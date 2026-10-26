@@ -245,6 +245,7 @@ function validatePart(part, index, push) {
 	if (part.cut !== undefined) push(`${at}.cut is no longer supported: the iso kit draws every side face as a plain flat face (no hatching); remove "cut" from the part`);
 	if (part.label !== undefined && (typeof part.label !== "string" || part.label.length > 60)) push(`${at}.label must be a string of ≤ 60 chars`);
 	if (part.explode !== undefined && !isVec(part.explode)) push(`${at}.explode must be [x, y, z]`);
+	if (part.guides !== undefined && part.guides !== false) push(`${at}.guides is false or absent (false: draw no explode guides for this part)`);
 	if (part.clipTo !== undefined && part.kind !== "ring") push(`${at}.clipTo is allowed on rings only`);
 	if (part.clipPad !== undefined && !(part.kind === "ring" && part.clipTo !== undefined && isNum(part.clipPad) && part.clipPad >= 0 && part.clipPad <= 200)) push(`${at}.clipPad is a number within 0–200, allowed on a ring with clipTo`);
 	if (part.state !== undefined && !PART_STATES.includes(part.state)) push(`${at}.state must be one of ${PART_STATES.join(", ")}`);
@@ -266,7 +267,18 @@ function validateLine(note, at, push) {
 
 function validateInteract(interact, push) {
 	if (interact === undefined || interact === null) return;
-	if (!["select", "explode", ...STATE_BEHAVIORS].includes(interact.behavior)) return push(`interact.behavior ${JSON.stringify(interact.behavior)} must be "select", "explode", "step" or "scrub"`);
+	if (!["select", "explode", "teardown", ...STATE_BEHAVIORS].includes(interact.behavior)) return push(`interact.behavior ${JSON.stringify(interact.behavior)} must be "select", "explode", "teardown", "step" or "scrub"`);
+	// teardown (illustrations.md § Teardown): the brief's `at` values are the exploded pose; each part's `explode` is its travel
+	// from the assembled place. An Exploded / Assembled switch, a Spread slider and part hover come with it.
+	if (interact.behavior === "teardown") {
+		const t = interact.teardown ?? {};
+		if (typeof t !== "object" || Array.isArray(t)) return push("interact.teardown must be an object");
+		if (t.step !== undefined && !(isNum(t.step) && t.step > 0 && t.step <= 1)) push("interact.teardown.step must be within (0, 1]");
+		if (t.start !== undefined && !["exploded", "assembled"].includes(t.start)) push('interact.teardown.start must be "exploded" or "assembled"');
+		if (t.gap !== undefined && !(isNum(t.gap) && t.gap > 0)) push("interact.teardown.gap must be a positive number (world units between layers)");
+		for (const key of ["lift", "explode"]) if (interact[key] !== undefined) push(`interact.${key} does not apply to teardown`);
+		return;
+	}
 	// step and scrub (states.mjs validateStateInteract, run from validateFlat with the parts).
 	if (STATE_BEHAVIORS.includes(interact.behavior)) {
 		if (interact.rest !== undefined && typeof interact.rest !== "string" && !Number.isInteger(interact.rest)) push("interact.rest must be a state index or a state name");

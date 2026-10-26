@@ -325,6 +325,7 @@ every count and size key is `null` (off): there is no layer, label, mark, detail
   do not change it.
 - **Behaviour**: `interact` is `null` (static, zoomable), `{ behavior: "select", rest?, lift? }`
   (pointer or arrow keys lift one part and name it; Escape returns to rest) or
+  `{ behavior: "teardown", teardown?: { gap, step, start } }` (an exploded view with an Exploded / Assembled switch; see **Teardown**) or
   `{ behavior: "explode", explode: { rest, min, max, step, unit } }` (hovering the figure opens it to `max` and leaving
   closes it; a touch tap toggles; pointer position plays no part; the range input commits the resting gap). The brief's `at` values are the rest pose; offsets are
   `explode × (gap − rest)`. `rest` must be a slider stop (`min + n × step`), or the range input
@@ -451,6 +452,33 @@ only the plate (foot and caption included), and content after the figure is your
 next slide. A figure in a hidden container (an inactive tab panel, a closed `<details>`) is left
 out of the fit and shows at full size when opened; it is fitted the next time the slide is shown.
 Give an iso figure a slide with at most an eyebrow, a heading and a lead above it.
+
+### Teardown
+
+An exploded view of any object or interface (after the MIT `teardown` skill, `github.com/jakubkrehel/skills`, Copyright (c)
+2026 Jakub Krehel): one model, an assembled view and an exploded view along the assembly paths, parts named on hover. Use it
+when the reader must see every layer or component of a thing and where each one goes, such as a device, a machine, a UI card or a
+concept made of layers (display pixels, a rendering stack). `scripts/iso/teardown.mjs`; examples `scripts/iso/briefs/td-*.json`
+on the **Teardowns** gallery page.
+
+- **Write the brief assembled**: every part at its real place, touching what it touches. Set
+  `interact: { behavior: "teardown", teardown?: { gap?, step?, start? } }`.
+- **Travel**: each part moves by its own `explode: [x, y, z]`. A part without one takes the travel of the part it rests on when
+  both share an assembly layer (a key on its deck, a chip on its board), else its `assemble.layers` index × `gap` (default 18)
+  straight up. So `assemble.layers` orders the stack; secondary hardware (a bracket, a magnet, a head stack) takes its own
+  sideways vector, and a part below the base takes a negative z.
+- **What is drawn**: the static art is the exploded drawing, with dashed guides on the assembly paths, leader labels and the usual
+  tones, shadows and accent. Label `anchor`s and mark `at`s are written on the assembled object and ride their part. There is no
+  entry drop: the switch is the motion.
+- **Controls**: an Exploded / Assembled switch and a Spread slider (0 = assembled, 1 = exploded, `step` default 0.05) sit under
+  the frame; `start: "assembled"` opens closed. Pointing at a part, or focusing the stage and using the arrow keys, names it in
+  the readout and outlines it in the accent (no lift). Labels and guides hide off the exploded pose. Past half way the parts take
+  the assembled pose's painter order (`data-vpk-iso-depth0`), so a cover closes over what it covers. Reopening restores the static
+  art byte for byte.
+- **Repeated detail**: `guides: false` on a part (fins, keys, chips) draws no explode guides for it; glass parts draw none.
+- **Good teardowns**: choose one primary axis, keep coaxial stacks coaxial, keep each gap clear in the drawing (raise `gap` or an
+  `explode` until no label leader ends under another part; the audit says which), and give every separated part a credible place
+  to return to. The audit (A7 and the rest) checks the exploded pose.
 
 ## 8. Motion policy
 

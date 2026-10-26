@@ -128,6 +128,13 @@ export const BRIEF_EXAMPLES = Object.freeze([
 	{ slug: "iso-an-lit-by-facing", brief: "iso/briefs/an-lit-by-facing.json", title: "Lit by facing, a rim stage", gallery: "anatomy-4", summary: "A recreation of anatomy's \"Lit by facing\" (No. 50): a clear rim on a stepped dais lit by a fixed key light at 1.0 and a half-strength fill at 0.5, each point lit by how squarely it faces them, with the rim as the one orange part and select-to-lift parts." },
 	{ slug: "iso-an-press-and-pull", brief: "iso/briefs/an-press-and-pull.json", title: "Press and pull", gallery: "anatomy-4", summary: "After the anatomy collection. Dimetric figure: a capsule glass button pressed by a fingertip set toward the pull. A dashed outline marks its rest footprint; the orange capsule is longer and shifted toward the finger. Hover or arrows lift a part." },
 	{ slug: "iso-an-three-reads", brief: "iso/briefs/an-three-reads.json", title: "Three reads, one normal", gallery: "anatomy-4", summary: "An isometric optical bench based on the anatomy collection's \"Three reads\" (dispersion) figure: a line card looks through a bevelled glass block (the orange focal part) at red, green and blue read screens set 1, 2 and 3 steps along the same normal, with a red–blue spread dimension and a spread dial." },
+	// Teardowns (after the MIT `teardown` skill, github.com/jakubkrehel/skills): briefs written assembled, drawn exploded, with an
+	// Exploded / Assembled switch, a Spread slider and part naming (illustrations.md § Teardown).
+	{ slug: "iso-td-card", brief: "iso/briefs/td-card.json", title: "Teardown of an interface card", gallery: "teardown", summary: "The teardown skill's own concept example: an interface card taken apart into page, card surface, media, text and the primary button. Switch to Assembled to stack the layers back, or drag the Spread slider; point at a layer to name it." },
+	{ slug: "iso-td-drive", brief: "iso/briefs/td-drive.json", title: "Teardown of a hard drive", gallery: "teardown", summary: "After teardown's Drive: the circuit board drops below the base casting, the spindle motor, three platters and the disc clamp rise up the spindle, the head stack swings aside and the top cover lifts clear. Assembled closes the cover over all of it." },
+	{ slug: "iso-td-cpu", brief: "iso/briefs/td-cpu.json", title: "Teardown of a CPU in its socket", gallery: "teardown", summary: "After teardown's CPU: motherboard and chokes, the socket frame and its pin field, the package substrate with capacitors, the die, thermal paste, the heat spreader and the retention lid with its lever, stacked along one axis." },
+	{ slug: "iso-td-gpu", brief: "iso/briefs/td-gpu.json", title: "Teardown of a graphics card", gallery: "teardown", summary: "After teardown's GPU: backplate, board with GPU, memory, power stages and display ports, the I/O bracket pulled out sideways, the cold plate, two heat pipes, a sixty-fin stack and the shroud with three fans." },
+	{ slug: "iso-td-pixels", brief: "iso/briefs/td-pixels.json", title: "Teardown of display pixels", gallery: "teardown", summary: "The teardown skill's concept of layered pixels: backlight, rear polariser, transistor grid, liquid crystal, black matrix, the red, green and blue filters and the cover glass, each lifted off the one below." },
 ]);
 
 export const LEGACY_EXAMPLES = Object.freeze([
@@ -287,6 +294,7 @@ export const GALLERY_PAGES = Object.freeze([
 	anatomy(2, "Part 2"),
 	anatomy(3, "Part 3"),
 	anatomy(4, "Part 4"),
+	{ key: "teardown", title: "Teardowns", summary: "Exploded views after the teardown skill: each figure is drawn taken apart along its assembly paths. Use Exploded and Assembled or the Spread slider to put it together, and point at a part to name it." },
 ].map(page => Object.freeze({ ...page, slug: `illustration-gallery-${page.key}`, fileName: `demo-illustration-gallery-${page.key}.html` })));
 
 const GALLERY_CSS = `.gallery-figure {

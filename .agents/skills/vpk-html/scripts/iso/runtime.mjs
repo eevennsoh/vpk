@@ -157,7 +157,10 @@ export function createIsoRuntime(win, loop, core) {
 		const svg = find(stage, "id");
 		const behavior = attr(stage, "behavior");
 		const vb = svg ? (svg.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number) : [];
-		if (!svg || vb.length !== 4 || !vb.every(Number.isFinite) || !["select", "explode", "step", "scrub"].includes(behavior)) throw new Error("stage");
+		if (!svg || vb.length !== 4 || !vb.every(Number.isFinite) || !["select", "explode", "teardown", "step", "scrub"].includes(behavior)) throw new Error("stage");
+		// Teardown (illustrations.md § Teardown): the explode spring drives the parts (Spread slider, Exploded / Assembled buttons)
+		// and the pointer or arrow keys name a part, as select does, without lifting it.
+		const teardown = behavior === "teardown";
 		let rect = null;
 		const measure = () => (rect = rect || svg.getBoundingClientRect());
 		const invalidate = () => {
@@ -206,7 +209,7 @@ export function createIsoRuntime(win, loop, core) {
 			// straight wire's degenerate hull is padded; a concave prism hits by its convex solids (core.partPoly).
 			const poly = core.partPoly(el);
 			const plan = (attr(el, "plan") || "").split(";").map(box => box.trim().split(/\s+/).map(Number)).filter(box => box.length === 4 && box.every(Number.isFinite));
-			return { el, i, id, unit, poly, vec, plan, depth: Number(attr(el, "depth")) || 0, group: el.parentNode, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
+			return { el, i, id, unit, poly, vec, plan, depth: Number(attr(el, "depth")) || 0, depth0: Number(attr(el, "depth0")) || 0, group: el.parentNode, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
 		});
 		if (!parts.length || parts.some(p => p.poly.length < 3)) throw new Error("polygon");
 		const polys = parts.map(p => p.poly);
@@ -246,12 +249,15 @@ export function createIsoRuntime(win, loop, core) {
 			list.over = list.map(a => list.map(b => a !== b && overlap(a, b)));
 		}
 
-		const cfg = behavior === "explode" && control
-			? { rest: Number(control.defaultValue || control.value), max: Number(control.max), unit: (readout && readout.textContent.trim().split(" ")[0]) || "gap" }
+		const cfg = (behavior === "explode" || teardown) && control
+			? { rest: Number(control.defaultValue || control.value), min: Number(control.min), max: Number(control.max), unit: teardown ? "spread" : (readout && readout.textContent.trim().split(" ")[0]) || "gap" }
 			: null;
-		if (behavior === "explode" && !cfg) throw new Error("control");
+		if ((behavior === "explode" || teardown) && !cfg) throw new Error("control");
+		if (teardown && control.hasAttribute("data-vpk-iso-start")) control.value = control.getAttribute("data-vpk-iso-start");
+		const poseButtons = teardown ? [...root.querySelectorAll("[data-vpk-iso-pose]")] : [];
+		const poseText = value => (value >= cfg.max - 1e-6 ? "exploded" : value <= cfg.min + 1e-6 ? "assembled" : `spread ${value.toFixed(2)}`);
 		const restText = readout ? attr(readout, "rest") || readout.textContent : "";
-		const st = { sel: { count: units.length, active: null, last: null }, ex: cfg ? { committed: Number(control.value), preview: null } : null, gap: spring(cfg ? Number(control.value) : 0), text: readout ? readout.textContent : "", said: null, liveText: null, leaveAt: null };
+		const st = { sel: { count: units.length, active: null, last: null }, ex: cfg ? { committed: Number(control.value), preview: null } : null, gap: spring(cfg ? Number(control.value) : 0), text: readout ? readout.textContent : "", said: null, liveText: null, leaveAt: null, apart: true, closed: false };
 		let board = null;
 		const wake = () => board && board.wake();
 
@@ -265,7 +271,10 @@ export function createIsoRuntime(win, loop, core) {
 		};
 		const leave = (t, touch) => {
 			// A touch "leave" follows every tap; the open/closed state belongs to the next tap, not to it.
-			if (cfg) {
+			if (teardown) {
+				if (touch) st.leaveAt = t + 1400;
+				else select(selectReducer(st.sel, { type: "leave" }), t);
+			} else if (cfg) {
 				if (!touch) st.ex = explodeReducer(st.ex, { type: "leave" }, cfg);
 			} else if (touch) st.leaveAt = t + 1400;
 			else select(selectReducer(st.sel, { type: "leave" }), t);
@@ -274,7 +283,7 @@ export function createIsoRuntime(win, loop, core) {
 
 		const move = e => {
 			if (fromReview(e)) return;
-			if (cfg) {
+			if (cfg && !teardown) {
 				st.ex = explodeReducer(st.ex, { type: e.pointerType === "mouse" ? "hover" : "toggle" }, cfg);
 				wake();
 				return;
@@ -292,7 +301,7 @@ export function createIsoRuntime(win, loop, core) {
 			if (e.pointerType !== "mouse") move(e);
 		});
 		stage.addEventListener("pointermove", e => {
-			if (!cfg || e.pointerType === "mouse") move(e);
+			if (!cfg || teardown || e.pointerType === "mouse") move(e);
 		});
 		stage.addEventListener("pointerleave", e => leave(now(), e.pointerType === "touch"));
 		stage.addEventListener("pointercancel", e => leave(now(), e.pointerType === "touch"));
@@ -303,10 +312,17 @@ export function createIsoRuntime(win, loop, core) {
 			});
 			control.addEventListener("change", () => {
 				st.ex = explodeReducer(st.ex, { type: "change", value: Number(control.value) }, cfg);
-				st.liveText = st.ex.live;
+				st.liveText = teardown ? poseText(st.ex.committed) : st.ex.live;
 				wake();
 			});
-		} else {
+			// Exploded / Assembled: each button sets the slider to its pose and commits it, so the slider stays the one source of truth.
+			for (const button of poseButtons) button.addEventListener("click", () => {
+				control.value = button.getAttribute("data-vpk-iso-pose");
+				control.dispatchEvent(new win.Event("input", { bubbles: true }));
+				control.dispatchEvent(new win.Event("change", { bubbles: true }));
+			});
+		}
+		if (teardown || !cfg) {
 			stage.addEventListener("keydown", e => {
 				if (fromReview(e) || e.altKey || e.ctrlKey || e.metaKey) return;
 				const next = selectReducer(st.sel, { type: "key", key: e.key });
@@ -419,6 +435,50 @@ export function createIsoRuntime(win, loop, core) {
 					p.dy = p.vec[1] * p.k;
 				}
 				text = `${cfg.unit} ${st.gap.x.toFixed(2)}`;
+				if (teardown) {
+					if (st.leaveAt !== null && t >= st.leaveAt) {
+						st.leaveAt = null;
+						select(selectReducer(st.sel, { type: "leave" }), t);
+					}
+					busy = busy || st.leaveAt !== null;
+					for (const p of parts) {
+						// The select tween drives only the blink here; the part does not lift (it moves with the spread).
+						p.lv = tval(p.tw, t, reduced);
+						busy = busy || !tdone(p.tw, t, reduced);
+						const on = p.unit === st.sel.active;
+						if (on === p.on) continue;
+						p.on = on;
+						for (const el of [p.el, ...labelsFor[p.i]]) {
+							if (on) el.classList.add("is-active");
+							else restore(el);
+						}
+					}
+					const settled = Math.abs(st.gap.x - st.gap.t) < 0.005 ? st.gap.t : st.gap.x;
+					// Labels belong to the exploded drawing: hidden while the parts are out of that pose (runtime-css).
+					const apart = settled >= cfg.max - 1e-6;
+					// Past half way the parts are drawn in the assembled pose's painter order (data-vpk-iso-depth0), else in the exploded one.
+					const closed = st.gap.x < (cfg.min + cfg.max) / 2;
+					if (closed !== st.closed) {
+						st.closed = closed;
+						for (const [g, list] of groups) {
+							// Reopening restores the group's exact original children (guides sit between parts), so the rest art returns byte for byte.
+							list.orig ??= [...g.childNodes];
+							if (!closed) {
+								for (const node of list.orig) g.appendChild(node);
+								continue;
+							}
+							const order = list.slice().sort((a, b) => a.depth0 - b.depth0 || a.i - b.i);
+							for (const p of order) g.insertBefore(p.el, list.tail);
+						}
+					}
+					if (apart !== st.apart) {
+						st.apart = apart;
+						svg.classList.toggle("vpk-iso-assembling", !apart);
+						if (!svg.classList.length) svg.removeAttribute("class");
+					}
+					text = st.sel.active === null ? poseText(settled) : units[st.sel.active].label;
+					for (const button of poseButtons) button.setAttribute("aria-pressed", String(Math.abs(Number(button.getAttribute("data-vpk-iso-pose")) - st.ex.committed) < 1e-6));
+				}
 			} else {
 				if (st.leaveAt !== null && t >= st.leaveAt) {
 					st.leaveAt = null;

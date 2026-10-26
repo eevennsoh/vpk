@@ -45,6 +45,8 @@ function sliderOf(plateHtml = "") {
 	for (const match of plateHtml.matchAll(INPUT_TAG)) {
 		const attrs = parseAttrs(match[1]);
 		if (attrs.get("data-vpk-iso-control") !== "explode") continue;
+		// A teardown's Spread slider (data-vpk-iso-start): its labels show only in the exploded pose, so only that pose is checked.
+		if (attrs.has("data-vpk-iso-start")) return null;
 		const [min, max, step, rest] = ["min", "max", "step", "value"].map(name => Number(attrs.get(name)));
 		if (![min, max, step, rest].every(Number.isFinite) || step <= 0 || max <= min) return null;
 		// The unit is the label text in front of the input ("Gap ").
@@ -455,7 +457,7 @@ export { auditLabelPoses, scenePoses };
 export function auditScene(scene) {
 	const findings = auditLabelPoses({
 		figure: scene.figId,
-		explode: scene.explode,
+		explode: scene.teardown ? null : scene.explode,
 		hull: scene.hull,
 		pieces: scene.pieces.map(piece => ({ ...piece, paints: piece.solids.some(solid => solid.fill) })),
 		labels: scene.labels.map(label => ({ text: label.text, target: label.target, box: label.box, points: label.leader.points })),

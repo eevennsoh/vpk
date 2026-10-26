@@ -134,6 +134,11 @@ ${entryCss}
 :where(.vpk-iso-readout) { min-width: 9ch; font: 12px/1.4 var(--font-numeric, var(--font-mono)); font-variant-numeric: tabular-nums; color: var(--ink); }
 :where(.vpk-iso-control) { display: inline-flex; align-items: center; gap: 10px; font: 12px/1.4 var(--font-mono); }
 :where(.vpk-iso-control input) { accent-color: var(--ink); }
+svg[data-vpk-iso].vpk-iso-assembling :is([data-vpk-iso-label-for], [data-vpk-iso-tag], [data-vpk-iso-fade]) { visibility: hidden; }
+:where(.vpk-iso-switch) { display: inline-flex; padding: 2px; border: 1px solid var(--rule); border-radius: 999px; }
+:where(.vpk-iso-switch button) { padding: 4px 12px; border: 0; border-radius: 999px; background: none; color: var(--muted-text); font: 12px/1.4 var(--font-mono); cursor: pointer; }
+:where(.vpk-iso-switch button[aria-pressed="true"]) { background: var(--surface-sunken); color: var(--ink); }
+:where(.vpk-iso-switch button:focus-visible) { outline: 1.5px solid var(--focus-ring, var(--ink)); outline-offset: 1px; }
 :where(.vpk-iso-live) { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-vpk-engine="iso-kit"] svg[data-vpk-iso-blink] .is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }
 ${emphasisCss}

@@ -47,6 +47,7 @@ export {
 export { expandBrief } from "./expand.mjs";
 import { BriefError, CAMERA_PRESETS, CROP_PAD, DEFAULT_PAD, DEFAULT_VIEWBOX, emphasisOf, FIT_FROM_Z, focalIdsOf, labelModeOf, labelSpecsOf, MANUAL_FROM, MAX_PARTS, MIN_CROP_ZOOM, validateBrief, WARN_PARTS } from "./schema.mjs";
 import { expandBrief } from "./expand.mjs";
+import { assembledBrief, explodedBrief, isTeardown } from "./teardown.mjs";
 const SCALE_GAP = 14;
 
 const round = (value, step = 10) => Math.round(value * step) / step;
@@ -174,10 +175,18 @@ export function buildScene(input, { style = input?.style } = {}) {
 	const errors = validateBrief({ ...input, style });
 	if (errors.length) throw new BriefError(errors);
 	// Repeat, instances and vary expand once; the scene (and scene.brief) holds the expanded parts.
-	const brief = expandBrief(input);
+	// A teardown brief is written assembled; the scene draws it exploded (teardown.mjs), so the static art is the teardown.
+	const brief = explodedBrief(expandBrief(input));
 	const scene = buildSceneAt(brief, style, null);
 	const rebuild = (gutters, viewBox) => buildSceneAt(brief, style, gutters, viewBox);
-	return fitHeight(scene.labels.length ? fitNear(scene, rebuild) : scene, rebuild);
+	const fitted = fitHeight(scene.labels.length ? fitNear(scene, rebuild) : scene, rebuild);
+	// Teardown: the painter order of the assembled pose too (depth0), so the runtime redraws a cover over the parts it closes on.
+	if (isTeardown(input)) {
+		const assembled = buildSceneAt(assembledBrief(expandBrief(input)), style, null);
+		const depth0 = new Map(assembled.pieces.map(piece => [piece.id, piece.depth]));
+		for (const piece of fitted.pieces) piece.depth0 = depth0.get(piece.id);
+	}
+	return fitted;
 }
 
 function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
@@ -195,7 +204,10 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 	const cam = resolveCamera(brief.camera);
 	const interact = brief.interact ?? null;
 	const behavior = interact?.behavior ?? null;
-	const explode = behavior === "explode" ? { unit: "gap", ...interact.explode } : null;
+	// A teardown figure is an explode figure whose rest pose is the exploded one: spread 1 is the brief's `at` values, spread 0
+	// moves every part back by its travel to its assembled place (illustrations.md § Teardown).
+	const teardown = behavior === "teardown" ? { step: 0.05, start: "exploded", ...interact.teardown } : null;
+	const explode = behavior === "explode" ? { unit: "gap", ...interact.explode } : teardown ? { unit: "spread", rest: 1, min: 0, max: 1, step: teardown.step } : null;
 	const liftWorld = behavior === "select" ? interact.lift ?? 8 : 0;
 	const layers = layerIndexMap(brief);
 	const zRank = new Map([...brief.parts].sort((a, b) => bottomZ(a) - bottomZ(b)).map((part, index) => [part.id, index]));
@@ -401,7 +413,8 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 	const guides = [];
 	if (explode) {
 		for (const part of brief.parts) {
-			if (["ring", "gap", "tray", "wire", "leg", ...TUBE_KINDS].includes(part.kind) && !(part.kind === "ring" && part.thickness)) continue;
+			// guides: false keeps repeated detail (fins, keys, chips) from drawing a curtain of dashed guides.
+			if (part.guides === false || part.tone === "glass" || (["ring", "gap", "tray", "wire", "leg", ...TUBE_KINDS].includes(part.kind) && !(part.kind === "ring" && part.thickness))) continue;
 			const byTarget = new Map();
 			for (const corner of guideCorners(part, P, part.r ?? preset.radius)) {
 				const below = brief.parts
@@ -496,6 +509,7 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 		liftWorld,
 		behavior,
 		explode,
+		teardown,
 		interact,
 		pieces,
 		groups,

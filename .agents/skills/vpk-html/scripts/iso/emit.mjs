@@ -93,6 +93,7 @@ export function renderPart(piece, scene, indent = "") {
 	if (piece.of) attrs.push(`data-vpk-iso-of="${escapeAttr(piece.of)}"`);
 	if (piece.state) attrs.push(`data-vpk-iso-state="${piece.state}"`);
 	if (piece.explode) attrs.push(`data-vpk-iso-explode="${vec(piece.explode)}"`);
+	if (piece.depth0 !== undefined) attrs.push(`data-vpk-iso-depth0="${num(piece.depth0)}"`);
 	if (piece.lift) attrs.push(`data-vpk-iso-lift="${vec(piece.lift)}"`);
 	if (piece.stacks) attrs.push(`data-vpk-iso-plan="${piece.plan.map(box => box.map(num).join(" ")).join(";")}"`);
 	if (piece.label) attrs.push(`data-vpk-iso-label="${escapeAttr(piece.label)}"`);
@@ -432,8 +433,8 @@ function renderScene(scene, indent) {
 export function renderSvg(scene, indent = "") {
 	const [w, h] = scene.viewBox;
 	const attrs = ["data-vpk-illustration", "data-vpk-iso", `data-vpk-iso-id="${scene.id}"`, `data-vpk-iso-style="${scene.style}"`];
-	// An active part blinks once and holds a 2px ink outline (select only; explode has no per-part active state).
-	if (scene.behavior === "select") attrs.push("data-vpk-iso-blink");
+	// An active part blinks once and holds a 2px ink outline (select and teardown; explode has no per-part active state).
+	if (scene.behavior === "select" || scene.behavior === "teardown") attrs.push("data-vpk-iso-blink");
 	attrs.push(`data-vpk-iso-zdepth="${scene.zdepth}"`);
 	if (scene.behavior === "select") attrs.push(`data-vpk-iso-lift-z="${num(scene.liftWorld)}"`);
 	// Emphasis "ink" or "none": no accent anywhere, so the hover CSS draws the active outline in ink (runtime-css emphasisCss).
@@ -463,6 +464,7 @@ function stageLabel(scene) {
 		const how = scene.states.input === "pointer-x" ? "Move the pointer across the figure" : scene.states.input === "keys" ? "Focus the figure and use the arrow keys" : "Drag across the figure";
 		return `${title}. ${how} to move through ${scene.states.states.length} states, or use the arrow keys or the slider; Escape returns to rest.`;
 	}
+	if (scene.behavior === "teardown") return `${title}. The parts are shown taken apart. Use the Exploded and Assembled buttons or the Spread slider to put them together; point at a part, or focus the figure and use the arrow keys, to name it.`;
 	if (scene.behavior === "explode") {
 		const unit = scene.explode.unit;
 		return `${title}. Point at the figure to separate the parts (tap on touch), or use the ${unit[0].toUpperCase()}${unit.slice(1)} slider to set it.`;
@@ -501,7 +503,7 @@ export function renderPlate(scene, { indent = "", attrs = "" } = {}) {
 	const stage = ['class="vpk-iso-stage"', "data-vpk-iso-stage"];
 	if (interactive) {
 		stage.push(`data-vpk-iso-behavior="${scene.behavior}"`, 'role="group"', 'aria-roledescription="interactive figure"', `aria-label="${escapeAttr(stageLabel(scene))}"`);
-		if (scene.behavior === "select" || scene.states) stage.push('tabindex="0"');
+		if (scene.behavior === "select" || scene.behavior === "teardown" || scene.states) stage.push('tabindex="0"');
 		// The state model for state-runtime.mjs (JSON in one attribute: no script island, so check-html sees no new script).
 		if (scene.states) stage.push(`data-vpk-iso-states="${escapeAttr(JSON.stringify(scene.states))}"`);
 	}
@@ -516,6 +518,14 @@ export function renderPlate(scene, { indent = "", attrs = "" } = {}) {
 			const text = cfg.states[cfg.rest].text;
 			readout.push(`<output class="vpk-iso-readout" data-vpk-iso-readout aria-live="off">${escapeText(text)}</output>`);
 			if (scene.behavior === "scrub") control.push(`<label class="vpk-iso-control">State <input type="range" data-vpk-iso-control="scrub" min="0" max="${cfg.states.length - 1}" step="any" value="${cfg.rest}" aria-valuetext="${escapeAttr(text)}" autocomplete="off"></label>`);
+		} else if (scene.behavior === "teardown") {
+			// Teardown: the readout names the hovered part (or the pose); the Exploded / Assembled switch and the Spread slider sit
+			// under the frame. The slider is an explode control (min 0, max 1, rest 1), so the audit sweeps its stops like a Gap.
+			const e = scene.explode;
+			const start = scene.teardown.start === "assembled" ? e.min : e.rest;
+			readout.push(`<output class="vpk-iso-readout" data-vpk-iso-readout data-vpk-iso-rest="${start === e.min ? "assembled" : "exploded"}" aria-live="off">${start === e.min ? "assembled" : "exploded"}</output>`);
+			control.push(`<div class="vpk-iso-switch" role="group" aria-label="View"><button type="button" data-vpk-iso-pose="${e.max}" aria-pressed="${start === e.max}">Exploded</button><button type="button" data-vpk-iso-pose="${e.min}" aria-pressed="${start === e.min}">Assembled</button></div>`);
+			control.push(`<label class="vpk-iso-control">Spread <input type="range" data-vpk-iso-control="explode" min="${e.min}" max="${e.max}" step="${e.step}" value="${e.rest}" data-vpk-iso-start="${start}" autocomplete="off"></label>`);
 		} else if (scene.behavior === "explode") {
 			const e = scene.explode;
 			readout.push(`<output class="vpk-iso-readout" data-vpk-iso-readout aria-live="off">${readoutText(scene, e.rest)}</output>`);

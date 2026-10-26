@@ -3,6 +3,13 @@
 `scripts/iso/` builds on two MIT-licensed projects. Nothing here is copied wholesale; the pieces
 below were ported or adapted, and each ported function carries a header comment pointing here.
 
+## teardown
+
+- Upstream: `github.com/jakubkrehel/skills` (`skills/teardown`), MIT, Copyright (c) 2026 Jakub Krehel.
+- Adapted, not copied: the teardown idea (one model drawn assembled and exploded along its assembly paths, parts named, explode
+  vectors that return each part to its assembled place) and the Drive, CPU, GPU, interface-card and display-pixel examples, redrawn
+  as iso-kit briefs in the vpk-html manual style (`teardown.mjs`, `briefs/td-*.json`). No code was ported.
+
 ## hairline
 
 - Upstream: `github.com/lucasmarkes/hairline` (the `@lucasmarkes/hairline` package), MIT,

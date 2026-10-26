@@ -1,0 +1,41 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "td-drive",
+	"figId": "FIG_202",
+	"title": "Teardown of a hard drive",
+	"label": "A hard drive taken apart along its axis: board below the base casting; motor, three platters and clamp up the spindle; head stack, voice coil and ramp aside; magnet yoke out; top cover lifted. Platters accented.",
+	"caption": "Everything that spins sits on one axis: motor, platters and clamp stack straight up off the spindle, while the head stack swings in from the side.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "board", "kind": "slab", "at": [14, 8, -2], "size": [118, 86, 1.6], "r": 2, "label": "Circuit board", "explode": [0, 0, -34], "detail": [{ "type": "line", "face": "top", "points": [[60, 10], [100, 10], [100, 30]] }, { "type": "recess", "face": "top", "shape": "circle", "at": [38, 42], "size": [18, 18] }] },
+		{ "id": "chip", "kind": "box", "at": [62, 40, -0.4], "size": [16, 16, 1.6], "r": 0.6, "label": "Controller", "explode": [0, 0, -34] },
+		{ "id": "ram", "kind": "box", "at": [90, 28, -0.4], "size": [10, 8, 1.4], "r": 0.5, "label": "Cache", "explode": [0, 0, -34], "repeat": { "linear": { "count": 3, "step": [12, 12, 0] } } },
+		{ "id": "sata", "kind": "box", "at": [18, 74, -0.4], "size": [22, 7, 3], "r": 0.6, "label": "Connector", "explode": [0, 0, -34], "repeat": { "linear": { "count": 2, "step": [26, 0, 0] } } },
+		{ "id": "base", "kind": "tray", "at": [0, 0, 0], "size": [146, 101, 24], "r": 4, "label": "Base casting", "detail": [{ "type": "recess", "face": "top", "shape": "circle", "at": [56, 50], "size": [98, 98], "depth": 1 }] },
+		{ "id": "spindle", "kind": "cylinder", "at": [56, 50, 2], "size": [13, 13, 9], "label": "Spindle motor", "explode": [0, 0, 28], "detail": [{ "type": "bolts", "face": "top", "r": 7, "count": 6, "size": 0.9 }] },
+		{ "id": "spindle-flange", "kind": "ring", "at": [56, 50, 2], "size": [17, 17, 0], "thickness": 1.6, "inner": 13, "label": "Motor flange", "explode": [0, 0, 28] },
+		{ "id": "platter", "kind": "ring", "at": [56, 50, 11.5], "size": [47.5, 47.5, 0], "thickness": 1.27, "inner": 12.5, "label": "Platters", "instances": [{ "at": [56, 50, 11.5], "explode": [0, 0, 64] }, { "at": [56, 50, 14.7], "explode": [0, 0, 76] }, { "at": [56, 50, 17.9], "explode": [0, 0, 88] }] },
+		{ "id": "clamp", "kind": "cylinder", "at": [56, 50, 21.2], "size": [15, 15, 1.6], "label": "Disc clamp", "explode": [0, 0, 104], "detail": [{ "type": "bolts", "face": "top", "r": 9, "count": 6, "size": 1 }, { "type": "recess", "face": "top", "shape": "circle", "at": [0, 0], "size": [5, 5] }] },
+		{ "id": "pivot", "kind": "cylinder", "at": [122, 24, 2], "size": [6.5, 6.5, 19], "label": "Actuator pivot", "explode": [30, 0, 108] },
+		{ "id": "arm", "kind": "box", "at": [72, 32, 18.4], "size": [56, 6, 0.9], "r": 1, "yaw": -21, "label": "Head stack", "explode": [30, 0, 108], "repeat": { "linear": { "count": 3, "step": [0, 0, -3.2] } } },
+		{ "id": "coil", "kind": "box", "at": [126, 10, 9], "size": [16, 11, 3], "r": 2, "yaw": -21, "label": "Voice coil", "explode": [30, 0, 108], "detail": [{ "type": "recess", "face": "top", "shape": "rect", "at": [4, 3], "size": [8, 5] }] },
+		{ "id": "ramp", "kind": "box", "at": [104, 60, 2], "size": [5, 12, 16], "r": 0.8, "label": "Parking ramp", "explode": [30, 0, 108], "detail": [{ "type": "ticks", "face": "+x", "from": [1, 4], "to": [11, 4], "step": 3.2, "lengths": [2, 2] }] },
+		{ "id": "yoke", "kind": "box", "at": [118, 4, 2], "size": [24, 13, 7], "r": 2, "label": "Magnet yoke", "explode": [40, -12, 30] },
+		{ "id": "cover", "kind": "slab", "at": [0, 0, 24], "size": [146, 101, 1.6], "r": 4, "label": "Top cover", "explode": [0, 0, 150], "detail": [{ "type": "inset", "face": "top", "by": 8, "r": 6 }, { "type": "recess", "face": "top", "shape": "rect", "at": [88, 62], "size": [36, 20], "depth": 0.3 }, { "type": "recess", "face": "top", "shape": "circle", "at": [56, 50], "size": [6, 6] }, { "type": "recess", "face": "top", "shape": "circle", "at": [6, 6], "size": [3.6, 3.6] }, { "type": "recess", "face": "top", "shape": "circle", "at": [140, 95], "size": [3.6, 3.6] }, { "type": "recess", "face": "top", "shape": "circle", "at": [6, 95], "size": [3.6, 3.6] }, { "type": "recess", "face": "top", "shape": "circle", "at": [140, 6], "size": [3.6, 3.6] }] }
+	],
+	"focal": "platter",
+	"labels": [
+		{ "text": "Top cover", "target": "cover", "side": "right" },
+		{ "text": "Parking ramp", "target": "ramp", "side": "right" },
+		{ "text": "Head stack", "target": "arm", "side": "right" },
+		{ "text": "Voice coil", "target": "coil", "side": "right" },
+		{ "text": "Disc clamp", "target": "clamp", "side": "left" },
+		{ "text": "Platters", "target": "platter", "side": "left", "anchor": [22.4, 83.6, 12.8] },
+		{ "text": "Spindle motor", "target": "spindle", "side": "left" },
+		{ "text": "Magnet yoke", "target": "yoke", "side": "right" },
+		{ "text": "Base casting", "target": "base", "side": "left" },
+		{ "text": "Circuit board", "target": "board", "side": "left" }
+	],
+	"assemble": { "layers": [["board", "chip", "ram", "sata"], ["base"], ["spindle", "spindle-flange"], ["platter"], ["clamp"], ["pivot", "arm", "coil", "ramp", "yoke"], ["cover"]] },
+	"interact": { "behavior": "teardown" }
+}
