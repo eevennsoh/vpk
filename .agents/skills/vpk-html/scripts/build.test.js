@@ -587,7 +587,7 @@ test("SKILL.md workflow skeleton", () => {
 	assert.ok(lock.includes(`<meta name="vpk-figure-engine" content="none|iso-kit|anatomy-hero|both">`));
 	assert.match(lock, /With nobody to ask, use the iso kit/);
 	assert.match(lock, /If you ask, stop and wait for the answer/);
-	assert.match(lock, /never an Epic\s+tier\. A page has at most one\./);
+	assert.match(lock, /needs it\. There\s+is no part or size cap, and a page may carry several\./);
 	assert.match(lock, /When you ask, say which planned figure each option would draw and what the\s+others become\. With the anatomy hero alone, the other figures are static\s+diagrams\./);
 	assert.ok(!/[;] /.test(lock.slice(lock.indexOf("- **iso kit**"), lock.indexOf("When you ask, say"))), "the engine options use full stops, not semicolons");
 	assert.equal(step(8).match(/^\d+\. /gm).length, 6, "the definition of done has six items");

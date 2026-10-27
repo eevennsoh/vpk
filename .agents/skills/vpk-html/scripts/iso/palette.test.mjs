@@ -51,7 +51,7 @@ function allPaints() {
 	for (const focal of [false, true]) for (const active of [false, true]) {
 		for (const role of Object.values(rolesFor({ focal, active }))) values.push(role.fill ?? role.stroke);
 	}
-	values.push(preset.edge, preset.crease, preset.mark, preset.guide.stroke, preset.leader, preset.label.fill, preset.focalEdge, preset.ink, preset.paper);
+	values.push(preset.edge, preset.crease, preset.mark, preset.guide.stroke, preset.leader, preset.label.fill, ACCENT_FACES.edge, preset.ink, preset.paper);
 	return values;
 }
 
@@ -127,16 +127,17 @@ test("DARK_TONE_OVERRIDES are the CSS dark rules, keyed by data-vpk-iso-tone", (
 	assert.deepEqual(DARK_TONE_OVERRIDES, { top: "var(--ill-tone2)", dark: "var(--surface-sunken)" });
 });
 
-test("stroke set and roles (R3, rule 4): 1 px edges, a 1.5 px paper ring, a 2 px darker-accent outline on the focal only", () => {
+test("stroke set and roles (R3, rule 4): 1 px edges, a 1.5 px paper ring; the accent focal keeps the neutral line work at rest", () => {
 	assert.deepEqual([...STROKE_SET], [1, 1.5, 2]);
 	assert.equal(rolesFor().edge.width, 1);
 	assert.equal(rolesFor().guide.dash, "3 3");
 	const focal = rolesFor({ focal: true });
 	assert.deepEqual([focal.top.fill, focal.fill.fill, focal.shade.fill], [ACCENT_FACES.top, ACCENT_FACES.light, ACCENT_FACES.dark], "the focal part takes the three accent faces");
 	assert.equal(focal.top.tone, "accent");
-	assert.deepEqual(focal.edge, { stroke: ACCENT_FACES.edge, width: 2 }, "the focal outline is the darker accent, not ink");
-	assert.deepEqual([focal.crease.stroke, focal.mark.stroke], [ACCENT_FACES.edge, ACCENT_FACES.edge], "no grey crease or mark on an orange face");
-	assert.equal(ISO_PRESET.focalEdge, ACCENT_FACES.edge);
+	assert.deepEqual(focal.edge, rolesFor().edge, "at rest the focal edge is every part's neutral 1 px edge (the accent outline is hover only)");
+	assert.deepEqual([focal.crease, focal.mark, focal.dot], [rolesFor().crease, rolesFor().mark, rolesFor().dot], "its creases, marks and dots are neutral too");
+	assert.equal("focalEdge" in ISO_PRESET, false, "no rest accent stroke in the preset");
+	assert.deepEqual(rolesFor({ focal: true, emphasis: "ink" }).edge, { stroke: ISO_PRESET.ink, width: 2 }, "the ink focal keeps its 2 px ink outline");
 	const active = rolesFor({ active: true });
 	assert.equal(active.top.fill, ISO_PRESET.tones.pale, "a new or active part takes the pale fill");
 	assert.equal(active.top.tone, "pale");
@@ -205,22 +206,25 @@ test("entry hand-off CSS: hide, accent and hand-off rules from the shared consta
 	assert.ok(ISO_CSS.includes(":is([data-vpk-iso-enter], [data-vpk-iso-shadow-enter]).vpk-iso-wait { visibility: hidden; }"));
 	assert.doesNotMatch(ISO_CSS, /vpk-iso-[ah]\d/, "no per-layer rules");
 	for (const fill of [ACCENT_FACES.top, ACCENT_FACES.light, ACCENT_FACES.dark]) assert.ok(ISO_CSS.includes(`{ fill: ${fill}; }`), fill);
-	assert.ok(ISO_CSS.includes(`{ stroke: ${ACCENT_FACES.edge}; }`), "the dropping layer's line work takes the darker accent");
-	assert.match(ISO_CSS, new RegExp(`transition: fill ${ENTRY.HANDOFF_MS}ms var\\(--ease-out\\), stroke ${ENTRY.HANDOFF_MS}ms`));
+	assert.doesNotMatch(ISO_CSS, /\.vpk-iso-drop\[data-vpk-iso-enter\] > \* > :is\(\[data-vpk-iso-role="edge"\]/, "the dropping layer's line work stays neutral (the accent outline is hover only)");
+	assert.match(ISO_CSS, new RegExp(`transition: fill ${ENTRY.HANDOFF_MS}ms var\\(--ease-out\\); \\}`));
 	assert.doesNotMatch(ISO_CSS, /vpk-iso-set|ghost|cue/, "the rest class paints nothing; no ghost or entry-arrow rule");
 	assert.deepEqual(Object.keys(ENTRY).sort(), ["ACCENT_HOLD_MS", "DROP_Z", "HANDOFF_MS", "PART_MS", "STAGGER_MS", "STEP_CAMERA_MS", "TITLE_FADE_MS"]);
 });
 
-// Redline 2a: every edge, crease and mark of an accented part (focal, hovered or selected, mid-entry) is one darker shade of the
-// accent (ACCENT_FACES.edge), never ink or the receded grey; the hover rule no longer paints the black --focal edge.
-test("accent parts use the accent stroke: focal roles, hover and entry CSS; darker than the far face in both themes", () => {
+// Hover-only accent outline (user decision 2026-10-27): no accented part draws an accent outline at rest (the focal part, the
+// dropping entry layer and a tour step keep neutral line work on their accent faces); the hovered or selected part takes the
+// 2 px accent outline, and a hovered focal part's creases, marks and dots the darker accent (ACCENT_FACES.edge).
+test("accent outline is hover only: the .is-active rules carry it; the entry layer and the tour step do not; darker than the far face", () => {
 	assert.ok(isAccentPaint(ACCENT_FACES.edge) && isAllowedIsoPaint(ACCENT_FACES.edge) && isAllowedFigureColorValue(ACCENT_FACES.edge), ACCENT_FACES.edge);
-	const lines = ':is([data-vpk-iso-role="edge"], [data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"])';
 	assert.ok(ISO_CSS.includes('.is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }'), "hovered or selected part: a 2 px accent outline");
 	assert.doesNotMatch(ISO_CSS, /\.is-active > \[data-vpk-iso-role="(?:top|fill|shade)"\]/, "hover never fills the faces (large parts flooded orange)");
-	assert.ok(ISO_CSS.includes(`.vpk-iso-drop[data-vpk-iso-enter] > * > ${lines} { stroke: ${ACCENT_FACES.edge}; }`), "dropping entry layer");
-	assert.doesNotMatch(ISO_CSS, /\.is-active > \[data-vpk-iso-role="edge"\]\) \{ stroke: var\(--focal\)/, "no ink hover edge");
-	assert.ok(ISO_CSS.includes('[data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }'), "a faceless part keeps the accent itself");
+	assert.ok(ISO_CSS.includes(`[data-vpk-iso-focal].is-active:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"]) > :is([data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"]) { stroke: ${ACCENT_FACES.edge}; }`), "a hovered focal's creases and marks take the darker accent");
+	assert.ok(ISO_CSS.includes(':not(:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }'), "a faceless part keeps the accent itself");
+	// Every rule that paints ACCENT_FACES.edge or a 2 px stroke is gated on .is-active, or on a faceless part.
+	for (const rule of ISO_CSS.split("\n").filter(line => line.includes(`stroke: ${ACCENT_FACES.edge}`) || line.includes("stroke: var(--ill-accent)"))) {
+		assert.ok(/\.is-active|:not\(:has\(|arrow-for/.test(rule), `accent stroke only on hover, a faceless part or an arrow: ${rule}`);
+	}
 	// The stroke is a darker shade of the same hue: below the far face's luminance (so it still draws the silhouette there).
 	const light = tokenBlock(":root");
 	const dark = { ...light, ...tokenBlock("[data-theme=\"dark\"]") };

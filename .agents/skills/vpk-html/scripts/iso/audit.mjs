@@ -29,9 +29,8 @@ export { FOCAL_MIN_VISIBLE, parseMarkup };
 const PAINT_ATTRS = ["fill", "stroke", "stop-color", "color", "flood-color", "lighting-color"];
 const SMIL = new Set(["animate", "animateTransform", "animateMotion", "set"]);
 const FACE_ROLES = new Set(["fill", "shade", "top"]);
-const FOCAL_LINE_ROLES = new Set(["edge", "crease", "mark", "hatch"]);
-// Detail fills a focal part paints in the accent family: its dots (the darker accent) and its recesses (the darker accent face).
-const FOCAL_DETAIL_FILLS = new Set(["dot", "recess"]);
+// Detail fills a focal part paints in the accent family: its recesses (the darker accent face).
+const FOCAL_DETAIL_FILLS = new Set(["recess"]);
 // The one transform the kit emits: face text projected onto its face (detail.mjs faceMatrix).
 const FACE_TEXT_MATRIX = /^matrix\((?:\s*-?[\d.]+(?:e-?\d+)?){6}\s*\)$/;
 const decimals = d => /\d\.\d{2,}/.test(d);
@@ -159,8 +158,8 @@ export function auditSvg(svgSource, context = {}) {
 	// A3 emphasis (data-vpk-iso-emphasis on the root; absent means "accent"). Under "accent" at least one part carries
 	// data-vpk-iso-focal (a list is a group drawn alike), each drawn with the accent faces (top, near side, far side:
 	// preset.accent); a part in state "new" or "active" takes the pale fill. The accent appears nowhere else in the rest art
-	// except the focal parts' line work (edge, creases and marks in the darker accent, preset.focalEdge), the focal label's leader
-	// dot and, for a faceless focal (the ring, a gap outline), its 2 px edge (the hover accent is runtime CSS, not markup). Under
+	// except the focal label's leader dot and, for a faceless focal (the ring, a wire, a gap outline), its 2 px edge: a focal with
+	// faces keeps the neutral line work of every part, and its accent outline is runtime CSS on hover, never markup. Under
 	// "ink" the focal parts (if any) keep their faces with a 2 px ink outline and no accent paints anywhere; "none" has no focal.
 	const emphasis = attr(svg, "data-vpk-iso-emphasis") ?? "accent";
 	if (!EMPHASES.includes(emphasis)) push("A3", `data-vpk-iso-emphasis="${emphasis}" must be one of ${EMPHASES.join(", ")}`);
@@ -188,28 +187,24 @@ export function auditSvg(svgSource, context = {}) {
 		const focalPart = part && has(part, "data-vpk-iso-focal");
 		const onFocalFace = focalPart && FACE_ROLES.has(attr(el, "data-vpk-iso-role"));
 		const onFacelessEdge = focalPart && attr(el, "data-vpk-iso-role") === "edge" && !faces.some(face => facePart.get(face) === part);
-		const onFocalLine = focalPart && FOCAL_LINE_ROLES.has(attr(el, "data-vpk-iso-role")) && norm(attr(el, "stroke") ?? "") === preset.focalEdge && !isAccentPaint(attr(el, "fill") ?? "");
-		const onFocalDetail = focalPart && FOCAL_DETAIL_FILLS.has(attr(el, "data-vpk-iso-role")) && [preset.focalEdge, preset.accent.dark].includes(norm(attr(el, "fill") ?? "")) && !has(el, "stroke");
+		const onFocalDetail = focalPart && FOCAL_DETAIL_FILLS.has(attr(el, "data-vpk-iso-role")) && norm(attr(el, "fill") ?? "") === preset.accent.dark && !has(el, "stroke");
 		// A motion arrow that names the focal part as the one it moves (data-vpk-iso-arrow-for) is drawn in the accent too.
 		const arrow = ancestor(el, item => has(item, "data-vpk-iso-arrow-for"));
 		const onFocalArrow = arrow && focalUnits.has(attr(arrow, "data-vpk-iso-arrow-for"));
-		if (!onFocalFace && !onFacelessEdge && !onFocalLine && !onFocalDetail && !onFocalArrow && !accentMarker(el)) push("A3", `<${el.name}${attr(el, "data-vpk-iso-role") ? ` data-vpk-iso-role="${attr(el, "data-vpk-iso-role")}"` : ""}> paints the accent; only the focal part's faces and line work (or a faceless focal's edge), its motion arrow and the focal leader dot may`);
+		if (!onFocalFace && !onFacelessEdge && !onFocalDetail && !onFocalArrow && !accentMarker(el)) push("A3", `<${el.name}${attr(el, "data-vpk-iso-role") ? ` data-vpk-iso-role="${attr(el, "data-vpk-iso-role")}"` : ""}> paints the accent; only the focal part's faces (or a faceless focal's edge), its motion arrow and the focal leader dot may`);
 	}
-	// The focal parts alone carry the 2 px outline: the darker accent (preset.focalEdge) under "accent", the ink under "ink";
-	// every other edge is the 1 px stroke. Under "accent" their creases and marks take the same darker accent, never a grey line
-	// on an orange face.
+	// At rest no part with faces carries an accent outline: a focal part's edge under "accent" is the neutral 1 px edge of every
+	// part (its accent outline is hover-only CSS). A faceless focal, which has nothing else to show the accent, keeps a 2 px accent
+	// stroke; under "ink" every focal edge is the 2 px ink outline. Any other edge is the 1 px stroke.
 	for (const el of elements.filter(item => attr(item, "data-vpk-iso-role") === "edge")) {
 		const part = partOf(el);
 		const isFocal = part && has(part, "data-vpk-iso-focal");
 		const faceless = isFocal && !faces.some(face => facePart.get(face) === part);
-		const want = !accented ? preset.ink : faceless ? `var(${ACCENT_TOKENS[0]})` : preset.focalEdge;
-		const outlined = Number(attr(el, "stroke-width")) === preset.focalStroke && norm(attr(el, "stroke") ?? "") === want;
-		if (isFocal && !outlined) push("A3", `focal part "${unitName(part)}" edge must be a ${preset.focalStroke}px ${want} outline`);
-		if (!isFocal && Number(attr(el, "stroke-width")) > preset.stroke) push("A3", `part "${part ? unitName(part) : "?"}" has a ${attr(el, "stroke-width")}px outline; only a focal part does`);
-	}
-	for (const el of elements.filter(item => accented && ["crease", "mark"].includes(attr(item, "data-vpk-iso-role")))) {
-		const part = partOf(el);
-		if (part && has(part, "data-vpk-iso-focal") && norm(attr(el, "stroke") ?? "") !== preset.focalEdge) push("A3", `focal part "${unitName(part)}" ${attr(el, "data-vpk-iso-role")} is ${attr(el, "stroke")}, not the accent stroke ${preset.focalEdge}`);
+		const width = Number(attr(el, "stroke-width"));
+		if (isFocal && (!accented || faceless)) {
+			const want = !accented ? preset.ink : `var(${ACCENT_TOKENS[0]})`;
+			if (width !== preset.focalStroke || norm(attr(el, "stroke") ?? "") !== want) push("A3", `focal part "${unitName(part)}" edge must be a ${preset.focalStroke}px ${want} outline`);
+		} else if (width > preset.stroke) push("A3", `part "${part ? unitName(part) : "?"}" has a ${attr(el, "stroke-width")}px outline at rest; only an ink focal or a faceless accent focal does (the accent outline is hover only)`);
 	}
 
 	// A4 stroke widths

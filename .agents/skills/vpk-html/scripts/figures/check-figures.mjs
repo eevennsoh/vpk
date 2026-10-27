@@ -370,7 +370,7 @@ export function collectFigureAdvisories(html, thresholds = loadFigureThresholds(
 		const focal = new Set([...markup.matchAll(/\sdata-focal\s*=\s*["']([^"']+)["']/g)].map(match => match[1]));
 		if (focal.size !== 1) add("A3", `hero ${id} has ${focal.size} distinct data-focal names (exactly one)`);
 		const hero = budget.heroes.find(item => item.id === root.id);
-		const [low, high] = thresholds.parts[hero.tier] ?? thresholds.parts.figure;
+		const [low] = thresholds.parts[hero.tier] ?? thresholds.parts.figure;
 		if (hero.parts < low) add("A4", `hero ${id}: ${hero.parts} parts is below the ${low}-part bar for the ${hero.tier} tier`, true);
 		if (hero.region > thresholds.heroFailBytes) add("A5", `hero ${id}: region ${kb(hero.region)} exceeds the ${kb(thresholds.heroFailBytes)} fail threshold`, true);
 		else if (hero.region > thresholds.heroWarnBytes) add("A5", `hero ${id}: region ${kb(hero.region)} exceeds ${kb(thresholds.heroWarnBytes)}`);

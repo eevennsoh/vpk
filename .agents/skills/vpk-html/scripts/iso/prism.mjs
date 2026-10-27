@@ -33,7 +33,10 @@ function grown(ring, idx, eps) {
 		const [a, b] = [ring[v], ring[w]];
 		const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
 		const push = [((b[1] - a[1]) / len) * eps, (-(b[0] - a[0]) / len) * eps];
-		for (const j of [k, (k + 1) % idx.length]) (out[j][0] += push[0]), (out[j][1] += push[1]);
+		for (const j of [k, (k + 1) % idx.length]) {
+			out[j][0] += push[0];
+			out[j][1] += push[1];
+		}
 	});
 	return out;
 }

@@ -128,11 +128,12 @@ export function renderPart(piece, scene, indent = "") {
 		if (index === (piece.received?.solid ?? 0) && piece.received) lines.push(...renderReceived(piece, scene, pad));
 		if (solid.crease) add(`<path data-vpk-iso-role="crease" d="${solid.crease}"${strokeAttrs(glass ? { ...roles.crease, dash: GLASS_DASH } : roles.crease)}/>`);
 		if (solid.edge) {
-			// A focal part with no faces (the flash ring, a gap outline) has nowhere else to show the accent, so its 2 px stroke takes it
-			// (the ink under emphasis "ink").
+			// A focal part with no faces (the flash ring, a wire, a gap outline) has nowhere else to show the accent, so its 2 px stroke
+			// takes it at rest (the ink under emphasis "ink"); a focal with faces shows the accent on them and keeps the neutral edge.
 			const faceless = piece.focal && (glass || !piece.solids.some(item => item.fill || item.top || item.shade));
-			const focalStroke = emphasis !== "accent" ? scene.preset.ink : faceless ? `var(${ACCENT_TOKENS[0]})` : scene.preset.focalEdge;
-			const edge = dash ? { stroke: piece.focal ? focalStroke : scene.preset.guide.stroke, width: roles.edge.width, dash } : faceless ? { ...roles.edge, stroke: focalStroke } : roles.edge;
+			const focalStroke = emphasis !== "accent" ? scene.preset.ink : `var(${ACCENT_TOKENS[0]})`;
+			const focalWidth = scene.preset.focalStroke;
+			const edge = dash ? { stroke: piece.focal ? focalStroke : scene.preset.guide.stroke, width: piece.focal ? focalWidth : roles.edge.width, dash } : faceless ? { ...roles.edge, stroke: focalStroke, width: focalWidth } : roles.edge;
 			add(`<path data-vpk-iso-role="edge" d="${solid.edge}"${strokeAttrs(edge)}/>`);
 		}
 	};

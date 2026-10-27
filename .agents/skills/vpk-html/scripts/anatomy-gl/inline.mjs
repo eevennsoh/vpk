@@ -79,6 +79,16 @@ const PLATE_CSS = `.vpk-anatomy-gl-plate { display: block !important; margin: 0;
 .vpk-anatomy-gl-plate > figcaption { max-width: 72ch; text-align: left; }`;
 export const anatomyGlStyleTag = () => `<style data-vpk-anatomy-gl-css>\n${ACCENT_TOKENS_CSS}\n${PLATE_CSS}\n</style>`;
 
+// The lit part's outline is hover only (as on an iso part): upstream strokes a lit solid's edge in --anatomy-lit at rest
+// (.iso-solid[data-lit] > .iso-edge, (0,3,0)). This sheet, adopted into each figure's shadow root, gives that edge back its own
+// tone (data-tone, the line every other part draws) at rest and the accent while the figure is hovered or holds focus. Lit
+// lines, wires and pointers (data-tone="lit", no faces) keep the accent at rest: a stroke is all they have to show it.
+const LIT_SOLID = ":is(.iso-solid, .ab-plate)[data-lit] > .iso-edge.iso-line";
+export const ANATOMY_GL_LIT_CSS = [
+	...["hi", "mid", "lo", "faint"].map(tone => `${LIT_SOLID}[data-tone="${tone}"] { stroke: var(--anatomy-${tone}); }`),
+	`.iso-plate:is(:hover, :focus-within) ${LIT_SOLID} { stroke: var(--anatomy-lit); }`,
+].join("\n");
+
 export function anatomyGlPlate({ slug, indent = "\t\t" }) {
 	const figure = anatomyGlFigure(slug);
 	if (!figure) throw new Error(`unknown anatomy-gl figure: ${slug}`);
@@ -113,6 +123,16 @@ export const ANATOMY_GL_BOOT = `const VPK_TOKENS = ${JSON.stringify(ANATOMY_GL_T
 const MOUNT_MARGIN = ${JSON.stringify(ANATOMY_GL_MOUNT_MARGIN)};
 const UNMOUNT_MARGIN = ${JSON.stringify(ANATOMY_GL_UNMOUNT_MARGIN)};
 const MAX_RECOVERIES = ${ANATOMY_GL_MAX_RECOVERIES};
+const LIT_CSS = ${JSON.stringify(ANATOMY_GL_LIT_CSS)};
+let litSheet = null;
+const adoptLitCss = root => {
+	if (!root || !("adoptedStyleSheets" in root) || typeof CSSStyleSheet !== "function") return;
+	if (!litSheet) {
+		litSheet = new CSSStyleSheet();
+		litSheet.replaceSync(LIT_CSS);
+	}
+	if (!root.adoptedStyleSheets.includes(litSheet)) root.adoptedStyleSheets = [...root.adoptedStyleSheets, litSheet];
+};
 const pageTheme = () => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
 const figures = new Map();
 const mount = host => {
@@ -121,6 +141,7 @@ const mount = host => {
 	figure.theme = pageTheme();
 	figure.lost = false;
 	figure.stop = figure.render(host, { theme: figure.theme, tokens: VPK_TOKENS[figure.theme] });
+	adoptLitCss(host.shadowRoot);
 	host.style.minHeight = "";
 	if (!figure.listening && host.shadowRoot) {
 		figure.listening = true;

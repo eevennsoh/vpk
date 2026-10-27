@@ -7,7 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { ANATOMY_GL_FIGURES } from "./figures.mjs";
-import { ANATOMY_GL_BOOT, ANATOMY_GL_MAX_RECOVERIES, ANATOMY_GL_MOUNT_MARGIN, ANATOMY_GL_TOKENS, ANATOMY_GL_UNMOUNT_MARGIN, anatomyGlPlate, anatomyGlRuntimeBlock, anatomyGlStyleTag, vendoredElementExists } from "./inline.mjs";
+import { ANATOMY_GL_BOOT, ANATOMY_GL_LIT_CSS, ANATOMY_GL_MAX_RECOVERIES, ANATOMY_GL_MOUNT_MARGIN, ANATOMY_GL_TOKENS, ANATOMY_GL_UNMOUNT_MARGIN, anatomyGlPlate, anatomyGlRuntimeBlock, anatomyGlStyleTag, vendoredElementExists } from "./inline.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const VENDOR = path.join(HERE, "vendor");
@@ -30,6 +30,14 @@ test("the token map sets every --anatomy-* colour the figures read from vpk toke
 	}
 	assert.equal(ANATOMY_GL_TOKENS.light["--anatomy-lit"], "var(--ill-accent)", "the lit part is the iso kit's accent");
 	assert.match(anatomyGlStyleTag(), /--ill-accent:/, "the style tag declares the accent pair");
+});
+
+// Hover-only accent outline: a lit solid's edge draws its own tone at rest and the accent only while the plate is hovered or
+// focused; the boot adopts the sheet into every figure's shadow root.
+test("a lit solid's edge is neutral at rest and takes the accent only on hover or focus", () => {
+	assert.match(ANATOMY_GL_LIT_CSS, /:is\(\.iso-solid, \.ab-plate\)\[data-lit\] > \.iso-edge\.iso-line\[data-tone="hi"\] \{ stroke: var\(--anatomy-hi\); \}/);
+	for (const rule of ANATOMY_GL_LIT_CSS.split("\n").filter(line => line.includes("--anatomy-lit"))) assert.match(rule, /:is\(:hover, :focus-within\)/, `accent only on hover: ${rule}`);
+	assert.match(ANATOMY_GL_BOOT, /adoptLitCss\(host\.shadowRoot\)/, "every mount adopts the sheet");
 });
 
 test("the plate is an anatomy-gl root with an accessible host, opted out of the lightbox", () => {

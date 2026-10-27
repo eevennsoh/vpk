@@ -26,7 +26,8 @@ export const HAIRLINE_NOTICE = "/* vpk hairline runtime · figures from hairline
 
 // Hairline's five colours, set to the iso kit's manual style (illustrations.md § 4, iso/accent.mjs) so a hairline figure
 // reads like an iso-kit figure: plates on the raised surface, ink edges at 60% (NEUTRAL_LINES.edge), creases at 38%, the
-// bright `hi` stroke (hairline's active part) in the accent edge colour. Dark mirrors the iso dark overrides.
+// bright `hi` stroke (hairline's active part; on a filled part only while the figure is hovered, TONE_CSS) in the accent edge
+// colour. Dark mirrors the iso dark overrides.
 export const HAIRLINE_PALETTE = Object.freeze({
 	light: Object.freeze({ plate: "var(--surface-raised)", hi: "color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line))", edge: "color-mix(in srgb, var(--ill-line) 60%, var(--paper))", mid: "color-mix(in srgb, var(--ill-line) 60%, var(--paper))", lo: "color-mix(in srgb, var(--ill-line) 38%, var(--paper))" }),
 	dark: Object.freeze({ plate: "var(--ill-tone2)", hi: "var(--ill-accent)", edge: "color-mix(in srgb, var(--ill-line) 60%, var(--paper))", mid: "color-mix(in srgb, var(--ill-line) 60%, var(--paper))", lo: "color-mix(in srgb, var(--ill-line) 38%, var(--paper))" }),
@@ -36,9 +37,12 @@ const paletteVars = palette => Object.entries(palette).map(([key, value]) => `--
 
 // The iso tone map on hairline solids (runtime/paint.mjs classifies every filled outline): a flat face takes data-hl-tone, a
 // solid gets a g[data-hl-faces] after it with its side bands and its outline; top = plate, near (l) side tone 1, far (r) side
-// tone 2. An active part (hairline's `.hi`) takes the iso accent faces and the darker accent outline, as a hovered iso part does.
+// tone 2. An active part (hairline's `.hi`, which some figures set at rest: the laptop lid, a rail's marked body) takes the iso
+// accent faces and the neutral edge; the darker accent outline is drawn only while the figure is hovered or focused, as on a
+// hovered iso part. A faceless `.hi` stroke (`.nf`: a shackle, a ring) keeps the accent at rest, having no face to carry it.
 // Cast shadows are one flat fill (SHADOW.TONE, dark SHADOW.DARK_TONE) in g[data-hl-shadows], the svg's first child.
 const SVG = '[data-vpk-engine="hairline"] [data-vpk-hairline] > svg';
+const HOVER = '[data-vpk-engine="hairline"] [data-vpk-hairline]:is(:hover, :focus-visible) > svg';
 const HI = `:is(.hi, .hi + [data-hl-faces] > *)`;
 const TONE_CSS = `${SVG} [data-hl-side] { stroke: none; }
 ${SVG} [data-hl-side="l"], ${SVG} :is([data-hl-tone="l"], [data-hl-tone="c"]) { fill: var(--ill-tone1); }
@@ -49,7 +53,8 @@ ${SVG} [data-hl-shadows] path { fill: ${SHADOW.TONE}; stroke: none; }
 ${SVG} :where(path.hi:not(.nf), polygon.hi, ellipse.hi:not(.nf)), ${SVG} .hi:is([data-hl-tone="t"], [data-hl-tone="c"]) { fill: ${ACCENT_FACES.top}; }
 ${SVG} ${HI}:is([data-hl-side="l"], [data-hl-tone="l"]) { fill: ${ACCENT_FACES.light}; }
 ${SVG} ${HI}:is([data-hl-side="r"], [data-hl-tone="r"]) { fill: ${ACCENT_FACES.dark}; }
-${SVG} .hi:not(.nf), ${SVG} .hi + [data-hl-faces] > [data-hl-edge] { stroke: ${ACCENT_FACES.edge}; stroke-width: 1.6; }
+${SVG} .hi:not(.nf) { stroke: var(--hl-edge); }
+${HOVER} .hi:not(.nf), ${HOVER} .hi + [data-hl-faces] > [data-hl-edge] { stroke: ${ACCENT_FACES.edge}; stroke-width: 1.6; }
 ${SVG} .ghost { display: none; }
 ${SVG} .dot { fill: var(--ill-line); }
 ${SVG} .dot.m { fill: var(--ill-accent); }
@@ -76,9 +81,9 @@ ${TONE_CSS}`;
 // The vendored css() itself, compiled by esbuild rather than imported: Node 22 before 22.18 cannot load .ts.
 function upstreamCss() {
 	const source = fs.readFileSync(path.join(SRC, "core/styles.ts"), "utf8");
-	const module = { exports: {} };
-	new Function("module", "exports", loadEsbuild().transformSync(source, { loader: "ts", format: "cjs" }).code)(module, module.exports);
-	return module.exports.css(false);
+	const cjs = { exports: {} };
+	new Function("module", "exports", loadEsbuild().transformSync(source, { loader: "ts", format: "cjs" }).code)(cjs, cjs.exports);
+	return cjs.exports.css(false);
 }
 
 export function hairlineCss() {

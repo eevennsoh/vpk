@@ -44,7 +44,7 @@ when absent and never overwrite it. Pages that show hairline's ready figures rec
 |---|---|---|
 | Use for | figures inside the argument: stacks, trays, walls, assemblies | one detailed interactive machine per document |
 | Labels | leader labels hugging the object (R7), numbered marks and boxed dimensions | plate corners plus a legend |
-| Stroke | 1 (2 for the focal outline and the active edge) | 0.6, overridable with `--vpk-figure-stroke` (anatomy only) |
+| Stroke | 1 (2 for the hovered or selected edge, an ink focal and a faceless accent focal) | 0.6, overridable with `--vpk-figure-stroke` (anatomy only) |
 | Root | `figure.vpk-iso-plate[data-vpk-engine="iso-kit"]` | `div[data-vpk-engine="anatomy-hero"]` |
 
 Both engines share one camera, one loop and one lightbox opt-out:
@@ -77,17 +77,17 @@ The light values are the SVG attributes; the dark overrides are CSS in the iso b
 | `fill` (hull, near side) / `light` | `var(--ill-tone1)` | none |
 | `shade` (away side) / `dark` | `var(--ill-tone2)` | `var(--surface-sunken)` |
 | focal faces / `accent` | top `var(--ill-accent)`, near side `color-mix(in srgb, var(--ill-accent) 62%, var(--surface-raised))`, away side `color-mix(in srgb, var(--ill-accent) 70%, var(--ill-line))` (`ACCENT_FACES`, the prototype's three accent faces) | none (the alias pair switches with the theme) |
-| hovered or selected part (`.is-active`) | the same three accent faces, from CSS only | none |
+| hovered or selected part (`.is-active`) | keeps its faces and takes the 2 px `var(--ill-accent)` outline, from CSS only (the only accent outline any part draws) | none |
 | `state` faces / `pale` | `color-mix(in srgb, var(--ill-tone3) 60%, var(--surface-raised))` on every face | `var(--ill-tone3)` (`DARK_MANUAL_OVERRIDES`) |
 | label chip (`data-vpk-iso-chip`, rx 2) | `none`; the focal label's chip `var(--ill-accent)` with text `var(--ill-accent-ink)`; the active part's label from CSS the same | none |
 | `edge` / `crease` / `mark` / `guide` | `color-mix(in srgb, var(--ill-line) 60%, var(--paper))` / 38% / 45% / 72% with a `3 3` dash (edges and creases recede so the accented part leads: `NEUTRAL_LINES`) | none |
-| focal `edge` | `var(--ill-line)`, 2 | none |
+| focal `edge` | at rest the neutral 1 px edge of every part (creases and marks neutral too); hovered or selected (`.is-active`) the 2 px `var(--ill-accent)` outline with creases, marks and dots in the darker accent `ACCENT_FACES.edge`, from CSS only. A faceless focal (a ring, a wire, a tube drawn only as a stroke) keeps a 2 px `var(--ill-accent)` stroke at rest, or it would vanish; an ink focal keeps its 2 px `var(--ill-line)` outline | none |
 | `leader`, label | the 72% mix, ending in an ink dot (the focal leader ends in the accent dot, `-arrow-accent`, with a 1 px ink ring); 11-unit sentence-case mono (Geist Mono) in `--ill-line`, no extra tracking | none |
 | `arrow` (annotation) | edge colour, 2px (CSS, `data-vpk-iso-weight`), its own `-flow` arrowhead; stays visible on narrow stages. An arrow that names the part it moves (`of`) draws its head as a filled path and takes `var(--ill-accent)` when that part is the focal one, and from CSS while it is hovered or selected | none |
 | `shadow` (cast shadow) | `color-mix(in srgb, var(--ill-line) 12%, var(--paper))` on the shadow group (`SHADOW.TONE`) | `var(--surface-sunken)` (`SHADOW.DARK_TONE`) |
 
 Resolved order (ADS tokens, `references/design.md` § ADS token map): light `#ffffff` (tops) > `#f0f1f2` > `#dddee1`; dark `#3d3f43` > `#303134` > `#18191a`. The edges,
-not the shading, carry the drawing. The focal part takes the accent faces with its 2 px darker-accent outline; the pale fill
+not the shading, carry the drawing. The focal part takes the accent faces and, at rest, no accent outline (the outline is hover only); the pale fill
 (parts with `state` only) is `#d4d5d8` in light, 1.47:1 off the tops, and tone 3 in dark through one more CSS
 override. Accent values (`scripts/iso/accent.mjs`, ADS `color.background.accent.orange.bolder` with `color.text.inverse` on it):
 light `#bd5b00` with white ink (4.51:1), dark `#fca700` with `#1f1f21` ink (8.36:1); `palette.test.mjs` checks the
@@ -144,8 +144,8 @@ because `--muted-text` alone is 4.44:1 in light. This matches the anatomy plate.
 |---|---|---|---|
 | R1 | one hue plus white | Paper and raised surface plus ≤ 8 distinct face fills (`top`, `light`, `dark`, `pale`, `accent`, `ink`, and later `recess` and `glow`); the three accent faces, the three ink faces and any pattern fill each count once | A2 |
 | R2 | opaque plates, back to front | every face opaque; parts in painter order (anatomy `depthOf`); a guide precedes its plate | A5, A6 |
-| R3 | 1px strokes, 2px for the focal and active path | edges are 1; the focal outline is 2 (the emitted attribute), the active edge 2 from CSS only; a numbered mark's paper ring is 1.5; non-scaling strokes from CSS | A4 |
-| R4 | one emphasis | `brief.emphasis` is `accent` (default), `ink` or `none` (root `data-vpk-iso-emphasis` when not `accent`). `accent`: at least one `data-vpk-iso-focal` part (`focal` is an id or a list, a group drawn alike), its faces the three accent faces (`ACCENT_FACES`) with a 2 px darker-accent outline; accent paint appears nowhere else except the focal leader dot and an owned arrow. `ink`: focal parts (optional) keep their faces with a 2 px ink outline, and no accent paints anywhere, in the rest art, the entry hand-off or on hover. `none`: no focal part and no accent. A part with `state` takes the pale fill without the outline; a part with `tone: "ink"` takes the three ink faces | A3 |
+| R3 | 1px strokes, 2px for the active path | edges are 1, a focal with faces included; the active edge is 2 from CSS only; the emitted 2 is only an ink focal's outline or a faceless accent focal's stroke; a numbered mark's paper ring is 1.5; non-scaling strokes from CSS | A4 |
+| R4 | one emphasis | `brief.emphasis` is `accent` (default), `ink` or `none` (root `data-vpk-iso-emphasis` when not `accent`). `accent`: at least one `data-vpk-iso-focal` part (`focal` is an id or a list, a group drawn alike), its faces the three accent faces (`ACCENT_FACES`) with the neutral line work of every part at rest (the accent outline is hover only; a faceless focal keeps its 2 px accent stroke); accent paint appears nowhere else except the focal leader dot and an owned arrow. `ink`: focal parts (optional) keep their faces with a 2 px ink outline, and no accent paints anywhere, in the rest art, the entry hand-off or on hover. `none`: no focal part and no accent. A part with `state` takes the pale fill without the outline; a part with `tone: "ink"` takes the three ink faces | A3 |
 | R5 | flat side faces (hatching removed) | every side face is a plain flat face in the tone map, like the reference videos; the kit emits no hatch pattern, and the `cut` role appears only on a cutaway's section faces (flat `CUT_TONE`, hatch as line work); a brief part with `cut` fails validation with a message naming the field | A15, `scene.test.mjs` |
 | R6 | dashed explode guides | `3 3` dash, the 72% ink mix, 1; from the part's extreme base corners straight down to the part beneath | A16 |
 | R7 | mono labels near the part on leaders, or none | `brief.labels` is a list of labels (`"leaders"`, no count limit), or `"none" (root `data-vpk-iso-labels="none"`: no labels, tags, legend or gutters, and no `part.label`; the drawing takes the full width). Leaders: Geist Mono 11 units, sentence case as the brief writes it (never forced to capitals), no extra tracking, ink; off the silhouettes, near the part, on a straight leader that ends in an ink dot on visible ink of the target; below 720 px the text becomes numbered gutter tags plus an HTML legend (see Narrow stages) | A7, A8, A20, browser (19) |
@@ -169,7 +169,7 @@ Mechanical checks run in `scripts/iso/audit.mjs` and `build.mjs --check-iso <fil
 |---|---|
 | A1 | every paint value in the plate (fill, stroke, stop-color, color, SMIL paint) is `none`, `transparent`, a local pattern `url(#…)`, `var(--t)` or `color-mix(in srgb, var(--t) N%, var(--u))` with t, u in `ALLOWED_ISO_TOKENS`, or the accent (`var(--ill-accent)`, `var(--ill-accent-ink)`, or a mix led by `--ill-accent` towards a grey token or `transparent`); glow gradient stops follow the same rule; `--ill-ray-r|g|b` only on a `ray`/`ray-end` path of a root with `data-vpk-iso-spectrum`; no escape-hatch attribute |
 | A2 | ≤ 8 distinct fills on `fill`/`shade`/`top` faces (`fillsMax`; the accent faces, the ink faces and a pattern fill each count once) |
-| A3 | per emphasis (R4): under `accent` at least one focal part, each with faces equal to `ACCENT_FACES` per role and a 2 px darker-accent outline, accent paint only on focal faces (or a faceless focal's edge), the motion arrow that names a focal part (`data-vpk-iso-arrow-for`) and the accent marker; under `ink` focal edges are 2 px `var(--ill-line)` and any accent paint is an error; under `none` a focal part is an error too; `state` parts pale; no non-focal part has a heavier outline |
+| A3 | per emphasis (R4): under `accent` at least one focal part, each with faces equal to `ACCENT_FACES` per role and the neutral 1 px edge at rest (a faceless focal: a 2 px `var(--ill-accent)` edge), accent paint only on focal faces and recesses (or a faceless focal's edge), the motion arrow that names a focal part (`data-vpk-iso-arrow-for`) and the accent marker; under `ink` focal edges are 2 px `var(--ill-line)` and any accent paint is an error; under `none` a focal part is an error too; `state` parts pale; no other edge is heavier than 1 px, so no accent outline at rest |
 | A4 | every `stroke-width` attribute is in {1, 1.5, 2}; the root carries `data-vpk-iso-style="manual"` (any other value is an error naming the one style; a missing one is a warning) |
 | A5 | of two parts whose rest hulls overlap, the larger `data-vpk-iso-depth` comes later. The depth is the painter key from the vendored depth audit (`scripts/iso/painter.mjs`), so it follows the true front-to-back order; a painter cycle (two solids that each cover the other) is a model-audit warning |
 | A6 | each guide sits in `g[data-vpk-iso-fade]` before the fill of its `data-vpk-iso-from` part |
@@ -353,7 +353,7 @@ every count and size key is `null` (off): there is no layer, label, mark, detail
   whitespace).
 
 **Style.** The kit has one style, `manual` (credit: `SkylarKitchen/skills` `design/3d-assembly-manual`, MIT,
-`LICENSE`): a near-white model, ink hairlines at 72%, one accent focal with a 2 px darker-accent outline, labels near the part on
+`LICENSE`): a near-white model, ink hairlines at 72%, one accent focal (its outline on hover only), labels near the part on
 short leaders ending in an ink dot, numbered marks, boxed dimensions and a scale bar. A brief omits `style` (or sets
 `"manual"`); `--style` accepts only `manual`. The short rules, each enforced by the audit or a unit test:
 
@@ -362,7 +362,9 @@ short leaders ending in an ink dot, numbered marks, boxed dimensions and a scale
 2. **Edges:** 1 px ink hairlines at about 72%, non-scaling; plates stay opaque.
 3. **Detail:** every part keeps all of its marks, merged into one path per role; the budget is drawn segments (A19: warn above
    400 per part; there is no fail limit).
-4. **Emphasis:** by default one or more focal parts take the three accent faces plus a 2 px darker-accent outline (A3);
+4. **Emphasis:** by default one or more focal parts take the three accent faces and, at rest, the same neutral line work as every
+   other part: the 2 px accent outline (creases and marks in the darker accent) is drawn only on hover or selection (A3). A
+   faceless focal (a ring, a wire, a tube drawn only as a stroke) keeps its 2 px accent stroke at rest, or it would vanish;
    `emphasis: "ink"` outlines them in 2 px ink with no accent anywhere, `emphasis: "none"` emphasises nothing; a part with `state`
    takes the pale fill without the outline; everything else is near-white. Its label sits on an accent chip with
    ink text, and its leader ends in the accent dot. A focal that renders no visible stroke
@@ -505,7 +507,7 @@ its behaviour (select, explode, teardown, step, scrub). `scripts/iso/tour.mjs` (
 - **Camera**: the runtime eases the SVG `viewBox` over `ENTRY.STEP_CAMERA_MS` (600 ms, the discrete clock) to frame the step's
   parts where they are drawn now (a teardown at its current spread, a step state's moves), at the Overview's aspect, at most
   `TOUR_MAX_ZOOM` (4) times closer. Hover maps through the current viewBox.
-- **Accent**: the step's parts take the three accent faces and the darker accent outline (`.is-tour`); every other part, the
+- **Accent**: the step's parts take the three accent faces with neutral line work (`.is-tour`; a faceless part its accent stroke; the outline is hover only); every other part, the
   brief's focal part included, is neutral while a step shows. Leader labels, tags and dimension notes hide while zoomed. The title
   fades grey to ink over `ENTRY.TITLE_FADE_MS` (400 ms). Under emphasis "ink" or "none" the step's parts get an ink outline.
 - **Accessibility and print**: the live region announces "Step k of n: title. text" once per change, then empties. Reduced motion
@@ -531,7 +533,7 @@ Kit specifics:
 - **Entry** (`ENTRY` in `scripts/iso/accent.mjs`, shared with the 3D prototype; matched to the barrel-sauna and fall-bed
   step guides, then trimmed by the user's redline). Each assembly layer drops from `DROP_Z` = 30 world units above its rest over
   `PART_MS` = 700 ms on the `0.16 1 0.3 1` spline and lands, its cast shadows sliding in on the ground under it. While it drops it
-  is the current step and wears the three accent faces with darker-accent line work; `ACCENT_HOLD_MS` = 180 ms after it starts
+  is the current step and wears the three accent faces with neutral line work (no accent outline at rest); `ACCENT_HOLD_MS` = 180 ms after it starts
   (the same for every layer, the last included) it hands back to the neutral tone map over `HANDOFF_MS` = 300 ms. The focal part keeps its accent. There is no entry arrow and no ghost or target
   outline (they were tried and removed: the falling part already shows the direction, and a ghost painted over the moving part).
   Mechanism: each layer group (`g[data-vpk-iso-enter]`, and each `g[data-vpk-iso-shadow-enter]`) carries one discrete SMIL `class`

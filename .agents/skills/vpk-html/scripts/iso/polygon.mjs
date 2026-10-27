@@ -180,8 +180,13 @@ export function frontOrder(polys, d) {
 			const a = spanOn(polys[i], u, p, m);
 			const b = spanOn(polys[j], u, p, m);
 			if (!a || !b) continue;
-			if (a[1] <= b[0] + 1e-7) after[i].push(j), need[j]++;
-			else if (b[1] <= a[0] + 1e-7) after[j].push(i), need[i]++;
+			if (a[1] <= b[0] + 1e-7) {
+				after[i].push(j);
+				need[j]++;
+			} else if (b[1] <= a[0] + 1e-7) {
+				after[j].push(i);
+				need[i]++;
+			}
 		}
 	}
 	const order = [];

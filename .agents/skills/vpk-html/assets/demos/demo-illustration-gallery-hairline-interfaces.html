@@ -1717,7 +1717,8 @@ svg[data-vpk-illustration] {
 [data-vpk-engine="hairline"] [data-vpk-hairline] > svg :where(path.hi:not(.nf), polygon.hi, ellipse.hi:not(.nf)), [data-vpk-engine="hairline"] [data-vpk-hairline] > svg .hi:is([data-hl-tone="t"], [data-hl-tone="c"]) { fill: var(--ill-accent); }
 [data-vpk-engine="hairline"] [data-vpk-hairline] > svg :is(.hi, .hi + [data-hl-faces] > *):is([data-hl-side="l"], [data-hl-tone="l"]) { fill: color-mix(in srgb, var(--ill-accent) 62%, var(--surface-raised)); }
 [data-vpk-engine="hairline"] [data-vpk-hairline] > svg :is(.hi, .hi + [data-hl-faces] > *):is([data-hl-side="r"], [data-hl-tone="r"]) { fill: color-mix(in srgb, var(--ill-accent) 70%, var(--ill-line)); }
-[data-vpk-engine="hairline"] [data-vpk-hairline] > svg .hi:not(.nf), [data-vpk-engine="hairline"] [data-vpk-hairline] > svg .hi + [data-hl-faces] > [data-hl-edge] { stroke: color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line)); stroke-width: 1.6; }
+[data-vpk-engine="hairline"] [data-vpk-hairline] > svg .hi:not(.nf) { stroke: var(--hl-edge); }
+[data-vpk-engine="hairline"] [data-vpk-hairline]:is(:hover, :focus-visible) > svg .hi:not(.nf), [data-vpk-engine="hairline"] [data-vpk-hairline]:is(:hover, :focus-visible) > svg .hi + [data-hl-faces] > [data-hl-edge] { stroke: color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line)); stroke-width: 1.6; }
 [data-vpk-engine="hairline"] [data-vpk-hairline] > svg .ghost { display: none; }
 [data-vpk-engine="hairline"] [data-vpk-hairline] > svg .dot { fill: var(--ill-line); }
 [data-vpk-engine="hairline"] [data-vpk-hairline] > svg .dot.m { fill: var(--ill-accent); }

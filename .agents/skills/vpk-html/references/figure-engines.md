@@ -260,10 +260,9 @@ page's `data-theme`:
 | `mid` (default stroke) | `#c3c3c9` | `--ill-tone3` 70% + `--ill-tone2` | `#3e3e44` | `--ill-tone3` |
 | `lo` (creases, off dots) | `#e0e0e4` | `--ill-tone2` | `#29292d` | `--ill-tone2` |
 
-The look stays upstream's: white plates, 0.9 px non-scaling hairlines, the active part drawn in `hi`. No accent
-fill is added. Option (not implemented): the house orange accent (`--ill-accent`) could take the `.hi` stroke, the
-active part, so hovered parts read in the identity's one accent. That changes upstream's monochrome rule 08, so it
-needs a design call.
+The active part (`.hi`) takes the iso accent faces (`scripts/hairline/inline.mjs` TONE_CSS) with the neutral edge at rest;
+its darker-accent outline is drawn only while the figure is hovered or focused, as on a hovered iso part. A faceless `.hi`
+stroke (`.nf`) keeps the accent at rest, having no face to carry it.
 
 **Motion.** Every figure ticks on `window.vpkFrameLoop`: `runtime/stage.mjs` re-exports `core/stage.ts` with
 `register` replaced (`runtime/loop.mjs`), so upstream's own rAF loop, IntersectionObserver and reduced-motion query
@@ -295,6 +294,8 @@ ten figures are not iso-kit briefs: the page runs the original figures, vendored
 - **Style.** The vpk look comes in through upstream's own token API: the boot calls `render(host, { theme, tokens })` with
   `ANATOMY_GL_TOKENS` (`scripts/anatomy-gl/inline.mjs`), which points every `--anatomy-*` colour at the vpk ramp (paper,
   raised surface, tone 1 and 2 sides, hairlines at 60/38/20%, mono text) and makes the lit part the iso kit's orange accent.
+  A lit solid's edge is neutral at rest and takes the accent only while the plate is hovered or focused (`ANATOMY_GL_LIT_CSS`,
+  adopted into each figure's shadow root); faceless lit lines and wires keep the accent at rest.
   The shaders keep upstream's colours: the fire, plasma and light are the effect itself. The figure follows the page theme
   (`data-theme` on `<html>`) and remounts on a change; upstream's teardown releases its WebGL contexts.
 - **Lifecycle.** A figure costs one or two WebGL contexts, and a browser keeps about sixteen per renderer process, shared by

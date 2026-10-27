@@ -64,7 +64,7 @@ export const REST_MOTION = Object.freeze({
 
 // Selective colour (reference video: a white and very light grey scene in which only the current step's parts are orange). The
 // parts that are not accented recede a little towards the paper through their line work: edges are the ink at 60% over the
-// paper (it was 72%) and creases 38% (was 45%), so the accented part and its 2 px outline lead. The faces keep the shared tone
+// paper (it was 72%) and creases 38% (was 45%), so the accented part leads. The faces keep the shared tone
 // map (tops lightest in both themes; anatomy and the iso kit resolve the same face tones, K13), which already reads as the
 // reference's white and very light grey. The SVG kit (palette.mjs ISO_PRESET) and the 3D prototype (engine/css3d.mjs --vb-edge)
 // paint the same strings.
@@ -75,10 +75,11 @@ export const NEUTRAL_LINES = Object.freeze({
 
 // The accented part's three faces (prototype engine/css3d.mjs --vb-accent / --vb-accentLight / --vb-accentDark): the top takes
 // the accent, the near side the accent pulled 62% towards the raised surface, the far side the accent pulled 70% towards ink.
-// `edge` is the one stroke of an accented part (--vb-accentEdge): its outline, creases and marks are a darker shade of the accent
-// itself (the barrel-sauna frame: orange lines on orange faces, never ink or grey), darker than the far face so it still draws the
-// silhouette there. The SVG focal part (emit via palette.rolesFor), the hovered or selected part and the dropping entry layer
-// (runtime-css) paint the same strings.
+// `edge` is the stroke of a hovered or selected accented part (--vb-accentEdge): its creases and marks are a darker shade of the
+// accent itself (orange lines on orange faces, never ink or grey), darker than the far face so it still draws the silhouette
+// there. At rest an accented part draws no accent outline (user decision 2026-10-27): the SVG focal part (emit via
+// palette.rolesFor), the dropping entry layer and a tour step paint the three faces here with neutral line work; runtime-css
+// adds the outline under .is-active. The hairline engine paints the same strings.
 export const ACCENT_FACES = Object.freeze({
 	top: "var(--ill-accent)",
 	light: "color-mix(in srgb, var(--ill-accent) 62%, var(--surface-raised))",

@@ -77,7 +77,9 @@ test("HF5 the stylesheet paints tones, accent faces and one flat shadow fill fro
 	assert.match(text, /\[data-theme="dark"\][^{]*\[data-hl-shadows\] path \{ fill: var\(--surface-sunken\); \}/);
 	assert.ok(!/data-hl-shadows[^}]*(filter|opacity|blur)/.test(text), "shadows are flat");
 	assert.match(text, /\[data-hl-tone="c"\]\) \{ fill: var\(--ill-tone1\); \}/, "a screen-space tube takes the tube body tone");
-	assert.match(text, /\.hi \+ \[data-hl-faces\] > \[data-hl-edge\] \{ stroke: color-mix\(in srgb, var\(--ill-accent\) 55%, var\(--ill-line\)\)/, "the active outline is the darker accent");
+	assert.match(text, /\[data-vpk-hairline\]:is\(:hover, :focus-visible\) > svg \.hi \+ \[data-hl-faces\] > \[data-hl-edge\] \{ stroke: color-mix\(in srgb, var\(--ill-accent\) 55%, var\(--ill-line\)\)/, "the active outline is the darker accent, while the figure is hovered or focused");
+	assert.match(text, /\[data-vpk-hairline\] > svg \.hi:not\(\.nf\) \{ stroke: var\(--hl-edge\); \}/, "at rest an active filled part keeps the neutral edge");
+	for (const rule of text.split("\n").filter(line => line.includes("var(--ill-accent) 55%") && /stroke:/.test(line))) assert.match(rule, /:is\(:hover, :focus-visible\)/, `no accent outline at rest: ${rule}`);
 	assert.match(text, /color-mix\(in srgb, var\(--ill-accent\) 62%, var\(--surface-raised\)\)/, "the active near side");
 	assert.match(text, /color-mix\(in srgb, var\(--ill-accent\) 70%, var\(--ill-line\)\)/, "the active far side");
 	const paint = fs.readFileSync(new URL("./runtime/paint.mjs", import.meta.url), "utf8");

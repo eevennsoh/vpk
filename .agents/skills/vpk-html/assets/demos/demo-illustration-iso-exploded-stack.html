@@ -1773,8 +1773,8 @@ svg[data-vpk-illustration] {
 										<animate data-vpk-begin="0s" attributeName="class" begin="indefinite" dur="1240ms" values="vpk-iso-wait;vpk-iso-set" keyTimes="0;0.435" calcMode="discrete" fill="freeze"/>
 									</g>
 								</g>
-								<path data-vpk-iso-role="crease" d="M410 246.5L409.9 247L409.7 247.4L409.2 247.8L408.7 248.2L369.1 268L368.4 268.3L367.6 268.5L366.7 268.6L365.8 268.6L364.9 268.6L364 268.5L363.2 268.3L362.5 268L303.2 238.3L302.6 237.9L302.2 237.5L301.9 237.1L301.8 236.7" stroke="color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line))" stroke-width="1"/>
-								<path data-vpk-iso-role="edge" d="M301.8 236.7L301.9 236.2L302.2 235.8L302.6 235.4L303.2 235L342.7 215.2L343.4 214.9L344.3 214.7L345.1 214.6L346 214.5L346.9 214.6L347.8 214.7L348.6 214.9L349.3 215.2L408.7 244.9L409.2 245.2L409.7 245.6L409.9 246.1L410 246.5M410 266.7L409.9 267.2L409.7 267.6L409.2 268L408.7 268.4L369.1 288.1L368.4 288.4L367.6 288.7L366.7 288.8L365.8 288.8L364.9 288.8L364 288.7L363.2 288.4L362.5 288.1L303.2 258.5L302.6 258.1L302.2 257.7L301.9 257.3L301.8 256.8M410 246.5L410 266.7M301.8 236.7L301.8 256.8" stroke="color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line))" stroke-width="2"/>
+								<path data-vpk-iso-role="crease" d="M410 246.5L409.9 247L409.7 247.4L409.2 247.8L408.7 248.2L369.1 268L368.4 268.3L367.6 268.5L366.7 268.6L365.8 268.6L364.9 268.6L364 268.5L363.2 268.3L362.5 268L303.2 238.3L302.6 237.9L302.2 237.5L301.9 237.1L301.8 236.7" stroke="color-mix(in srgb, var(--ill-line) 38%, var(--paper))" stroke-width="1"/>
+								<path data-vpk-iso-role="edge" d="M301.8 236.7L301.9 236.2L302.2 235.8L302.6 235.4L303.2 235L342.7 215.2L343.4 214.9L344.3 214.7L345.1 214.6L346 214.5L346.9 214.6L347.8 214.7L348.6 214.9L349.3 215.2L408.7 244.9L409.2 245.2L409.7 245.6L409.9 246.1L410 246.5M410 266.7L409.9 267.2L409.7 267.6L409.2 268L408.7 268.4L369.1 288.1L368.4 288.4L367.6 288.7L366.7 288.8L365.8 288.8L364.9 288.8L364 288.7L363.2 288.4L362.5 288.1L303.2 258.5L302.6 258.1L302.2 257.7L301.9 257.3L301.8 256.8M410 246.5L410 266.7M301.8 236.7L301.8 256.8" stroke="color-mix(in srgb, var(--ill-line) 60%, var(--paper))" stroke-width="1"/>
 							</g>
 							<animateTransform data-vpk-begin="0s" attributeName="transform" type="translate" begin="indefinite" dur="1240ms" values="0 -60.6;0 -60.6;0 0;0 0" keyTimes="0;0.29;0.855;1" calcMode="spline" keySplines="0 0 1 1;0.16 1 0.3 1;0 0 1 1" fill="freeze"/>
 							<animate data-vpk-begin="0s" attributeName="class" begin="indefinite" dur="1240ms" values="vpk-iso-wait;vpk-iso-drop;vpk-iso-set" keyTimes="0;0.29;0.435" calcMode="discrete" fill="freeze"/>
@@ -2250,14 +2250,16 @@ svg[data-vpk-illustration] {
 svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal] > [data-vpk-iso-received] { fill: color-mix(in srgb, var(--ill-accent) 85%, var(--ill-line)); }
 :where([data-vpk-engine="iso-kit"]) .is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }
 :where([data-vpk-engine="iso-kit"]) .is-active:not(:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }
+[data-vpk-engine="iso-kit"] svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal].is-active:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"]) > :is([data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"]) { stroke: color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line)); }
+[data-vpk-engine="iso-kit"] svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal].is-active:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"]) > [data-vpk-iso-role="dot"] { fill: color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line)); }
 [data-vpk-iso-arrow-for].is-active > path { stroke: var(--ill-accent); fill: var(--ill-accent); }
 :is([data-vpk-iso-enter], [data-vpk-iso-shadow-enter]).vpk-iso-wait { visibility: hidden; }
 .vpk-iso-drop[data-vpk-iso-enter] > * > [data-vpk-iso-role="top"] { fill: var(--ill-accent); }
 .vpk-iso-drop[data-vpk-iso-enter] > * > [data-vpk-iso-role="fill"] { fill: color-mix(in srgb, var(--ill-accent) 62%, var(--surface-raised)); }
 .vpk-iso-drop[data-vpk-iso-enter] > * > [data-vpk-iso-role="shade"] { fill: color-mix(in srgb, var(--ill-accent) 70%, var(--ill-line)); }
 .vpk-iso-drop[data-vpk-iso-enter] > * > [data-vpk-iso-received] { fill: color-mix(in srgb, var(--ill-accent) 85%, var(--ill-line)); }
-.vpk-iso-drop[data-vpk-iso-enter] > * > :is([data-vpk-iso-role="edge"], [data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"]) { stroke: color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line)); }
-[data-vpk-iso-enter][class] [data-vpk-iso-part] > * { transition: fill 300ms var(--ease-out), stroke 300ms var(--ease-out); }
+.vpk-iso-drop[data-vpk-iso-enter] > *:not(:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }
+[data-vpk-iso-enter][class] [data-vpk-iso-part] > * { transition: fill 300ms var(--ease-out); }
 :where([data-vpk-engine="iso-kit"] .vpk-iso-stage) { position: relative; overflow: clip; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 :where([data-vpk-engine="iso-kit"] .vpk-iso-stage:focus-visible) { outline: 1.5px solid var(--focus-ring, var(--ink)); outline-offset: 4px; }
 [data-vpk-engine="iso-kit"] .vpk-iso-stage[data-vpk-iso-behavior], [data-vpk-engine="iso-kit"] .vpk-iso-stage[data-vpk-iso-behavior] * { cursor: default; }
@@ -2298,8 +2300,7 @@ svg[data-vpk-iso].vpk-iso-assembling :is([data-vpk-iso-label-for], [data-vpk-iso
 [data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) .is-tour > [data-vpk-iso-role="fill"] { fill: color-mix(in srgb, var(--ill-accent) 62%, var(--surface-raised)); }
 [data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) .is-tour > [data-vpk-iso-role="shade"] { fill: color-mix(in srgb, var(--ill-accent) 70%, var(--ill-line)); }
 [data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) .is-tour > [data-vpk-iso-received] { fill: color-mix(in srgb, var(--ill-accent) 85%, var(--ill-line)); }
-[data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) .is-tour > :is([data-vpk-iso-role="edge"], [data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"]) { stroke: color-mix(in srgb, var(--ill-accent) 55%, var(--ill-line)); }
-[data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) .is-tour > [data-vpk-iso-role="edge"] { stroke-width: 2; }
+[data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) .is-tour:not(:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }
 [data-vpk-iso-touring] > svg [data-vpk-iso-arrow-for].is-tour > path { stroke: var(--ill-accent); fill: var(--ill-accent); }
 [data-vpk-iso-touring] > svg[data-vpk-iso-emphasis] .is-tour > [data-vpk-iso-role="edge"] { stroke: var(--ill-line); stroke-width: 2; }
 [data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal]:not(.is-tour) > [data-vpk-iso-role="top"] { fill: var(--surface-raised); }
@@ -2309,11 +2310,10 @@ svg[data-vpk-iso].vpk-iso-assembling :is([data-vpk-iso-label-for], [data-vpk-iso
 [data-theme="dark"] [data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal]:not(.is-tour) > [data-vpk-iso-role="shade"] { fill: var(--surface-sunken); }
 [data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal]:not(.is-tour) > [data-vpk-iso-received] { fill: color-mix(in srgb, var(--ill-line) 12%, var(--surface-raised)); }
 [data-theme="dark"] [data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal]:not(.is-tour) > [data-vpk-iso-received] { fill: var(--ill-tone1); }
-[data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal]:not(.is-tour) > :is([data-vpk-iso-role="edge"], [data-vpk-iso-role="mark"]) { stroke: color-mix(in srgb, var(--ill-line) 60%, var(--paper)); stroke-width: 1; }
-[data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal]:not(.is-tour) > [data-vpk-iso-role="crease"] { stroke: color-mix(in srgb, var(--ill-line) 38%, var(--paper)); }
+[data-vpk-iso-touring] > svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal]:not(.is-tour):not(:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: color-mix(in srgb, var(--ill-line) 60%, var(--paper)); stroke-width: 1; }
 [data-vpk-iso-touring] > svg [data-vpk-iso-arrow-for][data-vpk-iso-accent]:not(.is-tour) > path { stroke: color-mix(in srgb, var(--ill-line) 60%, var(--paper)); fill: color-mix(in srgb, var(--ill-line) 60%, var(--paper)); }
 [data-vpk-iso-touring] > svg :is([data-vpk-iso-label-for], [data-vpk-iso-tag], [data-vpk-iso-annotation="dimension"], [data-vpk-iso-annotation="scale"]) { visibility: hidden; }
-[data-vpk-iso-tour] [data-vpk-iso-part] > * { transition: fill 400ms var(--ease-out), stroke 400ms var(--ease-out); }
+[data-vpk-iso-tour] [data-vpk-iso-part] > * { transition: fill 400ms var(--ease-out); }
 @keyframes vpk-iso-tour-fade-1 { from { color: var(--muted-text); } to { color: var(--ink); } }
 @keyframes vpk-iso-tour-fade-2 { from { color: var(--muted-text); } to { color: var(--ink); } }
 .vpk-iso-tour__title[data-vpk-iso-tour-fade="1"] { animation: vpk-iso-tour-fade-1 400ms var(--ease-out) both; }

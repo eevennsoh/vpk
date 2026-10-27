@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { auditHtml, auditHtmlFile, auditScene, auditSvg, formatFindings, runCheckIso, scenePoses, uniqueFindings } from "./audit.mjs";
 import { renderRegion } from "./emit.mjs";
 import { enterKeyframes, fadeAnimation, staggerFor } from "./motion.mjs";
+import { ACCENT_FACES } from "./accent.mjs";
 import { ISO_PRESET } from "./palette.mjs";
 import { buildScene } from "./scene.mjs";
 
@@ -417,18 +418,20 @@ test("A3: a motion arrow paints the accent only when it names the focal part", (
 	assert.ok(auditHtml(stray).findings.some(f => f.rule === "A3" && /paints the accent/.test(f.message)), "an arrow of another part may not");
 });
 
-// Redline 2a: the focal part's line work is the darker accent (ISO_PRESET.focalEdge = ACCENT_FACES.edge). A grey crease or an
-// ink outline on the orange part fails A3; the accent stroke on its edge, creases and marks passes.
-test("A3: the focal part's edge, creases and marks take the accent stroke; ink or grey lines on it fail", () => {
+// Hover-only accent outline (user decision 2026-10-27): at rest the focal part has its accent faces and the neutral 1 px line
+// work of every part. A 2 px or accent outline, or an accent crease, on it at rest fails A3.
+test("A3: at rest the focal part keeps neutral line work; an accent outline or accent crease on it fails", () => {
 	const r = renderRegion(buildScene(structuredClone(EXEMPLAR)));
 	const a3 = html => auditHtml(html).findings.filter(f => f.rule === "A3");
 	assert.deepEqual(a3(r), [], "the emitted focal passes");
 	const focal = /(\t*)<g data-vpk-iso-part="module"[^>]*data-vpk-iso-focal>[\s\S]*?\n\1<\/g>/.exec(r)[0];
-	assert.ok(focal.includes(`stroke="${ISO_PRESET.focalEdge}" stroke-width="2"`) && ISO_PRESET.focalEdge.includes("--ill-accent"));
-	const inkOutline = r.replace(focal, focal.replace(`stroke="${ISO_PRESET.focalEdge}" stroke-width="2"`, 'stroke="var(--ill-line)" stroke-width="2"'));
-	assert.ok(a3(inkOutline).some(f => /edge must be a 2px/.test(f.message)), "an ink outline fails");
-	const greyCrease = r.replace(focal, focal.replace(/(data-vpk-iso-role="crease" d="[^"]*") stroke="[^"]*"/, `$1 stroke="${ISO_PRESET.crease}"`));
-	assert.ok(a3(greyCrease).some(f => /crease is .* not the accent stroke/.test(f.message)), "a grey crease on the accent part fails");
+	const neutralEdge = `stroke="${ISO_PRESET.edge}" stroke-width="${ISO_PRESET.stroke}"`;
+	assert.ok(focal.includes(`data-vpk-iso-role="edge"`) && focal.includes(neutralEdge), "the focal edge is the neutral 1 px edge");
+	assert.doesNotMatch(focal.replace(/data-vpk-iso-role="(?:top|fill|shade|recess|cut)"[^>]*>/g, ""), /stroke="[^"]*--ill-accent/, "no accent stroke on the focal at rest");
+	const accentOutline = r.replace(focal, focal.replace(neutralEdge, `stroke="${ACCENT_FACES.edge}" stroke-width="2"`));
+	assert.ok(a3(accentOutline).some(f => /outline at rest/.test(f.message)), "a 2 px accent outline at rest fails");
+	const accentCrease = r.replace(focal, focal.replace(/(data-vpk-iso-role="crease" d="[^"]*") stroke="[^"]*"/, `$1 stroke="${ACCENT_FACES.edge}"`));
+	assert.ok(a3(accentCrease).some(f => /crease.*paints the accent/.test(f.message)), "an accent crease at rest fails");
 });
 
 // Phase 0 (capabilities N, K; rules A2, A3, A17): the ink board is clean; emphasis none passes with no focal, the accent fails

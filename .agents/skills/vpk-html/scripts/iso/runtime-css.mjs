@@ -39,8 +39,10 @@
 // (top darker than both sides) and lost the non-scaling strokes (round-4 verifier).
 // Accent (iso/accent.mjs, shared with the 3D prototype): the hovered or selected part (.is-active) keeps its faces and takes a
 // 2 px accent outline only (a faceless part, the ring or a gap, takes the accent on its stroke too): filling a whole part made
-// large parts flood orange as the pointer crossed part boundaries; labels stay ink. The
-// rules are (0,2,0) or more, so they beat the dark tone overrides (0,1,0) and the presentation attributes.
+// large parts flood orange as the pointer crossed part boundaries; labels stay ink. An accent outline is drawn only here: at
+// rest the focal part has its accent faces and neutral line work, and once hovered or selected its edge, creases and marks take
+// the darker accent (ACCENT_FACES.edge), which still draws the silhouette against its own orange faces. The rules are (0,2,0)
+// or more, so they beat the dark tone overrides (0,1,0) and the presentation attributes.
 // Cast shadows (SHADOW): the emitted fill is the light tone (ink 12% into the paper); a dark page takes DARK_TONE, below the paper.
 // A shadow received on a top is RECEIVED (DARK_RECEIVED in dark); on an accented top (the focal, .is-active, the dropping layer)
 // it is RECEIVED_ACCENT, a deeper orange.
@@ -74,13 +76,16 @@ const restCss = [
 	"}",
 ].join("\n");
 
-// The line work of a part: its edge, creases and marks.
-const LINES = ':is([data-vpk-iso-role="edge"], [data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"])';
-
-// The dropping entry layer's line work (edge, crease, mark) is the darker accent (ACCENT_FACES.edge), like the focal part's.
+// The line work of a hovered or selected focal part with faces: its creases, marks and dots take the darker accent (its edge
+// takes the accent outline above), so no grey line sits on its orange faces while it is outlined.
+const FOCAL_ON = '[data-vpk-engine="iso-kit"] svg:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal].is-active:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"])';
+// A faceless part (a ring, a wire, a gap) has only its stroke to show the accent.
+const FACELESS = ':not(:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"]))';
 const accentCss = [
 	`:where([data-vpk-engine="iso-kit"]) .is-active > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }`,
-	`:where([data-vpk-engine="iso-kit"]) .is-active:not(:has(> [data-vpk-iso-role="top"], > [data-vpk-iso-role="fill"])) > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }`,
+	`:where([data-vpk-engine="iso-kit"]) .is-active${FACELESS} > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }`,
+	`${FOCAL_ON} > :is([data-vpk-iso-role="crease"], [data-vpk-iso-role="mark"]) { stroke: ${ACCENT_FACES.edge}; }`,
+	`${FOCAL_ON} > [data-vpk-iso-role="dot"] { fill: ${ACCENT_FACES.edge}; }`,
 	"[data-vpk-iso-arrow-for].is-active > path { stroke: var(--ill-accent); fill: var(--ill-accent); }",
 ].join("\n");
 
@@ -103,21 +108,21 @@ const entryCss = [
 	":is([data-vpk-iso-enter], [data-vpk-iso-shadow-enter]).vpk-iso-wait { visibility: hidden; }",
 	// The dropping layer takes the three accent faces (one rule per face role).
 	...[["top", ACCENT_FACES.top], ["fill", ACCENT_FACES.light], ["shade", ACCENT_FACES.dark]].map(([role, fill]) => `${DROP} > [data-vpk-iso-role="${role}"] { fill: ${fill}; }`),
-	// A shadow on its top darkens the accent (SHADOW.RECEIVED_ACCENT), never grey on orange.
+	// A shadow on its top darkens the accent (SHADOW.RECEIVED_ACCENT), never grey on orange. Its line work stays neutral: the
+	// accent outline is hover only.
 	`${DROP} > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED_ACCENT}; }`,
-	// Its line work takes the darker accent too, so no grey line sits on an orange face.
-	`${DROP} > ${LINES} { stroke: ${ACCENT_FACES.edge}; }`,
+	`.vpk-iso-drop[data-vpk-iso-enter] > *${FACELESS} > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); }`,
 	// A layer hands its accent back to the tone map over HANDOFF_MS, ACCENT_HOLD_MS after it starts (motion.mjs layerClassFrames).
-	`[data-vpk-iso-enter][class] [data-vpk-iso-part] > * { transition: fill ${ENTRY.HANDOFF_MS}ms var(--ease-out), stroke ${ENTRY.HANDOFF_MS}ms var(--ease-out); }`,
+	`[data-vpk-iso-enter][class] [data-vpk-iso-part] > * { transition: fill ${ENTRY.HANDOFF_MS}ms var(--ease-out); }`,
 ].join("\n");
 
 // The camera tour (iso/tour.mjs, tour-runtime.mjs; illustrations.md § Camera tour). The runtime eases the viewBox, so the CSS only
-// paints: the current step's pieces (.is-tour) take the three accent faces and the darker accent line work, like the dropping
-// entry layer; while a step shows (data-vpk-iso-touring on the stage) every other part is neutral, the brief's focal part
+// paints: the current step's pieces (.is-tour) take the three accent faces and keep their neutral line work, like the dropping
+// entry layer (the accent outline is hover only); while a step shows (data-vpk-iso-touring on the stage) every other part is neutral, the brief's focal part
 // included (its emitted accent faces go back to the tone map), and the leader labels, tags and dimension notes hide (zoomed up to
-// TOUR_MAX_ZOOM they would crowd the frame; arrows and lines stay). Faces and lines hand over on a TITLE_FADE_MS fill transition;
+// TOUR_MAX_ZOOM they would crowd the frame; arrows and lines stay). Faces hand over on a TITLE_FADE_MS fill transition;
 // the step title restarts a grey-to-ink fade over the same time (two keyframe names, so the runtime never forces a reflow). An
-// emphasis "ink" or "none" figure outlines the step's parts in ink instead of the accent. The focal part's rest bob stops while a
+// emphasis "ink" or "none" figure, which has no accent faces, outlines the step's parts in ink instead. The focal part's rest bob stops while a
 // step shows (that rule follows restCss, so it wins). Overview and print carry none of it.
 const TOUR = "[data-vpk-iso-touring] > svg";
 const ON = `${TOUR}:not([data-vpk-iso-emphasis]) .is-tour`;
@@ -126,19 +131,17 @@ const FACES = [["top", "top"], ["fill", "light"], ["shade", "dark"]];
 const tourCss = [
 	...FACES.map(([role, face]) => `${ON} > [data-vpk-iso-role="${role}"] { fill: ${ACCENT_FACES[face]}; }`),
 	`${ON} > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED_ACCENT}; }`,
-	`${ON} > ${LINES} { stroke: ${ACCENT_FACES.edge}; }`,
-	`${ON} > [data-vpk-iso-role="edge"] { stroke-width: 2; }`,
+	`${ON}${FACELESS} > [data-vpk-iso-role="edge"] { stroke: var(--ill-accent); stroke-width: 2; }`,
 	`${TOUR} [data-vpk-iso-arrow-for].is-tour > path { stroke: var(--ill-accent); fill: var(--ill-accent); }`,
 	`${TOUR}[data-vpk-iso-emphasis] .is-tour > [data-vpk-iso-role="edge"] { stroke: var(--ill-line); stroke-width: 2; }`,
 	...FACES.map(([role, face]) => `${OFF} > [data-vpk-iso-role="${role}"] { fill: ${ISO_PRESET.tones[face]}; }`),
 	...FACES.filter(([, face]) => DARK_TONE_OVERRIDES[face]).map(([role, face]) => `[data-theme="dark"] ${OFF} > [data-vpk-iso-role="${role}"] { fill: ${DARK_TONE_OVERRIDES[face]}; }`),
 	`${OFF} > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED}; }`,
 	`[data-theme="dark"] ${OFF} > [data-vpk-iso-received] { fill: ${SHADOW.DARK_RECEIVED}; }`,
-	`${OFF} > :is([data-vpk-iso-role="edge"], [data-vpk-iso-role="mark"]) { stroke: ${NEUTRAL_LINES.edge}; stroke-width: 1; }`,
-	`${OFF} > [data-vpk-iso-role="crease"] { stroke: ${NEUTRAL_LINES.crease}; }`,
+	`${OFF}${FACELESS} > [data-vpk-iso-role="edge"] { stroke: ${NEUTRAL_LINES.edge}; stroke-width: 1; }`,
 	`${TOUR} [data-vpk-iso-arrow-for][data-vpk-iso-accent]:not(.is-tour) > path { stroke: ${ISO_PRESET.edge}; fill: ${ISO_PRESET.edge}; }`,
 	`${TOUR} :is([data-vpk-iso-label-for], [data-vpk-iso-tag], [data-vpk-iso-annotation="dimension"], [data-vpk-iso-annotation="scale"]) { visibility: hidden; }`,
-	`[data-vpk-iso-tour] [data-vpk-iso-part] > * { transition: fill ${ENTRY.TITLE_FADE_MS}ms var(--ease-out), stroke ${ENTRY.TITLE_FADE_MS}ms var(--ease-out); }`,
+	`[data-vpk-iso-tour] [data-vpk-iso-part] > * { transition: fill ${ENTRY.TITLE_FADE_MS}ms var(--ease-out); }`,
 	...[1, 2].map(k => `@keyframes vpk-iso-tour-fade-${k} { from { color: var(--muted-text); } to { color: var(--ink); } }`),
 	...[1, 2].map(k => `.vpk-iso-tour__title[data-vpk-iso-tour-fade="${k}"] { animation: vpk-iso-tour-fade-${k} ${ENTRY.TITLE_FADE_MS}ms var(--ease-out) both; }`),
 	":where(.vpk-iso-tour__caption) { flex: 1 1 100%; min-width: 0; }",

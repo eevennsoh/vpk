@@ -84,7 +84,7 @@ export const CUT_TONE = "color-mix(in srgb, var(--ill-tone3) 80%, var(--ill-line
 export const DARK_CUT_OVERRIDES = Object.freeze({ cut: "color-mix(in srgb, var(--ill-tone3) 40%, var(--surface-sunken))" });
 
 // How a figure emphasises its focal parts (brief.emphasis, rule 4): "accent" (default) paints them with the three accent faces
-// and a 2 px darker-accent outline; "ink" keeps their faces and draws a 2 px ink outline, with no accent anywhere in the figure
+// and the same neutral line work as every other part (the darker-accent outline is hover only, runtime-css); "ink" keeps their faces and draws a 2 px ink outline, with no accent anywhere in the figure
 // (rest art, entry hand-off or hover); "none" has no focal part and no accent.
 export const EMPHASES = Object.freeze(["accent", "ink", "none"]);
 
@@ -104,9 +104,9 @@ export const ISO_PRESET = Object.freeze({
 	shading: true,
 	// Tops lightest in both themes (the dark overrides are keyed by the same tone names). `pale` (a part in state new or
 	// active) is one light step from the tops (1.3:1 in light, 1.2:1 in dark through DARK_MANUAL_OVERRIDES). The focal part
-	// takes the accent faces (`accent`, iso/accent.mjs ACCENT_FACES, shared with the 3D prototype) and a 2 px outline in the darker
-	// accent (ACCENT_FACES.edge, also its creases and marks); the edges and creases of every other part recede towards the paper
-	// (NEUTRAL_LINES), so the accent leads.
+	// takes the accent faces (`accent`, iso/accent.mjs ACCENT_FACES, shared with the 3D prototype) and, at rest, the same receded
+	// edges and creases as every other part (NEUTRAL_LINES), so the faces alone lead; the darker-accent outline (ACCENT_FACES.edge)
+	// is drawn only while the part is hovered or selected (runtime-css).
 	tones: Object.freeze({ top: "var(--surface-raised)", light: "var(--ill-tone1)", dark: "var(--ill-tone2)", pale: "color-mix(in srgb, var(--ill-tone3) 60%, var(--surface-raised))" }),
 	accent: ACCENT_FACES,
 	// A flat ring (the Done-flash disc) is drawn as a stroked arc, never as a filled wedge.
@@ -122,7 +122,6 @@ export const ISO_PRESET = Object.freeze({
 	leader: mix("--ill-line", 72),
 	// Labels are sentence case as the brief writes them (never forced to capitals), so mono needs no extra tracking.
 	label: Object.freeze({ fill: "var(--ill-line)", size: 11, spacingEm: 0, family: "Geist Mono, monospace" }),
-	focalEdge: ACCENT_FACES.edge,
 	ink: "var(--ill-line)",
 	paper: "var(--paper)",
 	texture: null,
@@ -135,7 +134,8 @@ export function presetFor(style) {
 }
 
 // Fill/stroke per data-vpk-iso-role for one part. Under the default emphasis ("accent") the focal part takes the accent faces
-// (top, near side `light`, far side `dark`) and the darker accent on its outline, creases and marks; under "ink" a focal part
+// (top, near side `light`, far side `dark`) and the neutral line work of any part (its accent outline is hover only); a
+// faceless focal (a ring, a wire) gets its accent stroke in emit.mjs, since it has no face to carry it. Under "ink" a focal part
 // keeps its faces and takes a 2 px ink outline. A part in state "new"/"active" takes the pale fill and no outline; an `ink` part
 // (tone "ink") the three ink faces with an ink edge. A `glow` part (tone "glow") paints all three faces with its glow gradient
 // (`glow` is its url(#…) paint); the accent focal treatment wins over it.
@@ -148,17 +148,17 @@ export function rolesFor({ focal = false, active = false, tone: partTone = null,
 	const face = tone => (accent ? p.accent[tone] : glowing ? glow : active ? p.tones.pale : ink ? INK_TONES[tone] : p.tones[tone]);
 	// Accent, pale, ink and glow faces carry their own tone name, so the dark-theme overrides (keyed top/dark/pale) never repaint them.
 	const tone = name => (accent ? "accent" : glowing ? "glow" : active ? "pale" : ink ? INK_TONE_NAMES[name] : name);
-	const edge = accent ? p.focalEdge : inkFocal || ink ? p.ink : p.edge;
+	const edge = inkFocal || ink ? p.ink : p.edge;
 	return Object.freeze({
 		fill: { fill: face("light"), tone: tone("light") },
 		top: { fill: face("top"), tone: tone("top") },
 		shade: { fill: face("dark"), tone: tone("dark") },
-		edge: { stroke: edge, width: accent || inkFocal ? p.focalStroke : p.stroke },
-		crease: { stroke: accent ? p.focalEdge : p.crease, width: p.stroke },
-		mark: { stroke: accent ? p.focalEdge : ink ? INK_MARK : p.mark, width: p.stroke },
+		edge: { stroke: edge, width: inkFocal ? p.focalStroke : p.stroke },
+		crease: { stroke: p.crease, width: p.stroke },
+		mark: { stroke: ink ? INK_MARK : p.mark, width: p.stroke },
 		// Detail (detail.mjs): dots take the mark's paint as a fill; a recess the recess tone (the darker accent face on an accent
 		// focal, the ink far side on an ink part); face text the leader ink (the ink on an accent focal, the raised surface on ink).
-		dot: { fill: accent ? p.focalEdge : ink ? INK_MARK : p.mark },
+		dot: { fill: ink ? INK_MARK : p.mark },
 		recess: accent ? { fill: p.accent.dark, tone: "accent" } : ink ? { fill: INK_TONES.dark, tone: INK_TONE_NAMES.dark } : { fill: RECESS_TONE, tone: "recess" },
 		text: { fill: accent ? p.ink : ink ? "var(--surface-raised)" : p.leader },
 		// A cutaway's section faces (role "cut"): one flat tone a step below the far side (the accent's far side on an accent focal).
@@ -169,7 +169,7 @@ export function rolesFor({ focal = false, active = false, tone: partTone = null,
 }
 
 // The stroke-width attribute values the kit may emit (A4): the 1 px edge, the numbered mark's paper ring (1.5) and the
-// focal outline (2). Hover/selection widths come only from CSS.
+// 2 px outline of an ink focal or a faceless accent focal. Hover/selection widths come only from CSS.
 export const STROKE_SET = Object.freeze([ISO_PRESET.stroke, 1.5, ISO_PRESET.focalStroke]);
 
 export function tokensOf(value) {

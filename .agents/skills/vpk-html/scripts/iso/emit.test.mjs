@@ -4,7 +4,7 @@ import test from "node:test";
 import { collectColorTokenIssues, collectSvgGrammarIssues } from "../check-html.mjs";
 import { renderFigure, renderRegion } from "./emit.mjs";
 import { buildScene, validateBrief } from "./scene.mjs";
-import { ACCENT_FACES } from "./accent.mjs";
+import { ISO_PRESET } from "./palette.mjs";
 
 const EXEMPLAR = JSON.parse(fs.readFileSync(new URL("./briefs/exploded-stack.json", import.meta.url), "utf8"));
 const KINDS = {
@@ -234,20 +234,19 @@ test("dimensions sit in a paper box; the scale bar and numbered mark discs are d
 	}
 });
 
-test("focal faces take the accent with a 2 px darker-accent outline and accent line work; a focal ring is a 2 px accent arc with no fill", () => {
+test("focal faces take the accent with the neutral line work at rest (the accent outline is hover only); a focal ring is a 2 px accent arc with no fill", () => {
 	// The part group closes at its own indent (a received-shadow group nests inside it); its line work is outside that group.
 	const focalGroup = /(\t*)<g data-vpk-iso-part="module"[^>]*data-vpk-iso-focal>([\s\S]*?)\n\1<\/g>/.exec(MANUAL_EXEMPLAR);
 	const focal = focalGroup[2];
 	assert.equal(tags(focal, /data-vpk-iso-tone="accent"/g).length, 3, "left, right and top faces take the accent");
 	assert.match(focal, /data-vpk-iso-role="top" data-vpk-iso-tone="accent" d="[^"]+" fill="var\(--ill-accent\)"/, "the top is the accent itself");
 	assert.doesNotMatch(focal, /data-vpk-iso-tone="(?:light|dark|top)"/);
-	const accentEdge = ACCENT_FACES.edge.replace(/[()]/g, "\\$&");
-	assert.match(focal, new RegExp(`<path data-vpk-iso-role="edge" d="[^"]+" stroke="${accentEdge}" stroke-width="2"/>`), "the 2 px outline in the darker accent");
-	// Every line on an accented part (edge, crease, mark) is the darker accent: no ink or grey line on an orange face.
+	// Every line on the focal at rest (edge, crease, mark) is the neutral line work of every part: no accent stroke, no 2 px.
 	const lines = tags(focal, /<path data-vpk-iso-role="(?:edge|crease|mark)"[^>]*>/g);
 	assert.ok(lines.length >= 2, "the focal draws its outline and at least one crease");
-	for (const line of lines) assert.ok(line.includes(`stroke="${ACCENT_FACES.edge}"`), `accent stroke on ${line.slice(0, 60)}`);
-	assert.doesNotMatch(MANUAL_EXEMPLAR.replace(focal, ""), /stroke-width="2"/, "no other part carries a heavy outline");
+	for (const line of lines) assert.ok(!line.includes("--ill-accent") && line.includes('stroke-width="1"'), `neutral 1 px stroke on ${line.slice(0, 60)}`);
+	assert.match(focal, new RegExp(`<path data-vpk-iso-role="edge" d="[^"]+" stroke="${ISO_PRESET.edge.replace(/[()]/g, "\\$&")}" stroke-width="1"/>`), "the neutral edge");
+	assert.doesNotMatch(MANUAL_EXEMPLAR, /stroke-width="2"/, "no part carries a heavy outline at rest");
 	const ring = /<g data-vpk-iso-part="ring"[^>]*data-vpk-iso-focal[^>]*>([\s\S]*?)<\/g>/.exec(MANUAL_REGION)[1];
 	assert.doesNotMatch(ring, /data-vpk-iso-role="(?:fill|shade|top)"|\sfill="(?!none)/, "the flash ring paints no fill");
 	assert.match(ring, /<path data-vpk-iso-role="edge" d="[^"]+" stroke="var\(--ill-accent\)" stroke-width="2"\/>/, "a faceless focal takes the accent on its 2 px arc");

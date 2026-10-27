@@ -14,7 +14,7 @@ let loop = null;
 
 function shared() {
 	if (loop) return loop;
-	// eslint-disable-next-line no-undef -- declared by the inlined frame loop around the bundle
+	// getFrameLoop is declared by the inlined frame loop around the bundle.
 	loop = getFrameLoop(window);
 	setReducedMotion(loop.reducedMotion());
 	loop.onReducedMotionChange(on => {
