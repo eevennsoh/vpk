@@ -110,7 +110,7 @@ type GUIResetButtonProps = Readonly<{
 	size?: "sm" | "md";
 }>;
 
-function GUIResetButton({ ariaLabel, disabled, onClick, size = "md" }: GUIResetButtonProps) {
+export function GUIResetButton({ ariaLabel, disabled, onClick, size = "md" }: GUIResetButtonProps) {
 	return (
 		<button
 			type="button"

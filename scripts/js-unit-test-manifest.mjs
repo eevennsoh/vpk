@@ -14,6 +14,8 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/utils/gui-timeline.behavior.test.js",
+		"components/utils/gui-motion.behavior.test.js",
 		"components/ui-custom/rich-text-editor/prosemirror-commands.behavior.test.js",
 		"components/ui-custom/message-math.behavior.test.js",
 		"components/ui-custom/code-block-cache-key.test.js",
