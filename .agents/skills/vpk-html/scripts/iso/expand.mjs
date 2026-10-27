@@ -202,6 +202,8 @@ export function expandBrief(brief) {
 	if (brief.assemble?.layers) out.assemble = { ...brief.assemble, layers: brief.assemble.layers.map(layer => (Array.isArray(layer) ? layer.flatMap(all) : layer)) };
 	if (Array.isArray(brief.labels)) out.labels = brief.labels.map(label => (label && groups.has(label.target) ? { ...label, target: first(label.target) } : label));
 	if (Array.isArray(brief.marks)) out.marks = brief.marks.map(mark => (mark && groups.has(mark.target) ? { ...mark, target: first(mark.target) } : mark));
+	// A tour step that names a repeated part frames and accents every instance.
+	if (Array.isArray(brief.tour?.steps)) out.tour = { ...brief.tour, steps: brief.tour.steps.map(step => (step && Array.isArray(step.parts) ? { ...step, parts: step.parts.flatMap(all) } : step)) };
 	if (Array.isArray(brief.annotations)) out.annotations = brief.annotations.map(note => (note && groups.has(note.of) ? { ...note, of: first(note.of) } : note));
 	return out;
 }

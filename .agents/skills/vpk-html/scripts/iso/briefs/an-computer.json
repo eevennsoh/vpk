@@ -3764,5 +3764,115 @@
 		"margin": "[ DESK COMPUTER ]",
 		"corner": "VPK-HTML"
 	},
-	"focal": "screen"
+	"focal": "screen",
+	"tour": {
+		"overview": "An all-in-one desk computer: the case holds the machine, the display shows the prompt, and the keyboard plugs in on a coiled lead.",
+		"steps": [
+			{
+				"title": "Case",
+				"text": "The vented case stands on its foot and carries the whole machine. Its front plate frames the display and the floppy slot.",
+				"parts": [
+					"case",
+					"case-foot",
+					"front-plate"
+				]
+			},
+			{
+				"title": "Display",
+				"text": "The display sits deep in the bezel. When the machine is on it shows the logo, the prompt and a blinking cursor, and each key typed appears after the prompt.",
+				"parts": [
+					"screen",
+					"screen-off",
+					"prompt",
+					"cursor",
+					"logo-a-left",
+					"logo-a-right",
+					"logo-a-bar",
+					"logo-slash"
+				]
+			},
+			{
+				"title": "Keyboard",
+				"text": "The full keyboard sits in its own tray. Each key is a separate cap that drops when pressed, and the letter appears on the screen.",
+				"parts": [
+					"keyboard",
+					"key-grave",
+					"key-1",
+					"key-2",
+					"key-3",
+					"key-4",
+					"key-5",
+					"key-6",
+					"key-7",
+					"key-8",
+					"key-9",
+					"key-0",
+					"key-minus",
+					"key-equal",
+					"key-backspace",
+					"key-tab",
+					"key-q",
+					"key-w",
+					"key-e",
+					"key-r",
+					"key-t",
+					"key-y",
+					"key-u",
+					"key-i",
+					"key-o",
+					"key-p",
+					"key-lbracket",
+					"key-rbracket",
+					"key-backslash",
+					"key-caps",
+					"key-a",
+					"key-s",
+					"key-d",
+					"key-f",
+					"key-g",
+					"key-h",
+					"key-j",
+					"key-k",
+					"key-l",
+					"key-semicolon",
+					"key-quote",
+					"key-return",
+					"key-shift",
+					"key-z",
+					"key-x",
+					"key-c",
+					"key-v",
+					"key-b",
+					"key-n",
+					"key-m",
+					"key-comma",
+					"key-period",
+					"key-slash",
+					"key-shift-r",
+					"key-ctrl",
+					"key-alt",
+					"key-cmd",
+					"key-space",
+					"key-cmd-r",
+					"key-alt-r",
+					"key-fn",
+					"key-ctrl-r"
+				]
+			},
+			{
+				"title": "Leads and ports",
+				"text": "The keyboard's coiled lead runs to the port at the back of the case, and the power lead plugs into the socket beside it.",
+				"parts": [
+					"kb-plug",
+					"kb-lead",
+					"coil",
+					"lead",
+					"port",
+					"port-plug",
+					"socket",
+					"case-plug"
+				]
+			}
+		]
+	}
 }

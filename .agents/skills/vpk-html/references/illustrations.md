@@ -393,8 +393,8 @@ short leaders ending in an ink dot, numbered marks, boxed dimensions and a scale
 The viewBox height of a figure shrinks to its drawing plus the camera pad (a 720 × 450 brief renders
 720 × 318 for the Done column), and the svg fills its frame up to 1.5 times its viewBox width. Every document
 with an iso figure inlines the same runtime block (the style's CSS, the select blink and the runtime), measured
-against one budget, `ISO_BUDGET_BYTES` = 49,152 B in `scripts/iso/inline.mjs` (29,703 B measured 2026-10-25 with 12 entry
-layers and the ink rules; the headroom is for the step, scrub and variant runtime).
+against one budget, `ISO_BUDGET_BYTES` = 53,248 B in `scripts/iso/inline.mjs` (50,380 B measured 2026-10-27 with the step,
+scrub and variant runtime and the camera tour).
 
 **Commands** (writes under `.agents/skills/` or `artifacts/` are unsandboxed):
 
@@ -482,6 +482,36 @@ on the **Teardowns** gallery page.
   `explode` until no label leader ends under another part; the audit says which), and give every separated part a credible place
   to return to. The audit (A7 and the rest) checks the exploded pose.
 
+### Camera tour
+
+A guided walk through a figure: an ordered list of steps, each framing a few parts. Any figure can carry one, alone or on top of
+its behaviour (select, explode, teardown, step, scrub). `scripts/iso/tour.mjs` (schema, model), `scripts/iso/tour-runtime.mjs`
+(browser); examples `an-watch`, `an-computer` and `td-gpu`.
+
+```json
+"tour": {
+	"overview": "Text shown at step 0 (optional).",
+	"steps": [{ "title": "Balance", "text": "What this step explains.", "parts": ["balance", "hairspring"], "pad": 24 }]
+}
+```
+
+- **Steps**: `title` and `text` are required, `parts` names one or more part ids (a repeated part's base id names every
+  instance), `pad` is the room around them in viewBox units (default `TOUR_PAD` = 24). Step 0 is the implicit **Overview**: the
+  whole figure, which is the static art.
+- **Controls**: Previous step / Next step buttons and a counter ("2 / 5") sit under the frame; the step title and text sit in the
+  frame's foot. Arrow keys and Page Up/Down on the controls step, Home and Escape return to the Overview, End goes to the last
+  step. A figure with no other behaviour gets `data-vpk-iso-behavior="tour"`, and the stage's own arrow keys also step; otherwise
+  the behaviour keeps the stage's keys.
+- **Camera**: the runtime eases the SVG `viewBox` over `ENTRY.STEP_CAMERA_MS` (600 ms, the discrete clock) to frame the step's
+  parts where they are drawn now (a teardown at its current spread, a step state's moves), at the Overview's aspect, at most
+  `TOUR_MAX_ZOOM` (4) times closer. Hover maps through the current viewBox.
+- **Accent**: the step's parts take the three accent faces and the darker accent outline (`.is-tour`); every other part, the
+  brief's focal part included, is neutral while a step shows. Leader labels, tags and dimension notes hide while zoomed. The title
+  fades grey to ink over `ENTRY.TITLE_FADE_MS` (400 ms). Under emphasis "ink" or "none" the step's parts get an ink outline.
+- **Accessibility and print**: the live region announces "Step k of n: title. text" once per change, then empties. Reduced motion
+  jumps without easing or the fade. Print shows the Overview (the full figure); afterprint brings the step back. Back on the
+  Overview, the SVG is the static art byte for byte.
+
 ## 8. Motion policy
 
 SMIL in illustrations follows [svg-style.md § SMIL motion](svg-style.md#smil-motion), the same
@@ -497,7 +527,7 @@ Kit specifics:
   transitions off inside the figure, because the shared stylesheet would otherwise glide every
   change for 200 ms under `body[data-vpk-motion]`.
 - **Loops (R14):** interactive motion only in `vpkFrameLoop` ticks; pointer, key and slider handlers set
-  targets and wake the board. There is no idle tour.
+  targets and wake the board. There is no idle tour: the camera tour moves only on input.
 - **Entry** (`ENTRY` in `scripts/iso/accent.mjs`, shared with the 3D prototype; matched to the barrel-sauna and fall-bed
   step guides, then trimmed by the user's redline). Each assembly layer drops from `DROP_Z` = 30 world units above its rest over
   `PART_MS` = 700 ms on the `0.16 1 0.3 1` spline and lands, its cast shadows sliding in on the ground under it. While it drops it
@@ -520,7 +550,7 @@ Kit specifics:
   the static art is unchanged. Any input removes the attribute at once. It is off under reduced motion, in a hidden
   tab, off screen (an IntersectionObserver), in print (the rest pose) and during the entrance. Rest motion uses no
   rAF: one `setTimeout` per stage and compositor-only CSS. Static figures (no `interact`) have no runtime and no rest
-  motion. The prototype's "done state" (after its tour) has no SVG equivalent: the SVG has no tour.
+  motion. The prototype's "done state" (after its tour) has no SVG equivalent: the SVG camera tour (§ Camera tour) moves only on the reader's input.
 
 `scripts/check-html.mjs` enforces the static rules; `build.mjs --verify` and
 `scripts/runtime/smil-starter.mjs --sweep` check the behaviour.

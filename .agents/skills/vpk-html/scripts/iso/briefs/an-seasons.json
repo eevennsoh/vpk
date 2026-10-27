@@ -10,20 +10,15 @@
 		"scale": "fit",
 		"pad": 14
 	},
-	"labels": "none",
+	"labels": [],
 	"parts": [
 		{
 			"id": "plinth",
-			"kind": "cylinder",
+			"kind": "lathe",
 			"at": [
 				0,
 				0,
 				0
-			],
-			"size": [
-				43,
-				43,
-				1.6
 			],
 			"detail": [
 				{
@@ -35,52 +30,86 @@
 						0.7,
 						1.8
 					]
-				},
-				{
-					"type": "knurl",
-					"count": 240
 				}
-			]
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					43
+				],
+				[
+					1.6,
+					43
+				]
+			],
+			"steps": 160,
+			"label": "Plinth with calendar ticks"
 		},
 		{
 			"id": "turntable",
-			"kind": "cylinder",
+			"kind": "lathe",
 			"at": [
 				0,
 				0,
 				1.6
 			],
-			"size": [
-				39,
-				39,
-				3.4
-			],
 			"detail": [
 				{
 					"type": "knurl",
-					"count": 360
+					"count": 220
 				},
 				{
+					"type": "inset",
+					"face": "top",
+					"by": 2.7
+				}
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					39
+				],
+				[
+					3.0,
+					39
+				]
+			],
+			"steps": 160,
+			"label": "Turntable"
+		},
+		{
+			"id": "rim",
+			"kind": "ring",
+			"at": [
+				0,
+				0,
+				4.6
+			],
+			"size": [
+				38.9,
+				38.9,
+				0
+			],
+			"thickness": 0.3,
+			"inner": 36.3,
+			"steps": 160,
+			"state": "new",
+			"detail": [
+				{
 					"type": "radialTicks",
+					"face": "top",
 					"r": 38.7,
 					"count": 365,
 					"every": 30,
 					"lengths": [
-						0.6,
-						2.4
+						0.7,
+						2.1
 					]
-				},
-				{
-					"type": "inset",
-					"face": "top",
-					"by": 2.6
-				},
-				{
-					"type": "inset",
-					"face": "top",
-					"by": 0.3
 				}
-			]
+			],
+			"label": "Brass rim, one tick a day"
 		},
 		{
 			"id": "arm",
@@ -88,12 +117,12 @@
 			"at": [
 				-31.49,
 				4.9,
-				5
+				4.6
 			],
 			"size": [
 				37,
-				5.2,
-				1
+				6,
+				1.4
 			],
 			"r": 2.6,
 			"yaw": 150,
@@ -109,7 +138,8 @@
 					330
 				],
 				"samples": 12
-			}
+			},
+			"label": "Orbit arm"
 		},
 		{
 			"id": "gear-1",
@@ -122,7 +152,7 @@
 			"size": [
 				4.2,
 				4.2,
-				1.5
+				1.8
 			],
 			"detail": [
 				{
@@ -218,7 +248,9 @@
 					"face": "top",
 					"by": 0.45
 				}
-			]
+			],
+			"state": "new",
+			"label": "Sun gear"
 		},
 		{
 			"id": "gear-2",
@@ -231,7 +263,7 @@
 			"size": [
 				3,
 				3,
-				1.5
+				1.8
 			],
 			"detail": [
 				{
@@ -285,7 +317,9 @@
 					"face": "top",
 					"by": 0.45
 				}
-			]
+			],
+			"state": "new",
+			"label": "Idler gear"
 		},
 		{
 			"id": "cap-2",
@@ -293,7 +327,7 @@
 			"at": [
 				-6.149,
 				3.55,
-				7.5
+				7.8
 			],
 			"axis": "z",
 			"profile": [
@@ -314,7 +348,8 @@
 					0.75,
 					0.3
 				]
-			]
+			],
+			"label": "Axle cap"
 		},
 		{
 			"id": "gear-3",
@@ -327,7 +362,7 @@
 			"size": [
 				4.2,
 				4.2,
-				1.5
+				1.8
 			],
 			"detail": [
 				{
@@ -423,7 +458,9 @@
 					"face": "top",
 					"by": 0.45
 				}
-			]
+			],
+			"state": "new",
+			"label": "Large idler gear"
 		},
 		{
 			"id": "cap-3",
@@ -431,7 +468,7 @@
 			"at": [
 				-12.298,
 				7.1,
-				7.5
+				7.8
 			],
 			"axis": "z",
 			"profile": [
@@ -452,7 +489,8 @@
 					0.75,
 					0.3
 				]
-			]
+			],
+			"label": "Axle cap"
 		},
 		{
 			"id": "gear-4",
@@ -465,7 +503,7 @@
 			"size": [
 				3,
 				3,
-				1.5
+				1.8
 			],
 			"detail": [
 				{
@@ -519,7 +557,9 @@
 					"face": "top",
 					"by": 0.45
 				}
-			]
+			],
+			"state": "new",
+			"label": "Idler gear"
 		},
 		{
 			"id": "cap-4",
@@ -527,7 +567,7 @@
 			"at": [
 				-18.446,
 				10.65,
-				7.5
+				7.8
 			],
 			"axis": "z",
 			"profile": [
@@ -548,7 +588,8 @@
 					0.75,
 					0.3
 				]
-			]
+			],
+			"label": "Axle cap"
 		},
 		{
 			"id": "gear-5",
@@ -561,7 +602,7 @@
 			"size": [
 				4.2,
 				4.2,
-				1.5
+				1.8
 			],
 			"detail": [
 				{
@@ -657,7 +698,9 @@
 					"face": "top",
 					"by": 0.45
 				}
-			]
+			],
+			"state": "new",
+			"label": "Globe gear"
 		},
 		{
 			"id": "flange",
@@ -665,7 +708,7 @@
 			"at": [
 				0,
 				0,
-				7.5
+				7.8
 			],
 			"axis": "z",
 			"profile": [
@@ -681,7 +724,9 @@
 					1.2,
 					1.3
 				]
-			]
+			],
+			"state": "new",
+			"label": "Pillar flange"
 		},
 		{
 			"id": "pillar",
@@ -695,7 +740,9 @@
 				1.25,
 				1.25,
 				13
-			]
+			],
+			"state": "new",
+			"label": "Brass pillar"
 		},
 		{
 			"id": "collar-low",
@@ -723,7 +770,9 @@
 						0.55
 					]
 				}
-			]
+			],
+			"state": "new",
+			"label": "Pillar collar"
 		},
 		{
 			"id": "collar-high",
@@ -743,7 +792,9 @@
 					0.9,
 					1.85
 				]
-			]
+			],
+			"state": "new",
+			"label": "Pillar collar"
 		},
 		{
 			"id": "cup",
@@ -775,7 +826,9 @@
 					3.4,
 					2.9
 				]
-			]
+			],
+			"state": "new",
+			"label": "Lamp cup"
 		},
 		{
 			"id": "lamp",
@@ -786,7 +839,8 @@
 				25.1
 			],
 			"r": 3.4,
-			"tone": "glow"
+			"tone": "glow",
+			"label": "Lamp: the Sun"
 		},
 		{
 			"id": "finial",
@@ -822,7 +876,9 @@
 					2.2,
 					0.45
 				]
-			]
+			],
+			"state": "new",
+			"label": "Lamp finial"
 		},
 		{
 			"id": "knob",
@@ -832,7 +888,9 @@
 				0,
 				31.000000000000004
 			],
-			"r": 0.75
+			"r": 0.75,
+			"state": "new",
+			"label": "Finial knob"
 		},
 		{
 			"id": "post",
@@ -840,13 +898,15 @@
 			"at": [
 				-24.249,
 				14,
-				7.5
+				7.8
 			],
 			"size": [
 				1.1,
 				1.1,
 				4.2
-			]
+			],
+			"state": "new",
+			"label": "Globe post"
 		},
 		{
 			"id": "bracket",
@@ -888,7 +948,9 @@
 					1.6
 				]
 			],
-			"depth": 3.2
+			"depth": 3.2,
+			"state": "new",
+			"label": "Wedge bracket, 23.4°"
 		},
 		{
 			"id": "axle",
@@ -903,7 +965,8 @@
 				12.129,
 				32.129
 			],
-			"radius": 0.42
+			"radius": 0.42,
+			"label": "Tilted axle"
 		},
 		{
 			"id": "axis-pin",
@@ -920,7 +983,8 @@
 				0.344,
 				-0.199,
 				0.918
-			]
+			],
+			"label": "Axis pin"
 		},
 		{
 			"id": "globe-day",
@@ -1038,7 +1102,8 @@
 					330
 				],
 				"samples": 12
-			}
+			},
+			"label": "Globe, day side"
 		},
 		{
 			"id": "globe-night",
@@ -1157,7 +1222,8 @@
 					330
 				],
 				"samples": 12
-			}
+			},
+			"label": "Globe, night side"
 		},
 		{
 			"id": "equator-1",
@@ -1458,7 +1524,8 @@
 					18.134,
 					26.68
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "arctic-1",
@@ -2069,7 +2136,8 @@
 					15.648109205625534,
 					30.93162493439495
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "capricorn-1",
@@ -2310,7 +2378,8 @@
 					20.138,
 					23.292
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "lat-n45-1",
@@ -2741,7 +2810,8 @@
 					12.169,
 					30.547
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "lat-s45-1",
@@ -2897,7 +2967,8 @@
 					20.464,
 					19.866
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "meridian-1-1",
@@ -3188,7 +3259,8 @@
 					17.478,
 					27.51
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "meridian-2-1",
@@ -3484,7 +3556,8 @@
 					12.717,
 					30.503
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "meridian-3-1",
@@ -3785,7 +3858,8 @@
 					10.381,
 					30.53
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "meridian-4-1",
@@ -4086,7 +4160,8 @@
 					9.147,
 					29.874
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "meridian-5-1",
@@ -4382,7 +4457,8 @@
 					8.405,
 					28.825
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "meridian-6-1",
@@ -4678,7 +4754,8 @@
 					7.956,
 					26.317
 				]
-			]
+			],
+			"label": "Graticule"
 		},
 		{
 			"id": "tropic",
@@ -5379,7 +5456,8 @@
 					15.265,
 					29.291
 				]
-			]
+			],
+			"label": "Tropic of Cancer"
 		},
 		{
 			"id": "coast-africa-1",
@@ -5930,7 +6008,8 @@
 					16.754,
 					23.535
 				]
-			]
+			],
+			"label": "Coastline"
 		},
 		{
 			"id": "coast-europe-1",
@@ -6421,7 +6500,8 @@
 					16.427,
 					26.688
 				]
-			]
+			],
+			"label": "Coastline"
 		},
 		{
 			"id": "coast-arabia-1",
@@ -6592,7 +6672,8 @@
 					19.485,
 					28.338
 				]
-			]
+			],
+			"label": "Coastline"
 		},
 		{
 			"id": "coast-madagascar-1",
@@ -6703,7 +6784,8 @@
 					21.796,
 					21.538
 				]
-			]
+			],
+			"label": "Coastline"
 		},
 		{
 			"id": "coast-britain-1",
@@ -6834,7 +6916,8 @@
 					15.794,
 					28.272
 				]
-			]
+			],
+			"label": "Coastline"
 		},
 		{
 			"id": "coast-southam-1",
@@ -6905,7 +6988,8 @@
 					13.912,
 					17.595
 				]
-			]
+			],
+			"label": "Coastline"
 		},
 		{
 			"id": "coast-greenland-1",
@@ -7076,7 +7160,8 @@
 					12.381,
 					28.439
 				]
-			]
+			],
+			"label": "Coastline"
 		}
 	],
 	"assemble": {
@@ -7089,6 +7174,7 @@
 			[
 				"plinth",
 				"turntable",
+				"rim",
 				"arm",
 				"gear-1",
 				"gear-2",

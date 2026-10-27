@@ -57,8 +57,8 @@
 // any number of layers. The classes exist only while SMIL plays or after it landed: a static, reduced-motion or print render
 // never gains one, and a landed or printed figure is the neutral art.
 
-import { ACCENT_FACES, ENTRY, REST_MOTION as R, SHADOW } from "./accent.mjs";
-import { DARK_CUT_OVERRIDES, DARK_INK_OVERRIDES, DARK_RECESS_OVERRIDES } from "./palette.mjs";
+import { ACCENT_FACES, ENTRY, NEUTRAL_LINES, REST_MOTION as R, SHADOW } from "./accent.mjs";
+import { DARK_CUT_OVERRIDES, DARK_INK_OVERRIDES, DARK_RECESS_OVERRIDES, DARK_TONE_OVERRIDES, ISO_PRESET } from "./palette.mjs";
 
 // The sine in-out curve, so the drift and the bob read as a slow pendulum (the 3D sway is a sine too).
 const SINE = "cubic-bezier(0.37, 0, 0.63, 1)";
@@ -111,6 +111,47 @@ const entryCss = [
 	`[data-vpk-iso-enter][class] [data-vpk-iso-part] > * { transition: fill ${ENTRY.HANDOFF_MS}ms var(--ease-out), stroke ${ENTRY.HANDOFF_MS}ms var(--ease-out); }`,
 ].join("\n");
 
+// The camera tour (iso/tour.mjs, tour-runtime.mjs; illustrations.md § Camera tour). The runtime eases the viewBox, so the CSS only
+// paints: the current step's pieces (.is-tour) take the three accent faces and the darker accent line work, like the dropping
+// entry layer; while a step shows (data-vpk-iso-touring on the stage) every other part is neutral, the brief's focal part
+// included (its emitted accent faces go back to the tone map), and the leader labels, tags and dimension notes hide (zoomed up to
+// TOUR_MAX_ZOOM they would crowd the frame; arrows and lines stay). Faces and lines hand over on a TITLE_FADE_MS fill transition;
+// the step title restarts a grey-to-ink fade over the same time (two keyframe names, so the runtime never forces a reflow). An
+// emphasis "ink" or "none" figure outlines the step's parts in ink instead of the accent. The focal part's rest bob stops while a
+// step shows (that rule follows restCss, so it wins). Overview and print carry none of it.
+const TOUR = "[data-vpk-iso-touring] > svg";
+const ON = `${TOUR}:not([data-vpk-iso-emphasis]) .is-tour`;
+const OFF = `${TOUR}:not([data-vpk-iso-emphasis]) [data-vpk-iso-focal]:not(.is-tour)`;
+const FACES = [["top", "top"], ["fill", "light"], ["shade", "dark"]];
+const tourCss = [
+	...FACES.map(([role, face]) => `${ON} > [data-vpk-iso-role="${role}"] { fill: ${ACCENT_FACES[face]}; }`),
+	`${ON} > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED_ACCENT}; }`,
+	`${ON} > ${LINES} { stroke: ${ACCENT_FACES.edge}; }`,
+	`${ON} > [data-vpk-iso-role="edge"] { stroke-width: 2; }`,
+	`${TOUR} [data-vpk-iso-arrow-for].is-tour > path { stroke: var(--ill-accent); fill: var(--ill-accent); }`,
+	`${TOUR}[data-vpk-iso-emphasis] .is-tour > [data-vpk-iso-role="edge"] { stroke: var(--ill-line); stroke-width: 2; }`,
+	...FACES.map(([role, face]) => `${OFF} > [data-vpk-iso-role="${role}"] { fill: ${ISO_PRESET.tones[face]}; }`),
+	...FACES.filter(([, face]) => DARK_TONE_OVERRIDES[face]).map(([role, face]) => `[data-theme="dark"] ${OFF} > [data-vpk-iso-role="${role}"] { fill: ${DARK_TONE_OVERRIDES[face]}; }`),
+	`${OFF} > [data-vpk-iso-received] { fill: ${SHADOW.RECEIVED}; }`,
+	`[data-theme="dark"] ${OFF} > [data-vpk-iso-received] { fill: ${SHADOW.DARK_RECEIVED}; }`,
+	`${OFF} > :is([data-vpk-iso-role="edge"], [data-vpk-iso-role="mark"]) { stroke: ${NEUTRAL_LINES.edge}; stroke-width: 1; }`,
+	`${OFF} > [data-vpk-iso-role="crease"] { stroke: ${NEUTRAL_LINES.crease}; }`,
+	`${TOUR} [data-vpk-iso-arrow-for][data-vpk-iso-accent]:not(.is-tour) > path { stroke: ${ISO_PRESET.edge}; fill: ${ISO_PRESET.edge}; }`,
+	`${TOUR} :is([data-vpk-iso-label-for], [data-vpk-iso-tag], [data-vpk-iso-annotation="dimension"], [data-vpk-iso-annotation="scale"]) { visibility: hidden; }`,
+	`[data-vpk-iso-tour] [data-vpk-iso-part] > * { transition: fill ${ENTRY.TITLE_FADE_MS}ms var(--ease-out), stroke ${ENTRY.TITLE_FADE_MS}ms var(--ease-out); }`,
+	...[1, 2].map(k => `@keyframes vpk-iso-tour-fade-${k} { from { color: var(--muted-text); } to { color: var(--ink); } }`),
+	...[1, 2].map(k => `.vpk-iso-tour__title[data-vpk-iso-tour-fade="${k}"] { animation: vpk-iso-tour-fade-${k} ${ENTRY.TITLE_FADE_MS}ms var(--ease-out) both; }`),
+	":where(.vpk-iso-tour__caption) { flex: 1 1 100%; min-width: 0; }",
+	":where(.vpk-iso-tour__title) { margin: 0; font: 500 13px/1.4 var(--font-sans, var(--font-body)); color: var(--ink); }",
+	":where(.vpk-iso-tour__text) { margin: 2px 0 0; max-width: 72ch; font: 13px/1.5 var(--font-body); color: color-mix(in srgb, var(--muted-text) 80%, var(--ink)); }",
+	":where(.vpk-iso-tour) { display: inline-flex; align-items: center; gap: 4px; padding: 2px; border: 1px solid var(--rule); border-radius: 999px; }",
+	":where(.vpk-iso-tour__go) { padding: 4px 12px; border: 0; border-radius: 999px; background: none; color: var(--ink); font: 12px/1.4 var(--font-mono); cursor: pointer; }",
+	":where(.vpk-iso-tour__go:hover) { background: var(--surface-sunken); }",
+	":where(.vpk-iso-tour__go[aria-disabled=\"true\"]) { color: var(--muted-text); background: none; cursor: default; }",
+	":where(.vpk-iso-tour__go:focus-visible) { outline: 1.5px solid var(--focus-ring, var(--ink)); outline-offset: 1px; }",
+	":where(.vpk-iso-tour__count) { min-width: 6ch; text-align: center; font: 12px/1.4 var(--font-numeric, var(--font-mono)); font-variant-numeric: tabular-nums; color: var(--muted-text); }",
+].join("\n");
+
 export const ISO_CSS = `:where([data-vpk-engine="iso-kit"] svg, svg[data-vpk-iso]) :where(path, line, polyline, polygon, ellipse, circle, rect) { vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
 :where([data-vpk-engine="iso-kit"] [data-vpk-iso-role="edge"]) { transition: stroke var(--duration-fast, 100ms) var(--ease-out); }
 [data-vpk-iso-weight="2"] path { stroke-width: 2; }
@@ -158,5 +199,7 @@ ${emphasisCss}
 .vpk-iso-legend li { display: inline-flex; align-items: center; gap: 6px; font: 11px/1.4 var(--font-mono) !important; }
 .vpk-iso-legend span { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 50%; font-size: 10px; letter-spacing: 0; line-height: 1 !important; }
 }
+${tourCss}
 ${restCss}
-@media (prefers-reduced-motion: reduce) { .vpk-iso-plate[data-vpk-engine="iso-kit"], .vpk-iso-plate[data-vpk-engine="iso-kit"] * { transition: none !important; } }`;
+[data-vpk-iso-touring] > svg [data-vpk-iso-focal] { animation-name: none; }
+@media (prefers-reduced-motion: reduce) { .vpk-iso-plate[data-vpk-engine="iso-kit"], .vpk-iso-plate[data-vpk-engine="iso-kit"] * { transition: none !important; } .vpk-iso-tour__title { animation-name: none !important; } }`;

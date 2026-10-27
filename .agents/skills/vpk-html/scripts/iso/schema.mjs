@@ -14,6 +14,7 @@ import { validateDims, validateMarks, validateScale } from "./manual-scene.mjs";
 import { EMPHASES, KIT_STYLE } from "./palette.mjs";
 import { STATE_BEHAVIORS, validateBriefStates, validatePartStates } from "./states.mjs";
 import { ISO_THRESHOLDS } from "./thresholds.mjs";
+import { validateTour } from "./tour.mjs";
 
 export const BRIEF_SCHEMA_ID = "vpk-iso-brief/1";
 export const ENGINE_ID = "iso-kit";
@@ -386,6 +387,7 @@ function validateFlat(brief) {
 	validateDims(brief.dims, push);
 	validateScale(brief.scale, push);
 	validateInteract(brief.interact, push);
+	validateTour(brief.tour, known, push);
 	validateBriefStates(brief, parts, push);
 	parts.forEach((part, index) => {
 		if (part && typeof part === "object" && PART_KINDS.includes(part.kind)) validatePartStates(part, index, push, validatePart);

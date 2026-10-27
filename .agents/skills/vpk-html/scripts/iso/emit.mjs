@@ -457,8 +457,21 @@ export function renderSvg(scene, indent = "") {
 	return [`${indent}<svg ${attrs.join(" ")}>`, ...body, `${indent}</svg>`].join("\n");
 }
 
+// The camera tour's sentence, appended to the stage label (a tour-only figure: the whole label after the title).
+function tourLabel(scene) {
+	const n = scene.tour.s.length;
+	const keys = scene.behavior ? "" : ", or focus the figure and use the arrow keys";
+	return `A camera tour of ${n} steps: use the Next step and Previous step buttons${keys} to frame each step's parts; Home returns to the overview.`;
+}
+
 function stageLabel(scene) {
 	const title = scene.brief.title.replace(/[.\s]+$/, "");
+	if (!scene.behavior) return `${title}. ${tourLabel(scene)}`;
+	const label = behaviorLabel(scene, title);
+	return scene.tour ? `${label} ${tourLabel(scene)}` : label;
+}
+
+function behaviorLabel(scene, title) {
 	if (scene.behavior === "step") return `${title}. Click the figure, or focus it and press Enter or the arrow keys, to step through ${scene.states.states.length} states; Home and End go to the first and last, Escape to rest.`;
 	if (scene.behavior === "scrub") {
 		const how = scene.states.input === "pointer-x" ? "Move the pointer across the figure" : scene.states.input === "keys" ? "Focus the figure and use the arrow keys" : "Drag across the figure";
@@ -487,9 +500,23 @@ function renderLegend(scene, indent) {
 
 export const readoutText = (scene, value) => (scene.behavior === "explode" ? `${scene.explode.unit} ${Number(value).toFixed(2)}` : String(value));
 
+// The camera tour (tour.mjs): its caption (the step title, which fades grey to ink on a change, and the step text) rides in the
+// frame's foot like a readout; the Previous step / Next step buttons and the step counter sit under the frame with the other
+// controls. Both start on the Overview (step 0), which is the static art; aria-disabled keeps a button focusable at the ends.
+function tourParts(scene) {
+	const tour = scene.tour;
+	const n = tour.s.length;
+	const caption = `<div class="vpk-iso-tour__caption"><p class="vpk-iso-tour__title" data-vpk-iso-tour-title>Overview</p><p class="vpk-iso-tour__text" data-vpk-iso-tour-text>${escapeText(tour.o)}</p></div>`;
+	const go = (by, text, off) => `<button type="button" class="vpk-iso-tour__go" data-vpk-iso-tour-go="${by}" aria-disabled="${off}">${text}</button>`;
+	const controls = `<div class="vpk-iso-tour" role="group" aria-label="Camera tour" data-vpk-iso-tour-controls>${go(-1, "Previous step", true)}<span class="vpk-iso-tour__count" data-vpk-iso-tour-count>0 / ${n}</span>${go(1, "Next step", false)}</div>`;
+	return { caption, controls };
+}
+
 export function renderPlate(scene, { indent = "", attrs = "" } = {}) {
 	const brief = scene.brief;
-	const interactive = Boolean(scene.behavior);
+	// A tour without another behaviour is the stage's behaviour "tour" (the runtime gives it the arrow keys).
+	const behavior = scene.behavior ?? (scene.tour ? "tour" : null);
+	const interactive = Boolean(behavior);
 	const root = [
 		'class="vpk-iso-plate"',
 		`id="${ids(scene).root}"`,
@@ -502,8 +529,10 @@ export function renderPlate(scene, { indent = "", attrs = "" } = {}) {
 	if (interactive) root.push("data-vpkh-no-lightbox");
 	const stage = ['class="vpk-iso-stage"', "data-vpk-iso-stage"];
 	if (interactive) {
-		stage.push(`data-vpk-iso-behavior="${scene.behavior}"`, 'role="group"', 'aria-roledescription="interactive figure"', `aria-label="${escapeAttr(stageLabel(scene))}"`);
-		if (scene.behavior === "select" || scene.behavior === "teardown" || scene.states) stage.push('tabindex="0"');
+		stage.push(`data-vpk-iso-behavior="${behavior}"`, 'role="group"', 'aria-roledescription="interactive figure"', `aria-label="${escapeAttr(stageLabel(scene))}"`);
+		if (behavior === "select" || behavior === "teardown" || behavior === "tour" || scene.states) stage.push('tabindex="0"');
+		// The tour model for tour-runtime.mjs (JSON in one attribute, like the state model).
+		if (scene.tour) stage.push(`data-vpk-iso-tour="${escapeAttr(JSON.stringify(scene.tour))}"`);
 		// The state model for state-runtime.mjs (JSON in one attribute: no script island, so check-html sees no new script).
 		if (scene.states) stage.push(`data-vpk-iso-states="${escapeAttr(JSON.stringify(scene.states))}"`);
 	}
@@ -532,8 +561,13 @@ export function renderPlate(scene, { indent = "", attrs = "" } = {}) {
 			// autocomplete="off": on Back the browser would otherwise restore the last committed value
 			// after the runtime has read the slider, leaving the slider and the figure apart.
 			control.push(`<label class="vpk-iso-control">${escapeText(e.unit[0].toUpperCase() + e.unit.slice(1))} <input type="range" data-vpk-iso-control="explode" min="${e.min}" max="${e.max}" step="${e.step}" value="${e.rest}" autocomplete="off"></label>`);
-		} else {
+		} else if (scene.behavior) {
 			readout.push(`<output class="vpk-iso-readout" data-vpk-iso-readout data-vpk-iso-rest="${escapeAttr(scene.interact.rest ?? "rest")}" aria-live="off">${escapeText(scene.interact.rest ?? "rest")}</output>`);
+		}
+		if (scene.tour) {
+			const tour = tourParts(scene);
+			readout.unshift(tour.caption);
+			control.unshift(tour.controls);
 		}
 		readout.push('<p class="vpk-iso-live" data-vpk-iso-live aria-live="polite"></p>');
 	}

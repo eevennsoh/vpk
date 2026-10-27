@@ -554,7 +554,7 @@ test("rest motion CSS: keyframes from REST_MOTION, gated on the attribute, scree
 	assert.match(ISO_CSS, new RegExp(`translate: 0 -${REST_MOTION.BOB_PX}px`));
 	assert.match(ISO_CSS, new RegExp(`translate: ${REST_MOTION.DRIFT_PX}px 0`));
 	assert.match(gated[1], /\[data-vpk-iso-rest="paused"\] > svg, [^{]+\{ animation-play-state: paused; \}/, "input pauses the drift in place");
-	assert.equal([...ISO_CSS.matchAll(/animation:/g)].length, 2, "no other animation rule");
+	assert.equal([...ISO_CSS.matchAll(/animation:/g)].length, 4, "no other animation rule: the drift, the bob and the two camera-tour title fades");
 });
 
 // Cast shadows follow their part (illustrations.md § Shadows): a lifted or exploded part's shadow moves by its cast vector times

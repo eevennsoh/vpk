@@ -3,9 +3,10 @@
 // kit). Projection is the vendored anatomy iso()/fitProjection(), so the camera is the one figure
 // camera (figures/camera.mjs FIGURE_CAMERA, integration K12).
 
-import { cameraAttr, FIGURE_CAMERA } from "../figures/camera.mjs";
+import { cameraAttr } from "../figures/camera.mjs";
 import { fitProjection, iso } from "../anatomy/vendor/kit/iso-kit.mjs";
 import { hull, parsePolyPath, pointInPolygon } from "./core.mjs";
+import { tourConfig } from "./tour.mjs";
 import { clipConvex, dimGeometry, gutterWidthsNear, placeLabelsNear, segmentBoxes, textWidth } from "./layout.mjs";
 import { buildMarks, fitHeight, fitNear, homePiece, narrowTagLayout, scaleGeometry } from "./manual-scene.mjs";
 import { manualTiming } from "./motion.mjs";
@@ -544,6 +545,8 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 		widthOf: text => textWidth(text, font),
 		stateModel,
 		states: null,
+		// The camera tour's stage model (tour.mjs; tour-runtime.mjs drives it), or null.
+		tour: tourConfig(brief.tour),
 	};
 	// The stage's state model: per state, the screen moves (part and cast shadow), discrete views, values, text and painter order.
 	if (stateModel) scene.states = stateConfig(scene, { byId: drawOf, screen: move => screenVector(move, P), shadowScreen: move => screenVector(shadowMove(move, step), P), P });

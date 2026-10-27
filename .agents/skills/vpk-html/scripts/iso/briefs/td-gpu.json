@@ -34,5 +34,56 @@
 		{ "text": "Backplate", "target": "backplate", "side": "left" }
 	],
 	"assemble": { "layers": [["backplate"], ["pcb", "gpu", "vram", "vrm", "port", "bracket"], ["coldplate"], ["pipe"], ["fins"], ["shroud"], ["fan"]] },
-	"interact": { "behavior": "teardown", "teardown": { "gap": 30 } }
+	"interact": { "behavior": "teardown", "teardown": { "gap": 30 } },
+	"tour": {
+		"overview": "A graphics card taken apart along one axis: the board and its chips, then the cooler, layer by layer, from the cold plate up to the fans.",
+		"steps": [
+			{
+				"title": "GPU and memory",
+				"text": "The GPU die sits at the centre of the board, with the memory chips around it. Together they do the card's work, and most of its heat comes from here.",
+				"parts": [
+					"gpu",
+					"vram"
+				]
+			},
+			{
+				"title": "Power stages",
+				"text": "A row of power stages turns the 12 V input into the low, steady voltage the GPU needs, and they get hot too.",
+				"parts": [
+					"vrm"
+				]
+			},
+			{
+				"title": "Ports and bracket",
+				"text": "The display ports at the end of the board come out through the I/O bracket, which also screws the card to the case.",
+				"parts": [
+					"port",
+					"bracket"
+				]
+			},
+			{
+				"title": "Cold plate and heat pipes",
+				"text": "A copper cold plate presses on the GPU. Two heat pipes carry its heat away to the fin stack.",
+				"parts": [
+					"coldplate",
+					"pipe"
+				]
+			},
+			{
+				"title": "Fin stack",
+				"text": "Sixty thin fins spread the heat over a large area so the air can carry it away.",
+				"parts": [
+					"fins"
+				]
+			},
+			{
+				"title": "Shroud and fans",
+				"text": "Three fans in the shroud push air down through the fins and out of the card.",
+				"parts": [
+					"shroud",
+					"fan"
+				]
+			}
+		]
+	}
 }

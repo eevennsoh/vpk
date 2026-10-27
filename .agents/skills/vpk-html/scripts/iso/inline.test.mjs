@@ -70,7 +70,7 @@ test("the pipeline inlines the one block for any iso figure and is a fixed point
 test("only the kit scope is renamed: the frame loop keeps its names (the spec's rAF probe reads `gen && run()`)", () => {
 	for (const kept of ["function createFrameLoop(", "function getFrameLoop(", "gen&&run()", "window.vpkIso??=kit.createIsoRuntime(window,getFrameLoop(window),kit)"]) assert.ok(SCRIPT.includes(kept), kept);
 	assert.equal(count(SCRIPT, "function createIsoRuntime("), 0, "kit locals are renamed");
-	assert.match(SCRIPT, /return\{createIsoRuntime:[\w$]+,hull:[\w$]+,padHull:[\w$]+,parsePolyPath:[\w$]+,parseVec:[\w$]+,topmostHit:[\w$]+,blink:[\w$]+,tagLines:[\w$]+,mountStates:[\w$]+,partPoly:[\w$]+\}/);
+	assert.match(SCRIPT, /return\{createIsoRuntime:[\w$]+,hull:[\w$]+,padHull:[\w$]+,parsePolyPath:[\w$]+,parseVec:[\w$]+,topmostHit:[\w$]+,blink:[\w$]+,tagLines:[\w$]+,mountStates:[\w$]+,mountTour:[\w$]+,partPoly:[\w$]+\}/);
 	assert.ok(SCRIPT.includes('querySelectorAll(".slide")') && SCRIPT.includes("maxHeight"), "the deck fit ships in the block");
 });
 
@@ -154,7 +154,7 @@ test("ENHANCEMENT_BLOCK carries the R6 opt-out (not S5b's attributeFilter)", () 
 // Regression: state-runtime called core.partPoly but KIT_NAMES did not export it, so every step/scrub figure was left static.
 test("every core.<name> the inlined runtimes call is exported by the kit scope", () => {
 	const kit = fs.readFileSync(new URL("./inline.mjs", import.meta.url), "utf8").match(/const KIT_NAMES = "\{([^}]*)\}"/)[1].split(",").map(name => name.trim());
-	for (const file of ["./runtime.mjs", "./state-runtime.mjs", "./manual-runtime.mjs"]) {
+	for (const file of ["./runtime.mjs", "./state-runtime.mjs", "./manual-runtime.mjs", "./tour-runtime.mjs"]) {
 		const used = new Set([...fs.readFileSync(new URL(file, import.meta.url), "utf8").matchAll(/\bcore\.([A-Za-z]\w*)\s*\(/g)].map(match => match[1]));
 		for (const name of used) assert.ok(kit.includes(name), `${file} calls core.${name}, missing from KIT_NAMES`);
 	}

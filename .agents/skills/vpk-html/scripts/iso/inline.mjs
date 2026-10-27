@@ -28,7 +28,10 @@ export const ISO_RUNTIME_ID = "iso";
 // Re-measure when the block changes and keep this comment, figure-engines.md § 9 and illustrations.md in step.
 // 2026-10-25 (iso upgrade, phase 2): 37,557 B = style 8,154 B + script (step, scrub, variants, per-state and per-scrub-segment order: state-runtime.mjs).
 // The layer-agnostic entry CSS shrank the style by about 3 KB.
-export const ISO_BUDGET_BYTES = 49152;
+// 2026-10-27 (camera tour): 50,380 B = style 14,311 B + script 36,024 B. The tour adds tour-runtime.mjs (viewBox camera, step
+// accent, caption, Previous / Next step) and its CSS (accent faces on the step's parts, the focal part neutral while touring, the
+// title fade, the controls), about 9.2 KB. The budget rose to 53,248 B (52 KiB).
+export const ISO_BUDGET_BYTES = 53248;
 export const ISO_START = `<!-- vpk-${ISO_RUNTIME_ID}:start -->`;
 export const ISO_END = `<!-- vpk-${ISO_RUNTIME_ID}:end -->`;
 export const ISO_NOTICE = "/* vpk iso runtime v1 · motion clocks and behaviours ported from hairline (MIT, Copyright (c) 2026 Lucas Marques, github.com/lucasmarkes/hairline) · see scripts/iso/NOTICE.md in the vpk-html skill */";
@@ -40,8 +43,9 @@ const KIT_SOURCES = Object.freeze([
 	["iso/runtime.mjs", new URL("./runtime.mjs", import.meta.url)],
 	["iso/manual-runtime.mjs", new URL("./manual-runtime.mjs", import.meta.url)],
 	["iso/state-runtime.mjs", new URL("./state-runtime.mjs", import.meta.url)],
+	["iso/tour-runtime.mjs", new URL("./tour-runtime.mjs", import.meta.url)],
 ]);
-const KIT_NAMES = "{ createIsoRuntime, hull, padHull, parsePolyPath, parseVec, topmostHit, blink, tagLines, mountStates, partPoly }";
+const KIT_NAMES = "{ createIsoRuntime, hull, padHull, parsePolyPath, parseVec, topmostHit, blink, tagLines, mountStates, mountTour, partPoly }";
 
 export function inlineSource(text, label = "source") {
 	if (/^\s*import\b/m.test(text)) throw new Error(`${label} must have no import statements to be inlined`);

@@ -166,8 +166,9 @@ export function createIsoRuntime(win, loop, core) {
 		const root = stage.closest("[data-vpk-engine]") || stage;
 		const svg = find(stage, "id");
 		const behavior = attr(stage, "behavior");
-		const vb = svg ? (svg.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number) : [];
-		if (!svg || vb.length !== 4 || !vb.every(Number.isFinite) || !["select", "explode", "teardown", "step", "scrub"].includes(behavior)) throw new Error("stage");
+		const viewBox = () => (svg.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number);
+		const vb0 = svg ? viewBox() : [];
+		if (!svg || vb0.length !== 4 || !vb0.every(Number.isFinite) || !["select", "explode", "teardown", "step", "scrub", "tour"].includes(behavior)) throw new Error("stage");
 		// Teardown (illustrations.md § Teardown): the explode spring drives the parts (Spread slider, Exploded / Assembled buttons)
 		// and the pointer or arrow keys name a part, as select does, without lifting it.
 		const teardown = behavior === "teardown";
@@ -179,11 +180,21 @@ export function createIsoRuntime(win, loop, core) {
 		win.addEventListener("scroll", invalidate, { passive: true, capture: true });
 		if (win.ResizeObserver) new win.ResizeObserver(invalidate).observe(stage);
 		stage.addEventListener("pointerenter", invalidate);
+		// The viewBox is read per call: a camera tour (tour-runtime.mjs) eases it, and hover must hit what is drawn there now.
 		const toView = (cx, cy) => {
 			const r = measure();
+			const vb = viewBox();
 			const s = Math.min(r.width / vb[2], r.height / vb[3]) || 1;
 			return [(cx - r.left - (r.width - vb[2] * s) / 2) / s + vb[0], (cy - r.top - (r.height - vb[3] * s) / 2) / s + vb[1]];
 		};
+		// A camera tour (tour-runtime.mjs, data-vpk-iso-tour) rides on any behaviour as its own board; a figure with a tour and no
+		// other behaviour (behavior "tour") gives the tour the stage's arrow keys too.
+		const tour = stage.hasAttribute("data-vpk-iso-tour") ? core.mountTour({ win, loop, core, stage, root, svg, attr, find, setText, speak, now, fromReview, keys: behavior === "tour", clocks: { tween, tval, tdone } }) : null;
+		if (tour) poses.push(tour.pose);
+		if (behavior === "tour") {
+			if (!tour) throw new Error("tour");
+			return restMotion(stage, root, svg, tour.still);
+		}
 		// Step and scrub figures (state-runtime.mjs): states, variants and per-state painter order.
 		if (behavior === "step" || behavior === "scrub") {
 			const states = core.mountStates({ win, loop, core, stage, root, svg, attr, find, role, setText, speak, restore, now, fromReview, line, measure, toView, clocks: { tween, tset, tval, tdone, spring, stepS } });
