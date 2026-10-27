@@ -34,6 +34,7 @@ export const UTILITY_DEMOS: Record<string, ComponentType> = {
 };
 
 export const UTILITY_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"gui-demo-timeline": dynamic(() => import("../demos/utils/gui-timeline-demo"), { ssr: false }),
 	"cone-safezone-placement": dynamic(() => import("../demos/utils/cone-safezone-demo").then((mod) => mod.ConeSafezoneDemoPlacement), { ssr: false }),
 	"cone-safezone-controlled": dynamic(() => import("../demos/utils/cone-safezone-demo").then((mod) => mod.ConeSafezoneDemoControlled), { ssr: false }),
 	"gui-demo-full-config": dynamic(

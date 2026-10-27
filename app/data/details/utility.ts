@@ -50,12 +50,14 @@ import { Button } from "@/components/ui/button";
 	},
 	gui: {
 		description:
-			"A reusable compound component for building dense animation and visual parameter panels. It owns numeric sliders, normalized percentages, toggles, selects, text, color inputs, editable color lists, RGBA tuple editors, local image/SVG uploads, swatch groups, segmented playback controls, sections, panel actions, and mounted value-key copy filtering.",
+			"A reusable compound component for building dense animation and visual parameter panels. It owns controlled easing and spring editors, an inline timeline editor with sampled playback, numeric sliders, normalized percentages, toggles, selects, text, color inputs, editable color lists, RGBA tuple editors, local image/SVG uploads, swatch groups, segmented playback controls, sections, panel actions, and mounted value-key copy filtering.",
 		demoLayout: {
 			previewContentWidth: "full",
 			examplesContentWidth: "full",
 		},
-		usage: `import { GUI } from "@/components/utils/gui";
+		usage: `import { GUI, useGUITimeline, type GUITimelineConfig } from "@/components/utils/gui";
+import { Button } from "@/components/ui/button";
+import { motionDuration, motionEase } from "@/lib/motion";
 
 <GUI.Panel title="Controls" values={config} onPlay={replay}>
   <GUI.Control
@@ -78,11 +80,60 @@ import { Button } from "@/components/ui/button";
     onChange={setAccent}
     valueKeys="accent"
   />
-</GUI.Panel>`,
+  <GUI.Easing
+    id="motion-easing"
+    label="Easing curve"
+    value={easing}
+    defaultValue={motionEase.inOut}
+    onChange={setEasing}
+    valueKeys="easing"
+  />
+  <GUI.Spring
+    id="motion-spring"
+    label="Spring physics"
+    value={spring}
+    onChange={setSpring}
+    valueKeys="spring"
+  />
+</GUI.Panel>
+
+const timelineEase: [...typeof motionEase.inOut] = [...motionEase.inOut];
+const timelineConfig = {
+  Card: {
+    at: 0,
+    duration: motionDuration.slowest,
+    from: { opacity: 0, y: 24 },
+    to: { opacity: 1, y: 0 },
+    transition: { type: "easing", duration: motionDuration.slowest, ease: timelineEase },
+  },
+} satisfies GUITimelineConfig;
+
+function TimelineExample() {
+  const timeline = useGUITimeline("Card entrance", timelineConfig);
+  const card = timeline?.Card.current ?? timelineConfig.Card.from;
+
+  return (
+    <>
+      <div style={{ opacity: card.opacity, transform: \`translateY(\${card.y}px)\` }}>
+        Card preview
+      </div>
+      <Button disabled={!timeline} onClick={() => timeline?.play()}>Play</Button>
+      <Button disabled={!timeline} onClick={() => timeline?.pause()}>Pause</Button>
+      <Button disabled={!timeline} onClick={() => timeline?.replay()}>Replay</Button>
+      <Button disabled={!timeline} onClick={() => timeline?.reset()}>Reset</Button>
+      <GUI.Timeline label="Card entrance timeline" defaultOpen />
+    </>
+  );
+}`,
 		examples: [
 			{
+				title: "Timeline",
+				description: "A Card entrance sequence with Card, Title, and Details tracks. Play, replay, scrub, retime or resize clips, edit their curves, reset defaults, save versions, and copy parameters. Numeric controls also edit the playhead and Title start time. Mount the aggregate GUI.Timeline once per page.",
+				demoSlug: "gui-demo-timeline",
+			},
+			{
 				title: "Full config",
-				description: "Kitchen-sink panel exercising every shared GUI control type plus optional config paths: descriptions, resets, disabled states, sticky selects, image labels, swatch shapes, mounted value keys, section defaults, and panel actions.",
+				description: "Kitchen-sink panel with a replayable motion preview driven by controlled easing or spring values, plus descriptions, resets, disabled states, sticky selects, image labels, swatch shapes, mounted value keys, section defaults, and panel actions.",
 				demoSlug: "gui-demo-full-config",
 			},
 		],
@@ -90,15 +141,27 @@ import { Button } from "@/components/ui/button";
 			{ name: "id", type: "string", description: "Unique control identifier used to generate input, select, and upload element IDs." },
 			{ name: "label", type: "string", description: "Compact label shown with the control." },
 			{ name: "description", type: "string", description: "Optional helper text for controls that need extra context." },
-			{ name: "value / checked", type: "number | string | boolean | string[] | [r,g,b,a]", description: "Current value shape for the specific control." },
-			{ name: "defaultValue", type: "number | string | string[] | [r,g,b,a]", description: "Optional reset target. Controls with defaults show a reset action." },
+			{ name: "value / checked", type: "number | string | boolean | string[] | [r,g,b,a] | GUIEasingValue | GUISpringValue", description: "Current controlled value for the specific editor. Consumers own all committed values." },
+			{ name: "defaultValue", type: "number | string | string[] | [r,g,b,a] | GUIEasingValue | GUISpringValue", description: "Optional reset target. Controls with defaults show a reset action." },
 			{ name: "onChange", type: "(next) => void", description: "Callback fired when the control commits a value change." },
+			{ name: "disabled", type: "boolean", description: "Disables supported editors, including motion graph interaction, numeric inputs, presets, and reset actions." },
+			{ name: "GUIEasingValue", type: "readonly [number, number, number, number]", description: "Exported cubic Bézier tuple type: x1, y1, x2, y2. Pass the tuple as a Motion transition's ease alongside duration." },
+			{ name: "GUISpringValue", type: "Readonly<{ stiffness: number; damping: number; mass: number }>", description: "Exported physical spring value type. Combine with type: 'spring' at the Motion transition boundary." },
+			{ name: "useGUITimeline", type: "<T extends GUITimelineConfig>(name, config, options?) => GUITimelineValues<T> | null", description: "Registers a timeline after mount and returns typed clip.current samples, time, duration, play, pause, replay, seek, reset, and numeric setValue(path, value). Autoplay defaults to false. Playback settles at the completed state when reduced motion is enabled." },
+			{ name: "GUITimelineConfig", type: "TimelineConfig", description: "Exported upstream timeline schema for clip start times, durations, transitions, groups, property tracks, and sequences. Define source configs with satisfies GUITimelineConfig." },
 			{ name: "valueKeys", type: "string | readonly string[]", description: "Registers mounted controls with GUI.Panel so copy-values includes only visible keys when any keys are registered." },
 			{ name: "useGUIValueKeys", type: "(valueKeys?: string | readonly string[]) => void", description: "Hook for custom GUI-adjacent controls that need to participate in mounted value-key copy filtering." },
 		],
 		subComponents: [
 			{ name: "GUI.Panel", description: "Collapsible wrapper with title, copy-values action, optional play/refresh action, chevron toggle, capped scroll area, and mounted value-key filtering." },
 			{ name: "GUI.Section", description: "Collapsible section used to group related controls inside a panel." },
+			{ name: "GUI.Easing", description: "Controlled cubic Bézier editor with graph handles, shared easing presets, numeric coordinates, disabled state, default reset, and value-key registration." },
+			{ name: "GUI.Spring", description: "Controlled physical spring editor with response graph, stiffness, damping, mass, disabled state, default reset, and value-key registration." },
+			{ name: "GUI.Timeline", description: "Inline aggregate timeline editor. Mount once per page; it shows registered timelines with play/replay, scrubbing, draggable timing bars, clip value and curve editors, saved versions, copy parameters, and collapse controls. Bind clip.current directly to preview styles for frame-accurate scrubbing; hiding the editor alone does not stop a registered timeline.", props: [
+				{ name: "label", type: "string", description: "Accessible label for the inline timeline editor." },
+				{ name: "defaultOpen", type: "boolean", description: "Whether registered timelines start expanded." },
+				{ name: "visible / onVisibilityChange", type: "boolean / (visible: boolean) => void", description: "Optional controlled visibility for the aggregate editor." },
+			] },
 			{ name: "GUI.Control", description: "Numeric slider/input row with label, optional reset, min/max labels, step precision, disabled state, and unit suffix." },
 			{ name: "GUI.PercentControl", description: "Normalized 0..1 numeric control displayed and edited as a percentage." },
 			{ name: "GUI.Toggle", description: "Boolean switch row with optional helper text and value-key registration." },

@@ -65,25 +65,6 @@ const ORBIT_CONTROLS: readonly NumberControl[] = [
 	{ key: "curvature", label: "Orbit curvature", min: 2, max: 8, step: 0.25 },
 	{ key: "scaleAmount", label: "Size swap", min: 0, max: 100, step: 5, factor: 100, unit: "%" },
 ];
-const EASING_PRESETS = [
-	{ value: "in-out", label: "Ease in out", curve: [0.4, 0, 0, 1] },
-	{
-		value: "out-practical",
-		label: "Ease out practical",
-		curve: [0.4, 1, 0.6, 1],
-	},
-	{ value: "out", label: "Ease out", curve: [0, 0.4, 0, 1] },
-	{ value: "in", label: "Ease in", curve: [0.6, 0, 0.8, 0.6] },
-	{ value: "linear", label: "Linear", curve: [0, 0, 1, 1] },
-] as const;
-type EasingChoice = (typeof EASING_PRESETS)[number]["value"] | "custom";
-const BEZIER_LABELS = [
-	"Bezier X1",
-	"Bezier Y1",
-	"Bezier X2",
-	"Bezier Y2",
-] as const;
-
 export function HumanAgentAvatarMotionControls({
 	config,
 	onChange,
@@ -100,9 +81,6 @@ export function HumanAgentAvatarMotionControls({
 	const geometry = humanAgentAvatarGeometry(sizePx);
 	const targets = resolveHumanAgentAvatarTargets(geometry, config);
 	const defaultTargets = resolveHumanAgentAvatarTargets(geometry);
-	const [easingChoice, setEasingChoice] = useState<EasingChoice>(() =>
-		EASING_PRESETS.find(preset => preset.curve.every((value, index) => value === config.ease[index]))?.value ?? "custom",
-	);
 	const [lastRepeatCount, setLastRepeatCount] = useState(0);
 	const repeatCount =
 		typeof config.repeat === "number" ? config.repeat : lastRepeatCount;
@@ -154,43 +132,14 @@ export function HumanAgentAvatarMotionControls({
 				{numbers(TIMING_CONTROLS)}
 			</GUI.Section>
 			<GUI.Section title="Easing">
-				<GUI.Select
+				<GUI.Easing
 					id={`${id}-easing`}
-					label="Easing preset"
-					value={easingChoice}
-					defaultValue="in-out"
-					options={[...EASING_PRESETS, { value: "custom", label: "Custom" }]}
+					label="Easing curve"
+					value={config.ease}
+					defaultValue={defaults.ease}
 					valueKeys="ease"
-					onChange={(choice) => {
-						setEasingChoice(choice);
-						const preset = EASING_PRESETS.find(
-							(option) => option.value === choice,
-						);
-						if (preset) onChange({ ease: preset.curve });
-					}}
+					onChange={(ease) => onChange({ ease })}
 				/>
-				{easingChoice === "custom"
-					? BEZIER_LABELS.map((label, index) => (
-							<GUI.Control
-								id={`${id}-bezier-${index}`}
-								key={label}
-								label={label}
-								value={config.ease[index]}
-								defaultValue={defaults.ease[index]}
-								min={0}
-								max={1}
-								step={0.01}
-								valueKeys="ease"
-								onChange={(value) => {
-									const ease: [number, number, number, number] = [
-										...config.ease,
-									];
-									ease[index] = value;
-									onChange({ ease });
-								}}
-							/>
-						))
-					: null}
 			</GUI.Section>
 			{config.variant === "orbit" ? (
 				<GUI.Section title="Orbit">

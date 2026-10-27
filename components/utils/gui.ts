@@ -13,6 +13,23 @@ import {
 	GUITextInput,
 	GUIToggle,
 } from "@/components/utils/gui-components";
+import { GUIEasing, GUISpring } from "@/components/utils/gui-motion";
+import { GUITimeline } from "@/components/utils/gui-timeline";
+
+export {
+	type GUITimelineConfig,
+	type GUITimelineOptions,
+	type GUITimelineProps,
+	type GUITimelineValues,
+	useGUITimeline,
+} from "@/components/utils/gui-timeline";
+
+export {
+	type GUIEasingProps,
+	type GUIEasingValue,
+	type GUISpringProps,
+	type GUISpringValue,
+} from "@/components/utils/gui-motion";
 
 export {
 	type GUIColorInputProps,
@@ -38,6 +55,7 @@ export const GUI = {
 	ColorInput: GUIColorInput,
 	ColorList: GUIColorList,
 	Control: GUIControl,
+	Easing: GUIEasing,
 	ImageInput: GUIImageInput,
 	Panel: GUIPanel,
 	PercentControl: GUIPercentControl,
@@ -45,7 +63,9 @@ export const GUI = {
 	Section: GUISection,
 	SegmentedControl: GUISegmentedControl,
 	Select: GUISelect,
+	Spring: GUISpring,
 	SwatchGroup: GUISwatchGroup,
 	TextInput: GUITextInput,
+	Timeline: GUITimeline,
 	Toggle: GUIToggle,
 } as const;

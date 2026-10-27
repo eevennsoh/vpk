@@ -172,7 +172,7 @@ async function renderShaderDemo(slug) {
 		props: { slug },
 		mocks: {
 			"@paper-design/shaders-react": shaderMock,
-			"motion/react": "export const useReducedMotion = () => true;",
+			"motion/react": `export * from ${JSON.stringify(require.resolve("motion/react"))}; export const useReducedMotion = () => true;`,
 		},
 	});
 }
