@@ -3,321 +3,13874 @@
 	"id": "an-merge-sort",
 	"figId": "FIG_214",
 	"title": "Merge sort on a chime rack",
-	"label": "Dimetric chime rack: two sorted runs of bells, each shortening behind its front bell, a merged run of the longest bells, and an overhead traveller carrying the accented lower front bell to the end of the merged run.",
-	"caption": "Each step compares only the front bell of each sorted run and rehangs the lower note at the end of the merged run, so two ordered runs become one ordered run in a single pass.",
+	"label": "Chime rack of eight tubular bells on two rails, sled-footed end frames, an overhead traveller with a drop line and hook, a run peg and a mallet: three bells sorted on the front rail, five in two runs behind.",
+	"caption": "Hover across the rack to step the merge, click to hold a step. The two rails are the two buffers of a bottom-up merge sort: the traveller compares only the front bell of each run and carries the lower note up and over to the end of the merged run on the other rail, so three passes turn the shuffle into C4 to C5.",
 	"camera": {
 		"preset": "dimetric",
+		"azimuth": 60,
+		"elevation": 26,
 		"scale": "fit"
 	},
+	"labels": "none",
+	"focal": "carriage",
 	"parts": [
 		{
-			"id": "foot",
+			"id": "foot-l",
 			"kind": "box",
 			"at": [
-				104,
-				-2,
+				-3,
+				-9,
+				2
+			],
+			"size": [
+				6,
+				42,
+				4
+			],
+			"r": 2.8,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3,
+						2.6
+					],
+					"size": [
+						1.6,
+						1.6
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3,
+						39.4
+					],
+					"size": [
+						1.6,
+						1.6
+					],
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "pad-lb",
+			"kind": "cylinder",
+			"at": [
+				0,
+				-6,
 				0
 			],
 			"size": [
-				14,
-				14,
-				4
+				2.3,
+				2.3,
+				1.1
 			],
-			"r": 0,
-			"label": "Foot"
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						0.5
+					]
+				}
+			]
 		},
 		{
-			"id": "post",
-			"kind": "box",
+			"id": "neck-lb",
+			"kind": "cylinder",
 			"at": [
-				108,
-				2,
-				4
-			],
-			"size": [
-				6,
-				6,
-				62
-			],
-			"r": 0,
-			"label": "Upright"
-		},
-		{
-			"id": "rail-a",
-			"kind": "box",
-			"at": [
-				-4,
-				1,
-				66
-			],
-			"size": [
-				32,
-				8,
-				5
-			],
-			"r": 0,
-			"label": "Hanging rail"
-		},
-		{
-			"id": "rail",
-			"kind": "box",
-			"at": [
-				28,
-				1,
-				66
-			],
-			"size": [
-				30,
-				8,
-				5
-			],
-			"r": 0,
-			"label": "Hanging rail"
-		},
-		{
-			"id": "rail-t",
-			"kind": "box",
-			"at": [
-				58,
-				1,
-				66
-			],
-			"size": [
-				32,
-				8,
-				5
-			],
-			"r": 0,
-			"label": "Hanging rail"
-		},
-		{
-			"id": "rail-c",
-			"kind": "box",
-			"at": [
-				90,
-				1,
-				66
-			],
-			"size": [
-				26,
-				8,
-				5
-			],
-			"r": 0,
-			"label": "Hanging rail"
-		},
-		{
-			"id": "traveller",
-			"kind": "box",
-			"at": [
-				64,
 				0,
-				71
+				-6,
+				1.1
 			],
 			"size": [
+				1.3,
+				1.3,
+				0.9
+			]
+		},
+		{
+			"id": "pad-lf",
+			"kind": "cylinder",
+			"at": [
+				0,
+				30,
+				0
+			],
+			"size": [
+				2.3,
+				2.3,
+				1.1
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						0.5
+					]
+				}
+			]
+		},
+		{
+			"id": "neck-lf",
+			"kind": "cylinder",
+			"at": [
+				0,
+				30,
+				1.1
+			],
+			"size": [
+				1.3,
+				1.3,
+				0.9
+			]
+		},
+		{
+			"id": "collar-lb",
+			"kind": "box",
+			"at": [
+				-3.2,
+				-3.2,
+				6
+			],
+			"size": [
+				6.4,
+				6.4,
+				2.4
+			],
+			"r": 0.8
+		},
+		{
+			"id": "post-lb",
+			"kind": "box",
+			"at": [
+				-2,
+				-2,
+				8.4
+			],
+			"size": [
+				4,
+				4,
+				68.1
+			],
+			"r": 0.5
+		},
+		{
+			"id": "head-lb",
+			"kind": "box",
+			"at": [
+				-2.8,
+				-2.8,
+				76.5
+			],
+			"size": [
+				5.6,
+				5.6,
+				2.5
+			],
+			"r": 0.6
+		},
+		{
+			"id": "cap-lb",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				82
+			],
+			"size": [
+				2,
+				2,
+				2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.5
+				}
+			]
+		},
+		{
+			"id": "collar-lf",
+			"kind": "box",
+			"at": [
+				-3.2,
+				20.8,
+				6
+			],
+			"size": [
+				6.4,
+				6.4,
+				2.4
+			],
+			"r": 0.8
+		},
+		{
+			"id": "post-lf",
+			"kind": "box",
+			"at": [
+				-2,
+				22,
+				8.4
+			],
+			"size": [
+				4,
+				4,
+				56.1
+			],
+			"r": 0.5
+		},
+		{
+			"id": "head-lf",
+			"kind": "box",
+			"at": [
+				-2.8,
+				21.2,
+				64.5
+			],
+			"size": [
+				5.6,
+				5.6,
+				2.5
+			],
+			"r": 0.6
+		},
+		{
+			"id": "cap-lf",
+			"kind": "cylinder",
+			"at": [
+				0,
+				24,
+				70
+			],
+			"size": [
+				2,
+				2,
+				2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.5
+				}
+			]
+		},
+		{
+			"id": "tie-l",
+			"kind": "box",
+			"at": [
+				-1.6,
+				2,
+				9.5
+			],
+			"size": [
+				3.2,
+				20,
+				3
+			],
+			"r": 0.3
+		},
+		{
+			"id": "gcollar-l",
+			"kind": "cylinder",
+			"at": [
+				0,
 				12,
-				10,
-				5
-			],
-			"r": 0,
-			"label": "Traveller"
-		},
-		{
-			"id": "a-2",
-			"kind": "cylinder",
-			"at": [
-				8,
-				5,
-				40
+				12.5
 			],
 			"size": [
-				3.5,
-				3.5,
-				24
-			],
-			"label": "Run A, next bell"
+				1.8,
+				1.8,
+				1.5
+			]
 		},
 		{
-			"id": "a-1",
+			"id": "gpost-l",
 			"kind": "cylinder",
 			"at": [
-				18,
-				5,
-				28
-			],
-			"size": [
-				3.5,
-				3.5,
-				36
-			],
-			"label": "Run A front"
-		},
-		{
-			"id": "b-2",
-			"kind": "cylinder",
-			"at": [
-				38,
-				5,
-				46
-			],
-			"size": [
-				3.5,
-				3.5,
-				18
-			],
-			"label": "Run B, next bell"
-		},
-		{
-			"id": "b-1",
-			"kind": "cylinder",
-			"at": [
-				48,
-				5,
-				32
-			],
-			"size": [
-				3.5,
-				3.5,
-				32
-			],
-			"label": "Run B front"
-		},
-		{
-			"id": "carried",
-			"kind": "cylinder",
-			"at": [
-				70,
-				5,
-				22
-			],
-			"size": [
-				3.5,
-				3.5,
-				42
-			],
-			"label": "Lower front bell"
-		},
-		{
-			"id": "out-2",
-			"kind": "cylinder",
-			"at": [
-				86,
-				5,
+				0,
+				12,
 				14
 			],
 			"size": [
-				3.5,
-				3.5,
-				50
-			],
-			"label": "Merged run"
+				1.1,
+				1.1,
+				79
+			]
 		},
 		{
-			"id": "out-1",
+			"id": "foot-r",
+			"kind": "box",
+			"at": [
+				107,
+				-9,
+				2
+			],
+			"size": [
+				6,
+				42,
+				4
+			],
+			"r": 2.8,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3,
+						2.6
+					],
+					"size": [
+						1.6,
+						1.6
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3,
+						39.4
+					],
+					"size": [
+						1.6,
+						1.6
+					],
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "pad-rb",
 			"kind": "cylinder",
 			"at": [
-				96,
-				5,
+				110,
+				-6,
+				0
+			],
+			"size": [
+				2.3,
+				2.3,
+				1.1
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						0.5
+					]
+				}
+			]
+		},
+		{
+			"id": "neck-rb",
+			"kind": "cylinder",
+			"at": [
+				110,
+				-6,
+				1.1
+			],
+			"size": [
+				1.3,
+				1.3,
+				0.9
+			]
+		},
+		{
+			"id": "pad-rf",
+			"kind": "cylinder",
+			"at": [
+				110,
+				30,
+				0
+			],
+			"size": [
+				2.3,
+				2.3,
+				1.1
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						0.5
+					]
+				}
+			]
+		},
+		{
+			"id": "neck-rf",
+			"kind": "cylinder",
+			"at": [
+				110,
+				30,
+				1.1
+			],
+			"size": [
+				1.3,
+				1.3,
+				0.9
+			]
+		},
+		{
+			"id": "collar-rb",
+			"kind": "box",
+			"at": [
+				106.8,
+				-3.2,
+				6
+			],
+			"size": [
+				6.4,
+				6.4,
+				2.4
+			],
+			"r": 0.8
+		},
+		{
+			"id": "post-rb",
+			"kind": "box",
+			"at": [
+				108,
+				-2,
+				8.4
+			],
+			"size": [
+				4,
+				4,
+				68.1
+			],
+			"r": 0.5
+		},
+		{
+			"id": "head-rb",
+			"kind": "box",
+			"at": [
+				107.2,
+				-2.8,
+				76.5
+			],
+			"size": [
+				5.6,
+				5.6,
+				2.5
+			],
+			"r": 0.6
+		},
+		{
+			"id": "cap-rb",
+			"kind": "cylinder",
+			"at": [
+				110,
+				0,
+				82
+			],
+			"size": [
+				2,
+				2,
+				2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.5
+				}
+			]
+		},
+		{
+			"id": "collar-rf",
+			"kind": "box",
+			"at": [
+				106.8,
+				20.8,
+				6
+			],
+			"size": [
+				6.4,
+				6.4,
+				2.4
+			],
+			"r": 0.8
+		},
+		{
+			"id": "post-rf",
+			"kind": "box",
+			"at": [
+				108,
+				22,
+				8.4
+			],
+			"size": [
+				4,
+				4,
+				56.1
+			],
+			"r": 0.5
+		},
+		{
+			"id": "head-rf",
+			"kind": "box",
+			"at": [
+				107.2,
+				21.2,
+				64.5
+			],
+			"size": [
+				5.6,
+				5.6,
+				2.5
+			],
+			"r": 0.6
+		},
+		{
+			"id": "cap-rf",
+			"kind": "cylinder",
+			"at": [
+				110,
+				24,
+				70
+			],
+			"size": [
+				2,
+				2,
+				2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.5
+				}
+			]
+		},
+		{
+			"id": "tie-r",
+			"kind": "box",
+			"at": [
+				108.4,
+				2,
+				9.5
+			],
+			"size": [
+				3.2,
+				20,
+				3
+			],
+			"r": 0.3
+		},
+		{
+			"id": "gcollar-r",
+			"kind": "cylinder",
+			"at": [
+				110,
+				12,
+				12.5
+			],
+			"size": [
+				1.8,
+				1.8,
+				1.5
+			]
+		},
+		{
+			"id": "gpost-r",
+			"kind": "cylinder",
+			"at": [
+				110,
+				12,
+				14
+			],
+			"size": [
+				1.1,
+				1.1,
+				79
+			]
+		},
+		{
+			"id": "rail-back",
+			"kind": "box",
+			"at": [
+				-4,
+				-2,
+				79
+			],
+			"size": [
+				118,
+				4,
+				3
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						8.5,
+						3.6
+					],
+					"to": [
+						101.5,
+						3.6
+					],
+					"step": 5.5,
+					"every": 2,
+					"lengths": [
+						0.7,
+						1.2
+					],
+					"side": -1
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						14,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						25,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						36,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						47,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						58,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						69,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						80,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						91,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							1.5
+						],
+						[
+							116,
+							1.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "rail-front",
+			"kind": "box",
+			"at": [
+				-4,
+				22,
+				67
+			],
+			"size": [
+				118,
+				4,
+				3
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						8.5,
+						3.6
+					],
+					"to": [
+						101.5,
+						3.6
+					],
+					"step": 5.5,
+					"every": 2,
+					"lengths": [
+						0.7,
+						1.2
+					],
+					"side": -1
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						14,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						25,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						36,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						47,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						58,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						69,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						80,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						91,
+						2
+					],
+					"size": [
+						1.5,
+						1.3
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							1.5
+						],
+						[
+							116,
+							1.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "stretcher",
+			"kind": "box",
+			"at": [
+				3,
+				8,
 				4
 			],
 			"size": [
-				3.5,
-				3.5,
-				60
+				104,
+				4,
+				3
 			],
-			"label": "Merged run"
-		}
-	],
-	"focal": "carried",
-	"labels": [
+			"r": 0.3
+		},
 		{
-			"text": "Run A front",
-			"target": "a-1",
-			"side": "left",
-			"anchor": [
-				18,
-				8.5,
+			"id": "nameplate",
+			"kind": "plate",
+			"at": [
+				42,
+				7.6,
+				7
+			],
+			"size": [
+				26,
+				4.8,
+				0.6
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.6,
+					"r": 0.4
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							5,
+							2.8
+						],
+						[
+							20,
+							2.8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							5,
+							2.0
+						],
+						[
+							14,
+							2.0
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.6,
+						2.4
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 22.8,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "gantry",
+			"kind": "box",
+			"at": [
+				-5,
+				10.5,
+				93
+			],
+			"size": [
+				120,
+				3,
+				2.6
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							1.5
+						],
+						[
+							117.5,
+							1.5
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						117.5,
+						1.3
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 0.9,
+					"size": 0.25
+				}
+			]
+		},
+		{
+			"id": "back-peg-1",
+			"kind": "cylinder",
+			"at": [
+				15.5,
+				0,
+				82
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "back-peg-2",
+			"kind": "cylinder",
+			"at": [
+				26.5,
+				0,
+				82
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "back-peg-3",
+			"kind": "cylinder",
+			"at": [
+				37.5,
+				0,
+				82
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "back-peg-4",
+			"kind": "cylinder",
+			"at": [
+				48.5,
+				0,
+				82
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "back-peg-5",
+			"kind": "cylinder",
+			"at": [
+				59.5,
+				0,
+				82
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "back-peg-6",
+			"kind": "cylinder",
+			"at": [
+				70.5,
+				0,
+				82
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "back-peg-7",
+			"kind": "cylinder",
+			"at": [
+				81.5,
+				0,
+				82
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "front-peg-2",
+			"kind": "cylinder",
+			"at": [
+				26.5,
+				24,
+				70
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "front-peg-4",
+			"kind": "cylinder",
+			"at": [
+				48.5,
+				24,
+				70
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "front-peg-6",
+			"kind": "cylinder",
+			"at": [
+				70.5,
+				24,
+				70
+			],
+			"size": [
+				0.8,
+				0.8,
+				4.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				}
+			]
+		},
+		{
+			"id": "bracket",
+			"kind": "box",
+			"at": [
+				112,
+				-1.1,
+				40
+			],
+			"size": [
+				5.5,
+				2.2,
+				1.6
+			],
+			"r": 0.4
+		},
+		{
+			"id": "bracket-ring",
+			"kind": "ring",
+			"at": [
+				117.5,
+				0,
+				41.6
+			],
+			"size": [
+				1.5,
+				1.5,
+				0
+			],
+			"thickness": 1.6,
+			"inner": 0.85
+		},
+		{
+			"id": "mallet-handle",
+			"kind": "lathe",
+			"at": [
+				117.5,
+				0,
+				44
+			],
+			"axis": "-z",
+			"profile": [
+				[
+					0,
+					0.65
+				],
+				[
+					27,
+					0.65
+				],
+				[
+					28,
+					0.45
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						17,
+						19,
+						21,
+						23,
+						25
+					]
+				}
+			]
+		},
+		{
+			"id": "mallet-head",
+			"kind": "lathe",
+			"at": [
+				117.5,
+				-3.3,
+				46.2
+			],
+			"axis": "y",
+			"profile": [
+				[
+					0,
+					1.9
+				],
+				[
+					0.5,
+					2.2,
+					"soft"
+				],
+				[
+					6.1,
+					2.2,
+					"soft"
+				],
+				[
+					6.6,
+					1.9
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.0,
+						5.6
+					]
+				}
+			]
+		},
+		{
+			"id": "carriage",
+			"kind": "box",
+			"at": [
+				28.5,
+				9,
+				90
+			],
+			"size": [
+				7,
+				6,
+				6.5
+			],
+			"r": 0.9,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.4,
+						5.2
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 4.2,
+					"size": 0.3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7,
+					"r": 0.5
+				}
+			]
+		},
+		{
+			"id": "stub",
+			"kind": "box",
+			"at": [
+				31.2,
+				11.2,
+				86
+			],
+			"size": [
+				1.6,
+				1.6,
+				4
+			],
+			"r": 0.2
+		},
+		{
+			"id": "tbar",
+			"kind": "box",
+			"at": [
+				31,
+				0,
+				84.4
+			],
+			"size": [
+				2,
+				24,
+				1.6
+			],
+			"r": 0.4
+		},
+		{
+			"id": "line",
+			"kind": "wire",
+			"from": [
+				32,
+				4,
+				84.4
+			],
+			"to": [
+				32,
+				4,
+				61
+			],
+			"variants": {
+				"carry": {
+					"from": [
+						32,
+						4,
+						84.4
+					],
+					"to": [
+						32,
+						4,
+						82
+					]
+				}
+			}
+		},
+		{
+			"id": "hook",
+			"kind": "cylinder",
+			"at": [
+				32,
+				4,
+				59.4
+			],
+			"size": [
+				0.9,
+				0.9,
+				1.6
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.3
+				}
+			]
+		},
+		{
+			"id": "rim-c4",
+			"kind": "cylinder",
+			"at": [
+				10,
+				24,
+				8
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.6
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "bell-c4",
+			"kind": "cylinder",
+			"at": [
+				10,
+				24,
+				8.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				50.199999999999996
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						45.199999999999996
+					]
+				}
+			]
+		},
+		{
+			"id": "band-c4",
+			"kind": "cylinder",
+			"at": [
+				10,
+				24,
+				58.8
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.7
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "cap-c4",
+			"kind": "cylinder",
+			"at": [
+				10,
+				24,
+				59.5
+			],
+			"size": [
+				3.25,
+				3.25,
+				2.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7
+				}
+			]
+		},
+		{
+			"id": "cord-c4",
+			"kind": "wire",
+			"points": [
+				[
+					8.4,
+					24,
+					62
+				],
+				[
+					10,
+					24,
+					67
+				],
+				[
+					11.6,
+					24,
+					62
+				]
+			]
+		},
+		{
+			"id": "rim-d4",
+			"kind": "cylinder",
+			"at": [
+				21,
+				24,
+				11
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.6
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "bell-d4",
+			"kind": "cylinder",
+			"at": [
+				21,
+				24,
+				11.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				47.199999999999996
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						42.199999999999996
+					]
+				}
+			]
+		},
+		{
+			"id": "band-d4",
+			"kind": "cylinder",
+			"at": [
+				21,
+				24,
+				58.8
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.7
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "cap-d4",
+			"kind": "cylinder",
+			"at": [
+				21,
+				24,
+				59.5
+			],
+			"size": [
+				3.25,
+				3.25,
+				2.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7
+				}
+			]
+		},
+		{
+			"id": "cord-d4",
+			"kind": "wire",
+			"points": [
+				[
+					19.4,
+					24,
+					62
+				],
+				[
+					21,
+					24,
+					67
+				],
+				[
+					22.6,
+					24,
+					62
+				]
+			]
+		},
+		{
+			"id": "rim-e4",
+			"kind": "cylinder",
+			"at": [
+				32,
+				24,
+				14
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.6
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "bell-e4",
+			"kind": "cylinder",
+			"at": [
+				32,
+				24,
+				14.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				44.199999999999996
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						39.199999999999996
+					]
+				}
+			]
+		},
+		{
+			"id": "band-e4",
+			"kind": "cylinder",
+			"at": [
+				32,
+				24,
+				58.8
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.7
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "cap-e4",
+			"kind": "cylinder",
+			"at": [
+				32,
+				24,
+				59.5
+			],
+			"size": [
+				3.25,
+				3.25,
+				2.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7
+				}
+			]
+		},
+		{
+			"id": "cord-e4",
+			"kind": "wire",
+			"points": [
+				[
+					30.4,
+					24,
+					62
+				],
+				[
+					32,
+					24,
+					67
+				],
+				[
+					33.6,
+					24,
+					62
+				]
+			]
+		},
+		{
+			"id": "rim-f4",
+			"kind": "cylinder",
+			"at": [
+				32,
+				0,
 				29
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.6
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "bell-f4",
+			"kind": "cylinder",
+			"at": [
+				32,
+				0,
+				29.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				41.199999999999996
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						36.199999999999996
+					]
+				}
 			]
 		},
 		{
-			"text": "Run B front",
-			"target": "b-1",
-			"side": "left",
-			"anchor": [
-				48,
-				8.5,
-				33
+			"id": "band-f4",
+			"kind": "cylinder",
+			"at": [
+				32,
+				0,
+				70.8
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.7
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "cap-f4",
+			"kind": "cylinder",
+			"at": [
+				32,
+				0,
+				71.5
+			],
+			"size": [
+				3.25,
+				3.25,
+				2.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7
+				}
 			]
 		},
 		{
-			"text": "Lower front bell",
-			"target": "carried",
-			"side": "left",
-			"anchor": [
-				70,
-				8.5,
-				23
+			"id": "cord-f4",
+			"kind": "wire",
+			"points": [
+				[
+					30.4,
+					0,
+					74
+				],
+				[
+					32,
+					0,
+					79
+				],
+				[
+					33.6,
+					0,
+					74
+				]
 			]
 		},
 		{
-			"text": "Merged run",
-			"target": "out-1",
-			"side": "left",
-			"anchor": [
-				96,
-				8.5,
-				5
+			"id": "rim-g4",
+			"kind": "cylinder",
+			"at": [
+				65,
+				0,
+				32
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.6
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "bell-g4",
+			"kind": "cylinder",
+			"at": [
+				65,
+				0,
+				32.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				38.199999999999996
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						33.199999999999996
+					]
+				}
 			]
 		},
 		{
-			"text": "Traveller",
-			"target": "traveller",
-			"side": "right"
+			"id": "band-g4",
+			"kind": "cylinder",
+			"at": [
+				65,
+				0,
+				70.8
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.7
+			],
+			"tone": "ink"
 		},
 		{
-			"text": "Hanging rail",
-			"target": "rail-c",
-			"side": "right"
+			"id": "cap-g4",
+			"kind": "cylinder",
+			"at": [
+				65,
+				0,
+				71.5
+			],
+			"size": [
+				3.25,
+				3.25,
+				2.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7
+				}
+			]
+		},
+		{
+			"id": "cord-g4",
+			"kind": "wire",
+			"points": [
+				[
+					63.4,
+					0,
+					74
+				],
+				[
+					65,
+					0,
+					79
+				],
+				[
+					66.6,
+					0,
+					74
+				]
+			]
+		},
+		{
+			"id": "rim-a4",
+			"kind": "cylinder",
+			"at": [
+				43,
+				0,
+				35
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.6
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "bell-a4",
+			"kind": "cylinder",
+			"at": [
+				43,
+				0,
+				35.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				35.199999999999996
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						30.199999999999996
+					]
+				}
+			]
+		},
+		{
+			"id": "band-a4",
+			"kind": "cylinder",
+			"at": [
+				43,
+				0,
+				70.8
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.7
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "cap-a4",
+			"kind": "cylinder",
+			"at": [
+				43,
+				0,
+				71.5
+			],
+			"size": [
+				3.25,
+				3.25,
+				2.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7
+				}
+			]
+		},
+		{
+			"id": "cord-a4",
+			"kind": "wire",
+			"points": [
+				[
+					41.4,
+					0,
+					74
+				],
+				[
+					43,
+					0,
+					79
+				],
+				[
+					44.6,
+					0,
+					74
+				]
+			]
+		},
+		{
+			"id": "rim-b4",
+			"kind": "cylinder",
+			"at": [
+				76,
+				0,
+				38
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.6
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "bell-b4",
+			"kind": "cylinder",
+			"at": [
+				76,
+				0,
+				38.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				32.199999999999996
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						27.199999999999996
+					]
+				}
+			]
+		},
+		{
+			"id": "band-b4",
+			"kind": "cylinder",
+			"at": [
+				76,
+				0,
+				70.8
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.7
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "cap-b4",
+			"kind": "cylinder",
+			"at": [
+				76,
+				0,
+				71.5
+			],
+			"size": [
+				3.25,
+				3.25,
+				2.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7
+				}
+			]
+		},
+		{
+			"id": "cord-b4",
+			"kind": "wire",
+			"points": [
+				[
+					74.4,
+					0,
+					74
+				],
+				[
+					76,
+					0,
+					79
+				],
+				[
+					77.6,
+					0,
+					74
+				]
+			]
+		},
+		{
+			"id": "rim-c5",
+			"kind": "cylinder",
+			"at": [
+				87,
+				0,
+				40
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.6
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "bell-c5",
+			"kind": "cylinder",
+			"at": [
+				87,
+				0,
+				40.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				30.2
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						25.2
+					]
+				}
+			]
+		},
+		{
+			"id": "band-c5",
+			"kind": "cylinder",
+			"at": [
+				87,
+				0,
+				70.8
+			],
+			"size": [
+				3.0,
+				3.0,
+				0.7
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "cap-c5",
+			"kind": "cylinder",
+			"at": [
+				87,
+				0,
+				71.5
+			],
+			"size": [
+				3.25,
+				3.25,
+				2.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.7
+				}
+			]
+		},
+		{
+			"id": "cord-c5",
+			"kind": "wire",
+			"points": [
+				[
+					85.4,
+					0,
+					74
+				],
+				[
+					87,
+					0,
+					79
+				],
+				[
+					88.6,
+					0,
+					74
+				]
+			]
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"foot"
+				"foot-l",
+				"pad-lb",
+				"neck-lb",
+				"pad-lf",
+				"neck-lf",
+				"foot-r",
+				"pad-rb",
+				"neck-rb",
+				"pad-rf",
+				"neck-rf"
 			],
 			[
-				"post"
+				"collar-lb",
+				"collar-lf",
+				"tie-l",
+				"gcollar-l",
+				"collar-rb",
+				"collar-rf",
+				"tie-r",
+				"gcollar-r",
+				"stretcher",
+				"nameplate"
 			],
 			[
-				"rail-a",
-				"rail",
-				"rail-t",
-				"rail-c"
+				"post-lb",
+				"head-lb",
+				"post-lf",
+				"head-lf",
+				"gpost-l",
+				"post-rb",
+				"head-rb",
+				"post-rf",
+				"head-rf",
+				"gpost-r"
 			],
 			[
-				"a-2",
-				"a-1",
-				"b-2",
-				"b-1",
-				"out-2",
-				"out-1"
+				"cap-lb",
+				"cap-lf",
+				"cap-rb",
+				"cap-rf",
+				"rail-back",
+				"rail-front",
+				"gantry",
+				"back-peg-1",
+				"back-peg-2",
+				"back-peg-3",
+				"back-peg-4",
+				"back-peg-5",
+				"back-peg-6",
+				"back-peg-7",
+				"front-peg-2",
+				"front-peg-4",
+				"front-peg-6",
+				"bracket",
+				"bracket-ring",
+				"mallet-handle",
+				"mallet-head"
 			],
 			[
-				"traveller"
+				"rim-c4",
+				"bell-c4",
+				"band-c4",
+				"cap-c4",
+				"cord-c4",
+				"rim-d4",
+				"bell-d4",
+				"band-d4",
+				"cap-d4",
+				"cord-d4",
+				"rim-e4",
+				"bell-e4",
+				"band-e4",
+				"cap-e4",
+				"cord-e4",
+				"rim-f4",
+				"bell-f4",
+				"band-f4",
+				"cap-f4",
+				"cord-f4",
+				"rim-g4",
+				"bell-g4",
+				"band-g4",
+				"cap-g4",
+				"cord-g4",
+				"rim-a4",
+				"bell-a4",
+				"band-a4",
+				"cap-a4",
+				"cord-a4",
+				"rim-b4",
+				"bell-b4",
+				"band-b4",
+				"cap-b4",
+				"cord-b4",
+				"rim-c5",
+				"bell-c5",
+				"band-c5",
+				"cap-c5",
+				"cord-c5"
 			],
 			[
-				"carried"
+				"carriage",
+				"stub",
+				"tbar",
+				"line",
+				"hook"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 2,
-		"rest": "pass 3 · 3 of 7 hung"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 38,
+		"states": [
+			{
+				"name": "shuffled",
+				"readout": "shuffled · F4 C4 A4 E4 B4 D4 C5 G4 · 0 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"rim-c4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · lift C4",
+				"readout": "pass 1 · carrying C4 · 1 compare",
+				"parts": {
+					"carriage": {
+						"move": [
+							-16.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-16.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-16.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-16.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							-16.5,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						]
+					},
+					"bell-c4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						]
+					},
+					"band-c4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						]
+					},
+					"cap-c4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						]
+					},
+					"cord-c4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						],
+						"hidden": true
+					},
+					"rim-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · C4",
+				"readout": "pass 1 · C4 before F4 · 1 compare",
+				"parts": {
+					"carriage": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · lift F4",
+				"readout": "pass 1 · carrying F4 · 1 compare",
+				"parts": {
+					"carriage": {
+						"move": [
+							-16.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-16.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-16.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-16.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							-16.5,
+							8,
+							21
+						]
+					},
+					"rim-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						]
+					},
+					"band-f4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · F4",
+				"readout": "pass 1 · F4 ends the run · 1 compare",
+				"parts": {
+					"carriage": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"rim-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							11,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · lift E4",
+				"readout": "pass 1 · carrying E4 · 2 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							5.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							5.5,
+							8,
+							21
+						]
+					},
+					"rim-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						]
+					},
+					"bell-e4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						]
+					},
+					"band-e4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						]
+					},
+					"cap-e4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						]
+					},
+					"cord-e4": {
+						"move": [
+							5.5,
+							-12,
+							18
+						],
+						"hidden": true
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · E4",
+				"readout": "pass 1 · E4 before A4 · 2 compares",
+				"parts": {
+					"rim-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-a4": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · lift A4",
+				"readout": "pass 1 · carrying A4 · 2 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							5.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							5.5,
+							8,
+							21
+						]
+					},
+					"rim-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"bell-a4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"band-a4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cap-a4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cord-a4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · A4",
+				"readout": "pass 1 · A4 ends the run · 2 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							44,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · lift D4",
+				"readout": "pass 1 · carrying D4 · 3 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							27.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							27.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							27.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							27.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							27.5,
+							8,
+							21
+						]
+					},
+					"rim-d4": {
+						"move": [
+							38.5,
+							-12,
+							18
+						]
+					},
+					"bell-d4": {
+						"move": [
+							38.5,
+							-12,
+							18
+						]
+					},
+					"band-d4": {
+						"move": [
+							38.5,
+							-12,
+							18
+						]
+					},
+					"cap-d4": {
+						"move": [
+							38.5,
+							-12,
+							18
+						]
+					},
+					"cord-d4": {
+						"move": [
+							38.5,
+							-12,
+							18
+						],
+						"hidden": true
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · D4",
+				"readout": "pass 1 · D4 before B4 · 3 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"band-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · lift B4",
+				"readout": "pass 1 · carrying B4 · 3 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							27.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							27.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							27.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							27.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							27.5,
+							8,
+							21
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						]
+					},
+					"band-b4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-16.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · B4",
+				"readout": "pass 1 · B4 ends the run · 3 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"bell-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"band-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cap-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"cord-g4": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · lift G4",
+				"readout": "pass 1 · carrying G4 · 4 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							49.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							49.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							49.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							49.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							49.5,
+							8,
+							21
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							16.5,
+							12,
+							6
+						]
+					},
+					"bell-g4": {
+						"move": [
+							16.5,
+							12,
+							6
+						]
+					},
+					"band-g4": {
+						"move": [
+							16.5,
+							12,
+							6
+						]
+					},
+					"cap-g4": {
+						"move": [
+							16.5,
+							12,
+							6
+						]
+					},
+					"cord-g4": {
+						"move": [
+							16.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · G4",
+				"readout": "pass 1 · G4 before C5 · 4 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"band-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · lift C5",
+				"readout": "pass 1 · carrying C5 · 4 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							49.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							49.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							49.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							49.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							49.5,
+							8,
+							21
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"bell-c5": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"band-c5": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cap-c5": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cord-c5": {
+						"move": [
+							-5.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 1 · C5",
+				"readout": "pass 1 · C5 ends the run · 4 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-22,
+							16,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							-22,
+							16,
+							0
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · lift C4",
+				"readout": "pass 2 · carrying C4 · 5 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-22.0,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-22.0,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-22.0,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-22.0,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							-22.0,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						]
+					},
+					"band-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						],
+						"hidden": true
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · C4",
+				"readout": "pass 2 · C4 before E4 · 5 compares",
+				"parts": {
+					"line": {
+						"move": [
+							0,
+							16,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							0,
+							16,
+							0
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · lift E4",
+				"readout": "pass 2 · carrying E4 · 6 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-5.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-5.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-5.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-5.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							-5.5,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						]
+					},
+					"band-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						],
+						"hidden": true
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · E4",
+				"readout": "pass 2 · E4 before F4 · 6 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-11,
+							16,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							-11,
+							16,
+							0
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · lift F4",
+				"readout": "pass 2 · carrying F4 · 7 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-5.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-5.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-5.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-5.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							-5.5,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-f4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"bell-f4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"band-f4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cap-f4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cord-f4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · F4",
+				"readout": "pass 2 · F4 before A4 · 7 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							11,
+							16,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							11,
+							16,
+							0
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · lift A4",
+				"readout": "pass 2 · carrying A4 · 7 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							11.0,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							11.0,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							11.0,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							11.0,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							11.0,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"bell-a4": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"band-a4": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"cap-a4": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"cord-a4": {
+						"move": [
+							0.0,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · A4",
+				"readout": "pass 2 · A4 ends the run · 7 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							22,
+							16,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							22,
+							16,
+							0
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · lift D4",
+				"readout": "pass 2 · carrying D4 · 8 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							22.0,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							22.0,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							22.0,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							22.0,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							22.0,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33.0,
+							-12,
+							18
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33.0,
+							-12,
+							18
+						]
+					},
+					"band-d4": {
+						"move": [
+							33.0,
+							-12,
+							18
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33.0,
+							-12,
+							18
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33.0,
+							-12,
+							18
+						],
+						"hidden": true
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · D4",
+				"readout": "pass 2 · D4 before G4 · 8 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							44,
+							16,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							44,
+							16,
+							0
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · lift G4",
+				"readout": "pass 2 · carrying G4 · 9 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							38.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							38.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							38.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							38.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							38.5,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							5.5,
+							12,
+							6
+						]
+					},
+					"bell-g4": {
+						"move": [
+							5.5,
+							12,
+							6
+						]
+					},
+					"band-g4": {
+						"move": [
+							5.5,
+							12,
+							6
+						]
+					},
+					"cap-g4": {
+						"move": [
+							5.5,
+							12,
+							6
+						]
+					},
+					"cord-g4": {
+						"move": [
+							5.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · G4",
+				"readout": "pass 2 · G4 before B4 · 9 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							33,
+							16,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							33,
+							16,
+							0
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · lift B4",
+				"readout": "pass 2 · carrying B4 · 10 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							38.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							38.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							38.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							38.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							38.5,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"bell-b4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"band-b4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cap-b4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cord-b4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · B4",
+				"readout": "pass 2 · B4 before C5 · 10 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							55,
+							16,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							55,
+							16,
+							0
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · lift C5",
+				"readout": "pass 2 · carrying C5 · 10 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							55.0,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							55.0,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							55.0,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							55.0,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							55.0,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"band-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 2 · C5",
+				"readout": "pass 2 · C5 ends the run · 10 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							-22,
+							0,
+							0
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"band-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0,
+							-24,
+							12
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · lift C4",
+				"readout": "pass 3 · carrying C4 · 11 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-22.0,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-22.0,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-22.0,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-22.0,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							-22.0,
+							8,
+							21
+						]
+					},
+					"rim-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						]
+					},
+					"bell-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						]
+					},
+					"band-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						]
+					},
+					"cap-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						]
+					},
+					"cord-c4": {
+						"move": [
+							0.0,
+							-12,
+							18
+						],
+						"hidden": true
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · C4",
+				"readout": "pass 3 · C4 before D4 · 11 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"rim-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"bell-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"band-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cap-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"cord-d4": {
+						"move": [
+							33,
+							-24,
+							12
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · lift D4",
+				"readout": "pass 3 · carrying D4 · 12 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							5.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							5.5,
+							8,
+							21
+						]
+					},
+					"rim-d4": {
+						"move": [
+							16.5,
+							-12,
+							18
+						]
+					},
+					"bell-d4": {
+						"move": [
+							16.5,
+							-12,
+							18
+						]
+					},
+					"band-d4": {
+						"move": [
+							16.5,
+							-12,
+							18
+						]
+					},
+					"cap-d4": {
+						"move": [
+							16.5,
+							-12,
+							18
+						]
+					},
+					"cord-d4": {
+						"move": [
+							16.5,
+							-12,
+							18
+						],
+						"hidden": true
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · D4",
+				"readout": "pass 3 · D4 before E4 · 12 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							-11,
+							0,
+							0
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"band-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-11,
+							-24,
+							12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · lift E4",
+				"readout": "pass 3 · carrying E4 · 13 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							-5.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							-5.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							-5.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							-5.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							-5.5,
+							8,
+							21
+						]
+					},
+					"rim-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						]
+					},
+					"bell-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						]
+					},
+					"band-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						]
+					},
+					"cap-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						]
+					},
+					"cord-e4": {
+						"move": [
+							-5.5,
+							-12,
+							18
+						],
+						"hidden": true
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · E4",
+				"readout": "pass 3 · E4 before G4 · 13 compares",
+				"parts": {
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · lift F4",
+				"readout": "pass 3 · carrying F4 · 14 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							5.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							5.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							5.5,
+							8,
+							21
+						]
+					},
+					"rim-f4": {
+						"move": [
+							5.5,
+							12,
+							6
+						]
+					},
+					"bell-f4": {
+						"move": [
+							5.5,
+							12,
+							6
+						]
+					},
+					"band-f4": {
+						"move": [
+							5.5,
+							12,
+							6
+						]
+					},
+					"cap-f4": {
+						"move": [
+							5.5,
+							12,
+							6
+						]
+					},
+					"cord-f4": {
+						"move": [
+							5.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · F4",
+				"readout": "pass 3 · F4 before G4 · 14 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							33,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · lift G4",
+				"readout": "pass 3 · carrying G4 · 15 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							27.5,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							27.5,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							27.5,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							27.5,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							27.5,
+							8,
+							21
+						]
+					},
+					"rim-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"bell-g4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"band-g4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cap-g4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						]
+					},
+					"cord-g4": {
+						"move": [
+							-5.5,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · G4",
+				"readout": "pass 3 · G4 before A4 · 15 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							11,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · lift A4",
+				"readout": "pass 3 · carrying A4 · 16 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							22.0,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							22.0,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							22.0,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							22.0,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							22.0,
+							8,
+							21
+						]
+					},
+					"rim-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							11.0,
+							12,
+							6
+						]
+					},
+					"bell-a4": {
+						"move": [
+							11.0,
+							12,
+							6
+						]
+					},
+					"band-a4": {
+						"move": [
+							11.0,
+							12,
+							6
+						]
+					},
+					"cap-a4": {
+						"move": [
+							11.0,
+							12,
+							6
+						]
+					},
+					"cord-a4": {
+						"move": [
+							11.0,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · A4",
+				"readout": "pass 3 · A4 before B4 · 16 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							44,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · lift B4",
+				"readout": "pass 3 · carrying B4 · 16 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							44.0,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							44.0,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							44.0,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							44.0,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							44.0,
+							8,
+							21
+						]
+					},
+					"rim-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"bell-b4": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"band-b4": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"cap-b4": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"cord-b4": {
+						"move": [
+							0.0,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · B4",
+				"readout": "pass 3 · B4 ends the run · 16 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							55,
+							0,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pass 3 · lift C5",
+				"readout": "pass 3 · carrying C5 · 16 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							55.0,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							55.0,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							55.0,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							55.0,
+							8,
+							0
+						],
+						"variant": "carry"
+					},
+					"hook": {
+						"move": [
+							55.0,
+							8,
+							21
+						]
+					},
+					"rim-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"band-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0.0,
+							12,
+							6
+						],
+						"hidden": true
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "sorted",
+				"readout": "sorted · C4 to C5 · 16 compares",
+				"parts": {
+					"carriage": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"stub": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"tbar": {
+						"move": [
+							22,
+							0,
+							0
+						]
+					},
+					"line": {
+						"move": [
+							22,
+							16,
+							0
+						]
+					},
+					"hook": {
+						"move": [
+							22,
+							16,
+							0
+						]
+					},
+					"rim-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"bell-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"band-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cap-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"cord-f4": {
+						"move": [
+							11,
+							24,
+							-12
+						]
+					},
+					"rim-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"bell-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"band-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cap-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"cord-g4": {
+						"move": [
+							-11,
+							24,
+							-12
+						]
+					},
+					"rim-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"bell-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"band-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cap-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"cord-a4": {
+						"move": [
+							22,
+							24,
+							-12
+						]
+					},
+					"rim-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-b4": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"rim-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"bell-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"band-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cap-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"cord-c5": {
+						"move": [
+							0,
+							24,
+							-12
+						]
+					},
+					"back-peg-1": {
+						"hidden": true
+					},
+					"back-peg-2": {
+						"hidden": true
+					},
+					"back-peg-3": {
+						"hidden": true
+					},
+					"back-peg-4": {
+						"hidden": true
+					},
+					"back-peg-5": {
+						"hidden": true
+					},
+					"back-peg-6": {
+						"hidden": true
+					},
+					"back-peg-7": {
+						"hidden": true
+					},
+					"front-peg-2": {
+						"hidden": true
+					},
+					"front-peg-4": {
+						"hidden": true
+					},
+					"front-peg-6": {
+						"hidden": true
+					}
+				}
+			}
+		]
 	},
 	"meta": {
-		"margin": "[ 7 BELLS ]",
+		"margin": "[ 8 BELLS ]",
 		"corner": "VPK-HTML"
 	}
 }

@@ -101,3 +101,50 @@ test("390 px: callouts hide, flow arrows stay visible and heavier than leaders, 
 		fs2.rmSync(dir, { recursive: true, force: true });
 	}
 });
+
+// Hover-only accent outline (user decision 2026-10-27): at rest the focal part has its accent faces and the neutral 1 px edge;
+// under .is-active (hover, select) the same edge takes the 2 px accent outline. Both themes.
+test("focal at rest has no accent outline; .is-active gives it the 2 px accent outline, light and dark", { skip }, async () => {
+	const fs2 = await import("node:fs");
+	const os = await import("node:os");
+	const dir = fs2.mkdtempSync(path.join(os.tmpdir(), "vpk-iso-outline-"));
+	const { chromium } = await import("@playwright/test");
+	const browser = await chromium.launch();
+	try {
+		const file = await figurePage(dir);
+		for (const theme of ["light", "dark"]) {
+			const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+			try {
+				const page = await context.newPage();
+				await page.goto(pathToFileURL(file).href, { waitUntil: "load" });
+				const probe = await page.evaluate(theme => {
+					document.documentElement.dataset.theme = theme;
+					const part = document.querySelector("[data-vpk-iso-focal]");
+					const edge = part.querySelector(':scope > [data-vpk-iso-role="edge"]');
+					const neutral = document.querySelector('[data-vpk-iso-part]:not([data-vpk-iso-focal]) > [data-vpk-iso-role="edge"]');
+					// The edge's own stroke transition would report a mid-way colour; read the end state.
+					edge.style.transition = "none";
+					const read = () => ({ stroke: getComputedStyle(edge).stroke, width: getComputedStyle(edge).strokeWidth });
+					const swatch = document.createElement("i");
+					swatch.style.color = "var(--ill-accent)";
+					document.body.append(swatch);
+					const accent = getComputedStyle(swatch).color;
+					const rest = read();
+					part.classList.add("is-active");
+					const active = read();
+					return { rest, active, accent, neutral: getComputedStyle(neutral).stroke };
+				}, theme);
+				assert.equal(probe.rest.width, "1px", `${theme}: the focal edge is 1 px at rest`);
+				assert.equal(probe.rest.stroke, probe.neutral, `${theme}: the focal edge at rest is every part's neutral edge`);
+				assert.notEqual(probe.rest.stroke, probe.accent, `${theme}: no accent stroke at rest`);
+				assert.equal(probe.active.width, "2px", `${theme}: .is-active gives a 2 px outline`);
+				assert.equal(probe.active.stroke, probe.accent, `${theme}: .is-active outlines it in the accent`);
+			} finally {
+				await context.close();
+			}
+		}
+	} finally {
+		await browser.close();
+		fs2.rmSync(dir, { recursive: true, force: true });
+	}
+});

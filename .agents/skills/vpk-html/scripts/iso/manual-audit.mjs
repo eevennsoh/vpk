@@ -8,6 +8,7 @@ import { pointInPolygon } from "./core.mjs";
 import { distanceToPolygon } from "./layout.mjs";
 import { ancestor, attr, has, norm, partOf, pointsOf, unitName } from "./audit-markup.mjs";
 import { SHADOW } from "./accent.mjs";
+import { ISO_THRESHOLDS } from "./thresholds.mjs";
 
 // A18: the share of a focal part's silhouette that must stay uncovered when no stroke of it shows.
 export const FOCAL_MIN_VISIBLE = 0.3;
@@ -33,7 +34,7 @@ const strokeSamples = points => points.flatMap((point, i) => (i ? [[(point[0] + 
 // by a window it never crossed, and passed every other check). It needs a painted fill or stroke, and either a
 // stroke point or at least FOCAL_MIN_VISIBLE of its silhouette inside its clip window and not covered by a part painted
 // later. Rest pose only, like A5.
-export function auditFocalVisible({ elements, parts, faces, facePart, hullOf, clipOf, focalUnits, push }) {
+export function auditFocalVisible({ elements, parts, faces, facePart, hullOf, clipOf, windowOf = () => null, focalUnits, push }) {
 	for (const unit of focalUnits) {
 		const members = parts.filter(part => unitName(part) === unit);
 		let painted = false;
@@ -42,7 +43,9 @@ export function auditFocalVisible({ elements, parts, faces, facePart, hullOf, cl
 		let shown = 0;
 		for (const part of members) {
 			const later = parts.slice(parts.indexOf(part) + 1).filter(other => unitName(other) !== unit && faces.some(face => facePart.get(face) === other && paintedValue(attr(face, "fill"))));
-			const visibleAt = point => later.every(other => !pointInPolygon(point, hullOf.get(other)));
+			// A cutaway's front shell covers nothing inside its window.
+			const covers = (other, point) => pointInPolygon(point, hullOf.get(other)) && !(windowOf(other) && pointInPolygon(point, windowOf(other)));
+			const visibleAt = point => later.every(other => !covers(other, point));
 			const ownFaces = faces.filter(face => facePart.get(face) === part && paintedValue(attr(face, "fill")));
 			const ownStrokes = elements.filter(el => partOf(el) === part && ["edge", "crease"].includes(attr(el, "data-vpk-iso-role")) && paintedValue(attr(el, "stroke")) && Number(attr(el, "stroke-width") ?? 1) > 0);
 			if (ownFaces.length || ownStrokes.length) painted = true;
@@ -67,14 +70,27 @@ export function auditFocalVisible({ elements, parts, faces, facePart, hullOf, cl
 	}
 }
 
-// A19 the detail budget (rule 3): a part other than the focal draws at most one interior mark.
+// A19 the detail budget (rule 3), a segment count instead of a mark count: every part keeps all its detail, merged into one
+// path per role, and A19 counts the drawn segments of its detail roles (each L after an M). A part warns above
+// DETAIL_SEGMENTS.warn and fails above DETAIL_SEGMENTS.fail; the whole figure fails above DETAIL_SEGMENTS.figure.
+export const DETAIL_ROLES = Object.freeze(["mark", "dot", "recess", "hatch"]);
+export const DETAIL_SEGMENTS = Object.freeze({ warn: ISO_THRESHOLDS.detailSegmentsWarn, fail: ISO_THRESHOLDS.detailSegmentsFail, figure: ISO_THRESHOLDS.detailSegmentsFigureFail });
+// Each L is a segment; a dot (detail.mjs: one closed pair of arcs, "a…a…") counts as one.
+export const segmentCount = d => (String(d ?? "").match(/L/g) ?? []).length + Math.floor((String(d ?? "").match(/a/g) ?? []).length / 2);
 export function auditDetailBudget({ elements, push }) {
-	const marksOf = new Map();
-	for (const el of elements.filter(item => attr(item, "data-vpk-iso-role") === "mark")) {
+	const segmentsOf = new Map();
+	for (const el of elements.filter(item => DETAIL_ROLES.includes(attr(item, "data-vpk-iso-role")))) {
 		const part = partOf(el);
-		if (part && !has(part, "data-vpk-iso-focal")) marksOf.set(unitName(part), (marksOf.get(unitName(part)) ?? 0) + 1);
+		const name = part ? unitName(part) : "(figure)";
+		segmentsOf.set(name, (segmentsOf.get(name) ?? 0) + segmentCount(attr(el, "d")));
 	}
-	for (const [name, count] of marksOf) if (count > 1) push("A19", `part "${name}" draws ${count} interior marks; a figure draws one per part (the focal may keep all)`);
+	let total = 0;
+	for (const [name, count] of segmentsOf) {
+		total += count;
+		if (count > DETAIL_SEGMENTS.fail) push("A19", `part "${name}" draws ${count} detail segments; at most ${DETAIL_SEGMENTS.fail} per part`);
+		else if (count > DETAIL_SEGMENTS.warn) push("A19", `part "${name}" draws ${count} detail segments, above the ${DETAIL_SEGMENTS.warn} per-part warning`, "warning");
+	}
+	if (total > DETAIL_SEGMENTS.figure) push("A19", `the figure draws ${total} detail segments; at most ${DETAIL_SEGMENTS.figure}`);
 }
 
 // A20 a label's leader dot sits on visible ink of its target: inside a painted fill face, or within INK_REACH of a
@@ -93,7 +109,8 @@ export function auditLeaderInk({ elements, parts, faces, facePart, clipOf, label
 		for (const part of parts.filter(item => unitName(item) === target)) {
 			const window = clipOf(part);
 			if (window && !pointInPolygon(end, window) && distanceToPolygon(end, window) > 0.5) continue;
-			if (faces.some(face => facePart.get(face) === part && paintedValue(attr(face, "fill")) && !/^url\(/.test(attr(face, "fill")) && pointInPolygon(end, pointsOf(face)))) inked = true;
+			// A pattern fill is not ink; a glow gradient (url(#…-glow-…)) is a painted face.
+			if (faces.some(face => facePart.get(face) === part && paintedValue(attr(face, "fill")) && (!/^url\(/.test(attr(face, "fill")) || /-glow-[\w-]+\)$/.test(attr(face, "fill"))) && pointInPolygon(end, pointsOf(face)))) inked = true;
 			for (const el of elements.filter(item => partOf(item) === part && ["edge", "crease"].includes(attr(item, "data-vpk-iso-role")) && paintedValue(attr(item, "stroke")))) {
 				const points = pointsOf(el);
 				for (let i = 1; i < points.length; i++) if (segmentGap(end, points[i - 1], points[i]) <= INK_REACH + Number(attr(el, "stroke-width") ?? 1) / 2) inked = true;
@@ -113,7 +130,8 @@ export function auditLeaderInk({ elements, parts, faces, facePart, clipOf, label
 const SHADOW_FORBIDDEN = ["stroke", "stroke-width", "stroke-dasharray", "filter", "opacity", "fill-opacity", "transform", "style", "mask", "clip-path"];
 const RECEIVED_FORBIDDEN = SHADOW_FORBIDDEN.filter(name => name !== "clip-path");
 export function auditShadows({ elements, parts, faces, facePart, push }) {
-	const shadows = elements.filter(el => attr(el, "data-vpk-iso-role") === "shadow");
+	// A shadow with display="none" belongs to a variant, turn sample or part the rest state does not show (step and scrub figures).
+	const shadows = elements.filter(el => attr(el, "data-vpk-iso-role") === "shadow" && attr(el, "display") !== "none");
 	const casters = parts.filter(part => faces.some(face => facePart.get(face) === part));
 	if (!shadows.length) {
 		if (casters.length) push("A21", "no cast shadows; every part with faces casts a flat shadow onto the ground (rebuild with build-figure.mjs)", "warning");

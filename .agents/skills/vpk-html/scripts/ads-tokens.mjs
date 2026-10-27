@@ -127,6 +127,10 @@ export const ADS_ACCENT_MAP = Object.freeze({
 	dark: Object.freeze({ accent: "color.background.accent.orange.bolder", ink: "color.text.inverse" }),
 });
 
+// The iso spectrum rays (scripts/iso/accent.mjs RAY): ADS icon accents red, green and blue, the same token names in both themes.
+// Only a ray (data-vpk-iso-role="ray") on an iso root marked data-vpk-iso-spectrum may paint them (check-html ISO_RAY_TOKENS).
+export const ADS_RAY_MAP = Object.freeze({ r: "color.icon.accent.red", g: "color.icon.accent.green", b: "color.icon.accent.blue" });
+
 const cssName = token => `--ds-${token.replace(/^(color|elevation)\./, "").replace(/\./g, "-")}`;
 
 function themeFile(repoRoot, theme) {
@@ -172,13 +176,14 @@ export function resolveAds(themes, map = ADS_TOKEN_MAP) {
 	return out;
 }
 
-// illAccent / illAccentInk are the iso accent pair. They are not in the shared styles.css block (only figures that paint the
+// illAccent / illAccentInk are the iso accent pair, and illRayR / G / B the spectrum rays. They are not in the shared styles.css block (only figures that paint the
 // accent inline it, through iso/accent.mjs ACCENT_TOKENS_CSS), but tokens.json lists them so check-html accepts that block's
 // declarations as token values and --check can hold accent.mjs to ADS.
 export async function buildTokensJson(themes) {
 	const resolved = resolveAds(themes);
 	const accent = resolveAds(themes, ADS_ACCENT_MAP);
-	const pair = theme => ({ illAccent: accent[theme].accent, illAccentInk: accent[theme].ink });
+	const rays = resolveAds(themes, ADS_RAY_MAP);
+	const pair = theme => ({ illAccent: accent[theme].accent, illAccentInk: accent[theme].ink, illRayR: rays[theme].r, illRayG: rays[theme].g, illRayB: rays[theme].b });
 	const light = { ...resolved.light, ...pair("light"), shadow: "none" };
 	const dark = { ...resolved.dark, ...pair("dark"), shadow: "none" };
 	return { semantic: { ...light }, light, dark };
@@ -190,11 +195,13 @@ async function main() {
 	const next = await buildTokensJson(themes);
 	const text = `${JSON.stringify(next, null, "\t")}\n`;
 	const accent = resolveAds(themes, ADS_ACCENT_MAP);
-	const { ACCENT } = await import("./iso/accent.mjs");
+	const { ACCENT, RAY } = await import("./iso/accent.mjs");
+	const rays = resolveAds(themes, ADS_RAY_MAP);
+	const rayDrift = ["light", "dark"].flatMap(theme => ["r", "g", "b"].filter(k => RAY[theme][k].toLowerCase() !== rays[theme][k]).map(k => `iso/accent.mjs RAY.${theme}.${k} is ${RAY[theme][k]}, ADS ${ADS_RAY_MAP[k]} is ${rays[theme][k]}`));
 	const accentDrift = ["light", "dark"].flatMap(theme => ["accent", "ink"].filter(k => ACCENT[theme][k].toLowerCase() !== accent[theme][k]).map(k => `iso/accent.mjs ACCENT.${theme}.${k} is ${ACCENT[theme][k]}, ADS ${ADS_ACCENT_MAP[theme][k]} is ${accent[theme][k]}`));
 	if (check) {
 		const current = fs.readFileSync(TOKENS_FILE, "utf8");
-		const issues = [...(current === text ? [] : ["references/tokens.json differs from the ADS map (run: node scripts/ads-tokens.mjs)"]), ...accentDrift];
+		const issues = [...(current === text ? [] : ["references/tokens.json differs from the ADS map (run: node scripts/ads-tokens.mjs)"]), ...accentDrift, ...rayDrift];
 		for (const issue of issues) console.error(`FAIL: ${issue}`);
 		if (issues.length) process.exit(1);
 		console.log("OK: tokens.json and the iso accent match @atlaskit/tokens");

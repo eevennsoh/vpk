@@ -1,0 +1,25 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "states-scrub",
+	"figId": "FIG_043",
+	"title": "Ladle pour",
+	"label": "A ladle on a trunnion tilts from upright to pouring as you scrub; a cart slides under the spout and the stream appears once the ladle passes half tilt.",
+	"focal": "ladle",
+	"parts": [
+		{ "id": "floor", "kind": "slab", "at": [0, 0, 0], "size": [140, 80, 6] },
+		{ "id": "post", "kind": "box", "at": [20, 34, 6], "size": [8, 12, 40] },
+		{ "id": "ladle", "kind": "lathe", "at": [40, 40, 30], "axis": "z", "profile": [[0, 6], [4, 12], [20, 14], [22, 15]], "hole": [22, 12], "rotate": { "axis": "x", "about": [40, 40, 40], "deg": [0, 70], "samples": 15 }, "label": "Ladle" },
+		{ "id": "stream", "kind": "cylinder", "at": [40, 18, 6], "size": [2.5, 2.5, 24] },
+		{ "id": "cart", "kind": "tray", "at": [90, 6, 6], "size": [30, 24, 8], "label": "Cart" }
+	],
+	"interact": {
+		"behavior": "scrub",
+		"values": { "deg": [0, 35, 70] },
+		"readout": "{name} · tilt {deg:1}°",
+		"states": [
+			{ "name": "upright", "parts": { "stream": { "hidden": true } } },
+			{ "name": "tilting", "parts": { "stream": { "hidden": true }, "cart": { "move": [-30, 0, 0] } } },
+			{ "name": "pouring", "readout": "pouring · 70°", "parts": { "cart": { "move": [-62, 0, 0] } } }
+		]
+	}
+}

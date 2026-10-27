@@ -3,262 +3,6352 @@
 	"id": "an-debounce",
 	"figId": "FIG_212",
 	"title": "Debounce and throttle recorder",
-	"label": "Dimetric music-box recorder: a pin disc on a case with a crank knob at the front. Two back posts hold the dashpots; throttle has set two pins, the highlighted debounce dashpot one.",
-	"caption": "Five turns of the knob are five calls; the throttle dashpot lets one through per interval and sets two pins, while the debounce dashpot waits for the turning to stop and sets just one.",
+	"label": "Music-box recorder: a cabinet carries a large pin disc; a gantry arm holds the throttle and debounce dashpots, two graduated scales and a 500 ms dial; a comb reaches over the disc and a knurled knob turns it.",
+	"caption": "Each click of the knob is a call: the disc turns and a grey pin drops. The throttle dashpot fires at most once per 500 ms and sets a black pin each time; the debounce dashpot waits for the turning to stop, then sets one large pin.",
 	"camera": {
 		"preset": "dimetric",
-		"scale": "fit"
+		"scale": "fit",
+		"pad": 22
 	},
+	"viewBox": [
+		720,
+		720
+	],
+	"labels": "none",
 	"parts": [
 		{
-			"id": "case",
-			"kind": "box",
+			"id": "foot-0",
+			"kind": "lathe",
 			"at": [
-				0,
-				0,
+				4,
+				4,
 				0
 			],
-			"size": [
-				96,
-				64,
-				10
-			],
-			"r": 2,
-			"label": "Recorder case",
-			"marks": [
+			"axis": "z",
+			"profile": [
 				[
-					[
-						8,
-						64
-					],
-					[
-						50,
-						64
-					]
+					0,
+					4.6
+				],
+				[
+					0.8,
+					5.4
+				],
+				[
+					3.8,
+					5.4
+				],
+				[
+					4.6,
+					5
+				],
+				[
+					5,
+					4.4
 				]
 			]
 		},
 		{
+			"id": "foot-1",
+			"kind": "lathe",
+			"at": [
+				96,
+				4,
+				0
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.6
+				],
+				[
+					0.8,
+					5.4
+				],
+				[
+					3.8,
+					5.4
+				],
+				[
+					4.6,
+					5
+				],
+				[
+					5,
+					4.4
+				]
+			]
+		},
+		{
+			"id": "foot-2",
+			"kind": "lathe",
+			"at": [
+				4,
+				96,
+				0
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.6
+				],
+				[
+					0.8,
+					5.4
+				],
+				[
+					3.8,
+					5.4
+				],
+				[
+					4.6,
+					5
+				],
+				[
+					5,
+					4.4
+				]
+			]
+		},
+		{
+			"id": "foot-3",
+			"kind": "lathe",
+			"at": [
+				96,
+				96,
+				0
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.6
+				],
+				[
+					0.8,
+					5.4
+				],
+				[
+					3.8,
+					5.4
+				],
+				[
+					4.6,
+					5
+				],
+				[
+					5,
+					4.4
+				]
+			]
+		},
+		{
+			"id": "plinth",
+			"kind": "slab",
+			"at": [
+				-5,
+				-5,
+				5
+			],
+			"size": [
+				110,
+				110,
+				4
+			],
+			"r": 7,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							7,
+							2.2
+						],
+						[
+							103,
+							2.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							7,
+							2.2
+						],
+						[
+							103,
+							2.2
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "plinth-lip",
+			"kind": "slab",
+			"at": [
+				-3,
+				-3,
+				9
+			],
+			"size": [
+				106,
+				106,
+				2
+			],
+			"r": 5
+		},
+		{
+			"id": "cabinet",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				11
+			],
+			"size": [
+				100,
+				100,
+				28
+			],
+			"r": 3,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							3,
+							25.6
+						],
+						[
+							97,
+							25.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3,
+							25.6
+						],
+						[
+							97,
+							25.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							14,
+							3.6
+						],
+						[
+							84,
+							3.6
+						],
+						[
+							84,
+							22.4
+						],
+						[
+							14,
+							22.4
+						],
+						[
+							14,
+							3.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							15.6,
+							5
+						],
+						[
+							82.4,
+							5
+						],
+						[
+							82.4,
+							21
+						],
+						[
+							15.6,
+							21
+						],
+						[
+							15.6,
+							5
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						17,
+						6.4
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 64,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						17,
+						19.6
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 64,
+					"size": 0.4
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						66,
+						10
+					],
+					"size": [
+						19,
+						8.5
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							59.5,
+							12
+						],
+						[
+							72.5,
+							12
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							59.5,
+							10
+						],
+						[
+							72.5,
+							10
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							62,
+							8
+						],
+						[
+							70,
+							8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							44.46,
+							13.83
+						],
+						[
+							44.78,
+							15.13
+						],
+						[
+							44.72,
+							16.46
+						],
+						[
+							44.31,
+							17.72
+						],
+						[
+							43.56,
+							18.82
+						],
+						[
+							42.54,
+							19.68
+						],
+						[
+							41.32,
+							20.22
+						],
+						[
+							40,
+							20.4
+						],
+						[
+							38.68,
+							20.22
+						],
+						[
+							37.46,
+							19.68
+						],
+						[
+							36.44,
+							18.82
+						],
+						[
+							35.69,
+							17.72
+						],
+						[
+							35.28,
+							16.46
+						],
+						[
+							35.22,
+							15.13
+						],
+						[
+							35.54,
+							13.83
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "handle",
+			"kind": "box",
+			"at": [
+				41,
+				101.4,
+				21.6
+			],
+			"size": [
+				14,
+				1.4,
+				1.8
+			],
+			"r": 0.8
+		},
+		{
+			"id": "handle-post",
+			"kind": "box",
+			"at": [
+				41,
+				100,
+				21.8
+			],
+			"size": [
+				1.6,
+				1.6,
+				1.4
+			],
+			"repeat": {
+				"linear": {
+					"count": 2,
+					"step": [
+						12.4,
+						0,
+						0
+					]
+				}
+			}
+		},
+		{
+			"id": "hasp-staple",
+			"kind": "box",
+			"at": [
+				100,
+				39.2,
+				26.4
+			],
+			"size": [
+				1.8,
+				1.6,
+				4.6
+			],
+			"r": 0.4
+		},
+		{
+			"id": "hasp-bar",
+			"kind": "box",
+			"at": [
+				100,
+				35.4,
+				26.6
+			],
+			"size": [
+				1.6,
+				9.4,
+				2
+			],
+			"r": 0.6
+		},
+		{
+			"id": "hasp-toggle",
+			"kind": "box",
+			"at": [
+				100,
+				36.4,
+				23
+			],
+			"size": [
+				3.6,
+				3.6,
+				3.4
+			],
+			"r": 1.4
+		},
+		{
+			"id": "top-plate",
+			"kind": "plate",
+			"at": [
+				3,
+				3,
+				39
+			],
+			"size": [
+				94,
+				94,
+				2
+			],
+			"r": 3,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 2.2,
+					"r": 2
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6,
+						6
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 82,
+					"size": 0.9
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6,
+						6
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 82,
+					"size": 0.35
+				}
+			]
+		},
+		{
 			"id": "disc",
+			"kind": "lathe",
+			"at": [
+				44,
+				57,
+				41
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					37.2
+				],
+				[
+					0.7,
+					38
+				],
+				[
+					2.3,
+					38
+				],
+				[
+					3,
+					37.2
+				]
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.4
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 9.5
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 20
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 31
+				},
+				{
+					"type": "bolts",
+					"face": "top",
+					"r": 35,
+					"count": 96,
+					"size": 0.26
+				},
+				{
+					"type": "bolts",
+					"face": "top",
+					"r": 24.5,
+					"count": 72,
+					"size": 0.26
+				},
+				{
+					"type": "bolts",
+					"face": "top",
+					"r": 11,
+					"count": 56,
+					"size": 0.26
+				}
+			]
+		},
+		{
+			"id": "hub",
+			"kind": "lathe",
+			"at": [
+				44,
+				57,
+				44
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					5
+				],
+				[
+					2.6,
+					5
+				],
+				[
+					3.2,
+					4.4
+				]
+			]
+		},
+		{
+			"id": "hub-post",
 			"kind": "cylinder",
 			"at": [
 				44,
-				34,
-				10
+				57,
+				47.2
 			],
 			"size": [
-				24,
-				24,
+				2.7,
+				2.7,
+				14.8
+			]
+		},
+		{
+			"id": "comb-foot",
+			"kind": "lathe",
+			"at": [
+				5.5,
+				51.5,
+				41
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					3.6
+				],
+				[
+					1.2,
+					3.6
+				],
+				[
+					1.6,
+					3
+				]
+			]
+		},
+		{
+			"id": "comb-post",
+			"kind": "box",
+			"at": [
+				3,
+				49,
+				42.6
+			],
+			"size": [
+				5,
+				5,
+				9.9
+			],
+			"r": 1.4
+		},
+		{
+			"id": "comb",
+			"kind": "box",
+			"at": [
+				3,
+				49,
+				51.5
+			],
+			"size": [
+				35,
+				5,
 				3
 			],
-			"label": "Pin disc"
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							3,
+							2.5
+						],
+						[
+							32,
+							2.5
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "call-track",
-			"kind": "ring",
+			"id": "comb-tooth",
+			"kind": "box",
+			"at": [
+				9,
+				52.4,
+				48.6
+			],
+			"size": [
+				0.9,
+				1.2,
+				2.9
+			],
+			"repeat": {
+				"linear": {
+					"count": 20,
+					"step": [
+						1.4,
+						0,
+						0
+					]
+				}
+			}
+		},
+		{
+			"id": "col-collar",
+			"kind": "lathe",
 			"at": [
 				44,
-				34,
-				13
+				9,
+				41
 			],
-			"size": [
-				20,
-				20,
-				0
-			],
-			"clipTo": "disc",
-			"label": "Call track"
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					6
+				],
+				[
+					2.6,
+					6
+				],
+				[
+					3.2,
+					5.2
+				]
+			]
 		},
 		{
-			"id": "knob",
+			"id": "column",
 			"kind": "cylinder",
 			"at": [
-				88,
-				54,
-				10
+				44,
+				9,
+				44.2
 			],
 			"size": [
-				4,
-				4,
-				8
+				4.2,
+				4.2,
+				17.8
 			],
-			"label": "Crank knob"
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2.4,
+						15
+					]
+				}
+			]
 		},
 		{
-			"id": "t-post",
+			"id": "arm",
 			"kind": "box",
 			"at": [
-				19,
-				-14,
-				0
+				38,
+				3,
+				62
 			],
 			"size": [
-				14,
-				13,
-				26
+				12,
+				61,
+				5
 			],
-			"r": 1,
-			"label": "Throttle post"
+			"r": 6,
+			"detail": [
+				{
+					"type": "text",
+					"face": "+x",
+					"at": [
+						52,
+						1.6
+					],
+					"text": "500 ms",
+					"size": 2.4,
+					"anchor": "middle"
+				}
+			]
 		},
 		{
-			"id": "d-post",
-			"kind": "box",
-			"at": [
-				49,
-				-14,
-				0
-			],
-			"size": [
-				14,
-				13,
-				26
-			],
-			"r": 1,
-			"label": "Debounce post"
-		},
-		{
-			"id": "throttle",
+			"id": "arm-screw",
 			"kind": "cylinder",
 			"at": [
-				26,
-				-7.5,
-				26
+				44,
+				61,
+				67
 			],
 			"size": [
-				4.5,
-				4.5,
-				12
+				2.4,
+				2.4,
+				0.9
 			],
-			"label": "Throttle dashpot"
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							-1.9,
+							0.9
+						],
+						[
+							1.9,
+							-0.9
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "boss",
+			"kind": "lathe",
+			"at": [
+				44,
+				20.5,
+				67
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					2.8
+				],
+				[
+					3.4,
+					2.8
+				],
+				[
+					4,
+					2.2
+				]
+			]
+		},
+		{
+			"id": "stop-block",
+			"kind": "box",
+			"at": [
+				47.6,
+				14.4,
+				67
+			],
+			"size": [
+				2.6,
+				2.6,
+				2.6
+			],
+			"r": 0.4
+		},
+		{
+			"id": "bushing",
+			"kind": "lathe",
+			"at": [
+				44,
+				20.5,
+				58.4
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.7
+				],
+				[
+					3.6,
+					1.7
+				]
+			],
+			"instances": [
+				{},
+				{
+					"at": [
+						44,
+						43,
+						58
+					],
+					"profile": [
+						[
+							0,
+							2.1
+						],
+						[
+							4,
+							2.1
+						]
+					]
+				},
+				{
+					"at": [
+						44,
+						29.5,
+						58
+					],
+					"profile": [
+						[
+							0,
+							2.1
+						],
+						[
+							4,
+							2.1
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "dial",
+			"kind": "lathe",
+			"at": [
+				44,
+				9,
+				67
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					7.8
+				],
+				[
+					1.4,
+					7.8
+				],
+				[
+					1.4,
+					6.6
+				],
+				[
+					2,
+					7
+				],
+				[
+					6.4,
+					7
+				],
+				[
+					7,
+					6.4
+				]
+			],
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "top",
+					"s": 1.4,
+					"r": 7.7,
+					"count": 60,
+					"every": 5,
+					"lengths": [
+						0.5,
+						1
+					]
+				},
+				{
+					"type": "knurl",
+					"count": 72,
+					"s0": 2,
+					"s1": 6.4
+				}
+			]
+		},
+		{
+			"id": "dial-pointer",
+			"kind": "rod",
+			"from": [
+				44.8,
+				8.5,
+				74.1
+			],
+			"to": [
+				48.8,
+				6.2,
+				74.1
+			],
+			"radius": 0.45,
+			"tone": "ink"
+		},
+		{
+			"id": "debounce-collar",
+			"kind": "lathe",
+			"at": [
+				44,
+				43,
+				67
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					6.6
+				],
+				[
+					1.4,
+					6.6
+				],
+				[
+					1.8,
+					6.2
+				]
+			]
 		},
 		{
 			"id": "debounce",
 			"kind": "cylinder",
 			"at": [
-				56,
-				-7.5,
-				26
+				44,
+				43,
+				68.8
 			],
 			"size": [
-				4.5,
-				4.5,
-				17
+				5.8,
+				5.8,
+				14
 			],
-			"label": "Debounce dashpot"
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2,
+						11.6
+					]
+				}
+			]
 		},
 		{
-			"id": "t-pin-1",
-			"kind": "cylinder",
+			"id": "debounce-shoulder",
+			"kind": "lathe",
 			"at": [
-				28,
-				46,
-				13
+				44,
+				43,
+				82.8
 			],
-			"size": [
-				1.8,
-				1.8,
-				7
-			],
-			"label": "Throttle pin"
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					5.8
+				],
+				[
+					0.8,
+					4.8
+				],
+				[
+					1.4,
+					2.8
+				]
+			]
 		},
 		{
-			"id": "t-pin-2",
+			"id": "debounce-neck",
 			"kind": "cylinder",
 			"at": [
 				44,
-				54,
-				13
+				43,
+				84.2
 			],
 			"size": [
-				1.8,
-				1.8,
-				7
-			],
-			"label": "Throttle pin"
+				2,
+				2,
+				2.2
+			]
 		},
 		{
-			"id": "d-pin",
+			"id": "debounce-cap",
+			"kind": "lathe",
+			"at": [
+				44,
+				43,
+				86.4
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.4
+				],
+				[
+					0.6,
+					4.9
+				],
+				[
+					2.8,
+					4.9
+				],
+				[
+					3.4,
+					4.4
+				]
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 48,
+					"s0": 0.6,
+					"s1": 2.8
+				}
+			]
+		},
+		{
+			"id": "debounce-rod",
 			"kind": "cylinder",
 			"at": [
-				60,
-				46,
-				13
+				44,
+				43,
+				57
 			],
 			"size": [
-				1.8,
-				1.8,
-				7
+				1,
+				1,
+				4.8
+			]
+		},
+		{
+			"id": "debounce-tip",
+			"kind": "lathe",
+			"at": [
+				44,
+				43,
+				54.5
 			],
-			"label": "Debounce pin"
-		}
-	],
-	"focal": "debounce",
-	"labels": [
-		{
-			"text": "Throttle dashpot",
-			"target": "throttle",
-			"side": "left"
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.5
+				],
+				[
+					2,
+					1.9
+				],
+				[
+					2.5,
+					1.9
+				]
+			]
 		},
 		{
-			"text": "Debounce dashpot",
-			"target": "debounce",
-			"side": "right"
+			"id": "debounce-bracket",
+			"kind": "box",
+			"at": [
+				35.4,
+				41,
+				62.6
+			],
+			"size": [
+				2.8,
+				4,
+				3.4
+			],
+			"r": 0.4
 		},
 		{
-			"text": "Throttle pins",
-			"target": "t-pin-1",
-			"side": "left"
+			"id": "debounce-scale",
+			"kind": "box",
+			"at": [
+				34.8,
+				40,
+				62
+			],
+			"size": [
+				1.6,
+				6,
+				59
+			],
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "+x",
+					"from": [
+						0.6,
+						20
+					],
+					"to": [
+						0.6,
+						57
+					],
+					"step": 2.4,
+					"every": 3,
+					"lengths": [
+						1.4,
+						2.8
+					],
+					"side": -1
+				}
+			]
 		},
 		{
-			"text": "Debounce pin",
-			"target": "d-pin",
-			"side": "right"
+			"id": "throttle-collar",
+			"kind": "lathe",
+			"at": [
+				44,
+				29.5,
+				67
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					6.6
+				],
+				[
+					1.4,
+					6.6
+				],
+				[
+					1.8,
+					6.2
+				]
+			]
 		},
 		{
-			"text": "Crank knob, a call per turn",
-			"target": "knob",
-			"side": "right"
+			"id": "throttle",
+			"kind": "cylinder",
+			"at": [
+				44,
+				29.5,
+				68.8
+			],
+			"size": [
+				5.8,
+				5.8,
+				14
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2,
+						11.6
+					]
+				}
+			]
 		},
 		{
-			"text": "Pin disc",
-			"target": "disc",
-			"side": "left"
+			"id": "throttle-shoulder",
+			"kind": "lathe",
+			"at": [
+				44,
+				29.5,
+				82.8
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					5.8
+				],
+				[
+					0.8,
+					4.8
+				],
+				[
+					1.4,
+					2.8
+				]
+			]
+		},
+		{
+			"id": "throttle-neck",
+			"kind": "cylinder",
+			"at": [
+				44,
+				29.5,
+				84.2
+			],
+			"size": [
+				2,
+				2,
+				2.2
+			]
+		},
+		{
+			"id": "throttle-cap",
+			"kind": "lathe",
+			"at": [
+				44,
+				29.5,
+				86.4
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.4
+				],
+				[
+					0.6,
+					4.9
+				],
+				[
+					2.8,
+					4.9
+				],
+				[
+					3.4,
+					4.4
+				]
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 48,
+					"s0": 0.6,
+					"s1": 2.8
+				}
+			]
+		},
+		{
+			"id": "throttle-rod",
+			"kind": "cylinder",
+			"at": [
+				44,
+				29.5,
+				57
+			],
+			"size": [
+				1,
+				1,
+				4.8
+			]
+		},
+		{
+			"id": "throttle-tip",
+			"kind": "lathe",
+			"at": [
+				44,
+				29.5,
+				54.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.5
+				],
+				[
+					2,
+					1.9
+				],
+				[
+					2.5,
+					1.9
+				]
+			]
+		},
+		{
+			"id": "throttle-window",
+			"kind": "cylinder",
+			"at": [
+				48.2,
+				33.7,
+				74
+			],
+			"size": [
+				1.2,
+				1.2,
+				4
+			]
+		},
+		{
+			"id": "throttle-bracket",
+			"kind": "box",
+			"at": [
+				35.4,
+				27.5,
+				62.6
+			],
+			"size": [
+				2.8,
+				4,
+				3.4
+			],
+			"r": 0.4
+		},
+		{
+			"id": "throttle-scale",
+			"kind": "box",
+			"at": [
+				34.8,
+				26.5,
+				62
+			],
+			"size": [
+				1.6,
+				6,
+				59
+			],
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "+x",
+					"from": [
+						0.6,
+						20
+					],
+					"to": [
+						0.6,
+						57
+					],
+					"step": 2.4,
+					"every": 3,
+					"lengths": [
+						1.4,
+						2.8
+					],
+					"side": -1
+				}
+			]
+		},
+		{
+			"id": "knob",
+			"kind": "lathe",
+			"at": [
+				85,
+				24,
+				41
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.8
+				],
+				[
+					1.4,
+					4.8
+				],
+				[
+					1.4,
+					4.2
+				],
+				[
+					8.6,
+					4.2
+				],
+				[
+					8.6,
+					4.5
+				],
+				[
+					9.8,
+					4.5
+				],
+				[
+					10.4,
+					4
+				]
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 40,
+					"s0": 1.4,
+					"s1": 4.4
+				},
+				{
+					"type": "bands",
+					"at": [
+						6.2,
+						7.6
+					]
+				}
+			]
+		},
+		{
+			"id": "knob-pointer",
+			"kind": "rod",
+			"from": [
+				85,
+				24,
+				51.9
+			],
+			"to": [
+				87.8,
+				24,
+				51.9
+			],
+			"radius": 0.4,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					85,
+					24,
+					51.9
+				],
+				"deg": [
+					0,
+					345
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "call-1",
+			"kind": "pin",
+			"at": [
+				10.53,
+				67.23,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-132,
+					0
+				],
+				"samples": 23
+			}
+		},
+		{
+			"id": "call-2",
+			"kind": "pin",
+			"at": [
+				11.78,
+				70.68,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-126,
+					0
+				],
+				"samples": 22
+			}
+		},
+		{
+			"id": "call-3",
+			"kind": "pin",
+			"at": [
+				13.39,
+				73.97,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-120,
+					0
+				],
+				"samples": 21
+			}
+		},
+		{
+			"id": "call-4",
+			"kind": "pin",
+			"at": [
+				15.33,
+				77.08,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-114,
+					0
+				],
+				"samples": 20
+			}
+		},
+		{
+			"id": "call-5",
+			"kind": "pin",
+			"at": [
+				17.59,
+				79.96,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-108,
+					0
+				],
+				"samples": 19
+			}
+		},
+		{
+			"id": "call-6",
+			"kind": "pin",
+			"at": [
+				20.13,
+				82.6,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-102,
+					0
+				],
+				"samples": 18
+			}
+		},
+		{
+			"id": "call-7",
+			"kind": "pin",
+			"at": [
+				22.94,
+				84.95,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-96,
+					0
+				],
+				"samples": 17
+			}
+		},
+		{
+			"id": "call-8",
+			"kind": "pin",
+			"at": [
+				25.97,
+				87,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-90,
+					0
+				],
+				"samples": 16
+			}
+		},
+		{
+			"id": "call-9",
+			"kind": "pin",
+			"at": [
+				29.21,
+				88.72,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-84,
+					0
+				],
+				"samples": 15
+			}
+		},
+		{
+			"id": "call-10",
+			"kind": "pin",
+			"at": [
+				32.61,
+				90.09,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-78,
+					0
+				],
+				"samples": 14
+			}
+		},
+		{
+			"id": "call-11",
+			"kind": "pin",
+			"at": [
+				36.13,
+				91.1,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-72,
+					0
+				],
+				"samples": 13
+			}
+		},
+		{
+			"id": "call-12",
+			"kind": "pin",
+			"at": [
+				39.73,
+				91.74,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-66,
+					0
+				],
+				"samples": 12
+			}
+		},
+		{
+			"id": "call-13",
+			"kind": "pin",
+			"at": [
+				43.39,
+				91.99,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-60,
+					0
+				],
+				"samples": 11
+			}
+		},
+		{
+			"id": "call-14",
+			"kind": "pin",
+			"at": [
+				47.05,
+				91.87,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-54,
+					0
+				],
+				"samples": 10
+			}
+		},
+		{
+			"id": "call-15",
+			"kind": "pin",
+			"at": [
+				50.68,
+				91.36,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-48,
+					0
+				],
+				"samples": 9
+			}
+		},
+		{
+			"id": "call-16",
+			"kind": "pin",
+			"at": [
+				54.23,
+				90.47,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-42,
+					0
+				],
+				"samples": 8
+			}
+		},
+		{
+			"id": "call-17",
+			"kind": "pin",
+			"at": [
+				57.68,
+				89.22,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-36,
+					0
+				],
+				"samples": 7
+			}
+		},
+		{
+			"id": "call-18",
+			"kind": "pin",
+			"at": [
+				60.97,
+				87.61,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-30,
+					0
+				],
+				"samples": 6
+			}
+		},
+		{
+			"id": "call-19",
+			"kind": "pin",
+			"at": [
+				64.08,
+				85.67,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-24,
+					0
+				],
+				"samples": 5
+			}
+		},
+		{
+			"id": "call-20",
+			"kind": "pin",
+			"at": [
+				66.96,
+				83.41,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-18,
+					0
+				],
+				"samples": 4
+			}
+		},
+		{
+			"id": "call-21",
+			"kind": "pin",
+			"at": [
+				69.6,
+				80.87,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-12,
+					0
+				],
+				"samples": 3
+			}
+		},
+		{
+			"id": "call-22",
+			"kind": "pin",
+			"at": [
+				71.95,
+				78.06,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-6,
+					0
+				],
+				"samples": 2
+			}
+		},
+		{
+			"id": "call-23",
+			"kind": "pin",
+			"at": [
+				74,
+				75.03,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new"
+		},
+		{
+			"id": "thr-1",
+			"kind": "pin",
+			"at": [
+				21.98,
+				67.74,
+				44
+			],
+			"length": 6.6,
+			"r": 0.42,
+			"head": 1,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-132,
+					0
+				],
+				"samples": 23
+			}
+		},
+		{
+			"id": "thr-2",
+			"kind": "pin",
+			"at": [
+				28.25,
+				75.77,
+				44
+			],
+			"length": 6.6,
+			"r": 0.42,
+			"head": 1,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-108,
+					0
+				],
+				"samples": 19
+			}
+		},
+		{
+			"id": "thr-3",
+			"kind": "pin",
+			"at": [
+				37.25,
+				80.55,
+				44
+			],
+			"length": 6.6,
+			"r": 0.42,
+			"head": 1,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-84,
+					0
+				],
+				"samples": 15
+			}
+		},
+		{
+			"id": "thr-4",
+			"kind": "pin",
+			"at": [
+				47.41,
+				81.26,
+				44
+			],
+			"length": 6.6,
+			"r": 0.42,
+			"head": 1,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-60,
+					0
+				],
+				"samples": 11
+			}
+		},
+		{
+			"id": "thr-5",
+			"kind": "pin",
+			"at": [
+				56.98,
+				77.78,
+				44
+			],
+			"length": 6.6,
+			"r": 0.42,
+			"head": 1,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-36,
+					0
+				],
+				"samples": 7
+			}
+		},
+		{
+			"id": "thr-6",
+			"kind": "pin",
+			"at": [
+				64.31,
+				70.7,
+				44
+			],
+			"length": 6.6,
+			"r": 0.42,
+			"head": 1,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-12,
+					0
+				],
+				"samples": 3
+			}
+		},
+		{
+			"id": "deb-pin",
+			"kind": "pin",
+			"at": [
+				44,
+				46,
+				44
+			],
+			"length": 8.8,
+			"r": 0.6,
+			"head": 1.55,
+			"tone": "ink"
+		},
+		{
+			"id": "old-call-1",
+			"kind": "pin",
+			"at": [
+				77.81,
+				47.94,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-call-2",
+			"kind": "pin",
+			"at": [
+				75.97,
+				42.76,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-call-3",
+			"kind": "pin",
+			"at": [
+				73.35,
+				37.94,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-call-4",
+			"kind": "pin",
+			"at": [
+				70.01,
+				33.58,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-call-5",
+			"kind": "pin",
+			"at": [
+				66.03,
+				29.8,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-call-6",
+			"kind": "pin",
+			"at": [
+				61.5,
+				26.69,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-call-7",
+			"kind": "pin",
+			"at": [
+				56.54,
+				24.32,
+				44
+			],
+			"length": 5.2,
+			"r": 0.26,
+			"head": 0.5,
+			"state": "new",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-thr-1",
+			"kind": "pin",
+			"at": [
+				67.87,
+				51.49,
+				44
+			],
+			"length": 6.6,
+			"r": 0.42,
+			"head": 1,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-thr-2",
+			"kind": "pin",
+			"at": [
+				62.49,
+				40.93,
+				44
+			],
+			"length": 6.6,
+			"r": 0.42,
+			"head": 1,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-thr-3",
+			"kind": "pin",
+			"at": [
+				53.97,
+				34.62,
+				44
+			],
+			"length": 6.6,
+			"r": 0.42,
+			"head": 1,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
+		},
+		{
+			"id": "old-deb",
+			"kind": "pin",
+			"at": [
+				54.8,
+				59.1,
+				44
+			],
+			"length": 8.8,
+			"r": 0.6,
+			"head": 1.55,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					44,
+					57,
+					44
+				],
+				"deg": [
+					-138,
+					0
+				],
+				"samples": 24
+			}
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"case"
+				"foot-0",
+				"foot-1",
+				"foot-2",
+				"foot-3",
+				"plinth",
+				"plinth-lip"
+			],
+			[
+				"cabinet",
+				"handle",
+				"handle-post",
+				"hasp-staple",
+				"hasp-bar",
+				"hasp-toggle"
+			],
+			[
+				"top-plate"
 			],
 			[
 				"disc",
-				"call-track",
-				"knob"
+				"hub",
+				"col-collar",
+				"knob",
+				"comb-foot"
 			],
 			[
-				"t-post",
-				"d-post"
+				"hub-post",
+				"column",
+				"comb-post",
+				"comb",
+				"comb-tooth",
+				"knob-pointer"
 			],
 			[
-				"throttle"
+				"arm",
+				"arm-screw",
+				"boss",
+				"stop-block",
+				"bushing",
+				"dial",
+				"dial-pointer"
 			],
 			[
-				"t-pin-1",
-				"t-pin-2",
-				"d-pin"
+				"throttle-collar",
+				"throttle",
+				"throttle-shoulder",
+				"throttle-neck",
+				"throttle-cap",
+				"throttle-rod",
+				"throttle-tip",
+				"throttle-window",
+				"throttle-bracket",
+				"throttle-scale"
 			],
 			[
-				"debounce"
+				"debounce-collar",
+				"debounce",
+				"debounce-shoulder",
+				"debounce-neck",
+				"debounce-cap",
+				"debounce-rod",
+				"debounce-tip",
+				"debounce-bracket",
+				"debounce-scale"
+			],
+			[
+				"old-call-1",
+				"old-call-2",
+				"old-call-3",
+				"old-call-4",
+				"old-call-5",
+				"old-call-6",
+				"old-call-7",
+				"old-thr-1",
+				"old-thr-2",
+				"old-thr-3",
+				"old-deb"
+			],
+			[
+				"call-1",
+				"call-2",
+				"call-3",
+				"call-4",
+				"call-5",
+				"call-6",
+				"call-7",
+				"call-8",
+				"call-9",
+				"call-10",
+				"call-11",
+				"call-12",
+				"call-13",
+				"call-14",
+				"call-15",
+				"call-16",
+				"call-17",
+				"call-18",
+				"call-19",
+				"call-20",
+				"call-21",
+				"call-22",
+				"call-23",
+				"thr-1",
+				"thr-2",
+				"thr-3",
+				"thr-4",
+				"thr-5",
+				"thr-6",
+				"deb-pin"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 10,
-		"rest": "5 calls, throttle 2, debounce 1"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": "stopped",
+		"readout": "{calls:1} calls · throttle {thr:1} · debounce {deb:1}",
+		"states": [
+			{
+				"name": "idle",
+				"values": {
+					"calls": 0,
+					"thr": 0,
+					"deb": 0
+				},
+				"parts": {
+					"call-1": {
+						"hidden": true,
+						"turn": -132
+					},
+					"call-2": {
+						"hidden": true,
+						"turn": -126
+					},
+					"call-3": {
+						"hidden": true,
+						"turn": -120
+					},
+					"call-4": {
+						"hidden": true,
+						"turn": -114
+					},
+					"call-5": {
+						"hidden": true,
+						"turn": -108
+					},
+					"call-6": {
+						"hidden": true,
+						"turn": -102
+					},
+					"call-7": {
+						"hidden": true,
+						"turn": -96
+					},
+					"call-8": {
+						"hidden": true,
+						"turn": -90
+					},
+					"call-9": {
+						"hidden": true,
+						"turn": -84
+					},
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-1": {
+						"hidden": true,
+						"turn": -132
+					},
+					"thr-2": {
+						"hidden": true,
+						"turn": -108
+					},
+					"thr-3": {
+						"hidden": true,
+						"turn": -84
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"old-call-1": {
+						"turn": -138
+					},
+					"old-call-2": {
+						"turn": -138
+					},
+					"old-call-3": {
+						"turn": -138
+					},
+					"old-call-4": {
+						"turn": -138
+					},
+					"old-call-5": {
+						"turn": -138
+					},
+					"old-call-6": {
+						"turn": -138
+					},
+					"old-call-7": {
+						"turn": -138
+					},
+					"old-thr-1": {
+						"turn": -138
+					},
+					"old-thr-2": {
+						"turn": -138
+					},
+					"old-thr-3": {
+						"turn": -138
+					},
+					"old-deb": {
+						"turn": -138
+					},
+					"knob-pointer": {
+						"turn": 0
+					}
+				},
+				"readout": "Move across to turn the knob"
+			},
+			{
+				"name": "turning, 1 calls",
+				"values": {
+					"calls": 1,
+					"thr": 1,
+					"deb": 0
+				},
+				"parts": {
+					"call-2": {
+						"hidden": true,
+						"turn": -126
+					},
+					"call-3": {
+						"hidden": true,
+						"turn": -120
+					},
+					"call-4": {
+						"hidden": true,
+						"turn": -114
+					},
+					"call-5": {
+						"hidden": true,
+						"turn": -108
+					},
+					"call-6": {
+						"hidden": true,
+						"turn": -102
+					},
+					"call-7": {
+						"hidden": true,
+						"turn": -96
+					},
+					"call-8": {
+						"hidden": true,
+						"turn": -90
+					},
+					"call-9": {
+						"hidden": true,
+						"turn": -84
+					},
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-2": {
+						"hidden": true,
+						"turn": -108
+					},
+					"thr-3": {
+						"hidden": true,
+						"turn": -84
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -132
+					},
+					"thr-1": {
+						"turn": -132
+					},
+					"old-call-1": {
+						"turn": -132
+					},
+					"old-call-2": {
+						"turn": -132
+					},
+					"old-call-3": {
+						"turn": -132
+					},
+					"old-call-4": {
+						"turn": -132
+					},
+					"old-call-5": {
+						"turn": -132
+					},
+					"old-call-6": {
+						"turn": -132
+					},
+					"old-call-7": {
+						"turn": -132
+					},
+					"old-thr-1": {
+						"turn": -132
+					},
+					"old-thr-2": {
+						"turn": -132
+					},
+					"old-thr-3": {
+						"turn": -132
+					},
+					"old-deb": {
+						"turn": -132
+					},
+					"throttle-rod": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"throttle-tip": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"knob-pointer": {
+						"turn": 15
+					}
+				}
+			},
+			{
+				"name": "turning, 2 calls",
+				"values": {
+					"calls": 2,
+					"thr": 1,
+					"deb": 0
+				},
+				"parts": {
+					"call-3": {
+						"hidden": true,
+						"turn": -120
+					},
+					"call-4": {
+						"hidden": true,
+						"turn": -114
+					},
+					"call-5": {
+						"hidden": true,
+						"turn": -108
+					},
+					"call-6": {
+						"hidden": true,
+						"turn": -102
+					},
+					"call-7": {
+						"hidden": true,
+						"turn": -96
+					},
+					"call-8": {
+						"hidden": true,
+						"turn": -90
+					},
+					"call-9": {
+						"hidden": true,
+						"turn": -84
+					},
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-2": {
+						"hidden": true,
+						"turn": -108
+					},
+					"thr-3": {
+						"hidden": true,
+						"turn": -84
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -126
+					},
+					"call-2": {
+						"turn": -126
+					},
+					"thr-1": {
+						"turn": -126
+					},
+					"old-call-1": {
+						"turn": -126
+					},
+					"old-call-2": {
+						"turn": -126
+					},
+					"old-call-3": {
+						"turn": -126
+					},
+					"old-call-4": {
+						"turn": -126
+					},
+					"old-call-5": {
+						"turn": -126
+					},
+					"old-call-6": {
+						"turn": -126
+					},
+					"old-call-7": {
+						"turn": -126
+					},
+					"old-thr-1": {
+						"turn": -126
+					},
+					"old-thr-2": {
+						"turn": -126
+					},
+					"old-thr-3": {
+						"turn": -126
+					},
+					"old-deb": {
+						"turn": -126
+					},
+					"knob-pointer": {
+						"turn": 30
+					}
+				}
+			},
+			{
+				"name": "turning, 3 calls",
+				"values": {
+					"calls": 3,
+					"thr": 1,
+					"deb": 0
+				},
+				"parts": {
+					"call-4": {
+						"hidden": true,
+						"turn": -114
+					},
+					"call-5": {
+						"hidden": true,
+						"turn": -108
+					},
+					"call-6": {
+						"hidden": true,
+						"turn": -102
+					},
+					"call-7": {
+						"hidden": true,
+						"turn": -96
+					},
+					"call-8": {
+						"hidden": true,
+						"turn": -90
+					},
+					"call-9": {
+						"hidden": true,
+						"turn": -84
+					},
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-2": {
+						"hidden": true,
+						"turn": -108
+					},
+					"thr-3": {
+						"hidden": true,
+						"turn": -84
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -120
+					},
+					"call-2": {
+						"turn": -120
+					},
+					"call-3": {
+						"turn": -120
+					},
+					"thr-1": {
+						"turn": -120
+					},
+					"old-call-1": {
+						"turn": -120
+					},
+					"old-call-2": {
+						"turn": -120
+					},
+					"old-call-3": {
+						"turn": -120
+					},
+					"old-call-4": {
+						"turn": -120
+					},
+					"old-call-5": {
+						"turn": -120
+					},
+					"old-call-6": {
+						"turn": -120
+					},
+					"old-call-7": {
+						"turn": -120
+					},
+					"old-thr-1": {
+						"turn": -120
+					},
+					"old-thr-2": {
+						"turn": -120
+					},
+					"old-thr-3": {
+						"turn": -120
+					},
+					"old-deb": {
+						"turn": -120
+					},
+					"knob-pointer": {
+						"turn": 45
+					}
+				}
+			},
+			{
+				"name": "turning, 4 calls",
+				"values": {
+					"calls": 4,
+					"thr": 1,
+					"deb": 0
+				},
+				"parts": {
+					"call-5": {
+						"hidden": true,
+						"turn": -108
+					},
+					"call-6": {
+						"hidden": true,
+						"turn": -102
+					},
+					"call-7": {
+						"hidden": true,
+						"turn": -96
+					},
+					"call-8": {
+						"hidden": true,
+						"turn": -90
+					},
+					"call-9": {
+						"hidden": true,
+						"turn": -84
+					},
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-2": {
+						"hidden": true,
+						"turn": -108
+					},
+					"thr-3": {
+						"hidden": true,
+						"turn": -84
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -114
+					},
+					"call-2": {
+						"turn": -114
+					},
+					"call-3": {
+						"turn": -114
+					},
+					"call-4": {
+						"turn": -114
+					},
+					"thr-1": {
+						"turn": -114
+					},
+					"old-call-1": {
+						"turn": -114
+					},
+					"old-call-2": {
+						"turn": -114
+					},
+					"old-call-3": {
+						"turn": -114
+					},
+					"old-call-4": {
+						"turn": -114
+					},
+					"old-call-5": {
+						"turn": -114
+					},
+					"old-call-6": {
+						"turn": -114
+					},
+					"old-call-7": {
+						"turn": -114
+					},
+					"old-thr-1": {
+						"turn": -114
+					},
+					"old-thr-2": {
+						"turn": -114
+					},
+					"old-thr-3": {
+						"turn": -114
+					},
+					"old-deb": {
+						"turn": -114
+					},
+					"knob-pointer": {
+						"turn": 60
+					}
+				}
+			},
+			{
+				"name": "turning, 5 calls",
+				"values": {
+					"calls": 5,
+					"thr": 2,
+					"deb": 0
+				},
+				"parts": {
+					"call-6": {
+						"hidden": true,
+						"turn": -102
+					},
+					"call-7": {
+						"hidden": true,
+						"turn": -96
+					},
+					"call-8": {
+						"hidden": true,
+						"turn": -90
+					},
+					"call-9": {
+						"hidden": true,
+						"turn": -84
+					},
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-3": {
+						"hidden": true,
+						"turn": -84
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -108
+					},
+					"call-2": {
+						"turn": -108
+					},
+					"call-3": {
+						"turn": -108
+					},
+					"call-4": {
+						"turn": -108
+					},
+					"call-5": {
+						"turn": -108
+					},
+					"thr-1": {
+						"turn": -108
+					},
+					"thr-2": {
+						"turn": -108
+					},
+					"old-call-1": {
+						"turn": -108
+					},
+					"old-call-2": {
+						"turn": -108
+					},
+					"old-call-3": {
+						"turn": -108
+					},
+					"old-call-4": {
+						"turn": -108
+					},
+					"old-call-5": {
+						"turn": -108
+					},
+					"old-call-6": {
+						"turn": -108
+					},
+					"old-call-7": {
+						"turn": -108
+					},
+					"old-thr-1": {
+						"turn": -108
+					},
+					"old-thr-2": {
+						"turn": -108
+					},
+					"old-thr-3": {
+						"turn": -108
+					},
+					"old-deb": {
+						"turn": -108
+					},
+					"throttle-rod": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"throttle-tip": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"knob-pointer": {
+						"turn": 75
+					}
+				}
+			},
+			{
+				"name": "turning, 6 calls",
+				"values": {
+					"calls": 6,
+					"thr": 2,
+					"deb": 0
+				},
+				"parts": {
+					"call-7": {
+						"hidden": true,
+						"turn": -96
+					},
+					"call-8": {
+						"hidden": true,
+						"turn": -90
+					},
+					"call-9": {
+						"hidden": true,
+						"turn": -84
+					},
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-3": {
+						"hidden": true,
+						"turn": -84
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -102
+					},
+					"call-2": {
+						"turn": -102
+					},
+					"call-3": {
+						"turn": -102
+					},
+					"call-4": {
+						"turn": -102
+					},
+					"call-5": {
+						"turn": -102
+					},
+					"call-6": {
+						"turn": -102
+					},
+					"thr-1": {
+						"turn": -102
+					},
+					"thr-2": {
+						"turn": -102
+					},
+					"old-call-1": {
+						"turn": -102
+					},
+					"old-call-2": {
+						"turn": -102
+					},
+					"old-call-3": {
+						"turn": -102
+					},
+					"old-call-4": {
+						"turn": -102
+					},
+					"old-call-5": {
+						"turn": -102
+					},
+					"old-call-6": {
+						"turn": -102
+					},
+					"old-call-7": {
+						"turn": -102
+					},
+					"old-thr-1": {
+						"turn": -102
+					},
+					"old-thr-2": {
+						"turn": -102
+					},
+					"old-thr-3": {
+						"turn": -102
+					},
+					"old-deb": {
+						"turn": -102
+					},
+					"knob-pointer": {
+						"turn": 90
+					}
+				}
+			},
+			{
+				"name": "turning, 7 calls",
+				"values": {
+					"calls": 7,
+					"thr": 2,
+					"deb": 0
+				},
+				"parts": {
+					"call-8": {
+						"hidden": true,
+						"turn": -90
+					},
+					"call-9": {
+						"hidden": true,
+						"turn": -84
+					},
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-3": {
+						"hidden": true,
+						"turn": -84
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -96
+					},
+					"call-2": {
+						"turn": -96
+					},
+					"call-3": {
+						"turn": -96
+					},
+					"call-4": {
+						"turn": -96
+					},
+					"call-5": {
+						"turn": -96
+					},
+					"call-6": {
+						"turn": -96
+					},
+					"call-7": {
+						"turn": -96
+					},
+					"thr-1": {
+						"turn": -96
+					},
+					"thr-2": {
+						"turn": -96
+					},
+					"old-call-1": {
+						"turn": -96
+					},
+					"old-call-2": {
+						"turn": -96
+					},
+					"old-call-3": {
+						"turn": -96
+					},
+					"old-call-4": {
+						"turn": -96
+					},
+					"old-call-5": {
+						"turn": -96
+					},
+					"old-call-6": {
+						"turn": -96
+					},
+					"old-call-7": {
+						"turn": -96
+					},
+					"old-thr-1": {
+						"turn": -96
+					},
+					"old-thr-2": {
+						"turn": -96
+					},
+					"old-thr-3": {
+						"turn": -96
+					},
+					"old-deb": {
+						"turn": -96
+					},
+					"knob-pointer": {
+						"turn": 105
+					}
+				}
+			},
+			{
+				"name": "turning, 8 calls",
+				"values": {
+					"calls": 8,
+					"thr": 2,
+					"deb": 0
+				},
+				"parts": {
+					"call-9": {
+						"hidden": true,
+						"turn": -84
+					},
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-3": {
+						"hidden": true,
+						"turn": -84
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -90
+					},
+					"call-2": {
+						"turn": -90
+					},
+					"call-3": {
+						"turn": -90
+					},
+					"call-4": {
+						"turn": -90
+					},
+					"call-5": {
+						"turn": -90
+					},
+					"call-6": {
+						"turn": -90
+					},
+					"call-7": {
+						"turn": -90
+					},
+					"call-8": {
+						"turn": -90
+					},
+					"thr-1": {
+						"turn": -90
+					},
+					"thr-2": {
+						"turn": -90
+					},
+					"old-call-1": {
+						"turn": -90
+					},
+					"old-call-2": {
+						"turn": -90
+					},
+					"old-call-3": {
+						"turn": -90
+					},
+					"old-call-4": {
+						"turn": -90
+					},
+					"old-call-5": {
+						"turn": -90
+					},
+					"old-call-6": {
+						"turn": -90
+					},
+					"old-call-7": {
+						"turn": -90
+					},
+					"old-thr-1": {
+						"turn": -90
+					},
+					"old-thr-2": {
+						"turn": -90
+					},
+					"old-thr-3": {
+						"turn": -90
+					},
+					"old-deb": {
+						"turn": -90
+					},
+					"knob-pointer": {
+						"turn": 120
+					}
+				}
+			},
+			{
+				"name": "turning, 9 calls",
+				"values": {
+					"calls": 9,
+					"thr": 3,
+					"deb": 0
+				},
+				"parts": {
+					"call-10": {
+						"hidden": true,
+						"turn": -78
+					},
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -84
+					},
+					"call-2": {
+						"turn": -84
+					},
+					"call-3": {
+						"turn": -84
+					},
+					"call-4": {
+						"turn": -84
+					},
+					"call-5": {
+						"turn": -84
+					},
+					"call-6": {
+						"turn": -84
+					},
+					"call-7": {
+						"turn": -84
+					},
+					"call-8": {
+						"turn": -84
+					},
+					"call-9": {
+						"turn": -84
+					},
+					"thr-1": {
+						"turn": -84
+					},
+					"thr-2": {
+						"turn": -84
+					},
+					"thr-3": {
+						"turn": -84
+					},
+					"old-call-1": {
+						"turn": -84
+					},
+					"old-call-2": {
+						"turn": -84
+					},
+					"old-call-3": {
+						"turn": -84
+					},
+					"old-call-4": {
+						"turn": -84
+					},
+					"old-call-5": {
+						"turn": -84
+					},
+					"old-call-6": {
+						"turn": -84
+					},
+					"old-call-7": {
+						"turn": -84
+					},
+					"old-thr-1": {
+						"turn": -84
+					},
+					"old-thr-2": {
+						"turn": -84
+					},
+					"old-thr-3": {
+						"turn": -84
+					},
+					"old-deb": {
+						"turn": -84
+					},
+					"throttle-rod": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"throttle-tip": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"knob-pointer": {
+						"turn": 135
+					}
+				}
+			},
+			{
+				"name": "turning, 10 calls",
+				"values": {
+					"calls": 10,
+					"thr": 3,
+					"deb": 0
+				},
+				"parts": {
+					"call-11": {
+						"hidden": true,
+						"turn": -72
+					},
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -78
+					},
+					"call-2": {
+						"turn": -78
+					},
+					"call-3": {
+						"turn": -78
+					},
+					"call-4": {
+						"turn": -78
+					},
+					"call-5": {
+						"turn": -78
+					},
+					"call-6": {
+						"turn": -78
+					},
+					"call-7": {
+						"turn": -78
+					},
+					"call-8": {
+						"turn": -78
+					},
+					"call-9": {
+						"turn": -78
+					},
+					"call-10": {
+						"turn": -78
+					},
+					"thr-1": {
+						"turn": -78
+					},
+					"thr-2": {
+						"turn": -78
+					},
+					"thr-3": {
+						"turn": -78
+					},
+					"old-call-1": {
+						"turn": -78
+					},
+					"old-call-2": {
+						"turn": -78
+					},
+					"old-call-3": {
+						"turn": -78
+					},
+					"old-call-4": {
+						"turn": -78
+					},
+					"old-call-5": {
+						"turn": -78
+					},
+					"old-call-6": {
+						"turn": -78
+					},
+					"old-call-7": {
+						"turn": -78
+					},
+					"old-thr-1": {
+						"turn": -78
+					},
+					"old-thr-2": {
+						"turn": -78
+					},
+					"old-thr-3": {
+						"turn": -78
+					},
+					"old-deb": {
+						"turn": -78
+					},
+					"knob-pointer": {
+						"turn": 150
+					}
+				}
+			},
+			{
+				"name": "turning, 11 calls",
+				"values": {
+					"calls": 11,
+					"thr": 3,
+					"deb": 0
+				},
+				"parts": {
+					"call-12": {
+						"hidden": true,
+						"turn": -66
+					},
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -72
+					},
+					"call-2": {
+						"turn": -72
+					},
+					"call-3": {
+						"turn": -72
+					},
+					"call-4": {
+						"turn": -72
+					},
+					"call-5": {
+						"turn": -72
+					},
+					"call-6": {
+						"turn": -72
+					},
+					"call-7": {
+						"turn": -72
+					},
+					"call-8": {
+						"turn": -72
+					},
+					"call-9": {
+						"turn": -72
+					},
+					"call-10": {
+						"turn": -72
+					},
+					"call-11": {
+						"turn": -72
+					},
+					"thr-1": {
+						"turn": -72
+					},
+					"thr-2": {
+						"turn": -72
+					},
+					"thr-3": {
+						"turn": -72
+					},
+					"old-call-1": {
+						"turn": -72
+					},
+					"old-call-2": {
+						"turn": -72
+					},
+					"old-call-3": {
+						"turn": -72
+					},
+					"old-call-4": {
+						"turn": -72
+					},
+					"old-call-5": {
+						"turn": -72
+					},
+					"old-call-6": {
+						"turn": -72
+					},
+					"old-call-7": {
+						"turn": -72
+					},
+					"old-thr-1": {
+						"turn": -72
+					},
+					"old-thr-2": {
+						"turn": -72
+					},
+					"old-thr-3": {
+						"turn": -72
+					},
+					"old-deb": {
+						"turn": -72
+					},
+					"knob-pointer": {
+						"turn": 165
+					}
+				}
+			},
+			{
+				"name": "turning, 12 calls",
+				"values": {
+					"calls": 12,
+					"thr": 3,
+					"deb": 0
+				},
+				"parts": {
+					"call-13": {
+						"hidden": true,
+						"turn": -60
+					},
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-4": {
+						"hidden": true,
+						"turn": -60
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -66
+					},
+					"call-2": {
+						"turn": -66
+					},
+					"call-3": {
+						"turn": -66
+					},
+					"call-4": {
+						"turn": -66
+					},
+					"call-5": {
+						"turn": -66
+					},
+					"call-6": {
+						"turn": -66
+					},
+					"call-7": {
+						"turn": -66
+					},
+					"call-8": {
+						"turn": -66
+					},
+					"call-9": {
+						"turn": -66
+					},
+					"call-10": {
+						"turn": -66
+					},
+					"call-11": {
+						"turn": -66
+					},
+					"call-12": {
+						"turn": -66
+					},
+					"thr-1": {
+						"turn": -66
+					},
+					"thr-2": {
+						"turn": -66
+					},
+					"thr-3": {
+						"turn": -66
+					},
+					"old-call-1": {
+						"turn": -66
+					},
+					"old-call-2": {
+						"turn": -66
+					},
+					"old-call-3": {
+						"turn": -66
+					},
+					"old-call-4": {
+						"turn": -66
+					},
+					"old-call-5": {
+						"turn": -66
+					},
+					"old-call-6": {
+						"turn": -66
+					},
+					"old-call-7": {
+						"turn": -66
+					},
+					"old-thr-1": {
+						"turn": -66
+					},
+					"old-thr-2": {
+						"turn": -66
+					},
+					"old-thr-3": {
+						"turn": -66
+					},
+					"old-deb": {
+						"turn": -66
+					},
+					"knob-pointer": {
+						"turn": 180
+					}
+				}
+			},
+			{
+				"name": "turning, 13 calls",
+				"values": {
+					"calls": 13,
+					"thr": 4,
+					"deb": 0
+				},
+				"parts": {
+					"call-14": {
+						"hidden": true,
+						"turn": -54
+					},
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -60
+					},
+					"call-2": {
+						"turn": -60
+					},
+					"call-3": {
+						"turn": -60
+					},
+					"call-4": {
+						"turn": -60
+					},
+					"call-5": {
+						"turn": -60
+					},
+					"call-6": {
+						"turn": -60
+					},
+					"call-7": {
+						"turn": -60
+					},
+					"call-8": {
+						"turn": -60
+					},
+					"call-9": {
+						"turn": -60
+					},
+					"call-10": {
+						"turn": -60
+					},
+					"call-11": {
+						"turn": -60
+					},
+					"call-12": {
+						"turn": -60
+					},
+					"call-13": {
+						"turn": -60
+					},
+					"thr-1": {
+						"turn": -60
+					},
+					"thr-2": {
+						"turn": -60
+					},
+					"thr-3": {
+						"turn": -60
+					},
+					"thr-4": {
+						"turn": -60
+					},
+					"old-call-1": {
+						"turn": -60
+					},
+					"old-call-2": {
+						"turn": -60
+					},
+					"old-call-3": {
+						"turn": -60
+					},
+					"old-call-4": {
+						"turn": -60
+					},
+					"old-call-5": {
+						"turn": -60
+					},
+					"old-call-6": {
+						"turn": -60
+					},
+					"old-call-7": {
+						"turn": -60
+					},
+					"old-thr-1": {
+						"turn": -60
+					},
+					"old-thr-2": {
+						"turn": -60
+					},
+					"old-thr-3": {
+						"turn": -60
+					},
+					"old-deb": {
+						"turn": -60
+					},
+					"throttle-rod": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"throttle-tip": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"knob-pointer": {
+						"turn": 195
+					}
+				}
+			},
+			{
+				"name": "turning, 14 calls",
+				"values": {
+					"calls": 14,
+					"thr": 4,
+					"deb": 0
+				},
+				"parts": {
+					"call-15": {
+						"hidden": true,
+						"turn": -48
+					},
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -54
+					},
+					"call-2": {
+						"turn": -54
+					},
+					"call-3": {
+						"turn": -54
+					},
+					"call-4": {
+						"turn": -54
+					},
+					"call-5": {
+						"turn": -54
+					},
+					"call-6": {
+						"turn": -54
+					},
+					"call-7": {
+						"turn": -54
+					},
+					"call-8": {
+						"turn": -54
+					},
+					"call-9": {
+						"turn": -54
+					},
+					"call-10": {
+						"turn": -54
+					},
+					"call-11": {
+						"turn": -54
+					},
+					"call-12": {
+						"turn": -54
+					},
+					"call-13": {
+						"turn": -54
+					},
+					"call-14": {
+						"turn": -54
+					},
+					"thr-1": {
+						"turn": -54
+					},
+					"thr-2": {
+						"turn": -54
+					},
+					"thr-3": {
+						"turn": -54
+					},
+					"thr-4": {
+						"turn": -54
+					},
+					"old-call-1": {
+						"turn": -54
+					},
+					"old-call-2": {
+						"turn": -54
+					},
+					"old-call-3": {
+						"turn": -54
+					},
+					"old-call-4": {
+						"turn": -54
+					},
+					"old-call-5": {
+						"turn": -54
+					},
+					"old-call-6": {
+						"turn": -54
+					},
+					"old-call-7": {
+						"turn": -54
+					},
+					"old-thr-1": {
+						"turn": -54
+					},
+					"old-thr-2": {
+						"turn": -54
+					},
+					"old-thr-3": {
+						"turn": -54
+					},
+					"old-deb": {
+						"turn": -54
+					},
+					"knob-pointer": {
+						"turn": 210
+					}
+				}
+			},
+			{
+				"name": "turning, 15 calls",
+				"values": {
+					"calls": 15,
+					"thr": 4,
+					"deb": 0
+				},
+				"parts": {
+					"call-16": {
+						"hidden": true,
+						"turn": -42
+					},
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -48
+					},
+					"call-2": {
+						"turn": -48
+					},
+					"call-3": {
+						"turn": -48
+					},
+					"call-4": {
+						"turn": -48
+					},
+					"call-5": {
+						"turn": -48
+					},
+					"call-6": {
+						"turn": -48
+					},
+					"call-7": {
+						"turn": -48
+					},
+					"call-8": {
+						"turn": -48
+					},
+					"call-9": {
+						"turn": -48
+					},
+					"call-10": {
+						"turn": -48
+					},
+					"call-11": {
+						"turn": -48
+					},
+					"call-12": {
+						"turn": -48
+					},
+					"call-13": {
+						"turn": -48
+					},
+					"call-14": {
+						"turn": -48
+					},
+					"call-15": {
+						"turn": -48
+					},
+					"thr-1": {
+						"turn": -48
+					},
+					"thr-2": {
+						"turn": -48
+					},
+					"thr-3": {
+						"turn": -48
+					},
+					"thr-4": {
+						"turn": -48
+					},
+					"old-call-1": {
+						"turn": -48
+					},
+					"old-call-2": {
+						"turn": -48
+					},
+					"old-call-3": {
+						"turn": -48
+					},
+					"old-call-4": {
+						"turn": -48
+					},
+					"old-call-5": {
+						"turn": -48
+					},
+					"old-call-6": {
+						"turn": -48
+					},
+					"old-call-7": {
+						"turn": -48
+					},
+					"old-thr-1": {
+						"turn": -48
+					},
+					"old-thr-2": {
+						"turn": -48
+					},
+					"old-thr-3": {
+						"turn": -48
+					},
+					"old-deb": {
+						"turn": -48
+					},
+					"knob-pointer": {
+						"turn": 225
+					}
+				}
+			},
+			{
+				"name": "turning, 16 calls",
+				"values": {
+					"calls": 16,
+					"thr": 4,
+					"deb": 0
+				},
+				"parts": {
+					"call-17": {
+						"hidden": true,
+						"turn": -36
+					},
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-5": {
+						"hidden": true,
+						"turn": -36
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -42
+					},
+					"call-2": {
+						"turn": -42
+					},
+					"call-3": {
+						"turn": -42
+					},
+					"call-4": {
+						"turn": -42
+					},
+					"call-5": {
+						"turn": -42
+					},
+					"call-6": {
+						"turn": -42
+					},
+					"call-7": {
+						"turn": -42
+					},
+					"call-8": {
+						"turn": -42
+					},
+					"call-9": {
+						"turn": -42
+					},
+					"call-10": {
+						"turn": -42
+					},
+					"call-11": {
+						"turn": -42
+					},
+					"call-12": {
+						"turn": -42
+					},
+					"call-13": {
+						"turn": -42
+					},
+					"call-14": {
+						"turn": -42
+					},
+					"call-15": {
+						"turn": -42
+					},
+					"call-16": {
+						"turn": -42
+					},
+					"thr-1": {
+						"turn": -42
+					},
+					"thr-2": {
+						"turn": -42
+					},
+					"thr-3": {
+						"turn": -42
+					},
+					"thr-4": {
+						"turn": -42
+					},
+					"old-call-1": {
+						"turn": -42
+					},
+					"old-call-2": {
+						"turn": -42
+					},
+					"old-call-3": {
+						"turn": -42
+					},
+					"old-call-4": {
+						"turn": -42
+					},
+					"old-call-5": {
+						"turn": -42
+					},
+					"old-call-6": {
+						"turn": -42
+					},
+					"old-call-7": {
+						"turn": -42
+					},
+					"old-thr-1": {
+						"turn": -42
+					},
+					"old-thr-2": {
+						"turn": -42
+					},
+					"old-thr-3": {
+						"turn": -42
+					},
+					"old-deb": {
+						"turn": -42
+					},
+					"knob-pointer": {
+						"turn": 240
+					}
+				}
+			},
+			{
+				"name": "turning, 17 calls",
+				"values": {
+					"calls": 17,
+					"thr": 5,
+					"deb": 0
+				},
+				"parts": {
+					"call-18": {
+						"hidden": true,
+						"turn": -30
+					},
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -36
+					},
+					"call-2": {
+						"turn": -36
+					},
+					"call-3": {
+						"turn": -36
+					},
+					"call-4": {
+						"turn": -36
+					},
+					"call-5": {
+						"turn": -36
+					},
+					"call-6": {
+						"turn": -36
+					},
+					"call-7": {
+						"turn": -36
+					},
+					"call-8": {
+						"turn": -36
+					},
+					"call-9": {
+						"turn": -36
+					},
+					"call-10": {
+						"turn": -36
+					},
+					"call-11": {
+						"turn": -36
+					},
+					"call-12": {
+						"turn": -36
+					},
+					"call-13": {
+						"turn": -36
+					},
+					"call-14": {
+						"turn": -36
+					},
+					"call-15": {
+						"turn": -36
+					},
+					"call-16": {
+						"turn": -36
+					},
+					"call-17": {
+						"turn": -36
+					},
+					"thr-1": {
+						"turn": -36
+					},
+					"thr-2": {
+						"turn": -36
+					},
+					"thr-3": {
+						"turn": -36
+					},
+					"thr-4": {
+						"turn": -36
+					},
+					"thr-5": {
+						"turn": -36
+					},
+					"old-call-1": {
+						"turn": -36
+					},
+					"old-call-2": {
+						"turn": -36
+					},
+					"old-call-3": {
+						"turn": -36
+					},
+					"old-call-4": {
+						"turn": -36
+					},
+					"old-call-5": {
+						"turn": -36
+					},
+					"old-call-6": {
+						"turn": -36
+					},
+					"old-call-7": {
+						"turn": -36
+					},
+					"old-thr-1": {
+						"turn": -36
+					},
+					"old-thr-2": {
+						"turn": -36
+					},
+					"old-thr-3": {
+						"turn": -36
+					},
+					"old-deb": {
+						"turn": -36
+					},
+					"throttle-rod": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"throttle-tip": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"knob-pointer": {
+						"turn": 255
+					}
+				}
+			},
+			{
+				"name": "turning, 18 calls",
+				"values": {
+					"calls": 18,
+					"thr": 5,
+					"deb": 0
+				},
+				"parts": {
+					"call-19": {
+						"hidden": true,
+						"turn": -24
+					},
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -30
+					},
+					"call-2": {
+						"turn": -30
+					},
+					"call-3": {
+						"turn": -30
+					},
+					"call-4": {
+						"turn": -30
+					},
+					"call-5": {
+						"turn": -30
+					},
+					"call-6": {
+						"turn": -30
+					},
+					"call-7": {
+						"turn": -30
+					},
+					"call-8": {
+						"turn": -30
+					},
+					"call-9": {
+						"turn": -30
+					},
+					"call-10": {
+						"turn": -30
+					},
+					"call-11": {
+						"turn": -30
+					},
+					"call-12": {
+						"turn": -30
+					},
+					"call-13": {
+						"turn": -30
+					},
+					"call-14": {
+						"turn": -30
+					},
+					"call-15": {
+						"turn": -30
+					},
+					"call-16": {
+						"turn": -30
+					},
+					"call-17": {
+						"turn": -30
+					},
+					"call-18": {
+						"turn": -30
+					},
+					"thr-1": {
+						"turn": -30
+					},
+					"thr-2": {
+						"turn": -30
+					},
+					"thr-3": {
+						"turn": -30
+					},
+					"thr-4": {
+						"turn": -30
+					},
+					"thr-5": {
+						"turn": -30
+					},
+					"old-call-1": {
+						"turn": -30
+					},
+					"old-call-2": {
+						"turn": -30
+					},
+					"old-call-3": {
+						"turn": -30
+					},
+					"old-call-4": {
+						"turn": -30
+					},
+					"old-call-5": {
+						"turn": -30
+					},
+					"old-call-6": {
+						"turn": -30
+					},
+					"old-call-7": {
+						"turn": -30
+					},
+					"old-thr-1": {
+						"turn": -30
+					},
+					"old-thr-2": {
+						"turn": -30
+					},
+					"old-thr-3": {
+						"turn": -30
+					},
+					"old-deb": {
+						"turn": -30
+					},
+					"knob-pointer": {
+						"turn": 270
+					}
+				}
+			},
+			{
+				"name": "turning, 19 calls",
+				"values": {
+					"calls": 19,
+					"thr": 5,
+					"deb": 0
+				},
+				"parts": {
+					"call-20": {
+						"hidden": true,
+						"turn": -18
+					},
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -24
+					},
+					"call-2": {
+						"turn": -24
+					},
+					"call-3": {
+						"turn": -24
+					},
+					"call-4": {
+						"turn": -24
+					},
+					"call-5": {
+						"turn": -24
+					},
+					"call-6": {
+						"turn": -24
+					},
+					"call-7": {
+						"turn": -24
+					},
+					"call-8": {
+						"turn": -24
+					},
+					"call-9": {
+						"turn": -24
+					},
+					"call-10": {
+						"turn": -24
+					},
+					"call-11": {
+						"turn": -24
+					},
+					"call-12": {
+						"turn": -24
+					},
+					"call-13": {
+						"turn": -24
+					},
+					"call-14": {
+						"turn": -24
+					},
+					"call-15": {
+						"turn": -24
+					},
+					"call-16": {
+						"turn": -24
+					},
+					"call-17": {
+						"turn": -24
+					},
+					"call-18": {
+						"turn": -24
+					},
+					"call-19": {
+						"turn": -24
+					},
+					"thr-1": {
+						"turn": -24
+					},
+					"thr-2": {
+						"turn": -24
+					},
+					"thr-3": {
+						"turn": -24
+					},
+					"thr-4": {
+						"turn": -24
+					},
+					"thr-5": {
+						"turn": -24
+					},
+					"old-call-1": {
+						"turn": -24
+					},
+					"old-call-2": {
+						"turn": -24
+					},
+					"old-call-3": {
+						"turn": -24
+					},
+					"old-call-4": {
+						"turn": -24
+					},
+					"old-call-5": {
+						"turn": -24
+					},
+					"old-call-6": {
+						"turn": -24
+					},
+					"old-call-7": {
+						"turn": -24
+					},
+					"old-thr-1": {
+						"turn": -24
+					},
+					"old-thr-2": {
+						"turn": -24
+					},
+					"old-thr-3": {
+						"turn": -24
+					},
+					"old-deb": {
+						"turn": -24
+					},
+					"knob-pointer": {
+						"turn": 285
+					}
+				}
+			},
+			{
+				"name": "turning, 20 calls",
+				"values": {
+					"calls": 20,
+					"thr": 5,
+					"deb": 0
+				},
+				"parts": {
+					"call-21": {
+						"hidden": true,
+						"turn": -12
+					},
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"thr-6": {
+						"hidden": true,
+						"turn": -12
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -18
+					},
+					"call-2": {
+						"turn": -18
+					},
+					"call-3": {
+						"turn": -18
+					},
+					"call-4": {
+						"turn": -18
+					},
+					"call-5": {
+						"turn": -18
+					},
+					"call-6": {
+						"turn": -18
+					},
+					"call-7": {
+						"turn": -18
+					},
+					"call-8": {
+						"turn": -18
+					},
+					"call-9": {
+						"turn": -18
+					},
+					"call-10": {
+						"turn": -18
+					},
+					"call-11": {
+						"turn": -18
+					},
+					"call-12": {
+						"turn": -18
+					},
+					"call-13": {
+						"turn": -18
+					},
+					"call-14": {
+						"turn": -18
+					},
+					"call-15": {
+						"turn": -18
+					},
+					"call-16": {
+						"turn": -18
+					},
+					"call-17": {
+						"turn": -18
+					},
+					"call-18": {
+						"turn": -18
+					},
+					"call-19": {
+						"turn": -18
+					},
+					"call-20": {
+						"turn": -18
+					},
+					"thr-1": {
+						"turn": -18
+					},
+					"thr-2": {
+						"turn": -18
+					},
+					"thr-3": {
+						"turn": -18
+					},
+					"thr-4": {
+						"turn": -18
+					},
+					"thr-5": {
+						"turn": -18
+					},
+					"old-call-1": {
+						"turn": -18
+					},
+					"old-call-2": {
+						"turn": -18
+					},
+					"old-call-3": {
+						"turn": -18
+					},
+					"old-call-4": {
+						"turn": -18
+					},
+					"old-call-5": {
+						"turn": -18
+					},
+					"old-call-6": {
+						"turn": -18
+					},
+					"old-call-7": {
+						"turn": -18
+					},
+					"old-thr-1": {
+						"turn": -18
+					},
+					"old-thr-2": {
+						"turn": -18
+					},
+					"old-thr-3": {
+						"turn": -18
+					},
+					"old-deb": {
+						"turn": -18
+					},
+					"knob-pointer": {
+						"turn": 300
+					}
+				}
+			},
+			{
+				"name": "turning, 21 calls",
+				"values": {
+					"calls": 21,
+					"thr": 6,
+					"deb": 0
+				},
+				"parts": {
+					"call-22": {
+						"hidden": true,
+						"turn": -6
+					},
+					"call-23": {
+						"hidden": true
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -12
+					},
+					"call-2": {
+						"turn": -12
+					},
+					"call-3": {
+						"turn": -12
+					},
+					"call-4": {
+						"turn": -12
+					},
+					"call-5": {
+						"turn": -12
+					},
+					"call-6": {
+						"turn": -12
+					},
+					"call-7": {
+						"turn": -12
+					},
+					"call-8": {
+						"turn": -12
+					},
+					"call-9": {
+						"turn": -12
+					},
+					"call-10": {
+						"turn": -12
+					},
+					"call-11": {
+						"turn": -12
+					},
+					"call-12": {
+						"turn": -12
+					},
+					"call-13": {
+						"turn": -12
+					},
+					"call-14": {
+						"turn": -12
+					},
+					"call-15": {
+						"turn": -12
+					},
+					"call-16": {
+						"turn": -12
+					},
+					"call-17": {
+						"turn": -12
+					},
+					"call-18": {
+						"turn": -12
+					},
+					"call-19": {
+						"turn": -12
+					},
+					"call-20": {
+						"turn": -12
+					},
+					"call-21": {
+						"turn": -12
+					},
+					"thr-1": {
+						"turn": -12
+					},
+					"thr-2": {
+						"turn": -12
+					},
+					"thr-3": {
+						"turn": -12
+					},
+					"thr-4": {
+						"turn": -12
+					},
+					"thr-5": {
+						"turn": -12
+					},
+					"thr-6": {
+						"turn": -12
+					},
+					"old-call-1": {
+						"turn": -12
+					},
+					"old-call-2": {
+						"turn": -12
+					},
+					"old-call-3": {
+						"turn": -12
+					},
+					"old-call-4": {
+						"turn": -12
+					},
+					"old-call-5": {
+						"turn": -12
+					},
+					"old-call-6": {
+						"turn": -12
+					},
+					"old-call-7": {
+						"turn": -12
+					},
+					"old-thr-1": {
+						"turn": -12
+					},
+					"old-thr-2": {
+						"turn": -12
+					},
+					"old-thr-3": {
+						"turn": -12
+					},
+					"old-deb": {
+						"turn": -12
+					},
+					"throttle-rod": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"throttle-tip": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"knob-pointer": {
+						"turn": 315
+					}
+				}
+			},
+			{
+				"name": "turning, 22 calls",
+				"values": {
+					"calls": 22,
+					"thr": 6,
+					"deb": 0
+				},
+				"parts": {
+					"call-23": {
+						"hidden": true
+					},
+					"deb-pin": {
+						"hidden": true
+					},
+					"call-1": {
+						"turn": -6
+					},
+					"call-2": {
+						"turn": -6
+					},
+					"call-3": {
+						"turn": -6
+					},
+					"call-4": {
+						"turn": -6
+					},
+					"call-5": {
+						"turn": -6
+					},
+					"call-6": {
+						"turn": -6
+					},
+					"call-7": {
+						"turn": -6
+					},
+					"call-8": {
+						"turn": -6
+					},
+					"call-9": {
+						"turn": -6
+					},
+					"call-10": {
+						"turn": -6
+					},
+					"call-11": {
+						"turn": -6
+					},
+					"call-12": {
+						"turn": -6
+					},
+					"call-13": {
+						"turn": -6
+					},
+					"call-14": {
+						"turn": -6
+					},
+					"call-15": {
+						"turn": -6
+					},
+					"call-16": {
+						"turn": -6
+					},
+					"call-17": {
+						"turn": -6
+					},
+					"call-18": {
+						"turn": -6
+					},
+					"call-19": {
+						"turn": -6
+					},
+					"call-20": {
+						"turn": -6
+					},
+					"call-21": {
+						"turn": -6
+					},
+					"call-22": {
+						"turn": -6
+					},
+					"thr-1": {
+						"turn": -6
+					},
+					"thr-2": {
+						"turn": -6
+					},
+					"thr-3": {
+						"turn": -6
+					},
+					"thr-4": {
+						"turn": -6
+					},
+					"thr-5": {
+						"turn": -6
+					},
+					"thr-6": {
+						"turn": -6
+					},
+					"old-call-1": {
+						"turn": -6
+					},
+					"old-call-2": {
+						"turn": -6
+					},
+					"old-call-3": {
+						"turn": -6
+					},
+					"old-call-4": {
+						"turn": -6
+					},
+					"old-call-5": {
+						"turn": -6
+					},
+					"old-call-6": {
+						"turn": -6
+					},
+					"old-call-7": {
+						"turn": -6
+					},
+					"old-thr-1": {
+						"turn": -6
+					},
+					"old-thr-2": {
+						"turn": -6
+					},
+					"old-thr-3": {
+						"turn": -6
+					},
+					"old-deb": {
+						"turn": -6
+					},
+					"knob-pointer": {
+						"turn": 330
+					}
+				}
+			},
+			{
+				"name": "turning, 23 calls",
+				"values": {
+					"calls": 23,
+					"thr": 6,
+					"deb": 0
+				},
+				"parts": {
+					"deb-pin": {
+						"hidden": true
+					},
+					"knob-pointer": {
+						"turn": 345
+					}
+				}
+			},
+			{
+				"name": "pause",
+				"values": {
+					"calls": 23,
+					"thr": 6,
+					"deb": 0
+				},
+				"parts": {
+					"deb-pin": {
+						"hidden": true
+					},
+					"knob-pointer": {
+						"turn": 345
+					}
+				}
+			},
+			{
+				"name": "debounce fires",
+				"values": {
+					"calls": 23,
+					"thr": 6,
+					"deb": 1
+				},
+				"parts": {
+					"debounce-rod": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"debounce-tip": {
+						"move": [
+							0,
+							0,
+							-3
+						]
+					},
+					"knob-pointer": {
+						"turn": 345
+					}
+				}
+			},
+			{
+				"name": "stopped",
+				"values": {
+					"calls": 23,
+					"thr": 6,
+					"deb": 1
+				},
+				"parts": {
+					"knob-pointer": {
+						"turn": 345
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ DEBOUNCE, THROTTLE ]",
 		"corner": "VPK-HTML"
-	}
+	},
+	"focal": "debounce"
 }

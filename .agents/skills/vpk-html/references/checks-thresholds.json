@@ -40,14 +40,30 @@
 		"warnBytes": 1572846
 	},
 	"figures": {
-		"maxHeroes": 1,
-		"heroWarnBytes": 300000,
-		"heroFailBytes": 450000,
-		"liveWarnBytes": 30000,
-		"figuresWarnBytes": 600000,
+		"maxHeroes": null,
+		"heroWarnBytes": null,
+		"heroFailBytes": null,
+		"liveWarnBytes": null,
+		"figuresWarnBytes": null,
 		"parts": {
 			"figure": [40, 80],
 			"hero": [80, 150]
+		},
+		"hairline": {
+			"runtimeWarnBytes": null,
+			"pageWarnBytes": null
 		}
+	},
+	"iso": {
+		"partsWarn": null,
+		"partsMax": null,
+		"svgWarnBytes": null,
+		"svgFailBytes": null,
+		"fillsMax": null,
+		"labelsMax": null,
+		"marksMax": null,
+		"detailSegmentsWarn": null,
+		"detailSegmentsFail": null,
+		"detailSegmentsFigureFail": null
 	}
 }

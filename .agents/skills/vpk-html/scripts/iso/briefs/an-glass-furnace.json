@@ -3,330 +3,3286 @@
 	"id": "an-glass-furnace",
 	"figId": "FIG_217",
 	"title": "Glory hole",
-	"label": "Drum furnace with a burner and a door whose framed port is the glory hole, beside a steel marver on a stand; the blowpipe rests its accented gather on it. Hover slides the pipe into the glory hole to reheat it.",
-	"caption": "On the marver the steel takes heat back out of the gather; slide the pipe into the hole and the 1,150 °C walls and burner flame reheat it toward 990 °C.",
+	"label": "Glassblowing station: drum furnace, a glory hole glowing down a dark bore between riveted doors, blower and burner gun with valves and gauges, a glowing steel marver, the gather on a blowpipe on yokes, jacks and tweezers, an annealer.",
+	"caption": "A gas-fired drum furnace beside a steel marver. In the hole, walls at 1,150 °C and the burner flame reheat the gather toward 990 °C; on the marver the steel takes the heat back. Point across the figure to slide the pipe into the glory hole.",
 	"camera": {
 		"preset": "dimetric",
 		"scale": "fit"
 	},
+	"focal": "gather",
+	"labels": "none",
 	"parts": [
 		{
-			"id": "plinth",
-			"kind": "box",
+			"id": "plate",
+			"kind": "slab",
 			"at": [
-				2,
-				6,
+				-2,
+				-6,
 				0
 			],
 			"size": [
-				42,
-				30,
-				6
+				186,
+				78,
+				3
 			],
-			"r": 2,
-			"label": "Plinth",
-			"explode": [
-				0,
-				0,
-				0
-			]
-		},
-		{
-			"id": "drum",
-			"kind": "box",
-			"at": [
-				4,
-				8,
-				6
-			],
-			"size": [
-				38,
-				26,
-				26
-			],
-			"r": 4,
-			"marks": [
-				[
-					[
-						4,
-						13
+			"r": 3,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						24,
+						69
 					],
-					[
-						34,
-						13
+					"to": [
+						134,
+						69
+					],
+					"step": 1,
+					"every": 10,
+					"lengths": [
+						1,
+						2.4
+					],
+					"side": -1
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.4,
+					"r": 2
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						170,
+						8
+					],
+					"size": [
+						10,
+						4.5
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							166,
+							6.5
+						],
+						[
+							174,
+							6.5
+						]
 					]
-				]
-			],
-			"label": "Drum furnace",
-			"explode": [
-				0,
-				0,
-				0
+				},
+				{
+					"type": "ticks",
+					"face": "+y",
+					"from": [
+						24,
+						1.5
+					],
+					"to": [
+						134,
+						1.5
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						0.6,
+						1.2
+					]
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						140,
+						70.5
+					],
+					"text": "Point to slide the pipe  ← →",
+					"size": 2.6
+				}
 			]
 		},
 		{
-			"id": "burner",
-			"kind": "cylinder",
-			"at": [
-				20,
-				21,
-				32
-			],
-			"size": [
-				4,
-				4,
-				7
-			],
-			"label": "Burner",
-			"explode": [
-				0,
-				0,
-				0
-			]
-		},
-		{
-			"id": "door",
+			"id": "frame",
 			"kind": "box",
 			"at": [
-				42,
-				10,
+				14,
+				15,
+				18
+			],
+			"size": [
+				36,
+				30,
+				4
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							2
+						],
+						[
+							34,
+							2
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						3,
+						2
+					],
+					"grid": [
+						4,
+						1
+					],
+					"gap": 10,
+					"size": 0.5
+				}
+			]
+		},
+		{
+			"id": "fleg-0",
+			"kind": "leg",
+			"at": [
+				16,
+				17,
+				18
+			],
+			"radius": 1.2,
+			"ground": 3,
+			"foot": {
+				"r": 2.0,
+				"h": 1
+			}
+		},
+		{
+			"id": "fleg-1",
+			"kind": "leg",
+			"at": [
+				48,
+				17,
+				18
+			],
+			"radius": 1.2,
+			"ground": 3,
+			"foot": {
+				"r": 2.0,
+				"h": 1
+			}
+		},
+		{
+			"id": "fleg-2",
+			"kind": "leg",
+			"at": [
+				16,
+				43,
+				18
+			],
+			"radius": 1.2,
+			"ground": 3,
+			"foot": {
+				"r": 2.0,
+				"h": 1
+			}
+		},
+		{
+			"id": "fleg-3",
+			"kind": "leg",
+			"at": [
+				48,
+				43,
+				18
+			],
+			"radius": 1.2,
+			"ground": 3,
+			"foot": {
+				"r": 2.0,
+				"h": 1
+			}
+		},
+		{
+			"id": "frail",
+			"kind": "box",
+			"at": [
+				15,
+				42.5,
 				8
 			],
 			"size": [
-				3,
-				22,
-				22
+				34,
+				1.2,
+				1.4
 			],
-			"r": 1,
-			"label": "Door",
-			"explode": [
+			"r": 0.3
+		},
+		{
+			"id": "frail-b",
+			"kind": "box",
+			"at": [
+				15,
+				16.4,
+				8
+			],
+			"size": [
+				34,
+				1.2,
+				1.4
+			],
+			"r": 0.3
+		},
+		{
+			"id": "drum",
+			"kind": "lathe",
+			"at": [
+				12,
+				30,
+				40
+			],
+			"axis": "x",
+			"up": [
 				0,
 				0,
-				0
+				1
+			],
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					19.6
+				],
+				[
+					0.6,
+					20.2,
+					"soft"
+				],
+				[
+					2.6,
+					20.2,
+					"soft"
+				],
+				[
+					3.2,
+					19
+				],
+				[
+					4,
+					17.6
+				],
+				[
+					38,
+					17.6
+				],
+				[
+					38,
+					0
+				]
+			],
+			"steps": 96,
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.6,
+						6,
+						14,
+						26,
+						34
+					]
+				}
 			]
 		},
 		{
-			"id": "port",
+			"id": "cap-stem",
+			"kind": "cylinder",
+			"at": [
+				36,
+				30,
+				57.4
+			],
+			"size": [
+				1.2,
+				1.2,
+				2.2
+			]
+		},
+		{
+			"id": "cap",
+			"kind": "sphere",
+			"at": [
+				36,
+				30,
+				60.2
+			],
+			"r": 1.5
+		},
+		{
+			"id": "peep-flange",
+			"kind": "ring",
+			"at": [
+				20,
+				42.3,
+				52.3
+			],
+			"axis": [
+				0,
+				0.71,
+				0.71
+			],
+			"size": [
+				4.6,
+				4.6,
+				0
+			],
+			"thickness": 0.4,
+			"inner": 3.4,
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 4.0,
+					"count": 6,
+					"size": 0.25
+				}
+			]
+		},
+		{
+			"id": "peep",
+			"kind": "ring",
+			"at": [
+				20,
+				42.6,
+				52.6
+			],
+			"axis": [
+				0,
+				0.71,
+				0.71
+			],
+			"size": [
+				3.4,
+				3.4,
+				0
+			],
+			"thickness": 0.9,
+			"inner": 1.9,
+			"tone": "ink"
+		},
+		{
+			"id": "peep-glow",
+			"kind": "cylinder",
+			"at": [
+				20,
+				42.9,
+				52.9
+			],
+			"axis": [
+				0,
+				0.71,
+				0.71
+			],
+			"size": [
+				1.9,
+				1.9,
+				0.5
+			],
+			"tone": "glow"
+		},
+		{
+			"id": "core-plate",
 			"kind": "box",
 			"at": [
-				45,
-				14,
-				11
+				51,
+				20,
+				22
 			],
 			"size": [
 				2,
-				14,
-				14
+				20,
+				34
 			],
-			"r": 1,
-			"label": "Glory hole",
-			"explode": [
-				0,
-				0,
-				0
-			]
+			"r": 0.5
 		},
 		{
-			"id": "mouth",
+			"id": "door-l",
 			"kind": "box",
 			"at": [
-				47,
-				16.5,
-				13.5
+				52.5,
+				40,
+				18
 			],
 			"size": [
-				0.5,
-				9,
-				9
-			],
-			"state": "active",
-			"label": "Glory hole",
-			"explode": [
-				0,
-				0,
-				0
-			]
-		},
-		{
-			"id": "stand",
-			"kind": "box",
-			"at": [
-				70,
-				12,
-				0
-			],
-			"size": [
+				2.4,
 				22,
-				18,
+				36
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						2,
+						2.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 18,
+					"size": 0.45
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						2,
+						33.5
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 18,
+					"size": 0.45
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "stadium",
+					"at": [
+						11,
+						18
+					],
+					"size": [
+						1.6,
+						14
+					],
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "door-r",
+			"kind": "box",
+			"at": [
+				52.5,
+				-2,
+				18
+			],
+			"size": [
+				2.4,
+				22,
+				36
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						2,
+						2.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 18,
+					"size": 0.45
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						2,
+						33.5
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 18,
+					"size": 0.45
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "stadium",
+					"at": [
+						11,
+						18
+					],
+					"size": [
+						1.6,
+						14
+					],
+					"depth": 0.5
+				}
+			]
+		},
+		{
+			"id": "rail",
+			"kind": "box",
+			"at": [
+				51.5,
+				-8,
+				61
+			],
+			"size": [
+				3.6,
+				78,
+				3
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1,
+							1.5
+						],
+						[
+							77,
+							1.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "rail-cap-0",
+			"kind": "box",
+			"at": [
+				51,
+				-9,
+				60.5
+			],
+			"size": [
+				4.6,
+				1.4,
+				4
+			],
+			"r": 0.4
+		},
+		{
+			"id": "rail-cap-1",
+			"kind": "box",
+			"at": [
+				51,
+				69,
+				60.5
+			],
+			"size": [
+				4.6,
+				1.4,
+				4
+			],
+			"r": 0.4
+		},
+		{
+			"id": "strap-0",
+			"kind": "box",
+			"at": [
+				53,
+				43,
+				54
+			],
+			"size": [
+				1.2,
+				1.6,
+				7
+			],
+			"r": 0.2
+		},
+		{
+			"id": "strap-1",
+			"kind": "box",
+			"at": [
+				53,
+				58,
+				54
+			],
+			"size": [
+				1.2,
+				1.6,
+				7
+			],
+			"r": 0.2
+		},
+		{
+			"id": "strap-2",
+			"kind": "box",
+			"at": [
+				53,
+				1,
+				54
+			],
+			"size": [
+				1.2,
+				1.6,
+				7
+			],
+			"r": 0.2
+		},
+		{
+			"id": "strap-3",
+			"kind": "box",
+			"at": [
+				53,
+				16,
+				54
+			],
+			"size": [
+				1.2,
+				1.6,
+				7
+			],
+			"r": 0.2
+		},
+		{
+			"id": "pedestal",
+			"kind": "box",
+			"at": [
+				9,
+				57,
+				3
+			],
+			"size": [
+				12,
+				8,
+				4
+			],
+			"r": 0.5
+		},
+		{
+			"id": "feed",
+			"kind": "tube",
+			"points": [
+				[
+					12,
+					62,
+					22
+				],
+				[
+					12,
+					62,
+					37
+				],
+				[
+					21,
+					62,
+					37
+				],
+				[
+					21,
+					60,
+					37
+				]
+			],
+			"radius": 1.7,
+			"fillet": 3.5
+		},
+		{
+			"id": "feed-flange",
+			"kind": "ring",
+			"at": [
+				12,
+				62,
+				25
+			],
+			"axis": "z",
+			"size": [
+				2.6,
+				2.6,
+				0
+			],
+			"thickness": 0.8,
+			"inner": 1.7
+		},
+		{
+			"id": "train",
+			"kind": "tube",
+			"points": [
+				[
+					19,
+					66,
+					17
+				],
+				[
+					19,
+					66,
+					24
+				],
+				[
+					42,
+					66,
+					24
+				]
+			],
+			"radius": 0.8,
+			"fillet": 1.5
+		},
+		{
+			"id": "valve-0",
+			"kind": "cylinder",
+			"at": [
+				26,
+				66,
+				23
+			],
+			"size": [
+				1.5,
+				1.5,
+				2.4
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.2
+					]
+				}
+			]
+		},
+		{
+			"id": "vstem-0",
+			"kind": "rod",
+			"from": [
+				26,
+				66,
+				25.4
+			],
+			"to": [
+				26,
+				66,
+				27.4
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "knob-0",
+			"kind": "cylinder",
+			"at": [
+				26,
+				66,
+				27.4
+			],
+			"size": [
+				1.6,
+				1.6,
+				0.7
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 16
+				}
+			]
+		},
+		{
+			"id": "valve-1",
+			"kind": "cylinder",
+			"at": [
+				33,
+				66,
+				23
+			],
+			"size": [
+				1.5,
+				1.5,
+				2.4
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.2
+					]
+				}
+			]
+		},
+		{
+			"id": "vstem-1",
+			"kind": "rod",
+			"from": [
+				33,
+				66,
+				25.4
+			],
+			"to": [
+				33,
+				66,
+				27.4
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "knob-1",
+			"kind": "cylinder",
+			"at": [
+				33,
+				66,
+				27.4
+			],
+			"size": [
+				1.6,
+				1.6,
+				0.7
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 16
+				}
+			]
+		},
+		{
+			"id": "gauge-stem",
+			"kind": "rod",
+			"from": [
+				39,
+				66,
+				24.8
+			],
+			"to": [
+				39,
+				66,
+				27.5
+			],
+			"radius": 0.4
+		},
+		{
+			"id": "gauge",
+			"kind": "cylinder",
+			"at": [
+				39,
+				66.4,
+				30
+			],
+			"axis": "y",
+			"size": [
+				2.8,
+				2.8,
+				1.0
+			],
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 2.3,
+					"count": 12,
+					"lengths": [
+						0.5,
+						0.8
+					],
+					"from": 225,
+					"span": 270
+				},
+				{
+					"type": "line",
+					"face": "end",
+					"points": [
+						[
+							0,
+							0
+						],
+						[
+							1.4,
+							1.2
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "hose",
+			"kind": "tube",
+			"points": [
+				[
+					42,
+					66,
+					24
+				],
+				[
+					44,
+					67,
+					20
+				],
+				[
+					44,
+					67,
+					8
+				],
+				[
+					42,
+					66,
+					4
+				]
+			],
+			"radius": 1.0,
+			"fillet": 3,
+			"corrugate": {
+				"every": 1.0
+			}
+		},
+		{
+			"id": "hose-2",
+			"kind": "tube",
+			"points": [
+				[
+					12,
+					66,
+					6
+				],
+				[
+					7,
+					67,
+					10
+				],
+				[
+					6,
+					67,
+					22
+				],
+				[
+					10,
+					66,
+					24
+				],
+				[
+					19,
+					66,
+					24
+				]
+			],
+			"radius": 0.9,
+			"fillet": 3,
+			"corrugate": {
+				"every": 1.0
+			}
+		},
+		{
+			"id": "ctrl",
+			"kind": "box",
+			"at": [
+				44,
+				56,
 				15
 			],
-			"r": 1,
-			"label": "Stand",
-			"explode": [
-				0,
-				0,
-				0
+			"size": [
+				9,
+				7,
+				10
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						3.5,
+						6
+					],
+					"size": [
+						4.4,
+						4.4
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "radialTicks",
+					"face": "+y",
+					"at": [
+						3.5,
+						6
+					],
+					"r": 2.0,
+					"count": 10,
+					"lengths": [
+						0.5,
+						0.8
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						7,
+						2.5
+					],
+					"size": [
+						1.4,
+						2
+					],
+					"depth": 0.4
+				}
 			]
+		},
+		{
+			"id": "ctrl-leg",
+			"kind": "leg",
+			"at": [
+				48.5,
+				59.5,
+				15
+			],
+			"radius": 0.8,
+			"ground": 3,
+			"foot": {
+				"r": 1.6,
+				"h": 1
+			}
+		},
+		{
+			"id": "ctrl-block",
+			"kind": "box",
+			"at": [
+				45,
+				60,
+				3
+			],
+			"size": [
+				4,
+				3,
+				3
+			],
+			"r": 0.4
 		},
 		{
 			"id": "marver",
 			"kind": "box",
 			"at": [
-				66,
-				8,
-				15
+				64,
+				18,
+				34
 			],
 			"size": [
-				30,
+				26,
 				26,
 				3
 			],
-			"r": 1,
-			"marks": [
-				[
-					[
-						4,
-						22
-					],
-					[
-						26,
-						22
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.2,
+					"r": 0.6
+				}
+			]
+		},
+		{
+			"id": "mleg-0",
+			"kind": "leg",
+			"at": [
+				66,
+				20,
+				34
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "mleg-1",
+			"kind": "leg",
+			"at": [
+				88,
+				20,
+				34
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "mleg-2",
+			"kind": "leg",
+			"at": [
+				66,
+				42,
+				34
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "mleg-3",
+			"kind": "leg",
+			"at": [
+				88,
+				42,
+				34
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "mshelf",
+			"kind": "plate",
+			"at": [
+				65,
+				19,
+				10
+			],
+			"size": [
+				24,
+				24,
+				1.2
+			]
+		},
+		{
+			"id": "mrail",
+			"kind": "box",
+			"at": [
+				65,
+				42.4,
+				22
+			],
+			"size": [
+				24,
+				1.2,
+				1.2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "heat",
+			"kind": "glow",
+			"at": [
+				76,
+				30,
+				37.15
+			],
+			"r": 12
+		},
+		{
+			"id": "yoke-1",
+			"kind": "box",
+			"at": [
+				100,
+				6,
+				32
+			],
+			"size": [
+				4,
+				54,
+				4.6
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1,
+							2.3
+						],
+						[
+							53,
+							2.3
+						]
 					]
+				}
+			]
+		},
+		{
+			"id": "y1post-0",
+			"kind": "leg",
+			"at": [
+				102,
+				9,
+				32
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "y1post-1",
+			"kind": "leg",
+			"at": [
+				102,
+				57,
+				32
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "yoke-2",
+			"kind": "box",
+			"at": [
+				130,
+				12,
+				26.5
+			],
+			"size": [
+				4,
+				42,
+				4
+			],
+			"r": 0.6
+		},
+		{
+			"id": "y2post-0",
+			"kind": "leg",
+			"at": [
+				132,
+				15,
+				26.5
+			],
+			"radius": 1.0,
+			"ground": 3,
+			"foot": {
+				"r": 1.7,
+				"h": 1
+			}
+		},
+		{
+			"id": "y2post-1",
+			"kind": "leg",
+			"at": [
+				132,
+				51,
+				26.5
+			],
+			"radius": 1.0,
+			"ground": 3,
+			"foot": {
+				"r": 1.7,
+				"h": 1
+			}
+		},
+		{
+			"id": "rack",
+			"kind": "box",
+			"at": [
+				104.3,
+				8,
+				28.4
+			],
+			"size": [
+				1.6,
+				27,
+				3.4
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						2,
+						1.7
+					],
+					"grid": [
+						6,
+						1
+					],
+					"gap": 5.2,
+					"size": 0.45
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							0.6,
+							2.8
+						],
+						[
+							29.4,
+							2.8
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "annealer",
+			"kind": "box",
+			"at": [
+				150,
+				18,
+				28
+			],
+			"size": [
+				26,
+				26,
+				30
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 0.8
+				}
+			]
+		},
+		{
+			"id": "aleg-0",
+			"kind": "leg",
+			"at": [
+				152,
+				20,
+				28
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "aleg-1",
+			"kind": "leg",
+			"at": [
+				174,
+				20,
+				28
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "aleg-2",
+			"kind": "leg",
+			"at": [
+				152,
+				42,
+				28
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "aleg-3",
+			"kind": "leg",
+			"at": [
+				174,
+				42,
+				28
+			],
+			"radius": 1.1,
+			"ground": 3,
+			"foot": {
+				"r": 1.8,
+				"h": 1
+			}
+		},
+		{
+			"id": "ashelf",
+			"kind": "plate",
+			"at": [
+				151,
+				19,
+				9
+			],
+			"size": [
+				24,
+				24,
+				1.2
+			]
+		},
+		{
+			"id": "adoor",
+			"kind": "box",
+			"at": [
+				152.5,
+				44,
+				31
+			],
+			"size": [
+				19,
+				1.2,
+				24
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 1,
+					"r": 0.4
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "circle",
+					"at": [
+						4,
+						19
+					],
+					"size": [
+						1.6,
+						1.6
+					]
+				}
+			]
+		},
+		{
+			"id": "hinge-0",
+			"kind": "cylinder",
+			"at": [
+				152.2,
+				45,
+				34
+			],
+			"size": [
+				0.5,
+				0.5,
+				3
+			]
+		},
+		{
+			"id": "hinge-1",
+			"kind": "cylinder",
+			"at": [
+				152.2,
+				45,
+				49
+			],
+			"size": [
+				0.5,
+				0.5,
+				3
+			]
+		},
+		{
+			"id": "ahandle",
+			"kind": "rod",
+			"from": [
+				156,
+				46.2,
+				34
+			],
+			"to": [
+				167,
+				46.2,
+				34
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "knob",
+			"kind": "sphere",
+			"at": [
+				156.5,
+				45.8,
+				50
+			],
+			"r": 0.8
+		},
+		{
+			"id": "apanel",
+			"kind": "box",
+			"at": [
+				176,
+				21,
+				32
+			],
+			"size": [
+				2,
+				14,
+				22
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "circle",
+					"at": [
+						7,
+						15
+					],
+					"size": [
+						6.4,
+						6.4
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "radialTicks",
+					"face": "+x",
+					"at": [
+						7,
+						15
+					],
+					"r": 2.9,
+					"count": 12,
+					"lengths": [
+						0.6,
+						0.9
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							7,
+							15
+						],
+						[
+							7,
+							17.5
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						7,
+						4
+					],
+					"size": [
+						1.4,
+						2
+					],
+					"depth": 0.4
+				}
+			]
+		},
+		{
+			"id": "vent",
+			"kind": "cone",
+			"at": [
+				163,
+				31,
+				58
+			],
+			"axis": "z",
+			"r0": 2.4,
+			"r1": 1.1,
+			"length": 3.2
+		},
+		{
+			"id": "acord",
+			"kind": "tube",
+			"points": [
+				[
+					177,
+					28,
+					32
+				],
+				[
+					177,
+					28,
+					20
+				],
+				[
+					177,
+					26,
+					4
 				]
 			],
-			"label": "Marver",
-			"explode": [
-				0,
-				0,
-				0
+			"radius": 0.5,
+			"fillet": 2
+		},
+		{
+			"id": "pipe",
+			"kind": "rod",
+			"from": [
+				80,
+				31.5,
+				41
+			],
+			"to": [
+				146,
+				45,
+				28
+			],
+			"radius": 0.75
+		},
+		{
+			"id": "mouth",
+			"kind": "lathe",
+			"at": [
+				146,
+				45,
+				28
+			],
+			"axis": [
+				66,
+				13.5,
+				-13
+			],
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					3.5,
+					1.1
+				],
+				[
+					4.2,
+					0.7
+				]
 			]
 		},
 		{
 			"id": "gather",
-			"kind": "box",
+			"kind": "sphere",
 			"at": [
-				76,
-				18,
-				18
+				76.5,
+				30.8,
+				41.6
 			],
+			"r": 4.6,
+			"tone": "glow"
+		},
+		{
+			"id": "hole-floor",
+			"kind": "lathe",
+			"at": [
+				54.9,
+				30,
+				38
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					7.7
+				],
+				[
+					0.3,
+					7.7
+				],
+				[
+					0.3,
+					0
+				]
+			],
+			"tone": "glow"
+		},
+		{
+			"id": "bore-0",
+			"kind": "ring",
+			"at": [
+				55.0,
+				30,
+				38
+			],
+			"axis": "x",
 			"size": [
-				7,
-				6,
-				6
-			],
-			"r": 3,
-			"label": "Gather",
-			"explode": [
-				-30.5,
-				0,
+				8.3,
+				8.3,
 				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-1",
+			"kind": "ring",
+			"at": [
+				55.38,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-2",
+			"kind": "ring",
+			"at": [
+				55.76,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-3",
+			"kind": "ring",
+			"at": [
+				56.14,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-4",
+			"kind": "ring",
+			"at": [
+				56.52,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-5",
+			"kind": "ring",
+			"at": [
+				56.9,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-6",
+			"kind": "ring",
+			"at": [
+				57.28,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-7",
+			"kind": "ring",
+			"at": [
+				57.66,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-8",
+			"kind": "ring",
+			"at": [
+				58.04,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-9",
+			"kind": "ring",
+			"at": [
+				58.42,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "bore-10",
+			"kind": "ring",
+			"at": [
+				58.8,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				8.3,
+				8.3,
+				0
+			],
+			"thickness": 0.42,
+			"inner": 7.7,
+			"tone": "ink"
+		},
+		{
+			"id": "port-ring",
+			"kind": "ring",
+			"at": [
+				59.0,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				10.4,
+				10.4,
+				0
+			],
+			"thickness": 1.6,
+			"inner": 7.8,
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 9.2,
+					"count": 12,
+					"size": 0.3
+				}
 			]
 		},
 		{
-			"id": "pipe",
+			"id": "port-plate",
+			"kind": "ring",
+			"at": [
+				54.9,
+				30,
+				38
+			],
+			"axis": "x",
+			"size": [
+				12,
+				12,
+				0
+			],
+			"thickness": 0.5,
+			"inner": 7.8
+		},
+		{
+			"id": "halo",
+			"kind": "glow",
+			"at": [
+				54.8,
+				30.5,
+				46.5
+			],
+			"axis": "x",
+			"r": 5.5
+		},
+		{
+			"id": "heat-core",
+			"kind": "glow",
+			"at": [
+				75,
+				29.5,
+				37.2
+			],
+			"r": 5
+		},
+		{
+			"id": "blower",
+			"kind": "lathe",
+			"at": [
+				15,
+				59,
+				13
+			],
+			"axis": "y",
+			"up": [
+				0,
+				0,
+				1
+			],
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					5.4
+				],
+				[
+					0.5,
+					6,
+					"soft"
+				],
+				[
+					5.2,
+					6,
+					"soft"
+				],
+				[
+					5.8,
+					5.4
+				],
+				[
+					5.8,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 5.0,
+					"count": 10,
+					"size": 0.3
+				},
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 1.4,
+					"r1": 3.8,
+					"count": 8
+				},
+				{
+					"type": "bands",
+					"at": [
+						2.9
+					]
+				}
+			]
+		},
+		{
+			"id": "scroll",
 			"kind": "box",
 			"at": [
-				83,
-				20,
+				9.5,
+				59.5,
+				13
+			],
+			"size": [
+				5.5,
+				4.8,
+				9
+			],
+			"r": 1.6
+		},
+		{
+			"id": "fan-hub",
+			"kind": "cylinder",
+			"at": [
+				15,
+				64.8,
+				13
+			],
+			"axis": "y",
+			"size": [
+				1.4,
+				1.4,
+				0.9
+			]
+		},
+		{
+			"id": "motor",
+			"kind": "cylinder",
+			"at": [
+				15,
+				57.6,
+				13
+			],
+			"axis": "-y",
+			"size": [
+				3.2,
+				3.2,
+				3.4
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 14
+				}
+			]
+		},
+		{
+			"id": "gun",
+			"kind": "lathe",
+			"at": [
+				21,
+				60.5,
+				37
+			],
+			"axis": [
+				0.45,
+				-1,
+				0.15
+			],
+			"up": [
+				0,
+				0,
+				1
+			],
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					2.6
+				],
+				[
+					0.4,
+					3,
+					"soft"
+				],
+				[
+					6.5,
+					3,
+					"soft"
+				],
+				[
+					7,
+					2.4
+				],
+				[
+					8,
+					2.4
+				],
+				[
+					8.4,
+					3.2
+				],
+				[
+					11.5,
+					4.6
+				],
+				[
+					11.5,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2,
+						4.2,
+						9.5
+					]
+				}
+			]
+		},
+		{
+			"id": "gun-valve",
+			"kind": "box",
+			"at": [
+				22,
+				61,
+				40
+			],
+			"size": [
+				3.6,
+				3.2,
+				3
+			],
+			"r": 0.5
+		},
+		{
+			"id": "gun-knob",
+			"kind": "cylinder",
+			"at": [
+				23.8,
+				62.6,
+				43.6
+			],
+			"size": [
+				1.5,
+				1.5,
+				0.7
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 16
+				}
+			]
+		},
+		{
+			"id": "gun-stem",
+			"kind": "rod",
+			"from": [
+				23.8,
+				62.6,
+				43
+			],
+			"to": [
+				23.8,
+				62.6,
+				43.6
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "gun-gauge",
+			"kind": "cylinder",
+			"at": [
+				19.5,
+				63.5,
+				41.5
+			],
+			"axis": "y",
+			"size": [
+				2.2,
+				2.2,
+				0.9
+			],
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 1.85,
+					"count": 10,
+					"lengths": [
+						0.4,
+						0.7
+					],
+					"from": 225,
+					"span": 270
+				},
+				{
+					"type": "line",
+					"face": "end",
+					"points": [
+						[
+							0,
+							0
+						],
+						[
+							1.0,
+							1.1
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gun-gstem",
+			"kind": "rod",
+			"from": [
+				19.5,
+				62,
+				39
+			],
+			"to": [
+				19.5,
+				63,
+				40.4
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "pilot",
+			"kind": "tube",
+			"points": [
+				[
+					25.5,
+					62,
+					41
+				],
+				[
+					28,
+					62,
+					41
+				],
+				[
+					28,
+					58,
+					41
+				],
+				[
+					28,
+					55,
+					38.5
+				]
+			],
+			"radius": 0.45,
+			"fillet": 1.2
+		},
+		{
+			"id": "valve-2",
+			"kind": "cylinder",
+			"at": [
+				22,
+				66,
+				23
+			],
+			"size": [
+				1.4,
+				1.4,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.1
+					]
+				}
+			]
+		},
+		{
+			"id": "vstem-2",
+			"kind": "rod",
+			"from": [
+				22,
+				66,
+				25.2
+			],
+			"to": [
+				22,
+				66,
+				26.8
+			],
+			"radius": 0.3
+		},
+		{
+			"id": "lever-2",
+			"kind": "box",
+			"at": [
+				21.6,
+				63.2,
+				26.6
+			],
+			"size": [
+				0.8,
+				3.6,
+				0.6
+			],
+			"r": 0.2
+		},
+		{
+			"id": "reg",
+			"kind": "lathe",
+			"at": [
+				29.5,
+				66,
+				24
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					0
+				],
+				[
+					0,
+					1.6
+				],
+				[
+					1.4,
+					1.6
+				],
+				[
+					1.6,
+					2.4
+				],
+				[
+					3,
+					2.4
+				],
+				[
+					3.4,
+					1.0
+				],
+				[
+					5,
+					0.6
+				],
+				[
+					5.2,
+					0
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						2.3
+					]
+				}
+			]
+		},
+		{
+			"id": "gauge-2",
+			"kind": "cylinder",
+			"at": [
+				36,
+				66.4,
+				21
+			],
+			"axis": "y",
+			"size": [
+				1.8,
+				1.8,
+				0.8
+			],
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "end",
+					"r": 1.5,
+					"count": 8,
+					"lengths": [
+						0.35,
+						0.6
+					],
+					"from": 225,
+					"span": 270
+				},
+				{
+					"type": "line",
+					"face": "end",
+					"points": [
+						[
+							0,
+							0
+						],
+						[
+							-0.8,
+							0.9
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gstem-2",
+			"kind": "rod",
+			"from": [
+				36,
+				66,
+				24
+			],
+			"to": [
+				36,
+				66,
+				22.6
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "train-2",
+			"kind": "tube",
+			"points": [
+				[
+					19,
+					64,
+					17
+				],
+				[
+					19,
+					64,
+					20
+				],
+				[
+					40,
+					64,
+					20
+				],
+				[
+					40,
+					60,
+					20
+				],
+				[
+					40,
+					60,
+					16
+				]
+			],
+			"radius": 0.6,
+			"fillet": 1.2
+		},
+		{
+			"id": "union-0",
+			"kind": "cylinder",
+			"at": [
+				30,
+				64,
 				20
 			],
+			"axis": "x",
 			"size": [
-				20,
-				2,
-				2
+				0.9,
+				0.9,
+				1.4
+			]
+		},
+		{
+			"id": "tee",
+			"kind": "cylinder",
+			"at": [
+				19,
+				66,
+				20.5
 			],
-			"r": 1,
-			"label": "Blowpipe",
-			"explode": [
-				-30.5,
-				0,
-				0
+			"size": [
+				1.1,
+				1.1,
+				1.4
 			]
-		}
-	],
-	"focal": "gather",
-	"labels": [
-		{
-			"text": "Burner",
-			"target": "burner",
-			"side": "left"
 		},
 		{
-			"text": "Drum furnace",
-			"target": "drum",
-			"side": "left"
+			"id": "rack-brk-0",
+			"kind": "box",
+			"at": [
+				104.1,
+				9.5,
+				28.4
+			],
+			"size": [
+				1.2,
+				1.4,
+				4
+			],
+			"r": 0.2
 		},
 		{
-			"text": "Glory hole 1,150 °C",
-			"target": "port",
-			"side": "right",
-			"anchor": [
-				46,
-				15.5,
+			"id": "rack-brk-1",
+			"kind": "box",
+			"at": [
+				104.1,
+				32.6,
+				28.4
+			],
+			"size": [
+				1.2,
+				1.4,
+				4
+			],
+			"r": 0.2
+		},
+		{
+			"id": "jack-0",
+			"kind": "prism",
+			"at": [
+				106.0,
+				11.5,
+				29.3
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					-0.6,
+					0
+				],
+				[
+					0.6,
+					0
+				],
+				[
+					0.8,
+					-2.5
+				],
+				[
+					1.97,
+					-7.65
+				],
+				[
+					2.7,
+					-14.45
+				],
+				[
+					2.16,
+					-17
+				],
+				[
+					1.26,
+					-16.66
+				],
+				[
+					1.6,
+					-14.45
+				],
+				[
+					1.05,
+					-7.65
+				],
+				[
+					0,
+					-3.2
+				],
+				[
+					-1.05,
+					-7.65
+				],
+				[
+					-1.6,
+					-14.45
+				],
+				[
+					-1.26,
+					-16.66
+				],
+				[
+					-2.16,
+					-17
+				],
+				[
+					-2.7,
+					-14.45
+				],
+				[
+					-1.97,
+					-7.65
+				],
+				[
+					-0.8,
+					-2.5
+				]
+			],
+			"depth": 1.0
+		},
+		{
+			"id": "jack-0-pin",
+			"kind": "cylinder",
+			"at": [
+				106.6,
+				11.5,
+				27.5
+			],
+			"axis": "x",
+			"size": [
+				0.55,
+				0.55,
+				0.4
+			]
+		},
+		{
+			"id": "jack-0-hook",
+			"kind": "rod",
+			"from": [
+				106.0,
+				11.5,
+				31.3
+			],
+			"to": [
+				106.2,
+				11.5,
+				29.1
+			],
+			"radius": 0.28
+		},
+		{
+			"id": "jack-1",
+			"kind": "prism",
+			"at": [
+				106.0,
+				16.6,
+				29.3
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					-0.6,
+					0
+				],
+				[
+					0.6,
+					0
+				],
+				[
+					0.8,
+					-2.5
+				],
+				[
+					2.11,
+					-8.33
+				],
+				[
+					2.9,
+					-15.72
+				],
+				[
+					2.33,
+					-18.5
+				],
+				[
+					1.38,
+					-18.13
+				],
+				[
+					1.75,
+					-15.72
+				],
+				[
+					1.15,
+					-8.33
+				],
+				[
+					0,
+					-3.2
+				],
+				[
+					-1.15,
+					-8.33
+				],
+				[
+					-1.75,
+					-15.72
+				],
+				[
+					-1.38,
+					-18.13
+				],
+				[
+					-2.33,
+					-18.5
+				],
+				[
+					-2.9,
+					-15.72
+				],
+				[
+					-2.11,
+					-8.33
+				],
+				[
+					-0.8,
+					-2.5
+				]
+			],
+			"depth": 1.0
+		},
+		{
+			"id": "jack-1-pin",
+			"kind": "cylinder",
+			"at": [
+				106.6,
+				16.6,
+				27.5
+			],
+			"axis": "x",
+			"size": [
+				0.55,
+				0.55,
+				0.4
+			]
+		},
+		{
+			"id": "jack-1-hook",
+			"kind": "rod",
+			"from": [
+				106.0,
+				16.6,
+				31.3
+			],
+			"to": [
+				106.2,
+				16.6,
+				29.1
+			],
+			"radius": 0.28
+		},
+		{
+			"id": "twz-0",
+			"kind": "prism",
+			"at": [
+				106.0,
+				21.4,
+				29.3
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					-0.5,
+					0
+				],
+				[
+					0.5,
+					0
+				],
+				[
+					2.1,
+					-10.5
+				],
+				[
+					0.98,
+					-15
+				],
+				[
+					0.58,
+					-15
+				],
+				[
+					1.4,
+					-10.5
+				],
+				[
+					0,
+					-1.6
+				],
+				[
+					-1.4,
+					-10.5
+				],
+				[
+					-0.58,
+					-15
+				],
+				[
+					-0.98,
+					-15
+				],
+				[
+					-2.1,
+					-10.5
+				]
+			],
+			"depth": 1.0
+		},
+		{
+			"id": "twz-0-pin",
+			"kind": "cylinder",
+			"at": [
+				106.6,
+				21.4,
+				27.5
+			],
+			"axis": "x",
+			"size": [
+				0.55,
+				0.55,
+				0.4
+			]
+		},
+		{
+			"id": "twz-0-hook",
+			"kind": "rod",
+			"from": [
+				106.0,
+				21.4,
+				31.3
+			],
+			"to": [
+				106.2,
+				21.4,
+				29.1
+			],
+			"radius": 0.28
+		},
+		{
+			"id": "jack-2",
+			"kind": "prism",
+			"at": [
+				106.0,
+				25.8,
+				29.3
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					-0.6,
+					0
+				],
+				[
+					0.6,
+					0
+				],
+				[
+					0.8,
+					-2.5
+				],
+				[
+					1.83,
+					-7.2
+				],
+				[
+					2.5,
+					-13.6
+				],
+				[
+					2.0,
+					-16
+				],
+				[
+					1.14,
+					-15.68
+				],
+				[
+					1.44,
+					-13.6
+				],
+				[
+					0.95,
+					-7.2
+				],
+				[
+					0,
+					-3.2
+				],
+				[
+					-0.95,
+					-7.2
+				],
+				[
+					-1.44,
+					-13.6
+				],
+				[
+					-1.14,
+					-15.68
+				],
+				[
+					-2.0,
+					-16
+				],
+				[
+					-2.5,
+					-13.6
+				],
+				[
+					-1.83,
+					-7.2
+				],
+				[
+					-0.8,
+					-2.5
+				]
+			],
+			"depth": 1.0
+		},
+		{
+			"id": "jack-2-pin",
+			"kind": "cylinder",
+			"at": [
+				106.6,
+				25.8,
+				27.5
+			],
+			"axis": "x",
+			"size": [
+				0.55,
+				0.55,
+				0.4
+			]
+		},
+		{
+			"id": "jack-2-hook",
+			"kind": "rod",
+			"from": [
+				106.0,
+				25.8,
+				31.3
+			],
+			"to": [
+				106.2,
+				25.8,
+				29.1
+			],
+			"radius": 0.28
+		},
+		{
+			"id": "paddle",
+			"kind": "box",
+			"at": [
+				105.89999999999999,
+				28.6,
+				10
+			],
+			"size": [
+				1.0,
+				5.4,
+				15
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "circle",
+					"at": [
+						2.75,
+						11.6
+					],
+					"size": [
+						1.2,
+						1.2
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1,
+							2
+						],
+						[
+							4.5,
+							2
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "paddle-strap",
+			"kind": "rod",
+			"from": [
+				106.3,
+				31.3,
+				31.3
+			],
+			"to": [
+				106.3,
+				31.3,
 				25
-			]
-		},
-		{
-			"text": "Gather 990 °C",
-			"target": "gather",
-			"side": "right"
-		},
-		{
-			"text": "Blowpipe",
-			"target": "pipe",
-			"side": "right",
-			"anchor": [
-				101,
-				21,
-				22
-			]
-		},
-		{
-			"text": "Steel marver",
-			"target": "marver",
-			"side": "right",
-			"anchor": [
-				96,
-				33,
-				15.5
-			]
+			],
+			"radius": 0.25
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"plinth",
-				"stand"
+				"plate"
 			],
 			[
-				"drum"
+				"frame",
+				"fleg-0",
+				"fleg-1",
+				"fleg-2",
+				"fleg-3",
+				"frail",
+				"frail-b",
+				"pedestal"
 			],
 			[
-				"door",
-				"burner"
+				"drum",
+				"cap-stem",
+				"cap",
+				"peep",
+				"peep-glow",
+				"peep-flange",
+				"blower",
+				"scroll",
+				"fan-hub",
+				"motor"
 			],
 			[
-				"port",
-				"mouth"
+				"core-plate",
+				"door-l",
+				"door-r",
+				"rail",
+				"rail-cap-0",
+				"rail-cap-1",
+				"strap-0",
+				"strap-1",
+				"strap-2",
+				"strap-3",
+				"feed",
+				"feed-flange",
+				"train",
+				"valve-0",
+				"vstem-0",
+				"knob-0",
+				"valve-1",
+				"vstem-1",
+				"knob-1",
+				"gauge-stem",
+				"gauge",
+				"hose",
+				"hose-2",
+				"ctrl",
+				"ctrl-leg",
+				"ctrl-block",
+				"gun",
+				"gun-valve",
+				"gun-knob",
+				"gun-stem",
+				"gun-gauge",
+				"gun-gstem",
+				"pilot",
+				"valve-2",
+				"vstem-2",
+				"lever-2",
+				"reg",
+				"gauge-2",
+				"gstem-2",
+				"train-2",
+				"union-0",
+				"tee"
 			],
 			[
-				"marver"
+				"marver",
+				"mleg-0",
+				"mleg-1",
+				"mleg-2",
+				"mleg-3",
+				"mshelf",
+				"mrail",
+				"yoke-1",
+				"y1post-0",
+				"y1post-1",
+				"yoke-2",
+				"y2post-0",
+				"y2post-1",
+				"rack",
+				"annealer",
+				"aleg-0",
+				"aleg-1",
+				"aleg-2",
+				"aleg-3",
+				"ashelf",
+				"hole-floor",
+				"bore-0",
+				"bore-1",
+				"bore-2",
+				"bore-3",
+				"bore-4",
+				"bore-5",
+				"bore-6",
+				"bore-7",
+				"bore-8",
+				"bore-9",
+				"bore-10",
+				"port-ring",
+				"port-plate",
+				"halo",
+				"rack-brk-0",
+				"rack-brk-1"
+			],
+			[
+				"heat",
+				"adoor",
+				"hinge-0",
+				"hinge-1",
+				"ahandle",
+				"knob",
+				"apanel",
+				"vent",
+				"acord",
+				"heat-core",
+				"jack-0",
+				"jack-0-pin",
+				"jack-0-hook",
+				"jack-1",
+				"jack-1-pin",
+				"jack-1-hook",
+				"twz-0",
+				"twz-0-pin",
+				"twz-0-hook",
+				"jack-2",
+				"jack-2-pin",
+				"jack-2-hook",
+				"paddle",
+				"paddle-strap"
 			],
 			[
 				"pipe",
+				"mouth",
 				"gather"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "explode",
-		"explode": {
-			"rest": 0,
-			"min": 0,
-			"max": 1,
-			"step": 0.25,
-			"unit": "reheat"
-		}
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": "marver",
+		"values": {
+			"g": [
+				990,
+				960,
+				925,
+				890
+			],
+			"p": [
+				1.42,
+				1.34,
+				1.26,
+				1.19
+			]
+		},
+		"readout": "gather {g} °C · burner {p:0.01} kPa",
+		"states": [
+			{
+				"name": "glory hole",
+				"parts": {
+					"gather": {
+						"move": [
+							-15.2,
+							-3.11,
+							2.99
+						]
+					},
+					"pipe": {
+						"move": [
+							-15.2,
+							-3.11,
+							2.99
+						]
+					},
+					"mouth": {
+						"move": [
+							-15.2,
+							-3.11,
+							2.99
+						]
+					}
+				}
+			},
+			{
+				"name": "mouth",
+				"parts": {
+					"gather": {
+						"move": [
+							-9.81,
+							-2.01,
+							1.93
+						]
+					},
+					"pipe": {
+						"move": [
+							-9.81,
+							-2.01,
+							1.93
+						]
+					},
+					"mouth": {
+						"move": [
+							-9.81,
+							-2.01,
+							1.93
+						]
+					}
+				}
+			},
+			{
+				"name": "lifting",
+				"parts": {
+					"gather": {
+						"move": [
+							-4.43,
+							-0.91,
+							0.87
+						]
+					},
+					"pipe": {
+						"move": [
+							-4.43,
+							-0.91,
+							0.87
+						]
+					},
+					"mouth": {
+						"move": [
+							-4.43,
+							-0.91,
+							0.87
+						]
+					}
+				}
+			},
+			{
+				"name": "marver"
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ GLORY HOLE ]",

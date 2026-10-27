@@ -174,6 +174,12 @@ vendor/
 # The vendored anatomy kit (MIT, pinned in VENDOR.json) is committed verbatim; vpk-html heroes and its audit run from it.
 !.agents/skills/vpk-html/scripts/anatomy/vendor/
 !.agents/skills/vpk-html/scripts/anatomy/vendor/**
+# The vendored hairline figures (MIT, pinned in VENDOR.json) are committed verbatim; the hairline gallery bundles them.
+!.agents/skills/vpk-html/scripts/hairline/vendor/
+!.agents/skills/vpk-html/scripts/hairline/vendor/**
+# The vendored anatomy-figures WebGL figures (MIT, pinned in VENDOR.json) are committed verbatim; the anatomy-gl engine bundles them.
+!.agents/skills/vpk-html/scripts/anatomy-gl/vendor/
+!.agents/skills/vpk-html/scripts/anatomy-gl/vendor/**
 *.log
 coverage/
 .cache/

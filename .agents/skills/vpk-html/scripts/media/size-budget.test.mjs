@@ -69,7 +69,8 @@ test("T-B3 checks-thresholds.json mirrors the single size value", () => {
 	assert.equal(thresholds.sizeBudget.warnBytes, DATA_URL_SAFE_HTML_BYTES);
 });
 
-test("T-B4 check-html stays ok on an over-budget file and warns on stderr", () => {
+// The user's standing rule: no warning on page size. A large page only loads more slowly.
+test("T-B4 check-html stays ok on an over-budget file and prints no size warning", () => {
 	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-html-size-"));
 	const file = path.join(tmp, "big.html");
 	try {
@@ -77,7 +78,7 @@ test("T-B4 check-html stays ok on an over-budget file and warns on stderr", () =
 		const result = spawnSync(process.execPath, [path.join(SCRIPTS, "check-html.mjs"), file], { encoding: "utf8" });
 		assert.equal(result.status, 0, result.stderr);
 		assert.match(result.stdout, /^ok .*big\.html$/m);
-		assert.match(result.stderr, /^warn .*big\.html: 1\.57 MB exceeds the 1\.57 MB data-URL viewer budget/m);
+		assert.doesNotMatch(result.stderr, /data-URL viewer budget/);
 	} finally {
 		fs.rmSync(tmp, { recursive: true, force: true });
 	}

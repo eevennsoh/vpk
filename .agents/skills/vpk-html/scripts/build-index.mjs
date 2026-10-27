@@ -113,6 +113,8 @@ const SECTIONS = [
 			["demo-illustration-gallery-anatomy-2.html", "Anatomy Collection, Part 2"],
 			["demo-illustration-gallery-anatomy-3.html", "Anatomy Collection, Part 3"],
 			["demo-illustration-gallery-anatomy-4.html", "Anatomy Collection, Part 4"],
+			["demo-illustration-gallery-anatomy-webgl.html", "Anatomy Collection, WebGL"],
+			["demo-illustration-gallery-teardown.html", "Teardowns"],
 			["demo-illustration-iso-flatpack-shelf.html", "Flat-pack Shelf"],
 			["demo-illustration-iso-phone-anatomy.html", "Phone Anatomy"],
 			["demo-illustration-iso-cache-shelves.html", "Cache Tiers"],

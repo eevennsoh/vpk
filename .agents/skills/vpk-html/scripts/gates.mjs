@@ -319,7 +319,6 @@ export async function runGates(htmlPath, { gates = Object.keys(GATES), threshold
 			if (!def) throw new Error(`Unknown gate: ${g}`);
 			const findings = await page.evaluate(
 				([src, th]) => {
-					// eslint-disable-next-line no-new-func
 					const fn = new Function(`return (${src})`)();
 					return fn(th);
 				},

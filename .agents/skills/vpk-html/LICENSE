@@ -64,6 +64,10 @@ runtime carries this notice in a comment. Details: scripts/iso/NOTICE.md.
   hairline — Copyright (c) 2026 Lucas Marques
   MIT License — https://github.com/lucasmarkes/hairline
 
+`scripts/hairline/vendor/` vendors hairline 0.5.1 unmodified (the package source and the site's three Marks
+figures) as the `hairline` figure engine; the inlined hairline runtime carries the notice in a comment.
+Details: scripts/hairline/NOTICE.md.
+
 The iso kit's one style, `manual` (`scripts/iso/`: palette, scene, emit, motion and layout; documented in
 `references/illustrations.md` § 7 "Style") adapts the visual treatment of the `design/3d-assembly-manual`
 skill in SkylarKitchen/skills: a white model with ink hairline edges, numbered ink-disc marks, boxed

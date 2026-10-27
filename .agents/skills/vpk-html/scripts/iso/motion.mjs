@@ -9,7 +9,8 @@
 
 import { ENTRY } from "./accent.mjs";
 
-export const MAX_LAYERS = 6;
+// Any number of layers: each layer group carries its own hand-off class animation and the runtime CSS is layer-agnostic
+// (runtime-css entryCss), so there is no layer cap.
 export const MAX_TOTAL_MS = 1800;
 export const MOVE_SPLINE = "0.16 1 0.3 1";
 export const HOLD_SPLINE = "0 0 1 1";
@@ -25,46 +26,65 @@ const tenth = value => {
 
 // The assembly (illustrations.md § Style, rule 10; the reference videos' entry, iso/accent.mjs ENTRY, shared with the 3D
 // prototype). Each layer drops from ENTRY.DROP_Z above in MANUAL_PART_MS on the ease-out spline and lands; layer i starts at
-// i × MANUAL_STEP_MS, an even gap shorter than the drop, so consecutive drops overlap slightly (six layers: 1.6 s in total, under
-// MAX_TOTAL_MS). No arrow and no ghost (the user's redline).
+// i × staggerFor(layers), an even gap shorter than the drop, so consecutive drops overlap slightly. No arrow and no ghost (the
+// user's redline). The gap is ENTRY.STAGGER_MS (MANUAL_STEP_MS, 180 ms) up to 7 layers; beyond that it shrinks, with no floor,
+// so the whole assembly still ends by MAX_TOTAL_MS (12 layers: 100 ms; 24 layers: 47 ms).
 export const MANUAL_PART_MS = ENTRY.PART_MS;
 export const MANUAL_STEP_MS = ENTRY.STAGGER_MS;
-// The hand-off state is a class list on <g data-vpk-iso-scene>, stepped by one discrete class animation: vpk-iso-h<j> hides
-// layer j (it has not started dropping), vpk-iso-a<i> paints layer i in the accent (it started less than ENTRY.ACCENT_HOLD_MS
-// ago: the current step), and the rest value vpk-iso-set paints nothing (the neutral tone map). runtime-css (entryCss) paints
-// the classes. MANUAL_HOLD_MS is the same for every layer, the last included, so each hands back at the same point of its drop.
+export function staggerFor(layers) {
+	const n = Math.max(1, Math.floor(Number(layers) || 1));
+	if (n < 2) return MANUAL_STEP_MS;
+	// No floor and no layer cap: the gap shrinks (fractional below 1 ms) so any number of layers ends by MAX_TOTAL_MS.
+	const gap = (MAX_TOTAL_MS - MANUAL_PART_MS) / (n - 1);
+	return gap >= 1 ? Math.min(MANUAL_STEP_MS, Math.floor(gap)) : gap;
+}
+
+// The hand-off is layer-agnostic: every layer group (g[data-vpk-iso-enter], and each g[data-vpk-iso-shadow-enter]) carries one
+// discrete SMIL class animation of its own. ENTRY_WAIT_CLASS hides the group until its layer starts dropping, ENTRY_DROP_CLASS
+// paints a dropping part group in the accent (it started less than ENTRY.ACCENT_HOLD_MS ago: the current step), and the rest
+// value ENTRY_REST_CLASS paints nothing (the neutral tone map). runtime-css paints the three classes with one rule set for any
+// layer count. MANUAL_HOLD_MS is the same for every layer, the last included, so each hands back at the same point of its drop.
+export const ENTRY_WAIT_CLASS = "vpk-iso-wait";
+export const ENTRY_DROP_CLASS = "vpk-iso-drop";
 export const ENTRY_REST_CLASS = "vpk-iso-set";
 export const MANUAL_HOLD_MS = ENTRY.ACCENT_HOLD_MS;
-export function entryClass(t, timing) {
-	const accented = timing.starts.flatMap((start, i) => (start <= t && t < start + MANUAL_HOLD_MS ? [`vpk-iso-a${i}`] : []));
-	const hidden = timing.starts.flatMap((start, j) => (start > t ? [`vpk-iso-h${j}`] : []));
-	return [...accented, ...hidden].join(" ") || ENTRY_REST_CLASS;
-}
 
 export function manualTiming({ layers }) {
 	const n = Array.isArray(layers) ? layers.length : Number(layers);
 	if (!Number.isInteger(n) || n < 1) throw new RangeError("manualTiming: at least one layer is required");
-	if (n > MAX_LAYERS) throw new RangeError(`manualTiming: ${n} layers exceeds ${MAX_LAYERS}`);
-	const starts = Array.from({ length: n }, (_, i) => i * MANUAL_STEP_MS);
+	const step = staggerFor(n);
+	const starts = Array.from({ length: n }, (_, i) => i * step);
 	const total = starts.at(-1) + MANUAL_PART_MS;
-	return Object.freeze({ layers: n, manual: true, part: MANUAL_PART_MS, starts: Object.freeze(starts), lastStart: starts.at(-1), total });
+	return Object.freeze({ layers: n, manual: true, part: MANUAL_PART_MS, step, starts: Object.freeze(starts), lastStart: starts.at(-1), total });
 }
 
-// The hand-off: one discrete class animation for the whole scene. Before the first layer starts every layer is hidden; from
-// starts[i] layer i drops in the accent (the current step) with later layers hidden; MANUAL_HOLD_MS after its start it loses the
-// accent class and the CSS fades it to neutral over ENTRY.HANDOFF_MS. Once the last layer has handed back the scene rests on
-// vpk-iso-set, which paints nothing, so a landed or printed figure is the neutral art. A figure that never plays (reduced
-// motion, static) never gains a class. One element per figure, so a 35-part figure pays for it once.
-export function handoffTimes(timing) {
-	const events = [-1, ...timing.starts, ...timing.starts.map(start => start + MANUAL_HOLD_MS)].filter(t => t < timing.total);
-	return [...new Set(events)].sort((a, b) => a - b);
+// The class frames of layer i, [[ms, class], ...]: a group waits (hidden) until its start, a part group then drops in the accent
+// for MANUAL_HOLD_MS, and rests. `accent: false` (emphasis "ink" or "none") and shadow groups (`shadow: true`) skip the accent
+// step. null when the class would never change (a first layer without the accent).
+export function layerClassFrames(i, timing, { accent = true, shadow = false } = {}) {
+	const start = timing.starts[i];
+	const frames = start > 0 ? [[0, ENTRY_WAIT_CLASS]] : [];
+	if (accent && !shadow) {
+		frames.push([start, ENTRY_DROP_CLASS]);
+		if (start + MANUAL_HOLD_MS < timing.total) frames.push([start + MANUAL_HOLD_MS, ENTRY_REST_CLASS]);
+	} else frames.push([start, ENTRY_REST_CLASS]);
+	return frames.length < 2 && frames[0]?.[1] === ENTRY_REST_CLASS ? null : frames;
 }
 
-export function handoffAnimation(timing) {
-	const events = handoffTimes(timing);
-	const values = events.map(t => entryClass(t, timing));
-	const times = events.map(t => Math.max(0, t) / timing.total);
-	return `<animate data-vpk-begin="0s" attributeName="class" begin="indefinite" dur="${timing.total}ms" values="${values.join(";")}" keyTimes="${times.map(fraction).join(";")}" calcMode="discrete" fill="freeze"/>`;
+// The class of layer i's group at time t ("" when it has no animation: the base art carries no class).
+export function layerClassAt(i, t, timing, options) {
+	const frames = layerClassFrames(i, timing, options);
+	if (!frames) return "";
+	return frames.filter(([at]) => at <= t).at(-1)?.[1] ?? frames[0][1];
+}
+
+// One discrete class animation for layer i's group ("" when the class never changes). The base art carries no class, so a
+// static, reduced-motion or print render is the neutral rest pose.
+export function layerClassAnimation(i, timing, options) {
+	const frames = layerClassFrames(i, timing, options);
+	if (!frames) return "";
+	if (frames[0][0] > 0) frames.unshift([0, frames[0][1]]);
+	return `<animate data-vpk-begin="0s" attributeName="class" begin="indefinite" dur="${timing.total}ms" values="${frames.map(([, name]) => name).join(";")}" keyTimes="${frames.map(([at]) => fraction(at / timing.total)).join(";")}" calcMode="discrete" fill="freeze"/>`;
 }
 
 // keyTimes / values / keySplines for layer i (non-decreasing, no duplicate times).

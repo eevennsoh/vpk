@@ -2,429 +2,2254 @@
 	"schema": "vpk-iso-brief/1",
 	"id": "an-public-key",
 	"figId": "FIG_229",
-	"title": "A strongbox with two kinds of key",
-	"label": "Dimetric strongbox with hinges, a hasp and a keyholed lid lock. Three public keys (bit, shaft, bow) lie on a rack on its left; one private key with an accented bow sits alone on a plinth on its right.",
-	"caption": "Any of the three public keys can turn the lock shut, but only the one private key turns it back open: anyone can seal the box, one person can read it.",
+	"title": "A two-key strongbox",
+	"label": "Banded steel strongbox on a low tray base with round feet: capped lid corners, centre hasp, side handle, plate n 3233 · e 17, L feet. A public key stands in the lid lock, two more in a caddy; the private key waits on a knurled pedestal.",
+	"caption": "Drag to turn: any public key turns the lock to seal the box (72 becomes 3000). Drag on and the private key leaves its pedestal for the lock; only it turns the lock back and reads 72 again. Anyone can seal, one person can open.",
 	"camera": {
 		"preset": "dimetric",
-		"scale": "fit"
+		"scale": "fit",
+		"pad": 44
 	},
+	"focal": [
+		"public-key-in-lock-blade",
+		"public-key-in-lock-bow",
+		"private-key-in-lock"
+	],
+	"labels": "none",
 	"parts": [
 		{
-			"id": "rack",
-			"kind": "gap",
-			"at": [
-				-6,
-				34,
-				0
-			],
-			"size": [
-				40,
-				44,
-				0
-			],
-			"r": 2,
-			"label": "Key mat"
-		},
-		{
-			"id": "pub-1-bit",
-			"kind": "box",
-			"at": [
-				0,
-				44.5,
-				0
-			],
-			"size": [
-				7,
-				3.5,
-				2.5
-			],
-			"r": 0,
-			"label": "Public key"
-		},
-		{
-			"id": "pub-1-shaft",
-			"kind": "box",
-			"at": [
-				0,
-				41.5,
-				0
-			],
-			"size": [
-				20,
-				3,
-				2.5
-			],
-			"r": 0,
-			"label": "Public key"
-		},
-		{
-			"id": "pub-1-bow",
+			"id": "foot",
 			"kind": "cylinder",
 			"at": [
-				24,
-				43,
-				0
-			],
-			"size": [
-				5,
-				5,
-				2.5
-			],
-			"label": "Public key"
-		},
-		{
-			"id": "pub-2-bit",
-			"kind": "box",
-			"at": [
-				0,
-				56.5,
-				0
-			],
-			"size": [
 				7,
-				3.5,
-				2.5
-			],
-			"r": 0,
-			"label": "Public key"
-		},
-		{
-			"id": "pub-2-shaft",
-			"kind": "box",
-			"at": [
-				0,
-				53.5,
-				0
-			],
-			"size": [
-				20,
-				3,
-				2.5
-			],
-			"r": 0,
-			"label": "Public key"
-		},
-		{
-			"id": "pub-2-bow",
-			"kind": "cylinder",
-			"at": [
-				24,
-				55,
-				0
-			],
-			"size": [
-				5,
-				5,
-				2.5
-			],
-			"label": "Public key"
-		},
-		{
-			"id": "pub-3-bit",
-			"kind": "box",
-			"at": [
-				0,
-				68.5,
-				0
-			],
-			"size": [
 				7,
-				3.5,
-				2.5
+				-8.6
 			],
-			"r": 0,
-			"label": "Public key"
+			"size": [
+				4.5,
+				4.5,
+				3.6
+			],
+			"repeat": {
+				"grid": {
+					"count": [
+						2,
+						2
+					],
+					"step": [
+						136,
+						56
+					]
+				}
+			}
 		},
 		{
-			"id": "pub-3-shaft",
-			"kind": "box",
+			"id": "base",
+			"kind": "slab",
 			"at": [
 				0,
-				65.5,
-				0
+				0,
+				-5
 			],
 			"size": [
-				20,
-				3,
-				2.5
+				150,
+				70,
+				4
 			],
-			"r": 0,
-			"label": "Public key"
+			"r": 8,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							8,
+							0.9
+						],
+						[
+							56,
+							0.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							60,
+							0.7
+						],
+						[
+							112,
+							0.7
+						],
+						[
+							112,
+							3.3
+						],
+						[
+							60,
+							3.3
+						],
+						[
+							60,
+							0.7
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "stadium",
+					"at": [
+						86,
+						2.0
+					],
+					"size": [
+						12,
+						1.2
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							116,
+							0.9
+						],
+						[
+							142,
+							0.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							8,
+							2.2
+						],
+						[
+							62,
+							2.2
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "pub-3-bow",
-			"kind": "cylinder",
+			"id": "lip",
+			"kind": "slab",
 			"at": [
-				24,
-				67,
+				1.2,
+				1.2,
+				-1
+			],
+			"size": [
+				147.6,
+				67.6,
+				1
+			],
+			"r": 7,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 2.6,
+					"r": 5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.4,
+						5.4
+					],
+					"size": 1.3,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						142.2,
+						5.4
+					],
+					"size": 1.3,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.4,
+						62.2
+					],
+					"size": 1.3,
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						142.2,
+						62.2
+					],
+					"size": 1.3,
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							4,
+							59.6
+						],
+						[
+							34,
+							59.6
+						],
+						[
+							34,
+							63.800000000000004
+						],
+						[
+							4,
+							63.800000000000004
+						],
+						[
+							4,
+							59.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							6.5,
+							61
+						],
+						[
+							31.5,
+							61
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							6.5,
+							62.4
+						],
+						[
+							31.5,
+							62.4
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "band-foot",
+			"kind": "slab",
+			"at": [
+				47.2,
+				5.2,
 				0
 			],
 			"size": [
-				5,
-				5,
-				2.5
+				61.6,
+				41.6,
+				1.8
 			],
-			"label": "Public key"
+			"r": 3.6
 		},
 		{
-			"id": "hinge-1",
+			"id": "case",
 			"kind": "box",
 			"at": [
 				48,
-				11.6,
-				15
+				6,
+				1.8
 			],
 			"size": [
-				7,
-				2.4,
-				11
-			],
-			"r": 0,
-			"label": "Hinge"
-		},
-		{
-			"id": "hinge-2",
-			"kind": "box",
-			"at": [
-				70,
-				11.6,
-				15
-			],
-			"size": [
-				7,
-				2.4,
-				11
-			],
-			"r": 0,
-			"label": "Hinge"
-		},
-		{
-			"id": "box",
-			"kind": "box",
-			"at": [
+				60,
 				40,
-				14,
-				0
-			],
-			"size": [
-				44,
-				32,
-				20
+				5.4
 			],
 			"r": 3,
-			"label": "Strongbox"
+			"bevel": 0.8
+		},
+		{
+			"id": "band-low",
+			"kind": "slab",
+			"at": [
+				47.2,
+				5.2,
+				7.2
+			],
+			"size": [
+				61.6,
+				41.6,
+				1.8
+			],
+			"r": 3.6
+		},
+		{
+			"id": "case-mid",
+			"kind": "box",
+			"at": [
+				48,
+				6,
+				9
+			],
+			"size": [
+				60,
+				40,
+				6
+			],
+			"r": 3,
+			"bevel": 0.8
+		},
+		{
+			"id": "band-seam",
+			"kind": "slab",
+			"at": [
+				47.2,
+				5.2,
+				15
+			],
+			"size": [
+				61.6,
+				41.6,
+				1.8
+			],
+			"r": 3.6
 		},
 		{
 			"id": "lid",
-			"kind": "slab",
+			"kind": "box",
 			"at": [
-				40,
-				14,
-				20
+				48,
+				6,
+				16.8
 			],
 			"size": [
-				44,
-				32,
-				5
+				60,
+				40,
+				13.2
 			],
-			"r": 2,
-			"label": "Lid"
+			"r": 3,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3,
+					"r": 1.5
+				}
+			],
+			"bevel": 0.8
 		},
 		{
-			"id": "lock",
+			"id": "cap-1",
+			"kind": "box",
+			"at": [
+				47.5,
+				5.5,
+				30
+			],
+			"size": [
+				8.5,
+				8.5,
+				0.7
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						5.6,
+						2.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						5.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "cap-2",
+			"kind": "box",
+			"at": [
+				100,
+				5.5,
+				30
+			],
+			"size": [
+				8.5,
+				8.5,
+				0.7
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.9000000000000004,
+						2.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6.1,
+						5.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "cap-3",
+			"kind": "box",
+			"at": [
+				47.5,
+				38,
+				30
+			],
+			"size": [
+				8.5,
+				8.5,
+				0.7
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						5.6,
+						6.1
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						2.9000000000000004
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "cap-4",
+			"kind": "box",
+			"at": [
+				100,
+				38,
+				30
+			],
+			"size": [
+				8.5,
+				8.5,
+				0.7
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.9000000000000004,
+						6.1
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6.1,
+						2.9000000000000004
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "hasp-hinge",
+			"kind": "box",
+			"at": [
+				75.5,
+				46.8,
+				17.6
+			],
+			"size": [
+				5,
+				0.9,
+				2.8
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.2,
+						1.4
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 2.6,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "latch",
+			"kind": "box",
+			"at": [
+				74,
+				46.8,
+				13.4
+			],
+			"size": [
+				8,
+				1.1,
+				4.2
+			],
+			"r": 0.7,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.7,
+					"r": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.3,
+						2.1
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 5.4,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "latch-tab",
+			"kind": "box",
+			"at": [
+				76.6,
+				47.9,
+				14.0
+			],
+			"size": [
+				2.8,
+				0.6,
+				3.0
+			],
+			"r": 0.6
+		},
+		{
+			"id": "plate",
+			"kind": "box",
+			"at": [
+				50,
+				46.9,
+				9.8
+			],
+			"size": [
+				21,
+				0.7,
+				4.6
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.6,
+					"r": 0.3
+				},
+				{
+					"type": "text",
+					"face": "+y",
+					"at": [
+						10.5,
+						1.6
+					],
+					"text": "n 3233 · e 17",
+					"size": 2,
+					"anchor": "middle"
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.3,
+						2.3
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 18.4,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "lug-a",
+			"kind": "box",
+			"at": [
+				108,
+				18,
+				17.6
+			],
+			"size": [
+				1.6,
+				2.6,
+				3.2
+			],
+			"r": 0.5
+		},
+		{
+			"id": "lug-b",
+			"kind": "box",
+			"at": [
+				108,
+				31.4,
+				17.6
+			],
+			"size": [
+				1.6,
+				2.6,
+				3.2
+			],
+			"r": 0.5
+		},
+		{
+			"id": "handle",
+			"kind": "tube",
+			"points": [
+				[
+					109,
+					19.3,
+					19.4
+				],
+				[
+					111.4,
+					19.3,
+					19.4
+				],
+				[
+					111.4,
+					19.3,
+					11.4
+				],
+				[
+					111.4,
+					32.7,
+					11.4
+				],
+				[
+					111.4,
+					32.7,
+					19.4
+				],
+				[
+					109,
+					32.7,
+					19.4
+				]
+			],
+			"radius": 0.7,
+			"fillet": 1.6
+		},
+		{
+			"id": "bracket-f1",
+			"kind": "prism",
+			"at": [
+				53,
+				47,
+				0
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					5.5,
+					0
+				],
+				[
+					5.5,
+					1
+				],
+				[
+					1,
+					1
+				],
+				[
+					1,
+					4.5
+				],
+				[
+					0,
+					4.5
+				]
+			],
+			"depth": 5
+		},
+		{
+			"id": "bolt-f1",
 			"kind": "cylinder",
 			"at": [
-				62,
-				33,
-				25
+				55.5,
+				50.6,
+				1
 			],
 			"size": [
-				5,
-				5,
-				4
-			],
-			"label": "Lid lock"
+				0.9,
+				0.9,
+				0.5
+			]
 		},
 		{
-			"id": "keyhole",
+			"id": "bracket-f2",
+			"kind": "prism",
+			"at": [
+				98,
+				47,
+				0
+			],
+			"axis": "x",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					5.5,
+					0
+				],
+				[
+					5.5,
+					1
+				],
+				[
+					1,
+					1
+				],
+				[
+					1,
+					4.5
+				],
+				[
+					0,
+					4.5
+				]
+			],
+			"depth": 5
+		},
+		{
+			"id": "bolt-f2",
+			"kind": "cylinder",
+			"at": [
+				100.5,
+				50.6,
+				1
+			],
+			"size": [
+				0.9,
+				0.9,
+				0.5
+			]
+		},
+		{
+			"id": "bracket-s1",
+			"kind": "prism",
+			"at": [
+				109,
+				15,
+				0
+			],
+			"axis": "-y",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					5.5,
+					0
+				],
+				[
+					5.5,
+					1
+				],
+				[
+					1,
+					1
+				],
+				[
+					1,
+					4.5
+				],
+				[
+					0,
+					4.5
+				]
+			],
+			"depth": 5
+		},
+		{
+			"id": "bolt-s1",
+			"kind": "cylinder",
+			"at": [
+				112.6,
+				12.5,
+				1
+			],
+			"size": [
+				0.9,
+				0.9,
+				0.5
+			]
+		},
+		{
+			"id": "bracket-s2",
+			"kind": "prism",
+			"at": [
+				109,
+				42,
+				0
+			],
+			"axis": "-y",
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					5.5,
+					0
+				],
+				[
+					5.5,
+					1
+				],
+				[
+					1,
+					1
+				],
+				[
+					1,
+					4.5
+				],
+				[
+					0,
+					4.5
+				]
+			],
+			"depth": 5
+		},
+		{
+			"id": "bolt-s2",
+			"kind": "cylinder",
+			"at": [
+				112.6,
+				39.5,
+				1
+			],
+			"size": [
+				0.9,
+				0.9,
+				0.5
+			]
+		},
+		{
+			"id": "escutcheon",
+			"kind": "cylinder",
+			"at": [
+				78,
+				26,
+				30
+			],
+			"size": [
+				8.6,
+				8.6,
+				0.8
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.3
+				},
+				{
+					"type": "bolts",
+					"face": "top",
+					"r": 7.6,
+					"count": 4,
+					"size": 0.5,
+					"phase": 20
+				}
+			]
+		},
+		{
+			"id": "bezel",
 			"kind": "ring",
 			"at": [
-				62,
-				33,
-				29
+				78,
+				26,
+				30.8
 			],
 			"size": [
-				1.4,
-				1.4,
+				5.6,
+				5.6,
 				0
 			],
-			"clipTo": "lock",
-			"label": "Keyhole"
+			"thickness": 0.7,
+			"inner": 3.6
 		},
 		{
-			"id": "hasp",
-			"kind": "box",
-			"at": [
-				59,
-				46,
-				12
-			],
-			"size": [
-				6,
-				1.6,
-				12
-			],
-			"r": 0,
-			"label": "Hasp"
-		},
-		{
-			"id": "plinth",
-			"fixed": true,
-			"kind": "slab",
-			"at": [
-				96,
-				12,
-				0
-			],
-			"size": [
-				36,
-				28,
-				4
-			],
-			"r": 0,
-			"label": "Plinth"
-		},
-		{
-			"id": "private-bit",
-			"kind": "box",
-			"at": [
-				102,
-				33.5,
-				4
-			],
-			"size": [
-				7,
-				3.5,
-				2.5
-			],
-			"r": 0,
-			"label": "Private key"
-		},
-		{
-			"id": "private-shaft",
-			"kind": "box",
-			"at": [
-				102,
-				30.5,
-				4
-			],
-			"size": [
-				20,
-				3,
-				2.5
-			],
-			"r": 0,
-			"label": "Private key"
-		},
-		{
-			"id": "private-bow",
+			"id": "plug",
 			"kind": "cylinder",
 			"at": [
-				126,
-				32,
-				4
+				78,
+				26,
+				30.8
 			],
 			"size": [
-				5,
-				5,
-				2.5
+				3.4,
+				3.4,
+				0.9
 			],
-			"label": "Private key"
-		}
-	],
-	"focal": "private-bow",
-	"labels": [
-		{
-			"text": "Public keys",
-			"target": "pub-3-shaft",
-			"side": "left"
-		},
-		{
-			"text": "Lid lock",
-			"target": "lock",
-			"side": "left",
-			"anchor": [
-				59,
-				36,
-				29
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						0,
+						0
+					],
+					"size": [
+						4.6,
+						1.1
+					],
+					"depth": 0.5
+				}
 			]
 		},
 		{
-			"text": "Hinge",
-			"target": "hinge-1",
-			"side": "left",
-			"anchor": [
-				51.5,
-				12.8,
-				26
+			"id": "pin",
+			"kind": "pin",
+			"at": [
+				73.4,
+				23.8,
+				31.5
+			],
+			"length": 2.6,
+			"r": 0.42,
+			"head": 0.5,
+			"instances": [
+				{},
+				{
+					"at": [
+						82.4,
+						28.6,
+						31.5
+					]
+				}
 			]
 		},
 		{
-			"text": "Strongbox",
-			"target": "box",
-			"side": "right",
-			"anchor": [
-				84,
-				22,
-				12
+			"id": "screw",
+			"kind": "cylinder",
+			"at": [
+				75.8,
+				30.4,
+				31.5
+			],
+			"size": [
+				0.7,
+				0.7,
+				0.4
+			],
+			"instances": [
+				{},
+				{
+					"at": [
+						80.6,
+						21.7,
+						31.5
+					]
+				}
 			]
 		},
 		{
-			"text": "Private key",
-			"target": "private-bow",
-			"side": "right"
+			"id": "holder-plinth",
+			"kind": "slab",
+			"at": [
+				4.5,
+				24.5,
+				0
+			],
+			"size": [
+				21,
+				17,
+				1.2
+			],
+			"r": 2.8
+		},
+		{
+			"id": "holder",
+			"kind": "box",
+			"at": [
+				6,
+				26,
+				1.2
+			],
+			"size": [
+				18,
+				14,
+				7
+			],
+			"r": 2.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "stadium",
+					"at": [
+						9,
+						3.6
+					],
+					"size": [
+						7,
+						1.4
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						9,
+						3
+					],
+					"size": [
+						5,
+						1.5
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						9,
+						7.5
+					],
+					"size": [
+						5,
+						1.5
+					],
+					"depth": 0.5
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						9,
+						12
+					],
+					"size": [
+						5,
+						1.5
+					],
+					"depth": 0.5
+				}
+			],
+			"bevel": 0.8
+		},
+		{
+			"id": "public-key-1-blade",
+			"kind": "prism",
+			"at": [
+				15,
+				38.55,
+				8.2
+			],
+			"axis": "-y",
+			"polygon": [
+				[
+					-0.8,
+					0
+				],
+				[
+					0.8,
+					0
+				],
+				[
+					0.8,
+					0.6
+				],
+				[
+					2.2,
+					0.6
+				],
+				[
+					2.2,
+					1.8
+				],
+				[
+					0.8,
+					1.8
+				],
+				[
+					0.8,
+					2.6
+				],
+				[
+					2.1,
+					2.6
+				],
+				[
+					2.1,
+					3.7
+				],
+				[
+					1,
+					3.7
+				],
+				[
+					1,
+					5.2
+				],
+				[
+					-1,
+					5.2
+				],
+				[
+					-1,
+					3.7
+				],
+				[
+					-2.1,
+					3.7
+				],
+				[
+					-2.1,
+					2.6
+				],
+				[
+					-0.8,
+					2.6
+				]
+			],
+			"depth": 1.1
+		},
+		{
+			"id": "public-key-1-bow",
+			"kind": "lathe",
+			"axis": "y",
+			"at": [
+				15,
+				37.2,
+				18.2
+			],
+			"profile": [
+				[
+					0,
+					5.4
+				],
+				[
+					1.6,
+					5.4
+				]
+			],
+			"detail": [
+				{
+					"type": "recess",
+					"face": "end",
+					"shape": "circle",
+					"at": [
+						-1.4,
+						1.6
+					],
+					"size": 3.4,
+					"depth": 0.6
+				}
+			]
+		},
+		{
+			"id": "public-key-2-blade",
+			"kind": "prism",
+			"at": [
+				15,
+				34.05,
+				8.2
+			],
+			"axis": "-y",
+			"polygon": [
+				[
+					-0.8,
+					0
+				],
+				[
+					0.8,
+					0
+				],
+				[
+					0.8,
+					0.6
+				],
+				[
+					2.2,
+					0.6
+				],
+				[
+					2.2,
+					1.8
+				],
+				[
+					0.8,
+					1.8
+				],
+				[
+					0.8,
+					2.6
+				],
+				[
+					2.1,
+					2.6
+				],
+				[
+					2.1,
+					3.7
+				],
+				[
+					1,
+					3.7
+				],
+				[
+					1,
+					5.2
+				],
+				[
+					-1,
+					5.2
+				],
+				[
+					-1,
+					3.7
+				],
+				[
+					-2.1,
+					3.7
+				],
+				[
+					-2.1,
+					2.6
+				],
+				[
+					-0.8,
+					2.6
+				]
+			],
+			"depth": 1.1
+		},
+		{
+			"id": "public-key-2-bow",
+			"kind": "lathe",
+			"axis": "y",
+			"at": [
+				15,
+				32.7,
+				18.2
+			],
+			"profile": [
+				[
+					0,
+					5.4
+				],
+				[
+					1.6,
+					5.4
+				]
+			],
+			"detail": [
+				{
+					"type": "recess",
+					"face": "end",
+					"shape": "circle",
+					"at": [
+						-1.4,
+						1.6
+					],
+					"size": 3.4,
+					"depth": 0.6
+				}
+			]
+		},
+		{
+			"id": "public-key-3-blade",
+			"kind": "prism",
+			"at": [
+				15,
+				29.55,
+				8.2
+			],
+			"axis": "-y",
+			"polygon": [
+				[
+					-0.8,
+					0
+				],
+				[
+					0.8,
+					0
+				],
+				[
+					0.8,
+					0.6
+				],
+				[
+					2.2,
+					0.6
+				],
+				[
+					2.2,
+					1.8
+				],
+				[
+					0.8,
+					1.8
+				],
+				[
+					0.8,
+					2.6
+				],
+				[
+					2.1,
+					2.6
+				],
+				[
+					2.1,
+					3.7
+				],
+				[
+					1,
+					3.7
+				],
+				[
+					1,
+					5.2
+				],
+				[
+					-1,
+					5.2
+				],
+				[
+					-1,
+					3.7
+				],
+				[
+					-2.1,
+					3.7
+				],
+				[
+					-2.1,
+					2.6
+				],
+				[
+					-0.8,
+					2.6
+				]
+			],
+			"depth": 1.1
+		},
+		{
+			"id": "public-key-3-bow",
+			"kind": "lathe",
+			"axis": "y",
+			"at": [
+				15,
+				28.2,
+				18.2
+			],
+			"profile": [
+				[
+					0,
+					5.4
+				],
+				[
+					1.6,
+					5.4
+				]
+			],
+			"detail": [
+				{
+					"type": "recess",
+					"face": "end",
+					"shape": "circle",
+					"at": [
+						-1.4,
+						1.6
+					],
+					"size": 3.4,
+					"depth": 0.6
+				}
+			]
+		},
+		{
+			"id": "public-key-in-lock-blade",
+			"kind": "prism",
+			"at": [
+				78,
+				26.55,
+				31.7
+			],
+			"axis": "-y",
+			"polygon": [
+				[
+					-0.8,
+					0
+				],
+				[
+					0.8,
+					0
+				],
+				[
+					0.8,
+					0.6
+				],
+				[
+					2.2,
+					0.6
+				],
+				[
+					2.2,
+					1.8
+				],
+				[
+					0.8,
+					1.8
+				],
+				[
+					0.8,
+					2.6
+				],
+				[
+					2.1,
+					2.6
+				],
+				[
+					2.1,
+					3.7
+				],
+				[
+					1,
+					3.7
+				],
+				[
+					1,
+					5.2
+				],
+				[
+					-1,
+					5.2
+				],
+				[
+					-1,
+					3.7
+				],
+				[
+					-2.1,
+					3.7
+				],
+				[
+					-2.1,
+					2.6
+				],
+				[
+					-0.8,
+					2.6
+				]
+			],
+			"depth": 1.1,
+			"rotate": {
+				"axis": "z",
+				"about": [
+					78,
+					26,
+					31.3
+				],
+				"deg": [
+					0,
+					-90
+				],
+				"samples": 19
+			}
+		},
+		{
+			"id": "public-key-in-lock-bow",
+			"kind": "lathe",
+			"axis": "y",
+			"at": [
+				78,
+				25.2,
+				41.699999999999996
+			],
+			"profile": [
+				[
+					0,
+					5.4
+				],
+				[
+					1.6,
+					5.4
+				]
+			],
+			"rotate": {
+				"axis": "z",
+				"about": [
+					78,
+					26,
+					31.3
+				],
+				"deg": [
+					0,
+					-90
+				],
+				"samples": 19
+			},
+			"detail": [
+				{
+					"type": "recess",
+					"face": "end",
+					"shape": "circle",
+					"at": [
+						-1.4,
+						1.6
+					],
+					"size": 3.4,
+					"depth": 0.6
+				}
+			]
+		},
+		{
+			"id": "pedestal",
+			"kind": "cylinder",
+			"at": [
+				133,
+				40,
+				0
+			],
+			"size": [
+				6.4,
+				6.4,
+				1.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1
+				}
+			]
+		},
+		{
+			"id": "collar",
+			"kind": "lathe",
+			"at": [
+				133,
+				40,
+				1.5
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					3.2
+				],
+				[
+					3,
+					3.2
+				]
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 32,
+					"s0": 0.3,
+					"s1": 2.7
+				}
+			]
+		},
+		{
+			"id": "collar-cap",
+			"kind": "cylinder",
+			"at": [
+				133,
+				40,
+				4.5
+			],
+			"size": [
+				4.4,
+				4.4,
+				1.3
+			],
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						0,
+						0
+					],
+					"size": [
+						4.2,
+						1.3
+					],
+					"depth": 0.4
+				}
+			]
+		},
+		{
+			"id": "private-key",
+			"at": [
+				133,
+				40.65,
+				5.8
+			],
+			"kind": "prism",
+			"axis": "-y",
+			"polygon": [
+				[
+					-0.9,
+					0
+				],
+				[
+					0.9,
+					0
+				],
+				[
+					0.9,
+					0.8
+				],
+				[
+					2.2,
+					0.8
+				],
+				[
+					2.2,
+					1.8
+				],
+				[
+					0.9,
+					1.8
+				],
+				[
+					0.9,
+					2.2
+				],
+				[
+					1.9,
+					2.2
+				],
+				[
+					1.9,
+					3.2
+				],
+				[
+					0.9,
+					3.2
+				],
+				[
+					0.9,
+					3.8
+				],
+				[
+					2.8,
+					3.8
+				],
+				[
+					3.356,
+					3.888
+				],
+				[
+					3.858,
+					4.144
+				],
+				[
+					4.256,
+					4.542
+				],
+				[
+					4.512,
+					5.044
+				],
+				[
+					4.6,
+					5.6
+				],
+				[
+					4.6,
+					11.2
+				],
+				[
+					4.512,
+					11.756
+				],
+				[
+					4.256,
+					12.258
+				],
+				[
+					3.858,
+					12.656
+				],
+				[
+					3.356,
+					12.912
+				],
+				[
+					2.8,
+					13.0
+				],
+				[
+					-2.8,
+					13.0
+				],
+				[
+					-3.356,
+					12.912
+				],
+				[
+					-3.858,
+					12.656
+				],
+				[
+					-4.256,
+					12.258
+				],
+				[
+					-4.512,
+					11.756
+				],
+				[
+					-4.6,
+					11.2
+				],
+				[
+					-4.6,
+					5.6
+				],
+				[
+					-4.512,
+					5.044
+				],
+				[
+					-4.256,
+					4.542
+				],
+				[
+					-3.858,
+					4.144
+				],
+				[
+					-3.356,
+					3.888
+				],
+				[
+					-2.8,
+					3.8
+				],
+				[
+					-0.9,
+					3.8
+				],
+				[
+					-0.9,
+					3.2
+				],
+				[
+					-1.9,
+					3.2
+				],
+				[
+					-1.9,
+					2.2
+				],
+				[
+					-0.9,
+					2.2
+				]
+			],
+			"depth": 1.3,
+			"round": 0.2,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "start",
+					"shape": "circle",
+					"at": [
+						4.6,
+						10.4
+					],
+					"size": 2.0,
+					"depth": 0.4
+				}
+			]
+		},
+		{
+			"id": "private-key-in-lock",
+			"at": [
+				78,
+				26.65,
+				31.7
+			],
+			"rotate": {
+				"axis": "z",
+				"about": [
+					78,
+					26,
+					31.3
+				],
+				"deg": [
+					0,
+					-90
+				],
+				"samples": 19
+			},
+			"kind": "prism",
+			"axis": "-y",
+			"polygon": [
+				[
+					-0.9,
+					0
+				],
+				[
+					0.9,
+					0
+				],
+				[
+					0.9,
+					0.8
+				],
+				[
+					2.2,
+					0.8
+				],
+				[
+					2.2,
+					1.8
+				],
+				[
+					0.9,
+					1.8
+				],
+				[
+					0.9,
+					2.2
+				],
+				[
+					1.9,
+					2.2
+				],
+				[
+					1.9,
+					3.2
+				],
+				[
+					0.9,
+					3.2
+				],
+				[
+					0.9,
+					3.8
+				],
+				[
+					2.8,
+					3.8
+				],
+				[
+					3.356,
+					3.888
+				],
+				[
+					3.858,
+					4.144
+				],
+				[
+					4.256,
+					4.542
+				],
+				[
+					4.512,
+					5.044
+				],
+				[
+					4.6,
+					5.6
+				],
+				[
+					4.6,
+					11.2
+				],
+				[
+					4.512,
+					11.756
+				],
+				[
+					4.256,
+					12.258
+				],
+				[
+					3.858,
+					12.656
+				],
+				[
+					3.356,
+					12.912
+				],
+				[
+					2.8,
+					13.0
+				],
+				[
+					-2.8,
+					13.0
+				],
+				[
+					-3.356,
+					12.912
+				],
+				[
+					-3.858,
+					12.656
+				],
+				[
+					-4.256,
+					12.258
+				],
+				[
+					-4.512,
+					11.756
+				],
+				[
+					-4.6,
+					11.2
+				],
+				[
+					-4.6,
+					5.6
+				],
+				[
+					-4.512,
+					5.044
+				],
+				[
+					-4.256,
+					4.542
+				],
+				[
+					-3.858,
+					4.144
+				],
+				[
+					-3.356,
+					3.888
+				],
+				[
+					-2.8,
+					3.8
+				],
+				[
+					-0.9,
+					3.8
+				],
+				[
+					-0.9,
+					3.2
+				],
+				[
+					-1.9,
+					3.2
+				],
+				[
+					-1.9,
+					2.2
+				],
+				[
+					-0.9,
+					2.2
+				]
+			],
+			"depth": 1.3,
+			"round": 0.2,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "start",
+					"shape": "circle",
+					"at": [
+						4.6,
+						10.4
+					],
+					"size": 2.0,
+					"depth": 0.4
+				}
+			]
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"rack",
-				"plinth",
-				"box",
-				"hinge-1",
-				"hinge-2"
+				"base",
+				"foot",
+				"lip"
 			],
 			[
-				"lid",
-				"hasp"
+				"band-foot",
+				"case"
 			],
 			[
-				"lock",
-				"keyhole"
+				"band-low",
+				"case-mid"
 			],
 			[
-				"pub-1-bit",
-				"pub-1-shaft",
-				"pub-1-bow",
-				"pub-2-bit",
-				"pub-2-shaft",
-				"pub-2-bow",
-				"pub-3-bit",
-				"pub-3-shaft",
-				"pub-3-bow"
+				"band-seam",
+				"lid"
 			],
 			[
-				"private-bit",
-				"private-shaft",
-				"private-bow"
+				"cap-1",
+				"cap-2",
+				"cap-3",
+				"cap-4",
+				"hasp-hinge",
+				"latch",
+				"latch-tab",
+				"plate",
+				"lug-a",
+				"lug-b",
+				"handle",
+				"bracket-f1",
+				"bracket-f2",
+				"bracket-s1",
+				"bracket-s2",
+				"bolt-f1",
+				"bolt-f2",
+				"bolt-s1",
+				"bolt-s2"
+			],
+			[
+				"escutcheon",
+				"bezel",
+				"plug",
+				"pin",
+				"screw"
+			],
+			[
+				"holder-plinth",
+				"holder",
+				"pedestal",
+				"collar",
+				"collar-cap"
+			],
+			[
+				"public-key-1-blade",
+				"public-key-1-bow",
+				"public-key-2-blade",
+				"public-key-2-bow",
+				"public-key-3-blade",
+				"public-key-3-bow",
+				"private-key"
+			],
+			[
+				"public-key-in-lock-blade",
+				"public-key-in-lock-bow",
+				"private-key-in-lock"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 6,
-		"rest": "Box sealed"
+		"behavior": "scrub",
+		"input": "drag",
+		"rest": 0,
+		"states": [
+			{
+				"name": "open",
+				"readout": "open · H = 72",
+				"parts": {
+					"public-key-in-lock-blade": {
+						"turn": 0
+					},
+					"public-key-in-lock-bow": {
+						"turn": 0
+					},
+					"public-key-3-blade": {
+						"hidden": true
+					},
+					"public-key-3-bow": {
+						"hidden": true
+					},
+					"private-key-in-lock": {
+						"hidden": true,
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "sealed",
+				"readout": "sealed · C = 3000",
+				"parts": {
+					"public-key-in-lock-blade": {
+						"turn": -90
+					},
+					"public-key-in-lock-bow": {
+						"turn": -90
+					},
+					"public-key-3-blade": {
+						"hidden": true
+					},
+					"public-key-3-bow": {
+						"hidden": true
+					},
+					"private-key-in-lock": {
+						"hidden": true,
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "private key in",
+				"readout": "private key in · C = 3000",
+				"parts": {
+					"public-key-in-lock-blade": {
+						"hidden": true,
+						"turn": 0
+					},
+					"public-key-in-lock-bow": {
+						"hidden": true,
+						"turn": 0
+					},
+					"private-key": {
+						"hidden": true
+					},
+					"private-key-in-lock": {
+						"turn": -90
+					}
+				}
+			},
+			{
+				"name": "read",
+				"readout": "open · H = 72",
+				"parts": {
+					"public-key-in-lock-blade": {
+						"hidden": true,
+						"turn": 0
+					},
+					"public-key-in-lock-bow": {
+						"hidden": true,
+						"turn": 0
+					},
+					"private-key": {
+						"hidden": true
+					},
+					"private-key-in-lock": {
+						"turn": 0
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ PUBLIC KEY ]",

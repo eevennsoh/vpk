@@ -3,375 +3,2605 @@
 	"id": "an-sampling",
 	"figId": "FIG_215",
 	"title": "Temperature as a roulette wheel",
-	"label": "Dimetric roulette table: an accented pocket rotor whose sixteen frets are spaced by next-token probability, a ball in the widest pocket, a thermostat with temperature knob and thermometer, and a chip tray.",
-	"caption": "Each pocket is as wide as its token's probability; turning the temperature knob up evens the pockets out, so the ball lands on unlikely tokens more often.",
+	"label": "Roulette table: sixteen pocket frets spaced by next-token probability, a ball, a thermostat with knob, thermometer and a prompt display reading 'the cat sat on the', and a chip mat. Drag to change the temperature.",
+	"caption": "Each pocket is as wide as its token's probability. Drag to heat the table: the knob turns, the mercury rises and the frets spread towards even spacing, so the ball lands on unlikely words more often.",
 	"camera": {
 		"preset": "dimetric",
+		"azimuth": 55,
+		"elevation": 30,
 		"scale": "fit"
 	},
+	"labels": [],
+	"focal": "knob",
 	"parts": [
+		{
+			"id": "foot",
+			"kind": "box",
+			"at": [
+				8.5,
+				8.5,
+				0
+			],
+			"size": [
+				13,
+				13,
+				2.4
+			],
+			"r": 1.2,
+			"instances": [
+				{
+					"at": [
+						8.5,
+						8.5,
+						0
+					]
+				},
+				{
+					"at": [
+						178.5,
+						8.5,
+						0
+					]
+				},
+				{
+					"at": [
+						8.5,
+						86.5,
+						0
+					]
+				},
+				{
+					"at": [
+						178.5,
+						86.5,
+						0
+					]
+				}
+			]
+		},
+		{
+			"id": "leg",
+			"kind": "box",
+			"at": [
+				10,
+				10,
+				2.4
+			],
+			"size": [
+				10,
+				10,
+				15.6
+			],
+			"r": 0.8,
+			"instances": [
+				{
+					"at": [
+						10,
+						10,
+						2.4
+					]
+				},
+				{
+					"at": [
+						180,
+						10,
+						2.4
+					]
+				},
+				{
+					"at": [
+						10,
+						88,
+						2.4
+					]
+				},
+				{
+					"at": [
+						180,
+						88,
+						2.4
+					]
+				}
+			]
+		},
+		{
+			"id": "table",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				18
+			],
+			"size": [
+				200,
+				108,
+				6
+			],
+			"r": 2,
+			"label": "Table",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 6.8,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "lip-back",
+			"kind": "box",
+			"at": [
+				0,
+				0,
+				24
+			],
+			"size": [
+				200,
+				4,
+				1.8
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8
+				}
+			]
+		},
+		{
+			"id": "lip-left",
+			"kind": "box",
+			"at": [
+				0,
+				4,
+				24
+			],
+			"size": [
+				4,
+				100,
+				1.8
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8
+				}
+			]
+		},
+		{
+			"id": "lip-right",
+			"kind": "box",
+			"at": [
+				196,
+				4,
+				24
+			],
+			"size": [
+				4,
+				100,
+				1.8
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8
+				}
+			]
+		},
+		{
+			"id": "lip-front",
+			"kind": "box",
+			"at": [
+				0,
+				104,
+				24
+			],
+			"size": [
+				200,
+				4,
+				1.8
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8
+				}
+			]
+		},
+		{
+			"id": "screw",
+			"kind": "cylinder",
+			"at": [
+				2,
+				2,
+				25.8
+			],
+			"size": [
+				1.1,
+				1.1,
+				0.3
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.5
+				}
+			],
+			"instances": [
+				{
+					"at": [
+						2,
+						2,
+						25.8
+					]
+				},
+				{
+					"at": [
+						198,
+						2,
+						25.8
+					]
+				},
+				{
+					"at": [
+						2,
+						106,
+						25.8
+					]
+				},
+				{
+					"at": [
+						198,
+						106,
+						25.8
+					]
+				}
+			]
+		},
+		{
+			"id": "plinth",
+			"kind": "cylinder",
+			"at": [
+				50,
+				46,
+				24
+			],
+			"size": [
+				43.4,
+				43.4,
+				1.4
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1
+				}
+			]
+		},
 		{
 			"id": "bowl",
 			"kind": "cylinder",
 			"at": [
-				0,
-				0,
-				0
+				50,
+				46,
+				25.4
 			],
 			"size": [
-				34,
-				34,
-				8
+				41.2,
+				41.2,
+				6.0
+			],
+			"label": "Wheel bowl",
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						0.9,
+						4.4
+					]
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"at": [
+						0,
+						0
+					],
+					"size": 60.56,
+					"depth": 0.8
+				}
+			]
+		},
+		{
+			"id": "bezel",
+			"kind": "ring",
+			"at": [
+				50,
+				46,
+				31.4
+			],
+			"size": [
+				36.46,
+				36.46,
+				0
+			],
+			"thickness": 0.4,
+			"inner": 35.43,
+			"label": "Ball track"
+		},
+		{
+			"id": "rim-line-1",
+			"kind": "ring",
+			"at": [
+				50,
+				46,
+				31.4
+			],
+			"size": [
+				39.76,
+				39.76,
+				0
 			],
 			"label": "Wheel bowl"
 		},
 		{
-			"id": "rotor",
-			"kind": "cylinder",
+			"id": "rim-line-2",
+			"kind": "ring",
 			"at": [
-				0,
-				0,
-				8
+				50,
+				46,
+				31.4
 			],
 			"size": [
-				28,
-				28,
-				3
+				38.52,
+				38.52,
+				0
 			],
-			"label": "Pocket rotor",
-			"marks": [
-				[
-					[
-						3.4,
-						-6.7
+			"label": "Wheel bowl"
+		},
+		{
+			"id": "rim-line-3",
+			"kind": "ring",
+			"at": [
+				50,
+				46,
+				31.4
+			],
+			"size": [
+				30.69,
+				30.69,
+				0
+			],
+			"label": "Wheel bowl"
+		},
+		{
+			"id": "tab",
+			"kind": "box",
+			"at": [
+				50,
+				46,
+				31.7
+			],
+			"size": [
+				2.2,
+				1.3,
+				0.9
+			],
+			"r": 0.2,
+			"label": "Deflector",
+			"repeat": {
+				"polar": {
+					"count": 8,
+					"centre": [
+						50,
+						46
 					],
-					[
-						11.8,
-						-23.2
-					]
-				],
-				[
-					[
-						7.2,
-						2.1
-					],
-					[
-						24.9,
-						7.4
-					]
-				],
-				[
-					[
-						2.5,
-						7.1
-					],
-					[
-						8.5,
-						24.6
-					]
-				],
-				[
-					[
-						-2.6,
-						7
-					],
-					[
-						-9.2,
-						24.3
-					]
-				],
-				[
-					[
-						-6,
-						4.5
-					],
-					[
-						-20.8,
-						15.6
-					]
-				],
-				[
-					[
-						-7.4,
-						1.5
-					],
-					[
-						-25.5,
-						5.2
-					]
-				],
-				[
-					[
-						-7.4,
-						-1.3
-					],
-					[
-						-25.6,
-						-4.6
-					]
-				],
-				[
-					[
-						-6.6,
-						-3.6
-					],
-					[
-						-22.9,
-						-12.3
-					]
-				],
-				[
-					[
-						-5.3,
-						-5.3
-					],
-					[
-						-18.5,
-						-18.3
-					]
-				],
-				[
-					[
-						-3.9,
-						-6.4
-					],
-					[
-						-13.3,
-						-22.3
-					]
-				],
-				[
-					[
-						-2.3,
-						-7.1
-					],
-					[
-						-8.1,
-						-24.7
-					]
-				],
-				[
-					[
-						-1,
-						-7.4
-					],
-					[
-						-3.3,
-						-25.8
-					]
-				],
-				[
-					[
-						0.2,
-						-7.5
-					],
-					[
-						0.8,
-						-26
-					]
-				],
-				[
-					[
-						1.2,
-						-7.4
-					],
-					[
-						4,
-						-25.7
-					]
-				],
-				[
-					[
-						2.1,
-						-7.2
-					],
-					[
-						7.2,
-						-25
-					]
-				],
-				[
-					[
-						2.8,
-						-7
-					],
-					[
-						9.6,
-						-24.2
-					]
-				]
+					"radius": 32.96,
+					"from": 22.5,
+					"face": true
+				}
+			}
+		},
+		{
+			"id": "tier1",
+			"kind": "cylinder",
+			"at": [
+				50,
+				46,
+				31.4
+			],
+			"size": [
+				18.4,
+				18.4,
+				1.2
+			],
+			"label": "Rotor",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.4
+				}
+			]
+		},
+		{
+			"id": "tier2",
+			"kind": "cylinder",
+			"at": [
+				50,
+				46,
+				32.6
+			],
+			"size": [
+				14,
+				14,
+				1.8
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.2
+				}
+			]
+		},
+		{
+			"id": "tier3",
+			"kind": "cylinder",
+			"at": [
+				50,
+				46,
+				34.4
+			],
+			"size": [
+				10,
+				10,
+				1.8
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1
+				}
+			]
+		},
+		{
+			"id": "tier4",
+			"kind": "cylinder",
+			"at": [
+				50,
+				46,
+				36.2
+			],
+			"size": [
+				6.4,
+				6.4,
+				1.6
 			]
 		},
 		{
 			"id": "hub",
 			"kind": "cylinder",
 			"at": [
-				0,
-				0,
-				11
+				50,
+				46,
+				37.8
 			],
 			"size": [
-				5,
-				5,
-				7
+				2.8,
+				2.8,
+				2
+			]
+		},
+		{
+			"id": "spindle",
+			"kind": "cylinder",
+			"at": [
+				50,
+				46,
+				39.8
 			],
-			"label": "Hub"
+			"size": [
+				0.9,
+				0.9,
+				5.2
+			],
+			"label": "Spindle"
+		},
+		{
+			"id": "arm",
+			"kind": "rod",
+			"from": [
+				50,
+				46,
+				43.8
+			],
+			"to": [
+				58,
+				46,
+				43.8
+			],
+			"radius": 0.52,
+			"label": "Cross handle",
+			"instances": [
+				{
+					"from": [
+						50,
+						46,
+						43.8
+					],
+					"to": [
+						58,
+						46,
+						43.8
+					]
+				},
+				{
+					"from": [
+						50,
+						46,
+						43.8
+					],
+					"to": [
+						50,
+						54,
+						43.8
+					]
+				},
+				{
+					"from": [
+						50,
+						46,
+						43.8
+					],
+					"to": [
+						42,
+						46,
+						43.8
+					]
+				},
+				{
+					"from": [
+						50,
+						46,
+						43.8
+					],
+					"to": [
+						50,
+						38,
+						43.8
+					]
+				}
+			]
+		},
+		{
+			"id": "knob-end",
+			"kind": "cylinder",
+			"at": [
+				58,
+				46,
+				42.9
+			],
+			"size": [
+				1.24,
+				1.24,
+				1.8
+			],
+			"label": "Cross handle",
+			"instances": [
+				{
+					"at": [
+						58,
+						46,
+						42.9
+					]
+				},
+				{
+					"at": [
+						50,
+						54,
+						42.9
+					]
+				},
+				{
+					"at": [
+						42,
+						46,
+						42.9
+					]
+				},
+				{
+					"at": [
+						50,
+						38,
+						42.9
+					]
+				}
+			]
+		},
+		{
+			"id": "cap",
+			"kind": "cylinder",
+			"at": [
+				50,
+				46,
+				43.6
+			],
+			"size": [
+				1.2,
+				1.2,
+				1.2
+			]
+		},
+		{
+			"id": "fret",
+			"kind": "prism",
+			"at": [
+				50,
+				46,
+				31.4
+			],
+			"axis": "z",
+			"polygon": [
+				[
+					19.0,
+					-0.26
+				],
+				[
+					29.3,
+					-0.26
+				],
+				[
+					29.3,
+					0.26
+				],
+				[
+					19.0,
+					0.26
+				]
+			],
+			"depth": 2.2,
+			"yaw": 111,
+			"label": "Pocket fret",
+			"instances": [
+				{
+					"yaw": 111
+				},
+				{
+					"yaw": -119.4,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-69,
+							219
+						],
+						"samples": 97
+					}
+				},
+				{
+					"yaw": -66.12,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-84,
+							177
+						],
+						"samples": 88
+					}
+				},
+				{
+					"yaw": -33.72,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-84,
+							144
+						],
+						"samples": 77
+					}
+				},
+				{
+					"yaw": -8.52,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-81,
+							120
+						],
+						"samples": 68
+					}
+				},
+				{
+					"yaw": 11.28,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-78,
+							102
+						],
+						"samples": 61
+					}
+				},
+				{
+					"yaw": 27.48,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-72,
+							84
+						],
+						"samples": 53
+					}
+				},
+				{
+					"yaw": 41.88,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-66,
+							72
+						],
+						"samples": 47
+					}
+				},
+				{
+					"yaw": 54.48,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-60,
+							57
+						],
+						"samples": 40
+					}
+				},
+				{
+					"yaw": 65.28,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-51,
+							48
+						],
+						"samples": 34
+					}
+				},
+				{
+					"yaw": 74.28,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-45,
+							39
+						],
+						"samples": 29
+					}
+				},
+				{
+					"yaw": 82.2,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-39,
+							30
+						],
+						"samples": 24
+					}
+				},
+				{
+					"yaw": 89.4,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-30,
+							24
+						],
+						"samples": 19
+					}
+				},
+				{
+					"yaw": 95.88,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-24,
+							18
+						],
+						"samples": 15
+					}
+				},
+				{
+					"yaw": 101.64,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-15,
+							12
+						],
+						"samples": 10
+					}
+				},
+				{
+					"yaw": 106.68,
+					"rotate": {
+						"axis": "z",
+						"about": [
+							50,
+							46,
+							31.4
+						],
+						"deg": [
+							-9,
+							6
+						],
+						"samples": 6
+					}
+				}
+			]
 		},
 		{
 			"id": "ball",
-			"kind": "cylinder",
+			"kind": "sphere",
+			"r": 1.6,
 			"at": [
-				12,
-				-12,
-				11
+				30.746,
+				60.988,
+				33.0
 			],
-			"size": [
-				2,
-				2,
-				1.5
-			],
-			"label": "Ball"
+			"label": "Ball",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					50,
+					46,
+					31.4
+				],
+				"deg": [
+					0,
+					300
+				],
+				"samples": 101
+			}
 		},
 		{
-			"id": "tray",
-			"kind": "tray",
+			"id": "connector",
+			"kind": "box",
 			"at": [
-				-14,
-				44,
-				0
+				94,
+				35.2,
+				24
 			],
 			"size": [
-				34,
-				16,
-				4
+				4.4,
+				4.4,
+				3.2
 			],
-			"label": "Chip tray"
+			"r": 0.6,
+			"label": "Cable"
 		},
 		{
-			"id": "chip",
-			"kind": "cylinder",
+			"id": "cable",
+			"kind": "tube",
+			"points": [
+				[
+					98.4,
+					37.4,
+					25.4
+				],
+				[
+					99.25,
+					36.28,
+					25.4
+				],
+				[
+					100.15,
+					35.17,
+					25.4
+				],
+				[
+					101.12,
+					34.05,
+					25.4
+				],
+				[
+					102.15,
+					32.95,
+					25.4
+				],
+				[
+					103.24,
+					31.85,
+					25.4
+				],
+				[
+					104.38,
+					30.78,
+					25.4
+				],
+				[
+					105.58,
+					29.72,
+					25.4
+				],
+				[
+					106.82,
+					28.68,
+					25.4
+				],
+				[
+					108.12,
+					27.67,
+					25.4
+				],
+				[
+					109.47,
+					26.69,
+					25.4
+				],
+				[
+					110.86,
+					25.75,
+					25.4
+				],
+				[
+					112.3,
+					24.85,
+					25.4
+				],
+				[
+					113.78,
+					23.99,
+					25.4
+				],
+				[
+					115.3,
+					23.18,
+					25.4
+				],
+				[
+					116.86,
+					22.41,
+					25.4
+				],
+				[
+					118.46,
+					21.71,
+					25.4
+				],
+				[
+					120.1,
+					21.06,
+					25.4
+				],
+				[
+					121.77,
+					20.48,
+					25.4
+				],
+				[
+					123.48,
+					19.96,
+					25.4
+				],
+				[
+					125.21,
+					19.52,
+					25.4
+				],
+				[
+					126.97,
+					19.15,
+					25.4
+				],
+				[
+					128.77,
+					18.86,
+					25.4
+				],
+				[
+					130.58,
+					18.65,
+					25.4
+				],
+				[
+					132.43,
+					18.53,
+					25.4
+				],
+				[
+					134.29,
+					18.5,
+					25.4
+				],
+				[
+					136.18,
+					18.57,
+					25.4
+				],
+				[
+					138.08,
+					18.73,
+					25.4
+				],
+				[
+					140.0,
+					19.0,
+					25.4
+				]
+			],
+			"radius": 0.5,
+			"label": "Cable"
+		},
+		{
+			"id": "clip",
+			"kind": "box",
 			"at": [
-				-4,
-				52,
-				1
+				105.82,
+				27.74,
+				24.5
 			],
 			"size": [
-				4,
-				4,
-				5
+				1.6,
+				2.2,
+				1.9
 			],
-			"label": "Sampled chip"
+			"r": 0.3,
+			"label": "Cable clip",
+			"instances": [
+				{
+					"at": [
+						105.82,
+						27.74,
+						24.5
+					],
+					"yaw": -38.8
+				},
+				{
+					"at": [
+						118.97,
+						20.09,
+						24.5
+					],
+					"yaw": -20.6
+				}
+			]
 		},
 		{
 			"id": "thermostat",
 			"kind": "box",
 			"at": [
-				44,
-				-12,
-				0
+				140,
+				6,
+				24
 			],
 			"size": [
-				22,
-				22,
-				7
+				44,
+				24,
+				7.2
 			],
-			"r": 2,
-			"label": "Thermostat"
+			"r": 2.6,
+			"label": "Thermostat",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 1.6
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.8,
+						2.8
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 2,
+					"size": 0.36
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						41.2,
+						2.8
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 2,
+					"size": 0.36
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.8,
+						21.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 2,
+					"size": 0.36
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						41.2,
+						21.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 2,
+					"size": 0.36
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						20.4,
+						3.5
+					],
+					"size": [
+						35.2,
+						4.6
+					],
+					"depth": 0.24
+				},
+				{
+					"type": "text",
+					"face": "+y",
+					"at": [
+						4.4,
+						2.5
+					],
+					"text": "the cat sat on the",
+					"size": 2
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							26.8,
+							2.3
+						],
+						[
+							33.2,
+							2.3
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							33.8,
+							2.2
+						],
+						[
+							33.8,
+							4.6
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						3.7,
+						3.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 2,
+					"size": 0.24
+				}
+			]
+		},
+		{
+			"id": "dial",
+			"kind": "cylinder",
+			"at": [
+				152.8,
+				17.2,
+				31.2
+			],
+			"size": [
+				8.6,
+				8.6,
+				0.6
+			],
+			"label": "Temperature dial",
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "top",
+					"r": 8,
+					"count": 40,
+					"every": 5,
+					"lengths": [
+						0.7,
+						1.5
+					]
+				}
+			]
 		},
 		{
 			"id": "knob",
 			"kind": "cylinder",
 			"at": [
-				58,
-				-2,
-				7
+				152.8,
+				17.2,
+				31.8
 			],
 			"size": [
-				5,
-				5,
-				4
+				5.6,
+				5.6,
+				3.8
 			],
-			"label": "Temperature knob"
+			"label": "Temperature knob",
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 44,
+					"s0": 0.3,
+					"s1": 3.2
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.9
+				}
+			]
 		},
 		{
-			"id": "thermometer",
+			"id": "pointer",
+			"kind": "prism",
+			"at": [
+				152.8,
+				17.2,
+				35.6
+			],
+			"axis": "z",
+			"polygon": [
+				[
+					-1.2,
+					-0.64
+				],
+				[
+					3.4,
+					-0.64
+				],
+				[
+					4.8,
+					0
+				],
+				[
+					3.4,
+					0.64
+				],
+				[
+					-1.2,
+					0.64
+				]
+			],
+			"depth": 1,
+			"yaw": 145,
+			"label": "Temperature knob",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					152.8,
+					17.2,
+					31.2
+				],
+				"deg": [
+					-111,
+					84
+				],
+				"samples": 66
+			}
+		},
+		{
+			"id": "therm-base",
 			"kind": "box",
 			"at": [
-				48,
-				-8,
-				7
+				168.8,
+				10.4,
+				31.2
 			],
 			"size": [
-				3,
-				3,
-				22
+				8.8,
+				8.8,
+				1.8
 			],
-			"r": 1,
+			"r": 1.2,
+			"label": "Thermometer",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8,
+					"r": 0.8
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.2,
+						1.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 2,
+					"size": 0.24
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						7.6,
+						7.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 2,
+					"size": 0.24
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.2,
+						7.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 2,
+					"size": 0.24
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						7.6,
+						1.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 2,
+					"size": 0.24
+				}
+			]
+		},
+		{
+			"id": "scale",
+			"kind": "box",
+			"at": [
+				170.2,
+				11,
+				33
+			],
+			"size": [
+				6.2,
+				0.9,
+				30
+			],
+			"r": 0.3,
+			"label": "Thermometer scale",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.6
+				},
+				{
+					"type": "ticks",
+					"face": "+y",
+					"from": [
+						5.2,
+						2.4
+					],
+					"to": [
+						5.2,
+						27.6
+					],
+					"step": 0.84,
+					"every": 5,
+					"lengths": [
+						0.8,
+						1.7
+					],
+					"side": -1
+				}
+			]
+		},
+		{
+			"id": "socket",
+			"kind": "cylinder",
+			"at": [
+				173.2,
+				15.8,
+				33
+			],
+			"size": [
+				1.9,
+				1.9,
+				3.6
+			],
 			"label": "Thermometer"
-		}
-	],
-	"focal": "rotor",
-	"labels": [
-		{
-			"text": "Pockets sized by probability",
-			"target": "rotor",
-			"side": "left"
 		},
 		{
-			"text": "Temperature knob",
-			"target": "knob",
-			"side": "right"
+			"id": "tube",
+			"kind": "cylinder",
+			"at": [
+				173.2,
+				15.8,
+				36.6
+			],
+			"size": [
+				1,
+				1,
+				24.4
+			],
+			"tone": "glass",
+			"label": "Thermometer"
 		},
 		{
-			"text": "Thermometer",
-			"target": "thermometer",
-			"side": "right"
+			"id": "column",
+			"kind": "cylinder",
+			"at": [
+				173.2,
+				15.8,
+				36.6
+			],
+			"size": [
+				0.36,
+				0.36,
+				10.458
+			],
+			"tone": "ink",
+			"label": "Mercury column",
+			"variants": {
+				"c0": {
+					"size": [
+						0.36,
+						0.36,
+						2.4
+					]
+				},
+				"c1": {
+					"size": [
+						0.36,
+						0.36,
+						4.012
+					]
+				},
+				"c2": {
+					"size": [
+						0.36,
+						0.36,
+						5.622
+					]
+				},
+				"c3": {
+					"size": [
+						0.36,
+						0.36,
+						7.772
+					]
+				},
+				"c5": {
+					"size": [
+						0.36,
+						0.36,
+						13.142
+					]
+				},
+				"c6": {
+					"size": [
+						0.36,
+						0.36,
+						15.828
+					]
+				},
+				"c7": {
+					"size": [
+						0.36,
+						0.36,
+						18.514
+					]
+				},
+				"c8": {
+					"size": [
+						0.36,
+						0.36,
+						21.2
+					]
+				}
+			}
 		},
 		{
-			"text": "Ball",
-			"target": "ball",
-			"side": "right"
+			"id": "bead",
+			"kind": "cylinder",
+			"at": [
+				173.2,
+				15.8,
+				41
+			],
+			"size": [
+				1.4,
+				1.4,
+				1
+			],
+			"label": "Bead stop",
+			"instances": [
+				{
+					"at": [
+						173.2,
+						15.8,
+						41
+					]
+				},
+				{
+					"at": [
+						173.2,
+						15.8,
+						51
+					]
+				},
+				{
+					"at": [
+						173.2,
+						15.8,
+						60
+					],
+					"size": [
+						1.5,
+						1.5,
+						1.6
+					]
+				}
+			]
 		},
 		{
-			"text": "Sampled tokens",
-			"target": "chip",
-			"side": "left"
+			"id": "mat",
+			"kind": "plate",
+			"at": [
+				110,
+				61,
+				24
+			],
+			"size": [
+				83.6,
+				26,
+				0.7
+			],
+			"r": 1.2,
+			"label": "Chip mat",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.8
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							11.8,
+							1.8
+						],
+						[
+							11.8,
+							24.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							21.8,
+							1.8
+						],
+						[
+							21.8,
+							24.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							31.8,
+							1.8
+						],
+						[
+							31.8,
+							24.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							41.8,
+							1.8
+						],
+						[
+							41.8,
+							24.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							51.8,
+							1.8
+						],
+						[
+							51.8,
+							24.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							61.8,
+							1.8
+						],
+						[
+							61.8,
+							24.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							71.8,
+							1.8
+						],
+						[
+							71.8,
+							24.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.8,
+							13
+						],
+						[
+							81.8,
+							13
+						]
+					]
+				}
+			]
 		},
 		{
-			"text": "Wheel bowl",
-			"target": "bowl",
-			"side": "left"
+			"id": "well",
+			"kind": "ring",
+			"at": [
+				146.8,
+				68.4,
+				24.7
+			],
+			"size": [
+				3.3,
+				3.3,
+				0
+			],
+			"label": "Chip mat",
+			"instances": [
+				{
+					"at": [
+						146.8,
+						68.4,
+						24.7
+					]
+				},
+				{
+					"at": [
+						166.8,
+						68.4,
+						24.7
+					]
+				},
+				{
+					"at": [
+						186.8,
+						68.4,
+						24.7
+					]
+				},
+				{
+					"at": [
+						116.8,
+						79.6,
+						24.7
+					]
+				},
+				{
+					"at": [
+						126.8,
+						79.6,
+						24.7
+					]
+				},
+				{
+					"at": [
+						146.8,
+						79.6,
+						24.7
+					]
+				},
+				{
+					"at": [
+						156.8,
+						79.6,
+						24.7
+					]
+				},
+				{
+					"at": [
+						166.8,
+						79.6,
+						24.7
+					]
+				},
+				{
+					"at": [
+						176.8,
+						79.6,
+						24.7
+					]
+				},
+				{
+					"at": [
+						186.8,
+						79.6,
+						24.7
+					]
+				}
+			]
+		},
+		{
+			"id": "chip",
+			"kind": "cylinder",
+			"at": [
+				116.8,
+				68.4,
+				24.7
+			],
+			"size": [
+				3.5,
+				3.5,
+				1.2
+			],
+			"label": "Chip (a drawn token)",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.64
+				}
+			],
+			"instances": [
+				{
+					"at": [
+						116.8,
+						68.4,
+						24.7
+					]
+				},
+				{
+					"at": [
+						116.8,
+						68.4,
+						25.9
+					]
+				},
+				{
+					"at": [
+						116.8,
+						68.4,
+						27.1
+					]
+				},
+				{
+					"at": [
+						116.8,
+						68.4,
+						28.3
+					]
+				},
+				{
+					"at": [
+						116.8,
+						68.4,
+						29.5
+					]
+				},
+				{
+					"at": [
+						126.8,
+						68.4,
+						24.7
+					]
+				},
+				{
+					"at": [
+						126.8,
+						68.4,
+						25.9
+					]
+				},
+				{
+					"at": [
+						136.8,
+						68.4,
+						24.7
+					]
+				},
+				{
+					"at": [
+						136.8,
+						79.6,
+						24.7
+					]
+				},
+				{
+					"at": [
+						156.8,
+						68.4,
+						24.7
+					]
+				},
+				{
+					"at": [
+						156.8,
+						68.4,
+						25.9
+					]
+				},
+				{
+					"at": [
+						176.8,
+						68.4,
+						24.7
+					]
+				}
+			]
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
+				"foot",
+				"leg"
+			],
+			[
+				"table",
+				"lip-back",
+				"lip-left",
+				"lip-right",
+				"lip-front"
+			],
+			[
+				"screw",
+				"plinth",
 				"bowl",
-				"tray",
-				"thermostat"
+				"connector",
+				"thermostat",
+				"mat",
+				"well"
 			],
 			[
-				"rotor"
+				"bezel",
+				"tier1",
+				"cable",
+				"dial",
+				"therm-base",
+				"rim-line-1",
+				"rim-line-2",
+				"rim-line-3"
 			],
 			[
+				"tab",
+				"tier2",
+				"tier3",
+				"fret",
+				"clip",
+				"knob",
+				"scale",
+				"socket"
+			],
+			[
+				"tier4",
 				"hub",
+				"spindle",
+				"pointer",
+				"tube",
+				"column",
 				"chip"
 			],
 			[
-				"thermometer"
-			],
-			[
-				"ball"
-			],
-			[
-				"knob"
+				"arm",
+				"knob-end",
+				"cap",
+				"ball",
+				"bead"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 8,
-		"rest": "T 1.00"
+		"behavior": "scrub",
+		"input": "drag",
+		"rest": 4,
+		"values": {
+			"T": [
+				0.25,
+				0.4,
+				0.55,
+				0.75,
+				1,
+				1.25,
+				1.5,
+				1.75,
+				2
+			]
+		},
+		"readout": "T {T:0.00} · {name}",
+		"states": [
+			{
+				"name": "drew mat 97%",
+				"parts": {
+					"fret-1": {
+						"turn": 218.213
+					},
+					"fret-2": {
+						"turn": 174.868
+					},
+					"fret-3": {
+						"turn": 143.827
+					},
+					"fret-4": {
+						"turn": 119.124
+					},
+					"fret-5": {
+						"turn": 99.513
+					},
+					"fret-6": {
+						"turn": 83.398
+					},
+					"fret-7": {
+						"turn": 69.051
+					},
+					"fret-8": {
+						"turn": 56.482
+					},
+					"fret-9": {
+						"turn": 45.699
+					},
+					"fret-10": {
+						"turn": 36.707
+					},
+					"fret-11": {
+						"turn": 28.792
+					},
+					"fret-12": {
+						"turn": 21.595
+					},
+					"fret-13": {
+						"turn": 15.117
+					},
+					"fret-14": {
+						"turn": 9.359
+					},
+					"fret-15": {
+						"turn": 4.32
+					},
+					"ball": {
+						"turn": 52.371
+					},
+					"pointer": {
+						"turn": 82.5
+					},
+					"column": {
+						"variant": "c0"
+					}
+				}
+			},
+			{
+				"name": "drew mat 84%",
+				"parts": {
+					"fret-1": {
+						"turn": 174.351
+					},
+					"fret-2": {
+						"turn": 154.009
+					},
+					"fret-3": {
+						"turn": 131.108
+					},
+					"fret-4": {
+						"turn": 110.975
+					},
+					"fret-5": {
+						"turn": 93.948
+					},
+					"fret-6": {
+						"turn": 79.427
+					},
+					"fret-7": {
+						"turn": 66.278
+					},
+					"fret-8": {
+						"turn": 54.574
+					},
+					"fret-9": {
+						"turn": 44.383
+					},
+					"fret-10": {
+						"turn": 35.769
+					},
+					"fret-11": {
+						"turn": 28.13
+					},
+					"fret-12": {
+						"turn": 21.151
+					},
+					"fret-13": {
+						"turn": 14.841
+					},
+					"fret-14": {
+						"turn": 9.208
+					},
+					"fret-15": {
+						"turn": 4.258
+					},
+					"ball": {
+						"turn": 41.844
+					},
+					"pointer": {
+						"turn": 66
+					},
+					"column": {
+						"variant": "c1"
+					}
+				}
+			},
+			{
+				"name": "drew mat 68%",
+				"parts": {
+					"fret-1": {
+						"turn": 116.765
+					},
+					"fret-2": {
+						"turn": 112.427
+					},
+					"fret-3": {
+						"turn": 99.839
+					},
+					"fret-4": {
+						"turn": 87.185
+					},
+					"fret-5": {
+						"turn": 75.477
+					},
+					"fret-6": {
+						"turn": 64.895
+					},
+					"fret-7": {
+						"turn": 55.03
+					},
+					"fret-8": {
+						"turn": 45.987
+					},
+					"fret-9": {
+						"turn": 37.875
+					},
+					"fret-10": {
+						"turn": 30.805
+					},
+					"fret-11": {
+						"turn": 24.414
+					},
+					"fret-12": {
+						"turn": 18.501
+					},
+					"fret-13": {
+						"turn": 13.082
+					},
+					"fret-14": {
+						"turn": 8.18
+					},
+					"fret-15": {
+						"turn": 3.812
+					},
+					"ball": {
+						"turn": 28.024
+					},
+					"pointer": {
+						"turn": 49.5
+					},
+					"column": {
+						"variant": "c2"
+					}
+				}
+			},
+			{
+				"name": "drew mat 50%",
+				"parts": {
+					"fret-1": {
+						"turn": 51.632
+					},
+					"fret-2": {
+						"turn": 53.753
+					},
+					"fret-3": {
+						"turn": 49.895
+					},
+					"fret-4": {
+						"turn": 45.111
+					},
+					"fret-5": {
+						"turn": 40.113
+					},
+					"fret-6": {
+						"turn": 35.24
+					},
+					"fret-7": {
+						"turn": 30.52
+					},
+					"fret-8": {
+						"turn": 26.022
+					},
+					"fret-9": {
+						"turn": 21.819
+					},
+					"fret-10": {
+						"turn": 17.992
+					},
+					"fret-11": {
+						"turn": 14.435
+					},
+					"fret-12": {
+						"turn": 11.076
+					},
+					"fret-13": {
+						"turn": 7.935
+					},
+					"fret-14": {
+						"turn": 5.028
+					},
+					"fret-15": {
+						"turn": 2.376
+					},
+					"ball": {
+						"turn": 12.392
+					},
+					"pointer": {
+						"turn": 27.5
+					},
+					"column": {
+						"variant": "c3"
+					}
+				}
+			},
+			{
+				"name": "drew mat 36%",
+				"parts": {
+					"fret-1": {
+						"turn": 0
+					},
+					"fret-2": {
+						"turn": 0
+					},
+					"fret-3": {
+						"turn": 0
+					},
+					"fret-4": {
+						"turn": 0
+					},
+					"fret-5": {
+						"turn": 0
+					},
+					"fret-6": {
+						"turn": 0
+					},
+					"fret-7": {
+						"turn": 0
+					},
+					"fret-8": {
+						"turn": 0
+					},
+					"fret-9": {
+						"turn": 0
+					},
+					"fret-10": {
+						"turn": 0
+					},
+					"fret-11": {
+						"turn": 0
+					},
+					"fret-12": {
+						"turn": 0
+					},
+					"fret-13": {
+						"turn": 0
+					},
+					"fret-14": {
+						"turn": 0
+					},
+					"fret-15": {
+						"turn": 0
+					},
+					"ball": {
+						"turn": 0
+					},
+					"pointer": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "drew rug 9%",
+				"parts": {
+					"fret-1": {
+						"turn": -29.752
+					},
+					"fret-2": {
+						"turn": -33.997
+					},
+					"fret-3": {
+						"turn": -33.46
+					},
+					"fret-4": {
+						"turn": -31.721
+					},
+					"fret-5": {
+						"turn": -29.309
+					},
+					"fret-6": {
+						"turn": -26.592
+					},
+					"fret-7": {
+						"turn": -23.775
+					},
+					"fret-8": {
+						"turn": -20.903
+					},
+					"fret-9": {
+						"turn": -18.026
+					},
+					"fret-10": {
+						"turn": -15.205
+					},
+					"fret-11": {
+						"turn": -12.454
+					},
+					"fret-12": {
+						"turn": -9.765
+					},
+					"fret-13": {
+						"turn": -7.156
+					},
+					"fret-14": {
+						"turn": -4.645
+					},
+					"fret-15": {
+						"turn": -2.251
+					},
+					"ball": {
+						"turn": 134.247
+					},
+					"pointer": {
+						"turn": -27.5
+					},
+					"column": {
+						"variant": "c5"
+					}
+				}
+			},
+			{
+				"name": "drew chair 5%",
+				"parts": {
+					"fret-1": {
+						"turn": -47.851
+					},
+					"fret-2": {
+						"turn": -55.933
+					},
+					"fret-3": {
+						"turn": -55.891
+					},
+					"fret-4": {
+						"turn": -53.654
+					},
+					"fret-5": {
+						"turn": -50.091
+					},
+					"fret-6": {
+						"turn": -45.854
+					},
+					"fret-7": {
+						"turn": -41.361
+					},
+					"fret-8": {
+						"turn": -36.676
+					},
+					"fret-9": {
+						"turn": -31.88
+					},
+					"fret-10": {
+						"turn": -27.068
+					},
+					"fret-11": {
+						"turn": -22.305
+					},
+					"fret-12": {
+						"turn": -17.603
+					},
+					"fret-13": {
+						"turn": -12.988
+					},
+					"fret-14": {
+						"turn": -8.491
+					},
+					"fret-15": {
+						"turn": -4.147
+					},
+					"ball": {
+						"turn": 208.969
+					},
+					"pointer": {
+						"turn": -55
+					},
+					"column": {
+						"variant": "c6"
+					}
+				}
+			},
+			{
+				"name": "drew step 4%",
+				"parts": {
+					"fret-1": {
+						"turn": -59.628
+					},
+					"fret-2": {
+						"turn": -70.804
+					},
+					"fret-3": {
+						"turn": -71.517
+					},
+					"fret-4": {
+						"turn": -69.268
+					},
+					"fret-5": {
+						"turn": -65.153
+					},
+					"fret-6": {
+						"turn": -60.029
+					},
+					"fret-7": {
+						"turn": -54.493
+					},
+					"fret-8": {
+						"turn": -48.621
+					},
+					"fret-9": {
+						"turn": -42.507
+					},
+					"fret-10": {
+						"turn": -36.267
+					},
+					"fret-11": {
+						"turn": -30.02
+					},
+					"fret-12": {
+						"turn": -23.804
+					},
+					"fret-13": {
+						"turn": -17.652
+					},
+					"fret-14": {
+						"turn": -11.602
+					},
+					"fret-15": {
+						"turn": -5.7
+					},
+					"ball": {
+						"turn": 262.993
+					},
+					"pointer": {
+						"turn": -82.5
+					},
+					"column": {
+						"variant": "c7"
+					}
+				}
+			},
+			{
+				"name": "drew hat 4%",
+				"parts": {
+					"fret-1": {
+						"turn": -67.755
+					},
+					"fret-2": {
+						"turn": -81.381
+					},
+					"fret-3": {
+						"turn": -82.859
+					},
+					"fret-4": {
+						"turn": -80.788
+					},
+					"fret-5": {
+						"turn": -76.415
+					},
+					"fret-6": {
+						"turn": -70.749
+					},
+					"fret-7": {
+						"turn": -64.534
+					},
+					"fret-8": {
+						"turn": -57.85
+					},
+					"fret-9": {
+						"turn": -50.797
+					},
+					"fret-10": {
+						"turn": -43.5
+					},
+					"fret-11": {
+						"turn": -36.131
+					},
+					"fret-12": {
+						"turn": -28.754
+					},
+					"fret-13": {
+						"turn": -21.405
+					},
+					"fret-14": {
+						"turn": -14.127
+					},
+					"fret-15": {
+						"turn": -6.971
+					},
+					"ball": {
+						"turn": 298.89
+					},
+					"pointer": {
+						"turn": -110
+					},
+					"column": {
+						"variant": "c8"
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ SAMPLING ]",

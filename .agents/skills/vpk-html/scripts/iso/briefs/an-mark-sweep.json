@@ -3,47 +3,5577 @@
 	"id": "an-mark-sweep",
 	"figId": "FIG_210",
 	"title": "Mark and sweep as a modular synth",
-	"label": "Dimetric synth case: cable arrows run from the stack module to modules A and C and from A to B, so all three are marked. Module E, which no cable reaches, is highlighted for the sweep beside a dashed freed slot.",
-	"caption": "The case is the heap and cables are pointers: marking follows every cable out from the stack and tags each module it reaches, and the sweep pulls any module no cable reaches, like module E, to free its slot.",
+	"label": "Modular synth case as the heap: ten faceplates on two rails with an empty bay, nine patch-cable pointers from two roots, black LEDs on the five marked modules, and D, H and I, a cycle no root reaches. Tap to sweep, then cut a cable.",
+	"caption": "Patch cables are pointers. Marking follows every cable out from the stack and the registers and blacks the LED of each module it reaches, so A, B, C, G and K are live; D, H and I patch only into each other, a cycle no root reaches. Sweeping pulls those three off the rails and leaves empty bays. Cut B→C and C and K go dark, and the next sweep collects them too.",
 	"camera": {
 		"preset": "dimetric",
+		"azimuth": 60,
+		"elevation": 33,
 		"scale": "fit"
 	},
+	"focal": "stack-root",
+	"labels": [],
 	"parts": [
-		{ "id": "case", "kind": "tray", "at": [0, 0, 0], "size": [104, 76, 4], "label": "Heap case" },
-		{ "id": "stack", "kind": "box", "at": [8, 44, 4], "size": [24, 24, 12], "r": 1, "label": "Stack root" },
-		{ "id": "mod-a", "kind": "box", "at": [40, 44, 4], "size": [24, 24, 5], "r": 1, "label": "Module A" },
-		{ "id": "mod-b", "kind": "box", "at": [72, 44, 4], "size": [24, 24, 5], "r": 1, "label": "Module B" },
-		{ "id": "mod-c", "kind": "box", "at": [8, 8, 4], "size": [24, 24, 5], "r": 1, "label": "Module C" },
-		{ "id": "freed", "kind": "gap", "at": [40, 8, 4], "size": [24, 24, 0], "label": "Freed slot" },
-		{ "id": "mod-e", "kind": "box", "at": [72, 8, 4], "size": [24, 24, 5], "r": 1, "label": "Module E" }
-	],
-	"focal": "mod-e",
-	"annotations": [
-		{ "kind": "arrow", "from": [26, 56, 16], "to": [50, 56, 9] },
-		{ "kind": "arrow", "from": [56, 56, 9], "to": [82, 56, 9] },
-		{ "kind": "arrow", "from": [20, 50, 16], "to": [20, 22, 9] }
-	],
-	"labels": [
-		{ "text": "Stack root", "target": "stack", "side": "left" },
-		{ "text": "Marked: A, B, C", "target": "mod-c", "side": "left", "anchor": [11, 11, 9] },
-		{ "text": "Heap case", "target": "case", "side": "left" },
-		{ "text": "Freed slot", "target": "freed", "side": "right", "anchor": [40, 14, 4] },
-		{ "text": "Unreached, swept", "target": "mod-e", "side": "right" }
+		{
+			"id": "foot-0",
+			"kind": "cylinder",
+			"at": [
+				1.5,
+				4,
+				0
+			],
+			"size": [
+				2.2,
+				2.2,
+				2
+			],
+			"label": "rubber foot"
+		},
+		{
+			"id": "foot-1",
+			"kind": "cylinder",
+			"at": [
+				118.5,
+				4,
+				0
+			],
+			"size": [
+				2.2,
+				2.2,
+				2
+			],
+			"label": "rubber foot"
+		},
+		{
+			"id": "foot-2",
+			"kind": "cylinder",
+			"at": [
+				1.5,
+				78.0,
+				0
+			],
+			"size": [
+				2.2,
+				2.2,
+				2
+			],
+			"label": "rubber foot"
+		},
+		{
+			"id": "foot-3",
+			"kind": "cylinder",
+			"at": [
+				118.5,
+				78.0,
+				0
+			],
+			"size": [
+				2.2,
+				2.2,
+				2
+			],
+			"label": "rubber foot"
+		},
+		{
+			"id": "case",
+			"kind": "slab",
+			"at": [
+				5,
+				0,
+				2
+			],
+			"size": [
+				110,
+				82.0,
+				7
+			],
+			"r": 2,
+			"label": "case (the heap)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						55,
+						21.75
+					],
+					"size": [
+						104,
+						32.5
+					],
+					"depth": 1.4
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						55,
+						59.25
+					],
+					"size": [
+						104,
+						32.5
+					],
+					"depth": 1.4
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							84,
+							57.5
+						],
+						[
+							91,
+							57.5
+						],
+						[
+							91,
+							59.7
+						],
+						[
+							84,
+							59.7
+						],
+						[
+							84,
+							57.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							96,
+							71.0
+						],
+						[
+							101,
+							71.0
+						],
+						[
+							101,
+							72.8
+						],
+						[
+							96,
+							72.8
+						],
+						[
+							96,
+							71.0
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							3,
+							5.8
+						],
+						[
+							107,
+							5.8
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "cheek-l",
+			"kind": "box",
+			"at": [
+				-3,
+				-1.5,
+				2
+			],
+			"size": [
+				8,
+				85.0,
+				12.5
+			],
+			"r": 3,
+			"bevel": 1.6,
+			"label": "end cheek",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.1,
+					"r": 2
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						5
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 75.0,
+					"size": 0.22
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						32
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 32.0,
+					"size": 0.16
+				}
+			]
+		},
+		{
+			"id": "cheek-r",
+			"kind": "box",
+			"at": [
+				115,
+				-1.5,
+				2
+			],
+			"size": [
+				8,
+				85.0,
+				12.5
+			],
+			"r": 3,
+			"bevel": 1.6,
+			"label": "end cheek",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.1,
+					"r": 2
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						5
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 75.0,
+					"size": 0.22
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						32
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 32.0,
+					"size": 0.16
+				}
+			]
+		},
+		{
+			"id": "label-plate",
+			"kind": "box",
+			"at": [
+				30,
+				82.0,
+				3.2
+			],
+			"size": [
+				34,
+				0.6,
+				4.4
+			],
+			"r": 0,
+			"label": "heap label, 192 B",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.4
+				},
+				{
+					"type": "text",
+					"face": "+y",
+					"at": [
+						2.2,
+						1.2
+					],
+					"text": "HEAP 192 B",
+					"size": 2
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2.2,
+							3.1
+						],
+						[
+							20,
+							3.1
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2.2,
+							2.5
+						],
+						[
+							26,
+							2.5
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						32.2,
+						3.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "rail-rb",
+			"kind": "box",
+			"at": [
+				8,
+				3,
+				9
+			],
+			"size": [
+				106,
+				5,
+				1.2
+			],
+			"r": 0.4,
+			"label": "rail",
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						2,
+						1.2
+					],
+					"to": [
+						104,
+						1.2
+					],
+					"step": 4.25,
+					"every": 4,
+					"lengths": [
+						0.45,
+						0.95
+					],
+					"side": 1
+				}
+			]
+		},
+		{
+			"id": "rail-rf",
+			"kind": "box",
+			"at": [
+				8,
+				35.5,
+				9
+			],
+			"size": [
+				106,
+				5,
+				1.2
+			],
+			"r": 0.4,
+			"label": "rail",
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						2,
+						3.8
+					],
+					"to": [
+						104,
+						3.8
+					],
+					"step": 4.25,
+					"every": 4,
+					"lengths": [
+						0.45,
+						0.95
+					],
+					"side": -1
+				}
+			]
+		},
+		{
+			"id": "rail-fb",
+			"kind": "box",
+			"at": [
+				8,
+				40.5,
+				9
+			],
+			"size": [
+				106,
+				5,
+				1.2
+			],
+			"r": 0.4,
+			"label": "rail",
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						2,
+						1.2
+					],
+					"to": [
+						104,
+						1.2
+					],
+					"step": 4.25,
+					"every": 4,
+					"lengths": [
+						0.45,
+						0.95
+					],
+					"side": 1
+				}
+			]
+		},
+		{
+			"id": "rail-ff",
+			"kind": "box",
+			"at": [
+				8,
+				73.0,
+				9
+			],
+			"size": [
+				106,
+				5,
+				1.2
+			],
+			"r": 0.4,
+			"label": "rail",
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						2,
+						3.8
+					],
+					"to": [
+						104,
+						3.8
+					],
+					"step": 4.25,
+					"every": 4,
+					"lengths": [
+						0.45,
+						0.95
+					],
+					"side": -1
+				}
+			]
+		},
+		{
+			"id": "cursor-a",
+			"kind": "box",
+			"at": [
+				24.2,
+				36.9,
+				10.2
+			],
+			"size": [
+				2.6,
+				2.6,
+				1.6
+			],
+			"r": 0.6,
+			"bevel": 0.6,
+			"label": "cutter",
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.3,
+							0.5
+						],
+						[
+							1.3,
+							2.1
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "cursor-b",
+			"kind": "box",
+			"at": [
+				7.4,
+				74.4,
+				10.2
+			],
+			"size": [
+				2.6,
+				2.6,
+				1.6
+			],
+			"r": 0.6,
+			"bevel": 0.6,
+			"label": "cutter",
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.3,
+							0.5
+						],
+						[
+							1.3,
+							2.1
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "stack-root",
+			"kind": "plate",
+			"at": [
+				9,
+				6,
+				10.2
+			],
+			"size": [
+				16,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "stack (root)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						14.7,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						14.7,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.2,
+							2.6
+						],
+						[
+							13.8,
+							2.6
+						],
+						[
+							13.8,
+							22.6
+						],
+						[
+							2.2,
+							22.6
+						],
+						[
+							2.2,
+							2.6
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						5.5,
+						10.920000000000002
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						10.5,
+						6.300000000000001
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						6,
+						15.96
+					],
+					"size": [
+						3.8,
+						3.8
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						6,
+						15.96
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						6,
+						15.96
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							23.099999999999998
+						],
+						[
+							13.5,
+							23.099999999999998
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							24.36
+						],
+						[
+							8,
+							24.36
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						13,
+						27.72
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				}
+			]
+		},
+		{
+			"id": "stack-root-plug-s1",
+			"kind": "lathe",
+			"at": [
+				14.5,
+				16.92,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "stack (root): plug"
+		},
+		{
+			"id": "stack-root-plug-s2",
+			"kind": "lathe",
+			"at": [
+				19.5,
+				12.3,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "stack (root): plug"
+		},
+		{
+			"id": "module-a",
+			"kind": "plate",
+			"at": [
+				25.5,
+				7.8,
+				10.2
+			],
+			"size": [
+				19,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "module A (marked)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						17.7,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						17.7,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						14.0,
+						10.079999999999998
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						9.5,
+						21.84
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4.0,
+						21.0
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4.0,
+						21.0
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							26.039999999999996
+						],
+						[
+							16.0,
+							26.039999999999996
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						16.0,
+						3.3600000000000003
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3.0,
+						14.280000000000001
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.0,
+						4.620000000000002
+					],
+					"size": [
+						2.6,
+						2.6
+					],
+					"depth": 0.05
+				}
+			]
+		},
+		{
+			"id": "module-a-plug-a-in",
+			"kind": "lathe",
+			"at": [
+				39.5,
+				17.88,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module A (marked): plug"
+		},
+		{
+			"id": "module-a-plug-a-out",
+			"kind": "lathe",
+			"at": [
+				35,
+				29.64,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module A (marked): plug"
+		},
+		{
+			"id": "module-a-led",
+			"kind": "cylinder",
+			"at": [
+				30.5,
+				12.420000000000002,
+				11.399999999999999
+			],
+			"size": [
+				1.05,
+				1.05,
+				0.3
+			],
+			"tone": "ink",
+			"label": "module A (marked): marked LED"
+		},
+		{
+			"id": "module-b",
+			"kind": "plate",
+			"at": [
+				45,
+				4.8,
+				10.2
+			],
+			"size": [
+				13.5,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "module B (marked)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						12.2,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						12.2,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						3.5,
+						23.52
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						9.5,
+						18.48
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						17.64
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						17.64
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							27.719999999999995
+						],
+						[
+							10.5,
+							27.719999999999995
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						10,
+						4.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4.5,
+						5.04
+					],
+					"size": [
+						2.6,
+						2.6
+					],
+					"depth": 0.05
+				}
+			]
+		},
+		{
+			"id": "module-b-plug-b-in",
+			"kind": "lathe",
+			"at": [
+				48.5,
+				28.32,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module B (marked): plug"
+		},
+		{
+			"id": "module-b-plug-b-out",
+			"kind": "lathe",
+			"at": [
+				54.5,
+				23.28,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module B (marked): plug"
+		},
+		{
+			"id": "module-b-led",
+			"kind": "cylinder",
+			"at": [
+				49.5,
+				9.84,
+				11.399999999999999
+			],
+			"size": [
+				1.05,
+				1.05,
+				0.3
+			],
+			"tone": "ink",
+			"label": "module B (marked): marked LED"
+		},
+		{
+			"id": "module-c",
+			"kind": "plate",
+			"at": [
+				59,
+				7.2,
+				10.2
+			],
+			"size": [
+				19.5,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "module C (marked)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						18.2,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						18.2,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						4.5,
+						22.68
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						13.5,
+						25.2
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						15.96
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						15.96
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							28.140000000000004
+						],
+						[
+							10,
+							28.140000000000004
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						17,
+						3.3599999999999985
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						5.46
+					],
+					"size": [
+						2.6,
+						2.6
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						14,
+						10.920000000000002
+					],
+					"size": [
+						5.4,
+						5.4
+					],
+					"depth": 0.05
+				}
+			]
+		},
+		{
+			"id": "module-c-plug-c-in",
+			"kind": "lathe",
+			"at": [
+				63.5,
+				29.88,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module C (marked): plug"
+		},
+		{
+			"id": "module-c-plug-c-out",
+			"kind": "lathe",
+			"at": [
+				72.5,
+				32.4,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module C (marked): plug"
+		},
+		{
+			"id": "module-c-led",
+			"kind": "cylinder",
+			"at": [
+				63,
+				12.66,
+				11.399999999999999
+			],
+			"size": [
+				1.05,
+				1.05,
+				0.3
+			],
+			"tone": "ink",
+			"label": "module C (marked): marked LED"
+		},
+		{
+			"id": "module-c-knob",
+			"kind": "lathe",
+			"at": [
+				73,
+				18.12,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					2.2
+				],
+				[
+					0.4,
+					2.2
+				],
+				[
+					0.4,
+					1.65
+				],
+				[
+					2.9,
+					1.65
+				],
+				[
+					3.3,
+					1.35
+				]
+			],
+			"label": "module C (marked): knob",
+			"detail": [
+				{
+					"type": "knurl",
+					"s0": 0.6,
+					"s1": 2.8,
+					"count": 24
+				},
+				{
+					"type": "line",
+					"face": "end",
+					"points": [
+						[
+							0,
+							0.35
+						],
+						[
+							0,
+							1.25
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "module-d",
+			"kind": "plate",
+			"at": [
+				79,
+				4.5,
+				10.2
+			],
+			"size": [
+				15.5,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "module D (unreached)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						14.2,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						14.2,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						4,
+						25.2
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						11.5,
+						21.0
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						15.96
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						15.96
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						11.5,
+						11.759999999999998
+					],
+					"size": [
+						3.8,
+						3.8
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						11.5,
+						11.759999999999998
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						11.5,
+						11.759999999999998
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							28.560000000000002
+						],
+						[
+							9,
+							28.560000000000002
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						12.5,
+						4.199999999999999
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						6,
+						6.719999999999999
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.05
+				}
+			]
+		},
+		{
+			"id": "module-d-plug-d-in",
+			"kind": "lathe",
+			"at": [
+				83,
+				29.7,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module D (unreached): plug"
+		},
+		{
+			"id": "module-d-plug-d-out",
+			"kind": "lathe",
+			"at": [
+				90.5,
+				25.5,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module D (unreached): plug"
+		},
+		{
+			"id": "module-d-btn",
+			"kind": "lathe",
+			"at": [
+				85,
+				11.219999999999999,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.15
+				],
+				[
+					0.9,
+					1.15
+				],
+				[
+					1.2,
+					0.85
+				]
+			],
+			"label": "module D (unreached): button"
+		},
+		{
+			"id": "module-k",
+			"kind": "plate",
+			"at": [
+				95,
+				7.5,
+				10.2
+			],
+			"size": [
+				16.5,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "module K (marked)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						15.2,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						15.2,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						5,
+						25.200000000000003
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						11.5,
+						23.52
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						11.5,
+						23.52
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5,
+						15.96
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5,
+						15.96
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							28.560000000000002
+						],
+						[
+							9,
+							28.560000000000002
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4.5,
+						5.879999999999999
+					],
+					"size": [
+						2.6,
+						2.6
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						11.5,
+						10.079999999999998
+					],
+					"size": [
+						5.4,
+						5.4
+					],
+					"depth": 0.05
+				}
+			]
+		},
+		{
+			"id": "module-k-plug-k-in",
+			"kind": "lathe",
+			"at": [
+				100,
+				32.7,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module K (marked): plug"
+		},
+		{
+			"id": "module-k-led",
+			"kind": "cylinder",
+			"at": [
+				99.5,
+				13.379999999999999,
+				11.399999999999999
+			],
+			"size": [
+				1.05,
+				1.05,
+				0.3
+			],
+			"tone": "ink",
+			"label": "module K (marked): marked LED"
+		},
+		{
+			"id": "module-k-knob",
+			"kind": "lathe",
+			"at": [
+				106.5,
+				17.58,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					2.2
+				],
+				[
+					0.4,
+					2.2
+				],
+				[
+					0.4,
+					1.65
+				],
+				[
+					2.9,
+					1.65
+				],
+				[
+					3.3,
+					1.35
+				]
+			],
+			"label": "module K (marked): knob",
+			"detail": [
+				{
+					"type": "knurl",
+					"s0": 0.6,
+					"s1": 2.8,
+					"count": 24
+				},
+				{
+					"type": "line",
+					"face": "end",
+					"points": [
+						[
+							0,
+							0.35
+						],
+						[
+							0,
+							1.25
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "module-f",
+			"kind": "plate",
+			"at": [
+				9,
+				43.5,
+				10.2
+			],
+			"size": [
+				19.5,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "registers (root)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						18.2,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						18.2,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						14.5,
+						26.039999999999992
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						8,
+						19.32
+					],
+					"size": [
+						1.7,
+						1.7
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						12,
+						19.32
+					],
+					"size": [
+						1.7,
+						1.7
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.5,
+							22.680000000000007
+						],
+						[
+							12.5,
+							22.680000000000007
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						16.5,
+						3.3599999999999994
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						19.32
+					],
+					"size": [
+						2.6,
+						2.6
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						8,
+						8.82
+					],
+					"size": [
+						10.6,
+						10.6
+					],
+					"depth": 0.05
+				}
+			]
+		},
+		{
+			"id": "module-f-plug-f-out",
+			"kind": "lathe",
+			"at": [
+				23.5,
+				69.53999999999999,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "registers (root): plug"
+		},
+		{
+			"id": "module-f-led",
+			"kind": "cylinder",
+			"at": [
+				13,
+				62.82,
+				11.399999999999999
+			],
+			"size": [
+				1.05,
+				1.05,
+				0.3
+			],
+			"tone": "ink",
+			"label": "registers (root): marked LED"
+		},
+		{
+			"id": "module-f-dial",
+			"kind": "lathe",
+			"at": [
+				17,
+				52.32,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.7
+				],
+				[
+					0.4,
+					4.7
+				],
+				[
+					0.4,
+					3.7
+				],
+				[
+					0.8,
+					3.7
+				],
+				[
+					0.8,
+					3.45,
+					"soft"
+				],
+				[
+					2.7,
+					3.45
+				],
+				[
+					3.1,
+					3.0
+				]
+			],
+			"label": "registers (root): dial",
+			"detail": [
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 0.7
+				}
+			]
+		},
+		{
+			"id": "module-g",
+			"kind": "plate",
+			"at": [
+				29,
+				45.1,
+				10.2
+			],
+			"size": [
+				21,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "module G (marked)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						19.7,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						19.7,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						7,
+						11.759999999999998
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						3.5,
+						19.32
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						15,
+						24.359999999999992
+					],
+					"size": [
+						3.8,
+						3.8
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						15,
+						24.359999999999992
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						15,
+						24.359999999999992
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2,
+							28.139999999999993
+						],
+						[
+							11,
+							28.139999999999993
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						18.5,
+						3.3599999999999994
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.5,
+						25.199999999999996
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4,
+						4.200000000000003
+					],
+					"size": [
+						2.6,
+						2.6
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						13,
+						8.399999999999999
+					],
+					"size": [
+						5.4,
+						5.4
+					],
+					"depth": 0.05
+				}
+			]
+		},
+		{
+			"id": "module-g-plug-g-in",
+			"kind": "lathe",
+			"at": [
+				36,
+				56.86,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module G (marked): plug"
+		},
+		{
+			"id": "module-g-plug-g-in2",
+			"kind": "lathe",
+			"at": [
+				32.5,
+				64.42,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module G (marked): plug"
+		},
+		{
+			"id": "module-g-led",
+			"kind": "cylinder",
+			"at": [
+				33,
+				49.300000000000004,
+				11.399999999999999
+			],
+			"size": [
+				1.05,
+				1.05,
+				0.3
+			],
+			"tone": "ink",
+			"label": "module G (marked): marked LED"
+		},
+		{
+			"id": "module-g-knob",
+			"kind": "lathe",
+			"at": [
+				42,
+				53.5,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					2.2
+				],
+				[
+					0.4,
+					2.2
+				],
+				[
+					0.4,
+					1.65
+				],
+				[
+					2.9,
+					1.65
+				],
+				[
+					3.3,
+					1.35
+				]
+			],
+			"label": "module G (marked): knob",
+			"detail": [
+				{
+					"type": "knurl",
+					"s0": 0.6,
+					"s1": 2.8,
+					"count": 24
+				},
+				{
+					"type": "line",
+					"face": "end",
+					"points": [
+						[
+							0,
+							0.35
+						],
+						[
+							0,
+							1.25
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "module-h",
+			"kind": "plate",
+			"at": [
+				50.5,
+				42.3,
+				10.2
+			],
+			"size": [
+				13.5,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "module H (unreached)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						12.2,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						12.2,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						9.5,
+						26.039999999999992
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						8.0,
+						15.96
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.5,
+						12.600000000000001
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.5,
+						12.600000000000001
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.5,
+						21.840000000000003
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.5,
+						21.840000000000003
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						11.0,
+						3.3599999999999994
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						4.5,
+						5.039999999999999
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.05
+				}
+			]
+		},
+		{
+			"id": "module-h-plug-h-in",
+			"kind": "lathe",
+			"at": [
+				60,
+				68.33999999999999,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module H (unreached): plug"
+		},
+		{
+			"id": "module-h-plug-h-out",
+			"kind": "lathe",
+			"at": [
+				58.5,
+				58.26,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module H (unreached): plug"
+		},
+		{
+			"id": "module-h-btn",
+			"kind": "lathe",
+			"at": [
+				55,
+				47.339999999999996,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.15
+				],
+				[
+					0.9,
+					1.15
+				],
+				[
+					1.2,
+					0.85
+				]
+			],
+			"label": "module H (unreached): button"
+		},
+		{
+			"id": "module-i",
+			"kind": "plate",
+			"at": [
+				64.5,
+				45.7,
+				10.2
+			],
+			"size": [
+				21.5,
+				31.5,
+				1.2
+			],
+			"r": 0.6,
+			"label": "module I (unreached)",
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						20.2,
+						1.3
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.3,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						20.2,
+						30.2
+					],
+					"size": [
+						0.9,
+						0.9
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						5.0,
+						14.280000000000001
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						7.0,
+						23.519999999999996
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.08
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.0,
+						23.519999999999996
+					],
+					"size": [
+						2.3,
+						2.3
+					],
+					"depth": 0.12
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.0,
+						23.519999999999996
+					],
+					"size": [
+						1.1,
+						1.1
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						10.5,
+						5.039999999999999
+					],
+					"size": [
+						1.5,
+						1.5
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							10.0,
+							27.72
+						],
+						[
+							19.0,
+							27.72
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						19.0,
+						3.3599999999999994
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.28
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						15.5,
+						12.600000000000001
+					],
+					"size": [
+						5.4,
+						5.4
+					],
+					"depth": 0.05
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.5,
+						5.039999999999999
+					],
+					"size": [
+						3.0,
+						3.0
+					],
+					"depth": 0.05
+				}
+			]
+		},
+		{
+			"id": "module-i-plug-i-in",
+			"kind": "lathe",
+			"at": [
+				69.5,
+				59.980000000000004,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module I (unreached): plug"
+		},
+		{
+			"id": "module-i-plug-i-out",
+			"kind": "lathe",
+			"at": [
+				71.5,
+				69.22,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.0
+				],
+				[
+					0.5,
+					1.0
+				],
+				[
+					0.5,
+					0.74
+				],
+				[
+					3.0,
+					0.74
+				],
+				[
+					3.35,
+					0.46
+				],
+				[
+					3.9,
+					0.46
+				]
+			],
+			"label": "module I (unreached): plug"
+		},
+		{
+			"id": "module-i-knob",
+			"kind": "lathe",
+			"at": [
+				80,
+				58.300000000000004,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					2.2
+				],
+				[
+					0.4,
+					2.2
+				],
+				[
+					0.4,
+					1.65
+				],
+				[
+					2.9,
+					1.65
+				],
+				[
+					3.3,
+					1.35
+				]
+			],
+			"label": "module I (unreached): knob",
+			"detail": [
+				{
+					"type": "knurl",
+					"s0": 0.6,
+					"s1": 2.8,
+					"count": 24
+				},
+				{
+					"type": "line",
+					"face": "end",
+					"points": [
+						[
+							0,
+							0.35
+						],
+						[
+							0,
+							1.25
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "module-i-btn",
+			"kind": "lathe",
+			"at": [
+				70,
+				50.74,
+				11.399999999999999
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.15
+				],
+				[
+					0.9,
+					1.15
+				],
+				[
+					1.2,
+					0.85
+				]
+			],
+			"label": "module I (unreached): button"
+		},
+		{
+			"id": "cable-root-a",
+			"kind": "tube",
+			"points": [
+				[
+					19.5,
+					12.3,
+					15.3
+				],
+				[
+					19.6,
+					12.33,
+					16.77
+				],
+				[
+					19.91,
+					12.41,
+					17.84
+				],
+				[
+					20.4,
+					12.55,
+					18.77
+				],
+				[
+					21.09,
+					12.74,
+					19.58
+				],
+				[
+					21.94,
+					12.98,
+					20.29
+				],
+				[
+					22.95,
+					13.26,
+					20.9
+				],
+				[
+					24.09,
+					13.58,
+					21.4
+				],
+				[
+					25.35,
+					13.93,
+					21.79
+				],
+				[
+					26.68,
+					14.3,
+					22.07
+				],
+				[
+					28.08,
+					14.69,
+					22.24
+				],
+				[
+					29.5,
+					15.09,
+					22.3
+				],
+				[
+					30.92,
+					15.49,
+					22.24
+				],
+				[
+					32.32,
+					15.88,
+					22.07
+				],
+				[
+					33.65,
+					16.25,
+					21.79
+				],
+				[
+					34.91,
+					16.6,
+					21.4
+				],
+				[
+					36.05,
+					16.92,
+					20.9
+				],
+				[
+					37.06,
+					17.2,
+					20.29
+				],
+				[
+					37.91,
+					17.44,
+					19.58
+				],
+				[
+					38.6,
+					17.63,
+					18.77
+				],
+				[
+					39.09,
+					17.77,
+					17.84
+				],
+				[
+					39.4,
+					17.85,
+					16.77
+				],
+				[
+					39.5,
+					17.88,
+					15.3
+				]
+			],
+			"radius": 0.32,
+			"label": "patch cable stack to A"
+		},
+		{
+			"id": "cable-root-g",
+			"kind": "tube",
+			"points": [
+				[
+					14.5,
+					16.92,
+					15.3
+				],
+				[
+					14.04,
+					16.99,
+					17.34
+				],
+				[
+					13.66,
+					17.19,
+					18.84
+				],
+				[
+					13.36,
+					17.53,
+					20.18
+				],
+				[
+					13.13,
+					18.0,
+					21.4
+				],
+				[
+					13.0,
+					18.6,
+					22.53
+				],
+				[
+					12.94,
+					19.33,
+					23.58
+				],
+				[
+					12.97,
+					20.17,
+					24.56
+				],
+				[
+					13.08,
+					21.13,
+					25.46
+				],
+				[
+					13.28,
+					22.2,
+					26.28
+				],
+				[
+					13.55,
+					23.36,
+					27.03
+				],
+				[
+					13.91,
+					24.62,
+					27.71
+				],
+				[
+					14.35,
+					25.97,
+					28.31
+				],
+				[
+					14.86,
+					27.39,
+					28.84
+				],
+				[
+					15.44,
+					28.87,
+					29.28
+				],
+				[
+					16.08,
+					30.41,
+					29.65
+				],
+				[
+					16.79,
+					31.99,
+					29.93
+				],
+				[
+					17.56,
+					33.6,
+					30.14
+				],
+				[
+					18.38,
+					35.24,
+					30.26
+				],
+				[
+					19.25,
+					36.89,
+					30.3
+				],
+				[
+					20.16,
+					38.54,
+					30.26
+				],
+				[
+					21.1,
+					40.18,
+					30.14
+				],
+				[
+					22.07,
+					41.79,
+					29.93
+				],
+				[
+					23.07,
+					43.37,
+					29.65
+				],
+				[
+					24.07,
+					44.91,
+					29.28
+				],
+				[
+					25.09,
+					46.39,
+					28.84
+				],
+				[
+					26.11,
+					47.81,
+					28.31
+				],
+				[
+					27.12,
+					49.16,
+					27.71
+				],
+				[
+					28.12,
+					50.42,
+					27.03
+				],
+				[
+					29.1,
+					51.58,
+					26.28
+				],
+				[
+					30.05,
+					52.65,
+					25.46
+				],
+				[
+					30.97,
+					53.61,
+					24.56
+				],
+				[
+					31.85,
+					54.45,
+					23.58
+				],
+				[
+					32.68,
+					55.18,
+					22.53
+				],
+				[
+					33.47,
+					55.78,
+					21.4
+				],
+				[
+					34.2,
+					56.25,
+					20.18
+				],
+				[
+					34.87,
+					56.59,
+					18.84
+				],
+				[
+					35.47,
+					56.79,
+					17.34
+				],
+				[
+					36.0,
+					56.86,
+					15.3
+				]
+			],
+			"radius": 0.32,
+			"label": "patch cable stack to G"
+		},
+		{
+			"id": "cable-a-b",
+			"kind": "tube",
+			"points": [
+				[
+					35.0,
+					29.64,
+					15.3
+				],
+				[
+					35.1,
+					29.63,
+					16.71
+				],
+				[
+					35.41,
+					29.6,
+					17.72
+				],
+				[
+					35.9,
+					29.55,
+					18.58
+				],
+				[
+					36.58,
+					29.49,
+					19.31
+				],
+				[
+					37.41,
+					29.4,
+					19.92
+				],
+				[
+					38.38,
+					29.31,
+					20.39
+				],
+				[
+					39.44,
+					29.21,
+					20.74
+				],
+				[
+					40.58,
+					29.09,
+					20.94
+				],
+				[
+					41.75,
+					28.98,
+					21.01
+				],
+				[
+					42.92,
+					28.87,
+					20.94
+				],
+				[
+					44.06,
+					28.75,
+					20.74
+				],
+				[
+					45.12,
+					28.65,
+					20.39
+				],
+				[
+					46.09,
+					28.56,
+					19.92
+				],
+				[
+					46.92,
+					28.47,
+					19.31
+				],
+				[
+					47.6,
+					28.41,
+					18.58
+				],
+				[
+					48.09,
+					28.36,
+					17.72
+				],
+				[
+					48.4,
+					28.33,
+					16.71
+				],
+				[
+					48.5,
+					28.32,
+					15.3
+				]
+			],
+			"radius": 0.32,
+			"label": "patch cable A to B"
+		},
+		{
+			"id": "cable-b-c",
+			"kind": "tube",
+			"points": [
+				[
+					54.5,
+					23.28,
+					15.3
+				],
+				[
+					54.59,
+					23.34,
+					16.72
+				],
+				[
+					54.84,
+					23.53,
+					17.73
+				],
+				[
+					55.26,
+					23.84,
+					18.57
+				],
+				[
+					55.82,
+					24.25,
+					19.27
+				],
+				[
+					56.5,
+					24.75,
+					19.81
+				],
+				[
+					57.28,
+					25.32,
+					20.21
+				],
+				[
+					58.12,
+					25.94,
+					20.45
+				],
+				[
+					59.0,
+					26.58,
+					20.53
+				],
+				[
+					59.88,
+					27.22,
+					20.45
+				],
+				[
+					60.72,
+					27.84,
+					20.21
+				],
+				[
+					61.5,
+					28.41,
+					19.81
+				],
+				[
+					62.18,
+					28.91,
+					19.27
+				],
+				[
+					62.74,
+					29.32,
+					18.57
+				],
+				[
+					63.16,
+					29.63,
+					17.73
+				],
+				[
+					63.41,
+					29.82,
+					16.72
+				],
+				[
+					63.5,
+					29.88,
+					15.3
+				]
+			],
+			"radius": 0.32,
+			"label": "patch cable B to C"
+		},
+		{
+			"id": "cable-c-k",
+			"kind": "tube",
+			"points": [
+				[
+					72.5,
+					32.4,
+					15.3
+				],
+				[
+					72.59,
+					32.4,
+					16.82
+				],
+				[
+					72.87,
+					32.4,
+					17.93
+				],
+				[
+					73.33,
+					32.41,
+					18.9
+				],
+				[
+					73.96,
+					32.42,
+					19.78
+				],
+				[
+					74.76,
+					32.42,
+					20.57
+				],
+				[
+					75.72,
+					32.44,
+					21.27
+				],
+				[
+					76.81,
+					32.45,
+					21.89
+				],
+				[
+					78.04,
+					32.46,
+					22.43
+				],
+				[
+					79.38,
+					32.48,
+					22.88
+				],
+				[
+					80.8,
+					32.49,
+					23.24
+				],
+				[
+					82.31,
+					32.51,
+					23.51
+				],
+				[
+					83.86,
+					32.52,
+					23.7
+				],
+				[
+					85.45,
+					32.54,
+					23.79
+				],
+				[
+					87.05,
+					32.56,
+					23.79
+				],
+				[
+					88.64,
+					32.58,
+					23.7
+				],
+				[
+					90.19,
+					32.59,
+					23.51
+				],
+				[
+					91.7,
+					32.61,
+					23.24
+				],
+				[
+					93.12,
+					32.62,
+					22.88
+				],
+				[
+					94.46,
+					32.64,
+					22.43
+				],
+				[
+					95.69,
+					32.65,
+					21.89
+				],
+				[
+					96.78,
+					32.66,
+					21.27
+				],
+				[
+					97.74,
+					32.68,
+					20.57
+				],
+				[
+					98.54,
+					32.68,
+					19.78
+				],
+				[
+					99.17,
+					32.69,
+					18.9
+				],
+				[
+					99.63,
+					32.7,
+					17.93
+				],
+				[
+					99.91,
+					32.7,
+					16.82
+				],
+				[
+					100.0,
+					32.7,
+					15.3
+				]
+			],
+			"radius": 0.32,
+			"label": "patch cable C to K"
+		},
+		{
+			"id": "cable-f-g",
+			"kind": "tube",
+			"points": [
+				[
+					23.5,
+					69.54,
+					15.3
+				],
+				[
+					23.59,
+					69.49,
+					16.67
+				],
+				[
+					23.84,
+					69.35,
+					17.65
+				],
+				[
+					24.26,
+					69.11,
+					18.47
+				],
+				[
+					24.82,
+					68.79,
+					19.14
+				],
+				[
+					25.5,
+					68.4,
+					19.67
+				],
+				[
+					26.28,
+					67.96,
+					20.06
+				],
+				[
+					27.12,
+					67.48,
+					20.29
+				],
+				[
+					28.0,
+					66.98,
+					20.37
+				],
+				[
+					28.88,
+					66.48,
+					20.29
+				],
+				[
+					29.72,
+					66.0,
+					20.06
+				],
+				[
+					30.5,
+					65.56,
+					19.67
+				],
+				[
+					31.18,
+					65.17,
+					19.14
+				],
+				[
+					31.74,
+					64.85,
+					18.47
+				],
+				[
+					32.16,
+					64.61,
+					17.65
+				],
+				[
+					32.41,
+					64.47,
+					16.67
+				],
+				[
+					32.5,
+					64.42,
+					15.3
+				]
+			],
+			"radius": 0.32,
+			"label": "patch cable registers to G"
+		},
+		{
+			"id": "cable-h-i",
+			"kind": "tube",
+			"points": [
+				[
+					58.5,
+					58.26,
+					15.3
+				],
+				[
+					58.61,
+					58.28,
+					16.71
+				],
+				[
+					58.92,
+					58.33,
+					17.72
+				],
+				[
+					59.43,
+					58.4,
+					18.57
+				],
+				[
+					60.11,
+					58.51,
+					19.26
+				],
+				[
+					60.94,
+					58.64,
+					19.81
+				],
+				[
+					61.9,
+					58.79,
+					20.21
+				],
+				[
+					62.93,
+					58.95,
+					20.45
+				],
+				[
+					64.0,
+					59.12,
+					20.53
+				],
+				[
+					65.07,
+					59.29,
+					20.45
+				],
+				[
+					66.1,
+					59.45,
+					20.21
+				],
+				[
+					67.06,
+					59.6,
+					19.81
+				],
+				[
+					67.89,
+					59.73,
+					19.26
+				],
+				[
+					68.57,
+					59.84,
+					18.57
+				],
+				[
+					69.08,
+					59.91,
+					17.72
+				],
+				[
+					69.39,
+					59.96,
+					16.71
+				],
+				[
+					69.5,
+					59.98,
+					15.3
+				]
+			],
+			"radius": 0.32,
+			"label": "patch cable H to I"
+		},
+		{
+			"id": "cable-i-d",
+			"kind": "tube",
+			"points": [
+				[
+					71.5,
+					69.22,
+					15.3
+				],
+				[
+					71.52,
+					69.14,
+					16.9
+				],
+				[
+					71.59,
+					68.9,
+					18.07
+				],
+				[
+					71.71,
+					68.51,
+					19.11
+				],
+				[
+					71.87,
+					67.96,
+					20.06
+				],
+				[
+					72.07,
+					67.26,
+					20.94
+				],
+				[
+					72.31,
+					66.42,
+					21.75
+				],
+				[
+					72.6,
+					65.45,
+					22.49
+				],
+				[
+					72.92,
+					64.34,
+					23.17
+				],
+				[
+					73.28,
+					63.12,
+					23.78
+				],
+				[
+					73.66,
+					61.78,
+					24.33
+				],
+				[
+					74.08,
+					60.35,
+					24.82
+				],
+				[
+					74.53,
+					58.82,
+					25.24
+				],
+				[
+					74.99,
+					57.23,
+					25.59
+				],
+				[
+					75.47,
+					55.57,
+					25.87
+				],
+				[
+					75.97,
+					53.86,
+					26.08
+				],
+				[
+					76.48,
+					52.11,
+					26.22
+				],
+				[
+					76.99,
+					50.35,
+					26.29
+				],
+				[
+					77.51,
+					48.57,
+					26.29
+				],
+				[
+					78.02,
+					46.81,
+					26.22
+				],
+				[
+					78.53,
+					45.06,
+					26.08
+				],
+				[
+					79.03,
+					43.35,
+					25.87
+				],
+				[
+					79.51,
+					41.69,
+					25.59
+				],
+				[
+					79.97,
+					40.1,
+					25.24
+				],
+				[
+					80.42,
+					38.57,
+					24.82
+				],
+				[
+					80.84,
+					37.14,
+					24.33
+				],
+				[
+					81.22,
+					35.8,
+					23.78
+				],
+				[
+					81.58,
+					34.58,
+					23.17
+				],
+				[
+					81.9,
+					33.47,
+					22.49
+				],
+				[
+					82.19,
+					32.5,
+					21.75
+				],
+				[
+					82.43,
+					31.66,
+					20.94
+				],
+				[
+					82.63,
+					30.96,
+					20.06
+				],
+				[
+					82.79,
+					30.41,
+					19.11
+				],
+				[
+					82.91,
+					30.02,
+					18.07
+				],
+				[
+					82.98,
+					29.78,
+					16.9
+				],
+				[
+					83.0,
+					29.7,
+					15.3
+				]
+			],
+			"radius": 0.32,
+			"label": "patch cable I to D"
+		},
+		{
+			"id": "cable-d-h",
+			"kind": "tube",
+			"points": [
+				[
+					90.5,
+					25.5,
+					15.3
+				],
+				[
+					90.46,
+					25.56,
+					16.68
+				],
+				[
+					90.33,
+					25.74,
+					17.7
+				],
+				[
+					90.12,
+					26.04,
+					18.61
+				],
+				[
+					89.82,
+					26.45,
+					19.44
+				],
+				[
+					89.45,
+					26.98,
+					20.22
+				],
+				[
+					88.99,
+					27.62,
+					20.94
+				],
+				[
+					88.46,
+					28.37,
+					21.62
+				],
+				[
+					87.85,
+					29.22,
+					22.25
+				],
+				[
+					87.17,
+					30.17,
+					22.84
+				],
+				[
+					86.43,
+					31.22,
+					23.38
+				],
+				[
+					85.62,
+					32.35,
+					23.88
+				],
+				[
+					84.76,
+					33.56,
+					24.33
+				],
+				[
+					83.84,
+					34.85,
+					24.74
+				],
+				[
+					82.88,
+					36.21,
+					25.1
+				],
+				[
+					81.87,
+					37.63,
+					25.42
+				],
+				[
+					80.82,
+					39.09,
+					25.69
+				],
+				[
+					79.75,
+					40.61,
+					25.91
+				],
+				[
+					78.64,
+					42.15,
+					26.08
+				],
+				[
+					77.52,
+					43.73,
+					26.2
+				],
+				[
+					76.39,
+					45.32,
+					26.28
+				],
+				[
+					75.25,
+					46.92,
+					26.3
+				],
+				[
+					74.11,
+					48.52,
+					26.28
+				],
+				[
+					72.98,
+					50.11,
+					26.2
+				],
+				[
+					71.86,
+					51.69,
+					26.08
+				],
+				[
+					70.75,
+					53.23,
+					25.91
+				],
+				[
+					69.68,
+					54.75,
+					25.69
+				],
+				[
+					68.63,
+					56.21,
+					25.42
+				],
+				[
+					67.62,
+					57.63,
+					25.1
+				],
+				[
+					66.66,
+					58.99,
+					24.74
+				],
+				[
+					65.74,
+					60.28,
+					24.33
+				],
+				[
+					64.88,
+					61.49,
+					23.88
+				],
+				[
+					64.07,
+					62.62,
+					23.38
+				],
+				[
+					63.33,
+					63.67,
+					22.84
+				],
+				[
+					62.65,
+					64.62,
+					22.25
+				],
+				[
+					62.04,
+					65.47,
+					21.62
+				],
+				[
+					61.51,
+					66.22,
+					20.94
+				],
+				[
+					61.05,
+					66.86,
+					20.22
+				],
+				[
+					60.68,
+					67.39,
+					19.44
+				],
+				[
+					60.38,
+					67.8,
+					18.61
+				],
+				[
+					60.17,
+					68.1,
+					17.7
+				],
+				[
+					60.04,
+					68.28,
+					16.68
+				],
+				[
+					60.0,
+					68.34,
+					15.3
+				]
+			],
+			"radius": 0.32,
+			"label": "patch cable D to H"
+		}
 	],
 	"assemble": {
 		"layers": [
-			["case"],
-			["stack", "freed"],
-			["mod-a", "mod-c"],
-			["mod-b"],
-			["mod-e"]
+			[
+				"foot-0",
+				"foot-1",
+				"foot-2",
+				"foot-3",
+				"case",
+				"cheek-l",
+				"cheek-r",
+				"label-plate"
+			],
+			[
+				"rail-rb",
+				"rail-rf",
+				"rail-fb",
+				"rail-ff",
+				"cursor-a",
+				"cursor-b"
+			],
+			[
+				"stack-root",
+				"module-a",
+				"module-b",
+				"module-c",
+				"module-d",
+				"module-k",
+				"module-f",
+				"module-g",
+				"module-h",
+				"module-i"
+			],
+			[
+				"stack-root-plug-s1",
+				"stack-root-plug-s2",
+				"module-a-plug-a-in",
+				"module-a-plug-a-out",
+				"module-a-led",
+				"module-b-plug-b-in",
+				"module-b-plug-b-out",
+				"module-b-led",
+				"module-c-plug-c-in",
+				"module-c-plug-c-out",
+				"module-c-led",
+				"module-c-knob",
+				"module-d-plug-d-in",
+				"module-d-plug-d-out",
+				"module-d-btn",
+				"module-k-plug-k-in",
+				"module-k-led",
+				"module-k-knob",
+				"module-f-plug-f-out",
+				"module-f-led",
+				"module-f-dial",
+				"module-g-plug-g-in",
+				"module-g-plug-g-in2",
+				"module-g-led",
+				"module-g-knob",
+				"module-h-plug-h-in",
+				"module-h-plug-h-out",
+				"module-h-btn",
+				"module-i-plug-i-in",
+				"module-i-plug-i-out",
+				"module-i-knob",
+				"module-i-btn"
+			],
+			[
+				"cable-root-a",
+				"cable-root-g",
+				"cable-a-b",
+				"cable-b-c",
+				"cable-c-k",
+				"cable-f-g",
+				"cable-h-i",
+				"cable-i-d",
+				"cable-d-h"
+			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 10,
-		"rest": "mark a, b, c · sweep e"
+		"behavior": "step",
+		"rest": 0,
+		"states": [
+			{
+				"name": "mark",
+				"readout": "marked 5 of 8 · 3 unreached · tap to collect"
+			},
+			{
+				"name": "sweep",
+				"readout": "sweeping · pulling D, H and I off the rails",
+				"parts": {
+					"module-d": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-d-plug-d-in": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-d-plug-d-out": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-d-btn": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-h": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-h-plug-h-in": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-h-plug-h-out": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-h-btn": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-i": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-i-plug-i-in": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-i-plug-i-out": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-i-knob": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"module-i-btn": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"cable-h-i": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"cable-i-d": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					},
+					"cable-d-h": {
+						"move": [
+							0,
+							0,
+							12
+						]
+					}
+				}
+			},
+			{
+				"name": "collect",
+				"readout": "collected 3 · 5 live · 4 bays free · tap to cut a cable",
+				"parts": {
+					"module-d": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-d-plug-d-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-d-plug-d-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-d-btn": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h-plug-h-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h-plug-h-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h-btn": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-plug-i-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-plug-i-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-knob": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-btn": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-h-i": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-i-d": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-d-h": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "cut",
+				"readout": "cut B→C · marked 3 of 5 · 2 unreached",
+				"parts": {
+					"module-d": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-d-plug-d-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-d-plug-d-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-d-btn": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h-plug-h-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h-plug-h-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h-btn": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-plug-i-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-plug-i-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-knob": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-btn": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-h-i": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-i-d": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-d-h": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-b-c": {
+						"hidden": true
+					},
+					"module-c-led": {
+						"hidden": true
+					},
+					"module-k-led": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "resweep",
+				"readout": "collected C and K · 3 live · 6 bays free",
+				"parts": {
+					"module-d": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-d-plug-d-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-d-plug-d-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-d-btn": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h-plug-h-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h-plug-h-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-h-btn": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-plug-i-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-plug-i-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-knob": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-i-btn": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-h-i": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-i-d": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-d-h": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-b-c": {
+						"hidden": true
+					},
+					"module-c-led": {
+						"hidden": true
+					},
+					"module-k-led": {
+						"hidden": true
+					},
+					"module-c": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-c-plug-c-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-c-plug-c-out": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-c-knob": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-k": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-k-plug-k-in": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"module-k-knob": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					},
+					"cable-c-k": {
+						"move": [
+							0,
+							0,
+							24
+						],
+						"hidden": true
+					}
+				}
+			}
+		],
+		"input": "click"
 	},
 	"meta": {
 		"margin": "[ MARK AND SWEEP ]",
