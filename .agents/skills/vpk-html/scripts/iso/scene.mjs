@@ -35,6 +35,7 @@ export {
 	LABEL_MODES,
 	labelModeOf,
 	labelSpecsOf,
+	LIFT_MODES,
 	MANUAL_FROM,
 	MAX_LABELS,
 	MAX_PARTS,
@@ -46,7 +47,7 @@ export {
 	WARN_PARTS,
 } from "./schema.mjs";
 export { expandBrief } from "./expand.mjs";
-import { BriefError, CAMERA_PRESETS, CROP_PAD, DEFAULT_PAD, DEFAULT_VIEWBOX, emphasisOf, FIT_FROM_Z, focalIdsOf, labelModeOf, labelSpecsOf, MANUAL_FROM, MAX_PARTS, MIN_CROP_ZOOM, validateBrief, WARN_PARTS } from "./schema.mjs";
+import { BriefError, CAMERA_PRESETS, CROP_PAD, DEFAULT_PAD, DEFAULT_VIEWBOX, emphasisOf, FIT_FROM_Z, focalIdsOf, GROW_KINDS, labelModeOf, labelSpecsOf, MANUAL_FROM, MAX_PARTS, MIN_CROP_ZOOM, validateBrief, WARN_PARTS } from "./schema.mjs";
 import { expandBrief } from "./expand.mjs";
 import { assembledBrief, explodedBrief, isTeardown } from "./teardown.mjs";
 const SCALE_GAP = 14;
@@ -159,6 +160,41 @@ function chooseAnchor(part, side, pieces, P, override) {
 	return { point: visible[0], visible: true };
 }
 
+// A select figure's support: the one lowest part (not the focal, not line work) whose plan holds every other part's plan, like a
+// plinth under a terrain or a tray under its cards. It holds the figure up, so it is fixed by default (`fixed: false` opts out).
+export function supportOf(brief) {
+	const solids = brief.parts.filter(part => !["ring", "gap", "wire", "glow"].includes(part.kind));
+	const low = Math.min(...solids.map(bottomZ));
+	const lowest = solids.filter(part => Math.abs(bottomZ(part) - low) < 1e-6);
+	if (lowest.length !== 1 || focalIdsOf(brief).includes(lowest[0].id)) return null;
+	const [x0, y0, x1, y1] = planBox(lowest[0]);
+	const inside = part => {
+		const [a0, b0, a1, b1] = planBox(part);
+		return a0 >= x0 - 0.5 && b0 >= y0 - 0.5 && a1 <= x1 + 0.5 && b1 <= y1 + 0.5;
+	};
+	return brief.parts.every(part => part === lowest[0] || inside(part)) ? lowest[0].id : null;
+}
+
+// A grown part (liftMode "grow") is drawn by the runtime from its rest paths: every point on its top face rides the lift and every
+// other point stays put. That is exact when the solid `lift` taller is the rest solid with its top-face points moved by the
+// screen lift, point for point; this checks it, so a solid the rule cannot draw raises instead of drawing a wrong shape.
+const POINT = /(-?[\d.]+) (-?[\d.]+)/g;
+export function growsInPlace(piece, grown, lift) {
+	if (!grown || !lift || piece.solids.length !== 1 || grown.solids.length !== 1 || !piece.solids[0].top) return false;
+	const [rest] = piece.solids;
+	const [tall] = grown.solids;
+	const top = new Set(rest.top.match(POINT));
+	const moved = d => d.replace(POINT, (pair, x, y) => (top.has(pair) ? `${Number(x) + lift[0]} ${Number(y) + lift[1]}` : pair));
+	const shape = d => d.replace(POINT, "#");
+	const numbers = d => (d.match(/-?[\d.]+/g) ?? []).map(Number);
+	return ["fill", "shade", "top", "crease", "edge"].every(role => {
+		if (!rest[role] || !tall[role]) return !rest[role] && !tall[role];
+		const [a, b] = [moved(rest[role]), tall[role]];
+		const [na, nb] = [numbers(a), numbers(b)];
+		return shape(a) === shape(b) && na.length === nb.length && na.every((value, index) => Math.abs(value - nb[index]) <= 0.15);
+	});
+}
+
 function layerIndexMap(brief) {
 	const map = new Map();
 	(brief.assemble?.layers ?? []).forEach((layer, index) => layer.forEach(id => map.set(id, index)));
@@ -214,19 +250,26 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 	const liftWorld = behavior === "select" ? interact.lift ?? 8 : 0;
 	const layers = layerIndexMap(brief);
 	const zRank = new Map([...brief.parts].sort((a, b) => bottomZ(a) - bottomZ(b)).map((part, index) => [part.id, index]));
+	// A fixed part (a plinth, a base, a housing) is scenery: it never lifts or separates, takes no hover outline, is no keyboard stop
+	// and cannot be selected. `fixed: true` marks one; a select figure's support (supportOf) is fixed unless it says `fixed: false`.
+	const support = behavior === "select" ? supportOf(brief) : null;
+	const isFixed = part => part.fixed ?? part.id === support;
 	// A part without its own explode vector that sits on another part (its base on that part's top, inside its plan; a tray's
 	// floor counts as its top) moves with that part: window controls stay on the window, pins on their bed. Only a part that
-	// rests on nothing falls back to its assembly layer, 12 units per layer.
-	const restsOn = part => brief.parts.find(other => other !== part && supportZs(other).some(z => Math.abs(z - bottomZ(part)) < 1e-6) && contains(other, planCentre(part)));
+	// rests on nothing (or on a fixed base, which never moves) falls back to its assembly layer, 12 units per layer.
+	const restsOn = part => brief.parts.find(other => other !== part && !isFixed(other) && supportZs(other).some(z => Math.abs(z - bottomZ(part)) < 1e-6) && contains(other, planCentre(part)));
 	const vectors = new Map();
 	const vectorOf = (part, seen = new Set()) => {
+		if (isFixed(part)) return [0, 0, 0];
 		if (part.explode) return part.explode;
 		if (vectors.has(part.id)) return vectors.get(part.id);
-		const support = castsShadow(part) && !seen.has(part.id) ? restsOn(part) : null;
-		const vector = support && !seen.has(support.id) ? vectorOf(support, seen.add(part.id)) : [0, 0, (layers.get(part.id) ?? zRank.get(part.id)) * 12];
+		const under = castsShadow(part) && !seen.has(part.id) ? restsOn(part) : null;
+		const vector = under && !seen.has(under.id) ? vectorOf(under, seen.add(part.id)) : [0, 0, (layers.get(part.id) ?? zRank.get(part.id)) * 12];
 		vectors.set(part.id, vector);
 		return vector;
 	};
+	const liftOf = part => (liftWorld && !isFixed(part) ? [0, 0, liftWorld] : null);
+	const growOf = part => Boolean(liftOf(part)) && GROW_KINDS.includes(part.kind) && (part.liftMode ?? interact.liftMode) === "grow";
 	const assemble = brief.assemble ?? null;
 	const from = assemble?.from ?? MANUAL_FROM;
 
@@ -255,7 +298,7 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 			const e = vectorOf(part);
 			for (const k of [explode.min - explode.rest, explode.max - explode.rest]) poses.push(...corners.map(([x, y, z]) => [x + e[0] * k, y + e[1] * k, z + e[2] * k]));
 		}
-		if (liftWorld) poses.push(...corners.map(([x, y, z]) => [x, y, z + liftWorld]));
+		if (liftOf(part)) poses.push(...corners.map(([x, y, z]) => [x, y, z + liftWorld]));
 		if (assemble) poses.push(...corners.map(([x, y, z]) => [x + from[0], y + from[1], z + Math.min(from[2], FIT_FROM_Z)]));
 		// The rest pose's shadows are fitted; a lifted or exploded shadow may run past the frame, which clips it (the stage clips).
 		if (castsShadow(part)) shadowPoses.push(...shadowCorners(part));
@@ -332,7 +375,12 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 		piece.tone = piece.geomTone;
 		piece.layer = assemble ? layers.get(part.id) : null;
 		if (explode) piece.explode = screenVector(vectorOf(part), P);
-		if (liftWorld) piece.lift = screenVector([0, 0, liftWorld], P);
+		if (liftOf(part)) piece.lift = screenVector(liftOf(part), P);
+		if (isFixed(part)) piece.fixed = true;
+		if (growOf(part)) {
+			if (growsInPlace(piece, solidFor({ ...part, size: [part.size[0], part.size[1], part.size[2] + liftWorld] }, P, preset).find(other => other.id === piece.id), piece.lift)) piece.grow = true;
+			else warnings.push(`part "${part.id}": its grown solid is not its rest solid with the top raised, so it raises instead of growing`);
+		}
 		if (part.clipTo) piece.clipTo = part.clipTo;
 	}
 	// Glow (plan § 2 W): each glowing piece's faces share one radial gradient centred on the piece, reaching its farthest corner
@@ -347,6 +395,8 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 			piece.glow = { k: glows++, cx, cy, r: Math.max(1, ...piece.hit.map(([x, y]) => Math.hypot(x - cx, y - cy))) };
 		}
 	}
+	// The parts that grow as built (growOf asks; growsInPlace may have sent a part back to raising).
+	const grown = new Set(pieces.filter(piece => piece.grow).map(piece => piece.partId));
 	// One flat shadow per part that casts one, in painter order of its first piece; `cast` is the screen move of the shadow per
 	// unit of the figure's motion (the lift for select, a Gap unit for explode), so the runtime moves it with its part.
 	const shadows = [];
@@ -356,21 +406,23 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 		const key = piece.variant ? `${part.id}@${piece.variant}` : part.id;
 		if (!castsShadow(part) || shadowed.has(key)) continue;
 		shadowed.add(key);
-		const move = explode ? vectorOf(part) : liftWorld ? [0, 0, liftWorld] : null;
+		const move = explode ? vectorOf(part) : liftOf(part);
 		// A variant or turn sample casts its own shadow, shown and hidden with it (state-runtime.mjs).
 		const geom = piece.variant ? drawEntries(drawOf.get(part.id)).find(entry => entry.variant === piece.variant).geom : part;
 		if (!castsShadow(geom)) continue;
 		for (const hit of castShadows(geom, P, { ground, r: geom.r ?? preset.radius, step })) {
-			shadows.push({ partId: part.id, layer: piece.layer, hit, cast: move ? screenVector(shadowMove(move, step), P) : null, variant: piece.variant ?? null, restHidden: piece.restHidden });
+			shadows.push({ partId: part.id, layer: piece.layer, hit, cast: move && !grown.has(part.id) ? screenVector(shadowMove(move, step), P) : null, variant: piece.variant ?? null, restHidden: piece.restHidden });
 		}
 	}
 	// Shadows on the parts below (illustrations.md § Shadows): one light, so a point on a part's top face is in shadow when any
 	// part above it blocks the light, and the union of those casters' projections onto the face's plane is its shadow. Each pair
 	// is the caster's full shadow on that plane, clipped live to the face (the emitter's clipPath), kept when it touches the face
 	// at some reachable pose; it moves by the caster's cast times its motion less the receiver's (runtime place()).
-	const castOf = part => {
-		const move = explode ? vectorOf(part) : liftWorld ? [0, 0, liftWorld] : null;
-		return move ? screenVector(shadowMove(move, step), P) : null;
+	// A growing caster's shadows hold still: its base stays put, so a moved shadow would come loose from it (the grown top's longer
+	// shadow is not drawn). A growing receiver's top rises like a raised one, so the shadows on it ride with it (castOn).
+	const castOf = (part, onTop = false) => {
+		const move = explode ? vectorOf(part) : liftOf(part);
+		return move && (onTop || !grown.has(part.id)) ? screenVector(shadowMove(move, step), P) : null;
 	};
 	const reach = explode ? [explode.min - explode.rest, 0, explode.max - explode.rest].map(k => [k, k]) : liftWorld ? [[0, 0], [1, 0]] : [[0, 0]];
 	const area = poly => Math.abs(poly.reduce((sum, [x, y], i) => sum + x * poly[(i + 1) % poly.length][1] - poly[(i + 1) % poly.length][0] * y, 0)) / 2;
@@ -380,7 +432,7 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 	for (const receiver of casters.filter(part => part.tone !== "ink" && receivingTop(part) && settled(part))) {
 		const top = receivingTop(receiver, receiver.r ?? preset.radius);
 		const face = top.ring.map(([x, y]) => iso([x, y, top.z], P));
-		const castOn = castOf(receiver);
+		const castOn = castOf(receiver, true);
 		const list = [];
 		for (const caster of casters) {
 			if (caster === receiver || bottomZ(caster) < top.z - 1e-6 || !settled(caster)) continue;
@@ -412,9 +464,10 @@ function buildSceneAt(source, style, gutterOverride, viewBoxOverride = null) {
 		if (clipped.length >= 3) piece.hit = clipped;
 	}
 
-	// Explode guides: each extreme base corner drops to the highest part whose footprint lies under it.
+	// Explode guides: each extreme base corner drops to the highest part whose footprint lies under it. A select figure draws them
+	// too with `interact.guides`, so a floating layer shows what it hovers over; the upper end rides its part's lift.
 	const guides = [];
-	if (explode) {
+	if (explode || interact?.guides) {
 		for (const part of brief.parts) {
 			// guides: false keeps repeated detail (fins, keys, chips) from drawing a curtain of dashed guides.
 			if (part.guides === false || part.tone === "glass" || (["ring", "gap", "tray", "wire", "leg", ...TUBE_KINDS].includes(part.kind) && !(part.kind === "ring" && part.thickness))) continue;

@@ -211,7 +211,7 @@ other value fails validation),
 (read by `scripts/iso/thresholds.mjs`): `partsWarn` 240, `partsMax` (null: off), `svgWarnBytes`, `svgFailBytes` (null: off), `fillsMax` (null: off),
 every count and size key is `null` (off): there is no layer, label, mark, detail or size limit, and no warning for any of them.
 
-- **Parts** (any number after expansion; the build warns above `partsWarn`): `{ id, kind, at, size, r?, bevel?, yaw?, axis?, up?, dividers?, marks?, detail?, label?, explode?, clipTo?, clipPad?, state?, tone?: "ink" | "glass" | "glow" }`,
+- **Parts** (any number after expansion; the build warns above `partsWarn`): `{ id, kind, at, size, r?, bevel?, yaw?, axis?, up?, dividers?, marks?, detail?, label?, explode?, clipTo?, clipPad?, state?, tone?: "ink" | "glass" | "glow", fixed?, liftMode? }`,
   `kind` ∈ `slab | box | plate | cylinder | tray | ring | gap` plus the turned, tube and ball kinds below. `at` is the min corner (centre for
   `cylinder`/`ring`), `size` is `[w, d, h]` in world units, z up (`[r, r, h]` for a `cylinder`,
   `[r, r, 0]` for a `ring`; r is the radius). A `tray` splits into `:back` and
@@ -222,6 +222,18 @@ every count and size key is `null` (off): there is no layer, label, mark, detail
   without the focal's outline. `tone: "ink"` draws the part in three ink faces (`INK_TONES`, `--ill-line` at 62/78/90% into the
   raised surface, swapped in dark so the top stays lightest) with an ink edge; it receives no shadows. `cut` is gone: the kit draws side faces flat, and a part that still says `cut` fails
   validation (`parts[n].cut is no longer supported`), with no silent fallback.
+- **Fixed parts**: `fixed: true` makes a part scenery: it never lifts or separates, never takes the hover outline, is not
+  a keyboard stop and cannot be selected (a select figure's pointer passes over it, and its faces drawn in front of a part
+  still block that part's hit). Use it for plinths, bases, housings and mats that hold the figure up. A select figure's
+  **support**, its one lowest part (not a focal) whose plan holds every other part's plan, is fixed by default; write
+  `fixed: false` to keep it selectable. Every other base (several feet, a plate on a housing, benches side by side) needs
+  `fixed: true`. A part resting on a fixed base keeps its own layer vector rather than the base's (which never moves). A brief
+  whose parts are all fixed, or a fixed part with a `liftMode`, fails validation.
+- **Lift mode** (select only): `interact.liftMode` (figure default) or a part's `liftMode` is `"raise"` (default: the part
+  rises whole) or `"grow"` (its base stays on what it stands on and only its top rises by `lift`, like a bar extending; a
+  terrain's pillars). `grow` takes a vertical prism (`box`, `slab`, `plate`, `cylinder`); the build checks that the solid
+  `lift` taller is the rest solid with its top-face points moved, and a solid that is not (a bevelled slab) raises instead,
+  with a build warning. A grown part's ground shadow holds still.
 - **Part kinds: turned, tube and ball** (`scripts/iso/geometry.mjs`, `kinds.mjs`; drawn with the vendored `lathe`, `tubePieces` and
   `sphereOf` under the same camera; none takes `size`). `axis` is `x | y | z | -x | -y | -z | [ax, ay, az]` (default `z`); `up`
   (optional, not parallel to the axis) fixes where angle 0 points.
@@ -323,8 +335,10 @@ every count and size key is `null` (off): there is no layer, label, mark, detail
 - **Assembly**: `assemble.layers` lists every part once, in as many layers as it needs (the stagger shrinks past 7 so the total stays ≤ 1.8 s); `from` (default `[0, 0, 30]`, `ENTRY.DROP_Z`) is the
   offset parts drop from (the camera fit counts only its first 14 units, so a part may start above the frame and fall in). The timing is fixed (rule 10 below); `staggerMs` and `partMs` still validate but
   do not change it.
-- **Behaviour**: `interact` is `null` (static, zoomable), `{ behavior: "select", rest?, lift? }`
-  (pointer or arrow keys lift one part and name it; Escape returns to rest) or
+- **Behaviour**: `interact` is `null` (static, zoomable), `{ behavior: "select", rest?, lift?, liftMode?, guides? }`
+  (pointer or arrow keys lift one part and name it; Escape returns to rest; a lift is straight up, so it reorders only parts whose
+  plans overlap, one standing over the other, and a part that rises behind a nearer part stays behind it; `guides: true` draws the
+  explode figure's dashed drop guides, whose upper ends ride the lift) or
   `{ behavior: "teardown", teardown?: { gap, step, start } }` (an exploded view with an Exploded / Assembled switch; see **Teardown**) or
   `{ behavior: "explode", explode: { rest, min, max, step, unit } }` (hovering the figure opens it to `max` and leaving
   closes it; a touch tap toggles; pointer position plays no part; the range input commits the resting gap). The brief's `at` values are the rest pose; offsets are

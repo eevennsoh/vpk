@@ -2683,10 +2683,10 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 74,
-			"pageCount": 57,
+			"ownerImportCount": 75,
+			"pageCount": 58,
 			"primaryOwnerKinds": {
-				"catalog": 17,
+				"catalog": 18,
 				"dynamic": 9,
 				"inline": 1,
 				"redirect": 2,
@@ -2991,6 +2991,33 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/awake/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "butter",
+					"status": "live",
+					"basedOn": "jira-team-eu26",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/butter",
+					"entry": "components/projects/butter/page.tsx",
+					"demo": "components/website/demos/projects/butter-demo.tsx"
+				},
+				"routePath": "/butter",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/butter/page.tsx"
 			},
 			{
 				"ownerCount": 2,
@@ -4491,10 +4518,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 453,
+			"manifestEntryCount": 454,
 			"categoryCount": 9,
 			"statusCounts": {
-				"live": 448,
+				"live": 449,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -5362,7 +5389,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 19,
+				"entryCount": 20,
 				"entries": [
 					{
 						"category": "projects",
@@ -5370,6 +5397,15 @@
 						"name": "Admin",
 						"importPath": "@/components/projects/admin",
 						"status": "live"
+					},
+					{
+						"category": "projects",
+						"slug": "butter",
+						"name": "Butter",
+						"importPath": "@/components/projects/butter",
+						"status": "live",
+						"basedOn": "jira-team-eu26",
+						"note": "Independent Butter fork of the Team ’26 EU Payments SDK board."
 					},
 					{
 						"category": "projects",

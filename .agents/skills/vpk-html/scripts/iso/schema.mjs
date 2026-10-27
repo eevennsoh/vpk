@@ -33,6 +33,10 @@ export const FIT_FROM_Z = 14;
 export const PART_KINDS = Object.freeze([...LEGACY_KINDS, ...NEW_KINDS]);
 // A "new" or "active" part shares the focal's pale fill, without its outline (rule 4).
 export const PART_STATES = Object.freeze(["new", "active"]);
+// How a selected part answers the hover (select figures): "raise" lifts the whole part; "grow" keeps its base where it stands
+// and raises only its top, like a bar extending (vertical prisms only: a box, slab, plate or cylinder).
+export const LIFT_MODES = Object.freeze(["raise", "grow"]);
+export const GROW_KINDS = Object.freeze(["box", "slab", "plate", "cylinder"]);
 // A part's own tone: "ink" paints its faces in the dark ink steps (black pins, dark slats); "glass" paints no face at all (its
 // visible edges in the edge stroke, its hidden edges dashed, no shadow; what stands behind it shows through); "glow" paints its faces
 // with a radial gradient from the accent (heat, light; plan § 2 W); omitted, the tone map.
@@ -250,6 +254,10 @@ function validatePart(part, index, push) {
 	if (part.clipTo !== undefined && part.kind !== "ring") push(`${at}.clipTo is allowed on rings only`);
 	if (part.clipPad !== undefined && !(part.kind === "ring" && part.clipTo !== undefined && isNum(part.clipPad) && part.clipPad >= 0 && part.clipPad <= 200)) push(`${at}.clipPad is a number within 0–200, allowed on a ring with clipTo`);
 	if (part.state !== undefined && !PART_STATES.includes(part.state)) push(`${at}.state must be one of ${PART_STATES.join(", ")}`);
+	if (part.fixed !== undefined && typeof part.fixed !== "boolean") push(`${at}.fixed must be true or false`);
+	if (part.liftMode !== undefined && !LIFT_MODES.includes(part.liftMode)) push(`${at}.liftMode must be one of ${LIFT_MODES.join(", ")}`);
+	else if (part.liftMode === "grow" && !GROW_KINDS.includes(part.kind)) push(`${at}.liftMode "grow" needs a vertical prism (${GROW_KINDS.join(", ")}), not a ${part.kind}`);
+	if (part.fixed === true && part.liftMode !== undefined) push(`${at}: a fixed part never lifts, so it takes no liftMode`);
 	if (part.tone !== undefined && !PART_TONES.includes(part.tone)) push(`${at}.tone ${JSON.stringify(part.tone)} must be one of ${PART_TONES.join(", ")}`);
 	if (part.cutaway !== undefined) validateCutaway(part, at, push);
 	validateDetail(part, at, push);
@@ -287,6 +295,8 @@ function validateInteract(interact, push) {
 	}
 	if (interact.lift !== undefined && !(isNum(interact.lift) && interact.lift > 0 && interact.lift <= 40)) push("interact.lift must be within (0, 40]");
 	if (interact.rest !== undefined && typeof interact.rest !== "string") push("interact.rest must be a string");
+	if (interact.guides !== undefined && (interact.behavior !== "select" || typeof interact.guides !== "boolean")) push("interact.guides must be true or false, on a select figure (an explode figure always draws its guides)");
+	if (interact.liftMode !== undefined && (interact.behavior !== "select" || !LIFT_MODES.includes(interact.liftMode))) push(`interact.liftMode must be one of ${LIFT_MODES.join(", ")}, on a select figure`);
 	if (interact.behavior === "explode") {
 		const e = interact.explode;
 		if (!e || ![e.rest, e.min, e.max, e.step].every(isNum)) return push("interact.explode needs numeric rest, min, max and step");
@@ -387,6 +397,8 @@ function validateFlat(brief) {
 	validateDims(brief.dims, push);
 	validateScale(brief.scale, push);
 	validateInteract(brief.interact, push);
+	if (parts.some(part => part?.liftMode !== undefined) && brief.interact?.behavior !== "select") push("parts[].liftMode needs interact.behavior \"select\"");
+	if (brief.interact && parts.length && parts.every(part => part?.fixed === true)) push("every part is fixed, so the figure has nothing to select or separate; drop interact or unfix a part");
 	validateTour(brief.tour, known, push);
 	validateBriefStates(brief, parts, push);
 	parts.forEach((part, index) => {

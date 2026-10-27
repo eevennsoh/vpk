@@ -222,7 +222,7 @@ export function mountStates(x) {
 		const pts = el && core.parsePolyPath(el.getAttribute("d"));
 		if (pts && target) lines.push(line(el, pts, false, pts.map((_, k) => (k === pts.length - 1 ? target : null))));
 	}
-	if (svg.querySelector("[data-vpk-iso-tag-for]")) lines.push(...core.tagLines(core.parsePolyPath, svg, parts, units, line));
+	if (svg.querySelector("[data-vpk-iso-tag-for]")) lines.push(...core.tagLines(core.parsePolyPath, svg, parts, line));
 	const groups = new Map();
 	for (const p of parts) {
 		if (!groups.has(p.group)) groups.set(p.group, []);

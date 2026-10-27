@@ -67,23 +67,35 @@ Prefer merge commits unless the user explicitly asks for squash or rebase.
 
 ## Sync persistent main
 
-After GitHub confirms `state: MERGED`, identify the worktree that owns local
-`main` with `git worktree list --porcelain`.
+After GitHub confirms `state: MERGED`, update the local `main` **ref**. Never
+run `git pull` in a checkout without first confirming it has `main` checked
+out: `git pull origin main` merges into whatever branch is current, so in a
+checkout another session has switched to its own branch it silently rewrites
+that branch (this happened on 2026-10-24, when a Codex dependency branch in
+the main checkout was fast-forwarded onto a merged PR).
 
-From the persistent main checkout:
-
-```bash
-git switch main
-git pull --ff-only origin main
-```
-
-From a secondary worktree, do not try to check out `main`; it is already owned
-elsewhere. Sync out of place:
+Find which worktree, if any, has `main` checked out:
 
 ```bash
-git -C <main-checkout> fetch origin
-git -C <main-checkout> pull --ff-only origin main
+git worktree list --porcelain | grep -B2 '^branch refs/heads/main$'
 ```
+
+- **No worktree has `main` checked out** (the usual case when the main
+  checkout is on another session's branch): update the ref without touching
+  any working tree. The refspec refuses a non-fast-forward update.
+
+  ```bash
+  git fetch origin main:main
+  ```
+
+- **A worktree has `main` checked out:** confirm it, then fast-forward there.
+
+  ```bash
+  test "$(git -C <that-worktree> branch --show-current)" = main
+  git -C <that-worktree> pull --ff-only origin main
+  ```
+
+Never switch another session's checkout to `main` to make the sync work.
 
 Before syncing, inspect the persistent checkout's status. If unrelated edits
 would be affected, preserve them with the narrowest safe mechanism and restore
@@ -98,9 +110,8 @@ branch it is using. Defer that to `vpk-git-clean` from the main checkout.
 Verify synchronization:
 
 ```bash
-git -C <main-checkout> status --short --branch
-git -C <main-checkout> rev-parse main
-git -C <main-checkout> rev-parse origin/main
+git rev-parse main origin/main
+git -C <main-checkout> status --short --branch   # its current branch must be unchanged
 ```
 
 The two revisions should match after a successful fast-forward. If they do not,

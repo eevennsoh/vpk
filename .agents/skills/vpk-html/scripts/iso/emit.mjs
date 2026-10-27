@@ -96,6 +96,9 @@ export function renderPart(piece, scene, indent = "") {
 	if (piece.depth0 !== undefined) attrs.push(`data-vpk-iso-depth0="${num(piece.depth0)}"`);
 	if (piece.lift) attrs.push(`data-vpk-iso-lift="${vec(piece.lift)}"`);
 	if (piece.stacks) attrs.push(`data-vpk-iso-plan="${piece.plan.map(box => box.map(num).join(" ")).join(";")}"`);
+	// A fixed part is scenery (no lift, outline, keyboard stop or selection); a grown part keeps its base and raises its top.
+	if (piece.fixed) attrs.push("data-vpk-iso-fixed");
+	if (piece.grow) attrs.push("data-vpk-iso-grow");
 	if (piece.label) attrs.push(`data-vpk-iso-label="${escapeAttr(piece.label)}"`);
 	if (piece.focal) attrs.push("data-vpk-iso-focal");
 	if (piece.clipTo) attrs.push(`clip-path="url(#${id.clip(piece.partId)})"`);
