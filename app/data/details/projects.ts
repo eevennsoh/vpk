@@ -82,6 +82,14 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewContentWidth: "full",
 		},
 	},
+	"butter": {
+		description: "Butter — an independent copy of the Team ’26 EU Payments SDK board, with Board/List views, session filters and drag-to-link agent sessions.",
+		importStatement: `import ButterPage from "@/components/projects/butter";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
 	"jira-team-eu26": {
 		description: "The Team ’26 EU Payments SDK v2 migration board in Jira chrome, with Board/List views, session filters, an Unlink sessions column and drag-to-link agent sessions.",
 		importStatement: `import JiraTeamEu26Page from "@/components/projects/jira-team-eu26";`,
