@@ -20,6 +20,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/ui-custom/message-math.behavior.test.js",
 		"components/ui-custom/code-block-cache-key.test.js",
 		"components/projects/butter/hooks/use-butter-agent-session-sync.behavior.test.js",
+		"components/projects/butter/hooks/use-butter-list-session-cohort.behavior.test.js",
 		"components/projects/jira-team-eu26/hooks/use-jira-team-eu26-agent-session-sync.behavior.test.js",
 		".agents/skills/vpk-build/scripts/extraction-dependencies.test.js",
 		"app/contexts/context-rovo-chat-lifecycle.behavior.test.js",
