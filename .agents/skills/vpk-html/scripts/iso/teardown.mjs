@@ -19,7 +19,11 @@ export function teardownTravel(brief) {
 	const gap = brief.interact?.teardown?.gap ?? TEARDOWN_GAP;
 	const layers = new Map();
 	(brief.assemble?.layers ?? []).forEach((layer, index) => layer.forEach(id => layers.set(id, index)));
-	const zRank = new Map([...brief.parts].sort((a, b) => boundsOf(a).bottom - boundsOf(b).bottom).map((part, index) => [part.id, index]));
+	// Without assemble.layers a part's layer is the rank of its bottom height among the distinct heights of the parts that take
+	// layer travel (no explode vector of their own): parts at one height (a row of keys, a grid of chips) share a layer and lift
+	// together, not one gap apart each.
+	const heights = [...new Set(brief.parts.filter(part => !isVec(part.explode)).map(part => Math.round(boundsOf(part).bottom * 1e6) / 1e6))].sort((a, b) => a - b);
+	const zRank = new Map(brief.parts.map(part => [part.id, Math.max(0, heights.indexOf(Math.round(boundsOf(part).bottom * 1e6) / 1e6))]));
 	const restsOn = part => brief.parts.find(other => other !== part && supportZs(other).some(z => Math.abs(z - boundsOf(part).bottom) < 1e-6) && contains(other, planCentre(part)));
 	const travel = new Map();
 	const layerOf = part => layers.get(part.id) ?? zRank.get(part.id);

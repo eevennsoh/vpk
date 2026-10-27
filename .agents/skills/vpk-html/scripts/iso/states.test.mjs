@@ -8,7 +8,7 @@ import * as core from "./core.mjs";
 import { renderRegion, renderSvg } from "./emit.mjs";
 import { auditHtml } from "./audit.mjs";
 import { blink, tagLines } from "./manual-runtime.mjs";
-import { createIsoRuntime } from "./runtime.mjs";
+import { createIsoRuntime, LIVE_CLEAR_MS } from "./runtime.mjs";
 import { buildScene, validateBrief } from "./scene.mjs";
 import { blendPose, formatReadout, mountStates, orderOf, poseText, scrubPose, scrubReducer, scrubTarget, statePose, stateText, stepReducer, unitView } from "./state-runtime.mjs";
 import { rotatePart, turnSamples } from "./states.mjs";
@@ -367,5 +367,54 @@ test("scrub runtime: hovering a part names it in the readout and outlines it; le
 		step(50);
 		assert.equal(readout.textContent, "upright · tilt 0°");
 		assert.equal(floor.hasAttribute("class"), false);
+	});
+});
+
+// Judge finding (anatomy step/scrub figures): after a commit the figure's text held the readout twice, the visible readout and
+// the live region, so browse mode read it twice. The live region speaks the commit, then empties (LIVE_CLEAR_MS later).
+test("step and scrub runtime: the live region speaks a commit once, then empties so the figure text holds the readout once", async () => {
+	for (const brief of [STEP, SCRUB]) {
+		await withRuntime(renderRegion(buildScene(brief)), async ({ step }) => {
+			const stage = document.querySelector("[data-vpk-iso-stage]");
+			const figure = stage.closest("figure");
+			const readout = document.querySelector("[data-vpk-iso-readout]");
+			const live = document.querySelector("[data-vpk-iso-live]");
+			const count = text => figure.textContent.split(text).length - 1;
+			key(stage, "ArrowRight");
+			step(1500);
+			const text = readout.textContent;
+			assert.equal(live.textContent, text, `${brief.id}: the commit is spoken`);
+			await new Promise(resolve => setTimeout(resolve, LIVE_CLEAR_MS + 50));
+			assert.equal(live.textContent, "", `${brief.id}: the live region empties after speaking`);
+			assert.equal(count(text), 1, `${brief.id}: the figure text holds "${text}" once`);
+			key(stage, "ArrowLeft");
+			step(1500);
+			key(stage, "ArrowRight");
+			step(1500);
+			assert.equal(live.textContent, text, `${brief.id}: the same state committed again speaks again`);
+		});
+	}
+});
+
+// Judge finding: hovering a part named it in the readout while the drawing showed no outline. After a print pose the parts'
+// cached hover flag survived the class removal, so the part under the pointer never took .is-active again.
+test("scrub runtime: after printing, the hovered part takes the accent outline again", async () => {
+	await withRuntime(renderRegion(buildScene(SCRUB)), async ({ boards, step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const svg = stage.querySelector("svg");
+		const readout = document.querySelector("[data-vpk-iso-readout]");
+		const floor = svg.querySelector('[data-vpk-iso-part="floor"]');
+		const pts = core.parsePolyPath(floor.querySelector('[data-vpk-iso-role="top"]').getAttribute("d"));
+		const [x, y] = pts.reduce(([sx, sy], [px, py]) => [sx + px / pts.length, sy + py / pts.length], [0, 0]);
+		pointer(stage, "pointermove", x, y);
+		step(50);
+		assert.ok(floor.classList.contains("is-active"));
+		boards[0].rest();
+		assert.equal(floor.hasAttribute("class"), false, "the print pose is the static art");
+		window.dispatchEvent(new window.Event("afterprint"));
+		pointer(stage, "pointermove", x, y);
+		step(50);
+		assert.equal(readout.textContent, "floor");
+		assert.ok(floor.classList.contains("is-active"), "the named part is outlined, not only named");
 	});
 });

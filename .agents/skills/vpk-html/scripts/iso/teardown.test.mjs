@@ -95,9 +95,9 @@ async function withRuntime(region, run) {
 		const boards = [];
 		const loop = {
 			register(stage, tick, opts) {
-				const board = { stage, tick, rest: opts && opts.rest };
+				const board = { stage, tick, rest: opts && opts.rest, wakes: 0 };
 				boards.push(board);
-				return { wake() {}, unregister() {} };
+				return { wake() { board.wakes++; }, unregister() {} };
 			},
 			reducedMotion: () => false,
 			onReducedMotionChange() {},
@@ -109,7 +109,7 @@ async function withRuntime(region, run) {
 			for (let t = start; t <= start + ms; t += 16) busy = boards[0].tick(0.016, t, false);
 			return busy;
 		};
-		await run({ step });
+		await run({ step, boards });
 	} finally {
 		await GlobalRegistrator.unregister();
 	}
@@ -148,5 +148,75 @@ test("runtime: Assembled closes the stack and hides labels, Exploded reopens it 
 		step(400);
 		assert.equal(readout.textContent, "Chip");
 		assert.ok(svg.querySelector('[data-vpk-iso-part="chip"]').classList.contains("is-active"));
+	});
+});
+
+test("travel without assemble.layers: parts at one height share a layer (a row of keys lifts together, not one gap apart each)", () => {
+	const { assemble, ...rest } = STACK;
+	const brief = { ...rest, parts: [...STACK.parts, { id: "chip-2", kind: "box", at: [36, 12, 6], size: [10, 10, 2], label: "Chip 2" }] };
+	const travel = teardownTravel(brief);
+	assert.deepEqual(travel.get("base"), [0, 0, 0]);
+	assert.deepEqual(travel.get("plate"), [0, 0, 20]);
+	assert.deepEqual(travel.get("chip"), [0, 0, 40]);
+	assert.deepEqual(travel.get("chip-2"), [0, 0, 40], "two chips at one height take one travel");
+});
+
+test("depth0 is the assembled painter rank: unique, and a plate paints before the keys on it", () => {
+	const { assemble, ...rest } = STACK;
+	const brief = { ...rest, focal: "key-0", parts: [STACK.parts[0], STACK.parts[1], ...[0, 1, 2].map(k => ({ id: `key-${k}`, kind: "box", at: [8 + k * 14, 12, 6], size: [10, 10, 4], label: "Key" }))] };
+	const scene = buildScene(brief);
+	const d0 = Object.fromEntries(scene.pieces.map(piece => [piece.id, piece.depth0]));
+	assert.equal(new Set(Object.values(d0)).size, scene.pieces.length, "no ties");
+	for (const k of [0, 1, 2]) assert.ok(d0.plate < d0[`key-${k}`], `plate before key-${k}`);
+});
+
+test("runtime: start assembled closes on mount; the slider carries aria-valuetext", async () => {
+	const brief = { ...STACK, interact: { behavior: "teardown", teardown: { gap: 20, start: "assembled" } } };
+	await withRuntime(renderRegion(buildScene(brief)), async ({ step, boards }) => {
+		const control = document.querySelector("[data-vpk-iso-control]");
+		assert.ok(boards[0].wakes >= 1, "the board wakes on mount to close the exploded static art");
+		step(1500);
+		assert.equal(document.querySelector("[data-vpk-iso-readout]").textContent, "assembled");
+		assert.equal(control.getAttribute("aria-valuetext"), "assembled");
+		assert.ok(document.querySelector('[data-vpk-iso-part="lid"]').hasAttribute("transform"));
+		document.querySelector('[data-vpk-iso-pose="1"]').click();
+		assert.equal(control.getAttribute("aria-valuetext"), "exploded");
+	});
+});
+
+test("runtime: hover hits a part where it is drawn now (assembled), not where the exploded art put it", async () => {
+	await withRuntime(renderRegion(buildScene(STACK)), async ({ step }) => {
+		const svg = document.querySelector("[data-vpk-iso-stage] svg");
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const readout = document.querySelector("[data-vpk-iso-readout]");
+		const lidTop = svg.querySelector('[data-vpk-iso-part="lid"] [data-vpk-iso-role="top"]');
+		const pts = core.hull(core.parsePolyPath(lidTop.getAttribute("d")));
+		const [cx, cy] = [pts.reduce((s, [x]) => s + x, 0) / pts.length, pts.reduce((s, [, y]) => s + y, 0) / pts.length];
+		document.querySelector('[data-vpk-iso-pose="0"]').click();
+		step(1500);
+		const [tx, ty] = svg.querySelector('[data-vpk-iso-part="lid"]').getAttribute("transform").match(/-?[\d.]+/g).map(Number);
+		const hover = (x, y) => {
+			stage.dispatchEvent(new window.PointerEvent("pointermove", { clientX: x, clientY: y, pointerType: "mouse", bubbles: true }));
+			step(400);
+			return readout.textContent;
+		};
+		assert.equal(hover(cx + tx, cy + ty), "Lid", "the closed lid is hit where it is drawn");
+		assert.equal(hover(cx, cy), "assembled", "the empty air where the exploded lid was drawn names nothing");
+	});
+});
+
+test("runtime: printing an assembled teardown prints the static exploded art (labels shown, exploded painter order)", async () => {
+	const brief = { ...STACK, labels: [{ text: "Lid", target: "lid", side: "right" }] };
+	await withRuntime(renderRegion(buildScene(brief)), async ({ step, boards }) => {
+		const svg = document.querySelector("[data-vpk-iso-stage] svg");
+		const snapshot = svg.outerHTML;
+		document.querySelector('[data-vpk-iso-pose="0"]').click();
+		step(1500);
+		assert.ok(svg.classList.contains("vpk-iso-assembling"));
+		boards[0].rest();
+		assert.equal(svg.outerHTML, snapshot, "the print pose is the static art");
+		window.dispatchEvent(new window.Event("afterprint"));
+		step(100);
+		assert.ok(svg.classList.contains("vpk-iso-assembling"), "after printing the assembled pose comes back");
 	});
 });

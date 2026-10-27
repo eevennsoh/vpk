@@ -183,7 +183,9 @@ export function buildScene(input, { style = input?.style } = {}) {
 	// Teardown: the painter order of the assembled pose too (depth0), so the runtime redraws a cover over the parts it closes on.
 	if (isTeardown(input)) {
 		const assembled = buildSceneAt(assembledBrief(expandBrief(input)), style, null);
-		const depth0 = new Map(assembled.pieces.map(piece => [piece.id, piece.depth]));
+		// The assembled pieces' rank in their painter order, not their depth key: keys tie (a plate and the keys on it), and a tie
+		// broken by the exploded order painted the plate over its keys once closed.
+		const depth0 = new Map(assembled.pieces.map((piece, index) => [piece.id, index]));
 		for (const piece of fitted.pieces) piece.depth0 = depth0.get(piece.id);
 	}
 	return fitted;

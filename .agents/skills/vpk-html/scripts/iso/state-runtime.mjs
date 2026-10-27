@@ -187,7 +187,7 @@ export function unitView(cfg, pose, unit) {
 // setText, restore, now, fromReview, line, measure, toView, clocks: { tween, tset, tval, tdone, spring, stepS } }. Returns the
 // print pose and the stillness getter for the shared rest motion.
 export function mountStates(x) {
-	const { loop, core, stage, root, svg, attr, find, role, setText, restore, now, fromReview, line, measure, toView, clocks: C } = x;
+	const { loop, core, stage, root, svg, attr, find, role, setText, speak, restore, now, fromReview, line, measure, toView, clocks: C } = x;
 	const cfg = JSON.parse(attr(stage, "states") || "null");
 	if (!cfg || !Array.isArray(cfg.states) || cfg.states.length < 2) throw new Error("states");
 	const step = attr(stage, "behavior") === "step";
@@ -412,7 +412,12 @@ export function mountStates(x) {
 	const pose = on => {
 		still = on;
 		if (!on) return wake();
-		for (const p of parts) restore(p.el);
+		for (const p of parts) {
+			// restore() drops .is-active, so the cached flag goes with it: else the part under the pointer is named after
+			// printing but never outlined again (tick skips a part whose flag already matches).
+			p.on = false;
+			restore(p.el);
+		}
 		for (const lab of labels) restore(lab.el);
 		write(rest);
 	};
@@ -448,7 +453,7 @@ export function mountStates(x) {
 			setText(readout, text);
 		}
 		if (live && st.liveText !== null) {
-			if (st.liveText !== st.said) setText(live, st.liveText);
+			if (st.liveText !== st.said) speak(live, st.liveText);
 			st.said = st.liveText;
 			st.liveText = null;
 		}

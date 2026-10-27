@@ -465,14 +465,16 @@ on the **Teardowns** gallery page.
   `interact: { behavior: "teardown", teardown?: { gap?, step?, start? } }`.
 - **Travel**: each part moves by its own `explode: [x, y, z]`. A part without one takes the travel of the part it rests on when
   both share an assembly layer (a key on its deck, a chip on its board), else its `assemble.layers` index × `gap` (default 18)
-  straight up. So `assemble.layers` orders the stack; secondary hardware (a bracket, a magnet, a head stack) takes its own
+  straight up (without `assemble.layers`, a part's layer is the rank of its bottom height, so parts at one height lift
+  together). So `assemble.layers` orders the stack; secondary hardware (a bracket, a magnet, a head stack) takes its own
   sideways vector, and a part below the base takes a negative z.
 - **What is drawn**: the static art is the exploded drawing, with dashed guides on the assembly paths, leader labels and the usual
   tones, shadows and accent. Label `anchor`s and mark `at`s are written on the assembled object and ride their part. There is no
   entry drop: the switch is the motion.
 - **Controls**: an Exploded / Assembled switch and a Spread slider (0 = assembled, 1 = exploded, `step` default 0.05) sit under
   the frame; `start: "assembled"` opens closed. Pointing at a part, or focusing the stage and using the arrow keys, names it in
-  the readout and outlines it in the accent (no lift). Labels and guides hide off the exploded pose. Past half way the parts take
+  the readout and outlines it in the accent (no lift). Labels and guides hide off the exploded pose; hover hits each part where it is drawn now; print always shows the
+  exploded static art. Past half way the parts take
   the assembled pose's painter order (`data-vpk-iso-depth0`), so a cover closes over what it covers. Reopening restores the static
   art byte for byte.
 - **Repeated detail**: `guides: false` on a part (fins, keys, chips) draws no explode guides for it; glass parts draw none.

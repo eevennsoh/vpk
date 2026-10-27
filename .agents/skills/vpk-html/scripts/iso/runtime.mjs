@@ -113,6 +113,8 @@ export const explodeTarget = state => state.preview ?? state.committed;
 // Motion at rest resumes this long after the last input (iso/accent.mjs REST_MOTION.IDLE_RESUME_MS; runtime.test.mjs pins the
 // two equal: this file is import-free so the inliner can read it). restMs reads a SMIL dur ("1800ms", "2s") in ms.
 export const REST_IDLE_MS = 3000;
+// How long the live region holds a spoken commit before it empties (createIsoRuntime speak).
+export const LIVE_CLEAR_MS = 1500;
 export const restMs = dur => (parseFloat(dur) || 0) * (/ms\s*$/.test(dur) ? 1 : /s\s*$/.test(dur) ? 1000 : 0);
 
 // Deck fit share (CSS px). `flow` is how far the slide's in-flow content runs past the room on the
@@ -143,6 +145,14 @@ export function createIsoRuntime(win, loop, core) {
 		const node = el.firstChild;
 		if (node && node.nodeType === 3 && el.childNodes.length === 1) node.data = text;
 		else el.textContent = text;
+	};
+	// The live region speaks a commit, then empties LIVE_CLEAR_MS later: left filled, the figure's text (browse mode, copy, the
+	// accessible description) held the visible readout twice. Emptying is silent; a new commit restarts the clock.
+	const liveTimers = new WeakMap();
+	const speak = (el, text) => {
+		win.clearTimeout(liveTimers.get(el));
+		setText(el, text);
+		liveTimers.set(el, win.setTimeout(() => setText(el, ""), LIVE_CLEAR_MS));
 	};
 
 	// data-vpk-iso-* attribute and role-selector helpers (they keep the inlined block small).
@@ -176,7 +186,7 @@ export function createIsoRuntime(win, loop, core) {
 		};
 		// Step and scrub figures (state-runtime.mjs): states, variants and per-state painter order.
 		if (behavior === "step" || behavior === "scrub") {
-			const states = core.mountStates({ win, loop, core, stage, root, svg, attr, find, role, setText, restore, now, fromReview, line, measure, toView, clocks: { tween, tset, tval, tdone, spring, stepS } });
+			const states = core.mountStates({ win, loop, core, stage, root, svg, attr, find, role, setText, speak, restore, now, fromReview, line, measure, toView, clocks: { tween, tset, tval, tdone, spring, stepS } });
 			poses.push(on => {
 				states.pose(on);
 				rests.forEach(fn => fn());
@@ -256,6 +266,7 @@ export function createIsoRuntime(win, loop, core) {
 		if (teardown && control.hasAttribute("data-vpk-iso-start")) control.value = control.getAttribute("data-vpk-iso-start");
 		const poseButtons = teardown ? [...root.querySelectorAll("[data-vpk-iso-pose]")] : [];
 		const poseText = value => (value >= cfg.max - 1e-6 ? "exploded" : value <= cfg.min + 1e-6 ? "assembled" : `spread ${value.toFixed(2)}`);
+		if (teardown) control.setAttribute("aria-valuetext", poseText(Number(control.value)));
 		const restText = readout ? attr(readout, "rest") || readout.textContent : "";
 		const st = { sel: { count: units.length, active: null, last: null }, ex: cfg ? { committed: Number(control.value), preview: null } : null, gap: spring(cfg ? Number(control.value) : 0), text: readout ? readout.textContent : "", said: null, liveText: null, leaveAt: null, apart: true, closed: false };
 		let board = null;
@@ -281,6 +292,17 @@ export function createIsoRuntime(win, loop, core) {
 			wake();
 		};
 
+		// A teardown part's hit polygon is drawn at the exploded pose; off it the part has moved by (dx, dy) and, past half way, the
+		// parts paint in the assembled order. So hit the parts in their current paint order, each at its current offset.
+		const byEl = new Map(parts.map(p => [p.el, p]));
+		const teardownHit = pt => {
+			const drawn = [...svg.querySelectorAll("[data-vpk-iso-part]")].map(el => byEl.get(el)).filter(Boolean);
+			for (let k = drawn.length - 1; k >= 0; k--) {
+				const p = drawn[k];
+				if (core.topmostHit([p.poly], [pt[0] - p.dx, pt[1] - p.dy]) === 0) return p.unit;
+			}
+			return -1;
+		};
 		const move = e => {
 			if (fromReview(e)) return;
 			if (cfg && !teardown) {
@@ -289,8 +311,8 @@ export function createIsoRuntime(win, loop, core) {
 				return;
 			}
 			st.leaveAt = null;
-			const top = core.topmostHit(polys, toView(e.clientX, e.clientY));
-			const hit = top < 0 ? -1 : parts[top].unit;
+			const pt = toView(e.clientX, e.clientY);
+			const hit = teardown ? teardownHit(pt) : (top => (top < 0 ? -1 : parts[top].unit))(core.topmostHit(polys, pt));
 			if ((hit < 0 ? null : hit) !== st.sel.active) select(selectReducer(st.sel, { type: "hover", unit: hit }), now());
 		};
 		// A finger or pen tap sends no pointermove, so non-mouse pointerdown hit-tests like a move
@@ -313,6 +335,7 @@ export function createIsoRuntime(win, loop, core) {
 			control.addEventListener("change", () => {
 				st.ex = explodeReducer(st.ex, { type: "change", value: Number(control.value) }, cfg);
 				st.liveText = teardown ? poseText(st.ex.committed) : st.ex.live;
+				if (teardown) control.setAttribute("aria-valuetext", poseText(st.ex.committed));
 				wake();
 			});
 			// Exploded / Assembled: each button sets the slider to its pose and commits it, so the slider stays the one source of truth.
@@ -417,6 +440,15 @@ export function createIsoRuntime(win, loop, core) {
 				p.on = false;
 				for (const el of [p.el, ...labelsFor[p.i]]) restore(el);
 			}
+			// Teardown prints the static (exploded) art: its painter order and its labels, whatever the spread on screen. The next
+			// tick after printing re-derives both from the spread.
+			if (teardown) {
+				for (const [g, list] of groups) if (list.orig) for (const node of list.orig) g.appendChild(node);
+				st.closed = false;
+				st.apart = true;
+				svg.classList.remove("vpk-iso-assembling");
+				if (!svg.classList.length) svg.removeAttribute("class");
+			}
 			write();
 		};
 		poses.push(pose);
@@ -506,7 +538,7 @@ export function createIsoRuntime(win, loop, core) {
 				setText(readout, text);
 			}
 			if (live && st.liveText !== null) {
-				if (st.liveText !== st.said) setText(live, st.liveText);
+				if (st.liveText !== st.said) speak(live, st.liveText);
 				st.said = st.liveText;
 				st.liveText = null;
 			}
@@ -515,6 +547,9 @@ export function createIsoRuntime(win, loop, core) {
 
 		labelsFor = parts.map(p => [...svg.querySelectorAll("[data-vpk-iso-label-for], [data-vpk-iso-arrow-for]")].filter(g => [p.id, units[p.unit].name].includes(attr(g, "label-for") || attr(g, "arrow-for"))));
 		board = loop.register(stage, tick, { rest: () => pose(true) });
+		// A teardown that starts assembled (data-vpk-iso-start below the slider's rest) must close on mount: the static art is the
+		// exploded drawing, and nothing else wakes the board before the first input.
+		if (teardown && Math.abs(st.gap.x - cfg.rest) > 1e-6) wake();
 		restMotion(stage, root, svg, () => still);
 	}
 

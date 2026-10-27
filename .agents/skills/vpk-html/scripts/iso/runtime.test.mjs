@@ -48,8 +48,9 @@ function referenceBezier(x1, y1, x2, y2) {
 test("runtime.mjs is import-free (it is inlined into the runtime block)", () => {
 	assert.doesNotMatch(SOURCE, /^\s*import\b/m);
 	assert.doesNotMatch(SOURCE, /requestAnimationFrame|setInterval/, "motion runs only through vpkFrameLoop ticks");
-	// One timer: the motion-at-rest gate waits out the entrance and the idle delay, then flips an attribute (the CSS animates).
-	assert.equal(SOURCE.match(/setTimeout/g).length, 1, "only the rest gate sets a timer");
+	// Two one-shot timers, neither drives motion: the motion-at-rest gate waits out the entrance and the idle delay, then flips an
+	// attribute (the CSS animates); speak() empties the live region LIVE_CLEAR_MS after a commit.
+	assert.equal(SOURCE.match(/setTimeout/g).length, 2, "only the rest gate and the live-region clear set a timer");
 });
 
 test("spring/stepS reach the target within eps and land at once when reduced", () => {
