@@ -69,9 +69,13 @@ const escapeAttr = text => escapeText(text).replace(/"/g, "&quot;");
 
 // The plate: the iso kit's frame (a ruled box on the paper) around upstream's own plate, and the house caption below. The
 // figure draws its corners (figure number, title, hint, live readout) itself; the frame only drops its outer card edge.
+// The reserve is a light-DOM box at the figure's own ratio plus upstream's plate padding: it holds the plate's height until the
+// figure first mounts (a shadow root hides light children), so lazily mounting a figure above the reader never moves the page.
 const PLATE_CSS = `.vpk-anatomy-gl-plate { display: block !important; margin: 0; text-align: start !important; }
 .vpk-anatomy-gl-frame { border: 1px solid var(--rule); background: var(--paper); }
 .vpk-anatomy-gl-host { display: block; width: 100%; min-height: 320px; }
+.vpk-anatomy-gl-reserve { box-sizing: content-box; padding: 52px 24px; }
+@media (max-width: 560px) { .vpk-anatomy-gl-reserve { padding: 48px 12px 70px; } }
 .vpk-anatomy-gl-plate > figcaption { max-width: 72ch; text-align: left; }`;
 export const anatomyGlStyleTag = () => `<style data-vpk-anatomy-gl-css>\n${ACCENT_TOKENS_CSS}\n${PLATE_CSS}\n</style>`;
 
@@ -80,7 +84,7 @@ export function anatomyGlPlate({ slug, indent = "\t\t" }) {
 	if (!figure) throw new Error(`unknown anatomy-gl figure: ${slug}`);
 	return [
 		`<figure class="vpk-anatomy-gl-plate" id="vpk-anatomy-gl-${slug}" data-vpk-engine="anatomy-gl" data-vpk-figure="an-${slug}" data-vpk-camera="45 30" data-vpk-block data-vpkh-no-lightbox>`,
-		`\t<div class="vpk-anatomy-gl-frame" data-vpk-review-ignore><div class="vpk-anatomy-gl-host" data-vpk-anatomy-gl="${slug}" aria-label="${escapeAttr(figure.summary)}"></div></div>`,
+		`\t<div class="vpk-anatomy-gl-frame" data-vpk-review-ignore><div class="vpk-anatomy-gl-host" data-vpk-anatomy-gl="${slug}" aria-label="${escapeAttr(figure.summary)}"><div class="vpk-anatomy-gl-reserve" style="aspect-ratio: ${figure.ratio}"></div></div></div>`,
 		`\t<figcaption data-vpk-review-ignore>${escapeText(figure.caption)}</figcaption>`,
 		"</figure>",
 	].join(`\n${indent}`);
@@ -94,32 +98,89 @@ function loadEsbuild() {
 	}
 }
 
-// The boot: mount every host on its figure with the page theme's tokens, and remount when the theme flips (scripts/theme.mjs
+// The boot: mount each host on its figure with the page theme's tokens, and remount when the theme flips (scripts/theme.mjs
 // writes data-theme on <html>). render() returns a teardown that loses the figure's WebGL contexts, so a remount never leaks one.
-const BOOT = `const VPK_TOKENS = ${JSON.stringify(ANATOMY_GL_TOKENS)};
+// Lifecycle: a figure costs one or two WebGL contexts and a browser keeps about sixteen per renderer process (shared by every
+// tab of that process), evicting the oldest past that, and upstream never recovers an evicted context. Mounting all ten at load
+// (15 contexts) left a second tab or any other WebGL on the page to blank them for good. So a figure mounts only when it comes
+// within MOUNT_MARGIN of the viewport and is torn down (its contexts released) once it is beyond the wider UNMOUNT_MARGIN; the
+// gap keeps a figure from flickering at the edge, and a focused figure is never torn down. A figure whose context the browser
+// takes anyway is remounted while it is near (a bounded number of times), or fresh the next time it comes near.
+export const ANATOMY_GL_MOUNT_MARGIN = "100% 0px";
+export const ANATOMY_GL_UNMOUNT_MARGIN = "200% 0px";
+export const ANATOMY_GL_MAX_RECOVERIES = 3;
+export const ANATOMY_GL_BOOT = `const VPK_TOKENS = ${JSON.stringify(ANATOMY_GL_TOKENS)};
+const MOUNT_MARGIN = ${JSON.stringify(ANATOMY_GL_MOUNT_MARGIN)};
+const UNMOUNT_MARGIN = ${JSON.stringify(ANATOMY_GL_UNMOUNT_MARGIN)};
+const MAX_RECOVERIES = ${ANATOMY_GL_MAX_RECOVERIES};
 const pageTheme = () => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
-const mounted = new Map();
-const mountAll = () => {
+const figures = new Map();
+const mount = host => {
+	const figure = figures.get(host);
+	figure.stop?.();
+	figure.theme = pageTheme();
+	figure.lost = false;
+	figure.stop = figure.render(host, { theme: figure.theme, tokens: VPK_TOKENS[figure.theme] });
+	host.style.minHeight = "";
+	if (!figure.listening && host.shadowRoot) {
+		figure.listening = true;
+		host.shadowRoot.addEventListener("webglcontextlost", () => {
+			if (!figure.stop || figure.lost) return;
+			figure.lost = true;
+			if (figure.recoveries >= MAX_RECOVERIES) return;
+			figure.recoveries++;
+			setTimeout(() => figure.lost && figure.near && mount(host), 1000);
+		}, true);
+		// A figure kept because it held focus is released once focus leaves it, if it is still far.
+		host.shadowRoot.addEventListener("focusout", () => setTimeout(() => figure.far && unmount(host)), true);
+	}
+};
+const unmount = host => {
+	const figure = figures.get(host);
+	if (!figure.stop || host.shadowRoot?.activeElement) return;
+	const stop = figure.stop;
+	figure.stop = null;
+	figure.lost = false;
+	// Hold the figure's height while it is empty, so releasing a figure above the viewport never shifts the page.
+	host.style.minHeight = host.offsetHeight + "px";
+	stop();
+};
+const onThemeChange = () => {
 	const theme = pageTheme();
+	for (const [host, figure] of figures) if (figure.stop && figure.theme !== theme) mount(host);
+};
+const start = () => {
+	const near = new IntersectionObserver(entries => {
+		for (const entry of entries) {
+			const figure = figures.get(entry.target);
+			figure.near = entry.isIntersecting;
+			if (figure.near && (!figure.stop || figure.lost)) mount(entry.target);
+		}
+	}, { rootMargin: MOUNT_MARGIN });
+	const far = new IntersectionObserver(entries => {
+		for (const entry of entries) {
+			const figure = figures.get(entry.target);
+			figure.far = !entry.isIntersecting;
+			if (!figure.far) continue;
+			figure.recoveries = 0;
+			unmount(entry.target);
+		}
+	}, { rootMargin: UNMOUNT_MARGIN });
 	for (const host of document.querySelectorAll("[data-vpk-anatomy-gl]")) {
 		const render = FIGURES[host.dataset.vpkAnatomyGl];
 		if (!render) continue;
-		const prev = mounted.get(host);
-		if (prev && prev.theme === theme) continue;
-		prev?.stop?.();
-		mounted.set(host, { theme, stop: render(host, { theme, tokens: VPK_TOKENS[theme] }) });
+		figures.set(host, { render, stop: null, theme: null, near: false, far: false, lost: false, listening: false, recoveries: 0 });
+		near.observe(host);
+		far.observe(host);
 	}
-};
-const start = () => {
-	mountAll();
-	new MutationObserver(mountAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+	new MutationObserver(onThemeChange).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 };
 document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", start, { once: true }) : start();`;
 
 function entrySource(slugs) {
 	const imports = slugs.map((slug, i) => `import { render as r${i} } from ${JSON.stringify(path.join(ELEMENTS, `${slug}.js`))};`);
 	const table = slugs.map((slug, i) => `${JSON.stringify(slug)}: r${i}`).join(", ");
-	return `${imports.join("\n")}\nconst FIGURES = { ${table} };\n${BOOT}\n`;
+	return `${imports.join("\n")}\nconst FIGURES = { ${table} };\n${ANATOMY_GL_BOOT}\n`;
 }
 
 export async function anatomyGlBundle(slugs) {

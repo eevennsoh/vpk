@@ -297,6 +297,14 @@ ten figures are not iso-kit briefs: the page runs the original figures, vendored
   raised surface, tone 1 and 2 sides, hairlines at 60/38/20%, mono text) and makes the lit part the iso kit's orange accent.
   The shaders keep upstream's colours: the fire, plasma and light are the effect itself. The figure follows the page theme
   (`data-theme` on `<html>`) and remounts on a change; upstream's teardown releases its WebGL contexts.
+- **Lifecycle.** A figure costs one or two WebGL contexts, and a browser keeps about sixteen per renderer process, shared by
+  every tab of that process; past that it evicts the oldest, and upstream never recovers an evicted context. So the boot
+  mounts a figure only when it is within `ANATOMY_GL_MOUNT_MARGIN` (one viewport) and tears it down, releasing its contexts,
+  once it is beyond `ANATOMY_GL_UNMOUNT_MARGIN` (two viewports). A focused figure is never torn down, and an evicted figure
+  that is still near is remounted (at most `ANATOMY_GL_MAX_RECOVERIES` times). Before the first mount, a light-DOM reserve at
+  the figure's ratio (`ratio` in `figures.mjs`, equal to the vendored entry's export) holds the plate's height, and an
+  emptied host keeps its last height, so mounting and unmounting never move the page. While a figure is mounted, upstream
+  pauses its own frame loop off screen and rests under reduced motion.
 - **Markup.** `figure[data-vpk-engine="anatomy-gl"]` with one host `[data-vpk-anatomy-gl="<slug>"]` (aria-label = the
   summary) inside the iso kit's ruled frame, and the house caption below; `data-vpkh-no-lightbox`. The figure draws its own
   corners (figure number, title, hint, live readout) and its own interaction (throttle, drag, keys) as upstream does.

@@ -19,7 +19,9 @@ The vpk adaptation lives beside the vendor folder and never patches it:
 - `inline.mjs` bundles only the figures a page shows with esbuild into one inline script (offline, single file), writes
   the plate CSS, and boots each figure with upstream's own token API: `render(host, { theme, tokens })` sets every
   `--anatomy-*` colour from vpk-html's ramp (plates, hairlines, mono text) and makes the lit part the iso kit's orange
-  accent. The boot follows the page theme and remounts on a theme change (upstream's teardown releases the WebGL contexts).
+  accent. The boot follows the page theme and remounts on a theme change, and mounts a figure only near the viewport,
+  tearing it down (upstream's teardown releases its WebGL contexts) once it is far, so a page of ten never exhausts the
+  browser's context budget.
 - `figures.mjs` lists the ten figures with titles and summaries from their pages on skills.wheresryan.sh.
 
 In shipped HTML the runtime block (`<script data-vpk-anatomy-gl-runtime>`) starts with a one-line notice naming
