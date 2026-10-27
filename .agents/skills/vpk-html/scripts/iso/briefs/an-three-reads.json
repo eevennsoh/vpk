@@ -3,16 +3,18 @@
 	"id": "an-three-reads",
 	"figId": "FIG_252",
 	"title": "Three reads, one normal",
-	"label": "Dimetric optical bench: a line card at one end, a bevelled glass block on a mount, and red, green and blue read screens at one, two and three steps along one normal. The bevel block is highlighted.",
-	"caption": "Lines seen through a bevel come apart into colour because red, green and blue are read at three distances along the same normal, and the spread sets how far apart those reads land.",
+	"label": "Dispersion bench: a ruled line card, a round-edged glass bevel on a graduated stage, a twin-slit plate and a louvred lamp wired to a switch box. Red, green and blue rays fan from the bevel corner to three reads on the card.",
+	"caption": "Lines seen through a bevel come apart into colour: red, green and blue are read at three distances along the same normal, so they land at three heights on the card. Slide left or right to set the spread d, and the red and blue reads move apart.",
 	"camera": {
 		"preset": "dimetric",
-		"scale": "fit"
+		"scale": "fit",
+		"pad": 70
 	},
+	"labels": "none",
+	"focal": "bevel",
 	"parts": [
 		{
-			"id": "bench-card",
-			"fixed": true,
+			"id": "base-lip",
 			"kind": "slab",
 			"at": [
 				0,
@@ -20,367 +22,1905 @@
 				0
 			],
 			"size": [
-				40,
-				44,
-				5
+				300,
+				72,
+				4
 			],
-			"r": 1,
-			"label": "Card plinth"
+			"r": 5
 		},
 		{
-			"id": "bench-lens",
-			"fixed": true,
+			"id": "base",
 			"kind": "slab",
 			"at": [
-				40,
-				0,
-				0
+				2,
+				2,
+				4
 			],
 			"size": [
-				60,
-				44,
+				296,
+				68,
 				5
 			],
-			"r": 1,
-			"label": "Lens plinth",
-			"marks": [
-				[
-					[
-						4,
-						40
-					],
-					[
-						56,
-						40
+			"r": 4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 2.5,
+					"r": 3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							10,
+							56
+						],
+						[
+							286,
+							56
+						],
+						[
+							286,
+							64
+						],
+						[
+							10,
+							64
+						],
+						[
+							10,
+							56
+						]
 					]
-				]
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						14,
+						64
+					],
+					"to": [
+						282,
+						64
+					],
+					"step": 4,
+					"every": 5,
+					"lengths": [
+						1.4,
+						3.2
+					],
+					"side": -1
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						14,
+						64
+					],
+					"to": [
+						282,
+						64
+					],
+					"step": 40,
+					"lengths": [
+						5.5,
+						5.5
+					],
+					"side": -1
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4,
+							2.5
+						],
+						[
+							292,
+							2.5
+						]
+					]
+				}
 			]
 		},
 		{
-			"id": "bench-red",
-			"fixed": true,
+			"id": "rail",
 			"kind": "slab",
 			"at": [
-				100,
-				0,
-				0
+				8,
+				15,
+				9
 			],
 			"size": [
-				38,
-				44,
-				5
+				276,
+				14,
+				2.4
 			],
 			"r": 1,
-			"label": "Red plinth"
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2,
+							7
+						],
+						[
+							274,
+							7
+						]
+					]
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 0.6
+				}
+			]
 		},
 		{
-			"id": "bench-green",
-			"fixed": true,
-			"kind": "slab",
+			"id": "card-carriage",
+			"kind": "box",
 			"at": [
-				138,
-				0,
-				0
+				6,
+				4,
+				11.4
 			],
 			"size": [
 				32,
-				44,
-				5
+				36,
+				9
 			],
-			"r": 1,
-			"label": "Green plinth"
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							3,
+							6.5
+						],
+						[
+							29,
+							6.5
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "bench-blue",
-			"fixed": true,
-			"kind": "slab",
+			"id": "card-screw",
+			"kind": "cylinder",
+			"axis": "y",
 			"at": [
-				170,
-				0,
-				0
+				22,
+				40,
+				15.6
 			],
 			"size": [
-				40,
-				44,
-				5
+				2.8,
+				2.8,
+				3.4
 			],
-			"r": 1,
-			"label": "Blue plinth"
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 18
+				}
+			]
 		},
 		{
-			"id": "card-foot",
+			"id": "card-clamp",
 			"kind": "box",
 			"at": [
-				12,
-				10,
-				5
+				4,
+				1,
+				20.4
 			],
 			"size": [
-				16,
-				24,
+				36,
+				42,
 				4
 			],
-			"r": 1,
-			"label": "Card foot"
+			"r": 1.2
+		},
+		{
+			"id": "card-frame",
+			"kind": "box",
+			"at": [
+				14,
+				2,
+				24.4
+			],
+			"size": [
+				8,
+				40,
+				52
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.6,
+					"r": 0.8
+				}
+			]
 		},
 		{
 			"id": "card",
 			"kind": "box",
 			"at": [
-				18.5,
+				22,
+				7,
+				27
+			],
+			"size": [
+				0.8,
+				24,
+				46
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "+x",
+					"from": [
+						17,
+						2
+					],
+					"to": [
+						17,
+						44
+					],
+					"step": 1.5,
+					"every": 4,
+					"lengths": [
+						1.6,
+						3.2
+					],
+					"side": -1
+				},
+				{
+					"type": "ticks",
+					"face": "+x",
+					"from": [
+						23,
+						4
+					],
+					"to": [
+						23,
+						43
+					],
+					"step": 6.5,
+					"lengths": [
+						12,
+						12
+					],
+					"side": -1
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						11,
+						4
+					],
+					"grid": [
+						1,
+						14
+					],
+					"gap": 3,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "card-rod",
+			"kind": "cylinder",
+			"at": [
+				23.2,
+				35,
+				26
+			],
+			"size": [
+				0.9,
+				0.9,
+				46
+			]
+		},
+		{
+			"id": "card-cap",
+			"kind": "box",
+			"at": [
 				12,
+				0.5,
+				76.4
+			],
+			"size": [
+				12,
+				43,
+				3.5
+			],
+			"r": 1.2
+		},
+		{
+			"id": "card-handle",
+			"kind": "box",
+			"at": [
+				16,
+				13,
+				79.9
+			],
+			"size": [
+				4,
+				16,
+				1.6
+			],
+			"r": 0.8
+		},
+		{
+			"id": "card-tab",
+			"kind": "box",
+			"at": [
+				22,
+				2.5,
+				24.4
+			],
+			"size": [
+				5,
+				5,
 				9
+			],
+			"r": 0.8
+		},
+		{
+			"id": "card-foot",
+			"kind": "box",
+			"at": [
+				22,
+				32.5,
+				24.4
 			],
 			"size": [
 				3,
-				20,
-				30
+				5,
+				3
 			],
-			"r": 0,
-			"label": "Line card",
-			"marks": [
+			"r": 0.6
+		},
+		{
+			"id": "mark-r",
+			"kind": "ring",
+			"axis": "x",
+			"at": [
+				23.8,
+				35,
+				32.5
+			],
+			"size": [
+				1.5,
+				1.5,
+				0
+			],
+			"thickness": 0.6,
+			"inner": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lead-r",
+			"kind": "wire",
+			"points": [
 				[
-					[
-						3,
-						4
-					],
-					[
-						3,
-						16
-					]
+					23.8,
+					34,
+					33
+				],
+				[
+					23.6,
+					28.6,
+					36.6
 				]
 			]
 		},
 		{
-			"id": "mount",
-			"kind": "cylinder",
+			"id": "read-r",
+			"kind": "ring",
+			"axis": "x",
 			"at": [
-				72,
-				22,
-				5
+				23.4,
+				28,
+				37
 			],
 			"size": [
-				11,
-				11,
-				8
+				1.4,
+				1.4,
+				0
 			],
-			"label": "Mount",
-			"marks": [
+			"thickness": 0.5,
+			"inner": 0.8
+		},
+		{
+			"id": "mark-g",
+			"kind": "ring",
+			"axis": "x",
+			"at": [
+				23.8,
+				35,
+				44.5
+			],
+			"size": [
+				1.5,
+				1.5,
+				0
+			],
+			"thickness": 0.6,
+			"inner": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lead-g",
+			"kind": "wire",
+			"points": [
 				[
-					[
-						0,
-						0
-					],
-					[
-						8,
-						0
-					]
+					23.8,
+					34,
+					45
+				],
+				[
+					23.6,
+					28.6,
+					48.6
 				]
+			]
+		},
+		{
+			"id": "read-g",
+			"kind": "ring",
+			"axis": "x",
+			"at": [
+				23.4,
+				28,
+				49
+			],
+			"size": [
+				1.4,
+				1.4,
+				0
+			],
+			"thickness": 0.5,
+			"inner": 0.8
+		},
+		{
+			"id": "mark-b",
+			"kind": "ring",
+			"axis": "x",
+			"at": [
+				23.8,
+				35,
+				56.5
+			],
+			"size": [
+				1.5,
+				1.5,
+				0
+			],
+			"thickness": 0.6,
+			"inner": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lead-b",
+			"kind": "wire",
+			"points": [
+				[
+					23.8,
+					34,
+					57
+				],
+				[
+					23.6,
+					28.6,
+					60.6
+				]
+			]
+		},
+		{
+			"id": "read-b",
+			"kind": "ring",
+			"axis": "x",
+			"at": [
+				23.4,
+				28,
+				61
+			],
+			"size": [
+				1.4,
+				1.4,
+				0
+			],
+			"thickness": 0.5,
+			"inner": 0.8
+		},
+		{
+			"id": "stage-carriage",
+			"kind": "box",
+			"at": [
+				104,
+				6,
+				11.4
+			],
+			"size": [
+				48,
+				32,
+				13
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							4
+						],
+						[
+							46,
+							4
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 28,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "panel",
+			"kind": "box",
+			"at": [
+				86,
+				38,
+				11.4
+			],
+			"size": [
+				32,
+				16,
+				13.5
+			],
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "text",
+					"face": "+y",
+					"at": [
+						3,
+						6
+					],
+					"text": "dispersion",
+					"size": 2.6
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.5,
+							2.5
+						],
+						[
+							30.5,
+							2.5
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						9,
+						11
+					],
+					"size": [
+						12,
+						3.2
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						4,
+						7.5
+					],
+					"to": [
+						14,
+						7.5
+					],
+					"step": 2.5,
+					"lengths": [
+						1.4,
+						1.4
+					],
+					"side": -1
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.6,
+						1.6
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 12.8,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "panel-nut",
+			"kind": "prism",
+			"at": [
+				104,
+				47,
+				24.9
+			],
+			"axis": "z",
+			"polygon": [
+				[
+					2.3,
+					0
+				],
+				[
+					1.15,
+					1.99
+				],
+				[
+					-1.15,
+					1.99
+				],
+				[
+					-2.3,
+					0
+				],
+				[
+					-1.15,
+					-1.99
+				],
+				[
+					1.15,
+					-1.99
+				]
+			],
+			"depth": 1.6
+		},
+		{
+			"id": "panel-gauge",
+			"kind": "cylinder",
+			"at": [
+				111.5,
+				47,
+				24.9
+			],
+			"size": [
+				3.2,
+				3.2,
+				3.6
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 20,
+					"s0": 0,
+					"s1": 2.4
+				},
+				{
+					"type": "radialTicks",
+					"face": "top",
+					"r": 2.8,
+					"count": 12,
+					"lengths": [
+						0.5,
+						0.5
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0,
+							0
+						],
+						[
+							1.2,
+							-1.6
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "pillar",
+			"kind": "cylinder",
+			"at": [
+				128,
+				22,
+				24.4
+			],
+			"size": [
+				6.5,
+				6.5,
+				16
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						4
+					]
+				}
+			]
+		},
+		{
+			"id": "stage",
+			"kind": "cylinder",
+			"at": [
+				128,
+				22,
+				40.4
+			],
+			"size": [
+				27,
+				27,
+				4
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.6
+					]
+				}
+			]
+		},
+		{
+			"id": "stage-scale",
+			"kind": "cylinder",
+			"at": [
+				128,
+				22,
+				44.4
+			],
+			"size": [
+				23,
+				23,
+				1.6
+			],
+			"detail": [
+				{
+					"type": "radialTicks",
+					"face": "top",
+					"r": 22.6,
+					"count": 72,
+					"every": 6,
+					"lengths": [
+						1.2,
+						2.8
+					]
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 5
+				}
+			]
+		},
+		{
+			"id": "stage-screw-a",
+			"kind": "cylinder",
+			"axis": "z",
+			"at": [
+				111,
+				38,
+				44.4
+			],
+			"size": [
+				1.8,
+				1.8,
+				2.8
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 18
+				}
+			]
+		},
+		{
+			"id": "stage-screw-b",
+			"kind": "cylinder",
+			"axis": "z",
+			"at": [
+				148,
+				9,
+				44.4
+			],
+			"size": [
+				1.8,
+				1.8,
+				2.8
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 18
+				}
 			]
 		},
 		{
 			"id": "bevel",
-			"kind": "slab",
+			"kind": "prism",
 			"at": [
-				62,
-				12,
-				13
+				106,
+				33,
+				46
+			],
+			"axis": "-y",
+			"depth": 22,
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					44,
+					0
+				],
+				[
+					44,
+					32
+				],
+				[
+					13,
+					32
+				],
+				[
+					10.74,
+					31.8
+				],
+				[
+					8.55,
+					31.22
+				],
+				[
+					6.5,
+					30.26
+				],
+				[
+					4.64,
+					28.96
+				],
+				[
+					3.04,
+					27.36
+				],
+				[
+					1.74,
+					25.5
+				],
+				[
+					0.78,
+					23.45
+				],
+				[
+					0.2,
+					21.26
+				],
+				[
+					0,
+					19
+				]
+			],
+			"detail": [
+				{
+					"type": "line",
+					"face": "start",
+					"points": [
+						[
+							20,
+							2
+						],
+						[
+							20,
+							31
+						]
+					],
+					"dash": true
+				},
+				{
+					"type": "line",
+					"face": "start",
+					"points": [
+						[
+							2,
+							10
+						],
+						[
+							42,
+							10
+						]
+					],
+					"dash": true
+				},
+				{
+					"type": "ticks",
+					"face": "start",
+					"from": [
+						1.5,
+						0.4
+					],
+					"to": [
+						16,
+						0.4
+					],
+					"step": 1.6,
+					"every": 4,
+					"lengths": [
+						1.4,
+						3
+					],
+					"side": 1
+				}
+			]
+		},
+		{
+			"id": "slit-carriage",
+			"kind": "box",
+			"at": [
+				178,
+				10,
+				11.4
 			],
 			"size": [
-				20,
-				20,
+				24,
+				24,
+				10
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							2.5
+						],
+						[
+							22,
+							2.5
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 20,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "slit-screw",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				190,
+				34,
 				16
 			],
-			"r": 3,
-			"bevel": 2,
-			"label": "Bevel block",
-			"marks": [
-				[
-					[
-						0,
-						10
-					],
-					[
-						20,
-						10
-					]
-				]
+			"size": [
+				2.8,
+				2.8,
+				3.4
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 18
+				}
 			]
 		},
 		{
-			"id": "read-red",
-			"kind": "box",
-			"at": [
-				118,
-				13,
-				5
-			],
-			"size": [
-				3,
-				18,
-				22
-			],
-			"r": 0,
-			"label": "Red read"
-		},
-		{
-			"id": "read-green",
-			"kind": "box",
-			"at": [
-				152,
-				13,
-				5
-			],
-			"size": [
-				3,
-				18,
-				22
-			],
-			"r": 0,
-			"label": "Green read"
-		},
-		{
-			"id": "read-blue",
-			"kind": "box",
-			"at": [
-				186,
-				13,
-				5
-			],
-			"size": [
-				3,
-				18,
-				22
-			],
-			"r": 0,
-			"label": "Blue read"
-		},
-		{
-			"id": "dial",
+			"id": "slit-collar",
 			"kind": "cylinder",
 			"at": [
-				200,
-				37,
-				5
+				190,
+				22,
+				21.4
+			],
+			"size": [
+				4.5,
+				4.5,
+				3
+			]
+		},
+		{
+			"id": "slit-post",
+			"kind": "cylinder",
+			"at": [
+				190,
+				22,
+				24.4
+			],
+			"size": [
+				2.8,
+				2.8,
+				12
+			]
+		},
+		{
+			"id": "slit-holder",
+			"kind": "cylinder",
+			"at": [
+				190,
+				22,
+				36.4
+			],
+			"size": [
+				4,
+				4,
+				3
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.5
+					]
+				}
+			]
+		},
+		{
+			"id": "slit-plate",
+			"kind": "box",
+			"at": [
+				188,
+				9,
+				39.4
+			],
+			"size": [
+				3,
+				26,
+				36
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.6,
+					"r": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						9,
+						19
+					],
+					"size": [
+						6,
+						24
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						17,
+						19
+					],
+					"size": [
+						6,
+						24
+					],
+					"depth": 0.6
+				}
+			]
+		},
+		{
+			"id": "slit-knob",
+			"kind": "cylinder",
+			"axis": "z",
+			"at": [
+				189.5,
+				12,
+				75.4
+			],
+			"size": [
+				1.8,
+				1.8,
+				3
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 18
+				}
+			]
+		},
+		{
+			"id": "lamp-carriage",
+			"kind": "box",
+			"at": [
+				226,
+				8,
+				11.4
+			],
+			"size": [
+				30,
+				28,
+				12
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							3
+						],
+						[
+							28,
+							3
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 24,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "lamp-screw",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				241,
+				36,
+				17
+			],
+			"size": [
+				2.8,
+				2.8,
+				3.4
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 18
+				}
+			]
+		},
+		{
+			"id": "lamp-post",
+			"kind": "cylinder",
+			"at": [
+				241,
+				22,
+				23.4
+			],
+			"size": [
+				3.4,
+				3.4,
+				22
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3
+					]
+				}
+			]
+		},
+		{
+			"id": "lamp-neck",
+			"kind": "cylinder",
+			"at": [
+				241,
+				22,
+				45.4
 			],
 			"size": [
 				5,
 				5,
-				4
+				3
+			]
+		},
+		{
+			"id": "lamp",
+			"kind": "box",
+			"at": [
+				231,
+				12,
+				48.4
 			],
-			"label": "Spread dial",
-			"marks": [
-				[
-					[
-						0,
-						0
+			"size": [
+				20,
+				20,
+				22
+			],
+			"r": 2,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "circle",
+					"at": [
+						10,
+						12
 					],
-					[
-						4,
-						0
+					"size": 10,
+					"depth": 1.4
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 16,
+					"size": 0.4
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "circle",
+					"at": [
+						17,
+						3
+					],
+					"size": 1.6,
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							3.5,
+							2.5
+						],
+						[
+							16.5,
+							2.5
+						],
+						[
+							16.5,
+							19.5
+						],
+						[
+							3.5,
+							19.5
+						],
+						[
+							3.5,
+							2.5
+						]
 					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.5,
+							4
+						],
+						[
+							15.5,
+							4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.5,
+							5.9
+						],
+						[
+							15.5,
+							5.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.5,
+							7.8
+						],
+						[
+							15.5,
+							7.8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.5,
+							9.7
+						],
+						[
+							15.5,
+							9.7
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.5,
+							11.6
+						],
+						[
+							15.5,
+							11.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.5,
+							13.5
+						],
+						[
+							15.5,
+							13.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.5,
+							15.399999999999999
+						],
+						[
+							15.5,
+							15.399999999999999
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							4.5,
+							17.299999999999997
+						],
+						[
+							15.5,
+							17.299999999999997
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.5,
+						1.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 17,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "lamp-lug",
+			"kind": "box",
+			"at": [
+				229,
+				19,
+				56
+			],
+			"size": [
+				2,
+				6,
+				7
+			],
+			"r": 0.6
+		},
+		{
+			"id": "lamp-collar",
+			"kind": "cylinder",
+			"at": [
+				241,
+				22,
+				70.4
+			],
+			"size": [
+				4.5,
+				4.5,
+				2.5
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.2
+					]
+				}
+			]
+		},
+		{
+			"id": "lamp-cap",
+			"kind": "cylinder",
+			"at": [
+				241,
+				22,
+				72.9
+			],
+			"size": [
+				7.5,
+				7.5,
+				2.4
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1
+					]
+				}
+			]
+		},
+		{
+			"id": "lamp-button",
+			"kind": "cylinder",
+			"at": [
+				241,
+				22,
+				75.3
+			],
+			"size": [
+				2,
+				2,
+				2.2
+			]
+		},
+		{
+			"id": "cable",
+			"kind": "wire",
+			"points": [
+				[
+					251,
+					29,
+					51.4
+				],
+				[
+					252.16,
+					29.17,
+					49.58
+				],
+				[
+					253.25,
+					29.39,
+					47.55
+				],
+				[
+					254.28,
+					29.64,
+					45.36
+				],
+				[
+					255.29,
+					29.93,
+					43.02
+				],
+				[
+					256.28,
+					30.25,
+					40.58
+				],
+				[
+					257.28,
+					30.6,
+					38.06
+				],
+				[
+					258.31,
+					30.98,
+					35.5
+				],
+				[
+					259.38,
+					31.38,
+					32.93
+				],
+				[
+					260.52,
+					31.81,
+					30.37
+				],
+				[
+					261.75,
+					32.25,
+					27.86
+				],
+				[
+					263.08,
+					32.71,
+					25.44
+				],
+				[
+					264.54,
+					33.18,
+					23.13
+				],
+				[
+					266.14,
+					33.65,
+					20.96
+				],
+				[
+					267.9,
+					34.14,
+					18.97
+				],
+				[
+					269.84,
+					34.63,
+					17.19
+				],
+				[
+					271.99,
+					35.11,
+					15.64
+				],
+				[
+					274.36,
+					35.6,
+					14.37
+				],
+				[
+					276.97,
+					36.07,
+					13.4
+				],
+				[
+					279.85,
+					36.54,
+					12.77
+				],
+				[
+					283,
+					37,
+					12.5
 				]
 			]
-		}
-	],
-	"focal": "bevel",
-	"labels": [
-		{
-			"text": "Bevel bends the normal",
-			"target": "bevel",
-			"side": "left"
 		},
 		{
-			"text": "Line card",
-			"target": "card",
-			"side": "left"
-		},
-		{
-			"text": "Red read, 1 d",
-			"target": "read-red",
-			"side": "right",
-			"anchor": [
-				119.5,
-				16,
-				27
+			"id": "switch-box",
+			"kind": "box",
+			"at": [
+				282,
+				30,
+				9
+			],
+			"size": [
+				14,
+				14,
+				7
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "-x",
+					"shape": "circle",
+					"at": [
+						8,
+						3.5
+					],
+					"size": 1.4
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 10,
+					"size": 0.35
+				}
 			]
 		},
 		{
-			"text": "Green read, 2 d",
-			"target": "read-green",
-			"side": "right",
-			"anchor": [
-				153.5,
-				16,
-				27
-			]
+			"id": "switch-btn",
+			"kind": "box",
+			"at": [
+				286,
+				34,
+				16
+			],
+			"size": [
+				6,
+				6,
+				2
+			],
+			"r": 0.8
 		},
 		{
-			"text": "Blue read, 3 d",
-			"target": "read-blue",
-			"side": "right",
-			"anchor": [
-				187.5,
+			"id": "end-stop",
+			"kind": "box",
+			"at": [
+				264,
+				14,
+				11.4
+			],
+			"size": [
+				12,
 				16,
-				27
+				7
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 8,
+					"size": 0.35
+				}
 			]
-		},
-		{
-			"text": "Spread d 0.089",
-			"target": "dial",
-			"side": "right"
 		}
 	],
 	"annotations": [
 		{
-			"kind": "arrow",
+			"kind": "line",
 			"from": [
-				88,
-				22,
-				21
+				106,
+				33,
+				65
 			],
 			"to": [
-				112,
-				22,
-				21
-			]
-		}
-	],
-	"dims": [
+				23.4,
+				28,
+				37
+			],
+			"spectrum": "r",
+			"ends": "dot"
+		},
 		{
+			"kind": "line",
 			"from": [
-				119,
-				44.0,
-				0.0
+				106,
+				33,
+				65
 			],
 			"to": [
-				187,
-				44.0,
-				0.0
+				23.4,
+				28,
+				49
 			],
-			"text": "red–blue 12.7 px",
-			"offset": 50.0
+			"spectrum": "g",
+			"ends": "dot"
+		},
+		{
+			"kind": "line",
+			"from": [
+				106,
+				33,
+				65
+			],
+			"to": [
+				23.4,
+				28,
+				61
+			],
+			"spectrum": "b",
+			"ends": "dot"
+		},
+		{
+			"kind": "line",
+			"from": [
+				106,
+				33,
+				65
+			],
+			"to": [
+				150,
+				33,
+				55
+			],
+			"dash": "dotted",
+			"ends": "dot"
+		},
+		{
+			"kind": "line",
+			"from": [
+				150,
+				33,
+				55
+			],
+			"to": [
+				191,
+				27.29,
+				57.34
+			],
+			"dash": "solid",
+			"ends": "dot"
+		},
+		{
+			"kind": "line",
+			"from": [
+				191,
+				27.29,
+				57.34
+			],
+			"to": [
+				229,
+				22,
+				59.5
+			],
+			"dash": "solid"
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"bench-card",
-				"bench-lens",
-				"bench-red",
-				"bench-green",
-				"bench-blue"
+				"base-lip",
+				"base",
+				"rail"
 			],
 			[
+				"card-carriage",
+				"card-screw",
+				"stage-carriage",
+				"panel",
+				"slit-carriage",
+				"slit-screw",
+				"lamp-carriage",
+				"lamp-screw",
+				"switch-box",
+				"end-stop",
+				"cable"
+			],
+			[
+				"card-clamp",
+				"pillar",
+				"panel-nut",
+				"panel-gauge",
+				"slit-collar",
+				"slit-post",
+				"slit-holder",
+				"lamp-post",
+				"lamp-neck",
+				"switch-btn"
+			],
+			[
+				"card-frame",
+				"card-tab",
 				"card-foot",
-				"mount",
-				"dial"
+				"stage",
+				"stage-scale",
+				"stage-screw-a",
+				"stage-screw-b",
+				"slit-plate",
+				"slit-knob",
+				"lamp",
+				"lamp-lug"
 			],
 			[
 				"card",
-				"read-red",
-				"read-green",
-				"read-blue"
+				"card-rod",
+				"card-cap",
+				"card-handle",
+				"lamp-collar",
+				"lamp-cap",
+				"lamp-button"
+			],
+			[
+				"mark-r",
+				"mark-g",
+				"mark-b",
+				"lead-r",
+				"lead-g",
+				"lead-b",
+				"read-r",
+				"read-g",
+				"read-b"
 			],
 			[
 				"bevel"
@@ -388,9 +1928,318 @@
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 8,
-		"rest": "d 0.089, three reads"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 3,
+		"values": {
+			"d": [
+				0.04,
+				0.08,
+				0.12,
+				0.159,
+				0.2,
+				0.25,
+				0.3
+			],
+			"px": [
+				5.7,
+				11.4,
+				17.1,
+				22.7,
+				28.6,
+				35.7,
+				42.8
+			]
+		},
+		"readout": "d {d:0.001} · red–blue {px:0.1} px   (slide ← → to set the spread)",
+		"states": [
+			{
+				"name": "d 0.04",
+				"parts": {
+					"read-r": {
+						"move": [
+							0,
+							0,
+							8.99
+						]
+					},
+					"mark-r": {
+						"move": [
+							0,
+							0,
+							8.99
+						]
+					},
+					"lead-r": {
+						"move": [
+							0,
+							0,
+							8.99
+						]
+					},
+					"read-b": {
+						"move": [
+							0,
+							0,
+							-8.99
+						]
+					},
+					"mark-b": {
+						"move": [
+							0,
+							0,
+							-8.99
+						]
+					},
+					"lead-b": {
+						"move": [
+							0,
+							0,
+							-8.99
+						]
+					}
+				}
+			},
+			{
+				"name": "d 0.08",
+				"parts": {
+					"read-r": {
+						"move": [
+							0,
+							0,
+							5.97
+						]
+					},
+					"mark-r": {
+						"move": [
+							0,
+							0,
+							5.97
+						]
+					},
+					"lead-r": {
+						"move": [
+							0,
+							0,
+							5.97
+						]
+					},
+					"read-b": {
+						"move": [
+							0,
+							0,
+							-5.97
+						]
+					},
+					"mark-b": {
+						"move": [
+							0,
+							0,
+							-5.97
+						]
+					},
+					"lead-b": {
+						"move": [
+							0,
+							0,
+							-5.97
+						]
+					}
+				}
+			},
+			{
+				"name": "d 0.12",
+				"parts": {
+					"read-r": {
+						"move": [
+							0,
+							0,
+							2.96
+						]
+					},
+					"mark-r": {
+						"move": [
+							0,
+							0,
+							2.96
+						]
+					},
+					"lead-r": {
+						"move": [
+							0,
+							0,
+							2.96
+						]
+					},
+					"read-b": {
+						"move": [
+							0,
+							0,
+							-2.96
+						]
+					},
+					"mark-b": {
+						"move": [
+							0,
+							0,
+							-2.96
+						]
+					},
+					"lead-b": {
+						"move": [
+							0,
+							0,
+							-2.96
+						]
+					}
+				}
+			},
+			{
+				"name": "d 0.159",
+				"parts": {}
+			},
+			{
+				"name": "d 0.2",
+				"parts": {
+					"read-r": {
+						"move": [
+							0,
+							0,
+							-3.12
+						]
+					},
+					"mark-r": {
+						"move": [
+							0,
+							0,
+							-3.12
+						]
+					},
+					"lead-r": {
+						"move": [
+							0,
+							0,
+							-3.12
+						]
+					},
+					"read-b": {
+						"move": [
+							0,
+							0,
+							3.12
+						]
+					},
+					"mark-b": {
+						"move": [
+							0,
+							0,
+							3.12
+						]
+					},
+					"lead-b": {
+						"move": [
+							0,
+							0,
+							3.12
+						]
+					}
+				}
+			},
+			{
+				"name": "d 0.25",
+				"parts": {
+					"read-r": {
+						"move": [
+							0,
+							0,
+							-6.87
+						]
+					},
+					"mark-r": {
+						"move": [
+							0,
+							0,
+							-6.87
+						]
+					},
+					"lead-r": {
+						"move": [
+							0,
+							0,
+							-6.87
+						]
+					},
+					"read-b": {
+						"move": [
+							0,
+							0,
+							6.87
+						]
+					},
+					"mark-b": {
+						"move": [
+							0,
+							0,
+							6.87
+						]
+					},
+					"lead-b": {
+						"move": [
+							0,
+							0,
+							6.87
+						]
+					}
+				}
+			},
+			{
+				"name": "d 0.3",
+				"parts": {
+					"read-r": {
+						"move": [
+							0,
+							0,
+							-10.63
+						]
+					},
+					"mark-r": {
+						"move": [
+							0,
+							0,
+							-10.63
+						]
+					},
+					"lead-r": {
+						"move": [
+							0,
+							0,
+							-10.63
+						]
+					},
+					"read-b": {
+						"move": [
+							0,
+							0,
+							10.63
+						]
+					},
+					"mark-b": {
+						"move": [
+							0,
+							0,
+							10.63
+						]
+					},
+					"lead-b": {
+						"move": [
+							0,
+							0,
+							10.63
+						]
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ DISPERSION ]",

@@ -1,0 +1,39 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "td-cpu",
+	"figId": "FIG_203",
+	"title": "Teardown of a CPU in its socket",
+	"label": "A desktop CPU and socket taken apart upward: motherboard with chokes, socket frame and pin field, the package substrate with its die and capacitors, thermal paste, the heat spreader and the retention lid with its lever. The die is accented.",
+	"caption": "The die is a sliver on a much larger substrate; everything above it exists to spread its heat, everything below to fan its pins out to the board.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "board", "kind": "slab", "at": [0, 0, 0], "size": [150, 130, 2.4], "r": 3, "label": "Motherboard", "detail": [{ "type": "recess", "face": "top", "shape": "circle", "at": [8, 8], "size": [7, 7] }, { "type": "recess", "face": "top", "shape": "circle", "at": [142, 8], "size": [7, 7] }, { "type": "recess", "face": "top", "shape": "circle", "at": [8, 122], "size": [7, 7] }, { "type": "recess", "face": "top", "shape": "circle", "at": [142, 122], "size": [7, 7] }, { "type": "line", "face": "top", "points": [[20, 20], [40, 26], [50, 22], [62, 30]] }, { "type": "line", "face": "top", "points": [[20, 28], [40, 34], [50, 30], [62, 38]] }, { "type": "line", "face": "top", "points": [[20, 36], [40, 42], [50, 38], [62, 46]] }] },
+		{ "id": "choke", "kind": "box", "at": [30, 104, 2.4], "size": [11, 11, 9], "r": 1.2, "label": "Power chokes", "repeat": { "linear": { "count": 4, "step": [14, 0, 0] } } },
+		{ "id": "smd", "kind": "box", "at": [118, 30, 2.4], "size": [3, 2, 1.2], "r": 0.3, "label": "Board capacitors", "repeat": { "linear": { "count": 6, "step": [0, 7, 0] } } },
+		{ "id": "socket", "kind": "tray", "at": [40, 30, 2.4], "size": [70, 64, 6], "r": 2, "label": "Socket frame", "detail": [{ "type": "dots", "face": "top", "at": [8, 8], "grid": [27, 24], "gap": 2, "size": 0.25 }] },
+		{ "id": "socket-key", "kind": "box", "at": [112, 86, 2.4], "size": [3, 4, 7], "r": 0.4, "label": "Socket key" },
+		{ "id": "substrate", "kind": "slab", "at": [43, 33, 4.4], "size": [64, 58, 1.4], "r": 1, "label": "Package substrate" },
+		{ "id": "cap", "kind": "box", "at": [48, 37, 5.8], "size": [2.4, 1.4, 1], "r": 0.2, "label": "Package capacitors", "repeat": { "linear": { "count": 14, "step": [3.9, 0, 0] } } },
+		{ "id": "cap-top", "kind": "box", "at": [48, 86, 5.8], "size": [2.4, 1.4, 1], "r": 0.2, "label": "Package capacitors, far row", "repeat": { "linear": { "count": 14, "step": [3.9, 0, 0] } } },
+		{ "id": "die", "kind": "box", "at": [62, 50, 5.8], "size": [26, 22, 1], "r": 0.4, "label": "Die", "detail": [{ "type": "line", "face": "top", "points": [[0, 11], [26, 11]] }, { "type": "line", "face": "top", "points": [[6.5, 0], [6.5, 22]] }, { "type": "line", "face": "top", "points": [[13, 0], [13, 22]] }, { "type": "line", "face": "top", "points": [[19.5, 0], [19.5, 22]] }] },
+		{ "id": "paste", "kind": "slab", "at": [64, 52, 6.8], "size": [22, 18, 0.5], "r": 6, "label": "Thermal paste" },
+		{ "id": "ihs", "kind": "slab", "at": [46, 38, 7.3], "size": [58, 48, 3.2], "r": 3, "label": "Heat spreader", "detail": [{ "type": "inset", "face": "top", "by": 6, "r": 4 }, { "type": "text", "face": "top", "at": [29, 18], "text": "CPU · 8C/16T", "size": 3, "anchor": "middle" }] },
+		{ "id": "lid", "kind": "tray", "at": [36, 26, 10.5], "size": [78, 72, 1.6], "r": 2, "label": "Retention lid", "explode": [0, 0, 180] },
+		{ "id": "lever", "kind": "rod", "from": [116, 26, 11.5], "to": [116, 98, 11.5], "radius": 1.1, "label": "Retention lever", "explode": [0, 0, 180] },
+		{ "id": "lever-handle", "kind": "rod", "from": [116, 98, 11.5], "to": [128, 106, 11.5], "radius": 1.1, "label": "Lever handle", "explode": [0, 0, 180] }
+	],
+	"focal": "die",
+	"labels": [
+		{ "text": "Retention lid", "target": "lid", "side": "left" },
+		{ "text": "Retention lever", "target": "lever-handle", "side": "right", "anchor": [126, 104.7, 12.6] },
+		{ "text": "Heat spreader", "target": "ihs", "side": "right" },
+		{ "text": "Thermal paste", "target": "paste", "side": "left" },
+		{ "text": "Die", "target": "die", "side": "right" },
+		{ "text": "Package substrate", "target": "substrate", "side": "left" },
+		{ "text": "Socket frame", "target": "socket", "side": "right" },
+		{ "text": "Power chokes", "target": "choke", "side": "left" },
+		{ "text": "Motherboard", "target": "board", "side": "left" }
+	],
+	"assemble": { "layers": [["board", "choke", "smd"], ["socket", "socket-key"], ["substrate", "cap", "cap-top"], ["die"], ["paste"], ["ihs"], ["lid", "lever", "lever-handle"]] },
+	"interact": { "behavior": "teardown", "teardown": { "gap": 30 } }
+}

@@ -1,0 +1,34 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "td-pixels",
+	"figId": "FIG_205",
+	"title": "Teardown of display pixels",
+	"label": "An LCD patch taken apart: backlight, rear polariser, transistor grid, liquid crystal, black matrix, red, green and blue filters, and cover glass. The green filter is accented.",
+	"caption": "A pixel is three shutters stacked over one light: each subpixel lets through only its own colour, and the black matrix hides the wiring between them.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "backlight", "kind": "slab", "at": [0, 0, 0], "size": [72, 72, 4], "r": 2, "label": "Backlight", "detail": [{ "type": "dots", "face": "top", "at": [6, 6], "grid": [7, 7], "gap": 10, "size": 1.2 }] },
+		{ "id": "polariser", "kind": "plate", "at": [0, 0, 4.4], "size": [72, 72, 0.8], "r": 2, "label": "Rear polariser", "detail": [{ "type": "hatch", "face": "top", "spacing": 3, "angle": 0 }] },
+		{ "id": "tft", "kind": "plate", "at": [0, 0, 5.6], "size": [72, 72, 1.2], "r": 2, "label": "Transistor grid", "detail": [{ "type": "line", "face": "top", "points": [[24, 0], [24, 72]] }, { "type": "line", "face": "top", "points": [[48, 0], [48, 72]] }, { "type": "line", "face": "top", "points": [[0, 24], [72, 24]] }, { "type": "line", "face": "top", "points": [[0, 48], [72, 48]] }, { "type": "recess", "face": "top", "shape": "rect", "at": [2, 2], "size": [5, 5] }, { "type": "recess", "face": "top", "shape": "rect", "at": [26, 2], "size": [5, 5] }, { "type": "recess", "face": "top", "shape": "rect", "at": [50, 2], "size": [5, 5] }] },
+		{ "id": "crystal", "kind": "slab", "at": [0, 0, 7.2], "size": [72, 72, 2], "r": 2, "tone": "glass", "label": "Liquid crystal" },
+		{ "id": "matrix", "kind": "tray", "at": [0, 0, 9.6], "size": [72, 72, 1.6], "r": 2, "dividers": { "x": [24, 48] }, "tone": "ink", "label": "Black matrix" },
+		{ "id": "filter-r", "kind": "slab", "at": [2, 2, 11.6], "size": [20, 68, 1.2], "r": 1, "label": "Red filter", "detail": [{ "type": "text", "face": "top", "at": [10, 34], "text": "R", "size": 5, "anchor": "middle" }] },
+		{ "id": "filter-g", "kind": "slab", "at": [26, 2, 11.6], "size": [20, 68, 1.2], "r": 1, "label": "Green filter", "detail": [{ "type": "text", "face": "top", "at": [10, 34], "text": "G", "size": 5, "anchor": "middle" }] },
+		{ "id": "filter-b", "kind": "slab", "at": [50, 2, 11.6], "size": [20, 68, 1.2], "r": 1, "label": "Blue filter", "detail": [{ "type": "text", "face": "top", "at": [10, 34], "text": "B", "size": 5, "anchor": "middle" }] },
+		{ "id": "glass", "kind": "slab", "at": [0, 0, 13.2], "size": [72, 72, 2], "r": 2, "tone": "glass", "label": "Cover glass" }
+	],
+	"focal": "filter-g",
+	"labels": [
+		{ "text": "Cover glass", "target": "glass", "side": "right" },
+		{ "text": "Green filter", "target": "filter-g", "side": "right" },
+		{ "text": "Red filter", "target": "filter-r", "side": "left" },
+		{ "text": "Blue filter", "target": "filter-b", "side": "right" },
+		{ "text": "Black matrix", "target": "matrix", "side": "left" },
+		{ "text": "Liquid crystal", "target": "crystal", "side": "right" },
+		{ "text": "Transistor grid", "target": "tft", "side": "left" },
+		{ "text": "Rear polariser", "target": "polariser", "side": "right" },
+		{ "text": "Backlight", "target": "backlight", "side": "left" }
+	],
+	"assemble": { "layers": [["backlight"], ["polariser"], ["tft"], ["crystal"], ["matrix"], ["filter-r", "filter-g", "filter-b"], ["glass"]] },
+	"interact": { "behavior": "teardown", "teardown": { "gap": 18 } }
+}

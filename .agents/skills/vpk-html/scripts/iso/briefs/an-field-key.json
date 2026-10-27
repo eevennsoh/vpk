@@ -3,237 +3,2407 @@
 	"id": "an-field-key",
 	"figId": "FIG_241",
 	"title": "A cache key as a pin lock",
-	"label": "Dimetric pin lock cut open: a housing with a shear line, five pins in its top, a key slid in from the right and a draw counter in front. One accented pin stands proud. Hover or arrow keys lift one part.",
-	"caption": "The stage keeps last frame's key; while every cut still matches, every pin sits at the shear line, the lock turns and nothing is drawn. Change one setting and its pin stands proud, the lock jams and the whole frame redraws.",
+	"label": "Pin-tumbler lock cut open on a footed base: eight pin stacks (spring, driver, pointed key pin) stand in the V cuts of a zigzag key blade, split at a dashed shear line; towers, hex-bolted brackets, face plate, fieldKey bow, draw counter.",
+	"caption": "A pin-tumbler lock cut open. The key has one cut per shape setting, and the cache only opens when every cut still matches the last frame's: change one and its pin rides past the shear line, the lock jams and the frame redraws.",
 	"camera": {
 		"preset": "dimetric",
 		"scale": "fit"
 	},
+	"focal": "blade",
+	"labels": "none",
 	"parts": [
 		{
-			"id": "counter",
-			"kind": "box",
+			"id": "foot-1",
+			"kind": "cylinder",
 			"at": [
-				20,
-				40,
+				6,
+				6,
 				0
 			],
 			"size": [
-				52,
-				7,
-				3
-			],
-			"r": 1,
-			"label": "Draw counter",
-			"marks": [
-				[
-					[
-						4,
-						1
-					],
-					[
-						48,
-						1
-					]
-				]
+				2,
+				2,
+				1.5
 			]
 		},
 		{
-			"id": "housing",
-			"kind": "box",
+			"id": "foot-2",
+			"kind": "cylinder",
 			"at": [
-				10,
-				12,
+				110,
+				6,
 				0
 			],
 			"size": [
-				70,
-				20,
-				24
-			],
-			"r": 3,
-			"label": "Lock housing",
-			"marks": [
-				[
-					[
-						0,
-						14
-					],
-					[
-						70,
-						14
-					]
-				]
+				2,
+				2,
+				1.5
 			]
 		},
 		{
-			"id": "pin-1",
+			"id": "foot-3",
 			"kind": "cylinder",
 			"at": [
-				27,
-				29,
-				24
+				6,
+				36,
+				0
 			],
 			"size": [
-				3,
-				3,
-				8
-			],
-			"label": "Pin"
+				2,
+				2,
+				1.5
+			]
 		},
 		{
-			"id": "pin-2",
+			"id": "foot-4",
 			"kind": "cylinder",
 			"at": [
-				38,
-				29,
-				24
+				110,
+				36,
+				0
 			],
 			"size": [
-				3,
-				3,
-				8
-			],
-			"label": "Pin"
+				2,
+				2,
+				1.5
+			]
 		},
 		{
-			"id": "pin-3",
-			"kind": "cylinder",
+			"id": "base",
+			"kind": "slab",
 			"at": [
-				49,
-				29,
-				24
+				0,
+				0,
+				1.5
 			],
 			"size": [
-				3,
-				3,
-				16
+				116,
+				42,
+				3.5
 			],
-			"label": "Changed pin"
+			"r": 4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3.6,
+						3.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						112.4,
+						3.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3.6,
+						38.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						112.4,
+						38.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							3,
+							1.5
+						],
+						[
+							113,
+							1.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							3,
+							1.5
+						],
+						[
+							39,
+							1.5
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "pin-4",
-			"kind": "cylinder",
-			"at": [
-				60,
-				29,
-				24
-			],
-			"size": [
-				3,
-				3,
-				8
-			],
-			"label": "Pin"
-		},
-		{
-			"id": "pin-5",
-			"kind": "cylinder",
-			"at": [
-				71,
-				29,
-				24
-			],
-			"size": [
-				3,
-				3,
-				8
-			],
-			"label": "Pin"
-		},
-		{
-			"id": "blade",
+			"id": "plinth-left",
 			"kind": "box",
 			"at": [
-				80,
-				20,
-				9
-			],
-			"size": [
-				12,
-				4,
-				6
-			],
-			"r": 1,
-			"label": "Key blade"
-		},
-		{
-			"id": "bow",
-			"kind": "box",
-			"at": [
-				92,
-				16,
+				9,
+				6,
 				5
 			],
 			"size": [
-				8,
-				12,
-				14
+				14,
+				14,
+				1.6
 			],
-			"r": 4,
-			"label": "Key bow"
-		}
-	],
-	"focal": "pin-3",
-	"labels": [
-		{
-			"text": "Changed pin",
-			"target": "pin-3",
-			"side": "left"
+			"r": 0.6
 		},
 		{
-			"text": "Matching pins",
-			"target": "pin-1",
-			"side": "left"
-		},
-		{
-			"text": "Shear line",
-			"target": "housing",
-			"side": "left",
-			"anchor": [
-				16,
-				32,
-				24
+			"id": "tower-left",
+			"kind": "box",
+			"at": [
+				10,
+				7,
+				6.6
+			],
+			"size": [
+				12,
+				12,
+				36.4
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							22
+						],
+						[
+							10,
+							22
+						],
+						[
+							10,
+							33.5
+						],
+						[
+							2,
+							33.5
+						],
+						[
+							2,
+							22
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							22
+						],
+						[
+							10,
+							22
+						],
+						[
+							10,
+							33.5
+						],
+						[
+							2,
+							33.5
+						],
+						[
+							2,
+							22
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.5,
+						2.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						9.5,
+						9.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				}
 			]
 		},
 		{
-			"text": "Draw counter",
-			"target": "counter",
-			"side": "left"
+			"id": "plinth-right",
+			"kind": "box",
+			"at": [
+				83,
+				6,
+				5
+			],
+			"size": [
+				14,
+				14,
+				1.6
+			],
+			"r": 0.6
 		},
 		{
-			"text": "Key, last frame",
-			"target": "bow",
-			"side": "right"
+			"id": "tower-right",
+			"kind": "box",
+			"at": [
+				84,
+				7,
+				6.6
+			],
+			"size": [
+				12,
+				12,
+				36.4
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							22
+						],
+						[
+							10,
+							22
+						],
+						[
+							10,
+							33.5
+						],
+						[
+							2,
+							33.5
+						],
+						[
+							2,
+							22
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							22
+						],
+						[
+							10,
+							22
+						],
+						[
+							10,
+							33.5
+						],
+						[
+							2,
+							33.5
+						],
+						[
+							2,
+							22
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.5,
+						2.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						9.5,
+						9.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "drum-left",
+			"kind": "lathe",
+			"axis": "x",
+			"at": [
+				5,
+				13.4,
+				17.5
+			],
+			"profile": [
+				[
+					0,
+					8.7
+				],
+				[
+					0.8,
+					9.5
+				],
+				[
+					5,
+					9.5
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						0.8
+					]
+				}
+			]
+		},
+		{
+			"id": "tail-left",
+			"kind": "box",
+			"at": [
+				1.5,
+				9.9,
+				20.5
+			],
+			"size": [
+				3.5,
+				7,
+				5
+			],
+			"r": 0.5
+		},
+		{
+			"id": "plugface-left",
+			"kind": "lathe",
+			"axis": "x",
+			"at": [
+				22,
+				13.4,
+				17.5
+			],
+			"profile": [
+				[
+					0,
+					8.5
+				],
+				[
+					1.6,
+					8.5
+				],
+				[
+					1.6,
+					7
+				],
+				[
+					2.2,
+					7
+				]
+			]
+		},
+		{
+			"id": "drum-right",
+			"kind": "lathe",
+			"axis": "x",
+			"at": [
+				96,
+				13.4,
+				17.5
+			],
+			"profile": [
+				[
+					0,
+					9.5
+				],
+				[
+					4.2,
+					9.5
+				],
+				[
+					5,
+					8.7
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						4.2
+					]
+				}
+			]
+		},
+		{
+			"id": "faceplate",
+			"kind": "lathe",
+			"axis": "x",
+			"at": [
+				101,
+				13.4,
+				17.5
+			],
+			"profile": [
+				[
+					0,
+					8.6
+				],
+				[
+					1.4,
+					8.6
+				],
+				[
+					1.8,
+					7.6
+				],
+				[
+					2.6,
+					7.6
+				]
+			]
+		},
+		{
+			"id": "facering",
+			"kind": "ring",
+			"axis": "x",
+			"at": [
+				102.65,
+				13.4,
+				17.5
+			],
+			"size": [
+				7.6,
+				7.6,
+				0
+			],
+			"thickness": 0.9,
+			"inner": 6.9
+		},
+		{
+			"id": "wall",
+			"kind": "box",
+			"at": [
+				22,
+				7,
+				5
+			],
+			"size": [
+				62,
+				3.5,
+				36
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1,
+							13.5
+						],
+						[
+							61,
+							13.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "plug",
+			"kind": "box",
+			"axis": "x",
+			"at": [
+				22,
+				10.5,
+				5
+			],
+			"size": [
+				10.5,
+				11,
+				62
+			],
+			"r": 2.4
+		},
+		{
+			"id": "plug-lip",
+			"kind": "box",
+			"at": [
+				22,
+				18.8,
+				5
+			],
+			"size": [
+				62,
+				2.2,
+				3.4
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "+y",
+					"from": [
+						4,
+						1.7
+					],
+					"to": [
+						58,
+						1.7
+					],
+					"step": 7,
+					"lengths": [
+						1,
+						1
+					]
+				}
+			]
+		},
+		{
+			"id": "blade",
+			"kind": "prism",
+			"axis": "-y",
+			"at": [
+				22,
+				15.200000000000001,
+				15
+			],
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					62,
+					0
+				],
+				[
+					62,
+					4.8
+				],
+				[
+					58,
+					7.2
+				],
+				[
+					52.1,
+					6.5
+				],
+				[
+					48.6,
+					7.2
+				],
+				[
+					45.3,
+					3
+				],
+				[
+					41.8,
+					7.2
+				],
+				[
+					38.5,
+					5.5
+				],
+				[
+					35,
+					7.2
+				],
+				[
+					31.7,
+					2.5
+				],
+				[
+					28.2,
+					7.2
+				],
+				[
+					24.9,
+					4
+				],
+				[
+					21.4,
+					7.2
+				],
+				[
+					18.1,
+					6
+				],
+				[
+					14.6,
+					7.2
+				],
+				[
+					11.3,
+					3.5
+				],
+				[
+					7.8,
+					7.2
+				],
+				[
+					4.5,
+					5
+				],
+				[
+					3,
+					7.2
+				],
+				[
+					3,
+					8.6
+				],
+				[
+					0.6,
+					8.6
+				],
+				[
+					0,
+					8
+				]
+			],
+			"depth": 1.8
+		},
+		{
+			"id": "keypin-1",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				26.5,
+				13.4,
+				20
+			],
+			"profile": [
+				[
+					0,
+					0.12
+				],
+				[
+					1.1,
+					1.55
+				],
+				[
+					7,
+					1.55
+				]
+			],
+			"state": "new"
+		},
+		{
+			"id": "driver-1",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				26.5,
+				13.4,
+				27
+			],
+			"profile": [
+				[
+					0,
+					1.55
+				],
+				[
+					0.25,
+					1.75
+				],
+				[
+					5.5,
+					1.75
+				]
+			]
+		},
+		{
+			"id": "spring-1",
+			"kind": "spring",
+			"from": [
+				26.5,
+				13.4,
+				32.5
+			],
+			"to": [
+				26.5,
+				13.4,
+				38
+			],
+			"radius": 1.45,
+			"wire": 0.26,
+			"turns": 8,
+			"variants": {
+				"comp": {
+					"from": [
+						26.5,
+						13.4,
+						35.5
+					]
+				}
+			}
+		},
+		{
+			"id": "cap-1",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				26.5,
+				13.4,
+				38
+			],
+			"profile": [
+				[
+					0,
+					1.85
+				],
+				[
+					1.4,
+					1.85
+				],
+				[
+					1.8,
+					1.5
+				]
+			]
+		},
+		{
+			"id": "keypin-2",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				33.3,
+				13.4,
+				18.5
+			],
+			"profile": [
+				[
+					0,
+					0.12
+				],
+				[
+					1.1,
+					1.55
+				],
+				[
+					8.5,
+					1.55
+				]
+			],
+			"state": "new"
+		},
+		{
+			"id": "driver-2",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				33.3,
+				13.4,
+				27
+			],
+			"profile": [
+				[
+					0,
+					1.55
+				],
+				[
+					0.25,
+					1.75
+				],
+				[
+					5.5,
+					1.75
+				]
+			]
+		},
+		{
+			"id": "spring-2",
+			"kind": "spring",
+			"from": [
+				33.3,
+				13.4,
+				32.5
+			],
+			"to": [
+				33.3,
+				13.4,
+				38
+			],
+			"radius": 1.45,
+			"wire": 0.26,
+			"turns": 8,
+			"variants": {
+				"comp": {
+					"from": [
+						33.3,
+						13.4,
+						35.5
+					]
+				}
+			}
+		},
+		{
+			"id": "cap-2",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				33.3,
+				13.4,
+				38
+			],
+			"profile": [
+				[
+					0,
+					1.85
+				],
+				[
+					1.4,
+					1.85
+				],
+				[
+					1.8,
+					1.5
+				]
+			]
+		},
+		{
+			"id": "keypin-3",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				40.1,
+				13.4,
+				21
+			],
+			"profile": [
+				[
+					0,
+					0.12
+				],
+				[
+					1.1,
+					1.55
+				],
+				[
+					6,
+					1.55
+				]
+			],
+			"state": "new"
+		},
+		{
+			"id": "driver-3",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				40.1,
+				13.4,
+				27
+			],
+			"profile": [
+				[
+					0,
+					1.55
+				],
+				[
+					0.25,
+					1.75
+				],
+				[
+					5.5,
+					1.75
+				]
+			]
+		},
+		{
+			"id": "spring-3",
+			"kind": "spring",
+			"from": [
+				40.1,
+				13.4,
+				32.5
+			],
+			"to": [
+				40.1,
+				13.4,
+				38
+			],
+			"radius": 1.45,
+			"wire": 0.26,
+			"turns": 8,
+			"variants": {
+				"comp": {
+					"from": [
+						40.1,
+						13.4,
+						35.5
+					]
+				}
+			}
+		},
+		{
+			"id": "cap-3",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				40.1,
+				13.4,
+				38
+			],
+			"profile": [
+				[
+					0,
+					1.85
+				],
+				[
+					1.4,
+					1.85
+				],
+				[
+					1.8,
+					1.5
+				]
+			]
+		},
+		{
+			"id": "keypin-4",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				46.9,
+				13.4,
+				19
+			],
+			"profile": [
+				[
+					0,
+					0.12
+				],
+				[
+					1.1,
+					1.55
+				],
+				[
+					8,
+					1.55
+				]
+			],
+			"state": "new"
+		},
+		{
+			"id": "driver-4",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				46.9,
+				13.4,
+				27
+			],
+			"profile": [
+				[
+					0,
+					1.55
+				],
+				[
+					0.25,
+					1.75
+				],
+				[
+					5.5,
+					1.75
+				]
+			]
+		},
+		{
+			"id": "spring-4",
+			"kind": "spring",
+			"from": [
+				46.9,
+				13.4,
+				32.5
+			],
+			"to": [
+				46.9,
+				13.4,
+				38
+			],
+			"radius": 1.45,
+			"wire": 0.26,
+			"turns": 8,
+			"variants": {
+				"comp": {
+					"from": [
+						46.9,
+						13.4,
+						35.5
+					]
+				}
+			}
+		},
+		{
+			"id": "cap-4",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				46.9,
+				13.4,
+				38
+			],
+			"profile": [
+				[
+					0,
+					1.85
+				],
+				[
+					1.4,
+					1.85
+				],
+				[
+					1.8,
+					1.5
+				]
+			]
+		},
+		{
+			"id": "keypin-5",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				53.7,
+				13.4,
+				17.5
+			],
+			"profile": [
+				[
+					0,
+					0.12
+				],
+				[
+					1.1,
+					1.55
+				],
+				[
+					9.5,
+					1.55
+				]
+			],
+			"state": "new"
+		},
+		{
+			"id": "driver-5",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				53.7,
+				13.4,
+				27
+			],
+			"profile": [
+				[
+					0,
+					1.55
+				],
+				[
+					0.25,
+					1.75
+				],
+				[
+					5.5,
+					1.75
+				]
+			]
+		},
+		{
+			"id": "spring-5",
+			"kind": "spring",
+			"from": [
+				53.7,
+				13.4,
+				32.5
+			],
+			"to": [
+				53.7,
+				13.4,
+				38
+			],
+			"radius": 1.45,
+			"wire": 0.26,
+			"turns": 8,
+			"variants": {
+				"comp": {
+					"from": [
+						53.7,
+						13.4,
+						35.5
+					]
+				}
+			}
+		},
+		{
+			"id": "cap-5",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				53.7,
+				13.4,
+				38
+			],
+			"profile": [
+				[
+					0,
+					1.85
+				],
+				[
+					1.4,
+					1.85
+				],
+				[
+					1.8,
+					1.5
+				]
+			]
+		},
+		{
+			"id": "keypin-6",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				60.5,
+				13.4,
+				20.5
+			],
+			"profile": [
+				[
+					0,
+					0.12
+				],
+				[
+					1.1,
+					1.55
+				],
+				[
+					6.5,
+					1.55
+				]
+			],
+			"state": "new"
+		},
+		{
+			"id": "driver-6",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				60.5,
+				13.4,
+				27
+			],
+			"profile": [
+				[
+					0,
+					1.55
+				],
+				[
+					0.25,
+					1.75
+				],
+				[
+					5.5,
+					1.75
+				]
+			]
+		},
+		{
+			"id": "spring-6",
+			"kind": "spring",
+			"from": [
+				60.5,
+				13.4,
+				32.5
+			],
+			"to": [
+				60.5,
+				13.4,
+				38
+			],
+			"radius": 1.45,
+			"wire": 0.26,
+			"turns": 8,
+			"variants": {
+				"comp": {
+					"from": [
+						60.5,
+						13.4,
+						35.5
+					]
+				}
+			}
+		},
+		{
+			"id": "cap-6",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				60.5,
+				13.4,
+				38
+			],
+			"profile": [
+				[
+					0,
+					1.85
+				],
+				[
+					1.4,
+					1.85
+				],
+				[
+					1.8,
+					1.5
+				]
+			]
+		},
+		{
+			"id": "keypin-7",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				67.3,
+				13.4,
+				18
+			],
+			"profile": [
+				[
+					0,
+					0.12
+				],
+				[
+					1.1,
+					1.55
+				],
+				[
+					9,
+					1.55
+				]
+			],
+			"state": "new"
+		},
+		{
+			"id": "driver-7",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				67.3,
+				13.4,
+				27
+			],
+			"profile": [
+				[
+					0,
+					1.55
+				],
+				[
+					0.25,
+					1.75
+				],
+				[
+					5.5,
+					1.75
+				]
+			]
+		},
+		{
+			"id": "spring-7",
+			"kind": "spring",
+			"from": [
+				67.3,
+				13.4,
+				32.5
+			],
+			"to": [
+				67.3,
+				13.4,
+				38
+			],
+			"radius": 1.45,
+			"wire": 0.26,
+			"turns": 8,
+			"variants": {
+				"comp": {
+					"from": [
+						67.3,
+						13.4,
+						35.5
+					]
+				}
+			}
+		},
+		{
+			"id": "cap-7",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				67.3,
+				13.4,
+				38
+			],
+			"profile": [
+				[
+					0,
+					1.85
+				],
+				[
+					1.4,
+					1.85
+				],
+				[
+					1.8,
+					1.5
+				]
+			]
+		},
+		{
+			"id": "keypin-8",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				74.1,
+				13.4,
+				21.5
+			],
+			"profile": [
+				[
+					0,
+					0.12
+				],
+				[
+					1.1,
+					1.55
+				],
+				[
+					5.5,
+					1.55
+				]
+			],
+			"state": "new"
+		},
+		{
+			"id": "driver-8",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				74.1,
+				13.4,
+				27
+			],
+			"profile": [
+				[
+					0,
+					1.55
+				],
+				[
+					0.25,
+					1.75
+				],
+				[
+					5.5,
+					1.75
+				]
+			]
+		},
+		{
+			"id": "spring-8",
+			"kind": "spring",
+			"from": [
+				74.1,
+				13.4,
+				32.5
+			],
+			"to": [
+				74.1,
+				13.4,
+				38
+			],
+			"radius": 1.45,
+			"wire": 0.26,
+			"turns": 8,
+			"variants": {
+				"comp": {
+					"from": [
+						74.1,
+						13.4,
+						35.5
+					]
+				}
+			}
+		},
+		{
+			"id": "cap-8",
+			"kind": "lathe",
+			"axis": "z",
+			"at": [
+				74.1,
+				13.4,
+				38
+			],
+			"profile": [
+				[
+					0,
+					1.85
+				],
+				[
+					1.4,
+					1.85
+				],
+				[
+					1.8,
+					1.5
+				]
+			]
+		},
+		{
+			"id": "bracket-left",
+			"kind": "box",
+			"at": [
+				13,
+				23.2,
+				5
+			],
+			"size": [
+				6,
+				2.2,
+				20
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.3,
+						2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						4.7,
+						2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "washer-left",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				16,
+				25.4,
+				21.5
+			],
+			"size": [
+				1.7,
+				1.7,
+				0.4
+			]
+		},
+		{
+			"id": "bolt-left",
+			"kind": "prism",
+			"axis": "y",
+			"at": [
+				16,
+				25.8,
+				21.5
+			],
+			"polygon": [
+				[
+					1.17,
+					0.68
+				],
+				[
+					0,
+					1.35
+				],
+				[
+					-1.17,
+					0.68
+				],
+				[
+					-1.17,
+					-0.67
+				],
+				[
+					0,
+					-1.35
+				],
+				[
+					1.17,
+					-0.67
+				]
+			],
+			"depth": 1.1,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.35,
+						1.17
+					],
+					"size": [
+						1.2,
+						1.2
+					],
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "bracket-right",
+			"kind": "box",
+			"at": [
+				87,
+				23.2,
+				5
+			],
+			"size": [
+				6,
+				2.2,
+				20
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.3,
+						2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						4.7,
+						2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "washer-right",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				90,
+				25.4,
+				21.5
+			],
+			"size": [
+				1.7,
+				1.7,
+				0.4
+			]
+		},
+		{
+			"id": "bolt-right",
+			"kind": "prism",
+			"axis": "y",
+			"at": [
+				90,
+				25.8,
+				21.5
+			],
+			"polygon": [
+				[
+					1.17,
+					0.68
+				],
+				[
+					0,
+					1.35
+				],
+				[
+					-1.17,
+					0.68
+				],
+				[
+					-1.17,
+					-0.67
+				],
+				[
+					0,
+					-1.35
+				],
+				[
+					1.17,
+					-0.67
+				]
+			],
+			"depth": 1.1,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						1.35,
+						1.17
+					],
+					"size": [
+						1.2,
+						1.2
+					],
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "shank",
+			"kind": "box",
+			"at": [
+				103.6,
+				11.8,
+				14
+			],
+			"size": [
+				4.4,
+				3.2,
+				7
+			],
+			"r": 0.6
+		},
+		{
+			"id": "bow",
+			"kind": "prism",
+			"axis": "x",
+			"at": [
+				108,
+				13.9,
+				16.7
+			],
+			"depth": 2.4,
+			"polygon": [
+				[
+					9.2,
+					0
+				],
+				[
+					9.14,
+					3
+				],
+				[
+					8.95,
+					4.37
+				],
+				[
+					8.63,
+					5.42
+				],
+				[
+					8.18,
+					6.25
+				],
+				[
+					7.59,
+					6.93
+				],
+				[
+					6.85,
+					7.47
+				],
+				[
+					5.93,
+					7.88
+				],
+				[
+					4.79,
+					8.17
+				],
+				[
+					3.28,
+					8.34
+				],
+				[
+					0,
+					8.4
+				],
+				[
+					-2.09,
+					8.32
+				],
+				[
+					-3.6,
+					8.07
+				],
+				[
+					-4.89,
+					7.66
+				],
+				[
+					-6.01,
+					7.09
+				],
+				[
+					-6.97,
+					6.37
+				],
+				[
+					-7.77,
+					5.49
+				],
+				[
+					-8.39,
+					4.47
+				],
+				[
+					-8.84,
+					3.28
+				],
+				[
+					-9.11,
+					1.9
+				],
+				[
+					-9.2,
+					0
+				],
+				[
+					-9.11,
+					-1.9
+				],
+				[
+					-8.84,
+					-3.28
+				],
+				[
+					-8.39,
+					-4.47
+				],
+				[
+					-7.77,
+					-5.49
+				],
+				[
+					-6.97,
+					-6.37
+				],
+				[
+					-6.01,
+					-7.09
+				],
+				[
+					-4.89,
+					-7.66
+				],
+				[
+					-3.6,
+					-8.07
+				],
+				[
+					-2.09,
+					-8.32
+				],
+				[
+					0,
+					-8.4
+				],
+				[
+					2.09,
+					-8.32
+				],
+				[
+					3.6,
+					-8.07
+				],
+				[
+					4.89,
+					-7.66
+				],
+				[
+					6.01,
+					-7.09
+				],
+				[
+					6.97,
+					-6.37
+				],
+				[
+					7.77,
+					-5.49
+				],
+				[
+					8.39,
+					-4.47
+				],
+				[
+					8.84,
+					-3.28
+				],
+				[
+					9.11,
+					-1.9
+				]
+			],
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						3.6,
+						11.3
+					],
+					"size": [
+						4.6,
+						4.6
+					],
+					"depth": 1.2
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						11.6,
+						5
+					],
+					"text": "fieldKey",
+					"size": 2,
+					"anchor": "middle"
+				}
+			]
+		},
+		{
+			"id": "counter",
+			"kind": "plate",
+			"at": [
+				28,
+				29.5,
+				5
+			],
+			"size": [
+				54,
+				5.6,
+				1.2
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						3.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.5
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6.8,
+						3.2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.5
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						9.6,
+						2.8
+					],
+					"grid": [
+						16,
+						1
+					],
+					"gap": 1.15,
+					"size": 0.32
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						30.2,
+						2.8
+					],
+					"grid": [
+						16,
+						1
+					],
+					"gap": 1.15,
+					"size": 0.32
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							9.4,
+							1.6
+						],
+						[
+							9.4,
+							1.2
+						],
+						[
+							27.2,
+							1.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							30,
+							1.6
+						],
+						[
+							30,
+							1.2
+						],
+						[
+							47.8,
+							1.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2,
+							4.8
+						],
+						[
+							20,
+							4.8
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "draw-mark",
+			"kind": "cylinder",
+			"at": [
+				37.6,
+				32.3,
+				6.2
+			],
+			"size": [
+				0.55,
+				0.55,
+				0.5
+			],
+			"tone": "ink"
+		}
+	],
+	"annotations": [
+		{
+			"kind": "line",
+			"from": [
+				22.6,
+				15.25,
+				27
+			],
+			"to": [
+				83.4,
+				15.25,
+				27
+			],
+			"dash": "dashed",
+			"ends": "dot"
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"housing"
+				"foot-1",
+				"foot-2",
+				"foot-3",
+				"foot-4",
+				"base"
 			],
 			[
-				"counter"
+				"plinth-left",
+				"tower-left",
+				"plinth-right",
+				"tower-right",
+				"drum-left",
+				"tail-left",
+				"plugface-left",
+				"drum-right"
 			],
 			[
-				"pin-1",
-				"pin-2",
-				"pin-4",
-				"pin-5"
+				"wall",
+				"plug",
+				"plug-lip",
+				"faceplate",
+				"facering"
 			],
 			[
 				"blade",
+				"shank",
 				"bow"
 			],
 			[
-				"pin-3"
+				"keypin-1",
+				"keypin-2",
+				"keypin-3",
+				"keypin-4",
+				"keypin-5",
+				"keypin-6",
+				"keypin-7",
+				"keypin-8",
+				"driver-1",
+				"driver-2",
+				"driver-3",
+				"driver-4",
+				"driver-5",
+				"driver-6",
+				"driver-7",
+				"driver-8"
+			],
+			[
+				"spring-1",
+				"spring-2",
+				"spring-3",
+				"spring-4",
+				"spring-5",
+				"spring-6",
+				"spring-7",
+				"spring-8",
+				"cap-1",
+				"cap-2",
+				"cap-3",
+				"cap-4",
+				"cap-5",
+				"cap-6",
+				"cap-7",
+				"cap-8"
+			],
+			[
+				"bracket-left",
+				"washer-left",
+				"bolt-left",
+				"bracket-right",
+				"washer-right",
+				"bolt-right",
+				"counter",
+				"draw-mark"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 10,
-		"rest": "Key matches"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 0,
+		"states": [
+			{
+				"name": "rest",
+				"readout": "Hover a part of the key · key matches · 0 draws",
+				"parts": {
+					"draw-mark": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "cut 1",
+				"readout": "cut 1 changed · pin 1 past the shear line · lock jams · 1 draw",
+				"parts": {
+					"keypin-1": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"driver-1": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"spring-1": {
+						"variant": "comp"
+					}
+				}
+			},
+			{
+				"name": "cut 2",
+				"readout": "cut 2 changed · pin 2 past the shear line · lock jams · 1 draw",
+				"parts": {
+					"keypin-2": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"driver-2": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"spring-2": {
+						"variant": "comp"
+					}
+				}
+			},
+			{
+				"name": "cut 3",
+				"readout": "cut 3 changed · pin 3 past the shear line · lock jams · 1 draw",
+				"parts": {
+					"keypin-3": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"driver-3": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"spring-3": {
+						"variant": "comp"
+					}
+				}
+			},
+			{
+				"name": "cut 4",
+				"readout": "cut 4 changed · pin 4 past the shear line · lock jams · 1 draw",
+				"parts": {
+					"keypin-4": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"driver-4": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"spring-4": {
+						"variant": "comp"
+					}
+				}
+			},
+			{
+				"name": "cut 5",
+				"readout": "cut 5 changed · pin 5 past the shear line · lock jams · 1 draw",
+				"parts": {
+					"keypin-5": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"driver-5": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"spring-5": {
+						"variant": "comp"
+					}
+				}
+			},
+			{
+				"name": "cut 6",
+				"readout": "cut 6 changed · pin 6 past the shear line · lock jams · 1 draw",
+				"parts": {
+					"keypin-6": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"driver-6": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"spring-6": {
+						"variant": "comp"
+					}
+				}
+			},
+			{
+				"name": "cut 7",
+				"readout": "cut 7 changed · pin 7 past the shear line · lock jams · 1 draw",
+				"parts": {
+					"keypin-7": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"driver-7": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"spring-7": {
+						"variant": "comp"
+					}
+				}
+			},
+			{
+				"name": "cut 8",
+				"readout": "cut 8 changed · pin 8 past the shear line · lock jams · 1 draw",
+				"parts": {
+					"keypin-8": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"driver-8": {
+						"move": [
+							0,
+							0,
+							3
+						]
+					},
+					"spring-8": {
+						"variant": "comp"
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ FIELD KEY ]",

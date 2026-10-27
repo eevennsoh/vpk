@@ -48,8 +48,9 @@ function referenceBezier(x1, y1, x2, y2) {
 test("runtime.mjs is import-free (it is inlined into the runtime block)", () => {
 	assert.doesNotMatch(SOURCE, /^\s*import\b/m);
 	assert.doesNotMatch(SOURCE, /requestAnimationFrame|setInterval/, "motion runs only through vpkFrameLoop ticks");
-	// One timer: the motion-at-rest gate waits out the entrance and the idle delay, then flips an attribute (the CSS animates).
-	assert.equal(SOURCE.match(/setTimeout/g).length, 1, "only the rest gate sets a timer");
+	// Two one-shot timers, neither drives motion: the motion-at-rest gate waits out the entrance and the idle delay, then flips an
+	// attribute (the CSS animates); speak() empties the live region LIVE_CLEAR_MS after a commit.
+	assert.equal(SOURCE.match(/setTimeout/g).length, 2, "only the rest gate and the live-region clear set a timer");
 });
 
 test("spring/stepS reach the target within eps and land at once when reduced", () => {
@@ -258,6 +259,28 @@ test("select: rest-polygon hits, one active part, staggered lift, keyboard isola
 	});
 });
 
+// A select lift is straight up: a card that rises behind a nearer card stays behind it (their plans do not overlap, so
+// painter order holds), and only parts that stand over one another in plan may trade places as one lifts.
+const RIFFLE = JSON.parse(fs.readFileSync(new URL("./fixtures/hl-riffle.json", import.meta.url), "utf8"));
+test("select lift: a lifted back card stays behind the cards in front of it", async () => {
+	await withRuntime(renderRegion(buildScene(RIFFLE)), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const svg = stage.querySelector("svg");
+		const order = () => [...svg.querySelectorAll("[data-vpk-iso-part]")].map(node => node.getAttribute("data-vpk-iso-part"));
+		const rest = order();
+		const key = name => stage.dispatchEvent(new window.KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true }));
+		key("End");
+		key("ArrowLeft");
+		step(900);
+		assert.equal(svg.querySelector(".is-active")?.getAttribute("data-vpk-iso-part"), "card-2");
+		assert.ok(svg.querySelector('[data-vpk-iso-part="card-2"]').hasAttribute("transform"), "card 2 lifts");
+		assert.deepEqual(order(), rest, "card 2 keeps its place behind card 1 and in front of card 3");
+		key("Escape");
+		step(1600);
+		assert.deepEqual(order(), rest);
+	});
+});
+
 test("select: a lifted part keeps its painter order, so it never jumps in front of a nearer part", async () => {
 	await withRuntime(renderRegion(buildScene(SELECT)), async ({ step }) => {
 		const stage = document.querySelector("[data-vpk-iso-stage]");
@@ -272,7 +295,10 @@ test("select: a lifted part keeps its painter order, so it never jumps in front 
 		assert.equal(cardA.getAttribute("class"), "is-active");
 		assert.ok(cardA.hasAttribute("transform"), "card-a lifts");
 		assert.equal(order(), rest, "lifting does not reorder the parts");
-		assert.equal(svg.hasAttribute("data-vpk-iso-lift-z"), false, "no lift-height re-sort input is emitted");
+		// The plan-overlap resort keeps lift-z: the two cards' plans do not overlap, so neither may pass the other.
+		const plan = id => svg.querySelector(`[data-vpk-iso-part="${id}"]`).getAttribute("data-vpk-iso-plan")?.split(" ").map(Number);
+		const [a, b] = [plan("card-a"), plan("card-b")];
+		assert.ok(!a || !b || !(a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]), "the cards' plans do not overlap");
 	});
 });
 
@@ -658,7 +684,7 @@ test("rest motion CSS: keyframes from REST_MOTION, gated on the attribute, scree
 	assert.match(ISO_CSS, new RegExp(`translate: 0 -${REST_MOTION.BOB_PX}px`));
 	assert.match(ISO_CSS, new RegExp(`translate: ${REST_MOTION.DRIFT_PX}px 0`));
 	assert.match(gated[1], /\[data-vpk-iso-rest="paused"\] > svg, [^{]+\{ animation-play-state: paused; \}/, "input pauses the drift in place");
-	assert.equal([...ISO_CSS.matchAll(/animation:/g)].length, 2, "no other animation rule");
+	assert.equal([...ISO_CSS.matchAll(/animation:/g)].length, 4, "no other animation rule: the drift, the bob and the two camera-tour title fades");
 });
 
 // Cast shadows follow their part (illustrations.md § Shadows): a lifted or exploded part's shadow moves by its cast vector times
@@ -694,5 +720,61 @@ test("shadows follow lift and explode through the same write; at rest none carri
 		const [sx, sy] = translate(shadow);
 		assert.ok(Math.abs(sx - cast[0] * 0.4) <= 0.1 && Math.abs(sy - cast[1] * 0.4) <= 0.1, `the exploded shell's shadow moves by 0.4 Gap units of its cast (${sx} ${sy})`);
 		assert.equal(document.querySelector('[data-vpk-iso-shadow-for="base"]').hasAttribute("transform"), false, "the still base keeps its shadow");
+	});
+});
+
+// Plan § 2 U: each tube chunk hits by its own hull, never the hull of the whole bent tube, so the empty inside corner of an
+// L-pipe hits nothing and a point on a chunk still selects the pipe.
+test("select: a point inside an L-pipe's concave corner hits nothing; a point on the pipe hits it", async () => {
+	const { iso } = await import("../anatomy/vendor/kit/iso-kit.mjs");
+	const brief = {
+		schema: "vpk-iso-brief/1", id: "l-pipe", figId: "FIG_953", title: "L pipe", label: "An L-shaped pipe beside a block.", emphasis: "none",
+		parts: [{ id: "pipe", kind: "tube", points: [[0, 0, 2], [60, 0, 2], [60, 40, 2]], radius: 1.5, label: "pipe" }, { id: "block", kind: "box", at: [-30, 50, 0], size: [10, 10, 6], label: "block" }],
+		interact: { behavior: "select", rest: "rest" },
+	};
+	const scene = buildScene(brief);
+	assert.ok(scene.pieces.filter(piece => piece.partId === "pipe").length >= 3);
+	await withRuntime(renderRegion(scene), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const readout = document.querySelector("[data-vpk-iso-readout]");
+		// The test stage is RECT (720 x 450); the scene's viewBox was fitted to its own height, so view points scale to client.
+		const client = ([x, y]) => [(x * RECT.width) / scene.viewBox[0], (y * RECT.height) / scene.viewBox[1]];
+		const [cx, cy] = iso([40, 20, 2], scene.P);
+		const chunks = scene.pieces.filter(piece => piece.partId === "pipe").map(piece => piece.hit);
+		assert.ok(core.pointInPolygon([cx, cy], core.hull(chunks.flat())), "the corner point lies inside the whole pipe's hull");
+		pointer(stage, "pointermove", ...client([cx, cy]));
+		step(16);
+		assert.equal(readout.textContent, "rest", "the concave corner hits nothing");
+		pointer(stage, "pointermove", ...client(iso([30, 0, 2], scene.P)));
+		step(16);
+		assert.equal(readout.textContent, "pipe");
+	});
+});
+
+// Plan § 2 P: a concave prism hits by its convex solids (data-vpk-iso-hit="solids"), so a point in the L's notch hits nothing;
+// a glass case paints no face but is still hoverable through the hull of its edges.
+test("select: an L prism's notch hits nothing, its arm hits; a glass case is hoverable", async () => {
+	const { iso } = await import("../anatomy/vendor/kit/iso-kit.mjs");
+	const brief = {
+		schema: "vpk-iso-brief/1", id: "l-prism", figId: "FIG_963", title: "L prism", label: "An L-shaped kerb and a glass case.", emphasis: "none",
+		parts: [
+			{ id: "kerb", kind: "prism", at: [0, 0, 0], polygon: [[0, 0], [30, 0], [30, 6], [6, 6], [6, 30], [0, 30]], depth: 6, label: "kerb" },
+			{ id: "case", kind: "box", at: [60, 0, 0], size: [20, 20, 16], tone: "glass", label: "case" },
+		],
+		interact: { behavior: "select", rest: "rest" },
+	};
+	const scene = buildScene(brief);
+	await withRuntime(renderRegion(scene), async ({ step }) => {
+		const stage = document.querySelector("[data-vpk-iso-stage]");
+		const readout = document.querySelector("[data-vpk-iso-readout]");
+		const client = ([x, y]) => [(x * RECT.width) / scene.viewBox[0], (y * RECT.height) / scene.viewBox[1]];
+		const at = point => {
+			pointer(stage, "pointermove", ...client(iso(point, scene.P)));
+			step(16);
+			return readout.textContent;
+		};
+		assert.equal(at([18, 18, 6]), "rest", "the notch hits nothing");
+		assert.equal(at([20, 3, 6]), "kerb");
+		assert.equal(at([70, 10, 16]), "case", "glass is hoverable");
 	});
 });

@@ -344,7 +344,8 @@ test("F4 budget and advisories: measured bytes, A4 below the bar and A5 over the
 	assert.deepEqual(advisories.map(advisory => [advisory.id, advisory.strict]), [["A4", true]], "the 12-part fixture is below the Figure bar");
 	assert.match(advisories[0].message, /12 parts is below the 40-part bar for the figure tier/);
 	const big = valid.replace("<!-- vpk-anatomy-hero:end", `<!-- ${"x".repeat(500000)} -->\n<!-- vpk-anatomy-hero:end`).replace('data-vpk-anatomy-parts="12"', 'data-vpk-anatomy-parts="45"');
-	assert.deepEqual(collectFigureAdvisories(big, DEFAULT_FIGURE_THRESHOLDS).map(advisory => [advisory.id, advisory.strict]), [["A5", true]]);
+	// No hero size limit: an oversized hero raises nothing.
+	assert.deepEqual(collectFigureAdvisories(big, DEFAULT_FIGURE_THRESHOLDS).map(advisory => advisory.id), []);
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-figures-"));
 	const run = (html, ...args) => {
 		const file = path.join(dir, "page.html");
@@ -353,8 +354,8 @@ test("F4 budget and advisories: measured bytes, A4 below the bar and A5 over the
 	};
 	assert.equal(run(big).status, 0, "advisory without --strict");
 	const strictBig = run(big, "--strict");
-	assert.equal(strictBig.status, 1);
-	assert.match(strictBig.stdout, /✗ A5 hero carriage: region .* exceeds the .* fail threshold/);
+	assert.equal(strictBig.status, 0, "size never fails, even under --strict");
+	assert.doesNotMatch(strictBig.stdout, /A5/);
 	const thirty = valid.replace('data-vpk-anatomy-parts="12"', 'data-vpk-anatomy-parts="30"');
 	const strictThirty = run(thirty, "--strict");
 	assert.equal(strictThirty.status, 1);
@@ -369,7 +370,9 @@ test("F4 budget and advisories: measured bytes, A4 below the bar and A5 over the
 	const flow = collectFigureAdvisories(valid.replace('class="iso-line iso-edge"', 'class="iso-line iso-edge" data-flow'), DEFAULT_FIGURE_THRESHOLDS);
 	assert.ok(flow.some(advisory => advisory.id === "A6"));
 	const two = valid.replace("<h1>", `${valid.match(/<!-- vpk-anatomy-hero:start[\s\S]*?<!-- vpk-anatomy-hero:end[^>]*-->/)[0].replace(/carriage/g, "second")}<h1>`);
-	assert.ok(collectFigureAdvisories(two, DEFAULT_FIGURE_THRESHOLDS).some(advisory => advisory.id === "A1"));
+	// The one-hero cap is off (maxHeroes Infinity): a document may carry several anatomy heroes.
+	assert.ok(!collectFigureAdvisories(two, DEFAULT_FIGURE_THRESHOLDS).some(advisory => advisory.id === "A1"));
+	assert.ok(collectFigureAdvisories(two, { ...DEFAULT_FIGURE_THRESHOLDS, maxHeroes: 1 }).some(advisory => advisory.id === "A1"), "a configured cap still reports");
 	const mixed = valid.replace("<h1>", '<figure class="vpk-iso-plate" data-vpk-engine="iso-kit" data-vpk-figure="flow" data-vpk-camera="45 35.26"></figure><h1>');
 	assert.ok(collectFigureAdvisories(mixed, DEFAULT_FIGURE_THRESHOLDS).some(advisory => advisory.id === "A2" && /iso figure flow \(45 35\.26\) differs from hero carriage \(45 30\)/.test(advisory.message)));
 	const aligned = mixed.replace('data-vpk-camera="45 35.26"', 'data-vpk-camera="45 30"');

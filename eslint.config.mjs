@@ -275,6 +275,10 @@ const eslintConfig = defineConfig([
 		"components/blocks/login/**",
 		// Vendored Rovo Stage Kit, served as is and replaced whole (its GUIDE.md).
 		"public/1p/rovo-stage-kit/**",
+		// Vendored upstream figure packages, kept byte for byte (each engine's VENDOR.json and NOTICE.md).
+		".agents/skills/vpk-html/scripts/anatomy/vendor/**",
+		".agents/skills/vpk-html/scripts/anatomy-gl/vendor/**",
+		".agents/skills/vpk-html/scripts/hairline/vendor/**",
 	]),
 	{
 		files: ["**/*.js", "**/*.cjs"],

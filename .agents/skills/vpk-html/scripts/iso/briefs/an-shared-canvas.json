@@ -3,425 +3,1168 @@
 	"id": "an-shared-canvas",
 	"figId": "FIG_236",
 	"title": "Shared canvas, a drafting board",
-	"label": "Dimetric drafting board in device pixels: a corner block at (0, 0), width and height rulers with ratchet stops marking a 512 by 352 canvas, and the accented draw card seated at the corner.",
-	"caption": "Every draw seats against the corner at (0, 0); when one needs more room than the canvas has, a ruler ratchets outward until it fits and never slides back.",
+	"label": "Drafting board: an origin head with a knurled knob and engraved 0,0, toothed ratchet channels to ticked end caps, ticked straightedges at the canvas edge over a dot grid, and a raised draw sheet with a stadium emboss at the corner.",
+	"caption": "Every draw seats against the corner at (0, 0). When a draw needs more room than the canvas has, the straightedges ratchet outward along the toothed channels until it fits, and they never slide back, so a small draw after a big one leaves the canvas large.",
 	"camera": {
 		"preset": "dimetric",
-		"scale": "fit"
+		"scale": "fit",
+		"pad": 48
 	},
+	"labels": "none",
+	"focal": "card",
 	"parts": [
 		{
-			"id": "board",
-			"kind": "tray",
+			"id": "base",
+			"kind": "box",
 			"at": [
 				0,
 				0,
 				0
 			],
 			"size": [
-				176,
-				136,
-				5
+				216,
+				154,
+				3
 			],
-			"r": 0,
-			"label": "Drafting board"
+			"r": 9,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						182,
+						149.5
+					],
+					"size": [
+						12,
+						5
+					],
+					"depth": 1.2
+				}
+			]
 		},
 		{
-			"id": "corner",
+			"id": "deck",
+			"kind": "box",
+			"at": [
+				3,
+				3,
+				3
+			],
+			"size": [
+				210,
+				141,
+				1
+			],
+			"r": 7,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 2.5,
+					"r": 5
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						24,
+						9
+					],
+					"grid": [
+						25,
+						15
+					],
+					"gap": 7.5,
+					"size": 0.45
+				}
+			]
+		},
+		{
+			"id": "head-a",
 			"kind": "box",
 			"at": [
 				4,
-				4,
-				2
+				125,
+				4
 			],
 			"size": [
-				14,
-				14,
-				10
+				18,
+				17,
+				13
 			],
-			"r": 1,
-			"label": "Corner block at (0, 0)"
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "text",
+					"face": "+y",
+					"at": [
+						6,
+						4
+					],
+					"text": "0,0",
+					"size": 4.5,
+					"anchor": "middle"
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.5,
+						2.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 12,
+					"size": 0.5
+				}
+			]
+		},
+		{
+			"id": "knob-collar",
+			"kind": "cylinder",
+			"at": [
+				13,
+				133.5,
+				17
+			],
+			"size": [
+				4.6,
+				4.6,
+				1.2
+			]
+		},
+		{
+			"id": "knob",
+			"kind": "cylinder",
+			"at": [
+				13,
+				133.5,
+				18.2
+			],
+			"size": [
+				3.2,
+				3.2,
+				3.6
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 28
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1
+				}
+			]
+		},
+		{
+			"id": "head-b",
+			"kind": "box",
+			"at": [
+				22,
+				124,
+				4
+			],
+			"size": [
+				20,
+				16,
+				11
+			],
+			"r": 1.5,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						1.5,
+						14.6
+					],
+					"to": [
+						18.5,
+						14.6
+					],
+					"step": 1,
+					"every": 5,
+					"lengths": [
+						1.3,
+						2.6
+					],
+					"side": -1
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						18.6,
+						1.5
+					],
+					"to": [
+						18.6,
+						13
+					],
+					"step": 1,
+					"every": 5,
+					"lengths": [
+						1.3,
+						2.6
+					],
+					"side": 1
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3.5,
+						3.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 11,
+					"size": 0.55
+				}
+			]
 		},
 		{
 			"id": "ruler-w",
-			"kind": "box",
+			"kind": "tray",
 			"at": [
-				20,
-				8,
-				2
+				42,
+				126,
+				4
 			],
 			"size": [
-				31,
-				8,
-				3
+				134,
+				9,
+				5
 			],
-			"r": 0.5,
-			"label": "Width ruler, tooth 1",
-			"marks": [
-				[
-					[
-						0,
-						4
-					],
-					[
-						31,
-						4
-					]
-				]
-			]
-		},
-		{
-			"id": "ruler-w-2",
-			"kind": "box",
-			"at": [
-				52,
-				8,
-				2
-			],
-			"size": [
-				31,
-				8,
-				3
-			],
-			"r": 0.5,
-			"label": "Width ruler, tooth 2",
-			"marks": [
-				[
-					[
-						0,
-						4
-					],
-					[
-						31,
-						4
-					]
-				]
-			]
-		},
-		{
-			"id": "ruler-w-3",
-			"kind": "box",
-			"at": [
-				84,
-				8,
-				2
-			],
-			"size": [
-				31,
-				8,
-				3
-			],
-			"r": 0.5,
-			"label": "Width ruler, tooth 3",
-			"marks": [
-				[
-					[
-						0,
-						4
-					],
-					[
-						31,
-						4
-					]
-				]
-			]
-		},
-		{
-			"id": "ruler-w-4",
-			"kind": "box",
-			"at": [
-				116,
-				8,
-				2
-			],
-			"size": [
-				31,
-				8,
-				3
-			],
-			"r": 0.5,
-			"label": "Width ruler, tooth 4",
-			"marks": [
-				[
-					[
-						0,
-						4
-					],
-					[
-						31,
-						4
-					]
-				]
-			]
+			"r": 0.6
 		},
 		{
 			"id": "ruler-h",
-			"kind": "box",
+			"kind": "tray",
 			"at": [
 				8,
-				20,
-				2
+				24,
+				4
 			],
 			"size": [
-				8,
-				21,
-				3
+				9,
+				101,
+				5
 			],
-			"r": 0.5,
-			"label": "Height ruler, tooth 1",
-			"marks": [
-				[
-					[
-						4,
-						0
-					],
-					[
-						4,
-						21
-					]
-				]
-			]
+			"r": 0.6
 		},
 		{
-			"id": "ruler-h-2",
-			"kind": "box",
+			"id": "tooth-w",
+			"kind": "prism",
 			"at": [
-				8,
-				42,
-				2
+				44,
+				133.8,
+				5.2
 			],
-			"size": [
-				8,
-				21,
-				3
-			],
-			"r": 0.5,
-			"label": "Height ruler, tooth 2",
-			"marks": [
+			"axis": "-y",
+			"polygon": [
 				[
-					[
-						4,
-						0
-					],
-					[
-						4,
-						21
-					]
+					0,
+					0
+				],
+				[
+					5.2,
+					0
+				],
+				[
+					5.2,
+					2.8
 				]
-			]
+			],
+			"depth": 6.6,
+			"repeat": {
+				"linear": {
+					"count": 21,
+					"step": [
+						6.2,
+						0,
+						0
+					]
+				}
+			}
 		},
 		{
-			"id": "ruler-h-3",
-			"kind": "box",
+			"id": "tooth-h",
+			"kind": "prism",
 			"at": [
-				8,
-				64,
-				2
+				9.2,
+				26,
+				5.2
 			],
-			"size": [
-				8,
-				21,
-				3
-			],
-			"r": 0.5,
-			"label": "Height ruler, tooth 3",
-			"marks": [
+			"axis": "x",
+			"polygon": [
 				[
-					[
-						4,
-						0
-					],
-					[
-						4,
-						21
-					]
+					0,
+					0
+				],
+				[
+					5.2,
+					0
+				],
+				[
+					5.2,
+					2.8
 				]
-			]
+			],
+			"depth": 6.6,
+			"repeat": {
+				"linear": {
+					"count": 15,
+					"step": [
+						0,
+						6.2,
+						0
+					]
+				}
+			}
 		},
 		{
-			"id": "ruler-h-4",
+			"id": "pawl-w",
 			"kind": "box",
 			"at": [
-				8,
-				86,
-				2
+				42.6,
+				127.6,
+				8
 			],
 			"size": [
-				8,
-				21,
-				3
-			],
-			"r": 0.5,
-			"label": "Height ruler, tooth 4",
-			"marks": [
-				[
-					[
-						4,
-						0
-					],
-					[
-						4,
-						21
-					]
-				]
-			]
-		},
-		{
-			"id": "stop-w",
-			"kind": "box",
-			"at": [
-				146,
-				6,
-				2
-			],
-			"size": [
-				6,
-				12,
+				2.2,
+				4.8,
 				7
 			],
-			"r": 1,
-			"label": "Width ratchet"
+			"axis": [
+				-0.5,
+				0,
+				1
+			],
+			"r": 0.6
 		},
 		{
-			"id": "stop-h",
+			"id": "pen-post",
+			"kind": "box",
+			"at": [
+				9.6,
+				115.6,
+				9
+			],
+			"size": [
+				2.8,
+				2.8,
+				3.4
+			],
+			"r": 0.4
+		},
+		{
+			"id": "pen",
+			"kind": "cone",
+			"at": [
+				12.4,
+				117,
+				11
+			],
+			"axis": [
+				1,
+				0.25,
+				-0.3
+			],
+			"r0": 1.2,
+			"r1": 0.3,
+			"length": 5
+		},
+		{
+			"id": "cap-w",
+			"kind": "box",
+			"at": [
+				176,
+				124,
+				4
+			],
+			"size": [
+				12,
+				13,
+				8
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						6,
+						6.5
+					],
+					"size": [
+						8,
+						4
+					],
+					"depth": 0.8
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						2.6,
+						8.1
+					],
+					"to": [
+						9.4,
+						8.1
+					],
+					"step": 1.2,
+					"lengths": [
+						1.4,
+						1.4
+					],
+					"side": -1
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.8,
+						1.8
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 9.4,
+					"size": 0.5
+				}
+			]
+		},
+		{
+			"id": "cap-h",
 			"kind": "box",
 			"at": [
 				6,
-				106,
-				2
+				12,
+				4
 			],
 			"size": [
+				13,
 				12,
-				6,
-				7
+				8
 			],
 			"r": 1,
-			"label": "Height ratchet"
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						6.5,
+						6
+					],
+					"size": [
+						4,
+						8
+					],
+					"depth": 0.8
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						4.9,
+						2.6
+					],
+					"to": [
+						4.9,
+						9.4
+					],
+					"step": 1.2,
+					"lengths": [
+						1.4,
+						1.4
+					],
+					"side": 1
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.8,
+						1.8
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 9.4,
+					"size": 0.5
+				}
+			]
 		},
 		{
-			"id": "draw",
-			"kind": "slab",
+			"id": "edge-h",
+			"kind": "box",
 			"at": [
-				20,
-				20,
-				2.5
+				17,
+				20.025625000000012,
+				4
 			],
 			"size": [
-				76,
-				56,
+				163.3,
+				2.4,
+				2.2
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						2,
+						2.4
+					],
+					"to": [
+						161,
+						2.4
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						0.9,
+						1.8
+					],
+					"side": -1
+				}
+			]
+		},
+		{
+			"id": "edge-w",
+			"kind": "box",
+			"at": [
+				164.29,
+				14,
+				6.2
+			],
+			"size": [
+				2.4,
+				112,
+				2.2
+			],
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						0,
+						2
+					],
+					"to": [
+						0,
+						110
+					],
+					"step": 2,
+					"every": 5,
+					"lengths": [
+						0.9,
+						1.8
+					],
+					"side": 1
+				}
+			]
+		},
+		{
+			"id": "card",
+			"kind": "box",
+			"r": 0.8,
+			"at": [
+				18,
+				58.998,
+				8.5
+			],
+			"size": [
+				86.86,
+				64.002,
 				2
 			],
-			"r": 0,
-			"label": "The draw, 304 × 224"
-		}
-	],
-	"focal": "draw",
-	"labels": [
-		{
-			"text": "Draw 304 × 224",
-			"target": "draw",
-			"side": "right",
-			"anchor": [
-				96,
-				40,
-				4.5
+			"variants": {
+				"d1": {
+					"at": [
+						18,
+						54.427,
+						8.5
+					],
+					"size": [
+						91.431,
+						68.573,
+						2
+					]
+				},
+				"d2": {
+					"at": [
+						18,
+						22.426,
+						8.5
+					],
+					"size": [
+						137.147,
+						100.574,
+						2
+					]
+				},
+				"d3": {
+					"at": [
+						18,
+						40.712,
+						8.5
+					],
+					"size": [
+						146.29,
+						82.288,
+						2
+					]
+				}
+			},
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1,
+					"r": 0.4
+				}
 			]
 		},
 		{
-			"text": "Corner at (0, 0)",
-			"target": "corner",
-			"side": "left"
-		},
-		{
-			"text": "Width ruler",
-			"target": "ruler-w-4",
-			"side": "right",
-			"anchor": [
-				128,
-				12,
-				5
+			"id": "pill",
+			"kind": "box",
+			"size": [
+				36,
+				14,
+				1.2
+			],
+			"r": 7,
+			"at": [
+				43.43,
+				84,
+				10.5
+			],
+			"variants": {
+				"d1": {
+					"at": [
+						45.72,
+						81.71,
+						10.5
+					]
+				},
+				"d2": {
+					"at": [
+						68.57,
+						65.71,
+						10.5
+					]
+				},
+				"d3": {
+					"at": [
+						73.14,
+						74.86,
+						10.5
+					]
+				}
+			},
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 5.4
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							11,
+							7
+						],
+						[
+							25,
+							7
+						]
+					]
+				}
 			]
 		},
 		{
-			"text": "Height ruler",
-			"target": "ruler-h-2",
-			"side": "left",
-			"anchor": [
-				12,
-				50,
-				5
-			]
+			"id": "pane",
+			"kind": "plate",
+			"tone": "glass",
+			"at": [
+				18,
+				22.426,
+				12.8
+			],
+			"size": [
+				146.29,
+				100.574,
+				0.3
+			],
+			"variants": {
+				"c1": {
+					"at": [
+						18,
+						54.427,
+						12.8
+					],
+					"size": [
+						91.431,
+						68.573,
+						0.3
+					]
+				},
+				"c2": {
+					"at": [
+						18,
+						22.426,
+						12.8
+					],
+					"size": [
+						137.147,
+						100.574,
+						0.3
+					]
+				}
+			}
 		},
 		{
-			"text": "Ratchets, out only",
-			"target": "stop-w",
-			"side": "right"
+			"id": "drop-0",
+			"kind": "wire",
+			"from": [
+				104.86,
+				123,
+				8.3
+			],
+			"to": [
+				104.86,
+				123,
+				4.2
+			],
+			"variants": {
+				"d1": {
+					"from": [
+						109.431,
+						123,
+						8.3
+					],
+					"to": [
+						109.431,
+						123,
+						4.2
+					]
+				},
+				"d2": {
+					"from": [
+						155.147,
+						123,
+						8.3
+					],
+					"to": [
+						155.147,
+						123,
+						4.2
+					]
+				},
+				"d3": {
+					"from": [
+						164.29,
+						123,
+						8.3
+					],
+					"to": [
+						164.29,
+						123,
+						4.2
+					]
+				}
+			}
+		},
+		{
+			"id": "drop-1",
+			"kind": "wire",
+			"from": [
+				104.86,
+				58.998,
+				8.3
+			],
+			"to": [
+				104.86,
+				58.998,
+				4.2
+			],
+			"variants": {
+				"d1": {
+					"from": [
+						109.431,
+						54.427,
+						8.3
+					],
+					"to": [
+						109.431,
+						54.427,
+						4.2
+					]
+				},
+				"d2": {
+					"from": [
+						155.147,
+						22.426,
+						8.3
+					],
+					"to": [
+						155.147,
+						22.426,
+						4.2
+					]
+				},
+				"d3": {
+					"from": [
+						164.29,
+						40.712,
+						8.3
+					],
+					"to": [
+						164.29,
+						40.712,
+						4.2
+					]
+				}
+			}
+		},
+		{
+			"id": "drop-2",
+			"kind": "wire",
+			"from": [
+				18.6,
+				58.998,
+				8.3
+			],
+			"to": [
+				18.6,
+				58.998,
+				4.2
+			],
+			"variants": {
+				"d1": {
+					"from": [
+						18.6,
+						54.427,
+						8.3
+					],
+					"to": [
+						18.6,
+						54.427,
+						4.2
+					]
+				},
+				"d2": {
+					"from": [
+						18.6,
+						22.426,
+						8.3
+					],
+					"to": [
+						18.6,
+						22.426,
+						4.2
+					]
+				},
+				"d3": {
+					"from": [
+						18.6,
+						40.712,
+						8.3
+					],
+					"to": [
+						18.6,
+						40.712,
+						4.2
+					]
+				}
+			}
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"board"
+				"base",
+				"deck"
 			],
 			[
-				"corner"
-			],
-			[
+				"head-a",
+				"head-b",
 				"ruler-w",
-				"ruler-w-2",
-				"ruler-w-3",
-				"ruler-w-4",
-				"ruler-h",
-				"ruler-h-2",
-				"ruler-h-3",
-				"ruler-h-4"
+				"ruler-h"
 			],
 			[
-				"stop-w",
-				"stop-h"
+				"knob-collar",
+				"knob",
+				"tooth-w",
+				"tooth-h"
 			],
 			[
-				"draw"
+				"pawl-w",
+				"pen-post",
+				"pen",
+				"cap-w",
+				"cap-h"
+			],
+			[
+				"edge-h",
+				"edge-w"
+			],
+			[
+				"card",
+				"drop-0",
+				"drop-1",
+				"drop-2"
+			],
+			[
+				"pill"
+			],
+			[
+				"pane"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 12,
-		"rest": "draw 4 of 4"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 7,
+		"states": [
+			{
+				"name": "draw 1",
+				"readout": "draw 1 · 320 × 240 · canvas 320 × 240",
+				"parts": {
+					"card": {
+						"variant": "d1"
+					},
+					"pill": {
+						"variant": "d1"
+					},
+					"drop-0": {
+						"variant": "d1"
+					},
+					"drop-1": {
+						"variant": "d1"
+					},
+					"drop-2": {
+						"variant": "d1"
+					},
+					"pane": {
+						"variant": "c1"
+					},
+					"edge-w": {
+						"move": [
+							-54.859,
+							0,
+							0
+						]
+					},
+					"edge-h": {
+						"move": [
+							0,
+							32.001,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "draw 2",
+				"readout": "draw 2 · 480 × 352 · canvas 480 × 352",
+				"parts": {
+					"card": {
+						"variant": "d2"
+					},
+					"pill": {
+						"variant": "d2"
+					},
+					"drop-0": {
+						"variant": "d2"
+					},
+					"drop-1": {
+						"variant": "d2"
+					},
+					"drop-2": {
+						"variant": "d2"
+					},
+					"pane": {
+						"variant": "c2"
+					},
+					"edge-w": {
+						"move": [
+							-9.143,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "draw 3",
+				"readout": "draw 3 · 512 × 288 · canvas 512 × 352",
+				"parts": {
+					"card": {
+						"variant": "d3"
+					},
+					"pill": {
+						"variant": "d3"
+					},
+					"drop-0": {
+						"variant": "d3"
+					},
+					"drop-1": {
+						"variant": "d3"
+					},
+					"drop-2": {
+						"variant": "d3"
+					},
+					"pane": {
+						"variant": "base"
+					}
+				}
+			},
+			{
+				"name": "draw 3 held",
+				"readout": "draw 3 · 512 × 288 · canvas 512 × 352",
+				"parts": {
+					"card": {
+						"variant": "d3"
+					},
+					"pill": {
+						"variant": "d3"
+					},
+					"drop-0": {
+						"variant": "d3"
+					},
+					"drop-1": {
+						"variant": "d3"
+					},
+					"drop-2": {
+						"variant": "d3"
+					},
+					"pane": {
+						"variant": "base"
+					}
+				}
+			},
+			{
+				"name": "draw 3 hold",
+				"readout": "draw 3 · 512 × 288 · canvas 512 × 352",
+				"parts": {
+					"card": {
+						"variant": "d3"
+					},
+					"pill": {
+						"variant": "d3"
+					},
+					"drop-0": {
+						"variant": "d3"
+					},
+					"drop-1": {
+						"variant": "d3"
+					},
+					"drop-2": {
+						"variant": "d3"
+					},
+					"pane": {
+						"variant": "base"
+					}
+				}
+			},
+			{
+				"name": "draw 3 fill",
+				"readout": "draw 3 · 512 × 288 · canvas 512 × 352",
+				"parts": {
+					"card": {
+						"variant": "d3"
+					},
+					"pill": {
+						"variant": "d3"
+					},
+					"drop-0": {
+						"variant": "d3"
+					},
+					"drop-1": {
+						"variant": "d3"
+					},
+					"drop-2": {
+						"variant": "d3"
+					},
+					"pane": {
+						"variant": "base"
+					}
+				}
+			},
+			{
+				"name": "draw 3 fit",
+				"readout": "draw 3 · 512 × 288 · canvas 512 × 352",
+				"parts": {
+					"card": {
+						"variant": "d3"
+					},
+					"pill": {
+						"variant": "d3"
+					},
+					"drop-0": {
+						"variant": "d3"
+					},
+					"drop-1": {
+						"variant": "d3"
+					},
+					"drop-2": {
+						"variant": "d3"
+					},
+					"pane": {
+						"variant": "base"
+					}
+				}
+			},
+			{
+				"name": "draw 4",
+				"readout": "draw 4 · 304 × 224 · canvas 512 × 352",
+				"parts": {
+					"card": {
+						"variant": "base"
+					},
+					"pill": {
+						"variant": "base"
+					},
+					"drop-0": {
+						"variant": "base"
+					},
+					"drop-1": {
+						"variant": "base"
+					},
+					"drop-2": {
+						"variant": "base"
+					},
+					"pane": {
+						"variant": "base"
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ DEVICE PX ]",
 		"corner": "VPK-HTML"
-	},
-	"dims": [
-		{
-			"from": [
-				20,
-				136,
-				0
-			],
-			"to": [
-				148,
-				136,
-				0
-			],
-			"text": "512 px",
-			"offset": 30
-		},
-		{
-			"from": [
-				176,
-				20,
-				0
-			],
-			"to": [
-				176,
-				108,
-				0
-			],
-			"text": "352 px",
-			"offset": 30
-		}
-	]
+	}
 }

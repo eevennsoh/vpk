@@ -113,6 +113,8 @@ export const explodeTarget = state => state.preview ?? state.committed;
 // Motion at rest resumes this long after the last input (iso/accent.mjs REST_MOTION.IDLE_RESUME_MS; runtime.test.mjs pins the
 // two equal: this file is import-free so the inliner can read it). restMs reads a SMIL dur ("1800ms", "2s") in ms.
 export const REST_IDLE_MS = 3000;
+// How long the live region holds a spoken commit before it empties (createIsoRuntime speak).
+export const LIVE_CLEAR_MS = 1500;
 export const restMs = dur => (parseFloat(dur) || 0) * (/ms\s*$/.test(dur) ? 1 : /s\s*$/.test(dur) ? 1000 : 0);
 
 // Deck fit share (CSS px). `flow` is how far the slide's in-flow content runs past the room on the
@@ -143,6 +145,14 @@ export function createIsoRuntime(win, loop, core) {
 		const node = el.firstChild;
 		if (node && node.nodeType === 3 && el.childNodes.length === 1) node.data = text;
 		else el.textContent = text;
+	};
+	// The live region speaks a commit, then empties LIVE_CLEAR_MS later: left filled, the figure's text (browse mode, copy, the
+	// accessible description) held the visible readout twice. Emptying is silent; a new commit restarts the clock.
+	const liveTimers = new WeakMap();
+	const speak = (el, text) => {
+		win.clearTimeout(liveTimers.get(el));
+		setText(el, text);
+		liveTimers.set(el, win.setTimeout(() => setText(el, ""), LIVE_CLEAR_MS));
 	};
 
 	// data-vpk-iso-* attribute and role-selector helpers (they keep the inlined block small).
@@ -178,8 +188,48 @@ export function createIsoRuntime(win, loop, core) {
 		const root = stage.closest("[data-vpk-engine]") || stage;
 		const svg = find(stage, "id");
 		const behavior = attr(stage, "behavior");
-		const vb = svg ? (svg.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number) : [];
-		if (!svg || vb.length !== 4 || !vb.every(Number.isFinite) || (behavior !== "select" && behavior !== "explode")) throw new Error("stage");
+		const viewBox = () => (svg.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number);
+		const vb0 = svg ? viewBox() : [];
+		if (!svg || vb0.length !== 4 || !vb0.every(Number.isFinite) || !["select", "explode", "teardown", "step", "scrub", "tour"].includes(behavior)) throw new Error("stage");
+		// Teardown (illustrations.md § Teardown): the explode spring drives the parts (Spread slider, Exploded / Assembled buttons)
+		// and the pointer or arrow keys name a part, as select does, without lifting it.
+		const teardown = behavior === "teardown";
+		let rect = null;
+		const measure = () => (rect = rect || svg.getBoundingClientRect());
+		const invalidate = () => {
+			rect = null;
+		};
+		win.addEventListener("scroll", invalidate, { passive: true, capture: true });
+		if (win.ResizeObserver) new win.ResizeObserver(invalidate).observe(stage);
+		stage.addEventListener("pointerenter", invalidate);
+		// The viewBox is read per call: a camera tour (tour-runtime.mjs) eases it, and hover must hit what is drawn there now.
+		const toView = (cx, cy) => {
+			const r = measure();
+			const vb = viewBox();
+			const s = Math.min(r.width / vb[2], r.height / vb[3]) || 1;
+			return [(cx - r.left - (r.width - vb[2] * s) / 2) / s + vb[0], (cy - r.top - (r.height - vb[3] * s) / 2) / s + vb[1]];
+		};
+		// A camera tour (tour-runtime.mjs, data-vpk-iso-tour) rides on any behaviour as its own board; a figure with a tour and no
+		// other behaviour (behavior "tour") gives the tour the stage's arrow keys too.
+		const tour = stage.hasAttribute("data-vpk-iso-tour") ? core.mountTour({ win, loop, core, stage, root, svg, attr, find, setText, speak, now, fromReview, keys: behavior === "tour", clocks: { tween, tval, tdone } }) : null;
+		if (tour) poses.push(tour.pose);
+		if (behavior === "tour") {
+			if (!tour) throw new Error("tour");
+			return restMotion(stage, root, svg, tour.still);
+		}
+		// Step and scrub figures (state-runtime.mjs): states, variants and per-state painter order.
+		if (behavior === "step" || behavior === "scrub") {
+			const states = core.mountStates({ win, loop, core, stage, root, svg, attr, find, role, setText, speak, restore, now, fromReview, line, measure, toView, clocks: { tween, tset, tval, tdone, spring, stepS } });
+			poses.push(on => {
+				states.pose(on);
+				rests.forEach(fn => fn());
+			});
+			const enhancer = doc.querySelector("script[data-vpkh-enhance]");
+			if (enhancer && !enhancer.textContent.includes("vpkh-no-lightbox")) stage.addEventListener("click", e => e.stopPropagation());
+			return restMotion(stage, root, svg, states.still);
+		}
+		const zd = Number(attr(svg, "zdepth")) || 0;
+		const liftZ = Number(attr(svg, "lift-z")) || 0;
 		// The select blink and the narrow tag leaders live in manual-runtime.mjs (core.blink, core.tagLines).
 		const blinks = svg.hasAttribute("data-vpk-iso-blink");
 		const readout = find(root, "readout");
@@ -191,29 +241,27 @@ export function createIsoRuntime(win, loop, core) {
 		const parts = [...svg.querySelectorAll("[data-vpk-iso-part]")].map((el, i) => {
 			const id = attr(el, "part");
 			const name = attr(el, "of") || id;
-			const base = { el, i, id, name, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
-			// A fixed part (data-vpk-iso-fixed) is scenery: it never moves, has no hit polygon and is no keyboard stop (unit -1).
-			if (el.hasAttribute("data-vpk-iso-fixed")) return { ...base, unit: -1, vec: [0, 0] };
+			// Each piece hits by its own hull (a bent tube's chunks, a tray's back and front), never the hull of its whole unit; a
+			// straight wire's degenerate hull is padded; a concave prism hits by its convex solids (core.partPoly).
+			const poly = core.partPoly(el);
+			const plan = (attr(el, "plan") || "").split(";").map(box => box.trim().split(/\s+/).map(Number)).filter(box => box.length === 4 && box.every(Number.isFinite));
+			const base = { el, i, id, name, poly, plan, depth: Number(attr(el, "depth")) || 0, depth0: Number(attr(el, "depth0")) || 0, group: el.parentNode, tw: tween(0, SELECT_MS), lv: 0, k: 0, dx: 0, dy: 0, tf: null, on: false };
+			// A fixed part (data-vpk-iso-fixed) is scenery: it never moves and is no keyboard stop (unit -1). It still hits in painter
+			// order by each of its faces, so drawn in front (a tray's near wall) it stops the pointer reaching the part behind it.
+			if (el.hasAttribute("data-vpk-iso-fixed")) {
+				poly.solids ??= [...el.querySelectorAll(role("fill"))].map(f => core.hull(core.parsePolyPath(f.getAttribute("d")) || [])).filter(q => q.length >= 3);
+				return { ...base, unit: -1, vec: [0, 0] };
+			}
 			const vec = core.parseVec(attr(el, vecKey));
 			if (!vec) throw new Error("vector");
 			if (!unitOf.has(name)) {
 				unitOf.set(name, units.length);
-				units.push({ name, label: attr(el, "label") || name, points: [] });
+				units.push({ name, label: attr(el, "label") || name });
 			}
-			const unit = unitOf.get(name);
-			let points = [...el.querySelectorAll(role("fill"))].flatMap(p => core.parsePolyPath(p.getAttribute("d")) || []);
-			if (!points.length) points = core.parsePolyPath((el.querySelector(role("edge")) || el).getAttribute("d")) || [];
-			units[unit].points.push(...points);
-			return { ...base, unit, vec, grow: el.hasAttribute("data-vpk-iso-grow") && growOf(el) };
+			return { ...base, unit: unitOf.get(name), vec, grow: el.hasAttribute("data-vpk-iso-grow") && growOf(el) };
 		});
-		for (const unit of units) unit.poly = core.hull(unit.points);
-		if (!units.length || units.some(unit => unit.poly.length < 3)) throw new Error("polygon");
-		// Hit order is painter order: each unit at its first part, and each face of a fixed part as a blocker (unit -1), so a fixed
-		// part drawn in front (a tray's near wall) stops the pointer reaching the part behind it.
-		const hits = parts.flatMap(p => (p.unit < 0
-			? [...p.el.querySelectorAll(role("fill"))].map(f => ({ at: p.i, unit: -1, poly: core.hull(core.parsePolyPath(f.getAttribute("d")) || []) }))
-			: parts.find(q => q.unit === p.unit) === p ? [{ at: p.i, unit: p.unit, poly: units[p.unit].poly }] : []));
-		const polys = hits.map(h => h.poly);
+		if (!units.length || parts.some(p => p.poly.length < 3)) throw new Error("polygon");
+		const polys = parts.map(p => p.poly);
 		const byId = new Map(parts.map(p => [p.id, p]));
 		// Cast shadows stay on the ground: each moves by its cast vector times its part's motion (k: the lift, or the Gap offset).
 		// A received shadow (on a part's top) rides in its receiver's group, so it moves by its caster's cast less the receiver's (cast-on).
@@ -239,26 +287,30 @@ export function createIsoRuntime(win, loop, core) {
 			if (pts && target) lines.push(line(el, pts, false, pts.map((_, k) => (k === pts.length - 1 ? target : null))));
 		}
 		if (svg.querySelector("[data-vpk-iso-tag-for]")) lines.push(...core.tagLines(core.parsePolyPath, svg, parts, line));
+		const groups = new Map();
+		for (const p of parts) {
+			if (!groups.has(p.group)) groups.set(p.group, []);
+			groups.get(p.group).push(p);
+		}
+		// Footprints that overlap in plan (data-vpk-iso-plan; a part without one overlaps nothing): only such a pair can trade places
+		// when one lifts.
+		const overlap = (a, b) => a.plan.some(p => b.plan.some(q => p[0] < q[2] && q[0] < p[2] && p[1] < q[3] && q[1] < p[3]));
+		for (const list of groups.values()) {
+			list.order = list.slice();
+			list.tail = list[list.length - 1].el.nextElementSibling;
+			list.over = list.map(a => list.map(b => a !== b && overlap(a, b)));
+		}
 
-		let rect = null;
-		const measure = () => (rect = rect || svg.getBoundingClientRect());
-		const invalidate = () => {
-			rect = null;
-		};
-		win.addEventListener("scroll", invalidate, { passive: true, capture: true });
-		if (win.ResizeObserver) new win.ResizeObserver(invalidate).observe(stage);
-		const toView = (cx, cy) => {
-			const r = measure();
-			const s = Math.min(r.width / vb[2], r.height / vb[3]) || 1;
-			return [(cx - r.left - (r.width - vb[2] * s) / 2) / s + vb[0], (cy - r.top - (r.height - vb[3] * s) / 2) / s + vb[1]];
-		};
-
-		const cfg = behavior === "explode" && control
-			? { rest: Number(control.defaultValue || control.value), max: Number(control.max), unit: (readout && readout.textContent.trim().split(" ")[0]) || "gap" }
+		const cfg = (behavior === "explode" || teardown) && control
+			? { rest: Number(control.defaultValue || control.value), min: Number(control.min), max: Number(control.max), unit: teardown ? "spread" : (readout && readout.textContent.trim().split(" ")[0]) || "gap" }
 			: null;
-		if (behavior === "explode" && !cfg) throw new Error("control");
+		if ((behavior === "explode" || teardown) && !cfg) throw new Error("control");
+		if (teardown && control.hasAttribute("data-vpk-iso-start")) control.value = control.getAttribute("data-vpk-iso-start");
+		const poseButtons = teardown ? [...root.querySelectorAll("[data-vpk-iso-pose]")] : [];
+		const poseText = value => (value >= cfg.max - 1e-6 ? "exploded" : value <= cfg.min + 1e-6 ? "assembled" : `spread ${value.toFixed(2)}`);
+		if (teardown) control.setAttribute("aria-valuetext", poseText(Number(control.value)));
 		const restText = readout ? attr(readout, "rest") || readout.textContent : "";
-		const st = { sel: { count: units.length, active: null, last: null }, ex: cfg ? { committed: Number(control.value), preview: null } : null, gap: spring(cfg ? Number(control.value) : 0), text: readout ? readout.textContent : "", said: null, liveText: null, leaveAt: null };
+		const st = { sel: { count: units.length, active: null, last: null }, ex: cfg ? { committed: Number(control.value), preview: null } : null, gap: spring(cfg ? Number(control.value) : 0), text: readout ? readout.textContent : "", said: null, liveText: null, leaveAt: null, apart: true, closed: false };
 		let board = null;
 		const wake = () => board && board.wake();
 
@@ -272,26 +324,39 @@ export function createIsoRuntime(win, loop, core) {
 		};
 		const leave = (t, touch) => {
 			// A touch "leave" follows every tap; the open/closed state belongs to the next tap, not to it.
-			if (cfg) {
+			if (teardown) {
+				if (touch) st.leaveAt = t + 1400;
+				else select(selectReducer(st.sel, { type: "leave" }), t);
+			} else if (cfg) {
 				if (!touch) st.ex = explodeReducer(st.ex, { type: "leave" }, cfg);
 			} else if (touch) st.leaveAt = t + 1400;
 			else select(selectReducer(st.sel, { type: "leave" }), t);
 			wake();
 		};
 
+		// A teardown part's hit polygon is drawn at the exploded pose; off it the part has moved by (dx, dy) and, past half way, the
+		// parts paint in the assembled order. So hit the parts in their current paint order, each at its current offset.
+		const byEl = new Map(parts.map(p => [p.el, p]));
+		const teardownHit = pt => {
+			const drawn = [...svg.querySelectorAll("[data-vpk-iso-part]")].map(el => byEl.get(el)).filter(Boolean);
+			for (let k = drawn.length - 1; k >= 0; k--) {
+				const p = drawn[k];
+				if (core.topmostHit([p.poly], [pt[0] - p.dx, pt[1] - p.dy]) === 0) return p.unit;
+			}
+			return -1;
+		};
 		const move = e => {
 			if (fromReview(e)) return;
-			if (cfg) {
+			if (cfg && !teardown) {
 				st.ex = explodeReducer(st.ex, { type: e.pointerType === "mouse" ? "hover" : "toggle" }, cfg);
 				wake();
 				return;
 			}
 			st.leaveAt = null;
-			const top = core.topmostHit(polys, toView(e.clientX, e.clientY));
-			const hit = top < 0 ? -1 : hits[top].unit;
+			const pt = toView(e.clientX, e.clientY);
+			const hit = teardown ? teardownHit(pt) : (top => (top < 0 ? -1 : parts[top].unit))(core.topmostHit(polys, pt));
 			if ((hit < 0 ? null : hit) !== st.sel.active) select(selectReducer(st.sel, { type: "hover", unit: hit }), now());
 		};
-		stage.addEventListener("pointerenter", invalidate);
 		// A finger or pen tap sends no pointermove, so non-mouse pointerdown hit-tests like a move
 		// (hairline kernel `pointer().down`). On a select figure the touch leave holds the result for 1400 ms; on an explode
 		// figure each tap toggles the full gap and the touch leave changes nothing.
@@ -300,7 +365,7 @@ export function createIsoRuntime(win, loop, core) {
 			if (e.pointerType !== "mouse") move(e);
 		});
 		stage.addEventListener("pointermove", e => {
-			if (!cfg || e.pointerType === "mouse") move(e);
+			if (!cfg || teardown || e.pointerType === "mouse") move(e);
 		});
 		stage.addEventListener("pointerleave", e => leave(now(), e.pointerType === "touch"));
 		stage.addEventListener("pointercancel", e => leave(now(), e.pointerType === "touch"));
@@ -311,10 +376,18 @@ export function createIsoRuntime(win, loop, core) {
 			});
 			control.addEventListener("change", () => {
 				st.ex = explodeReducer(st.ex, { type: "change", value: Number(control.value) }, cfg);
-				st.liveText = st.ex.live;
+				st.liveText = teardown ? poseText(st.ex.committed) : st.ex.live;
+				if (teardown) control.setAttribute("aria-valuetext", poseText(st.ex.committed));
 				wake();
 			});
-		} else {
+			// Exploded / Assembled: each button sets the slider to its pose and commits it, so the slider stays the one source of truth.
+			for (const button of poseButtons) button.addEventListener("click", () => {
+				control.value = button.getAttribute("data-vpk-iso-pose");
+				control.dispatchEvent(new win.Event("input", { bubbles: true }));
+				control.dispatchEvent(new win.Event("change", { bubbles: true }));
+			});
+		}
+		if (teardown || !cfg) {
 			stage.addEventListener("keydown", e => {
 				if (fromReview(e) || e.altKey || e.ctrlKey || e.metaKey) return;
 				const next = selectReducer(st.sel, { type: "key", key: e.key });
@@ -327,8 +400,38 @@ export function createIsoRuntime(win, loop, core) {
 		const enhancer = doc.querySelector("script[data-vpkh-enhance]");
 		if (enhancer && !enhancer.textContent.includes("vpkh-no-lightbox")) stage.addEventListener("click", e => e.stopPropagation());
 
-		// A lift is vertical, so it never changes which part is nearer the viewer: the lifted part keeps its painter-order place and
-		// the parts in front of it still cover it (re-sorting by lifted height drew a lifted card over the nearer cards).
+		// Depth re-sort within a motion group (select lift); at rest the order is painter order again. A lift is straight up, so it
+		// reorders only pairs whose plans overlap (one stands over the other); every other pair keeps painter order, and a card that
+		// rises behind a nearer card stays behind it. The pairwise rule is a partial order: placed by a topological pass that takes
+		// the earliest ready part in painter order (and breaks a cycle the same way).
+		function resort() {
+			const key = p => p.depth + p.lv * liftZ * zd;
+			for (const [g, list] of groups) {
+				const n = list.length;
+				if (n < 2) continue;
+				const next = list.map(() => []);
+				const deg = list.map(() => 0);
+				for (let a = 0; a < n; a++) {
+					for (let b = a + 1; b < n; b++) {
+						const [u, v] = list.over[a][b] && key(list[b]) < key(list[a]) ? [b, a] : [a, b];
+						next[u].push(v);
+						deg[v]++;
+					}
+				}
+				const placed = list.map(() => false);
+				const order = [];
+				while (order.length < n) {
+					let k = deg.findIndex((d, j) => !placed[j] && d <= 0);
+					if (k < 0) k = placed.indexOf(false);
+					placed[k] = true;
+					order.push(list[k]);
+					for (const v of next[k]) deg[v]--;
+				}
+				if (order.every((p, k) => p === list.order[k])) continue;
+				list.order = order;
+				for (const p of order) g.insertBefore(p.el, list.tail);
+			}
+		}
 
 		// One translate per moved element (a part, or a shadow on the ground), written only when it changes; none at rest. A grown
 		// part (p.grow) is not translated: its face paths keep their base points and move their top-face points (grow()).
@@ -362,6 +465,7 @@ export function createIsoRuntime(win, loop, core) {
 				line.d = d;
 				line.el.setAttribute("d", d);
 			}
+			if (liftZ && zd) resort();
 		}
 
 		// Print pose. The print CSS forces part transforms to none, but guide and leader `d`, the
@@ -379,6 +483,15 @@ export function createIsoRuntime(win, loop, core) {
 				p.dx = p.dy = p.lv = p.k = 0;
 				p.on = false;
 				for (const el of [p.el, ...labelsFor[p.i]]) restore(el);
+			}
+			// Teardown prints the static (exploded) art: its painter order and its labels, whatever the spread on screen. The next
+			// tick after printing re-derives both from the spread.
+			if (teardown) {
+				for (const [g, list] of groups) if (list.orig) for (const node of list.orig) g.appendChild(node);
+				st.closed = false;
+				st.apart = true;
+				svg.classList.remove("vpk-iso-assembling");
+				if (!svg.classList.length) svg.removeAttribute("class");
 			}
 			write();
 		};
@@ -398,6 +511,50 @@ export function createIsoRuntime(win, loop, core) {
 					p.dy = p.vec[1] * p.k;
 				}
 				text = `${cfg.unit} ${st.gap.x.toFixed(2)}`;
+				if (teardown) {
+					if (st.leaveAt !== null && t >= st.leaveAt) {
+						st.leaveAt = null;
+						select(selectReducer(st.sel, { type: "leave" }), t);
+					}
+					busy = busy || st.leaveAt !== null;
+					for (const p of parts) {
+						// The select tween drives only the blink here; the part does not lift (it moves with the spread).
+						p.lv = tval(p.tw, t, reduced);
+						busy = busy || !tdone(p.tw, t, reduced);
+						const on = p.unit === st.sel.active;
+						if (on === p.on) continue;
+						p.on = on;
+						for (const el of [p.el, ...labelsFor[p.i]]) {
+							if (on) el.classList.add("is-active");
+							else restore(el);
+						}
+					}
+					const settled = Math.abs(st.gap.x - st.gap.t) < 0.005 ? st.gap.t : st.gap.x;
+					// Labels belong to the exploded drawing: hidden while the parts are out of that pose (runtime-css).
+					const apart = settled >= cfg.max - 1e-6;
+					// Past half way the parts are drawn in the assembled pose's painter order (data-vpk-iso-depth0), else in the exploded one.
+					const closed = st.gap.x < (cfg.min + cfg.max) / 2;
+					if (closed !== st.closed) {
+						st.closed = closed;
+						for (const [g, list] of groups) {
+							// Reopening restores the group's exact original children (guides sit between parts), so the rest art returns byte for byte.
+							list.orig ??= [...g.childNodes];
+							if (!closed) {
+								for (const node of list.orig) g.appendChild(node);
+								continue;
+							}
+							const order = list.slice().sort((a, b) => a.depth0 - b.depth0 || a.i - b.i);
+							for (const p of order) g.insertBefore(p.el, list.tail);
+						}
+					}
+					if (apart !== st.apart) {
+						st.apart = apart;
+						svg.classList.toggle("vpk-iso-assembling", !apart);
+						if (!svg.classList.length) svg.removeAttribute("class");
+					}
+					text = st.sel.active === null ? poseText(settled) : units[st.sel.active].label;
+					for (const button of poseButtons) button.setAttribute("aria-pressed", String(Math.abs(Number(button.getAttribute("data-vpk-iso-pose")) - st.ex.committed) < 1e-6));
+				}
 			} else {
 				if (st.leaveAt !== null && t >= st.leaveAt) {
 					st.leaveAt = null;
@@ -425,7 +582,7 @@ export function createIsoRuntime(win, loop, core) {
 				setText(readout, text);
 			}
 			if (live && st.liveText !== null) {
-				if (st.liveText !== st.said) setText(live, st.liveText);
+				if (st.liveText !== st.said) speak(live, st.liveText);
 				st.said = st.liveText;
 				st.liveText = null;
 			}
@@ -434,11 +591,18 @@ export function createIsoRuntime(win, loop, core) {
 
 		labelsFor = parts.map(p => [...svg.querySelectorAll("[data-vpk-iso-label-for], [data-vpk-iso-arrow-for]")].filter(g => [p.id, p.name].includes(attr(g, "label-for") || attr(g, "arrow-for"))));
 		board = loop.register(stage, tick, { rest: () => pose(true) });
+		// A teardown that starts assembled (data-vpk-iso-start below the slider's rest) must close on mount: the static art is the
+		// exploded drawing, and nothing else wakes the board before the first input.
+		if (teardown && Math.abs(st.gap.x - cfg.rest) > 1e-6) wake();
+		restMotion(stage, root, svg, () => still);
+	}
 
-		// Motion at rest (iso/accent.mjs REST_MOTION; the keyframes are runtime-css): data-vpk-iso-rest on the stage (not the
-		// svg, whose outerHTML stays the static art, R9) once the figure has been idle IDLE_RESUME_MS after its entrance (SMIL)
-		// or the last input, while it is on screen, the tab is shown, motion is not reduced and it is not printing (the 3D
-		// prototype starts its sway the same idle delay after its entry). No frame callback: the CSS animates.
+	// Motion at rest (iso/accent.mjs REST_MOTION; the keyframes are runtime-css): data-vpk-iso-rest on the stage (not the
+	// svg, whose outerHTML stays the static art, R9) once the figure has been idle IDLE_RESUME_MS after its entrance (SMIL)
+	// or the last input, while it is on screen, the tab is shown, motion is not reduced and it is not printing (the 3D
+	// prototype starts its sway the same idle delay after its entry). No frame callback: the CSS animates. Every behaviour
+	// shares it; `still()` says whether the figure is holding its print pose.
+	function restMotion(stage, root, svg, still) {
 		let idleAt = now() + REST_IDLE_MS + Math.max(0, ...[...svg.querySelectorAll("[dur]")].map(a => restMs(a.getAttribute("dur"))));
 		let shown = !win.IntersectionObserver;
 		let timer = 0;
@@ -446,7 +610,7 @@ export function createIsoRuntime(win, loop, core) {
 			win.clearTimeout(timer);
 			const wait = idleAt - now();
 			if (wait > 0) timer = win.setTimeout(rest, wait + 20);
-			const allowed = shown && !still && !doc.hidden && !loop.reducedMotion();
+			const allowed = shown && !still() && !doc.hidden && !loop.reducedMotion();
 			// Input pauses the drift where it is (and it resumes from there), so the drawing never snaps back under the pointer.
 			if (allowed && wait <= 0) stage.setAttribute("data-vpk-iso-rest", "");
 			else if (allowed && stage.hasAttribute("data-vpk-iso-rest")) stage.setAttribute("data-vpk-iso-rest", "paused");

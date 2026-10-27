@@ -1,0 +1,89 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "td-gpu",
+	"figId": "FIG_204",
+	"title": "Teardown of a graphics card",
+	"label": "A graphics card taken apart upward: backplate, circuit board with GPU, memory chips, power stages and display ports, the vapour-chamber cold plate, two heat pipes, the fin stack and the fan shroud with three fans. The GPU is accented.",
+	"caption": "Heat climbs the stack: GPU to cold plate, along the heat pipes into the fins, and out through the three fans in the shroud.",
+	"camera": { "preset": "dimetric", "scale": "fit" },
+	"parts": [
+		{ "id": "backplate", "kind": "slab", "at": [0, 0, 0], "size": [250, 104, 1.6], "r": 3, "label": "Backplate", "detail": [{ "type": "inset", "face": "top", "by": 10, "r": 4 }] },
+		{ "id": "pcb", "kind": "slab", "at": [4, 6, 2], "size": [236, 96, 1.6], "r": 2, "label": "Circuit board", "detail": [{ "type": "ticks", "face": "+y", "from": [96, 0.8], "to": [176, 0.8], "step": 1.5, "lengths": [0.6, 0.6] }] },
+		{ "id": "gpu", "kind": "box", "at": [100, 40, 3.6], "size": [26, 26, 2.2], "r": 0.6, "label": "GPU", "detail": [{ "type": "inset", "face": "top", "by": 4, "r": 1 }] },
+		{ "id": "vram", "kind": "box", "at": [80, 44, 3.6], "size": [10, 14, 1.2], "r": 0.4, "label": "Memory", "guides": false, "instances": [{ "at": [80, 44, 3.6] }, { "at": [136, 44, 3.6] }, { "at": [106, 74, 3.6], "size": [14, 10, 1.2] }, { "at": [106, 22, 3.6], "size": [14, 10, 1.2] }, { "at": [84, 26, 3.6] }, { "at": [132, 64, 3.6] }] },
+		{ "id": "vrm", "kind": "box", "at": [160, 20, 3.6], "size": [7, 7, 4], "r": 0.6, "label": "Power stages", "guides": false, "repeat": { "grid": { "count": [3, 4], "step": [9, 9] } } },
+		{ "id": "port", "kind": "box", "at": [6, 16, 3.6], "size": [12, 15, 7], "r": 0.6, "label": "Display ports", "guides": false, "repeat": { "linear": { "count": 4, "step": [0, 18, 0] } } },
+		{ "id": "bracket", "kind": "slab", "at": [-4, 0, 0], "size": [2, 104, 40], "r": 1, "label": "I/O bracket", "detail": [{ "type": "recess", "face": "+x", "shape": "rect", "at": [14, 10], "size": [14, 8] }, { "type": "recess", "face": "+x", "shape": "rect", "at": [32, 10], "size": [14, 8] }, { "type": "recess", "face": "+x", "shape": "rect", "at": [50, 10], "size": [14, 8] }, { "type": "recess", "face": "+x", "shape": "rect", "at": [68, 10], "size": [14, 8] }], "explode": [-40, 0, 0] },
+		{ "id": "coldplate", "kind": "slab", "at": [92, 32, 5.8], "size": [42, 42, 3], "r": 3, "label": "Cold plate", "detail": [{ "type": "recess", "face": "top", "shape": "circle", "at": [3, 3], "size": [2.4, 2.4] }, { "type": "recess", "face": "top", "shape": "circle", "at": [39, 39], "size": [2.4, 2.4] }] },
+		{ "id": "pipe", "kind": "tube", "points": [[30, 46, 10], [96, 46, 10], [130, 46, 10], [220, 46, 10]], "radius": 2.6, "label": "Heat pipes", "instances": [{ "points": [[30, 46, 10], [220, 46, 10]] }, { "points": [[30, 60, 10], [220, 60, 10]] }] },
+		{ "id": "fins", "kind": "box", "at": [236.2, 8, 13], "size": [1.2, 92, 22], "r": 0, "label": "Fin stack", "guides": false, "repeat": { "linear": { "count": 60, "step": [-3.8, 0, 0] } } },
+		{ "id": "shroud", "kind": "slab", "at": [4, 0, 35], "size": [242, 104, 6], "r": 6, "label": "Fan shroud", "detail": [{ "type": "recess", "face": "top", "shape": "circle", "at": [46, 52], "size": [72, 72], "depth": 2 }, { "type": "recess", "face": "top", "shape": "circle", "at": [124, 52], "size": [72, 72], "depth": 2 }, { "type": "recess", "face": "top", "shape": "circle", "at": [202, 52], "size": [72, 72], "depth": 2 }] },
+		{ "id": "fan", "kind": "cylinder", "at": [50, 52, 41], "size": [30, 30, 2], "label": "Fans", "repeat": { "linear": { "count": 3, "step": [78, 0, 0] } }, "detail": [{ "type": "spokes", "face": "top", "r0": 8, "r1": 29, "count": 11 }, { "type": "recess", "face": "top", "shape": "circle", "at": [0, 0], "size": [16, 16] }] }
+	],
+	"focal": "gpu",
+	"labels": [
+		{ "text": "Fans", "target": "fan", "side": "right" },
+		{ "text": "Fan shroud", "target": "shroud", "side": "right" },
+		{ "text": "Fin stack", "target": "fins", "side": "left" },
+		{ "text": "Heat pipes", "target": "pipe", "side": "right" },
+		{ "text": "Cold plate", "target": "coldplate", "side": "right" },
+		{ "text": "GPU", "target": "gpu", "side": "right" },
+		{ "text": "Display ports", "target": "port", "side": "left" },
+		{ "text": "I/O bracket", "target": "bracket", "side": "left" },
+		{ "text": "Circuit board", "target": "pcb", "side": "right" },
+		{ "text": "Backplate", "target": "backplate", "side": "left" }
+	],
+	"assemble": { "layers": [["backplate"], ["pcb", "gpu", "vram", "vrm", "port", "bracket"], ["coldplate"], ["pipe"], ["fins"], ["shroud"], ["fan"]] },
+	"interact": { "behavior": "teardown", "teardown": { "gap": 30 } },
+	"tour": {
+		"overview": "A graphics card taken apart along one axis: the board and its chips, then the cooler, layer by layer, from the cold plate up to the fans.",
+		"steps": [
+			{
+				"title": "GPU and memory",
+				"text": "The GPU die sits at the centre of the board, with the memory chips around it. Together they do the card's work, and most of its heat comes from here.",
+				"parts": [
+					"gpu",
+					"vram"
+				]
+			},
+			{
+				"title": "Power stages",
+				"text": "A row of power stages turns the 12 V input into the low, steady voltage the GPU needs, and they get hot too.",
+				"parts": [
+					"vrm"
+				]
+			},
+			{
+				"title": "Ports and bracket",
+				"text": "The display ports at the end of the board come out through the I/O bracket, which also screws the card to the case.",
+				"parts": [
+					"port",
+					"bracket"
+				]
+			},
+			{
+				"title": "Cold plate and heat pipes",
+				"text": "A copper cold plate presses on the GPU. Two heat pipes carry its heat away to the fin stack.",
+				"parts": [
+					"coldplate",
+					"pipe"
+				]
+			},
+			{
+				"title": "Fin stack",
+				"text": "Sixty thin fins spread the heat over a large area so the air can carry it away.",
+				"parts": [
+					"fins"
+				]
+			},
+			{
+				"title": "Shroud and fans",
+				"text": "Three fans in the shroud push air down through the fins and out of the card.",
+				"parts": [
+					"shroud",
+					"fan"
+				]
+			}
+		]
+	}
+}

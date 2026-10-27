@@ -18,7 +18,7 @@
 import { buildFaviconLinkBlock, buildSharedCssBlock } from "../shared.mjs";
 import { engineRoots } from "./check-figures.mjs";
 
-export const FIGURE_ENGINE_VALUES = Object.freeze(["none", "iso-kit", "anatomy-hero", "both"]);
+export const FIGURE_ENGINE_VALUES = Object.freeze(["none", "iso-kit", "anatomy-hero", "both", "hairline", "anatomy-gl"]);
 
 const ENGINE_META = /<meta\b[^>]*\bname\s*=\s*["']vpk-figure-engine["'][^>]*>/i;
 
@@ -30,11 +30,15 @@ function escapeAttr(value) {
 	return escapeText(value).replace(/"/g, "&quot;");
 }
 
-// Engine record derived from the element roots present: no roots → "none".
+// Engine record derived from the element roots present: no roots → "none". Hairline roots record "hairline"
+// ("both" stays iso-kit plus anatomy-hero); a page that mixes hairline with another engine passes its meta explicitly.
 export function deriveFigureEngine(html) {
-	const kinds = new Set(engineRoots(String(html)).map(root => String(root.engine).toLowerCase()).filter(engine => engine === "iso-kit" || engine === "anatomy-hero"));
+	const roots = new Set(engineRoots(String(html)).map(root => String(root.engine).toLowerCase()));
+	const kinds = new Set([...roots].filter(engine => engine === "iso-kit" || engine === "anatomy-hero"));
 	if (kinds.size === 2) return "both";
-	return kinds.size === 1 ? [...kinds][0] : "none";
+	if (kinds.size === 1) return [...kinds][0];
+	if (roots.has("hairline")) return "hairline";
+	return roots.has("anatomy-gl") ? "anatomy-gl" : "none";
 }
 
 export function figureEngineMetaTag(engine) {

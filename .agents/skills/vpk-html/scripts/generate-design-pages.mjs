@@ -4,7 +4,6 @@ import fs from "node:fs";
 import path from "node:path";
 import {
 	DEMOS,
-	ROOT,
 	TOKENS_FILE,
 	buildFaviconLinkBlock,
 	buildSharedCssBlock,
@@ -222,10 +221,6 @@ function safeValueHtml(value) {
 	return escapeHtml(value)
 		.replace(/#/g, "&#35;")
 		.replace(/\b(rgba?|hsla?)\(/gi, "$1&#40;");
-}
-
-function slugify(value) {
-	return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 function semanticMap(tokens) {

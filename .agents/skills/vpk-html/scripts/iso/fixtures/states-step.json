@@ -1,0 +1,30 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "states-throttle",
+	"figId": "FIG_042",
+	"title": "Throttle states",
+	"label": "A nozzle on a base opens through three states while a carriage slides along its rail and a crank arm turns; the plume shows only at full power.",
+	"caption": "Each step changes the nozzle, the carriage position and the crank angle together.",
+	"labels": "none",
+	"emphasis": "ink",
+	"focal": "nozzle",
+	"parts": [
+		{ "id": "base", "kind": "slab", "at": [0, 0, 0], "size": [120, 60, 8] },
+		{ "id": "rail", "kind": "box", "at": [10, 44, 8], "size": [100, 6, 3] },
+		{ "id": "carriage", "kind": "box", "at": [14, 40, 11], "size": [16, 14, 8], "tone": "ink" },
+		{ "id": "nozzle", "kind": "cone", "at": [80, 22, 8], "axis": "z", "r0": 12, "r1": 6, "length": 18, "variants": { "half": { "r1": 9 }, "open": { "r1": 12 } } },
+		{ "id": "plume", "kind": "cylinder", "at": [80, 22, 26], "size": [10, 10, 14] },
+		{ "id": "hub", "kind": "cylinder", "at": [30, 18, 8], "size": [7, 7, 6] },
+		{ "id": "crank", "kind": "rod", "from": [30, 18, 16], "to": [48, 18, 16], "radius": 1.6, "rotate": { "axis": "z", "about": [30, 18, 16], "deg": [0, 120], "samples": 9 } }
+	],
+	"interact": {
+		"behavior": "step",
+		"values": { "kN": [12.4, 45.6, 79.3] },
+		"readout": "{name} · {kN} kN",
+		"states": [
+			{ "name": "idle", "parts": { "plume": { "hidden": true } } },
+			{ "name": "spool", "parts": { "nozzle": { "variant": "half" }, "plume": { "hidden": true }, "carriage": { "move": [36, 0, 0] } } },
+			{ "name": "full", "parts": { "nozzle": { "variant": "open" }, "carriage": { "move": [76, 0, 0] } } }
+		]
+	}
+}
