@@ -3,44 +3,4475 @@
 	"id": "an-forge",
 	"figId": "FIG_220",
 	"title": "Forge and hammer",
-	"label": "Dimetric smithy: a forge table with firepot, hood and chimney, an accented bar in the fire, a cranked blower ducted to the fire, a quench tub, and a power hammer ram over an anvil. Hover or arrow keys lift a part.",
-	"caption": "The blower feeds the coal until the bar reaches forging heat, each blow of the ram flattens it on the anvil, and the quench tub takes it back to cold.",
-	"camera": { "preset": "dimetric", "scale": "fit" },
+	"label": "Coal forge and power hammer on a base board: anvil, lipped table with a glowing coal bed, firebox hood and chimney, cranked blower, coal bucket, quench tub, and a belt-driven hammer over a hot billet in tongs.",
+	"caption": "The blower drives the coal bed to 1,325 °C and brings the bar to a yellow forging heat; each blow of the ram flattens it (40 mm to 32 mm) and the quench tub takes it back to cold. Move across the figure: left taps the tub, centre holds the fire, right holds the hammer.",
+	"camera": {
+		"preset": "dimetric",
+		"scale": "fit"
+	},
+	"focal": "billet-hot",
+	"labels": "none",
 	"parts": [
-		{ "id": "table", "kind": "box", "at": [8, 10, 0], "size": [42, 34, 24], "r": 2, "label": "Forge table", "marks": [[[0, 17], [42, 17]]] },
-		{ "id": "duct", "kind": "box", "at": [22, 44, 5], "size": [4, 11, 3], "r": 0, "label": "Air duct" },
-		{ "id": "blower", "kind": "cylinder", "at": [24, 60, 0], "size": [6, 6, 12], "label": "Blower" },
-		{ "id": "crank", "kind": "box", "at": [24, 59, 12], "size": [8, 2, 2], "r": 0, "label": "Crank" },
-		{ "id": "tub", "kind": "cylinder", "at": [-16, 46, 0], "size": [9, 9, 12], "label": "Quench tub" },
-		{ "id": "firepot", "kind": "cylinder", "at": [24, 28, 24], "size": [9, 9, 2], "label": "Firepot" },
-		{ "id": "hood", "kind": "box", "at": [35, 12, 24], "size": [10, 12, 12], "r": 0, "label": "Hood" },
-		{ "id": "chimney", "kind": "cylinder", "at": [40, 18, 36], "size": [3, 3, 16], "label": "Chimney" },
-		{ "id": "bar", "kind": "box", "at": [12, 26, 26], "size": [26, 4, 3], "r": 1, "label": "Bar" },
-		{ "id": "frame", "kind": "box", "at": [98, 16, 0], "size": [12, 16, 46], "r": 2, "label": "Hammer frame" },
-		{ "id": "head", "kind": "box", "at": [98, 18, 46], "size": [30, 12, 8], "r": 0, "label": "Hammer head" },
-		{ "id": "waist", "fixed": true, "kind": "box", "at": [117, 21, 0], "size": [8, 6, 8], "r": 0, "label": "Anvil base" },
-		{ "id": "anvil", "kind": "box", "at": [113, 18, 8], "size": [16, 12, 6], "r": 0, "label": "Anvil" },
-		{ "id": "ram", "kind": "box", "at": [116, 20, 24], "size": [10, 8, 10], "r": 0, "label": "Ram" }
-	],
-	"focal": "bar",
-	"labels": [
-		{ "text": "Bar at forging heat", "target": "bar", "side": "left", "anchor": [13.5, 27, 29] },
-		{ "text": "Chimney", "target": "chimney", "side": "left" },
-		{ "text": "Blower", "target": "blower", "side": "left" },
-		{ "text": "Quench tub", "target": "tub", "side": "left" },
-		{ "text": "Power hammer", "target": "head", "side": "right" },
-		{ "text": "Ram", "target": "ram", "side": "right" },
-		{ "text": "Anvil", "target": "anvil", "side": "right" }
+		{
+			"id": "board",
+			"kind": "slab",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				160,
+				100,
+				4
+			],
+			"r": 4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4.5,
+						4.5
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 151,
+					"size": 0.9
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4.5,
+						95.5
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 151,
+					"size": 0.9
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						147,
+						90
+					],
+					"size": [
+						13,
+						6.5
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						142,
+						88.8
+					],
+					"text": "FORGE 20",
+					"size": 2
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							141.5,
+							90.6
+						],
+						[
+							150,
+							90.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							141.5,
+							91.8
+						],
+						[
+							148,
+							91.8
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "ruler",
+			"kind": "plate",
+			"at": [
+				28,
+				92.5,
+				4
+			],
+			"size": [
+				96,
+				3,
+				0.3
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						1,
+						2.8
+					],
+					"to": [
+						95,
+						2.8
+					],
+					"step": 1,
+					"every": 10,
+					"lengths": [
+						0.7,
+						1.6
+					],
+					"side": -1
+				}
+			]
+		},
+		{
+			"id": "pedestal",
+			"kind": "cylinder",
+			"at": [
+				21,
+				83,
+				4
+			],
+			"size": [
+				8,
+				8,
+				32
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 26,
+					"s0": 0.6,
+					"s1": 31.4
+				},
+				{
+					"type": "bands",
+					"at": [
+						1.2,
+						30.8
+					]
+				}
+			]
+		},
+		{
+			"id": "ped-cap",
+			"kind": "box",
+			"at": [
+				13,
+				75,
+				36
+			],
+			"size": [
+				16,
+				16,
+				2.5
+			],
+			"r": 0.6
+		},
+		{
+			"id": "ped-foot",
+			"kind": "cylinder",
+			"at": [
+				21,
+				83,
+				4
+			],
+			"size": [
+				9,
+				9,
+				1.2
+			]
+		},
+		{
+			"id": "anvil",
+			"kind": "prism",
+			"axis": "-y",
+			"at": [
+				10,
+				86,
+				38.5
+			],
+			"depth": 10,
+			"round": 0.3,
+			"polygon": [
+				[
+					2,
+					0
+				],
+				[
+					20,
+					0
+				],
+				[
+					18,
+					2.4
+				],
+				[
+					14,
+					3.4
+				],
+				[
+					14,
+					7
+				],
+				[
+					20.5,
+					7.6
+				],
+				[
+					22,
+					10.5
+				],
+				[
+					22,
+					12.6
+				],
+				[
+					0,
+					12.6
+				],
+				[
+					0,
+					9.6
+				],
+				[
+					3,
+					7.6
+				],
+				[
+					8,
+					7
+				],
+				[
+					8,
+					3.4
+				],
+				[
+					4,
+					2.4
+				]
+			],
+			"detail": [
+				{
+					"type": "recess",
+					"face": "start",
+					"shape": "rect",
+					"at": [
+						4,
+						2.5
+					],
+					"size": [
+						2,
+						2
+					],
+					"depth": 0.8
+				}
+			]
+		},
+		{
+			"id": "horn",
+			"kind": "cone",
+			"axis": "x",
+			"at": [
+				32,
+				81,
+				48.6
+			],
+			"r0": 2.4,
+			"r1": 0.25,
+			"length": 11
+		},
+		{
+			"id": "heel-step",
+			"kind": "box",
+			"at": [
+				6,
+				77.5,
+				48.1
+			],
+			"size": [
+				4,
+				7,
+				3
+			],
+			"r": 0.3
+		},
+		{
+			"id": "hardy",
+			"kind": "box",
+			"at": [
+				14,
+				79.5,
+				51.1
+			],
+			"size": [
+				3,
+				3,
+				3.4
+			],
+			"r": 0.4
+		},
+		{
+			"id": "hardy-tool",
+			"kind": "rod",
+			"from": [
+				18,
+				81,
+				52.6
+			],
+			"to": [
+				27,
+				81,
+				53.6
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "leg-0",
+			"kind": "box",
+			"at": [
+				13.5,
+				7.5,
+				5
+			],
+			"size": [
+				2.5,
+				2.5,
+				37
+			],
+			"r": 0.3
+		},
+		{
+			"id": "foot-0",
+			"kind": "plate",
+			"at": [
+				12.5,
+				6.5,
+				4
+			],
+			"size": [
+				4.5,
+				4.5,
+				1
+			],
+			"r": 0.4
+		},
+		{
+			"id": "leg-1",
+			"kind": "box",
+			"at": [
+				59,
+				7.5,
+				5
+			],
+			"size": [
+				2.5,
+				2.5,
+				37
+			],
+			"r": 0.3
+		},
+		{
+			"id": "foot-1",
+			"kind": "plate",
+			"at": [
+				58,
+				6.5,
+				4
+			],
+			"size": [
+				4.5,
+				4.5,
+				1
+			],
+			"r": 0.4
+		},
+		{
+			"id": "leg-2",
+			"kind": "box",
+			"at": [
+				13.5,
+				53,
+				5
+			],
+			"size": [
+				2.5,
+				2.5,
+				37
+			],
+			"r": 0.3
+		},
+		{
+			"id": "foot-2",
+			"kind": "plate",
+			"at": [
+				12.5,
+				52,
+				4
+			],
+			"size": [
+				4.5,
+				4.5,
+				1
+			],
+			"r": 0.4
+		},
+		{
+			"id": "leg-3",
+			"kind": "box",
+			"at": [
+				59,
+				53,
+				5
+			],
+			"size": [
+				2.5,
+				2.5,
+				37
+			],
+			"r": 0.3
+		},
+		{
+			"id": "foot-3",
+			"kind": "plate",
+			"at": [
+				58,
+				52,
+				4
+			],
+			"size": [
+				4.5,
+				4.5,
+				1
+			],
+			"r": 0.4
+		},
+		{
+			"id": "rail-back",
+			"kind": "box",
+			"at": [
+				16,
+				8,
+				12
+			],
+			"size": [
+				42.5,
+				1.5,
+				1.5
+			],
+			"r": 0.2
+		},
+		{
+			"id": "rail-front",
+			"kind": "box",
+			"at": [
+				16,
+				53.5,
+				12
+			],
+			"size": [
+				42.5,
+				1.5,
+				1.5
+			],
+			"r": 0.2
+		},
+		{
+			"id": "rail-left",
+			"kind": "box",
+			"at": [
+				14,
+				10,
+				12
+			],
+			"size": [
+				1.5,
+				42.5,
+				1.5
+			],
+			"r": 0.2
+		},
+		{
+			"id": "rail-right",
+			"kind": "box",
+			"at": [
+				59.5,
+				10,
+				12
+			],
+			"size": [
+				1.5,
+				42.5,
+				1.5
+			],
+			"r": 0.2
+		},
+		{
+			"id": "apron-front",
+			"kind": "box",
+			"at": [
+				13.5,
+				54.5,
+				39
+			],
+			"size": [
+				48,
+				1,
+				3
+			],
+			"r": 0
+		},
+		{
+			"id": "apron-right",
+			"kind": "box",
+			"at": [
+				60.5,
+				7.5,
+				39
+			],
+			"size": [
+				1,
+				48,
+				3
+			],
+			"r": 0
+		},
+		{
+			"id": "table-top",
+			"kind": "box",
+			"at": [
+				13,
+				7,
+				42
+			],
+			"size": [
+				49,
+				49,
+				2
+			],
+			"r": 0.5
+		},
+		{
+			"id": "bracket",
+			"kind": "box",
+			"at": [
+				31,
+				56,
+				35
+			],
+			"size": [
+				4.5,
+				0.8,
+				8
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2.25,
+						6
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 3.5,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "firepot",
+			"kind": "ring",
+			"at": [
+				32,
+				30,
+				43.6
+			],
+			"size": [
+				12.5,
+				12.5,
+				0
+			],
+			"thickness": 0.9,
+			"inner": 10.6
+		},
+		{
+			"id": "coals",
+			"kind": "lathe",
+			"at": [
+				32,
+				30,
+				43.6
+			],
+			"tone": "glow",
+			"profile": [
+				[
+					0,
+					10.6
+				],
+				[
+					0.5,
+					10.4
+				],
+				[
+					1.4,
+					9.6
+				],
+				[
+					2.4,
+					8
+				],
+				[
+					3.3,
+					5.8
+				],
+				[
+					4,
+					3.2
+				],
+				[
+					4.3,
+					0
+				]
+			]
+		},
+		{
+			"id": "hood",
+			"kind": "box",
+			"at": [
+				46,
+				9,
+				43.6
+			],
+			"size": [
+				14,
+				12,
+				24
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1,
+					"r": 0.6
+				}
+			]
+		},
+		{
+			"id": "flue-boot",
+			"kind": "cylinder",
+			"at": [
+				53,
+				15,
+				67.6
+			],
+			"size": [
+				4.2,
+				4.2,
+				3
+			]
+		},
+		{
+			"id": "chimney",
+			"kind": "cylinder",
+			"at": [
+				53,
+				15,
+				70.6
+			],
+			"size": [
+				3.2,
+				3.2,
+				38
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						9,
+						20,
+						31
+					]
+				}
+			]
+		},
+		{
+			"id": "collar-0",
+			"kind": "cylinder",
+			"at": [
+				53,
+				15,
+				80.6
+			],
+			"size": [
+				3.8,
+				3.8,
+				1.4
+			]
+		},
+		{
+			"id": "collar-1",
+			"kind": "cylinder",
+			"at": [
+				53,
+				15,
+				94.6
+			],
+			"size": [
+				3.8,
+				3.8,
+				1.4
+			]
+		},
+		{
+			"id": "damper",
+			"kind": "rod",
+			"from": [
+				56.2,
+				15,
+				87.6
+			],
+			"to": [
+				59.5,
+				15,
+				87.6
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "damper-knob",
+			"kind": "sphere",
+			"at": [
+				59.8,
+				15,
+				87.6
+			],
+			"r": 0.8
+		},
+		{
+			"id": "strut-0",
+			"kind": "rod",
+			"from": [
+				54.8,
+				16.8,
+				108.6
+			],
+			"to": [
+				55.8,
+				17.8,
+				111.6
+			],
+			"radius": 0.25
+		},
+		{
+			"id": "strut-1",
+			"kind": "rod",
+			"from": [
+				51.2,
+				16.8,
+				108.6
+			],
+			"to": [
+				50.2,
+				17.8,
+				111.6
+			],
+			"radius": 0.25
+		},
+		{
+			"id": "strut-2",
+			"kind": "rod",
+			"from": [
+				54.8,
+				13.2,
+				108.6
+			],
+			"to": [
+				55.8,
+				12.2,
+				111.6
+			],
+			"radius": 0.25
+		},
+		{
+			"id": "strut-3",
+			"kind": "rod",
+			"from": [
+				51.2,
+				13.2,
+				108.6
+			],
+			"to": [
+				50.2,
+				12.2,
+				111.6
+			],
+			"radius": 0.25
+		},
+		{
+			"id": "rain-cap",
+			"kind": "cone",
+			"axis": "z",
+			"at": [
+				53,
+				15,
+				111.6
+			],
+			"r0": 7,
+			"r1": 0.4,
+			"length": 3.4
+		},
+		{
+			"id": "oil-can",
+			"kind": "cylinder",
+			"at": [
+				118,
+				84,
+				4
+			],
+			"size": [
+				3,
+				3,
+				4.6
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						0.6,
+						4
+					]
+				}
+			]
+		},
+		{
+			"id": "oil-cap",
+			"kind": "cylinder",
+			"at": [
+				118,
+				84,
+				8.6
+			],
+			"size": [
+				1.4,
+				1.4,
+				1
+			]
+		},
+		{
+			"id": "oil-spout",
+			"kind": "rod",
+			"from": [
+				120,
+				83,
+				7.6
+			],
+			"to": [
+				124,
+				81.5,
+				10
+			],
+			"radius": 0.4
+		},
+		{
+			"id": "oil-handle",
+			"kind": "torus",
+			"axis": "y",
+			"at": [
+				114.6,
+				84,
+				6.6
+			],
+			"R": 1.4,
+			"r": 0.3
+		},
+		{
+			"id": "plinth",
+			"kind": "slab",
+			"at": [
+				104,
+				4,
+				4
+			],
+			"size": [
+				50,
+				46,
+				3
+			],
+			"r": 1,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.5,
+						2.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 41,
+					"size": 0.8
+				}
+			]
+		},
+		{
+			"id": "plinth-2",
+			"kind": "box",
+			"at": [
+				107,
+				7,
+				7
+			],
+			"size": [
+				44,
+				40,
+				3
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1,
+					"r": 0.4
+				}
+			]
+		},
+		{
+			"id": "anchor-0",
+			"kind": "cylinder",
+			"at": [
+				105.8,
+				5.8,
+				7
+			],
+			"size": [
+				0.9,
+				0.9,
+				0.9
+			]
+		},
+		{
+			"id": "anchor-1",
+			"kind": "cylinder",
+			"at": [
+				152,
+				5.8,
+				7
+			],
+			"size": [
+				0.9,
+				0.9,
+				0.9
+			]
+		},
+		{
+			"id": "anchor-2",
+			"kind": "cylinder",
+			"at": [
+				105.8,
+				48,
+				7
+			],
+			"size": [
+				0.9,
+				0.9,
+				0.9
+			]
+		},
+		{
+			"id": "anchor-3",
+			"kind": "cylinder",
+			"at": [
+				152,
+				48,
+				7
+			],
+			"size": [
+				0.9,
+				0.9,
+				0.9
+			]
+		},
+		{
+			"id": "column",
+			"kind": "box",
+			"at": [
+				126,
+				9,
+				10
+			],
+			"size": [
+				19,
+				18,
+				126
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.6,
+					"r": 0.4
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "rect",
+					"at": [
+						9,
+						18
+					],
+					"size": [
+						8,
+						20
+					],
+					"depth": 0.4
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.6,
+							44
+						],
+						[
+							16.4,
+							44
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.6,
+							86
+						],
+						[
+							16.4,
+							86
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							44
+						],
+						[
+							17,
+							44
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							2,
+							86
+						],
+						[
+							17,
+							86
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "housing",
+			"kind": "box",
+			"at": [
+				111,
+				26,
+				10
+			],
+			"size": [
+				17,
+				15,
+				44
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						6,
+						31
+					],
+					"size": [
+						7,
+						6
+					],
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							3.6,
+							32.4
+						],
+						[
+							8.4,
+							32.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							3.6,
+							31
+						],
+						[
+							8.4,
+							31
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							3.6,
+							29.6
+						],
+						[
+							7,
+							29.6
+						]
+					]
+				},
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 1.6,
+					"r": 0.3
+				},
+				{
+					"type": "ticks",
+					"face": "+x",
+					"from": [
+						3,
+						6
+					],
+					"to": [
+						12,
+						6
+					],
+					"step": 1,
+					"lengths": [
+						3,
+						3
+					],
+					"side": 1
+				}
+			]
+		},
+		{
+			"id": "housing-cap",
+			"kind": "box",
+			"at": [
+				110.5,
+				25.5,
+				54
+			],
+			"size": [
+				18,
+				16,
+				1.6
+			],
+			"r": 0.4
+		},
+		{
+			"id": "die-lower",
+			"kind": "box",
+			"at": [
+				114,
+				28,
+				55.6
+			],
+			"size": [
+				11,
+				10,
+				2.4
+			],
+			"r": 0.3,
+			"tone": "glow"
+		},
+		{
+			"id": "die-upper",
+			"kind": "box",
+			"at": [
+				114,
+				28,
+				61.199999999999996
+			],
+			"size": [
+				11,
+				10,
+				2.4
+			],
+			"r": 0.3
+		},
+		{
+			"id": "ram",
+			"kind": "box",
+			"at": [
+				113,
+				27,
+				63.599999999999994
+			],
+			"size": [
+				13,
+				12,
+				26
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0,
+							20
+						],
+						[
+							13,
+							20
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "ram-plate-0",
+			"kind": "box",
+			"at": [
+				113.6,
+				39,
+				66.19999999999999
+			],
+			"size": [
+				5,
+				1,
+				18
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2.5,
+						2
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 14,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "ram-plate-1",
+			"kind": "box",
+			"at": [
+				120.4,
+				39,
+				66.19999999999999
+			],
+			"size": [
+				5,
+				1,
+				18
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2.5,
+						2
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 14,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "guide-0",
+			"kind": "box",
+			"at": [
+				110.6,
+				28,
+				59.199999999999996
+			],
+			"size": [
+				2.2,
+				10,
+				32
+			],
+			"r": 0.3
+		},
+		{
+			"id": "ram-neck",
+			"kind": "box",
+			"at": [
+				117,
+				31,
+				89.6
+			],
+			"size": [
+				5,
+				4,
+				3
+			],
+			"r": 0.3
+		},
+		{
+			"id": "toggle-0",
+			"kind": "rod",
+			"from": [
+				119.5,
+				33,
+				92.6
+			],
+			"to": [
+				111,
+				33,
+				99.6
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "toggle-1",
+			"kind": "rod",
+			"from": [
+				119.5,
+				33,
+				92.6
+			],
+			"to": [
+				128,
+				33,
+				99.6
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "toggle-2",
+			"kind": "rod",
+			"from": [
+				111,
+				33,
+				99.6
+			],
+			"to": [
+				114,
+				33,
+				103.6
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "toggle-3",
+			"kind": "rod",
+			"from": [
+				128,
+				33,
+				99.6
+			],
+			"to": [
+				125,
+				33,
+				103.6
+			],
+			"radius": 0.6
+		},
+		{
+			"id": "toggle-pin",
+			"kind": "sphere",
+			"at": [
+				119.5,
+				33,
+				92.6
+			],
+			"r": 1.1
+		},
+		{
+			"id": "toggle-pin-l",
+			"kind": "sphere",
+			"at": [
+				111,
+				33,
+				99.6
+			],
+			"r": 0.8
+		},
+		{
+			"id": "toggle-pin-r",
+			"kind": "sphere",
+			"at": [
+				128,
+				33,
+				99.6
+			],
+			"r": 0.8
+		},
+		{
+			"id": "toggle-bar",
+			"kind": "box",
+			"at": [
+				112,
+				31.5,
+				103.6
+			],
+			"size": [
+				15,
+				3,
+				1.8
+			],
+			"r": 0.3
+		},
+		{
+			"id": "spring-arm",
+			"kind": "box",
+			"at": [
+				117.5,
+				30,
+				105.39999999999999
+			],
+			"size": [
+				4,
+				6,
+				3
+			],
+			"r": 0.3
+		},
+		{
+			"id": "flywheel",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				134,
+				28.5,
+				112
+			],
+			"size": [
+				15,
+				15,
+				1.6
+			],
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 2,
+					"r1": 13.4,
+					"count": 6
+				},
+				{
+					"type": "inset",
+					"face": "end",
+					"by": 1.6
+				}
+			]
+		},
+		{
+			"id": "fly-hub",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				134,
+				30.1,
+				112
+			],
+			"size": [
+				2.4,
+				2.4,
+				1.6
+			]
+		},
+		{
+			"id": "crank-pin",
+			"kind": "pin",
+			"axis": "y",
+			"at": [
+				128,
+				30.1,
+				106
+			],
+			"length": 1.6,
+			"r": 0.5,
+			"head": 0.9
+		},
+		{
+			"id": "conrod",
+			"kind": "rod",
+			"from": [
+				128,
+				31.7,
+				106
+			],
+			"to": [
+				120,
+				33,
+				107.1
+			],
+			"radius": 0.7
+		},
+		{
+			"id": "motor-bracket",
+			"kind": "box",
+			"at": [
+				117,
+				14,
+				116
+			],
+			"size": [
+				9,
+				10,
+				3
+			],
+			"r": 0.4
+		},
+		{
+			"id": "motor",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				118,
+				10,
+				123.5
+			],
+			"size": [
+				5.6,
+				5.6,
+				11
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 18,
+					"s0": 1,
+					"s1": 9
+				}
+			]
+		},
+		{
+			"id": "motor-box",
+			"kind": "box",
+			"at": [
+				113.4,
+				12,
+				120.6
+			],
+			"size": [
+				3.2,
+				7,
+				6.2
+			],
+			"r": 0.4
+		},
+		{
+			"id": "control",
+			"kind": "box",
+			"at": [
+				145,
+				13,
+				70
+			],
+			"size": [
+				2.6,
+				6,
+				10
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "stadium",
+					"at": [
+						3,
+						6
+					],
+					"size": [
+						1.4,
+						4
+					],
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "pull-rod",
+			"kind": "rod",
+			"from": [
+				130,
+				36,
+				9
+			],
+			"to": [
+				130,
+				36,
+				64
+			],
+			"radius": 0.5
+		},
+		{
+			"id": "pull-guide",
+			"kind": "box",
+			"at": [
+				128.5,
+				34.5,
+				60
+			],
+			"size": [
+				3,
+				3,
+				2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "treadle",
+			"kind": "rod",
+			"from": [
+				140,
+				62,
+				11
+			],
+			"to": [
+				140,
+				36,
+				9
+			],
+			"radius": 0.7
+		},
+		{
+			"id": "treadle-link",
+			"kind": "rod",
+			"from": [
+				140,
+				36,
+				9
+			],
+			"to": [
+				130,
+				36,
+				9
+			],
+			"radius": 0.5
+		},
+		{
+			"id": "pedal",
+			"kind": "box",
+			"at": [
+				137.5,
+				60,
+				10.6
+			],
+			"size": [
+				5,
+				4.5,
+				0.9
+			],
+			"r": 0.3
+		},
+		{
+			"id": "treadle-spring",
+			"kind": "spring",
+			"from": [
+				140,
+				64,
+				4.2
+			],
+			"to": [
+				140,
+				64,
+				10.6
+			],
+			"radius": 0.9,
+			"wire": 0.2,
+			"turns": 7
+		},
+		{
+			"id": "treadle-pivot",
+			"kind": "box",
+			"at": [
+				138,
+				33,
+				4
+			],
+			"size": [
+				4,
+				4,
+				5
+			],
+			"r": 0.3
+		},
+		{
+			"id": "lip-back",
+			"kind": "box",
+			"at": [
+				13,
+				7,
+				44
+			],
+			"size": [
+				49,
+				1.2,
+				2.6
+			],
+			"r": 0.2
+		},
+		{
+			"id": "lip-left",
+			"kind": "box",
+			"at": [
+				13,
+				8.2,
+				44
+			],
+			"size": [
+				1.2,
+				46.6,
+				2.6
+			],
+			"r": 0.2
+		},
+		{
+			"id": "lip-right",
+			"kind": "box",
+			"at": [
+				60.8,
+				8.2,
+				44
+			],
+			"size": [
+				1.2,
+				46.6,
+				2.6
+			],
+			"r": 0.2
+		},
+		{
+			"id": "lip-front",
+			"kind": "box",
+			"at": [
+				13,
+				54.8,
+				44
+			],
+			"size": [
+				49,
+				1.2,
+				2.6
+			],
+			"r": 0.2
+		},
+		{
+			"id": "shelf",
+			"kind": "plate",
+			"at": [
+				16,
+				10,
+				12.4
+			],
+			"size": [
+				43.5,
+				43,
+				0.8
+			],
+			"r": 0.2,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.4,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "fire-halo",
+			"kind": "glow",
+			"at": [
+				32,
+				30,
+				46.2
+			],
+			"r": 25
+		},
+		{
+			"id": "lump-0",
+			"kind": "sphere",
+			"at": [
+				42.2,
+				30,
+				44.84
+			],
+			"r": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-1",
+			"kind": "sphere",
+			"at": [
+				41.92,
+				32.39,
+				44.93
+			],
+			"r": 1,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-2",
+			"kind": "sphere",
+			"at": [
+				41.08,
+				34.65,
+				45.02
+			],
+			"r": 1.15,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-3",
+			"kind": "sphere",
+			"at": [
+				40.48,
+				35.67,
+				44.88
+			],
+			"r": 0.93,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-4",
+			"kind": "sphere",
+			"at": [
+				38.92,
+				37.5,
+				44.97
+			],
+			"r": 1.08,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-5",
+			"kind": "sphere",
+			"at": [
+				36.97,
+				38.91,
+				44.84
+			],
+			"r": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-6",
+			"kind": "sphere",
+			"at": [
+				35.9,
+				39.42,
+				44.93
+			],
+			"r": 1,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-7",
+			"kind": "sphere",
+			"at": [
+				33.59,
+				40.08,
+				45.02
+			],
+			"r": 1.15,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-8",
+			"kind": "sphere",
+			"at": [
+				31.18,
+				40.17,
+				44.88
+			],
+			"r": 0.93,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-9",
+			"kind": "sphere",
+			"at": [
+				30.01,
+				40,
+				44.97
+			],
+			"r": 1.08,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-10",
+			"kind": "sphere",
+			"at": [
+				27.72,
+				39.26,
+				44.84
+			],
+			"r": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-11",
+			"kind": "sphere",
+			"at": [
+				25.67,
+				38,
+				44.93
+			],
+			"r": 1,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-12",
+			"kind": "sphere",
+			"at": [
+				24.79,
+				37.21,
+				45.02
+			],
+			"r": 1.15,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-13",
+			"kind": "sphere",
+			"at": [
+				23.3,
+				35.32,
+				44.88
+			],
+			"r": 0.93,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-14",
+			"kind": "sphere",
+			"at": [
+				22.29,
+				33.14,
+				44.97
+			],
+			"r": 1.08,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-15",
+			"kind": "sphere",
+			"at": [
+				22,
+				31.99,
+				44.84
+			],
+			"r": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-16",
+			"kind": "sphere",
+			"at": [
+				21.81,
+				29.59,
+				44.93
+			],
+			"r": 1,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-17",
+			"kind": "sphere",
+			"at": [
+				22.19,
+				27.21,
+				45.02
+			],
+			"r": 1.15,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-18",
+			"kind": "sphere",
+			"at": [
+				22.58,
+				26.1,
+				44.88
+			],
+			"r": 0.93,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-19",
+			"kind": "sphere",
+			"at": [
+				23.75,
+				24,
+				44.97
+			],
+			"r": 1.08,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-20",
+			"kind": "sphere",
+			"at": [
+				25.39,
+				22.23,
+				44.84
+			],
+			"r": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-21",
+			"kind": "sphere",
+			"at": [
+				26.33,
+				21.52,
+				44.93
+			],
+			"r": 1,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-22",
+			"kind": "sphere",
+			"at": [
+				28.48,
+				20.43,
+				45.02
+			],
+			"r": 1.15,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-23",
+			"kind": "sphere",
+			"at": [
+				30.82,
+				19.87,
+				44.88
+			],
+			"r": 0.93,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-24",
+			"kind": "sphere",
+			"at": [
+				32,
+				19.8,
+				44.97
+			],
+			"r": 1.08,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-25",
+			"kind": "sphere",
+			"at": [
+				34.39,
+				20.08,
+				44.84
+			],
+			"r": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-26",
+			"kind": "sphere",
+			"at": [
+				36.65,
+				20.92,
+				44.93
+			],
+			"r": 1,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-27",
+			"kind": "sphere",
+			"at": [
+				37.67,
+				21.52,
+				45.02
+			],
+			"r": 1.15,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-28",
+			"kind": "sphere",
+			"at": [
+				39.5,
+				23.08,
+				44.88
+			],
+			"r": 0.93,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-29",
+			"kind": "sphere",
+			"at": [
+				40.91,
+				25.03,
+				44.97
+			],
+			"r": 1.08,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-30",
+			"kind": "sphere",
+			"at": [
+				41.42,
+				26.1,
+				44.84
+			],
+			"r": 0.85,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-31",
+			"kind": "sphere",
+			"at": [
+				42.08,
+				28.41,
+				44.93
+			],
+			"r": 1,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-32",
+			"kind": "sphere",
+			"at": [
+				40.95,
+				30.94,
+				45.83
+			],
+			"r": 0.77,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-33",
+			"kind": "sphere",
+			"at": [
+				40.34,
+				33.39,
+				45.92
+			],
+			"r": 0.9,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-34",
+			"kind": "sphere",
+			"at": [
+				39.06,
+				35.58,
+				46
+			],
+			"r": 1.03,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-35",
+			"kind": "sphere",
+			"at": [
+				38.08,
+				36.64,
+				45.87
+			],
+			"r": 0.83,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-36",
+			"kind": "sphere",
+			"at": [
+				35.99,
+				38.07,
+				45.96
+			],
+			"r": 0.97,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-37",
+			"kind": "sphere",
+			"at": [
+				33.59,
+				38.86,
+				45.83
+			],
+			"r": 0.77,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-38",
+			"kind": "sphere",
+			"at": [
+				32.14,
+				39,
+				45.92
+			],
+			"r": 0.9,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-39",
+			"kind": "sphere",
+			"at": [
+				29.64,
+				38.68,
+				46
+			],
+			"r": 1.03,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-40",
+			"kind": "sphere",
+			"at": [
+				27.32,
+				37.68,
+				45.87
+			],
+			"r": 0.83,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-41",
+			"kind": "sphere",
+			"at": [
+				26.14,
+				36.83,
+				45.96
+			],
+			"r": 0.97,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-42",
+			"kind": "sphere",
+			"at": [
+				24.47,
+				34.93,
+				45.83
+			],
+			"r": 0.77,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-43",
+			"kind": "sphere",
+			"at": [
+				23.4,
+				32.65,
+				45.92
+			],
+			"r": 0.9,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-44",
+			"kind": "sphere",
+			"at": [
+				23.08,
+				31.23,
+				46
+			],
+			"r": 1.03,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-45",
+			"kind": "sphere",
+			"at": [
+				23.09,
+				28.7,
+				45.87
+			],
+			"r": 0.83,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-46",
+			"kind": "sphere",
+			"at": [
+				23.81,
+				26.28,
+				45.96
+			],
+			"r": 0.97,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-47",
+			"kind": "sphere",
+			"at": [
+				24.51,
+				25.01,
+				45.83
+			],
+			"r": 0.77,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-48",
+			"kind": "sphere",
+			"at": [
+				26.2,
+				23.12,
+				45.92
+			],
+			"r": 0.9,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-49",
+			"kind": "sphere",
+			"at": [
+				28.34,
+				21.78,
+				46
+			],
+			"r": 1.03,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-50",
+			"kind": "sphere",
+			"at": [
+				29.71,
+				21.3,
+				45.87
+			],
+			"r": 0.83,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-51",
+			"kind": "sphere",
+			"at": [
+				32.22,
+				21,
+				45.96
+			],
+			"r": 0.97,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-52",
+			"kind": "sphere",
+			"at": [
+				34.71,
+				21.42,
+				45.83
+			],
+			"r": 0.77,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-53",
+			"kind": "sphere",
+			"at": [
+				36.05,
+				21.96,
+				45.92
+			],
+			"r": 0.9,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-54",
+			"kind": "sphere",
+			"at": [
+				38.13,
+				23.41,
+				46
+			],
+			"r": 1.03,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-55",
+			"kind": "sphere",
+			"at": [
+				39.72,
+				25.37,
+				45.87
+			],
+			"r": 0.83,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-56",
+			"kind": "sphere",
+			"at": [
+				40.36,
+				26.67,
+				45.96
+			],
+			"r": 0.97,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-57",
+			"kind": "sphere",
+			"at": [
+				40.96,
+				29.13,
+				45.83
+			],
+			"r": 0.77,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-58",
+			"kind": "sphere",
+			"at": [
+				39.59,
+				30.4,
+				46.44
+			],
+			"r": 0.47,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-59",
+			"kind": "sphere",
+			"at": [
+				38.51,
+				33.92,
+				46.49
+			],
+			"r": 0.55,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-60",
+			"kind": "sphere",
+			"at": [
+				35.91,
+				36.52,
+				46.54
+			],
+			"r": 0.63,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-61",
+			"kind": "sphere",
+			"at": [
+				33.3,
+				37.49,
+				46.47
+			],
+			"r": 0.51,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-62",
+			"kind": "sphere",
+			"at": [
+				29.63,
+				37.22,
+				46.52
+			],
+			"r": 0.59,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-63",
+			"kind": "sphere",
+			"at": [
+				26.52,
+				35.26,
+				46.44
+			],
+			"r": 0.47,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-64",
+			"kind": "sphere",
+			"at": [
+				24.99,
+				32.93,
+				46.49
+			],
+			"r": 0.55,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-65",
+			"kind": "sphere",
+			"at": [
+				24.43,
+				29.3,
+				46.54
+			],
+			"r": 0.63,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-66",
+			"kind": "sphere",
+			"at": [
+				25.65,
+				25.83,
+				46.47
+			],
+			"r": 0.51,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-67",
+			"kind": "sphere",
+			"at": [
+				27.58,
+				23.82,
+				46.52
+			],
+			"r": 0.59,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-68",
+			"kind": "sphere",
+			"at": [
+				31,
+				22.47,
+				46.44
+			],
+			"r": 0.47,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-69",
+			"kind": "sphere",
+			"at": [
+				34.66,
+				22.88,
+				46.49
+			],
+			"r": 0.55,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-70",
+			"kind": "sphere",
+			"at": [
+				37.04,
+				24.31,
+				46.54
+			],
+			"r": 0.63,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-71",
+			"kind": "sphere",
+			"at": [
+				39.12,
+				27.35,
+				46.47
+			],
+			"r": 0.51,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-72",
+			"kind": "sphere",
+			"at": [
+				37.64,
+				31.72,
+				47.05
+			],
+			"r": 0.32,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-73",
+			"kind": "sphere",
+			"at": [
+				34.56,
+				35.32,
+				47.09
+			],
+			"r": 0.38,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-74",
+			"kind": "sphere",
+			"at": [
+				29.83,
+				35.49,
+				47.12
+			],
+			"r": 0.44,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-75",
+			"kind": "sphere",
+			"at": [
+				26.79,
+				32.77,
+				47.07
+			],
+			"r": 0.35,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-76",
+			"kind": "sphere",
+			"at": [
+				26.43,
+				28.05,
+				47.1
+			],
+			"r": 0.41,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-77",
+			"kind": "sphere",
+			"at": [
+				29.66,
+				24.59,
+				47.05
+			],
+			"r": 0.32,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-78",
+			"kind": "sphere",
+			"at": [
+				33.72,
+				24.36,
+				47.09
+			],
+			"r": 0.38,
+			"tone": "ink"
+		},
+		{
+			"id": "lump-79",
+			"kind": "sphere",
+			"at": [
+				37.32,
+				27.44,
+				47.12
+			],
+			"r": 0.44,
+			"tone": "ink"
+		},
+		{
+			"id": "firebox",
+			"kind": "box",
+			"at": [
+				48.6,
+				21,
+				47
+			],
+			"size": [
+				8.8,
+				0.4,
+				10.2
+			],
+			"r": 0,
+			"tone": "glow"
+		},
+		{
+			"id": "firebox-floor",
+			"kind": "box",
+			"at": [
+				48.6,
+				21,
+				46.2
+			],
+			"size": [
+				8.8,
+				1.8,
+				0.8
+			],
+			"r": 0,
+			"tone": "glow"
+		},
+		{
+			"id": "fb-jamb-l",
+			"kind": "box",
+			"at": [
+				47.4,
+				21,
+				46.2
+			],
+			"size": [
+				1.2,
+				1.8,
+				12
+			],
+			"r": 0.1
+		},
+		{
+			"id": "fb-jamb-r",
+			"kind": "box",
+			"at": [
+				57.4,
+				21,
+				46.2
+			],
+			"size": [
+				1.2,
+				1.8,
+				12
+			],
+			"r": 0.1
+		},
+		{
+			"id": "fb-lintel",
+			"kind": "box",
+			"at": [
+				47.4,
+				21,
+				57.2
+			],
+			"size": [
+				11.2,
+				1.8,
+				1.4
+			],
+			"r": 0.1
+		},
+		{
+			"id": "tuyere",
+			"kind": "box",
+			"at": [
+				28.5,
+				26.5,
+				31
+			],
+			"size": [
+				7,
+				7,
+				11
+			],
+			"r": 0.4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.8,
+					"r": 0.3
+				}
+			]
+		},
+		{
+			"id": "tuyere-flange",
+			"kind": "ring",
+			"at": [
+				35.6,
+				30,
+				35.5
+			],
+			"axis": "x",
+			"size": [
+				3.4,
+				3.4,
+				0
+			],
+			"thickness": 0.8,
+			"inner": 2.4
+		},
+		{
+			"id": "duct",
+			"kind": "rod",
+			"from": [
+				35.5,
+				30,
+				35.5
+			],
+			"to": [
+				70,
+				30,
+				35.5
+			],
+			"radius": 2.3
+		},
+		{
+			"id": "duct-flange",
+			"kind": "ring",
+			"at": [
+				52,
+				30,
+				35.5
+			],
+			"axis": "x",
+			"size": [
+				3.2,
+				3.2,
+				0
+			],
+			"thickness": 0.8,
+			"inner": 2.3
+		},
+		{
+			"id": "duct-flange-2",
+			"kind": "ring",
+			"at": [
+				67,
+				30,
+				35.5
+			],
+			"axis": "x",
+			"size": [
+				3.2,
+				3.2,
+				0
+			],
+			"thickness": 0.8,
+			"inner": 2.3
+		},
+		{
+			"id": "duct-valve",
+			"kind": "box",
+			"at": [
+				45,
+				28.8,
+				37.4
+			],
+			"size": [
+				2.4,
+				2.4,
+				2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "duct-stem",
+			"kind": "rod",
+			"from": [
+				46.2,
+				30,
+				39.4
+			],
+			"to": [
+				46.2,
+				30,
+				41.4
+			],
+			"radius": 0.4
+		},
+		{
+			"id": "ash-gate",
+			"kind": "cylinder",
+			"at": [
+				32,
+				30,
+				29.5
+			],
+			"size": [
+				4.4,
+				4.4,
+				1.5
+			]
+		},
+		{
+			"id": "ash-lever",
+			"kind": "rod",
+			"from": [
+				32,
+				30,
+				30
+			],
+			"to": [
+				24,
+				56,
+				26
+			],
+			"radius": 0.5
+		},
+		{
+			"id": "ash-ball",
+			"kind": "sphere",
+			"at": [
+				24,
+				56,
+				26
+			],
+			"r": 1.3
+		},
+		{
+			"id": "poker",
+			"kind": "rod",
+			"from": [
+				17,
+				40,
+				36
+			],
+			"to": [
+				30,
+				40,
+				36
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "poker-tee",
+			"kind": "rod",
+			"from": [
+				17,
+				38,
+				36
+			],
+			"to": [
+				17,
+				42,
+				36
+			],
+			"radius": 0.45
+		},
+		{
+			"id": "blower-post",
+			"kind": "leg",
+			"at": [
+				73.4,
+				30,
+				17
+			],
+			"radius": 1.1,
+			"ground": 4,
+			"foot": {
+				"r": 3.6,
+				"h": 1.1
+			}
+		},
+		{
+			"id": "blower",
+			"kind": "lathe",
+			"axis": "x",
+			"at": [
+				70,
+				30,
+				35.5
+			],
+			"profile": [
+				[
+					0,
+					6
+				],
+				[
+					0.4,
+					7.2,
+					"soft"
+				],
+				[
+					1.4,
+					7.8,
+					"soft"
+				],
+				[
+					3.4,
+					7.8,
+					"soft"
+				],
+				[
+					4.4,
+					7.2,
+					"soft"
+				],
+				[
+					4.8,
+					6
+				]
+			],
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 1.2,
+					"r1": 5.6,
+					"count": 6
+				},
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 5.8,
+					"count": 10,
+					"size": 0.28
+				}
+			]
+		},
+		{
+			"id": "blower-pulley",
+			"kind": "cylinder",
+			"axis": "x",
+			"at": [
+				74.8,
+				30,
+				35.5
+			],
+			"size": [
+				2.2,
+				2.2,
+				1.2
+			]
+		},
+		{
+			"id": "blower-hub",
+			"kind": "cylinder",
+			"axis": "x",
+			"at": [
+				76,
+				30,
+				35.5
+			],
+			"size": [
+				0.8,
+				0.8,
+				0.8
+			]
+		},
+		{
+			"id": "gearbox",
+			"kind": "box",
+			"at": [
+				71.6,
+				27.2,
+				17.6
+			],
+			"size": [
+				3.6,
+				5.6,
+				6
+			],
+			"r": 0.4
+		},
+		{
+			"id": "gear",
+			"kind": "cylinder",
+			"axis": "x",
+			"at": [
+				75.2,
+				30,
+				21
+			],
+			"size": [
+				2.2,
+				2.2,
+				1.2
+			],
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 0.4,
+					"r1": 1.9,
+					"count": 4
+				}
+			]
+		},
+		{
+			"id": "belt-a",
+			"kind": "wire",
+			"from": [
+				75.4,
+				27.8,
+				35.5
+			],
+			"to": [
+				75.8,
+				27.8,
+				21
+			]
+		},
+		{
+			"id": "belt-b",
+			"kind": "wire",
+			"from": [
+				75.4,
+				32.2,
+				35.5
+			],
+			"to": [
+				75.8,
+				32.2,
+				21
+			]
+		},
+		{
+			"id": "crank-arm",
+			"kind": "rod",
+			"from": [
+				76.6,
+				30,
+				21
+			],
+			"to": [
+				76.6,
+				34,
+				17.6
+			],
+			"radius": 0.5
+		},
+		{
+			"id": "crank-knob",
+			"kind": "rod",
+			"from": [
+				76.6,
+				34,
+				17.6
+			],
+			"to": [
+				79.4,
+				34,
+				17.6
+			],
+			"radius": 0.7
+		},
+		{
+			"id": "blower-lever",
+			"kind": "rod",
+			"from": [
+				74.6,
+				32.6,
+				25
+			],
+			"to": [
+				77.4,
+				36.5,
+				30
+			],
+			"radius": 0.35
+		},
+		{
+			"id": "blower-lever-knob",
+			"kind": "sphere",
+			"at": [
+				77.4,
+				36.5,
+				30
+			],
+			"r": 0.75
+		},
+		{
+			"id": "bucket",
+			"kind": "lathe",
+			"at": [
+				50,
+				37,
+				13.2
+			],
+			"profile": [
+				[
+					0,
+					3.2
+				],
+				[
+					7,
+					4.1
+				]
+			],
+			"closed": false,
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1,
+						6
+					]
+				}
+			]
+		},
+		{
+			"id": "bucket-floor",
+			"kind": "cylinder",
+			"at": [
+				50,
+				37,
+				13.2
+			],
+			"size": [
+				3.2,
+				3.2,
+				0.4
+			]
+		},
+		{
+			"id": "bucket-coal",
+			"kind": "lathe",
+			"at": [
+				50,
+				37,
+				19.2
+			],
+			"tone": "ink",
+			"profile": [
+				[
+					0,
+					3.8
+				],
+				[
+					1.2,
+					3.5
+				],
+				[
+					2,
+					2.2
+				],
+				[
+					2.5,
+					0
+				]
+			]
+		},
+		{
+			"id": "bail",
+			"kind": "tube",
+			"points": [
+				[
+					45.9,
+					37,
+					19.799999999999997
+				],
+				[
+					46.6,
+					37,
+					23.2
+				],
+				[
+					50,
+					37,
+					24.7
+				],
+				[
+					53.4,
+					37,
+					23.2
+				],
+				[
+					54.1,
+					37,
+					19.799999999999997
+				]
+			],
+			"radius": 0.25,
+			"fillet": 2.5
+		},
+		{
+			"id": "barrel",
+			"kind": "lathe",
+			"at": [
+				86,
+				80,
+				4
+			],
+			"profile": [
+				[
+					0,
+					9.4
+				],
+				[
+					1.2,
+					9.8
+				],
+				[
+					12,
+					10.3
+				],
+				[
+					23,
+					9.9
+				],
+				[
+					24.4,
+					9.7
+				]
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 20,
+					"s0": 0.3,
+					"s1": 24.1
+				}
+			]
+		},
+		{
+			"id": "hoop-0",
+			"kind": "torus",
+			"axis": "z",
+			"at": [
+				86,
+				80,
+				6.4
+			],
+			"R": 9.95,
+			"r": 0.45
+		},
+		{
+			"id": "hoop-1",
+			"kind": "torus",
+			"axis": "z",
+			"at": [
+				86,
+				80,
+				22
+			],
+			"R": 10.05,
+			"r": 0.45
+		},
+		{
+			"id": "water",
+			"kind": "cylinder",
+			"at": [
+				86,
+				80,
+				28.4
+			],
+			"size": [
+				9,
+				9,
+				0.2
+			],
+			"state": "new"
+		},
+		{
+			"id": "rim",
+			"kind": "torus",
+			"axis": "z",
+			"at": [
+				86,
+				80,
+				28.75
+			],
+			"R": 9.4,
+			"r": 0.75
+		},
+		{
+			"id": "belt-top",
+			"kind": "wire",
+			"from": [
+				134.82,
+				30.2,
+				126.98
+			],
+			"to": [
+				152.64,
+				26.6,
+				126
+			]
+		},
+		{
+			"id": "belt-bottom",
+			"kind": "wire",
+			"from": [
+				147.75,
+				30.2,
+				106
+			],
+			"to": [
+				154.88,
+				26.6,
+				122.36
+			]
+		},
+		{
+			"id": "top-shelf",
+			"kind": "box",
+			"at": [
+				145,
+				9,
+				117.6
+			],
+			"size": [
+				13,
+				20,
+				1.4
+			],
+			"r": 0.3
+		},
+		{
+			"id": "gusset",
+			"kind": "prism",
+			"axis": "-y",
+			"at": [
+				145,
+				20,
+				104
+			],
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					11.5,
+					13.6
+				],
+				[
+					0,
+					13.6
+				]
+			],
+			"depth": 1.6
+		},
+		{
+			"id": "motor-r",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				152.5,
+				12,
+				123.4
+			],
+			"size": [
+				3.9,
+				3.9,
+				13
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 16,
+					"s0": 1.4,
+					"s1": 11.6
+				},
+				{
+					"type": "bands",
+					"at": [
+						0.7,
+						12.3
+					]
+				}
+			]
+		},
+		{
+			"id": "motor-r-foot",
+			"kind": "box",
+			"at": [
+				149.5,
+				13,
+				119
+			],
+			"size": [
+				6,
+				11,
+				1.6
+			],
+			"r": 0.3
+		},
+		{
+			"id": "pulley-r",
+			"kind": "cylinder",
+			"axis": "y",
+			"at": [
+				152.5,
+				25,
+				123.4
+			],
+			"size": [
+				2.6,
+				2.6,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 1.7,
+					"count": 5,
+					"size": 0.25
+				}
+			]
+		},
+		{
+			"id": "valve",
+			"kind": "cylinder",
+			"at": [
+				152.5,
+				16,
+				127.2
+			],
+			"size": [
+				1.4,
+				1.4,
+				2
+			]
+		},
+		{
+			"id": "fly-arm",
+			"kind": "box",
+			"at": [
+				134,
+				30.4,
+				110.8
+			],
+			"size": [
+				12.5,
+				2,
+				2.2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "fly-arm-post",
+			"kind": "box",
+			"at": [
+				144.3,
+				28.4,
+				104
+			],
+			"size": [
+				2.2,
+				2.2,
+				9
+			],
+			"r": 0.3
+		},
+		{
+			"id": "side-pipe",
+			"kind": "tube",
+			"points": [
+				[
+					152.5,
+					16,
+					129.2
+				],
+				[
+					152.5,
+					16,
+					137
+				],
+				[
+					147.6,
+					24,
+					137
+				],
+				[
+					147.6,
+					24,
+					12
+				]
+			],
+			"radius": 0.7,
+			"fillet": 5
+		},
+		{
+			"id": "clamp-0",
+			"kind": "box",
+			"at": [
+				146.3,
+				22.6,
+				96
+			],
+			"size": [
+				2.6,
+				2.8,
+				2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "clamp-1",
+			"kind": "box",
+			"at": [
+				146.3,
+				22.6,
+				70
+			],
+			"size": [
+				2.6,
+				2.8,
+				2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "clamp-2",
+			"kind": "box",
+			"at": [
+				146.3,
+				22.6,
+				38
+			],
+			"size": [
+				2.6,
+				2.8,
+				2
+			],
+			"r": 0.3
+		},
+		{
+			"id": "die-glow",
+			"kind": "glow",
+			"at": [
+				119.5,
+				33,
+				58.3
+			],
+			"r": 10
+		},
+		{
+			"id": "billet-hot",
+			"kind": "box",
+			"at": [
+				118,
+				24,
+				58
+			],
+			"size": [
+				3,
+				12.5,
+				2.8
+			],
+			"r": 0.2,
+			"tone": "glow",
+			"variants": {
+				"flat": {
+					"at": [
+						117.7,
+						24,
+						58
+					],
+					"size": [
+						3.6,
+						12.5,
+						2.2
+					]
+				},
+				"cold": {
+					"tone": "ink"
+				}
+			}
+		},
+		{
+			"id": "billet-mid",
+			"kind": "box",
+			"at": [
+				118,
+				36.5,
+				58
+			],
+			"size": [
+				3,
+				6,
+				2.8
+			],
+			"r": 0.2,
+			"tone": "glow",
+			"variants": {
+				"flat": {
+					"at": [
+						117.7,
+						36.5,
+						58
+					],
+					"size": [
+						3.6,
+						6,
+						2.2
+					]
+				},
+				"cold": {
+					"tone": "ink"
+				}
+			}
+		},
+		{
+			"id": "billet-tail",
+			"kind": "box",
+			"at": [
+				118,
+				42.5,
+				58
+			],
+			"size": [
+				3,
+				7.5,
+				2.8
+			],
+			"r": 0.2,
+			"tone": "ink",
+			"variants": {
+				"flat": {
+					"at": [
+						117.7,
+						42.5,
+						58
+					],
+					"size": [
+						3.6,
+						7.5,
+						2.2
+					]
+				},
+				"cold": {
+					"tone": "ink"
+				}
+			}
+		},
+		{
+			"id": "tong-a",
+			"kind": "tube",
+			"points": [
+				[
+					118.4,
+					44,
+					61.3
+				],
+				[
+					118.6,
+					48,
+					61.5
+				],
+				[
+					119.5,
+					52,
+					58.8
+				],
+				[
+					119.1,
+					68,
+					50.6
+				]
+			],
+			"radius": 0.45,
+			"fillet": 1.5,
+			"variants": {
+				"quench": {
+					"points": [
+						[
+							84.9,
+							91.5,
+							32.3
+						],
+						[
+							85.39,
+							95.1,
+							33.03
+						],
+						[
+							88.59,
+							95.88,
+							34.54
+						],
+						[
+							97.4,
+							99,
+							43.2
+						]
+					]
+				}
+			}
+		},
+		{
+			"id": "tong-b",
+			"kind": "tube",
+			"points": [
+				[
+					120.6,
+					44,
+					57.5
+				],
+				[
+					120.4,
+					48,
+					57.3
+				],
+				[
+					119.5,
+					52,
+					58.8
+				],
+				[
+					117.3,
+					68,
+					53.2
+				]
+			],
+			"radius": 0.45,
+			"fillet": 1.5,
+			"variants": {
+				"quench": {
+					"points": [
+						[
+							87.1,
+							91.5,
+							28.5
+						],
+						[
+							87.19,
+							95.1,
+							28.83
+						],
+						[
+							88.59,
+							95.88,
+							34.54
+						],
+						[
+							95.6,
+							99,
+							45.8
+						]
+					]
+				}
+			}
+		},
+		{
+			"id": "tong-pivot",
+			"kind": "sphere",
+			"at": [
+				119.5,
+				52,
+				58.8
+			],
+			"r": 0.85,
+			"variants": {
+				"quench": {
+					"at": [
+						88.59,
+						95.88,
+						34.54
+					]
+				}
+			}
+		},
+		{
+			"id": "tong-ring",
+			"kind": "torus",
+			"axis": "y",
+			"at": [
+				118.2,
+				66,
+				52
+			],
+			"R": 1.3,
+			"r": 0.3,
+			"variants": {
+				"quench": {
+					"at": [
+						95.35,
+						98.61,
+						42.49
+					]
+				}
+			}
+		}
 	],
 	"assemble": {
 		"layers": [
-			["table", "frame", "waist", "tub"],
-			["firepot", "hood", "chimney", "anvil"],
-			["blower", "duct", "crank"],
-			["head", "ram"],
-			["bar"]
+			[
+				"board",
+				"ruler"
+			],
+			[
+				"pedestal",
+				"ped-cap",
+				"ped-foot",
+				"leg-0",
+				"foot-0",
+				"leg-1",
+				"foot-1",
+				"leg-2",
+				"foot-2",
+				"leg-3",
+				"foot-3",
+				"rail-back",
+				"rail-front",
+				"rail-left",
+				"rail-right",
+				"shelf"
+			],
+			[
+				"plinth",
+				"plinth-2",
+				"anchor-0",
+				"anchor-1",
+				"anchor-2",
+				"anchor-3"
+			],
+			[
+				"column",
+				"housing",
+				"housing-cap",
+				"die-lower"
+			],
+			[
+				"apron-front",
+				"apron-right",
+				"table-top",
+				"bracket",
+				"lip-back",
+				"lip-left",
+				"lip-right",
+				"lip-front"
+			],
+			[
+				"tuyere",
+				"tuyere-flange",
+				"duct",
+				"duct-flange",
+				"duct-flange-2",
+				"duct-valve",
+				"duct-stem",
+				"ash-gate",
+				"ash-lever",
+				"ash-ball",
+				"poker",
+				"poker-tee",
+				"bucket",
+				"bucket-floor",
+				"bucket-coal",
+				"bail"
+			],
+			[
+				"blower-post",
+				"blower",
+				"blower-pulley",
+				"blower-hub",
+				"gearbox",
+				"gear",
+				"belt-a",
+				"belt-b",
+				"crank-arm",
+				"crank-knob",
+				"blower-lever",
+				"blower-lever-knob"
+			],
+			[
+				"oil-can",
+				"oil-cap",
+				"oil-spout",
+				"oil-handle",
+				"barrel",
+				"hoop-0",
+				"hoop-1",
+				"water",
+				"rim"
+			],
+			[
+				"anvil",
+				"horn",
+				"heel-step",
+				"hardy",
+				"hardy-tool"
+			],
+			[
+				"firepot",
+				"coals",
+				"fire-halo",
+				"lump-0",
+				"lump-1",
+				"lump-2",
+				"lump-3",
+				"lump-4",
+				"lump-5",
+				"lump-6",
+				"lump-7",
+				"lump-8",
+				"lump-9",
+				"lump-10",
+				"lump-11",
+				"lump-12",
+				"lump-13",
+				"lump-14",
+				"lump-15",
+				"lump-16",
+				"lump-17",
+				"lump-18",
+				"lump-19",
+				"lump-20",
+				"lump-21",
+				"lump-22",
+				"lump-23",
+				"lump-24",
+				"lump-25",
+				"lump-26",
+				"lump-27",
+				"lump-28",
+				"lump-29",
+				"lump-30",
+				"lump-31",
+				"lump-32",
+				"lump-33",
+				"lump-34",
+				"lump-35",
+				"lump-36",
+				"lump-37",
+				"lump-38",
+				"lump-39",
+				"lump-40",
+				"lump-41",
+				"lump-42",
+				"lump-43",
+				"lump-44",
+				"lump-45",
+				"lump-46",
+				"lump-47",
+				"lump-48",
+				"lump-49",
+				"lump-50",
+				"lump-51",
+				"lump-52",
+				"lump-53",
+				"lump-54",
+				"lump-55",
+				"lump-56",
+				"lump-57",
+				"lump-58",
+				"lump-59",
+				"lump-60",
+				"lump-61",
+				"lump-62",
+				"lump-63",
+				"lump-64",
+				"lump-65",
+				"lump-66",
+				"lump-67",
+				"lump-68",
+				"lump-69",
+				"lump-70",
+				"lump-71",
+				"lump-72",
+				"lump-73",
+				"lump-74",
+				"lump-75",
+				"lump-76",
+				"lump-77",
+				"lump-78",
+				"lump-79"
+			],
+			[
+				"hood",
+				"flue-boot",
+				"firebox",
+				"firebox-floor",
+				"fb-jamb-l",
+				"fb-jamb-r",
+				"fb-lintel"
+			],
+			[
+				"chimney",
+				"collar-0",
+				"collar-1",
+				"damper",
+				"damper-knob",
+				"strut-0",
+				"strut-1",
+				"strut-2",
+				"strut-3",
+				"rain-cap"
+			],
+			[
+				"die-upper",
+				"ram",
+				"ram-plate-0",
+				"ram-plate-1",
+				"guide-0",
+				"ram-neck"
+			],
+			[
+				"toggle-0",
+				"toggle-1",
+				"toggle-2",
+				"toggle-3",
+				"toggle-pin",
+				"toggle-pin-l",
+				"toggle-pin-r",
+				"toggle-bar",
+				"spring-arm"
+			],
+			[
+				"flywheel",
+				"fly-hub",
+				"crank-pin",
+				"conrod",
+				"motor-bracket",
+				"motor",
+				"motor-box",
+				"belt-top",
+				"belt-bottom",
+				"top-shelf",
+				"gusset",
+				"motor-r",
+				"motor-r-foot",
+				"pulley-r",
+				"valve",
+				"fly-arm",
+				"fly-arm-post"
+			],
+			[
+				"control",
+				"pull-rod",
+				"pull-guide",
+				"treadle",
+				"treadle-link",
+				"pedal",
+				"treadle-spring",
+				"treadle-pivot",
+				"side-pipe",
+				"clamp-0",
+				"clamp-1",
+				"clamp-2"
+			],
+			[
+				"die-glow",
+				"billet-hot",
+				"billet-mid",
+				"billet-tail",
+				"tong-a",
+				"tong-b",
+				"tong-pivot",
+				"tong-ring"
+			]
 		]
 	},
-	"interact": { "behavior": "select", "lift": 10, "rest": "Bar in the fire" },
-	"meta": { "margin": "[ FORGE ]", "corner": "VPK-HTML" }
+	"interact": {
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 1,
+		"values": {
+			"temp": [
+				40,
+				1180,
+				695,
+				1250,
+				1150
+			],
+			"mm": [
+				40,
+				40,
+				40,
+				40,
+				32
+			]
+		},
+		"readout": "billet {temp} °C · {mm:0.1} mm thick",
+		"states": [
+			{
+				"name": "tap tub",
+				"readout": "billet 40 °C · quenched · 40.0 mm thick",
+				"parts": {
+					"billet-hot": {
+						"move": [
+							-33.5,
+							47.5,
+							-29
+						],
+						"variant": "cold"
+					},
+					"billet-mid": {
+						"move": [
+							-33.5,
+							47.5,
+							-29
+						],
+						"variant": "cold"
+					},
+					"billet-tail": {
+						"move": [
+							-33.5,
+							47.5,
+							-29
+						],
+						"variant": "cold"
+					},
+					"tong-a": {
+						"variant": "quench"
+					},
+					"tong-b": {
+						"variant": "quench"
+					},
+					"tong-pivot": {
+						"variant": "quench"
+					},
+					"tong-ring": {
+						"variant": "quench"
+					},
+					"die-glow": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "anvil",
+				"readout": "billet 1,180 °C · 40.0 mm thick"
+			},
+			{
+				"name": "hold fire",
+				"readout": "billet 695 °C · fire 1,325 °C",
+				"parts": {
+					"billet-hot": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"billet-mid": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"billet-tail": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"tong-a": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"tong-b": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"tong-pivot": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"tong-ring": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"die-glow": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "yellow heat",
+				"readout": "billet 1,250 °C · fire 1,325 °C",
+				"parts": {
+					"billet-hot": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"billet-mid": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"billet-tail": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"tong-a": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"tong-b": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"tong-pivot": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"tong-ring": {
+						"move": [
+							-87.5,
+							2,
+							-12.2
+						]
+					},
+					"die-glow": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "hold hammer",
+				"readout": "billet 1,150 °C · 32.0 mm thick",
+				"parts": {
+					"die-upper": {
+						"move": [
+							0,
+							0,
+							-0.9
+						]
+					},
+					"ram": {
+						"move": [
+							0,
+							0,
+							-0.9
+						]
+					},
+					"ram-plate-0": {
+						"move": [
+							0,
+							0,
+							-0.9
+						]
+					},
+					"ram-plate-1": {
+						"move": [
+							0,
+							0,
+							-0.9
+						]
+					},
+					"ram-neck": {
+						"move": [
+							0,
+							0,
+							-0.9
+						]
+					},
+					"toggle-0": {
+						"move": [
+							0,
+							0,
+							-0.9
+						]
+					},
+					"toggle-1": {
+						"move": [
+							0,
+							0,
+							-0.9
+						]
+					},
+					"toggle-pin": {
+						"move": [
+							0,
+							0,
+							-0.9
+						]
+					},
+					"spring-arm": {
+						"move": [
+							0,
+							0,
+							-0.9
+						]
+					},
+					"billet-hot": {
+						"variant": "flat"
+					},
+					"billet-mid": {
+						"variant": "flat"
+					},
+					"billet-tail": {
+						"variant": "flat"
+					}
+				}
+			}
+		]
+	},
+	"meta": {
+		"margin": "[ FORGE ]",
+		"corner": "VPK-HTML"
+	}
 }

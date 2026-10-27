@@ -8,6 +8,7 @@ const ROOT = process.cwd();
 const DEMO_SOURCE = fs.readFileSync(path.join(ROOT, "components/website/demos/utils/gui-demo.tsx"), "utf8");
 const DETAILS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/details/utility.ts"), "utf8");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
+const { renderComponent } = require(path.join(ROOT, "scripts/lib/render-component.js"));
 
 test("GUI utility docs expose a rendered full-config example", () => {
 	assert.match(DETAILS_SOURCE, /examplesContentWidth: "full"/);
@@ -99,4 +100,30 @@ test("GUI full-config preview binds interactive controls to visible shader outpu
 			`expected GUI full-config preview to bind visible output: ${sourceFragment}`,
 		);
 	}
+});
+
+test("GUI demo motion controls update preview mode, replay and copied settings", async (context) => {
+	const copied = [];
+	context.mock.method(navigator.clipboard, "writeText", async (value) => { copied.push(value); });
+	const view = await renderComponent({
+		entry: "components/website/demos/utils/gui-demo.tsx",
+		exportName: "GUIFullConfigDemo",
+		mocks: {
+			"@/components/visual/liquid-gradient": "export default function LiquidGradient() { return null; }",
+		},
+	});
+	assert.equal(view.container.querySelector("[data-gui-motion-preview]").getAttribute("data-gui-motion-preview"), "easing");
+	await view.fill(view.getByRole("textbox", { name: "Bezier X1" }), "0.7");
+	await view.click(view.getByRole("button", { name: "Spring" }));
+	assert.equal(view.container.querySelector("[data-gui-motion-preview]").getAttribute("data-gui-motion-preview"), "spring");
+	assert.equal(view.getByRole("textbox", { name: "Bezier X1" }).matches(":disabled"), true);
+	await view.fill(view.getByRole("textbox", { name: "Stiffness" }), "320");
+	await view.click(view.getByRole("button", { name: "Replay motion preview" }));
+	assert.equal(view.getByText("Runs 1").textContent, "Runs 1");
+	await view.click(view.getByRole("button", { name: "Copy values as JSON" }));
+	const values = JSON.parse(copied.at(-1));
+	assert.equal(values.motionMode, "spring");
+	assert.deepEqual(values.motionEasing, [0.7, 0, 0, 1]);
+	assert.deepEqual(values.motionSpring, { stiffness: 320, damping: 26, mass: 1 });
+	assert.equal(typeof values.motionSeconds, "number");
 });

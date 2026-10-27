@@ -8,12 +8,14 @@ import { iso } from "../anatomy/vendor/kit/iso-kit.mjs";
 import { pointInPolygon } from "./core.mjs";
 import { MANUAL_TAG_RADIUS, NARROW_STAGE_PX, NARROW_TEXT_FLOOR_PX, TAG_FONT } from "./emit.mjs";
 import { hullExtent, labelBox, spread } from "./layout.mjs";
+import { ISO_THRESHOLDS } from "./thresholds.mjs";
 
 const isNum = value => typeof value === "number" && Number.isFinite(value);
 const isVec = (value, n = 3) => Array.isArray(value) && value.length === n && value.every(isNum);
 
 // Marks, dims and scale brief fields (illustrations.md § Style).
-export const MAX_MARKS = 12;
+// At most 20 numbered marks (checks-thresholds.json → iso.marksMax): dense figures number more parts.
+export const MAX_MARKS = ISO_THRESHOLDS.marksMax;
 export const MAX_DIMS = 8;
 
 export function validateMarks(marks, known, push) {
@@ -70,7 +72,7 @@ export function scaleGeometry(spec, at, P, font) {
 // The [piece, index] whose group carries a tag or mark on `point`: the first of the target's pieces whose silhouette holds
 // it, the last one in painter order, so a tag on a tray's near wall rides in the front piece instead of being painted under it.
 export function homePiece(pieces, target, point) {
-	const own = pieces.map((piece, at) => [piece, at]).filter(([piece]) => piece.partId === target);
+	const own = pieces.map((piece, at) => [piece, at]).filter(([piece]) => piece.partId === target && !piece.restHidden);
 	const holds = ([piece]) => piece.hit.length >= 3 && pointInPolygon(point, piece.hit);
 	return own.filter(holds).at(-1) ?? own.at(-1);
 }

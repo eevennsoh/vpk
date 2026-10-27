@@ -1,24 +1,27 @@
-# Figure engines: iso kit and anatomy hero
+# Figure engines: iso kit, anatomy hero and hairline
 
-vpk-html draws technical figures with two engines that share one camera, one frame loop and one face-tone map,
+vpk-html draws technical figures with two authoring engines that share one camera, one frame loop and one face-tone map,
 so one document may use either or both. This file owns the anatomy hero and the mixing rules; the iso kit's
 own grammar lives in `references/illustrations.md`. SKILL.md step 2 asks the engine question and records the
-answer in `<meta name="vpk-figure-engine" content="none|iso-kit|anatomy-hero|both">`.
+answer in `<meta name="vpk-figure-engine" content="none|iso-kit|anatomy-hero|both">`. A third engine, `hairline`
+(§ 10), draws Lucas Marques's 36 hairline figures from the vendored upstream source; it is a catalogue of
+ready figures, not an authoring engine, and a page that shows them records `content="hairline"`. The full set of
+meta values is `none|iso-kit|anatomy-hero|both|hairline`; `both` means iso kit plus anatomy hero.
 
 Both engines are built into this skill. The upstream anatomy, hairline and 3d-assembly-manual code is vendored or ported
 here, and their authoring guidance is in [figure craft](figure-craft.md); never install or load those skills.
 
 ## 1. Choosing an engine
 
-| | iso kit (`iso-kit`) | anatomy hero (`anatomy-hero`) | both (`both`) |
-|---|---|---|---|
-| Use for | flows, stacks, exploded assemblies, request paths: several light figures | the one physical mechanism that carries the story, which the reader can work | one hero plus supporting iso figures |
-| Authoring cost | a JSON brief, minutes | a hero module: Figure tier 30–90 min, Hero tier 2–4 h | the sum |
-| Weight | ≤ 60 KB SVG per figure (≤ 120 KB dense), one runtime block within `ISO_BUDGET_BYTES` (`scripts/iso/inline.mjs`) | hero region warn > 300 KB, blocks ≤ 40 KB together | all figure regions warn > 600 KB |
-| Interaction | select or explode behaviour, no tour | a slider (pointer, keys, idle tour) or live-owned input | per figure |
-| Labels | short leaders ending in an ink dot, near the part (numbered gutter tags on narrow stages); the kit has one style, `manual` | plate corners (`Fig n`, title, hint, live readout) and a legend; no leaders or balloons inside the drawing | per engine |
+| | iso kit (`iso-kit`) | anatomy hero (`anatomy-hero`) | both (`both`) | hairline (`hairline`) |
+|---|---|---|---|---|
+| Use for | flows, stacks, exploded assemblies, request paths: several light figures | the one physical mechanism that carries the story, which the reader can work | one hero plus supporting iso figures | one of hairline's 36 ready figures, shown as upstream draws it (§ 10) |
+| Authoring cost | a JSON brief, minutes | a hero module: Figure tier 30–90 min, Hero tier 2–4 h | the sum | none: pick a figure id from `scripts/hairline/figures.mjs` |
+| Weight | no size limit: an SVG warns above 250 KB and never fails (`checks-thresholds.json` → `iso`); one runtime block within `ISO_BUDGET_BYTES` (`scripts/iso/inline.mjs`) | hero region warns above 300 KB, never fails | no total cap | no size limit (`figures.hairline` thresholds are off) |
+| Interaction | select, explode, step or scrub behaviour, no tour | a slider (pointer, keys, idle tour) or live-owned input | per figure | each figure's own pointer answer (riffle also takes arrow keys); no `play` tour |
+| Labels | short leaders ending in an ink dot, near the part (numbered gutter tags on narrow stages); the kit has one style, `manual` | plate corners (`Fig n`, title, hint, live readout) and a legend; no leaders or balloons inside the drawing | per engine | none in the drawing; a mono readout under it shows the figure's caption |
 
-Rules: never start an Epic tier; at most one anatomy hero per document; the Hero tier (80–150 parts) only on an
+Rules: a figure takes as many parts, layers and detail as it needs to look right; there is no size, part or tier cap, and a document may carry several anatomy heroes. The Hero tier (80–150 parts) is a guide, used on an
 explicit request. With nobody to ask, the iso kit is the default.
 
 ## 2. Anatomy hero workflow
@@ -216,3 +219,99 @@ figures, and `figures.test.mjs` F8b pins them):
 | Iso runtime block | 27,432 B (the one block, with the accent tokens and rules, the rest motion, the cast and received shadows and the entry hand-off; budget `ISO_BUDGET_BYTES` = 27,648 B in `scripts/iso/inline.mjs`) |
 | Hero region, anatomy blocks | as above: 97,282 B; 40,332 B |
 | Demo page | 554,405 B |
+
+## 10. The hairline engine (`hairline`)
+
+`scripts/hairline/` renders hairline's figures (Lucas Marques, MIT, `github.com/lucasmarkes/hairline`) from the
+vendored upstream source. `vendor/` is verbatim: the 0.5.1 package source (33 figures) and the site's three Marks
+pages (Vercel, Mastra, Notion), pinned with sha256s in `vendor/VENDOR.json`. Attribution: `scripts/hairline/NOTICE.md`.
+Never edit `vendor/`; re-vendor with the `fetch` loop in VENDOR.json and rebuild. It is skipped by the repo's file-size
+budget (`scripts/verify-file-size-budget.js` `VENDORED_DIRECTORIES`) and by the root `tsconfig.json`.
+
+**Markup.** One plate per figure (`hairlinePlate()` in `scripts/hairline/inline.mjs`):
+
+```html
+<figure class="vpk-hairline-plate" data-vpk-engine="hairline" data-vpk-figure="hl-<id>" data-vpk-camera="45 30" data-vpk-block data-vpkh-no-lightbox>
+	<div class="vpk-hairline-stage" data-vpk-review-ignore><div data-vpk-hairline="<id>" role="img" aria-label="…"></div></div>
+	<p class="vpk-hairline-read" data-vpk-hairline-read data-vpk-review-ignore>rest</p>
+	<figcaption>…</figcaption>
+</figure>
+```
+
+The host's `aria-label` is upstream's label (riffle is a focusable `group`, the rest `img`); the figure keeps it,
+because upstream's mount never overwrites an attribute the host already has. The figure's `onRead` caption goes to
+the mono readout under the stage.
+
+**Blocks.** `<style data-vpk-hairline-css>` in `<head>` is upstream's stylesheet (`core/styles.ts` `css()`), every
+selector still inside `:where()`, with the raw-hex palette fallbacks removed and the five colours set from tokens.
+`<!-- vpk-hairline:start --><script data-vpk-hairline-runtime>…<!-- vpk-hairline:end -->` before `</body>` is the
+inlined `runtime/frame-loop.mjs` around one esbuild bundle of only the figures that page shows (tree-shaken;
+13.9 KB for one figure, 35.4 KB for the eight on the Empty shelf, 134 KB for all 36). esbuild is pinned by the
+lockfile, so `build-illustrations.mjs --check` is stable. The gallery builder (`renderHairlinePage`) writes both blocks.
+
+**Theme.** Hairline's five colours map onto vpk tokens on `[data-vpk-engine="hairline"]`, so a figure follows the
+page's `data-theme`:
+
+| hairline | light (upstream) | light (vpk) | dark (upstream) | dark (vpk) |
+|---|---|---|---|---|
+| `plate` (face fill) | `#ffffff` | `--paper` | `#08090a` | `--paper` |
+| `hi` (active stroke, dots) | `#232327` | `--ink` | `#d0d6e0` | `--ink` |
+| `edge` (silhouettes) | `#a4a4ac` | `--ill-tone3` 85% + `--ill-ink50` | `#5b5d64` | `--ill-hatch` |
+| `mid` (default stroke) | `#c3c3c9` | `--ill-tone3` 70% + `--ill-tone2` | `#3e3e44` | `--ill-tone3` |
+| `lo` (creases, off dots) | `#e0e0e4` | `--ill-tone2` | `#29292d` | `--ill-tone2` |
+
+The active part (`.hi`) takes the iso accent faces (`scripts/hairline/inline.mjs` TONE_CSS) with the neutral edge at rest;
+its darker-accent outline is drawn only while the figure is hovered or focused, as on a hovered iso part. A faceless `.hi`
+stroke (`.nf`) keeps the accent at rest, having no face to carry it.
+
+**Motion.** Every figure ticks on `window.vpkFrameLoop`: `runtime/stage.mjs` re-exports `core/stage.ts` with
+`register` replaced (`runtime/loop.mjs`), so upstream's own rAF loop, IntersectionObserver and reduced-motion query
+are tree-shaken out. Reduced motion is upstream's module flag, written from the loop's query; springs and tweens
+then land at once and the figure still answers the pointer. Upstream's `play` tour is not offered (`tour` is a stub).
+Phosphor keeps upstream's idle loop while on screen with motion allowed, as on the site.
+
+**check-html exemption.** `fade()` in `core/stage.ts` writes white `stop-color` gradient stops for the reflection
+masks of riffle and phosphor. A mask is luminance, not paint, so the theme has nothing to map; `collectColorTokenIssues`
+ignores exactly `"stop-color":"#fff"` inside `<script data-vpk-hairline-runtime>`. The SVG grammar check does not see
+those gradients (they are created at run time, not in markup).
+
+**Checks.** check-figures L1 (one stylesheet in `<head>` and one runtime block with a hairline root; none without),
+L2 (each plate has a host with an `aria-label`, a readout, and `data-vpkh-no-lightbox`), E1–E3 with meta `hairline`,
+and advisory A7 (`figures.hairline.runtimeWarnBytes`, `pageWarnBytes`).
+
+**Gallery.** `GALLERY_PAGES` entries with `engine: "hairline"` render a shelf from `scripts/hairline/figures.mjs`
+(site order; titles and summaries are the site's). Rebuild with `node .agents/skills/vpk-html/scripts/build-illustrations.mjs`
+then `build.mjs --refresh-library` (both unsandboxed).
+
+## 11. The anatomy WebGL engine (`anatomy-gl`)
+
+The anatomy collection's ten WebGL machines (afterburner, glory hole, tokamak, plasma cutter, forge, turbofan, power
+station, process pump, pouring steel, pool reactor) draw their flame, plasma, arcs, sparks, molten steel and Cherenkov
+light with fragment shaders ray-marched against each figure's geometry every frame. No SVG kit can reproduce that, so these
+ten figures are not iso-kit briefs: the page runs the original figures, vendored unmodified from `anatomy-figures@0.1.0`
+(MIT, `scripts/anatomy-gl/vendor/`, pinned with sha256 in `VENDOR.json`; notice in `scripts/anatomy-gl/NOTICE.md`).
+
+- **Style.** The vpk look comes in through upstream's own token API: the boot calls `render(host, { theme, tokens })` with
+  `ANATOMY_GL_TOKENS` (`scripts/anatomy-gl/inline.mjs`), which points every `--anatomy-*` colour at the vpk ramp (paper,
+  raised surface, tone 1 and 2 sides, hairlines at 60/38/20%, mono text) and makes the lit part the iso kit's orange accent.
+  A lit solid's edge is neutral at rest and takes the accent only while the plate is hovered or focused (`ANATOMY_GL_LIT_CSS`,
+  adopted into each figure's shadow root); faceless lit lines and wires keep the accent at rest.
+  The shaders keep upstream's colours: the fire, plasma and light are the effect itself. The figure follows the page theme
+  (`data-theme` on `<html>`) and remounts on a change; upstream's teardown releases its WebGL contexts.
+- **Lifecycle.** A figure costs one or two WebGL contexts, and a browser keeps about sixteen per renderer process, shared by
+  every tab of that process; past that it evicts the oldest, and upstream never recovers an evicted context. So the boot
+  mounts a figure only when it is within `ANATOMY_GL_MOUNT_MARGIN` (one viewport) and tears it down, releasing its contexts,
+  once it is beyond `ANATOMY_GL_UNMOUNT_MARGIN` (two viewports). A focused figure is never torn down, and an evicted figure
+  that is still near is remounted (at most `ANATOMY_GL_MAX_RECOVERIES` times). Before the first mount, a light-DOM reserve at
+  the figure's ratio (`ratio` in `figures.mjs`, equal to the vendored entry's export) holds the plate's height, and an
+  emptied host keeps its last height, so mounting and unmounting never move the page. While a figure is mounted, upstream
+  pauses its own frame loop off screen and rests under reduced motion.
+- **Markup.** `figure[data-vpk-engine="anatomy-gl"]` with one host `[data-vpk-anatomy-gl="<slug>"]` (aria-label = the
+  summary) inside the iso kit's ruled frame, and the house caption below; `data-vpkh-no-lightbox`. The figure draws its own
+  corners (figure number, title, hint, live readout) and its own interaction (throttle, drag, keys) as upstream does.
+- **Blocks.** `<style data-vpk-anatomy-gl-css>` in `<head>` (the accent pair and the plate CSS) and one
+  `<!-- vpk-anatomy-gl:start -->…<!-- vpk-anatomy-gl:end -->` runtime block before `</body>`: an esbuild bundle of only the
+  figures the page shows, offline. check-html skips upstream's built-in theme tables and run-time SVG inside that one script.
+- **Meta.** `<meta name="vpk-figure-engine" content="anatomy-gl">`; `both` does not cover it.
+- **Gallery.** The `GALLERY_PAGES` entry with `engine: "anatomy-gl"` ("Anatomy collection, WebGL") renders all ten from
+  `scripts/anatomy-gl/figures.mjs`; their iso-kit briefs (`briefs/an-<slug>.json`) stay in the repo but are no longer shown.

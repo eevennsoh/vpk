@@ -4,7 +4,7 @@ import test from "node:test";
 import { buildScene } from "./scene.mjs";
 import { renderSvg } from "./emit.mjs";
 import { ENTRY } from "./accent.mjs";
-import { enterAnimation, enterKeyframes, entryClass, fadeAnimation, fadeStart, handoffTimes, HOLD_SPLINE, MANUAL_HOLD_MS, MANUAL_PART_MS, MANUAL_STEP_MS, manualTiming, MOVE_SPLINE } from "./motion.mjs";
+import { ENTRY_DROP_CLASS, ENTRY_REST_CLASS, ENTRY_WAIT_CLASS, enterAnimation, enterKeyframes, fadeAnimation, fadeStart, HOLD_SPLINE, layerClassAnimation, layerClassAt, layerClassFrames, MANUAL_HOLD_MS, MANUAL_PART_MS, MANUAL_STEP_MS, manualTiming, MAX_TOTAL_MS, MOVE_SPLINE, staggerFor } from "./motion.mjs";
 
 const EXEMPLAR = JSON.parse(fs.readFileSync(new URL("./briefs/exploded-stack.json", import.meta.url), "utf8"));
 const attr = (tag, name) => new RegExp(`\\s${name}="([^"]*)"`).exec(tag)?.[1];
@@ -64,55 +64,68 @@ test("the default start offset drops parts into place (dy < 0 at 45/30), and the
 });
 
 // Rule 10: 700 ms landings on an even stagger shorter than a drop (the drops overlap), under 1.8 s; the first layer drops at once.
-test("manualTiming: 700 ms landings from the start, even overlapping gaps, total under 1.8 s", () => {
+// Any number of layers: past 7 the stagger shrinks, with no floor, so the total stays within 1.8 s.
+test("manualTiming: 700 ms landings from the start, even overlapping gaps, total under 1.8 s, for any layer count", () => {
 	assert.throws(() => manualTiming({ layers: 0 }), /at least one layer/);
-	assert.throws(() => manualTiming({ layers: 7 }), /7 layers exceeds 6/);
-	for (let n = 1; n <= 6; n++) {
+	for (const n of [1, 2, 6, 7, 12, 24, 25, 60, 200]) {
 		const timing = manualTiming({ layers: n });
 		assert.equal(timing.part, MANUAL_PART_MS);
 		assert.equal(timing.starts[0], 0, `${n} layers: the first layer drops at once (no ghost or arrow lead)`);
-		assert.ok(timing.total <= 1800, `${n} layers: ${timing.total} ms`);
+		assert.ok(timing.total <= MAX_TOTAL_MS, `${n} layers: ${timing.total} ms`);
 		const gaps = timing.starts.slice(1).map((start, i) => start - timing.starts[i]);
-		assert.ok(gaps.every(gap => gap === MANUAL_STEP_MS), `${n} layers: every gap is ${MANUAL_STEP_MS} ms (uniform), got ${gaps}`);
-		assert.ok(MANUAL_STEP_MS < MANUAL_PART_MS, "the next layer starts before the previous one lands (overlap)");
+		assert.ok(gaps.every(gap => gap === staggerFor(n)), `${n} layers: every gap is ${staggerFor(n)} ms (uniform), got ${gaps}`);
+		assert.ok(staggerFor(n) < MANUAL_PART_MS, "the next layer starts before the previous one lands (overlap)");
 	}
 	assert.deepEqual(manualTiming({ layers: [["a"], ["b"]] }), manualTiming({ layers: 2 }));
 });
 
-test("the entry drops each layer from ENTRY.DROP_Z with an accent hand-off, and draws no ghost or arrow", () => {
+test("staggerFor: 180 ms up to 7 layers, 157 ms at 8, 100 ms at 12, 47 ms at 24, shrinking with no floor", () => {
+	for (const n of [1, 2, 6, 7]) assert.equal(staggerFor(n), MANUAL_STEP_MS, `${n} layers`);
+	assert.equal(staggerFor(8), 157);
+	assert.equal(staggerFor(12), 100);
+	assert.equal(staggerFor(24), 47);
+	assert.equal(staggerFor(111), 10, "no floor: the assembly still ends by 1.8 s");
+	assert.equal(manualTiming({ layers: 12 }).total, 1800);
+});
+
+// The hand-off is layer-agnostic: each layer group steps its own class (wait → drop → set), so the CSS needs no per-layer rule.
+test("layer class frames: wait until the start, drop in the accent for ACCENT_HOLD_MS, then rest; shadows and no-accent skip the drop", () => {
+	assert.deepEqual([ENTRY_WAIT_CLASS, ENTRY_DROP_CLASS, ENTRY_REST_CLASS], ["vpk-iso-wait", "vpk-iso-drop", "vpk-iso-set"]);
+	assert.equal(MANUAL_HOLD_MS, ENTRY.ACCENT_HOLD_MS);
+	const timing = manualTiming({ layers: 3 });
+	assert.deepEqual(layerClassFrames(0, timing), [[0, "vpk-iso-drop"], [180, "vpk-iso-set"]]);
+	assert.deepEqual(layerClassFrames(2, timing), [[0, "vpk-iso-wait"], [360, "vpk-iso-drop"], [540, "vpk-iso-set"]]);
+	assert.deepEqual(layerClassFrames(2, timing, { shadow: true }), [[0, "vpk-iso-wait"], [360, "vpk-iso-set"]]);
+	assert.deepEqual(layerClassFrames(2, timing, { accent: false }), [[0, "vpk-iso-wait"], [360, "vpk-iso-set"]]);
+	assert.equal(layerClassFrames(0, timing, { accent: false }), null, "a first layer without the accent never changes class");
+	assert.equal(layerClassAnimation(0, timing, { shadow: true }), "");
+	// Every layer, the last included, hands its accent back the same fixed time after it starts.
+	for (const layers of [1, 3, 6, 24, 40]) {
+		const t = manualTiming({ layers });
+		for (let i = 0; i < layers; i++) {
+			assert.equal(layerClassAt(i, t.starts[i], t), "vpk-iso-drop", `${layers}/${i} drops in the accent`);
+			assert.equal(layerClassAt(i, t.starts[i] + MANUAL_HOLD_MS, t), "vpk-iso-set");
+			if (t.starts[i] > 0) assert.equal(layerClassAt(i, t.starts[i] - 1, t), "vpk-iso-wait");
+			assert.equal(layerClassAt(i, t.total, t), "vpk-iso-set", "rests on the class that paints nothing");
+		}
+	}
+	assert.equal(layerClassAnimation(2, timing), '<animate data-vpk-begin="0s" attributeName="class" begin="indefinite" dur="1060ms" values="vpk-iso-wait;vpk-iso-drop;vpk-iso-set" keyTimes="0;0.34;0.509" calcMode="discrete" fill="freeze"/>');
+});
+
+test("the entry drops each layer from ENTRY.DROP_Z with a per-group hand-off and draws no ghost or arrow, for any layer count", () => {
 	const brief = { ...structuredClone(EXEMPLAR), assemble: { layers: [["base"], ["core", "module"], ["shell"]] } };
 	const scene = buildScene(brief);
 	assert.equal(scene.timing.manual, true);
 	const svg = renderSvg(scene);
-	assert.doesNotMatch(svg, /data-vpk-iso-ghost|data-vpk-iso-cue/);
-	const handoff = /<animate [^>]*attributeName="class"[^>]*values="([^"]+)"[^>]*keyTimes="([^"]+)"/.exec(svg);
-	// Starts 0, 180, 360; each hands back MANUAL_HOLD_MS (180) after its start: 180 and 360 coincide with the next start.
-	assert.deepEqual(handoff[1].split(";"), ["vpk-iso-h0 vpk-iso-h1 vpk-iso-h2", "vpk-iso-a0 vpk-iso-h1 vpk-iso-h2", "vpk-iso-a1 vpk-iso-h2", "vpk-iso-a2", "vpk-iso-set"]);
-	assert.equal(handoff[2].split(";").length, 5);
-	// The drop is ENTRY.DROP_Z world units: straight down on screen at the dimetric camera.
+	assert.doesNotMatch(svg, /data-vpk-iso-ghost|data-vpk-iso-cue|vpk-iso-[ah]\d/);
+	assert.match(svg, /<g data-vpk-iso-enter="2">[\s\S]*?values="vpk-iso-wait;vpk-iso-drop;vpk-iso-set"/);
 	assert.equal(scene.enterOffset[0], 0);
-	assert.ok(scene.enterOffset[1] < -ENTRY.DROP_Z, `a ${ENTRY.DROP_Z}-unit drop moves up the screen by more than its world length at this fit (${scene.enterOffset[1]})`);
-});
-
-// Redline 2b: every layer, the last included, hands its accent back the same fixed time after it starts (so the same point of
-// its own drop): the last layer used to stay orange until it fully landed, 520 ms longer than the others.
-test("the hand-off is uniform: every layer, the last included, loses the accent ENTRY.ACCENT_HOLD_MS after it starts", () => {
-	assert.equal(MANUAL_HOLD_MS, ENTRY.ACCENT_HOLD_MS);
-	for (const layers of [1, 2, 3, 6]) {
-		const timing = manualTiming({ layers });
-		const accentedAt = (i, t) => entryClass(t, timing).split(" ").includes(`vpk-iso-a${i}`);
-		const ends = timing.starts.map((start, i) => {
-			assert.ok(accentedAt(i, start), `layer ${i} is accented as it starts`);
-			const events = handoffTimes(timing).filter(t => t > start && !accentedAt(i, t));
-			return events[0] - start;
-		});
-		assert.deepEqual(ends, timing.starts.map(() => MANUAL_HOLD_MS), `${layers} layers: hand-off intervals ${ends}`);
-		assert.ok(timing.lastStart + MANUAL_HOLD_MS + ENTRY.HANDOFF_MS <= timing.total, "the last fade ends inside the assembly");
-		assert.equal(entryClass(timing.total, timing), "vpk-iso-set", "the scene rests on the class that paints nothing");
-	}
-	// The SMIL values follow the same events: in a 6-layer entry the last accent class drops at lastStart + hold.
-	const timing = manualTiming({ layers: 6 });
-	const svgTimes = handoffTimes(timing);
-	assert.ok(svgTimes.includes(timing.lastStart + MANUAL_HOLD_MS));
-	assert.ok(svgTimes.at(-1) < timing.total);
+	assert.ok(scene.enterOffset[1] < -ENTRY.DROP_Z);
+	// 30 layers (one part each) build: there is no layer cap.
+	const many = { schema: "vpk-iso-brief/1", id: "many-layers", figId: "FIG_009", title: "Many layers", label: "Thirty boxes, one per layer.", labels: "none", emphasis: "none" };
+	many.parts = Array.from({ length: 30 }, (_, i) => ({ id: `p${i}`, kind: "box", at: [i * 6, 0, 0], size: [4, 4, 4] }));
+	many.assemble = { layers: many.parts.map(part => [part.id]) };
+	const big = renderSvg(buildScene(many));
+	assert.equal([...big.matchAll(/<g data-vpk-iso-enter="\d+">/g)].length, 30);
+	assert.doesNotMatch(big, /vpk-iso-drop/, "emphasis none: no accent step");
 });

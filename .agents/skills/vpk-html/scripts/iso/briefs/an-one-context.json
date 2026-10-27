@@ -3,597 +3,7271 @@
 	"id": "an-one-context",
 	"figId": "FIG_235",
 	"title": "One context as a plotter",
-	"label": "Dimetric plotter: sixteen tiles, one 2D canvas per pane, each holding a stamped shape. A carriage on a back rail holds one print head over pane 16, and pane 15 beside it holds the image just stamped. Hover or arrow keys lift one part.",
-	"caption": "One WebGL2 context renders every pane in turn and stamps each image into that pane's own canvas, which keeps it until the head comes back.",
+	"label": "XY plotter: a bed of sixteen sunken wells, each a pane canvas; a gantry with a drag chain on its beam carries one webgl2 print head over pane 11. Move the pointer across it, or use arrow keys, to send the head to a pane.",
+	"caption": "One WebGL2 context renders each pane in turn, then lowers and stamps its pixels into that pane's own canvas.",
 	"camera": {
 		"preset": "dimetric",
 		"scale": "fit",
 		"pad": 18
 	},
+	"labels": "none",
+	"emphasis": "accent",
+	"focal": [
+		"head",
+		"stamp"
+	],
 	"parts": [
 		{
-			"id": "tile-4",
-			"kind": "box",
+			"id": "bed",
+			"kind": "slab",
 			"at": [
 				0,
 				0,
 				0
 			],
 			"size": [
-				24,
-				24,
-				3
+				216,
+				186,
+				8
 			],
-			"r": 0,
-			"label": "Pane 4 canvas"
+			"r": 13,
+			"bevel": 1.5,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "stadium",
+					"at": [
+						66,
+						4
+					],
+					"size": [
+						46,
+						2.6
+					],
+					"depth": 1
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						8,
+						8
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 200,
+					"size": 0.9
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						8,
+						178
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 200,
+					"size": 0.9
+				}
+			]
 		},
 		{
-			"id": "glyph-4",
-			"kind": "ring",
+			"id": "rail-l",
+			"kind": "box",
 			"at": [
+				10,
 				12,
-				12,
-				3
-			],
-			"size": [
-				6,
-				6,
-				0
-			],
-			"clipTo": "tile-4",
-			"label": "Pane 4 image"
-		},
-		{
-			"id": "tile-8",
-			"kind": "box",
-			"at": [
-				28,
-				0,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 8 canvas"
-		},
-		{
-			"id": "glyph-8",
-			"kind": "plate",
-			"at": [
-				35,
-				7,
-				3
+				8
 			],
 			"size": [
 				10,
-				10,
-				1
+				162,
+				3.5
 			],
-			"r": 0,
-			"label": "Pane 8 image"
-		},
-		{
-			"id": "tile-12",
-			"kind": "box",
-			"at": [
-				56,
-				0,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 12 canvas",
-			"marks": [
-				[
-					[
-						5,
-						12
-					],
-					[
-						19,
-						12
-					]
-				]
-			]
-		},
-		{
-			"id": "tile-16",
-			"kind": "box",
-			"at": [
-				84,
-				0,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 16 canvas"
-		},
-		{
-			"id": "tile-3",
-			"kind": "box",
-			"at": [
-				0,
-				28,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 3 canvas",
-			"marks": [
-				[
-					[
-						7,
-						17
-					],
-					[
-						17,
-						7
-					]
-				]
-			]
-		},
-		{
-			"id": "tile-7",
-			"kind": "box",
-			"at": [
-				28,
-				28,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 7 canvas"
-		},
-		{
-			"id": "glyph-7",
-			"kind": "ring",
-			"at": [
-				40,
-				40,
-				3
-			],
-			"size": [
-				6,
-				6,
-				0
-			],
-			"clipTo": "tile-7",
-			"label": "Pane 7 image"
-		},
-		{
-			"id": "tile-11",
-			"kind": "box",
-			"at": [
-				56,
-				28,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 11 canvas"
-		},
-		{
-			"id": "glyph-11",
-			"kind": "plate",
-			"at": [
-				63,
-				35,
-				3
-			],
-			"size": [
-				10,
-				10,
-				1
-			],
-			"r": 0,
-			"label": "Pane 11 image"
-		},
-		{
-			"id": "tile-15",
-			"kind": "box",
-			"at": [
-				84,
-				28,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 15 canvas",
-			"state": "new",
-			"marks": [
-				[
-					[
-						5,
-						12
-					],
-					[
-						19,
-						12
-					]
-				]
-			]
-		},
-		{
-			"id": "tile-2",
-			"kind": "box",
-			"at": [
-				0,
-				56,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 2 canvas",
-			"marks": [
-				[
-					[
-						12,
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						1.5,
 						5
 					],
-					[
-						12,
-						19
-					]
-				]
-			]
-		},
-		{
-			"id": "tile-6",
-			"kind": "box",
-			"at": [
-				28,
-				56,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 6 canvas",
-			"marks": [
-				[
-					[
-						7,
-						17
+					"to": [
+						1.5,
+						157
 					],
-					[
-						17,
-						7
-					]
-				]
-			]
-		},
-		{
-			"id": "tile-10",
-			"kind": "box",
-			"at": [
-				56,
-				56,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 10 canvas"
-		},
-		{
-			"id": "glyph-10",
-			"kind": "ring",
-			"at": [
-				68,
-				68,
-				3
-			],
-			"size": [
-				6,
-				6,
-				0
-			],
-			"clipTo": "tile-10",
-			"label": "Pane 10 image"
-		},
-		{
-			"id": "tile-14",
-			"kind": "box",
-			"at": [
-				84,
-				56,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 14 canvas"
-		},
-		{
-			"id": "glyph-14",
-			"kind": "plate",
-			"at": [
-				91,
-				63,
-				3
-			],
-			"size": [
-				10,
-				10,
-				1
-			],
-			"r": 0,
-			"label": "Pane 14 image"
-		},
-		{
-			"id": "tile-1",
-			"kind": "box",
-			"at": [
-				0,
-				84,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 1 canvas",
-			"marks": [
-				[
-					[
-						5,
-						12
+					"step": 3,
+					"every": 5,
+					"lengths": [
+						1.3,
+						2.6
 					],
-					[
-						19,
-						12
-					]
-				]
+					"side": -1
+				}
 			]
 		},
 		{
-			"id": "tile-5",
+			"id": "rail-l-stop-a",
 			"kind": "box",
 			"at": [
-				28,
-				84,
-				0
+				9,
+				4,
+				8
 			],
 			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 5 canvas",
-			"marks": [
-				[
-					[
-						12,
-						5
-					],
-					[
-						12,
-						19
-					]
-				]
-			]
-		},
-		{
-			"id": "tile-9",
-			"kind": "box",
-			"at": [
-				56,
-				84,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 9 canvas",
-			"marks": [
-				[
-					[
-						7,
-						17
-					],
-					[
-						17,
-						7
-					]
-				]
-			]
-		},
-		{
-			"id": "tile-13",
-			"kind": "box",
-			"at": [
-				84,
-				84,
-				0
-			],
-			"size": [
-				24,
-				24,
-				3
-			],
-			"r": 0,
-			"label": "Pane 13 canvas"
-		},
-		{
-			"id": "glyph-13",
-			"kind": "ring",
-			"at": [
-				96,
-				96,
-				3
-			],
-			"size": [
-				6,
-				6,
-				0
-			],
-			"clipTo": "tile-13",
-			"label": "Pane 13 image"
-		},
-		{
-			"id": "rail",
-			"kind": "box",
-			"at": [
-				-6,
-				-16,
-				0
-			],
-			"size": [
-				120,
+				12,
 				8,
-				6
+				5.5
 			],
-			"r": 1,
-			"label": "Rail"
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6,
+						4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.7
+				}
+			]
+		},
+		{
+			"id": "rail-l-stop-b",
+			"kind": "box",
+			"at": [
+				9,
+				174,
+				8
+			],
+			"size": [
+				12,
+				8,
+				5.5
+			],
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6,
+						4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.7
+				}
+			]
+		},
+		{
+			"id": "rail-r",
+			"kind": "box",
+			"at": [
+				186,
+				12,
+				8
+			],
+			"size": [
+				10,
+				162,
+				3.5
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						8.5,
+						5
+					],
+					"to": [
+						8.5,
+						157
+					],
+					"step": 3,
+					"every": 5,
+					"lengths": [
+						1.3,
+						2.6
+					],
+					"side": 1
+				}
+			]
+		},
+		{
+			"id": "rail-r-stop-a",
+			"kind": "box",
+			"at": [
+				185,
+				4,
+				8
+			],
+			"size": [
+				12,
+				8,
+				5.5
+			],
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6,
+						4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.7
+				}
+			]
+		},
+		{
+			"id": "rail-r-stop-b",
+			"kind": "box",
+			"at": [
+				185,
+				174,
+				8
+			],
+			"size": [
+				12,
+				8,
+				5.5
+			],
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6,
+						4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.7
+				}
+			]
+		},
+		{
+			"id": "frame",
+			"kind": "slab",
+			"at": [
+				35,
+				30,
+				8
+			],
+			"size": [
+				128,
+				128,
+				3
+			],
+			"r": 10,
+			"bevel": 0.8,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 2.6,
+					"r": 7.5
+				}
+			]
+		},
+		{
+			"id": "well-1",
+			"kind": "slab",
+			"at": [
+				42,
+				37,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-1",
+			"kind": "box",
+			"at": [
+				49.5,
+				47.7,
+				13
+			],
+			"size": [
+				11,
+				4.6,
+				2.6
+			],
+			"r": 2.3
+		},
+		{
+			"id": "well-2",
+			"kind": "slab",
+			"at": [
+				71,
+				37,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-2",
+			"kind": "box",
+			"at": [
+				79.0,
+				46.75,
+				13
+			],
+			"size": [
+				10,
+				6.5,
+				2.4
+			],
+			"r": 1
+		},
+		{
+			"id": "well-3",
+			"kind": "slab",
+			"at": [
+				100,
+				37,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-3",
+			"kind": "box",
+			"at": [
+				110.7,
+				44.5,
+				13
+			],
+			"size": [
+				4.6,
+				11,
+				2.6
+			],
+			"r": 2.3
+		},
+		{
+			"id": "well-4",
+			"kind": "slab",
+			"at": [
+				129,
+				37,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-4",
+			"kind": "box",
+			"at": [
+				137.0,
+				46.75,
+				13
+			],
+			"size": [
+				10,
+				6.5,
+				2.4
+			],
+			"r": 1
+		},
+		{
+			"id": "well-5",
+			"kind": "slab",
+			"at": [
+				42,
+				66,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-5",
+			"kind": "box",
+			"at": [
+				50.0,
+				75.75,
+				13
+			],
+			"size": [
+				10,
+				6.5,
+				2.4
+			],
+			"r": 1
+		},
+		{
+			"id": "well-6",
+			"kind": "slab",
+			"at": [
+				71,
+				66,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-6",
+			"kind": "box",
+			"at": [
+				79.75,
+				76.5,
+				13
+			],
+			"size": [
+				8.5,
+				5,
+				3.4
+			],
+			"r": 0.8
+		},
+		{
+			"id": "well-7",
+			"kind": "slab",
+			"at": [
+				100,
+				66,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-7",
+			"kind": "box",
+			"at": [
+				107.5,
+				76.7,
+				13
+			],
+			"size": [
+				11,
+				4.6,
+				2.6
+			],
+			"r": 2.3
+		},
+		{
+			"id": "well-8",
+			"kind": "slab",
+			"at": [
+				129,
+				66,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-8",
+			"kind": "box",
+			"at": [
+				139.5,
+				74.75,
+				13
+			],
+			"size": [
+				5,
+				8.5,
+				3.4
+			],
+			"r": 0.8
+		},
+		{
+			"id": "well-9",
+			"kind": "slab",
+			"at": [
+				42,
+				95,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-9",
+			"kind": "box",
+			"at": [
+				49.5,
+				105.7,
+				13
+			],
+			"size": [
+				11,
+				4.6,
+				2.6
+			],
+			"r": 2.3
+		},
+		{
+			"id": "well-10",
+			"kind": "slab",
+			"at": [
+				71,
+				95,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-10",
+			"kind": "box",
+			"at": [
+				79.75,
+				105.5,
+				13
+			],
+			"size": [
+				8.5,
+				5,
+				3.4
+			],
+			"r": 0.8
+		},
+		{
+			"id": "well-11",
+			"kind": "slab",
+			"at": [
+				100,
+				95,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-11",
+			"kind": "box",
+			"at": [
+				108.0,
+				104.75,
+				13
+			],
+			"size": [
+				10,
+				6.5,
+				2.4
+			],
+			"r": 1
+		},
+		{
+			"id": "well-12",
+			"kind": "slab",
+			"at": [
+				129,
+				95,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-12",
+			"kind": "cylinder",
+			"at": [
+				142.0,
+				108.0,
+				13
+			],
+			"size": [
+				4.6,
+				4.6,
+				2.6
+			]
+		},
+		{
+			"id": "well-13",
+			"kind": "slab",
+			"at": [
+				42,
+				124,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-13",
+			"kind": "box",
+			"at": [
+				49.5,
+				134.7,
+				13
+			],
+			"size": [
+				11,
+				4.6,
+				2.6
+			],
+			"r": 2.3
+		},
+		{
+			"id": "well-14",
+			"kind": "slab",
+			"at": [
+				71,
+				124,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-14",
+			"kind": "box",
+			"at": [
+				79.0,
+				133.75,
+				13
+			],
+			"size": [
+				10,
+				6.5,
+				2.4
+			],
+			"r": 1
+		},
+		{
+			"id": "well-15",
+			"kind": "slab",
+			"at": [
+				100,
+				124,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-15",
+			"kind": "box",
+			"at": [
+				110.7,
+				131.5,
+				13
+			],
+			"size": [
+				4.6,
+				11,
+				2.6
+			],
+			"r": 2.3
+		},
+		{
+			"id": "well-16",
+			"kind": "slab",
+			"at": [
+				129,
+				124,
+				11
+			],
+			"size": [
+				26,
+				26,
+				2
+			],
+			"r": 4,
+			"bevel": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.5,
+					"r": 3
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 4.2,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "img-16",
+			"kind": "box",
+			"at": [
+				136.5,
+				134.7,
+				13
+			],
+			"size": [
+				11,
+				4.6,
+				2.6
+			],
+			"r": 2.3
+		},
+		{
+			"id": "stamp",
+			"kind": "plate",
+			"at": [
+				99.5,
+				94.5,
+				13
+			],
+			"size": [
+				27,
+				27,
+				0.6
+			],
+			"r": 2,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4,
+					"r": 1.4
+				}
+			]
+		},
+		{
+			"id": "tower-l-foot",
+			"kind": "box",
+			"at": [
+				8.5,
+				73.0,
+				11.5
+			],
+			"size": [
+				13,
+				24,
+				5
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.5,
+						2.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 8,
+					"size": 0.6
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "tower-l",
+			"kind": "box",
+			"at": [
+				10,
+				78.0,
+				16.5
+			],
+			"size": [
+				10,
+				14,
+				35.5
+			],
+			"r": 3.2,
+			"bevel": 0,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "stadium",
+					"at": [
+						5,
+						14
+					],
+					"size": [
+						2.6,
+						11
+					],
+					"depth": 0.8
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "stadium",
+					"at": [
+						7,
+						14
+					],
+					"size": [
+						2.6,
+						11
+					],
+					"depth": 0.8
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "tower-r-foot",
+			"kind": "box",
+			"at": [
+				184.5,
+				73.0,
+				11.5
+			],
+			"size": [
+				13,
+				24,
+				5
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.5,
+						2.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 8,
+					"size": 0.6
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "tower-r",
+			"kind": "box",
+			"at": [
+				186,
+				78.0,
+				16.5
+			],
+			"size": [
+				10,
+				14,
+				43.5
+			],
+			"r": 4.6,
+			"bevel": 2.2,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "stadium",
+					"at": [
+						5,
+						14
+					],
+					"size": [
+						2.6,
+						11
+					],
+					"depth": 0.8
+				},
+				{
+					"type": "recess",
+					"face": "+x",
+					"shape": "stadium",
+					"at": [
+						7,
+						14
+					],
+					"size": [
+						2.6,
+						11
+					],
+					"depth": 0.8
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "motor-plate",
+			"kind": "box",
+			"at": [
+				9.5,
+				77.0,
+				52
+			],
+			"size": [
+				11,
+				16,
+				2
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.6,
+						1.6
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 7.8,
+					"size": 0.45
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "motor-a",
+			"kind": "box",
+			"at": [
+				10.5,
+				79.0,
+				54
+			],
+			"size": [
+				9,
+				12,
+				2.2
+			],
+			"r": 1.6,
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "motor-b",
+			"kind": "box",
+			"at": [
+				10.5,
+				79.0,
+				56.4
+			],
+			"size": [
+				9,
+				12,
+				2.2
+			],
+			"r": 1.6,
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "motor-c",
+			"kind": "box",
+			"at": [
+				10.5,
+				79.0,
+				58.8
+			],
+			"size": [
+				9,
+				12,
+				2.2
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.5,
+						1.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 6,
+					"size": 0.45
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "motor-shaft",
+			"kind": "cylinder",
+			"at": [
+				15,
+				85.0,
+				61
+			],
+			"size": [
+				2.6,
+				2.6,
+				1.8
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "bridge",
+			"kind": "box",
+			"at": [
+				20,
+				79.0,
+				44
+			],
+			"size": [
+				166,
+				13,
+				8
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "+y",
+					"from": [
+						6,
+						7.4
+					],
+					"to": [
+						160,
+						7.4
+					],
+					"step": 3,
+					"every": 5,
+					"lengths": [
+						1.4,
+						2.8
+					],
+					"side": -1
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "track",
+			"kind": "tray",
+			"at": [
+				23,
+				79.5,
+				52
+			],
+			"size": [
+				152,
+				12,
+				3.2
+			],
+			"r": 0.6,
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "chain",
+			"kind": "tube",
+			"points": [
+				[
+					163,
+					82.3,
+					54.45
+				],
+				[
+					29.05,
+					82.3,
+					54.45
+				],
+				[
+					25.849999999999998,
+					85.5,
+					54.45
+				],
+				[
+					29.05,
+					88.7,
+					54.45
+				],
+				[
+					104.0,
+					88.7,
+					54.45
+				]
+			],
+			"radius": 1.25,
+			"fillet": 2.0,
+			"corrugate": {
+				"every": 1.5
+			},
+			"variants": {
+				"c0": {
+					"points": [
+						[
+							163,
+							82.3,
+							54.45
+						],
+						[
+							29.05,
+							82.3,
+							54.45
+						],
+						[
+							25.849999999999998,
+							85.5,
+							54.45
+						],
+						[
+							29.05,
+							88.7,
+							54.45
+						],
+						[
+							46.0,
+							88.7,
+							54.45
+						]
+					]
+				},
+				"c1": {
+					"points": [
+						[
+							163,
+							82.3,
+							54.45
+						],
+						[
+							29.05,
+							82.3,
+							54.45
+						],
+						[
+							25.849999999999998,
+							85.5,
+							54.45
+						],
+						[
+							29.05,
+							88.7,
+							54.45
+						],
+						[
+							60.5,
+							88.7,
+							54.45
+						]
+					]
+				},
+				"c2": {
+					"points": [
+						[
+							163,
+							82.3,
+							54.45
+						],
+						[
+							29.05,
+							82.3,
+							54.45
+						],
+						[
+							25.849999999999998,
+							85.5,
+							54.45
+						],
+						[
+							29.05,
+							88.7,
+							54.45
+						],
+						[
+							75.0,
+							88.7,
+							54.45
+						]
+					]
+				},
+				"c3": {
+					"points": [
+						[
+							163,
+							82.3,
+							54.45
+						],
+						[
+							29.05,
+							82.3,
+							54.45
+						],
+						[
+							25.849999999999998,
+							85.5,
+							54.45
+						],
+						[
+							29.05,
+							88.7,
+							54.45
+						],
+						[
+							89.5,
+							88.7,
+							54.45
+						]
+					]
+				},
+				"c5": {
+					"points": [
+						[
+							163,
+							82.3,
+							54.45
+						],
+						[
+							29.05,
+							82.3,
+							54.45
+						],
+						[
+							25.849999999999998,
+							85.5,
+							54.45
+						],
+						[
+							29.05,
+							88.7,
+							54.45
+						],
+						[
+							118.5,
+							88.7,
+							54.45
+						]
+					]
+				},
+				"c6": {
+					"points": [
+						[
+							163,
+							82.3,
+							54.45
+						],
+						[
+							29.05,
+							82.3,
+							54.45
+						],
+						[
+							25.849999999999998,
+							85.5,
+							54.45
+						],
+						[
+							29.05,
+							88.7,
+							54.45
+						],
+						[
+							133.0,
+							88.7,
+							54.45
+						]
+					]
+				}
+			}
+		},
+		{
+			"id": "chain-mount",
+			"kind": "box",
+			"at": [
+				162,
+				80.9,
+				53.2
+			],
+			"size": [
+				7,
+				9.2,
+				3.6
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3.5,
+						2.5
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 6,
+					"size": 0.45
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "clamp",
+			"kind": "box",
+			"at": [
+				176.5,
+				80.5,
+				52
+			],
+			"size": [
+				7,
+				10,
+				4.2
+			],
+			"r": 1.2,
+			"variants": {
+				"quiet": {}
+			}
 		},
 		{
 			"id": "carriage",
 			"kind": "box",
 			"at": [
-				90,
-				-21,
-				6
+				102.0,
+				78.0,
+				55.5
 			],
 			"size": [
-				12,
+				22,
 				15,
-				16
+				5.5
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						3,
+						3
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 9,
+					"size": 0.5
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "carriage-plate",
+			"kind": "box",
+			"at": [
+				105.0,
+				93.2,
+				41
+			],
+			"size": [
+				16,
+				2.4,
+				16.5
 			],
 			"r": 1,
-			"label": "Carriage"
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2.5,
+						2.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 11,
+					"size": 0.45
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "bracket",
+			"kind": "box",
+			"at": [
+				104.0,
+				95.0,
+				41
+			],
+			"size": [
+				18,
+				18.0,
+				3.2
+			],
+			"r": 1.2,
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "rod-a",
+			"kind": "rod",
+			"from": [
+				108.0,
+				109.0,
+				37
+			],
+			"to": [
+				108.0,
+				109.0,
+				44.2
+			],
+			"radius": 0.8,
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "rodcap-a",
+			"kind": "cylinder",
+			"at": [
+				108.0,
+				109.0,
+				44.2
+			],
+			"size": [
+				1.5,
+				1.5,
+				2.6
+			],
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "rod-b",
+			"kind": "rod",
+			"from": [
+				118.0,
+				109.0,
+				37
+			],
+			"to": [
+				118.0,
+				109.0,
+				44.2
+			],
+			"radius": 0.8,
+			"variants": {
+				"quiet": {}
+			}
+		},
+		{
+			"id": "rodcap-b",
+			"kind": "cylinder",
+			"at": [
+				118.0,
+				109.0,
+				44.2
+			],
+			"size": [
+				1.5,
+				1.5,
+				2.6
+			],
+			"variants": {
+				"quiet": {}
+			}
 		},
 		{
 			"id": "head",
 			"kind": "box",
 			"at": [
-				88,
-				-4,
-				7
+				103.0,
+				98.0,
+				24
 			],
 			"size": [
-				16,
 				20,
-				12
+				20,
+				13
 			],
-			"r": 2,
-			"label": "Print head"
-		}
-	],
-	"focal": "head",
-	"labels": [
-		{
-			"text": "One WebGL2 context",
-			"target": "head",
-			"side": "right",
-			"anchor": [
-				104,
-				14,
-				10
-			]
+			"r": 3.2,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						4,
+						4
+					],
+					"grid": [
+						5,
+						5
+					],
+					"gap": 3,
+					"size": 0.32
+				},
+				{
+					"type": "text",
+					"face": "+y",
+					"at": [
+						3.6,
+						5
+					],
+					"text": "webgl2",
+					"size": 2.8
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.4,
+					"r": 2
+				}
+			],
+			"variants": {
+				"quiet": {}
+			}
 		},
 		{
-			"text": "Just stamped by copyTo()",
-			"target": "tile-15",
-			"side": "right"
+			"id": "pixel",
+			"kind": "cylinder",
+			"at": [
+				116.0,
+				111.0,
+				37
+			],
+			"size": [
+				1.1,
+				1.1,
+				0.3
+			],
+			"tone": "ink",
+			"variants": {
+				"quiet": {}
+			}
 		},
 		{
-			"text": "A tile: one pane's own 2D canvas",
-			"target": "tile-13",
-			"side": "right"
+			"id": "nozzle",
+			"kind": "lathe",
+			"at": [
+				113.0,
+				108.0,
+				13.6
+			],
+			"axis": "z",
+			"steps": 40,
+			"profile": [
+				[
+					0,
+					5.6
+				],
+				[
+					1.4,
+					5.6
+				],
+				[
+					1.4,
+					3.3
+				],
+				[
+					4.4,
+					3.3
+				],
+				[
+					4.4,
+					4.6
+				],
+				[
+					10.4,
+					4.6
+				]
+			],
+			"variants": {
+				"quiet": {}
+			}
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"rail"
+				"bed"
 			],
 			[
-				"tile-4",
-				"tile-8",
-				"tile-12",
-				"tile-16",
-				"tile-3",
-				"tile-7",
-				"tile-11",
-				"tile-15"
+				"rail-l",
+				"rail-l-stop-a",
+				"rail-l-stop-b",
+				"rail-r",
+				"rail-r-stop-a",
+				"rail-r-stop-b"
 			],
 			[
-				"tile-2",
-				"tile-6",
-				"tile-10",
-				"tile-14",
-				"tile-1",
-				"tile-5",
-				"tile-9",
-				"tile-13"
+				"frame"
 			],
 			[
-				"glyph-4",
-				"glyph-8",
-				"glyph-7",
-				"glyph-11",
-				"glyph-10",
-				"glyph-14",
-				"glyph-13"
+				"well-1",
+				"well-2",
+				"well-3",
+				"well-4",
+				"well-5",
+				"well-6",
+				"well-7",
+				"well-8",
+				"well-9",
+				"well-10",
+				"well-11",
+				"well-12",
+				"well-13",
+				"well-14",
+				"well-15",
+				"well-16"
 			],
 			[
-				"carriage"
+				"img-1",
+				"img-2",
+				"img-3",
+				"img-4",
+				"img-5",
+				"img-6",
+				"img-7",
+				"img-8",
+				"img-9",
+				"img-10",
+				"img-11",
+				"img-12",
+				"img-13",
+				"img-14",
+				"img-15",
+				"img-16",
+				"stamp"
 			],
 			[
-				"head"
+				"tower-l-foot",
+				"tower-l",
+				"tower-r-foot",
+				"tower-r"
+			],
+			[
+				"motor-plate",
+				"motor-a",
+				"motor-b",
+				"motor-c",
+				"motor-shaft"
+			],
+			[
+				"bridge"
+			],
+			[
+				"track",
+				"chain",
+				"chain-mount",
+				"clamp"
+			],
+			[
+				"carriage",
+				"carriage-plate"
+			],
+			[
+				"bracket",
+				"rod-a",
+				"rodcap-a",
+				"rod-b",
+				"rodcap-b",
+				"head",
+				"pixel",
+				"nozzle"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"rest": "Head over pane 16 of 16",
-		"lift": 10
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 14,
+		"states": [
+			{
+				"name": "pane 13",
+				"readout": "head \u2192 pane 13 / 16 \u00b7 copyTo() stamps canvas 13",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							29,
+							0
+						],
+						"variant": "c0"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							-58,
+							29,
+							0
+						]
+					},
+					"img-13": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 13-14",
+				"readout": "head lifts \u00b7 pane 13 \u2192 pane 14",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							29.0,
+							0
+						],
+						"variant": "c1"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-43.5,
+							29.0,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-43.5,
+							29.0,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-43.5,
+							29.0,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							-43.5,
+							29.0,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-43.5,
+							29.0,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							-43.5,
+							29.0,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-43.5,
+							29.0,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							-43.5,
+							29.0,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							-43.5,
+							29.0,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							-43.5,
+							29.0,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 14",
+				"readout": "head \u2192 pane 14 / 16 \u00b7 copyTo() stamps canvas 14",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							29,
+							0
+						],
+						"variant": "c2"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							-29,
+							29,
+							0
+						]
+					},
+					"img-14": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 14-9",
+				"readout": "head lifts \u00b7 pane 14 \u2192 pane 9",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							14.5,
+							0
+						],
+						"variant": "c1"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-43.5,
+							14.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-43.5,
+							14.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-43.5,
+							14.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							-43.5,
+							14.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-43.5,
+							14.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							-43.5,
+							14.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-43.5,
+							14.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							-43.5,
+							14.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							-43.5,
+							14.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							-43.5,
+							14.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 9",
+				"readout": "head \u2192 pane 9 / 16 \u00b7 copyTo() stamps canvas 9",
+				"parts": {
+					"chain": {
+						"variant": "c0"
+					},
+					"carriage": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							-58,
+							0,
+							0
+						]
+					},
+					"img-9": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 9-5",
+				"readout": "head lifts \u00b7 pane 9 \u2192 pane 5",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-14.5,
+							0
+						],
+						"variant": "c0"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-58.0,
+							-14.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-58.0,
+							-14.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-58.0,
+							-14.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							-58.0,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-58.0,
+							-14.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							-58.0,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-58.0,
+							-14.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							-58.0,
+							-14.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							-58.0,
+							-14.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							-58.0,
+							-14.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 5",
+				"readout": "head \u2192 pane 5 / 16 \u00b7 copyTo() stamps canvas 5",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-29,
+							0
+						],
+						"variant": "c0"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							-58,
+							-29,
+							0
+						]
+					},
+					"img-5": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 5-10",
+				"readout": "head lifts \u00b7 pane 5 \u2192 pane 10",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-14.5,
+							0
+						],
+						"variant": "c1"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-43.5,
+							-14.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-43.5,
+							-14.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-43.5,
+							-14.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							-43.5,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-43.5,
+							-14.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							-43.5,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-43.5,
+							-14.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							-43.5,
+							-14.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							-43.5,
+							-14.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							-43.5,
+							-14.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 10",
+				"readout": "head \u2192 pane 10 / 16 \u00b7 copyTo() stamps canvas 10",
+				"parts": {
+					"chain": {
+						"variant": "c2"
+					},
+					"carriage": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"img-10": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 10-15",
+				"readout": "head lifts \u00b7 pane 10 \u2192 pane 15",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							14.5,
+							0
+						],
+						"variant": "c3"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-14.5,
+							14.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-14.5,
+							14.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-14.5,
+							14.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							-14.5,
+							14.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-14.5,
+							14.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							-14.5,
+							14.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-14.5,
+							14.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							-14.5,
+							14.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							-14.5,
+							14.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							-14.5,
+							14.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 15",
+				"readout": "head \u2192 pane 15 / 16 \u00b7 copyTo() stamps canvas 15",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"img-15": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 15-16",
+				"readout": "head lifts \u00b7 pane 15 \u2192 pane 16",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							29.0,
+							0
+						],
+						"variant": "c5"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							29.0,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							14.5,
+							29.0,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							14.5,
+							29.0,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							14.5,
+							29.0,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							14.5,
+							29.0,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							14.5,
+							29.0,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							14.5,
+							29.0,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							14.5,
+							29.0,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							14.5,
+							29.0,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							14.5,
+							29.0,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							14.5,
+							29.0,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 16",
+				"readout": "head \u2192 pane 16 / 16 \u00b7 copyTo() stamps canvas 16",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							29,
+							0
+						],
+						"variant": "c6"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							29,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							29,
+							29,
+							0
+						]
+					},
+					"img-16": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 16-11",
+				"readout": "head lifts \u00b7 pane 16 \u2192 pane 11",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							14.5,
+							0
+						],
+						"variant": "c5"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							14.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							14.5,
+							14.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							14.5,
+							14.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							14.5,
+							14.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							14.5,
+							14.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							14.5,
+							14.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							14.5,
+							14.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							14.5,
+							14.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							14.5,
+							14.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							14.5,
+							14.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							14.5,
+							14.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 11",
+				"readout": "head \u2192 pane 11 / 16 \u00b7 copyTo() stamps canvas 11",
+				"parts": {
+					"img-11": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 11-6",
+				"readout": "head lifts \u00b7 pane 11 \u2192 pane 6",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-14.5,
+							0
+						],
+						"variant": "c3"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-14.5,
+							-14.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-14.5,
+							-14.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-14.5,
+							-14.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							-14.5,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-14.5,
+							-14.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							-14.5,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-14.5,
+							-14.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							-14.5,
+							-14.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							-14.5,
+							-14.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							-14.5,
+							-14.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 6",
+				"readout": "head \u2192 pane 6 / 16 \u00b7 copyTo() stamps canvas 6",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-29,
+							0
+						],
+						"variant": "c2"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							-29,
+							-29,
+							0
+						]
+					},
+					"img-6": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 6-1",
+				"readout": "head lifts \u00b7 pane 6 \u2192 pane 1",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-43.5,
+							0
+						],
+						"variant": "c1"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-43.5,
+							-43.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-43.5,
+							-43.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-43.5,
+							-43.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							-43.5,
+							-43.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-43.5,
+							-43.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							-43.5,
+							-43.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-43.5,
+							-43.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							-43.5,
+							-43.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							-43.5,
+							-43.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							-43.5,
+							-43.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 1",
+				"readout": "head \u2192 pane 1 / 16 \u00b7 copyTo() stamps canvas 1",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-58,
+							0
+						],
+						"variant": "c0"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							-58,
+							-58,
+							0
+						]
+					},
+					"img-1": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 1-2",
+				"readout": "head lifts \u00b7 pane 1 \u2192 pane 2",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-58.0,
+							0
+						],
+						"variant": "c1"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-43.5,
+							-58.0,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-43.5,
+							-58.0,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-43.5,
+							-58.0,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							-43.5,
+							-58.0,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-43.5,
+							-58.0,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							-43.5,
+							-58.0,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-43.5,
+							-58.0,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							-43.5,
+							-58.0,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							-43.5,
+							-58.0,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							-43.5,
+							-58.0,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 2",
+				"readout": "head \u2192 pane 2 / 16 \u00b7 copyTo() stamps canvas 2",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-58,
+							0
+						],
+						"variant": "c2"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							-29,
+							-58,
+							0
+						]
+					},
+					"img-2": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 2-7",
+				"readout": "head lifts \u00b7 pane 2 \u2192 pane 7",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-43.5,
+							0
+						],
+						"variant": "c3"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							-14.5,
+							-43.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							-14.5,
+							-43.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							-14.5,
+							-43.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							-14.5,
+							-43.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							-14.5,
+							-43.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							-14.5,
+							-43.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							-14.5,
+							-43.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							-14.5,
+							-43.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							-14.5,
+							-43.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							-14.5,
+							-43.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 7",
+				"readout": "head \u2192 pane 7 / 16 \u00b7 copyTo() stamps canvas 7",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"img-7": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 7-12",
+				"readout": "head lifts \u00b7 pane 7 \u2192 pane 12",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-14.5,
+							0
+						],
+						"variant": "c5"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							14.5,
+							-14.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							14.5,
+							-14.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							14.5,
+							-14.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							14.5,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							14.5,
+							-14.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							14.5,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							14.5,
+							-14.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							14.5,
+							-14.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							14.5,
+							-14.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							14.5,
+							-14.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 12",
+				"readout": "head \u2192 pane 12 / 16 \u00b7 copyTo() stamps canvas 12",
+				"parts": {
+					"chain": {
+						"variant": "c6"
+					},
+					"carriage": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							29,
+							0,
+							0
+						]
+					},
+					"img-12": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 12-8",
+				"readout": "head lifts \u00b7 pane 12 \u2192 pane 8",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-14.5,
+							0
+						],
+						"variant": "c6"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-14.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							29.0,
+							-14.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							29.0,
+							-14.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							29.0,
+							-14.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							29.0,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							29.0,
+							-14.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							29.0,
+							-14.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							29.0,
+							-14.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							29.0,
+							-14.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							29.0,
+							-14.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							29.0,
+							-14.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 8",
+				"readout": "head \u2192 pane 8 / 16 \u00b7 copyTo() stamps canvas 8",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-29,
+							0
+						],
+						"variant": "c6"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-29,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							29,
+							-29,
+							0
+						]
+					},
+					"img-8": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 8-3",
+				"readout": "head lifts \u00b7 pane 8 \u2192 pane 3",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-43.5,
+							0
+						],
+						"variant": "c5"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-43.5,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							14.5,
+							-43.5,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							14.5,
+							-43.5,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							14.5,
+							-43.5,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							14.5,
+							-43.5,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							14.5,
+							-43.5,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							14.5,
+							-43.5,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							14.5,
+							-43.5,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							14.5,
+							-43.5,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							14.5,
+							-43.5,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							14.5,
+							-43.5,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 3",
+				"readout": "head \u2192 pane 3 / 16 \u00b7 copyTo() stamps canvas 3",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"img-3": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "lift 3-4",
+				"readout": "head lifts \u00b7 pane 3 \u2192 pane 4",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-58.0,
+							0
+						],
+						"variant": "c5"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-58.0,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							14.5,
+							-58.0,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							14.5,
+							-58.0,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							14.5,
+							-58.0,
+							5
+						]
+					},
+					"rod-a": {
+						"move": [
+							14.5,
+							-58.0,
+							5
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							14.5,
+							-58.0,
+							5
+						]
+					},
+					"rod-b": {
+						"move": [
+							14.5,
+							-58.0,
+							5
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							14.5,
+							-58.0,
+							5
+						]
+					},
+					"head": {
+						"move": [
+							14.5,
+							-58.0,
+							5
+						]
+					},
+					"pixel": {
+						"move": [
+							14.5,
+							-58.0,
+							5
+						]
+					},
+					"nozzle": {
+						"move": [
+							14.5,
+							-58.0,
+							5
+						]
+					},
+					"stamp": {
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "pane 4",
+				"readout": "head \u2192 pane 4 / 16 \u00b7 copyTo() stamps canvas 4",
+				"parts": {
+					"tower-l-foot": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-l": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-r-foot": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"tower-r": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-plate": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-a": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-b": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-c": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"motor-shaft": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"bridge": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"track": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"chain": {
+						"move": [
+							0,
+							-58,
+							0
+						],
+						"variant": "c6"
+					},
+					"chain-mount": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"clamp": {
+						"move": [
+							0,
+							-58,
+							0
+						]
+					},
+					"carriage": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"carriage-plate": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"bracket": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"rod-a": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"rodcap-a": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"rod-b": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"rodcap-b": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"head": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"pixel": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"nozzle": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"stamp": {
+						"move": [
+							29,
+							-58,
+							0
+						]
+					},
+					"img-4": {
+						"hidden": true
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ ONE CONTEXT ]",

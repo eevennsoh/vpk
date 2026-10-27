@@ -43,8 +43,8 @@ pushes back.
 SKILL.md step 2 holds the only copy of the engine question and its three
 options (iso kit, anatomy hero, both). Ask it when the plan includes technical
 figures and the user has not named an engine. Data charts and the
-`assets/diagrams/` primitives never trigger it. An anatomy hero is never an
-Epic tier, and a document has at most one.
+`assets/diagrams/` primitives never trigger it. An anatomy hero takes as many parts as it needs,
+and a document may carry several.
 
 With nobody to ask (evals, automation, the backend report generator), use the
 iso kit: write `figure_engine: "iso-kit"` and `figure_engine_source: "default"`

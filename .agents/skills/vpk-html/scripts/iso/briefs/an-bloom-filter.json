@@ -3,556 +3,3122 @@
 	"id": "an-bloom-filter",
 	"figId": "FIG_208",
 	"title": "Bloom filter as a fruit machine",
-	"label": "Dimetric fruit machine: three hash reels recessed in a front window, a coin slot below, a pull lever on a side hub, a rail of sixteen flags on top with three raised, and a payout tray at the front, highlighted.",
-	"caption": "Each reel is one hash function and picks one of the sixteen flags; a coin goes in only by raising its three flags, and the tray pays out only when all three of a word's flags are already up, which means maybe seen, never certainly.",
+	"label": "Fruit machine on a long plinth: eight fruit coins on a tablet, three striped reels on a payline, knob, slot and button, a plate m 16 · k 3, a payout tray, a side lever, sixteen flag sockets and a probe.",
+	"caption": "Each coin is a word and each reel one hash: a word lands on three of the sixteen flags. Adding raises them; a query pays only if all three are already up, so a miss is certain and a hit only maybe.",
 	"camera": {
 		"preset": "dimetric",
-		"scale": "fit"
+		"azimuth": 54,
+		"elevation": 30,
+		"scale": "fit",
+		"pad": 16
 	},
+	"viewBox": [
+		720,
+		560
+	],
+	"labels": "none",
+	"focal": "coin-grape",
 	"parts": [
 		{
-			"id": "base",
+			"id": "plinth-skirt",
 			"kind": "slab",
 			"at": [
-				-10,
-				-10,
+				3,
+				3,
 				0
 			],
 			"size": [
-				130,
-				110,
+				111,
+				61,
 				4
 			],
-			"r": 0,
-			"label": "Base plate"
+			"r": 3
 		},
 		{
-			"id": "cabinet",
-			"kind": "box",
+			"id": "plinth",
+			"kind": "slab",
 			"at": [
-				24,
-				12,
+				0,
+				0,
 				4
 			],
 			"size": [
-				72,
-				54,
-				30
-			],
-			"r": 0,
-			"label": "Cabinet"
-		},
-		{
-			"id": "upper",
-			"kind": "box",
-			"at": [
-				24,
-				14,
-				34
-			],
-			"size": [
-				72,
-				46,
-				28
-			],
-			"r": 0,
-			"label": "Reel housing"
-		},
-		{
-			"id": "reel-1",
-			"kind": "box",
-			"at": [
-				31,
-				60,
-				37
-			],
-			"size": [
-				16,
-				3,
-				16
-			],
-			"r": 0,
-			"label": "Reel 1, hash 1"
-		},
-		{
-			"id": "reel-2",
-			"kind": "box",
-			"at": [
-				52,
-				60,
-				37
-			],
-			"size": [
-				16,
-				3,
-				16
-			],
-			"r": 0,
-			"label": "Reel 2, hash 2"
-		},
-		{
-			"id": "reel-3",
-			"kind": "box",
-			"at": [
-				73,
-				60,
-				37
-			],
-			"size": [
-				16,
-				3,
-				16
-			],
-			"r": 0,
-			"label": "Reel 3, hash 3"
-		},
-		{
-			"id": "coin-slot",
-			"kind": "box",
-			"at": [
-				30,
-				66,
-				22
-			],
-			"size": [
-				14,
-				4,
+				117,
+				67,
 				6
 			],
-			"r": 0,
-			"label": "Coin slot"
+			"r": 3,
+			"bevel": 1.2,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.5,
+					"r": 2
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						2.4,
+						2.4
+					],
+					"r0": 0.7,
+					"r1": 0.7,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						114.6,
+						2.4
+					],
+					"r0": 0.7,
+					"r1": 0.7,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						2.4,
+						64.6
+					],
+					"r0": 0.7,
+					"r1": 0.7,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						114.6,
+						64.6
+					],
+					"r0": 0.7,
+					"r1": 0.7,
+					"turns": 1
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						64.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						114.6,
+						64.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						114.6,
+						2.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.5,
+							1.4
+						],
+						[
+							115.5,
+							1.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.5,
+							1.4
+						],
+						[
+							65.5,
+							1.4
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "hub",
-			"kind": "box",
+			"id": "plaque",
+			"kind": "slab",
 			"at": [
-				96,
-				18,
-				40
+				91,
+				57.5,
+				10
 			],
 			"size": [
+				15,
 				6,
-				8,
-				8
+				0.9
 			],
-			"r": 0,
-			"label": "Lever hub"
+			"r": 1.2,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.8,
+					"r": 0.8
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.4,
+							2.2
+						],
+						[
+							12.6,
+							2.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							2.4,
+							3.8
+						],
+						[
+							10,
+							3.8
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "lever",
-			"kind": "box",
+			"id": "coin-rack",
+			"kind": "slab",
 			"at": [
-				102,
-				20,
-				28
+				5,
+				22,
+				10
 			],
 			"size": [
-				4,
-				4,
-				30
+				18,
+				36,
+				2.6
 			],
-			"r": 0,
-			"label": "Lever"
+			"r": 2,
+			"bevel": 0.8,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1,
+					"r": 1.4
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.5,
+						4.5
+					],
+					"size": [
+						3.4,
+						3.4
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						12.5,
+						4.5
+					],
+					"size": [
+						3.4,
+						3.4
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.5,
+						13.100000000000001
+					],
+					"size": [
+						3.4,
+						3.4
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						12.5,
+						13.100000000000001
+					],
+					"size": [
+						3.4,
+						3.4
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.5,
+						21.700000000000003
+					],
+					"size": [
+						3.4,
+						3.4
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						12.5,
+						21.700000000000003
+					],
+					"size": [
+						3.4,
+						3.4
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						5.5,
+						30.299999999999997
+					],
+					"size": [
+						3.4,
+						3.4
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						12.5,
+						30.299999999999997
+					],
+					"size": [
+						3.4,
+						3.4
+					],
+					"depth": 0.6
+				}
+			]
+		},
+		{
+			"id": "coin-apple",
+			"kind": "cylinder",
+			"at": [
+				10.5,
+				26.5,
+				12.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.45
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0,
+						-0.2
+					],
+					"r0": 1.4,
+					"r1": 1.4,
+					"turns": 1
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0,
+							1.2
+						],
+						[
+							0.2,
+							1.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.2,
+							1.6
+						],
+						[
+							1.0,
+							2.0
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "coin-cherry",
+			"kind": "cylinder",
+			"at": [
+				17.5,
+				26.5,
+				12.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.45
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						-0.9,
+						-0.7
+					],
+					"r0": 0.6,
+					"r1": 0.6,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0.8,
+						-1.0
+					],
+					"r0": 0.6,
+					"r1": 0.6,
+					"turns": 1
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							-0.8,
+							-0.1
+						],
+						[
+							0.2,
+							1.5
+						],
+						[
+							0.8,
+							-0.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0.2,
+							1.5
+						],
+						[
+							1.1,
+							1.8
+						],
+						[
+							0.7,
+							1.2
+						],
+						[
+							0.2,
+							1.5
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "coin-plum",
+			"kind": "cylinder",
+			"at": [
+				10.5,
+				35.1,
+				12.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.45
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0,
+						0
+					],
+					"r0": 1.5,
+					"r1": 1.5,
+					"turns": 1
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							-0.2,
+							1.4
+						],
+						[
+							0.4,
+							0.2
+						],
+						[
+							0.1,
+							-1.2
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "coin-lemon",
+			"kind": "cylinder",
+			"at": [
+				17.5,
+				35.1,
+				12.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.45
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							-1.9,
+							-0.6
+						],
+						[
+							-1.0,
+							0.6
+						],
+						[
+							0.4,
+							1.2
+						],
+						[
+							1.9,
+							0.7
+						],
+						[
+							1.0,
+							-0.6
+						],
+						[
+							-0.4,
+							-1.2
+						],
+						[
+							-1.9,
+							-0.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							-1.3,
+							-0.4
+						],
+						[
+							1.3,
+							0.4
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "coin-melon",
+			"kind": "cylinder",
+			"at": [
+				10.5,
+				43.7,
+				12.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.45
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							-1.9,
+							0.5
+						],
+						[
+							-1.5,
+							-0.6
+						],
+						[
+							-0.6,
+							-1.3
+						],
+						[
+							0.6,
+							-1.3
+						],
+						[
+							1.5,
+							-0.6
+						],
+						[
+							1.9,
+							0.5
+						],
+						[
+							-1.9,
+							0.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							-1.2,
+							0
+						],
+						[
+							-0.5,
+							-0.6
+						],
+						[
+							0.5,
+							-0.6
+						],
+						[
+							1.2,
+							0
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "coin-grape",
+			"kind": "cylinder",
+			"at": [
+				17.5,
+				43.7,
+				12.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.45
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						-0.9,
+						0.6
+					],
+					"r0": 0.45,
+					"r1": 0.45,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0,
+						0.6
+					],
+					"r0": 0.45,
+					"r1": 0.45,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0.9,
+						0.6
+					],
+					"r0": 0.45,
+					"r1": 0.45,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						-0.45,
+						-0.2
+					],
+					"r0": 0.45,
+					"r1": 0.45,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0.45,
+						-0.2
+					],
+					"r0": 0.45,
+					"r1": 0.45,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0,
+						-1.0
+					],
+					"r0": 0.45,
+					"r1": 0.45,
+					"turns": 1
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0,
+							1.05
+						],
+						[
+							0.3,
+							1.8
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "coin-orange",
+			"kind": "cylinder",
+			"at": [
+				10.5,
+				52.3,
+				12.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.45
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0,
+						0
+					],
+					"r0": 1.6,
+					"r1": 1.6,
+					"turns": 1
+				},
+				{
+					"type": "spokes",
+					"face": "top",
+					"r0": 0.25,
+					"r1": 1.5,
+					"count": 6
+				}
+			]
+		},
+		{
+			"id": "coin-kiwi",
+			"kind": "cylinder",
+			"at": [
+				17.5,
+				52.3,
+				12.6
+			],
+			"size": [
+				2.9,
+				2.9,
+				2.2
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.45
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0,
+						0
+					],
+					"r0": 1.6,
+					"r1": 1.6,
+					"turns": 1
+				},
+				{
+					"type": "spiral",
+					"face": "top",
+					"at": [
+						0,
+						0
+					],
+					"r0": 0.4,
+					"r1": 0.4,
+					"turns": 1
+				},
+				{
+					"type": "radialTicks",
+					"face": "top",
+					"r": 1.0,
+					"count": 10,
+					"lengths": [
+						0.3,
+						0.3
+					]
+				}
+			]
+		},
+		{
+			"id": "coin-ring",
+			"kind": "torus",
+			"at": [
+				17.5,
+				43.7,
+				14.6
+			],
+			"axis": "z",
+			"R": 2.85,
+			"r": 0.28,
+			"tone": "ink"
+		},
+		{
+			"id": "cab-skirt",
+			"kind": "slab",
+			"at": [
+				36,
+				8,
+				10
+			],
+			"size": [
+				72,
+				42,
+				4
+			],
+			"r": 3,
+			"bevel": 1
+		},
+		{
+			"id": "body",
+			"kind": "box",
+			"at": [
+				38,
+				10,
+				14
+			],
+			"size": [
+				68,
+				38,
+				63
+			],
+			"r": 3,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 2.6,
+					"r": 1
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						4.4,
+						4.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.6
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						33.6,
+						4.4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.6
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						4.4,
+						58.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.6
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						33.6,
+						58.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.6
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							5,
+							7.0
+						],
+						[
+							16,
+							7.0
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							5,
+							8.6
+						],
+						[
+							16,
+							8.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							5,
+							10.2
+						],
+						[
+							16,
+							10.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							5,
+							11.8
+						],
+						[
+							16,
+							11.8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							5,
+							13.4
+						],
+						[
+							16,
+							13.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							5,
+							15.0
+						],
+						[
+							16,
+							15.0
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							5,
+							16.6
+						],
+						[
+							16,
+							16.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							5,
+							18.200000000000003
+						],
+						[
+							16,
+							18.200000000000003
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "nameplate",
+			"kind": "box",
+			"at": [
+				51,
+				48,
+				25
+			],
+			"size": [
+				38,
+				0.8,
+				9.5
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.9,
+					"r": 0.4
+				},
+				{
+					"type": "text",
+					"face": "+y",
+					"at": [
+						19,
+						3.6
+					],
+					"text": "m 16 · k 3",
+					"size": 3.0,
+					"anchor": "middle"
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2,
+						4.75
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						36,
+						4.75
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "chute-lip",
+			"kind": "box",
+			"at": [
+				63.5,
+				48,
+				21.4
+			],
+			"size": [
+				13,
+				3,
+				1.6
+			],
+			"r": 0.5
+		},
+		{
+			"id": "payout",
+			"kind": "tray",
+			"at": [
+				61,
+				52,
+				10
+			],
+			"size": [
+				22,
+				10,
+				4.4
+			],
+			"r": 1
+		},
+		{
+			"id": "payout-tab-l",
+			"kind": "box",
+			"at": [
+				58.6,
+				51.6,
+				10
+			],
+			"size": [
+				2.8,
+				10.8,
+				7
+			],
+			"r": 0.9
+		},
+		{
+			"id": "payout-tab-r",
+			"kind": "box",
+			"at": [
+				82.6,
+				51.6,
+				10
+			],
+			"size": [
+				2.8,
+				10.8,
+				7
+			],
+			"r": 0.9
+		},
+		{
+			"id": "shelf",
+			"kind": "box",
+			"at": [
+				35,
+				48,
+				42.5
+			],
+			"size": [
+				73,
+				9,
+				6
+			],
+			"r": 2,
+			"bevel": 1,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.5,
+							1.2
+						],
+						[
+							71.5,
+							1.2
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2.4,
+						3.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						70.6,
+						3.6
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "knob-base",
+			"kind": "cylinder",
+			"at": [
+				45,
+				52.6,
+				48.5
+			],
+			"size": [
+				3.4,
+				3.4,
+				0.7
+			]
 		},
 		{
 			"id": "knob",
 			"kind": "cylinder",
 			"at": [
-				104,
-				22,
-				58
+				45,
+				52.6,
+				49.2
 			],
 			"size": [
-				5,
-				5,
-				6
+				2.5,
+				2.5,
+				3
 			],
-			"label": "Lever knob"
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 30
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							-0.2,
+							-0.3
+						],
+						[
+							1.2,
+							1.7
+						]
+					]
+				}
+			]
 		},
 		{
-			"id": "flag-1",
-			"kind": "gap",
+			"id": "coin-plate",
+			"kind": "slab",
 			"at": [
-				28.5,
-				54,
-				62
+				64,
+				50.4,
+				48.5
+			],
+			"size": [
+				12,
+				5.2,
+				1.1
+			],
+			"r": 1.6,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "stadium",
+					"at": [
+						6,
+						2.6
+					],
+					"size": [
+						8,
+						1.3
+					],
+					"depth": 0.8
+				}
+			]
+		},
+		{
+			"id": "button-base",
+			"kind": "cylinder",
+			"at": [
+				97,
+				52.6,
+				48.5
+			],
+			"size": [
+				3.6,
+				3.6,
+				0.7
+			]
+		},
+		{
+			"id": "button",
+			"kind": "lathe",
+			"at": [
+				97,
+				52.6,
+				49.2
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					2.8
+				],
+				[
+					1.4,
+					2.8
+				],
+				[
+					1.9,
+					2.5,
+					"soft"
+				],
+				[
+					2.4,
+					1.6,
+					"soft"
+				],
+				[
+					2.6,
+					0
+				]
+			]
+		},
+		{
+			"id": "bezel",
+			"kind": "box",
+			"at": [
+				41,
+				48,
+				50
+			],
+			"size": [
+				57,
+				0.9,
+				25
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.9,
+					"r": 0.5
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2,
+						2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						55,
+						2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2,
+						23
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						55,
+						23
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						9.5,
+						12.5
+					],
+					"size": [
+						13,
+						16.5
+					],
+					"depth": 1.6
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						28.5,
+						12.5
+					],
+					"size": [
+						13,
+						16.5
+					],
+					"depth": 1.6
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						47.5,
+						12.5
+					],
+					"size": [
+						13,
+						16.5
+					],
+					"depth": 1.6
+				}
+			]
+		},
+		{
+			"id": "reel-1",
+			"kind": "box",
+			"at": [
+				44,
+				48.9,
+				55.75
+			],
+			"size": [
+				11,
+				0.3,
+				14.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.5,
+						2.2
+					],
+					"size": [
+						10.4,
+						1.3
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.5,
+						12.3
+					],
+					"size": [
+						10.4,
+						1.3
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.5,
+							4.6
+						],
+						[
+							10.5,
+							4.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.5,
+							9.9
+						],
+						[
+							10.5,
+							9.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.3,
+							7.25
+						],
+						[
+							10.7,
+							7.25
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						2.3,
+						4.0
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						4.1,
+						10.6
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.9,
+						3.6
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						8.299999999999999,
+						10.4
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						10.1,
+						4.2
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						3.0999999999999996,
+						11.4
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						9.1,
+						2.8
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				}
+			]
+		},
+		{
+			"id": "reel-2",
+			"kind": "box",
+			"at": [
+				63,
+				48.9,
+				55.75
+			],
+			"size": [
+				11,
+				0.3,
+				14.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.5,
+						2.2
+					],
+					"size": [
+						10.4,
+						1.3
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.5,
+						12.3
+					],
+					"size": [
+						10.4,
+						1.3
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.5,
+							4.6
+						],
+						[
+							10.5,
+							4.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.5,
+							9.9
+						],
+						[
+							10.5,
+							9.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.3,
+							7.25
+						],
+						[
+							10.7,
+							7.25
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.000000000000001,
+						4.0
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						6.8,
+						10.6
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						8.6,
+						3.6
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						1.400000000000001,
+						10.4
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						3.200000000000002,
+						4.2
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.8,
+						11.4
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						2.200000000000002,
+						2.8
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				}
+			]
+		},
+		{
+			"id": "reel-3",
+			"kind": "box",
+			"at": [
+				82,
+				48.9,
+				55.75
+			],
+			"size": [
+				11,
+				0.3,
+				14.5
+			],
+			"r": 0,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.5,
+						2.2
+					],
+					"size": [
+						10.4,
+						1.3
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.5,
+						12.3
+					],
+					"size": [
+						10.4,
+						1.3
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.5,
+							4.6
+						],
+						[
+							10.5,
+							4.6
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.5,
+							9.9
+						],
+						[
+							10.5,
+							9.9
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							0.3,
+							7.25
+						],
+						[
+							10.7,
+							7.25
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						7.7,
+						4.0
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						9.5,
+						10.6
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						1.7000000000000017,
+						3.6
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						4.1000000000000005,
+						10.4
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						5.900000000000001,
+						4.2
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						8.5,
+						11.4
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				},
+				{
+					"type": "recess",
+					"face": "+y",
+					"shape": "rect",
+					"at": [
+						4.900000000000001,
+						2.8
+					],
+					"size": [
+						0.6,
+						1.5
+					],
+					"depth": 0.2
+				}
+			]
+		},
+		{
+			"id": "hit-1",
+			"kind": "box",
+			"at": [
+				44.8,
+				49.2,
+				61.85
+			],
+			"size": [
+				0.8,
+				0.25,
+				2.3
+			],
+			"r": 0,
+			"tone": "ink"
+		},
+		{
+			"id": "hit2-1",
+			"kind": "box",
+			"at": [
+				47.666666666666664,
+				49.2,
+				64.45
+			],
+			"size": [
+				0.6,
+				0.25,
+				1.4
+			],
+			"r": 0,
+			"tone": "ink"
+		},
+		{
+			"id": "hit-2",
+			"kind": "box",
+			"at": [
+				67.81333333333333,
+				49.2,
+				61.85
+			],
+			"size": [
+				0.8,
+				0.25,
+				2.3
+			],
+			"r": 0,
+			"tone": "ink"
+		},
+		{
+			"id": "hit2-2",
+			"kind": "box",
+			"at": [
+				70.67999999999999,
+				49.2,
+				64.45
+			],
+			"size": [
+				0.6,
+				0.25,
+				1.4
+			],
+			"r": 0,
+			"tone": "ink"
+		},
+		{
+			"id": "hit-3",
+			"kind": "box",
+			"at": [
+				90.82666666666667,
+				49.2,
+				61.85
+			],
+			"size": [
+				0.8,
+				0.25,
+				2.3
+			],
+			"r": 0,
+			"tone": "ink"
+		},
+		{
+			"id": "hit2-3",
+			"kind": "box",
+			"at": [
+				84.52,
+				49.2,
+				64.45
+			],
+			"size": [
+				0.6,
+				0.25,
+				1.4
+			],
+			"r": 0,
+			"tone": "ink"
+		},
+		{
+			"id": "deck",
+			"kind": "slab",
+			"at": [
+				36.5,
+				8,
+				77
+			],
+			"size": [
+				71,
+				42,
+				5
+			],
+			"r": 3,
+			"bevel": 1.2,
+			"detail": [
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						35.5,
+						15.4
+					],
+					"size": [
+						65,
+						7.6
+					],
+					"depth": 0.8
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						7,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						11,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						15,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						19,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						23,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						27,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						31,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						35,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						39,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						43,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						47,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						51,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						55,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						59,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						63,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "rect",
+					"at": [
+						67,
+						15.4
+					],
+					"size": [
+						3.4,
+						3.2
+					],
+					"depth": 0.6
+				},
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						7,
+						20.2
+					],
+					"to": [
+						67,
+						20.2
+					],
+					"step": 4,
+					"lengths": [
+						1.3,
+						1.3
+					],
+					"side": 1
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.4,
+						33.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						68.6,
+						33.5
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				}
+			]
+		},
+		{
+			"id": "index-tick",
+			"kind": "box",
+			"at": [
+				42.9,
+				28.4,
+				82
+			],
+			"size": [
+				0.5,
+				2.6,
+				0.15
+			],
+			"r": 0,
+			"tone": "ink"
+		},
+		{
+			"id": "sign",
+			"kind": "box",
+			"at": [
+				38.5,
+				14,
+				82
+			],
+			"size": [
+				68,
+				2.4,
+				14.5
+			],
+			"r": 1.4,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 1.4,
+					"r": 0.8
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						2.6,
+						11.9
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						65.4,
+						11.9
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						65.4,
+						4
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "fence",
+			"kind": "box",
+			"at": [
+				38.5,
+				31,
+				82
+			],
+			"size": [
+				68,
+				2.2,
+				2.2
+			],
+			"r": 0.8
+		},
+		{
+			"id": "flag-0",
+			"kind": "box",
+			"at": [
+				42.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				9
 			],
-			"r": 0,
-			"label": "Flag 1, down"
+			"r": 0.5
+		},
+		{
+			"id": "flag-1",
+			"kind": "box",
+			"at": [
+				46.0,
+				22.2,
+				82
+			],
+			"size": [
+				3,
+				2.4,
+				0.9
+			],
+			"r": 0.45
 		},
 		{
 			"id": "flag-2",
 			"kind": "box",
 			"at": [
-				32.5,
-				54,
-				62
+				50.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				18
+				2.4,
+				0.9
 			],
-			"r": 0,
-			"label": "Flag 2, up"
+			"r": 0.45,
+			"variants": {
+				"up": {
+					"size": [
+						3,
+						2.4,
+						9
+					],
+					"r": 0.5
+				}
+			}
 		},
 		{
 			"id": "flag-3",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				36.5,
-				54,
-				62
+				54.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				9
 			],
-			"r": 0,
-			"label": "Flag 3, down"
+			"r": 0.5
 		},
 		{
 			"id": "flag-4",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				40.5,
-				54,
-				62
+				58.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				0.9
 			],
-			"r": 0,
-			"label": "Flag 4, down"
+			"r": 0.45
 		},
 		{
 			"id": "flag-5",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				44.5,
-				54,
-				62
+				62.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				9
 			],
-			"r": 0,
-			"label": "Flag 5, down"
+			"r": 0.5
 		},
 		{
 			"id": "flag-6",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				48.5,
-				54,
-				62
+				66.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				9
 			],
-			"r": 0,
-			"label": "Flag 6, down"
+			"r": 0.5
 		},
 		{
 			"id": "flag-7",
 			"kind": "box",
 			"at": [
-				52.5,
-				54,
-				62
+				70.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				18
+				2.4,
+				0.9
 			],
-			"r": 0,
-			"label": "Flag 7, up"
+			"r": 0.45,
+			"variants": {
+				"up": {
+					"size": [
+						3,
+						2.4,
+						9
+					],
+					"r": 0.5
+				}
+			}
 		},
 		{
 			"id": "flag-8",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				56.5,
-				54,
-				62
+				74.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				9
 			],
-			"r": 0,
-			"label": "Flag 8, down"
+			"r": 0.5
 		},
 		{
 			"id": "flag-9",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				60.5,
-				54,
-				62
+				78.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				0.9
 			],
-			"r": 0,
-			"label": "Flag 9, down"
+			"r": 0.45,
+			"variants": {
+				"up": {
+					"size": [
+						3,
+						2.4,
+						9
+					],
+					"r": 0.5
+				}
+			}
 		},
 		{
 			"id": "flag-10",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				64.5,
-				54,
-				62
+				82.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				0.9
 			],
-			"r": 0,
-			"label": "Flag 10, down"
+			"r": 0.45
 		},
 		{
 			"id": "flag-11",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				68.5,
-				54,
-				62
+				86.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				9
 			],
-			"r": 0,
-			"label": "Flag 11, down"
+			"r": 0.5
 		},
 		{
 			"id": "flag-12",
 			"kind": "box",
 			"at": [
-				72.5,
-				54,
-				62
+				90.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				18
+				2.4,
+				0.9
 			],
-			"r": 0,
-			"label": "Flag 12, up"
+			"r": 0.45
 		},
 		{
 			"id": "flag-13",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				76.5,
-				54,
-				62
+				94.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				0.9
 			],
-			"r": 0,
-			"label": "Flag 13, down"
+			"r": 0.45,
+			"variants": {
+				"up": {
+					"size": [
+						3,
+						2.4,
+						9
+					],
+					"r": 0.5
+				}
+			}
 		},
 		{
 			"id": "flag-14",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				80.5,
-				54,
-				62
+				98.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				9
 			],
-			"r": 0,
-			"label": "Flag 14, down"
+			"r": 0.5
 		},
 		{
 			"id": "flag-15",
-			"kind": "gap",
+			"kind": "box",
 			"at": [
-				84.5,
-				54,
-				62
+				102.0,
+				22.2,
+				82
 			],
 			"size": [
 				3,
-				4,
-				1
+				2.4,
+				0.9
 			],
-			"r": 0,
-			"label": "Flag 15, down"
+			"r": 0.45
 		},
 		{
-			"id": "flag-16",
-			"kind": "gap",
+			"id": "probe-base",
+			"kind": "box",
 			"at": [
-				88.5,
-				54,
-				62
+				100.9,
+				30,
+				84.2
 			],
 			"size": [
-				3,
-				4,
-				1
+				5.2,
+				4.4,
+				3.6
 			],
-			"r": 0,
-			"label": "Flag 16, down"
+			"r": 0.8
 		},
 		{
-			"id": "tray",
-			"kind": "tray",
+			"id": "probe-post",
+			"kind": "rod",
+			"from": [
+				103.5,
+				32.2,
+				87.8
+			],
+			"to": [
+				103.5,
+				32.2,
+				99.6
+			],
+			"radius": 0.75
+		},
+		{
+			"id": "probe-arm",
+			"kind": "box",
 			"at": [
-				40,
-				72,
-				4
+				102.7,
+				23.4,
+				99
 			],
 			"size": [
-				44,
-				24,
-				6
+				1.6,
+				9.6,
+				1.6
 			],
-			"r": 0,
-			"label": "Payout tray",
-			"marks": [
-				[
-					[
-						18,
-						10
-					],
-					[
-						26,
-						10
-					]
-				],
-				[
-					[
-						26,
-						10
-					],
-					[
-						26,
-						14
-					]
-				],
-				[
-					[
-						26,
-						14
-					],
-					[
-						18,
-						14
-					]
-				],
-				[
-					[
-						18,
-						14
-					],
-					[
-						18,
-						10
-					]
-				]
+			"r": 0.4
+		},
+		{
+			"id": "probe-collar",
+			"kind": "cylinder",
+			"at": [
+				103.5,
+				23.4,
+				97.6
+			],
+			"size": [
+				1.1,
+				1.1,
+				4.4
 			]
+		},
+		{
+			"id": "probe-stem",
+			"kind": "rod",
+			"from": [
+				103.5,
+				23.4,
+				93.6
+			],
+			"to": [
+				103.5,
+				23.4,
+				106
+			],
+			"radius": 0.5
+		},
+		{
+			"id": "probe-knob",
+			"kind": "cylinder",
+			"at": [
+				103.5,
+				23.4,
+				106
+			],
+			"size": [
+				0.8,
+				0.8,
+				0.8
+			]
+		},
+		{
+			"id": "probe-cap",
+			"kind": "cylinder",
+			"at": [
+				103.5,
+				23.4,
+				92.2
+			],
+			"size": [
+				1.3,
+				1.3,
+				1.5
+			],
+			"tone": "ink"
+		},
+		{
+			"id": "hub-ring",
+			"kind": "cylinder",
+			"axis": "x",
+			"at": [
+				106,
+				28,
+				55
+			],
+			"size": [
+				5,
+				5,
+				1.4
+			],
+			"detail": [
+				{
+					"type": "bolts",
+					"face": "end",
+					"r": 4.0,
+					"count": 4,
+					"size": 0.35
+				}
+			]
+		},
+		{
+			"id": "hub-boss",
+			"kind": "cylinder",
+			"axis": "x",
+			"at": [
+				107.4,
+				28,
+				55
+			],
+			"size": [
+				2.8,
+				2.8,
+				3.4
+			]
+		},
+		{
+			"id": "lever",
+			"kind": "pin",
+			"at": [
+				110.6,
+				28,
+				55
+			],
+			"axis": [
+				0,
+				-0.44,
+				0.9
+			],
+			"length": 21,
+			"r": 0.7,
+			"head": 3.1,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					110.6,
+					28,
+					55
+				],
+				"deg": [
+					0,
+					-78
+				],
+				"samples": 8
+			}
 		}
 	],
-	"focal": "tray",
-	"labels": [
+	"annotations": [
 		{
-			"text": "16 flags, bit array",
-			"target": "flag-1",
-			"side": "left",
-			"anchor": [
-				28.5,
-				58,
-				62
-			]
-		},
-		{
-			"text": "Hash reel",
-			"target": "reel-1",
-			"side": "left"
-		},
-		{
-			"text": "Coin slot",
-			"target": "coin-slot",
-			"side": "left"
-		},
-		{
-			"text": "Pays if all 3 up",
-			"target": "tray",
-			"side": "left"
-		},
-		{
-			"text": "Flag up",
-			"target": "flag-2",
-			"side": "left",
-			"anchor": [
-				32.5,
-				58,
-				80
-			]
-		},
-		{
-			"text": "Pull lever",
-			"target": "knob",
-			"side": "right"
-		},
-		{
-			"text": "Base plate",
-			"target": "base",
-			"side": "right"
+			"kind": "line",
+			"from": [
+				42.6,
+				49.4,
+				63
+			],
+			"to": [
+				94.4,
+				49.4,
+				63
+			],
+			"dash": "solid",
+			"ends": "dot"
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"base"
+				"plinth-skirt",
+				"plinth"
 			],
 			[
-				"cabinet",
-				"upper"
+				"plaque",
+				"coin-rack",
+				"cab-skirt",
+				"payout",
+				"payout-tab-l",
+				"payout-tab-r"
 			],
 			[
+				"coin-apple",
+				"coin-cherry",
+				"coin-plum",
+				"coin-lemon",
+				"coin-melon",
+				"coin-grape",
+				"coin-orange",
+				"coin-kiwi",
+				"coin-ring",
+				"body"
+			],
+			[
+				"nameplate",
+				"chute-lip",
+				"shelf",
+				"hub-ring",
+				"hub-boss",
+				"bezel"
+			],
+			[
+				"knob-base",
+				"knob",
+				"coin-plate",
+				"button-base",
+				"button",
 				"reel-1",
 				"reel-2",
 				"reel-3",
-				"coin-slot"
+				"hit-1",
+				"hit-2",
+				"hit-3",
+				"hit2-1",
+				"hit2-2",
+				"hit2-3",
+				"lever"
 			],
 			[
-				"hub",
-				"lever",
-				"knob"
+				"deck",
+				"sign"
 			],
 			[
+				"index-tick",
+				"fence",
+				"flag-0",
 				"flag-1",
 				"flag-2",
 				"flag-3",
@@ -568,17 +3134,474 @@
 				"flag-13",
 				"flag-14",
 				"flag-15",
-				"flag-16"
-			],
-			[
-				"tray"
+				"probe-base",
+				"probe-post",
+				"probe-arm",
+				"probe-collar",
+				"probe-stem",
+				"probe-knob",
+				"probe-cap"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 10,
-		"rest": "3 flags up"
+		"behavior": "step",
+		"readout": "{name}",
+		"states": [
+			{
+				"name": "grape?",
+				"readout": "grape → 0 7 14 · no, flag 7 down",
+				"parts": {
+					"lever": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "lemon?",
+				"readout": "lemon → 3 8 11 · maybe, all three up",
+				"parts": {
+					"coin-ring": {
+						"move": [
+							0.0,
+							-8.6,
+							1.4
+						]
+					},
+					"coin-lemon": {
+						"move": [
+							0,
+							0,
+							1.4
+						]
+					},
+					"probe-base": {
+						"move": [
+							-16.0,
+							0,
+							0
+						]
+					},
+					"probe-post": {
+						"move": [
+							-16.0,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-16.0,
+							0,
+							0
+						]
+					},
+					"probe-collar": {
+						"move": [
+							-16.0,
+							0,
+							0
+						]
+					},
+					"probe-stem": {
+						"move": [
+							-16.0,
+							0,
+							0
+						]
+					},
+					"probe-knob": {
+						"move": [
+							-16.0,
+							0,
+							0
+						]
+					},
+					"probe-cap": {
+						"move": [
+							-16.0,
+							0,
+							0
+						]
+					},
+					"lever": {
+						"turn": -78
+					},
+					"hit-1": {
+						"move": [
+							1.72,
+							0,
+							0
+						]
+					},
+					"hit2-1": {
+						"move": [
+							1.72,
+							0,
+							0
+						]
+					},
+					"hit-2": {
+						"move": [
+							0.57,
+							0,
+							0
+						]
+					},
+					"hit2-2": {
+						"move": [
+							0.57,
+							0,
+							0
+						]
+					},
+					"hit-3": {
+						"move": [
+							-1.72,
+							0,
+							0
+						]
+					},
+					"hit2-3": {
+						"move": [
+							-1.72,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "add cherry",
+				"readout": "add cherry → 2 9 13 · three flags raised",
+				"parts": {
+					"coin-ring": {
+						"move": [
+							0.0,
+							-17.2,
+							1.4
+						]
+					},
+					"coin-cherry": {
+						"move": [
+							0,
+							0,
+							1.4
+						]
+					},
+					"probe-base": {
+						"move": [
+							-8.0,
+							0,
+							0
+						]
+					},
+					"probe-post": {
+						"move": [
+							-8.0,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-8.0,
+							0,
+							0
+						]
+					},
+					"probe-collar": {
+						"move": [
+							-8.0,
+							0,
+							0
+						]
+					},
+					"probe-stem": {
+						"move": [
+							-8.0,
+							0,
+							0
+						]
+					},
+					"probe-knob": {
+						"move": [
+							-8.0,
+							0,
+							0
+						]
+					},
+					"probe-cap": {
+						"move": [
+							-8.0,
+							0,
+							0
+						]
+					},
+					"flag-9": {
+						"variant": "up"
+					},
+					"flag-2": {
+						"variant": "up"
+					},
+					"flag-13": {
+						"variant": "up"
+					},
+					"lever": {
+						"turn": -78
+					},
+					"hit-1": {
+						"move": [
+							1.15,
+							0,
+							0
+						]
+					},
+					"hit2-1": {
+						"move": [
+							1.15,
+							0,
+							0
+						]
+					},
+					"hit-2": {
+						"move": [
+							1.15,
+							0,
+							0
+						]
+					},
+					"hit2-2": {
+						"move": [
+							1.15,
+							0,
+							0
+						]
+					},
+					"hit-3": {
+						"move": [
+							-0.57,
+							0,
+							0
+						]
+					},
+					"hit2-3": {
+						"move": [
+							-0.57,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "plum?",
+				"readout": "plum → 2 6 13 · maybe, a false positive",
+				"parts": {
+					"coin-ring": {
+						"move": [
+							-7.0,
+							-8.6,
+							1.4
+						]
+					},
+					"coin-plum": {
+						"move": [
+							0,
+							0,
+							1.4
+						]
+					},
+					"probe-base": {
+						"move": [
+							-36.0,
+							0,
+							0
+						]
+					},
+					"probe-post": {
+						"move": [
+							-36.0,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-36.0,
+							0,
+							0
+						]
+					},
+					"probe-collar": {
+						"move": [
+							-36.0,
+							0,
+							0
+						]
+					},
+					"probe-stem": {
+						"move": [
+							-36.0,
+							0,
+							0
+						]
+					},
+					"probe-knob": {
+						"move": [
+							-36.0,
+							0,
+							0
+						]
+					},
+					"probe-cap": {
+						"move": [
+							-36.0,
+							0,
+							0
+						]
+					},
+					"flag-9": {
+						"variant": "up"
+					},
+					"flag-2": {
+						"variant": "up"
+					},
+					"flag-13": {
+						"variant": "up"
+					},
+					"lever": {
+						"turn": -78
+					},
+					"hit-1": {
+						"move": [
+							1.15,
+							0,
+							0
+						]
+					},
+					"hit2-1": {
+						"move": [
+							1.15,
+							0,
+							0
+						]
+					},
+					"hit-2": {
+						"move": [
+							-0.57,
+							0,
+							0
+						]
+					},
+					"hit2-2": {
+						"move": [
+							-0.57,
+							0,
+							0
+						]
+					},
+					"hit-3": {
+						"move": [
+							-0.57,
+							0,
+							0
+						]
+					},
+					"hit2-3": {
+						"move": [
+							-0.57,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "add grape",
+				"readout": "add grape → 0 7 14 · flag 7 raised",
+				"parts": {
+					"coin-ring": {
+						"move": [
+							0.0,
+							0.0,
+							1.4
+						]
+					},
+					"coin-grape": {
+						"move": [
+							0,
+							0,
+							1.4
+						]
+					},
+					"probe-base": {
+						"move": [
+							-32.0,
+							0,
+							0
+						]
+					},
+					"probe-post": {
+						"move": [
+							-32.0,
+							0,
+							0
+						]
+					},
+					"probe-arm": {
+						"move": [
+							-32.0,
+							0,
+							0
+						]
+					},
+					"probe-collar": {
+						"move": [
+							-32.0,
+							0,
+							0
+						]
+					},
+					"probe-stem": {
+						"move": [
+							-32.0,
+							0,
+							0
+						]
+					},
+					"probe-knob": {
+						"move": [
+							-32.0,
+							0,
+							0
+						]
+					},
+					"probe-cap": {
+						"move": [
+							-32.0,
+							0,
+							0
+						]
+					},
+					"flag-9": {
+						"variant": "up"
+					},
+					"flag-2": {
+						"variant": "up"
+					},
+					"flag-13": {
+						"variant": "up"
+					},
+					"flag-7": {
+						"variant": "up"
+					},
+					"lever": {
+						"turn": -78
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ FRUIT MACHINE ]",

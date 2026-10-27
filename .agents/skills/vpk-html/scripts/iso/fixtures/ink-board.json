@@ -1,0 +1,24 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "ink-board",
+	"figId": "FIG_001",
+	"title": "Ink board",
+	"label": "A pale board carrying a row of ink pins and a two-chip stack drawn with an ink outline; no labels, no accent.",
+	"caption": "Phase 0 scratch: labels none, emphasis ink, a focal list and ink-tone parts over eight assembly layers.",
+	"labels": "none",
+	"emphasis": "ink",
+	"focal": ["chip-a", "chip-b"],
+	"parts": [
+		{ "id": "board", "kind": "slab", "at": [0, 0, 0], "size": [120, 72, 6], "marks": [[[6, 6], [114, 6]], [[6, 66], [114, 66]], [[6, 12], [6, 60]], [[114, 12], [114, 60]]] },
+		{ "id": "rail", "kind": "slab", "at": [8, 52, 6], "size": [80, 10, 3], "tone": "ink" },
+		{ "id": "pin-1", "kind": "cylinder", "at": [104, 14, 6], "size": [3, 3, 10], "tone": "ink" },
+		{ "id": "pin-2", "kind": "cylinder", "at": [104, 26, 6], "size": [3, 3, 14], "tone": "ink" },
+		{ "id": "pin-3", "kind": "cylinder", "at": [104, 38, 6], "size": [3, 3, 18], "tone": "ink" },
+		{ "id": "pin-4", "kind": "cylinder", "at": [112, 30, 6], "size": [3, 3, 14], "tone": "ink" },
+		{ "id": "chip-a", "kind": "box", "at": [66, 24, 6], "size": [30, 22, 6] },
+		{ "id": "chip-b", "kind": "box", "at": [70, 27, 12], "size": [22, 16, 6] },
+		{ "id": "cap", "kind": "plate", "at": [74, 30, 18], "size": [14, 10, 2], "state": "new" }
+	],
+	"assemble": { "layers": [["board"], ["rail"], ["pin-1"], ["pin-2"], ["pin-3"], ["pin-4"], ["chip-a"], ["chip-b", "cap"]] },
+	"interact": { "behavior": "select", "rest": "ink board" }
+}

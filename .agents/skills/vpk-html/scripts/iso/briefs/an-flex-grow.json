@@ -3,49 +3,3406 @@
 	"id": "an-flex-grow",
 	"figId": "FIG_209",
 	"title": "flex-grow as a bench vise",
-	"label": "Dimetric bench vise: a fixed and a moving jaw clamp three blocks in a row. Three equal springs share the free space: one after the grow 1 block, two after the grow 2 block, none after the grow 0 block.",
-	"caption": "Every spring takes the same share of the free space. Grow 2 holds two springs, so it gets twice the room of grow 1, and grow 0 holds no spring at all.",
+	"label": "Bench vise on a swivel pedestal. A ruled px rail carries three blocks, grow 1, grow 2 and grow 0, between the fixed jaw and a moving jaw with a T-handle. A coil follows each grow point.",
+	"caption": "Free space is shared by grow, 1 + 2 + 0 = 3 shares. The grow 2 block's spring takes twice the grow 1 block's room, and the grow 0 block gets none. Move the pointer across the figure to slide the jaw shut, and both springs shrink in proportion until the blocks touch.",
 	"camera": {
 		"preset": "dimetric",
 		"scale": "fit"
 	},
-	"parts": [
-		{ "id": "jaw-fixed", "kind": "box", "at": [0, -6, 0], "size": [12, 20, 10], "r": 1, "label": "Fixed jaw" },
-		{ "id": "block-a", "kind": "box", "at": [12, 0, 0], "size": [12, 14, 18], "r": 1, "label": "Grow 1" },
-		{ "id": "spring-a", "kind": "box", "at": [24, 12, 0], "size": [30, 6, 6], "r": 0, "label": "Share 1", "marks": [[[15, 0], [15, 6]]] },
-		{ "id": "block-b", "kind": "box", "at": [54, 0, 0], "size": [12, 14, 18], "r": 1, "label": "Grow 2" },
-		{ "id": "spring-b1", "kind": "box", "at": [66, 12, 0], "size": [30, 6, 6], "r": 0, "label": "Share 2", "marks": [[[15, 0], [15, 6]]] },
-		{ "id": "spring-b2", "kind": "box", "at": [98, 12, 0], "size": [30, 6, 6], "r": 0, "label": "Share 3", "marks": [[[15, 0], [15, 6]]] },
-		{ "id": "block-c", "kind": "box", "at": [128, 0, 0], "size": [12, 14, 18], "r": 1, "label": "Grow 0" },
-		{ "id": "jaw-moving", "kind": "box", "at": [140, -6, 0], "size": [12, 20, 10], "r": 1, "label": "Moving jaw" },
-		{ "id": "screw", "kind": "box", "at": [152, 2, 3], "size": [14, 4, 4], "r": 0, "label": "Screw" },
-		{ "id": "handle", "kind": "box", "at": [166, -5, 4], "size": [3, 18, 2], "r": 0, "label": "Handle" }
-	],
-	"focal": "spring-a",
+	"focal": "block-b",
 	"labels": [
-		{ "text": "Fixed jaw", "target": "jaw-fixed", "side": "left" },
-		{ "text": "Grow 1", "target": "block-a", "side": "right" },
-		{ "text": "Share 1", "target": "spring-a", "side": "left" },
-		{ "text": "Grow 2", "target": "block-b", "side": "right" },
-		{ "text": "Share 2", "target": "spring-b1", "side": "left" },
-		{ "text": "Share 3", "target": "spring-b2", "side": "right" },
-		{ "text": "Grow 0", "target": "block-c", "side": "right" },
-		{ "text": "Moving jaw", "target": "jaw-moving", "side": "right" },
-		{ "text": "Screw handle", "target": "handle", "side": "right" }
+		{
+			"text": "Drag the jaw",
+			"target": "jaw-moving",
+			"side": "right",
+			"anchor": [
+				196.2,
+				9,
+				104
+			]
+		}
 	],
-	"assemble": {
-		"layers": [
-			["jaw-fixed", "jaw-moving"],
-			["block-a", "block-b", "block-c"],
-			["spring-a"],
-			["spring-b1", "spring-b2"],
-			["screw", "handle"]
-		]
-	},
+	"parts": [
+		{
+			"id": "foot",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				0
+			],
+			"size": [
+				36,
+				36,
+				3.6
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.4
+				}
+			]
+		},
+		{
+			"id": "foot-step",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				3.6
+			],
+			"size": [
+				27,
+				27,
+				3.4
+			]
+		},
+		{
+			"id": "foot-boss",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				7
+			],
+			"size": [
+				15,
+				15,
+				2.6
+			]
+		},
+		{
+			"id": "collar-lo",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				9.6
+			],
+			"size": [
+				11.5,
+				11.5,
+				3.4
+			]
+		},
+		{
+			"id": "column",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				13
+			],
+			"size": [
+				9.5,
+				9.5,
+				51
+			]
+		},
+		{
+			"id": "collar-hi",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				64
+			],
+			"size": [
+				11.5,
+				11.5,
+				4
+			]
+		},
+		{
+			"id": "foot-bolt",
+			"kind": "prism",
+			"at": [
+				30,
+				0,
+				3.6
+			],
+			"axis": "z",
+			"polygon": [
+				[
+					2.4,
+					0
+				],
+				[
+					1.2,
+					2.08
+				],
+				[
+					-1.2,
+					2.08
+				],
+				[
+					-2.4,
+					0
+				],
+				[
+					-1.2,
+					-2.08
+				],
+				[
+					1.2,
+					-2.08
+				]
+			],
+			"depth": 1.6,
+			"round": 0.2,
+			"repeat": {
+				"polar": {
+					"count": 3,
+					"centre": [
+						0,
+						0
+					],
+					"radius": 31,
+					"from": 50,
+					"span": 360,
+					"face": true
+				}
+			}
+		},
+		{
+			"id": "turntable",
+			"kind": "cylinder",
+			"at": [
+				0,
+				0,
+				68
+			],
+			"size": [
+				31,
+				31,
+				6
+			],
+			"detail": [
+				{
+					"type": "radialTicks",
+					"r": 30,
+					"count": 90,
+					"every": 5,
+					"lengths": [
+						1.4,
+						2.8
+					],
+					"from": 70,
+					"span": 160
+				}
+			]
+		},
+		{
+			"id": "swivel-plate",
+			"kind": "box",
+			"at": [
+				-26,
+				-26,
+				74
+			],
+			"size": [
+				52,
+				52,
+				4
+			],
+			"r": 5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						5,
+						5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 42,
+					"size": 1.1
+				}
+			]
+		},
+		{
+			"id": "lock-rod",
+			"kind": "rod",
+			"from": [
+				-20,
+				26,
+				76
+			],
+			"to": [
+				-20,
+				38,
+				76
+			],
+			"radius": 1.1
+		},
+		{
+			"id": "lock-ball",
+			"kind": "sphere",
+			"at": [
+				-20,
+				39.5,
+				76
+			],
+			"r": 2.4
+		},
+		{
+			"id": "jaw-rear",
+			"kind": "box",
+			"at": [
+				-26,
+				-16,
+				78
+			],
+			"size": [
+				28,
+				32,
+				28
+			],
+			"r": 3,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 3,
+					"r": 1
+				}
+			]
+		},
+		{
+			"id": "jaw-cap",
+			"kind": "box",
+			"at": [
+				-22,
+				-13,
+				106
+			],
+			"size": [
+				22,
+				26,
+				6
+			],
+			"r": 3,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 2.5,
+					"r": 1.5
+				}
+			]
+		},
+		{
+			"id": "jaw-fixed",
+			"kind": "box",
+			"at": [
+				2,
+				-18,
+				78
+			],
+			"size": [
+				12,
+				36,
+				48
+			],
+			"r": 2.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						6,
+						7
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 22,
+					"size": 0.5
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 1
+				},
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 2,
+					"r": 1
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							28
+						],
+						[
+							34,
+							28
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							30
+						],
+						[
+							34,
+							30
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							32
+						],
+						[
+							34,
+							32
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							34
+						],
+						[
+							34,
+							34
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							36
+						],
+						[
+							34,
+							36
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							38
+						],
+						[
+							34,
+							38
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							40
+						],
+						[
+							34,
+							40
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							42
+						],
+						[
+							34,
+							42
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							2,
+							44
+						],
+						[
+							34,
+							44
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "rail",
+			"kind": "box",
+			"at": [
+				14,
+				-10,
+				78
+			],
+			"size": [
+				175.2,
+				27,
+				8
+			],
+			"r": 0.6,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "top",
+					"from": [
+						2,
+						27
+					],
+					"to": [
+						173.2,
+						27
+					],
+					"step": 2.5,
+					"every": 4,
+					"lengths": [
+						1.6,
+						3.4
+					],
+					"side": -1
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1,
+							4
+						],
+						[
+							174.2,
+							4
+						]
+					]
+				},
+				{
+					"type": "text",
+					"face": "top",
+					"at": [
+						161.2,
+						21
+					],
+					"text": "px",
+					"size": 3,
+					"anchor": "end"
+				}
+			],
+			"variants": {
+				"v16": {
+					"size": [
+						89.2,
+						27,
+						8
+					],
+					"detail": [
+						{
+							"type": "ticks",
+							"face": "top",
+							"from": [
+								2,
+								27
+							],
+							"to": [
+								87.2,
+								27
+							],
+							"step": 2.5,
+							"every": 4,
+							"lengths": [
+								1.6,
+								3.4
+							],
+							"side": -1
+						},
+						{
+							"type": "line",
+							"face": "+y",
+							"points": [
+								[
+									1,
+									4
+								],
+								[
+									88.2,
+									4
+								]
+							]
+						},
+						{
+							"type": "text",
+							"face": "top",
+							"at": [
+								75.2,
+								21
+							],
+							"text": "px",
+							"size": 3,
+							"anchor": "end"
+						}
+					]
+				},
+				"v17": {
+					"size": [
+						110.2,
+						27,
+						8
+					],
+					"detail": [
+						{
+							"type": "ticks",
+							"face": "top",
+							"from": [
+								2,
+								27
+							],
+							"to": [
+								108.2,
+								27
+							],
+							"step": 2.5,
+							"every": 4,
+							"lengths": [
+								1.6,
+								3.4
+							],
+							"side": -1
+						},
+						{
+							"type": "line",
+							"face": "+y",
+							"points": [
+								[
+									1,
+									4
+								],
+								[
+									109.2,
+									4
+								]
+							]
+						},
+						{
+							"type": "text",
+							"face": "top",
+							"at": [
+								96.2,
+								21
+							],
+							"text": "px",
+							"size": 3,
+							"anchor": "end"
+						}
+					]
+				},
+				"v18": {
+					"size": [
+						131.7,
+						27,
+						8
+					],
+					"detail": [
+						{
+							"type": "ticks",
+							"face": "top",
+							"from": [
+								2,
+								27
+							],
+							"to": [
+								129.7,
+								27
+							],
+							"step": 2.5,
+							"every": 4,
+							"lengths": [
+								1.6,
+								3.4
+							],
+							"side": -1
+						},
+						{
+							"type": "line",
+							"face": "+y",
+							"points": [
+								[
+									1,
+									4
+								],
+								[
+									130.7,
+									4
+								]
+							]
+						},
+						{
+							"type": "text",
+							"face": "top",
+							"at": [
+								117.7,
+								21
+							],
+							"text": "px",
+							"size": 3,
+							"anchor": "end"
+						}
+					]
+				},
+				"v19": {
+					"size": [
+						152.7,
+						27,
+						8
+					],
+					"detail": [
+						{
+							"type": "ticks",
+							"face": "top",
+							"from": [
+								2,
+								27
+							],
+							"to": [
+								150.7,
+								27
+							],
+							"step": 2.5,
+							"every": 4,
+							"lengths": [
+								1.6,
+								3.4
+							],
+							"side": -1
+						},
+						{
+							"type": "line",
+							"face": "+y",
+							"points": [
+								[
+									1,
+									4
+								],
+								[
+									151.7,
+									4
+								]
+							]
+						},
+						{
+							"type": "text",
+							"face": "top",
+							"at": [
+								138.7,
+								21
+							],
+							"text": "px",
+							"size": 3,
+							"anchor": "end"
+						}
+					]
+				}
+			}
+		},
+		{
+			"id": "key-tab",
+			"kind": "box",
+			"at": [
+				14,
+				11,
+				86
+			],
+			"size": [
+				5,
+				3,
+				2.2
+			],
+			"r": 0.4
+		},
+		{
+			"id": "block-a-back",
+			"kind": "box",
+			"at": [
+				14,
+				-10.3,
+				86
+			],
+			"size": [
+				1.4,
+				20.6,
+				20.5
+			],
+			"r": 0.6
+		},
+		{
+			"id": "block-a",
+			"kind": "box",
+			"at": [
+				15.4,
+				-10,
+				86
+			],
+			"size": [
+				20,
+				20,
+				20
+			],
+			"r": 2.2,
+			"bevel": 1.2,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "block-b-back",
+			"kind": "box",
+			"at": [
+				65.4,
+				-12.3,
+				86
+			],
+			"size": [
+				1.4,
+				24.6,
+				26.5
+			],
+			"r": 0.6
+		},
+		{
+			"id": "block-b",
+			"kind": "box",
+			"at": [
+				66.8,
+				-12,
+				86
+			],
+			"size": [
+				30,
+				24,
+				26
+			],
+			"r": 2.2,
+			"bevel": 1.2,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "block-c-back",
+			"kind": "box",
+			"at": [
+				156.8,
+				-10.3,
+				86
+			],
+			"size": [
+				1.4,
+				20.6,
+				20.5
+			],
+			"r": 0.6
+		},
+		{
+			"id": "block-c",
+			"kind": "box",
+			"at": [
+				158.2,
+				-10,
+				86
+			],
+			"size": [
+				20,
+				20,
+				20
+			],
+			"r": 2.2,
+			"bevel": 1.2,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "jaw-moving",
+			"kind": "box",
+			"at": [
+				178.2,
+				-18,
+				64
+			],
+			"size": [
+				18,
+				36,
+				48
+			],
+			"r": 3,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						9,
+						9
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 18,
+					"size": 0.5
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.6,
+					"r": 1
+				},
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 3,
+					"r": 1.2
+				}
+			]
+		},
+		{
+			"id": "hub",
+			"kind": "lathe",
+			"at": [
+				196.2,
+				-6,
+				78
+			],
+			"axis": "x",
+			"profile": [
+				[
+					0,
+					7.4
+				],
+				[
+					1.2,
+					7.4
+				],
+				[
+					1.2,
+					5.4
+				],
+				[
+					7,
+					5.4
+				]
+			],
+			"hole": [
+				7,
+				1.4
+			]
+		},
+		{
+			"id": "handle",
+			"kind": "rod",
+			"from": [
+				200.4,
+				7.93,
+				87.75
+			],
+			"to": [
+				200.4,
+				-19.93,
+				68.25
+			],
+			"radius": 1.1,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					200.4,
+					-6,
+					78
+				],
+				"deg": [
+					0,
+					58
+				],
+				"samples": 30
+			}
+		},
+		{
+			"id": "handle-ball-a",
+			"kind": "sphere",
+			"at": [
+				200.4,
+				9.24,
+				88.67
+			],
+			"r": 2.5,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					200.4,
+					-6,
+					78
+				],
+				"deg": [
+					0,
+					58
+				],
+				"samples": 30
+			}
+		},
+		{
+			"id": "handle-ball-b",
+			"kind": "sphere",
+			"at": [
+				200.4,
+				-21.24,
+				67.33
+			],
+			"r": 2.5,
+			"rotate": {
+				"axis": "x",
+				"about": [
+					200.4,
+					-6,
+					78
+				],
+				"deg": [
+					0,
+					58
+				],
+				"samples": 30
+			}
+		},
+		{
+			"id": "spring-a-rod",
+			"kind": "rod",
+			"from": [
+				35.4,
+				0,
+				97
+			],
+			"to": [
+				65.4,
+				0,
+				97
+			],
+			"radius": 1,
+			"variants": {
+				"v16": {
+					"to": [
+						43.73,
+						0,
+						97
+					]
+				},
+				"v17": {
+					"to": [
+						50.9,
+						0,
+						97
+					]
+				},
+				"v18": {
+					"to": [
+						57.9,
+						0,
+						97
+					]
+				},
+				"v19": {
+					"to": [
+						64.9,
+						0,
+						97
+					]
+				}
+			}
+		},
+		{
+			"id": "spring-a",
+			"kind": "spring",
+			"from": [
+				35.4,
+				0,
+				97
+			],
+			"to": [
+				65.4,
+				0,
+				97
+			],
+			"radius": 6.8,
+			"wire": 0.32,
+			"turns": 5,
+			"tone": "ink",
+			"variants": {
+				"v16": {
+					"from": [
+						35.4,
+						0,
+						97
+					],
+					"to": [
+						43.73,
+						0,
+						97
+					]
+				},
+				"v17": {
+					"from": [
+						35.4,
+						0,
+						97
+					],
+					"to": [
+						50.9,
+						0,
+						97
+					]
+				},
+				"v18": {
+					"from": [
+						35.4,
+						0,
+						97
+					],
+					"to": [
+						57.9,
+						0,
+						97
+					]
+				},
+				"v19": {
+					"from": [
+						35.4,
+						0,
+						97
+					],
+					"to": [
+						64.9,
+						0,
+						97
+					]
+				}
+			}
+		},
+		{
+			"id": "spring-b-rod",
+			"kind": "rod",
+			"from": [
+				96.8,
+				0,
+				97
+			],
+			"to": [
+				156.8,
+				0,
+				97
+			],
+			"radius": 1,
+			"variants": {
+				"v16": {
+					"from": [
+						75.13,
+						0,
+						97
+					],
+					"to": [
+						91.8,
+						0,
+						97
+					]
+				},
+				"v17": {
+					"from": [
+						82.3,
+						0,
+						97
+					],
+					"to": [
+						113.3,
+						0,
+						97
+					]
+				},
+				"v18": {
+					"from": [
+						89.3,
+						0,
+						97
+					],
+					"to": [
+						134.3,
+						0,
+						97
+					]
+				},
+				"v19": {
+					"from": [
+						96.3,
+						0,
+						97
+					],
+					"to": [
+						155.3,
+						0,
+						97
+					]
+				}
+			}
+		},
+		{
+			"id": "spring-b",
+			"kind": "spring",
+			"from": [
+				96.8,
+				0,
+				97
+			],
+			"to": [
+				156.8,
+				0,
+				97
+			],
+			"radius": 6.8,
+			"wire": 0.32,
+			"turns": 9,
+			"tone": "ink",
+			"variants": {
+				"v16": {
+					"from": [
+						75.13,
+						0,
+						97
+					],
+					"to": [
+						91.8,
+						0,
+						97
+					]
+				},
+				"v17": {
+					"from": [
+						82.3,
+						0,
+						97
+					],
+					"to": [
+						113.3,
+						0,
+						97
+					]
+				},
+				"v18": {
+					"from": [
+						89.3,
+						0,
+						97
+					],
+					"to": [
+						134.3,
+						0,
+						97
+					]
+				},
+				"v19": {
+					"from": [
+						96.3,
+						0,
+						97
+					],
+					"to": [
+						155.3,
+						0,
+						97
+					]
+				}
+			}
+		},
+		{
+			"id": "washer",
+			"kind": "ring",
+			"at": [
+				126.8,
+				0,
+				97
+			],
+			"axis": "x",
+			"size": [
+				6.5,
+				6.5,
+				0
+			],
+			"thickness": 1.6,
+			"inner": 1.4
+		}
+	],
 	"interact": {
-		"behavior": "select",
-		"lift": 8,
-		"rest": "Free space 90 ÷ 3 springs = 30 each"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 20,
+		"values": {
+			"free": [
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				8,
+				50,
+				93,
+				135,
+				177,
+				180,
+				180,
+				180,
+				180,
+				180,
+				180,
+				180,
+				180,
+				180,
+				180,
+				180
+			],
+			"share": [
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				2.67,
+				16.67,
+				31,
+				45,
+				59,
+				60,
+				60,
+				60,
+				60,
+				60,
+				60,
+				60,
+				60,
+				60,
+				60,
+				60
+			],
+			"a": [
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				52.67,
+				66.67,
+				81,
+				95,
+				109,
+				110,
+				110,
+				110,
+				110,
+				110,
+				110,
+				110,
+				110,
+				110,
+				110,
+				110
+			],
+			"b": [
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				95.33,
+				123.33,
+				152,
+				180,
+				208,
+				210,
+				210,
+				210,
+				210,
+				210,
+				210,
+				210,
+				210,
+				210,
+				210,
+				210
+			]
+		},
+		"readout": "free {free:1} ÷ 3 = {share:0.01} → {a:0.1} · {b:0.1} · 60",
+		"states": [
+			{
+				"name": "closed",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-2",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-3",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-4",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-5",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-6",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-7",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-8",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-9",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-10",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-11",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-12",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-13",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-14",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-15",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "closed-16",
+				"readout": "free 8 ÷ 3 = 2.67 → 52.7 · 95.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-28.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-86,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-a": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"handle-ball-b": {
+						"move": [
+							-86,
+							0,
+							0
+						],
+						"turn": 58
+					},
+					"spring-a": {
+						"hidden": true
+					},
+					"spring-a-rod": {
+						"hidden": true
+					},
+					"spring-b": {
+						"hidden": true
+					},
+					"spring-b-rod": {
+						"hidden": true
+					},
+					"washer": {
+						"hidden": true
+					},
+					"rail": {
+						"variant": "v16"
+					}
+				}
+			},
+			{
+				"name": "free-50",
+				"readout": "free 50 ÷ 3 = 16.67 → 66.7 · 123.3 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-21.67,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-21.67,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-65,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-65,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-65,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-65,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-65,
+							0,
+							0
+						],
+						"turn": 43.84
+					},
+					"handle-ball-a": {
+						"move": [
+							-65,
+							0,
+							0
+						],
+						"turn": 43.84
+					},
+					"handle-ball-b": {
+						"move": [
+							-65,
+							0,
+							0
+						],
+						"turn": 43.84
+					},
+					"spring-a": {
+						"variant": "v16"
+					},
+					"spring-a-rod": {
+						"variant": "v16"
+					},
+					"spring-b": {
+						"variant": "v16"
+					},
+					"spring-b-rod": {
+						"variant": "v16"
+					},
+					"washer": {
+						"move": [
+							-43.33,
+							0,
+							0
+						]
+					},
+					"rail": {
+						"variant": "v17"
+					}
+				}
+			},
+			{
+				"name": "free-93",
+				"readout": "free 93 ÷ 3 = 31 → 81 · 152 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-14.5,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-14.5,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-43.5,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-43.5,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-43.5,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-43.5,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-43.5,
+							0,
+							0
+						],
+						"turn": 29.34
+					},
+					"handle-ball-a": {
+						"move": [
+							-43.5,
+							0,
+							0
+						],
+						"turn": 29.34
+					},
+					"handle-ball-b": {
+						"move": [
+							-43.5,
+							0,
+							0
+						],
+						"turn": 29.34
+					},
+					"spring-a": {
+						"variant": "v17"
+					},
+					"spring-a-rod": {
+						"variant": "v17"
+					},
+					"spring-b": {
+						"variant": "v17"
+					},
+					"spring-b-rod": {
+						"variant": "v17"
+					},
+					"washer": {
+						"move": [
+							-29,
+							0,
+							0
+						]
+					},
+					"rail": {
+						"variant": "v18"
+					}
+				}
+			},
+			{
+				"name": "free-135",
+				"readout": "free 135 ÷ 3 = 45 → 95 · 180 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-7.5,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-7.5,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-22.5,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-22.5,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-22.5,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-22.5,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-22.5,
+							0,
+							0
+						],
+						"turn": 15.17
+					},
+					"handle-ball-a": {
+						"move": [
+							-22.5,
+							0,
+							0
+						],
+						"turn": 15.17
+					},
+					"handle-ball-b": {
+						"move": [
+							-22.5,
+							0,
+							0
+						],
+						"turn": 15.17
+					},
+					"spring-a": {
+						"variant": "v18"
+					},
+					"spring-a-rod": {
+						"variant": "v18"
+					},
+					"spring-b": {
+						"variant": "v18"
+					},
+					"spring-b-rod": {
+						"variant": "v18"
+					},
+					"washer": {
+						"move": [
+							-15,
+							0,
+							0
+						]
+					},
+					"rail": {
+						"variant": "v19"
+					}
+				}
+			},
+			{
+				"name": "free-177",
+				"readout": "free 177 ÷ 3 = 59 → 109 · 208 · 60",
+				"parts": {
+					"block-b": {
+						"move": [
+							-0.5,
+							0,
+							0
+						]
+					},
+					"block-b-back": {
+						"move": [
+							-0.5,
+							0,
+							0
+						]
+					},
+					"block-c": {
+						"move": [
+							-1.5,
+							0,
+							0
+						]
+					},
+					"block-c-back": {
+						"move": [
+							-1.5,
+							0,
+							0
+						]
+					},
+					"jaw-moving": {
+						"move": [
+							-1.5,
+							0,
+							0
+						]
+					},
+					"hub": {
+						"move": [
+							-1.5,
+							0,
+							0
+						]
+					},
+					"handle": {
+						"move": [
+							-1.5,
+							0,
+							0
+						],
+						"turn": 1.01
+					},
+					"handle-ball-a": {
+						"move": [
+							-1.5,
+							0,
+							0
+						],
+						"turn": 1.01
+					},
+					"handle-ball-b": {
+						"move": [
+							-1.5,
+							0,
+							0
+						],
+						"turn": 1.01
+					},
+					"spring-a": {
+						"variant": "v19"
+					},
+					"spring-a-rod": {
+						"variant": "v19"
+					},
+					"spring-b": {
+						"variant": "v19"
+					},
+					"spring-b-rod": {
+						"variant": "v19"
+					},
+					"washer": {
+						"move": [
+							-1,
+							0,
+							0
+						]
+					}
+				}
+			},
+			{
+				"name": "open",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-1",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-2",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-3",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-4",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-5",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-6",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-7",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-8",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-9",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "open-10",
+				"readout": "free 180 ÷ 3 = 60 → 110 · 210 · 60",
+				"parts": {
+					"handle": {
+						"turn": 0
+					},
+					"handle-ball-a": {
+						"turn": 0
+					},
+					"handle-ball-b": {
+						"turn": 0
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ FLEX-GROW ]",

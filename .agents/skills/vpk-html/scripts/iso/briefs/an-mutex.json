@@ -2,273 +2,5107 @@
 	"schema": "vpk-iso-brief/1",
 	"id": "an-mutex",
 	"figId": "FIG_213",
-	"title": "A mutex as a tank and key",
-	"label": "Dimetric water tank on a stand, filled by two pumps, one at each side, each run by its own controller with a key slot on top. Between them a lock box holds a single accented interlock key. Hover or arrow keys lift one part.",
-	"caption": "Both controllers want to read the level and run their pump; only the one holding the single key may, so two pumps never fill the tank at once and it never overflows.",
+	"title": "A mutex as a water tower and key",
+	"label": "Water tower on a kerbed plinth: staved, hooped tank and ribbed roof on braced legs, ladder, level gauge and valve stand; two pumps feed straight risers; a two-dial console holds the one key. Hover across to step.",
+	"caption": "Both controllers read the level and top up the gap. Without the key both read 793 L, both pump 207 L and the tank spills; when A holds the key, B waits and the tank fills once.",
 	"camera": {
 		"preset": "dimetric",
 		"scale": "fit"
 	},
+	"emphasis": "accent",
+	"focal": [
+		"key",
+		"key-tab",
+		"float"
+	],
+	"labels": "none",
 	"parts": [
 		{
-			"id": "stand",
-			"fixed": true,
+			"id": "plinth",
+			"kind": "prism",
+			"at": [
+				0,
+				0,
+				-6
+			],
+			"axis": "z",
+			"depth": 6,
+			"round": 2.2,
+			"polygon": [
+				[
+					0,
+					0
+				],
+				[
+					46,
+					0
+				],
+				[
+					50,
+					1.2
+				],
+				[
+					54,
+					0
+				],
+				[
+					100,
+					0
+				],
+				[
+					100,
+					100
+				],
+				[
+					0,
+					100
+				]
+			],
+			"detail": [
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							1.4,
+							98.6
+						],
+						[
+							98.6,
+							98.6
+						],
+						[
+							98.6,
+							1.4
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							8,
+							94.5
+						],
+						[
+							94.5,
+							94.5
+						],
+						[
+							94.5,
+							8
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							34,
+							78
+						],
+						[
+							34,
+							94.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							34,
+							86
+						],
+						[
+							50.5,
+							86
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							78,
+							34
+						],
+						[
+							94.5,
+							34
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							86,
+							34
+						],
+						[
+							86,
+							50.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							60,
+							83.5
+						],
+						[
+							60,
+							94.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							83.5,
+							60
+						],
+						[
+							94.5,
+							60
+						]
+					]
+				},
+				{
+					"type": "recess",
+					"face": "top",
+					"shape": "circle",
+					"at": [
+						58,
+						18.5
+					],
+					"size": 6,
+					"depth": 0.3
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							56,
+							16.5
+						],
+						[
+							60,
+							20.5
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							60,
+							16.5
+						],
+						[
+							56,
+							20.5
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						97,
+						97
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.45
+				}
+			]
+		},
+		{
+			"id": "kerb-b",
 			"kind": "box",
 			"at": [
-				48,
-				14,
+				0,
+				0,
 				0
 			],
 			"size": [
-				44,
-				36,
-				26
+				100,
+				4,
+				9
 			],
-			"r": 2,
-			"label": "Tank stand"
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						97,
+						2
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "kerb-l",
+			"kind": "box",
+			"at": [
+				0,
+				4,
+				0
+			],
+			"size": [
+				4,
+				96,
+				9
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2,
+						93
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.4
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "pad-0",
+			"kind": "box",
+			"at": [
+				10.5,
+				10.5,
+				0
+			],
+			"size": [
+				7.4,
+				7.4,
+				3
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1,
+						1
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 5.4,
+					"size": 0.35
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "leg-0",
+			"kind": "box",
+			"at": [
+				12.4,
+				12.4,
+				3
+			],
+			"size": [
+				3.6,
+				3.6,
+				28
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.8,
+							1
+						],
+						[
+							1.8,
+							27
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.8,
+							1
+						],
+						[
+							1.8,
+							27
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						1.8,
+						4
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 21,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.8,
+						4
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 21,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "pad-1",
+			"kind": "box",
+			"at": [
+				43.1,
+				10.5,
+				0
+			],
+			"size": [
+				7.4,
+				7.4,
+				3
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1,
+						1
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 5.4,
+					"size": 0.35
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "leg-1",
+			"kind": "box",
+			"at": [
+				45,
+				12.4,
+				3
+			],
+			"size": [
+				3.6,
+				3.6,
+				28
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.8,
+							1
+						],
+						[
+							1.8,
+							27
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.8,
+							1
+						],
+						[
+							1.8,
+							27
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						1.8,
+						4
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 21,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.8,
+						4
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 21,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "pad-2",
+			"kind": "box",
+			"at": [
+				10.5,
+				43.1,
+				0
+			],
+			"size": [
+				7.4,
+				7.4,
+				3
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1,
+						1
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 5.4,
+					"size": 0.35
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "leg-2",
+			"kind": "box",
+			"at": [
+				12.4,
+				45,
+				3
+			],
+			"size": [
+				3.6,
+				3.6,
+				28
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.8,
+							1
+						],
+						[
+							1.8,
+							27
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.8,
+							1
+						],
+						[
+							1.8,
+							27
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						1.8,
+						4
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 21,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.8,
+						4
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 21,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "pad-3",
+			"kind": "box",
+			"at": [
+				43.1,
+				43.1,
+				0
+			],
+			"size": [
+				7.4,
+				7.4,
+				3
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1,
+						1
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 5.4,
+					"size": 0.35
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "leg-3",
+			"kind": "box",
+			"at": [
+				45,
+				45,
+				3
+			],
+			"size": [
+				3.6,
+				3.6,
+				28
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.8,
+							1
+						],
+						[
+							1.8,
+							27
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							1.8,
+							1
+						],
+						[
+							1.8,
+							27
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						1.8,
+						4
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 21,
+					"size": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.8,
+						4
+					],
+					"grid": [
+						1,
+						2
+					],
+					"gap": 21,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "beam-b",
+			"kind": "box",
+			"at": [
+				9.7,
+				12.5,
+				31
+			],
+			"size": [
+				41.599999999999994,
+				3.4,
+				4
+			],
+			"r": 0.3,
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "beam-l",
+			"kind": "box",
+			"at": [
+				12.5,
+				15.899999999999999,
+				31
+			],
+			"size": [
+				3.4,
+				29.199999999999996,
+				4
+			],
+			"r": 0.3,
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "beam-r",
+			"kind": "box",
+			"at": [
+				45.099999999999994,
+				15.899999999999999,
+				31
+			],
+			"size": [
+				3.4,
+				29.199999999999996,
+				4
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						3,
+						2
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 23.199999999999996,
+					"size": 0.4
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "beam-f",
+			"kind": "box",
+			"at": [
+				9.7,
+				45.099999999999994,
+				31
+			],
+			"size": [
+				41.599999999999994,
+				3.4,
+				4
+			],
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						4.5,
+						2
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 32.599999999999994,
+					"size": 0.4
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "brace-0a0",
+			"kind": "rod",
+			"from": [
+				16.1,
+				14.2,
+				7.4
+			],
+			"to": [
+				44.9,
+				14.2,
+				28.6
+			],
+			"radius": 0.45,
+			"caps": false
+		},
+		{
+			"id": "brace-0b0",
+			"kind": "rod",
+			"from": [
+				44.9,
+				14.2,
+				7.4
+			],
+			"to": [
+				16.1,
+				14.2,
+				28.6
+			],
+			"radius": 0.45,
+			"caps": false
+		},
+		{
+			"id": "brace-1a0",
+			"kind": "rod",
+			"from": [
+				14.2,
+				16.1,
+				7.4
+			],
+			"to": [
+				14.2,
+				44.9,
+				28.6
+			],
+			"radius": 0.45,
+			"caps": false
+		},
+		{
+			"id": "brace-1b0",
+			"kind": "rod",
+			"from": [
+				14.2,
+				44.9,
+				7.4
+			],
+			"to": [
+				14.2,
+				16.1,
+				28.6
+			],
+			"radius": 0.45,
+			"caps": false
+		},
+		{
+			"id": "brace-2a0",
+			"kind": "rod",
+			"from": [
+				46.8,
+				16.1,
+				7.4
+			],
+			"to": [
+				46.8,
+				44.9,
+				28.6
+			],
+			"radius": 0.45,
+			"caps": false
+		},
+		{
+			"id": "brace-2b0",
+			"kind": "rod",
+			"from": [
+				46.8,
+				44.9,
+				7.4
+			],
+			"to": [
+				46.8,
+				16.1,
+				28.6
+			],
+			"radius": 0.45,
+			"caps": false
+		},
+		{
+			"id": "brace-3a0",
+			"kind": "rod",
+			"from": [
+				16.1,
+				46.8,
+				7.4
+			],
+			"to": [
+				44.9,
+				46.8,
+				28.6
+			],
+			"radius": 0.45,
+			"caps": false
+		},
+		{
+			"id": "brace-3b0",
+			"kind": "rod",
+			"from": [
+				44.9,
+				46.8,
+				7.4
+			],
+			"to": [
+				16.1,
+				46.8,
+				28.6
+			],
+			"radius": 0.45,
+			"caps": false
 		},
 		{
 			"id": "tank",
-			"kind": "cylinder",
+			"kind": "lathe",
 			"at": [
-				70,
-				32,
-				26
+				30.5,
+				30.5,
+				35
 			],
-			"size": [
-				16,
-				16,
-				40
-			],
-			"label": "Tank"
-		},
-		{
-			"id": "pipe-a",
-			"kind": "box",
-			"at": [
-				13,
-				28,
-				0
-			],
-			"size": [
-				35,
-				6,
-				5
-			],
-			"r": 1,
-			"label": "Feed pipe"
-		},
-		{
-			"id": "pipe-b",
-			"kind": "box",
-			"at": [
-				92,
-				28,
-				0
-			],
-			"size": [
-				28,
-				6,
-				5
-			],
-			"r": 1,
-			"label": "Feed pipe"
-		},
-		{
-			"id": "pump-a",
-			"kind": "cylinder",
-			"at": [
-				8,
-				31,
-				0
-			],
-			"size": [
-				5,
-				5,
-				18
-			],
-			"label": "Pump A"
-		},
-		{
-			"id": "pump-b",
-			"kind": "cylinder",
-			"at": [
-				122,
-				31,
-				0
-			],
-			"size": [
-				5,
-				5,
-				18
-			],
-			"label": "Pump B"
-		},
-		{
-			"id": "ctrl-a",
-			"kind": "box",
-			"at": [
-				8,
-				62,
-				0
-			],
-			"size": [
-				20,
-				14,
-				16
-			],
-			"r": 2,
-			"label": "Controller A",
-			"marks": [
+			"axis": "z",
+			"profile": [
 				[
-					[
-						6,
-						7
-					],
-					[
-						14,
-						7
-					]
+					0,
+					23.5
+				],
+				[
+					36,
+					23.5
 				]
+			],
+			"steps": 120,
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						5.2,
+						10.4,
+						15.6,
+						20.8,
+						26,
+						31.2
+					]
+				},
+				{
+					"type": "ribs",
+					"count": 72,
+					"s0": 0.3,
+					"s1": 35.7
+				}
 			]
 		},
 		{
-			"id": "ctrl-b",
-			"kind": "box",
+			"id": "rim-low",
+			"kind": "torus",
 			"at": [
-				112,
-				62,
-				0
+				30.5,
+				30.5,
+				35.3
 			],
-			"size": [
-				20,
-				14,
-				16
+			"axis": "z",
+			"R": 23.55,
+			"r": 0.3,
+			"tone": "ink"
+		},
+		{
+			"id": "roof",
+			"kind": "lathe",
+			"at": [
+				30.5,
+				30.5,
+				71
 			],
-			"r": 2,
-			"label": "Controller B",
-			"marks": [
+			"axis": "z",
+			"profile": [
 				[
-					[
-						6,
-						7
-					],
-					[
-						14,
-						7
-					]
+					0,
+					25.1
+				],
+				[
+					0.8,
+					25.1
+				],
+				[
+					10.2,
+					3.4
 				]
+			],
+			"steps": 120,
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 30,
+					"s0": 0.8,
+					"s1": 9.6
+				}
 			]
 		},
 		{
-			"id": "lockbox",
+			"id": "rim-roof",
+			"kind": "torus",
+			"at": [
+				30.5,
+				30.5,
+				71.8
+			],
+			"axis": "z",
+			"R": 25.1,
+			"r": 0.32,
+			"tone": "ink"
+		},
+		{
+			"id": "collar",
+			"kind": "cylinder",
+			"at": [
+				30.5,
+				30.5,
+				81.2
+			],
+			"size": [
+				3.4,
+				3.4,
+				0.5
+			]
+		},
+		{
+			"id": "vent",
+			"kind": "lathe",
+			"at": [
+				30.5,
+				30.5,
+				81.7
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.1
+				],
+				[
+					3.4,
+					1.1
+				],
+				[
+					3.4,
+					1.4
+				],
+				[
+					4.4,
+					1.4
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						3.4
+					]
+				}
+			]
+		},
+		{
+			"id": "gauge",
 			"kind": "box",
 			"at": [
-				54,
-				84,
+				46.88,
+				44.48,
+				36.2
+			],
+			"size": [
+				1.6,
+				6.4,
+				31.8
+			],
+			"yaw": 45,
+			"r": 0.2,
+			"detail": [
+				{
+					"type": "ticks",
+					"face": "+x",
+					"from": [
+						4.4,
+						2.2
+					],
+					"to": [
+						4.4,
+						26.3
+					],
+					"step": 2.6,
+					"every": 5,
+					"lengths": [
+						0.9,
+						1.9
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							1.6,
+							1.2
+						],
+						[
+							1.6,
+							30.8
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gauge-cap",
+			"kind": "box",
+			"at": [
+				46.77,
+				44.17,
+				67.8
+			],
+			"size": [
+				2.4,
+				7.6,
+				3
+			],
+			"yaw": 45,
+			"r": 0.3,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						1.2,
+						1.5
+					],
+					"grid": [
+						2,
+						1
+					],
+					"gap": 5.2,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "float",
+			"kind": "box",
+			"at": [
+				48.06,
+				45.86,
+				63.4
+			],
+			"size": [
+				0.8,
+				5.2,
+				1.3
+			],
+			"yaw": 45
+		},
+		{
+			"id": "rail-a",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				0
+			],
+			"to": [
+				39.82,
+				54.77,
+				74
+			],
+			"radius": 0.42
+		},
+		{
+			"id": "rail-b",
+			"kind": "rod",
+			"from": [
+				33.67,
+				56.31,
+				0
+			],
+			"to": [
+				33.67,
+				56.31,
+				74
+			],
+			"radius": 0.42
+		},
+		{
+			"id": "rung-0",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				2.6
+			],
+			"to": [
+				33.67,
+				56.31,
+				2.6
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-1",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				5.35
+			],
+			"to": [
+				33.67,
+				56.31,
+				5.35
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-2",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				8.1
+			],
+			"to": [
+				33.67,
+				56.31,
+				8.1
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-3",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				10.85
+			],
+			"to": [
+				33.67,
+				56.31,
+				10.85
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-4",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				13.6
+			],
+			"to": [
+				33.67,
+				56.31,
+				13.6
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-5",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				16.35
+			],
+			"to": [
+				33.67,
+				56.31,
+				16.35
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-6",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				19.1
+			],
+			"to": [
+				33.67,
+				56.31,
+				19.1
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-7",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				21.85
+			],
+			"to": [
+				33.67,
+				56.31,
+				21.85
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-8",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				24.6
+			],
+			"to": [
+				33.67,
+				56.31,
+				24.6
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-9",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				27.35
+			],
+			"to": [
+				33.67,
+				56.31,
+				27.35
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-10",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				30.1
+			],
+			"to": [
+				33.67,
+				56.31,
+				30.1
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-11",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				32.85
+			],
+			"to": [
+				33.67,
+				56.31,
+				32.85
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-12",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				35.6
+			],
+			"to": [
+				33.67,
+				56.31,
+				35.6
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-13",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				38.35
+			],
+			"to": [
+				33.67,
+				56.31,
+				38.35
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-14",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				41.1
+			],
+			"to": [
+				33.67,
+				56.31,
+				41.1
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-15",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				43.85
+			],
+			"to": [
+				33.67,
+				56.31,
+				43.85
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-16",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				46.6
+			],
+			"to": [
+				33.67,
+				56.31,
+				46.6
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-17",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				49.35
+			],
+			"to": [
+				33.67,
+				56.31,
+				49.35
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-18",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				52.1
+			],
+			"to": [
+				33.67,
+				56.31,
+				52.1
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-19",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				54.85
+			],
+			"to": [
+				33.67,
+				56.31,
+				54.85
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-20",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				57.6
+			],
+			"to": [
+				33.67,
+				56.31,
+				57.6
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-21",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				60.35
+			],
+			"to": [
+				33.67,
+				56.31,
+				60.35
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-22",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				63.1
+			],
+			"to": [
+				33.67,
+				56.31,
+				63.1
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-23",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				65.85
+			],
+			"to": [
+				33.67,
+				56.31,
+				65.85
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-24",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				68.6
+			],
+			"to": [
+				33.67,
+				56.31,
+				68.6
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "rung-25",
+			"kind": "rod",
+			"from": [
+				39.82,
+				54.77,
+				71.35
+			],
+			"to": [
+				33.67,
+				56.31,
+				71.35
+			],
+			"radius": 0.24,
+			"caps": false
+		},
+		{
+			"id": "valve-ring",
+			"kind": "ring",
+			"at": [
+				24.6,
+				35.6,
+				0.05
+			],
+			"size": [
+				2.9,
+				2.9,
+				0
+			]
+		},
+		{
+			"id": "valve-pipe",
+			"kind": "cylinder",
+			"at": [
+				24.6,
+				35.6,
 				0
 			],
 			"size": [
-				32,
-				22,
-				12
+				1.3,
+				1.3,
+				11
+			]
+		},
+		{
+			"id": "valve-cpl",
+			"kind": "cylinder",
+			"at": [
+				24.6,
+				35.6,
+				6
+			],
+			"size": [
+				1.45,
+				1.45,
+				0.6
+			]
+		},
+		{
+			"id": "valve",
+			"kind": "cylinder",
+			"at": [
+				24.6,
+				35.6,
+				11
+			],
+			"size": [
+				2.1,
+				2.1,
+				3.6
+			]
+		},
+		{
+			"id": "valve-stem",
+			"kind": "rod",
+			"from": [
+				26.6,
+				35.6,
+				12.8
+			],
+			"to": [
+				29.8,
+				35.6,
+				12.8
+			],
+			"radius": 0.3
+		},
+		{
+			"id": "handwheel",
+			"kind": "torus",
+			"at": [
+				30,
+				35.6,
+				12.8
+			],
+			"axis": "x",
+			"R": 2.8,
+			"r": 0.3
+		},
+		{
+			"id": "wheel-hub",
+			"kind": "cylinder",
+			"at": [
+				29.700000000000003,
+				35.6,
+				12.8
+			],
+			"axis": "x",
+			"size": [
+				0.6,
+				0.6,
+				0.6
+			],
+			"detail": [
+				{
+					"type": "spokes",
+					"face": "end",
+					"r0": 0.2,
+					"r1": 0.6,
+					"count": 6
+				}
+			]
+		},
+		{
+			"id": "wheel-spoke-0",
+			"kind": "rod",
+			"radius": 0.12,
+			"from": [
+				30,
+				35.6,
+				12.8
+			],
+			"to": [
+				30,
+				38.21,
+				13.5
+			]
+		},
+		{
+			"id": "wheel-spoke-1",
+			"kind": "rod",
+			"radius": 0.12,
+			"from": [
+				30,
+				35.6,
+				12.8
+			],
+			"to": [
+				30,
+				36.3,
+				15.41
+			]
+		},
+		{
+			"id": "wheel-spoke-2",
+			"kind": "rod",
+			"radius": 0.12,
+			"from": [
+				30,
+				35.6,
+				12.8
+			],
+			"to": [
+				30,
+				33.69,
+				14.71
+			]
+		},
+		{
+			"id": "wheel-spoke-3",
+			"kind": "rod",
+			"radius": 0.12,
+			"from": [
+				30,
+				35.6,
+				12.8
+			],
+			"to": [
+				30,
+				32.99,
+				12.1
+			]
+		},
+		{
+			"id": "wheel-spoke-4",
+			"kind": "rod",
+			"radius": 0.12,
+			"from": [
+				30,
+				35.6,
+				12.8
+			],
+			"to": [
+				30,
+				34.9,
+				10.19
+			]
+		},
+		{
+			"id": "wheel-spoke-5",
+			"kind": "rod",
+			"radius": 0.12,
+			"from": [
+				30,
+				35.6,
+				12.8
+			],
+			"to": [
+				30,
+				37.51,
+				10.89
+			]
+		},
+		{
+			"id": "pad-a",
+			"kind": "box",
+			"at": [
+				18,
+				82,
+				0
+			],
+			"size": [
+				14,
+				14,
+				2.6
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.5,
+						1.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 11,
+					"size": 0.45
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "casing-a",
+			"kind": "lathe",
+			"at": [
+				25,
+				89,
+				2.6
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.8
+				],
+				[
+					0.8,
+					4.8
+				],
+				[
+					0.8,
+					4.5
+				],
+				[
+					8,
+					4.5
+				],
+				[
+					8,
+					3.6
+				],
+				[
+					9.5,
+					3.6
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						4.2
+					]
+				}
+			]
+		},
+		{
+			"id": "motor-a",
+			"kind": "lathe",
+			"at": [
+				25,
+				89,
+				12.1
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.2
+				],
+				[
+					7.4,
+					4.2
+				],
+				[
+					7.4,
+					4.45
+				],
+				[
+					11.4,
+					4.45
+				]
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 30,
+					"s0": 0.3,
+					"s1": 7.1
+				},
+				{
+					"type": "bands",
+					"at": [
+						9.2
+					]
+				}
+			]
+		},
+		{
+			"id": "fan-a",
+			"kind": "cylinder",
+			"at": [
+				25,
+				89,
+				23.5
+			],
+			"size": [
+				4.45,
+				4.45,
+				0.01
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.5
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4
+				},
+				{
+					"type": "spokes",
+					"face": "top",
+					"r0": 1.05,
+					"r1": 3.95,
+					"count": 6,
+					"phase": 15
+				}
+			]
+		},
+		{
+			"id": "jbox-a",
+			"kind": "box",
+			"at": [
+				28.6,
+				86.4,
+				13.4
+			],
+			"size": [
+				2.8,
+				5.2,
+				4.6
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+x",
+					"by": 0.5,
+					"r": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						4.2,
+						3.8
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "pad-b",
+			"kind": "box",
+			"at": [
+				82,
+				18,
+				0
+			],
+			"size": [
+				14,
+				14,
+				2.6
+			],
+			"r": 0.8,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.5,
+						1.5
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 11,
+					"size": 0.45
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "casing-b",
+			"kind": "lathe",
+			"at": [
+				89,
+				25,
+				2.6
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.8
+				],
+				[
+					0.8,
+					4.8
+				],
+				[
+					0.8,
+					4.5
+				],
+				[
+					8,
+					4.5
+				],
+				[
+					8,
+					3.6
+				],
+				[
+					9.5,
+					3.6
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						4.2
+					]
+				}
+			]
+		},
+		{
+			"id": "motor-b",
+			"kind": "lathe",
+			"at": [
+				89,
+				25,
+				12.1
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					4.2
+				],
+				[
+					7.4,
+					4.2
+				],
+				[
+					7.4,
+					4.45
+				],
+				[
+					11.4,
+					4.45
+				]
+			],
+			"detail": [
+				{
+					"type": "ribs",
+					"count": 30,
+					"s0": 0.3,
+					"s1": 7.1
+				},
+				{
+					"type": "bands",
+					"at": [
+						9.2
+					]
+				}
+			]
+		},
+		{
+			"id": "fan-b",
+			"kind": "cylinder",
+			"at": [
+				89,
+				25,
+				23.5
+			],
+			"size": [
+				4.45,
+				4.45,
+				0.01
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.5
+				},
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 3.4
+				},
+				{
+					"type": "spokes",
+					"face": "top",
+					"r0": 1.05,
+					"r1": 3.95,
+					"count": 6,
+					"phase": 15
+				}
+			]
+		},
+		{
+			"id": "jbox-b",
+			"kind": "box",
+			"at": [
+				86.4,
+				28.6,
+				13.4
+			],
+			"size": [
+				5.2,
+				2.8,
+				4.6
+			],
+			"r": 0.5,
+			"detail": [
+				{
+					"type": "inset",
+					"face": "+y",
+					"by": 0.5,
+					"r": 0.3
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						4.2,
+						3.8
+					],
+					"grid": [
+						1,
+						1
+					],
+					"gap": 1,
+					"size": 0.3
+				}
+			]
+		},
+		{
+			"id": "run-a",
+			"kind": "rod",
+			"from": [
+				25,
+				84.6,
+				6
+			],
+			"to": [
+				25,
+				74.95,
+				6
+			],
+			"radius": 1.35,
+			"caps": false
+		},
+		{
+			"id": "elbow-a",
+			"kind": "cylinder",
+			"at": [
+				25,
+				73,
+				3.4
+			],
+			"size": [
+				1.95,
+				1.95,
+				5.2
+			]
+		},
+		{
+			"id": "riser-a",
+			"kind": "cylinder",
+			"at": [
+				25,
+				73,
+				8.6
+			],
+			"size": [
+				1.35,
+				1.35,
+				27.4
+			]
+		},
+		{
+			"id": "cpl-a",
+			"kind": "cylinder",
+			"at": [
+				25,
+				73,
+				21
+			],
+			"size": [
+				1.55,
+				1.55,
+				1.1
+			]
+		},
+		{
+			"id": "head-a",
+			"kind": "cylinder",
+			"at": [
+				25,
+				73,
+				36
+			],
+			"size": [
+				1.95,
+				1.95,
+				4.6
+			]
+		},
+		{
+			"id": "stub-a",
+			"kind": "rod",
+			"from": [
+				25,
+				73,
+				38.3
+			],
+			"to": [
+				25,
+				53.15,
+				38.3
+			],
+			"radius": 1.35,
+			"caps": false
+		},
+		{
+			"id": "flange-a",
+			"kind": "torus",
+			"at": [
+				25,
+				53.5,
+				38.3
+			],
+			"axis": "y",
+			"R": 1.8,
+			"r": 0.38
+		},
+		{
+			"id": "run-b",
+			"kind": "rod",
+			"from": [
+				84.6,
+				25,
+				6
+			],
+			"to": [
+				74.95,
+				25,
+				6
+			],
+			"radius": 1.35,
+			"caps": false
+		},
+		{
+			"id": "elbow-b",
+			"kind": "cylinder",
+			"at": [
+				73,
+				25,
+				3.4
+			],
+			"size": [
+				1.95,
+				1.95,
+				5.2
+			]
+		},
+		{
+			"id": "riser-b",
+			"kind": "cylinder",
+			"at": [
+				73,
+				25,
+				8.6
+			],
+			"size": [
+				1.35,
+				1.35,
+				27.4
+			]
+		},
+		{
+			"id": "cpl-b",
+			"kind": "cylinder",
+			"at": [
+				73,
+				25,
+				21
+			],
+			"size": [
+				1.55,
+				1.55,
+				1.1
+			]
+		},
+		{
+			"id": "head-b",
+			"kind": "cylinder",
+			"at": [
+				73,
+				25,
+				36
+			],
+			"size": [
+				1.95,
+				1.95,
+				4.6
+			]
+		},
+		{
+			"id": "stub-b",
+			"kind": "rod",
+			"from": [
+				73,
+				25,
+				38.3
+			],
+			"to": [
+				53.15,
+				25,
+				38.3
+			],
+			"radius": 1.35,
+			"caps": false
+		},
+		{
+			"id": "flange-b",
+			"kind": "torus",
+			"at": [
+				53.5,
+				25,
+				38.3
+			],
+			"axis": "x",
+			"R": 1.8,
+			"r": 0.38
+		},
+		{
+			"id": "ov-stub",
+			"kind": "rod",
+			"from": [
+				44.79,
+				12,
+				59
+			],
+			"to": [
+				51.2,
+				12,
+				59
+			],
+			"radius": 1.2,
+			"caps": false
+		},
+		{
+			"id": "ov-flange",
+			"kind": "torus",
+			"at": [
+				45.14,
+				12,
+				59
+			],
+			"axis": "x",
+			"R": 1.6,
+			"r": 0.36
+		},
+		{
+			"id": "ov-head",
+			"kind": "cylinder",
+			"at": [
+				51.2,
+				12,
+				56.8
+			],
+			"size": [
+				1.8,
+				1.8,
+				4.4
+			]
+		},
+		{
+			"id": "ov-riser",
+			"kind": "cylinder",
+			"at": [
+				51.2,
+				12,
+				18
+			],
+			"size": [
+				1.2,
+				1.2,
+				38.8
+			]
+		},
+		{
+			"id": "ov-cpl",
+			"kind": "cylinder",
+			"at": [
+				51.2,
+				12,
+				33
+			],
+			"size": [
+				1.4,
+				1.4,
+				1
+			]
+		},
+		{
+			"id": "ov-end",
+			"kind": "cylinder",
+			"at": [
+				51.2,
+				12,
+				16.2
+			],
+			"size": [
+				1.4,
+				1.4,
+				1.8
+			]
+		},
+		{
+			"id": "console-base",
+			"kind": "box",
+			"at": [
+				50.5,
+				50.5,
+				0
+			],
+			"size": [
+				33,
+				33,
+				2.5
+			],
+			"r": 2.2,
+			"detail": [
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						1.4,
+						1.4
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 30.2,
+					"size": 0.4
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "console",
+			"kind": "box",
+			"at": [
+				52.5,
+				52.5,
+				2.5
+			],
+			"size": [
+				29,
+				29,
+				13.5
 			],
 			"r": 2,
-			"label": "Lock box"
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 1.1,
+					"r": 1.4
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							15,
+							2.2
+						],
+						[
+							24.5,
+							4.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							15,
+							3.25
+						],
+						[
+							24.5,
+							5.25
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							15,
+							4.300000000000001
+						],
+						[
+							24.5,
+							6.300000000000001
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+y",
+					"points": [
+						[
+							15,
+							5.3500000000000005
+						],
+						[
+							24.5,
+							7.3500000000000005
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							4.5,
+							4.2
+						],
+						[
+							14,
+							2.2
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							4.5,
+							5.25
+						],
+						[
+							14,
+							3.25
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							4.5,
+							6.300000000000001
+						],
+						[
+							14,
+							4.300000000000001
+						]
+					]
+				},
+				{
+					"type": "line",
+					"face": "+x",
+					"points": [
+						[
+							4.5,
+							7.3500000000000005
+						],
+						[
+							14,
+							5.3500000000000005
+						]
+					]
+				},
+				{
+					"type": "dots",
+					"face": "+y",
+					"at": [
+						1.4,
+						1.4
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 26.2,
+					"size": 0.32
+				},
+				{
+					"type": "dots",
+					"face": "+x",
+					"at": [
+						1.4,
+						1.4
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 26.2,
+					"size": 0.32
+				},
+				{
+					"type": "dots",
+					"face": "top",
+					"at": [
+						2.1,
+						2.1
+					],
+					"grid": [
+						2,
+						2
+					],
+					"gap": 24.8,
+					"size": 0.32
+				}
+			],
+			"variants": {
+				"plain": {}
+			}
+		},
+		{
+			"id": "bezel-a",
+			"kind": "torus",
+			"at": [
+				58,
+				81.6,
+				9.6
+			],
+			"axis": "y",
+			"R": 1.45,
+			"r": 0.28
+		},
+		{
+			"id": "lamp-a",
+			"kind": "cylinder",
+			"at": [
+				58,
+				81.5,
+				9.6
+			],
+			"axis": "y",
+			"size": [
+				1,
+				1,
+				0.5
+			],
+			"variants": {
+				"lit": {
+					"tone": "ink"
+				}
+			}
+		},
+		{
+			"id": "bezel-b",
+			"kind": "torus",
+			"at": [
+				81.6,
+				58,
+				9.6
+			],
+			"axis": "x",
+			"R": 1.45,
+			"r": 0.28
+		},
+		{
+			"id": "lamp-b",
+			"kind": "cylinder",
+			"at": [
+				81.5,
+				58,
+				9.6
+			],
+			"axis": "x",
+			"size": [
+				1,
+				1,
+				0.5
+			],
+			"variants": {
+				"lit": {
+					"tone": "ink"
+				}
+			}
+		},
+		{
+			"id": "dial-a",
+			"kind": "cylinder",
+			"at": [
+				57.7,
+				75.7,
+				16
+			],
+			"size": [
+				3.6,
+				3.6,
+				0.9
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.35
+				},
+				{
+					"type": "radialTicks",
+					"face": "top",
+					"r": 3,
+					"count": 24,
+					"every": 4,
+					"from": 150,
+					"span": 240,
+					"lengths": [
+						0.4,
+						0.8
+					]
+				}
+			]
+		},
+		{
+			"id": "needle-a",
+			"kind": "rod",
+			"from": [
+				57.7,
+				75.7,
+				17.1
+			],
+			"to": [
+				60.3,
+				75.7,
+				17.1
+			],
+			"radius": 0.2,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					57.7,
+					75.7,
+					17.1
+				],
+				"deg": [
+					-210,
+					30
+				],
+				"samples": 25
+			}
+		},
+		{
+			"id": "dial-b",
+			"kind": "cylinder",
+			"at": [
+				75.7,
+				57.7,
+				16
+			],
+			"size": [
+				3.6,
+				3.6,
+				0.9
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.35
+				},
+				{
+					"type": "radialTicks",
+					"face": "top",
+					"r": 3,
+					"count": 24,
+					"every": 4,
+					"from": 150,
+					"span": 240,
+					"lengths": [
+						0.4,
+						0.8
+					]
+				}
+			]
+		},
+		{
+			"id": "needle-b",
+			"kind": "rod",
+			"from": [
+				75.7,
+				57.7,
+				17.1
+			],
+			"to": [
+				78.3,
+				57.7,
+				17.1
+			],
+			"radius": 0.2,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					75.7,
+					57.7,
+					17.1
+				],
+				"deg": [
+					-210,
+					30
+				],
+				"samples": 25
+			}
+		},
+		{
+			"id": "gauge-a",
+			"kind": "cylinder",
+			"at": [
+				61.7,
+				71.5,
+				16
+			],
+			"size": [
+				1.9,
+				1.9,
+				1.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				},
+				{
+					"type": "radialTicks",
+					"face": "top",
+					"r": 1.5,
+					"count": 7,
+					"every": 7,
+					"from": 180,
+					"span": 180,
+					"lengths": [
+						0.35,
+						0.35
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0,
+							0
+						],
+						[
+							-0.9,
+							0.7
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "gauge-b",
+			"kind": "cylinder",
+			"at": [
+				71.5,
+				61.7,
+				16
+			],
+			"size": [
+				1.9,
+				1.9,
+				1.5
+			],
+			"detail": [
+				{
+					"type": "inset",
+					"face": "top",
+					"by": 0.25
+				},
+				{
+					"type": "radialTicks",
+					"face": "top",
+					"r": 1.5,
+					"count": 7,
+					"every": 7,
+					"from": 180,
+					"span": 180,
+					"lengths": [
+						0.35,
+						0.35
+					]
+				},
+				{
+					"type": "line",
+					"face": "top",
+					"points": [
+						[
+							0,
+							0
+						],
+						[
+							-0.9,
+							0.7
+						]
+					]
+				}
+			]
+		},
+		{
+			"id": "knob-ring-a",
+			"kind": "ring",
+			"at": [
+				63.4,
+				78.3,
+				16.02
+			],
+			"size": [
+				2.4,
+				2.4,
+				0
+			]
+		},
+		{
+			"id": "knob-a",
+			"kind": "lathe",
+			"at": [
+				63.4,
+				78.3,
+				16
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.75
+				],
+				[
+					1.9,
+					1.75
+				],
+				[
+					1.9,
+					1.5
+				],
+				[
+					2.1,
+					1.5
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.9
+					]
+				}
+			]
+		},
+		{
+			"id": "knob-ring-b",
+			"kind": "ring",
+			"at": [
+				78.3,
+				63.4,
+				16.02
+			],
+			"size": [
+				2.4,
+				2.4,
+				0
+			]
+		},
+		{
+			"id": "knob-b",
+			"kind": "lathe",
+			"at": [
+				78.3,
+				63.4,
+				16
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.75
+				],
+				[
+					1.9,
+					1.75
+				],
+				[
+					1.9,
+					1.5
+				],
+				[
+					2.1,
+					1.5
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.9
+					]
+				}
+			]
+		},
+		{
+			"id": "rotary-ring",
+			"kind": "ring",
+			"at": [
+				75.6,
+				75.6,
+				16.02
+			],
+			"size": [
+				2.6,
+				2.6,
+				0
+			]
+		},
+		{
+			"id": "rotary",
+			"kind": "lathe",
+			"at": [
+				75.6,
+				75.6,
+				16
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					1.85
+				],
+				[
+					0.4,
+					1.85
+				],
+				[
+					0.4,
+					1.6
+				],
+				[
+					2.4,
+					1.6
+				],
+				[
+					2.4,
+					1.3
+				],
+				[
+					2.6,
+					1.3
+				]
+			],
+			"detail": [
+				{
+					"type": "knurl",
+					"count": 26,
+					"s0": 0.5,
+					"s1": 2.3
+				}
+			]
+		},
+		{
+			"id": "rotary-tick",
+			"kind": "rod",
+			"from": [
+				75.6,
+				75.6,
+				18.7
+			],
+			"to": [
+				75.6,
+				74.5,
+				18.7
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"rotate": {
+				"axis": "z",
+				"about": [
+					75.6,
+					75.6,
+					18.7
+				],
+				"deg": [
+					0,
+					120
+				],
+				"samples": 3
+			}
+		},
+		{
+			"id": "turret",
+			"kind": "lathe",
+			"at": [
+				67,
+				67,
+				16
+			],
+			"axis": "z",
+			"profile": [
+				[
+					0,
+					2.3
+				],
+				[
+					0.3,
+					2.3
+				],
+				[
+					0.3,
+					2.1
+				],
+				[
+					2.4,
+					2.1
+				]
+			],
+			"detail": [
+				{
+					"type": "bands",
+					"at": [
+						1.2
+					]
+				}
+			]
 		},
 		{
 			"id": "key",
+			"kind": "prism",
+			"at": [
+				67,
+				67.45,
+				17.799999999999997
+			],
+			"axis": "-y",
+			"depth": 0.9,
+			"round": 0.25,
+			"polygon": [
+				[
+					-0.55,
+					0
+				],
+				[
+					0.55,
+					0
+				],
+				[
+					0.55,
+					3.2
+				],
+				[
+					2.3,
+					3.2
+				],
+				[
+					2.3,
+					6.9
+				],
+				[
+					-2.3,
+					6.9
+				],
+				[
+					-2.3,
+					3.2
+				],
+				[
+					-0.55,
+					3.2
+				]
+			],
+			"rotate": {
+				"axis": "z",
+				"about": [
+					67,
+					67,
+					18.4
+				],
+				"deg": [
+					0,
+					90
+				],
+				"samples": 2
+			},
+			"detail": [
+				{
+					"type": "recess",
+					"face": "start",
+					"shape": "circle",
+					"at": [
+						2.3,
+						5.05
+					],
+					"size": 1.6,
+					"depth": 0.3
+				}
+			]
+		},
+		{
+			"id": "key-tab",
 			"kind": "box",
 			"at": [
-				66,
-				92,
-				12
+				64.9,
+				66.25,
+				24.7
 			],
 			"size": [
-				8,
-				5,
-				14
+				4.2,
+				1.5,
+				0.8
 			],
-			"r": 1,
-			"label": "Interlock key"
-		}
-	],
-	"focal": "key",
-	"labels": [
-		{
-			"text": "Tank",
-			"target": "tank",
-			"side": "right"
+			"r": 0.3,
+			"rotate": {
+				"axis": "z",
+				"about": [
+					67,
+					67,
+					18.4
+				],
+				"deg": [
+					0,
+					90
+				],
+				"samples": 2
+			}
 		},
 		{
-			"text": "Pump A",
-			"target": "pump-a",
-			"side": "left"
+			"id": "flow-a-0",
+			"kind": "rod",
+			"from": [
+				26.13,
+				83.8,
+				6.93
+			],
+			"to": [
+				26.13,
+				82.7,
+				6.93
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
 		},
 		{
-			"text": "Pump B",
-			"target": "pump-b",
-			"side": "right"
+			"id": "flow-a-1",
+			"kind": "rod",
+			"from": [
+				26.13,
+				81.5,
+				6.93
+			],
+			"to": [
+				26.13,
+				80.4,
+				6.93
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
 		},
 		{
-			"text": "Controller A",
-			"target": "ctrl-a",
-			"side": "left"
+			"id": "flow-a-2",
+			"kind": "rod",
+			"from": [
+				26.13,
+				79.2,
+				6.93
+			],
+			"to": [
+				26.13,
+				78.1,
+				6.93
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
 		},
 		{
-			"text": "Controller B",
-			"target": "ctrl-b",
-			"side": "right"
+			"id": "flow-a-3",
+			"kind": "rod",
+			"from": [
+				26.13,
+				76.9,
+				6.93
+			],
+			"to": [
+				26.13,
+				75.8,
+				6.93
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
 		},
 		{
-			"text": "Interlock key",
-			"target": "key",
-			"side": "left",
-			"anchor": [
-				68,
-				97,
-				20
-			]
+			"id": "flow-a-4",
+			"kind": "rod",
+			"from": [
+				26.04,
+				74.04,
+				9.73
+			],
+			"to": [
+				26.04,
+				74.04,
+				10.83
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
 		},
 		{
-			"target": "lockbox",
-			"text": "Lock box",
-			"side": "left",
-			"anchor": [
-				60,
-				106,
-				5
-			]
+			"id": "flow-a-5",
+			"kind": "rod",
+			"from": [
+				26.04,
+				74.04,
+				12.68
+			],
+			"to": [
+				26.04,
+				74.04,
+				13.78
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-6",
+			"kind": "rod",
+			"from": [
+				26.04,
+				74.04,
+				15.63
+			],
+			"to": [
+				26.04,
+				74.04,
+				16.73
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-7",
+			"kind": "rod",
+			"from": [
+				26.04,
+				74.04,
+				18.58
+			],
+			"to": [
+				26.04,
+				74.04,
+				19.68
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-8",
+			"kind": "rod",
+			"from": [
+				26.04,
+				74.04,
+				23.51
+			],
+			"to": [
+				26.04,
+				74.04,
+				24.61
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-9",
+			"kind": "rod",
+			"from": [
+				26.04,
+				74.04,
+				26.84
+			],
+			"to": [
+				26.04,
+				74.04,
+				27.94
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-10",
+			"kind": "rod",
+			"from": [
+				26.04,
+				74.04,
+				30.16
+			],
+			"to": [
+				26.04,
+				74.04,
+				31.26
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-11",
+			"kind": "rod",
+			"from": [
+				26.04,
+				74.04,
+				33.49
+			],
+			"to": [
+				26.04,
+				74.04,
+				34.59
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-12",
+			"kind": "rod",
+			"from": [
+				26.13,
+				69.66,
+				39.23
+			],
+			"to": [
+				26.13,
+				68.57,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-13",
+			"kind": "rod",
+			"from": [
+				26.13,
+				66.3,
+				39.23
+			],
+			"to": [
+				26.13,
+				65.19,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-14",
+			"kind": "rod",
+			"from": [
+				26.13,
+				62.93,
+				39.23
+			],
+			"to": [
+				26.13,
+				61.83,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-15",
+			"kind": "rod",
+			"from": [
+				26.13,
+				59.56,
+				39.23
+			],
+			"to": [
+				26.13,
+				58.46,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-a-16",
+			"kind": "rod",
+			"from": [
+				26.13,
+				56.19,
+				39.23
+			],
+			"to": [
+				26.13,
+				55.09,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-0",
+			"kind": "rod",
+			"from": [
+				83.8,
+				26.13,
+				6.93
+			],
+			"to": [
+				82.7,
+				26.13,
+				6.93
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-1",
+			"kind": "rod",
+			"from": [
+				81.5,
+				26.13,
+				6.93
+			],
+			"to": [
+				80.4,
+				26.13,
+				6.93
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-2",
+			"kind": "rod",
+			"from": [
+				79.2,
+				26.13,
+				6.93
+			],
+			"to": [
+				78.1,
+				26.13,
+				6.93
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-3",
+			"kind": "rod",
+			"from": [
+				76.9,
+				26.13,
+				6.93
+			],
+			"to": [
+				75.8,
+				26.13,
+				6.93
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-4",
+			"kind": "rod",
+			"from": [
+				74.04,
+				26.04,
+				9.73
+			],
+			"to": [
+				74.04,
+				26.04,
+				10.83
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-5",
+			"kind": "rod",
+			"from": [
+				74.04,
+				26.04,
+				12.68
+			],
+			"to": [
+				74.04,
+				26.04,
+				13.78
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-6",
+			"kind": "rod",
+			"from": [
+				74.04,
+				26.04,
+				15.63
+			],
+			"to": [
+				74.04,
+				26.04,
+				16.73
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-7",
+			"kind": "rod",
+			"from": [
+				74.04,
+				26.04,
+				18.58
+			],
+			"to": [
+				74.04,
+				26.04,
+				19.68
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-8",
+			"kind": "rod",
+			"from": [
+				74.04,
+				26.04,
+				23.51
+			],
+			"to": [
+				74.04,
+				26.04,
+				24.61
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-9",
+			"kind": "rod",
+			"from": [
+				74.04,
+				26.04,
+				26.84
+			],
+			"to": [
+				74.04,
+				26.04,
+				27.94
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-10",
+			"kind": "rod",
+			"from": [
+				74.04,
+				26.04,
+				30.16
+			],
+			"to": [
+				74.04,
+				26.04,
+				31.26
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-11",
+			"kind": "rod",
+			"from": [
+				74.04,
+				26.04,
+				33.49
+			],
+			"to": [
+				74.04,
+				26.04,
+				34.59
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-12",
+			"kind": "rod",
+			"from": [
+				69.66,
+				26.13,
+				39.23
+			],
+			"to": [
+				68.57,
+				26.13,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-13",
+			"kind": "rod",
+			"from": [
+				66.3,
+				26.13,
+				39.23
+			],
+			"to": [
+				65.19,
+				26.13,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-14",
+			"kind": "rod",
+			"from": [
+				62.93,
+				26.13,
+				39.23
+			],
+			"to": [
+				61.83,
+				26.13,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-15",
+			"kind": "rod",
+			"from": [
+				59.56,
+				26.13,
+				39.23
+			],
+			"to": [
+				58.46,
+				26.13,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-b-16",
+			"kind": "rod",
+			"from": [
+				56.19,
+				26.13,
+				39.23
+			],
+			"to": [
+				55.09,
+				26.13,
+				39.23
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-0",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				55.12
+			],
+			"to": [
+				52.13,
+				12.93,
+				54.02
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-1",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				51.45
+			],
+			"to": [
+				52.13,
+				12.93,
+				50.35
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-2",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				47.78
+			],
+			"to": [
+				52.13,
+				12.93,
+				46.68
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-3",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				44.12
+			],
+			"to": [
+				52.13,
+				12.93,
+				43.02
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-4",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				40.45
+			],
+			"to": [
+				52.13,
+				12.93,
+				39.35
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-5",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				36.78
+			],
+			"to": [
+				52.13,
+				12.93,
+				35.68
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-6",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				31.38
+			],
+			"to": [
+				52.13,
+				12.93,
+				30.28
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-7",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				27.83
+			],
+			"to": [
+				52.13,
+				12.93,
+				26.73
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-8",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				24.28
+			],
+			"to": [
+				52.13,
+				12.93,
+				23.18
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
+		},
+		{
+			"id": "flow-ov-9",
+			"kind": "rod",
+			"from": [
+				52.13,
+				12.93,
+				20.73
+			],
+			"to": [
+				52.13,
+				12.93,
+				19.63
+			],
+			"radius": 0.17,
+			"tone": "ink",
+			"caps": false
 		}
 	],
 	"assemble": {
 		"layers": [
 			[
-				"stand",
-				"pipe-a",
-				"pipe-b"
+				"plinth",
+				"kerb-b",
+				"kerb-l"
 			],
 			[
-				"tank"
+				"pad-0",
+				"leg-0",
+				"pad-1",
+				"leg-1",
+				"pad-2",
+				"leg-2",
+				"pad-3",
+				"leg-3",
+				"valve-ring",
+				"pad-a",
+				"pad-b",
+				"console-base"
 			],
 			[
-				"pump-a",
-				"pump-b",
-				"ctrl-a",
-				"ctrl-b"
+				"beam-b",
+				"beam-l",
+				"beam-r",
+				"beam-f",
+				"brace-0a0",
+				"brace-0b0",
+				"brace-1a0",
+				"brace-1b0",
+				"brace-2a0",
+				"brace-2b0",
+				"brace-3a0",
+				"brace-3b0"
 			],
 			[
-				"lockbox"
+				"tank",
+				"rim-low",
+				"valve-pipe",
+				"valve-cpl",
+				"valve",
+				"valve-stem",
+				"handwheel",
+				"wheel-hub",
+				"wheel-spoke-0",
+				"wheel-spoke-1",
+				"wheel-spoke-2",
+				"wheel-spoke-3",
+				"wheel-spoke-4",
+				"wheel-spoke-5"
 			],
 			[
-				"key"
+				"roof",
+				"rim-roof",
+				"collar",
+				"vent",
+				"gauge",
+				"gauge-cap",
+				"float"
+			],
+			[
+				"rail-a",
+				"rail-b",
+				"rung-0",
+				"rung-1",
+				"rung-2",
+				"rung-3",
+				"rung-4",
+				"rung-5",
+				"rung-6",
+				"rung-7",
+				"rung-8",
+				"rung-9",
+				"rung-10",
+				"rung-11",
+				"rung-12",
+				"rung-13",
+				"rung-14",
+				"rung-15",
+				"rung-16",
+				"rung-17",
+				"rung-18",
+				"rung-19",
+				"rung-20",
+				"rung-21",
+				"rung-22",
+				"rung-23",
+				"rung-24",
+				"rung-25"
+			],
+			[
+				"casing-a",
+				"motor-a",
+				"fan-a",
+				"jbox-a",
+				"casing-b",
+				"motor-b",
+				"fan-b",
+				"jbox-b"
+			],
+			[
+				"run-a",
+				"elbow-a",
+				"riser-a",
+				"cpl-a",
+				"head-a",
+				"stub-a",
+				"flange-a",
+				"run-b",
+				"elbow-b",
+				"riser-b",
+				"cpl-b",
+				"head-b",
+				"stub-b",
+				"flange-b",
+				"ov-stub",
+				"ov-flange",
+				"ov-head",
+				"ov-riser",
+				"ov-cpl",
+				"ov-end",
+				"flow-a-0",
+				"flow-a-1",
+				"flow-a-2",
+				"flow-a-3",
+				"flow-a-4",
+				"flow-a-5",
+				"flow-a-6",
+				"flow-a-7",
+				"flow-a-8",
+				"flow-a-9",
+				"flow-a-10",
+				"flow-a-11",
+				"flow-a-12",
+				"flow-a-13",
+				"flow-a-14",
+				"flow-a-15",
+				"flow-a-16",
+				"flow-b-0",
+				"flow-b-1",
+				"flow-b-2",
+				"flow-b-3",
+				"flow-b-4",
+				"flow-b-5",
+				"flow-b-6",
+				"flow-b-7",
+				"flow-b-8",
+				"flow-b-9",
+				"flow-b-10",
+				"flow-b-11",
+				"flow-b-12",
+				"flow-b-13",
+				"flow-b-14",
+				"flow-b-15",
+				"flow-b-16",
+				"flow-ov-0",
+				"flow-ov-1",
+				"flow-ov-2",
+				"flow-ov-3",
+				"flow-ov-4",
+				"flow-ov-5",
+				"flow-ov-6",
+				"flow-ov-7",
+				"flow-ov-8",
+				"flow-ov-9"
+			],
+			[
+				"console",
+				"bezel-a",
+				"lamp-a",
+				"bezel-b",
+				"lamp-b"
+			],
+			[
+				"dial-a",
+				"needle-a",
+				"dial-b",
+				"needle-b",
+				"gauge-a",
+				"gauge-b",
+				"knob-ring-a",
+				"knob-a",
+				"knob-ring-b",
+				"knob-b",
+				"rotary-ring",
+				"rotary",
+				"rotary-tick",
+				"turret"
+			],
+			[
+				"key",
+				"key-tab"
 			]
 		]
 	},
 	"interact": {
-		"behavior": "select",
-		"lift": 10,
-		"rest": "Key in the lock box"
+		"behavior": "scrub",
+		"input": "pointer-x",
+		"rest": 0,
+		"states": [
+			{
+				"name": "Full",
+				"readout": "1000 L · spilled 0 L",
+				"parts": {
+					"flow-a-0": {
+						"hidden": true
+					},
+					"flow-a-1": {
+						"hidden": true
+					},
+					"flow-a-2": {
+						"hidden": true
+					},
+					"flow-a-3": {
+						"hidden": true
+					},
+					"flow-a-4": {
+						"hidden": true
+					},
+					"flow-a-5": {
+						"hidden": true
+					},
+					"flow-a-6": {
+						"hidden": true
+					},
+					"flow-a-7": {
+						"hidden": true
+					},
+					"flow-a-8": {
+						"hidden": true
+					},
+					"flow-a-9": {
+						"hidden": true
+					},
+					"flow-a-10": {
+						"hidden": true
+					},
+					"flow-a-11": {
+						"hidden": true
+					},
+					"flow-a-12": {
+						"hidden": true
+					},
+					"flow-a-13": {
+						"hidden": true
+					},
+					"flow-a-14": {
+						"hidden": true
+					},
+					"flow-a-15": {
+						"hidden": true
+					},
+					"flow-a-16": {
+						"hidden": true
+					},
+					"flow-b-0": {
+						"hidden": true
+					},
+					"flow-b-1": {
+						"hidden": true
+					},
+					"flow-b-2": {
+						"hidden": true
+					},
+					"flow-b-3": {
+						"hidden": true
+					},
+					"flow-b-4": {
+						"hidden": true
+					},
+					"flow-b-5": {
+						"hidden": true
+					},
+					"flow-b-6": {
+						"hidden": true
+					},
+					"flow-b-7": {
+						"hidden": true
+					},
+					"flow-b-8": {
+						"hidden": true
+					},
+					"flow-b-9": {
+						"hidden": true
+					},
+					"flow-b-10": {
+						"hidden": true
+					},
+					"flow-b-11": {
+						"hidden": true
+					},
+					"flow-b-12": {
+						"hidden": true
+					},
+					"flow-b-13": {
+						"hidden": true
+					},
+					"flow-b-14": {
+						"hidden": true
+					},
+					"flow-b-15": {
+						"hidden": true
+					},
+					"flow-b-16": {
+						"hidden": true
+					},
+					"flow-ov-0": {
+						"hidden": true
+					},
+					"flow-ov-1": {
+						"hidden": true
+					},
+					"flow-ov-2": {
+						"hidden": true
+					},
+					"flow-ov-3": {
+						"hidden": true
+					},
+					"flow-ov-4": {
+						"hidden": true
+					},
+					"flow-ov-5": {
+						"hidden": true
+					},
+					"flow-ov-6": {
+						"hidden": true
+					},
+					"flow-ov-7": {
+						"hidden": true
+					},
+					"flow-ov-8": {
+						"hidden": true
+					},
+					"flow-ov-9": {
+						"hidden": true
+					},
+					"lamp-a": {
+						"variant": "base"
+					},
+					"lamp-b": {
+						"variant": "base"
+					},
+					"needle-a": {
+						"turn": 30
+					},
+					"needle-b": {
+						"turn": 30
+					},
+					"rotary-tick": {
+						"turn": 0
+					},
+					"key": {
+						"turn": 0
+					},
+					"key-tab": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "Drawn down",
+				"readout": "793 L · key in · A idle, B idle",
+				"parts": {
+					"flow-a-0": {
+						"hidden": true
+					},
+					"flow-a-1": {
+						"hidden": true
+					},
+					"flow-a-2": {
+						"hidden": true
+					},
+					"flow-a-3": {
+						"hidden": true
+					},
+					"flow-a-4": {
+						"hidden": true
+					},
+					"flow-a-5": {
+						"hidden": true
+					},
+					"flow-a-6": {
+						"hidden": true
+					},
+					"flow-a-7": {
+						"hidden": true
+					},
+					"flow-a-8": {
+						"hidden": true
+					},
+					"flow-a-9": {
+						"hidden": true
+					},
+					"flow-a-10": {
+						"hidden": true
+					},
+					"flow-a-11": {
+						"hidden": true
+					},
+					"flow-a-12": {
+						"hidden": true
+					},
+					"flow-a-13": {
+						"hidden": true
+					},
+					"flow-a-14": {
+						"hidden": true
+					},
+					"flow-a-15": {
+						"hidden": true
+					},
+					"flow-a-16": {
+						"hidden": true
+					},
+					"flow-b-0": {
+						"hidden": true
+					},
+					"flow-b-1": {
+						"hidden": true
+					},
+					"flow-b-2": {
+						"hidden": true
+					},
+					"flow-b-3": {
+						"hidden": true
+					},
+					"flow-b-4": {
+						"hidden": true
+					},
+					"flow-b-5": {
+						"hidden": true
+					},
+					"flow-b-6": {
+						"hidden": true
+					},
+					"flow-b-7": {
+						"hidden": true
+					},
+					"flow-b-8": {
+						"hidden": true
+					},
+					"flow-b-9": {
+						"hidden": true
+					},
+					"flow-b-10": {
+						"hidden": true
+					},
+					"flow-b-11": {
+						"hidden": true
+					},
+					"flow-b-12": {
+						"hidden": true
+					},
+					"flow-b-13": {
+						"hidden": true
+					},
+					"flow-b-14": {
+						"hidden": true
+					},
+					"flow-b-15": {
+						"hidden": true
+					},
+					"flow-b-16": {
+						"hidden": true
+					},
+					"flow-ov-0": {
+						"hidden": true
+					},
+					"flow-ov-1": {
+						"hidden": true
+					},
+					"flow-ov-2": {
+						"hidden": true
+					},
+					"flow-ov-3": {
+						"hidden": true
+					},
+					"flow-ov-4": {
+						"hidden": true
+					},
+					"flow-ov-5": {
+						"hidden": true
+					},
+					"flow-ov-6": {
+						"hidden": true
+					},
+					"flow-ov-7": {
+						"hidden": true
+					},
+					"flow-ov-8": {
+						"hidden": true
+					},
+					"flow-ov-9": {
+						"hidden": true
+					},
+					"float": {
+						"move": [
+							0,
+							0,
+							-5.7
+						]
+					},
+					"lamp-a": {
+						"variant": "base"
+					},
+					"lamp-b": {
+						"variant": "base"
+					},
+					"needle-a": {
+						"turn": -20
+					},
+					"needle-b": {
+						"turn": -20
+					},
+					"rotary-tick": {
+						"turn": 0
+					},
+					"key": {
+						"turn": 0
+					},
+					"key-tab": {
+						"turn": 0
+					}
+				}
+			},
+			{
+				"name": "No key",
+				"readout": "793 L · A pumps, B pumps",
+				"parts": {
+					"flow-a-0": {
+						"hidden": false
+					},
+					"flow-a-1": {
+						"hidden": false
+					},
+					"flow-a-2": {
+						"hidden": false
+					},
+					"flow-a-3": {
+						"hidden": false
+					},
+					"flow-a-4": {
+						"hidden": false
+					},
+					"flow-a-5": {
+						"hidden": false
+					},
+					"flow-a-6": {
+						"hidden": false
+					},
+					"flow-a-7": {
+						"hidden": false
+					},
+					"flow-a-8": {
+						"hidden": false
+					},
+					"flow-a-9": {
+						"hidden": false
+					},
+					"flow-a-10": {
+						"hidden": false
+					},
+					"flow-a-11": {
+						"hidden": false
+					},
+					"flow-a-12": {
+						"hidden": false
+					},
+					"flow-a-13": {
+						"hidden": false
+					},
+					"flow-a-14": {
+						"hidden": false
+					},
+					"flow-a-15": {
+						"hidden": false
+					},
+					"flow-a-16": {
+						"hidden": false
+					},
+					"flow-b-0": {
+						"hidden": false
+					},
+					"flow-b-1": {
+						"hidden": false
+					},
+					"flow-b-2": {
+						"hidden": false
+					},
+					"flow-b-3": {
+						"hidden": false
+					},
+					"flow-b-4": {
+						"hidden": false
+					},
+					"flow-b-5": {
+						"hidden": false
+					},
+					"flow-b-6": {
+						"hidden": false
+					},
+					"flow-b-7": {
+						"hidden": false
+					},
+					"flow-b-8": {
+						"hidden": false
+					},
+					"flow-b-9": {
+						"hidden": false
+					},
+					"flow-b-10": {
+						"hidden": false
+					},
+					"flow-b-11": {
+						"hidden": false
+					},
+					"flow-b-12": {
+						"hidden": false
+					},
+					"flow-b-13": {
+						"hidden": false
+					},
+					"flow-b-14": {
+						"hidden": false
+					},
+					"flow-b-15": {
+						"hidden": false
+					},
+					"flow-b-16": {
+						"hidden": false
+					},
+					"flow-ov-0": {
+						"hidden": true
+					},
+					"flow-ov-1": {
+						"hidden": true
+					},
+					"flow-ov-2": {
+						"hidden": true
+					},
+					"flow-ov-3": {
+						"hidden": true
+					},
+					"flow-ov-4": {
+						"hidden": true
+					},
+					"flow-ov-5": {
+						"hidden": true
+					},
+					"flow-ov-6": {
+						"hidden": true
+					},
+					"flow-ov-7": {
+						"hidden": true
+					},
+					"flow-ov-8": {
+						"hidden": true
+					},
+					"flow-ov-9": {
+						"hidden": true
+					},
+					"float": {
+						"move": [
+							0,
+							0,
+							-5.7
+						]
+					},
+					"lamp-a": {
+						"variant": "lit"
+					},
+					"lamp-b": {
+						"variant": "lit"
+					},
+					"needle-a": {
+						"turn": -20
+					},
+					"needle-b": {
+						"turn": -20
+					},
+					"rotary-tick": {
+						"turn": 60
+					},
+					"key": {
+						"turn": 0,
+						"hidden": true
+					},
+					"key-tab": {
+						"turn": 0,
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "Both filled",
+				"readout": "1000 L · A pumps, B pumps · spilled 207 L",
+				"parts": {
+					"flow-a-0": {
+						"hidden": false
+					},
+					"flow-a-1": {
+						"hidden": false
+					},
+					"flow-a-2": {
+						"hidden": false
+					},
+					"flow-a-3": {
+						"hidden": false
+					},
+					"flow-a-4": {
+						"hidden": false
+					},
+					"flow-a-5": {
+						"hidden": false
+					},
+					"flow-a-6": {
+						"hidden": false
+					},
+					"flow-a-7": {
+						"hidden": false
+					},
+					"flow-a-8": {
+						"hidden": false
+					},
+					"flow-a-9": {
+						"hidden": false
+					},
+					"flow-a-10": {
+						"hidden": false
+					},
+					"flow-a-11": {
+						"hidden": false
+					},
+					"flow-a-12": {
+						"hidden": false
+					},
+					"flow-a-13": {
+						"hidden": false
+					},
+					"flow-a-14": {
+						"hidden": false
+					},
+					"flow-a-15": {
+						"hidden": false
+					},
+					"flow-a-16": {
+						"hidden": false
+					},
+					"flow-b-0": {
+						"hidden": false
+					},
+					"flow-b-1": {
+						"hidden": false
+					},
+					"flow-b-2": {
+						"hidden": false
+					},
+					"flow-b-3": {
+						"hidden": false
+					},
+					"flow-b-4": {
+						"hidden": false
+					},
+					"flow-b-5": {
+						"hidden": false
+					},
+					"flow-b-6": {
+						"hidden": false
+					},
+					"flow-b-7": {
+						"hidden": false
+					},
+					"flow-b-8": {
+						"hidden": false
+					},
+					"flow-b-9": {
+						"hidden": false
+					},
+					"flow-b-10": {
+						"hidden": false
+					},
+					"flow-b-11": {
+						"hidden": false
+					},
+					"flow-b-12": {
+						"hidden": false
+					},
+					"flow-b-13": {
+						"hidden": false
+					},
+					"flow-b-14": {
+						"hidden": false
+					},
+					"flow-b-15": {
+						"hidden": false
+					},
+					"flow-b-16": {
+						"hidden": false
+					},
+					"flow-ov-0": {
+						"hidden": false
+					},
+					"flow-ov-1": {
+						"hidden": false
+					},
+					"flow-ov-2": {
+						"hidden": false
+					},
+					"flow-ov-3": {
+						"hidden": false
+					},
+					"flow-ov-4": {
+						"hidden": false
+					},
+					"flow-ov-5": {
+						"hidden": false
+					},
+					"flow-ov-6": {
+						"hidden": false
+					},
+					"flow-ov-7": {
+						"hidden": false
+					},
+					"flow-ov-8": {
+						"hidden": false
+					},
+					"flow-ov-9": {
+						"hidden": false
+					},
+					"lamp-a": {
+						"variant": "lit"
+					},
+					"lamp-b": {
+						"variant": "lit"
+					},
+					"needle-a": {
+						"turn": 30
+					},
+					"needle-b": {
+						"turn": 30
+					},
+					"rotary-tick": {
+						"turn": 120
+					},
+					"key": {
+						"turn": 0,
+						"hidden": true
+					},
+					"key-tab": {
+						"turn": 0,
+						"hidden": true
+					}
+				}
+			},
+			{
+				"name": "A holds the key",
+				"readout": "1000 L · A holds the key, B waits · spilled 0 L",
+				"parts": {
+					"flow-a-0": {
+						"hidden": false
+					},
+					"flow-a-1": {
+						"hidden": false
+					},
+					"flow-a-2": {
+						"hidden": false
+					},
+					"flow-a-3": {
+						"hidden": false
+					},
+					"flow-a-4": {
+						"hidden": false
+					},
+					"flow-a-5": {
+						"hidden": false
+					},
+					"flow-a-6": {
+						"hidden": false
+					},
+					"flow-a-7": {
+						"hidden": false
+					},
+					"flow-a-8": {
+						"hidden": false
+					},
+					"flow-a-9": {
+						"hidden": false
+					},
+					"flow-a-10": {
+						"hidden": false
+					},
+					"flow-a-11": {
+						"hidden": false
+					},
+					"flow-a-12": {
+						"hidden": false
+					},
+					"flow-a-13": {
+						"hidden": false
+					},
+					"flow-a-14": {
+						"hidden": false
+					},
+					"flow-a-15": {
+						"hidden": false
+					},
+					"flow-a-16": {
+						"hidden": false
+					},
+					"flow-b-0": {
+						"hidden": true
+					},
+					"flow-b-1": {
+						"hidden": true
+					},
+					"flow-b-2": {
+						"hidden": true
+					},
+					"flow-b-3": {
+						"hidden": true
+					},
+					"flow-b-4": {
+						"hidden": true
+					},
+					"flow-b-5": {
+						"hidden": true
+					},
+					"flow-b-6": {
+						"hidden": true
+					},
+					"flow-b-7": {
+						"hidden": true
+					},
+					"flow-b-8": {
+						"hidden": true
+					},
+					"flow-b-9": {
+						"hidden": true
+					},
+					"flow-b-10": {
+						"hidden": true
+					},
+					"flow-b-11": {
+						"hidden": true
+					},
+					"flow-b-12": {
+						"hidden": true
+					},
+					"flow-b-13": {
+						"hidden": true
+					},
+					"flow-b-14": {
+						"hidden": true
+					},
+					"flow-b-15": {
+						"hidden": true
+					},
+					"flow-b-16": {
+						"hidden": true
+					},
+					"flow-ov-0": {
+						"hidden": true
+					},
+					"flow-ov-1": {
+						"hidden": true
+					},
+					"flow-ov-2": {
+						"hidden": true
+					},
+					"flow-ov-3": {
+						"hidden": true
+					},
+					"flow-ov-4": {
+						"hidden": true
+					},
+					"flow-ov-5": {
+						"hidden": true
+					},
+					"flow-ov-6": {
+						"hidden": true
+					},
+					"flow-ov-7": {
+						"hidden": true
+					},
+					"flow-ov-8": {
+						"hidden": true
+					},
+					"flow-ov-9": {
+						"hidden": true
+					},
+					"lamp-a": {
+						"variant": "lit"
+					},
+					"lamp-b": {
+						"variant": "base"
+					},
+					"needle-a": {
+						"turn": 30
+					},
+					"needle-b": {
+						"turn": -210
+					},
+					"rotary-tick": {
+						"turn": 60
+					},
+					"key": {
+						"turn": 90
+					},
+					"key-tab": {
+						"turn": 90
+					}
+				}
+			}
+		]
 	},
 	"meta": {
 		"margin": "[ MUTEX ]",

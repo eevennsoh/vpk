@@ -8,12 +8,10 @@
 // controls or lightbox opt-out.
 
 import { pathOf } from "../anatomy/vendor/kit/iso-kit.mjs";
-import { parsePolyPath } from "./core.mjs";
-import { enterAnimation, fadeAnimation, fadeStart, handoffAnimation } from "./motion.mjs";
+import { enterAnimation, fadeAnimation, fadeStart, layerClassAnimation } from "./motion.mjs";
 import { ACCENT_TOKENS } from "./accent.mjs";
-import { rolesFor } from "./palette.mjs";
+import { GLOW_STOPS, rayPaint, rolesFor } from "./palette.mjs";
 
-export const DENSE_PARTS = 40;
 // Numbered marks are 20 px ink discs (mono 500, 11 px) inside a paper ring and an ink ring; the narrow-stage tag
 // is the same disc a little larger, because a phone draws the scene at about 0.6 of a desktop's scale.
 export const MARK_RADIUS = 10;
@@ -22,6 +20,8 @@ export const MARK_FONT = 11;
 export const MANUAL_TAG_RADIUS = 14;
 // How far past its viewBox width an svg may grow to fill a wide frame.
 export const MANUAL_MAX_ZOOM = 1.5;
+// The dash of a glass part's hidden edges (its creases): the hidden-line look.
+export const GLASS_DASH = "2 2";
 // Narrow-stage callout numeral (viewBox units): at the cropped scale (about 0.55-0.75 on a 320-390 px phone) the digit
 // renders at 9-12 px.
 export const TAG_FONT = 16;
@@ -45,7 +45,7 @@ const num = value => {
 const vec = ([x, y]) => `${num(x)} ${num(y)}`;
 const ids = scene => {
 	const base = `vpk-iso-${scene.id}`;
-	return { root: base, arrow: `${base}-arrow`, accent: `${base}-arrow-accent`, flow: `${base}-flow`, dots: `${base}-dots`, clip: part => `${base}-clip-${part}`, recv: part => `${base}-recv-${part}` };
+	return { root: base, arrow: `${base}-arrow`, accent: `${base}-arrow-accent`, flow: `${base}-flow`, dots: `${base}-dots`, clip: part => `${base}-clip-${part}`, recv: part => `${base}-recv-${part}`, win: part => `${base}-win-${part}`, glow: k => `${base}-glow-${k}` };
 };
 
 export function renderDefs(scene, indent = "") {
@@ -67,6 +67,15 @@ export function renderDefs(scene, indent = "") {
 	}
 	// A part's top face as the window for the shadows it receives (renderReceived).
 	for (const piece of scene.pieces) if (piece.received) out.push(`<clipPath id="${id.recv(piece.partId)}">`, `\t<path d="${pathOf(piece.received.clip, true)}"/>`, "</clipPath>");
+	// A cutaway's front shell shows everywhere but its window: the frame less the window polygon, even-odd.
+	const [w, h] = scene.viewBox;
+	for (const piece of scene.pieces) if (piece.window) out.push(`<clipPath id="${id.win(piece.partId)}">`, `\t<path d="M0 0L${w} 0L${w} ${h}L0 ${h}Z${pathOf(piece.window, true)}" clip-rule="evenodd"/>`, "</clipPath>");
+	// Glow (plan § 2 W): the only gradients the kit emits, ids vpk-iso-<id>-glow-<k> (check-html admits an iso root's gradients by
+	// that prefix). A glowing part's gradient is centred on the part in user space (it moves with its group); the halo's is one
+	// bounding-box gradient shared by every glow part. Stops: the accent pair and grey tokens only (palette GLOW_STOPS, audit A1).
+	const stops = list => list.map(([offset, color]) => `\t<stop offset="${offset}" stop-color="${color}"/>`);
+	for (const piece of scene.pieces) if (piece.glow) out.push(`<radialGradient id="${id.glow(piece.glow.k)}" gradientUnits="userSpaceOnUse" cx="${num(piece.glow.cx)}" cy="${num(piece.glow.cy)}" r="${num(piece.glow.r)}">`, ...stops(GLOW_STOPS.body), "</radialGradient>");
+	if (scene.pieces.some(piece => piece.halo)) out.push(`<radialGradient id="${id.glow("halo")}">`, ...stops(GLOW_STOPS.halo), "</radialGradient>");
 	if (!out.length) return "";
 	return [`${indent}<defs>`, ...out.map(line => `${indent}\t${line}`), `${indent}</defs>`].join("\n");
 }
@@ -78,38 +87,70 @@ function strokeAttrs({ stroke, width, dash }) {
 export function renderPart(piece, scene, indent = "") {
 	const id = ids(scene);
 	const part = scene.brief.parts.find(entry => entry.id === piece.partId);
-	const roles = rolesFor({ focal: piece.focal, active: Boolean(piece.state) });
+	const emphasis = scene.emphasis ?? "accent";
+	const roles = rolesFor({ focal: piece.focal, active: Boolean(piece.state), tone: piece.tone, emphasis, glow: piece.glow ? `url(#${id.glow(piece.glow.k)})` : null });
 	const attrs = [`data-vpk-iso-part="${escapeAttr(piece.id)}"`, `data-vpk-iso-depth="${num(piece.depth)}"`];
 	if (piece.of) attrs.push(`data-vpk-iso-of="${escapeAttr(piece.of)}"`);
 	if (piece.state) attrs.push(`data-vpk-iso-state="${piece.state}"`);
 	if (piece.explode) attrs.push(`data-vpk-iso-explode="${vec(piece.explode)}"`);
+	if (piece.depth0 !== undefined) attrs.push(`data-vpk-iso-depth0="${num(piece.depth0)}"`);
 	if (piece.lift) attrs.push(`data-vpk-iso-lift="${vec(piece.lift)}"`);
+	if (piece.stacks) attrs.push(`data-vpk-iso-plan="${piece.plan.map(box => box.map(num).join(" ")).join(";")}"`);
 	// A fixed part is scenery (no lift, outline, keyboard stop or selection); a grown part keeps its base and raises its top.
 	if (piece.fixed) attrs.push("data-vpk-iso-fixed");
 	if (piece.grow) attrs.push("data-vpk-iso-grow");
 	if (piece.label) attrs.push(`data-vpk-iso-label="${escapeAttr(piece.label)}"`);
 	if (piece.focal) attrs.push("data-vpk-iso-focal");
 	if (piece.clipTo) attrs.push(`clip-path="url(#${id.clip(piece.partId)})"`);
+	// A step or scrub figure's variant or turn sample, and any piece the rest state does not show (state-runtime.mjs swaps them).
+	if (piece.variant) attrs.push(`data-vpk-iso-variant="${escapeAttr(piece.variant)}"`);
+	if (piece.restHidden) attrs.push('display="none"');
+	// A glass part (tone "glass") paints no face; its hidden edges are dashed creases. A concave prism hits by its convex solids.
+	const glass = piece.tone === "glass";
+	if (glass) attrs.push('data-vpk-iso-tone="glass"');
+	if (piece.hitSolids) attrs.push('data-vpk-iso-hit="solids"');
+	// A cutaway's front shell: its window polygon, which the runtime's hit test leaves to the parts inside.
+	if (piece.window) attrs.push(`data-vpk-iso-window="${piece.window.map(vec).join(" ")}"`);
 	const lines = [`${indent}<g ${attrs.join(" ")}>`];
-	const add = line => lines.push(`${indent}\t${line}`);
 	const dash = part.kind === "gap" ? scene.preset.guide.dash : null;
-	piece.solids.forEach((solid, index) => {
-		if (solid.fill) add(`<path data-vpk-iso-role="fill" data-vpk-iso-tone="${roles.fill.tone}" d="${solid.fill}" fill="${roles.fill.fill}"/>`);
-		if (solid.shade && roles.shade) add(`<path data-vpk-iso-role="shade" data-vpk-iso-tone="${roles.shade.tone}" d="${solid.shade}" fill="${roles.shade.fill}"/>`);
-		if (solid.top) add(`<path data-vpk-iso-role="top" data-vpk-iso-tone="${roles.top.tone}" d="${solid.top}" fill="${roles.top.fill}"/>`);
+	const solidLines = (solid, index, pad) => {
+		const add = line => lines.push(`${pad}${line}`);
+		// A solid with a bore (a washer, a lathe with a hole) carries the bore as a second subpath of its fill: even-odd leaves it open.
+		const rule = solid.evenodd ? ' fill-rule="evenodd"' : "";
+		// A glow part (kind "glow") is one halo path in the shared halo gradient; it has no faces or line work.
+		if (solid.glow) add(`<path data-vpk-iso-role="glow" d="${solid.glow}" fill="url(#${id.glow("halo")})"/>`);
+		if (solid.fill && !glass) add(`<path data-vpk-iso-role="fill" data-vpk-iso-tone="${roles.fill.tone}" d="${solid.fill}" fill="${roles.fill.fill}"${rule}/>`);
+		if (solid.shade && roles.shade && !glass) add(`<path data-vpk-iso-role="shade" data-vpk-iso-tone="${roles.shade.tone}" d="${solid.shade}" fill="${roles.shade.fill}"/>`);
+		if (solid.top && !glass) add(`<path data-vpk-iso-role="top" data-vpk-iso-tone="${roles.top.tone}" d="${solid.top}" fill="${roles.top.fill}"/>`);
+		// A cutaway's cavity (the inner wall seen through the window) is a recess-tone fill; its section faces take the cut tone.
+		if (solid.recess) add(`<path data-vpk-iso-role="recess" data-vpk-iso-tone="${roles.recess.tone}" d="${solid.recess}" fill="${roles.recess.fill}"/>`);
+		if (solid.cut) add(`<path data-vpk-iso-role="cut" data-vpk-iso-tone="${roles.cut.tone}" d="${solid.cut}" fill="${roles.cut.fill}"/>`);
+		// Section hatch is drawn in the edge stroke: the mark grey vanished on the mid-grey cut tone.
+		if (solid.hatch) add(`<path data-vpk-iso-role="hatch" d="${solid.hatch}"${strokeAttrs({ ...roles.edge, width: scene.preset.stroke })}/>`);
 		// Shadows from the parts above land on the first solid's top (a tray's floor), under its line work.
-		if (index === 0 && piece.received) lines.push(...renderReceived(piece, scene, `${indent}\t`));
-		if (solid.crease) add(`<path data-vpk-iso-role="crease" d="${solid.crease}"${strokeAttrs(roles.crease)}/>`);
+		if (index === (piece.received?.solid ?? 0) && piece.received) lines.push(...renderReceived(piece, scene, pad));
+		if (solid.crease) add(`<path data-vpk-iso-role="crease" d="${solid.crease}"${strokeAttrs(glass ? { ...roles.crease, dash: GLASS_DASH } : roles.crease)}/>`);
 		if (solid.edge) {
-			// A focal part with no faces (the flash ring, a gap outline) has nowhere else to show the accent, so its 2 px stroke takes it.
-			const faceless = piece.focal && !piece.solids.some(item => item.fill || item.top || item.shade);
-			const focalStroke = faceless ? `var(${ACCENT_TOKENS[0]})` : scene.preset.focalEdge;
-			const edge = dash ? { stroke: piece.focal ? focalStroke : scene.preset.guide.stroke, width: roles.edge.width, dash } : faceless ? { ...roles.edge, stroke: focalStroke } : roles.edge;
+			// A focal part with no faces (the flash ring, a wire, a gap outline) has nowhere else to show the accent, so its 2 px stroke
+			// takes it at rest (the ink under emphasis "ink"); a focal with faces shows the accent on them and keeps the neutral edge.
+			const faceless = piece.focal && (glass || !piece.solids.some(item => item.fill || item.top || item.shade));
+			const focalStroke = emphasis !== "accent" ? scene.preset.ink : `var(${ACCENT_TOKENS[0]})`;
+			const focalWidth = scene.preset.focalStroke;
+			const edge = dash ? { stroke: piece.focal ? focalStroke : scene.preset.guide.stroke, width: piece.focal ? focalWidth : roles.edge.width, dash } : faceless ? { ...roles.edge, stroke: focalStroke, width: focalWidth } : roles.edge;
 			add(`<path data-vpk-iso-role="edge" d="${solid.edge}"${strokeAttrs(edge)}/>`);
 		}
-	});
-	// Detail budget (rule 3): one identifying mark per part, the longest; the focal keeps all of its own.
-	for (const mark of marksKept(piece)) add(`<path data-vpk-iso-role="mark" d="${mark}"${strokeAttrs(roles.mark)}/>`);
+	};
+	if (piece.window) {
+		// The shell and its detail inside the window clip; the section faces after it, unclipped (they stand in the window's edges).
+		lines.push(`${indent}\t<g data-vpk-iso-clipped clip-path="url(#${id.win(piece.partId)})">`);
+		piece.solids.forEach((solid, index) => solid.clipped && solidLines(solid, index, `${indent}\t\t`));
+		lines.push(...renderDetail(piece.detail, roles, scene, `${indent}\t\t`), `${indent}\t</g>`);
+		piece.solids.forEach((solid, index) => !solid.clipped && solidLines(solid, index, `${indent}\t`));
+	} else {
+		piece.solids.forEach((solid, index) => solidLines(solid, index, `${indent}\t`));
+		lines.push(...renderDetail(piece.detail, roles, scene, `${indent}\t`));
+	}
+	const add = line => lines.push(`${indent}\t${line}`);
 	const index = scene.pieces.indexOf(piece);
 	for (const tag of scene.tags.filter(entry => entry.piece === index)) add(renderTag(tag, scene));
 	for (const mark of scene.marks.filter(entry => entry.piece === index)) add(renderMark(mark, scene));
@@ -117,16 +158,23 @@ export function renderPart(piece, scene, indent = "") {
 	return lines.join("\n");
 }
 
-// Detail budget (rule 3): a part other than the focal draws at most one interior mark, the longest, so a label can name it
-// without busy detail on every part.
-const markLength = d => {
-	const points = parsePolyPath(d) ?? [];
-	return points.length > 1 ? Math.hypot(points.at(-1)[0] - points[0][0], points.at(-1)[1] - points[0][1]) : 0;
-};
-export function marksKept(piece) {
-	const marks = piece.marks ?? [];
-	if (piece.focal || marks.length < 2) return marks;
-	return [marks.reduce((best, mark) => (markLength(mark) > markLength(best) ? mark : best))];
+// A part's detail (detail.mjs), one element per role so A19 counts it and a figure stays light: recess fills, hatch, every mark
+// merged into one path (dashed lines in a second), the dots as one path of tiny closed arcs, then face text. Face text is the
+// one transform the kit emits: a matrix that projects the text onto its face (A11's exception), class iso-face-text so the
+// print reset and check-figures recognise it.
+function renderDetail(detail, roles, scene, pad) {
+	if (!detail) return [];
+	const out = [];
+	for (const recess of detail.recess) out.push(`${pad}<path data-vpk-iso-role="recess" data-vpk-iso-tone="${roles.recess.tone}" d="${recess.fill}" fill="${roles.recess.fill}"/>`);
+	if (detail.hatch.length) out.push(`${pad}<path data-vpk-iso-role="hatch" d="${detail.hatch.join("")}"${strokeAttrs(roles.mark)}/>`);
+	if (detail.mark.length) out.push(`${pad}<path data-vpk-iso-role="mark" d="${detail.mark.join("")}"${strokeAttrs(roles.mark)}/>`);
+	if (detail.dash.length) out.push(`${pad}<path data-vpk-iso-role="mark" d="${detail.dash.join("")}"${strokeAttrs({ ...roles.mark, dash: "2 2" })}/>`);
+	if (detail.dot.length) out.push(`${pad}<path data-vpk-iso-role="dot" d="${detail.dot.join("")}" fill="${roles.dot.fill}"/>`);
+	for (const text of detail.text) {
+		const anchor = text.anchor === "start" ? "" : ` text-anchor="${text.anchor}"`;
+		out.push(`${pad}<text data-vpk-iso-role="face-text" class="iso-face-text" transform="${text.matrix}" font-family="${scene.preset.label.family}" font-size="${text.size}"${anchor} fill="${roles.text.fill}">${escapeText(text.text)}</text>`);
+	}
+	return out;
 }
 
 // A numbered callout dot on a label's anchor: hidden (display="none") until the narrow-stage CSS swaps it in for
@@ -240,8 +288,10 @@ function renderScaleBar(bar, scene, indent) {
 	].join("\n");
 }
 
-// A label names the focal part when its target is the focal part's id or the unit (`of`) the focal part belongs to.
+// A label names the focal part when its target is the focal part's id or the unit (`of`) the focal part belongs to. Only an
+// accent focal takes the accent dot and arrow: under emphasis "ink" or "none" nothing is accented.
 function isFocalTarget(scene, target) {
+	if ((scene.emphasis ?? "accent") !== "accent") return false;
 	return scene.pieces.some(piece => piece.focal && (piece.partId === target || piece.id === target || piece.of === target));
 }
 
@@ -259,6 +309,24 @@ function renderOwnedArrow(note, scene, indent) {
 		`${indent}<g data-vpk-iso-annotation="arrow" data-vpk-iso-arrow-for="${escapeAttr(note.of)}"${accent ? " data-vpk-iso-accent" : ""}${scene.preset.activeStroke > scene.preset.stroke ? ` data-vpk-iso-weight="${scene.preset.activeStroke}"` : ""}>`,
 		`${indent}\t<path d="${pathOf([note.a, at(-6, 0)])}" stroke="${paint}" stroke-width="${scene.preset.stroke}"/>`,
 		`${indent}\t<path data-vpk-iso-role="arrowhead" d="${pathOf([at(1, 0), at(-7, -4), at(-7, 4)], true)}" fill="${paint}"/>`,
+		`${indent}</g>`,
+	].join("\n");
+}
+
+// A `line` annotation (plan § 2 X): a polyline through its projected points, in the guide tone (dashed by default, or dotted, or
+// solid), or a spectrum ray in one of the three ray tokens (role "ray", solid, on a root marked data-vpk-iso-spectrum). `ends: "dot"`
+// puts a small filled dot on each end, in the line's paint.
+export const LINE_DASH = Object.freeze({ dotted: "1 2", dashed: "3 3", solid: null });
+function renderLine(note, scene, indent) {
+	const ray = Boolean(note.spectrum);
+	const paint = ray ? rayPaint(note.spectrum) : scene.preset.guide.stroke;
+	const dash = ray ? null : LINE_DASH[note.dash ?? "dashed"];
+	const role = ray ? "ray" : "guide-line";
+	const dots = note.ends === "dot" ? [note.points[0], note.points.at(-1)].map(([x, y]) => `M${num(x + 1.5)} ${num(y)}a1.5 1.5 0 1 0 -3 0a1.5 1.5 0 1 0 3 0`).join("") : "";
+	return [
+		`${indent}<g data-vpk-iso-annotation="line"${ray ? ` data-vpk-iso-spectrum-key="${note.spectrum}"` : ""}>`,
+		`${indent}\t<path data-vpk-iso-role="${role}" d="${pathOf(note.points)}"${strokeAttrs({ stroke: paint, width: scene.preset.stroke, dash })}/>`,
+		...(dots ? [`${indent}\t<path data-vpk-iso-role="${role}-end" d="${dots}" fill="${paint}"/>`] : []),
 		`${indent}</g>`,
 	].join("\n");
 }
@@ -284,6 +352,7 @@ export function renderLabels(scene, indent = "") {
 	}
 	for (const note of scene.annotations) {
 		if (note.kind === "dimension") lines.push(renderDimension(note, scene, `${indent}\t`));
+		else if (note.kind === "line") lines.push(renderLine(note, scene, `${indent}\t`));
 		else if (note.of) lines.push(renderOwnedArrow(note, scene, `${indent}\t`));
 		else lines.push(`${indent}\t<g data-vpk-iso-annotation="arrow"${scene.preset.activeStroke > scene.preset.stroke ? ` data-vpk-iso-weight="${scene.preset.activeStroke}"` : ""}>`, `${indent}\t\t<path d="${pathOf([note.a, note.b])}" stroke="${scene.preset.edge}" stroke-width="${scene.preset.stroke}" marker-end="url(#${id.flow})"/>`, `${indent}\t</g>`);
 	}
@@ -306,12 +375,18 @@ export function renderLabels(scene, indent = "") {
 // part group (it moves and is covered with it); data-vpk-iso-cast is the caster's shadow move per unit of motion and
 // data-vpk-iso-cast-on the receiver's, so the runtime moves a shadow by their difference (the plane is the receiver's). An
 // assembled figure hides each caster's shadow until its layer drops and slides it in from the start pose, like the ground ones.
+// A shadow group waits hidden until its caster's layer drops (no accent step).
+function shadowClass(layer, scene, pad) {
+	const anim = layerClassAnimation(layer, scene.timing, { shadow: true });
+	return anim ? [`${pad}${anim}`] : [];
+}
+
 function renderReceived(piece, scene, indent) {
 	const path = entry => `<path data-vpk-iso-role="shadow" data-vpk-iso-shadow-for="${escapeAttr(entry.partId)}"${entry.cast ? ` data-vpk-iso-cast="${vec(entry.cast)}"` : ""}${entry.castOn && (entry.castOn[0] || entry.castOn[1]) ? ` data-vpk-iso-cast-on="${vec(entry.castOn)}"` : ""} d="${pathOf(entry.hit, true)}"/>`;
 	const out = [`${indent}<g data-vpk-iso-received clip-path="url(#${ids(scene).recv(piece.partId)})" fill="${scene.preset.received}">`];
 	for (const entry of piece.received.shadows) {
 		if (!scene.timing || entry.layer === null || entry.layer === undefined) out.push(`${indent}\t${path(entry)}`);
-		else out.push(`${indent}\t<g data-vpk-iso-shadow-enter="${entry.layer}">`, `${indent}\t\t${path(entry)}`, `${indent}\t\t${enterAnimation(entry.layer, scene.timing, scene.shadowOffset)}`, `${indent}\t</g>`);
+		else out.push(`${indent}\t<g data-vpk-iso-shadow-enter="${entry.layer}">`, `${indent}\t\t${path(entry)}`, `${indent}\t\t${enterAnimation(entry.layer, scene.timing, scene.shadowOffset)}`, ...shadowClass(entry.layer, scene, `${indent}\t\t`), `${indent}\t</g>`);
 	}
 	out.push(`${indent}</g>`);
 	return out;
@@ -321,13 +396,14 @@ function renderShadows(scene, indent) {
 	if (!scene.shadows.length) return [];
 	const casts = new Set(scene.shadows.map(entry => (entry.cast ? vec(entry.cast) : "")));
 	const shared = casts.size === 1 && !casts.has("") ? ` data-vpk-iso-cast="${[...casts][0]}"` : "";
-	const shadow = (entry, pad) => `${pad}<path data-vpk-iso-role="shadow" data-vpk-iso-shadow-for="${escapeAttr(entry.partId)}"${entry.cast && !shared ? ` data-vpk-iso-cast="${vec(entry.cast)}"` : ""} d="${pathOf(entry.hit, true)}"/>`;
+	// display="none" comes last, where the runtime re-adds it, so the rest SVG's outerHTML is the static art after any toggle (R9).
+	const shadow = (entry, pad) => `${pad}<path data-vpk-iso-role="shadow" data-vpk-iso-shadow-for="${escapeAttr(entry.partId)}"${entry.variant ? ` data-vpk-iso-variant="${escapeAttr(entry.variant)}"` : ""}${entry.cast && !shared ? ` data-vpk-iso-cast="${vec(entry.cast)}"` : ""} d="${pathOf(entry.hit, true)}"${entry.restHidden ? ' display="none"' : ""}/>`;
 	const out = [`${indent}<g data-vpk-iso-shadows fill="${scene.preset.shadow}"${shared}>`];
 	if (!scene.timing) out.push(...scene.shadows.map(entry => shadow(entry, `${indent}\t`)));
 	else for (let layer = 0; layer < scene.timing.layers; layer++) {
 		const list = scene.shadows.filter(entry => entry.layer === layer);
 		if (!list.length) continue;
-		out.push(`${indent}\t<g data-vpk-iso-shadow-enter="${layer}">`, ...list.map(entry => shadow(entry, `${indent}\t\t`)), `${indent}\t\t${enterAnimation(layer, scene.timing, scene.shadowOffset)}`, `${indent}\t</g>`);
+		out.push(`${indent}\t<g data-vpk-iso-shadow-enter="${layer}">`, ...list.map(entry => shadow(entry, `${indent}\t\t`)), `${indent}\t\t${enterAnimation(layer, scene.timing, scene.shadowOffset)}`, ...shadowClass(layer, scene, `${indent}\t\t`), `${indent}\t</g>`);
 	}
 	out.push(`${indent}</g>`);
 	return out;
@@ -350,10 +426,10 @@ function renderScene(scene, indent) {
 			for (const guide of scene.guides.filter(entry => entry.from === piece.partId && !piece.of)) out.push(renderGuide(guide, scene, inner, fade));
 			out.push(renderPart(piece, scene, inner));
 		}
-		if (wrapped) out.push(`${indent}\t\t${enterAnimation(group.layer, scene.timing, scene.enterOffset)}`, `${indent}\t</g>`);
+		// The hand-off (motion.mjs layerClassAnimation): hidden until its layer drops, accented for ENTRY.ACCENT_HOLD_MS from its start, then neutral.
+		const handoff = wrapped ? layerClassAnimation(group.layer, scene.timing, { accent: (scene.emphasis ?? "accent") === "accent" }) : "";
+		if (wrapped) out.push(`${indent}\t\t${enterAnimation(group.layer, scene.timing, scene.enterOffset)}`, ...(handoff ? [`${indent}\t\t${handoff}`] : []), `${indent}\t</g>`);
 	}
-	// The hand-off (motion.mjs handoffAnimation): hidden until a layer drops, accented for ENTRY.ACCENT_HOLD_MS from its start, then neutral.
-	if (scene.timing) out.push(`${indent}\t${handoffAnimation(scene.timing)}`);
 	out.push(`${indent}</g>`);
 	return out.join("\n");
 }
@@ -361,10 +437,16 @@ function renderScene(scene, indent) {
 export function renderSvg(scene, indent = "") {
 	const [w, h] = scene.viewBox;
 	const attrs = ["data-vpk-illustration", "data-vpk-iso", `data-vpk-iso-id="${scene.id}"`, `data-vpk-iso-style="${scene.style}"`];
-	// An active part blinks once and holds a 2px ink outline (select only; explode has no per-part active state).
-	if (scene.behavior === "select") attrs.push("data-vpk-iso-blink");
+	// An active part blinks once and holds a 2px ink outline (select and teardown; explode has no per-part active state).
+	if (scene.behavior === "select" || scene.behavior === "teardown") attrs.push("data-vpk-iso-blink");
 	attrs.push(`data-vpk-iso-zdepth="${scene.zdepth}"`);
-	if (scene.brief.parts.length > DENSE_PARTS) attrs.push("data-vpk-iso-dense");
+	if (scene.behavior === "select") attrs.push(`data-vpk-iso-lift-z="${num(scene.liftWorld)}"`);
+	// Emphasis "ink" or "none": no accent anywhere, so the hover CSS draws the active outline in ink (runtime-css emphasisCss).
+	if (scene.emphasis && scene.emphasis !== "accent") attrs.push(`data-vpk-iso-emphasis="${scene.emphasis}"`);
+	// labels "none": the figure draws no labels or tags; the audit checks none crept in.
+	if (scene.labelMode === "none") attrs.push('data-vpk-iso-labels="none"');
+	// A spectrum ray (a `line` with `spectrum`) admits the three ray tokens on this figure only (audit A1, check-html).
+	if (scene.spectrum) attrs.push("data-vpk-iso-spectrum");
 	if (scene.timing) attrs.push("data-vpk-smil-arm", 'data-vpk-smil-stagger="0"');
 	// Opts the figure into the narrow-stage callouts (tags, legend, crop). A figure built before they existed has
 	// no attribute, so the CSS never hides its text labels without tags to replace them.
@@ -379,8 +461,27 @@ export function renderSvg(scene, indent = "") {
 	return [`${indent}<svg ${attrs.join(" ")}>`, ...body, `${indent}</svg>`].join("\n");
 }
 
+// The camera tour's sentence, appended to the stage label (a tour-only figure: the whole label after the title).
+function tourLabel(scene) {
+	const n = scene.tour.s.length;
+	const keys = scene.behavior ? "" : ", or focus the figure and use the arrow keys";
+	return `A camera tour of ${n} steps: use the Next step and Previous step buttons${keys} to frame each step's parts; Home returns to the overview.`;
+}
+
 function stageLabel(scene) {
 	const title = scene.brief.title.replace(/[.\s]+$/, "");
+	if (!scene.behavior) return `${title}. ${tourLabel(scene)}`;
+	const label = behaviorLabel(scene, title);
+	return scene.tour ? `${label} ${tourLabel(scene)}` : label;
+}
+
+function behaviorLabel(scene, title) {
+	if (scene.behavior === "step") return `${title}. Click the figure, or focus it and press Enter or the arrow keys, to step through ${scene.states.states.length} states; Home and End go to the first and last, Escape to rest.`;
+	if (scene.behavior === "scrub") {
+		const how = scene.states.input === "pointer-x" ? "Move the pointer across the figure" : scene.states.input === "keys" ? "Focus the figure and use the arrow keys" : "Drag across the figure";
+		return `${title}. ${how} to move through ${scene.states.states.length} states, or use the arrow keys or the slider; Escape returns to rest.`;
+	}
+	if (scene.behavior === "teardown") return `${title}. The parts are shown taken apart. Use the Exploded and Assembled buttons or the Spread slider to put them together; point at a part, or focus the figure and use the arrow keys, to name it.`;
 	if (scene.behavior === "explode") {
 		const unit = scene.explode.unit;
 		return `${title}. Point at the figure to separate the parts (tap on touch), or use the ${unit[0].toUpperCase()}${unit.slice(1)} slider to set it.`;
@@ -403,9 +504,23 @@ function renderLegend(scene, indent) {
 
 export const readoutText = (scene, value) => (scene.behavior === "explode" ? `${scene.explode.unit} ${Number(value).toFixed(2)}` : String(value));
 
+// The camera tour (tour.mjs): its caption (the step title, which fades grey to ink on a change, and the step text) rides in the
+// frame's foot like a readout; the Previous step / Next step buttons and the step counter sit under the frame with the other
+// controls. Both start on the Overview (step 0), which is the static art; aria-disabled keeps a button focusable at the ends.
+function tourParts(scene) {
+	const tour = scene.tour;
+	const n = tour.s.length;
+	const caption = `<div class="vpk-iso-tour__caption"><p class="vpk-iso-tour__title" data-vpk-iso-tour-title>Overview</p><p class="vpk-iso-tour__text" data-vpk-iso-tour-text>${escapeText(tour.o)}</p></div>`;
+	const go = (by, text, off) => `<button type="button" class="vpk-iso-tour__go" data-vpk-iso-tour-go="${by}" aria-disabled="${off}">${text}</button>`;
+	const controls = `<div class="vpk-iso-tour" role="group" aria-label="Camera tour" data-vpk-iso-tour-controls>${go(-1, "Previous step", true)}<span class="vpk-iso-tour__count" data-vpk-iso-tour-count>0 / ${n}</span>${go(1, "Next step", false)}</div>`;
+	return { caption, controls };
+}
+
 export function renderPlate(scene, { indent = "", attrs = "" } = {}) {
 	const brief = scene.brief;
-	const interactive = Boolean(scene.behavior);
+	// A tour without another behaviour is the stage's behaviour "tour" (the runtime gives it the arrow keys).
+	const behavior = scene.behavior ?? (scene.tour ? "tour" : null);
+	const interactive = Boolean(behavior);
 	const root = [
 		'class="vpk-iso-plate"',
 		`id="${ids(scene).root}"`,
@@ -418,21 +533,45 @@ export function renderPlate(scene, { indent = "", attrs = "" } = {}) {
 	if (interactive) root.push("data-vpkh-no-lightbox");
 	const stage = ['class="vpk-iso-stage"', "data-vpk-iso-stage"];
 	if (interactive) {
-		stage.push(`data-vpk-iso-behavior="${scene.behavior}"`, 'role="group"', 'aria-roledescription="interactive figure"', `aria-label="${escapeAttr(stageLabel(scene))}"`);
-		if (scene.behavior === "select") stage.push('tabindex="0"');
+		stage.push(`data-vpk-iso-behavior="${behavior}"`, 'role="group"', 'aria-roledescription="interactive figure"', `aria-label="${escapeAttr(stageLabel(scene))}"`);
+		if (behavior === "select" || behavior === "teardown" || behavior === "tour" || scene.states) stage.push('tabindex="0"');
+		// The tour model for tour-runtime.mjs (JSON in one attribute, like the state model).
+		if (scene.tour) stage.push(`data-vpk-iso-tour="${escapeAttr(JSON.stringify(scene.tour))}"`);
+		// The state model for state-runtime.mjs (JSON in one attribute: no script island, so check-html sees no new script).
+		if (scene.states) stage.push(`data-vpk-iso-states="${escapeAttr(JSON.stringify(scene.states))}"`);
 	}
 	stage.push("data-vpk-review-ignore");
 	const readout = [];
 	const control = [];
 	if (interactive) {
-		if (scene.behavior === "explode") {
+		if (scene.states) {
+			// Step and scrub: the readout starts on the rest state's text; a scrub figure also gets a slider under the frame (one stop per
+			// state, continuous between), so a keyboard or switch user reaches every state without the pointer.
+			const cfg = scene.states;
+			const text = cfg.states[cfg.rest].text;
+			readout.push(`<output class="vpk-iso-readout" data-vpk-iso-readout aria-live="off">${escapeText(text)}</output>`);
+			if (scene.behavior === "scrub") control.push(`<label class="vpk-iso-control">State <input type="range" data-vpk-iso-control="scrub" min="0" max="${cfg.states.length - 1}" step="any" value="${cfg.rest}" aria-valuetext="${escapeAttr(text)}" autocomplete="off"></label>`);
+		} else if (scene.behavior === "teardown") {
+			// Teardown: the readout names the hovered part (or the pose); the Exploded / Assembled switch and the Spread slider sit
+			// under the frame. The slider is an explode control (min 0, max 1, rest 1), so the audit sweeps its stops like a Gap.
+			const e = scene.explode;
+			const start = scene.teardown.start === "assembled" ? e.min : e.rest;
+			readout.push(`<output class="vpk-iso-readout" data-vpk-iso-readout data-vpk-iso-rest="${start === e.min ? "assembled" : "exploded"}" aria-live="off">${start === e.min ? "assembled" : "exploded"}</output>`);
+			control.push(`<div class="vpk-iso-switch" role="group" aria-label="View"><button type="button" data-vpk-iso-pose="${e.max}" aria-pressed="${start === e.max}">Exploded</button><button type="button" data-vpk-iso-pose="${e.min}" aria-pressed="${start === e.min}">Assembled</button></div>`);
+			control.push(`<label class="vpk-iso-control">Spread <input type="range" data-vpk-iso-control="explode" min="${e.min}" max="${e.max}" step="${e.step}" value="${e.rest}" data-vpk-iso-start="${start}" autocomplete="off"></label>`);
+		} else if (scene.behavior === "explode") {
 			const e = scene.explode;
 			readout.push(`<output class="vpk-iso-readout" data-vpk-iso-readout aria-live="off">${readoutText(scene, e.rest)}</output>`);
 			// autocomplete="off": on Back the browser would otherwise restore the last committed value
 			// after the runtime has read the slider, leaving the slider and the figure apart.
 			control.push(`<label class="vpk-iso-control">${escapeText(e.unit[0].toUpperCase() + e.unit.slice(1))} <input type="range" data-vpk-iso-control="explode" min="${e.min}" max="${e.max}" step="${e.step}" value="${e.rest}" autocomplete="off"></label>`);
-		} else {
+		} else if (scene.behavior) {
 			readout.push(`<output class="vpk-iso-readout" data-vpk-iso-readout data-vpk-iso-rest="${escapeAttr(scene.interact.rest ?? "rest")}" aria-live="off">${escapeText(scene.interact.rest ?? "rest")}</output>`);
+		}
+		if (scene.tour) {
+			const tour = tourParts(scene);
+			readout.unshift(tour.caption);
+			control.unshift(tour.controls);
 		}
 		readout.push('<p class="vpk-iso-live" data-vpk-iso-live aria-live="polite"></p>');
 	}

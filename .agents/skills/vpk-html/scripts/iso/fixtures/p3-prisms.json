@@ -1,0 +1,24 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "p3-prisms",
+	"figId": "FIG_961",
+	"title": "Prisms, open trays, glass",
+	"label": "A bench holding a key-shaped prism, an L kerb, a turned box, an open-front cubby with dividers and letters, and a glass case over a block.",
+	"labels": "none",
+	"emphasis": "ink",
+	"focal": "key",
+	"parts": [
+		{ "id": "bench", "kind": "slab", "at": [-10, -10, -6], "size": [200, 130, 6], "detail": [{ "type": "recess", "face": "top", "at": [16, 112], "size": [20, 8], "shape": "stadium" }] },
+		{ "id": "key", "kind": "prism", "at": [10, 10, 0], "axis": "z", "depth": 3, "round": 0.6, "polygon": [[0, 0], [14, 0], [14, 4], [40, 4], [40, 8], [36, 8], [36, 11], [32, 8], [28, 11], [24, 8], [14, 8], [14, 12], [0, 12]] },
+		{ "id": "kerb", "kind": "prism", "at": [10, 40, 0], "axis": "z", "depth": 8, "polygon": [[0, 0], [30, 0], [30, 6], [6, 6], [6, 30], [0, 30]] },
+		{ "id": "blade", "kind": "prism", "at": [60, 6, 0], "axis": "-y", "depth": 2, "polygon": [[0, 0], [24, 0], [24, 6], [12, 16], [0, 6]] },
+		{ "id": "turned", "kind": "box", "at": [60, 40, 0], "size": [24, 14, 10], "yaw": 30 },
+		{ "id": "panel", "kind": "plate", "at": [60, 80, 0], "size": [24, 14, 1.5], "axis": "-y" },
+		{ "id": "cubby", "kind": "tray", "at": [110, 10, 0], "size": [24, 60, 36], "axis": "+x", "dividers": { "y": [30], "z": [18] } },
+		{ "id": "letter", "kind": "box", "at": [114, 16, 2], "size": [14, 1, 10], "yaw": -12 },
+		{ "id": "block", "kind": "box", "at": [150, 84, 0], "size": [12, 12, 10] },
+		{ "id": "case", "kind": "box", "at": [144, 78, 0], "size": [24, 24, 20], "tone": "glass" },
+		{ "id": "fan", "kind": "box", "at": [150, 40, 0], "size": [10, 2, 3], "repeat": { "polar": { "count": 5, "centre": [160, 40], "radius": 8, "from": 0, "span": 120, "face": true } } }
+	],
+	"interact": { "behavior": "select", "rest": "rest" }
+}

@@ -1,0 +1,52 @@
+{
+	"schema": "vpk-iso-brief/1",
+	"id": "p1-kinds",
+	"figId": "FIG_901",
+	"title": "Phase 1 kinds",
+	"label": "A bench plate carrying a turned shaft between two posts, a cone, a torus, a washer, a coiled spring, a bent pipe, a cable, pins on a dial and a keypad.",
+	"labels": "none",
+	"emphasis": "ink",
+	"focal": "dial",
+	"parts": [
+		{ "id": "bench", "kind": "slab", "at": [0, 0, 0], "size": [140, 90, 6], "r": 2,
+			"detail": [
+				{ "type": "ticks", "face": "+y", "from": [6, 4], "to": [134, 4], "step": 2, "every": 5, "lengths": [1, 2] },
+				{ "type": "text", "face": "+y", "at": [8, 1.2], "text": "BENCH 140 × 90", "size": 2.6 },
+				{ "type": "recess", "face": "top", "shape": "stadium", "at": [120, 14], "size": [22, 7] },
+				{ "type": "hatch", "face": "top", "spacing": 4, "angle": 30 }
+			] },
+		{ "id": "post-far", "kind": "box", "at": [52, 8, 6], "size": [6, 6, 24] },
+		{ "id": "post-near", "kind": "box", "at": [10, 36, 6], "size": [6, 6, 24] },
+		{ "id": "shaft", "kind": "lathe", "at": [-4, 22, 20], "axis": "x",
+			"profile": [[0, 2], [6, 2], [6, 4], [14, 4], [16, 3], [70, 3], [70, 5], [76, 5], [80, 2]],
+			"detail": [{ "type": "bands", "at": [30, 40, 50] }, { "type": "knurl", "s0": 6, "s1": 14, "count": 40 }] },
+		{ "id": "cone", "kind": "cone", "at": [96, 70, 6], "axis": "z", "r0": 9, "r1": 3, "length": 16 },
+		{ "id": "donut", "kind": "torus", "at": [124, 72, 9], "axis": "z", "R": 9, "r": 3 },
+		{ "id": "washer", "kind": "ring", "at": [70, 74, 6], "size": [8, 8, 0], "thickness": 2, "inner": 4 },
+		{ "id": "roller", "kind": "cylinder", "at": [107, 12, 12], "size": [5, 5, 26], "axis": "y" },
+		{ "id": "dial", "kind": "cylinder", "at": [40, 66, 6], "size": [14, 14, 4],
+			"detail": [
+				{ "type": "radialTicks", "r": 13, "count": 60, "every": 5, "lengths": [1, 2] },
+				{ "type": "spokes", "r0": 2, "r1": 8, "count": 5 },
+				{ "type": "spiral", "r0": 0.5, "r1": 6, "turns": 3 },
+				{ "type": "knurl", "count": 72 }
+			] },
+		{ "id": "pin", "kind": "pin", "at": [40, 66, 10], "length": 6, "r": 0.6, "head": 1.4,
+			"repeat": { "polar": { "count": 8, "centre": [40, 66], "radius": 10, "from": 0, "span": 315 } } },
+		{ "id": "key", "kind": "box", "at": [74, 34, 6], "size": [5, 5, 2], "r": 1, "tone": "ink",
+			"repeat": { "grid": { "count": [4, 3], "step": [7, 7] } },
+			"vary": { "field": "size.2", "fn": "gauss", "sigma": 1.2, "floor": 1 } },
+		{ "id": "pad", "kind": "plate", "at": [112, 40, 6], "size": [22, 18, 1],
+			"detail": [
+				{ "type": "dots", "face": "top", "at": [2, 2], "grid": [10, 7], "gap": 2, "weights": [1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1, 1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1, 1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1, 1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1, 1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1, 1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1, 1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1] },
+				{ "type": "inset", "face": "top", "by": 1, "r": 1 }
+			] },
+		{ "id": "spring", "kind": "spring", "from": [24, 80, 6], "to": [24, 80, 26], "radius": 3, "wire": 0.5, "turns": 7 },
+		{ "id": "pipe", "kind": "tube", "points": [[130, 4, 6], [130, 4, 30], [80, 4, 30], [80, 4, 40]], "radius": 1.6, "fillet": 5, "corrugate": { "every": 1.4 } },
+		{ "id": "cable", "kind": "catenary", "from": [55, 11, 30], "to": [13, 39, 30], "sag": 6, "radius": 0.9 },
+		{ "id": "lead", "kind": "wire", "from": [100, 30, 38], "to": [120, 50, 7], "sag": 3 },
+		{ "id": "ball", "kind": "sphere", "at": [124, 72, 15], "r": 4 },
+		{ "id": "leg", "kind": "leg", "at": [62, 52, 20], "radius": 1, "ground": 6, "foot": { "r": 2.5, "h": 1 } },
+		{ "id": "shelf", "kind": "plate", "at": [56, 46, 20], "size": [14, 12, 1.5] }
+	]
+}

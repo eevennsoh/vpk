@@ -244,7 +244,7 @@ export function auditLabelPoses({ figure: name, explode, hull: restHull, pieces:
 	const vectorOf = new Map(base.map(piece => [piece.partId, piece.explode]));
 	for (const { gap, k } of poses) {
 		const move = (point, vec) => (vec && k ? [point[0] + vec[0] * k, point[1] + vec[1] * k] : point);
-		const pieces = base.map(piece => ({ partId: piece.partId, paints: piece.paints, hit: piece.hit.map(point => move(point, piece.explode)) }));
+		const pieces = base.map(piece => ({ partId: piece.partId, paints: piece.paints, hit: piece.hit.map(point => move(point, piece.explode)), window: piece.window ? piece.window.map(point => move(point, piece.explode)) : null }));
 		const figure = k ? hull(pieces.flatMap(piece => piece.hit)) : restHull;
 		const leaders = labels.map(label => [...label.points.slice(0, -1), move(label.points.at(-1), vectorOf.get(label.target))]);
 		labels.forEach((label, i) => {
@@ -255,7 +255,9 @@ export function auditLabelPoses({ figure: name, explode, hull: restHull, pieces:
 			if (!nearPolygon(end, hull(own.flatMap(piece => piece.hit)), 2)) fail(`label "${label.text}" cannot reach "${label.target}"; set labels[].anchor`, gap);
 			else {
 				const after = pieces.slice(Math.max(...own.map(piece => pieces.indexOf(piece))) + 1);
-				const cover = after.find(piece => piece.partId !== label.target && piece.hit.length >= 3 && (pointInPolygon(end, piece.hit) || distanceToPolygon(end, piece.hit) < LEADER_CLEAR));
+				// A cutaway's front shell does not cover a leader end well inside its window.
+				const inWindow = piece => piece.window && pointInPolygon(end, piece.window) && distanceToPolygon(end, piece.window) >= LEADER_CLEAR;
+				const cover = after.find(piece => piece.partId !== label.target && piece.hit.length >= 3 && !inWindow(piece) && (pointInPolygon(end, piece.hit) || distanceToPolygon(end, piece.hit) < LEADER_CLEAR));
 				if (cover) fail(`label "${label.text}" leader ends under "${cover.partId}", not on a visible point of "${label.target}"; set labels[].anchor`, gap);
 			}
 			labels.forEach((other, j) => {

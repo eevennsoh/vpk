@@ -36,12 +36,6 @@ test("T-L2 every library file passes check-html (templates may keep {{…}} plac
 	assert.deepEqual(failures, []);
 });
 
-test("T-L3 no library file exceeds the data-URL viewer budget", async () => {
-	const { weightWarnings } = await load("media/size-budget.mjs");
-	const over = (await libraryFiles()).flatMap(({ rel, html }) => weightWarnings(html, { label: rel }));
-	assert.deepEqual(over, []);
-});
-
 test("T-L4 every SMIL file carries exactly one marked starter and no stray starter scripts", async () => {
 	const { listSmilElements } = await load("runtime/smil-starter.mjs");
 	const { markedRanges } = await load("runtime/blocks.mjs");

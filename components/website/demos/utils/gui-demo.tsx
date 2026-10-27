@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion, type Transition } from "motion/react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import VideoPlayIcon from "@atlaskit/icon/core/video-play";
 import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 
-import { GUI } from "@/components/utils/gui";
+import { GUI, type GUIEasingValue, type GUISpringValue } from "@/components/utils/gui";
 import {
 	parseGUIColorToRgbHex,
 	rgbaUnitToCss,
@@ -13,6 +14,13 @@ import {
 	type GUIRGBAColor,
 } from "@/components/utils/gui-color";
 import LiquidGradient from "@/components/visual/liquid-gradient";
+import { motionDuration, motionEase } from "@/lib/motion";
+
+const DEFAULT_MOTION_SPRING: GUISpringValue = {
+	stiffness: 170,
+	damping: 26,
+	mass: 1,
+};
 
 const THEME_OPTIONS = [
 	{
@@ -101,6 +109,7 @@ function getShaderPalette(values: readonly string[]): string[] {
 }
 
 export function GUIFullConfigDemo() {
+	const id = useId();
 	const [size, setSize] = useState(144);
 	const [radius, setRadius] = useState(18);
 	const [opacity, setOpacity] = useState(0.92);
@@ -116,6 +125,10 @@ export function GUIFullConfigDemo() {
 	const [swatches, setSwatches] = useState<string[]>(["#357DE8", "#22A06B"]);
 	const [styleSwatches, setStyleSwatches] = useState<string[]>(["solid"]);
 	const [playback, setPlayback] = useState<"play" | "stop">("play");
+	const [motionMode, setMotionMode] = useState<"easing" | "spring">("easing");
+	const [motionEasing, setMotionEasing] = useState<[...GUIEasingValue]>([...motionEase.inOut]);
+	const [motionSpring, setMotionSpring] = useState<GUISpringValue>(DEFAULT_MOTION_SPRING);
+	const [motionSeconds, setMotionSeconds] = useState<number>(motionDuration.slowest);
 	const [disabledAmount, setDisabledAmount] = useState(6);
 	const [disabledToggle, setDisabledToggle] = useState(false);
 	const [disabledColor, setDisabledColor] = useState("#C7D1DB");
@@ -173,6 +186,10 @@ export function GUIFullConfigDemo() {
 	const hasSolidStyle = styleSwatches.includes("solid");
 	const isPlaying = playback === "play" && enabled;
 	const previewAccent = toShaderHex(hexColor, selectedTheme.accent);
+	const motionTransition: Transition = motionMode === "easing"
+		? { duration: motionSeconds, ease: motionEasing }
+		: { type: "spring", ...motionSpring };
+	const motionPreviewKey = `${actionCount}-${isPlaying}-${motionMode}-${motionSeconds}-${motionEasing.join(",")}-${motionSpring.stiffness}-${motionSpring.damping}-${motionSpring.mass}`;
 
 	const config = useMemo(
 		() => ({
@@ -193,6 +210,10 @@ export function GUIFullConfigDemo() {
 			swatches,
 			styleSwatches,
 			playback,
+			motionMode,
+			motionEasing,
+			motionSpring,
+			motionSeconds,
 			disabledAmount,
 			disabledToggle,
 			disabledColor,
@@ -213,6 +234,10 @@ export function GUIFullConfigDemo() {
 			hexColor,
 			imageSrc,
 			label,
+			motionEasing,
+			motionMode,
+			motionSeconds,
+			motionSpring,
 			opacity,
 			playback,
 			radius,
@@ -287,6 +312,9 @@ export function GUIFullConfigDemo() {
 						<span className="rounded bg-surface-overlay px-2 py-1 shadow-sm">
 							{snapToGrid ? "Snapped" : "Free"}
 						</span>
+						<span className="rounded bg-surface-overlay px-2 py-1 shadow-sm">
+							{motionMode === "easing" ? "Easing preview" : "Spring preview"}
+						</span>
 					</div>
 					<div className="absolute bottom-4 left-4 flex gap-1.5">
 						{swatches.map((swatch) => (
@@ -300,64 +328,120 @@ export function GUIFullConfigDemo() {
 					<div className="absolute bottom-4 right-4 rounded bg-surface-overlay px-2 py-1 text-[11px] font-medium text-text shadow-sm">
 						Runs {actionCount}
 					</div>
-					<div
-						className="relative flex items-center justify-center overflow-hidden border border-border-bold text-center font-semibold text-text-inverse shadow-lg"
-						style={{
-							width: size,
-							height: size,
-							borderRadius: radius,
-							opacity: enabled ? opacity : 0.42,
-							background: hasSolidStyle ? previewBackground : "color-mix(in srgb, var(--color-surface-overlay) 62%, transparent)",
-							backdropFilter: hasSoftStyle ? "blur(18px) saturate(1.4)" : undefined,
-							borderColor: hasOutlineStyle ? previewAccent : "var(--color-border-bold)",
-							borderWidth: hasOutlineStyle ? 2 : 1,
-							color: previewAccent,
-							boxShadow: hasOutlineStyle ? `0 0 0 1px ${selectedTheme.grid}` : `0 18px 60px ${rgbaUnitToCss(rgbaColor)}`,
-							filter: enabled ? "none" : "grayscale(0.65)",
-							transform: snapToGrid ? "translate3d(0, 0, 0) rotate(0deg)" : "translate3d(18px, -12px, 0) rotate(-7deg)",
-							transition: "all var(--duration-normal) var(--ease-out)",
-							willChange: "transform, opacity, filter",
-						}}
+					<motion.div
+						key={motionPreviewKey}
+						data-gui-motion-preview={motionMode}
+						initial={isPlaying ? { x: -48 } : false}
+						animate={{ x: 0 }}
+						transition={motionTransition}
+						style={{ willChange: "transform" }}
 					>
-						{actionCount > 0 ? (
-							<span
-								key={`gui-demo-action-${actionCount}`}
-								className="pointer-events-none absolute -inset-5 rounded-[inherit] border-2"
+						<div
+							className="relative flex items-center justify-center overflow-hidden border border-border-bold text-center font-semibold text-text-inverse shadow-lg"
+							style={{
+								width: size,
+								height: size,
+								borderRadius: radius,
+								opacity: enabled ? opacity : 0.42,
+								background: hasSolidStyle ? previewBackground : "color-mix(in srgb, var(--color-surface-overlay) 62%, transparent)",
+								backdropFilter: hasSoftStyle ? "blur(18px) saturate(1.4)" : undefined,
+								borderColor: hasOutlineStyle ? previewAccent : "var(--color-border-bold)",
+								borderWidth: hasOutlineStyle ? 2 : 1,
+								color: previewAccent,
+								boxShadow: hasOutlineStyle ? `0 0 0 1px ${selectedTheme.grid}` : `0 18px 60px ${rgbaUnitToCss(rgbaColor)}`,
+								filter: enabled ? "none" : "grayscale(0.65)",
+								transform: snapToGrid ? "translate3d(0, 0, 0) rotate(0deg)" : "translate3d(18px, -12px, 0) rotate(-7deg)",
+								transition: "all var(--duration-normal) var(--ease-out)",
+								willChange: "transform, opacity, filter",
+							}}
+						>
+							{actionCount > 0 ? (
+								<span
+									key={`gui-demo-action-${actionCount}`}
+									className="pointer-events-none absolute -inset-5 rounded-[inherit] border-2"
+									style={{
+										animation: "gui-demo-action-pulse 700ms var(--ease-out) both",
+										borderColor: selectedTheme.accent,
+									}}
+								/>
+							) : null}
+							{imageSrc ? (
+								<Image
+									src={imageSrc}
+									alt=""
+									width={400}
+									height={400}
+									unoptimized
+									className="absolute inset-0 size-full object-cover opacity-35"
+								/>
+							) : null}
+							<div
+								className="absolute inset-3 rounded-[inherit] border border-current opacity-45"
 								style={{
-									animation: "gui-demo-action-pulse 700ms var(--ease-out) both",
-									borderColor: selectedTheme.accent,
+									animation: "gui-demo-orbit 8s linear infinite",
+									animationPlayState: isPlaying ? "running" : "paused",
+									borderStyle: hasOutlineStyle ? "solid" : "dashed",
 								}}
 							/>
-						) : null}
-						{imageSrc ? (
-							<Image
-								src={imageSrc}
-								alt=""
-								width={400}
-								height={400}
-								unoptimized
-								className="absolute inset-0 size-full object-cover opacity-35"
-							/>
-						) : null}
-						<div
-							className="absolute inset-3 rounded-[inherit] border border-current opacity-45"
-							style={{
-								animation: "gui-demo-orbit 8s linear infinite",
-								animationPlayState: isPlaying ? "running" : "paused",
-								borderStyle: hasOutlineStyle ? "solid" : "dashed",
-							}}
-						/>
-						<span className="relative max-w-[80%] text-sm leading-5">{label}</span>
-					</div>
+							<span className="relative max-w-[80%] text-sm leading-5">{label}</span>
+						</div>
+					</motion.div>
 				</div>
 
 				<GUI.Panel
 					title="Kitchen sink"
 					values={config}
 					onPlay={() => setActionCount((count) => count + 1)}
-					playLabel="Run panel action"
+					playLabel="Replay motion preview"
 				>
-					<GUI.Section title="Numeric" borderTop={false}>
+					<GUI.Section title="Motion" borderTop={false}>
+						<GUI.Select
+							id={`${id}-motion-type`}
+							label="Motion type"
+							value={motionMode}
+							defaultValue="easing"
+							options={[
+								{ value: "easing", label: "Easing" },
+								{ value: "spring", label: "Spring" },
+							]}
+							valueKeys="motionMode"
+							onChange={setMotionMode}
+						/>
+						<GUI.Control
+							id={`${id}-motion-duration`}
+							label="Easing duration"
+							value={motionSeconds}
+							defaultValue={motionDuration.slowest}
+							min={motionDuration.fast}
+							max={2}
+							step={motionDuration.xxshort}
+							unit="s"
+							disabled={motionMode !== "easing"}
+							valueKeys="motionSeconds"
+							onChange={setMotionSeconds}
+						/>
+						<GUI.Easing
+							id={`${id}-motion-easing`}
+							label="Easing curve"
+							description="Edit the curve to replay the card with a timed transition."
+							value={motionEasing}
+							defaultValue={motionEase.inOut}
+							disabled={motionMode !== "easing"}
+							valueKeys="motionEasing"
+							onChange={setMotionEasing}
+						/>
+						<GUI.Spring
+							id={`${id}-motion-spring`}
+							label="Spring physics"
+							description="Edit stiffness, damping, and mass to replay a physics transition."
+							value={motionSpring}
+							defaultValue={DEFAULT_MOTION_SPRING}
+							disabled={motionMode !== "spring"}
+							valueKeys="motionSpring"
+							onChange={setMotionSpring}
+						/>
+					</GUI.Section>
+					<GUI.Section title="Numeric">
 						<GUI.Control
 							id="gui-size"
 							label="Size"
