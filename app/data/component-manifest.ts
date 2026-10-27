@@ -69,6 +69,11 @@ export const CATALOG_LIFECYCLE: Readonly<Partial<Record<CatalogKey, ComponentLif
 		basedOn: "jira-golden-journeys-v3",
 		note: "Superseded by jira-team-eu26, its 2026-09-09 copy; the jira-kanban block demo still reads its board data.",
 	},
+	"projects/butter": {
+		status: "live",
+		basedOn: "jira-team-eu26",
+		note: "Independent Butter fork of the Team ’26 EU Payments SDK board.",
+	},
 	"projects/jira-team-eu26": {
 		status: "live",
 		basedOn: "jira-golden-journeys-v4",
@@ -694,6 +699,7 @@ export const PROJECT_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	projectComponent("jira-golden-journeys-v3", "Jira Golden Journeys v3"),
 	projectComponent("jira-golden-journeys-v4", "Jira Golden Journeys v4"),
 	projectComponent("jira-queue", "Jira Queue"),
+	projectComponent("butter", "Butter"),
 	projectComponent("jira-team-eu26", "Jira Team EU26"),
 	projectComponent("jira-team-eu26-end", "Jira Team EU26 End"),
 	projectComponent("rovo", "Rovo"),

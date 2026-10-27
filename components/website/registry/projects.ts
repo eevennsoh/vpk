@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const PROJECT_DEMOS: Record<string, ComponentType> = {
+	butter: dynamic(() => import("../demos/projects/butter-demo"), { ssr: false }),
 	admin: dynamic(() => import("../demos/projects/admin-demo"), { ssr: false }),
 	confluence: dynamic(() => import("../demos/projects/confluence-demo"), {
 		ssr: false,

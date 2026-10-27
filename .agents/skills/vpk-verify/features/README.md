@@ -69,6 +69,7 @@ After changing this index or a feature file, run `pnpm run verify:vpk-feature-ma
 
 Every directory under `components/projects/` needs a recipe whose `How to get to it (user POV)` names one of its live routes (its app route or `/preview/projects/<slug>`; the doc page alone does not count), or a line here with a one-line reason. The verifier fails on a project in neither place and on a line whose project is now covered or gone, so this list only shrinks. Library directories (`shared`, `rovo-core`, `rovo-floating-chat`) are excluded, with reasons, in `LIBRARY_PROJECT_DIRS` in `scripts/verify-feature-map.js`.
 
+- `butter`: Independent Team EU26 board fork at `/butter`; use the Team EU26 interaction recipe with the Butter route.
 - `admin`: Administration settings surface at `/admin`; no recipe yet.
 - `confluence`: Rich-text editor at `/confluence`; editing proof not mapped yet.
 - `html`: Embeds the checked-in vpk-html index at `/html`; no recipe yet.
