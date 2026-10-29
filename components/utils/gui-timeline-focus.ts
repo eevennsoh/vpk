@@ -1,16 +1,33 @@
 export function restoreGUITimelineFocus(root: HTMLElement) {
 	const document = root.ownerDocument;
 	const pendingRestorations = new Set<ReturnType<typeof setTimeout>>();
-	let opener: { clip: HTMLElement; section: HTMLElement; label: string | null; index: number } | undefined;
+	type Opener = { clip: HTMLElement; section: HTMLElement; label: string | null; index: number };
+	const openers = new WeakMap<HTMLElement, Opener>();
+	let pendingOpener: Opener | undefined;
 	const rememberOpener = (event: Event) => {
+		if (event instanceof KeyboardEvent && event.key !== "Enter" && event.key !== " ") return;
 		const clip = event.target instanceof Element ? event.target.closest<HTMLElement>(".dialkit-timeline-clip") : null;
 		const section = clip?.closest<HTMLElement>(".dialkit-timeline-section");
 		if (clip && section && root.contains(section)) {
-			opener = { clip, section, label: clip.getAttribute("aria-label"), index: [...section.querySelectorAll(".dialkit-timeline-clip")].indexOf(clip) };
+			pendingOpener = { clip, section, label: clip.getAttribute("aria-label"), index: [...section.querySelectorAll(".dialkit-timeline-clip")].indexOf(clip) };
 		}
 	};
+	const popupObserver = new MutationObserver((records) => {
+		if (!pendingOpener) return;
+		for (const record of records) {
+			for (const node of record.addedNodes) {
+				if (!(node instanceof HTMLElement)) continue;
+				const popup = node.matches(".dialkit-timeline-popover") ? node : node.querySelector<HTMLElement>(".dialkit-timeline-popover");
+				if (!popup || !popup.contains(document.activeElement) || !popup.getAttribute("aria-label")?.startsWith(pendingOpener.label ?? "")) continue;
+				openers.set(popup, pendingOpener);
+				pendingOpener = undefined;
+				return;
+			}
+		}
+	});
+	popupObserver.observe(document.body, { childList: true });
 	const restoreAfterDismissal = (popup: HTMLElement) => {
-		const origin = opener;
+		const origin = openers.get(popup);
 		if (!origin) return;
 		const timer = setTimeout(() => {
 			pendingRestorations.delete(timer);
@@ -37,6 +54,7 @@ export function restoreGUITimelineFocus(root: HTMLElement) {
 	document.addEventListener("keydown", handleKey, true);
 	document.addEventListener("click", handleClose, true);
 	return () => {
+		popupObserver.disconnect();
 		pendingRestorations.forEach((timer) => clearTimeout(timer));
 		pendingRestorations.clear();
 		root.removeEventListener("keydown", rememberOpener, true);
