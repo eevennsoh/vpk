@@ -1,13 +1,21 @@
 "use client";
 
-import type { HeaderAssigneeRenderContext } from "@/components/blocks/jira-kanban/experimental/experimental-board-header";
+import type { JiraKanbanAssigneeData } from "@/components/blocks/jira-kanban";
 import { AGENT_LANYARD_AGENTS, AGENT_LANYARD_FIRST_PARTY_AGENTS, type AgentLanyardAgent } from "@/components/blocks/agent-lanyard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useHeaderLanyardHandle } from "./header-lanyards";
+import { useHeaderLanyardHandle } from "./eu26-header-lanyards";
+
+interface Eu26HeaderAssigneeProps {
+	assignee: JiraKanbanAssigneeData;
+	muted: boolean;
+	selected: boolean;
+	onToggle?: () => void;
+	surfaceLabel: string;
+}
 
 const CLAUDE = AGENT_LANYARD_AGENTS.find((agent) => agent.id === "claude")!;
 const CURSOR = AGENT_LANYARD_AGENTS.find((agent) => agent.id === "cursor")!;
@@ -28,11 +36,11 @@ const HEADER_AGENTS = new Map([
 	["wac-figma", FIGMA],
 ]);
 
-export function renderEu26HeaderAssignee(context: HeaderAssigneeRenderContext) {
+export function renderEu26HeaderAssignee(context: Eu26HeaderAssigneeProps) {
 	return <Eu26HeaderAssignee {...context} />;
 }
 
-function Eu26HeaderAssignee({ assignee, muted, selected, onToggle, surfaceLabel }: Readonly<HeaderAssigneeRenderContext>) {
+function Eu26HeaderAssignee({ assignee, muted, selected, onToggle, surfaceLabel }: Readonly<Eu26HeaderAssigneeProps>) {
 	const handle = useHeaderLanyardHandle();
 	const agent = HEADER_AGENTS.get(assignee.id);
 	const isJiraCoding = agent === JIRA_CODING;
