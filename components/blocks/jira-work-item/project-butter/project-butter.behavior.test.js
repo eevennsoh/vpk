@@ -329,6 +329,18 @@ test("activity navigation and filters operate on the populated reference feed", 
 	assert.equal(view.getAllByRole("option").length, total);
 });
 
+test("activity order and timeline follow timestamps in both directions", async () => {
+	const view = await renderWorkItem();
+	let options = view.getAllByRole("option");
+	assert.match(options[0].textContent, /Liam Estrada: updated 2 fields/u);
+	assert.match(options.at(-1).textContent, /Claude with Annie Cook: Published the Teamwork onboarding inventory/u);
+	await view.click(view.getByRole("button", { name: "More activity actions" }));
+	await view.click(view.getByRole("menuitemcheckbox", { name: "Newest first" }));
+	options = view.getAllByRole("option");
+	assert.match(options[0].textContent, /Claude with Annie Cook: Published the Teamwork onboarding inventory/u);
+	assert.match(options.at(-1).textContent, /Liam Estrada: updated 2 fields/u);
+});
+
 test("activity navigation scrolls its content owner without moving the work item shell", async (t) => {
 	const view = await renderWorkItem();
 	const shell = document.querySelector("[data-project-butter-presentation] > section");
