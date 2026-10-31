@@ -5,7 +5,16 @@ import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
 export type JiraIssueChrome = "raised" | "stroke";
 /** Compact keeps 12px glyphs and 16px avatars. Comfortable uses 16px glyphs and 24px avatars. */
 export type JiraIssueIconScale = "compact" | "comfortable";
-export type JiraIssuePriority = "major" | "medium" | "minor";
+export type JiraIssuePriority = "major" | "medium" | "minor" | "critical";
+export type JiraIssueAppearance = "default" | "project-butter";
+
+export interface JiraIssueCardMetadata {
+	issueType?: "task" | "story" | "epic" | "bug" | "subtask";
+	dueDate?: string;
+	dueDateWarning?: boolean;
+	storyPoints?: number;
+	flagged?: boolean;
+}
 export type JiraIssuePullRequestStatus = "open" | "failed" | "merged";
 export type JiraIssueVariant = "default" | "uncaptured-work";
 

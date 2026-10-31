@@ -14,6 +14,10 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.behavior.test.js",
+		"components/blocks/jira-issue/project-butter-invocation-model.test.ts",
+		"components/blocks/jira-issue/project-butter-model.test.ts",
+		"components/blocks/jira-issue/project-butter.behavior.test.js",
 		"components/utils/gui-timeline.behavior.test.js",
 		"components/utils/gui-motion.behavior.test.js",
 		"components/ui-custom/rich-text-editor/prosemirror-commands.behavior.test.js",

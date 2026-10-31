@@ -175,7 +175,7 @@ function ExperimentalJiraKanbanPageContent({
 	agentActivityLayout,
 	cardGenerativeActionFooterActions,
 	cardGenerativeActionPinnedAgentIds,
-	cardGenerativeActionPresentation, iconScale,
+	cardGenerativeActionPresentation, iconScale, cardAppearance,
 	showPriorityIndicator,
 	showFooterMetadata = true,
 	createWellBounce = "once",
@@ -961,7 +961,7 @@ function ExperimentalJiraKanbanPageContent({
 									? { onArchive: handleCardRemove, onDelete: handleCardRemove }
 									: undefined}
 								onCardsRemove={controlledBoardColumns === undefined || onBoardColumnsChange ? handleCardsRemove : undefined}
-								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale}
+								cardGenerativeActionPresentation={cardGenerativeActionPresentation} iconScale={iconScale} cardAppearance={cardAppearance}
 								showPriorityIndicator={showPriorityIndicator}
 								showFooterMetadata={showFooterMetadata}
 								collapsedColumns={displayedCollapsedColumns}

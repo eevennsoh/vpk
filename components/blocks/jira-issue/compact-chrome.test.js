@@ -14,8 +14,8 @@ const EXPERIMENTAL_KANBAN_CARD_SOURCE = readFileSync(
 test("compact internals stay on when raised chrome is selected", () => {
 	assert.match(SOURCE, /compact\?: boolean;/u);
 	assert.match(SOURCE, /const usesStrokeChrome = chrome === "stroke";/u);
-	assert.match(SOURCE, /const usesCompactVisual = compact \|\| usesStrokeChrome;/u);
-	assert.match(SOURCE, /<div className=\{usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>/u);
+	assert.match(SOURCE, /const usesCompactVisual = compact \|\| usesStrokeChrome \|\| appearance === "project-butter";/u);
+	assert.match(SOURCE, /<div className=\{appearance === "project-butter" \? "p-3" : usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>/u);
 	assert.match(SOURCE, /boxShadow: chromeStyles\.boxShadow,/u);
 	assert.match(SOURCE, /const agentActivityRestBorderClassName = !hasActiveAgentActivityShell\s*\n\t\t\? agentSurfaceChromeClassName\s*\n\t\t: usesStrokeChrome\s*\n\t\t\t\? cn\("border-surface", chromeStyles\.agentSurfaceHoverClassName\)\s*\n\t\t\t: agentSurfaceChromeClassName;/u);
 	assert.match(SUBTASKS_SOURCE, /const usesStrokeChrome = compact \|\| chrome === "stroke";/u);

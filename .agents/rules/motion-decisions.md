@@ -126,6 +126,7 @@ Lint rejects inline cubic-bezier arrays, hand-written `cubic-bezier()` strings, 
 | --- | --- | --- |
 | `generationDraw` | `[0.16, 1, 0.3, 1]` | transitions.dev UI generation: every stroke of the `UIGeneration` drawing |
 | `smoothOut` | `[0.22, 1, 0.36, 1]` | transitions.dev `--ease-smooth-out`: the `UIGeneration` reveal |
+| `agentInvocationHandoff` | `[0.4, 0, 0.2, 1]` | Vohmann `6627c513` `AgentInvocationPreviewHandoff`: preview-to-working status-label roll |
 
 Add a row here and to the test when you add an entry.
 

@@ -2,9 +2,6 @@
 
 import type { ReactNode } from "react";
 import AutomationIcon from "@atlaskit/icon/core/automation";
-import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
-import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
-import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
 import TaskIcon from "@atlaskit/icon/core/task";
 
 import {
@@ -30,6 +27,7 @@ import {
 import { JiraIssuePullRequestCluster } from "@/components/blocks/jira-issue/pull-request-cluster";
 import { JiraIssueCover } from "@/components/blocks/jira-issue/cover-image";
 import type {
+	JiraIssueAppearance, JiraIssueCardMetadata,
 	JiraIssueCoverImage,
 	JiraIssueIconScale,
 	JiraIssuePriority,
@@ -37,22 +35,13 @@ import type {
 	JiraIssuePullRequestStatus,
 	JiraIssueTag,
 } from "@/components/blocks/jira-issue/types";
-
-const PRIORITY_ICONS = {
-	major: PriorityMajorIcon,
-	medium: PriorityMediumIcon,
-	minor: PriorityMinorIcon,
-} as const;
+import type { JiraIssueAgentAssignment, JiraIssueSubtask } from "./index";
+import { PRIORITY_ICONS, PRIORITY_COLORS } from "./priority-model";
+import { ProjectButterSummary } from "./project-butter-summary";
 
 /** Rest as the default gray Tag; reveal the label color while the issue card is hovered or focused. */
 const ISSUE_TAG_IDLE_BORDER_CLASS =
 	"duration-fast ease-out-practical motion-reduce:transition-none [@media(hover:hover)]:group-[:not(:hover):not(:focus-within)]/jira-issue:border-border-accent-gray-subtle";
-
-const PRIORITY_COLORS = {
-	major: token("color.icon.danger"),
-	medium: token("color.icon.information"),
-	minor: token("color.icon.success"),
-} as const;
 
 function JiraIssueAssignee({
 	assigneeAvatarLabel,
@@ -103,6 +92,8 @@ function JiraIssueAssignee({
 }
 
 export function JiraIssueSummary({
+	assignment, allowAddAgent,
+	appearance, metadata, assigneeControl, subtasks, onSubtaskOpen,
 	assigneeAvatarLabel,
 	assigneeAvatarShape,
 	assigneeAvatarSrc,
@@ -127,6 +118,13 @@ export function JiraIssueSummary({
 	tags,
 	usesStrokeChrome,
 }: Readonly<{
+	assignment?: JiraIssueAgentAssignment;
+	allowAddAgent?: boolean;
+	appearance?: JiraIssueAppearance;
+	metadata?: JiraIssueCardMetadata;
+	assigneeControl?: ReactNode;
+	subtasks?: readonly JiraIssueSubtask[];
+	onSubtaskOpen?: (subtask: JiraIssueSubtask) => void;
 	assigneeAvatarLabel?: string;
 	assigneeAvatarShape: NonNullable<AvatarProps["shape"]>;
 	assigneeAvatarSrc?: string;
@@ -156,6 +154,16 @@ export function JiraIssueSummary({
 	const iconMetrics = resolveJiraIssueIconMetrics(iconScale);
 	const comfortableIcons = iconScale === "comfortable";
 	const compactIconClassName = iconMetrics.compactIconClassName;
+	if (appearance === "project-butter") {
+		return <ProjectButterSummary
+			assignment={assignment} allowAddAgent={allowAddAgent}
+			issueKey={issueKey} summary={summary} metadata={metadata} priority={priority} tags={tags}
+			parentEpicControl={parentEpicControl} subtasks={subtasks} onSubtaskOpen={onSubtaskOpen} moreAction={moreAction}
+			pullRequestNumber={pullRequestNumber} pullRequestPreview={pullRequestPreview} pullRequestStatus={pullRequestStatus}
+			pullRequestTitle={pullRequestTitle} showPriorityIndicator={showPriorityIndicator} showFooterMetadata={showFooterMetadata}
+			assignee={assigneeControl ?? (isMounted ? <JiraIssueAssignee assigneeAvatarLabel={assigneeAvatarLabel} assigneeAvatarShape={assigneeAvatarShape} assigneeAvatarSrc={assigneeAvatarSrc} assigneePulse={assigneePulse} assigneeUnassignedKind={assigneeUnassignedKind} issueKey={issueKey} size="sm" /> : null)}
+		/>;
+	}
 	const pullRequestCluster = pullRequestNumber ? (
 		<JiraIssuePullRequestCluster
 			iconScale={iconScale}
