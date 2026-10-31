@@ -279,6 +279,7 @@ export function AgentSessionCard({
 	showLifecycleLabel = true,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
+	showBranch = false,
 	triageRow,
 	draggingIds,
 	visibilityLabel = "Archive",
@@ -367,6 +368,7 @@ export function AgentSessionCard({
 	showLinkWorkItemMenuItem?: boolean;
 	/** Shows the experimental Working indicator in the short row's lifecycle slot. */
 	showWorkingSpinner?: boolean;
+	showBranch?: boolean;
 	triageRow?: AgentSessionTriageRow | null;
 	draggingIds?: ReadonlySet<string>;
 	/** Accessible name for the menu's dismiss row. Archive in the active list, Unarchive in the archived view. */
@@ -733,7 +735,7 @@ export function AgentSessionCard({
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isLongDensity
-										? <AgentSessionLongMetadata item={item} />
+										? <AgentSessionLongMetadata item={item} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
 								onView={mark == null && bind === undefined ? viewSession : undefined}

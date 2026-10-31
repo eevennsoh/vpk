@@ -75,7 +75,7 @@ function insertEditorCommand(editor: Editor, command: string): void {
 	editor.chain().focus().insertContent(command).run();
 }
 
-function JiraCommentEditorToolbarLeading({ editor }: Readonly<{ editor: Editor }>) {
+export function JiraCommentEditorToolbarLeading({ editor }: Readonly<{ editor: Editor }>) {
 	return (
 		<div className="flex shrink-0 items-center gap-1">
 			<Button
@@ -113,6 +113,8 @@ export interface JiraActivityComposerProps {
 	 */
 	variant?: "reply" | "comment" | "flush";
 	onSubmit: (body: string) => void;
+	/** Close a host-owned floating composer after nested editor controls dismiss. */
+	onEscape?: () => void;
 	/** Controlled draft value. Omit to let the composer own its draft. */
 	value?: string;
 	/** Initial draft for an uncontrolled composer. */
@@ -156,6 +158,7 @@ export function JiraActivityComposer({
 	placeholder,
 	variant = "comment",
 	onSubmit,
+	onEscape,
 	value: controlledValue,
 	defaultValue = "",
 	onValueChange,
@@ -208,6 +211,7 @@ export function JiraActivityComposer({
 	}
 
 	function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+		if (event.key === "Escape" && onEscape && !event.defaultPrevented) { event.preventDefault(); event.stopPropagation(); onEscape(); return; }
 		if (event.key === "Enter" && !event.shiftKey) {
 			event.preventDefault();
 			submit();
@@ -330,6 +334,7 @@ export function JiraActivityComposer({
 				if (isExpandableComment) setIsExpanded(true);
 			}}
 			onSubmit={submit}
+			onKeyDown={(event) => { if (event.key === "Escape" && onEscape && !event.defaultPrevented) { event.preventDefault(); event.stopPropagation(); onEscape(); } }}
 		>
 			<PromptInputTextarea
 				aria-label={placeholder}
@@ -345,6 +350,7 @@ export function JiraActivityComposer({
 				mentionSectionLabels={mentionSectionLabels}
 				onChange={(event) => updateValue(event.currentTarget.value)}
 				onEditorReady={setEditor}
+				onEscape={onEscape}
 				placeholder={resolvedPlaceholder}
 				prefillMentionRequest={prefillMentionRequest}
 				ref={textareaRef}

@@ -145,6 +145,8 @@ export interface AgentSessionProps {
 	 * by the medium and small footprints, which have their own fixed geometry.
 	 */
 	density?: AgentSessionDensity;
+	/** Include the feature branch in long-density metadata. Hidden by default. */
+	showBranch?: boolean;
 	/** Sessions to render; defaults to relationship-appropriate built-in sample data. */
 	items?: readonly AgentSessionItem[];
 	/** Show the experimental Working indicator in short rows. In-flow columns opt in. */

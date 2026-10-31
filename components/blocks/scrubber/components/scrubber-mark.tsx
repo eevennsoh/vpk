@@ -24,6 +24,7 @@ export interface ScrubberMarkProps {
 	state: ScrubberMarkState;
 	/** The one mark Tab reaches — see `ScrubberRail`. */
 	tabbable: boolean;
+	appearance?: "notches" | "dots";
 }
 
 /** One selectable mark: a major or one of the minors inside its gap. */
@@ -39,6 +40,7 @@ export function ScrubberMark({
 	railSizeRef,
 	state,
 	tabbable,
+	appearance = "notches",
 }: Readonly<ScrubberMarkProps>) {
 	return (
 		<button
@@ -57,13 +59,13 @@ export function ScrubberMark({
 			// lifted above it or its ring is half-covered.
 			className={cn(
 				"group/mark focus-visible:ring-ring absolute flex rounded-xs outline-none focus-visible:z-10 focus-visible:ring-2",
-				axis === "y"
+				appearance === "dots" ? "left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center" : axis === "y"
 					? "left-0 h-5 w-full -translate-y-1/2 items-center"
 					: "bottom-0 h-6 w-6 -translate-x-1/2 flex-col justify-end",
 			)}
 		>
 			<span className="sr-only">{toScrubberMarkLabel(entry)}</span>
-			<ScrubberRule
+			{appearance === "dots" ? <><span aria-hidden className="absolute size-5 rounded-full bg-bg-neutral opacity-0 group-hover/mark:opacity-100 group-focus-visible/mark:opacity-100" /><span aria-hidden className={cn("relative size-1.5 rounded-full bg-current", isActive ? "opacity-100" : "opacity-0")} /></> : <ScrubberRule
 				axis={axis}
 				// The button is the hit target; the rule overflows it at full swell
 				// and must not stretch the target into whatever sits beside the rail.
@@ -78,7 +80,7 @@ export function ScrubberMark({
 				pointerOffset={pointerOffset}
 				railSizeRef={railSizeRef}
 				weight={RULE_WEIGHT[entry.kind][state]}
-			/>
+			/>}
 		</button>
 	);
 }

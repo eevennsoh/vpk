@@ -44,6 +44,8 @@ export interface JiraActivityProps {
 	composer?: ReactNode | null;
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
+	/** Rich domain-owned comment content, retaining the shared card and reply/reaction controls. */
+	renderCommentBody?: (entry: JiraActivityCommentEntry) => ReactNode | undefined;
 	/** Optional replacement for an entry's built-in body. Return undefined to use the default renderer. */
 	renderEntry?: (entry: JiraActivityEntry) => ReactNode | undefined;
 	/** Marks one timeline row as the current step without changing ordering or filtering. */
@@ -116,6 +118,7 @@ export function JiraActivity({
 	actors = [],
 	composer,
 	renderCommentAction,
+	renderCommentBody,
 	renderEntry,
 	activeEntryId,
 	onAddCommentToChat,
@@ -308,6 +311,7 @@ export function JiraActivity({
 							/>
 						) : entry.kind === "comment" ? (
 							<JiraActivityComment
+								bodyContent={renderCommentBody?.(entry)}
 								actorsById={actorsById}
 								commentActions={commentActions}
 								currentUser={currentUser}

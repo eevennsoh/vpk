@@ -9,7 +9,7 @@ import type { AgentListHost, AgentListPrStatus, AgentListState } from "@/compone
  * than rendering an em-dash placeholder. Progression lives on the trailing
  * lifecycle icon, not in this line.
  */
-export type AgentSessionMetadataSegmentKind = "agent" | "tool-call" | "artifact" | "time";
+export type AgentSessionMetadataSegmentKind = "agent" | "branch" | "tool-call" | "artifact" | "time";
 
 export interface AgentSessionMetadataSegment {
 	readonly kind: AgentSessionMetadataSegmentKind;
@@ -28,6 +28,7 @@ export interface AgentSessionMetadataSegment {
 
 export interface AgentSessionMetadataInput {
 	readonly agentName: string;
+	readonly branch?: string;
 	/**
 	 * Resolved session host, or `undefined` when the row never declared one.
 	 *
@@ -68,6 +69,9 @@ export function toAgentSessionMetadataSegments(
 	const toolCalls = input.toolCalls
 		?.map((toolCall) => toolCall.trim())
 		.filter((toolCall) => toolCall.length > 0);
+	if (input.branch) {
+		segments.push({ kind: "branch", label: input.branch });
+	}
 
 	if (toolCalls !== undefined && toolCalls.length > 0) {
 		segments.push({ kind: "tool-call", toolCalls });

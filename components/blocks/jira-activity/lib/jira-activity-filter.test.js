@@ -131,6 +131,14 @@ test("all returns the original feed reference", () => {
 	assert.equal(filterJiraActivityEntries(JIRA_ACTIVITY_ENTRIES, "all"), JIRA_ACTIVITY_ENTRIES);
 });
 
+test("history-only retains changes and events without comment cards", () => {
+	const comments = filterJiraActivityEntries(JIRA_ACTIVITY_ENTRIES, "comments-only");
+	const history = filterJiraActivityEntries(JIRA_ACTIVITY_ENTRIES, "history-only");
+	assert.ok(history.length > 0);
+	assert.ok(history.every((entry) => entry.kind !== "comment"));
+	assert.equal(history.length + comments.length, JIRA_ACTIVITY_ENTRIES.length);
+});
+
 test("comments-only matching is kind-based", () => {
 	assert.equal(
 		matchesJiraActivityFilter(

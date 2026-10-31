@@ -16,6 +16,9 @@ interface TeamEuRailPanelProps {
 	children: ReactNode;
 	defaultOpen?: boolean;
 	headerActions?: ReactNode;
+	footer?: ReactNode;
+	alwaysShowHeaderActions?: boolean;
+	surface?: "card" | "inline";
 	title: string;
 }
 
@@ -23,6 +26,9 @@ export function TeamEuRailPanel({
 	children,
 	defaultOpen = false,
 	headerActions,
+	footer,
+	alwaysShowHeaderActions = false,
+	surface = "card",
 	title,
 }: Readonly<TeamEuRailPanelProps>) {
 	const [open, setOpen] = useState(defaultOpen);
@@ -33,9 +39,9 @@ export function TeamEuRailPanel({
 	return (
 		<section
 			aria-labelledby={headingId}
-			className="group/rail-panel rounded-lg border border-border-disabled bg-surface"
+			className={cn("group/rail-panel bg-surface", footer ? "relative" : undefined, surface === "card" ? "rounded-lg border border-border-disabled" : undefined)}
 		>
-			<div className="relative flex min-h-12 items-center px-4">
+			<div className={cn("relative flex items-center", surface === "card" ? "min-h-12 px-4" : "min-h-8")}>
 				<button
 					aria-controls={contentId}
 					aria-expanded={open}
@@ -65,7 +71,7 @@ export function TeamEuRailPanel({
 						<ChevronDownIcon label="" size="small" />
 					</motion.span>
 				</h2>
-				{open ? (
+				{open || alwaysShowHeaderActions ? (
 					headerActions ? (
 						<div className="relative z-10 ml-auto flex items-center gap-0.5">
 							{headerActions}
@@ -85,6 +91,7 @@ export function TeamEuRailPanel({
 			>
 				{children}
 			</motion.div>
+			{open ? footer : null}
 		</section>
 	);
 }

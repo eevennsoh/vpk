@@ -14,6 +14,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/jira-work-item/project-butter/project-butter.behavior.test.js",
 		"components/utils/gui-timeline.behavior.test.js",
 		"components/utils/gui-motion.behavior.test.js",
 		"components/ui-custom/rich-text-editor/prosemirror-commands.behavior.test.js",

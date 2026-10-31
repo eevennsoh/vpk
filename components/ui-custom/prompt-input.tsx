@@ -867,6 +867,8 @@ export type PromptInputTextareaProps = ComponentProps<
    * e.g. from the Rovo/Studio composers.
    */
   onEditorReady?: (editor: Editor) => void;
+	/** Called on Escape when no inline suggestion menu is open. */
+	onEscape?: () => void;
 };
 
 /**
@@ -925,6 +927,7 @@ export const PromptInputTextarea = ({
   mentionSectionLabels,
   suggestionVariant,
   onEditorReady,
+	onEscape,
   "aria-label": ariaLabel,
   // Native-textarea-only props (rows, enterKeyHint, onPaste, …) have no
   // contentEditable equivalent the composer relies on; absorb them so the
@@ -971,6 +974,7 @@ export const PromptInputTextarea = ({
   const directoryAutocompleteLimitRef = useRef(directoryAutocompleteLimit);
   const onDirectoryAutocompleteChangeRef = useRef(onDirectoryAutocompleteChange);
   const onDirectoryAutocompleteControllerChangeRef = useRef(onDirectoryAutocompleteControllerChange);
+	const onEscapeRef = useRef(onEscape);
   const acceptDirectoryAutocompleteIndexRef = useRef<(index: number, requireGhost?: boolean) => boolean>(() => false);
   // True while the visual-trace auto-tagger is mid-debounce. During that window we
   // intentionally keep the prior matches visible (no per-keystroke flicker), but
@@ -1000,6 +1004,7 @@ export const PromptInputTextarea = ({
     onChangeRef.current = onChange;
     onInputRef.current = onInput;
     onEditorReadyRef.current = onEditorReady;
+		onEscapeRef.current = onEscape;
     mentionSourcesRef.current = mentionSources;
     attachmentsRef.current = attachments;
     controllerRef.current = controller;
@@ -1228,6 +1233,11 @@ export const PromptInputTextarea = ({
         getMentionSources: () => mentionSourcesRef.current,
         mentionSectionLabels,
         onEnter: handleEnterSubmit,
+				onEscape: () => {
+					if (!onEscapeRef.current) return false;
+					onEscapeRef.current();
+					return true;
+				},
         onPasteFiles: (files) => attachmentsRef.current.add(files),
         suggestionVariant,
       }),

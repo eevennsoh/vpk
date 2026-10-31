@@ -8,6 +8,7 @@ import JiraWorkItem, {
 } from "@/components/blocks/jira-work-item";
 import JiraWorkItemPage from "@/components/blocks/jira-work-item/page";
 import { Button } from "@/components/ui/button";
+import { ProjectButterDemo } from "@/components/website/demos/blocks/jira-work-item-project-butter-demo";
 
 const PRESET_OPTIONS: ReadonlyArray<{
 	value: JiraWorkItemExperimentalPreset;
@@ -101,6 +102,10 @@ export function JiraWorkItemDemoTeamEu26() {
 
 export function JiraWorkItemDemoTeamEu26Empty() {
 	return <JiraWorkItem variant="team-eu26" initialExperimentalPreset="empty" />;
+}
+
+export function JiraWorkItemDemoProjectButter() {
+	return <ProjectButterDemo />;
 }
 
 export function JiraWorkItemDemoExperimentalV3Empty() {

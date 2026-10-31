@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useInView } from "motion/react";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
+import BranchIcon from "@atlaskit/icon/core/branch";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 
 import {
@@ -177,6 +178,8 @@ function LongMetadataSegment({
 			);
 		case "tool-call":
 			return <AgentSessionToolCall toolCalls={segment.toolCalls ?? []} />;
+		case "branch":
+			return <span className="flex min-w-0 items-center gap-1"><BranchIcon label="" size="small" /><span className="min-w-0 truncate" title={segment.label}>{segment.label}</span></span>;
 		case "artifact":
 			return (
 				<span className="flex min-w-0 shrink items-center gap-1">
@@ -215,13 +218,14 @@ function LongMetadataSegment({
  * unit-tested; this component only decides how each chunk looks.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSessionItem }>) {
+export function AgentSessionLongMetadata({ item, showBranch = false }: Readonly<{ item: AgentSessionItem; showBranch?: boolean }>) {
 	// Deliberately not `getAgentListHost`, which answers "cloud" for a payload
 	// that simply never said. Undefined here means the row stays quiet about
 	// where it ran rather than asserting a default onto the card.
 	const declaredHost = item.host ?? item.sessionDetails?.host;
 	const segments = toAgentSessionMetadataSegments({
 		agentName: item.agent.name,
+		branch: showBranch ? item.branch : undefined,
 		artifactLabel: toArtifactLabel(item),
 		host: declaredHost,
 		prStatus: item.prStatus,

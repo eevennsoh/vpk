@@ -308,6 +308,7 @@ function ThreadReplyCard({
  */
 export function JiraActivityComment({
 	entry,
+	bodyContent,
 	currentUser,
 	actorsById,
 	onSubmitReply,
@@ -320,6 +321,7 @@ export function JiraActivityComment({
 	commentActions = "reply-and-reactions",
 }: Readonly<{
 	entry: JiraActivityCommentEntry;
+	bodyContent?: ReactNode;
 	currentUser: JiraActivityActor;
 	actorsById: ReadonlyMap<string, JiraActivityActor>;
 	onSubmitReply: (body: string) => void;
@@ -575,10 +577,10 @@ export function JiraActivityComment({
 				) : undefined
 			}
 		>
-			<JiraActivitySegments
+			{bodyContent === undefined ? <JiraActivitySegments
 				className="text-sm leading-5 text-text"
 				segments={entry.body}
-			/>
+			/> : bodyContent}
 			{entry.progressChecklist?.length ? (
 				<ul aria-label="Agent progress" className="mt-3 grid min-w-0 gap-1.5">
 					{entry.progressChecklist.map((item) => (
