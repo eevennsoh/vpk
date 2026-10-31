@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
+const { act } = require("react");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const subtasks = [
@@ -160,6 +161,32 @@ test("Butter's hexagon action opens the shared directory and assigns an agent wi
 		["assign", "reviewer"],
 		["ids", ["reviewer"]],
 	]);
+});
+
+test("Butter restores the add-agent control when assignment does not create a row", async () => {
+	const assigned = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			appearance: "project-butter",
+			issueKey: "PD-40",
+			summary: "Implement advanced date-range filter",
+			assignment: {
+				agents: [{ id: "reviewer", name: "Review agent", byline: "Review changes" }],
+				onAgentAssign: (agent) => assigned.push(agent.id),
+			},
+		},
+	});
+	const trigger = view.getByRole("button", { name: "Add agent to PD-40" });
+	await view.click(trigger);
+	await view.click(view.getByRole("menuitem", { name: "Review agent" }));
+	assert.deepEqual(assigned, ["reviewer"]);
+	assert.equal(trigger.disabled, true);
+	await act(() => new Promise((resolve) => setTimeout(resolve, 3200)));
+	assert.equal(trigger.disabled, false);
+	await view.click(trigger);
+	assert.equal(view.getByRole("menuitem", { name: "Review agent" }) !== null, true);
 });
 
 test("Butter omits the add-agent action during selection, dragging, and attached activity", async () => {

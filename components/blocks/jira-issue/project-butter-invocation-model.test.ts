@@ -33,6 +33,8 @@ test("cancel and reopen reset the preview and reject stale handoff completions",
 		agentInvocationReducer(reopened, { type: "settle", sequence: committed.preview.sequence }),
 		reopened,
 	);
+	assert.equal(agentInvocationReducer(committed, { type: "abort", sequence: committed.preview.sequence }).phase, "idle");
+	assert.equal(agentInvocationReducer(reopened, { type: "abort", sequence: committed.preview.sequence }), reopened);
 	assert.equal(
 		agentInvocationReducer(committed, { type: "settle", sequence: committed.preview.sequence }).phase,
 		"attached",

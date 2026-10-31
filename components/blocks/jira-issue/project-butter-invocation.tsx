@@ -19,6 +19,7 @@ const ActionsContext = createContext<{
 	preview: (agent: AgentSelectorAgent | null, index: number) => void;
 	commit: (agent: AgentSelectorAgent, index: number) => void;
 	settle: (sequence: number) => void;
+	abort: (sequence: number) => void;
 } | null>(null);
 
 export function ProjectButterInvocationProvider({
@@ -40,6 +41,7 @@ export function ProjectButterInvocationProvider({
 				dispatch({ type: "preview", agent, index }),
 			commit: (agent: AgentSelectorAgent, index: number) => dispatch({ type: "commit", agent, index }),
 			settle: (sequence: number) => dispatch({ type: "settle", sequence }),
+			abort: (sequence: number) => dispatch({ type: "abort", sequence }),
 		}),
 		[],
 	);

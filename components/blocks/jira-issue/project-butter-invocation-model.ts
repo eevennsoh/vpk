@@ -24,7 +24,8 @@ type AgentInvocationAction =
 	| { type: "reset" }
 	| { type: "preview"; agent: AgentSelectorAgent | null; index: number }
 	| { type: "commit"; agent: AgentSelectorAgent; index: number }
-	| { type: "settle"; sequence: number };
+	| { type: "settle"; sequence: number }
+	| { type: "abort"; sequence: number };
 
 function previewAgent(
 	current: AgentInvocationPreview,
@@ -62,6 +63,10 @@ export function agentInvocationReducer(
 		}
 		case "commit":
 			return { phase: "handoff", preview: previewAgent(state.preview, action.agent, action.index) };
+		case "abort":
+			return state.phase === "handoff" && state.preview.sequence === action.sequence
+				? { ...state, phase: "idle" }
+				: state;
 		case "settle":
 			return state.phase === "handoff" && state.preview.sequence === action.sequence
 				? { ...state, phase: "attached" }

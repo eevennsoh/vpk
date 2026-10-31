@@ -92,10 +92,10 @@ export function ProjectButterInvocationChin({
 	const reduce = useReducedMotion();
 	const previewing = phase === "choosing" || phase === "handoff";
 	useEffect(() => {
-		if (phase !== "handoff" || !hasChin || !actions) return;
+		if (phase !== "handoff" || !actions) return;
 		const timer = setTimeout(
-			() => actions.settle(preview.sequence),
-			reduce ? 0 : BUTTER_INVOCATION_CYCLE.duration * 1000,
+			() => hasChin ? actions.settle(preview.sequence) : actions.abort(preview.sequence),
+			hasChin ? (reduce ? 0 : BUTTER_INVOCATION_CYCLE.duration * 1000) : 3000,
 		);
 		return () => clearTimeout(timer);
 	}, [actions, hasChin, phase, preview.sequence, reduce]);
