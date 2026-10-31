@@ -77,6 +77,7 @@ export function JiraIssuePullRequestCluster({
 	pullRequestStatus,
 	pullRequestTitle,
 	usesStrokeChrome,
+	tone = "status",
 }: Readonly<{
 	iconScale?: JiraIssueIconScale;
 	pullRequestNumber: number;
@@ -84,6 +85,7 @@ export function JiraIssuePullRequestCluster({
 	pullRequestStatus?: JiraIssuePullRequestStatus;
 	pullRequestTitle: string;
 	usesStrokeChrome: boolean;
+	tone?: "status" | "subtle";
 }>) {
 	const { StatusIcon, colorClass, label } = getJiraIssuePullRequestPresentation(pullRequestStatus);
 	const overlayTitle = pullRequestPreview?.title ?? pullRequestTitle;
@@ -111,7 +113,7 @@ export function JiraIssuePullRequestCluster({
 				render={(
 					<Button
 						aria-label={accessibleName}
-						className={cn(colorClass, "[&_svg]:text-current", iconMetrics.compactIconClassName)}
+						className={cn(tone === "subtle" ? "text-icon-subtle" : colorClass, "[&_svg]:text-current", iconMetrics.compactIconClassName)}
 						onClick={stopNestedActivation}
 						onPointerDown={stopNestedActivation}
 						size="icon-compact"

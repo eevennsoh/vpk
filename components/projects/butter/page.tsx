@@ -409,6 +409,7 @@ function ButterApp(): React.ReactElement {
 						cardGenerativeActionPinnedAgentIds={BUTTER_PINNED_CODING_AGENT_IDS}
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
+						cardAppearance="project-butter"
 						issueSelectionAppearance="fused-backdrop"
 						getStatusVariant={statusVariant}
 						autoArrangeEnabled={designVariants.autoArrange}

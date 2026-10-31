@@ -94,12 +94,14 @@ test("Butter board activation opens the selected item and preserves edits separa
 			const beta = { code: "PAY-119", title: "Second board item", priority: "minor", tags: [],
 				agentActivities: [{ id: "coding", name: "Codex", label: "Review rollback", message: "Check rollback safety", state: "working", host: "cloud" }] };
 			const gamma = { code: "PAY-120", title: "Third board item", priority: "medium", tags: [] };
+			const critical = { code: "PAY-121", title: "Critical board item", priority: "critical", tags: [] };
 			export default function BoardProbe() {
 				const item = useButterWorkItem();
 				return <ThemeWrapper><SidebarProvider>
 					<button onClick={() => item.openWorkItem(alpha, "To do")}>Open first card</button>
 					<button onClick={() => item.openWorkItem(beta, "Done")}>Open second card</button>
 					<button onClick={() => item.openWorkItem(gamma, "To do")}>Open third card</button>
+					<button onClick={() => item.openWorkItem(critical, "In progress")}>Open critical card</button>
 					{item.selection ? <ProjectButterJiraWorkItem {...item.selection} initialPreset="filled" open={item.open} onClose={item.closeWorkItem} /> : null}
 				</SidebarProvider></ThemeWrapper>;
 			}`,
@@ -145,6 +147,10 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("heading", { name: "Work on PAY-120" }) !== null, true);
 	assert.equal(view.queryByText("Ready to work on PAY-120.") !== null, true);
 	assert.equal(view.queryByText("Draft billing flow PRD"), null);
+	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
+	await view.click(view.getByRole("button", { name: "Open critical card" }));
+	assert.equal(view.queryByRole("heading", { name: "Critical board item" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Change priority. Current priority: Highest" }) !== null, true);
 });
 
 test("empty Project butter can create a coding session", async () => {

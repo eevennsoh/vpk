@@ -17,8 +17,18 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
   ]}
   priority="major"
   assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
+/>
+
+<JiraIssue
+  appearance="project-butter"
+  chrome="raised"
+  iconScale="comfortable"
+  issueKey="PD-40"
+  summary="Implement advanced date-range filter"
+  metadata={{ issueType: "story", dueDate: "2026-04-11", storyPoints: 3 }}
 />`,
 	examples: [
+		{ id: "project-butter", title: "Project butter", description: "Vohmann’s latest card design with key-first hierarchy, a parent swatch, inline subtask progress, and due date, priority, points and assignee metadata. Extends the experimental v2 agent playground with parent selection, assignment, subtask details, copy actions and selection. Use appearance=\"project-butter\" with explicit metadata; board-only actions are unavailable in this demo.", demoSlug: "jira-issue-demo-project-butter" },
 		{ title: "Experimental", description: "Issue card with the stroke-only visual treatment used by the experimental Jira Kanban.", demoSlug: "jira-issue-demo-experimental" },
 		{ title: "Uncaptured work", description: "GitHub PRs, branches, and commits discovered outside Jira, with source context, a suggested Link to work item button, and trailing Create work item and Subtasks icons.", demoSlug: "jira-issue-demo-uncaptured-work" },
 		{ title: "Subtasks collapsed", description: "Issue card with a collapsed nested subtasks row.", demoSlug: "jira-issue-demo-subtasks-collapsed" },
@@ -29,6 +39,11 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ id: "agent-activity-states-experimental-v2", title: "Agent activity states (experimental v2)", description: "Same merged-chin playground as the experimental agent activity states, with 16px issue-type, priority, and subtask icons, 24px avatars, and nested subtask cards that stay stroke regardless of the parent Raised/Stroke toggle. Expired shows an expired session beside active and private sessions, with the 28-day row tooltip and a Delete-only menu.", demoSlug: "jira-issue-demo-agent-activity-states-experimental-v2" },
 	],
 	props: [
+		{ name: "appearance", type: '"default" | "project-butter"', default: '"default"', description: "Project butter places the key above the summary and uses an inline subtask popover. Pair with raised chrome and comfortable iconScale for the reference treatment." },
+		{ name: "metadata", type: "JiraIssueCardMetadata", description: "Project butter metadata: issueType (task, story, epic, bug, subtask), dueDate (YYYY-MM-DD), dueDateWarning, storyPoints, and flagged. Omitted values are not synthesized." },
+		{ name: "assigneeControl", type: "ReactNode", description: "Host-owned assignee picker in the Project butter footer; falls back to the shared avatar." },
+		{ name: "onSubtaskOpen", type: "(subtask: JiraIssueSubtask) => void", description: "Opens a subtask from the Project butter popover. Rows are read-only when omitted." },
+		{ name: "availableMoreActions", type: "readonly JiraIssueMoreAction[]", description: "Optional capability list for the overflow menu. Unlisted actions are disabled; listed actions require onMoreActionSelect. Project butter disables these actions when no handler is supplied." },
 		{ name: "variant", type: '"default" | "uncaptured-work"', default: '"default"', description: "Selects the standard Jira issue card or the uncaptured-work presentation." },
 		{ name: "summary", type: "string", required: true, description: "Issue summary shown as the primary card text." },
 		{ name: "issueKey", type: "string", description: "Jira issue key shown beside the issue-type icon. Required for the default variant." },
@@ -47,7 +62,7 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ name: "subtasks", type: "readonly JiraIssueSubtask[]", description: "Nested subtasks rendered behind the expandable subtasks row." },
 		{ name: "subtasksCompleted", type: "number", default: "0", description: "Completed subtask count used for the subtasks badge." },
 		{ name: "defaultSubtasksExpanded", type: "boolean", default: "false", description: "Initial uncontrolled expanded state for subtasks." },
-		{ name: "priority", type: '"major" | "medium" | "minor"', default: '"major"', description: "Priority icon and color." },
+		{ name: "priority", type: '"major" | "medium" | "minor" | "critical"', default: '"major"', description: "Priority icon and color." },
 		{ name: "showPriorityIndicator", type: "boolean", default: "true", description: "Controls whether the priority icon is shown in the issue metadata row." },
 		{ name: "selected", type: "boolean", default: "false", description: "Applies the selected border/background and aria-pressed state." },
 		{ name: "dragging", type: "boolean", default: "false", description: "Applies the drag cursor and faded drag state." },
@@ -56,6 +71,7 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ name: "assigneeAvatarSrc", type: "string", description: "Assignee avatar image source." },
 		{ name: "assigneeUnassignedKind", type: '"person" | "agent"', description: "Renders the shared unassigned avatar placeholder instead of an assignee image." },
 		{ name: "agentActivities", type: "readonly JiraIssueAgentActivity[]", description: "Active agents aggregated into one priority row. One or many attached sessions reveal the same shared assignment flyout; multiple agents use the cycling Agent Loading visual." },
+		{ name: "assignment", type: "JiraIssueAgentAssignment", description: "Agent catalog and assignment callbacks. Project butter reveals a hexagon Add agent action on hover or keyboard focus when onAgentAssign or onAssignedAgentIdsChange is supplied. Opening it reveals an inset casing and Add agent preview; hovering, scrolling or navigating the menu cycles the preview name. Selection hands the preview into the working row; Escape or outside press cancels. The action stays hidden during selection, dragging, or attached activity." },
 		{ name: "agentActivityMode", type: '"none" | "working" | "awaiting-input" | "completed"', default: '"none"', description: "Presentation mode for showing active agent rows or completed-work notification states." },
 		{ name: "agentActivityLayout", type: '"merged" | "split"', default: '"merged"', description: "Merged collapses active agents into one prioritized chin row; split gives each active agent its own row with its own status and chat entry point." },
 		{ name: "agentDoneRuns", type: "readonly JiraIssueCompletedAgentRun[]", description: "Completed agent runs shown with the shared Jira Activity output-card design." },

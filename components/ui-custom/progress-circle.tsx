@@ -71,7 +71,7 @@ const progressCircleVariants = cva(
 	},
 );
 
-export type ProgressCircleSegmentStatus = "passed" | "failed" | "pending";
+export type ProgressCircleSegmentStatus = "passed" | "failed" | "pending" | "in-progress";
 
 export interface ProgressCircleSegment {
 	status: ProgressCircleSegmentStatus;
@@ -97,6 +97,7 @@ export interface ProgressCircleProps
 	 * while segmented rendering is active.
 	 */
 	segments?: readonly ProgressCircleSegment[];
+	segmentGap?: "default" | "none";
 	/** Status overlay — replaces the progress ring with an icon. */
 	status?: "error" | "info";
 	/** Accessible label for the progress indicator. */
@@ -123,6 +124,8 @@ function segmentStrokeClassName(status: ProgressCircleSegmentStatus): string {
 			return "text-icon-danger";
 		case "pending":
 			return "text-border";
+		case "in-progress":
+			return "text-icon-information";
 		default: {
 			const _exhaustive: never = status;
 			return _exhaustive;
@@ -135,12 +138,14 @@ function SegmentArcs({
 	segments,
 	weights,
 	totalWeight,
+	segmentGap,
 }: Readonly<{
 	segments: readonly ProgressCircleSegment[];
 	weights: readonly number[];
 	totalWeight: number;
+	segmentGap: "default" | "none";
 }>) {
-	const gapCount = segments.length > 1 ? segments.length : 0;
+	const gapCount = segmentGap !== "none" && segments.length > 1 ? segments.length : 0;
 	const gapLength = gapCount > 0 ? CIRCUMFERENCE * SEGMENT_GAP_RATIO : 0;
 	const drawableLength = Math.max(0, CIRCUMFERENCE - gapCount * gapLength);
 	let offset = 0;
@@ -173,6 +178,7 @@ function ProgressCircle({
 	value,
 	segmented = false,
 	segments,
+	segmentGap = "default",
 	size = "default",
 	variant = "outline",
 	status,
@@ -356,6 +362,7 @@ function ProgressCircle({
 					>
 						<SegmentArcs
 							segments={segmentList}
+							segmentGap={segmentGap}
 							totalWeight={totalSegmentWeight}
 							weights={segmentWeights}
 						/>

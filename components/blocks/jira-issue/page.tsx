@@ -38,6 +38,7 @@ import { useAsxAgentChatDemo } from "@/components/projects/jira-golden-journeys-
 import { Button } from "@/components/ui/button";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import { token } from "@/lib/tokens";
+import { ProjectButterPlayground, type ProjectButterDemoIssueProps } from "./project-butter-demo";
 
 const JIRA_ISSUE_DEMO_TAGS = [
 	{ text: "Acmecorp", color: "discovery" },
@@ -176,6 +177,49 @@ const JIRA_ISSUE_DEMO_SUBTASKS = [
 		summary: "Review Venn's test design pattern proposal",
 		issueKey: "JDSN-230",
 		status: "To Do",
+		assigneeUnassignedKind: "person",
+	},
+] as const;
+
+const PROJECT_BUTTER_DEMO_SUBTASKS = [
+	...JIRA_ISSUE_DEMO_SUBTASKS,
+	{
+		issueKey: "PD-41",
+		summary: "Build the date-range picker",
+		status: "Done",
+		priority: "major",
+		assigneeAvatarSrc: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[0].avatarSrc,
+		assigneeAvatarLabel: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[0].name,
+	},
+	{
+		issueKey: "PD-42",
+		summary: "Support keyboard navigation",
+		status: "In Progress",
+		priority: "critical",
+		assigneeAvatarSrc: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[1].avatarSrc,
+		assigneeAvatarLabel: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[1].name,
+	},
+	{
+		issueKey: "PD-43",
+		summary: "Add preset date ranges",
+		status: "Done",
+		priority: "medium",
+		assigneeAvatarSrc: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[2].avatarSrc,
+		assigneeAvatarLabel: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[2].name,
+	},
+	{
+		issueKey: "PD-44",
+		summary: "Handle timezone boundaries",
+		status: "In Progress",
+		priority: "major",
+		assigneeAvatarSrc: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[1].avatarSrc,
+		assigneeAvatarLabel: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[1].name,
+	},
+	{
+		issueKey: "PD-45",
+		summary: "Test date-range edge cases",
+		status: "To Do",
+		priority: "minor",
 		assigneeUnassignedKind: "person",
 	},
 ] as const;
@@ -469,7 +513,7 @@ function getExperimentalDemoPullRequest(
 }
 
 interface JiraIssuePageProps {
-	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states" | "agent-activity-states-experimental" | "agent-activity-states-experimental-v2";
+	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states" | "agent-activity-states-experimental" | "agent-activity-states-experimental-v2" | "project-butter";
 }
 
 function JiraIssueUncapturedWorkDemo() {
@@ -515,6 +559,14 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 		: isSubtasksVariant
 			? "Venn's test"
 			: "Acmecorp: Prepare for bid recommendation for ESM RFP";
+
+	if (variant === "project-butter") {
+		return (
+			<ProjectButterPlayground participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS}>
+				{(issueProps) => <JiraIssueExperimentalAgentActivityStatesPage iconScale="comfortable" issueProps={{ ...issueProps, subtasks: PROJECT_BUTTER_DEMO_SUBTASKS }} />}
+			</ProjectButterPlayground>
+		);
+	}
 
 	if (variant === "agent-activity-states-experimental-v2") {
 		return <JiraIssueExperimentalAgentActivityStatesPage iconScale="comfortable" />;
@@ -592,6 +644,7 @@ const EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW: JiraIssuePullRequestPreview = {
 };
 
 interface JiraIssueAgentActivityStatesDemoProps {
+	issueProps?: ProjectButterDemoIssueProps;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	chrome?: JiraIssueChrome;
 	/** Keeps experimental compact internals when chrome toggles to raised. */
@@ -605,14 +658,17 @@ interface JiraIssueAgentActivityStatesDemoProps {
 
 function JiraIssueExperimentalAgentActivityStatesPage({
 	iconScale,
+	issueProps,
 }: Readonly<{
 	iconScale?: JiraIssueIconScale;
+	issueProps?: ProjectButterDemoIssueProps;
 }> = {}): React.ReactElement {
-	const [chrome, setChrome] = useState<JiraIssueChrome>("stroke");
+	const [chrome, setChrome] = useState<JiraIssueChrome>(issueProps?.appearance === "project-butter" ? "raised" : "stroke");
 
 	return (
 		<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
 			<JiraIssueAgentActivityStatesDemo
+				issueProps={issueProps}
 				agentActivityLayout="merged"
 				chrome={chrome}
 				compact
@@ -626,6 +682,7 @@ function JiraIssueExperimentalAgentActivityStatesPage({
 }
 
 function JiraIssueAgentActivityStatesDemo({
+	issueProps,
 	agentActivityLayout = "merged",
 	chrome = "raised",
 	compact = false,
@@ -892,6 +949,7 @@ function JiraIssueAgentActivityStatesDemo({
 						subtasksCompleted={0}
 						summary="Implement advanced date-range filter"
 						tags={[{ text: "FE Development", color: "purple" }]}
+						{...issueProps}
 					/>
 				</div>
 			</div>

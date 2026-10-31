@@ -777,7 +777,7 @@
   },
   "components/blocks/jira-epic/jira-epic.test.js": {
     "no-restricted-syntax": {
-      "count": 32
+      "count": 8
     }
   },
   "components/blocks/jira-insights/components/jira-insights-timeline-rail.tsx": {

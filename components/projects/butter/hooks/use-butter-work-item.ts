@@ -6,7 +6,12 @@ import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { toButterDetachedAgentSession } from "@/components/projects/butter/data/presentation-story";
 
-const PRIORITIES = { major: "High", medium: "Medium", minor: "Low" } as const;
+const PRIORITIES: Readonly<Record<JiraKanbanCardData["priority"], NonNullable<WorkItemData["priority"]>>> = {
+	critical: "Highest",
+	major: "High",
+	medium: "Medium",
+	minor: "Low",
+};
 
 export function useButterWorkItem() {
 	const [selection, setSelection] = useState<{

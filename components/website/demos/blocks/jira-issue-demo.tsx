@@ -73,3 +73,11 @@ export function JiraIssueDemoAgentActivityStatesExperimentalV2() {
 		</div>
 	);
 }
+
+export function JiraIssueDemoProjectButter() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<JiraIssuePage variant="project-butter" />
+		</div>
+	);
+}

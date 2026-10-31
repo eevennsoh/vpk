@@ -36,6 +36,7 @@ import ExperimentalV2JiraKanbanPage from "@/components/blocks/jira-kanban/experi
 		},
 	],
 	props: [
+		{ name: "cardAppearance", type: '"default" | "project-butter"', default: '"default"', description: "Experimental board/page only. Forward the selected JiraIssue presentation to every card while preserving board data, selection, dragging and agent sessions. Butter opts into project-butter." },
 		{ name: "columnChrome", type: '"default" | "simple"', description: "Expanded column backdrop. \"default\" is the sunken well. \"simple\" is no well. Omit for \"default\"." },
 		{ name: "selectionToolbar", type: "JiraKanbanSelectionToolbarConfig", description: "Optional Jira Toolbar actions shown while controlled card selection is non-empty." },
 	],

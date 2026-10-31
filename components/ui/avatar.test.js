@@ -154,9 +154,9 @@ test("hexagon avatars clip an inner frame so corner overlays render unclipped", 
 	assert.match(AVATAR_SOURCE, /function AvatarHexagonBorder\(/);
 	assert.match(AVATAR_SOURCE, /text-border!/);
 	assert.match(AVATAR_SOURCE, /style=\{\{ clipPath: separator \? HEXAGON_SEPARATOR_CLIP : HEXAGON_BORDER_CLIP \}\}/);
-	assert.match(AVATAR_SOURCE, /<AvatarHexagonBorder \/>/);
+	assert.match(AVATAR_SOURCE, /<AvatarHexagonBorder tone=\{borderTone\} \/>/);
 	assert.match(AVATAR_SOURCE, /const HEXAGON_SEPARATOR_CLIP = avatarHexagonClip\(2\)/);
-	assert.match(AVATAR_SOURCE, /data-slot="avatar-hexagon-artwork"[\s\S]*?<AvatarHexagonBorder \/>\s*<\/span>/);
+	assert.match(AVATAR_SOURCE, /data-slot="avatar-hexagon-artwork"[\s\S]*?<AvatarHexagonBorder tone=\{borderTone\} \/>\s*<\/span>/);
 });
 
 test("hexagon corners scale through 4px at 24px and 6px at 32px while borders remain 1px inset", () => {
