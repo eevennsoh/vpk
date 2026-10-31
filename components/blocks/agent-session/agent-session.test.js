@@ -637,7 +637,6 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /lifecycle=\{lifecycleIndicator\}/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator =[\s\S]*isLongDensity[\s\S]*<AgentSessionLifecycle[\s\S]*state=\{shownLifecycleState\}/u);
 	assert.match(CARD_SOURCE, /: <AgentSessionShortLifecycleIcon[\s\S]*state=\{shownLifecycleState\}/u);
-	assert.match(CARD_SOURCE, /<AgentSessionLongMetadata item=\{item\} \/>/u);
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 rounded-lg/u);
 	assert.match(
 		METADATA_SOURCE,

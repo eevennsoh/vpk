@@ -173,12 +173,12 @@ test("description edits and comment drafts survive closing and reopening the wor
 test("branch metadata stays opt-in for existing agent session consumers", async () => {
 	const item = { agent: { name: "Coding agent" }, branch: "feature/onboarding", id: "coding", state: "needs-input", title: "Draft the PRD", timeLabel: "19 May" };
 	const view = await renderComponent({
-		entry: "components/blocks/agent-session/agent-session-metadata.tsx",
-		exportName: "AgentSessionLongMetadata",
-		props: { item },
+		entry: "components/blocks/agent-session/index.tsx",
+		exportName: "AgentSession",
+		props: { items: [item], density: "long", variant: "large" },
 	});
 	assert.equal(view.queryByText("feature/onboarding"), null);
-	await view.rerender({ item, showBranch: true });
+	await view.rerender({ items: [item], density: "long", variant: "large", showBranch: true });
 	assert.equal(view.queryByText("feature/onboarding") !== null, true);
 });
 
