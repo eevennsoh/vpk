@@ -69,7 +69,7 @@ test("the agent shell latches on so a filtered-away row cannot remount the card"
 test("both tree-shape gates read the latch", () => {
 	assert.match(
 		SOURCE,
-		/const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| agentActivityShellMounted/u,
+		/const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| appearance === "project-butter"\s*\n\t\t\|\| agentActivityShellMounted/u,
 	);
 	// `hasInteractiveContent` picks the article vs. plain-card branch. Leaving
 	// it on the raw flag would remount the card even with the shell latched.

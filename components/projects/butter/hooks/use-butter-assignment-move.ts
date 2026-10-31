@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
 import type { JiraKanbanAgentData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import type { JiraKanbanIssueMoveRequest } from "@/components/blocks/jira-kanban/experimental/hooks/use-issue-move-request";
@@ -13,6 +13,20 @@ interface PendingAssignment {
 	columnTitle: string;
 }
 
+function restoreAssignedCardFocus(issueKey: string) {
+	const root = document.querySelector("[data-butter-board-surface]");
+	if (!root) return;
+	// Native arrival temporarily makes the moved card inert; restore focus once it is usable.
+	const observer = new MutationObserver(() => {
+		const row = root.querySelector<HTMLElement>(`[data-issue-key="${CSS.escape(issueKey)}"] [data-jira-issue-agent-row-handle]`);
+		if (!row || row.closest('[inert], [aria-hidden="true"]')) return;
+		observer.disconnect();
+		if (document.activeElement === document.body) row.focus({ preventScroll: true });
+	});
+	observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["inert", "aria-hidden"] });
+	return () => observer.disconnect();
+}
+
 /** Board assignment shares move geometry, with its card glow owning the feedback. */
 export function useButterAssignmentMove({
 	agents,
@@ -25,9 +39,13 @@ export function useButterAssignmentMove({
 }>) {
 	const catalog = useMemo(() => mergeJiraKanbanAgentCatalog(agents), [agents]);
 	const pending = useRef<PendingAssignment | undefined>(undefined);
+	const stopFocusRestore = useRef<(() => void) | undefined>(undefined);
+	useEffect(() => () => stopFocusRestore.current?.(), []);
 	const sequence = useRef(0);
 	const [issueMoveRequest, setIssueMoveRequest] = useState<JiraKanbanIssueMoveRequest>();
 	const queueUpdate = useCallback((issueKey: string, update: PendingAssignment["update"]) => {
+		stopFocusRestore.current?.();
+		stopFocusRestore.current = undefined;
 		const move = getButterCardMove(boardColumns, update(boardColumns), issueKey);
 		if (!move) {
 			setBoardColumns(update);
@@ -52,6 +70,7 @@ export function useButterAssignmentMove({
 			pending.current = undefined;
 			setIssueMoveRequest(undefined);
 			setBoardColumns(assignment.update(columns));
+			stopFocusRestore.current = restoreAssignedCardFocus(assignment.issueKey);
 		} else {
 			setBoardColumns([...columns]);
 		}

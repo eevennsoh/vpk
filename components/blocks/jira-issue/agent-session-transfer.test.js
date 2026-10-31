@@ -121,7 +121,7 @@ test("Jira issue unlink detaches under the work item; Link remounts the chin", (
 	);
 	assert.match(
 		SOURCE,
-		/const insetsAgentActivitySurfaceBottom = hasActiveAgentActivityShell && !hasAgentActivityChin;/u,
+		/const insetsAgentActivitySurfaceBottom = hasActiveAgentActivityShell && \(!hasAgentActivityChin \|\| appearance === "project-butter"\);/u,
 	);
 	assert.doesNotMatch(PAGE_SOURCE, /case "agent-session-unlink":\s*\n\s*return JIRA_ISSUE_AGENT_ACTIVITIES/u);
 	assert.match(PAGE_SOURCE, /sessionTransferAfter=\{showDetachedSessions/u);

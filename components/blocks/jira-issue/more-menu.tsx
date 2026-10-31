@@ -42,6 +42,8 @@ export interface JiraIssueMoreMenuActions {
 }
 
 interface JiraIssueMoreMenuProps {
+	availableActions?: readonly JiraIssueMoreAction[];
+	flagged?: boolean;
 	issueKey: string;
 	selected?: boolean;
 	moreMenuActions?: JiraIssueMoreMenuActions;
@@ -76,7 +78,7 @@ function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 	) : <JiraIssueMoreDropdown {...props} />;
 }
 
-function JiraIssueMoreDropdown({ generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange }: Readonly<JiraIssueMoreMenuProps>) {
+function JiraIssueMoreDropdown({ availableActions, flagged, generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange }: Readonly<JiraIssueMoreMenuProps>) {
 	const [open, setOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -87,6 +89,9 @@ function JiraIssueMoreDropdown({ generativeAction, generativeActionIssue, issueK
 
 	function select(action: JiraIssueMoreAction) {
 		return () => onActionSelect?.(action);
+	}
+	function unavailable(action: JiraIssueMoreAction) {
+		return availableActions !== undefined && (!onActionSelect || !availableActions.includes(action));
 	}
 
 	function selectCard() {
@@ -126,23 +131,23 @@ function JiraIssueMoreDropdown({ generativeAction, generativeActionIssue, issueK
 					</>
 				) : null}
 				<DropdownMenuGroup>
-					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("change-status")}>Change status</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("move-work-item")} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("change-status")} onSelect={select("change-status")}>Change status</DropdownMenuItem>
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
-					<DropdownMenuItem onSelect={select("copy-link")}>Copy link</DropdownMenuItem>
-					<DropdownMenuItem onSelect={select("copy-key")}>Copy key</DropdownMenuItem>
+					<DropdownMenuItem disabled={unavailable("copy-link")} onSelect={select("copy-link")}>Copy link</DropdownMenuItem>
+					<DropdownMenuItem disabled={unavailable("copy-key")} onSelect={select("copy-key")}>Copy key</DropdownMenuItem>
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
-					{generativeAction ? null : <DropdownMenuItem elemAfter={CHEVRON} onSelect={select("add-agent")}>Add agent</DropdownMenuItem>}
-					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("link-confluence-item")}>Link Confluence item</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("link-work-item")}>Link work item</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("change-parent")}>Change parent</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("select-cover")}>Select cover</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("add-flag")}>Add flag</DropdownMenuItem>
+					{generativeAction ? null : <DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("add-agent")} onSelect={select("add-agent")}>Add agent</DropdownMenuItem>}
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("link-confluence-item")} onSelect={select("link-confluence-item")}>Link Confluence item</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("link-work-item")} onSelect={select("link-work-item")}>Link work item</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("change-parent")} onSelect={select("change-parent")}>Change parent</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("select-cover")} onSelect={select("select-cover")}>Select cover</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("edit-labels")} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("add-flag")} onSelect={select("add-flag")}>{flagged ? "Remove flag" : "Add flag"}</DropdownMenuItem>
 				</DropdownMenuGroup>
 				{moreMenuActions ? (
 					<>

@@ -1,0 +1,38 @@
+<svg width="32" height="35" viewBox="0 0 32 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Avatars">
+<g id="Agent">
+<path id="Glyph" d="M29.5011 7.02224L18.5064 0.670554C16.956 -0.22512 15.045 -0.223381 13.4962 0.675116L2.49097 7.05966C0.949056 7.95418 0 9.60196 0 11.3846V23.0935C0 24.8793 0.952494 26.5296 2.49885 27.4229L13.4989 33.7777C15.0464 34.6717 16.9536 34.6717 18.5011 33.7777L29.5011 27.4229C31.0475 26.5296 32 24.8793 32 23.0935V11.3517C32 9.56585 31.0475 7.91558 29.5011 7.02224Z" fill="#14120B"/>
+<g id="opencode-logo-dark 1" clip-path="url(#clip0_4180_23554)">
+<g id="Clip path group">
+<mask id="mask0_4180_23554" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="8" y="8" width="16" height="19">
+<g id="clip0_1401_86283">
+<path id="Vector" d="M23.1998 8.2226H8.7998V26.2226H23.1998V8.2226Z" fill="white"/>
+</g>
+</mask>
+<g mask="url(#mask0_4180_23554)">
+<g id="Group">
+<g id="Mask group">
+<mask id="mask1_4180_23554" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="8" y="8" width="16" height="19">
+<g id="Group_2">
+<path id="Vector_2" d="M23.1998 8.2226H8.7998V26.2226H23.1998V8.2226Z" fill="white"/>
+</g>
+</mask>
+<g mask="url(#mask1_4180_23554)">
+<g id="Group_3">
+<path id="Vector_3" d="M19.6004 22.6225H12.4004V15.4225H19.6004V22.6225Z" fill="#4B4646"/>
+<path id="Vector_4" d="M19.5998 11.8226H12.3998V22.6226H19.5998V11.8226ZM23.1998 26.2226H8.7998V8.2226H23.1998V26.2226Z" fill="#F1ECEC"/>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_4180_23554">
+<rect width="14.4" height="18" fill="white" transform="translate(8.7998 8.2226)"/>
+</clipPath>
+</defs>
+</svg>
