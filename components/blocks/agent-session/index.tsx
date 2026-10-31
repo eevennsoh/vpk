@@ -127,6 +127,7 @@ export function AgentSession({
 	showUntrackedWorkFooter,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
+	showBranch = false,
 	style,
 	variant = "large",
 	visibilityLabel,
@@ -312,6 +313,7 @@ export function AgentSession({
 								sessionDrag={sessionDrag}
 								showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 								showWorkingSpinner={showWorkingSpinner}
+								showBranch={showBranch}
 								triageRow={rowTriage?.get(item.id)}
 								draggingIds={draggingIds}
 								visibilityLabel={visibilityLabel}

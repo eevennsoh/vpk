@@ -19,6 +19,16 @@ const COUNTER_SOURCE = `
 	}
 `;
 
+test("fill replaces contenteditable text and delivers a native input event", async () => {
+	const view = await renderComponent({ source: `import { useState } from "react";
+		export default function Editable() { const [value, setValue] = useState(""); return <><div contentEditable role="textbox" aria-label="Comment" onInput={(event) => setValue(event.currentTarget.textContent)} /><p>Saved: {value}</p></>; }` });
+	await view.fill(view.getByRole("textbox", { name: "Comment" }), "First draft");
+	assert.equal(view.queryByText("Saved: First draft") !== null, true);
+	await view.fill(view.getByRole("textbox", { name: "Comment" }), "Replacement");
+	assert.equal(view.queryByText("Saved: Replacement") !== null, true);
+	assert.equal(view.getByRole("textbox", { name: "Comment" }).textContent, "Replacement");
+});
+
 test("renders an inline component with props", async () => {
 	const view = await renderComponent({ exportName: "Counter", props: { label: "Clicks" }, source: COUNTER_SOURCE });
 

@@ -78,6 +78,8 @@ interface TopNavigationProps {
 	settingsIconOnly?: boolean;
 	/** Route-owned actions rendered below the settings Properties, after a separator. */
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
+	/** Open host-owned settings directly from the global cog. */
+	onSettingsClick?: () => void;
 	/**
 	 * Forces the "Ask Rovo" pill to render even for products that normally
 	 * suppress it (Rovo/Studio). The Figma global top navigation always shows
@@ -171,6 +173,7 @@ export default function TopNavigation({
 	settingsDesignVariantIds,
 	settingsIconOnly = false,
 	settingsMenuItems,
+	onSettingsClick,
 	forceShowRovoAction = false,
 	variant = "shell",
 	sidebar,
@@ -375,6 +378,7 @@ export default function TopNavigation({
 			settingsDesignVariantIds={settingsDesignVariantIds}
 			settingsIconOnly={settingsIconOnly}
 			settingsMenuItems={settingsMenuItems}
+			onSettingsClick={onSettingsClick}
 			forceShowRovoAction={forceShowRovoAction}
 			isChatOpen={nav.isSidebarChatOpen}
 			onToggleChat={nav.toggleChat}

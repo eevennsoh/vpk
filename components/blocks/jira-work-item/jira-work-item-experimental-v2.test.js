@@ -701,11 +701,11 @@ test("the block index resolves every experimental surface from one map", () => {
 
 	assert.match(
 		indexSource,
-		/export type JiraWorkItemVariant = "default" \| "experimental" \| "experimental-v2" \| "experimental-v3" \| "experimental-v4" \| "experimental-v5" \| "team-eu26";/u,
+		/export type JiraWorkItemVariant = "default" \| "experimental" \| "experimental-v2" \| "experimental-v3" \| "experimental-v4" \| "experimental-v5" \| "team-eu26" \| "project-butter";/u,
 	);
 	assert.match(
 		indexSource,
-		/const EXPERIMENTAL_SURFACES = \{\s*experimental: ExperimentalJiraWorkItem,\s*"experimental-v2": ExperimentalV2JiraWorkItem,\s*"experimental-v3": ExperimentalV3JiraWorkItem,\s*"experimental-v4": ExperimentalV4JiraWorkItem,\s*"experimental-v5": ExperimentalV5JiraWorkItem,\s*"team-eu26": TeamEu26JiraWorkItem,\s*\} as const;/u,
+		/const EXPERIMENTAL_SURFACES = \{\s*experimental: ExperimentalJiraWorkItem,\s*"experimental-v2": ExperimentalV2JiraWorkItem,\s*"experimental-v3": ExperimentalV3JiraWorkItem,\s*"experimental-v4": ExperimentalV4JiraWorkItem,\s*"experimental-v5": ExperimentalV5JiraWorkItem,\s*"team-eu26": TeamEu26JiraWorkItem,\s*"project-butter": ProjectButterJiraWorkItem,\s*\} as const;/u,
 	);
 	assert.match(indexSource, /type ExperimentalVariant = keyof typeof EXPERIMENTAL_SURFACES;/u);
 	assert.match(indexSource, /const ExperimentalSurface = EXPERIMENTAL_SURFACES\[surface\];/u);

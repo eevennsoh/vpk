@@ -34,15 +34,15 @@ export const BUTTON_DETAIL: ComponentDetail = {
     props: [
       {
         name: "variant",
-        type: '"default" | "outline" | "secondary" | "ghost" | "destructive" | "link"',
+        type: '"default" | "outline" | "secondary" | "ghost" | "disclosure" | "destructive" | "link" | "warning" | "discovery"',
         default: '"default"',
-        description: "Visual style variant of the button.",
+        description: "Visual style variant. Disclosure uses an opaque surface and neutral expanded state for card-border controls.",
       },
       {
         name: "size",
-        type: '"default" | "compact" | "icon" | "icon-compact"',
+        type: '"default" | "compact" | "disclosure" | "icon" | "icon-compact"',
         default: '"default"',
-        description: "Size of the button. Default is 32px tall; compact is 24px tall.",
+        description: "Default is 32px tall; compact is 24px. Disclosure is a 24px pill with 12px regular text and 8px inline padding.",
       },
       {
         name: "isLoading",

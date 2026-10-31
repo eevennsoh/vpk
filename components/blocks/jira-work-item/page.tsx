@@ -50,6 +50,9 @@ export default function JiraWorkItemPage() {
 			<Button type="button" onClick={() => setActiveVariant("team-eu26")}>
 				Open Team EU26 session
 			</Button>
+			<Button type="button" variant="outline" onClick={() => setActiveVariant("project-butter")}>
+				Open Project butter session
+			</Button>
 		</div>
 	);
 }

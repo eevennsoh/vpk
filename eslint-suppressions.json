@@ -520,7 +520,7 @@
   },
   "components/blocks/agent-session/agent-session.test.js": {
     "no-restricted-syntax": {
-      "count": 526
+      "count": 525
     }
   },
   "components/blocks/agent-session/page.tsx": {

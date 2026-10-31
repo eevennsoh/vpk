@@ -40,6 +40,8 @@ const buttonVariants = cva(
 					"bg-secondary text-text-subtle [&_svg]:text-icon-subtle hover:bg-secondary/80 active:bg-secondary/70 disabled:pointer-events-none disabled:opacity-(--opacity-disabled)",
 				ghost:
 					"text-text-subtle [&_svg]:text-icon-subtle hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed disabled:pointer-events-none disabled:opacity-(--opacity-disabled)",
+				disclosure:
+					"border-0 bg-surface text-text-subtlest [&_svg]:text-icon-subtle hover:bg-linear-to-b hover:from-bg-neutral-subtle-hovered hover:to-bg-neutral-subtle-hovered hover:text-text focus-visible:bg-linear-to-b focus-visible:from-bg-neutral-subtle-hovered focus-visible:to-bg-neutral-subtle-hovered focus-visible:text-text aria-expanded:bg-surface aria-expanded:text-text-subtlest aria-expanded:border-transparent aria-expanded:hover:bg-surface aria-expanded:hover:text-text aria-expanded:active:bg-surface aria-expanded:[&_svg]:text-icon-subtle aria-expanded:[&_[data-slot=icon]]:text-icon-subtle disabled:pointer-events-none disabled:opacity-(--opacity-disabled)",
 				destructive:
 					"bg-bg-danger text-text-danger hover:bg-bg-danger-hovered active:bg-bg-danger-pressed focus-visible:ring-destructive/20 focus-visible:border-border-danger disabled:pointer-events-none disabled:opacity-(--opacity-disabled)",
 				link: "text-primary underline-offset-4 hover:underline active:text-link-pressed disabled:pointer-events-none disabled:opacity-(--opacity-disabled)",
@@ -51,6 +53,7 @@ const buttonVariants = cva(
 			size: {
 				default: defaultButtonSize,
 				compact: compactButtonSize,
+				disclosure: "h-6 rounded-full px-2 text-xs font-normal",
 				icon: defaultIconButtonSize,
 				"icon-compact": compactIconButtonSize,
 			},

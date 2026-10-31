@@ -85,6 +85,8 @@ export interface ScrubberRailProps {
 	showPill?: boolean;
 	/** Which surface the rail is painted on. `inverse` for a dark host. */
 	tone?: ScrubberTone;
+	appearance?: "notches" | "dots";
+	selectionMode?: "hover" | "drag";
 }
 
 function noop() {}
@@ -114,6 +116,8 @@ export function ScrubberRail({
 	onSelect,
 	showPill = true,
 	tone = "default",
+	appearance = "notches",
+	selectionMode = "hover",
 }: Readonly<ScrubberRailProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	// One resolved index for everything downstream. An `activeIndex` that
@@ -128,6 +132,7 @@ export function ScrubberRail({
 		onHoverChange,
 		onSelect,
 		shouldReduceMotion: shouldReduceMotion === true,
+		selectOnHover: selectionMode === "hover",
 	});
 
 	const activeEntry = entries[resolvedIndex] ?? null;
@@ -149,13 +154,16 @@ export function ScrubberRail({
 				aria-orientation={axis === "y" ? "vertical" : "horizontal"}
 				onKeyDown={handleKeyDown}
 				onPointerMove={handlePointerMove}
+				onPointerDown={selectionMode === "drag" ? (event) => { event.currentTarget.setPointerCapture(event.pointerId); handlePointerMove(event); } : undefined}
 				onPointerLeave={handlePointerLeave}
-				className={cn("relative min-w-0", axis === "y" ? "h-full w-6 shrink-0" : "h-3.5 w-full")}
+				className={cn("relative min-w-0", axis === "y" ? "h-full w-6 shrink-0" : "h-3.5 w-full", selectionMode === "drag" && "touch-none")}
 			>
+				{appearance === "dots" ? <span aria-hidden className={cn("pointer-events-none absolute border-dashed border-border", axis === "y" ? "inset-y-0 left-1/2 border-l" : "inset-x-0 top-1/2 border-t")} /> : null}
 				{entries.map((entry, index) => (
 					<ScrubberMark
 						key={entry.id}
 						axis={axis}
+						appearance={appearance}
 						entry={entry}
 						isActive={index === resolvedIndex}
 						magnify={magnify}

@@ -77,6 +77,12 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 				"Row shape for the large footprint. `short` leads with a 32px identity and an agent · PR · host · time byline (PR omitted when none is linked). `long` drops the leading avatar, gives the title the full width, and adds agent, a cycling tool call, an artifact chip, session type/time, and a trailing indicator. Ignored by the medium and small footprints, which have fixed geometry.",
 		},
 		{
+			name: "showBranch",
+			type: "boolean",
+			default: "false",
+			description: "Include the session's feature branch in long-density metadata. Other densities and the default byline are unchanged.",
+		},
+		{
 			name: "items",
 			type: "readonly AgentSessionItem[]",
 			default: "built-in sample data",

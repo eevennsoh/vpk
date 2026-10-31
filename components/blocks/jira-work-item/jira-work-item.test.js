@@ -22,7 +22,7 @@ function readBlockFile(relativePath) {
 // ── Source shape: variant API + experimental preset ──────────────────────────
 
 test("JiraWorkItem exposes the variant API and the minimal experimental preset prop", () => {
-	assert.match(JIRA_WORK_ITEM_SOURCE, /export type JiraWorkItemVariant = "default" \| "experimental" \| "experimental-v2" \| "experimental-v3" \| "experimental-v4" \| "experimental-v5" \| "team-eu26";/u);
+	assert.match(JIRA_WORK_ITEM_SOURCE, /export type JiraWorkItemVariant = "default" \| "experimental" \| "experimental-v2" \| "experimental-v3" \| "experimental-v4" \| "experimental-v5" \| "team-eu26" \| "project-butter";/u);
 	assert.match(JIRA_WORK_ITEM_SOURCE, /variant\?: JiraWorkItemVariant;/u);
 	assert.match(JIRA_WORK_ITEM_SOURCE, /variant = "default"/u);
 	assert.match(JIRA_WORK_ITEM_SOURCE, /initialExperimentalPreset\?: JiraWorkItemExperimentalPreset;/u);
@@ -35,7 +35,7 @@ test("JiraWorkItem exposes the variant API and the minimal experimental preset p
 	// is written once and the variant union cannot drift from the surfaces.
 	assert.match(
 		JIRA_WORK_ITEM_SOURCE,
-		/const EXPERIMENTAL_SURFACES = \{\s*experimental: ExperimentalJiraWorkItem,\s*"experimental-v2": ExperimentalV2JiraWorkItem,\s*"experimental-v3": ExperimentalV3JiraWorkItem,\s*"experimental-v4": ExperimentalV4JiraWorkItem,\s*"experimental-v5": ExperimentalV5JiraWorkItem,\s*"team-eu26": TeamEu26JiraWorkItem,\s*\} as const;/u,
+		/const EXPERIMENTAL_SURFACES = \{\s*experimental: ExperimentalJiraWorkItem,\s*"experimental-v2": ExperimentalV2JiraWorkItem,\s*"experimental-v3": ExperimentalV3JiraWorkItem,\s*"experimental-v4": ExperimentalV4JiraWorkItem,\s*"experimental-v5": ExperimentalV5JiraWorkItem,\s*"team-eu26": TeamEu26JiraWorkItem,\s*"project-butter": ProjectButterJiraWorkItem,\s*\} as const;/u,
 	);
 	assert.match(JIRA_WORK_ITEM_SOURCE, /type ExperimentalVariant = keyof typeof EXPERIMENTAL_SURFACES;/u);
 	// The experimental preset type is the model's preset union.
@@ -605,7 +605,7 @@ test("page.tsx is the variant chooser with the newest fork primary and all varia
 	);
 	// Exactly one primary call to action: the newest fork. Every older chooser
 	// entry is a neutral outline button.
-	assert.equal((pageSource.match(/variant="outline"/gu) ?? []).length, 6);
+	assert.equal((pageSource.match(/variant="outline"/gu) ?? []).length, 7);
 	assert.match(
 		pageSource,
 		/<Button type="button" onClick=\{\(\) => setActiveVariant\("team-eu26"\)\}>/u,
@@ -639,7 +639,7 @@ test("JiraWorkItem keeps the standard + experimental registry, detail, demo, and
 	assert.match(jiraWorkItemDetailsSource, /title: "Experimental v4"[\s\S]*demoSlug: "jira-work-item-demo-experimental-v4"/u);
 	assert.match(jiraWorkItemDetailsSource, /title: "Experimental v5"[\s\S]*demoSlug: "jira-work-item-demo-experimental-v5"/u);
 	assert.match(jiraWorkItemDetailsSource, /title: "Team EU26"[\s\S]*demoSlug: "jira-work-item-demo-team-eu26"/u);
-	assert.equal((jiraWorkItemDetailsSource.match(/demoSlug:/gu) ?? []).length, 7);
+	assert.equal((jiraWorkItemDetailsSource.match(/demoSlug:/gu) ?? []).length, 8);
 	assert.doesNotMatch(jiraWorkItemDetailsSource, /title: "[^"]+ · (?:Filled|Empty|Multiple)/u);
 	assert.match(detailsSource, /name: "initialIssueOpen"[\s\S]*Opens the Jira work item modal on initial render/u);
 	assert.match(detailsSource, /name: "onIssueClose"[\s\S]*Called after the Jira work item modal closes/u);

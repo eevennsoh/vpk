@@ -246,11 +246,11 @@ export function StatusPill({
 	);
 }
 
-export function PriorityRowField({ value, onChange }: Readonly<{ value: PriorityValue | null; onChange: (next: PriorityValue) => void }>) {
+export function PriorityRowField({ value, onChange, renderValue }: Readonly<{ value: PriorityValue | null; onChange: (next: PriorityValue) => void; renderValue?: (value: PriorityValue) => ReactNode }>) {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger render={<DetailValueTrigger aria-label={value ? `Change priority. Current priority: ${value}` : "Add priority"} />}>
-				{value ? <PriorityLabel value={value} /> : <span className="text-sm text-text-subtlest">Add priority</span>}
+				{value ? renderValue?.(value) ?? <PriorityLabel value={value} /> : <span className="text-sm text-text-subtlest">Add priority</span>}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-56" positionerClassName={METADATA_PICKER_POSITIONER_CLASS} sideOffset={METADATA_PICKER_SIDE_OFFSET}>
 				{PRIORITY_OPTIONS.map((option) => (

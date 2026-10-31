@@ -36,6 +36,8 @@ export const referenceEase = {
 	generationDraw: [0.16, 1, 0.3, 1],
 	/** transitions.dev `--ease-smooth-out`: the UI generation reveal. */
 	smoothOut: [0.22, 1, 0.36, 1],
+	/** wiv-v2/main @72a8dc5 App.css: floating comment bar reveal. */
+	workItemCommentReveal: [0.4, 0, 0.2, 1],
 	/** Vohmann 6627c513 AgentInvocationPreviewHandoff, matching its status-label roll. */
 	agentInvocationHandoff: [0.4, 0, 0.2, 1],
 } as const satisfies Record<string, CubicBezier>;

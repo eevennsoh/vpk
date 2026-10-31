@@ -118,20 +118,20 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "filter",
-			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "insights-only"',
+			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "history-only" | "insights-only"',
 			default: "undefined (uncontrolled)",
 			description:
-				"Controlled timeline filter. `agents-only` shows agent cards; `needs-input` shows sessions awaiting the viewer; `comments-only` shows comment entries; `insights-only` shows captured decisions.",
+				"Controlled timeline filter. `agents-only` shows agent cards; `needs-input` shows sessions awaiting the viewer; `comments-only` shows comment entries; `history-only` shows changes and other events; `insights-only` shows captured decisions.",
 		},
 		{
 			name: "defaultFilter",
-			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "insights-only"',
+			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "history-only" | "insights-only"',
 			default: '"all"',
 			description: "Initial filter when the header view control is uncontrolled.",
 		},
 		{
 			name: "onFilterChange",
-			type: '(next: "all" | "agents-only" | "needs-input" | "comments-only" | "insights-only") => void',
+			type: '(next: "all" | "agents-only" | "needs-input" | "comments-only" | "history-only" | "insights-only") => void',
 			description: "Called when the header view control changes the activity filter.",
 		},
 		{

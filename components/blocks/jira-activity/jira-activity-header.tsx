@@ -49,6 +49,7 @@ const FILTER_TRIGGER_LABELS: Record<Exclude<JiraActivityFilter, "all">, string> 
 	"agents-only": "Show agents",
 	"needs-input": "Show needs input",
 	"comments-only": "Show comments",
+	"history-only": "Show history",
 	"insights-only": "Show insights",
 };
 
@@ -56,6 +57,7 @@ const FILTER_MENU_LABELS: Record<Exclude<JiraActivityFilter, "all">, string> = {
 	"agents-only": "Agents",
 	"needs-input": "Needs input",
 	"comments-only": "Comments",
+	"history-only": "History",
 	"insights-only": "Insights",
 };
 

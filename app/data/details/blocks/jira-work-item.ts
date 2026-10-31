@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
-	description: "Jira work-item surface with a standard current-state variant and independently versioned experimental forks for agent/chat iteration.",
+	description: "Jira work-item surface with a standard current-state variant, independently versioned experimental forks, and the Project butter agent-session layout.",
 	importStatement: `import JiraWorkItem from "@/components/blocks/jira-work-item";`,
 	usage: `import JiraWorkItem from "@/components/blocks/jira-work-item";
 
@@ -42,8 +42,20 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 			description: "Compare the content-rich VITA-1 work item with its sparse empty state in one Team EU26 demo.",
 			demoSlug: "jira-work-item-demo-team-eu26",
 		},
+		{
+			title: "Project butter",
+			id: "project-butter",
+			description: "Open Project butter in full screen, a modal, or a side panel. Toggle Empty before opening or through the global header Settings cog.",
+			demoSlug: "jira-work-item-demo-project-butter",
+		},
 	],
 	props: [
+		{
+			name: "projectButterPresentation",
+			type: "\"full-screen\" | \"modal\" | \"side-panel\"",
+			default: "\"full-screen\"",
+			description: "Initial Project butter presentation. The global Settings cog switches presentation and Empty without discarding drafts.",
+		},
 		{
 			name: "initialIssueOpen",
 			type: "boolean",
@@ -57,7 +69,7 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "variant",
-			type: "\"default\" | \"experimental\" | \"experimental-v2\" | \"experimental-v3\" | \"experimental-v4\" | \"experimental-v5\" | \"team-eu26\"",
+			type: "\"default\" | \"experimental\" | \"experimental-v2\" | \"experimental-v3\" | \"experimental-v4\" | \"experimental-v5\" | \"team-eu26\" | \"project-butter\"",
 			default: "\"default\"",
 			description: "Opt-in layout variation with independently owned component trees.",
 		},

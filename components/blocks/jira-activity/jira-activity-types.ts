@@ -276,6 +276,7 @@ export type JiraActivitySortOrder = "ascending" | "descending";
  * - `agents-only` — agent-authored comments and generated-output cards
  * - `needs-input` — entries awaiting viewer input (`sessionItem.state === "needs-input"`)
  * - `comments-only` — human and agent comment cards only
+ * - `history-only` — work item changes and other non-comment events
  * - `insights-only` — captured insight/decision rows on the shared Activity timeline
  */
 export type JiraActivityFilter =
@@ -283,4 +284,5 @@ export type JiraActivityFilter =
 	| "agents-only"
 	| "needs-input"
 	| "comments-only"
+	| "history-only"
 	| "insights-only";

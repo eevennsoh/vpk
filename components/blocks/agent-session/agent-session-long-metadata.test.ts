@@ -13,6 +13,7 @@ type Segment = {
 
 type Input = {
 	agentName: string;
+	branch?: string;
 	artifactLabel?: string;
 	host?: "cloud" | "local";
 	prStatus?: "created" | "merged" | "failed";
@@ -20,6 +21,12 @@ type Input = {
 };
 
 const build = toAgentSessionMetadataSegments as (input: Input) => readonly Segment[];
+
+test("an opted-in branch sits between the agent and artifact without changing the default byline", () => {
+	assert.deepEqual(build({ agentName: "Jira Coding agent", branch: "feature/VITA-1", artifactLabel: "#1839" }).map((segment) => segment.kind), ["agent", "branch", "artifact", "time"]);
+	assert.equal(build({ agentName: "Jira Coding agent", branch: "feature/VITA-1" }).find((segment) => segment.kind === "branch")?.label, "feature/VITA-1");
+	assert.equal(build({ agentName: "Jira Coding agent" }).some((segment) => segment.kind === "branch"), false);
+});
 
 /** Chunk kinds in order, which is the part the renderer depends on. */
 function kinds(input: Input): string[] {
