@@ -31,6 +31,70 @@ test("Butter previews an assigned agent from its session avatar", async ({ page 
 	await expect(lanyard).toBeHidden();
 	await expect(assignment).toBeVisible();
 });
+test("Butter aligns footer icons with the agent row", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	for (const key of ["PAY-105", "PAY-107", "PAY-112", "PAY-123", "PAY-101"]) {
+		const issue = card(page, key);
+		const centers = await issue.evaluate((node) => {
+			const center = (selector: string) => {
+				const bounds = node.querySelector(selector)?.getBoundingClientRect();
+				return bounds ? bounds.left + bounds.width / 2 : null;
+			};
+			return {
+				metadata: center('[aria-label^="Pull request"] svg') ?? center('[aria-label$="priority"] svg'),
+				agent: center('[data-jira-issue-agent-row-handle] > div > span:first-child'),
+				assignee: center('[data-slot="jira-issue-project-butter"] [data-slot="jira-issue-assignee-slot"]'),
+				status: center('[data-slot="jira-issue-agent-status-affordance"]'),
+			};
+		});
+		for (const value of Object.values(centers)) expect(value, `${key}: ${JSON.stringify(centers)}`).not.toBeNull();
+		expect(Math.abs(centers.metadata! - centers.agent!), key).toBeLessThan(0.5);
+		expect(Math.abs(centers.assignee! - centers.status!), key).toBeLessThan(0.5);
+	}
+});
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`Butter's inset keeps card content still and uses one raised edge (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(appUrl("/butter"));
+		await page.evaluate(() => document.fonts.ready);
+		const issue = card(page, "PAY-118");
+		const summary = issue.getByText("Carry card-artwork metadata into the next wallet epic", { exact: true });
+		await summary.hover();
+		const add = issue.getByRole("button", { name: "Add agent to PAY-118", exact: true });
+		const surface = issue.locator('[data-slot="jira-issue-surface"]');
+		const baseline = await issue.evaluate((node) => {
+			const host = node.querySelector("article")!.getBoundingClientRect();
+			return ["[data-slot='jira-issue-project-butter']", "p", "[data-slot='jira-issue-assignee-slot']"].map((selector) => {
+				const bounds = node.querySelector(selector)!.getBoundingClientRect();
+				return [bounds.x - host.x, bounds.y - host.y, bounds.width, bounds.height];
+			});
+		});
+		const framesPromise = issue.evaluate(async (node) => {
+			const trigger = node.querySelector<HTMLButtonElement>("[aria-label='Add agent to PAY-118']")!;
+			await new Promise<void>((resolve) => trigger.addEventListener("click", () => resolve(), { once: true, capture: true }));
+			const frames: number[][][] = [];
+			for (let i = 0; i < 32; i++) {
+				const host = node.querySelector("article")!.getBoundingClientRect();
+				frames.push(["[data-slot='jira-issue-project-butter']", "p", "[data-slot='jira-issue-assignee-slot']"].map((selector) => {
+					const bounds = node.querySelector(selector)!.getBoundingClientRect();
+					return [bounds.x - host.x, bounds.y - host.y, bounds.width, bounds.height];
+				}));
+				await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+			}
+			return frames;
+		});
+		await add.click();
+		const frames = await framesPromise;
+		expect(frames.every((frame) => frame.every((box, index) => box.every((value, axis) =>
+			Math.abs(value - baseline[index][axis]) < 0.5))), JSON.stringify({ baseline, frames })).toBe(true);
+		await expect(page.getByRole("menu", { name: "Agents", exact: true })).toBeVisible();
+		await expect(surface).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
+		await expect(surface).not.toHaveCSS("box-shadow", "none");
+		await page.keyboard.press("Escape");
+		await expect(add).toBeFocused();
+	});
+}
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Butter's card picker keeps keyboard focus through assignment (${reducedMotion})`, async ({ page }) => {

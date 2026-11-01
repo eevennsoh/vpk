@@ -152,7 +152,7 @@ function ProjectButterFooter({
 	const dueDate = formatButterDueDate(metadata?.dueDate);
 	return (
 		<div className="flex min-h-6 min-w-0 items-center justify-between gap-1">
-			<div className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5 text-xs leading-4 text-text-subtle">
+			<div className={cn("flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5 text-xs leading-4 text-text-subtle", !dueDate && "-ml-1")}>
 				{dueDate ? (
 					<span className="mr-1 inline-flex shrink-0 items-center gap-1">
 						<span className="sr-only">{metadata?.dueDateWarning ? "Critical due date " : "Due "}</span>

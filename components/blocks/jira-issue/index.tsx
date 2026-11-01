@@ -595,7 +595,6 @@ function JiraIssueDefault({
 	const agentActivitySurfaceInset = hasActiveAgentActivityShell ? 4 : 0;
 	const agentActivityInnerStyle = {
 		...AGENT_ACTIVITY_INNER_STYLE,
-		padding: appearance === "project-butter" ? 0 : undefined,
 		"--cover-surface-inset": `${agentActivitySurfaceInset}px`,
 		"--cover-surface-top-inset": selectionBackdropState.joinsBefore ? "0px" : undefined,
 	};
@@ -811,7 +810,7 @@ function JiraIssueDefault({
 			<LayoutGroup id={agentActivityLayoutGroupId}>
 				<motion.div
 					className={rootClassName}
-					initial={false} animate={appearance === "project-butter" ? { padding: hasActiveAgentActivityShell ? 4 : 0 } : undefined}
+					initial={false}
 					data-slot="jira-issue-card"
 					layout={shouldReduceMotion || agentActivityHoverOpen || parentOwnsLayout ? false : "position"}
 					style={agentActivityInnerStyle}
