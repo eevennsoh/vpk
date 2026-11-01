@@ -546,6 +546,7 @@ export function AgentListRow({
 	item,
 	lifecycle,
 	metadata,
+	metadataOutsideViewTrigger = false,
 	onView,
 	renderIdentity,
 	renderViewTrigger,
@@ -573,6 +574,7 @@ export function AgentListRow({
 	lifecycle?: ReactNode;
 	/** Caller-owned metadata. Pass `null` to omit the default metadata line. */
 	metadata?: ReactNode;
+	metadataOutsideViewTrigger?: boolean;
 	onView?: (item: AgentListItem) => void;
 	/** Let the owner turn the existing row button into an anchored menu trigger. */
 	renderViewTrigger?: (trigger: ReactElement) => ReactNode;
@@ -635,6 +637,38 @@ export function AgentListRow({
 		/>
 	);
 
+	const resolvedMetadata = metadata === undefined ? (
+		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
+			{item.metadataPrefix ? (
+				<>
+					<span className="shrink-0">{item.metadataPrefix}</span>
+					<MetadataDot />
+				</>
+			) : null}
+			<AgentListMetadataIdentity item={item} />
+			{prMeta && PrIcon ? (
+				<>
+					<MetadataDot />
+					<span className="flex min-w-0 shrink items-center gap-1">
+						<span
+							className={cn(
+								"grid size-4 shrink-0 place-items-center",
+								prMeta.colorClass,
+							)}
+						>
+							<PrIcon color="currentColor" label="" size="small" />
+						</span>
+						<span className="truncate text-text-subtle">{prMeta.label}</span>
+					</span>
+				</>
+			) : null}
+			<MetadataDot />
+			<span className="shrink-0" title={timeSlotTitle(item)}>
+				<AgentListTime item={item} />
+			</span>
+		</span>
+	) : metadata;
+
 	return (
 		<div
 			className={cn(
@@ -675,6 +709,7 @@ export function AgentListRow({
 					 */}
 					<AgentListRowBody
 						className="flex min-w-0 flex-1 flex-col items-start justify-center rounded-xs text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+						footer={metadataOutsideViewTrigger ? resolvedMetadata : undefined}
 						isSelected={isSelected}
 						onView={viewItem}
 						renderViewTrigger={renderViewTrigger}
@@ -704,37 +739,7 @@ export function AgentListRow({
 							)}
 							{stateAwareTitle && stateMeta.showDots ? <AnimatedDots /> : null}
 						</span>
-						{metadata === undefined ? (
-							<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
-								{item.metadataPrefix ? (
-									<>
-										<span className="shrink-0">{item.metadataPrefix}</span>
-										<MetadataDot />
-									</>
-								) : null}
-								<AgentListMetadataIdentity item={item} />
-								{prMeta && PrIcon ? (
-									<>
-										<MetadataDot />
-										<span className="flex min-w-0 shrink items-center gap-1">
-											<span
-												className={cn(
-													"grid size-4 shrink-0 place-items-center",
-													prMeta.colorClass,
-												)}
-											>
-												<PrIcon color="currentColor" label="" size="small" />
-											</span>
-											<span className="truncate text-text-subtle">{prMeta.label}</span>
-										</span>
-									</>
-								) : null}
-								<MetadataDot />
-								<span className="shrink-0" title={timeSlotTitle(item)}>
-									<AgentListTime item={item} />
-								</span>
-							</span>
-						) : metadata}
+						{metadataOutsideViewTrigger ? null : resolvedMetadata}
 					</AgentListRowBody>
 					{lifecycleNode ? (
 						// A `div`, not a `span`: every non-running indicator is an

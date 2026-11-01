@@ -29,6 +29,7 @@ interface AgentLanyardAgentProps {
 	onAction?: (agent: AgentLanyardAgent) => void;
 	onMoreActions?: (agent: AgentLanyardAgent) => void;
 	menuActions?: AgentLanyardMenuActions;
+	menuPositionerClassName?: string;
 	starred?: boolean;
 	className?: string;
 }

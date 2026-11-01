@@ -190,7 +190,7 @@ test("agent attribution groups share the same explicit order contract", () => {
 		/export function AgentListAttributionAvatarGroup[\s\S]*<AvatarGroup[\s\S]*className=\{cn\("shrink-0", className\)\}[\s\S]*label=\{`\$\{agent\.name\}, used by \$\{attributedBy\.name\}`\}/u,
 	);
 	assert.doesNotMatch(IDENTITY_SOURCE, /gap-1 space-x-0/u);
-	assert.match(IDENTITY_SOURCE, /orderAttributionAvatars\(attributionOrder, agentAvatar, personAvatar\)/u);
+	assert.match(IDENTITY_SOURCE, /orderAttributionAvatars\(attributionOrder, renderAgentAvatar\?\.\(agent, agentAvatar\) \?\? agentAvatar, personAvatar\)/u);
 });
 
 test("the attention state keeps the row's own title and warns instead of shimmering", () => {
@@ -481,7 +481,7 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	// read-only list must not add one focusable no-op to the tab order per row.
 	assert.match(
 		ROW_BODY_SOURCE,
-		/if \(onView === undefined\) \{\s*return <div className=\{className\}>\{children\}<\/div>;/u,
+		/if \(onView === undefined\) \{\s*return <div className=\{className\}>\{children\}\{footer\}<\/div>;/u,
 	);
 	assert.match(
 		CARD_SOURCE,

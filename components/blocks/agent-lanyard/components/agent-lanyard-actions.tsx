@@ -11,6 +11,7 @@ interface AgentLanyardActionsProps {
 	onAction?: (agent: AgentLanyardAgent) => void;
 	onMoreActions?: (agent: AgentLanyardAgent) => void;
 	menuActions?: AgentLanyardMenuActions;
+	menuPositionerClassName?: string;
 	starred?: boolean;
 }
 
@@ -21,7 +22,7 @@ export function AgentLanyardActions({ agent, onAction, ...menu }: Readonly<Agent
 			<Button variant="outline" size={isChat ? "icon-compact" : "compact"} aria-label={`${isChat ? "Chat with" : "Connect"} ${agent.name}`} disabled={!onAction} onClick={onAction ? () => onAction(agent) : undefined}>
 				{isChat ? <Icon render={<RovoChatIcon label="" size="small" />} /> : "Connect"}
 			</Button>
-			<AgentLanyardMenu agent={agent} actions={menu.menuActions} starred={menu.starred} onMoreActions={menu.onMoreActions} />
+			<AgentLanyardMenu agent={agent} actions={menu.menuActions} positionerClassName={menu.menuPositionerClassName} starred={menu.starred} onMoreActions={menu.onMoreActions} />
 		</div>
 	);
 }

@@ -63,6 +63,7 @@ import {
 	type AgentSessionWorkItemOption,
 } from "./agent-session-types";
 import { useAgentSessionMenu } from "./use-agent-session-menu";
+import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
 import { motionEase } from "@/lib/motion";
 
 const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
@@ -273,6 +274,7 @@ export function AgentSessionCard({
 	onToggleVisibility,
 	onView,
 	padding = "default",
+	renderAgentAvatar,
 	trailingAlign = "center",
 	sessionDrag,
 	showMoreMenu = true,
@@ -345,6 +347,7 @@ export function AgentSessionCard({
 	 * vertical) so stacked menu rows sit tighter than catalog cards.
 	 */
 	padding?: "default" | "compact";
+	renderAgentAvatar?: AgentSessionAvatarPreview;
 	/** Keep status and replacement actions centered beside the shared title/metadata column. */
 	trailingAlign?: "center" | "metadata";
 	/**
@@ -735,9 +738,10 @@ export function AgentSessionCard({
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isLongDensity
-										? <AgentSessionLongMetadata item={item} showBranch={showBranch} />
+										? <AgentSessionLongMetadata item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
+								metadataOutsideViewTrigger={isLongDensity && renderAgentAvatar !== undefined}
 								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
 								renderIdentity={() => {
