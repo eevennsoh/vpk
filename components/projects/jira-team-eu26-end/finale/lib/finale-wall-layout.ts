@@ -1,47 +1,40 @@
-import kitPieces from "@/public/1p/rovo-stage-kit/pieces.json";
+import { FINALE_PIECES as kitPieces, STAGE_KIT_PIECES, type FinalePiece as KitPiece, type FinalePieceId as PieceId } from "../data/finale-piece-catalogue";
 import stageFile from "@/public/1p/rovo-stage-kit/rovo-stage.json";
-import type { ComposedPiece, KitPiece, PieceId, StageFile } from "@/public/1p/rovo-stage-kit/types/stage-file";
+import type { ComposedPiece, StageFile } from "@/public/1p/rovo-stage-kit/types/stage-file";
 
 import { FINALE_STORIES, finaleBentoLayout, type FinaleBentoLayout, type FinaleChapterId, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import type { FinaleBrandColor } from "../data/finale-palette";
+import { repeatKey } from "../studio/studio-inventory";
+import { DEFAULT_FINALE_STUDIO, orderedByStudio, studioCardOn, studioPieceFor, studioPieceOn, studioPiecePadding, studioPieceScale, studioPieceTile, type FinaleStudioConfig } from "../studio/finale-studio-config";
 import { FINALE_TITLE } from "../data/finale-title";
 import { packWallMasonry, type MasonryItem } from "./finale-wall-masonry";
 import { wallPiecesLayout } from "./finale-wall-pieces";
 
 /** Scale of the keynote tiles and their typography after the throw. */
 export const WALL_SCALE = 0.3;
+/** A venue screen's height in metres: the studio's lengths and pace are in metres of it. */
+export const VENUE_SCREEN_M = 5;
+/** A stage wall point at zoom 1, as a share of the screen's height (the Rovo stage on the Team ’26 board). */
+const STAGE_POINT = 2.64 / 900;
+/** The stage's packing per density: how small its pieces are drawn, and its gap in wall points. */
+const STAGE_DENSITY = { gallery: { scale: 1, gap: 112 }, balanced: { scale: 0.88, gap: 64 }, dense: { scale: 0.76, gap: 30 } } as const;
 export const WALL_TITLE_ORDER = 6;
 /** Original entry-camera calibration, independent of tile sizing and spatial indexing. */
 const WALL_ENTRY_SCALE = 68 / 231;
-/**
- * Lanyard tiles a period carries, spread evenly through it, each in the
- * lanyard's own 3:4 portrait box at the 1920 stage. Their straps are cut
- * straight at the top of the box, so every one hangs from the top edge of the
- * frame (`wallLanyardRect`), never mid-wall. Three, not four: each takes the
- * space of cards that would arrive and be set down, and four dropped the
- * teammates' drags below their cadence (`finale-wall-cursors.test.js`).
- */
 export const WALL_LANYARDS = { count: 3, width: 360, height: 480 } as const;
-/**
- * Done cards dealt a second time each loop, where the feature-name tiles once
- * were, so teammates still have as many cards to set down (the drag cadence
- * in `finale-wall-cursors.test.js`). Eight, measured: the cadence moves with
- * the masonry's packing, and eight keeps every screen from 1024 to 2560 wide
- * over its floor, where six, seven and nine each leave one under it.
- */
-export const WALL_RECYCLED_PRINTS = 8;
 
 export type WallStatId = "presenters" | "chapters";
 export type WallStripId = "flow";
 export type WallPiece = Pick<KitPiece, "id" | "scale">;
 export type WallContent =
 	| { readonly kind: "story"; readonly story: FinaleStory }
+	| { readonly kind: "benefit"; readonly story: FinaleStory }
 	| { readonly kind: "print"; readonly codes: readonly [string] }
 	| { readonly kind: "poster"; readonly word: FinaleChapterId; readonly fill: FinaleBrandColor; readonly ink: FinaleBrandColor }
 	| { readonly kind: "stat"; readonly stat: WallStatId }
 	| { readonly kind: "strip"; readonly strip: WallStripId }
-	| { readonly kind: "piece"; readonly pieces: readonly WallPiece[] }
-	/** `order`: its place in the wall's endless run of lanyards (each copy of the period continues it), which deals its presenter and agent. */
+	/** `bare`: no wall tile behind it, the piece straight on the slide; `padding`: its tile round it, across and down in kit points. */
+	| { readonly kind: "piece"; readonly pieces: readonly WallPiece[]; readonly padding: { readonly x: number; readonly y: number }; readonly bare?: boolean }
 	| { readonly kind: "lanyard"; readonly order: number }
 	| { readonly kind: "title" };
 
@@ -61,6 +54,10 @@ export interface WallGeometry {
 	readonly pieceScale: number;
 	readonly radius: number;
 	readonly viewport: { readonly width: number; readonly height: number };
+	/** The glide, in viewport px a second. */
+	readonly speed: number;
+	/** The loop's least length in viewport px: a longer wall is dealt again. */
+	readonly length: number;
 }
 
 export interface WallSlot {
@@ -80,6 +77,8 @@ export interface WallGap {
 
 export interface FinaleWall {
 	readonly geometry: WallGeometry;
+	/** The movable cards' keys in packing order (the studio's Composer reorders these). */
+	readonly order: readonly string[];
 	readonly periodWidth: number;
 	readonly periodBuckets: number;
 	readonly items: readonly WallSlot[];
@@ -97,17 +96,23 @@ type WallStageSource = {
 	readonly board: { readonly cells: { readonly a: Pick<StageFile["board"]["cells"]["a"], "options"> } };
 };
 
+/** The wall's density: how much smaller than its catalogue size a piece is drawn (an explicit composition keeps its own). */
+function stageDensity(stage: WallStageSource, studio: FinaleStudioConfig): number {
+	return stage.composition !== null ? 1 : STAGE_DENSITY[studio.wall.density].scale;
+}
+
 /** Explicit instances keep their scales; automatic stages use the enabled catalogue and density. */
-export function resolveWallStagePieces(stage: WallStageSource): readonly WallStagePiece[] {
+export function resolveWallStagePieces(stage: WallStageSource, studio: FinaleStudioConfig = DEFAULT_FINALE_STUDIO): readonly WallStagePiece[] {
 	if (stage.composition !== null) return stage.composition.pieces;
 	const options = stage.board.cells.a.options ?? {};
-	const density = options.density === "gallery" ? 1 : options.density === "dense" ? 0.76 : 0.88;
-	const enabled = kitPieces.filter((piece) => {
+	const density = stageDensity(stage, studio);
+	// Local additions enter the Library first; only an explicit on setting adds them to the wall.
+	const enabled = STAGE_KIT_PIECES.filter((piece) => {
 		const shown = options[`show${piece.group[0].toUpperCase()}${piece.group.slice(1)}`];
 		return typeof shown === "boolean" ? shown : piece.group !== "apps";
 	});
 	const groups = [...new Set(enabled.map((piece) => piece.group))].map((group) => enabled.filter((piece) => piece.group === group));
-	const ordered: typeof kitPieces = [];
+	const ordered: KitPiece[] = [];
 	for (let index = 0; index < Math.max(0, ...groups.map((group) => group.length)); index += 1) {
 		for (const group of groups) {
 			const piece = group[index];
@@ -121,29 +126,56 @@ export function resolveWallStagePieces(stage: WallStageSource): readonly WallSta
 	}));
 }
 
-function wallStageGap(option: string | boolean | undefined): number {
-	const value = typeof option === "string" ? Number(option) : Number.NaN;
-	return Number.isFinite(value) ? Math.min(160, Math.max(0, value)) : 28;
+/** The scale the wall draws a kit piece at, in kit points: its catalogue scale, the wall's density, its own size. */
+export function wallPieceScale(studio: FinaleStudioConfig, id: string): number {
+	const piece = kitPieces.find((each) => each.id === id);
+	return piece ? piece.scale * stageDensity(stageFile, studio) * studioPieceScale(studio, id) : 1;
 }
 
-export function wallGeometry(fitScale: number, viewport: { readonly width: number; readonly height: number }): WallGeometry {
+/** The stage file's pieces as the studio sets them: swapped, turned off, resized. */
+export function studioWallPieces(studio: FinaleStudioConfig = DEFAULT_FINALE_STUDIO): readonly WallStagePiece[] {
+	const placed = resolveWallStagePieces(stageFile, studio).flatMap((each) => {
+		const id = studioPieceFor(studio, each.key, each.id);
+		if (!studioPieceOn(studio, id)) return [];
+		const own = kitPieces.find((piece) => piece.id === each.id);
+		const shown = kitPieces.find((piece) => piece.id === id);
+		// A swapped-in piece keeps the slot's density, at its own catalogue size.
+		const scale = own && shown && own !== shown ? (each.scale / own.scale) * shown.scale : each.scale;
+		return [{ ...each, id, scale: scale * studioPieceScale(studio, id) }];
+	});
+	// Pieces the studio put on the wall where the stage file leaves them out, at the stage's density.
+	const keys = new Set(placed.map((each) => each.key));
+	const added = kitPieces.filter((piece) => studio.pieces[piece.id]?.on === true && !placed.some((each) => each.id === piece.id)).map((piece) => {
+		const key = keys.has(`library-${piece.id}`) ? `library-${piece.id}-added` : `library-${piece.id}`;
+		return { key, id: piece.id, scale: piece.scale * stageDensity(stageFile, studio) * studioPieceScale(studio, piece.id) };
+	});
+	return [...placed, ...added];
+}
+
+export function wallGeometry(fitScale: number, viewport: { readonly width: number; readonly height: number }, studio: FinaleStudioConfig = DEFAULT_FINALE_STUDIO): WallGeometry {
 	const referenceWidth = finaleBentoLayout(viewport, fitScale).slots[0].rect.width * WALL_ENTRY_SCALE;
-	// The exported zoom frames the kit; a shared 1.25 enlargement makes its animated UI readable.
-	const pieceScale = fitScale * stageFile.board.cells.a.zoom * 1.25;
-	const maxPieceWidth = Math.max(...resolveWallStagePieces(stageFile).map((placed) => {
+	// The wall's zoom draws a stage point as the Team ’26 board did, against the screen's height.
+	const { zoom, density, pace, length } = studio.wall;
+	const pieceScale = viewport.height * STAGE_POINT * zoom;
+	// The keynote's cards were drawn beside the kit at the stage file's framing (its zoom, enlarged 1.25): they keep that ratio.
+	const designPieceScale = fitScale * stageFile.board.cells.a.zoom * 1.25;
+	const gap = STAGE_DENSITY[density].gap;
+	const maxPieceWidth = Math.max(0, ...studioWallPieces(studio).map((placed) => {
 		const piece = kitPieces.find((each) => each.id === placed.id);
 		return piece ? (piece.w * placed.scale + 80) * pieceScale : 0;
 	}));
 	return {
-		gutter: wallStageGap(stageFile.board.cells.a.options.masonryGapX) * fitScale,
-		gutterY: wallStageGap(stageFile.board.cells.a.options.masonryGapY) * fitScale,
+		gutter: (studio.gaps?.x ?? gap) * pieceScale,
+		gutterY: (studio.gaps?.y ?? gap) * pieceScale,
 		bucketWidth: 256 * fitScale,
 		arrivalWidth: referenceWidth * 2 + 32 * fitScale,
 		arrivalReach: referenceWidth + 32 * fitScale,
 		maxTileWidth: Math.max(maxPieceWidth, 480 * fitScale),
 		originX: 0,
-		typeScale: fitScale * WALL_SCALE,
+		typeScale: fitScale * WALL_SCALE * (pieceScale / designPieceScale),
 		pieceScale,
+		speed: (pace * viewport.height) / VENUE_SCREEN_M,
+		length: (length * viewport.height) / VENUE_SCREEN_M,
 		radius: 20,
 		viewport,
 	};
@@ -154,7 +186,7 @@ export function wallSlotRadius(_slot: WallSlot, geometry: WallGeometry): number 
 	return geometry.radius;
 }
 
-interface WallItem extends MasonryItem {
+export interface WallItem extends MasonryItem {
 	readonly content: WallContent;
 }
 
@@ -162,50 +194,84 @@ function isPieceId(id: string): id is PieceId {
 	return kitPieces.some((piece) => piece.id === id);
 }
 
-function libraryItems(geometry: WallGeometry): readonly WallItem[] {
-	return resolveWallStagePieces(stageFile).flatMap((placed) => {
+function libraryItems(geometry: WallGeometry, studio: FinaleStudioConfig): readonly WallItem[] {
+	return studioWallPieces(studio).flatMap((placed) => {
 		if (!isPieceId(placed.id)) return [];
 		const piece = kitPieces.find((each) => each.id === placed.id);
 		if (!piece) return [];
-		const layout = wallPiecesLayout([{ ...piece, id: placed.id, scale: placed.scale }], geometry.pieceScale);
-		return [{ key: placed.key, width: layout.width, height: layout.height, content: { kind: "piece" as const, pieces: [{ id: placed.id, scale: placed.scale }] } }];
+		const padding = studioPiecePadding(studio, placed.id);
+		const layout = wallPiecesLayout([{ ...piece, id: placed.id, scale: placed.scale }], geometry.pieceScale, padding);
+		const bare = !studioPieceTile(studio, placed.id);
+		return [{ key: placed.key, width: layout.width, height: layout.height, content: { kind: "piece" as const, pieces: [{ id: placed.id, scale: placed.scale }], padding, ...(bare ? { bare } : {}) } }];
 	});
 }
 
-function keynoteItems(geometry: WallGeometry, features: readonly FinaleStory[], dragOrder: readonly string[]): readonly WallItem[] {
+/** Every card of the keynote's own the wall can show, on it or not (the studio's Library lists them all). */
+export function keynoteItems(geometry: WallGeometry, features: readonly FinaleStory[], dragOrder: readonly string[]): readonly WallItem[] {
 	const scale = geometry.typeScale / WALL_SCALE;
 	const item = (key: string, width: number, height: number, content: WallContent): WallItem => ({ key, width: width * scale, height: height * scale, content, ...(content.kind === "poster" ? { group: "chapter" } : {}) });
 	const featured = new Set(features.map((story) => story.code));
 	const remaining = FINALE_STORIES.map((story) => story.code).filter((code) => !featured.has(code));
 	const ordered = [...dragOrder.filter((code) => remaining.includes(code)), ...remaining.filter((code) => !dragOrder.includes(code))];
-	const print = (key: string, code: string) => item(key, 260, 140, { kind: "print", codes: [code] });
-	// The run's last cards come round again first, so a card's two copies sit far apart on the wall.
-	const extras: WallItem[] = ordered.slice(-WALL_RECYCLED_PRINTS).map((code, index) => print(`print-again-${index}`, code));
+	const extras: WallItem[] = features.map((story, index) => item(`benefit-${index}`, 240 + (index % 3) * 55, 155 + (index % 2) * 55, { kind: "benefit", story }));
 	const posters = [
 		{ word: "Context", width: 300, height: 160, fill: "lime", ink: "black" },
 		{ word: "Collaboration", width: 360, height: 200, fill: "purple", ink: "black" },
 		{ word: "Confidence", width: 280, height: 220, fill: "blue", ink: "white" },
 	] satisfies readonly { word: FinaleChapterId; width: number; height: number; fill: FinaleBrandColor; ink: FinaleBrandColor }[];
 	posters.forEach(({ word, width, height, fill, ink }, index) => extras.push(item(`poster-${index}`, width, height, { kind: "poster", word, fill, ink })));
-	ordered.forEach((code, index) => extras.push(print(`print-${index}`, code)));
+	ordered.forEach((code, index) => extras.push(item(`print-${index}`, 260, 140, { kind: "print", codes: [code] })));
 	extras.push(item("chapters", 180, 125, { kind: "stat", stat: "chapters" }), item("flow", 330, 65, { kind: "strip", strip: "flow" }));
+	for (let order = 0; order < WALL_LANYARDS.count; order++) {
+		extras.push(item(`lanyard-${order}`, WALL_LANYARDS.width, WALL_LANYARDS.height, { kind: "lanyard", order }));
+	}
 	return extras;
 }
 
-/**
- * Lanyard tile `index` of a period `spacing` apart (`finale-wall-lanyard.ts`):
- * reserved before the masonry packs, like the keynote gaps, stuck to the top
- * of the frame with its top corners just above it, so the strap's straight cut
- * is the frame's own edge. The first waits just past the opening frame, clear
- * of the keynote gaps, and glides in with the wall.
- */
+/** The wall's cards in packing order: the kit's pieces and the keynote's cards interleaved, or the composer's order. */
+function wallItems(geometry: WallGeometry, features: readonly FinaleStory[], dragOrder: readonly string[], studio: FinaleStudioConfig): readonly WallItem[] {
+	const library = libraryItems(geometry, studio);
+	const extras = keynoteItems(geometry, features, dragOrder).filter((item) => item.content.kind !== "lanyard" && studioCardOn(studio, item.key));
+	const interleaved: WallItem[] = [];
+	for (let index = 0; index < Math.max(library.length, extras.length); index += 1) {
+		if (library[index]) interleaved.push(library[index]);
+		if (extras[index]) interleaved.push(extras[index]);
+	}
+	return orderedByStudio(interleaved, studio.order);
+}
+
 function wallLanyardRect(geometry: WallGeometry, index: number, spacing: number): FinaleRect {
 	const scale = geometry.typeScale / WALL_SCALE;
 	return { x: geometry.viewport.width + geometry.gutter + index * spacing, y: -geometry.radius, width: WALL_LANYARDS.width * scale, height: WALL_LANYARDS.height * scale };
 }
 
+/** Cards `from`… of the passes after the first: each pass starts half a pass on, so a card's copies stay apart. */
+function dealtAgain(first: readonly WallItem[], from: number, count: number): readonly WallItem[] {
+	const half = Math.floor(first.length / 2);
+	return Array.from({ length: count }, (_, step) => {
+		const index = from + step;
+		const pass = Math.floor(index / first.length) + 2;
+		const item = first[(index % first.length + (pass - 1) * half) % first.length];
+		return { ...item, key: repeatKey(item.key, pass) };
+	});
+}
+
+/** The cards dealt again until the packed wall reaches `length` (a few packs: the masonry's holes vary). */
+function filledToLength(first: readonly WallItem[], firstRects: readonly FinaleRect[], length: number, pack: (items: readonly WallItem[]) => readonly FinaleRect[], order: readonly string[] | null): { readonly items: readonly WallItem[]; readonly rects: readonly FinaleRect[] } {
+	const reach = (rects: readonly FinaleRect[]) => Math.max(0, ...rects.map((rect) => rect.x + rect.width));
+	let items = first;
+	let rects = firstRects;
+	for (let attempt = 0; attempt < 4 && first.length > 0 && reach(rects) < length; attempt += 1) {
+		const width = Math.max(1, reach(rects));
+		const more = Math.ceil((items.length * (length - width)) / width) + 1;
+		items = orderedByStudio([...items, ...dealtAgain(first, items.length - first.length, more)], order);
+		rects = pack(items);
+	}
+	return { items, rects };
+}
+
 /** Intrinsic rectangles packed edge to edge, with the keynote landing spaces reserved first. */
-export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout, features: readonly FinaleStory[], dragOrder: readonly string[]): FinaleWall {
+export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout, features: readonly FinaleStory[], dragOrder: readonly string[], studio: FinaleStudioConfig = DEFAULT_FINALE_STUDIO): FinaleWall {
 	const { gutter, gutterY, bucketWidth, viewport } = geometry;
 	const anchors = [...bento.slots.slice(0, features.length).map((slot, order) => ({ order, rect: slot.rect, content: { kind: "story" as const, story: features[order] } })), { order: WALL_TITLE_ORDER, rect: bento.title, content: { kind: "title" as const } }];
 	const reserved = anchors.map(({ order, rect }) => {
@@ -220,22 +286,22 @@ export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout
 			height,
 		};
 	});
-	const library = libraryItems(geometry);
-	const extras = keynoteItems(geometry, features, dragOrder);
-	const items: WallItem[] = [];
-	for (let index = 0; index < Math.max(library.length, extras.length); index += 1) {
-		if (library[index]) items.push(library[index]);
-		if (extras[index]) items.push(extras[index]);
-	}
 	const groupGap = 900 * geometry.typeScale / WALL_SCALE;
-	// The period is only known once packed, so pack once without the lanyards to space them evenly round it, then for real.
-	const unhung = packWallMasonry(items, reserved, viewport.height, gutter, gutterY, groupGap);
+	const pack = (list: readonly WallItem[], blocked = reserved) => packWallMasonry(list, blocked, viewport.height, gutter, gutterY, groupGap);
+	const first = wallItems(geometry, features, dragOrder, studio);
+	const unhung = pack(first);
 	const lanyardWidth = wallLanyardRect(geometry, 0, 0).width + gutter;
 	const spacing = (Math.max(...[...reserved, ...unhung].map((rect) => rect.x + rect.width)) + gutter + WALL_LANYARDS.count * lanyardWidth) / WALL_LANYARDS.count;
-	const lanyards = Array.from({ length: WALL_LANYARDS.count }, (_, index) => wallLanyardRect(geometry, index, spacing));
-	const rects = packWallMasonry(items, [...reserved, ...lanyards], viewport.height, gutter, gutterY, groupGap);
+	const lanyards = Array.from({ length: WALL_LANYARDS.count }, (_, index): WallSlot => ({
+		key: `lanyard-${index}`, bucket: 0, rect: wallLanyardRect(geometry, index, spacing),
+		content: { kind: "lanyard", order: index }, seed: 977 + index * 53,
+	})).filter((slot) => studioCardOn(studio, slot.key));
+	const packWithLanyards = (list: readonly WallItem[]) => pack(list, [...reserved, ...lanyards.map((slot) => slot.rect)]);
+	const firstRects = packWithLanyards(first);
+	// A longer wall deals its cards again, as the stage's own fill does.
+	const { items, rects } = filledToLength(first, firstRects, geometry.length, packWithLanyards, studio.order);
 	const base = anchors.map(({ order, content }, index): WallSlot => ({ key: `gap-${order}`, bucket: 0, rect: reserved[index], content, seed: order * 31, reserved: order }));
-	lanyards.forEach((rect, index) => base.push({ key: `lanyard-${index}`, bucket: 0, rect, content: { kind: "lanyard", order: index }, seed: 977 + index * 53 }));
+	base.push(...lanyards);
 	items.forEach((item, index) => base.push({ key: item.key, bucket: 0, rect: rects[index], content: item.content, seed: 211 + index * 37 }));
 	const periodBuckets = Math.ceil((Math.max(...base.map((slot) => slot.rect.x + slot.rect.width)) + gutter) / bucketWidth);
 	const periodWidth = periodBuckets * bucketWidth;
@@ -251,8 +317,7 @@ export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout
 			key: `${index}:${slot.key}`,
 			bucket: index,
 			rect: { ...slot.rect, x: slot.rect.x + copy * periodWidth },
-			// Each copy's lanyards carry on the run, so the next one along is always a new lanyard.
-			...(slot.content.kind === "lanyard" ? { content: { kind: "lanyard", order: copy * WALL_LANYARDS.count + slot.content.order } } : {}),
+			...(slot.content.kind === "lanyard" ? { content: { ...slot.content, order: copy * WALL_LANYARDS.count + slot.content.order } } : {}),
 			...(copy === 0 && order !== undefined ? { reserved: order } : {}),
 		}));
 		if (buckets.size >= 96) {
@@ -262,13 +327,13 @@ export function buildFinaleWall(geometry: WallGeometry, bento: FinaleBentoLayout
 		buckets.set(index, slots);
 		return slots;
 	};
-	const first = Array.from({ length: periodBuckets }, (_, index) => bucket(index)).flat();
+	const firstPeriod = Array.from({ length: periodBuckets }, (_, index) => bucket(index)).flat();
 	const gaps = anchors.map(({ order }): WallGap => {
-		const slot = first.find((each) => each.reserved === order);
+		const slot = firstPeriod.find((each) => each.reserved === order);
 		if (!slot) throw new Error(`Missing keynote landing ${order}`);
 		return { order, kind: order === WALL_TITLE_ORDER ? "title" : "tile", slot };
 	});
-	return { geometry, periodWidth, periodBuckets, bucket, items: first, gaps };
+	return { geometry, order: items.map((item) => item.key), periodWidth, periodBuckets, bucket, items: firstPeriod, gaps };
 }
 
 /** Gap between a print slot's stacked Done cards at the 1920 stage (it scales with the type). */

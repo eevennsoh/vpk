@@ -1,0 +1,31 @@
+send-to-agent { display: block; position: relative; flex: none; }
+send-to-agent .send-agent-stage {
+	--send-agent-ground: #f8f8f8; --send-agent-panel: #fff; --send-agent-ink: #505258;
+	--send-agent-muted: #6b6e76; --send-agent-rule: rgba(5,21,36,.06);
+	--send-agent-selected: #e9f2fe; --send-agent-blue: #1868db;
+	position: relative; width: 604px; height: 765px; transform-origin: 0 0;
+	overflow: hidden; border-radius: 20px; background: var(--send-agent-ground); color: var(--send-agent-ink);
+	font: 500 16.811px/24.015px "Inter", "Atlassian Sans", sans-serif;
+}
+send-to-agent[appearance="dark"] .send-agent-stage {
+	--send-agent-ground: #242528; --send-agent-panel: #1f1f21; --send-agent-ink: #cecfd2;
+	--send-agent-muted: #96999e; --send-agent-rule: #343639;
+	--send-agent-selected: #123263; --send-agent-blue: #669df1;
+}
+send-to-agent .send-agent-stage.no-surface { background: transparent; }
+send-to-agent .send-agent-graphic { position: absolute; left: 141px; top: 80px; width: 311px; }
+send-to-agent .send-agent-trigger {
+	box-sizing: border-box; display: flex; align-items: center; gap: 9.606px;
+	position: absolute; left: 146.49px; top: 0; height: 38.425px; padding: 0 14.409px 0 9.606px;
+	border: 1.201px solid var(--send-agent-blue); border-radius: 7.205px;
+	background: var(--send-agent-selected); color: var(--send-agent-blue);
+	font: 400 16.811px/24.015px "Atlassian Sans", sans-serif; white-space: nowrap;
+}
+send-to-agent .send-agent-trigger img { width: 19.212px; height: 19.212px; object-fit: contain; }
+send-to-agent .send-agent-menu { position: absolute; top: 50.43px; left: 0; width: 311px; background: var(--send-agent-panel); border-radius: 9.606px; overflow: hidden; box-shadow: 0 0 .6px rgba(30,31,33,.31), 0 9.606px 7.205px rgba(30,31,33,.15); }
+send-to-agent .send-agent-section { padding: 9.606px; border-bottom: 1.201px solid var(--send-agent-rule); }
+send-to-agent .send-agent-section:last-child { border-bottom: 0; }
+send-to-agent .send-agent-row { box-sizing: border-box; height: 43.227px; display: flex; align-items: center; gap: 9.606px; padding: 9.606px 7.205px; white-space: nowrap; }
+send-to-agent .send-agent-icon { width: 21.614px; height: 24.015px; display: flex; align-items: center; justify-content: center; flex: none; }
+send-to-agent .send-agent-icon img { display: block; max-width: 23px; max-height: 24px; object-fit: contain; }
+send-to-agent .send-agent-heading { box-sizing: border-box; display: flex; align-items: center; height: 38.425px; padding: 9.606px 7.205px 4.803px; margin: 0; color: var(--send-agent-muted); font: 650 14.409px/19.212px "Atlassian Sans", sans-serif; }

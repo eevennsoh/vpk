@@ -1,0 +1,403 @@
+{
+	"version": 2,
+	"pieces": {
+		"appConfluence": {
+			"tile": false
+		},
+		"appJira": {
+			"tile": false
+		},
+		"appSlack": {
+			"tile": false
+		},
+		"appFigma": {
+			"tile": false
+		},
+		"appGithub": {
+			"tile": false
+		},
+		"appDrive": {
+			"tile": false
+		},
+		"appLoom": {
+			"tile": false
+		},
+		"ampMark": {
+			"on": false
+		},
+		"sendToAgent": {
+			"on": false
+		},
+		"contentAttribution": {
+			"on": false
+		},
+		"codeSearchGreeting": {
+			"on": false
+		},
+		"multiplayer": {
+			"on": false
+		},
+		"agentSessionStack": {
+			"on": true
+		},
+		"principleVendor": {
+			"on": false
+		},
+		"principleSync": {
+			"on": false
+		},
+		"humanAgentNetwork": {
+			"on": false
+		},
+		"principleFlow": {
+			"on": false
+		},
+		"agentProliferation": {
+			"on": false
+		},
+		"realtimeEditing": {
+			"on": false
+		},
+		"agentActivityFeed": {
+			"on": false
+		},
+		"twgSearchStrip": {
+			"on": false
+		},
+		"agentPresence": {
+			"surface": false,
+			"tile": false
+		},
+		"iso42001": {
+			"surface": false
+		},
+		"redactedPrompt": {
+			"surface": false
+		},
+		"conversation": {
+			"surface": false
+		},
+		"agentCard": {
+			"surface": false
+		},
+		"presenceFacepile": {
+			"surface": false
+		},
+		"rovoWithYou": {
+			"surface": false
+		}
+	},
+	"cards": {
+		"benefit-1": {
+			"on": false
+		},
+		"benefit-0": {
+			"on": false
+		},
+		"benefit-5": {
+			"on": false
+		},
+		"poster-0": {
+			"on": false
+		},
+		"poster-1": {
+			"on": false
+		},
+		"poster-2": {
+			"on": false
+		},
+		"print-0": {
+			"on": false
+		},
+		"print-1": {
+			"on": false
+		},
+		"print-2": {
+			"on": false
+		},
+		"print-3": {
+			"on": false
+		},
+		"print-4": {
+			"on": false
+		},
+		"print-9": {
+			"on": false
+		},
+		"print-14": {
+			"on": false
+		},
+		"print-13": {
+			"on": false
+		},
+		"print-12": {
+			"on": false
+		},
+		"print-8": {
+			"on": false
+		},
+		"print-7": {
+			"on": false
+		},
+		"print-6": {
+			"on": false
+		},
+		"print-5": {
+			"on": false
+		},
+		"print-10": {
+			"on": false
+		},
+		"print-11": {
+			"on": false
+		},
+		"print-16": {
+			"on": false
+		},
+		"flow": {
+			"on": false
+		},
+		"chapters": {
+			"on": false
+		},
+		"print-15": {
+			"on": false
+		},
+		"benefit-2": {
+			"on": false
+		},
+		"benefit-3": {
+			"on": false
+		},
+		"benefit-4": {
+			"on": false
+		}
+	},
+	"wall": {
+		"zoom": 0.25,
+		"density": "dense",
+		"length": 78,
+		"pace": 0.3,
+		"padding": {
+			"x": 40,
+			"y": 40
+		}
+	},
+	"order": [
+		"library-search",
+		"print-17",
+		"library-bubbles",
+		"library-twg",
+		"library-voice",
+		"library-picker",
+		"library-hold",
+		"library-glyphSearch",
+		"library-appConfluence",
+		"library-mosaic",
+		"library-quizArtifact",
+		"library-rovoDevCli",
+		"library-agentPresence",
+		"library-loomRecordBar",
+		"library-governance",
+		"library-stampTyping",
+		"library-agentIdentities",
+		"library-searchDrop",
+		"library-composer",
+		"library-reasoning",
+		"library-avatars",
+		"library-compact",
+		"library-glyphChat",
+		"library-appJira",
+		"library-filmFacets",
+		"library-dashboardArtifact",
+		"library-codeCard",
+		"library-mentions",
+		"library-loomTeleprompter",
+		"library-iso42001",
+		"library-stampPhotos",
+		"library-atlassianMcp",
+		"library-filters",
+		"library-starters",
+		"library-workPill",
+		"library-badgeRovo",
+		"library-switch",
+		"library-glyphForYou",
+		"library-appSlack",
+		"library-artifactsLogo",
+		"library-codeSearchLogo",
+		"library-attribution",
+		"library-loomCameraBubble",
+		"library-statTokens",
+		"library-stampShapes",
+		"library-redactedPrompt",
+		"library-skills",
+		"library-sources",
+		"library-scheduledTask",
+		"library-bloom",
+		"library-glyphAuto",
+		"library-appFigma",
+		"library-codeSearchQuery",
+		"library-shareSnapshot",
+		"library-loomOverlays",
+		"library-stampShield",
+		"library-needsInput",
+		"library-mobileChat",
+		"library-sourcesPopover",
+		"library-agentCard",
+		"library-ringsTile",
+		"library-appGithub",
+		"library-twgSearchCli",
+		"library-readiness",
+		"library-stampRovoMark",
+		"library-agentSessions",
+		"library-appDrive",
+		"library-highReadiness",
+		"library-stampTangle",
+		"library-requestResolver",
+		"library-appLoom",
+		"library-stampLoops",
+		"library-jiraList",
+		"library-presenceFacepile",
+		"library-stampRibbon",
+		"library-riskStack",
+		"library-rovoWithYou",
+		"library-stampSignal",
+		"library-costByModel",
+		"library-workflowCard",
+		"library-stampGrid",
+		"library-spendCard",
+		"library-conversation",
+		"library-stampSparkle",
+		"library-dimensions",
+		"library-stampFields",
+		"library-potentialSavings",
+		"library-stampSquiggle",
+		"library-sessionCard",
+		"library-stampSmile",
+		"library-skills#2",
+		"library-sources#2",
+		"library-scheduledTask#2",
+		"library-bloom#2",
+		"library-glyphAuto#2",
+		"library-appFigma#2",
+		"library-codeSearchQuery#2",
+		"library-shareSnapshot#2",
+		"library-loomOverlays#2",
+		"library-stampShield#2",
+		"library-needsInput#2",
+		"library-mobileChat#2",
+		"library-sourcesPopover#2",
+		"library-agentCard#2",
+		"library-ringsTile#2",
+		"library-appGithub#2",
+		"library-twgSearchCli#2",
+		"library-readiness#2",
+		"library-stampRovoMark#2",
+		"library-agentSessions#2",
+		"library-appDrive#2",
+		"library-highReadiness#2",
+		"library-stampTangle#2",
+		"library-requestResolver#2",
+		"library-appLoom#2",
+		"library-stampLoops#2",
+		"library-jiraList#2",
+		"library-presenceFacepile#2",
+		"library-stampRibbon#2",
+		"library-riskStack#2",
+		"library-rovoWithYou#2",
+		"library-stampSignal#2",
+		"library-costByModel#2",
+		"library-workflowCard#2",
+		"library-stampGrid#2",
+		"library-spendCard#2",
+		"library-conversation#2",
+		"library-stampSparkle#2",
+		"library-dimensions#2",
+		"library-stampFields#2",
+		"library-potentialSavings#2",
+		"library-stampSquiggle#2",
+		"library-sessionCard#2",
+		"library-stampSmile#2",
+		"library-search#2",
+		"print-17#2",
+		"library-bubbles#2",
+		"library-twg#2",
+		"library-voice#2",
+		"library-picker#2",
+		"library-hold#2",
+		"library-glyphSearch#2",
+		"library-appConfluence#2",
+		"library-mosaic#2",
+		"library-quizArtifact#2",
+		"library-rovoDevCli#2",
+		"library-agentPresence#2",
+		"library-loomRecordBar#2",
+		"library-governance#2",
+		"library-stampTyping#2",
+		"library-agentIdentities#2",
+		"library-searchDrop#2",
+		"library-composer#2",
+		"library-reasoning#2",
+		"library-avatars#2",
+		"library-compact#2",
+		"library-glyphChat#2",
+		"library-appJira#2",
+		"library-filmFacets#2",
+		"library-dashboardArtifact#2",
+		"library-codeCard#2",
+		"library-mentions#2",
+		"library-loomTeleprompter#2",
+		"library-iso42001#2",
+		"library-stampPhotos#2",
+		"library-atlassianMcp#2",
+		"library-filters#2",
+		"library-starters#2",
+		"library-workPill#2",
+		"library-badgeRovo#2",
+		"library-switch#2",
+		"library-glyphForYou#2",
+		"library-appSlack#2",
+		"library-artifactsLogo#2",
+		"library-codeSearchLogo#2",
+		"library-attribution#2",
+		"library-loomCameraBubble#2",
+		"library-statTokens#2",
+		"library-stampShapes#2",
+		"library-redactedPrompt#2",
+		"library-search#3",
+		"print-17#3",
+		"library-bubbles#3",
+		"library-twg#3",
+		"library-voice#3",
+		"library-picker#3",
+		"library-hold#3",
+		"library-glyphSearch#3",
+		"library-appConfluence#3",
+		"library-mosaic#3",
+		"library-quizArtifact#3",
+		"library-rovoDevCli#3",
+		"library-agentPresence#3",
+		"library-loomRecordBar#3",
+		"library-governance#3",
+		"library-stampTyping#3",
+		"library-agentIdentities#3",
+		"library-searchDrop#3",
+		"library-composer#3",
+		"library-reasoning#3",
+		"library-avatars#3",
+		"library-compact#3",
+		"library-glyphChat#3",
+		"library-appJira#3",
+		"library-filmFacets#3",
+		"library-dashboardArtifact#3",
+		"library-codeCard#3",
+		"library-mentions#3",
+		"library-loomTeleprompter#3",
+		"library-iso42001#3",
+		"library-stampPhotos#3",
+		"library-atlassianMcp#3",
+		"library-filters#3"
+	],
+	"swaps": {},
+	"gaps": null
+}

@@ -2,8 +2,7 @@ import { hash01, lerp, smoothstep as smooth } from "./finale-math";
 
 /*
  * How a sheet of paper falls through air, as a pure function of how far
- * through its fall it is (0 → 1): the mega bento's thrown cards and the
- * arrivals that come down at its leading edge (`finale-wall-motion.ts`).
+ * through its fall it is (0 → 1): the mega bento's thrown cards (`finale-wall-motion.ts`).
  *
  * Air pushes back hardest on a sheet broadside on, so a falling sheet only
  * ever turns about an axis lying in its own plane: end over end, or side over

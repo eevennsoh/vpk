@@ -72,8 +72,7 @@ test("arrival timing does not change with the spatial bucket size", () => {
 	const { m, wall, geometry } = sceneFor(VIEWPORTS[1]);
 	const slot = { ...wall.items[0], key: "entry-probe", seed: 42, rect: { x: 2600, y: 200, width: 170, height: 140 } };
 	const normal = m.slotDescent(slot, wall);
-	assert.ok(close(normal.start - m.wallDriftStart(), 11.977299814740884), "the pre-masonry entry time relative to the glide");
-	assert.ok(close(normal.touchdown - m.wallDriftStart(), 12.956097591474147), "the pre-masonry landing time relative to the glide");
+	assert.ok(normal.touchdown > normal.start, "the probe card comes down after it enters");
 	const reindexed = m.slotDescent(slot, { ...wall, geometry: { ...geometry, bucketWidth: geometry.bucketWidth * 2 } });
 	assert.deepEqual(reindexed, normal);
 });

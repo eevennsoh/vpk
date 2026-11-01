@@ -381,7 +381,9 @@ function JiraTeamEu26App(): React.ReactElement {
 				product="jira"
 				currentUser={JIRA_TEAM_EU26_END_PRESENTERS.mike}
 				chatGreeting={{ heading: "What can I help you with, MCB?" }}
-				settingsDesignVariantIds={JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
+				settingsDesignVariantIds={process.env.NEXT_PUBLIC_DEMO_BUILD === "true"
+					? JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS.filter((id) => id !== "pauseMegaBento")
+					: JIRA_TEAM_EU26_SETTINGS_DESIGN_VARIANT_IDS}
 				settingsMenuItems={settingsMenuItems}
 			>
 				<div

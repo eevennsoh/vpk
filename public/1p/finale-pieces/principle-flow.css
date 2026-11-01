@@ -1,0 +1,26 @@
+principle-flow { display: block; position: relative; flex: none; }
+principle-flow .flow-stage {
+	--flow-ground: #f8f8f8; --flow-card: #fff;
+	--flow-border: rgba(11, 18, 14, .14); --flow-border-bold: #7d818a;
+	position: relative; width: 236px; height: 145px; transform-origin: 0 0;
+	overflow: hidden; border-radius: 8px; background: var(--flow-ground);
+}
+principle-flow .flow-stage::after {
+	content: ""; position: absolute; inset: 0; border-radius: inherit;
+	box-shadow: inset 0 0 0 1px var(--flow-border); pointer-events: none;
+}
+principle-flow[appearance="dark"] .flow-stage {
+	--flow-ground: #242528; --flow-card: #1f1f21;
+	--flow-border: #ffffff24; --flow-border-bold: #7e8188;
+}
+principle-flow .flow-stage img { position: absolute; display: block; max-width: none; }
+principle-flow .flow-detail { left: 50.272362px; top: 20.586422px; }
+principle-flow .flow-curve { position: absolute; left: -7.850146px; top: -4.999997px; }
+principle-flow .flow-box {
+	position: absolute; top: 0; left: 0; width: 59.4px; height: 27px;
+}
+principle-flow .flow-box svg { display: block; }
+principle-flow .flow-outline { fill: var(--flow-card); stroke: var(--flow-border-bold); }
+principle-flow .flow-box-edge .flow-outline { stroke: var(--flow-border); }
+principle-flow .flow-stage.no-surface { background: transparent; }
+principle-flow .flow-stage.no-surface::after { display: none; }

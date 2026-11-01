@@ -4,6 +4,7 @@ import { resolvePeelSurfaceTuning } from "@/components/visual/peel/data";
 import { PEEL_DURATIONS } from "@/components/visual/peel/peel-model";
 
 import { CUE } from "../data/finale-cues";
+import type { FinaleAppearance } from "../data/finale-palette";
 import type { Vec3 } from "./finale-camera";
 import { FINALE_LIGHT_DIRECTION, LANDING, landingSwell, type FinaleCardPose, type FinaleLandingShadow, type FinaleShadowGround, type FinaleViewport } from "./finale-card-motion";
 import { parseRgb, progress } from "./finale-math";
@@ -13,7 +14,7 @@ import { parseRgb, progress } from "./finale-math";
  * burst and the bento, and the mega bento's sheets after it. One sheet shader
  * (Peel's paper wave, airborne cloth and flutter, the printed face and its
  * blank back, fog, and the key light modelling the folds), one landing
- * shadow, one lens (the spectral smear and sphere warp), and how a pose
+ * shadow, one lens (the radial softness and sphere warp), and how a pose
  * drives them, so a card flies and lands on the wall exactly as it did over
  * the slide.
  */
@@ -425,13 +426,12 @@ export function lensShare(chroma: number, opacity: number): number {
 }
 
 /**
- * Spectral radial dispersion, after the lens in Yousuf Soomro's liquid-glass
- * carousel (MIT, github.com/Yousuf-developer/liquid-glass-carousel): toward
- * the frame edge each pixel gathers taps along the ray to the centre, each
- * weighted by its own part of the spectrum (red near, green mid, blue far), so
- * shapes stretch outward and split into spectral trails on the light slide; a
- * tangential "fluid rim" wave makes the edge swim like liquid glass. The
- * centre of frame stays crisp.
+ * Light dispersion adapts Yousuf Soomro's liquid-glass carousel
+ * (MIT, github.com/Yousuf-developer/liquid-glass-carousel).
+ * The light lens disperses its radial taps by spectrum. In dark mode,
+ * the same geometry keeps its sphere warp, while all colour channels
+ * take the same short, softly weighted taps. Printed colours and transparent
+ * edges then stay together, without a coloured trail or a white rim.
  */
 const postFragmentShader = /* glsl */ `
 precision highp float;
@@ -443,6 +443,8 @@ uniform float uStrength;
 #endif
 uniform float uAspect;
 uniform float uTime;
+uniform float uDarkMode;
+uniform vec2 uResolution;
 #ifdef CHROMA_FIELD
 float uWarp;
 #else
@@ -517,9 +519,10 @@ void main() {
 	vec2 screen = (vUv - 0.5) * vec2(uAspect, 1.0);
 	float radius = length(screen) / length(vec2(uAspect, 1.0) * 0.5);
 	float edge = pow(smoothstep(0.18, 1.0, radius), 1.6);
-	float reach = uStrength * edge * 0.2;
+	float softReach = min(uStrength * edge * 0.008, 2.0 / max(uResolution.x, uResolution.y));
+	float reach = mix(uStrength * edge * 0.2, softReach, uDarkMode);
 	// A soft light falloff toward the rim sells the curved lens.
-	float vignette = uWarp * smoothstep(0.55, 1.25, radius) * 0.9;
+	float vignette = uWarp * smoothstep(0.55, 1.25, radius) * 0.9 * (1.0 - uDarkMode);
 	if (reach < 0.0004) {
 		vec4 plain = sampleScene(lensUv);
 		gl_FragColor = vec4(mix(plain.rgb, vec3(plain.a), vignette), plain.a);
@@ -529,7 +532,9 @@ void main() {
 	vec2 tangent = vec2(-inward.y, inward.x);
 	float angle = atan(screen.y, screen.x);
 	float fluid = sin(angle * 2.0 + uTime * 1.3) * 0.55 + sin(angle - uTime * 0.9) * 0.25;
-	vec2 base = lensUv + tangent * fluid * uStrength * edge * 0.018;
+	float fluidReach = uStrength * edge * 0.018;
+	float softFluidReach = min(fluidReach * 0.04, 0.5 / max(uResolution.x, uResolution.y));
+	vec2 base = lensUv + tangent * fluid * mix(fluidReach, softFluidReach, uDarkMode);
 #ifdef CHROMA_FIELD
 	vec4 plain = sampleScene(lensUv);
 	vec4 mask = sampleMask(lensUv);
@@ -551,7 +556,8 @@ void main() {
 		float bare = within(here, along);
 		tap = tap * paper + plain * standIn(paper, bare, tap.a);
 #endif
-		vec3 w = spectrum(t);
+		float softWeight = exp(-pow((t - 0.5) / 0.3, 2.0));
+		vec3 w = mix(spectrum(t), vec3(softWeight), uDarkMode);
 		sum += (tap.rgb + uBackground * (1.0 - tap.a)) * w;
 		alpha += tap.a * w;
 		weight += w;
@@ -565,16 +571,16 @@ void main() {
 }
 `;
 
-/** Plain stand-in when a print is unavailable (rehearsal or capture failure). */
-export function fallbackPrint(width: number, height: number, radius: number): HTMLCanvasElement {
+/** Plain stand-in when a print is unavailable (rehearsal or capture failure): a card in the board's colours. */
+export function fallbackPrint(width: number, height: number, radius: number, fill = "#FFFFFF", edge = "rgba(9, 30, 66, 0.14)"): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
 	canvas.width = Math.max(2, Math.round(width * 2));
 	canvas.height = Math.max(2, Math.round(height * 2));
 	const context = canvas.getContext("2d");
 	if (context) {
 		context.scale(2, 2);
-		context.fillStyle = "#FFFFFF";
-		context.strokeStyle = "rgba(9, 30, 66, 0.14)";
+		context.fillStyle = fill;
+		context.strokeStyle = edge;
 		context.beginPath();
 		context.roundRect(0.5, 0.5, width - 1, height - 1, radius);
 		context.fill();
@@ -662,6 +668,9 @@ export function createSheetMaterial(options: SheetMaterialOptions): THREE.Shader
 export interface LensMaterialOptions {
 	readonly scene: THREE.Texture;
 	readonly aspect: number;
+	/** CSS px: dark motion softness reaches at most two pixels. */
+	readonly resolution: THREE.Vector2;
+	readonly appearance: FinaleAppearance;
 	/** What shows beneath the canvas (the slide): the smear mixes its taps over it. */
 	readonly background: THREE.Vector3;
 	/**
@@ -681,8 +690,8 @@ export interface LensMaterialOptions {
 	readonly mask?: THREE.Texture;
 }
 
-/** The lens pass: the frame through the spectral dispersion and sphere warp. */
-export function createLensMaterial({ scene, aspect, background, spots = 0, mask }: LensMaterialOptions): THREE.ShaderMaterial {
+/** The lens pass: the frame through radial softness and sphere warp. */
+export function createLensMaterial({ scene, aspect, resolution, appearance, background, spots = 0, mask }: LensMaterialOptions): THREE.ShaderMaterial {
 	const field: Record<string, THREE.IUniform> = spots > 0
 		? {
 				uSmear: { value: 0 },
@@ -705,6 +714,8 @@ export function createLensMaterial({ scene, aspect, background, spots = 0, mask 
 			uScene: { value: scene },
 			uAspect: { value: aspect },
 			uTime: { value: 0 },
+			uResolution: { value: resolution },
+			uDarkMode: { value: appearance === "dark" ? 1 : 0 },
 			uBackground: { value: background },
 			...field,
 		},

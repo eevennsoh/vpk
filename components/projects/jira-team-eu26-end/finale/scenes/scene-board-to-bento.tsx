@@ -10,9 +10,6 @@ import { FinaleTeamTitle } from "../components/finale-team-title";
 import { FinaleBentoTile } from "../components/finale-bento-tile";
 import { FINALE_TILE_RADIUS } from "../components/finale-tile";
 import { FinaleTileGlow } from "../components/finale-tile-glow";
-import { FinaleWall } from "../components/finale-wall";
-import { FinaleWallAccents } from "../components/finale-wall-accents";
-import { FinaleWallGl } from "../components/finale-wall-gl";
 import { finaleBentoLayout, type FinaleRect, type FinaleStory } from "../data/finale-stories";
 import { useFinaleBoardExit } from "../hooks/use-finale-board-exit";
 import { finaleFacePrintKey } from "../hooks/use-finale-face-prints";
@@ -23,8 +20,8 @@ import {
 	type FinaleFit,
 	type FinaleViewport,
 } from "../lib/finale-card-motion";
-import { buildFinaleWall, wallGeometry, wallPrintShapes } from "../lib/finale-wall-layout";
-import { bentoDrops, bentoTossTime } from "../lib/finale-wall-motion";
+import { bentoTossTime } from "../lib/finale-bento-timing";
+import { SceneMegaBento } from "@/components/projects/jira-team-eu26-end/finale/scenes/scene-mega-bento";
 
 /** The field always carries a full board, padding with blank sheets in rehearsal. */
 const FIELD_SIZE = 13;
@@ -125,12 +122,6 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		() => buildField({ snapshot, dragOrder, features, cardPrint }, column, slotRects),
 		[snapshot, dragOrder, features, cardPrint, column, slotRects],
 	);
-	// Act III: the mega bento, and the gap each bento card is thrown into.
-	const geometry = useMemo(() => wallGeometry(fit.scale, viewport), [fit.scale, viewport]);
-	const wall = useMemo(() => buildFinaleWall(geometry, bento, features, dragOrder), [geometry, bento, features, dragOrder]);
-	const drops = useMemo(() => bentoDrops(wall, slotRects, bento.title), [wall, slotRects, bento.title]);
-	// The Done cards' print shapes: a print slot's cards land, show and glow each on its own rect.
-	const prints = useMemo(() => wallPrintShapes(cardPrint), [cardPrint]);
 	// The camera frames the hero (the bento's first feature) for the long zoom.
 	const subject = useMemo(() => cards.find((card) => card.input.role.kind === "hero")?.input.rect ?? column, [cards, column]);
 
@@ -152,36 +143,29 @@ export function SceneBoardToBento({ fit, viewport, snapshot, dragOrder, features
 		<div aria-hidden className="absolute inset-0">
 			{/* The live board shows through while light sweeps its Done column; on the toss it blurs and fades out under the slide. */}
 			<div ref={slideRef} className="absolute inset-0" style={{ visibility: "hidden" }} />
-			{/* Act III: the mega bento's DOM cards (its sheets and accents are drawn over the bento, below). */}
-			{reducedMotion ? null : <FinaleWall wall={wall} drops={drops} cardPrint={cardPrint} prints={prints} />}
-			<FinaleTeamTitle rect={bento.title} scale={fit.scale} />
-			{/* Add the complementary image opacities before compositing onto the slide. */}
-			<div className="absolute inset-0 isolate">
-				<FinaleCardSpaceGl cards={cards} facePrint={facePrint} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
-				{/* The column "completes" in a sweep of light before its cards are tossed. */}
-				<FinaleColumnFlash column={column} print={columnPrint} occluders={snapshot?.occluders} />
-				{/* Each tile is there in full from its hand-off: its sheet landed as its face's print. */}
-				{features.map((story, order) => (
-					<FinaleBentoTile
-						key={story.code}
-						ref={(element) => { tileRefs.current[order] = element; }}
-						story={story}
-						slot={bento.slots[order]}
-						scale={fit.scale}
-						className="absolute mix-blend-plus-lighter"
-						style={{ left: slotRects[order].x, top: slotRects[order].y, opacity: 0, visibility: "hidden" }}
-					/>
-				))}
-			</div>
-			{/* One shared WebGL layer: each tile's whole border glows once, Pulsing Border style, as it settles. */}
-			<FinaleTileGlow tiles={slotRects} radius={FINALE_TILE_RADIUS * fit.scale} scale={fit.scale} viewport={viewport} />
-			{/* Act III's sheets and landing accents, over the bento's tiles: the title card hops over its neighbours as it flips. */}
-			{reducedMotion ? null : (
-				<>
-					<FinaleWallGl wall={wall} drops={drops} viewport={viewport} fit={fit} cardPrint={cardPrint} prints={prints} facePrint={facePrint} />
-					<FinaleWallAccents wall={wall} drops={drops} fit={fit} viewport={viewport} prints={prints} />
-				</>
-			)}
+			<SceneMegaBento bento={bento} fit={fit} viewport={viewport} features={features} dragOrder={dragOrder} cardPrint={cardPrint} facePrint={facePrint} reducedMotion={reducedMotion}>
+				<FinaleTeamTitle rect={bento.title} scale={fit.scale} />
+				{/* Add the complementary image opacities before compositing onto the slide. */}
+				<div className="absolute inset-0 isolate">
+					<FinaleCardSpaceGl cards={cards} facePrint={facePrint} clip={clip} subject={subject} viewport={viewport} tileRadius={FINALE_TILE_RADIUS * fit.scale} />
+					{/* The column "completes" in a sweep of light before its cards are tossed. */}
+					<FinaleColumnFlash column={column} print={columnPrint} occluders={snapshot?.occluders} />
+					{/* Each tile is there in full from its hand-off: its sheet landed as its face's print. */}
+					{features.map((story, order) => (
+						<FinaleBentoTile
+							key={story.code}
+							ref={(element) => { tileRefs.current[order] = element; }}
+							story={story}
+							slot={bento.slots[order]}
+							scale={fit.scale}
+							className="absolute mix-blend-plus-lighter"
+							style={{ left: slotRects[order].x, top: slotRects[order].y, opacity: 0, visibility: "hidden" }}
+						/>
+					))}
+				</div>
+				{/* One shared WebGL layer: each tile's whole border glows once, Pulsing Border style, as it settles. */}
+				<FinaleTileGlow tiles={slotRects} radius={FINALE_TILE_RADIUS * fit.scale} scale={fit.scale} viewport={viewport} />
+			</SceneMegaBento>
 			{/* Topmost: the presenters' cursors placing the final cards. */}
 			<FinaleCursors slots={bento.slots} viewport={viewport} scale={fit.scale} />
 		</div>

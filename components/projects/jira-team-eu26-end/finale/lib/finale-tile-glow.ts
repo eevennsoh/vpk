@@ -4,7 +4,7 @@ import { CUE } from "../data/finale-cues";
 import type { FinaleRect } from "../data/finale-stories";
 import { tileRevealStart, touchdownTime } from "./finale-card-motion";
 import { EASE, clamp, hash01, lerp, parseRgb, progress } from "./finale-math";
-import { landingSettled } from "./finale-wall-motion";
+import { landingSettled } from "./finale-bento-timing";
 
 /**
  * Paper's Pulsing Border, alive for one brief moment round each bento tile as

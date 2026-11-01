@@ -1,0 +1,62 @@
+realtime-editing { display: block; position: relative; flex: none; }
+realtime-editing .editing-stage {
+	--editing-ground: #f8f8f8; --editing-ink: #292a2e; --editing-muted: rgba(8, 15, 33, .29);
+	position: relative; width: 604px; height: 472px; transform-origin: 0 0;
+	overflow: hidden; border-radius: 20px; background: var(--editing-ground);
+	color: var(--editing-ink); font: 400 25.362px/45.592px "Atlassian Sans", sans-serif;
+	letter-spacing: .2536px; font-feature-settings: "liga" 0, "calt" 0;
+}
+realtime-editing[appearance="dark"] .editing-stage {
+	--editing-ground: #242528; --editing-ink: #cecfd2; --editing-muted: #7e8188;
+}
+realtime-editing .editing-title {
+	position: absolute; left: 33.5px; top: 26px; margin: 0;
+	font: 400 24px/32px "Atlassian Mono", monospace; letter-spacing: -.48px;
+	text-transform: uppercase; color: var(--editing-muted);
+}
+realtime-editing .editing-layer {
+	position: absolute; top: 115.437px; left: 80.302px; width: 445px;
+	box-sizing: border-box; margin: 0; padding: 0 0 0 38.043px;
+	list-style: disc;
+}
+realtime-editing .editing-row {
+	position: relative; height: 45.592px; margin: 0 0 10.14468px; padding: 0;
+	white-space: nowrap; font: inherit;
+}
+realtime-editing .editing-blue { --editing-accent: #1868db; --editing-fill: #e9f2fe; --editing-rule: #cfe1fd; --editing-selection-top: 2.563px; }
+realtime-editing .editing-gray { --editing-accent: #14120b; --editing-fill: #f0f1f2; --editing-rule: #dddee1; --editing-selection-top: 1.09px; }
+realtime-editing .editing-lime { --editing-accent: #6a9a23; --editing-fill: #efffd6; --editing-rule: #d3f1a7; --editing-selection-top: -.384px; }
+realtime-editing[appearance="dark"] .editing-blue { --editing-fill: #123263; --editing-rule: #1558bc; }
+realtime-editing[appearance="dark"] .editing-gray { --editing-fill: #343639; --editing-rule: #63666b; }
+realtime-editing[appearance="dark"] .editing-lime { --editing-fill: #283911; --editing-rule: #4c6b1f; }
+realtime-editing .editing-selection {
+	position: absolute; top: var(--editing-selection-top); left: -3.845px; height: 45px;
+	box-sizing: border-box; background: var(--editing-fill); border-bottom: 5.532px solid var(--editing-rule);
+	mix-blend-mode: multiply;
+}
+realtime-editing[appearance="dark"] .editing-selection { mix-blend-mode: normal; }
+realtime-editing .editing-before, realtime-editing .editing-after, realtime-editing .editing-light {
+	position: absolute; left: 0; top: 0; width: max-content; white-space: pre;
+}
+realtime-editing .editing-before { position: relative; display: inline-block; }
+realtime-editing .editing-word { display: inline-block; white-space: pre; }
+realtime-editing .editing-light {
+	color: transparent; background-image: linear-gradient(90deg, transparent 32%, #b8d8ff 44%, #fff 50%, #b8d8ff 56%, transparent 68%);
+	background-size: 300% 100%; background-repeat: no-repeat;
+	background-clip: text; -webkit-background-clip: text; pointer-events: none;
+}
+realtime-editing .editing-cursor {
+	position: absolute; left: 0; top: calc(var(--editing-selection-top) - 32px);
+	width: 2.213px; height: 77.45px; background: var(--editing-accent);
+}
+realtime-editing .editing-badge {
+	box-sizing: border-box; position: absolute; top: 0; left: 0; height: 40px;
+	display: flex; align-items: center; padding: 0 8.851px 0 4.426px;
+	border-radius: 0 8px 8px 0; background: var(--editing-accent); color: #fff;
+	font: 400 20.289px/35.406px "Atlassian Sans", sans-serif; letter-spacing: 0;
+}
+realtime-editing .editing-badge img { display: block; flex: none; }
+realtime-editing .editing-gray .editing-badge { gap: 4.426px; }
+realtime-editing .editing-lime .editing-cursor { top: calc(var(--editing-selection-top) - 24px); height: 68.172px; width: 2.435px; }
+realtime-editing .editing-lime .editing-badge { padding-left: 8.856px; }
+realtime-editing .editing-stage.no-surface { background: transparent; }

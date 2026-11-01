@@ -34,7 +34,7 @@ const KIT = JSON.parse(readFileSync(path.join(PUBLIC, "1p/rovo-stage-kit/pieces.
 test("piece boxes preserve catalog sizing at a shared camera scale", () => {
 	const m = load();
 	const pieces = ["switch", "codeCard"].map((id) => KIT.find((piece) => piece.id === id));
-	const layout = m.wallPiecesLayout(pieces, 0.5);
+	const layout = m.wallPiecesLayout(pieces, 0.5, { x: 40, y: 40 });
 	assert.deepEqual(layout.boxes.map((box) => Number(box.scale.toFixed(4))), [1, 0.8]);
 	assert.deepEqual(layout.boxes.map((box) => Number(box.width.toFixed(4))), [170, 220.8]);
 	assert.equal(Number(layout.width.toFixed(4)), 442.8);
@@ -43,7 +43,7 @@ test("piece boxes preserve catalog sizing at a shared camera scale", () => {
 
 test("instance scales reach the kit unchanged, with shadow room and no fit to a tile", () => {
 	const piece = KIT.find((piece) => piece.id === "codeCard");
-	const layout = load().wallPiecesLayout([{ ...piece, scale: 1.408 }], 0.5);
+	const layout = load().wallPiecesLayout([{ ...piece, scale: 1.408 }], 0.5, { x: 40, y: 40 });
 	assert.equal(layout.boxes[0].scale, 0.704);
 	assert.equal(layout.boxes[0].x, 20);
 	assert.equal(layout.boxes[0].y, 20);

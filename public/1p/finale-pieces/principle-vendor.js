@@ -1,0 +1,252 @@
+/** Figma 355:14574. Shape and connection drawing overlap, followed by one traveling trail. */
+export const SHAPE_START_SECONDS = 0.12;
+export const SHAPE_STAGGER_SECONDS = 0.18;
+export const SHAPE_DRAW_SECONDS = 0.5;
+export const FILL_START_SECONDS = 1.2;
+export const FILL_SECONDS = 0.2;
+export const CONNECTION_START_SECONDS = 0.42;
+export const CONNECTION_STAGGER_SECONDS = 0.14;
+export const CONNECTION_DRAW_SECONDS = 0.6;
+export const TRAVEL_START_SECONDS = 1.96;
+export const TRAVEL_SPEED = 144;
+export const POSTER_SECONDS = 2.7;
+const clamp = (value) => Math.max(0, Math.min(1, value));
+const out = (value) => 1 - (1 - clamp(value)) ** 3;
+const smooth = (value) => { const t = clamp(value); return t * t * (3 - 2 * t); };
+
+// Exact endpoints of the six supplied dotted paths; reveals run from one end to the other.
+export const CONNECTIONS = [
+	{ id: "Line 59", from: [16.7692, 19.147], to: [132.953, 101.369] },
+	{ id: "Line 60", from: [16.5587, 19.0393], to: [31.6603, 93.6591] },
+	{ id: "Line 61", from: [32.0487, 94.1555], to: [122.744, 27.2492] },
+	{ id: "Line 62", from: [32.7129, 94.5842], to: [133.116, 101.713] },
+	{ id: "Line 63", from: [122.429, 28.9179], to: [133.082, 100.829] },
+	{ id: "Line 64", from: [17.1104, 18.9866], to: [122.313, 27.0105] },
+];
+const DRAW_ORDER = [5, 1, 0, 4, 2, 3];
+// Walk between neighboring nodes, covering all six connections before repeating.
+const WALK = [[0, false], [3, true], [2, false], [5, true], [1, false], [3, false], [4, true], [5, true]];
+const TRAIL_START = [46.3472, 39.7803];
+const TRAIL_END = [103.073, 79.7673];
+const TRAIL_LENGTH = Math.hypot(TRAIL_END[0] - TRAIL_START[0], TRAIL_END[1] - TRAIL_START[1]);
+const TRAIL_ANGLE = Math.atan2(TRAIL_END[1] - TRAIL_START[1], TRAIL_END[0] - TRAIL_START[0]);
+export const ROUTES = WALK.map(([index, reverse]) => {
+	const connection = CONNECTIONS[index];
+	const from = reverse ? connection.to : connection.from;
+	const to = reverse ? connection.from : connection.to;
+	const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+	return { from, to, length, angle: Math.atan2(to[1] - from[1], to[0] - from[0]), duration: (length + TRAIL_LENGTH + 4) / TRAVEL_SPEED };
+});
+export const TRAVEL_CYCLE_SECONDS = ROUTES.reduce((sum, route) => sum + route.duration, 0);
+// A finite play ends only after the entire trail has cleared the final connection.
+export const MOMENT_SECONDS = TRAVEL_START_SECONDS + TRAVEL_CYCLE_SECONDS;
+
+/** One deterministic clock drives the intro and continuous travel, including backward seeks. */
+export function vendorFrame(seconds) {
+	const time = Math.max(0, seconds);
+	let travel = Math.max(0, time - TRAVEL_START_SECONDS) % TRAVEL_CYCLE_SECONDS;
+	let route = 0;
+	while (route < ROUTES.length - 1 && travel >= ROUTES[route].duration) travel -= ROUTES[route++].duration;
+	return {
+		shapes: Array.from({ length: 4 }, (_, index) => ({
+			outline: smooth((time - SHAPE_START_SECONDS - index * SHAPE_STAGGER_SECONDS) / SHAPE_DRAW_SECONDS),
+			fill: out((time - FILL_START_SECONDS) / FILL_SECONDS),
+		})),
+		connections: CONNECTIONS.map((_, index) => smooth((time - CONNECTION_START_SECONDS - DRAW_ORDER.indexOf(index) * CONNECTION_STAGGER_SECONDS) / CONNECTION_DRAW_SECONDS)),
+		trail: { visible: time >= TRAVEL_START_SECONDS, route, head: travel * TRAVEL_SPEED },
+	};
+}
+
+export function vendorTime(seconds, { play = "live", length = MOMENT_SECONDS, rest = 1.5 } = {}) {
+	const time = Math.max(0, seconds);
+	if (play === "live") return time;
+	const duration = Math.max(0.1, length);
+	const elapsed = play === "loop" ? time % (duration + rest) : time;
+	// An explicit duration fits the whole sequence instead of cutting off a moving trail.
+	return Math.min(elapsed / duration, 1) * MOMENT_SECONDS;
+}
+
+// Embed the supplied SVG intact so its individual paths can animate, including in offline blob modules.
+export const DIAGRAM_SVG = "<svg preserveAspectRatio=\"none\" overflow=\"visible\" style=\"display: block;\" width=\"151.65\" height=\"119.25\" viewBox=\"0 0 151.65 119.25\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<g id=\"Frame 2147260397\">\n<path id=\"Line 59\" d=\"M132.953 101.369L132.949 101.367M16.7692 19.147L16.7729 19.1496M131.486 100.331L131.479 100.326M130.015 99.2903L130.008 99.2851M128.545 98.2495L128.537 98.2443M127.074 97.2087L127.067 97.2036M125.603 96.1679L125.596 96.1628M124.132 95.1272L124.125 95.122M122.662 94.0864L122.654 94.0812M121.191 93.0456L121.184 93.0404M119.72 92.0048L119.713 91.9996M118.25 90.964L118.242 90.9588M116.779 89.9232L116.772 89.918M115.308 88.8824L115.301 88.8772M113.838 87.8416L113.83 87.8365M112.367 86.8008L112.36 86.7957M110.896 85.7601L110.889 85.7549M109.426 84.7193L109.418 84.7141M107.955 83.6785L107.948 83.6733M106.484 82.6377L106.477 82.6325M105.014 81.5969L105.006 81.5917M103.543 80.5561L103.536 80.5509M102.072 79.5153L102.065 79.5101M100.602 78.4745L100.594 78.4694M99.1309 77.4337L99.1236 77.4286M97.6602 76.393L97.6529 76.3878M96.1895 75.3522L96.1822 75.347M94.7189 74.3114L94.7115 74.3062M93.2482 73.2706L93.2409 73.2654M91.7775 72.2298L91.7702 72.2246M90.3068 71.189L90.2995 71.1838M88.8361 70.1482L88.8288 70.143M87.3655 69.1074L87.3581 69.1023M85.8948 68.0666L85.8875 68.0615M84.4241 67.0259L84.4168 67.0207M82.9534 65.9851L82.9461 65.9799M81.4827 64.9443L81.4754 64.9391M80.0121 63.9035L80.0047 63.8983M78.5414 62.8627L78.5341 62.8575M77.0707 61.8219L77.0634 61.8167M75.6 60.7811L75.5927 60.7759M74.1293 59.7403L74.122 59.7352M72.6587 58.6995L72.6513 58.6944M71.188 57.6588L71.1807 57.6536M69.7173 56.618L69.71 56.6128M68.2466 55.5772L68.2393 55.572M66.7759 54.5364L66.7686 54.5312M65.3053 53.4956L65.2979 53.4904M63.8346 52.4548L63.8273 52.4496M62.3639 51.414L62.3566 51.4088M60.8932 50.3732L60.8859 50.3681M59.4225 49.3324L59.4152 49.3273M57.9519 48.2917L57.9446 48.2865M56.4812 47.2509L56.4739 47.2457M55.0105 46.2101L55.0032 46.2049M53.5398 45.1693L53.5325 45.1641M52.0691 44.1285L52.0618 44.1233M50.5985 43.0877L50.5912 43.0825M49.1278 42.0469L49.1205 42.0417M47.6571 41.0061L47.6498 41.001M46.1864 39.9653L46.1791 39.9602M44.7158 38.9246L44.7084 38.9194M43.2451 37.8838L43.2378 37.8786M41.7744 36.843L41.7671 36.8378M40.3037 35.8022L40.2964 35.797M38.833 34.7614L38.8257 34.7562M37.3624 33.7206L37.355 33.7154M35.8917 32.6798L35.8844 32.6746M34.421 31.639L34.4137 31.6339M32.9503 30.5983L32.943 30.5931M31.4796 29.5575L31.4723 29.5523M30.009 28.5167L30.0016 28.5115M28.5383 27.4759L28.531 27.4707M27.0676 26.4351L27.0603 26.4299M25.5969 25.3943L25.5896 25.3891M24.1262 24.3535L24.1189 24.3484M22.6556 23.3127L22.6483 23.3076M21.1849 22.272L21.1776 22.2668M19.7142 21.2312L19.7069 21.226M18.2436 20.1904L18.2362 20.1852\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke=\"#B7B9BE\"/>\n<path id=\"Line 60\" d=\"M31.6603 93.6591L31.6594 93.6547M16.5587 19.0393L16.5596 19.0437M31.3016 91.8869L31.2999 91.878M30.9421 90.1102L30.9403 90.1014M30.5825 88.3335L30.5807 88.3247M30.223 86.5569L30.2212 86.548M29.8634 84.7802L29.8616 84.7714M29.5038 83.0036L29.502 82.9947M29.1443 81.2269L29.1425 81.2181M28.7847 79.4502L28.7829 79.4414M28.4251 77.6736L28.4234 77.6647M28.0656 75.8969L28.0638 75.8881M27.706 74.1202L27.7042 74.1114M27.3465 72.3436L27.3447 72.3347M26.9869 70.5669L26.9851 70.5581M26.6273 68.7903L26.6255 68.7814M26.2678 67.0136L26.266 67.0047M25.9082 65.2369L25.9064 65.2281M25.5486 63.4603L25.5469 63.4514M25.1891 61.6836L25.1873 61.6748M24.8295 59.9069L24.8277 59.8981M24.47 58.1303L24.4682 58.1214M24.1104 56.3536L24.1086 56.3448M23.7508 54.5769L23.749 54.5681M23.3913 52.8003L23.3895 52.7914M23.0317 51.0236L23.0299 51.0148M22.6721 49.2469L22.6703 49.2381M22.3126 47.4703L22.3108 47.4614M21.953 45.6936L21.9512 45.6848M21.5934 43.917L21.5917 43.9081M21.2339 42.1403L21.2321 42.1315M20.8743 40.3636L20.8725 40.3548M20.5148 38.587L20.513 38.5781M20.1552 36.8103L20.1534 36.8015M19.7956 35.0336L19.7938 35.0248M19.4361 33.257L19.4343 33.2481M19.0765 31.4803L19.0747 31.4715M18.7169 29.7036L18.7152 29.6948M18.3574 27.927L18.3556 27.9181M17.9978 26.1503L17.996 26.1415M17.6383 24.3736L17.6365 24.3648M17.2787 22.597L17.2769 22.5881M16.9191 20.8203L16.9173 20.8115\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke=\"#B7B9BE\"/>\n<path id=\"Line 61\" d=\"M122.744 27.2492L122.741 27.2519M32.0487 94.1555L32.0524 94.1529M121.285 28.3256L121.278 28.331M119.822 29.4048L119.815 29.4101M118.359 30.4839L118.352 30.4893M116.897 31.563L116.889 31.5684M115.434 32.6422L115.427 32.6475M113.971 33.7213L113.964 33.7267M112.508 34.8004L112.501 34.8058M111.045 35.8796L111.038 35.885M109.582 36.9587L109.575 36.9641M108.12 38.0379L108.112 38.0432M106.657 39.117L106.65 39.1224M105.194 40.1961L105.187 40.2015M103.731 41.2753L103.724 41.2806M102.268 42.3544L102.261 42.3598M100.805 43.4335L100.798 43.4389M99.3426 44.5127L99.3354 44.518M97.8798 45.5918L97.8725 45.5972M96.417 46.6709L96.4097 46.6763M94.9541 47.7501L94.9469 47.7554M93.4913 48.8292L93.484 48.8346M92.0285 49.9083L92.0212 49.9137M90.5657 50.9875L90.5584 50.9928M89.1028 52.0666L89.0955 52.072M87.64 53.1457L87.6327 53.1511M86.1772 54.2249L86.1699 54.2302M84.7143 55.304L84.707 55.3094M83.2515 56.3831L83.2442 56.3885M81.7887 57.4623L81.7814 57.4677M80.3258 58.5414L80.3186 58.5468M78.863 59.6206L78.8557 59.6259M77.4002 60.6997L77.3929 60.7051M75.9373 61.7788L75.9301 61.7842M74.4745 62.858L74.4672 62.8633M73.0117 63.9371L73.0044 63.9425M71.5488 65.0162L71.5416 65.0216M70.086 66.0954L70.0787 66.1007M68.6232 67.1745L68.6159 67.1799M67.1603 68.2536L67.1531 68.259M65.6975 69.3328L65.6902 69.3381M64.2347 70.4119L64.2274 70.4173M62.7719 71.491L62.7646 71.4964M61.309 72.5702L61.3017 72.5755M59.8462 73.6493L59.8389 73.6547M58.3834 74.7284L58.3761 74.7338M56.9205 75.8076L56.9133 75.8129M55.4577 76.8867L55.4504 76.8921M53.9949 77.9658L53.9876 77.9712M52.532 79.045L52.5248 79.0503M51.0692 80.1241L51.0619 80.1295M49.6064 81.2032L49.5991 81.2086M48.1435 82.2824L48.1363 82.2877M46.6807 83.3615L46.6734 83.3669M45.2179 84.4406L45.2106 84.446M43.755 85.5198L43.7478 85.5251M42.2922 86.5989L42.2849 86.6043M40.8294 87.678L40.8221 87.6834M39.3665 88.7572L39.3593 88.7625M37.9037 89.8363L37.8964 89.8417M36.4409 90.9154L36.4336 90.9208M34.9781 91.9946L34.9708 92M33.5152 93.0737L33.508 93.0791\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke=\"#B7B9BE\"/>\n<path id=\"Line 62\" d=\"M133.116 101.713L133.111 101.713M32.7129 94.5842L32.7175 94.5845M131.327 101.586L131.318 101.586M129.534 101.459L129.525 101.458M127.741 101.332L127.733 101.331M125.949 101.204L125.94 101.204M124.156 101.077L124.147 101.076M122.363 100.95L122.354 100.949M120.57 100.823L120.561 100.822M118.777 100.695L118.768 100.695M116.984 100.568L116.975 100.567M115.191 100.441L115.182 100.44M113.398 100.313L113.389 100.313M111.605 100.186L111.596 100.185M109.812 100.059L109.803 100.058M108.019 99.9314L108.011 99.9307M106.227 99.8041L106.218 99.8034M104.434 99.6767L104.425 99.6761M102.641 99.5494L102.632 99.5488M100.848 99.4221L100.839 99.4215M99.0549 99.2948L99.046 99.2942M97.262 99.1675L97.2531 99.1669M95.4691 99.0402L95.4602 99.0396M93.6762 98.9129L93.6673 98.9123M91.8833 98.7856L91.8744 98.785M90.0904 98.6583L90.0815 98.6577M88.2975 98.531L88.2886 98.5304M86.5046 98.4037L86.4957 98.403M84.7117 98.2764L84.7028 98.2757M82.9188 98.1491L82.9099 98.1484M81.1259 98.0218L81.1169 98.0211M79.333 97.8945L79.324 97.8938M77.5401 97.7671L77.5311 97.7665M75.7471 97.6398L75.7382 97.6392M73.9542 97.5125L73.9453 97.5119M72.1613 97.3852L72.1524 97.3846M70.3684 97.2579L70.3595 97.2573M68.5755 97.1306L68.5666 97.13M66.7826 97.0033L66.7737 97.0027M64.9897 96.876L64.9808 96.8754M63.1968 96.7487L63.1879 96.7481M61.4039 96.6214L61.395 96.6208M59.611 96.4941L59.6021 96.4934M57.8181 96.3668L57.8092 96.3661M56.0252 96.2395L56.0163 96.2388M54.2323 96.1122L54.2234 96.1115M52.4394 95.9849L52.4305 95.9842M50.6465 95.8575L50.6376 95.8569M48.8536 95.7302L48.8447 95.7296M47.0607 95.6029L47.0518 95.6023M45.2678 95.4756L45.2589 95.475M43.4749 95.3483L43.466 95.3477M41.682 95.221L41.6731 95.2204M39.8891 95.0937L39.8802 95.0931M38.0962 94.9664L38.0873 94.9658M36.3033 94.8391L36.2944 94.8385M34.5104 94.7118L34.5015 94.7112\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke=\"#B7B9BE\"/>\n<path id=\"Ellipse 1908\" d=\"M49.7996 94.05C49.7996 103.743 41.9422 111.6 32.2496 111.6C22.557 111.6 14.6996 103.743 14.6996 94.05C14.6996 84.3574 22.557 76.5 32.2496 76.5C41.9422 76.5 49.7996 84.3574 49.7996 94.05Z\" fill=\"white\" stroke-width=\"0.9\" stroke=\"#7D818A\"/>\n<path id=\"Line 63\" d=\"M133.082 100.829L133.081 100.824M122.429 28.9179L122.429 28.9224M132.816 99.0354L132.815 99.0264M132.55 97.2376L132.549 97.2287M132.284 95.4398L132.282 95.4309M132.017 93.6421L132.016 93.6331M131.751 91.8443L131.75 91.8354M131.485 90.0465L131.483 90.0376M131.218 88.2488L131.217 88.2398M130.952 86.451L130.951 86.442M130.686 84.6532L130.684 84.6443M130.419 82.8554L130.418 82.8465M130.153 81.0577L130.152 81.0487M129.887 79.2599L129.885 79.251M129.62 77.4621L129.619 77.4532M129.354 75.6644L129.353 75.6554M129.088 73.8666L129.086 73.8577M128.821 72.0688L128.82 72.0599M128.555 70.2711L128.554 70.2621M128.289 68.4733L128.287 68.4644M128.022 66.6755L128.021 66.6666M127.756 64.8778L127.755 64.8688M127.49 63.08L127.488 63.071M127.223 61.2822L127.222 61.2733M126.957 59.4844L126.956 59.4755M126.691 57.6867L126.689 57.6777M126.424 55.8889L126.423 55.88M126.158 54.0911L126.157 54.0822M125.892 52.2934L125.89 52.2844M125.625 50.4956L125.624 50.4867M125.359 48.6978L125.358 48.6889M125.093 46.9001L125.091 46.8911M124.826 45.1023L124.825 45.0934M124.56 43.3045L124.559 43.2956M124.294 41.5068L124.292 41.4978M124.027 39.709L124.026 39.7M123.761 37.9112L123.76 37.9023M123.495 36.1135L123.493 36.1045M123.228 34.3157L123.227 34.3067M122.962 32.5179L122.961 32.509M122.696 30.7201L122.694 30.7112\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke=\"#B7B9BE\"/>\n<path id=\"Line 64\" d=\"M122.313 27.0105L122.309 27.0102M17.1104 18.9866L17.115 18.9869M120.504 26.8725L120.495 26.8718M118.69 26.7342L118.681 26.7335M116.876 26.5958L116.867 26.5952M115.062 26.4575L115.053 26.4568M113.249 26.3192L113.24 26.3185M111.435 26.1808L111.426 26.1801M109.621 26.0425L109.612 26.0418M107.807 25.9041L107.798 25.9034M105.993 25.7658L105.984 25.7651M104.179 25.6274L104.17 25.6267M102.366 25.4891L102.356 25.4884M100.552 25.3507L100.543 25.3501M98.7378 25.2124L98.7288 25.2117M96.924 25.0741L96.915 25.0734M95.1101 24.9357L95.1011 24.935M93.2963 24.7974L93.2873 24.7967M91.4825 24.659L91.4734 24.6583M89.6686 24.5207L89.6596 24.52M87.8548 24.3823L87.8458 24.3817M86.0409 24.244L86.0319 24.2433M84.2271 24.1057L84.2181 24.105M82.4132 23.9673L82.4042 23.9666M80.5994 23.829L80.5904 23.8283M78.7856 23.6906L78.7765 23.6899M76.9717 23.5523L76.9627 23.5516M75.1579 23.4139L75.1489 23.4132M73.344 23.2756L73.335 23.2749M71.5302 23.1372L71.5212 23.1366M69.7163 22.9989L69.7073 22.9982M67.9025 22.8606L67.8935 22.8599M66.0887 22.7222L66.0796 22.7215M64.2748 22.5839L64.2658 22.5832M62.461 22.4455L62.452 22.4448M60.6471 22.3072L60.6381 22.3065M58.8333 22.1688L58.8243 22.1681M57.0194 22.0305L57.0104 22.0298M55.2056 21.8921L55.1966 21.8915M53.3918 21.7538L53.3827 21.7531M51.5779 21.6155L51.5689 21.6148M49.7641 21.4771L49.7551 21.4764M47.9502 21.3388L47.9412 21.3381M46.1364 21.2004L46.1274 21.1997M44.3226 21.0621L44.3135 21.0614M42.5087 20.9237L42.4997 20.9231M40.6949 20.7854L40.6859 20.7847M38.8811 20.6471L38.872 20.6464M37.0672 20.5087L37.0582 20.508M35.2534 20.3704L35.2444 20.3697M33.4395 20.232L33.4305 20.2313M31.6257 20.0937L31.6167 20.093M29.8119 19.9553L29.8028 19.9547M27.998 19.817L27.989 19.8163M26.1842 19.6787L26.1752 19.678M24.3703 19.5403L24.3613 19.5396M22.5565 19.402L22.5475 19.4013M20.7427 19.2636L20.7336 19.2629M18.9288 19.1253L18.9198 19.1246\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke=\"#B7B9BE\"/>\n<path id=\"Ellipse 1907\" d=\"M151.2 101.25C151.2 110.943 143.342 118.8 133.65 118.8C123.957 118.8 116.1 110.943 116.1 101.25C116.1 91.5574 123.957 83.7 133.65 83.7C143.342 83.7 151.2 91.5574 151.2 101.25Z\" fill=\"white\" stroke-width=\"0.9\" stroke=\"#7D818A\"/>\n<path id=\"Vector\" d=\"M16.65 0.45C17.5031 0.450011 18.3411 0.675149 19.0799 1.10279L30.4201 7.6667C31.1589 8.09432 31.7724 8.70937 32.1989 9.45003C32.6254 10.1907 32.85 11.0309 32.85 11.8861V25.0139C32.85 25.8692 32.6254 26.7093 32.1989 27.45C31.7724 28.1907 31.1589 28.8057 30.4201 29.2333L19.0799 35.7972C18.3411 36.2249 17.5031 36.45 16.65 36.45C15.7969 36.45 14.9589 36.2249 14.2201 35.7972L2.87988 29.2333C2.14111 28.8057 1.52763 28.1907 1.10109 27.45C0.67456 26.7093 0.450006 25.8692 0.45 25.0139V11.8861C0.450006 11.0309 0.67456 10.1907 1.10109 9.45003C1.52763 8.70937 2.14111 8.09432 2.87988 7.6667L14.2201 1.10279C14.9589 0.675149 15.7969 0.450011 16.65 0.45Z\" fill=\"white\" stroke-width=\"0.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke=\"#7D818A\"/>\n<path id=\"Vector_2\" d=\"M122.85 8.55C123.703 8.55001 124.541 8.77515 125.28 9.20279L136.62 15.7667C137.359 16.1943 137.972 16.8094 138.399 17.55C138.825 18.2907 139.05 19.1309 139.05 19.9861V33.1139C139.05 33.9692 138.825 34.8093 138.399 35.55C137.972 36.2907 137.359 36.9057 136.62 37.3333L125.28 43.8973C124.541 44.3249 123.703 44.55 122.85 44.55C121.997 44.55 121.159 44.3249 120.42 43.8973L109.08 37.3333C108.341 36.9057 107.727 36.2907 107.301 35.55C106.874 34.8093 106.65 33.9692 106.65 33.1139V19.9861C106.65 19.1309 106.874 18.2907 107.301 17.55C107.727 16.8094 108.341 16.1943 109.08 15.7667L120.42 9.20279C121.159 8.77515 121.997 8.55001 122.85 8.55Z\" fill=\"white\" stroke-width=\"0.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke=\"#7D818A\"/>\n<path id=\"Vector_3\" d=\"M46.3472 39.7803L49.9074 42.2034L53.4348 44.6797L56.9618 47.1614L60.4892 49.6377L64.0167 52.1139L67.5441 54.5902L71.0716 57.0664L74.5935 59.5421L78.1204 62.0239L81.6479 64.5002L85.1753 66.9764L88.7028 69.4526L92.2302 71.9289L95.7572 74.4107L99.2846 76.8869L103.073 79.7673\" stroke-width=\"3.906\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke=\"url(#paint0_linear_0_59)\"/>\n</g>\n<defs>\n<linearGradient id=\"paint0_linear_0_59\" x1=\"5.60488\" y1=\"29.3096\" x2=\"102.806\" y2=\"79.3626\" gradientUnits=\"userSpaceOnUse\">\n<stop offset=\"0.317308\" stop-color=\"#AF59E1\" stop-opacity=\"0\"/>\n<stop offset=\"0.682692\" stop-color=\"#AF59E1\" stop-opacity=\"0.34\"/>\n<stop offset=\"1\" stop-color=\"#AF59E1\"/>\n</linearGradient>\n</defs>\n</svg>\n";
+const asset = (name) => new URL(`/1p/finale-pieces/assets/principle-vendor/${name}`, document.baseURI).href;
+const stylesheet = new URL("/1p/finale-pieces/principle-vendor.css", document.baseURI).href;
+const SVG_NS = "http://www.w3.org/2000/svg";
+let instance = 0;
+
+function svgNode(tag, attributes) {
+	const node = document.createElementNS(SVG_NS, tag);
+	for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
+	return node;
+}
+
+class PrincipleVendor extends HTMLElement {
+	static observedAttributes = ["time", "paused", "scale", "appearance", "surface", "play", "rest", "length"];
+	#styles;
+	#stage;
+	#shapes = [];
+	#connections = [];
+	#trail;
+	#trailGroup;
+	#trailWindow;
+	#trailClip;
+	#frame = 0;
+	#elapsed = 0;
+	#lastTick = null;
+	#visible = true;
+	#observer;
+	#motion = matchMedia("(prefers-reduced-motion: reduce)");
+	#refresh = () => this.redraw();
+
+	connectedCallback() {
+		if (!document.querySelector("link[data-principle-vendor-style]")) {
+			const link = document.createElement("link");
+			link.rel = "stylesheet";
+			link.href = stylesheet;
+			link.dataset.principleVendorStyle = "";
+			document.head.append(link);
+		}
+		if (!this.#stage) this.#build();
+		this.#motion.addEventListener("change", this.#refresh);
+		document.addEventListener("visibilitychange", this.#refresh);
+		this.#observer = new IntersectionObserver(([entry]) => {
+			this.#visible = entry.isIntersecting;
+			this.redraw();
+		});
+		this.#observer.observe(this);
+		this.redraw();
+	}
+
+	disconnectedCallback() {
+		cancelAnimationFrame(this.#frame);
+		this.#lastTick = null;
+		this.#observer?.disconnect();
+		this.#motion.removeEventListener("change", this.#refresh);
+		document.removeEventListener("visibilitychange", this.#refresh);
+	}
+
+	attributeChangedCallback() { this.redraw(); }
+	get pieceStyles() { return this.#styles; }
+	set pieceStyles(value) { this.#styles = value; this.redraw(); }
+
+
+	#build() {
+		this.setAttribute("role", "img");
+		this.setAttribute("aria-label", "Principle vendor. Two hexagons and two circles draw and fill white. Six dotted connections draw in sequence, then a purple trail travels between the shapes.");
+		this.#stage = document.createElement("div");
+		this.#stage.className = "vendor-stage";
+		this.#stage.setAttribute("aria-hidden", "true");
+		this.#stage.innerHTML = `<span class="vendor-detail"><img src="${asset("user-avatar.svg")}" alt=""></span><div class="vendor-diagram">${DIAGRAM_SVG}</div>`;
+		const svg = this.#stage.querySelector("svg");
+		const originals = new Map([...svg.querySelectorAll("[id]")].map((node) => [node.id, node]));
+		const prefix = `principle-vendor-${++instance}`;
+		[...originals.values()].forEach((node, index) => { node.id = `${prefix}-shape-${index}`; });
+		svg.querySelectorAll("[stroke]").forEach((node) => {
+			const reference = node.getAttribute("stroke").match(/^url\(#(.+)\)$/)?.[1];
+			if (reference) node.setAttribute("stroke", `url(#${originals.get(reference).id})`);
+		});
+		this.#shapes = ["Vector", "Vector_2", "Ellipse 1908", "Ellipse 1907"].map((id) => {
+			const node = originals.get(id);
+			node.classList.add("vendor-shape");
+			return { node, length: node.getTotalLength?.() ?? (id.startsWith("Ellipse") ? 110.275 : 108) };
+		});
+		const defs = svg.querySelector("defs");
+		const group = originals.get("Frame 2147260397");
+		// Keep connections outside the shapes even before their white fills appear.
+		const cutouts = svgNode("mask", { id: `${prefix}-shape-cutouts`, maskUnits: "userSpaceOnUse", x: -1, y: -1, width: 154, height: 122 });
+		cutouts.append(svgNode("rect", { x: -1, y: -1, width: 154, height: 122, fill: "white" }));
+		this.#shapes.forEach(({ node }) => {
+			const cutout = node.cloneNode();
+			cutout.removeAttribute("id"); cutout.removeAttribute("class");
+			cutout.setAttribute("fill", "black"); cutout.setAttribute("stroke", "none");
+			cutouts.append(cutout);
+		});
+		defs.append(cutouts);
+		const connections = svgNode("g", { class: "vendor-connections", mask: `url(#${cutouts.id})` });
+		group.prepend(connections);
+		this.#connections = CONNECTIONS.map(({ id, from, to }, index) => {
+			const node = originals.get(id);
+			connections.append(node);
+			node.classList.add("vendor-connection");
+			const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+			const mask = svgNode("mask", { id: `${prefix}-connection-${index}`, maskUnits: "userSpaceOnUse", x: -1, y: -1, width: 154, height: 122 });
+			const reveal = svgNode("path", { d: `M${from.join(" ")}L${to.join(" ")}`, stroke: "white", "stroke-width": 3, fill: "none", "stroke-dasharray": length });
+			mask.append(reveal);
+			defs.append(mask);
+			node.setAttribute("mask", `url(#${mask.id})`);
+			return { node, reveal, length };
+		});
+		this.#trail = originals.get("Vector_3");
+		this.#trail.classList.add("vendor-trail");
+		this.#trailClip = `${prefix}-trail-clip`;
+		const clip = svgNode("clipPath", { id: this.#trailClip, clipPathUnits: "userSpaceOnUse" });
+		this.#trailWindow = svgNode("rect", { x: -1, y: -4, width: 1, height: 8 });
+		clip.append(this.#trailWindow);
+		defs.append(clip);
+		this.#trailGroup = svgNode("g", { class: "vendor-trail-window" });
+		this.#trailGroup.append(this.#trail);
+		group.append(this.#trailGroup);
+		// Put the white shapes above both the connections and traveling trail.
+		this.#shapes.forEach(({ node }) => group.append(node));
+		this.replaceChildren(this.#stage);
+	}
+
+	#number(name, fallback) {
+		const value = this.getAttribute(name);
+		return value !== null && Number.isFinite(Number(value)) ? Number(value) : fallback;
+	}
+
+	#paint() {
+		const settings = this.#styles?.principleVendor ?? {};
+		const scale = Math.max(0.01, this.#number("scale", 1));
+		this.style.width = `${236 * scale}px`;
+		this.style.height = `${145 * scale}px`;
+		this.#stage.style.transform = `scale(${scale})`;
+		const surface = this.getAttribute("surface");
+		this.#stage.classList.toggle("no-surface", surface === "off" || (surface !== "on" && settings.surface === false));
+		const reduced = this.#motion.matches;
+		const time = reduced ? POSTER_SECONDS : this.#number("time", this.#elapsed);
+		const play = reduced ? "live" : this.getAttribute("play") ?? settings.play ?? "live";
+		const length = Math.max(0.1, this.#number("length", settings.length ?? MOMENT_SECONDS));
+		const shown = vendorTime(time, { play, length, rest: Math.max(0, this.#number("rest", settings.rest ?? 1.5)) });
+		const pose = vendorFrame(shown);
+		const finished = play !== "live" && shown >= MOMENT_SECONDS;
+		this.#shapes.forEach(({ node, length }, index) => {
+			const { outline, fill } = pose.shapes[index];
+			node.setAttribute("stroke-dasharray", outline === 1 ? "none" : String(length));
+			node.setAttribute("stroke-dashoffset", String((1 - outline) * length));
+			node.setAttribute("stroke-opacity", outline > 0 ? "1" : "0");
+			node.setAttribute("fill-opacity", String(fill));
+		});
+		this.#connections.forEach(({ node, reveal, length }, index) => {
+			const progress = pose.connections[index];
+			node.setAttribute("opacity", progress > 0 ? "1" : "0");
+			reveal.setAttribute("stroke-dasharray", progress === 1 ? "none" : String(length));
+			reveal.setAttribute("stroke-dashoffset", String((1 - progress) * length));
+		});
+		const route = ROUTES[pose.trail.route];
+		const x = route.from[0] + Math.cos(route.angle) * pose.trail.head;
+		const y = route.from[1] + Math.sin(route.angle) * pose.trail.head;
+		this.#trailGroup.setAttribute("opacity", pose.trail.visible && !finished ? "1" : "0");
+		this.#trailGroup.setAttribute("clip-path", reduced ? "none" : `url(#${this.#trailClip})`);
+		this.#trailWindow.setAttribute("width", String(route.length + 2));
+		this.#trailWindow.setAttribute("transform", `translate(${route.from.join(" ")}) rotate(${route.angle * 180 / Math.PI})`);
+		this.#trail.setAttribute("transform", reduced ? "translate(0 0)" : `translate(${x} ${y}) rotate(${(route.angle - TRAIL_ANGLE) * 180 / Math.PI}) translate(${-TRAIL_END[0]} ${-TRAIL_END[1]})`);
+		return play !== "once" || time < length;
+	}
+
+	redraw() {
+		cancelAnimationFrame(this.#frame);
+		this.#lastTick = null;
+		if (!this.isConnected || !this.#stage) return;
+		const moving = this.#paint();
+		if (!moving || this.hasAttribute("time") || this.hasAttribute("paused") || this.#motion.matches || !this.#visible || document.hidden) return;
+		const tick = (now) => {
+			if (this.#lastTick !== null) this.#elapsed += (now - this.#lastTick) / 1000;
+			this.#lastTick = now;
+			if (this.#paint()) this.#frame = requestAnimationFrame(tick);
+		};
+		this.#frame = requestAnimationFrame(tick);
+	}
+}
+
+if (!customElements.get("principle-vendor")) customElements.define("principle-vendor", PrincipleVendor);

@@ -7,7 +7,7 @@ import { FINALE_COLORS } from "../data/finale-palette";
 import type { FinaleRect } from "../data/finale-stories";
 import { FINALE_TITLE } from "../data/finale-title";
 import { EASE, eased, lerp, progress } from "../lib/finale-math";
-import { bentoTitleFlipTime, bentoTitleForm } from "../lib/finale-wall-motion";
+import { bentoTitleFlipTime, bentoTitleForm } from "../lib/finale-bento-timing";
 import { FINALE_INK, FINALE_INK_BLEED, applyFinaleBuild, finaleBuildGradient } from "../lib/finale-build-style";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FINALE_TILE_RADIUS } from "./finale-tile";
