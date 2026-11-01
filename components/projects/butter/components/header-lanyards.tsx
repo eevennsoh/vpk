@@ -1,16 +1,42 @@
 "use client";
 
-import { createContext, use, useRef, useState, type ReactNode } from "react";
+import { createContext, use, useCallback, useId, useRef, useState, type ReactNode } from "react";
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
-import { AgentLanyard, type AgentLanyardAgent, type AgentLanyardFirstPartyAgent } from "@/components/blocks/agent-lanyard";
+import { AgentLanyard, AGENT_LANYARD_AGENTS, type AgentLanyardAgent, type AgentLanyardFirstPartyAgent } from "@/components/blocks/agent-lanyard";
 import { AgentLanyardFirstPartyAvatar } from "@/components/blocks/agent-lanyard/agent-lanyard-first-party-avatar";
-import { HoverCard, HoverCardContent, createHoverCardHandle, type HoverCardHandle } from "@/components/ui/hover-card";
+import { AgentSessionAvatarPreviewContext, type AgentSessionAvatarPreview } from "@/components/blocks/agent-session/agent-session-avatar-preview";
+import { HoverCard, HoverCardContent, HoverCardTrigger, createHoverCardHandle, type HoverCardHandle } from "@/components/ui/hover-card";
 import { TOOLTIP_POPUP_ANIMATION_CLASSES } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 
 type HeaderAgent = AgentLanyardAgent | AgentLanyardFirstPartyAgent;
 const HeaderLanyardContext = createContext<HoverCardHandle<HeaderAgent> | null>(null);
+const SESSION_AGENT_IDS = new Map([
+	["claude", "claude"],
+	["cursor", "cursor"],
+	["openai-codex", "codex"],
+	["github-copilot", "copilot"],
+]);
+
+function SessionAvatarPreview({ agent, avatar, handle }: Readonly<{ agent: AgentLanyardAgent; avatar: ReactNode; handle: HoverCardHandle<HeaderAgent> }>) {
+	const id = useId();
+	return (
+		<HoverCardTrigger
+			closeDelay={150}
+			delay={150}
+			handle={handle}
+			id={id}
+			payload={agent}
+			render={<button aria-label={`Preview ${agent.name}`} className="inline-flex shrink-0 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => handle.open(id)} onKeyDown={(event) => {
+				if (event.key === "Escape" && handle.isOpen) {
+					event.stopPropagation();
+					handle.close();
+				}
+			}} type="button">{avatar}</button>}
+		/>
+	);
+}
 
 export function useHeaderLanyardHandle() {
 	const handle = use(HeaderLanyardContext);
@@ -23,6 +49,11 @@ export function HeaderLanyards({ children }: Readonly<{ children: ReactNode }>) 
 	const [handle] = useState(() => createHoverCardHandle<HeaderAgent>());
 	const [menuAnnouncement, setMenuAnnouncement] = useState("");
 	const popupRef = useRef<HTMLDivElement>(null);
+	const renderSessionAvatar = useCallback<AgentSessionAvatarPreview>((identity, avatar) => {
+		const id = identity.brandName ? SESSION_AGENT_IDS.get(identity.brandName) : undefined;
+		const agent = AGENT_LANYARD_AGENTS.find((candidate) => candidate.id === id || (identity.avatarSrc && candidate.avatarSrc === identity.avatarSrc));
+		return agent ? <SessionAvatarPreview key="agent" agent={agent} avatar={avatar} handle={handle} /> : avatar;
+	}, [handle]);
 	function chatWithAgent(agent: AgentLanyardAgent) {
 		handle.close();
 		selectAgent(agent.id === "claude" ? "claude-code" : agent.id);
@@ -34,7 +65,7 @@ export function HeaderLanyards({ children }: Readonly<{ children: ReactNode }>) 
 	}
 	return (
 		<HeaderLanyardContext value={handle}>
-			{children}
+			<AgentSessionAvatarPreviewContext value={renderSessionAvatar}>{children}</AgentSessionAvatarPreviewContext>
 			<HoverCard handle={handle} onOpenChange={(open) => {
 				// A fast switch can arrive before the first entrance has finished.
 				if (open && handle.isOpen) {
@@ -44,6 +75,7 @@ export function HeaderLanyards({ children }: Readonly<{ children: ReactNode }>) 
 				{({ payload: agent }) => (
 					<HoverCardContent
 						ref={popupRef}
+						positionerClassName="z-[600]"
 						align="center" alignOffset={0} sideOffset={8}
 						style={{ boxShadow: token("elevation.shadow.overlay") }}
 						className={cn(
@@ -59,6 +91,7 @@ export function HeaderLanyards({ children }: Readonly<{ children: ReactNode }>) 
 								perspectiveTilt={false}
 								animateGrid
 								gridAnimationTrigger="reveal"
+								menuPositionerClassName="z-[700]"
 								headingLevel={2}
 								onAction={chatWithAgent}
 								menuActions={{

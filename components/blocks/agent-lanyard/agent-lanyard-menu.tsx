@@ -20,9 +20,10 @@ interface AgentLanyardMenuProps {
 	actions?: AgentLanyardMenuActions;
 	starred?: boolean;
 	onMoreActions?: (agent: AgentLanyardAgent) => void;
+	positionerClassName?: string;
 }
 
-export function AgentLanyardMenu({ agent, actions, starred = false, onMoreActions }: Readonly<AgentLanyardMenuProps>) {
+export function AgentLanyardMenu({ agent, actions, starred = false, onMoreActions, positionerClassName }: Readonly<AgentLanyardMenuProps>) {
 	const hasActions = actions
 		? Boolean(actions.onViewProfile || actions.onToggleStar || actions.onCopyLink || actions.onDuplicate)
 		: Boolean(onMoreActions);
@@ -38,7 +39,7 @@ export function AgentLanyardMenu({ agent, actions, starred = false, onMoreAction
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger disabled={!hasActions} render={trigger} />
-			<DropdownMenuContent align="start" className="w-48 min-w-48" aria-label={`Actions for ${agent.name}`}>
+			<DropdownMenuContent align="start" className="w-48 min-w-48" aria-label={`Actions for ${agent.name}`} positionerClassName={positionerClassName}>
 				<DropdownMenuItem disabled={!onViewProfile} onSelect={onViewProfile ? () => onViewProfile(agent) : undefined}>
 					View profile
 				</DropdownMenuItem>

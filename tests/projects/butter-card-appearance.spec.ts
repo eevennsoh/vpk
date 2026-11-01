@@ -5,6 +5,33 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("Butter previews an assigned agent from its session avatar", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").getByRole("button", { name: "Cursor: Working" }).click();
+	const assignment = page.getByRole("dialog", { name: "Agent assignment" });
+	await assignment.getByRole("button", { name: "Cursor", exact: true }).click();
+	await expect(page.getByRole("menu", { name: /Cursor/ })).toBeVisible();
+	await page.keyboard.press("Escape");
+	const avatar = assignment.getByRole("button", { name: "Preview Cursor" });
+	await avatar.hover();
+	const lanyard = page.getByRole("article", { name: "Cursor agent" });
+	await expect(lanyard).toBeVisible();
+	await lanyard.hover();
+	await expect(assignment).toBeVisible();
+	await expect(lanyard.getByRole("button", { name: "Chat with Cursor" })).toBeVisible();
+	await lanyard.getByRole("button", { name: "More actions for Cursor" }).click();
+	await expect(page.getByRole("menu", { name: "Actions for Cursor" })).toBeVisible();
+	await expect(assignment).toBeVisible();
+	await page.keyboard.press("Escape");
+	await page.keyboard.press("Escape");
+	await avatar.focus();
+	await expect(lanyard).toBeVisible();
+	await expect(avatar.locator("xpath=ancestor::button")).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(lanyard).toBeHidden();
+	await expect(assignment).toBeVisible();
+});
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Butter's card picker keeps keyboard focus through assignment (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });

@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
 import { HumanAgentAvatar, type HumanAgentAvatarOrder, type HumanAgentAvatarProps } from "@/components/ui-custom/human-agent-avatar";
 import {
@@ -40,6 +42,7 @@ export function AgentListAttributionAvatarGroup({
 	attributedBy,
 	attributionOrder = "agent-first",
 	className,
+	renderAgentAvatar,
 	sizePx,
 }: Readonly<{
 	agent: AgentListAgent;
@@ -48,6 +51,7 @@ export function AgentListAttributionAvatarGroup({
 	attributedBy: AgentListInvoker;
 	attributionOrder?: AgentListAttributionOrder;
 	className?: string;
+	renderAgentAvatar?: (agent: AgentListAgent, avatar: ReactNode) => ReactNode;
 	sizePx: number;
 }>) {
 	const personAvatar = (
@@ -77,11 +81,12 @@ export function AgentListAttributionAvatarGroup({
 
 	return (
 		<AvatarGroup
+			as={renderAgentAvatar ? "span" : "div"}
 			className={cn("shrink-0", className)}
 			label={`${agent.name}, used by ${attributedBy.name}`}
 			size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
 		>
-			{orderAttributionAvatars(attributionOrder, agentAvatar, personAvatar)}
+			{orderAttributionAvatars(attributionOrder, renderAgentAvatar?.(agent, agentAvatar) ?? agentAvatar, personAvatar)}
 		</AvatarGroup>
 	);
 }

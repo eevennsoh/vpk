@@ -131,7 +131,7 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.doesNotMatch(CARD_SOURCE, /AgentSessionProvenanceMetadata/u);
 	assert.match(METADATA_SOURCE, /export function AgentSessionShortMetadata/u);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
-	assert.match(LIST_CARD_SOURCE, /\{metadata === undefined \? \(/u);
+	assert.match(LIST_CARD_SOURCE, /const resolvedMetadata = metadata === undefined \? \(/u);
 	assert.doesNotMatch(METADATA_SOURCE, /AgentSessionShortLifecycleIcon|StrokeWeightLargeIcon|StatusSuccessIcon/u);
 	assert.match(LIFECYCLE_SOURCE, /export function AgentSessionShortLifecycleIcon/u);
 	assert.match(LIFECYCLE_SOURCE, /data-agent-session-lifecycle-current=\{accessibleState\}/u);
@@ -640,7 +640,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /"group\/agent-row relative flex w-full min-w-0 rounded-lg/u);
 	assert.match(
 		METADATA_SOURCE,
-		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1">\s*<LongMetadataIdentity item=\{item\} \/>\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
+		/case "agent":\s*return \(\s*<span className="flex min-w-0 items-center gap-1">\s*<LongMetadataIdentity item=\{item\} renderAgentAvatar=\{renderAgentAvatar\} \/>\s*<span className="min-w-0 truncate text-text-subtle" title=\{segment\.label\}>/u,
 	);
 	assert.match(
 		METADATA_SOURCE,
