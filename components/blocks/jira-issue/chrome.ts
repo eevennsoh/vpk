@@ -30,7 +30,6 @@ const JIRA_ISSUE_CHROME_STYLES: Readonly<Record<JiraIssueChrome, JiraIssueChrome
 
 const BUTTER_RAISED_CHROME_STYLES: JiraIssueChromeStyles = Object.freeze({
 	...RAISED_JIRA_ISSUE_CHROME_STYLES,
-	restClassName: "border-border-disabled",
 	hoverClassName: "hover:bg-surface-raised-hovered",
 	agentSurfaceHoverClassName: "group-hover/jira-issue-card:bg-surface-raised-hovered",
 });
