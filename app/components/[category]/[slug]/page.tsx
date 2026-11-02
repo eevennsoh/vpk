@@ -22,7 +22,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export function generateStaticParams() {
-	const params: { category: string; slug: string }[] = [];
+	const params: { category: string; slug: string }[] = [
+		{ category: "ui-audio", slug: "live-waveform" },
+	];
 
 	for (const comp of UI_CHART_COMPONENTS) {
 		params.push({ category: "ui-charts", slug: comp.slug });
@@ -61,6 +63,10 @@ export function generateStaticParams() {
 
 export default async function ComponentDetailPage({ params }: PageProps) {
 	const { category, slug } = await params;
+
+	if (category === "ui-audio" && slug === "live-waveform") {
+		redirect("/components/ui-custom/live-waveform");
+	}
 
 	if (category === "ui-custom" && slug === "skill-card") {
 		redirect("/components/ui-custom/entity-card");
