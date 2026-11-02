@@ -61,6 +61,24 @@ test("Butter's agent picker keeps directory actions visible while scrolling", as
 	await expect(page).toHaveURL(/\/studio$/u, { timeout: 20_000 });
 });
 
+for (const example of [
+	{ route: "/butter", key: "PAY-118", type: "task" },
+	{ route: "/components/blocks/jira-issue#project-butter", key: "PD-40", type: "story" },
+]) {
+	test(`Butter centers the ${example.type} icon with its key`, async ({ page }) => {
+		await page.goto(appUrl(example.route), { waitUntil: "domcontentloaded" });
+		const issue = example.type === "task"
+			? card(page, example.key)
+			: page.getByRole("region", { name: "Project butter playground" });
+		const icon = issue.getByRole("img", { name: example.type, exact: true }).locator("svg");
+		const key = issue.getByText(example.key, { exact: true });
+		await expect(icon).toBeVisible();
+		const [iconBox, keyBox] = await Promise.all([icon.boundingBox(), key.boundingBox()]);
+		if (!iconBox || !keyBox) throw new Error(`Missing ${example.key} icon or key`);
+		expect(Math.abs((iconBox.y + iconBox.height / 2) - (keyBox.y + keyBox.height / 2))).toBeLessThan(0.5);
+	});
+}
+
 test("Butter aligns footer icons with the agent row", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	for (const key of ["PAY-105", "PAY-107", "PAY-112", "PAY-123", "PAY-101"]) {
@@ -81,6 +99,48 @@ test("Butter aligns footer icons with the agent row", async ({ page }) => {
 		expect(Math.abs(centers.metadata! - centers.agent!), key).toBeLessThan(0.5);
 		expect(Math.abs(centers.assignee! - centers.status!), key).toBeLessThan(0.5);
 	}
+});
+
+test("Butter keeps card activation separate from its controls", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-118");
+	const title = issue.getByText("Carry card-artwork metadata into the next wallet epic", { exact: true });
+	const workItem = page.getByRole("dialog", { name: "Project butter", exact: true });
+	const activation = issue.getByRole("button", { name: "PAY-118: Carry card-artwork metadata into the next wallet epic", exact: true });
+	await activation.focus();
+	await page.keyboard.press("Enter");
+	await expect(workItem).toBeVisible();
+	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(workItem).toHaveCount(0);
+
+	await issue.getByText("wallet", { exact: true }).click();
+	await expect(workItem).toHaveCount(0);
+	const pullRequest = card(page, "PAY-119").getByRole("button", { name: "Pull request #1880: Publish rollback guide", exact: true });
+	await pullRequest.hover();
+	const preview = page.locator('[data-slot="hover-card-content"]').filter({ hasText: "Publish rollback guide" });
+	await expect(preview).toBeVisible();
+	await preview.getByText("Publish rollback guide", { exact: true }).click();
+	await expect(workItem).toHaveCount(0);
+	await title.hover();
+	await issue.getByRole("button", { name: "More actions for PAY-118" }).click();
+	const actions = page.getByRole("menu");
+	await expect(actions).toBeVisible();
+	await actions.locator('[role="separator"]').first().click();
+	await expect(workItem).toHaveCount(0);
+	await page.keyboard.press("Escape");
+
+	await title.hover();
+	await issue.getByRole("button", { name: "Add agent to PAY-118" }).click();
+	const agents = page.getByRole("dialog", { name: "Agents", exact: true });
+	await expect(agents).toBeVisible();
+	await expect(workItem).toHaveCount(0);
+	await agents.getByRole("option", { name: /^Claude/u }).click();
+	await expect(issue).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(issue.locator("[data-jira-issue-agent-row-handle]")).toHaveAttribute("aria-label", "Claude: Working");
+	await expect(workItem).toHaveCount(0);
+	await title.click();
+	await expect(workItem).toBeVisible();
+	await expect(workItem.getByRole("heading", { name: "Carry card-artwork metadata into the next wallet epic" })).toBeVisible();
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {

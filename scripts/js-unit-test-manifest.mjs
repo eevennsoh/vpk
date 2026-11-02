@@ -15,6 +15,12 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
 		"components/blocks/jira-work-item/project-butter/project-butter.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/breadcrumb.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/status.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/activity-response.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/details-fields.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/related-work.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/shell-editors.behavior.test.js",
 		"components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.behavior.test.js",
 		"components/blocks/jira-issue/project-butter-invocation-model.test.ts",
 		"components/blocks/jira-issue/project-butter-model.test.ts",
@@ -116,6 +122,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-html/scripts/iso/emit.test.mjs",
 		".agents/skills/vpk-html/scripts/iso/audit.test.mjs",
 		".agents/skills/vpk-html/scripts/iso/runtime.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/teardown.test.mjs",
 		".agents/skills/vpk-html/scripts/iso/inline.test.mjs",
 		".agents/skills/vpk-html/scripts/iso/build-figure.test.mjs",
 		".agents/skills/vpk-html/scripts/check-html-figures.test.mjs",

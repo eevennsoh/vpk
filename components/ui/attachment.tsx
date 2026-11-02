@@ -5,6 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { Button, type ButtonProps } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { token } from "@/lib/tokens"
 
 const attachmentVariants = cva(
 	"group/attachment relative flex w-fit max-w-full min-w-0 shrink-0 flex-wrap rounded-xl border bg-card text-card-foreground transition-colors focus-within:ring-1 focus-within:ring-ring/50 has-[>a,>button]:hover:bg-bg-neutral-subtle-hovered data-[state=error]:border-border-danger data-[state=idle]:border-dashed",
@@ -19,6 +20,10 @@ const attachmentVariants = cva(
 			orientation: {
 				horizontal: "min-w-40 items-center",
 				vertical: "w-24 flex-col has-data-[slot=attachment-content]:w-30",
+			},
+			variant: {
+				default: "",
+				preview: "w-full flex-col flex-nowrap gap-0 rounded-lg border-0 p-0 text-xs",
 			},
 		},
 	}
@@ -35,9 +40,11 @@ function Attachment({
 	state = "done",
 	size = "default",
 	orientation = "horizontal",
+	variant = "default",
+	style,
 	...props
 }: Readonly<AttachmentProps>) {
-	const resolvedOrientation = orientation ?? "horizontal"
+	const resolvedOrientation = variant === "preview" ? "vertical" : orientation ?? "horizontal"
 
 	return (
 		<div
@@ -45,7 +52,9 @@ function Attachment({
 			data-state={state}
 			data-size={size}
 			data-orientation={resolvedOrientation}
-			className={cn(attachmentVariants({ size, orientation }), className)}
+			data-variant={variant}
+			className={cn(attachmentVariants({ size: variant === "preview" ? null : size, orientation: variant === "preview" ? null : orientation, variant }), className)}
+			style={{ ...(variant === "preview" ? { boxShadow: token("elevation.shadow.raised") } : undefined), ...style }}
 			{...props}
 		/>
 	)
@@ -59,6 +68,7 @@ const attachmentMediaVariants = cva(
 				icon: "",
 				image:
 					"opacity-60 group-data-[state=done]/attachment:opacity-100 group-data-[state=idle]/attachment:opacity-100 *:[img]:aspect-square *:[img]:w-full *:[img]:object-cover",
+				preview: "aspect-auto h-20 w-full rounded-t-none rounded-b-lg bg-surface-sunken [&_img]:h-full [&_img]:w-full [&_img]:object-cover",
 			},
 		},
 		defaultVariants: {
@@ -105,12 +115,16 @@ function AttachmentContent({
 
 export type AttachmentTitleProps = React.ComponentProps<"span">
 
+function AttachmentHeader({ className, ...props }: Readonly<React.ComponentProps<"div">>) {
+	return <div data-slot="attachment-header" className={cn("relative flex h-9 min-w-0 items-center gap-2 rounded-t-lg bg-card p-2.5 text-xs group-hover/attachment:bg-bg-neutral group-focus-within/attachment:bg-bg-neutral", className)} {...props} />
+}
+
 function AttachmentTitle({ className, ...props }: Readonly<AttachmentTitleProps>) {
 	return (
 		<span
 			data-slot="attachment-title"
 			className={cn(
-				"block max-w-full min-w-0 truncate font-medium group-data-[state=processing]/attachment:animate-pulse group-data-[state=uploading]/attachment:animate-pulse",
+				"block max-w-full min-w-0 truncate font-medium group-data-[variant=preview]/attachment:font-normal group-data-[state=processing]/attachment:animate-pulse group-data-[state=uploading]/attachment:animate-pulse",
 				className
 			)}
 			{...props}
@@ -146,7 +160,7 @@ function AttachmentActions({
 		<div
 			data-slot="attachment-actions"
 			className={cn(
-				"relative z-20 flex shrink-0 items-center group-data-[orientation=vertical]/attachment:absolute group-data-[orientation=vertical]/attachment:top-3 group-data-[orientation=vertical]/attachment:right-3 group-data-[orientation=vertical]/attachment:gap-1",
+				"relative z-20 flex shrink-0 items-center group-data-[orientation=vertical]/attachment:absolute group-data-[orientation=vertical]/attachment:top-3 group-data-[orientation=vertical]/attachment:right-3 group-data-[orientation=vertical]/attachment:gap-1 group-data-[variant=preview]/attachment:top-1.5 group-data-[variant=preview]/attachment:right-1.5",
 				className
 			)}
 			{...props}
@@ -218,6 +232,7 @@ export {
 	AttachmentGroup,
 	AttachmentMedia,
 	AttachmentContent,
+	AttachmentHeader,
 	AttachmentTitle,
 	AttachmentDescription,
 	AttachmentActions,

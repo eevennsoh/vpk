@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducedMotion } from "motion/react";
+import { motion, useMotionValue, useReducedMotion, useTransform, type MotionValue } from "motion/react";
 
 import { ScrubberMark } from "@/components/blocks/scrubber/components/scrubber-mark";
 import { useScrubberNavigation } from "@/components/blocks/scrubber/hooks/use-scrubber-navigation";
@@ -74,7 +74,11 @@ export interface ScrubberRailProps {
 	entries: readonly ScrubberEntry[];
 	/** Index into `entries` of the committed entry. Out-of-range is tolerated. */
 	activeIndex: number;
+	/** Continuous playhead position, independent of the selected keyboard option. */
+	activeOffset?: MotionValue<number>;
 	onSelect: (id: string) => void;
+	/** Seek continuously on pointer input while preserving discrete keyboard navigation. */
+	onSeek?: (offset: number) => void;
 	/** Nearest entry under the pointer, or `null` once it leaves. */
 	onHoverChange?: (id: string | null) => void;
 	/** Same preview channel, driven by keyboard focus. */
@@ -107,6 +111,7 @@ function noop() {}
  */
 export function ScrubberRail({
 	activeIndex,
+	activeOffset,
 	ariaLabel,
 	axis = "x",
 	className,
@@ -114,12 +119,15 @@ export function ScrubberRail({
 	onFocusChange = noop,
 	onHoverChange = noop,
 	onSelect,
+	onSeek,
 	showPill = true,
 	tone = "default",
 	appearance = "notches",
 	selectionMode = "hover",
 }: Readonly<ScrubberRailProps>) {
 	const shouldReduceMotion = useReducedMotion();
+	const defaultOffset = useMotionValue(0);
+	const playheadPosition = useTransform(activeOffset ?? defaultOffset, (value) => `${Math.min(1, Math.max(0, value)) * 100}%`);
 	// One resolved index for everything downstream. An `activeIndex` that
 	// overflows a shortened rail would otherwise blank the pill, leave no option
 	// `aria-selected`, and make the pointer hook re-commit on every pointermove.
@@ -131,10 +139,13 @@ export function ScrubberRail({
 		entries,
 		onHoverChange,
 		onSelect,
+		onSeek,
 		shouldReduceMotion: shouldReduceMotion === true,
 		selectOnHover: selectionMode === "hover",
 	});
 
+	const hoverPosition = useTransform(pointerOffset, (value) => `${Math.min(1, Math.max(0, value)) * 100}%`);
+	const hoverOpacity = useTransform(pointerOffset, (value) => value < 0 ? 0 : 1);
 	const activeEntry = entries[resolvedIndex] ?? null;
 	// Clamped rather than tied to `isActive`: roving tabindex only works if
 	// exactly one mark carries `tabIndex={0}`, and a rail with nothing committed
@@ -154,9 +165,11 @@ export function ScrubberRail({
 				aria-orientation={axis === "y" ? "vertical" : "horizontal"}
 				onKeyDown={handleKeyDown}
 				onPointerMove={handlePointerMove}
-				onPointerDown={selectionMode === "drag" ? (event) => { event.currentTarget.setPointerCapture(event.pointerId); handlePointerMove(event); } : undefined}
+				onPointerDown={selectionMode === "drag" ? (event) => { if (event.button !== 0) return; event.currentTarget.setPointerCapture(event.pointerId); handlePointerMove(event); } : undefined}
+				onPointerUp={selectionMode === "drag" ? (event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); } : undefined}
+				onPointerCancel={selectionMode === "drag" ? handlePointerLeave : undefined}
 				onPointerLeave={handlePointerLeave}
-				className={cn("relative min-w-0", axis === "y" ? "h-full w-6 shrink-0" : "h-3.5 w-full", selectionMode === "drag" && "touch-none")}
+				className={cn("relative min-w-0", onSeek && "cursor-grab active:cursor-grabbing", axis === "y" ? "h-full w-6 shrink-0" : "h-3.5 w-full", selectionMode === "drag" && "touch-none")}
 			>
 				{appearance === "dots" ? <span aria-hidden className={cn("pointer-events-none absolute border-dashed border-border", axis === "y" ? "inset-y-0 left-1/2 border-l" : "inset-x-0 top-1/2 border-t")} /> : null}
 				{entries.map((entry, index) => (
@@ -166,18 +179,31 @@ export function ScrubberRail({
 						appearance={appearance}
 						entry={entry}
 						isActive={index === resolvedIndex}
+						showActiveIndicator={activeOffset === undefined}
 						magnify={magnify}
 						markRef={(node) => {
 							markRefs.current[index] = node;
 						}}
 						onFocusChange={onFocusChange}
-						onSelect={() => moveTo(index)}
+						onSelect={(event) => { if (onSeek === undefined || event.detail === 0) moveTo(index); }}
 						pointerOffset={pointerOffset}
 						railSizeRef={railSizeRef}
 						state={toMarkState(entry.muted === true, index === resolvedIndex)}
 						tabbable={index === focusIndex}
 					/>
 				))}
+				{appearance === "dots" && activeOffset !== undefined && entries.length > 0 ? <motion.span
+					aria-hidden
+					className={cn("pointer-events-none absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-bg-neutral", axis === "y" ? "left-1/2" : "top-1/2")}
+					data-slot="scrubber-hover"
+					style={axis === "y" ? { top: hoverPosition, opacity: hoverOpacity } : { left: hoverPosition, opacity: hoverOpacity }}
+				><span className="size-1.5 rounded-full bg-current" /></motion.span> : null}
+				{appearance === "dots" && activeOffset !== undefined && entries.length > 0 ? <motion.span
+					aria-hidden
+					className={cn("pointer-events-none absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current", axis === "y" ? "left-1/2" : "top-1/2")}
+					data-slot="scrubber-playhead"
+					style={axis === "y" ? { top: playheadPosition } : { left: playheadPosition }}
+				/> : null}
 			</div>
 			{showPill ? (
 				// A reserved row rather than an overlay: the pill changing width can

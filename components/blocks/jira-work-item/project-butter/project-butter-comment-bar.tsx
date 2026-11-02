@@ -23,7 +23,10 @@ export function ProjectButterCommentBar({ active, content, empty, sidePanel }: R
 		if (!active) return;
 		function onKeyDown(event: KeyboardEvent) {
 			if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.key.toLowerCase() !== "m") return;
-			if (event.target instanceof Element && event.target.closest("input, textarea, select, [contenteditable=true], [role=combobox], [role=menuitem], [role=option], [role=slider]")) return;
+			if (event.target instanceof Element && (
+				event.target.closest<HTMLElement>("[contenteditable]")?.isContentEditable ||
+				event.target.closest("input, textarea, select, [role=combobox], [role=menuitem], [role=option], [role=slider]")
+			)) return;
 			event.preventDefault(); revealActivity(); setExpanded(true);
 		}
 		window.addEventListener("keydown", onKeyDown);
@@ -40,11 +43,11 @@ export function ProjectButterCommentBar({ active, content, empty, sidePanel }: R
 	}, [barRef, setCommentDraft, expanded]);
 	function submit(body: string) {
 		const entry = { ...createCommentEntry({ id: crypto.randomUUID(), actor: PROJECT_BUTTER_CURRENT_USER, body, timestamp: "Just now" }), createdAtMs: Date.now() };
-		content.setActivityEntries((entries) => [...entries, entry]); content.setActivityFocusId(entry.id); cancel();
+		content.setActivityEntries((entries) => [...entries, entry]); content.setActivityView("Activity"); content.setActivityFocusId(entry.id); cancel();
 	}
 	return (
 		<motion.div animate={{ opacity: visible ? 1 : 0, transform: visible || sidePanel || empty ? "translateY(0%)" : "translateY(100%)" }} aria-hidden={!visible} aria-label="Comment editor" className="sticky bottom-4 z-30 mt-4 rounded-xl bg-surface" data-elevated={elevated} data-project-butter-comment-bar data-visible={visible} inert={!visible} initial={false} ref={barRef} role="group" style={{ pointerEvents: visible ? "auto" : "none", boxShadow: expanded || empty || (sidePanel && !elevated) ? undefined : token("elevation.shadow.overlay") }} transition={{ duration: reducedMotion ? 0 : motionDuration.normal * 2, ease: referenceEase.workItemCommentReveal }}>
-			{expanded ? <ProjectButterCommentEditor onCancel={cancel} onSave={submit} onValueChange={content.setCommentDraft} value={content.commentDraft} /> : <button aria-label="Add a comment" className={cn("flex min-h-12 w-full items-center gap-2 rounded-xl border border-border px-4 text-left text-sm text-text-subtle outline-none focus-visible:ring-2 focus-visible:ring-ring", empty || (sidePanel && !elevated) ? "bg-bg-input hover:bg-bg-input-hovered" : "bg-surface")} onClick={() => setExpanded(true)} type="button"><span>Add a comment or press</span><Kbd>M</Kbd></button>}
+			{expanded ? <ProjectButterCommentEditor onCancel={cancel} onSave={submit} onValueChange={content.setCommentDraft} value={content.commentDraft} /> : <button aria-label="Add a comment" className={cn("flex min-h-12 w-full items-center gap-2 rounded-xl px-4 text-left text-sm text-text-subtle outline-none focus-visible:ring-2 focus-visible:ring-ring", empty || (sidePanel && !elevated) ? "bg-bg-input hover:bg-bg-input-hovered" : "bg-surface")} onClick={() => setExpanded(true)} type="button"><span>Add a comment or press</span><Kbd>M</Kbd></button>}
 		</motion.div>
 	);
 }

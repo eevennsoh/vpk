@@ -242,6 +242,44 @@ test("the public Butter card opens work items without activating through nested 
 	assert.deepEqual(opened, ["PD-40"]);
 });
 
+test("a Butter card does not open when its portalled overflow menu is clicked", async () => {
+	const opened = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			appearance: "project-butter",
+			issueKey: "PD-40",
+			summary: "Implement advanced date-range filter",
+			onClick: () => opened.push("PD-40"),
+		},
+	});
+	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	assert.deepEqual(opened, []);
+	await view.click(view.getAllByRole("separator")[0]);
+	assert.deepEqual(opened, []);
+	await view.press(null, "Escape");
+	await view.click(view.getByText("Implement advanced date-range filter", { exact: true }));
+	assert.deepEqual(opened, ["PD-40"]);
+});
+
+test("a Butter card does not open when an interactive assignee control is clicked", async () => {
+	const actions = [];
+	const view = await renderComponent({
+		source: `
+			import { JiraIssue } from "@/components/blocks/jira-issue";
+			export function Fixture({ onOpen, onAssignee }) {
+				return <JiraIssue appearance="project-butter" issueKey="PD-40" summary="Implement advanced date-range filter" onClick={onOpen}
+					assigneeControl={<div role="button" tabIndex={0} onClick={onAssignee}><span>Manage assignee</span></div>} />;
+			}
+		`,
+		exportName: "Fixture",
+		props: { onOpen: () => actions.push("card"), onAssignee: () => actions.push("assignee") },
+	});
+	await view.click(view.getByText("Manage assignee", { exact: true }));
+	assert.deepEqual(actions, ["assignee"]);
+});
+
 test("the Butter playground commits labels and supports flagging and selection", async () => {
 	const view = await renderComponent({
 		source: `

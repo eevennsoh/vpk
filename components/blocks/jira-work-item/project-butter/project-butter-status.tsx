@@ -1,32 +1,133 @@
 "use client";
 
-import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
-import StatusInProgressIcon from "@atlaskit/icon-lab/core/status-workflow-in-progress";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
-import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
-import { cn } from "@/lib/utils";
+import { projectButterStatusProgress, projectButterStatusVariant } from "@/components/blocks/jira-work-item/project-butter/status-model";
+import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 
-const PHASES = ["To do", "In progress", "In review", "Done"] as const;
+export function ProjectButterStatusGlyph({ status, animated = true }: Readonly<{ status: string; animated?: boolean }>) {
+	return <ProgressCircle
+		animated={animated}
+		animateDashes={false}
+		aria-hidden
+		colorByProgress
+		dashed
+		label={status}
+		size="sm"
+		value={projectButterStatusProgress(status)}
+		variant="filled"
+	/>;
+}
 
-export function ProjectButterStatus({ content }: Readonly<{ content: ProjectButterContent }>) {
-	const status = content.status;
-	const StatusIcon = status === "Done" ? StatusSuccessIcon : status === "To do" ? TaskToDoIcon : StatusInProgressIcon;
-	const variant = status === "Done" ? "success" : status === "To do" ? "neutral" : "information";
+export function ProjectButterStatus({
+	content,
+	appearance = "icon",
+}: Readonly<{ content: ProjectButterContent; appearance?: "icon" | "field" }>) {
+	const [editor, setEditor] = useState<"create" | "edit" | null>(null);
+	const [name, setName] = useState("");
+	const value = name.trim();
+	const duplicate = content.statusOptions.some(
+		(option) =>
+			option.toLowerCase() === value.toLowerCase() &&
+			(editor !== "edit" || option !== content.status),
+	);
+	function openEditor(mode: "create" | "edit") {
+		setName(mode === "edit" ? content.status : "");
+		setEditor(mode);
+	}
+	function save() {
+		if (!value || duplicate) return;
+		content.setStatusOptions((options) =>
+			editor === "edit"
+				? options.map((option) => (option === content.status ? value : option))
+				: [...options, value],
+		);
+		content.setStatus(value);
+		setEditor(null);
+	}
 	return (
-		<div className={cn("flex min-h-14 min-w-0 items-center justify-between gap-3 rounded-lg p-3", status === "Done" ? "bg-bg-success" : status === "To do" ? "bg-surface-sunken" : "bg-bg-selected")} data-project-butter-status>
+		<>
 			<DropdownMenu>
-				<DropdownMenuTrigger render={<LozengeDropdownTrigger aria-label={`Change status, ${status}`} icon={<StatusIcon color="currentColor" label="" size="small" />} size="spacious" variant={variant} />}>{status}</DropdownMenuTrigger>
-				<DropdownMenuContent align="start" positionerClassName="z-[650]">{PHASES.map((phase) => <DropdownMenuItem key={phase} onSelect={() => content.setStatus(phase)} selected={status === phase}>{phase}</DropdownMenuItem>)}</DropdownMenuContent>
+				<DropdownMenuTrigger
+					render={
+						<LozengeDropdownTrigger
+							appearance={appearance === "field" ? "text" : "icon"}
+							aria-label={`Change status${appearance === "field" ? " in details" : ""}, ${content.status}`}
+							icon={<ProjectButterStatusGlyph status={content.status} />}
+							size="spacious"
+							variant={projectButterStatusVariant(content.status)}
+						/>
+					}
+				>
+					{content.status}
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="start" positionerClassName="z-[650]">
+					{content.statusOptions
+						.filter((status) => status !== content.status)
+						.map((status) => (
+							<DropdownMenuItem
+								elemBefore={<ProjectButterStatusGlyph animated={false} status={status} />}
+								key={status}
+								onSelect={() => content.setStatus(status)}
+							>
+								{status}
+							</DropdownMenuItem>
+						))}
+					<DropdownMenuSeparator />
+					<DropdownMenuItem onSelect={() => openEditor("create")}>Create status</DropdownMenuItem>
+					<DropdownMenuItem onSelect={() => openEditor("edit")}>Edit status</DropdownMenuItem>
+				</DropdownMenuContent>
 			</DropdownMenu>
-			<div className="flex shrink-0 items-center gap-1">
-				<Button aria-label={`${content.watching ? "Stop watching" : "Watch"} work item. ${4 + Number(content.watching)} watchers`} aria-pressed={content.watching} onClick={() => content.setWatching((value) => !value)} size="compact" type="button" variant="ghost"><EyeOpenIcon label="" size="small" />{4 + Number(content.watching)}</Button>
-				<DropdownMenu><DropdownMenuTrigger render={<Button aria-label="More work item actions" size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger><DropdownMenuContent align="end" positionerClassName="z-[650]"><DropdownMenuItem onSelect={() => navigator.clipboard.writeText(`${location.origin}${location.pathname}#project-butter`)}>Copy link</DropdownMenuItem><DropdownMenuCheckboxItem checked={content.watching} onCheckedChange={content.setWatching}>Watch work item</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={content.flagged} onCheckedChange={content.setFlagged}>Flag work item</DropdownMenuCheckboxItem></DropdownMenuContent></DropdownMenu>
-			</div>
-		</div>
+			<Dialog
+				onOpenChange={(open) => {
+					if (!open) setEditor(null);
+				}}
+				open={editor !== null}
+			>
+				<DialogContent
+					className="z-[701]"
+					overlayProps={{ forceRender: true, className: "z-[700]" }}
+				>
+					<DialogTitle>{editor === "create" ? "Create status" : "Edit status"}</DialogTitle>
+					<DialogDescription>Name the status for this work item.</DialogDescription>
+					<form
+						className="space-y-4"
+						onSubmit={(event) => {
+							event.preventDefault();
+							save();
+						}}
+					>
+						<Input
+							aria-label="Status name"
+							autoFocus
+							onChange={(event) => setName(event.currentTarget.value)}
+							value={name}
+						/>
+						{duplicate ? (
+							<p className="text-sm text-text-danger">A status with this name already exists.</p>
+						) : null}
+						<div className="flex justify-end gap-2">
+							<Button onClick={() => setEditor(null)} type="button" variant="ghost">
+								Cancel
+							</Button>
+							<Button disabled={!value || duplicate} type="submit">
+								{editor === "create" ? "Create and apply" : "Save status"}
+							</Button>
+						</div>
+					</form>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }

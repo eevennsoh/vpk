@@ -501,7 +501,8 @@ function ButterApp(): React.ReactElement {
 			</AppLayout>
 			</HeaderLanyards>
 			{workItem.selection ? <ProjectButterJiraWorkItem
-				initialPresentation="full-screen"
+				initialPresentation="modal"
+				shell="project"
 				initialPreset="filled"
 				initialSessions={workItem.selection.initialSessions}
 				onClose={workItem.closeWorkItem}
@@ -531,6 +532,8 @@ function ButterApp(): React.ReactElement {
 				/>
 			</MountOnFirstUse>
 			<JgpRovoOverlay
+				chat={workItem.open ? "hidden" : "auto"}
+				launcher={workItem.open ? "hidden" : "auto"}
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}

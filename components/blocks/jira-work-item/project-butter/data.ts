@@ -1,12 +1,14 @@
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 
-// Reference: atlassian/prototyping, wiv-v2/main at 72a8dc5d, packages/prototypes/wiv-v2.
-export type ProjectButterSessionItem = AgentSessionItem & { message: string };
+// Reference: atlassian/prototyping, wiv-v2/main at 3a53253a, packages/prototypes/wiv-v2.
+export type ProjectButterSessionItem = AgentSessionItem & { message: string; invokedAtMs?: number };
+export const PROJECT_BUTTER_SESSION_EPOCH = Date.UTC(2026, 10, 1, 15, 45);
 
 export const PROJECT_BUTTER_SESSIONS: readonly ProjectButterSessionItem[] = [
 	{
 		id: "butter-coding",
+		invokedAtMs: Date.UTC(2026, 4, 19, 9),
 		title: "Draft billing flow PRD",
 		agent: {
 			id: "rovo-dev",
@@ -22,6 +24,7 @@ export const PROJECT_BUTTER_SESSIONS: readonly ProjectButterSessionItem[] = [
 	},
 	{
 		id: "butter-scoping",
+		invokedAtMs: PROJECT_BUTTER_SESSION_EPOCH - 14 * 60 * 60 * 1000,
 		title: "Troubleshoot 403 API errors",
 		agent: {
 			id: "work-item-planner",
@@ -37,12 +40,13 @@ export const PROJECT_BUTTER_SESSIONS: readonly ProjectButterSessionItem[] = [
 	},
 	{
 		id: "butter-claude",
+		invokedAtMs: PROJECT_BUTTER_SESSION_EPOCH - 2 * 60 * 1000,
 		title: "Review Teamwork onboarding guide",
 		agent: { id: "claude", name: "Claude", brandName: "claude" },
 		invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
 		host: "local",
 		state: "needs-input",
-		timeLabel: "46m ago",
+		timeLabel: "2m ago",
 		sessionDetails: { pullRequestNumber: 1839 },
 		message: "I reviewed the onboarding guide in PR #1839. Should I focus on the first-run setup instructions or the returning-user journey?",
 	},

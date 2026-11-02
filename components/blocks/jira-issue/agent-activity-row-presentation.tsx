@@ -134,7 +134,7 @@ function JiraIssueActiveAgentStatusIcon({
 	iconScale: JiraIssueIconScale;
 	isAwaitingInput: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
-	workingSpinnerVariant?: "default" | "experimental-avatar";
+	workingSpinnerVariant?: "default" | "bloom-avatar";
 }>): ReactElement {
 	if (renderAgentActivityIndicator) {
 		return (
@@ -153,15 +153,15 @@ function JiraIssueActiveAgentStatusIcon({
 		);
 	}
 
-	const spinnerVariant = workingSpinnerVariant ?? (iconScale === "comfortable" ? "experimental-avatar" : "default");
+	const spinnerVariant = workingSpinnerVariant ?? (iconScale === "comfortable" ? "bloom-avatar" : "default");
 
 	return (
 		<span
 			aria-hidden="true"
 			className="grid size-6 shrink-0 place-items-center text-icon"
 		>
-			{spinnerVariant === "experimental-avatar" ? (
-				<Spinner className="size-[16.75px]" label="" pulse size="xl" variant="experimental-avatar" />
+			{spinnerVariant === "bloom-avatar" ? (
+				<Spinner className="size-[16.75px]" label="" pulse size="xl" variant="bloom-avatar" />
 			) : (
 				<Spinner label="" size="xs" />
 			)}
@@ -182,7 +182,7 @@ export function JiraIssueAgentStatusIcon({
 	isCompletedRow: boolean;
 	isFailedRow: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
-	workingSpinnerVariant?: "default" | "experimental-avatar";
+	workingSpinnerVariant?: "default" | "bloom-avatar";
 }>): ReactElement {
 	if (isCompletedRow) {
 		return (

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Ref } from "react";
+import type { ReactNode, Ref } from "react";
 
 import ReplyLeftIcon from "@atlaskit/icon-lab/core/reply-left";
 
@@ -22,6 +22,7 @@ export interface JiraActivityCommentActionsProps {
 	replyRef?: Ref<HTMLButtonElement>;
 	/** SCM review-thread resolve. Omit when the entry did not opt in. */
 	onResolve?: () => void;
+	trailingActions?: ReactNode;
 }
 
 /**
@@ -37,6 +38,7 @@ export function JiraActivityCommentActions({
 	replyComposerId,
 	replyRef,
 	onResolve,
+	trailingActions,
 }: Readonly<JiraActivityCommentActionsProps>) {
 	return (
 		<EmojiReactionBar
@@ -62,8 +64,8 @@ export function JiraActivityCommentActions({
 			}
 			onToggleReaction={onToggleReaction}
 			reactions={reactions}
-			trailing={
-				onResolve ? (
+			trailing={onResolve || trailingActions ? <>
+				{onResolve ? (
 					<Button
 						aria-label="Resolve"
 						className="h-auto px-0 text-xs text-text-subtle"
@@ -73,8 +75,9 @@ export function JiraActivityCommentActions({
 					>
 						Resolve
 					</Button>
-				) : null
-			}
+				) : null}
+				{trailingActions}
+			</> : null}
 		/>
 	);
 }

@@ -147,6 +147,8 @@ export interface AgentSessionProps {
 	density?: AgentSessionDensity;
 	/** Include the feature branch in long-density metadata. Hidden by default. */
 	showBranch?: boolean;
+	/** Owner activation for large local cards: continue in the agent, or invoke onView. */
+	localSessionAction?: "continue" | "view";
 	/** Sessions to render; defaults to relationship-appropriate built-in sample data. */
 	items?: readonly AgentSessionItem[];
 	/** Show the experimental Working indicator in short rows. In-flow columns opt in. */

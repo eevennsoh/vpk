@@ -323,6 +323,7 @@ export interface LozengeDropdownTriggerProps
 	extends React.ComponentProps<"button">,
 		VariantProps<typeof lozengeTriggerVariants> {
 	icon?: ReactNode
+	appearance?: "lozenge" | "icon" | "text"
 	isLoading?: boolean
 	isSelected?: boolean
 	maxWidth?: string | number
@@ -336,6 +337,7 @@ function LozengeDropdownTrigger({
 	size = "compact",
 	isBold = false,
 	icon,
+	appearance = "lozenge",
 	isLoading = false,
 	isSelected,
 	maxWidth,
@@ -363,20 +365,23 @@ function LozengeDropdownTrigger({
 			data-variant={resolvedVariant}
 			data-size={resolvedSize}
 			data-selected={isOpen ? "true" : undefined}
+			data-appearance={appearance}
 			aria-busy={isLoading || undefined}
 			aria-expanded={ariaExpanded}
 			disabled={disabled || isLoading}
 			className={cn(
 				lozengeTriggerVariants({ variant: resolvedVariant, size: resolvedSize, isBold }),
+				appearance === "icon" && "size-8 justify-center rounded-md border-0 p-0",
+				appearance === "text" && "min-h-8 gap-2 rounded-sm border-0 bg-transparent px-0 text-sm font-normal text-text hover:bg-bg-neutral-subtle-hovered data-selected:bg-bg-neutral-subtle-hovered data-selected:text-text",
 				isLoading && "opacity-(--opacity-loading)",
-				hasLeadingElement && (resolvedSize === "compact" ? "ps-px" : "ps-1.5"),
-				resolvedMetric != null && (resolvedSize === "compact" ? "pr-px" : "pr-1"),
+				appearance === "lozenge" && hasLeadingElement && (resolvedSize === "compact" ? "ps-px" : "ps-1.5"),
+				appearance === "lozenge" && resolvedMetric != null && (resolvedSize === "compact" ? "pr-px" : "pr-1"),
 				className
 			)}
 			style={maxWidth != null ? { ...style, maxWidth } : style}
 			{...props}
 		>
-			<LozengeContent
+			{appearance === "icon" ? <span aria-hidden className="flex size-4 items-center justify-center">{isLoading ? <Spinner label="Loading" size="sm" /> : icon}</span> : appearance === "text" ? <>{icon}{children}</> : <LozengeContent
 				variant={resolvedVariant}
 				size={resolvedSize}
 				icon={icon}
@@ -398,7 +403,7 @@ function LozengeDropdownTrigger({
 				}
 			>
 				{children}
-			</LozengeContent>
+			</LozengeContent>}
 		</button>
 	)
 }

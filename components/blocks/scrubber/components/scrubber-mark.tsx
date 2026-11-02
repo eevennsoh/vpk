@@ -1,6 +1,6 @@
 "use client";
 
-import type { RefObject } from "react";
+import type { MouseEvent, RefObject } from "react";
 import type { MotionValue } from "motion/react";
 
 import { ScrubberRule } from "@/components/blocks/scrubber/components/scrubber-rule";
@@ -15,10 +15,11 @@ export interface ScrubberMarkProps {
 	axis: "x" | "y";
 	entry: ScrubberEntry;
 	isActive: boolean;
+	showActiveIndicator?: boolean;
 	magnify: MotionValue<number>;
 	markRef: (node: HTMLButtonElement | null) => void;
 	onFocusChange: (id: string | null) => void;
-	onSelect: () => void;
+	onSelect: (event: MouseEvent<HTMLButtonElement>) => void;
 	pointerOffset: MotionValue<number>;
 	railSizeRef: RefObject<number>;
 	state: ScrubberMarkState;
@@ -32,6 +33,7 @@ export function ScrubberMark({
 	axis,
 	entry,
 	isActive,
+	showActiveIndicator = true,
 	magnify,
 	markRef,
 	onFocusChange,
@@ -65,7 +67,7 @@ export function ScrubberMark({
 			)}
 		>
 			<span className="sr-only">{toScrubberMarkLabel(entry)}</span>
-			{appearance === "dots" ? <><span aria-hidden className="absolute size-5 rounded-full bg-bg-neutral opacity-0 group-hover/mark:opacity-100 group-focus-visible/mark:opacity-100" /><span aria-hidden className={cn("relative size-1.5 rounded-full bg-current", isActive ? "opacity-100" : "opacity-0")} /></> : <ScrubberRule
+			{appearance === "dots" ? <><span aria-hidden className="absolute size-5 rounded-full bg-bg-neutral opacity-0 group-hover/mark:opacity-100 group-focus-visible/mark:opacity-100" /><span aria-hidden className={cn("relative size-1.5 rounded-full bg-current", isActive && showActiveIndicator ? "opacity-100" : "opacity-0")} /></> : <ScrubberRule
 				axis={axis}
 				// The button is the hit target; the rule overflows it at full swell
 				// and must not stretch the target into whatever sits beside the rail.
