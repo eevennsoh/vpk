@@ -17,16 +17,12 @@ Provider-specific setup for running this repo in Cursor Cloud VMs. Everything he
 ## Update script (paste into the Update Script box)
 
 ```
-{
-  echo "registry=https://registry.npmjs.org/"
-  echo "@atlaskit:registry=https://registry.npmjs.org/"
-  echo "@atlassian:registry=https://packages.atlassian.com/artifactory/api/npm/atlassian-npm/"
-  echo "//packages.atlassian.com/artifactory/api/npm/atlassian-npm/:_authToken=\${ATLASSIAN_NPM_TOKEN}"
-  echo "//packages.atlassian.com/api/npm/atlassian-npm/:_authToken=\${ATLASSIAN_NPM_TOKEN}"
-} > "$HOME/.npmrc"
+node scripts/write-npmrc.mjs
 test -f .env.local || cp .env.local.example .env.local
 pnpm install
 ```
+
+`scripts/write-npmrc.mjs` upserts the registry routing and both atlassian-npm auth lines into `~/.npmrc`: each managed key appears exactly once, other lines are preserved, and reruns are no-ops. It exits non-zero with a clear message when `ATLASSIAN_NPM_TOKEN` is empty, instead of letting `pnpm install` 404. Do not hand-write `~/.npmrc` with `>>`; repeated runs stack duplicate entries.
 
 ## Services overview
 
@@ -47,7 +43,7 @@ Start frontend + backend together: `pnpm run dev`. Start all three (including Ro
 
 ## Non-obvious caveats
 
-- `ATLASSIAN_NPM_TOKEN` must be configured as a secret and written to `~/.npmrc` before `pnpm install` will succeed (the CI workflow `.github/workflows/ci.yml` shows the exact pattern). Without it, the private `@atlassian/logo-third-party` package fails to resolve.
+- `ATLASSIAN_NPM_TOKEN` must be configured as a secret and written to `~/.npmrc` by `node scripts/write-npmrc.mjs` before `pnpm install` will succeed (CI runs the same script). Without it, the private `@atlassian/logo-third-party` package fails to resolve.
 - The backend reads secrets from `process.env` directly (with `.env.local` as dotenv fallback), so injected env vars work without writing them to `.env.local`. `.env.local` is still useful for `next dev`; create it from `.env.local.example` if missing.
 - Backend port is written to `.dev-backend-port`, frontend to `.dev-frontend-port` at startup.
 - `pnpm run dev` starts both services via `concurrently`; do not run `pnpm run rovo` at the same time or you'll get port conflicts.
