@@ -1,0 +1,54 @@
+:host { display:block; contain:layout style; }
+* { box-sizing:border-box; }
+.card {
+	--surface:#fff; --ink:#292a2e; --subtle:#6b6e76; --border:rgba(11,18,40,.14); --sunken:#f8f8f8; --track:#e5e6e9;
+	width:480px; height:426px; padding:16px 28px 28px; overflow:hidden;
+	border:1px solid var(--border); border-radius:12px; background:var(--surface); color:var(--ink);
+	font:14px/20px 'Atlassian Sans',ui-sans-serif,-apple-system,BlinkMacSystemFont,sans-serif;
+	font-feature-settings:'liga' 0,'calt' 0; transform-origin:top left;
+}
+:host([appearance=dark]) .card { --surface:#242528; --ink:#cecfd2; --subtle:#96999e; --border:#44464b; --sunken:#1f2023; --track:#44464b; }
+:host([appearance=dark]) .filter-icon, :host([appearance=dark]) .metadata-icon { filter:invert(.75); }
+:host([surface=off]) .card, :host([surface=false]) .card, .card.no-surface { background:transparent; border-color:transparent; }
+.heading { margin:0 0 8px; font-size:14px; line-height:20px; font-weight:500; }
+.sessions { display:grid; gap:8px; }
+.session { height:62px; border:1px solid var(--border); border-radius:8px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; }
+.session-title { font-weight:500; }
+.metadata { display:flex; align-items:center; height:16px; gap:3px; font-size:12px; line-height:16px; color:var(--subtle); white-space:nowrap; }
+.session-avatars { position:relative; width:30px; height:18px; margin-left:-1px; }
+.session-avatar { display:block; width:30px; height:18px; }
+.cursor-agent { position:absolute; width:16px; height:17.5px; left:0; top:0; }
+.pr-icon { width:16px; height:16px; overflow:hidden; display:inline-block; }
+.pr-icon img { display:block; width:73px; height:16px; max-width:none; }
+.cloud { width:12px; height:12px; }
+.status { display:flex; align-items:center; gap:12px; color:var(--subtle); font-size:12px; white-space:nowrap; margin-right:8px; }
+.status-dot { width:6px; height:6px; border-radius:50%; background:#388bff; margin:0 3px; }
+.success { width:12px; height:12px; background:#6a9a23; color:white; border-radius:50%; font-size:9px; line-height:12px; text-align:center; }
+.activity { margin-top:32px; }
+.toolbar { display:flex; align-items:center; gap:12px; height:48px; }
+.toolbar .heading { margin:0; }
+.track { position:relative; height:24px; flex:1; min-width:0; }
+.rail { position:absolute; left:0; right:0; top:11px; height:2px; background:repeating-linear-gradient(to right,var(--track) 0 3px,transparent 3px 6px); }
+.origin { position:absolute; width:6px; height:6px; top:9px; left:0; border-radius:50%; background:var(--subtle); }
+.scrubber { position:absolute; top:0; left:0; width:12px; height:24px; transform:translateX(76px); }
+.disc { position:absolute; top:6px; left:-3px; width:12px; height:12px; border-radius:50%; background:#dcdee2; box-shadow:0 0 0 2px var(--surface); }
+.preview { position:absolute; top:-11px; left:-4px; display:flex; align-items:center; gap:4px; height:16px; padding-right:3px; background:var(--surface); white-space:nowrap; font-size:12px; line-height:16px; color:var(--subtle); }
+.preview-avatars { display:grid; width:21px; height:15px; align-items:center; }
+.preview-avatars > span { grid-area:1/1; position:relative; width:21px; height:15px; opacity:0; }
+.preview-avatars > span:first-child { opacity:1; }
+.preview-avatar { width:21px; height:15px; object-fit:contain; }
+.preview-avatars .cursor-agent { width:11px; height:12px; top:1px; }
+.preview-date { display:grid; }
+.preview-date span { grid-area:1/1; opacity:0; }
+.preview-date span:first-child { opacity:1; }
+.pointer { position:absolute; top:14px; left:0; width:16px; height:24px; opacity:0; filter:drop-shadow(0 1px 1px #0003); }
+.filters { display:flex; align-items:center; gap:2px; padding:2px; border-radius:8px; background:var(--sunken); }
+.all { height:24px; padding:2px 8px; border-radius:6px; background:var(--surface); box-shadow:0 0 .5px #1e1f2150,0 1px .5px #1e1f2140; }
+.filter-icon { display:block; width:24px; height:24px; }
+.rows { display:grid; gap:32px; margin:4px 0 0; padding:0 12px; list-style:none; }
+.row { display:flex; align-items:center; gap:10px; height:24px; white-space:nowrap; }
+.avatar { position:relative; width:24px; height:24px; flex:none; }
+.avatar img { position:absolute; width:29px; height:30px; left:-2px; top:-3px; }
+.avatar.human img { width:28px; height:28px; top:-2px; }
+.row-content { display:flex; align-items:center; gap:8px; }
+.timestamp { font-size:12px; line-height:16px; color:var(--subtle); }

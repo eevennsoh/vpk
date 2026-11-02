@@ -23,7 +23,7 @@ const DONUT_ARCS = [
 /** A provider's brand tile, or ADS's grey App tile (in its light-mode colours) for the rest. */
 function BrandTile({ logo }: Readonly<{ logo: BentoCostRow["logo"] }>) {
 	if (logo === "app") {
-		return <IconTile icon={<AppIcon label="" color="currentColor" />} label="" size="xsmall" className="bg-[#F0F1F2] text-[#6B6E76]" aria-hidden />;
+		return <IconTile icon={<AppIcon label="" color="currentColor" />} label="" size="xsmall" className="bg-[color:var(--finale-chip)] text-[color:var(--finale-text-subtlest)]" aria-hidden />;
 	}
 	return (
 		<span className="flex size-[21px] items-center justify-center">
@@ -42,8 +42,8 @@ function CostByProvider() {
 						<Image key={arc.src} src={`${ASSET}/${arc.src}`} alt="" width={200} height={200} className={`absolute max-w-none ${arc.className}`} />
 					))}
 					<div className="absolute top-[calc(50%+0.42px)] left-[calc(50%+0.62px)] flex w-[149.85px] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center whitespace-nowrap">
-						<p className="text-[22.5px] leading-[21px] font-semibold text-[#292A2E]" style={FIGURES}>$5.6m</p>
-						<p className="text-[12px] leading-[19.98px] text-[#6B6E76]">Total cost</p>
+						<p className="text-[22.5px] leading-[21px] font-semibold text-[color:var(--finale-text)]" style={FIGURES}>$5.6m</p>
+						<p className="text-[12px] leading-[19.98px] text-[color:var(--finale-text-subtlest)]">Total cost</p>
 					</div>
 				</div>
 				<div className="absolute top-[15px] left-[229.77px] flex w-[209.79px] flex-col gap-[14.985px]">
@@ -54,9 +54,9 @@ function CostByProvider() {
 									<div className="size-[9px] rounded-full" style={{ background: row.color }} />
 									<BrandTile logo={row.logo} />
 								</div>
-								<p className="whitespace-nowrap text-[#6B6E76]">{row.label}</p>
+								<p className="whitespace-nowrap text-[color:var(--finale-text-subtlest)]">{row.label}</p>
 							</div>
-							<p className="text-right whitespace-nowrap text-[#292A2E]" style={FIGURES}>{row.cost}</p>
+							<p className="text-right whitespace-nowrap text-[color:var(--finale-text)]" style={FIGURES}>{row.cost}</p>
 						</div>
 					))}
 				</div>
@@ -69,7 +69,7 @@ function CostByModel() {
 	return (
 		<div className="flex w-[439.56px] flex-col gap-[12px]">
 			<p className={BENTO_PANEL_HEADING}>Cost by model</p>
-			<p className="text-[24.975px] leading-[29.97px] whitespace-nowrap text-[#505258]">Opus 4.6: 20.03%</p>
+			<p className="text-[24.975px] leading-[29.97px] whitespace-nowrap text-[color:var(--finale-text-subtle)]">Opus 4.6: 20.03%</p>
 			<div className="flex w-full gap-[2.498px] overflow-hidden rounded-[2.498px]">
 				{BENTO_MODEL_SPLIT.map((share) => <div key={share.color} className="h-[9.99px] shrink-0 first:rounded-l-[1.249px] last:rounded-r-[1.249px]" style={{ background: share.color, width: share.width }} />)}
 			</div>

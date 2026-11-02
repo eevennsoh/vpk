@@ -1,0 +1,48 @@
+twg-search-strip { display: block; position: relative; flex: none; }
+twg-search-strip .twg-strip-stage { position: relative; width: 1008px; height: 156px; transform-origin: 0 0; }
+twg-search-strip .twg-strip-layer { position: absolute; inset: 0; }
+twg-search-strip .twg-strip {
+	--strip-surface: #f8f8f8;
+	--strip-border: #fff;
+	--strip-grid: #6b6e76;
+	--strip-ink: #1c1d1f;
+	--strip-glint: #dfdfdf;
+	--strip-mid: #595959;
+	position: relative; box-sizing: border-box; width: 1008px; height: 156px;
+	display: flex; align-items: center; justify-content: space-between;
+	padding: 48px; border: 1.5px solid var(--strip-border); border-radius: 24px;
+	background: var(--strip-surface); overflow: hidden;
+}
+twg-search-strip[appearance="dark"] .twg-strip {
+	--strip-surface: #242528; --strip-border: #3d3f43; --strip-grid: #96999e;
+	--strip-ink: #cecfd2; --strip-glint: #63666b; --strip-mid: #b1b3b8;
+}
+twg-search-strip .twg-strip-grid {
+	position: absolute; inset: 0; pointer-events: none;
+	background-image: radial-gradient(circle, var(--strip-grid) .8px, transparent 1px), radial-gradient(circle, var(--strip-grid) .8px, transparent 1px);
+	background-size: 6px 32px, 32px 6px;
+	background-position: 0 12px, 0 0;
+	mask-image: linear-gradient(90deg, transparent 35.417%, #000);
+	opacity: .75;
+}
+twg-search-strip .twg-strip-label { position: relative; display: flex; align-items: center; gap: 36px; flex: none; }
+twg-search-strip .twg-strip-mark { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; flex: none; color: #6b6e76; }
+twg-search-strip .twg-strip-mark svg { width: 45px; height: 45px; display: block; overflow: visible; }
+twg-search-strip[appearance="dark"] .twg-strip-mark { color: #b6bbc9; }
+twg-search-strip .twg-strip-text {
+	margin: 0; padding: 0; font: 400 42px/60px "Atlassian Sans", sans-serif;
+	font-feature-settings: "liga" 0, "calt" 0; letter-spacing: 0; white-space: nowrap;
+	color: transparent; -webkit-text-fill-color: transparent; background-clip: text; -webkit-background-clip: text;
+	/* One broad highlight, fully outside the text at either end of the sweep. */
+	background-color: var(--strip-ink);
+	background-image: linear-gradient(90deg, var(--strip-ink) 25%, var(--strip-mid) 37.5%, var(--strip-glint) 50%, var(--strip-mid) 62.5%, var(--strip-ink) 75%);
+	background-size: 400% 100%;
+	background-repeat: no-repeat;
+}
+twg-search-strip .twg-strip-apps { position: relative; display: flex; align-items: center; flex: none; width: 165px; height: 48px; }
+twg-search-strip .twg-strip-app { position: relative; flex: none; width: 48px; height: 48px; margin-right: -9px; transform-origin: 50% 65%; }
+twg-search-strip .twg-strip-app:last-child { margin-right: 0; }
+twg-search-strip .twg-strip-teams { box-sizing: border-box; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #fff; border: 1px solid rgba(11,18,14,.14); }
+twg-search-strip .twg-strip-teams img { width: 25.657px; height: 27.082px; display: block; transform: translate(-.67px, -1.46px); }
+twg-search-strip[surface="off"] .twg-strip { background: transparent; border-color: transparent; }
+twg-search-strip[surface="off"] .twg-strip-grid { opacity: 0; }

@@ -6,7 +6,7 @@ import { BENTO_SESSION_AXIS, BENTO_SESSION_BARS, BENTO_SESSION_LEGEND, type Bent
 import { BENTO_PANEL_HEADING, BentoFade, BentoLabel, BentoPanel } from "./finale-bento-parts";
 
 const ASSET = "/illustration/jira-team-eu26-end/bento";
-const AXIS = "text-[10px] leading-[normal] text-[#6B6E76]";
+const AXIS = "text-[10px] leading-[normal] text-[color:var(--finale-text-subtlest)]";
 const FIGURES = { fontFeatureSettings: '"lnum" 1, "tnum" 1' } as const;
 
 function StackedBar({ bar }: Readonly<{ bar: BentoBar }>) {
@@ -56,16 +56,16 @@ function SessionLegend() {
 		<div className="flex w-[439.56px] flex-col gap-[8px] px-[9.99px] text-[14.985px] leading-[19.98px]">
 			{BENTO_SESSION_LEGEND.map((item, index) => (
 				<div key={item.label} className="flex flex-col gap-[8px]">
-					{index > 0 ? <div className="h-[0.789px] w-full bg-[#F3F4F6]" /> : null}
+					{index > 0 ? <div className="h-[0.789px] w-full bg-[color:var(--finale-hairline)]" /> : null}
 					<div className="flex w-full items-center justify-between">
 						{/* A long label runs on under the figures' empty start, as in the Figma. */}
 						<div className="flex min-w-0 items-center gap-[9.99px]">
 							<div className="size-[9px] shrink-0 rounded-full" style={{ background: item.color }} />
-							<p className="whitespace-nowrap text-[#6B6E76]">{item.label}</p>
+							<p className="whitespace-nowrap text-[color:var(--finale-text-subtlest)]">{item.label}</p>
 						</div>
 						<p className="flex w-[205.805px] shrink-0 justify-end gap-[3px] whitespace-nowrap" style={FIGURES}>
-							<span className="text-[#292A2E]">{item.sessions}</span>
-							<span className="text-[#6B6E76]">sessions</span>
+							<span className="text-[color:var(--finale-text)]">{item.sessions}</span>
+							<span className="text-[color:var(--finale-text-subtlest)]">sessions</span>
 						</p>
 					</div>
 				</div>

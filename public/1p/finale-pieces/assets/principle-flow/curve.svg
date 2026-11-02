@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="241.017" height="143.081" viewBox="0 0 241.017 143.081" fill="none">
+  <!-- Matches the motion geometry in principle-flow.js, with the centre kink removed. -->
+  <path d="M 0 0 C 3.296818 5.164781 61.885061 9.760197 76.016602 24.599976 C 87.731098 36.901575 56.237091 58.820398 51.75 70.650002 C 40.729894 99.703009 202.1166 67.299976 180.516602 91.599976 C 168.99042 104.56693 129.520651 125.437341 140.399994 137.699997 C 149.90848 148.417489 240.016602 136.099976 240.016602 136.099976" transform="translate(.5 .5)" stroke="#B7B9BE" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray=".009 1.791"/>
+</svg>

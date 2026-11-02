@@ -8,6 +8,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { JIRA_TEAM_EU26_END_KEYNOTE_ISSUE_CODES } from "../data/keynote-board";
 import { FinaleFacePrintStage } from "./components/finale-face-print-stage";
 import { FinaleOverlay } from "./components/finale-overlay";
+import { FinalePaletteStyle } from "./components/finale-palette-style";
 import { FINALE_FEATURES } from "./data/finale-stories";
 import { useFinaleAudioClock } from "./hooks/use-finale-audio-clock";
 import { useFinaleControls } from "./hooks/use-finale-controls";
@@ -20,6 +21,7 @@ import { finaleArrivals, finaleSmallConfettiDue, nextFinaleDragOrder } from "./l
 import { createFinaleConfetti, type FinaleConfettiShow } from "./lib/play-finale-confetti";
 import { FINALE_DONE_COLUMN_TITLE, isJiraTeamEu26FinaleReady, parseFinaleSearch } from "./lib/finale-trigger";
 import type { FinaleSceneInput } from "./scenes/scene-board-to-bento";
+import { useFinaleAppearance } from "./studio/use-finale-appearance";
 
 /** Idle pre-print of every keynote card starts once the board has settled in. */
 const FINALE_PREWARM_DELAY_MS = 1500;
@@ -59,6 +61,8 @@ interface JiraTeamEu26EndFinaleProps {
 }
 
 export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0, pauseMegaBento }: Readonly<JiraTeamEu26EndFinaleProps>) {
+	// Mounted with the board, so a page address's `?appearance=` sets the theme before the finale runs.
+	useFinaleAppearance();
 	const clock = useFinaleAudioClock();
 	const prints = useFinaleCardPrints();
 	const facePrints = useFinaleFacePrints();
@@ -306,6 +310,7 @@ export function JiraTeamEu26EndFinale({ boardColumns, replayRequest = 0, pauseMe
 
 	return (
 		<>
+			<FinalePaletteStyle />
 			<FinaleFacePrintStage prints={facePrints} />
 			{scene ? <FinaleOverlay scene={scene} clock={clock} reducedMotion={reducedMotion} closing={closing} pauseMegaBento={pauseMegaBento} /> : null}
 		</>

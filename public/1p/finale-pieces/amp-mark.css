@@ -1,0 +1,5 @@
+amp-mark { display: block; position: relative; flex: none; }
+amp-mark .amp-stage { position: relative; width: 302px; height: 102.9037px; transform-origin: 0 0; color: #101214; }
+amp-mark[appearance="dark"] .amp-stage { color: #cecfd2; }
+amp-mark .amp-art { display: block; overflow: visible; }
+amp-mark .amp-label { position: absolute; left: 117.543px; top: 10.067px; width: 161.14px; height: 83.115px; display: flex; align-items: center; justify-content: flex-end; font: 400 76.895px/1 Inter, Arial, sans-serif; letter-spacing: -1.5379px; }

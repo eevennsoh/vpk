@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { flashPrintRect } from "@/components/projects/jira-team-eu26-end/finale/lib/finale-column-flash";
 import { waitForFinaleColumnCapture } from "@/components/projects/jira-team-eu26-end/finale/lib/capture-done-column";
 import { FINALE_DONE_COLUMN_TITLE } from "../lib/finale-trigger";
+import { useFinaleAppearance } from "../studio/use-finale-appearance";
 
 const CARD = '[data-slot="jira-issue-card"]';
 /** Lets the board's own drop animation finish before a card is printed. */
@@ -261,9 +262,18 @@ export function useFinaleCardPrints(): FinaleCardPrints {
 	const printsRef = useRef(new Map<string, HTMLCanvasElement>());
 	const pendingRef = useRef(new Map<string, Promise<void>>());
 	const timersRef = useRef(new Set<number>());
+	// A card printed in one theme is the wrong card in the other: print again on the next run.
+	const appearance = useFinaleAppearance();
+	useEffect(() => {
+		printsRef.current = new Map();
+		pendingRef.current = new Map();
+	}, [appearance]);
 
 	const capture = useCallback((code: string, scope: "done" | "board" = "done") => {
-		const existing = pendingRef.current.get(code);
+		// Bound to this theme's maps: a capture still running when the theme changes lands in the discarded ones.
+		const prints = printsRef.current;
+		const pending = pendingRef.current;
+		const existing = pending.get(code);
 		if (existing) return existing;
 		const element = findFinaleCard(code, scope) ?? (scope === "done" ? findFinaleCard(code, "board") : null);
 		if (!element) return Promise.resolve();
@@ -271,13 +281,13 @@ export function useFinaleCardPrints(): FinaleCardPrints {
 			.then((canvas) => {
 				// Its corner as a share of its width: the wall rounds the card's shadow and accents as the print is rounded.
 				canvas.dataset.finaleCorner = String(cornerShare(element));
-				printsRef.current.set(code, canvas);
+				prints.set(code, canvas);
 			})
 			.catch(() => undefined)
 			.finally(() => {
-				pendingRef.current.delete(code);
+				pending.delete(code);
 			});
-		pendingRef.current.set(code, task);
+		pending.set(code, task);
 		return task;
 	}, []);
 

@@ -1,0 +1,18 @@
+code-search-greeting { display: block; position: relative; flex: none; }
+code-search-greeting .code-search-stage {
+	position: relative; width: 627px; height: 146px; transform-origin: 0 0;
+	overflow: hidden; border-radius: 16px; background: #f8f8f8; color: #292a2e;
+}
+code-search-greeting[appearance="dark"] .code-search-stage { background: #1f1f21; color: #cecfd2; }
+code-search-greeting .code-search-stage.no-surface { background: transparent; }
+code-search-greeting .code-search-icon { position: absolute; left: 55px; top: 33px; width: 80px; height: 80px; transform-origin: center; }
+code-search-greeting .code-search-icon img { position: absolute; display: block; }
+code-search-greeting .code-search-magnifier { left: .67%; top: 25.87%; width: 50.36%; height: 59.05%; }
+code-search-greeting .code-search-right { left: 61.99%; top: 25.76%; width: 36.14%; height: 43.58%; }
+code-search-greeting .code-search-left { left: 21.77%; top: 25.76%; width: 36.13%; height: 43.58%; transform: scaleX(-1); }
+code-search-greeting .code-search-label {
+	position: absolute; left: 159px; top: 55px; margin: 0; padding: 0;
+	font: 400 40px/36px -apple-system, BlinkMacSystemFont, "SF Pro", sans-serif;
+	font-variation-settings: "wdth" 100; letter-spacing: 0; white-space: nowrap;
+}
+code-search-greeting .code-search-character { display: inline-block; white-space: pre; }

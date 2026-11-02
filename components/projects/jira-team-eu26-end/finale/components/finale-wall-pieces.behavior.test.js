@@ -5,6 +5,9 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const test = require("node:test");
 
+// The studio store listens for saves on a BroadcastChannel it never closes; an open channel keeps node alive.
+test.after(() => globalThis.__vennFinaleStudioChannel?.close());
+
 const { renderComponent } = require(path.join(process.cwd(), "scripts/lib/render-component.js"));
 
 /**
@@ -16,6 +19,7 @@ const HARNESS = `
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { FinaleFrameContext, createFinaleFrameRegistry, useFinaleFrame } from "@/components/projects/jira-team-eu26-end/finale/hooks/use-finale-frame";
 import { WallPieceHostContext, WallPieces, WallSlotMirrorContext } from "@/components/projects/jira-team-eu26-end/finale/components/finale-wall-pieces";
+import { ThemeWrapper } from "@/components/utils/theme-wrapper";
 
 function Slot({ visibleFrom, children }) {
 	const mirrors = useRef(new Set());
@@ -37,16 +41,18 @@ export default function Harness({ onRegistry, track, revealStart, visibleFrom })
 	const registry = useMemo(() => createFinaleFrameRegistry(), []);
 	useLayoutEffect(() => onRegistry(registry), [onRegistry, registry]);
 	const host = useMemo(() => ({ track, kit: { pieces: [{ id: "codeCard", w: 276, h: 143, scale: 1.6, holds: 4 }], pieceStyles: {}, composition: { pieces: [{ id: "codeCard", scale: 0.4 }] } } }), [track]);
-	const slot = useMemo(() => ({ key: "0:0:0", column: 0, band: 0, rect: { x: 100, y: 100, width: 180, height: 140 }, height: "tall", seed: 1, content: { kind: "piece", pieces: [{ id: "codeCard", scale: 0.4 }] } }), []);
+	const slot = useMemo(() => ({ key: "0:0:0", column: 0, band: 0, rect: { x: 100, y: 100, width: 180, height: 140 }, height: "tall", seed: 1, content: { kind: "piece", pieces: [{ id: "codeCard", scale: 0.4 }], padding: { x: 40, y: 40 } } }), []);
 	const geometry = useMemo(() => ({ originX: 0, pieceScale: 0.5, typeScale: 0.3, viewport: { width: 1000, height: 800 } }), []);
 	return (
-		<FinaleFrameContext value={registry}>
-			<WallPieceHostContext value={host}>
-				<Slot visibleFrom={visibleFrom}>
-					<WallPieces slot={slot} geometry={geometry} pieces={slot.content.pieces} revealStart={revealStart} />
-				</Slot>
-			</WallPieceHostContext>
-		</FinaleFrameContext>
+		<ThemeWrapper defaultTheme="light">
+			<FinaleFrameContext value={registry}>
+				<WallPieceHostContext value={host}>
+					<Slot visibleFrom={visibleFrom}>
+						<WallPieces slot={slot} geometry={geometry} pieces={slot.content.pieces} revealStart={revealStart} />
+					</Slot>
+				</WallPieceHostContext>
+			</FinaleFrameContext>
+		</ThemeWrapper>
 	);
 }
 `;
@@ -98,5 +104,8 @@ test("the kit draws the piece at its authored scale, light, with the stage file'
 	assert.equal(piece.getAttribute("piece"), "codeCard");
 	assert.equal(piece.getAttribute("appearance"), "light");
 	assert.equal(piece.getAttribute("scale"), "0.2000");
-	assert.deepEqual(piece.pieceStyles, {});
+	// The stage file's styles (none here) with the saved studio's per-piece choices over them.
+	const studioPieces = require(path.join(process.cwd(), "components/projects/jira-team-eu26-end/finale/data/finale-studio.json")).pieces;
+	assert.equal(piece.pieceStyles.codeCard, undefined);
+	for (const id of Object.keys(piece.pieceStyles)) assert.ok(Object.hasOwn(studioPieces, id), `${id} is styled by the saved studio`);
 });

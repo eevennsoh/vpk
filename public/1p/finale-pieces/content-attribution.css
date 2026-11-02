@@ -1,0 +1,28 @@
+content-attribution { display: block; position: relative; flex: none; }
+content-attribution .attribution-stage {
+	--attribution-ground: #f8f8f8; --attribution-ink: #000;
+	--attribution-fill: #e9f2fe; --attribution-rule: #adcbfb;
+	position: relative; width: 811px; height: 293px; transform-origin: 0 0;
+	overflow: hidden; border-radius: 20px; background: var(--attribution-ground); color: var(--attribution-ink);
+	font-family: "Atlassian Sans", sans-serif; font-feature-settings: "liga" 0, "calt" 0;
+}
+content-attribution[appearance="dark"] .attribution-stage {
+	--attribution-ground: #242528; --attribution-ink: #cecfd2;
+	--attribution-fill: #123263; --attribution-rule: #1558bc;
+}
+content-attribution .attribution-stage.no-surface { background: transparent; }
+/* Center the visible graphic, including the bullet markers and final text row. */
+content-attribution .attribution-graphic { position: absolute; left: 50%; top: 50%; width: 660px; height: 132px; transform: translate(-50%, -50%); }
+/* Clip the bar at the highlight's top edge so it rises from behind the selection. */
+content-attribution .attribution-bar-window { position: absolute; left: 25.515px; top: 0; width: 489.394px; height: 42.606px; overflow: hidden; z-index: 1; }
+content-attribution .attribution-bar { position: relative; width: 100%; height: 100%; border-radius: 7.83px 7.83px 0 0; background: #357de8; color: #fff; }
+content-attribution .attribution-icons { position: absolute; left: 11.75px; top: 5.87px; width: 50.897px; height: 35.236px; transform-origin: center; }
+content-attribution .attribution-icons img { position: absolute; display: block; }
+content-attribution .attribution-agent { left: .35px; top: 1.312px; width: 27.636px; height: 29.396px; }
+content-attribution .attribution-arrow { left: 3.805px; top: 5.645px; width: 20.727px; height: 20.727px; }
+content-attribution .attribution-connector { left: 25.45px; top: 5.87px; width: 7.83px; height: 19.576px; }
+content-attribution .attribution-avatar { left: 27.397px; top: 4.12px; width: 23.5px; height: 23.5px; border-radius: 50%; }
+content-attribution .attribution-label { position: absolute; left: 68.145px; top: 5.87px; margin: 0; white-space: nowrap; font: 500 23.03px/31.321px "Atlassian Sans", sans-serif; letter-spacing: -.2303px; }
+content-attribution .attribution-highlight { box-sizing: border-box; position: absolute; left: 25.515px; top: 42.606px; width: 634.485px; height: 39.152px; background: var(--attribution-fill); border-bottom: 2.303px solid var(--attribution-rule); z-index: 2; }
+content-attribution .attribution-list { position: absolute; left: -12.485px; top: 33.394px; margin: 0; padding: 0 0 0 41.46px; z-index: 3; list-style: disc; }
+content-attribution .attribution-list li { margin: 0; padding: 0; white-space: nowrap; font: 400 27.64px/57.576px "Atlassian Sans", sans-serif; }

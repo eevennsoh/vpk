@@ -1,0 +1,63 @@
+atlassian-connect { display: block; position: relative; flex: none; }
+atlassian-connect .connect-stage {
+	--connect-ground: #f8f8f8; --connect-border: #b7b9be;
+	--connect-blue: #1868db; --connect-cursor: #505258;
+	position: relative; width: 604px; height: 442px; overflow: hidden;
+	transform-origin: 0 0; border-radius: 20px; background: var(--connect-ground);
+}
+atlassian-connect[appearance="dark"] .connect-stage {
+	--connect-ground: #242528; --connect-border: #7e8188;
+	--connect-blue: #669df1; --connect-cursor: #a9abaf;
+}
+atlassian-connect .connect-window {
+	box-sizing: border-box; position: absolute; left: 44px; top: 170px;
+	width: 516px; height: 296px; border: 1.5px solid var(--connect-border); border-radius: 16.4px;
+}
+atlassian-connect .connect-dots { display: flex; gap: 8px; position: absolute; left: 18.5px; top: 17.5px; }
+atlassian-connect img { display: block; max-width: none; pointer-events: none; user-select: none; }
+atlassian-connect .connect-mention {
+	position: absolute; left: 179px; top: 272px; display: flex; align-items: center; height: 56px;
+	font: 400 40px/56px "Atlassian Mono", ui-monospace, monospace;
+	letter-spacing: -.8px; color: var(--connect-blue); white-space: nowrap;
+}
+atlassian-connect .connect-caret { display: block; flex: none; width: 24px; height: 56px; background: var(--connect-cursor); }
+atlassian-connect .connect-stack { position: absolute; left: 165.947px; top: 52px; display: flex; align-items: center; height: 60px; isolation: isolate; }
+atlassian-connect .connect-logo {
+	position: relative; display: grid; place-items: center; flex: none;
+	width: 60px; height: 60px; padding: 0; margin: 0 -3.517px 0 0;
+	border: 0; background: none; border-radius: 14px; cursor: pointer;
+}
+atlassian-connect .connect-logo:disabled { cursor: default; }
+atlassian-connect .connect-logo:focus-visible { outline: 2px solid var(--connect-blue); outline-offset: 5px; }
+atlassian-connect .connect-logo-enter { display: block; position: relative; width: 54.593px; height: 54.593px; }
+atlassian-connect .connect-logo-art {
+	display: block; position: relative; width: 100%; height: 100%;
+	translate: 0 0; scale: 1; rotate: 0deg;
+	transition: translate 220ms cubic-bezier(.19,1,.22,1), scale 150ms ease, rotate 220ms cubic-bezier(.19,1,.22,1);
+}
+atlassian-connect .connect-logo img { position: absolute; }
+atlassian-connect .connect-tile { display: block; position: relative; width: 54.593px; height: 54.593px; border-radius: 13.648px; background: white; }
+atlassian-connect .connect-tile::after { content: ""; position: absolute; inset: 0; border: 1.137px solid rgb(11 18 14 / 14%); border-radius: inherit; pointer-events: none; }
+atlassian-connect .connect-glyph { display: block; position: absolute; width: 48px; height: 48px; transform: scale(1.137354); transform-origin: 0 0; }
+atlassian-connect .teams { z-index: 6; }
+atlassian-connect .teams .connect-logo-art { rotate: -6deg; }
+atlassian-connect .figma { width: 54.593px; z-index: 5; }
+atlassian-connect .slack { z-index: 4; }
+atlassian-connect .slack .connect-logo-art { rotate: 6deg; }
+atlassian-connect .slack .connect-tile { outline: 4px solid var(--connect-ground); }
+atlassian-connect .agent { width: 56px; height: 56px; z-index: 3; }
+atlassian-connect .agent .connect-logo-enter { width: 56px; height: 56px; }
+atlassian-connect .agent:last-child { z-index: 2; margin-right: 0; }
+atlassian-connect .connect-line { position: absolute; overflow: visible; pointer-events: none; }
+atlassian-connect .line-0 { left: 210.25px; top: 116.25px; }
+atlassian-connect .line-1 { left: 304.25px; top: 116.25px; transform: scaleX(-1); }
+atlassian-connect .connect-stage.no-surface { background: transparent; }
+atlassian-connect .connect-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) {
+	atlassian-connect .connect-logo:not(:disabled):hover { z-index: 7; }
+	atlassian-connect .connect-logo:not(:disabled):hover .connect-logo-art { translate: 0 -5px; rotate: 0deg; scale: 1.02; }
+}
+atlassian-connect .connect-logo:not(:disabled):active .connect-logo-art { translate: 0 -1px; scale: .97; }
+@media (prefers-reduced-motion: reduce) {
+	atlassian-connect .connect-logo-art { transition: none; }
+}

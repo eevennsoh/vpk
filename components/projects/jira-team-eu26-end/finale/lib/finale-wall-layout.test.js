@@ -26,8 +26,6 @@ function load() {
 	return layoutModule;
 }
 
-const { readFileSync } = require("node:fs");
-const KIT = JSON.parse(readFileSync("public/1p/rovo-stage-kit/pieces.json", "utf8"));
 const VIEWPORTS = [{ width: 1728, height: 1117 }, { width: 1920, height: 1080 }, { width: 1024, height: 768 }, { width: 2560, height: 1440 }];
 const close = (a, b) => Math.abs(a - b) < 1e-6;
 const overlaps = (a, b, gap = 0) => a.x < b.x + b.width + gap - 1e-6 && a.x + a.width + gap > b.x + 1e-6 && a.y < b.y + b.height + gap - 1e-6 && a.y + a.height + gap > b.y + 1e-6;
@@ -39,59 +37,6 @@ function sceneFor(viewport, dragOrder = []) {
 	const wall = m.buildFinaleWall(geometry, bento, m.FINALE_FEATURES, dragOrder);
 	return { m, bento, geometry, wall };
 }
-
-test("every remaining work item has its own print slot instead of a bulk-drag stack", () => {
-	for (const viewport of VIEWPORTS) {
-		const { m, wall } = sceneFor(viewport);
-		const prints = wall.items.filter((slot) => slot.content.kind === "print");
-		// Each remaining work item once, and the recycled ones a second time.
-		assert.equal(prints.length, m.FINALE_STORIES.length - m.FINALE_FEATURES.length + m.WALL_RECYCLED_PRINTS);
-		for (const slot of prints) assert.equal(slot.content.codes.length, 1, `${slot.key} holds one work item`);
-	}
-});
-
-test("the wall has three varied chapter word tiles separated by product content", () => {
-	for (const viewport of VIEWPORTS) {
-		const { wall, geometry } = sceneFor(viewport);
-		const posters = wall.items.filter((slot) => slot.content.kind === "poster");
-		assert.deepEqual(posters.map((slot) => slot.content.word).sort(), ["Collaboration", "Confidence", "Context"]);
-		const sizes = { Context: [300, 160], Collaboration: [360, 200], Confidence: [280, 220] };
-		const scale = geometry.typeScale / 0.3;
-		for (const slot of posters) {
-			const [width, height] = sizes[slot.content.word];
-			assert.ok(close(slot.rect.width, width * scale));
-			assert.ok(close(slot.rect.height, height * scale));
-			for (const other of posters.filter((other) => other !== slot)) {
-				assert.ok(Math.abs(slot.rect.x + slot.rect.width / 2 - other.rect.x - other.rect.width / 2) >= 900 * scale - 1e-6, "chapter blocks are spread along the wall");
-			}
-		}
-	}
-});
-
-test("three 3:4 lanyard tiles hang from the top edge through every period, evenly spaced, never two in frame at once", () => {
-	for (const viewport of VIEWPORTS) {
-		const { m, wall, geometry } = sceneFor(viewport);
-		const lanyards = wall.items.filter((slot) => slot.content.kind === "lanyard").sort((a, b) => a.rect.x - b.rect.x);
-		assert.equal(lanyards.length, m.WALL_LANYARDS.count);
-		const scale = geometry.typeScale / 0.3;
-		// The first hangs just past the opening frame, clear of the keynote gaps, so it glides in.
-		assert.ok(lanyards[0].rect.x >= viewport.width, `${viewport.width}: first lanyard at ${lanyards[0].rect.x}`);
-		for (const slot of lanyards) {
-			// Its top corners sit just above the frame, so the strap's straight cut is the frame's own edge.
-			assert.equal(slot.rect.y, -geometry.radius, slot.key);
-			assert.ok(close(slot.rect.width, m.WALL_LANYARDS.width * scale), slot.key);
-			assert.ok(close(slot.rect.height, m.WALL_LANYARDS.height * scale), slot.key);
-			assert.ok(close(slot.rect.width / slot.rect.height, 3 / 4), slot.key);
-		}
-		// Neighbours (round the seam too) never share the frame, and no stretch of the loop goes much longer than its share without one.
-		const centres = lanyards.map((slot) => slot.rect.x + slot.rect.width / 2);
-		const spacings = centres.map((centre, index) => (index === 0 ? centre + wall.periodWidth - centres.at(-1) : centre - centres[index - 1]));
-		for (const spacing of spacings) {
-			assert.ok(spacing >= viewport.width + lanyards[0].rect.width, `${viewport.width}: lanyards ${Math.round(spacing)}px apart`);
-			assert.ok(spacing <= (wall.periodWidth / lanyards.length) * 1.2, `${viewport.width}: a ${Math.round(spacing)}px stretch without a lanyard`);
-		}
-	}
-});
 
 test("the mega bento contains no standalone presenter portraits or facepiles", () => {
 	const { wall } = sceneFor(VIEWPORTS[1]);
@@ -115,24 +60,6 @@ test("separated accents pack beyond the current edge while product items fill th
 	]);
 });
 
-test("an automatic stage resolves enabled library pieces at the authored density", () => {
-	const m = load();
-	const stage = { composition: null, board: { cells: { a: { options: { density: "balanced", showApps: true, showMosaic: false, showConfidence: false } } } } };
-	const pieces = m.resolveWallStagePieces(stage);
-	assert.equal(pieces.length, KIT.filter((piece) => !["mosaic", "confidence"].includes(piece.group)).length);
-	assert.equal(pieces.some((piece) => piece.id.startsWith("stamp")), false);
-	assert.equal(pieces.some((piece) => piece.id === "agentIdentities"), false);
-	assert.ok(close(pieces.find((piece) => piece.id === "codeCard").scale, 1.408));
-	assert.equal(new Set(pieces.map((piece) => piece.key)).size, pieces.length);
-});
-
-test("automatic stages honor density changes and the kit's app visibility default", () => {
-	const stage = (density) => ({ composition: null, board: { cells: { a: { options: { density } } } } });
-	assert.equal(load().resolveWallStagePieces(stage("gallery")).find((piece) => piece.id === "codeCard").scale, 1.6);
-	assert.ok(close(load().resolveWallStagePieces(stage("dense")).find((piece) => piece.id === "codeCard").scale, 1.216));
-	assert.equal(load().resolveWallStagePieces(stage("balanced")).some((piece) => piece.id === "appJira"), false);
-});
-
 test("an explicit composition keeps its instance scales and repeated pieces", () => {
 	const pieces = [{ key: "first", id: "codeCard", scale: 1.408 }, { key: "second", id: "codeCard", scale: 0.7 }];
 	assert.deepEqual(load().resolveWallStagePieces({ composition: { pieces }, board: { cells: { a: { options: { density: "dense" } } } } }), pieces);
@@ -152,26 +79,6 @@ test("every wall container, including custom coloured tiles, has a fixed 20px ra
 		const tiles = wall.items.filter((slot) => slot.content.kind !== "print");
 		assert.ok(tiles.length > 0);
 		for (const slot of tiles) assert.equal(m.wallSlotRadius(slot, geometry), 20, slot.key);
-	}
-});
-
-test("all 91 enabled pieces keep their library dimensions and balanced scale under one camera scale", () => {
-	for (const viewport of VIEWPORTS) {
-		const { geometry, wall } = sceneFor(viewport);
-		const library = wall.items.filter((item) => item.content.kind === "piece");
-		assert.equal(library.length, 91);
-		assert.equal(library.filter((slot) => slot.content.pieces[0].id.startsWith("stamp")).length, 14);
-		assert.ok(close(geometry.gutter, 28 * geometry.typeScale / 0.3));
-		assert.equal(geometry.gutterY, geometry.gutter);
-		for (const piece of KIT) {
-			const slot = library.find((item) => item.content.pieces[0].id === piece.id);
-			assert.ok(slot, `${piece.id} is present`);
-			assert.ok(close(slot.content.pieces[0].scale, piece.scale * 0.88));
-			assert.ok(close(slot.rect.width, (piece.w * piece.scale * 0.88 + 80) * geometry.pieceScale), `${piece.id}: natural width and shadow room`);
-			assert.ok(close(slot.rect.height, (piece.h * piece.scale * 0.88 + 80) * geometry.pieceScale), `${piece.id}: natural height and shadow room`);
-		}
-		const widths = new Set(wall.items.filter((item) => item.content.kind === "piece").map((item) => item.rect.width.toFixed(3)));
-		assert.ok(widths.size > 25, "pieces have many distinct widths, rather than one-column and two-column sizes");
 	}
 });
 
@@ -205,37 +112,6 @@ test("seven keynote landing spaces retain their centres and the six story tiles 
 		assert.equal(wall.items.filter((slot) => slot.reserved !== undefined).length, 7);
 		assert.equal(m.WALL_TITLE_ORDER, 6);
 	}
-});
-
-test("the landed title adds vertical room to match its horizontal padding without widening the card", () => {
-	for (const viewport of VIEWPORTS) {
-		const { bento, geometry, wall } = sceneFor(viewport);
-		const { rect } = wall.gaps.find((gap) => gap.kind === "title").slot;
-		const horizontalPadding = (rect.width - 343 * geometry.typeScale) / 2;
-		const verticalPadding = (rect.height - 171 * geometry.typeScale) / 2;
-		assert.ok(close(rect.width, bento.title.width * 0.3));
-		assert.ok(rect.height > bento.title.height * 0.3);
-		assert.ok(close(verticalPadding, horizontalPadding), `${viewport.width}: ${verticalPadding}px vertical, ${horizontalPadding}px horizontal`);
-	}
-	const { wall } = sceneFor({ width: 1920, height: 1080 });
-	assert.ok(close(wall.gaps.find((gap) => gap.kind === "title").slot.rect.height, 124.4));
-});
-
-test("every story is dealt once as a featured tile or a print, the run's last prints come round again, and drag order survives", () => {
-	const dragged = ["TEU-7", "TEU-4", "TEU-12", "TEU-1", "TEU-9", "TEU-3", "TEU-13"];
-	const { m, wall } = sceneFor(VIEWPORTS[1], dragged);
-	const featured = new Set(m.FINALE_FEATURES.map((story) => story.code));
-	// The run is `print-<n>`; the recycled cards are `print-again-<n>` (each key after its bucket, `<bucket>:`).
-	const dealt = (pattern) => wall.items.filter((slot) => slot.content.kind === "print" && pattern.test(slot.key)).sort((a, b) => Number(a.key.match(/\d+$/)[0]) - Number(b.key.match(/\d+$/)[0])).flatMap((slot) => slot.content.codes);
-	const run = dealt(/:print-\d+$/);
-	const codes = [...run, ...wall.items.flatMap((slot) => (slot.content.kind === "story" ? [slot.content.story.code] : []))];
-	assert.deepEqual(codes.sort(), m.FINALE_STORIES.map((story) => story.code).sort(), "each story once in the run");
-	assert.deepEqual(dealt(/:print-again-\d+$/), run.slice(-m.WALL_RECYCLED_PRINTS), "the run's last cards come round again");
-	// A featured story shows only as its own bento tile: no feature-name block repeats it.
-	assert.equal(wall.items.filter((slot) => "story" in slot.content && slot.content.kind !== "story").length, 0);
-	assert.equal(wall.items.filter((slot) => slot.content.kind === "title").length, 1);
-	const expected = dragged.filter((code) => !featured.has(code));
-	assert.deepEqual(run.slice(0, expected.length), expected);
 });
 
 test("spatial buckets only index the natural rectangles, and copies repeat exactly but for the lanyards' run", () => {

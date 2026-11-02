@@ -1,0 +1,82 @@
+agent-session-stack { display: block; position: relative; flex: none; }
+agent-session-stack .session-stack-stage {
+	--session-ground: #f8f8f8; --session-panel: #fff; --session-ink: #292a2e;
+	--session-subtle: #6b6e76; --session-border: #dddee1;
+	position: relative; width: 1174px; height: 674px; transform-origin: 0 0;
+	overflow: hidden; border-radius: 40px; background: var(--session-ground);
+	font: 400 48px/58px "Atlassian Sans", sans-serif; color: var(--session-ink); text-align: left;
+}
+agent-session-stack[appearance="dark"] .session-stack-stage {
+	--session-ground: #242528; --session-panel: #1f1f21; --session-ink: #cecfd2;
+	--session-subtle: #96999e; --session-border: #3d3f43;
+}
+agent-session-stack .session-stack-row {
+	box-sizing: border-box; position: absolute; left: 111px; width: 955px; height: 184px;
+	display: flex; align-items: center; gap: 24px; padding: 0 40px;
+	border: 1px solid var(--session-border); border-radius: 40px;
+}
+agent-session-stack .session-stack-row.working { background: var(--session-panel); box-shadow: 0 8px 48px rgb(0 0 0 / .05); }
+agent-session-stack .session-stack-identity { position: relative; width: 112px; height: 112px; flex: none; }
+agent-session-stack .session-stack-agent { display: block; width: 112px; height: 112px; object-fit: contain; }
+agent-session-stack .session-stack-person {
+	box-sizing: border-box; position: absolute; right: 0; bottom: 0; width: 52px; height: 52px;
+	border: 3px solid var(--session-panel); border-radius: 50%; object-fit: cover;
+}
+agent-session-stack .session-stack-label { flex: 1; min-width: 0; }
+agent-session-stack .session-stack-name { margin: 0; font: inherit; letter-spacing: -.02em; white-space: nowrap; color: var(--session-subtle); }
+agent-session-stack .working .session-stack-name { color: var(--session-ink); font-weight: 600; }
+agent-session-stack .session-stack-meta { display: flex; align-items: center; gap: 12px; margin: 4px 0 0; font-size: 36px; line-height: 44px; color: var(--session-subtle); }
+agent-session-stack .session-stack-working { display: flex; align-items: center; gap: 12px; flex: none; }
+agent-session-stack .session-stack-status { display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; flex: none; }
+agent-session-stack .session-stack-unread { width: 27px; height: 27px; border-radius: 50%; background: #357de8; }
+agent-session-stack .session-stack-fade { position: absolute; inset: auto 0 0; height: 250px; background: linear-gradient(to top, var(--session-ground), transparent); pointer-events: none; }
+agent-session-stack .session-stack-stage.no-surface { background: transparent; }
+agent-session-stack .no-surface .session-stack-row { background: transparent; border-color: transparent; box-shadow: none; }
+agent-session-stack .no-surface .session-stack-fade { display: none; }
+
+/* VPK Shimmer: 1.4s sweep, the 12px status label's 14px band scaled to 36px type. */
+agent-session-stack .session-stack-shimmer {
+	--highlight: oklch(from currentColor l c h / .2);
+	font-size: 36px; line-height: 44px; color: var(--session-subtle);
+	background-image: linear-gradient(110deg, currentColor calc(50% - 42px), color-mix(in oklch, var(--highlight), currentColor 50%) calc(50% - 21px), var(--highlight) 50%, color-mix(in oklch, var(--highlight), currentColor 50%) calc(50% + 21px), currentColor calc(50% + 42px));
+	background-repeat: no-repeat; background-size: calc(200% + 84px) 100%;
+	background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+	animation: session-stack-shimmer 1.4s linear infinite both paused;
+	animation-delay: var(--session-stack-time, 0s);
+}
+agent-session-stack[appearance="dark"] .session-stack-shimmer { --highlight: oklch(from currentColor max(.8, calc(l + .4)) c h); }
+@keyframes session-stack-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+/* VPK's ExperimentalSpinner avatar pulse, from app/jira-agent-motion.css. */
+agent-session-stack .session-stack-orb { width: 72px; height: 72px; overflow: visible; color: var(--session-ink); }
+agent-session-stack .session-stack-orb g {
+	transform-origin: 10px 10px;
+	animation: session-stack-rotate 9.6s linear infinite both paused;
+	animation-delay: calc(var(--session-stack-time, 0s) - 3.84s);
+}
+agent-session-stack .session-stack-dot {
+	transform-box: fill-box; transform-origin: center;
+	transform: translate(var(--outer-x), var(--outer-y)); opacity: var(--expanded-opacity);
+	animation: session-stack-bloom 9.6s cubic-bezier(.4, 0, 0, 1) infinite both paused, session-stack-opacity 9.6s cubic-bezier(.4, 0, 0, 1) infinite both paused;
+	animation-delay: calc(var(--session-stack-time, 0s) - 3.84s);
+}
+agent-session-stack .dot-0 { --inner-x: 0px; --inner-y: -1.3px; --outer-x: 0px; --outer-y: -5.5px; --expanded-opacity: .82; --pulse-opacity: .66; }
+agent-session-stack .dot-1 { --inner-x: 1.126px; --inner-y: -.65px; --outer-x: 4.763px; --outer-y: -2.75px; --expanded-opacity: .62; --pulse-opacity: .78; }
+agent-session-stack .dot-2 { --inner-x: 1.126px; --inner-y: .65px; --outer-x: 4.763px; --outer-y: 2.75px; --expanded-opacity: .78; --pulse-opacity: .6; }
+agent-session-stack .dot-3 { --inner-x: 0px; --inner-y: 1.3px; --outer-x: 0px; --outer-y: 5.5px; --expanded-opacity: .58; --pulse-opacity: .72; }
+agent-session-stack .dot-4 { --inner-x: -1.126px; --inner-y: .65px; --outer-x: -4.763px; --outer-y: 2.75px; --expanded-opacity: .8; --pulse-opacity: .66; }
+agent-session-stack .dot-5 { --inner-x: -1.126px; --inner-y: -.65px; --outer-x: -4.763px; --outer-y: -2.75px; --expanded-opacity: .6; --pulse-opacity: .76; }
+@keyframes session-stack-rotate { to { transform: rotate(360deg); } }
+@keyframes session-stack-bloom {
+	0%, 5%, 50%, 55%, 100% { transform: translate(var(--inner-x), var(--inner-y)); }
+	25%, 42%, 75%, 92% { transform: translate(var(--outer-x), var(--outer-y)); }
+}
+@keyframes session-stack-opacity {
+	0%, 5%, 50%, 55%, 100% { opacity: 1; }
+	25%, 40%, 75%, 90% { opacity: var(--expanded-opacity); }
+	32%, 82% { opacity: var(--pulse-opacity); }
+}
+@media (prefers-reduced-motion: reduce) {
+	agent-session-stack .session-stack-shimmer { animation: none; background: none; -webkit-text-fill-color: currentColor; }
+	agent-session-stack .session-stack-orb g, agent-session-stack .session-stack-dot { animation: none; }
+}

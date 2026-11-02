@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-import { FINALE_COLORS } from "../data/finale-palette";
+import { FINALE_PALETTES } from "../data/finale-palette";
 import type { FinaleRect } from "../data/finale-stories";
 import { cameraBasis, finaleCameraRig, toView } from "../lib/finale-camera";
 import { finaleCardSheetsShown } from "../lib/finale-column-flash";
@@ -43,7 +43,8 @@ import {
 } from "../lib/finale-sheet-gl";
 import { finaleFieldPixelRatio } from "../lib/finale-stage-fit";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
-import { wallActive } from "../lib/finale-wall-motion";
+import { wallActive } from "../lib/finale-bento-timing";
+import { useFinaleAppearance } from "../studio/use-finale-appearance";
 
 export interface FinaleGlCard {
 	readonly key: string;
@@ -101,6 +102,7 @@ interface GlState {
 export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, tileRadius }: Readonly<FinaleCardSpaceGlProps>) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const stateRef = useRef<GlState | null>(null);
+	const appearance = useFinaleAppearance();
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -122,8 +124,9 @@ export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, t
 		camera.lookAt(0, 0, 0);
 		const geometry = new THREE.PlaneGeometry(1, 1, 48, 32);
 		const shadowGeometry = new THREE.PlaneGeometry(1, 1);
-		const tileColor = rgbUnit(FINALE_COLORS.tile);
-		const fogColor = rgbUnit(FINALE_COLORS.slide);
+		const palette = FINALE_PALETTES[appearance];
+		const tileColor = rgbUnit(palette.tile);
+		const fogColor = rgbUnit(palette.slide);
 		const textures = new Map<string, { texture: THREE.CanvasTexture; aspect: number }>();
 		const pending: GlState["pending"] = new Map();
 		const lateResolvers = latePrintResolvers(cards);
@@ -133,7 +136,7 @@ export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, t
 		const sheets = cards.map((card, index) => {
 			let entry = textures.get(card.printKey);
 			if (!entry) {
-				const source = card.print ?? fallbackPrint(card.input.rect.width, card.input.rect.height, 8);
+				const source = card.print ?? fallbackPrint(card.input.rect.width, card.input.rect.height, 8, palette.card, palette.cardEdge);
 				entry = { texture: textureFrom(source), aspect: source.width / source.height };
 				textures.set(card.printKey, entry);
 				const resolve = card.print ? undefined : lateResolvers.get(card.printKey);
@@ -171,7 +174,7 @@ export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, t
 		});
 
 		const target = new THREE.WebGLRenderTarget(Math.round(viewport.width * ratio), Math.round(viewport.height * ratio), { samples: 4 });
-		const postMaterial = createLensMaterial({ scene: target.texture, aspect: viewport.width / viewport.height, background: fogColor });
+		const postMaterial = createLensMaterial({ scene: target.texture, aspect: viewport.width / viewport.height, resolution: new THREE.Vector2(viewport.width, viewport.height), appearance, background: fogColor });
 		const postGeometry = new THREE.PlaneGeometry(2, 2);
 		const postScene = new THREE.Scene();
 		postScene.add(new THREE.Mesh(postGeometry, postMaterial));
@@ -222,7 +225,7 @@ export function FinaleCardSpaceGl({ cards, facePrint, clip, subject, viewport, t
 			target.dispose();
 			renderer.dispose();
 		};
-	}, [cards, clip, facePrint, tileRadius, viewport]);
+	}, [appearance, cards, clip, facePrint, tileRadius, viewport]);
 
 	useFinaleFrame((time) => {
 		const state = stateRef.current;

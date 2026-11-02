@@ -3,6 +3,7 @@
 import Image from "next/image";
 import TaskIcon from "@atlaskit/icon/core/task";
 
+import { FINALE_COLORS } from "@/components/projects/jira-team-eu26-end/finale/data/finale-palette";
 import { BentoFade, BentoLabel } from "./finale-bento-parts";
 
 const ASSIGNEE = "/avatar-human/robi-lopez.png";
@@ -21,7 +22,7 @@ const FRAME = "absolute inset-y-0 left-1/2 w-[586.667px] -translate-x-1/2";
  * Figma frame with no fill casts its shadow from its stroke alone, so this is
  * a `drop-shadow` filter, not a box shadow.
  */
-const COLUMN = "absolute top-[117px] bottom-[-62px] w-[440px] rounded-[28px] border-[1.5px] border-[#DDDEE1] drop-shadow-[0_7.304px_43.826px_rgba(0,0,0,0.05)]";
+const COLUMN = "absolute top-[117px] bottom-[-62px] w-[440px] rounded-[28px] border-[1.5px] border-[color:var(--finale-line)] drop-shadow-[0_7.304px_43.826px_rgba(0,0,0,0.05)]";
 /**
  * The drop target's 2px brand stroke, fading out toward its top right: the
  * Figma's linear stroke (#3941FE solid to 33%, clear at 100%) mapped onto the
@@ -30,7 +31,7 @@ const COLUMN = "absolute top-[117px] bottom-[-62px] w-[440px] rounded-[28px] bor
  */
 const TARGET_STROKE = {
 	borderColor: "transparent",
-	backgroundImage: "linear-gradient(#FFFFFF, #FFFFFF), linear-gradient(136.876deg, #3941FE 28.738%, rgba(57, 65, 254, 0) 61.756%)",
+	backgroundImage: "linear-gradient(var(--finale-panel), var(--finale-panel)), linear-gradient(136.876deg, #3941FE 28.738%, rgba(57, 65, 254, 0) 61.756%)",
 	backgroundOrigin: "border-box",
 	backgroundClip: "padding-box, border-box",
 } as const;
@@ -48,11 +49,11 @@ function SessionSlot({ summary, target = false, className }: Readonly<SessionSlo
 		<div className={`absolute left-[82px] h-[233px] w-[420px] rounded-[16px] ${className}`}>
 			<div
 				className="absolute top-0 left-[calc(50%-0.27px)] flex w-[423.47px] -translate-x-1/2 flex-col gap-[6.669px] rounded-[20px] p-[6.669px]"
-				style={{ background: target ? "rgba(5, 21, 36, 0.06)" : "rgba(23, 23, 23, 0.03)" }}
+				style={{ background: target ? FINALE_COLORS.rowTarget : FINALE_COLORS.row }}
 			>
 				<div className="relative isolate flex flex-col rounded-[16px] px-[20.006px] pt-[20.006px] pb-[13.338px] shadow-[0_0_1.667px_rgba(9,30,66,0.31),0_1.667px_1.667px_rgba(9,30,66,0.25)]">
-					<div className={`absolute inset-0 z-[1] rounded-[16px] bg-[#FFFFFF] ${target ? "border-2" : ""}`} style={target ? TARGET_STROKE : undefined} />
-					<p className="relative z-[2] h-[66.688px] w-[370.119px] text-[#292A2E]" style={BODY}>{summary}</p>
+					<div className={`absolute inset-0 z-[1] rounded-[16px] bg-[color:var(--finale-panel)] ${target ? "border-2" : ""}`} style={target ? TARGET_STROKE : undefined} />
+					<p className="relative z-[2] h-[66.688px] w-[370.119px] text-[color:var(--finale-text)]" style={BODY}>{summary}</p>
 					<div className="relative z-[2] mt-[13.338px] flex h-[46.682px] items-center gap-[6.669px]">
 						<div className="flex flex-1 items-center gap-[6.669px]">
 							<span className="flex h-[33.344px] w-[26.675px] items-center justify-center">
@@ -60,12 +61,12 @@ function SessionSlot({ summary, target = false, className }: Readonly<SessionSlo
 									<TaskIcon label="" color="currentColor" />
 								</span>
 							</span>
-							<span className="text-[20px] leading-[27px] font-semibold text-[#505258]">TEU-112</span>
+							<span className="text-[20px] leading-[27px] font-semibold text-[color:var(--finale-text-subtle)]">TEU-112</span>
 						</div>
 						<Image src={ASSIGNEE} alt="" width={40} height={40} className="size-[40.013px] rounded-full object-cover" />
 					</div>
 				</div>
-				<div className="flex h-[53.351px] items-center justify-center rounded-[10px] text-[#6B6E76]" style={BODY}>
+				<div className="flex h-[53.351px] items-center justify-center rounded-[10px] text-[color:var(--finale-text-subtlest)]" style={BODY}>
 					Link agent session
 				</div>
 			</div>
@@ -80,7 +81,7 @@ function SessionChip() {
 			<div className="absolute top-[94px] left-[20px] flex h-[98.526px] w-[272.942px] items-center justify-center">
 				<div
 					className="flex h-[80.026px] w-[268.013px] rotate-4 items-center justify-center gap-[12px] overflow-hidden rounded-[16px] px-[20.006px] py-[13.338px] shadow-[0_0_1.667px_rgba(30,31,33,0.31),0_13.338px_20.006px_rgba(30,31,33,0.15)]"
-					style={{ backgroundImage: "linear-gradient(270deg, rgba(57, 65, 255, 0.128) 0%, rgba(57, 65, 255, 0) 28.065%), linear-gradient(90deg, #FFFFFF, #FFFFFF)" }}
+					style={{ backgroundImage: "linear-gradient(270deg, rgba(57, 65, 255, 0.128) 0%, rgba(57, 65, 255, 0) 28.065%), linear-gradient(90deg, var(--finale-panel), var(--finale-panel))" }}
 				>
 					{/* Two 32px avatars, the agent's hex over the person it works for, 8px overlapping. */}
 					<div className="isolate flex shrink-0 items-center">
@@ -89,7 +90,7 @@ function SessionChip() {
 						</span>
 						<Image src={ASSIGNEE} alt="" width={32} height={32} className="relative z-[1] size-[32px] shrink-0 rounded-full object-cover" />
 					</div>
-					<p className="whitespace-nowrap text-[#000000]" style={BODY}>Jordan Okafor</p>
+					<p className="whitespace-nowrap text-[color:var(--finale-text-strong)]" style={BODY}>Jordan Okafor</p>
 				</div>
 			</div>
 			<Image src={`${ASSET}/agent-sessions-grab.svg`} alt="" width={34} height={32} className="absolute top-[168.796px] left-[140.247px] h-[31.786px] w-[34.292px] max-w-none" />

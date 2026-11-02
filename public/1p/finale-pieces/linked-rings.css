@@ -1,0 +1,8 @@
+linked-rings { display: block; position: relative; flex: none; }
+linked-rings .linked-rings-stage {
+	position: relative; width: 120px; height: 120px; transform-origin: 0 0;
+}
+linked-rings .linked-rings-tile { display: block; transform-origin: 60px 60px; }
+linked-rings .linked-rings-rim { opacity: 0; }
+linked-rings[appearance="dark"] .linked-rings-rim { opacity: 1; }
+linked-rings .no-surface .linked-rings-surface { display: none; }

@@ -6,7 +6,7 @@ import { JIRA_TEAM_EU26_END_PRESENTERS } from "@/components/projects/jira-team-e
 
 import { CUE } from "../data/finale-cues";
 import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
-import { FINALE_STORIES } from "../data/finale-stories";
+import { FINALE_STORIES, type FinaleChapterId, type FinaleStory } from "../data/finale-stories";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import { FINALE_INK, applyFinaleBuild, buildAfter, finaleBuildPaint } from "../lib/finale-build-style";
 import { EASE, progress } from "../lib/finale-math";
@@ -23,8 +23,8 @@ import {
 	type WallSlot,
 	type WallStatId,
 } from "../lib/finale-wall-layout";
-import { FinaleBuildSpan, useFinaleBuild } from "./finale-build-text";
-import { FinaleDealt, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
+import { FinaleBuildSpan, FinaleBuildText, useFinaleBuild } from "./finale-build-text";
+import { FinaleDealt, FinaleTileLogos, FINALE_TILE_RADIUS_CSS } from "./finale-tile";
 import { FinaleTileFace } from "./finale-tile-face";
 import { WallLanyard } from "./finale-wall-lanyard";
 import { WallPieces } from "./finale-wall-pieces";
@@ -41,14 +41,16 @@ import { FinaleTitleLockup } from "./finale-title-lockup";
 
 const PRESENTERS = Object.values(JIRA_TEAM_EU26_END_PRESENTERS);
 const SANS = { fontFamily: "var(--font-sans)", letterSpacing: "-0.02em" } as const;
-const SUBTLE = "#6B6E76";
+const SUBTLE = FINALE_COLORS.textSubtlest;
 const LOZENGE = "rounded-[6px] px-3 py-1.5 text-[24px] leading-none font-bold tracking-normal uppercase";
-/** ADS's status lozenges (a fixed brand surface, like the slide). */
+/** ADS's status lozenges, in the finale's appearance. */
 const STATUS = {
-	todo: { background: "#DDDEE1", color: "#292A2E" },
-	progress: { background: "#E9F2FE", color: "#1558BC" },
-	done: { background: "#DCFFF1", color: "#216E4E" },
+	todo: { background: FINALE_COLORS.todo, color: FINALE_COLORS.todoText },
+	progress: { background: FINALE_COLORS.progress, color: FINALE_COLORS.progressText },
+	done: { background: FINALE_COLORS.done, color: FINALE_COLORS.doneText },
 } as const;
+/** Each chapter's tint: the 200 steps of its poster's colour in the Team ’26 palette. */
+const CHAPTER_TINT: Readonly<Record<FinaleChapterId, string>> = { Context: FINALE_COLORS.chapterContext, Collaboration: FINALE_COLORS.chapterCollaboration, Confidence: FINALE_COLORS.chapterConfidence };
 /** A poster's word picks up its glide over this long once it has built. */
 const POSTER_RAMP_S = 1.2;
 
@@ -68,7 +70,7 @@ function StageBox({ slot, geometry, children }: Readonly<StageBoxProps>) {
 		transformOrigin: "0 0",
 	};
 	return (
-		<div className="absolute top-0 left-0" style={style}>
+		<div className="absolute top-0 left-0 [&_[data-finale-bento-label]]:hidden" style={style}>
 			{children(size)}
 		</div>
 	);
@@ -143,10 +145,24 @@ function Poster({ word, fill, ink, width, height, revealStart }: Readonly<Poster
 	);
 }
 
+/** A featured story's benefit line, set large on its chapter's tint, its products underneath. */
+function Benefit({ story, width, height, revealStart }: Readonly<{ story: FinaleStory; width: number; height: number; revealStart: number | null }>) {
+	const fontSize = Math.min(80, Math.max(52, height * 0.14), width * 0.13);
+	return (
+		<div className="absolute inset-0 flex flex-col justify-between overflow-hidden" style={{ ...SANS, background: CHAPTER_TINT[story.chapter], borderRadius: FINALE_TILE_RADIUS_CSS, padding: 40, color: FINALE_INK }}>
+			<FinaleBuildText text={story.title} start={revealStart} tracking="-0.03em" style={{ fontSize, lineHeight: 1.04, fontWeight: 500, textWrap: "balance" }} />
+			<div className="flex items-center justify-between">
+				<FinaleTileLogos sources={story.apps} revealStart={revealStart} className="origin-left scale-150" />
+				<FinaleBuildSpan text={story.chapter} start={buildAfter(revealStart, 0.45)} duration={CUE.reveal * 0.6} className="inline-block text-[28px] leading-none" />
+			</div>
+		</div>
+	);
+}
+
 /** The keynote in numbers: a lozenge as Jira shows status, one figure, one line. */
 const STATS: Readonly<Record<WallStatId, { readonly lozenge: string; readonly tone: { readonly background: string; readonly color: string }; readonly figure: number; readonly label: string }>> = {
-	presenters: { lozenge: "On stage", tone: { background: "#E9F2FE", color: "#1558BC" }, figure: PRESENTERS.length, label: "presenters, one board" },
-	chapters: { lozenge: "In progress", tone: { background: "#F8EEFE", color: "#803FA5" }, figure: 3, label: "chapters: Context, Collaboration, Confidence" },
+	presenters: { lozenge: "On stage", tone: STATUS.progress, figure: PRESENTERS.length, label: "presenters, one board" },
+	chapters: { lozenge: "In progress", tone: { background: FINALE_COLORS.discovery, color: FINALE_COLORS.discoveryText }, figure: 3, label: "chapters: Context, Collaboration, Confidence" },
 };
 
 /**
@@ -282,7 +298,6 @@ interface WallTileContentProps {
 export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot, geometry, cardPrint, revealStart }: Readonly<WallTileContentProps>) {
 	const content: WallContent = slot.content;
 	if (content.kind === "print") return <WallPrints slot={slot} geometry={geometry} codes={content.codes} cardPrint={cardPrint} revealStart={revealStart} />;
-	// Drawn at the slot's own pixels, not the stage box's scale, so the canvas stays sharp. It never lands, so never builds.
 	if (content.kind === "lanyard") return <WallLanyard slot={slot} geometry={geometry} order={content.order} />;
 	return (
 		<StageBox slot={slot} geometry={geometry}>
@@ -290,6 +305,8 @@ export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot,
 				switch (content.kind) {
 					case "story":
 						return <FinaleTileFace story={content.story} slot={{ rect: { x: 0, y: 0, ...size }, short: slot.rect.height < slot.rect.width }} scale={1} revealStart={revealStart} />;
+					case "benefit":
+						return <Benefit story={content.story} {...size} revealStart={revealStart} />;
 					case "poster":
 						return <Poster word={content.word} fill={FINALE_BRAND[content.fill]} ink={FINALE_BRAND[content.ink]} {...size} revealStart={revealStart} />;
 					case "stat":
@@ -297,7 +314,7 @@ export const FinaleWallTileContent = memo(function FinaleWallTileContent({ slot,
 					case "strip":
 						return <Flow revealStart={revealStart} />;
 					case "piece":
-						return <WallPieces slot={slot} geometry={geometry} pieces={content.pieces} revealStart={revealStart} />;
+						return <WallPieces slot={slot} geometry={geometry} pieces={content.pieces} bare={content.bare} revealStart={revealStart} />;
 					case "title":
 						// "Team ’26" as a card, as the bento's title became one at the throw.
 						return (

@@ -6,9 +6,7 @@ import { useFinaleFrame } from "./use-finale-frame";
 import { FINALE_COLORS } from "../data/finale-palette";
 import { queryJiraTeamEu26DoneCards } from "../lib/capture-done-column";
 import { boardDoneCardsHidden, boardExitStyle } from "../lib/finale-board-exit";
-import { parseRgb } from "../lib/finale-math";
 
-const SLIDE_RGB = parseRgb(FINALE_COLORS.slide).join(", ");
 
 interface HiddenCard {
 	readonly element: HTMLElement;
@@ -50,7 +48,7 @@ export function useFinaleBoardExit(layerRef: RefObject<HTMLDivElement | null>): 
 	useFinaleFrame((time) => {
 		const layer = layerRef.current;
 		const style = boardExitStyle(time);
-		const background = `rgba(${SLIDE_RGB}, ${style.opacity.toFixed(4)})`;
+		const background = `color-mix(in srgb, ${FINALE_COLORS.slide} ${(style.opacity * 100).toFixed(2)}%, transparent)`;
 		const written = `${style.visibility}|${background}|${style.backdropFilter}`;
 		if (layer && writtenRef.current !== written) {
 			writtenRef.current = written;

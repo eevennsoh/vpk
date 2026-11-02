@@ -10,26 +10,25 @@ import { cn } from "@/lib/utils";
  * a mono label top left over a slice of the product, laid out at the 1920
  * stage and run off the tile's edge under a fade of the tile's own fill.
  * They are there in full from the moment their tiles land, so they never
- * build. Slides are a fixed brand surface, so the product UI is drawn in
- * ADS's light-mode values as literals, never theme tokens. That includes
- * white and black: VPK's `bg-white` and `text-black` follow the theme, so
- * write `bg-[#FFFFFF]` (`finale-bento-tile.behavior.test.js` holds this).
+ * build. The product UI is drawn in the finale's own palette
+ * (`data/finale-palette.ts`): ADS's light values in light, its dark set in
+ * dark, never VPK's `bg-white`/`text-black`, which follow other rules.
  */
 
-/** ADS `color.text.disabled` in light mode, as the Figma labels set it. */
-const LABEL_INK = "rgba(8, 15, 33, 0.29)";
+/** ADS `color.text.disabled`, as the Figma labels set it. */
+const LABEL_INK = FINALE_COLORS.textDisabled;
 
 /** The tile's label, top left. */
 export function BentoLabel({ text }: Readonly<{ text: string }>) {
 	return (
-		<p className="absolute top-[25px] left-[32px] font-mono text-[24px] leading-[normal] tracking-[-0.02em] whitespace-nowrap uppercase" style={{ color: LABEL_INK }}>
+		<p data-finale-bento-label className="absolute top-[25px] left-[32px] font-mono text-[24px] leading-[normal] tracking-[-0.02em] whitespace-nowrap uppercase" style={{ color: LABEL_INK }}>
 			{text}
 		</p>
 	);
 }
 
 /** A panel chart's title. */
-export const BENTO_PANEL_HEADING = "text-[15px] leading-[19.98px] font-bold whitespace-nowrap text-[#292A2E]";
+export const BENTO_PANEL_HEADING = "text-[15px] leading-[19.98px] font-bold whitespace-nowrap text-[color:var(--finale-text)]";
 
 /**
  * Figma's "❖ Panel": a white dashboard panel, far taller than its tile, run
@@ -37,13 +36,13 @@ export const BENTO_PANEL_HEADING = "text-[15px] leading-[19.98px] font-bold whit
  */
 export function BentoPanel({ className, children }: Readonly<{ className: string; children: ReactNode }>) {
 	return (
-		<div className={cn("absolute flex h-[1057.691px] w-[499.5px] flex-col rounded-[16px] border-[0.45px] border-[#DDDEE1] bg-[#FFFFFF] pt-[24px] pr-[29.97px] pl-[24px] drop-shadow-[0_4.5px_13.5px_rgba(0,0,0,0.05)]", className)}>
+		<div className={cn("absolute flex h-[1057.691px] w-[499.5px] flex-col rounded-[16px] border-[0.45px] border-[color:var(--finale-line)] bg-[color:var(--finale-panel)] pt-[24px] pr-[29.97px] pl-[24px] drop-shadow-[0_4.5px_13.5px_rgba(0,0,0,0.05)]", className)}>
 			<div className="flex flex-col overflow-hidden">{children}</div>
 		</div>
 	);
 }
 
-const TILE_CLEAR = `${FINALE_COLORS.tile}00`;
+const TILE_CLEAR = `color-mix(in srgb, ${FINALE_COLORS.tile} 0%, transparent)`;
 
 const FADE_TOWARD = { bottom: "to top", top: "to bottom", left: "to right" } as const;
 

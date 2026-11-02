@@ -1,8 +1,10 @@
 import type { CSSProperties } from "react";
 
+import { FINALE_COLORS } from "../data/finale-palette";
 import { clamp } from "./finale-math";
 
-export const FINALE_INK = "#101214";
+/** The keynote's type, in the finale's appearance. */
+export const FINALE_INK = FINALE_COLORS.ink;
 
 /**
  * How far the gradient's painting box reaches past the line boxes, above and

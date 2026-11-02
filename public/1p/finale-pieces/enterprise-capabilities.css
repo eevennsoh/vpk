@@ -1,0 +1,22 @@
+enterprise-capabilities { display: block; position: relative; flex: none; }
+enterprise-capabilities .enterprise-stage {
+	position: relative; width: 583px; height: 230px; transform-origin: 0 0;
+	overflow: hidden; border-radius: 20px; background: #f8f8f8;
+	font-family: "Atlassian Sans", sans-serif; font-weight: 400; color: #000;
+}
+enterprise-capabilities[appearance="dark"] .enterprise-stage { background: #242528; color: #cecfd2; }
+enterprise-capabilities .enterprise-stage.no-surface { background: transparent; }
+enterprise-capabilities .enterprise-number {
+	position: absolute; left: 64px; top: 69px; display: flex; height: 100px;
+	font-size: 96px; line-height: 100px; letter-spacing: -1.92px;
+}
+enterprise-capabilities .enterprise-digit { position: relative; display: block; height: 100px; overflow: hidden; }
+enterprise-capabilities .enterprise-final { visibility: hidden; }
+enterprise-capabilities .enterprise-reel { position: absolute; top: 0; left: 0; width: 100%; text-align: center; }
+enterprise-capabilities .enterprise-reel > span { display: block; height: 100px; }
+enterprise-capabilities .enterprise-plus { display: block; transform-origin: center; }
+enterprise-capabilities .enterprise-label {
+	position: absolute; left: 254px; top: 96px; width: 294px; height: 34px;
+	display: flex; flex-direction: column; justify-content: center;
+	font-size: 36px; line-height: normal; letter-spacing: -.72px;
+}

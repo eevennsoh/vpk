@@ -1,0 +1,35 @@
+agent-lanyard-sticker { display: block; position: relative; flex: none; }
+agent-lanyard-sticker .lanyard-stage {
+	--lanyard-surface: #fff; --lanyard-cover: #f1f2f4; --lanyard-text: #292a2e;
+	--lanyard-subtle: #505258; --lanyard-border: #dddee1; --lanyard-grid: #b7b9be;
+	box-sizing: border-box; width: 252px; height: 280px; display: flex; flex-direction: column;
+	border: 1px solid var(--lanyard-border); border-radius: 12px; background: var(--lanyard-surface);
+	transform-origin: 0 0; overflow: hidden; text-align: left; color: var(--lanyard-text);
+	font: 400 12px/16px "Atlassian Sans", sans-serif;
+}
+agent-lanyard-sticker[appearance="dark"] .lanyard-stage {
+	--lanyard-surface: #1f1f21; --lanyard-cover: #2b2c2f; --lanyard-text: #cecfd2;
+	--lanyard-subtle: #a9abaf; --lanyard-border: #3d3f43; --lanyard-grid: #7d818a;
+}
+agent-lanyard-sticker .lanyard-cover { position: relative; height: 108px; flex: none; overflow: hidden; background: var(--lanyard-cover); }
+agent-lanyard-sticker .lanyard-grid { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--lanyard-grid); }
+agent-lanyard-sticker .lanyard-cutout {
+	position: absolute; left: 50%; top: 7px; width: 40px; height: 6px; transform: translateX(-50%);
+	border-radius: 3.75px; background: var(--lanyard-surface);
+	box-shadow: inset 0 0 0 .5px var(--lanyard-border), inset 0 1px 1px rgb(30 31 33 / .16), inset 0 0 1px rgb(30 31 33 / .12);
+}
+agent-lanyard-sticker .lanyard-avatar { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); object-fit: contain; }
+agent-lanyard-sticker .lanyard-body { display: flex; flex-direction: column; flex: 1; gap: 12px; padding: 16px; min-height: 0; }
+agent-lanyard-sticker .lanyard-title { display: flex; align-items: center; gap: 6px; }
+agent-lanyard-sticker .lanyard-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 16px; line-height: 24px; font-weight: 500; }
+agent-lanyard-sticker .lanyard-verified { width: 12px; height: 12px; flex: none; }
+agent-lanyard-sticker .lanyard-publisher { margin: 0; font-weight: 500; color: var(--lanyard-subtle); }
+agent-lanyard-sticker .lanyard-description { margin: 0; min-height: 48px; color: var(--lanyard-subtle); }
+agent-lanyard-sticker .lanyard-actions { display: flex; align-items: center; gap: 6px; margin-top: auto; color: var(--lanyard-subtle); }
+agent-lanyard-sticker .lanyard-actions > span { box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 24px; min-width: 24px; border: 1px solid var(--lanyard-border); border-radius: 6px; }
+agent-lanyard-sticker .lanyard-actions [hidden], agent-lanyard-sticker .lanyard-verified[hidden] { display: none; }
+agent-lanyard-sticker .lanyard-chat img { width: 12px; height: 12px; }
+agent-lanyard-sticker[appearance="dark"] .lanyard-chat img { filter: invert(1); }
+agent-lanyard-sticker .lanyard-more { font-size: 20px; line-height: 1; font-weight: 600; padding-bottom: 8px; }
+agent-lanyard-sticker .lanyard-connect { padding: 0 12px; font-size: 14px; font-weight: 500; }
+agent-lanyard-sticker .no-surface { background: transparent; border-color: transparent; }

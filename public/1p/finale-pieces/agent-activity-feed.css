@@ -1,0 +1,49 @@
+agent-activity-feed { display: block; position: relative; flex: none; }
+agent-activity-feed .activity-stage {
+	--activity-ground: #f8f8f8;
+	--activity-panel: #fff;
+	--activity-ink: #292a2e;
+	--activity-border: #dddee1;
+	--activity-divider: #f0f1f2;
+	--activity-header-rule: rgba(11, 18, 40, .14);
+	position: relative; width: 804px; height: 469px; transform-origin: 0 0;
+	overflow: hidden; border-radius: 20px; background: var(--activity-ground);
+	font: 400 22px/34.207px "Atlassian Sans", sans-serif; letter-spacing: -.055px;
+	color: var(--activity-ink);
+}
+agent-activity-feed[appearance="dark"] .activity-stage {
+	--activity-ground: #242528; --activity-panel: #1f1f21; --activity-ink: #cecfd2;
+	--activity-border: #3d3f43; --activity-divider: #2b2c2f; --activity-header-rule: #3d3f43;
+}
+agent-activity-feed .activity-panel {
+	box-sizing: border-box; position: absolute; top: 61px; left: 112px; width: 581px;
+	border: 1px solid var(--activity-border); border-radius: 16px; overflow: hidden;
+	background: var(--activity-panel);
+}
+agent-activity-feed .activity-heading {
+	box-sizing: border-box; height: 82.098px; margin: 0; padding: 0 26.366px;
+	display: flex; align-items: center; border-bottom: 1.5px solid var(--activity-header-rule);
+	font: 500 23.945px/34.207px "Atlassian Sans", sans-serif; letter-spacing: -.055px;
+}
+agent-activity-feed .activity-list { position: relative; height: 410.49px; }
+agent-activity-feed .activity-layer { position: absolute; inset: 0; }
+agent-activity-feed .activity-row {
+	box-sizing: border-box; height: 82.098px; padding: 0 26.366px;
+	display: flex; align-items: center; gap: 16px;
+	border-bottom: 1.5px solid var(--activity-divider);
+}
+agent-activity-feed .activity-icon {
+	position: relative; display: flex; align-items: center; justify-content: center;
+	width: 34.207px; height: 34.207px; flex: none; transform-origin: center;
+}
+agent-activity-feed .activity-icon img { position: absolute; display: block; }
+agent-activity-feed .activity-agent { width: 34.207px; height: 36.388px; }
+agent-activity-feed .activity-chatgpt { width: 34.311px; height: 36.493px; }
+agent-activity-feed .activity-hex { width: 33.283px; height: 36.388px; }
+agent-activity-feed .activity-symbol { width: 25.655px; height: 25.655px; }
+agent-activity-feed .activity-rovo { width: 19.181px; height: 21.38px; }
+agent-activity-feed .activity-text { margin: 0; padding: 0; white-space: nowrap; font: inherit; }
+agent-activity-feed .activity-text strong { font-weight: 500; }
+agent-activity-feed .activity-text .activity-rovo-name { font-weight: 600; }
+agent-activity-feed .activity-stage.no-surface { background: transparent; }
+agent-activity-feed .no-surface .activity-panel { background: transparent; border-color: transparent; }

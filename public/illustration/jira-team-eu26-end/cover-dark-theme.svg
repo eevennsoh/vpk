@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+	<defs>
+		<filter id="neutral" color-interpolation-filters="sRGB" x="-10%" y="-20%" width="120%" height="140%">
+			<feColorMatrix in="SourceGraphic" type="saturate" values="0" result="gray"/>
+			<feBlend in="SourceGraphic" in2="gray" mode="difference" result="chroma"/>
+			<feColorMatrix in="chroma" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 4 4 0 0" result="color-mask"/>
+			<feComponentTransfer in="color-mask" result="color-mask">
+				<feFuncA type="discrete" tableValues="0 0 1 1"/>
+			</feComponentTransfer>
+			<feMorphology in="color-mask" operator="dilate" radius="3" result="color-mask"/>
+			<feMorphology in="color-mask" operator="erode" radius="3" result="color-mask"/>
+			<feComponentTransfer in="SourceGraphic" result="dark">
+				<feFuncR type="linear" slope="-0.7" intercept="0.82"/>
+				<feFuncG type="linear" slope="-0.7" intercept="0.82"/>
+				<feFuncB type="linear" slope="-0.7" intercept="0.82"/>
+			</feComponentTransfer>
+			<feComposite in="SourceGraphic" in2="color-mask" operator="in" result="colored"/>
+			<feComposite in="dark" in2="color-mask" operator="out" result="neutral"/>
+			<feComposite in="colored" in2="neutral" operator="arithmetic" k2="1" k3="1" result="combined"/>
+			<feComposite in="combined" in2="SourceAlpha" operator="in"/>
+		</filter>
+		<filter id="photos" color-interpolation-filters="sRGB" x="-10%" y="-20%" width="120%" height="140%">
+			<feColorMatrix in="SourceGraphic" type="saturate" values="0" result="gray"/>
+			<feBlend in="SourceGraphic" in2="gray" mode="difference" result="chroma"/>
+			<feColorMatrix in="chroma" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 4 4 0 0" result="color-mask"/>
+			<feComponentTransfer in="color-mask" result="color-mask">
+				<feFuncA type="discrete" tableValues="0 0 1 1"/>
+			</feComponentTransfer>
+			<feMorphology in="color-mask" operator="dilate" radius="12" result="color-mask"/>
+			<feMorphology in="color-mask" operator="erode" radius="12" result="color-mask"/>
+			<feComponentTransfer in="SourceGraphic" result="dark">
+				<feFuncR type="linear" slope="-0.7" intercept="0.82"/>
+				<feFuncG type="linear" slope="-0.7" intercept="0.82"/>
+				<feFuncB type="linear" slope="-0.7" intercept="0.82"/>
+			</feComponentTransfer>
+			<feComposite in="SourceGraphic" in2="color-mask" operator="in" result="colored"/>
+			<feComposite in="dark" in2="color-mask" operator="out" result="neutral"/>
+			<feComposite in="colored" in2="neutral" operator="arithmetic" k2="1" k3="1" result="combined"/>
+			<feComposite in="combined" in2="SourceAlpha" operator="in"/>
+		</filter>
+	</defs>
+</svg>

@@ -1,9 +1,11 @@
 import type { ThirdPartyLogoName } from "@/components/ui/logo-third-party";
 
+import { FINALE_COLORS } from "./finale-palette";
+
 /*
  * What the bento's product slices show, verbatim from the Founder Keynote
- * Figma "Bento" (node 10774:6028). Colours are ADS light-mode chart values:
- * the slide is a fixed brand surface.
+ * Figma "Bento" (node 10774:6028). Colours are ADS chart values; the empty
+ * track and "Other" follow the finale's appearance (`finale-palette.ts`).
  */
 
 /** One stacked segment, top to bottom; no height shares what the bar has left. */
@@ -17,7 +19,7 @@ export interface BentoBar {
 	readonly segments: readonly BentoBarSegment[];
 }
 
-const GRAY = "#E5E7EB";
+const GRAY = FINALE_COLORS.track;
 const BLUE = "#487CE1";
 const SKY = "#42B2D7";
 const LIME = "#82B536";
@@ -25,7 +27,7 @@ const PURPLE = "#BF63F3";
 const AMBER = "#FCA700";
 const ORANGE = "#E88F36";
 const COBALT = "#1558BC";
-const SILVER = "#DDDEE1";
+const SILVER = FINALE_COLORS.silver;
 
 /** Agent Effectiveness: "Agent work by session", Jul–Oct 2026. */
 export const BENTO_SESSION_BARS: readonly BentoBar[] = [

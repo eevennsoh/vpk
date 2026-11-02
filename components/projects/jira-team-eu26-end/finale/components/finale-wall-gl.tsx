@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 import { WALL_CUE } from "../data/finale-cues";
-import { FINALE_BRAND, FINALE_COLORS } from "../data/finale-palette";
+import { FINALE_BRAND, FINALE_PALETTES, finaleColor, type FinaleAppearance } from "../data/finale-palette";
 import { FINALE_TITLE, FINALE_TITLE_BLOCK } from "../data/finale-title";
 import { useFinaleFrame } from "../hooks/use-finale-frame";
 import {
@@ -37,6 +37,7 @@ import { finaleFieldPixelRatio } from "../lib/finale-stage-fit";
 import { paintWallPrint, type FinaleWall, type WallPrintShapes } from "../lib/finale-wall-layout";
 import { wallActive, wallSheetsAt, type BentoDrop, type WallSheet } from "../lib/finale-wall-motion";
 import { wallDrawOrder, wallSheetLifted, type WallDrawOrder } from "../lib/finale-wall-order";
+import { useFinaleAppearance } from "../studio/use-finale-appearance";
 
 type PrintLookup = (key: string) => HTMLCanvasElement | undefined;
 
@@ -129,6 +130,8 @@ interface WallGlState {
 	readonly faces: Map<string, FacePrint>;
 	/** The title's ink on each face, drawn over its plate with the plate's pose. */
 	readonly inks: TitleFaces<SheetMesh>;
+	/** Resolves the sheets' palette colours (the scene is rebuilt when it changes). */
+	readonly appearance: FinaleAppearance;
 	readonly lens: {
 		readonly target: THREE.WebGLRenderTarget;
 		/** The same sheets in their own chroma and bulge (see `drawMask`). */
@@ -301,9 +304,9 @@ function paintTitleInk(fit: FinaleFit, ink: string): TitleInk | null {
 	return { texture: textureFrom(canvas), width: canvas.width / em, height: canvas.height / em };
 }
 
-function paintTitleFaces(fit: FinaleFit): TitleFaces<TitleInk> | null {
+function paintTitleFaces(fit: FinaleFit, appearance: FinaleAppearance): TitleFaces<TitleInk> | null {
 	const front = paintTitleInk(fit, FINALE_BRAND.white);
-	const back = paintTitleInk(fit, FINALE_INK);
+	const back = paintTitleInk(fit, finaleColor(FINALE_INK, appearance));
 	if (front && back) return { front, back };
 	front?.texture.dispose();
 	back?.texture.dispose();
@@ -318,13 +321,13 @@ function disposeTitle(title: TitleFaces<TitleInk> | null): void {
 /** The title's ink, made on first use; repainted once Atlassian Sans has loaded if it had not. */
 function titleInk(state: WallGlState, fit: FinaleFit): TitleFaces<TitleInk> | null {
 	if (state.title) return state.title;
-	state.title = paintTitleFaces(fit);
+	state.title = paintTitleFaces(fit, state.appearance);
 	const probe = `400 ${FINALE_TITLE.fontSize}px "Atlassian Sans"`;
 	if (state.title && typeof document.fonts?.check === "function" && !document.fonts.check(probe)) {
 		void document.fonts.load(probe).then(() => {
 			if (state.disposed || !state.title) return;
 			disposeTitle(state.title);
-			state.title = paintTitleFaces(fit);
+			state.title = paintTitleFaces(fit, state.appearance);
 			state.time = Number.NaN;
 		});
 	}
@@ -449,8 +452,8 @@ function drawSheet(state: WallGlState, held: PooledSheet, sheet: WallSheet, inpu
 	if (held.color !== sheet.color || held.back !== sheet.back) {
 		held.color = sheet.color;
 		held.back = sheet.back;
-		rgbUnit(sheet.color, uniforms.uTileColor.value);
-		rgbUnit(sheet.back, uniforms.uBackColor.value);
+		rgbUnit(finaleColor(sheet.color, state.appearance), uniforms.uTileColor.value);
+		rgbUnit(finaleColor(sheet.back, state.appearance), uniforms.uBackColor.value);
 	}
 	uniforms.uRadius.value = sheet.radius;
 	uniforms.uFog.value = fogAtDepth(depth, viewport);
@@ -588,6 +591,7 @@ interface FinaleWallGlProps {
 export function FinaleWallGl({ wall, drops, viewport, fit, cardPrint, prints, facePrint }: Readonly<FinaleWallGlProps>) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const stateRef = useRef<WallGlState | null>(null);
+	const appearance = useFinaleAppearance();
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -611,12 +615,13 @@ export function FinaleWallGl({ wall, drops, viewport, fit, cardPrint, prints, fa
 		camera.updateMatrixWorld();
 		const sheetGeometry = new THREE.PlaneGeometry(1, 1, 48, 32);
 		const shadowGeometry = new THREE.PlaneGeometry(1, 1);
-		const fogColor = rgbUnit(FINALE_COLORS.slide);
+		const palette = FINALE_PALETTES[appearance];
+		const fogColor = rgbUnit(palette.slide);
 		const blankCanvas = document.createElement("canvas");
 		blankCanvas.width = 2;
 		blankCanvas.height = 2;
 		const blank = textureFrom(blankCanvas);
-		const sheetMaterial = () => createSheetMaterial({ texture: blank, radius: 0, tileColor: rgbUnit(FINALE_COLORS.tile), fogColor, viewport, pixelRatio: ratio });
+		const sheetMaterial = () => createSheetMaterial({ texture: blank, radius: 0, tileColor: rgbUnit(palette.tile), fogColor, viewport, pixelRatio: ratio });
 		const pool: PooledSheet[] = [];
 		const make = (): PooledSheet => {
 			const mesh = new THREE.Mesh(sheetGeometry, sheetMaterial());
@@ -643,7 +648,7 @@ export function FinaleWallGl({ wall, drops, viewport, fit, cardPrint, prints, fa
 		const target = new THREE.WebGLRenderTarget(buffer.x, buffer.y, { samples: 4 });
 		// Multisampled as the scene's target, so each sheet's mask has exactly its coverage.
 		const mask = new THREE.WebGLRenderTarget(buffer.x, buffer.y, { samples: 4 });
-		const lensMaterial = createLensMaterial({ scene: target.texture, mask: mask.texture, aspect: viewport.width / viewport.height, background: fogColor, spots: LENS_SPOTS });
+		const lensMaterial = createLensMaterial({ scene: target.texture, mask: mask.texture, aspect: viewport.width / viewport.height, resolution: new THREE.Vector2(viewport.width, viewport.height), appearance, background: fogColor, spots: LENS_SPOTS });
 		lensMaterial.uniforms.uSmear.value = LENS_SMEAR;
 		lensMaterial.uniforms.uBulge.value = LENS_BULGE;
 		lensMaterial.uniforms.uSpotReach.value = LENS_REACH;
@@ -690,6 +695,7 @@ export function FinaleWallGl({ wall, drops, viewport, fit, cardPrint, prints, fa
 		mask.scissorTest = true;
 
 		const state: WallGlState = {
+			appearance,
 			renderer,
 			scene,
 			camera,
@@ -737,7 +743,7 @@ export function FinaleWallGl({ wall, drops, viewport, fit, cardPrint, prints, fa
 			mask.dispose();
 			renderer.dispose();
 		};
-	}, [viewport]);
+	}, [appearance, viewport]);
 
 	useFinaleFrame((time) => {
 		const state = stateRef.current;

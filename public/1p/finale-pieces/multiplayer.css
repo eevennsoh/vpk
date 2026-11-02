@@ -1,0 +1,40 @@
+multiplayer-collaboration { display: block; position: relative; flex: none; }
+multiplayer-collaboration .multiplayer-stage {
+	position: relative; width: 328.607px; height: 274px; transform-origin: 0 0;
+	overflow: hidden; border-radius: 8px; background: #f8f8f8;
+}
+multiplayer-collaboration .multiplayer-stage::after {
+	content: ""; position: absolute; inset: 0; border-radius: inherit;
+	box-shadow: inset 0 0 0 1px #0b120e24; pointer-events: none;
+}
+multiplayer-collaboration .multiplayer-art { position: absolute; inset: 26px 0 auto; }
+multiplayer-collaboration .multiplayer-art > div { position: absolute; }
+multiplayer-collaboration .multiplayer-construction { left: 36.1245px; top: -18.2034px; }
+multiplayer-collaboration .multiplayer-outline { left: 40.293px; top: -17.8997px; }
+multiplayer-collaboration .multiplayer-agent-trail { left: 143.446px; top: -18.1689px; }
+multiplayer-collaboration .multiplayer-human-ring { left: 165.0582px; top: 118.6549px; }
+multiplayer-collaboration .multiplayer-human-trail {
+	left: 264.46px; top: 176.335px; transform: rotate(-7.44deg); transform-origin: center;
+}
+multiplayer-collaboration .multiplayer-cursor { display: flex; align-items: flex-start; }
+multiplayer-collaboration .multiplayer-agent { left: 58.2037px; top: 45.6186px; }
+multiplayer-collaboration .multiplayer-human { left: 174.0339px; top: 150.9186px; align-items: flex-end; }
+multiplayer-collaboration .multiplayer-tag {
+	box-sizing: border-box; height: 25.92px; padding: 0 8.1px;
+	display: flex; align-items: center; gap: 4.86px; border: .405px solid #505258;
+	border-radius: 26px; background: #505258; color: #f0f1f2;
+	font: 300 11.34px/1 "Atlassian Mono", ui-monospace, monospace; white-space: nowrap;
+}
+multiplayer-collaboration .multiplayer-agent .multiplayer-tag { width: 66.6332px; }
+multiplayer-collaboration .multiplayer-human .multiplayer-tag {
+	width: 68.02px; border-color: #82b536; background: #82b536; color: #efffd6;
+}
+multiplayer-collaboration img { display: block; flex: none; }
+multiplayer-collaboration .multiplayer-agent .multiplayer-pointer { transform: rotate(180deg); }
+multiplayer-collaboration .multiplayer-human .multiplayer-pointer { margin-right: -1.0435px; }
+multiplayer-collaboration[appearance="dark"] .multiplayer-stage { background: #242528; }
+multiplayer-collaboration[appearance="dark"] .multiplayer-stage::after { box-shadow: inset 0 0 0 1px #ffffff24; }
+multiplayer-collaboration[appearance="dark"] :is(.multiplayer-outline, .multiplayer-human-ring) path { stroke: #cecfd2; }
+multiplayer-collaboration[appearance="dark"] .multiplayer-agent-trail { filter: brightness(0) invert(.8); }
+multiplayer-collaboration .multiplayer-stage.no-surface { background: transparent; }
+multiplayer-collaboration .multiplayer-stage.no-surface::after { display: none; }

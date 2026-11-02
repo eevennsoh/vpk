@@ -10,8 +10,9 @@ export function finaleFacePrintKey(order: number): string {
 	return `bento-${order}`;
 }
 
+/** Prints hold for one window size in one theme: either changing prints them again. */
 function layoutKey(fit: Pick<FinaleStageFit, "width" | "height">): string {
-	return `${fit.width}x${fit.height}`;
+	return `${fit.width}x${fit.height}:${document.documentElement.dataset.colorMode ?? "light"}`;
 }
 
 interface FacePrintRun {

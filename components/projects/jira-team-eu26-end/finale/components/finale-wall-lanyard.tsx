@@ -36,6 +36,7 @@ interface WallLanyardProps {
 	readonly geometry: WallGeometry;
 	/** Its place in the wall's run of lanyards, which deals it. */
 	readonly order: number;
+	readonly playback?: "finale" | "still";
 }
 
 /**
@@ -45,7 +46,7 @@ interface WallLanyardProps {
  * deterministic in its time, so it is drawn straight from the finale clock,
  * and only while it moves and its tile is on screen.
  */
-export function WallLanyard({ slot, geometry, order }: Readonly<WallLanyardProps>) {
+export function WallLanyard({ slot, geometry, order, playback = "finale" }: Readonly<WallLanyardProps>) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const rendererRef = useRef<LanyardRenderer | null>(null);
 	const timeRef = useRef<number | null>(null);
@@ -58,10 +59,12 @@ export function WallLanyard({ slot, geometry, order }: Readonly<WallLanyardProps
 		const canvas = canvasRef.current;
 		const renderer = rendererRef.current;
 		if (!canvas || !renderer) return;
-		const rect = slotOnScreen(slot, wallOffset(time, geometry), geometry);
-		if (rect.x > geometry.viewport.width || rect.x + rect.width < 0) return;
+		if (playback === "finale") {
+			const rect = slotOnScreen(slot, wallOffset(time, geometry), geometry);
+			if (rect.x > geometry.viewport.width || rect.x + rect.width < 0) return;
+		}
 		const painted = paintedRef.current;
-		const at = wallLanyardTime(time, dropTime, renderer.duration);
+		const at = playback === "still" ? renderer.duration : wallLanyardTime(time, dropTime, renderer.duration);
 		if (at === null) {
 			if (painted.shown) canvas.style.visibility = "hidden";
 			painted.shown = false;
@@ -99,7 +102,7 @@ export function WallLanyard({ slot, geometry, order }: Readonly<WallLanyardProps
 					rendererRef.current = created;
 					paintedRef.current = { time: Number.NaN, shown: false };
 					// The clock may be held, emitting no new reading.
-					if (timeRef.current !== null) paintRef.current(timeRef.current);
+					if (playback === "still" || timeRef.current !== null) paintRef.current(timeRef.current ?? 0);
 				});
 			})
 			// Without its artwork the tile stays a plain grey card, as a kit piece does without its kit.
@@ -109,7 +112,7 @@ export function WallLanyard({ slot, geometry, order }: Readonly<WallLanyardProps
 			rendererRef.current = null;
 			renderer?.dispose();
 		};
-	}, [config, width, height]);
+	}, [config, width, height, playback]);
 
 	useFinaleFrame((time) => {
 		timeRef.current = time;

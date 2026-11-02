@@ -54,7 +54,7 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing, pauseMegaB
 		let last = Number.NaN;
 		const tick = () => {
 			let time = reducedMotion ? FINALE_REST_TIME : clock.time();
-			if (pauseMegaBento && time > FINALE_REST_TIME) {
+			if ((process.env.NEXT_PUBLIC_DEMO_BUILD === "true" || pauseMegaBento) && time > FINALE_REST_TIME) {
 				time = FINALE_REST_TIME;
 				clock.hold(time);
 			}
@@ -73,7 +73,7 @@ export function FinaleOverlay({ scene, clock, reducedMotion, closing, pauseMegaB
 	useEffect(() => {
 		if (process.env.NODE_ENV === "production") return undefined;
 		const target = window as typeof window & { __jiraTeamEu26FinaleFrame?: (time: number) => void };
-		target.__jiraTeamEu26FinaleFrame = (time) => registry.emit(time);
+		target.__jiraTeamEu26FinaleFrame = (time) => registry.emit(process.env.NEXT_PUBLIC_DEMO_BUILD === "true" ? Math.min(time, FINALE_REST_TIME) : time);
 		return () => {
 			delete target.__jiraTeamEu26FinaleFrame;
 		};
