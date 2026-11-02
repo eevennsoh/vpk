@@ -174,28 +174,46 @@ Examples:
 /vpk-remote --model terra --effort xhigh <task>
 ```
 
-## Hard preflight (blocking)
+## Preflight the selected route
 
-Run before writing any brief; every check must pass or the task ends as a
-reported blocker.
+For ordinary tasks, check the selected worker CLI (`codex --version` or
+`"$HOME/.local/bin/claude" --version`) and run the maintained probe before
+creating a worktree or dispatching a worker:
 
 ```bash
-curl -fsS --max-time 5 http://localhost:29576/openai/v1/models >/dev/null
+node scripts/vpk-remote-preflight.js --app codex --model <resolved-gpt-id>
+node scripts/vpk-remote-preflight.js --app claude --model <resolved-claude-id>
 ```
 
-- Gateway health only. Proximity's model catalog is **stale** (it lists
-  models older than what the gateway actually serves — verified: the catalog
-  tops out at gpt-5.5 while `gpt-5.6-sol`, `gpt-5.6-terra`, and
-  `gpt-5.6-luna` work).
-  **Never grep the catalog for the target model**; a model rejection at
-  dispatch time is itself a blocker to report.
-- GPT lane: `codex --version` succeeds.
-- Claude lane: `"$HOME/.local/bin/claude" --version` succeeds and
-  `test -f "$HOME/.claude/settings-gw.json"` passes.
+Run only the command for the selected lane. The probe sends a small streamed
+tool-call request to the exact model and inference route. It checks the returned
+tool name, namespace, and arguments. It retries transient transport/408/429/5xx
+failures once; authentication, model, schema, and CloudID errors stop immediately.
+It never changes the model or falls back to a subscription login.
 
-On failure: report which check failed and stop. Never fall back to
-implementing in the planner session, never substitute the planner's own model,
-never retry through a shell alias.
+Do not use `/openai/v1/models` as a health gate. Discovery can return 502 while
+Claude inference works, and its catalog can omit working models. Report the
+selected inference route's actual failure and next action. A passed probe does
+not certify all installed plugins or a later worker run.
+
+For a conversation handoff, `ai-api` runs this probe itself for the selected app
+and model. Its dry run is offline and does not read the translator key. Install
+or update the maintained launcher and historical-tool guard with:
+
+```bash
+bash scripts/install-vpk-remote.sh
+```
+
+The installer backs up existing files, preserves model routes, and registers a
+LiteLLM callback. Restart only the local translator to load a newly installed
+callback; do not restart Proximity or unrelated services. Installation outside
+the checkout requires the harness's normal filesystem approval.
+
+Repairing this skill, launcher, or adapter is local tooling work. Diagnose and
+fix a broken gateway path directly; do not require that broken path to run its
+own repair worker. For other task failures, stop before dispatch, preserve any
+landed diff, and report the concrete blocker instead of implementing in the
+planner or silently switching models.
 
 ## Billing boundary
 
@@ -703,3 +721,23 @@ problem: check `git status` for a landed diff, then prefer the Claude lane
 (`--model opus` / `--model sonnet`, routed via `/vertex/claude`, 12/12 clean
 in the same window) rather than re-dispatching to GPT. The upstream fix
 belongs to whoever provisions the staging CloudID.
+
+## Regression checks
+
+```bash
+node --test scripts/vpk-ai-api.test.js scripts/vpk-remote-preflight.test.js scripts/vpk-remote-tools.test.js
+python3 scripts/test_vpk_remote_tools.py
+node scripts/validate-skills.js --target .agents/skills/vpk-remote
+```
+
+The maintained sources are `scripts/vpk-ai-api.sh`,
+`scripts/vpk-remote-preflight.js`, `scripts/vpk_remote_tools.py`, and
+`scripts/vpk_remote_callback.py`; change these before reinstalling, rather than
+patching site-packages or leaving the fix only in a machine-local script.
+
+A 400 `tools: Tool names must be unique` on a Codex-to-Claude fork can come from
+historical `additional_tools` bundles repeating the current tools. The callback
+keeps current runtime schemas, merges missing historical members, and gives the
+latest historical definition precedence when there is no current definition.
+Conflicting definitions inside the current list fail locally rather than being
+silently replaced. It does not rename tools or rewrite tool calls/results.

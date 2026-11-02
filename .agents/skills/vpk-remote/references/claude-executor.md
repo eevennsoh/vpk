@@ -10,14 +10,15 @@ clean stderr, launched from inside a Claude Code Bash call). Sonnet 5 at
 
 ```bash
 "$HOME/.local/bin/claude" --version
-test -f "$HOME/.claude/settings-gw.json"
-curl -fsS --max-time 5 http://localhost:29576/openai/v1/models >/dev/null
+node scripts/vpk-remote-preflight.js --app claude --model <resolved-model-id>
 ```
 
-Failure of any check is a blocker. `settings-gw.json` is user-maintained and
-carries the gateway env block (dummy `ANTHROPIC_API_KEY` that satisfies SDK
-validation, `ANTHROPIC_BASE_URL`, model defaults, OAuth-disable flags). This
-skill references it by path and never copies its contents anywhere.
+Use the exact requested model after resolving aliases from `defaults.env`.
+The helper validates streaming tool transport on the selected inference route;
+model discovery is not a health gate. On failure, preserve the actual code and
+message, stop before worker dispatch, and follow the root skill's repair rules.
+
+Also require `test -f "$HOME/.claude/settings-gw.json"`. Never print or copy its contents.
 
 ## Canonical run
 

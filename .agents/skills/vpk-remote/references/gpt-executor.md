@@ -11,16 +11,13 @@ re-run `codex exec --help` and update this doc if a newer CLI drifts.
 
 ```bash
 codex --version
-curl -fsS --max-time 5 http://localhost:29576/openai/v1/models >/dev/null
+node scripts/vpk-remote-preflight.js --app codex --model <resolved-model-id>
 ```
 
-The curl is a **health check only**. Proximity's catalog endpoint is stale —
-it lists models older than what the gateway serves (verified: catalog tops
-out at gpt-5.5 while `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna`
-answer). Do not
-grep the catalog for the target model; if the gateway rejects the model at
-dispatch time, that rejection is the blocker to report. Failure of either
-check is a blocker — never substitute the planner's provider or login.
+Use the exact requested model after resolving aliases from `defaults.env`.
+The helper validates streaming tool transport on the selected inference route;
+model discovery is not a health gate. On failure, preserve the actual code and
+message, stop before worker dispatch, and follow the root skill's repair rules.
 
 ## Canonical first run
 
