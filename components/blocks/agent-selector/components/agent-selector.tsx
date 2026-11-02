@@ -283,13 +283,13 @@ function AgentSelectorItem({
 	return (
 		<CommandItem
 			aria-checked={showCheckIcon ? isChecked : undefined}
-			aria-disabled={isDisabled || undefined}
 			aria-haspopup={isSubmenuTrigger ? "menu" : undefined}
 			className={cn(
 				AGENT_ROW_BASE_CLASS,
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
 			)}
 			data-checked={showCheckIcon && isChecked ? true : undefined}
+			disabled={isDisabled}
 			keywords={[agent.name, agent.byline]}
 			onBlur={() => setIsInteractionActive(false)}
 			onFocus={() => setIsInteractionActive(true)}

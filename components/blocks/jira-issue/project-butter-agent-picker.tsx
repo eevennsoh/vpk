@@ -20,6 +20,7 @@ export function ProjectButterAgentPicker({
 	const agents = useProjectButterInvocationAgents();
 	const actions = useProjectButterInvocationActions();
 	const pointer = useRef<{ x: number; y: number } | null>(null);
+	const popup = useRef<HTMLDivElement | null>(null);
 	const frame = useRef<number | null>(null);
 	const syncHighlight = useRef(false);
 	useEffect(
@@ -42,7 +43,10 @@ export function ProjectButterAgentPicker({
 				: root.querySelector<HTMLElement>('[data-slot="command-item"][aria-selected="true"]');
 			const shouldSyncHighlight = syncHighlight.current;
 			syncHighlight.current = false;
-			if (!option || !root.contains(option)) return;
+			if (!option || !root.contains(option)) {
+				if (!position) actions.preview(null, -1);
+				return;
+			}
 			const index = agents.findIndex((agent) => agent.id === option.dataset.value);
 			if (index < 0) return;
 			if (shouldSyncHighlight && position && option.getAttribute("aria-selected") !== "true") {
@@ -58,6 +62,7 @@ export function ProjectButterAgentPicker({
 
 	return (
 		<PopoverContent
+			ref={popup}
 			aria-label="Agents"
 			side="right"
 			align="start"
@@ -96,6 +101,10 @@ export function ProjectButterAgentPicker({
 				}}
 				onBrowseAgents={onBrowseAgents ? () => { actions.close(); onBrowseAgents(); } : undefined}
 				onCreateAgent={onCreateAgent ? () => { actions.close(); onCreateAgent(); } : undefined}
+				onQueryChange={() => {
+					pointer.current = null;
+					if (popup.current) schedulePreview(popup.current);
+				}}
 				pinningEnabled={false}
 				searchVariant="palette"
 				selectionMode="single"

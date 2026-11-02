@@ -138,8 +138,11 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const menu = page.getByRole("dialog", { name: "Agents", exact: true });
 		const search = menu.getByRole("textbox", { name: "Search agents" });
 		await expect(search).toBeFocused();
+		await menu.locator('[data-slot="command-item"][data-value="github-copilot"]').hover();
+		await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "github-copilot");
+		await search.fill("no matching agent");
+		await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "default");
 		await search.fill("Claude");
-		await menu.getByRole("option", { name: /^Claude/u }).hover();
 		await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
 		await page.keyboard.press("Escape");
 		await expect(add).toBeFocused();
