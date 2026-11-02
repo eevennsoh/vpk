@@ -460,7 +460,7 @@
  * block to enter. Hide that generated block in the unfocused work-item read
  * view, then restore it on focus so the description remains fully editable.
  */
-.context-description-tiptap-editor:not(:focus) > p:last-child:has(> br.ProseMirror-trailingBreak:only-child) {
+.context-description-tiptap-editor:not(:focus) > p:last-child:not(:first-child):has(> br.ProseMirror-trailingBreak:only-child) {
 	display: none;
 }
 

@@ -8,13 +8,13 @@ const EDITOR_HARNESS = `import React from "react";
 	import { ProjectButterDescription } from "@/components/blocks/jira-work-item/project-butter/project-butter-description";
 	import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 	const item = { code: "VITA-1", title: "Original summary", description: "Original description" };
-	export default function EditorProbe({ visible = true, description = false }) {
+	export default function EditorProbe({ visible = true, description = false, empty = false }) {
 		const content = useProjectButterContent("filled", item);
 		return <><button type="button">Outside editor</button>
 			<output aria-label="Saved summary" role="status">{content.summary}</output>
 			<output aria-label="Saved description" role="status">{content.description}</output>
 			<output aria-label="Description draft" role="status">{content.descriptionDraft}</output>
-			{visible ? description ? <ProjectButterDescription content={content} empty={false} /> : <ProjectButterSummary content={content} /> : null}
+			{visible ? description ? <ProjectButterDescription content={content} empty={empty} /> : <ProjectButterSummary content={content} /> : null}
 		</>;
 	}`;
 
@@ -109,6 +109,18 @@ test("direct description editing preserves drafts through unmount and commits on
 	assert.equal(view.tabOrder().includes("Work item description"), false);
 	await view.click(view.getByRole("button", { name: "Description" }));
 	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent, "Saved by collapse");
+});
+
+test("empty description renders the editor without an accordion and commits on blur", async () => {
+	const view = await renderComponent({ source: EDITOR_HARNESS, props: { description: true, empty: true } });
+	assert.equal(view.queryByRole("button", { name: "Description" }), null);
+	assert.equal(view.queryByRole("heading", { name: "Description" }), null);
+	const editor = view.getByRole("textbox", { name: "Work item description" });
+	await view.fill(editor, "Saved by blur");
+	assert.equal(view.getByRole("status", { name: "Saved description" }).textContent, "Original description");
+	await view.click(view.getByRole("button", { name: "Outside editor" }));
+	assert.equal(view.getByRole("status", { name: "Saved description" }).textContent, "Saved by blur");
+	assert.equal(view.tabOrder().includes("Work item description"), true);
 });
 
 test("side panel keyboard resize stays bounded and survives presentation switches", async () => {

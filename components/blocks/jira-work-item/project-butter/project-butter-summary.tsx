@@ -5,10 +5,10 @@ import { token } from "@/lib/tokens";
 
 export function ProjectButterSummary({ content }: Readonly<{ content: ProjectButterContent }>) {
 	return (
-		<h1 className="min-w-0 flex-1 text-text" style={{ font: token("font.heading.medium") }}><span
+		<h1 className="flex h-8 min-w-0 flex-1 items-center text-text" style={{ font: token("font.heading.medium") }}><span
 			aria-label="Work item summary"
 			aria-multiline="false"
-			className="block cursor-text rounded-sm outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring"
+			className="block h-8 min-w-0 w-full cursor-text truncate rounded-sm leading-8 outline-none"
 			contentEditable="plaintext-only"
 			onBlur={(event) => {
 				const summary = event.currentTarget.textContent?.replace(/\s+/g, " ").trim() || content.summary;

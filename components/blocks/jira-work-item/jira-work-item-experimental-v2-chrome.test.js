@@ -159,7 +159,7 @@ test("experimental v2 reveals description mode tabs across the description scope
 	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-(?:list|trigger)\]\]/u);
 	assert.match(
 		richTextEditorStyles,
-		/\.context-description-tiptap-editor:not\(:focus\) > p:last-child:has\(> br\.ProseMirror-trailingBreak:only-child\) \{\s*display: none;/u,
+		/\.context-description-tiptap-editor:not\(:focus\) > p:last-child:not\(:first-child\):has\(> br\.ProseMirror-trailingBreak:only-child\) \{\s*display: none;/u,
 	);
 });
 

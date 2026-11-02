@@ -22,7 +22,7 @@ export function ProjectButterBody({ active, sidePanel, content, details, empty, 
 			<ProjectButterDescription content={content} empty={empty} />
 			{details}
 			<ProjectButterRelatedWork content={content} empty={empty} />
-			<ProjectButterActivity content={content} onOpenSession={onOpenSession} sessions={sessions} sidePanel={sidePanel} />
+			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} sessions={sessions} sidePanel={sidePanel} />
 			<ProjectButterCommentBar active={active} content={content} empty={empty} sidePanel={sidePanel} />
 		</div>
 	);

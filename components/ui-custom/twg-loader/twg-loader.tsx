@@ -15,7 +15,7 @@
  * to avoid re-rendering React 60 times/sec.
  */
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -23,25 +23,30 @@ import { cn } from "@/lib/utils";
 import {
 	BURST_DURATION_S,
 	computeFrame,
-	computeStaticFrame,
+	cubicBezierEase,
 	DOT_ORDER,
 	DOT_RADIUS,
 	DRAW_PATTERNS,
-	type DotPosition,
-	type FrameState,
 	getDotColors,
 	getDotPositions,
 	getLineColor,
-	getRestPositions,
+	getRestPattern,
 	HIDDEN_DASH,
+	INITIAL_REST_ROTATION,
 	LINE_WIDTH,
 	type TWGLoaderSize,
 	MAX_LINE_COUNT,
+	nextForwardAngle,
 	NODE_STROKE_WIDTH,
-	REST_PATTERN,
+	planForwardTurn,
+	REST_RADIUS,
+	REST_ROTATION_PERIOD,
+	REST_ROTATION_PHASE,
+	ROTATION_AMOUNT_RAD,
 	type Segment,
 	SIZE_PX,
 	SPREAD_RADIUS,
+	turnRotationAt,
 	updateDots,
 	updateLines,
 	VIEWBOX_SIZE,
@@ -83,9 +88,9 @@ export interface TWGLoaderProps {
 	/** Additional classes applied to the wrapping element. */
 	className?: string;
 	/**
-	 * Draws the branded snake while true. When false, the rings ease into a
-	 * static graph in the subtle icon color and the loop stops. Loading again
-	 * eases them back into the snake.
+	 * Draws the branded snake while true. When false, the rings keep turning
+	 * clockwise and slow into a static square in the subtle icon color. Loading
+	 * again turns them onward into the snake. Neither change turns back.
 	 *
 	 * @default true
 	 */
@@ -96,26 +101,37 @@ export interface TWGLoaderProps {
 
 const REST_STROKE = "var(--color-icon-subtle)";
 const STROKE_TRANSITION = "stroke var(--duration-medium) var(--ease-in-out)";
+const easeInOut = cubicBezierEase(motionEase.inOut);
+/** Turns into and out of rest take one loop rotation step. */
+const TURN_DURATION_MS = motionDuration.slower * 1000;
+/** Shortest turn into or out of rest, so a state change always reads as one forward step. */
+const MIN_TURN_TRAVEL = ROTATION_AMOUNT_RAD / 2;
+/** Older samples than this mean the mark was standing still. */
+const VELOCITY_WINDOW_MS = 50;
+const NO_LINES: readonly Segment[] = [];
+const ROTOR_STYLE = { transformBox: "view-box", transformOrigin: "50% 50%" } as const satisfies CSSProperties;
 
-/** `motionEase.inOut` sampled at `t`. Position morphs use the same curve as the stroke. */
-function easeInOut(t: number): number {
-	const [x1, y1, x2, y2] = motionEase.inOut;
-	const cx = 3 * x1;
-	const bx = 3 * (x2 - x1) - cx;
-	const ax = 1 - cx - bx;
-	const cy = 3 * y1;
-	const by = 3 * (y2 - y1) - cy;
-	const ay = 1 - cy - by;
-	const sampleX = (u: number) => ((ax * u + bx) * u + cx) * u;
-	const sampleY = (u: number) => ((ay * u + by) * u + cy) * u;
-	const slopeX = (u: number) => (3 * ax * u + 2 * bx) * u + cx;
-	let u = t;
-	for (let i = 0; i < 6; i += 1) {
-		const dx = slopeX(u);
-		if (Math.abs(dx) < 1e-6) break;
-		u -= (sampleX(u) - t) / dx;
-	}
-	return sampleY(Math.min(1, Math.max(0, u)));
+/** Everything painted for one frame. `rotation` only ever grows, so the mark never turns back. */
+type Pose = {
+	rotation: number;
+	spread: number;
+	pattern: readonly Segment[];
+	drawFrac: number;
+	retractFrac: number;
+};
+
+type PaintedPose = Pose & { velocity: number; at: number };
+
+const lerp = (from: number, to: number, t: number) => from + (to - from) * t;
+
+/** Snake head and tail `t` of the way to fully retracted. */
+function retractLines(pose: Pose, t: number): Pick<Pose, "drawFrac" | "retractFrac"> {
+	if (pose.drawFrac < 0) return { drawFrac: -1, retractFrac: 0 };
+	return { drawFrac: pose.drawFrac, retractFrac: lerp(pose.retractFrac, pose.drawFrac, t) };
+}
+
+function restPose(rotation: number): Pose {
+	return { rotation, spread: REST_RADIUS, pattern: getRestPattern(rotation), drawFrac: 1, retractFrac: 0 };
 }
 
 export function TWGLoader({
@@ -136,87 +152,107 @@ export function TWGLoader({
 	const lineColor = getLineColor();
 
 	const svgRef = useRef<SVGSVGElement>(null);
-	const positionsRef = useRef<DotPosition[] | null>(null);
+	const rotorRef = useRef<SVGGElement>(null);
+	const poseRef = useRef<PaintedPose | null>(null);
 
 	useLayoutEffect(() => {
 		const svg = svgRef.current;
-		if (!svg) return;
+		const rotor = rotorRef.current;
+		if (!svg || !rotor) return;
 
 		let rafId = 0;
 		let cancelled = false;
 
-		const paint = (
-			positions: readonly DotPosition[],
-			pattern: readonly Segment[],
-			drawFrac: number,
-			retractFrac: number,
-		) => {
+		const paint = (pose: Pose, at = performance.now()) => {
+			const previous = poseRef.current;
+			const elapsedMs = previous ? at - previous.at : 0;
+			const velocity = !previous || elapsedMs >= VELOCITY_WINDOW_MS
+				? 0
+				: elapsedMs > 0
+					? ((pose.rotation - previous.rotation) / elapsedMs) * 1000
+					: previous.velocity;
+			rotor.style.transform = `rotate(${(pose.rotation * 180) / Math.PI}deg)`;
+			const positions = getDotPositions(pose.spread, 0);
 			updateDots(svg, positions);
-			updateLines(svg, positions, pattern, drawFrac, retractFrac);
-			positionsRef.current = positions.map((position) => ({ ...position }));
+			updateLines(svg, positions, pose.pattern, pose.drawFrac, pose.retractFrac);
+			poseRef.current = { ...pose, velocity, at };
 		};
 
-		const paintFrame = ({ positions, drawFrac, retractFrac, patternIndex }: FrameState) => {
-			paint(positions, DRAW_PATTERNS[patternIndex] ?? DRAW_PATTERNS[0], drawFrac, retractFrac);
-		};
-
-		const settle = (
-			to: readonly DotPosition[],
-			pattern: readonly Segment[],
-			drawFrac: number,
-			onDone?: () => void,
-		) => {
-			const from = positionsRef.current ?? getDotPositions(0, 0);
-			if (reducedMotion) {
-				paint(to, pattern, drawFrac, 0);
-				onDone?.();
-				return;
-			}
-			const started = performance.now();
-			const duration = motionDuration.medium * 1000;
-			const step = (now: number) => {
-				if (cancelled) return;
-				const raw = Math.min(1, (now - started) / duration);
-				const progress = easeInOut(raw);
-				paint(
-					from.map((position, index) => ({
-						x: position.x + ((to[index]?.x ?? position.x) - position.x) * progress,
-						y: position.y + ((to[index]?.y ?? position.y) - position.y) * progress,
-					})),
-					pattern,
-					drawFrac,
-					0,
-				);
-				if (raw < 1) rafId = requestAnimationFrame(step);
-				else onDone?.();
+		const loop = (baseRotation: number, initialElapsed: number) => {
+			const paintAt = (elapsed: number, at?: number) => {
+				const frame = computeFrame(elapsed);
+				paint({
+					rotation: baseRotation + frame.rotation,
+					spread: frame.spread,
+					pattern: DRAW_PATTERNS[frame.patternIndex] ?? DRAW_PATTERNS[0],
+					drawFrac: frame.drawFrac,
+					retractFrac: frame.retractFrac,
+				}, at);
 			};
-			rafId = requestAnimationFrame(step);
-		};
-
-		const loop = (initialElapsed: number) => {
-			if (reducedMotion) {
-				paintFrame(computeStaticFrame());
-				return;
-			}
 			let startTime = 0;
 			const tick = (timestamp: number) => {
 				if (cancelled) return;
 				if (!startTime) startTime = timestamp - initialElapsed * 1000;
-				paintFrame(computeFrame((timestamp - startTime) / 1000));
+				paintAt((timestamp - startTime) / 1000, timestamp);
 				rafId = requestAnimationFrame(tick);
 			};
+			if (!poseRef.current) paintAt(initialElapsed);
 			rafId = requestAnimationFrame(tick);
 		};
 
-		if (!active) {
-			if (positionsRef.current && !reducedMotion) settle(getRestPositions(), REST_PATTERN, 1);
-			else paint(getRestPositions(), REST_PATTERN, 1, 0);
-		} else if (positionsRef.current && !reducedMotion) {
-			settle(getDotPositions(SPREAD_RADIUS, 0), REST_PATTERN, 1, () => {
-				if (!cancelled) loop(BURST_DURATION_S);
+		/** Turn clockwise from the last painted pose onto the next angle in `period` steps from `phase`. */
+		const turn = (
+			from: PaintedPose,
+			period: number,
+			phase: number,
+			poseAt: (t: number, rotation: number, to: number) => Pose,
+			onDone?: (rotation: number) => void,
+		) => {
+			const startedAt = performance.now();
+			const plan = planForwardTurn({
+				from: from.rotation,
+				velocity: startedAt - from.at < VELOCITY_WINDOW_MS ? from.velocity : 0,
+				duration: TURN_DURATION_MS / 1000,
+				period,
+				phase,
+				minTravel: MIN_TURN_TRAVEL,
 			});
+			const step = (now: number) => {
+				if (cancelled) return;
+				const t = Math.min(1, Math.max(0, (now - startedAt) / TURN_DURATION_MS));
+				paint(poseAt(t, turnRotationAt(plan, t, easeInOut), plan.to), now);
+				if (t < 1) rafId = requestAnimationFrame(step);
+				else onDone?.(plan.to);
+			};
+			rafId = requestAnimationFrame(step);
+		};
+
+		const current = poseRef.current;
+		if (reducedMotion) {
+			const rotation = nextForwardAngle(current?.rotation ?? INITIAL_REST_ROTATION, 0, REST_ROTATION_PERIOD, REST_ROTATION_PHASE);
+			paint(active ? { ...restPose(rotation), pattern: NO_LINES, drawFrac: -1 } : restPose(rotation));
+		} else if (!current) {
+			if (active) loop(0, 0);
+			else paint(restPose(INITIAL_REST_ROTATION));
+		} else if (active) {
+			turn(
+				current,
+				ROTATION_AMOUNT_RAD,
+				0,
+				(t, rotation) => ({
+					rotation,
+					spread: lerp(current.spread, SPREAD_RADIUS, easeInOut(t)),
+					pattern: current.pattern,
+					...retractLines(current, easeInOut(t)),
+				}),
+				(rotation) => loop(rotation, BURST_DURATION_S),
+			);
 		} else {
-			loop(0);
+			turn(current, REST_ROTATION_PERIOD, REST_ROTATION_PHASE, (t, rotation, to) => {
+				const spread = lerp(current.spread, REST_RADIUS, easeInOut(t));
+				if (t < 0.5) return { rotation, spread, pattern: current.pattern, ...retractLines(current, easeInOut(t * 2)) };
+				return { rotation, spread, pattern: getRestPattern(to), drawFrac: easeInOut(t * 2 - 1), retractFrac: 0 };
+			});
 		}
 
 		return () => {
@@ -268,42 +304,44 @@ export function TWGLoader({
 					</mask>
 				</defs>
 
-				{/* Snake / connector lines. Masked so they stop at each ring. */}
-				<g mask={`url(#${holesMaskId})`}>
-					{Array.from({ length: MAX_LINE_COUNT }, (_, i) => (
-						<path
-							key={`line-${i}`}
-							id={`line-${i}`}
-							stroke={lineColor}
-							strokeWidth={LINE_WIDTH}
-							strokeLinecap="butt"
-							fill="none"
-							strokeDasharray={HIDDEN_DASH}
-							style={{
-								stroke: active ? lineColor : REST_STROKE,
-								transition: reducedMotion ? undefined : STROKE_TRANSITION,
-							}}
-						/>
-					))}
-				</g>
+				<g ref={rotorRef} data-twg-rotor="" style={ROTOR_STYLE}>
+					{/* Snake / connector lines. Masked so they stop at each ring. */}
+					<g mask={`url(#${holesMaskId})`}>
+						{Array.from({ length: MAX_LINE_COUNT }, (_, i) => (
+							<path
+								key={`line-${i}`}
+								id={`line-${i}`}
+								stroke={lineColor}
+								strokeWidth={LINE_WIDTH}
+								strokeLinecap="butt"
+								fill="none"
+								strokeDasharray={HIDDEN_DASH}
+								style={{
+									stroke: active ? lineColor : REST_STROKE,
+									transition: reducedMotion ? undefined : STROKE_TRANSITION,
+								}}
+							/>
+						))}
+					</g>
 
-				{/* Dot rings — stroke only, interiors stay transparent. */}
-				<g>
-					{DOT_ORDER.map((i) => (
-						<circle
-							key={`dot-${i}`}
-							data-type="dot"
-							data-idx={i}
-							r={DOT_RADIUS}
-							fill="none"
-							stroke={dotColors[i]}
-							strokeWidth={NODE_STROKE_WIDTH}
-							style={{
-								stroke: active ? dotColors[i] : REST_STROKE,
-								transition: reducedMotion ? undefined : STROKE_TRANSITION,
-							}}
-						/>
-					))}
+					{/* Dot rings — stroke only, interiors stay transparent. */}
+					<g>
+						{DOT_ORDER.map((i) => (
+							<circle
+								key={`dot-${i}`}
+								data-type="dot"
+								data-idx={i}
+								r={DOT_RADIUS}
+								fill="none"
+								stroke={dotColors[i]}
+								strokeWidth={NODE_STROKE_WIDTH}
+								style={{
+									stroke: active ? dotColors[i] : REST_STROKE,
+									transition: reducedMotion ? undefined : STROKE_TRANSITION,
+								}}
+							/>
+						))}
+					</g>
 				</g>
 			</svg>
 		</output>

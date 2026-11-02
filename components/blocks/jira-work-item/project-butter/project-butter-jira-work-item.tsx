@@ -130,8 +130,8 @@ export function ProjectButterJiraWorkItem({
 				content={content}
 				empty={sparse}
 				onClose={onClose}
-				onExpand={() => setPresentation("full-screen")}
 				onOpenSession={(session) => setActiveSessionId(session.id)}
+				onPresentationChange={setPresentation}
 				onStartAgent={startAgent}
 				onStartCoding={startCoding}
 				secondaryActions={
@@ -154,7 +154,7 @@ export function ProjectButterJiraWorkItem({
 				<div
 					className={cn(
 						"min-w-0 px-6 pb-8",
-						!sidePanel && "@[860px]/butter:overflow-y-auto @[860px]/butter:px-9",
+						!sidePanel && "@[860px]/butter:overflow-y-auto",
 					)}
 				>
 					<ProjectButterBody

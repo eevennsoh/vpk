@@ -113,6 +113,38 @@ export function easeInOutQuad(t: number): number {
 	return c < 0.5 ? 2 * c * c : 1 - Math.pow(-2 * c + 2, 2) / 2;
 }
 
+export type Ease = (t: number) => number;
+
+/** CSS `cubic-bezier()` easing as a function of time, for curves mirrored from motion tokens. */
+export function cubicBezierEase([x1, y1, x2, y2]: readonly [number, number, number, number]): Ease {
+	const cx = 3 * x1;
+	const bx = 3 * (x2 - x1) - cx;
+	const ax = 1 - cx - bx;
+	const cy = 3 * y1;
+	const by = 3 * (y2 - y1) - cy;
+	const ay = 1 - cy - by;
+	const sampleX = (u: number) => ((ax * u + bx) * u + cx) * u;
+	const sampleY = (u: number) => ((ay * u + by) * u + cy) * u;
+	const slopeX = (u: number) => (3 * ax * u + 2 * bx) * u + cx;
+	return (t) => {
+		const target = clamp01(t);
+		let u = target;
+		for (let i = 0; i < 8; i += 1) {
+			const dx = slopeX(u);
+			if (Math.abs(dx) < 1e-6) break;
+			u = clamp01(u - (sampleX(u) - target) / dx);
+		}
+		let lo = 0;
+		let hi = 1;
+		for (let i = 0; i < 20 && Math.abs(sampleX(u) - target) > 1e-5; i += 1) {
+			if (sampleX(u) < target) lo = u;
+			else hi = u;
+			u = (lo + hi) / 2;
+		}
+		return sampleY(u);
+	};
+}
+
 /* -------------------------------------------------------------------------- */
 /* Colors                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -141,7 +173,10 @@ export function getLineColor(): string {
 export type DotPosition = { x: number; y: number };
 
 export type FrameState = {
-	positions: readonly DotPosition[];
+	/** Distance of each ring from the center, in viewBox units. */
+	spread: number;
+	/** Clockwise rotation of the whole mark in radians, relative to the loop's start. */
+	rotation: number;
 	/** Snake head fraction in `[0, 1]`. Negative = no snake this frame. */
 	drawFrac: number;
 	/** Snake tail fraction in `[0, 1]`. */
@@ -205,40 +240,85 @@ export function computeFrame(elapsedSeconds: number): FrameState {
 		}
 	}
 
-	return {
-		positions: getDotPositions(spread, rotation),
-		drawFrac,
-		retractFrac,
-		patternIndex,
-	};
+	return { spread, rotation, drawFrac, retractFrac, patternIndex };
 }
 
 /**
- * Resting mark. Same four rings, parked in a square, with one diagonal from
- * the top-left ring (index 0) to the bottom-right ring (index 2).
+ * Resting mark. The same four rings, turned onto the diagonals so they park in
+ * a square, with one connector from the top-left ring to the bottom-right ring.
  */
 export const REST_SPREAD = 6.5;
+/** Ring distance from the center at rest: the square's half-diagonal. */
+export const REST_RADIUS: number = REST_SPREAD * Math.SQRT2;
+/** Rest angles repeat every quarter turn because the resting rings share one color. */
+export const REST_ROTATION_PERIOD: number = Math.PI / 2;
+export const REST_ROTATION_PHASE: number = Math.PI / 4;
+/** Rest angle for a loader that mounts idle, which draws the 0→2 connector top-left to bottom-right. */
+export const INITIAL_REST_ROTATION: number = -Math.PI / 4;
 
-export function getRestPositions(): DotPosition[] {
-	return [
-		{ x: VIEWBOX_CENTER - REST_SPREAD, y: VIEWBOX_CENTER - REST_SPREAD },
-		{ x: VIEWBOX_CENTER + REST_SPREAD, y: VIEWBOX_CENTER - REST_SPREAD },
-		{ x: VIEWBOX_CENTER + REST_SPREAD, y: VIEWBOX_CENTER + REST_SPREAD },
-		{ x: VIEWBOX_CENTER - REST_SPREAD, y: VIEWBOX_CENTER + REST_SPREAD },
-	];
+/**
+ * Connector drawn at rest for a given rest angle. Each quarter turn swaps which
+ * ring pair lies on the top-left to bottom-right diagonal.
+ */
+export function getRestPattern(rotation: number): readonly Segment[] {
+	const quarter = Math.round((rotation - REST_ROTATION_PHASE) / REST_ROTATION_PERIOD);
+	return Math.abs(quarter) % 2 === 0 ? [[1, 3]] : [[0, 2]];
 }
 
-/** The single connector drawn while the logo is resting. */
-export const REST_PATTERN: readonly Segment[] = [[0, 2]];
+/** Smallest angle at or beyond `from + minTravel` that is congruent to `phase` modulo `period`. */
+export function nextForwardAngle(from: number, minTravel: number, period: number, phase: number): number {
+	return phase + Math.ceil((from + minTravel - phase) / period - 1e-9) * period;
+}
 
-/** Static frame used for `prefers-reduced-motion: reduce`. */
-export function computeStaticFrame(): FrameState {
-	return {
-		positions: getDotPositions(SPREAD_RADIUS, 0),
-		drawFrac: -1,
-		retractFrac: 0,
-		patternIndex: 0,
-	};
+/**
+ * A clockwise-only turn between two rotations. It starts at `velocity` (rad/s)
+ * so an interrupted spin carries on, and eases to a stop at `to`.
+ */
+export type Turn = {
+	readonly from: number;
+	readonly to: number;
+	readonly velocity: number;
+	readonly duration: number;
+};
+
+/** Travel the inherited spin contributes while it decays; its rate falls as `(1 - t)³`. */
+function carriedTravel(turn: Turn): number {
+	return (turn.velocity * turn.duration) / 4;
+}
+
+/**
+ * Rotation at `t` (0–1 of the turn's duration). The inherited spin decays
+ * while the remaining travel eases in, and both terms only add, so the turn
+ * can never wind back.
+ */
+export function turnRotationAt(turn: Turn, t: number, ease: Ease): number {
+	const s = clamp01(t);
+	const carried = carriedTravel(turn);
+	return turn.from + carried * (1 - Math.pow(1 - s, 4)) + (turn.to - turn.from - carried) * ease(s);
+}
+
+/**
+ * Plan a turn that lands on the next forward angle congruent to `phase`
+ * modulo `period`, far enough on that a fast incoming spin can coast into it.
+ */
+export function planForwardTurn({
+	from,
+	velocity,
+	duration,
+	period,
+	phase,
+	minTravel,
+}: Readonly<{
+	from: number;
+	velocity: number;
+	duration: number;
+	period: number;
+	phase: number;
+	minTravel: number;
+}>): Turn {
+	const start = { from, velocity: Math.max(0, velocity), duration };
+	const carried = carriedTravel({ ...start, to: from });
+	return { ...start, to: nextForwardAngle(from, Math.max(minTravel, carried), period, phase) };
 }
 
 /* -------------------------------------------------------------------------- */
