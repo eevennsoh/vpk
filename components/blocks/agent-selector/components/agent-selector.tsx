@@ -197,6 +197,26 @@ function filterAgentsByQuery(
 		: [...agents];
 }
 
+function resolveAgentSections({ sections, agents, query, expanded }: Readonly<{
+	sections: AgentSelectorProps["sections"];
+	agents: readonly AgentSelectorAgent[];
+	query: string;
+	expanded: boolean;
+}>) {
+	if (!sections) return null;
+	const sectionAgents = sections.agentIds.flatMap((id) => agents.filter((agent) => agent.id === id));
+	const sectionIds = new Set(sections.agentIds);
+	const otherAgents = agents.filter((agent) => !sectionIds.has(agent.id));
+	const showMore = !query && !expanded && sections.initialLimit !== undefined && sectionAgents.length > sections.initialLimit;
+	return {
+		heading: sections.heading,
+		otherHeading: sections.otherHeading,
+		agents: showMore ? sectionAgents.slice(0, sections.initialLimit) : sectionAgents,
+		otherAgents,
+		showMore,
+	};
+}
+
 function AgentSelectorLogo({ agent, size }: Readonly<{ agent: AgentSelectorAgent; size: 20 | 24 }>): ReactElement {
 	if (agent.visual) {
 		return agent.visual;
@@ -623,17 +643,11 @@ export function AgentSelector({
 	const hasPinnedAgents = agents.some(
 		(agent) => pinnedAgentIdSet.has(agent.id) && !inProgressAgentIdSet.has(agent.id),
 	);
-	const sectionAgents = sections
-		? sections.agentIds.flatMap((id) => visibleAgents.filter((agent) => agent.id === id))
-		: [];
-	const sectionAgentIds = new Set(sections?.agentIds);
-	const otherSectionAgents = sections ? visibleAgents.filter((agent) => !sectionAgentIds.has(agent.id)) : [];
-	const showMore = Boolean(sections && !normalizedQuery && !sectionsExpanded && sections.initialLimit !== undefined && sectionAgents.length > sections.initialLimit);
-	const displayedSectionAgents = showMore ? sectionAgents.slice(0, sections?.initialLimit) : sectionAgents;
-	const selectableAgents = (sections ? [...displayedSectionAgents, ...otherSectionAgents] : [...inProgressAgents, ...pinnedAgents, ...moreAgents]).filter(
+	const sectionLayout = resolveAgentSections({ sections, agents: visibleAgents, query: normalizedQuery, expanded: sectionsExpanded });
+	const selectableAgents = (sectionLayout ? [...sectionLayout.agents, ...sectionLayout.otherAgents] : [...inProgressAgents, ...pinnedAgents, ...moreAgents]).filter(
 		(agent) => !disabledAgentIdSet.has(agent.id),
 	);
-	const activeVisibleAgentId = (showMore && activeAgentId === "__show_more_agents__") || selectableAgents.some((agent) => agent.id === activeAgentId)
+	const activeVisibleAgentId = (sectionLayout?.showMore && activeAgentId === "__show_more_agents__") || selectableAgents.some((agent) => agent.id === activeAgentId)
 		? activeAgentId
 		: selectableAgents[0]?.id ?? "";
 
@@ -725,11 +739,11 @@ export function AgentSelector({
 				ref={listOverflow.ref}
 			>
 				{visibleAgents.length === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
-				{sections ? (<>
-					<AgentSelectorGroup avatarSize={avatarSize} agents={displayedSectionAgents} disabledAgentIdSet={disabledAgentIdSet} heading={sections.heading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading>
-						{showMore ? <CommandItem className="h-8 px-2 text-xs text-text-subtlest hover:underline data-selected:bg-transparent data-selected:text-text-subtlest data-selected:underline" onSelect={() => setSectionsExpanded(true)} showCheckIcon={false} value="__show_more_agents__">Show more</CommandItem> : null}
+				{sectionLayout ? (<>
+					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.agents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.heading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading>
+						{sectionLayout.showMore ? <CommandItem className="h-8 px-2 text-xs text-text-subtlest hover:underline data-selected:bg-transparent data-selected:text-text-subtlest data-selected:underline" onSelect={() => setSectionsExpanded(true)} showCheckIcon={false} value="__show_more_agents__">Show more</CommandItem> : null}
 					</AgentSelectorGroup>
-					<AgentSelectorGroup avatarSize={avatarSize} agents={otherSectionAgents} disabledAgentIdSet={disabledAgentIdSet} heading={sections.otherHeading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
+					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.otherAgents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.otherHeading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
 				</>) : (<>
 				<AgentSelectorGroup
 					avatarSize={avatarSize}
