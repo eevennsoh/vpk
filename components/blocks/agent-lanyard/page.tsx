@@ -58,6 +58,7 @@ export default function AgentLanyardPage() {
 							<AgentLanyard
 								agent={agent} className="w-full"
 								perspectiveTilt={perspectiveTilt} animateGrid={animateGrid}
+								onSelect={() => setProfileAgent(agent)}
 								onAction={(selected) => setFeedback(`Selected: ${selected.action === "chat" ? "Chat with" : "Connect"} ${selected.name}`)}
 								starred={starredIds.includes(agent.id)}
 								menuActions={{ onViewProfile: setProfileAgent, onToggleStar: toggleStar, onCopyLink: copyLink, onDuplicate: duplicate }}

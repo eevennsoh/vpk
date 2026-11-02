@@ -410,6 +410,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-directory-demo-standard-v2": dynamic(
+		() =>
+			import("../demos/blocks/agent-directory-demo").then((mod) => ({
+				default: mod.AgentsDirectoryDemoStandardV2,
+			})),
+		{ ssr: false },
+	),
 	"agent-directory-demo-experimental": dynamic(
 		() =>
 			import("../demos/blocks/agent-directory-demo").then((mod) => ({
