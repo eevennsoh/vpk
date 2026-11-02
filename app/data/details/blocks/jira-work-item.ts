@@ -45,7 +45,7 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 		{
 			title: "Project butter",
 			id: "project-butter",
-			description: "Open Project butter in full screen, a modal, or a side panel. Toggle Empty before opening or through the global header Settings cog.",
+			description: "Open Project butter in full screen, a modal, or a side panel. Toggle Empty or Suggestion before opening, or through the global header Settings cog.",
 			demoSlug: "jira-work-item-demo-project-butter",
 		},
 	],
@@ -54,7 +54,7 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 			name: "projectButterPresentation",
 			type: "\"full-screen\" | \"modal\" | \"side-panel\"",
 			default: "\"full-screen\"",
-			description: "Initial Project butter presentation. The global Settings cog switches presentation and Empty without discarding drafts.",
+			description: "Initial Project butter presentation. The global Settings cog switches presentation, Empty, and Suggestion without discarding drafts.",
 		},
 		{
 			name: "initialIssueOpen",
@@ -72,6 +72,12 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 			type: "\"default\" | \"experimental\" | \"experimental-v2\" | \"experimental-v3\" | \"experimental-v4\" | \"experimental-v5\" | \"team-eu26\" | \"project-butter\"",
 			default: "\"default\"",
 			description: "Opt-in layout variation with independently owned component trees.",
+		},
+		{
+			name: "projectButterSuggestion",
+			type: "boolean",
+			default: "false",
+			description: "Opens the Project butter variant in the suggestion state. Teamwork Graph proposes values for empty details fields, which can be accepted one at a time or all at once.",
 		},
 		{
 			name: "initialExperimentalPreset",

@@ -27,7 +27,7 @@ function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: 
 	}
 }
 
-export function ProjectButterDetailsFields({ content, empty, expanded }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean }>) {
+export function ProjectButterDetailsFields({ content, empty, expanded, shimmerText }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
 	const id = useId();
 	const [dragging, setDragging] = useState(false);
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates, scrollBehavior: "auto" }));
@@ -45,7 +45,7 @@ export function ProjectButterDetailsFields({ content, empty, expanded }: Readonl
 						{visible.map((field, index) => {
 							const filled = isProjectButterDetailFieldFilled(field, content);
 							const required = PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS.includes(field);
-							return <DetailsFieldRow filled={filled} first={index === 0} id={field} key={field} last={index === visible.length - 1} onClear={filled && !required && field !== "costPerReach" ? () => clearProjectButterDetailField(field, content) : undefined} onHide={required ? undefined : () => content.setDetailFields((current) => ({ ...current, hidden: [...current.hidden, field] }))} onMove={(direction) => {
+							return <DetailsFieldRow filled={filled} first={index === 0} id={field} key={field} last={index === visible.length - 1} onClear={filled && !required && field !== "costPerReach" ? () => clearProjectButterDetailField(field, content) : undefined} onHide={required ? undefined : () => content.setDetailFields((current) => ({ ...current, hidden: [...current.hidden, field] }))} shimmerText={shimmerText?.[field]} onMove={(direction) => {
 								const target = visible[index + direction];
 								if (target) content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, field, target) }));
 							}}><ProjectButterDetailFieldValue content={content} id={field} /></DetailsFieldRow>;

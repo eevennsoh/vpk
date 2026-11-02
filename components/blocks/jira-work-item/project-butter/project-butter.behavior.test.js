@@ -19,6 +19,7 @@ test("one catalog demo opens each presentation directly and keeps its Empty sett
 		},
 	});
 	assert.equal(view.queryByRole("button", { name: "Open Project butter" }) === null, true);
+	assert.equal(view.getByRole("switch", { name: "Suggestion" }).getAttribute("aria-checked"), "false");
 	for (const empty of [false, true]) {
 		if (empty) await view.click(view.getByRole("switch", { name: "Empty" }));
 		assert.equal(view.queryByRole("dialog"), null, "the Empty toggle must not launch a work item");
@@ -599,6 +600,32 @@ test("timeline hover previews and continuous pointer seeking follow the click po
 	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 65) < 0.1, true, "short feeds must retain continuous seeking");
 });
 
+
+test("suggestion state proposes empty details fields and accepts or dismisses one at a time", async () => {
+	const view = await renderWorkItem({ initialSuggestion: true });
+	assert.equal(document.querySelector("[data-project-butter-state]")?.getAttribute("data-project-butter-state"), "suggestion");
+	assert.equal(document.querySelector("[data-project-butter-suggestion-panel]")?.getAttribute("data-suggestion-count"), "8");
+	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "false");
+	await view.click(view.getByRole("button", { name: "Accept Due Date suggestion" }));
+	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "true");
+	assert.equal(document.querySelector("[data-project-butter-suggestion-panel]")?.getAttribute("data-suggestion-count"), "7");
+	assert.equal(document.querySelector('[data-field-id="parent"]')?.getAttribute("data-field-filled"), "false");
+	await view.click(view.getByRole("button", { name: "Dismiss Reporter suggestion" }));
+	assert.equal(document.querySelector("[data-project-butter-suggestion-panel]")?.getAttribute("data-suggestion-count"), "6");
+	assert.equal(document.querySelector('[data-field-id="reporter"]')?.getAttribute("data-field-filled"), "false");
+});
+
+test("settings can switch Project butter into the suggestion state", async () => {
+	const view = await renderWorkItem();
+	await view.click(view.getByRole("button", { name: "Settings" }));
+	assert.equal(view.getByRole("switch", { name: "Suggestion" }).getAttribute("aria-checked"), "false");
+	await view.click(view.getByRole("switch", { name: "Suggestion" }));
+	assert.equal(view.getByRole("switch", { name: "Empty" }).getAttribute("aria-checked"), "false");
+	await view.click(view.getByRole("button", { name: "View prototype" }));
+	assert.equal(document.querySelector("[data-project-butter-state]")?.getAttribute("data-project-butter-state"), "suggestion");
+	if (view.queryByRole("button", { name: "Accept Parent suggestion" }) === null) await view.click(view.getByRole("button", { name: /Suggestions/u }));
+	assert.equal(view.queryByRole("button", { name: "Accept Parent suggestion" }) !== null, true);
+});
 
 test("Butter timestamps disclose an exact date, time, and timezone on focus and retain format toggling", async () => {
 	const view = await renderComponent({

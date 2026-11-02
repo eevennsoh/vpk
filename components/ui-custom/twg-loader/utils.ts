@@ -213,6 +213,24 @@ export function computeFrame(elapsedSeconds: number): FrameState {
 	};
 }
 
+/**
+ * Resting mark. Same four rings, parked in a square, with one diagonal from
+ * the top-left ring (index 0) to the bottom-right ring (index 2).
+ */
+export const REST_SPREAD = 6.5;
+
+export function getRestPositions(): DotPosition[] {
+	return [
+		{ x: VIEWBOX_CENTER - REST_SPREAD, y: VIEWBOX_CENTER - REST_SPREAD },
+		{ x: VIEWBOX_CENTER + REST_SPREAD, y: VIEWBOX_CENTER - REST_SPREAD },
+		{ x: VIEWBOX_CENTER + REST_SPREAD, y: VIEWBOX_CENTER + REST_SPREAD },
+		{ x: VIEWBOX_CENTER - REST_SPREAD, y: VIEWBOX_CENTER + REST_SPREAD },
+	];
+}
+
+/** The single connector drawn while the logo is resting. */
+export const REST_PATTERN: readonly Segment[] = [[0, 2]];
+
 /** Static frame used for `prefers-reduced-motion: reduce`. */
 export function computeStaticFrame(): FrameState {
 	return {

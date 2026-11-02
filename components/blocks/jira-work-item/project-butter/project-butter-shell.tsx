@@ -20,18 +20,22 @@ export function ProjectButterShell({
 	onClose,
 	onEmptyChange,
 	onPresentationChange,
+	onSuggestionChange = () => {},
 	open,
 	presentation,
 	shell = "standalone",
+	suggestion = false,
 }: Readonly<{
 	children: ReactNode;
 	empty: boolean;
 	onClose: () => void;
 	onEmptyChange: (empty: boolean) => void;
 	onPresentationChange: (presentation: ProjectButterPresentation) => void;
+	onSuggestionChange?: (suggestion: boolean) => void;
 	open: boolean;
 	presentation: ProjectButterPresentation;
 	shell?: ProjectButterShellContext;
+	suggestion?: boolean;
 }>) {
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const panelResize = useProjectButterPanelResize(open && presentation === "side-panel");
@@ -132,7 +136,7 @@ export function ProjectButterShell({
 				<DialogTitle className="sr-only">Project butter</DialogTitle>
 				<DialogDescription className="sr-only">
 					{standalone
-						? "Explore the work item in full screen, a modal, or a side panel. Open Settings to change presentation or toggle Empty."
+						? "Explore the work item in full screen, a modal, or a side panel. Open Settings to change presentation, Empty, or Suggestion."
 						: "View and edit this work item. Close the dialog to return to the board."}
 				</DialogDescription>
 				{standalone ? (
@@ -169,8 +173,10 @@ export function ProjectButterShell({
 						onClose={() => setSettingsOpen(false)}
 						onEmptyChange={onEmptyChange}
 						onPresentationChange={onPresentationChange}
+						onSuggestionChange={onSuggestionChange}
 						open={settingsOpen}
 						presentation={presentation}
+						suggestion={suggestion}
 					/>
 				) : null}
 			</DialogContent>

@@ -10,6 +10,9 @@ import { SetToRecurRow } from "@/components/blocks/jira-work-item/team-eu26/comp
 import { TEAM_EU_REFERENCE_AUTOMATION_RULES } from "@/components/blocks/jira-work-item/team-eu26/data/team-eu-automation-rules";
 import { ProjectButterDetailsFields } from "@/components/blocks/jira-work-item/project-butter/details-fields";
 import { PROJECT_BUTTER_DETAIL_FIELDS, PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS } from "@/components/blocks/jira-work-item/project-butter/details-model";
+import { ProjectButterSuggestionCursor } from "@/components/blocks/jira-work-item/project-butter/suggestion-cursor";
+import { ProjectButterSuggestionPanel } from "@/components/blocks/jira-work-item/project-butter/suggestion-panel";
+import { useProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
 import { ProjectButterSortablePanel } from "@/components/blocks/jira-work-item/project-butter/project-butter-sortable-panel";
 import { ProjectButterExpandControl } from "@/components/blocks/jira-work-item/project-butter/project-butter-expand-control";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
@@ -22,19 +25,26 @@ import { reorderProjectButterPanels, type ProjectButterPanelId } from "@/compone
 const TITLES: Record<ProjectButterPanelId, string> = { details: "Details", development: "Development", automation: "Automation", apps: "Apps" };
 const APPS = ["My Reminders", "Tempo", "PagerDuty", "Sentry", "Checklist", "Invision for Jira", "Trello Assistant"];
 
-export function ProjectButterDetails({ content, empty, onPanelOrderChange, onStartCoding, panelOrder, sidePanel }: Readonly<{
+export function ProjectButterDetails({ content, empty, onPanelOrderChange, onStartCoding, panelOrder, sidePanel, suggestion = false }: Readonly<{
 	content: ProjectButterContent;
 	empty: boolean;
 	onPanelOrderChange: (order: ProjectButterPanelId[]) => void;
 	onStartCoding: () => void;
 	panelOrder: ProjectButterPanelId[];
 	sidePanel: boolean;
+	suggestion?: boolean;
 }>) {
 	const id = useId();
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 	const [moreFields, setMoreFields] = useState(false);
+	const [openedSuggestion, setOpenedSuggestion] = useState(false);
 	const [developmentFields, setDevelopmentFields] = useState<string[]>([]);
 	const [recentRuns, setRecentRuns] = useState(false);
+	const fill = useProjectButterSuggestionFill(content, suggestion, () => setMoreFields(true));
+	if (suggestion && !openedSuggestion) {
+		setOpenedSuggestion(true);
+		setMoreFields(true);
+	}
 	const order = panelOrder.filter((panel) => panel !== "apps" || !empty || sidePanel);
 	function panelActions(panel: ProjectButterPanelId) {
 		if (panel === "apps") return null;
@@ -45,15 +55,19 @@ export function ProjectButterDetails({ content, empty, onPanelOrderChange, onSta
 	}
 	return (
 		<aside aria-label="Work item details" className="min-w-0">
+			{suggestion ? <ProjectButterSuggestionPanel fill={fill} /> : null}
+			<div className={cn("relative", suggestion && "[&_[data-field-id]]:scroll-mt-20")} data-project-butter-suggestion-fields={fill.columnId}>
+			<ProjectButterSuggestionCursor fill={fill} />
 			<DndContext collisionDetection={closestCenter} id={id} onDragEnd={({ active, over }) => onPanelOrderChange(reorderProjectButterPanels(panelOrder, active.id, over?.id ?? null))} sensors={sensors}>
 				<SortableContext items={order} strategy={verticalListSortingStrategy}>
 					<div className={cn("flex min-w-0 flex-col", sidePanel ? "gap-6" : "gap-4")}>
 						{order.map((panel) => <ProjectButterSortablePanel actions={panelActions(panel)} defaultOpen={panel === "details" || panel === "development"} footer={panel === "details" ? <ProjectButterExpandControl chevron expanded={moreFields} label={moreFields ? "Show less details" : "Show more details"} onClick={() => setMoreFields((value) => !value)} /> : null} id={panel} key={panel} sidePanel={sidePanel} title={TITLES[panel]}>
-							{panel === "details" ? <ProjectButterDetailsFields content={content} empty={empty} expanded={moreFields} /> : panel === "development" ? <div className="space-y-3"><Button onClick={onStartCoding} type="button" variant="ghost"><BranchIcon label="" size="small" />Start coding</Button>{developmentFields.map((field) => <p className="text-sm text-text-subtle" key={field}>No {field.toLowerCase()} linked</p>)}</div> : panel === "automation" ? <div className="space-y-3"><ul className="space-y-3 text-sm text-text">{TEAM_EU_REFERENCE_AUTOMATION_RULES.map((rule) => <li key={rule.id}>{rule.title}</li>)}</ul><Button onClick={() => setRecentRuns(true)} type="button" variant="ghost">Recent run rules</Button><SetToRecurRow /></div> : <div className="space-y-2">{APPS.map((app) => <details key={app}><summary className="cursor-pointer rounded-sm py-2 text-sm text-text focus-visible:ring-2 focus-visible:ring-ring">{app}</summary><p className="pb-3 text-sm text-text-subtle">Work item information from {app} appears here.</p></details>)}</div>}
+							{panel === "details" ? <ProjectButterDetailsFields content={content} empty={empty} expanded={moreFields} shimmerText={fill.shimmerText} /> : panel === "development" ? <div className="space-y-3"><Button onClick={onStartCoding} type="button" variant="ghost"><BranchIcon label="" size="small" />Start coding</Button>{developmentFields.map((field) => <p className="text-sm text-text-subtle" key={field}>No {field.toLowerCase()} linked</p>)}</div> : panel === "automation" ? <div className="space-y-3"><ul className="space-y-3 text-sm text-text">{TEAM_EU_REFERENCE_AUTOMATION_RULES.map((rule) => <li key={rule.id}>{rule.title}</li>)}</ul><Button onClick={() => setRecentRuns(true)} type="button" variant="ghost">Recent run rules</Button><SetToRecurRow /></div> : <div className="space-y-2">{APPS.map((app) => <details key={app}><summary className="cursor-pointer rounded-sm py-2 text-sm text-text focus-visible:ring-2 focus-visible:ring-ring">{app}</summary><p className="pb-3 text-sm text-text-subtle">Work item information from {app} appears here.</p></details>)}</div>}
 						</ProjectButterSortablePanel>)}
 					</div>
 				</SortableContext>
 			</DndContext>
+			</div>
 			<Dialog onOpenChange={setRecentRuns} open={recentRuns}><DialogContent className="z-[701]" overlayProps={{ forceRender: true, className: "z-[700]" }} size="md"><DialogTitle>Recent run rules</DialogTitle><DialogDescription>Recent automation activity for this work item.</DialogDescription><ul className="space-y-3 text-sm">{TEAM_EU_REFERENCE_AUTOMATION_RULES.filter((rule) => rule.lastRunAt).map((rule) => <li key={rule.id}>{rule.title}<span className="ml-2 text-text-subtlest">{rule.lastRunAt}</span></li>)}</ul></DialogContent></Dialog>
 		</aside>
 	);

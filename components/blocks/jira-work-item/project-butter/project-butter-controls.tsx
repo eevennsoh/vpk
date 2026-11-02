@@ -9,15 +9,20 @@ export function ProjectButterControls({
 	empty,
 	onEmptyChange,
 	onPresentationChange,
+	onSuggestionChange,
 	selectedPresentation,
+	suggestion,
 }: Readonly<{
 	empty: boolean;
 	onEmptyChange: (empty: boolean) => void;
 	onPresentationChange: (presentation: ProjectButterPresentation) => void;
+	onSuggestionChange: (suggestion: boolean) => void;
 	/** Omit for launch buttons; supply for the settings selection. */
 	selectedPresentation?: ProjectButterPresentation;
+	suggestion: boolean;
 }>) {
 	const emptyId = useId();
+	const suggestionId = useId();
 	return (
 		<div className="flex flex-wrap items-center gap-6">
 			<div aria-label="Screen size" className="flex flex-wrap gap-2" role="group">
@@ -28,6 +33,7 @@ export function ProjectButterControls({
 				))}
 			</div>
 			<div className="flex items-center gap-3 text-sm text-text"><label htmlFor={emptyId}>Empty</label><Switch checked={empty} id={emptyId} label="Empty" onCheckedChange={onEmptyChange} /></div>
+			<div className="flex items-center gap-3 text-sm text-text"><label htmlFor={suggestionId}>Suggestion</label><Switch checked={suggestion} id={suggestionId} label="Suggestion" onCheckedChange={onSuggestionChange} /></div>
 		</div>
 	);
 }

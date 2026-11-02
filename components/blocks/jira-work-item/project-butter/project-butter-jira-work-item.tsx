@@ -26,6 +26,7 @@ export interface ProjectButterJiraWorkItemProps {
 	open: boolean;
 	onClose: () => void;
 	initialPreset: JiraWorkItemPreset;
+	initialSuggestion?: boolean;
 	initialPresentation?: ProjectButterPresentation;
 	shell?: ProjectButterShellContext;
 	workItem?: WorkItemData;
@@ -37,6 +38,7 @@ export function ProjectButterJiraWorkItem({
 	open,
 	onClose,
 	initialPreset,
+	initialSuggestion = false,
 	initialPresentation = "full-screen",
 	shell = "standalone",
 	workItem,
@@ -44,7 +46,8 @@ export function ProjectButterJiraWorkItem({
 	placeholders,
 }: Readonly<ProjectButterJiraWorkItemProps>) {
 	const [presentation, setPresentation] = useState(initialPresentation);
-	const [empty, setEmpty] = useState(initialPreset === "empty" || initialPreset === "blank");
+	const [suggestion, setSuggestion] = useState(initialSuggestion);
+	const [empty, setEmpty] = useState(!initialSuggestion && (initialPreset === "empty" || initialPreset === "blank"));
 	const [panelOrder, setPanelOrder] = useState(PROJECT_BUTTER_PANEL_ORDER);
 	const filledContent = useProjectButterContent(
 		initialPreset === "running" ? "running" : "filled",
@@ -53,14 +56,16 @@ export function ProjectButterJiraWorkItem({
 		placeholders,
 	);
 	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders);
+	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, true);
 	const filledSessions = useProjectButterSessions(
 		initialPreset === "running" ? "running" : "filled",
 		workItem?.code,
 		initialSessions,
 	);
 	const emptySessions = useProjectButterSessions("empty", workItem?.code);
-	const content = empty ? emptyContent : filledContent;
-	const model = empty ? emptySessions : filledSessions;
+	const sparse = empty || suggestion;
+	const content = suggestion ? suggestionContent : empty ? emptyContent : filledContent;
+	const model = sparse ? emptySessions : filledSessions;
 	const {
 		activeSession,
 		drafts,
@@ -70,6 +75,14 @@ export function ProjectButterJiraWorkItem({
 		setActiveSessionId,
 		setDrafts,
 	} = model;
+	function changeEmpty(next: boolean) {
+		setEmpty(next);
+		if (next) setSuggestion(false);
+	}
+	function changeSuggestion(next: boolean) {
+		setSuggestion(next);
+		if (next) setEmpty(false);
+	}
 	function addInvocation(session: ProjectButterSessionItem) {
 		const entry = projectButterSessionInvocation(session);
 		content.setActivityEntries((entries) =>
@@ -92,19 +105,22 @@ export function ProjectButterJiraWorkItem({
 	const details = (
 		<ProjectButterDetails
 			content={content}
-			empty={empty}
+			empty={sparse}
 			onPanelOrderChange={setPanelOrder}
 			onStartCoding={startCoding}
 			panelOrder={panelOrder}
 			sidePanel={sidePanel}
+			suggestion={suggestion}
 		/>
 	);
 	return (
 		<ProjectButterShell
 			empty={empty}
 			onClose={onClose}
-			onEmptyChange={setEmpty}
+			onEmptyChange={changeEmpty}
 			onPresentationChange={setPresentation}
+			onSuggestionChange={changeSuggestion}
+			suggestion={suggestion}
 			open={open}
 			presentation={presentation}
 			shell={shell}
@@ -112,14 +128,14 @@ export function ProjectButterJiraWorkItem({
 			<ProjectButterHeader
 				key={workItem?.code ?? "reference"}
 				content={content}
-				empty={empty}
+				empty={sparse}
 				onClose={onClose}
 				onExpand={() => setPresentation("full-screen")}
 				onOpenSession={(session) => setActiveSessionId(session.id)}
 				onStartAgent={startAgent}
 				onStartCoding={startCoding}
 				secondaryActions={
-					empty && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null
+					sparse && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null
 				}
 				presentation={presentation}
 				sessions={sessions}
@@ -132,6 +148,7 @@ export function ProjectButterJiraWorkItem({
 						? "grid-cols-1 overflow-y-auto"
 						: "grid-cols-1 overflow-y-auto @[860px]/butter:grid-cols-[minmax(0,1fr)_minmax(280px,420px)] @[860px]/butter:overflow-clip",
 				)}
+				data-project-butter-state={suggestion ? "suggestion" : empty ? "empty" : "filled"}
 				data-project-butter-work-item
 			>
 				<div
@@ -146,7 +163,7 @@ export function ProjectButterJiraWorkItem({
 						sidePanel={sidePanel}
 						content={content}
 						details={sidePanel ? details : null}
-						empty={empty}
+						empty={sparse}
 						onOpenSession={setActiveSessionId}
 						sessions={sessions}
 					/>
