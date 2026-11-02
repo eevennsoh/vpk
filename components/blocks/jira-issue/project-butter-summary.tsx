@@ -74,7 +74,7 @@ export function ProjectButterSummary({
 					<span className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
 						<span
 							className={cn(
-								"shrink-0 text-icon-subtle transition-colors duration-fast ease-out-practical motion-reduce:transition-none",
+								"inline-flex shrink-0 items-center text-icon-subtle transition-colors duration-fast ease-out-practical motion-reduce:transition-none",
 								WORK_TYPE_HOVER_CLASSES[issueType],
 							)}
 						>

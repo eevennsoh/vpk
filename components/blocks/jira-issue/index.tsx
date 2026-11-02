@@ -710,7 +710,11 @@ function JiraIssueDefault({
 						</button>
 						<div
 							onClick={props.disabled ? undefined : appearance === "project-butter" ? (event) => {
-								if (event.target instanceof Element && event.target.closest("button, a, input, select, textarea, [role=menuitem], [data-slot=tag]")) return;
+								if (event.defaultPrevented || !(event.target instanceof Element) || !event.currentTarget.contains(event.target)) return;
+								const interactive = "button, a, input, select, textarea, summary, [contenteditable]:not([contenteditable=false]), "
+									+ "[role=button], [role=link], [role=checkbox], [role=radio], [role=switch], [role=combobox], "
+									+ "[role=menuitem], [role=menuitemcheckbox], [role=menuitemradio], [role=option], [role=slider], [role=tab], [role=textbox], [data-slot=tag]";
+								if (event.target.closest(interactive)) return;
 								(props.onClick as ComponentProps<"div">["onClick"])?.(event);
 							} : props.onClick as ComponentProps<"div">["onClick"]}
 						>
