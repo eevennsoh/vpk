@@ -9,8 +9,8 @@ import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { DEFAULT_SKILLS, ROVO_DIRECTORY_AGENT_PROFILES } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
-import { renderEu26HeaderAssignee } from "@/components/projects/jira-team-eu26/components/header-assignee";
-import { HeaderLanyards } from "@/components/projects/jira-team-eu26/components/header-lanyards";
+import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
+import { HeaderLanyards } from "@/components/projects/shared/components/eu26-header-lanyards";
 import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {

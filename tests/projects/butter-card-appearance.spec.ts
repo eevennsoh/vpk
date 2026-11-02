@@ -264,3 +264,11 @@ test("the Team EU26 board retains its existing card appearance", async ({ page }
 	await expect(card(page, "PAY-118")).toBeVisible();
 	await expect(page.locator('[data-slot="jira-issue-project-butter"]')).toHaveCount(0);
 });
+
+test("Team EU26 retains its original session avatar controls", async ({ page }) => {
+	await page.goto(appUrl("/jira-team-eu26"));
+	await card(page, "PAY-105").getByRole("button", { name: "Cursor: Working" }).click();
+	const assignment = page.getByRole("dialog", { name: "Agent assignment" });
+	await expect(assignment.getByRole("button", { name: /Cursor, used by Venn/ })).toBeVisible();
+	await expect(assignment.getByRole("button", { name: "Preview Cursor" })).toHaveCount(0);
+});

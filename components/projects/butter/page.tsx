@@ -32,7 +32,7 @@ import {
 
 import { HeaderLanyards } from "./components/header-lanyards";
 import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
-import { renderEu26HeaderAssignee } from "./components/header-assignee";
+import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { BUTTER_CHAT_AGENT_PROFILES } from "@/components/projects/butter/data/chat-agent-profiles";

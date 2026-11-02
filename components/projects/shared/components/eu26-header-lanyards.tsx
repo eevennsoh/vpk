@@ -18,7 +18,11 @@ export function useHeaderLanyardHandle() {
 	return handle;
 }
 
-export function HeaderLanyards({ children }: Readonly<{ children: ReactNode }>) {
+export function HeaderLanyards({ children, positionerClassName, menuPositionerClassName }: Readonly<{
+	children: ReactNode;
+	positionerClassName?: string;
+	menuPositionerClassName?: string;
+}>) {
 	const { openChat, selectAgent } = useRovoChatControls();
 	const [handle] = useState(() => createHoverCardHandle<HeaderAgent>());
 	const [menuAnnouncement, setMenuAnnouncement] = useState("");
@@ -44,6 +48,7 @@ export function HeaderLanyards({ children }: Readonly<{ children: ReactNode }>) 
 				{({ payload: agent }) => (
 					<HoverCardContent
 						ref={popupRef}
+						positionerClassName={positionerClassName}
 						align="center" alignOffset={0} sideOffset={8}
 						style={{ boxShadow: token("elevation.shadow.overlay") }}
 						className={cn(
@@ -59,6 +64,7 @@ export function HeaderLanyards({ children }: Readonly<{ children: ReactNode }>) 
 								perspectiveTilt={false}
 								animateGrid
 								gridAnimationTrigger="reveal"
+								menuPositionerClassName={menuPositionerClassName}
 								headingLevel={2}
 								onAction={chatWithAgent}
 								menuActions={{
