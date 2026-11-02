@@ -75,12 +75,12 @@ test('Video is a live HTML preview and rendering starts only from Generate', {ti
 					intermediate:dock.querySelectorAll('[data-intermediate="true"]').length,timestamps:[...dock.querySelectorAll('.eu26-timeline-timestamp')].map(label=>label.textContent),
 					elapsed:dock.querySelector('.eu26-video-elapsed').textContent,controls:['play','replay','fullscreen'].every(action=>control(action)?.getBoundingClientRect().width>0)};
 				story.setMode('story');await wait(80);
-				return {during,restored:progress.getAttribute('aria-orientation')==='vertical'&&!panel.contains(progress)&&getComputedStyle(dock).position==='fixed',pageTimes:dock.querySelectorAll('.eu26-timeline-timestamp,output').length,time:explorer.getState().time};
+				return {during,restored:progress.getAttribute('aria-orientation')==='vertical'&&!panel.contains(progress)&&getComputedStyle(dock).position==='fixed',pageReplay:dock.querySelectorAll('[data-eu26-action="replay"]').length,pageTimes:dock.querySelectorAll('.eu26-timeline-timestamp,output').length,time:explorer.getState().time};
 			`);
 			assert.equal(result.during.sameInput,true);assert.equal(result.during.orientation,'horizontal');assert.equal(result.during.position,'relative');
 			assert.equal(result.during.ranges,1);assert.equal(result.during.oldBar,0);assert.equal(result.during.horizontal,true);assert.ok(result.during.intermediate>5,'Video retains intermediate marks with responsive shared spacing');
 			assert.deepEqual(result.during.timestamps,['0:00','0:05','0:10','0:15','0:20']);assert.equal(result.during.elapsed,'0:07 / 0:20');assert.equal(result.during.controls,true);
-			assert.equal(result.restored,true);assert.equal(result.pageTimes,0);assert.equal(result.time,12.34);
+			assert.equal(result.restored,true);assert.equal(result.pageReplay,0);assert.equal(result.pageTimes,0);assert.equal(result.time,12.34);
 		});
 
 		await t.test('preview progress and chapter selection use the canonical authored clock',()=>{

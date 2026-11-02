@@ -40,9 +40,7 @@
 			button.append(icon);
 			return button;
 		};
-		const previous = actionButton('previous', '↑', 'Previous chapter');
 		const playButton = actionButton('play', '▶', 'Play animation');
-		const next = actionButton('next', '↓', 'Next chapter');
 		const replayButton = actionButton('replay', '↻', 'Replay story');
 		transport.append(playButton);
 		const rulerGroup = node('div', 'eu26-dock-ruler');
@@ -140,12 +138,7 @@
 			list.append(item);
 			return choice;
 		});
-		const previewTransport = node('div', 'eu26-preview-transport');
-		previewTransport.setAttribute('role', 'group');
-		previewTransport.setAttribute('aria-label', 'Chapter navigation');
-		previewTransport.append(previous, replayButton, next);
-		const selectedCaption = node('p', 'eu26-preview-caption');
-		tray.append(list, selectedCaption, previewTransport);
+		tray.append(list);
 		const hint = node('p', 'eu26-explorer-hint eu26-dock-sr', 'Explore chapters with the rail. Select a preview to move there. Frames opens every chapter. Use the arrow keys to navigate. Escape closes previews.');
 		hint.id = 'eu26-explorer-hint';
 		const announcement = node('p', 'eu26-explorer-announcement');
@@ -425,6 +418,7 @@
 		controls.addEventListener('pointerleave', event => {
 			if (event.pointerType === 'touch') return;
 			pointerInside = false;
+			if (expanded && !pinned && !tray.contains(document.activeElement)) setExpanded(false, { pin: false });
 			hoverFrameIndex = null;
 			pendingRailY = null;
 			dismissed = false;
@@ -478,11 +472,12 @@
 				stateButtons[selectedIndex].focus({ preventScroll: true });
 			}
 		});
+		framesButton.addEventListener('pointerenter', event => { if (canHover(event)) setExpanded(true, { pin: false }); });
 		framesButton.addEventListener('click', () => { if (pinned) dismiss(); else setExpanded(true); });
 		context.addEventListener('click', () => { const index = contextIndex; clearSources(); lockHover(); onAction('select', index); });
 		context.addEventListener('focus', () => { if (!pointerFocus && !dismissed) previewFrame(contextIndex, 'focus'); });
 		context.addEventListener('blur', () => clearSource('focus'));
-		for (const button of [previous, playButton, next, replayButton]) button.addEventListener('click', () => {
+		for (const button of [playButton, replayButton]) button.addEventListener('click', () => {
 			browseIntent = false;
 			hoverFrameIndex = null;
 			clearSources();
@@ -583,12 +578,9 @@
 			playButton.setAttribute('aria-label', `${playAction} ${horizontal && !pageBased ? 'video preview' : 'animation'}`);
 			playButton.title = `${playAction} ${horizontal && !pageBased ? 'video preview' : 'animation'}`;
 			playButton.setAttribute('aria-pressed', String(playAction === 'Pause'));
-			previous.setAttribute('aria-disabled', String(selectedIndex === 0));
-			next.setAttribute('aria-disabled', String(selectedIndex === states.length - 1));
 			timeline.value = String(pageBased ? pagePosition(time) : time / playbackRate);
 			timeline.setAttribute('aria-valuetext', horizontal && !pageBased ? `${formatTime(time / playbackRate)} of ${formatTime(durationSeconds)}. ${states[selectedIndex].title}` : states[selectedIndex].title);
 			if (horizontal && !pageBased) setText(elapsed, `${formatTime(Math.min(duration, time) / playbackRate)} / ${formatTime(durationSeconds)}`);
-			setText(selectedCaption, states[selectedIndex].title);
 			setText(playbackStatus, status);
 			for (const [index, choice] of stateButtons.entries()) {
 				choice.setAttribute('aria-pressed', String(index === selectedIndex));
@@ -622,7 +614,7 @@
 				transport.append(replayButton); rulerGroup.append(elapsed, timestampLabels);
 				playButton.dataset.videoAction = 'play'; replayButton.dataset.videoAction = 'replay'; timeline.dataset.videoProgress = '';
 			} else if (!nextVideo && wasVideo) {
-				home.after(controls); previewTransport.insertBefore(replayButton, next);
+				home.after(controls); replayButton.remove();
 				elapsed.remove(); timestampLabels.remove();
 				tray.style.maxBlockSize = '';
 				delete playButton.dataset.videoAction; delete replayButton.dataset.videoAction; delete timeline.dataset.videoProgress;

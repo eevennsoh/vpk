@@ -139,14 +139,13 @@ test('the vertical timeline reveals a reachable preview stack without taking ove
 				const before = rect(dock); window.scrollBy(0,600); await wait(80); const after = rect(dock);
 				const closed = !ui.getState().expanded && tray.inert && tray.getAttribute('aria-hidden') === 'true' && cards.every(card=>card.tabIndex===-1);
 				const secondary=[...dock.querySelectorAll('[data-eu26-action]')].filter(button=>['previous','next','replay'].includes(button.dataset.eu26Action));
-				const protectedControls=secondary.length===3 && secondary.every(button=>{button.focus({preventScroll:true});return tray.contains(button) && button.closest('[inert]')===tray && document.activeElement!==button;});
-				return { before,after,closed,contextClosed,protectedControls,position:getComputedStyle(dock).position,hero:rect(hero),viewport:innerWidth,orientation:slider.getAttribute('aria-orientation'),count:cards.length,hidden:getComputedStyle(tray).visibility };
+				return { before,after,closed,contextClosed,secondary:secondary.length,position:getComputedStyle(dock).position,hero:rect(hero),viewport:innerWidth,orientation:slider.getAttribute('aria-orientation'),count:cards.length,hidden:getComputedStyle(tray).visibility };
 			`);
 			assert.equal(result.position,'fixed'); assert.ok(Math.abs(result.before.width-64)<1);
 			assert.deepEqual(result.after,result.before); assert.equal(result.closed,true); assert.equal(result.hidden,'hidden');
 			assert.equal(result.count,12); assert.equal(result.orientation,'vertical');
 			assert.equal(result.contextClosed,true);
-			assert.equal(result.protectedControls,true,'closed secondary transport stays inside the inert preview tray');
+			assert.equal(result.secondary,0,'chapter transport is absent from the closed gallery');
 			assert.ok(result.viewport-result.before.right>=8 && result.viewport-result.before.right<=24,'the rail stays at the right viewport edge');
 			assert.ok(result.hero.right <= result.before.left-8,'the right rail does not cover the hero');
 		});
@@ -217,6 +216,21 @@ test('the vertical timeline reveals a reachable preview stack without taking ove
 			assert.equal(scenario(`await until(()=>explorer.getState().previewIndex===null,'hover restore'); return explorer.getState().renderTime;`),17.1234);
 			scenario(`ui.setExpanded(true); ui.setExpanded(false); return null;`); run('focus','#eu26-explorer-timeline');
 			assert.equal(scenario(`await until(()=>ui.getState().contextVisible,'focus context');return !ui.getState().expanded;`),true);
+		});
+
+		await t.test('hovering the grid immediately reveals the gallery and allows browsing', () => {
+			scenario(`ui.dismiss(); return null;`);
+			run('mouse','move','8','40');
+			run('hover','#eu26-explorer-controls [data-eu26-action="frames"]');
+			const result = scenario(`return {expanded:ui.getState().expanded,inert:tray.inert,hidden:tray.getAttribute('aria-hidden'),visibility:getComputedStyle(tray).visibility,opacity:getComputedStyle(tray).opacity};`);
+			assert.deepEqual(result,{expanded:true,inert:false,hidden:'false',visibility:'visible',opacity:'1'});
+			run('hover',choice(8));
+			assert.equal(scenario(`return ui.getState().expanded;`),true,'the gallery stays open while browsing');
+			run('mouse','move','8','40');
+			assert.equal(scenario(`return ui.getState().expanded;`),false,'an unpinned gallery closes on leaving');
+			run('click','#eu26-explorer-controls [data-eu26-action="frames"]');
+			run('mouse','move','8','40');
+			assert.equal(scenario(`return ui.getState().expanded;`),true,'click pins the gallery open');
 		});
 
 		await t.test('every preview button contains its image and caption without overlapping the next card', () => {
@@ -358,7 +372,7 @@ test('the vertical timeline reveals a reachable preview stack without taking ove
 				const result = scenario(`
 					explorer.pause(); story.suspendFollowing(); const failures=[]; const rail=rect(dock);
 					const closed=!ui.getState().expanded && tray.inert;
-					for(const action of ['previous','next','replay']){const button=dock.querySelector('[data-eu26-action="'+action+'"]');button.focus({preventScroll:true});if(!tray.contains(button)||document.activeElement===button)failures.push('closed '+action+' focus');}
+					for(const action of ['previous','next','replay'])if(dock.querySelector('[data-eu26-action="'+action+'"]'))failures.push('unexpected '+action+' button');
 					if(document.documentElement.scrollWidth>innerWidth+1)failures.push('page overflow');
 					if(Math.abs(rail.width-48)>1 || rail.left<0 || rail.right>innerWidth || rail.bottom>innerHeight)failures.push('rail bounds');
 					if(rect(hero).right>rail.left-8)failures.push('hero under right rail');
@@ -418,6 +432,22 @@ test('Frames galleries follow their view orientation and keep horizontal navigat
 	command('set','viewport','1440','900');command('set','media','light');command('open',`file://${artifact}`);
 	command('wait','--fn','Boolean(window.__eu26Timeline && window.__eu26Explorer && window.__vpkStory)');
 	try {
+		await t.test('every gallery omits chapter transport while Video keeps its replay button', () => {
+			const result = probe(`
+				const samples=[];
+				for(const mode of ['story','slides','twitter','video','story','video']) {
+					story.setMode(mode);explorer.pause();explorer.seek(16);ui.setExpanded(true);await wait(80);
+					const replay=dock.querySelector('[data-video-action="replay"]');
+					samples.push({mode,transport:tray.querySelectorAll('[data-eu26-action="previous"],[data-eu26-action="replay"],[data-eu26-action="next"]').length,
+						chapterButtons:dock.querySelectorAll('[data-eu26-action="previous"],[data-eu26-action="next"]').length,
+						replay:!!replay&&dock.querySelector('.eu26-dock-transport').contains(replay)&&rect(replay).width>0&&!replay.closest('[inert]'),
+						caption:!!tray.querySelector('.eu26-preview-caption'),label:cards[7].querySelector('.eu26-state-title').textContent});
+					ui.dismiss();
+				}
+				return samples;
+			`);
+			for(const sample of result) assert.deepEqual(sample,{mode:sample.mode,transport:0,chapterButtons:0,replay:sample.mode==='video',caption:false,label:data.states[7].title});
+		});
 		for(const mode of ['slides','video']) {
 			await t.test(`${mode} lays frames left to right and centers keyboard previews`,()=>{
 				const layout=probe(`
@@ -454,7 +484,7 @@ test('Frames galleries follow their view orientation and keep horizontal navigat
 							if(r.left<8||r.right>innerWidth-8||r.top<header.bottom+8||r.bottom>innerHeight-8)failures.push(mode+' gallery escapes viewport');
 							if(getComputedStyle(list).flexDirection!=='row'||list.scrollHeight>list.clientHeight+1)failures.push(mode+' gallery is not a single horizontal row');
 							if(document.documentElement.scrollWidth>innerWidth+1)failures.push(mode+' page overflows: '+JSON.stringify({width:document.documentElement.scrollWidth,bad:[...document.querySelectorAll('body *')].filter(e=>rect(e).right>innerWidth+1&&!e.closest('svg')&&!e.closest('.eu26-dock-filmstrip')).slice(0,6).map(e=>({name:e.className,rect:rect(e)}))}));
-							for(const button of tray.querySelectorAll('.eu26-preview-transport button')){const b=rect(button);if(b.top<r.top||b.bottom>r.bottom)failures.push(mode+' transport is clipped');}
+							if(tray.querySelector('[data-eu26-action]'))failures.push(mode+' gallery contains transport controls');
 							ui.dismiss();
 						}
 						return failures;

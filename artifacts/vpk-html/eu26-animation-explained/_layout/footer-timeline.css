@@ -302,7 +302,7 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-expanded="true"] .eu26-do
 	visibility: visible;
 	pointer-events: auto;
 	transform: translate(0, -50%);
-	transition-duration: var(--vpk-dur-enter), var(--vpk-dur-enter), 0s;
+	transition-duration: 0s;
 	transition-delay: 0s;
 }
 
@@ -324,27 +324,6 @@ body[data-vpk-layout="story"] #eu26-explorer-controls .eu26-dock-filmstrip {
 	scrollbar-color: var(--ill-accent) transparent;
 	list-style: none;
 	mask-image: linear-gradient(to bottom, transparent, black 24px, black calc(100% - 24px), transparent);
-}
-
-body[data-vpk-layout="story"] .eu26-preview-caption {
-	flex: 0 0 auto;
-	min-block-size: 18px;
-	margin: 0;
-	padding: 4px 18px 0;
-	color: var(--ink);
-	font: 12px/1.5 var(--font-body) !important;
-	text-wrap: pretty;
-}
-
-body[data-vpk-layout="story"] .eu26-preview-transport {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	justify-items: center;
-	align-items: center;
-	flex: 0 0 auto;
-	gap: 4px;
-	margin: 0;
-	padding: 6px 18px 8px;
 }
 
 body[data-vpk-layout="story"] .eu26-dock-filmstrip > li {
@@ -447,7 +426,6 @@ body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock :is(but
 	body[data-vpk-layout="story"] .eu26-dock-ruler { padding-block: 6px; }
 	body[data-vpk-layout="story"] .eu26-dock-tray { inline-size: 270px; }
 	body[data-vpk-layout="story"] #eu26-explorer-controls .eu26-dock-filmstrip { gap: 24px; padding-inline: 14px; }
-	body[data-vpk-layout="story"] :is(.eu26-preview-caption, .eu26-preview-transport) { padding-inline: 14px; }
 	body[data-vpk-layout="story"] .story-step { scroll-margin-block-start: calc(var(--story-top) + var(--story-hero-height) + 76px); }
 }
 
@@ -558,13 +536,6 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-orientation="horizont
 }
 body[data-vpk-layout="story"] .eu26-timeline-dock[data-orientation="horizontal"] .eu26-dock-filmstrip > li {
 	flex: 0 0 clamp(180px, 23dvw, 240px);
-}
-body[data-vpk-layout="story"] .eu26-timeline-dock[data-orientation="horizontal"] .eu26-preview-transport {
-	grid-template-columns: repeat(3, 44px);
-	justify-content: center;
-}
-body[data-vpk-layout="story"] .eu26-timeline-dock[data-orientation="horizontal"] .eu26-preview-transport :is([data-eu26-action="previous"], [data-eu26-action="next"]) .eu26-dock-icon {
-	transform: rotate(-90deg);
 }
 body[data-vpk-layout="story"] #eu26-explorer-controls[data-orientation="horizontal"][data-popup-side="below"] :is(.eu26-chapter-context, .eu26-dock-tray) { inset-block: calc(100% + 12px) auto; }
 body[data-vpk-layout="story"] .eu26-timeline-dock[data-orientation="horizontal"][data-popup-side="below"]::before { inset-block: 100% auto; }
