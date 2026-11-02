@@ -95,7 +95,7 @@ export function BoardCardInsertionLine({
 				}}
 			>
 				<span
-					className="absolute left-0 top-1/2 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-surface-overlay text-icon-subtle"
+					className="absolute left-0 top-1/2 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface-overlay text-icon-subtle"
 					data-board-insertion-marker={position}
 				>
 					<Icon render={<AddIcon color={token("color.icon.subtle")} label="" size="small" />} />

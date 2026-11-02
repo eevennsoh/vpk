@@ -66,7 +66,7 @@ export function RowBoundaryCreateControls({
 						<Button
 							aria-label={`Create work item ${position} ${row.issueKey}`}
 							className={cn(
-								"fixed z-30 size-6 -translate-x-1/2 -translate-y-1/2 border border-border bg-surface-overlay! text-icon-subtle opacity-0 transition-opacity duration-fast hover:bg-surface-overlay-hovered! active:bg-surface-overlay-pressed! focus-visible:pointer-events-auto focus-visible:bg-surface-overlay! focus-visible:opacity-100",
+								"fixed z-30 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-overlay! text-icon-subtle opacity-0 transition-opacity duration-fast hover:bg-surface-overlay-hovered! active:bg-surface-overlay-pressed! focus-visible:pointer-events-auto focus-visible:bg-surface-overlay! focus-visible:opacity-100",
 								isVisible && "pointer-events-auto opacity-100",
 							)}
 							data-insertion-position={position}
