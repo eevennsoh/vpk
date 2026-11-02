@@ -18,6 +18,7 @@ import { ProjectButterBody } from "@/components/blocks/jira-work-item/project-bu
 import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
 import { ProjectButterSession } from "@/components/blocks/jira-work-item/project-butter/project-butter-session";
+import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-item/project-butter/placeholder-fill";
 import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { PROJECT_BUTTER_PANEL_ORDER } from "@/components/blocks/jira-work-item/project-butter/panel-order";
 
@@ -29,6 +30,7 @@ export interface ProjectButterJiraWorkItemProps {
 	shell?: ProjectButterShellContext;
 	workItem?: WorkItemData;
 	initialSessions?: readonly ProjectButterSessionItem[];
+	placeholders?: ProjectButterPlaceholderMap;
 }
 
 export function ProjectButterJiraWorkItem({
@@ -39,6 +41,7 @@ export function ProjectButterJiraWorkItem({
 	shell = "standalone",
 	workItem,
 	initialSessions,
+	placeholders,
 }: Readonly<ProjectButterJiraWorkItemProps>) {
 	const [presentation, setPresentation] = useState(initialPresentation);
 	const [empty, setEmpty] = useState(initialPreset === "empty" || initialPreset === "blank");
@@ -47,8 +50,9 @@ export function ProjectButterJiraWorkItem({
 		initialPreset === "running" ? "running" : "filled",
 		workItem,
 		initialSessions,
+		placeholders,
 	);
-	const emptyContent = useProjectButterContent("empty", workItem);
+	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders);
 	const filledSessions = useProjectButterSessions(
 		initialPreset === "running" ? "running" : "filled",
 		workItem?.code,

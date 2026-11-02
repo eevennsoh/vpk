@@ -66,6 +66,7 @@ import { useButterGenerativeActions } from "./hooks/use-butter-generative-action
 import { useButterList } from "./hooks/use-butter-list";
 import { useButterAssignmentMove } from "@/components/projects/butter/hooks/use-butter-assignment-move";
 import { useButterContent } from "./hooks/use-butter-content";
+import { BUTTER_WORK_ITEM_PLACEHOLDERS } from "@/components/projects/butter/data/work-item-placeholders";
 import { useButterWorkItem } from "@/components/projects/butter/hooks/use-butter-work-item";
 import {
 	WAC_BOARD_TITLE,
@@ -507,6 +508,7 @@ function ButterApp(): React.ReactElement {
 				initialSessions={workItem.selection.initialSessions}
 				onClose={workItem.closeWorkItem}
 				open={workItem.open}
+				placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
 				workItem={workItem.selection.workItem}
 			/> : null}
 			{/* Resume swaps the button label to "Copied" — colour and text alone,

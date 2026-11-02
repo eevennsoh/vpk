@@ -33,21 +33,48 @@ import {
 } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
 import type { ProjectButterReferenceChange } from "@/components/blocks/jira-work-item/project-butter/reference-model";
 import { appendProjectButterAudit } from "@/components/blocks/jira-work-item/project-butter/content-audit";
+import {
+	projectButterPlaceholderAttachments,
+	projectButterPlaceholderComments,
+	projectButterPlaceholderDetails,
+	projectButterPlaceholderRelated,
+	projectButterPlaceholderReporter,
+	type ProjectButterPlaceholderMap,
+} from "@/components/blocks/jira-work-item/project-butter/placeholder-fill";
 
 function createContent(
 	preset: JiraWorkItemPreset,
 	workItem?: WorkItemData,
 	initialSessions?: readonly ProjectButterSessionItem[],
+	placeholders?: ProjectButterPlaceholderMap,
 ) {
 	const empty = preset === "empty" || preset === "blank";
-	const description = empty ? "" : workItem ? (workItem.description ?? "") : TEAM_EU26_DESCRIPTION;
-	const attachments: readonly ProjectButterAttachment[] =
-		empty || workItem ? [] : PROJECT_BUTTER_ATTACHMENTS;
+	const placeholder = empty || !placeholders || !workItem?.code ? undefined : placeholders[workItem.code];
+	const description = empty
+		? ""
+		: workItem?.description
+			? workItem.description
+			: placeholder
+				? placeholder.description
+				: workItem
+					? ""
+					: TEAM_EU26_DESCRIPTION;
+	const attachments: readonly ProjectButterAttachment[] = empty
+		? []
+		: placeholder
+			? projectButterPlaceholderAttachments(placeholder)
+			: workItem
+				? []
+				: PROJECT_BUTTER_ATTACHMENTS;
 	const assignee: WorkItemPerson = workItem?.assignee ?? TEAM_EU26_PEOPLE.automatic;
 	const priority: PriorityValue = workItem?.priority ?? (empty ? "Medium" : "High");
-	const reporter: WorkItemPerson | null = workItem
-		? (workItem.reporter ?? null)
-		: { name: "Planner agent", avatarUrl: projectButterPersonAvatar("Annie Cook") };
+	const reporter: WorkItemPerson | null = workItem?.reporter
+		? workItem.reporter
+		: placeholder
+			? projectButterPlaceholderReporter(placeholder)
+			: workItem
+				? null
+				: { name: "Planner agent", avatarUrl: projectButterPersonAvatar("Annie Cook") };
 	const activityFocusId: string | null = null;
 	const dueDate: Date | undefined = workItem
 		? workItem.dueDate
@@ -56,13 +83,15 @@ function createContent(
 		: empty
 			? undefined
 			: new Date("2026-05-25T00:00:00.000Z");
+	const related = placeholder ? projectButterPlaceholderRelated(placeholder) : undefined;
 	const relatedWork: {
 		children: readonly ProjectButterRelatedItem[];
 		linked: readonly ProjectButterRelatedItem[];
 	} = {
-		children: empty || workItem ? [] : PROJECT_BUTTER_CHILD_ITEMS,
-		linked: empty || workItem ? [] : PROJECT_BUTTER_LINKED_ITEMS,
+		children: related ? related.children : empty || workItem ? [] : PROJECT_BUTTER_CHILD_ITEMS,
+		linked: related ? related.linked : empty || workItem ? [] : PROJECT_BUTTER_LINKED_ITEMS,
 	};
+	const detailFields = createProjectButterDetailFields(empty, workItem);
 	const status = workItem?.status ?? (empty ? "To do" : "In progress");
 	const sessions = empty
 		? []
@@ -79,11 +108,15 @@ function createContent(
 		auditChanges,
 		summary: workItem?.title ?? "Redesign onboarding flow for new users",
 		statusOptions: createProjectButterStatusOptions(status),
-		detailFields: createProjectButterDetailFields(empty, workItem),
+		detailFields: placeholder ? projectButterPlaceholderDetails(detailFields, placeholder) : detailFields,
 		relatedEditor: createProjectButterRelatedEditorState(),
 		relatedWork,
 		activityEntries: [
-			...(workItem ? [] : createProjectButterActivity(empty)),
+			...(placeholder
+				? projectButterPlaceholderComments(placeholder)
+				: workItem
+					? []
+					: createProjectButterActivity(empty)),
 			...sessions
 				.filter((session) => session.state !== "needs-input")
 				.map(projectButterSessionInvocation),
@@ -118,10 +151,11 @@ export function useProjectButterContent(
 	preset: JiraWorkItemPreset,
 	workItem?: WorkItemData,
 	initialSessions?: readonly ProjectButterSessionItem[],
+	placeholders?: ProjectButterPlaceholderMap,
 ) {
 	const initialState = useMemo<ProjectButterContentState>(
-		() => createContent(preset, workItem, initialSessions),
-		[preset, workItem, initialSessions],
+		() => createContent(preset, workItem, initialSessions, placeholders),
+		[initialSessions, placeholders, preset, workItem],
 	);
 	const { state, fieldSetter, updateState } = useProjectButterItemState(
 		workItem?.code ?? "reference",
