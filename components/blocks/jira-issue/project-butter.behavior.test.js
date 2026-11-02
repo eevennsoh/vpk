@@ -147,7 +147,10 @@ test("Butter's hexagon action opens the shared directory and assigns an agent wi
 			summary: "Implement advanced date-range filter",
 			onClick: () => actions.push(["card"]),
 			assignment: {
-				agents: [{ id: "reviewer", name: "Review agent", byline: "Review changes" }],
+				agents: [
+					{ id: "reviewer", name: "Review agent", byline: "Review changes" },
+					{ id: "writer", name: "Writing agent", byline: "Draft updates" },
+				],
 				onAgentAssign: (agent) => actions.push(["assign", agent.id]),
 				onAssignedAgentIdsChange: (ids) => actions.push(["ids", ids]),
 			},
@@ -156,7 +159,10 @@ test("Butter's hexagon action opens the shared directory and assigns an agent wi
 	const trigger = view.getByRole("button", { name: "Add agent to PD-40" });
 	assert.equal(trigger.querySelector('[data-shape="hexagon"]') !== null, true);
 	await view.click(trigger);
-	await view.click(view.getByRole("menuitem", { name: "Review agent" }));
+	const search = view.getByRole("textbox", { name: "Search agents" });
+	await view.fill(search, "review");
+	assert.equal(view.queryByRole("option", { name: /Writing agent/u }), null);
+	await view.press(search, "Enter");
 	assert.deepEqual(actions, [
 		["assign", "reviewer"],
 		["ids", ["reviewer"]],
@@ -180,13 +186,13 @@ test("Butter restores the add-agent control when assignment does not create a ro
 	});
 	const trigger = view.getByRole("button", { name: "Add agent to PD-40" });
 	await view.click(trigger);
-	await view.click(view.getByRole("menuitem", { name: "Review agent" }));
+	await view.click(view.getByRole("option", { name: /Review agent/u }));
 	assert.deepEqual(assigned, ["reviewer"]);
 	assert.equal(trigger.disabled, true);
 	await act(() => new Promise((resolve) => setTimeout(resolve, 3200)));
 	assert.equal(trigger.disabled, false);
 	await view.click(trigger);
-	assert.equal(view.getByRole("menuitem", { name: "Review agent" }) !== null, true);
+	assert.equal(view.getByRole("option", { name: /Review agent/u }) !== null, true);
 });
 
 test("Butter omits the add-agent action during selection, dragging, and attached activity", async () => {

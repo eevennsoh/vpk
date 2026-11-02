@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { Avatar } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ProjectButterAgentPicker } from "./project-butter-agent-picker";
 import {
@@ -59,11 +59,11 @@ export function ProjectButterAddAgent({
 				exiting && "opacity-0! pointer-events-none!",
 			)}
 		>
-			<DropdownMenu modal={false} open={open} onOpenChange={(nextOpen) => (nextOpen ? actions.open() : actions.close())}>
+			<Popover open={open} onOpenChange={(nextOpen) => (nextOpen ? actions.open() : actions.close())}>
 				<Tooltip open={tooltipOpen && !open} onOpenChange={setTooltipOpen}>
 					<TooltipTrigger
 						render={
-							<DropdownMenuTrigger
+							<PopoverTrigger
 								render={
 									<button
 										ref={triggerRef}
@@ -94,8 +94,12 @@ export function ProjectButterAddAgent({
 						Add agent
 					</TooltipContent>
 				</Tooltip>
-				<ProjectButterAgentPicker onAssign={assignAgent} />
-			</DropdownMenu>
+				<ProjectButterAgentPicker
+					onAssign={assignAgent}
+					onBrowseAgents={assignment.onBrowseAgents}
+					onCreateAgent={assignment.onCreateAgent}
+				/>
+			</Popover>
 		</div>
 	);
 }
