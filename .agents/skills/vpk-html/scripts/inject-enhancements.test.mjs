@@ -4,7 +4,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import { ENHANCEMENT_BLOCK } from "./inject-enhancements.mjs";
+import { ENHANCEMENT_BLOCK, injectEnhancements } from "./inject-enhancements.mjs";
+
+test("minimal pages omit enhancement code and remove previously injected chrome", () => {
+	for (const attribute of ['data-vpk-enhancements="off"', "data-vpk-enhancements='off'", 'data-vpk-enhancements=off']) {
+		const page = `<!doctype html><html><head></head><body ${attribute}><main>Reader</main></body></html>`;
+		assert.equal(injectEnhancements(page), page);
+		const enhanced = page.replace('</body>', `${ENHANCEMENT_BLOCK}\n</body>`);
+		assert.equal(injectEnhancements(enhanced), page);
+		assert.equal(injectEnhancements(injectEnhancements(enhanced)), page);
+	}
+});
+
+test("minimal chrome is an explicit body option and leaves normal artifacts enhanced", () => {
+	for (const body of ['<body>', '<body data-vpk-enhancements="on">', '<body><p>data-vpk-enhancements="off"</p>']) {
+		const page = `<html><head></head>${body}<main>Content</main></body></html>`;
+		assert.ok(injectEnhancements(page).includes(ENHANCEMENT_BLOCK));
+	}
+});
 
 const SCRIPT = ENHANCEMENT_BLOCK.match(/<script data-vpkh-enhance>([\s\S]*?)<\/script>/)?.[1];
 const RECT = { left: 0, top: 0, right: 640, bottom: 360, width: 640, height: 360, x: 0, y: 0 };
