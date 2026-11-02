@@ -14,8 +14,10 @@ export interface ScrubberPointerOptions {
 	activeIndex: number;
 	axis: "x" | "y";
 	onSelect: (id: string) => void;
+	onSeek?: (offset: number) => void;
 	onHoverChange: (id: string | null) => void;
 	shouldReduceMotion: boolean;
+	selectOnHover?: boolean;
 }
 
 export interface ScrubberPointer {
@@ -47,7 +49,9 @@ export function useScrubberPointer({
 	entries,
 	onHoverChange,
 	onSelect,
+	onSeek,
 	shouldReduceMotion,
+	selectOnHover = true,
 }: Readonly<ScrubberPointerOptions>): ScrubberPointer {
 	const railRef = useRef<HTMLDivElement | null>(null);
 	// Never 0: the rules multiply by it, and a zero rail would flatten the swell.
@@ -76,7 +80,7 @@ export function useScrubberPointer({
 	function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
 		// Touch has no hover: a finger sliding here is a page scroll, and
 		// scrubbing under it would hijack the gesture. Tap still commits.
-		if (event.pointerType === "touch") {
+		if (event.pointerType === "touch" && selectOnHover) {
 			return;
 		}
 		const offset = readOffset(event);
@@ -93,13 +97,15 @@ export function useScrubberPointer({
 		// Reduced motion keeps the hover *preview* — that is information, not
 		// decoration — but drops both the swell and scrub-to-select, because a
 		// zero-duration swell would still let a sweep commit at frame rate.
-		if (shouldReduceMotion) {
+		if (shouldReduceMotion && selectOnHover) {
 			return;
 		}
-		if (magnify.get() !== 1) {
+		if (!shouldReduceMotion && magnify.get() !== 1) {
 			animate(magnify, 1, SCRUBBER_MAGNIFY_IN);
 		}
-		if (nearest !== null && nearest !== activeIndex) {
+		if (onSeek && event.buttons === 1) {
+			onSeek(offset);
+		} else if (nearest !== null && nearest !== activeIndex && (selectOnHover || event.buttons === 1)) {
 			onSelect(entries[nearest].id);
 		}
 	}

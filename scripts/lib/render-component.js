@@ -234,6 +234,12 @@ const interactions = {
 	}),
 	/** Sets a form control's value through the native setter so React's onChange fires. */
 	fill: (element, value) => run(() => {
+		if (element.isContentEditable || element.getAttribute("contenteditable") === "true") {
+			focusElement(element);
+			element.textContent = value;
+			element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: value }));
+			return;
+		}
 		Object.getOwnPropertyDescriptor(Object.getPrototypeOf(element), "value").set.call(element, value);
 		element.dispatchEvent(new Event("input", { bubbles: true }));
 		element.dispatchEvent(new Event("change", { bubbles: true }));

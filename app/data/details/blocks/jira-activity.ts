@@ -24,6 +24,18 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 	],
 	props: [
 		{
+			name: "commentHeaderLayout",
+			type: '"inline" | "stacked"',
+			default: '"stacked"',
+			description: "Display author and timestamp together or on separate lines for plain comments and replies.",
+		},
+		{
+			name: "connectorStyle",
+			type: '"timeline" | "thread"',
+			default: '"timeline"',
+			description: "Draw a continuous timeline or connect only the replies within each comment discussion with rounded branches.",
+		},
+		{
 			name: "entries",
 			type: "readonly JiraActivityEntry[]",
 			default: "undefined (uncontrolled)",
@@ -51,6 +63,11 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			name: "renderCommentAction",
 			type: "(entry: JiraActivityCommentEntry) => ReactNode",
 			description: "Renders an optional trailing action in each comment card header.",
+		},
+		{
+			name: "renderReply",
+			type: "(reply: JiraActivityReply) => ReactNode | undefined",
+			description: "Optionally replaces a complete reply card while retaining its thread placement and collapsed visibility. Return undefined for the standard card.",
 		},
 		{
 			name: "renderEntry",
@@ -118,20 +135,20 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "filter",
-			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "insights-only"',
+			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "history-only" | "insights-only"',
 			default: "undefined (uncontrolled)",
 			description:
-				"Controlled timeline filter. `agents-only` shows agent cards; `needs-input` shows sessions awaiting the viewer; `comments-only` shows comment entries; `insights-only` shows captured decisions.",
+				"Controlled timeline filter. `agents-only` shows agent cards; `needs-input` shows sessions awaiting the viewer; `comments-only` shows comment entries; `history-only` shows changes and other events; `insights-only` shows captured decisions.",
 		},
 		{
 			name: "defaultFilter",
-			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "insights-only"',
+			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "history-only" | "insights-only"',
 			default: '"all"',
 			description: "Initial filter when the header view control is uncontrolled.",
 		},
 		{
 			name: "onFilterChange",
-			type: '(next: "all" | "agents-only" | "needs-input" | "comments-only" | "insights-only") => void',
+			type: '(next: "all" | "agents-only" | "needs-input" | "comments-only" | "history-only" | "insights-only") => void',
 			description: "Called when the header view control changes the activity filter.",
 		},
 		{

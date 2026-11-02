@@ -71,9 +71,9 @@ test("Jira issue stroke chrome drops the raised shadow and uses the disabled bor
 	assert.match(SOURCE, /chrome = "raised",/u);
 	assert.match(SOURCE, /compact = false,/u);
 	assert.match(SOURCE, /import \{ resolveJiraIssueChrome \} from "\.\/chrome";/u);
-	assert.match(SOURCE, /const chromeStyles = resolveJiraIssueChrome\(chrome\);/u);
+	assert.match(SOURCE, /const chromeStyles = resolveJiraIssueChrome\(chrome, appearance\);/u);
 	assert.match(SOURCE, /const usesStrokeChrome = chrome === "stroke";/u);
-	assert.match(SOURCE, /const usesCompactVisual = compact \|\| usesStrokeChrome;/u);
+	assert.match(SOURCE, /const usesCompactVisual = compact \|\| usesStrokeChrome \|\| appearance === "project-butter";/u);
 	assert.match(SOURCE, /boxShadow: chromeStyles\.boxShadow,/u);
 	assert.doesNotMatch(SOURCE, /export \{[\s\S]*resolveJiraIssueChrome/u);
 	assert.match(SUMMARY_SOURCE, /usesStrokeChrome: boolean;/u);
@@ -99,8 +99,8 @@ test("Jira issue label tags rest as default gray and reveal color on card hover"
 
 test("Jira issue compact visual keeps stroke internals when chrome is raised", () => {
 	assert.match(SOURCE, /compact\?: boolean;/u);
-	assert.match(SOURCE, /const usesCompactVisual = compact \|\| usesStrokeChrome;/u);
-	assert.match(SOURCE, /<div className=\{usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>/u);
+	assert.match(SOURCE, /const usesCompactVisual = compact \|\| usesStrokeChrome \|\| appearance === "project-butter";/u);
+	assert.match(SOURCE, /<div className=\{appearance === "project-butter" \? "p-3" : usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>/u);
 	assert.match(SOURCE, /usesStrokeChrome=\{usesCompactVisual\}/u);
 	assert.match(SOURCE, /compact=\{usesCompactVisual\}/u);
 	assert.match(SOURCE, /const agentActivityRestBorderClassName = !hasActiveAgentActivityShell\s*\n\t\t\? agentSurfaceChromeClassName\s*\n\t\t: usesStrokeChrome\s*\n\t\t\t\? cn\("border-surface", chromeStyles\.agentSurfaceHoverClassName\)\s*\n\t\t\t: agentSurfaceChromeClassName;/u);
@@ -118,7 +118,7 @@ test("Jira issue stroke chrome keeps its rest border everywhere except the agent
 	);
 	assert.match(
 		ROOT_CLASS_BLOCK,
-		/const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? cn\([\s\S]*chromeStyles\.restClassName[\s\S]*chromeStyles\.agentSurfaceHoverClassName[\s\S]*"bg-bg-selected"[\s\S]*: cn\(agentActivityRestBorderClassName, "bg-surface"\)/u,
+		/const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? cn\([\s\S]*chromeStyles\.restClassName[\s\S]*chromeStyles\.agentSurfaceHoverClassName[\s\S]*"bg-bg-selected"[\s\S]*: cn\(agentActivityRestBorderClassName, appearance === "project-butter" \? "bg-surface-raised" : "bg-surface"\)/u,
 	);
 	assert.match(SOURCE, /const agentActivityRestBorderClassName = !hasActiveAgentActivityShell\s*\n\t\t\? agentSurfaceChromeClassName\s*\n\t\t: usesStrokeChrome\s*\n\t\t\t\? cn\("border-surface", chromeStyles\.agentSurfaceHoverClassName\)\s*\n\t\t\t: agentSurfaceChromeClassName;/u);
 });
@@ -259,7 +259,7 @@ test("Jira issue reserves a stable title action slot and opens the built-in acti
 	assert.match(MORE_MENU_SOURCE, /data-popup-open:pointer-events-auto data-popup-open:opacity-100/u);
 	assert.match(MORE_MENU_SOURCE, /motion-reduce:transition-none/u);
 	assert.match(MORE_MENU_SOURCE, /<DropdownMenuContent align="start" className="max-h-none w-\[280px\]" side="right" sideOffset=\{8\}>/u);
-	for (const label of ["Move work item", "Change status", "Copy link", "Copy key", "Add agent", "Link Confluence item", "Link work item", "Change parent", "Select cover", "Edit labels", "Add flag"]) {
+	for (const label of ["Move work item", "Change status", "Copy link", "Copy key", "Add agent", "Link Confluence item", "Link work item", "Change parent", "Select cover", "Edit labels"]) {
 		assert.match(MORE_MENU_SOURCE, new RegExp(`>\\s*${label}\\s*</DropdownMenuItem>`));
 	}
 	assert.doesNotMatch(MORE_MENU_SOURCE, /Lozenge|>New</u);
@@ -443,7 +443,7 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /if \(!usesStrokeChrome\) \{[\s\S]*#\{pullRequestNumber\}/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /iconScale = "compact",/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /const iconMetrics = resolveJiraIssueIconMetrics\(iconScale\);/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className=\{cn\(colorClass, "\[&_svg\]:text-current", iconMetrics\.compactIconClassName\)\}/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className=\{cn\(tone === "subtle" \? "text-icon-subtle" : colorClass, "\[&_svg\]:text-current", iconMetrics\.compactIconClassName\)\}/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<HoverCard>[\s\S]*render=\{\(\s*<Button[\s\S]*aria-label=\{accessibleName\}[\s\S]*onClick=\{stopNestedActivation\}[\s\S]*onPointerDown=\{stopNestedActivation\}[\s\S]*size="icon-compact"[\s\S]*type="button"[\s\S]*variant="ghost"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<Button[\s\S]*size="icon-compact"[\s\S]*variant="ghost"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<PullRequest[\s\S]*relativeTime=\{pullRequestPreview\?\.relativeTime\}[\s\S]*variant="flyout"/u);
@@ -471,7 +471,7 @@ test("Jira issue uses the 8px large radius token", () => {
 test("Jira issue switches rich variants to an article with internal controls", () => {
 	assert.match(SOURCE, /const hasAgentActivityPresentation = agentActivityMode !== undefined \|\| Boolean\(agentActivities\?\.length\) \|\| hasCompletedAgentChin;/);
 	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| agentActivityShellMounted \|\| selectionBackdropState.active \|\| Boolean\(generativeAction\) \|\| Boolean\(agentSessionTransfer\) \|\| usesCompactVisual \|\| Boolean\(agentSessionTargetPreview\);/);
-	assert.match(SOURCE, /const shouldRenderIssueClickButton = Boolean\(props\.onClick && !parentEpicControl\);/);
+	assert.match(SOURCE, /const shouldRenderIssueClickButton = Boolean\(props\.onClick && \(!parentEpicControl \|\| appearance === "project-butter"\)\);/);
 	assert.match(SOURCE, /<article[\s\S]*data-selected=\{selected \|\| undefined\}/);
 	assert.match(SOURCE, /draggable=\{draggable\}/);
 	assert.match(SOURCE, /shouldRenderIssueClickButton \? \([\s\S]*usesCompactVisual \? \([\s\S]*<button[\s\S]*className="sr-only"[\s\S]*\{showFooterMetadata \? `\$\{issueKey\}: \$\{summary\}` : summary\}[\s\S]*: \([\s\S]*<button[\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
@@ -482,7 +482,7 @@ test("Jira issue switches rich variants to an article with internal controls", (
 	assert.match(SUMMARY_SOURCE, /\{showPriorityIndicator \? \([\s\S]*usesStrokeChrome \? \([\s\S]*<span[\s\S]*aria-label=\{`\$\{priority\} priority`\}[\s\S]*buttonVariants\(\{ size: "icon-compact", variant: "ghost" \}\)/);
 	assert.match(SOURCE, /className="relative w-full px-3 pt-3 pb-3 text-left outline-none/);
 	assert.match(SOURCE, /className="w-full p-3 text-left outline-none/);
-	assert.match(SOURCE, /<div className=\{usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>\{summaryContent\}<\/div>/);
+	assert.match(SOURCE, /<div className=\{appearance === "project-butter" \? "p-3" : usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"\}>\{summaryContent\}<\/div>/);
 	assert.match(SUBTASKS_SOURCE, /import \{ JiraIssueCountBadge \} from "@\/components\/blocks\/jira-issue\/count-badge";/);
 	assert.match(SUBTASKS_SOURCE, /import \{ Separator \} from "@\/components\/ui\/separator";/);
 	assert.doesNotMatch(SOURCE, /parentEpicControl \? <JiraIssueSeparator \/> : null/);
@@ -505,7 +505,7 @@ test("Jira issue keeps its agent shell mounted throughout a session-target previ
 	);
 	assert.match(
 		SOURCE,
-		/const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| agentActivityShellMounted\s*\n\t\t\|\| selectionBackdropState.active\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined\s*\n\t\t\|\| Boolean\(agentSessionTargetPreview\);/u,
+		/const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| appearance === "project-butter"\s*\n\t\t\|\| agentActivityShellMounted\s*\n\t\t\|\| selectionBackdropState.active\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined\s*\n\t\t\|\| Boolean\(agentSessionTargetPreview\);/u,
 	);
 	assert.match(
 		SOURCE,
@@ -699,7 +699,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/<span[\s\S]*className="grid size-6 shrink-0 place-items-center text-icon"[\s\S]*<Spinner[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="experimental-avatar"/u,
+		/<span[\s\S]*className="grid size-6 shrink-0 place-items-center text-icon"[\s\S]*<Spinner[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="bloom-avatar"/u,
 	);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*iconScale=\{iconScale\}/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*inheritChinSurface/);
@@ -729,7 +729,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	);
 	assert.match(
 		SOURCE,
-		/const insetsAgentActivitySurfaceBottom = hasActiveAgentActivityShell && !hasAgentActivityChin;/u,
+		/const insetsAgentActivitySurfaceBottom = hasActiveAgentActivityShell && \(!hasAgentActivityChin \|\| appearance === "project-butter"\);/u,
 	);
 	// The well is carved out of the card on every edge. A spacer row under the card
 	// would grow the shell on hover and push the rest of the column down.
@@ -742,7 +742,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	);
 	assert.doesNotMatch(SOURCE, /\[&_\[data-slot=jira-issue-agent-backdrop\]\]:opacity-0/u);
 	assert.doesNotMatch(SOURCE, /\[&_\[data-slot=jira-issue-surface\]\]:-inset-px/u);
-	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*cn\(agentActivityRestBorderClassName, "bg-surface"\)/);
+	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*cn\(agentActivityRestBorderClassName, appearance === "project-butter" \? "bg-surface-raised" : "bg-surface"\)/);
 	assert.doesNotMatch(SOURCE, /agentActivityShellPadding/);
 	assert.doesNotMatch(SOURCE, /agentActivityBackdropOutset/);
 	assert.match(SOURCE, /data-agent-activity-mode=\{resolvedAgentActivityMode\}/);
@@ -813,10 +813,10 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
 	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence key=\{rowPresenceKey\} initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup, index\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
-	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
+	assert.match(SOURCE, /const hasIssueRows = hasSubtasks && appearance !== "project-butter";/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);
-	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| agentActivityShellMounted\s*\n\t\t\|\| selectionBackdropState.active\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined\s*\n\t\t\|\| Boolean\(agentSessionTargetPreview\);/);
+	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| appearance === "project-butter"\s*\n\t\t\|\| agentActivityShellMounted\s*\n\t\t\|\| selectionBackdropState.active\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined\s*\n\t\t\|\| Boolean\(agentSessionTargetPreview\);/);
 	assert.match(SOURCE, /const agentActivityBackdropAnimation = \{[\s\S]*left: 0,[\s\S]*opacity: hasActiveAgentActivityShell \? 1 : attachNearness,[\s\S]*right: 0,[\s\S]*top: selectionBackdropState.top/);
 	assert.match(SOURCE, /an inset of 4\s*\n\t\/\/ puts them 4px from the article edge, flush with the `px-1` gutter the chin/);
 	assert.match(SOURCE, /const agentActivitySurfacePosition = agentActivitySurfaceInset - 1;/);
@@ -868,7 +868,7 @@ test("Jira issue parent epic demo includes issue context and a collapsed subtask
 });
 
 test("Jira issue agent activity demo is registered in docs and variant registry", () => {
-	assert.match(PAGE_SOURCE, /variant\?: "default" \| "experimental" \| "uncaptured-work" \| "subtasks-collapsed" \| "subtasks-expanded" \| "parent-epic" \| "agent-activity-states" \| "agent-activity-states-experimental" \| "agent-activity-states-experimental-v2";/);
+	assert.match(PAGE_SOURCE, /variant\?: "default" \| "experimental" \| "uncaptured-work" \| "subtasks-collapsed" \| "subtasks-expanded" \| "parent-epic" \| "agent-activity-states" \| "agent-activity-states-experimental" \| "agent-activity-states-experimental-v2" \| "project-butter";/);
 	assert.match(PAGE_SOURCE, /const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = \[/);
 	assert.match(PAGE_SOURCE, /const SERVICE_IMPACT_AGENT_LABELS = \[[\s\S]*"Reading linked design notes"[\s\S]*"Mapping customer-facing impact"/);
 	assert.match(PAGE_SOURCE, /const DEPENDENCY_MAPPER_LABELS = \[[\s\S]*"Following linked work items"[\s\S]*"Finding blocked handoffs"/);
@@ -956,7 +956,7 @@ test("Jira issue agent activity demo has an experimental stroke-chrome duplicate
 	assert.match(PAGE_SOURCE, /variant === "agent-activity-states"/);
 	assert.match(PAGE_SOURCE, /function JiraIssueExperimentalAgentActivityStatesPage\(\{[\s\S]*iconScale,[\s\S]*\}: Readonly<\{[\s\S]*iconScale\?: JiraIssueIconScale;[\s\S]*\}> = \{\}\): React\.ReactElement \{/);
 	assert.match(PAGE_SOURCE, /subtaskChrome="stroke"/);
-	assert.match(PAGE_SOURCE, /const \[chrome, setChrome\] = useState<JiraIssueChrome>\("stroke"\);/);
+	assert.match(PAGE_SOURCE, /const \[chrome, setChrome\] = useState<JiraIssueChrome>\(issueProps\?\.appearance === "project-butter" \? "raised" : "stroke"\);/);
 	assert.match(PAGE_SOURCE, /interface JiraIssueAgentActivityStatesDemoProps \{[\s\S]*agentActivityLayout\?: JiraIssueAgentActivityLayout;[\s\S]*chrome\?: JiraIssueChrome;[\s\S]*onChromeChange\?: \(chrome: JiraIssueChrome\) => void;[\s\S]*\}/);
 	assert.match(PAGE_SOURCE, /function JiraIssueAgentActivityStatesDemo\(\{[\s\S]*agentActivityLayout = "merged",[\s\S]*chrome = "raised",[\s\S]*onChromeChange,[\s\S]*\}: Readonly<JiraIssueAgentActivityStatesDemoProps> = \{\}\): React\.ReactElement \{/);
 	assert.match(PAGE_SOURCE, /<JiraIssue[\s\S]*agentActivityLayout=\{agentActivityLayout\}[\s\S]*chrome=\{chrome\}[\s\S]*compact=\{compact\}/);

@@ -143,7 +143,7 @@ export function JiraActivityNode({
 					<ActorGlyph actor={actor} sizePx={16} />
 				)}
 			</div>
-			{isLast ? null : <div className="min-h-4 w-px flex-1 bg-border" />}
+			{isLast ? null : <div className="min-h-4 w-px flex-1 bg-border" data-jira-activity-timeline-stem />}
 		</div>
 	);
 }

@@ -105,7 +105,7 @@ export default function ProductSidebar({
 				variant="inset"
 			>
 				<SidebarContent className="gap-3 overflow-hidden bg-sidebar px-3">
-					<div aria-label="Product navigation" className="flex shrink-0 flex-col gap-3">
+					<div className="flex shrink-0 flex-col gap-3">
 						{renderSidebarContent()}
 					</div>
 				</SidebarContent>

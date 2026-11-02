@@ -350,6 +350,7 @@ function isSuggestionMenuOpen(view: EditorView): boolean {
 function createComposerBehavior(
 	onEnter?: (view: EditorView) => boolean,
 	onPasteFiles?: (files: File[]) => void,
+	onEscape?: (view: EditorView) => boolean,
 ) {
 	return Extension.create({
 		name: "composerBehavior",
@@ -364,6 +365,11 @@ function createComposerBehavior(
 					key: composerSubmitPluginKey,
 					props: {
 						handleKeyDown: (view, event) => {
+							if (event.key === "Escape" && !event.isComposing && !isSuggestionMenuOpen(view) && onEscape) {
+								const handled = onEscape(view);
+								if (handled) event.stopPropagation();
+								return handled;
+							}
 							if (event.key !== "Enter") {
 								return false;
 							}
@@ -573,6 +579,8 @@ export interface ComposerEditorExtensionOptions extends RichTextEditorExtensionO
 	 * Return `true` to consume the keystroke (e.g. after requesting form submit).
 	 */
 	onEnter?: (view: EditorView) => boolean;
+	/** Called on Escape after inline suggestion menus have dismissed. */
+	onEscape?: (view: EditorView) => boolean;
 	/**
 	 * Called with files pasted into the composer (images, etc.) so the host can
 	 * turn them into attachments — the contentEditable itself can't hold files.
@@ -603,6 +611,6 @@ export function createComposerEditorExtensions(
 		DismissedAutoTagTracker,
 		createComposerTraceDecorationExtension(),
 		createComposerDirectoryAutocomplete(options.directoryAutocomplete),
-		createComposerBehavior(options.onEnter, options.onPasteFiles),
+		createComposerBehavior(options.onEnter, options.onPasteFiles, options.onEscape),
 	];
 }

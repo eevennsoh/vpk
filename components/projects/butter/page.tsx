@@ -30,7 +30,7 @@ import {
 	type JiraListInsertion,
 } from "@/components/blocks/jira-list";
 
-import { HeaderLanyards } from "@/components/projects/shared/components/eu26-header-lanyards";
+import { HeaderLanyards } from "./components/header-lanyards";
 import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
@@ -66,6 +66,7 @@ import { useButterGenerativeActions } from "./hooks/use-butter-generative-action
 import { useButterList } from "./hooks/use-butter-list";
 import { useButterAssignmentMove } from "@/components/projects/butter/hooks/use-butter-assignment-move";
 import { useButterContent } from "./hooks/use-butter-content";
+import { useButterWorkItem } from "@/components/projects/butter/hooks/use-butter-work-item";
 import {
 	WAC_BOARD_TITLE,
 	WAC_HEADER_ASSIGNEES,
@@ -77,6 +78,7 @@ import {
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
+const ProjectButterJiraWorkItem = dynamic(() => import("@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item").then((module) => module.ProjectButterJiraWorkItem));
 
 const BUTTER_TABS = getJiraTabs(false);
 const BUTTER_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(BUTTER_TABS);
@@ -110,6 +112,7 @@ function ButterApp(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
+	const workItem = useButterWorkItem();
 	const {
 		boardColumns,
 		contentMode,
@@ -406,6 +409,7 @@ function ButterApp(): React.ReactElement {
 						cardGenerativeActionPinnedAgentIds={BUTTER_PINNED_CODING_AGENT_IDS}
 						cardGenerativeActionPresentation="more-actions"
 						iconScale="comfortable"
+						cardAppearance="project-butter"
 						issueSelectionAppearance="fused-backdrop"
 						getStatusVariant={statusVariant}
 						autoArrangeEnabled={designVariants.autoArrange}
@@ -448,6 +452,7 @@ function ButterApp(): React.ReactElement {
 						onAgentSessionsReviewed={reviewAgentSessions}
 						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
 						onBoardColumnsChange={onBoardColumnsChange}
+						onCardClick={workItem.openWorkItem}
 						onCardAgentActivityViewChat={handleViewChat}
 						onCardAssignedAgentIdsChange={onBoardAssignedAgentIdsChange}
 						onCardAgentDoneRunView={handleViewCompletedRun}
@@ -495,6 +500,15 @@ function ButterApp(): React.ReactElement {
 				</div>
 			</AppLayout>
 			</HeaderLanyards>
+			{workItem.selection ? <ProjectButterJiraWorkItem
+				initialPresentation="modal"
+				shell="project"
+				initialPreset="filled"
+				initialSessions={workItem.selection.initialSessions}
+				onClose={workItem.closeWorkItem}
+				open={workItem.open}
+				workItem={workItem.selection.workItem}
+			/> : null}
 			{/* Resume swaps the button label to "Copied" — colour and text alone,
 			    which a screen reader on the row never hears. Announce it instead. */}
 			<span aria-live="polite" className="sr-only" role="status">
@@ -518,6 +532,8 @@ function ButterApp(): React.ReactElement {
 				/>
 			</MountOnFirstUse>
 			<JgpRovoOverlay
+				chat={workItem.open ? "hidden" : "auto"}
+				launcher={workItem.open ? "hidden" : "auto"}
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}

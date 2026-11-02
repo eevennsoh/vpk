@@ -167,6 +167,7 @@ export interface JiraActivityReply {
 	id: string;
 	actor: JiraActivityActor;
 	timestamp: string;
+	createdAtMs?: number;
 	body: string;
 	reactions?: readonly JiraActivityReaction[];
 	/** Optional agent-session summary used to open an embedded Rovo chat. */
@@ -228,6 +229,8 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	 * comments with a `parentId` default to collapsed so only one nested level is visible.
 	 */
 	defaultRepliesExpanded?: boolean;
+	/** Keep the latest N replies visible while collapsed; omit for collapse-all behavior. */
+	replyPreviewCount?: number;
 	/** Emoji reactions on this comment, in first-reacted order. */
 	reactions?: readonly JiraActivityReaction[];
 	/** Render the reply composer under this comment. Defaults to `true`. */
@@ -276,6 +279,7 @@ export type JiraActivitySortOrder = "ascending" | "descending";
  * - `agents-only` — agent-authored comments and generated-output cards
  * - `needs-input` — entries awaiting viewer input (`sessionItem.state === "needs-input"`)
  * - `comments-only` — human and agent comment cards only
+ * - `history-only` — work item changes and other non-comment events
  * - `insights-only` — captured insight/decision rows on the shared Activity timeline
  */
 export type JiraActivityFilter =
@@ -283,4 +287,5 @@ export type JiraActivityFilter =
 	| "agents-only"
 	| "needs-input"
 	| "comments-only"
+	| "history-only"
 	| "insights-only";

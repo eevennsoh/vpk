@@ -70,7 +70,7 @@ test("Team EU26 filled preset renders the high-confidence sections and details r
 	assert.match(sectionSource, /useReducedMotion/u);
 	assert.match(railPanelSource, /absolute inset-0 z-0/u);
 	assert.match(railPanelSource, /pointer-events-none relative z-10/u);
-	assert.match(railPanelSource, /relative flex min-h-12 items-center px-4/u);
+	assert.match(railPanelSource, /relative flex items-center[\s\S]*surface === "card" \? "min-h-12 px-4"/u);
 	assert.doesNotMatch(railPanelSource, /variant="ghost"/u);
 	assert.doesNotMatch(railPanelSource, /aria-expanded:hover:bg-bg-neutral-subtle-hovered/u);
 	assert.match(railPanelSource, /panelContentVariants\(shouldReduceMotion\)/u);

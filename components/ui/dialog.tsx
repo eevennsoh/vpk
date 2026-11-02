@@ -58,6 +58,7 @@ const DIALOG_SIZE_CLASSES = {
 
 interface DialogContentProps extends DialogPrimitive.Popup.Props {
   showCloseButton?: boolean
+  overlayProps?: React.ComponentProps<typeof DialogOverlay>
   size?: "sm" | "md" | "lg" | "xl"
 }
 
@@ -65,12 +66,13 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  overlayProps,
   size = "sm",
   ...props
 }: Readonly<DialogContentProps>) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay {...overlayProps} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(

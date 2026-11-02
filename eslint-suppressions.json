@@ -520,7 +520,7 @@
   },
   "components/blocks/agent-session/agent-session.test.js": {
     "no-restricted-syntax": {
-      "count": 526
+      "count": 525
     }
   },
   "components/blocks/agent-session/page.tsx": {
@@ -727,7 +727,7 @@
   },
   "components/blocks/jira-activity/jira-activity-alignment.test.js": {
     "no-restricted-syntax": {
-      "count": 43
+      "count": 40
     }
   },
   "components/blocks/jira-activity/jira-activity-event-row.test.js": {
@@ -737,7 +737,7 @@
   },
   "components/blocks/jira-activity/jira-activity-threads.test.js": {
     "no-restricted-syntax": {
-      "count": 213
+      "count": 169
     }
   },
   "components/blocks/jira-activity/jira-activity.test.js": {
@@ -777,7 +777,7 @@
   },
   "components/blocks/jira-epic/jira-epic.test.js": {
     "no-restricted-syntax": {
-      "count": 32
+      "count": 8
     }
   },
   "components/blocks/jira-insights/components/jira-insights-timeline-rail.tsx": {

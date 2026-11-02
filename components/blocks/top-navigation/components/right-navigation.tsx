@@ -27,6 +27,7 @@ interface RightNavigationProps {
 	isChatOpen?: boolean;
 	onToggleChat: () => void;
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
+	onSettingsClick?: () => void;
 	/**
 	 * Exposes the cluster's container so the bar can measure how much room the
 	 * right side needs. The centered search overlay reserves that width on both
@@ -46,6 +47,7 @@ export function RightNavigation({
 	isChatOpen = false,
 	onToggleChat,
 	settingsMenuItems,
+	onSettingsClick,
 	ref,
 }: Readonly<RightNavigationProps>) {
 	const [isOverflowOpen, setIsOverflowOpen] = useState(false);
@@ -84,6 +86,7 @@ export function RightNavigation({
 			isChatOpen={isChatOpen}
 			onToggleChat={onToggleChat}
 			settingsMenuItems={settingsMenuItems}
+			onSettingsClick={onSettingsClick}
 		/>
 	);
 

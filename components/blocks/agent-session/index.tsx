@@ -104,6 +104,7 @@ export function AgentSession({
 	highlightedItemId,
 	issueKey,
 	isResumable,
+	localSessionAction = "continue",
 	newItemIds,
 	onContinueInAgent,
 	onCopyResume,
@@ -127,6 +128,7 @@ export function AgentSession({
 	showUntrackedWorkFooter,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
+	showBranch = false,
 	style,
 	variant = "large",
 	visibilityLabel,
@@ -292,6 +294,7 @@ export function AgentSession({
 								isSelected={item.id === selectedItemId}
 								item={item}
 								key={item.id}
+								localSessionAction={localSessionAction}
 								onContinueInAgent={onContinueInAgent}
 								onCopyResume={onCopyResume}
 								onCreateWorkItemFromDraft={onCreateWorkItemFromDraft}
@@ -312,6 +315,7 @@ export function AgentSession({
 								sessionDrag={sessionDrag}
 								showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 								showWorkingSpinner={showWorkingSpinner}
+								showBranch={showBranch}
 								triageRow={rowTriage?.get(item.id)}
 								draggingIds={draggingIds}
 								visibilityLabel={visibilityLabel}

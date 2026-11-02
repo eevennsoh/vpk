@@ -42,6 +42,7 @@ interface RightNavigationActionsProps {
 	settingsDesignVariantIds?: readonly DesignVariantId[];
 	settingsIconOnly?: boolean;
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
+	onSettingsClick?: () => void;
 }
 
 function renderSettingsMenuItem(item: RightNavigationSettingsMenuItem) {
@@ -85,6 +86,7 @@ export function RightNavigationActions({
 	settingsDesignVariantIds,
 	settingsIconOnly = false,
 	settingsMenuItems,
+	onSettingsClick,
 }: Readonly<RightNavigationActionsProps>) {
 	const hasSettingsMenu = Boolean(settingsMenuItems && settingsMenuItems.length > 0);
 	const { designVariants, setDesignVariant } = useDesignVariants();
@@ -118,7 +120,11 @@ export function RightNavigationActions({
 			</Button>
 
 			{/* Retain visual chrome without exposing an empty settings control. */}
-			{settingsIconOnly || (!hasSettingsProperties && !hasSettingsMenu) ? (
+			{onSettingsClick ? (
+				<Button aria-label="Settings" onClick={onSettingsClick} size="icon" type="button" variant="ghost">
+					<SettingsIcon label="" color={token("color.icon.subtle")} />
+				</Button>
+			) : settingsIconOnly || (!hasSettingsProperties && !hasSettingsMenu) ? (
 				<span
 					aria-hidden="true"
 					className="inline-flex size-8 shrink-0 items-center justify-center text-icon-subtle [&_svg]:size-4 [&_svg]:shrink-0"

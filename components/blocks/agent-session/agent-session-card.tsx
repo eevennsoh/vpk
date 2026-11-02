@@ -56,6 +56,7 @@ import { isTransferSourceFaded } from "./session-cohort";
 import {
 	type AgentSessionDensity,
 	type AgentSessionItem,
+	type AgentSessionProps,
 	type AgentSessionSelectionGesture,
 	getAgentSessionRole,
 	type AgentSessionTriageRow,
@@ -63,6 +64,7 @@ import {
 	type AgentSessionWorkItemOption,
 } from "./agent-session-types";
 import { useAgentSessionMenu } from "./use-agent-session-menu";
+import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
 import { motionEase } from "@/lib/motion";
 
 const STATUS_DEPARTURE_TRANSITION = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
@@ -257,6 +259,7 @@ export function AgentSessionCard({
 	isResumable,
 	isSelected = false,
 	item,
+	localSessionAction = "continue",
 	moreMenuPortalled,
 	moreMenuPositionerClassName,
 	onArrivalComplete,
@@ -273,12 +276,14 @@ export function AgentSessionCard({
 	onToggleVisibility,
 	onView,
 	padding = "default",
+	renderAgentAvatar,
 	trailingAlign = "center",
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
+	showBranch = false,
 	triageRow,
 	draggingIds,
 	visibilityLabel = "Archive",
@@ -322,6 +327,7 @@ export function AgentSessionCard({
 	/** Single-select highlight owned by the list, not this card. */
 	isSelected?: boolean;
 	item: AgentSessionItem;
+	localSessionAction?: AgentSessionProps["localSessionAction"];
 	onArrivalComplete?: () => void;
 	onDepartureComplete?: () => void;
 	onStateChangeComplete?: () => void;
@@ -344,6 +350,7 @@ export function AgentSessionCard({
 	 * vertical) so stacked menu rows sit tighter than catalog cards.
 	 */
 	padding?: "default" | "compact";
+	renderAgentAvatar?: AgentSessionAvatarPreview;
 	/** Keep status and replacement actions centered beside the shared title/metadata column. */
 	trailingAlign?: "center" | "metadata";
 	/**
@@ -367,6 +374,7 @@ export function AgentSessionCard({
 	showLinkWorkItemMenuItem?: boolean;
 	/** Shows the experimental Working indicator in the short row's lifecycle slot. */
 	showWorkingSpinner?: boolean;
+	showBranch?: boolean;
 	triageRow?: AgentSessionTriageRow | null;
 	draggingIds?: ReadonlySet<string>;
 	/** Accessible name for the menu's dismiss row. Archive in the active list, Unarchive in the archived view. */
@@ -469,9 +477,9 @@ export function AgentSessionCard({
 	// path so selection is not avatar-only. Hover actions stay buttons so they
 	// can stop the article from changing the selection.
 	const role = getAgentSessionRole(item);
-	const canOpenLocalMenu = role === "owner" && !isCloudSession && (canResume || onContinueInAgent !== undefined);
+	const canOpenLocalMenu = role === "owner" && !isCloudSession && localSessionAction === "continue" && (canResume || onContinueInAgent !== undefined);
 	const viewSession: typeof onView = role === "owner"
-		? isCloudSession ? onView : canOpenLocalMenu ? menu.toggleContinue : undefined
+		? isCloudSession || localSessionAction === "view" ? onView : canOpenLocalMenu ? menu.toggleContinue : undefined
 		: undefined;
 	function renderLocalContinuation(trigger?: ReactElement) {
 		return (
@@ -733,9 +741,10 @@ export function AgentSessionCard({
 								lifecycle={lifecycleIndicator}
 								metadata={
 									isLongDensity
-										? <AgentSessionLongMetadata item={item} />
+										? <AgentSessionLongMetadata item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
+								metadataOutsideViewTrigger={isLongDensity && renderAgentAvatar !== undefined}
 								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
 								renderIdentity={() => {

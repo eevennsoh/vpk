@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useInView } from "motion/react";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
+import BranchIcon from "@atlaskit/icon/core/branch";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 
 import {
@@ -22,6 +23,7 @@ import {
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
 import type { AgentSessionItem } from "./agent-session-types";
+import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
 
 const TOOL_CALL_CYCLE_MS = 2_200;
 
@@ -85,7 +87,7 @@ function toPullRequestNumberLabel(item: AgentSessionItem): string | undefined {
  * AvatarGroup facepile at 16px.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
+function LongMetadataIdentity({ item, renderAgentAvatar }: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview }>) {
 	if (item.invokedBy) {
 		return (
 			<AgentListAttributionAvatarGroup
@@ -94,23 +96,23 @@ function LongMetadataIdentity({ item }: Readonly<{ item: AgentSessionItem }>) {
 				attributionOrder="agent-first"
 				sizePx={16}
 				appearance="coding"
+				renderAgentAvatar={renderAgentAvatar}
 			/>
 		);
 	}
 
-	return (
-		<span className="flex size-4 shrink-0 items-center justify-center">
-			<AgentAvatarVisual
-				appearance="coding"
-				avatarClassName="after:border-0"
-				avatarSrc={item.agent.avatarSrc}
-				brandName={item.agent.brandName}
-				label=""
-				sizePx={16}
-				vpkLogo={item.agent.vpkLogo}
-			/>
-		</span>
+	const avatar = (
+		<AgentAvatarVisual
+			appearance="coding"
+			avatarClassName="after:border-0"
+			avatarSrc={item.agent.avatarSrc}
+			brandName={item.agent.brandName}
+			label=""
+			sizePx={16}
+			vpkLogo={item.agent.vpkLogo}
+		/>
 	);
+	return <span className="flex size-4 shrink-0 items-center justify-center">{renderAgentAvatar?.(item.agent, avatar) ?? avatar}</span>;
 }
 
 /** Cycles only while visible; reduced motion holds the first tool call still. */
@@ -163,13 +165,14 @@ function AgentSessionToolCall({ toolCalls }: Readonly<{ toolCalls: readonly stri
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
 function LongMetadataSegment({
 	item,
+	renderAgentAvatar,
 	segment,
-}: Readonly<{ item: AgentSessionItem; segment: AgentSessionMetadataSegment }>) {
+}: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; segment: AgentSessionMetadataSegment }>) {
 	switch (segment.kind) {
 		case "agent":
 			return (
 				<span className="flex min-w-0 items-center gap-1">
-					<LongMetadataIdentity item={item} />
+					<LongMetadataIdentity item={item} renderAgentAvatar={renderAgentAvatar} />
 					<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
 						{segment.label}
 					</span>
@@ -177,6 +180,8 @@ function LongMetadataSegment({
 			);
 		case "tool-call":
 			return <AgentSessionToolCall toolCalls={segment.toolCalls ?? []} />;
+		case "branch":
+			return <span className="flex min-w-0 items-center gap-1"><BranchIcon label="" size="small" /><span className="min-w-0 truncate" title={segment.label}>{segment.label}</span></span>;
 		case "artifact":
 			return (
 				<span className="flex min-w-0 shrink items-center gap-1">
@@ -215,13 +220,14 @@ function LongMetadataSegment({
  * unit-tested; this component only decides how each chunk looks.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSessionItem }>) {
+export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch = false }: Readonly<{ item: AgentSessionItem; renderAgentAvatar?: AgentSessionAvatarPreview; showBranch?: boolean }>) {
 	// Deliberately not `getAgentListHost`, which answers "cloud" for a payload
 	// that simply never said. Undefined here means the row stays quiet about
 	// where it ran rather than asserting a default onto the card.
 	const declaredHost = item.host ?? item.sessionDetails?.host;
 	const segments = toAgentSessionMetadataSegments({
 		agentName: item.agent.name,
+		branch: showBranch ? item.branch : undefined,
 		artifactLabel: toArtifactLabel(item),
 		host: declaredHost,
 		prStatus: item.prStatus,
@@ -245,7 +251,7 @@ export function AgentSessionLongMetadata({ item }: Readonly<{ item: AgentSession
 					key={segment.kind}
 				>
 					{index > 0 ? <MetadataDot /> : null}
-					<LongMetadataSegment item={item} segment={segment} />
+					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 				</span>
 			))}
 		</span>

@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import GrowVerticalIcon from "@atlaskit/icon/core/grow-vertical";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
 import type { AgentListItem } from "@/components/blocks/agent-list";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { activityActorVpkLogo } from "./jira-activity-actor-mention";
 import { JiraActivityAddToChatButton } from "./jira-activity-add-to-chat-button";
 import { JiraActivityCard } from "./jira-activity-card";
+import type { JiraActivityCardProps } from "./jira-activity-card";
 import { JiraActivityCommentActions } from "./jira-activity-comment-actions";
 import { JiraActivityComposer } from "./jira-activity-composer";
 import { JiraActivityImagePreviewDialog } from "./jira-activity-image-preview-dialog";
@@ -24,6 +26,7 @@ import { JiraActivitySegments } from "./jira-activity-segments";
 import type {
 	JiraActivityActor,
 	JiraActivityCommentEntry,
+	JiraActivityEntry,
 	JiraActivityImageAttachment,
 	JiraActivityReaction,
 	JiraActivityReply,
@@ -198,6 +201,17 @@ function ReopenThreadAction({
 	);
 }
 
+function ThreadContinuation() {
+	return <span aria-hidden className="pointer-events-none absolute -left-6 inset-y-0 w-px -translate-x-1/2 bg-bg-accent-gray-subtler" data-jira-activity-thread-continuation />;
+}
+
+function ThreadConnector({ continued, centered = false }: Readonly<{ continued: boolean; centered?: boolean }>) {
+	return <>
+		<span aria-hidden className={cn("pointer-events-none absolute -left-6 w-4 -translate-x-[0.5px] rounded-bl-xl border-b border-l border-bg-accent-gray-subtler", centered ? "-top-3 bottom-[calc(50%-0.5px)]" : "top-0 h-7")} data-jira-activity-thread-branch />
+		{continued ? <ThreadContinuation /> : null}
+	</>;
+}
+
 function ThreadReplyCard({
 	reply,
 	currentUser,
@@ -213,6 +227,14 @@ function ThreadReplyCard({
 	indented,
 	showResolvedStatus,
 	onReopen,
+	bodyContent,
+	content,
+	timestampContent,
+	headerLayout,
+	tools,
+	hidden = false,
+	threaded = false,
+	continued = false,
 }: Readonly<{
 	reply: JiraActivityReply;
 	currentUser: JiraActivityActor;
@@ -228,6 +250,14 @@ function ThreadReplyCard({
 	indented: boolean;
 	showResolvedStatus: boolean;
 	onReopen?: () => void;
+	bodyContent?: ReactNode;
+	content?: ReactNode;
+	timestampContent?: ReactNode;
+	headerLayout: JiraActivityCardProps["headerLayout"];
+	tools?: ReactNode;
+	hidden?: boolean;
+	threaded?: boolean;
+	continued?: boolean;
 }>) {
 	const [reactions, setReactions] = useState<readonly JiraActivityReaction[]>(reply.reactions ?? []);
 	const replyButtonRef = useRef<HTMLButtonElement>(null);
@@ -261,14 +291,16 @@ function ThreadReplyCard({
 	) : null;
 
 	return (
-		<div className={cn("pt-3", indented ? "pl-6" : null)}>
-			<JiraActivityCard
+		<div className={cn("relative pt-3", threaded ? "pb-3" : null, indented ? "pl-6" : null)} hidden={hidden}>
+			{threaded && continued ? <ThreadContinuation /> : null}
+			{content === undefined ? <JiraActivityCard
 				action={addToChatAction ?? undefined}
 				agentName={reply.actor.name}
 				className="rounded-none"
 				activityGroup="activity-reply"
 				headerAvatar={<ActivityActorAvatar actor={reply.actor} />}
-				headerLayout="stacked"
+				headerConnector={threaded ? <ThreadConnector centered continued={false} /> : undefined}
+				headerLayout={headerLayout}
 				item={reply.sessionItem}
 				onView={onViewSession}
 				footerActions={
@@ -286,16 +318,18 @@ function ThreadReplyCard({
 							replyComposerId={replySelected ? replyComposerId : undefined}
 							replyExpanded={replySelected}
 							replyRef={replyButtonRef}
+							trailingActions={tools}
 						/>
 					)
 				}
 				timestamp={reply.timestamp}
+				timestampContent={timestampContent}
 				timestampMeta={
 					showResolvedStatus ? <Lozenge variant="success">Resolved</Lozenge> : undefined
 				}
 			>
-				<div className="text-sm leading-5 text-text">{reply.body}</div>
-			</JiraActivityCard>
+				{bodyContent === undefined ? <div className="text-sm leading-5 text-text">{reply.body}</div> : bodyContent}
+			</JiraActivityCard> : <div className="relative">{threaded ? <ThreadConnector centered continued={false} /> : null}{content}</div>}
 		</div>
 	);
 }
@@ -308,6 +342,7 @@ function ThreadReplyCard({
  */
 export function JiraActivityComment({
 	entry,
+	bodyContent,
 	currentUser,
 	actorsById,
 	onSubmitReply,
@@ -317,9 +352,19 @@ export function JiraActivityComment({
 	onAddReplyToChat,
 	onViewSession,
 	action,
+	renderCommentTools,
+	renderTimestamp,
+	renderReplyBody,
+	renderReply,
+	replyDraft: controlledReplyDraft,
+	onReplyDraftChange,
 	commentActions = "reply-and-reactions",
+	threaded = false,
+	headerLayout = "stacked",
 }: Readonly<{
 	entry: JiraActivityCommentEntry;
+	bodyContent?: ReactNode;
+	headerLayout?: JiraActivityCardProps["headerLayout"];
 	currentUser: JiraActivityActor;
 	actorsById: ReadonlyMap<string, JiraActivityActor>;
 	onSubmitReply: (body: string) => void;
@@ -330,10 +375,19 @@ export function JiraActivityComment({
 	onAddReplyToChat?: (reply: JiraActivityReply) => void;
 	onViewSession?: (item: AgentListItem) => void;
 	action?: ReactNode;
+	renderCommentTools?: (entry: JiraActivityCommentEntry, reply?: JiraActivityReply) => ReactNode;
+	renderTimestamp?: (item: JiraActivityEntry | JiraActivityReply) => ReactNode;
+	renderReplyBody?: (reply: JiraActivityReply) => ReactNode;
+	renderReply?: (reply: JiraActivityReply) => ReactNode | undefined;
+	replyDraft?: string;
+	onReplyDraftChange?: (value: string) => void;
 	commentActions?: "none" | "reactions" | "reply-and-reactions";
+	threaded?: boolean;
 }>) {
 	const replies = entry.replies ?? [];
 	const hasReplies = replies.length > 0;
+	const hasReplyPreview = entry.replyPreviewCount !== undefined;
+	const replyPreviewCount = Math.max(0, Math.floor(entry.replyPreviewCount ?? 0));
 	const allowReply = entry.allowReply ?? true;
 	const allowResolve = Boolean(entry.allowResolve);
 	const resolved = Boolean(entry.resolved);
@@ -343,7 +397,12 @@ export function JiraActivityComment({
 		key: string;
 		actor: JiraActivityActor;
 	} | null>(null);
-	const [replyDraft, setReplyDraft] = useState("");
+	const [localReplyDraft, setLocalReplyDraft] = useState("");
+	const replyDraft = controlledReplyDraft ?? localReplyDraft;
+	function setReplyDraft(value: string) {
+		if (controlledReplyDraft === undefined) setLocalReplyDraft(value);
+		onReplyDraftChange?.(value);
+	}
 	const [previewAttachment, setPreviewAttachment] = useState<JiraActivityImageAttachment | null>(null);
 	const [repliesExpanded, setRepliesExpanded] = useState(
 		entry.defaultRepliesExpanded ?? !nested,
@@ -371,7 +430,11 @@ export function JiraActivityComment({
 		activeReplyButtonRef.current = button;
 		if (replyTarget?.key === key) {
 			setReplyTarget(null);
-			setReplyDraft("");
+			if (controlledReplyDraft === undefined) setReplyDraft("");
+			return;
+		}
+		if (controlledReplyDraft !== undefined) {
+			setReplyTarget({ key, actor });
 			return;
 		}
 		setReplyTarget({ key, actor });
@@ -395,7 +458,7 @@ export function JiraActivityComment({
 	}
 
 	const repliesToggleLabel = repliesExpanded ? "Hide all replies" : "Show all replies";
-	const repliesToggle = hasReplies ? (
+	const repliesToggle = hasReplies && !hasReplyPreview ? (
 		<Button
 			aria-controls={repliesId}
 			aria-expanded={repliesExpanded}
@@ -408,6 +471,20 @@ export function JiraActivityComment({
 			variant="outline"
 		>
 			<GrowVerticalIcon label="" />
+		</Button>
+	) : null;
+	const earlierRepliesToggle = hasReplyPreview && replies.length > replyPreviewCount ? (
+		<Button
+			aria-controls={repliesId}
+			aria-expanded={repliesExpanded}
+			className={cn("justify-self-start", threaded ? "font-normal text-text-subtle" : null)}
+			onClick={() => setRepliesExpanded((expanded) => !expanded)}
+			size="compact"
+			type="button"
+			variant={threaded ? "ghost" : "link"}
+		>
+			{repliesExpanded ? "Hide earlier replies" : "Show more replies"}
+			{threaded ? <ChevronDownIcon label="" size="small" /> : null}
 		</Button>
 	) : null;
 	const addToChatAction = onAddToChat ? (
@@ -434,9 +511,10 @@ export function JiraActivityComment({
 			replyComposerId={replyTarget?.key === entry.id ? composerId : undefined}
 			replyExpanded={replyTarget?.key === entry.id}
 			replyRef={replyButtonRef}
+			trailingActions={renderCommentTools?.(entry)}
 		/>
 	);
-	const collapsedThreadSummary = hasReplies && !repliesExpanded ? (
+	const collapsedThreadSummary = hasReplies && !repliesExpanded && !hasReplyPreview ? (
 		<CollapsedThreadSummary
 			onExpand={() => setRepliesExpanded(true)}
 			replies={replies}
@@ -471,7 +549,8 @@ export function JiraActivityComment({
 			// parent avatar, not the indented reply column.
 			headerAvatar={nested ? <ActivityActorAvatar actor={entry.actor} /> : undefined}
 			hideLeadAvatar={!nested}
-			headerLayout="stacked"
+			headerLayout={headerLayout}
+			threadConnector={threaded && (hasReplies || composerVisible)}
 			item={entry.sessionItem}
 			onView={onViewSession}
 			details={
@@ -500,9 +579,10 @@ export function JiraActivityComment({
 			replyComposer={
 				composerVisible ? (
 					<div
-						className="-ml-10 w-[calc(100%+2.5rem)]"
+						className={threaded ? "relative py-3" : "-ml-10 w-[calc(100%+2.5rem)]"}
 						id={composerId}
 					>
+						{threaded ? <ThreadConnector continued={false} /> : null}
 						<JiraActivityComposer
 							author={currentUser}
 							// In collapsible mode the composer only mounts on a Reply
@@ -518,7 +598,7 @@ export function JiraActivityComment({
 							}}
 							onValueChange={setReplyDraft}
 							prefillMentionRequest={
-								replyMention ? { mention: replyMention, requestKey: 1 } : undefined
+								replyMention && !replyDraft.trim() ? { mention: replyMention, requestKey: 1 } : undefined
 							}
 							placeholder={entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply..."}
 							value={replyDraft}
@@ -529,20 +609,26 @@ export function JiraActivityComment({
 			}
 			replies={
 				hasReplies ? (
+					<>
+					{threaded && earlierRepliesToggle ? <div className="relative py-3"><ThreadContinuation /><div className="relative flex"><ThreadConnector centered continued={false} />{earlierRepliesToggle}</div></div> : earlierRepliesToggle}
 					<div
 						aria-label="Replies"
-						className={cn("grid gap-2", repliesExpanded ? null : "hidden")}
-						hidden={!repliesExpanded}
+						className={cn("grid", threaded ? "gap-0" : "gap-2", repliesExpanded || hasReplyPreview ? null : "hidden")}
+						hidden={!repliesExpanded && !hasReplyPreview}
 						id={repliesId}
 						role="group"
 					>
 						{replies.map((reply, index) => (
 							<ThreadReplyCard
+								headerLayout={headerLayout}
 								allowReply={allowReply}
+								bodyContent={renderReplyBody?.(reply)}
+								content={renderReply?.(reply)}
 								commentActions={commentActions}
 								currentUser={currentUser}
 								actorsById={actorsById}
 								key={reply.id}
+								hidden={hasReplyPreview && !repliesExpanded && index < replies.length - replyPreviewCount}
 								onAddToChat={
 									onAddReplyToChat ? () => onAddReplyToChat(reply) : undefined
 								}
@@ -557,15 +643,21 @@ export function JiraActivityComment({
 								replyComposerId={composerId}
 								replySelected={replyTarget?.key === reply.id}
 								resolved={resolved}
-								indented={!nested}
+								indented={!nested && !threaded}
+								threaded={threaded}
+								continued={index < replies.length - 1 || composerVisible}
 								showResolvedStatus={resolved && index === replies.length - 1}
+								timestampContent={renderTimestamp?.(reply)}
+								tools={renderCommentTools?.(entry, reply)}
 							/>
 						))}
 					</div>
+					</>
 				) : undefined
 			}
 			tag={entry.tag}
 			timestamp={entry.timestamp}
+			timestampContent={renderTimestamp?.(entry)}
 			timestampMeta={
 				reviewStatus || parentResolvedStatus ? (
 					<>
@@ -575,10 +667,10 @@ export function JiraActivityComment({
 				) : undefined
 			}
 		>
-			<JiraActivitySegments
+			{bodyContent === undefined ? <JiraActivitySegments
 				className="text-sm leading-5 text-text"
 				segments={entry.body}
-			/>
+			/> : bodyContent}
 			{entry.progressChecklist?.length ? (
 				<ul aria-label="Agent progress" className="mt-3 grid min-w-0 gap-1.5">
 					{entry.progressChecklist.map((item) => (

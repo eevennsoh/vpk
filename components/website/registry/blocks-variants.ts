@@ -318,6 +318,12 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"jira-work-item-demo-project-butter": dynamic(
+		() => import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+			default: mod.JiraWorkItemDemoProjectButter,
+		})),
+		{ ssr: false },
+	),
 	"jira-work-item-demo-team-eu26-empty": dynamic(
 		() =>
 			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
@@ -608,6 +614,9 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	})), { ssr: false }),
 	"jira-issue-demo-agent-activity-states-experimental-v2": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
 		default: mod.JiraIssueDemoAgentActivityStatesExperimentalV2,
+	})), { ssr: false }),
+	"jira-issue-demo-project-butter": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
+		default: mod.JiraIssueDemoProjectButter,
 	})), { ssr: false }),
 	"jira-creating-demo-work-item": dynamic(() => import("../demos/blocks/jira-creating-demo").then((mod) => ({
 		default: mod.JiraCreateDemoWorkItem,

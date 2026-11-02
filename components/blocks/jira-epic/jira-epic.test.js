@@ -3,7 +3,6 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
-const SOURCE = readFileSync(join(__dirname, "components", "jira-epic.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DEMO_SOURCE = readFileSync(join(process.cwd(), "components/website/demos/blocks/jira-epic-demo.tsx"), "utf8");
 const DETAILS_SOURCE = readFileSync(join(process.cwd(), "app", "data", "details", "blocks", "jira-epic.ts"), "utf8");
@@ -12,34 +11,35 @@ const COMPONENTS_SOURCE = readFileSync(join(process.cwd(), "app", "data", "compo
 const MANIFEST_SOURCE = readFileSync(join(process.cwd(), "app", "data", "component-manifest.ts"), "utf8");
 const REGISTRY_SOURCE = readFileSync(join(process.cwd(), "components", "website", "registry", "blocks.ts"), "utf8");
 
-test("JiraEpic renders a Tag-backed dropdown trigger", () => {
-	assert.match(SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag";/);
-	assert.match(SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/);
-	assert.match(SOURCE, /import EpicIcon from "@atlaskit\/icon\/core\/epic";/u);
-	assert.match(SOURCE, /<DropdownMenuTrigger[\s\S]*<Tag[\s\S]*<ChevronDownIcon/u);
-	assert.match(SOURCE, /function EpicGlyph\(\{ className \}: Readonly<\{ className\?: string \}>\): ReactElement/u);
-	assert.match(SOURCE, /render=\{<EpicIcon label="" size="medium" spacing="none" color="currentColor" \/>\}/u);
-	assert.match(SOURCE, /function EpicTagIcon\(\): ReactElement \{[\s\S]*<IconTile[\s\S]*as="span"[\s\S]*className="text-current"[\s\S]*icon=\{<EpicGlyph \/>\}[\s\S]*iconSize="medium"[\s\S]*size="xxsmall"[\s\S]*variant="transparent"/u);
-	assert.match(SOURCE, /elemBefore=\{selectedEpic \? <EpicTagIcon \/> : null\}/u);
-	assert.match(SOURCE, /aria-label=\{triggerLabel\}/u);
-	assert.doesNotMatch(SOURCE, /portalled=\{false\}/u);
-	assert.doesNotMatch(SOURCE, /EpicSwatch/u);
-	assert.doesNotMatch(SOURCE, /EPIC_COLOR_CLASSES/u);
-	assert.doesNotMatch(SOURCE, /block size-4 rounded-sm/u);
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
+
+const epics = [
+	{ id: "a", issueKey: "EP-1", name: "Design system", color: "purple" },
+	{ id: "b", issueKey: "EP-2", name: "AI studio", color: "blue" },
+];
+
+test("JiraEpic renders its selected parent in a Tag-backed dropdown trigger", async () => {
+	const view = await renderComponent({ entry: "components/blocks/jira-epic/components/jira-epic.tsx", exportName: "JiraEpic", props: { epics } });
+	assert.equal(view.getByRole("button", { name: "Select parent epic" }).textContent.includes("Design system"), true);
+	assert.equal(view.container.querySelector('[data-slot="tag"]') !== null, true);
+	await view.click(view.getByRole("button", { name: "Select parent epic" }));
+	assert.equal(view.getByRole("menuitem", { name: "EP-1 Design system" }).textContent.includes("EP-1"), true);
 });
 
-test("JiraEpic exposes parent actions and selectable epics", () => {
-	assert.match(SOURCE, /onEpicSelect\?: \(epicId: string, epic: JiraEpicOption\) => void;/u);
-	assert.match(SOURCE, /selectedEpicId\?: string \| null;/u);
-	assert.match(SOURCE, /const initialSelectedEpicId = defaultSelectedEpicId === undefined \? firstEpicId : defaultSelectedEpicId;/u);
-	assert.match(SOURCE, /function handleRemoveParent\(\)[\s\S]*setInternalSelectedEpicId\(null\);[\s\S]*onRemoveParent\?\.\(\);/u);
-	assert.match(SOURCE, /\{addParentLabel\}/u);
-	assert.match(SOURCE, /\{viewParentLabel\}/u);
-	assert.match(SOURCE, /\{removeParentLabel\}/u);
-	assert.match(SOURCE, /selected=\{epic\.id === selectedEpic\?\.id\}/u);
-	assert.match(SOURCE, /const EPIC_ICON_COLOR_CLASSES: Record<JiraEpicColor, string> = \{[\s\S]*purple: "text-icon-accent-purple"[\s\S]*magenta: "text-icon-accent-magenta"[\s\S]*blue: "text-icon-accent-blue"[\s\S]*sky: "text-icon-information"[\s\S]*green: "text-icon-accent-green"/u);
-	assert.match(SOURCE, /elemBefore=\{<EpicMenuIcon color=\{epic\.color\} \/>\}/u);
-	assert.match(PAGE_SOURCE, /function handleRemoveParent\(\)[\s\S]*setSelectedEpicId\(null\);/u);
+test("JiraEpic selects, views, and removes a parent", async () => {
+	const calls = [];
+	const view = await renderComponent({ entry: "components/blocks/jira-epic/components/jira-epic.tsx", exportName: "JiraEpic", props: {
+		epics, onEpicSelect: (id) => calls.push(id), onViewParent: () => calls.push("view"), onRemoveParent: () => calls.push("remove"),
+	} });
+	await view.click(view.getByRole("button", { name: "Select parent epic" }));
+	await view.click(view.getByRole("menuitem", { name: "EP-2 AI studio" }));
+	assert.equal(view.container.textContent.includes("AI studio"), true);
+	await view.click(view.getByRole("button", { name: "Select parent epic" }));
+	await view.click(view.getByRole("menuitem", { name: "View parent" }));
+	await view.click(view.getByRole("button", { name: "Select parent epic" }));
+	await view.click(view.getByRole("menuitem", { name: "Remove parent" }));
+	assert.equal(view.container.textContent.includes("Add parent"), true);
+	assert.deepEqual(calls, ["b", "view", "remove"]);
 });
 
 test("JiraEpic block has a page and website demo", () => {

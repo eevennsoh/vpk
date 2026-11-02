@@ -1,6 +1,6 @@
 import { token } from "@/lib/tokens";
 
-import type { JiraIssueChrome } from "./types";
+import type { JiraIssueAppearance, JiraIssueChrome } from "./types";
 
 export interface JiraIssueChromeStyles {
 	readonly restClassName: string; // idle border only, no fill
@@ -28,8 +28,16 @@ const JIRA_ISSUE_CHROME_STYLES: Readonly<Record<JiraIssueChrome, JiraIssueChrome
 	stroke: STROKE_JIRA_ISSUE_CHROME_STYLES,
 });
 
+const BUTTER_RAISED_CHROME_STYLES: JiraIssueChromeStyles = Object.freeze({
+	...RAISED_JIRA_ISSUE_CHROME_STYLES,
+	hoverClassName: "hover:bg-surface-raised-hovered",
+	agentSurfaceHoverClassName: "group-hover/jira-issue-card:bg-surface-raised-hovered",
+});
+
 export function resolveJiraIssueChrome(
 	chrome?: JiraIssueChrome,
+	appearance: JiraIssueAppearance = "default",
 ): JiraIssueChromeStyles {
+	if (appearance === "project-butter" && chrome !== "stroke") return BUTTER_RAISED_CHROME_STYLES;
 	return JIRA_ISSUE_CHROME_STYLES[chrome ?? "raised"];
 }

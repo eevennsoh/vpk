@@ -9,6 +9,7 @@ import { type AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
 import {
 	JiraIssue,
+	type JiraIssueAppearance,
 	type JiraIssueAgentActivity,
 	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueAgentActivityLayout,
@@ -184,6 +185,7 @@ function assignedAgentsFromKanbanCard(card: JiraKanbanCardData): AgentAssignment
 
 interface ExperimentalJiraKanbanCardProps {
 	active: boolean;
+	appearance?: JiraIssueAppearance;
 	addAgentLabel?: string;
 	agentActivityLayout: JiraIssueAgentActivityLayout;
 	/** One-shot brand sweep across the chin rows a drop just added. */
@@ -258,6 +260,7 @@ function getCardAssigneeAvatarShape(card: JiraKanbanCardData) {
 
 export function ExperimentalJiraKanbanCard({
 	active,
+	appearance,
 	addAgentLabel,
 	agents,
 	agentActivityLayout,
@@ -338,6 +341,8 @@ export function ExperimentalJiraKanbanCard({
 
 	const issue = (
 		<JiraIssue
+			appearance={appearance}
+			metadata={{ issueType: card.issueType, dueDate: card.dueDate }}
 			selectionBackdrop={selectionBackdrop}
 			active={active}
 			agentActivities={card.agentActivities}

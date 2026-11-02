@@ -9,6 +9,7 @@ import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
 import StoryIcon from "@atlaskit/icon/core/story";
+import PriorityCriticalIcon from "@atlaskit/icon/core/priority-critical";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
 
@@ -48,6 +49,7 @@ const PRIORITY_ICONS = {
 	major: PriorityMajorIcon,
 	medium: PriorityMediumIcon,
 	minor: PriorityMinorIcon,
+	critical: PriorityCriticalIcon,
 } as const;
 
 const ISSUE_TYPE_ICONS = {

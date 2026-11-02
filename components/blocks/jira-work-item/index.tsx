@@ -9,6 +9,7 @@ import JiraWorkItemModal from "@/components/projects/jira/components/jira-work-i
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
+import type { ProjectButterPresentation } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/experimental/experimental-jira-work-item";
 import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
 import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
@@ -24,7 +25,12 @@ const TeamEu26JiraWorkItem = dynamic(
 		.then((module) => module.TeamEu26JiraWorkItem),
 );
 
-export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2" | "experimental-v3" | "experimental-v4" | "experimental-v5" | "team-eu26";
+const ProjectButterJiraWorkItem = dynamic(
+	() => import("@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item")
+		.then((module) => module.ProjectButterJiraWorkItem),
+);
+
+export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2" | "experimental-v3" | "experimental-v4" | "experimental-v5" | "team-eu26" | "project-butter";
 export type JiraWorkItemExperimentalPreset = JiraWorkItemPreset;
 
 /**
@@ -39,6 +45,7 @@ const EXPERIMENTAL_SURFACES = {
 	"experimental-v4": ExperimentalV4JiraWorkItem,
 	"experimental-v5": ExperimentalV5JiraWorkItem,
 	"team-eu26": TeamEu26JiraWorkItem,
+	"project-butter": ProjectButterJiraWorkItem,
 } as const;
 
 type ExperimentalVariant = keyof typeof EXPERIMENTAL_SURFACES;
@@ -52,6 +59,8 @@ export interface JiraWorkItemProps {
 	variant?: JiraWorkItemVariant;
 	/** Deterministic starting state for the experimental variants. */
 	initialExperimentalPreset?: JiraWorkItemExperimentalPreset;
+	/** Initial Project butter presentation; its header Settings can change it live. */
+	projectButterPresentation?: ProjectButterPresentation;
 }
 
 export function JiraWorkItem({
@@ -59,6 +68,7 @@ export function JiraWorkItem({
 	onIssueClose,
 	variant = "default",
 	initialExperimentalPreset = "filled",
+	projectButterPresentation = "full-screen",
 }: Readonly<JiraWorkItemProps>) {
 	return variant === "default" ? (
 		<JiraWorkItemDefaultView initialIssueOpen={initialIssueOpen} onIssueClose={onIssueClose} />
@@ -67,6 +77,7 @@ export function JiraWorkItem({
 			initialIssueOpen={initialIssueOpen}
 			onIssueClose={onIssueClose}
 			initialExperimentalPreset={initialExperimentalPreset}
+			projectButterPresentation={projectButterPresentation}
 			surface={variant}
 		/>
 	);
@@ -117,11 +128,13 @@ function JiraWorkItemExperimentalView({
 	onIssueClose,
 	initialExperimentalPreset,
 	surface,
+	projectButterPresentation,
 }: Readonly<{
 	initialIssueOpen: boolean;
 	onIssueClose?: () => void;
 	initialExperimentalPreset: JiraWorkItemExperimentalPreset;
 	surface: ExperimentalVariant;
+	projectButterPresentation: ProjectButterPresentation;
 }>) {
 	const [isIssueOpen, setIsIssueOpen] = useState(initialIssueOpen);
 	const ExperimentalSurface = EXPERIMENTAL_SURFACES[surface];
@@ -133,11 +146,11 @@ function JiraWorkItemExperimentalView({
 
 	return (
 		<JiraWorkItemShell onOpen={() => setIsIssueOpen(true)}>
-			<ExperimentalSurface
+			{surface === "project-butter" ? <ProjectButterJiraWorkItem initialPresentation={projectButterPresentation} initialPreset={initialExperimentalPreset} onClose={handleIssueClose} open={isIssueOpen} /> : <ExperimentalSurface
 				open={isIssueOpen}
 				onClose={handleIssueClose}
 				initialPreset={initialExperimentalPreset}
-			/>
+			/>}
 		</JiraWorkItemShell>
 	);
 }

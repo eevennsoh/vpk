@@ -106,6 +106,8 @@ interface AvatarProps
 	outline?: AvatarOutlineMotion
 	/** Add a 2px inverse separator outside a hexagon badge's normal border. */
 	separator?: boolean
+	/** Use the selected border token for an avatar that controls an open surface. */
+	borderTone?: "default" | "selected"
 	/** Rendered as an unclipped sibling of hex artwork so the badge can hang past the tile. */
 	status?: AvatarStatus
 }
@@ -179,12 +181,12 @@ function avatarOutline(shape: AvatarProps["shape"], outline: AvatarProps["outlin
 	return { motion, className: motion ? "isolate after:border-0" : undefined }
 }
 
-function AvatarHexagonBorder({ separator = false }: Readonly<{ separator?: boolean }>) {
+function AvatarHexagonBorder({ separator = false, tone = "default" }: Readonly<{ separator?: boolean; tone?: AvatarProps["borderTone"] }>) {
 	return (
 		<span
 			aria-hidden="true"
 			className={cn("pointer-events-none absolute bg-current",
-				separator ? "-inset-0.5 -z-10 text-border-inverse" : "inset-0 z-[1] text-border! mix-blend-darken dark:mix-blend-lighten")}
+				separator ? "-inset-0.5 -z-10 text-border-inverse" : tone === "selected" ? "inset-0 z-[1] text-border-selected" : "inset-0 z-[1] text-border! mix-blend-darken dark:mix-blend-lighten")}
 			data-slot={separator ? "avatar-hexagon-separator" : "avatar-hexagon-border"}
 			style={{ clipPath: separator ? HEXAGON_SEPARATOR_CLIP : HEXAGON_BORDER_CLIP }}
 		/>
@@ -202,6 +204,7 @@ function Avatar({
 	status,
 	outline: outlineMotion,
 	separator = false,
+	borderTone = "default",
 	style: styleProp,
 	...props
 }: Readonly<AvatarProps>) {
@@ -212,6 +215,7 @@ function Avatar({
 		: styleProp
 	const rootClassName = cn(
 		avatarVariants({ size, shape }),
+		borderTone === "selected" && "after:border-border-selected",
 		outline.className,
 		disabled && "opacity-(--opacity-disabled) pointer-events-none grayscale",
 		className
@@ -274,7 +278,7 @@ function Avatar({
 					data-slot="avatar-hexagon-artwork"
 				>
 					{childArray.filter((child) => !isOverlay(child))}
-					<AvatarHexagonBorder />
+					<AvatarHexagonBorder tone={borderTone} />
 				</span>
 				{status ? <AvatarStatusIndicator status={status} /> : null}
 				{childArray.filter(isOverlay)}
@@ -713,16 +717,17 @@ function AvatarStatusIndicator({
 }
 
 interface AvatarGroupProps extends React.ComponentProps<"div"> {
+	as?: "div" | "span"
 	label?: string
 	size?: AvatarSize
 }
 
-function AvatarGroup({ children, className, label, size, ...props }: Readonly<AvatarGroupProps>) {
+function AvatarGroup({ as: Group = "div", children, className, label, size, ...props }: Readonly<AvatarGroupProps>) {
 	const resolvedSize = size ?? firstAvatarSize(children)
 	return (
 		<AvatarGroupContext value>
 			<AvatarGroupSizeContext value={resolvedSize}>
-				<div
+				<Group
 					data-slot="avatar-group"
 					role="group"
 					aria-label={label}
@@ -735,7 +740,7 @@ function AvatarGroup({ children, className, label, size, ...props }: Readonly<Av
 					{...props}
 				>
 					{children}
-				</div>
+				</Group>
 			</AvatarGroupSizeContext>
 		</AvatarGroupContext>
 	)

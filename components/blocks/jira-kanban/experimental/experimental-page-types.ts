@@ -78,6 +78,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	cardGenerativeActionPinnedAgentIds?: readonly string[];
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;
+	cardAppearance?: ExperimentalJiraKanbanProps["cardAppearance"];
 	showPriorityIndicator?: ExperimentalJiraKanbanProps["showPriorityIndicator"];
 	showFooterMetadata?: ExperimentalJiraKanbanProps["showFooterMetadata"];
 	createWorkItemDropZoneLabel?: ExperimentalJiraKanbanProps["createWorkItemDropZoneLabel"];

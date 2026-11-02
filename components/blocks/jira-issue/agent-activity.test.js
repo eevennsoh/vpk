@@ -80,7 +80,7 @@ test("new Jira agent sessions show Working immediately", async () => {
 for (const { name, iconScale, workingSpinnerVariant, avatar } of [
 	{ name: "comfortable default", iconScale: "comfortable", avatar: true },
 	{ name: "compact default", iconScale: "compact", avatar: false },
-	{ name: "compact avatar override", iconScale: "compact", workingSpinnerVariant: "experimental-avatar", avatar: true },
+	{ name: "compact avatar override", iconScale: "compact", workingSpinnerVariant: "bloom-avatar", avatar: true },
 	{ name: "comfortable standard override", iconScale: "comfortable", workingSpinnerVariant: "default", avatar: false },
 ]) {
 	test(`working Jira status uses a decorative spinner for ${name}`, async () => {

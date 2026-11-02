@@ -44,6 +44,12 @@ export const AVATAR_DETAIL: ComponentDetail = {
           "Applies disabled styling (reduced opacity and grayscale).",
       },
 		{
+			name: "borderTone",
+			type: '"default" | "selected"',
+			default: '"default"',
+			description: "Uses the selected border token when the avatar controls an open surface.",
+		},
+		{
 			name: "outline",
 			type: "{ scale: number | readonly number[]; transition?: Pick<AnimationOptions, 'duration' | 'ease' | 'times' | 'repeat' | 'delay'>; ring?: boolean }",
 			description: "For circular avatars, supply an ancestor's scale and transition to keep the border at 1px and the optional separation ring at 2px during motion.",

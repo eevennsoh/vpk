@@ -56,6 +56,7 @@ import { JiraIssueMoreMenu, type JiraIssueMoreAction, type JiraIssueMoreMenuActi
 import { JiraIssueUncapturedWork } from "@/components/blocks/jira-issue/uncaptured-work";
 import { JiraIssueSummary } from "@/components/blocks/jira-issue/summary";
 import type {
+	JiraIssueAppearance, JiraIssueCardMetadata,
 	JiraIssueChrome,
 	JiraIssueCoverImage,
 	JiraIssueIconScale,
@@ -72,6 +73,9 @@ import { cn } from "@/lib/utils";
 
 import { resolveJiraIssueChrome } from "./chrome";
 import { resolveJiraIssueSelectionBackdrop, type JiraIssueSelectionBackdrop } from "./selection-backdrop";
+import { ProjectButterInvocationProvider, useProjectButterInvocationPhase } from "./project-butter-invocation";
+import { ProjectButterInvocationChin } from "./project-butter-invocation-chin";
+import { BUTTER_INVOCATION_REVEAL } from "./project-butter-invocation-motion";
 
 const AGENT_ACTIVITY_SHELL_STYLE: CSSProperties = {
 	borderRadius: "10px",
@@ -88,6 +92,7 @@ const AGENT_ACTIVITY_SURFACE_STYLE: CSSProperties = {
 };
 
 export type {
+	JiraIssueAppearance, JiraIssueCardMetadata,
 	JiraIssueChrome,
 	JiraIssueCoverImage,
 	JiraIssueIconScale,
@@ -125,6 +130,7 @@ export type { JiraIssueMoreAction, JiraIssueMoreMenuActions } from "@/components
 export type JiraIssueGenerativeActionPresentation = "sparkle" | "more-actions";
 
 export interface JiraIssueSubtask {
+	priority?: JiraIssuePriority;
 	summary: string;
 	issueKey: string;
 	status?: string;
@@ -166,6 +172,11 @@ export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"artic
 }
 
 export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "children"> {
+	appearance?: JiraIssueAppearance;
+	metadata?: JiraIssueCardMetadata;
+	assigneeControl?: ReactNode;
+	onSubtaskOpen?: (subtask: JiraIssueSubtask) => void;
+	availableMoreActions?: readonly JiraIssueMoreAction[];
 	variant?: "default";
 	coverImage?: JiraIssueCoverImage;
 	/** Issue summary shown as the primary card text. */
@@ -255,10 +266,11 @@ export function JiraIssue(props: Readonly<JiraIssueProps>) {
 		return <JiraIssueUncapturedWork {...props} />;
 	}
 
-	return <JiraIssueDefault {...props} />;
+	return props.appearance === "project-butter" ? <ProjectButterInvocationProvider agents={props.assignment?.agents} enabled={Boolean(props.assignment?.onAgentAssign || props.assignment?.onAssignedAgentIdsChange) && !props.selected && !props.dragging}><JiraIssueDefault {...props} /></ProjectButterInvocationProvider> : <JiraIssueDefault {...props} />;
 }
 
 function JiraIssueDefault({
+	appearance = "default", metadata, assigneeControl, onSubtaskOpen, availableMoreActions,
 	"aria-pressed": ariaPressed,
 	active = false,
 	agentActivities,
@@ -321,6 +333,8 @@ function JiraIssueDefault({
 	...props
 }: Readonly<JiraIssueDefaultProps>) {
 	const isMounted = useIsMounted();
+	const invocationPhase = useProjectButterInvocationPhase();
+	const isInvocationPreview = invocationPhase === "choosing" || invocationPhase === "handoff";
 	const shouldReduceMotion = useReducedMotion();
 	const subtasksPanelId = useId();
 	const agentActivityLayoutGroupId = useId();
@@ -434,6 +448,7 @@ function JiraIssueDefault({
 	// around the issue. The shell keys off mode, not a mounted row.
 	const selectionBackdropState = resolveJiraIssueSelectionBackdrop(selectionBackdrop);
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
+		|| isInvocationPreview
 		|| resolvedAgentActivityMode === "awaiting-input"
 		|| hasCompletedAgentChin
 		|| isAttachingSession
@@ -442,7 +457,7 @@ function JiraIssueDefault({
 	const hasAgentActivityChin = activeAgentActivities.length > 0
 		|| hasCompletedAgentChin
 		|| isAttachingSession;
-	const hasIssueRows = hasSubtasks;
+	const hasIssueRows = hasSubtasks && appearance !== "project-butter";
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasCompletedAgentChin;
 	// Agent chrome also leaves for reasons that have nothing to do with this card:
 	// a board filter such as View → Agents strips every row off the cards it is
@@ -475,18 +490,19 @@ function JiraIssueDefault({
 	// remount the whole card — dropping keyboard focus — every time a pointer
 	// passed within the proximity range.
 	const usesAgentActivityShell = hasAgentActivityPresentation
+		|| appearance === "project-butter"
 		|| agentActivityShellMounted
 		|| selectionBackdropState.active
 		|| Boolean(agentSessionTransfer)
 		|| agentSessionDragControl !== undefined
 		|| Boolean(agentSessionTargetPreview);
-	const chromeStyles = resolveJiraIssueChrome(chrome);
+	const chromeStyles = resolveJiraIssueChrome(chrome, appearance);
 	const usesStrokeChrome = chrome === "stroke";
-	const usesCompactVisual = compact || usesStrokeChrome;
+	const usesCompactVisual = compact || usesStrokeChrome || appearance === "project-butter";
 	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || agentActivityShellMounted || selectionBackdropState.active || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesCompactVisual || Boolean(agentSessionTargetPreview);
-	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
+	const shouldRenderIssueClickButton = Boolean(props.onClick && (!parentEpicControl || appearance === "project-butter"));
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
-	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
+	const layoutTransition = appearance === "project-butter" && !shouldReduceMotion ? BUTTER_INVOCATION_REVEAL : getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const issueChromeClassName = cn(chromeStyles.restClassName, chromeStyles.hoverClassName);
 	const agentSurfaceChromeClassName = cn(
@@ -545,7 +561,7 @@ function JiraIssueDefault({
 					usesStrokeChrome ? chromeStyles.agentSurfaceHoverClassName : undefined,
 					"bg-bg-selected",
 				)
-				: cn(agentActivityRestBorderClassName, "bg-surface"),
+				: cn(agentActivityRestBorderClassName, appearance === "project-butter" ? "bg-surface-raised" : "bg-surface"),
 	);
 	// Last chin row is the travelling chip: keep the grey backdrop and close
 	// the open chin so the well hugs the white card. A 4px bottom pad matches
@@ -600,7 +616,7 @@ function JiraIssueDefault({
 	// Opacity is the one value here that chases a pointer, so it gets its own
 	// per-value timing. The reduced-motion branch keeps the object plain numbers
 	// because it is spread straight into `style`.
-	const agentActivityBackdropTransition = shouldReduceMotion
+	const agentActivityBackdropTransition = shouldReduceMotion || appearance === "project-butter"
 		? layoutTransition
 		: { ...layoutTransition, opacity: JIRA_ISSUE_MOTION_BACKDROP_NEARNESS };
 	const agentActivitySurfacePosition = agentActivitySurfaceInset - 1;
@@ -608,7 +624,7 @@ function JiraIssueDefault({
 	// the card, exactly like its left, right, and top bands. Adding a spacer row
 	// instead would grow the shell by 4px the moment a hovered agent session
 	// highlighted the card and shove every card below it down.
-	const insetsAgentActivitySurfaceBottom = hasActiveAgentActivityShell && !hasAgentActivityChin;
+	const insetsAgentActivitySurfaceBottom = hasActiveAgentActivityShell && (!hasAgentActivityChin || appearance === "project-butter");
 	const agentActivitySurfaceAnimation = {
 		...getJiraIssueAgentSurfaceOffsets(agentActivitySurfacePosition, insetsAgentActivitySurfaceBottom),
 		// The preceding chin supplies the gutter at a fused join.
@@ -634,6 +650,8 @@ function JiraIssueDefault({
 
 	const moreActionMenu = showMoreAction ? (
 		<JiraIssueMoreMenu
+			availableActions={availableMoreActions ?? (appearance === "project-butter" && !onMoreActionSelect ? [] : undefined)}
+			flagged={metadata?.flagged}
 			selected={selected} onSelectionToggle={onSelectionToggle}
 			generativeAction={generativeActionPresentation === "more-actions" ? generativeAction : undefined}
 			generativeActionIssue={{ issueKey, summary }}
@@ -645,6 +663,8 @@ function JiraIssueDefault({
 	) : null;
 	const summaryContent = (
 		<JiraIssueSummary
+			assignment={assignment} allowAddAgent={(!hasAgentActivityChin || invocationPhase === "handoff") && !selected && !dragging}
+			appearance={appearance} metadata={metadata} assigneeControl={assigneeControl} subtasks={subtasks} onSubtaskOpen={onSubtaskOpen}
 			assigneeAvatarLabel={assigneeAvatarLabel}
 			assigneeAvatarShape={assigneeAvatarShape}
 			assigneeAvatarSrc={assigneeAvatarSrc}
@@ -689,7 +709,10 @@ function JiraIssueDefault({
 							{showFooterMetadata ? `${issueKey}: ${summary}` : summary}
 						</button>
 						<div
-							onClick={props.disabled ? undefined : props.onClick as ComponentProps<"div">["onClick"]}
+							onClick={props.disabled ? undefined : appearance === "project-butter" ? (event) => {
+								if (event.target instanceof Element && event.target.closest("button, a, input, select, textarea, [role=menuitem], [data-slot=tag]")) return;
+								(props.onClick as ComponentProps<"div">["onClick"])?.(event);
+							} : props.onClick as ComponentProps<"div">["onClick"]}
 						>
 							{summaryContent}
 						</div>
@@ -707,7 +730,7 @@ function JiraIssueDefault({
 					</button>
 				)
 			) : (
-				<div className={usesCompactVisual ? "px-3 pt-3 pb-2" : "p-3"}>{summaryContent}</div>
+				<div className={appearance === "project-butter" ? "p-3" : usesCompactVisual ? "px-3 pt-3 pb-2" : "p-3"}>{summaryContent}</div>
 			)}
 			{positionedMoreActionMenu}
 			<AnimatePresence initial={false} mode="popLayout">
@@ -787,6 +810,7 @@ function JiraIssueDefault({
 			<LayoutGroup id={agentActivityLayoutGroupId}>
 				<motion.div
 					className={rootClassName}
+					initial={false}
 					data-slot="jira-issue-card"
 					layout={shouldReduceMotion || agentActivityHoverOpen || parentOwnsLayout ? false : "position"}
 					style={agentActivityInnerStyle}
@@ -814,7 +838,7 @@ function JiraIssueDefault({
 				{/* Running sessions already occupy the chin; attach copy takes the last
 				    row instead of stacking. Split layouts keep the other rows so the
 				    card height — and drop-zone geometry — stays put. */}
-				<JiraIssueAgentActivityRows
+				<ProjectButterInvocationChin hasChin={hasAgentActivityChin}><JiraIssueAgentActivityRows
 					activities={activeAgentActivities} assignment={assignment}
 					attachPreviewCopy={replaceDetachedTransfer ? undefined : attachChinCopy}
 					iconScale={iconScale}
@@ -828,7 +852,7 @@ function JiraIssueDefault({
 					sessionDrag={agentSessionDragBinding}
 					shouldReduceMotion={shouldReduceMotion}
 					usesStrokeChrome={usesCompactVisual}
-				/>
+				/></ProjectButterInvocationChin>
 				<AnimatePresence initial={false} mode="popLayout">
 					{hasAgentDoneNotification ? (
 						<motion.div

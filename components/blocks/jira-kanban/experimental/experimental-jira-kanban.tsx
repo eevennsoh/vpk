@@ -18,6 +18,7 @@ import {
 	type JiraIssueGenerativeActionConfig,
 	type JiraIssueGenerativeActionPresentation,
 	type JiraIssueIconScale,
+	type JiraIssueAppearance,
 } from "@/components/blocks/jira-issue";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraLinkingVariant } from "@/components/blocks/jira-linking";
@@ -195,6 +196,7 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	>;
 	/** Compact keeps 12px glyphs. Comfortable is experimental v2 (16px icons, 24px avatars). */
 	iconScale?: JiraIssueIconScale;
+	cardAppearance?: JiraIssueAppearance;
 	/** Show issue priority on board cards; defaults to the issue component's behavior. */
 	showPriorityIndicator?: boolean;
 	/** Show the issue type, key, and assignee strip at the bottom of board cards. */
@@ -417,7 +419,7 @@ function ExperimentalJiraKanbanView({
 	cardGenerativeActionPinnedAgentIds,
 	cardGenerativeActionFooterActions, cardMoreMenuActions, onCardsRemove,
 	cardMoveAnimation,
-	iconScale = "compact",
+	iconScale = "compact", cardAppearance,
 	showPriorityIndicator,
 	showFooterMetadata = true,
 	issueDragTransitions = false,
@@ -929,6 +931,7 @@ function ExperimentalJiraKanbanView({
 												onRemovalComplete={() => cardRemoval.complete(card.code)}
 											>
 								<ExperimentalJiraKanbanCard
+									appearance={cardAppearance}
 									addAgentLabel={addAgentLabel}
 												active={isActive}
 													agents={agents}

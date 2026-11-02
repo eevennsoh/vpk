@@ -21,7 +21,7 @@ export function JiraSessionStatusIndicator({
 		case "working":
 			return (
 				<span aria-hidden="true" className="mt-0.5 grid size-4 shrink-0 self-start place-items-center text-icon-subtlest">
-					<Spinner label="" size="default" variant="experimental-avatar" />
+					<Spinner label="" size="default" variant="bloom-avatar" />
 				</span>
 			);
 		case "finished":

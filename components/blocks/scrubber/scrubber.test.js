@@ -425,3 +425,44 @@ test("Scrubber mark labels say when a mark is filtered out", () => {
 		"Wallet cut, major mark",
 	);
 });
+
+
+test("continuous dot rails preview hover, seek pointer positions, and keep keyboard entry navigation", async (t) => {
+	const { createRequire } = await import("node:module");
+	const require = createRequire(import.meta.url);
+	const { act } = require("react");
+	const { renderComponent } = require("../../../scripts/lib/render-component.js");
+	const view = await renderComponent({
+		source: `import React, { useState } from "react";
+			import { useMotionValue } from "motion/react";
+			import { ScrubberRail } from "@/components/blocks/scrubber/components/scrubber-rail";
+			const entries = ["a", "b", "c"].map((id, index) => ({id, label:id, heading:id, kind:"minor", offset:index/2}));
+			export default function Rail({continuous = true}) {
+				const offset = useMotionValue(0.25);
+				const [selection, setSelection] = useState("a");
+				const [seek, setSeek] = useState("");
+				return <><ScrubberRail activeIndex={entries.findIndex((entry) => entry.id === selection)} activeOffset={continuous ? offset : undefined} ariaLabel="Timeline" appearance="dots" entries={entries} onSelect={setSelection} onSeek={continuous ? (value) => {offset.set(value);setSeek(value.toFixed(2));} : undefined} selectionMode="drag" showPill={false} /><output role="status" aria-label="Selected item">{selection}</output><output role="status" aria-label="Seek offset">{seek}</output></>;
+			}`,
+	});
+	const rail = view.getByRole("listbox", { name: "Timeline" });
+	t.mock.method(rail, "getBoundingClientRect", () => ({left:10, top:0, width:200, height:14}));
+	Object.defineProperty(rail, "setPointerCapture", {configurable:true, value() {}});
+	async function pointer(type, buttons) {
+		await act(async () => {rail.dispatchEvent(new PointerEvent(type, {bubbles:true, pointerType:"mouse", clientX:150, button:0, buttons, pointerId:7}));await new Promise((resolve) => setTimeout(resolve, 40));});
+	}
+	await pointer("pointermove", 0);
+	assert.equal(rail.querySelector('[data-slot="scrubber-hover"]').style.opacity, "1");
+	assert.equal(rail.querySelector('[data-slot="scrubber-hover"]').style.left, "70%");
+	assert.equal(view.getByRole("status", {name:"Selected item"}).textContent, "a");
+	await pointer("pointerdown", 1);
+	assert.equal(view.getByRole("status", {name:"Seek offset"}).textContent, "0.70");
+	assert.equal(rail.querySelector('[data-slot="scrubber-playhead"]').style.left, "70%");
+	await act(() => view.getAllByRole("option")[1].dispatchEvent(new MouseEvent("click", {bubbles:true, detail:1})));
+	assert.equal(view.getByRole("status", {name:"Selected item"}).textContent, "a", "pointer commits must not snap back to a nearby entry");
+	await view.press(view.getAllByRole("option")[0], "End");
+	assert.equal(view.getByRole("status", {name:"Selected item"}).textContent, "c");
+	await view.rerender({continuous:false});
+	assert.equal(rail.querySelector('[data-slot="scrubber-playhead"]') === null, true);
+	await view.click(view.getAllByRole("option")[1]);
+	assert.equal(view.getByRole("status", {name:"Selected item"}).textContent, "b");
+});
