@@ -39,6 +39,7 @@ interface AgentLanyardAgentProps {
 export type AgentLanyardProps = AgentLanyardAgentProps | {
 	variant: "template";
 	template: AgentLanyardTemplate;
+	templateIcon?: ReactNode;
 	perspectiveTilt?: boolean;
 	onSelect?: () => void;
 	className?: string;
@@ -46,12 +47,12 @@ export type AgentLanyardProps = AgentLanyardAgentProps | {
 
 export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 	if (props.variant === "template") {
-		const { template, perspectiveTilt, onSelect, className } = props;
+		const { template, templateIcon, perspectiveTilt, onSelect, className } = props;
 		return (
 			<AgentLanyardCard
 				id={template.id} name={template.name} byline="Template" description={template.description}
 				variant="template" perspectiveTilt={perspectiveTilt} onSelect={onSelect} className={className} showGrid={false}
-				avatar={<AgentLanyardTemplateAvatar iconSrc={template.iconSrc} />}
+				avatar={<AgentLanyardTemplateAvatar iconSrc={template.iconSrc} icon={templateIcon} />}
 				footer={
 					<div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack" role="img" aria-label={`Connected apps: ${template.sources.map((source) => source.label).join(", ")}`}>
 						<TWGAppstack sources={template.sources} iconSize="xsmall" animated={false} aria-hidden className="justify-start" />

@@ -112,6 +112,21 @@ test("template variant retains its artwork, copy, and app sources without agent 
 	}
 });
 
+test("reference templates show their matching monochrome artwork", () => {
+	const expectedIcons = {
+		"Decision Director": "decision.svg",
+		"Weekly summary": "weekly-summary.svg",
+		"Pipeline planner": "pipeline-planner.svg",
+		"Script writer": "script-writer.svg",
+	};
+	for (const template of AGENT_LANYARD_TEMPLATES) {
+		const html = renderToStaticMarkup(React.createElement(ThemeWrapper, null, React.createElement(AgentLanyard, { variant: "template", template })));
+		const card = parseHTML(html).document;
+		const images = card.querySelectorAll('[data-slot="agent-lanyard-template-avatar"] img');
+		assert.equal(images[1].getAttribute("src"), `/illustration/agent-lanyard-template/${expectedIcons[template.name]}`);
+	}
+});
+
 test("chat and connect affordances require their own capabilities", () => {
 	for (const agent of AGENT_LANYARD_AGENTS) {
 		const displayOnly = renderCard(agent);

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
@@ -525,14 +525,16 @@ function ButterApp(): React.ReactElement {
 				{resumeAnnouncement}
 			</span>
 			<MountOnFirstUse active={agentsDirectoryOpen}>
-				<AgentsDirectoryDialog
-					agents={BUTTER_DIRECTORY_AGENT_PROFILES}
-					variant="standard-v2"
-					onCreateAgent={() => router.push("/studio")}
-					onOpenChange={setAgentsDirectoryOpen}
-					onSelectAgent={() => setAgentsDirectoryOpen(false)}
-					open={agentsDirectoryOpen}
-				/>
+				<Suspense fallback={null}>
+					<AgentsDirectoryDialog
+						agents={BUTTER_DIRECTORY_AGENT_PROFILES}
+						variant="standard-v2"
+						onCreateAgent={() => router.push("/studio")}
+						onOpenChange={setAgentsDirectoryOpen}
+						onSelectAgent={() => setAgentsDirectoryOpen(false)}
+						open={agentsDirectoryOpen}
+					/>
+				</Suspense>
 			</MountOnFirstUse>
 			<MountOnFirstUse active={skillsDirectoryOpen}>
 				<SkillsDirectoryDialog

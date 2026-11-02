@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { getSkillIcon } from "@/lib/skill-icons";
 import {
 	DEFAULT_DIRECTORY_FILTERS,
 	DIRECTORY_APP_OPTIONS,
@@ -40,6 +41,7 @@ import {
 	getDirectoryCollection,
 	getDirectoryPublisher,
 	getDirectoryRecommendations,
+	getDirectoryTemplateIconLabel,
 	getFirstPartyLanyard,
 	isDirectoryAgentOwned,
 	toDirectoryLanyard,
@@ -151,9 +153,10 @@ function DirectoryHero({
 function DirectoryTemplateCard({
 	agent, onSelectAgent,
 }: Readonly<{ agent: AgentTemplatesAgent; onSelectAgent?: (agent: AgentTemplatesAgent) => void }>) {
+	const iconLabel = getDirectoryTemplateIconLabel(agent);
 	return (
 		<div className="relative min-w-0">
-			<AgentLanyard variant="template" template={toDirectoryTemplate(agent)} className="w-full" onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined} />
+			<AgentLanyard variant="template" template={toDirectoryTemplate(agent)} templateIcon={iconLabel ? getSkillIcon(iconLabel) : undefined} className="w-full" onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined} />
 		</div>
 	);
 }

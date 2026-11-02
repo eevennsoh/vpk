@@ -19,7 +19,7 @@ const APPS = {
 
 export const AGENT_LANYARD_TEMPLATES: readonly AgentLanyardTemplate[] = [
 	{ id: "decision-director", name: "Decision Director", description: "Gathers needs and goals and aligns team on the best course of actions.", iconSrc: "/illustration/agent-lanyard-template/decision.svg", sources: [APPS.confluence, APPS.goals] },
-	{ id: "weekly-summary", name: "Weekly summary", description: "Summarises your work for that week and shares with stakeholders", iconSrc: "/illustration/agent-lanyard-template/bullet-list-bounded.svg", sources: [APPS.projects, APPS.confluence, APPS.jira] },
-	{ id: "pipeline-planner", name: "Pipeline planner", description: "Guides you through pipeline set up and automatically maintains the pipeline checks", iconSrc: "/illustration/agent-lanyard-template/documents.svg", sources: [APPS.bitbucket, APPS.confluence, APPS.jira] },
-	{ id: "script-writer", name: "Script writer", description: "Generates draft scripts for any important videos you need to record.", iconSrc: "/illustration/agent-lanyard-template/edit-page.svg", sources: [APPS.confluence, APPS.loom] },
+	{ id: "weekly-summary", name: "Weekly summary", description: "Summarises your work for that week and shares with stakeholders", iconSrc: "/illustration/agent-lanyard-template/weekly-summary.svg", sources: [APPS.projects, APPS.confluence, APPS.jira] },
+	{ id: "pipeline-planner", name: "Pipeline planner", description: "Guides you through pipeline set up and automatically maintains the pipeline checks", iconSrc: "/illustration/agent-lanyard-template/pipeline-planner.svg", sources: [APPS.bitbucket, APPS.confluence, APPS.jira] },
+	{ id: "script-writer", name: "Script writer", description: "Generates draft scripts for any important videos you need to record.", iconSrc: "/illustration/agent-lanyard-template/script-writer.svg", sources: [APPS.confluence, APPS.loom] },
 ];

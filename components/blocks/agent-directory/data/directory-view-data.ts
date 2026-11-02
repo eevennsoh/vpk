@@ -141,9 +141,56 @@ export function toDirectoryTemplate(agent: AgentTemplatesAgent): AgentLanyardTem
 		id: agent.id,
 		name: agent.name,
 		description: agent.description ?? "",
-		iconSrc: known?.iconSrc ?? agent.avatarSrc ?? "/illustration/agent-lanyard-template/documents.svg",
+		iconSrc: known?.iconSrc ?? "/illustration/agent-lanyard-template/documents.svg",
 		sources: agent.sources ?? known?.sources ?? [],
 	};
+}
+
+const TEMPLATE_ICON_LABELS: Readonly<Record<string, string>> = {
+	"okr-generator": "goal-alignment",
+	"opportunity-explorer": "research-scan",
+	"experiment-planner": "experiment-shaping",
+	"tradeoff-mapper": "tradeoff-analysis",
+	"assumption-tester": "assumption-check",
+	"criteria-builder": "rubric-building",
+	"brainstorm-facilitator": "facilitation",
+	"customer-insights": "feedback-clustering",
+	"jira-theme-analyzer": "theme-mining",
+	"transcript-insights-reporter": "meeting-recap",
+	"meeting-insights": "meeting-recap",
+	"trend-spotter": "trend-analysis",
+	"sentiment-mapper": "sentiment-mapping",
+	"funnel-analyzer": "funnel-diagnosis",
+	"research-synthesizer": "research-synthesis",
+	"service-triage": "triage",
+	"service-request-helper": "support-reply",
+	"rovo-ops": "incident-routing",
+	"rovo-expert": "knowledge-gap",
+	"user-manual-writer": "content-briefing",
+	"knowledge-base-guide": "policy-lookup",
+	"incident-recap-writer": "postmortem-scan",
+	"teamwork-coach": "facilitation",
+	"product-requirements-guide": "prd-outline",
+	"release-notes-drafter": "release-note-grouping",
+	"brand-voice-crafter": "brand-review",
+	"social-media-writer": "social-adaptation",
+	"global-translator": "translation-review",
+	"executive-briefing-writer": "executive-summary",
+	"stakeholder-update-builder": "stakeholder-update",
+	"team-recap": "meeting-recap",
+	"work-item-planner": "work-breakdown",
+	"work-item-organizer": "queue-cleanup",
+	"bug-report-assistant": "bug-reporting",
+	"blocker-checker": "blocker-scan",
+	"readiness-checker": "readiness",
+	"progress-tracker": "progress-summary",
+	"sprint-capacity-planner": "sprint-scope",
+	"workflow-synthesizer": "workflow-design",
+};
+
+export function getDirectoryTemplateIconLabel(agent: AgentTemplatesAgent): string | undefined {
+	if (AGENT_LANYARD_TEMPLATES.some((candidate) => sameIdentity(agent, candidate))) return undefined;
+	return TEMPLATE_ICON_LABELS[agent.id] ?? "capability";
 }
 
 export function filterDirectoryAgents<Agent extends AgentTemplatesAgent>(

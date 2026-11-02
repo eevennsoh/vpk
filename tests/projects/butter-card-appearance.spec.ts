@@ -41,6 +41,41 @@ test("Butter's agent preview matches the finished agent avatar", async ({ page }
 	await expect(previewBackground).toHaveCSS("background-color", await finishedBackground.evaluate((element) => getComputedStyle(element).backgroundColor));
 });
 
+test("Butter keeps the board visible until the agent directory loads", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const add = card(page, "PAY-118").getByRole("button", { name: "Add agent to PAY-118", exact: true });
+	await add.focus();
+	await page.keyboard.press("Enter");
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true }).filter({ has: page.getByRole("listbox") });
+	let releaseChunks!: () => void;
+	const chunksReady = new Promise<void>((resolve) => { releaseChunks = resolve; });
+	let markChunkRequested!: () => void;
+	const chunkRequested = new Promise<void>((resolve) => { markChunkRequested = resolve; });
+	await page.route("**/_next/static/chunks/**", async (route) => {
+		markChunkRequested();
+		await chunksReady;
+		await route.continue();
+	});
+	try {
+		await picker.getByRole("button", { name: "Browse agents" }).click();
+		await chunkRequested;
+		await expect(card(page, "PAY-118")).toBeVisible();
+		await expect(page.getByText("Loading agent directory")).toHaveCount(0);
+		const directory = page.getByRole("dialog", { name: "Agents", exact: true }).filter({ has: page.getByRole("tab", { name: "Recommended" }) });
+		await expect(directory).toHaveCount(0);
+		releaseChunks();
+		await expect(directory).toBeVisible();
+		await directory.getByRole("button", { name: "Close" }).click();
+		await expect(directory).toBeHidden();
+		await add.focus();
+		await page.keyboard.press("Enter");
+		await picker.getByRole("button", { name: "Browse agents" }).click();
+		await expect(directory).toBeVisible();
+	} finally {
+		releaseChunks();
+	}
+});
+
 test("Butter previews an assigned agent from its session avatar", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-105").getByRole("button", { name: "Cursor: Working" }).click();
@@ -99,6 +134,12 @@ test("Butter's agent picker keeps directory actions visible while scrolling", as
 	for (const name of ["Jira Coding Agent", "Claude", "Cursor", "Codex", "GitHub Copilot"]) {
 		await expect(directory.getByRole("button", { name: `View ${name}`, exact: true })).toHaveCount(1);
 	}
+	await directory.getByRole("tab", { name: "Templates" }).click();
+	const templateAvatar = directory.locator('[data-agent-id="okr-generator"] [data-slot="agent-lanyard-template-avatar"]');
+	await expect(templateAvatar.locator('img[src*="/avatar-agent/"]')).toHaveCount(0);
+	const glyph = templateAvatar.locator("svg");
+	await expect(glyph).toBeVisible();
+	expect((await glyph.boundingBox())?.width).toBeGreaterThan(20);
 	await directory.getByRole("tab", { name: "All agents" }).click();
 	await directory.getByRole("button", { name: "View Feedback Analyzer" }).click();
 	await expect(directory).toBeHidden();

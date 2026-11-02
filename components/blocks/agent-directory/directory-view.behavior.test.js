@@ -46,6 +46,31 @@ test("a requested template category opens directly and clears when navigating aw
 	assert.equal(view.getByRole("heading", { name: "Planner" }).textContent, "Planner");
 });
 
+test("template cards use a monochrome glyph rather than the full agent avatar", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/agent-directory/components/directory-view.tsx",
+		exportName: "AgentDirectoryView",
+		mocks: { "@/components/utils/theme-wrapper": `export function useTheme() { return { colorMode: "light", theme: "light", isDark: false }; }` },
+		props: {
+			agents: [],
+			templateAgents: [
+				{ id: "okr-generator", name: "OKR Generator", byline: "Template", categoryId: "brainstorm", avatarSrc: "/avatar-agent/product-agents/okr-generator.svg" },
+				{ id: "custom", name: "Custom template", byline: "Template", avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg" },
+				{ id: "decision-director", name: "Decision Director", byline: "Template" },
+			],
+		},
+	});
+	await view.click(view.getByRole("tab", { name: "Templates" }));
+	for (const name of ["OKR Generator", "Custom template"]) {
+		const card = view.getByRole("heading", { name }).closest("article");
+		const avatar = card.querySelector('[data-slot="agent-lanyard-template-avatar"]');
+		assert.equal(Boolean(avatar?.querySelector('img[src*="/avatar-agent/"]')), false);
+		assert.equal(Boolean(avatar?.querySelector("svg")), true);
+	}
+	const known = view.getByRole("heading", { name: "Decision Director" }).closest("article");
+	assert.equal(Boolean(known.querySelector('img[src$="/decision.svg"]')), true);
+});
+
 test("directory lanyards respond to hover while selection and actions stay independent", async () => {
 	const selections = [];
 	const view = await renderComponent({
