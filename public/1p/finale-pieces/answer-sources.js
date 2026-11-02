@@ -29,7 +29,7 @@ class AnswerSources extends HTMLElement {
 			const link = document.createElement("link");
 			link.rel = "stylesheet";
 			link.href = stylesheet;
-			link.dataset.sourcesPopoverStyle = "";
+			link.dataset.answerSourcesStyle = "";
 			document.head.append(link);
 		}
 		if (!this.#stage) this.#build();

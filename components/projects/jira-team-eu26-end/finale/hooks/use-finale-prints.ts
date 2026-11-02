@@ -270,7 +270,10 @@ export function useFinaleCardPrints(): FinaleCardPrints {
 	}, [appearance]);
 
 	const capture = useCallback((code: string, scope: "done" | "board" = "done") => {
-		const existing = pendingRef.current.get(code);
+		// Bound to this theme's maps: a capture still running when the theme changes lands in the discarded ones.
+		const prints = printsRef.current;
+		const pending = pendingRef.current;
+		const existing = pending.get(code);
 		if (existing) return existing;
 		const element = findFinaleCard(code, scope) ?? (scope === "done" ? findFinaleCard(code, "board") : null);
 		if (!element) return Promise.resolve();
@@ -278,13 +281,13 @@ export function useFinaleCardPrints(): FinaleCardPrints {
 			.then((canvas) => {
 				// Its corner as a share of its width: the wall rounds the card's shadow and accents as the print is rounded.
 				canvas.dataset.finaleCorner = String(cornerShare(element));
-				printsRef.current.set(code, canvas);
+				prints.set(code, canvas);
 			})
 			.catch(() => undefined)
 			.finally(() => {
-				pendingRef.current.delete(code);
+				pending.delete(code);
 			});
-		pendingRef.current.set(code, task);
+		pending.set(code, task);
 		return task;
 	}, []);
 
