@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LiveWaveform } from "@/components/ui-audio/live-waveform";
+import { LiveWaveform } from "@/components/ui-custom/live-waveform";
 import { Button } from "@/components/ui/button";
 import {
 	Card,

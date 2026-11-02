@@ -345,48 +345,6 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/ui-audio/bar-visualizer.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable react-hooks/exhaustive-deps */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/ui-audio/matrix.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable react-hooks/exhaustive-deps */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/ui-audio/orb.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/ui-audio/speech-input.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/ui-audio/transcript-viewer.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable react-hooks/exhaustive-deps */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/ui-audio/waveform.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable react-hooks/exhaustive-deps */",
-			"type": "eslint-disable"
-		},
-		{
 			"filePath": "components/ui-charts/chart-config-context.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",

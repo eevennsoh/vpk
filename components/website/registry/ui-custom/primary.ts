@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
+	"live-waveform": dynamic(() => import("../../demos/ui-custom/live-waveform-demo"), { ssr: false }),
 	"human-agent-avatar": dynamic(() => import("../../demos/ui-custom/human-agent-avatar-demo"), {
 		ssr: false,
 	}),

@@ -9,7 +9,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 
 - Read this file top-to-bottom once. Quick start: `pnpm install`, then `pnpm run rovo`.
 - Production uses one Express process serving the static export plus `/api/*`.
-- Frontend edits live mainly in `components/projects/`, `components/blocks/`, `components/arts/`, `components/ui-custom/`, `components/ui-audio/`, `components/visual/`, `components/website/`, and `app/`.
+- Frontend edits live mainly in `components/projects/`, `components/blocks/`, `components/arts/`, `components/ui-custom/`, `components/visual/`, `components/website/`, and `app/`.
 - Backend/API ownership: `backend/app.js` composes Express; `backend/server.js` owns startup/static serving/listen/WebSockets; `backend/routes/*.js`, `backend/chat/*.js`, `backend/services/*`, and `backend/middleware/*` own their domains; `app/api/**/route.ts` owns dev proxies and route adapters.
 - Validate every change with `pnpm run lint` and `pnpm run typecheck`; UI changes also need visual and accessibility checks.
 - When the user corrects you, fix the environment as well as the diff: push the lesson to the lowest rung that can hold it — (1) codebase: one paved path, delete the copy you nearly followed; (2) lint/types/CI: an `error` rule, existing violations baselined in `eslint-suppressions.json`; (3) rules; (4) skills; (5) `DESIGN.md`. Codex doesn't auto-load `.agents/rules/` and Cursor loads only `.mdc`, so anything mechanical belongs in rungs 1–2. Procedure: `.agents/docs/playbooks/push-corrections-down-the-ladder.md`. Propose new or subjective policy instead of enforcing it globally.

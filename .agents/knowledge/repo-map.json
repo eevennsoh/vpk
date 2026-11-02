@@ -2683,11 +2683,11 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 75,
-			"pageCount": 58,
+			"ownerImportCount": 73,
+			"pageCount": 57,
 			"primaryOwnerKinds": {
 				"catalog": 18,
-				"dynamic": 9,
+				"dynamic": 8,
 				"inline": 1,
 				"redirect": 2,
 				"shell": 28
@@ -3027,7 +3027,6 @@
 						"source": "app/data/components",
 						"symbols": [
 							"ART_COMPONENTS",
-							"AUDIO_COMPONENTS",
 							"BLOCK_COMPONENTS",
 							"CUSTOM_COMPONENTS",
 							"PROJECT_COMPONENTS",
@@ -3972,43 +3971,6 @@
 				"primaryOwner": {
 					"kind": "dynamic",
 					"dynamic": "catalog",
-					"category": "ui-audio",
-					"loader": "RenderPreviewCategoryPage"
-				},
-				"routePath": "/preview/ui-audio/[slug]",
-				"shellOwnerCount": 1,
-				"shellOwners": [
-					{
-						"importPath": "@/app/preview/_shared/render-preview-category-page",
-						"source": "app/preview/_shared/render-preview-category-page",
-						"symbols": [
-							"RenderPreviewCategoryPage"
-						]
-					}
-				],
-				"source": "app/preview/ui-audio/[slug]/page.tsx"
-			},
-			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/app/preview/_shared/preview-static-params",
-						"source": "app/preview/_shared/preview-static-params",
-						"symbols": [
-							"getPreviewStaticParams"
-						]
-					},
-					{
-						"importPath": "@/app/preview/_shared/render-preview-category-page",
-						"source": "app/preview/_shared/render-preview-category-page",
-						"symbols": [
-							"RenderPreviewCategoryPage"
-						]
-					}
-				],
-				"primaryOwner": {
-					"kind": "dynamic",
-					"dynamic": "catalog",
 					"category": "ui-charts",
 					"loader": "RenderPreviewCategoryPage"
 				},
@@ -4518,10 +4480,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 454,
-			"categoryCount": 9,
+			"manifestEntryCount": 438,
+			"categoryCount": 8,
 			"statusCounts": {
-				"live": 449,
+				"live": 433,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -6126,131 +6088,6 @@
 				]
 			},
 			{
-				"category": "ui-audio",
-				"entryCount": 17,
-				"entries": [
-					{
-						"category": "ui-audio",
-						"slug": "audio-player",
-						"name": "Audio Player",
-						"importPath": "@/components/ui-audio/audio-player",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "bar-visualizer",
-						"name": "Bar Visualizer",
-						"importPath": "@/components/ui-audio/bar-visualizer",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "conversation",
-						"name": "Conversation",
-						"importPath": "@/components/ui-audio/conversation",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "conversation-bar",
-						"name": "Conversation Bar",
-						"importPath": "@/components/ui-audio/conversation-bar",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "live-waveform",
-						"name": "Live Waveform",
-						"importPath": "@/components/ui-audio/live-waveform",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "matrix",
-						"name": "Matrix",
-						"importPath": "@/components/ui-audio/matrix",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "message",
-						"name": "Message",
-						"importPath": "@/components/ui-audio/message",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "mic-selector",
-						"name": "Mic Selector",
-						"importPath": "@/components/ui-audio/mic-selector",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "orb",
-						"name": "Orb",
-						"importPath": "@/components/ui-audio/orb",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "response",
-						"name": "Response",
-						"importPath": "@/components/ui-audio/response",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "scrub-bar",
-						"name": "Scrub Bar",
-						"importPath": "@/components/ui-audio/scrub-bar",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "shimmering-text",
-						"name": "Shimmering Text",
-						"importPath": "@/components/ui-audio/shimmering-text",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "speech-input",
-						"name": "Speech Input",
-						"importPath": "@/components/ui-audio/speech-input",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "transcript-viewer",
-						"name": "Transcript Viewer",
-						"importPath": "@/components/ui-audio/transcript-viewer",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "voice-button",
-						"name": "Voice Button",
-						"importPath": "@/components/ui-audio/voice-button",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "voice-picker",
-						"name": "Voice Picker",
-						"importPath": "@/components/ui-audio/voice-picker",
-						"status": "live"
-					},
-					{
-						"category": "ui-audio",
-						"slug": "waveform",
-						"name": "Waveform",
-						"importPath": "@/components/ui-audio/waveform",
-						"status": "live"
-					}
-				]
-			},
-			{
 				"category": "ui-charts",
 				"entryCount": 20,
 				"entries": [
@@ -6398,7 +6235,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 75,
+				"entryCount": 76,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6629,6 +6466,13 @@
 						"slug": "list",
 						"name": "List",
 						"importPath": "@/components/ui-custom/list",
+						"status": "live"
+					},
+					{
+						"category": "ui-custom",
+						"slug": "live-waveform",
+						"name": "Live Waveform",
+						"importPath": "@/components/ui-custom/live-waveform",
 						"status": "live"
 					},
 					{
@@ -7870,7 +7714,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component"
 			},
 			{
-				"description": "Translate custom or third-party AI, voice, and adjacent libraries into VPK-owned primitives. Use when asked to \"migrate to ui-custom\", \"standardize AI components\", \"adopt ai-elements\", \"port ElevenLabs UI\", or \"use ui-audio\".",
+				"description": "Translate custom or third-party AI, voice, and adjacent libraries into VPK-owned primitives. Use when asked to \"migrate to ui-custom\", \"standardize AI components\", \"adopt ai-elements\", \"port ElevenLabs UI\",.",
 				"name": "vpk-component-ext",
 				"path": ".agents/skills/vpk-component-ext/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component-ext"

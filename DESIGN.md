@@ -342,7 +342,7 @@ mix overlay shadow into ordinary inline content.
 Shared components should feel compact, predictable, and stateful. Product and
 art surfaces own their composition and visual direction; shared components retain
 their implementation contract. Search the existing surface and `components/ui/`,
-`components/ui-custom/`, and `components/ui-audio/` before building. Use supported
+and `components/ui-custom/` before building. Use supported
 variants and slots; shared primitives own appearance and geometry. Preserve
 supplied reference copy and layout when reproducing a specific product state.
 

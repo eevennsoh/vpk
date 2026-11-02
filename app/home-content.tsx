@@ -9,7 +9,6 @@ import { WebsitePreview } from "@/components/website/website-preview";
 import { CategoryTabs } from "@/components/website/category-tabs";
 import { CATEGORY_TAB_OPTIONS, type WebsiteCategoryTab } from "@/app/data/category-tabs";
 import {
-	AUDIO_COMPONENTS,
 	UI_CHART_COMPONENTS,
 	CUSTOM_COMPONENTS,
 	UI_COMPONENTS,
@@ -81,21 +80,6 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 								{CUSTOM_COMPONENTS.map((comp) => (
 									<WebsiteCard key={comp.slug} name={comp.name} href={`/components/ui-custom/${comp.slug}`}>
 										<WebsitePreview slug={comp.slug} name={comp.name} importPath={comp.importPath} category="ui-custom" />
-									</WebsiteCard>
-								))}
-							</WebsiteGrid>
-						</> : null}
-
-					{category === "ui-audio" ? <>
-							<HomeSectionHeading
-								id="audio-elements"
-								title="UI — Audio"
-								count={AUDIO_COMPONENTS.length}
-							/>
-							<WebsiteGrid>
-								{AUDIO_COMPONENTS.map((comp) => (
-									<WebsiteCard key={comp.slug} name={comp.name} href={`/components/ui-audio/${comp.slug}`}>
-										<WebsitePreview slug={comp.slug} name={comp.name} importPath={comp.importPath} category="ui-audio" />
 									</WebsiteCard>
 								))}
 							</WebsiteGrid>

@@ -3,7 +3,6 @@ import type { ComponentType } from "react";
 import { ARTS_DEMOS } from "./arts";
 import { BLOCK_DEMOS, BLOCK_VARIANT_DEMOS } from "./blocks";
 import { PROJECT_DEMOS } from "./projects";
-import { UI_AUDIO_DEMO, UI_AUDIO_VARIANT_DEMOS } from "./ui-audio";
 import { UI_CHARTS_DEMO, UI_CHARTS_VARIANT_DEMOS } from "./ui-charts";
 import { UI_CUSTOM_DEMO, UI_CUSTOM_VARIANT_DEMOS } from "./ui-custom";
 import { UI_DEMO, UI_VARIANT_DEMOS } from "./ui";
@@ -13,7 +12,6 @@ import { VISUAL_DEMOS, VISUAL_VARIANT_DEMOS } from "./visual";
 export { getChartDemoComponent } from "./charts";
 
 type DemoCategory =
-	| "ui-audio"
 	| "ui-charts"
 	| "ui-custom"
 	| "ui"
@@ -31,7 +29,6 @@ const CATEGORY_REGISTRIES: Record<DemoCategory, DemoRegistry> = {
 	projects: PROJECT_DEMOS,
 	arts: ARTS_DEMOS,
 	blocks: BLOCK_DEMOS,
-	"ui-audio": UI_AUDIO_DEMO,
 	"ui-charts": UI_CHARTS_DEMO,
 	"ui-custom": UI_CUSTOM_DEMO,
 	ui: UI_DEMO,
@@ -44,7 +41,6 @@ export function getDemoComponent(slug: string, category: DemoCategory): Componen
 
 const VARIANT_REGISTRIES: Partial<Record<DemoCategory, DemoRegistry>> = {
 	utility: UTILITY_VARIANT_DEMOS,
-	"ui-audio": UI_AUDIO_VARIANT_DEMOS,
 	"ui-charts": UI_CHARTS_VARIANT_DEMOS,
 	"ui-custom": UI_CUSTOM_VARIANT_DEMOS,
 	blocks: BLOCK_VARIANT_DEMOS,

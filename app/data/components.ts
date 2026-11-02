@@ -1,5 +1,4 @@
 import type { ComponentDetail } from "./component-detail-types";
-import { UI_AUDIO_DETAILS } from "./details/ui-audio";
 import { UI_CHART_DETAILS } from "./details/ui-charts";
 import { UI_CUSTOM_DETAILS } from "./details/ui-custom";
 import { BLOCK_DETAILS } from "./details/blocks";
@@ -14,7 +13,7 @@ export interface ComponentEntry {
 	name: string;
 	slug: string;
 	importPath: string;
-	category: "ui-audio" | "ui-charts" | "ui-custom" | "ui" | "blocks" | "projects" | "arts" | "utility" | "visual";
+	category: "ui-charts" | "ui-custom" | "ui" | "blocks" | "projects" | "arts" | "utility" | "visual";
 	detail?: ComponentDetail;
 }
 
@@ -36,16 +35,6 @@ function customComponent(slug: string, name?: string): ComponentEntry {
 		importPath: `@/components/ui-custom/${slug}`,
 		category: "ui-custom",
 		detail: UI_CUSTOM_DETAILS[slug],
-	};
-}
-
-function audioComponent(slug: string, name?: string): ComponentEntry {
-	return {
-		name: name ?? toTitleCase(slug),
-		slug,
-		importPath: `@/components/ui-audio/${slug}`,
-		category: "ui-audio",
-		detail: UI_AUDIO_DETAILS[slug],
 	};
 }
 
@@ -164,6 +153,7 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("audio-player", "Audio Player"),
 	customComponent("canvas"),
 	customComponent("entity-card", "Entity Card"),
+	customComponent("live-waveform", "Live Waveform"),
 	customComponent("knowledge"),
 	customComponent("footer", "Footer"),
 	customComponent("hover-reveal-row", "Hover Reveal Row"),
@@ -230,26 +220,6 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("transcription"),
 	customComponent("voice-selector", "Voice Selector"),
 	customComponent("web-preview", "Web Preview"),
-]);
-
-export const AUDIO_COMPONENTS: ComponentEntry[] = sortEntriesByName([
-	audioComponent("audio-player", "Audio Player"),
-	audioComponent("bar-visualizer", "Bar Visualizer"),
-	audioComponent("conversation"),
-	audioComponent("conversation-bar", "Conversation Bar"),
-	audioComponent("live-waveform", "Live Waveform"),
-	audioComponent("matrix"),
-	audioComponent("message"),
-	audioComponent("mic-selector", "Mic Selector"),
-	audioComponent("orb", "Orb"),
-	audioComponent("response"),
-	audioComponent("scrub-bar", "Scrub Bar"),
-	audioComponent("shimmering-text", "Shimmering Text"),
-	audioComponent("speech-input", "Speech Input"),
-	audioComponent("transcript-viewer", "Transcript Viewer"),
-	audioComponent("voice-button", "Voice Button"),
-	audioComponent("voice-picker", "Voice Picker"),
-	audioComponent("waveform", "Waveform"),
 ]);
 
 export const UI_CHART_COMPONENTS: ComponentEntry[] = sortEntriesByName([
@@ -622,7 +592,7 @@ export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	...PAPER_SHADER_COMPONENTS.map(([slug, name]) => visualComponent(slug, name, PAPER_SHADER_DEMO_IMPORT_PATH)),
 	]);
 
-const ALL_COMPONENTS = [...AUDIO_COMPONENTS, ...UI_CHART_COMPONENTS, ...CUSTOM_COMPONENTS, ...UI_COMPONENTS, ...BLOCK_COMPONENTS, ...PROJECT_COMPONENTS, ...ART_COMPONENTS, ...UTILITY_COMPONENTS, ...VISUAL_COMPONENTS];
+const ALL_COMPONENTS = [...UI_CHART_COMPONENTS, ...CUSTOM_COMPONENTS, ...UI_COMPONENTS, ...BLOCK_COMPONENTS, ...PROJECT_COMPONENTS, ...ART_COMPONENTS, ...UTILITY_COMPONENTS, ...VISUAL_COMPONENTS];
 
 export function findComponent(category: string, slug: string): ComponentEntry | undefined {
 	return ALL_COMPONENTS.find((c) => c.category === category && c.slug === slug);

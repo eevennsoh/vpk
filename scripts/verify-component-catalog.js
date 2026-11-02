@@ -31,10 +31,6 @@ const DETAIL_MODULES = {
 		entry: "app/data/details/ui.ts",
 		exportName: "UI_DETAILS",
 	},
-	"ui-audio": {
-		entry: "app/data/details/ui-audio.ts",
-		exportName: "UI_AUDIO_DETAILS",
-	},
 	"ui-charts": {
 		entry: "app/data/details/ui-charts.ts",
 		exportName: "UI_CHART_DETAILS",
@@ -57,7 +53,6 @@ const CATEGORY_SOURCE_ROOTS = {
 	blocks: "components/blocks",
 	projects: "components/projects",
 	ui: "components/ui",
-	"ui-audio": "components/ui-audio",
 	"ui-charts": "components/ui-charts",
 	"ui-custom": "components/ui-custom",
 	utility: "components/website/demos/utils",
@@ -79,7 +74,6 @@ const MANIFEST_HELPERS = {
 	blocks: "blockComponent",
 	projects: "projectComponent",
 	ui: "uiComponent",
-	"ui-audio": "audioComponent",
 	"ui-charts": "uiChartComponent",
 	"ui-custom": "customComponent",
 	utility: "utilityComponent",

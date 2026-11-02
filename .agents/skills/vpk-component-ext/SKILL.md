@@ -1,6 +1,6 @@
 ---
 name: vpk-component-ext
-description: Translate custom or third-party AI, voice, and adjacent libraries into VPK-owned primitives. Use when asked to "migrate to ui-custom", "standardize AI components", "adopt ai-elements", "port ElevenLabs UI", or "use ui-audio".
+description: Translate custom or third-party AI, voice, and adjacent libraries into VPK-owned primitives. Use when asked to "migrate to ui-custom", "standardize AI components", "adopt ai-elements", "port ElevenLabs UI",.
 validation_command: pnpm run lint && pnpm run typecheck
 ---
 
@@ -27,8 +27,8 @@ This translation skill's no-import/no-vendor invariant still applies to VPK-owne
 ## Hard invariants
 
 - Reuse an existing VPK primitive before creating a wrapper or new component.
-- Choose the target family by behavior: generic UI in `components/ui`, AI/chat
-  in `components/ui-custom`, and voice/audio in `components/ui-audio`.
+- Choose the target family by behavior: generic UI in `components/ui` and AI,
+  chat, and voice/audio in `components/ui-custom`.
 - Do not import or vendor upstream packages as the migration result. Inspect
   upstream generators in a scratch area when source evidence is needed.
 - Preserve callbacks, controlled state, data flow, and user-visible behavior;
@@ -67,8 +67,8 @@ translations, read [migration examples](references/migration-examples.md).
 
 Replace imports with explicit `@/components/ui*` paths and keep source behavior
 intact. Rich assistant content generally uses `ui-custom/MessageResponse`;
-plain transcript and voice labels should remain plain content or use the audio
-family response primitive. Alias duplicate component names at import sites.
+plain transcript and voice labels should remain plain content. Alias duplicate
+component names at import sites.
 
 Label icon-only controls, leave decorative icon labels empty, use each VPK
 primitive's supported render/composition API, and preserve submit/select

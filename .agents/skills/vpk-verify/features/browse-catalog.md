@@ -30,7 +30,7 @@ Preconditions:
 ## Gotchas
 
 - Home is `/` and the logo lands on `/projects`. Both show the projects catalog; assert the URL after the logo click.
-- Category tab names include counts (`UI 80`) and `UI` is a substring of `UI — Audio`. Always click `#home-category-tab-ui`.
+- Category tab names include counts (`UI 80`) and `UI` is a substring of other UI category names. Always click `#home-category-tab-ui`.
 - `find role link click --name "Go to projects"` can report success without navigating. Use `a[aria-label='Go to projects']`.
 - Project cards embed preview iframes. Do not click inside the iframe to open docs; click the card title link.
 - Default project sort is last-updated. Do not require a specific first-card title such as `Jira For You`.

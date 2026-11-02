@@ -2712,93 +2712,6 @@
       "count": 1
     }
   },
-  "components/ui-audio/bar-visualizer.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 4
-    }
-  },
-  "components/ui-audio/conversation-bar.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/ui-audio/hooks/use-scribe.ts": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-audio/live-waveform.tsx": {
-    "jsx-a11y/no-aria-hidden-on-focusable": {
-      "count": 1
-    }
-  },
-  "components/ui-audio/matrix.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-audio/mic-selector.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 3
-    }
-  },
-  "components/ui-audio/orb.tsx": {
-    "react-hooks/immutability": {
-      "count": 1
-    },
-    "react-hooks/purity": {
-      "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 2
-    }
-  },
-  "components/ui-audio/speech-input.tsx": {
-    "no-restricted-syntax": {
-      "count": 7
-    }
-  },
-  "components/ui-audio/transcript-viewer.tsx": {
-    "react-hooks/refs": {
-      "count": 2
-    }
-  },
-  "components/ui-audio/voice-button.tsx": {
-    "no-restricted-syntax": {
-      "count": 7
-    }
-  },
-  "components/ui-audio/voice-picker.tsx": {
-    "jsx-a11y/click-events-have-key-events": {
-      "count": 1
-    },
-    "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    }
-  },
-  "components/ui-audio/waveform.tsx": {
-    "jsx-a11y/no-static-element-interactions": {
-      "count": 2
-    },
-    "react-hooks/immutability": {
-      "count": 2
-    },
-    "react-hooks/purity": {
-      "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 8
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
   "components/ui-charts/animation.ts": {
     "no-restricted-syntax": {
       "count": 2
@@ -3246,6 +3159,11 @@
   "components/ui-custom/list.test.js": {
     "no-restricted-syntax": {
       "count": 19
+    }
+  },
+  "components/ui-custom/live-waveform.tsx": {
+    "jsx-a11y/no-aria-hidden-on-focusable": {
+      "count": 1
     }
   },
   "components/ui-custom/message.test.js": {
@@ -3903,16 +3821,6 @@
   "components/website/demos/projects/use-project-demo-embedded.test.js": {
     "no-restricted-syntax": {
       "count": 5
-    }
-  },
-  "components/website/demos/ui-audio/matrix-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "components/website/demos/ui-audio/speech-input-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "components/website/demos/ui-custom/attachments-demo.tsx": {

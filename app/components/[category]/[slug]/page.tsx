@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { AUDIO_COMPONENTS, UI_CHART_COMPONENTS, CUSTOM_COMPONENTS, UI_COMPONENTS, BLOCK_COMPONENTS, PROJECT_COMPONENTS, ART_COMPONENTS, UTILITY_COMPONENTS, VISUAL_COMPONENTS, findComponent } from "@/app/data/components";
+import { UI_CHART_COMPONENTS, CUSTOM_COMPONENTS, UI_COMPONENTS, BLOCK_COMPONENTS, PROJECT_COMPONENTS, ART_COMPONENTS, UTILITY_COMPONENTS, VISUAL_COMPONENTS, findComponent } from "@/app/data/components";
 import { ComponentDoc } from "@/components/website/component-doc/page";
 import { getComponentPageTitle } from "@/lib/project-page-title";
 
@@ -23,10 +23,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export function generateStaticParams() {
 	const params: { category: string; slug: string }[] = [];
-
-	for (const comp of AUDIO_COMPONENTS) {
-		params.push({ category: "ui-audio", slug: comp.slug });
-	}
 
 	for (const comp of UI_CHART_COMPONENTS) {
 		params.push({ category: "ui-charts", slug: comp.slug });
@@ -92,7 +88,7 @@ export default async function ComponentDetailPage({ params }: PageProps) {
 		redirect("/components/blocks/chat-configuration");
 	}
 
-	if (category !== "ui-audio" && category !== "ui-charts" && category !== "ui-custom" && category !== "ui" && category !== "blocks" && category !== "projects" && category !== "arts" && category !== "utility" && category !== "visual") {
+	if (category !== "ui-charts" && category !== "ui-custom" && category !== "ui" && category !== "blocks" && category !== "projects" && category !== "arts" && category !== "utility" && category !== "visual") {
 		notFound();
 	}
 
