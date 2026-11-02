@@ -40,6 +40,9 @@ while (($#)); do
 	esac
 done
 ((new_window && background)) && die "--new-window and --background are mutually exclusive"
+if [[ "$app" == codex && "$background" == 1 && ( "$mode" == continue || "$mode" == fork-last ) ]]; then
+	die "background Codex forks require an explicit --fork or --resume session ID; --last is interactive-only"
+fi
 
 # Resolve model: alias -> full ID; empty -> the app's native default.
 if [[ -n "$model" ]]; then
@@ -121,20 +124,26 @@ else
 			-c 'model_providers.litellm.supports_websockets=false')
 	fi
 	sub=()
-	((background)) && sub=(exec)
-	case "$mode" in
-		resume|continue) ((background)) && sub+=(fork) || sub+=(resume) ;;
-		fork|fork-last) sub+=(fork) ;;
-	esac
+	if ((background)); then sub=(exec)
+	else
+		case "$mode" in
+			resume|continue) sub=(resume) ;;
+			fork|fork-last) sub=(fork) ;;
+		esac
+	fi
 	codex_bin="$(type -P codex)" || die "codex is not installed or not on PATH"
 	cmd+=("$codex_bin" ${sub[@]+"${sub[@]}"} "${prov[@]}" -m "$model" -c "model_reasoning_effort=\"$effort\"")
+	if ((background)); then
+		cmd+=(--json --skip-git-repo-check --sandbox workspace-write --output-last-message "$dir/runs/.last-$$" ${extra[@]+"${extra[@]}"})
+		[[ "$mode" == new ]] || cmd+=(fork)
+	fi
 	case "$mode" in
 		resume|fork) cmd+=("$sid") ;;
 		continue|fork-last) cmd+=(--last) ;;
 	esac
-	((background)) && cmd+=(--json --skip-git-repo-check --sandbox workspace-write --output-last-message "$dir/runs/.last-$$")
+	((background)) && cmd+=(-)
 fi
-cmd+=(${extra[@]+"${extra[@]}"})
+if [[ "$app" == claude ]] || ((!background)); then cmd+=(${extra[@]+"${extra[@]}"}); fi
 
 echo "ai-api: $app · $model · effort $effort · ${mode}${sid:+ $sid}" >&2
 if ((dry)); then printf '%q ' "${cmd[@]}"; echo; exit 0; fi
@@ -196,7 +205,8 @@ NOTES: <anything unfinished, risky, or needing review, or none>"
 	exit 0
 fi
 if ((new_window)); then
-	launcher="$(mktemp -t ai-api).command"
+	launcher_dir="$(mktemp -d "${TMPDIR:-/tmp}/ai-api.XXXXXX")"
+	launcher="$launcher_dir/session.command"
 	{
 		echo '#!/bin/zsh -l'
 		echo "cd $(printf %q "$PWD") || exit 1"

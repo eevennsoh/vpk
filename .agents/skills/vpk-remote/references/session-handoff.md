@@ -139,3 +139,9 @@ the `RESULT` line.
   namespace, and validates a streamed tool-call round-trip. If it fails, no new
   terminal window opens. Keep current schemas authoritative; do not remove tools
   by leaf name across different namespaces.
+
+For headless Codex handoffs, use an explicit `--fork <id>` or `--resume <id>`.
+The launcher forks either choice to protect the original session, places exec
+options before `fork`, and passes `-` so the task brief is read from stdin.
+`--continue` and `--fork-last` remain interactive-only for Codex because the
+headless fork command requires a session ID.
