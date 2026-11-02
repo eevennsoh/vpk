@@ -1,0 +1,281 @@
+{
+  "schema": "vpk-iso-brief/1",
+  "id": "vortex-ignition",
+  "figId": "FIG_003",
+  "title": "From vortex to column sweep",
+  "label": "An isometric Done tray: the completion ring expands from its foot, then four representative cards lift into the field.",
+  "caption": "The ring sweeps upward before the cards lift out. Playback is slowed to show the handoff.",
+  "camera": {
+    "preset": "dimetric",
+    "scale": "fit"
+  },
+  "parts": [
+    {
+      "id": "column",
+      "kind": "tray",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        60,
+        150,
+        6
+      ]
+    },
+    {
+      "id": "card-1",
+      "kind": "slab",
+      "at": [
+        5,
+        8,
+        4
+      ],
+      "size": [
+        50,
+        32,
+        2.4
+      ],
+      "r": 2,
+      "marks": [
+        [
+          [
+            4,
+            4
+          ],
+          [
+            46,
+            4
+          ]
+        ],
+        [
+          [
+            4,
+            14
+          ],
+          [
+            34,
+            14
+          ]
+        ],
+        [
+          [
+            44,
+            25
+          ],
+          [
+            45,
+            25
+          ]
+        ]
+      ],
+      "explode": [
+        0,
+        0,
+        30
+      ]
+    },
+    {
+      "id": "card-2",
+      "kind": "slab",
+      "at": [
+        5,
+        44,
+        4
+      ],
+      "size": [
+        50,
+        32,
+        2.4
+      ],
+      "r": 2,
+      "marks": [
+        [
+          [
+            4,
+            4
+          ],
+          [
+            46,
+            4
+          ]
+        ],
+        [
+          [
+            4,
+            14
+          ],
+          [
+            34,
+            14
+          ]
+        ],
+        [
+          [
+            44,
+            25
+          ],
+          [
+            45,
+            25
+          ]
+        ]
+      ],
+      "explode": [
+        0,
+        0,
+        45
+      ]
+    },
+    {
+      "id": "card-3",
+      "kind": "slab",
+      "at": [
+        5,
+        80,
+        4
+      ],
+      "size": [
+        50,
+        32,
+        2.4
+      ],
+      "r": 2,
+      "marks": [
+        [
+          [
+            4,
+            4
+          ],
+          [
+            46,
+            4
+          ]
+        ],
+        [
+          [
+            4,
+            14
+          ],
+          [
+            34,
+            14
+          ]
+        ],
+        [
+          [
+            44,
+            25
+          ],
+          [
+            45,
+            25
+          ]
+        ]
+      ],
+      "explode": [
+        0,
+        0,
+        60
+      ]
+    },
+    {
+      "id": "card-4",
+      "kind": "slab",
+      "at": [
+        5,
+        116,
+        4
+      ],
+      "size": [
+        50,
+        32,
+        2.4
+      ],
+      "r": 2,
+      "marks": [
+        [
+          [
+            4,
+            4
+          ],
+          [
+            46,
+            4
+          ]
+        ],
+        [
+          [
+            4,
+            14
+          ],
+          [
+            34,
+            14
+          ]
+        ],
+        [
+          [
+            44,
+            25
+          ],
+          [
+            45,
+            25
+          ]
+        ]
+      ],
+      "explode": [
+        0,
+        0,
+        75
+      ]
+    },
+    {
+      "id": "flash-ring",
+      "kind": "ring",
+      "at": [
+        30,
+        3,
+        4
+      ],
+      "size": [
+        171.3,
+        171.3,
+        0
+      ],
+      "clipTo": "column",
+      "clipPad": 28,
+      "explode": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "focal": "flash-ring",
+  "labels": "none",
+  "annotations": [
+    {
+      "kind": "dimension",
+      "from": [
+        70,
+        0,
+        0
+      ],
+      "to": [
+        70,
+        150,
+        0
+      ],
+      "text": "Toss · 0.62 s",
+      "offset": 55
+    }
+  ],
+  "interact": null,
+  "meta": {
+    "margin": "[ DONE COLUMN ]",
+    "corner": "VPK-HTML"
+  }
+}

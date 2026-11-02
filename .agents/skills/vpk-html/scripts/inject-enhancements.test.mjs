@@ -23,6 +23,23 @@ test("minimal chrome is an explicit body option and leaves normal artifacts enha
 	}
 });
 
+test("only the actual body attribute controls enhancements", () => {
+	const enabled = [
+		`<html><head><script>const example = '<body data-vpk-enhancements="off">';</script></head><body><main>Content</main></body></html>`,
+		`<html><head><!-- <body data-vpk-enhancements="off"> --></head><body><main>Content</main></body></html>`,
+		`<html><head></head><body data-example='data-vpk-enhancements="off"'><main>Content</main></body></html>`,
+	];
+	for (const page of enabled) assert.ok(injectEnhancements(page).includes(ENHANCEMENT_BLOCK));
+
+	const disabled = [
+		`<html><head></head><body data-example="one > two" data-vpk-enhancements="off"><main>Content</main></body></html>`,
+		`<html><head></head><BODY DATA-VPK-ENHANCEMENTS="OFF"><main>Content</main></BODY></html>`,
+		`<html><head></head><body data-vpk-enhancements="o&#102;f"><main>Content</main></body></html>`,
+		`<body data-vpk-enhancements="off"><main>Content</main></body>`,
+	];
+	for (const page of disabled) assert.equal(injectEnhancements(page), page);
+});
+
 const SCRIPT = ENHANCEMENT_BLOCK.match(/<script data-vpkh-enhance>([\s\S]*?)<\/script>/)?.[1];
 const RECT = { left: 0, top: 0, right: 640, bottom: 360, width: 640, height: 360, x: 0, y: 0 };
 const FIGURE = `<figure><svg viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="Static figure"><rect x="20" y="20" width="200" height="120"></rect></svg><figcaption>A static figure</figcaption></figure>`;
