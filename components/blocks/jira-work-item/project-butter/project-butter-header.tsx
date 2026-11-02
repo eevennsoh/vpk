@@ -10,7 +10,7 @@ import { ProjectButterBreadcrumb } from "@/components/blocks/jira-work-item/proj
 import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
 import { ProjectButterSummary } from "@/components/blocks/jira-work-item/project-butter/project-butter-summary";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ProjectButterStatus } from "@/components/blocks/jira-work-item/project-butter/project-butter-status";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { ProjectButterPresentation } from "@/components/blocks/jira-work-item/project-butter/presentation";
@@ -57,7 +57,6 @@ export function ProjectButterHeader({ content, empty, onClose, onExpand, onOpenS
 						<DropdownMenu>
 							<DropdownMenuTrigger render={<Button aria-label="More work item actions" size="icon" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
 							<DropdownMenuContent align="end" positionerClassName="z-[650]">
-								<DropdownMenuItem onSelect={() => navigator.clipboard.writeText(`${location.origin}${location.pathname}#project-butter`)}>Copy link</DropdownMenuItem>
 								<DropdownMenuCheckboxItem checked={content.watching} onCheckedChange={content.setWatching}>Watch work item</DropdownMenuCheckboxItem>
 								<DropdownMenuCheckboxItem checked={content.flagged} onCheckedChange={content.setFlagged}>Flag work item</DropdownMenuCheckboxItem>
 							</DropdownMenuContent>

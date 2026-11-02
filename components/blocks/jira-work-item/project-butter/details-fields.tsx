@@ -4,9 +4,28 @@ import { useId, useState } from "react";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DetailsFieldRow } from "@/components/blocks/jira-work-item/project-butter/details-field-row";
-import { clearProjectButterDetailField, isProjectButterDetailFieldFilled, ProjectButterDetailFieldValue } from "@/components/blocks/jira-work-item/project-butter/details-field-values";
-import { PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS, reorderProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
+import { ProjectButterDetailFieldValue } from "@/components/blocks/jira-work-item/project-butter/details-field-values";
+import { PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS, projectButterCostPerReach, reorderProjectButterDetailFields, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
+import { TEAM_EU26_PEOPLE } from "@/components/blocks/jira-work-item/team-eu26/data/team-eu26-vita-one";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+
+function isProjectButterDetailFieldFilled(id: ProjectButterDetailFieldId, content: ProjectButterContent): boolean {
+	if (id === "status" || id === "assignee" || id === "priority") return true;
+	if (id === "dueDate") return Boolean(content.dueDate);
+	if (id === "reporter") return Boolean(content.reporter);
+	if (id === "costPerReach") return Boolean(projectButterCostPerReach(content.detailFields));
+	const value = content.detailFields[id];
+	return typeof value === "string" ? Boolean(value) : Array.isArray(value) ? value.length > 0 : Boolean(value.region || value.market);
+}
+
+function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: ProjectButterContent): void {
+	if (id === "dueDate") content.setDueDate(undefined);
+	else if (id === "reporter") content.setReporter(null);
+	else if (id === "assignee") content.setAssignee(TEAM_EU26_PEOPLE.automatic);
+	else if (id !== "status" && id !== "priority" && id !== "costPerReach") {
+		content.setDetailFields((fields) => ({ ...fields, [id]: id === "campaignRegion" ? { region: "", market: "" } : Array.isArray(fields[id]) ? [] : "" }));
+	}
+}
 
 export function ProjectButterDetailsFields({ content, empty, expanded }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean }>) {
 	const id = useId();

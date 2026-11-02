@@ -15,24 +15,6 @@ import { InlineEdit } from "@/components/ui/inline-edit";
 
 const PEOPLE = Object.values(TEAM_EU26_PEOPLE).map((person) => ({ ...person, avatarUrl: person.name === "Automatic" ? undefined : projectButterPersonAvatar(person.name) }));
 
-export function isProjectButterDetailFieldFilled(id: ProjectButterDetailFieldId, content: ProjectButterContent): boolean {
-	if (id === "status" || id === "assignee" || id === "priority") return true;
-	if (id === "dueDate") return Boolean(content.dueDate);
-	if (id === "reporter") return Boolean(content.reporter);
-	if (id === "costPerReach") return Boolean(projectButterCostPerReach(content.detailFields));
-	const value = content.detailFields[id];
-	return typeof value === "string" ? Boolean(value) : Array.isArray(value) ? value.length > 0 : Boolean(value.region || value.market);
-}
-
-export function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: ProjectButterContent): void {
-	if (id === "dueDate") content.setDueDate(undefined);
-	else if (id === "reporter") content.setReporter(null);
-	else if (id === "assignee") content.setAssignee(TEAM_EU26_PEOPLE.automatic);
-	else if (id !== "status" && id !== "priority" && id !== "costPerReach") {
-		content.setDetailFields((fields) => ({ ...fields, [id]: id === "campaignRegion" ? { region: "", market: "" } : Array.isArray(fields[id]) ? [] : "" }));
-	}
-}
-
 export function ProjectButterDetailFieldValue({ content, id }: Readonly<{ content: ProjectButterContent; id: ProjectButterDetailFieldId }>) {
 	const fields = content.detailFields;
 	function setField<K extends keyof ProjectButterDetailFields>(key: K, value: ProjectButterDetailFields[K]) {

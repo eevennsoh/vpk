@@ -109,10 +109,51 @@ test("inline creation, existing-item search, and pasted links add real rows at t
 	assert.equal(view.queryByRole("button", { name: "Edit relationship for VITA-11: Clones" }) !== null, true);
 });
 
+test("related due dates preserve the selected calendar date across timezones", async (t) => {
+	t.mock.timers.enable({ apis: ["Date"], now: Date.UTC(2026, 7, 15, 12) });
+	const previousTimezone = process.env.TZ;
+	try {
+		for (const timezone of ["America/Los_Angeles", "Pacific/Kiritimati"]) {
+			process.env.TZ = timezone;
+			const view = await renderComponent({
+				source: `import React, { useState } from "react";
+					import { RelatedDueDateField } from "@/components/blocks/jira-work-item/project-butter/related-row-fields";
+					export default function DueDateProbe() {
+						const [dueDate, setDueDate] = useState("2026-08-27");
+						return <><RelatedDueDateField item={{ id: "date-probe", key: "VITA-4", summary: "Date probe", status: "To do", priority: "Medium", assignee: "Unassigned", dueDate }} onChange={setDueDate} /><output aria-label="Stored due date" role="status">{dueDate}</output></>;
+					}`,
+			});
+			await view.click(view.getByRole("button", { name: "Edit due date for VITA-4, Aug 27" }));
+			assert.equal(view.getByRole("button", { name: /August 27th, 2026.*selected/u }).textContent, "27");
+			await view.click(view.getByRole("button", { name: /August 28th, 2026/u }));
+			assert.equal(view.getByRole("status", { name: "Stored due date" }).textContent, "2026-08-28");
+			await view.click(view.getByRole("button", { name: "Edit due date for VITA-4, Aug 28" }));
+			assert.equal(view.getByRole("button", { name: /August 28th, 2026.*selected/u }).textContent, "28");
+			await view.unmount();
+		}
+	} finally {
+		if (previousTimezone === undefined) delete process.env.TZ;
+		else process.env.TZ = previousTimezone;
+	}
+});
+
+test("display options identify the initial source order as Rank", async () => {
+	const view = await renderRelated();
+	const initialOrder = childRows(view).map((row) => row.querySelector('button[aria-label^="Edit summary"]').textContent);
+	assert.equal(initialOrder[0], "Write copy for welcome screen");
+	await chooseDisplay(view);
+	await view.click(view.getByRole("button", { name: "Ordering, Rank" }));
+	assert.equal(view.getByRole("menuitem", { name: "Rank" }).getAttribute("data-selected"), "true");
+	assert.equal(view.getByRole("menuitem", { name: "Priority" }).getAttribute("data-selected"), null);
+	await view.click(view.getByRole("menuitem", { name: "Rank" }));
+	await chooseDisplay(view);
+	assert.deepEqual(childRows(view).map((row) => row.querySelector('button[aria-label^="Edit summary"]').textContent), initialOrder);
+});
+
 test("display options order rows, hide completed work, and hide selected properties", async () => {
 	const view = await renderRelated();
 	await chooseDisplay(view);
-	await view.click(view.getByRole("button", { name: "Ordering, Priority" }));
+	await view.click(view.getByRole("button", { name: "Ordering, Rank" }));
 	await view.click(view.getByRole("menuitem", { name: "Priority" }));
 	await chooseDisplay(view);
 	assert.equal(childRows(view)[0].querySelector('button[aria-label^="Edit summary"]').textContent, "Design progress indicator component");

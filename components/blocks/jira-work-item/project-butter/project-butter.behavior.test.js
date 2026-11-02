@@ -159,6 +159,19 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("button", { name: "Change priority. Current priority: Highest" }) !== null, true);
 });
 
+test("board work item actions omit unsupported deep links and keep key copying available", async () => {
+	const view = await renderWorkItem({
+		initialPresentation: "modal",
+		shell: "project",
+		workItem: { code: "PAY-118", title: "First board item" },
+	});
+	assert.equal(view.queryByRole("button", { name: "Copy work item key" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "More work item actions" }));
+	assert.equal(view.queryByRole("menuitem", { name: "Copy link" }) === null, true);
+	assert.equal(view.queryByRole("menuitemcheckbox", { name: "Watch work item" }) !== null, true);
+	assert.equal(view.queryByRole("menuitemcheckbox", { name: "Flag work item" }) !== null, true);
+});
+
 test("empty Project butter can create a coding session", async () => {
 	const view = await renderWorkItem({ initialPreset: "empty" });
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);

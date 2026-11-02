@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 const PRIORITY_ICONS = { High: PriorityHighIcon, Highest: PriorityHighestIcon, Medium: PriorityMediumIcon, Low: PriorityLowIcon, Lowest: PriorityLowestIcon };
 const PEOPLE = ["Unassigned", "Automatic", "Annie Cook", "Sarah Lim", "Marcus Kim", "Elena Rodriguez", "Sia Vale", "Amara Okafor", "Zoe Loft", "Marcus Aurelius", "Liam Wilson", "Oliver Knight", "Hiroshi Tanaka"];
-export const RELATED_RELATIONSHIPS = ["Blocks", "Blocked by", "Is blocked by", "Clones", "Is cloned by", "Duplicates", "Is duplicated by", "Relates to"];
+const RELATED_RELATIONSHIPS = ["Blocks", "Blocked by", "Is blocked by", "Clones", "Is cloned by", "Duplicates", "Is duplicated by", "Relates to"];
 
 export function RelatedPriorityGlyph({ value }: Readonly<{ value: PriorityValue }>) {
 	const Icon = PRIORITY_ICONS[value];
@@ -44,7 +44,7 @@ export function RelatedAssigneeField({ item, onChange }: Readonly<{ item: Projec
 export function RelatedDueDateField({ item, onChange }: Readonly<{ item: ProjectButterRelatedItem; onChange: (dueDate: string) => void }>) {
 	const [open, setOpen] = useState(false);
 	const value = item.dueDate ? new Date(`${item.dueDate}T12:00:00`) : undefined;
-	const display = value ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(value) : "—";
+	const display = item.dueDate ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${item.dueDate}T00:00:00Z`)) : "—";
 	return <Popover onOpenChange={setOpen} open={open}><PopoverTrigger render={<Button aria-label={`Edit due date for ${item.key}, ${display}`} size="compact" type="button" variant="ghost" />}><span className="text-xs font-normal text-text-subtlest">{display}</span></PopoverTrigger><PopoverContent onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} align="end" className="w-auto" positionerClassName="z-[650]"><Calendar mode="single" onSelect={(date) => { onChange(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` : ""); setOpen(false); }} selected={value} /></PopoverContent></Popover>;
 }
 
