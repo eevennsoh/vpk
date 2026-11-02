@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import CrossIcon from "@atlaskit/icon/core/cross";
 
 import {
 	AgentBrowserDialog,
@@ -16,11 +17,14 @@ import {
 	DEMO_AGENT_TEMPLATES_SESSION,
 } from "@/components/blocks/agent-templates/data/demo-template-agents";
 import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agent-directory/data/sidebar-groups";
+import { AgentDirectoryView } from "@/components/blocks/agent-directory/components/directory-view";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export type AgentsDirectoryAgent = AgentBrowserAgent;
 export type AgentsDirectoryTemplateAgent = AgentTemplatesAgent;
 export type AgentsDirectorySidebarGroup = AgentBrowserSidebarGroup;
-export type AgentsDirectoryVariant = AgentBrowserVariant;
+export type AgentsDirectoryVariant = AgentBrowserVariant | "standard-v1" | "standard-v2";
 export type AgentsDirectoryTemplateBuildOptions = AgentBrowserTemplateBuildOptions;
 export type AgentsDirectoryTemplateBuildResult = AgentBrowserTemplateBuildResult;
 
@@ -108,6 +112,25 @@ export function AgentsDirectoryDialog({
 		[sessionTemplateAgents, templateAgents],
 	);
 
+	if (variant === "standard-v2") {
+		return (
+			<Dialog open={open} onOpenChange={onOpenChange}>
+				<DialogContent className="grid h-[min(800px,calc(100svh-2rem))] max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[1120px]" showCloseButton={false}>
+					<div className="flex items-center justify-between gap-4 px-6 pt-6 pb-4">
+						<DialogTitle>{title ?? "Agents"}</DialogTitle>
+						<DialogClose render={<Button variant="ghost" size="icon" />}>
+							<CrossIcon label="" />
+							<span className="sr-only">Close</span>
+						</DialogClose>
+					</div>
+					<div className="min-h-0 overflow-y-auto px-6 pb-8">
+						<AgentDirectoryView agents={directoryAgents} templateAgents={directoryTemplateAgents} ownedAgentIds={sessionAgents.map((agent) => agent.id)} initialTemplateCategory={initialTemplateCategory} onCreateAgent={onCreateAgent} onSelectAgent={onSelectAgent} onSelectTemplateAgent={onSelectTemplateAgent} />
+					</div>
+				</DialogContent>
+			</Dialog>
+		);
+	}
+
 	return (
 		<AgentBrowserDialog
 			open={open}
@@ -123,7 +146,7 @@ export function AgentsDirectoryDialog({
 			sidebarGroups={sidebarGroups}
 			templateAgents={directoryTemplateAgents}
 			initialTemplateCategory={initialTemplateCategory}
-			variant={variant}
+			variant={variant === "standard-v1" ? "default" : variant}
 		/>
 	);
 }

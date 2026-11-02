@@ -21,11 +21,13 @@ interface AgentLanyardCardProps {
 	verified?: boolean;
 	accentColor?: string;
 	showGrid?: boolean;
+	showDescription?: boolean;
 	perspectiveTilt?: boolean;
 	animateGrid?: boolean;
 	/** Play the finite grid wave when mounted by a preview instead of on card hover. */
 	gridAnimationTrigger?: "hover" | "reveal";
 	headingLevel?: 2 | 3;
+	onSelect?: () => void;
 	className?: string;
 }
 
@@ -36,7 +38,7 @@ const EXIT = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
 
 export function AgentLanyardCard({
 	id, name, byline, description, variant, avatar, footer, verified = false,
-	accentColor, showGrid = true, perspectiveTilt = true, animateGrid = true, gridAnimationTrigger = "hover", headingLevel = 3, className,
+	accentColor, showGrid = true, showDescription = true, perspectiveTilt = true, animateGrid = true, gridAnimationTrigger = "hover", headingLevel = 3, onSelect, className,
 }: Readonly<AgentLanyardCardProps>) {
 	const Title = headingLevel === 2 ? "h2" : "h3";
 	const [hovered, setHovered] = useState(false);
@@ -58,15 +60,18 @@ export function AgentLanyardCard({
 			<motion.div
 				data-slot="agent-lanyard-surface"
 				className={cn(
-					"flex min-h-[280px] flex-col rounded-xl border border-border bg-surface transition-[background-color,box-shadow] duration-normal ease-out-practical motion-reduce:transition-none",
-					hovered ? "bg-surface-hovered shadow-2xl" : null,
+					"relative flex min-h-[280px] flex-col rounded-xl border border-border bg-surface transition-[background-color,box-shadow] duration-normal ease-out-practical motion-reduce:transition-none",
+					hovered ? "border-transparent bg-surface-hovered shadow-2xl" : null,
 				)}
 				initial={false}
 				animate={{ transform: tiltEnabled ? (hovered ? HOVER_TILT : REST_TILT) : "none" }}
 				transition={tiltEnabled ? (hovered ? ENTER : EXIT) : { duration: 0 }}
 			>
-				<div className={cn("relative h-[108px] shrink-0 overflow-hidden rounded-t-xl", showGrid ? "bg-bg-neutral" : "bg-surface-sunken")} aria-hidden="true">
-					{showGrid ? <AgentLanyardGrid key={id} active={gridEnabled && (gridAnimationTrigger === "reveal" || hovered)} color={accentColor} animationTrigger={gridAnimationTrigger} /> : null}
+				{onSelect ? (
+					<button type="button" aria-label={variant === "template" ? `Use ${name} template` : `View ${name}`} onClick={onSelect} className="absolute inset-0 z-10 cursor-pointer rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50" />
+				) : null}
+				<div className={cn("relative h-[108px] shrink-0 overflow-hidden rounded-t-xl", showGrid ? "bg-bg-neutral" : "bg-surface-sunken", hovered ? "-mx-px -mt-px h-[109px]" : null)} aria-hidden="true">
+					{showGrid ? <AgentLanyardGrid key={id} active={gridEnabled && (gridAnimationTrigger === "reveal" || hovered)} color={accentColor} /> : null}
 					<span data-slot="agent-lanyard-cutout" className="pointer-events-none absolute top-[7px] left-1/2 z-10 h-1.5 w-10 -translate-x-1/2 rounded-[3.75px]">
 						<span className="absolute inset-0 rounded-[inherit] bg-surface" />
 						<span
@@ -86,7 +91,7 @@ export function AgentLanyardCard({
 						</div>
 						<p className="text-xs leading-4 font-medium text-text-subtle">{byline}</p>
 					</div>
-					<p className="min-h-12 text-xs leading-4 text-text-subtle">{description}</p>
+					{showDescription ? <p className="min-h-12 text-xs leading-4 text-text-subtle">{description}</p> : null}
 					{footer}
 				</div>
 			</motion.div>

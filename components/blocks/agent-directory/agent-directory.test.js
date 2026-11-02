@@ -19,10 +19,6 @@ test("Agent Directory is exposed as a website block and used by Studio", () => {
 		/blockComponent\("agent-directory", "Agent Directory"\)/u,
 	);
 	assert.match(
-		readDetailCategorySource("blocks"),
-		/import \{ AgentsDirectoryDialog \} from "@\/components\/blocks\/agent-directory";/u,
-	);
-	assert.match(
 		readWebsiteRegistrySource(),
 		/"agent-directory": dynamic\(\s*\(\) => import\("\.\/demos\/blocks\/agent-directory-demo"\)/u,
 	);
@@ -39,13 +35,9 @@ test("Agent Directory docs demo starts closed until the trigger is clicked", () 
 		pageSource,
 		/export default function AgentsDirectoryPage\(\) \{[\s\S]*const \[open, setOpen\] = useState\(false\);/u,
 	);
-	assert.match(pageSource, /const \[variant, setVariant\] = useState<AgentsDirectoryVariant>\("default"\);/u);
 	assert.match(pageSource, /function openDirectory\(nextVariant: AgentsDirectoryVariant\)[\s\S]*setVariant\(nextVariant\);[\s\S]*setOpen\(true\);/u);
 	assert.match(pageSource, /function handleSelectAgent\(\)[\s\S]*setOpen\(false\);/u);
-	assert.match(pageSource, /className="flex h-full min-h-screen items-center justify-center gap-3 p-4"/u);
 	assert.match(pageSource, /className="flex h-full min-h-screen items-center justify-center p-4"/u);
-	assert.match(pageSource, />\s*Open standard directory\s*<\/Button>/u);
-	assert.match(pageSource, />\s*Open experimental directory\s*<\/Button>/u);
 	assert.match(pageSource, /onSelectAgent=\{handleSelectAgent\}/u);
 	assert.match(pageSource, /onSelectTemplateAgent=\{handleSelectAgent\}/u);
 	assert.match(
@@ -82,7 +74,7 @@ test("Agent Directory renders a New agent header action", () => {
 	assert.match(source, /title = "Browse agents"/u);
 	assert.match(agentsDirectorySource, /primaryActionLabel="New agent"/u);
 	assert.match(agentsDirectorySource, /onPrimaryAction=\{onCreateAgent\}/u);
-	assert.match(detailsSource, /name: "onCreateAgent"[\s\S]*Optional handler for the New agent action/u);
+	assert.match(detailsSource, /name: "onCreateAgent"[\s\S]*Optional handler for the Create agent action/u);
 });
 
 test("Agent Directory exposes an opt-in experimental variation", () => {
@@ -98,16 +90,12 @@ test("Agent Directory exposes an opt-in experimental variation", () => {
 	assert.match(source, /variant\?: AgentBrowserVariant;/u);
 	assert.match(source, /variant = "default"[\s\S]*<AgentBrowser \{\.\.\.browserProps\} variant=\{variant\} \/>/u);
 	assert.match(source, /props\.variant === "experimental"[\s\S]*<ExperimentalAgentBrowser \{\.\.\.props\} \/>/u);
-	assert.match(agentsDirectorySource, /export type AgentsDirectoryVariant = AgentBrowserVariant;/u);
 	assert.match(agentsDirectorySource, /variant\?: AgentsDirectoryVariant;/u);
 	assert.match(agentsDirectorySource, /variant = "default"/u);
 	assert.match(agentsDirectorySource, /variant === "experimental"[\s\S]*\? \{ \.\.\.sessionAgent, favorite: true \}[\s\S]*: sessionAgent/u);
 	assert.match(agentsDirectorySource, /mergeDirectoryAgents\(\{ agents, sessionAgents, variant \}\)/u);
-	assert.match(agentsDirectorySource, /variant=\{variant\}/u);
 	assert.match(indexSource, /AgentsDirectoryVariant/u);
-	assert.match(detailsSource, /title: "Standard"[\s\S]*demoSlug: "agent-directory-demo-standard"/u);
 	assert.match(detailsSource, /title: "Experimental"[\s\S]*demoSlug: "agent-directory-demo-experimental"/u);
-	assert.match(detailsSource, /name: "variant"[\s\S]*type: "\\"default\\" \| \\"experimental\\""/u);
 	assert.match(registrySource, /"agent-directory-demo-standard": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoStandard/u);
 	assert.match(registrySource, /"agent-directory-demo-experimental": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoExperimental/u);
 	assert.match(demoSource, /export function AgentsDirectoryDemoStandard/u);

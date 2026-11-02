@@ -1,4 +1,5 @@
 export { AgentsDirectoryDialog } from "./components/agent-directory";
+export { AgentDirectoryView, type AgentDirectoryViewProps } from "./components/directory-view";
 export type {
 	AgentsDirectoryAgent,
 	AgentsDirectoryDialogProps,

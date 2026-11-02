@@ -26,6 +26,8 @@ interface AgentLanyardAgentProps {
 	avatar?: ReactNode;
 	/** Plain covers can opt out of the decorative grid without affecting tilt. */
 	showGrid?: boolean;
+	showDescription?: boolean;
+	onSelect?: () => void;
 	onAction?: (agent: AgentLanyardAgent) => void;
 	onMoreActions?: (agent: AgentLanyardAgent) => void;
 	menuActions?: AgentLanyardMenuActions;
@@ -38,16 +40,17 @@ export type AgentLanyardProps = AgentLanyardAgentProps | {
 	variant: "template";
 	template: AgentLanyardTemplate;
 	perspectiveTilt?: boolean;
+	onSelect?: () => void;
 	className?: string;
 };
 
 export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 	if (props.variant === "template") {
-		const { template, perspectiveTilt, className } = props;
+		const { template, perspectiveTilt, onSelect, className } = props;
 		return (
 			<AgentLanyardCard
 				id={template.id} name={template.name} byline="Template" description={template.description}
-				variant="template" perspectiveTilt={perspectiveTilt} className={className} showGrid={false}
+				variant="template" perspectiveTilt={perspectiveTilt} onSelect={onSelect} className={className} showGrid={false}
 				avatar={<AgentLanyardTemplateAvatar iconSrc={template.iconSrc} />}
 				footer={
 					<div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack" role="img" aria-label={`Connected apps: ${template.sources.map((source) => source.label).join(", ")}`}>
@@ -58,12 +61,12 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 		);
 	}
 
-	const { agent, perspectiveTilt, animateGrid, gridAnimationTrigger, headingLevel, showGrid, avatar, footer, className, ...actions } = props;
+	const { agent, perspectiveTilt, animateGrid, gridAnimationTrigger, headingLevel, showGrid, showDescription, avatar, footer, onSelect, className, ...actions } = props;
 	return (
 		<AgentLanyardCard
 			id={agent.id} name={agent.name} byline={agent.publisher} description={agent.description}
 			variant="agent" verified={agent.verified} accentColor={agent.accentColor}
-			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} className={className}
+			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={showDescription} onSelect={onSelect} className={className}
 			avatar={avatar ?? (agent.brandName ? (
 				<span className="absolute top-6 left-1/2 z-10 -translate-x-1/2">
 					<AgentAvatarVisual animate={false} brandName={agent.brandName} label="" sizePx={48} />
