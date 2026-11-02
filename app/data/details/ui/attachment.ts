@@ -14,6 +14,12 @@ export const ATTACHMENT_DETAIL: ComponentDetail = {
 </Attachment>`,
     props: [
       {
+        name: "variant",
+        type: '"default" | "preview"',
+        default: '"default"',
+        description: "Preview cards use a title header above an 80px thumbnail, with a raised surface.",
+      },
+      {
         name: "state",
         type: '"idle" | "uploading" | "processing" | "error" | "done"',
         default: '"done"',
@@ -36,6 +42,7 @@ export const ATTACHMENT_DETAIL: ComponentDetail = {
       { name: "AttachmentGroup", description: "Scrollable row of attachments." },
       { name: "AttachmentMedia", description: "Icon or image thumbnail." },
       { name: "AttachmentContent", description: "Metadata container." },
+      { name: "AttachmentHeader", description: "Title, icon, and actions above a preview thumbnail." },
       { name: "AttachmentTitle", description: "Primary attachment label." },
       { name: "AttachmentDescription", description: "Secondary metadata text." },
       { name: "AttachmentActions", description: "Action button container." },

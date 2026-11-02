@@ -47,7 +47,7 @@ function IndicatorGlyph({
 					label=""
 					pulse
 					size="xl"
-					variant="experimental-avatar"
+					variant="bloom-avatar"
 				/>
 			);
 		case "needs-input":

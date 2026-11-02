@@ -19,6 +19,8 @@ export interface JiraActivityCardProps {
 	agentName?: string;
 	/** Fixed sent timestamp shown before active runtime in agent-session headers. */
 	timestamp?: string;
+	/** Optional replacement for the timestamp in a plain comment header. */
+	timestampContent?: ReactNode;
 	/** Optional status tag shown in the activity-card header. */
 	tag?: { text: string; color?: TagColor };
 	/** Optional metadata rendered immediately after the plain-header timestamp. */
@@ -27,6 +29,7 @@ export interface JiraActivityCardProps {
 	action?: ReactNode;
 	/** Optional leading identity shown in the plain activity-card header. */
 	headerAvatar?: ReactNode;
+	headerConnector?: ReactNode;
 	/**
 	 * When true, omit the leading avatar — the timeline node already owns the
 	 * size-8 identity so the content column stays flush with event copy.
@@ -34,6 +37,8 @@ export interface JiraActivityCardProps {
 	hideLeadAvatar?: boolean;
 	/** Header geometry for plain activity cards without a session summary. */
 	headerLayout?: "inline" | "stacked";
+	/** Draw the parent stem below its avatar, stopping before the branched replies. */
+	threadConnector?: boolean;
 	/** Named hover scope for cards nested inside another activity card. */
 	activityGroup?: "activity-card" | "activity-reply";
 	/** Called when the rich activity header's View button is activated. */
@@ -60,12 +65,15 @@ export function JiraActivityCard({
 	item,
 	agentName,
 	timestamp,
+	timestampContent,
 	tag,
 	timestampMeta,
 	action,
 	headerAvatar,
+	headerConnector,
 	hideLeadAvatar = false,
 	headerLayout = "inline",
+	threadConnector = false,
 	activityGroup = "activity-card",
 	onView,
 	children,
@@ -131,37 +139,41 @@ export function JiraActivityCard({
 		>
 			<div
 				className={cn(
-					"grid min-w-0",
+					"relative grid min-w-0",
 					hasExpandedLayout ? "gap-3" : "gap-2",
 				)}
 			>
+				{threadConnector ? <span aria-hidden className="pointer-events-none absolute -left-6 bottom-0 top-10 w-px -translate-x-1/2 bg-bg-accent-gray-subtler" data-jira-activity-thread-stem /> : null}
 				{item ? (
 					<>
-						<AgentListActivityHeader
-							action={action}
-							activityGroup={activityGroup}
-							hideAvatar={hideLeadAvatar}
-							item={item}
-							key={item.id}
-							leadWithAgentName
-							messageTimestamp={timestamp}
-							onView={onView}
-						/>
+						<div className="relative min-w-0">
+							{headerConnector}
+							<AgentListActivityHeader
+								action={action}
+								activityGroup={activityGroup}
+								hideAvatar={hideLeadAvatar}
+								item={item}
+								key={item.id}
+								leadWithAgentName
+								messageTimestamp={timestamp}
+								onView={onView}
+							/>
+						</div>
 						{body}
 					</>
 				) : (
 					<>
 						<div
 							className={cn(
-								"flex min-w-0 gap-2",
-								hasStackedHeader ? "items-center" : "items-start",
+								"relative flex min-w-0 items-center gap-2",
 								// Match the timeline node's h-10 card track so the
 								// name/timestamp block optically centers with the
 								// out-of-card size-8 avatar (same as items-center
 								// when the avatar lived in this row).
-								hideLeadAvatar && hasStackedHeader ? "min-h-10" : null,
+								hideLeadAvatar ? "min-h-10" : null,
 							)}
 						>
+							{headerConnector}
 							{hideLeadAvatar ? null : headerAvatar}
 							{hasStackedHeader ? (
 								<div className="min-w-0 flex-1 overflow-hidden">
@@ -171,7 +183,7 @@ export function JiraActivityCard({
 										</span>
 									</div>
 									<div className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtle">
-										<span className="shrink-0">{timestamp}</span>
+										{timestampContent === undefined ? <span className="shrink-0">{timestamp}</span> : <span className="shrink-0">{timestampContent}</span>}
 										{timestampMeta}
 										{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
 									</div>
@@ -179,7 +191,7 @@ export function JiraActivityCard({
 							) : (
 								<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5">
 									<span className="font-medium text-text">{agentName}</span>
-									<span className="text-text-subtle">{timestamp}</span>
+									<span className="inline-flex items-center text-text-subtle">{timestampContent === undefined ? timestamp : timestampContent}</span>
 									{timestampMeta}
 									{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
 								</div>
@@ -206,7 +218,7 @@ export function JiraActivityCard({
 			</div>
 
 			{showFooter ? (
-				<div className="grid gap-3">
+				<div className={cn("grid", threadConnector ? "gap-0" : "gap-3")}>
 					{replies}
 					{replyComposer}
 				</div>

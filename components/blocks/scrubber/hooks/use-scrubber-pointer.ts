@@ -14,6 +14,7 @@ export interface ScrubberPointerOptions {
 	activeIndex: number;
 	axis: "x" | "y";
 	onSelect: (id: string) => void;
+	onSeek?: (offset: number) => void;
 	onHoverChange: (id: string | null) => void;
 	shouldReduceMotion: boolean;
 	selectOnHover?: boolean;
@@ -48,6 +49,7 @@ export function useScrubberPointer({
 	entries,
 	onHoverChange,
 	onSelect,
+	onSeek,
 	shouldReduceMotion,
 	selectOnHover = true,
 }: Readonly<ScrubberPointerOptions>): ScrubberPointer {
@@ -101,7 +103,9 @@ export function useScrubberPointer({
 		if (!shouldReduceMotion && magnify.get() !== 1) {
 			animate(magnify, 1, SCRUBBER_MAGNIFY_IN);
 		}
-		if (nearest !== null && nearest !== activeIndex && (selectOnHover || event.buttons === 1)) {
+		if (onSeek && event.buttons === 1) {
+			onSeek(offset);
+		} else if (nearest !== null && nearest !== activeIndex && (selectOnHover || event.buttons === 1)) {
 			onSelect(entries[nearest].id);
 		}
 	}

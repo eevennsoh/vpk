@@ -5,3 +5,5 @@ export const PROJECT_BUTTER_PRESENTATIONS = [
 ] as const;
 
 export type ProjectButterPresentation = typeof PROJECT_BUTTER_PRESENTATIONS[number]["value"];
+
+export type ProjectButterShellContext = "standalone" | "project";

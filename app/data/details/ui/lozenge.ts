@@ -11,6 +11,12 @@ export const LOZENGE_DETAIL: ComponentDetail = {
 <Lozenge variant="success" trailingMetric="0.8">Completed</Lozenge>`,
     props: [
       {
+        name: "appearance (LozengeDropdownTrigger)",
+        type: '"lozenge" | "icon" | "text"',
+        default: '"lozenge"',
+        description: "Dropdown trigger presentation: filled lozenge, compact icon, or plain icon and text. Icon-only triggers require an accessible label.",
+      },
+      {
         name: "variant",
         type: '"neutral" | "success" | "danger" | "information" | "discovery" | "warning" | "accent-red" | "accent-orange" | "accent-yellow" | "accent-lime" | "accent-green" | "accent-teal" | "accent-blue" | "accent-purple" | "accent-magenta" | "accent-gray"',
         default: '"neutral"',

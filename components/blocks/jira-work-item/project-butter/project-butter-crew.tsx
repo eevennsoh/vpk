@@ -1,16 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import AddIcon from "@atlaskit/icon/core/add";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
+import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
+import { ProjectButterAgentPicker } from "@/components/blocks/jira-work-item/project-butter/project-butter-agent-picker";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
 
-type CrewMember = { name: string; kind: "person"; state: "Working"; avatarSrc?: string } | { name: string; kind: "agent"; state: "Working" | "Needs input" | "Completed"; visual: Pick<AgentAvatarVisualProps, "avatarSrc" | "brandName" | "vpkLogo"> };
+type CrewMember = { name: string; kind: "person"; state: "Working" | "Currently viewing"; avatarSrc?: string } | { id?: string; name: string; kind: "agent"; state: "Working" | "Needs input" | "Completed"; visual: Pick<AgentAvatarVisualProps, "avatarSrc" | "brandName" | "vpkLogo"> };
+type AgentCrewMember = Extract<CrewMember, { kind: "agent" }>;
 const CREW: readonly CrewMember[] = [
 	{ name: "Sarah Lim", kind: "person", state: "Working" },
 	{ name: "Claude", kind: "agent", state: "Needs input", visual: { brandName: "claude" } },
@@ -20,26 +26,60 @@ const CREW: readonly CrewMember[] = [
 	{ name: "Figma", kind: "agent", state: "Completed", visual: { brandName: "figma" } },
 	{ name: "Rovo", kind: "agent", state: "Completed", visual: { vpkLogo: "rovo" } },
 ];
+const SESSION_URGENCY: Readonly<Record<AgentSessionItem["state"], number>> = { "needs-input": 0, attention: 0, running: 1, complete: 2 };
+const SESSION_STATE: Readonly<Record<AgentSessionItem["state"], AgentCrewMember["state"]>> = { "needs-input": "Needs input", attention: "Needs input", running: "Working", complete: "Completed" };
 
-export function ProjectButterCrew({ assignee, onOpenSession, sessions, useReferenceCrew = true }: Readonly<{ assignee?: WorkItemPerson; onOpenSession: (session: AgentSessionItem) => void; sessions: readonly AgentSessionItem[]; useReferenceCrew?: boolean }>) {
+function sameCrewAgent(member: AgentCrewMember, agent: AgentSessionItem["agent"]) {
+	return Boolean(member.id && member.id === agent.id)
+		|| member.name.toLowerCase() === agent.name.toLowerCase()
+		|| Boolean(member.visual.brandName && member.visual.brandName === agent.brandName)
+		|| Boolean(member.visual.vpkLogo && member.visual.vpkLogo === agent.vpkLogo);
+}
+
+function referenceCrew(sessionsByUrgency: readonly AgentSessionItem[]): readonly CrewMember[] {
+	const members: CrewMember[] = CREW.map((member) => {
+		if (member.kind === "person") return member;
+		const session = sessionsByUrgency.find((candidate) => sameCrewAgent(member, candidate.agent));
+		return session ? { ...member, state: SESSION_STATE[session.state] } : member;
+	});
+	for (const session of sessionsByUrgency) {
+		if (session.id === "butter-coding" || session.id === "butter-scoping" || members.some((member) => member.kind === "agent" && sameCrewAgent(member, session.agent))) continue;
+		members.push({ id: session.agent.id, name: session.agent.name, kind: "agent", state: SESSION_STATE[session.state], visual: { avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo } });
+	}
+	return members;
+}
+
+export function ProjectButterCrew({ assignee, onOpenSession, onStartAgent, sessions, useReferenceCrew = true }: Readonly<{
+	assignee?: WorkItemPerson;
+	onOpenSession: (session: AgentSessionItem) => void;
+	onStartAgent?: (agent: AgentSessionItem["agent"]) => void;
+	sessions: readonly AgentSessionItem[];
+	useReferenceCrew?: boolean;
+}>) {
 	const [open, setOpen] = useState(false);
-	const crew: readonly CrewMember[] = useReferenceCrew ? CREW : [
+	const [view, setView] = useState<"sessions" | "picker">("sessions");
+	const orderedSessions = [...sessions].sort((left, right) => SESSION_URGENCY[left.state] - SESSION_URGENCY[right.state]);
+	const members: readonly CrewMember[] = useReferenceCrew ? referenceCrew(orderedSessions) : [
 		...(assignee && assignee.name !== "Automatic" ? [{ name: assignee.name, kind: "person" as const, state: "Working" as const, avatarSrc: assignee.avatarUrl }] : []),
-		...sessions.map((session): CrewMember => ({ name: session.agent.name, kind: "agent", state: session.state === "complete" ? "Completed" : session.state === "needs-input" ? "Needs input" : "Working", visual: { avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName } })),
+		...sessions.map((session): CrewMember => ({ name: session.agent.name, kind: "agent", state: session.state === "complete" ? "Completed" : session.state === "needs-input" || session.state === "attention" ? "Needs input" : "Working", visual: { avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo } })),
 	];
-	if (crew.length === 0) return null;
+	const crew: readonly CrewMember[] = members.length ? members : [{ name: "Annie Cook", kind: "person", state: "Currently viewing" }];
+	const picking = view === "picker" || sessions.length === 0;
+	const label = `${members.length ? "Working on this work item. " : ""}${crew.map((member) => `${member.name}, ${member.state}`).join(". ")}. Add agent`;
+	function changeOpen(next: boolean) {
+		setOpen(next);
+		if (!next) setView("sessions");
+	}
 	return (
-		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<Button aria-label={`Working on this work item. ${crew.map((member) => `${member.name}, ${member.state}`).join(". ")}`} type="button" variant="ghost" />}>
-				<AvatarGroup label="People and agents working on this item">
-					{crew.map((member, index) => member.kind === "person" ? <Avatar key={`${member.name}-${index}`} label={member.name} size="default"><AvatarImage src={member.avatarSrc ?? projectButterPersonAvatar(member.name)} /><AvatarFallback>{member.name.slice(0, 1)}</AvatarFallback></Avatar> : <span className="relative shrink-0" key={`${member.name}-${index}`}><AgentAvatarVisual {...member.visual} appearance="coding" label={`${member.name}, ${member.state}`} sizePx={32} status={member.state === "Completed" ? "finished" : member.state === "Needs input" ? "needs-input" : undefined} />{member.state === "Working" ? <span className="absolute -bottom-0.5 -right-0.5 rounded-full bg-surface p-0.5"><Spinner label="Working" size="xs" /></span> : null}</span>)}
+		<Popover onOpenChange={changeOpen} open={open}>
+			<PopoverTrigger render={<button aria-label={label} className="group/crew inline-flex shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!onStartAgent && sessions.length === 0} type="button" />}>
+				<AvatarGroup className="-space-x-1.5" label="People and agents working on this item">
+					{crew.map((member, index) => member.kind === "person" ? <Avatar className="size-7.5" key={`${member.name}-${index}`} label={`${member.name}, ${member.state}`} size="default" title={`${member.name}, ${member.state}`}><AvatarImage src={member.avatarSrc ?? projectButterPersonAvatar(member.name)} /><AvatarFallback>{member.name.slice(0, 1)}</AvatarFallback></Avatar> : <span className="relative shrink-0" key={`${member.name}-${index}`} title={`${member.name}, ${member.state}`}><AgentAvatarVisual {...member.visual} appearance="coding" label={`${member.name}, ${member.state}`} sizePx={30} status={member.state === "Completed" ? "finished" : member.state === "Needs input" ? "needs-input" : undefined} />{member.state === "Working" ? <span className="absolute -right-0.5 -top-0.5 z-10 grid size-3.5 place-items-center rounded-full bg-surface"><Spinner className="size-2.5" label="Working" size="xs" variant="bloom" /></span> : null}</span>)}
+					<Avatar animate={false} borderTone={open ? "selected" : "default"} className="size-7.5" label="Add agent" shape="hexagon" size="default"><AvatarFallback className="bg-transparent text-icon-subtle group-hover/crew:bg-bg-neutral-subtle-hovered"><AddIcon label="" size="small" /></AvatarFallback></Avatar>
 				</AvatarGroup>
 			</PopoverTrigger>
-			<PopoverContent align="end" className="w-80 p-3" positionerClassName="z-[650]">
-				<p className="mb-3 text-sm font-semibold">Working on this work item</p>
-				<ul className="space-y-2 text-sm">{crew.map((member, index) => <li className="flex justify-between gap-3" key={`${member.name}-${index}`}><span>{member.name}</span><span className="text-text-subtle">{member.state}</span></li>)}</ul>
-				<p className="mb-1 mt-4 text-xs font-medium text-text-subtle">Agent sessions</p>
-				{sessions.map((session) => <Button aria-label={`Open ${session.agent.name} session`} className="w-full justify-start" key={session.id} onClick={() => { onOpenSession(session); setOpen(false); }} type="button" variant="ghost">{session.title}</Button>)}
+			<PopoverContent align="end" aria-label={picking ? "Add agent" : "Agent sessions"} className={picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[360px] gap-0 p-1"} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">
+				{picking && onStartAgent ? <ProjectButterAgentPicker onSelect={(agent) => { onStartAgent(agent); changeOpen(false); }} sessions={sessions} /> : <><ul aria-label="Agent sessions">{orderedSessions.map((session) => <li key={session.id}><Button aria-label={`Open ${session.agent.name} session: ${session.title}`} className="h-auto min-h-12 w-full justify-start gap-3 py-2" onClick={() => { onOpenSession(session); changeOpen(false); }} type="button" variant="ghost"><AgentAvatarVisual avatarSrc={session.agent.avatarSrc} brandName={session.agent.brandName} label={session.agent.name} sizePx={24} vpkLogo={session.agent.vpkLogo} /><span className="min-w-0 flex-1 text-left"><span className="block truncate font-normal text-text">{session.title}</span><span className="block truncate text-xs font-normal text-text-subtle">{session.agent.name} · {SESSION_STATE[session.state]}{session.timeLabel ? ` · ${session.timeLabel}` : ""}</span></span>{session.state === "running" ? <Spinner label="Working" size="xs" variant="bloom" /> : <span className="shrink-0 text-xs font-normal text-text-subtle">{SESSION_STATE[session.state]}</span>}</Button></li>)}</ul><Separator className="my-1" /><Button disabled={!onStartAgent} onClick={onStartAgent ? () => setView("picker") : undefined} type="button" variant="ghost"><AiAgentAddIcon label="" size="small" /><span className="min-w-0 flex-1 text-left font-normal">Add agent</span><ChevronRightIcon label="" size="small" /></Button></>}
 			</PopoverContent>
 		</Popover>
 	);

@@ -5,8 +5,8 @@ const test = require("node:test");
 
 const PROGRESS_TRACKER_SOURCE = fs.readFileSync(path.join(__dirname, "progress-tracker.tsx"), "utf8");
 const SPINNER_SOURCE = fs.readFileSync(path.join(__dirname, "spinner.tsx"), "utf8");
-const EXPERIMENTAL_SPINNER_SOURCE = fs.readFileSync(path.join(__dirname, "spinner-experimental.tsx"), "utf8");
-const EXPERIMENTAL_SPINNER_STYLES = fs.readFileSync(path.join(__dirname, "../../app/jira-agent-motion.css"), "utf8");
+const BLOOM_SPINNER_SOURCE = fs.readFileSync(path.join(__dirname, "spinner-bloom.tsx"), "utf8");
+const BLOOM_SPINNER_STYLES = fs.readFileSync(path.join(__dirname, "../../app/jira-agent-motion.css"), "utf8");
 const SPINNER_DETAIL_SOURCE = fs.readFileSync(path.join(__dirname, "../../app/data/details/ui/spinner.ts"), "utf8");
 const SPINNER_DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "../website/demos/ui/spinner-demo.tsx"), "utf8");
 const BOARD_VIEW_MENU_SOURCE = fs.readFileSync(
@@ -77,51 +77,51 @@ test("Spinner preserves the CodePen chasing-tail motion without competing rotati
 	assert.match(SPINNER_SOURCE, /const tailAnimations = shouldReduceMotion \? null : \(/u);
 });
 
-test("Spinner exposes the Jira prototype iconic orb only as an experimental variant", () => {
-	assert.match(SPINNER_SOURCE, /experimental: "text-icon-subtlest!"/u);
-	assert.match(SPINNER_SOURCE, /variant === "experimental"/u);
-	assert.match(SPINNER_SOURCE, /<ExperimentalSpinner/u);
+test("Spinner exposes the Jira prototype iconic orb as the Bloom variant", () => {
+	assert.match(SPINNER_SOURCE, /bloom: "text-icon-subtlest!"/u);
+	assert.match(SPINNER_SOURCE, /variant === "bloom"/u);
+	assert.match(SPINNER_SOURCE, /<BloomSpinner/u);
 	assert.match(SPINNER_SOURCE, /pulse\?: boolean/u);
 	assert.match(SPINNER_SOURCE, /pulse = false/u);
 	assert.match(SPINNER_SOURCE, /pulse=\{pulse\}/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /data-iconic-orb=""/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /pulse = false/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-rotator-motion/u);
+	assert.match(BLOOM_SPINNER_SOURCE, /data-iconic-orb=""/u);
+	assert.match(BLOOM_SPINNER_SOURCE, /pulse = false/u);
+	assert.match(BLOOM_SPINNER_SOURCE, /spinner-bloom-orb-rotator-motion/u);
 	assert.match(
-		EXPERIMENTAL_SPINNER_SOURCE,
-		/canAnimate && pulse && \(avatar[\s\S]*: "spinner-experimental-orb-dot-motion"\)/u,
+		BLOOM_SPINNER_SOURCE,
+		/canAnimate && pulse && \(avatar[\s\S]*: "spinner-bloom-orb-dot-motion"\)/u,
 	);
 	assert.match(
-		EXPERIMENTAL_SPINNER_SOURCE,
-		/canAnimate && pulse && "spinner-experimental-orb-rotator-pulse-delay"/u,
+		BLOOM_SPINNER_SOURCE,
+		/canAnimate && pulse && "spinner-bloom-orb-rotator-pulse-delay"/u,
 	);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-dot-top-right/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /ORB_DOTS/u);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-morph/u);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /0%, 5% \{ transform: translate\(0, 0\); \}/u);
-	assert.doesNotMatch(EXPERIMENTAL_SPINNER_STYLES, /--orb-inner-/u);
-	assert.doesNotMatch(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-opacity/u);
-	assert.doesNotMatch(EXPERIMENTAL_SPINNER_STYLES, /--orb-expanded-opacity|--orb-pulse-opacity/u);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@utility spinner-experimental-orb-dot-motion/u);
+	assert.match(BLOOM_SPINNER_SOURCE, /spinner-bloom-orb-dot-top-right/u);
+	assert.match(BLOOM_SPINNER_SOURCE, /ORB_DOTS/u);
+	assert.match(BLOOM_SPINNER_STYLES, /@keyframes spinner-bloom-orb-morph/u);
+	assert.match(BLOOM_SPINNER_STYLES, /0%, 5% \{ transform: translate\(0, 0\); \}/u);
+	assert.doesNotMatch(BLOOM_SPINNER_STYLES, /--orb-inner-/u);
+	assert.doesNotMatch(BLOOM_SPINNER_STYLES, /@keyframes spinner-bloom-orb-opacity/u);
+	assert.doesNotMatch(BLOOM_SPINNER_STYLES, /--orb-expanded-opacity|--orb-pulse-opacity/u);
+	assert.match(BLOOM_SPINNER_STYLES, /@utility spinner-bloom-orb-dot-motion/u);
 	assert.match(
-		EXPERIMENTAL_SPINNER_STYLES,
-		/animation: spinner-experimental-orb-morph calc\(var\(--duration-slowest\) \* 16\) var\(--ease-in-out\) infinite both;/u,
+		BLOOM_SPINNER_STYLES,
+		/animation: spinner-bloom-orb-morph calc\(var\(--duration-slowest\) \* 16\) var\(--ease-in-out\) infinite both;/u,
 	);
 	assert.match(
-		EXPERIMENTAL_SPINNER_STYLES,
+		BLOOM_SPINNER_STYLES,
 		/transform: translate\(var\(--orb-outer-x\), var\(--orb-outer-y\)\);/u,
 	);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-rotate/u);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@utility spinner-experimental-orb-rotator-pulse-delay/u);
-	assert.doesNotMatch(EXPERIMENTAL_SPINNER_SOURCE, /const HEX =/u);
-	assert.doesNotMatch(EXPERIMENTAL_SPINNER_SOURCE, /const SPARKLE =/u);
+	assert.match(BLOOM_SPINNER_STYLES, /@keyframes spinner-bloom-orb-rotate/u);
+	assert.match(BLOOM_SPINNER_STYLES, /@utility spinner-bloom-orb-rotator-pulse-delay/u);
+	assert.doesNotMatch(BLOOM_SPINNER_SOURCE, /const HEX =/u);
+	assert.doesNotMatch(BLOOM_SPINNER_SOURCE, /const SPARKLE =/u);
 	assert.match(SPINNER_DETAIL_SOURCE, /six-dot iconic orb/u);
 	assert.match(SPINNER_DETAIL_SOURCE, /name: "pulse"/u);
-	assert.match(SPINNER_DETAIL_SOURCE, /spinner-demo-experimental/u);
-	assert.match(SPINNER_DEMO_SOURCE, /id="spinner-experimental-pulse"/u);
+	assert.match(SPINNER_DETAIL_SOURCE, /spinner-demo-bloom/u);
+	assert.match(SPINNER_DEMO_SOURCE, /id="spinner-bloom-pulse"/u);
 	assert.match(SPINNER_DEMO_SOURCE, /<Switch[\s\S]*onCheckedChange=\{setPulse\}/u);
 	assert.match(SPINNER_DEMO_SOURCE, /pulse=\{pulse\}[\s\S]*variant=\{variant\}/u);
-	assert.match(BOARD_VIEW_MENU_SOURCE, /variant="experimental-avatar"/u);
+	assert.match(BOARD_VIEW_MENU_SOURCE, /variant="bloom-avatar"/u);
 	assert.doesNotMatch(BOARD_VIEW_MENU_SOURCE, /pulse/u);
 });
 
@@ -135,4 +135,21 @@ test("Shimmer sweeps through the shadcn utility, and the wave stays a separate c
 	assert.doesNotMatch(SHIMMER_SOURCE, /\bwave\??:/u);
 	assert.match(SHIMMER_WAVE_SOURCE, /export const ShimmerWave = memo\(/u);
 	assert.match(SHIMMER_WAVE_SOURCE, /useReducedMotion/u);
+});
+
+
+test("Bloom variants render six dots and retain their accessible loading label", async () => {
+	const { renderComponent } = require("../../scripts/lib/render-component.js");
+	const { SPINNER_DETAIL } = require("../../app/data/details/ui/spinner.ts");
+	assert.equal(SPINNER_DETAIL.examples.some((example) => example.title === "Bloom" && example.demoSlug === "spinner-demo-bloom"), true);
+	assert.equal(SPINNER_DETAIL.examples.some((example) => example.title === "Experimental"), false);
+	const view = await renderComponent({ entry: "components/ui/spinner.tsx", exportName: "Spinner", props: { label: "Working", variant: "bloom" } });
+	for (const variant of ["bloom", "bloom-avatar"]) {
+		await view.rerender({ label: "Working", variant, pulse: true });
+		const spinner = view.getByRole("status", { name: "Working" });
+		assert.equal(spinner.querySelectorAll("circle").length, 6);
+		assert.equal(spinner.hasAttribute("data-iconic-orb-avatar"), variant === "bloom-avatar");
+	}
+	await view.rerender({ label: "Working", variant: "default" });
+	assert.equal(view.getByRole("status", { name: "Working" }).querySelectorAll("circle").length, 1);
 });
