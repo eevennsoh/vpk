@@ -359,6 +359,29 @@ test("Claude offers cloud and the shared local command and workspace picker", as
 	assert.deepEqual(assigned, ["claude-code"]);
 });
 
+test("searching closes the run-location submenu for a filtered agent", async () => {
+	const assigned = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			appearance: "project-butter", issueKey: "PD-40", summary: "Test",
+			assignment: { agents: [
+				{ id: "claude-code", name: "Claude", byline: "" },
+				{ id: "test-agent", name: "Cursor", byline: "" },
+			], onAgentAssign: (agent) => assigned.push(agent.id) },
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
+	await view.click(view.getByRole("option", { name: /Claude/u }));
+	assert.equal(view.getByRole("dialog", { name: "Run Claude on" }) !== null, true);
+	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Cursor");
+	assert.equal(view.queryByRole("dialog", { name: "Run Claude on" }), null);
+	assert.equal(view.queryByRole("option", { name: /Claude/u }), null);
+	assert.equal(view.getByRole("option", { name: /Cursor/u }) !== null, true);
+	assert.deepEqual(assigned, []);
+});
+
 test("Butter software agents offer run locations before cloud assignment", async () => {
 	const assigned = [];
 	const agents = [

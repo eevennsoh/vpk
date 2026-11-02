@@ -163,6 +163,8 @@ export function ProjectButterAgentPicker({
 				onBrowseAgents={onBrowseAgents ? () => { actions.close(); onBrowseAgents(); } : undefined}
 				onCreateAgent={onCreateAgent ? () => { actions.close(); onCreateAgent(); } : undefined}
 				onQueryChange={() => {
+					cancelClose();
+					setSubmenu(null);
 					pointer.current = null;
 					if (popup.current) schedulePreview(popup.current);
 				}}
