@@ -308,7 +308,7 @@ export default function TopNavigation({
 					>
 						<InputGroup
 							className={cn(
-								"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered motion-reduce:transition-none",
+								"h-8 origin-center rounded-md border-border-input-search bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered motion-reduce:transition-none",
 								"has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0",
 								nav.isSearchFocused && "relative z-[1001] scale-y-[1.15]",
 							)}

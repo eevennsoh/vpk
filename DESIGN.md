@@ -150,7 +150,9 @@ theme mode and ADS token resolution can change the final values.
 - **Selected State** (`bg-bg-selected`, `text-text-selected`,
   `border-border-selected`): Use for pressed, expanded, selected, or active
   controls when the state needs to persist. Keep the selected triad together:
-  selected background, selected text, and selected border or marker.
+  selected background, selected text, and selected border or marker. ADS
+  finesse makes these states neutral; checked controls use the bold selected
+  background and inverse mark. Keep focus indicators and primary actions distinct.
 
 ### Neutral
 
@@ -208,7 +210,9 @@ system unless the surface is intentionally experimental.
 Typography should feel functional and composed. Use ADS font shorthand tokens
 such as `font.heading.*`, `font.body`, `font.body.small`, and `font.code` when
 applying composite typography. The frontmatter's `font` entries represent CSS
-font shorthand. For ordinary UI text, `text-sm` pairs 14px type with 20px line
+font shorthand. The finesse theme gives medium through xxsmall headings a
+500 weight; large and larger headings retain their existing weights. For
+ordinary UI text, `text-sm` pairs 14px type with 20px line
 height and `text-xs` pairs 12px with 16px; use mapped utilities for weight and
 color. Avoid viewport-scaled type for fixed tool surfaces because it makes
 compact controls unpredictable.

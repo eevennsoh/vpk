@@ -168,7 +168,7 @@ function PanelTitle({
 				</span>
 			) : null}
 			<span className={cn(icon && "pl-1")}>
-				<h2 className="truncate text-base font-semibold leading-5 text-text">
+				<h2 className="truncate text-base font-medium leading-5 text-text">
 					{children}
 				</h2>
 			</span>

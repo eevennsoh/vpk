@@ -38,6 +38,7 @@
 	--color-discovery-foreground: var(--ds-text-inverse); /* #FFFFFF */
 	--color-border: var(--ds-border); /* #0B120E24 */
 	--color-input: var(--ds-border); /* #0B120E24 */
+	--color-border-input-search: var(--ds-border-input-search);
 	--color-ring: var(--ds-border-focused); /* #4688EC */
 	--color-blanket: var(--ds-blanket); /* #050C1F75 */
 	--color-primary-hovered: var(--ds-background-brand-bold-hovered); /* #1558BC */
