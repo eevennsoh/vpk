@@ -5,7 +5,7 @@
 import { useChoropleth } from "@/components/ui-charts";
 import { useEffect } from "react";
 import { computeVisitorTrend, getVisitorValue } from "../data/visitors";
-import type { StatCardHoverState } from "./stat-card-chart";
+import type { StatCardHoverState } from "@/components/ui-charts/stat-card-chart";
 
 /** Syncs hovered choropleth feature into stat card NumberFlow and trend badge. */
 export function StatCardChoroplethHoverBridge({

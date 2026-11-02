@@ -41,6 +41,89 @@ function chartDetail(input: {
 }
 
 export const UI_CHART_DETAILS: Record<string, ComponentDetail> = {
+	"chart-utilities": chartDetail({
+		description: "Composable chart overlays for ranges, forecasts, trends, dates, markers, and backgrounds.",
+		importStatement: 'import { LineChart, Line, ReferenceArea, TrendLine } from "@/components/ui-charts";',
+		usage: `<LineChart data={data} xDataKey="date">
+	<ReferenceArea y1={40} y2={60} />
+	<Line dataKey="value" />
+	<TrendLine dataKey="value" />
+</LineChart>`,
+		props: [],
+		subComponents: [
+			{ name: "Background / ReferenceArea", description: "Shade the plot or a region of its data domain." },
+			{ name: "ProjectionLine / TrendLine / Band", description: "Show a forecast, fitted trend, or range alongside a series." },
+			{ name: "Weekends / Deadline / ChartMarkers", description: "Add dates and events to a time-series chart." },
+			{ name: "ChartBrush / ChartBrushLayout", description: "Select a time range to zoom a line or area chart." },
+			{ name: "BarDepth", description: "Add a dimensional treatment to bars." },
+		],
+		examples: [
+			{ title: "Background", demoSlug: "chart-utilities-demo-background" },
+			{ title: "Reference area", demoSlug: "chart-utilities-demo-reference-area" },
+			{ title: "Projection", demoSlug: "chart-utilities-demo-projection-line" },
+			{ title: "Band", demoSlug: "chart-utilities-demo-band" },
+			{ title: "Brush", demoSlug: "chart-utilities-demo-brush" },
+			{ title: "Weekends", demoSlug: "chart-utilities-demo-weekends" },
+			{ title: "Deadline", demoSlug: "chart-utilities-demo-deadline" },
+			{ title: "Trend line", demoSlug: "chart-utilities-demo-trend-line" },
+			{ title: "Markers", demoSlug: "chart-utilities-demo-markers" },
+			{ title: "Bar depth", demoSlug: "chart-utilities-demo-bar-depth" },
+		],
+	}),
+	"radial-chart": chartDetail({
+		description: "Composable radial charts for categories, time series, and circular or partial-arc comparisons.",
+		importStatement: 'import { RadialChart, RadialBar, RadialAxis, RadialCenter } from "@/components/ui-charts";',
+		usage: `<RadialChart angleType="band" data={data} xDataKey="month" series={series}>
+	<RadialBar />
+	<RadialAxis />
+	<RadialCenter />
+</RadialChart>`,
+		props: [
+			{ name: "data", type: "Record<string, unknown>[]", required: true, description: "Values for each angular or radial bin." },
+			{ name: "series", type: "RadialSeries[]", description: "Keys, labels, and colors for the data series." },
+			{ name: "angleType", type: '"clock" | "band" | "time"', description: "How bins are arranged around the chart." },
+		],
+		subComponents: [
+			{ name: "RadialBar / RadialRingBar / RadialDotBar", description: "Display values as radial bars, rings, or dots." },
+			{ name: "RadialLine / RadialArea", description: "Display a series as a line or filled area." },
+			{ name: "RadialAxis / RadialCenter / RadialLegend", description: "Add labels and context to the chart." },
+		],
+		examples: [{ title: "Default", demoSlug: "radial-chart-demo-default" }],
+	}),
+	"sparkline": chartDetail({
+		description: "Compact line, area, and bar trends for dense dashboards and table cells.",
+		importStatement: 'import { LineSparkline, AreaSparkline, BarSparkline, useSparklineHover } from "@/components/ui-charts";',
+		usage: `<LineSparkline data={data} dataKey="value" />
+<AreaSparkline data={data} dataKey="value" />
+<BarSparkline data={data} dataKey="value" />`,
+		props: [
+			{ name: "data", type: "readonly T[]", required: true, description: "Ordered points to display." },
+			{ name: "dataKey", type: "keyof T | ((row: T) => number)", required: true, description: "Numeric value for each point." },
+			{ name: "height", type: "number", default: "32", description: "Height in pixels; width fills the parent unless specified." },
+		],
+		subComponents: [{ name: "useSparklineHover", description: "Shares hover state and exposes the active datum for a separate value display." }],
+		examples: [{ title: "Line, area, and bar", demoSlug: "sparkline-demo-default" }],
+	}),
+	"sunburst-chart": chartDetail({
+		description: "Hierarchical part-to-whole chart with drill-down navigation.",
+		importStatement: 'import { buildArcs, SunburstChart, SunburstSegment, SunburstCenter, SunburstLabels } from "@/components/ui-charts";',
+		usage: `const { arcs } = buildArcs(data);
+<SunburstChart data={data}>
+	{arcs.map((arc) => <SunburstSegment key={arc.id} index={arc.arcIndex} />)}
+	<SunburstCenter />
+	<SunburstLabels />
+</SunburstChart>`,
+		props: [
+			{ name: "data", type: "SunburstNode", required: true, description: "A tree of named values and child nodes." },
+			{ name: "size", type: "number", description: "Maximum chart diameter in pixels." },
+		],
+		subComponents: [
+			{ name: "SunburstSegment", description: "Draws a segment and enables drill-down for a node with children." },
+			{ name: "SunburstCenter / SunburstBreadcrumb", description: "Provide navigation back through the hierarchy." },
+			{ name: "SunburstLabels / SunburstHint", description: "Show labels and the active segment." },
+		],
+		examples: [{ title: "Default", demoSlug: "sunburst-chart-demo-default" }],
+	}),
 	"area-chart": chartDetail({
 		description: "Composable Bklit area chart for filled trend lines and multi-series comparisons.",
 		importStatement: 'import { AreaChart, Area, Grid, XAxis, YAxis, ChartTooltip } from "@/components/ui-charts";',

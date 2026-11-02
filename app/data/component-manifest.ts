@@ -295,6 +295,7 @@ export const UI_CHART_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	uiChartComponent("area-chart", "Area Chart"),
 	uiChartComponent("bar-chart", "Bar Chart"),
 	uiChartComponent("candlestick-chart", "Candlestick Chart"),
+	uiChartComponent("chart-utilities", "Chart Utilities", "@/components/ui-charts"),
 	uiChartComponent("choropleth-chart", "Choropleth Chart", "@/components/ui-charts/choropleth"),
 	uiChartComponent("composed-chart", "Composed Chart"),
 	uiChartComponent("funnel-chart", "Funnel Chart"),
@@ -306,12 +307,15 @@ export const UI_CHART_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	uiChartComponent("pie-chart", "Pie Chart"),
 	uiChartComponent("profit-loss-line", "Profit Loss Line", "@/components/ui-charts/profit-loss-line"),
 	uiChartComponent("radar-chart", "Radar Chart"),
+	uiChartComponent("radial-chart", "Radial Chart"),
 	uiChartComponent("ring-chart", "Ring Chart"),
 	uiChartComponent("sankey-chart", "Sankey Chart", "@/components/ui-charts/sankey"),
 	uiChartComponent("scatter-chart", "Scatter Chart"),
+	uiChartComponent("sparkline", "Sparkline"),
 	uiChartComponent("stat-card-area-01", "Stat Card Area 01"),
 	uiChartComponent("stat-card-choropleth-01", "Stat Card Choropleth 01"),
 	uiChartComponent("stat-card-line-01", "Stat Card Line 01"),
+	uiChartComponent("sunburst-chart", "Sunburst Chart"),
 ]);
 
 export const UI_COMPONENTS: ComponentManifestEntry[] = catalogEntries([

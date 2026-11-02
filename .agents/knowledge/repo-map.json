@@ -4480,10 +4480,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 438,
+			"manifestEntryCount": 442,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 433,
+				"live": 437,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -6089,7 +6089,7 @@
 			},
 			{
 				"category": "ui-charts",
-				"entryCount": 20,
+				"entryCount": 24,
 				"entries": [
 					{
 						"category": "ui-charts",
@@ -6110,6 +6110,13 @@
 						"slug": "candlestick-chart",
 						"name": "Candlestick Chart",
 						"importPath": "@/components/ui-charts/candlestick-chart",
+						"status": "live"
+					},
+					{
+						"category": "ui-charts",
+						"slug": "chart-utilities",
+						"name": "Chart Utilities",
+						"importPath": "@/components/ui-charts",
 						"status": "live"
 					},
 					{
@@ -6191,6 +6198,13 @@
 					},
 					{
 						"category": "ui-charts",
+						"slug": "radial-chart",
+						"name": "Radial Chart",
+						"importPath": "@/components/ui-charts/radial-chart",
+						"status": "live"
+					},
+					{
+						"category": "ui-charts",
 						"slug": "ring-chart",
 						"name": "Ring Chart",
 						"importPath": "@/components/ui-charts/ring-chart",
@@ -6212,6 +6226,13 @@
 					},
 					{
 						"category": "ui-charts",
+						"slug": "sparkline",
+						"name": "Sparkline",
+						"importPath": "@/components/ui-charts/sparkline",
+						"status": "live"
+					},
+					{
+						"category": "ui-charts",
 						"slug": "stat-card-area-01",
 						"name": "Stat Card Area 01",
 						"importPath": "@/components/ui-charts/stat-card-area-01",
@@ -6229,6 +6250,13 @@
 						"slug": "stat-card-line-01",
 						"name": "Stat Card Line 01",
 						"importPath": "@/components/ui-charts/stat-card-line-01",
+						"status": "live"
+					},
+					{
+						"category": "ui-charts",
+						"slug": "sunburst-chart",
+						"name": "Sunburst Chart",
+						"importPath": "@/components/ui-charts/sunburst-chart",
 						"status": "live"
 					}
 				]

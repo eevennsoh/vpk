@@ -26,7 +26,7 @@ import {
   type StatCardHoverState,
   statCardLabelClassName,
   statCardValueClassName,
-} from "./stat-card-chart";
+} from "@/components/ui-charts/stat-card-chart";
 import { StatCardChoroplethHoverBridge } from "./stat-card-choropleth-hover-bridge";
 import { TrendBadge } from "./trend-badge";
 

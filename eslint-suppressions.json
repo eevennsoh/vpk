@@ -2717,86 +2717,14 @@
       "count": 2
     }
   },
-  "components/ui-charts/bar-chart.tsx": {
-    "react-hooks/purity": {
-      "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/bar-x-axis.tsx": {
-    "react-hooks/refs": {
-      "count": 2
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/bar-y-axis.tsx": {
-    "react-hooks/refs": {
-      "count": 2
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/candlestick-chart.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/chart-config-context.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/chart-context.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "components/ui-charts/chart-legend-hover.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/ui-charts/chart-loading-label.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "components/ui-charts/choropleth/choropleth-chart.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/choropleth/choropleth-context.tsx": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
   "components/ui-charts/heatmap/heatmap-cells.tsx": {
     "no-restricted-syntax": {
       "count": 1
-    }
-  },
-  "components/ui-charts/heatmap/heatmap-context.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "components/ui-charts/highlight-segment.tsx": {
-    "react-hooks/refs": {
-      "count": 3
-    }
-  },
-  "components/ui-charts/legend/legend-context.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "components/ui-charts/legend/legend-item.tsx": {
@@ -2817,73 +2745,12 @@
       "count": 4
     }
   },
-  "components/ui-charts/live-line-chart.tsx": {
-    "react-hooks/purity": {
-      "count": 2
-    }
-  },
-  "components/ui-charts/live-x-axis.tsx": {
-    "react-hooks/refs": {
-      "count": 2
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/live-y-axis.tsx": {
-    "react-hooks/refs": {
-      "count": 3
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/ui-charts/measured-parent-size.tsx": {
     "react-hooks/refs": {
       "count": 2
     }
   },
-  "components/ui-charts/pie-chart.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/pie-context.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "components/ui-charts/profit-loss-legend-hover.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/radar-context.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "components/ui-charts/radar-labels.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/ring-chart.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/ring-context.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "components/ui-charts/sankey/sankey-chart.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/sankey/sankey-context.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -2894,32 +2761,6 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 2
-    }
-  },
-  "components/ui-charts/static-chart-preview-context.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/tooltip/chart-tooltip.tsx": {
-    "react-hooks/refs": {
-      "count": 2
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/tooltip/tooltip-box.tsx": {
-    "react-hooks/refs": {
-      "count": 4
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/tooltip/tooltip-content.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "components/ui-charts/use-animated-y-domains.ts": {
@@ -2934,23 +2775,6 @@
   },
   "components/ui-charts/x-axis.tsx": {
     "no-restricted-syntax": {
-      "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 2
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/ui-charts/y-axis.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 2
-    },
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },

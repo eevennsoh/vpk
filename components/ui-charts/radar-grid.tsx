@@ -1,119 +1,167 @@
 "use client";
 
-import { scaleLinear } from "@visx/scale";
-import { LineRadial } from "@visx/shape";
-import { motion } from "motion/react";
+import { scaleLinear } from "d3-scale";
+import { lineRadial } from "d3-shape";
+import { m } from "motion/react";
+import {
+	GRID_RING_SPRING,
+	GRID_RING_STAGGER_S,
+	GRID_VALUE_LABEL_STAGGER_S,
+	gridLabelDelay,
+} from "./animation";
 import { transitionWithDelay } from "./motion-utils";
 import { radarCssVars, useRadarStable } from "./radar-context";
 
 export interface RadarGridProps {
-  /** Show level value labels. Default: true */
-  showLabels?: boolean;
-  /** Additional class name */
-  className?: string;
+	/** Show level value labels. Default: true */
+	showLabels?: boolean;
+	/** Grid line stroke color. Default: var(--border) */
+	stroke?: string;
+	/** Grid line stroke opacity. Default: 0.6 */
+	strokeOpacity?: number;
+	/** Additional class name */
+	className?: string;
+}
+
+export interface RadarGridRingProps {
+	/** One point per metric, plus a closing point back at the first angle */
+	data: { angle: number }[];
+	/** Maps a datum to its angle in radians */
+	angle: (d: { angle: number }) => number;
+	/** Ring radius (constant for every point) */
+	radius: number;
+	stroke: string;
+	strokeOpacity: number;
+}
+
+/**
+ * One polygon ring of the grid. Renders the same `<path>` visx `LineRadial`
+ * did (minus its `visx-line-radial` class): d3 `lineRadial` with the default
+ * linear curve and `d` / `fill` emitted before the stroke props.
+ */
+export function RadarGridRing({
+	data,
+	angle,
+	radius,
+	stroke,
+	strokeOpacity,
+}: RadarGridRingProps) {
+	const path = lineRadial<{ angle: number }>().angle(angle);
+	// visx only applied `radius` when truthy; a 0 radius kept d3's default
+	// accessor (`d[1]` -> NaN). Mirror that so the output is byte-identical.
+	if (radius) {
+		path.radius(radius);
+	}
+	return (
+		<path
+			d={path(data) || ""}
+			fill="none"
+			stroke={stroke}
+			strokeLinecap="round"
+			strokeOpacity={strokeOpacity}
+			strokeWidth={1}
+		/>
+	);
 }
 
 export function RadarGrid({
-  showLabels = true,
-  className = "",
+	showLabels = true,
+	stroke = radarCssVars.border,
+	strokeOpacity = 0.6,
+	className = "",
 }: RadarGridProps) {
-  const {
-    metrics,
-    radius,
-    levels,
-    animate,
-    enterTransition,
-    staggerScale,
-    enterDurationMs,
-    motionReplayKey,
-  } = useRadarStable();
+	const {
+		metrics,
+		radius,
+		levels,
+		animate,
+		enterTransition,
+		staggerScale,
+		enterDurationMs,
+		motionReplayKey,
+	} = useRadarStable();
 
-  const durationFactor = enterDurationMs / 1100;
-  const gridStagger = 0.08 * staggerScale * durationFactor;
+	const durationFactor = enterDurationMs / 1100;
+	const gridStagger = GRID_RING_STAGGER_S * staggerScale * durationFactor;
 
-  // Generate angles for the radial lines (one per metric)
-  const degrees = 360;
-  const angles = [...new Array(metrics.length + 1)].map((_, i) => ({
-    angle: i * (degrees / metrics.length) + degrees / metrics.length / 2,
-  }));
+	// Generate angles for the radial lines (one per metric)
+	const degrees = 360;
+	const angles = [...new Array(metrics.length + 1)].map((_, i) => ({
+		angle: i * (degrees / metrics.length) + degrees / metrics.length / 2,
+	}));
 
-  // Radial scale for converting degrees to radians
-  const radialScale = scaleLinear<number>({
-    range: [0, Math.PI * 2],
-    domain: [degrees, 0],
-  });
+	// Radial scale for converting degrees to radians
+	const radialScale = scaleLinear<number>()
+		.domain([degrees, 0])
+		.range([0, Math.PI * 2]);
 
-  const labelDelay = levels * gridStagger * 0.5;
+	const labelDelay = gridLabelDelay(levels, gridStagger);
 
-  return (
-    <g className={className}>
-      {/* Concentric grid circles */}
-      {[...new Array(levels)].map((_, i) => {
-        const targetRadius = ((i + 1) * radius) / levels;
-        return (
-          <motion.g
-            animate={{ scale: 1, opacity: 1 }}
-            initial={
-              animate ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }
-            }
-            // biome-ignore lint/suspicious/noArrayIndexKey: Static grid levels
-            key={`grid-${i}-${motionReplayKey}`}
-            style={{ transformOrigin: "0px 0px" }}
-            transition={
-              animate
-                ? transitionWithDelay(enterTransition, i * gridStagger, {
-                    type: "spring",
-                    stiffness: 100,
-                    damping: 15,
-                    mass: 1,
-                  })
-                : undefined
-            }
-          >
-            <LineRadial
-              angle={(d) => radialScale(d.angle) ?? 0}
-              data={angles}
-              fill="none"
-              radius={targetRadius}
-              stroke={radarCssVars.border}
-              strokeLinecap="round"
-              strokeOpacity={0.6}
-              strokeWidth={1}
-            />
-          </motion.g>
-        );
-      })}
+	return (
+		<g className={className}>
+			{/* Concentric grid circles */}
+			{[...new Array(levels)].map((_, i) => {
+				const targetRadius = ((i + 1) * radius) / levels;
+				return (
+					<m.g
+						animate={{ scale: 1, opacity: 1 }}
+						initial={
+							animate ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }
+						}
+						// biome-ignore lint/suspicious/noArrayIndexKey: Static grid levels
+						key={`grid-${i}-${motionReplayKey}`}
+						style={{ transformOrigin: "0px 0px" }}
+						transition={
+							animate
+								? transitionWithDelay(
+										enterTransition,
+										i * gridStagger,
+										GRID_RING_SPRING
+									)
+								: undefined
+						}
+					>
+						<RadarGridRing
+							angle={(d) => radialScale(d.angle) ?? 0}
+							data={angles}
+							radius={targetRadius}
+							stroke={stroke}
+							strokeOpacity={strokeOpacity}
+						/>
+					</m.g>
+				);
+			})}
 
-      {/* Grid level labels */}
-      {showLabels ? [...new Array(levels)].map((_, i) => (
-          <motion.g
-            animate={{ opacity: 1 }}
-            initial={animate ? { opacity: 0 } : { opacity: 1 }}
-            // biome-ignore lint/suspicious/noArrayIndexKey: Static grid levels
-            key={`level-label-${i}-${motionReplayKey}`}
-            transition={
-              animate
-                ? transitionWithDelay(
-                    enterTransition,
-                    labelDelay + i * 0.06 * durationFactor
-                  )
-                : undefined
-            }
-          >
-            <text
-              dominantBaseline="middle"
-              fill={radarCssVars.foregroundMuted}
-              fontSize={9}
-              textAnchor="start"
-              x={4}
-              y={-((i + 1) * radius) / levels}
-            >
-              {((i + 1) * 100) / levels}
-            </text>
-          </motion.g>
-        )) : null}
-    </g>
-  );
+			{/* Grid level labels */}
+			{showLabels ? [...new Array(levels)].map((_, i) => (
+					<m.g
+						animate={{ opacity: 1 }}
+						initial={animate ? { opacity: 0 } : { opacity: 1 }}
+						// biome-ignore lint/suspicious/noArrayIndexKey: Static grid levels
+						key={`level-label-${i}-${motionReplayKey}`}
+						transition={
+							animate
+								? transitionWithDelay(
+										enterTransition,
+										labelDelay + i * GRID_VALUE_LABEL_STAGGER_S * durationFactor
+									)
+								: undefined
+						}
+					>
+						<text
+							dominantBaseline="middle"
+							fill={radarCssVars.foregroundMuted}
+							fontSize={9}
+							textAnchor="start"
+							x={4}
+							y={-((i + 1) * radius) / levels}
+						>
+							{((i + 1) * 100) / levels}
+						</text>
+					</m.g>
+				)) : null}
+		</g>
+	);
 }
 
 RadarGrid.displayName = "RadarGrid";
