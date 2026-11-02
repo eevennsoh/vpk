@@ -214,6 +214,24 @@ test("distinct clip popovers retain their own From controls and values", async (
 	assert.equal(snapshot(view, "Second").card.from.opacity, 0);
 });
 
+test("closing an earlier clip editor restores focus to its own clip", async () => {
+	const view = await render({ second: true });
+	await view.press(view.getAllByRole("button", { name: "Edit Card" })[0], "Enter");
+	await view.press(view.getAllByRole("button", { name: "Edit Card" })[1], "Enter");
+	const firstDialog = view.getAllByRole("dialog", { name: "Edit Card" })[0];
+	const closeFirst = firstDialog.querySelector('[aria-label="Close editor"]');
+	await view.focus(closeFirst);
+	await view.press(closeFirst, "Escape");
+	await nextTask();
+	assert.equal(view.getAllByRole("dialog", { name: "Edit Card" }).length, 1);
+	assert.equal(view.isFocused(view.getAllByRole("button", { name: "Edit Card" })[0]), true);
+	const closeSecond = view.getByRole("dialog", { name: "Edit Card" }).querySelector('[aria-label="Close editor"]');
+	await view.focus(closeSecond);
+	await view.press(closeSecond, "Escape");
+	await nextTask();
+	assert.equal(view.isFocused(view.getAllByRole("button", { name: "Edit Card" })[1]), true);
+});
+
 test("dismissing a clip editor returns keyboard focus to its clip", async () => {
 	const view = await render();
 	const clip = view.getByRole("button", { name: "Edit Card" });

@@ -137,7 +137,8 @@ In `2.0.2`, dismissing a clip editor with Escape or its close button removes
 the focused popup without returning focus to its clip. A small delegated focus
 adapter remembers the opener and restores focus after dismissal only when focus
 fell to the document body. It resolves a current clip within its original
-section after upstream redraws and never steals focus from another control or
+section after upstream redraws, associates each open popup with its own clip,
+and never steals focus from another control or
 restores into an unmounted root. Restoration runs in a cancellable task after
 native event dispatch: a capture-listener microtask can run before the native
 target's close handler in Chrome. Cleanup cancels outstanding restoration tasks.
