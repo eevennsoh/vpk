@@ -113,6 +113,7 @@ function resolveKanbanCardAssignment(
 	catalog: readonly JiraKanbanAgentData[] | undefined,
 	onAssignedAgentIdsChange?: (issueKey: string, agentIds: readonly string[]) => void,
 	addAgentLabel?: string,
+	footerActions?: Pick<JiraIssueGenerativeActionConfig, "onBrowseAgents" | "onCreateAgent">,
 ): JiraIssueAgentAssignment | undefined {
 	if (!onAssignedAgentIdsChange) {
 		return undefined;
@@ -153,6 +154,8 @@ function resolveKanbanCardAssignment(
 		...(assignmentAgents.length > 0 ? { agents: assignmentAgents } : {}),
 		assignedAgents,
 		defaultPinnedAgentIds: pinnedAgentIds,
+		onBrowseAgents: footerActions?.onBrowseAgents,
+		onCreateAgent: footerActions?.onCreateAgent,
 		onAssignedAgentIdsChange: (agentIds) => onAssignedAgentIdsChange(
 			card.code,
 			agentIds.map((agentId) => canonicalizeAssignedAgentId(card.code, agentId)),
@@ -347,7 +350,7 @@ export function ExperimentalJiraKanbanCard({
 			active={active}
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
-			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel)}
+			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions)}
 			agentLinkFlash={agentLinkFlash}
 			agentActivityMode={agentActivityMode}
 			agentSessionDragControl={agentSessionDragControl}

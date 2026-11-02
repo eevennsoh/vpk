@@ -53,16 +53,9 @@ jobs:
         # the public npm-remote mirror, so it resolves from `atlassian-npm`.
         # Public @atlaskit packages resolve from npmjs tarballs in the lockfile; this
         # token is only for the internal package tarball, mirroring local `~/.npmrc`.
-        # Cover both registry path variants: metadata uses `/artifactory/api/npm/`,
-        # internal lockfile tarball URLs use `/api/npm/`.
-        run: |
-          {
-            echo "registry=https://registry.npmjs.org/"
-            echo "@atlaskit:registry=https://registry.npmjs.org/"
-            echo "@atlassian:registry=https://packages.atlassian.com/artifactory/api/npm/atlassian-npm/"
-            echo "//packages.atlassian.com/artifactory/api/npm/atlassian-npm/:_authToken=${ATLASSIAN_NPM_TOKEN}"
-            echo "//packages.atlassian.com/api/npm/atlassian-npm/:_authToken=${ATLASSIAN_NPM_TOKEN}"
-          } >> "$HOME/.npmrc"
+        # `scripts/write-npmrc.mjs` upserts both registry path variants (metadata uses
+        # `/artifactory/api/npm/`, lockfile tarballs use `/api/npm/`) without duplicates.
+        run: node scripts/write-npmrc.mjs
         env:
           ATLASSIAN_NPM_TOKEN: ${{ secrets.ATLASSIAN_NPM_TOKEN }}
 

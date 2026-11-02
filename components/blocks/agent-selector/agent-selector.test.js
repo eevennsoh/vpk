@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const esbuild = require("esbuild");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
 const COMPONENT_SOURCE = fs.readFileSync(path.join(__dirname, "components/agent-selector.tsx"), "utf8");
@@ -22,6 +23,31 @@ const AGENT_SELECTOR_DROPDOWN_CALLSITE_SOURCES = [
 	source: fs.readFileSync(path.join(process.cwd(), sourcePath), "utf8"),
 	sourcePath,
 }));
+
+test("AgentSelector keyboard navigation skips disabled agents", async () => {
+	const selected = [];
+	const view = await renderComponent({
+		entry: "components/blocks/agent-selector/components/agent-selector.tsx",
+		exportName: "AgentSelector",
+		props: {
+			agents: [
+				{ id: "first", name: "First", byline: "" },
+				{ id: "disabled", name: "Unavailable", byline: "" },
+				{ id: "last", name: "Last", byline: "" },
+			],
+			disabledAgentIds: ["disabled"],
+			onAgentToggle: (id) => selected.push(id),
+			pinningEnabled: false,
+			searchVariant: "palette",
+			selectionMode: "single",
+		},
+	});
+	const search = view.getByRole("textbox", { name: "Search agents" });
+	assert.equal(view.getByRole("option", { name: /Unavailable/u }).getAttribute("aria-disabled"), "true");
+	await view.press(search, "ArrowDown");
+	await view.press(search, "Enter");
+	assert.deepEqual(selected, ["last"]);
+});
 
 async function loadAgentSelectorHarness() {
 	const mockModules = new Map([
