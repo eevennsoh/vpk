@@ -34,10 +34,10 @@ test("both content presets share the coding and custom agent catalog", async () 
 	assert.ok(Array.isArray(board.BUTTER_BOARD_AGENTS));
 	assert.deepEqual(board.BUTTER_BOARD_AGENTS.slice(0, 5), wac.WAC_BOARD_AGENTS);
 	assert.deepEqual(board.BUTTER_BOARD_AGENTS.map((agent) => agent.name), [
-		"Claude", "Cursor", "Codex", "GitHub Copilot", "Figma",
+		"Claude", "Cursor", "Codex", "GitHub Copilot", "Figma", "Jira Coding Agent", "Rovo CLI",
 		"Code Reviewer", "Release Notes Drafter", "Bug Report Assistant",
 	]);
-	assert.equal(new Set(board.BUTTER_BOARD_AGENTS.map((agent) => agent.id)).size, 8);
+	assert.equal(new Set(board.BUTTER_BOARD_AGENTS.map((agent) => agent.id)).size, 10);
 	for (const agent of board.BUTTER_BOARD_AGENTS) {
 		assert.ok(agent.avatarSrc || agent.brandName);
 		if (agent.avatarSrc) assert.ok(fs.existsSync(path.join(process.cwd(), "public", agent.avatarSrc)));

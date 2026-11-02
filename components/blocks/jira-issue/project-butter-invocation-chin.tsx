@@ -6,6 +6,9 @@ import { useEffect, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { cn } from "@/lib/utils";
+import { getJiraIssueAgentAvatarSize, getJiraIssueAgentRowInset } from "./agent-activity-avatar";
+import type { JiraIssueIconScale } from "./types";
 import { BUTTER_INVOCATION_CYCLE, BUTTER_INVOCATION_HANDOFF, BUTTER_INVOCATION_REVEAL } from "./project-butter-invocation-motion";
 import {
 	useProjectButterInvocationActions,
@@ -13,7 +16,7 @@ import {
 	useProjectButterInvocationPreview,
 } from "./project-butter-invocation";
 
-function InvocationPreview({ handoff = false }: Readonly<{ handoff?: boolean }>) {
+function InvocationPreview({ handoff = false, iconScale }: Readonly<{ handoff?: boolean; iconScale?: JiraIssueIconScale }>) {
 	const { agent, previousAgent, direction, sequence } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const animate = !reduce && !handoff && sequence > 0 && agent?.id !== previousAgent?.id;
@@ -24,18 +27,19 @@ function InvocationPreview({ handoff = false }: Readonly<{ handoff?: boolean }>)
 			data-slot="jira-issue-agent-invocation-preview"
 			data-agent-id={agent?.id ?? "default"}
 			data-direction={direction === 1 ? "forward" : "backward"}
-			className="pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1 pl-2 pr-3"
+			className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)))}
 		>
 			<span className="flex size-6 shrink-0 items-center justify-center">
 				{agent ? (
 					(agent.visual ?? (
 						<AgentAvatarVisual
+							appearance="coding"
 							avatarSrc={agent.avatarSrc}
 							brandName={agent.brandName}
 							logoName={agent.logoName}
 							vpkLogo={agent.vpkLogo}
 							label=""
-							sizePx={16}
+							sizePx={getJiraIssueAgentAvatarSize(agent.brandName, agent.avatarSrc)}
 							animate={false}
 						/>
 					))
@@ -43,7 +47,7 @@ function InvocationPreview({ handoff = false }: Readonly<{ handoff?: boolean }>)
 					<AiAgentIcon label="" size="small" color="currentColor" />
 				)}
 			</span>
-			<span className="-ml-0.5 flex h-5 min-w-0 flex-1 items-center pr-2 text-sm text-text">
+			<span className={cn("flex h-5 min-w-0 flex-1 items-center text-sm leading-5 text-text", iconScale === undefined && "-ml-0.5 pr-2")}>
 				Add&nbsp;
 				<span className="relative h-5 min-w-0 flex-1 overflow-hidden text-left">
 					{animate ? (
@@ -84,8 +88,9 @@ function InvocationPreview({ handoff = false }: Readonly<{ handoff?: boolean }>)
 
 export function ProjectButterInvocationChin({
 	hasChin,
+	iconScale,
 	children,
-}: Readonly<{ hasChin: boolean; children: ReactNode }>) {
+}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; children: ReactNode }>) {
 	const phase = useProjectButterInvocationPhase();
 	const actions = useProjectButterInvocationActions();
 	const preview = useProjectButterInvocationPreview();
@@ -130,7 +135,7 @@ export function ProjectButterInvocationChin({
 						exit={{ opacity: 0 }}
 						transition={reduce ? { duration: 0 } : BUTTER_INVOCATION_HANDOFF}
 					>
-						<InvocationPreview handoff={phase === "handoff"} />
+						<InvocationPreview handoff={phase === "handoff"} iconScale={iconScale} />
 					</motion.div>
 				) : null}
 			</AnimatePresence>

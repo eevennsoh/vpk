@@ -43,8 +43,8 @@ export function renderEu26HeaderAssignee(context: Eu26HeaderAssigneeProps) {
 function Eu26HeaderAssigneeAvatar({ assignee, agent, muted, selected }: Readonly<
 	Pick<Eu26HeaderAssigneeProps, "assignee" | "muted" | "selected"> & { agent: AgentLanyardAgent | undefined }
 >) {
-	if (agent?.brandName) {
-		return <AgentAvatarVisual animate={false} brandName={agent.brandName} label={assignee.name} sizePx={24} />;
+	if (agent?.brandName || agent === JIRA_CODING) {
+		return <AgentAvatarVisual animate={false} avatarSrc={assignee.avatarSrc} brandName={agent.brandName} label={assignee.name} sizePx={24} />;
 	}
 
 	return (
@@ -58,11 +58,7 @@ function Eu26HeaderAssigneeAvatar({ assignee, agent, muted, selected }: Readonly
 				muted && !agent ? "opacity-(--opacity-disabled)" : null,
 			)}
 		>
-			{agent === JIRA_CODING ? (
-				<span className="flex size-full items-center justify-center" style={{ backgroundColor: JIRA_CODING.accentColor }}>
-					<AvatarImage alt="" src={assignee.avatarSrc} className="size-4.5 object-contain" />
-				</span>
-			) : <AvatarImage alt="" src={assignee.avatarSrc} />}
+			<AvatarImage alt="" src={assignee.avatarSrc} />
 			<AvatarFallback>{assignee.name.slice(0, 1)}</AvatarFallback>
 		</Avatar>
 	);

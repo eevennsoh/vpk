@@ -30,7 +30,7 @@ import type {
 	JiraIssueAgentActivityAvatarLayout,
 	JiraIssueAgentActivityIndicatorRenderer,
 } from "./agent-activity";
-import { getJiraIssueAgentAvatarSize } from "./agent-activity-avatar";
+import { getJiraIssueAgentAvatarSize, getJiraIssueAgentRowInset } from "./agent-activity-avatar";
 
 export type JiraIssueAgentAssignment = Partial<
 	Pick<
@@ -296,7 +296,7 @@ export function JiraIssueAgentRowContent({
 					vpkLogo={featuredActivity.agentVpkLogo}
 					fallbackText={getAgentInitial(featuredActivity.name)}
 					label={featuredActivity.name}
-					sizePx={getJiraIssueAgentAvatarSize(featuredActivity.agentBrandName)}
+					sizePx={getJiraIssueAgentAvatarSize(featuredActivity.agentBrandName, featuredActivity.avatarSrc)}
 				/>
 			</span>
 		);
@@ -317,7 +317,7 @@ export function JiraIssueAgentRowContent({
 						fallbackText={getAgentInitial(activity.name)}
 						key={activity.id}
 						label=""
-						sizePx={getJiraIssueAgentAvatarSize(activity.agentBrandName)}
+						sizePx={getJiraIssueAgentAvatarSize(activity.agentBrandName, activity.avatarSrc)}
 					/>
 				))}
 			</AvatarGroup>
@@ -453,7 +453,7 @@ export function JiraIssueAgentRowSurface({
 						"h-8 w-full justify-between rounded-md py-1 hover:bg-bg-neutral-subtle-hovered has-[[aria-expanded=true]]:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
 						// Outline paints on the full surface without shrinking its content box.
 						"outline-1 outline-transparent has-[[data-jira-issue-agent-row-handle]:focus-visible]:outline-ring has-[[data-jira-issue-agent-row-handle]:focus-visible]:ring-3 has-[[data-jira-issue-agent-row-handle]:focus-visible]:ring-ring/50 transition-shadow duration-fast ease-out-practical motion-reduce:transition-none",
-						flushContent ? "px-0" : iconScale === "comfortable" ? "pr-2 pl-1" : "px-2",
+						flushContent ? "px-0" : getJiraIssueAgentRowInset(iconScale),
 						inheritChinSurface ? "bg-transparent" : "bg-bg-neutral",
 					),
 			)}

@@ -46,6 +46,7 @@ interface JiraIssueMoreMenuProps {
 	flagged?: boolean;
 	issueKey: string;
 	selected?: boolean;
+	showUnavailableAsEnabled?: boolean;
 	moreMenuActions?: JiraIssueMoreMenuActions;
 	onSelectionToggle?: () => void;
 	onActionSelect?: (action: JiraIssueMoreAction) => void;
@@ -78,7 +79,7 @@ function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 	) : <JiraIssueMoreDropdown {...props} />;
 }
 
-function JiraIssueMoreDropdown({ availableActions, flagged, generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange }: Readonly<JiraIssueMoreMenuProps>) {
+function JiraIssueMoreDropdown({ availableActions, flagged, generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange, showUnavailableAsEnabled = false }: Readonly<JiraIssueMoreMenuProps>) {
 	const [open, setOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -88,10 +89,16 @@ function JiraIssueMoreDropdown({ availableActions, flagged, generativeAction, ge
 	}
 
 	function select(action: JiraIssueMoreAction) {
-		return () => onActionSelect?.(action);
+		return () => { if (!unavailable(action)) onActionSelect?.(action); };
 	}
 	function unavailable(action: JiraIssueMoreAction) {
 		return availableActions !== undefined && (!onActionSelect || !availableActions.includes(action));
+	}
+	function actionDisabled(action: JiraIssueMoreAction) {
+		return !showUnavailableAsEnabled && unavailable(action);
+	}
+	function handlerDisabled(handler: (() => void) | undefined) {
+		return !showUnavailableAsEnabled && !handler;
 	}
 
 	function selectCard() {
@@ -131,31 +138,31 @@ function JiraIssueMoreDropdown({ availableActions, flagged, generativeAction, ge
 					</>
 				) : null}
 				<DropdownMenuGroup>
-					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("move-work-item")} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("change-status")} onSelect={select("change-status")}>Change status</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("move-work-item")} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("change-status")} onSelect={select("change-status")}>Change status</DropdownMenuItem>
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
-					<DropdownMenuItem disabled={unavailable("copy-link")} onSelect={select("copy-link")}>Copy link</DropdownMenuItem>
-					<DropdownMenuItem disabled={unavailable("copy-key")} onSelect={select("copy-key")}>Copy key</DropdownMenuItem>
+					<DropdownMenuItem disabled={actionDisabled("copy-link")} onSelect={select("copy-link")}>Copy link</DropdownMenuItem>
+					<DropdownMenuItem disabled={actionDisabled("copy-key")} onSelect={select("copy-key")}>Copy key</DropdownMenuItem>
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
-					{generativeAction ? null : <DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("add-agent")} onSelect={select("add-agent")}>Add agent</DropdownMenuItem>}
-					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("link-confluence-item")} onSelect={select("link-confluence-item")}>Link Confluence item</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("link-work-item")} onSelect={select("link-work-item")}>Link work item</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("change-parent")} onSelect={select("change-parent")}>Change parent</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("select-cover")} onSelect={select("select-cover")}>Select cover</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("edit-labels")} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
-					<DropdownMenuItem elemAfter={CHEVRON} disabled={unavailable("add-flag")} onSelect={select("add-flag")}>{flagged ? "Remove flag" : "Add flag"}</DropdownMenuItem>
+					{generativeAction ? null : <DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("add-agent")} onSelect={select("add-agent")}>Add agent</DropdownMenuItem>}
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("link-confluence-item")} onSelect={select("link-confluence-item")}>Link Confluence item</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("link-work-item")} onSelect={select("link-work-item")}>Link work item</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("change-parent")} onSelect={select("change-parent")}>Change parent</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("select-cover")} onSelect={select("select-cover")}>Select cover</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("edit-labels")} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
+					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("add-flag")} onSelect={select("add-flag")}>{flagged ? "Remove flag" : "Add flag"}</DropdownMenuItem>
 				</DropdownMenuGroup>
 				{moreMenuActions ? (
 					<>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<DropdownMenuItem aria-label="Select" aria-description="Command plus click" disabled={!moreMenuActions.onSelect} elemAfter={<DropdownMenuShortcut aria-hidden="true">Cmd + Click</DropdownMenuShortcut>} onSelect={selectCard}>Select</DropdownMenuItem>
-							<DropdownMenuItem disabled={!moreMenuActions.onArchive} onSelect={moreMenuActions.onArchive}>Archive</DropdownMenuItem>
-							<DropdownMenuItem disabled={!moreMenuActions.onDelete} onSelect={moreMenuActions.onDelete}>Delete</DropdownMenuItem>
+							<DropdownMenuItem aria-label="Select" aria-description="Command plus click" disabled={handlerDisabled(moreMenuActions.onSelect)} elemAfter={<DropdownMenuShortcut aria-hidden="true">Cmd + Click</DropdownMenuShortcut>} onSelect={selectCard}>Select</DropdownMenuItem>
+							<DropdownMenuItem disabled={handlerDisabled(moreMenuActions.onArchive)} onSelect={moreMenuActions.onArchive}>Archive</DropdownMenuItem>
+							<DropdownMenuItem disabled={handlerDisabled(moreMenuActions.onDelete)} onSelect={moreMenuActions.onDelete}>Delete</DropdownMenuItem>
 						</DropdownMenuGroup>
 					</>
 				) : null}

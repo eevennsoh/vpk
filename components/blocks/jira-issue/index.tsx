@@ -656,6 +656,7 @@ function JiraIssueDefault({
 			generativeAction={generativeActionPresentation === "more-actions" ? generativeAction : undefined}
 			generativeActionIssue={{ issueKey, summary }}
 			issueKey={issueKey}
+			showUnavailableAsEnabled={appearance === "project-butter"}
 			moreMenuActions={moreMenuActions}
 			onActionSelect={onMoreActionSelect}
 			onOpenChange={setMoreActionMenuOpen}
@@ -842,7 +843,7 @@ function JiraIssueDefault({
 				{/* Running sessions already occupy the chin; attach copy takes the last
 				    row instead of stacking. Split layouts keep the other rows so the
 				    card height — and drop-zone geometry — stays put. */}
-				<ProjectButterInvocationChin hasChin={hasAgentActivityChin}><JiraIssueAgentActivityRows
+				<ProjectButterInvocationChin hasChin={hasAgentActivityChin} iconScale={iconScale}><JiraIssueAgentActivityRows
 					activities={activeAgentActivities} assignment={assignment}
 					attachPreviewCopy={replaceDetachedTransfer ? undefined : attachChinCopy}
 					iconScale={iconScale}

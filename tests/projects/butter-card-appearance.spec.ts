@@ -5,6 +5,42 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("Butter's agent preview matches the finished agent avatar", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-118");
+	await issue.getByRole("button", { name: "Add agent to PAY-118" }).focus();
+	await page.keyboard.press("Enter");
+	await page.getByRole("dialog", { name: "Agents" }).locator('[data-slot="command-item"][data-value="claude-code"]').hover();
+	const preview = issue.locator('[data-slot="jira-issue-agent-invocation-preview"]');
+	await expect(preview).toHaveAttribute("data-agent-id", "claude-code");
+	const previewAvatar = preview.locator('[data-slot="avatar"]');
+	const finishedAvatar = card(page, "PAY-101").locator('[data-jira-issue-agent-row-handle] [data-slot="avatar"]').first();
+	await expect(previewAvatar).toBeVisible();
+	await expect(finishedAvatar).toBeVisible();
+	const [previewBox, finishedBox] = await Promise.all([previewAvatar.boundingBox(), finishedAvatar.boundingBox()]);
+	expect(previewBox?.width).toBe(finishedBox?.width);
+	expect(previewBox?.height).toBe(finishedBox?.height);
+	const offsetFromCard = (element: Element, selector: string) => {
+		const cardElement = element.closest('[data-issue-key][data-board-column-title]');
+		const target = element.querySelector(selector);
+		if (!cardElement || !target) throw new Error(`Missing card or ${selector}`);
+		return target.getBoundingClientRect().left - cardElement.getBoundingClientRect().left;
+	};
+	for (const [previewSelector, finishedSelector] of [
+		['[data-slot="jira-issue-agent-invocation-preview"] > span:first-child', '[data-jira-issue-agent-row-handle] > div > span:first-child'],
+		['[data-slot="jira-issue-agent-invocation-preview"] > span:nth-child(2)', '[data-jira-issue-agent-row-handle] > div > span:nth-child(2)'],
+	] as const) {
+		const [previewOffset, finishedOffset] = await Promise.all([
+			issue.evaluate(offsetFromCard, previewSelector),
+			card(page, "PAY-101").evaluate(offsetFromCard, finishedSelector),
+		]);
+		expect(Math.abs(previewOffset - finishedOffset)).toBeLessThan(0.5);
+	}
+	const previewBackground = previewAvatar.locator('[data-slot="avatar-hexagon-artwork"] > span').first();
+	const finishedBackground = finishedAvatar.locator('[data-slot="avatar-hexagon-artwork"] > span').first();
+	await expect(previewBackground).toHaveCSS("background-color", await finishedBackground.evaluate((element) => getComputedStyle(element).backgroundColor));
+});
+
 test("Butter previews an assigned agent from its session avatar", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-105").getByRole("button", { name: "Cursor: Working" }).click();

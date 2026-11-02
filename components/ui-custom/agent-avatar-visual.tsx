@@ -9,6 +9,7 @@ import { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
 import { getCodingAgentLogoFrame, getCodingAgentVisual } from "@/components/ui-custom/agent-avatar-coding-appearance";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
+import { JIRA_CODING_AGENT_GLYPH, SOFTWARE_AGENT_COLOR } from "@/lib/agent-avatar-visuals";
 
 /** Maps a square pixel size to the nearest ADS logo size token. */
 const PX_TO_LOGO_SIZE: Record<number, LogoProps["size"]> = {
@@ -134,11 +135,12 @@ export function AgentAvatarVisual({
 }: Readonly<AgentAvatarVisualProps>) {
 	if (!avatarSrc && !vpkLogo && !logoName && !brandName && !fallbackText) return null;
 
+	const isJiraCodingAgent = avatarSrc === JIRA_CODING_AGENT_GLYPH;
 	const isSecondPartyAgent = avatarSrc?.startsWith("/2p/") ?? false;
 	const isThirdPartyAgent = Boolean(brandName);
 	const isExternalAgent = isSecondPartyAgent || isThirdPartyAgent;
 	const isRovoAvatar = vpkLogo === "rovo" || avatarSrc === ROVO_LOGO_DATA_URI;
-	const hasWhiteBackdrop = isExternalAgent || logoName === "atlassian" || isRovoAvatar;
+	const hasWhiteBackdrop = isExternalAgent || logoName === "atlassian" || isRovoAvatar || isJiraCodingAgent;
 	const shouldInsetImage = inset || isExternalAgent;
 	// Keep partner marks at the previous 50% ratio when the avatar is 32px.
 	const insetImageClassName = isSecondPartyAgent && sizePx === 32 ? "size-4" : PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
@@ -160,7 +162,7 @@ export function AgentAvatarVisual({
 		<>
 			<AvatarImage
 				alt=""
-				className={cn(shouldInsetImage ? insetImageClassName : "size-full", "object-contain", className)}
+				className={cn(isJiraCodingAgent ? "size-3/4" : shouldInsetImage ? insetImageClassName : "size-full", "object-contain", className)}
 				loading={loading}
 				src={avatarSrc}
 			/>
@@ -185,7 +187,7 @@ export function AgentAvatarVisual({
 					aria-hidden="true"
 					// ADS color-scheme inherits from the nearest global or subtree theme.
 					// Inline light-dark avoids the CSS compiler's global-theme fallback.
-					style={{ backgroundColor: isRovoAvatar ? "light-dark(var(--ds-surface), #292A2E)" : codingVisual?.backgroundColor ?? (brandName === "claude" ? "#d97757" : undefined) }}
+					style={{ backgroundColor: isRovoAvatar ? "light-dark(var(--ds-surface), #292A2E)" : isJiraCodingAgent ? SOFTWARE_AGENT_COLOR : codingVisual?.backgroundColor ?? (brandName === "claude" ? "#d97757" : undefined) }}
 					className={cn("flex size-full items-center justify-center bg-surface",
 						brandName === "claude" || codingVisual?.whiteGlyph ? "[&_svg]:brightness-0 [&_svg]:invert [&_img]:brightness-0 [&_img]:invert" : undefined)}>{visual}</span>
 			) : (

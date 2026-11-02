@@ -12,6 +12,7 @@ import type {
 	JiraKanbanColumnData,
 } from "@/components/blocks/jira-kanban";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
+import { JIRA_CODING_AGENT_GLYPH } from "@/lib/agent-avatar-visuals";
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 
 import { BUTTER_PAY_CURRENT_USER } from "./current-user";
@@ -109,6 +110,8 @@ const CUSTOM_BOARD_AGENT_IDS = ["code-reviewer", "release-notes-drafter", "bug-r
 /** Assignment catalog shared by both content presets; custom agents stay unpinned. */
 export const BUTTER_BOARD_AGENTS: readonly JiraKanbanAgentData[] = [
 	...BUTTER_PRIMARY_BOARD_AGENTS,
+	{ id: "jira-coding", name: "Jira Coding Agent", byline: "", avatarSrc: JIRA_CODING_AGENT_GLYPH },
+	{ id: "rovo-cli", name: "Rovo CLI", byline: "", avatarSrc: "/illustration/project-butter-agents/agent-rovo.svg" },
 	...CUSTOM_BOARD_AGENT_IDS.map((id) => ROVO_AGENT_SELECTOR_AGENTS.find((agent) => agent.id === id)!),
 ];
 

@@ -3,7 +3,12 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
-const { getJiraIssueAgentAvatarSize } = require("./agent-activity-avatar.ts");
+const { getJiraIssueAgentAvatarSize, getJiraIssueAgentRowInset } = require("./agent-activity-avatar.ts");
+
+test("agent rows use the inset for their icon scale", () => {
+	assert.equal(getJiraIssueAgentRowInset("comfortable"), "pr-2 pl-1");
+	assert.equal(getJiraIssueAgentRowInset("compact"), "px-2");
+});
 
 test("coding-agent chins retain Claude's compact size without resizing other brands", () => {
 	for (const brand of ["claude", "cursor", "openai-codex", "github-copilot"]) {
@@ -12,6 +17,8 @@ test("coding-agent chins retain Claude's compact size without resizing other bra
 	for (const brand of ["slack", "github", undefined]) {
 		assert.equal(getJiraIssueAgentAvatarSize(brand), 24);
 	}
+	assert.equal(getJiraIssueAgentAvatarSize(undefined, "/1p/agent-lanyard/glyph-jira-coding.svg"), 20);
+	assert.equal(getJiraIssueAgentAvatarSize(undefined, "/1p/agent-lanyard/glyph-jira-delivery.svg"), 24);
 });
 
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
