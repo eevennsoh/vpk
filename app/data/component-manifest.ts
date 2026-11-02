@@ -1,7 +1,6 @@
 import { compareByNameNatural } from "@/lib/utils";
 
 export type ComponentCategory =
-	| "ui-audio"
 	| "ui-charts"
 	| "ui-custom"
 	| "ui"
@@ -108,15 +107,6 @@ function customComponent(slug: string, name?: string): ComponentManifestEntry {
 		slug,
 		importPath: `@/components/ui-custom/${slug}`,
 		category: "ui-custom",
-	};
-}
-
-function audioComponent(slug: string, name?: string): ComponentManifestEntry {
-	return {
-		name: name ?? toTitleCase(slug),
-		slug,
-		importPath: `@/components/ui-audio/${slug}`,
-		category: "ui-audio",
 	};
 }
 
@@ -232,6 +222,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("audio-player", "Audio Player"),
 	customComponent("canvas"),
 	customComponent("entity-card", "Entity Card"),
+	customComponent("live-waveform", "Live Waveform"),
 	customComponent("knowledge"),
 	customComponent("footer", "Footer"),
 	customComponent("hover-reveal-row", "Hover Reveal Row"),
@@ -298,26 +289,6 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	customComponent("transcription"),
 	customComponent("voice-selector", "Voice Selector"),
 	customComponent("web-preview", "Web Preview"),
-]);
-
-export const AUDIO_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
-	audioComponent("audio-player", "Audio Player"),
-	audioComponent("bar-visualizer", "Bar Visualizer"),
-	audioComponent("conversation"),
-	audioComponent("conversation-bar", "Conversation Bar"),
-	audioComponent("live-waveform", "Live Waveform"),
-	audioComponent("matrix"),
-	audioComponent("message"),
-	audioComponent("mic-selector", "Mic Selector"),
-	audioComponent("orb", "Orb"),
-	audioComponent("response"),
-	audioComponent("scrub-bar", "Scrub Bar"),
-	audioComponent("shimmering-text", "Shimmering Text"),
-	audioComponent("speech-input", "Speech Input"),
-	audioComponent("transcript-viewer", "Transcript Viewer"),
-	audioComponent("voice-button", "Voice Button"),
-	audioComponent("voice-picker", "Voice Picker"),
-	audioComponent("waveform", "Waveform"),
 ]);
 
 export const UI_CHART_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
@@ -872,7 +843,6 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	]);
 
 const ALL_COMPONENTS = [
-	...AUDIO_COMPONENTS,
 	...UI_CHART_COMPONENTS,
 	...CUSTOM_COMPONENTS,
 	...UI_COMPONENTS,

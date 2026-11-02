@@ -82,7 +82,7 @@ Prefer ARIA roles, accessible names, and `id` / `href` handles from the feature 
 
 | Handle | What it is |
 | --- | --- |
-| `#home-category-tab-projects`, `#home-category-tab-ui` | Category tabs (do not click by name `UI` — that substring also matches `UI — Audio`) |
+| `#home-category-tab-projects`, `#home-category-tab-ui` | Category tabs (do not click by name `UI` — that substring also matches other UI categories) |
 | `a[href='/components/projects/jira-for-you']` | Home project card title |
 | `a[href='/components/ui/accordion']` | Accordion catalog/doc link |
 | `a[aria-label='Go to projects']` | Sidebar rail logo (prefer this over `find role link --name`) |

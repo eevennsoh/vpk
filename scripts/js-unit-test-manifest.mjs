@@ -412,7 +412,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-session-column/agent-session-column-rail-viewport.test.ts",
 		"components/blocks/agent-session-column/untracked-selection-keyboard.test.ts",
 		"components/blocks/agent-session-column/use-agent-session-column-hidden.test.ts",
-		"components/ui-audio/live-waveform-layout.test.js",
+		"components/ui-custom/live-waveform-layout.test.js",
 		"components/website/demos/utils/gui-demo.test.js",
 		"components/website/demos/visual/pattern-tile-core.test.js",
 		"components/utils/design-variants.test.js",

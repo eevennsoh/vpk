@@ -11,7 +11,6 @@
 2. Add or update the component implementation under its owning folder:
 	- `components/ui/`
 	- `components/ui-custom/`
-	- `components/ui-audio/`
 	- `components/ui-charts/`
 	- `components/blocks/`
 	- `components/projects/`

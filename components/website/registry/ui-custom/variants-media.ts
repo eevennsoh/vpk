@@ -2,6 +2,10 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"live-waveform-demo-scrolling": dynamic(
+		() => import("../../demos/ui-custom/live-waveform-demo").then((mod) => ({ default: mod.LiveWaveformDemoScrolling })),
+		{ ssr: false },
+	),
 	"pixel-loader-demo-shapes": dynamic(
 		() =>
 			import("../../demos/ui-custom/pixel-loader-demo").then((mod) => ({

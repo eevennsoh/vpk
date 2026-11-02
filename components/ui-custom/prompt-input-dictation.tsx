@@ -3,7 +3,7 @@
 import CrossIcon from "@atlaskit/icon/core/cross";
 import MicrophoneIcon from "@atlaskit/icon/core/microphone";
 
-import { LiveWaveform } from "@/components/ui-audio/live-waveform";
+import { LiveWaveform } from "@/components/ui-custom/live-waveform";
 import { PromptInputButton } from "@/components/ui-custom/prompt-input-button";
 import { ROVO_WAVEFORM_COLOR_CSS_VARS } from "@/lib/rovo-colors";
 import { cn } from "@/lib/utils";

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { AUDIO_COMPONENTS, UI_CHART_COMPONENTS, CUSTOM_COMPONENTS, UI_COMPONENTS, BLOCK_COMPONENTS, PROJECT_COMPONENTS, ART_COMPONENTS, UTILITY_COMPONENTS, VISUAL_COMPONENTS, findComponent } from "@/app/data/components";
+import { UI_CHART_COMPONENTS, CUSTOM_COMPONENTS, UI_COMPONENTS, BLOCK_COMPONENTS, PROJECT_COMPONENTS, ART_COMPONENTS, UTILITY_COMPONENTS, VISUAL_COMPONENTS, findComponent } from "@/app/data/components";
 import { ComponentDoc } from "@/components/website/component-doc/page";
 import { getComponentPageTitle } from "@/lib/project-page-title";
 
@@ -22,11 +22,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export function generateStaticParams() {
-	const params: { category: string; slug: string }[] = [];
-
-	for (const comp of AUDIO_COMPONENTS) {
-		params.push({ category: "ui-audio", slug: comp.slug });
-	}
+	const params: { category: string; slug: string }[] = [
+		{ category: "ui-audio", slug: "live-waveform" },
+	];
 
 	for (const comp of UI_CHART_COMPONENTS) {
 		params.push({ category: "ui-charts", slug: comp.slug });
@@ -66,6 +64,10 @@ export function generateStaticParams() {
 export default async function ComponentDetailPage({ params }: PageProps) {
 	const { category, slug } = await params;
 
+	if (category === "ui-audio" && slug === "live-waveform") {
+		redirect("/components/ui-custom/live-waveform");
+	}
+
 	if (category === "ui-custom" && slug === "skill-card") {
 		redirect("/components/ui-custom/entity-card");
 	}
@@ -92,7 +94,7 @@ export default async function ComponentDetailPage({ params }: PageProps) {
 		redirect("/components/blocks/chat-configuration");
 	}
 
-	if (category !== "ui-audio" && category !== "ui-charts" && category !== "ui-custom" && category !== "ui" && category !== "blocks" && category !== "projects" && category !== "arts" && category !== "utility" && category !== "visual") {
+	if (category !== "ui-charts" && category !== "ui-custom" && category !== "ui" && category !== "blocks" && category !== "projects" && category !== "arts" && category !== "utility" && category !== "visual") {
 		notFound();
 	}
 

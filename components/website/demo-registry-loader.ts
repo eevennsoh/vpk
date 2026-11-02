@@ -1,7 +1,6 @@
 import type { ComponentType } from "react";
 
 export type DemoCategory =
-	| "ui-audio"
 	| "ui-charts"
 	| "ui-custom"
 	| "ui"

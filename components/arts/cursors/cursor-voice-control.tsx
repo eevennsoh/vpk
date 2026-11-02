@@ -1,7 +1,7 @@
 "use client";
 
 import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
-import { LiveWaveform } from "@/components/ui-audio/live-waveform";
+import { LiveWaveform } from "@/components/ui-custom/live-waveform";
 import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
 import { useTheme } from "@/components/utils/theme-wrapper";
 import { LiquidMetal } from "@/components/visual/liquid-metal";

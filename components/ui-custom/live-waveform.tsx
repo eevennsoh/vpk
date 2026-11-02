@@ -23,7 +23,7 @@ import {
   getWaveformEaseOutProgress,
   getWaveformPaletteIndex,
   getWaveformSeriesValue,
-} from "@/components/ui-audio/live-waveform-layout"
+} from "@/components/ui-custom/live-waveform-layout"
 import { cn } from "@/lib/utils"
 
 export type LiveWaveformProps = HTMLAttributes<HTMLDivElement> & {

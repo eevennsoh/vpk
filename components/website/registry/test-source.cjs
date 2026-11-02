@@ -14,7 +14,6 @@ const REGISTRY_SOURCE_FILES = [
 	"components/website/registry/ui/variants-navigation.ts",
 	"components/website/registry/ui/variants-overlays.ts",
 	"components/website/registry/ui/variants-progress.ts",
-	"components/website/registry/ui-audio.ts",
 	"components/website/registry/ui-charts.ts",
 	"components/website/registry/ui-custom.ts",
 	"components/website/registry/ui-custom/primary.ts",

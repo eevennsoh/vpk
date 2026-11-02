@@ -10,6 +10,7 @@ import { PROGRESS_ROVO_DETAIL } from "./ui-custom/progress-rovo";
 import { SIDEBAR_NAV_ITEM_DETAIL } from "./ui-custom/sidebar-nav-item";
 import { ENTITY_CARD_DETAIL } from "./ui-custom/entity-card";
 import { SKILL_TAG_DETAIL } from "./ui-custom/skill-tag";
+import { LIVE_WAVEFORM_DETAIL } from "./ui-custom/live-waveform";
 import { AUDIO_PLAYER_DETAIL } from "./ui-custom/audio-player";
 import { KNOWLEDGE_DETAIL } from "./ui-custom/knowledge";
 import { ANIMATED_DOTS_DETAIL } from "./ui-custom/animated-dots";
@@ -77,6 +78,7 @@ import { VOICE_SELECTOR_DETAIL } from "./ui-custom/voice-selector";
 import { WEB_PREVIEW_DETAIL } from "./ui-custom/web-preview";
 
 export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
+	"live-waveform": LIVE_WAVEFORM_DETAIL,
 	"agent-loading": AGENT_LOADING_DETAIL,
 	"human-agent-avatar": HUMAN_AGENT_AVATAR_DETAIL,
 	"hover-reveal-row": HOVER_REVEAL_ROW_DETAIL,

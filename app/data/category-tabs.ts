@@ -1,6 +1,5 @@
 import {
 	ART_COMPONENTS,
-	AUDIO_COMPONENTS,
 	UI_CHART_COMPONENTS,
 	CUSTOM_COMPONENTS,
 	BLOCK_COMPONENTS,
@@ -12,7 +11,6 @@ import {
 
 export type WebsiteCategoryTab =
 	| "ui"
-	| "ui-audio"
 	| "ui-charts"
 	| "ui-custom"
 	| "blocks"
@@ -31,7 +29,6 @@ export const CATEGORY_TAB_OPTIONS: ReadonlyArray<CategoryTabOption> = [
 	{ key: "projects", title: "Projects", count: PROJECT_COMPONENTS.length },
 	{ key: "arts", title: "Arts", count: ART_COMPONENTS.length },
 	{ key: "ui", title: "UI", count: UI_COMPONENTS.length },
-	{ key: "ui-audio", title: "UI — Audio", count: AUDIO_COMPONENTS.length },
 	{ key: "ui-charts", title: "UI — Charts", count: UI_CHART_COMPONENTS.length },
 	{ key: "ui-custom", title: "UI — Custom", count: CUSTOM_COMPONENTS.length },
 	{ key: "blocks", title: "Blocks", count: BLOCK_COMPONENTS.length },
