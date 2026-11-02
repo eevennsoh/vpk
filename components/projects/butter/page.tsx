@@ -6,7 +6,7 @@ import { useCallback, useState } from "react";
 import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
-import { DEFAULT_SKILLS, ROVO_DIRECTORY_AGENT_PROFILES } from "@/app/data/directory";
+import { DEFAULT_SKILLS } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
@@ -35,7 +35,7 @@ import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/comp
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
-import { BUTTER_CHAT_AGENT_PROFILES } from "@/components/projects/butter/data/chat-agent-profiles";
+import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES } from "@/components/projects/butter/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
@@ -526,7 +526,8 @@ function ButterApp(): React.ReactElement {
 			</span>
 			<MountOnFirstUse active={agentsDirectoryOpen}>
 				<AgentsDirectoryDialog
-					agents={ROVO_DIRECTORY_AGENT_PROFILES}
+					agents={BUTTER_DIRECTORY_AGENT_PROFILES}
+					variant="standard-v2"
 					onCreateAgent={() => router.push("/studio")}
 					onOpenChange={setAgentsDirectoryOpen}
 					onSelectAgent={() => setAgentsDirectoryOpen(false)}
