@@ -7,7 +7,9 @@ worker per SKILL.md, so its result returns to the planner for verification.
 
 Everything runs through one launcher, `ai-api`, kept outside the repo in
 `~/.config/litellm-proximity/` (it is machine plumbing shared by Claude Code
-and Codex). This skill only parses intent and runs it.
+and Codex). The maintained source is `scripts/vpk-ai-api.sh`; install it and its readiness
+helper with `bash scripts/install-vpk-remote.sh`. Edit the maintained source
+before reinstalling instead of patching only the local copy.
 
 ## The launcher
 
@@ -69,14 +71,19 @@ session in the other app with a short summary as its first prompt instead.
    rules in SKILL.md. Unstated values take the defaults.
 2. **Echo the plan in one line** before launching — for example
    `Forking this session → Claude Code · gpt-6.1-sol · effort high`.
-3. **Launch** with `--new-window` (plus `-- "<task>"` if the user gave one).
+3. **Preview** with `--dry-run` when changing launch behavior. It must not contact
+   services, read credentials, or open windows. Then **launch** with `--new-window` (plus `-- "<task>"` if the user gave one).
    The starting session may itself be on API (started with `ai-api` or
    `claude-gw`); moving works the same and switches model or effort
    mid-conversation. Do not use `ai-api --background` from this skill: it
    detaches the run, so this session is never told when it finishes and cannot
    verify it. Tasks go to a worker instead.
-4. **Tell the user to continue in the new tab.** The original session stays
-   intact and the user can return to it.
+4. **Report exactly what was verified.** Outside herdr this opens a window of
+   the default terminal, not a Codex desktop sidebar chat. A successful launcher
+   exit proves that opening was requested after a route probe; it does not prove
+   the interactive session answered. State the app, model, terminal location, and
+   probe result. Verify a read-only tool call in the fork before calling a
+   problematic handoff repaired. The original session stays intact.
 
 Never summarize or re-read the conversation to perform the move — the fork
 carries the history for free.
@@ -113,3 +120,28 @@ the `RESULT` line.
 - The Claude and Codex **desktop apps** cannot be relaunched by `ai-api`. A
   handoff from a desktop app opens a terminal window (`--new-window`) or a background run, which
   resumes the same session store the desktop app uses.
+
+## Handoff failures
+
+- Repeated update prompts can mean the new terminal selected a different Codex
+  executable. The launcher pins the caller's absolute executable and PATH, which
+  also preserves the npm installation's Node.js. Diagnose `which -a codex` and
+  each executable's `--version` before running another update. Current Codex
+  provides `codex update`; old binaries can choose an uninstalled Homebrew cask.
+- The translator key is read at execution time. Never print it in dry-run output,
+  write it into a generated terminal command, or copy OAuth credentials.
+- `Conversation interrupted` alone does not establish an API failure or cause.
+  Inspect the next failed request's actual error before attributing it to the
+  gateway or a copied turn.
+- Historical `additional_tools` can repeat tool namespaces on a fork. The
+  installed LiteLLM guard normalizes these before translation. The cross-provider
+  preflight exercises a repeated bundle and a same-named tool in another
+  namespace, and validates a streamed tool-call round-trip. If it fails, no new
+  terminal window opens. Keep current schemas authoritative; do not remove tools
+  by leaf name across different namespaces.
+
+For headless Codex handoffs, use an explicit `--fork <id>` or `--resume <id>`.
+The launcher forks either choice to protect the original session, places exec
+options before `fork`, and passes `-` so the task brief is read from stdin.
+`--continue` and `--fork-last` remain interactive-only for Codex because the
+headless fork command requires a session ID.
