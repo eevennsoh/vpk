@@ -3,6 +3,7 @@
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
 import AddIcon from "@atlaskit/icon/core/add";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import PinIcon from "@atlaskit/icon/core/pin";
@@ -50,6 +51,7 @@ export interface AgentSelectorAction {
 export interface AgentSelectorProps {
 	agents?: readonly AgentSelectorAgent[];
 	availableLabel?: string;
+	avatarSize?: 20 | 24;
 	browseIcon?: ReactNode;
 	browseAgentsLabel?: string;
 	className?: string;
@@ -81,6 +83,8 @@ export interface AgentSelectorProps {
 	pinnedItemsLabel?: string;
 	pinningEnabled?: boolean;
 	selectionMode?: "multiple" | "single";
+	sections?: { heading: string; agentIds: readonly string[]; initialLimit?: number; otherHeading: string };
+	showByline?: boolean;
 	selectedAgentActions?: readonly AgentSelectorAction[];
 	selectedActionsLabel?: string;
 	selectedAgentIds?: readonly string[];
@@ -167,7 +171,7 @@ const ACTION_LABEL_CLASS = "text-text-subtle";
 // (e.g. the stop control's 6px padding + 4px `mr-1` = 10px would become 22px).
 // So we add the third column only when `showCheckIcon` is true.
 const AGENT_ROW_BASE_CLASS =
-	"grid h-11 w-full items-center gap-3 rounded-[12px] py-0 pr-1.5 pl-2 text-left";
+	"grid h-11 w-full items-center gap-3 rounded-md py-0 pr-1.5 pl-2 text-left";
 const AGENT_ROW_CHECK_COLS = "grid-cols-[24px_minmax(0,1fr)_auto]";
 const AGENT_ROW_PLAIN_COLS = "grid-cols-[24px_minmax(0,1fr)]";
 const AGENT_COPY_CLASS =
@@ -193,13 +197,14 @@ function filterAgentsByQuery(
 		: [...agents];
 }
 
-function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): ReactElement {
+function AgentSelectorLogo({ agent, size }: Readonly<{ agent: AgentSelectorAgent; size: 20 | 24 }>): ReactElement {
 	if (agent.visual) {
 		return agent.visual;
 	}
 
 	return (
 		<AgentAvatarVisual
+			appearance={agent.brandName === "openai-codex" ? "coding" : undefined}
 			avatarClassName="shrink-0"
 			avatarSrc={agent.avatarSrc}
 			brandName={agent.brandName}
@@ -207,13 +212,14 @@ function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): 
 			fallbackText={agent.name.slice(0, 2).toUpperCase()}
 			label={agent.name}
 			logoName={agent.logoName}
-			sizePx={24}
+			sizePx={size}
 		/>
 	);
 }
 
 function AgentSelectorItem({
 	agent,
+	avatarSize,
 	isChecked,
 	isDisabled,
 	isInProgress,
@@ -224,9 +230,11 @@ function AgentSelectorItem({
 	onToggle,
 	pinningEnabled,
 	showSelectedTickInSingleSelect,
+	showByline,
 	supportsMultipleSelection,
 }: Readonly<{
 	agent: AgentSelectorAgent;
+	avatarSize: 20 | 24;
 	isChecked: boolean;
 	isDisabled: boolean;
 	/** In-progress rows swap the pin/check affordance for a stop-on-hover control. */
@@ -240,6 +248,7 @@ function AgentSelectorItem({
 	pinningEnabled: boolean;
 	/** Opt-in single-select tick on the selected row. */
 	showSelectedTickInSingleSelect: boolean;
+	showByline: boolean;
 	supportsMultipleSelection: boolean;
 }>): ReactElement {
 	// Mirror the editor-palette suggestion row: the byline stays hidden until the
@@ -287,6 +296,7 @@ function AgentSelectorItem({
 			className={cn(
 				AGENT_ROW_BASE_CLASS,
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
+				!showByline && "h-8",
 			)}
 			data-checked={showCheckIcon && isChecked ? true : undefined}
 			disabled={isDisabled}
@@ -316,9 +326,9 @@ function AgentSelectorItem({
 			showCheckIcon={showCheckIcon}
 			value={agent.id}
 		>
-			<AgentSelectorLogo agent={agent} />
+			<span className="grid size-6 place-items-center"><AgentSelectorLogo agent={agent} size={avatarSize} /></span>
 			<div className="flex min-w-0 items-center">
-				<motion.span
+				{showByline ? <motion.span
 					animate={revealByline ? "active" : "idle"}
 					className={cn(AGENT_COPY_CLASS, "flex-1")}
 					custom={copyInstant}
@@ -340,7 +350,7 @@ function AgentSelectorItem({
 					>
 						{agent.byline}
 					</motion.span>
-				</motion.span>
+				</motion.span> : <span className={cn(AGENT_LABEL_CLASS, "flex-1")}>{agent.name}</span>}
 				{isDisabled ? (
 					<span className="ml-2 shrink-0 text-xs font-medium text-text-subtlest">Working</span>
 				) : null}
@@ -416,6 +426,7 @@ function AgentSelectorItem({
 						</Button>
 					</span>
 				) : null}
+				{isSubmenuTrigger ? <Icon aria-hidden className="ml-1 shrink-0 text-icon-subtle" render={<ChevronRightIcon label="" size="small" />} /> : null}
 				{showSingleSelectTick ? (
 					// Single-select selected marker: the VPK check glyph in the subtle icon
 					// color, in a 24px transparent icon tile so it aligns with
@@ -441,6 +452,7 @@ function AgentSelectorItem({
 
 interface AgentSelectorGroupProps {
 	agents: readonly AgentSelectorAgent[];
+	avatarSize: 20 | 24;
 	disabledAgentIdSet: ReadonlySet<string>;
 	heading?: string;
 	/** Renders every row in this group with the in-progress stop-on-hover treatment. */
@@ -452,12 +464,16 @@ interface AgentSelectorGroupProps {
 	pinningEnabled: boolean;
 	selectedAgentIdSet: ReadonlySet<string>;
 	showSelectedTickInSingleSelect: boolean;
+	showByline: boolean;
+	children?: ReactNode;
+	paletteHeading?: boolean;
 	submenuAgentIdSet: ReadonlySet<string>;
 	supportsMultipleSelection: boolean;
 }
 
 function AgentSelectorGroup({
 	agents,
+	avatarSize,
 	disabledAgentIdSet,
 	heading,
 	isInProgressGroup = false,
@@ -468,17 +484,21 @@ function AgentSelectorGroup({
 	pinningEnabled,
 	selectedAgentIdSet,
 	showSelectedTickInSingleSelect,
+	showByline,
+	children,
+	paletteHeading = false,
 	submenuAgentIdSet,
 	supportsMultipleSelection,
 }: Readonly<AgentSelectorGroupProps>): ReactElement | null {
 	return agents.length > 0 ? (
 		<CommandGroup
-			className="!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold"
+			className={cn("!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold", paletteHeading && "!py-0 **:[[cmdk-group-heading]]:!px-2 **:[[cmdk-group-heading]]:!pt-3 **:[[cmdk-group-heading]]:!pb-1 **:[[cmdk-group-heading]]:!text-text-subtlest")}
 			heading={heading}
 		>
 			{agents.map((agent) => (
 				<AgentSelectorItem
 					agent={agent}
+					avatarSize={avatarSize}
 					isChecked={selectedAgentIdSet.has(agent.id)}
 					isDisabled={disabledAgentIdSet.has(agent.id)}
 					isInProgress={isInProgressGroup}
@@ -490,15 +510,18 @@ function AgentSelectorGroup({
 					onTogglePinned={onTogglePinned}
 					pinningEnabled={pinningEnabled}
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
+					showByline={showByline}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 			))}
+			{children}
 		</CommandGroup>
 	) : null;
 }
 
 export function AgentSelector({
 	agents = ROVO_AGENT_SELECTOR_AGENTS,
+	avatarSize = 24,
 	availableLabel = "agents",
 	browseIcon = <Icon className="size-4" render={<AiAgentIcon label="" />} />,
 	browseAgentsLabel = "Browse agents",
@@ -522,6 +545,8 @@ export function AgentSelector({
 	pinnedItemsLabel = "Pinned",
 	pinningEnabled = true,
 	selectionMode = "multiple",
+	sections,
+	showByline = true,
 	selectedAgentActions,
 	selectedActionsLabel = "Selected agent actions",
 	selectedAgentIds,
@@ -535,6 +560,7 @@ export function AgentSelector({
 	const [internalQuery, setInternalQuery] = useState(defaultQuery);
 	const [internalPinnedAgentIds, setInternalPinnedAgentIds] = useState<readonly string[]>(defaultPinnedAgentIds);
 	const [activeAgentId, setActiveAgentId] = useState("");
+	const [sectionsExpanded, setSectionsExpanded] = useState(false);
 	const selectedIds = selectedAgentIds ?? EMPTY_SELECTED_AGENT_IDS;
 	const disabledIds = disabledAgentIds ?? EMPTY_DISABLED_AGENT_IDS;
 	const submenuIds = submenuAgentIds ?? EMPTY_SUBMENU_AGENT_IDS;
@@ -597,10 +623,17 @@ export function AgentSelector({
 	const hasPinnedAgents = agents.some(
 		(agent) => pinnedAgentIdSet.has(agent.id) && !inProgressAgentIdSet.has(agent.id),
 	);
-	const selectableAgents = [...inProgressAgents, ...pinnedAgents, ...moreAgents].filter(
+	const sectionAgents = sections
+		? sections.agentIds.flatMap((id) => visibleAgents.filter((agent) => agent.id === id))
+		: [];
+	const sectionAgentIds = new Set(sections?.agentIds);
+	const otherSectionAgents = sections ? visibleAgents.filter((agent) => !sectionAgentIds.has(agent.id)) : [];
+	const showMore = Boolean(sections && !normalizedQuery && !sectionsExpanded && sections.initialLimit !== undefined && sectionAgents.length > sections.initialLimit);
+	const displayedSectionAgents = showMore ? sectionAgents.slice(0, sections?.initialLimit) : sectionAgents;
+	const selectableAgents = (sections ? [...displayedSectionAgents, ...otherSectionAgents] : [...inProgressAgents, ...pinnedAgents, ...moreAgents]).filter(
 		(agent) => !disabledAgentIdSet.has(agent.id),
 	);
-	const activeVisibleAgentId = selectableAgents.some((agent) => agent.id === activeAgentId)
+	const activeVisibleAgentId = (showMore && activeAgentId === "__show_more_agents__") || selectableAgents.some((agent) => agent.id === activeAgentId)
 		? activeAgentId
 		: selectableAgents[0]?.id ?? "";
 
@@ -692,7 +725,14 @@ export function AgentSelector({
 				ref={listOverflow.ref}
 			>
 				{visibleAgents.length === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
+				{sections ? (<>
+					<AgentSelectorGroup avatarSize={avatarSize} agents={displayedSectionAgents} disabledAgentIdSet={disabledAgentIdSet} heading={sections.heading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading>
+						{showMore ? <CommandItem className="h-8 px-2 text-xs text-text-subtlest hover:underline data-selected:bg-transparent data-selected:text-text-subtlest data-selected:underline" onSelect={() => setSectionsExpanded(true)} showCheckIcon={false} value="__show_more_agents__">Show more</CommandItem> : null}
+					</AgentSelectorGroup>
+					<AgentSelectorGroup avatarSize={avatarSize} agents={otherSectionAgents} disabledAgentIdSet={disabledAgentIdSet} heading={sections.otherHeading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
+				</>) : (<>
 				<AgentSelectorGroup
+					avatarSize={avatarSize}
 					agents={inProgressAgents}
 					disabledAgentIdSet={disabledAgentIdSet}
 					heading={inProgressLabel}
@@ -704,10 +744,12 @@ export function AgentSelector({
 					pinningEnabled={pinningEnabled}
 					selectedAgentIdSet={selectedAgentIdSet}
 					showSelectedTickInSingleSelect={false}
+					showByline={showByline}
 					submenuAgentIdSet={submenuAgentIdSet}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				<AgentSelectorGroup
+					avatarSize={avatarSize}
 					agents={pinnedAgents}
 					disabledAgentIdSet={disabledAgentIdSet}
 					heading={pinnedItemsLabel}
@@ -717,10 +759,12 @@ export function AgentSelector({
 					pinningEnabled={pinningEnabled}
 					selectedAgentIdSet={selectedAgentIdSet}
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
+					showByline={showByline}
 					submenuAgentIdSet={submenuAgentIdSet}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				<AgentSelectorGroup
+					avatarSize={avatarSize}
 					agents={moreAgents}
 					disabledAgentIdSet={disabledAgentIdSet}
 					heading={hasPinnedAgents || inProgressAgents.length > 0 ? moreItemsLabel : undefined}
@@ -730,9 +774,11 @@ export function AgentSelector({
 					pinningEnabled={pinningEnabled}
 					selectedAgentIdSet={selectedAgentIdSet}
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
+					showByline={showByline}
 					submenuAgentIdSet={submenuAgentIdSet}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
+				</>)}
 			</CommandList>
 			{hasFooterActions ? (
 				<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">

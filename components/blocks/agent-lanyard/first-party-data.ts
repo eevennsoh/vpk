@@ -1,3 +1,4 @@
+import { SOFTWARE_AGENT_COLOR } from "@/lib/agent-avatar-visuals";
 import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import type { AgentLanyardAgent } from "./data";
 import { customFirstPartyBadge, namedFirstPartyBadge, type AgentLanyardFirstPartyBadge, type NamedFirstPartyAgentId } from "./first-party-badges";
@@ -13,7 +14,7 @@ export type AgentLanyardFirstPartyAgent = AgentLanyardAgent & {
 // Figma collection colors and logo-only exports; the shared Avatar owns the hexagon.
 export const AGENT_LANYARD_COLLECTIONS = {
 	teamwork: { label: "Teamwork", color: "#1868DB", avatarSrc: "/1p/agent-lanyard/glyph-custom-white.svg" },
-	software: { label: "Software", color: "#94C748", avatarSrc: "/1p/agent-lanyard/glyph-custom-black.svg" },
+	software: { label: "Software", color: SOFTWARE_AGENT_COLOR, avatarSrc: "/1p/agent-lanyard/glyph-custom-black.svg" },
 	product: { label: "Product", color: "#C97CF4", avatarSrc: "/1p/agent-lanyard/glyph-custom-black.svg" },
 	service: { label: "Service", color: "#FFC716", avatarSrc: "/1p/agent-lanyard/glyph-custom-black.svg" },
 	strategy: { label: "Strategy", color: "#FB9700", avatarSrc: "/1p/agent-lanyard/glyph-custom-black.svg" },

@@ -52,6 +52,7 @@ test("AgentSelector keyboard navigation skips disabled agents", async () => {
 async function loadAgentSelectorHarness() {
 	const mockModules = new Map([
 		["@atlaskit/icon/core/add", "export default function Icon() { return null; }"],
+		["@atlaskit/icon/core/chevron-right", "export default function Icon() { return null; }"],
 		["@atlaskit/icon/core/ai-agent", "export default function Icon() { return null; }"],
 		["@atlaskit/icon/core/pin-filled", "export default function Icon() { return 'PIN_FILLED'; }"],
 		["@atlaskit/icon/core/pin", "export default function Icon() { return 'PIN_OUTLINE'; }"],
@@ -203,7 +204,7 @@ async function loadAgentSelectorHarness() {
 test("agent rows use 8px left padding while preserving the compact trailing inset", () => {
 	assert.match(
 		COMPONENT_SOURCE,
-		/const AGENT_ROW_BASE_CLASS =\s*"grid h-11 w-full items-center gap-3 rounded-\[12px\] py-0 pr-1\.5 pl-2 text-left";/u,
+		/const AGENT_ROW_BASE_CLASS =\s*"grid h-11 w-full items-center gap-3 rounded-md py-0 pr-1\.5 pl-2 text-left";/u,
 	);
 });
 
@@ -356,7 +357,7 @@ test("AgentSelector action labels use subtle text color", () => {
 test("AgentSelector group headings use the semibold subheading treatment", () => {
 	assert.match(
 		COMPONENT_SOURCE,
-		/className="!px-0 !py-1\.5 \*\*:\[\[cmdk-group-heading\]\]:font-semibold"/u,
+		/!px-0 !py-1\.5 \*\*:\[\[cmdk-group-heading\]\]:font-semibold/u,
 	);
 });
 
@@ -367,7 +368,7 @@ test("AgentSelector omits the top picker heading unless a consumer supplies one"
 });
 
 test("AgentSelector rows use greeting prompt text rhythm and shared agent avatars", () => {
-	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_BASE_CLASS =\s*"grid h-11 w-full items-center gap-3 rounded-\[12px\] py-0 pr-1\.5 pl-2 text-left";/u);
+	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_BASE_CLASS =\s*"grid h-11 w-full items-center gap-3 rounded-md py-0 pr-1\.5 pl-2 text-left";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CHECK_COLS = "grid-cols-\[24px_minmax\(0,1fr\)_auto\]";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_PLAIN_COLS = "grid-cols-\[24px_minmax\(0,1fr\)\]";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_COPY_CLASS =\s*"flex min-h-\[34px\] min-w-0 flex-col justify-start overflow-hidden";/u);
@@ -376,7 +377,7 @@ test("AgentSelector rows use greeting prompt text rhythm and shared agent avatar
 	assert.match(COMPONENT_SOURCE, /const AGENT_LABEL_CLASS = "menu-row-title text-left";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_DESCRIPTION_CLASS = "menu-row-byline text-left";/u);
 	assert.match(COMPONENT_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
-	assert.match(COMPONENT_SOURCE, /<AgentAvatarVisual[\s\S]*avatarSrc=\{agent\.avatarSrc\}[\s\S]*brandName=\{agent\.brandName\}[\s\S]*logoName=\{agent\.logoName\}[\s\S]*sizePx=\{24\}/u);
+	assert.match(COMPONENT_SOURCE, /<AgentAvatarVisual[\s\S]*avatarSrc=\{agent\.avatarSrc\}[\s\S]*brandName=\{agent\.brandName\}[\s\S]*logoName=\{agent\.logoName\}[\s\S]*sizePx=\{size\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /<LogoThirdParty/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /<AtlassianLogo/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /grid-cols-\[32px_minmax\(0,1fr\)_auto\]/u);

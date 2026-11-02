@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import LinkIcon from "@atlaskit/icon/core/link";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import StoryIcon from "@atlaskit/icon/core/story";
 import TaskIcon from "@atlaskit/icon/core/task";
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -35,9 +35,7 @@ function WorkItemKeyCopy({ code }: Readonly<{ code: string }>) {
 			<TooltipTrigger delay={0} render={<button aria-label={label} className="group/key inline-flex shrink-0 cursor-pointer items-center rounded-sm bg-transparent p-0 text-inherit outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" data-project-butter-key onClick={() => { void copyKey(); }} type="button" />}>
 				<span ref={anchor}>{code}</span>
 				<span aria-hidden className={cn("inline-flex max-w-0 shrink-0 overflow-hidden opacity-0 transition-[max-width,opacity] duration-normal ease-out-practical group-hover/key:max-w-6 group-hover/key:opacity-100 group-focus-visible/key:max-w-6 group-focus-visible/key:opacity-100", feedback !== "idle" && "max-w-6 opacity-100")} data-project-butter-key-copy-icon>
-					<span className={cn("ml-1 inline-flex size-4 items-center justify-center", feedback === "copied" ? "text-icon-success" : "text-text-subtle")}>
-						{feedback === "copied" ? <StatusSuccessIcon label="" size="small" /> : <LinkIcon label="" size="small" />}
-					</span>
+					<CopyFeedbackIcon className="ml-1" copied={feedback === "copied"} idleIcon={<LinkIcon label="" size="small" />} />
 				</span>
 			</TooltipTrigger>
 			<TooltipContent anchor={anchor} positionerClassName="z-[650]" side="top">{label}</TooltipContent>

@@ -863,7 +863,7 @@
   },
   "components/blocks/jira-issue/jira-issue.test.js": {
     "no-restricted-syntax": {
-      "count": 625
+      "count": 624
     }
   },
   "components/blocks/jira-issue/page.tsx": {
