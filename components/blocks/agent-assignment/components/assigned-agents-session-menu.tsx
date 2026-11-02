@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { use, useEffect, useRef } from "react";
 
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 
@@ -9,6 +9,7 @@ import {
 } from "@/components/blocks/agent-assignment/components/agent-assignment";
 import { toAssignmentSessionItem } from "@/components/blocks/agent-assignment/components/assignment-session";
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
 import { Button } from "@/components/ui/button";
 
@@ -34,6 +35,7 @@ export function AssignedAgentsSessionMenu({
 	rows: readonly AgentAssignmentAgent[];
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const renderAgentAvatar = use(AgentSessionAvatarPreviewContext);
 
 	useEffect(() => {
 		const frameId = window.requestAnimationFrame(() => {
@@ -62,6 +64,7 @@ export function AssignedAgentsSessionMenu({
 							onToggleVisibility={onToggleVisibility}
 							onView={row.host === "local" ? undefined : () => onSelectAgent(row)}
 							padding="compact"
+							renderAgentAvatar={renderAgentAvatar ?? undefined}
 							showLifecycleLabel={false}
 							trailingAlign="center"
 						/>

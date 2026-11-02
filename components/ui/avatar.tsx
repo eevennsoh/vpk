@@ -717,16 +717,17 @@ function AvatarStatusIndicator({
 }
 
 interface AvatarGroupProps extends React.ComponentProps<"div"> {
+	as?: "div" | "span"
 	label?: string
 	size?: AvatarSize
 }
 
-function AvatarGroup({ children, className, label, size, ...props }: Readonly<AvatarGroupProps>) {
+function AvatarGroup({ as: Group = "div", children, className, label, size, ...props }: Readonly<AvatarGroupProps>) {
 	const resolvedSize = size ?? firstAvatarSize(children)
 	return (
 		<AvatarGroupContext value>
 			<AvatarGroupSizeContext value={resolvedSize}>
-				<div
+				<Group
 					data-slot="avatar-group"
 					role="group"
 					aria-label={label}
@@ -739,7 +740,7 @@ function AvatarGroup({ children, className, label, size, ...props }: Readonly<Av
 					{...props}
 				>
 					{children}
-				</div>
+				</Group>
 			</AvatarGroupSizeContext>
 		</AvatarGroupContext>
 	)
