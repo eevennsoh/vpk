@@ -1,0 +1,186 @@
+"use client";
+
+import { m, useTransform } from "motion/react";
+import { type KeyboardEvent, memo, useMemo } from "react";
+import { motionDuration, motionEase } from "@/lib/motion";
+import { applyHoverGrow, arcPath, transitionGeometry } from "./sunburst";
+import { sunburstCssVars, useSunburstHover, useSunburstStable } from "./sunburst-context";
+import { useEnterComplete } from "./use-enter-complete";
+import { useMountProgress } from "./use-mount-progress";
+
+const HOVER_DIM_TRANSITION = { duration: motionDuration.normal, ease: motionEase.outPractical };
+
+export interface SunburstSegmentProps {
+	index: number;
+	/** Optional color override */
+	color?: string;
+	/** Optional fill override (patterns/gradients) */
+	fill?: string;
+	/** Optional fill opacity override */
+	fillOpacity?: number;
+}
+
+function SunburstSegmentInner({
+	index,
+	color: colorProp,
+	fill: fillProp,
+	fillOpacity: fillOpacityProp,
+}: SunburstSegmentProps) {
+	const {
+		arcs,
+		focus,
+		prevFocus,
+		maxDepth,
+		radius,
+		zoomT,
+		enterTiming,
+		enterTransition,
+		playKey,
+		skipEnterAnimation,
+		growAmountForArc,
+		getFill,
+		getFillOpacity,
+		isRelated,
+		maxExpandedThickness,
+		zoomTo,
+	} = useSunburstStable();
+	const { setHoveredArc, setHoveredArcIndex } = useSunburstHover();
+
+	const arc = arcs[index];
+	const segmentDelay =
+		(arc ? enterTiming.segmentDelays.get(arc.id)?.delay : undefined) ?? 0;
+	const replayId = arc?.id ?? `missing-${index}`;
+
+	const base = useMemo(() => {
+		if (!arc) {
+			return null;
+		}
+		return transitionGeometry(arc, prevFocus, focus, maxDepth, radius, zoomT);
+	}, [arc, prevFocus, focus, maxDepth, radius, zoomT]);
+
+	const visualGeometry = useMemo(() => {
+		if (!(arc && base)) {
+			return null;
+		}
+		return applyHoverGrow(base, arc.id, growAmountForArc, maxExpandedThickness);
+	}, [arc, base, growAmountForArc, maxExpandedThickness]);
+
+	const enterProgress = useMountProgress(
+		enterTransition,
+		segmentDelay,
+		`${playKey}-enter-${replayId}`
+	);
+	const enterComplete = useEnterComplete(enterProgress);
+	const enterScale = useTransform(enterProgress, [0, 1], [0, 1]);
+	const animatedHitPath = useTransform(enterProgress, (value) =>
+		base ? (arcPath(base, value, 1) ?? "") : ""
+	);
+	const animatedVisualPath = useTransform(enterProgress, (value) =>
+		visualGeometry ? (arcPath(visualGeometry, value, 1) ?? "") : ""
+	);
+
+	if (!arc) {
+		return null;
+	}
+
+	if (!base) {
+		return null;
+	}
+
+	const showStatic = skipEnterAnimation || enterComplete;
+
+	const fullHitPath = arcPath(base, 1, 1);
+	const fullVisualPath = visualGeometry ? arcPath(visualGeometry, 1, 1) : null;
+	if (!(fullHitPath && fullVisualPath)) {
+		return null;
+	}
+
+	const relativeDepth = arc.depth - focus.depth;
+	const segmentFill = getFill(index, fillProp, colorProp);
+	const fillOpacity = fillOpacityProp ?? getFillOpacity(relativeDepth);
+	const related = isRelated(arc);
+	const layerOpacity = related ? 1 : 0.25;
+
+	const groupStyle = {
+		cursor: arc.hasChildren ? ("pointer" as const) : ("default" as const),
+		transformOrigin: "0px 0px",
+	};
+
+	const hitHandlers = {
+		onClick: () => { if (arc.hasChildren) { zoomTo(arc.id); } },
+		onFocus: () => { setHoveredArc(arc); setHoveredArcIndex(index); },
+		onBlur: () => { setHoveredArc(null); setHoveredArcIndex(null); },
+		onKeyDown: (event: KeyboardEvent<SVGGElement>) => {
+			if (event.key === " ") { event.preventDefault(); }
+			if (event.key === "Enter" && arc.hasChildren) {
+				event.preventDefault();
+				zoomTo(arc.id, { focusCenter: true });
+			}
+		},
+		onKeyUp: (event: KeyboardEvent<SVGGElement>) => {
+			if (event.key === " " && arc.hasChildren) {
+				event.preventDefault();
+				zoomTo(arc.id, { focusCenter: true });
+			}
+		},
+		onPointerEnter: () => {
+			setHoveredArc(arc);
+			setHoveredArcIndex(index);
+		},
+	};
+
+	const visualPathProps = {
+		fill: segmentFill,
+		fillOpacity,
+		pointerEvents: "none" as const,
+		stroke: sunburstCssVars.ring,
+		strokeLinejoin: "round" as const,
+		strokeWidth: 1,
+	};
+
+	if (showStatic) {
+		return (
+			<m.g
+				animate={{ opacity: layerOpacity }}
+				initial={false}
+				{...hitHandlers}
+			aria-label={`${arc.name}: ${arc.value}${arc.hasChildren ? ", drill down" : ""}`}
+			className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focused"
+			role={arc.hasChildren ? "button" : "img"}
+			tabIndex={0}
+				style={groupStyle}
+				transition={{ opacity: HOVER_DIM_TRANSITION }}
+			>
+				<path d={fullHitPath} fill="transparent" />
+				<path d={fullVisualPath} {...visualPathProps} />
+			</m.g>
+		);
+	}
+
+	return (
+		<m.g
+			animate={{ opacity: layerOpacity }}
+			initial={false}
+			{...hitHandlers}
+			aria-label={`${arc.name}: ${arc.value}${arc.hasChildren ? ", drill down" : ""}`}
+			className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focused"
+			role={arc.hasChildren ? "button" : "img"}
+			tabIndex={0}
+			style={{
+				...groupStyle,
+				scale: enterScale,
+			}}
+			transition={{ opacity: HOVER_DIM_TRANSITION }}
+		>
+			<m.path d={animatedHitPath} fill="transparent" />
+			<m.path d={animatedVisualPath} {...visualPathProps} />
+		</m.g>
+	);
+}
+
+export const SunburstSegment = memo(function SunburstSegment(props: SunburstSegmentProps) {
+	const { playKey } = useSunburstStable();
+	return <SunburstSegmentInner {...props} key={playKey} />;
+});
+
+SunburstSegment.displayName = "SunburstSegment";

@@ -1,149 +1,258 @@
 "use client";
 
-// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
-
-import { motion, useSpring } from "motion/react";
-import { useEffect } from "react";
+import { m, useSpring } from "motion/react";
+import { useEffect, useId } from "react";
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
 import { chartCssVars } from "../chart-context";
+import {
+	type IndicatorFadeEdges,
+	indicatorFadeGradientStops,
+	resolveVerticalFadeSides,
+} from "../indicator-fade";
 
 export type IndicatorWidth =
-  | number // Pixel width
-  | "line" // 1px line (default)
-  | "thin" // 2px
-  | "medium" // 4px
-  | "thick"; // 8px
+	| number // Pixel width
+	| "line" // 1px line (default)
+	| "thin" // 2px
+	| "medium" // 4px
+	| "thick"; // 8px
 
 export interface TooltipIndicatorProps {
-  /** X position in pixels (center of the indicator) */
-  x: number;
-  /** Height of the indicator */
-  height: number;
-  /** Whether the indicator is visible */
-  visible: boolean;
-  /**
-   * Width of the indicator - number (pixels) or preset.
-   * Ignored if `span` is provided.
-   */
-  width?: IndicatorWidth;
-  /**
-   * Number of columns/days to span, with current point centered.
-   * Requires `columnWidth` to be set.
-   */
-  span?: number;
-  /** Width of a single column/day in pixels. Required when using `span`. */
-  columnWidth?: number;
-  /** Primary color at edges (10% and 90%) */
-  colorEdge?: string;
-  /** Secondary color at center (50%) */
-  colorMid?: string;
-  /** Whether to fade to transparent at 0% and 100% */
-  fadeEdges?: boolean;
-  /** Animate position with a spring. Default: true */
-  animate?: boolean;
-  /** Unique ID for the gradient */
-  gradientId?: string;
-  /** Per-chart override; falls back to `ChartConfigProvider.tooltipSpring`. */
-  springConfig?: SpringConfig;
+	/** X position in pixels (center of the indicator) */
+	x: number;
+	/** Height of the indicator */
+	height: number;
+	/** Whether the indicator is visible */
+	visible: boolean;
+	/**
+	 * Width of the indicator - number (pixels) or preset.
+	 * Ignored if `span` is provided.
+	 */
+	width?: IndicatorWidth;
+	/**
+	 * Number of columns/days to span, with current point centered.
+	 * Requires `columnWidth` to be set.
+	 */
+	span?: number;
+	/** Width of a single column/day in pixels. Required when using `span`. */
+	columnWidth?: number;
+	/** Primary color at edges (10% and 90%) */
+	colorEdge?: string;
+	/** Secondary color at center (50%) */
+	colorMid?: string;
+	/**
+	 * Bottom colour for a vertical colour ramp: the indicator blends from
+	 * `colorMid` (top) to `colorEnd` (bottom). Composes with `fadeEdges`.
+	 */
+	colorEnd?: string;
+	/**
+	 * Y (px) where the indicator ends, e.g. the hovered point. Springs with the
+	 * indicator. Default: `height` (full plot).
+	 */
+	bottom?: number;
+	/** Vertical fade: both ends, top, bottom, or none (solid). */
+	fadeEdges?: IndicatorFadeEdges | boolean;
+	/** Fade zone size as a percentage of indicator height. Default: 10 */
+	fadeLength?: number;
+	/** Animate position with a spring. Default: true */
+	animate?: boolean;
+	/** Unique ID for the gradient. Default: generated per instance. */
+	gradientId?: string;
+	/** Per-chart override; falls back to `ChartConfigProvider.tooltipSpring`. */
+	springConfig?: SpringConfig;
+	/** SVG stroke dash pattern. When set, renders a dashed stroke instead of a solid fill. */
+	strokeDasharray?: string;
 }
 
 function resolveWidth(width: IndicatorWidth): number {
-  if (typeof width === "number") {
-    return width;
-  }
-  switch (width) {
-    case "line":
-      return 1;
-    case "thin":
-      return 2;
-    case "medium":
-      return 4;
-    case "thick":
-      return 8;
-    default:
-      return 1;
-  }
+	if (typeof width === "number") {
+		return width;
+	}
+	switch (width) {
+		case "line":
+			return 1;
+		case "thin":
+			return 2;
+		case "medium":
+			return 4;
+		case "thick":
+			return 8;
+		default:
+			return 1;
+	}
+}
+
+/** Colour at a gradient `offset` ("40%") on a top → bottom ramp. */
+function verticalRampColor(top: string, end: string, offset: string): string {
+	const percent = Number.parseFloat(offset);
+	if (percent <= 0) {
+		return top;
+	}
+	if (percent >= 100) {
+		return end;
+	}
+	return `color-mix(in srgb, ${end} ${percent}%, ${top})`;
 }
 
 // Inner-only-on-visible so `useSpring` initializes at the real cursor x
 // instead of 0 on first hover.
 export function TooltipIndicator(props: TooltipIndicatorProps) {
-  if (!props.visible) {
-    return null;
-  }
-  return <TooltipIndicatorInner {...props} />;
+	if (!props.visible) {
+		return null;
+	}
+	return <TooltipIndicatorInner {...props} />;
 }
 
 function TooltipIndicatorInner({
-  x,
-  visible,
-  height,
-  width = "line",
-  span,
-  columnWidth,
-  colorEdge = chartCssVars.crosshair,
-  colorMid = chartCssVars.crosshair,
-  fadeEdges = true,
-  animate = true,
-  gradientId = "tooltip-indicator-gradient",
-  springConfig,
+	x,
+	visible,
+	height,
+	width = "line",
+	span,
+	columnWidth,
+	colorEdge = chartCssVars.crosshair,
+	colorMid = chartCssVars.crosshair,
+	colorEnd,
+	bottom,
+	fadeEdges = "both",
+	fadeLength = 10,
+	animate = true,
+	gradientId: gradientIdProp,
+	springConfig,
+	strokeDasharray,
 }: TooltipIndicatorProps) {
-  const { tooltipSpring } = useChartConfig();
-  const effectiveSpring = springConfig ?? tooltipSpring;
+	// Per-instance id: a shared id makes every chart on the page resolve
+	// `url(#…)` to the first chart's gradient (and its colours).
+	const generatedId = useId();
+	const gradientId =
+		gradientIdProp ?? `tooltip-indicator-gradient-${generatedId}`;
+	const { tooltipSpring } = useChartConfig();
+	const effectiveSpring = springConfig ?? tooltipSpring;
 
-  const pixelWidth =
-    span !== undefined && columnWidth !== undefined
-      ? span * columnWidth
-      : resolveWidth(width);
+	const pixelWidth =
+		span !== undefined && columnWidth !== undefined
+			? span * columnWidth
+			: resolveWidth(width);
 
-  const rectX = x - pixelWidth / 2;
-  const animatedX = useSpring(rectX, effectiveSpring);
+	const rectX = x - pixelWidth / 2;
+	const lineX = x;
+	const endY = Math.max(0, Math.min(height, bottom ?? height));
+	const animatedX = useSpring(rectX, effectiveSpring);
+	const animatedLineX = useSpring(lineX, effectiveSpring);
+	const animatedEndY = useSpring(endY, effectiveSpring);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: we need to jump the animatedX when the visible prop changes
 	useEffect(() => {
 		if (animate || visible) {
 			animatedX.set(rectX);
+			animatedLineX.set(lineX);
+			animatedEndY.set(endY);
 		}
-	}, [animate, animatedX, rectX, visible]);
+	}, [animate, animatedLineX, animatedX, animatedEndY, endY, lineX, rectX, visible]);
 
-  const edgeOpacity = fadeEdges ? 0 : 1;
+	const indicatorFill = colorMid || colorEdge;
+	const fadeSides = resolveVerticalFadeSides(fadeEdges);
+	const legacyColorRamp = !colorEnd && colorEdge !== colorMid;
+	const dashed = Boolean(strokeDasharray);
 
-  return (
-    <g>
-      <defs>
-        <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-          <stop
-            offset="0%"
-            style={{ stopColor: colorEdge, stopOpacity: edgeOpacity }}
-          />
-          <stop offset="10%" style={{ stopColor: colorEdge, stopOpacity: 1 }} />
-          <stop offset="50%" style={{ stopColor: colorMid, stopOpacity: 1 }} />
-          <stop offset="90%" style={{ stopColor: colorEdge, stopOpacity: 1 }} />
-          <stop
-            offset="100%"
-            style={{ stopColor: colorEdge, stopOpacity: edgeOpacity }}
-          />
-        </linearGradient>
-      </defs>
-      {animate ? (
-        <motion.rect
-          fill={`url(#${gradientId})`}
-          height={height}
-          width={pixelWidth}
-          x={animatedX}
-          y={0}
-        />
-      ) : (
-        <rect
-          fill={`url(#${gradientId})`}
-          height={height}
-          width={pixelWidth}
-          x={rectX}
-          y={0}
-        />
-      )}
-    </g>
-  );
+	if (dashed) {
+		const strokeWidth = Math.max(1, pixelWidth);
+		return animate ? (
+			<m.line
+				stroke={indicatorFill}
+				strokeDasharray={strokeDasharray}
+				strokeWidth={strokeWidth}
+				x1={animatedLineX}
+				x2={animatedLineX}
+				y1={0}
+				y2={animatedEndY}
+			/>
+		) : (
+			<line
+				stroke={indicatorFill}
+				strokeDasharray={strokeDasharray}
+				strokeWidth={strokeWidth}
+				x1={lineX}
+				x2={lineX}
+				y1={0}
+				y2={endY}
+			/>
+		);
+	}
+
+	if (!(fadeSides.any || colorEnd || legacyColorRamp)) {
+		return animate ? (
+			<m.rect
+				fill={indicatorFill}
+				height={animatedEndY}
+				width={pixelWidth}
+				x={animatedX}
+				y={0}
+			/>
+		) : (
+			<rect
+				fill={indicatorFill}
+				height={endY}
+				width={pixelWidth}
+				x={rectX}
+				y={0}
+			/>
+		);
+	}
+
+	const fade = Math.min(40, Math.max(2, fadeLength));
+	const fadeStops = legacyColorRamp
+		? [
+				{ offset: "0%", opacity: fadeSides.top ? 0 : 1 },
+				{ offset: `${fade}%`, opacity: 1 },
+				{ offset: "50%", opacity: 1 },
+				{ offset: `${100 - fade}%`, opacity: 1 },
+				{ offset: "100%", opacity: fadeSides.bottom ? 0 : 1 },
+			]
+		: indicatorFadeGradientStops(fadeSides, fadeLength);
+	if (colorEnd && fadeStops.length === 1) {
+		fadeStops.push({ offset: "100%", opacity: 1 });
+	}
+
+	return (
+		<g>
+			<defs>
+				<linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
+					{fadeStops.map((stop) => (
+						<stop
+							key={stop.offset}
+							offset={stop.offset}
+							style={{
+								stopColor: colorEnd
+									? verticalRampColor(indicatorFill, colorEnd, stop.offset)
+									: legacyColorRamp && stop.offset !== "50%"
+									? colorEdge
+									: indicatorFill,
+								stopOpacity: stop.opacity,
+							}}
+						/>
+					))}
+				</linearGradient>
+			</defs>
+			{animate ? (
+				<m.rect
+					fill={`url(#${gradientId})`}
+					height={animatedEndY}
+					width={pixelWidth}
+					x={animatedX}
+					y={0}
+				/>
+			) : (
+				<rect
+					fill={`url(#${gradientId})`}
+					height={endY}
+					width={pixelWidth}
+					x={rectX}
+					y={0}
+				/>
+			)}
+		</g>
+	);
 }
 
 TooltipIndicator.displayName = "TooltipIndicator";

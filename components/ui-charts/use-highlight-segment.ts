@@ -1,63 +1,100 @@
 "use client";
 
 import { useSpring } from "motion/react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import { useChartConfig } from "./chart-config-context";
-import { useChartHover, useChartStable } from "./chart-context";
 import {
-  computeSegmentBounds,
-  INACTIVE_SEGMENT,
+	type ChartHoverContextValue,
+	DISCRETE_INTERACTION_LABEL_THRESHOLD,
+	useChartHoverSelector,
+	useChartHoverStore,
+	useChartStable,
+} from "./chart-context";
+import {
+	computeSegmentBounds,
+	INACTIVE_SEGMENT,
+	type SegmentBounds,
 } from "./highlight-segment-bounds";
 
 // Hover-highlight band for `line.tsx` and `area.tsx`. Computes the segment
 // bounds and springs its x/width; `<HighlightSegment>` renders the clipped
 // re-stroke. Spring tuning comes from `ChartConfigProvider.highlightSpring`.
-// Stable + hover slices are read separately so callers can see the exact
-// subscription surface (anything calling this hook will re-render on hover).
+//
+// The springs are driven straight from the hover store, so a pointer move
+// retargets them without a React render. Callers re-render only when the band
+// shows or hides (`isActive`), or when their own props / the stable slice
+// change.
 
 export interface HighlightSegmentResult {
-  xSpring: ReturnType<typeof useSpring>;
-  widthSpring: ReturnType<typeof useSpring>;
-  isActive: boolean;
+	xSpring: ReturnType<typeof useSpring>;
+	widthSpring: ReturnType<typeof useSpring>;
+	isActive: boolean;
 }
 
 /**
  * @param enabled set false when there is no stroke to highlight (e.g. an area
  *   with `showLine={false}`); defaults true.
+ * @param span data points either side of the hovered point the band covers;
+ *   defaults 1.
  */
 export function useHighlightSegment({
-  enabled = true,
+	enabled = true,
+	span = 1,
 }: {
-  enabled?: boolean;
+	enabled?: boolean;
+	span?: number;
 } = {}): HighlightSegmentResult {
-  const { data, xScale, xAccessor } = useChartStable();
-  const { tooltipData, selection } = useChartHover();
-  const { highlightSpring } = useChartConfig();
+	const { data, xScale, xAccessor, dateLabels } = useChartStable();
+	const snap = dateLabels.length > DISCRETE_INTERACTION_LABEL_THRESHOLD;
+	const store = useChartHoverStore();
+	const { highlightSpring } = useChartConfig();
 
-  const bounds = useMemo(
-    () =>
-      enabled
-        ? computeSegmentBounds(data, xScale, xAccessor, tooltipData, selection)
-        : INACTIVE_SEGMENT,
-    [enabled, data, xScale, xAccessor, tooltipData, selection]
-  );
+	const resolveBounds = useCallback(
+		(hover: ChartHoverContextValue): SegmentBounds =>
+			enabled
+				? computeSegmentBounds(
+						data,
+						xScale,
+						xAccessor,
+						hover.tooltipData,
+						hover.selection,
+						span
+					)
+				: INACTIVE_SEGMENT,
+		[enabled, data, xScale, xAccessor, span]
+	);
 
-  const xSpring = useSpring(0, highlightSpring);
-  const widthSpring = useSpring(0, highlightSpring);
+	const isActive = useChartHoverSelector(
+		(hover) => resolveBounds(hover).isActive
+	);
 
-  // Jump on inactive→active so the band appears at the hovered point instead
-  // of sliding in from x=0; ease on subsequent moves.
-  const wasActive = useRef(false);
-	useEffect(() => {
-		if (bounds.isActive && !wasActive.current) {
-			xSpring.jump(bounds.x);
-			widthSpring.jump(bounds.width);
-		} else {
+	const xSpring = useSpring(0, highlightSpring);
+	const widthSpring = useSpring(0, highlightSpring);
+
+	const wasActive = useRef(false);
+	// Runs on every hover change (store subscription) and whenever the bounds
+	// inputs change (data / scale / span), like the old per-render effect.
+	useLayoutEffect(() => {
+		if (!store) {
+			return;
+		}
+		const drive = () => {
+			const bounds = resolveBounds(store.getSnapshot());
+			if (!bounds.isActive) {
+				wasActive.current = false;
+				return;
+			}
+			if (!wasActive.current || snap) {
+				xSpring.jump(bounds.x);
+				widthSpring.jump(bounds.width);
+			}
 			xSpring.set(bounds.x);
 			widthSpring.set(bounds.width);
-		}
-		wasActive.current = bounds.isActive;
-	}, [bounds, widthSpring, xSpring]);
+			wasActive.current = true;
+		};
+		drive();
+		return store.subscribe(drive);
+	}, [resolveBounds, snap, store, xSpring, widthSpring]);
 
-  return { xSpring, widthSpring, isActive: bounds.isActive };
+	return { xSpring, widthSpring, isActive };
 }

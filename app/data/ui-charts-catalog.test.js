@@ -14,6 +14,7 @@ const EXPECTED_SLUGS = [
 	"area-chart",
 	"bar-chart",
 	"candlestick-chart",
+	"chart-utilities",
 	"choropleth-chart",
 	"composed-chart",
 	"funnel-chart",
@@ -25,12 +26,15 @@ const EXPECTED_SLUGS = [
 	"pie-chart",
 	"profit-loss-line",
 	"radar-chart",
+	"radial-chart",
 	"ring-chart",
 	"sankey-chart",
 	"scatter-chart",
+	"sparkline",
 	"stat-card-area-01",
 	"stat-card-choropleth-01",
 	"stat-card-line-01",
+	"sunburst-chart",
 ];
 
 test("ui-charts catalog section is wired through data, routes, previews, and registry", () => {

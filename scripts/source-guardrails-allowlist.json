@@ -345,165 +345,11 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/ui-charts/chart-config-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "return useContext(ChartConfigContext) ?? DEFAULT_CHART_CONFIG;",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/chart-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(ChartStableContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/chart-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(ChartHoverContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/chart-legend-hover.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(ChartLegendHoverContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/choropleth/choropleth-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "return useContext(ChoroplethZoomContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/choropleth/choropleth-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(ChoroplethStableContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/choropleth/choropleth-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(ChoroplethInteractionContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/heatmap/heatmap-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(HeatmapContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/heatmap/heatmap-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(HeatmapInteractionContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/heatmap/heatmap-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "return useContext(HeatmapInteractionContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/heatmap/heatmap-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const existing = useContext(HeatmapInteractionContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/legend/legend-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(LegendContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/legend/legend-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(LegendItemContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/live-y-axis.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */",
-			"type": "eslint-disable"
-		},
-		{
 			"filePath": "components/ui-charts/path-stroke-utils.ts",
 			"occurrence": 1,
 			"reason": "existing baseline",
 			"text": "/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */",
 			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/ui-charts/pie-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(PieStableContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/pie-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(PieHoverContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/profit-loss-legend-hover.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(ProfitLossLegendHoverContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/radar-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(RadarStableContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/radar-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(RadarHoverContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/ring-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(RingStableContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/ring-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(RingHoverContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/sankey/sankey-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "const context = useContext(SankeyContext);",
-			"type": "legacy-react-context"
 		},
 		{
 			"filePath": "components/ui-charts/sankey/sankey-link.tsx",
@@ -517,13 +363,6 @@
 			"occurrence": 1,
 			"reason": "existing baseline",
 			"text": "return useContext(WorldDataContext);",
-			"type": "legacy-react-context"
-		},
-		{
-			"filePath": "components/ui-charts/static-chart-preview-context.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "return useContext(StaticChartPreviewContext);",
 			"type": "legacy-react-context"
 		},
 		{

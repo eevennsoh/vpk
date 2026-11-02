@@ -1,190 +1,198 @@
 "use client";
 
-import { curveLinear } from "@visx/curve";
-import { LinePath } from "@visx/shape";
-import type { CurveFactory } from "d3-shape";
+import { type CurveFactory, curveLinear } from "d3-shape";
 import { useCallback, useId, useMemo } from "react";
 import { useChartStable } from "./chart-context";
 import { useChart } from "./use-chart";
 import {
-  type FadeEdges,
-  fadeGradientStops,
-  resolveFadeSides,
+	type FadeEdges,
+	fadeGradientStops,
+	resolveFadeSides,
 } from "./fade-edges";
+import { LinePath, linePathD } from "./line-path";
 import { useProfitLossLegendHover } from "./profit-loss-legend-hover";
 import { splitProfitLossSegments } from "./profit-loss-segments";
 
-export const PROFIT_LOSS_POSITIVE_COLOR = "var(--color-emerald-500)";
-export const PROFIT_LOSS_NEGATIVE_COLOR = "var(--color-red-500)";
+/** Semantic trend tokens with Tailwind fallbacks for apps without `--chart-positive` / `--chart-negative`. */
+export const PROFIT_LOSS_POSITIVE_COLOR =
+	"var(--chart-positive, var(--color-emerald-500))";
+export const PROFIT_LOSS_NEGATIVE_COLOR =
+	"var(--chart-negative, var(--color-red-500))";
 
 const LEGEND_DIM_OPACITY = 0.25;
 
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function profitLossColor(value: number) {
-  return value >= 0 ? PROFIT_LOSS_POSITIVE_COLOR : PROFIT_LOSS_NEGATIVE_COLOR;
+	return value >= 0 ? PROFIT_LOSS_POSITIVE_COLOR : PROFIT_LOSS_NEGATIVE_COLOR;
 }
 
 export const PROFIT_LOSS_TOOLTIP_LABEL_FALLBACK = "Profit/Loss";
 
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function resolveProfitLossTooltipLabel(label: string) {
-  const trimmed = label.trim();
-  return trimmed || PROFIT_LOSS_TOOLTIP_LABEL_FALLBACK;
+	const trimmed = label.trim();
+	return trimmed || PROFIT_LOSS_TOOLTIP_LABEL_FALLBACK;
 }
 
 export interface ProfitLossLineProps {
-  dataKey: string;
-  xDataKey?: string;
-  strokeWidth?: number;
-  positiveColor?: string;
-  negativeColor?: string;
-  /** Curve function. Default: curveLinear */
-  curve?: CurveFactory;
-  /**
-   * Fade the line stroke toward transparent at the chart edges.
-   * Default: false
-   */
-  fadeEdges?: FadeEdges;
+	dataKey: string;
+	xDataKey?: string;
+	strokeWidth?: number;
+	positiveColor?: string;
+	negativeColor?: string;
+	/** Curve function. Default: curveLinear */
+	curve?: CurveFactory;
+	/**
+	 * Fade the line stroke toward transparent at the chart edges.
+	 * Default: false
+	 */
+	fadeEdges?: FadeEdges;
 }
 
 function segmentLegendIndex(isPositive: boolean) {
-  return isPositive ? 0 : 1;
+	return isPositive ? 0 : 1;
 }
 
 export function ProfitLossLine({
-  dataKey,
-  xDataKey = "date",
-  strokeWidth = 2.5,
-  positiveColor = PROFIT_LOSS_POSITIVE_COLOR,
-  negativeColor = PROFIT_LOSS_NEGATIVE_COLOR,
-  curve = curveLinear,
-  fadeEdges = false,
+	dataKey,
+	xDataKey = "date",
+	strokeWidth = 2.5,
+	positiveColor = PROFIT_LOSS_POSITIVE_COLOR,
+	negativeColor = PROFIT_LOSS_NEGATIVE_COLOR,
+	curve = curveLinear,
+	fadeEdges = false,
 }: ProfitLossLineProps) {
-  const { tooltipData } = useChart();
-  const { hoveredIndex } = useProfitLossLegendHover();
-  const { renderData, xScale, yScale, xAccessor, innerWidth } =
-    useChartStable();
-  const reactId = useId();
-  const fadeSides = resolveFadeSides(fadeEdges);
-  const fadeStops = fadeSides.any ? fadeGradientStops(fadeSides) : null;
-  const positiveGradientId = `profit-loss-gradient-pos-${dataKey}-${reactId}`;
-  const negativeGradientId = `profit-loss-gradient-neg-${dataKey}-${reactId}`;
+	const { tooltipData } = useChart();
+	const { hoveredIndex } = useProfitLossLegendHover();
+	const { renderData, xScale, yScale, xAccessor, innerWidth } =
+		useChartStable();
+	const reactId = useId();
+	const fadeSides = resolveFadeSides(fadeEdges);
+	const fadeStops = fadeSides.any ? fadeGradientStops(fadeSides) : null;
+	const positiveGradientId = `profit-loss-gradient-pos-${dataKey}-${reactId}`;
+	const negativeGradientId = `profit-loss-gradient-neg-${dataKey}-${reactId}`;
 
-  const focusedLegendIndex = useMemo(() => {
-    if (hoveredIndex !== null) {
-      return hoveredIndex;
-    }
-    if (!tooltipData) {
-      return null;
-    }
-    const value = tooltipData.point[dataKey];
-    if (typeof value !== "number") {
-      return null;
-    }
-    return segmentLegendIndex(value >= 0);
-  }, [dataKey, hoveredIndex, tooltipData]);
+	const focusedLegendIndex = useMemo(() => {
+		if (hoveredIndex !== null) {
+			return hoveredIndex;
+		}
+		if (!tooltipData) {
+			return null;
+		}
+		const value = tooltipData.point[dataKey];
+		if (typeof value !== "number") {
+			return null;
+		}
+		return segmentLegendIndex(value >= 0);
+	}, [dataKey, hoveredIndex, tooltipData]);
 
-  const segments = useMemo(
-    () =>
-      splitProfitLossSegments({
-        data: renderData,
-        dataKey,
-        xDataKey,
-        xAccessor,
-      }),
-    [dataKey, renderData, xAccessor, xDataKey]
-  );
+	const segments = useMemo(
+		() =>
+			splitProfitLossSegments({
+				data: renderData,
+				dataKey,
+				xDataKey,
+				xAccessor,
+			}),
+		[dataKey, renderData, xAccessor, xDataKey]
+	);
 
-  const getX = useCallback(
-    (d: Record<string, unknown>) => xScale(xAccessor(d)) ?? 0,
-    [xAccessor, xScale]
-  );
+	const getX = useCallback(
+		(d: Record<string, unknown>) => xScale(xAccessor(d)) ?? 0,
+		[xAccessor, xScale]
+	);
 
-  const getY = useCallback(
-    (d: Record<string, unknown>) => {
-      const value = d[dataKey];
-      return typeof value === "number" ? (yScale(value) ?? 0) : 0;
-    },
-    [dataKey, yScale]
-  );
+	const getY = useCallback(
+		(d: Record<string, unknown>) => {
+			const value = d[dataKey];
+			return typeof value === "number" ? (yScale(value) ?? 0) : 0;
+		},
+		[dataKey, yScale]
+	);
 
-  return (
-    <>
-      {fadeStops ? (
-        <defs>
-          <linearGradient
-            gradientUnits="userSpaceOnUse"
-            id={positiveGradientId}
-            x1={0}
-            x2={innerWidth}
-            y1={0}
-            y2={0}
-          >
-            {fadeStops.map((stop) => (
-              <stop
-                key={stop.offset}
-                offset={stop.offset}
-                style={{
-                  stopColor: positiveColor,
-                  stopOpacity: stop.opacity,
-                }}
-              />
-            ))}
-          </linearGradient>
-          <linearGradient
-            gradientUnits="userSpaceOnUse"
-            id={negativeGradientId}
-            x1={0}
-            x2={innerWidth}
-            y1={0}
-            y2={0}
-          >
-            {fadeStops.map((stop) => (
-              <stop
-                key={stop.offset}
-                offset={stop.offset}
-                style={{
-                  stopColor: negativeColor,
-                  stopOpacity: stop.opacity,
-                }}
-              />
-            ))}
-          </linearGradient>
-        </defs>
-      ) : null}
-      {segments.map((segment) => {
-        const isDimmed =
-          focusedLegendIndex !== null &&
-          focusedLegendIndex !== segmentLegendIndex(segment.isPositive);
-        const firstPoint = segment.data[0];
-        const lastPoint = segment.data.at(-1);
-        const segmentKey = `${dataKey}-${segment.isPositive ? "pos" : "neg"}-${String(firstPoint?.[xDataKey])}-${String(lastPoint?.[xDataKey])}`;
-        const stroke = segment.isPositive ? positiveColor : negativeColor;
-        const segmentStroke = fadeStops
-          ? `url(#${segment.isPositive ? positiveGradientId : negativeGradientId})`
-          : stroke;
+	// Hover (tooltip / legend) re-renders only change opacity; reuse the paths.
+	const segmentPaths = useMemo(
+		() =>
+			segments.map((segment) =>
+				linePathD(segment.data, { curve, x: getX, y: getY })
+			),
+		[curve, getX, getY, segments]
+	);
 
-        return (
-          <g
-            key={segmentKey}
-            opacity={isDimmed ? LEGEND_DIM_OPACITY : 1}
-            style={{ transition: "opacity 0.2s ease-in-out" }}
-          >
-            <LinePath
-              curve={curve}
-              data={segment.data}
-              stroke={segmentStroke}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={strokeWidth}
-              x={getX}
-              y={getY}
-            />
-          </g>
-        );
-      })}
-    </>
-  );
+	return (
+		<>
+			{fadeStops ? (
+				<defs>
+					<linearGradient
+						gradientUnits="userSpaceOnUse"
+						id={positiveGradientId}
+						x1={0}
+						x2={innerWidth}
+						y1={0}
+						y2={0}
+					>
+						{fadeStops.map((stop) => (
+							<stop
+								key={stop.offset}
+								offset={stop.offset}
+								style={{
+									stopColor: positiveColor,
+									stopOpacity: stop.opacity,
+								}}
+							/>
+						))}
+					</linearGradient>
+					<linearGradient
+						gradientUnits="userSpaceOnUse"
+						id={negativeGradientId}
+						x1={0}
+						x2={innerWidth}
+						y1={0}
+						y2={0}
+					>
+						{fadeStops.map((stop) => (
+							<stop
+								key={stop.offset}
+								offset={stop.offset}
+								style={{
+									stopColor: negativeColor,
+									stopOpacity: stop.opacity,
+								}}
+							/>
+						))}
+					</linearGradient>
+				</defs>
+			) : null}
+			{segments.map((segment, segmentIndex) => {
+				const isDimmed =
+					focusedLegendIndex !== null &&
+					focusedLegendIndex !== segmentLegendIndex(segment.isPositive);
+				const firstPoint = segment.data[0];
+				const lastPoint = segment.data.at(-1);
+				const segmentKey = `${dataKey}-${segment.isPositive ? "pos" : "neg"}-${String(firstPoint?.[xDataKey])}-${String(lastPoint?.[xDataKey])}`;
+				const stroke = segment.isPositive ? positiveColor : negativeColor;
+				const segmentStroke = fadeStops
+					? `url(#${segment.isPositive ? positiveGradientId : negativeGradientId})`
+					: stroke;
+
+				return (
+					<g
+						key={segmentKey}
+						opacity={isDimmed ? LEGEND_DIM_OPACITY : 1}
+						style={{ transition: "opacity 0.2s ease-in-out" }}
+					>
+						<LinePath
+							d={segmentPaths[segmentIndex] ?? ""}
+							stroke={segmentStroke}
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={strokeWidth}
+						/>
+					</g>
+				);
+			})}
+		</>
+	);
 }
 
 ProfitLossLine.displayName = "ProfitLossLine";
