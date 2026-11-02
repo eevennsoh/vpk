@@ -32,13 +32,9 @@ import {
  * `@use-gesture/react` recognisers it binds.
  *
  * The zoom API below is a transcription of visx's Zoom.js: the same React
- * state (`transformMatrix`, `isDragging`, `startPoint`, `startTranslate`),
- * the same matrix ref updated inside the `setTransformMatrix` updater, and
- * the same render-time closures. That matters beyond style: on the first
- * ctrl+wheel of a trackpad pinch, use-gesture calls the wheel handler and
- * then the pinch handler in one event, and whether the pinch step sees the
- * wheel step depends on whether React computed the first update eagerly.
- * Mirroring visx's state lets React make that call exactly as it did.
+ * state (`transformMatrix`, `isDragging`, `startPoint`, `startTranslate`) and
+ * render-time closures. The matrix ref is updated synchronously before the
+ * state update so consecutive wheel and pinch steps see the latest matrix.
  *
  * The gesture layer reproduces use-gesture:
  * - Drag-pan with the primary button / one finger: pointer capture on the hit
@@ -272,11 +268,9 @@ export function useChoroplethZoomState<E extends Element>({
 
 	const setTransformMatrix = useCallback(
 		(next: TransformMatrix) => {
-			setTransformMatrixState((prev) => {
-				const updated = defaultConstrain(next, prev);
-				matrixStateRef.current = updated;
-				return updated;
-			});
+			const updated = defaultConstrain(next, matrixStateRef.current);
+			matrixStateRef.current = updated;
+			setTransformMatrixState(updated);
 		},
 		[defaultConstrain]
 	);

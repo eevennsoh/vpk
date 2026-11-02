@@ -62,14 +62,16 @@ export const ChartBrushLayout = memo(function ChartBrushLayout({
 	);
 	const [brushSelection, setBrushSelection] =
 		useState<ChartBrushSelection | null>(null);
+	const extentStart = fullExtent?.[0].getTime();
+	const extentEnd = fullExtent?.[1].getTime();
 
 	useEffect(() => {
-		if (!fullExtent) {
+		if (extentStart === undefined || extentEnd === undefined) {
 			setBrushSelection(null);
 			return;
 		}
-		setBrushSelection({ start: fullExtent[0], end: fullExtent[1] });
-	}, [fullExtent]);
+		setBrushSelection({ start: new Date(extentStart), end: new Date(extentEnd) });
+	}, [extentStart, extentEnd]);
 
 	const handleBrushSelectionChange = useCallback(
 		(selection: ChartBrushSelection | null) => {

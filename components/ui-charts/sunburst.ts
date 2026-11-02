@@ -48,8 +48,8 @@ const HOVER_GROW_RING_BUDGET = 0.28;
 /** Per-segment hover grow cap as a fraction of ring width. */
 const HOVER_GROW_SEGMENT_CAP = 0.1;
 
-function nodeId(parentId: string | null, name: string): string {
-	return parentId ? `${parentId}${ID_SEP}${name}` : name;
+function nodeId(parentId: string, index: number): string {
+	return `${parentId}${ID_SEP}${index}`;
 }
 
 export function sumValues(node: SunburstNode): number {
@@ -120,7 +120,7 @@ function layoutNode(
 	for (const [index, child] of node.children.entries()) {
 		const childValue = sumValues(child);
 		const childSpan = value > 0 ? (childValue / value) * span : 0;
-		const childId = nodeId(id, child.name);
+		const childId = nodeId(id, index);
 		const childCategory = depth === 0 ? index : categoryIndex;
 		layoutNode(
 			child,

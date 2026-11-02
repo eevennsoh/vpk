@@ -115,22 +115,26 @@ function linearRegressionSlope(points: { t: number; y: number }[]): number {
 	if (points.length < 2) {
 		return 0;
 	}
-	const n = points.length;
+	const origin = points[0].t;
 	let sumT = 0;
 	let sumY = 0;
-	let sumTY = 0;
-	let sumTT = 0;
 	for (const { t, y } of points) {
-		sumT += t;
+		sumT += t - origin;
 		sumY += y;
-		sumTY += t * y;
-		sumTT += t * t;
 	}
-	const denom = n * sumTT - sumT * sumT;
-	if (Math.abs(denom) < 1e-12) {
+	const meanT = sumT / points.length;
+	const meanY = sumY / points.length;
+	let covariance = 0;
+	let variance = 0;
+	for (const { t, y } of points) {
+		const deltaT = t - origin - meanT;
+		covariance += deltaT * (y - meanY);
+		variance += deltaT * deltaT;
+	}
+	if (variance === 0) {
 		return 0;
 	}
-	return (n * sumTY - sumT * sumY) / denom;
+	return covariance / variance;
 }
 
 function buildAutoFutureValues(options: {

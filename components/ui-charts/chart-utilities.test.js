@@ -39,6 +39,14 @@ test("projection preserves its source anchor and reaches the target on the sourc
 	assert.equal(result.at(-1).date.toISOString(), "2026-10-06T00:00:00.000Z");
 });
 
+test("automatic projections retain short-cadence trends at modern epoch timestamps", () => {
+	for (const interval of [1_000, 60_000]) {
+		const data = [100, 101, 102].map((value, index) => ({ date: new Date(Date.UTC(2026, 0, 1) + index * interval), value }));
+		const result = buildProjectionPath({ sourceData: data, seriesKey: "value", mode: "auto", autoMethod: "linearRegression", horizonPoints: 2 });
+		assert.equal(result.at(-1).value, 104);
+	}
+});
+
 test("reference ranges clip overflowing geometry without changing data coordinates", () => {
 	const options = { innerWidth: 100, innerHeight: 100, y1: -20, y2: 60, xScale: (date) => date.getTime(), yScale: (value) => 100 - value };
 	assert.deepEqual(computeReferenceAreaRect(options), { x: 0, y: 40, width: 100, height: 60 });

@@ -37,6 +37,29 @@ function range(start, end) {
 	return { start: new Date(start), end: new Date(end) };
 }
 
+test("brush layout preserves a selected range when equivalent data is replaced", async () => {
+	const view = await renderComponent({
+		source: `
+			import { ChartBrushLayout } from "@/components/ui-charts/chart-brush-layout";
+			export default function Fixture({ revision = 0, end = 100 }) {
+				const data = [{ date: new Date(0), value: revision }, { date: new Date(end), value: revision }];
+				return <ChartBrushLayout data={data} enabled height={60}>
+					{({ brushSelection, onBrushSelectionChange }) => <>
+						<button onClick={() => onBrushSelectionChange({ start: new Date(20), end: new Date(80) })}>Select range</button>
+						<output>{brushSelection ? brushSelection.start.getTime() + ":" + brushSelection.end.getTime() : "none"}</output>
+					</>}
+				</ChartBrushLayout>;
+			}`,
+	});
+	await view.click(view.getByRole("button", { name: "Select range" }));
+	assert.equal(view.container.querySelector("output").textContent, "20:80");
+	await view.rerender({ revision: 1 });
+	assert.equal(view.container.querySelector("output").textContent, "20:80");
+	await view.rerender({ revision: 1, end: 200 });
+	assert.equal(view.container.querySelector("output").textContent, "0:200");
+	await view.unmount();
+});
+
 test("both brush handles are focusable sliders and keyboard changes emit a selected date range", async () => {
 	const changes = [];
 	const view = await renderComponent({

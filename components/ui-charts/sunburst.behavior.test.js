@@ -21,6 +21,35 @@ export default function Example() {
  </SunburstChart>;
 }`;
 
+test("same-named siblings drill into their own subtrees", async () => {
+	const matchMedia = window.matchMedia;
+	window.matchMedia = (query) => ({ matches: query.includes("prefers-reduced-motion"), media: query, addEventListener() {}, removeEventListener() {} });
+	try {
+		const view = await renderComponent({
+			source: `
+			import { SunburstChart } from "@/components/ui-charts/sunburst-chart";
+			import { SunburstSegment } from "@/components/ui-charts/sunburst-segment";
+			import { buildArcs } from "@/components/ui-charts/sunburst";
+			const data = { name: "Root", children: [
+				{ name: "Team", children: [{ name: "First", value: 10 }] },
+				{ name: "Team", children: [{ name: "Second", value: 20 }] },
+			] };
+			const { arcs } = buildArcs(data);
+			export default function Example() {
+				return <SunburstChart data={data} size={320}>
+					{arcs.map((arc) => <SunburstSegment key={arc.id} index={arc.arcIndex} />)}
+				</SunburstChart>;
+			}`,
+		});
+		await view.press(view.getByRole("button", { name: "Team: 10, drill down" }), "Enter");
+		assert.ok(view.queryByRole("img", { name: "First: 10" }) !== null);
+		assert.ok(view.queryByRole("img", { name: "Second: 20" }) === null);
+		await view.unmount();
+	} finally {
+		window.matchMedia = matchMedia;
+	}
+});
+
 for (const key of ["Enter", " "]) {
 	test(`sunburst supports ${key === " " ? "Space" : key} drill-down and zoom-out under reduced motion`, async () => {
 		const matchMedia = window.matchMedia;

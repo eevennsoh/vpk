@@ -60,6 +60,30 @@ test("pointer conversion respects SVG transforms and touch coordinates", () => {
 	assert.deepEqual(localPoint(group, { changedTouches: [{ clientX: 30, clientY: 40 }] }), { x: 10, y: 10 });
 });
 
+test("choropleth batches zoom steps without replaying constraint callbacks", async () => {
+	const calls = [];
+	const constrain = (next, previous) => { calls.push(previous.scaleX); return next; };
+	const view = await renderComponent({
+		source: `
+			import { StrictMode } from "react";
+			import { useChoroplethZoomState } from "@/components/ui-charts/choropleth/use-choropleth-zoom-state";
+			function Chart({ constrain }) {
+				const zoom = useChoroplethZoomState({ width: 100, height: 100, constrain });
+				return <><button onClick={() => {
+					zoom.scale({ scaleX: 2, scaleY: 2 });
+					zoom.scale({ scaleX: 2, scaleY: 2 });
+				}}>Zoom</button><output>{zoom.transformMatrix.scaleX}</output></>;
+			}
+			export default function Fixture({ constrain }) { return <StrictMode><Chart constrain={constrain} /></StrictMode>; }
+		`,
+		props: { constrain },
+	});
+	await view.click(view.getByRole("button", { name: "Zoom" }));
+	assert.deepEqual(calls, [1, 2]);
+	assert.equal(view.container.querySelector("output").textContent, "4");
+	await view.unmount();
+});
+
 test("the migrated LineChart renders its series and updates hover context", async () => {
 	const view = await renderComponent({
 		source: `
