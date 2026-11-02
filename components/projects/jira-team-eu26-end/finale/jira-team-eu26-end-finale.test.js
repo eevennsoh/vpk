@@ -28,6 +28,8 @@ function loadFinale() {
 		format: "cjs",
 		platform: "node",
 		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		// The prints read the app theme, whose provider pulls in Atlaskit's compiled CSS: no styles are needed here.
+		loader: { ".css": "empty" },
 		write: false,
 	}).outputFiles[0].text, "jira-team-eu26-end-finale-harness.cjs");
 	return finale;
@@ -281,6 +283,7 @@ test("a mounted finale follows a changed reduced-motion preference", async (t) =
 			},
 			dispose() { document.querySelectorAll('[data-test-confetti]').forEach((canvas) => canvas.remove()); },
 		});`),
+		mock("studio/use-finale-appearance", "export const useFinaleAppearance = () => 'light';"),
 		mock("lib/finale-trigger", "export const FINALE_DONE_COLUMN_TITLE = 'Done'; export const isJiraTeamEu26FinaleReady = () => false; export const parseFinaleSearch = () => ({ autostart: true, seek: 0, hold: false });"),
 	]);
 	const view = await renderComponent({
@@ -781,10 +784,11 @@ test("the hero's shadow falls on a lens-square plane that becomes the slide as i
 });
 
 test("colour parsing reads hex and rgb() alike (the slide never eases to black)", () => {
-	const { parseRgb, FINALE_COLORS } = loadFinale();
-	assert.deepEqual(parseRgb(FINALE_COLORS.slide), [255, 255, 255]);
+	const { parseRgb, FINALE_COLORS, finaleColor } = loadFinale();
+	// The DOM's colours are CSS variables; WebGL resolves them against the light palette.
+	assert.deepEqual(parseRgb(finaleColor(FINALE_COLORS.slide, "light")), [255, 255, 255]);
 	// Neutral100: its hex digits would read as 8, 8, 8 were they parsed as decimal channels.
-	assert.deepEqual(parseRgb(FINALE_COLORS.tile), [248, 248, 248]);
+	assert.deepEqual(parseRgb(finaleColor(FINALE_COLORS.tile, "light")), [248, 248, 248]);
 	assert.deepEqual(parseRgb("rgb(248, 248, 248)"), [248, 248, 248]);
 	assert.deepEqual(parseRgb("rgba(9, 30, 66, 0.14)"), [9, 30, 66]);
 });
@@ -829,10 +833,11 @@ const FIELD_ORDER_HARNESS = `
 import { useLayoutEffect, useMemo } from "react";
 import { FinaleCardSpaceGl } from "@/components/projects/jira-team-eu26-end/finale/components/finale-card-space-gl";
 import { FinaleFrameContext, createFinaleFrameRegistry } from "@/components/projects/jira-team-eu26-end/finale/hooks/use-finale-frame";
+import { ThemeWrapper } from "@/components/utils/theme-wrapper";
 export default function Harness({ onClock, ...props }) {
 	const registry = useMemo(() => createFinaleFrameRegistry(), []);
 	useLayoutEffect(() => onClock(registry), [onClock, registry]);
-	return <FinaleFrameContext value={registry}><FinaleCardSpaceGl {...props} /></FinaleFrameContext>;
+	return <ThemeWrapper defaultTheme="light"><FinaleFrameContext value={registry}><FinaleCardSpaceGl {...props} /></FinaleFrameContext></ThemeWrapper>;
 }
 `;
 

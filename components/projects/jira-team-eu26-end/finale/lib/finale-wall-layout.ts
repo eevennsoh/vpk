@@ -155,8 +155,10 @@ export function studioWallPieces(studio: FinaleStudioConfig = DEFAULT_FINALE_STU
 export function wallGeometry(fitScale: number, viewport: { readonly width: number; readonly height: number }, studio: FinaleStudioConfig = DEFAULT_FINALE_STUDIO): WallGeometry {
 	const referenceWidth = finaleBentoLayout(viewport, fitScale).slots[0].rect.width * WALL_ENTRY_SCALE;
 	// The wall's zoom draws a stage point as the Team ’26 board did, against the screen's height.
+	// A portrait frame measures it no taller than it is wide, so its cards stay in proportion to the frame (and teammates can hold them).
+	const screen = Math.min(viewport.height, viewport.width);
 	const { zoom, density, pace, length } = studio.wall;
-	const pieceScale = viewport.height * STAGE_POINT * zoom;
+	const pieceScale = screen * STAGE_POINT * zoom;
 	// The keynote's cards were drawn beside the kit at the stage file's framing (its zoom, enlarged 1.25): they keep that ratio.
 	const designPieceScale = fitScale * stageFile.board.cells.a.zoom * 1.25;
 	const gap = STAGE_DENSITY[density].gap;
@@ -174,8 +176,8 @@ export function wallGeometry(fitScale: number, viewport: { readonly width: numbe
 		originX: 0,
 		typeScale: fitScale * WALL_SCALE * (pieceScale / designPieceScale),
 		pieceScale,
-		speed: (pace * viewport.height) / VENUE_SCREEN_M,
-		length: (length * viewport.height) / VENUE_SCREEN_M,
+		speed: (pace * screen) / VENUE_SCREEN_M,
+		length: (length * screen) / VENUE_SCREEN_M,
 		radius: 20,
 		viewport,
 	};

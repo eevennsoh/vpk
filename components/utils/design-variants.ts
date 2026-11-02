@@ -50,12 +50,14 @@ export const DESIGN_VARIANTS_QUERY_PARAM = "variants";
  * `false` is incidental — the whole map is persisted when a variant is
  * toggled — and must not block the on-default rollout.
  */
-export const DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION = 3;
+export const DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION = 4;
 
 /** Schema that first shipped Simple kanban as an on default. */
 const SIMPLE_KANBAN_ON_DEFAULT_SCHEMA_VERSION = 2;
 /** Older maps persisted Peel visual's former on default alongside unrelated choices. */
 const PEEL_OFF_DEFAULT_SCHEMA_VERSION = 3;
+/** Older maps persisted Pause mega-bento's former on default, which held the finale on the bento. */
+const PAUSE_MEGA_BENTO_OFF_DEFAULT_SCHEMA_VERSION = 4;
 
 export const DESIGN_VARIANTS = [
 	{ id: "panel", label: "Panel" },
@@ -133,7 +135,7 @@ const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	manualLink: false,
 	moveVisual: true,
 	panel: false,
-	pauseMegaBento: true,
+	pauseMegaBento: false,
 	sessionBloom: true,
 	sessionPeel: false,
 	sessionProximity: false,
@@ -307,6 +309,9 @@ export function readStoredDesignVariants(): DesignVariantState | null {
 				continue;
 			}
 			if (variant.id === "sessionPeel" && schemaVersion < PEEL_OFF_DEFAULT_SCHEMA_VERSION) {
+				continue;
+			}
+			if (variant.id === "pauseMegaBento" && schemaVersion < PAUSE_MEGA_BENTO_OFF_DEFAULT_SCHEMA_VERSION) {
 				continue;
 			}
 			next[variant.id] = record[variant.id] === true;

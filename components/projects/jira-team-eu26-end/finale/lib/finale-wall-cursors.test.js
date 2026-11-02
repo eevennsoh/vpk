@@ -156,7 +156,7 @@ const whollyIn = (box, viewport) => box.left >= 0 && box.top >= 0 && box.right <
 
 test("a teammate's cursor glides onto its card, then gradually fades during a brief return toward its entry edge", () => {
 	const m = load();
-	for (const viewport of [{ width: 1920, height: 1080 }, { width: 1440, height: 900 }]) {
+	for (const viewport of [{ width: 1920, height: 1080 }, { width: 1440, height: 900 }, { width: 1130, height: 2296 }]) {
 		const { wall, drops } = wallFor(viewport);
 		const { geometry } = wall;
 		const fit = geometry.typeScale / m.WALL_SCALE;
