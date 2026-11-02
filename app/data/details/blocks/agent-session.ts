@@ -83,6 +83,12 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 			description: "Include the session's feature branch in long-density metadata. Other densities and the default byline are unchanged.",
 		},
 		{
+			name: "localSessionAction",
+			type: '"continue" | "view"',
+			default: '"continue"',
+			description: "Owner activation for large local cards. The default opens Continue in; view invokes onView so a host can open its own session surface. Viewer and expired session restrictions still apply.",
+		},
+		{
 			name: "items",
 			type: "readonly AgentSessionItem[]",
 			default: "built-in sample data",

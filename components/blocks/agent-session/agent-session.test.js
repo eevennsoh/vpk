@@ -753,7 +753,7 @@ test("a working long row breathes with the Avatar spinner", () => {
 	);
 	assert.match(
 		LIFECYCLE_SOURCE,
-		/<Spinner[\s\S]*className=\{cn\("group-aria-pressed\/button:text-icon-selected!", compact && "size-\[16\.75px\]"\)\}[\s\S]*label=""[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="experimental-avatar"/u,
+		/<Spinner[\s\S]*className=\{cn\("group-aria-pressed\/button:text-icon-selected!", compact && "size-\[16\.75px\]"\)\}[\s\S]*label=""[\s\S]*pulse[\s\S]*size="xl"[\s\S]*variant="bloom-avatar"/u,
 	);
 	assert.match(LIFECYCLE_SOURCE, /StrokeWeightLargeIcon/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /PixelLoader/u);

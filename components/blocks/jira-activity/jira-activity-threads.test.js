@@ -2,6 +2,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const React = require("react");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 // Thread replies, reactions, and composer contracts split from jira-activity.test.js
 // so the parent file stays inside the default file-size budget.
@@ -37,33 +39,59 @@ const PROMPT_INPUT_SOURCE = fs.readFileSync(
 	"utf8",
 );
 
+const THREAD_ACTOR = { id: "parent-author", kind: "person", name: "Parent author" };
+const THREAD_ENTRY = {
+	id: "discussion",
+	kind: "comment",
+	actor: THREAD_ACTOR,
+	timestamp: "1 hour ago",
+	body: [{ type: "text", text: "Parent discussion body" }],
+	replies: [{
+		id: "nested-reply",
+		actor: { id: "reply-author", kind: "person", name: "Reply author" },
+		timestamp: "30 minutes ago",
+		body: "Nested reply body",
+	}],
+};
+
+function threadProps(overrides = {}) {
+	return { composer: null, currentUser: THREAD_ACTOR, entries: [THREAD_ENTRY], hideHeader: true, ...overrides };
+}
+
+function renderDefaultThread(overrides) {
+	return renderComponent({
+		entry: "components/blocks/jira-activity/index.tsx",
+		exportName: "JiraActivity",
+		props: threadProps(overrides),
+	});
+}
+
 test("controlled timelines can route inline agent replies to their owning session", () => {
 	assert.match(INDEX_SOURCE, /onSubmitReply\?: \(entry: JiraActivityCommentEntry, body: string\) => void/u);
 	assert.match(INDEX_SOURCE, /onSubmitReply\(entry, body\);/u);
 	assert.match(INDEX_SOURCE, /onSubmitReply=\{\(body\) => handleAddReply\(entry, body\)\}/u);
 });
 
-test("inline review comments keep one reply level and continue the parent timeline spine", () => {
-	assert.match(INDEX_SOURCE, /const isNestedComment = entry\.kind === "comment" && Boolean\(entry\.parentId\);/u);
-	assert.match(INDEX_SOURCE, /data-jira-activity-parent-id=/u);
-	assert.match(
-		INDEX_SOURCE,
-		/isNestedComment \? \(\s*<div[\s\S]*?className="flex w-8 shrink-0 justify-center"[\s\S]*?data-jira-activity-spine-continuation[\s\S]*?<div className="w-px self-stretch bg-border" \/>/u,
-	);
-	assert.match(INDEX_SOURCE, /isNestedComment \? "pt-3 pl-6" : null/u);
-	assert.match(COMMENT_SOURCE, /const nested = Boolean\(entry\.parentId\);/u);
-	assert.match(
-		COMMENT_SOURCE,
-		/headerAvatar=\{nested \? <ActivityActorAvatar actor=\{entry\.actor\} \/> : undefined\}/u,
-	);
-	assert.match(COMMENT_SOURCE, /hideLeadAvatar=\{!nested\}/u);
-	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*indented=\{!nested\}/u);
-	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*indented=\{!nested\}/u);
+test("inline review comments keep one reply level and continue the parent timeline spine", async () => {
+	const view = await renderDefaultThread({
+		entries: [
+			{ ...THREAD_ENTRY, replies: [] },
+			{ ...THREAD_ENTRY, id: "review", parentId: THREAD_ENTRY.id, actor: { ...THREAD_ACTOR, id: "reviewer", name: "Review author" } },
+		],
+	});
+	const parent = document.querySelector('[data-jira-activity-entry-id="discussion"]');
+	const review = document.querySelector('[data-jira-activity-entry-id="review"]');
+	assert.equal(review.getAttribute("data-jira-activity-parent-id"), "discussion");
+	assert.equal(parent.querySelector("[data-jira-activity-timeline-stem]") !== null, true);
+	assert.equal(review.querySelector("[data-jira-activity-spine-continuation]") !== null, true);
+	assert.equal(view.queryByRole("group", { name: "Replies" }), null, "parentId threads start collapsed");
+	await view.click(view.getByRole("button", { name: "Show all replies" }));
+	assert.equal(view.queryByText("Nested reply body") !== null, true);
+	assert.equal(view.getByRole("group", { name: "Replies" }).firstElementChild.classList.contains("pl-6"), false);
 });
 
-test("plain comments share the stacked identity header and the flush composer geometry", () => {
+test("plain comments share the stacked identity header and the flush composer geometry", async () => {
 	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \}/u);
-	assert.match(COMMENT_SOURCE, /headerLayout="stacked"/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /entry\.actor\.kind === "person" \? "stacked" : "inline"/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /const headerTag = resolved/u);
 	assert.match(COMMENT_SOURCE, /tag=\{entry\.tag\}/u);
@@ -92,12 +120,13 @@ test("plain comments share the stacked identity header and the flush composer ge
 	// Flush composer chrome stays on the composer's `flush` surface; the
 	// callsite only mounts the composer (no local chrome classNames).
 	assert.doesNotMatch(COMMENT_SOURCE, /border-0 rounded-none bg-transparent|FLUSH_COMPOSER_CLASSNAME/u);
-	// Pull across the timeline node (w-8) + li gap-2 so the prompt shares the
-	// parent avatar edge instead of the nested pl-6 reply column.
-	assert.match(
-		COMMENT_SOURCE,
-		/<div\s+className="-ml-10 w-\[calc\(100%\+2\.5rem\)\]"\s+id=\{composerId\}\s*>/u,
-	);
+	const view = await renderDefaultThread();
+	await view.click(view.getAllByRole("button", { name: "Reply" })[0]);
+	const editor = view.getByRole("textbox", { name: "Leave a reply..." });
+	const shell = editor.closest("[data-prompt-input-root]");
+	assert.equal(shell.classList.contains("shadow-none"), true);
+	assert.equal(shell.classList.contains("p-2"), true);
+	assert.equal(view.getByRole("button", { name: "Add" }).classList.contains("size-6"), true);
 	assert.doesNotMatch(COMMENT_SOURCE, /overflow-visible px-1\.5 pt-1 pb-3/u);
 });
 
@@ -114,18 +143,33 @@ test("only the latest third-level reply owns Reopen", () => {
 	assert.doesNotMatch(COMMENT_SOURCE, /<ReopenThreadAction[^>]*indented=/u);
 });
 
-test("the activity card hosts the action row in the body grid, not the footer", () => {
-	// `action` is a header slot, so the reply/reaction row gets its own slot that
-	// lands last in the body grid and inherits the card's gap for both geometries.
-	assert.match(CARD_SOURCE, /footerActions\?: ReactNode;/u);
-	assert.match(CARD_SOURCE, /^\tfooterActions,$/mu);
-	assert.match(CARD_SOURCE, /\{detailsContent\}[\s\S]*\{footerActions\}[\s\S]*\{showFooter \? \(/u);
-	// Nothing renders it inside the footer branch.
-	assert.doesNotMatch(CARD_SOURCE, /\{showFooter \? \([\s\S]*\{footerActions\}/u);
-	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-3" : "gap-2"/u);
+test("the activity card hosts the action row in the body grid, not the footer", async () => {
+	const props = {
+		agentName: "Card author",
+		timestamp: "Today",
+		children: React.createElement("p", null, "Card body"),
+		details: { label: "More detail", children: React.createElement("p", null, "Expanded detail") },
+		footerActions: React.createElement("button", null, "Card actions"),
+		replies: React.createElement("p", null, "Thread reply"),
+		replyComposer: React.createElement("textarea", { "aria-label": "Reply draft" }),
+	};
+	const view = await renderComponent({ entry: "components/blocks/jira-activity/jira-activity-card.tsx", exportName: "JiraActivityCard", props });
+	for (const headerLayout of ["inline", "stacked"]) {
+		await view.rerender({ ...props, headerLayout });
+		if (view.queryByText("Expanded detail") === null) await view.click(view.getByRole("button", { name: "More detail" }));
+		const bodyGrid = view.getByText("Card body").parentElement.parentElement;
+		const actions = view.getByRole("button", { name: "Card actions" });
+		const reply = view.getByText("Thread reply");
+		assert.equal(actions.parentElement === bodyGrid, true);
+		assert.equal(reply.parentElement === bodyGrid, false);
+		assert.equal(Boolean(view.getByText("Expanded detail").compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+		assert.equal(Boolean(actions.compareDocumentPosition(reply) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+		assert.equal(Boolean(reply.compareDocumentPosition(view.getByRole("textbox", { name: "Reply draft" })) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+		assert.equal(bodyGrid.classList.contains(headerLayout === "stacked" ? "gap-3" : "gap-2"), true);
+		assert.equal(reply.parentElement.classList.contains("gap-3"), true);
+		assert.equal(reply.parentElement.classList.contains("overflow-visible"), false);
+	}
 	assert.doesNotMatch(CARD_SOURCE, /\bp-3\b/u);
-	assert.match(CARD_SOURCE, /className="grid gap-3"/u);
-	assert.doesNotMatch(CARD_SOURCE, /className="grid gap-3 overflow-visible"/u);
 });
 
 test("parent comments keep Reply and reactions while resolved threads label the latest reply", () => {
@@ -179,11 +223,9 @@ test("parent comments keep Reply and reactions while resolved threads label the 
 
 test("active thread replies have actions while only the latest resolved reply can reopen", () => {
 	assert.match(COMMENT_SOURCE, /function ThreadReplyCard/u);
-	assert.match(COMMENT_SOURCE, /<div className=\{cn\("pt-3", indented \? "pl-6" : null\)\}>\s*<JiraActivityCard[\s\S]*className="rounded-none"/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /className="rounded-none border-0"/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-6">/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-3">/u);
-	assert.match(COMMENT_SOURCE, /headerLayout="stacked"/u);
 	assert.match(COMMENT_SOURCE, /activityGroup="activity-reply"/u);
 	assert.match(COMMENT_SOURCE, /item=\{reply\.sessionItem\}/u);
 	assert.match(COMMENT_SOURCE, /onView=\{onViewSession\}/u);
@@ -196,34 +238,34 @@ test("active thread replies have actions while only the latest resolved reply ca
 	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*allowReply=\{allowReply\}/u);
 	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*resolved=\{resolved\}/u);
 	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*showResolvedStatus=\{resolved && index === replies\.length - 1\}/u);
-	assert.match(COMMENT_SOURCE, /replies=\{[\s\S]*aria-label="Replies"[\s\S]*className=\{cn\("grid gap-2", repliesExpanded \? null : "hidden"\)\}[\s\S]*role="group"[\s\S]*replies\.map\(\(reply, index\) => \([\s\S]*<ThreadReplyCard/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /divide-y divide-border/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /before:-top-3|before:left-4|before:w-px|ml-8/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /import \{ Comment \} from "@\/components\/ui\/comment";/u);
 });
 
-test("a thread owns one bottom reply composer and targets the clicked author", () => {
-	assert.equal(
-		(COMMENT_SOURCE.match(/<JiraActivityComposer/gu) ?? []).length,
-		1,
-		"the parent and nested replies must not mount independent composers",
-	);
-	assert.match(
-		COMMENT_SOURCE,
-		/function toggleReply\(key: string, actor: JiraActivityActor, button: HTMLButtonElement \| null\)[\s\S]*setReplyTarget\(\{ key, actor \}\);\s*setReplyDraft\(""\);/u,
-	);
-	assert.match(COMMENT_SOURCE, /onReply=\{\(button\) => toggleReply\(reply\.id, reply\.actor, button\)\}/u);
-	assert.match(
-		COMMENT_SOURCE,
-		/composerVisible \? \([\s\S]*?<div\s+className="-ml-10 w-\[calc\(100%\+2\.5rem\)\]"\s+id=\{composerId\}\s*>/u,
-	);
-	assert.doesNotMatch(
-		COMMENT_SOURCE,
-		/className=\{hasReplies && repliesExpanded \? "border-t border-border" : undefined\}/u,
-	);
-	assert.match(COMMENT_SOURCE, /key=\{replyTarget\?\.key \?\? "thread-reply"\}/u);
-	assert.match(COMMENT_SOURCE, /onValueChange=\{setReplyDraft\}/u);
-	assert.match(COMMENT_SOURCE, /value=\{replyDraft\}/u);
+test("a thread owns one bottom reply composer and targets the clicked author", async () => {
+	const view = await renderDefaultThread();
+	const [parentReply, nestedReply] = view.getAllByRole("button", { name: "Reply" });
+	await view.click(nestedReply);
+	assert.equal(view.getAllByRole("textbox").length, 1);
+	let editor = view.getByRole("textbox", { name: "Leave a reply..." });
+	assert.equal(editor.textContent.trim(), "Reply author");
+	assert.equal(editor.querySelector('[data-mention-category="human"]') !== null, true);
+	assert.equal(nestedReply.getAttribute("aria-expanded"), "true");
+	assert.equal(parentReply.hasAttribute("aria-controls"), false);
+	const composer = document.getElementById(nestedReply.getAttribute("aria-controls"));
+	assert.equal(composer.contains(editor), true);
+	assert.equal(Boolean(view.getByRole("group", { name: "Replies" }).compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	await view.click(parentReply);
+	assert.equal(view.getAllByRole("textbox").length, 1);
+	editor = view.getByRole("textbox", { name: "Leave a reply..." });
+	assert.equal(editor.textContent.trim(), "Parent author");
+	assert.equal(parentReply.getAttribute("aria-expanded"), "true");
+	assert.equal(nestedReply.getAttribute("aria-expanded"), "false");
+	assert.equal(nestedReply.hasAttribute("aria-controls"), false);
+	await view.click(parentReply);
+	assert.equal(view.queryByRole("textbox"), null);
+	assert.equal(view.isFocused(parentReply), true);
 });
 
 test("comments with nested replies expose one shared header control to collapse the thread", () => {
@@ -250,11 +292,6 @@ test("comments with nested replies expose one shared header control to collapse 
 	);
 	assert.doesNotMatch(CARD_SOURCE, /"hidden shrink-0 items-center gap-1/u);
 	assert.match(COMMENT_SOURCE, /action=\{headerAction\}/u);
-	assert.match(COMMENT_SOURCE, /hidden=\{!repliesExpanded\}[\s\S]*id=\{repliesId\}/u);
-	assert.match(
-		COMMENT_SOURCE,
-		/className=\{cn\("grid gap-2", repliesExpanded \? null : "hidden"\)\}/u,
-	);
 	assert.doesNotMatch(COMMENT_SOURCE, /repliesHidden=/u);
 	assert.doesNotMatch(CARD_SOURCE, /repliesHidden/u);
 });
@@ -301,38 +338,57 @@ test("collapsed threads show a Slack-like participant, count, and timestamp summ
 	);
 });
 
-test("Reply discloses the single thread composer, defaulting to reply-and-reactions", () => {
-	assert.match(
-		INDEX_SOURCE,
-		/commentActions\?: "none" \| "reactions" \| "reply-and-reactions";/u,
-	);
-	assert.match(INDEX_SOURCE, /commentActions = "reply-and-reactions",/u);
-	assert.match(INDEX_SOURCE, /commentActions=\{commentActions\}/u);
-	// The comment stands alone with the same default.
-	assert.match(COMMENT_SOURCE, /commentActions = "reply-and-reactions",/u);
-	assert.match(COMMENT_SOURCE, /const allowReply = entry\.allowReply \?\? true;/u);
-	assert.match(
-		COMMENT_SOURCE,
-		/const collapsible = commentActions === "reply-and-reactions";/u,
-	);
-	assert.match(
-		COMMENT_SOURCE,
-		/const composerVisible = allowReply && \(!collapsible \|\| replyTarget !== null\);/u,
-	);
-	assert.match(
-		COMMENT_SOURCE,
-		/function handleResolveToggle\(\) \{\s*if \(!resolved\) \{\s*setReplyTarget\(null\);\s*setReplyDraft\(""\);\s*\}\s*onResolve\?\.\(\);\s*\}/u,
-	);
-	// The composer only mounts when visible, and aria-controls never dangles.
-	assert.match(
-		COMMENT_SOURCE,
-		/composerVisible \? \([\s\S]*?<div\s+className="-ml-10 w-\[calc\(100%\+2\.5rem\)\]"\s+id=\{composerId\}\s*>/u,
-	);
-	assert.match(COMMENT_SOURCE, /replyComposerId=\{replyTarget\?\.key === entry\.id \? composerId : undefined\}/u);
-	assert.match(COMMENT_SOURCE, /const composerId = useId\(\);/u);
-	// "none" drops the row entirely; Reply is withheld when the entry opted out.
-	assert.match(COMMENT_SOURCE, /commentActions === "none" \? undefined : \(/u);
-	assert.match(COMMENT_SOURCE, /\? \(\) => toggleReply\(entry\.id, entry\.actor, replyButtonRef\.current\)/u);
+test("Reply discloses the single thread composer, defaulting to reply-and-reactions", async () => {
+	const view = await renderDefaultThread();
+	const reply = view.getAllByRole("button", { name: "Reply" })[0];
+	assert.equal(view.queryByRole("textbox"), null);
+	assert.equal(reply.getAttribute("aria-expanded"), "false");
+	assert.equal(reply.hasAttribute("aria-controls"), false);
+	await view.click(reply);
+	const composerId = reply.getAttribute("aria-controls");
+	assert.equal(reply.getAttribute("aria-expanded"), "true");
+	assert.equal(document.getElementById(composerId).contains(view.getByRole("textbox")), true);
+	await view.click(reply);
+	assert.equal(view.queryByRole("textbox"), null);
+	assert.equal(document.getElementById(composerId) === null, true);
+	assert.equal(reply.hasAttribute("aria-controls"), false);
+	assert.equal(view.isFocused(reply), true);
+	for (const commentActions of ["reply-and-reactions", "reactions", "none"]) {
+		await view.rerender(threadProps({ commentActions, entries: [{ ...THREAD_ENTRY, allowReply: false }] }));
+		assert.equal(view.queryByRole("button", { name: "Reply" }), null);
+		assert.equal(view.queryByRole("textbox"), null);
+		assert.equal(view.container.querySelectorAll('[role="group"][aria-label="Comment actions"]').length, commentActions === "none" ? 0 : 2);
+	}
+	for (const commentActions of ["reactions", "none"]) {
+		await view.rerender(threadProps({ commentActions }));
+		assert.equal(view.queryByRole("button", { name: "Reply" }), null);
+		assert.equal(view.getAllByRole("textbox").length, 1, "non-disclosure modes retain the always-visible reply composer");
+		assert.equal(view.container.querySelectorAll('[role="group"][aria-label="Comment actions"]').length, commentActions === "none" ? 0 : 2);
+	}
+	await view.unmount();
+	const standalone = await renderComponent({
+		entry: "components/blocks/jira-activity/jira-activity-comment.tsx",
+		exportName: "JiraActivityComment",
+		props: { entry: THREAD_ENTRY, currentUser: THREAD_ACTOR, actorsById: new Map(), onSubmitReply() {}, onToggleReaction() {} },
+	});
+	assert.equal(standalone.queryByRole("textbox"), null, "standalone comments share the disclosure default");
+	await standalone.click(standalone.getAllByRole("button", { name: "Reply" })[0]);
+	assert.equal(standalone.getAllByRole("textbox").length, 1);
+});
+
+test("resolving a thread closes its composer and removes the disclosure relationship", async () => {
+	const view = await renderDefaultThread({ entries: undefined, defaultEntries: [{ ...THREAD_ENTRY, allowResolve: true }] });
+	const reply = view.getAllByRole("button", { name: "Reply" })[0];
+	await view.click(reply);
+	const composerId = reply.getAttribute("aria-controls");
+	assert.equal(document.getElementById(composerId).contains(view.getByRole("textbox")), true);
+	await view.click(view.getByRole("button", { name: "Resolve" }));
+	assert.equal(view.queryByRole("textbox"), null);
+	assert.equal(document.getElementById(composerId) === null, true);
+	assert.equal(reply.hasAttribute("aria-controls"), false);
+	assert.equal(reply.getAttribute("aria-expanded"), "false");
+	assert.equal(view.isFocused(reply), true);
+	assert.equal(view.queryByRole("button", { name: "Reopen" }) !== null, true);
 });
 
 test("toggling a reaction routes through the reducer with the current user's id", () => {
@@ -528,7 +584,6 @@ test("disclosing Reply prefills a rich mention token for the target actor", () =
 	assert.match(COMMENT_SOURCE, /function getReplyMention\(actor: JiraActivityActor\): RichTextMentionItem/u);
 	assert.match(COMMENT_SOURCE, /category === "human"|actor\.kind === "person"/u);
 	assert.match(COMMENT_SOURCE, /prefillMentionRequest=\{/u);
-	assert.match(COMMENT_SOURCE, /replyMention \? \{ mention: replyMention, requestKey: 1 \}/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /setReplyDraft\(`@\$\{actor\.name\} `\)/u);
 	assert.match(COMMENT_SOURCE, /setReplyTarget\(\{ key, actor \}\);\s*setReplyDraft\(""\);/u);
 	assert.match(PROMPT_INPUT_SOURCE, /prefillValueSyncGuardKeyRef\.current = requestKey;/u);
@@ -541,4 +596,174 @@ test("disclosing Reply prefills a rich mention token for the target actor", () =
 		PROMPT_INPUT_SOURCE,
 		/prefillMentionRequest\?\.requestKey === prefillValueSyncGuardKeyRef\.current[\s\S]*currentText !== resolvedValue[\s\S]*return;/u,
 	);
+});
+
+function renderReplyPreview(replyPreviewCount) {
+	const actor = { id: "viewer", kind: "person", name: "Annie Cook" };
+	return renderComponent({
+		entry: "components/blocks/jira-activity/index.tsx",
+		exportName: "JiraActivity",
+		props: {
+			composer: null,
+			currentUser: actor,
+			hideHeader: true,
+			entries: [{
+				id: "discussion",
+				kind: "comment",
+				actor,
+				timestamp: "1 hour ago",
+				body: [{ type: "text", text: "A thread with three replies" }],
+				defaultRepliesExpanded: false,
+				replyPreviewCount,
+				replies: [
+					{ id: "earliest", actor, timestamp: "30 minutes ago", body: "Earliest reply" },
+					{ id: "middle", actor, timestamp: "20 minutes ago", body: "Middle reply" },
+					{ id: "latest", actor, timestamp: "10 minutes ago", body: "Latest reply" },
+				],
+			}],
+			renderReplyBody(reply) {
+				return React.createElement("a", { href: `#${reply.id}` }, reply.body);
+			},
+		},
+	});
+}
+
+test("reply previews keep the latest replies reachable and toggle earlier replies before the group", async () => {
+	const view = await renderReplyPreview(1);
+	const replies = view.getByRole("group", { name: "Replies" });
+	const toggle = view.getByRole("button", { name: "Show more replies" });
+	assert.equal(toggle.getAttribute("aria-controls"), replies.id);
+	assert.equal(toggle.getAttribute("aria-expanded"), "false");
+	assert.equal(Boolean(toggle.compareDocumentPosition(replies) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	assert.equal(replies.hidden, false);
+	assert.equal(view.queryByRole("button", { name: "Show all replies" }), null);
+	assert.equal(view.queryByRole("link", { name: "Earliest reply" }), null);
+	assert.equal(view.queryByRole("link", { name: "Middle reply" }), null);
+	assert.equal(view.queryByRole("link", { name: "Latest reply" }) !== null, true);
+	assert.equal(view.tabOrder().includes("Earliest reply"), false);
+	assert.equal(view.tabOrder().includes("Latest reply"), true);
+	await view.click(toggle);
+	assert.equal(view.getByRole("button", { name: "Hide earlier replies" }).getAttribute("aria-expanded"), "true");
+	assert.equal(view.queryByRole("link", { name: "Earliest reply" }) !== null, true);
+	assert.equal(view.queryByRole("link", { name: "Middle reply" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
+	assert.equal(view.queryByRole("link", { name: "Earliest reply" }), null);
+	assert.equal(view.tabOrder().includes("Middle reply"), false);
+	assert.equal(view.queryByRole("link", { name: "Latest reply" }) !== null, true);
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Show more replies" })), true);
+});
+
+test("reply preview counts choose the last N replies and collapse-all stays the default", async () => {
+	const preview = await renderReplyPreview(2);
+	assert.equal(preview.queryByRole("link", { name: "Earliest reply" }), null);
+	assert.equal(preview.queryByRole("link", { name: "Middle reply" }) !== null, true);
+	assert.equal(preview.queryByRole("link", { name: "Latest reply" }) !== null, true);
+	await preview.unmount();
+	const view = await renderReplyPreview(undefined);
+	assert.equal(view.queryByRole("button", { name: "Show more replies" }), null);
+	assert.equal(view.queryByRole("group", { name: "Replies" }), null);
+	assert.equal(view.tabOrder().includes("Latest reply"), false);
+	await view.click(view.getByRole("button", { name: "Show all replies" }));
+	assert.equal(view.queryByRole("link", { name: "Earliest reply" }) !== null, true);
+	assert.equal(view.queryByRole("link", { name: "Latest reply" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Hide all replies" }));
+	assert.equal(view.queryByRole("group", { name: "Replies" }), null);
+	assert.equal(view.tabOrder().includes("Earliest reply"), false);
+});
+
+function renderControlledReplyDraft(initialDraft) {
+	return renderComponent({
+		source: `import React, { useState } from "react";
+			import { JiraActivity } from "@/components/blocks/jira-activity";
+			const actor = { id: "annie", kind: "person", name: "Annie Cook" };
+			const entries = [{ id: "discussion", kind: "comment", actor, timestamp: "1 hour ago", body: [{ type: "text", text: "Discuss onboarding recovery" }] }];
+			export default function ControlledReplyDraft({ initialDraft }) {
+				const [drafts, setDrafts] = useState({ discussion: initialDraft });
+				return <JiraActivity composer={null} currentUser={actor} entries={entries} hideHeader replyDrafts={drafts} onReplyDraftChange={(entryId, value) => setDrafts((current) => ({ ...current, [entryId]: value }))} />;
+			}`,
+		props: { initialDraft },
+	});
+}
+
+test("opening a controlled reply preserves a saved draft and prefills a mention only when empty", async () => {
+	const saved = await renderControlledReplyDraft("Keep the recovery copy and the existing links");
+	await saved.click(saved.getByRole("button", { name: "Reply" }));
+	const savedEditor = saved.getByRole("textbox", { name: "Leave a reply..." });
+	assert.equal(savedEditor.textContent, "Keep the recovery copy and the existing links");
+	assert.equal(savedEditor.querySelector("[data-mention-category]") !== null, false);
+	await saved.click(saved.getByRole("button", { name: "Reply" }));
+	await saved.click(saved.getByRole("button", { name: "Reply" }));
+	assert.equal(saved.getByRole("textbox", { name: "Leave a reply..." }).textContent, "Keep the recovery copy and the existing links");
+	await saved.unmount();
+	const empty = await renderControlledReplyDraft("");
+	await empty.click(empty.getByRole("button", { name: "Reply" }));
+	const emptyEditor = empty.getByRole("textbox", { name: "Leave a reply..." });
+	assert.equal(emptyEditor.textContent.trim(), "Annie Cook");
+	assert.equal(emptyEditor.querySelector('[data-mention-category="human"]') !== null, true);
+});
+
+function renderThreadConnectors(connectorStyle) {
+	const actor = { id: "thread-author", name: "Annie Cook", kind: "person" };
+	return renderComponent({
+		entry: "components/blocks/jira-activity/index.tsx",
+		exportName: "JiraActivity",
+		props: {
+			connectorStyle,
+			composer: null,
+			hideHeader: true,
+			currentUser: actor,
+			entries: [
+				{ id: "thread", kind: "comment", actor, timestamp: "1h", body: [{ type: "text", text: "Threaded discussion" }], defaultRepliesExpanded: false, replyPreviewCount: 1, replies: [
+					{ id: "first", actor, timestamp: "30m", body: "Earlier reply" },
+					{ id: "last", actor, timestamp: "20m", body: "Latest reply" },
+				] },
+				{ id: "standalone", kind: "comment", actor, timestamp: "10m", body: [{ type: "text", text: "Unrelated standalone comment" }] },
+			],
+		},
+	});
+}
+
+test("thread connectors branch only inside discussions and stop at the last visible reply", async () => {
+	const view = await renderThreadConnectors("thread");
+	const thread = document.querySelector('[data-jira-activity-entry-id="thread"]');
+	const standalone = document.querySelector('[data-jira-activity-entry-id="standalone"]');
+	const visibleBranches = () => [...thread.querySelectorAll("[data-jira-activity-thread-branch]")].filter((node) => !node.closest("[hidden]"));
+	assert.equal(thread.querySelector("[data-jira-activity-thread-stem]") !== null, true);
+	assert.equal(standalone.querySelector("[data-jira-activity-thread-stem]") === null, true);
+	assert.equal(document.querySelector("[data-jira-activity-timeline-stem]") === null, true);
+	assert.equal(visibleBranches().length, 2, "collapsed toggle and latest reply each get one branch");
+	assert.equal(visibleBranches().at(-1).parentElement.querySelector("[data-jira-activity-thread-continuation]") === null, true);
+	assert.equal(visibleBranches().every((branch) => branch.getAttribute("aria-hidden") === "true"), true);
+	await view.click(view.getByRole("button", { name: "Show more replies" }));
+	assert.equal(visibleBranches().length, 3);
+	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
+	assert.equal(visibleBranches().length, 2);
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Show more replies" })), true);
+	await view.click(view.getAllByRole("button", { name: "Reply" }).at(-1));
+	assert.equal(standalone.querySelector("[data-jira-activity-thread-stem]") !== null, true);
+	assert.equal(standalone.querySelectorAll("[data-jira-activity-thread-branch]").length, 1, "reply composer joins its parent thread");
+});
+
+test("the default activity connector remains a continuous timeline", async () => {
+	await renderThreadConnectors(undefined);
+	assert.equal(document.querySelectorAll("[data-jira-activity-timeline-stem]").length, 1);
+	assert.equal(document.querySelector("[data-jira-activity-thread-branch]") === null, true);
+	assert.equal(document.querySelector("[data-jira-activity-thread-stem]") === null, true);
+});
+
+
+test("comment and reply headers share the selected inline layout while retaining stacked defaults", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { JiraActivity } from "@/components/blocks/jira-activity";
+			const actor = { id: "author", name: "Parent author", kind: "person" };
+			const entries = [{ id: "thread", kind: "comment", actor, timestamp: "1h", body: [{ type: "text", text: "Discussion" }], replies: [{ id: "reply", actor: { ...actor, id: "reply-author", name: "Reply author" }, timestamp: "30m", body: "Reply body" }] }];
+			export default function HeaderTest(props) { return <JiraActivity entries={entries} composer={null} hideHeader {...props} />; }`,
+	});
+	const sameLineOwner = (author, timestamp) => view.getByText(author).parentElement === view.getByText(timestamp).parentElement;
+	assert.equal(sameLineOwner("Parent author", "1h"), false);
+	assert.equal(sameLineOwner("Reply author", "30m"), false);
+	await view.rerender({ commentHeaderLayout: "inline" });
+	assert.equal(sameLineOwner("Parent author", "1h"), true);
+	assert.equal(sameLineOwner("Reply author", "30m"), true);
 });

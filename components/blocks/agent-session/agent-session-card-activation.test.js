@@ -515,3 +515,34 @@ test("removing the active card restores hover previews for the remaining session
 		assert.equal(document.querySelector("[data-preview-suspended]").getAttribute("data-preview-suspended"), "false");
 	}, AgentSession);
 });
+
+test("the session list preserves local continuation by default and lets hosts opt into View", async () => {
+	const { AgentSession } = await loadHarness();
+	for (const localSessionAction of [undefined, "continue", "view"]) {
+		const viewed = [];
+		await withCard({
+			items: [LOCAL_ITEM], density: "long", localSessionAction,
+			onView: (item) => viewed.push(item.id),
+		}, async ({ document, click }) => {
+			await click(document.querySelector("[data-body-trigger]"));
+			assert.deepEqual(viewed, localSessionAction === "view" ? [LOCAL_ITEM.id] : []);
+			assert.equal(document.querySelector('[data-menu="continue"]') !== null, localSessionAction !== "view");
+		}, AgentSession);
+	}
+});
+
+test("local View activation applies to a draggable owner card and preserves viewer restrictions", async () => {
+	let viewed = 0;
+	await withCard({ item: LOCAL_ITEM, localSessionAction: "view", sessionDrag: {}, onView: () => { viewed++; } }, async ({ document, click }) => {
+		await click(document.querySelector("article"));
+		assert.equal(viewed, 1);
+		assert.equal(document.querySelector('[data-menu="continue"]') === null, true);
+		assert.equal(document.querySelector("article").hasAttribute("aria-haspopup"), false);
+	});
+	for (const role of ["viewer", "expired"]) {
+		await withCard({ item: { ...LOCAL_ITEM, role }, localSessionAction: "view", onView: () => { viewed++; } }, async ({ document }) => {
+			assert.equal(document.querySelector("[data-body-trigger]") === null, true);
+		});
+	}
+	assert.equal(viewed, 1);
+});

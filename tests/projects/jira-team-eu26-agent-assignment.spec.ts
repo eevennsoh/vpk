@@ -137,7 +137,7 @@ test("List session identities align with Add agent and working uses the Avatar s
 	const reducedSpinner = page.locator('[data-issue-key="PAY-105"] td').nth(4).locator('[data-slot="spinner"]');
 	await expect(reducedSpinner).toHaveAttribute("data-iconic-orb", "");
 	await expect(reducedSpinner).toHaveAttribute("data-iconic-orb-avatar", "");
-	await expect(reducedSpinner.locator("g")).not.toHaveClass(/spinner-experimental-orb-rotator-motion/u);
+	await expect(reducedSpinner.locator("g")).not.toHaveClass(/spinner-bloom-orb-rotator-motion/u);
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
@@ -150,7 +150,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(spinner.locator("circle")).toHaveCount(6);
 		await expect(spinner.locator("circle").first()).toHaveCSS("animation-name", reducedMotion === "reduce"
 			? "none"
-			: "spinner-experimental-avatar-morph, spinner-experimental-avatar-opacity");
+			: "spinner-bloom-avatar-morph, spinner-bloom-avatar-opacity");
 	});
 }
 

@@ -104,6 +104,7 @@ export function AgentSession({
 	highlightedItemId,
 	issueKey,
 	isResumable,
+	localSessionAction = "continue",
 	newItemIds,
 	onContinueInAgent,
 	onCopyResume,
@@ -293,6 +294,7 @@ export function AgentSession({
 								isSelected={item.id === selectedItemId}
 								item={item}
 								key={item.id}
+								localSessionAction={localSessionAction}
 								onContinueInAgent={onContinueInAgent}
 								onCopyResume={onCopyResume}
 								onCreateWorkItemFromDraft={onCreateWorkItemFromDraft}

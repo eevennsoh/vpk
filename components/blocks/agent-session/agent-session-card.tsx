@@ -56,6 +56,7 @@ import { isTransferSourceFaded } from "./session-cohort";
 import {
 	type AgentSessionDensity,
 	type AgentSessionItem,
+	type AgentSessionProps,
 	type AgentSessionSelectionGesture,
 	getAgentSessionRole,
 	type AgentSessionTriageRow,
@@ -258,6 +259,7 @@ export function AgentSessionCard({
 	isResumable,
 	isSelected = false,
 	item,
+	localSessionAction = "continue",
 	moreMenuPortalled,
 	moreMenuPositionerClassName,
 	onArrivalComplete,
@@ -325,6 +327,7 @@ export function AgentSessionCard({
 	/** Single-select highlight owned by the list, not this card. */
 	isSelected?: boolean;
 	item: AgentSessionItem;
+	localSessionAction?: AgentSessionProps["localSessionAction"];
 	onArrivalComplete?: () => void;
 	onDepartureComplete?: () => void;
 	onStateChangeComplete?: () => void;
@@ -474,9 +477,9 @@ export function AgentSessionCard({
 	// path so selection is not avatar-only. Hover actions stay buttons so they
 	// can stop the article from changing the selection.
 	const role = getAgentSessionRole(item);
-	const canOpenLocalMenu = role === "owner" && !isCloudSession && (canResume || onContinueInAgent !== undefined);
+	const canOpenLocalMenu = role === "owner" && !isCloudSession && localSessionAction === "continue" && (canResume || onContinueInAgent !== undefined);
 	const viewSession: typeof onView = role === "owner"
-		? isCloudSession ? onView : canOpenLocalMenu ? menu.toggleContinue : undefined
+		? isCloudSession || localSessionAction === "view" ? onView : canOpenLocalMenu ? menu.toggleContinue : undefined
 		: undefined;
 	function renderLocalContinuation(trigger?: ReactElement) {
 		return (

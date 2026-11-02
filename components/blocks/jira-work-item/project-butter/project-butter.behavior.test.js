@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { act } = require("react");
 
 const { renderComponent } = require("../../../../scripts/lib/render-component.js");
 const { JIRA_WORK_ITEM_DETAIL } = require("../../../../app/data/details/blocks/jira-work-item.ts");
@@ -17,7 +18,7 @@ test("one catalog demo opens each presentation directly and keeps its Empty sett
 				}`,
 		},
 	});
-	assert.equal(view.queryByRole("button", { name: "Open Project butter" }), null);
+	assert.equal(view.queryByRole("button", { name: "Open Project butter" }) === null, true);
 	for (const empty of [false, true]) {
 		if (empty) await view.click(view.getByRole("switch", { name: "Empty" }));
 		assert.equal(view.queryByRole("dialog"), null, "the Empty toggle must not launch a work item");
@@ -40,8 +41,8 @@ async function commentEditor(view) {
 }
 
 async function openSession(view, name) {
-	if (!view.queryByRole("button", { name: `Open ${name} session` })) await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
-	await view.click(view.getByRole("button", { name: `Open ${name} session` }));
+	if (!view.queryByRole("button", { name: new RegExp(`^Open ${name} session:`) })) await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
+	await view.click(view.getByRole("button", { name: new RegExp(`^Open ${name} session:`) }));
 }
 
 function renderWorkItem(props = {}) {
@@ -66,7 +67,7 @@ test("Project butter shows the reference sessions and keeps replies scoped to ea
 	assert.equal(view.queryByRole("complementary", { name: "Product navigation" }) !== null, true);
 	assert.equal(document.querySelector('div[aria-label="Product navigation"]:not([role])') === null, true);
 	assert.equal(view.queryByText("Draft billing flow PRD") !== null, true);
-	assert.equal(view.queryByText("Troubleshoot 403 API errors") !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Open Jira Scoping agent chat" }) !== null, true);
 	assert.equal(view.queryByText("Review Teamwork onboarding guide") !== null, true);
 	await view.click(view.getByRole("button", { name: /^Draft billing flow PRD/u }));
 	await view.fill(view.getByRole("textbox", { name: "Reply to Jira Coding agent" }), "Ship the MVP path first");
@@ -79,7 +80,7 @@ test("Project butter shows the reference sessions and keeps replies scoped to ea
 	assert.equal(view.queryByText("Ship the MVP path first") !== null, true);
 	await openSession(view, "Claude");
 	assert.equal(view.getByRole("textbox", { name: "Reply to Claude" }).value, "Focus on first-run setup");
-	assert.equal(view.queryByText("Ship the MVP path first"), null);
+	assert.equal(view.queryByText("Ship the MVP path first") === null, true);
 });
 
 test("Butter board activation opens the selected item and preserves edits separately for each card", async () => {
@@ -102,7 +103,7 @@ test("Butter board activation opens the selected item and preserves edits separa
 					<button onClick={() => item.openWorkItem(beta, "Done")}>Open second card</button>
 					<button onClick={() => item.openWorkItem(gamma, "To do")}>Open third card</button>
 					<button onClick={() => item.openWorkItem(critical, "In progress")}>Open critical card</button>
-					{item.selection ? <ProjectButterJiraWorkItem {...item.selection} initialPreset="filled" open={item.open} onClose={item.closeWorkItem} /> : null}
+					{item.selection ? <ProjectButterJiraWorkItem {...item.selection} initialPreset="filled" initialPresentation="modal" shell="project" open={item.open} onClose={item.closeWorkItem} /> : null}
 				</SidebarProvider></ThemeWrapper>;
 			}`,
 		mocks: {
@@ -112,64 +113,81 @@ test("Butter board activation opens the selected item and preserves edits separa
 				export const useOptionalRovoChat = () => null;`,
 		},
 	});
-	assert.equal(view.queryByRole("dialog"), null);
+	assert.equal(view.queryByRole("dialog") === null, true);
 	await view.click(view.getByRole("button", { name: "Open first card" }));
 	assert.equal(view.queryByRole("heading", { name: "First board item" }) !== null, true);
+	assert.equal(document.querySelector("[data-project-butter-presentation]")?.getAttribute("data-project-butter-presentation"), "modal");
+	assert.equal(view.queryByRole("complementary", { name: "Product navigation" }) === null, true);
+	assert.equal(document.querySelectorAll('[data-slot="dialog-overlay"]').length, 1);
+	assert.equal(view.getByRole("dialog", { name: "Project butter" }).getAttribute("aria-modal"), "true");
 	assert.equal(view.queryByText("PAY-118") !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Change status, To do" }) !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Change priority. Current priority: High" }) !== null, true);
 	assert.equal(view.queryByText("Board owner") !== null, true);
-	assert.equal(view.queryByText("Draft billing flow PRD"), null);
+	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
 	assert.equal(view.queryByRole("button", { name: /Working on this work item\. Board owner, Working\. Claude, Needs input/u }) !== null, true);
-	assert.equal(view.queryByText("Sarah Lim"), null);
-	await view.click(view.getByRole("button", { name: "Edit description" }));
+	assert.equal(view.queryByText("Sarah Lim") === null, true);
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "First card saved scope");
-	await view.click(view.getByRole("button", { name: "Save" }));
+	await view.focus(view.getByRole("button", { name: "Description" }));
 	await view.click(view.getByRole("button", { name: /^Inspect payment calls/u }));
 	await view.fill(view.getByRole("textbox", { name: "Reply to Claude" }), "First card reply draft");
 	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
-	assert.equal(view.queryByRole("dialog"), null);
+	assert.equal(view.queryByRole("dialog") === null, true);
 	await view.click(view.getByRole("button", { name: "Open second card" }));
 	assert.equal(view.queryByRole("heading", { name: "Second board item" }) !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Change status, Done" }) !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Change priority. Current priority: Low" }) !== null, true);
-	assert.equal(view.queryByText("First card saved scope"), null);
-	await view.click(view.getByRole("button", { name: /^Review rollback/u }));
+	assert.equal(view.queryByText("First card saved scope") === null, true);
+	await openSession(view, "Codex");
 	assert.equal(view.getByRole("textbox", { name: "Reply to Codex" }).value, "");
 	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
 	await view.click(view.getByRole("button", { name: "Open first card" }));
-	assert.equal(view.getByRole("button", { name: "Edit description" }).textContent, "First card saved scope");
+	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent, "First card saved scope");
 	assert.equal(view.getByRole("textbox", { name: "Reply to Claude" }).value, "First card reply draft");
 	await view.press(document.body, "Escape");
-	assert.equal(view.queryByRole("dialog"), null);
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) === null, true);
+	await view.press(document.body, "Escape");
+	assert.equal(view.queryByRole("dialog") === null, true);
 	await view.click(view.getByRole("button", { name: "Open third card" }));
-	await view.click(view.getByRole("button", { name: "Add agent" }));
-	assert.equal(view.queryByRole("heading", { name: "Work on PAY-120" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Start coding" }));
+	assert.equal(view.getAllByRole("heading", { name: "Work on PAY-120" }).length > 0, true);
 	assert.equal(view.queryByText("Ready to work on PAY-120.") !== null, true);
-	assert.equal(view.queryByText("Draft billing flow PRD"), null);
+	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
 	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
 	await view.click(view.getByRole("button", { name: "Open critical card" }));
 	assert.equal(view.queryByRole("heading", { name: "Critical board item" }) !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Change priority. Current priority: Highest" }) !== null, true);
 });
 
+test("board work item actions omit unsupported deep links and keep key copying available", async () => {
+	const view = await renderWorkItem({
+		initialPresentation: "modal",
+		shell: "project",
+		workItem: { code: "PAY-118", title: "First board item" },
+	});
+	assert.equal(view.queryByRole("button", { name: "Copy work item key" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "More work item actions" }));
+	assert.equal(view.queryByRole("menuitem", { name: "Copy link" }) === null, true);
+	assert.equal(view.queryByRole("menuitemcheckbox", { name: "Watch work item" }) !== null, true);
+	assert.equal(view.queryByRole("menuitemcheckbox", { name: "Flag work item" }) !== null, true);
+});
+
 test("empty Project butter can create a coding session", async () => {
 	const view = await renderWorkItem({ initialPreset: "empty" });
-	assert.equal(view.queryByText("Draft billing flow PRD"), null);
-	await view.click(view.getByRole("button", { name: "Add agent" }));
+	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
+	await view.click(view.getByRole("button", { name: "Start coding" }));
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Jira Coding agent" }) !== null, true);
-	assert.equal(view.queryByText("No agent sessions yet. Start coding to begin work on this item."), null);
+	assert.equal(view.queryByText("No agent sessions yet. Start coding to begin work on this item.") === null, true);
 });
 
 test("description edits and comment drafts survive closing and reopening the work item", async () => {
 	const view = await renderWorkItem();
-	await view.click(view.getByRole("button", { name: "Edit description" }));
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "Updated onboarding scope");
-	await view.click(view.getByRole("button", { name: "Save" }));
+	await view.focus(view.getByRole("button", { name: "Description" }));
 	await view.fill(await commentEditor(view), "Keep this draft");
 	await view.rerender({ initialPreset: "filled", onClose() {}, open: false });
 	await view.rerender({ initialPreset: "filled", onClose() {}, open: true });
-	assert.equal(view.getByRole("button", { name: "Edit description" }).textContent, "Updated onboarding scope");
+	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent, "Updated onboarding scope");
 	assert.equal((await commentEditor(view)).textContent, "Keep this draft");
 	await view.click(view.getByRole("button", { name: "Save comment" }));
 	assert.equal(view.queryByText("Keep this draft") !== null, true);
@@ -183,7 +201,7 @@ test("branch metadata stays opt-in for existing agent session consumers", async 
 		exportName: "AgentSession",
 		props: { items: [item], density: "long", variant: "large" },
 	});
-	assert.equal(view.queryByText("feature/onboarding"), null);
+	assert.equal(view.queryByText("feature/onboarding") === null, true);
 	await view.rerender({ items: [item], density: "long", variant: "large", showBranch: true });
 	assert.equal(view.queryByText("feature/onboarding") !== null, true);
 });
@@ -193,14 +211,14 @@ for (const presentation of ["full-screen", "modal", "side-panel"]) {
 		test(`${presentation} supports Empty ${empty ? "on" : "off"} through the global settings cog`, async () => {
 			const view = await renderWorkItem({ initialPresentation: presentation, initialPreset: empty ? "empty" : "filled" });
 			assert.equal(document.querySelector("[data-project-butter-presentation]")?.getAttribute("data-project-butter-presentation"), presentation);
-			assert.equal(view.queryByRole("heading", { name: "Agent sessions" }) !== null, !empty);
+			assert.equal(document.querySelector('section[aria-label="Needs input"]') !== null, !empty);
 			assert.equal(view.queryByRole("button", { name: `Change status, ${empty ? "To do" : "In progress"}` }) !== null, true);
 			await view.click(view.getByRole("button", { name: "Settings" }));
 			assert.equal(document.querySelectorAll('[data-slot="dialog-overlay"]').length, 2, "nested settings must render their own backdrop above the prototype");
 			assert.equal(view.getByRole("switch", { name: "Empty" }).getAttribute("aria-checked"), String(empty));
 			await view.click(view.getByRole("switch", { name: "Empty" }));
 			await view.click(view.getByRole("button", { name: "View prototype" }));
-			assert.equal(view.queryByRole("heading", { name: "Agent sessions" }) !== null, empty);
+			assert.equal(document.querySelector('section[aria-label="Needs input"]') !== null, empty);
 			assert.equal(document.querySelector("[data-project-butter-presentation]")?.getAttribute("data-project-butter-presentation"), presentation);
 		});
 	}
@@ -208,40 +226,45 @@ for (const presentation of ["full-screen", "modal", "side-panel"]) {
 
 test("switching presentation and Empty preserves saved edits and clears dismissed comment drafts", async () => {
 	const view = await renderWorkItem();
-	await view.click(view.getByRole("button", { name: "Edit description" }));
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "Keep this scope");
-	await view.click(view.getByRole("button", { name: "Save" }));
+	await view.focus(view.getByRole("button", { name: "Description" }));
 	await view.fill(await commentEditor(view), "Keep this comment draft");
 	await view.click(view.getByRole("button", { name: "Settings" }));
 	await view.click(view.getByRole("button", { name: "Side panel" }));
 	await view.click(view.getByRole("switch", { name: "Empty" }));
 	await view.click(view.getByRole("button", { name: "View prototype" }));
-	assert.equal(view.getByRole("button", { name: "Edit description" }).textContent, "Add description");
+	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent, "");
 	assert.equal((await commentEditor(view)).textContent, "");
 	await view.click(view.getByRole("button", { name: "Settings" }));
 	await view.click(view.getByRole("switch", { name: "Empty" }));
 	await view.click(view.getByRole("button", { name: "Modal" }));
 	await view.click(view.getByRole("button", { name: "View prototype" }));
-	assert.equal(view.getByRole("button", { name: "Edit description" }).textContent, "Keep this scope");
+	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent, "Keep this scope");
 	assert.equal((await commentEditor(view)).textContent, "");
 });
 
-test("attachments paginate and filter with keyboard-reachable row actions", async () => {
+test("attachment stacks expand independently and Escape returns focus without closing the work item", async () => {
 	const view = await renderWorkItem();
-	const section = document.querySelector('section[aria-label="Attachments"]');
-	const rowCount = () => section.querySelectorAll('ul[aria-label="Attachments"] > li').length;
-	assert.equal(rowCount(), 5);
+	const documents = view.getByRole("button", { name: "Documents, 4 attachments" });
+	assert.equal(documents.getAttribute("aria-expanded"), "false");
+	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) === null, true);
+	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), false);
+	assert.equal(view.queryByRole("button", { name: "Preview Hero Image - Summer Launch.png" }) !== null, true);
+	await view.click(documents);
+	assert.equal(view.getByRole("button", { name: "Close documents" }).getAttribute("aria-expanded"), "true");
+	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) !== null, true);
 	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), true);
-	const showMore = view.getAllByRole("button", { name: "Show 3 more" }).find((button) => section.contains(button));
-	await view.click(showMore);
-	assert.equal(rowCount(), 8);
-	await view.click(view.getByRole("tab", { name: "Images" }));
-	assert.equal(rowCount(), 1);
-	assert.equal(section.textContent.includes("Hero Image - Summer Launch.png"), true);
-	await view.click(view.getByRole("tab", { name: "Videos" }));
-	assert.equal(rowCount(), 2);
-	await view.click(view.getByRole("tab", { name: "All" }));
-	assert.equal(rowCount(), 5);
+	await view.click(view.getByRole("button", { name: "Videos, 2 attachments" }));
+	const video = view.getByRole("button", { name: "Preview Customer Interview Recording.mp4" });
+	await view.focus(video);
+	await view.press(video, "Escape");
+	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Close documents" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Preview Customer Interview Recording.mp4" }) === null, true);
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Videos, 2 attachments" })), true);
+	await view.click(view.getByRole("button", { name: "Close documents" }));
+	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) === null, true);
+	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), false);
 });
 
 test("attachments can be added, previewed, and removed without losing other attachments", async () => {
@@ -249,14 +272,15 @@ test("attachments can be added, previewed, and removed without losing other atta
 	await view.click(view.getByRole("button", { name: "Add attachment" }));
 	await view.fill(view.getByRole("textbox", { name: "Attachment name or URL" }), "https://example.com/design");
 	await view.click(document.querySelector('section[aria-label="Attachments"] button[type="submit"]'));
-	await view.click(view.getByRole("button", { name: "https://example.com/design" }));
+	await view.click(view.getByRole("button", { name: "Links, 2 attachments" }));
+	await view.click(view.getByRole("button", { name: "Preview https://example.com/design" }));
 	assert.equal(view.getByRole("link", { name: "Open link" }).getAttribute("href"), "https://example.com/design");
 	await view.click(view.getByRole("button", { name: "Close" }));
 	await view.click(view.getByRole("button", { name: "More actions for https://example.com/design" }));
 	await view.click(view.getByRole("menuitem", { name: "Remove" }));
 	await view.click(view.getByRole("button", { name: "Remove" }));
-	assert.equal(view.queryByRole("button", { name: "https://example.com/design" }), null);
-	assert.equal(view.queryByRole("button", { name: "Q1 Marketing Strategy & Goals" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Preview https://example.com/design" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) !== null, true);
 });
 
 test("panel ordering changes only for valid panel drops and keeps source data immutable", () => {
@@ -287,10 +311,10 @@ test("Details expands from an accessible chevron footer and hides that control w
 	assert.equal(view.queryByRole("button", { name: "Change reporter" }) !== null, true);
 	assert.equal(view.getByRole("button", { name: "Show less details" }).getAttribute("aria-expanded"), "true");
 	await view.click(view.getByRole("button", { name: "Details" }));
-	assert.equal(view.queryByRole("button", { name: "Show less details" }), null);
+	assert.equal(view.queryByRole("button", { name: "Show less details" }) === null, true);
 	await view.click(view.getByRole("button", { name: "Details" }));
 	await view.click(view.getByRole("button", { name: "Show less details" }));
-	assert.equal(view.queryByRole("button", { name: "Change reporter" }), null);
+	assert.equal(view.queryByRole("button", { name: "Change reporter" }) === null, true);
 });
 
 test("keyboard panel dragging receives arrow keys and Escape cancels without closing the work item", async () => {
@@ -313,38 +337,32 @@ test("keyboard panel dragging receives arrow keys and Escape cancels without clo
 	}
 });
 
-test("activity navigation and filters operate on the populated reference feed", async () => {
+test("Activity and Audit separate comments from paginated field history", async () => {
 	const view = await renderWorkItem();
-	assert.equal(view.queryByRole("heading", { name: "Session summary" }) !== null, true);
-	const options = view.getAllByRole("option");
-	assert.equal(options.length > 40, true);
-	const total = options.length;
-	await view.press(options[0], "End");
-	assert.equal(options.at(-1).getAttribute("aria-selected"), "true");
-	await view.click(view.getByRole("button", { name: "More activity actions" }));
-	await view.click(view.getByRole("menuitemradio", { name: "Comments" }));
-	assert.equal(view.getAllByRole("option").length, 9);
-	await view.press(null, "Escape");
-	await view.click(view.getByRole("button", { name: "More activity actions" }));
-	await view.click(view.getByRole("menuitemradio", { name: "History" }));
-	assert.equal(view.getAllByRole("option").length, total - 9);
-	assert.equal(view.queryByRole("heading", { name: "Session summary" }), null);
-	await view.press(null, "Escape");
-	await view.click(view.getByRole("button", { name: "More activity actions" }));
-	await view.click(view.getByRole("menuitemradio", { name: "All activity" }));
-	assert.equal(view.getAllByRole("option").length, total);
+	assert.equal(document.querySelector('section[aria-label="Needs input"]') !== null, true);
+	assert.equal(document.querySelectorAll("[data-project-butter-activity] [data-jira-activity-entry-id]").length, 8);
+	assert.equal(view.queryByRole("button", { name: /Liam Estrada updated 2 fields/u }) === null, true);
+	await view.click(view.getByRole("tab", { name: "Audit" }));
+	assert.equal(document.querySelector('section[aria-label="Needs input"]'), null);
+	assert.equal(document.querySelectorAll("[data-project-butter-activity] [data-jira-activity-entry-id]").length, 10);
+	await view.click(view.getByRole("button", { name: "Show more audit updates" }));
+	assert.equal(document.querySelectorAll("[data-project-butter-activity] [data-jira-activity-entry-id]").length, 20);
+	await view.click(view.getByRole("tab", { name: /Activity/u }));
+	assert.equal(document.querySelectorAll("[data-project-butter-activity] [data-jira-activity-entry-id]").length, 8);
 });
 
-test("activity order and timeline follow timestamps in both directions", async () => {
+test("activity order and scrubber follow timestamps in both directions", async () => {
 	const view = await renderWorkItem();
-	let options = view.getAllByRole("option");
-	assert.match(options[0].textContent, /Liam Estrada: updated 2 fields/u);
-	assert.match(options.at(-1).textContent, /Claude with Annie Cook: Published the Teamwork onboarding inventory/u);
+	const labels = () => [...document.querySelectorAll('[aria-label="Navigate activity"] [role="option"]')].map((item) => item.textContent);
+	const newest = labels();
+	assert.match(newest[0], /Annie Cook: Visuals are looking strong/u);
+	assert.match(newest.at(-1), /Annie Cook: First round of email nurture/u);
 	await view.click(view.getByRole("button", { name: "More activity actions" }));
-	await view.click(view.getByRole("menuitemcheckbox", { name: "Newest first" }));
-	options = view.getAllByRole("option");
-	assert.match(options[0].textContent, /Claude with Annie Cook: Published the Teamwork onboarding inventory/u);
-	assert.match(options.at(-1).textContent, /Liam Estrada: updated 2 fields/u);
+	await view.click(view.getByRole("menuitemradio", { name: "Oldest first" }));
+	const oldest = labels();
+	assert.match(oldest[0], /Annie Cook: First round of email nurture/u);
+	assert.match(oldest.at(-1), /Annie Cook: Visuals are looking strong/u);
+	assert.equal(oldest.length, newest.length);
 });
 
 test("activity navigation scrolls its content owner without moving the work item shell", async (t) => {
@@ -359,14 +377,51 @@ test("activity navigation scrolls its content owner without moving the work item
 	const calls = [];
 	t.mock.method(scrollport, "scrollTo", (options) => calls.push(options));
 	await view.click(view.getAllByRole("option")[0]);
-	assert.deepEqual(calls, [{ top: 356, behavior: "auto" }]);
+	assert.deepEqual(calls, [{ top: 308, behavior: "auto" }]);
 	assert.equal(shell.scrollTop, 0);
+});
+
+test("typing M in the summary or its descendants keeps focus in the summary", async () => {
+	const view = await renderWorkItem({ initialPresentation: "modal", shell: "project" });
+	const summary = view.getByRole("textbox", { name: "Work item summary" });
+	await view.focus(summary);
+	await view.press(summary, "m");
+	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }) === null, true);
+	assert.equal(view.isFocused(summary), true);
+	const nested = document.createElement("span");
+	summary.append(nested);
+	await view.press(nested, "M");
+	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }) === null, true);
+	assert.equal(view.isFocused(summary), true);
+	await view.focus(view.getByRole("button", { name: "Close Project butter work item" }));
+	await view.press(null, "m");
+	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }) !== null, true);
+});
+
+test("related composers dismiss outside their row inside the work item dialog and retain nested picker interactions", async () => {
+	const view = await renderWorkItem({ initialPresentation: "modal", shell: "project" });
+	await view.click(view.getByRole("button", { name: "Add linked work" }));
+	const linked = view.getByRole("combobox", { name: "Add linked work" });
+	await view.fill(linked, "analytics events");
+	await view.click(view.getByRole("button", { name: "Relationship for the new linked work item" }));
+	await view.click(view.getByRole("menuitem", { name: "Blocks" }));
+	assert.equal(view.getByRole("combobox", { name: "Add linked work" }).value, "analytics events");
+	await view.focus(linked);
+	await view.click(view.getByRole("option", { name: /VITA-12Add analytics events for onboarding steps/u }));
+	assert.equal(view.queryByRole("button", { name: "Edit relationship for VITA-12: Blocks" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Add child work item" }));
+	await view.fill(view.getByRole("combobox", { name: "Create child work item" }), "Keep the unfinished child");
+	await view.click(view.getByRole("button", { name: "Description" }));
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 180)); });
+	assert.equal(view.queryByRole("combobox", { name: "Create child work item" }) === null, true);
+	await view.click(view.getByRole("button", { name: "Add child work item" }));
+	assert.equal(view.getByRole("combobox", { name: "Create child work item" }).value, "Keep the unfinished child");
 });
 
 test("the source comment editor opens with M, clears cancelled drafts, resizes, and saves with the keyboard", async () => {
 	let closed = false;
 	const view = await renderWorkItem({ onClose() { closed = true; } });
-	assert.equal(view.queryByRole("button", { name: "Add a comment" }), null);
+	assert.equal(view.queryByRole("button", { name: "Add a comment" }) === null, true);
 	await view.focus(view.getByRole("button", { name: "Close Project butter work item" }));
 	await view.press(null, "m");
 	const editor = await commentEditor(view);
@@ -375,7 +430,7 @@ test("the source comment editor opens with M, clears cancelled drafts, resizes, 
 	await view.fill(editor, "Discard this draft");
 	await view.press(editor, "Escape");
 	assert.equal(closed, false);
-	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }) === null, true);
 	const reopened = await commentEditor(view);
 	assert.equal(reopened.textContent, "");
 	const handle = view.getByRole("separator", { name: "Resize comment editor" });
@@ -388,26 +443,181 @@ test("the source comment editor opens with M, clears cancelled drafts, resizes, 
 	await view.fill(reopened, "Keep the onboarding recovery copy");
 	await view.press(reopened, "Enter", { ctrlKey: true });
 	assert.equal(view.queryByText("Keep the onboarding recovery copy") !== null, true);
-	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }) === null, true);
 });
 
 test("outside click and the toolbar close control dismiss and clear the source editor", async () => {
 	const view = await renderWorkItem();
 	await view.fill(await commentEditor(view), "Do not publish this");
 	await view.click(view.getByRole("button", { name: "Development" }));
-	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }) === null, true);
 	assert.equal((await commentEditor(view)).textContent, "");
 	await view.fill(view.getByRole("textbox", { name: "Comment editor" }), "Another discarded draft");
 	await view.click(view.getByRole("button", { name: "Close comment editor" }));
 	assert.equal((await commentEditor(view)).textContent, "");
-	assert.equal(view.queryByText("Do not publish this"), null);
+	assert.equal(view.queryByText("Do not publish this") === null, true);
 });
 
-test("status changes use the matching treatment and watching updates the count", async () => {
+test("header and Details share status options and custom status updates", async () => {
+	const view = await renderWorkItem();
+	await view.click(view.getByRole("button", { name: "Change status, In progress" }));
+	assert.equal(view.queryByRole("menuitem", { name: "In progress" }) === null, true);
+	await view.click(view.getByRole("menuitem", { name: "Done" }));
+	assert.equal(view.queryByRole("button", { name: "Change status, Done" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Change status in details, Done" }));
+	await view.click(view.getByRole("menuitem", { name: "Create status" }));
+	await view.fill(view.getByRole("textbox", { name: "Status name" }), "In review");
+	await view.click(view.getByRole("button", { name: "Create and apply" }));
+	assert.equal(view.queryByRole("button", { name: "Change status, In review" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Change status in details, In review" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "More work item actions" }));
+	await view.click(view.getByRole("menuitemcheckbox", { name: "Watch work item" }));
+	await view.press(null, "Escape");
+	await view.click(view.getByRole("button", { name: "More work item actions" }));
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "Watch work item" }).getAttribute("aria-checked"), "true");
+});
+
+
+test("new audit records and comment replies survive changing activity views", async () => {
 	const view = await renderWorkItem();
 	await view.click(view.getByRole("button", { name: "Change status, In progress" }));
 	await view.click(view.getByRole("menuitem", { name: "Done" }));
-	assert.equal(view.queryByRole("button", { name: "Change status, Done" }) !== null, true);
-	await view.click(view.getByRole("button", { name: "Watch work item. 4 watchers" }));
-	assert.equal(view.getByRole("button", { name: "Stop watching work item. 5 watchers" }).getAttribute("aria-pressed"), "true");
+	await view.click(view.getByRole("tab", { name: "Audit" }));
+	await view.click(view.getByRole("button", { name: /Annie Cook\s*updated status\s*Just now/u }));
+	const change = document.querySelector("[data-project-butter-activity] dl").textContent;
+	assert.equal(change.includes("In progress"), true);
+	assert.equal(change.includes("Done"), true);
+	await view.click(view.getByRole("tab", { name: /Activity/u }));
+	await view.click(view.getAllByRole("button", { name: "Reply" })[0]);
+	await view.fill(view.getByRole("textbox", { name: "Leave a reply..." }), "Keep the reply draft");
+	await view.click(view.getByRole("tab", { name: "Audit" }));
+	await view.click(view.getByRole("tab", { name: /Activity/u }));
+	await view.click(view.getAllByRole("button", { name: "Reply" })[0]);
+	assert.equal(view.getByRole("textbox", { name: "Leave a reply..." }).textContent, "Keep the reply draft");
+	await view.click(view.getByRole("button", { name: "Submit" }));
+	assert.equal(view.queryByText("Keep the reply draft") !== null, true);
+	await view.click(view.getByRole("tab", { name: "Audit" }));
+	assert.equal(view.queryByRole("button", { name: /Annie Cook\s*updated status\s*Just now/u }) !== null, true);
+	await view.fill(await commentEditor(view), "Posted from Audit");
+	await view.click(view.getByRole("button", { name: "Save comment" }));
+	assert.equal(view.getByRole("tab", { name: /Activity/u }).getAttribute("aria-selected"), "true");
+	assert.equal(view.queryByText("Posted from Audit") !== null, true);
+});
+
+test("own comments can be edited and deleted with both actions recorded in Audit", async () => {
+	const view = await renderWorkItem();
+	await view.click(view.getAllByRole("button", { name: "Edit comment" })[0]);
+	await view.fill(view.getByRole("textbox", { name: "Edit comment body" }), "Updated campaign review");
+	await view.click(view.getByRole("button", { name: "Save comment" }));
+	assert.equal(view.queryByText("Updated campaign review") !== null, true);
+	await view.click(view.getAllByRole("button", { name: "More comment actions" })[0]);
+	await view.click(view.getByRole("menuitem", { name: "Delete comment" }));
+	assert.equal(view.queryByText("Updated campaign review") === null, true);
+	await view.click(view.getByRole("tab", { name: "Audit" }));
+	assert.equal(view.getAllByRole("button", { name: /Annie Cook\s*updated comment\s*Just now/u }).length, 2);
+});
+
+
+test("pinned local sessions open the work item chat directly", async () => {
+	const view = await renderWorkItem();
+	await view.click(view.getByRole("button", { name: /^Review Teamwork onboarding guide/u }));
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) !== null, true);
+	assert.equal(view.queryByRole("menuitem", { name: "Terminal" }) === null, true);
+	await view.press(document.body, "Escape");
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Close Project butter work item" }) !== null, true);
+});
+
+
+test("timeline hover previews and continuous pointer seeking follow the click position", async (t) => {
+	const { act } = require("react");
+	const view = await renderComponent({
+		source: `import React from "react";
+			import {useTransform} from "motion/react";
+			import {useProjectButterActivityNavigation} from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
+			import {ScrubberRail} from "@/components/blocks/scrubber/components/scrubber-rail";
+			const entries = Array.from({length:8}, (_, index) => ({id:String(index)}));
+			export default function Navigation({count=8,view="Activity"}) {
+				const items = React.useMemo(()=>entries.slice(0,count),[count]);
+				const navigation = useProjectButterActivityNavigation(items, false, null, true, view);
+				const offset = useTransform(navigation.progress, (value) => 0.02 + value * 0.96);
+				const marks = items.map((entry, index) => ({...entry, label:entry.id, heading:entry.id, kind:"minor", offset:0.02+(navigation.entryOffsets[entry.id] ?? index/7)*0.96}));
+				return <div data-test-scroll-root style={{overflowY:"auto",height:600}}>
+					<div data-project-butter-activity-header ref={navigation.headerRef} />
+					<div data-project-butter-activity-timeline ref={navigation.timelineRef}><ScrubberRail activeIndex={Math.max(0,items.findIndex((entry)=>entry.id===navigation.visibleId))} activeOffset={offset} entries={marks} onSelect={navigation.scrollToEntry} onSeek={(value)=>navigation.seekToProgress((value-0.02)/0.96)} appearance="dots" selectionMode="drag" ariaLabel="Navigate activity" showPill={false} /></div>
+					<div data-project-butter-activity-feed ref={navigation.feedRef}>{items.map((entry)=><div data-jira-activity-entry-id={entry.id} key={entry.id}>{entry.id}</div>)}</div>
+				</div>;
+			}`,
+	});
+	const root = document.querySelector("[data-test-scroll-root]");
+	const feed = document.querySelector("[data-project-butter-activity-feed]");
+	const header = document.querySelector("[data-project-butter-activity-header]");
+	const timeline = document.querySelector("[data-project-butter-activity-timeline]");
+	const rail = timeline.querySelector('[data-slot="scrubber-rail"]');
+	const rows = [...feed.querySelectorAll("[data-jira-activity-entry-id]")];
+	root.style.overflowY = "auto";
+	root.scrollTop = 1000;
+	Object.defineProperty(root, "clientHeight", { configurable: true, value: 600 });
+	t.mock.method(root, "getBoundingClientRect", () => ({ top: 100, bottom: 700, height: 600 }));
+	let headerTop = 100;
+	t.mock.method(header, "getBoundingClientRect", () => ({ top:headerTop, height: 56 }));
+	t.mock.method(timeline, "getBoundingClientRect", () => ({ height: 44 }));
+	let feedHeight = 1600;
+	t.mock.method(feed, "getBoundingClientRect", () => ({ top: 1212 - root.scrollTop, bottom: 1212 + feedHeight - root.scrollTop, height: feedHeight }));
+	t.mock.method(rail, "getBoundingClientRect", () => ({ left: 0, top: 0, width: 1000, height: 14 }));
+	for (const [index, row] of rows.entries()) {
+		t.mock.method(row, "getBoundingClientRect", () => ({ top: 1212 + index * 200 - root.scrollTop, bottom: 1412 + index * 200 - root.scrollTop, height: 200 }));
+	}
+	Object.defineProperty(rail, "setPointerCapture", { configurable: true, value() {} });
+	const calls = [];
+	t.mock.method(root, "scrollTo", (options) => { calls.push(options.top); root.scrollTop = options.top; root.dispatchEvent(new Event("scroll")); });
+	async function settle(action) {
+		await act(async () => { action(); await new Promise((resolve) => setTimeout(resolve, 80)); });
+	}
+	await settle(() => root.dispatchEvent(new Event("scroll")));
+	await settle(() => rail.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse", clientX: 650, buttons: 0 })));
+	const hover = rail.querySelector('[data-slot="scrubber-hover"]');
+	assert.equal(hover.style.opacity, "1");
+	assert.equal(hover.style.left, "65%");
+	assert.equal(calls.length, 0, "hover must not move the feed");
+	await settle(() => rail.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "mouse", pointerId: 7, clientX: 650, button: 0, buttons: 1 })));
+	assert.equal(Math.abs(calls.at(-1) - 1729.75) < 0.1, true);
+	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 65) < 0.1, true);
+	await settle(() => rail.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse", pointerId: 7, clientX: 800, buttons: 1 })));
+	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 80) < 0.1, true);
+	root.scrollTop = 1556;
+	await settle(() => root.dispatchEvent(new Event("scroll")));
+	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 50) < 0.1, true, rail.querySelector('[data-slot="scrubber-playhead"]').style.left);
+	feedHeight = 544;
+	root.scrollTop = 1000;
+	headerTop = 180;
+	await view.rerender({count:1,view:"Audit"});
+	assert.equal(root.scrollTop, 1080, "switching to a shorter feed must preserve the sticky header");
+	headerTop = 100;
+	await settle(() => root.dispatchEvent(new Event("scroll")));
+	await settle(() => rail.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "mouse", pointerId: 8, clientX: 650, button: 0, buttons: 1 })));
+	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 65) < 0.1, true, "short feeds must retain continuous seeking");
+});
+
+
+test("Butter timestamps disclose an exact date, time, and timezone on focus and retain format toggling", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/activity-comment-tools.tsx",
+		exportName: "ProjectButterTimestamp",
+		props: { item: { id: "comment", kind: "comment", actor: { id: "annie", name: "Annie Cook", kind: "person" }, body: [], timestamp: "45 minutes ago", createdAtMs: Date.UTC(2026, 10, 1, 15) } },
+	});
+	const trigger = view.getByRole("button", { name: "45 minutes ago. Show full timestamp" });
+	assert.equal(trigger.querySelector("time").getAttribute("datetime"), "2026-11-01T15:00:00.000Z");
+	await view.focus(trigger);
+	const tooltip = view.getByRole("tooltip");
+	assert.equal(trigger.getAttribute("aria-describedby"), tooltip.id);
+	const details = tooltip.textContent;
+	assert.equal(details.includes("Sunday, November 1, 2026"), true);
+	assert.equal(details.includes("23:00:00"), true);
+	assert.equal(details.includes("GMT+8"), true);
+	await view.click(trigger);
+	assert.equal(trigger.textContent.includes("Nov 1, 2026"), true);
+	assert.equal(trigger.getAttribute("aria-pressed"), "true");
+	await view.click(trigger);
+	assert.equal(trigger.textContent, "45 minutes ago");
 });

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
 import { JiraActivityChangedFiles } from "./jira-activity-changed-files";
 import { JiraActivityComment } from "./jira-activity-comment";
+import type { JiraActivityCardProps } from "./jira-activity-card";
 import { JiraActivityComposer } from "./jira-activity-composer";
 import { JiraActivityEvent } from "./jira-activity-event";
 import { JiraActivityHeader } from "./jira-activity-header";
@@ -42,8 +43,23 @@ export interface JiraActivityProps {
 	actors?: readonly JiraActivityActor[];
 	/** Override the bottom composer. Pass `null` to suppress it. */
 	composer?: ReactNode | null;
+	/** Connect every timeline entry, or draw branches only within comment threads. */
+	connectorStyle?: "timeline" | "thread";
+	/** Plain comment and reply header layout. */
+	commentHeaderLayout?: JiraActivityCardProps["headerLayout"];
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
+	/** Additional footer tools for comments and their nested replies. */
+	renderCommentTools?: (entry: JiraActivityCommentEntry, reply?: JiraActivityReply) => ReactNode;
+	/** Optional replacement for a plain comment or reply header's timestamp. */
+	renderTimestamp?: (item: JiraActivityEntry | JiraActivityReply) => ReactNode;
+	/** Rich reply content. Return undefined to use the plain-text body. */
+	renderReplyBody?: (reply: JiraActivityReply) => ReactNode;
+	/** Replace a reply card while retaining its thread position and visibility. */
+	renderReply?: (reply: JiraActivityReply) => ReactNode | undefined;
+	/** Optional persisted reply drafts keyed by the parent comment entry id. */
+	replyDrafts?: Readonly<Record<string, string>>;
+	onReplyDraftChange?: (entryId: string, value: string) => void;
 	/** Rich domain-owned comment content, retaining the shared card and reply/reaction controls. */
 	renderCommentBody?: (entry: JiraActivityCommentEntry) => ReactNode | undefined;
 	/** Optional replacement for an entry's built-in body. Return undefined to use the default renderer. */
@@ -117,7 +133,15 @@ export function JiraActivity({
 	currentUser = JIRA_ACTIVITY_CURRENT_USER,
 	actors = [],
 	composer,
+	connectorStyle = "timeline",
+	commentHeaderLayout,
 	renderCommentAction,
+	renderCommentTools,
+	renderTimestamp,
+	renderReplyBody,
+	renderReply,
+	replyDrafts,
+	onReplyDraftChange,
 	renderCommentBody,
 	renderEntry,
 	activeEntryId,
@@ -311,7 +335,15 @@ export function JiraActivity({
 							/>
 						) : entry.kind === "comment" ? (
 							<JiraActivityComment
+								headerLayout={commentHeaderLayout}
+								threaded={connectorStyle === "thread"}
 								bodyContent={renderCommentBody?.(entry)}
+								renderCommentTools={renderCommentTools}
+								renderTimestamp={renderTimestamp}
+								renderReplyBody={renderReplyBody}
+								renderReply={renderReply}
+								replyDraft={replyDrafts === undefined ? undefined : replyDrafts[entry.id] ?? ""}
+								onReplyDraftChange={onReplyDraftChange ? (value) => onReplyDraftChange(entry.id, value) : undefined}
 								actorsById={actorsById}
 								commentActions={commentActions}
 								currentUser={currentUser}
@@ -376,7 +408,7 @@ export function JiraActivity({
 												? (entry.pullRequest ? "pull-request" : entry.icon)
 												: undefined
 										}
-										isLast={isLast}
+											isLast={isLast || connectorStyle === "thread"}
 										size={isCardEntry ? "card" : "event"}
 									/>
 								)}

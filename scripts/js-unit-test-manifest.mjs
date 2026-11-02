@@ -15,6 +15,12 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
 		"components/blocks/jira-work-item/project-butter/project-butter.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/breadcrumb.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/status.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/activity-response.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/details-fields.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/related-work.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/shell-editors.behavior.test.js",
 		"components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.behavior.test.js",
 		"components/blocks/jira-issue/project-butter-invocation-model.test.ts",
 		"components/blocks/jira-issue/project-butter-model.test.ts",

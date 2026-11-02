@@ -12,13 +12,13 @@
 }
 
 /* Iconic orb: rest at full ring size and rotate. Pulse/grow is opt-in. */
-@keyframes spinner-experimental-orb-rotate {
+@keyframes spinner-bloom-orb-rotate {
 	from { transform: rotate(0deg); }
 	to { transform: rotate(360deg); }
 }
 
 /* Iconic orb: 9.78s prototype loop maps to 16 × duration-slowest (9.6s). */
-@keyframes spinner-experimental-orb-morph {
+@keyframes spinner-bloom-orb-morph {
 	0%, 5% { transform: translate(0, 0); }
 	25%, 40% { transform: translate(var(--orb-outer-x), var(--orb-outer-y)); }
 	50%, 55% { transform: translate(0, 0); }
@@ -26,30 +26,30 @@
 	100% { transform: translate(0, 0); }
 }
 
-@utility spinner-experimental-orb-rotator {
+@utility spinner-bloom-orb-rotator {
 	transform-origin: 10px 10px;
 }
 
-@utility spinner-experimental-orb-rotator-motion {
-	animation: spinner-experimental-orb-rotate calc(var(--duration-slowest) * 16) var(--ease-linear) infinite;
+@utility spinner-bloom-orb-rotator-motion {
+	animation: spinner-bloom-orb-rotate calc(var(--duration-slowest) * 16) var(--ease-linear) infinite;
 }
 
-@utility spinner-experimental-orb-rotator-pulse-delay {
+@utility spinner-bloom-orb-rotator-pulse-delay {
 	animation-delay: calc(var(--duration-slowest) * -6.4);
 }
 
-@utility spinner-experimental-orb-dot {
+@utility spinner-bloom-orb-dot {
 	transform-box: fill-box;
 	transform-origin: center;
 	transform: translate(var(--orb-outer-x), var(--orb-outer-y));
 }
 
-@utility spinner-experimental-orb-dot-motion {
-	animation: spinner-experimental-orb-morph calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both;
+@utility spinner-bloom-orb-dot-motion {
+	animation: spinner-bloom-orb-morph calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both;
 	animation-delay: calc(var(--duration-slowest) * -6.4);
 }
 
-@utility spinner-experimental-orb-dot-top {
+@utility spinner-bloom-orb-dot-top {
 	--avatar-inner-x: 0px;
 	--avatar-inner-y: -1.3px;
 	--avatar-expanded-opacity: 0.82;
@@ -58,7 +58,7 @@
 	--orb-outer-y: -5.5px;
 }
 
-@utility spinner-experimental-orb-dot-top-right {
+@utility spinner-bloom-orb-dot-top-right {
 	--avatar-inner-x: 1.126px;
 	--avatar-inner-y: -0.65px;
 	--avatar-expanded-opacity: 0.62;
@@ -67,7 +67,7 @@
 	--orb-outer-y: -2.75px;
 }
 
-@utility spinner-experimental-orb-dot-bottom-right {
+@utility spinner-bloom-orb-dot-bottom-right {
 	--avatar-inner-x: 1.126px;
 	--avatar-inner-y: 0.65px;
 	--avatar-expanded-opacity: 0.78;
@@ -76,7 +76,7 @@
 	--orb-outer-y: 2.75px;
 }
 
-@utility spinner-experimental-orb-dot-bottom {
+@utility spinner-bloom-orb-dot-bottom {
 	--avatar-inner-x: 0px;
 	--avatar-inner-y: 1.3px;
 	--avatar-expanded-opacity: 0.58;
@@ -85,7 +85,7 @@
 	--orb-outer-y: 5.5px;
 }
 
-@utility spinner-experimental-orb-dot-bottom-left {
+@utility spinner-bloom-orb-dot-bottom-left {
 	--avatar-inner-x: -1.126px;
 	--avatar-inner-y: 0.65px;
 	--avatar-expanded-opacity: 0.8;
@@ -94,7 +94,7 @@
 	--orb-outer-y: 2.75px;
 }
 
-@utility spinner-experimental-orb-dot-top-left {
+@utility spinner-bloom-orb-dot-top-left {
 	--avatar-inner-x: -1.126px;
 	--avatar-inner-y: -0.65px;
 	--avatar-expanded-opacity: 0.6;
@@ -105,7 +105,7 @@
 
 /* Jira board reference: overlapping dots form a compact hexagonal avatar
    cluster, rather than all six converging to the same center point. */
-@keyframes spinner-experimental-avatar-morph {
+@keyframes spinner-bloom-avatar-morph {
 	0%, 5%, 50%, 55%, 100% {
 		transform: translate(var(--avatar-inner-x), var(--avatar-inner-y));
 	}
@@ -114,27 +114,27 @@
 	}
 }
 
-@keyframes spinner-experimental-avatar-opacity {
+@keyframes spinner-bloom-avatar-opacity {
 	0%, 5%, 50%, 55%, 100% { opacity: 1; }
 	25%, 40%, 75%, 90% { opacity: var(--avatar-expanded-opacity); }
 	32%, 82% { opacity: var(--avatar-pulse-opacity); }
 }
 
-@utility spinner-experimental-avatar-dot {
+@utility spinner-bloom-avatar-dot {
 	opacity: var(--avatar-expanded-opacity);
 }
 
-@utility spinner-experimental-avatar-dot-motion {
+@utility spinner-bloom-avatar-dot-motion {
 	animation:
-		spinner-experimental-avatar-morph calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both,
-		spinner-experimental-avatar-opacity calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both;
+		spinner-bloom-avatar-morph calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both,
+		spinner-bloom-avatar-opacity calc(var(--duration-slowest) * 16) var(--ease-in-out) infinite both;
 	animation-delay: calc(var(--duration-slowest) * -6.4);
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.spinner-experimental-orb-rotator-motion,
-	.spinner-experimental-orb-dot-motion,
-	.spinner-experimental-avatar-dot-motion {
+	.spinner-bloom-orb-rotator-motion,
+	.spinner-bloom-orb-dot-motion,
+	.spinner-bloom-avatar-dot-motion {
 		animation: none;
 	}
 }
