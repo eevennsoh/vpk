@@ -35,6 +35,22 @@ test-results/
 # output
 /output
 /artifacts
+!/artifacts/
+/artifacts/*
+!/artifacts/vpk-html/
+/artifacts/vpk-html/*
+!/artifacts/vpk-html/eu26-animation-explained/
+/artifacts/vpk-html/eu26-animation-explained/*
+!/artifacts/vpk-html/eu26-animation-explained/eu26-animation-explained.html
+!/artifacts/vpk-html/eu26-animation-explained/eu26-animation-explained.content.json
+!/artifacts/vpk-html/eu26-animation-explained/README.md
+!/artifacts/vpk-html/eu26-animation-explained/_figures/
+/artifacts/vpk-html/eu26-animation-explained/_figures/playback.behavior.test.mjs
+!/artifacts/vpk-html/eu26-animation-explained/_layout/
+!/artifacts/vpk-html/eu26-animation-explained/_video/
+/artifacts/vpk-html/eu26-animation-explained/_video/project/
+/artifacts/vpk-html/eu26-animation-explained/_video/exports/
+/artifacts/vpk-html/eu26-animation-explained/_video/render-endpoint.json
 /media/videos/tmp*/
 /media/videos/**/partial_movie_files/
 public/**/hyperframes/.hyperframes/

@@ -82,3 +82,5 @@ The presentation runtime is for live browser presentation and PDF export. MP4
 export is a separate Hyperframes conversion track; see `references/video-export.md`.
 Speaker notes are excluded from audience-window recordings; video conversion may
 consume them as narration input only.
+
+Minimal reading layouts can set `data-vpk-enhancements="off"` on `<body>` to omit the optional lightbox, scroll fades and token-override runtime. Combine it with `data-vpk-docnav="off"` when the layout owns navigation; the shared theme and figure runtimes remain available.

@@ -1,0 +1,385 @@
+{
+  "schema": "vpk-iso-brief/1",
+  "id": "single-drop",
+  "figId": "FIG_001",
+  "title": "A puff at touchdown",
+  "label": "A card in the Done tray with a low scatter of paper around its landing.",
+  "caption": "The card lands first; the small puff then spreads out from its footprint and fades.",
+  "camera": {
+    "preset": "dimetric",
+    "scale": "fit",
+    "pad": 32
+  },
+  "viewBox": [
+    800,
+    420
+  ],
+  "parts": [
+    {
+      "id": "board",
+      "kind": "plate",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        128,
+        83,
+        2
+      ],
+      "r": 2,
+      "fixed": true
+    },
+    {
+      "id": "done",
+      "kind": "tray",
+      "at": [
+        73,
+        4,
+        2
+      ],
+      "size": [
+        49,
+        74,
+        4
+      ],
+      "fixed": true
+    },
+    {
+      "id": "landed-card",
+      "kind": "slab",
+      "at": [
+        79,
+        15,
+        7
+      ],
+      "size": [
+        37,
+        25,
+        1.4
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              34,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              24.05,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              15.54,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "next-card",
+      "kind": "slab",
+      "at": [
+        13,
+        41,
+        7
+      ],
+      "size": [
+        37,
+        25,
+        1.4
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              34,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              24.05,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              15.54,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "paper-0",
+      "kind": "slab",
+      "at": [
+        125,
+        27,
+        5
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "paper-1",
+      "kind": "slab",
+      "at": [
+        122.22712830126774,
+        35.67767478235116,
+        7
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 31
+    },
+    {
+      "id": "paper-2",
+      "kind": "slab",
+      "at": [
+        114.45771445204454,
+        42.6366296493606,
+        9
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 62
+    },
+    {
+      "id": "paper-3",
+      "kind": "slab",
+      "at": [
+        103.2305861507768,
+        46.498558243636474,
+        5
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 93
+    },
+    {
+      "id": "paper-4",
+      "kind": "slab",
+      "at": [
+        90.7694138492232,
+        46.498558243636474,
+        7
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 124
+    },
+    {
+      "id": "paper-5",
+      "kind": "slab",
+      "at": [
+        79.54228554795546,
+        42.6366296493606,
+        9
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 155
+    },
+    {
+      "id": "paper-6",
+      "kind": "slab",
+      "at": [
+        71.77287169873227,
+        35.67767478235116,
+        5
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 186
+    },
+    {
+      "id": "paper-7",
+      "kind": "slab",
+      "at": [
+        69,
+        27.000000000000004,
+        7
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 217
+    },
+    {
+      "id": "paper-8",
+      "kind": "slab",
+      "at": [
+        71.77287169873226,
+        18.32232521764884,
+        9
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 248
+    },
+    {
+      "id": "paper-9",
+      "kind": "slab",
+      "at": [
+        79.54228554795546,
+        11.363370350639407,
+        5
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 279
+    },
+    {
+      "id": "paper-10",
+      "kind": "slab",
+      "at": [
+        90.76941384922318,
+        7.501441756363526,
+        7
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 310
+    },
+    {
+      "id": "paper-11",
+      "kind": "slab",
+      "at": [
+        103.23058615077677,
+        7.501441756363523,
+        9
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 341
+    },
+    {
+      "id": "paper-12",
+      "kind": "slab",
+      "at": [
+        114.45771445204454,
+        11.363370350639402,
+        5
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 12
+    },
+    {
+      "id": "paper-13",
+      "kind": "slab",
+      "at": [
+        122.22712830126774,
+        18.32232521764885,
+        7
+      ],
+      "size": [
+        2.5,
+        1.4,
+        0.4
+      ],
+      "yaw": 43
+    }
+  ],
+  "focal": "landed-card",
+  "labels": "none",
+  "interact": null,
+  "meta": {
+    "margin": "A puff at touchdown",
+    "corner": "VPK-HTML"
+  }
+}

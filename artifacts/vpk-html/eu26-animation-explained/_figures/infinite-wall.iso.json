@@ -1,0 +1,1047 @@
+{
+  "schema": "vpk-iso-brief/1",
+  "id": "infinite-wall",
+  "figId": "FIG_006",
+  "title": "A wall that keeps receiving cards",
+  "label": "A wide bento wall with two sheets suspended over gaps at its leading edge.",
+  "caption": "The receiving wall moves while the incoming sheets descend into its gaps.",
+  "camera": {
+    "preset": "dimetric",
+    "scale": "fit",
+    "pad": 32
+  },
+  "viewBox": [
+    800,
+    420
+  ],
+  "parts": [
+    {
+      "id": "wall-base",
+      "kind": "plate",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        188,
+        101,
+        2
+      ],
+      "r": 2,
+      "fixed": true
+    },
+    {
+      "id": "wall-0",
+      "kind": "slab",
+      "at": [
+        4,
+        4,
+        3
+      ],
+      "size": [
+        28,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              11.76,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-1",
+      "kind": "slab",
+      "at": [
+        4,
+        35,
+        3
+      ],
+      "size": [
+        32,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              29,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              20.8,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              13.44,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-2",
+      "kind": "slab",
+      "at": [
+        4,
+        66,
+        3
+      ],
+      "size": [
+        28,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              11.76,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-3",
+      "kind": "slab",
+      "at": [
+        41,
+        4,
+        3
+      ],
+      "size": [
+        32,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              29,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              20.8,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              13.44,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-4",
+      "kind": "slab",
+      "at": [
+        41,
+        35,
+        3
+      ],
+      "size": [
+        28,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              11.76,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-5",
+      "kind": "slab",
+      "at": [
+        41,
+        66,
+        3
+      ],
+      "size": [
+        32,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              29,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              20.8,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              13.44,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-6",
+      "kind": "slab",
+      "at": [
+        78,
+        4,
+        3
+      ],
+      "size": [
+        28,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              11.76,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-7",
+      "kind": "slab",
+      "at": [
+        78,
+        35,
+        3
+      ],
+      "size": [
+        32,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              29,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              20.8,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              13.44,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-8",
+      "kind": "slab",
+      "at": [
+        78,
+        66,
+        3
+      ],
+      "size": [
+        28,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              11.76,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-9",
+      "kind": "slab",
+      "at": [
+        115,
+        4,
+        3
+      ],
+      "size": [
+        32,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              29,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              20.8,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              13.44,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-10",
+      "kind": "slab",
+      "at": [
+        115,
+        35,
+        3
+      ],
+      "size": [
+        28,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              11.76,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-11",
+      "kind": "slab",
+      "at": [
+        115,
+        66,
+        3
+      ],
+      "size": [
+        32,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              29,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              20.8,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              13.44,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-12",
+      "kind": "slab",
+      "at": [
+        152,
+        4,
+        3
+      ],
+      "size": [
+        28,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              11.76,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-13",
+      "kind": "slab",
+      "at": [
+        152,
+        35,
+        3
+      ],
+      "size": [
+        32,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              29,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              20.8,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              13.44,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall-14",
+      "kind": "slab",
+      "at": [
+        152,
+        66,
+        3
+      ],
+      "size": [
+        28,
+        25,
+        1.1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              11.76,
+              21
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arrival-a",
+      "kind": "slab",
+      "at": [
+        145,
+        13,
+        32
+      ],
+      "size": [
+        31,
+        25,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              28,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              20.150000000000002,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              13.02,
+              21
+            ]
+          ]
+        }
+      ],
+      "yaw": -14
+    },
+    {
+      "id": "arrival-b",
+      "kind": "slab",
+      "at": [
+        160,
+        67,
+        46
+      ],
+      "size": [
+        26,
+        25,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              23,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              16.900000000000002,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              21
+            ],
+            [
+              10.92,
+              21
+            ]
+          ]
+        }
+      ],
+      "yaw": 19
+    }
+  ],
+  "focal": "arrival-a",
+  "labels": "none",
+  "interact": null,
+  "meta": {
+    "margin": "A wall that keeps receiving cards",
+    "corner": "VPK-HTML"
+  }
+}

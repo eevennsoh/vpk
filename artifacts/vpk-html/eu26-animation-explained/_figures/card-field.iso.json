@@ -1,0 +1,522 @@
+{
+  "schema": "vpk-iso-brief/1",
+  "id": "card-field",
+  "figId": "FIG_004",
+  "title": "The board becomes a 3D field",
+  "label": "Printed issue cards float at different depths over a stage, with one hero sheet ahead of the others.",
+  "caption": "The sheets spread from the column into separate depths; the hero advances last.",
+  "camera": {
+    "preset": "dimetric",
+    "scale": "fit",
+    "pad": 32
+  },
+  "viewBox": [
+    800,
+    420
+  ],
+  "parts": [
+    {
+      "id": "stage",
+      "kind": "plate",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        150,
+        100,
+        2
+      ],
+      "r": 2,
+      "fixed": true
+    },
+    {
+      "id": "field-card-0",
+      "kind": "slab",
+      "at": [
+        7,
+        8,
+        18
+      ],
+      "size": [
+        28,
+        19,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              11.76,
+              15
+            ]
+          ]
+        }
+      ],
+      "yaw": -18
+    },
+    {
+      "id": "field-card-1",
+      "kind": "slab",
+      "at": [
+        48,
+        3,
+        42
+      ],
+      "size": [
+        28,
+        19,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              11.76,
+              15
+            ]
+          ]
+        }
+      ],
+      "yaw": 12
+    },
+    {
+      "id": "field-card-2",
+      "kind": "slab",
+      "at": [
+        98,
+        9,
+        25
+      ],
+      "size": [
+        28,
+        19,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              11.76,
+              15
+            ]
+          ]
+        }
+      ],
+      "yaw": 25
+    },
+    {
+      "id": "field-card-3",
+      "kind": "slab",
+      "at": [
+        5,
+        49,
+        43
+      ],
+      "size": [
+        28,
+        19,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              11.76,
+              15
+            ]
+          ]
+        }
+      ],
+      "yaw": 8
+    },
+    {
+      "id": "field-card-4",
+      "kind": "slab",
+      "at": [
+        61,
+        40,
+        65
+      ],
+      "size": [
+        28,
+        19,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              11.76,
+              15
+            ]
+          ]
+        }
+      ],
+      "yaw": -12
+    },
+    {
+      "id": "field-card-5",
+      "kind": "slab",
+      "at": [
+        111,
+        48,
+        52
+      ],
+      "size": [
+        28,
+        19,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              11.76,
+              15
+            ]
+          ]
+        }
+      ],
+      "yaw": -24
+    },
+    {
+      "id": "field-card-6",
+      "kind": "slab",
+      "at": [
+        32,
+        78,
+        17
+      ],
+      "size": [
+        28,
+        19,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              11.76,
+              15
+            ]
+          ]
+        }
+      ],
+      "yaw": 18
+    },
+    {
+      "id": "field-card-7",
+      "kind": "slab",
+      "at": [
+        85,
+        83,
+        24
+      ],
+      "size": [
+        28,
+        19,
+        1
+      ],
+      "r": 1.2,
+      "detail": [
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              4
+            ],
+            [
+              25,
+              4
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              8
+            ],
+            [
+              18.2,
+              8
+            ]
+          ]
+        },
+        {
+          "type": "line",
+          "face": "top",
+          "points": [
+            [
+              3,
+              15
+            ],
+            [
+              11.76,
+              15
+            ]
+          ]
+        }
+      ],
+      "yaw": -8
+    }
+  ],
+  "focal": "field-card-4",
+  "labels": "none",
+  "interact": null,
+  "meta": {
+    "margin": "The board becomes a 3D field",
+    "corner": "VPK-HTML"
+  }
+}

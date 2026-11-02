@@ -1,0 +1,73 @@
+{
+  "type": "document",
+  "lang": "en",
+  "brief": {
+    "template": "code-understanding.html",
+    "reader_job": {
+      "quick_read": "Understand the six visible stages from a card drop to the endless mega bento.",
+      "deep_audit": "Trace each effect to the exact Bitbucket commit, timing cues, shaders and DOM handoffs."
+    },
+    "formats": [
+      "html"
+    ],
+    "audience": "Designers and engineers explaining the Team ’26 EU finale",
+    "length_target": "Single-column Page, Slides, X Threads and Video views with a right chapter navigator and twelve states.",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "size_budget_kb": 5000,
+    "figure_engine": "anatomy-hero",
+    "figure_engine_source": "user",
+    "figures": [
+      {
+        "id": "eu26-hero",
+        "kind": "explainer",
+        "engine": "anatomy-hero",
+        "tier": "hero",
+        "job": "One anchored animation follows the reader through twelve states in Page, Slides, X Threads and Video views."
+      }
+    ],
+    "review": {
+      "runtime": false
+    },
+    "acceptance_checks": [
+      "check-placeholders",
+      "verify",
+      "check-html",
+      "check-content",
+      "build-hero --audit",
+      "build-hero --check",
+      "check-figures --strict",
+      "check-layout --strict",
+      "seven browser/model suites",
+      "deferred export service tests with a fake runner",
+      "light and dark desktop/mobile review",
+      "pnpm run lint",
+      "pnpm run typecheck"
+    ],
+    "assumptions": [
+      "This artifact demonstrates the proposed reusable layout before a future consolidation of the entire template catalog.",
+      "Page, Slides, X Threads and Video share the same hero and state model; switching modes preserves the selected step.",
+      "X Threads is a local reading view. It does not publish or post anything."
+    ],
+    "evidence": [
+      "Bitbucket main verified at 8588b00ff81cb5e8341a462158c747c6d990667c on 30 October 2026.",
+      "Deployed board and held 3D field inspected through the supplied Statlas URL.",
+      "Supplied final.mov: 54.325 seconds, 4088x2382, inspected 31 October 2026 for board drags, title carry and wall collaborators.",
+      "Supplied 65SmwZlt323Sc8Oe.mp4: 40.708 seconds, 720x740 at 120 fps; inspected for framing, shot pacing and holds. The user requested retained orbit freedom with less fidgeting.",
+      "Heerich interactive guide inspected 31 October 2026 for generous diagram framing and editorial reading rhythm: https://meodai.github.io/heerich/",
+      "Supplied timeline.mp4: 13.056 seconds, 1280x720 at 60fps. Its graduated ruler and large filmstrip inform the vertical adaptation. https://www.pengzhe.ng/#timeline"
+    ],
+    "explicit_deviations": [
+      "The user requested one column: a wide anchored diagram above short text in every view. Native scrolling and state jumps use heading anchors below the diagram so the text stays clear.",
+      "The user requested orange accents, border light and a directional gradient. These override fixed-camera and grayscale anatomy defaults; all cover artwork and diagram labels are omitted.",
+      "Authored camera shots coordinate focus, zoom and angles. Navigation blends poses directly; scrolling and scrubbing seek exact time. Reduced motion selects still states.",
+      "Play runs a 20-second sequence, then one irregular masonry field continues until paused. A bounded pool recycles individual cards without cloning neighboring layouts.",
+      "The new reading layout omits optional floating enhancement chrome and owns its navigation. Shared embedded fonts, theme, figure runtime and offline delivery remain.",
+      "The user requested a right-side chapter navigator with one-pixel ticks anchored at their right edge and expanding toward the left. Navigation shows chapter names without timestamps; Frames opens the full chapter list.",
+      "The supplied marks.mov reference guides the ruler interaction. The orange indicator occupies a real tick; a magnetic approach and local proximity wave use a stationary native input, exact authored time and reduced-motion stillness.",
+      "A single chapter image follows scrolling. Video remains a coded HTML preview; only the explicit Generate video action requests a Hyperframes render."
+    ]
+  }
+}

@@ -24,10 +24,13 @@
  */
 
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { inlineIcon } from "./icons.mjs";
-import { moveMarkedBlockToBodyEnd } from "./runtime/blocks.mjs";
+import { moveMarkedBlockToBodyEnd, removeMarkedBlock } from "./runtime/blocks.mjs";
+
+const require = createRequire(import.meta.url);
 
 export const START = "<!-- vpkh-enhance:begin -->";
 export const END = "<!-- vpkh-enhance:end -->";
@@ -733,6 +736,12 @@ ${END}`;
 
 // Pure: strip any existing block and re-append the current one before the last </body>.
 export function injectEnhancements(html, filePath) {
+	if (/data-vpk-enhancements/i.test(html)) {
+		const { document } = require("linkedom").parseHTML(html);
+		const body = document.querySelector("html > body") ?? document.querySelector("body");
+		const disabled = [...(body?.attributes ?? [])].some(({ name, value }) => name.toLowerCase() === "data-vpk-enhancements" && value.toLowerCase() === "off");
+		if (disabled) return removeMarkedBlock(html, START, END);
+	}
 	return moveMarkedBlockToBodyEnd(html, { start: START, end: END, block: ENHANCEMENT_BLOCK, label: filePath });
 }
 
