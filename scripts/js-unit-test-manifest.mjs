@@ -21,6 +21,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/project-butter/details-fields.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/related-work.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/shell-editors.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/use-project-butter-content.behavior.test.js",
 		"components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.behavior.test.js",
 		"components/blocks/jira-issue/project-butter-invocation-model.test.ts",
 		"components/blocks/jira-issue/project-butter-model.test.ts",
