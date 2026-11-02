@@ -14,7 +14,7 @@ import {
 	type ProjectButterSuggestionSnapshot,
 } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
-import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-field-row";
+import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 import type { ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 
 /**

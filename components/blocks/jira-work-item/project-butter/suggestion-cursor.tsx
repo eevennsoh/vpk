@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 
 import { Spinner } from "@/components/ui/spinner";
-import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-field-row";
+import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 

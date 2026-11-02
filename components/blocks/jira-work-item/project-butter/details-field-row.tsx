@@ -10,13 +10,11 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ShimmerWave } from "@/components/ui-custom/shimmer-wave";
 import { cn } from "@/lib/utils";
-import { motionDuration, motionEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 import { PROJECT_BUTTER_DETAIL_FIELDS, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
+import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 
 const SUGGESTION_WAVE_COLORS = ["#FCA700", "#6A9A23", "#1868DB", "#AF59E1"] as const;
-/** Shared by the field rows and the filling bar so they move as one rail. Linear because Accept all chains steps back to back; an eased step would brake at every row. */
-export const DETAILS_RAIL_GLIDE = { layout: { duration: motionDuration.slower, ease: motionEase.linear } } as const;
 
 export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, first, last, reflow = false, shimmerText }: Readonly<{
 	children: ReactNode;
