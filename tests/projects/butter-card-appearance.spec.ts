@@ -59,6 +59,10 @@ test("Butter's agent picker keeps directory actions visible while scrolling", as
 	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot"]) {
 		await expect(directory.getByRole("heading", { name, exact: true })).toHaveCount(1);
 	}
+	await directory.getByRole("tab", { name: "Verified" }).click();
+	for (const name of ["Jira Coding Agent", "Claude", "Cursor", "Codex", "GitHub Copilot"]) {
+		await expect(directory.getByRole("button", { name: `View ${name}`, exact: true })).toHaveCount(1);
+	}
 	await directory.getByRole("tab", { name: "All agents" }).click();
 	await directory.getByRole("button", { name: "View Feedback Analyzer" }).click();
 	await expect(directory).toBeHidden();
