@@ -40,10 +40,37 @@ export function renderEu26HeaderAssignee(context: Eu26HeaderAssigneeProps) {
 	return <Eu26HeaderAssignee {...context} />;
 }
 
+function Eu26HeaderAssigneeAvatar({ assignee, agent, muted, selected }: Readonly<
+	Pick<Eu26HeaderAssigneeProps, "assignee" | "muted" | "selected"> & { agent: AgentLanyardAgent | undefined }
+>) {
+	if (agent?.brandName) {
+		return <AgentAvatarVisual animate={false} brandName={agent.brandName} label={assignee.name} sizePx={24} />;
+	}
+
+	return (
+		<Avatar
+			label={assignee.name}
+			shape={agent ? "hexagon" : "circle"}
+			size="sm"
+			className={cn(
+				!agent ? "ring-2 ring-background" : null,
+				selected && !agent ? "ring-2! ring-border-selected!" : null,
+				muted && !agent ? "opacity-(--opacity-disabled)" : null,
+			)}
+		>
+			{agent === JIRA_CODING ? (
+				<span className="flex size-full items-center justify-center" style={{ backgroundColor: JIRA_CODING.accentColor }}>
+					<AvatarImage alt="" src={assignee.avatarSrc} className="size-4.5 object-contain" />
+				</span>
+			) : <AvatarImage alt="" src={assignee.avatarSrc} />}
+			<AvatarFallback>{assignee.name.slice(0, 1)}</AvatarFallback>
+		</Avatar>
+	);
+}
+
 function Eu26HeaderAssignee({ assignee, muted, selected, onToggle, surfaceLabel }: Readonly<Eu26HeaderAssigneeProps>) {
 	const handle = useHeaderLanyardHandle();
 	const agent = HEADER_AGENTS.get(assignee.id);
-	const isJiraCoding = agent === JIRA_CODING;
 	const trigger = (
 		<button
 			aria-label={agent ? `Preview ${assignee.name}` : `Filter ${surfaceLabel} by ${assignee.name}`}
@@ -52,23 +79,7 @@ function Eu26HeaderAssignee({ assignee, muted, selected, onToggle, surfaceLabel 
 			onClick={agent ? undefined : onToggle}
 			type="button"
 		>
-			{agent?.brandName ? <AgentAvatarVisual animate={false} brandName={agent.brandName} label={assignee.name} sizePx={24} /> : <Avatar
-				label={assignee.name}
-				shape={agent ? "hexagon" : "circle"}
-				size="sm"
-				className={cn(
-					!agent ? "ring-2 ring-background" : null,
-					selected && !agent ? "ring-2! ring-border-selected!" : null,
-					muted && !agent ? "opacity-(--opacity-disabled)" : null,
-				)}
-			>
-				{isJiraCoding ? (
-					<span className="flex size-full items-center justify-center" style={{ backgroundColor: JIRA_CODING.accentColor }}>
-						<AvatarImage alt="" src={assignee.avatarSrc} className="size-4.5 object-contain" />
-					</span>
-				) : <AvatarImage alt="" src={assignee.avatarSrc} />}
-				<AvatarFallback>{assignee.name.slice(0, 1)}</AvatarFallback>
-			</Avatar>}
+			<Eu26HeaderAssigneeAvatar assignee={assignee} agent={agent} muted={muted} selected={selected} />
 		</button>
 	);
 

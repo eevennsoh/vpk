@@ -20,7 +20,7 @@ for (const route of ["jira-team-eu26", "jira-team-eu26-end"]) {
 				const more = card.getByRole("button", { name: `More actions for ${name}`, exact: true });
 				await expect(more).toBeEnabled();
 				await more.click();
-				const menu = page.getByRole("menu", { name: `More actions for ${name}`, exact: true });
+				const menu = page.getByRole("menu", { name: `Actions for ${name}`, exact: true });
 				await expect(menu).toBeVisible();
 				await expect(menu.getByRole("menuitem")).toHaveText(["View profile", "Star", "Copy link", "Duplicate"]);
 				for (const item of await menu.getByRole("menuitem").all()) await expect(item).toBeEnabled();
