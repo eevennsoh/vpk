@@ -39,7 +39,7 @@ test("Butter's agent picker keeps directory actions visible while scrolling", as
 	const add = issue.getByRole("button", { name: "Add agent to PAY-118", exact: true });
 	await add.focus();
 	await page.keyboard.press("Enter");
-	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true }).filter({ has: page.getByRole("listbox") });
 	const browse = picker.getByRole("button", { name: "Browse agents" });
 	const create = picker.getByRole("button", { name: "Create agent" });
 	await expect(browse).toBeVisible();
@@ -52,9 +52,26 @@ test("Butter's agent picker keeps directory actions visible while scrolling", as
 	await expect(create).toBeVisible();
 	expect((await browse.boundingBox())?.y).toBe(before?.y);
 	await browse.click();
-	const directory = page.getByRole("dialog", { name: "Browse agents" });
+	const directory = page.getByRole("dialog", { name: "Agents", exact: true }).filter({ has: page.getByRole("tab", { name: "Recommended" }) });
+	await expect(directory).toBeVisible();
+	await expect(directory.getByRole("tab", { name: "Recommended" })).toBeVisible();
+	await expect(directory.getByRole("heading", { name: "Jira Coding Agent", exact: true })).toBeVisible();
+	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot"]) {
+		await expect(directory.getByRole("heading", { name, exact: true })).toHaveCount(1);
+	}
+	await directory.getByRole("tab", { name: "Verified" }).click();
+	for (const name of ["Jira Coding Agent", "Claude", "Cursor", "Codex", "GitHub Copilot"]) {
+		await expect(directory.getByRole("button", { name: `View ${name}`, exact: true })).toHaveCount(1);
+	}
+	await directory.getByRole("tab", { name: "All agents" }).click();
+	await directory.getByRole("button", { name: "View Feedback Analyzer" }).click();
+	await expect(directory).toBeHidden();
+	await add.focus();
+	await page.keyboard.press("Enter");
+	await picker.getByRole("button", { name: "Browse agents" }).click();
 	await expect(directory).toBeVisible();
 	await directory.getByRole("button", { name: "Close" }).click();
+	await expect(directory).toBeHidden();
 	await add.focus();
 	await page.keyboard.press("Enter");
 	await picker.getByRole("button", { name: "Create agent" }).click();
