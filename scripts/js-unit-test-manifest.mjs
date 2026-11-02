@@ -122,6 +122,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		".agents/skills/vpk-html/scripts/iso/emit.test.mjs",
 		".agents/skills/vpk-html/scripts/iso/audit.test.mjs",
 		".agents/skills/vpk-html/scripts/iso/runtime.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/teardown.test.mjs",
 		".agents/skills/vpk-html/scripts/iso/inline.test.mjs",
 		".agents/skills/vpk-html/scripts/iso/build-figure.test.mjs",
 		".agents/skills/vpk-html/scripts/check-html-figures.test.mjs",
