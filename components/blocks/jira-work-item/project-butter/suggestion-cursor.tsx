@@ -1,25 +1,24 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 
-import type { ProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
 import { Spinner } from "@/components/ui/spinner";
+import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-field-row";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 
-/** Traveling status pill. It sits on the field that is about to receive a value. */
-export function ProjectButterSuggestionCursor({ fill }: Readonly<{ fill: ProjectButterSuggestionFill }>) {
-	const shouldReduceMotion = useReducedMotion() ?? false;
-	if (!fill.running || fill.pillTop == null || shouldReduceMotion) return null;
-
+/** Filling status bar. It sits in the Details rail below the field about to receive a value, so each move slides one row past it. */
+export function ProjectButterSuggestionCursor() {
 	return (
 		<motion.div
-			animate={{ opacity: 1, y: fill.pillTop }}
+			animate={{ opacity: 1 }}
 			aria-hidden
-			className="pointer-events-none absolute inset-x-1 top-0 z-20"
+			className="pointer-events-none relative z-20"
 			data-project-butter-suggestion-cursor
-			initial={{ opacity: 0, y: fill.pillTop }}
-			transition={{ duration: motionDuration.medium, ease: motionEase.inOut }}
+			initial={{ opacity: 0 }}
+			layout="position"
+			style={{ willChange: "transform" }}
+			transition={{ ...DETAILS_RAIL_GLIDE, opacity: { duration: motionDuration.medium, ease: motionEase.outPractical } }}
 		>
 			<div className="flex items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5" style={{ boxShadow: token("elevation.shadow.overlay") }}>
 				<Spinner label="" size="xs" variant="rainbow" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
@@ -21,24 +21,13 @@ const SUGGESTION_SOURCES = [
 	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
 ] as const satisfies readonly TwgToolSource[];
 
-const SUGGESTION_BANNER_CLASS = "relative flex h-auto w-full items-center justify-start gap-3 overflow-hidden rounded-[calc(0.25*2.5rem+0.375rem+1px)] border border-border bg-surface-sunken p-1.5 pr-2 text-left";
+const SUGGESTION_BANNER_CLASS = "relative flex h-auto w-full items-center justify-start gap-3 overflow-hidden rounded-[calc(0.25*2.5rem+0.375rem+1px)] border border-border bg-surface-sunken p-1.5 pr-2 text-left transition-[background-color,border-color,box-shadow] has-[[data-suggestion-trigger]:hover]:bg-surface-raised-hovered has-[[data-suggestion-trigger]:focus-visible]:border-ring has-[[data-suggestion-trigger]:focus-visible]:ring-3 has-[[data-suggestion-trigger]:focus-visible]:ring-ring/50";
 
 function TeamworkGraphLoaderTile({ active }: Readonly<{ active: boolean }>) {
 	return (
 		<Tile className="relative z-10 bg-surface" hasBorder label="Teamwork Graph" size="large" variant="transparent">
 			<TWGLoader active={active} label="Teamwork Graph" size="small" />
 		</Tile>
-	);
-}
-
-function SuggestionBannerFace({ active, label, trailing }: Readonly<{ active: boolean; label: string; trailing: ReactNode }>) {
-	return (
-		<>
-			<TwgToolBannerBackground />
-			<TeamworkGraphLoaderTile active={active} />
-			<span aria-live="polite" className="relative z-10 min-w-0 flex-1 truncate text-sm text-text">{label}</span>
-			{trailing}
-		</>
 	);
 }
 
@@ -51,31 +40,26 @@ function suggestionBannerLabel(fill: ProjectButterSuggestionFill): string | null
 	return `${count} ${count === 1 ? "Suggestion" : "Suggestions"}`;
 }
 
+/** One banner element in every state, so the loader tile keeps turning from where it was instead of remounting. */
 function SuggestionBanner({ active, fill, label, reviewing }: Readonly<{ active: boolean; fill: ProjectButterSuggestionFill; label: string; reviewing: boolean }>) {
-	if (reviewing) {
-		return (
-			<div className={SUGGESTION_BANNER_CLASS} data-suggestion-review="updated">
-				<SuggestionBannerFace
-					active={active}
-					label={label}
-					trailing={(
-						<div className="relative z-10 flex shrink-0 items-center gap-1">
-							<Button onClick={fill.undoAccepted} size="compact" type="button" variant="outline">Undo</Button>
-							<Button onClick={fill.dismissAccepted} size="compact" type="button" variant="default">Done</Button>
-						</div>
-					)}
-				/>
-			</div>
-		);
-	}
+	const labelId = useId();
 	return (
-		<PopoverTrigger
-			render={
-				<Button className="relative h-auto w-full justify-start gap-3 overflow-hidden rounded-[calc(0.25*2.5rem+0.375rem+1px)] border-border bg-surface-sunken p-1.5 pr-2 text-left aria-expanded:border-border aria-expanded:bg-surface-sunken aria-expanded:text-text hover:bg-surface-raised-hovered aria-expanded:hover:bg-surface-raised-hovered" type="button" variant="ghost" />
-			}
-		>
-			<SuggestionBannerFace active={active} label={label} trailing={<TwgToolSourceStack className="relative z-10 max-w-[44%] shrink-0" sources={SUGGESTION_SOURCES} />} />
-		</PopoverTrigger>
+		<div className={SUGGESTION_BANNER_CLASS} data-suggestion-review={reviewing ? "updated" : undefined}>
+			{reviewing ? null : (
+				<PopoverTrigger aria-labelledby={labelId} className="absolute inset-0 z-20 rounded-[inherit] outline-none" data-suggestion-trigger="" type="button" />
+			)}
+			<TwgToolBannerBackground />
+			<TeamworkGraphLoaderTile active={active} />
+			<span aria-live="polite" className="relative z-10 min-w-0 flex-1 truncate text-sm text-text" id={labelId}>{label}</span>
+			{reviewing ? (
+				<div className="relative z-30 flex shrink-0 items-center gap-1">
+					<Button onClick={fill.undoAccepted} size="compact" type="button" variant="outline">Undo</Button>
+					<Button onClick={fill.dismissAccepted} size="compact" type="button" variant="default">Done</Button>
+				</div>
+			) : (
+				<TwgToolSourceStack className="relative z-10 max-w-[44%] shrink-0" sources={SUGGESTION_SOURCES} />
+			)}
+		</div>
 	);
 }
 
@@ -113,7 +97,7 @@ function SuggestionFieldList({ fill, reduced }: Readonly<{ fill: ProjectButterSu
 /** Suggestions for empty Details fields, opened from a trigger above the Details panel. */
 export function ProjectButterSuggestionPanel({ fill }: Readonly<{ fill: ProjectButterSuggestionFill }>) {
 	const shouldReduceMotion = useReducedMotion() ?? false;
-	const [open, setOpen] = useState(true);
+	const [open, setOpen] = useState(false);
 	const [intro, setIntro] = useState(true);
 	const label = suggestionBannerLabel(fill);
 	if (label == null) return null;

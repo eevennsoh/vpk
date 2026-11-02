@@ -160,6 +160,79 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("button", { name: "Change priority. Current priority: Highest" }) !== null, true);
 });
 
+test("modal header centers the issue key with collapse and close", async () => {
+	const view = await renderWorkItem({
+		initialPresentation: "modal",
+		shell: "project",
+		workItem: { code: "PAY-118", title: "First board item" },
+	});
+	const row = document.querySelector("[data-project-butter-header-key-row]");
+	const summary = view.getByRole("textbox", { name: "Work item summary" });
+	assert.equal(row !== null, true);
+	assert.match(row.className, /\bitems-center\b/);
+	const key = view.getByRole("button", { name: "Copy work item key" });
+	assert.equal(row.contains(key), true);
+	const storyIcon = key.closest("[data-slot='breadcrumb-item']").querySelector("[aria-label='Story']");
+	assert.match(storyIcon.parentElement.className, /\binline-flex\b/);
+	assert.match(storyIcon.parentElement.className, /\bitems-center\b/);
+	assert.match(storyIcon.parentElement.className, /\bleading-none\b/);
+	assert.equal(row.contains(view.getByRole("button", { name: "Collapse work item" })), true);
+	assert.equal(row.contains(view.getByRole("button", { name: "Close Project butter work item" })), true);
+	assert.match(summary.className, /\bh-8\b/);
+	assert.equal(summary.className.includes("hover:bg-bg-neutral-subtle-hovered"), false);
+	await view.click(view.getByRole("button", { name: "Collapse work item" }));
+	assert.equal(document.querySelector("[data-project-butter-presentation]")?.getAttribute("data-project-butter-presentation"), "side-panel");
+});
+
+test("full screen keeps the issue key row without collapse or close and still closes on Escape", async () => {
+	let closed = 0;
+	const view = await renderWorkItem({
+		initialPresentation: "full-screen",
+		onClose: () => { closed += 1; },
+		shell: "project",
+		workItem: { code: "PAY-118", title: "First board item" },
+	});
+	assert.equal(view.queryByRole("button", { name: "Copy work item key" }) !== null, true);
+	assert.equal(view.queryByText("PAY-118") !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Collapse work item" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Close Project butter work item" }) === null, true);
+	await view.press(document.body, "Escape");
+	assert.equal(closed, 1);
+});
+
+test("side panel header expands back to the modal with an icon button", async () => {
+	const view = await renderWorkItem({ initialPresentation: "side-panel" });
+	assert.equal(view.queryByRole("button", { name: "Full screen" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Expand work item" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Close Project butter work item" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Expand work item" }));
+	assert.equal(document.querySelector("[data-project-butter-presentation]")?.getAttribute("data-project-butter-presentation"), "modal");
+});
+
+test("side panel renders its chrome through the shared Panel and modal does not", async () => {
+	let closed = 0;
+	const view = await renderWorkItem({ initialPresentation: "side-panel", onClose: () => { closed += 1; } });
+	const panel = document.querySelector('section[aria-label="Work item side panel view"]');
+	assert.equal(panel.getAttribute("data-slot"), "panel-container");
+	const header = panel.querySelector('[data-slot="panel-header"]');
+	assert.equal(header?.querySelector('[data-slot="panel-title"]')?.textContent, "Jira work item");
+	for (const name of ["Expand work item", "Close Project butter work item"]) {
+		const action = view.getByRole("button", { name });
+		assert.equal(action.getAttribute("data-slot"), "panel-action");
+		assert.equal(header.contains(action), true);
+	}
+	assert.equal(view.getAllByRole("button", { name: "Close Project butter work item" }).length, 1);
+	assert.equal(panel.contains(view.getByRole("textbox", { name: "Work item summary" })), true);
+	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
+	assert.equal(closed, 1);
+});
+
+test("modal keeps its own header outside the shared Panel", async () => {
+	await renderWorkItem({ initialPresentation: "modal" });
+	assert.equal(document.querySelector('[data-slot="panel-container"]'), null);
+	assert.equal(document.querySelector('section[aria-label="Work item modal view"]') !== null, true);
+});
+
 test("board work item actions omit unsupported deep links and keep key copying available", async () => {
 	const view = await renderWorkItem({
 		initialPresentation: "modal",
@@ -179,6 +252,52 @@ test("empty Project butter can create a coding session", async () => {
 	await view.click(view.getByRole("button", { name: "Start coding" }));
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Jira Coding agent" }) !== null, true);
 	assert.equal(view.queryByText("No agent sessions yet. Start coding to begin work on this item.") === null, true);
+});
+
+test("activity header keeps only the more-actions menu in both states", async () => {
+	for (const initialPreset of ["filled", "empty"]) {
+		const view = await renderWorkItem({ initialPreset });
+		assert.equal(view.queryByRole("button", { name: /^(Collapse|Expand) activity$/u }), null);
+		assert.equal(view.queryByRole("button", { name: "More activity actions" }) !== null, true);
+		await view.unmount();
+	}
+});
+
+test("empty Project butter shows the reference empty layout without placeholder copy", async () => {
+	const view = await renderWorkItem({ initialPreset: "empty", initialPresentation: "modal", shell: "project" });
+	assert.equal(view.queryByText("No activity yet. Add a comment or an agent to get started."), null);
+	assert.equal(view.queryByRole("button", { name: "Description" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Work item description" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Add a comment" }) !== null, true);
+});
+
+test("empty secondary actions stay reachable by Tab without a prior hover", async () => {
+	const view = await renderWorkItem({ initialPreset: "empty", initialPresentation: "modal", shell: "project" });
+	const order = view.tabOrder();
+	const index = order.indexOf("Add attachment");
+	assert.equal(index > 0, true, "Add attachment must stay in the tab order while visually hidden");
+	assert.deepEqual(order.slice(index, index + 3), ["Add attachment", "Add child work item", "Add linked work"]);
+	await view.focus(document.body);
+	for (let step = 0; step <= index; step += 1) await view.press(null, "Tab");
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Add attachment" })), true);
+	await view.press(null, "Enter");
+	assert.equal(view.queryByRole("textbox", { name: "Attachment name or URL" }) !== null, true);
+});
+
+test("clicking the description suppresses the focus ring that keyboard focus keeps", async () => {
+	const view = await renderWorkItem();
+	const editor = () => view.getByRole("group", { name: "Description editor" });
+	const textbox = () => view.getByRole("textbox", { name: "Work item description" });
+	assert.equal(editor().className.includes("focus-within:"), false);
+	assert.equal(editor().hasAttribute("data-pointer-focused"), false);
+	await view.click(textbox());
+	assert.equal(view.isFocused(textbox()), true);
+	assert.equal(editor().hasAttribute("data-pointer-focused"), true);
+	await view.focus(view.getByRole("button", { name: "Description" }));
+	assert.equal(editor().hasAttribute("data-pointer-focused"), false);
+	await view.focus(textbox());
+	assert.equal(view.isFocused(textbox()), true);
+	assert.equal(editor().hasAttribute("data-pointer-focused"), false);
 });
 
 test("description edits and comment drafts survive closing and reopening the work item", async () => {
@@ -423,7 +542,7 @@ test("the source comment editor opens with M, clears cancelled drafts, resizes, 
 	let closed = false;
 	const view = await renderWorkItem({ onClose() { closed = true; } });
 	assert.equal(view.queryByRole("button", { name: "Add a comment" }) === null, true);
-	await view.focus(view.getByRole("button", { name: "Close Project butter work item" }));
+	await view.focus(view.getByRole("button", { name: "More work item actions" }));
 	await view.press(null, "m");
 	const editor = await commentEditor(view);
 	assert.equal(view.getByRole("button", { name: "Save comment" }).disabled, true);
@@ -526,7 +645,7 @@ test("pinned local sessions open the work item chat directly", async () => {
 	assert.equal(view.queryByRole("menuitem", { name: "Terminal" }) === null, true);
 	await view.press(document.body, "Escape");
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) === null, true);
-	assert.equal(view.queryByRole("button", { name: "Close Project butter work item" }) !== null, true);
+	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
 });
 
 
@@ -540,7 +659,7 @@ test("timeline hover previews and continuous pointer seeking follow the click po
 			const entries = Array.from({length:8}, (_, index) => ({id:String(index)}));
 			export default function Navigation({count=8,view="Activity"}) {
 				const items = React.useMemo(()=>entries.slice(0,count),[count]);
-				const navigation = useProjectButterActivityNavigation(items, false, null, true, view);
+				const navigation = useProjectButterActivityNavigation(items, false, null, view);
 				const offset = useTransform(navigation.progress, (value) => 0.02 + value * 0.96);
 				const marks = items.map((entry, index) => ({...entry, label:entry.id, heading:entry.id, kind:"minor", offset:0.02+(navigation.entryOffsets[entry.id] ?? index/7)*0.96}));
 				return <div data-test-scroll-root style={{overflowY:"auto",height:600}}>
@@ -604,6 +723,20 @@ test("timeline hover previews and continuous pointer seeking follow the click po
 test("suggestion state proposes empty details fields and accepts or dismisses one at a time", async () => {
 	const view = await renderWorkItem({ initialSuggestion: true });
 	assert.equal(document.querySelector("[data-project-butter-state]")?.getAttribute("data-project-butter-state"), "suggestion");
+	const suggestions = view.getByRole("button", { name: /8 Suggestions/u });
+	assert.equal(suggestions.getAttribute("aria-expanded"), "false");
+	assert.equal(view.queryByRole("list", { name: "Suggested field values" }), null);
+	assert.equal(view.queryByRole("button", { name: "Accept all" }), null);
+	assert.equal(view.queryByRole("button", { name: "Accept Due Date suggestion" }), null);
+	await view.click(suggestions);
+	assert.equal(suggestions.getAttribute("aria-expanded"), "true");
+	assert.equal(view.queryByRole("list", { name: "Suggested field values" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Accept all" }) !== null, true);
+	assert.equal(view.queryByText("Dec 15, 2026") !== null, true);
+	await view.click(suggestions);
+	assert.equal(suggestions.getAttribute("aria-expanded"), "false");
+	assert.equal(view.queryByRole("button", { name: "Accept all" }), null);
+	await view.click(suggestions);
 	assert.equal(document.querySelector("[data-project-butter-suggestion-panel]")?.getAttribute("data-suggestion-count"), "8");
 	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "false");
 	await view.click(view.getByRole("button", { name: "Accept Due Date suggestion" }));
@@ -615,6 +748,84 @@ test("suggestion state proposes empty details fields and accepts or dismisses on
 	assert.equal(document.querySelector('[data-field-id="reporter"]')?.getAttribute("data-field-filled"), "false");
 });
 
+const SUGGESTION_FIELD_ORDER = ["dueDate", "parent", "labels", "components", "fixVersion", "acceptanceCriteria", "reporter", "costCenter"];
+
+function detailRailOrder() {
+	return [...document.querySelectorAll("[data-project-butter-detail-fields] [data-field-id], [data-project-butter-detail-fields] [data-project-butter-suggestion-cursor]")].map((node) => node.getAttribute("data-field-id") ?? "filling-bar");
+}
+
+async function acceptAllSuggestions(view) {
+	await view.click(view.getByRole("button", { name: /8 Suggestions/u }));
+	await view.click(view.getByRole("button", { name: "Accept all" }));
+}
+
+function assertFilledInRailOrder() {
+	assert.deepEqual(detailRailOrder().slice(0, 11), ["status", "assignee", "priority", ...SUGGESTION_FIELD_ORDER]);
+	assert.equal(SUGGESTION_FIELD_ORDER.every((field) => document.querySelector(`[data-field-id="${field}"]`)?.getAttribute("data-field-filled") === "true"), true);
+}
+
+test("Accept all walks the filling bar down the rail one field at a time and keeps the field order", async () => {
+	const view = await renderWorkItem({ initialSuggestion: true });
+	await acceptAllSuggestions(view);
+	const barSlots = [];
+	const filledState = (field) => document.querySelector(`[data-field-id="${field}"]`)?.getAttribute("data-field-filled");
+	for (let waited = 0; !view.queryByText("8 updated") && waited < 10_000; waited += 25) {
+		const rail = detailRailOrder();
+		const slot = rail.indexOf("filling-bar");
+		if (slot > 0 && barSlots.at(-1) !== rail[slot - 1]) {
+			barSlots.push(rail[slot - 1]);
+			assert.equal(filledState(rail[slot - 1]), "true", "the row above the bar has been filled");
+			if (SUGGESTION_FIELD_ORDER.includes(rail[slot + 1])) assert.equal(filledState(rail[slot + 1]), "false", "rows below the bar wait their turn");
+		}
+		await act(() => new Promise((resolve) => setTimeout(resolve, 25)));
+	}
+	assert.deepEqual(barSlots, ["priority", ...SUGGESTION_FIELD_ORDER], "the bar enters below the last filled field, then moves below each suggestion in rail order");
+	assert.equal(view.queryByText("8 updated") !== null, true);
+	assert.equal(detailRailOrder().includes("filling-bar"), false);
+	assertFilledInRailOrder();
+});
+
+test("the suggestion banner keeps one Teamwork Graph loader from loading to resting and back", async () => {
+	const view = await renderWorkItem({ initialSuggestion: true });
+	const loader = () => document.querySelector('[data-slot="twg-loader"][aria-label="Teamwork Graph"]');
+	const waitForState = async (state) => {
+		for (let waited = 0; loader()?.getAttribute("data-state") !== state && waited < 10_000; waited += 50) {
+			await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+		}
+		return loader()?.getAttribute("data-state");
+	};
+	const original = loader();
+	assert.equal(original !== null, true);
+	assert.equal(await waitForState("resting"), "resting", "the intro settles to rest");
+	await acceptAllSuggestions(view);
+	assert.equal(await waitForState("loading"), "loading");
+	assert.equal(loader() === original, true, "starting to fill keeps the resting loader");
+	assert.equal(await waitForState("resting"), "resting");
+	assert.equal(view.queryByText("8 updated") !== null, true);
+	assert.equal(loader() === original, true, "the review banner keeps the loader that was filling");
+	await view.click(view.getByRole("button", { name: "Undo" }));
+	assert.equal(loader() === original, true, "undo keeps the same loader");
+	await acceptAllSuggestions(view);
+	assert.equal(await waitForState("loading"), "loading");
+	assert.equal(loader() === original, true, "filling again resumes the same loader");
+	await view.unmount();
+});
+
+test("Accept all under reduced motion fills instantly without the filling bar", async () => {
+	const matchMedia = window.matchMedia;
+	window.matchMedia = (query) => ({ matches: query.includes("prefers-reduced-motion"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+	try {
+		const view = await renderWorkItem({ initialSuggestion: true });
+		await acceptAllSuggestions(view);
+		assert.equal(view.queryByText("8 updated") !== null, true);
+		assert.equal(detailRailOrder().includes("filling-bar"), false);
+		assertFilledInRailOrder();
+		await view.unmount();
+	} finally {
+		window.matchMedia = matchMedia;
+	}
+});
+
 test("settings can switch Project butter into the suggestion state", async () => {
 	const view = await renderWorkItem();
 	await view.click(view.getByRole("button", { name: "Settings" }));
@@ -623,7 +834,8 @@ test("settings can switch Project butter into the suggestion state", async () =>
 	assert.equal(view.getByRole("switch", { name: "Empty" }).getAttribute("aria-checked"), "false");
 	await view.click(view.getByRole("button", { name: "View prototype" }));
 	assert.equal(document.querySelector("[data-project-butter-state]")?.getAttribute("data-project-butter-state"), "suggestion");
-	if (view.queryByRole("button", { name: "Accept Parent suggestion" }) === null) await view.click(view.getByRole("button", { name: /Suggestions/u }));
+	assert.equal(view.queryByRole("button", { name: "Accept Parent suggestion" }), null);
+	await view.click(view.getByRole("button", { name: /Suggestions/u }));
 	assert.equal(view.queryByRole("button", { name: "Accept Parent suggestion" }) !== null, true);
 });
 

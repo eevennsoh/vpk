@@ -5,6 +5,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DetailsFieldRow } from "@/components/blocks/jira-work-item/project-butter/details-field-row";
 import { ProjectButterDetailFieldValue } from "@/components/blocks/jira-work-item/project-butter/details-field-values";
+import { ProjectButterSuggestionCursor } from "@/components/blocks/jira-work-item/project-butter/suggestion-cursor";
 import { PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS, projectButterCostPerReach, reorderProjectButterDetailFields, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { TEAM_EU26_PEOPLE } from "@/components/blocks/jira-work-item/team-eu26/data/team-eu26-vita-one";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
@@ -27,7 +28,7 @@ function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: 
 	}
 }
 
-export function ProjectButterDetailsFields({ content, empty, expanded, shimmerText }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
+export function ProjectButterDetailsFields({ content, empty, expanded, fillingBarAfter = null, reflow = false, shimmerText }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | null; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
 	const id = useId();
 	const [dragging, setDragging] = useState(false);
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates, scrollBehavior: "auto" }));
@@ -42,13 +43,14 @@ export function ProjectButterDetailsFields({ content, empty, expanded, shimmerTe
 			}} sensors={sensors}>
 				<SortableContext items={visible} strategy={verticalListSortingStrategy}>
 					<div className="flex min-w-0 flex-col gap-4 [&>[data-field-filled=false]+[data-field-filled=true]]:mt-1 [&>*+[data-field-filled=false]]:-mt-1">
-						{visible.map((field, index) => {
+						{visible.flatMap((field, index) => {
 							const filled = isProjectButterDetailFieldFilled(field, content);
 							const required = PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS.includes(field);
-							return <DetailsFieldRow filled={filled} first={index === 0} id={field} key={field} last={index === visible.length - 1} onClear={filled && !required && field !== "costPerReach" ? () => clearProjectButterDetailField(field, content) : undefined} onHide={required ? undefined : () => content.setDetailFields((current) => ({ ...current, hidden: [...current.hidden, field] }))} shimmerText={shimmerText?.[field]} onMove={(direction) => {
+							const row = <DetailsFieldRow filled={filled} first={index === 0} id={field} key={field} last={index === visible.length - 1} onClear={filled && !required && field !== "costPerReach" ? () => clearProjectButterDetailField(field, content) : undefined} onHide={required ? undefined : () => content.setDetailFields((current) => ({ ...current, hidden: [...current.hidden, field] }))} reflow={reflow && !dragging} shimmerText={shimmerText?.[field]} onMove={(direction) => {
 								const target = visible[index + direction];
 								if (target) content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, field, target) }));
 							}}><ProjectButterDetailFieldValue content={content} id={field} /></DetailsFieldRow>;
+							return field === fillingBarAfter ? [row, <ProjectButterSuggestionCursor key="filling-bar" />] : [row];
 						})}
 					</div>
 				</SortableContext>

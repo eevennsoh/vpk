@@ -20,7 +20,7 @@ function scrollActivityRow(feed: HTMLDivElement | null, id: string, offset: numb
 	if (row && scrollport) scrollport.scrollTo({ top: scrollport.scrollTop + row.getBoundingClientRect().top - scrollport.getBoundingClientRect().top - offset, behavior: "auto" });
 }
 
-export function useProjectButterActivityNavigation(entries: readonly JiraActivityEntry[], sidePanel: boolean, focusId: string | null, active = true, view: "Activity" | "Audit" = "Activity") {
+export function useProjectButterActivityNavigation(entries: readonly JiraActivityEntry[], sidePanel: boolean, focusId: string | null, view: "Activity" | "Audit" = "Activity") {
 	const feedRef = useRef<HTMLDivElement>(null);
 	const headerRef = useRef<HTMLDivElement>(null);
 	const timelineRef = useRef<HTMLDivElement>(null);
@@ -61,17 +61,17 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 		const feed = feedRef.current;
 		const root = activityScrollport(feed);
 		const header = headerRef.current;
-		if (!changed || !sticky.current || !active || entries.length === 0 || !feed || !root || !header) return;
+		if (!changed || !sticky.current || entries.length === 0 || !feed || !root || !header) return;
 		feed.style.minHeight = `${Math.max(0, root.clientHeight - (header.getBoundingClientRect().height || HEADER_HEIGHT))}px`;
 		root.scrollTop += header.getBoundingClientRect().top - root.getBoundingClientRect().top;
-	}, [active, entries.length, view]);
+	}, [entries.length, view]);
 
 	const focusVisible = entries.some((entry) => entry.id === focusId);
-	useEffect(() => { if (active && focusId && focusVisible) scrollActivityRow(feedRef.current, focusId, readingOffset()); }, [active, focusId, focusVisible, readingOffset]);
+	useEffect(() => { if (focusId && focusVisible) scrollActivityRow(feedRef.current, focusId, readingOffset()); }, [focusId, focusVisible, readingOffset]);
 	useEffect(() => {
 		const feed = feedRef.current;
 		const root = activityScrollport(feed);
-		if (!feed || !root || !active || entries.length === 0) return;
+		if (!feed || !root || entries.length === 0) return;
 		let frame = 0;
 		const previousMinHeight = feed.style.minHeight;
 		const update = () => {
@@ -103,6 +103,6 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 		}
 		schedule();
 		return () => { root.removeEventListener("scroll", schedule); resize?.disconnect(); if (frame) cancelAnimationFrame(frame); if (seekFrame.current) cancelAnimationFrame(seekFrame.current); seekFrame.current = 0; feed.style.minHeight = previousMinHeight; };
-	}, [active, entries, sidePanel, progress, readingOffset]);
+	}, [entries, sidePanel, progress, readingOffset]);
 	return { feedRef, headerRef, timelineRef, progress, entryOffsets, scrollToEntry, seekToProgress, visibleId };
 }

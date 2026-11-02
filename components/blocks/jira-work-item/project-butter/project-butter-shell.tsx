@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import TaskIcon from "@atlaskit/icon/core/task";
 import ProductSidebar from "@/components/blocks/product-sidebar/page";
 import TopNavigation from "@/components/blocks/top-navigation/page";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { PanelActionClose, PanelActionExpand, PanelActionGroup, PanelContainer, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { ProjectButterSettings } from "@/components/blocks/jira-work-item/project-butter/project-butter-settings";
 import { useProjectButterPanelResize } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-panel-resize";
 import type {
@@ -40,6 +42,22 @@ export function ProjectButterShell({
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const panelResize = useProjectButterPanelResize(open && presentation === "side-panel");
 	const standalone = shell === "standalone";
+	const sectionLabel = `Work item ${presentation === "full-screen" ? "full screen" : presentation === "side-panel" ? "side panel" : "modal"} view`;
+	const frameClassName = cn(
+		"@container/butter relative z-10 flex min-h-0 min-w-0 flex-col overflow-clip bg-surface",
+		!standalone || presentation === "full-screen"
+			? "h-full w-full"
+			: presentation === "modal"
+				? "m-auto h-[calc(100%-4rem)] max-h-[960px] w-[calc(100%-4rem)] max-w-[1280px] rounded-xl"
+				: "ml-auto h-full max-w-full",
+	);
+	const frameStyle =
+		!standalone || presentation === "full-screen"
+			? undefined
+			: {
+					boxShadow: token("elevation.shadow.overlay"),
+					width: presentation === "side-panel" ? panelResize.width : undefined,
+				};
 	const surface = (
 		<div
 			aria-label="Project butter preview"
@@ -50,26 +68,8 @@ export function ProjectButterShell({
 			{!standalone || presentation === "full-screen" ? null : (
 				<div aria-hidden className="absolute inset-0 bg-blanket" />
 			)}
-			<section
-				aria-label={`Work item ${presentation === "full-screen" ? "full screen" : presentation === "side-panel" ? "side panel" : "modal"} view`}
-				className={cn(
-					"@container/butter relative z-10 flex min-h-0 min-w-0 flex-col overflow-clip bg-surface",
-					!standalone || presentation === "full-screen"
-						? "h-full w-full"
-						: presentation === "modal"
-							? "m-auto h-[calc(100%-4rem)] max-h-[960px] w-[calc(100%-4rem)] max-w-[1280px] rounded-xl"
-							: "ml-auto h-full max-w-full",
-				)}
-				style={
-					!standalone || presentation === "full-screen"
-						? undefined
-						: {
-								boxShadow: token("elevation.shadow.overlay"),
-								width: presentation === "side-panel" ? panelResize.width : undefined,
-							}
-				}
-			>
-				{presentation === "side-panel" ? (
+			{presentation === "side-panel" ? (
+				<div className={frameClassName} style={frameStyle}>
 					<div
 						{...panelResize.separatorProps}
 						aria-label="Resize work item side panel"
@@ -83,9 +83,22 @@ export function ProjectButterShell({
 							className="h-full w-0.5 bg-transparent transition-colors duration-normal ease-out-practical group-hover:bg-border-focused group-focus-visible:bg-border-focused group-data-[resizing=true]:bg-border-focused"
 						/>
 					</div>
-				) : null}
-				{children}
-			</section>
+					<PanelContainer aria-label={sectionLabel}>
+						<PanelHeader>
+							<PanelTitle icon={<TaskIcon label="" />}>Jira work item</PanelTitle>
+							<PanelActionGroup>
+								<PanelActionExpand label="Expand work item" onClick={() => onPresentationChange("modal")} />
+								<PanelActionClose label="Close Project butter work item" onClick={onClose} />
+							</PanelActionGroup>
+						</PanelHeader>
+						{children}
+					</PanelContainer>
+				</div>
+			) : (
+				<section aria-label={sectionLabel} className={frameClassName} style={frameStyle}>
+					{children}
+				</section>
+			)}
 		</div>
 	);
 	return (

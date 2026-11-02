@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { motion } from "motion/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import DragHandleVerticalIcon from "@atlaskit/icon/core/drag-handle-vertical";
@@ -9,12 +10,15 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ShimmerWave } from "@/components/ui-custom/shimmer-wave";
 import { cn } from "@/lib/utils";
+import { motionDuration, motionEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 import { PROJECT_BUTTER_DETAIL_FIELDS, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 
 const SUGGESTION_WAVE_COLORS = ["#FCA700", "#6A9A23", "#1868DB", "#AF59E1"] as const;
+/** Shared by the field rows and the filling bar so they move as one rail. Linear because Accept all chains steps back to back; an eased step would brake at every row. */
+export const DETAILS_RAIL_GLIDE = { layout: { duration: motionDuration.slower, ease: motionEase.linear } } as const;
 
-export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, first, last, shimmerText }: Readonly<{
+export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, first, last, reflow = false, shimmerText }: Readonly<{
 	children: ReactNode;
 	filled: boolean;
 	id: ProjectButterDetailFieldId;
@@ -23,6 +27,8 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 	onMove: (direction: -1 | 1) => void;
 	first: boolean;
 	last: boolean;
+	/** Glide to new rail positions. A fixed layout dependency otherwise keeps Motion out of dnd-kit drags. */
+	reflow?: boolean;
 	shimmerText?: string;
 }>) {
 	const [actionsOpen, setActionsOpen] = useState(false);
@@ -39,42 +45,44 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 			role="group"
 			style={{ transform: CSS.Transform.toString(transform), transition: isDragging ? undefined : "transform var(--duration-medium) var(--ease-out-practical)", boxShadow: isDragging ? token("elevation.shadow.overlay") : undefined }}
 		>
-			{filled ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">{label}</div> : null}
-			<div className="relative -mx-2 flex min-h-8 min-w-0 items-start rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
-				<div className="min-w-0 flex-1 pr-14 [&_[data-slot=detail-value-trigger]]:min-h-8">
-					{shimmerText ? (
-						<ShimmerWave
-							as="span"
-							baseColor="var(--color-text)"
-							baseGradientColor={SUGGESTION_WAVE_COLORS}
-							className="text-sm"
-							duration={0.9}
-							rotateYDistance={6}
-							scaleDistance={1.04}
-							spread={2}
-							transition={{ repeat: 0, ease: "easeInOut" }}
-							xDistance={0}
-							yDistance={-1}
-							zDistance={6}
-						>
-							{shimmerText}
-						</ShimmerWave>
-					) : children}
+			<motion.div className="min-w-0" layout="position" layoutDependency={reflow ? undefined : "settled"} transition={DETAILS_RAIL_GLIDE}>
+				{filled ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">{label}</div> : null}
+				<div className="relative -mx-2 flex min-h-8 min-w-0 items-start rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
+					<div className="min-w-0 flex-1 pr-14 [&_[data-slot=detail-value-trigger]]:min-h-8">
+						{shimmerText ? (
+							<ShimmerWave
+								as="span"
+								baseColor="var(--color-text)"
+								baseGradientColor={SUGGESTION_WAVE_COLORS}
+								className="text-sm"
+								duration={0.9}
+								rotateYDistance={6}
+								scaleDistance={1.04}
+								spread={2}
+								transition={{ repeat: 0, ease: "easeInOut" }}
+								xDistance={0}
+								yDistance={-1}
+								zDistance={6}
+							>
+								{shimmerText}
+							</ShimmerWave>
+						) : children}
+					</div>
+					<div className={cn("absolute right-0 top-0 flex shrink-0 items-center opacity-0 transition-opacity duration-fast ease-out-practical group-hover/butter-field:opacity-100 group-focus-within/butter-field:opacity-100", actionsOpen || isDragging ? "opacity-100" : undefined)}>
+						<Button {...attributes} {...listeners} aria-label={`Drag to reorder ${label} field`} className="touch-pan-x" ref={setActivatorNodeRef} size="icon-compact" type="button" variant="ghost"><DragHandleVerticalIcon label="" size="small" /></Button>
+						<DropdownMenu onOpenChange={setActionsOpen} open={actionsOpen}>
+							<DropdownMenuTrigger render={<Button aria-label={`More ${label.toLowerCase()} field actions`} size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
+							<DropdownMenuContent align="end" positionerClassName="z-[700]">
+								<DropdownMenuItem disabled={first} onSelect={() => onMove(-1)}>Move up</DropdownMenuItem>
+								<DropdownMenuItem disabled={last} onSelect={() => onMove(1)}>Move down</DropdownMenuItem>
+								{onClear || onHide ? <DropdownMenuSeparator /> : null}
+								{onClear ? <DropdownMenuItem onSelect={onClear}>Clear {label.toLowerCase()}</DropdownMenuItem> : null}
+								{onHide ? <DropdownMenuItem onSelect={onHide}>Hide field</DropdownMenuItem> : <DropdownMenuItem disabled>Pinned by default</DropdownMenuItem>}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
 				</div>
-				<div className={cn("absolute right-0 top-0 flex shrink-0 items-center opacity-0 transition-opacity duration-fast ease-out-practical group-hover/butter-field:opacity-100 group-focus-within/butter-field:opacity-100", actionsOpen || isDragging ? "opacity-100" : undefined)}>
-					<Button {...attributes} {...listeners} aria-label={`Drag to reorder ${label} field`} className="touch-pan-x" ref={setActivatorNodeRef} size="icon-compact" type="button" variant="ghost"><DragHandleVerticalIcon label="" size="small" /></Button>
-					<DropdownMenu onOpenChange={setActionsOpen} open={actionsOpen}>
-						<DropdownMenuTrigger render={<Button aria-label={`More ${label.toLowerCase()} field actions`} size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
-						<DropdownMenuContent align="end" positionerClassName="z-[700]">
-							<DropdownMenuItem disabled={first} onSelect={() => onMove(-1)}>Move up</DropdownMenuItem>
-							<DropdownMenuItem disabled={last} onSelect={() => onMove(1)}>Move down</DropdownMenuItem>
-							{onClear || onHide ? <DropdownMenuSeparator /> : null}
-							{onClear ? <DropdownMenuItem onSelect={onClear}>Clear {label.toLowerCase()}</DropdownMenuItem> : null}
-							{onHide ? <DropdownMenuItem onSelect={onHide}>Hide field</DropdownMenuItem> : <DropdownMenuItem disabled>Pinned by default</DropdownMenuItem>}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			</div>
+			</motion.div>
 		</div>
 	);
 }

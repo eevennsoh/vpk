@@ -27,10 +27,12 @@ export function ProjectButterEmptyActions({ content }: Readonly<{ content: Proje
 		content.setRelatedEditor((editor) => ({ ...editor, [kind]: { ...editor[kind], composerOpen: true, editingId: null } }));
 	}
 	return (
-		<div aria-label="Add related work" className="flex items-center gap-2" role="group">
-			{content.attachments.length === 0 && !attachmentOpen ? <Button aria-label="Add attachment" onClick={() => content.setAttachmentComposerOpen(true)} ref={attachment} size="icon" type="button" variant="ghost"><AttachmentIcon label="" size="small" /></Button> : null}
-			{content.relatedWork.children.length === 0 && !childrenOpen ? <Button aria-label="Add child work item" onClick={() => openRelated("children")} ref={children} size="icon" type="button" variant="ghost"><SubtasksIcon label="" size="small" /></Button> : null}
-			{content.relatedWork.linked.length === 0 && !linkedOpen ? <Button aria-label="Add linked work" onClick={() => openRelated("linked")} ref={linked} size="icon" type="button" variant="ghost"><LinkIcon label="" size="small" /></Button> : null}
+		<div className="group/empty-actions flex items-center">
+			<div aria-label="Add related work" className="pointer-events-none flex items-center gap-2 opacity-0 transition-opacity duration-normal ease-out group-hover/empty-actions:pointer-events-auto group-hover/empty-actions:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100 motion-reduce:transition-none" role="group">
+				{content.attachments.length === 0 && !attachmentOpen ? <Button aria-label="Add attachment" onClick={() => content.setAttachmentComposerOpen(true)} ref={attachment} size="icon" type="button" variant="ghost"><AttachmentIcon label="" size="small" /></Button> : null}
+				{content.relatedWork.children.length === 0 && !childrenOpen ? <Button aria-label="Add child work item" onClick={() => openRelated("children")} ref={children} size="icon" type="button" variant="ghost"><SubtasksIcon label="" size="small" /></Button> : null}
+				{content.relatedWork.linked.length === 0 && !linkedOpen ? <Button aria-label="Add linked work" onClick={() => openRelated("linked")} ref={linked} size="icon" type="button" variant="ghost"><LinkIcon label="" size="small" /></Button> : null}
+			</div>
 		</div>
 	);
 }

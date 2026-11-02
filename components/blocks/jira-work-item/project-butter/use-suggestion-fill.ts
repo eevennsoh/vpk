@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { startTransition, useEffect, useId, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import { getShimmerWaveEndTime } from "@/components/ui-custom/lib/shimmer-wave-timing";
@@ -14,11 +14,14 @@ import {
 	type ProjectButterSuggestionSnapshot,
 } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-field-row";
+import type { ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 
-/** Time for the fill pill to travel onto a field before the value lands. */
-const FILL_TRAVEL_MS = 220;
-/** Pause after a value lands so the eye can register it before the next field. */
-const FILL_HOLD_MS = 280;
+/**
+ * One rail step: the next field fills as the bar slides below it. Each step starts just before the previous
+ * glide lands, so render latency on a step never shows up as the bar parking between rows.
+ */
+const FILL_STEP_MS = (DETAILS_RAIL_GLIDE.layout.duration - motionDuration.xxshort) * 1000;
 const WAVE_DURATION = 0.9;
 const WAVE_SPREAD = 2;
 
@@ -54,10 +57,11 @@ export interface ProjectButterSuggestionFill {
 	acceptField: (suggestion: ProjectButterSuggestion) => void;
 	accepted: readonly ProjectButterSuggestion[] | null;
 	activeField: ProjectButterSuggestionField | null;
+	/** Details row the filling bar sits below while Accept all runs. */
+	barAfter: ProjectButterDetailFieldId | null;
 	columnId: string;
 	dismissAccepted: () => void;
 	dismissField: (field: ProjectButterSuggestionField) => void;
-	pillTop: number | null;
 	running: boolean;
 	shimmerText: Readonly<Partial<Record<ProjectButterSuggestionField, string>>>;
 	suggestions: readonly ProjectButterSuggestion[];
@@ -66,7 +70,7 @@ export interface ProjectButterSuggestionFill {
 
 /**
  * Review and playback for the Butter suggestion state.
- * One field commits immediately. Accept all walks a pill down the details rail.
+ * One field commits immediately. Accept all slides the filling bar down the details rail.
  */
 export function useProjectButterSuggestionFill(
 	content: ProjectButterContent,
@@ -83,7 +87,7 @@ export function useProjectButterSuggestionFill(
 	const reducedRef = useRef(shouldReduceMotion);
 	const [running, setRunning] = useState(false);
 	const [activeField, setActiveField] = useState<ProjectButterSuggestionField | null>(null);
-	const [pillTop, setPillTop] = useState<number | null>(null);
+	const [barAfter, setBarAfter] = useState<ProjectButterDetailFieldId | null>(null);
 	const [dismissed, setDismissed] = useState<ReadonlySet<ProjectButterSuggestionField>>(() => new Set());
 	const [accepted, setAccepted] = useState<readonly ProjectButterSuggestion[] | null>(null);
 	const [shimmerText, setShimmerText] = useState<Readonly<Partial<Record<ProjectButterSuggestionField, string>>>>({});
@@ -126,14 +130,11 @@ export function useProjectButterSuggestionFill(
 		shimmerTimers.current.push(timer);
 	}
 
-	function placePill(field: ProjectButterSuggestionField) {
+	/** Rows' outer boxes carry no layout transform, so this scrolls to where the bar is heading, not where it is mid-glide. */
+	function revealRow(field: ProjectButterDetailFieldId) {
 		const container = document.querySelector(`[data-project-butter-suggestion-fields="${CSS.escape(columnId)}"]`);
-		if (!(container instanceof HTMLElement)) return;
-		const node = container.querySelector(`[data-field-id="${field}"]`);
-		if (!(node instanceof HTMLElement)) return;
-		const top = node.getBoundingClientRect().bottom - container.getBoundingClientRect().top;
-		setPillTop(Math.max(0, top - 16));
-		node.scrollIntoView({ block: "nearest", behavior: reducedRef.current ? "auto" : "smooth" });
+		const row = container?.querySelector(`[data-field-id="${field}"]`);
+		if (row instanceof HTMLElement) row.scrollIntoView({ block: "nearest", behavior: "smooth" });
 	}
 
 	function acceptField(suggestion: ProjectButterSuggestion) {
@@ -170,7 +171,7 @@ export function useProjectButterSuggestionFill(
 		setAccepted(null);
 		setRunning(false);
 		setActiveField(null);
-		setPillTop(null);
+		setBarAfter(null);
 		setShimmerText({});
 	}
 
@@ -193,23 +194,27 @@ export function useProjectButterSuggestionFill(
 		revealRef.current();
 		await wait(motionDuration.slow * 1000);
 		if (id !== runId.current) return;
-		await settleLayout();
-		for (const suggestion of batch) {
+		const rail = target.detailFields.order.filter((field) => !target.detailFields.hidden.includes(field));
+		setBarAfter(rail[rail.indexOf(batch[0].field) - 1] ?? null);
+		await wait(motionDuration.medium * 1000);
+		for (const [index, suggestion] of batch.entries()) {
 			if (id !== runId.current) return;
-			setActiveField(suggestion.field);
+			const stepStart = performance.now();
+			startTransition(() => {
+				setActiveField(suggestion.field);
+				setBarAfter(suggestion.field);
+				applyProjectButterSuggestion(suggestion, target);
+				shimmerField(suggestion);
+			});
 			await settleLayout();
-			placePill(suggestion.field);
-			await wait(FILL_TRAVEL_MS);
-			if (id !== runId.current) return;
-			applyProjectButterSuggestion(suggestion, target);
-			shimmerField(suggestion);
-			await settleLayout();
-			placePill(suggestion.field);
-			await wait(FILL_HOLD_MS);
+			revealRow(batch[index + 1]?.field ?? suggestion.field);
+			await wait(Math.max(0, FILL_STEP_MS - (performance.now() - stepStart)));
 		}
 		if (id !== runId.current) return;
 		setActiveField(null);
-		setPillTop(null);
+		setBarAfter(null);
+		await wait(FILL_STEP_MS);
+		if (id !== runId.current) return;
 		rememberAccepted(batch, target);
 		setRunning(false);
 	}
@@ -221,10 +226,10 @@ export function useProjectButterSuggestionFill(
 		acceptField,
 		accepted,
 		activeField,
+		barAfter,
 		columnId,
 		dismissAccepted,
 		dismissField,
-		pillTop,
 		running,
 		shimmerText,
 		suggestions,
