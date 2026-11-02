@@ -31,6 +31,36 @@ test("Butter previews an assigned agent from its session avatar", async ({ page 
 	await expect(lanyard).toBeHidden();
 	await expect(assignment).toBeVisible();
 });
+
+test("Butter's agent picker keeps directory actions visible while scrolling", async ({ page }) => {
+	test.setTimeout(60_000);
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-118");
+	const add = issue.getByRole("button", { name: "Add agent to PAY-118", exact: true });
+	await add.focus();
+	await page.keyboard.press("Enter");
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+	const browse = picker.getByRole("button", { name: "Browse agents" });
+	const create = picker.getByRole("button", { name: "Create agent" });
+	await expect(browse).toBeVisible();
+	await expect(create).toBeVisible();
+	const before = await browse.boundingBox();
+	const list = picker.getByRole("listbox");
+	await list.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+	await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+	await expect(browse).toBeVisible();
+	await expect(create).toBeVisible();
+	expect((await browse.boundingBox())?.y).toBe(before?.y);
+	await browse.click();
+	const directory = page.getByRole("dialog", { name: "Browse agents" });
+	await expect(directory).toBeVisible();
+	await directory.getByRole("button", { name: "Close" }).click();
+	await add.focus();
+	await page.keyboard.press("Enter");
+	await picker.getByRole("button", { name: "Create agent" }).click();
+	await expect(page).toHaveURL(/\/studio$/u, { timeout: 20_000 });
+});
+
 test("Butter aligns footer icons with the agent row", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	for (const key of ["PAY-105", "PAY-107", "PAY-112", "PAY-123", "PAY-101"]) {
@@ -88,7 +118,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const frames = await framesPromise;
 		expect(frames.every((frame) => frame.every((box, index) => box.every((value, axis) =>
 			Math.abs(value - baseline[index][axis]) < 0.5))), JSON.stringify({ baseline, frames })).toBe(true);
-		await expect(page.getByRole("menu", { name: "Agents", exact: true })).toBeVisible();
+		await expect(page.getByRole("dialog", { name: "Agents", exact: true })).toBeVisible();
 		await expect(surface).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
 		await expect(surface).not.toHaveCSS("box-shadow", "none");
 		await page.keyboard.press("Escape");
@@ -105,15 +135,18 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const add = issue.getByRole("button", { name: "Add agent to PAY-118", exact: true });
 		await add.focus();
 		await page.keyboard.press("Enter");
-		const menu = page.getByRole("menu", { name: "Agents", exact: true });
-		const claude = menu.getByRole("menuitem", { name: "Claude", exact: true });
-		await claude.focus();
+		const menu = page.getByRole("dialog", { name: "Agents", exact: true });
+		const search = menu.getByRole("textbox", { name: "Search agents" });
+		await expect(search).toBeFocused();
+		await search.fill("Claude");
+		await menu.getByRole("option", { name: /^Claude/u }).hover();
 		await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
 		await page.keyboard.press("Escape");
 		await expect(add).toBeFocused();
 		await expect(issue.locator('[data-jira-issue-agent-row-handle]')).toHaveCount(0);
 		await page.keyboard.press("Enter");
-		await claude.focus();
+		await search.fill("Claude");
+		await expect(menu.getByRole("option", { name: /^Claude/u })).toHaveAttribute("aria-selected", "true");
 		await page.keyboard.press("Enter");
 		await expect(issue).toHaveAttribute("data-board-column-title", "In progress");
 		const activity = issue.locator('[data-jira-issue-agent-row-handle]');

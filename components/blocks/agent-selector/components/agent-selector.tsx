@@ -534,6 +534,7 @@ export function AgentSelector({
 }: Readonly<AgentSelectorProps>): ReactElement {
 	const [internalQuery, setInternalQuery] = useState(defaultQuery);
 	const [internalPinnedAgentIds, setInternalPinnedAgentIds] = useState<readonly string[]>(defaultPinnedAgentIds);
+	const [activeAgentId, setActiveAgentId] = useState("");
 	const selectedIds = selectedAgentIds ?? EMPTY_SELECTED_AGENT_IDS;
 	const disabledIds = disabledAgentIds ?? EMPTY_DISABLED_AGENT_IDS;
 	const submenuIds = submenuAgentIds ?? EMPTY_SUBMENU_AGENT_IDS;
@@ -596,6 +597,12 @@ export function AgentSelector({
 	const hasPinnedAgents = agents.some(
 		(agent) => pinnedAgentIdSet.has(agent.id) && !inProgressAgentIdSet.has(agent.id),
 	);
+	const selectableAgents = [...inProgressAgents, ...pinnedAgents, ...moreAgents].filter(
+		(agent) => !disabledAgentIdSet.has(agent.id),
+	);
+	const activeVisibleAgentId = selectableAgents.some((agent) => agent.id === activeAgentId)
+		? activeAgentId
+		: selectableAgents[0]?.id ?? "";
 
 	function handleQueryChange(nextQuery: string) {
 		if (query === undefined) {
@@ -619,7 +626,7 @@ export function AgentSelector({
 	const supportsMultipleSelection = selectionMode === "multiple";
 
 	return (
-		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 rounded-xl p-1", className)} shouldFilter={false}>
+		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 rounded-xl p-1", className)} onValueChange={setActiveAgentId} shouldFilter={false} value={activeVisibleAgentId}>
 			{hasSelectedAgentActions ? (
 				<div aria-label={selectedActionsLabel} className="flex shrink-0 flex-col border-b border-border pb-2" role="group">
 					{selectedActions.map((action) => (

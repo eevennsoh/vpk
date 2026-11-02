@@ -55,8 +55,27 @@ test("Butter board cards render the shared appearance and commit an agent assign
 	assert.equal(view.container.textContent.includes("Dec 1"), true);
 	assert.equal(view.getByRole("img", { name: "story" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Add agent to PAY-118" }));
-	await view.click(view.getByRole("menuitem", { name: "Board agent" }));
+	await view.click(view.getByRole("option", { name: /Board agent/u }));
 	assert.deepEqual(events, [["PAY-118", ["board-agent"]]]);
+});
+
+test("Butter card selector opens its supplied directory and creation actions", async () => {
+	const events = [];
+	const view = await renderCard(fixture(events, {
+		appearance: "project-butter",
+		generativeActionFooterActions: {
+			onBrowseAgents: () => events.push("browse"),
+			onCreateAgent: () => events.push("create"),
+		},
+		onAssignedAgentIdsChange: () => events.push("assign"),
+	}));
+	const trigger = view.getByRole("button", { name: "Add agent to PAY-118" });
+	await view.click(trigger);
+	await view.click(view.getByRole("button", { name: "Browse agents" }));
+	assert.deepEqual(events, ["browse"]);
+	await view.click(trigger);
+	await view.click(view.getByRole("button", { name: "Create agent" }));
+	assert.deepEqual(events, ["browse", "create"]);
 });
 
 test("Butter board cards omit assignment without a capability and preserve every issue type", async () => {

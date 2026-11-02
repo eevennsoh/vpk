@@ -161,18 +161,20 @@ test("Project butter's hexagon is keyboard reachable and attaches a working agen
 	await expect(trigger).toBeFocused();
 	await expect(demo.locator('[data-slot="jira-issue-add-agent"]')).toHaveCSS("opacity", "1");
 	await page.keyboard.press("Enter");
-	const picker = page.getByRole("menu", { name: "Agents", exact: true });
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
 	await expect(picker).toBeVisible();
-	await picker.getByRole("menuitem").first().focus();
-	await expect(demo.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute(
-		"data-agent-id",
-		"rovo",
-	);
+	await expect(picker.getByRole("textbox", { name: "Search agents" })).toBeFocused();
 	await page.keyboard.press("ArrowDown");
 	await expect(demo.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute(
 		"data-agent-id",
 		"rovoDev",
 	);
+	await page.keyboard.press("ArrowUp");
+	await expect(demo.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute(
+		"data-agent-id",
+		"rovo",
+	);
+	await page.keyboard.press("ArrowDown");
 	await page.keyboard.press("Enter");
 	const activity = demo.locator("[data-jira-issue-agent-row-handle]");
 	await expect(activity).toBeVisible();
@@ -196,9 +198,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await demo.getByText("Implement advanced date-range filter", { exact: true }).hover();
 		await trigger.click();
 		await expect(border).not.toHaveCSS("color", idleBorderColor);
-		const menu = page.getByRole("menu", { name: "Agents", exact: true });
+		const menu = page.getByRole("dialog", { name: "Agents", exact: true });
 		await expect(menu).toBeVisible();
-		await expect(menu.getByRole("textbox")).toHaveCount(0);
+		await expect(menu.getByRole("textbox", { name: "Search agents" })).toBeVisible();
 		await expect(demo.locator('[data-slot="jira-issue-agent-backdrop"]')).toHaveCSS("opacity", "1");
 		await expect
 			.poll(async () => {
@@ -210,10 +212,10 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const paper = await surface.boundingBox();
 		expect(paper?.width).toBe((before?.width ?? 0) - 8);
 		const preview = demo.locator('[data-slot="jira-issue-agent-invocation-preview"]');
-		await menu.getByRole("menuitem", { name: "Claude", exact: true }).hover();
+		await menu.getByRole("option", { name: /^Claude/u }).hover();
 		await expect(preview).toHaveAttribute("data-agent-id", "claude");
 		await expect(preview.locator("img")).toHaveAttribute("src", /agent-claude\.svg/u);
-		await menu.getByRole("menuitem", { name: "Cursor", exact: true }).hover();
+		await menu.getByRole("option", { name: /^Cursor/u }).hover();
 		await expect(preview).toHaveAttribute("data-agent-id", "cursor");
 		await expect(preview).toHaveAttribute("data-direction", "backward");
 		if (reducedMotion === "reduce") await expect(preview.locator("[data-preview-layer]")).toHaveCount(0);
@@ -237,19 +239,19 @@ test("Project butter cycles the agent under a stationary pointer when the menu s
 	const demo = await openButter(page);
 	await demo.getByText("Implement advanced date-range filter", { exact: true }).hover();
 	await demo.getByRole("button", { name: "Add agent to PD-40" }).click();
-	const menu = page.getByRole("menu", { name: "Agents", exact: true });
+	const menu = page.getByRole("dialog", { name: "Agents", exact: true });
 	await expect(demo.locator('[data-slot="jira-issue-agent-backdrop"]')).toHaveCSS("opacity", "1");
-	await menu.getByRole("menuitem", { name: "Claude", exact: true }).hover();
+	await menu.getByRole("option", { name: /^Claude/u }).hover();
 	const preview = demo.locator('[data-slot="jira-issue-agent-invocation-preview"]');
 	await expect(preview).toHaveAttribute("data-agent-id", "claude");
-	const viewport = menu.locator('[data-slot="jira-issue-agent-picker-scroll"]');
+	const viewport = menu.locator('[data-slot="command-list"]');
 	const initialScrollTop = await viewport.evaluate((element) => element.scrollTop);
 	await page.mouse.wheel(0, 96);
 	await expect.poll(async () => viewport.evaluate((element) => element.scrollTop)).toBe(initialScrollTop + 96);
 	await expect(preview).not.toHaveAttribute("data-agent-id", "claude");
 	await expect(preview).toHaveAttribute("data-direction", "forward");
-	await expect(menu.locator("[data-butter-agent-id][data-highlighted]")).toHaveAttribute(
-		"data-butter-agent-id",
+	await expect(menu.locator('[data-slot="command-item"][aria-selected="true"]')).toHaveAttribute(
+		"data-value",
 		await preview.getAttribute("data-agent-id") ?? "",
 	);
 	const scrollTop = await viewport.evaluate((element) => element.scrollTop);
@@ -270,13 +272,13 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const demo = await openButter(page);
 		await demo.getByText("Implement advanced date-range filter", { exact: true }).hover();
 		await demo.getByRole("button", { name: "Add agent to PD-40" }).click();
-		const menu = page.getByRole("menu", { name: "Agents", exact: true });
-		const option = menu.getByRole("menuitem", { name: "Claude", exact: true });
+		const menu = page.getByRole("dialog", { name: "Agents", exact: true });
+		const option = menu.getByRole("option", { name: /^Claude/u });
 		await option.hover();
 		await expect(demo.locator('[data-slot="jira-issue-agent-backdrop"]')).toHaveCSS("opacity", "1");
 		const before = await demo.locator("article").boundingBox();
 		const framesPromise = page.evaluate(async () => {
-			const option = document.querySelector('[data-butter-agent-id="claude"]');
+			const option = document.querySelector('[data-slot="command-item"][data-value="claude"]');
 			const shell = document.querySelector("[data-project-butter-demo] article");
 			const surface = document.querySelector('[data-project-butter-demo] [data-slot="jira-issue-surface"]');
 			if (!option || !shell || !surface) throw new Error("Invocation fixture missing");
