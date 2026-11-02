@@ -7,10 +7,11 @@ import { getShimmerWaveEndTime } from "@/components/ui-custom/lib/shimmer-wave-t
 import { motionDuration } from "@/lib/motion";
 import {
 	applyProjectButterSuggestion,
-	clearProjectButterSuggestion,
 	listProjectButterSuggestions,
+	revertMatchingProjectButterSuggestions,
 	type ProjectButterSuggestion,
 	type ProjectButterSuggestionField,
+	type ProjectButterSuggestionSnapshot,
 } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 
@@ -33,6 +34,19 @@ function settleLayout(): Promise<void> {
 			window.requestAnimationFrame(() => resolve());
 		});
 	});
+}
+
+function suggestionSnapshot(content: ProjectButterContent): ProjectButterSuggestionSnapshot {
+	return {
+		dueDate: content.dueDate,
+		reporter: content.reporter,
+		parent: content.detailFields.parent,
+		labels: content.detailFields.labels,
+		components: content.detailFields.components,
+		fixVersion: content.detailFields.fixVersion,
+		acceptanceCriteria: content.detailFields.acceptanceCriteria,
+		costCenter: content.detailFields.costCenter,
+	};
 }
 
 export interface ProjectButterSuggestionFill {
@@ -64,6 +78,7 @@ export function useProjectButterSuggestionFill(
 	const runId = useRef(0);
 	const shimmerTimers = useRef<number[]>([]);
 	const contentRef = useRef(content);
+	const acceptedTarget = useRef<ProjectButterContent | null>(null);
 	const revealRef = useRef(onRevealMore);
 	const reducedRef = useRef(shouldReduceMotion);
 	const [running, setRunning] = useState(false);
@@ -137,11 +152,21 @@ export function useProjectButterSuggestionFill(
 		});
 	}
 
+	function rememberAccepted(batch: readonly ProjectButterSuggestion[], target: ProjectButterContent) {
+		acceptedTarget.current = target;
+		setAccepted(batch);
+	}
+
 	function undoAccepted() {
 		const batch = accepted;
-		if (!batch) return;
+		const target = acceptedTarget.current;
+		if (!batch || !target) return;
 		runId.current += 1;
-		for (const suggestion of batch) clearProjectButterSuggestion(suggestion.field, contentRef.current);
+		const live = contentRef.current;
+		if (live.setDueDate === target.setDueDate) {
+			revertMatchingProjectButterSuggestions(batch, suggestionSnapshot(live), target);
+		}
+		acceptedTarget.current = null;
 		setAccepted(null);
 		setRunning(false);
 		setActiveField(null);
@@ -150,15 +175,17 @@ export function useProjectButterSuggestionFill(
 	}
 
 	function dismissAccepted() {
+		acceptedTarget.current = null;
 		setAccepted(null);
 	}
 
 	async function acceptAll() {
 		if (running || suggestions.length === 0 || accepted) return;
 		const batch = suggestions;
+		const target = contentRef.current;
 		if (reducedRef.current) {
-			for (const suggestion of batch) applyProjectButterSuggestion(suggestion, contentRef.current);
-			setAccepted(batch);
+			for (const suggestion of batch) applyProjectButterSuggestion(suggestion, target);
+			rememberAccepted(batch, target);
 			return;
 		}
 		const id = ++runId.current;
@@ -174,7 +201,7 @@ export function useProjectButterSuggestionFill(
 			placePill(suggestion.field);
 			await wait(FILL_TRAVEL_MS);
 			if (id !== runId.current) return;
-			applyProjectButterSuggestion(suggestion, contentRef.current);
+			applyProjectButterSuggestion(suggestion, target);
 			shimmerField(suggestion);
 			await settleLayout();
 			placePill(suggestion.field);
@@ -183,7 +210,7 @@ export function useProjectButterSuggestionFill(
 		if (id !== runId.current) return;
 		setActiveField(null);
 		setPillTop(null);
-		setAccepted(batch);
+		rememberAccepted(batch, target);
 		setRunning(false);
 	}
 

@@ -158,6 +158,50 @@ export function applyProjectButterSuggestion<T extends ProjectButterSuggestionFi
 	}
 }
 
+/** True when the field still holds the value this suggestion wrote. */
+export function projectButterSuggestionMatches(
+	suggestion: ProjectButterSuggestion,
+	snapshot: ProjectButterSuggestionSnapshot,
+): boolean {
+	switch (suggestion.field) {
+		case "dueDate":
+			return snapshot.dueDate?.getTime() === suggestion.date.getTime();
+		case "reporter":
+			return snapshot.reporter?.name === suggestion.person.name;
+		case "labels":
+		case "components": {
+			const current = snapshot[suggestion.field];
+			return current.length === suggestion.values.length
+				&& current.every((value, index) => value === suggestion.values[index]);
+		}
+		case "parent":
+		case "fixVersion":
+		case "acceptanceCriteria":
+		case "costCenter":
+			return snapshot[suggestion.field] === suggestion.text;
+		default: {
+			const unreachable: never = suggestion;
+			return unreachable;
+		}
+	}
+}
+
+/** Restore accepted fields that the user has not edited since the batch landed. */
+export function revertMatchingProjectButterSuggestions<T extends ProjectButterSuggestionFieldPatch>(
+	batch: readonly ProjectButterSuggestion[],
+	snapshot: ProjectButterSuggestionSnapshot,
+	target: {
+		setDueDate: (date: Date | undefined) => void;
+		setReporter: (person: { name: string; avatarUrl: string } | null) => void;
+		setDetailFields: (update: (current: T) => T) => void;
+	},
+): void {
+	for (const suggestion of batch) {
+		if (!projectButterSuggestionMatches(suggestion, snapshot)) continue;
+		clearProjectButterSuggestion(suggestion.field, target);
+	}
+}
+
 /** Restore a field that Accept all wrote, so the batch can be reverted. */
 export function clearProjectButterSuggestion<T extends ProjectButterSuggestionFieldPatch>(
 	field: ProjectButterSuggestionField,

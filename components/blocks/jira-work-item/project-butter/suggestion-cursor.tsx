@@ -14,12 +14,12 @@ export function ProjectButterSuggestionCursor({ fill }: Readonly<{ fill: Project
 
 	return (
 		<motion.div
-			animate={{ opacity: 1, top: fill.pillTop }}
+			animate={{ opacity: 1, y: fill.pillTop }}
 			aria-hidden
-			className="pointer-events-none absolute inset-x-1 z-20"
+			className="pointer-events-none absolute inset-x-1 top-0 z-20"
 			data-project-butter-suggestion-cursor
-			initial={{ opacity: 0, top: fill.pillTop }}
-			transition={{ duration: motionDuration.medium, ease: motionEase.out }}
+			initial={{ opacity: 0, y: fill.pillTop }}
+			transition={{ duration: motionDuration.medium, ease: motionEase.inOut }}
 		>
 			<div className="flex items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5" style={{ boxShadow: token("elevation.shadow.overlay") }}>
 				<Spinner label="" size="xs" variant="rainbow" />

@@ -5,6 +5,7 @@ import {
 	applyProjectButterSuggestion,
 	clearProjectButterSuggestion,
 	listProjectButterSuggestions,
+	revertMatchingProjectButterSuggestions,
 	type ProjectButterSuggestionFieldPatch,
 	type ProjectButterSuggestionSnapshot,
 } from "./suggestion-model.ts";
@@ -114,6 +115,42 @@ test("clearing an accepted batch restores the empty fields", () => {
 		reporter: written.reporter ?? null,
 		...fields,
 	}).length, 8);
+});
+
+test("undo restores only fields that still match the accepted suggestion", () => {
+	const fields: ProjectButterSuggestionFieldPatch = {
+		parent: "",
+		labels: [],
+		components: [],
+		fixVersion: "",
+		acceptanceCriteria: "",
+		costCenter: "",
+	};
+	const written: { dueDate?: Date; reporter?: { name: string; avatarUrl: string } | null } = {};
+	const target = {
+		setDueDate(date: Date | undefined) {
+			written.dueDate = date;
+		},
+		setReporter(person: { name: string; avatarUrl: string } | null) {
+			written.reporter = person;
+		},
+		setDetailFields(update: (current: ProjectButterSuggestionFieldPatch) => ProjectButterSuggestionFieldPatch) {
+			Object.assign(fields, update(fields));
+		},
+	};
+	const suggestions = listProjectButterSuggestions(emptySnapshot());
+	for (const suggestion of suggestions) applyProjectButterSuggestion(suggestion, target);
+	fields.parent = "Edited after accept";
+	const snapshot: ProjectButterSuggestionSnapshot = {
+		dueDate: written.dueDate,
+		reporter: written.reporter ?? null,
+		...fields,
+	};
+	revertMatchingProjectButterSuggestions(suggestions, snapshot, target);
+	assert.equal(fields.parent, "Edited after accept");
+	assert.equal(written.dueDate, undefined);
+	assert.equal(written.reporter, null);
+	assert.deepEqual(fields.labels, []);
 });
 
 test("filled details produce no suggestions", () => {
