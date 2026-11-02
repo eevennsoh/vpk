@@ -7,11 +7,14 @@ import DragHandleVerticalIcon from "@atlaskit/icon/core/drag-handle-vertical";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ShimmerWave } from "@/components/ui-custom/shimmer-wave";
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { PROJECT_BUTTER_DETAIL_FIELDS, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 
-export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, first, last }: Readonly<{
+const SUGGESTION_WAVE_COLORS = ["#FCA700", "#6A9A23", "#1868DB", "#AF59E1"] as const;
+
+export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, first, last, shimmerText }: Readonly<{
 	children: ReactNode;
 	filled: boolean;
 	id: ProjectButterDetailFieldId;
@@ -20,6 +23,7 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 	onMove: (direction: -1 | 1) => void;
 	first: boolean;
 	last: boolean;
+	shimmerText?: string;
 }>) {
 	const [actionsOpen, setActionsOpen] = useState(false);
 	const { attributes, listeners, isDragging, setActivatorNodeRef, setNodeRef, transform } = useSortable({ id });
@@ -37,7 +41,26 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 		>
 			{filled ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">{label}</div> : null}
 			<div className="relative -mx-2 flex min-h-8 min-w-0 items-start rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
-				<div className="min-w-0 flex-1 pr-14 [&_[data-slot=detail-value-trigger]]:min-h-8">{children}</div>
+				<div className="min-w-0 flex-1 pr-14 [&_[data-slot=detail-value-trigger]]:min-h-8">
+					{shimmerText ? (
+						<ShimmerWave
+							as="span"
+							baseColor="var(--color-text)"
+							baseGradientColor={SUGGESTION_WAVE_COLORS}
+							className="text-sm"
+							duration={0.9}
+							rotateYDistance={6}
+							scaleDistance={1.04}
+							spread={2}
+							transition={{ repeat: 0, ease: "easeInOut" }}
+							xDistance={0}
+							yDistance={-1}
+							zDistance={6}
+						>
+							{shimmerText}
+						</ShimmerWave>
+					) : children}
+				</div>
 				<div className={cn("absolute right-0 top-0 flex shrink-0 items-center opacity-0 transition-opacity duration-fast ease-out-practical group-hover/butter-field:opacity-100 group-focus-within/butter-field:opacity-100", actionsOpen || isDragging ? "opacity-100" : undefined)}>
 					<Button {...attributes} {...listeners} aria-label={`Drag to reorder ${label} field`} className="touch-pan-x" ref={setActivatorNodeRef} size="icon-compact" type="button" variant="ghost"><DragHandleVerticalIcon label="" size="small" /></Button>
 					<DropdownMenu onOpenChange={setActionsOpen} open={actionsOpen}>

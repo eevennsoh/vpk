@@ -61,6 +61,8 @@ export interface JiraWorkItemProps {
 	initialExperimentalPreset?: JiraWorkItemExperimentalPreset;
 	/** Initial Project butter presentation; its header Settings can change it live. */
 	projectButterPresentation?: ProjectButterPresentation;
+	/** Opens Project butter in the suggestion state, with Teamwork Graph fills for empty fields. */
+	projectButterSuggestion?: boolean;
 }
 
 export function JiraWorkItem({
@@ -69,6 +71,7 @@ export function JiraWorkItem({
 	variant = "default",
 	initialExperimentalPreset = "filled",
 	projectButterPresentation = "full-screen",
+	projectButterSuggestion = false,
 }: Readonly<JiraWorkItemProps>) {
 	return variant === "default" ? (
 		<JiraWorkItemDefaultView initialIssueOpen={initialIssueOpen} onIssueClose={onIssueClose} />
@@ -78,6 +81,7 @@ export function JiraWorkItem({
 			onIssueClose={onIssueClose}
 			initialExperimentalPreset={initialExperimentalPreset}
 			projectButterPresentation={projectButterPresentation}
+			projectButterSuggestion={projectButterSuggestion}
 			surface={variant}
 		/>
 	);
@@ -129,12 +133,14 @@ function JiraWorkItemExperimentalView({
 	initialExperimentalPreset,
 	surface,
 	projectButterPresentation,
+	projectButterSuggestion,
 }: Readonly<{
 	initialIssueOpen: boolean;
 	onIssueClose?: () => void;
 	initialExperimentalPreset: JiraWorkItemExperimentalPreset;
 	surface: ExperimentalVariant;
 	projectButterPresentation: ProjectButterPresentation;
+	projectButterSuggestion: boolean;
 }>) {
 	const [isIssueOpen, setIsIssueOpen] = useState(initialIssueOpen);
 	const ExperimentalSurface = EXPERIMENTAL_SURFACES[surface];
@@ -146,7 +152,7 @@ function JiraWorkItemExperimentalView({
 
 	return (
 		<JiraWorkItemShell onOpen={() => setIsIssueOpen(true)}>
-			{surface === "project-butter" ? <ProjectButterJiraWorkItem initialPresentation={projectButterPresentation} initialPreset={initialExperimentalPreset} onClose={handleIssueClose} open={isIssueOpen} /> : <ExperimentalSurface
+			{surface === "project-butter" ? <ProjectButterJiraWorkItem initialPresentation={projectButterPresentation} initialPreset={initialExperimentalPreset} initialSuggestion={projectButterSuggestion} onClose={handleIssueClose} open={isIssueOpen} /> : <ExperimentalSurface
 				open={isIssueOpen}
 				onClose={handleIssueClose}
 				initialPreset={initialExperimentalPreset}

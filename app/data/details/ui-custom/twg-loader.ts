@@ -15,6 +15,12 @@ export const TWG_LOADER_DETAIL: ComponentDetail = {
 			description: "Visual size (16 / 24 / 32 / 64px). Mirrors @atlaskit/spinner.",
 		},
 		{
+			name: "active",
+			type: "boolean",
+			default: "true",
+			description: "Spins the branded snake while true. When false, the rings ease into a static subtle graph and stay there until loading starts again.",
+		},
+		{
 			name: "label",
 			type: "string",
 			default: '"Loading"',
