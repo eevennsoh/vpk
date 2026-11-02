@@ -13,6 +13,7 @@ import { DocumentTitlePrefix } from "@/components/utils/document-title-prefix";
 import { PreHydrationScript } from "@/components/utils/pre-hydration-script";
 import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
+import { configurePlatformFeatureFlags } from "@/lib/platform-feature-flags";
 
 const arkEsSolidLight = localFont({
 	src: "../public/fonts/ark-es/ARK-ES-SolidLight.woff",
@@ -32,12 +33,7 @@ const departureMono = localFont({
 	display: "swap",
 });
 
-// Prevent @atlaskit/tokens from falling back to uninitialized FeatureGates client.
-// Sets the resolver on the same global that @atlaskit/platform-feature-flags uses internally.
-// Returns false for all flags — increased-contrast themes stay disabled.
-(globalThis as Record<string, unknown>).__PLATFORM_FEATURE_FLAGS__ = {
-	booleanResolver: () => false,
-};
+configurePlatformFeatureFlags();
 
 const THEME_STORAGE_KEY = "ui-theme";
 const APP_TITLE = "V—P—K: Venn Prototype Kit";

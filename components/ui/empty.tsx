@@ -146,7 +146,7 @@ const emptyTitleVariants = cva("text-text", {
 	variants: {
 		headingSize: {
 			medium: "",
-			xsmall: "text-sm font-semibold",
+			xsmall: "text-sm font-medium",
 		},
 	},
 	defaultVariants: {

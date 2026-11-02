@@ -85,12 +85,13 @@ function CommandInput({
 }) {
   return (
     <div data-slot="command-input-wrapper" className={cn("p-1 pb-0", wrapperClassName)}>
-      <InputGroup className={cn("bg-background border-input h-8! rounded-lg! shadow-none!", inputGroupClassName)}>
+      <InputGroup className={cn("bg-background border-border-input-search h-8! rounded-lg! shadow-none!", inputGroupClassName)}>
         <CommandPrimitiveInput
           asChild
           {...props}
         >
           <InputGroupInput
+            type="search"
             className={cn("text-sm", className)}
           />
         </CommandPrimitiveInput>
