@@ -1,6 +1,6 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, MouseEvent as ReactMouseEvent, SetStateAction } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
@@ -23,6 +23,7 @@ import type {
 	JiraListRowData,
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list/jira-list-types";
+import { JiraListPointsCell } from "@/components/blocks/jira-list/jira-list-points-cell";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -39,12 +40,16 @@ export function createJiraListBaseColumns({
 	agentCatalog,
 	addAgentLabel,
 	copiedIssueKey,
+	editingSummaryIssueKey,
 	onAgentAssign,
 	onAssignedAgentIdsChange,
 	onAssignedAgentSelect,
 	onCopyLink,
 	onIssueClick,
 	onIssueKeyClick,
+	onSummaryEditStart,
+	onStoryPointsChange,
+	renderAgentSessions,
 	onStatusChange,
 	onToggleExpand,
 	openCopyTooltipIssueKey,
@@ -54,12 +59,16 @@ export function createJiraListBaseColumns({
 	agentCatalog?: readonly AgentSelectorAgent[];
 	addAgentLabel?: string;
 	copiedIssueKey: string | null;
+	editingSummaryIssueKey?: string;
 	onAgentAssign?: JiraListProps["onAgentAssign"];
 	onAssignedAgentIdsChange?: JiraListProps["onAssignedAgentIdsChange"];
 	onAssignedAgentSelect?: JiraListProps["onAssignedAgentSelect"];
 	onCopyLink?: (row: JiraListRowData) => void;
 	onIssueClick?: (row: JiraListRowData) => void;
 	onIssueKeyClick?: (row: JiraListRowData) => void;
+	onSummaryEditStart?: (row: JiraListRowData, event: ReactMouseEvent<HTMLButtonElement>) => void;
+	onStoryPointsChange?: JiraListProps["onStoryPointsChange"];
+	renderAgentSessions?: JiraListProps["renderAgentSessions"];
 	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
 	onToggleExpand?: (issueKey: string) => void;
 	openCopyTooltipIssueKey: string | null;
@@ -76,14 +85,16 @@ export function createJiraListBaseColumns({
 			renderCell: (row) => {
 				const indentLevel = row.indentLevel ?? 0;
 				const isCopiedRow = copiedIssueKey === row.issueKey;
+				const isEditing = editingSummaryIssueKey === row.issueKey;
 
 				return (
 					<div className="flex min-w-0 items-center gap-2">
 						<div className="flex min-w-0 flex-1 items-center gap-1.5">
 							<HierarchyConnector indentLevel={indentLevel} />
-							{row.hasChildren ? (
+							{row.hasChildren && onToggleExpand ? (
 								<Button
 									aria-label={`${row.isExpanded ? "Collapse" : "Expand"} ${row.issueKey}`}
+									aria-expanded={Boolean(row.isExpanded)}
 									className="size-5 shrink-0 rounded-sm px-0 hover:bg-transparent focus-visible:bg-bg-neutral-subtle-hovered"
 									onClick={() => onToggleExpand?.(row.issueKey)}
 									size="icon-compact"
@@ -161,10 +172,12 @@ export function createJiraListBaseColumns({
 									</span>
 								) : null}
 							</div>
-							{onIssueClick ? (
+							{onSummaryEditStart || onIssueClick ? (
 								<button
-									className="min-w-0 flex-1 truncate rounded-sm text-left text-[13px] font-medium text-text hover:text-link focus-visible:text-link focus-visible:outline-none"
-									onClick={() => onIssueClick(row)}
+									className={cn("min-w-0 flex-1 truncate rounded-sm text-left text-[13px] font-medium text-text hover:text-link focus-visible:text-link focus-visible:outline-none", isEditing && "invisible")}
+									aria-label={onSummaryEditStart ? `Edit summary for ${row.issueKey}: ${row.summary}` : undefined}
+									data-summary-trigger={row.issueKey}
+									onClick={(event) => onSummaryEditStart ? onSummaryEditStart(row, event) : onIssueClick?.(row)}
 									type="button"
 								>
 									{row.summary}
@@ -175,7 +188,7 @@ export function createJiraListBaseColumns({
 								</span>
 							)}
 						</div>
-						{hasHoverRowActions ? (
+						{hasHoverRowActions && !isEditing ? (
 							<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100">
 								{onIssueClick ? (
 									<Tooltip>
@@ -252,7 +265,7 @@ export function createJiraListBaseColumns({
 			id: "agentSessions",
 			label: "Agent sessions",
 			widthClassName: "w-[247px]",
-			renderCell: (row) => (
+			renderCell: (row) => renderAgentSessions ? renderAgentSessions(row) : (
 				<JiraListAgentSessionsCell
 					addAgentLabel={addAgentLabel}
 					agentCatalog={agentCatalog}
@@ -288,6 +301,14 @@ export function createJiraListBaseColumns({
 				</div>
 			),
 		},
+		...(onStoryPointsChange ? [{
+			id: "storyPoints",
+			label: "Points",
+			widthClassName: "w-[96px]",
+			renderCell: (row: JiraListRowData) => (
+				<JiraListPointsCell issueKey={row.issueKey} onChange={(points) => onStoryPointsChange(row.issueKey, points)} points={row.storyPoints} />
+			),
+		}] : []),
 		{
 			id: "labels",
 			label: "Labels",

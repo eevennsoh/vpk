@@ -21,6 +21,7 @@ import {
 	BUTTER_PAY_101_PULL_REQUEST_NUMBER,
 	PAY_101_INVENTORY_COMMIT_ARTIFACT,
 	PAY_101_INVENTORY_PR_ARTIFACT,
+	PAY_101_SUBTASK_KEYS,
 } from "./presentation-build";
 import { PAY_STORY_PEOPLE } from "./presentation-people";
 import { getButterPullRequestPreview } from "./presentation-pull-requests";
@@ -686,6 +687,9 @@ function cloneBoardCard(card: JiraKanbanCardData): JiraKanbanCardData {
 export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
 	return PAY_BOARD_COLUMNS.map((column) => ({
 		...column,
-		cards: column.cards.map(cloneBoardCard),
+		cards: column.cards.map((card) => ({
+			...cloneBoardCard(card),
+			parentIssueKey: PAY_101_SUBTASK_KEYS.some((key) => key === card.code) ? "PAY-101" : undefined,
+		})),
 	}));
 }

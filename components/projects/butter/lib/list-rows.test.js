@@ -7,6 +7,7 @@ const {
 const {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
+	arrangeListHierarchy,
 	appendBoardCreatedListOrder,
 	createBoardWorkItemFromSession,
 	createListRows,
@@ -798,4 +799,21 @@ test("archiving one echoed id removes only that row", () => {
 		["PAY-105:test-agent", "PAY-107:claude-code"],
 	);
 	assert.deepEqual(card?.agentDoneRuns?.map((run) => run.id), ["pay-105-rollout-session"]);
+});
+
+
+test("list hierarchy keeps children with their parent and exposes filtered orphans", () => {
+	const rows = [
+		{ issueKey: "PAY-2", parentIssueKey: "PAY-1" },
+		{ issueKey: "PAY-3" },
+		{ issueKey: "PAY-1" },
+		{ issueKey: "PAY-4", parentIssueKey: "PAY-1" },
+	];
+	const collapsed = arrangeListHierarchy(rows, new Set());
+	assert.deepEqual(collapsed.map((row) => row.issueKey), ["PAY-3", "PAY-1"]);
+	assert.equal(collapsed[1].hasChildren, true);
+	const expanded = arrangeListHierarchy(rows, new Set(["PAY-1"]));
+	assert.deepEqual(expanded.map((row) => [row.issueKey, row.indentLevel]), [["PAY-3", 0], ["PAY-1", 0], ["PAY-2", 1], ["PAY-4", 1]]);
+	const filtered = arrangeListHierarchy([rows[0]], new Set());
+	assert.deepEqual(filtered.map((row) => [row.issueKey, row.indentLevel]), [["PAY-2", 0]]);
 });

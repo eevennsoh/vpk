@@ -272,3 +272,126 @@ test("Team EU26 retains its original session avatar controls", async ({ page }) 
 	await expect(assignment.getByRole("button", { name: /Cursor, used by Venn/ })).toBeVisible();
 	await expect(assignment.getByRole("button", { name: "Preview Cursor" })).toHaveCount(0);
 });
+
+test("Butter list editing preserves row geometry and keeps inset sticky actions", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	await page.evaluate(() => document.fonts.ready);
+	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list", exact: true });
+	const summary = list.locator('[data-summary-trigger="PAY-118"]');
+	const baseline = await summary.evaluate((node) => {
+		const row = node.closest("tr")!;
+		const bounds = node.getBoundingClientRect();
+		return {
+			x: bounds.x,
+			cells: Array.from(row.cells, (cell) => {
+				const box = cell.getBoundingClientRect();
+				return [box.x, box.y, box.width, box.height];
+			}),
+		};
+	});
+	await summary.click();
+	const input = list.getByRole("textbox", { name: "Summary for PAY-118", exact: true });
+	await expect(input).toBeFocused();
+	const layout = () => input.evaluate((node) => {
+		const row = node.closest("tr")!;
+		const region = row.closest('[data-testid="jira-list"]')!;
+		const scroll = region.querySelector('[data-testid="jira-list-table-scroll"]')!;
+		const actions = region.querySelector('[data-slot="jira-list-summary-actions"]')!;
+		const bounds = node.getBoundingClientRect();
+		const rowBounds = row.getBoundingClientRect();
+		return {
+			x: bounds.x,
+			height: bounds.height,
+			centerDelta: Math.abs(bounds.y + bounds.height / 2 - rowBounds.y - rowBounds.height / 2),
+			rightGap: scroll.getBoundingClientRect().right - actions.getBoundingClientRect().right,
+			actionsPosition: getComputedStyle(actions).position,
+			actionsBackground: getComputedStyle(actions).backgroundColor,
+			dividersHidden: Array.from(row.cells).every((cell) => getComputedStyle(cell).borderRightColor === "rgba(0, 0, 0, 0)"),
+			metadataHidden: Array.from(row.cells).slice(2).every((cell) => cell.inert && getComputedStyle(cell.firstElementChild!).opacity === "0"),
+			surface: Array.from(row.cells).every((cell) => getComputedStyle(cell).backgroundColor === getComputedStyle(region).backgroundColor),
+			cells: Array.from(row.cells, (cell) => {
+				const box = cell.getBoundingClientRect();
+				return [box.x, box.y, box.width, box.height];
+			}),
+		};
+	});
+	const editing = await layout();
+	expect(editing.cells).toEqual(baseline.cells);
+	expect(editing.x).toBeCloseTo(baseline.x, 1);
+	expect(editing.height).toBe(24);
+	expect(editing.centerDelta).toBeLessThan(1);
+	expect(editing.dividersHidden).toBe(true);
+	expect(editing.metadataHidden).toBe(true);
+	expect(editing.surface).toBe(true);
+	expect(editing.actionsPosition).toBe("sticky");
+	expect(editing.actionsBackground).toBe("rgba(0, 0, 0, 0)");
+	await input.fill("Temporary layout check");
+	expect((await layout()).cells).toEqual(baseline.cells);
+	for (const width of [1280, 1800]) {
+		await page.setViewportSize({ width, height: 1100 });
+		await expect.poll(async () => Math.abs((await layout()).rightGap - 12)).toBeLessThan(1);
+		await list.locator('[data-testid="jira-list-table-scroll"]').evaluate((node) => { node.scrollLeft = 100; });
+		await expect.poll(async () => Math.abs((await layout()).rightGap - 12)).toBeLessThan(1);
+	}
+	await input.press("Escape");
+	await expect(summary).toBeFocused();
+	await expect(summary).toHaveText("Carry card-artwork metadata into the next wallet epic");
+});
+
+test("Butter points chevrons stay centered in their hover and focus shapes", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list", exact: true });
+	await list.getByRole("button", { name: "Edit story points for PAY-118, no estimate", exact: true }).click();
+	const input = list.getByRole("spinbutton", { name: "Story points for PAY-118", exact: true });
+	await input.fill("4");
+	await input.press("Enter");
+	const up = list.getByRole("button", { name: "Increase story points for PAY-118", exact: true });
+	const down = list.getByRole("button", { name: "Decrease story points for PAY-118", exact: true });
+
+	for (const button of [up, down]) {
+		await button.hover();
+		await expect.poll(() => button.evaluate((node) => {
+			const shape = node.querySelector('[data-slot="jira-list-points-stepper-visual"]') ?? node;
+			return getComputedStyle(shape).backgroundColor;
+		})).not.toBe("rgba(0, 0, 0, 0)");
+		const layout = await button.evaluate((node) => {
+			const shape = node.querySelector('[data-slot="jira-list-points-stepper-visual"]') ?? node;
+			const shapeBox = shape.getBoundingClientRect();
+			const svg = node.querySelector("svg")!;
+			const iconBox = svg.getBoundingClientRect();
+			const path = svg.querySelector("path")!;
+			const pathBox = path.getBBox();
+			const pathCenter = svg.createSVGPoint();
+			pathCenter.x = pathBox.x + pathBox.width / 2;
+			pathCenter.y = pathBox.y + pathBox.height / 2;
+			const screenTransform = path.getScreenCTM();
+			if (!screenTransform) throw new Error("Points chevron has no screen transform");
+			return {
+				centerDelta: Math.abs(shapeBox.top + shapeBox.height / 2 - iconBox.top - iconBox.height / 2),
+				strokeCenterDelta: Math.abs(shapeBox.top + shapeBox.height / 2 - pathCenter.matrixTransform(screenTransform).y),
+				rowHeight: node.closest("tr")!.getBoundingClientRect().height,
+			};
+		});
+		expect(layout.centerDelta).toBeLessThan(0.5);
+		expect(layout.strokeCenterDelta).toBeLessThan(1);
+		expect(layout.rowHeight).toBe(40);
+	}
+	const upper = await up.locator("svg").boundingBox();
+	const lower = await down.locator("svg").boundingBox();
+	if (!upper || !lower) throw new Error("Points chevrons are missing");
+	expect(Math.abs(lower.y - upper.y - upper.height)).toBeLessThan(0.5);
+
+	await up.click();
+	await expect(list.getByRole("button", { name: "Edit story points for PAY-118, 5", exact: true })).toBeVisible();
+	await down.click();
+	await expect(list.getByRole("button", { name: "Edit story points for PAY-118, 4", exact: true })).toBeVisible();
+	await page.keyboard.press("Tab");
+	await up.focus();
+	await expect(up).toBeFocused();
+	await expect.poll(() => up.evaluate((node) => {
+		const shape = node.querySelector('[data-slot="jira-list-points-stepper-visual"]') ?? node;
+		return getComputedStyle(shape).boxShadow;
+	})).not.toBe("none");
+});

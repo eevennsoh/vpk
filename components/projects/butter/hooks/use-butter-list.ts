@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { createElement, useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
@@ -19,10 +19,12 @@ import type {
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list";
 
+import { ButterListAgentCell } from "../components/butter-list-agent-cell";
 import { BUTTER_PAY_BOARD_AGENTS } from "../data/presentation-story";
 import {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
+	arrangeListHierarchy,
 	appendBoardCreatedListOrder,
 	createBoardWorkItemFromSession,
 	createListRows,
@@ -36,8 +38,6 @@ import {
 	moveListOrder,
 	toKanbanCardFromDraft,
 } from "../lib/list-rows";
-
-const ignoreIssueClick = () => undefined;
 
 interface ListDraftWorkItem {
 	anchorIssueKey: string | null;
@@ -97,6 +97,7 @@ export function useButterList({
 	contentMode = "default",
 	listAriaLabel = "Payments SDK v2 migration work items list",
 	onAssignedAgentSelect,
+	onIssueOpen,
 	setBoardColumns,
 }: Readonly<{
 	agents?: readonly JiraKanbanAgentData[];
@@ -104,9 +105,11 @@ export function useButterList({
 	contentMode?: ContentMode;
 	listAriaLabel?: string;
 	onAssignedAgentSelect?: (issueKey: string, agent: JiraListAssignedAgent) => void;
+	onIssueOpen?: (issueKey: string) => void;
 	setBoardColumns: Dispatch<SetStateAction<JiraKanbanColumnData[]>>;
 }>): UseButterListResult {
 	const BUTTER_AGENT_CATALOG = useMemo(() => mergeJiraKanbanAgentCatalog(agents), [agents]);
+	const [expandedKeys, setExpandedKeys] = useContentModeState(contentMode, () => new Set<string>());
 	const [listOrder, setListOrder] = useContentModeState<readonly string[]>(contentMode, () => []);
 	const [selectedIssueKeys, setSelectedIssueKeys] = useContentModeState(contentMode, () => new Set<string>());
 	const [copiedIssueKey, setCopiedIssueKey] = useContentModeState<string | null>(contentMode, () => null);
@@ -235,6 +238,25 @@ export function useButterList({
 		setBoardColumns((columns) => moveJiraKanbanCardsToStatus(columns, [issueKey], status.status));
 	}, [setBoardColumns]);
 
+	const handleToggleExpand = useCallback((issueKey: string) => {
+		setExpandedKeys((current) => {
+			const next = new Set(current);
+			if (next.has(issueKey)) next.delete(issueKey);
+			else next.add(issueKey);
+			return next;
+		});
+	}, [setExpandedKeys]);
+
+	const updateCard = useCallback((issueKey: string, update: Partial<Pick<JiraKanbanCardData, "title" | "storyPoints">>) => {
+		setBoardColumns((columns) => columns.map((column) => ({
+			...column,
+			cards: column.cards.map((card) => card.code === issueKey ? { ...card, ...update } : card),
+		})));
+	}, [setBoardColumns]);
+	const handleSummaryChange = useCallback((issueKey: string, title: string) => updateCard(issueKey, { title }), [updateCard]);
+	const handleStoryPointsChange = useCallback((issueKey: string, storyPoints: number | undefined) => updateCard(issueKey, { storyPoints }), [updateCard]);
+	const handleIssueOpen = useCallback((row: JiraListRowData) => onIssueOpen?.(row.issueKey), [onIssueOpen]);
+
 	const handleAssignedAgentIdsChange = useCallback((
 		issueKey: string,
 		agentIds: readonly string[],
@@ -343,10 +365,11 @@ export function useButterList({
 	const handleDraftWorkItemCancel = useCallback(() => setDraftWorkItem(null), [setDraftWorkItem]);
 
 	const getProps = useCallback((columns: readonly JiraKanbanColumnData[]): JiraListProps => {
-		const rows = applyListOrder(
+		const orderedRows = applyListOrder(
 			selectListRows(columns, BUTTER_AGENT_CATALOG, rowIndex),
 			listOrder,
 		);
+		const rows = arrangeListHierarchy(orderedRows, expandedKeys);
 
 		return {
 			agentCatalog: BUTTER_AGENT_CATALOG,
@@ -373,8 +396,12 @@ export function useButterList({
 			onDraftWorkItemIssueTypeChange: handleDraftWorkItemIssueTypeChange,
 			onDraftWorkItemSubmit: handleDraftWorkItemSubmit,
 			onDraftWorkItemSummaryChange: handleDraftWorkItemSummaryChange,
-			onIssueClick: ignoreIssueClick,
-			onIssueKeyClick: ignoreIssueClick,
+			onIssueClick: onIssueOpen ? handleIssueOpen : undefined,
+			onIssueKeyClick: onIssueOpen ? handleIssueOpen : undefined,
+			onSummaryChange: handleSummaryChange,
+			onStoryPointsChange: handleStoryPointsChange,
+			onToggleExpand: handleToggleExpand,
+			renderAgentSessions: (row) => createElement(ButterListAgentCell, { agentCatalog: BUTTER_AGENT_CATALOG, onAssignedAgentIdsChange: handleAssignedAgentIdsChange, onAssignedAgentSelect, row }),
 			onMoveRow: handleMoveRow,
 			onRefresh: handleRefresh,
 			onSelectAllRows: handleSelectAllRows,
@@ -383,7 +410,7 @@ export function useButterList({
 			rows,
 			selectedIssueKeys,
 			statusOptions: BUTTER_LIST_STATUS_OPTIONS,
-			totalCountLabel: `${rows.length}`,
+			totalCountLabel: `${orderedRows.length}`,
 			visibleCount: rows.length,
 		};
 	}, [
@@ -391,6 +418,12 @@ export function useButterList({
 		listAriaLabel,
 		copiedIssueKey,
 		draftWorkItem,
+		expandedKeys,
+		handleIssueOpen,
+		handleSummaryChange,
+		handleStoryPointsChange,
+		handleToggleExpand,
+		onIssueOpen,
 		handleAssignedAgentIdsChange,
 		handleCopyLink,
 		handleCreateWorkItem,

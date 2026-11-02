@@ -95,6 +95,8 @@ export interface JiraKanbanCardData {
 	avatarPulse?: boolean;
 	assignee?: JiraKanbanAssigneeData;
 	dueDate?: string;
+	parentIssueKey?: string;
+	storyPoints?: number;
 	issueType?: "epic" | "task" | "story" | "subtask" | "bug";
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentActivityMode?: JiraIssueAgentActivityMode;

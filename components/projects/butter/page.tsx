@@ -261,6 +261,13 @@ function ButterApp(): React.ReactElement {
 			issueSummary: card.title,
 		});
 	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
+	const openListWorkItem = workItem.openWorkItem;
+	const handleListIssueOpen = useCallback((issueKey: string) => {
+		for (const column of boardColumns) {
+			const card = column.cards.find((candidate) => candidate.code === issueKey);
+			if (card) { openListWorkItem(card, column.title); return; }
+		}
+	}, [boardColumns, openListWorkItem]);
 	const {
 		createBoardFromAgentSession,
 		createFromAgentSession,
@@ -272,6 +279,7 @@ function ButterApp(): React.ReactElement {
 		contentMode,
 		listAriaLabel: wacContent ? "Checkout roadmap work items list" : undefined,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
+		onIssueOpen: handleListIssueOpen,
 		setBoardColumns,
 	});
 	// Sessions dropped into the list neither select the rows they land in nor

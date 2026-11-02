@@ -109,6 +109,7 @@ import {
 	type JiraListRowTarget,
 } from "@/components/blocks/jira-list/jira-list-dnd";
 import { useJiraListRowFlashKeys } from "@/components/blocks/jira-list/jira-list-row-flash";
+import { JiraListSummaryEditor, useJiraListSummaryEdit } from "@/components/blocks/jira-list/jira-list-summary-editor";
 import { createJiraListBaseColumns } from "@/components/blocks/jira-list/jira-list-base-columns";
 import {
 	IssueTypeGlyph,
@@ -249,6 +250,9 @@ export function JiraList({
 	onSelectAllRows,
 	onSelectRow,
 	onStatusChange,
+	onSummaryChange,
+	onStoryPointsChange,
+	renderAgentSessions,
 	onToggleExpand,
 	agentSessionDropIntent,
 	rowFlash,
@@ -257,6 +261,7 @@ export function JiraList({
 	trailingOverlayRef,
 }: Readonly<JiraListProps>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
+	const { begin: beginSummaryEdit, draft: editingSummary, editorRef: summaryEditorRef, finish: finishSummaryEdit, listRef } = useJiraListSummaryEdit(onSummaryChange);
 	const {
 		ref: verticalOverflowRef,
 		showBottomScrollMask,
@@ -362,21 +367,25 @@ export function JiraList({
 		agentCatalog,
 		addAgentLabel,
 		copiedIssueKey,
+		editingSummaryIssueKey: editingSummary?.issueKey,
 		onAgentAssign,
 		onAssignedAgentIdsChange,
 		onAssignedAgentSelect,
 		onCopyLink,
 		onIssueClick,
 		onIssueKeyClick,
+		onSummaryEditStart: onSummaryChange ? beginSummaryEdit : undefined,
+		onStoryPointsChange,
+		renderAgentSessions,
 		onStatusChange,
 		onToggleExpand,
 		openCopyTooltipIssueKey,
 		setOpenCopyTooltipIssueKey,
 		statusOptions,
 	}), [
-		agentCatalog, addAgentLabel, copiedIssueKey, onAgentAssign, onAssignedAgentIdsChange,
+		agentCatalog, addAgentLabel, copiedIssueKey, editingSummary?.issueKey, onAgentAssign, onAssignedAgentIdsChange,
 		onAssignedAgentSelect, onCopyLink, onIssueClick, onIssueKeyClick,
-		onStatusChange, onToggleExpand, openCopyTooltipIssueKey, statusOptions,
+		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, onToggleExpand, openCopyTooltipIssueKey, statusOptions,
 	]);
 	const orderedColumns = useMemo(() => getOrderedColumns(baseColumns, extraColumns), [baseColumns, extraColumns]);
 	const trailingEdgeLayout = getJiraListTrailingEdgeLayout(
@@ -623,6 +632,7 @@ export function JiraList({
 				className,
 			)}
 			data-testid="jira-list"
+			ref={listRef}
 		>
 			<div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
 				{/* Positioned wrapper so the fades stay on the scrollport
@@ -658,7 +668,7 @@ export function JiraList({
 							<col className={column.widthClassName} key={column.id} />
 						))}
 					</colgroup>
-					<TableHeader className="sticky top-0 z-20 bg-surface-sunken shadow-[inset_0_-1px_0_var(--ds-border)]">
+					<TableHeader inert={Boolean(editingSummary)} className="sticky top-0 z-20 bg-surface-sunken shadow-[inset_0_-1px_0_var(--ds-border)]">
 						<TableRow className="border-0 hover:bg-transparent">
 							<TableHead
 								className={cn(
@@ -696,7 +706,7 @@ export function JiraList({
 											anchorName: getColumnAnchorName(insertionAnchorId, columnIndex),
 										}}
 									>
-										<div className="group/column-header flex min-w-0 items-center gap-2">
+										<div className={cn("group/column-header flex min-w-0 items-center gap-2", editingSummary && column.id !== "work" && "opacity-20")}>
 											<div
 												className={cn(
 													"inline-flex min-w-0 items-center gap-1 truncate",
@@ -715,6 +725,8 @@ export function JiraList({
 					<TableBody>
 						<SortableContext items={rowIds} strategy={verticalListSortingStrategy}>
 							{rows.map((row, rowIndex) => {
+								const isEditing = editingSummary?.issueKey === row.issueKey;
+								const isDimmed = Boolean(editingSummary && !isEditing);
 								const isSelected = selectedIssueKeys.has(row.issueKey);
 								const isActive = activeIssueKey === row.issueKey;
 								const isHighlighted = isSelected || isActive;
@@ -753,6 +765,8 @@ export function JiraList({
 											agentSessionDropEnabled={agentSessionDropIntent !== undefined}
 											aria-selected={isHighlighted || undefined}
 											className="group/row border-0 hover:bg-transparent focus-within:bg-transparent data-[state=selected]:bg-transparent"
+											data-summary-editing={isEditing || undefined}
+											inert={isDimmed}
 											data-active={isActive || undefined}
 											data-state={isSelected ? "selected" : undefined}
 											handleOverlayElement={rowOverlayElement}
@@ -762,7 +776,7 @@ export function JiraList({
 												hoveredRowTarget?.issueKey === row.issueKey
 												&& hoveredRowTarget.zone === "drag"
 											)}
-											onMoveRow={onMoveRow}
+											onMoveRow={editingSummary ? undefined : onMoveRow}
 											onPointerLeave={() => setHoveredRowTarget(null)}
 											onPointerMove={(event) => handleRowPointerMove(event, row)}
 											row={row}
@@ -772,12 +786,15 @@ export function JiraList({
 											<TableCell
 												className={cn(
 													getBodyCellClassName({
+														isEditing,
 														isLastRow,
 														isSelected: isHighlighted,
 														align: "center",
 													}),
 													"sticky left-0 isolate overflow-visible bg-surface! px-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:transition-colors",
-													isHighlighted
+													isEditing
+														? "before:bg-transparent"
+														: isHighlighted
 														? "before:bg-bg-selected"
 														: "before:bg-transparent group-hover/row:before:bg-bg-neutral-subtle-hovered group-focus-within/row:before:bg-bg-neutral-subtle-hovered",
 													insertionLinePosition ? "z-30" : "z-10",
@@ -788,7 +805,7 @@ export function JiraList({
 												data-insertion-line={insertionLinePosition}
 												style={{ anchorName: getRowAnchorName(insertionAnchorId, rowIndex) }}
 											>
-												<div className="relative z-10 flex items-center justify-center">
+												<div inert={isEditing} className={cn("relative z-10 flex items-center justify-center", isDimmed && "opacity-20")}>
 													<Checkbox
 														aria-label={`Select ${row.issueKey}`}
 														checked={isSelected}
@@ -800,20 +817,34 @@ export function JiraList({
 												<TableCell
 													className={cn(
 														getBodyCellClassName({
+															isEditing,
 															isSelected: isHighlighted,
 															align: column.align,
 															isLastColumn:
 																columnIndex === trailingEdgeLayout.lastBodyColumnIndex,
 															isLastRow,
 														}),
+														isEditing && column.id === "work" && "z-30 overflow-visible",
 														insertionLineClassName,
 														getRowFlashCellClassName(isFlashing),
 														getAgentSessionAttachCellClassName(isSessionAttachTarget),
 													)}
 													data-insertion-line={insertionLinePosition}
+													inert={isEditing && column.id !== "work"}
 													key={column.id}
 												>
-													<JiraListCellContent column={column} row={row} />
+													<div
+														inert={isEditing && column.id === "work"}
+														className={cn(
+															isDimmed && "opacity-20",
+															isEditing && column.id !== "work" && "pointer-events-none opacity-0",
+														)}
+													>
+														<JiraListCellContent column={column} row={row} />
+													</div>
+													{isEditing && column.id === "work" ? (
+														<JiraListSummaryEditor draft={editingSummary} editorRef={summaryEditorRef} finish={finishSummaryEdit} />
+													) : null}
 												</TableCell>
 											))}
 										</JiraListSortableRow>
@@ -851,6 +882,7 @@ export function JiraList({
 					className="sticky bottom-0 z-20 flex h-10 min-h-10 items-center gap-3 border-t border-border bg-surface px-2 py-1 text-[13px] shrink-0"
 					data-footer-state={isFooterDraft ? "editing" : "default"}
 					data-testid="jira-list-sticky-footer"
+					inert={Boolean(editingSummary)}
 				>
 					{isFooterDraft ? (
 						<div className="min-w-0 flex-1" data-testid="jira-list-footer-draft">
@@ -897,6 +929,7 @@ export function JiraList({
 			<div
 				className="pointer-events-none contents"
 				data-testid="jira-list-column-boundary-overlay"
+				inert={Boolean(editingSummary)}
 			>
 				{columnBoundaries.map((boundary) => (
 					<JiraListColumnBoundary
@@ -915,7 +948,7 @@ export function JiraList({
 					activeTarget={activeInsertionTarget}
 					hoveredTarget={hoveredRowTarget}
 					instanceId={insertionAnchorId}
-					onCreate={onCreate}
+					onCreate={editingSummary ? undefined : onCreate}
 					onFocusedTargetChange={setFocusedCreateTarget}
 					onHoveredTargetChange={setHoveredCreateTarget}
 					overlayRef={setRowOverlayElement}

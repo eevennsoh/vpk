@@ -14,6 +14,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/jira-list/jira-list-interactions.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/project-butter.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/breadcrumb.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/status.behavior.test.js",

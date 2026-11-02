@@ -1,4 +1,4 @@
-import type { ComponentProps, RefObject } from "react";
+import type { ComponentProps, ReactNode, RefObject } from "react";
 
 import type {
 	AgentAssignmentAgent,
@@ -20,6 +20,7 @@ export type JiraListBaseColumnId =
 	| "agentSessions"
 	| "goals"
 	| "priority"
+	| "storyPoints"
 	| "labels"
 	| "dueDate"
 	| "contributors";
@@ -62,6 +63,8 @@ export interface JiraListRowData {
 	priority: JiraListPriority;
 	status: string;
 	statusVariant?: ComponentProps<typeof Lozenge>["variant"];
+	parentIssueKey?: string;
+	storyPoints?: number;
 	indentLevel?: number;
 	hasChildren?: boolean;
 	isExpanded?: boolean;
@@ -148,6 +151,9 @@ export interface JiraListProps {
 	onSelectAllRows?: (checked: boolean) => void;
 	onSelectRow?: (issueKey: string, checked: boolean) => void;
 	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
+	onSummaryChange?: (issueKey: string, summary: string) => void;
+	onStoryPointsChange?: (issueKey: string, points: number | undefined) => void;
+	renderAgentSessions?: (row: JiraListRowData) => ReactNode;
 	onToggleExpand?: (issueKey: string) => void;
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
 	/** One-shot acknowledgement for rows a dropped session created or joined. */

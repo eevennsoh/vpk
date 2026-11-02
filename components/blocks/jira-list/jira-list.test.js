@@ -431,7 +431,7 @@ test("JiraList column add popover filters static options without changing table 
 
 test("JiraList gives every data column an accessible ellipsis action", () => {
 	assert.match(SOURCE, /<JiraListColumnActions label=\{column\.label\}/u);
-	assert.match(SOURCE, /className="group\/column-header flex min-w-0 items-center gap-2"/u);
+	assert.match(SOURCE, /"group\/column-header flex min-w-0 items-center gap-2"/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /More actions for \$\{label\}/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /<ShowMoreHorizontalIcon/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /group-hover\/column-header:opacity-100 group-has-\[:focus-visible\]\/column-header:opacity-100/u);
@@ -457,7 +457,7 @@ test("JiraList renders summaries as plain text when no issue action is available
 		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
 	)?.[1] ?? "";
 
-	assert.match(workCellSource, /\{onIssueClick \? \([\s\S]*?<button[\s\S]*?onClick=\{\(\) => onIssueClick\(row\)\}/u);
+	assert.match(workCellSource, /\{onSummaryEditStart \|\| onIssueClick \? \([\s\S]*?<button[\s\S]*?onClick=\{\(event\) => onSummaryEditStart \? onSummaryEditStart\(row, event\) : onIssueClick\?\.\(row\)\}/u);
 	assert.match(workCellSource, /\) : \([\s\S]*?<span className="min-w-0 flex-1 truncate text-\[13px\] font-medium text-text">/u);
 });
 
@@ -466,7 +466,7 @@ test("JiraList renders issue keys as plain text when no issue-key action is avai
 		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
 	)?.[1] ?? "";
 	const issueKeyGroupSource = workCellSource.match(
-		/<div className="group\/issue-key[\s\S]*?\n\t\t\t\t\t\t\t\{onIssueClick \? \(/u,
+		/<div className="group\/issue-key[\s\S]*?\n\t\t\t\t\t\t\t\{onSummaryEditStart \|\| onIssueClick \? \(/u,
 	)?.[0] ?? "";
 
 	assert.match(
@@ -484,7 +484,7 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
 	)?.[1] ?? "";
 	const issueKeyGroupSource = workCellSource.match(
-		/<div className="group\/issue-key[\s\S]*?\n\t\t\t\t\t\t\t\{onIssueClick \? \(/u,
+		/<div className="group\/issue-key[\s\S]*?\n\t\t\t\t\t\t\t\{onSummaryEditStart \|\| onIssueClick \? \(/u,
 	)?.[0] ?? "";
 	const rowActionGroupSource = workCellSource.match(
 		/<div className="flex shrink-0 items-center gap-1 opacity-0[\s\S]*?<\/div>\s*\) : null\}/u,
@@ -523,7 +523,7 @@ test("JiraList left-aligns top-level work items without an empty hierarchy space
 		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
 	)?.[1] ?? "";
 
-	assert.match(workCellSource, /row\.hasChildren \? \([\s\S]*?<Button/u);
+	assert.match(workCellSource, /row\.hasChildren && onToggleExpand \? \([\s\S]*?<Button/u);
 	assert.match(
 		workCellSource,
 		/\) : indentLevel > 0 \? \([\s\S]*?aria-hidden="true" className="block size-5 shrink-0"[\s\S]*?\) : null/u,
@@ -694,7 +694,7 @@ test("JiraList sticky selection cells remain opaque while preserving row state t
 	assert.match(SOURCE, /\? "before:bg-bg-selected"/u);
 	assert.match(SOURCE, /group-hover\/row:before:bg-bg-neutral-subtle-hovered/u);
 	assert.match(SOURCE, /group-focus-within\/row:before:bg-bg-neutral-subtle-hovered/u);
-	assert.match(SOURCE, /className="relative z-10 flex items-center justify-center"/u);
+	assert.match(SOURCE, /"relative z-10 flex items-center justify-center"/u);
 });
 
 test("JiraList row boundary controls are fixed opaque overlays", () => {

@@ -355,6 +355,8 @@ function createListRow(
 	return {
 		issueKey: card.code,
 		summary: card.title,
+		parentIssueKey: card.parentIssueKey,
+		storyPoints: card.storyPoints,
 		issueType: card.issueType ?? "task",
 		priority: card.priority,
 		status: card.status ?? columnTitle,
@@ -423,6 +425,33 @@ export function applyListOrder(
 		}
 	}
 	return next;
+}
+
+export function arrangeListHierarchy(
+	rows: readonly JiraListRowData[],
+	expandedKeys: ReadonlySet<string>,
+): JiraListRowData[] {
+	const keys = new Set(rows.map((row) => row.issueKey));
+	const children = new Map<string, JiraListRowData[]>();
+	for (const row of rows) {
+		if (row.parentIssueKey && keys.has(row.parentIssueKey)) {
+			const siblings = children.get(row.parentIssueKey) ?? [];
+			siblings.push(row);
+			children.set(row.parentIssueKey, siblings);
+		}
+	}
+	const result: JiraListRowData[] = [];
+	const visited = new Set<string>();
+	const visit = (row: JiraListRowData, depth: number) => {
+		if (visited.has(row.issueKey)) return;
+		visited.add(row.issueKey);
+		const descendants = children.get(row.issueKey) ?? [];
+		const expanded = expandedKeys.has(row.issueKey);
+		result.push({ ...row, indentLevel: depth, hasChildren: descendants.length > 0, isExpanded: expanded });
+		if (expanded) descendants.forEach((child) => visit(child, depth + 1));
+	};
+	rows.filter((row) => !row.parentIssueKey || !keys.has(row.parentIssueKey)).forEach((row) => visit(row, 0));
+	return result;
 }
 
 export function moveListOrder(

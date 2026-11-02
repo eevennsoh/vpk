@@ -16,9 +16,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { JiraIssueAgentAssignment } from "./index";
 
 export function ProjectButterAddAgent({
+	alwaysVisible = false,
 	issueKey,
 	assignment,
 }: Readonly<{
+	alwaysVisible?: boolean;
 	issueKey: string;
 	assignment?: JiraIssueAgentAssignment;
 }>) {
@@ -37,6 +39,7 @@ export function ProjectButterAddAgent({
 	const assignAgent = (agent: AgentSelectorAgent) => {
 		const id = agent.id;
 		const card = triggerRef.current?.closest("article");
+		const listSurface = triggerRef.current?.closest("[data-butter-agent-surface]");
 		actions.commit(
 			agent,
 			agents.findIndex((candidate) => candidate.id === id),
@@ -45,9 +48,10 @@ export function ProjectButterAddAgent({
 		onAssign?.(agent);
 		const ids = assignment?.assignedAgents?.map((assigned) => assigned.id) ?? [];
 		assignment?.onAssignedAgentIdsChange?.(ids.includes(id) ? ids : [...ids, id]);
-		queueMicrotask(() =>
-			card?.querySelector<HTMLElement>("[data-jira-issue-agent-row-handle]")?.focus({ preventScroll: true }),
-		);
+		const focusSession = () => (listSurface ?? card)
+			?.querySelector<HTMLElement>("[data-jira-issue-agent-row-handle]")?.focus({ preventScroll: true });
+		if (listSurface) requestAnimationFrame(focusSession);
+		else queueMicrotask(focusSession);
 	};
 
 	return (
@@ -56,7 +60,8 @@ export function ProjectButterAddAgent({
 			data-open={open || undefined}
 			className={cn(
 				"group/butter-add-agent pointer-events-none size-6 shrink-0 opacity-0 transition-opacity duration-fast ease-out-practical motion-reduce:transition-none group-hover/jira-issue:pointer-events-auto group-hover/jira-issue:opacity-100 group-has-[:focus-visible]/jira-issue:pointer-events-auto group-has-[:focus-visible]/jira-issue:opacity-100 data-[open=true]:pointer-events-auto data-[open=true]:opacity-100",
-				exiting && "opacity-0! pointer-events-none!",
+				alwaysVisible && "pointer-events-auto opacity-100",
+				exiting && !alwaysVisible && "opacity-0! pointer-events-none!",
 			)}
 		>
 			<Popover open={open} onOpenChange={(nextOpen) => (nextOpen ? actions.open() : actions.close())}>
