@@ -18,7 +18,7 @@ interface AgentLanyardActionsProps {
 export function AgentLanyardActions({ agent, onAction, ...menu }: Readonly<AgentLanyardActionsProps>) {
 	const isChat = agent.action === "chat";
 	return (
-		<div className="mt-auto flex items-center gap-1.5">
+		<div className="relative z-20 mt-auto flex items-center gap-1.5">
 			<Button variant="outline" size={isChat ? "icon-compact" : "compact"} aria-label={`${isChat ? "Chat with" : "Connect"} ${agent.name}`} disabled={!onAction} onClick={onAction ? () => onAction(agent) : undefined}>
 				{isChat ? <Icon render={<RovoChatIcon label="" size="small" />} /> : "Connect"}
 			</Button>

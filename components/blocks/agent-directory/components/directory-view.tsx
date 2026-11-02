@@ -289,6 +289,101 @@ function DirectoryRecommendations({ agents, templateAgents, onSelectTemplateAgen
 	);
 }
 
+function DirectoryTemplateGrid({ agents, onSelect }: Readonly<{
+	agents: readonly AgentTemplatesAgent[];
+	onSelect?: (agent: AgentTemplatesAgent) => void;
+}>) {
+	return <div className={cn(DIRECTORY_GRID_CLASS_NAME, "-m-1 p-1")}>{agents.map((agent) => <DirectoryTemplateCard key={agent.id} agent={agent} onSelectAgent={onSelect} />)}</div>;
+}
+
+function DirectorySearchResults({ agents, templates, list, onListChange, onSelectTemplateAgent, empty, actions }: Readonly<{
+	agents: readonly AgentBrowserAgent[];
+	templates: readonly AgentTemplatesAgent[];
+	list: boolean;
+	onListChange: (list: boolean) => void;
+	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
+	empty: ReactNode;
+	actions: DirectoryAgentActions;
+}>) {
+	if (agents.length + templates.length === 0) return empty;
+	return (
+		<>
+			<DirectorySection title={`${agents.length} ${agents.length === 1 ? "agent" : "agents"}`} action={<DirectoryViewMode list={list} onChange={onListChange} />}>
+				{agents.length > 0 ? <DirectoryAgentGrid agents={agents} list={list} {...actions} /> : <p className="text-sm text-text-subtle">No matching agents. Browse matching templates below.</p>}
+			</DirectorySection>
+			{templates.length > 0 ? <DirectorySection title="Templates"><DirectoryTemplateGrid agents={templates} onSelect={onSelectTemplateAgent} /></DirectorySection> : null}
+		</>
+	);
+}
+
+function DirectoryYourAgents({ owned, starred, empty, actions }: Readonly<{
+	owned: readonly AgentBrowserAgent[];
+	starred: readonly AgentBrowserAgent[];
+	empty: ReactNode;
+	actions: DirectoryAgentActions;
+}>) {
+	if (owned.length + starred.length === 0) return empty;
+	return <>{owned.length > 0 ? <DirectorySection title="Owned by you"><DirectoryAgentGrid agents={owned} {...actions} /></DirectorySection> : null}{starred.length > 0 ? <DirectorySection title="Starred by you"><DirectoryAgentGrid agents={starred} {...actions} /></DirectorySection> : null}</>;
+}
+
+function DirectoryCatalogResults({ agents, tab, list, onListChange, empty, actions }: Readonly<{
+	agents: readonly AgentBrowserAgent[];
+	tab: "verified" | "all-agents";
+	list: boolean;
+	onListChange: (list: boolean) => void;
+	empty: ReactNode;
+	actions: DirectoryAgentActions;
+}>) {
+	const verified = tab === "verified";
+	const shownAgents = verified ? agents.filter((agent) => agent.verified) : agents;
+	return <DirectorySection title={verified ? "Verified by your administrators" : `${shownAgents.length} ${shownAgents.length === 1 ? "agent" : "agents"}`} description={verified ? "Agents reviewed and verified by your organization" : undefined} action={verified ? undefined : <DirectoryViewMode list={list} onChange={onListChange} />}>{shownAgents.length > 0 ? <DirectoryAgentGrid agents={shownAgents} list={list} {...actions} /> : empty}</DirectorySection>;
+}
+
+function matchesTemplateCategory(agent: AgentTemplatesAgent, category: AgentTemplatesCategoryId | null, searchActive: boolean, tab: DirectoryTab): boolean {
+	return !category || searchActive || tab !== "templates" || agent.categoryId === category;
+}
+
+function hasActiveDirectoryFilters(filters: DirectoryFilters): boolean {
+	return filters.owner !== "all" || filters.app !== "all" || filters.category !== "all" || filters.sort !== "relevance";
+}
+
+function DirectoryResults({ agents, templateAgents, ownedAgentIds, tab, templateCategory, query, filters, list, onListChange, onClear, onCategorySelect, onCreateAgent, onSelectTemplateAgent, actions }: Readonly<{
+	agents: readonly AgentBrowserAgent[];
+	templateAgents: readonly AgentTemplatesAgent[];
+	ownedAgentIds: readonly string[];
+	tab: DirectoryTab;
+	templateCategory: AgentTemplatesCategoryId | null;
+	query: string;
+	filters: DirectoryFilters;
+	list: boolean;
+	onListChange: (list: boolean) => void;
+	onClear: () => void;
+	onCategorySelect: (category: DirectoryCategory) => void;
+	onCreateAgent?: () => void;
+	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
+	actions: DirectoryAgentActions;
+}>) {
+	const hasSearch = query.trim().length > 0;
+	const visibleAgents = filterDirectoryAgents(agents, query, filters, ownedAgentIds);
+	const visibleTemplates = filterDirectoryAgents(templateAgents, query, filters, ownedAgentIds).filter((agent) =>
+		matchesTemplateCategory(agent, templateCategory, hasSearch, tab),
+	);
+	const empty = <DirectoryEmpty onClear={onClear} onCreateAgent={onCreateAgent} />;
+	if (hasSearch || (tab === "recommended" && hasActiveDirectoryFilters(filters))) {
+		return <DirectorySearchResults agents={visibleAgents} templates={visibleTemplates} list={list} onListChange={onListChange} onSelectTemplateAgent={onSelectTemplateAgent} empty={empty} actions={actions} />;
+	}
+	if (tab === "recommended") {
+		return agents.length + templateAgents.length > 0 ? <DirectoryRecommendations agents={visibleAgents} templateAgents={visibleTemplates} onSelectTemplateAgent={onSelectTemplateAgent} onCategorySelect={onCategorySelect} {...actions} /> : empty;
+	}
+	if (tab === "templates") {
+		return <DirectorySection title="Templates" description="Start with a template and make it your own">{visibleTemplates.length > 0 ? <DirectoryTemplateGrid agents={visibleTemplates} onSelect={onSelectTemplateAgent} /> : empty}</DirectorySection>;
+	}
+	if (tab === "your-agents") {
+		return <DirectoryYourAgents owned={visibleAgents.filter((agent) => ownedAgentIds.includes(agent.id) || isDirectoryAgentOwned(agent))} starred={visibleAgents.filter(actions.isStarred)} empty={empty} actions={actions} />;
+	}
+	return <DirectoryCatalogResults agents={visibleAgents} tab={tab} list={list} onListChange={onListChange} empty={empty} actions={actions} />;
+}
+
 export function AgentDirectoryView({
 	agents, templateAgents, ownedAgentIds = [], initialTemplateCategory = null, onSelectAgent, onSelectTemplateAgent, onCreateAgent,
 }: Readonly<AgentDirectoryViewProps>) {
@@ -303,36 +398,7 @@ export function AgentDirectoryView({
 		setStarOverrides((previous) => new Map(previous).set(agent.id, !(previous.get(agent.id) ?? agent.favorite ?? false)));
 	};
 	const actions = { onSelectAgent, onToggleStar, isStarred };
-	const hasSearch = query.trim().length > 0;
-	const hasFilters = filters.owner !== "all" || filters.app !== "all" || filters.category !== "all" || filters.sort !== "relevance";
-	const visibleAgents = filterDirectoryAgents(agents, query, filters, ownedAgentIds);
-	const visibleTemplates = filterDirectoryAgents(templateAgents, query, filters, ownedAgentIds).filter((agent) =>
-		!templateCategory || hasSearch || tab !== "templates" || agent.categoryId === templateCategory,
-	);
-	const ownedAgents = visibleAgents.filter((agent) => ownedAgentIds.includes(agent.id) || isDirectoryAgentOwned(agent));
-	const starredAgents = visibleAgents.filter(isStarred);
-	const tabAgents = tab === "verified" ? visibleAgents.filter((agent) => agent.verified) : visibleAgents;
 	const clearSearch = () => { setQuery(""); setFilters({ ...DEFAULT_DIRECTORY_FILTERS }); };
-	const empty = <DirectoryEmpty onClear={clearSearch} onCreateAgent={onCreateAgent} />;
-	let content: ReactNode;
-	if (hasSearch || (tab === "recommended" && hasFilters)) {
-		content = visibleAgents.length + visibleTemplates.length > 0 ? (
-			<>
-				<DirectorySection title={`${visibleAgents.length} ${visibleAgents.length === 1 ? "agent" : "agents"}`} action={<DirectoryViewMode list={list} onChange={setList} />}>
-					{visibleAgents.length > 0 ? <DirectoryAgentGrid agents={visibleAgents} list={list} {...actions} /> : <p className="text-sm text-text-subtle">No matching agents. Browse matching templates below.</p>}
-				</DirectorySection>
-				{visibleTemplates.length > 0 ? <DirectorySection title="Templates"><div className={cn(DIRECTORY_GRID_CLASS_NAME, "-m-1 p-1")}>{visibleTemplates.map((agent) => <DirectoryTemplateCard key={agent.id} agent={agent} onSelectAgent={onSelectTemplateAgent} />)}</div></DirectorySection> : null}
-			</>
-		) : empty;
-	} else if (tab === "recommended") {
-		content = agents.length + templateAgents.length > 0 ? <DirectoryRecommendations agents={visibleAgents} templateAgents={visibleTemplates} onSelectTemplateAgent={onSelectTemplateAgent} onCategorySelect={(category) => { setFilters((previous) => ({ ...previous, category })); setTab("all-agents"); }} {...actions} /> : empty;
-	} else if (tab === "templates") {
-		content = <DirectorySection title="Templates" description="Start with a template and make it your own">{visibleTemplates.length > 0 ? <div className={cn(DIRECTORY_GRID_CLASS_NAME, "-m-1 p-1")}>{visibleTemplates.map((agent) => <DirectoryTemplateCard key={agent.id} agent={agent} onSelectAgent={onSelectTemplateAgent} />)}</div> : empty}</DirectorySection>;
-	} else if (tab === "your-agents") {
-		content = ownedAgents.length + starredAgents.length > 0 ? <>{ownedAgents.length > 0 ? <DirectorySection title="Owned by you"><DirectoryAgentGrid agents={ownedAgents} {...actions} /></DirectorySection> : null}{starredAgents.length > 0 ? <DirectorySection title="Starred by you"><DirectoryAgentGrid agents={starredAgents} {...actions} /></DirectorySection> : null}</> : empty;
-	} else {
-		content = <DirectorySection title={tab === "verified" ? "Verified by your administrators" : `${tabAgents.length} ${tabAgents.length === 1 ? "agent" : "agents"}`} description={tab === "verified" ? "Agents reviewed and verified by your organization" : undefined} action={tab === "all-agents" ? <DirectoryViewMode list={list} onChange={setList} /> : undefined}>{tabAgents.length > 0 ? <DirectoryAgentGrid agents={tabAgents} list={list} {...actions} /> : empty}</DirectorySection>;
-	}
 	return (
 		<Tabs value={tab} onValueChange={(value) => { const next = DIRECTORY_TABS.find((candidate) => candidate.id === value); if (next) { setTab(next.id); setQuery(""); setTemplateCategory(null); } }} className="min-w-0 gap-10" data-slot="agent-directory-view">
 			<div className="flex flex-wrap items-center justify-between gap-4 py-1">
@@ -348,7 +414,7 @@ export function AgentDirectoryView({
 					{onCreateAgent ? <Button variant="outline" onClick={onCreateAgent}>Create agent</Button> : null}
 				</div>
 			</div>
-			{DIRECTORY_TABS.map((item) => <TabsContent key={item.id} value={item.id} keepMounted={false} className="flex min-w-0 flex-col gap-15">{item.id === tab ? content : null}</TabsContent>)}
+			{DIRECTORY_TABS.map((item) => <TabsContent key={item.id} value={item.id} keepMounted={false} className="flex min-w-0 flex-col gap-15">{item.id === tab ? <DirectoryResults agents={agents} templateAgents={templateAgents} ownedAgentIds={ownedAgentIds} tab={tab} templateCategory={templateCategory} query={query} filters={filters} list={list} onListChange={setList} onClear={clearSearch} onCategorySelect={(category) => { setFilters((previous) => ({ ...previous, category })); setTab("all-agents"); }} onCreateAgent={onCreateAgent} onSelectTemplateAgent={onSelectTemplateAgent} actions={actions} /> : null}</TabsContent>)}
 		</Tabs>
 	);
 }
