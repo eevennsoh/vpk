@@ -163,7 +163,7 @@ test("Project butter's hexagon is keyboard reachable and attaches a working agen
 	await page.keyboard.press("Enter");
 	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
 	await expect(picker).toBeVisible();
-	await expect(picker.getByRole("textbox", { name: "Search agents" })).toBeFocused();
+	await expect(picker.getByRole("combobox", { name: "Search agents" })).toBeFocused();
 	await page.keyboard.press("ArrowDown");
 	await expect(demo.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute(
 		"data-agent-id",
@@ -200,7 +200,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(border).not.toHaveCSS("color", idleBorderColor);
 		const menu = page.getByRole("dialog", { name: "Agents", exact: true });
 		await expect(menu).toBeVisible();
-		await expect(menu.getByRole("textbox", { name: "Search agents" })).toBeVisible();
+		await expect(menu.getByRole("combobox", { name: "Search agents" })).toBeVisible();
 		await expect(demo.locator('[data-slot="jira-issue-agent-backdrop"]')).toHaveCSS("opacity", "1");
 		await expect
 			.poll(async () => {

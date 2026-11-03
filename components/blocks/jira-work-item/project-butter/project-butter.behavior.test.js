@@ -42,8 +42,12 @@ async function commentEditor(view) {
 }
 
 async function openSession(view, name) {
-	if (!view.queryByRole("button", { name: new RegExp(`^Open ${name} session:`) })) await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
-	await view.click(view.getByRole("button", { name: new RegExp(`^Open ${name} session:`) }));
+	if (!view.queryByRole("dialog", { name: "Agent sessions" })) await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
+	const menu = view.getByRole("dialog", { name: "Agent sessions" });
+	const titles = { Claude: "Review Teamwork onboarding guide", "Jira Coding agent": "Draft billing flow PRD", Codex: "Review rollback" };
+	const row = [...menu.querySelectorAll("li")].find((item) => item.textContent.includes(titles[name] ?? name));
+	assert.ok(row, `No session for ${name}`);
+	await view.click(row.querySelector("button"));
 }
 
 function renderWorkItem(props = {}) {

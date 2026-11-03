@@ -204,13 +204,15 @@ function ProgressCircle({
 	const isIndeterminate = !hasSegments && value == null && !status;
 	const clampedValue = isIndeterminate ? 0 : Math.min(100, Math.max(0, value ?? 0));
 	const isFilled = variant === "filled";
-	const filledColor = !colorByProgress || isIndeterminate || clampedValue === 0
-		? "text-text-subtle"
-		: clampedValue >= 100
-			? "text-icon-success"
-			: clampedValue >= 75
-				? "text-icon-discovery"
-				: "text-icon-information";
+	const filledColor = !isIndeterminate && clampedValue === 0
+		? "text-icon-subtlest"
+		: !colorByProgress || isIndeterminate
+			? "text-text-subtle"
+			: clampedValue >= 100
+				? "text-icon-success"
+				: clampedValue >= 75
+					? "text-icon-discovery"
+					: "text-icon-information";
 	const hasDashedRing = dashed && isFilled && !hasSegments && !status && value != null;
 	const remainderMaskId = useId();
 	const filledProgress = useMotionValue(clampedValue);

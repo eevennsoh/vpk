@@ -235,6 +235,8 @@ export function JiraListAgentSessionsCell({
 	onAgentAssign,
 	onAssignedAgentIdsChange,
 	onAssignedAgentSelect,
+	onBrowseAgents,
+	onCreateAgent,
 }: Readonly<{
 	addAgentLabel?: string;
 	agentCatalog?: readonly AgentSelectorAgent[];
@@ -242,6 +244,8 @@ export function JiraListAgentSessionsCell({
 	onAgentAssign?: (agent: AgentSelectorAgent) => void;
 	onAssignedAgentIdsChange?: (agentIds: readonly string[]) => void;
 	onAssignedAgentSelect?: (agent: JiraListAssignedAgent) => void;
+	onBrowseAgents?: () => void;
+	onCreateAgent?: () => void;
 }>) {
 	const assignedAgents = (agentSessions ?? []).map(toAssignmentAgent);
 	const extraAgents = assignedAgents
@@ -296,6 +300,8 @@ export function JiraListAgentSessionsCell({
 				onAssignedAgentSelect={(agent) => {
 					onAssignedAgentSelect?.(toListAssignedAgent(agent));
 				}}
+				onBrowseAgents={onBrowseAgents}
+				onCreateAgent={onCreateAgent}
 			/>
 		</div>
 	);

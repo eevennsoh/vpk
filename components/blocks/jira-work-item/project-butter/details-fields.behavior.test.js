@@ -15,7 +15,7 @@ function renderDetails(props = {}) {
 				const emptyContent = useProjectButterContent("empty", workItem);
 				const [order, setOrder] = useState(["details", "development", "automation", "apps"]);
 				const [coding, setCoding] = useState(false);
-				return <ThemeWrapper><ProjectButterDetails content={empty ? emptyContent : filledContent} empty={empty} key={sidePanel ? "side-panel" : "wide"} onPanelOrderChange={setOrder} onStartCoding={() => setCoding(true)} panelOrder={order} sidePanel={sidePanel} />{coding ? <p>Coding started</p> : null}</ThemeWrapper>;
+				return <ThemeWrapper><ProjectButterDetails code={workItem?.code} content={empty ? emptyContent : filledContent} empty={empty} key={sidePanel ? "side-panel" : "wide"} onPanelOrderChange={setOrder} onStartCoding={() => setCoding(true)} panelOrder={order} sidePanel={sidePanel} />{coding ? <p>Coding started</p> : null}</ThemeWrapper>;
 			}`,
 		props,
 	});
@@ -45,6 +45,30 @@ test("Details initializes each item independently and calculates cost per reach"
 	assert.equal(boardItem.parent, "PAY-100 Payments");
 	assert.deepEqual(boardItem.labels, ["billing"]);
 	assert.equal(boardItem.fixVersion, "");
+});
+
+test("Development copies the current work item prompt", async (t) => {
+	const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+	const copied = [];
+	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value) => copied.push(value) } });
+	t.after(() => { if (original) Object.defineProperty(navigator, "clipboard", original); else delete navigator.clipboard; });
+	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing", description: "Carry the artwork" } });
+	await view.click(view.getByRole("button", { name: "Copy prompt" }));
+	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork"]);
+	assert.equal(view.getByRole("button", { name: "Prompt copied" }) !== null, true);
+	assert.equal(view.getAllByRole("status").some((status) => status.textContent === "Prompt copied"), true);
+	await view.rerender({ workItem: { code: "PAY-119", title: "Runbook", description: "Write it" } });
+	await view.click(view.getByRole("button", { name: "Copy prompt" }));
+	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork", "PAY-119: Runbook\n\nWrite it"]);
+});
+
+test("Development does not claim a rejected clipboard write succeeded", async (t) => {
+	const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { throw new Error("Denied"); } } });
+	t.after(() => { if (original) Object.defineProperty(navigator, "clipboard", original); else delete navigator.clipboard; });
+	const view = await renderDetails();
+	await view.click(view.getByRole("button", { name: "Copy prompt" }));
+	assert.equal(view.getByRole("button", { name: "Could not copy prompt" }) !== null, true);
 });
 
 test("Details expands, clears seeded fields, reorders and restores hidden fields", async () => {

@@ -42,11 +42,24 @@ test("AgentSelector keyboard navigation skips disabled agents", async () => {
 			selectionMode: "single",
 		},
 	});
-	const search = view.getByRole("textbox", { name: "Search agents" });
+	const search = view.getByRole("combobox", { name: "Search agents" });
+	const list = view.getByRole("listbox", { name: "Suggestions" });
+	assert.equal(search.getAttribute("aria-controls"), list.id);
 	assert.equal(view.getByRole("option", { name: /Unavailable/u }).getAttribute("aria-disabled"), "true");
+	await view.focus(search);
 	await view.press(search, "ArrowDown");
+	assert.equal(view.isFocused(search), true);
+	assert.equal(search.getAttribute("aria-activedescendant"), view.getByRole("option", { name: /Last/u }).id);
 	await view.press(search, "Enter");
 	assert.deepEqual(selected, ["last"]);
+	await view.fill(search, "First");
+	const filtered = view.getByRole("option", { name: /First/u });
+	assert.equal(search.getAttribute("aria-activedescendant"), filtered.id);
+	assert.equal(view.isFocused(search), true);
+	await view.fill(search, "No matching agent");
+	assert.equal(search.hasAttribute("aria-activedescendant"), false);
+	await view.fill(search, "Last");
+	assert.equal(search.getAttribute("aria-activedescendant"), view.getByRole("option", { name: /Last/u }).id);
 });
 
 async function loadAgentSelectorHarness() {
@@ -79,6 +92,7 @@ async function loadAgentSelectorHarness() {
 				export function CommandEmpty(props) { return React.createElement("div", null, props.children); }
 				export function CommandGroup(props) { return React.createElement("div", null, props.children); }
 				export function CommandInput() { return null; }
+				export function CommandPrimitiveInput(props) { return props.children; }
 				export function CommandItem(props) {
 					return React.createElement(
 						"div",
@@ -593,7 +607,7 @@ test("AgentSelector fades its list under the search header once scrolled", () =>
 	// it must fade rather than hard-clip — the same treatment the editor-palette
 	// command menus use. Gated on showTopScrollMask so a short list is unmasked.
 	assert.match(COMPONENT_SOURCE, /useHasVerticalOverflow<HTMLDivElement>\(\)/u);
-	assert.match(COMPONENT_SOURCE, /ref=\{listOverflow\.ref\}/u);
+	assert.match(COMPONENT_SOURCE, /useActiveAgentOption\(listOverflow\.ref\)[\s\S]*ref=\{activeOption\.ref\}/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/listOverflow\.showTopScrollMask\s*&& "scroll-mask-top overscroll-contain \[--scroll-mask-fade-size:3rem\]"/u,

@@ -13,7 +13,7 @@ import { useMemo, useState, type ReactElement, type ReactNode } from "react";
 
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandPrimitiveInput } from "@/components/ui/command";
 import { Icon } from "@/components/ui/icon";
 import type { AtlassianLogoName } from "@/components/ui/logo";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -25,6 +25,7 @@ import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
 import { motionEase } from "@/lib/motion";
+import { useActiveAgentOption } from "@/components/blocks/agent-selector/components/use-active-agent-option";
 
 export interface AgentSelectorAgent {
 	id: string;
@@ -224,7 +225,7 @@ function AgentSelectorLogo({ agent, size }: Readonly<{ agent: AgentSelectorAgent
 
 	return (
 		<AgentAvatarVisual
-			appearance={agent.brandName === "openai-codex" ? "coding" : undefined}
+			appearance={agent.brandName === "openai-codex" || agent.brandName === "cursor" || agent.brandName === "github-copilot" ? "coding" : undefined}
 			avatarClassName="shrink-0"
 			avatarSrc={agent.avatarSrc}
 			brandName={agent.brandName}
@@ -316,7 +317,7 @@ function AgentSelectorItem({
 			className={cn(
 				AGENT_ROW_BASE_CLASS,
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
-				!showByline && "h-8",
+				!showByline && "h-9",
 			)}
 			data-checked={showCheckIcon && isChecked ? true : undefined}
 			disabled={isDisabled}
@@ -579,7 +580,6 @@ export function AgentSelector({
 }: Readonly<AgentSelectorProps>): ReactElement {
 	const [internalQuery, setInternalQuery] = useState(defaultQuery);
 	const [internalPinnedAgentIds, setInternalPinnedAgentIds] = useState<readonly string[]>(defaultPinnedAgentIds);
-	const [activeAgentId, setActiveAgentId] = useState("");
 	const [sectionsExpanded, setSectionsExpanded] = useState(false);
 	const selectedIds = selectedAgentIds ?? EMPTY_SELECTED_AGENT_IDS;
 	const disabledIds = disabledAgentIds ?? EMPTY_DISABLED_AGENT_IDS;
@@ -595,6 +595,7 @@ export function AgentSelector({
 	const pinnedAgentIdSet = useMemo(() => new Set(resolvedPinnedAgentIds), [resolvedPinnedAgentIds]);
 	const inProgressAgentIdSet = useMemo(() => new Set(inProgressIds), [inProgressIds]);
 	const listOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const activeOption = useActiveAgentOption(listOverflow.ref);
 	const visibleAgents = useMemo(() => {
 		const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 		const selectedAgents = selectedIds
@@ -644,12 +645,6 @@ export function AgentSelector({
 		(agent) => pinnedAgentIdSet.has(agent.id) && !inProgressAgentIdSet.has(agent.id),
 	);
 	const sectionLayout = resolveAgentSections({ sections, agents: visibleAgents, query: normalizedQuery, expanded: sectionsExpanded });
-	const selectableAgents = (sectionLayout ? [...sectionLayout.agents, ...sectionLayout.otherAgents] : [...inProgressAgents, ...pinnedAgents, ...moreAgents]).filter(
-		(agent) => !disabledAgentIdSet.has(agent.id),
-	);
-	const activeVisibleAgentId = (sectionLayout?.showMore && activeAgentId === "__show_more_agents__") || selectableAgents.some((agent) => agent.id === activeAgentId)
-		? activeAgentId
-		: selectableAgents[0]?.id ?? "";
 
 	function handleQueryChange(nextQuery: string) {
 		if (query === undefined) {
@@ -673,7 +668,7 @@ export function AgentSelector({
 	const supportsMultipleSelection = selectionMode === "multiple";
 
 	return (
-		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 rounded-xl p-1", className)} onValueChange={setActiveAgentId} shouldFilter={false} value={activeVisibleAgentId}>
+		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 rounded-xl p-1", className)} label={searchPlaceholder} shouldFilter={false}>
 			{hasSelectedAgentActions ? (
 				<div aria-label={selectedActionsLabel} className="flex shrink-0 flex-col border-b border-border pb-2" role="group">
 					{selectedActions.map((action) => (
@@ -703,12 +698,14 @@ export function AgentSelector({
 					// which owns row highlighting and activation for this list.
 					<div className="-mx-1 -mt-1 mb-1 overflow-hidden rounded-t-xl">
 						<RichTextCommandMenuSearchField
+							activeDescendantId={activeOption.activeOptionId ?? null}
 							autoFocus
 							hostOwnsKeyNavigation
 							icon={<SearchIcon className="size-4 text-icon-subtle" />}
 							label={searchPlaceholder}
 							onClear={() => handleQueryChange("")}
 							onValueChange={handleQueryChange}
+							renderInput={(input) => <CommandPrimitiveInput asChild value={resolvedQuery}>{input}</CommandPrimitiveInput>}
 							value={resolvedQuery}
 						/>
 					</div>
@@ -736,7 +733,7 @@ export function AgentSelector({
 					listOverflow.showTopScrollMask
 						&& "scroll-mask-top overscroll-contain [--scroll-mask-fade-size:3rem]",
 				)}
-				ref={listOverflow.ref}
+				ref={activeOption.ref}
 			>
 				{visibleAgents.length === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
 				{sectionLayout ? (<>

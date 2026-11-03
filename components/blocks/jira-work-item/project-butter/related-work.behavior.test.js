@@ -185,7 +185,7 @@ test("empty crew shows the current viewer and adds the chosen searchable agent",
 	assert.equal(view.queryByRole("img", { name: "Annie Cook, Currently viewing" }) !== null, true);
 	assert.equal(view.queryByRole("img", { name: "Add agent" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Annie Cook, Currently viewing. Add agent" }));
-	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Codex");
+	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Codex");
 	await view.click(view.getByRole("option", { name: /^Codex/u }));
 	assert.deepEqual(selected.map((agent) => ({ id: agent.id, name: agent.name })), [{ id: "codex", name: "Codex" }]);
 	assert.equal(view.queryByRole("textbox", { name: "Search agents" }) === null, true);
@@ -202,7 +202,7 @@ test("filled crew sorts sessions by urgency and routes session and add-agent sel
 	assert.deepEqual(opened, ["running"]);
 	await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
 	await view.click(view.getByRole("button", { name: "Add agent" }));
-	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Figma");
+	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Figma");
 	await view.click(view.getByRole("option", { name: /^Figma/u }));
 	assert.deepEqual(selected, ["figma"]);
 });
@@ -238,7 +238,7 @@ test("reference crew appends a newly picked agent and combines its sessions by u
 	const view = await renderCrew(props);
 	await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
 	await view.click(view.getByRole("button", { name: "Add agent" }));
-	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Code Reviewer");
+	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Code Reviewer");
 	await view.click(view.getByRole("option", { name: /Code Reviewer/u }));
 	assert.equal(selected.length, 1);
 	const running = { ...crewSession("review-running", "running", "Code Reviewer"), agent: selected[0] };

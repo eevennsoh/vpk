@@ -155,7 +155,6 @@ export function ProjectButterAgentPicker({
 		>
 			<AgentSelector
 				agents={pickerAgents}
-				avatarSize={20}
 				className="min-w-0 w-full"
 				onAgentToggle={(agentId) => {
 					const agent = agents.find((candidate) => candidate.id === agentId);

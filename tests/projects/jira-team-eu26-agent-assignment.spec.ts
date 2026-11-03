@@ -162,7 +162,7 @@ test("List assigned menu uses Add agent and opens the selector", async ({ page }
 	const menu = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 	await expect(menu).toBeVisible();
 	await menu.getByRole("button", { name: "Add agent", exact: true }).click();
-	await expect(menu.getByRole("textbox", { name: "Search agents" })).toBeVisible();
+	await expect(menu.getByRole("combobox", { name: "Search agents" })).toBeVisible();
 });
 
 test("compact assignment flyout centers status and more actions in each row", async ({ page }) => {

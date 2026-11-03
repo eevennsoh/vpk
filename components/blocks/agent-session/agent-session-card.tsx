@@ -426,6 +426,8 @@ export function AgentSessionCard({
 	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
 	const cardAnchorRef = useRef<HTMLElement>(null);
 	const isCloudSession = !isLocalAgentListItem(item);
+	const isLongDensity = density === "long";
+	const isTitleLed = isLongDensity || (item.host ?? item.sessionDetails?.host) === "cloud";
 	const menu = useAgentSessionMenu({
 		canResume,
 		isCloud: isCloudSession,
@@ -459,7 +461,7 @@ export function AgentSessionCard({
 		animateLayout,
 		arrivalDelaySeconds,
 		arrivalStartTransform,
-		hasAnimatedIdentity: (density !== "long" || mark != null) && item.invokedBy !== undefined && item.agent.kind !== "person",
+		hasAnimatedIdentity: (!isTitleLed || mark != null) && item.invokedBy !== undefined && item.agent.kind !== "person",
 		isArriving,
 		isDeparting,
 		isStateChanged,
@@ -537,7 +539,6 @@ export function AgentSessionCard({
 	// Every density keeps lifecycle state outside the authored title and byline.
 	// Short rows use a settled-state glyph in the same slot the hover/focus menu
 	// replaces; long rows keep their full trailing progression control.
-	const isLongDensity = density === "long";
 	const trailingControl = (() => {
 		if (!showMoreMenu && role !== "viewer") {
 			return undefined;
@@ -606,7 +607,7 @@ export function AgentSessionCard({
 	// A triage mark lives on the leading avatar, so a markable row keeps its
 	// identity column even in the title-led density — losing multi-select would
 	// cost more than the horizontal space it buys back.
-	const hideIdentity = isLongDensity && mark == null;
+	const hideIdentity = isTitleLed && mark == null;
 
 	// Arrival layout lives on the list item, not the flyout trigger. Base UI
 	// closes a preview card when its active trigger unmounts, and Motion's layout
@@ -740,11 +741,11 @@ export function AgentSessionCard({
 								// shared trailing slot lets hover actions replace it in place.
 								lifecycle={lifecycleIndicator}
 								metadata={
-									isLongDensity
+									isTitleLed
 										? <AgentSessionLongMetadata item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
-								metadataOutsideViewTrigger={isLongDensity && renderAgentAvatar !== undefined}
+								metadataOutsideViewTrigger={isTitleLed && renderAgentAvatar !== undefined}
 								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
 								renderIdentity={() => {
