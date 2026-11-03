@@ -148,7 +148,7 @@ const PAY_101: ButterWorkItemPlaceholder = {
 			name: "Payments SDK v2 migration scope",
 			addedBy: PRIYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/network/primary/lime.svg",
+			previewSrc: "/ambient/itsm/repeat/primary/blue.svg",
 		},
 		{
 			id: "pay-101-call-site-inventory",
@@ -156,7 +156,7 @@ const PAY_101: ButterWorkItemPlaceholder = {
 			name: "v1-call-site-inventory.csv",
 			addedBy: MAYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/automation-text-repeat/tint/blue.svg",
+			previewSrc: "/ambient/atlassian/abstract/shape-1/primary/yellow.svg",
 		},
 		{
 			id: "pay-101-pr-1839",
@@ -164,7 +164,7 @@ const PAY_101: ButterWorkItemPlaceholder = {
 			name: "PR #1839 · Map v1 call sites",
 			addedBy: MAYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/itsm/line/ambient/itsm/line/shade/purple.svg",
+			previewSrc: "/ambient/ado/combo/primary/neutral.svg",
 			url: "https://github.com/payments-platform/payments/pull/1839",
 		},
 		{
@@ -173,7 +173,7 @@ const PAY_101: ButterWorkItemPlaceholder = {
 			name: "Commit 8c2f4e1 · 61 call sites and owners",
 			addedBy: MAYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/itsm/grid/shade/yellow.svg",
+			previewSrc: "/ambient/atlassian/pictorial/security/primary/lime.svg",
 			url: "https://github.com/payments-platform/payments/commit/8c2f4e1",
 		},
 	],
@@ -317,7 +317,7 @@ const PAY_102: ButterWorkItemPlaceholder = {
 			name: "legacy-adapter-deletion-proof.md",
 			addedBy: MAYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/security/tint/neutral.svg",
+			previewSrc: "/ambient/ado/dots/primary/blue.svg",
 		},
 		{
 			id: "pay-102-pr-1847",
@@ -325,7 +325,7 @@ const PAY_102: ButterWorkItemPlaceholder = {
 			name: "PR #1847 · Verify adapter removal",
 			addedBy: MAYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/data-center/shade/lime.svg",
+			previewSrc: "/ambient/atlassian/abstract/line-2/primary/neutral.svg",
 			url: "https://github.com/payments-platform/payments/pull/1847",
 		},
 		{
@@ -334,7 +334,7 @@ const PAY_102: ButterWorkItemPlaceholder = {
 			name: "LegacyGatewayAdapter deletion spike",
 			addedBy: MAYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/itsm/shape/primary/blue.svg",
+			previewSrc: "/ambient/atlassian/pictorial/automation-text-repeat/primary/yellow.svg",
 		},
 		{
 			id: "pay-102-spike-notes",
@@ -342,7 +342,7 @@ const PAY_102: ButterWorkItemPlaceholder = {
 			name: "SDK v2 spike: adapter deletion",
 			addedBy: DIEGO,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/ado/shape/shade/yellow.svg",
+			previewSrc: "/ambient/atlassian/abstract/combo-1/primary/lime.svg",
 		},
 	],
 	comments: [
@@ -477,7 +477,7 @@ const PAY_113: ButterWorkItemPlaceholder = {
 			name: "3ds-contract-suite-214-results.txt",
 			addedBy: JORDAN,
 			dateAdded: "13 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/combo-2/shade/lime.svg",
+			previewSrc: "/ambient/atlassian/pictorial/work-management/primary/purple.svg",
 		},
 		{
 			id: "pay-113-pr-1863",
@@ -485,7 +485,7 @@ const PAY_113: ButterWorkItemPlaceholder = {
 			name: "PR #1863 · Add 3DS contracts",
 			addedBy: JORDAN,
 			dateAdded: "13 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/line-1/primary/blue.svg",
+			previewSrc: "/ambient/itsm/shape/primary/yellow.svg",
 			url: "https://github.com/payments-platform/payments/pull/1863",
 		},
 		{
@@ -494,7 +494,7 @@ const PAY_113: ButterWorkItemPlaceholder = {
 			name: "3-D Secure contract catalogue",
 			addedBy: MAYA,
 			dateAdded: "13 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/shape-1/tint/purple.svg",
+			previewSrc: "/ambient/itsm/grid/primary/blue.svg",
 		},
 		{
 			id: "pay-113-assertion-review",
@@ -502,7 +502,7 @@ const PAY_113: ButterWorkItemPlaceholder = {
 			name: "214 assertion review notes",
 			addedBy: PRIYA,
 			dateAdded: "13 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/shape-2/tint/yellow.svg",
+			previewSrc: "/ambient/ado/shape/primary/lime.svg",
 		},
 	],
 	comments: [
@@ -645,7 +645,7 @@ const PAY_126: ButterWorkItemPlaceholder = {
 			name: "legacy-gateway-adapter-removal.diff",
 			addedBy: MAYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/clouds/tint/neutral.svg",
+			previewSrc: "/ambient/atlassian/pictorial/automation-repeat/primary/purple.svg",
 		},
 		{
 			id: "pay-126-pr-1874",
@@ -653,7 +653,7 @@ const PAY_126: ButterWorkItemPlaceholder = {
 			name: "PR #1874 · Remove v1 adapter",
 			addedBy: MAYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/combo-1/shade/yellow.svg",
+			previewSrc: "/ambient/atlassian/pictorial/work-management/primary/neutral.svg",
 			url: "https://github.com/payments-platform/payments/pull/1874",
 		},
 		{
@@ -662,7 +662,7 @@ const PAY_126: ButterWorkItemPlaceholder = {
 			name: "Adapter removal checklist",
 			addedBy: JORDAN,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/data-center/primary/lime.svg",
+			previewSrc: "/ambient/atlassian/abstract/combo-2/primary/blue.svg",
 		},
 		{
 			id: "pay-126-removal-walkthrough",
@@ -670,7 +670,7 @@ const PAY_126: ButterWorkItemPlaceholder = {
 			name: "LegacyGatewayAdapter removal on main",
 			addedBy: MAYA,
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/itsm/grid/shade/blue.svg",
+			previewSrc: "/ambient/itsm/combo/primary/yellow.svg",
 		},
 	],
 	comments: [
