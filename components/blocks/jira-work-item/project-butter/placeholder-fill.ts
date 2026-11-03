@@ -4,7 +4,7 @@ import type { ProjectButterAttachment } from "@/components/blocks/jira-work-item
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
 import type { ProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
-import type { ProjectButterRelatedItem } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import type { ProjectButterRelatedItem, ProjectButterRelatedStatus } from "@/components/blocks/jira-work-item/project-butter/related-model";
 
 export interface ProjectButterWorkItemPlaceholder {
 	description: string;
@@ -83,6 +83,11 @@ export function projectButterPlaceholderAttachments(placeholder: ProjectButterWo
 	}));
 }
 
+/** Butter related rows have no "In review" status; board placeholders that use it read as in progress. */
+export function relatedStatusFromPlaceholder(status: ProjectButterWorkItemPlaceholder["children"][number]["status"]): ProjectButterRelatedStatus {
+	return status === "In review" ? "In progress" : status;
+}
+
 export function projectButterPlaceholderRelated(placeholder: ProjectButterWorkItemPlaceholder): {
 	children: ProjectButterRelatedItem[];
 	linked: ProjectButterRelatedItem[];
@@ -94,7 +99,7 @@ export function projectButterPlaceholderRelated(placeholder: ProjectButterWorkIt
 			summary: item.summary,
 			priority: item.priority,
 			assignee: item.assignee,
-			status: item.status,
+			status: relatedStatusFromPlaceholder(item.status),
 			estimate: item.estimate,
 			dueDate: item.dueDate,
 		})),
@@ -104,7 +109,7 @@ export function projectButterPlaceholderRelated(placeholder: ProjectButterWorkIt
 			summary: item.summary,
 			priority: item.priority,
 			assignee: item.assignee,
-			status: item.status,
+			status: relatedStatusFromPlaceholder(item.status),
 			relationship: item.relationship,
 		})),
 	};

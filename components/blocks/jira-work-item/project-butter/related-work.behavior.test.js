@@ -278,44 +278,56 @@ const SECTIONS_HARNESS = `import React from "react";
 		</div></MotionConfig></ThemeWrapper>;
 	}`;
 
-test("work item sections collapse independently without a Related work group", async () => {
+test("Related work collapses to a summary and its groups collapse independently", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
-	const childHeading = () => view.getByRole("button", { name: /^Child work items, /u });
-	assert.equal(view.queryByText("Related work") === null, true);
-	await view.click(view.getByRole("button", { name: "Attachments" }));
+	const childHeading = () => view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u });
+	const related = view.getByRole("button", { name: "Collapse Related work" });
+	assert.equal(related.getAttribute("aria-expanded"), "true");
+	assert.equal(view.queryByRole("heading", { name: "Related work", level: 2 }) !== null, true);
+	assert.equal(document.querySelector('[data-component="RelatedWorkCollapsedSummary"]'), null);
+	await view.click(view.getByRole("button", { name: "Collapse Attachments" }));
 	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) === null, true);
 	assert.equal(view.queryByRole("button", { name: "Add attachment" }) === null, true);
 	assert.equal(view.queryByRole("list", { name: "Child work items" }) !== null, true);
 	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
+	assert.equal(childHeading().getAttribute("aria-label"), "Collapse Child work items 10 of 15 done, 5 in progress, 0 to do");
 	await view.click(childHeading());
 	assert.equal(view.queryByRole("list", { name: "Child work items" }) === null, true);
 	assert.equal(childHeading().textContent.includes("10/15"), true);
 	assert.equal(view.queryByRole("button", { name: "Add child work item" }) === null, true);
-	await view.click(view.getByRole("button", { name: "Linked work" }));
+	await view.click(view.getByRole("button", { name: "Collapse Linked work" }));
 	await view.click(view.getByRole("button", { name: "Description" }));
 	assert.equal(view.queryByRole("list", { name: "Linked work" }) === null, true);
 	assert.equal(view.queryByRole("textbox", { name: "Work item description" }) === null, true);
-	for (const trigger of [view.getByRole("button", { name: "Description" }), view.getByRole("button", { name: "Attachments" }), childHeading(), view.getByRole("button", { name: "Linked work" })]) {
+	for (const trigger of [view.getByRole("button", { name: "Description" }), view.getByRole("button", { name: "Expand Attachments" }), childHeading(), view.getByRole("button", { name: "Expand Linked work" })]) {
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
 	}
 	assert.equal(view.tabOrder().includes("Edit summary for VITA-9"), false);
 	assert.equal(view.tabOrder().includes("More attachment actions"), false);
-	await view.click(view.getByRole("button", { name: "Linked work" }));
+	await view.click(view.getByRole("button", { name: "Expand Linked work" }));
 	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
 	assert.equal(view.queryByRole("list", { name: "Child work items" }) === null, true);
+	await view.click(view.getByRole("button", { name: "Collapse Related work" }));
+	assert.equal(view.getByRole("button", { name: "Expand Related work" }).getAttribute("aria-expanded"), "false");
+	assert.equal(view.getByRole("list", { name: "8 attachments, 15 subitems, 8 linked work items" }).textContent, "8158");
+	assert.equal(view.queryByRole("list", { name: "Linked work" }) === null, true);
+	assert.equal(view.tabOrder().includes("Expand Attachments"), false);
+	await view.click(view.getByRole("button", { name: "Expand Related work" }));
+	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
+	assert.equal(document.querySelector('[data-component="RelatedWorkCollapsedSummary"]'), null);
 });
 
 test("collapsing sections preserves attachment stacks and summary drafts", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
 	await view.click(view.getByRole("button", { name: "Documents, 4 attachments" }));
-	await view.click(view.getByRole("button", { name: "Attachments" }));
-	await view.click(view.getByRole("button", { name: "Attachments" }));
+	await view.click(view.getByRole("button", { name: "Collapse Attachments" }));
+	await view.click(view.getByRole("button", { name: "Expand Attachments" }));
 	assert.equal(view.getByRole("button", { name: "Close documents" }).getAttribute("aria-expanded"), "true");
 	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) !== null, true);
 	await view.click(summaryButtons("VITA-4")[0]);
 	await view.fill(view.getByRole("textbox", { name: "Edit summary for VITA-4" }), "Keep this collapsed draft");
-	await view.click(view.getByRole("button", { name: /^Child work items, /u }));
+	await view.click(view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u }));
 	assert.equal(view.queryByRole("textbox", { name: "Edit summary for VITA-4" }) === null, true);
-	await view.click(view.getByRole("button", { name: /^Child work items, /u }));
+	await view.click(view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u }));
 	assert.equal(view.getByRole("textbox", { name: "Edit summary for VITA-4" }).value, "Keep this collapsed draft");
 });

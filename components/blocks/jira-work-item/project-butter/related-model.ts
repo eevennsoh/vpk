@@ -1,6 +1,12 @@
 import type { PriorityValue } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 
-export type ProjectButterRelatedStatus = "To do" | "In progress" | "In review" | "Done";
+/** Butter related rows use three statuses. Placeholder data that says "In review" is mapped to "In progress" in placeholder-fill.ts. */
+export type ProjectButterRelatedStatus = "To do" | "In progress" | "Done";
+export const RELATED_STATUSES: readonly ProjectButterRelatedStatus[] = ["To do", "In progress", "Done"];
+
+/** The three related-work groups, in render order. */
+export type ProjectButterRelatedKind = "attachments" | "children" | "linked";
+export const RELATED_KINDS: readonly ProjectButterRelatedKind[] = ["attachments", "children", "linked"];
 export interface ProjectButterRelatedItem {
 	id: string;
 	key: string;
@@ -42,6 +48,10 @@ export type ProjectButterRelatedFields = Readonly<Record<ProjectButterRelatedFie
 export interface ProjectButterRelatedListEditor {
 	expanded: boolean;
 	composerOpen: boolean;
+	/** Bumped by every add request. The composer refocuses on change and the group uses it as its reveal key. */
+	createSignal: number;
+	/** The display options popover; add requests close it. */
+	displayOptionsOpen: boolean;
 	query: string;
 	relationship: string;
 	editingId: string | null;
@@ -54,7 +64,7 @@ export interface ProjectButterRelatedListEditor {
 
 export function createProjectButterRelatedListEditor(): ProjectButterRelatedListEditor {
 	return {
-		expanded: false, composerOpen: false, query: "", relationship: "Clones", editingId: null,
+		expanded: false, composerOpen: false, createSignal: 0, displayOptionsOpen: false, query: "", relationship: "Clones", editingId: null,
 		summaryDrafts: {}, hideDone: false, sortBy: null, sortAscending: true,
 		visibleFields: { status: true, id: true, labels: false, dueDate: false, estimate: false, priority: true, assignee: true },
 	};

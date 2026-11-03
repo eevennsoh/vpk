@@ -211,6 +211,9 @@ test("floating session chat keeps the work item interactive and closes independe
 	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
 });
 
+const RELATED_GROUP_TYPES = { Attachments: "attachments", "Child work items": "subitems", "Linked work": "linked" };
+const relatedGroup = (label) => document.querySelector(`[data-component="ContextTableGroup"][data-related-type="${RELATED_GROUP_TYPES[label]}"]`);
+
 test("Empty shortcuts reveal only their section and return after cancellation", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";
@@ -219,7 +222,7 @@ test("Empty shortcuts reveal only their section and return after cancellation", 
 			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 			export default function EmptyProbe() {
 				const content = useProjectButterContent("empty");
-				const active = content.attachmentComposerOpen || content.relatedEditor.children.composerOpen || content.relatedEditor.linked.composerOpen || content.attachments.length || content.relatedWork.children.length || content.relatedWork.linked.length;
+				const active = content.attachmentEditor.composerOpen || content.relatedEditor.children.composerOpen || content.relatedEditor.linked.composerOpen || content.attachments.length || content.relatedWork.children.length || content.relatedWork.linked.length;
 				return <><button type="button">Outside related work</button><ProjectButterEmptyActions content={content} />{active ? <ProjectButterRelatedWork content={content} empty /> : null}</>;
 			}`,
 	});
@@ -227,17 +230,17 @@ test("Empty shortcuts reveal only their section and return after cancellation", 
 		await view.click(view.getByRole("button", { name: shortcut }));
 		assert.equal(view.getAllByRole("button", { name: shortcut }).length, 1);
 		for (const candidate of ["Attachments", "Child work items", "Linked work"]) {
-			assert.equal(document.querySelector(`section[aria-label="${candidate}"]`) !== null, candidate === section);
+			assert.equal(relatedGroup(candidate) !== null, candidate === section);
 		}
 		const editor = view.getByRole(input === "Attachment name or URL" ? "textbox" : "combobox", { name: input });
 		await view.press(editor, "Escape");
-		assert.equal(document.querySelector(`section[aria-label="${section}"]`) === null, true);
+		assert.equal(relatedGroup(section) === null, true);
 		assert.equal(view.isFocused(view.getByRole("button", { name: shortcut })), true);
 	}
 	for (const [shortcut, section] of [["Add attachment", "Attachments"], ["Add child work item", "Child work items"]]) {
 		await view.click(view.getByRole("button", { name: shortcut }));
 		await view.click(view.getByRole("button", { name: "Outside related work" }));
-		assert.equal(document.querySelector(`section[aria-label="${section}"]`) === null, true);
+		assert.equal(relatedGroup(section) === null, true);
 		assert.equal(view.isFocused(view.getByRole("button", { name: "Outside related work" })), true);
 		assert.equal(view.queryByRole("button", { name: shortcut }) !== null, true);
 	}

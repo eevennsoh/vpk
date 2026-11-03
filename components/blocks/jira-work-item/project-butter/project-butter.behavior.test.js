@@ -395,7 +395,7 @@ test("attachments can be added, previewed, and removed without losing other atta
 	const view = await renderWorkItem();
 	await view.click(view.getByRole("button", { name: "Add attachment" }));
 	await view.fill(view.getByRole("textbox", { name: "Attachment name or URL" }), "https://example.com/design");
-	await view.click(document.querySelector('section[aria-label="Attachments"] button[type="submit"]'));
+	await view.click(document.querySelector('#section-attachments button[type="submit"]'));
 	await view.click(view.getByRole("button", { name: "Links, 2 attachments" }));
 	await view.click(view.getByRole("button", { name: "Preview https://example.com/design" }));
 	assert.equal(view.getByRole("link", { name: "Open link" }).getAttribute("href"), "https://example.com/design");

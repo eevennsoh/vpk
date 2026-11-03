@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { Button } from "@/components/ui/button";
@@ -15,10 +14,9 @@ export function ProjectButterRelatedDisplayOptions({ editor, label, onChange }: 
 	label: string;
 	onChange: (patch: Partial<ProjectButterRelatedListEditor>) => void;
 }>) {
-	const [open, setOpen] = useState(false);
 	const ordering = RELATED_SORT_OPTIONS.find((option) => option.value === editor.sortBy)?.label ?? "Rank";
 	return (
-		<Popover onOpenChange={setOpen} open={open}>
+		<Popover onOpenChange={(displayOptionsOpen) => onChange({ displayOptionsOpen })} open={editor.displayOptionsOpen}>
 			<PopoverTrigger render={<Button aria-label={`${label} display options`} size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></PopoverTrigger>
 			<PopoverContent align="end" aria-label={`${label} display options`} className="w-80 gap-0 p-0" onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]" side="top" sideOffset={8}>
 				<div className="flex min-h-12 items-center justify-between gap-3 border-b border-border px-4 py-2"><span className="text-text-subtle">Ordering</span><div className="flex items-center gap-1">

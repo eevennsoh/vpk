@@ -16,7 +16,8 @@ import {
 	PROJECT_BUTTER_CHILD_ITEMS,
 	PROJECT_BUTTER_LINKED_ITEMS,
 } from "@/components/blocks/jira-work-item/project-butter/related-data";
-import type { ProjectButterRelatedItem } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import type { ProjectButterRelatedItem, ProjectButterRelatedKind } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { createProjectButterAttachmentEditor } from "@/components/blocks/jira-work-item/project-butter/attachment-model";
 import { useProjectButterItemState } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-item-state";
 import { createProjectButterRelatedEditorState } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { createProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
@@ -103,8 +104,13 @@ function createContent(
 	const activitySort: ProjectButterActivitySort = "newest";
 	const replyDrafts: Readonly<Record<string, string>> = {};
 	const auditChanges: Readonly<Record<string, ProjectButterReferenceChange>> = {};
+	const relatedDismissed: readonly ProjectButterRelatedKind[] = [];
 	return {
-		attachmentComposerOpen: false,
+		attachmentEditor: createProjectButterAttachmentEditor(),
+		/** Related work heading open state. Add requests force it open. */
+		relatedSectionOpen: true,
+		/** Groups hidden for the session through their empty-state Dismiss button. */
+		relatedDismissed,
 		activityView,
 		activitySort,
 		replyDrafts,
@@ -198,7 +204,24 @@ export function useProjectButterContent(
 					appendProjectButterAudit(current, { id, createdAtMs, label, before, after }),
 				);
 			},
-			setAttachmentComposerOpen: fieldSetter("attachmentComposerOpen"),
+			setAttachmentEditor: fieldSetter("attachmentEditor"),
+			setRelatedSectionOpen: fieldSetter("relatedSectionOpen"),
+			setRelatedDismissed: fieldSetter("relatedDismissed"),
+			/**
+			 * The one add path for header +, empty-mode quick actions, empty states and Shift+A/C/K.
+			 * Opens Related work, un-dismisses the group, opens its composer (closing a display popover)
+			 * and bumps its createSignal so a repeat press refocuses the input instead of toggling.
+			 */
+			openRelatedAdd: (kind: ProjectButterRelatedKind) => {
+				updateState((previous) => ({
+					...previous,
+					relatedSectionOpen: true,
+					relatedDismissed: previous.relatedDismissed.filter((candidate) => candidate !== kind),
+					...(kind === "attachments"
+						? { attachmentEditor: { ...previous.attachmentEditor, composerOpen: true, createSignal: previous.attachmentEditor.createSignal + 1 } }
+						: { relatedEditor: { ...previous.relatedEditor, [kind]: { ...previous.relatedEditor[kind], composerOpen: true, editingId: null, displayOptionsOpen: false, createSignal: previous.relatedEditor[kind].createSignal + 1 } } }),
+				}));
+			},
 			setActivityView: fieldSetter("activityView"),
 			setActivitySort: fieldSetter("activitySort"),
 			setReplyDrafts: fieldSetter("replyDrafts"),
