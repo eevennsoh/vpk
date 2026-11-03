@@ -78,6 +78,7 @@ const PAY_112: ButterWorkItemPlaceholder = {
 			name: "sandbox-retained-key-401.log",
 			addedBy: "Jordan Okafor",
 			dateAdded: "17 Aug 2026",
+			previewSrc: "/ambient/itsm/shape/tint/lime.svg",
 		},
 		{
 			id: "pay-112-retention-decision",
@@ -85,6 +86,7 @@ const PAY_112: ButterWorkItemPlaceholder = {
 			name: "Sandbox key retention decision",
 			addedBy: "Priya Raman",
 			dateAdded: "10 Aug 2026",
+			previewSrc: "/ambient/atlassian/pictorial/work-management/primary/blue.svg",
 		},
 		{
 			id: "pay-112-pr-1858",
@@ -92,6 +94,7 @@ const PAY_112: ButterWorkItemPlaceholder = {
 			name: "PR #1858 Set key retention",
 			addedBy: "Diego Santos",
 			dateAdded: "17 Aug 2026",
+			previewSrc: "/ambient/atlassian/abstract/combo-2/shade/yellow.svg",
 			url: "https://github.com/payments-platform/payments/pull/1858",
 		},
 	],
@@ -201,6 +204,7 @@ const PAY_115: ButterWorkItemPlaceholder = {
 			name: "customer-ship-note-after-wallet-cut.md",
 			addedBy: "Maya Ferreira",
 			dateAdded: "15 Aug 2026",
+			previewSrc: "/ambient/atlassian/abstract/line-1/tint/purple.svg",
 		},
 		{
 			id: "pay-115-release-note",
@@ -208,6 +212,7 @@ const PAY_115: ButterWorkItemPlaceholder = {
 			name: "Wallet cut release note",
 			addedBy: "Priya Raman",
 			dateAdded: "14 Aug 2026",
+			previewSrc: "/ambient/atlassian/abstract/shape-1/primary/blue.svg",
 		},
 		{
 			id: "pay-115-allow-list",
@@ -215,6 +220,7 @@ const PAY_115: ButterWorkItemPlaceholder = {
 			name: "English-only allow-list wording",
 			addedBy: "Diego Santos",
 			dateAdded: "13 Aug 2026",
+			previewSrc: "/ambient/atlassian/pictorial/network/shade/lime.svg",
 		},
 	],
 	comments: [
@@ -323,6 +329,7 @@ const PAY_119: ButterWorkItemPlaceholder = {
 			name: "rollback-rehearsal-runbook.md",
 			addedBy: "Maya Ferreira",
 			dateAdded: "17 Aug 2026",
+			previewSrc: "/ambient/itsm/combo/shade/blue.svg",
 		},
 		{
 			id: "pay-119-timings",
@@ -330,6 +337,7 @@ const PAY_119: ButterWorkItemPlaceholder = {
 			name: "Rollback rehearsal timings",
 			addedBy: "Diego Santos",
 			dateAdded: "16 Aug 2026",
+			previewSrc: "/ambient/atlassian/pictorial/communication/tint/lime.svg",
 		},
 		{
 			id: "pay-119-pr-1880",
@@ -337,6 +345,7 @@ const PAY_119: ButterWorkItemPlaceholder = {
 			name: "PR #1880 Publish rollback guide",
 			addedBy: "Jordan Okafor",
 			dateAdded: "17 Aug 2026",
+			previewSrc: "/ambient/itsm/grid/primary/yellow.svg",
 			url: "https://github.com/payments-platform/payments/pull/1880",
 		},
 	],
@@ -446,6 +455,7 @@ const PAY_132: ButterWorkItemPlaceholder = {
 			name: "issuer-unavailable-recovery-message.md",
 			addedBy: "Diego Santos",
 			dateAdded: "16 Aug 2026",
+			previewSrc: "/ambient/ado/shape/primary/yellow.svg",
 		},
 		{
 			id: "pay-132-previous-wording",
@@ -453,6 +463,7 @@ const PAY_132: ButterWorkItemPlaceholder = {
 			name: "previous-recovery-wording.diff",
 			addedBy: "Maya Ferreira",
 			dateAdded: "15 Aug 2026",
+			previewSrc: "/ambient/atlassian/pictorial/data-center/tint/purple.svg",
 		},
 		{
 			id: "pay-132-fixture-match",
@@ -460,6 +471,7 @@ const PAY_132: ButterWorkItemPlaceholder = {
 			name: "Decline-code fixture match",
 			addedBy: "Jordan Okafor",
 			dateAdded: "14 Aug 2026",
+			previewSrc: "/ambient/ado/combo/shade/lime.svg",
 		},
 	],
 	comments: [
@@ -568,6 +580,7 @@ const PAY_104: ButterWorkItemPlaceholder = {
 			name: "create-payment-intent-v2-request.diff",
 			addedBy: "Jordan Okafor",
 			dateAdded: "16 Aug 2026",
+			previewSrc: "/ambient/atlassian/abstract/shape-2/shade/lime.svg",
 		},
 		{
 			id: "pay-104-pr-1851",
@@ -575,6 +588,7 @@ const PAY_104: ButterWorkItemPlaceholder = {
 			name: "PR #1851 Port payment intents",
 			addedBy: "Maya Ferreira",
 			dateAdded: "16 Aug 2026",
+			previewSrc: "/ambient/atlassian/pictorial/clouds/primary/blue.png",
 			url: "https://github.com/payments-platform/payments/pull/1851",
 		},
 		{
@@ -583,6 +597,7 @@ const PAY_104: ButterWorkItemPlaceholder = {
 			name: "v1 createPaymentIntent argument map",
 			addedBy: "Priya Raman",
 			dateAdded: "12 Aug 2026",
+			previewSrc: "/ambient/ado/dots/tint/purple.svg",
 		},
 	],
 	comments: [
@@ -691,6 +706,7 @@ const PAY_109: ButterWorkItemPlaceholder = {
 			name: "v2-webhook-openapi-revision.yaml",
 			addedBy: "Maya Ferreira",
 			dateAdded: "16 Aug 2026",
+			previewSrc: "/ambient/atlassian/pictorial/work-management/tint/lime.svg",
 		},
 		{
 			id: "pay-109-pr-1863",
@@ -698,6 +714,7 @@ const PAY_109: ButterWorkItemPlaceholder = {
 			name: "PR #1863 Refresh webhook data",
 			addedBy: "Jordan Okafor",
 			dateAdded: "16 Aug 2026",
+			previewSrc: "/ambient/ado/line/shade/purple.svg",
 			url: "https://github.com/payments-platform/payments/pull/1863",
 		},
 		{
@@ -706,6 +723,7 @@ const PAY_109: ButterWorkItemPlaceholder = {
 			name: "Webhook consumer list",
 			addedBy: "Priya Raman",
 			dateAdded: "15 Aug 2026",
+			previewSrc: "/ambient/atlassian/pictorial/automation-repeat/primary/yellow.svg",
 		},
 	],
 	comments: [
@@ -814,6 +832,7 @@ const PAY_121: ButterWorkItemPlaceholder = {
 			name: "per-account-kill-switch-rules.json",
 			addedBy: "Priya Raman",
 			dateAdded: "16 Aug 2026",
+			previewSrc: "/ambient/itsm/combo/shade/purple.svg",
 		},
 		{
 			id: "pay-121-pr-1866",
@@ -821,6 +840,7 @@ const PAY_121: ButterWorkItemPlaceholder = {
 			name: "PR #1866 Add kill switch",
 			addedBy: "Diego Santos",
 			dateAdded: "16 Aug 2026",
+			previewSrc: "/ambient/ado/combo/primary/lime.svg",
 			url: "https://github.com/payments-platform/payments/pull/1866",
 		},
 		{
@@ -829,6 +849,7 @@ const PAY_121: ButterWorkItemPlaceholder = {
 			name: "One-percent targeting validation",
 			addedBy: "Jordan Okafor",
 			dateAdded: "17 Aug 2026",
+			previewSrc: "/ambient/atlassian/pictorial/communication/tint/blue.svg",
 		},
 	],
 	comments: [
@@ -937,6 +958,7 @@ const PAY_128: ButterWorkItemPlaceholder = {
 			name: "settlement-sdk-version-stamp.sql",
 			addedBy: "Maya Ferreira",
 			dateAdded: "17 Aug 2026",
+			previewSrc: "/ambient/itsm/repeat/shade/yellow.svg",
 		},
 		{
 			id: "pay-128-pr-1881",
@@ -944,6 +966,7 @@ const PAY_128: ButterWorkItemPlaceholder = {
 			name: "PR #1881 Stamp SDK version",
 			addedBy: "Jordan Okafor",
 			dateAdded: "17 Aug 2026",
+			previewSrc: "/ambient/atlassian/abstract/combo-1/primary/lime.svg",
 			url: "https://github.com/payments-platform/payments/pull/1881",
 		},
 		{
@@ -952,6 +975,7 @@ const PAY_128: ButterWorkItemPlaceholder = {
 			name: "Finance export column map",
 			addedBy: "Diego Santos",
 			dateAdded: "14 Aug 2026",
+			previewSrc: "/ambient/atlassian/abstract/line-2/tint/neutral.svg",
 		},
 	],
 	comments: [

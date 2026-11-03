@@ -1,5 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { existsSync } = require("node:fs");
+const { join } = require("node:path");
 
 const { renderComponent } = require("../../../../scripts/lib/render-component.js");
 const { BUTTER_DONE_PLACEHOLDERS } = require("../../../../components/projects/butter/data/work-item-placeholders/done.ts");
@@ -66,6 +68,7 @@ const HARNESS = `import React from "react";
 			<p data-field="child">{content.relatedWork.children.map((item) => item.key).join(",")}</p>
 			<p data-field="linked">{content.relatedWork.linked.map((item) => item.key).join(",")}</p>
 			<p data-field="attachment">{content.attachments.map((item) => item.name).join("|")}</p>
+			<p data-field="attachment-preview">{content.attachments.map((item) => item.previewSrc ?? "").join("|")}</p>
 			<p data-field="comment">{comments.map(commentText).join(" ")}</p>
 			<p data-field="reply">{replies.map((reply) => reply.body).join(" ")}</p>
 			<p data-field="session">{content.activityEntries.filter((entry) => String(entry.id).startsWith("invocation-")).map((entry) => entry.id).join(",")}</p>
@@ -106,6 +109,27 @@ test("each column map authors description, children, attachments, and comments",
 	}
 });
 
+test("every attachment previews a distinct ambient illustration, varied within each work item", () => {
+	const seen = new Set();
+	for (const [, source, codes] of COLUMN_MAPS) {
+		for (const code of codes) {
+			const families = new Set();
+			const colors = new Set();
+			for (const attachment of source[code].attachments) {
+				const match = /^\/ambient\/(.+)\/(?:primary|shade|tint)\/(\w+)\.(?:svg|png)$/u.exec(attachment.previewSrc ?? "");
+				assert.notEqual(match, null, `${attachment.id} previews an ambient illustration`);
+				assert.equal(existsSync(join(__dirname, "../../../../public", attachment.previewSrc)), true, attachment.previewSrc);
+				assert.equal(seen.has(attachment.previewSrc), false, `${attachment.previewSrc} is reused`);
+				seen.add(attachment.previewSrc);
+				families.add(match[1]);
+				colors.add(match[2]);
+			}
+			assert.equal(families.size, source[code].attachments.length, `${code} mixes designs`);
+			assert.equal(colors.size, source[code].attachments.length, `${code} mixes colors`);
+		}
+	}
+});
+
 test("opening a card from each column fills that map's sections", async () => {
 	for (const [, source, codes] of COLUMN_MAPS) {
 		for (const code of codes) {
@@ -115,6 +139,7 @@ test("opening a card from each column fills that map's sections", async () => {
 			assert.equal(field("reporter", view.container), placeholder.reporter, code);
 			assert.equal(field("child", view.container).split(",").includes(placeholder.children[0].key), true, code);
 			assert.equal(field("attachment", view.container).includes(placeholder.attachments[0].name), true, code);
+			assert.equal(field("attachment-preview", view.container).includes(placeholder.attachments[0].previewSrc), true, code);
 			assert.equal(field("comment", view.container).includes(placeholder.comments[0].markdown), true, code);
 			assert.equal(field("campaign", view.container), "", code);
 			await view.unmount();
