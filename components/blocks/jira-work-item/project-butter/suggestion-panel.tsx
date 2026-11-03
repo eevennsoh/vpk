@@ -21,11 +21,11 @@ const SUGGESTION_SOURCES = [
 	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
 ] as const satisfies readonly TwgToolSource[];
 
-const SUGGESTION_BANNER_CLASS = "relative flex h-auto w-full items-center justify-start gap-3 overflow-hidden rounded-[calc(0.25*2.5rem+0.375rem+1px)] border border-border bg-surface-sunken p-1.5 pr-2 text-left transition-[background-color,border-color,box-shadow] has-[[data-suggestion-trigger]:hover]:bg-surface-raised-hovered has-[[data-suggestion-trigger]:focus-visible]:border-ring has-[[data-suggestion-trigger]:focus-visible]:ring-3 has-[[data-suggestion-trigger]:focus-visible]:ring-ring/50";
+const SUGGESTION_BANNER_CLASS = "relative flex h-auto w-full items-center justify-start gap-3 overflow-hidden rounded-[calc(0.25*2rem+0.375rem+1px)] border border-border bg-surface-sunken p-1.5 pr-2 text-left transition-[background-color,border-color,box-shadow] has-[[data-suggestion-trigger][aria-expanded=false]:hover]:bg-surface-raised-hovered has-[[data-suggestion-trigger][aria-expanded=true]]:border-border-selected has-[[data-suggestion-trigger][aria-expanded=true]]:bg-bg-selected has-[[data-suggestion-trigger]:focus-visible]:border-ring has-[[data-suggestion-trigger]:focus-visible]:ring-3 has-[[data-suggestion-trigger]:focus-visible]:ring-ring/50";
 
 function TeamworkGraphLoaderTile({ active }: Readonly<{ active: boolean }>) {
 	return (
-		<Tile className="relative z-10 bg-surface" hasBorder label="Teamwork Graph" size="large" variant="transparent">
+		<Tile className="relative z-10 bg-surface" hasBorder label="Teamwork Graph" size="medium" variant="transparent">
 			<TWGLoader active={active} label="Teamwork Graph" size="small" />
 		</Tile>
 	);
@@ -41,24 +41,26 @@ function suggestionBannerLabel(fill: ProjectButterSuggestionFill): string | null
 }
 
 /** One banner element in every state, so the loader tile keeps turning from where it was instead of remounting. */
-function SuggestionBanner({ active, fill, label, reviewing }: Readonly<{ active: boolean; fill: ProjectButterSuggestionFill; label: string; reviewing: boolean }>) {
+function SuggestionBanner({ active, fill, label, reduced, reviewing, showSources }: Readonly<{ active: boolean; fill: ProjectButterSuggestionFill; label: string; reduced: boolean; reviewing: boolean; showSources: boolean }>) {
 	const labelId = useId();
 	return (
 		<div className={SUGGESTION_BANNER_CLASS} data-suggestion-review={reviewing ? "updated" : undefined}>
 			{reviewing ? null : (
 				<PopoverTrigger aria-labelledby={labelId} className="absolute inset-0 z-20 rounded-[inherit] outline-none" data-suggestion-trigger="" type="button" />
 			)}
-			<TwgToolBannerBackground />
+			{showSources ? <motion.div animate={{ opacity: 1 }} className="pointer-events-none absolute inset-0" data-suggestion-grid="" initial={reduced ? false : { opacity: 0 }} style={{ willChange: "opacity" }} transition={{ duration: motionDuration.slowest, ease: motionEase.inOut }}>
+				<TwgToolBannerBackground gridMaskPosition="right 13px center" />
+			</motion.div> : null}
 			<TeamworkGraphLoaderTile active={active} />
 			<span aria-live="polite" className="relative z-10 min-w-0 flex-1 truncate text-sm text-text" id={labelId}>{label}</span>
 			{reviewing ? (
 				<div className="relative z-30 flex shrink-0 items-center gap-1">
-					<Button onClick={fill.undoAccepted} size="compact" type="button" variant="outline">Undo</Button>
+					<Button className="bg-surface hover:bg-surface-hovered active:bg-surface-pressed" onClick={fill.undoAccepted} size="compact" type="button" variant="outline">Undo</Button>
 					<Button onClick={fill.dismissAccepted} size="compact" type="button" variant="default">Done</Button>
 				</div>
-			) : (
+			) : showSources ? (
 				<TwgToolSourceStack className="relative z-10 max-w-[44%] shrink-0" sources={SUGGESTION_SOURCES} />
-			)}
+			) : null}
 		</div>
 	);
 }
@@ -78,7 +80,15 @@ function SuggestionFieldList({ fill, reduced }: Readonly<{ fill: ProjectButterSu
 						<div className="flex items-center gap-1 rounded-md py-0.5 pr-0.5 pl-1.5">
 							<div className="flex min-w-0 flex-1 items-baseline gap-2">
 								<span className="shrink-0 text-xs text-text-subtlest">{suggestion.label}</span>
-								<span className="min-w-0 flex-1 truncate text-sm text-text">{suggestion.preview}</span>
+								{suggestion.field === "description" ? (
+									<div className="min-w-0 flex-1 text-sm text-text">
+										<span>{suggestion.preview}</span>
+										{suggestion.text !== suggestion.preview ? <details className="mt-1">
+											<summary className="cursor-pointer rounded-sm text-xs text-text-subtle underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-ring">Show full description</summary>
+											<p className="mt-1 whitespace-pre-wrap">{suggestion.text}</p>
+										</details> : null}
+									</div>
+								) : <span className="min-w-0 flex-1 truncate text-sm text-text">{suggestion.preview}</span>}
 							</div>
 							<Button aria-label={`Accept ${suggestion.label} suggestion`} className="text-text [&_svg]:text-icon" disabled={fill.running} onClick={() => fill.acceptField(suggestion)} size="icon-compact" type="button" variant="ghost">
 								<CheckMarkIcon label="" size="small" />
@@ -95,7 +105,7 @@ function SuggestionFieldList({ fill, reduced }: Readonly<{ fill: ProjectButterSu
 }
 
 /** Suggestions for empty Details fields, opened from a trigger above the Details panel. */
-export function ProjectButterSuggestionPanel({ fill }: Readonly<{ fill: ProjectButterSuggestionFill }>) {
+export function ProjectButterSuggestionPanel({ fill, showIntroLoading = false }: Readonly<{ fill: ProjectButterSuggestionFill; showIntroLoading?: boolean }>) {
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const [open, setOpen] = useState(false);
 	const [intro, setIntro] = useState(true);
@@ -108,7 +118,7 @@ export function ProjectButterSuggestionPanel({ fill }: Readonly<{ fill: ProjectB
 		<Popover onOpenChange={setOpen} open={open && !reviewing}>
 			<div className="sticky top-0 z-40 -mx-6 w-[calc(100%+3rem)] bg-surface px-6 pb-3">
 				<RovoGeneration.Highlight active className="block w-full" onHighlightComplete={() => setIntro(false)}>
-					<SuggestionBanner active={fill.running || intro} fill={fill} label={label} reviewing={reviewing} />
+					<SuggestionBanner active={fill.running || intro} fill={fill} label={showIntroLoading && intro ? "Finding suggestions" : label} reduced={shouldReduceMotion} reviewing={reviewing} showSources={!intro} />
 				</RovoGeneration.Highlight>
 			</div>
 			<PopoverContent
@@ -124,9 +134,11 @@ export function ProjectButterSuggestionPanel({ fill }: Readonly<{ fill: ProjectB
 			>
 				<div aria-live="polite" className="sr-only">{active ? `Filling ${active.label}` : ""}</div>
 				<SuggestionFieldList fill={fill} reduced={shouldReduceMotion} />
-				<div className="mt-2 flex justify-end">
-					<Button disabled={fill.running || fill.suggestions.length === 0} onClick={() => { setOpen(false); fill.acceptAll(); }} size="compact" type="button" variant="outline">
-						<CheckMarkIcon label="" size="small" />
+				<div className="mt-2 grid grid-cols-2 gap-2">
+					<Button className="w-full" disabled={fill.running || fill.suggestions.length === 0} onClick={() => { for (const suggestion of fill.suggestions) fill.dismissField(suggestion.field); setOpen(false); }} size="compact" type="button" variant="outline">
+						Dismiss all
+					</Button>
+					<Button className="w-full" disabled={fill.running || fill.suggestions.length === 0} onClick={() => { setOpen(false); fill.acceptAll(); }} size="compact" type="button" variant="outline">
 						{fill.running ? "Filling details" : "Accept all"}
 					</Button>
 				</div>

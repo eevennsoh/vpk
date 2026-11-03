@@ -22,7 +22,6 @@ import { useProjectButterItemState } from "@/components/blocks/jira-work-item/pr
 import { createProjectButterRelatedEditorState } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { createProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { createProjectButterStatusOptions } from "@/components/blocks/jira-work-item/project-butter/status-model";
-import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
 import {
 	createProjectButterSessions,
 	type ProjectButterSessionItem,
@@ -48,7 +47,7 @@ function createContent(
 	workItem?: WorkItemData,
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
-	omitReporter = false,
+	defaultReporter?: WorkItemPerson,
 ) {
 	const empty = preset === "empty" || preset === "blank";
 	const placeholder = empty || !placeholders || !workItem?.code ? undefined : placeholders[workItem.code];
@@ -70,15 +69,9 @@ function createContent(
 				: PROJECT_BUTTER_ATTACHMENTS;
 	const assignee: WorkItemPerson = workItem?.assignee ?? TEAM_EU26_PEOPLE.automatic;
 	const priority: PriorityValue = workItem?.priority ?? (empty ? "Medium" : "High");
-	const reporter: WorkItemPerson | null = omitReporter
-		? null
-		: workItem?.reporter
-			? workItem.reporter
-			: placeholder
-				? projectButterPlaceholderReporter(placeholder)
-				: workItem
-					? null
-					: { name: "Planner agent", avatarUrl: projectButterPersonAvatar("Annie Cook") };
+	const reporterPlaceholder = workItem?.code ? placeholders?.[workItem.code] : undefined;
+	const reporter: WorkItemPerson = workItem?.reporter
+		?? (reporterPlaceholder ? projectButterPlaceholderReporter(reporterPlaceholder) : defaultReporter ?? TEAM_EU26_PEOPLE.annie);
 	const activityFocusId: string | null = null;
 	const dueDate: Date | undefined = workItem
 		? workItem.dueDate
@@ -161,11 +154,11 @@ export function useProjectButterContent(
 	workItem?: WorkItemData,
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
-	omitReporter = false,
+	defaultReporter?: WorkItemPerson,
 ) {
 	const initialState = useMemo<ProjectButterContentState>(
-		() => createContent(preset, workItem, initialSessions, placeholders, omitReporter),
-		[initialSessions, omitReporter, placeholders, preset, workItem],
+		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter),
+		[defaultReporter, initialSessions, placeholders, preset, workItem],
 	);
 	const { state, fieldSetter, updateState } = useProjectButterItemState(
 		workItem?.code ?? "reference",

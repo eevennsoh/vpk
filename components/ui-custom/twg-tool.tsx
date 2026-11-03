@@ -50,6 +50,7 @@ export type TwgToolProps = Omit<ComponentProps<typeof Collapsible>, "children"> 
 
 export interface TwgToolBannerBackgroundProps {
 	fadeDirection?: TwgToolBannerBackgroundFadeDirection;
+	gridMaskPosition?: CSSProperties["maskPosition"];
 }
 
 const bannerGridStroke = {
@@ -69,6 +70,7 @@ const bannerGridFadeStyles = {
 
 export function TwgToolBannerBackground({
 	fadeDirection = "horizontal",
+	gridMaskPosition,
 }: Readonly<TwgToolBannerBackgroundProps>) {
 	return (
 		<div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -81,6 +83,7 @@ export function TwgToolBannerBackground({
 				stroke={bannerGridStroke}
 				fill="tile"
 				opacity={0.72}
+				style={{ maskPosition: gridMaskPosition }}
 			/>
 			<div className="absolute inset-0" style={bannerGridFadeStyles[fadeDirection]} />
 		</div>

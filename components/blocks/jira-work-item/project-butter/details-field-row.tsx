@@ -1,20 +1,19 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import DragHandleVerticalIcon from "@atlaskit/icon/core/drag-handle-vertical";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ShimmerWave } from "@/components/ui-custom/shimmer-wave";
+import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { PROJECT_BUTTER_DETAIL_FIELDS, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-rail";
-
-const SUGGESTION_WAVE_COLORS = ["#FCA700", "#6A9A23", "#1868DB", "#AF59E1"] as const;
+import { motionDuration, motionEase } from "@/lib/motion";
 
 export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, first, last, reflow = false, shimmerText }: Readonly<{
 	children: ReactNode;
@@ -45,28 +44,15 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 		>
 			<motion.div className="min-w-0" layout="position" layoutDependency={reflow ? undefined : "settled"} transition={DETAILS_RAIL_GLIDE}>
 				{filled ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">{label}</div> : null}
-				<div className="relative -mx-2 flex min-h-8 min-w-0 items-start rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
+				<div className="relative -mx-2 flex min-h-8 min-w-0 items-center rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
 					<div className="min-w-0 flex-1 pr-14 [&_[data-slot=detail-value-trigger]]:min-h-8">
-						{shimmerText ? (
-							<ShimmerWave
-								as="span"
-								baseColor="var(--color-text)"
-								baseGradientColor={SUGGESTION_WAVE_COLORS}
-								className="text-sm"
-								duration={0.9}
-								rotateYDistance={6}
-								scaleDistance={1.04}
-								spread={2}
-								transition={{ repeat: 0, ease: "easeInOut" }}
-								xDistance={0}
-								yDistance={-1}
-								zDistance={6}
-							>
-								{shimmerText}
-							</ShimmerWave>
-						) : children}
+						<AnimatePresence initial={false}>
+							<motion.div animate={{ opacity: 1 }} initial={{ opacity: 0 }} key={shimmerText ? "shimmer" : "value"} transition={{ duration: motionDuration.fast, ease: motionEase.outPractical }}>
+								{shimmerText ? <SuggestionRainbowText text={shimmerText} /> : children}
+							</motion.div>
+						</AnimatePresence>
 					</div>
-					<div className={cn("absolute right-0 top-0 flex shrink-0 items-center opacity-0 transition-opacity duration-fast ease-out-practical group-hover/butter-field:opacity-100 group-focus-within/butter-field:opacity-100", actionsOpen || isDragging ? "opacity-100" : undefined)}>
+					<div className={cn("absolute right-0 top-1/2 flex -translate-y-1/2 shrink-0 items-center opacity-0 transition-opacity duration-fast ease-out-practical group-hover/butter-field:opacity-100 group-focus-within/butter-field:opacity-100", actionsOpen || isDragging ? "opacity-100" : undefined)}>
 						<Button {...attributes} {...listeners} aria-label={`Drag to reorder ${label} field`} className="touch-pan-x" ref={setActivatorNodeRef} size="icon-compact" type="button" variant="ghost"><DragHandleVerticalIcon label="" size="small" /></Button>
 						<DropdownMenu onOpenChange={setActionsOpen} open={actionsOpen}>
 							<DropdownMenuTrigger render={<Button aria-label={`More ${label.toLowerCase()} field actions`} size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>

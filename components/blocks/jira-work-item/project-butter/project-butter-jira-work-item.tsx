@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
-import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
+import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
@@ -29,6 +29,8 @@ export interface ProjectButterJiraWorkItemProps {
 	onClose: () => void;
 	initialPreset: JiraWorkItemPreset;
 	initialSuggestion?: boolean;
+	defaultReporter?: WorkItemPerson;
+	suggestionProfile?: "default" | "payments";
 	initialPresentation?: ProjectButterPresentation;
 	shell?: ProjectButterShellContext;
 	workItem?: WorkItemData;
@@ -48,6 +50,8 @@ export function ProjectButterJiraWorkItem({
 	onClose,
 	initialPreset,
 	initialSuggestion = false,
+	defaultReporter,
+	suggestionProfile = "default",
 	initialPresentation = "full-screen",
 	shell = "standalone",
 	workItem,
@@ -63,6 +67,19 @@ export function ProjectButterJiraWorkItem({
 	/** The scrolling left column: the whole of it (gutters included) accepts file drops. */
 	const columnRef = useRef<HTMLDivElement>(null);
 	const [suggestion, setSuggestion] = useState(initialSuggestion);
+	const [descriptionReveal, setDescriptionReveal] = useState<{ id: number; text: string } | null>(null);
+	const [revealOpen, setRevealOpen] = useState(open);
+	if (revealOpen !== open) {
+		setRevealOpen(open);
+		if (!open) setDescriptionReveal(null);
+	}
+	const [suggestionItemKey, setSuggestionItemKey] = useState(workItem?.code);
+	if (suggestionItemKey !== workItem?.code) {
+		setSuggestionItemKey(workItem?.code);
+		setSuggestion(initialSuggestion);
+		setDescriptionReveal(null);
+	}
+	const finishDescriptionReveal = useCallback(() => setDescriptionReveal(null), []);
 	const [empty, setEmpty] = useState(!initialSuggestion && (initialPreset === "empty" || initialPreset === "blank"));
 	const [panelOrder, setPanelOrder] = useState(PROJECT_BUTTER_PANEL_ORDER);
 	const filledContent = useProjectButterContent(
@@ -70,9 +87,10 @@ export function ProjectButterJiraWorkItem({
 		workItem,
 		initialSessions,
 		placeholders,
+		defaultReporter,
 	);
-	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders);
-	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, true);
+	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter);
+	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter);
 	const filledSessions = useProjectButterSessions(
 		initialPreset === "running" ? "running" : "filled",
 		workItem?.code,
@@ -92,10 +110,12 @@ export function ProjectButterJiraWorkItem({
 		setDrafts,
 	} = model;
 	function changeEmpty(next: boolean) {
+		setDescriptionReveal(null);
 		setEmpty(next);
 		if (next) setSuggestion(false);
 	}
 	function changeSuggestion(next: boolean) {
+		setDescriptionReveal(null);
 		setSuggestion(next);
 		if (next) setEmpty(false);
 	}
@@ -124,14 +144,17 @@ export function ProjectButterJiraWorkItem({
 	const sidePanel = presentation === "side-panel";
 	const details = (
 		<ProjectButterDetails
+			key={workItem?.code ?? "reference"}
 			code={workItem?.code ?? "VITA-1"}
 			content={content}
 			empty={sparse}
+			onDescriptionSuggested={(text) => setDescriptionReveal((current) => ({ id: (current?.id ?? 0) + 1, text }))}
 			onPanelOrderChange={setPanelOrder}
 			onStartCoding={startCoding}
 			panelOrder={panelOrder}
 			sidePanel={sidePanel}
 			suggestion={suggestion}
+			suggestionProfile={suggestionProfile}
 		/>
 	);
 	return (
@@ -187,6 +210,8 @@ export function ProjectButterJiraWorkItem({
 						active={open}
 						sidePanel={sidePanel}
 						content={content}
+						descriptionReveal={suggestion ? descriptionReveal : null}
+						onDescriptionRevealComplete={finishDescriptionReveal}
 						details={sidePanel ? details : null}
 						empty={sparse}
 						onOpenSession={setActiveSessionId}

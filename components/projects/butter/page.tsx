@@ -58,10 +58,11 @@ import { cn } from "@/lib/utils";
 import { ButterList } from "./components/butter-list";
 
 import { renderButterAgentActivityIndicator } from "./data/agent-activity-indicators";
-import { BUTTER_BOARD_AGENTS, toButterAgentActivityFromSession } from "@/components/projects/butter/data/presentation-board";
+import { BUTTER_BOARD_AGENTS, BUTTER_SUGGESTION_DEMO_KEY, toButterAgentActivityFromSession } from "@/components/projects/butter/data/presentation-board";
 import {
 	toButterDetachedAgentSession,
 	BUTTER_PAY_BOARD_AGENTS,
+	BUTTER_PAY_CURRENT_USER,
 	BUTTER_PAY_HEADER_ASSIGNEES,
 	BUTTER_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 	BUTTER_PAY_SESSION_MEMBERS,
@@ -87,6 +88,8 @@ const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-di
 const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
 const ProjectButterJiraWorkItem = dynamic(() => import("@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item").then((module) => module.ProjectButterJiraWorkItem));
 
+const BUTTER_DEFAULT_REPORTER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
+const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
 const BUTTER_TABS = getJiraTabs(false);
 const BUTTER_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(BUTTER_TABS);
 const BUTTER_ADD_AGENT_LABEL = "Add agent";
@@ -118,12 +121,13 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
 }
 
-function ButterWorkItemSurface({ ref, onBrowseAgents, onCreateAgent, onAgentSessionStart, onWorkItemClose, openRelatedItem, relatedCatalog, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateAgent, onAgentSessionStart, onWorkItemClose, openRelatedItem, relatedCatalog, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
 	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
 	openRelatedItem: RelatedItemOpener;
 	/** Board cards as related-work matches, so composers offer this project's items. */
 	relatedCatalog: readonly ProjectButterRelatedSearchItem[];
 	ref: Ref<ButterWorkItemHandle>;
+	defaultReporter: ComponentProps<typeof ProjectButterJiraWorkItem>["defaultReporter"];
 	onBrowseAgents: () => void;
 	onCreateAgent: () => void;
 	onAgentSessionStart: (issueKey: string, session: AgentSessionItem) => void;
@@ -144,6 +148,9 @@ function ButterWorkItemSurface({ ref, onBrowseAgents, onCreateAgent, onAgentSess
 						initialPresentation="modal"
 						shell="project"
 						initialPreset="filled"
+						initialSuggestion={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY}
+						suggestionProfile={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? "payments" : "default"}
+						defaultReporter={defaultReporter}
 						initialSessions={workItem.selection.initialSessions}
 						onBrowseAgents={onBrowseAgents}
 						onCreateAgent={onCreateAgent}
@@ -643,6 +650,7 @@ function ButterApp(): React.ReactElement {
 			</MountOnFirstUse>
 			<ButterWorkItemSurface
 				ref={workItemRef}
+				defaultReporter={wacContent ? WAC_DEFAULT_REPORTER : BUTTER_DEFAULT_REPORTER}
 				onBrowseAgents={browseAgents}
 				onCreateAgent={createAgent}
 				onAgentSessionStart={handleWorkItemSessionStart}

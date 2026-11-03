@@ -32,7 +32,7 @@ async function fieldAction(view, field, action) {
 
 test("Details initializes each item independently and calculates cost per reach", () => {
 	const fields = createProjectButterDetailFields(false);
-	assert.deepEqual(fields.order.slice(0, 6), ["status", "assignee", "priority", "dueDate", "parent", "labels"]);
+	assert.deepEqual(fields.order, ["status", "assignee", "priority", "dueDate", "parent", "labels", "acceptanceCriteria", "reporter"]);
 	assert.equal(fields.parent, "VITA-22 User Experience Overhaul");
 	assert.deepEqual(fields.labels, ["social-media", "website-traffic"]);
 	assert.deepEqual(reorderProjectButterDetailFields(fields.order, "dueDate", "assignee").slice(0, 4), ["status", "dueDate", "assignee", "priority"]);
@@ -71,18 +71,80 @@ test("Development does not claim a rejected clipboard write succeeded", async (t
 	assert.equal(view.getByRole("button", { name: "Could not copy prompt" }) !== null, true);
 });
 
+test("Labels hides selected values and supports creating labels", async () => {
+	const view = await renderDetails();
+	await view.click(view.getByRole("button", { name: "Show more details" }));
+	await view.click(view.getByRole("button", { name: "Edit labels" }));
+	assert.equal(view.queryByRole("option", { name: "Remove social-media" }), null);
+	assert.equal(view.queryByRole("option", { name: "Remove website-traffic" }), null);
+	await view.click(view.getByRole("option", { name: "Add marketing-campaign" }));
+	assert.equal(view.queryByRole("option", { name: "Remove marketing-campaign" }), null);
+	assert.equal(view.queryByRole("option", { name: "Add marketing-campaign" }), null);
+	assert.equal(view.queryByRole("button", { name: "Edit labels" }).textContent.includes("marketing-campaign"), true);
+	await view.fill(view.getByRole("textbox", { name: "Search labels" }), "new-label");
+	await view.click(view.getByRole("option", { name: "Add new-label" }));
+	assert.equal(view.getByRole("button", { name: "Edit labels" }).textContent.includes("new-label"), true);
+	await view.press(null, "Escape");
+	await fieldAction(view, "Labels", "Clear labels");
+	await view.click(view.getByRole("button", { name: "Edit labels" }));
+	assert.notEqual(view.queryByRole("option", { name: "Add social-media" }), null);
+	assert.notEqual(view.queryByRole("option", { name: "Add marketing-campaign" }), null);
+});
+
+test("the shared labels picker retains its selected options by default", async () => {
+	const view = await renderComponent({
+		source: `import React, { useState } from "react";
+			import { ArtifactLabelsField } from "@/components/blocks/artifact-pane/artifact-labels-field";
+			export default function Picker() {
+				const [values, setValues] = useState(["selected"]);
+				return <ArtifactLabelsField onChange={setValues} options={["selected", "available"]} value={values} />;
+			}`,
+	});
+	await view.click(view.getByRole("button", { name: "Edit labels" }));
+	assert.notEqual(view.queryByRole("option", { name: "Remove selected" }), null);
+	await view.click(view.getByRole("option", { name: "Remove selected" }));
+	assert.notEqual(view.queryByRole("option", { name: "Add selected" }), null);
+});
+
+test("Parent uses the searchable work-item picker and preserves a selected value", async () => {
+	const view = await renderDetails({ workItem: { code: "PAY-999", title: "Demo", parent: { code: "PAY-100", title: "Payments SDK v2 migration" } } });
+	await view.click(view.getByRole("button", { name: "Show more details" }));
+	assert.equal(view.getByRole("button", { name: "Change parent" }).textContent.includes("Payments SDK v2 migration"), true);
+	await view.click(view.getByRole("button", { name: "Change parent" }));
+	await view.fill(view.getByRole("textbox", { name: "Search work items" }), "VITA-23");
+	await view.click(view.getByRole("option", { name: /Improve product experience/u }));
+	assert.equal(view.getByRole("button", { name: "Change parent" }).textContent.includes("Improve product experience"), true);
+	await view.click(view.getByRole("button", { name: "Change parent" }));
+	assert.notEqual(view.queryByRole("option", { name: /Improve product experience/u }), null);
+});
+
+test("other multi-value fields keep selected options available for deselection", async () => {
+	const view = await renderComponent({
+		source: `import React, { useState } from "react";
+			import { DetailsOptionField } from "@/components/blocks/jira-work-item/project-butter/details-option-field";
+			export default function Picker() {
+				const [values, setValues] = useState(["Backend"]);
+				return <DetailsOptionField label="Components" multiple onChange={setValues} options={["Backend", "Frontend"]} values={values} />;
+			}`,
+	});
+	await view.click(view.getByRole("button", { name: "Change components" }));
+	assert.notEqual(view.queryByRole("option", { name: /Backend/u }), null);
+	await view.click(view.getByRole("option", { name: /Backend/u }));
+	assert.equal(view.getByRole("button", { name: "Change components" }).textContent.includes("Backend"), false);
+});
+
 test("Details expands, clears seeded fields, reorders and restores hidden fields", async () => {
 	const view = await renderDetails();
 	assert.deepEqual(fieldLabels(), ["Status", "Assignee", "Priority", "Due Date"]);
 	await view.click(view.getByRole("button", { name: "Show more details" }));
-	assert.equal(view.queryByText("VITA-22 User Experience Overhaul") !== null, true);
+	assert.equal(view.queryByText("User Experience Overhaul") !== null, true);
 	assert.equal(view.queryByText("social-media") !== null, true);
-	await fieldAction(view, "Fix Version", "Clear fix version");
-	assert.equal(view.queryByText("v2.0"), null);
-	assert.equal(view.queryByText("Add fix version") !== null, true);
+	await fieldAction(view, "Acceptance Criteria", "Clear acceptance criteria");
+	assert.equal(view.queryByText("90% of new users complete onboarding in 1 week"), null);
+	assert.equal(view.queryByText("Add acceptance criteria") !== null, true);
 	await view.click(view.getByRole("button", { name: "Show less details" }));
 	await view.click(view.getByRole("button", { name: "Show more details" }));
-	assert.equal(view.queryByText("v2.0"), null);
+	assert.equal(view.queryByText("90% of new users complete onboarding in 1 week"), null);
 	await fieldAction(view, "Parent", "Move up");
 	assert.equal(fieldLabels().indexOf("Parent") < fieldLabels().indexOf("Due Date"), true);
 	await fieldAction(view, "Labels", "Hide field");
@@ -95,47 +157,43 @@ test("Details expands, clears seeded fields, reorders and restores hidden fields
 test("Details edits and visibility survive presentation remounts, empty mode and item switches", async () => {
 	const view = await renderDetails();
 	await view.click(view.getByRole("button", { name: "Show more details" }));
-	await fieldAction(view, "Fix Version", "Clear fix version");
+	await fieldAction(view, "Acceptance Criteria", "Clear acceptance criteria");
 	await fieldAction(view, "Due Date", "Move up");
 	await fieldAction(view, "Labels", "Hide field");
 	const savedOrder = fieldLabels();
 	await view.rerender({ sidePanel: true });
 	await view.click(view.getByRole("button", { name: "Show more details" }));
 	assert.deepEqual(fieldLabels(), savedOrder);
-	assert.equal(view.queryByText("v2.0"), null);
-	assert.equal(view.queryByText("Add fix version") !== null, true);
+	assert.equal(view.queryByText("90% of new users complete onboarding in 1 week"), null);
+	assert.equal(view.queryByText("Add acceptance criteria") !== null, true);
 	await view.rerender({ empty: true, sidePanel: true });
-	assert.equal(view.queryByText("VITA-22 User Experience Overhaul"), null);
+	assert.equal(view.queryByText("User Experience Overhaul"), null);
 	await view.rerender({ workItem: { code: "PAY-118", title: "Billing", labels: ["billing"] }, sidePanel: true });
 	assert.equal(view.queryByText("billing") !== null, true);
 	assert.equal(fieldLabels().includes("Labels"), true);
 	await fieldAction(view, "Labels", "Clear labels");
 	await view.rerender({ sidePanel: true });
 	assert.deepEqual(fieldLabels(), savedOrder);
-	assert.equal(view.queryByText("v2.0"), null);
+	assert.equal(view.queryByText("90% of new users complete onboarding in 1 week"), null);
 	await view.click(view.getByRole("button", { name: "More details actions" }));
 	await view.click(view.getByRole("menuitemcheckbox", { name: "Labels" }));
 	await view.press(null, "Escape");
 	assert.equal(view.queryByText("social-media") !== null, true);
 	await view.rerender({ workItem: { code: "PAY-118", title: "Billing", labels: ["billing"] }, sidePanel: true });
 	assert.equal(view.queryByText("billing"), null);
-	assert.equal(view.queryByText("Add labels") !== null, true);
+	assert.equal(view.queryByText("Add label") !== null, true);
 });
 
-test("Details computes its formula from committed budget and reach inputs", async () => {
-	const view = await renderDetails({ empty: true });
-	assert.deepEqual(fieldLabels(), ["Status", "Assignee", "Priority"]);
-	await view.click(view.getByRole("button", { name: "Show more details" }));
-	await view.click(view.getByRole("button", { name: "Change campaign budget" }));
-	await view.fill(view.getByRole("textbox", { name: "Campaign budget" }), "$1,200");
-	await view.press(view.getByRole("textbox", { name: "Campaign budget" }), "Enter");
-	await view.click(view.getByRole("button", { name: "Change estimated reach" }));
-	await view.fill(view.getByRole("textbox", { name: "Estimated Reach" }), "24,000");
-	await view.press(view.getByRole("textbox", { name: "Estimated Reach" }), "Enter");
-	assert.equal(view.queryByText("$0.05") !== null, true);
-	await fieldAction(view, "Estimated Reach", "Clear estimated reach");
-	assert.equal(view.queryByText("$0.05"), null);
-	assert.equal(view.queryByText("Calculated from budget and reach") !== null, true);
+test("expanded Details offers at most eight fields for filled and sparse items", async () => {
+	for (const empty of [false, true]) {
+		const view = await renderDetails({ empty });
+		await view.click(view.getByRole("button", { name: "Show more details" }));
+		assert.deepEqual(fieldLabels(), ["Status", "Assignee", "Priority", "Due Date", "Parent", "Labels", "Acceptance Criteria", "Reporter"]);
+		await view.click(view.getByRole("button", { name: "More details actions" }));
+		assert.equal(view.queryByRole("menuitemcheckbox", { name: "Campaign budget" }), null);
+		assert.equal(view.queryByRole("menuitemcheckbox", { name: "Fix Version" }), null);
+		await view.unmount();
+	}
 });
 
 test("keyboard field drops commit the moved field and preserve its focus", async () => {

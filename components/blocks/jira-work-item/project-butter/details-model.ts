@@ -41,12 +41,16 @@ export type ProjectButterDetailFields = {
 	assetObject: string;
 };
 
+const PROJECT_BUTTER_DEFAULT_DETAIL_ORDER: readonly ProjectButterDetailFieldId[] = [
+	"status", "assignee", "priority", "dueDate", "parent", "labels", "acceptanceCriteria", "reporter",
+];
+
 export const PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS: readonly ProjectButterDetailFieldId[] = ["status", "assignee", "priority"];
 
 export function createProjectButterDetailFields(empty: boolean, workItem?: WorkItemData): ProjectButterDetailFields {
 	const reference = !empty && !workItem;
 	return {
-		order: Object.keys(PROJECT_BUTTER_DETAIL_FIELDS) as ProjectButterDetailFieldId[],
+		order: [...PROJECT_BUTTER_DEFAULT_DETAIL_ORDER],
 		hidden: [],
 		parent: workItem?.parent ? `${workItem.parent.code}${workItem.parent.title ? ` ${workItem.parent.title}` : ""}` : reference ? "VITA-22 User Experience Overhaul" : "",
 		labels: workItem?.labels ?? (reference ? ["social-media", "website-traffic"] : []),
