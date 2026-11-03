@@ -188,7 +188,7 @@ test("empty crew shows the current viewer and adds the chosen searchable agent",
 	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Codex");
 	await view.click(view.getByRole("option", { name: /^Codex/u }));
 	assert.deepEqual(selected.map((agent) => ({ id: agent.id, name: agent.name })), [{ id: "codex", name: "Codex" }]);
-	assert.equal(view.queryByRole("textbox", { name: "Search agents" }) === null, true);
+	assert.equal(view.queryByRole("combobox", { name: "Search agents" }) === null, true);
 });
 
 test("filled crew sorts sessions by urgency and routes session and add-agent selections", async () => {
@@ -197,8 +197,8 @@ test("filled crew sorts sessions by urgency and routes session and add-agent sel
 	const selected = [];
 	const view = await renderCrew({ onOpenSession: (session) => opened.push(session.id), onStartAgent: (agent) => selected.push(agent.id), sessions });
 	await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
-	assert.deepEqual(view.getAllByRole("button", { name: /^Open .* session:/u }).map(accessibleName), ["Open Blocked session: Blocked work", "Open Working session: Working work", "Open Finished session: Finished work"]);
-	await view.click(view.getByRole("button", { name: "Open Working session: Working work" }));
+	assert.deepEqual([...view.getByRole("dialog", { name: "Agent sessions" }).querySelectorAll("li")].map((item) => item.querySelector("button")?.textContent.split(" work")[0]), ["Blocked", "Working", "Finished"]);
+	await view.click(view.getByRole("button", { name: /^Working work/u }));
 	assert.deepEqual(opened, ["running"]);
 	await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
 	await view.click(view.getByRole("button", { name: "Add agent" }));
@@ -210,7 +210,7 @@ test("filled crew sorts sessions by urgency and routes session and add-agent sel
 test("crew without an add-agent capability does not advertise an enabled picker", async () => {
 	const view = await renderCrew();
 	assert.equal(view.getByRole("button", { name: "Annie Cook, Currently viewing. Add agent" }).disabled, true);
-	assert.equal(view.queryByRole("textbox", { name: "Search agents" }) === null, true);
+	assert.equal(view.queryByRole("combobox", { name: "Search agents" }) === null, true);
 });
 
 test("reference crew keeps its initial members while matching session labels follow live state", async () => {
