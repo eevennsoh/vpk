@@ -110,6 +110,7 @@ export type JiraListAgentSessionDropIntent =
  */
 export interface JiraListRowFlash {
 	readonly issueKeys: readonly string[];
+	readonly color?: string;
 	/** Bumped once per drop, so a repeat drop replays the acknowledgement. */
 	readonly token: number;
 }

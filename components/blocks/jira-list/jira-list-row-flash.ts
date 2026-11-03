@@ -19,10 +19,11 @@ export const JIRA_LIST_ROW_FLASH_HOLD_MS = 700;
 export function appendRowFlash(
 	current: JiraListRowFlash,
 	issueKeys: readonly string[],
+	color?: string,
 ): JiraListRowFlash {
 	return issueKeys.length === 0
 		? current
-		: { issueKeys: [...issueKeys], token: current.token + 1 };
+		: { issueKeys: [...issueKeys], token: current.token + 1, ...(color ? { color } : {}) };
 }
 
 /**
@@ -35,14 +36,16 @@ export function appendRowFlash(
  */
 export function useJiraListRowFlashSource(): Readonly<{
 	flash: JiraListRowFlash;
-	flashRow: (issueKey: string) => void;
+	flashRow: (issueKey: string, color?: string) => void;
 }> {
 	const [flash, setFlash] = useState<JiraListRowFlash>(NO_JIRA_LIST_ROW_FLASH);
 	const batchRef = useRef<string[]>([]);
+	const colorRef = useRef<string | undefined>(undefined);
 
-	const flashRow = useCallback((issueKey: string) => {
+	const flashRow = useCallback((issueKey: string, color?: string) => {
 		const isFirstOfBatch = batchRef.current.length === 0;
 		batchRef.current.push(issueKey);
+		if (isFirstOfBatch) colorRef.current = color;
 		if (!isFirstOfBatch) {
 			return;
 		}
@@ -50,7 +53,9 @@ export function useJiraListRowFlashSource(): Readonly<{
 		queueMicrotask(() => {
 			const issueKeys = batchRef.current;
 			batchRef.current = [];
-			setFlash((current) => appendRowFlash(current, issueKeys));
+			const color = colorRef.current;
+			colorRef.current = undefined;
+			setFlash((current) => appendRowFlash(current, issueKeys, color));
 		});
 	}, []);
 

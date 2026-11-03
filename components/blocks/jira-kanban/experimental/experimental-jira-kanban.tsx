@@ -834,6 +834,9 @@ function ExperimentalJiraKanbanView({
 						>
 							{(handleCollapseColumn) => (
 							<BoardColumn
+								butterAgentPicker={cardAppearance === "project-butter"}
+								onBrowseAgents={cardGenerativeActionFooterActions?.onBrowseAgents}
+								onCreateDirectoryAgent={cardGenerativeActionFooterActions?.onCreateAgent}
 								headerAccessory={<BoardAutoArrangeBadge count={autoArrange.incoming(column.title)} title={column.title} />}
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
@@ -960,6 +963,7 @@ function ExperimentalJiraKanbanView({
 												onAgentActivityOpenChange={onCardAgentActivityOpenChange}
 												onAgentActivityViewChat={onCardAgentActivityViewChat}
 												onAssignedAgentIdsChange={onCardAssignedAgentIdsChange}
+												onAgentAssign={boardSessionDrag.noteAgentAssignment}
 												onAgentDoneRunReview={onCardAgentDoneRunReview}
 												onAgentDoneRunView={onCardAgentDoneRunView}
 												onClick={handleClick}
@@ -1010,6 +1014,7 @@ function ExperimentalJiraKanbanView({
 			</div>
 				{selectionToolbar && (!singleCardDrag || autoArrange.available) ? (
 					<JiraToolbar
+						butterAgentPicker={cardAppearance === "project-butter"}
 						primaryAction={onAutoArrange ? <BoardAutoArrangeAction key={autoArrange.key} ready={autoArrange.ready} available={autoArrange.available} onArrange={autoArrange.arrange} /> : undefined}
 						primaryActionOnly={singleCardDrag}
 						agents={selectionToolbar.agents ?? agents ?? []}

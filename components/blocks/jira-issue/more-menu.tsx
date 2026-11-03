@@ -21,6 +21,9 @@ import {
 	type JiraIssueGenerativeActionConfig,
 	type JiraIssueGenerativeActionIssue,
 } from "./generative-action-menu";
+import { ProjectButterMenuAgentSubmenu } from "./project-butter-add-agent";
+import { useProjectButterInvocationActions } from "./project-butter-invocation";
+import type { JiraIssueAgentAssignment } from "./index";
 
 export type JiraIssueMoreAction =
 	| "move-work-item"
@@ -53,6 +56,7 @@ interface JiraIssueMoreMenuProps {
 	onOpenChange?: (open: boolean) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 	generativeActionIssue?: JiraIssueGenerativeActionIssue;
+	butterAssignment?: JiraIssueAgentAssignment;
 }
 
 const CHEVRON = <ChevronRightIcon label="" size="small" color="currentColor" />;
@@ -79,9 +83,10 @@ function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 	) : <JiraIssueMoreDropdown {...props} />;
 }
 
-function JiraIssueMoreDropdown({ availableActions, flagged, generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange, showUnavailableAsEnabled = false }: Readonly<JiraIssueMoreMenuProps>) {
+function JiraIssueMoreDropdown({ availableActions, butterAssignment, flagged, generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange, showUnavailableAsEnabled = false }: Readonly<JiraIssueMoreMenuProps>) {
 	const [open, setOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement | null>(null);
+	const invocation = useProjectButterInvocationActions();
 
 	function handleOpenChange(nextOpen: boolean) {
 		setOpen(nextOpen);
@@ -127,12 +132,14 @@ function JiraIssueMoreDropdown({ availableActions, flagged, generativeAction, ge
 				<Icon render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="max-h-none w-[280px]" side="right" sideOffset={8}>
+				{butterAssignment && invocation ? <ProjectButterMenuAgentSubmenu assignment={butterAssignment} triggerRef={triggerRef} onRequestClose={() => handleOpenChange(false)} /> : null}
 				{generativeAction && generativeActionIssue ? (
 					<>
 						<JiraIssueAgentAndSkillSubmenus
 							action={generativeAction}
 							issue={generativeActionIssue}
 							onRequestClose={() => handleOpenChange(false)}
+							showAgent={!butterAssignment}
 						/>
 						<DropdownMenuSeparator />
 					</>
@@ -148,7 +155,7 @@ function JiraIssueMoreDropdown({ availableActions, flagged, generativeAction, ge
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
-					{generativeAction ? null : <DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("add-agent")} onSelect={select("add-agent")}>Add agent</DropdownMenuItem>}
+					{generativeAction || butterAssignment ? null : <DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("add-agent")} onSelect={select("add-agent")}>Add agent</DropdownMenuItem>}
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("link-confluence-item")} onSelect={select("link-confluence-item")}>Link Confluence item</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("link-work-item")} onSelect={select("link-work-item")}>Link work item</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} disabled={actionDisabled("change-parent")} onSelect={select("change-parent")}>Change parent</DropdownMenuItem>

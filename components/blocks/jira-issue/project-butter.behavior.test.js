@@ -544,11 +544,41 @@ test("Butter restores the add-agent control when assignment does not create a ro
 	assert.equal(view.getByRole("option", { name: /Review agent/u }) !== null, true);
 });
 
-test("Butter omits the add-agent action during selection, dragging, and attached activity", async () => {
+test("Butter lets a card with attached activity add another agent", async () => {
+	const assignments = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			appearance: "project-butter",
+			issueKey: "PD-40",
+			summary: "Implement advanced date-range filter",
+			agentActivities: [{ id: "reviewer", name: "Review agent", state: "working", label: "Working" }],
+			assignment: {
+				agents: [{ id: "writer", name: "Writing agent", byline: "Draft updates" }],
+				assignedAgents: [{ id: "reviewer", name: "Review agent" }],
+				onAssignedAgentIdsChange: (ids) => assignments.push(ids),
+			},
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-agent-invocation-preview"]') !== null, true);
+	const actual = view.container.querySelector('[data-slot="jira-issue-agent-invocation-actual"]');
+	assert.equal(actual.hasAttribute("inert"), true);
+	assert.equal(actual.getAttribute("aria-hidden"), "true");
+	await view.press(null, "Escape");
+	assert.equal(actual.hasAttribute("inert"), false);
+	assert.equal(actual.hasAttribute("aria-hidden"), false);
+	assert.equal(view.getByRole("button", { name: "Review agent: Working" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
+	await view.click(view.getByRole("option", { name: /Writing agent/u }));
+	assert.deepEqual(assignments, [["reviewer", "writer"]]);
+});
+
+test("Butter omits the add-agent action during selection and dragging", async () => {
 	for (const state of [
 		{ selected: true },
 		{ dragging: true },
-		{ agentActivities: [{ id: "reviewer", name: "Review agent", state: "working", label: "Working" }] },
 	]) {
 		const view = await renderComponent({
 			entry: "components/blocks/jira-issue/index.tsx",
