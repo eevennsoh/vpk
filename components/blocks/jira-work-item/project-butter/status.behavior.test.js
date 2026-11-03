@@ -19,12 +19,16 @@ test("status changes reuse the controlled circle and synchronize the header and 
 	const view = await renderStatus();
 	const initialCircle = view.getByRole("button", { name: "Change status, In progress" }).querySelector('[data-slot="progress-circle"]');
 	assert.equal(initialCircle?.getAttribute("aria-valuenow"), "50");
+	assert.equal(initialCircle.querySelector('[data-slot="progress-circle-dashes"]').style.animationPlayState, "running");
 	let currentStatus = "In progress";
 	for (const [status, progress] of [["To do", "0"], ["In progress", "50"], ["Done", "100"], ["To do", "0"]]) {
 		await view.click(view.getByRole("button", { name: `Change status, ${currentStatus}` }));
 		assert.equal(view.queryByRole("menuitem", { name: currentStatus }) === null, true);
 		const option = view.getByRole("menuitem", { name: status });
 		assert.equal(option.querySelector('[data-slot="progress-circle"]')?.getAttribute("aria-valuenow"), progress);
+		if (status !== "Done") {
+			assert.equal(option.querySelector('[data-slot="progress-circle-dashes"]').style.animationPlayState, "paused");
+		}
 		assert.equal(option.querySelector('[data-slot="lozenge"]') === null, true);
 		await view.click(option);
 		const headerCircle = view.getByRole("button", { name: `Change status, ${status}` }).querySelector('[data-slot="progress-circle"]');
@@ -32,6 +36,10 @@ test("status changes reuse the controlled circle and synchronize the header and 
 		assert.equal(headerCircle === initialCircle, true);
 		assert.equal(headerCircle?.getAttribute("aria-valuenow"), progress);
 		assert.equal(detailsCircle?.getAttribute("aria-valuenow"), progress);
+		if (status !== "Done") {
+			assert.equal(headerCircle.querySelector('[data-slot="progress-circle-dashes"]').style.animationPlayState, "running");
+			assert.equal(detailsCircle.querySelector('[data-slot="progress-circle-dashes"]').style.animationPlayState, "running");
+		}
 		if (status === "To do") {
 			assert.equal(headerCircle.querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtlest"), true);
 			assert.equal(detailsCircle.querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtlest"), true);
