@@ -19,9 +19,10 @@ function PileCard({ item, index, count, piled, pointer, onPreview, onRemove }: R
 	item: ProjectButterAttachment; index: number; count: number; piled: boolean; pointer: AttachmentPilePointer;
 }>) {
 	const rest = piled ? { x: index === 0 ? 0 : index === 1 ? 4 : -4, y: index === 0 ? 0 : 2, rotate: index === 0 ? 0 : index === 1 ? 4 : -5 } : { x: 0, y: 0, rotate: 0 };
-	const fan = piled && index > 0 ? (rest.x < 0 ? -1 : 1) : 0;
+	// Fan direction and strength: the top card swings left a little less than the back cards swing out.
+	const fan = !piled ? 0 : index === 0 ? -0.7 : rest.x < 0 ? -1 : 1;
 	const live = piled ? 1 : 0;
-	// The top card holds still; each back card fans away on its own side, opening wider when the pointer is over that side.
+	// Every card fans away on its own side, opening wider when the pointer is over that side.
 	const opening = () => live * fan * pointer.spread.get() * (1 + Math.max(0, pointer.lean.get() * fan) * 0.5);
 	const x = useTransform(() => opening() * 3);
 	const y = useTransform(() => live * Math.abs(fan) * pointer.spread.get() * -1);
