@@ -23,7 +23,9 @@ const attachmentVariants = cva(
 			},
 			variant: {
 				default: "",
-				preview: "w-full flex-col flex-nowrap gap-0 rounded-lg border-0 p-0 text-xs",
+				// Header and media cover the whole root, so the root never shows its hover fill. Keep it static:
+				// Chromium composites the fade without the rounded clip, flashing a dark edge on hover.
+				preview: "w-full flex-col flex-nowrap gap-0 rounded-lg border-0 p-0 text-xs transition-none has-[>a,>button]:hover:bg-card",
 			},
 		},
 	}
