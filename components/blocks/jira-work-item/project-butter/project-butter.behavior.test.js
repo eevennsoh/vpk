@@ -246,8 +246,10 @@ test("board work item actions omit unsupported deep links and keep key copying a
 	assert.equal(view.queryByRole("button", { name: "Copy work item key" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "More work item actions" }));
 	assert.equal(view.queryByRole("menuitem", { name: "Copy link" }) === null, true);
-	assert.equal(view.queryByRole("menuitemcheckbox", { name: "Watch work item" }) !== null, true);
-	assert.equal(view.queryByRole("menuitemcheckbox", { name: "Flag work item" }) !== null, true);
+	for (const name of ["Log work", "Add flag", "Start watching (4)", "Add vote (2)", "Add restriction", "Select cover", "Classify work item", "Clone", "Move", "Convert to subtask", /Open command palette/u, "Archive", "Delete", "Connect Slack channel", "Print", "Export to", "Share", "Give feedback", "Switch to classic experience"]) {
+		const item = view.getByRole("menuitem", { name });
+		assert.notEqual(item.getAttribute("aria-disabled"), "true", String(name));
+	}
 });
 
 test("empty Project butter can create a coding session", async () => {
@@ -595,10 +597,9 @@ test("header and Details share status options and custom status updates", async 
 	assert.equal(view.queryByRole("button", { name: "Change status, In review" }) !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Change status in details, In review" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "More work item actions" }));
-	await view.click(view.getByRole("menuitemcheckbox", { name: "Watch work item" }));
-	await view.press(null, "Escape");
+	await view.click(view.getByRole("menuitem", { name: "Start watching (4)" }));
 	await view.click(view.getByRole("button", { name: "More work item actions" }));
-	assert.equal(view.getByRole("menuitemcheckbox", { name: "Watch work item" }).getAttribute("aria-checked"), "true");
+	assert.equal(view.queryByRole("menuitem", { name: "Stop watching (4)" }) !== null, true);
 });
 
 
