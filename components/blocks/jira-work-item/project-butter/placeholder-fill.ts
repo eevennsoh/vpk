@@ -39,6 +39,7 @@ export interface ProjectButterWorkItemPlaceholder {
 		addedBy: string;
 		dateAdded: string;
 		url?: string;
+		previewSrc?: string;
 	}[];
 	comments: readonly {
 		id: string;
@@ -78,6 +79,7 @@ export function projectButterPlaceholderAttachments(placeholder: ProjectButterWo
 		addedBy: item.addedBy,
 		dateAdded: item.dateAdded,
 		url: item.url,
+		previewSrc: item.previewSrc,
 	}));
 }
 
