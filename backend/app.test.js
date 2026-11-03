@@ -69,7 +69,9 @@ test("createBackendApp wires middleware before routes and does not listen", () =
 	assert.equal(result.runtimeAdminToken, "runtime-token");
 	assert.equal(routeDependencies.serviceValue, "service");
 	assert.equal(routeDependencies.requireRuntimeAdmin, runtimeControls.requireRuntimeAdmin);
-	assert.deepEqual(calls, [
+	assert.equal(calls[0][0], "use");
+	assert.equal(calls[0][1], "/api/local-folder");
+	assert.deepEqual(calls.slice(1), [
 		["security"],
 		["runtime-admin", ["https://vpk.localhost"]],
 		["rate-limit"],

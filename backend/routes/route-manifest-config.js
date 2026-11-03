@@ -1,5 +1,6 @@
 const SERVER_ROUTE_FILES = [
 	{ calleeName: "app", filePath: "backend/server.js", prefix: "" },
+	{ calleeName: "router", filePath: "backend/routes/local-folder.js", prefix: "/api/local-folder" },
 	{ calleeName: "router", filePath: "backend/routes/personal-graph.js", prefix: "/api/personal-graph" },
 	{ calleeName: "router", filePath: "backend/routes/status.js", prefix: "/api/status" },
 	{ calleeName: "app", filePath: "backend/routes/status.js", prefix: "" },

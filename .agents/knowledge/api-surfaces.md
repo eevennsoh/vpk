@@ -11,7 +11,7 @@ Rules section of `AGENTS.md`). Source of truth is `backend/routes/route-manifest
 <!-- generated:begin -->
 <!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->
 
-Generated from `backend/routes/route-manifest.json`. Backend routes: 122; runtime-admin routes: 18; Next API routes: 103.
+Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 18; Next API routes: 103.
 
 ### Backend Routes
 
@@ -74,6 +74,7 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 122; runtim
 | `POST` | `/api/html-selector/dispatch` | no | `backend/routes/html-selector.js:99` |
 | `GET` | `/api/html-selector/tokens` | no | `backend/routes/html-selector.js:168` |
 | `GET` | `/api/image-proxy` | no | `backend/routes/media.js:184` |
+| `POST` | `/api/local-folder` | no | `backend/routes/local-folder.js:33` |
 | `DELETE` | `/api/orchestrator/log` | yes | `backend/routes/orchestrator.js:72` |
 | `GET` | `/api/orchestrator/log` | no | `backend/routes/orchestrator.js:46` |
 | `GET` | `/api/orchestrator/timeline` | no | `backend/routes/orchestrator.js:59` |

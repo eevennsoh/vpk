@@ -1,9 +1,127 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
+
+test("Butter directory picker can be dismissed without trapping focus", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").getByRole("button", { name: "Add agent to PAY-118" }).focus();
+	await page.keyboard.press("Enter");
+	await page.getByRole("option", { name: /Claude/u }).hover();
+	const submenu = page.getByRole("dialog", { name: "Run Claude on" });
+	const configure = submenu.getByRole("button", { name: "Configure directory" });
+	await configure.click();
+	const field = submenu.getByRole("textbox", { name: "Choose your directory" });
+	const dropdown = page.getByRole("dialog", { name: "Codebase workspaces" });
+	await field.click();
+	await expect(dropdown).toBeVisible();
+	await field.press("Escape");
+	await expect(dropdown).toBeHidden();
+	await expect(configure).toBeFocused();
+	await field.click();
+	await submenu.locator('[data-slot="input-group-addon"]').click();
+	await expect(dropdown).toBeHidden();
+	await expect(configure).toBeFocused();
+	await field.click();
+	await field.press("ArrowDown");
+	await expect(dropdown.getByRole("button", { name: "Add workspace" })).toBeFocused();
+	await page.keyboard.press("Escape");
+	await expect(dropdown).toBeHidden();
+	await expect(configure).toBeFocused();
+	await field.click();
+	await page.getByRole("textbox", { name: "Search agents" }).click();
+	await expect(dropdown).toBeHidden();
+	await expect(page.getByRole("textbox", { name: "Search agents" })).toBeFocused();
+});
+
+test("Butter add-agent tooltip follows rapid pointer re-entry", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-118");
+	const add = issue.getByRole("button", { name: "Add agent to PAY-118" });
+	await issue.getByText("Carry card-artwork metadata into the next wallet epic", { exact: true }).hover();
+	await add.hover();
+	const tooltip = page.getByRole("tooltip", { name: "Add agent", exact: true });
+	await expect(tooltip).toBeVisible();
+	const addBox = await add.boundingBox();
+	if (!addBox) throw new Error("Missing add-agent trigger");
+	await page.mouse.move(addBox.x + addBox.width + 8, addBox.y + addBox.height / 2);
+	await page.waitForTimeout(60);
+	await page.mouse.move(addBox.x + addBox.width / 2, addBox.y + addBox.height / 2);
+	await page.waitForTimeout(350);
+	await expect(tooltip).toBeVisible();
+	await page.mouse.move(addBox.x - 100, addBox.y - 100);
+	await expect(tooltip).not.toBeVisible();
+	const issueBox = await issue.boundingBox();
+	if (!issueBox) throw new Error("Missing issue card");
+	await page.mouse.move(issueBox.x + issueBox.width + 40, addBox.y - 20, { steps: 8 });
+	await page.waitForTimeout(50);
+	await page.mouse.move(addBox.x + addBox.width + 15, addBox.y + addBox.height / 2, { steps: 8 });
+	await page.mouse.move(addBox.x + addBox.width / 2, addBox.y + addBox.height / 2, { steps: 8 });
+	await page.waitForTimeout(350);
+	await expect(tooltip).toBeVisible();
+});
+
+test("Butter add-agent tooltip does not cover its trigger while entering", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-118");
+	await issue.getByText("Carry card-artwork metadata into the next wallet epic", { exact: true }).hover();
+	const add = issue.getByRole("button", { name: "Add agent to PAY-118" });
+	const box = await add.boundingBox();
+	if (!box) throw new Error("Missing add-agent trigger");
+	const samples = page.evaluate(async () => {
+		const button = document.querySelector<HTMLElement>('[aria-label="Add agent to PAY-118"]');
+		if (!button) throw new Error("Missing add-agent trigger");
+		await new Promise<void>((resolve) => button.addEventListener("pointerenter", () => resolve(), { once: true }));
+		const frames: { overlap: number; offset: number }[] = [];
+		for (let i = 0; i < 20; i++) {
+			const tooltip = [...document.querySelectorAll<HTMLElement>('[role="tooltip"]')].find((node) => node.textContent === "Add agent");
+			if (tooltip) {
+				const tooltipBox = tooltip.getBoundingClientRect();
+				const buttonBox = button.getBoundingClientRect();
+				frames.push({ overlap: tooltipBox.bottom - buttonBox.top, offset: (tooltipBox.left + tooltipBox.width / 2) - (buttonBox.left + buttonBox.width / 2) });
+			}
+			await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+		}
+		return frames;
+	});
+	await page.mouse.move(box.x + box.width / 2, box.y + 1);
+	const frames = await samples;
+	expect(frames.length).toBeGreaterThan(0);
+	expect(frames.every((frame) => frame.overlap <= 0 && Math.abs(frame.offset) < 0.5), JSON.stringify(frames)).toBe(true);
+	await expect(page.getByRole("tooltip", { name: "Add agent", exact: true })).toBeVisible();
+});
+
+test("Butter aligns directory chevron and selected workspace checkmarks", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const add = card(page, "PAY-118").getByRole("button", { name: "Add agent to PAY-118" });
+	await add.focus();
+	await page.keyboard.press("Enter");
+	await page.getByRole("option", { name: /Claude/u }).hover();
+	const submenu = page.getByRole("dialog", { name: "Run Claude on" });
+	await submenu.getByRole("button", { name: "Configure directory" }).click();
+	const field = submenu.getByRole("textbox", { name: "Choose your directory" });
+	await field.click();
+	const dropdown = page.getByRole("dialog", { name: "Codebase workspaces" });
+	const inputGroup = submenu.locator('[data-slot="input-group"]');
+	const chevron = inputGroup.locator('[data-slot="input-group-addon"] svg');
+	const expectAligned = async (row: Locator) => {
+		const [chevronBox, inputBox, checkBox, rowBox] = await Promise.all([
+			chevron.boundingBox(), inputGroup.boundingBox(), row.locator("svg").last().boundingBox(), row.boundingBox(),
+		]);
+		if (!chevronBox || !inputBox || !checkBox || !rowBox) throw new Error("Missing directory picker geometry");
+		expect(Math.abs((chevronBox.x + chevronBox.width / 2) - (checkBox.x + checkBox.width / 2))).toBeLessThan(0.5);
+		expect(Math.abs((chevronBox.y + chevronBox.height / 2) - (inputBox.y + inputBox.height / 2))).toBeLessThan(0.5);
+		expect(Math.abs((checkBox.y + checkBox.height / 2) - (rowBox.y + rowBox.height / 2))).toBeLessThan(0.5);
+	};
+	await expectAligned(dropdown.getByRole("button", { name: "No workspace" }));
+	await field.fill("~/dev/alignment-check");
+	await field.press("Enter");
+	const selected = dropdown.getByRole("button", { name: "~/dev/alignment-check", exact: true });
+	await expect(selected).toHaveAttribute("aria-current", "true");
+	await expectAligned(selected);
+});
 
 test("Butter's agent preview matches the finished agent avatar", async ({ page }) => {
 	await page.goto(appUrl("/butter"));

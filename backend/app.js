@@ -1,4 +1,5 @@
 const express = require("express");
+const { createLocalFolderRouter } = require("./routes/local-folder");
 const {
 	registerBodyLimitMiddleware,
 } = require("./middleware/body-limits");
@@ -80,6 +81,7 @@ function createBackendApp(dependencies = {}, options = {}) {
 	} = options;
 
 	const app = expressImpl();
+	app.use("/api/local-folder", createLocalFolderRouter());
 	const { allowedOrigins } = registerSecurity(app);
 	const runtimeAdminControls = createRuntimeAdmin({ allowedOrigins });
 

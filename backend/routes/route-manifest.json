@@ -344,6 +344,12 @@
 			"source": "backend/routes/media.js:184"
 		},
 		{
+			"method": "POST",
+			"path": "/api/local-folder",
+			"runtimeAdmin": false,
+			"source": "backend/routes/local-folder.js:33"
+		},
+		{
 			"method": "DELETE",
 			"path": "/api/orchestrator/log",
 			"runtimeAdmin": true,
