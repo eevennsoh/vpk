@@ -226,27 +226,28 @@ test("Empty shortcuts reveal only their section and return after cancellation", 
 				return <><button type="button">Outside related work</button><ProjectButterEmptyActions content={content} />{active ? <ProjectButterRelatedWork content={content} empty /> : null}</>;
 			}`,
 	});
-	for (const [shortcut, input, section] of [["Add attachment", "Attachment name or URL", "Attachments"], ["Add child work item", "Create child work item", "Child work items"], ["Add linked work", "Add linked work", "Linked work"]]) {
+	for (const [shortcut, input, section, add] of [["Attachment", "Add attachment", "Attachments", "Add attachment"], ["Subtask", "Create child work item", "Child work items", "Add child work item"], ["Linked work", "Add linked work", "Linked work", "Add linked work"]]) {
 		await view.click(view.getByRole("button", { name: shortcut }));
-		assert.equal(view.getAllByRole("button", { name: shortcut }).length, 1);
+		assert.equal(view.queryByRole("button", { name: shortcut }) === null, true, "the quick action leaves once its section opens");
+		assert.equal(view.getAllByRole("button", { name: add }).length, 1);
 		for (const candidate of ["Attachments", "Child work items", "Linked work"]) {
 			assert.equal(relatedGroup(candidate) !== null, candidate === section);
 		}
-		const editor = view.getByRole(input === "Attachment name or URL" ? "textbox" : "combobox", { name: input });
+		const editor = view.getByRole("combobox", { name: input });
 		await view.press(editor, "Escape");
 		assert.equal(relatedGroup(section) === null, true);
 		assert.equal(view.isFocused(view.getByRole("button", { name: shortcut })), true);
 	}
-	for (const [shortcut, section] of [["Add attachment", "Attachments"], ["Add child work item", "Child work items"]]) {
+	for (const [shortcut, section] of [["Attachment", "Attachments"], ["Subtask", "Child work items"]]) {
 		await view.click(view.getByRole("button", { name: shortcut }));
 		await view.click(view.getByRole("button", { name: "Outside related work" }));
 		assert.equal(relatedGroup(section) === null, true);
 		assert.equal(view.isFocused(view.getByRole("button", { name: "Outside related work" })), true);
 		assert.equal(view.queryByRole("button", { name: shortcut }) !== null, true);
 	}
-	await view.click(view.getByRole("button", { name: "Add attachment" }));
-	await view.fill(view.getByRole("textbox", { name: "Attachment name or URL" }), "Design review");
-	await view.click(view.getByRole("button", { name: "Add", hidden: false }));
+	await view.click(view.getByRole("button", { name: "Attachment" }));
+	await view.fill(view.getByRole("combobox", { name: "Add attachment" }), "Design review");
+	await view.click(view.getAllByRole("option", { name: /Design review/u })[0]);
 	assert.equal(view.queryByText("Design review") !== null, true);
 	assert.equal(view.getAllByRole("button", { name: "Add attachment" }).length, 1);
 });

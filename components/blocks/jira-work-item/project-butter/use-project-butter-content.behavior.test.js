@@ -18,6 +18,7 @@ const COLUMN_MAPS = [
 
 const HARNESS = `import React from "react";
 	import { BUTTER_WORK_ITEM_PLACEHOLDERS } from "@/components/projects/butter/data/work-item-placeholders";
+	import { attachmentDisplayName } from "@/components/blocks/jira-work-item/project-butter/attachment-model";
 	import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 
 	const session = {
@@ -67,7 +68,7 @@ const HARNESS = `import React from "react";
 			<p data-field="reporter">{content.reporter?.name ?? ""}</p>
 			<p data-field="child">{content.relatedWork.children.map((item) => item.key).join(",")}</p>
 			<p data-field="linked">{content.relatedWork.linked.map((item) => item.key).join(",")}</p>
-			<p data-field="attachment">{content.attachments.map((item) => item.name).join("|")}</p>
+			<p data-field="attachment">{content.attachments.map(attachmentDisplayName).join("|")}</p>
 			<p data-field="attachment-preview">{content.attachments.map((item) => item.previewSrc ?? "").join("|")}</p>
 			<p data-field="comment">{comments.map(commentText).join(" ")}</p>
 			<p data-field="reply">{replies.map((reply) => reply.body).join(" ")}</p>

@@ -51,7 +51,7 @@ test("an item with nothing related shows every group's empty state and its add b
 	assert.equal(view.queryByRole("button", { name: "Link work items" }) !== null, true);
 	assert.equal(view.queryByText("No attachments yet."), null);
 	await view.click(document.querySelector('[data-related-empty="attachments"] button[data-related-add]'));
-	assert.equal(view.isFocused(view.getByRole("textbox", { name: "Attachment name or URL" })), true);
+	assert.equal(view.isFocused(view.getByRole("combobox", { name: "Add attachment" })), true);
 	await view.click(document.querySelector('[data-related-empty="linked"] button[aria-label="Dismiss"]'));
 	assert.equal(group("linked"), null, "Dismiss hides the group for the session");
 	await view.click(view.getByRole("button", { name: "Request linked" }));

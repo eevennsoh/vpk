@@ -19,6 +19,7 @@ import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
 import { ProjectButterSession } from "@/components/blocks/jira-work-item/project-butter/project-butter-session";
 import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-item/project-butter/placeholder-fill";
+import type { RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { PROJECT_BUTTER_PANEL_ORDER } from "@/components/blocks/jira-work-item/project-butter/panel-order";
 
@@ -32,6 +33,8 @@ export interface ProjectButterJiraWorkItemProps {
 	workItem?: WorkItemData;
 	initialSessions?: readonly ProjectButterSessionItem[];
 	placeholders?: ProjectButterPlaceholderMap;
+	/** Resolves a related work key to an opener when the host has that work item (Butter board). */
+	openRelatedItem?: RelatedItemOpener;
 }
 
 export function ProjectButterJiraWorkItem({
@@ -44,6 +47,7 @@ export function ProjectButterJiraWorkItem({
 	workItem,
 	initialSessions,
 	placeholders,
+	openRelatedItem,
 }: Readonly<ProjectButterJiraWorkItemProps>) {
 	const [presentation, setPresentation] = useState(initialPresentation);
 	const [suggestion, setSuggestion] = useState(initialSuggestion);
@@ -166,7 +170,9 @@ export function ProjectButterJiraWorkItem({
 						details={sidePanel ? details : null}
 						empty={sparse}
 						onOpenSession={setActiveSessionId}
+						openRelatedItem={openRelatedItem}
 						sessions={sessions}
+						workItemKey={workItem?.code}
 					/>
 				</div>
 				{sidePanel ? null : (

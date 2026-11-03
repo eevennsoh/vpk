@@ -1,6 +1,7 @@
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { JiraActivityActor, JiraActivityCommentEntry } from "@/components/blocks/jira-activity/jira-activity-types";
 import type { ProjectButterAttachment } from "@/components/blocks/jira-work-item/project-butter/attachment-data";
+import { splitFileName } from "@/components/blocks/jira-work-item/project-butter/attachment-model";
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
 import type { ProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
@@ -71,16 +72,18 @@ export function projectButterPlaceholderReporter(placeholder: ProjectButterWorkI
 	return { name: placeholder.reporter, avatarUrl: projectButterPersonAvatar(placeholder.reporter) };
 }
 
+/** Placeholder dates read "16 Aug 2026"; attachments store ISO timestamps (noon UTC keeps the day stable). */
+function placeholderIsoDate(value: string): string {
+	const parsed = Date.parse(`${value} 12:00 UTC`);
+	return Number.isNaN(parsed) ? value : new Date(parsed).toISOString();
+}
+
 export function projectButterPlaceholderAttachments(placeholder: ProjectButterWorkItemPlaceholder): ProjectButterAttachment[] {
-	return placeholder.attachments.map((item) => ({
-		id: item.id,
-		kind: item.kind,
-		name: item.name,
-		addedBy: item.addedBy,
-		dateAdded: item.dateAdded,
-		url: item.url,
-		previewSrc: item.previewSrc,
-	}));
+	return placeholder.attachments.map((item) => {
+		const date = placeholderIsoDate(item.dateAdded);
+		const named = item.kind === "file" || item.kind === "image" || item.kind === "video" ? splitFileName(item.name) : { name: item.name };
+		return { id: item.id, kind: item.kind, ...named, addedBy: item.addedBy, dateAdded: date, updatedAt: date, url: item.url, previewSrc: item.previewSrc };
+	});
 }
 
 /** Butter related rows have no "In review" status; board placeholders that use it read as in progress. */

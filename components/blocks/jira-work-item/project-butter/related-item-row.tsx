@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { motion } from "motion/react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Lozenge } from "@/components/ui/lozenge";
-import { ProgressCircle } from "@/components/ui-custom/progress-circle";
-import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
+import { RelatedRowActions } from "@/components/blocks/jira-work-item/project-butter/related-row-actions";
 import { RelatedAssigneeField, RelatedDueDateField, RelatedEstimateField, RelatedPriorityField, RelatedRelationshipField } from "@/components/blocks/jira-work-item/project-butter/related-row-fields";
-import { RELATED_STATUSES, type ProjectButterRelatedFields, type ProjectButterRelatedItem } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { RelatedStatusField } from "@/components/blocks/jira-work-item/project-butter/related-status-field";
+import { RelatedSummaryField } from "@/components/blocks/jira-work-item/project-butter/related-summary-field";
+import type { ProjectButterRelatedFields, ProjectButterRelatedItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-export function ProjectButterRelatedItemRow({ dimmed, draft, editing, faded, fields, item, onChange, onDraftChange, onEdit, onFinish, onRemove }: Readonly<{
+const FADE = "related-row-fade group-has-[:focus-visible]/work-row:mask-none group-has-[[aria-expanded=true]]/work-row:mask-none";
+
+export function ProjectButterRelatedItemRow({ actions, dimmed, draft, editing, faded, fields, item, onChange, onDraftChange, onEdit, onFinish, openItem }: Readonly<{
+	/** Child rows get Change parent / Clone / Move / Archive / Delete; linked rows have no menu. */
+	actions?: { onClone: () => void; onDelete: () => void };
 	dimmed: boolean;
 	draft: string;
 	editing: boolean;
@@ -26,29 +27,45 @@ export function ProjectButterRelatedItemRow({ dimmed, draft, editing, faded, fie
 	onDraftChange: (summary: string) => void;
 	onEdit: () => void;
 	onFinish: (save: boolean) => void;
-	onRemove: () => void;
+	openItem?: RelatedItemOpener;
 }>) {
-	const summaryTrigger = useRef<HTMLButtonElement>(null);
-	const restoreFocus = useRef(false);
-	useEffect(() => {
-		if (!editing && restoreFocus.current) {
-			restoreFocus.current = false;
-			summaryTrigger.current?.focus();
-		}
-	}, [editing]);
-	function finish(save: boolean) {
-		restoreFocus.current = true;
-		onFinish(save);
-	}
+	const open = openItem?.(item.key);
+	const keyClass = cn("ml-1 shrink-0 whitespace-nowrap text-sm text-text-subtlest", faded && !editing && FADE);
 	return (
-		<motion.li className={cn("group/work-row flex h-10 min-w-0 items-center gap-1.5 px-4 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered", dimmed && "pointer-events-none opacity-(--opacity-disabled)", editing && "relative z-10")} data-related-id={item.id} data-summary-editing={editing || undefined} inert={dimmed || undefined} layout="position" onKeyDown={(event) => { if (editing && event.key === "Escape") { event.preventDefault(); event.stopPropagation(); finish(false); } }} transition={{ duration: motionDuration.medium, ease: motionEase.outPractical }}>
-			{item.relationship ? <RelatedRelationshipField label={`Edit relationship for ${item.key}: ${item.relationship}`} onChange={(relationship) => onChange({ relationship })} value={item.relationship} /> : null}
-			{fields.status ? <DropdownMenu><DropdownMenuTrigger render={<Button aria-label={`Edit status for ${item.key}, ${item.status}`} size="icon-compact" type="button" variant="ghost" />}><span aria-hidden><ProgressCircle animated colorByProgress label="" size="xs" value={item.status === "Done" ? 100 : item.status === "In progress" ? 50 : 0} variant="filled" /></span></DropdownMenuTrigger><DropdownMenuContent onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">{RELATED_STATUSES.map((status) => <DropdownMenuItem key={status} onSelect={() => onChange({ status })} selected={status === item.status}><Lozenge variant={statusVariant(status)}>{status}</Lozenge></DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu> : null}
-			{fields.id ? <span className={cn("ml-1 shrink-0 text-sm text-text-subtle", faded && !editing && "related-row-fade group-has-[:focus-visible]/work-row:mask-none group-has-[[aria-expanded=true]]/work-row:mask-none")}>{item.key}</span> : null}
-			<div className="flex min-w-0 flex-1 items-center gap-2">
-				{editing ? <><input aria-label={`Edit summary for ${item.key}`} autoFocus className="min-w-0 flex-1 rounded-sm bg-transparent py-1 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-ring" onChange={(event) => onDraftChange(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === "Escape" || event.key === "Enter") { event.preventDefault(); event.stopPropagation(); if (event.key === "Escape" || draft.trim()) finish(event.key === "Enter"); } }} value={draft} /><div className="flex shrink-0 items-center gap-1"><Button aria-label={`Save summary for ${item.key}`} disabled={!draft.trim()} onClick={() => finish(true)} size="icon-compact" type="button" variant="secondary"><CheckMarkIcon label="" size="small" /></Button><Button aria-label={`Cancel summary for ${item.key}`} onClick={() => finish(false)} size="icon-compact" type="button" variant="secondary"><CrossIcon label="" size="small" /></Button></div></> : <button aria-label={`Edit summary for ${item.key}`} className={cn("min-w-0 flex-1 cursor-text truncate rounded-sm py-1 text-left text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-ring", faded && "related-row-fade group-has-[:focus-visible]/work-row:mask-none group-has-[[aria-expanded=true]]/work-row:mask-none")} onClick={onEdit} ref={summaryTrigger} type="button">{item.summary}</button>}
-			</div>
-			{editing ? null : <div className="flex shrink-0 items-center gap-2"><span className="opacity-0 group-hover/work-row:opacity-100 group-focus-within/work-row:opacity-100 has-[[aria-expanded=true]]:opacity-100"><DropdownMenu><DropdownMenuTrigger render={<Button aria-label={`More actions for ${item.key}`} size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger><DropdownMenuContent onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]"><DropdownMenuItem onSelect={onRemove}>Remove from work item</DropdownMenuItem></DropdownMenuContent></DropdownMenu></span>{fields.labels && item.labels?.length ? <span className={cn("max-w-24 truncate text-xs text-text-subtle", faded && "related-row-fade group-has-[:focus-visible]/work-row:mask-none group-has-[[aria-expanded=true]]/work-row:mask-none")}>{item.labels.join(", ")}</span> : null}{fields.dueDate ? <RelatedDueDateField item={item} onChange={(dueDate) => onChange({ dueDate })} /> : null}{fields.estimate ? <RelatedEstimateField item={item} onChange={(estimate) => onChange({ estimate })} /> : null}{fields.priority ? <RelatedPriorityField item={item} onChange={(priority) => onChange({ priority })} /> : null}{fields.assignee ? <RelatedAssigneeField item={item} onChange={(assignee) => onChange({ assignee })} /> : null}</div>}
+		<motion.li
+			className={cn(
+				"group/work-row flex h-10 min-w-0 items-center gap-1.5 px-4 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered has-[:focus-visible]:bg-bg-neutral-subtle-hovered has-[[aria-expanded=true]]:bg-bg-neutral-subtle-hovered",
+				dimmed && "pointer-events-none opacity-(--opacity-disabled)",
+				editing && "relative z-10",
+			)}
+			data-related-id={item.id}
+			data-summary-editing={editing || undefined}
+			inert={dimmed || undefined}
+			layout="position"
+			onBlur={(event) => { if (editing && !(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) onFinish(true); }}
+			transition={{ duration: motionDuration.medium, ease: motionEase.outPractical }}
+		>
+			{item.relationship ? <span className={cn("flex shrink-0", faded && !editing && FADE)}><RelatedRelationshipField label={`Edit relationship for ${item.key}: ${item.relationship}. Edit`} onChange={(relationship) => onChange({ relationship })} value={item.relationship} /></span> : null}
+			{fields.status ? <RelatedStatusField itemKey={item.key} onChange={(status) => onChange({ status })} status={item.status} /> : null}
+			{fields.id ? open ? (
+				<button className={cn(keyClass, "rounded-sm outline-none hover:text-text-subtle hover:underline focus-visible:ring-2 focus-visible:ring-border-focused")} onClick={open} type="button">{item.key}</button>
+			) : <span className={keyClass}>{item.key}</span> : null}
+			<RelatedSummaryField draft={draft} editing={editing} faded={faded} itemKey={item.key} onDraftChange={onDraftChange} onEdit={onEdit} onFinish={onFinish} summary={item.summary} />
+			{editing ? (
+				<div className="flex shrink-0 items-center gap-1">
+					<Button aria-label={`Save summary for ${item.key}`} onClick={() => onFinish(true)} onMouseDown={(event) => event.preventDefault()} size="icon-compact" type="button" variant="secondary"><CheckMarkIcon label="" size="small" /></Button>
+					<Button aria-label={`Cancel summary for ${item.key}`} onClick={() => onFinish(false)} onMouseDown={(event) => event.preventDefault()} size="icon-compact" type="button" variant="secondary"><CrossIcon label="" size="small" /></Button>
+				</div>
+			) : (
+				<div className="flex shrink-0 items-center gap-3 pr-1">
+					{fields.labels && item.labels?.length ? <span className={cn("max-w-24 truncate text-xs text-text-subtle", faded && FADE)}>{item.labels.join(", ")}</span> : null}
+					{fields.dueDate ? <span className={cn("flex", faded && FADE)}><RelatedDueDateField item={item} onChange={(dueDate) => onChange({ dueDate })} /></span> : null}
+					{fields.estimate ? <RelatedEstimateField item={item} onChange={(estimate) => onChange({ estimate })} /> : null}
+					{fields.priority ? <RelatedPriorityField item={item} onChange={(priority) => onChange({ priority })} /> : null}
+					{fields.assignee ? <RelatedAssigneeField item={item} onChange={(assignee) => onChange({ assignee })} /> : null}
+					{actions ? <RelatedRowActions itemKey={item.key} onClone={actions.onClone} onDelete={actions.onDelete} /> : null}
+				</div>
+			)}
 		</motion.li>
 	);
 }

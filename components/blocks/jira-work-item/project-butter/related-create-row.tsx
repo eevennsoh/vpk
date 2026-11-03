@@ -1,35 +1,38 @@
 "use client";
 
-import AddIcon from "@atlaskit/icon/core/add";
-import PersonIcon from "@atlaskit/icon/core/person";
-import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 import { PROJECT_BUTTER_RELATED_SEARCH_ITEMS } from "@/components/blocks/jira-work-item/project-butter/related-data";
-import { RelatedComposer } from "@/components/blocks/jira-work-item/project-butter/related-composer";
-import { relatedSearchText, relatedWorkItemKey, type ProjectButterRelatedAddRequest, type ProjectButterRelatedItem, type ProjectButterRelatedListEditor } from "@/components/blocks/jira-work-item/project-butter/related-model";
-import { RelatedPriorityGlyph, RelatedRelationshipField } from "@/components/blocks/jira-work-item/project-butter/related-row-fields";
+import { RelatedComposer, type RelatedComposerDismissReason } from "@/components/blocks/jira-work-item/project-butter/related-composer";
+import { relatedComposerChoices, relatedWorkItemKey, type ProjectButterRelatedAddRequest, type ProjectButterRelatedItem, type ProjectButterRelatedListEditor, type ProjectButterRelatedWorkType, type RelatedWorkChoice } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { RelatedAssigneeAvatar, RelatedPriorityGlyph, RelatedRelationshipField } from "@/components/blocks/jira-work-item/project-butter/related-row-fields";
+import { RelatedStatusIcon } from "@/components/blocks/jira-work-item/project-butter/related-status-field";
 
-type Choice = { kind: "existing"; id: string; item: ProjectButterRelatedItem } | { kind: "create"; id: string; summary: string };
-
-export function ProjectButterRelatedCreateRow({ dimmed, editor, items, linked, onAdd, onChange, onDismiss }: Readonly<{
+export function ProjectButterRelatedCreateRow({ dimmed, editor, items, linked, onAdd, onChange, onDismiss, ownKey, parentType }: Readonly<{
 	dimmed: boolean;
 	editor: ProjectButterRelatedListEditor;
 	items: readonly ProjectButterRelatedItem[];
 	linked: boolean;
 	onAdd: (request: ProjectButterRelatedAddRequest) => void;
 	onChange: (patch: Partial<ProjectButterRelatedListEditor>) => void;
-	onDismiss: () => void;
+	/** The composer closed without adding (Escape on an empty query or a pointerdown outside). */
+	onDismiss: (reason: RelatedComposerDismissReason) => void;
+	/** The open work item's key, never offered as a match. */
+	ownKey: string;
+	parentType?: ProjectButterRelatedWorkType;
 }>) {
-	const query = relatedSearchText(editor.query);
-	const excluded = new Set(items.map((item) => item.key));
-	const matches = query ? PROJECT_BUTTER_RELATED_SEARCH_ITEMS.filter((item) => !excluded.has(item.key) && (linked || item.workType === "Subtask") && `${item.key} ${item.summary}`.toLowerCase().includes(query.toLowerCase())).slice(0, 6) : [];
-	const exact = matches.find((item) => item.key === query.toUpperCase());
-	const choices: Choice[] = matches.map((item) => ({ kind: "existing", id: item.key, item }));
-	if (query && !exact && !excluded.has(relatedWorkItemKey(query) ?? "")) choices.push({ kind: "create", id: "create", summary: query });
+	const { choices, matchCount } = relatedComposerChoices({
+		catalog: PROJECT_BUTTER_RELATED_SEARCH_ITEMS,
+		existingKeys: new Set(items.map((item) => item.key)),
+		kind: linked ? "linked" : "children",
+		ownKey,
+		parentType,
+		query: editor.query,
+	});
 	const label = linked ? "Add linked work" : "Create child work item";
-	function select(choice: Choice | undefined) {
+	const relationship = linked ? { relationship: editor.relationship } : {};
+	function select(choice: RelatedWorkChoice | undefined) {
 		if (!choice) return;
-		onAdd(choice.kind === "existing" ? { kind: "existing", item: choice.item, ...(linked ? { relationship: editor.relationship } : {}) } : { kind: "create", summary: choice.summary, ...(linked ? { relationship: editor.relationship } : {}) });
 		onChange({ query: "", composerOpen: false });
+		onAdd(choice.kind === "existing" ? { kind: "existing", item: choice.item, ...relationship } : { kind: "create", summary: choice.summary, ...relationship });
 	}
 	return (
 		<RelatedComposer
@@ -37,18 +40,22 @@ export function ProjectButterRelatedCreateRow({ dimmed, editor, items, linked, o
 			createSignal={editor.createSignal}
 			dimmed={dimmed}
 			label={label}
-			leading={<>{linked ? <RelatedRelationshipField label="Relationship for the new linked work item" onChange={(relationship) => onChange({ relationship })} value={editor.relationship} /> : null}<span aria-hidden className="flex size-6 shrink-0 items-center justify-center text-icon-subtle"><TaskToDoIcon label="" size="small" /></span></>}
+			leading={<>{linked ? <RelatedRelationshipField label={`Relationship for the new linked work item: ${editor.relationship}. Edit`} onChange={(value) => onChange({ relationship: value })} value={editor.relationship} /> : null}<span aria-hidden className="flex size-6 shrink-0 items-center justify-center"><RelatedStatusIcon status="To do" /></span></>}
 			listboxLabel="Matching work items"
-			liveMessage={`${matches.length} matching work item${matches.length === 1 ? "" : "s"}`}
+			liveMessage={`${matchCount} matching work item${matchCount === 1 ? "" : "s"}`}
 			onCommit={select}
-			onDismiss={(reason) => reason === "escape" ? onDismiss() : onChange({ composerOpen: false })}
+			onDismiss={(reason) => {
+				// Reference parity: leaving the composer drops the uncommitted query.
+				onChange({ query: "", composerOpen: false });
+				onDismiss(reason);
+			}}
 			onPasteText={relatedWorkItemKey}
 			onQueryChange={(value) => onChange({ query: value })}
 			query={editor.query}
 			renderChoice={(choice) => choice.kind === "create"
-				? <><AddIcon label="" size="small" /><span className="min-w-0 truncate">Create “{choice.summary}”</span></>
-				: <><TaskToDoIcon label="" size="small" /><span className="shrink-0 text-text-subtlest">{choice.item.key}</span><span className="min-w-0 truncate">{choice.item.summary}</span></>}
-			trailing={<><RelatedPriorityGlyph value="Medium" /><PersonIcon label="" size="small" /></>}
+				? <><RelatedStatusIcon status="To do" /><span className="min-w-0 truncate">Create “{choice.summary}”</span></>
+				: <><RelatedStatusIcon status={choice.item.status} /><span className="shrink-0 text-text-subtlest">{choice.item.key}</span><span className="min-w-0 truncate">{choice.item.summary}</span></>}
+			trailing={<><RelatedPriorityGlyph value="Medium" /><RelatedAssigneeAvatar /></>}
 		/>
 	);
 }

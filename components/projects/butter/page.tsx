@@ -16,6 +16,7 @@ import type {
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
+import type { RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { countNeedsInputAgents } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-filter";
@@ -113,7 +114,9 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
 }
 
-function ButterWorkItemSurface({ ref, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+function ButterWorkItemSurface({ openRelatedItem, ref, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
+	openRelatedItem: RelatedItemOpener;
 	ref: Ref<ButterWorkItemHandle>;
 }) {
 	const workItem = useButterWorkItem();
@@ -134,6 +137,7 @@ function ButterWorkItemSurface({ ref, ...overlayProps }: ComponentProps<typeof J
 						initialSessions={workItem.selection.initialSessions}
 						onClose={workItem.closeWorkItem}
 						open={workItem.open}
+						openRelatedItem={openRelatedItem}
 						placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
 						workItem={workItem.selection.workItem}
 					/>
@@ -318,6 +322,13 @@ function ButterApp(): React.ReactElement {
 			if (card) { openListWorkItem(card, column.title); return; }
 		}
 	}, [boardColumns, openListWorkItem]);
+	const openRelatedItem = useCallback<RelatedItemOpener>((issueKey) => {
+		for (const column of boardColumns) {
+			const card = column.cards.find((candidate) => candidate.code === issueKey);
+			if (card) return () => openWorkItem(card, column.title);
+		}
+		return undefined;
+	}, [boardColumns, openWorkItem]);
 	const {
 		createBoardFromAgentSession,
 		createFromAgentSession,
@@ -592,6 +603,7 @@ function ButterApp(): React.ReactElement {
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}
 				onComposerPrefillConsumed={handleComposerPrefillConsumed}
+				openRelatedItem={openRelatedItem}
 			/>
 		</>
 	);
