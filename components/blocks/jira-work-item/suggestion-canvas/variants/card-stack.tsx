@@ -16,8 +16,9 @@ import { useJustFilled } from "./card-stack/use-just-filled";
 import { useOverlayPlacement } from "./card-stack/use-overlay-placement";
 
 /**
- * Card stack: one suggestion at a time on a swipeable deck inside a compact popover over the work item.
- * Swipe or press → to accept, ← to dismiss; re-runs add new cards to the back of the deck.
+ * Card stack: one suggestion at a time on a swipeable, randomly fanned stack inside a popover over the work item.
+ * Swipe or press → to accept, ← to dismiss; click the stack (or the list toggle) to unpack it into a scrolling list
+ * and gather it back. Re-runs put their finds on top, marked New.
  */
 export function CardStackVariant() {
 	const feed = useSuggestionFeed();
@@ -60,7 +61,7 @@ export function CardStackVariant() {
 								key="deck"
 								style={{ ...style, willChange: "transform, opacity" }}
 							>
-								<StackPanel deck={deck} deckRef={deckRef} feed={feed} id={panelId} onClose={close} overlay={overlay} panelRef={panelRef} />
+								<StackPanel deck={deck} deckRef={deckRef} feed={feed} id={panelId} maxHeight={Number(style.maxHeight)} onClose={close} overlay={overlay} panelRef={panelRef} />
 							</motion.div>
 						) : null}
 					</AnimatePresence>

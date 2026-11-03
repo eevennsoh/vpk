@@ -6,29 +6,37 @@ import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 
 import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
 import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 
 import { WHY_CLOSE_DELAY, WHY_OPEN_DELAY } from "./constants";
 import { WhyCard } from "./why-card";
 
 /** Matches the shared PopoverContent enter/exit: opacity plus a short slide toward the deck it explains. */
 const POPUP_MOTION =
-	"origin-(--transform-origin) transition-[opacity,translate] duration-normal ease-out-practical data-ending-style:duration-fast data-ending-style:ease-in data-starting-style:opacity-0 data-ending-style:opacity-0 data-starting-style:translate-x-2 data-ending-style:translate-x-2";
+	"origin-(--transform-origin) transition-[opacity,translate] duration-normal ease-out-practical data-ending-style:duration-fast data-ending-style:ease-in data-starting-style:opacity-0 data-ending-style:opacity-0 data-starting-style:translate-x-2 data-ending-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=right]:data-ending-style:-translate-x-2";
 
 export interface CardWhyProps {
 	suggestion: WorkItemSuggestion;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	/** The deck popover: the reasoning card opens beside it so it never covers the card being judged. */
+	/** The suggestions popover: the reasoning card opens beside it so it never covers the card being judged. */
 	anchor: RefObject<HTMLElement | null>;
 	/** The preview's overlay layer: the card renders there so it pans and zooms with the canvas and stays inside the frame. */
 	container: HTMLElement | null;
+	/** "line" reads "Why · 2 sources" under the top card's value; "icon" is the list card's lightbulb. */
+	appearance: "line" | "icon";
 }
+
+const TRIGGER: Readonly<Record<CardWhyProps["appearance"], string>> = {
+	line: "-mx-1.5 h-6 gap-1 rounded-md px-1.5 text-xs text-text-subtlest hover:text-text-subtle focus-visible:text-text-subtle data-popup-open:text-text-subtle",
+	icon: "size-7 justify-center rounded-full text-icon-subtlest hover:text-icon-subtle focus-visible:text-icon-subtle data-popup-open:text-icon-discovery",
+};
 
 /**
  * The card's quiet "Why" affordance. Hover, keyboard focus or tap opens the reasoning card beside the deck.
  * Escape closes it and keeps focus on the trigger without reopening it; focus has to leave and come back first.
  */
-export function CardWhy({ suggestion, open, onOpenChange, anchor, container }: Readonly<CardWhyProps>) {
+export function CardWhy({ suggestion, open, onOpenChange, anchor, container, appearance }: Readonly<CardWhyProps>) {
 	const reopenOnFocus = useRef(true);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const popupRef = useRef<HTMLDivElement>(null);
@@ -53,7 +61,7 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container }: R
 		<PopoverPrimitive.Root onOpenChange={changeOpen} open={open}>
 			<PopoverPrimitive.Trigger
 				aria-label={`Why ${suggestion.label.toLowerCase()} was suggested`}
-				className="-mx-1.5 inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-xs text-text-subtlest outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-text-subtle focus-visible:text-text-subtle focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-bg-neutral-subtle-hovered data-popup-open:text-text-subtle"
+				className={cn("inline-flex shrink-0 items-center outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-bg-neutral-subtle-hovered", TRIGGER[appearance])}
 				closeDelay={WHY_CLOSE_DELAY}
 				delay={WHY_OPEN_DELAY}
 				onBlur={onBlur}
@@ -62,24 +70,28 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container }: R
 				ref={triggerRef}
 				type="button"
 			>
-				<span className="flex text-icon-subtlest"><LightbulbIcon color="currentColor" label="" size="small" /></span>
-				Why
-				<span aria-hidden="true">·</span>
-				<span>{sources} {sources === 1 ? "source" : "sources"}</span>
+				{appearance === "line" ? (
+					<>
+						<span className="flex text-icon-subtlest"><LightbulbIcon color="currentColor" label="" size="small" /></span>
+						Why
+						<span aria-hidden="true">·</span>
+						<span>{sources} {sources === 1 ? "source" : "sources"}</span>
+					</>
+				) : <LightbulbIcon color="currentColor" label="" size="small" />}
 			</PopoverPrimitive.Trigger>
 			<PopoverPrimitive.Portal container={container}>
 				<PopoverPrimitive.Positioner
 					align="start"
 					anchor={anchor}
 					className="pointer-events-auto isolate z-40"
-					collisionAvoidance={{ side: "none", align: "shift" }}
+					collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "end" }}
 					collisionBoundary={container ?? "clipping-ancestors"}
-					collisionPadding={16}
+					collisionPadding={8}
 					side="left"
 					sideOffset={8}
 				>
 					<PopoverPrimitive.Popup
-						className={`flex max-h-(--available-height) w-66 flex-col overflow-hidden rounded-xl bg-surface-overlay text-sm text-text outline-hidden ${POPUP_MOTION}`}
+						className={`flex max-h-(--available-height) w-60 flex-col overflow-hidden rounded-xl bg-surface-overlay text-sm text-text outline-hidden ${POPUP_MOTION}`}
 						finalFocus={(closeType) => (closeType === "keyboard" ? triggerRef.current : false)}
 						initialFocus={false}
 						ref={popupRef}

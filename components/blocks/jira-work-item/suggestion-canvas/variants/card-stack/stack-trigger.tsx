@@ -24,7 +24,12 @@ function TriggerLabel({ feed }: Readonly<{ feed: SuggestionFeed }>) {
 	return (
 		<>
 			{pending} {pending === 1 ? "suggestion" : "suggestions"}
-			{fresh > 0 ? <span className="ml-1.5 text-xs font-medium text-text-discovery">{fresh} new</span> : null}
+			{fresh > 0 ? (
+				<>
+					<span className="sr-only">, </span>
+					<span className="ml-1.5 text-xs font-medium text-text-discovery">{fresh} new</span>
+				</>
+			) : null}
 		</>
 	);
 }
@@ -38,8 +43,8 @@ export interface StackTriggerProps {
 }
 
 /**
- * The live "N suggestions" banner above Details, matching the Ledger's. Its name stays "Suggestions"; the count
- * or run state is its description. The graph mark is decorative and animates while the agent re-runs.
+ * The live "N suggestions" banner above Details, matching the Ledger's. Its accessible name is its visible label
+ * (the live count or run state), so what a screen reader announces matches what is shown. The graph mark is decorative and animates while the agent re-runs.
  */
 export function StackTrigger({ feed, open, panelId, onToggle, triggerRef }: Readonly<StackTriggerProps>) {
 	const labelId = useId();
@@ -52,9 +57,8 @@ export function StackTrigger({ feed, open, panelId, onToggle, triggerRef }: Read
 		>
 			<button
 				aria-controls={open ? panelId : undefined}
-				aria-describedby={labelId}
 				aria-expanded={open}
-				aria-label="Suggestions"
+				aria-labelledby={labelId}
 				className="absolute inset-0 z-20 rounded-[inherit] outline-none"
 				onClick={onToggle}
 				ref={triggerRef}

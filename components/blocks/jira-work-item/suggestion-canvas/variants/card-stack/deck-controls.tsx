@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import UndoIcon from "@atlaskit/icon/core/undo";
@@ -8,41 +10,30 @@ import { Kbd } from "@/components/ui/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+import { DISC_GAP, FAN, INSTANT, LEAVE, UNDO_ROOM } from "./constants";
 import type { Deck, SwipeDirection } from "./use-deck";
 
-const BASE =
-	"flex items-center justify-center rounded-full outline-none transition-[background-color,scale] duration-normal ease-out-practical focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-overlay disabled:pointer-events-none disabled:opacity-(--opacity-disabled)";
-
 /**
- * ✕ and ✓ are the same size: a neutral fill for dismiss, a success fill for accept. Dark theme takes the bold
- * success fill, since the subtler one reads as a dull olive disc there.
+ * Equal neutral discs. Colour is reserved for intent: the disc matching a swipe lights up once releasing would
+ * commit it (success for ✓, a deeper neutral for ✕), and pressing gives a small tactile dip.
  */
-const LOOK: Readonly<Record<SwipeDirection, string>> = {
-	accept: "size-10 bg-bg-success-subtler text-icon-success hover:bg-bg-success-subtler-hovered active:bg-bg-success-subtler-pressed data-armed:scale-110 data-armed:bg-bg-success-subtler-pressed dark:bg-success dark:text-icon-inverse dark:hover:bg-success-hovered dark:active:bg-success-pressed dark:data-armed:bg-success-pressed",
-	dismiss: "size-10 bg-bg-neutral text-icon-subtle hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed data-armed:scale-110 data-armed:bg-bg-neutral-pressed data-armed:text-icon",
+const DISC =
+	"flex size-10 items-center justify-center rounded-full bg-bg-neutral text-icon-subtle outline-none transition-[background-color,color,scale] duration-normal ease-out-practical hover:bg-bg-neutral-hovered hover:text-icon active:scale-95 active:bg-bg-neutral-pressed focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-overlay";
+
+const ARMED: Readonly<Record<SwipeDirection, string>> = {
+	accept: "scale-110 bg-bg-success-subtler text-icon-success hover:bg-bg-success-subtler hover:text-icon-success",
+	dismiss: "scale-110 bg-bg-neutral-pressed text-icon",
 };
 
-function DecisionButton({ direction, label, armed, onClick }: Readonly<{ direction: SwipeDirection; label: string; armed: boolean; onClick: () => void }>) {
-	const accept = direction === "accept";
+function Disc({ label, hint, shortcut, armed, onClick, children }: Readonly<{ label: string; hint: string; shortcut: string; armed?: string | null; onClick: () => void; children: ReactNode }>) {
 	return (
 		<Tooltip>
-			<TooltipTrigger
-				render={(
-					<button
-						aria-keyshortcuts={accept ? "ArrowRight" : "ArrowLeft"}
-						aria-label={`${accept ? "Accept" : "Dismiss"} ${label.toLowerCase()}`}
-						className={cn(BASE, LOOK[direction])}
-						data-armed={armed ? "" : undefined}
-						onClick={onClick}
-						type="button"
-					/>
-				)}
-			>
-				{accept ? <CheckMarkIcon color="currentColor" label="" /> : <CrossIcon color="currentColor" label="" />}
+			<TooltipTrigger render={<button aria-label={label} className={cn(DISC, armed)} onClick={onClick} type="button" />}>
+				{children}
 			</TooltipTrigger>
 			<TooltipContent className="flex items-center gap-2">
-				{accept ? "Accept" : "Dismiss"}
-				<Kbd>{accept ? "→" : "←"}</Kbd>
+				{hint}
+				<Kbd>{shortcut}</Kbd>
 			</TooltipContent>
 		</Tooltip>
 	);
@@ -57,44 +48,45 @@ export interface DeckControlsProps {
 }
 
 /**
- * ✕ and ✓ either side of a labelled Undo. The Undo slot is always reserved so ✕ and ✓ never move; the button
- * appears once there is something to undo. The button matching a swipe lights up once releasing would commit it.
+ * ✕ ✓ under the stack, with ↶ between them only once there is something to undo. The row is laid out for all three
+ * at all times with one gap; at rest ✕ and ✓ slide in by half a disc plus half a gap to sit as a pair that same gap
+ * apart, and when a decision lands they glide apart while Undo grows into the centre. Only transforms move, so nothing around the row reflows.
  */
 export function DeckControls({ deck, label, armed, onCommit, onUndo }: Readonly<DeckControlsProps>) {
+	const reduced = useReducedMotion() ?? false;
 	const last = deck.lastDecision;
+	const field = label.toLowerCase();
+	const glide = reduced ? INSTANT : FAN;
+	const room = last ? 0 : UNDO_ROOM;
 	return (
-		<div className="flex items-center justify-center gap-3">
-			<DecisionButton armed={armed === "dismiss"} direction="dismiss" label={label} onClick={() => onCommit("dismiss")} />
-			<span className="flex w-20 items-center justify-center">
-				{last ? <UndoButton last={last} onUndo={onUndo} /> : null}
-			</span>
-			<DecisionButton armed={armed === "accept"} direction="accept" label={label} onClick={() => onCommit("accept")} />
+		<div className="flex items-center justify-center" data-deck-controls="" style={{ gap: DISC_GAP }}>
+			<motion.div animate={{ x: room }} initial={false} transition={glide}>
+				<Disc armed={armed === "dismiss" ? ARMED.dismiss : null} hint="Dismiss" label={`Dismiss ${field}`} onClick={() => onCommit("dismiss")} shortcut="←">
+					<CrossIcon color="currentColor" label="" />
+				</Disc>
+			</motion.div>
+			<div className="grid size-10 place-items-center">
+				<AnimatePresence initial={false}>
+					{last ? (
+						<motion.div
+							animate={{ opacity: 1, scale: 1, transition: reduced ? INSTANT : FAN }}
+							className="col-start-1 row-start-1"
+							exit={{ opacity: 0, scale: 0.6, transition: reduced ? INSTANT : LEAVE }}
+							initial={{ opacity: 0, scale: 0.6 }}
+							key="undo"
+						>
+							<Disc hint={deck.undoLabel ?? "Undo"} label={deck.undoLabel ?? "Undo"} onClick={onUndo} shortcut="⌘Z">
+								<UndoIcon color="currentColor" label="" />
+							</Disc>
+						</motion.div>
+					) : null}
+				</AnimatePresence>
+			</div>
+			<motion.div animate={{ x: -room }} initial={false} transition={glide}>
+				<Disc armed={armed === "accept" ? ARMED.accept : null} hint="Accept" label={`Accept ${field}`} onClick={() => onCommit("accept")} shortcut="→">
+					<CheckMarkIcon color="currentColor" label="" />
+				</Disc>
+			</motion.div>
 		</div>
-	);
-}
-
-/** Undo as a word, not a stray glyph: subtle text on a neutral pill that fills on hover. Shared with the caught-up state. */
-export function UndoButton({ last, onUndo, className }: Readonly<{ last: NonNullable<Deck["lastDecision"]>; onUndo: () => void; className?: string }>) {
-	return (
-		<Tooltip>
-			<TooltipTrigger
-				render={(
-					<button
-						aria-keyshortcuts="Control+Z Meta+Z"
-						aria-label={`Undo ${last.decision === "accept" ? "accepting" : "dismissing"} ${last.ids.length === 1 ? "the last suggestion" : `${last.ids.length} suggestions`}`}
-						className={cn(BASE, "h-8 gap-1 bg-bg-neutral-subtle px-3 text-xs font-medium text-text-subtle ring-1 ring-border ring-inset hover:bg-bg-neutral-subtle-hovered hover:text-text active:bg-bg-neutral-subtle-pressed", className)}
-						onClick={onUndo}
-						type="button"
-					/>
-				)}
-			>
-				<UndoIcon color="currentColor" label="" size="small" />
-				Undo
-			</TooltipTrigger>
-			<TooltipContent className="flex items-center gap-2">
-				Undo
-				<Kbd>⌘Z</Kbd>
-			</TooltipContent>
-		</Tooltip>
 	);
 }
