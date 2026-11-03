@@ -1,13 +1,14 @@
 import type { CanvasEntry } from "./canvas/canvas-workspace";
-import { FocusDeckVariant } from "./variants/focus-deck";
-import { InlineGhostFillVariant } from "./variants/inline-ghost-fill";
+import { CardStackVariant } from "./variants/card-stack";
 import { LedgerPopoverVariant } from "./variants/ledger-popover";
-import { ProvenanceMapVariant } from "./variants/provenance-map";
-import { StagedDiffSheetVariant } from "./variants/staged-diff-sheet";
+import { PeekPaneVariant } from "./variants/peek-pane";
+import { QuietMenuVariant } from "./variants/quiet-menu";
+import { RunTimelineVariant } from "./variants/run-timeline";
 
 /**
  * Canvas membership. Add, rename or remove previews here; positions saved in the browser only move them.
  * Every preview shares the same synthetic data, size and theme so only the design differs.
+ * All variants are lightweight popovers over the work item, fed by the same ongoing suggestion feed.
  */
 const PREVIEW_WIDTH = 1040;
 const PREVIEW_HEIGHT = 760;
@@ -17,8 +18,8 @@ const row = (index: number) => index * (PREVIEW_HEIGHT + GAP + 40);
 
 export const SUGGESTION_CANVAS_ENTRIES: readonly CanvasEntry[] = [
 	{ id: "ledger-popover", name: "Suggestions · Ledger popover", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(0), y: row(0), render: () => <LedgerPopoverVariant /> },
-	{ id: "inline-ghost-fill", name: "Suggestions · Inline ghost fill", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(1), y: row(0), render: () => <InlineGhostFillVariant /> },
-	{ id: "focus-deck", name: "Suggestions · Focus deck", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(2), y: row(0), render: () => <FocusDeckVariant /> },
-	{ id: "staged-diff-sheet", name: "Suggestions · Staged diff sheet", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(0), y: row(1), render: () => <StagedDiffSheetVariant /> },
-	{ id: "provenance-map", name: "Suggestions · Provenance map", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(1), y: row(1), render: () => <ProvenanceMapVariant /> },
+	{ id: "card-stack", name: "Suggestions · Card stack", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(1), y: row(0), render: () => <CardStackVariant /> },
+	{ id: "quiet-menu", name: "Suggestions · Quiet menu", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(2), y: row(0), render: () => <QuietMenuVariant /> },
+	{ id: "run-timeline", name: "Suggestions · Run timeline", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(0), y: row(1), render: () => <RunTimelineVariant /> },
+	{ id: "peek-pane", name: "Suggestions · Peek pane", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(1), y: row(1), render: () => <PeekPaneVariant /> },
 ];

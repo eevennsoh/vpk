@@ -40,7 +40,7 @@ export type SuggestionValue =
 	| { kind: "labels"; labels: readonly string[] }
 	| { kind: "checklist"; items: readonly string[] };
 
-export type SuggestionFieldId = "description" | "assignee" | "dueDate" | "parent" | "labels" | "acceptanceCriteria";
+export type SuggestionFieldId = "description" | "assignee" | "dueDate" | "parent" | "labels" | "acceptanceCriteria" | "components" | "fixVersion";
 
 export type SuggestionConfidence = "high" | "medium";
 
@@ -181,6 +181,44 @@ export const WORK_ITEM_SUGGESTIONS: readonly WorkItemSuggestion[] = [
 			detail: "Each criterion maps to a measurable PRD goal: time to first payment, inline error recovery, and per-step funnel tracking.",
 			evidence: [
 				{ id: "metrics", kind: "confluence", title: "PRD § Success metrics", meta: `${AMIRA} · Updated 2 days ago`, excerpt: "P0: first test payment < 30 min. P1: inline error recovery. P1: step-level funnel." },
+			],
+		},
+	},
+];
+
+/**
+ * Suggestions are ongoing: the agent re-runs as the work item changes. This batch only arrives on the next run,
+ * so every variant has to reveal new suggestions while earlier ones are already decided.
+ */
+export const FOLLOW_UP_SUGGESTIONS: readonly WorkItemSuggestion[] = [
+	{
+		id: "components",
+		label: "Components",
+		currentDisplay: "None",
+		value: { kind: "labels", labels: ["Merchant Onboarding", "Payments SDK"] },
+		valueText: "Merchant Onboarding, Payments SDK",
+		confidence: "high",
+		reason: {
+			headline: "Matches the components on PAY-100 and every sibling item.",
+			detail: "Once the parent was set, the agent re-checked related work. All four siblings under PAY-100 carry these two components, and Merchant Onboarding routes the item to the right board.",
+			evidence: [
+				{ id: "siblings-components", kind: "jira", title: "4 of 4 siblings use these components", meta: "PAY-961, PAY-972, PAY-988, PAY-990" },
+			],
+		},
+	},
+	{
+		id: "fixVersion",
+		label: "Fix version",
+		currentDisplay: "None",
+		value: { kind: "labels", labels: ["SDK v2.0 GA"] },
+		valueText: "SDK v2.0 GA",
+		confidence: "medium",
+		reason: {
+			headline: "The Dec 15 due date lands inside the SDK v2.0 GA release window.",
+			detail: "Release SDK v2.0 GA ships on Dec 18 and already contains 23 related items. Assigning it keeps release notes and the readiness dashboard complete.",
+			evidence: [
+				{ id: "release-window", kind: "jira", title: "Release SDK v2.0 GA — Dec 18, 2026", meta: "PAY releases · 23 of 31 items done" },
+				{ id: "notes", kind: "confluence", title: "SDK v2.0 release notes (draft)", meta: "Priya Raman · Updated today", excerpt: "Onboarding improvements: guided checklist, pre-filled sandbox keys." },
 			],
 		},
 	},

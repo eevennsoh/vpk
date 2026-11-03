@@ -5,9 +5,9 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { motionRecipe } from "@/lib/motion";
 
-import { WORK_ITEM_SUGGESTIONS, type SuggestionFieldId } from "../data/suggestions";
+import { type SuggestionFieldId } from "../data/suggestions";
 import { MockDetailsRail } from "../mock-details-rail";
-import { useSuggestionReview } from "../use-suggestion-review";
+import { useSuggestionFeed } from "../use-suggestion-feed";
 import { WorkItemPreviewShell } from "../work-item-preview-shell";
 import { LedgerBanner } from "./ledger-popover/ledger-banner";
 import { LedgerMain } from "./ledger-popover/ledger-main";
@@ -67,7 +67,8 @@ function useJustFilled() {
 }
 
 export function LedgerPopoverVariant() {
-	const review = useSuggestionReview(WORK_ITEM_SUGGESTIONS);
+	const feed = useSuggestionFeed();
+	const review = feed.review;
 	const [open, setOpen] = useState(true);
 	const panelId = useId();
 	const panelRef = useRef<HTMLDivElement>(null);

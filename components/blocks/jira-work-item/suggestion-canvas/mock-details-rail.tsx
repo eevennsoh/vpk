@@ -25,7 +25,18 @@ export interface MockDetailsRailProps {
 	className?: string;
 }
 
-const RAIL_ORDER: readonly SuggestionFieldId[] = ["assignee", "dueDate", "parent", "labels", "acceptanceCriteria"];
+const RAIL_ORDER: readonly SuggestionFieldId[] = ["assignee", "dueDate", "parent", "labels", "components", "fixVersion", "acceptanceCriteria"];
+
+/** Empty-state rows exist before any suggestion targets them, so later runs fill rows that were already visible. */
+const EMPTY_FIELDS: Readonly<Record<Exclude<SuggestionFieldId, "description">, { label: string; placeholder: string }>> = {
+	assignee: { label: "Assignee", placeholder: "Automatic" },
+	dueDate: { label: "Due date", placeholder: "Add due date" },
+	parent: { label: "Parent", placeholder: "Add parent" },
+	labels: { label: "Labels", placeholder: "Add label" },
+	components: { label: "Components", placeholder: "None" },
+	fixVersion: { label: "Fix version", placeholder: "None" },
+	acceptanceCriteria: { label: "Acceptance criteria", placeholder: "Add acceptance criteria" },
+};
 
 function FieldRow({ label, children, highlighted }: Readonly<{ label: string; children: ReactNode; highlighted?: boolean }>) {
 	return (
@@ -43,15 +54,16 @@ function Placeholder({ children, icon }: Readonly<{ children: ReactNode; icon?: 
 export function MockDetailsRail({ review, slot, highlighted, className }: Readonly<MockDetailsRailProps>) {
 	const byId = new Map(review.suggestions.map((suggestion) => [suggestion.id, suggestion]));
 	const renderField = (id: SuggestionFieldId) => {
+		if (id === "description") return null;
+		const empty = EMPTY_FIELDS[id];
 		const suggestion = byId.get(id);
-		if (!suggestion) return null;
-		const custom = slot?.(suggestion);
+		const custom = suggestion ? slot?.(suggestion) : null;
 		if (custom != null) return <div key={id}>{custom}</div>;
-		const accepted = review.decisionOf(id) === "accepted";
+		const accepted = suggestion != null && review.decisionOf(id) === "accepted";
 		return (
-			<FieldRow highlighted={highlighted?.has(id)} key={id} label={suggestion.label}>
+			<FieldRow highlighted={highlighted?.has(id)} key={id} label={empty.label}>
 				{accepted ? <SuggestionValueView value={suggestion.value} /> : (
-					<Placeholder icon={id === "dueDate" ? <CalendarIcon color="currentColor" label="" size="small" /> : undefined}>{suggestion.currentDisplay}</Placeholder>
+					<Placeholder icon={id === "dueDate" ? <CalendarIcon color="currentColor" label="" size="small" /> : undefined}>{empty.placeholder}</Placeholder>
 				)}
 			</FieldRow>
 		);

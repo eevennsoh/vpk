@@ -8,25 +8,20 @@ export type SuggestionDecision = "pending" | "accepted" | "dismissed";
 
 type ReviewAction =
 	| { type: "decide"; id: SuggestionFieldId; decision: SuggestionDecision }
-	| { type: "decideAll"; decision: Exclude<SuggestionDecision, "pending"> }
+	| { type: "decideMany"; ids: readonly SuggestionFieldId[]; decision: Exclude<SuggestionDecision, "pending"> }
 	| { type: "reset" };
 
-type DecisionMap = Readonly<Record<SuggestionFieldId, SuggestionDecision>>;
+/** Missing ids are pending, so suggestions that arrive on a later run start undecided. */
+type DecisionMap = Readonly<Partial<Record<SuggestionFieldId, SuggestionDecision>>>;
 
-function initialDecisions(suggestions: readonly WorkItemSuggestion[]): DecisionMap {
-	return Object.fromEntries(suggestions.map((suggestion) => [suggestion.id, "pending"])) as DecisionMap;
-}
-
-function reviewReducer(state: DecisionMap, action: ReviewAction, initial: DecisionMap): DecisionMap {
+function reviewReducer(state: DecisionMap, action: ReviewAction): DecisionMap {
 	switch (action.type) {
 		case "decide":
 			return { ...state, [action.id]: action.decision };
-		case "decideAll":
-			return Object.fromEntries(
-				Object.entries(state).map(([id, decision]) => [id, decision === "pending" ? action.decision : decision]),
-			) as DecisionMap;
+		case "decideMany":
+			return { ...state, ...Object.fromEntries(action.ids.map((id) => [id, action.decision])) };
 		case "reset":
-			return initial;
+			return {};
 		default: {
 			const unreachable: never = action;
 			return unreachable;
@@ -44,41 +39,38 @@ export interface SuggestionReview {
 	dismiss: (id: SuggestionFieldId) => void;
 	/** Return one decided suggestion to pending. */
 	undo: (id: SuggestionFieldId) => void;
+	/** Accept every pending suggestion. Already decided ones keep their decision. */
 	acceptAll: () => void;
 	dismissAll: () => void;
 	/** Restore every suggestion to pending, for replaying the demo. */
 	reset: () => void;
 }
 
-/** Local, synthetic review state for one canvas preview. Nothing is written anywhere. */
+/** Local, synthetic review state for one canvas preview. Nothing is written anywhere. `suggestions` may grow. */
 export function useSuggestionReview(suggestions: readonly WorkItemSuggestion[]): SuggestionReview {
-	const initial = useMemo(() => initialDecisions(suggestions), [suggestions]);
-	const [decisions, dispatch] = useReducer(
-		(state: DecisionMap, action: ReviewAction) => reviewReducer(state, action, initial),
-		initial,
-	);
+	const [decisions, dispatch] = useReducer(reviewReducer, {});
 
 	const accept = useCallback((id: SuggestionFieldId) => dispatch({ type: "decide", id, decision: "accepted" }), []);
 	const dismiss = useCallback((id: SuggestionFieldId) => dispatch({ type: "decide", id, decision: "dismissed" }), []);
 	const undo = useCallback((id: SuggestionFieldId) => dispatch({ type: "decide", id, decision: "pending" }), []);
-	const acceptAll = useCallback(() => dispatch({ type: "decideAll", decision: "accepted" }), []);
-	const dismissAll = useCallback(() => dispatch({ type: "decideAll", decision: "dismissed" }), []);
 	const reset = useCallback(() => dispatch({ type: "reset" }), []);
 
 	return useMemo(() => {
 		const decisionOf = (id: SuggestionFieldId) => decisions[id] ?? "pending";
+		const pending = suggestions.filter((suggestion) => decisionOf(suggestion.id) === "pending");
+		const pendingIds = pending.map((suggestion) => suggestion.id);
 		return {
 			suggestions,
 			decisionOf,
-			pending: suggestions.filter((suggestion) => decisionOf(suggestion.id) === "pending"),
+			pending,
 			accepted: suggestions.filter((suggestion) => decisionOf(suggestion.id) === "accepted"),
 			dismissed: suggestions.filter((suggestion) => decisionOf(suggestion.id) === "dismissed"),
 			accept,
 			dismiss,
 			undo,
-			acceptAll,
-			dismissAll,
+			acceptAll: () => dispatch({ type: "decideMany", ids: pendingIds, decision: "accepted" }),
+			dismissAll: () => dispatch({ type: "decideMany", ids: pendingIds, decision: "dismissed" }),
 			reset,
 		};
-	}, [accept, acceptAll, decisions, dismiss, dismissAll, reset, suggestions, undo]);
+	}, [accept, decisions, dismiss, reset, suggestions, undo]);
 }
