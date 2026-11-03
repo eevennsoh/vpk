@@ -152,12 +152,12 @@ function arrivedAt(from: number, descent: Descent): number {
 }
 
 /**
- * Plan the cursor's lane independently of the displayed name, which follows
- * the order in which cards arrive.
+ * Plan with the widest roster label so a longer name cannot clip or overlap.
+ * The lane is independent of the displayed name's position in the sequence.
  */
 function wallCursorHolder(seed: number): { readonly name: string; readonly lane: number } {
 	const lane = Math.floor(hash01(seed * 5.13 + 0.7) * FINALE_CURSORS.length);
-	const name = FINALE_WALL_CURSOR_NAMES[0];
+	const name = FINALE_WALL_CURSOR_NAMES.reduce((longest, next) => next.length > longest.length ? next : longest);
 	return { name, lane };
 }
 
@@ -194,7 +194,9 @@ interface WallHold extends Holder {
  */
 function onCard(slot: WallSlot, card: WallArrival, time: number, geometry: WallGeometry, viewport: FinaleViewport, breathing = true): { readonly x: number; readonly y: number; readonly scale: number } {
 	const pose = arrivalCardPose(slot, card, slotOnScreen(slot, wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport, { breathing });
-	return projectLifted(pose, viewport);
+	const projected = projectLifted(pose, viewport);
+	// Leave room for the widest label on portrait walls without moving the grip off the card.
+	return { ...projected, scale: projected.scale * (viewport.width < viewport.height ? 0.75 : 1) };
 }
 
 /**

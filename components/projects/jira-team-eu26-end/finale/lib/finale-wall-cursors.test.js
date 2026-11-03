@@ -101,6 +101,13 @@ test("held cards cycle through teammates in arrival order, one per lane, after M
 			carried += 1;
 		}
 		const cursors = all.filter((cursor) => cursor.key !== "title");
+		for (let i = 0; i < cursors.length; i += 1) {
+			for (let j = i + 1; j < cursors.length; j += 1) {
+				const a = paintedBox(load(), cursors[i], geometry.typeScale / load().WALL_SCALE);
+				const b = paintedBox(load(), cursors[j], geometry.typeScale / load().WALL_SCALE);
+				assert.ok(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top, "visible cursor labels do not overlap");
+			}
+		}
 		if (cursors.length > 0) firstTeammate = Math.min(firstTeammate, time);
 		for (const cursor of cursors) {
 			assert.ok(Number.isInteger(cursor.lane) && cursor.lane >= 0 && cursor.lane < FINALE_CURSORS.length, `lane ${cursor.lane}`);
