@@ -7,6 +7,7 @@ import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agen
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import { ProjectButterLocalAgentMenu } from "./project-butter-local-agent-menu";
 import {
 	useProjectButterInvocationActions,
@@ -14,12 +15,14 @@ import {
 } from "./project-butter-invocation";
 
 const RUN_ON_LABELS: Readonly<Record<string, string>> = {
-	"test-agent": "Open in Cursor app",
-	"review-agent": "Open in Codex app",
+	"test-agent": "Open in Cursor",
+	"review-agent": "Open in Codex",
+	"release-agent": "Open in VS Code",
+	"github-copilot": "Open in VS Code",
 };
-const LOCAL_AGENT_IDS = new Set(["release-agent", "github-copilot", "rovo-cli"]);
-const RUN_ON_AGENT_IDS = ["claude-code", ...Object.keys(RUN_ON_LABELS), ...LOCAL_AGENT_IDS];
-const hasWorkspaceOptions = (agentId: string) => agentId === "claude-code" || LOCAL_AGENT_IDS.has(agentId);
+const VS_CODE_AGENT_IDS = new Set(["release-agent", "github-copilot"]);
+const RUN_ON_AGENT_IDS = ["claude-code", ...Object.keys(RUN_ON_LABELS), "rovo-cli"];
+const hasWorkspaceOptions = (agentId: string) => agentId === "claude-code" || agentId === "rovo-cli";
 
 export function ProjectButterAgentPicker({
 	onAssign,
@@ -38,6 +41,7 @@ export function ProjectButterAgentPicker({
 	const frame = useRef<number | null>(null);
 	const syncHighlight = useRef(false);
 	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const selectingFolder = useRef(false);
 	const cloudButton = useRef<HTMLButtonElement | null>(null);
 	const submenuContent = useRef<HTMLDivElement | null>(null);
 	const [submenu, setSubmenu] = useState<{ agent: AgentSelectorAgent; anchor: HTMLElement } | null>(null);
@@ -48,6 +52,7 @@ export function ProjectButterAgentPicker({
 	const closeSubmenuLater = () => {
 		cancelClose();
 		closeTimer.current = setTimeout(() => {
+			if (selectingFolder.current) return;
 			if (document.activeElement?.closest("[data-butter-local-menu], [aria-label='Codebase workspaces']")) return;
 			setSubmenu(null);
 			actions?.preview(null, -1);
@@ -56,7 +61,7 @@ export function ProjectButterAgentPicker({
 	const openSubmenu = (agent: AgentSelectorAgent, anchor: HTMLElement, focus = false) => {
 		cancelClose();
 		setSubmenu((current) => current?.agent.id === agent.id && current.anchor === anchor ? current : { agent, anchor });
-		if (focus) requestAnimationFrame(() => (LOCAL_AGENT_IDS.has(agent.id) ? submenuContent.current?.querySelector<HTMLButtonElement>("button") : cloudButton.current)?.focus());
+		if (focus) requestAnimationFrame(() => (agent.id === "rovo-cli" ? submenuContent.current?.querySelector<HTMLButtonElement>("button") : cloudButton.current)?.focus());
 	};
 	useEffect(
 		() => () => {
@@ -180,20 +185,20 @@ export function ProjectButterAgentPicker({
 				<PopoverContent
 					ref={submenuContent}
 					anchor={submenu.anchor}
-					aria-label={LOCAL_AGENT_IDS.has(submenu.agent.id) ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
+					aria-label={submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
 					role={hasWorkspaceOptions(submenu.agent.id) ? "dialog" : "menu"}
 					initialFocus={false}
 					finalFocus={false}
 					side="right"
 					align="start"
 					sideOffset={0}
-					className="w-60 gap-0 p-1"
+					className="w-70 gap-0 p-1"
 					onPointerEnter={cancelClose}
 					onPointerLeave={closeSubmenuLater}
 					onClick={(event) => event.stopPropagation()}
 					onPointerDown={(event) => event.stopPropagation()}
 					onKeyDown={(event) => {
-						if (LOCAL_AGENT_IDS.has(submenu.agent.id)) return;
+						if (submenu.agent.id === "rovo-cli") return;
 						if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target) || event.target instanceof HTMLInputElement) return;
 						if (!hasWorkspaceOptions(submenu.agent.id) && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
 							event.preventDefault();
@@ -209,14 +214,24 @@ export function ProjectButterAgentPicker({
 						}
 					}}
 				>
-					{!LOCAL_AGENT_IDS.has(submenu.agent.id) ? <>
+					{submenu.agent.id !== "rovo-cli" ? <>
 					<Button ref={cloudButton} role={hasWorkspaceOptions(submenu.agent.id) ? undefined : "menuitem"} className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign(submenu.agent)}>
 						<Icon aria-hidden className="size-4 shrink-0" render={<CloudIcon label="" size="small" />} />Run on cloud
 					</Button>
 					</> : null}
-					{hasWorkspaceOptions(submenu.agent.id) ? <ProjectButterLocalAgentMenu key={submenu.agent.id} onPointerEnter={cancelClose} onPointerLeave={closeSubmenuLater} /> : <>
-					<Button role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost">
-						<Icon aria-hidden className="size-4 shrink-0" render={<ScreenIcon label="" size="small" />} />{RUN_ON_LABELS[submenu.agent.id]}
+					{hasWorkspaceOptions(submenu.agent.id) ? <ProjectButterLocalAgentMenu key={submenu.agent.id} onPointerEnter={cancelClose} onPointerLeave={closeSubmenuLater} onSelectingFolderChange={(selecting) => { selectingFolder.current = selecting; if (selecting) cancelClose(); }} /> : <>
+					<Button
+						role="menuitem"
+						aria-disabled={VS_CODE_AGENT_IDS.has(submenu.agent.id) ? true : undefined}
+						onClick={(event) => { if (VS_CODE_AGENT_IDS.has(submenu.agent.id)) event.preventDefault(); }}
+						className={cn("w-full justify-start gap-3 px-2 text-sm font-normal aria-disabled:opacity-(--opacity-disabled) aria-disabled:hover:bg-transparent", VS_CODE_AGENT_IDS.has(submenu.agent.id) ? "h-11" : "h-8")}
+						variant="ghost"
+					>
+						<Icon aria-hidden className="size-4 shrink-0" render={<ScreenIcon label="" size="small" />} />
+						<span className="flex min-w-0 flex-col text-left">
+							<span className="menu-row-title">{RUN_ON_LABELS[submenu.agent.id]}</span>
+							{VS_CODE_AGENT_IDS.has(submenu.agent.id) ? <span className="menu-row-byline">Not installed</span> : null}
+						</span>
 					</Button>
 					</>}
 				</PopoverContent>

@@ -244,6 +244,7 @@ test("Butter local agents share editable codebase workspaces", async () => {
 			assignment: { agents: [
 				{ id: "rovo-cli", name: "Rovo CLI", byline: "" },
 				{ id: "release-agent", name: "GitHub Copilot", byline: "" },
+				{ id: "claude-code", name: "Claude", byline: "" },
 			], onAgentAssign: (agent) => assigned.push(agent.id) },
 		},
 	});
@@ -282,6 +283,15 @@ test("Butter local agents share editable codebase workspaces", async () => {
 	assert.equal(view.isFocused(field), false);
 	assert.equal(view.isFocused(view.getByRole("button", { name: "~/dev/project" })), true);
 	await view.click(view.getByRole("option", { name: /GitHub Copilot/u }));
+	assert.equal(view.queryByRole("button", { name: "Copy command" }), null);
+	assert.equal(view.queryByRole("button", { name: "Configure directory" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Choose your directory" }), null);
+	const unavailable = view.getByRole("menuitem", { name: /Open in VS Code.*Not installed/u });
+	assert.equal(unavailable.getAttribute("aria-disabled"), "true");
+	await view.click(unavailable);
+	assert.equal(view.queryByRole("button", { name: "Command copied" }), null);
+	assert.deepEqual(assigned, []);
+	await view.click(view.getByRole("option", { name: /Claude/u }));
 	await view.click(view.getByRole("button", { name: "Configure directory" }));
 	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "~/dev/project");
 	assert.equal(view.queryByRole("button", { name: "Choose workspace" }), null);
@@ -293,6 +303,36 @@ test("Butter local agents share editable codebase workspaces", async () => {
 	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "");
 	assert.deepEqual(assigned, []);
 });
+
+for (const agentId of ["github-copilot", "release-agent"]) {
+	test(`GitHub Copilot offers cloud and VS Code (${agentId})`, async () => {
+		const assigned = [];
+		const view = await renderComponent({
+			entry: "components/blocks/jira-issue/index.tsx",
+			exportName: "JiraIssue",
+			props: { appearance: "project-butter", issueKey: "PD-40", summary: "Test", assignment: {
+				agents: [{ id: agentId, name: "GitHub Copilot", byline: "" }],
+				onAgentAssign: (agent) => assigned.push(agent.id),
+			} },
+		});
+		await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
+		await view.click(view.getByRole("option", { name: /GitHub Copilot/u }));
+		const cloud = view.getByRole("menuitem", { name: "Run on cloud" });
+		const action = view.getByRole("menuitem", { name: /Open in VS Code.*Not installed/u });
+		assert.equal(action.getAttribute("aria-disabled"), "true");
+		assert.equal(view.queryByRole("button", { name: "Configure directory" }), null);
+		await view.press(cloud, "ArrowDown");
+		assert.equal(view.isFocused(action), true);
+		await view.press(action, "Enter");
+		assert.deepEqual(assigned, []);
+		await view.press(action, "Escape");
+		assert.equal(view.queryByRole("menu", { name: "Run GitHub Copilot on" }), null);
+		assert.equal(view.isFocused(view.getByRole("textbox", { name: "Search agents" })), true);
+		await view.click(view.getByRole("option", { name: /GitHub Copilot/u }));
+		await view.click(view.getByRole("menuitem", { name: "Run on cloud" }));
+		assert.deepEqual(assigned, [agentId]);
+	});
+}
 
 test("creating a workspace with Enter keeps the new selected entry visible", async () => {
 	const view = await renderComponent({
@@ -323,6 +363,52 @@ test("creating a workspace with Enter keeps the new selected entry visible", asy
 	assert.equal(field.value, "");
 	assert.equal(view.isFocused(field), false);
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Configure directory" })), true);
+});
+
+test("directory label spacing dismisses the workspace menu without focusing its input", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-local-agent-menu.tsx",
+		exportName: "ProjectButterLocalAgentMenu",
+		props: { onPointerEnter: () => {}, onPointerLeave: () => {}, onSelectingFolderChange: () => {} },
+	});
+	await view.click(view.getByRole("button", { name: "Configure directory" }));
+	const field = view.getByRole("textbox", { name: "Choose your directory" });
+	const label = view.container.querySelector("label");
+	assert.equal(label.control === field, true);
+	await view.click(field);
+	assert.equal(view.queryByRole("dialog", { name: "Codebase workspaces" }) !== null, true);
+	await view.click(label.parentElement);
+	assert.equal(view.queryByRole("dialog", { name: "Codebase workspaces" }), null);
+	assert.equal(view.isFocused(field), false);
+});
+
+test("adding a workspace selects the chosen path, avoids duplicates, and handles cancellation", async (t) => {
+	let choices = 0;
+	t.mock.method(globalThis, "fetch", async (url) => {
+		if (url === "/api/realtime/ws-url") return { ok: true, json: async () => ({ wsUrl: "ws://localhost:8400" }) };
+		choices += 1;
+		if (choices === 4) return { ok: false };
+		return { ok: true, json: async () => ({ path: choices === 3 ? null : "/Users/example/project/" }) };
+	});
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-local-agent-menu.tsx",
+		exportName: "ProjectButterLocalAgentMenu",
+		props: { onPointerEnter: () => {}, onPointerLeave: () => {}, onSelectingFolderChange: () => {} },
+	});
+	await view.click(view.getByRole("button", { name: "Configure directory" }));
+	await view.click(view.getByRole("textbox", { name: "Choose your directory" }));
+	assert.equal(view.getByRole("dialog", { name: "Codebase workspaces" }).querySelector("button")?.textContent, "Add workspace");
+	await view.click(view.getByRole("button", { name: "Add workspace" }));
+	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "/Users/example/project/");
+	assert.equal(view.getByRole("button", { name: "/Users/example/project/" }).getAttribute("aria-current"), "true");
+	assert.equal(view.getByRole("dialog", { name: "Codebase workspaces" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Add workspace" }));
+	assert.equal(view.container.ownerDocument.querySelectorAll('button[aria-current="true"]').length, 1);
+	await view.click(view.getByRole("button", { name: "Add workspace" }));
+	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "/Users/example/project/");
+	await view.click(view.getByRole("button", { name: "Add workspace" }));
+	assert.equal(view.getByRole("alert").textContent, "Could not open the folder chooser. You can still type a path.");
+	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "/Users/example/project/");
 });
 
 test("Claude offers cloud and the shared local command and workspace picker", async () => {
@@ -395,7 +481,7 @@ test("Butter software agents offer run locations before cloud assignment", async
 		props: { appearance: "project-butter", issueKey: "PD-40", summary: "Test", assignment: { agents, onAgentAssign: (agent) => assigned.push(agent.id) } },
 	});
 	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
-	for (const [name, label] of [["Cursor", "Open in Cursor app"], ["Codex", "Open in Codex app"]]) {
+	for (const [name, label] of [["Cursor", "Open in Cursor"], ["Codex", "Open in Codex"]]) {
 		await view.click(view.getByRole("option", { name: new RegExp(name, "u") }));
 		assert.equal(view.getByRole("menu", { name: `Run ${name} on` }) !== null, true);
 		assert.equal(view.queryByText(/^Run on$/u), null);

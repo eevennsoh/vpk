@@ -416,7 +416,7 @@ function runExecFile(execFileImpl, command, args, options) {
 	});
 }
 
-async function selectVaultRoot(options = {}) {
+async function selectLocalFolder(options = {}) {
 	const platform = options.platform ?? process.platform;
 	if (platform !== "darwin") {
 		const error = new Error("Folder selection is only available in the local macOS app runtime.");
@@ -450,7 +450,11 @@ async function selectVaultRoot(options = {}) {
 		throw error;
 	}
 
-	return writeVaultConfig(selectedRoot, options);
+	return selectedRoot;
+}
+
+async function selectVaultRoot(options = {}) {
+	return writeVaultConfig(await selectLocalFolder(options), options);
 }
 
 function readPage(slug) {
@@ -598,6 +602,7 @@ module.exports = {
 	readPage,
 	readRaw,
 	selectVaultRoot,
+	selectLocalFolder,
 	unprocessedRawSources,
 	writeVaultConfig,
 	writePage,

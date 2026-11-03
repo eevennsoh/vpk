@@ -19,6 +19,7 @@ const {
 	readRouteManifest,
 } = require("./route-manifest");
 const {
+	createBackendApp,
 	registerBackendAppRoutes,
 } = require("../app");
 const ts = require("typescript");
@@ -337,8 +338,7 @@ test("checked-in route manifest matches source collectors", () => {
 });
 
 test("runtime Express route stack registers every backend manifest route", () => {
-	const app = express();
-	registerBackendAppRoutes(app, createRuntimeRouteStackTestDependencies());
+	const { app } = createBackendApp(createRuntimeRouteStackTestDependencies());
 	const manifest = collectRouteManifest();
 	const runtimeRouteKeys = collectRuntimeRouteStackRoutes(app, manifest.backendRoutes)
 		.map((route) => `${route.method} ${route.path}`)

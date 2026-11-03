@@ -95,7 +95,7 @@ export function ProjectButterAddAgent({
 							</Avatar>
 						</span>
 					</TooltipTrigger>
-					<TooltipContent id={tooltipId} role="tooltip" side="top">
+					<TooltipContent id={tooltipId} role="tooltip" side="top" sideOffset={8}>
 						Add agent
 					</TooltipContent>
 				</Tooltip>

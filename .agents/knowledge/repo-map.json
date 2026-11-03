@@ -10,9 +10,9 @@
 	},
 	"routes": {
 		"summary": {
-			"backendRouteCount": 122,
+			"backendRouteCount": 123,
 			"nextApiRouteCount": 103,
-			"ownerCount": 101,
+			"ownerCount": 102,
 			"runtimeAdminRouteCount": 18
 		},
 		"owners": [
@@ -424,6 +424,19 @@
 						"method": "GET",
 						"path": "/api/html-selector/tokens",
 						"source": "backend/routes/html-selector.js:168",
+						"runtimeAdmin": false
+					}
+				]
+			},
+			{
+				"kind": "backend",
+				"owner": "backend/routes/local-folder.js",
+				"routeCount": 1,
+				"routes": [
+					{
+						"method": "POST",
+						"path": "/api/local-folder",
+						"source": "backend/routes/local-folder.js:33",
 						"runtimeAdmin": false
 					}
 				]
