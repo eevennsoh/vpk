@@ -23,7 +23,7 @@ export function DetailsOptionField({ label, onChange, options, tagAppearance = "
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
 			<PopoverTrigger render={<DetailValueTrigger aria-label={`Change ${label.toLowerCase()}`} />}>
-				{values.length ? <span className="flex min-w-0 flex-wrap items-center gap-1.5">{values.map((value) => tagAppearance === "plain" ? <span className="min-w-0 truncate" key={value}>{value}</span> : <Tag color="purple" elemBefore={<IconComponent label="" size="small" />} key={value}>{value}</Tag>)}</span> : <span className="flex min-w-0 items-center gap-2 text-text-subtle"><span className="flex size-6 shrink-0 items-center justify-center"><IconComponent label="" size="small" /></span><span>{`Add ${label.toLowerCase()}`}</span></span>}
+				{values.length ? <span className="flex min-w-0 flex-wrap items-center gap-1.5">{values.map((value) => tagAppearance === "plain" ? <span className="min-w-0 truncate" key={value}>{value}</span> : <Tag color="purple" elemBefore={<IconComponent label="" size="small" />} key={value}>{value}</Tag>)}</span> : <span className="text-text-subtle">{`Add ${label.toLowerCase()}`}</span>}
 			</PopoverTrigger>
 			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName="z-[700]" sideOffset={8}>
 				<MetadataSearchPicker

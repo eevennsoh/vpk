@@ -25,6 +25,40 @@ function fieldLabels() {
 	return [...document.querySelectorAll("[data-project-butter-detail-fields] [data-field-id]")].map((node) => node.getAttribute("data-field-label"));
 }
 
+test("assignee defaults to Unassigned with its avatar and can be reassigned", async () => {
+	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing" } });
+	let assignee = view.getByRole("button", { name: "Change assignee" });
+	assert.equal(assignee.textContent, "Unassigned");
+	assert.notEqual(assignee.querySelector('[data-unassigned="person"]'), null);
+	await view.click(assignee);
+	await view.fill(view.getByRole("textbox", { name: "Search people" }), "Annie Cook");
+	await view.press(null, "Enter");
+	assignee = view.getByRole("button", { name: "Change assignee" });
+	assert.equal(assignee.textContent.includes("Annie Cook"), true);
+	await view.click(assignee);
+	await view.fill(view.getByRole("textbox", { name: "Search people" }), "Unassigned");
+	await view.press(null, "Enter");
+	assignee = view.getByRole("button", { name: "Change assignee" });
+	assert.equal(assignee.textContent, "Unassigned");
+	assert.notEqual(assignee.querySelector('[data-unassigned="person"]'), null);
+});
+
+test("an existing Automatic assignee is shown as Unassigned with the VPK avatar", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { ProjectButterDetailFieldValue } from "@/components/blocks/jira-work-item/project-butter/details-field-values";
+			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+			export default function LegacyAssigneeTest() {
+				const content = useProjectButterContent("empty");
+				return <><button onClick={() => content.setAssignee({ name: "Automatic" })}>Load old assignee</button><ProjectButterDetailFieldValue content={content} id="assignee" /></>;
+			}`,
+	});
+	await view.click(view.getByRole("button", { name: "Load old assignee" }));
+	const assignee = view.getByRole("button", { name: "Change assignee" });
+	assert.equal(assignee.textContent, "Unassigned");
+	assert.notEqual(assignee.querySelector('[data-unassigned="person"]'), null);
+});
+
 async function fieldAction(view, field, action) {
 	await view.click(view.getByRole("button", { name: `More ${field.toLowerCase()} field actions` }));
 	await view.click(view.getByRole("menuitem", { name: action }));
@@ -32,7 +66,7 @@ async function fieldAction(view, field, action) {
 
 test("Details initializes each item independently and calculates cost per reach", () => {
 	const fields = createProjectButterDetailFields(false);
-	assert.deepEqual(fields.order, ["status", "assignee", "priority", "dueDate", "parent", "labels", "acceptanceCriteria", "reporter"]);
+	assert.deepEqual(fields.order, ["status", "assignee", "priority", "dueDate", "parent", "labels", "storyPoints", "reporter"]);
 	assert.equal(fields.parent, "VITA-22 User Experience Overhaul");
 	assert.deepEqual(fields.labels, ["social-media", "website-traffic"]);
 	assert.deepEqual(reorderProjectButterDetailFields(fields.order, "dueDate", "assignee").slice(0, 4), ["status", "dueDate", "assignee", "priority"]);
@@ -139,9 +173,9 @@ test("Details expands, clears seeded fields, reorders and restores hidden fields
 	await view.click(view.getByRole("button", { name: "Show more details" }));
 	assert.equal(view.queryByText("User Experience Overhaul") !== null, true);
 	assert.equal(view.queryByText("social-media") !== null, true);
-	await fieldAction(view, "Acceptance Criteria", "Clear acceptance criteria");
+	await fieldAction(view, "Story points", "Clear story points");
 	assert.equal(view.queryByText("90% of new users complete onboarding in 1 week"), null);
-	assert.equal(view.queryByText("Add acceptance criteria") !== null, true);
+	assert.equal(view.queryByText("Add story points") !== null, true);
 	await view.click(view.getByRole("button", { name: "Show less details" }));
 	await view.click(view.getByRole("button", { name: "Show more details" }));
 	assert.equal(view.queryByText("90% of new users complete onboarding in 1 week"), null);
@@ -157,7 +191,7 @@ test("Details expands, clears seeded fields, reorders and restores hidden fields
 test("Details edits and visibility survive presentation remounts, empty mode and item switches", async () => {
 	const view = await renderDetails();
 	await view.click(view.getByRole("button", { name: "Show more details" }));
-	await fieldAction(view, "Acceptance Criteria", "Clear acceptance criteria");
+	await fieldAction(view, "Story points", "Clear story points");
 	await fieldAction(view, "Due Date", "Move up");
 	await fieldAction(view, "Labels", "Hide field");
 	const savedOrder = fieldLabels();
@@ -165,7 +199,7 @@ test("Details edits and visibility survive presentation remounts, empty mode and
 	await view.click(view.getByRole("button", { name: "Show more details" }));
 	assert.deepEqual(fieldLabels(), savedOrder);
 	assert.equal(view.queryByText("90% of new users complete onboarding in 1 week"), null);
-	assert.equal(view.queryByText("Add acceptance criteria") !== null, true);
+	assert.equal(view.queryByText("Add story points") !== null, true);
 	await view.rerender({ empty: true, sidePanel: true });
 	assert.equal(view.queryByText("User Experience Overhaul"), null);
 	await view.rerender({ workItem: { code: "PAY-118", title: "Billing", labels: ["billing"] }, sidePanel: true });
@@ -188,7 +222,7 @@ test("expanded Details offers at most eight fields for filled and sparse items",
 	for (const empty of [false, true]) {
 		const view = await renderDetails({ empty });
 		await view.click(view.getByRole("button", { name: "Show more details" }));
-		assert.deepEqual(fieldLabels(), ["Status", "Assignee", "Priority", "Due Date", "Parent", "Labels", "Acceptance Criteria", "Reporter"]);
+		assert.deepEqual(fieldLabels(), ["Status", "Assignee", "Priority", "Due Date", "Parent", "Labels", "Story points", "Reporter"]);
 		await view.click(view.getByRole("button", { name: "More details actions" }));
 		assert.equal(view.queryByRole("menuitemcheckbox", { name: "Campaign budget" }), null);
 		assert.equal(view.queryByRole("menuitemcheckbox", { name: "Fix Version" }), null);
@@ -196,54 +230,14 @@ test("expanded Details offers at most eight fields for filled and sparse items",
 	}
 });
 
-test("keyboard field drops commit the moved field and preserve its focus", async () => {
+test("field actions support keyboard reordering without a drag handle", async () => {
 	const view = await renderDetails();
-	for (const [index, field] of [...document.querySelectorAll("[data-project-butter-detail-fields] [data-field-id]")].entries()) {
-		field.getBoundingClientRect = () => new DOMRect(0, index * 64, 320, 48);
-	}
-	const handle = view.getByRole("button", { name: "Drag to reorder Priority field" });
-	await view.focus(handle);
-	await view.press(handle, " ", { code: "Space" });
-	await new Promise((resolve) => setTimeout(resolve, 0));
-	await view.press(handle, "ArrowUp", { code: "ArrowUp" });
-	await view.press(handle, " ", { code: "Space" });
+	const actions = view.getByRole("button", { name: "More priority field actions" });
+	await view.focus(actions);
+	await view.press(actions, "Enter");
+	const moveUp = view.getByRole("menuitem", { name: "Move up" });
+	await view.focus(moveUp);
+	await view.press(moveUp, "Enter");
 	assert.deepEqual(fieldLabels(), ["Status", "Priority", "Assignee", "Due Date"]);
-	assert.notEqual(handle.getAttribute("aria-pressed"), "true");
-	assert.equal(view.isFocused(handle), true);
-});
-
-test("keyboard field dragging receives arrows and Escape cancels without dismissing the work item", async () => {
-	let closed = false;
-	const view = await renderComponent({
-		source: `import React from "react";
-			import { SidebarProvider } from "@/app/contexts/context-sidebar";
-			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
-			import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
-			export default function TestWorkItem(props) { return <ThemeWrapper><SidebarProvider><ProjectButterJiraWorkItem {...props} /></SidebarProvider></ThemeWrapper>; }`,
-		mocks: {
-			"@/app/contexts": `const controls = { chatSurface: null, openChat() {}, toggleChat() {} }; export const useRovoChatControls = () => controls; export const useOptionalRovoChatControls = () => controls; export const useOptionalRovoChat = () => null;`,
-		},
-		props: { initialPreset: "filled", onClose() { closed = true; }, open: true },
-	});
-	const initialOrder = fieldLabels();
-	const handle = view.getByRole("button", { name: "Drag to reorder Priority field" });
-	await view.focus(handle);
-	await view.press(handle, " ", { code: "Space" });
-	assert.equal(handle.getAttribute("aria-pressed"), "true");
-	assert.equal(document.querySelector('[data-project-butter-field-dragging="true"]') !== null, true);
-	let arrowReceived = false;
-	const listen = (event) => { if (event.code === "ArrowUp") arrowReceived = true; };
-	document.addEventListener("keydown", listen);
-	try {
-		await view.press(handle, "ArrowUp", { code: "ArrowUp" });
-		assert.equal(arrowReceived, true);
-		await view.press(handle, "Escape", { code: "Escape" });
-		assert.equal(closed, false);
-		assert.notEqual(handle.getAttribute("aria-pressed"), "true");
-		assert.deepEqual(fieldLabels(), initialOrder);
-		assert.equal(document.querySelector('[data-project-butter-field-dragging="true"]'), null);
-		assert.equal(view.isFocused(handle), true);
-	} finally {
-		document.removeEventListener("keydown", listen);
-	}
+	assert.equal(view.queryByRole("button", { name: "Drag to reorder Priority field" }), null);
 });

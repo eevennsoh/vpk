@@ -8,7 +8,7 @@ export const PROJECT_BUTTER_SUGGESTION_FIELDS = [
 	"labels",
 	"components",
 	"fixVersion",
-	"acceptanceCriteria",
+	"storyPoints",
 	"reporter",
 	"costCenter",
 ] as const;
@@ -24,7 +24,7 @@ export interface ProjectButterSuggestionSnapshot {
 	labels: readonly string[];
 	components: readonly string[];
 	fixVersion: string;
-	acceptanceCriteria: string;
+	storyPoints: string;
 	costCenter: string;
 }
 
@@ -38,7 +38,7 @@ export type ProjectButterSuggestion =
 	| (ProjectButterSuggestionBase & { field: "dueDate"; date: Date })
 	| (ProjectButterSuggestionBase & { field: "reporter"; person: { name: string; avatarUrl: string } })
 	| (ProjectButterSuggestionBase & { field: "description"; text: string })
-	| (ProjectButterSuggestionBase & { field: "parent" | "fixVersion" | "acceptanceCriteria" | "costCenter"; text: string })
+	| (ProjectButterSuggestionBase & { field: "parent" | "fixVersion" | "storyPoints" | "costCenter"; text: string })
 	| (ProjectButterSuggestionBase & { field: "labels" | "components"; values: readonly string[] });
 
 export interface ProjectButterSuggestionFieldPatch {
@@ -46,7 +46,7 @@ export interface ProjectButterSuggestionFieldPatch {
 	labels: string[];
 	components: string[];
 	fixVersion: string;
-	acceptanceCriteria: string;
+	storyPoints: string;
 	costCenter: string;
 }
 
@@ -69,7 +69,7 @@ const LABELS: Record<ProjectButterSuggestionField, string> = {
 	labels: "Labels",
 	components: "Components",
 	fixVersion: "Fix Version",
-	acceptanceCriteria: "Acceptance Criteria",
+	storyPoints: "Story points",
 	reporter: "Reporter",
 	costCenter: "Cost Center",
 };
@@ -94,8 +94,8 @@ function isSuggestionFieldEmpty(field: ProjectButterSuggestionField, snapshot: P
 			return snapshot.parent.length === 0;
 		case "fixVersion":
 			return snapshot.fixVersion.length === 0;
-		case "acceptanceCriteria":
-			return snapshot.acceptanceCriteria.length === 0;
+		case "storyPoints":
+			return snapshot.storyPoints.length === 0;
 		case "costCenter":
 			return snapshot.costCenter.length === 0;
 		default: {
@@ -113,7 +113,7 @@ function createSuggestion(field: ProjectButterSuggestionField, profile: "default
 			case "parent": return { field, label, preview: "PAY-100 Payments SDK v2 migration", text: "PAY-100 Payments SDK v2 migration" };
 			case "labels": return { field, label, preview: "onboarding, sdk-v2", values: ["onboarding", "sdk-v2"] };
 			case "components": return { field, label, preview: "Payments SDK", values: ["Payments SDK"] };
-			case "acceptanceCriteria": return { field, label, preview: "Merchants can complete SDK v2 onboarding and make a test payment", text: "Merchants can complete SDK v2 onboarding and make a test payment" };
+			case "storyPoints": return { field, label, preview: "5", text: "5" };
 			default: break;
 		}
 	}
@@ -132,8 +132,8 @@ function createSuggestion(field: ProjectButterSuggestionField, profile: "default
 			return { field, label, preview: "Frontend, Design System", values: ["Frontend", "Design System"] };
 		case "fixVersion":
 			return { field, label, preview: "v2.0", text: "v2.0" };
-		case "acceptanceCriteria":
-			return { field, label, preview: "90% of new users complete onboarding in 1 week", text: "90% of new users complete onboarding in 1 week" };
+		case "storyPoints":
+			return { field, label, preview: "3", text: "3" };
 		case "costCenter":
 			return { field, label, preview: "RD-100-ENGINEERING", text: "RD-100-ENGINEERING" };
 		default: {
@@ -174,7 +174,7 @@ export function applyProjectButterSuggestion<T extends ProjectButterSuggestionFi
 			return;
 		case "parent":
 		case "fixVersion":
-		case "acceptanceCriteria":
+		case "storyPoints":
 		case "costCenter":
 			target.setDetailFields((current) => ({ ...current, [suggestion.field]: suggestion.text }));
 			return;
@@ -209,7 +209,7 @@ export function projectButterSuggestionMatches(
 		}
 		case "parent":
 		case "fixVersion":
-		case "acceptanceCriteria":
+		case "storyPoints":
 		case "costCenter":
 			return snapshot[suggestion.field] === suggestion.text;
 		default: {
@@ -261,7 +261,7 @@ export function clearProjectButterSuggestion<T extends ProjectButterSuggestionFi
 			return;
 		case "parent":
 		case "fixVersion":
-		case "acceptanceCriteria":
+		case "storyPoints":
 		case "costCenter":
 			target.setDetailFields((current) => ({ ...current, [field]: "" }));
 			return;

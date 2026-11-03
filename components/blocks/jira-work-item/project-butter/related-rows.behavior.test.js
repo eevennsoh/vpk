@@ -30,6 +30,10 @@ const childTrigger = (view) => view.getByRole("button", { name: /^(Collapse|Expa
 
 test("the status menu offers three statuses with icons and updates the row and header counts", async () => {
 	const view = await renderRelated();
+	const progress = childTrigger(view).querySelector('[data-slot="progress-circle"]');
+	assert.equal(progress?.getAttribute("aria-valuenow"), "10");
+	assert.equal(progress?.getAttribute("aria-valuemax"), "15");
+	assert.equal(progress?.querySelectorAll("circle").length, 2);
 	const trigger = view.getAllByRole("button", { name: "Edit status for VITA-4, In progress" })[0];
 	assert.equal(trigger.querySelector('svg[data-status="In progress"]') !== null, true, "the row glyph matches the status");
 	await view.click(trigger);
@@ -40,6 +44,7 @@ test("the status menu offers three statuses with icons and updates the row and h
 	await view.click(view.getByRole("menuitem", { name: "Done" }));
 	assert.equal(view.getAllByRole("button", { name: "Edit status for VITA-4, Done" }).length, 1);
 	assert.equal(childTrigger(view).getAttribute("aria-label"), "Collapse Child work items 11 of 15 done, 4 in progress, 0 to do");
+	assert.equal(childTrigger(view).querySelector('[data-slot="progress-circle"]')?.getAttribute("aria-valuenow"), "11");
 	assert.equal(view.queryByText("11/15") !== null, true);
 });
 

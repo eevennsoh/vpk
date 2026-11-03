@@ -263,7 +263,7 @@ test("dismiss all clears remaining suggestions without undoing accepted fields",
 	assert.equal(document.querySelector('[data-field-id="parent"]')?.getAttribute("data-field-filled"), "false");
 });
 
-const SUGGESTION_FIELD_ORDER = ["dueDate", "parent", "labels", "acceptanceCriteria"];
+const SUGGESTION_FIELD_ORDER = ["dueDate", "parent", "labels", "storyPoints"];
 
 function detailRailOrder() {
 	return [...document.querySelectorAll("[data-project-butter-detail-fields] [data-field-id], [data-project-butter-detail-fields] [data-project-butter-suggestion-cursor]")].map((node) => node.getAttribute("data-field-id") ?? "filling-bar");

@@ -43,7 +43,7 @@ function suggestionSnapshot(content: ProjectButterContent): ProjectButterSuggest
 		labels: content.detailFields.labels,
 		components: content.detailFields.components,
 		fixVersion: content.detailFields.fixVersion,
-		acceptanceCriteria: content.detailFields.acceptanceCriteria,
+		storyPoints: content.detailFields.storyPoints,
 		costCenter: content.detailFields.costCenter,
 	};
 }
@@ -113,7 +113,7 @@ export function useProjectButterSuggestionFill(
 			labels: content.detailFields.labels,
 			components: content.detailFields.components,
 			fixVersion: content.detailFields.fixVersion,
-			acceptanceCriteria: content.detailFields.acceptanceCriteria,
+			storyPoints: content.detailFields.storyPoints,
 			costCenter: content.detailFields.costCenter,
 		}, profile)
 			.filter((suggestion) => !dismissed.has(suggestion.field) && (suggestion.field === "description" || (content.detailFields.order.includes(suggestion.field) && !content.detailFields.hidden.includes(suggestion.field))))

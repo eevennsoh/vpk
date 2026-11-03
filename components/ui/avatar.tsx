@@ -388,7 +388,7 @@ function AvatarUnassigned({
 			)}>
 				<Icon
 					aria-hidden
-					className="text-icon-subtle"
+					className={cn("text-icon-subtle", !isAgent && resolvedSize === "xs" && "scale-75", !isAgent && resolvedSize === "xxs" && "scale-50")}
 					render={
 						<IconComponent
 							color="currentColor"

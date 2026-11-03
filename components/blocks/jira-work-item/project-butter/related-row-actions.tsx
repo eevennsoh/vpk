@@ -12,7 +12,7 @@ export function RelatedRowActions({ itemKey, onClone, onDelete }: Readonly<{ ite
 	return (
 		<span className="flex shrink-0" data-component="SubItemActionsMenu">
 			<DropdownMenu>
-				<DropdownMenuTrigger render={<Button aria-label={`More actions for ${itemKey}`} className="-mx-1.5" size="icon-compact" type="button" variant="ghost" />}>
+				<DropdownMenuTrigger render={<Button aria-label={`More actions for ${itemKey}`} className="-mx-1.5 [&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle" size="icon-compact" type="button" variant="ghost" />}>
 					<ShowMoreHorizontalIcon label="" size="small" />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" aria-label={`Actions for ${itemKey}`} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">

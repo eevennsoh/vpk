@@ -24,7 +24,7 @@ export function AttachmentManageMenu({ canDownload, onDeleteAll, onDownloadAll, 
 	const grid = viewMode === "grid";
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger render={<Button aria-label="More actions" size="icon-compact" type="button" variant="ghost" />}>
+			<DropdownMenuTrigger render={<Button aria-label="More actions" className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle" size="icon-compact" type="button" variant="ghost" />}>
 				<ShowMoreHorizontalIcon label="" size="small" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">

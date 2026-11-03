@@ -151,7 +151,6 @@ export function projectButterPlaceholderDetails(
 		labels: fields.labels.length > 0 ? fields.labels : [...placeholder.labels],
 		components: fields.components.length > 0 ? fields.components : [...placeholder.components],
 		fixVersion: fields.fixVersion || placeholder.fixVersion,
-		acceptanceCriteria: fields.acceptanceCriteria || placeholder.acceptanceCriteria,
 		costCenter: fields.costCenter || placeholder.costCenter,
 	};
 }

@@ -66,7 +66,7 @@ export function ProjectButterHeader({ content, empty, onBrowseAgents, onCreateAg
 					<div className="flex shrink-0 items-center gap-2">
 						<div aria-label="Work item agents" className="flex items-center" role="group"><ProjectButterCrew assignee={workItem ? content.assignee : undefined} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={onOpenSession} onStartAgent={onStartAgent ?? onStartCoding} sessions={sessions} useReferenceCrew={!empty && !workItem} /></div>
 						<DropdownMenu>
-							<DropdownMenuTrigger render={<Button aria-label="More work item actions" size="icon" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
+							<DropdownMenuTrigger render={<Button aria-label="More work item actions" className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle" size="icon" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="max-h-[var(--available-height)] w-72" positionerClassName="z-[650]">
 								<DropdownMenuItem>Log work</DropdownMenuItem>
 								<DropdownMenuItem onSelect={() => content.setFlagged(!content.flagged)}>{content.flagged ? "Remove flag" : "Add flag"}</DropdownMenuItem>

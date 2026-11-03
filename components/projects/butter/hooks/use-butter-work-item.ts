@@ -29,6 +29,7 @@ export function useButterWorkItem() {
 				code: card.code,
 				title: card.title,
 				status: card.status ?? columnTitle,
+				storyPoints: card.storyPoints,
 				priority: PRIORITIES[card.priority],
 				assignee: card.assignee ? { name: card.assignee.name, avatarUrl: card.assignee.avatarSrc } : undefined,
 				dueDate: card.dueDate,

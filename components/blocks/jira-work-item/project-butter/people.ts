@@ -1,3 +1,5 @@
+export const PROJECT_BUTTER_UNASSIGNED = { name: "Unassigned" } as const;
+
 const PERSON_AVATAR_IDS: Readonly<Record<string, string>> = {
 	"Sarah Lim": "laila-ali--color--teamwork-blue", "Olivia Yang": "olivia-yang--color--dev-lime",
 	"Elena Rodriguez": "florence-garcia--color--dev-lime", "Marcus Kim": "issac-varghese--color--product-purple",

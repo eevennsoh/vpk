@@ -9,7 +9,7 @@ export const PROJECT_BUTTER_DETAIL_FIELDS = {
 	labels: "Labels",
 	components: "Components",
 	fixVersion: "Fix Version",
-	acceptanceCriteria: "Acceptance Criteria",
+	storyPoints: "Story points",
 	reporter: "Reporter",
 	costCenter: "Cost Center",
 	campaignGoal: "Campaign goal",
@@ -30,7 +30,7 @@ export type ProjectButterDetailFields = {
 	labels: string[];
 	components: string[];
 	fixVersion: string;
-	acceptanceCriteria: string;
+	storyPoints: string;
 	costCenter: string;
 	campaignGoal: string;
 	campaignBudget: string;
@@ -42,7 +42,7 @@ export type ProjectButterDetailFields = {
 };
 
 const PROJECT_BUTTER_DEFAULT_DETAIL_ORDER: readonly ProjectButterDetailFieldId[] = [
-	"status", "assignee", "priority", "dueDate", "parent", "labels", "acceptanceCriteria", "reporter",
+	"status", "assignee", "priority", "dueDate", "parent", "labels", "storyPoints", "reporter",
 ];
 
 export const PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS: readonly ProjectButterDetailFieldId[] = ["status", "assignee", "priority"];
@@ -56,7 +56,7 @@ export function createProjectButterDetailFields(empty: boolean, workItem?: WorkI
 		labels: workItem?.labels ?? (reference ? ["social-media", "website-traffic"] : []),
 		components: reference ? ["Frontend", "Design System"] : [],
 		fixVersion: reference ? "v2.0" : "",
-		acceptanceCriteria: reference ? "90% of new users complete onboarding in 1 week" : "",
+		storyPoints: workItem?.storyPoints?.toString() ?? (reference ? "3" : ""),
 		costCenter: reference ? "RD-100-ENGINEERING" : "",
 		campaignGoal: "",
 		campaignBudget: "",

@@ -21,7 +21,7 @@ function emptySnapshot(): ProjectButterSuggestionSnapshot {
 		labels: [],
 		components: [],
 		fixVersion: "",
-		acceptanceCriteria: "",
+		storyPoints: "",
 		costCenter: "",
 	};
 }
@@ -68,7 +68,7 @@ test("suggestion state offers every empty details field in rail order", () => {
 		"labels",
 		"components",
 		"fixVersion",
-		"acceptanceCriteria",
+		"storyPoints",
 		"reporter",
 		"costCenter",
 	]);
@@ -84,7 +84,7 @@ test("description suggestions do not replace a saved description or an in-progre
 test("payments demo suggests values relevant to merchant onboarding", () => {
 	const suggestions = listProjectButterSuggestions(emptySnapshot(), "payments");
 	assert.equal(suggestions.find((suggestion) => suggestion.field === "parent")?.preview, "PAY-100 Payments SDK v2 migration");
-	assert.equal(suggestions.find((suggestion) => suggestion.field === "acceptanceCriteria")?.preview, "Merchants can complete SDK v2 onboarding and make a test payment");
+	assert.equal(suggestions.find((suggestion) => suggestion.field === "storyPoints")?.preview, "5");
 });
 
 test("accepting one suggestion writes only that field", () => {
@@ -93,7 +93,7 @@ test("accepting one suggestion writes only that field", () => {
 		labels: [],
 		components: [],
 		fixVersion: "",
-		acceptanceCriteria: "",
+		storyPoints: "",
 		costCenter: "",
 	};
 	const written: { dueDate?: Date; reporter?: { name: string } | null } = {};
@@ -131,7 +131,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 		labels: [],
 		components: [],
 		fixVersion: "",
-		acceptanceCriteria: "",
+		storyPoints: "",
 		costCenter: "",
 	};
 	const written: { dueDate?: Date; reporter?: { name: string; avatarUrl: string } | null } = {};
@@ -160,7 +160,7 @@ test("clearing an accepted batch restores the empty fields", () => {
 		labels: [],
 		components: [],
 		fixVersion: "",
-		acceptanceCriteria: "",
+		storyPoints: "",
 		costCenter: "",
 	});
 	assert.equal(listProjectButterSuggestions({
@@ -178,7 +178,7 @@ test("undo restores only fields that still match the accepted suggestion", () =>
 		labels: [],
 		components: [],
 		fixVersion: "",
-		acceptanceCriteria: "",
+		storyPoints: "",
 		costCenter: "",
 	};
 	const written: { dueDate?: Date; reporter?: { name: string; avatarUrl: string } | null } = {};
@@ -222,7 +222,7 @@ test("filled details produce no suggestions", () => {
 		labels: ["social-media"],
 		components: ["Frontend"],
 		fixVersion: "v2.0",
-		acceptanceCriteria: "Done",
+		storyPoints: "3",
 		costCenter: "RD-100-ENGINEERING",
 	});
 	assert.deepEqual(suggestions, []);

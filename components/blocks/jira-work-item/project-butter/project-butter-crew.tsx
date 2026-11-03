@@ -66,7 +66,7 @@ export function ProjectButterCrew({ assignee, onBrowseAgents, onCreateAgent, onO
 		if (!pickerAgents.some((candidate) => candidate.id === id)) pickerAgents.push({ ...agent, id, byline: "On this work item" });
 	}
 	const members: readonly CrewMember[] = useReferenceCrew ? referenceCrew(orderedSessions) : [
-		...(assignee && assignee.name !== "Automatic" ? [{ name: assignee.name, kind: "person" as const, state: "Working" as const, avatarSrc: assignee.avatarUrl }] : []),
+		...(assignee && assignee.name !== "Automatic" && assignee.name !== "Unassigned" ? [{ name: assignee.name, kind: "person" as const, state: "Working" as const, avatarSrc: assignee.avatarUrl }] : []),
 		...sessions.map((session): CrewMember => ({ name: session.agent.name, kind: "agent", state: session.state === "complete" ? "Completed" : session.state === "needs-input" || session.state === "attention" ? "Needs input" : "Working", visual: { avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo } })),
 	];
 	const crew: readonly CrewMember[] = members.length ? members : [{ name: "Annie Cook", kind: "person", state: "Currently viewing" }];

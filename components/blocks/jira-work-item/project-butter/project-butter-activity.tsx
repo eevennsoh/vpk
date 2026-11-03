@@ -268,6 +268,7 @@ export function ProjectButterActivity({
 								render={
 									<Button
 										aria-label="More activity actions"
+										className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle"
 										size="icon-compact"
 										type="button"
 										variant="ghost"

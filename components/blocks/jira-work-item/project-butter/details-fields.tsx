@@ -2,13 +2,14 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { animate, useReducedMotion } from "motion/react";
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DetailsFieldRow } from "@/components/blocks/jira-work-item/project-butter/details-field-row";
 import { ProjectButterDetailFieldValue } from "@/components/blocks/jira-work-item/project-butter/details-field-values";
 import { ProjectButterSuggestionCursor } from "@/components/blocks/jira-work-item/project-butter/suggestion-cursor";
 import { PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS, projectButterCostPerReach, reorderProjectButterDetailFields, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
-import { TEAM_EU26_PEOPLE } from "@/components/blocks/jira-work-item/team-eu26/data/team-eu26-vita-one";
+import { PROJECT_BUTTER_UNASSIGNED } from "@/components/blocks/jira-work-item/project-butter/people";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { motionDuration, motionEase } from "@/lib/motion";
 
@@ -24,7 +25,7 @@ function isProjectButterDetailFieldFilled(id: ProjectButterDetailFieldId, conten
 function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: ProjectButterContent): void {
 	if (id === "dueDate") content.setDueDate(undefined);
 	else if (id === "reporter") content.setReporter(null);
-	else if (id === "assignee") content.setAssignee(TEAM_EU26_PEOPLE.automatic);
+	else if (id === "assignee") content.setAssignee(PROJECT_BUTTER_UNASSIGNED);
 	else if (id !== "status" && id !== "priority" && id !== "costPerReach") {
 		content.setDetailFields((fields) => ({ ...fields, [id]: id === "campaignRegion" ? { region: "", market: "" } : Array.isArray(fields[id]) ? [] : "" }));
 	}
@@ -77,13 +78,13 @@ export function ProjectButterDetailsFields({ content, expanded, fillingBarAfter 
 			animatingRef.current = false;
 		};
 	}, [expanded, reduced]);
-	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates, scrollBehavior: "auto" }));
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 	const fields = content.detailFields;
 	const order = fields.order.filter((field) => !fields.hidden.includes(field));
 	const visible = expanded ? order : order.slice(0, 4);
 	return (
 		<div data-project-butter-detail-fields data-project-butter-field-dragging={dragging ? "true" : undefined} ref={rootRef}>
-			<DndContext collisionDetection={closestCenter} id={id} onDragCancel={() => setDragging(false)} onDragStart={() => setDragging(true)} onDragEnd={({ active, over }) => {
+			<DndContext collisionDetection={closestCenter} id={id} modifiers={[restrictToVerticalAxis]} onDragCancel={() => setDragging(false)} onDragStart={() => setDragging(true)} onDragEnd={({ active, over }) => {
 				setDragging(false);
 				content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, active.id, over?.id ?? null) }));
 			}} sensors={sensors}>

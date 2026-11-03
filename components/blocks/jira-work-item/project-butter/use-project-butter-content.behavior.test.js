@@ -43,6 +43,7 @@ const HARNESS = `import React from "react";
 		description,
 		labels,
 		dueDate,
+		storyPoints,
 		reporterName,
 		defaultReporterName,
 		withSession = false,
@@ -54,6 +55,7 @@ const HARNESS = `import React from "react";
 			description,
 			labels,
 			dueDate,
+			storyPoints,
 			reporter: reporterName ? { name: reporterName } : undefined,
 		} : undefined;
 		const content = useProjectButterContent(
@@ -79,7 +81,7 @@ const HARNESS = `import React from "react";
 			<p data-field="labels">{content.detailFields.labels.join(",")}</p>
 			<p data-field="components">{content.detailFields.components.join(",")}</p>
 			<p data-field="fix">{content.detailFields.fixVersion}</p>
-			<p data-field="criteria">{content.detailFields.acceptanceCriteria}</p>
+			<p data-field="story-points">{content.detailFields.storyPoints}</p>
 			<p data-field="cost">{content.detailFields.costCenter}</p>
 			<p data-field="campaign">{content.detailFields.campaignGoal}</p>
 			<p data-field="platforms">{content.detailFields.targetPlatforms.join(",")}</p>
@@ -151,7 +153,7 @@ test("opening a card from each column fills that map's sections", async () => {
 });
 
 test("opened PAY-118 fills description, child, attachment, comment, and detail fields", async () => {
-	await renderHarness({ code: "PAY-118" });
+	await renderHarness({ code: "PAY-118", storyPoints: 5 });
 	assert.equal(field("description").includes("LegacyGatewayAdapter"), true);
 	assert.equal(field("description").includes("PAY-118"), true);
 	assert.equal(field("reporter"), "Priya Raman");
@@ -164,7 +166,7 @@ test("opened PAY-118 fills description, child, attachment, comment, and detail f
 	assert.equal(field("labels"), "wallet");
 	assert.equal(field("components").includes("Frontend"), true);
 	assert.equal(field("fix"), "v2.0");
-	assert.equal(field("criteria").includes("named owner"), true);
+	assert.equal(field("story-points"), "5");
 	assert.equal(field("cost"), "RD-100-ENGINEERING");
 	assert.equal(field("campaign"), "");
 	assert.equal(field("platforms"), "");

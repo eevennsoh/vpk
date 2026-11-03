@@ -26,7 +26,7 @@ export function ProjectButterRelatedDisplayOptions({ editor, menuLabel, onChange
 	return (
 		<Popover onOpenChange={(displayOptionsOpen) => onChange({ displayOptionsOpen })} open={editor.displayOptionsOpen}>
 			<RelatedTooltip label="More actions">
-				<PopoverTrigger render={<Button aria-label="More actions" className="aria-expanded:bg-bg-selected aria-expanded:text-text-selected" size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></PopoverTrigger>
+				<PopoverTrigger render={<Button aria-label="More actions" className="aria-expanded:bg-bg-selected aria-expanded:text-text-selected [&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle" size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></PopoverTrigger>
 			</RelatedTooltip>
 			<PopoverContent align="end" aria-label={menuLabel} className="w-80 gap-0 p-0" initialFocus={orderingTrigger} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]" side="top" sideOffset={8}>
 				<div className="flex min-h-12 items-center justify-between gap-3 border-b border-border px-4 py-2"><span className="text-sm text-text-subtle">Ordering</span>

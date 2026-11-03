@@ -98,6 +98,8 @@ export interface ProgressCircleProps
 	 */
 	segments?: readonly ProgressCircleSegment[];
 	segmentGap?: "default" | "none";
+	/** Render within phrasing content, such as a button label. */
+	inline?: boolean;
 	/** Status overlay — replaces the progress ring with an icon. */
 	status?: "error" | "info";
 	/** Accessible label for the progress indicator. */
@@ -179,6 +181,7 @@ function ProgressCircle({
 	segmented = false,
 	segments,
 	segmentGap = "default",
+	inline = false,
 	size = "default",
 	variant = "outline",
 	status,
@@ -260,9 +263,10 @@ function ProgressCircle({
 			? undefined
 			: clampedValue;
 	const ariaValueMax = hasSegments ? totalSegmentWeight : 100;
+	const Root = inline ? "span" : "div";
 
 	return (
-		<div
+		<Root
 			data-slot="progress-circle"
 			role="progressbar"
 			aria-valuenow={ariaValueNow}
@@ -469,7 +473,7 @@ function ProgressCircle({
 					</motion.svg>
 				)}
 			</AnimatePresence>
-		</div>
+		</Root>
 	);
 }
 

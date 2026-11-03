@@ -5,6 +5,7 @@ import DownloadIcon from "@atlaskit/icon/core/download";
 import LinkBrokenIcon from "@atlaskit/icon/core/link-broken";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { ProjectButterAttachment } from "@/components/blocks/jira-work-item/project-butter/attachment-data";
 import { attachmentDisplayName, attachmentIsLinked } from "@/components/blocks/jira-work-item/project-butter/attachment-model";
@@ -33,7 +34,7 @@ export function AttachmentActionsMenu({ item, onRemove, triggerClassName }: Read
 	const label = `More actions for ${attachmentDisplayName(item)}`;
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger render={<Button aria-label={label} className={triggerClassName} size="icon-compact" type="button" variant="ghost" />}>
+			<DropdownMenuTrigger render={<Button aria-label={label} className={cn(triggerClassName, "[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle")} size="icon-compact" type="button" variant="ghost" />}>
 				<ShowMoreHorizontalIcon label="" size="small" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">

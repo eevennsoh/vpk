@@ -22,6 +22,7 @@ import { useProjectButterItemState } from "@/components/blocks/jira-work-item/pr
 import { createProjectButterRelatedEditorState } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { createProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { createProjectButterStatusOptions } from "@/components/blocks/jira-work-item/project-butter/status-model";
+import { PROJECT_BUTTER_UNASSIGNED } from "@/components/blocks/jira-work-item/project-butter/people";
 import {
 	createProjectButterSessions,
 	type ProjectButterSessionItem,
@@ -67,7 +68,7 @@ function createContent(
 			: workItem
 				? []
 				: PROJECT_BUTTER_ATTACHMENTS;
-	const assignee: WorkItemPerson = workItem?.assignee ?? TEAM_EU26_PEOPLE.automatic;
+	const assignee: WorkItemPerson = !workItem?.assignee || workItem.assignee.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : workItem.assignee;
 	const priority: PriorityValue = workItem?.priority ?? (empty ? "Medium" : "High");
 	const reporterPlaceholder = workItem?.code ? placeholders?.[workItem.code] : undefined;
 	const reporter: WorkItemPerson = workItem?.reporter
@@ -256,7 +257,7 @@ export function useProjectButterContent(
 			setStatus: audited("status", "Status", (value) => value),
 		};
 	}, [fieldSetter, updateState]);
-	return { ...state, ...actions };
+	return { ...state, assignee: state.assignee.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : state.assignee, ...actions };
 }
 
 export type ProjectButterContent = ReturnType<typeof useProjectButterContent>;

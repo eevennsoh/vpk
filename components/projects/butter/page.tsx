@@ -121,7 +121,7 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
 }
 
-function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateAgent, onAgentSessionStart, onWorkItemClose, openRelatedItem, relatedCatalog, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateAgent, onAgentSessionStart, onStoryPointsChange, onWorkItemClose, openRelatedItem, relatedCatalog, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
 	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
 	openRelatedItem: RelatedItemOpener;
 	/** Board cards as related-work matches, so composers offer this project's items. */
@@ -131,6 +131,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateA
 	onBrowseAgents: () => void;
 	onCreateAgent: () => void;
 	onAgentSessionStart: (issueKey: string, session: AgentSessionItem) => void;
+	onStoryPointsChange: (issueKey: string, storyPoints: number | undefined) => void;
 	onWorkItemClose: () => void;
 }) {
 	const workItem = useButterWorkItem();
@@ -155,6 +156,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateA
 						onBrowseAgents={onBrowseAgents}
 						onCreateAgent={onCreateAgent}
 						onAgentSessionStart={(session) => { if (workItem.selection) onAgentSessionStart(workItem.selection.workItem.code, session); }}
+						onStoryPointsChange={(points) => { if (workItem.selection) onStoryPointsChange(workItem.selection.workItem.code, points); }}
 						onClose={() => { workItem.closeWorkItem(); onWorkItemClose(); }}
 						open={workItem.open}
 						openRelatedItem={openRelatedItem}
@@ -654,6 +656,7 @@ function ButterApp(): React.ReactElement {
 				onBrowseAgents={browseAgents}
 				onCreateAgent={createAgent}
 				onAgentSessionStart={handleWorkItemSessionStart}
+				onStoryPointsChange={(issueKey, storyPoints) => setBoardColumns((columns) => columns.map((column) => ({ ...column, cards: column.cards.map((card) => card.code === issueKey ? { ...card, storyPoints } : card) })))}
 				onWorkItemClose={handleWorkItemClose}
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}

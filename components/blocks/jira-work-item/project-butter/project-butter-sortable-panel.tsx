@@ -24,7 +24,7 @@ export function ProjectButterSortablePanel({ actions, children, defaultOpen = tr
 				alwaysShowHeaderActions
 				defaultOpen={defaultOpen}
 				footer={footer}
-				headerActions={<div className="flex items-center gap-1 opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{actions}<Button {...attributes} {...listeners} aria-label={`Drag to reorder ${title}`} className="touch-none" ref={setActivatorNodeRef} size="icon-compact" type="button" variant="ghost"><DragHandleVerticalIcon label="" size="small" /></Button></div>}
+				headerActions={<div className="-mr-1 flex items-center gap-1 opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{actions}<Button {...attributes} {...listeners} aria-label={`Drag to reorder ${title}`} className="touch-none [&_svg]:text-icon-subtle" ref={setActivatorNodeRef} size="icon-compact" type="button" variant="ghost"><DragHandleVerticalIcon label="" size="small" /></Button></div>}
 				surface={sidePanel ? "inline" : "card"}
 				title={title}
 			>

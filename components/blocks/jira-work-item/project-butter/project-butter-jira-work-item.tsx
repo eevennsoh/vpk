@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
@@ -39,6 +39,7 @@ export interface ProjectButterJiraWorkItemProps {
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
+	onStoryPointsChange?: (storyPoints: number | undefined) => void;
 	/** Resolves a related work key to an opener when the host has that work item (Butter board). */
 	openRelatedItem?: RelatedItemOpener;
 	/** Host project scope for related work: composer match pool and this work item's type. */
@@ -60,6 +61,7 @@ export function ProjectButterJiraWorkItem({
 	onBrowseAgents,
 	onCreateAgent,
 	onAgentSessionStart,
+	onStoryPointsChange,
 	openRelatedItem,
 	relatedScope,
 }: Readonly<ProjectButterJiraWorkItemProps>) {
@@ -98,7 +100,23 @@ export function ProjectButterJiraWorkItem({
 	);
 	const emptySessions = useProjectButterSessions("empty", workItem?.code);
 	const sparse = empty || suggestion;
-	const content = suggestion ? suggestionContent : empty ? emptyContent : filledContent;
+	const currentContent = suggestion ? suggestionContent : empty ? emptyContent : filledContent;
+	const setDetailFields = currentContent.setDetailFields;
+	useEffect(() => {
+		if (!open || !workItem) return;
+		const storyPoints = workItem.storyPoints?.toString() ?? "";
+		setDetailFields((fields) => fields.storyPoints === storyPoints ? fields : { ...fields, storyPoints });
+	}, [open, setDetailFields, workItem]);
+	const content = {
+		...currentContent,
+		setDetailFields: (update: React.SetStateAction<typeof currentContent.detailFields>) => {
+			const next = typeof update === "function" ? update(currentContent.detailFields) : update;
+			currentContent.setDetailFields(update);
+			if (next.storyPoints !== currentContent.detailFields.storyPoints) {
+				onStoryPointsChange?.(next.storyPoints === "" ? undefined : Number(next.storyPoints));
+			}
+		},
+	};
 	const model = sparse ? emptySessions : filledSessions;
 	const {
 		activeSession,
