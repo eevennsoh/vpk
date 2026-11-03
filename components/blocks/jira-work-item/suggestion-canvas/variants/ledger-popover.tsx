@@ -1,15 +1,122 @@
 "use client";
 
-import { WORK_ITEM_SUGGESTIONS } from "../data/suggestions";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { AnimatePresence, motion } from "motion/react";
+
+import { motionRecipe } from "@/lib/motion";
+
+import { WORK_ITEM_SUGGESTIONS, type SuggestionFieldId } from "../data/suggestions";
 import { MockDetailsRail } from "../mock-details-rail";
 import { useSuggestionReview } from "../use-suggestion-review";
+import { WorkItemPreviewShell } from "../work-item-preview-shell";
+import { LedgerBanner } from "./ledger-popover/ledger-banner";
+import { LedgerMain } from "./ledger-popover/ledger-main";
+import { LedgerPanel } from "./ledger-popover/ledger-panel";
 
-/** Placeholder: replaced by the variant builder. */
+const PANEL_GAP = 8;
+const FRAME_INSET = 24;
+const HIGHLIGHT_MS = 1400;
+
+/**
+ * Places the ledger to the left of the banner, top-aligned with it, inside the preview frame.
+ * It renders in the shell's overlay rather than a body portal so it pans and zooms with its canvas frame.
+ */
+function useLedgerPlacement(open: boolean) {
+	const overlayRef = useRef<HTMLDivElement>(null);
+	const anchorRef = useRef<HTMLDivElement>(null);
+	const [style, setStyle] = useState<CSSProperties | null>(null);
+	useLayoutEffect(() => {
+		const overlay = overlayRef.current;
+		const anchor = anchorRef.current;
+		if (!open || !overlay || !anchor) return undefined;
+		const measure = () => {
+			const frame = overlay.getBoundingClientRect();
+			const banner = anchor.getBoundingClientRect();
+			const scale = frame.width / overlay.offsetWidth || 1;
+			const top = (banner.top - frame.top) / scale;
+			setStyle({ top, right: (frame.right - banner.left) / scale + PANEL_GAP, maxHeight: overlay.offsetHeight - top - FRAME_INSET });
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(overlay);
+		observer.observe(anchor);
+		return () => observer.disconnect();
+	}, [open]);
+	return { overlayRef, anchorRef, style };
+}
+
+/** Briefly tints Details rows that just received a value, tying each Accept to its consequence. */
+function useJustFilled() {
+	const [filled, setFilled] = useState<ReadonlySet<SuggestionFieldId>>(new Set());
+	const timers = useRef(new Map<SuggestionFieldId, number>());
+	useEffect(() => {
+		const pending = timers.current;
+		return () => pending.forEach((timer) => window.clearTimeout(timer));
+	}, []);
+	const flash = useCallback((ids: readonly SuggestionFieldId[]) => {
+		setFilled((current) => new Set([...current, ...ids]));
+		for (const id of ids) {
+			window.clearTimeout(timers.current.get(id));
+			timers.current.set(id, window.setTimeout(() => {
+				timers.current.delete(id);
+				setFilled((current) => new Set([...current].filter((entry) => entry !== id)));
+			}, HIGHLIGHT_MS));
+		}
+	}, []);
+	return { filled, flash };
+}
+
 export function LedgerPopoverVariant() {
 	const review = useSuggestionReview(WORK_ITEM_SUGGESTIONS);
+	const [open, setOpen] = useState(true);
+	const panelId = useId();
+	const panelRef = useRef<HTMLDivElement>(null);
+	const triggerRef = useRef<HTMLButtonElement>(null);
+	const { overlayRef, anchorRef, style } = useLedgerPlacement(open);
+	const { filled, flash } = useJustFilled();
+
+	const close = () => {
+		setOpen(false);
+		triggerRef.current?.focus();
+	};
+	const accept = (id: SuggestionFieldId) => {
+		review.accept(id);
+		flash([id]);
+	};
+	const acceptAll = () => {
+		flash(review.pending.map((suggestion) => suggestion.id));
+		review.acceptAll();
+	};
+
 	return (
-		<div className="flex h-full justify-end bg-surface p-6">
-			<MockDetailsRail className="w-[360px]" review={review} />
-		</div>
+		<WorkItemPreviewShell
+			main={<LedgerMain review={review} highlighted={filled.has("description")} />}
+			overlay={(
+				<div className="pointer-events-none absolute inset-0 z-30" ref={overlayRef}>
+					<AnimatePresence initial={false}>
+						{open && style ? (
+							<motion.div
+								animate={{ opacity: 1, x: 0, transition: motionRecipe.popup.enter }}
+								className="pointer-events-auto absolute flex"
+								exit={{ opacity: 0, x: 8, transition: motionRecipe.popup.exit }}
+								initial={{ opacity: 0, x: 8 }}
+								key="ledger"
+								style={{ ...style, willChange: "transform, opacity" }}
+							>
+								<LedgerPanel cardMaxHeight={typeof style.maxHeight === "number" ? style.maxHeight : undefined} id={panelId} onAccept={accept} onAcceptAll={acceptAll} onClose={close} panelRef={panelRef} review={review} />
+							</motion.div>
+						) : null}
+					</AnimatePresence>
+				</div>
+			)}
+			rail={(
+				<>
+					<div ref={anchorRef}>
+						<LedgerBanner onToggle={() => setOpen((current) => !current)} open={open} panelId={panelId} review={review} triggerRef={triggerRef} />
+					</div>
+					<MockDetailsRail highlighted={filled} review={review} />
+				</>
+			)}
+		/>
 	);
 }
