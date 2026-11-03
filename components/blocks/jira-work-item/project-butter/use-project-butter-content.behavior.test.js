@@ -109,15 +109,15 @@ test("each column map authors description, children, attachments, and comments",
 	}
 });
 
-test("every attachment previews a distinct ambient illustration, varied within each work item", () => {
+test("every attachment previews a distinct primary ambient illustration, varied within each work item", () => {
 	const seen = new Set();
 	for (const [, source, codes] of COLUMN_MAPS) {
 		for (const code of codes) {
 			const families = new Set();
 			const colors = new Set();
 			for (const attachment of source[code].attachments) {
-				const match = /^\/ambient\/(.+)\/(?:primary|shade|tint)\/(\w+)\.(?:svg|png)$/u.exec(attachment.previewSrc ?? "");
-				assert.notEqual(match, null, `${attachment.id} previews an ambient illustration`);
+				const match = /^\/ambient\/(.+)\/primary\/(\w+)\.(?:svg|png)$/u.exec(attachment.previewSrc ?? "");
+				assert.notEqual(match, null, `${attachment.id} previews a primary ambient illustration`);
 				assert.equal(existsSync(join(__dirname, "../../../../public", attachment.previewSrc)), true, attachment.previewSrc);
 				assert.equal(seen.has(attachment.previewSrc), false, `${attachment.previewSrc} is reused`);
 				seen.add(attachment.previewSrc);
