@@ -713,15 +713,14 @@ test("timeline hover previews and continuous pointer seeking follow the click po
 	root.scrollTop = 1556;
 	await settle(() => root.dispatchEvent(new Event("scroll")));
 	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 50) < 0.1, true, rail.querySelector('[data-slot="scrubber-playhead"]').style.left);
-	feedHeight = 544;
+	feedHeight = 200;
 	root.scrollTop = 1000;
 	headerTop = 180;
 	await view.rerender({count:1,view:"Audit"});
 	assert.equal(root.scrollTop, 1080, "switching to a shorter feed must preserve the sticky header");
+	assert.equal(feed.style.minHeight, "", "short feeds must not create blank scroll space");
 	headerTop = 100;
 	await settle(() => root.dispatchEvent(new Event("scroll")));
-	await settle(() => rail.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "mouse", pointerId: 8, clientX: 650, button: 0, buttons: 1 })));
-	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 65) < 0.1, true, "short feeds must retain continuous seeking");
 });
 
 

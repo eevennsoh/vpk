@@ -5,6 +5,17 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("short work item activity ends without a viewport of blank space", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const feed = page.locator("[data-project-butter-activity-feed]");
+	await expect(feed.locator("[data-jira-activity-entry-id]").last()).toBeVisible();
+	await expect.poll(() => feed.evaluate((element) => {
+		const last = element.querySelectorAll("[data-jira-activity-entry-id]");
+		return element.getBoundingClientRect().bottom - last[last.length - 1].getBoundingClientRect().bottom;
+	})).toBeLessThan(64);
+});
+
 test("the board remains visible while a work item loads for the first time", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	const board = page.locator("[data-butter-board-surface]");
