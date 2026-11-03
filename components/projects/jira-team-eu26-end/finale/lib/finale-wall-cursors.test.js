@@ -44,7 +44,7 @@ function wallFor(viewport) {
 
 test("the wall's cursors use the requested teammates and the bento keeps its presenters", () => {
 	const { FINALE_CURSORS, FINALE_WALL_CURSOR_NAMES } = load();
-	assert.deepEqual(FINALE_WALL_CURSOR_NAMES, ["Venn", "Eduardo", "Jason", "Charlie", "Carola", "Harry", "Sofia", "Jannis"]);
+	assert.deepEqual(FINALE_WALL_CURSOR_NAMES, ["Venn", "Eduardo", "Jason", "Vohmann", "Charlie", "Carola", "Harry", "Sofia", "Jannis"]);
 	assert.deepEqual(FINALE_CURSORS.map((cursor) => cursor.label).sort(), ["Mike", "Sherif", "Tamar", "Taroon"], "the bento keeps its presenters");
 });
 

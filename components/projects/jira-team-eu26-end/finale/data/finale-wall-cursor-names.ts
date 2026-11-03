@@ -3,6 +3,7 @@ export const FINALE_WALL_CURSOR_NAMES = [
 	"Venn",
 	"Eduardo",
 	"Jason",
+	"Vohmann",
 	"Charlie",
 	"Carola",
 	"Harry",
