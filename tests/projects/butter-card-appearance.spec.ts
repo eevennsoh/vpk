@@ -5,6 +5,20 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("empty activity places the comment bar 24 pixels below the tabs", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/jira-work-item#project-butter"));
+	await page.getByRole("switch", { name: "Empty" }).check();
+	await page.getByRole("button", { name: "Modal", exact: true }).click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	const tabs = dialog.getByRole("tablist", { name: "Activity views" });
+	const comment = dialog.getByRole("button", { name: "Add a comment" });
+	await expect(comment).toBeVisible();
+	await expect.poll(async () => {
+		const [tabsBox, commentBox] = await Promise.all([tabs.boundingBox(), comment.boundingBox()]);
+		return tabsBox && commentBox ? commentBox.y - (tabsBox.y + tabsBox.height) : null;
+	}).toBe(24);
+});
+
 test("short work item activity ends without a viewport of blank space", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();

@@ -12,7 +12,7 @@ import { motionDuration, referenceEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-export function ProjectButterCommentBar({ active, content, empty, sidePanel }: Readonly<{ active: boolean; content: ProjectButterContent; empty: boolean; sidePanel: boolean }>) {
+export function ProjectButterCommentBar({ active, compact, content, empty, sidePanel }: Readonly<{ active: boolean; compact: boolean; content: ProjectButterContent; empty: boolean; sidePanel: boolean }>) {
 	const [expanded, setExpanded] = useState(false);
 	const { setCommentDraft } = content;
 	const reducedMotion = useReducedMotion();
@@ -46,7 +46,7 @@ export function ProjectButterCommentBar({ active, content, empty, sidePanel }: R
 		content.setActivityEntries((entries) => [...entries, entry]); content.setActivityView("Activity"); content.setActivityFocusId(entry.id); cancel();
 	}
 	return (
-		<motion.div animate={{ opacity: visible ? 1 : 0, transform: visible || sidePanel || empty ? "translateY(0%)" : "translateY(100%)" }} aria-hidden={!visible} aria-label="Comment editor" className="sticky bottom-4 z-30 mt-4 rounded-xl bg-surface" data-elevated={elevated} data-project-butter-comment-bar data-visible={visible} inert={!visible} initial={false} ref={barRef} role="group" style={{ pointerEvents: visible ? "auto" : "none", boxShadow: expanded || empty || (sidePanel && !elevated) ? undefined : token("elevation.shadow.overlay") }} transition={{ duration: reducedMotion ? 0 : motionDuration.normal * 2, ease: referenceEase.workItemCommentReveal }}>
+		<motion.div animate={{ opacity: visible ? 1 : 0, transform: visible || sidePanel || empty ? "translateY(0%)" : "translateY(100%)" }} aria-hidden={!visible} aria-label="Comment editor" className={cn("sticky bottom-4 z-30 rounded-xl bg-surface", compact ? "-mt-4" : "mt-4")} data-elevated={elevated} data-project-butter-comment-bar data-visible={visible} inert={!visible} initial={false} ref={barRef} role="group" style={{ pointerEvents: visible ? "auto" : "none", boxShadow: expanded || empty || (sidePanel && !elevated) ? undefined : token("elevation.shadow.overlay") }} transition={{ duration: reducedMotion ? 0 : motionDuration.normal * 2, ease: referenceEase.workItemCommentReveal }}>
 			{expanded ? <ProjectButterCommentEditor onCancel={cancel} onSave={submit} onValueChange={content.setCommentDraft} value={content.commentDraft} /> : <button aria-label="Add a comment" className={cn("flex min-h-12 w-full items-center gap-2 rounded-xl px-4 text-left text-sm text-text-subtle outline-none focus-visible:ring-2 focus-visible:ring-ring", empty ? "bg-bg-input inset-ring inset-ring-border hover:bg-bg-input-hovered" : sidePanel && !elevated ? "bg-bg-input hover:bg-bg-input-hovered" : "bg-surface")} onClick={() => setExpanded(true)} type="button"><span>Add a comment or press</span><Kbd>M</Kbd></button>}
 		</motion.div>
 	);
