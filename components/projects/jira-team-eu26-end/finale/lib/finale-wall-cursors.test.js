@@ -1,5 +1,4 @@
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
 const esbuild = require("esbuild");
@@ -35,15 +34,6 @@ function load() {
 /** The keynote's presenters, whose cursors belong to the bento, never the wall. */
 const PRESENTER = /^(mike|michael|tamar|sherif|taroon)$/i;
 
-/** First names in the human avatar roster, as its files name them (`andrea-wilson.png` → "Andrea"). */
-function rosterFirstNames() {
-	const files = fs.readdirSync(path.join(process.cwd(), "public/avatar-human")).filter((file) => file.endsWith(".png"));
-	return new Set(files.map((file) => {
-		const first = file.split("-")[0];
-		return first.charAt(0).toUpperCase() + first.slice(1);
-	}));
-}
-
 function wallFor(viewport) {
 	const { bentoDrops, buildFinaleWall, finaleBentoLayout, FINALE_FEATURES, wallGeometry } = load();
 	const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
@@ -52,14 +42,9 @@ function wallFor(viewport) {
 	return { wall, drops: bentoDrops(wall, bento.slots.map((slot) => slot.rect), bento.title) };
 }
 
-test("the wall's cursors are named from the avatar roster, once each, and never for a presenter", () => {
+test("the wall's cursors use the requested teammates and the bento keeps its presenters", () => {
 	const { FINALE_CURSORS, FINALE_WALL_CURSOR_NAMES } = load();
-	const roster = rosterFirstNames();
-	assert.equal(new Set(FINALE_WALL_CURSOR_NAMES).size, FINALE_WALL_CURSOR_NAMES.length, "one label per name");
-	for (const name of FINALE_WALL_CURSOR_NAMES) {
-		assert.ok(roster.has(name), `${name} has an avatar in public/avatar-human`);
-		assert.ok(!PRESENTER.test(name), `${name} is not a presenter`);
-	}
+	assert.deepEqual(FINALE_WALL_CURSOR_NAMES, ["Venn", "Eduardo", "Jason", "Charlie", "Carola", "Harry", "Sofia", "Jannis"]);
 	assert.deepEqual(FINALE_CURSORS.map((cursor) => cursor.label).sort(), ["Mike", "Sherif", "Tamar", "Taroon"], "the bento keeps its presenters");
 });
 
@@ -85,7 +70,7 @@ test("human drags recur regularly through the steady wall without long empty str
 	}
 });
 
-test("each held card's cursor is the slot's own teammate on every pass, one per lane and nobody twice at once, once MCB has carried the title in", () => {
+test("held cards cycle through teammates in arrival order, one per lane, after MCB carries the title", () => {
 	const { FINALE_CURSORS, FINALE_WALL_CURSOR_NAMES, WALL_CUE, titleCarrierGoneTime, titleReachTime, wallCursorsAt, wallTimeAt } = load();
 	const pool = new Set(FINALE_WALL_CURSOR_NAMES);
 	const presenters = new Set(FINALE_CURSORS.map((cursor) => cursor.label));
@@ -93,18 +78,16 @@ test("each held card's cursor is the slot's own teammate on every pass, one per 
 	const viewport = { width: 1728, height: 1117 };
 	const { wall, drops } = wallFor(viewport);
 	const { geometry } = wall;
-	const seedOf = (key) => wall.bucket(Number(key.split(":")[0])).find((slot) => slot.key === key).seed;
 	// Three periods of travel: at least two whole loops past the wall's run-up, so every slot comes round again.
 	const end = wallTimeAt(3 * wall.periodWidth, geometry);
 	assert.ok(Number.isFinite(end) && end > WALL_CUE.start, "the wall glides");
 
 	const byKey = new Map();
-	const bySeed = new Map();
-	const keysOfSeed = new Map();
+	const timesByKey = new Map();
 	let held = 0;
 	let carried = 0;
 	let firstTeammate = Number.POSITIVE_INFINITY;
-	for (let time = WALL_CUE.start; time < end; time += 0.1) {
+	for (let time = WALL_CUE.start; time < end; time += 0.01) {
 		const all = wallCursorsAt(time, wall, drops, viewport);
 		assert.equal(new Set(all.map((cursor) => cursor.lane)).size, all.length, "one card per lane at a time");
 		assert.equal(new Set(all.map((cursor) => cursor.name)).size, all.length, "nobody in two places at once");
@@ -127,17 +110,20 @@ test("each held card's cursor is the slot's own teammate on every pass, one per 
 			if (cursor.opacity === 1) held += 1;
 			const who = `${cursor.name}@${cursor.lane}`;
 			assert.equal(byKey.get(cursor.key) ?? who, who, `slot ${cursor.key} keeps its teammate`);
+			if (!byKey.has(cursor.key)) timesByKey.set(cursor.key, time);
 			byKey.set(cursor.key, who);
-			const seed = seedOf(cursor.key);
-			assert.equal(bySeed.get(seed) ?? who, who, `seed ${seed} is the same teammate on every pass`);
-			bySeed.set(seed, who);
-			keysOfSeed.set(seed, (keysOfSeed.get(seed) ?? new Set()).add(cursor.key));
 		}
 	}
 	assert.ok(held > 0, "they do reach in");
 	assert.ok(carried > 0, "MCB carries the title in");
 	assert.ok(firstTeammate > titleCarrierGoneTime(), "and has left before any teammate reaches in");
-	assert.ok([...keysOfSeed.values()].some((keys) => keys.size > 1), "a slot is held again on a later pass");
+	assert.ok(byKey.size > FINALE_WALL_CURSOR_NAMES.length * 2, "the roster repeats over multiple loops");
+	assert.deepEqual([...byKey.values()].map((who) => who.split("@")[0]), Array.from({ length: byKey.size }, (_, index) => FINALE_WALL_CURSOR_NAMES[index % FINALE_WALL_CURSOR_NAMES.length]));
+	const fresh = wallFor(viewport);
+	for (const [key, time] of [...timesByKey].reverse()) {
+		const cursor = wallCursorsAt(time, fresh.wall, fresh.drops, viewport).find((each) => each.key === key);
+		assert.equal(`${cursor.name}@${cursor.lane}`, byKey.get(key), `seeking back to ${key} restores its teammate`);
+	}
 	const names = new Set([...byKey.values()].map((who) => who.split("@")[0]));
 	assert.ok(names.size >= FINALE_CURSORS.length, `many teammates over a loop (${[...names].join(", ")})`);
 	assert.equal(new Set([...byKey.values()].map((who) => who.split("@")[1])).size, FINALE_CURSORS.length, "every lane is used");
