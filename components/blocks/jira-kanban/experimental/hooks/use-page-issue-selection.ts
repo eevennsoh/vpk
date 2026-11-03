@@ -27,7 +27,12 @@ export function usePageIssueSelection({
 	const selectionColumns = getSelectableJiraKanbanColumns(filteredBoardColumns, collapsedColumns);
 	const dragCohort = useRef<readonly string[] | null>(null);
 	const handleCardDragEnd = () => { dragCohort.current = null; setDraggedCard(null); };
-	const onClearSelection = () => { handleCardDragEnd(); setSelection(createJiraKanbanSelectionState()); };
+	const onClearSelection = () => {
+		handleCardDragEnd();
+		setSelection((current) => current.selectedCardCodes.size === 0 && current.anchor === null && current.keyboardRange === undefined
+			? current
+			: createJiraKanbanSelectionState());
+	};
 	const onSelectAll = () => {
 		handleCardDragEnd();
 		setSelection((current) => selectAllJiraKanbanCardsInSelectedColumns(current, selectionColumns));

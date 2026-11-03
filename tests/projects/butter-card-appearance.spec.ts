@@ -5,6 +5,80 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("the board remains visible while a work item loads for the first time", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const board = page.locator("[data-butter-board-surface]");
+	await expect(board).toBeVisible();
+	await page.evaluate(() => {
+		Object.assign(window, { workItemEntryTransitions: [] as string[] });
+		document.addEventListener("transitionrun", (event) => {
+			if (event.target instanceof HTMLElement && event.target.matches('[role="dialog"][data-slot="dialog-content"]')) {
+				(window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions.push(event.propertyName);
+			}
+		}, true);
+	});
+	let releaseChunks!: () => void;
+	const chunksReleased = new Promise<void>((resolve) => { releaseChunks = resolve; });
+	let observeChunk!: () => void;
+	const chunkRequested = new Promise<void>((resolve) => { observeChunk = resolve; });
+	await page.route("**/_next/static/**/*.js", async (route) => {
+		observeChunk();
+		await chunksReleased;
+		await route.continue();
+	});
+	try {
+		await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+		await chunkRequested;
+		await expect(board).toBeVisible({ timeout: 5_000 });
+		await expect(page.getByRole("status").filter({ hasText: "Opening work item" })).toBeVisible();
+		await card(page, "PAY-107").locator('[data-slot="jira-issue-card"]').click();
+		await expect(board).toBeVisible();
+	} finally {
+		releaseChunks();
+	}
+	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Move retry and backoff out of LegacyGatewayAdapter" })).toBeVisible();
+	await expect.poll(() => page.evaluate(() => (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions)).toContain("opacity");
+	await page.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeHidden();
+	await page.evaluate(() => { (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions = []; });
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	await expect(page.getByRole("heading", { name: "Port confirmPaymentIntent and the 3-D Secure challenge flow" })).toBeVisible();
+	await expect.poll(() => page.evaluate(() => (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions)).toContain("opacity");
+});
+
+test("the first work item opens without motion when reduced motion is requested", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	await expect(dialog).toBeVisible();
+	await expect(dialog).toHaveCSS("transition-property", "none");
+	await expect(dialog).toHaveCSS("opacity", "1");
+});
+
+test("opening work items leaves every synced session visible after overlapping arrivals", async ({ page }) => {
+	test.setTimeout(240_000);
+	await page.goto(appUrl("/butter"));
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	const column = page.locator("[data-agent-session-column]");
+	await expect(column.locator('[data-testid^="agent-session-row-"]').first()).toBeAttached();
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
+	await page.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(page.locator("[data-butter-board-surface]")).toHaveAttribute("data-agent-session-sync", "settled", { timeout: 220_000 });
+	await expect.poll(() => column.locator('[data-testid^="agent-session-row-"]').evaluateAll((rows) => rows.filter((row) => {
+		const style = getComputedStyle(row);
+		return Number(style.opacity) < 0.99 || style.visibility !== "visible";
+	}).length), { timeout: 10_000 }).toBe(0);
+	await expect(column.locator('[data-testid^="agent-session-row-"]')).toHaveCount(48);
+	await card(page, "PAY-107").locator('[data-slot="jira-issue-card"]').click();
+	await expect(page.getByRole("heading", { name: "Move retry and backoff out of LegacyGatewayAdapter" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeHidden();
+	await expect(column.locator('[data-testid^="agent-session-row-"]')).toHaveCount(48);
+});
+
 test("Butter directory picker can be dismissed without trapping focus", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").getByRole("button", { name: "Add agent to PAY-118" }).focus();
