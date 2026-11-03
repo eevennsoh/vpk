@@ -18,13 +18,14 @@ function PileCount({ count }: Readonly<{ count: number }>) {
 function PileCard({ item, index, count, piled, pointer, onPreview, onRemove }: Readonly<AttachmentCardActions & {
 	item: ProjectButterAttachment; index: number; count: number; piled: boolean; pointer: AttachmentPilePointer;
 }>) {
-	const falloff = 1 / (1 + index * 0.75);
 	const rest = piled ? { x: index === 0 ? 0 : index === 1 ? 4 : -4, y: index === 0 ? 0 : 2, rotate: index === 0 ? 0 : index === 1 ? 4 : -5 } : { x: 0, y: 0, rotate: 0 };
 	const fan = piled && index > 0 ? (rest.x < 0 ? -1 : 1) : 0;
 	const live = piled ? 1 : 0;
-	const x = useTransform(() => live * (pointer.x.get() * falloff + pointer.spread.get() * fan * 2));
-	const y = useTransform(() => live * (pointer.y.get() * falloff - pointer.spread.get() * 2));
-	const rotate = useTransform(() => live * (pointer.rotate.get() * falloff + pointer.spread.get() * fan));
+	// The top card holds still; each back card fans away on its own side, opening wider when the pointer is over that side.
+	const opening = () => live * fan * pointer.spread.get() * (1 + Math.max(0, pointer.lean.get() * fan) * 0.5);
+	const x = useTransform(() => opening() * 3);
+	const y = useTransform(() => live * Math.abs(fan) * pointer.spread.get() * -1);
+	const rotate = useTransform(() => opening() * 3);
 	return (
 		<motion.div
 			animate={rest}
@@ -37,7 +38,7 @@ function PileCard({ item, index, count, piled, pointer, onPreview, onRemove }: R
 			style={{ zIndex: count - index, pointerEvents: piled ? "none" : undefined, willChange: "transform" }}
 			transition={{ duration: piled ? motionDuration.medium : motionDuration.slow, ease: motionEase.outPractical }}
 		>
-			<motion.div style={{ x, y, rotate, willChange: "transform" }}><ProjectButterAttachmentCard item={item} onPreview={onPreview} onRemove={onRemove} /></motion.div>
+			<motion.div style={{ x, y, rotate, originY: 1, willChange: "transform" }}><ProjectButterAttachmentCard item={item} onPreview={onPreview} onRemove={onRemove} /></motion.div>
 		</motion.div>
 	);
 }

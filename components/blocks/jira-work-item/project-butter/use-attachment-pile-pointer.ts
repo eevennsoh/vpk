@@ -17,13 +17,11 @@ function usePileSpring(target: MotionValue<number>, reducedMotion: boolean | nul
  */
 export function useAttachmentPilePointer() {
 	const reducedMotion = useReducedMotion();
-	const targetX = useMotionValue(0);
-	const targetY = useMotionValue(0);
-	const targetRotate = useMotionValue(0);
+	const targetLean = useMotionValue(0);
 	const targetSpread = useMotionValue(0);
-	const x = usePileSpring(targetX, reducedMotion);
-	const y = usePileSpring(targetY, reducedMotion);
-	const rotate = usePileSpring(targetRotate, reducedMotion);
+	/** Pointer position across the pile, -1 (left edge) to 1 (right edge). */
+	const lean = usePileSpring(targetLean, reducedMotion);
+	/** 0 at rest, 1 while hovered: how far the back cards fan out. */
 	const spread = usePileSpring(targetSpread, reducedMotion);
 	const frame = useRef<number | null>(null);
 	const pointer = useRef<{ node: Element; x: number; y: number } | null>(null);
@@ -45,17 +43,16 @@ export function useAttachmentPilePointer() {
 			if (!sample) return;
 			const box = sample.node.getBoundingClientRect();
 			const nx = Math.max(-1, Math.min(1, (sample.x - box.left - box.width / 2) / (box.width / 2 || 1)));
-			const ny = Math.max(-1, Math.min(1, (sample.y - box.top - box.height / 2) / (box.height / 2 || 1)));
-			targetX.set(nx * 4); targetY.set(ny * 2); targetRotate.set(nx * 3);
+			targetLean.set(nx);
 		});
 	}
 	function reset() {
 		pointer.current = null;
 		if (frame.current !== null) cancelAnimationFrame(frame.current);
 		frame.current = null;
-		for (const value of [targetX, targetY, targetRotate, targetSpread]) value.set(0);
+		for (const value of [targetLean, targetSpread]) value.set(0);
 	}
-	return { x, y, rotate, spread, enter, move, reset };
+	return { lean, spread, enter, move, reset };
 }
 
 export type AttachmentPilePointer = ReturnType<typeof useAttachmentPilePointer>;
