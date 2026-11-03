@@ -104,6 +104,7 @@ export function ProjectButterJiraWorkItem({
 	const sidePanel = presentation === "side-panel";
 	const details = (
 		<ProjectButterDetails
+			code={workItem?.code ?? "VITA-1"}
 			content={content}
 			empty={sparse}
 			onPanelOrderChange={setPanelOrder}

@@ -97,6 +97,8 @@ export function useButterList({
 	contentMode = "default",
 	listAriaLabel = "Payments SDK v2 migration work items list",
 	onAssignedAgentSelect,
+	onBrowseAgents,
+	onCreateAgent,
 	onIssueOpen,
 	setBoardColumns,
 }: Readonly<{
@@ -105,6 +107,8 @@ export function useButterList({
 	contentMode?: ContentMode;
 	listAriaLabel?: string;
 	onAssignedAgentSelect?: (issueKey: string, agent: JiraListAssignedAgent) => void;
+	onBrowseAgents?: () => void;
+	onCreateAgent?: () => void;
 	onIssueOpen?: (issueKey: string) => void;
 	setBoardColumns: Dispatch<SetStateAction<JiraKanbanColumnData[]>>;
 }>): UseButterListResult {
@@ -401,7 +405,7 @@ export function useButterList({
 			onSummaryChange: handleSummaryChange,
 			onStoryPointsChange: handleStoryPointsChange,
 			onToggleExpand: handleToggleExpand,
-			renderAgentSessions: (row) => createElement(ButterListAgentCell, { agentCatalog: BUTTER_AGENT_CATALOG, onAssignedAgentIdsChange: handleAssignedAgentIdsChange, onAssignedAgentSelect, row }),
+			renderAgentSessions: (row) => createElement(ButterListAgentCell, { agentCatalog: BUTTER_AGENT_CATALOG, onAssignedAgentIdsChange: handleAssignedAgentIdsChange, onAssignedAgentSelect, onBrowseAgents, onCreateAgent, row }),
 			onMoveRow: handleMoveRow,
 			onRefresh: handleRefresh,
 			onSelectAllRows: handleSelectAllRows,
@@ -442,6 +446,8 @@ export function useButterList({
 		nextIssueKey,
 		rowIndex,
 		onAssignedAgentSelect,
+		onBrowseAgents,
+		onCreateAgent,
 		selectedIssueKeys,
 	]);
 

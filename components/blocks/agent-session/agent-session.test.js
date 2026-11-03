@@ -141,13 +141,13 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 	assert.match(METADATA_SOURCE, /const label = isLocal \? "Local session" : "Cloud session";/u);
 	assert.match(
 		METADATA_SOURCE,
-		/<span\s+aria-label=\{label\}\s+className="grid size-4 shrink-0 place-items-center text-icon-subtlest"\s+role="img"/u,
+		/<span\s+aria-label=\{label\}\s+className=\{cn\([\s\S]*?\)\}\s+role="img"/u,
 	);
 	assert.doesNotMatch(METADATA_SOURCE, /Tooltip|tabIndex|handleTooltipWheel/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "host"/u);
 	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`[\s\S]*export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*underline-offset-2 hover:underline[\s\S]*\{pullRequestLabel\}/u);
-	assert.equal((METADATA_SOURCE.match(/<AgentListPrStatusIcon\s+className="text-icon-subtlest"\s+status=\{(?:segment\.prStatus|item\.prStatus) \?\? "created"\}\s+\/>/gu) ?? []).length, 2);
+	assert.equal((METADATA_SOURCE.match(/<AgentListPrStatusIcon\s+className="[^"]*text-icon-subtlest[^"]*"\s+status=\{(?:segment\.prStatus|item\.prStatus) \?\? "created"\}\s+\/>/gu) ?? []).length, 2);
 	assert.doesNotMatch(METADATA_SOURCE, /<a[\s\S]*href=\{item\.sessionDetails\?\.pullRequestUrl/u);
 	assert.doesNotMatch(CARD_SOURCE, /pullRequest/u);
 	assert.doesNotMatch(CARD_SOURCE, /MetadataPathLink/u);
@@ -632,7 +632,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /const isLongDensity = density === "long";/u);
 	// A triage mark lives on the leading avatar, so a markable row keeps its
 	// identity column even in the title-led density.
-	assert.match(CARD_SOURCE, /const hideIdentity = isLongDensity && mark == null;/u);
+	assert.match(CARD_SOURCE, /const hideIdentity = isTitleLed && mark == null;/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hideIdentity=\{hideIdentity\}/u);
 	assert.match(CARD_SOURCE, /lifecycle=\{lifecycleIndicator\}/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator =[\s\S]*isLongDensity[\s\S]*<AgentSessionLifecycle[\s\S]*state=\{shownLifecycleState\}/u);
@@ -652,7 +652,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	);
 	assert.match(
 		METADATA_SOURCE,
-		/case "time":\s*return \(\s*<span className="flex shrink-0 items-center gap-1 text-nowrap">\s*\{segment\.host === undefined \? null : \(\s*<AgentSessionHostSegment isLocal=\{segment\.host === "local"\} \/>/u,
+		/case "time":\s*return \(\s*<span className="flex shrink-0 items-center gap-1 text-nowrap">\s*\{segment\.host === undefined \? null : \(\s*<AgentSessionHostSegment compact isLocal=\{segment\.host === "local"\} \/>/u,
 	);
 	assert.match(CARD_SOURCE, /<AgentSessionShortMetadata item=\{item\} \/>/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "status"/u);

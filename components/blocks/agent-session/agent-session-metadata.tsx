@@ -47,14 +47,14 @@ function MetadataDot() {
  * same thing wherever it appears.
  */
 // react-doctor-disable-next-line react-doctor/no-multi-component-file -- These are the sub-parts of one metadata line, colocated so short and long densities cannot drift apart; splitting six presentational fragments across six files would cost more than it explains.
-export function AgentSessionHostSegment({ isLocal }: Readonly<{ isLocal: boolean }>) {
+export function AgentSessionHostSegment({ compact = false, isLocal }: Readonly<{ compact?: boolean; isLocal: boolean }>) {
 	const label = isLocal ? "Local session" : "Cloud session";
 	const HostIcon = isLocal ? ScreenIcon : CloudIcon;
 
 	return (
 		<span
 			aria-label={label}
-			className="grid size-4 shrink-0 place-items-center text-icon-subtlest"
+			className={cn("grid shrink-0 place-items-center text-icon-subtlest", compact ? "size-3 [&_span]:size-3! [&_svg]:size-3!" : "size-4 [&_span]:size-4! [&_svg]:size-4!")}
 			role="img"
 		>
 			<HostIcon color="currentColor" label="" size="small" />
@@ -181,12 +181,12 @@ function LongMetadataSegment({
 		case "tool-call":
 			return <AgentSessionToolCall toolCalls={segment.toolCalls ?? []} />;
 		case "branch":
-			return <span className="flex min-w-0 items-center gap-1"><BranchIcon label="" size="small" /><span className="min-w-0 truncate" title={segment.label}>{segment.label}</span></span>;
+			return <span className="flex min-w-0 items-center gap-1"><span className="grid size-3 shrink-0 place-items-center [&_span]:size-3! [&_svg]:size-3!"><BranchIcon label="" size="small" /></span><span className="min-w-0 truncate" title={segment.label}>{segment.label}</span></span>;
 		case "artifact":
 			return (
 				<span className="flex min-w-0 shrink items-center gap-1">
 					<AgentListPrStatusIcon
-						className="text-icon-subtlest"
+						className="size-3 text-icon-subtlest [&_span]:size-3! [&_svg]:size-3!"
 						status={segment.prStatus ?? "created"}
 					/>
 					<span className="min-w-0 truncate text-text-subtle" title={segment.label}>
@@ -198,7 +198,7 @@ function LongMetadataSegment({
 			return (
 				<span className="flex shrink-0 items-center gap-1 text-nowrap">
 					{segment.host === undefined ? null : (
-						<AgentSessionHostSegment isLocal={segment.host === "local"} />
+						<AgentSessionHostSegment compact isLocal={segment.host === "local"} />
 					)}
 					<span title="Last update">
 						<AgentListTime item={item} />
@@ -281,7 +281,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 			) : (
 				<span className="flex min-w-0 shrink items-center gap-1">
 					<AgentListPrStatusIcon
-						className="text-icon-subtlest"
+						className="size-3 text-icon-subtlest [&_span]:size-3! [&_svg]:size-3!"
 						status={item.prStatus ?? "created"}
 					/>
 					<span
@@ -300,7 +300,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 			<MetadataDot />
 			<span className="flex shrink-0 items-center gap-1 text-nowrap">
 				{declaredHost === undefined ? null : (
-					<AgentSessionHostSegment isLocal={declaredHost === "local"} />
+					<AgentSessionHostSegment compact isLocal={declaredHost === "local"} />
 				)}
 				<span title="Last update">
 					<AgentListTime item={item} />

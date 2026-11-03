@@ -31,9 +31,9 @@ test("Butter directory picker can be dismissed without trapping focus", async ({
 	await expect(dropdown).toBeHidden();
 	await expect(configure).toBeFocused();
 	await field.click();
-	await page.getByRole("textbox", { name: "Search agents" }).click();
+	await page.getByRole("combobox", { name: "Search agents" }).click();
 	await expect(dropdown).toBeHidden();
-	await expect(page.getByRole("textbox", { name: "Search agents" })).toBeFocused();
+	await expect(page.getByRole("combobox", { name: "Search agents" })).toBeFocused();
 });
 
 test("Butter add-agent tooltip follows rapid pointer re-entry", async ({ page }) => {
@@ -219,6 +219,32 @@ test("Butter previews an assigned agent from its session avatar", async ({ page 
 	await page.keyboard.press("Escape");
 	await expect(lanyard).toBeHidden();
 	await expect(assignment).toBeVisible();
+});
+
+test("Butter List agent picker keeps directory actions available", async ({ page }) => {
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	const add = page.getByRole("button", { name: "Add agent to PAY-118", exact: true });
+	await add.click();
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+	const browse = picker.getByRole("button", { name: "Browse agents" });
+	const create = picker.getByRole("button", { name: "Create agent" });
+	await expect(browse).toBeVisible();
+	await expect(create).toBeVisible();
+	const before = await browse.boundingBox();
+	const list = picker.getByRole("listbox");
+	await list.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+	await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+	await expect(browse).toBeVisible();
+	await expect(create).toBeVisible();
+	expect((await browse.boundingBox())?.y).toBe(before?.y);
+	await browse.click();
+	const directory = page.getByRole("dialog", { name: "Agents", exact: true }).filter({ has: page.getByRole("tab", { name: "Recommended" }) });
+	await expect(directory).toBeVisible();
+	await directory.getByRole("button", { name: "Close" }).click();
+	await add.click();
+	await picker.getByRole("button", { name: "Create agent" }).click();
+	await expect(page).toHaveURL(/\/studio$/u, { timeout: 20_000 });
 });
 
 test("Butter's agent picker keeps directory actions visible while scrolling", async ({ page }) => {
@@ -408,7 +434,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await add.focus();
 		await page.keyboard.press("Enter");
 		const menu = page.getByRole("dialog", { name: "Agents", exact: true });
-		const search = menu.getByRole("textbox", { name: "Search agents" });
+		const search = menu.getByRole("combobox", { name: "Search agents" });
 		await expect(search).toBeFocused();
 		await menu.locator('[data-slot="command-item"][data-value="github-copilot"]').hover();
 		await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "github-copilot");

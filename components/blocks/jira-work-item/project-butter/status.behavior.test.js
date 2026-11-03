@@ -32,8 +32,23 @@ test("status changes reuse the controlled circle and synchronize the header and 
 		assert.equal(headerCircle === initialCircle, true);
 		assert.equal(headerCircle?.getAttribute("aria-valuenow"), progress);
 		assert.equal(detailsCircle?.getAttribute("aria-valuenow"), progress);
+		if (status === "To do") {
+			assert.equal(headerCircle.querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtlest"), true);
+			assert.equal(detailsCircle.querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtlest"), true);
+		}
 		currentStatus = status;
 	}
+});
+
+test("filled progress circles use the subtlest icon color at zero", async () => {
+	const view = await renderComponent({
+		entry: "components/ui-custom/progress-circle.tsx",
+		exportName: "ProgressCircle",
+		props: { value: 0, variant: "filled", dashed: true },
+	});
+	assert.equal(view.getByRole("progressbar").querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtlest"), true);
+	await view.rerender({ value: 50, variant: "filled", dashed: true, colorByProgress: true });
+	assert.equal(view.getByRole("progressbar").querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-information"), true);
 });
 
 test("custom review status uses the review progress state and can be renamed", async () => {

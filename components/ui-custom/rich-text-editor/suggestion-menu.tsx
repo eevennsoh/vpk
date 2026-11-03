@@ -12,6 +12,7 @@ import {
 	useState,
 	type FocusEvent,
 	type KeyboardEvent,
+	type ReactElement,
 	type ReactNode,
 } from "react";
 import { ReactRenderer } from "@tiptap/react";
@@ -806,6 +807,7 @@ export function RichTextSuggestionMenu({
 }
 
 export interface RichTextCommandMenuSearchFieldProps {
+	activeDescendantId?: string | null;
 	autoFocus?: boolean;
 	/**
 	 * Set when an ancestor owns list keyboard navigation — e.g. a cmdk `Command`
@@ -826,6 +828,7 @@ export interface RichTextCommandMenuSearchFieldProps {
 	onSubmit?: () => void;
 	onValueChange: (value: string) => void;
 	placeholder?: string;
+	renderInput?: (input: ReactElement) => ReactNode;
 	/**
 	 * When true, show a "Tab" key hint in the trailing slot while the field is
 	 * empty and unfocused — signalling that pressing Tab from the editor moves
@@ -838,6 +841,7 @@ export interface RichTextCommandMenuSearchFieldProps {
 }
 
 export function RichTextCommandMenuSearchField({
+	activeDescendantId,
 	autoFocus,
 	hostOwnsKeyNavigation,
 	icon,
@@ -849,6 +853,7 @@ export function RichTextCommandMenuSearchField({
 	onSubmit,
 	onValueChange,
 	placeholder = label,
+	renderInput,
 	tabHint,
 	value,
 }: Readonly<RichTextCommandMenuSearchFieldProps>) {
@@ -869,41 +874,43 @@ export function RichTextCommandMenuSearchField({
 		});
 		return () => cancelAnimationFrame(frame);
 	}, [autoFocus]);
+	const input = <Input
+		ref={inputRef}
+		{...(id === undefined ? {} : { id })}
+		{...(activeDescendantId === undefined ? {} : { "aria-activedescendant": activeDescendantId ?? undefined })}
+		variant="subtle"
+		value={value}
+		aria-label={label}
+		placeholder={placeholder}
+		onChange={(event) => onValueChange(event.currentTarget.value)}
+		onKeyDown={(event) => {
+			onKeyDown?.(event);
+			if (!hostOwnsKeyNavigation) {
+				event.stopPropagation();
+			}
+			if (event.defaultPrevented) {
+				return;
+			}
+			if ((event.key === "Escape" || event.key === "Esc") && onEscape) {
+				event.preventDefault();
+				onEscape();
+				return;
+			}
+			// Leave Enter alone when the host owns navigation: cmdk's root
+			// handler skips events that are already `defaultPrevented`, so
+			// preventing here would stop Enter from picking the highlighted row.
+			if (event.key === "Enter" && !hostOwnsKeyNavigation) {
+				event.preventDefault();
+				onSubmit?.();
+			}
+		}}
+	/>;
 	return (
 		<div className="rich-text-command-menu-search rich-text-command-menu-item-sticky">
 			<span className="rich-text-command-menu-search-logo" aria-hidden={true}>
 				{icon}
 			</span>
-			<Input
-				ref={inputRef}
-				id={id}
-				variant="subtle"
-				value={value}
-				aria-label={label}
-				placeholder={placeholder}
-				onChange={(event) => onValueChange(event.currentTarget.value)}
-				onKeyDown={(event) => {
-					onKeyDown?.(event);
-					if (!hostOwnsKeyNavigation) {
-						event.stopPropagation();
-					}
-					if (event.defaultPrevented) {
-						return;
-					}
-					if ((event.key === "Escape" || event.key === "Esc") && onEscape) {
-						event.preventDefault();
-						onEscape();
-						return;
-					}
-					// Leave Enter alone when the host owns navigation: cmdk's root
-					// handler skips events that are already `defaultPrevented`, so
-					// preventing here would stop Enter from picking the highlighted row.
-					if (event.key === "Enter" && !hostOwnsKeyNavigation) {
-						event.preventDefault();
-						onSubmit?.();
-					}
-				}}
-			/>
+			{renderInput ? renderInput(input) : input}
 			{value ? (
 				<Button
 					type="button"

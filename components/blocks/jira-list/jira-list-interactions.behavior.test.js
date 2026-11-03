@@ -78,6 +78,46 @@ test("Butter list uses the card agent picker to start a session", async () => {
 	assert.deepEqual(assigned, [["PAY-1", ["claude"]]]);
 });
 
+test("Butter list forwards agent directory actions to the picker", async () => {
+	const actions = [];
+	const view = await renderComponent({
+		entry: "components/projects/butter/components/butter-list-agent-cell.tsx",
+		exportName: "ButterListAgentCell",
+		props: {
+			agentCatalog: [{ id: "claude", name: "Claude", byline: "Coding agent" }],
+			onAssignedAgentIdsChange() {},
+			onBrowseAgents: () => actions.push("browse"),
+			onCreateAgent: () => actions.push("create"),
+			row: rows[0],
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Add agent to PAY-1" }));
+	await view.click(view.getByRole("button", { name: "Browse agents" }));
+	assert.deepEqual(actions, ["browse"]);
+	await view.click(view.getByRole("button", { name: "Add agent to PAY-1" }));
+	await view.click(view.getByRole("button", { name: "Create agent" }));
+	assert.deepEqual(actions, ["browse", "create"]);
+});
+
+test("assigned list sessions forward agent directory actions", async () => {
+	const actions = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-list/jira-list-cells.tsx",
+		exportName: "JiraListAgentSessionsCell",
+		props: {
+			agentCatalog: [{ id: "claude", name: "Claude", byline: "Coding agent" }],
+			agentSessions: [{ id: "claude", name: "Claude", statusKind: "working", statusLabel: "Working" }],
+			onAssignedAgentIdsChange() {},
+			onBrowseAgents: () => actions.push("browse"),
+			onCreateAgent: () => actions.push("create"),
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Edit agents" }));
+	await view.click(view.getByRole("button", { name: "Assign agent" }));
+	await view.click(view.getByRole("button", { name: "Browse agents" }));
+	assert.deepEqual(actions, ["browse"]);
+});
+
 test("starting a list session moves focus to its activity", async () => {
 	const view = await renderComponent({ source: `
 		import { useState } from "react";

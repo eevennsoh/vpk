@@ -2,15 +2,12 @@
 
 import { useState } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
+import { AgentSessionsMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-session-menu";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { ProjectButterAgentPicker } from "@/components/blocks/jira-work-item/project-butter/project-butter-agent-picker";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
@@ -78,8 +75,8 @@ export function ProjectButterCrew({ assignee, onOpenSession, onStartAgent, sessi
 					<Avatar animate={false} borderTone={open ? "selected" : "default"} className="size-7.5" label="Add agent" shape="hexagon" size="default"><AvatarFallback className="bg-transparent text-icon-subtle group-hover/crew:bg-bg-neutral-subtle-hovered"><AddIcon label="" size="small" /></AvatarFallback></Avatar>
 				</AvatarGroup>
 			</PopoverTrigger>
-			<PopoverContent align="end" aria-label={picking ? "Add agent" : "Agent sessions"} className={picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[360px] gap-0 p-1"} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">
-				{picking && onStartAgent ? <ProjectButterAgentPicker onSelect={(agent) => { onStartAgent(agent); changeOpen(false); }} sessions={sessions} /> : <><ul aria-label="Agent sessions">{orderedSessions.map((session) => <li key={session.id}><Button aria-label={`Open ${session.agent.name} session: ${session.title}`} className="h-auto min-h-12 w-full justify-start gap-3 py-2" onClick={() => { onOpenSession(session); changeOpen(false); }} type="button" variant="ghost"><AgentAvatarVisual avatarSrc={session.agent.avatarSrc} brandName={session.agent.brandName} label={session.agent.name} sizePx={24} vpkLogo={session.agent.vpkLogo} /><span className="min-w-0 flex-1 text-left"><span className="block truncate font-normal text-text">{session.title}</span><span className="block truncate text-xs font-normal text-text-subtle">{session.agent.name} · {SESSION_STATE[session.state]}{session.timeLabel ? ` · ${session.timeLabel}` : ""}</span></span>{session.state === "running" ? <Spinner label="Working" size="xs" variant="bloom" /> : <span className="shrink-0 text-xs font-normal text-text-subtle">{SESSION_STATE[session.state]}</span>}</Button></li>)}</ul><Separator className="my-1" /><Button disabled={!onStartAgent} onClick={onStartAgent ? () => setView("picker") : undefined} type="button" variant="ghost"><AiAgentAddIcon label="" size="small" /><span className="min-w-0 flex-1 text-left font-normal">Add agent</span><ChevronRightIcon label="" size="small" /></Button></>}
+			<PopoverContent align="end" aria-label={picking ? "Add agent" : "Agent sessions"} className={picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0"} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">
+				{picking && onStartAgent ? <ProjectButterAgentPicker onSelect={(agent) => { onStartAgent(agent); changeOpen(false); }} sessions={sessions} /> : <AgentSessionsMenu addAgentLabel="Add agent" items={orderedSessions} localSessionAction="view" onAddAgent={onStartAgent ? () => setView("picker") : undefined} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} />}
 			</PopoverContent>
 		</Popover>
 	);

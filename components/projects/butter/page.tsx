@@ -113,6 +113,8 @@ function ButterApp(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
+	const browseAgents = useCallback(() => setAgentsDirectoryOpen(true), []);
+	const createAgent = useCallback(() => router.push("/studio"), [router]);
 	const workItem = useButterWorkItem();
 	const {
 		boardColumns,
@@ -142,9 +144,9 @@ function ButterApp(): React.ReactElement {
 			onStartAgentSession: startAgentSession,
 		});
 	const cardGenerativeActionFooterActions = {
-		onBrowseAgents: () => setAgentsDirectoryOpen(true),
+		onBrowseAgents: browseAgents,
 		onBrowseSkills: () => setSkillsDirectoryOpen(true),
-		onCreateAgent: () => router.push("/studio"),
+		onCreateAgent: createAgent,
 		onCreateSkill: () => router.push("/skills"),
 	};
 	// Team EU 26 keeps its page structure fixed: Board and List remain sibling
@@ -279,6 +281,8 @@ function ButterApp(): React.ReactElement {
 		contentMode,
 		listAriaLabel: wacContent ? "Checkout roadmap work items list" : undefined,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
+		onBrowseAgents: browseAgents,
+		onCreateAgent: createAgent,
 		onIssueOpen: handleListIssueOpen,
 		setBoardColumns,
 	});

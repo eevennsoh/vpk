@@ -12,6 +12,7 @@ import { AgentSessionCard } from "@/components/blocks/agent-session/agent-sessio
 import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 
 export function AssignedAgentsSessionMenu({
 	addAgentLabel,
@@ -34,6 +35,45 @@ export function AssignedAgentsSessionMenu({
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	rows: readonly AgentAssignmentAgent[];
 }>) {
+	return <AgentSessionsMenu
+		addAgentLabel={addAgentLabel}
+		items={rows.map(toAssignmentSessionItem)}
+		onAddAgent={onAddAgent}
+		onContinueInAgent={onContinueInAgent}
+		onDeleteSession={onDeleteSession}
+		onMoreMenuOpenChange={onMoreMenuOpenChange}
+		onRenameSession={onRenameSession}
+		onSelectSession={(item) => {
+			const row = rows.find((candidate) => candidate.id === item.id);
+			if (row) onSelectAgent(row);
+		}}
+		onToggleVisibility={onToggleVisibility}
+	/>;
+}
+
+export function AgentSessionsMenu({
+	addAgentLabel,
+	items,
+	localSessionAction = "continue",
+	onAddAgent,
+	onContinueInAgent,
+	onDeleteSession,
+	onMoreMenuOpenChange,
+	onRenameSession,
+	onSelectSession,
+	onToggleVisibility,
+}: Readonly<{
+	addAgentLabel: string;
+	items: readonly AgentSessionItem[];
+	localSessionAction?: "continue" | "view";
+	onAddAgent?: () => void;
+	onContinueInAgent?: (item: AgentSessionItem) => void;
+	onDeleteSession?: (item: AgentSessionItem) => void;
+	onMoreMenuOpenChange?: (open: boolean) => void;
+	onRenameSession?: (item: AgentSessionItem) => void;
+	onSelectSession: (item: AgentSessionItem) => void;
+	onToggleVisibility?: (item: AgentSessionItem) => void;
+}>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const renderAgentAvatar = use(AgentSessionAvatarPreviewContext);
 
@@ -46,15 +86,16 @@ export function AssignedAgentsSessionMenu({
 
 	return (
 		<div className="flex w-full flex-col gap-1 p-1 outline-none" ref={containerRef} tabIndex={-1}>
-			{rows.length === 0 ? (
+			{items.length === 0 ? (
 				<p className="px-3 py-2 text-sm text-text-subtle">No agents assigned</p>
 			) : (
 				<ul className="flex w-full flex-col gap-0">
-					{rows.map((row) => (
+					{items.map((item) => (
 						<AgentSessionCard
 							density="long"
-							item={toAssignmentSessionItem(row)}
-							key={row.id}
+							item={item}
+							key={item.id}
+							localSessionAction={localSessionAction}
 							moreMenuPortalled={true}
 							moreMenuPositionerClassName="z-[600]"
 							onContinueInAgent={onContinueInAgent}
@@ -62,7 +103,7 @@ export function AssignedAgentsSessionMenu({
 							onMoreMenuOpenChange={onMoreMenuOpenChange}
 							onRenameSession={onRenameSession}
 							onToggleVisibility={onToggleVisibility}
-							onView={row.host === "local" ? undefined : () => onSelectAgent(row)}
+							onView={item.host === "local" && localSessionAction === "continue" ? undefined : () => onSelectSession(item)}
 							padding="compact"
 							renderAgentAvatar={renderAgentAvatar ?? undefined}
 							showLifecycleLabel={false}
@@ -80,9 +121,9 @@ export function AssignedAgentsSessionMenu({
 						variant="ghost"
 					>
 						<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">
-							<AiAgentAddIcon label="" />
+							<Icon className="size-4" render={<AiAgentAddIcon label="" />} />
 						</span>
-						<span className="text-text-subtle">{addAgentLabel}</span>
+						<span className="min-w-0 truncate text-text-subtle">{addAgentLabel}</span>
 					</Button>
 				</div>
 			) : null}

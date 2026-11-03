@@ -206,6 +206,7 @@ export {
   Command,
   CommandDialog,
   CommandInput,
+  CommandPrimitiveInput,
   CommandList,
   CommandEmpty,
   CommandGroup,

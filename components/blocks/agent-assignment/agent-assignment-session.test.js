@@ -51,7 +51,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(sessionMenu, /padding="compact"/u);
 	assert.doesNotMatch(sessionMenu, /showMoreMenu=\{false\}/u);
 	assert.match(sessionMenu, /onContinueInAgent=\{onContinueInAgent\}/u);
-	assert.match(sessionMenu, /onView=\{row\.host === "local" \? undefined : \(\) => onSelectAgent\(row\)\}/u);
+	assert.match(sessionMenu, /onView=\{item\.host === "local" && localSessionAction === "continue" \? undefined : \(\) => onSelectSession\(item\)\}/u);
 	assert.match(source, /<AssignedAgentsSessionMenu[\s\S]*onSelectAgent=\{handleAssignedAgentSelect\}/u);
 	assert.match(sessionMenu, /onDeleteSession=\{onDeleteSession\}/u);
 	assert.match(sessionMenu, /onRenameSession=\{onRenameSession\}/u);
@@ -89,7 +89,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 		demoAgents,
 		/const DEMO_INVOKERS: Readonly<Record<string, AgentListInvoker>> = \{\n\t"github-copilot"/u,
 	);
-	assert.match(sessionMenu, /toAssignmentSessionItem\(row\)/u);
+	assert.match(sessionMenu, /rows\.map\(toAssignmentSessionItem\)/u);
 	assert.doesNotMatch(sessionMenu, /density="short"/u);
 	assert.match(sessionMenu, /\{addAgentLabel\}/u);
 	assert.match(

@@ -6,10 +6,12 @@ import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/
 import { JiraListAgentSessionsCell } from "@/components/blocks/jira-list/jira-list-cells";
 import type { JiraListProps, JiraListRowData } from "@/components/blocks/jira-list";
 
-export function ButterListAgentCell({ agentCatalog, onAssignedAgentIdsChange, onAssignedAgentSelect, row }: Readonly<{
+export function ButterListAgentCell({ agentCatalog, onAssignedAgentIdsChange, onAssignedAgentSelect, onBrowseAgents, onCreateAgent, row }: Readonly<{
 	agentCatalog: NonNullable<JiraListProps["agentCatalog"]>;
 	onAssignedAgentIdsChange: NonNullable<JiraListProps["onAssignedAgentIdsChange"]>;
 	onAssignedAgentSelect?: JiraListProps["onAssignedAgentSelect"];
+	onBrowseAgents?: () => void;
+	onCreateAgent?: () => void;
 	row: JiraListRowData;
 }>) {
 	const sessions = row.agentSessions ?? [];
@@ -20,6 +22,8 @@ export function ButterListAgentCell({ agentCatalog, onAssignedAgentIdsChange, on
 					agents: agentCatalog,
 					assignedAgents: sessions.map((agent) => ({ ...agent, byline: agent.byline ?? "" })),
 					onAssignedAgentIdsChange: (ids) => onAssignedAgentIdsChange(row.issueKey, ids),
+					onBrowseAgents,
+					onCreateAgent,
 				}} />
 				{sessions.length === 0 ? <span className="pointer-events-none shrink-0 text-sm text-text-subtlest">Add agent</span> : null}
 				<div className="min-w-0 flex-1">
@@ -29,6 +33,8 @@ export function ButterListAgentCell({ agentCatalog, onAssignedAgentIdsChange, on
 							agentSessions={sessions}
 							onAssignedAgentIdsChange={(ids) => onAssignedAgentIdsChange(row.issueKey, ids)}
 							onAssignedAgentSelect={onAssignedAgentSelect ? (agent) => onAssignedAgentSelect(row.issueKey, agent) : undefined}
+							onBrowseAgents={onBrowseAgents}
+							onCreateAgent={onCreateAgent}
 						/> : null}
 					</ProjectButterInvocationChin>
 				</div>

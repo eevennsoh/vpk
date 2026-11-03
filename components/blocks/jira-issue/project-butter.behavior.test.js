@@ -156,7 +156,7 @@ test("Butter's hexagon action opens the shared directory and assigns an agent wi
 	const trigger = view.getByRole("button", { name: "Add agent to PD-40" });
 	assert.equal(trigger.querySelector('[data-shape="hexagon"]') !== null, true);
 	await view.click(trigger);
-	const search = view.getByRole("textbox", { name: "Search agents" });
+	const search = view.getByRole("combobox", { name: "Search agents" });
 	await view.fill(search, "review");
 	assert.equal(view.queryByRole("option", { name: /Writing agent/u }), null);
 	await view.press(search, "Enter");
@@ -178,7 +178,8 @@ test("Jira Coding Agent uses its green avatar in the Butter picker", async () =>
 	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
 	const option = view.getByRole("option", { name: /Jira Coding Agent/u });
 	const avatar = option.querySelector('[data-slot="avatar"]');
-	assert.equal(avatar.classList.contains("size-5"), true);
+	assert.equal(avatar.classList.contains("size-6"), true);
+	assert.equal(option.classList.contains("h-9"), true);
 	assert.equal(avatar.parentElement.classList.contains("size-6"), true);
 	assert.equal(option.querySelector('[data-slot="avatar-hexagon-artwork"] > span').style.backgroundColor, "#94C748");
 });
@@ -194,7 +195,27 @@ test("Butter uses the coding artwork for the Codex picker avatar", async () => {
 	});
 	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
 	const option = view.getByRole("option", { name: /Codex/u });
-	assert.equal(option.querySelector("img")?.getAttribute("src"), "/3p/openai-codex/glyph.svg");
+	assert.equal(option.querySelector("img")?.getAttribute("src"), "/3p/openai-codex/24.svg");
+});
+
+test("Butter uses the shared coding avatar treatments for Cursor and GitHub Copilot", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			appearance: "project-butter", issueKey: "PD-40", summary: "Test",
+			assignment: { agents: [
+				{ id: "test-agent", name: "Cursor", byline: "", brandName: "cursor" },
+				{ id: "release-agent", name: "GitHub Copilot", byline: "", brandName: "github-copilot" },
+			], onAgentAssign: () => {} },
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
+	const cursor = view.getByRole("option", { name: /Cursor/u });
+	assert.equal(cursor.querySelector('[data-slot="avatar-hexagon-artwork"] > span').style.backgroundColor, "#14120B");
+	assert.equal(cursor.querySelector("img")?.getAttribute("src"), "/3p/cursor/24.svg");
+	const copilot = view.getByRole("option", { name: /GitHub Copilot/u });
+	assert.equal(copilot.querySelector('[data-slot="avatar-hexagon-artwork"] > span').style.backgroundColor, "#000000");
 });
 
 test("Butter groups agents, expands software agents, and searches the full catalog", async () => {
@@ -225,7 +246,7 @@ test("Butter groups agents, expands software agents, and searches the full catal
 	assert.equal(view.getByRole("option", { name: /Codex/u }) !== null, true);
 	assert.equal(view.getByRole("option", { name: /Rovo CLI/u }) !== null, true);
 	assert.equal(view.getByRole("option", { name: /GitHub Copilot/u }) !== null, true);
-	const search = view.getByRole("textbox", { name: "Search agents" });
+	const search = view.getByRole("combobox", { name: "Search agents" });
 	await view.fill(search, "copilot");
 	assert.equal(view.getByRole("option", { name: /GitHub Copilot/u }) !== null, true);
 	await view.fill(search, "rovo cli");
@@ -252,7 +273,7 @@ test("Butter local agents share editable codebase workspaces", async () => {
 	await view.click(view.getByRole("option", { name: /Rovo CLI/u }));
 	const dialog = view.getByRole("dialog", { name: "Rovo CLI local options" });
 	const avatar = view.getByRole("option", { name: /Rovo CLI/u }).querySelector('[data-slot="avatar"]');
-	assert.equal(avatar.classList.contains("size-5"), true);
+	assert.equal(avatar.classList.contains("size-6"), true);
 	assert.equal(avatar.parentElement.classList.contains("size-6"), true);
 	assert.equal(dialog.textContent.includes("Run on cloud"), false);
 	const configure = view.getByRole("button", { name: "Configure directory" });
@@ -327,7 +348,7 @@ for (const agentId of ["github-copilot", "release-agent"]) {
 		assert.deepEqual(assigned, []);
 		await view.press(action, "Escape");
 		assert.equal(view.queryByRole("menu", { name: "Run GitHub Copilot on" }), null);
-		assert.equal(view.isFocused(view.getByRole("textbox", { name: "Search agents" })), true);
+		assert.equal(view.isFocused(view.getByRole("combobox", { name: "Search agents" })), true);
 		await view.click(view.getByRole("option", { name: /GitHub Copilot/u }));
 		await view.click(view.getByRole("menuitem", { name: "Run on cloud" }));
 		assert.deepEqual(assigned, [agentId]);
@@ -461,7 +482,7 @@ test("searching closes the run-location submenu for a filtered agent", async () 
 	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
 	await view.click(view.getByRole("option", { name: /Claude/u }));
 	assert.equal(view.getByRole("dialog", { name: "Run Claude on" }) !== null, true);
-	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Cursor");
+	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Cursor");
 	assert.equal(view.queryByRole("dialog", { name: "Run Claude on" }), null);
 	assert.equal(view.queryByRole("option", { name: /Claude/u }), null);
 	assert.equal(view.getByRole("option", { name: /Cursor/u }) !== null, true);
