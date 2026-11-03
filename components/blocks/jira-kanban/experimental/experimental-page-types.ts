@@ -206,6 +206,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	onCardAssignedAgentIdsChange?: (issueKey: string, agentIds: readonly string[]) => void;
+	onSelectedCardsAgentAssign?: (issueKeys: readonly string[], agentId: string) => void;
+	agentAssignmentRequest?: Readonly<{ issueKey: string; session: AgentSessionItem }>;
 	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
 	onCardGenerativeActionSubmit?: JiraKanbanProps["onCardGenerativeActionSubmit"];
 	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];

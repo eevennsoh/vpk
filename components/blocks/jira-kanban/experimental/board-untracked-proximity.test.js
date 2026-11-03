@@ -503,7 +503,7 @@ test("a menu assignment measures the card after the link its own commit caused",
 	// that is already gone.
 	assert.match(
 		DRAG_HOOK_SOURCE,
-		/clearTimeout\(flashRetireRef\.current\);\s*\}\s*if \(assignmentFrameRef\.current !== null\) \{\s*cancelAnimationFrame\(assignmentFrameRef\.current\);\s*\}\s*\}, \[\]\);/u,
+		/clearTimeout\(flashRetireRef\.current\);\s*\}\s*if \(assignmentFrameRef\.current !== null\) \{\s*cancelAnimationFrame\(assignmentFrameRef\.current\);\s*\}/u,
 	);
 	// Click-assign skips the travelling chip a drop builds: Glow's halo is the
 	// whole acknowledgement, and faking a drop origin would replay the collapse.

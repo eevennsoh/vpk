@@ -85,7 +85,7 @@ const PAY_118: ButterWorkItemPlaceholder = {
 			name: "Card artwork field map",
 			addedBy: "Priya Raman",
 			dateAdded: "12 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/work-management/shade/blue.svg",
+			previewSrc: "/ambient/atlassian/abstract/shape-1/primary/purple.svg",
 		},
 		{
 			id: "pay-118-call-sites",
@@ -93,7 +93,7 @@ const PAY_118: ButterWorkItemPlaceholder = {
 			name: "saved-card-artwork-call-sites.csv",
 			addedBy: "Diego Santos",
 			dateAdded: "13 Aug 2026",
-			previewSrc: "/ambient/ado/dots/tint/yellow.svg",
+			previewSrc: "/ambient/atlassian/pictorial/automation-repeat/primary/neutral.svg",
 		},
 		{
 			id: "pay-118-latency-pr",
@@ -101,7 +101,7 @@ const PAY_118: ButterWorkItemPlaceholder = {
 			name: "PR #1871 Measure card latency",
 			addedBy: "Jordan Okafor",
 			dateAdded: "14 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/line-1/primary/purple.svg",
+			previewSrc: "/ambient/atlassian/pictorial/network/primary/lime.svg",
 			url: "https://github.com/payments-platform/payments/pull/1871",
 		},
 		{
@@ -110,7 +110,7 @@ const PAY_118: ButterWorkItemPlaceholder = {
 			name: "Wallet artwork carry walkthrough",
 			addedBy: "Maya Ferreira",
 			dateAdded: "15 Aug 2026",
-			previewSrc: "/ambient/itsm/repeat/tint/neutral.svg",
+			previewSrc: "/ambient/atlassian/pictorial/security/primary/blue.svg",
 		},
 	],
 	comments: [
@@ -222,7 +222,7 @@ const PAY_124: ButterWorkItemPlaceholder = {
 			name: "english-account-allow-list.csv",
 			addedBy: "Priya Raman",
 			dateAdded: "12 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/security/primary/yellow.svg",
+			previewSrc: "/ambient/ado/combo/primary/yellow.svg",
 		},
 		{
 			id: "pay-124-targeting-rules",
@@ -230,7 +230,7 @@ const PAY_124: ButterWorkItemPlaceholder = {
 			name: "One-percent account targeting rules",
 			addedBy: "Maya Ferreira",
 			dateAdded: "13 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/network/shade/neutral.svg",
+			previewSrc: "/ambient/itsm/shape/primary/blue.svg",
 		},
 		{
 			id: "pay-124-exclusion-notes",
@@ -238,7 +238,7 @@ const PAY_124: ButterWorkItemPlaceholder = {
 			name: "Allow-list exclusion notes",
 			addedBy: "Diego Santos",
 			dateAdded: "14 Aug 2026",
-			previewSrc: "/ambient/itsm/line/ambient/itsm/line/tint/blue.svg",
+			previewSrc: "/ambient/itsm/line/ambient/itsm/line/primary/neutral.svg",
 		},
 		{
 			id: "pay-124-kill-switch-pr",
@@ -246,7 +246,7 @@ const PAY_124: ButterWorkItemPlaceholder = {
 			name: "PR #1866 Add kill switch",
 			addedBy: "Jordan Okafor",
 			dateAdded: "15 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/automation-repeat/primary/lime.svg",
+			previewSrc: "/ambient/atlassian/abstract/combo-2/primary/purple.svg",
 			url: "https://github.com/payments-platform/payments/pull/1866",
 		},
 	],
@@ -359,7 +359,7 @@ const PAY_125: ButterWorkItemPlaceholder = {
 			name: "One-percent dashboard panel list",
 			addedBy: "Maya Ferreira",
 			dateAdded: "11 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/shape-1/shade/yellow.svg",
+			previewSrc: "/ambient/atlassian/abstract/line-1/primary/yellow.svg",
 		},
 		{
 			id: "pay-125-metrics",
@@ -367,7 +367,7 @@ const PAY_125: ButterWorkItemPlaceholder = {
 			name: "one-percent-slice-metrics.md",
 			addedBy: "Jordan Okafor",
 			dateAdded: "13 Aug 2026",
-			previewSrc: "/ambient/ado/combo/tint/blue.svg",
+			previewSrc: "/ambient/atlassian/pictorial/work-management/primary/lime.svg",
 		},
 		{
 			id: "pay-125-rollback-loom",
@@ -375,7 +375,7 @@ const PAY_125: ButterWorkItemPlaceholder = {
 			name: "Rollback panel rehearsal",
 			addedBy: "Priya Raman",
 			dateAdded: "15 Aug 2026",
-			previewSrc: "/ambient/itsm/combo/primary/lime.svg",
+			previewSrc: "/ambient/itsm/repeat/primary/purple.svg",
 		},
 		{
 			id: "pay-125-runbook",
@@ -383,7 +383,7 @@ const PAY_125: ButterWorkItemPlaceholder = {
 			name: "PAY-119 rollback rehearsal runbook",
 			addedBy: "Maya Ferreira",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/ado/shape/primary/neutral.svg",
+			previewSrc: "/ambient/atlassian/pictorial/automation-text-repeat/primary/blue.svg",
 			url: "https://github.com/payments-platform/payments/blob/pay-119-rollback-rehearsal-runbook/docs/rollback-rehearsal.md",
 		},
 	],
@@ -496,7 +496,7 @@ const PAY_127: ButterWorkItemPlaceholder = {
 			name: "dead-v1-exports.txt",
 			addedBy: "Jordan Okafor",
 			dateAdded: "10 Aug 2026",
-			previewSrc: "/ambient/itsm/grid/shade/neutral.svg",
+			previewSrc: "/ambient/ado/dots/primary/lime.svg",
 		},
 		{
 			id: "pay-127-cleanup-note",
@@ -504,7 +504,7 @@ const PAY_127: ButterWorkItemPlaceholder = {
 			name: "v1.2 export cleanup note",
 			addedBy: "Diego Santos",
 			dateAdded: "12 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/combo-2/primary/yellow.svg",
+			previewSrc: "/ambient/itsm/grid/primary/neutral.svg",
 		},
 		{
 			id: "pay-127-adapter-pr",
@@ -512,7 +512,7 @@ const PAY_127: ButterWorkItemPlaceholder = {
 			name: "PR #1874 Remove v1 adapter",
 			addedBy: "Maya Ferreira",
 			dateAdded: "14 Aug 2026",
-			previewSrc: "/ambient/ado/line/tint/lime.svg",
+			previewSrc: "/ambient/atlassian/abstract/shape-2/primary/yellow.svg",
 			url: "https://github.com/payments-platform/payments/pull/1874",
 		},
 		{
@@ -521,7 +521,7 @@ const PAY_127: ButterWorkItemPlaceholder = {
 			name: "Call-site check against PAY-101",
 			addedBy: "Priya Raman",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/line-2/primary/purple.svg",
+			previewSrc: "/ambient/itsm/combo/primary/purple.svg",
 		},
 	],
 	comments: [

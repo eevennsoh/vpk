@@ -21,13 +21,16 @@ export function ProjectButterBody({ active, sidePanel, content, details, empty, 
 	sessions: readonly ProjectButterSessionItem[];
 	workItemKey?: string;
 }>) {
+	const emptyActivity = content.activityView === "Activity"
+		&& !content.activityEntries.some((entry) => entry.kind === "comment")
+		&& !sessions.some((session) => session.state === "needs-input");
 	return (
 		<div className="flex min-w-0 flex-col gap-6">
 			<ProjectButterDescription content={content} empty={empty} />
 			{details}
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
 			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} sessions={sessions} sidePanel={sidePanel} />
-			<ProjectButterCommentBar active={active} content={content} empty={empty} sidePanel={sidePanel} />
+			<ProjectButterCommentBar active={active} compact={emptyActivity} content={content} empty={empty} sidePanel={sidePanel} />
 		</div>
 	);
 }

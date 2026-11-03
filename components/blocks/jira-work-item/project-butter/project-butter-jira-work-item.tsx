@@ -34,6 +34,9 @@ export interface ProjectButterJiraWorkItemProps {
 	workItem?: WorkItemData;
 	initialSessions?: readonly ProjectButterSessionItem[];
 	placeholders?: ProjectButterPlaceholderMap;
+	onBrowseAgents?: () => void;
+	onCreateAgent?: () => void;
+	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
 	/** Resolves a related work key to an opener when the host has that work item (Butter board). */
 	openRelatedItem?: RelatedItemOpener;
 	/** Host project scope for related work: composer match pool and this work item's type. */
@@ -50,6 +53,9 @@ export function ProjectButterJiraWorkItem({
 	workItem,
 	initialSessions,
 	placeholders,
+	onBrowseAgents,
+	onCreateAgent,
+	onAgentSessionStart,
 	openRelatedItem,
 	relatedScope,
 }: Readonly<ProjectButterJiraWorkItemProps>) {
@@ -101,10 +107,14 @@ export function ProjectButterJiraWorkItem({
 		content.setActivityView("Activity");
 	}
 	function startAgent(agent: AgentSessionItem["agent"]) {
-		addInvocation(model.startAgent(agent, content.summary));
+		const session = model.startAgent(agent, content.summary);
+		addInvocation(session);
+		onAgentSessionStart?.(session);
 	}
 	function startCoding() {
-		addInvocation(model.startCoding());
+		const session = model.startCoding();
+		addInvocation(session);
+		onAgentSessionStart?.(session);
 	}
 	function reply() {
 		if (!activeSession || !drafts[activeSession.id]?.trim()) return;
@@ -141,6 +151,8 @@ export function ProjectButterJiraWorkItem({
 				content={content}
 				empty={sparse}
 				onClose={onClose}
+				onBrowseAgents={onBrowseAgents}
+				onCreateAgent={onCreateAgent}
 				onOpenSession={(session) => setActiveSessionId(session.id)}
 				onPresentationChange={setPresentation}
 				onStartAgent={startAgent}

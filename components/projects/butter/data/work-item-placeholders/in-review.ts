@@ -79,7 +79,7 @@ const PAY_112: ButterWorkItemPlaceholder = {
 			name: "sandbox-retained-key-401.log",
 			addedBy: "Jordan Okafor",
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/itsm/shape/tint/lime.svg",
+			previewSrc: "/ambient/itsm/repeat/primary/yellow.svg",
 		},
 		{
 			id: "pay-112-retention-decision",
@@ -87,7 +87,7 @@ const PAY_112: ButterWorkItemPlaceholder = {
 			name: "Sandbox key retention decision",
 			addedBy: "Priya Raman",
 			dateAdded: "10 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/work-management/primary/blue.svg",
+			previewSrc: "/ambient/atlassian/abstract/line-2/primary/lime.svg",
 		},
 		{
 			id: "pay-112-pr-1858",
@@ -95,7 +95,7 @@ const PAY_112: ButterWorkItemPlaceholder = {
 			name: "PR #1858 Set key retention",
 			addedBy: "Diego Santos",
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/combo-2/shade/yellow.svg",
+			previewSrc: "/ambient/atlassian/abstract/shape-2/primary/purple.svg",
 			url: "https://github.com/payments-platform/payments/pull/1858",
 		},
 	],
@@ -205,7 +205,7 @@ const PAY_115: ButterWorkItemPlaceholder = {
 			name: "customer-ship-note-after-wallet-cut.md",
 			addedBy: "Maya Ferreira",
 			dateAdded: "15 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/line-1/tint/purple.svg",
+			previewSrc: "/ambient/atlassian/pictorial/communication/primary/lime.svg",
 		},
 		{
 			id: "pay-115-release-note",
@@ -213,7 +213,7 @@ const PAY_115: ButterWorkItemPlaceholder = {
 			name: "Wallet cut release note",
 			addedBy: "Priya Raman",
 			dateAdded: "14 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/shape-1/primary/blue.svg",
+			previewSrc: "/ambient/itsm/combo/primary/neutral.svg",
 		},
 		{
 			id: "pay-115-allow-list",
@@ -221,7 +221,7 @@ const PAY_115: ButterWorkItemPlaceholder = {
 			name: "English-only allow-list wording",
 			addedBy: "Diego Santos",
 			dateAdded: "13 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/network/shade/lime.svg",
+			previewSrc: "/ambient/itsm/grid/primary/purple.svg",
 		},
 	],
 	comments: [
@@ -330,7 +330,7 @@ const PAY_119: ButterWorkItemPlaceholder = {
 			name: "rollback-rehearsal-runbook.md",
 			addedBy: "Maya Ferreira",
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/itsm/combo/shade/blue.svg",
+			previewSrc: "/ambient/atlassian/pictorial/data-center/primary/yellow.svg",
 		},
 		{
 			id: "pay-119-timings",
@@ -338,7 +338,7 @@ const PAY_119: ButterWorkItemPlaceholder = {
 			name: "Rollback rehearsal timings",
 			addedBy: "Diego Santos",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/communication/tint/lime.svg",
+			previewSrc: "/ambient/atlassian/pictorial/automation-repeat/primary/blue.svg",
 		},
 		{
 			id: "pay-119-pr-1880",
@@ -346,7 +346,7 @@ const PAY_119: ButterWorkItemPlaceholder = {
 			name: "PR #1880 Publish rollback guide",
 			addedBy: "Jordan Okafor",
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/itsm/grid/primary/yellow.svg",
+			previewSrc: "/ambient/ado/shape/primary/neutral.svg",
 			url: "https://github.com/payments-platform/payments/pull/1880",
 		},
 	],
@@ -456,7 +456,7 @@ const PAY_132: ButterWorkItemPlaceholder = {
 			name: "issuer-unavailable-recovery-message.md",
 			addedBy: "Diego Santos",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/ado/shape/primary/yellow.svg",
+			previewSrc: "/ambient/atlassian/pictorial/security/primary/yellow.svg",
 		},
 		{
 			id: "pay-132-previous-wording",
@@ -464,7 +464,7 @@ const PAY_132: ButterWorkItemPlaceholder = {
 			name: "previous-recovery-wording.diff",
 			addedBy: "Maya Ferreira",
 			dateAdded: "15 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/data-center/tint/purple.svg",
+			previewSrc: "/ambient/atlassian/abstract/combo-1/primary/purple.svg",
 		},
 		{
 			id: "pay-132-fixture-match",
@@ -472,7 +472,7 @@ const PAY_132: ButterWorkItemPlaceholder = {
 			name: "Decline-code fixture match",
 			addedBy: "Jordan Okafor",
 			dateAdded: "14 Aug 2026",
-			previewSrc: "/ambient/ado/combo/shade/lime.svg",
+			previewSrc: "/ambient/atlassian/pictorial/automation-text-repeat/primary/lime.svg",
 		},
 	],
 	comments: [

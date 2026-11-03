@@ -114,6 +114,7 @@ function resolveKanbanCardAssignment(
 	onAssignedAgentIdsChange?: (issueKey: string, agentIds: readonly string[]) => void,
 	addAgentLabel?: string,
 	footerActions?: Pick<JiraIssueGenerativeActionConfig, "onBrowseAgents" | "onCreateAgent">,
+	onAgentAssign?: (agent: AgentSelectorAgent, card: JiraKanbanCardData) => void,
 ): JiraIssueAgentAssignment | undefined {
 	if (!onAssignedAgentIdsChange) {
 		return undefined;
@@ -161,6 +162,7 @@ function resolveKanbanCardAssignment(
 			agentIds.map((agentId) => canonicalizeAssignedAgentId(card.code, agentId)),
 		),
 		pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL,
+		onAgentAssign: onAgentAssign ? (agent) => onAgentAssign(agent, card) : undefined,
 	};
 }
 
@@ -219,6 +221,7 @@ interface ExperimentalJiraKanbanCardProps {
 	onAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	agents?: readonly JiraKanbanAgentData[];
 	onAssignedAgentIdsChange?: (issueKey: string, agentIds: readonly string[]) => void;
+	onAgentAssign?: (agent: AgentSelectorAgent, card: JiraKanbanCardData) => void;
 	onAgentDoneRunReview?: JiraKanbanProps["onCardAgentDoneRunReview"];
 	onAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
 	onClick: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -289,6 +292,7 @@ export function ExperimentalJiraKanbanCard({
 	onAgentActivityOpenChange,
 	onAgentActivityViewChat,
 	onAssignedAgentIdsChange,
+	onAgentAssign,
 	onAgentDoneRunReview,
 	onAgentDoneRunView,
 	onClick,
@@ -350,7 +354,7 @@ export function ExperimentalJiraKanbanCard({
 			active={active}
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
-			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions)}
+			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions, onAgentAssign)}
 			agentLinkFlash={agentLinkFlash}
 			agentActivityMode={agentActivityMode}
 			agentSessionDragControl={agentSessionDragControl}

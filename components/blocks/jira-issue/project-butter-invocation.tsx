@@ -11,10 +11,12 @@ import {
 } from "./project-butter-invocation-model";
 
 const PhaseContext = createContext<AgentInvocationState["phase"] | null>(null);
+const SourceContext = createContext<AgentInvocationState["source"]>("footer");
+const EnabledContext = createContext(false);
 const PreviewContext = createContext<AgentInvocationPreview>(INITIAL_AGENT_INVOCATION.preview);
 const AgentsContext = createContext<readonly AgentSelectorAgent[]>(PROJECT_BUTTER_AGENTS);
 const ActionsContext = createContext<{
-	open: () => void;
+	open: (source: AgentInvocationState["source"]) => void;
 	close: () => void;
 	preview: (agent: AgentSelectorAgent | null, index: number) => void;
 	commit: (agent: AgentSelectorAgent, index: number) => void;
@@ -35,7 +37,7 @@ export function ProjectButterInvocationProvider({
 	useEffect(() => () => dispatch({ type: "reset" }), [enabled]);
 	const actions = useMemo(
 		() => ({
-			open: () => dispatch({ type: "open" }),
+			open: (source: AgentInvocationState["source"]) => dispatch({ type: "open", source }),
 			close: () => dispatch({ type: "close" }),
 			preview: (agent: AgentSelectorAgent | null, index: number) =>
 				dispatch({ type: "preview", agent, index }),
@@ -47,17 +49,27 @@ export function ProjectButterInvocationProvider({
 	);
 	return (
 		<PhaseContext value={enabled ? state.phase : "idle"}>
-			<PreviewContext value={state.preview}>
-				<AgentsContext value={agents}>
-					<ActionsContext value={actions}>{children}</ActionsContext>
-				</AgentsContext>
-			</PreviewContext>
+			<EnabledContext value={enabled}>
+				<SourceContext value={state.source}>
+					<PreviewContext value={state.preview}>
+						<AgentsContext value={agents}>
+							<ActionsContext value={actions}>{children}</ActionsContext>
+						</AgentsContext>
+					</PreviewContext>
+				</SourceContext>
+			</EnabledContext>
 		</PhaseContext>
 	);
 }
 
 export function useProjectButterInvocationPhase() {
 	return use(PhaseContext);
+}
+export function useProjectButterInvocationSource() {
+	return use(SourceContext);
+}
+export function useProjectButterInvocationEnabled() {
+	return use(EnabledContext);
 }
 export function useProjectButterInvocationPreview() {
 	return use(PreviewContext);

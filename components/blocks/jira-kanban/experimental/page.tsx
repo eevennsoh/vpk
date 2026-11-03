@@ -1,11 +1,14 @@
 "use client";
 
+import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
+
 import dynamic from "next/dynamic";
 import { usePageIssueSelection } from "@/components/blocks/jira-kanban/experimental/hooks/use-page-issue-selection";
 import { useAgentSessionReview } from "@/components/blocks/jira-kanban/experimental/hooks/use-agent-session-review";
 import { RetainedView } from "@/components/projects/shared/components/mount-on-first-use";
 import {
 	useCallback,
+	useEffect,
 	useImperativeHandle,
 	useLayoutEffect,
 	useMemo,
@@ -219,6 +222,8 @@ function ExperimentalJiraKanbanPageContent({
 	onCardClick,
 	onCardAgentActivityViewChat,
 	onCardAssignedAgentIdsChange,
+	onSelectedCardsAgentAssign,
+	agentAssignmentRequest,
 	onCardAgentDoneRunView,
 	onCardGenerativeActionSubmit,
 	onCardAgentSessionLink,
@@ -753,6 +758,12 @@ function ExperimentalJiraKanbanPageContent({
 
 
 	const handleSelectedCardsAgentAssignmentChange = (agentId: string, assigned: boolean) => {
+		if (onSelectedCardsAgentAssign && assigned) {
+			const agent = agents.find((candidate) => candidate.id === agentId) ?? ROVO_AGENT_SELECTOR_AGENTS.find((candidate) => candidate.id === agentId);
+			if (agent) boardSessionDrag.noteBulkAgentAssignment(agent, filteredBoardColumns.flatMap((column) => column.cards).filter((card) => selection.selectedCardCodes.has(card.code)));
+			onSelectedCardsAgentAssign([...selection.selectedCardCodes], agentId);
+			return;
+		}
 		setAssignedAgentIdsByCard((currentAssignments) => updateJiraKanbanCardAgentAssignment(
 			currentAssignments,
 			selection.selectedCardCodes,
@@ -809,6 +820,15 @@ function ExperimentalJiraKanbanPageContent({
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
 		untrackedSessions: agentSessionColumnConfig?.items,
 	});
+	const acknowledgedAssignmentRef = useRef<string | null>(null);
+	const { armSessionLink: acknowledgeAgentAssignment } = boardSessionDrag;
+	useEffect(() => {
+		if (!agentAssignmentRequest || acknowledgedAssignmentRef.current === agentAssignmentRequest.session.id) return;
+		const card = filteredBoardColumns.flatMap((column) => column.cards).find((candidate) => candidate.code === agentAssignmentRequest.issueKey);
+		if (!card?.agentActivities?.some((activity) => activity.id === agentAssignmentRequest.session.id)) return;
+		acknowledgedAssignmentRef.current = agentAssignmentRequest.session.id;
+		acknowledgeAgentAssignment(agentAssignmentRequest.issueKey, agentAssignmentRequest.session);
+	}, [acknowledgeAgentAssignment, agentAssignmentRequest, filteredBoardColumns]);
 	const { handleCardSelect, handleCardClick, handleCardDragStart, handleCardDrop, handleCardsMove, handleCardDragEnd, handleCardRemove, handleCardsRemove, handleSelectedCardsStatusChange, onSelectAll, onClearSelection } = usePageIssueSelection({
 		rootRef: boardSessionDrag.boardRootRef, enabled: issueSelectionAppearance === "fused-backdrop" && !isListContent,
 		filteredBoardColumns, collapsedColumns: isListContent ? EMPTY_COLLAPSED_BOARD_COLUMNS : displayedCollapsedColumns, boardColumns, selection, setSelection, draggedCard, setDraggedCard, updateBoardColumns, onCardClick,
@@ -1012,6 +1032,8 @@ function ExperimentalJiraKanbanPageContent({
 									onSelectAll,
 									dismissOnEscape: issueSelectionAppearance === "fused-backdrop" ? false : undefined,
 									onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
+									onBrowseAgents: cardGenerativeActionFooterActions?.onBrowseAgents,
+									onCreateAgent: cardGenerativeActionFooterActions?.onCreateAgent,
 									onClearSelection,
 									onStatusChange: handleSelectedCardsStatusChange,
 									selectedAgentIds,

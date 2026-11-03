@@ -19,7 +19,7 @@ import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 export function ProjectButterStatusGlyph({ status, animated = true }: Readonly<{ status: string; animated?: boolean }>) {
 	return <ProgressCircle
 		animated={animated}
-		animateDashes={false}
+		animateDashes={animated}
 		aria-hidden
 		colorByProgress
 		dashed

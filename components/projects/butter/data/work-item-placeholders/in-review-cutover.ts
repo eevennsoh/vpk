@@ -76,7 +76,7 @@ export const PAY_104: ButterWorkItemPlaceholder = {
 			name: "create-payment-intent-v2-request.diff",
 			addedBy: "Jordan Okafor",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/shape-2/shade/lime.svg",
+			previewSrc: "/ambient/atlassian/pictorial/work-management/primary/blue.svg",
 		},
 		{
 			id: "pay-104-pr-1851",
@@ -84,7 +84,7 @@ export const PAY_104: ButterWorkItemPlaceholder = {
 			name: "PR #1851 Port payment intents",
 			addedBy: "Maya Ferreira",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/clouds/primary/blue.png",
+			previewSrc: "/ambient/atlassian/pictorial/clouds/primary/purple.png",
 			url: "https://github.com/payments-platform/payments/pull/1851",
 		},
 		{
@@ -93,7 +93,7 @@ export const PAY_104: ButterWorkItemPlaceholder = {
 			name: "v1 createPaymentIntent argument map",
 			addedBy: "Priya Raman",
 			dateAdded: "12 Aug 2026",
-			previewSrc: "/ambient/ado/dots/tint/purple.svg",
+			previewSrc: "/ambient/atlassian/abstract/combo-2/primary/yellow.svg",
 		},
 	],
 	comments: [
@@ -202,7 +202,7 @@ export const PAY_109: ButterWorkItemPlaceholder = {
 			name: "v2-webhook-openapi-revision.yaml",
 			addedBy: "Maya Ferreira",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/work-management/tint/lime.svg",
+			previewSrc: "/ambient/atlassian/pictorial/automation-repeat/primary/lime.svg",
 		},
 		{
 			id: "pay-109-pr-1863",
@@ -210,7 +210,7 @@ export const PAY_109: ButterWorkItemPlaceholder = {
 			name: "PR #1863 Refresh webhook data",
 			addedBy: "Jordan Okafor",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/ado/line/shade/purple.svg",
+			previewSrc: "/ambient/atlassian/pictorial/communication/primary/blue.svg",
 			url: "https://github.com/payments-platform/payments/pull/1863",
 		},
 		{
@@ -219,7 +219,7 @@ export const PAY_109: ButterWorkItemPlaceholder = {
 			name: "Webhook consumer list",
 			addedBy: "Priya Raman",
 			dateAdded: "15 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/automation-repeat/primary/yellow.svg",
+			previewSrc: "/ambient/atlassian/pictorial/data-center/primary/neutral.svg",
 		},
 	],
 	comments: [
@@ -328,7 +328,7 @@ export const PAY_121: ButterWorkItemPlaceholder = {
 			name: "per-account-kill-switch-rules.json",
 			addedBy: "Priya Raman",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/itsm/combo/shade/purple.svg",
+			previewSrc: "/ambient/ado/line/primary/purple.svg",
 		},
 		{
 			id: "pay-121-pr-1866",
@@ -336,7 +336,7 @@ export const PAY_121: ButterWorkItemPlaceholder = {
 			name: "PR #1866 Add kill switch",
 			addedBy: "Diego Santos",
 			dateAdded: "16 Aug 2026",
-			previewSrc: "/ambient/ado/combo/primary/lime.svg",
+			previewSrc: "/ambient/atlassian/pictorial/network/primary/neutral.svg",
 			url: "https://github.com/payments-platform/payments/pull/1866",
 		},
 		{
@@ -345,7 +345,7 @@ export const PAY_121: ButterWorkItemPlaceholder = {
 			name: "One-percent targeting validation",
 			addedBy: "Jordan Okafor",
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/pictorial/communication/tint/blue.svg",
+			previewSrc: "/ambient/itsm/line/ambient/itsm/line/primary/yellow.svg",
 		},
 	],
 	comments: [
@@ -454,7 +454,7 @@ export const PAY_128: ButterWorkItemPlaceholder = {
 			name: "settlement-sdk-version-stamp.sql",
 			addedBy: "Maya Ferreira",
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/itsm/repeat/shade/yellow.svg",
+			previewSrc: "/ambient/atlassian/abstract/shape-2/primary/lime.svg",
 		},
 		{
 			id: "pay-128-pr-1881",
@@ -462,7 +462,7 @@ export const PAY_128: ButterWorkItemPlaceholder = {
 			name: "PR #1881 Stamp SDK version",
 			addedBy: "Jordan Okafor",
 			dateAdded: "17 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/combo-1/primary/lime.svg",
+			previewSrc: "/ambient/itsm/combo/primary/blue.svg",
 			url: "https://github.com/payments-platform/payments/pull/1881",
 		},
 		{
@@ -471,7 +471,7 @@ export const PAY_128: ButterWorkItemPlaceholder = {
 			name: "Finance export column map",
 			addedBy: "Diego Santos",
 			dateAdded: "14 Aug 2026",
-			previewSrc: "/ambient/atlassian/abstract/line-2/tint/neutral.svg",
+			previewSrc: "/ambient/atlassian/abstract/line-1/primary/purple.svg",
 		},
 	],
 	comments: [
