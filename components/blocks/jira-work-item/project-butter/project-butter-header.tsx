@@ -52,7 +52,8 @@ export function ProjectButterHeader({ content, empty, onBrowseAgents, onCreateAg
 					)}
 				</div>
 			)}
-			<div className={cn("min-w-0 px-6 pb-6", sidePanel ? "pt-6" : "pt-4")}>
+			{/* group/empty-actions: hovering anywhere in the title block reveals the empty quick actions (reference #section-description reveal). */}
+			<div className={cn("group/empty-actions min-w-0 px-6 pb-6", sidePanel ? "pt-6" : "pt-4")}>
 				{sidePanel ? <ProjectButterBreadcrumb code={code} parent={content.detailFields.parent} summary={content.summary} /> : null}
 				<div className={cn("flex min-w-0 items-start gap-2", sidePanel ? "flex-col gap-3" : null)}>
 					<div className="min-w-0 flex-1">

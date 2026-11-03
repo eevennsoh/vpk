@@ -280,14 +280,14 @@ test("empty Project butter shows the reference empty layout without placeholder 
 test("empty secondary actions stay reachable by Tab without a prior hover", async () => {
 	const view = await renderWorkItem({ initialPreset: "empty", initialPresentation: "modal", shell: "project" });
 	const order = view.tabOrder();
-	const index = order.indexOf("Add attachment");
-	assert.equal(index > 0, true, "Add attachment must stay in the tab order while visually hidden");
-	assert.deepEqual(order.slice(index, index + 3), ["Add attachment", "Add child work item", "Add linked work"]);
+	const index = order.indexOf("Attachment");
+	assert.equal(index > 0, true, "the Attachment quick action must stay in the tab order while visually hidden");
+	assert.deepEqual(order.slice(index, index + 3), ["Attachment", "Subtask", "Linked work"]);
 	await view.focus(document.body);
 	for (let step = 0; step <= index; step += 1) await view.press(null, "Tab");
-	assert.equal(view.isFocused(view.getByRole("button", { name: "Add attachment" })), true);
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Attachment" })), true);
 	await view.press(null, "Enter");
-	assert.equal(view.queryByRole("textbox", { name: "Attachment name or URL" }) !== null, true);
+	assert.equal(document.querySelector('[data-related-type="attachments"]') !== null, true, "Enter opens the Attachments group");
 });
 
 test("clicking the description suppresses the focus ring that keyboard focus keeps", async () => {
@@ -373,40 +373,43 @@ test("attachment stacks expand independently and Escape returns focus without cl
 	const view = await renderWorkItem();
 	const documents = view.getByRole("button", { name: "Documents, 4 attachments" });
 	assert.equal(documents.getAttribute("aria-expanded"), "false");
-	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) === null, true);
-	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), false);
-	assert.equal(view.queryByRole("button", { name: "Preview Hero Image - Summer Launch.png" }) !== null, true);
+	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), false, "piled cards are inert");
+	assert.equal(view.tabOrder().includes("More actions for Hero Image - Summer Launch.png"), true, "single cards keep their actions");
 	await view.click(documents);
 	assert.equal(view.getByRole("button", { name: "Close documents" }).getAttribute("aria-expanded"), "true");
-	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) !== null, true);
 	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), true);
 	await view.click(view.getByRole("button", { name: "Videos, 2 attachments" }));
-	const video = view.getByRole("button", { name: "Preview Customer Interview Recording.mp4" });
+	const video = view.getByRole("button", { name: "More actions for Team Offsite Recap" });
 	await view.focus(video);
 	await view.press(video, "Escape");
 	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Close documents" }) !== null, true);
-	assert.equal(view.queryByRole("button", { name: "Preview Customer Interview Recording.mp4" }) === null, true);
+	assert.equal(view.tabOrder().includes("More actions for Team Offsite Recap"), false);
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Videos, 2 attachments" })), true);
 	await view.click(view.getByRole("button", { name: "Close documents" }));
-	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) === null, true);
 	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), false);
 });
 
-test("attachments can be added, previewed, and removed without losing other attachments", async () => {
+test("attachments can be added as links and removed through the reference confirmation without losing others", async () => {
 	const view = await renderWorkItem();
 	await view.click(view.getByRole("button", { name: "Add attachment" }));
-	await view.fill(view.getByRole("textbox", { name: "Attachment name or URL" }), "https://example.com/design");
-	await view.click(document.querySelector('section[aria-label="Attachments"] button[type="submit"]'));
+	const input = view.getByRole("combobox", { name: "Add attachment" });
+	await view.fill(input, "https://example.com/design");
+	assert.deepEqual([...view.getByRole("listbox", { name: "Matching attachments" }).querySelectorAll("[role=option]")].map((option) => option.textContent), ['Add link "Design"']);
+	await act(async () => input.form.requestSubmit());
 	await view.click(view.getByRole("button", { name: "Links, 2 attachments" }));
-	await view.click(view.getByRole("button", { name: "Preview https://example.com/design" }));
-	assert.equal(view.getByRole("link", { name: "Open link" }).getAttribute("href"), "https://example.com/design");
-	await view.click(view.getByRole("button", { name: "Close" }));
-	await view.click(view.getByRole("button", { name: "More actions for https://example.com/design" }));
+	assert.equal(document.querySelector("[data-attachment-arrival]") !== null, true, "the new card plays its arrival and stays inert meanwhile");
+	assert.equal(view.queryByRole("button", { name: "More actions for Design" }), null);
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1800)); });
+	assert.equal(document.querySelector("[data-attachment-arrival]"), null);
+	assert.equal(view.queryByRole("button", { name: /^Preview /u }), null, "cards have no preview");
+	await view.click(view.getByRole("button", { name: "More actions for Design" }));
 	await view.click(view.getByRole("menuitem", { name: "Remove" }));
+	assert.equal(view.getByRole("dialog", { name: "Remove content?" }).textContent.includes("Once removed, it'll no longer appear in this work item."), true);
 	await view.click(view.getByRole("button", { name: "Remove" }));
-	assert.equal(view.queryByRole("button", { name: "Preview https://example.com/design" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "More actions for Design" }), null);
 	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) !== null, true);
+	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
 });
 
 test("panel ordering changes only for valid panel drops and keeps source data immutable", () => {
@@ -529,19 +532,19 @@ test("related composers dismiss outside their row inside the work item dialog an
 	await view.click(view.getByRole("button", { name: "Add linked work" }));
 	const linked = view.getByRole("combobox", { name: "Add linked work" });
 	await view.fill(linked, "analytics events");
-	await view.click(view.getByRole("button", { name: "Relationship for the new linked work item" }));
+	await view.click(view.getByRole("button", { name: "Relationship for the new linked work item: Clones. Edit" }));
 	await view.click(view.getByRole("menuitem", { name: "Blocks" }));
 	assert.equal(view.getByRole("combobox", { name: "Add linked work" }).value, "analytics events");
 	await view.focus(linked);
 	await view.click(view.getByRole("option", { name: /VITA-12Add analytics events for onboarding steps/u }));
-	assert.equal(view.queryByRole("button", { name: "Edit relationship for VITA-12: Blocks" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Edit relationship for VITA-12: Blocks. Edit" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Add child work item" }));
 	await view.fill(view.getByRole("combobox", { name: "Create child work item" }), "Keep the unfinished child");
 	await view.click(view.getByRole("button", { name: "Description" }));
 	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 180)); });
 	assert.equal(view.queryByRole("combobox", { name: "Create child work item" }) === null, true);
 	await view.click(view.getByRole("button", { name: "Add child work item" }));
-	assert.equal(view.getByRole("combobox", { name: "Create child work item" }).value, "Keep the unfinished child");
+	assert.equal(view.getByRole("combobox", { name: "Create child work item" }).value, "", "an outside dismiss drops the uncommitted query (reference parity)");
 });
 
 test("the source comment editor opens with M, clears cancelled drafts, resizes, and saves with the keyboard", async () => {

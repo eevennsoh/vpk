@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 
+import { AttachmentDropZone } from "@/components/blocks/jira-work-item/project-butter/attachment-drop-overlay";
 import { projectButterSessionInvocation } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
 import { ProjectButterEmptyActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-empty-actions";
 import { ProjectButterSessionChat } from "@/components/blocks/jira-work-item/project-butter/project-butter-session-chat";
@@ -19,6 +20,7 @@ import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
 import { ProjectButterSession } from "@/components/blocks/jira-work-item/project-butter/project-butter-session";
 import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-item/project-butter/placeholder-fill";
+import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { PROJECT_BUTTER_PANEL_ORDER } from "@/components/blocks/jira-work-item/project-butter/panel-order";
 
@@ -35,6 +37,10 @@ export interface ProjectButterJiraWorkItemProps {
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
+	/** Resolves a related work key to an opener when the host has that work item (Butter board). */
+	openRelatedItem?: RelatedItemOpener;
+	/** Host project scope for related work: composer match pool and this work item's type. */
+	relatedScope?: ProjectButterRelatedScope;
 }
 
 export function ProjectButterJiraWorkItem({
@@ -50,8 +56,12 @@ export function ProjectButterJiraWorkItem({
 	onBrowseAgents,
 	onCreateAgent,
 	onAgentSessionStart,
+	openRelatedItem,
+	relatedScope,
 }: Readonly<ProjectButterJiraWorkItemProps>) {
 	const [presentation, setPresentation] = useState(initialPresentation);
+	/** The scrolling left column: the whole of it (gutters included) accepts file drops. */
+	const columnRef = useRef<HTMLDivElement>(null);
 	const [suggestion, setSuggestion] = useState(initialSuggestion);
 	const [empty, setEmpty] = useState(!initialSuggestion && (initialPreset === "empty" || initialPreset === "blank"));
 	const [panelOrder, setPanelOrder] = useState(PROJECT_BUTTER_PANEL_ORDER);
@@ -169,7 +179,9 @@ export function ProjectButterJiraWorkItem({
 						"min-w-0 px-6 pb-8",
 						!sidePanel && "@[860px]/butter:overflow-y-auto",
 					)}
+					ref={columnRef}
 				>
+					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
 						key={workItem?.code ?? "reference"}
 						active={open}
@@ -178,7 +190,10 @@ export function ProjectButterJiraWorkItem({
 						details={sidePanel ? details : null}
 						empty={sparse}
 						onOpenSession={setActiveSessionId}
+						openRelatedItem={openRelatedItem}
+						relatedScope={relatedScope}
 						sessions={sessions}
+						workItemKey={workItem?.code}
 					/>
 				</div>
 				{sidePanel ? null : (

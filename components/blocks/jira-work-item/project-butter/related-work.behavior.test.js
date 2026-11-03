@@ -23,12 +23,13 @@ function renderRelated(props = {}) {
 	});
 }
 
-const summaryButtons = (key) => [...document.querySelectorAll(`button[aria-label="Edit summary for ${key}"]`)];
+const summaryButtons = (key) => [...document.querySelectorAll(`[role="textbox"][aria-label="Edit summary for ${key}"]`)];
 const childRows = (view) => [...view.getByRole("list", { name: "Child work items" }).children]
-	.filter((row) => row.querySelector('button[aria-label^="Edit summary for "]'));
+	.filter((row) => row.querySelector('[aria-label^="Edit summary for "]'));
+const rowSummary = (row) => row.querySelector('[aria-label^="Edit summary"]').textContent;
 
-async function chooseDisplay(view, label = "Child work items") {
-	await view.click(view.getByRole("button", { name: `${label} display options` }));
+async function chooseDisplay(view, type = "subitems") {
+	await view.click(document.querySelector(`[data-related-type="${type}"] button[aria-label="More actions"]`));
 }
 
 test("child summary Save and Cancel isolate editing and Escape returns focus without dismissing the host", async () => {
@@ -38,7 +39,7 @@ test("child summary Save and Cancel isolate editing and Escape returns focus wit
 	await view.click(summaryButtons("VITA-4")[0]);
 	assert.equal(view.queryByRole("button", { name: "Save summary for VITA-4" }) !== null, true);
 	assert.equal(view.tabOrder().includes("Edit summary for VITA-5"), false, "other rows must leave keyboard navigation during a summary edit");
-	assert.equal(view.queryByRole("button", { name: "Edit priority for VITA-4, Medium" }) === null, true, "summary actions replace the row metadata");
+	assert.equal(view.queryByRole("button", { name: "Edit priority for VITA-4: Medium. Edit" }) === null, true, "summary actions replace the row metadata");
 	await view.fill(view.getByRole("textbox", { name: "Edit summary for VITA-4" }), "Discard this edit");
 	await view.click(view.getByRole("button", { name: "Cancel summary for VITA-4" }));
 	assert.equal(summaryButtons("VITA-4")[0].textContent, "Write copy for welcome screen");
@@ -56,6 +57,27 @@ test("child summary Save and Cancel isolate editing and Escape returns focus wit
 	assert.equal(escaped, 0);
 });
 
+test("keyboard Save, Cancel and Escape on the summary actions return focus to the settled summary", async () => {
+	let escaped = 0;
+	const view = await renderRelated({ onUnhandledEscape: () => escaped++ });
+	const summary = () => summaryButtons("VITA-5")[0];
+	await view.focus(summary());
+	await view.fill(summary(), "Keyboard saved copy");
+	await view.press(summary(), "Tab");
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Save summary for VITA-5" })), true);
+	await view.press(null, "Enter");
+	assert.equal(summary().textContent, "Keyboard saved copy");
+	assert.equal(view.isFocused(summary()), true, "focus must not drop to the body after keyboard Save");
+	assert.equal(view.queryByRole("button", { name: "Save summary for VITA-5" }), null, "the settled summary does not re-enter editing");
+	await view.press(summary(), "x");
+	await view.fill(summary(), "Discard via Escape on Cancel");
+	await view.focus(view.getByRole("button", { name: "Cancel summary for VITA-5" }));
+	await view.press(null, "Escape");
+	assert.equal(summary().textContent, "Keyboard saved copy");
+	assert.equal(view.isFocused(summary()), true);
+	assert.equal(escaped, 0, "Escape on the actions cancels the edit, not the host dialog");
+});
+
 test("repeated work-item keys keep independent summaries when rows are saved or removed", async () => {
 	const view = await renderRelated();
 	assert.equal(summaryButtons("VITA-4").length, 2);
@@ -64,7 +86,7 @@ test("repeated work-item keys keep independent summaries when rows are saved or 
 	await view.click(view.getByRole("button", { name: "Save summary for VITA-4" }));
 	assert.deepEqual(summaryButtons("VITA-4").map((button) => button.textContent), ["Write copy for welcome screen", "Second reference only"]);
 	await view.click(view.getAllByRole("button", { name: "More actions for VITA-4" })[1]);
-	await view.click(view.getByRole("menuitem", { name: "Remove from work item" }));
+	await view.click(view.getByRole("menuitem", { name: "Delete" }));
 	assert.equal(summaryButtons("VITA-4").every((button) => button.textContent === "Write copy for welcome screen"), true);
 	assert.equal(view.queryByText("Second reference only") === null, true);
 });
@@ -75,11 +97,11 @@ test("summary and composer drafts survive remounting the related surface", async
 	await view.fill(view.getByRole("textbox", { name: "Edit summary for VITA-4" }), "Keep the unfinished summary");
 	await view.rerender({ shown: false });
 	await view.rerender({ shown: true });
-	assert.equal(view.getByRole("textbox", { name: "Edit summary for VITA-4" }).value, "Keep the unfinished summary");
+	assert.equal(view.getByRole("textbox", { name: "Edit summary for VITA-4" }).textContent, "Keep the unfinished summary");
+	assert.equal(view.queryByRole("button", { name: "Save summary for VITA-4" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Cancel summary for VITA-4" }));
 	await view.click(view.getByRole("button", { name: "Add child work item" }));
 	await view.fill(view.getByRole("combobox", { name: "Create child work item" }), "Keep the unfinished child");
-	await view.click(view.getByRole("button", { name: "Outside related work" }));
 	await view.rerender({ shown: false });
 	await view.rerender({ shown: true });
 	await view.click(view.getByRole("button", { name: "Add child work item" }));
@@ -93,7 +115,7 @@ test("inline creation, existing-item search, and pasted links add real rows at t
 	assert.equal(composer.getAttribute("placeholder"), "Create new, search or paste existing");
 	await view.fill(composer, "Write a focused acceptance checklist");
 	await view.click(view.getByRole("option", { name: "Create “Write a focused acceptance checklist”" }));
-	assert.equal(childRows(view)[0].querySelector('button[aria-label^="Edit summary"]').textContent, "Write a focused acceptance checklist");
+	assert.equal(rowSummary(childRows(view)[0]), "Write a focused acceptance checklist");
 	await view.click(view.getByRole("button", { name: "Add child work item" }));
 	await view.fill(view.getByRole("combobox", { name: "Create child work item" }), "analytics events");
 	await view.click(view.getByRole("option", { name: /VITA-12Add analytics events for onboarding steps/u }));
@@ -106,7 +128,7 @@ test("inline creation, existing-item search, and pasted links add real rows at t
 	assert.equal(linkedComposer.value, "VITA-11");
 	await view.click(view.getByRole("option", { name: /VITA-11Integrate onboarding flow with auth system/u }));
 	assert.equal(summaryButtons("VITA-11")[0].textContent, "Integrate onboarding flow with auth system");
-	assert.equal(view.queryByRole("button", { name: "Edit relationship for VITA-11: Clones" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Edit relationship for VITA-11: Clones. Edit" }) !== null, true);
 });
 
 test("related due dates preserve the selected calendar date across timezones", async (t) => {
@@ -139,7 +161,7 @@ test("related due dates preserve the selected calendar date across timezones", a
 
 test("display options identify the initial source order as Rank", async () => {
 	const view = await renderRelated();
-	const initialOrder = childRows(view).map((row) => row.querySelector('button[aria-label^="Edit summary"]').textContent);
+	const initialOrder = childRows(view).map(rowSummary);
 	assert.equal(initialOrder[0], "Write copy for welcome screen");
 	await chooseDisplay(view);
 	await view.click(view.getByRole("button", { name: "Ordering, Rank" }));
@@ -147,7 +169,7 @@ test("display options identify the initial source order as Rank", async () => {
 	assert.equal(view.getByRole("menuitem", { name: "Priority" }).getAttribute("data-selected"), null);
 	await view.click(view.getByRole("menuitem", { name: "Rank" }));
 	await chooseDisplay(view);
-	assert.deepEqual(childRows(view).map((row) => row.querySelector('button[aria-label^="Edit summary"]').textContent), initialOrder);
+	assert.deepEqual(childRows(view).map(rowSummary), initialOrder);
 });
 
 test("display options order rows, hide completed work, and hide selected properties", async () => {
@@ -156,14 +178,14 @@ test("display options order rows, hide completed work, and hide selected propert
 	await view.click(view.getByRole("button", { name: "Ordering, Rank" }));
 	await view.click(view.getByRole("menuitem", { name: "Priority" }));
 	await chooseDisplay(view);
-	assert.equal(childRows(view)[0].querySelector('button[aria-label^="Edit summary"]').textContent, "Design progress indicator component");
+	assert.equal(rowSummary(childRows(view)[0]), "Design progress indicator component");
 	await chooseDisplay(view);
 	await view.click(view.getByRole("switch", { name: "Hide done work items" }));
 	await view.click(view.getByRole("button", { name: "Priority" }));
 	await chooseDisplay(view);
 	assert.equal(view.queryByRole("button", { name: "Edit summary for VITA-5" }) === null, true);
 	assert.equal(childRows(view).length, 5);
-	assert.equal(view.queryByRole("button", { name: "Edit priority for VITA-4, Medium" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Edit priority for VITA-4: Medium. Edit" }) === null, true);
 	assert.equal(view.queryByText("10/15") !== null, true, "progress includes the complete list when done rows are filtered out");
 });
 
@@ -279,44 +301,62 @@ const SECTIONS_HARNESS = `import React from "react";
 		</div></MotionConfig></ThemeWrapper>;
 	}`;
 
-test("work item sections collapse independently without a Related work group", async () => {
+test("Related work collapses to a summary and its groups collapse independently", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
-	const childHeading = () => view.getByRole("button", { name: /^Child work items, /u });
-	assert.equal(view.queryByText("Related work") === null, true);
-	await view.click(view.getByRole("button", { name: "Attachments" }));
+	const childHeading = () => view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u });
+	const related = view.getByRole("button", { name: "Collapse Related work" });
+	assert.equal(related.getAttribute("aria-expanded"), "true");
+	assert.equal(view.queryByRole("heading", { name: "Related work", level: 2 }) !== null, true);
+	assert.equal(document.querySelector('[data-component="RelatedWorkCollapsedSummary"]'), null);
+	await view.click(view.getByRole("button", { name: "Collapse Attachments" }));
 	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) === null, true);
 	assert.equal(view.queryByRole("button", { name: "Add attachment" }) === null, true);
 	assert.equal(view.queryByRole("list", { name: "Child work items" }) !== null, true);
 	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
+	assert.equal(childHeading().getAttribute("aria-label"), "Collapse Child work items 10 of 15 done, 5 in progress, 0 to do");
 	await view.click(childHeading());
 	assert.equal(view.queryByRole("list", { name: "Child work items" }) === null, true);
 	assert.equal(childHeading().textContent.includes("10/15"), true);
 	assert.equal(view.queryByRole("button", { name: "Add child work item" }) === null, true);
-	await view.click(view.getByRole("button", { name: "Linked work" }));
+	await view.click(view.getByRole("button", { name: "Collapse Linked work" }));
 	await view.click(view.getByRole("button", { name: "Description" }));
 	assert.equal(view.queryByRole("list", { name: "Linked work" }) === null, true);
 	assert.equal(view.queryByRole("textbox", { name: "Work item description" }) === null, true);
-	for (const trigger of [view.getByRole("button", { name: "Description" }), view.getByRole("button", { name: "Attachments" }), childHeading(), view.getByRole("button", { name: "Linked work" })]) {
+	for (const trigger of [view.getByRole("button", { name: "Description" }), view.getByRole("button", { name: "Expand Attachments" }), childHeading(), view.getByRole("button", { name: "Expand Linked work" })]) {
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
 	}
 	assert.equal(view.tabOrder().includes("Edit summary for VITA-9"), false);
-	assert.equal(view.tabOrder().includes("More attachment actions"), false);
-	await view.click(view.getByRole("button", { name: "Linked work" }));
+	assert.equal(view.tabOrder().includes("More actions for Hero Image - Summer Launch.png"), false);
+	await view.click(view.getByRole("button", { name: "Expand Linked work" }));
 	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
 	assert.equal(view.queryByRole("list", { name: "Child work items" }) === null, true);
+	await view.click(view.getByRole("button", { name: "Collapse Related work" }));
+	assert.equal(view.getByRole("button", { name: "Expand Related work" }).getAttribute("aria-expanded"), "false");
+	assert.equal(view.getByRole("list", { name: "8 attachments, 15 subitems, 8 linked work items" }).textContent, "8158");
+	assert.equal(view.queryByRole("list", { name: "Linked work" }) === null, true);
+	assert.equal(view.tabOrder().includes("Expand Attachments"), false);
+	await view.click(view.getByRole("button", { name: "Expand Related work" }));
+	assert.equal(view.queryByRole("list", { name: "Linked work" }) !== null, true);
+	assert.equal(document.querySelector('[data-component="RelatedWorkCollapsedSummary"]'), null);
 });
 
-test("collapsing sections preserves attachment stacks and summary drafts", async () => {
+test("collapsing sections preserves attachment stacks", async () => {
 	const view = await renderComponent({ source: SECTIONS_HARNESS });
 	await view.click(view.getByRole("button", { name: "Documents, 4 attachments" }));
-	await view.click(view.getByRole("button", { name: "Attachments" }));
-	await view.click(view.getByRole("button", { name: "Attachments" }));
+	await view.click(view.getByRole("button", { name: "Collapse Attachments" }));
+	await view.click(view.getByRole("button", { name: "Expand Attachments" }));
 	assert.equal(view.getByRole("button", { name: "Close documents" }).getAttribute("aria-expanded"), "true");
-	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) !== null, true);
+	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), true);
+});
+
+test("collapsing child work commits the live summary edit", async () => {
+	const view = await renderComponent({ source: SECTIONS_HARNESS });
 	await view.click(summaryButtons("VITA-4")[0]);
 	await view.fill(view.getByRole("textbox", { name: "Edit summary for VITA-4" }), "Keep this collapsed draft");
-	await view.click(view.getByRole("button", { name: /^Child work items, /u }));
+	await view.click(view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u }));
 	assert.equal(view.queryByRole("textbox", { name: "Edit summary for VITA-4" }) === null, true);
-	await view.click(view.getByRole("button", { name: /^Child work items, /u }));
-	assert.equal(view.getByRole("textbox", { name: "Edit summary for VITA-4" }).value, "Keep this collapsed draft");
+	await view.click(view.getByRole("button", { name: /^(Collapse|Expand) Child work items /u }));
+	// Leaving the row commits the live edit (reference InlineEditableTextCell), so collapsing keeps the text.
+	assert.equal(summaryButtons("VITA-4")[0].textContent, "Keep this collapsed draft");
+	assert.equal(view.queryByRole("button", { name: "Save summary for VITA-4" }) === null, true);
 });
