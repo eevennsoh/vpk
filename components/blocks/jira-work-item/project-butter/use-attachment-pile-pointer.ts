@@ -1,23 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { animate, useMotionValue, useReducedMotion } from "motion/react";
-import { motionDuration, motionEase } from "@/lib/motion";
+import { useEffect, useRef, type PointerEvent } from "react";
+import { useMotionValue, useReducedMotion, useSpring, type MotionValue } from "motion/react";
 
+/** Tight, critically damped follow: settles in ~200ms without overshooting the pile's tilt. */
+const PILE_POINTER_SPRING = { stiffness: 420, damping: 36, mass: 0.6 } as const;
+
+function usePileSpring(target: MotionValue<number>, reducedMotion: boolean | null) {
+	const spring = useSpring(target, PILE_POINTER_SPRING);
+	return reducedMotion ? target : spring;
+}
+
+/**
+ * Hover state lives in motion values, not React state: entering or leaving a pile
+ * must not re-render its `layout` cards, which would make the whole LayoutGroup re-measure.
+ */
 export function useAttachmentPilePointer() {
 	const reducedMotion = useReducedMotion();
-	const [hovered, setHovered] = useState(false);
-	const x = useMotionValue(0);
-	const y = useMotionValue(0);
-	const rotate = useMotionValue(0);
+	const targetX = useMotionValue(0);
+	const targetY = useMotionValue(0);
+	const targetRotate = useMotionValue(0);
+	const targetSpread = useMotionValue(0);
+	const x = usePileSpring(targetX, reducedMotion);
+	const y = usePileSpring(targetY, reducedMotion);
+	const rotate = usePileSpring(targetRotate, reducedMotion);
+	const spread = usePileSpring(targetSpread, reducedMotion);
 	const frame = useRef<number | null>(null);
 	const pointer = useRef<{ node: Element; x: number; y: number } | null>(null);
 	useEffect(() => () => {
 		if (frame.current !== null) cancelAnimationFrame(frame.current);
-		x.stop(); y.stop(); rotate.stop();
-	}, [rotate, x, y]);
+	}, []);
 	function enter() {
-		if (!reducedMotion) setHovered(true);
+		if (!reducedMotion) targetSpread.set(1);
 	}
 	function move(event: PointerEvent<HTMLElement>) {
 		if (reducedMotion || event.pointerType === "touch") return;
@@ -32,22 +46,16 @@ export function useAttachmentPilePointer() {
 			const box = sample.node.getBoundingClientRect();
 			const nx = Math.max(-1, Math.min(1, (sample.x - box.left - box.width / 2) / (box.width / 2 || 1)));
 			const ny = Math.max(-1, Math.min(1, (sample.y - box.top - box.height / 2) / (box.height / 2 || 1)));
-			x.stop(); y.stop(); rotate.stop();
-			x.set(nx * 4); y.set(ny * 2); rotate.set(nx * 3);
+			targetX.set(nx * 4); targetY.set(ny * 2); targetRotate.set(nx * 3);
 		});
 	}
 	function reset() {
-		setHovered(false);
 		pointer.current = null;
 		if (frame.current !== null) cancelAnimationFrame(frame.current);
 		frame.current = null;
-		for (const value of [x, y, rotate]) {
-			value.stop();
-			if (reducedMotion) value.set(0);
-			else animate(value, 0, { duration: motionDuration.normal, ease: motionEase.outPractical });
-		}
+		for (const value of [targetX, targetY, targetRotate, targetSpread]) value.set(0);
 	}
-	return { hovered, x, y, rotate, enter, move, reset };
+	return { x, y, rotate, spread, enter, move, reset };
 }
 
 export type AttachmentPilePointer = ReturnType<typeof useAttachmentPilePointer>;

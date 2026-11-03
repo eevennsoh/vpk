@@ -19,15 +19,15 @@ function PileCard({ item, index, count, piled, pointer, onPreview, onRemove }: R
 	item: ProjectButterAttachment; index: number; count: number; piled: boolean; pointer: AttachmentPilePointer;
 }>) {
 	const falloff = 1 / (1 + index * 0.75);
-	const x = useTransform(() => piled ? pointer.x.get() * falloff : 0);
-	const y = useTransform(() => piled ? pointer.y.get() * falloff : 0);
-	const rotate = useTransform(() => piled ? pointer.rotate.get() * falloff : 0);
 	const rest = piled ? { x: index === 0 ? 0 : index === 1 ? 4 : -4, y: index === 0 ? 0 : 2, rotate: index === 0 ? 0 : index === 1 ? 4 : -5 } : { x: 0, y: 0, rotate: 0 };
-	const nudge = piled && pointer.hovered;
-	const direction = rest.x < 0 ? -1 : 1;
+	const fan = piled && index > 0 ? (rest.x < 0 ? -1 : 1) : 0;
+	const live = piled ? 1 : 0;
+	const x = useTransform(() => live * (pointer.x.get() * falloff + pointer.spread.get() * fan * 2));
+	const y = useTransform(() => live * (pointer.y.get() * falloff - pointer.spread.get() * 2));
+	const rotate = useTransform(() => live * (pointer.rotate.get() * falloff + pointer.spread.get() * fan));
 	return (
 		<motion.div
-			animate={{ x: nudge ? [rest.x, rest.x + (index === 0 ? 0 : direction * 2), rest.x] : rest.x, y: nudge ? [rest.y, rest.y - 2, rest.y] : rest.y, rotate: nudge ? [rest.rotate, rest.rotate + (index === 0 ? 0 : direction), rest.rotate] : rest.rotate }}
+			animate={rest}
 			aria-hidden={piled || undefined}
 			className={cn("min-w-0", piled || index === 0 ? "absolute inset-0" : "relative")}
 			data-attachment-card={item.id}
@@ -35,7 +35,7 @@ function PileCard({ item, index, count, piled, pointer, onPreview, onRemove }: R
 			layout
 			layoutId={item.id}
 			style={{ zIndex: count - index, pointerEvents: piled ? "none" : undefined, willChange: "transform" }}
-			transition={{ duration: nudge || !piled ? motionDuration.slow : motionDuration.medium, ease: motionEase.outPractical, times: [0, 0.42, 1], delay: nudge ? Math.min(index, 2) * motionDuration.slow / 12 : 0, layout: { duration: piled ? motionDuration.medium : motionDuration.slow, ease: motionEase.outPractical } }}
+			transition={{ duration: piled ? motionDuration.medium : motionDuration.slow, ease: motionEase.outPractical }}
 		>
 			<motion.div style={{ x, y, rotate, willChange: "transform" }}><ProjectButterAttachmentCard item={item} onPreview={onPreview} onRemove={onRemove} /></motion.div>
 		</motion.div>
