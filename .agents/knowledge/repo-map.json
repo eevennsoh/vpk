@@ -2696,14 +2696,14 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 73,
-			"pageCount": 57,
+			"ownerImportCount": 75,
+			"pageCount": 58,
 			"primaryOwnerKinds": {
 				"catalog": 18,
 				"dynamic": 8,
 				"inline": 1,
 				"redirect": 2,
-				"shell": 28
+				"shell": 29
 			}
 		},
 		"pages": [
@@ -4315,6 +4315,43 @@
 					}
 				],
 				"source": "app/sandbox/screen-assistant/page.tsx"
+			},
+			{
+				"ownerCount": 2,
+				"owners": [
+					{
+						"importPath": "@/components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
+						"source": "components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
+						"symbols": [
+							"CanvasWorkspace"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/jira-work-item/suggestion-canvas/registry",
+						"source": "components/blocks/jira-work-item/suggestion-canvas/registry",
+						"symbols": [
+							"SUGGESTION_CANVAS_ENTRIES"
+						]
+					}
+				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace"
+					]
+				},
+				"routePath": "/sandbox/suggestion-canvas",
+				"shellOwnerCount": 1,
+				"shellOwners": [
+					{
+						"importPath": "@/components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
+						"source": "components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
+						"symbols": [
+							"CanvasWorkspace"
+						]
+					}
+				],
+				"source": "app/sandbox/suggestion-canvas/page.tsx"
 			},
 			{
 				"ownerCount": 1,
