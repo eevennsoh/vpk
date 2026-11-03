@@ -3,7 +3,7 @@
 import ClockIcon from "@atlaskit/icon/core/clock";
 import VideoPlayIcon from "@atlaskit/icon/core/video-play";
 
-import type { SuggestionConfidence, SuggestionEvidence, WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionConfidence, SuggestionEvidence, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { ConfluenceIcon, JiraIcon, LoomIcon } from "@/components/ui/logo";
 import { SlackLogo } from "@/components/ui/logo-third-party";
 import { PopoverDescription, PopoverTitle } from "@/components/ui/popover";

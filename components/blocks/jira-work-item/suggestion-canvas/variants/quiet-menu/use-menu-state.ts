@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 
 const MENU_GAP = 8;
 /** The menu surface width; the main column keeps the description clear of it while the menu is open. */

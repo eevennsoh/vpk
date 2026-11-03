@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { MotionValue } from "motion/react";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 
 import type { SwipeDirection } from "./use-deck";
 

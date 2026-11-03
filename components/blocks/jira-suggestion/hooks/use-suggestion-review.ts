@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useReducer } from "react";
 
-import type { SuggestionFieldId, WorkItemSuggestion } from "./data/suggestions";
+import type { SuggestionFieldId, WorkItemSuggestion } from "../data/suggestions";
 
 export type SuggestionDecision = "pending" | "accepted" | "dismissed";
 

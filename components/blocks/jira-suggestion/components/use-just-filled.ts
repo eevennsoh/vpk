@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 
 import { HIGHLIGHT_MS } from "./constants";
 

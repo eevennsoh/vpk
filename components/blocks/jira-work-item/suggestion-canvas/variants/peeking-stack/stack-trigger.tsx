@@ -4,8 +4,8 @@ import type { ReactNode, Ref } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
-import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { TeamworkGraphMark } from "@/components/ui-custom/teamwork-graph-mark";
 import { TWGLoader } from "@/components/ui-custom/twg-loader";

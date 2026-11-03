@@ -6,8 +6,8 @@ import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 
-import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionDecision } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
+import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionDecision } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { motionDuration, motionEase } from "@/lib/motion";

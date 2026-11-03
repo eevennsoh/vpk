@@ -6,7 +6,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { cn } from "@/lib/utils";

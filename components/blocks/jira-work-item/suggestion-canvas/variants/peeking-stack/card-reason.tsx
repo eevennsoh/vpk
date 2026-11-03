@@ -4,7 +4,7 @@ import { useRef, useState, type FocusEvent, type KeyboardEvent, type RefObject }
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
-import type { SuggestionEvidence, WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionEvidence, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { motionDuration } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ThumbsDownIcon from "@atlaskit/icon/core/thumbs-down";
 import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
 
-import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { Button } from "@/components/ui/button";
 import { PopoverDescription, PopoverTitle } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";

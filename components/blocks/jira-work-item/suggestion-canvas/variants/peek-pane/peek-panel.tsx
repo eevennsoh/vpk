@@ -3,8 +3,8 @@
 import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
 import { AnimatePresence } from "motion/react";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 

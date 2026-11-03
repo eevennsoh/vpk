@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { motionDuration } from "@/lib/motion";
 
 /** Space between the popover and its trigger, and between a why card and the popover. */

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 
 import { arrivalRunOf, pendingDeck } from "./stack-order";
 

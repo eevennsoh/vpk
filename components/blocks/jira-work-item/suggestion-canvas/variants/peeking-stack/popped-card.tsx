@@ -3,7 +3,7 @@
 import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
 import { motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
 
-import { SUGGESTION_WORK_ITEM, type WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import { SUGGESTION_WORK_ITEM, type WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 

@@ -4530,10 +4530,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 442,
+			"manifestEntryCount": 443,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 437,
+				"live": 438,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -4582,7 +4582,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 116,
+				"entryCount": 117,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4967,6 +4967,13 @@
 						"slug": "jira-list",
 						"name": "Jira List",
 						"importPath": "@/components/blocks/jira-list",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-suggestion",
+						"name": "Jira Suggestion",
+						"importPath": "@/components/blocks/jira-suggestion",
 						"status": "live"
 					},
 					{

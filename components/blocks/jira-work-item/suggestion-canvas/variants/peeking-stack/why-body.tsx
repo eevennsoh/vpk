@@ -1,6 +1,6 @@
 "use client";
 
-import type { SuggestionConfidence, WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionConfidence, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { PopoverDescription, PopoverTitle } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 
 import { PEEK_TIMING } from "./peek-timing";
 

@@ -2,7 +2,7 @@
 
 import { useEffect, type RefObject } from "react";
 
-import type { SuggestionRun } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionRun } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 
 import { PEEK_TIMING } from "./peek-timing";
 

@@ -6,8 +6,8 @@ import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
-import { SUGGESTION_WORK_ITEM, type WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import { SUGGESTION_WORK_ITEM, type WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Shimmer } from "@/components/ui-custom/shimmer";

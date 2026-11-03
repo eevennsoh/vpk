@@ -3,8 +3,8 @@
 import { useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
-import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionDecision } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
+import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionDecision } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 

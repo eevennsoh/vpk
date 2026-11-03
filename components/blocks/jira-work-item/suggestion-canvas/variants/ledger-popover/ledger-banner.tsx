@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState, type Ref } from "react";
 
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tile } from "@/components/ui/tile";
 import { TWGLoader } from "@/components/ui-custom/twg-loader";
 import { TwgToolBannerBackground, TwgToolSourceStack, type TwgToolSource } from "@/components/ui-custom/twg-tool";

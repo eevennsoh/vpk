@@ -1,6 +1,6 @@
 "use client";
 
-import type { SuggestionReview } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
+import type { SuggestionReview } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 import { cn } from "@/lib/utils";
 
 import { PeekValue } from "./value";

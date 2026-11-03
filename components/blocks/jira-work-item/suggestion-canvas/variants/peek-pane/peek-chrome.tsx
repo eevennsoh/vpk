@@ -5,8 +5,8 @@ import { AnimatePresence, motion } from "motion/react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
-import { SUGGESTION_WORK_ITEM } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionReview } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
+import { SUGGESTION_WORK_ITEM } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionReview } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

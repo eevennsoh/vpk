@@ -7,8 +7,8 @@ import { Popover, PopoverContent } from "@/components/ui/popover";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { CaughtUp, GroupDivider, MenuFooter, MenuHeader, MenuStatusLine, RUNNING_COPY, type FooterUndo, type MenuStatus } from "./menu-chrome";
 import { QuietRow, type DecideVia, type RowMove } from "./quiet-row";
 import { ReviewedGroup } from "./reviewed-group";

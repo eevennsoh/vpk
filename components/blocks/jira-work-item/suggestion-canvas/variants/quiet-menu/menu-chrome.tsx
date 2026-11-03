@@ -13,7 +13,7 @@ import { TWGLoader } from "@/components/ui-custom/twg-loader";
 import { motionRecipe } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-import { SUGGESTION_WORK_ITEM } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import { SUGGESTION_WORK_ITEM } from "@/components/blocks/jira-suggestion/data/suggestions";
 
 /** The one phrase used for a re-run, wherever it is shown or announced. */
 export const RUNNING_COPY = "Checking for new suggestions";

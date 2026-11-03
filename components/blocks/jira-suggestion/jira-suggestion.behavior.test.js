@@ -10,9 +10,9 @@ const { renderComponent } = require(path.join(process.cwd(), "scripts/lib/render
 
 const SOURCE = `import React from "react";
 	import { ThemeWrapper } from "@/components/utils/theme-wrapper";
-	import { CardStackVariant } from "@/components/blocks/jira-work-item/suggestion-canvas/variants/card-stack";
-	export default function CardStackTest() {
-		return <ThemeWrapper><CardStackVariant /></ThemeWrapper>;
+	import { JiraSuggestion } from "@/components/blocks/jira-suggestion";
+	export default function JiraSuggestionTest() {
+		return <ThemeWrapper><JiraSuggestion /></ThemeWrapper>;
 	}`;
 
 /** happy-dom has no :focus-visible heuristics; treat programmatic focus as keyboard focus, as a Tab would be. */

@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, type Transition } from "motion/react";
 
-import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { motionDuration, motionEase, motionRecipe } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 

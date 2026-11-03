@@ -7,7 +7,7 @@ import { ConfluenceIcon, JiraIcon, LoomIcon } from "@/components/ui/logo";
 import { SlackLogo } from "@/components/ui/logo-third-party";
 import { Tile } from "@/components/ui/tile";
 
-import type { SuggestionEvidence } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionEvidence } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { KeepKeys } from "./keep-keys";
 
 const KIND_LABEL: Readonly<Record<SuggestionEvidence["kind"], string>> = {

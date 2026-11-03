@@ -1,4 +1,4 @@
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 
 /**
  * Stable `data-focus-key` values for controls that mount and unmount as decisions change.

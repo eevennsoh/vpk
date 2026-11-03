@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useCallback, useEffectEvent, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { animate, useMotionValue, useReducedMotion, type AnimationPlaybackControls, type Transition } from "motion/react";
 
 import { MORPH_HEIGHT, MORPH_HEIGHT_GATHER, MORPH_HEIGHT_UNPACK, SETTLE } from "./constants";
@@ -78,22 +78,24 @@ export function useBodyHeight(content: RefObject<HTMLElement | null>, mode: Body
 	};
 
 	// A mode change eases with the morph.
-	useLayoutEffect(() => {
+	const onModeChange = useEffectEvent(() => {
 		const from = height.get();
 		const shrinking = typeof from === "number" && targetHeight() < from;
 		follow(shrinking ? MORPH_HEIGHT_GATHER : mode === "list" ? MORPH_HEIGHT_UNPACK : MORPH_HEIGHT);
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- runs per mode; follow only reads refs and the motion value
+	});
+	useLayoutEffect(() => {
+		onModeChange();
 	}, [mode, maxHeight]);
 
 	// Content resizing within a mode (a decision, a fold, a re-run's arrivals) eases more briefly.
+	const onContentResize = useEffectEvent(() => follow(easing.current ? MORPH_HEIGHT : SETTLE));
 	useLayoutEffect(() => {
 		const element = content.current;
 		if (!element) return undefined;
-		const observer = new ResizeObserver(() => follow(easing.current ? MORPH_HEIGHT : SETTLE));
+		const observer = new ResizeObserver(() => onContentResize());
 		observer.observe(element);
 		return () => observer.disconnect();
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- one observer for the component's life
-	}, []);
+	}, [content]);
 
 	const settled = settledMode === mode;
 	return { height, settled, overflow: overflowOf(mode, isEasing || !settled), viewport };

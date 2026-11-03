@@ -7,7 +7,7 @@ import StoryIcon from "@atlaskit/icon/core/story";
 
 import { cn } from "@/lib/utils";
 
-import { SUGGESTION_WORK_ITEM } from "./data/suggestions";
+import { SUGGESTION_WORK_ITEM } from "../data/suggestions";
 
 export interface WorkItemPreviewShellProps {
 	/** Right column content: the variant's suggestion UI plus the Details rail. */

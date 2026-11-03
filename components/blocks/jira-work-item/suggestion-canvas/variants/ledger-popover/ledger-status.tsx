@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Button } from "@/components/ui/button";
 import { motionDuration, motionEase } from "@/lib/motion";
 

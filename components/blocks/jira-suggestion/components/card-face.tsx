@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { cn } from "@/lib/utils";
 
 import { CardValue } from "./card-value";

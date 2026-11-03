@@ -112,6 +112,7 @@ import { JIRA_CREATE_DETAIL } from "./blocks/jira-creating";
 import { JIRA_DRAGGING_DETAIL } from "./blocks/jira-dragging";
 import { JIRA_DROPZONE_DETAIL } from "./blocks/jira-dropzone";
 import { JIRA_TOOLBAR_DETAIL } from "./blocks/jira-toolbar";
+import { JIRA_SUGGESTION_DETAIL } from "./blocks/jira-suggestion";
 import { GENERATIVE_DETAIL } from "./blocks/generative";
 import { GALLERY_DETAIL } from "./blocks/gallery";
 import { HTML_SELECTOR_DETAIL } from "./blocks/html-selector";
@@ -230,6 +231,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-dragging": JIRA_DRAGGING_DETAIL,
 	"jira-dropzone": JIRA_DROPZONE_DETAIL,
 	"jira-toolbar": JIRA_TOOLBAR_DETAIL,
+	"jira-suggestion": JIRA_SUGGESTION_DETAIL,
 	generative: GENERATIVE_DETAIL,
 	gallery: GALLERY_DETAIL,
 	"html-selector": HTML_SELECTOR_DETAIL,

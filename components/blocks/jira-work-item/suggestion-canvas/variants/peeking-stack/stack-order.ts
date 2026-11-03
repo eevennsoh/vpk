@@ -1,5 +1,5 @@
-import type { SuggestionFieldId, WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFieldId, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 
 /** Newest run first, each run in the agent's order, so fresh cards land on top of the deck. */
 export function stackOrder(feed: SuggestionFeed): readonly WorkItemSuggestion[] {

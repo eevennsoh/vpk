@@ -6,7 +6,7 @@ import RefreshIcon from "@atlaskit/icon/core/refresh";
 import ThumbsDownIcon from "@atlaskit/icon/core/thumbs-down";
 import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
 
-import type { SuggestionConfidence, WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionConfidence, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";

@@ -2,7 +2,7 @@
 
 import { useId, type Ref } from "react";
 
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tile } from "@/components/ui/tile";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { TWGLoader } from "@/components/ui-custom/twg-loader";

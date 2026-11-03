@@ -480,6 +480,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	blockComponent("jira-dragging", "Jira Dragging"),
 	blockComponent("jira-dropzone", "Jira Dropzone"),
 	blockComponent("jira-toolbar", "Jira Toolbar"),
+	blockComponent("jira-suggestion", "Jira Suggestion"),
 	blockComponent("apps-directory", "Apps Directory"),
 	blockComponent("artifact"),
 	blockComponent("artifact-pane", "Artifact Pane"),

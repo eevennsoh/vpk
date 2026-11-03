@@ -4,8 +4,8 @@ import { useEffect, useLayoutEffect, useRef, type Ref, type RefObject } from "re
 import { AnimatePresence, motion, type MotionValue } from "motion/react";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Button } from "@/components/ui/button";
 import { motionRecipe } from "@/lib/motion";
 

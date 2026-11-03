@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { FOLLOW_UP_SUGGESTIONS, WORK_ITEM_SUGGESTIONS, type SuggestionFieldId, type WorkItemSuggestion } from "./data/suggestions";
+import { FOLLOW_UP_SUGGESTIONS, WORK_ITEM_SUGGESTIONS, type SuggestionFieldId, type WorkItemSuggestion } from "../data/suggestions";
 import { useSuggestionReview, type SuggestionReview } from "./use-suggestion-review";
 
 /** Simulated agent latency for a re-run, long enough to show a working state. */

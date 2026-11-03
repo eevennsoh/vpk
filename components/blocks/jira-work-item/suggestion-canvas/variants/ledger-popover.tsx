@@ -5,10 +5,10 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { motionDuration, motionRecipe } from "@/lib/motion";
 
-import { type SuggestionFieldId } from "../data/suggestions";
-import { MockDetailsRail } from "../mock-details-rail";
-import { useSuggestionFeed } from "../use-suggestion-feed";
-import { WorkItemPreviewShell } from "../work-item-preview-shell";
+import { type SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
+import { MockDetailsRail } from "@/components/blocks/jira-suggestion/components/mock-details-rail";
+import { useSuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
+import { WorkItemPreviewShell } from "@/components/blocks/jira-suggestion/components/work-item-preview-shell";
 import { LedgerBanner } from "./ledger-popover/ledger-banner";
 import { LedgerMain } from "./ledger-popover/ledger-main";
 import { LedgerPanel } from "./ledger-popover/ledger-panel";

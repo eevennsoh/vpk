@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useState, type Ref } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, usePresence, usePresenceData, useReducedMotion, useTransform, type MotionValue, type Transition } from "motion/react";
 
-import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionDecision } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
+import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionDecision } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 import { cn } from "@/lib/utils";
 
 import { CARD_PAPER, CARD_PAPER_STYLE } from "./card-face";
@@ -108,7 +108,7 @@ export function SuggestionCard({
 	const contentOpacity = useTransform([contentShown, peek], ([base, peeked]: number[]) => Math.max(base, peeked));
 
 	// Arrivals: back from the side it left by, or dropped in from just above. Before paint, so nothing flashes.
-	useLayoutEffect(() => {
+	const playArrival = useEffectEvent(() => {
 		if (arrival === "none") return;
 		if (reduced) {
 			appear.set(1);
@@ -119,7 +119,10 @@ export function SuggestionCard({
 			animate(dragX, 0, SETTLE);
 		}
 		animate(appear, 1, arrival === "reveal" ? { ...CONTENT_IN, delay: CONTENT_IN.delay + delay } : FADE);
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- the arrival plays once, on mount
+	});
+	// The arrival plays once, on mount.
+	useLayoutEffect(() => {
+		playArrival();
 	}, []);
 
 	const settle = useEffectEvent((target: CardPose) => {

@@ -6,7 +6,7 @@ import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 import UndoIcon from "@atlaskit/icon/core/undo";
 
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Button } from "@/components/ui/button";
 import { motionRecipe } from "@/lib/motion";
 import { token } from "@/lib/tokens";

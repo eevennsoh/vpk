@@ -2,7 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
 
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 
 import { focusKey, focusQuietly } from "./ledger-focus";
 

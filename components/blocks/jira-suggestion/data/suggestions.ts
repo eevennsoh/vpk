@@ -1,4 +1,4 @@
-import { projectButterPersonAvatar } from "../../project-butter/people.ts";
+import { projectButterPersonAvatar } from "../../jira-work-item/project-butter/people.ts";
 
 /**
  * Synthetic suggestions for the empty PAY-999 work item. Every canvas variant renders this same list,

@@ -5,10 +5,10 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { motionRecipe } from "@/lib/motion";
 
-import type { SuggestionFieldId } from "../data/suggestions";
-import { MockDetailsRail } from "../mock-details-rail";
-import { useSuggestionFeed } from "../use-suggestion-feed";
-import { WorkItemPreviewShell } from "../work-item-preview-shell";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
+import { MockDetailsRail } from "@/components/blocks/jira-suggestion/components/mock-details-rail";
+import { useSuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
+import { WorkItemPreviewShell } from "@/components/blocks/jira-suggestion/components/work-item-preview-shell";
 import { QuietMain } from "./quiet-menu/quiet-main";
 import { QuietPanel } from "./quiet-menu/quiet-panel";
 import { QuietTrigger } from "./quiet-menu/quiet-trigger";

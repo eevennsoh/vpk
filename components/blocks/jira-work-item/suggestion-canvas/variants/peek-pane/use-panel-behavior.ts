@@ -2,8 +2,8 @@
 
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
-import type { SuggestionFieldId, WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionReview } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
+import type { SuggestionFieldId, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionReview } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 
 /** Which control should hold focus once a decision re-renders the list. */
 export type FocusRequest = { target: "undo" | "accept"; id: SuggestionFieldId; serial: number } | { target: "done"; serial: number } | null;

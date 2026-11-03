@@ -8,7 +8,7 @@ import { Lozenge } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
-import type { SuggestionValue } from "./data/suggestions";
+import type { SuggestionValue } from "../data/suggestions";
 
 /**
  * Full rendering of a suggested value. Text wraps; nothing is clipped or ellipsised.

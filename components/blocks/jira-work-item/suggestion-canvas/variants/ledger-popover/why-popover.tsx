@@ -3,7 +3,7 @@
 import { useRef, type FocusEvent, type KeyboardEvent, type RefObject } from "react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
-import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { motionDuration } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 

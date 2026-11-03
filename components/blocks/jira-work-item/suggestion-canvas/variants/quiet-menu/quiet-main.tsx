@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-import type { SuggestionReview } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
+import type { SuggestionReview } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 import { QuietValue } from "./quiet-value";
 
 /** Clearance from the menu's left edge to the main column's text, so the description stays readable beside it. */

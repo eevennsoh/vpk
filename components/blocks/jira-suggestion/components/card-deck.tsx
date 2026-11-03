@@ -3,8 +3,8 @@
 import { useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type RefObject } from "react";
 import { AnimatePresence, type MotionValue, type Transition } from "motion/react";
 
-import type { SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { cn } from "@/lib/utils";
 
 import { FAN, FAN_SPREAD, LIST_GAP, MORPH, MORPH_STAGGER, REAR_SHEETS, STACK_ROOM, WIDE_CARD_TILT } from "./constants";

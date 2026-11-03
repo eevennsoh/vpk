@@ -7,10 +7,10 @@ import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-import { projectButterPersonAvatar } from "../project-butter/people";
-import type { SuggestionFieldId, WorkItemSuggestion } from "./data/suggestions";
+import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
+import type { SuggestionFieldId, WorkItemSuggestion } from "../data/suggestions";
 import { SuggestionValueView } from "./suggestion-value-view";
-import type { SuggestionReview } from "./use-suggestion-review";
+import type { SuggestionReview } from "../hooks/use-suggestion-review";
 
 /**
  * A static replica of the Butter Details rail for preview context. Accepted suggestions fill their rows,

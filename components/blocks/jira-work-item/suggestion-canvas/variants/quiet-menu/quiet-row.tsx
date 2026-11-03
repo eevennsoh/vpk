@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-import type { WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionDecision } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
+import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionDecision } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 import { UNDO_TEXT } from "./menu-chrome";
 import { QuietValue } from "./quiet-value";
 import { useElementEvents } from "./use-element-events";
@@ -49,7 +49,7 @@ const COLLAPSE_OUT = { duration: motionDuration.normal, ease: motionEase.in };
 const ROW_KEYS: Readonly<Record<string, RowMove>> = { ArrowDown: "next", ArrowUp: "previous", Home: "first", End: "last" };
 const via = (event: { detail: number }): DecideVia => (event.detail === 0 ? "keyboard" : "pointer");
 /** ✕/✓ rest invisible and arrive with the row's hover or focus; they stay in the tab order and show on touch. */
-const REVEAL = "opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100";
+const REVEAL = "opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100";
 /** A receipt's Undo lands where ✕/✓ just were; ignore the rest of a double-click or an immediate second tap. */
 const UNDO_GUARD_MS = 450;
 

@@ -5,7 +5,7 @@ import EpicIcon from "@atlaskit/icon/core/epic";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-import type { SuggestionValue } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionValue } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { KeepKeys } from "./keep-keys";
 
 /**

@@ -4,7 +4,7 @@ import CalendarIcon from "@atlaskit/icon/core/calendar";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import EpicIcon from "@atlaskit/icon/core/epic";
 
-import type { SuggestionValue } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionValue } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";

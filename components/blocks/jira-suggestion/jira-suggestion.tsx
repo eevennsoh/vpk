@@ -5,22 +5,22 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { motionRecipe } from "@/lib/motion";
 
-import { MockDetailsRail } from "../mock-details-rail";
-import { useSuggestionFeed } from "../use-suggestion-feed";
-import { WorkItemPreviewShell } from "../work-item-preview-shell";
-import { StackMain } from "./card-stack/stack-main";
-import { StackPanel } from "./card-stack/stack-panel";
-import { StackTrigger } from "./card-stack/stack-trigger";
-import { useDeck } from "./card-stack/use-deck";
-import { useJustFilled } from "./card-stack/use-just-filled";
-import { useOverlayPlacement } from "./card-stack/use-overlay-placement";
+import { MockDetailsRail } from "./components/mock-details-rail";
+import { useSuggestionFeed } from "./hooks/use-suggestion-feed";
+import { WorkItemPreviewShell } from "./components/work-item-preview-shell";
+import { StackMain } from "./components/stack-main";
+import { StackPanel } from "./components/stack-panel";
+import { StackTrigger } from "./components/stack-trigger";
+import { useDeck } from "./components/use-deck";
+import { useJustFilled } from "./components/use-just-filled";
+import { useOverlayPlacement } from "./components/use-overlay-placement";
 
 /**
  * Card stack: one suggestion at a time on a swipeable, randomly fanned stack inside a popover over the work item.
  * Swipe or press → to accept, ← to dismiss; click the stack (or the list toggle) to unpack it into a scrolling list
  * and gather it back. Re-runs put their finds on top, marked New.
  */
-export function CardStackVariant() {
+export function JiraSuggestion() {
 	const feed = useSuggestionFeed();
 	const [open, setOpen] = useState(true);
 	const panelId = useId();

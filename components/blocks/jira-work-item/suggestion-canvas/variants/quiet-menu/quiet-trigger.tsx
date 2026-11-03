@@ -6,7 +6,7 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { TWGLoader } from "@/components/ui-custom/twg-loader";
 import { cn } from "@/lib/utils";
 
-import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { RUNNING_COPY } from "./menu-chrome";
 
 export interface QuietTriggerProps {

@@ -1,5 +1,5 @@
 import type { CanvasEntry } from "./canvas/canvas-workspace";
-import { CardStackVariant } from "./variants/card-stack";
+import { JiraSuggestion } from "@/components/blocks/jira-suggestion";
 import { LedgerPopoverVariant } from "./variants/ledger-popover";
 import { PeekPaneVariant } from "./variants/peek-pane";
 import { PeekingStackVariant } from "./variants/peeking-stack";
@@ -19,7 +19,7 @@ const row = (index: number) => index * (PREVIEW_HEIGHT + GAP + 40);
 
 export const SUGGESTION_CANVAS_ENTRIES: readonly CanvasEntry[] = [
 	{ id: "ledger-popover", name: "Suggestions · Ledger popover", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(0), y: row(0), render: () => <LedgerPopoverVariant /> },
-	{ id: "card-stack", name: "Suggestions · Card stack", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(1), y: row(0), render: () => <CardStackVariant /> },
+	{ id: "card-stack", name: "Suggestions · Card stack", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(1), y: row(0), render: () => <JiraSuggestion /> },
 	{ id: "quiet-menu", name: "Suggestions · Quiet menu", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(2), y: row(0), render: () => <QuietMenuVariant /> },
 	{ id: "run-timeline", name: "Suggestions · Run timeline", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(0), y: row(1), render: () => <RunTimelineVariant /> },
 	{ id: "peek-pane", name: "Suggestions · Peek pane", width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, x: column(1), y: row(1), render: () => <PeekPaneVariant /> },
