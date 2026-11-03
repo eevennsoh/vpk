@@ -153,6 +153,10 @@ test("Delete all and per-item confirmations use the reference copy", async () =>
 	assert.equal(all.textContent.includes("All attachments will be permanently deleted."), true);
 	await view.click(view.getByRole("button", { name: "Delete" }));
 	assert.equal(document.querySelector('[data-related-type="attachments"]'), null, "an emptied group hides while other groups have content");
+	await new Promise((resolve) => setTimeout(resolve, 400));
+	await act(() => {});
+	assert.equal(view.queryByRole("dialog", { name: "Delete all attachments?" }), null, "the dialog outlives the group and closes");
+	assert.equal(document.activeElement !== document.body && document.querySelector("#section-linked-content").contains(document.activeElement), true, "focus lands in Related work, not on the body");
 });
 
 test("Escape closes the most recently opened pile and refocuses its toggle", async () => {

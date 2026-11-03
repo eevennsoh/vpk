@@ -25,8 +25,27 @@ export function attachmentDropMessage(added: number) {
 
 const GHOST_SIZE = 120;
 
+/** The part of `element` the user can see: its rect clipped by every non-visible-overflow ancestor and the viewport. */
+export function visibleDropRect(element: Element) {
+	const box = element.getBoundingClientRect();
+	let top = Math.max(box.top, 0);
+	let left = Math.max(box.left, 0);
+	let bottom = Math.min(box.bottom, window.innerHeight);
+	let right = Math.min(box.right, window.innerWidth);
+	for (let node = element.parentElement; node; node = node.parentElement) {
+		const style = getComputedStyle(node);
+		if (style.overflowX === "visible" && style.overflowY === "visible") continue;
+		const clip = node.getBoundingClientRect();
+		top = Math.max(top, clip.top);
+		left = Math.max(left, clip.left);
+		bottom = Math.min(bottom, clip.bottom);
+		right = Math.min(right, clip.right);
+	}
+	return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+
 /**
- * Whole-left-column file drop for Project Butter. Files become attachments (images get object-URL
+ * Whole-left-column file drop for Project Butter (the scrolling column, gutters included). Files become attachments (images get object-URL
  * previews), duplicates are dropped, and the result is announced. After a drop the Attachments group
  * opens; in list view the new rows fade in and an image flies to its row thumbnail. Grid view relies on
  * the card arrival instead. Reduced motion skips the flight and fade.
@@ -38,15 +57,22 @@ export function useAttachmentDrop(zoneRef: RefObject<HTMLElement | null>, conten
 	const [announcement, setAnnouncement] = useState("");
 	const pointer = useRef({ x: 0, y: 0 });
 	const hintRef = useRef<HTMLSpanElement>(null);
+	const washRef = useRef<HTMLDivElement>(null);
 	const frame = useRef(0);
+	/** Re-measured each coalesced dragover: the wash covers what is visible of the zone, so its cards sit at 42% of the view. */
 	const placeHint = useEffectEvent(() => {
 		frame.current = 0;
 		const zone = zoneRef.current;
+		if (!zone) return;
+		const wash = washRef.current;
+		if (wash) {
+			const rect = visibleDropRect(zone);
+			Object.assign(wash.style, { top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px` });
+		}
 		const hint = hintRef.current;
-		if (!zone || !hint) return;
-		const box = zone.getBoundingClientRect();
-		hint.style.left = `${pointer.current.x - box.left}px`;
-		hint.style.top = `${pointer.current.y - box.top}px`;
+		if (!hint) return;
+		hint.style.left = `${pointer.current.x}px`;
+		hint.style.top = `${pointer.current.y}px`;
 	});
 	useLayoutEffect(() => {
 		if (over) placeHint();
@@ -130,5 +156,5 @@ export function useAttachmentDrop(zoneRef: RefObject<HTMLElement | null>, conten
 			window.removeEventListener("drop", reset);
 		};
 	}, [zoneRef]);
-	return { over, ghost, announcement, hintRef, clearGhost: () => setGhost(null) };
+	return { over, ghost, announcement, hintRef, washRef, clearGhost: () => setGhost(null) };
 }

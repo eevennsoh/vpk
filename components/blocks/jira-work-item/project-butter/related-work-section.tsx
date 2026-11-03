@@ -86,14 +86,10 @@ export function RelatedWorkSection({ animated, children, collapsedSummary, onOpe
 	const titleId = useId();
 	const contentId = useId();
 	const expanded = ready ? open : true;
-	const { animating, announceOpening } = useRelatedPanelSettle();
-	function changeOpen(next: boolean) {
-		if (next) announceOpening();
-		onOpenChange(next);
-	}
+	const animating = useRelatedPanelSettle(expanded);
 	return (
-		<section aria-label={ready ? undefined : "Related work"} aria-labelledby={ready ? titleId : undefined} className={cn("min-w-0", !expanded && "pb-3.5")} data-component="RelatedWork" id="section-linked-content" ref={sectionRef}>
-			<Collapsible onOpenChange={changeOpen} open={expanded}>
+		<section aria-label={ready ? undefined : "Related work"} aria-labelledby={ready ? titleId : undefined} className="min-w-0" data-component="RelatedWork" id="section-linked-content" ref={sectionRef}>
+			<Collapsible onOpenChange={onOpenChange} open={expanded}>
 				{ready ? (
 					<motion.div animate={{ opacity: 1 }} className="-ml-1 flex h-8 w-[calc(100%+4px)] min-w-0 items-center gap-2" initial={animated ? { opacity: 0 } : false} transition={{ duration: motionDuration.medium, ease: motionEase.out }}>
 						<h2 className="flex h-6 min-w-0 items-center">

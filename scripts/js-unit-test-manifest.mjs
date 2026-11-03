@@ -351,6 +351,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/jira-team-eu26-end/finale/studio/studio-versions.test.js",
 		"components/projects/jira-golden-journeys-v4/data/presentation-story.test.js",
 		"components/projects/butter/data/presentation-story.test.js",
+		"components/projects/butter/data/related-scope.test.js",
 		"components/projects/jira-team-eu26/data/presentation-story.test.js",
 		"components/projects/jira-team-eu26-end/data/presentation-story.test.js",
 		"components/projects/jira-golden-journeys-v4/lib/list-rows.test.js",

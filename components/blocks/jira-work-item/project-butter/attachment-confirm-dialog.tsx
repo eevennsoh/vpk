@@ -17,10 +17,12 @@ export function attachmentConfirmCopy(target: AttachmentConfirmTarget) {
 
 /**
  * Small danger modal above the work item dialog (z-[701] over a z-[700] blanket). Escape, the close
- * button and a blanket click cancel; Base UI returns focus to the element that opened it.
- * `target` outlives `open` so the exit fade keeps its copy.
+ * button and a blanket click cancel. Focus returns to `finalFocus` (the opener, or a stable fallback when
+ * it unmounted). Owners keep `target` past `open` and render this outside the group so the exit fade keeps its copy.
  */
-export function AttachmentConfirmDialog({ onConfirm, onOpenChange, open, target }: Readonly<{
+export function AttachmentConfirmDialog({ finalFocus, onConfirm, onOpenChange, open, target }: Readonly<{
+	/** Where focus goes on close when the opener may have unmounted (Base UI Popup finalFocus). */
+	finalFocus?: () => HTMLElement | true;
 	onConfirm: () => void;
 	onOpenChange: (open: boolean) => void;
 	open: boolean;
@@ -29,7 +31,7 @@ export function AttachmentConfirmDialog({ onConfirm, onOpenChange, open, target 
 	const copy = target ? attachmentConfirmCopy(target) : null;
 	return (
 		<Dialog onOpenChange={onOpenChange} open={open}>
-			<DialogContent className="z-[701] gap-4" overlayProps={{ forceRender: true, className: "z-[700]" }} size="sm">
+			<DialogContent className="z-[701] gap-4" finalFocus={finalFocus} overlayProps={{ forceRender: true, className: "z-[700]" }} size="sm">
 				<DialogTitle variant="destructive">{copy?.title}</DialogTitle>
 				<DialogDescription className="text-text">{copy?.body}</DialogDescription>
 				<DialogFooter>

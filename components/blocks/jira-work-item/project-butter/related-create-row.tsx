@@ -2,11 +2,13 @@
 
 import { PROJECT_BUTTER_RELATED_SEARCH_ITEMS } from "@/components/blocks/jira-work-item/project-butter/related-data";
 import { RelatedComposer, type RelatedComposerDismissReason } from "@/components/blocks/jira-work-item/project-butter/related-composer";
-import { relatedComposerChoices, relatedWorkItemKey, type ProjectButterRelatedAddRequest, type ProjectButterRelatedItem, type ProjectButterRelatedListEditor, type ProjectButterRelatedWorkType, type RelatedWorkChoice } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { relatedComposerChoices, relatedWorkItemKey, type ProjectButterRelatedAddRequest, type ProjectButterRelatedItem, type ProjectButterRelatedListEditor, type ProjectButterRelatedSearchItem, type ProjectButterRelatedWorkType, type RelatedWorkChoice } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { RelatedAssigneeAvatar, RelatedPriorityGlyph, RelatedRelationshipField } from "@/components/blocks/jira-work-item/project-butter/related-row-fields";
 import { RelatedStatusIcon } from "@/components/blocks/jira-work-item/project-butter/related-status-field";
 
-export function ProjectButterRelatedCreateRow({ dimmed, editor, items, linked, onAdd, onChange, onDismiss, ownKey, parentType }: Readonly<{
+export function ProjectButterRelatedCreateRow({ catalog = PROJECT_BUTTER_RELATED_SEARCH_ITEMS, dimmed, editor, items, linked, onAdd, onChange, onDismiss, ownKey, parentType }: Readonly<{
+	/** Work items the composer can match; the host passes its own project (Butter board cards). */
+	catalog?: readonly ProjectButterRelatedSearchItem[];
 	dimmed: boolean;
 	editor: ProjectButterRelatedListEditor;
 	items: readonly ProjectButterRelatedItem[];
@@ -20,7 +22,7 @@ export function ProjectButterRelatedCreateRow({ dimmed, editor, items, linked, o
 	parentType?: ProjectButterRelatedWorkType;
 }>) {
 	const { choices, matchCount } = relatedComposerChoices({
-		catalog: PROJECT_BUTTER_RELATED_SEARCH_ITEMS,
+		catalog,
 		existingKeys: new Set(items.map((item) => item.key)),
 		kind: linked ? "linked" : "children",
 		ownKey,

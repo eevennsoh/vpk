@@ -57,6 +57,27 @@ test("child summary Save and Cancel isolate editing and Escape returns focus wit
 	assert.equal(escaped, 0);
 });
 
+test("keyboard Save, Cancel and Escape on the summary actions return focus to the settled summary", async () => {
+	let escaped = 0;
+	const view = await renderRelated({ onUnhandledEscape: () => escaped++ });
+	const summary = () => summaryButtons("VITA-5")[0];
+	await view.focus(summary());
+	await view.fill(summary(), "Keyboard saved copy");
+	await view.press(summary(), "Tab");
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Save summary for VITA-5" })), true);
+	await view.press(null, "Enter");
+	assert.equal(summary().textContent, "Keyboard saved copy");
+	assert.equal(view.isFocused(summary()), true, "focus must not drop to the body after keyboard Save");
+	assert.equal(view.queryByRole("button", { name: "Save summary for VITA-5" }), null, "the settled summary does not re-enter editing");
+	await view.press(summary(), "x");
+	await view.fill(summary(), "Discard via Escape on Cancel");
+	await view.focus(view.getByRole("button", { name: "Cancel summary for VITA-5" }));
+	await view.press(null, "Escape");
+	assert.equal(summary().textContent, "Keyboard saved copy");
+	assert.equal(view.isFocused(summary()), true);
+	assert.equal(escaped, 0, "Escape on the actions cancels the edit, not the host dialog");
+});
+
 test("repeated work-item keys keep independent summaries when rows are saved or removed", async () => {
 	const view = await renderRelated();
 	assert.equal(summaryButtons("VITA-4").length, 2);

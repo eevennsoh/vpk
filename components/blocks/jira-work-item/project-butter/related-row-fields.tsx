@@ -43,8 +43,8 @@ export function RelatedRelationshipField({ label, value, onChange }: Readonly<{ 
 	return (
 		<span className="w-[90px] min-w-[90px] shrink-0">
 			<DropdownMenu>
-				<DropdownMenuTrigger render={<Button aria-label={label} className="h-6 w-full justify-start px-0" size="compact" type="button" variant="ghost" />}><span className="truncate text-sm font-normal text-text">{value}</span></DropdownMenuTrigger>
-				<DropdownMenuContent align="start" onKeyDown={stopEscape} positionerClassName="z-[650]">{RELATED_RELATIONSHIPS.map((relationship) => <DropdownMenuItem key={relationship} onSelect={() => onChange(relationship)} selected={relationship === value}>{relationship}</DropdownMenuItem>)}</DropdownMenuContent>
+				<DropdownMenuTrigger render={<Button aria-label={label} className="h-6 w-full justify-start px-0 hover:bg-transparent aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle" size="compact" type="button" variant="ghost" />}><span className="truncate text-sm font-normal text-text">{value}</span></DropdownMenuTrigger>
+				<DropdownMenuContent align="start" className="w-[180px] min-w-[180px]" onKeyDown={stopEscape} positionerClassName="z-[650]">{RELATED_RELATIONSHIPS.map((relationship) => <DropdownMenuItem key={relationship} onSelect={() => onChange(relationship)} selected={relationship === value}>{relationship}</DropdownMenuItem>)}</DropdownMenuContent>
 			</DropdownMenu>
 		</span>
 	);

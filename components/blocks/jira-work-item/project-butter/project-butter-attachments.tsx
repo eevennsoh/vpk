@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { downloadAttachment } from "@/components/blocks/jira-work-item/project-butter/attachment-actions-menu";
 import { attachmentFromChoice, type AttachmentComposerChoice } from "@/components/blocks/jira-work-item/project-butter/attachment-catalog";
 import { AttachmentComposer } from "@/components/blocks/jira-work-item/project-butter/attachment-composer";
-import { AttachmentConfirmDialog, type AttachmentConfirmTarget } from "@/components/blocks/jira-work-item/project-butter/attachment-confirm-dialog";
+import type { AttachmentConfirmTarget } from "@/components/blocks/jira-work-item/project-butter/attachment-confirm-dialog";
 import { AttachmentFilterTabs } from "@/components/blocks/jira-work-item/project-butter/attachment-filter-tabs";
 import { AttachmentList } from "@/components/blocks/jira-work-item/project-butter/attachment-list";
 import { AttachmentManageMenu } from "@/components/blocks/jira-work-item/project-butter/attachment-manage-menu";
@@ -19,17 +19,12 @@ import { RelatedWorkGroup } from "@/components/blocks/jira-work-item/project-but
 import type { RelatedComposerDismissReason } from "@/components/blocks/jira-work-item/project-butter/related-composer";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 
-/** Revokes the object URL a dropped image used for its preview. */
-function releasePreview(item: ProjectButterAttachment) {
-	if (item.previewSrc?.startsWith("blob:")) URL.revokeObjectURL(item.previewSrc);
-}
-
 /**
  * Project Butter Attachments group: grid piles by default, a list view with filter tabs, the inline
- * create/search/paste composer, and the reference confirmations. Editor state lives in
+ * create/search/paste composer. Delete confirmations are owned above the group (useAttachmentRemoval). Editor state lives in
  * `content.attachmentEditor` (never audited) so it survives close and reopen.
  */
-export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset = false, emptyState = false, onDismissGroup }: Readonly<{
+export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset = false, emptyState = false, onDismissGroup, onRequestRemove }: Readonly<{
 	asSectionHeader: boolean;
 	content: ProjectButterContent;
 	/** The Empty preset: filter tabs only offer the types present. */
@@ -37,11 +32,11 @@ export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset
 	/** Every related group is empty: show the empty state row. */
 	emptyState?: boolean;
 	onDismissGroup?: () => void;
+	/** Opens the delete confirmation (rendered by the Related work owner so it outlives this group). */
+	onRequestRemove: (target: AttachmentConfirmTarget) => void;
 }>) {
 	const editor = content.attachmentEditor;
 	const addTrigger = useRef<HTMLButtonElement>(null);
-	const [confirm, setConfirm] = useState<AttachmentConfirmTarget | null>(null);
-	const [confirmOpen, setConfirmOpen] = useState(false);
 	const sorted = sortAttachments(content.attachments);
 	const filters = visibleAttachmentFilters(sorted, emptyPreset);
 	const filter = effectiveAttachmentFilter(editor.filter, filters);
@@ -62,20 +57,8 @@ export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset
 		patch({ composerOpen: false, query: "" });
 		if (reason === "escape") addTrigger.current?.focus();
 	}
-	function requestRemove(target: AttachmentConfirmTarget) {
-		setConfirm(target);
-		setConfirmOpen(true);
-	}
-	function confirmRemove() {
-		const target = confirm;
-		setConfirmOpen(false);
-		if (!target) return;
-		const removed = target.kind === "all" ? content.attachments : content.attachments.filter((item) => item.id === target.item.id);
-		content.setAttachments((items) => target.kind === "all" ? [] : items.filter((item) => item.id !== target.item.id));
-		removed.forEach(releasePreview);
-	}
 	const composer = editor.composerOpen ? <AttachmentComposer attachedNames={attachedNames} createSignal={editor.createSignal} onCommit={commit} onDismiss={dismiss} onQueryChange={(query) => patch({ query })} query={editor.query} /> : null;
-	const onRemove = (item: ProjectButterAttachment) => requestRemove({ kind: "item", item });
+	const onRemove = (item: ProjectButterAttachment) => onRequestRemove({ kind: "item", item });
 	return (
 		<RelatedWorkGroup
 			asSectionHeader={asSectionHeader}
@@ -84,7 +67,7 @@ export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset
 					<TooltipTrigger render={<Button aria-keyshortcuts="Shift+A" aria-label="Add attachment" data-related-add onClick={() => content.openRelatedAdd("attachments")} ref={addTrigger} size="icon-compact" type="button" variant="ghost" />}><AddIcon label="" size="small" /></TooltipTrigger>
 					<TooltipContent positionerClassName="z-[650]" side="bottom">Add attachment</TooltipContent>
 				</Tooltip>
-				<AttachmentManageMenu canDownload={sorted.some((item) => item.file)} onDeleteAll={() => requestRemove({ kind: "all" })} onDownloadAll={() => sorted.forEach(downloadAttachment)} onViewModeChange={(viewMode) => patch({ viewMode })} viewMode={editor.viewMode} />
+				<AttachmentManageMenu canDownload={sorted.some((item) => item.file)} onDeleteAll={() => onRequestRemove({ kind: "all" })} onDownloadAll={() => sorted.forEach(downloadAttachment)} onViewModeChange={(viewMode) => patch({ viewMode })} viewMode={editor.viewMode} />
 			</>}
 			id="section-attachments"
 			label="Attachments"
@@ -101,7 +84,6 @@ export function ProjectButterAttachments({ asSectionHeader, content, emptyPreset
 					<ProjectButterAttachmentPiles items={sorted} onRemove={onRemove} />
 				</>
 			)}
-			<AttachmentConfirmDialog onConfirm={confirmRemove} onOpenChange={setConfirmOpen} open={confirmOpen} target={confirm} />
 		</RelatedWorkGroup>
 	);
 }

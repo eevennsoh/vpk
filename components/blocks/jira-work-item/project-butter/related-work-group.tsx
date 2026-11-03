@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -10,20 +10,23 @@ import { cn } from "@/lib/utils";
 /**
  * Tracks whether a height-animated panel has settled open, so it can switch back to
  * `overflow: visible` (the Show N more pill and tilted pile cards sit outside the box).
- * Call `announceOpening()` when the panel starts opening.
+ * Any false -> true flip of `open` counts, whether from the trigger or a programmatic open
+ * (add requests, file drops, revealKey), so content never spills while the height tweens.
  */
-export function useRelatedPanelSettle() {
+export function useRelatedPanelSettle(open: boolean) {
 	const reducedMotion = useReducedMotion();
+	const [previous, setPrevious] = useState(open);
 	const [animating, setAnimating] = useState(false);
-	const timer = useRef<number | undefined>(undefined);
-	useEffect(() => () => window.clearTimeout(timer.current), []);
-	function announceOpening() {
-		window.clearTimeout(timer.current);
-		if (reducedMotion) return setAnimating(false);
-		setAnimating(true);
-		timer.current = window.setTimeout(() => setAnimating(false), motionDuration.slow * 1000);
+	if (previous !== open) {
+		setPrevious(open);
+		setAnimating(open && !reducedMotion);
 	}
-	return { animating, announceOpening };
+	useEffect(() => {
+		if (!animating) return undefined;
+		const timer = window.setTimeout(() => setAnimating(false), motionDuration.slow * 1000);
+		return () => window.clearTimeout(timer);
+	}, [animating]);
+	return animating;
 }
 
 /** Height-animated collapsible content shared by the Related work section and its groups. */
@@ -85,18 +88,14 @@ export function RelatedWorkGroup({ asSectionHeader = false, children, extra, hea
 	const contentId = useId();
 	const [open, setOpen] = useState(true);
 	const [seenReveal, setSeenReveal] = useState(revealKey);
-	const { animating, announceOpening } = useRelatedPanelSettle();
 	if (seenReveal !== revealKey) {
 		setSeenReveal(revealKey);
 		if (!open) setOpen(true);
 	}
-	function changeOpen(next: boolean) {
-		if (next) announceOpening();
-		setOpen(next);
-	}
+	const animating = useRelatedPanelSettle(open);
 	const name = `${open ? "Collapse" : "Expand"} ${label}${titleMeta ? ` ${titleMeta}` : ""}${indicatorLabel ? ` ${indicatorLabel}` : ""}`;
 	return (
-		<Collapsible onOpenChange={changeOpen} open={open}>
+		<Collapsible onOpenChange={setOpen} open={open}>
 			<div
 				className={cn(
 					"group/related-group flex flex-col transition-[gap,padding] duration-medium ease-in-out",
@@ -108,8 +107,8 @@ export function RelatedWorkGroup({ asSectionHeader = false, children, extra, hea
 				data-section-header={asSectionHeader || undefined}
 				id={id}
 			>
-				<div className="flex h-8 min-w-0 items-center gap-2">
-					<h3 className="group/related-header flex min-w-0 items-center">
+				<div className="group/related-header flex h-8 min-w-0 items-center gap-2">
+					<h3 className="flex min-w-0 items-center">
 						<CollapsibleTrigger aria-controls={contentId} aria-label={name} className="flex min-w-0 items-center gap-1 rounded-sm bg-transparent text-left text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-border-focused focus-visible:ring-offset-2">
 							<span className={cn("truncate", asSectionHeader ? "font-medium" : "font-normal")}>{label}</span>
 							{titleMeta ? <span className="truncate text-text-subtlest">{titleMeta}</span> : null}

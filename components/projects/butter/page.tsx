@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Suspense, useCallback, useEffect, useImperativeHandle, useRef, useState, type ComponentProps, type Ref } from "react";
+import { Suspense, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ComponentProps, type Ref } from "react";
 import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
@@ -16,7 +16,8 @@ import type {
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
-import type { RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import type { ProjectButterRelatedSearchItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { butterRelatedCatalog } from "@/components/projects/butter/data/related-scope";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { countNeedsInputAgents } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-filter";
@@ -114,9 +115,11 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
 }
 
-function ButterWorkItemSurface({ openRelatedItem, ref, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+function ButterWorkItemSurface({ openRelatedItem, relatedCatalog, ref, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
 	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
 	openRelatedItem: RelatedItemOpener;
+	/** Board cards as related-work matches, so composers offer this project's items. */
+	relatedCatalog: readonly ProjectButterRelatedSearchItem[];
 	ref: Ref<ButterWorkItemHandle>;
 }) {
 	const workItem = useButterWorkItem();
@@ -138,6 +141,7 @@ function ButterWorkItemSurface({ openRelatedItem, ref, ...overlayProps }: Compon
 						onClose={workItem.closeWorkItem}
 						open={workItem.open}
 						openRelatedItem={openRelatedItem}
+						relatedScope={{ catalog: relatedCatalog, parentType: workItem.selection.workType }}
 						placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
 						workItem={workItem.selection.workItem}
 					/>
@@ -329,6 +333,7 @@ function ButterApp(): React.ReactElement {
 		}
 		return undefined;
 	}, [boardColumns, openWorkItem]);
+	const relatedCatalog = useMemo(() => butterRelatedCatalog(boardColumns), [boardColumns]);
 	const {
 		createBoardFromAgentSession,
 		createFromAgentSession,
@@ -604,6 +609,7 @@ function ButterApp(): React.ReactElement {
 				externalThinkingMessageId={externalThinkingMessageId}
 				onComposerPrefillConsumed={handleComposerPrefillConsumed}
 				openRelatedItem={openRelatedItem}
+				relatedCatalog={relatedCatalog}
 			/>
 		</>
 	);

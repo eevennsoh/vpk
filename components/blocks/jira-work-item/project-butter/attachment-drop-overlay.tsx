@@ -18,16 +18,17 @@ const CARDS = [
 
 /**
  * Drop feedback for the left column (reference AttachmentImageDrop with `cursorHint`): a translucent blue
- * wash over the column, a small stack of cards, and a "Drop to upload" pill under the pointer. It sits
- * inside the column (absolute, pointer-events none) so it follows scrolling without re-measuring.
- * Mount it as a child of the `relative` element passed as `targetRef`.
+ * wash over the visible part of the column, a small stack of cards at 42% of that view, and a "Drop to
+ * upload" pill under the pointer. Both are fixed and portalled (pointer-events none); the drop hook
+ * re-measures the zone's visible rect on each coalesced dragover, so scrolling never hides the cards.
+ * `targetRef` is the scrolling column wrapper, so its gutters are part of the zone.
  */
 export function AttachmentDropZone({ content, targetRef }: Readonly<{ content: ProjectButterContent; targetRef: RefObject<HTMLElement | null> }>) {
-	const { announcement, clearGhost, ghost, hintRef, over } = useAttachmentDrop(targetRef, content);
+	const { announcement, clearGhost, ghost, hintRef, over, washRef } = useAttachmentDrop(targetRef, content);
 	return (
 		<>
-			{over ? (
-				<div aria-hidden className="pointer-events-none absolute inset-0 z-20 bg-bg-accent-blue-subtle/20" data-attachment-drop-wash>
+			{over ? createPortal(
+				<div aria-hidden className="pointer-events-none fixed z-[640] bg-bg-accent-blue-subtle/20" data-attachment-drop-wash ref={washRef}>
 					<div className="absolute top-[42%] left-1/2 h-16 w-20">
 						{CARDS.map((card) => (
 							<motion.span
@@ -42,10 +43,12 @@ export function AttachmentDropZone({ content, targetRef }: Readonly<{ content: P
 							</motion.span>
 						))}
 					</div>
-				</div>
+				</div>,
+				document.body,
 			) : null}
-			{over ? (
-				<span aria-hidden className="pointer-events-none absolute z-40 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-surface px-2 py-1 text-xs font-medium whitespace-nowrap text-text" ref={hintRef} style={{ boxShadow: token("elevation.shadow.overlay") }}>Drop to upload</span>
+			{over ? createPortal(
+				<span aria-hidden className="pointer-events-none fixed z-[641] -translate-x-1/2 -translate-y-1/2 rounded-sm bg-surface px-2 py-1 text-xs font-medium whitespace-nowrap text-text" ref={hintRef} style={{ boxShadow: token("elevation.shadow.overlay") }}>Drop to upload</span>,
+				document.body,
 			) : null}
 			{ghost ? createPortal(
 				<motion.div

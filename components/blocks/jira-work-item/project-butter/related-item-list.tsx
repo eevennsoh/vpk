@@ -12,14 +12,14 @@ import { RelatedProgress } from "@/components/blocks/jira-work-item/project-butt
 import { RelatedTooltip } from "@/components/blocks/jira-work-item/project-butter/related-tooltip";
 import { RelatedWorkGroup } from "@/components/blocks/jira-work-item/project-butter/related-work-group";
 import { relatedListWindow } from "@/components/blocks/jira-work-item/project-butter/related-work-model";
-import { nextRelatedKey, normalizeRelatedSummary, orderRelatedItems, relatedKeyPrefix, relatedProgressLabel, relatedStatusCounts, type ProjectButterRelatedAddRequest, type ProjectButterRelatedItem, type ProjectButterRelatedListEditor, type ProjectButterRelatedWorkType, type RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { nextRelatedKey, normalizeRelatedSummary, orderRelatedItems, relatedKeyPrefix, relatedProgressLabel, relatedStatusCounts, type ProjectButterRelatedAddRequest, type ProjectButterRelatedItem, type ProjectButterRelatedListEditor, type ProjectButterRelatedScope, type RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 
 const LIST_GROUPS = {
 	children: { label: "Child work items", id: "section-subitems", relatedType: "subitems", add: "Add child work item", menu: "Child work item display options", shortcut: "Shift+C" },
 	linked: { label: "Linked work", id: "section-linked-items", relatedType: "linked", add: "Add linked work", menu: "Linked work display options", shortcut: "Shift+K" },
 } as const;
 
-export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptyState = false, items, kind, onAdd, onAddRequest, onChange, onDismissGroup, onEditorChange, openItem, ownKey, parentType }: Readonly<{
+export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptyState = false, items, kind, onAdd, onAddRequest, onChange, onDismissGroup, onEditorChange, openItem, ownKey, scope }: Readonly<{
 	asSectionHeader: boolean;
 	editor: ProjectButterRelatedListEditor;
 	/** Every related group is empty: render the empty state row instead of an empty card. */
@@ -36,7 +36,8 @@ export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptySta
 	openItem?: RelatedItemOpener;
 	/** The open work item's key: excluded from matches and the prefix for created and cloned keys. */
 	ownKey: string;
-	parentType?: ProjectButterRelatedWorkType;
+	/** Host project scope: composer match pool and the parent type rules. */
+	scope?: ProjectButterRelatedScope;
 }>) {
 	const addTrigger = useRef<HTMLButtonElement>(null);
 	const { add, id, label, menu, relatedType, shortcut } = LIST_GROUPS[kind];
@@ -87,7 +88,7 @@ export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptySta
 		>
 			{emptyState && items.length === 0 && !editor.composerOpen ? <RelatedEmptyState kind={kind} onAdd={onAddRequest} onDismiss={onDismissGroup} /> : (
 				<RelatedListCard
-					composer={editor.composerOpen ? <ProjectButterRelatedCreateRow dimmed={editingId !== null} editor={editor} items={items} linked={linked} onAdd={(request) => { onAdd(request); addTrigger.current?.focus(); }} onChange={onEditorChange} onDismiss={(reason) => { if (reason === "escape") addTrigger.current?.focus(); }} ownKey={ownKey} parentType={parentType} /> : null}
+					composer={editor.composerOpen ? <ProjectButterRelatedCreateRow dimmed={editingId !== null} editor={editor} items={items} linked={linked} onAdd={(request) => { onAdd(request); addTrigger.current?.focus(); }} onChange={onEditorChange} onDismiss={(reason) => { if (reason === "escape") addTrigger.current?.focus(); }} catalog={scope?.catalog} ownKey={ownKey} parentType={scope?.parentType} /> : null}
 					empty={<li className="px-4 py-3 text-sm text-text-subtle">{items.length ? "No matching work items." : `No ${label.toLowerCase()}.`}</li>}
 					expanded={editor.expanded}
 					items={ordered}

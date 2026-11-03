@@ -40,12 +40,27 @@ export function ProjectButterEmptyActions({ content }: Readonly<{ content: Proje
 	const childrenOpen = content.relatedEditor.children.composerOpen;
 	const linkedOpen = content.relatedEditor.linked.composerOpen;
 	const previous = useRef({ attachmentOpen, childrenOpen, linkedOpen });
+	/** Set by Escape, cleared by any pointerdown: only an Escape dismissal returns focus here (reference dismissComposer(true)). */
+	const escaped = useRef(false);
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") escaped.current = true; };
+		const onPointerDown = () => { escaped.current = false; };
+		document.addEventListener("keydown", onKeyDown, true);
+		document.addEventListener("pointerdown", onPointerDown, true);
+		return () => {
+			document.removeEventListener("keydown", onKeyDown, true);
+			document.removeEventListener("pointerdown", onPointerDown, true);
+		};
+	}, []);
 	useEffect(() => {
 		const closed = previous.current.attachmentOpen && !attachmentOpen ? attachment.current
 			: previous.current.childrenOpen && !childrenOpen ? children.current
 				: previous.current.linkedOpen && !linkedOpen ? linked.current : null;
 		previous.current = { attachmentOpen, childrenOpen, linkedOpen };
-		if (closed && document.activeElement === document.body) closed.focus();
+		if (!closed) return;
+		const fromEscape = escaped.current;
+		escaped.current = false;
+		if (fromEscape && document.activeElement === document.body) closed.focus();
 	}, [attachmentOpen, childrenOpen, linkedOpen]);
 	return (
 		<div className="group/empty-actions flex items-center">

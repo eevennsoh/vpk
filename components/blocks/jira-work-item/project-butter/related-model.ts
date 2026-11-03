@@ -33,6 +33,14 @@ export type ProjectButterRelatedSearchItem = ProjectButterRelatedItem & {
 	workType: ProjectButterRelatedWorkType;
 };
 
+/** What the host knows about the open work item's project: its type and the work items a composer can match. */
+export interface ProjectButterRelatedScope {
+	/** Match pool for the child and linked composers (defaults to the reference VITA items). */
+	catalog?: readonly ProjectButterRelatedSearchItem[];
+	/** The open work item's type: Epics take Story/Task/Bug children; a Subtask hides child work. */
+	parentType?: ProjectButterRelatedWorkType;
+}
+
 /** The person who creates items in the prototype (reference CURRENT_USER). */
 export const RELATED_CURRENT_USER = "Annie Cook";
 

@@ -1,9 +1,6 @@
 "use client";
 
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import CrossIcon from "@atlaskit/icon/core/cross";
 import { motion } from "motion/react";
-import { Button } from "@/components/ui/button";
 import { RelatedRowActions } from "@/components/blocks/jira-work-item/project-butter/related-row-actions";
 import { RelatedAssigneeField, RelatedDueDateField, RelatedEstimateField, RelatedPriorityField, RelatedRelationshipField } from "@/components/blocks/jira-work-item/project-butter/related-row-fields";
 import { RelatedStatusField } from "@/components/blocks/jira-work-item/project-butter/related-status-field";
@@ -51,12 +48,7 @@ export function ProjectButterRelatedItemRow({ actions, dimmed, draft, editing, f
 				<button className={cn(keyClass, "rounded-sm outline-none hover:text-text-subtle hover:underline focus-visible:ring-2 focus-visible:ring-border-focused")} onClick={open} type="button">{item.key}</button>
 			) : <span className={keyClass}>{item.key}</span> : null}
 			<RelatedSummaryField draft={draft} editing={editing} faded={faded} itemKey={item.key} onDraftChange={onDraftChange} onEdit={onEdit} onFinish={onFinish} summary={item.summary} />
-			{editing ? (
-				<div className="flex shrink-0 items-center gap-1">
-					<Button aria-label={`Save summary for ${item.key}`} onClick={() => onFinish(true)} onMouseDown={(event) => event.preventDefault()} size="icon-compact" type="button" variant="secondary"><CheckMarkIcon label="" size="small" /></Button>
-					<Button aria-label={`Cancel summary for ${item.key}`} onClick={() => onFinish(false)} onMouseDown={(event) => event.preventDefault()} size="icon-compact" type="button" variant="secondary"><CrossIcon label="" size="small" /></Button>
-				</div>
-			) : (
+			{editing ? null : (
 				<div className="flex shrink-0 items-center gap-3 pr-1">
 					{fields.labels && item.labels?.length ? <span className={cn("max-w-24 truncate text-xs text-text-subtle", faded && FADE)}>{item.labels.join(", ")}</span> : null}
 					{fields.dueDate ? <span className={cn("flex", faded && FADE)}><RelatedDueDateField item={item} onChange={(dueDate) => onChange({ dueDate })} /></span> : null}

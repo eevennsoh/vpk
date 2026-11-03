@@ -42,9 +42,11 @@ function PileCard({ item, index, count, piled, pointer, onRemove, arriving }: Re
 	const live = piled ? 1 : 0;
 	// Depth falloff 1/(1 + depth * 0.75), as in the reference lean.
 	const depth = 1 / (1 + index * 0.75);
-	const opening = () => live * fan * pointer.spread.get() * (1 + Math.max(0, pointer.lean.get() * fan) * 0.5);
+	const spread = pointer.spreads[Math.min(index, pointer.spreads.length - 1)];
+	const opening = () => live * fan * spread.get() * (1 + Math.max(0, pointer.lean.get() * fan) * 0.5);
+	// Lean: ±4px x, ±2px y following the pointer, ±3deg (reference leanPile), with depth falloff.
 	const x = useTransform(() => opening() * 3 + live * pointer.lean.get() * 4 * depth);
-	const y = useTransform(() => live * Math.abs(fan) * pointer.spread.get() * -2);
+	const y = useTransform(() => live * Math.abs(fan) * spread.get() * -2 + live * pointer.leanY.get() * 2 * depth);
 	const rotate = useTransform(() => opening() + live * pointer.lean.get() * 3 * depth);
 	const overlay = arriving(item);
 	return (
@@ -56,10 +58,10 @@ function PileCard({ item, index, count, piled, pointer, onRemove, arriving }: Re
 			inert={piled}
 			layout
 			layoutId={item.id}
-			style={{ zIndex: count - index, pointerEvents: piled ? "none" : undefined, willChange: "transform" }}
+			style={{ zIndex: count - index, pointerEvents: piled ? "none" : undefined, originY: 0, willChange: "transform" }}
 			transition={{ duration: piled ? motionDuration.medium : motionDuration.slow, ease: motionEase.outPractical }}
 		>
-			<motion.div aria-hidden={overlay ? true : undefined} className={cn(overlay ? "opacity-0" : undefined)} inert={Boolean(overlay) || undefined} style={{ x, y, rotate, originY: 1, willChange: "transform" }}><ProjectButterAttachmentCard item={item} onRemove={piled || overlay ? undefined : onRemove} /></motion.div>
+			<motion.div aria-hidden={overlay ? true : undefined} className={cn(overlay ? "opacity-0" : undefined)} inert={Boolean(overlay) || undefined} style={{ x, y, rotate, originY: 0, willChange: "transform" }}><ProjectButterAttachmentCard item={item} onRemove={piled || overlay ? undefined : onRemove} /></motion.div>
 			{overlay}
 		</motion.div>
 	);
@@ -94,7 +96,7 @@ export function ProjectButterAttachmentStack({ arriving, forming, onRemove, onTo
 					aria-label={open ? `Close ${pile.label.toLowerCase()}` : `${pile.label}, ${pile.items.length} attachments`}
 					className={cn("mt-1.5 flex h-4 w-full items-baseline gap-1 rounded-sm text-left text-xs font-medium text-text outline-none focus-visible:ring-2 focus-visible:ring-ring", !open && "after:absolute after:inset-0 after:z-20 after:rounded-sm focus-visible:ring-0 focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2")}
 					data-pile-toggle={pile.type}
-					onBlur={pointer.reset}
+					onBlur={(event) => pointer.blur(event.currentTarget)}
 					onClick={() => { pointer.reset(); onToggle(); }}
 					onFocus={() => { if (!open) pointer.enter(); }}
 					onPointerEnter={() => { if (!open) pointer.enter(); }}
