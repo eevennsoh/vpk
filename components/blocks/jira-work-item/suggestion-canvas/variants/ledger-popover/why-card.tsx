@@ -97,9 +97,9 @@ export function WhyCardBody({ suggestion }: Readonly<{ suggestion: WorkItemSugge
 						Sources
 						<span className="text-text-subtlest tabular-nums">{reason.evidence.length}</span>
 					</h3>
-					<ul className="flex flex-col gap-2">
+					<ul className="flex flex-col">
 						{reason.evidence.map((evidence) => (
-							<li key={evidence.id}><EvidenceCard evidence={evidence} /></li>
+							<li className="border-t border-border py-3 first:border-t-0 first:pt-1 last:pb-0" key={evidence.id}><EvidenceCard evidence={evidence} /></li>
 						))}
 					</ul>
 				</section>

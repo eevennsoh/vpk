@@ -1,7 +1,6 @@
 "use client";
 
 import CalendarIcon from "@atlaskit/icon/core/calendar";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import EpicIcon from "@atlaskit/icon/core/epic";
 
 import type { SuggestionValue } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
@@ -13,10 +12,10 @@ import { Tag } from "@/components/ui/tag";
  * The ledger's own value renderer. Every value wraps at full width; nothing is clipped,
  * clamped or ellipsised, so a reviewer always judges the whole suggestion.
  */
-export function LedgerValue({ value }: Readonly<{ value: SuggestionValue }>) {
+export function LedgerValue({ value, plain = false }: Readonly<{ value: SuggestionValue; plain?: boolean }>) {
 	switch (value.kind) {
 		case "paragraph":
-			return <p className="text-sm leading-5 text-pretty text-text">{value.text}</p>;
+			return <p className="text-sm leading-5 text-text">{value.text}</p>;
 		case "date":
 			return (
 				<span className="flex items-center gap-2 text-sm leading-5 text-text">
@@ -47,17 +46,21 @@ export function LedgerValue({ value }: Readonly<{ value: SuggestionValue }>) {
 				</span>
 			);
 		case "labels":
-			return (
+			// Components and versions read as plain text, as Jira writes them; only real labels keep their chips.
+			return plain ? (
+				<p className="text-sm leading-5 text-pretty text-text">{value.labels.join(", ")}</p>
+			) : (
 				<span className="flex flex-wrap gap-1">
 					{value.labels.map((label) => <Tag key={label}>{label}</Tag>)}
 				</span>
 			);
 		case "checklist":
 			return (
-				<ul className="flex flex-col gap-1.5">
+				<ul className="flex flex-col gap-1">
 					{value.items.map((item) => (
 						<li className="flex gap-2 text-sm leading-5 text-pretty text-text" key={item}>
-							<span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-bg-neutral text-icon-subtle"><CheckMarkIcon color="currentColor" label="" size="small" /></span>
+							{/* A neutral bullet, as the Details rail lists them: ✓ keeps the one meaning "accept". */}
+							<span aria-hidden="true" className="flex h-5 w-4 shrink-0 items-center justify-center"><span className="size-1 rounded-full bg-icon-subtle" /></span>
 							<span className="min-w-0">{item}</span>
 						</li>
 					))}

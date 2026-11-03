@@ -55,12 +55,17 @@ function presenterOf(meta: string): string {
 	return meta.split(" · ")[0] ?? meta;
 }
 
+/** The duration badge already shows the length, so the meta line drops a repeated "30 min". */
+function metaWithoutDuration(evidence: SuggestionEvidence): string {
+	return evidence.meta.split(" · ").filter((part) => part !== evidence.duration).join(" · ");
+}
+
 /** A Loom recording preview: a faux screen-share frame, the presenter bubble, a play affordance and the length. */
 function LoomEvidenceCard({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
 	const presenter = presenterOf(evidence.meta);
 	return (
-		<div className="rounded-lg bg-surface-raised" style={{ boxShadow: token("elevation.shadow.raised") }}>
-			<div aria-hidden="true" className="relative m-1 mb-0 h-[100px] rounded-md bg-linear-to-br from-purple-100 via-blue-100 to-teal-100">
+		<div className="flex flex-col gap-2.5">
+			<div aria-hidden="true" className="relative h-[100px] overflow-hidden rounded-lg bg-linear-to-br from-purple-100 via-blue-100 to-teal-100">
 				<div className="absolute inset-x-5 top-3 bottom-0 flex flex-col gap-1.5 rounded-t-md bg-surface/85 px-3 pt-2.5">
 					<span className="flex gap-1">
 						<span className="size-1.5 rounded-full bg-red-400" />
@@ -84,11 +89,11 @@ function LoomEvidenceCard({ evidence }: Readonly<{ evidence: SuggestionEvidence 
 				/>
 				<span className="absolute right-2 bottom-2 rounded-sm bg-bg-neutral-bold px-1.5 py-0.5 text-[11px] leading-3.5 font-medium text-text-inverse tabular-nums">{evidence.duration}</span>
 			</div>
-			<div className="flex gap-2.5 px-3 pt-2.5 pb-3">
+			<div className="flex gap-2.5">
 				<span className="mt-px shrink-0"><EvidenceMark kind="loom" /></span>
 				<div className="min-w-0 flex-1">
 					<p className="text-sm leading-5 font-medium text-pretty text-text">{evidence.title}</p>
-					<p className="text-xs leading-4 text-text-subtle">{evidence.meta}</p>
+					<p className="text-xs leading-4 text-text-subtle">{metaWithoutDuration(evidence)}</p>
 					{evidence.excerpt ? <Excerpt>{evidence.excerpt}</Excerpt> : null}
 				</div>
 			</div>
@@ -98,7 +103,7 @@ function LoomEvidenceCard({ evidence }: Readonly<{ evidence: SuggestionEvidence 
 
 function DocumentEvidenceCard({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
 	return (
-		<div className="flex gap-2.5 rounded-lg bg-surface-raised px-3 py-2.5" style={{ boxShadow: token("elevation.shadow.raised") }}>
+		<div className="flex gap-2.5">
 			<span className="mt-px shrink-0"><EvidenceMark kind={evidence.kind} /></span>
 			<div className="min-w-0 flex-1">
 				<p className="text-sm leading-5 font-medium text-pretty text-text">{evidence.title}</p>

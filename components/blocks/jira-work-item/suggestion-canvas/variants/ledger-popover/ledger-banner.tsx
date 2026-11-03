@@ -1,39 +1,68 @@
 "use client";
 
-import { useId, type Ref } from "react";
+import { useEffect, useId, useState, type Ref } from "react";
 
-import type { SuggestionReview } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
+import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
 import { Tile } from "@/components/ui/tile";
 import { TWGLoader } from "@/components/ui-custom/twg-loader";
 import { TwgToolBannerBackground, TwgToolSourceStack, type TwgToolSource } from "@/components/ui-custom/twg-tool";
+import { motionDuration } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-/** The products the agent read, matching the evidence kinds behind the suggestions. */
+import { lastRunFoundNothing } from "./ledger-status";
+
+/** The products the agent read, matching the evidence kinds. The tile already stands for Teamwork Graph itself. */
 const SUGGESTION_SOURCES = [
-	{ id: "twg", label: "Teamwork Graph", provider: "twg" },
 	{ id: "jira", label: "Jira", provider: "jira" },
 	{ id: "confluence", label: "Confluence", provider: "confluence" },
 	{ id: "loom", label: "Loom", provider: "loom" },
 ] as const satisfies readonly TwgToolSource[];
 
-function bannerLabel(review: SuggestionReview): string {
-	const pending = review.pending.length;
-	if (pending > 0) return `${pending} ${pending === 1 ? "Suggestion" : "Suggestions"}`;
-	const applied = review.accepted.length;
-	return applied === 0 ? "Suggestions dismissed" : `${applied} ${applied === 1 ? "field" : "fields"} updated`;
+/** How long the banner echoes an empty check before settling back: four of the slowest motion beats. */
+const NOTHING_NEW_ECHO_MS = motionDuration.slowest * 4 * 1000;
+
+/** True for a short beat after a re-run that found nothing, keyed to that run. */
+function useNothingNewEcho(feed: SuggestionFeed): boolean {
+	const run = feed.runs.length;
+	const empty = lastRunFoundNothing(feed) && feed.status === "idle";
+	const [settledRun, setSettledRun] = useState(0);
+	useEffect(() => {
+		if (!empty) return undefined;
+		const timer = window.setTimeout(() => setSettledRun(run), NOTHING_NEW_ECHO_MS);
+		return () => window.clearTimeout(timer);
+	}, [empty, run]);
+	return empty && settledRun !== run;
+}
+
+function BannerLabel({ feed, echo }: Readonly<{ feed: SuggestionFeed; echo: boolean }>) {
+	if (echo) return <span className="text-text-subtle">No new suggestions</span>;
+	const pending = feed.review.pending.length;
+	if (pending === 0) return <span className="text-text-subtle">All caught up</span>;
+	const fresh = feed.newIds.size;
+	return (
+		<>
+			{pending} {pending === 1 ? "suggestion" : "suggestions"}
+			{fresh > 0 ? <span className="ml-1.5 text-xs font-medium text-text-brand">{fresh} new</span> : null}
+		</>
+	);
 }
 
 export interface LedgerBannerProps {
-	review: SuggestionReview;
+	feed: SuggestionFeed;
 	open: boolean;
 	panelId: string;
 	onToggle: () => void;
 	triggerRef: Ref<HTMLButtonElement>;
 }
 
-/** The "N Suggestions" banner above Details. The whole banner toggles the ledger, which opens to its left. */
-export function LedgerBanner({ review, open, panelId, onToggle, triggerRef }: Readonly<LedgerBannerProps>) {
+/**
+ * The "N suggestions" banner above Details. The whole banner toggles the ledger, which opens to its left.
+ * Its name stays "Suggestions"; the live count or state is its description. While the agent re-runs,
+ * the count holds and only the graph mark animates.
+ */
+export function LedgerBanner({ feed, open, panelId, onToggle, triggerRef }: Readonly<LedgerBannerProps>) {
 	const labelId = useId();
+	const echo = useNothingNewEcho(feed);
 	return (
 		<div
 			className={cn(
@@ -43,8 +72,9 @@ export function LedgerBanner({ review, open, panelId, onToggle, triggerRef }: Re
 		>
 			<button
 				aria-controls={open ? panelId : undefined}
+				aria-describedby={labelId}
 				aria-expanded={open}
-				aria-labelledby={labelId}
+				aria-label="Suggestions"
 				className="absolute inset-0 z-20 rounded-[inherit] outline-none"
 				onClick={onToggle}
 				ref={triggerRef}
@@ -52,9 +82,9 @@ export function LedgerBanner({ review, open, panelId, onToggle, triggerRef }: Re
 			/>
 			<TwgToolBannerBackground />
 			<Tile className="relative z-10 bg-surface" hasBorder label="Teamwork Graph" size="large" variant="transparent">
-				<TWGLoader active={false} label="Teamwork Graph" size="small" />
+				<TWGLoader active={feed.status === "running"} label="Teamwork Graph" size="small" />
 			</Tile>
-			<span aria-live="polite" className="relative z-10 min-w-0 flex-1 text-sm text-text" id={labelId}>{bannerLabel(review)}</span>
+			<span aria-live="polite" className="relative z-10 min-w-0 flex-1 text-sm text-text" id={labelId}><BannerLabel echo={echo} feed={feed} /></span>
 			<TwgToolSourceStack className="relative z-10 shrink-0" sources={SUGGESTION_SOURCES} />
 		</div>
 	);

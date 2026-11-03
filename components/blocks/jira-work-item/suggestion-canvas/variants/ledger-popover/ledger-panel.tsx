@@ -1,156 +1,157 @@
 "use client";
 
-import { useEffect, useEffectEvent, useState, type RefObject } from "react";
-import Image from "next/image";
-import CrossIcon from "@atlaskit/icon/core/cross";
+import { useState, type RefObject } from "react";
+import { AnimatePresence, motion } from "motion/react";
 
-import { SUGGESTION_WORK_ITEM, type SuggestionFieldId } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
-import type { SuggestionReview } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-review";
-import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { TeamworkGraphMark } from "@/components/ui-custom/teamwork-graph-mark";
+import type { SuggestionFieldId, WorkItemSuggestion } from "@/components/blocks/jira-work-item/suggestion-canvas/data/suggestions";
+import type { SuggestionFeed } from "@/components/blocks/jira-work-item/suggestion-canvas/use-suggestion-feed";
+import { motionDuration, motionEase } from "@/lib/motion";
 import { token } from "@/lib/tokens";
-import { cn } from "@/lib/utils";
 
+import { focusKey } from "./ledger-focus";
+import { LedgerFooter } from "./ledger-footer";
+import { LedgerHeader } from "./ledger-header";
 import { LedgerRow } from "./ledger-row";
+import { LedgerStatus } from "./ledger-status";
+import { useFocusHandoff, useLedgerEscape, useRevealArrivals, useScrollEdges } from "./use-ledger-panel";
 
 export interface LedgerPanelProps {
 	id: string;
-	review: SuggestionReview;
+	feed: SuggestionFeed;
 	panelRef: RefObject<HTMLDivElement | null>;
-	/** Keeps the why cards inside the preview frame; they open top-aligned with the panel. */
-	cardMaxHeight?: number;
+	/** The banner button that opened the ledger; Escape there still closes it. */
+	triggerRef: RefObject<HTMLButtonElement | null>;
+	/** The free area below the trigger banner; why cards stay inside it. */
+	whyBoundary: Element | null;
 	onAccept: (id: SuggestionFieldId) => void;
 	onAcceptAll: () => void;
 	onClose: () => void;
 }
 
-function AgentMark() {
-	return (
-		<Avatar animate={false} shape="hexagon" size="xs">
-			<span className="flex size-full items-center justify-center bg-blue-700">
-				<Image alt="" className="size-2.5!" height={10} src="/1p/agent-lanyard/glyph-jira-triage.svg" width={10} />
-			</span>
-		</Avatar>
-	);
+interface RunGroup {
+	number: number;
+	/** Divider copy for earlier runs. The newest run needs none: its rows carry "New" and the byline says "Just now". */
+	label: string | null;
+	rows: readonly WorkItemSuggestion[];
 }
 
-function PanelHeader({ titleId, onClose }: Readonly<{ titleId: string; onClose: () => void }>) {
-	const { agent } = SUGGESTION_WORK_ITEM;
-	return (
-		<header className="flex items-start gap-3 px-4 pt-3.5 pb-3">
-			<div className="flex min-w-0 flex-1 flex-col gap-1">
-				<h2 className="text-text" id={titleId} style={{ font: token("font.heading.xsmall") }}>Work item suggestions</h2>
-				<p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs leading-4 text-text-subtle">
-					<AgentMark />
-					<span className="text-text">{agent.name}</span>
-					<span aria-hidden="true" className="text-text-subtlest">·</span>
-					<time className="text-text-subtlest" dateTime="PT2M">2m</time>
-					<span aria-hidden="true" className="text-text-subtlest">·</span>
-					<span className="inline-flex items-center gap-1 text-text-subtlest">
-						<TeamworkGraphMark className="size-3" />
-						Teamwork Graph
-					</span>
-				</p>
-			</div>
-			<Button aria-label="Close suggestions" className="-mt-0.5 -mr-1.5" onClick={onClose} size="icon" type="button" variant="ghost">
-				<CrossIcon color="currentColor" label="" size="small" />
-			</Button>
-		</header>
-	);
-}
-
-/** One segment per suggestion, in ledger order, so progress also shows where the decisions landed. */
-function ProgressSegments({ review }: Readonly<{ review: SuggestionReview }>) {
-	return (
-		<span aria-hidden="true" className="flex gap-0.5">
-			{review.suggestions.map((suggestion) => {
-				const decision = review.decisionOf(suggestion.id);
-				return (
-					<span
-						className={cn(
-							"h-1 w-3 rounded-full transition-colors duration-normal ease-out-practical",
-							decision === "accepted" ? "bg-icon-success" : decision === "dismissed" ? "bg-icon-subtlest" : "bg-bg-neutral-hovered",
-						)}
-						key={suggestion.id}
-					/>
-				);
-			})}
-		</span>
-	);
-}
-
-function PanelFooter({ review, onAcceptAll, onClose }: Readonly<{ review: SuggestionReview; onAcceptAll: () => void; onClose: () => void }>) {
-	const total = review.suggestions.length;
-	const reviewed = total - review.pending.length;
-	const done = review.pending.length === 0;
-	return (
-		<footer className="flex items-center gap-3 border-t border-border px-4 py-3">
-			<div className="flex min-w-0 flex-1 flex-col gap-1.5">
-				<span aria-live="polite" className="text-xs leading-4 text-text-subtle tabular-nums">
-					{done ? `All reviewed · ${review.accepted.length} applied` : `${reviewed} of ${total} reviewed`}
-				</span>
-				<ProgressSegments review={review} />
-			</div>
-			{done ? (
-				<>
-					<Button onClick={review.reset} type="button" variant="ghost">Start over</Button>
-					<Button onClick={onClose} type="button">Done</Button>
-				</>
-			) : (
-				<>
-					<Button onClick={review.dismissAll} type="button" variant="ghost">Dismiss all</Button>
-					<Button onClick={onAcceptAll} type="button">Accept all</Button>
-				</>
-			)}
-		</footer>
-	);
-}
-
-/** The ledger surface: header, one row per suggestion with the label above its full value, and a progress footer. */
-export function LedgerPanel({ cardMaxHeight, id, review, panelRef, onAccept, onAcceptAll, onClose }: Readonly<LedgerPanelProps>) {
-	const [whyId, setWhyId] = useState<SuggestionFieldId | null>(null);
-	const titleId = `${id}-title`;
-	const closeOnEscape = useEffectEvent((event: KeyboardEvent) => {
-		if (event.key === "Escape" && !event.defaultPrevented) onClose();
+/** Newest run first, each run in the agent's order, so arrivals land at the top. */
+function runGroups(feed: SuggestionFeed): readonly RunGroup[] {
+	const byId = new Map(feed.review.suggestions.map((suggestion) => [suggestion.id, suggestion]));
+	const latest = feed.runs.at(-1)?.number;
+	return feed.runs.toReversed().flatMap((run) => {
+		const rows = run.ids.flatMap((id) => byId.get(id) ?? []);
+		return rows.length > 0 ? [{ number: run.number, label: run.number === latest ? null : `Earlier · ${run.ranAt}`, rows }] : [];
 	});
-	useEffect(() => {
-		const panel = panelRef.current;
-		if (!panel) return undefined;
-		const listener = (event: KeyboardEvent) => closeOnEscape(event);
-		panel.addEventListener("keydown", listener);
-		return () => panel.removeEventListener("keydown", listener);
-	}, [panelRef]);
+}
+
+const DIVIDER = { duration: motionDuration.medium, ease: motionEase.inOut };
+const DIVIDER_EXIT = { duration: motionDuration.normal, ease: motionEase.in };
+
+/** A section break on the row grid: the same inset hairline as between rows, then a small label at the row's top inset. */
+function RunDivider({ label }: Readonly<{ label: string }>) {
+	return (
+		<motion.li
+			animate={{ height: "auto", opacity: 1 }}
+			className="relative overflow-hidden before:pointer-events-none before:absolute before:inset-x-2.5 before:top-0 before:h-px before:bg-border"
+			exit={{ height: 0, opacity: 0, transition: DIVIDER_EXIT }}
+			initial={{ height: 0, opacity: 0 }}
+			role="presentation"
+			transition={DIVIDER}
+		>
+			<p className="px-2.5 pt-3 pb-0.5 text-[11px] leading-4 font-medium text-text-subtlest">{label}</p>
+		</motion.li>
+	);
+}
+
+/** The ledger surface: header with re-run, one status block, airy rows grouped by run, and a progress footer. */
+export function LedgerPanel({ id, feed, panelRef, triggerRef, whyBoundary, onAccept, onAcceptAll, onClose }: Readonly<LedgerPanelProps>) {
+	const { review } = feed;
+	const [whyId, setWhyId] = useState<SuggestionFieldId | null>(null);
+	const [reviewedOpen, setReviewedOpen] = useState(false);
+	const { bodyRef, topRef, bottomRef, scrolled, moreBelow } = useScrollEdges();
+	useRevealArrivals(feed, bodyRef);
+	const requestFocus = useFocusHandoff(panelRef, feed);
+	useLedgerEscape({ panelRef, triggerRef, whyOpen: whyId != null, closeWhy: () => setWhyId(null), onClose });
+
+	const titleId = `${id}-title`;
+	const listId = `${id}-list`;
+	const groups = runGroups(feed);
+	const ordered = groups.flatMap((group) => group.rows);
+	const caughtUp = review.pending.length === 0;
+	const showRows = !caughtUp || reviewedOpen;
+	const grouped = feed.newIds.size > 0 && groups.length > 1;
+
+	/** After a decision, focus the row's Undo; the last decision hands focus to the caught-up "Check again". */
+	const decide = (suggestionId: SuggestionFieldId, apply: () => void) => {
+		const last = review.pending.length === 1 && review.decisionOf(suggestionId) === "pending";
+		if (last) setReviewedOpen(false);
+		setWhyId(null);
+		apply();
+		requestFocus(last ? focusKey.checkAgain : focusKey.undo(suggestionId));
+	};
+	const decideAll = (apply: () => void) => {
+		setReviewedOpen(false);
+		setWhyId(null);
+		apply();
+		requestFocus(focusKey.checkAgain);
+	};
+
 	return (
 		<div
 			aria-labelledby={titleId}
-			className="flex max-h-full w-[404px] flex-col rounded-xl bg-surface-overlay"
+			className="flex max-h-full w-[400px] flex-col rounded-xl bg-surface-overlay outline-none"
 			id={id}
 			ref={panelRef}
 			role="dialog"
 			style={{ boxShadow: token("elevation.shadow.overlay") }}
+			// A click on the panel's quiet areas keeps focus inside it, so Escape stays in scope.
+			tabIndex={-1}
 		>
-			<PanelHeader onClose={onClose} titleId={titleId} />
-			<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3">
-				<ol aria-label="Suggested field values" className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
-					{review.suggestions.map((suggestion) => (
-						<LedgerRow
-							decision={review.decisionOf(suggestion.id)}
-							key={suggestion.id}
-							onAccept={() => onAccept(suggestion.id)}
-							onDismiss={() => review.dismiss(suggestion.id)}
-							onUndo={() => review.undo(suggestion.id)}
-							onWhyOpenChange={(open) => setWhyId((current) => (open ? suggestion.id : current === suggestion.id ? null : current))}
-							suggestion={suggestion}
-							whyAnchor={panelRef}
-							whyMaxHeight={cardMaxHeight}
-							whyOpen={whyId === suggestion.id}
-						/>
-					))}
+			<LedgerHeader feed={feed} onClose={onClose} scrolled={scrolled} titleId={titleId} />
+			<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1.5 pb-1.5" ref={bodyRef}>
+				<div aria-hidden="true" className="h-px" ref={topRef} />
+				<LedgerStatus feed={feed} />
+				<ol aria-label="Suggested field values" className="flex flex-col" id={listId}>
+					<AnimatePresence initial={false}>
+						{showRows ? groups.flatMap((group) => [
+							grouped && group.label ? <RunDivider key={`run-${group.number}`} label={group.label} /> : null,
+							...group.rows.map((suggestion, index) => (
+								<LedgerRow
+									decision={review.decisionOf(suggestion.id)}
+									isNew={feed.newIds.has(suggestion.id)}
+									key={suggestion.id}
+									compact={caughtUp}
+									leading={grouped && group.label != null && index === 0}
+									onAccept={() => decide(suggestion.id, () => onAccept(suggestion.id))}
+									onDismiss={() => decide(suggestion.id, () => review.dismiss(suggestion.id))}
+									onUndo={() => {
+										review.undo(suggestion.id);
+										requestFocus(focusKey.accept(suggestion.id));
+									}}
+									onWhyOpenChange={(open) => setWhyId((current) => (open ? suggestion.id : current === suggestion.id ? null : current))}
+									otherWhyOpen={whyId != null && whyId !== suggestion.id}
+									suggestion={suggestion}
+									whyBoundary={whyBoundary}
+									whyOpen={whyId === suggestion.id}
+								/>
+							)),
+						]) : null}
+					</AnimatePresence>
 				</ol>
-				<div aria-hidden="true" className="h-3" />
+				<div aria-hidden="true" className="h-px" ref={bottomRef} />
 			</div>
-			<PanelFooter onAcceptAll={onAcceptAll} onClose={onClose} review={review} />
+			<LedgerFooter
+				moreBelow={moreBelow}
+				onAcceptAll={() => decideAll(onAcceptAll)}
+				onClose={onClose}
+				onDismissAll={() => decideAll(review.dismissAll)}
+				onToggleReviewed={() => setReviewedOpen((current) => !current)}
+				ordered={ordered}
+				review={review}
+				reviewedListId={listId}
+				reviewedOpen={reviewedOpen}
+			/>
 		</div>
 	);
 }
