@@ -187,7 +187,8 @@ test("empty crew shows the current viewer and adds the chosen searchable agent",
 	await view.click(view.getByRole("button", { name: "Annie Cook, Currently viewing. Add agent" }));
 	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Codex");
 	await view.click(view.getByRole("option", { name: /^Codex/u }));
-	assert.deepEqual(selected.map((agent) => ({ id: agent.id, name: agent.name })), [{ id: "codex", name: "Codex" }]);
+	await view.click(view.getByRole("menuitem", { name: "Run on cloud" }));
+	assert.deepEqual(selected.map((agent) => ({ id: agent.id, name: agent.name })), [{ id: "review-agent", name: "Codex" }]);
 	assert.equal(view.queryByRole("combobox", { name: "Search agents" }) === null, true);
 });
 

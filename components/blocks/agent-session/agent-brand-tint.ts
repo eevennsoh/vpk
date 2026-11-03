@@ -22,12 +22,15 @@ import {
 	// by a node:test suite, where the `@/` alias does not resolve. Keep every
 	// import here in that shape, and keep this module dependency-light.
 } from "../../ui-custom/lib/shimmer-colors.ts";
+import { SOFTWARE_AGENT_COLOR } from "../../../lib/agent-avatar-visuals.ts";
 
 const BRAND_TINT_HEX: Readonly<Record<string, string>> = {
 	claude: "#d97757",
 	cursor: "#26251e",
 	github: "#292a2e",
 	"openai-codex": "#3941ff",
+	"jira coding agent": SOFTWARE_AGENT_COLOR,
+	"jira-coding": SOFTWARE_AGENT_COLOR,
 	rovo: "#1868db",
 };
 

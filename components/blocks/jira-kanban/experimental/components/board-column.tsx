@@ -29,6 +29,9 @@ import type { AgentSessionWorkItemDraft } from "@/components/blocks/agent-sessio
 type BoardIssueDropState = ReturnType<typeof useBoardIssueDrop>;
 
 function BoardColumnHeader({
+	butterAgentPicker,
+	onBrowseAgents,
+	onCreateDirectoryAgent,
 	headerAccessory,
 	agents,
 	assignedAgentIds,
@@ -42,6 +45,9 @@ function BoardColumnHeader({
 	onToggleAgent,
 	title,
 }: Readonly<{
+	butterAgentPicker?: boolean;
+	onBrowseAgents?: () => void;
+	onCreateDirectoryAgent?: () => void;
 	headerAccessory?: ReactNode;
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
@@ -146,6 +152,9 @@ function BoardColumnHeader({
 					/>
 					{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
 						<BoardColumnAgentAssignment
+							butterAgentPicker={butterAgentPicker}
+							onBrowseAgents={onBrowseAgents}
+							onCreateDirectoryAgent={onCreateDirectoryAgent}
 							agents={agents}
 							assignedAgentIds={assignedAgentIds}
 							columnTitle={title}
@@ -175,6 +184,9 @@ function BoardColumnHeader({
 }
 
 export function BoardColumn({
+	butterAgentPicker,
+	onBrowseAgents,
+	onCreateDirectoryAgent,
 	headerAccessory,
 	agents,
 	assignedAgentIds,
@@ -197,6 +209,9 @@ export function BoardColumn({
 	statuses,
 	onIssueDrop,
 }: Readonly<{
+	butterAgentPicker?: boolean;
+	onBrowseAgents?: () => void;
+	onCreateDirectoryAgent?: () => void;
 	headerAccessory?: ReactNode;
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
@@ -252,6 +267,9 @@ export function BoardColumn({
 			}}
 		>
 			<BoardColumnHeader
+				butterAgentPicker={butterAgentPicker}
+				onBrowseAgents={onBrowseAgents}
+				onCreateDirectoryAgent={onCreateDirectoryAgent}
 					headerAccessory={headerAccessory}
 					agents={agents}
 					assignedAgentIds={assignedAgentIds}

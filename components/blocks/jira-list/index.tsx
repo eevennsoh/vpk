@@ -7,6 +7,7 @@ import {
 	useMemo,
 	useState,
 	type KeyboardEvent as ReactKeyboardEvent,
+	type CSSProperties,
 	type PointerEvent as ReactPointerEvent,
 	type RefCallback,
 } from "react";
@@ -768,6 +769,7 @@ export function JiraList({
 											data-summary-editing={isEditing || undefined}
 											inert={isDimmed}
 											data-active={isActive || undefined}
+											style={isFlashing && rowFlash?.color ? { "--jira-list-row-flash-color": rowFlash.color } as CSSProperties : undefined}
 											data-state={isSelected ? "selected" : undefined}
 											handleOverlayElement={rowOverlayElement}
 											instanceId={insertionAnchorId}

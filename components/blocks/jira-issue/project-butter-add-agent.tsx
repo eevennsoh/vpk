@@ -1,19 +1,76 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { Avatar } from "@/components/ui/avatar";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ProjectButterAgentPicker } from "./project-butter-agent-picker";
+import { ProjectButterAgentPicker, ProjectButterAgentPickerContent } from "./project-butter-agent-picker";
 import {
 	useProjectButterInvocationActions,
 	useProjectButterInvocationAgents,
 	useProjectButterInvocationPhase,
+	useProjectButterInvocationSource,
 } from "./project-butter-invocation";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { JiraIssueAgentAssignment } from "./index";
+
+function useButterAgentAssignment(assignment: JiraIssueAgentAssignment | undefined, triggerRef: RefObject<HTMLElement | null>) {
+	const actions = useProjectButterInvocationActions();
+	const agents = useProjectButterInvocationAgents();
+	return (agent: AgentSelectorAgent) => {
+		const id = agent.id;
+		const card = triggerRef.current?.closest("article");
+		const listSurface = triggerRef.current?.closest("[data-butter-agent-surface]");
+		actions?.commit(agent, agents.findIndex((candidate) => candidate.id === id));
+		assignment?.onAgentAssign?.(agent);
+		const ids = assignment?.assignedAgents?.map((assigned) => assigned.id) ?? [];
+		assignment?.onAssignedAgentIdsChange?.(ids.includes(id) ? ids : [...ids, id]);
+		const focusSession = () => (listSurface ?? card)?.querySelector<HTMLElement>("[data-jira-issue-agent-row-handle]")?.focus({ preventScroll: true });
+		if (listSurface) requestAnimationFrame(focusSession);
+		else queueMicrotask(focusSession);
+	};
+}
+
+export function ProjectButterMenuAgentSubmenu({ assignment, onRequestClose, triggerRef }: Readonly<{
+	assignment: JiraIssueAgentAssignment;
+	onRequestClose: () => void;
+	triggerRef: RefObject<HTMLElement | null>;
+}>) {
+	const actions = useProjectButterInvocationActions();
+	const assignAgent = useButterAgentAssignment(assignment, triggerRef);
+	return (
+		<DropdownMenuSub onOpenChange={(open) => open ? actions?.open("menu") : actions?.close()}>
+			<DropdownMenuSubTrigger aria-haspopup="dialog">Add agent</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent aria-label="Agents" role="dialog" className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
+				<ProjectButterAgentPickerContent
+					onAssign={(agent) => { assignAgent(agent); onRequestClose(); }}
+					onBrowseAgents={assignment.onBrowseAgents ? () => { onRequestClose(); assignment.onBrowseAgents?.(); } : undefined}
+					onCreateAgent={assignment.onCreateAgent ? () => { onRequestClose(); assignment.onCreateAgent?.(); } : undefined}
+				/>
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
+	);
+}
+
+export function ProjectButterMenuAgentPicker({ assignment, id, source: pickerSource = "menu", triggerRef }: Readonly<{
+	assignment: JiraIssueAgentAssignment;
+	id: string;
+	source?: "menu" | "session";
+	triggerRef: RefObject<HTMLElement | null>;
+}>) {
+	const phase = useProjectButterInvocationPhase();
+	const source = useProjectButterInvocationSource();
+	const actions = useProjectButterInvocationActions();
+	const assignAgent = useButterAgentAssignment(assignment, triggerRef);
+	return (
+		<Popover open={phase === "choosing" && source === pickerSource} onOpenChange={(open) => open ? actions?.open(pickerSource) : actions?.close()}>
+			<ProjectButterAgentPicker id={id} anchor={triggerRef} onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents} onCreateAgent={assignment.onCreateAgent} />
+		</Popover>
+	);
+}
 
 export function ProjectButterAddAgent({
 	alwaysVisible = false,
@@ -25,34 +82,17 @@ export function ProjectButterAddAgent({
 	assignment?: JiraIssueAgentAssignment;
 }>) {
 	const phase = useProjectButterInvocationPhase();
+	const source = useProjectButterInvocationSource();
 	const actions = useProjectButterInvocationActions();
-	const agents = useProjectButterInvocationAgents();
-	const open = phase === "choosing";
+	const open = phase === "choosing" && source === "footer";
 	const exiting = phase === "handoff";
 	useEffect(() => () => actions?.close(), [actions]);
 	const [tooltipOpen, setTooltipOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement | null>(null);
+	const assignAgent = useButterAgentAssignment(assignment, triggerRef);
 	const tooltipId = useId();
 	const onAssign = assignment?.onAgentAssign;
 	if (!assignment || (!onAssign && !assignment.onAssignedAgentIdsChange) || !actions) return null;
-
-	const assignAgent = (agent: AgentSelectorAgent) => {
-		const id = agent.id;
-		const card = triggerRef.current?.closest("article");
-		const listSurface = triggerRef.current?.closest("[data-butter-agent-surface]");
-		actions.commit(
-			agent,
-			agents.findIndex((candidate) => candidate.id === id),
-		);
-		setTooltipOpen(false);
-		onAssign?.(agent);
-		const ids = assignment?.assignedAgents?.map((assigned) => assigned.id) ?? [];
-		assignment?.onAssignedAgentIdsChange?.(ids.includes(id) ? ids : [...ids, id]);
-		const focusSession = () => (listSurface ?? card)
-			?.querySelector<HTMLElement>("[data-jira-issue-agent-row-handle]")?.focus({ preventScroll: true });
-		if (listSurface) requestAnimationFrame(focusSession);
-		else queueMicrotask(focusSession);
-	};
 
 	return (
 		<div
@@ -64,7 +104,7 @@ export function ProjectButterAddAgent({
 				exiting && !alwaysVisible && "opacity-0! pointer-events-none!",
 			)}
 		>
-			<Popover open={open} onOpenChange={(nextOpen) => (nextOpen ? actions.open() : actions.close())}>
+			<Popover open={open} onOpenChange={(nextOpen) => (nextOpen ? actions.open("footer") : actions.close())}>
 				<Tooltip open={tooltipOpen && !open} onOpenChange={setTooltipOpen}>
 					<TooltipTrigger
 						render={
@@ -100,7 +140,7 @@ export function ProjectButterAddAgent({
 					</TooltipContent>
 				</Tooltip>
 				<ProjectButterAgentPicker
-					onAssign={assignAgent}
+					onAssign={(agent) => { setTooltipOpen(false); assignAgent(agent); }}
 					onBrowseAgents={assignment.onBrowseAgents}
 					onCreateAgent={assignment.onCreateAgent}
 				/>

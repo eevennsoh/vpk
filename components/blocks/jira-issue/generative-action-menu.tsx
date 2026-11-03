@@ -78,6 +78,7 @@ interface JiraIssueAgentAndSkillSubmenusProps {
 	action: JiraIssueGenerativeActionConfig;
 	issue: JiraIssueGenerativeActionIssue;
 	onRequestClose: () => void;
+	showAgent?: boolean;
 }
 
 interface JiraIssueGenerativeActionPosition {
@@ -178,6 +179,7 @@ export function JiraIssueAgentAndSkillSubmenus({
 	action,
 	issue,
 	onRequestClose,
+	showAgent = true,
 }: Readonly<JiraIssueAgentAndSkillSubmenusProps>) {
 	const agents = useMemo(
 		() => action.agents?.map(mapRovoItemToAgent) ?? ROVO_AGENT_SELECTOR_AGENTS,
@@ -236,7 +238,7 @@ export function JiraIssueAgentAndSkillSubmenus({
 
 	return (
 		<>
-			<DropdownMenuSub onOpenChange={(open) => open ? undefined : setAgentQuery("")}>
+			{showAgent ? <DropdownMenuSub onOpenChange={(open) => open ? undefined : setAgentQuery("")}>
 				<DropdownMenuSubTrigger>Add agent</DropdownMenuSubTrigger>
 				<DropdownMenuSubContent
 					className="max-h-none w-[360px] overflow-hidden p-0"
@@ -256,7 +258,7 @@ export function JiraIssueAgentAndSkillSubmenus({
 						selectionMode="single"
 					/>
 				</DropdownMenuSubContent>
-			</DropdownMenuSub>
+			</DropdownMenuSub> : null}
 			<DropdownMenuSub onOpenChange={(open) => open ? undefined : setSkillQuery("")}>
 				<DropdownMenuSubTrigger>Use skills</DropdownMenuSubTrigger>
 				<DropdownMenuSubContent

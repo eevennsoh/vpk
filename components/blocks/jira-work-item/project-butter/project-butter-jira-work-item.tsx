@@ -32,6 +32,9 @@ export interface ProjectButterJiraWorkItemProps {
 	workItem?: WorkItemData;
 	initialSessions?: readonly ProjectButterSessionItem[];
 	placeholders?: ProjectButterPlaceholderMap;
+	onBrowseAgents?: () => void;
+	onCreateAgent?: () => void;
+	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
 }
 
 export function ProjectButterJiraWorkItem({
@@ -44,6 +47,9 @@ export function ProjectButterJiraWorkItem({
 	workItem,
 	initialSessions,
 	placeholders,
+	onBrowseAgents,
+	onCreateAgent,
+	onAgentSessionStart,
 }: Readonly<ProjectButterJiraWorkItemProps>) {
 	const [presentation, setPresentation] = useState(initialPresentation);
 	const [suggestion, setSuggestion] = useState(initialSuggestion);
@@ -91,10 +97,14 @@ export function ProjectButterJiraWorkItem({
 		content.setActivityView("Activity");
 	}
 	function startAgent(agent: AgentSessionItem["agent"]) {
-		addInvocation(model.startAgent(agent, content.summary));
+		const session = model.startAgent(agent, content.summary);
+		addInvocation(session);
+		onAgentSessionStart?.(session);
 	}
 	function startCoding() {
-		addInvocation(model.startCoding());
+		const session = model.startCoding();
+		addInvocation(session);
+		onAgentSessionStart?.(session);
 	}
 	function reply() {
 		if (!activeSession || !drafts[activeSession.id]?.trim()) return;
@@ -131,6 +141,8 @@ export function ProjectButterJiraWorkItem({
 				content={content}
 				empty={sparse}
 				onClose={onClose}
+				onBrowseAgents={onBrowseAgents}
+				onCreateAgent={onCreateAgent}
 				onOpenSession={(session) => setActiveSessionId(session.id)}
 				onPresentationChange={setPresentation}
 				onStartAgent={startAgent}

@@ -10,11 +10,14 @@ import { DEFAULT_SKILLS } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
+import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
+import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
@@ -53,7 +56,7 @@ import { cn } from "@/lib/utils";
 import { ButterList } from "./components/butter-list";
 
 import { renderButterAgentActivityIndicator } from "./data/agent-activity-indicators";
-import { BUTTER_BOARD_AGENTS } from "@/components/projects/butter/data/presentation-board";
+import { BUTTER_BOARD_AGENTS, toButterAgentActivityFromSession } from "@/components/projects/butter/data/presentation-board";
 import {
 	toButterDetachedAgentSession,
 	BUTTER_PAY_BOARD_AGENTS,
@@ -113,8 +116,12 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
 }
 
-function ButterWorkItemSurface({ ref, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+function ButterWorkItemSurface({ ref, onBrowseAgents, onCreateAgent, onAgentSessionStart, onWorkItemClose, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
 	ref: Ref<ButterWorkItemHandle>;
+	onBrowseAgents: () => void;
+	onCreateAgent: () => void;
+	onAgentSessionStart: (issueKey: string, session: AgentSessionItem) => void;
+	onWorkItemClose: () => void;
 }) {
 	const workItem = useButterWorkItem();
 	useImperativeHandle(ref, () => ({ open: workItem.openWorkItem }), [workItem.openWorkItem]);
@@ -132,7 +139,10 @@ function ButterWorkItemSurface({ ref, ...overlayProps }: ComponentProps<typeof J
 						shell="project"
 						initialPreset="filled"
 						initialSessions={workItem.selection.initialSessions}
-						onClose={workItem.closeWorkItem}
+						onBrowseAgents={onBrowseAgents}
+						onCreateAgent={onCreateAgent}
+						onAgentSessionStart={(session) => { if (workItem.selection) onAgentSessionStart(workItem.selection.workItem.code, session); }}
+						onClose={() => { workItem.closeWorkItem(); onWorkItemClose(); }}
 						open={workItem.open}
 						placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
 						workItem={workItem.selection.workItem}
@@ -161,7 +171,11 @@ function ButterApp(): React.ReactElement {
 	const browseAgents = useCallback(() => setAgentsDirectoryOpen(true), []);
 	const createAgent = useCallback(() => router.push("/studio"), [router]);
 	const workItemRef = useRef<ButterWorkItemHandle>(null);
-	const openWorkItem = useCallback((card: JiraKanbanCardData, columnTitle: string) => {
+	const pendingWorkItemAssignment = useRef<Readonly<{ issueKey: string; session: AgentSessionItem }> | null>(null);
+	const [agentAssignmentRequest, setAgentAssignmentRequest] = useState<Readonly<{ issueKey: string; session: AgentSessionItem }>>();
+	const openButterWorkItem = useCallback((card: JiraKanbanCardData, columnTitle: string) => {
+		pendingWorkItemAssignment.current = null;
+		setAgentAssignmentRequest(undefined);
 		workItemRef.current?.open(card, columnTitle);
 	}, []);
 	const {
@@ -176,7 +190,7 @@ function ButterApp(): React.ReactElement {
 	} = useButterContent();
 	// Same selector the Needs input focus uses, so the count names the rows it shows.
 	const needsInputCount = countNeedsInputAgents(boardColumns);
-	const { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, startAgentSession } = useButterAssignmentMove({
+	const { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, onSelectedCardsAgentAssign, startAgentSession } = useButterAssignmentMove({
 		agents: BUTTER_BOARD_AGENTS,
 		boardColumns,
 		setBoardColumns,
@@ -311,13 +325,36 @@ function ButterApp(): React.ReactElement {
 			issueSummary: card.title,
 		});
 	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
-	const openListWorkItem = openWorkItem;
 	const handleListIssueOpen = useCallback((issueKey: string) => {
 		for (const column of boardColumns) {
 			const card = column.cards.find((candidate) => candidate.code === issueKey);
-			if (card) { openListWorkItem(card, column.title); return; }
+			if (card) { openButterWorkItem(card, column.title); return; }
 		}
-	}, [boardColumns, openListWorkItem]);
+	}, [boardColumns, openButterWorkItem]);
+	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
+	const handleListAgentAssigned = useCallback((issueKey: string, agent: AgentSelectorAgent) => {
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+		const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(agent.brandName, agent.vpkLogo, agent.name, agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
+		flashListRow(issueKey, `color-mix(in srgb, ${tint} 28%, transparent)`);
+	}, [flashListRow]);
+	const handleWorkItemSessionStart = useCallback((issueKey: string, session: AgentSessionItem) => {
+		const card = boardColumns.flatMap((column) => column.cards).find((candidate) => candidate.code === issueKey);
+		if (!card || card.agentActivities?.some((activity) => activity.id === session.id)) return;
+		pendingWorkItemAssignment.current = { issueKey, session };
+		startAgentSession(issueKey, toButterAgentActivityFromSession(session));
+	}, [boardColumns, startAgentSession]);
+	const handleWorkItemClose = useCallback(() => {
+		const pending = pendingWorkItemAssignment.current;
+		pendingWorkItemAssignment.current = null;
+		if (!pending) return;
+		if (activeView === "list") {
+			const { issueKey, session } = pending;
+			const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(session.agent.brandName, session.agent.vpkLogo, session.agent.name, session.agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
+			if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) flashListRow(issueKey, `color-mix(in srgb, ${tint} 28%, transparent)`);
+		} else {
+			setAgentAssignmentRequest(pending);
+		}
+	}, [activeView, flashListRow]);
 	const {
 		createBoardFromAgentSession,
 		createFromAgentSession,
@@ -328,6 +365,7 @@ function ButterApp(): React.ReactElement {
 		boardColumns,
 		contentMode,
 		listAriaLabel: wacContent ? "Checkout roadmap work items list" : undefined,
+		onAgentAssigned: handleListAgentAssigned,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		onBrowseAgents: browseAgents,
 		onCreateAgent: createAgent,
@@ -341,7 +379,6 @@ function ButterApp(): React.ReactElement {
 	// It only reaches rows the list is rendering. Board-created cards are
 	// assigned to Venn (the prototype current user), so the matching assignee
 	// filter keeps the new row visible long enough for this acknowledgement.
-	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
 	// reads that map, so the session reappears there immediately. Proximity
 	// stays off, so it never parks beside the card.
@@ -477,6 +514,7 @@ function ButterApp(): React.ReactElement {
 						issueDragTransitions
 						issueDropMotion="solitaire"
 						issueMoveRequest={issueMoveRequest}
+						agentAssignmentRequest={agentAssignmentRequest}
 						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
@@ -513,9 +551,10 @@ function ButterApp(): React.ReactElement {
 						onAgentSessionsReviewed={reviewAgentSessions}
 						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
 						onBoardColumnsChange={onBoardColumnsChange}
-						onCardClick={openWorkItem}
+						onCardClick={openButterWorkItem}
 						onCardAgentActivityViewChat={handleViewChat}
 						onCardAssignedAgentIdsChange={onBoardAssignedAgentIdsChange}
+						onSelectedCardsAgentAssign={onSelectedCardsAgentAssign}
 						onCardAgentDoneRunView={handleViewCompletedRun}
 						onCardGenerativeActionSubmit={handleCardGenerativeActionSubmit}
 						onCardAgentSessionLink={handleAgentSessionLink}
@@ -588,6 +627,10 @@ function ButterApp(): React.ReactElement {
 			</MountOnFirstUse>
 			<ButterWorkItemSurface
 				ref={workItemRef}
+				onBrowseAgents={browseAgents}
+				onCreateAgent={createAgent}
+				onAgentSessionStart={handleWorkItemSessionStart}
+				onWorkItemClose={handleWorkItemClose}
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}

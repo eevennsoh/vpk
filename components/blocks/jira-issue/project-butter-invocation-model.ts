@@ -1,5 +1,9 @@
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 
+export function matchesInvocationAgent(activity: Readonly<{ id: string; name: string }>, agent: AgentSelectorAgent): boolean {
+	return activity.id === agent.id || activity.id.endsWith(`:${agent.id}`) || activity.name.trim().toLowerCase() === agent.name.trim().toLowerCase();
+}
+
 export interface AgentInvocationPreview {
 	agent: AgentSelectorAgent | null;
 	previousAgent: AgentSelectorAgent | null;
@@ -10,16 +14,18 @@ export interface AgentInvocationPreview {
 
 export interface AgentInvocationState {
 	phase: "idle" | "choosing" | "handoff" | "attached";
+	source: "footer" | "menu" | "session";
 	preview: AgentInvocationPreview;
 }
 
 export const INITIAL_AGENT_INVOCATION: AgentInvocationState = {
 	phase: "idle",
+	source: "footer",
 	preview: { agent: null, previousAgent: null, index: -1, direction: 1, sequence: 0 },
 };
 
 type AgentInvocationAction =
-	| { type: "open" }
+	| { type: "open"; source: AgentInvocationState["source"] }
 	| { type: "close" }
 	| { type: "reset" }
 	| { type: "preview"; agent: AgentSelectorAgent | null; index: number }
@@ -50,6 +56,7 @@ export function agentInvocationReducer(
 		case "open":
 			return {
 				phase: "choosing",
+				source: action.source,
 				preview: { ...INITIAL_AGENT_INVOCATION.preview, sequence: state.preview.sequence + 1 },
 			};
 		case "close":
@@ -62,7 +69,7 @@ export function agentInvocationReducer(
 			return preview === state.preview ? state : { ...state, preview };
 		}
 		case "commit":
-			return { phase: "handoff", preview: previewAgent(state.preview, action.agent, action.index) };
+			return { ...state, phase: "handoff", preview: previewAgent(state.preview, action.agent, action.index) };
 		case "abort":
 			return state.phase === "handoff" && state.preview.sequence === action.sequence
 				? { ...state, phase: "idle" }

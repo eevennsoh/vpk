@@ -39,6 +39,9 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { getWorkflowPhaseLozengeVariant } from "@/lib/workflow-status";
 import { motionEase } from "@/lib/motion";
+import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/project-butter-agent-picker";
+import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 
 const TOOLBAR_ENTER: Transition = {
 	duration: 0.25,
@@ -66,6 +69,7 @@ const TOOLBAR_HORIZONTAL_PADDING = 16;
 const FLYOUT_SIDE_OFFSET = 16;
 
 export interface JiraToolbarProps {
+	butterAgentPicker?: boolean;
 	/** Consumer-owned primary action, kept visible beside the selection count. */
 	primaryAction?: ReactNode;
 	/** Show only the consumer-owned primary action during a focused gesture. */
@@ -152,6 +156,7 @@ interface ToolbarAction {
 }
 
 export function JiraToolbar({
+	butterAgentPicker = false,
 	primaryAction,
 	primaryActionOnly = false,
 	dismissOnEscape = true,
@@ -225,7 +230,11 @@ export function JiraToolbar({
 			<Lozenge variant={getStatusVariant(status, statusOptions)}>{status}</Lozenge>
 		</DropdownMenuItem>
 	));
-	const agentPicker = (
+	const agentPicker = butterAgentPicker ? (
+		<ProjectButterInvocationProvider agents={BUTTER_PICKER_AGENTS} enabled>
+			<ProjectButterAgentPickerContent onAssign={(agent) => { onAgentAssignmentChange(agent.id, true); handleAgentSelectorOpenChange(false); }} onBrowseAgents={onBrowseAgents ? () => { handleAgentSelectorOpenChange(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { handleAgentSelectorOpenChange(false); onCreateAgent(); } : undefined} />
+		</ProjectButterInvocationProvider>
+	) : (
 		<AgentSelector
 			agents={agents}
 			defaultPinnedAgentIds={defaultPinnedAgentIds}

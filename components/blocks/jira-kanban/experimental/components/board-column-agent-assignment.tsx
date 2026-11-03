@@ -7,6 +7,9 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import type { JiraKanbanAgentData } from "@/components/blocks/jira-kanban";
 import { BOARD_COLUMN_ACTION_REVEAL } from "@/components/blocks/jira-kanban/experimental/lib/board-column-action-reveal";
 import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
+import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/project-butter-agent-picker";
+import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 import {
 	Avatar,
@@ -35,6 +38,9 @@ interface AgentStackProps {
 }
 
 interface BoardColumnAgentAssignmentProps {
+	butterAgentPicker?: boolean;
+	onBrowseAgents?: () => void;
+	onCreateDirectoryAgent?: () => void;
 	agents: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	columnTitle: string;
@@ -97,6 +103,9 @@ function AgentStack({ agents }: Readonly<AgentStackProps>): ReactElement | null 
 }
 
 export function BoardColumnAgentAssignment({
+	butterAgentPicker = false,
+	onBrowseAgents,
+	onCreateDirectoryAgent,
 	agents,
 	assignedAgentIds,
 	columnTitle,
@@ -106,11 +115,12 @@ export function BoardColumnAgentAssignment({
 	const [open, setOpen] = useState(false);
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(DEFAULT_PINNED_SPACE_AGENT_IDS);
 	const [query, setQuery] = useState("");
+	const availableAgents = butterAgentPicker ? BUTTER_PICKER_AGENTS : agents;
 	const assignedAgents = useMemo(
 		() => assignedAgentIds
-			.map((id) => agents.find((agent) => agent.id === id))
+			.map((id) => availableAgents.find((agent) => agent.id === id))
 			.filter((agent): agent is JiraKanbanAgentData => Boolean(agent)),
-		[agents, assignedAgentIds],
+		[availableAgents, assignedAgentIds],
 	);
 	const hasAssignedAgents = assignedAgents.length > 0;
 	const triggerLabel = hasAssignedAgents
@@ -183,7 +193,7 @@ export function BoardColumnAgentAssignment({
 					positionerClassName="z-[502]"
 					sideOffset={8}
 				>
-					<WorkItemAgentSelector
+					{butterAgentPicker ? <ProjectButterInvocationProvider agents={availableAgents} enabled><ProjectButterAgentPickerContent selectedAgentIds={assignedAgentIds} onAssign={(agent) => { onToggleAgent(agent.id); closeMenu(); }} onBrowseAgents={onBrowseAgents ? () => { closeMenu(); onBrowseAgents(); } : undefined} onCreateAgent={onCreateDirectoryAgent ? () => { closeMenu(); onCreateDirectoryAgent(); } : undefined} /></ProjectButterInvocationProvider> : <WorkItemAgentSelector
 						agents={agents}
 						onAgentToggle={onToggleAgent}
 						onBrowseAgents={closeMenu}
@@ -193,7 +203,7 @@ export function BoardColumnAgentAssignment({
 						pinnedAgentIds={pinnedAgentIds}
 						query={query}
 						selectedAgentIds={assignedAgentIds}
-					/>
+					/>}
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</div>

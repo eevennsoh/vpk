@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ComponentProps } from "react";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -25,13 +25,30 @@ const RUN_ON_AGENT_IDS = ["claude-code", ...Object.keys(RUN_ON_LABELS), "rovo-cl
 const hasWorkspaceOptions = (agentId: string) => agentId === "claude-code" || agentId === "rovo-cli";
 
 export function ProjectButterAgentPicker({
+	anchor,
+	id,
 	onAssign,
 	onBrowseAgents,
 	onCreateAgent,
 }: Readonly<{
+	anchor?: ComponentProps<typeof PopoverContent>["anchor"];
+	id?: string;
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
+}>) {
+	return (
+		<PopoverContent id={id} anchor={anchor} aria-label="Agents" side="right" align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
+			<ProjectButterAgentPickerContent onAssign={onAssign} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} />
+		</PopoverContent>
+	);
+}
+
+export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCreateAgent, selectedAgentIds }: Readonly<{
+	onAssign: (agent: AgentSelectorAgent) => void;
+	onBrowseAgents?: () => void;
+	onCreateAgent?: () => void;
+	selectedAgentIds?: readonly string[];
 }>) {
 	const agents = useProjectButterInvocationAgents();
 	const actions = useProjectButterInvocationActions();
@@ -44,7 +61,13 @@ export function ProjectButterAgentPicker({
 	const selectingFolder = useRef(false);
 	const cloudButton = useRef<HTMLButtonElement | null>(null);
 	const submenuContent = useRef<HTMLDivElement | null>(null);
+	const submenuId = useId();
 	const [submenu, setSubmenu] = useState<{ agent: AgentSelectorAgent; anchor: HTMLElement } | null>(null);
+	useEffect(() => {
+		if (!submenu) return;
+		submenu.anchor.setAttribute("aria-controls", submenuId);
+		return () => submenu.anchor.removeAttribute("aria-controls");
+	}, [submenu, submenuId]);
 	const cancelClose = () => {
 		if (closeTimer.current !== null) clearTimeout(closeTimer.current);
 		closeTimer.current = null;
@@ -103,14 +126,9 @@ export function ProjectButterAgentPicker({
 
 	return (
 		<>
-		<PopoverContent
+		<div
 			ref={popup}
-			aria-label="Agents"
-			side="right"
-			align="start"
-			alignOffset={-6}
-			sideOffset={8}
-			className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0"
+			className="w-full"
 			onPointerMove={(event) => {
 				if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
 				pointer.current = { x: event.clientX, y: event.clientY };
@@ -150,8 +168,6 @@ export function ProjectButterAgentPicker({
 				syncHighlight.current = false;
 				closeSubmenuLater();
 			}}
-			onClick={(event) => event.stopPropagation()}
-			onPointerDown={(event) => event.stopPropagation()}
 		>
 			<AgentSelector
 				agents={pickerAgents}
@@ -176,12 +192,15 @@ export function ProjectButterAgentPicker({
 				searchVariant="palette"
 				sections={{ heading: "Software agents", agentIds: ["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent", "github-copilot", "rovo-cli"], initialLimit: 3, otherHeading: "Other agents" }}
 				showByline={false}
+				selectedAgentIds={selectedAgentIds}
+				showSelectedTickInSingleSelect
 				submenuAgentIds={RUN_ON_AGENT_IDS}
 				selectionMode="single"
 			/>
 		<Popover open={submenu !== null} onOpenChange={(open) => { if (!open) setSubmenu((current) => current?.agent.id === submenu?.agent.id ? null : current); }}>
 			{submenu ? (
 				<PopoverContent
+					id={submenuId}
 					ref={submenuContent}
 					anchor={submenu.anchor}
 					aria-label={submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
@@ -236,7 +255,7 @@ export function ProjectButterAgentPicker({
 				</PopoverContent>
 			) : null}
 		</Popover>
-		</PopoverContent>
+		</div>
 		</>
 	);
 }

@@ -99,6 +99,24 @@ test("Butter list forwards agent directory actions to the picker", async () => {
 	assert.deepEqual(actions, ["browse", "create"]);
 });
 
+test("Butter list session menu hands Add agent to the shared picker", async () => {
+	const assigned = [];
+	const view = await renderComponent({
+		entry: "components/projects/butter/components/butter-list-agent-cell.tsx",
+		exportName: "ButterListAgentCell",
+		props: {
+			agentCatalog: [{ id: "claude", name: "Claude", byline: "" }, { id: "figma", name: "Figma", byline: "" }],
+			onAssignedAgentIdsChange: (key, ids) => assigned.push([key, ids]),
+			row: { ...rows[0], agentSessions: [{ id: "claude", name: "Claude", statusKind: "working", statusLabel: "Working" }] },
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Edit agents" }));
+	await view.click(view.getByRole("button", { name: "Assign agent" }));
+	assert.equal(view.getByRole("dialog", { name: "Agents" }) !== null, true);
+	await view.click(view.getByRole("option", { name: /Figma/u }));
+	assert.deepEqual(assigned, [["PAY-1", ["claude", "figma"]]]);
+});
+
 test("assigned list sessions forward agent directory actions", async () => {
 	const actions = [];
 	const view = await renderComponent({

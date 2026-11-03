@@ -5,11 +5,13 @@ import { useReducedMotion } from "motion/react";
 import { createLatestAnimationFrame } from "@/lib/latest-animation-frame";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import {
 	AGENT_BRAND_TINT_FALLBACK,
 	resolveAgentBrandTintColor,
 } from "@/components/blocks/agent-session/agent-brand-tint";
 import { toSessionTransferMember } from "@/components/blocks/agent-session/agent-session-transfer-member";
+import { useBulkAssignmentGlow } from "@/components/blocks/jira-kanban/experimental/hooks/use-bulk-assignment-glow";
 import { createSessionCohort } from "@/components/blocks/agent-session/session-cohort";
 import type {
 	JiraIssueAgentSessionDragControl,
@@ -23,6 +25,7 @@ import {
 } from "@/components/blocks/jira-issue/attach-proximity";
 import {
 	JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
+	sessionTransferTintSeed,
 	type JiraIssueAgentSessionDragBinding,
 	type JiraIssueAgentSessionTransferMember,
 } from "@/components/blocks/jira-issue/agent-session-drag";
@@ -430,6 +433,7 @@ export function useBoardAgentSessionDrag({
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const boardRootRef = useRef<HTMLDivElement | null>(null);
+	const noteBulkAgentAssignment = useBulkAssignmentGlow({ boardColumns, boardRootRef, linkingVariant, shouldReduceMotion });
 	const transactionRef = useRef<BoardAgentSessionDragTransaction<JiraIssueAgentSessionTransferMember> | null>(null);
 	const [transaction, setTransaction] = useState<BoardAgentSessionDragTransaction<JiraIssueAgentSessionTransferMember> | null>(null);
 	const [dragState, setDragState] = useState<JiraIssueAgentSessionDragState>(
@@ -677,6 +681,13 @@ export function useBoardAgentSessionDrag({
 		armMemberLink(cardCode, toSessionTransferMember(session));
 	}, [armMemberLink]);
 
+	const noteAgentAssignment = useCallback((agent: AgentSelectorAgent, card: JiraKanbanCardData) => {
+		pendingAssignmentRef.current = {
+			cardCode: card.code,
+			member: { id: agent.id, name: agent.name, avatarSrc: agent.avatarSrc, tintSeed: sessionTransferTintSeed(agent.brandName, agent.vpkLogo, agent.name, agent.id) },
+			previousActivities: card.agentActivities,
+		};
+	}, []);
 	/**
 	 * A card's generative-action handler with the link acknowledgement attached.
 	 *
@@ -703,7 +714,11 @@ export function useBoardAgentSessionDrag({
 		// must never consume its replacement's glow while it is leaving.
 		if (!card || card.agentActivities === pending.previousActivities) return;
 		pendingAssignmentRef.current = null;
-		armMemberLink(pending.cardCode, pending.member);
+		const previousIds = new Set(pending.previousActivities?.map((activity) => activity.id));
+		const matchesSelected = (id: string, name: string) => id === pending.member.id || id.endsWith(`:${pending.member.id}`) || name.trim().toLowerCase() === pending.member.name.trim().toLowerCase();
+		if (card.agentActivities?.some((activity) => !previousIds.has(activity.id) || matchesSelected(activity.id, activity.name)) || card.agentDoneRuns?.some((run) => matchesSelected(run.id, run.agentName))) {
+			armMemberLink(pending.cardCode, pending.member);
+		}
 	}, [armMemberLink, boardColumns]);
 
 	useEffect(() => () => {
@@ -936,6 +951,8 @@ export function useBoardAgentSessionDrag({
 		 * The menu owns the link; this only draws it.
 		 */
 		withAssignedAgentLink,
+		noteAgentAssignment,
+		noteBulkAgentAssignment,
 		armSessionLink,
 		boardRootRef,
 		/**
