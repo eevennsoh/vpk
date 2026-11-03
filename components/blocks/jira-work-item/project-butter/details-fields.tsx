@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { animate, useReducedMotion } from "motion/react";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DetailsFieldRow } from "@/components/blocks/jira-work-item/project-butter/details-field-row";
@@ -9,6 +10,7 @@ import { ProjectButterSuggestionCursor } from "@/components/blocks/jira-work-ite
 import { PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS, projectButterCostPerReach, reorderProjectButterDetailFields, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { TEAM_EU26_PEOPLE } from "@/components/blocks/jira-work-item/team-eu26/data/team-eu26-vita-one";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+import { motionDuration, motionEase } from "@/lib/motion";
 
 function isProjectButterDetailFieldFilled(id: ProjectButterDetailFieldId, content: ProjectButterContent): boolean {
 	if (id === "status" || id === "assignee" || id === "priority") return true;
@@ -28,15 +30,59 @@ function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: 
 	}
 }
 
-export function ProjectButterDetailsFields({ content, empty, expanded, fillingBarAfter = null, reflow = false, shimmerText }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | null; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
+export function ProjectButterDetailsFields({ content, expanded, fillingBarAfter = null, reflow = false, shimmerText }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | "top" | null; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
 	const id = useId();
+	const rootRef = useRef<HTMLDivElement>(null);
+	const heightRef = useRef<number | null>(null);
+	const animatingRef = useRef(false);
+	const reduced = useReducedMotion();
 	const [dragging, setDragging] = useState(false);
+	useEffect(() => {
+		const root = rootRef.current;
+		if (!root || typeof ResizeObserver === "undefined") return;
+		const observer = new ResizeObserver(() => {
+			if (!animatingRef.current) heightRef.current = root.getBoundingClientRect().height;
+		});
+		observer.observe(root);
+		return () => observer.disconnect();
+	}, []);
+	useLayoutEffect(() => {
+		const root = rootRef.current;
+		if (!root) return;
+		const from = heightRef.current;
+		const to = root.scrollHeight;
+		heightRef.current = to;
+		if (reduced || from === null || Math.abs(from - to) < 1) return;
+		let active = true;
+		animatingRef.current = true;
+		root.style.height = `${from}px`;
+		root.style.overflow = "hidden";
+		const animation = animate(root, { height: [from, to] }, { duration: motionDuration.slow, ease: motionEase.outPractical });
+		const finish = () => {
+			if (!active) return;
+			active = false;
+			root.style.height = "";
+			root.style.overflow = "";
+			animatingRef.current = false;
+			heightRef.current = root.getBoundingClientRect().height;
+		};
+		void animation.finished.then(finish, finish);
+		return () => {
+			if (!active) return;
+			heightRef.current = root.getBoundingClientRect().height;
+			active = false;
+			animation.stop();
+			root.style.height = "";
+			root.style.overflow = "";
+			animatingRef.current = false;
+		};
+	}, [expanded, reduced]);
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates, scrollBehavior: "auto" }));
 	const fields = content.detailFields;
 	const order = fields.order.filter((field) => !fields.hidden.includes(field));
-	const visible = expanded ? order : order.slice(0, empty ? 3 : 4);
+	const visible = expanded ? order : order.slice(0, 4);
 	return (
-		<div data-project-butter-detail-fields data-project-butter-field-dragging={dragging ? "true" : undefined}>
+		<div data-project-butter-detail-fields data-project-butter-field-dragging={dragging ? "true" : undefined} ref={rootRef}>
 			<DndContext collisionDetection={closestCenter} id={id} onDragCancel={() => setDragging(false)} onDragStart={() => setDragging(true)} onDragEnd={({ active, over }) => {
 				setDragging(false);
 				content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, active.id, over?.id ?? null) }));
@@ -50,6 +96,7 @@ export function ProjectButterDetailsFields({ content, empty, expanded, fillingBa
 								const target = visible[index + direction];
 								if (target) content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, field, target) }));
 							}}><ProjectButterDetailFieldValue content={content} id={field} /></DetailsFieldRow>;
+							if (index === 0 && fillingBarAfter === "top") return [<ProjectButterSuggestionCursor key="filling-bar" />, row];
 							return field === fillingBarAfter ? [row, <ProjectButterSuggestionCursor key="filling-bar" />] : [row];
 						})}
 					</div>

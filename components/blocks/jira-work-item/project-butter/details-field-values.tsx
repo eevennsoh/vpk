@@ -12,6 +12,8 @@ import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/pr
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { Calendar } from "@/components/ui/calendar";
 import { InlineEdit } from "@/components/ui/inline-edit";
+import { ArtifactLabelsField } from "@/components/blocks/artifact-pane/artifact-labels-field";
+import { ArtifactParentField } from "@/components/blocks/artifact-pane/artifact-parent-field";
 
 const PEOPLE = Object.values(TEAM_EU26_PEOPLE).map((person) => ({ ...person, avatarUrl: person.name === "Automatic" ? undefined : projectButterPersonAvatar(person.name) }));
 
@@ -23,11 +25,19 @@ export function ProjectButterDetailFieldValue({ content, id }: Readonly<{ conten
 	if (id === "status") return <ProjectButterStatus appearance="field" content={content} />;
 	if (id === "assignee") return <PersonRowField ariaLabel="Change assignee" onChange={content.setAssignee} people={PEOPLE} placeholder="Automatic" renderValue={(person) => <PersonLabel avatarSize="xs" person={person} />} value={content.assignee.name === "Automatic" ? null : content.assignee} />;
 	if (id === "priority") return <PriorityRowField onChange={content.setPriority} value={content.priority} />;
-	if (id === "dueDate") return <span className="flex min-w-0 items-center gap-1"><DateRowField ariaLabel="Change due date" CalendarComponent={Calendar} dateValueMode="utc-date" leadingVisual={<CalendarIcon label="" size="small" />} onChange={content.setDueDate} placeholder="Add due date" value={content.dueDate} />{content.dueDate && content.dueDate.getTime() < Date.UTC(2026, 9, 28) ? <span className="shrink-0 text-icon-danger"><WarningIcon label="Overdue" size="small" /></span> : null}</span>;
+	if (id === "dueDate") return <span className="flex min-w-0 items-center gap-1"><DateRowField ariaLabel="Change due date" CalendarComponent={Calendar} dateValueMode="utc-date" leadingVisual={<span className="flex size-6 shrink-0 items-center justify-center"><CalendarIcon label="" size="small" /></span>} onChange={content.setDueDate} placeholder="Add due date" value={content.dueDate} />{content.dueDate && content.dueDate.getTime() < Date.UTC(2026, 9, 28) ? <span className="shrink-0 text-icon-danger"><WarningIcon label="Overdue" size="small" /></span> : null}</span>;
 	if (id === "reporter") return <PersonRowField ariaLabel="Change reporter" onChange={content.setReporter} people={PEOPLE} placeholder="Add reporter" value={content.reporter} />;
-	if (id === "costPerReach") return <span className="flex min-h-8 items-center gap-2 text-sm text-text-subtle"><DataFormulaIcon label="" size="small" /><span>{projectButterCostPerReach(fields) || "Calculated from budget and reach"}</span></span>;
+	if (id === "costPerReach") return <span className="flex min-h-8 items-center gap-2 text-sm text-text-subtle"><span className="flex size-6 shrink-0 items-center justify-center"><DataFormulaIcon label="" size="small" /></span><span>{projectButterCostPerReach(fields) || "Calculated from budget and reach"}</span></span>;
 	if (id === "campaignRegion") return <div className="flex min-w-0 gap-2"><DetailsOptionField label="region" onChange={([region]) => setField("campaignRegion", { region, market: "" })} options={Object.keys(PROJECT_BUTTER_CAMPAIGN_MARKETS)} values={fields.campaignRegion.region ? [fields.campaignRegion.region] : []} />{fields.campaignRegion.region ? <DetailsOptionField label="market" onChange={([market]) => setField("campaignRegion", { ...fields.campaignRegion, market })} options={PROJECT_BUTTER_CAMPAIGN_MARKETS[fields.campaignRegion.region] ?? []} values={fields.campaignRegion.market ? [fields.campaignRegion.market] : []} /> : null}</div>;
-	if (id === "parent" || id === "fixVersion" || id === "costCenter" || id === "assetObject") return <DetailsOptionField label={PROJECT_BUTTER_DETAIL_FIELDS[id]} onChange={([value]) => setField(id, value)} options={PROJECT_BUTTER_DETAIL_OPTIONS[id]} tagAppearance={id === "parent" ? "parent" : id === "assetObject" ? "asset" : "plain"} values={fields[id] ? [fields[id]] : []} />;
-	if (id === "labels" || id === "components" || id === "targetPlatforms") return <DetailsOptionField label={PROJECT_BUTTER_DETAIL_FIELDS[id]} multiple onChange={(values) => setField(id, values)} options={PROJECT_BUTTER_DETAIL_OPTIONS[id]} tagAppearance={id === "labels" ? "labels" : "plain"} values={fields[id]} />;
+	if (id === "parent") {
+		const options = [...new Set([...(fields.parent ? [fields.parent] : []), ...PROJECT_BUTTER_DETAIL_OPTIONS.parent])].map((value) => {
+			const separator = value.indexOf(" ");
+			return { key: value, summary: separator < 0 ? value : value.slice(separator + 1) };
+		});
+		return <ArtifactParentField onChange={(value) => setField("parent", value)} options={options} value={fields.parent || null} />;
+	}
+	if (id === "labels") return <ArtifactLabelsField hideSelected onChange={(values) => setField("labels", values)} options={PROJECT_BUTTER_DETAIL_OPTIONS.labels} value={fields.labels} />;
+	if (id === "fixVersion" || id === "costCenter" || id === "assetObject") return <DetailsOptionField label={PROJECT_BUTTER_DETAIL_FIELDS[id]} onChange={([value]) => setField(id, value)} options={PROJECT_BUTTER_DETAIL_OPTIONS[id]} tagAppearance={id === "assetObject" ? "asset" : "plain"} values={fields[id] ? [fields[id]] : []} />;
+	if (id === "components" || id === "targetPlatforms") return <DetailsOptionField label={PROJECT_BUTTER_DETAIL_FIELDS[id]} multiple onChange={(values) => setField(id, values)} options={PROJECT_BUTTER_DETAIL_OPTIONS[id]} values={fields[id]} />;
 	return <InlineEdit cancelButtonLabel={`Cancel ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()} changes`} confirmButtonLabel={`Save ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()}`} editButtonLabel={`Change ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()}`} inputProps={{ "aria-label": PROJECT_BUTTER_DETAIL_FIELDS[id], isCompact: true }} multiline={id === "acceptanceCriteria"} onConfirm={(value) => setField(id, value.trim())} placeholder={`Add ${PROJECT_BUTTER_DETAIL_FIELDS[id].toLowerCase()}`} readViewClassName="min-h-8 h-auto px-0 py-1 hover:bg-transparent" textareaProps={{ "aria-label": PROJECT_BUTTER_DETAIL_FIELDS[id] }} value={fields[id]} />;
 }

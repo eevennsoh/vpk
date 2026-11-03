@@ -77,9 +77,11 @@ function LabelOptionGroup({
 }
 
 export function ArtifactLabelsField({
+	hideSelected = false,
 	onChange,
+	options = LABEL_OPTIONS,
 	value,
-}: Readonly<{ onChange: (next: string[]) => void; value: readonly string[] }>) {
+}: Readonly<{ hideSelected?: boolean; onChange: (next: string[]) => void; options?: readonly string[]; value: readonly string[] }>) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	// This picker hand-rolls the command-menu markup (its rows are Tag pills with
@@ -89,9 +91,9 @@ export function ArtifactLabelsField({
 	// event, so the scroll handler alone keeps the mask in sync.
 	const { listProps, menuProps } = useCommandMenuScrollMask();
 	const normalizedQuery = query.trim().toLowerCase();
-	const allLabels = Array.from(new Set([...value, ...LABEL_OPTIONS]));
+	const allLabels = Array.from(new Set([...value, ...options]));
 	const visibleLabels = allLabels.filter((label) => label.toLowerCase().includes(normalizedQuery));
-	const selectedLabels = visibleLabels.filter((label) => value.includes(label));
+	const selectedLabels = hideSelected ? [] : visibleLabels.filter((label) => value.includes(label));
 	const moreLabels = visibleLabels.filter((label) => !value.includes(label));
 	const firstVisibleLabel = moreLabels[0] ?? selectedLabels[0];
 	const customLabel = query.trim();
@@ -156,7 +158,7 @@ export function ArtifactLabelsField({
 						role="listbox"
 						{...listProps}
 					>
-						{visibleLabels.length > 0 ? (
+						{selectedLabels.length + moreLabels.length > 0 ? (
 							<>
 								<LabelOptionGroup heading="Selected" labels={selectedLabels} onToggle={toggle} selected />
 								<LabelOptionGroup heading="More labels" labels={moreLabels} onToggle={toggle} selected={false} />

@@ -13,15 +13,15 @@ export function ProjectButterSuggestionCursor() {
 		<motion.div
 			animate={{ opacity: 1 }}
 			aria-hidden
-			className="pointer-events-none relative z-20"
+			className="pointer-events-none relative z-20 -mx-2"
 			data-project-butter-suggestion-cursor
 			initial={{ opacity: 0 }}
 			layout="position"
 			style={{ willChange: "transform" }}
 			transition={{ ...DETAILS_RAIL_GLIDE, opacity: { duration: motionDuration.medium, ease: motionEase.outPractical } }}
 		>
-			<div className="flex items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5" style={{ boxShadow: token("elevation.shadow.overlay") }}>
-				<Spinner label="" size="xs" variant="rainbow" />
+			<div className="flex items-center gap-2 rounded-lg bg-surface px-2 py-1.5" style={{ boxShadow: token("elevation.shadow.overlay") }}>
+				<span className="flex h-3 w-6 shrink-0 items-center justify-center"><Spinner label="" size="xs" variant="rainbow" /></span>
 				<span className="text-xs font-medium text-text-subtle">Filling details</span>
 			</div>
 		</motion.div>

@@ -9,12 +9,14 @@ import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/pro
 import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 
-export function ProjectButterBody({ active, sidePanel, content, details, empty, onOpenSession, openRelatedItem, relatedScope, sessions, workItemKey }: Readonly<{
+export function ProjectButterBody({ active, sidePanel, content, descriptionReveal, details, empty, onDescriptionRevealComplete, onOpenSession, openRelatedItem, relatedScope, sessions, workItemKey }: Readonly<{
 	active: boolean;
 	sidePanel: boolean;
 	content: ProjectButterContent;
+	descriptionReveal?: { id: number; text: string } | null;
 	details?: ReactNode;
 	empty: boolean;
+	onDescriptionRevealComplete?: () => void;
 	onOpenSession: (sessionId: string) => void;
 	openRelatedItem?: RelatedItemOpener;
 	relatedScope?: ProjectButterRelatedScope;
@@ -26,7 +28,7 @@ export function ProjectButterBody({ active, sidePanel, content, details, empty, 
 		&& !sessions.some((session) => session.state === "needs-input");
 	return (
 		<div className="flex min-w-0 flex-col gap-6">
-			<ProjectButterDescription content={content} empty={empty} />
+			<ProjectButterDescription content={content} empty={empty} onRevealComplete={onDescriptionRevealComplete} reveal={descriptionReveal} />
 			{details}
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
 			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} sessions={sessions} sidePanel={sidePanel} />

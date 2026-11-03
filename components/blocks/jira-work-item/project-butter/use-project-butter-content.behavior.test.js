@@ -44,6 +44,7 @@ const HARNESS = `import React from "react";
 		labels,
 		dueDate,
 		reporterName,
+		defaultReporterName,
 		withSession = false,
 		passMap = true,
 	}) {
@@ -60,6 +61,7 @@ const HARNESS = `import React from "react";
 			workItem,
 			withSession ? [session, waiting] : undefined,
 			passMap ? BUTTER_WORK_ITEM_PLACEHOLDERS : undefined,
+			defaultReporterName ? { name: defaultReporterName } : undefined,
 		);
 		const comments = content.activityEntries.filter((entry) => entry.kind === "comment" && !String(entry.id).startsWith("invocation-"));
 		const replies = comments.flatMap((entry) => entry.kind === "comment" ? entry.replies ?? [] : []);
@@ -195,13 +197,13 @@ test("placeholder fill keeps a complete agent session in the activity feed", asy
 	assert.equal(field("comment").includes("issuer artwork id"), true);
 });
 
-test("a missing placeholder key stays blank and does not throw", async () => {
+test("a missing placeholder key gets a default reporter and leaves other fields blank", async () => {
 	await renderHarness({ code: "PAY-404" });
 	assert.equal(field("description"), "");
 	assert.equal(field("child"), "");
 	assert.equal(field("attachment"), "");
 	assert.equal(field("comment"), "");
-	assert.equal(field("reporter"), "");
+	assert.equal(field("reporter"), "Annie Cook");
 	assert.equal(field("fix"), "");
 });
 
@@ -210,9 +212,17 @@ test("empty and blank presets stay empty when a placeholder exists", async () =>
 	assert.equal(field("description"), "");
 	assert.equal(field("attachment"), "");
 	assert.equal(field("comment"), "");
+	assert.equal(field("reporter"), "Priya Raman");
 	await renderHarness({ code: "PAY-118", preset: "blank" });
 	assert.equal(field("description"), "");
 	assert.equal(field("child"), "");
+});
+
+test("items without an authored reporter use the host's current person in every preset", async () => {
+	for (const preset of ["filled", "empty", "blank"]) {
+		await renderHarness({ code: "PAY-999", preset, defaultReporterName: "Venn" });
+		assert.equal(field("reporter"), "Venn");
+	}
 });
 
 test("the reference demo stays filled when no board item is open", async () => {

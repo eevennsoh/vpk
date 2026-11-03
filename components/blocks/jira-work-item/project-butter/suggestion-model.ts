@@ -1,7 +1,8 @@
 import { projectButterPersonAvatar } from "./people.ts";
 
-/** Empty Details fields the Suggestion state can fill, in rail order. */
+/** Empty work item fields the Suggestion state can fill, in review order. */
 export const PROJECT_BUTTER_SUGGESTION_FIELDS = [
+	"description",
 	"dueDate",
 	"parent",
 	"labels",
@@ -15,6 +16,8 @@ export const PROJECT_BUTTER_SUGGESTION_FIELDS = [
 export type ProjectButterSuggestionField = typeof PROJECT_BUTTER_SUGGESTION_FIELDS[number];
 
 export interface ProjectButterSuggestionSnapshot {
+	description: string;
+	descriptionDraft: string;
 	dueDate: Date | undefined;
 	reporter: { name: string } | null;
 	parent: string;
@@ -34,6 +37,7 @@ interface ProjectButterSuggestionBase {
 export type ProjectButterSuggestion =
 	| (ProjectButterSuggestionBase & { field: "dueDate"; date: Date })
 	| (ProjectButterSuggestionBase & { field: "reporter"; person: { name: string; avatarUrl: string } })
+	| (ProjectButterSuggestionBase & { field: "description"; text: string })
 	| (ProjectButterSuggestionBase & { field: "parent" | "fixVersion" | "acceptanceCriteria" | "costCenter"; text: string })
 	| (ProjectButterSuggestionBase & { field: "labels" | "components"; values: readonly string[] });
 
@@ -47,12 +51,19 @@ export interface ProjectButterSuggestionFieldPatch {
 }
 
 const SUGGESTED_DUE_DATE = new Date(Date.UTC(2026, 11, 15));
+const PAYMENTS_DESCRIPTION = [
+	"Help merchants adopt Payments SDK v2 with a clear onboarding path, from initial setup to their first test payment. Document the prerequisites, account configuration, and credentials needed before an integration begins.",
+	"Provide a guided quickstart that shows how to install the SDK, initialize the client, and create a payment in the sandbox. Explain how to handle authentication challenges, declined payments, and common integration errors, with examples that developers can adapt.",
+	"Include a checklist for moving from sandbox to production, links to the relevant documentation, and a way for merchants to find support when they get stuck.",
+	"Validate the journey with a small group of merchants and use their feedback to clarify any confusing steps.",
+].join("\n\n");
 const SUGGESTED_REPORTER = {
 	name: "Elena Rodriguez",
 	avatarUrl: projectButterPersonAvatar("Elena Rodriguez"),
 };
 
 const LABELS: Record<ProjectButterSuggestionField, string> = {
+	description: "Description",
 	dueDate: "Due Date",
 	parent: "Parent",
 	labels: "Labels",
@@ -69,6 +80,8 @@ function dueDatePreview(date: Date): string {
 
 function isSuggestionFieldEmpty(field: ProjectButterSuggestionField, snapshot: ProjectButterSuggestionSnapshot): boolean {
 	switch (field) {
+		case "description":
+			return !snapshot.description.trim() && !snapshot.descriptionDraft.trim();
 		case "dueDate":
 			return snapshot.dueDate == null;
 		case "reporter":
@@ -92,9 +105,21 @@ function isSuggestionFieldEmpty(field: ProjectButterSuggestionField, snapshot: P
 	}
 }
 
-function createSuggestion(field: ProjectButterSuggestionField): ProjectButterSuggestion {
+function createSuggestion(field: ProjectButterSuggestionField, profile: "default" | "payments"): ProjectButterSuggestion {
 	const label = LABELS[field];
+	if (profile === "payments") {
+		switch (field) {
+			case "description": return { field, label, preview: "Help merchants adopt Payments SDK v2, from setup to their first test payment.", text: PAYMENTS_DESCRIPTION };
+			case "parent": return { field, label, preview: "PAY-100 Payments SDK v2 migration", text: "PAY-100 Payments SDK v2 migration" };
+			case "labels": return { field, label, preview: "onboarding, sdk-v2", values: ["onboarding", "sdk-v2"] };
+			case "components": return { field, label, preview: "Payments SDK", values: ["Payments SDK"] };
+			case "acceptanceCriteria": return { field, label, preview: "Merchants can complete SDK v2 onboarding and make a test payment", text: "Merchants can complete SDK v2 onboarding and make a test payment" };
+			default: break;
+		}
+	}
 	switch (field) {
+		case "description":
+			return { field, label, preview: "Improve the onboarding experience so new users can get started and complete their first key task.", text: "Improve the onboarding experience so new users can get started and complete their first key task." };
 		case "dueDate":
 			return { field, label, preview: dueDatePreview(SUGGESTED_DUE_DATE), date: SUGGESTED_DUE_DATE };
 		case "reporter":
@@ -119,22 +144,28 @@ function createSuggestion(field: ProjectButterSuggestionField): ProjectButterSug
 }
 
 /** Pending suggestions for fields that are still empty. */
-export function listProjectButterSuggestions(snapshot: ProjectButterSuggestionSnapshot): ProjectButterSuggestion[] {
+export function listProjectButterSuggestions(snapshot: ProjectButterSuggestionSnapshot, profile: "default" | "payments" = "default"): ProjectButterSuggestion[] {
 	return PROJECT_BUTTER_SUGGESTION_FIELDS
 		.filter((field) => isSuggestionFieldEmpty(field, snapshot))
-		.map((field) => createSuggestion(field));
+		.map((field) => createSuggestion(field, profile));
 }
 
 /** Write one accepted suggestion into the work item. */
 export function applyProjectButterSuggestion<T extends ProjectButterSuggestionFieldPatch>(
 	suggestion: ProjectButterSuggestion,
 	target: {
+		setDescription: (description: string) => void;
+		setDescriptionDraft: (description: string) => void;
 		setDueDate: (date: Date) => void;
 		setReporter: (person: { name: string; avatarUrl: string }) => void;
 		setDetailFields: (update: (current: T) => T) => void;
 	},
 ): void {
 	switch (suggestion.field) {
+		case "description":
+			target.setDescription(suggestion.text);
+			target.setDescriptionDraft(suggestion.text);
+			return;
 		case "dueDate":
 			target.setDueDate(suggestion.date);
 			return;
@@ -164,6 +195,8 @@ export function projectButterSuggestionMatches(
 	snapshot: ProjectButterSuggestionSnapshot,
 ): boolean {
 	switch (suggestion.field) {
+		case "description":
+			return snapshot.description === suggestion.text && snapshot.descriptionDraft === suggestion.text;
 		case "dueDate":
 			return snapshot.dueDate?.getTime() === suggestion.date.getTime();
 		case "reporter":
@@ -191,6 +224,8 @@ export function revertMatchingProjectButterSuggestions<T extends ProjectButterSu
 	batch: readonly ProjectButterSuggestion[],
 	snapshot: ProjectButterSuggestionSnapshot,
 	target: {
+		setDescription: (description: string) => void;
+		setDescriptionDraft: (description: string) => void;
 		setDueDate: (date: Date | undefined) => void;
 		setReporter: (person: { name: string; avatarUrl: string } | null) => void;
 		setDetailFields: (update: (current: T) => T) => void;
@@ -206,12 +241,18 @@ export function revertMatchingProjectButterSuggestions<T extends ProjectButterSu
 export function clearProjectButterSuggestion<T extends ProjectButterSuggestionFieldPatch>(
 	field: ProjectButterSuggestionField,
 	target: {
+		setDescription: (description: string) => void;
+		setDescriptionDraft: (description: string) => void;
 		setDueDate: (date: Date | undefined) => void;
 		setReporter: (person: { name: string; avatarUrl: string } | null) => void;
 		setDetailFields: (update: (current: T) => T) => void;
 	},
 ): void {
 	switch (field) {
+		case "description":
+			target.setDescription("");
+			target.setDescriptionDraft("");
+			return;
 		case "dueDate":
 			target.setDueDate(undefined);
 			return;
