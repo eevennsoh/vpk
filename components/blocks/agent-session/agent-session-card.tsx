@@ -145,7 +145,7 @@ function resolveAgentSessionCardMotion({
 		animate: shouldPlayDeparture ? { opacity: 0 }
 			: shouldPlayStatusReentry
 				? { opacity: [0, 1], transform: [arrivalStartTransform, "translateY(0%)"] }
-				: shouldPlayArrival ? { opacity: 1, transform: "translateY(0%)" } : undefined,
+				: { opacity: 1, transform: "translateY(0%)" },
 		ariaHidden: isTransferSource || isDeparting || undefined,
 		departing: isDeparting || undefined,
 		initial: shouldPlayArrival && !isStateChanged ? { opacity: 0, transform: arrivalStartTransform } : false,

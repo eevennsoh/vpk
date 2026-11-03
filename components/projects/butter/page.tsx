@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useEffect, useImperativeHandle, useRef, useState, type ComponentProps, type Ref } from "react";
 import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
@@ -31,6 +31,7 @@ import {
 } from "@/components/blocks/jira-list";
 
 import { HeaderLanyards } from "./components/header-lanyards";
+import { Spinner } from "@/components/ui/spinner";
 import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
@@ -99,6 +100,50 @@ const BUTTER_SETTINGS_DESIGN_VARIANT_IDS = [
 ] as const;
 const isButterLooseWorkResumable = () => true;
 
+type ButterWorkItemHandle = {
+	open: (card: JiraKanbanCardData, columnTitle: string) => void;
+};
+
+function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWorkItem>) {
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => {
+		const frame = window.requestAnimationFrame(() => setMounted(true));
+		return () => window.cancelAnimationFrame(frame);
+	}, []);
+	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
+}
+
+function ButterWorkItemSurface({ ref, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+	ref: Ref<ButterWorkItemHandle>;
+}) {
+	const workItem = useButterWorkItem();
+	useImperativeHandle(ref, () => ({ open: workItem.openWorkItem }), [workItem.openWorkItem]);
+	return (
+		<>
+			{workItem.selection ? (
+				<Suspense fallback={workItem.open ? (
+					<div className="pointer-events-none fixed bottom-6 left-1/2 z-[190] flex -translate-x-1/2 items-center gap-2 rounded-lg bg-surface-overlay px-4 py-3 text-sm text-text shadow-overlay" role="status">
+						<Spinner label="" size="xs" />
+						Opening work item…
+					</div>
+				) : null}>
+					<ButterWorkItemDialog
+						initialPresentation="modal"
+						shell="project"
+						initialPreset="filled"
+						initialSessions={workItem.selection.initialSessions}
+						onClose={workItem.closeWorkItem}
+						open={workItem.open}
+						placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
+						workItem={workItem.selection.workItem}
+					/>
+				</Suspense>
+			) : null}
+			<JgpRovoOverlay {...overlayProps} chat={workItem.open ? "hidden" : "auto"} launcher={workItem.open ? "hidden" : "auto"} />
+		</>
+	);
+}
+
 export default function ButterPage(): React.ReactElement {
 	return (
 		<RovoChatProvider agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
@@ -115,7 +160,10 @@ function ButterApp(): React.ReactElement {
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
 	const browseAgents = useCallback(() => setAgentsDirectoryOpen(true), []);
 	const createAgent = useCallback(() => router.push("/studio"), [router]);
-	const workItem = useButterWorkItem();
+	const workItemRef = useRef<ButterWorkItemHandle>(null);
+	const openWorkItem = useCallback((card: JiraKanbanCardData, columnTitle: string) => {
+		workItemRef.current?.open(card, columnTitle);
+	}, []);
 	const {
 		boardColumns,
 		contentMode,
@@ -263,7 +311,7 @@ function ButterApp(): React.ReactElement {
 			issueSummary: card.title,
 		});
 	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
-	const openListWorkItem = workItem.openWorkItem;
+	const openListWorkItem = openWorkItem;
 	const handleListIssueOpen = useCallback((issueKey: string) => {
 		for (const column of boardColumns) {
 			const card = column.cards.find((candidate) => candidate.code === issueKey);
@@ -465,7 +513,7 @@ function ButterApp(): React.ReactElement {
 						onAgentSessionsReviewed={reviewAgentSessions}
 						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
 						onBoardColumnsChange={onBoardColumnsChange}
-						onCardClick={workItem.openWorkItem}
+						onCardClick={openWorkItem}
 						onCardAgentActivityViewChat={handleViewChat}
 						onCardAssignedAgentIdsChange={onBoardAssignedAgentIdsChange}
 						onCardAgentDoneRunView={handleViewCompletedRun}
@@ -513,16 +561,6 @@ function ButterApp(): React.ReactElement {
 				</div>
 			</AppLayout>
 			</HeaderLanyards>
-			{workItem.selection ? <ProjectButterJiraWorkItem
-				initialPresentation="modal"
-				shell="project"
-				initialPreset="filled"
-				initialSessions={workItem.selection.initialSessions}
-				onClose={workItem.closeWorkItem}
-				open={workItem.open}
-				placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
-				workItem={workItem.selection.workItem}
-			/> : null}
 			{/* Resume swaps the button label to "Copied" — colour and text alone,
 			    which a screen reader on the row never hears. Announce it instead. */}
 			<span aria-live="polite" className="sr-only" role="status">
@@ -548,9 +586,8 @@ function ButterApp(): React.ReactElement {
 					skills={DEFAULT_SKILLS}
 				/>
 			</MountOnFirstUse>
-			<JgpRovoOverlay
-				chat={workItem.open ? "hidden" : "auto"}
-				launcher={workItem.open ? "hidden" : "auto"}
+			<ButterWorkItemSurface
+				ref={workItemRef}
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}
