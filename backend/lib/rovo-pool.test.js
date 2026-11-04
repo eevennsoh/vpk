@@ -118,8 +118,10 @@ test("acquire times out with ROVO_BUSY code when all ports busy", async () => {
 
 test("releaseAsUnhealthy quarantines a failed port while other ports remain available", async () => {
 	const serverA = http.createServer((_req, res) => {
-		res.writeHead(200, { "Content-Type": "application/json" });
-		res.end(JSON.stringify({ status: "healthy" }));
+		setTimeout(() => {
+			res.writeHead(200, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ status: "healthy" }));
+		}, 250);
 	});
 	const serverB = http.createServer((_req, res) => {
 		res.writeHead(200, { "Content-Type": "application/json" });
@@ -142,7 +144,11 @@ test("releaseAsUnhealthy quarantines a failed port while other ports remain avai
 		assert.equal(fallbackHandle.port, portB);
 		fallbackHandle.release();
 
-		await new Promise((resolve) => setTimeout(resolve, 150));
+		const deadline = Date.now() + 5000;
+		while (pool.getStatus().ports.find((entry) => entry.port === portA)?.status !== "available" && Date.now() < deadline) {
+			await new Promise((resolve) => setTimeout(resolve, 10));
+		}
+		assert.equal(pool.getStatus().ports.find((entry) => entry.port === portA)?.status, "available");
 
 		const recoveredHandle = await pool.acquire({ preferredPort: portA });
 		assert.equal(recoveredHandle.port, portA);

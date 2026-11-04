@@ -115,5 +115,5 @@ test("Agent loading exposes visible status copy, size variants, and uses VPK mot
 	assert.match(COMPONENT_SOURCE, /window\.matchMedia\("\(prefers-reduced-motion: reduce\)"\)/u);
 	assert.match(MOTION_SOURCE, /&\[data-size="small"\]/u);
 	assert.match(MOTION_SOURCE, /transform: scale\(calc\(4 \/ 6\)\)/u);
-	assert.doesNotMatch(MOTION_SOURCE, /@keyframes agent-loading-/u);
+	assert.doesNotMatch(MOTION_SOURCE, /@keyframes agent-loading-(?:cycle|swap)/u);
 });

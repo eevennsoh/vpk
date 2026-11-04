@@ -235,7 +235,7 @@ export function ProjectButterJiraWorkItem({
 			>
 				<div
 					className={cn(
-						"min-w-0 px-6 pb-8",
+						"min-w-0 px-6 pb-6",
 						!sidePanel && "@[860px]/butter:overflow-y-auto",
 					)}
 					ref={columnRef}
