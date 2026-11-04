@@ -236,6 +236,13 @@ function getLocalConversationVoiceSuppressionMs(text: string): number {
 	);
 }
 
+export interface ChatComposerPrefillRequest {
+	mention?: RichTextMentionItem;
+	text?: string;
+	append?: boolean;
+	requestKey: number;
+}
+
 interface ChatPanelProps {
 	onClose: () => void;
 	onBackToRovo?: () => void;
@@ -360,7 +367,7 @@ interface ChatPanelProps {
 	 * (keyed-request idiom, like `startRealtimeVoiceRequestKey`). Used to
 	 * auto-prefill a newly-created skill's tag.
 	 */
-	composerPrefillRequest?: { mention?: RichTextMentionItem; text?: string; requestKey: number };
+	composerPrefillRequest?: ChatComposerPrefillRequest;
 	/** Called after the rich composer applies the keyed mention request. */
 	onComposerPrefillConsumed?: (requestKey: number) => void;
 	/**
@@ -813,10 +820,16 @@ export default function ChatPanel({ onClose, agentCreator,
 		}
 		lastComposerPrefillKeyRef.current = requestKey;
 		if (!composerPrefillRequest?.mention) {
-			setPrompt(composerPrefillRequest?.text ?? "");
+			const incoming = composerPrefillRequest?.text ?? "";
+			const next = composerPrefillRequest?.append && promptRef.current.trim()
+				? `${promptRef.current.trimEnd()}\n\n${incoming}`
+				: incoming;
+			promptRef.current = next;
+			setPrompt(next);
+			onComposerPrefillConsumed?.(requestKey);
 		}
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
-	}, [composerPrefillRequest, setPrompt]);
+	}, [composerPrefillRequest, onComposerPrefillConsumed, setPrompt]);
 	const screenAssistantPointerRef = useRef<{ x: number; y: number } | null>(null);
 	const sendFunctionCallOutputRef = useRef<
 		((payload: { callId: string; output: unknown; createResponse?: boolean }) => void) | null

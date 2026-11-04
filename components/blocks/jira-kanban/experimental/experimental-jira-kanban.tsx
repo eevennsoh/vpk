@@ -10,6 +10,7 @@ import { BoardColumnDropRing } from "./components/board-column-drop-ring";
 import { LayoutGroup, useReducedMotion } from "motion/react";
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import type { AgentSessionItem, AgentSessionWorkItemDraft } from "@/components/blocks/agent-session";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { resolveAgentSessionWorkItemKey } from "@/components/blocks/agent-session/agent-session-work-item";
 import {
 	type JiraIssueAgentActivityLayout,
@@ -181,6 +182,7 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 		columnTitle: string,
 	) => void;
 	onCardAssignedAgentIdsChange?: (issueKey: string, agentIds: readonly string[]) => void;
+	onCardCreateCloudSession?: (agent: AgentSelectorAgent, card: JiraKanbanCardData) => void;
 	onCardAgentSessionMove?: (session: JiraIssueAgentSessionRef, sourceCard: JiraKanbanCardData, targetCard: JiraKanbanCardData, sourceColumnTitle: string, targetColumnTitle: string) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
@@ -446,6 +448,7 @@ function ExperimentalJiraKanbanView({
 	onCardAgentActivityOpenChange,
 	onCardAgentActivityViewChat,
 	onCardAssignedAgentIdsChange,
+	onCardCreateCloudSession,
 	onCardAgentSessionLink,
 	onCardAgentSessionUnlink,
 	showAgentSessionUnlinkWell = true,
@@ -964,6 +967,7 @@ function ExperimentalJiraKanbanView({
 												onAgentActivityViewChat={onCardAgentActivityViewChat}
 												onAssignedAgentIdsChange={onCardAssignedAgentIdsChange}
 												onAgentAssign={boardSessionDrag.noteAgentAssignment}
+												onCreateCloudSession={onCardCreateCloudSession}
 												onAgentDoneRunReview={onCardAgentDoneRunReview}
 												onAgentDoneRunView={onCardAgentDoneRunView}
 												onClick={handleClick}

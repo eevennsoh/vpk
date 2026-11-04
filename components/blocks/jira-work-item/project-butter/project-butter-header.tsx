@@ -20,13 +20,14 @@ import type { ProjectButterContent } from "@/components/blocks/jira-work-item/pr
 import type { ProjectButterPresentation } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { cn } from "@/lib/utils";
 
-export function ProjectButterHeader({ content, empty, onBrowseAgents, onCreateAgent, onClose, onOpenSession, onPresentationChange, onStartAgent, onStartCoding, presentation, secondaryActions, sessions, workItem }: Readonly<{
+export function ProjectButterHeader({ content, empty, onBrowseAgents, onCreateAgent, onClose, onOpenSession, onPreviewSession, onPresentationChange, onStartAgent, onStartCoding, presentation, secondaryActions, sessions, workItem }: Readonly<{
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	content: ProjectButterContent;
 	empty: boolean;
 	onClose: () => void;
 	onOpenSession: (session: AgentSessionItem) => void;
+	onPreviewSession: (sessionId: string | null) => void;
 	onPresentationChange: (presentation: ProjectButterPresentation) => void;
 	onStartAgent?: (agent: AgentSessionItem["agent"]) => void;
 	onStartCoding: () => void;
@@ -64,7 +65,7 @@ export function ProjectButterHeader({ content, empty, onBrowseAgents, onCreateAg
 						{secondaryActions}
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
-						<div aria-label="Work item agents" className="flex items-center" role="group"><ProjectButterCrew assignee={workItem ? content.assignee : undefined} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={onOpenSession} onStartAgent={onStartAgent ?? onStartCoding} sessions={sessions} useReferenceCrew={!empty && !workItem} /></div>
+						<div aria-label="Work item agents" className="flex items-center" role="group"><ProjectButterCrew assignee={workItem ? content.assignee : undefined} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={onOpenSession} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent ?? onStartCoding} sessions={sessions} useReferenceCrew={!empty && !workItem} /></div>
 						<DropdownMenu>
 							<DropdownMenuTrigger render={<Button aria-label="More work item actions" className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle" size="icon" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="max-h-[var(--available-height)] w-72" positionerClassName="z-[650]">

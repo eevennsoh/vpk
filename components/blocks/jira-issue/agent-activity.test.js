@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
+const React = require("react");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
 const { getJiraIssueAgentAvatarSize, getJiraIssueAgentRowInset } = require("./agent-activity-avatar.ts");
 
@@ -102,6 +103,32 @@ test("adding an agent to an existing row shows Working immediately", async () =>
 	assert.equal(Boolean(view.queryByText("Let's get started")), false);
 	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });
+
+for (const host of ["local", "cloud"]) {
+	for (const role of ["owner", "viewer"]) {
+		for (const [state, label, indicator] of [
+			["working", "Working", "working"],
+			["awaiting-input", "Needs input", "awaiting-input"],
+			["completed", "Finished", "finished"],
+		]) {
+			test(`${host} ${role} sessions show ${label} and its indicator`, async () => {
+				const view = await renderComponent({
+					entry: "components/blocks/jira-issue/agent-activity.tsx",
+					exportName: "JiraIssueAgentActivityRows",
+					props: {
+						activities: [{ id: "session", name: "Claude", host, role, state, label }],
+						iconScale: "comfortable",
+						shouldReduceMotion: true,
+						usesStrokeChrome: true,
+						renderAgentActivityIndicator: (kind) => React.createElement("span", null, `indicator: ${kind}`),
+					},
+				});
+				assert.equal(Boolean(view.getByRole("button", { name: `Claude: ${label}` })), true);
+				assert.equal(Boolean(view.getByText(`indicator: ${indicator}`)), true);
+			});
+		}
+	}
+}
 
 for (const { name, iconScale, workingSpinnerVariant, avatar } of [
 	{ name: "comfortable default", iconScale: "comfortable", avatar: true },

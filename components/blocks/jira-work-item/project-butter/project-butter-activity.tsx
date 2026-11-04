@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTransform } from "motion/react";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { AgentSession } from "@/components/blocks/agent-session";
@@ -33,7 +33,7 @@ import {
 	ProjectButterTimestamp,
 } from "@/components/blocks/jira-work-item/project-butter/activity-comment-tools";
 import { ProjectButterAgentResponse } from "@/components/blocks/jira-work-item/project-butter/activity-agent-response";
-import { useProjectButterActivityNavigation } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
+import { activityScrollport, useProjectButterActivityNavigation } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_REFERENCE_HISTORY } from "@/components/blocks/jira-work-item/project-butter/reference-data";
@@ -56,13 +56,16 @@ export function ProjectButterActivity({
 	sidePanel,
 	sessions,
 	onOpenSession,
+	previewSessionId,
 }: Readonly<{
 	content: ProjectButterContent;
 	empty: boolean;
 	sidePanel: boolean;
 	sessions: readonly ProjectButterSessionItem[];
 	onOpenSession: (id: string) => void;
+	previewSessionId?: string | null;
 }>) {
+	const activityRef = useRef<HTMLElement>(null);
 	const [expandedAudit, setExpandedAudit] = useState(false);
 	const [limit, setLimit] = useState(10);
 	const [hoverId, setHoverId] = useState<string | null>(null);
@@ -71,13 +74,14 @@ export function ProjectButterActivity({
 		() => selectProjectButterActivity(content.activityEntries, view, content.activitySort),
 		[content.activityEntries, view, content.activitySort],
 	);
+	const previewEntryId = ordered.find((entry) => entry.id === `invocation-${previewSessionId}` || entry.kind === "comment" && (entry.sessionItem?.id === previewSessionId || entry.replies?.some((reply) => reply.sessionItem?.id === previewSessionId)))?.id;
 	const visible = useMemo(
 		() =>
 			ordered.slice(
 				0,
-				Math.max(limit, ordered.findIndex((entry) => entry.id === content.activityFocusId) + 1),
+				Math.max(limit, ordered.findIndex((entry) => entry.id === content.activityFocusId) + 1, ordered.findIndex((entry) => entry.id === previewEntryId) + 1),
 			),
-		[ordered, limit, content.activityFocusId],
+		[ordered, limit, content.activityFocusId, previewEntryId],
 	);
 	const needsInput = sessions
 		.filter((session) => session.state === "needs-input")
@@ -88,6 +92,17 @@ export function ProjectButterActivity({
 		content.activityFocusId,
 		view,
 	);
+	useEffect(() => {
+		if (!previewSessionId) return;
+		const activity = activityRef.current;
+		const root = activityScrollport(activity);
+		const entry = previewEntryId
+			? [...(activity?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [])].find((node) => node.dataset.jiraActivityEntryId === previewEntryId)
+			: [...(activity?.querySelectorAll<HTMLElement>("[data-project-butter-needs-input-session]") ?? [])].find((node) => node.dataset.projectButterNeedsInputSession === previewSessionId);
+		if (!root || !entry) return;
+		const offset = (headerRef.current?.getBoundingClientRect().height ?? 0) + (previewEntryId ? timelineRef.current?.getBoundingClientRect().height ?? 0 : 0) + 12;
+		root.scrollTo({ top: root.scrollTop + entry.getBoundingClientRect().top - root.getBoundingClientRect().top - offset, behavior: "auto" });
+	}, [headerRef, previewEntryId, previewSessionId, timelineRef, visible.length]);
 	const activeOffset = useTransform(progress, (value) => 0.02 + value * 0.96);
 	const activeIndex = Math.max(
 		0,
@@ -107,7 +122,7 @@ export function ProjectButterActivity({
 				<section aria-label="Needs input" className="mb-6 space-y-1">
 					<h3 className="mb-2 text-xs font-medium text-text-subtle">Needs input</h3>
 					{needsInput.map((session) => (
-						<div className="rounded-lg border border-border" key={session.id}>
+						<div className={cn("rounded-lg border border-border", previewSessionId === session.id && "bg-bg-selected ring-2 ring-border-focused")} data-project-butter-needs-input-session={session.id} key={session.id}>
 							<AgentSession
 								animateLayout={false}
 								density="long"
@@ -149,9 +164,9 @@ export function ProjectButterActivity({
 					</div>
 				</div>
 			) : null}
-			<div className="[&_[data-jira-activity-entry-id]]:scroll-mt-28" data-project-butter-activity-feed ref={feedRef}>
+			<div className={cn("[&_[data-jira-activity-entry-id]]:scroll-mt-28", previewEntryId && "[&_[data-active]]:rounded-md [&_[data-active]]:bg-bg-selected [&_[data-active]]:ring-2 [&_[data-active]]:ring-border-focused")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={feedRef}>
 				<JiraActivity
-					activeEntryId={visible[activeIndex]?.id}
+					activeEntryId={previewEntryId ?? visible[activeIndex]?.id}
 					commentHeaderLayout="inline"
 					composer={null}
 				connectorStyle={view === "Activity" ? "thread" : "timeline"}
@@ -232,6 +247,7 @@ export function ProjectButterActivity({
 			aria-label="Activity"
 			className="group/activity min-w-0"
 			data-project-butter-activity
+			ref={activityRef}
 		>
 			<h2 className="sr-only">Activity</h2>
 			<Tabs

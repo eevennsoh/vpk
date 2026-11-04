@@ -222,6 +222,7 @@ function ExperimentalJiraKanbanPageContent({
 	onCardClick,
 	onCardAgentActivityViewChat,
 	onCardAssignedAgentIdsChange,
+	onCardCreateCloudSession,
 	onSelectedCardsAgentAssign,
 	agentAssignmentRequest,
 	onCardAgentDoneRunView,
@@ -1005,6 +1006,7 @@ function ExperimentalJiraKanbanPageContent({
 								onCardClick={handleCardClick}
 								onCardAgentActivityViewChat={onCardAgentActivityViewChat}
 								onCardAssignedAgentIdsChange={onCardAssignedAgentIdsChange}
+								onCardCreateCloudSession={onCardCreateCloudSession}
 								onCardAgentDoneRunView={onCardAgentDoneRunView}
 								onCardGenerativeActionSubmit={onCardGenerativeActionSubmit}
 								onCardAgentSessionLink={onCardAgentSessionLink

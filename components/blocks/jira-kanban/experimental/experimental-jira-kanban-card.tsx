@@ -115,6 +115,9 @@ function resolveKanbanCardAssignment(
 	addAgentLabel?: string,
 	footerActions?: Pick<JiraIssueGenerativeActionConfig, "onBrowseAgents" | "onCreateAgent">,
 	onAgentAssign?: (agent: AgentSelectorAgent, card: JiraKanbanCardData) => void,
+	onOpenSession?: (activity: JiraIssueAgentActivity, card: JiraKanbanCardData, columnTitle: string) => void,
+	onCreateCloudSession?: (agent: AgentSelectorAgent, card: JiraKanbanCardData) => void,
+	columnTitle = "",
 ): JiraIssueAgentAssignment | undefined {
 	if (!onAssignedAgentIdsChange) {
 		return undefined;
@@ -163,6 +166,25 @@ function resolveKanbanCardAssignment(
 		),
 		pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL,
 		onAgentAssign: onAgentAssign ? (agent) => onAgentAssign(agent, card) : undefined,
+		...(onCreateCloudSession ? {
+			sessions: (card.agentActivities ?? []).map((activity) => ({
+				id: activity.id,
+				title: activity.label,
+				prompt: activity.prompt,
+				startedAtMs: activity.startedAtMs,
+				invokedBy: activity.invokedBy,
+				timeLabel: activity.timeLabel,
+				host: activity.host,
+				role: activity.role,
+				state: activity.state === "awaiting-input" ? "needs-input" as const : activity.state === "completed" ? "complete" as const : "running" as const,
+				agent: { id: activity.id, name: activity.name, kind: "agent" as const, avatarSrc: activity.avatarSrc, brandName: activity.agentBrandName },
+			})),
+			onOpenSession: onOpenSession ? (session: AgentSessionItem) => {
+				const activity = card.agentActivities?.find((candidate) => candidate.id === session.id);
+				if (activity) onOpenSession(activity, card, columnTitle);
+			} : undefined,
+			onCreateCloudSession: (agent: AgentSelectorAgent) => onCreateCloudSession(agent, card),
+		} : {}),
 	};
 }
 
@@ -222,6 +244,7 @@ interface ExperimentalJiraKanbanCardProps {
 	agents?: readonly JiraKanbanAgentData[];
 	onAssignedAgentIdsChange?: (issueKey: string, agentIds: readonly string[]) => void;
 	onAgentAssign?: (agent: AgentSelectorAgent, card: JiraKanbanCardData) => void;
+	onCreateCloudSession?: (agent: AgentSelectorAgent, card: JiraKanbanCardData) => void;
 	onAgentDoneRunReview?: JiraKanbanProps["onCardAgentDoneRunReview"];
 	onAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
 	onClick: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -293,6 +316,7 @@ export function ExperimentalJiraKanbanCard({
 	onAgentActivityViewChat,
 	onAssignedAgentIdsChange,
 	onAgentAssign,
+	onCreateCloudSession,
 	onAgentDoneRunReview,
 	onAgentDoneRunView,
 	onClick,
@@ -354,7 +378,7 @@ export function ExperimentalJiraKanbanCard({
 			active={active}
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
-			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions, onAgentAssign)}
+			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions, onAgentAssign, onAgentActivityViewChat, onCreateCloudSession, columnTitle)}
 			agentLinkFlash={agentLinkFlash}
 			agentActivityMode={agentActivityMode}
 			agentSessionDragControl={agentSessionDragControl}

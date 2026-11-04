@@ -5,6 +5,38 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+async function mockRovoThreads(page: Page) {
+	const threads = new Map<string, Record<string, unknown>>();
+	const openedThreads: string[] = [];
+	let delayedThreadId: string | null = null;
+	let releaseThread = () => {};
+	const threadGate = new Promise<void>((resolve) => { releaseThread = resolve; });
+	await page.route("**/api/rovo/threads**", async (route) => {
+		const request = route.request();
+		const pathname = new URL(request.url()).pathname;
+		const id = decodeURIComponent(pathname.split("/").at(-1) ?? "");
+		if (request.method() === "POST" && id === "threads") {
+			const thread: Record<string, unknown> = request.postDataJSON();
+			threads.set(String(thread.id), thread);
+			await route.fulfill({ status: 201, json: { thread } });
+		} else if (request.method() === "GET" && id === "threads") {
+			await route.fulfill({ json: { threads: [...threads.values()] } });
+		} else if (request.method() === "PUT") {
+			const thread = { ...threads.get(id), ...request.postDataJSON(), id };
+			threads.set(id, thread);
+			await route.fulfill({ json: { thread } });
+		} else if (request.method() === "GET") {
+			openedThreads.push(id);
+			if (id === delayedThreadId) await threadGate;
+			const thread = threads.get(id);
+			await route.fulfill(thread ? { json: { thread } } : { status: 404, json: { error: "Not found" } });
+		} else await route.continue();
+	});
+	await page.route("**/api/rovo/runs/**/detach", async (route) => route.fulfill({ json: { detached: true } }));
+	await page.route("**/api/chat-title", async (route) => route.fulfill({ json: { title: "Test session" } }));
+	return { threads, openedThreads, delayThread: (id: string) => { delayedThreadId = id; }, releaseThread: () => releaseThread() };
+}
+
 test("the comment bar has matching left and bottom insets", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter"));
@@ -86,6 +118,36 @@ test("comment dictation does not scale controls with reduced motion", async ({ p
 	expect(scaled).toBe(false);
 });
 
+for (const name of ["Claude", "Ali"]) test(`${name} mention aligns with the surrounding comment text`, async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await expect(workItem).toBeVisible();
+	await page.keyboard.press("m");
+	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially(`@${name}`);
+	await page.getByRole("option", { name: new RegExp(`^${name}(?:\\s|$)`) }).first().click();
+	await editor.pressSequentially(" please review");
+	const alignment = await editor.evaluate((element) => {
+		const label = element.querySelector<HTMLElement>(".rich-text-mention-chip [data-tag-text]");
+		const paragraph = element.querySelector<HTMLElement>("p");
+		if (!label || !paragraph) throw new Error("Mention label or comment text not found");
+		const text = [...paragraph.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+		if (!text) throw new Error("Comment text not found");
+		const labelRange = document.createRange();
+		labelRange.selectNodeContents(label);
+		const textRange = document.createRange();
+		textRange.selectNodeContents(text);
+		return {
+			labelSize: getComputedStyle(label).fontSize,
+			textSize: getComputedStyle(paragraph).fontSize,
+			topDifference: Math.abs(labelRange.getBoundingClientRect().top - textRange.getBoundingClientRect().top),
+		};
+	});
+	expect(alignment.labelSize).toBe(alignment.textSize);
+	expect(alignment.topDifference).toBeLessThan(0.75);
+});
+
 test("agent mentions open an existing session or create a separate session", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
@@ -103,20 +165,421 @@ test("agent mentions open an existing session or create a separate session", asy
 	await expect(workItem.getByText("Check the timeout path", { exact: false }).first()).toBeVisible();
 	await mentionClaude();
 	const choices = workItem.getByRole("listbox", { name: "Choose agent session" });
+	await expect(workItem.locator("[data-project-butter-session-target-menu]").getByRole("button", { name: "Back" })).toHaveCount(0);
+	await expect(editor).toBeFocused();
+	await editor.pressSequentially(" What should I check next?");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
 	const chat = workItem.locator('[data-rovo-chat-placement="floating"]');
 	await expect(chat.getByText("@Claude Check the timeout path")).toBeVisible();
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toHaveText("What should I check next?");
+	await expect(chat.getByRole("log").getByText("What should I check next?", { exact: true })).toHaveCount(0);
+	await chat.getByRole("textbox", { name: "Chat message input" }).fill("Existing chat draft");
+	await workItem.getByRole("button", { name: "Add a comment" }).click();
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("option", { name: /^Claude / }).click();
+	await editor.pressSequentially(" More context");
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("More context");
+	await expect(chat.getByRole("log").getByText("More context", { exact: true })).toHaveCount(0);
+	await workItem.getByRole("button", { name: "Add a comment" }).click();
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("option", { name: /^Claude / }).click();
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("More context");
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 	if (await editor.isVisible()) await workItem.getByRole("button", { name: "Close comment editor" }).click();
 	await mentionClaude();
-	await choices.getByRole("option", { name: "Start a new session" }).click();
+	await expect(choices).toBeVisible();
+	if (await choices.getByRole("option", { name: "Continue in existing session" }).getAttribute("aria-selected") === "true") await editor.press("ArrowDown");
+	await editor.press("Enter");
 	await expect(editor).toBeFocused();
 	await editor.pressSequentially("Inspect retry behavior");
 	await editor.press("Enter");
 	await expect(workItem.getByText("Inspect retry behavior", { exact: false }).first()).toBeVisible();
 	await mentionClaude();
+	await editor.pressSequentially(" Please revisit this");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
-	await expect(chat.getByText("@Claude Inspect retry behavior")).toBeVisible();
-	await expect(chat.getByText("@Claude Check the timeout path")).toHaveCount(0);
+	const sessions = workItem.getByRole("listbox", { name: "Choose a session" });
+	await expect(sessions.getByRole("option")).toHaveCount(2);
+	const earlier = sessions.getByRole("option", { name: /Check the timeout path/ });
+	const later = sessions.getByRole("option", { name: /Inspect retry behavior/ });
+	await expect(earlier).toContainText("Working");
+	await expect(earlier).toContainText("Annie Cook");
+	await expect(earlier).toContainText(/\w{3} \d{1,2}, \d{4}/);
+	await earlier.hover();
+	await expect(workItem.locator("[data-jira-activity-entry-id][data-active]")).toContainText("Check the timeout path");
+	await expect.poll(() => workItem.evaluate((root) => {
+		const entry = root.querySelector<HTMLElement>("[data-jira-activity-entry-id][data-active]");
+		const viewport = root.querySelector<HTMLElement>("[data-project-butter-work-item] > div");
+		const menu = root.querySelector<HTMLElement>("[data-project-butter-session-target-menu]");
+		if (!entry || !viewport || !menu) return false;
+		return entry.getBoundingClientRect().top >= viewport.getBoundingClientRect().top && entry.getBoundingClientRect().top < menu.getBoundingClientRect().top;
+	})).toBe(true);
+	await later.hover();
+	await expect(workItem.locator("[data-jira-activity-entry-id][data-active]")).toContainText("Inspect retry behavior");
+	await earlier.hover();
+	await editor.press("ArrowUp");
+	await expect(workItem.locator("[data-jira-activity-entry-id][data-active]")).toContainText("Inspect retry behavior");
+	await earlier.hover();
+	await earlier.click();
+	await expect(chat.getByText("@Claude Check the timeout path")).toBeVisible();
+	await expect(chat.getByText("@Claude Inspect retry behavior")).toHaveCount(0);
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Please revisit this");
+	await expect(chat.getByRole("log").getByText("Please revisit this", { exact: true })).toHaveCount(0);
+});
+
+for (const suffix of ["", " later"]) test(`Escape converts the mention to plain text with${suffix ? "" : "out"} following text`, async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await expect(workItem).toBeVisible();
+	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
+	async function insertClaude() {
+		await editor.pressSequentially("@Claude");
+		await page.getByRole("option", { name: /^Claude / }).click();
+	}
+	await page.keyboard.press("m");
+	await insertClaude();
+	await editor.pressSequentially(" Original task");
+	await editor.press("Enter");
+	const agents = workItem.getByRole("button", { name: /^Working on this work item\./ });
+	const before = await agents.getAttribute("aria-label");
+	await page.keyboard.press("m");
+	await editor.pressSequentially("Please ask ");
+	await insertClaude();
+	const choices = workItem.getByRole("listbox", { name: "Choose agent session" });
+	await expect(choices).toBeVisible();
+	if (suffix) await editor.pressSequentially(suffix);
+	await editor.press("Escape");
+	await expect(choices).toHaveCount(0);
+	await expect(page.getByRole("listbox", { name: "Mention" })).toHaveCount(0);
+	await expect(editor.locator('[data-mention-category="subagent"]')).toHaveCount(0);
+	await expect(editor).toContainText(`Please ask @Claude${suffix}`);
+	await expect(editor).toBeFocused();
+	await editor.pressSequentially(" today");
+	await editor.press("Enter");
+	await expect(workItem.getByText(`Please ask @Claude${suffix} today`, { exact: false }).first()).toBeVisible();
+	await expect(agents).toHaveAttribute("aria-label", before!);
+	await expect(workItem.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
+});
+
+test("Enter sends the prefilled chat draft only after the user presses it", async ({ page }) => {
+	let sentBody = "";
+	await mockRovoThreads(page);
+	await page.route("**/api/rovo/chat", async (route) => {
+		sentBody = route.request().postData() ?? "";
+		await route.fulfill({ status: 503, body: "Mocked chat request" });
+	});
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await expect(workItem).toBeVisible();
+	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
+	async function mentionClaude() {
+		await page.keyboard.press("m");
+		await editor.pressSequentially("@Claude");
+		await page.getByRole("option", { name: /^Claude / }).click();
+	}
+	await mentionClaude();
+	await editor.pressSequentially(" First task");
+	await editor.press("Enter");
+	await mentionClaude();
+	await editor.pressSequentially(" Please check status");
+	await workItem.getByRole("option", { name: "Continue in existing session" }).click();
+	const chatInput = workItem.locator('[data-rovo-chat-placement="floating"]').getByRole("textbox", { name: "Chat message input" });
+	await expect(chatInput).toContainText("Please check status");
+	expect(sentBody).toBe("");
+	await chatInput.press("Enter");
+	await expect.poll(() => sentBody).toContain("Please check status");
+	expect(sentBody).not.toContain("statuspage");
+});
+
+test("continuing a mention-only session opens chat without starting a turn", async ({ page }) => {
+	const startedRequests: string[] = [];
+	await page.route("**/api/rovo/threads", async (route) => {
+		if (route.request().method() === "POST") {
+			startedRequests.push("thread");
+			await route.fulfill({ status: 503, body: "Unexpected thread creation" });
+		} else await route.continue();
+	});
+	await page.route("**/api/rovo/chat", async (route) => {
+		startedRequests.push("chat");
+		await route.fulfill({ status: 503, body: "Unexpected chat turn" });
+	});
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await expect(workItem).toBeVisible();
+	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
+	async function mentionCursor() {
+		await page.keyboard.press("m");
+		await editor.pressSequentially("@Cursor");
+		await page.getByRole("option", { name: /^Cursor / }).first().click();
+	}
+	await mentionCursor();
+	await editor.press("Enter");
+	await mentionCursor();
+	const choices = workItem.getByRole("listbox", { name: "Choose agent session" });
+	const continueOption = choices.getByRole("option", { name: "Continue in existing session" });
+	await expect(continueOption).toBeVisible();
+	if (await continueOption.getAttribute("aria-selected") !== "true") await editor.press("ArrowUp");
+	await editor.press("Enter");
+	const chat = workItem.locator('[data-rovo-chat-placement="floating"]');
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toHaveText("");
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeFocused();
+	await expect(chat.getByRole("button", { name: "Submit", exact: true })).toBeDisabled();
+	await expect(chat.getByRole("log").getByText("@Cursor", { exact: true })).toHaveCount(0);
+	await expect(chat.getByText(/I finished a first pass/)).toHaveCount(0);
+	await expect.poll(() => startedRequests).toEqual([]);
+});
+
+test("a resumed session keeps its conversation after the user sends and reopens it", async ({ page }) => {
+	const { threads, openedThreads, delayThread, releaseThread } = await mockRovoThreads(page);
+	await page.route("**/api/rovo/chat", async (route) => {
+		await route.fulfill({
+			status: 200,
+			headers: { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" },
+			body: [
+				'data: {"type":"start","messageId":"mock-response"}',
+				'data: {"type":"text-start","id":"mock-text"}',
+				'data: {"type":"text-delta","id":"mock-text","delta":"Mocked response"}',
+				'data: {"type":"text-end","id":"mock-text"}',
+				`data: ${JSON.stringify({ type: "data-turn-complete", data: { timestamp: new Date().toISOString() } })}`,
+				'data: {"type":"finish"}',
+				"data: [DONE]",
+				"",
+			].join("\n\n"),
+		});
+	});
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await expect(workItem).toBeVisible();
+	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
+	async function mentionCursor() {
+		await page.keyboard.press("m");
+		await editor.pressSequentially("@Cursor");
+		await page.getByRole("option", { name: /^Cursor / }).first().click();
+	}
+	await mentionCursor();
+	await editor.press("Enter");
+	await mentionCursor();
+	await workItem.getByRole("option", { name: "Continue in existing session" }).click();
+	const chat = workItem.locator('[data-rovo-chat-placement="floating"]');
+	const chatInput = chat.getByRole("textbox", { name: "Chat message input" });
+	await expect(chatInput).toBeVisible();
+	await chatInput.fill("Please investigate the timeout");
+	const saved = page.waitForResponse((response) => response.request().method() === "PUT" && /\/api\/rovo\/threads\//u.test(response.url()) && (response.request().postData() ?? "").includes("Please investigate the timeout") && response.ok());
+	await chatInput.press("Enter");
+	await expect(chat.getByRole("log").getByText("Please investigate the timeout")).toBeVisible();
+	const firstSaveResponse = await saved;
+	await chat.getByRole("button", { name: "Close", exact: true }).click();
+	await mentionCursor();
+	await workItem.getByRole("option", { name: "Start a new session" }).click();
+	await editor.pressSequentially(" Second session task");
+	await editor.press("Enter");
+	await mentionCursor();
+	await workItem.getByRole("option", { name: "Continue in existing session" }).click();
+	await workItem.getByRole("listbox", { name: "Choose a session" }).getByRole("option", { name: /Second session task/ }).click();
+	await expect(chat.getByRole("log").getByText("Please investigate the timeout")).toHaveCount(0);
+	await chatInput.fill("Second session message");
+	const secondSaved = page.waitForResponse((response) => response.request().method() === "PUT" && /\/api\/rovo\/threads\//u.test(response.url()) && (response.request().postData() ?? "").includes("Second session message") && response.ok());
+	await chatInput.press("Enter");
+	const secondSaveResponse = await secondSaved;
+	expect(secondSaveResponse.url()).not.toBe(firstSaveResponse.url());
+	const firstThreadId = decodeURIComponent(new URL(firstSaveResponse.url()).pathname.split("/").at(-1) ?? "");
+	expect(JSON.stringify(threads.get(firstThreadId))).not.toContain("Second session message");
+	await workItem.getByRole("button", { name: "Add a comment" }).click();
+	await editor.pressSequentially("@Cursor");
+	await page.getByRole("option", { name: /^Cursor / }).first().click();
+	await editor.pressSequentially(" Follow up later");
+	await workItem.getByRole("option", { name: "Continue in existing session" }).click();
+	delayThread(firstThreadId);
+	await workItem.getByRole("listbox", { name: "Choose a session" }).getByRole("option", { name: /Work on Port confirmPaymentIntent/ }).click();
+	await expect.poll(() => openedThreads.at(-1)).toBe(firstThreadId);
+	await expect(chat).toHaveAttribute("inert", "");
+	await expect(page.getByRole("status").filter({ hasText: "Opening session" })).toBeVisible();
+	await expect(editor).toContainText("Follow up later");
+	releaseThread();
+	await expect(chat).not.toHaveAttribute("inert", "");
+	expect(JSON.stringify(threads.get(firstThreadId))).not.toContain("Second session message");
+	await expect(chat.getByRole("log").getByText("Please investigate the timeout")).toBeVisible();
+	await expect(chat.getByRole("log").getByText("Second session message")).toHaveCount(0);
+	await expect(chat.getByRole("log").getByText("@Cursor", { exact: true })).toHaveCount(0);
+	await expect(chatInput).toContainText("Follow up later");
+});
+
+test("the work-item agent picker offers existing sessions and starts a separate one", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await expect(workItem).toBeVisible();
+	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
+	async function mentionClaude() {
+		await page.keyboard.press("m");
+		await editor.pressSequentially("@Claude");
+		await page.getByRole("option", { name: /^Claude / }).first().click();
+	}
+	await mentionClaude();
+	await editor.pressSequentially(" Check timeout behavior");
+	await editor.press("Enter");
+	await mentionClaude();
+	await workItem.getByRole("option", { name: "Start a new session" }).click();
+	await editor.pressSequentially(" Review retry behavior");
+	await editor.press("Enter");
+	const crew = workItem.getByRole("button", { name: /^Working on this work item\./ });
+	await crew.click();
+	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await page.getByRole("option", { name: /^Claude/ }).first().click();
+	const actions = page.getByRole("menu", { name: "Run Claude on" });
+	await expect(actions.getByRole("group", { name: "Run on cloud" })).toBeVisible();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (2)" })).toBeVisible();
+	await expect(actions.getByRole("menuitem", { name: "Start a new session" })).toBeVisible();
+	await expect(actions.getByRole("separator")).toBeVisible();
+	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
+	await expect(sessions.getByRole("option")).toHaveCount(2);
+	const earlier = sessions.getByRole("option", { name: /Check timeout behavior/ });
+	await earlier.hover();
+	await expect(workItem.locator("[data-jira-activity-entry-id][data-active]")).toContainText("Check timeout behavior");
+	await earlier.click();
+	const chat = workItem.locator('[data-rovo-chat-placement="floating"]');
+	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+	await expect(chat.getByRole("log").getByText("@Claude Check timeout behavior")).toBeVisible();
+	await expect(chat.getByRole("log").getByText("@Claude Review retry behavior")).toHaveCount(0);
+	await chat.getByRole("button", { name: "Close", exact: true }).click();
+	await crew.click();
+	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await page.getByRole("option", { name: /^Claude/ }).first().click();
+	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
+	await expect(chat).toBeHidden();
+	await crew.click();
+	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await page.getByRole("option", { name: /^Claude/ }).first().click();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (3)" })).toBeVisible();
+});
+
+test("a first cloud session started from the board does not open chat", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-105");
+	await issue.locator('[data-slot="jira-issue-card"]').hover();
+	await issue.getByRole("button", { name: "Add agent to PAY-105" }).click();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await page.getByRole("option", { name: /^Claude/ }).first().click();
+	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
+	await expect(issue.getByRole("button", { name: "2 agents: Needs input" })).toBeVisible();
+	await expect(page.locator('[data-rovo-chat-placement="floating"]')).toBeHidden();
+});
+
+test("long session titles and metadata stay inside their own selectable rows", async ({ page }) => {
+	test.setTimeout(60_000);
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-105");
+	async function chooseClaude() {
+		await issue.locator('[data-slot="jira-issue-card"]').hover();
+		await issue.getByRole("button", { name: "Add agent to PAY-105" }).click();
+		await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+		await page.getByRole("option", { name: /^Claude/ }).first().click();
+	}
+	const actions = page.getByRole("menu", { name: "Run Claude on" });
+	await chooseClaude();
+	await actions.getByRole("menuitem", { name: "Run on cloud" }).click();
+	await chooseClaude();
+	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
+	await chooseClaude();
+	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	const list = page.getByRole("listbox", { name: "Choose a Claude session" });
+	await expect(list.getByRole("option")).toHaveCount(2);
+	const rowsAreContained = () => list.evaluate((element) => {
+		const rows = [...element.querySelectorAll<HTMLElement>('[role="option"]')];
+		return rows.every((row, index) => {
+			const bounds = row.getBoundingClientRect();
+			const title = row.querySelector<HTMLElement>(".menu-row-title")?.getBoundingClientRect();
+			const byline = row.querySelector<HTMLElement>(".menu-row-byline")?.getBoundingClientRect();
+			const next = rows[index + 1]?.getBoundingClientRect();
+			return Boolean(title && byline && title.top >= bounds.top && title.bottom <= byline.top + 1 && byline.bottom <= bounds.bottom + 1 && (!next || bounds.bottom <= next.top + 1));
+		});
+	});
+	await expect.poll(rowsAreContained).toBe(true);
+	await page.setViewportSize({ width: 900, height: 800 });
+	await expect.poll(rowsAreContained).toBe(true);
+});
+
+test("the board card picker continues a chosen session or creates a separate empty session", async ({ page }) => {
+	test.setTimeout(60_000);
+	await mockRovoThreads(page);
+	await page.route("**/api/rovo/chat", async (route) => route.fulfill({ status: 503, body: "Mocked chat request" }));
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await expect(workItem).toBeVisible();
+	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
+	for (const [index, prompt] of ["Check timeouts", "Review retries"].entries()) {
+		await page.keyboard.press("m");
+		await editor.pressSequentially("@Claude");
+		await page.getByRole("option", { name: /^Claude / }).first().click();
+		if (index) await workItem.getByRole("option", { name: "Start a new session" }).click();
+		await editor.pressSequentially(` ${prompt}`);
+		await editor.press("Enter");
+	}
+	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
+	const issue = card(page, "PAY-105");
+	async function openClaudePicker() {
+		await issue.locator('[data-slot="jira-issue-card"]').hover();
+		await issue.getByRole("button", { name: "Add agent to PAY-105" }).click();
+		await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+		await page.getByRole("option", { name: /^Claude/ }).first().click();
+	}
+	await openClaudePicker();
+	const actions = page.getByRole("menu", { name: "Run Claude on" });
+	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
+	await expect(sessions.getByRole("option")).toHaveCount(2);
+	await expect.poll(() => sessions.locator("..").evaluate((menu) => ({
+		shadow: getComputedStyle(menu).boxShadow,
+		border: getComputedStyle(menu).borderTopWidth,
+	}))).toEqual({ shadow: "none", border: "0px" });
+	await expect.poll(() => sessions.locator(".menu-row-byline").evaluateAll((rows) => rows.every((row) => row.scrollWidth <= row.clientWidth + 1 && row.scrollHeight <= row.clientHeight + 1))).toBe(true);
+	await page.setViewportSize({ width: 900, height: 800 });
+	await expect.poll(() => sessions.evaluate((list) => {
+		const bounds = list.getBoundingClientRect();
+		return bounds.left >= 0 && bounds.right <= window.innerWidth;
+	})).toBe(true);
+	await expect.poll(() => sessions.locator(".menu-row-byline").evaluateAll((rows) => rows.every((row) => row.scrollWidth <= row.clientWidth + 1 && row.scrollHeight <= row.clientHeight + 1))).toBe(true);
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await expect(sessions.getByRole("option", { name: /Check timeouts/ })).toContainText("Annie Cook");
+	await sessions.getByRole("option").first().focus();
+	await page.keyboard.press("ArrowDown");
+	await expect(sessions.getByRole("option", { name: /Check timeouts/ })).toBeFocused();
+	await sessions.getByRole("option", { name: /Check timeouts/ }).click();
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	await expect(chat.getByRole("log").getByText("@Claude Check timeouts")).toBeVisible();
+	await expect(chat.getByRole("log").getByText("@Claude Review retries")).toHaveCount(0);
+	await chat.getByRole("button", { name: "Close", exact: true }).click();
+	await openClaudePicker();
+	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
+	await expect(chat).toBeHidden();
+	await openClaudePicker();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (3)" })).toBeVisible();
+	await actions.getByRole("menuitem", { name: "Continue to existing session (3)" }).click();
+	await expect.poll(() => sessions.getByRole("option", { name: /Work on Port confirmPaymentIntent/ }).locator(".menu-row-title").evaluate((title) => title.scrollHeight <= title.clientHeight + 1)).toBe(true);
+	await sessions.getByRole("option", { name: /Work on Port confirmPaymentIntent/ }).click();
+	const input = chat.getByRole("textbox", { name: "Chat message input" });
+	await expect(input).toBeVisible();
+	await expect(input).toBeEmpty();
+	await expect(chat.getByRole("log").getByText("@Claude", { exact: false })).toHaveCount(0);
+	await input.fill("Investigate decline handling");
+	await input.press("Enter");
+	await expect(chat.getByRole("log").getByText("Investigate decline handling", { exact: true })).toBeVisible();
+	await chat.getByRole("button", { name: "Close", exact: true }).click();
+	await openClaudePicker();
+	await actions.getByRole("menuitem", { name: "Continue to existing session (3)" }).click();
+	await expect(sessions.getByRole("option", { name: /Investigate decline handling/ })).toContainText("Working");
 });
 

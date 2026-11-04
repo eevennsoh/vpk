@@ -41,7 +41,7 @@ export interface ProjectButterJiraWorkItemProps {
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
-	onOpenCloudSession?: (session: ProjectButterSessionItem) => void;
+	onOpenCloudSession?: (session: ProjectButterSessionItem, draft?: string) => boolean | void | Promise<boolean | void>;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
 	onStoryPointsChange?: (storyPoints: number | undefined) => void;
 	/** Resolves a related work key to an opener when the host has that work item (Butter board). */
@@ -120,6 +120,12 @@ export function ProjectButterJiraWorkItem({
 	const emptySessions = useProjectButterSessions("empty", workItem?.code);
 	const sparse = empty || suggestion;
 	const currentContent = suggestion ? suggestionContent : empty ? emptyContent : filledContent;
+	const [previewSessionId, setPreviewSessionId] = useState<string | null>(null);
+	const { setActivityView } = currentContent;
+	const previewSession = useCallback((id: string | null) => {
+		setPreviewSessionId(id);
+		if (id) setActivityView("Activity");
+	}, [setActivityView]);
 	const setDetailFields = currentContent.setDetailFields;
 	useEffect(() => {
 		if (!open || !workItem) return;
@@ -167,7 +173,7 @@ export function ProjectButterJiraWorkItem({
 		const session = model.startAgent(agent, content.summary);
 		addInvocation(session);
 		onAgentSessionStart?.(session);
-		if (onOpenCloudSession) { setActiveSessionId(null); onOpenCloudSession(session); }
+		setActiveSessionId(null);
 	}
 	function startAgentFromComment(agent: AgentSessionItem["agent"], prompt: string) {
 		const session = model.startAgent(agent, content.summary, prompt);
@@ -181,14 +187,16 @@ export function ProjectButterJiraWorkItem({
 		onAgentSessionStart?.(session);
 		if (onOpenCloudSession) { setActiveSessionId(null); onOpenCloudSession(session); }
 	}
-	function openSession(id: string) {
+	function openSession(id: string, draft?: string): boolean | void | Promise<boolean | void> {
 		const session = sessions.find((item) => item.id === id);
-		if (!session || isLocalAgentListItem(session)) return;
+		if (!session || isLocalAgentListItem(session)) return false;
 		if (onOpenCloudSession) {
 			setActiveSessionId(null);
-			onOpenCloudSession(session);
+			return onOpenCloudSession(session, draft);
 		} else {
+			if (draft) setDrafts((current) => ({ ...current, [id]: current[id]?.trim() ? `${current[id].trimEnd()}\n\n${draft}` : draft }));
 			setActiveSessionId(id);
+			return true;
 		}
 	}
 	function reply() {
@@ -248,6 +256,7 @@ export function ProjectButterJiraWorkItem({
 				onBrowseAgents={onBrowseAgents}
 				onCreateAgent={onCreateAgent}
 				onOpenSession={(session) => openSession(session.id)}
+				onPreviewSession={previewSession}
 				onPresentationChange={setPresentation}
 				onStartAgent={startAgent}
 				onStartCoding={startCoding}
@@ -287,8 +296,10 @@ export function ProjectButterJiraWorkItem({
 						detailsSlotRef={setInlineDetailsSlot}
 						empty={sparse}
 						onOpenSession={openSession}
+						onPreviewSession={previewSession}
 						onStartAgent={startAgentFromComment}
 						openRelatedItem={openRelatedItem}
+						previewSessionId={previewSessionId}
 						relatedScope={relatedScope}
 						sessions={sessions}
 						workItemKey={workItem?.code}

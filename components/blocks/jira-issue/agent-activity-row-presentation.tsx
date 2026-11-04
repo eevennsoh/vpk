@@ -13,6 +13,7 @@ import {
 	type AgentAssignmentProps,
 } from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { JiraIssueAgentLinkFlashOverlay, type JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
 import { useProjectButterInvocationActions, useProjectButterInvocationEnabled, useProjectButterInvocationPhase, useProjectButterInvocationPreview, useProjectButterInvocationSource } from "@/components/blocks/jira-issue/project-butter-invocation";
@@ -55,7 +56,11 @@ export type JiraIssueAgentAssignment = Partial<
 		| "pinnedItemsLabel"
 		| "usedAgentIds"
 	>
->;
+> & {
+	sessions?: readonly (AgentSessionItem & { prompt?: string; invokedAtMs?: number })[];
+	onOpenSession?: (session: AgentSessionItem) => void;
+	onCreateCloudSession?: (agent: AgentSelectorAgent) => void;
+};
 
 function getAgentInitial(name: string): string {
 	return name.trim()[0]?.toUpperCase() ?? "A";

@@ -5,6 +5,19 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("Butter starts a second session for an agent already on the card", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-105");
+	await issue.hover();
+	await issue.getByRole("button", { name: "Add agent to PAY-105" }).click();
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Cursor");
+	await picker.getByRole("option", { name: /^Cursor/ }).click();
+	await page.getByText("Run on cloud", { exact: true }).click();
+	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(issue.locator('[data-agent-id^="PAY-105:test-agent"]')).toHaveCount(2);
+});
+
 test("empty activity places the comment bar 24 pixels below the tabs", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/jira-work-item#project-butter"));
 	await page.getByRole("switch", { name: "Empty" }).check();
@@ -141,7 +154,7 @@ test("Butter card overflow opens the agent submenu on hover and previews in the 
 	await expect(cloud).toBeVisible();
 	await cloud.click();
 	await expect(page.getByRole("menu", { name: "More actions for PAY-105" })).toHaveCount(0);
-	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(issue.getByRole("button", { name: "2 agents: Needs input" })).toBeVisible();
 	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
 });
 
@@ -156,7 +169,7 @@ test("Butter session menu opens the same agent picker", async ({ page }) => {
 	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
 	await picker.getByRole("option", { name: /^Claude/ }).click();
 	await page.getByText("Run on cloud", { exact: true }).click();
-	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(issue.getByRole("button", { name: "2 agents: Needs input" })).toBeVisible();
 	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
 });
 
