@@ -21,6 +21,7 @@ const PROPS = {
 	provider: "bitbucket",
 	author: { name: "Shilpa Airi" },
 	repository: "atlassian/shilpas-test-repo",
+	reviewers: { approved: 0, total: 1 },
 	branch: "SHIL-25-dev-panel",
 	targetBranch: "main",
 	additions: 312,
@@ -137,4 +138,27 @@ test("flyout singularizes one build", async () => {
 	});
 
 	assert.match(text, /1\/1 build passed/u);
+});
+
+test("the author line ends with the reviewer state", async () => {
+	const { text } = await renderFlyout({});
+
+	assert.match(text, /Shilpa Airi·20d·0\/1 reviewer/u);
+});
+
+test("reviewer state covers none, partial, and absent", async () => {
+	const none = await renderFlyout({ reviewers: { approved: 0, total: 0 } });
+	assert.match(none.text, /Shilpa Airi·20d·No reviewers/u);
+
+	const partial = await renderFlyout({ reviewers: { approved: 1, total: 2 } });
+	assert.match(partial.text, /·1\/2 reviewers/u);
+
+	const absent = await renderFlyout({ reviewers: undefined });
+	assert.doesNotMatch(absent.text, /reviewer/u);
+});
+
+test("reviewer state still shows when there is no author", async () => {
+	const { text } = await renderFlyout({ author: undefined });
+
+	assert.match(text, /20d · 0\/1 reviewer/u);
 });

@@ -122,7 +122,9 @@ export function PullRequestFlyoutChecks({
 			    releases while a control inside is keyboard-focused so its ring is not cut off. */}
 			<CollapsibleContent
 				className={cn(
-					"h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-medium ease-in-out",
+					// `-mx-1 px-1` widens the clip box by the 4px the rows bleed to match the summary row,
+					// so the panel's overflow clipping no longer squares off the rows' hover fill.
+					"-mx-1 h-(--collapsible-panel-height) overflow-hidden px-1 transition-[height] duration-medium ease-in-out",
 					"data-starting-style:h-0 data-ending-style:h-0 data-open:has-[:focus-visible]:overflow-visible motion-reduce:transition-none",
 				)}
 			>

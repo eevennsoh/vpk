@@ -15,6 +15,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { pullRequestReviewersLabel } from "@/components/blocks/pull-request/lib/pull-request-reviewers-label";
 import { toCompactRelativeTimeLabel } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ import type {
 export type {
 	PullRequestAuthor,
 	PullRequestProps,
+	PullRequestReviewers,
 	PullRequestStatus,
 	PullRequestVariant,
 } from "@/components/blocks/pull-request/components/pull-request-types";
@@ -348,6 +350,7 @@ function PullRequestFlyoutBody({
 	relativeTime,
 	provider = "github",
 	repository,
+	reviewers,
 	checks,
 	reviewHref,
 	href,
@@ -366,11 +369,13 @@ function PullRequestFlyoutBody({
 		| "relativeTime"
 		| "provider"
 		| "repository"
+		| "reviewers"
 		| "checks"
 		| "reviewHref"
 		| "href"
 	>
 >) {
+	const reviewersLabel = reviewers ? pullRequestReviewersLabel(reviewers) : null;
 	const authorMeta = author ? (
 		<span className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtlest">
 			<PullRequestAuthorAvatar author={author} size="xs" />
@@ -381,9 +386,20 @@ function PullRequestFlyoutBody({
 					<span className="shrink-0">{toCompactRelativeTimeLabel(relativeTime)}</span>
 				</>
 			) : null}
+			{reviewersLabel ? (
+				<>
+					<span className="shrink-0">·</span>
+					<span className="shrink-0">{reviewersLabel}</span>
+				</>
+			) : null}
 		</span>
 	) : relativeTime ? (
-		<span className="text-xs leading-4 text-text-subtlest">{toCompactRelativeTimeLabel(relativeTime)}</span>
+		<span className="text-xs leading-4 text-text-subtlest">
+			{toCompactRelativeTimeLabel(relativeTime)}
+			{reviewersLabel ? ` · ${reviewersLabel}` : null}
+		</span>
+	) : reviewersLabel ? (
+		<span className="text-xs leading-4 text-text-subtlest">{reviewersLabel}</span>
 	) : null;
 	const hasBranchPath = Boolean(branch || targetBranch);
 	const hasActions = Boolean(reviewHref || href);
@@ -482,6 +498,7 @@ export function PullRequest({
 	relativeTime,
 	provider,
 	repository,
+	reviewers,
 	checks,
 	reviewHref,
 	href,
@@ -509,6 +526,7 @@ export function PullRequest({
 			relativeTime={relativeTime}
 			repository={repository}
 			reviewHref={reviewHref}
+			reviewers={reviewers}
 			status={status}
 			targetBranch={targetBranch}
 			title={title}

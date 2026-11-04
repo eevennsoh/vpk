@@ -20,6 +20,12 @@ export interface PullRequestAuthor {
 /** Source-control host. Picks the provider mark on the flyout repository / branch row. */
 export type PullRequestProvider = "github" | "bitbucket";
 
+/** Reviewer sign-off, shown on the flyout as `0/1 reviewer` (or `No reviewers` at total 0). */
+export interface PullRequestReviewers {
+	approved: number;
+	total: number;
+}
+
 export interface PullRequestProps {
 	/** Layout. Defaults to the compact dropdown list card. */
 	variant?: PullRequestVariant;
@@ -41,6 +47,8 @@ export interface PullRequestProps {
 	filesChanged?: number;
 	/** Flyout only. Provider mark for the repository row. Defaults to `github`. */
 	provider?: PullRequestProvider;
+	/** Flyout only. Reviewer sign-off, appended to the `Name · time` line. Omitted when absent. */
+	reviewers?: PullRequestReviewers;
 	/** Flyout only. `workspace/repo` shown beside the provider mark. */
 	repository?: string;
 	/**

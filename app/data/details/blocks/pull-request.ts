@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_DETAIL: ComponentDetail = {
 	description:
-		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: wrapping `#N` + title with a trailing status lozenge, author avatar + `Name · relativeTime`, then a divided section with the repository name, `source → target` path, files / `+add` `−del`, and an expandable CI checks row, followed by Review / View pull request actions when their links are supplied.",
+		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: wrapping `#N` + title with a trailing status lozenge, author avatar + `Name · relativeTime · reviewers`, then a divided section with the repository name, `source → target` path, files / `+add` `−del`, and an expandable CI checks row, followed by Review / View pull request actions when their links are supplied.",
 	importStatement: `import { PullRequest } from "@/components/blocks/pull-request";
 import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 	usage: `import { PullRequest } from "@/components/blocks/pull-request";
@@ -44,7 +44,7 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		{
 			title: "Flyout",
 			description:
-				"Overlay summary card: wrapping `#N` + title with a trailing status lozenge, author · time, then repository, `source → target`, files / diff stats, an expandable CI checks row, and the Review / View pull request actions.",
+				"Overlay summary card: wrapping `#N` + title with a trailing status lozenge, author · time · reviewers, then repository, `source → target`, files / diff stats, an expandable CI checks row, and the Review / View pull request actions.",
 			demoSlug: "pull-request-demo-flyout",
 		},
 		{
@@ -114,6 +114,12 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 			type: "number",
 			description:
 				"Number of changed files, rendered as `N files` on every card.",
+		},
+		{
+			name: "reviewers",
+			type: "{ approved: number; total: number }",
+			description:
+				"Flyout only. Reviewer sign-off appended to the `Name · time` line: `0/1 reviewer`, `1/2 reviewers`, or `No reviewers` when `total` is 0. Omitted when absent.",
 		},
 		{
 			name: "provider",

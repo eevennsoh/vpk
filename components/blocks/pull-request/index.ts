@@ -7,6 +7,7 @@ export {
 } from "@/components/blocks/pull-request/components/pull-request-checks-list";
 export type {
 	PullRequestAuthor,
+	PullRequestReviewers,
 	PullRequestProps,
 	PullRequestStatus,
 	PullRequestVariant,

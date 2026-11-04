@@ -560,6 +560,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/jira-work-item-shared-channel.test.js",
 		"components/blocks/pull-request/lib/pull-request-check-elapsed.test.js",
 		"components/blocks/pull-request/lib/pull-request-checks-title.test.js",
+		"components/blocks/pull-request/lib/pull-request-reviewers-label.test.js",
 		"components/blocks/question-card/lib/focus-policy.test.js",
 		"components/blocks/question-card/lib/footer-actions.test.js",
 		"components/blocks/question-card/lib/option-slots.test.js",
