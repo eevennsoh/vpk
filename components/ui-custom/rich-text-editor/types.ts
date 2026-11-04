@@ -138,6 +138,7 @@ export function resolveCommandVariant(
 }
 
 export interface RichTextEditorExtensionOptions {
+	trailingNode?: boolean;
 	getMentionSources?: () => RichTextMentionSources | undefined;
 	/** Overrides section copy without changing the stored mention categories. */
 	mentionSectionLabels?: RichTextMentionSectionLabels;

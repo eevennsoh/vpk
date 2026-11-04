@@ -26,6 +26,7 @@ export function ContextDescriptionEditor({
 	hugContent = false,
 	placeholder = "Press / to help improve the work item",
 	placeholderSlot = DEFAULT_PLACEHOLDER_SLOT,
+	trailingNode = true,
 	value,
 	viewMode,
 	onMarkdownChange,
@@ -35,6 +36,7 @@ export function ContextDescriptionEditor({
 	hugContent?: boolean;
 	placeholder?: string;
 	placeholderSlot?: ReactNode;
+	trailingNode?: boolean;
 	value: string;
 	viewMode?: EditorToolbarViewMode;
 	onMarkdownChange: (value: string) => void;
@@ -46,6 +48,7 @@ export function ContextDescriptionEditor({
 			className="min-w-0 space-y-0"
 			editorClassName={cn(
 				"agent-instructions-tiptap-editor context-description-tiptap-editor text-text",
+				!trailingNode && "context-description-tiptap-no-trailing-node",
 				hugContent && "context-description-tiptap-editor-hug",
 			)}
 			enableDirectoryAutocomplete
@@ -53,6 +56,7 @@ export function ContextDescriptionEditor({
 			placeholder={placeholder}
 			placeholderSlot={placeholderSlot}
 			showToolbar={false}
+			trailingNode={trailingNode}
 			suggestionVariant="nested"
 			value={value}
 			viewMode={viewMode}

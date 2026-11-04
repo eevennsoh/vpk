@@ -87,6 +87,7 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 				onMarkdownChange={content.setDescriptionDraft}
 				placeholder={empty ? "Add description" : "Add a description"}
 				placeholderSlot={null}
+				trailingNode={false}
 				value={content.descriptionDraft}
 			/>
 			</div>

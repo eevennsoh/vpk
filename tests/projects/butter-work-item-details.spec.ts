@@ -5,6 +5,40 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("focusing a list-ending description does not add a blank line", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const editor = page.getByRole("textbox", { name: "Work item description" });
+	const related = page.getByRole("button", { name: "Collapse Related work" });
+	const original = await editor.boundingBox();
+	const relatedBefore = await related.boundingBox();
+	if (!original || !relatedBefore) throw new Error("Description geometry is unavailable");
+	await editor.locator("li").last().click();
+	const focused = await editor.boundingBox();
+	const relatedAfter = await related.boundingBox();
+	if (!focused || !relatedAfter) throw new Error("Focused description geometry is unavailable");
+	expect(focused.height).toBeCloseTo(original.height, 0);
+	expect(relatedAfter.y).toBeCloseTo(relatedBefore.y, 0);
+	await editor.evaluate((element) => {
+		const lastParagraph = element.querySelector("li:last-child p");
+		if (!lastParagraph) throw new Error("Last list item is unavailable");
+		const range = document.createRange();
+		range.selectNodeContents(lastParagraph);
+		range.collapse(false);
+		const selection = window.getSelection();
+		selection?.removeAllRanges();
+		selection?.addRange(range);
+	});
+	await page.keyboard.press("Enter");
+	await page.keyboard.press("Enter");
+	await page.keyboard.type("New paragraph after the list");
+	await expect(editor.locator(":scope > p").last()).toHaveText("New paragraph after the list");
+	await page.getByRole("button", { name: "Description", exact: true }).click();
+	await page.getByRole("button", { name: "Description", exact: true }).click();
+	await expect(editor).toContainText("New paragraph after the list");
+});
+
 test("attachment cards stay fanned while hovered and settle when the pointer leaves", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
