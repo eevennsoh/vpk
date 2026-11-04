@@ -90,7 +90,7 @@ export function ProjectButterAttachmentStack({ arriving, forming, onRemove, onTo
 				<button
 					aria-expanded={open}
 					aria-label={open ? `Close ${pile.label.toLowerCase()}` : `${pile.label}, ${pile.items.length} attachments`}
-					className={cn("mt-1.5 flex h-4 w-full items-baseline gap-1 rounded-sm text-left text-xs font-medium text-text outline-none focus-visible:ring-2 focus-visible:ring-ring", !open && "after:absolute after:inset-0 after:z-20 after:rounded-sm focus-visible:ring-0 focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2")}
+					className={cn("mt-4 flex h-4 w-full items-baseline gap-1 rounded-sm text-left text-xs font-medium text-text outline-none focus-visible:ring-2 focus-visible:ring-ring", !open && "after:absolute after:inset-0 after:z-20 after:rounded-sm focus-visible:ring-0 focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2")}
 					data-pile-toggle={pile.type}
 					onBlur={(event) => pointer.blur(event.currentTarget)}
 					onClick={() => { pointer.reset(); onToggle(); }}
