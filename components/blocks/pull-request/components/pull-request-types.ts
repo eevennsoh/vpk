@@ -1,3 +1,5 @@
+import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
+
 export type PullRequestStatus = "Open" | "Merged";
 
 /**
@@ -13,6 +15,15 @@ export type PullRequestVariant = "dropdown" | "spacious" | "flyout";
 export interface PullRequestAuthor {
 	name: string;
 	avatarUrl?: string;
+}
+
+/** Source-control host. Picks the provider mark on the flyout repository / branch row. */
+export type PullRequestProvider = "github" | "bitbucket";
+
+/** Reviewer sign-off, shown on the flyout as `0/1 reviewer` (or `No reviewers` at total 0). */
+export interface PullRequestReviewers {
+	approved: number;
+	total: number;
 }
 
 export interface PullRequestProps {
@@ -34,6 +45,21 @@ export interface PullRequestProps {
 	deletions: number;
 	/** Number of changed files, rendered as `N files` on every card. */
 	filesChanged?: number;
+	/** Flyout only. Provider mark for the repository row. Defaults to `github`. */
+	provider?: PullRequestProvider;
+	/** Flyout only. Reviewer sign-off, appended to the `Name · time` line. Omitted when absent. */
+	reviewers?: PullRequestReviewers;
+	/** Flyout only. `workspace/repo` shown beside the provider mark. */
+	repository?: string;
+	/**
+	 * Flyout only. CI checks. The row reads `3/3 builds passed` and expands inline into
+	 * the full checks list. Omitted when absent or empty.
+	 */
+	checks?: readonly PullRequestCheck[];
+	/** Flyout only. Renders the primary Review action as a link. Omitted without it. */
+	reviewHref?: string;
+	/** Flyout only. Renders the View pull request action as an external link. Omitted without it. */
+	href?: string;
 	/**
 	 * Absolute timestamp (ms). Reserved for callers that already track PR age;
 	 * the card renders `relativeTime` when provided.
