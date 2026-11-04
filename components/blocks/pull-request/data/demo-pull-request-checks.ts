@@ -66,7 +66,7 @@ export const PULL_REQUEST_CHECKS_SCENARIOS: readonly PullRequestChecksScenario[]
 		id: "failed",
 		shortLabel: "Failed",
 		label: "Failed",
-		description: "A check failed; its row offers Fix, and the others stay green.",
+		description: "A check failed and the others stay green.",
 		checks: [
 			{ id: "lint-types", name: "Lint and typecheck", status: "failed", details: "Failed after 42s · deliveryAddress may be null" },
 			{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },

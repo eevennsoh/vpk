@@ -349,7 +349,6 @@ function PullRequestFlyoutBody({
 	provider = "github",
 	repository,
 	checks,
-	onFixCheck,
 	reviewHref,
 	href,
 }: Readonly<
@@ -368,7 +367,6 @@ function PullRequestFlyoutBody({
 		| "provider"
 		| "repository"
 		| "checks"
-		| "onFixCheck"
 		| "reviewHref"
 		| "href"
 	>
@@ -430,7 +428,7 @@ function PullRequestFlyoutBody({
 						className="font-normal"
 					/>
 				</PullRequestFlyoutMetaRow>
-				{checks ? <PullRequestFlyoutChecks checks={checks} onFixCheck={onFixCheck} /> : null}
+				{checks ? <PullRequestFlyoutChecks checks={checks} /> : null}
 				{hasActions ? (
 					<div className="flex min-w-0 gap-2 pt-1">
 						{reviewHref ? (
@@ -485,7 +483,6 @@ export function PullRequest({
 	provider,
 	repository,
 	checks,
-	onFixCheck,
 	reviewHref,
 	href,
 	selected = false,
@@ -508,7 +505,6 @@ export function PullRequest({
 			filesChanged={filesChanged}
 			href={href}
 			number={number}
-			onFixCheck={onFixCheck}
 			provider={provider}
 			relativeTime={relativeTime}
 			repository={repository}

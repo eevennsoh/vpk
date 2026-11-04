@@ -50,7 +50,7 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		{
 			title: "CI checks",
 			description:
-				"The flyout's expandable CI checks row in every state: yet to be run, running, a mixed in-progress run, all successful, and failed with a Fix action. The summary shows `passed/total builds passed` with a segmented status ring (a spinner while any check runs). Each check is a single-status ring (lime passed, red failed), a dashed circle when yet to run, or a spinner while running; failure reasons and elapsed times stay available to screen readers.",
+				"The flyout's expandable CI checks row in every state: yet to be run, running, a mixed in-progress run, all successful, and failed. The summary shows `passed/total builds passed` with a segmented status ring (a spinner while any check runs). Each check is a single-status ring (lime passed, red failed), a dashed circle when yet to run, or a spinner while running; failure reasons and elapsed times stay available to screen readers.",
 			demoSlug: "pull-request-demo-checks",
 		},
 	],
@@ -131,11 +131,6 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 			type: "readonly PullRequestCheck[]",
 			description:
 				"Flyout only. CI checks (`queued`, `running`, `passed`, `failed`). The row reads `3/3 builds passed` (plus `· N failed`, with a spinner while unsettled) and expands inline into the full checks list. Omitted when absent or empty.",
-		},
-		{
-			name: "onFixCheck",
-			type: "(checks: readonly PullRequestCheck[]) => void",
-			description: "Flyout only. Called from a failed check's Fix action.",
 		},
 		{
 			name: "reviewHref",

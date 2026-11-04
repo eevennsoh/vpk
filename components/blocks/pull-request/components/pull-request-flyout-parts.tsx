@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
+import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
+import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 
 import {
@@ -32,24 +34,20 @@ export function PullRequestFlyoutMetaRow({
 	);
 }
 
-/** Segment status each settled check state draws as a single-status ring. */
-const CHECK_SEGMENT_STATUS = {
-	passed: "passed",
-	failed: "failed",
-} as const;
-
-const CHECK_STATUS_LABEL = {
-	passed: "Passed",
-	failed: "Failed",
-} as const;
-
 /**
- * Per-check glyph: a full single-status ring (lime passed, danger failed) from
- * the segmented Progress Circle, the dashed circle for a check that is yet to
- * run, and a bare spinner while it is running. Decorative — the row spells the
- * status out for assistive tech.
+ * Per-check glyphs are the ones the golden journeys' CI list always used: the
+ * green check-circle for passed, the red error diamond for failed, the dashed
+ * circle for yet to run, and a bare spinner while running. All sit at 12px in
+ * the 16px icon column. Decorative — the row spells the status out for
+ * assistive tech.
  */
-function renderCheckStatusRing(check: PullRequestCheck) {
+const CHECK_STATUS_GLYPH = {
+	passed: { className: "text-icon-success", Glyph: CheckCircleIcon },
+	failed: { className: "text-icon-danger", Glyph: StatusErrorIcon },
+	queued: { className: "text-icon-disabled", Glyph: TaskToDoIcon },
+} as const;
+
+function renderCheckStatusGlyph(check: PullRequestCheck) {
 	if (check.status === "running") {
 		return (
 			<span aria-hidden="true" className="inline-flex size-4 items-center justify-center text-icon-subtle">
@@ -57,31 +55,18 @@ function renderCheckStatusRing(check: PullRequestCheck) {
 			</span>
 		);
 	}
-	if (check.status === "queued") {
-		return (
-			<IconTile
-				aria-hidden
-				as="span"
-				className="text-icon-disabled"
-				icon={<TaskToDoIcon color="currentColor" label="" size="small" />}
-				iconSize="small"
-				label=""
-				size="xxsmall"
-				variant="transparent"
-			/>
-		);
-	}
+	const { className, Glyph } = CHECK_STATUS_GLYPH[check.status];
 	return (
-		<span aria-hidden="true" className="inline-flex size-4 items-center justify-center">
-			<ProgressCircle
-				animated={false}
-				inline
-				label={CHECK_STATUS_LABEL[check.status]}
-				segmented
-				segments={[{ status: CHECK_SEGMENT_STATUS[check.status] }]}
-				size="xs"
-			/>
-		</span>
+		<IconTile
+			aria-hidden
+			as="span"
+			className={className}
+			icon={<Glyph color="currentColor" label="" size="small" />}
+			iconSize="small"
+			label=""
+			size="xxsmall"
+			variant="transparent"
+		/>
 	);
 }
 
@@ -89,17 +74,15 @@ function renderCheckStatusRing(check: PullRequestCheck) {
  * Builds row that expands inline into the full CI checks list. The collapsed
  * row is the one-line summary (`2/3 builds passed · 1 failed`); the panel is the
  * same `PullRequestChecksList` the metadata rail uses, so every row state —
- * queued, running, passed, failed with Fix — appears without leaving the card.
+ * queued, running, passed, failed — appears without leaving the card.
  */
 export function PullRequestFlyoutChecks({
 	checks,
 	defaultOpen = false,
-	onFixCheck,
 }: Readonly<{
 	checks: readonly PullRequestCheck[];
 	/** Start expanded, for surfaces that exist to show the rows (the catalog gallery). */
 	defaultOpen?: boolean;
-	onFixCheck?: (checks: readonly PullRequestCheck[]) => void;
 }>) {
 	if (checks.length === 0) return null;
 
@@ -143,12 +126,12 @@ export function PullRequestFlyoutChecks({
 					"data-starting-style:h-0 data-ending-style:h-0 data-open:has-[:focus-visible]:overflow-visible motion-reduce:transition-none",
 				)}
 			>
-				<div className="-mx-1 pt-1">
+				{/* Rows take the summary row's 6px radius so both hover fills match. */}
+				<div className="-mx-1 pt-1 [&_li]:rounded-md!">
 					<PullRequestChecksList
 						checks={checks}
 						density="compact"
-						onFixCheck={onFixCheck}
-						renderStatusIcon={renderCheckStatusRing}
+						renderStatusIcon={renderCheckStatusGlyph}
 					/>
 				</div>
 			</CollapsibleContent>

@@ -24,7 +24,6 @@ export default function PullRequestPage({
 	);
 
 	const [checksScenarioId, setChecksScenarioId] = useState("in-progress");
-	const [fixRequest, setFixRequest] = useState<string | null>(null);
 
 	return (
 		<div className="flex h-full min-h-[360px] w-full items-center justify-center bg-surface p-6 text-text">
@@ -58,7 +57,6 @@ export default function PullRequestPage({
 						onValueChange={(values) => {
 							if (values[0]) {
 								setChecksScenarioId(values[0]);
-								setFixRequest(null);
 							}
 						}}
 						size="sm"
@@ -77,11 +75,6 @@ export default function PullRequestPage({
 						key={item.number}
 						{...item}
 						checks={isFlyout ? pullRequestChecksScenario(checksScenarioId) : item.checks}
-						onFixCheck={
-							isFlyout
-								? (checks) => setFixRequest(`Fix requested for ${checks.map((check) => check.name).join(", ")}`)
-								: undefined
-						}
 						variant={variant}
 						selected={isFlyout ? false : item.number === selectedNumber}
 						onActivate={
@@ -94,11 +87,6 @@ export default function PullRequestPage({
 						}
 					/>
 				))}
-				{isFlyout ? (
-					<p aria-live="polite" className="min-h-4 text-xs text-text-subtle" role="status">
-						{fixRequest}
-					</p>
-				) : null}
 			</div>
 		</div>
 	);

@@ -63,24 +63,24 @@ test("every scenario starts expanded so its rows are visible", async () => {
 	await view.unmount();
 });
 
-test("passed and failed checks draw rings, running checks draw spinners", async () => {
+test("the summary draws a status ring unless a check is running, and running checks draw spinners", async () => {
 	const view = await renderGallery();
 	const rings = (id) => count(view, id, '[data-slot="progress-circle"]');
 	const spinners = (id) => count(view, id, '[role="status"]');
 
-	// Rings: one per passed/failed row, plus the summary ring unless a check is running.
-	// Yet-to-run rows draw the dashed circle instead, so they add none.
-	assert.deepEqual(IDS.map(rings), [1, 0, 1, 4, 4]);
+	// Rows use the golden-journey glyphs (check-circle, error diamond, dashed circle),
+	// so the summary is the only ring, and it gives way to a spinner while any check runs.
+	assert.deepEqual(IDS.map(rings), [1, 0, 0, 1, 1]);
 	// Spinners: one per running row, plus the summary spinner while any check runs.
 	assert.deepEqual(IDS.map(spinners), [0, 4, 2, 0, 0]);
 	await view.unmount();
 });
 
-test("only the failed scenario offers Fix, and it reports the request", async () => {
+test("checks are read-only status lines with no Fix action or link glyph", async () => {
 	const view = await renderGallery();
 
-	assert.deepEqual(IDS.map((id) => count(view, id, 'button[aria-label^="Fix "]')), [0, 0, 0, 0, 1]);
-	await view.click(view.getByRole("button", { name: "Fix Lint and typecheck" }));
-	assert.match(view.container.textContent, /Fix requested for Lint and typecheck/u);
+	assert.deepEqual(IDS.map((id) => count(view, id, 'button[aria-label^="Fix "]')), [0, 0, 0, 0, 0]);
+	assert.deepEqual(IDS.map((id) => count(view, id, ".rich-text-command-menu-shortcut")), [0, 0, 0, 0, 0]);
+	assert.deepEqual(IDS.map((id) => count(view, id, "[data-jira-work-item-failed-check-actions]")), [0, 0, 0, 0, 0]);
 	await view.unmount();
 });

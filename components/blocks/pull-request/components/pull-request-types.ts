@@ -48,8 +48,6 @@ export interface PullRequestProps {
 	 * the full checks list. Omitted when absent or empty.
 	 */
 	checks?: readonly PullRequestCheck[];
-	/** Flyout only. Called from a failed check's Fix action. */
-	onFixCheck?: (checks: readonly PullRequestCheck[]) => void;
 	/** Flyout only. Renders the primary Review action as a link. Omitted without it. */
 	reviewHref?: string;
 	/** Flyout only. Renders the View pull request action as an external link. Omitted without it. */

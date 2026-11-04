@@ -235,11 +235,12 @@ function checkRowLinkProps(checkUrl: string | undefined) {
  * with a 4px gap (so icons line up with the summary row above), a single
  * `text-xs` title line, and a content-sized height instead of the menu's fixed
  * 44px. The byline stays in the DOM as screen-reader text, since it carries the
- * failure reason and elapsed time. Hover matches the flyout's summary row: the
- * same `rounded-md` fill, with no link glyph unless the row has a URL.
+ * failure reason and elapsed time. Rows are read-only status lines (no Fix
+ * action, no link glyph), and hover matches the flyout's summary row (the host
+ * sets the row radius).
  */
 const COMPACT_ROW_CLASS_NAME =
-	"h-auto! min-h-6 rounded-md! grid-cols-[16px_minmax(0,1fr)]! gap-x-1! px-1! py-1! [&_.rich-text-command-menu-avatar]:size-4! [&_.menu-row-title]:text-xs! [&_.menu-row-title]:leading-4! [&_.menu-row-byline]:sr-only";
+	"h-auto! min-h-6 grid-cols-[16px_minmax(0,1fr)]! gap-x-1! px-1! py-1! [&_.rich-text-command-menu-avatar]:size-4! [&_.menu-row-title]:text-xs! [&_.menu-row-title]:leading-4! [&_.menu-row-byline]:sr-only";
 
 function CheckRow({
 	bleed = false,
@@ -260,14 +261,10 @@ function CheckRow({
 			className={cn(
 				"group/check-row rich-text-command-menu-item hover:bg-bg-neutral-subtle-hovered! focus-visible:bg-bg-neutral-subtle-hovered! focus-visible:outline-none",
 				compact ? COMPACT_ROW_CLASS_NAME : undefined,
-				// The hover-revealed external-link glyphs only make sense when the row opens a URL.
-				compact && !check.url
-					? "[&_.rich-text-command-menu-shortcut]:hidden [&_[data-jira-work-item-failed-check-actions]>div[aria-hidden]]:hidden"
-					: undefined,
-				isFailed ? (compact ? "grid-cols-[16px_minmax(0,1fr)_auto]!" : "grid-cols-[24px_minmax(0,1fr)_auto]!") : undefined,
+				isFailed && !compact ? "grid-cols-[24px_minmax(0,1fr)_auto]!" : undefined,
 				bleed ? "-mx-2 w-[calc(100%+1rem)]!" : undefined,
 			)}
-			data-has-trailing={isFailed ? "true" : undefined}
+			data-has-trailing={isFailed && !compact ? "true" : undefined}
 			{...checkRowLinkProps(check.url)}
 		>
 			<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center">
@@ -282,7 +279,8 @@ function CheckRow({
 					<CheckDetails check={check} />
 				</span>
 			</span>
-			{isFailed ? (
+			{/* Compact rows are read-only status lines: no Fix action and no link glyph. */}
+			{compact ? null : isFailed ? (
 				<CheckRowTrailing check={check} onFixCheck={onFixCheck} />
 			) : (
 				<span className="rich-text-command-menu-shortcut">
