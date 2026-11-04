@@ -72,9 +72,10 @@ export function attachCanvasGestures(controller: CanvasController, viewport: HTM
 		viewport.dataset.canvasPanning = "";
 	};
 
-	const endPan = () => {
+	/** `release: false` hands a touch pan over to a pinch: the first finger keeps its capture and stays in `touches`. */
+	const endPan = ({ release = true }: { release?: boolean } = {}) => {
 		if (!pan) return;
-		if (viewport.hasPointerCapture(pan.pointerId)) viewport.releasePointerCapture(pan.pointerId);
+		if (release && viewport.hasPointerCapture(pan.pointerId)) viewport.releasePointerCapture(pan.pointerId);
 		suppressClick = pan.moved;
 		pan = null;
 		delete viewport.dataset.canvasPanning;
@@ -87,7 +88,7 @@ export function attachCanvasGestures(controller: CanvasController, viewport: HTM
 			viewport.setPointerCapture(event.pointerId);
 			if (touches.size === 1) startPan(event);
 			else {
-				endPan();
+				endPan({ release: false });
 				pinch = null;
 			}
 			return;
