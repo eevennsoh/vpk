@@ -16,6 +16,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
 		"components/blocks/agent-directory/directory-view.behavior.test.js",
 		"components/blocks/jira-list/jira-list-interactions.behavior.test.js",
+		"components/blocks/pull-request/pull-request-flyout.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/project-butter.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/suggestions.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/breadcrumb.behavior.test.js",

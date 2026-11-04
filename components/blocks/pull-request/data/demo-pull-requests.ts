@@ -3,12 +3,11 @@ import type { PullRequestProps } from "@/components/blocks/pull-request/componen
 /**
  * Catalog fixtures for the Pull Request block.
  *
- * `repository` is not a `PullRequestProps` field — the card does not print the
- * repo, because the provider mark and `#N` already say where the change lives.
- * It stays on the fixture for consumers that show a repo of their own, such as
- * the context bar's `showRepository` slot.
+ * The dropdown cards ignore `repository`, `builds`, and the action links: the
+ * provider mark and `#N` already say where the change lives there. The flyout
+ * prints them, matching the production dev-panel hover card content.
  */
-export const DEMO_PULL_REQUESTS: readonly (PullRequestProps & { repository: string })[] = [
+export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
 	{
 		number: 1306,
 		title: "Add guest checkout to the storefront",
@@ -24,6 +23,9 @@ export const DEMO_PULL_REQUESTS: readonly (PullRequestProps & { repository: stri
 		deletions: 21,
 		filesChanged: 6,
 		relativeTime: "1h",
+		builds: { passed: 3, total: 3 },
+		href: "https://github.com/acme/storefront/pull/1306",
+		reviewHref: "https://github.com/acme/storefront/pull/1306/files",
 	},
 	{
 		number: 1847,
@@ -40,5 +42,24 @@ export const DEMO_PULL_REQUESTS: readonly (PullRequestProps & { repository: stri
 		deletions: 37,
 		filesChanged: 12,
 		relativeTime: "Yesterday",
+		builds: { passed: 3, total: 3 },
+		href: "https://github.com/acme/storefront/pull/1847",
+	},
+	{
+		number: 7,
+		title: "SHIL-25: Integrate Pull Request Data and Actions into Dev Panel - (Jira Dev Panel)",
+		status: "Merged",
+		provider: "bitbucket",
+		author: { name: "Shilpa Airi" },
+		repository: "atlassian/shilpas-test-repo",
+		branch: "SHIL-25-dev-panel-pull-request-data-integration-2e5f6",
+		targetBranch: "main",
+		additions: 312,
+		deletions: 48,
+		filesChanged: 9,
+		relativeTime: "20d ago",
+		builds: { passed: 3, total: 3 },
+		href: "https://bitbucket.org/atlassian/shilpas-test-repo/pull-requests/7",
+		reviewHref: "https://bitbucket.org/atlassian/shilpas-test-repo/pull-requests/7/review",
 	},
 ];

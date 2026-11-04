@@ -15,6 +15,15 @@ export interface PullRequestAuthor {
 	avatarUrl?: string;
 }
 
+/** Source-control host. Picks the provider mark on the flyout repository / branch row. */
+export type PullRequestProvider = "github" | "bitbucket";
+
+/** Build results, rendered on the flyout as `passed/total builds passed`. */
+export interface PullRequestBuilds {
+	passed: number;
+	total: number;
+}
+
 export interface PullRequestProps {
 	/** Layout. Defaults to the compact dropdown list card. */
 	variant?: PullRequestVariant;
@@ -34,6 +43,16 @@ export interface PullRequestProps {
 	deletions: number;
 	/** Number of changed files, rendered as `N files` on every card. */
 	filesChanged?: number;
+	/** Flyout only. Provider mark for the repository row. Defaults to `github`. */
+	provider?: PullRequestProvider;
+	/** Flyout only. `workspace/repo` shown beside the provider mark. */
+	repository?: string;
+	/** Flyout only. Shown as `3/3 builds passed`. */
+	builds?: PullRequestBuilds;
+	/** Flyout only. Renders the primary Review action as a link. Omitted without it. */
+	reviewHref?: string;
+	/** Flyout only. Renders the View pull request action as an external link. Omitted without it. */
+	href?: string;
 	/**
 	 * Absolute timestamp (ms). Reserved for callers that already track PR age;
 	 * the card renders `relativeTime` when provided.
