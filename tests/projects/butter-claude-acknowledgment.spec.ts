@@ -26,6 +26,14 @@ test("Claude acknowledges after Venn's activity snapshots", async ({ page }) => 
 	await expect(acknowledgment).toHaveCount(0);
 	await expect(acknowledgment).toContainText("I'm looking into this issue now", { timeout: 6_000 });
 	await expect(acknowledgment).toHaveCount(1);
+	await expect.poll(async () => activity.locator("[data-jira-activity-entry-id]").evaluateAll((entries) => entries.map((entry) => entry.getAttribute("data-jira-activity-entry-id")))).toEqual([
+		await acknowledgment.getAttribute("data-jira-activity-entry-id"),
+		await activity.locator('[data-jira-activity-entry-id^="merchant-agent-added-"]').getAttribute("data-jira-activity-entry-id"),
+		"butter-accepted-suggestions",
+	]);
+	await activity.getByRole("heading", { name: "Activity" }).hover();
+	await activity.getByRole("button", { name: "More activity actions" }).click();
+	await expect(page.getByRole("menuitemradio", { name: "Oldest first" })).toHaveCount(0);
 });
 
 test("the acknowledgment arrives after closing and reopening the work item", async ({ page }) => {

@@ -1,4 +1,4 @@
-import type { JiraActivityEntry } from "@/components/blocks/jira-activity";
+import type { JiraActivityEntry, JiraActivityReply } from "@/components/blocks/jira-activity";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
@@ -20,15 +20,14 @@ const MESSAGES = [
 ];
 const GENERATED_IDS = new Set([...MESSAGES.map((message) => message.id), "merchant-assignment"]);
 
-export function merchantJourneyActivity(phase: ProjectButterDevelopmentPhase, invokedAtMs = PROJECT_BUTTER_SESSION_EPOCH): JiraActivityEntry[] {
+export function merchantJourneyActivity(phase: ProjectButterDevelopmentPhase, invokedAtMs = PROJECT_BUTTER_SESSION_EPOCH): JiraActivityReply[] {
 	const step = STAGES.indexOf(phase);
 	return MESSAGES.filter((message) => step >= message.at).map((message) => ({
 		id: message.id,
-		kind: "comment" as const,
 		actor: { id: "merchant-claude", name: "Claude", kind: "agent" as const, brandName: "claude" as const },
 		timestamp: "Just now",
 		createdAtMs: invokedAtMs + (message.at + 1) * 60_000,
-		body: [{ type: "text" as const, text: message.text }],
+		body: message.text,
 	}));
 }
 
@@ -102,8 +101,11 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 	const prepared = phase ? prepareContent(content, authoredFields) : content;
 	const active = Boolean(phase && phase !== "invoke");
 	const actualSession = sessions.find((candidate) => candidate.id === session?.id) ?? session;
+	const acceptedAtMs = content.activityEntries.find((entry) => entry.id === PROJECT_BUTTER_SUGGESTION_AUDIT_ID)?.createdAtMs;
+	const invokedAtMs = actualSession?.invokedAtMs ?? (acceptedAtMs ?? PROJECT_BUTTER_SESSION_EPOCH - 1) + 1;
 	const projectedSession: ProjectButterSessionItem | undefined = active && actualSession ? {
 		...actualSession,
+		invokedAtMs,
 		state: phase === "merged" ? "complete" : "running",
 		message: phase === "merged" ? "PR #284 merged and checks passed." : actualSession.message,
 	} : undefined;
@@ -134,6 +136,17 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 		if (projectedSession.agent.name === "Claude" && showAcknowledgment) {
 			const id = `merchant-started-${projectedSession.id}`;
 			const previous = content.activityEntries.find((entry) => entry.id === id);
+			const updates = phase && phase !== "invoke" && phase !== "working" ? merchantJourneyActivity(phase, invokedAtMs).filter((update) => update.id !== "merchant-merged") : [];
+			const visibleUpdates = new Set(updates.map((reply) => reply.id));
+			const replies = previous?.kind === "comment" ? [...(previous.replies ?? [])].filter((reply) => !GENERATED_IDS.has(reply.id) || visibleUpdates.has(reply.id)) : [];
+			const existingReplies = new Set(replies.map((reply) => reply.id));
+			for (const update of updates) {
+				if (!existingReplies.has(update.id)) { replies.push(update); existingReplies.add(update.id); }
+				const original = content.activityEntries.find((entry) => entry.id === update.id);
+				for (const reply of original?.kind === "comment" ? original.replies ?? [] : []) {
+					if (!existingReplies.has(reply.id)) { replies.push(reply); existingReplies.add(reply.id); }
+				}
+			}
 			entries.push({
 				id,
 				kind: "comment",
@@ -141,14 +154,16 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 				timestamp: "Just now",
 				createdAtMs: (projectedSession.invokedAtMs ?? PROJECT_BUTTER_SESSION_EPOCH) + MERCHANT_ACKNOWLEDGMENT_DELAY_MS,
 				body: [{ type: "text", text: "I'm looking into this issue now. I'll report back here with updates as I make progress." }],
-				...(previous?.kind === "comment" ? { replies: previous.replies } : {}),
+				...(replies.length ? { replies } : {}),
 			});
 		}
-	}
-	if (phase && phase !== "invoke" && phase !== "working") {
-		for (const entry of merchantJourneyActivity(phase, actualSession?.invokedAtMs)) {
-			const original = content.activityEntries.find((candidate) => candidate.id === entry.id);
-			entries.push(entry.kind === "comment" && original?.kind === "comment" ? { ...entry, replies: original.replies } : entry);
+		if (projectedSession.agent.name === "Claude" && phase === "merged") {
+			const original = content.activityEntries.find((entry) => entry.id === "merchant-merged");
+			const acknowledgment = content.activityEntries.find((entry) => entry.id === `merchant-started-${projectedSession.id}`);
+			const legacy = acknowledgment?.kind === "comment" ? acknowledgment.replies?.find((reply) => reply.id === "merchant-merged") : undefined;
+			const merged = legacy ?? merchantJourneyActivity(phase, invokedAtMs).find((update) => update.id === "merchant-merged");
+			if (original?.kind === "comment") entries.push({ ...original, parentId: undefined });
+			else if (merged) entries.push({ ...merged, kind: "comment", body: [{ type: "text", text: merged.body }] });
 		}
 	}
 	let presented = { ...prepared, status: active && !authoredFields.has("status") ? phase === "merged" ? "Done" : "In progress" : prepared.status, activityEntries: entries };
@@ -156,7 +171,7 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 		const snapshot = { ...content.detailFields, description: content.description, descriptionDraft: content.descriptionDraft, dueDate: content.dueDate, reporter: content.reporter };
 		const suggestions = listProjectButterSuggestions(snapshot, "payments").filter((suggestion) => !authoredFields.has(suggestion.field) && (suggestion.field === "description" || (content.detailFields.order.includes(suggestion.field) && !content.detailFields.hidden.includes(suggestion.field))));
 		for (const suggestion of suggestions) {
-			presented = updateProjectButterSuggestionAudit(presented, { id: PROJECT_BUTTER_SUGGESTION_AUDIT_ID, createdAtMs: PROJECT_BUTTER_SESSION_EPOCH, label: suggestion.label, before: "", after: suggestedAuditValue(suggestion) }, content.currentUser, "accept");
+			presented = updateProjectButterSuggestionAudit(presented, { id: PROJECT_BUTTER_SUGGESTION_AUDIT_ID, createdAtMs: acceptedAtMs ?? invokedAtMs - 1, label: suggestion.label, before: "", after: suggestedAuditValue(suggestion) }, content.currentUser, "accept");
 		}
 	}
 	return {

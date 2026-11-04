@@ -14,17 +14,17 @@ function renderJourney(props = {}) {
 test("the PR journey exposes running checks, the accessibility failure, rerun, and merged results", async () => {
 	const view = await renderJourney();
 	assert.equal(view.queryByText("Add merchant onboarding quickstart") !== null, true);
-	assert.equal(view.queryByText("Pull request created · Checks running") !== null, true);
+	assert.equal(view.queryByRole("button", { name: /0\/3 builds passed/u }) !== null, true);
 	assert.equal(projectButterDevelopmentChecks("pr").some((check) => check.status === "running"), true);
 	await view.rerender({ autoFixEnabled: true, autoMergeEnabled: true, phase: "failed" });
-	assert.equal(view.queryByText("2 of 3 checks passed") !== null, true);
-	assert.equal(view.queryByText(/Inline errors are not associated with their form fields/u) !== null, true);
+	assert.equal(view.queryByRole("button", { name: /2\/3 builds passed · 1 failed/u }) !== null, true);
+	assert.equal(projectButterDevelopmentChecks("failed").find((check) => check.id === "accessibility").status, "failed");
 	await view.rerender({ autoFixEnabled: true, autoMergeEnabled: true, phase: "fixing", agentName: "Claude" });
-	assert.equal(view.queryByText(/Claude is fixing the failing check/u) !== null, true);
+	assert.equal(view.queryByRole("button", { name: /checks running/u }) !== null, true);
 	assert.equal(projectButterDevelopmentChecks("fixing").find((check) => check.id === "accessibility").status, "running");
 	await view.rerender({ autoFixEnabled: true, autoMergeEnabled: true, phase: "merged" });
-	assert.equal(view.queryByText("All 3 checks passed · Merged") !== null, true);
-	assert.equal(view.queryByText("Merchant onboarding quickstart merged into main.") !== null, true);
+	assert.equal(view.queryByRole("button", { name: /Merged/u }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: /builds passed/u }) === null, true);
 	assert.equal(projectButterDevelopmentChecks("merged").every((check) => check.status === "passed"), true);
 	await view.unmount();
 });
@@ -33,25 +33,41 @@ test("automation changes are controlled and both settings remain available in th
 	const changes = [];
 	const props = { autoFixEnabled: true, autoMergeEnabled: true, onAutoFixChange: (enabled) => changes.push(["fix", enabled]), onAutoMergeChange: (enabled) => changes.push(["merge", enabled]), phase: "pr" };
 	const view = await renderJourney(props);
-	await view.click(view.getByRole("button", { name: "CI checks and automation: Auto-fix & auto-merge enabled" }));
-	await view.click(view.getByRole("menuitemcheckbox", { name: "Auto-fix CI & address comments" }));
-	await view.click(view.getByRole("menuitemcheckbox", { name: "Auto-merge when ready" }));
+	await view.click(view.getByRole("button", { name: "Pull request settings" }));
+	await view.click(view.getByRole("switch", { name: "Auto-fix" }));
+	await view.click(view.getByRole("switch", { name: "Merge when ready" }));
 	assert.deepEqual(changes, [["fix", false], ["merge", false]]);
-	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-fix CI & address comments" }).getAttribute("aria-checked"), "true");
+	assert.equal(view.getByRole("switch", { name: "Auto-fix" }).getAttribute("aria-checked"), "true");
 	await view.rerender({ ...props, autoFixEnabled: false, autoMergeEnabled: false });
-	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-fix CI & address comments" }).getAttribute("aria-checked"), "false");
-	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-merge when ready" }).getAttribute("aria-checked"), "false");
+	assert.equal(view.getByRole("switch", { name: "Auto-fix" }).getAttribute("aria-checked"), "false");
+	assert.equal(view.getByRole("switch", { name: "Merge when ready" }).getAttribute("aria-checked"), "false");
 	await view.press(null, "Escape");
-	assert.equal(view.queryByRole("button", { name: "CI checks and automation: Automation disabled" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Pull request settings" }) !== null, true);
+	await view.unmount();
+});
+
+test("PR settings remain available when the first pull request appears", async () => {
+	const props = { autoFixEnabled: true, autoMergeEnabled: true, phase: undefined, onAutoFixChange() {}, onAutoMergeChange() {} };
+	const view = await renderJourney(props);
+	await view.click(view.getByRole("button", { name: "Pull request settings" }));
+	assert.equal(view.getByRole("switch", { name: "Auto-fix" }).getAttribute("aria-checked"), "true");
+	await view.click(view.getByRole("switch", { name: "Auto-archive on merge or close" }));
+	await view.press(null, "Escape");
+	await view.rerender({ ...props, phase: "pr" });
+	await view.click(view.getByRole("button", { name: "Pull request settings" }));
+	assert.equal(view.getByRole("switch", { name: "Auto-archive on merge or close" }).getAttribute("aria-checked"), "true");
 	await view.unmount();
 });
 
 test("read-only settings and absent action capabilities are disabled", async () => {
 	const view = await renderJourney({ phase: "failed" });
-	assert.equal(view.getByRole("button", { name: "Fix accessibility check" }).disabled, true);
-	await view.click(view.getByRole("button", { name: "CI checks and automation: Auto-fix & auto-merge enabled" }));
-	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-fix CI & address comments" }).getAttribute("aria-disabled"), "true");
-	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-merge when ready" }).getAttribute("aria-disabled"), "true");
+	assert.equal(view.queryByRole("button", { name: "Fix accessibility check" }), null);
+	await view.click(view.getByRole("button", { name: /#284 Add merchant onboarding quickstart/u }));
+	assert.equal(view.getByRole("button", { name: "Fix PR" }).disabled, true);
+	await view.press(null, "Escape");
+	await view.click(view.getByRole("button", { name: "Pull request settings" }));
+	assert.equal(view.getByRole("switch", { name: "Auto-fix" }).disabled, true);
+	assert.equal(view.getByRole("switch", { name: "Merge when ready" }).disabled, true);
 	assert.equal(view.queryByRole("button", { name: "Fix Accessibility" }), null);
 	await view.press(null, "Escape");
 	await view.rerender({ autoFixEnabled: false, autoMergeEnabled: false, phase: "passed" });
@@ -63,49 +79,55 @@ test("manual fix and merge actions call the journey host", async () => {
 	let fixes = 0;
 	let merges = 0;
 	const view = await renderJourney({ phase: "failed", autoFixEnabled: false, onFixCheck: () => { fixes += 1; } });
-	await view.click(view.getByRole("button", { name: "Fix accessibility check" }));
+	assert.equal(view.queryByRole("button", { name: "Fix accessibility check" }), null);
+	await view.click(view.getByRole("button", { name: /#284 Add merchant onboarding quickstart/u }));
+	assert.equal(view.getByRole("button", { name: "Review" }).disabled, false);
+	await view.click(view.getByRole("button", { name: "Fix PR" }));
 	assert.equal(fixes, 1);
+	await view.press(null, "Escape");
 	await view.rerender({ autoFixEnabled: false, autoMergeEnabled: false, phase: "passed", onMergePullRequest: () => { merges += 1; } });
 	await view.click(view.getByRole("button", { name: "Merge pull request" }));
 	assert.equal(merges, 1);
 	await view.unmount();
 });
 
-test("running checks can be completed from the open work item only when the host supplies that action", async () => {
-	let completions = 0;
+test("running checks are shown without a manual completion action", async () => {
 	const view = await renderJourney();
 	assert.equal(view.queryByRole("button", { name: "Complete checks" }), null);
-	await view.rerender({ autoFixEnabled: true, autoMergeEnabled: true, phase: "pr", onFailChecks: () => { completions += 1; } });
-	await view.click(view.getByRole("button", { name: "Complete checks" }));
-	assert.equal(completions, 1);
-	await view.rerender({ autoFixEnabled: true, autoMergeEnabled: true, phase: "failed", onFailChecks: () => { completions += 1; } });
-	assert.equal(view.queryByRole("button", { name: "Complete checks" }), null);
+	assert.equal(view.queryByRole("button", { name: /checks running/u }) !== null, true);
 	await view.unmount();
 });
 
 test("keyboard users can enter automation and Escape returns focus to its trigger", async () => {
 	const view = await renderJourney({ onAutoFixChange() {}, onAutoMergeChange() {} });
-	const trigger = view.getByRole("button", { name: "CI checks and automation: Auto-fix & auto-merge enabled" });
+	const trigger = view.getByRole("button", { name: "Pull request settings" });
 	await view.focus(trigger);
-	await view.press(trigger, "ArrowDown");
-	assert.equal(view.isFocused(view.getByRole("menuitemcheckbox", { name: "Auto-fix CI & address comments" })), true);
-	await view.press(null, "ArrowDown");
-	assert.equal(view.isFocused(view.getByRole("menuitemcheckbox", { name: "Auto-merge when ready" })), true);
+	await view.press(trigger, "Enter");
+	await view.focus(view.getByRole("switch", { name: "Auto-fix" }));
+	assert.equal(view.isFocused(view.getByRole("switch", { name: "Auto-fix" })), true);
 	await view.press(null, "Escape");
 	assert.equal(view.isFocused(trigger), true);
 	await view.unmount();
 });
 
-test("a merged PR keeps its automation settings read-only", async () => {
-	let changes = 0;
-	const view = await renderJourney({ phase: "merged", onAutoFixChange: () => { changes += 1; }, onAutoMergeChange: () => { changes += 1; } });
-	await view.click(view.getByRole("button", { name: "CI checks and automation: Auto-fix & auto-merge enabled" }));
-	const fix = view.getByRole("menuitemcheckbox", { name: "Auto-fix CI & address comments" });
-	const merge = view.getByRole("menuitemcheckbox", { name: "Auto-merge when ready" });
-	assert.equal(fix.getAttribute("aria-disabled"), "true");
-	assert.equal(merge.getAttribute("aria-disabled"), "true");
+test("automation settings remain editable after the PR is merged", async () => {
+	const changes = [];
+	const props = { phase: "merged", autoFixEnabled: true, autoMergeEnabled: true, onAutoFixChange: (enabled) => changes.push(["fix", enabled]), onAutoMergeChange: (enabled) => changes.push(["merge", enabled]) };
+	const view = await renderJourney(props);
+	await view.click(view.getByRole("button", { name: "Pull request settings" }));
+	const fix = view.getByRole("switch", { name: "Auto-fix" });
+	const merge = view.getByRole("switch", { name: "Merge when ready" });
+	const archive = view.getByRole("switch", { name: "Auto-archive on merge or close" });
+	assert.equal(fix.disabled, false);
+	assert.equal(merge.disabled, false);
+	assert.equal(archive.disabled, false);
 	await view.click(fix);
 	await view.click(merge);
-	assert.equal(changes, 0);
+	await view.click(archive);
+	assert.deepEqual(changes, [["fix", false], ["merge", false]]);
+	assert.equal(archive.getAttribute("aria-checked"), "true");
+	await view.rerender({ ...props, autoFixEnabled: false, autoMergeEnabled: false });
+	assert.equal(fix.getAttribute("aria-checked"), "false");
+	assert.equal(merge.getAttribute("aria-checked"), "false");
 	await view.unmount();
 });

@@ -43,7 +43,7 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 	const titleId = `${id}-title`;
 	const view = useDeckView(feed, deck);
 	// A check from the caught-up state runs in place there: the stack and footer only come back for real finds.
-	const mode: BodyMode = view.listed ? "list" : deck.order.length > 0 ? "stack" : "caught-up";
+	const mode: BodyMode = deck.order.length === 0 ? "caught-up" : view.listed ? "list" : "stack";
 	const shortcuts = [
 		...(mode === "stack" ? ["ArrowLeft", "ArrowRight"] : []),
 		...(deck.lastDecision && feed.status !== "running" ? ["Meta+Z", "Control+Z"] : []),

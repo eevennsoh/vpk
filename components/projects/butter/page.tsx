@@ -21,7 +21,7 @@ import type {
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
 import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
-import { ProjectButterDevelopmentJourney } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
+import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
 import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
 import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
@@ -144,7 +144,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 	journeyPhase?: ComponentProps<typeof ProjectButterJiraWorkItem>["journeyPhase"];
 	journeySession?: ProjectButterSessionItem;
 	journeyControls?: React.ReactNode;
-	developmentJourney?: React.ReactNode;
+	developmentJourney?: ProjectButterDevelopmentJourneyProps;
 	onBrowseAgents: () => void;
 	onCreateAgent: () => void;
 	onAgentSessionStart: (issueKey: string, session: ProjectButterSessionItem) => void;
@@ -208,7 +208,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 
 export default function ButterPage(): React.ReactElement {
 	const [phase, setPhase] = useState<MerchantJourneyPhase>("prepare");
-	const [boardSeen, setBoardSeen] = useState(false);
+	const [activeStep, setActiveStep] = useState(0);
 	const [journeySession, setJourneySession] = useState<ProjectButterSessionItem>();
 	const [jumpRevision, setJumpRevision] = useState(0);
 	const [pullRequestVisible, setPullRequestVisible] = useState(false);
@@ -233,8 +233,8 @@ export default function ButterPage(): React.ReactElement {
 		if (!next) return;
 		journeyRef.current?.selectStep(step);
 		if (step === 2) setPullRequestVisible(false);
+		setActiveStep(step);
 		setPhase(next);
-		setBoardSeen(step >= 1);
 		if (step >= 1) setJourneySession((session) => session ?? {
 			id: "PAY-999:merchant-journey", title: "Work on Improve merchant onboarding for Payments SDK v2", state: "running", host: "cloud", timeLabel: "Just now", message: "Working on the merchant onboarding quickstart.",
 			agent: { id: "claude-code", kind: "agent", name: "Claude", brandName: "claude" },
@@ -242,8 +242,8 @@ export default function ButterPage(): React.ReactElement {
 		});
 		setJumpRevision((current) => current + 1);
 	}, []);
-	const reset = useCallback(() => { setPhase("prepare"); setBoardSeen(false); setJourneySession(undefined); setJumpRevision(0); setAutoFixEnabled(true); setAutoMergeEnabled(true); }, []);
-	const controls = { onSelectStep: selectStep, phase, boardSeen };
+	const reset = useCallback(() => { setPhase("prepare"); setActiveStep(0); setJourneySession(undefined); setJumpRevision(0); setAutoFixEnabled(true); setAutoMergeEnabled(true); }, []);
+	const controls = { onSelectStep: selectStep, activeStep };
 	return (
 		<div className="h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
@@ -256,7 +256,7 @@ export default function ButterPage(): React.ReactElement {
 				renderSelectedItem={() => (
 					<div className="relative left-1/2 h-full min-h-0 w-[100cqw] -translate-x-1/2 overflow-hidden">
 						<RovoChatProvider agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
-							<ButterApp ref={journeyRef} phase={phase} pullRequestVisible={pullRequestVisible} setPhase={setPhase} setBoardSeen={setBoardSeen} journeySession={journeySession} setJourneySession={setJourneySession} journeyControls={<div data-merchant-journey-controls><div className="hidden lg:block"><MerchantJourneyControls {...controls} /></div><div className="lg:hidden"><MerchantJourneyCompactControls {...controls} /></div></div>} autoFixEnabled={autoFixEnabled} setAutoFixEnabled={setAutoFixEnabled} autoMergeEnabled={autoMergeEnabled} setAutoMergeEnabled={setAutoMergeEnabled} />
+							<ButterApp ref={journeyRef} phase={phase} pullRequestVisible={pullRequestVisible} setPhase={setPhase} journeySession={journeySession} setJourneySession={setJourneySession} journeyControls={<div data-merchant-journey-controls><div className="hidden lg:block"><MerchantJourneyControls {...controls} /></div><div className="lg:hidden"><MerchantJourneyCompactControls {...controls} /></div></div>} autoFixEnabled={autoFixEnabled} setAutoFixEnabled={setAutoFixEnabled} autoMergeEnabled={autoMergeEnabled} setAutoMergeEnabled={setAutoMergeEnabled} />
 						</RovoChatProvider>
 					</div>
 				)}
@@ -279,12 +279,11 @@ function ButterSessionPromptObserver({ activeSessionId, isSwitchingSession, onPr
 	return null;
 }
 
-function ButterApp({ ref, phase, pullRequestVisible, setPhase, setBoardSeen, journeySession, setJourneySession, journeyControls, autoFixEnabled, setAutoFixEnabled, autoMergeEnabled, setAutoMergeEnabled }: Readonly<{
+function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, setJourneySession, journeyControls, autoFixEnabled, setAutoFixEnabled, autoMergeEnabled, setAutoMergeEnabled }: Readonly<{
 	ref: Ref<{ selectStep: (step: number) => void }>;
 	phase: MerchantJourneyPhase;
 	pullRequestVisible: boolean;
 	setPhase: React.Dispatch<React.SetStateAction<MerchantJourneyPhase>>;
-	setBoardSeen: React.Dispatch<React.SetStateAction<boolean>>;
 	journeySession?: ProjectButterSessionItem;
 	setJourneySession: React.Dispatch<React.SetStateAction<ProjectButterSessionItem | undefined>>;
 	journeyControls: React.ReactNode;
@@ -522,7 +521,6 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, setBoardSeen, jou
 		const pending = pendingWorkItemAssignment.current;
 		pendingWorkItemAssignment.current = null;
 		if (!pending) return;
-		if (pending.issueKey === BUTTER_SUGGESTION_DEMO_KEY && pending.session.id === journeySession?.id) setBoardSeen(true);
 		if (activeView === "list") {
 			const { issueKey, session } = pending;
 			const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(session.agent.brandName, session.agent.vpkLogo, session.agent.name, session.agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
@@ -530,7 +528,7 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, setBoardSeen, jou
 		} else {
 			setAgentAssignmentRequest(pending);
 		}
-	}, [activeView, flashListRow, journeySession?.id, setBoardSeen]);
+	}, [activeView, flashListRow]);
 	useImperativeHandle(ref, () => ({ selectStep: (step) => {
 		const column = boardColumns.find((candidate) => candidate.cards.some((card) => card.code === BUTTER_SUGGESTION_DEMO_KEY));
 		const card = column?.cards.find((candidate) => candidate.code === BUTTER_SUGGESTION_DEMO_KEY);
@@ -827,18 +825,17 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, setBoardSeen, jou
 				journeyPhase={!wacContent && phase !== "prepare" ? phase : undefined}
 				journeySession={!wacContent ? journeySession : undefined}
 				journeyControls={!wacContent ? journeyControls : undefined}
-				developmentJourney={!wacContent && phase !== "prepare" && phase !== "invoke" && phase !== "working" ? <ProjectButterDevelopmentJourney
-					phase={phase}
-					agentName="Claude"
-					author={{ ...BUTTER_DEFAULT_REPORTER, assistedBy: { name: "Claude", brandName: "claude" } }}
-					autoFixEnabled={autoFixEnabled}
-					autoMergeEnabled={autoMergeEnabled}
-					onAutoFixChange={setAutoFixEnabled}
-					onAutoMergeChange={setAutoMergeEnabled}
-					onFixCheck={() => setPhase("fixing")}
-					onMergePullRequest={() => setPhase("merged")}
-					onFailChecks={() => setPhase("failed")}
-				/> : undefined}
+				developmentJourney={!wacContent ? {
+					phase: phase !== "prepare" && phase !== "invoke" && phase !== "working" ? phase : undefined,
+					agentName: "Claude",
+					author: { ...BUTTER_DEFAULT_REPORTER, assistedBy: { name: "Claude", brandName: "claude" } },
+					autoFixEnabled,
+					autoMergeEnabled,
+					onAutoFixChange: setAutoFixEnabled,
+					onAutoMergeChange: setAutoMergeEnabled,
+					onFixCheck: () => setPhase("fixing"),
+					onMergePullRequest: () => setPhase("merged"),
+				} : undefined}
 				onBrowseAgents={browseAgents}
 				onCreateAgent={createAgent}
 				onAgentSessionStart={handleWorkItemSessionStart}

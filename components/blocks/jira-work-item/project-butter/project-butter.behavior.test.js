@@ -437,13 +437,12 @@ test("panel ordering changes only for valid panel drops and keeps source data im
 	assert.equal(reorderProjectButterPanels(order, "development", null), order);
 });
 
-test("panel controls remain reachable while collapsed and development settings change visible fields", async () => {
+test("panel controls remain reachable while collapsed and development settings show connections", async () => {
 	const view = await renderWorkItem();
 	assert.equal(view.tabOrder().includes("Drag to reorder Automation"), true);
 	await view.click(view.getByRole("button", { name: "Development settings" }));
-	await view.click(view.getByRole("menuitemcheckbox", { name: "Show branches" }));
+	assert.equal(view.queryByRole("button", { name: "Request GitLab for Jira Cloud" }) !== null, true);
 	await view.press(null, "Escape");
-	assert.equal(view.queryByText("No branches linked") !== null, true);
 	await view.click(view.getByRole("button", { name: "Automation" }));
 	assert.equal(view.queryByText("Send reminder 24 hours before due date") !== null, true);
 });

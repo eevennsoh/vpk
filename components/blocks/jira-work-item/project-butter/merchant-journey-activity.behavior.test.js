@@ -18,6 +18,8 @@ const mocks = {
 		<button onClick={() => { content.beginSuggestionAudit("Description", "accept"); content.setDescription("My accepted description"); content.endSuggestionAudit(); }}>Accept real description</button>
 		<button onClick={() => content.setActivityEntries((entries) => [...entries, { id: "authored-comment", kind: "comment", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: [{ type: "text", text: "Keep my comment" }] }])}>Add comment</button>
 		<button onClick={() => content.setActivityEntries((entries) => entries.map((entry) => entry.id === "authored-comment" ? { ...entry, replies: [...(entry.replies ?? []), { id: "authored-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my reply" }] } : entry))}>Reply to journey</button>
+		<button onClick={() => content.setActivityEntries((entries) => entries.map((entry) => entry.id === "merchant-started-journey-session" ? { ...entry, replies: [...(entry.replies ?? []), { id: "claude-thread-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my thread reply" }] } : entry))}>Reply to Claude</button>
+		<button onClick={() => content.setActivityEntries((entries) => [...entries, { id: "merchant-pr", kind: "comment", actor: { id: "claude", name: "Claude", kind: "agent" }, timestamp: "Just now", body: [{ type: "text", text: "Earlier PR update" }], replies: [{ id: "legacy-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my old PR reply" }] }])}>Add old PR reply</button>
 		<p data-field="activity">{content.activityEntries.map((entry) => entry.id + ":" + (entry.kind === "comment" ? entry.body.map((part) => part.text).join("") + (entry.replies ?? []).map((reply) => reply.body).join("") : "audit " + entry.actor.name + " " + entry.segments.map((part) => part.text).join(""))).join("|")}</p>
 		<p data-field="suggestion-details">{(content.auditChanges["butter-accepted-suggestions"]?.changes ?? []).map((change) => change.label + ":" + change.after).join("|")}</p>
 		{sessions.map((session) => <button key={session.id} onClick={() => onOpenSession(session.id)}>Open {session.id}</button>)}
@@ -47,7 +49,7 @@ test("Claude selection renders one activity snapshot with an agent mention", asy
 		export default function Harness() {
 			const content = useProjectButterContent("empty", { code: "PAY-999", title: "Merchant onboarding" }, undefined, undefined, venn, { currentUser: venn, showAuditInActivity: true });
 			const projected = projectMerchantJourney({ content, sessions: [], phase: "working", session, autoAssignTo: venn });
-			return <ThemeWrapper><ProjectButterActivity content={projected.content} sessions={projected.sessions} empty sidePanel={false} singleView onOpenSession={() => undefined} /></ThemeWrapper>;
+			return <ThemeWrapper><ProjectButterActivity content={{ ...projected.content, activitySort: "oldest" }} sessions={projected.sessions} empty sidePanel={false} singleView onOpenSession={() => undefined} /></ThemeWrapper>;
 		}` });
 	const entries = document.querySelectorAll('[data-jira-activity-entry-id="merchant-agent-added-journey-session"]');
 	assert.equal(entries.length, 1);
@@ -60,6 +62,7 @@ test("Claude selection renders one activity snapshot with an agent mention", asy
 	assert.equal(acknowledgment.length, 1);
 	assert.equal(acknowledgment[0].textContent.includes("Claude"), true);
 	assert.equal(acknowledgment[0].textContent.includes("I'm looking into this issue now. I'll report back here with updates as I make progress."), true);
+	assert.deepEqual([...document.querySelectorAll("[data-jira-activity-entry-id]")].map((entry) => entry.getAttribute("data-jira-activity-entry-id")), ["merchant-started-journey-session", "merchant-agent-added-journey-session", "butter-accepted-suggestions"]);
 	await view.unmount();
 });
 
@@ -69,6 +72,7 @@ test("direct jumps synthesize a session and rewind removes future progress witho
 	assert.equal(field("activity").includes("merchant-agent-added-journey-session"), true);
 	assert.equal(field("activity").includes("merchant-started-journey-session"), true);
 	assert.equal(field("activity").includes("PR #284 merged"), true);
+	assert.equal(field("activity").includes("merchant-merged:PR #284 merged"), true);
 	assert.equal(field("status"), "Done");
 	await view.rerender({ ...props, journeyPhase: "pr" });
 	assert.equal(field("sessions").includes("journey-session:Merchant onboarding:running"), true);
@@ -82,6 +86,31 @@ test("direct jumps synthesize a session and rewind removes future progress witho
 	await view.rerender(props);
 	assert.equal(field("status"), "To do");
 	assert.equal(field("activity"), "");
+});
+
+test("Claude's updates share the first comment and preserve human replies across journey steps", async () => {
+	const journeyProps = { ...props, journeySession: { ...journeySession, invokedAtMs: Date.now() - 10_000 } };
+	const view = await renderJourney({ ...journeyProps, journeyPhase: "pr" });
+	assert.equal(field("activity").includes("merchant-started-journey-session"), true);
+	assert.equal(field("activity").includes("opened PR #284"), true);
+	assert.equal(field("activity").includes("merchant-pr:"), false);
+	await view.click(view.getByRole("button", { name: "Add old PR reply" }));
+	assert.equal(field("activity").includes("Keep my old PR reply"), true);
+	await view.click(view.getByRole("button", { name: "Reply to Claude" }));
+	await view.rerender({ ...journeyProps, journeyPhase: "merged" });
+	assert.equal(field("activity").includes("Keep my thread reply"), true);
+	assert.equal(field("activity").includes("Keep my old PR reply"), true);
+	assert.equal(field("activity").includes("pushed a fix"), true);
+	assert.equal(field("activity").includes("checks passed after"), true);
+	assert.equal(field("activity").includes("PR #284 merged"), true);
+	await view.rerender({ ...journeyProps, journeyPhase: "working" });
+	assert.equal(field("activity").includes("Keep my thread reply"), true);
+	assert.equal(field("activity").includes("opened PR #284"), false);
+	assert.equal(field("activity").includes("PR #284 merged"), false);
+	await view.rerender({ ...journeyProps, journeyPhase: "merged" });
+	assert.equal(field("activity").split("Keep my thread reply").length - 1, 1);
+	assert.equal(field("activity").split("PR #284 merged").length - 1, 1);
+	await view.unmount();
 });
 
 test("direct Invoke prepares empty ticket fields only in the presentation", async () => {

@@ -61,6 +61,8 @@ export interface PullRequestProps {
 	checks?: readonly PullRequestCheck[];
 	/** Flyout only. Renders the primary Review action as a link. Omitted without it. */
 	reviewHref?: string;
+	/** Flyout only. Show a Review button when no review destination is available. */
+	showReview?: boolean;
 	/** Flyout only. Makes the pull request title an external link. */
 	href?: string;
 	/** Called with failing CI checks when Fix PR is activated. */

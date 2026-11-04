@@ -141,6 +141,11 @@ test("non-merged pull requests show a compact CI summary without check details",
 	await expect(open.locator("svg animate")).toHaveCount(0);
 	await expect(merged).not.toContainText("builds passed");
 	await open.click();
+	const flyout = page.getByRole("group", { name: "Pull request #1306: Add guest checkout to the storefront" });
+	const wrapper = flyout.locator('..');
+	await expect(wrapper).toHaveCSS("border-top-width", "0px");
+	await expect(wrapper).toHaveCSS("box-shadow", /^(none|rgba\(0, 0, 0, 0\))/u);
+	await expect(flyout).toHaveCSS("border-top-width", "0px");
 	const flyoutChecks = page.getByRole("button", { name: /1\/3 builds passed/u }).last();
 	await expect(flyoutChecks).toBeVisible();
 	await flyoutChecks.click();

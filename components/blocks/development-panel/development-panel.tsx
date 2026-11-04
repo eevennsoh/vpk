@@ -17,7 +17,7 @@ import { TeamEuRailPanel } from "@/components/blocks/jira-work-item/team-eu26/co
 import { getPullRequestStatusPresentation, type PullRequestStatusIconKind } from "@/components/blocks/jira-work-item/team-eu26/lib/pull-request-status-presentation";
 import { ProjectButterDevelopmentActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-actions";
 import { BranchNameSettings } from "@/components/blocks/development-panel/branch-name-settings";
-import { PullRequestSettings } from "@/components/blocks/development-panel/pull-request-settings";
+import { PullRequestSettings, type PullRequestSettingsProps } from "@/components/blocks/development-panel/pull-request-settings";
 import { PullRequest, type PullRequestProps, type PullRequestStatus } from "@/components/blocks/pull-request";
 import { PullRequestChecksSummary } from "@/components/blocks/pull-request/components/pull-request-flyout-parts";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -35,6 +35,10 @@ export interface DevelopmentPanelProps {
 	pullRequests?: readonly PullRequestProps[];
 	workItem: { code: string; summary: string; description: string };
 	onStartCoding?: () => void;
+	pullRequestSettings?: PullRequestSettingsProps;
+	headerExtra?: ReactNode;
+	footerExtra?: ReactNode;
+	surface?: "card" | "inline";
 }
 
 const DEVELOPMENT_ROW_CLASS = "flex w-full min-w-0 items-center gap-2 rounded-lg px-2 text-left text-sm text-text-subtle outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring";
@@ -117,14 +121,16 @@ function DevelopmentSettings() {
 	);
 }
 
-export function DevelopmentPanel({ pullRequests = [], workItem, onStartCoding }: Readonly<DevelopmentPanelProps>) {
+export function DevelopmentPanel({ pullRequests = [], workItem, onStartCoding, pullRequestSettings, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
 	const hasPullRequests = pullRequests.length > 0;
 	return (
 		<TeamEuRailPanel
+			alwaysShowHeaderActions={Boolean(headerExtra)}
 			defaultOpen
-			headerActions={<div className="flex items-center opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{hasPullRequests ? <StartCodingMenu /> : null}<PullRequestSettings /><DevelopmentSettings /></div>}
+			headerActions={<div className="flex items-center opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{hasPullRequests ? <StartCodingMenu /> : null}<PullRequestSettings {...pullRequestSettings} /><DevelopmentSettings />{headerExtra}</div>}
+			surface={surface}
 			title="Development"
-			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button><div className="px-2"><ProjectButterDevelopmentActions {...workItem} showStartCoding={false} /></div></div> : null}
+			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button><div className="px-2"><ProjectButterDevelopmentActions {...workItem} showStartCoding={false} /></div>{footerExtra}</div> : null}
 		>
 			<div className={hasPullRequests ? "px-2 pb-2" : "px-4 pb-4"}>
 				{hasPullRequests ? pullRequests.map((request) => {
@@ -136,7 +142,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, onStartCoding }:
 							<Icon aria-hidden className={`size-4 shrink-0 ${STATUS_COLORS[request.status]}`} render={<StatusIcon label="" size="small" />} />
 							<span className="min-w-0 flex-1"><span className="block truncate"><span className="text-text-subtlest">#{request.number} </span><span className="text-text">{request.title}</span><span className="sr-only"> {request.status}</span></span>{showChecks && request.checks ? <PullRequestChecksSummary checks={request.checks} /> : null}</span>
 						</PopoverTrigger>
-						<PopoverContent align="start" className="w-[344px] max-w-[calc(100vw-2rem)] p-0" side="left">
+						<PopoverContent align="start" className="w-[344px] max-w-[calc(100vw-2rem)] p-0 shadow-none" side="left">
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>

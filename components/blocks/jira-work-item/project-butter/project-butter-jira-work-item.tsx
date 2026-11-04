@@ -26,6 +26,7 @@ import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-
 import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { PROJECT_BUTTER_PANEL_ORDER } from "@/components/blocks/jira-work-item/project-butter/panel-order";
+import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
 
 export interface ProjectButterJiraWorkItemProps {
 	open: boolean;
@@ -39,7 +40,7 @@ export interface ProjectButterJiraWorkItemProps {
 	journeyPhase?: ProjectButterJourneyPhase;
 	journeySession?: ProjectButterSessionItem;
 	journeyControls?: ReactNode;
-	developmentJourney?: ReactNode;
+	developmentJourney?: ProjectButterDevelopmentJourneyProps;
 	suggestionProfile?: "default" | "payments";
 	initialPresentation?: ProjectButterPresentation;
 	shell?: ProjectButterShellContext;

@@ -75,6 +75,7 @@ export default function PullRequestPage({
 						key={item.number}
 						{...item}
 						checks={isFlyout ? pullRequestChecksScenario(checksScenarioId) : item.checks}
+						onFix={isFlyout && item.status === "Open" ? () => setChecksScenarioId("running") : undefined}
 						variant={variant}
 						selected={isFlyout ? false : item.number === selectedNumber}
 						onActivate={

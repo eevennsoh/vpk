@@ -362,6 +362,7 @@ function PullRequestFlyoutBody({
 	reviewers,
 	checks,
 	reviewHref,
+	showReview,
 	href,
 	onFix,
 }: Readonly<
@@ -382,6 +383,7 @@ function PullRequestFlyoutBody({
 		| "reviewers"
 		| "checks"
 		| "reviewHref"
+		| "showReview"
 		| "href"
 		| "onFix"
 	>
@@ -416,8 +418,8 @@ function PullRequestFlyoutBody({
 	) : null;
 	const hasBranchPath = Boolean(branch || targetBranch);
 	const failedChecks = checks?.filter((check) => check.status === "failed") ?? [];
-	const canFix = Boolean(onFix && failedChecks.length);
-	const hasActions = Boolean(reviewHref || canFix);
+	const hasFailedChecks = status !== "Merged" && failedChecks.length > 0;
+	const hasActions = Boolean(reviewHref || showReview || hasFailedChecks);
 
 	return (
 		<>
@@ -470,9 +472,9 @@ function PullRequestFlyoutBody({
 							<a className={cn(buttonVariants({ variant: "outline" }), "min-w-0 flex-1")} href={reviewHref}>
 								Review
 							</a>
-						) : null}
-						{canFix && onFix ? (
-							<Button className="min-w-0 flex-1" onClick={() => onFix(failedChecks)} type="button" variant="outline">
+						) : showReview ? <Button className="min-w-0 flex-1" type="button" variant="outline">Review</Button> : null}
+						{hasFailedChecks ? (
+							<Button className="min-w-0 flex-1" disabled={!onFix} onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
 								Fix PR
 							</Button>
 						) : null}
@@ -513,6 +515,7 @@ export function PullRequest({
 	reviewers,
 	checks,
 	reviewHref,
+	showReview,
 	href,
 	onFix,
 	selected = false,
@@ -540,6 +543,7 @@ export function PullRequest({
 			relativeTime={relativeTime}
 			repository={repository}
 			reviewHref={reviewHref}
+			showReview={showReview}
 			reviewers={reviewers}
 			status={status}
 			targetBranch={targetBranch}

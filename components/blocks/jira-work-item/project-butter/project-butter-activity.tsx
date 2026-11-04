@@ -73,7 +73,7 @@ export function ProjectButterActivity({
 	const [hoverId, setHoverId] = useState<string | null>(null);
 	const view = singleView ? "Activity" : content.activityView;
 	const ordered = useMemo(
-		() => selectProjectButterActivity(content.activityEntries, view, content.activitySort, singleView || content.showAuditInActivity),
+		() => selectProjectButterActivity(content.activityEntries, view, singleView ? "newest" : content.activitySort, singleView || content.showAuditInActivity),
 		[content.activityEntries, view, content.activitySort, singleView, content.showAuditInActivity],
 	);
 	const previewEntryId = ordered.find((entry) => entry.id === `invocation-${previewSessionId}` || entry.kind === "comment" && (entry.sessionItem?.id === previewSessionId || entry.replies?.some((reply) => reply.sessionItem?.id === previewSessionId)))?.id;
@@ -175,6 +175,7 @@ export function ProjectButterActivity({
 					currentUser={content.currentUser}
 					entries={visible}
 					hideHeader
+					sortOrder="ascending"
 					onViewSession={(session) => onOpenSession(session.id)}
 					onEntriesChange={(entries) => {
 						const ids = new Set(visible.map((entry) => entry.id));
@@ -285,7 +286,7 @@ export function ProjectButterActivity({
 								<ShowMoreHorizontalIcon label="" size="small" />
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end" positionerClassName="z-[650]">
-								<DropdownMenuRadioGroup
+								{!singleView ? <DropdownMenuRadioGroup
 									onValueChange={(value) => {
 										const selected = SORTS.find((sort) => sort.value === value);
 										if (selected) content.setActivitySort(selected.value);
@@ -297,7 +298,7 @@ export function ProjectButterActivity({
 											{sort.label}
 										</DropdownMenuRadioItem>
 									))}
-								</DropdownMenuRadioGroup>
+								</DropdownMenuRadioGroup> : null}
 								{singleView || view === "Audit" ? (
 									<DropdownMenuCheckboxItem
 										checked={expandedAudit}

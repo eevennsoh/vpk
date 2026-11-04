@@ -52,6 +52,7 @@ async function renderFlyout(overrides) {
 		titleHref: view.queryByRole("link", { name: /#7 SHIL-25: Integrate Pull Request Data/u })?.getAttribute("href"),
 		viewPullRequest: view.queryByRole("link", { name: /^View pull request$/u }) !== null,
 		fix: view.queryByRole("button", { name: "Fix PR" }) !== null,
+		fixDisabled: view.queryByRole("button", { name: "Fix PR" })?.disabled,
 	};
 	await view.unmount();
 	return snapshot;
@@ -215,18 +216,32 @@ test("Fix PR appears for failed checks and passes only failures to the handler",
 		{ id: "unit", name: "Unit", status: "passed", details: "Passed" },
 	];
 	const fixed = [];
-	const withoutHandler = await renderFlyout({ checks });
-	assert.equal(withoutHandler.fix, false);
+	const withoutHandler = await renderFlyout({ checks, status: "Open" });
+	assert.equal(withoutHandler.fix, true);
+	assert.equal(withoutHandler.fixDisabled, true);
+	assert.equal((await renderFlyout({ checks, status: "Merged" })).fix, false);
 	const view = await renderComponent({
 		entry: "components/blocks/pull-request/components/pull-request.tsx",
 		exportName: "PullRequest",
 		mocks: THEME_MOCK,
-		props: { ...PROPS, checks, onFix: (failed) => fixed.push(failed) },
+		props: { ...PROPS, status: "Open", checks, onFix: (failed) => fixed.push(failed) },
 	});
 	await view.click(view.getByRole("button", { name: "Fix PR" }));
 	assert.deepEqual(fixed, [[checks[0]]]);
 	await view.rerender({ ...PROPS, checks: [{ ...checks[0], status: "running" }] });
 	assert.equal(view.queryByRole("button", { name: "Fix PR" }) === null, true);
+	await view.unmount();
+});
+
+test("the review placeholder remains enabled when no review destination is available", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/pull-request/components/pull-request.tsx",
+		exportName: "PullRequest",
+		mocks: THEME_MOCK,
+		props: { ...PROPS, reviewHref: undefined, showReview: true },
+	});
+	assert.equal(view.getByRole("button", { name: "Review" }).disabled, false);
+	await view.click(view.getByRole("button", { name: "Review" }));
 	await view.unmount();
 });
 
