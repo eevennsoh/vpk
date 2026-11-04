@@ -81,7 +81,7 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 	return (
 		<div
 			aria-labelledby={titleId}
-			className="flex max-h-full w-96 flex-col rounded-xl bg-surface-overlay outline-none"
+			className="flex max-h-full w-96 max-w-[calc(100vw-1rem)] flex-col rounded-xl bg-surface-overlay outline-none"
 			id={id}
 			ref={panelRef}
 			role="dialog"

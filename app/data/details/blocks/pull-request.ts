@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_DETAIL: ComponentDetail = {
 	description:
-		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: wrapping `#N` + title with a trailing status lozenge, author avatar + `Name · relativeTime`, then a divided GitHub mark + `source → target` path and files / `+add` `−del` footer.",
+		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: wrapping `#N` + title with a trailing status lozenge, author avatar + `Name · relativeTime · reviewers`, then a divided section with the repository name, `source → target` path, files / `+add` `−del`, and an expandable CI checks row, followed by Review / View pull request actions when their links are supplied.",
 	importStatement: `import { PullRequest } from "@/components/blocks/pull-request";
 import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 	usage: `import { PullRequest } from "@/components/blocks/pull-request";
@@ -19,6 +19,10 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
   deletions={21}
   filesChanged={6}
   relativeTime="1h"
+  repository="acme/storefront"
+  checks={checks}
+  reviewHref="https://github.com/acme/storefront/pull/1306/files"
+  href="https://github.com/acme/storefront/pull/1306"
 />`,
 	demoLayout: {
 		previewContentWidth: "full",
@@ -40,8 +44,14 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		{
 			title: "Flyout",
 			description:
-				"Overlay summary card: wrapping `#N` + title with a trailing status lozenge, author · time, then GitHub `source → target` and files / diff stats.",
+				"Overlay summary card: wrapping `#N` + title with a trailing status lozenge, author · time · reviewers, then repository, `source → target`, files / diff stats, an expandable CI checks row, and the Review / View pull request actions.",
 			demoSlug: "pull-request-demo-flyout",
+		},
+		{
+			title: "CI checks",
+			description:
+				"The flyout's expandable CI checks row in every state: yet to be run, running, a mixed in-progress run, all successful, and failed. The summary shows `passed/total builds passed` with a segmented status ring (a spinner while any check runs). Each check is a single-status ring (lime passed, red failed), a dashed circle when yet to run, or a spinner while running; failure reasons and elapsed times stay available to screen readers.",
+			demoSlug: "pull-request-demo-checks",
 		},
 	],
 	props: [
@@ -104,6 +114,39 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 			type: "number",
 			description:
 				"Number of changed files, rendered as `N files` on every card.",
+		},
+		{
+			name: "reviewers",
+			type: "{ approved: number; total: number }",
+			description:
+				"Flyout only. Reviewer sign-off appended to the `Name · time` line: `0/1 reviewer`, `1/2 reviewers`, or `No reviewers` when `total` is 0. Omitted when absent.",
+		},
+		{
+			name: "provider",
+			type: '"github" | "bitbucket"',
+			default: '"github"',
+			description: "Flyout only. Source-control host mark shown on the repository row (or the branch row when no repository is given).",
+		},
+		{
+			name: "repository",
+			type: "string",
+			description: "Flyout only. `workspace/repo` shown beside the provider mark. Omitted when absent.",
+		},
+		{
+			name: "checks",
+			type: "readonly PullRequestCheck[]",
+			description:
+				"Flyout only. CI checks (`queued`, `running`, `passed`, `failed`). The row reads `3/3 builds passed` (plus `· N failed`, with a spinner while unsettled) and expands inline into the full checks list. Omitted when absent or empty.",
+		},
+		{
+			name: "reviewHref",
+			type: "string",
+			description: "Flyout only. Renders the primary Review action as a link. The action is omitted without it.",
+		},
+		{
+			name: "href",
+			type: "string",
+			description: "Flyout only. Renders View pull request as an external link. The action is omitted without it.",
 		},
 		{
 			name: "timestampMs",

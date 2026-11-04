@@ -133,6 +133,29 @@ test("child work item progress has breathing room after its heading", async ({ p
 	}).toBe(8);
 });
 
+test("child work item actions appear on hover and keyboard focus", async ({ page }) => {
+	test.setTimeout(90_000);
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const row = page.getByRole("list", { name: "Child work items" }).getByRole("listitem").first();
+	const action = row.getByRole("button", { name: /^More actions for / });
+	const actions = row.locator('[data-component="SubItemActionsMenu"]');
+	await page.mouse.move(0, 0);
+	await expect(actions).toHaveCSS("opacity", "0");
+	await row.getByRole("button", { name: /^Edit priority for / }).focus();
+	await page.keyboard.press("Shift+Tab");
+	await expect(action).toBeFocused();
+	await expect(actions).toHaveCSS("opacity", "1");
+	await page.getByRole("button", { name: /^Collapse Child work items/ }).focus();
+	await expect(actions).toHaveCSS("opacity", "0");
+	await row.hover();
+	await expect(actions).toHaveCSS("opacity", "1");
+	await action.click();
+	await page.mouse.move(0, 0);
+	await expect(action).toHaveAttribute("aria-expanded", "true");
+	await expect(actions).toHaveCSS("opacity", "1");
+});
+
 test("work item story points use the number icon and stay in sync with the list", async ({ page }) => {
 	test.setTimeout(90_000);
 	await page.goto(appUrl("/butter"));
@@ -216,3 +239,23 @@ test("the status field opens across its row without a second background", async 
 	await expect(page.getByRole("menuitem", { name: "Pinned by default" })).toBeVisible();
 });
 
+
+test("long suggestions scroll inside the card without clipping the panel", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-999").locator('[data-slot="jira-issue-card"]').click();
+	await page.getByRole("button", { name: "5 suggestions" }).click();
+	const value = page.getByRole("region", { name: "Suggested value" });
+	await expect(value).toBeVisible();
+	await expect(page.getByRole("button", { name: "Accept all" })).toBeVisible();
+	const popup = page.locator('[data-slot="popover-content"]').filter({ has: value });
+	await expect(popup).toHaveCSS("overflow-x", "visible");
+	const geometry = await value.evaluate((element) => ({ height: element.clientHeight, total: element.scrollHeight }));
+	expect(geometry.height).toBeLessThanOrEqual(200);
+	expect(geometry.total).toBeGreaterThan(geometry.height);
+	await value.focus();
+	await page.keyboard.press("End");
+	await expect.poll(() => value.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+	await expect(page.getByRole("button", { name: "Accept description" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Accept all" })).toBeVisible();
+});

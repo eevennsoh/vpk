@@ -36,6 +36,9 @@ const EMPTY_FIELDS: Readonly<Record<Exclude<SuggestionFieldId, "description">, {
 	components: { label: "Components", placeholder: "None" },
 	fixVersion: { label: "Fix version", placeholder: "None" },
 	acceptanceCriteria: { label: "Acceptance criteria", placeholder: "Add acceptance criteria" },
+	storyPoints: { label: "Story points", placeholder: "Add story points" },
+	reporter: { label: "Reporter", placeholder: "Add reporter" },
+	costCenter: { label: "Cost center", placeholder: "Add cost center" },
 };
 
 function FieldRow({ label, children, highlighted }: Readonly<{ label: string; children: ReactNode; highlighted?: boolean }>) {

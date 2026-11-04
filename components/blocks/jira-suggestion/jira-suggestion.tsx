@@ -14,6 +14,36 @@ import { StackTrigger } from "./components/stack-trigger";
 import { useDeck } from "./components/use-deck";
 import { useJustFilled } from "./components/use-just-filled";
 import { useOverlayPlacement } from "./components/use-overlay-placement";
+import { Popover, PopoverContent } from "@/components/ui/popover";
+import type { SuggestionFeed } from "./hooks/use-suggestion-feed";
+import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
+
+/** The same review stack embedded beside a real work item's details. */
+export function JiraSuggestionControl({ feed, sources, showIntroLoading = false }: Readonly<{ feed: SuggestionFeed; sources?: readonly TwgToolSource[]; showIntroLoading?: boolean }>) {
+	const [open, setOpen] = useState(false);
+	const panelId = useId();
+	const anchorRef = useRef<HTMLDivElement>(null);
+	const triggerRef = useRef<HTMLButtonElement>(null);
+	const panelRef = useRef<HTMLDivElement>(null);
+	const deckRef = useRef<HTMLDivElement>(null);
+	const deck = useDeck(feed, () => {});
+	const close = () => {
+		setOpen(false);
+		feed.acknowledgeNew();
+		triggerRef.current?.focus();
+	};
+
+	return (
+		<Popover onOpenChange={setOpen} open={open}>
+			<div ref={anchorRef}>
+				<StackTrigger animateIntro feed={feed} onToggle={() => setOpen((current) => !current)} open={open} panelId={panelId} showIntroLoading={showIntroLoading} sources={sources} triggerRef={triggerRef} />
+			</div>
+			<PopoverContent anchor={anchorRef} align="start" aria-label="Work item suggestions" className="w-auto max-w-[calc(100vw-1rem)] gap-0 overflow-visible bg-transparent p-0 shadow-none" positionerClassName="z-[650]" side="left" sideOffset={8}>
+				<StackPanel deck={deck} deckRef={deckRef} feed={feed} id={panelId} maxHeight={500} onClose={close} overlay={null} panelRef={panelRef} />
+			</PopoverContent>
+		</Popover>
+	);
+}
 
 /**
  * Card stack: one suggestion at a time on a swipeable, randomly fanned stack inside a popover over the work item.

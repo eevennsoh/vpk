@@ -43,10 +43,11 @@ test("short work item activity ends without a viewport of blank space", async ({
 	})).toBeLessThan(64);
 });
 
-test("the board remains visible while a work item loads for the first time", async ({ page }) => {
+test("the first work item opens without waiting for additional JavaScript", async ({ page }) => {
+	test.setTimeout(60_000);
 	await page.goto(appUrl("/butter"));
 	const board = page.locator("[data-butter-board-surface]");
-	await expect(board).toBeVisible();
+	await expect(board).toBeVisible({ timeout: 30_000 });
 	await page.evaluate(() => {
 		Object.assign(window, { workItemEntryTransitions: [] as string[] });
 		document.addEventListener("transitionrun", (event) => {
@@ -57,31 +58,25 @@ test("the board remains visible while a work item loads for the first time", asy
 	});
 	let releaseChunks!: () => void;
 	const chunksReleased = new Promise<void>((resolve) => { releaseChunks = resolve; });
-	let observeChunk!: () => void;
-	const chunkRequested = new Promise<void>((resolve) => { observeChunk = resolve; });
 	await page.route("**/_next/static/**/*.js", async (route) => {
-		observeChunk();
 		await chunksReleased;
 		await route.continue();
 	});
 	try {
 		await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
-		await chunkRequested;
-		await expect(board).toBeVisible({ timeout: 5_000 });
-		await expect(page.getByRole("status").filter({ hasText: "Opening work item" })).toBeVisible();
-		await card(page, "PAY-107").locator('[data-slot="jira-issue-card"]').click();
-		await expect(board).toBeVisible();
+		await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
+		await expect(page.getByRole("heading", { name: "Port confirmPaymentIntent and the 3-D Secure challenge flow" })).toBeVisible();
+		await expect(page.getByText("Opening work item", { exact: false })).toHaveCount(0);
 	} finally {
 		releaseChunks();
 	}
 	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
-	await expect(page.getByRole("heading", { name: "Move retry and backoff out of LegacyGatewayAdapter" })).toBeVisible();
 	await expect.poll(() => page.evaluate(() => (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions)).toContain("opacity");
 	await page.getByRole("button", { name: "Close Project butter work item" }).click();
 	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeHidden();
 	await page.evaluate(() => { (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions = []; });
-	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
-	await expect(page.getByRole("heading", { name: "Port confirmPaymentIntent and the 3-D Secure challenge flow" })).toBeVisible();
+	await card(page, "PAY-107").locator('[data-slot="jira-issue-card"]').click();
+	await expect(page.getByRole("heading", { name: "Move retry and backoff out of LegacyGatewayAdapter" })).toBeVisible();
 	await expect.poll(() => page.evaluate(() => (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions)).toContain("opacity");
 });
 

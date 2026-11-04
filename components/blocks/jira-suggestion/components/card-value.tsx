@@ -2,20 +2,33 @@
 
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import EpicIcon from "@atlaskit/icon/core/epic";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import type { SuggestionValue } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 
-/**
- * The deck's value renderer. Every value wraps at full card width; nothing is clipped,
- * clamped or ellipsised, and the card grows to fit, so a reviewer always judges the whole suggestion.
- */
+function ParagraphValue({ text }: Readonly<{ text: string }>) {
+	const ref = useRef<HTMLParagraphElement>(null);
+	const [scrollable, setScrollable] = useState(false);
+	useLayoutEffect(() => {
+		const element = ref.current;
+		if (!element) return undefined;
+		const measure = () => setScrollable(element.scrollHeight > element.clientHeight);
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [text]);
+	return <p aria-label={scrollable ? "Suggested value" : undefined} className="scrollbar-thin max-h-50 overflow-y-auto overscroll-contain text-sm leading-5 text-pretty whitespace-pre-wrap text-text focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" data-suggestion-value-scroll={scrollable ? "" : undefined} ref={ref} role={scrollable ? "region" : undefined} tabIndex={scrollable ? 0 : undefined}>{text}</p>;
+}
+
+/** Values wrap without truncation; longer paragraphs scroll within the card. */
 export function CardValue({ value }: Readonly<{ value: SuggestionValue }>) {
 	switch (value.kind) {
 		case "paragraph":
-			return <p className="text-sm leading-5 text-pretty text-text">{value.text}</p>;
+			return <ParagraphValue text={value.text} />;
 		case "date":
 			return (
 				<span className="flex items-center gap-2 text-sm leading-5 text-text">
