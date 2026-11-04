@@ -273,6 +273,25 @@ function buildJgpQuestionCardParts(
 	];
 }
 
+/** Reconstructs the session's recorded messages without starting a new turn. */
+export function buildJgpAgentSessionMessages(
+	scenario: JgpAgentChatScenario,
+	sessionKey: string,
+): RovoUIMessage[] {
+	const request = scenario.request?.trim();
+	const mentionOnly = request?.toLowerCase() === `@${scenario.agentName}`.toLowerCase();
+	const messages: RovoUIMessage[] = [];
+	if (request && !mentionOnly) {
+		messages.push({ id: `${sessionKey}-user`, role: "user", parts: [{ type: "text", text: request, state: "done" }] });
+	}
+	const questionParts = buildJgpQuestionCardParts(scenario, sessionKey);
+	const assistantParts = questionParts ?? (!mentionOnly && scenario.intro?.trim()
+		? [{ type: "text" as const, text: scenario.intro, state: "done" as const }]
+		: []);
+	if (assistantParts.length) messages.push({ id: `${sessionKey}-assistant`, role: "assistant", parts: assistantParts });
+	return messages;
+}
+
 /**
  * Builds a deterministic local thinking -> generating -> completed transcript.
  * The ids vary per playback, while the visible content and timing stay stable.

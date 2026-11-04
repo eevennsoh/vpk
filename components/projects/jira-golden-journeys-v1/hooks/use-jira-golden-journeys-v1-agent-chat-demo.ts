@@ -7,24 +7,29 @@ import { useRovoChat } from "@/app/contexts/context-rovo-chat";
 import {
 	buildJgpAgentChatContextBar,
 	buildJgpAgentChatPlayback,
+	buildJgpAgentSessionMessages,
 	type JgpAgentChatScenario,
 } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { getMessageText } from "@/lib/rovo-ui-messages";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 
 export interface UseJgpAgentChatDemoResult {
+	activeSessionId: string | null;
 	chatContextBar: ChatContextBarDescriptor | null;
 	externalThinkingMessageId: string | null;
-	openAgentChat: (scenario: JgpAgentChatScenario) => void;
+	isSwitchingSession: boolean;
+	openAgentChat: (scenario: JgpAgentChatScenario) => Promise<boolean>;
 }
 
 export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
 	const { openChat, applyLocalTurn, selectAgent } = useRovoChatControls();
 	const { activeThreadId, activateSession, selectThread } = useRovoChat();
 	const sessionThreads = useRef(new Map<string, string>());
-	const pendingSession = useRef<string | null>(null);
+	const pendingSession = useRef<{ sessionId: string; previousThreadId: string | null } | null>(null);
 	const [chatContextBar, setChatContextBar] = useState<ChatContextBarDescriptor | null>(null);
 	const [externalThinkingMessageId, setExternalThinkingMessageId] = useState<string | null>(null);
+	const [isSwitchingSession, setIsSwitchingSession] = useState(false);
+	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 	const playbackAbortRef = useRef<AbortController | null>(null);
 	const runCounterRef = useRef(0);
 
@@ -34,8 +39,8 @@ export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
 
 	useEffect(() => cancelPlayback, [cancelPlayback]);
 	useEffect(() => {
-		if (pendingSession.current && activeThreadId) {
-			sessionThreads.current.set(pendingSession.current, activeThreadId);
+		if (pendingSession.current && activeThreadId && activeThreadId !== pendingSession.current.previousThreadId) {
+			sessionThreads.current.set(pendingSession.current.sessionId, activeThreadId);
 			pendingSession.current = null;
 		}
 	}, [activeThreadId]);
@@ -46,24 +51,39 @@ export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
 		const controller = new AbortController();
 		playbackAbortRef.current = controller;
 		const runId = `${scenario.issueKey.toLowerCase()}-${runCounterRef.current += 1}`;
-		const playback = buildJgpAgentChatPlayback(scenario, runId);
-
 		setChatContextBar(buildJgpAgentChatContextBar(scenario));
+		const sessionId = scenario.sessionId;
+		if (sessionId) {
+			setIsSwitchingSession(true);
+			return (async () => {
+				try {
+					const threadId = sessionThreads.current.get(sessionId);
+					if (threadId) {
+						await selectThread(threadId);
+					} else {
+						const activated = await activateSession({ agentId: scenario.agentId, threadId: null, messages: buildJgpAgentSessionMessages(scenario, sessionId) });
+						if (!activated || controller.signal.aborted) return false;
+						pendingSession.current = { sessionId, previousThreadId: activeThreadId };
+					}
+					if (controller.signal.aborted) return false;
+					setExternalThinkingMessageId(null);
+					setActiveSessionId(sessionId);
+					openChat("floating");
+					return true;
+				} catch (error) {
+					if (!controller.signal.aborted) console.error("[JGP] Failed to open agent session:", error);
+					return false;
+				} finally {
+					if (!controller.signal.aborted) setIsSwitchingSession(false);
+				}
+			})();
+		}
+		setIsSwitchingSession(false);
+		setActiveSessionId(null);
 		openChat("floating");
 		void (async () => {
-			const threadId = scenario.sessionId ? sessionThreads.current.get(scenario.sessionId) : undefined;
-			if (threadId) {
-				setExternalThinkingMessageId(null);
-				await selectThread(threadId);
-				return;
-			}
-			if (scenario.sessionId) {
-				const activated = await activateSession({ agentId: scenario.agentId, threadId: null, messages: [] });
-				if (!activated || controller.signal.aborted) return;
-				pendingSession.current = scenario.sessionId;
-			} else {
-				selectAgent(scenario.agentId, { preserveCurrentThread: true });
-			}
+			selectAgent(scenario.agentId, { preserveCurrentThread: true });
+			const playback = buildJgpAgentChatPlayback(scenario, runId);
 			setExternalThinkingMessageId(scenario.question ? null : playback.assistantMessageId);
 			const started = await applyLocalTurn({
 				history: "replace",
@@ -81,10 +101,11 @@ export function useJgpAgentChatDemo(): UseJgpAgentChatDemoResult {
 					if (id || !Boolean(scenario.question)) setExternalThinkingMessageId(id);
 				},
 			});
-			if (!started && pendingSession.current === scenario.sessionId) pendingSession.current = null;
+			if (!started && !controller.signal.aborted) setExternalThinkingMessageId(null);
 		})();
+		return Promise.resolve(true);
 
-	}, [activateSession, cancelPlayback, openChat, applyLocalTurn, selectAgent, selectThread]);
+	}, [activeThreadId, activateSession, cancelPlayback, openChat, applyLocalTurn, selectAgent, selectThread]);
 
-	return { chatContextBar, externalThinkingMessageId, openAgentChat };
+	return { activeSessionId, chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat };
 }

@@ -101,6 +101,10 @@ export interface JiraIssueAgentActivity {
 	label: string;
 	labels?: readonly string[];
 	message?: string;
+	/** Original user request, retained when a session is shown in a picker. */
+	prompt?: string;
+	/** A newly created session that has not received its first prompt yet. */
+	waitingForPrompt?: boolean;
 	/** Stable start time supplied by a real running session. */
 	startedAtMs?: number;
 	/** Optional seeded runtime for demos; active timers continue from this value. */

@@ -6,7 +6,7 @@ import { ROVO_AGENT_ID } from "@/app/data/directory/agents";
 import type { JiraIssueAgentActivity, JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-issue";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import { linkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
-import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
+import type { ChatComposerPrefillRequest } from "@/components/projects/sidebar-chat/page";
 import {
 	createJgpKanbanActivity,
 	getJgpGenerativeAgentSelection,
@@ -21,11 +21,6 @@ interface UseButterGenerativeActionsOptions {
 	setBoardColumns: Dispatch<SetStateAction<JiraKanbanColumnData[]>>;
 	/** Lets the Board capture its native arrival before the assignment commits. */
 	onStartAgentSession?: (issueKey: string, activity: JiraIssueAgentActivity) => void;
-}
-
-interface ComposerPrefillRequest {
-	mention: RichTextMentionItem;
-	requestKey: number;
 }
 
 function getSkillMentionId(id: string): string {
@@ -72,11 +67,15 @@ export function useButterGenerativeActions({
 	onStartAgentSession,
 }: Readonly<UseButterGenerativeActionsOptions>) {
 	const prefillRequestKeyRef = useRef(0);
-	const [composerPrefillRequest, setComposerPrefillRequest] = useState<ComposerPrefillRequest>();
+	const [composerPrefillRequest, setComposerPrefillRequest] = useState<ChatComposerPrefillRequest>();
 	const handleComposerPrefillConsumed = useCallback((requestKey: number) => {
 		setComposerPrefillRequest((current) => (
 			current?.requestKey === requestKey ? undefined : current
 		));
+	}, []);
+	const prefillComposerText = useCallback((text: string) => {
+		prefillRequestKeyRef.current += 1;
+		setComposerPrefillRequest({ text, append: true, requestKey: prefillRequestKeyRef.current });
 	}, []);
 
 	const handleCardGenerativeActionSubmit = useCallback((
@@ -134,6 +133,7 @@ export function useButterGenerativeActions({
 
 	return {
 		composerPrefillRequest,
+		prefillComposerText,
 		handleCardGenerativeActionSubmit,
 		handleComposerPrefillConsumed,
 	};

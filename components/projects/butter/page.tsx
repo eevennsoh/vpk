@@ -10,6 +10,8 @@ import { DEFAULT_SKILLS } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { useRovoChat } from "@/app/contexts/context-rovo-chat";
+import { getMessageText } from "@/lib/rovo-ui-messages";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type {
 	JiraIssueAgentActivity,
@@ -130,7 +132,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateA
 	onBrowseAgents: () => void;
 	onCreateAgent: () => void;
 	onAgentSessionStart: (issueKey: string, session: AgentSessionItem) => void;
-	onOpenCloudSession: (issueKey: string, issueSummary: string, session: AgentSessionItem & { message: string; prompt?: string }) => void;
+	onOpenCloudSession: (issueKey: string, issueSummary: string, session: AgentSessionItem & { message: string; prompt?: string }, draft?: string) => Promise<boolean>;
 	onStoryPointsChange: (issueKey: string, storyPoints: number | undefined) => void;
 	onWorkItemClose: () => void;
 }) {
@@ -160,7 +162,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateA
 					defaultReporter={defaultReporter}
 					initialSessions={workItem.selection.initialSessions}
 					overlayContainerRef={setOverlayContainer}
-					onOpenCloudSession={(session) => { if (workItem.selection) onOpenCloudSession(workItem.selection.workItem.code, workItem.selection.workItem.title, session); }}
+					onOpenCloudSession={(session, draft) => workItem.selection ? onOpenCloudSession(workItem.selection.workItem.code, workItem.selection.workItem.title, session, draft) : Promise.resolve(false)}
 					onBrowseAgents={onBrowseAgents}
 					onCreateAgent={onCreateAgent}
 					onAgentSessionStart={(session) => { if (workItem.selection) onAgentSessionStart(workItem.selection.workItem.code, session); }}
@@ -186,10 +188,24 @@ export default function ButterPage(): React.ReactElement {
 	);
 }
 
+function ButterSessionPromptObserver({ activeSessionId, isSwitchingSession, onPrompt }: Readonly<{
+	activeSessionId: string | null;
+	isSwitchingSession: boolean;
+	onPrompt: (sessionId: string, prompt: string) => void;
+}>) {
+	const { uiMessages } = useRovoChat();
+	useEffect(() => {
+		if (!activeSessionId || isSwitchingSession) return;
+		const firstPrompt = uiMessages.find((message) => message.role === "user");
+		if (firstPrompt) onPrompt(activeSessionId, getMessageText(firstPrompt));
+	}, [activeSessionId, isSwitchingSession, onPrompt, uiMessages]);
+	return null;
+}
+
 function ButterApp(): React.ReactElement {
 	const router = useRouter();
 	const { designVariants } = useDesignVariants();
-	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
+	const { activeSessionId, chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
 	const browseAgents = useCallback(() => setAgentsDirectoryOpen(true), []);
@@ -221,6 +237,7 @@ function ButterApp(): React.ReactElement {
 	});
 	const {
 		composerPrefillRequest,
+		prefillComposerText,
 		handleCardGenerativeActionSubmit,
 		handleComposerPrefillConsumed,
 	} =
@@ -287,16 +304,41 @@ function ButterApp(): React.ReactElement {
 		if (activity.host === "local") return;
 		openAgentChat({
 			sessionId: activity.id,
-			agentId: activity.id.includes(":")
-				? activity.id.slice(activity.id.lastIndexOf(":") + 1)
-				: activity.id,
+			agentId: resolveButterChatAgentId({ name: activity.name }, activity.id),
 			agentName: activity.name,
 			issueKey: card.code,
 			issueSummary: card.title,
 			intro: activity.message,
+			request: activity.prompt,
 			question: activity.question,
 		});
 	}, [openAgentChat]);
+	const handleCardCreateCloudSession = useCallback((agent: AgentSelectorAgent, card: JiraKanbanCardData) => {
+		const session: AgentSessionItem = {
+			id: `${card.code}:${crypto.randomUUID()}`,
+			agent: { id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo },
+			title: `Work on ${card.title}`,
+			state: "needs-input",
+			host: "cloud",
+			startedAtMs: Date.now(),
+			timeLabel: "Just now",
+			invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
+		};
+		startAgentSession(card.code, { ...toButterAgentActivityFromSession(session), waitingForPrompt: true });
+	}, [startAgentSession]);
+	const handleSessionPrompt = useCallback((sessionId: string, prompt: string) => {
+		if (!prompt.trim()) return;
+		setBoardColumns((columns) => {
+			if (!columns.some((column) => column.cards.some((card) => card.agentActivities?.some((activity) => activity.id === sessionId && activity.waitingForPrompt)))) return columns;
+			return columns.map((column) => {
+				if (!column.cards.some((card) => card.agentActivities?.some((activity) => activity.id === sessionId && activity.waitingForPrompt))) return column;
+				return { ...column, cards: column.cards.map((card) => {
+					if (!card.agentActivities?.some((activity) => activity.id === sessionId && activity.waitingForPrompt)) return card;
+					return { ...card, agentActivities: card.agentActivities.map((activity) => activity.id === sessionId && activity.waitingForPrompt ? { ...activity, state: "working", waitingForPrompt: false, prompt } : activity) };
+				}) };
+			});
+		});
+	}, [setBoardColumns]);
 	const handleViewCompletedRun = useCallback((run: JiraIssueCompletedAgentRun) => {
 		openAgentChat({
 			agentId: run.agentName.toLowerCase().replace(/\s+/g, "-"),
@@ -587,6 +629,7 @@ function ButterApp(): React.ReactElement {
 						onCardClick={openButterWorkItem}
 						onCardAgentActivityViewChat={handleViewChat}
 						onCardAssignedAgentIdsChange={onBoardAssignedAgentIdsChange}
+						onCardCreateCloudSession={handleCardCreateCloudSession}
 						onSelectedCardsAgentAssign={onSelectedCardsAgentAssign}
 						onCardAgentDoneRunView={handleViewCompletedRun}
 						onCardGenerativeActionSubmit={handleCardGenerativeActionSubmit}
@@ -664,7 +707,7 @@ function ButterApp(): React.ReactElement {
 				onBrowseAgents={browseAgents}
 				onCreateAgent={createAgent}
 				onAgentSessionStart={handleWorkItemSessionStart}
-				onOpenCloudSession={(issueKey, issueSummary, session) => openAgentChat({
+				onOpenCloudSession={async (issueKey, issueSummary, session, draft) => { const opened = await openAgentChat({
 					sessionId: session.id,
 					agentId: resolveButterChatAgentId(session.agent, session.id),
 					agentName: session.agent.name,
@@ -672,16 +715,18 @@ function ButterApp(): React.ReactElement {
 					issueSummary,
 					intro: session.message,
 					request: session.prompt,
-				})}
+				}); if (opened && draft) prefillComposerText(draft); return opened; }}
 				onStoryPointsChange={(issueKey, storyPoints) => setBoardColumns((columns) => columns.map((column) => ({ ...column, cards: column.cards.map((card) => card.code === issueKey ? { ...card, storyPoints } : card) })))}
 				onWorkItemClose={handleWorkItemClose}
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}
+				isSwitchingSession={isSwitchingSession}
 				onComposerPrefillConsumed={handleComposerPrefillConsumed}
 				openRelatedItem={openRelatedItem}
 				relatedCatalog={relatedCatalog}
 			/>
+			<ButterSessionPromptObserver activeSessionId={activeSessionId} isSwitchingSession={isSwitchingSession} onPrompt={handleSessionPrompt} />
 		</>
 	);
 }

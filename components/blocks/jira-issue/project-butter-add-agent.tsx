@@ -21,6 +21,12 @@ function useButterAgentAssignment(assignment: JiraIssueAgentAssignment | undefin
 	const actions = useProjectButterInvocationActions();
 	const agents = useProjectButterInvocationAgents();
 	return (agent: AgentSelectorAgent) => {
+		if (assignment?.onCreateCloudSession) {
+			actions?.commit(agent, agents.findIndex((candidate) => candidate.id === agent.id));
+			assignment.onAgentAssign?.(agent);
+			assignment.onCreateCloudSession(agent);
+			return;
+		}
 		const id = agent.id;
 		const card = triggerRef.current?.closest("article");
 		const listSurface = triggerRef.current?.closest("[data-butter-agent-surface]");
@@ -46,6 +52,8 @@ export function ProjectButterMenuAgentSubmenu({ assignment, onRequestClose, trig
 			<DropdownMenuSubTrigger aria-haspopup="dialog">Add agent</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent aria-label="Agents" role="dialog" className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
 				<ProjectButterAgentPickerContent
+					sessions={assignment.sessions}
+					onContinueSession={assignment.onOpenSession ? (session) => { actions?.close(); onRequestClose(); assignment.onOpenSession?.(session); } : undefined}
 					onAssign={(agent) => { assignAgent(agent); onRequestClose(); }}
 					onBrowseAgents={assignment.onBrowseAgents ? () => { onRequestClose(); assignment.onBrowseAgents?.(); } : undefined}
 					onCreateAgent={assignment.onCreateAgent ? () => { onRequestClose(); assignment.onCreateAgent?.(); } : undefined}
@@ -67,7 +75,7 @@ export function ProjectButterMenuAgentPicker({ assignment, id, source: pickerSou
 	const assignAgent = useButterAgentAssignment(assignment, triggerRef);
 	return (
 		<Popover open={phase === "choosing" && source === pickerSource} onOpenChange={(open) => open ? actions?.open(pickerSource) : actions?.close()}>
-			<ProjectButterAgentPicker id={id} anchor={triggerRef} onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents} onCreateAgent={assignment.onCreateAgent} />
+			<ProjectButterAgentPicker id={id} anchor={triggerRef} onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents} onCreateAgent={assignment.onCreateAgent} sessions={assignment.sessions} onContinueSession={assignment.onOpenSession ? (session) => { actions?.close(); assignment.onOpenSession?.(session); } : undefined} />
 		</Popover>
 	);
 }
@@ -140,6 +148,8 @@ export function ProjectButterAddAgent({
 					</TooltipContent>
 				</Tooltip>
 				<ProjectButterAgentPicker
+					sessions={assignment.sessions}
+					onContinueSession={assignment.onOpenSession ? (session) => { actions.close(); assignment.onOpenSession?.(session); } : undefined}
 					onAssign={(agent) => { setTooltipOpen(false); assignAgent(agent); }}
 					onBrowseAgents={assignment.onBrowseAgents}
 					onCreateAgent={assignment.onCreateAgent}

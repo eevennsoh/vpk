@@ -165,7 +165,7 @@ test("Butter card overflow opens the agent submenu on hover and previews in the 
 	await expect(cloud).toBeVisible();
 	await cloud.click();
 	await expect(page.getByRole("menu", { name: "More actions for PAY-105" })).toHaveCount(0);
-	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(issue.getByRole("button", { name: "2 agents: Needs input" })).toBeVisible();
 	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
 });
 
@@ -180,7 +180,7 @@ test("Butter session menu opens the same agent picker", async ({ page }) => {
 	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
 	await picker.getByRole("option", { name: /^Claude/ }).click();
 	await page.getByText("Run on cloud", { exact: true }).click();
-	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(issue.getByRole("button", { name: "2 agents: Needs input" })).toBeVisible();
 	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
 });
 

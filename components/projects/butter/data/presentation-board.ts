@@ -96,7 +96,7 @@ export const BUTTER_PAY_BOARD_AGENTS = [
 ] as const satisfies readonly JiraKanbanAgentData[];
 
 export function toButterAgentActivityFromSession(
-	session: AgentSessionItem,
+	session: AgentSessionItem & { prompt?: string; invokedAtMs?: number },
 ): JiraIssueAgentActivity {
 	return {
 		id: session.id,
@@ -104,6 +104,8 @@ export function toButterAgentActivityFromSession(
 		avatarSrc: session.agent.avatarSrc,
 		agentBrandName: session.agent.brandName,
 		label: session.title,
+		...(session.prompt ? { prompt: session.prompt } : {}),
+		...(session.invokedAtMs ?? session.startedAtMs ? { startedAtMs: session.invokedAtMs ?? session.startedAtMs } : {}),
 		state: session.state === "needs-input" || session.state === "attention"
 			? "awaiting-input"
 			: session.state === "complete"
@@ -119,9 +121,11 @@ export function toButterAgentActivityFromSession(
 export function toButterDetachedAgentSession(
 	activity: JiraIssueAgentActivity,
 	card: JiraKanbanCardData,
-): AgentSessionItem {
+): AgentSessionItem & { prompt?: string; invokedAtMs?: number } {
 	return {
 		id: activity.id,
+		...(activity.prompt ? { prompt: activity.prompt } : {}),
+		...(activity.startedAtMs ? { startedAtMs: activity.startedAtMs, invokedAtMs: activity.startedAtMs } : {}),
 		title: activity.label,
 		state: activity.state === "awaiting-input"
 			? "needs-input"

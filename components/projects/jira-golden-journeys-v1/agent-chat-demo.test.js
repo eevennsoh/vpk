@@ -24,6 +24,7 @@ async function loadHarness() {
 					JGP_ROVO_COMPLETED_SESSION_PATCH,
 					JGP_ROVO_SESSION_SEEDS,
 					buildJgpAgentChatPlayback,
+					buildJgpAgentSessionMessages,
 					buildJgpAgentChatContextBar,
 					buildJgpRovoContinuationPlayback,
 				} from "./components/projects/jira-golden-journeys-v1/data/agent-chat-data";
@@ -166,6 +167,17 @@ test("JGP chat hook opens the chat, selects the session agent, and cancels stale
 	assert.match(HOOK_SOURCE, /useEffect\(\(\) => cancelPlayback, \[cancelPlayback\]\);/u);
 	assert.match(HOOK_SOURCE, /setChatContextBar\(buildJgpAgentChatContextBar\(scenario\)\);/u);
 	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(scenario\.question \? null : playback\.assistantMessageId\);/u);
+});
+
+test("resuming an agent session restores recorded content without inventing a turn", async () => {
+	const { buildJgpAgentSessionMessages } = await loadHarness();
+	const scenario = { agentId: "cursor", agentName: "Cursor", issueKey: "PAY-105", issueSummary: "Review the flow", intro: "Ready to work." };
+	assert.deepEqual(buildJgpAgentSessionMessages({ ...scenario, request: "@Cursor" }, "session-a"), []);
+	assert.deepEqual(buildJgpAgentSessionMessages({ ...scenario, request: "@Cursor Check the flow" }, "session-b").map((message) => [message.role, message.parts[0].text]), [
+		["user", "@Cursor Check the flow"],
+		["assistant", "Ready to work."],
+	]);
+	assert.deepEqual(buildJgpAgentSessionMessages(scenario, "session-c").map((message) => [message.role, message.parts[0].text]), [["assistant", "Ready to work."]]);
 });
 
 test("JGP global Rovo uses one input-required session that continues to PR completion", async () => {
