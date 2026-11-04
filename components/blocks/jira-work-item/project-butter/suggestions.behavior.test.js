@@ -104,7 +104,7 @@ test("accepting a due date fills its Details field", async () => {
 
 test("the shared stack accepts and dismisses Butter fields and supports undo", async () => {
 	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments" });
-	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
+	await view.click(view.getByRole("button", { name: /suggestions/iu }));
 	assert.notEqual(view.queryByRole("button", { name: "Show as list" }), null);
 	await view.click(view.getByRole("button", { name: "Show as list" }));
 	await view.click(view.getByRole("button", { name: "Accept due date" }));
@@ -118,7 +118,7 @@ test("the shared stack accepts and dismisses Butter fields and supports undo", a
 
 test("accept all uses actual values and undo preserves later edits", async () => {
 	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments" });
-	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
+	await view.click(view.getByRole("button", { name: /suggestions/iu }));
 	await view.click(view.getByRole("button", { name: "Accept all" }));
 	const editor = view.getByRole("textbox", { name: "Work item description" });
 	assert.equal(editor.textContent.includes("Help merchants adopt Payments SDK v2"), true);
@@ -146,7 +146,7 @@ test("suggestions remain scoped to the work item", async () => {
 	const demo = { ...common, initialSuggestion: true, suggestionProfile: "payments", workItem: { code: "PAY-999", title: "Merchant onboarding" } };
 	const other = { ...common, initialSuggestion: false, workItem: { code: "PAY-118", title: "Card artwork" } };
 	const view = await renderWorkItem(demo);
-	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
+	await view.click(view.getByRole("button", { name: /suggestions/iu }));
 	await view.click(view.getByRole("button", { name: "Show as list" }));
 	await view.click(view.getByRole("button", { name: "Accept parent" }));
 	await view.rerender(other);
@@ -175,6 +175,22 @@ test("undoing a dismissal restores it to the work item", async () => {
 	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
 	await view.click(view.getByRole("button", { name: "Dismiss description" }));
 	await view.click(view.getByRole("button", { name: "Undo dismissing Description" }));
+	assert.notEqual(view.queryByRole("button", { name: /5 suggestions/iu }), null);
+	await view.unmount();
+});
+
+
+test("the source stack and grid appear together after the border trace", async () => {
+	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments" });
+	const trigger = view.getByRole("button", { name: "Finding suggestions" });
+	const banner = trigger.parentElement;
+	assert.equal(banner.querySelector("[data-suggestion-grid]"), null);
+	assert.equal(banner.querySelector('[aria-label="Confluence"]'), null);
+	for (let waited = 0; !banner.querySelector("[data-suggestion-grid]") && waited < 8_000; waited += 50) {
+		await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+	}
+	assert.notEqual(banner.querySelector("[data-suggestion-grid]"), null);
+	assert.notEqual(banner.querySelector('[aria-label="Confluence"]'), null);
 	assert.notEqual(view.queryByRole("button", { name: /5 suggestions/iu }), null);
 	await view.unmount();
 });

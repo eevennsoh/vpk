@@ -45,7 +45,7 @@ export interface CardDeckProps {
 
 function isFromControl(event: KeyboardEvent<HTMLDivElement>): boolean {
 	if (event.target === event.currentTarget) return false;
-	return (event.target as Element).closest("button, a, input, textarea, select, [contenteditable], [role=button], [role=menuitem]") != null;
+	return (event.target as Element).closest("button, a, input, textarea, select, [contenteditable], [role=button], [role=menuitem], [data-suggestion-value-scroll]") != null;
 }
 
 /**

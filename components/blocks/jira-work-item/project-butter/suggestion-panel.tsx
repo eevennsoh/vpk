@@ -41,7 +41,7 @@ function toCard(suggestion: ProjectButterSuggestion): WorkItemSuggestion {
 }
 
 /** Connect the shared suggestion stack to Butter's editable fields. */
-export function ProjectButterSuggestionPanel({ fill }: Readonly<{ fill: ProjectButterSuggestionFill; showIntroLoading?: boolean }>) {
+export function ProjectButterSuggestionPanel({ fill, showIntroLoading = false }: Readonly<{ fill: ProjectButterSuggestionFill; showIntroLoading?: boolean }>) {
 	const [saved, setSaved] = useState<readonly ProjectButterSuggestion[]>(fill.suggestions);
 	const additions = fill.suggestions.filter((suggestion) => !saved.some((item) => item.field === suggestion.field));
 	const suggestions = additions.length ? [...saved, ...additions] : saved;
@@ -92,7 +92,7 @@ export function ProjectButterSuggestionPanel({ fill }: Readonly<{ fill: ProjectB
 	if (!suggestions.length) return null;
 	return (
 		<div className="sticky top-0 z-40 -mx-6 w-[calc(100%+3rem)] bg-surface px-6 pb-3">
-			<JiraSuggestionControl feed={feed} sources={SOURCES} />
+			<JiraSuggestionControl feed={feed} showIntroLoading={showIntroLoading} sources={SOURCES} />
 		</div>
 	);
 }

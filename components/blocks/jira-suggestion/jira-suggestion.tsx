@@ -19,7 +19,7 @@ import type { SuggestionFeed } from "./hooks/use-suggestion-feed";
 import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
 
 /** The same review stack embedded beside a real work item's details. */
-export function JiraSuggestionControl({ feed, sources }: Readonly<{ feed: SuggestionFeed; sources?: readonly TwgToolSource[] }>) {
+export function JiraSuggestionControl({ feed, sources, showIntroLoading = false }: Readonly<{ feed: SuggestionFeed; sources?: readonly TwgToolSource[]; showIntroLoading?: boolean }>) {
 	const [open, setOpen] = useState(false);
 	const panelId = useId();
 	const anchorRef = useRef<HTMLDivElement>(null);
@@ -36,9 +36,9 @@ export function JiraSuggestionControl({ feed, sources }: Readonly<{ feed: Sugges
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
 			<div ref={anchorRef}>
-				<StackTrigger feed={feed} onToggle={() => setOpen((current) => !current)} open={open} panelId={panelId} sources={sources} triggerRef={triggerRef} />
+				<StackTrigger animateIntro feed={feed} onToggle={() => setOpen((current) => !current)} open={open} panelId={panelId} showIntroLoading={showIntroLoading} sources={sources} triggerRef={triggerRef} />
 			</div>
-			<PopoverContent anchor={anchorRef} align="start" aria-label="Work item suggestions" className="max-h-[calc(100vh-1rem)] w-auto max-w-[calc(100vw-1rem)] gap-0 overflow-y-auto bg-transparent p-0 shadow-none" positionerClassName="z-[650]" side="left" sideOffset={8}>
+			<PopoverContent anchor={anchorRef} align="start" aria-label="Work item suggestions" className="w-auto max-w-[calc(100vw-1rem)] gap-0 overflow-visible bg-transparent p-0 shadow-none" positionerClassName="z-[650]" side="left" sideOffset={8}>
 				<StackPanel deck={deck} deckRef={deckRef} feed={feed} id={panelId} maxHeight={500} onClose={close} overlay={null} panelRef={panelRef} />
 			</PopoverContent>
 		</Popover>
