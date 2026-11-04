@@ -18,6 +18,7 @@ import { JiraIssueAgentLinkFlashOverlay, type JiraIssueAgentLinkFlash } from "@/
 import { useProjectButterInvocationActions, useProjectButterInvocationEnabled, useProjectButterInvocationPhase, useProjectButterInvocationPreview, useProjectButterInvocationSource } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { matchesInvocationAgent } from "@/components/blocks/jira-issue/project-butter-invocation-model";
 import { ProjectButterMenuAgentPicker } from "@/components/blocks/jira-issue/project-butter-add-agent";
+import { JiraIssueAgentHandoffLabel } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
 import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issue/agent-session-unlink-button";
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -340,6 +341,7 @@ export function JiraIssueAgentRowContent({
 					agents={activities.map(toAgentLoadingAgent)}
 					announce={false}
 					className="shrink-0"
+					intro={puzzleHandoff && !reduce && selectedActivity ? { agentId: selectedActivity.id, avatarSize: getJiraIssueAgentAvatarSize(selectedActivity.agentBrandName, selectedActivity.avatarSrc) } : undefined}
 					key={selectedAgent?.id ?? "default"}
 				/>
 			</span>
@@ -350,17 +352,17 @@ export function JiraIssueAgentRowContent({
 		<>
 			<div className="flex min-w-0 flex-1 items-center gap-2">
 				<span
-					className={cn("flex shrink-0", puzzleHandoff && !reduce ? "agent-loading-handoff-reveal" : phase === "handoff" && !reduce ? "opacity-0" : null)}
+					className={cn("flex shrink-0", phase === "handoff" && !puzzleHandoff && !reduce ? "opacity-0" : null)}
 					data-slot="jira-issue-agent-avatar-handoff"
 					key={selectedAgent?.id ?? "default"}
 				>
 					{avatar}
 				</span>
-				<JiraIssueAgentRowLabel
+				{phase === "handoff" && selectedAgent && isWorking && !reduce ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel
 					isAwaitingInput={isAwaitingInput}
 					isWorking={isWorking}
 					rowLabel={rowLabel}
-				/>
+				/></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={isAwaitingInput} isWorking={isWorking} rowLabel={rowLabel} />}
 			</div>
 			{showUnlinkControl ? null : statusIcon}
 		</>
