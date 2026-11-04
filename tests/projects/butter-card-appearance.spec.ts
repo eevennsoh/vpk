@@ -5,6 +5,19 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("Butter starts a second session for an agent already on the card", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-105");
+	await issue.hover();
+	await issue.getByRole("button", { name: "Add agent to PAY-105" }).click();
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Cursor");
+	await picker.getByRole("option", { name: /^Cursor/ }).click();
+	await page.getByText("Run on cloud", { exact: true }).click();
+	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(issue.locator('[data-agent-id^="PAY-105:test-agent"]')).toHaveCount(2);
+});
+
 test("empty activity places the comment bar 24 pixels below the tabs", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/jira-work-item#project-butter"));
 	await page.getByRole("switch", { name: "Empty" }).check();
