@@ -14,6 +14,8 @@ import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 
 interface JgpRovoOverlayProps {
+	portalContainer?: HTMLElement | null;
+	contained?: boolean;
 	agentCreator?: AgentResultCreator;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	composerPrefillRequest?: { mention: RichTextMentionItem; requestKey: number };
@@ -39,6 +41,8 @@ interface JgpRovoOverlayProps {
 
 /** Keeps JGP Rovo surfaces in the viewport stacking context above the Gallery dock. */
 export function JgpRovoOverlay({
+	portalContainer,
+	contained = false,
 	agentCreator,
 	chatContextBar,
 	composerPrefillRequest,
@@ -88,13 +92,14 @@ export function JgpRovoOverlay({
 		onApply: onQuestionAnswer,
 	}), [onQuestionAnswer]);
 
+	const embeddedInDialog = contained;
 	const showLauncher = launcher === "auto"
 		&& chatSurface === null
 		&& !isRovoCanvasOpen
-		&& !isEmbeddedHostOpen;
+		&& (!isEmbeddedHostOpen || embeddedInDialog);
 	const showFloatingChat = chat === "auto"
 		&& chatSurface === "floating"
-		&& !isEmbeddedHostOpen;
+		&& (!isEmbeddedHostOpen || embeddedInDialog);
 
 	// Autofocus belongs to a genuine chat open; host visibility changes must
 	// preserve their own focus restoration when floating chat remounts.
@@ -140,6 +145,6 @@ export function JgpRovoOverlay({
 				) : null}
 			</AnimatePresence>
 		</>,
-		portalRoot,
+		portalContainer ?? portalRoot,
 	);
 }

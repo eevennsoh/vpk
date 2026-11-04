@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Suspense, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ComponentProps, type Ref } from "react";
+import { Suspense, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type Ref } from "react";
 import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
@@ -121,7 +121,7 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
 }
 
-function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateAgent, onAgentSessionStart, onStoryPointsChange, onWorkItemClose, openRelatedItem, relatedCatalog, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateAgent, onAgentSessionStart, onOpenCloudSession, onStoryPointsChange, onWorkItemClose, openRelatedItem, relatedCatalog, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
 	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
 	openRelatedItem: RelatedItemOpener;
 	/** Board cards as related-work matches, so composers offer this project's items. */
@@ -131,10 +131,23 @@ function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateA
 	onBrowseAgents: () => void;
 	onCreateAgent: () => void;
 	onAgentSessionStart: (issueKey: string, session: AgentSessionItem) => void;
+	onOpenCloudSession: (issueKey: string, issueSummary: string, session: AgentSessionItem & { message: string }) => void;
 	onStoryPointsChange: (issueKey: string, storyPoints: number | undefined) => void;
 	onWorkItemClose: () => void;
 }) {
 	const workItem = useButterWorkItem();
+	const [overlayContainer, setOverlayContainer] = useState<HTMLDivElement | null>(null);
+	const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null);
+	useLayoutEffect(() => {
+		const host = document.createElement("div");
+		host.style.display = "contents";
+		document.body.appendChild(host);
+		const frame = window.requestAnimationFrame(() => setOverlayHost(host));
+		return () => { window.cancelAnimationFrame(frame); host.remove(); };
+	}, []);
+	useLayoutEffect(() => {
+		if (overlayHost) (workItem.open && overlayContainer ? overlayContainer : document.body).appendChild(overlayHost);
+	}, [overlayContainer, overlayHost, workItem.open]);
 	useImperativeHandle(ref, () => ({ open: workItem.openWorkItem }), [workItem.openWorkItem]);
 	return (
 		<>
@@ -153,6 +166,8 @@ function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateA
 						suggestionProfile={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? "payments" : "default"}
 						defaultReporter={defaultReporter}
 						initialSessions={workItem.selection.initialSessions}
+						overlayContainerRef={setOverlayContainer}
+						onOpenCloudSession={(session) => { if (workItem.selection) onOpenCloudSession(workItem.selection.workItem.code, workItem.selection.workItem.title, session); }}
 						onBrowseAgents={onBrowseAgents}
 						onCreateAgent={onCreateAgent}
 						onAgentSessionStart={(session) => { if (workItem.selection) onAgentSessionStart(workItem.selection.workItem.code, session); }}
@@ -166,7 +181,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateA
 					/>
 				</Suspense>
 			) : null}
-			<JgpRovoOverlay {...overlayProps} chat={workItem.open ? "hidden" : "auto"} launcher={workItem.open ? "hidden" : "auto"} />
+			{overlayHost ? <JgpRovoOverlay {...overlayProps} portalContainer={overlayHost} contained={workItem.open && Boolean(overlayContainer)} /> : null}
 		</>
 	);
 }
@@ -656,6 +671,14 @@ function ButterApp(): React.ReactElement {
 				onBrowseAgents={browseAgents}
 				onCreateAgent={createAgent}
 				onAgentSessionStart={handleWorkItemSessionStart}
+				onOpenCloudSession={(issueKey, issueSummary, session) => openAgentChat({
+					agentId: BUTTER_CHAT_AGENT_PROFILES.find((profile) => profile.name.toLowerCase() === session.agent.name.toLowerCase())?.id
+						?? (session.agent.id ?? session.id).split(":").at(-1) ?? session.id,
+					agentName: session.agent.name,
+					issueKey,
+					issueSummary,
+					intro: session.message,
+				})}
 				onStoryPointsChange={(issueKey, storyPoints) => setBoardColumns((columns) => columns.map((column) => ({ ...column, cards: column.cards.map((card) => card.code === issueKey ? { ...card, storyPoints } : card) })))}
 				onWorkItemClose={handleWorkItemClose}
 				chatContextBar={chatContextBar}

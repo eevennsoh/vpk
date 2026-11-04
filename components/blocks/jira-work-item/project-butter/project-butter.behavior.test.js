@@ -44,7 +44,7 @@ async function commentEditor(view) {
 async function openSession(view, name) {
 	if (!view.queryByRole("dialog", { name: "Agent sessions" })) await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
 	const menu = view.getByRole("dialog", { name: "Agent sessions" });
-	const titles = { Claude: "Review Teamwork onboarding guide", "Jira Coding agent": "Draft billing flow PRD", Codex: "Review rollback" };
+	const titles = { Claude: "Review Teamwork onboarding guide", "Jira Coding agent": "Draft billing flow PRD", "Jira Scoping agent": "Troubleshoot 403 API errors", Codex: "Review rollback" };
 	const row = [...menu.querySelectorAll("li")].find((item) => item.textContent.includes(titles[name] ?? name));
 	assert.ok(row, `No session for ${name}`);
 	await view.click(row.querySelector("button"));
@@ -76,15 +76,15 @@ test("Project butter shows the reference sessions and keeps replies scoped to ea
 	assert.equal(view.queryByText("Review Teamwork onboarding guide") !== null, true);
 	await view.click(view.getByRole("button", { name: /^Draft billing flow PRD/u }));
 	await view.fill(view.getByRole("textbox", { name: "Reply to Jira Coding agent" }), "Ship the MVP path first");
-	await openSession(view, "Claude");
-	await view.fill(view.getByRole("textbox", { name: "Reply to Claude" }), "Focus on first-run setup");
+	await openSession(view, "Jira Scoping agent");
+	await view.fill(view.getByRole("textbox", { name: "Reply to Jira Scoping agent" }), "Focus on first-run setup");
 	await openSession(view, "Jira Coding agent");
 	assert.equal(view.getByRole("textbox", { name: "Reply to Jira Coding agent" }).value, "Ship the MVP path first");
 	await view.click(view.getByRole("button", { name: "Send reply" }));
 	assert.equal(view.getByRole("textbox", { name: "Reply to Jira Coding agent" }).value, "");
 	assert.equal(view.queryByText("Ship the MVP path first") !== null, true);
-	await openSession(view, "Claude");
-	assert.equal(view.getByRole("textbox", { name: "Reply to Claude" }).value, "Focus on first-run setup");
+	await openSession(view, "Jira Scoping agent");
+	assert.equal(view.getByRole("textbox", { name: "Reply to Jira Scoping agent" }).value, "Focus on first-run setup");
 	assert.equal(view.queryByText("Ship the MVP path first") === null, true);
 });
 
@@ -646,11 +646,11 @@ test("own comments can be edited and deleted with both actions recorded in Audit
 });
 
 
-test("pinned local sessions open the work item chat directly", async () => {
+test("pinned local sessions open the continuation menu in place", async () => {
 	const view = await renderWorkItem();
 	await view.click(view.getByRole("button", { name: /^Review Teamwork onboarding guide/u }));
-	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) !== null, true);
-	assert.equal(view.queryByRole("menuitem", { name: "Terminal" }) === null, true);
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }), null);
+	assert.equal(view.queryByRole("menuitem", { name: /Terminal/u }) !== null, true);
 	await view.press(document.body, "Escape");
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) === null, true);
 	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);

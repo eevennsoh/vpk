@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { isLocalAgentListItem } from "@/components/blocks/agent-list";
 import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 
@@ -39,6 +40,8 @@ export interface ProjectButterJiraWorkItemProps {
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
+	onOpenCloudSession?: (session: ProjectButterSessionItem) => void;
+	overlayContainerRef?: (element: HTMLDivElement | null) => void;
 	onStoryPointsChange?: (storyPoints: number | undefined) => void;
 	/** Resolves a related work key to an opener when the host has that work item (Butter board). */
 	openRelatedItem?: RelatedItemOpener;
@@ -61,6 +64,8 @@ export function ProjectButterJiraWorkItem({
 	onBrowseAgents,
 	onCreateAgent,
 	onAgentSessionStart,
+	onOpenCloudSession,
+	overlayContainerRef,
 	onStoryPointsChange,
 	openRelatedItem,
 	relatedScope,
@@ -148,11 +153,23 @@ export function ProjectButterJiraWorkItem({
 		const session = model.startAgent(agent, content.summary);
 		addInvocation(session);
 		onAgentSessionStart?.(session);
+		if (onOpenCloudSession) { setActiveSessionId(null); onOpenCloudSession(session); }
 	}
 	function startCoding() {
 		const session = model.startCoding();
 		addInvocation(session);
 		onAgentSessionStart?.(session);
+		if (onOpenCloudSession) { setActiveSessionId(null); onOpenCloudSession(session); }
+	}
+	function openSession(id: string) {
+		const session = sessions.find((item) => item.id === id);
+		if (!session || isLocalAgentListItem(session)) return;
+		if (onOpenCloudSession) {
+			setActiveSessionId(null);
+			onOpenCloudSession(session);
+		} else {
+			setActiveSessionId(id);
+		}
 	}
 	function reply() {
 		if (!activeSession || !drafts[activeSession.id]?.trim()) return;
@@ -177,6 +194,7 @@ export function ProjectButterJiraWorkItem({
 	);
 	return (
 		<ProjectButterShell
+			overlayContainerRef={overlayContainerRef}
 			empty={empty}
 			onClose={onClose}
 			onEmptyChange={changeEmpty}
@@ -194,7 +212,7 @@ export function ProjectButterJiraWorkItem({
 				onClose={onClose}
 				onBrowseAgents={onBrowseAgents}
 				onCreateAgent={onCreateAgent}
-				onOpenSession={(session) => setActiveSessionId(session.id)}
+				onOpenSession={(session) => openSession(session.id)}
 				onPresentationChange={setPresentation}
 				onStartAgent={startAgent}
 				onStartCoding={startCoding}
@@ -232,7 +250,7 @@ export function ProjectButterJiraWorkItem({
 						onDescriptionRevealComplete={finishDescriptionReveal}
 						details={sidePanel ? details : null}
 						empty={sparse}
-						onOpenSession={setActiveSessionId}
+						onOpenSession={openSession}
 						openRelatedItem={openRelatedItem}
 						relatedScope={relatedScope}
 						sessions={sessions}
@@ -245,7 +263,7 @@ export function ProjectButterJiraWorkItem({
 			</div>
 			<ProjectButterSessionChat
 				onClose={() => setActiveSessionId(null)}
-				open={open && Boolean(activeSession)}
+				open={open && Boolean(activeSession && !isLocalAgentListItem(activeSession))}
 				title={activeSession?.title}
 			>
 				{activeSession ? (

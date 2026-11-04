@@ -27,6 +27,7 @@ export function ProjectButterShell({
 	presentation,
 	shell = "standalone",
 	suggestion = false,
+	overlayContainerRef,
 }: Readonly<{
 	children: ReactNode;
 	empty: boolean;
@@ -38,6 +39,7 @@ export function ProjectButterShell({
 	presentation: ProjectButterPresentation;
 	shell?: ProjectButterShellContext;
 	suggestion?: boolean;
+	overlayContainerRef?: (element: HTMLDivElement | null) => void;
 }>) {
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const panelResize = useProjectButterPanelResize(open && presentation === "side-panel");
@@ -61,7 +63,7 @@ export function ProjectButterShell({
 	const surface = (
 		<div
 			aria-label="Project butter preview"
-			className="relative flex min-h-0 min-w-0 flex-1 overflow-clip bg-surface"
+			className="relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-[inherit] bg-surface"
 			data-project-butter-presentation={presentation}
 			role="region"
 		>
@@ -123,14 +125,20 @@ export function ProjectButterShell({
 			open={open}
 		>
 			<DialogContent
+				ref={overlayContainerRef}
 				aria-modal="true"
 				className={cn(
-					"flex min-h-0 flex-col gap-0 overflow-clip p-0",
+					"flex min-h-0 flex-col gap-0 p-0",
+					overlayContainerRef ? "overflow-visible" : "overflow-clip",
 					standalone || presentation === "full-screen"
 						? "left-0 top-0 h-dvh w-screen max-w-none translate-x-0 translate-y-0 rounded-none sm:max-w-none"
 						: presentation === "modal"
 							? "h-[calc(100dvh-4rem)] max-h-[960px] w-[calc(100vw-4rem)] max-w-[1280px] sm:max-w-[1280px]"
 							: "left-auto right-0 top-0 h-dvh max-w-full translate-x-0 translate-y-0 rounded-none sm:max-w-none",
+					overlayContainerRef ? cn(
+						"translate-none data-starting-style:scale-none data-ending-style:scale-none",
+						presentation === "modal" && !standalone ? "inset-0 m-auto" : null,
+					) : null,
 				)}
 				style={
 					!standalone && presentation === "side-panel" ? { width: panelResize.width } : undefined
