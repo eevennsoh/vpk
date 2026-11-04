@@ -1,3 +1,4 @@
+import { migrateAgentAvatarSrc } from "../../../../../lib/agent-avatars.ts";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import type {
 	StudioAgentPublishStatus,
@@ -268,6 +269,21 @@ function sanitizeRfpDemoSessionAgentRecord(
 	};
 }
 
+function migrateRecordAvatars(record: PersistedSessionAgentRecord): PersistedSessionAgentRecord {
+	const migrateResult = (result: RovoDataParts["agent-result"]): RovoDataParts["agent-result"] => {
+		const avatarSrc = migrateAgentAvatarSrc(result.avatarSrc);
+		return avatarSrc === result.avatarSrc ? result : { ...result, avatarSrc };
+	};
+	return {
+		...record,
+		sourceResult: migrateResult(record.sourceResult),
+		draftResult: migrateResult(record.draftResult),
+		publishReadyResult: migrateResult(record.publishReadyResult),
+		publishedResult: record.publishedResult ? migrateResult(record.publishedResult) : null,
+		versionHistory: record.versionHistory.map((version) => ({ ...version, snapshot: migrateResult(version.snapshot) })),
+	};
+}
+
 function normalizePersistedRecord(record: RawPersistedSessionAgentRecord): PersistedSessionAgentRecord {
 	const publishedVersion =
 		typeof record.publishedVersion === "number" && Number.isFinite(record.publishedVersion)
@@ -292,13 +308,13 @@ function normalizePersistedRecord(record: RawPersistedSessionAgentRecord): Persi
 		: createLegacyVersionHistory(record.publishedResult, lastPublishedAt ?? record.lastTouchedAt, lastPublishedBy);
 	const normalizedVersionHistory = normalizeVersionHistory(versionHistory, publishedVersion);
 
-	return sanitizeRfpDemoSessionAgentRecord({
+	return migrateRecordAvatars(sanitizeRfpDemoSessionAgentRecord({
 		...record,
 		publishedVersion,
 		lastPublishedAt,
 		lastPublishedBy,
 		versionHistory: normalizedVersionHistory,
-	});
+	}));
 }
 
 function migrateLegacyRecord(record: LegacyPublishedAgentRecord): PersistedSessionAgentRecord {
@@ -307,7 +323,7 @@ function migrateLegacyRecord(record: LegacyPublishedAgentRecord): PersistedSessi
 			? record.lastTouchedAt
 			: Date.now();
 
-	return sanitizeRfpDemoSessionAgentRecord({
+	return migrateRecordAvatars(sanitizeRfpDemoSessionAgentRecord({
 		profileId: record.profileId,
 		resultKey: record.resultKey,
 		sourceResult: record.result,
@@ -320,7 +336,7 @@ function migrateLegacyRecord(record: LegacyPublishedAgentRecord): PersistedSessi
 		lastPublishedAt: lastTouchedAt,
 		lastPublishedBy: "Venn Soh",
 		versionHistory: createLegacyVersionHistory(record.result, lastTouchedAt, "Venn Soh"),
-	});
+	}));
 }
 
 // Collapse records that share a profileId, keeping the freshest (highest

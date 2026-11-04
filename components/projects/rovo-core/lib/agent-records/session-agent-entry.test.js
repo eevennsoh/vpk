@@ -207,7 +207,7 @@ test("creates session entries with suffixed identities, repaired catalog fields,
 		assert.equal(entry.profile.byline, "Template default");
 		assert.equal(entry.lastTouchedAt, 1_700_000_000_000);
 		assert.equal(entry.publishStatus, "testing");
-		assert.match(entry.sourceResult.avatarSrc, /^\/avatar-agent\//u);
+		assert.match(entry.sourceResult.avatarSrc, /^\/avatar-agent-new\//u);
 		assert.deepEqual(entry.sourceResult.skills, ["repaired-skill"]);
 		assert.match(entry.resultKey, /^message-1:/u);
 		assert.deepEqual(

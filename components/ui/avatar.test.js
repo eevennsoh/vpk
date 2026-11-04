@@ -467,7 +467,7 @@ test("Rovo avatar inputs share an inset hexagon and the dark Rovo button canvas"
 test("avatar docs demonstrate Rovo, 1P, 2P, and 3P agent tiers", () => {
 	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoAgentTiers\(\)/);
 	assert.match(AVATAR_DEMO_SOURCE, /label: "Rovo"[\s\S]*<AgentAvatarVisual label="Rovo agent" sizePx=\{32\} vpkLogo="rovo"/);
-	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/avatar-agent\/teamwork-agents\/customer-insights\.svg"/);
+	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/avatar-agent-new\/blue\/customer-insight\.svg"/);
 	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/2p\/appfire\.png"/);
 	assert.match(AVATAR_DEMO_SOURCE, /brandName="slack"/);
 	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-agent-tiers"/);

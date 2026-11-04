@@ -6,7 +6,7 @@ export default function AgentProfileCardDemo(): React.ReactElement {
 			{/* First-party company — Atlassian glyph on the blue company badge, verified. */}
 			<AgentProfileCard
 				attributionKind="company"
-				avatarSrc="/avatar-agent/teamwork-agents/blocker-checker.svg"
+				avatarSrc="/avatar-agent-new/blue/backlog-buddy.svg"
 				description="Proactively assists by automatically suggesting subtasks when you start adding one and providing comment summaries."
 				name="Task Improver"
 				partnerName="Atlassian"
@@ -15,7 +15,7 @@ export default function AgentProfileCardDemo(): React.ReactElement {
 			{/* Third-party company — partner app logo tile on the company badge, verified. */}
 			<AgentProfileCard
 				attributionKind="company"
-				avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
+				avatarSrc="/avatar-agent-new/purple/customer-insight.svg"
 				description="Turns product feedback into Figma-ready briefs and keeps design specs in sync with the latest research."
 				name="Design Researcher"
 				partnerBrandName="figma"
@@ -25,7 +25,7 @@ export default function AgentProfileCardDemo(): React.ReactElement {
 			{/* Person — round headshot badge, unverified. */}
 			<AgentProfileCard
 				attributionKind="person"
-				avatarSrc="/avatar-agent/dev-agents/code-planner.svg"
+				avatarSrc="/avatar-agent-new/lime/auto-dev.svg"
 				description="Summarizes async standups, flags blockers, and drafts the daily digest for your squad."
 				name="Standup Summarizer"
 				partnerLogoSrc="/avatar-human/andrea-wilson.png"
@@ -36,7 +36,7 @@ export default function AgentProfileCardDemo(): React.ReactElement {
 			{/* Team — square project tile badge, unverified. */}
 			<AgentProfileCard
 				attributionKind="team"
-				avatarSrc="/avatar-agent/service-agents/service-triage.svg"
+				avatarSrc="/avatar-agent-new/yellow/ops-agent.svg"
 				description="Triages incoming incidents, pages the on-call owner, and assembles the response timeline."
 				name="Incident Responder"
 				partnerLogoSrc="/avatar-project/rocket.svg"

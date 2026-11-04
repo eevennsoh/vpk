@@ -17,7 +17,7 @@ export interface SubagentPrompt {
 
 export const DEFAULT_SUBAGENTS_BASE_AGENT: SubagentsBaseAgent = {
 	id: "policy-checker",
-	avatarSrc: "/avatar-agent/teamwork-agents/blocker-checker.svg",
+	avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 	config: {
 		name: "Policy Checker",
 		description:

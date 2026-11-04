@@ -298,7 +298,7 @@ test("ChatContextBar renders a collapsible agent edit bar with avatar", async ()
 		iconName: "agent",
 		signature: "studio-edit-agent:research-assistant",
 		variant: "edit",
-		avatarSrc: "/avatar-agent/service-agents/service-triage.svg",
+		avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
 		collapsible: true,
 		collapsedLabel: "Edit agent",
 	});

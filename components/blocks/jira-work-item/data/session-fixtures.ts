@@ -135,14 +135,14 @@ const TRIAGE_AGENT: StaticTimelineEvent["actor"] = {
 	id: "static-triage-assistant",
 	name: "Triage assistant",
 	kind: "agent",
-	avatarSrc: "/avatar-agent/teamwork-agents/bug-report-assistant.svg",
+	avatarSrc: "/avatar-agent-new/blue/auto-fix.svg",
 };
 
 const READINESS_AGENT: StaticTimelineEvent["actor"] = {
 	id: "static-readiness-checker",
 	name: "Readiness Checker",
 	kind: "agent",
-	avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+	avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 };
 
 const AUTOMATION_TAG = { text: "Automation" } as const;
@@ -235,7 +235,7 @@ export const FILLED_STATIC_EVENTS: StaticTimelineEvent[] = [
 			state: "complete",
 			agent: {
 				name: READINESS_AGENT.name,
-				avatarSrc: READINESS_AGENT.avatarSrc ?? "/avatar-agent/teamwork-agents/readiness-checker.svg",
+				avatarSrc: READINESS_AGENT.avatarSrc ?? "/avatar-agent-new/blue/backlog-buddy.svg",
 			},
 			branch: "rovo/rfp-101-risk-review",
 			elapsedSeconds: 300,
@@ -318,8 +318,8 @@ export function filledContextResources(): JiraWorkItemContextResources {
 
 /** Seeded agents for preset sessions. */
 export const PRESET_AGENTS: Record<string, AgentSessionAgent> = {
-	readiness: { id: "readiness-checker", name: "Readiness Checker", avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg" },
-	requirements: { id: "response-reviewer", name: "Response Reviewer", avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg" },
-	feedback: { id: "feedback-analyzer", name: "Feedback Analyzer", avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg" },
-	meeting: { id: "meeting-insights-reporter", name: "Meeting Insights Reporter", avatarSrc: "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg" },
+	readiness: { id: "readiness-checker", name: "Readiness Checker", avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg" },
+	requirements: { id: "response-reviewer", name: "Response Reviewer", avatarSrc: "/avatar-agent-new/lime/auto-review.svg" },
+	feedback: { id: "feedback-analyzer", name: "Feedback Analyzer", avatarSrc: "/avatar-agent-new/purple/customer-insight.svg" },
+	meeting: { id: "meeting-insights-reporter", name: "Meeting Insights Reporter", avatarSrc: "/avatar-agent-new/blue/comms-drafter.svg" },
 };

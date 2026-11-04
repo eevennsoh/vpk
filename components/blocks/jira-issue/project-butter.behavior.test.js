@@ -570,6 +570,31 @@ test("Butter lets a card with attached activity add another agent", async () => 
 	assert.deepEqual(assignments, [["reviewer", "writer"]]);
 });
 
+for (const role of ["owner", "viewer"]) {
+	test(`Butter can start another Cursor session when a ${role} session exists`, async () => {
+		const assignments = [];
+		const view = await renderComponent({
+			entry: "components/blocks/jira-issue/index.tsx",
+			exportName: "JiraIssue",
+			props: {
+				appearance: "project-butter",
+				issueKey: "PD-40",
+				summary: "Test",
+				agentActivities: [{ id: "test-agent", name: "Cursor", state: "working", label: "Working", role }],
+				assignment: {
+					agents: [{ id: "test-agent", name: "Cursor", byline: "" }],
+					assignedAgents: [{ id: "test-agent", name: "Cursor" }],
+					onAssignedAgentIdsChange: (ids) => assignments.push(ids),
+				},
+			},
+		});
+		await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
+		await view.click(view.getByRole("option", { name: /Cursor/u }));
+		await view.click(view.getByRole("menuitem", { name: "Run on cloud" }));
+		assert.deepEqual(assignments, [["test-agent", "test-agent"]]);
+	});
+}
+
 test("Butter omits the add-agent action during selection and dragging", async () => {
 	for (const state of [
 		{ selected: true },

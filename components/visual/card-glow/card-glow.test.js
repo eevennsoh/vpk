@@ -251,7 +251,7 @@ test("a session's hover accent is the colour it flashes when dropped on a work i
 		{ kind: "agent", name: "Rovo", vpkLogo: "rovo" },
 		// Unmapped: both sides must land on the same neutral, not one each.
 		{ brandName: "figma", kind: "agent", name: "Figma" },
-		{ avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg", kind: "agent", name: "Reviewer" },
+		{ avatarSrc: "/avatar-agent-new/lime/auto-review.svg", kind: "agent", name: "Reviewer" },
 	];
 
 	for (const agent of agents) {

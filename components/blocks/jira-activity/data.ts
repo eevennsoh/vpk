@@ -20,7 +20,7 @@ const TRIAGE_AGENT: JiraActivityActor = {
 	id: "triage",
 	name: "Triage assistant",
 	kind: "agent",
-	avatarSrc: "/avatar-agent/teamwork-agents/bug-report-assistant.svg",
+	avatarSrc: "/avatar-agent-new/blue/auto-fix.svg",
 };
 
 const ROVO_DEV: JiraActivityActor = {
@@ -34,7 +34,7 @@ const PROGRESS_TRACKER: JiraActivityActor = {
 	id: "progress-tracker",
 	name: "Progress tracker",
 	kind: "agent",
-	avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+	avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 };
 
 const GITHUB: JiraActivityActor = {
@@ -170,7 +170,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 			state: "needs-input",
 			agent: {
 				name: "Progress tracker",
-				avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 			},
 			branch: "rovo/perf-27-benchmarks",
 			elapsedSeconds: 360,
@@ -203,7 +203,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 			state: "complete",
 			agent: {
 				name: "Progress tracker",
-				avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 			},
 			branch: "rovo/perf-27-benchmarks",
 			elapsedSeconds: 300,

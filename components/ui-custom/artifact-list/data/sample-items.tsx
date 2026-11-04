@@ -44,7 +44,7 @@ export const SAMPLE_ARTIFACT_ITEMS: readonly ArtifactListItem[] = [
 		title: "HR Policy Assistant",
 		source: "Rovo agent",
 		owner: "Vitafleet Team",
-		avatarSrc: "/avatar-agent/teamwork-agents/teamwork-coach.svg",
+		avatarSrc: "/avatar-agent-new/blue/team-connection.svg",
 	},
 ];
 

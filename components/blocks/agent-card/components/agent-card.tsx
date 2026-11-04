@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
+import { getUnmaskedAgentAvatarSrc } from "@/lib/agent-avatars";
 import { getSkillIcon } from "@/lib/skill-icons";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -121,26 +122,41 @@ const PROJECT_BADGE_AVATAR_SRCS = [
 const EXPERIMENTAL_COVER_TEXT_COLOR = "#CFE1FD";
 const EXPERIMENTAL_COVER_TEXT_COLORS: Record<string, string> = {
 	"dev-agents": "#37471F",
+	lime: "#37471F",
 	"product-agents": "#48245D",
+	purple: "#48245D",
 	"service-agents": "#533F04",
+	yellow: "#533F04",
 	"strategy-agents": "#693200",
+	orange: "#693200",
 	"teamwork-agents": EXPERIMENTAL_COVER_TEXT_COLOR,
+	blue: EXPERIMENTAL_COVER_TEXT_COLOR,
 };
 const EXPERIMENTAL_DETAIL_BACKGROUND_COLOR = "var(--ds-background-accent-blue-subtlest)";
 const EXPERIMENTAL_DETAIL_BACKGROUND_COLORS: Record<string, string> = {
 	"dev-agents": "var(--ds-background-accent-lime-subtlest)",
+	lime: "var(--ds-background-accent-lime-subtlest)",
 	"product-agents": "var(--ds-background-accent-purple-subtlest)",
+	purple: "var(--ds-background-accent-purple-subtlest)",
 	"service-agents": "var(--ds-background-accent-yellow-subtlest)",
+	yellow: "var(--ds-background-accent-yellow-subtlest)",
 	"strategy-agents": "var(--ds-background-accent-orange-subtlest)",
+	orange: "var(--ds-background-accent-orange-subtlest)",
 	"teamwork-agents": EXPERIMENTAL_DETAIL_BACKGROUND_COLOR,
+	blue: EXPERIMENTAL_DETAIL_BACKGROUND_COLOR,
 };
 const EXPERIMENTAL_DETAIL_TEXT_COLOR = "var(--ds-text-accent-blue-bolder)";
 const EXPERIMENTAL_DETAIL_TEXT_COLORS: Record<string, string> = {
 	"dev-agents": "var(--ds-text-accent-lime-bolder)",
+	lime: "var(--ds-text-accent-lime-bolder)",
 	"product-agents": "var(--ds-text-accent-purple-bolder)",
+	purple: "var(--ds-text-accent-purple-bolder)",
 	"service-agents": "var(--ds-text-accent-yellow-bolder)",
+	yellow: "var(--ds-text-accent-yellow-bolder)",
 	"strategy-agents": "var(--ds-text-accent-orange-bolder)",
+	orange: "var(--ds-text-accent-orange-bolder)",
 	"teamwork-agents": EXPERIMENTAL_DETAIL_TEXT_COLOR,
+	blue: EXPERIMENTAL_DETAIL_TEXT_COLOR,
 };
 const EXPERIMENTAL_COVER_TEXT_CLASS_NAME = "text-[var(--agent-card-cover-text-color)]";
 const EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME = "text-[var(--agent-card-detail-text-color)]";
@@ -173,7 +189,7 @@ function formatAgentCardStatText(stat: { value: string; label: string }): string
 }
 
 function getAgentAvatarCategory(avatarSrc: string | undefined): string | undefined {
-	return avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
+	return avatarSrc?.match(/\/avatar-agent(?:-new)?\/([^/]+)\//u)?.[1];
 }
 
 function getExperimentalCoverTextColor(avatarSrc: string | undefined): string {
@@ -189,10 +205,6 @@ function getExperimentalDetailBackgroundColor(avatarSrc: string | undefined): st
 function getExperimentalDetailTextColor(avatarSrc: string | undefined): string {
 	const category = getAgentAvatarCategory(avatarSrc);
 	return (category ? EXPERIMENTAL_DETAIL_TEXT_COLORS[category] : undefined) ?? EXPERIMENTAL_DETAIL_TEXT_COLOR;
-}
-
-function getUnmaskedAgentAvatarSrc(avatarSrc: string | undefined): string | undefined {
-	return avatarSrc?.replace("/avatar-agent/", "/avatar-agent-unmasked/");
 }
 
 function getProjectBadgeAvatarSrc(seed: string) {
@@ -577,7 +589,7 @@ export function AgentCard({
 		// Cover keeps the inline stats + "Use template" CTA; collaborators move to the
 		// "Trusted by teammates" detail section below.
 		const showCoverActionRow = showInlineStats || showExperimentalCollaborators;
-		const unmaskedAvatarSrc = getUnmaskedAgentAvatarSrc(avatarSrc);
+		const unmaskedAvatarSrc = avatarSrc ? getUnmaskedAgentAvatarSrc(avatarSrc) : undefined;
 		const hasMoreAction = Boolean(moreAction) || Boolean(onMoreActions);
 
 		return (

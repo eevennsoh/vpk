@@ -49,7 +49,7 @@ export const MOCK_TASKS: ProgressStatusGroups = {
 			label: "Looking through feedback",
 			description: "Figuring out which services are affected",
 			agentName: "Agent name",
-			agentAvatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+			agentAvatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 		},
 	],
 	failed: [],

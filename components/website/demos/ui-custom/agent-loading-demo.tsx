@@ -24,7 +24,7 @@ const ACTIVE_AGENTS: readonly AgentLoadingAgent[] = [
 		name: "Jira Coding agent",
 		status: "working",
 		avatar: {
-			avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
+			avatarSrc: "/avatar-agent-new/lime/auto-dev.svg",
 		},
 	},
 	{

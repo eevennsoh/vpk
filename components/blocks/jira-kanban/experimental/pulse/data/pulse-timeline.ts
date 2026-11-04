@@ -32,9 +32,9 @@ const AVATAR = {
 	jordan: "/avatar-user/issac-varghese/color/asow-dev-lime.png",
 	priya: "/avatar-user/ting-chen/color/asow-teamwork-blue.png",
 	diego: "/avatar-user/dev-rana/color/asow-product-purple.png",
-	reviewAgent: "/avatar-agent/teamwork-agents/decision-director.svg",
-	testAgent: "/avatar-agent/service-agents/rca-agent.svg",
-	releaseAgent: "/avatar-agent/strategy-agents/strategic-insight.svg",
+	reviewAgent: "/avatar-agent-new/blue/decision-director.svg",
+	testAgent: "/avatar-agent-new/yellow/ops-agent.svg",
+	releaseAgent: "/avatar-agent-new/orange/research-scout.svg",
 } as const;
 
 /* ------------------------------------------------------------------ */

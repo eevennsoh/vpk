@@ -12,7 +12,7 @@ const suggestedAgents: TWGAgentSuggestion[] = [
     id: "life-admin-agent",
     name: "Life Admin Agent",
     description: "Handles reminders, forms, and renewals.",
-    avatarSrc: "/avatar-agent/service-agents/service-request-helper.svg",
+    avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
   },
 ];
 

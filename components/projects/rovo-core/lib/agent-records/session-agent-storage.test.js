@@ -383,3 +383,15 @@ test("dedupeSessionAgentRecordsByProfileId keeps one record per profileId and pr
 	const aRecord = deduped.find((record) => record.profileId === "a");
 	assert.equal(aRecord.resultKey, "a-2");
 });
+
+
+test("rehydrates saved avatars with the new artwork while preserving custom images", () => {
+	const oldResult = makeAgentResult({ avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg" });
+	const customResult = makeAgentResult({ avatarSrc: "/custom/my-avatar.svg" });
+	writeSessionAgentRecords([makeRecord({ sourceResult: oldResult, draftResult: oldResult, publishReadyResult: oldResult, publishedResult: customResult })]);
+	const [record] = readSessionAgentRecords();
+	assert.equal(record.sourceResult.avatarSrc, "/avatar-agent-new/lime/auto-review.svg");
+	assert.equal(record.draftResult.avatarSrc, "/avatar-agent-new/lime/auto-review.svg");
+	assert.equal(record.publishReadyResult.avatarSrc, "/avatar-agent-new/lime/auto-review.svg");
+	assert.equal(record.publishedResult.avatarSrc, "/custom/my-avatar.svg");
+});

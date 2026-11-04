@@ -29,9 +29,9 @@ const PAY_AVATARS = {
 	jordan: "/avatar-user/issac-varghese/color/asow-dev-lime.png",
 	maya: "/avatar-user/chloe-lee/color/asow-dev-lime.png",
 	priya: "/avatar-user/ting-chen/color/asow-teamwork-blue.png",
-	releaseAgent: "/avatar-agent/strategy-agents/strategic-insight.svg",
-	reviewAgent: "/avatar-agent/teamwork-agents/decision-director.svg",
-	testAgent: "/avatar-agent/service-agents/rca-agent.svg",
+	releaseAgent: "/avatar-agent-new/orange/research-scout.svg",
+	reviewAgent: "/avatar-agent-new/blue/decision-director.svg",
+	testAgent: "/avatar-agent-new/yellow/ops-agent.svg",
 } as const;
 
 const PAY_ASSIGNEES = {

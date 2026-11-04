@@ -37,7 +37,7 @@ const COLLABORATORS = [
 ] as const;
 
 const DEFAULT_EXPERIMENTAL_AGENT = {
-	avatarSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
+	avatarSrc: "/avatar-agent-new/blue/decision-director.svg",
 	description: "Review DACI decisions, close context gaps, and suggest the next decision-ready resources.",
 	label: "Teamwork",
 	name: "Decision Director",
@@ -46,25 +46,25 @@ const DEFAULT_EXPERIMENTAL_AGENT = {
 const EXPERIMENTAL_AGENT_VARIANTS = [
 	DEFAULT_EXPERIMENTAL_AGENT,
 	{
-		avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+		avatarSrc: "/avatar-agent-new/lime/auto-review.svg",
 		description: "Review code changes, surface blockers, and suggest the next implementation-ready fixes.",
 		label: "Dev",
 		name: "Code Reviewer",
 	},
 	{
-		avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
+		avatarSrc: "/avatar-agent-new/purple/customer-insight.svg",
 		description: "Cluster feedback, size opportunities, and identify the strongest product next steps.",
 		label: "Product",
 		name: "Feedback Analyzer",
 	},
 	{
-		avatarSrc: "/avatar-agent/service-agents/service-triage.svg",
+		avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
 		description: "Triage requests, route urgent issues, and recommend the next support-ready action.",
 		label: "Service",
 		name: "Service Triage",
 	},
 	{
-		avatarSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
+		avatarSrc: "/avatar-agent-new/orange/research-scout.svg",
 		description: "Synthesize market context, compare options, and shape the next strategic recommendation.",
 		label: "Strategy",
 		name: "Strategic Insight",
@@ -108,7 +108,7 @@ export function AgentCardDemoExpanded() {
 		<div className="flex w-full justify-center p-6">
 			<AgentCard
 				attributionKind="company"
-				avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+				avatarSrc="/avatar-agent-new/blue/decision-director.svg"
 				capabilities={CAPABILITIES}
 				className="w-full max-w-[376px]"
 				collaborators={COLLABORATORS}
@@ -160,7 +160,7 @@ export function AgentCardDemoSimple() {
 				className="w-[420px]"
 				collaborators={COLLABORATORS}
 				description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
-				iconSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+				iconSrc="/avatar-agent-new/blue/decision-director.svg"
 				name="Decision Director"
 				onSelect={() => {}}
 				publisher="Atlassian"

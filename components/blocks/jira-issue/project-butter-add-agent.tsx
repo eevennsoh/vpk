@@ -27,7 +27,7 @@ function useButterAgentAssignment(assignment: JiraIssueAgentAssignment | undefin
 		actions?.commit(agent, agents.findIndex((candidate) => candidate.id === id));
 		assignment?.onAgentAssign?.(agent);
 		const ids = assignment?.assignedAgents?.map((assigned) => assigned.id) ?? [];
-		assignment?.onAssignedAgentIdsChange?.(ids.includes(id) ? ids : [...ids, id]);
+		assignment?.onAssignedAgentIdsChange?.([...ids, id]);
 		const focusSession = () => (listSurface ?? card)?.querySelector<HTMLElement>("[data-jira-issue-agent-row-handle]")?.focus({ preventScroll: true });
 		if (listSurface) requestAnimationFrame(focusSession);
 		else queueMicrotask(focusSession);

@@ -134,13 +134,13 @@ export type JiraAgentsStoryAgent = Omit<JiraForYouAgent, "avatarSrc" | "id"> & {
 export const CODE_PLANNER = {
 	id: "code-planner",
 	name: "Code Planner",
-	avatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
+	avatarSrc: "/avatar-agent-new/lime/auto-dev.svg",
 } satisfies JiraAgentsStoryAgent;
 
 export const CLAUDE_CODE = {
 	id: "claude-code",
 	name: "Claude",
-	avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
+	avatarSrc: "/avatar-agent-new/lime/auto-dev.svg",
 	brandName: "claude",
 } satisfies JiraAgentsStoryAgent;
 
