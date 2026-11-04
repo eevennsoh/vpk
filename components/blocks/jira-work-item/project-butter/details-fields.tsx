@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { animate, AnimatePresence, useReducedMotion } from "motion/react";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
@@ -31,7 +31,7 @@ function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: 
 	}
 }
 
-export function ProjectButterDetailsFields({ content, expanded, fillingBarAfter = null, fillingFinishing = false, onRevealInteract, reflow = false, shimmerText }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | "top" | null; fillingFinishing?: boolean; onRevealInteract?: (field: ProjectButterDetailFieldId) => void; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
+export function ProjectButterDetailsFields({ agentField, content, expanded, fillingBarAfter = null, fillingFinishing = false, onRevealInteract, reflow = false, shimmerText }: Readonly<{ agentField?: ReactNode; content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | "top" | null; fillingFinishing?: boolean; onRevealInteract?: (field: ProjectButterDetailFieldId) => void; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
 	const id = useId();
 	const rootRef = useRef<HTMLDivElement>(null);
 	const heightRef = useRef<number | null>(null);
@@ -80,8 +80,8 @@ export function ProjectButterDetailsFields({ content, expanded, fillingBarAfter 
 	}, [expanded, reduced]);
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 	const fields = content.detailFields;
-	const order = fields.order.filter((field) => !fields.hidden.includes(field));
-	const visible = expanded ? order : order.slice(0, 4);
+	const order = fields.order.filter((field) => field !== "status" && !fields.hidden.includes(field));
+	const visible = expanded ? order : order.slice(0, 2);
 	return (
 		<div className="relative" data-project-butter-detail-fields data-project-butter-field-dragging={dragging ? "true" : undefined} ref={rootRef}>
 			<AnimatePresence initial={false}>
@@ -100,7 +100,7 @@ export function ProjectButterDetailsFields({ content, expanded, fillingBarAfter 
 								const target = visible[index + direction];
 								if (target) content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, field, target) }));
 							}}><ProjectButterDetailFieldValue content={content} id={field} /></DetailsFieldRow>;
-							return row;
+							return field === "assignee" ? <div className="flex flex-col gap-3" key={field}>{row}{agentField}</div> : row;
 						})}
 					</div>
 				</SortableContext>

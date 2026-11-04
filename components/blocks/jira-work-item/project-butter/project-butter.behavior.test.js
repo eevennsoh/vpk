@@ -59,7 +59,8 @@ async function commentEditor(view) {
 }
 
 async function openSession(view, name) {
-	if (!view.queryByRole("dialog", { name: "Agent sessions" })) await view.click(view.getByRole("button", { name: /^Working on this work item\./u }));
+	await view.click(view.getByRole("button", { name: "Add agent" }));
+	await view.click(view.getByRole("button", { name: "View agent sessions" }));
 	const menu = view.getByRole("dialog", { name: "Agent sessions" });
 	const titles = { Claude: "Review Teamwork onboarding guide", "Jira Coding agent": "Draft billing flow PRD", "Jira Scoping agent": "Troubleshoot 403 API errors", Codex: "Review rollback" };
 	const row = [...menu.querySelectorAll("li")].find((item) => item.textContent.includes(titles[name] ?? name));
@@ -147,7 +148,7 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("button", { name: "Change priority. Current priority: High" }) !== null, true);
 	assert.equal(view.queryByText("Board owner") !== null, true);
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
-	assert.equal(view.queryByRole("button", { name: /Working on this work item\. Board owner, Working\. Claude, Needs input/u }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Add agent" }) !== null, true);
 	assert.equal(view.queryByText("Sarah Lim") === null, true);
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "First card saved scope");
 	await view.focus(view.getByRole("button", { name: "Description" }));
@@ -634,18 +635,17 @@ test("reopened comment drafts report restored agent mentions before submission",
 	assert.deepEqual(mentionedNames, ["Claude"]);
 });
 
-test("header and Details share status options and custom status updates", async () => {
+test("header status offers options and custom status updates", async () => {
 	const view = await renderWorkItem();
 	await view.click(view.getByRole("button", { name: "Change status, In progress" }));
 	assert.equal(view.queryByRole("menuitem", { name: "In progress" }) === null, true);
 	await view.click(view.getByRole("menuitem", { name: "Done" }));
 	assert.equal(view.queryByRole("button", { name: "Change status, Done" }) !== null, true);
-	await view.click(view.getByRole("button", { name: "Change status in details, Done" }));
+	await view.click(view.getByRole("button", { name: "Change status, Done" }));
 	await view.click(view.getByRole("menuitem", { name: "Create status" }));
 	await view.fill(view.getByRole("textbox", { name: "Status name" }), "In review");
 	await view.click(view.getByRole("button", { name: "Create and apply" }));
 	assert.equal(view.queryByRole("button", { name: "Change status, In review" }) !== null, true);
-	assert.equal(view.queryByRole("button", { name: "Change status in details, In review" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "More work item actions" }));
 	await view.click(view.getByRole("menuitem", { name: "Start watching (4)" }));
 	await view.click(view.getByRole("button", { name: "More work item actions" }));

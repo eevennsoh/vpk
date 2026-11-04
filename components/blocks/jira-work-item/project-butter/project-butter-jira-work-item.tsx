@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { ProjectButterBody } from "@/components/blocks/jira-work-item/project-butter/project-butter-body";
 import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
+import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
 import { ProjectButterSession } from "@/components/blocks/jira-work-item/project-butter/project-butter-session";
 import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-item/project-butter/placeholder-fill";
 import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
@@ -290,6 +291,7 @@ export function ProjectButterJiraWorkItem({
 	}, [detailsHost, layoutElement, sidePanel, workItem?.code]);
 	const details = (
 		<ProjectButterDetails
+			agentField={<ProjectButterCrew field onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={(session) => openSession(session.id)} onPreviewSession={previewSession} onStartAgent={startAgent} sessions={sessions} />}
 			key={workItem?.code ?? "reference"}
 			code={workItem?.code ?? "VITA-1"}
 			content={content}
@@ -320,20 +322,12 @@ export function ProjectButterJiraWorkItem({
 			<ProjectButterHeader
 				key={workItem?.code ?? "reference"}
 				content={content}
-				empty={sparse}
 				onClose={onClose}
-				onBrowseAgents={onBrowseAgents}
-				onCreateAgent={onCreateAgent}
-				onOpenSession={(session) => openSession(session.id)}
-				onPreviewSession={previewSession}
 				onPresentationChange={setPresentation}
-				onStartAgent={startAgent}
-				onStartCoding={startCoding}
 				secondaryActions={
 					sparse && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null
 				}
 				presentation={presentation}
-				sessions={sessions}
 				workItem={workItem}
 			/>
 			<div
