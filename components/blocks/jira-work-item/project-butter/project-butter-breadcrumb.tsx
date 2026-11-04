@@ -44,12 +44,12 @@ function WorkItemKeyCopy({ code }: Readonly<{ code: string }>) {
 	</>;
 }
 
-const TRAIL_CLASS_NAME = "min-w-0 opacity-0 transition-opacity duration-normal ease-out-practical group-hover/butter-breadcrumb:opacity-100 group-focus-within/butter-breadcrumb:opacity-100";
+const TRAIL_CLASS_NAME = "min-w-0 opacity-0 transition-opacity duration-normal ease-out-practical group-hover/butter-header:opacity-100 group-focus-within/butter-header:opacity-100";
 
 export function ProjectButterBreadcrumb({ aligned = false, code, parent, summary }: Readonly<{ aligned?: boolean; code: string; parent?: string; summary: string }>) {
 	const parentLabel = parent?.trim();
 	return (
-		<Breadcrumb className={cn("group/butter-breadcrumb flex h-8 min-w-0 flex-1 items-center overflow-visible", aligned ? null : "mb-1")} size="small">
+		<Breadcrumb className={cn("flex h-8 min-w-0 flex-1 items-center overflow-visible", aligned ? null : "mb-1")} size="small">
 			<BreadcrumbList className="h-8 min-h-0 gap-2 overflow-visible text-text-subtle">
 				<BreadcrumbItem className="shrink-0 gap-2">
 					<span className="inline-flex shrink-0 items-center leading-none text-icon-success"><StoryIcon label="Story" size="small" /></span>
