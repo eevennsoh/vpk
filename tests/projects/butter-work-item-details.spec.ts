@@ -39,6 +39,33 @@ test("focusing a list-ending description does not add a blank line", async ({ pa
 	await expect(editor).toContainText("New paragraph after the list");
 });
 
+test("a description ending in a table keeps an editable paragraph after it", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const editor = page.getByRole("textbox", { name: "Work item description" });
+	await editor.fill("");
+	await editor.evaluate((element) => {
+		const clipboard = new DataTransfer();
+		clipboard.setData("text/html", "<table><tbody><tr><td><p>Cell</p></td></tr></tbody></table>");
+		element.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard }));
+	});
+	await expect(editor.locator("table")).toBeVisible();
+	const trailing = editor.locator(":scope > p").last();
+	await expect(trailing).toBeVisible();
+	await page.getByRole("textbox", { name: "Work item summary" }).focus();
+	const beforeFocus = await editor.boundingBox();
+	await trailing.click();
+	const afterFocus = await editor.boundingBox();
+	if (!beforeFocus || !afterFocus) throw new Error("Table description geometry is unavailable");
+	expect(afterFocus.height).toBeCloseTo(beforeFocus.height, 0);
+	await page.keyboard.type("Notes below.");
+	await expect(trailing).toHaveText("Notes below.");
+	await page.getByRole("button", { name: "Description", exact: true }).click();
+	await page.getByRole("button", { name: "Description", exact: true }).click();
+	await expect(editor).toContainText("Notes below.");
+});
+
 test("attachment cards stay fanned while hovered and settle when the pointer leaves", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();

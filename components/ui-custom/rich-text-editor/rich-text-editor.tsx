@@ -45,6 +45,7 @@ import {
 import type { EditorToolbarInsertReferenceCategory, EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { isRichTextReferenceCategory } from "./reference-categories";
 import type {
+	RichTextEditorExtensionOptions,
 	RichTextMentionItem,
 	RichTextMentionRemovalRequest,
 	RichTextMentionSources,
@@ -59,7 +60,7 @@ interface RichTextEditorProps
 	value?: string;
 	placeholder?: string;
 	placeholderSlot?: ReactNode;
-	trailingNode?: boolean;
+	trailingNode?: RichTextEditorExtensionOptions["trailingNode"];
 	dataFlowConfig?: StudioAgentDataFlowConfig;
 	dataFlowDiagramLabel?: string;
 	editorClassName?: string;
@@ -355,7 +356,7 @@ export function RichTextEditor({
 	value,
 	placeholder,
 	placeholderSlot,
-	trailingNode = true,
+	trailingNode,
 	dataFlowConfig,
 	dataFlowDiagramLabel,
 	className,

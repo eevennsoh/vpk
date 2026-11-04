@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { RichTextEditor } from "@/components/ui-custom/rich-text-editor";
+import type { RichTextEditorExtensionOptions } from "@/components/ui-custom/rich-text-editor/types";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +27,7 @@ export function ContextDescriptionEditor({
 	hugContent = false,
 	placeholder = "Press / to help improve the work item",
 	placeholderSlot = DEFAULT_PLACEHOLDER_SLOT,
-	trailingNode = true,
+	trailingNode,
 	value,
 	viewMode,
 	onMarkdownChange,
@@ -36,7 +37,7 @@ export function ContextDescriptionEditor({
 	hugContent?: boolean;
 	placeholder?: string;
 	placeholderSlot?: ReactNode;
-	trailingNode?: boolean;
+	trailingNode?: RichTextEditorExtensionOptions["trailingNode"];
 	value: string;
 	viewMode?: EditorToolbarViewMode;
 	onMarkdownChange: (value: string) => void;
@@ -48,7 +49,7 @@ export function ContextDescriptionEditor({
 			className="min-w-0 space-y-0"
 			editorClassName={cn(
 				"agent-instructions-tiptap-editor context-description-tiptap-editor text-text",
-				!trailingNode && "context-description-tiptap-no-trailing-node",
+				trailingNode !== undefined && "context-description-tiptap-stable-trailing-node",
 				hugContent && "context-description-tiptap-editor-hug",
 			)}
 			enableDirectoryAutocomplete
