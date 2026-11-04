@@ -60,6 +60,21 @@ test("repeated projections are idempotent and do not duplicate sessions", () => 
 	}
 });
 
+test("the journey PR attributes Venn and Claude and follows CI progress", () => {
+	for (const [phase, statuses] of [
+		["pr", ["running", "running", "queued"]],
+		["failed", ["passed", "passed", "failed"]],
+		["fixing", ["passed", "passed", "running"]],
+		["merged", ["passed", "passed", "passed"]],
+	] as const) {
+		const preview = journeyCard(applyMerchantJourneyToBoard(board(), phase, "journey-session")).card.pullRequestPreview;
+		assert.equal(preview?.author?.name, "Venn");
+		assert.equal(preview?.author?.assistedBy?.name, "Claude");
+		assert.equal(preview?.repository, "payments-platform/payments");
+		assert.deepEqual(preview?.checks?.map((check) => check.status), statuses);
+	}
+});
+
 test("rewinding removes only journey activity and restores automatic assignment", () => {
 	const initial = board();
 	const original = journeyCard(initial).card;
@@ -106,6 +121,7 @@ test("opening a projected card exposes authored assignment without mutating the 
 	const columns = applyMerchantJourneyToBoard(board(), "pr", "journey-session");
 	const { card } = journeyCard(columns);
 	const authored = merchantJourneyAuthoredCard(card);
+	assert.equal(authored.status, "To do");
 	assert.equal(authored.assignee, undefined);
 	assert.equal(authored.avatarSrc, undefined);
 	assert.equal(authored.pullRequestNumber, 284);

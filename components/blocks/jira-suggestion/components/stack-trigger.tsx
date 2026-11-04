@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type Ref } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tile } from "@/components/ui/tile";
@@ -67,14 +67,18 @@ export function StackTrigger({ feed, open, panelId, onToggle, triggerRef, source
 				ref={triggerRef}
 				type="button"
 			/>
-			{intro ? null : <motion.div animate={{ opacity: 1 }} className="pointer-events-none absolute inset-0" data-suggestion-grid="" initial={reduced ? false : { opacity: 0 }} style={{ willChange: "opacity" }} transition={{ duration: motionDuration.slowest, ease: motionEase.inOut }}>
-				<TwgToolBannerBackground gridMaskPosition="right 13px center" />
-			</motion.div>}
+			<AnimatePresence>
+				{intro ? null : <motion.div animate={{ opacity: 1 }} className="pointer-events-none absolute inset-0" data-suggestion-grid="" initial={reduced ? false : { opacity: 0 }} key="grid" style={{ willChange: "opacity" }} transition={{ duration: motionDuration.slowest, ease: motionEase.inOut }}>
+					<TwgToolBannerBackground gridMaskPosition="right 13px center" />
+				</motion.div>}
+			</AnimatePresence>
 			<Tile aria-hidden className="relative z-10 bg-surface" hasBorder label="Teamwork Graph" size="medium" variant="transparent">
 				<TWGLoader active={intro || feed.status === "running"} label="" size="small" />
 			</Tile>
 			<span aria-live="polite" className="relative z-10 min-w-0 flex-1 text-sm text-text" id={labelId}>{intro && showIntroLoading ? "Finding suggestions" : <TriggerLabel feed={feed} />}</span>
-			{intro ? null : <TwgToolSourceStack className="relative z-10 max-w-[44%] shrink-0" sources={sources} />}
+			<AnimatePresence>
+				{intro ? null : <div className="relative z-10 max-w-[44%] shrink-0" data-suggestion-sources key="sources"><TwgToolSourceStack sources={sources} /></div>}
+			</AnimatePresence>
 		</div>
 	);
 	return animateIntro ? <RovoGeneration.Highlight active className="block w-full" onHighlightComplete={() => setIntro(false)}>{banner}</RovoGeneration.Highlight> : banner;

@@ -10,12 +10,12 @@ import { FOCUS_RING_CLIP_GUTTER } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/utils";
 import type { MerchantJourneyPhase } from "../data/merchant-journey";
 
-const STEPS = ["Prepare", "Invoke", "In progress", "Pull request", "Fix checks", "Done"] as const;
+const STEPS = ["Prepare & invoke", "In progress", "Pull request", "Fix checks", "Done"] as const;
 
-type Props = Readonly<{ phase: MerchantJourneyPhase; prepared: boolean; boardSeen: boolean; onSelectStep: (step: number) => void }>;
+type Props = Readonly<{ phase: MerchantJourneyPhase; boardSeen: boolean; onSelectStep: (step: number) => void }>;
 
-function currentStep({ phase, prepared, boardSeen }: Props) {
-	return phase === "prepare" ? (prepared ? 1 : 0) : phase === "invoke" ? 1 : phase === "working" ? (boardSeen ? 2 : 1) : phase === "pr" ? 3 : phase === "merged" ? 5 : 4;
+function currentStep({ phase, boardSeen }: Props) {
+	return phase === "prepare" || phase === "invoke" ? 0 : phase === "working" ? (boardSeen ? 1 : 0) : phase === "pr" ? 2 : phase === "merged" ? 4 : 3;
 }
 
 export function MerchantJourneyControls(props: Props) {

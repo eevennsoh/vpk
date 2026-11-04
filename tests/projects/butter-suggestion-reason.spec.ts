@@ -16,6 +16,10 @@ test("PAY-999 explains suggested values in both stack and list views", async ({ 
 	await page.getByRole("button", { name: "Why due date was suggested" }).click();
 	await expect(page.getByText("Lands three days before the SDK v2.0 general-availability release.")).toBeVisible();
 	await expect(page.getByText("Release SDK v2.0 GA — Dec 18, 2026")).toBeVisible();
+	await page.getByText("Lands three days before the SDK v2.0 general-availability release.").hover();
+	const openColor = () => page.getByRole("button", { name: "Why due date was suggested" }).evaluate((button) => getComputedStyle(button).color);
+	const defaultColor = await page.getByRole("button", { name: "Why parent was suggested" }).evaluate((button) => getComputedStyle(button).color);
+	await expect.poll(openColor).toBe(defaultColor);
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Why story points was suggested" }).hover();
 	await expect(page.getByText("A five-point estimate fits the onboarding quickstart.")).toBeVisible();

@@ -16,6 +16,7 @@ export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
 		author: {
 			name: "Venn",
 			avatarUrl: "/avatar-user/venn/venn.png",
+			assistedBy: { name: "Cursor", brandName: "cursor" },
 		},
 		repository: "acme/storefront",
 		branch: "rovo/rfp-103-response-validation",

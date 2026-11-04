@@ -24,13 +24,12 @@ import { reorderProjectButterPanels, type ProjectButterPanelId } from "@/compone
 const TITLES: Record<ProjectButterPanelId, string> = { details: "Details", development: "Development", automation: "Automation", apps: "Apps" };
 const APPS = ["My Reminders", "Tempo", "PagerDuty", "Sentry", "Checklist", "Invision for Jira", "Trello Assistant"];
 
-export function ProjectButterDetails({ code = "VITA-1", content, developmentJourney, empty, onDescriptionSuggested, onSuggestionReviewComplete, onPanelOrderChange, onStartCoding, panelOrder, sidePanel, suggestion = false, suggestionProfile = "default" }: Readonly<{
+export function ProjectButterDetails({ code = "VITA-1", content, developmentJourney, empty, onDescriptionSuggested, onPanelOrderChange, onStartCoding, panelOrder, sidePanel, suggestion = false, suggestionProfile = "default" }: Readonly<{
 	code?: string;
 	content: ProjectButterContent;
 	developmentJourney?: ReactNode;
 	empty: boolean;
 	onDescriptionSuggested?: (text: string) => void;
-	onSuggestionReviewComplete?: (complete: boolean) => void;
 	onPanelOrderChange: (order: ProjectButterPanelId[]) => void;
 	onStartCoding: () => void;
 	panelOrder: ProjectButterPanelId[];
@@ -54,13 +53,13 @@ export function ProjectButterDetails({ code = "VITA-1", content, developmentJour
 	}
 	return (
 		<aside aria-label="Work item details" className="min-w-0">
-			{suggestion ? <ProjectButterSuggestionPanel fill={fill} onReviewComplete={onSuggestionReviewComplete} profile={suggestionProfile} showIntroLoading={suggestionProfile === "payments"} /> : null}
+			{suggestion ? <ProjectButterSuggestionPanel fill={fill} profile={suggestionProfile} showIntroLoading={suggestionProfile === "payments"} /> : null}
 			<div className={cn("relative", suggestion && "[&_[data-field-id]]:scroll-mt-20")} data-project-butter-suggestion-fields={fill.columnId}>
 			<DndContext collisionDetection={closestCenter} id={id} onDragEnd={({ active, over }) => onPanelOrderChange(reorderProjectButterPanels(panelOrder, active.id, over?.id ?? null))} sensors={sensors}>
 				<SortableContext items={order} strategy={verticalListSortingStrategy}>
 					<div className={cn("flex min-w-0 flex-col", sidePanel ? "gap-6" : "gap-4")}>
 						{order.map((panel) => <ProjectButterSortablePanel actions={panelActions(panel)} defaultOpen={panel === "details" || panel === "development"} footer={panel === "details" ? <ProjectButterExpandControl chevron expanded={moreFields} label={moreFields ? "Show less details" : "Show more details"} onClick={() => setMoreFields((value) => !value)} /> : null} id={panel} key={panel} sidePanel={sidePanel} title={TITLES[panel]}>
-							{panel === "details" ? <ProjectButterDetailsFields content={content} empty={empty} expanded={moreFields} fillingBarAfter={fill.running ? fill.barAfter : null} onRevealInteract={fill.settleField} reflow={fill.running} shimmerText={fill.shimmerText} /> : panel === "development" ? <div className="-mb-2 space-y-3">{developmentJourney ?? <ProjectButterDevelopmentActions code={code} description={content.description} key={code} onStartCoding={onStartCoding} summary={content.summary} />}{developmentFields.map((field) => <p className="text-sm text-text-subtle" key={field}>No {field.toLowerCase()} linked</p>)}</div> : panel === "automation" ? <div className="space-y-3"><ul className="space-y-3 text-sm text-text">{TEAM_EU_REFERENCE_AUTOMATION_RULES.map((rule) => <li key={rule.id}>{rule.title}</li>)}</ul><Button onClick={() => setRecentRuns(true)} type="button" variant="ghost">Recent run rules</Button><SetToRecurRow /></div> : <div className="space-y-2">{APPS.map((app) => <details key={app}><summary className="cursor-pointer rounded-sm py-2 text-sm text-text focus-visible:ring-2 focus-visible:ring-ring">{app}</summary><p className="pb-3 text-sm text-text-subtle">Work item information from {app} appears here.</p></details>)}</div>}
+							{panel === "details" ? <ProjectButterDetailsFields content={content} empty={empty} expanded={moreFields} fillingBarAfter={fill.running ? fill.barAfter : null} fillingFinishing={fill.finishing} onRevealInteract={fill.settleField} reflow={fill.running} shimmerText={fill.shimmerText} /> : panel === "development" ? <div className="-mb-2 space-y-3">{developmentJourney ?? <ProjectButterDevelopmentActions code={code} description={content.description} key={code} onStartCoding={onStartCoding} summary={content.summary} />}{developmentFields.map((field) => <p className="text-sm text-text-subtle" key={field}>No {field.toLowerCase()} linked</p>)}</div> : panel === "automation" ? <div className="space-y-3"><ul className="space-y-3 text-sm text-text">{TEAM_EU_REFERENCE_AUTOMATION_RULES.map((rule) => <li key={rule.id}>{rule.title}</li>)}</ul><Button onClick={() => setRecentRuns(true)} type="button" variant="ghost">Recent run rules</Button><SetToRecurRow /></div> : <div className="space-y-2">{APPS.map((app) => <details key={app}><summary className="cursor-pointer rounded-sm py-2 text-sm text-text focus-visible:ring-2 focus-visible:ring-ring">{app}</summary><p className="pb-3 text-sm text-text-subtle">Work item information from {app} appears here.</p></details>)}</div>}
 						</ProjectButterSortablePanel>)}
 					</div>
 				</SortableContext>

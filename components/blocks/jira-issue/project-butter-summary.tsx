@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import BugIcon from "@atlaskit/icon/core/bug";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
@@ -10,6 +11,7 @@ import TaskIcon from "@atlaskit/icon/core/task";
 import StatusWorkflowWarningIcon from "@atlaskit/icon-lab/core/status-workflow-warning";
 import { Tag, TagGroup } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
+import { motionDuration, motionEase } from "@/lib/motion";
 import type { JiraIssueDefaultProps } from "./index";
 import { ButterPriorityIcon } from "./priority";
 import { formatButterDueDate } from "./project-butter-model";
@@ -150,6 +152,8 @@ function ProjectButterFooter({
 	> & { pullRequestTitle: string }
 >) {
 	const dueDate = formatButterDueDate(metadata?.dueDate);
+	const [initiallyHasPullRequest] = useState(() => Boolean(pullRequestNumber));
+	const reducedMotion = useReducedMotion();
 	return (
 		<div className="flex min-h-6 min-w-0 items-center justify-between gap-1">
 			<div className={cn("flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5 text-xs leading-4 text-text-subtle", !dueDate && "-ml-1")}>
@@ -163,6 +167,7 @@ function ProjectButterFooter({
 					</span>
 				) : null}
 				{pullRequestNumber ? (
+					<motion.span animate={{ opacity: 1, transform: "scale(1)" }} className="inline-flex" initial={initiallyHasPullRequest || reducedMotion ? false : { opacity: 0, transform: "scale(0.9)" }} transition={{ duration: motionDuration.medium, ease: motionEase.outPractical }}>
 					<JiraIssuePullRequestCluster
 						pullRequestNumber={pullRequestNumber}
 						pullRequestPreview={pullRequestPreview}
@@ -171,6 +176,7 @@ function ProjectButterFooter({
 						usesStrokeChrome
 						tone="subtle"
 					/>
+					</motion.span>
 				) : null}
 				{showPriorityIndicator ? (
 					<span className="grid size-6 shrink-0 place-items-center">

@@ -285,11 +285,11 @@ test("Rovo CLI retains editable codebase workspaces", async () => {
 	await view.click(configure);
 	assert.equal(configure.getAttribute("aria-expanded"), "false");
 	assert.equal(view.queryByRole("textbox", { name: "Choose your directory" }), null);
-	await view.click(view.getByRole("button", { name: "Copy command" }));
+	await view.click(view.getByRole("button", { name: "Open in Rovo CLI" }));
 	assert.equal(view.getByRole("button", { name: "Command copied" }) !== null, true);
 	assert.equal(view.getByRole("status").textContent, "Command copied");
 	await act(() => new Promise((resolve) => setTimeout(resolve, 1850)));
-	assert.equal(view.getByRole("button", { name: "Copy command" }) !== null, true);
+	assert.equal(view.getByRole("button", { name: "Open in Rovo CLI" }) !== null, true);
 	assert.deepEqual(assigned, []);
 	await view.click(configure);
 	const field = view.getByRole("textbox", { name: "Choose your directory" });
@@ -304,7 +304,7 @@ test("Rovo CLI retains editable codebase workspaces", async () => {
 	assert.equal(view.isFocused(field), false);
 	assert.equal(view.isFocused(view.getByRole("button", { name: "~/dev/project" })), true);
 	await view.click(view.getByRole("option", { name: /GitHub Copilot/u }));
-	assert.equal(view.queryByRole("button", { name: "Copy command" }), null);
+	assert.equal(view.queryByRole("button", { name: "Open in Rovo CLI" }), null);
 	assert.equal(view.queryByRole("button", { name: "Configure directory" }), null);
 	assert.equal(view.queryByRole("textbox", { name: "Choose your directory" }), null);
 	const unavailable = view.getByRole("menuitem", { name: /Open in VS Code.*Not installed/u });
@@ -451,7 +451,7 @@ test("Claude offers cloud and Open in Claude like the other coding agents", asyn
 	assert.equal(view.queryByText(/^Run on$/u), null);
 	const cloud = view.getByRole("menuitem", { name: "Run on cloud" });
 	const local = view.getByRole("menuitem", { name: "Open in Claude" });
-	assert.equal(view.queryByRole("button", { name: "Copy command" }), null);
+	assert.equal(view.queryByRole("button", { name: "Open in Rovo CLI" }), null);
 	assert.equal(view.queryByRole("button", { name: "Configure directory" }), null);
 	await view.press(cloud, "ArrowDown");
 	assert.equal(view.isFocused(local), true);

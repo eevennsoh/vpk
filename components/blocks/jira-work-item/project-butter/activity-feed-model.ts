@@ -7,7 +7,7 @@ import { toActivityMentionSegments } from "@/components/blocks/jira-work-item/ex
 export type ProjectButterActivityView = "Activity" | "Audit";
 export type ProjectButterActivitySort = "newest" | "oldest" | "agents" | "comments";
 
-function agentMention(agent: ProjectButterSessionItem["agent"]): JiraActivitySegment {
+export function agentMention(agent: ProjectButterSessionItem["agent"]): JiraActivitySegment {
 	return { type: "agent-mention", text: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo };
 }
 

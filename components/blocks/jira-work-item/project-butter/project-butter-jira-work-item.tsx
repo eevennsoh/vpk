@@ -10,7 +10,7 @@ import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-ite
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 
 import { AttachmentDropZone } from "@/components/blocks/jira-work-item/project-butter/attachment-drop-overlay";
-import { merchantJourneyAuthoredActivity, merchantJourneyAuthoredUpdate, projectMerchantJourney, type ProjectButterJourneyPhase, type ProjectButterJourneyAuthoredField } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
+import { MERCHANT_ACKNOWLEDGMENT_DELAY_MS, merchantJourneyAuthoredActivity, merchantJourneyAuthoredUpdate, projectMerchantJourney, type ProjectButterJourneyPhase, type ProjectButterJourneyAuthoredField } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
 import { PROJECT_BUTTER_SUGGESTION_FIELDS } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import { ProjectButterEmptyActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-empty-actions";
 import { ProjectButterSessionChat } from "@/components/blocks/jira-work-item/project-butter/project-butter-session-chat";
@@ -40,7 +40,6 @@ export interface ProjectButterJiraWorkItemProps {
 	journeySession?: ProjectButterSessionItem;
 	journeyControls?: ReactNode;
 	developmentJourney?: ReactNode;
-	onSuggestionReviewComplete?: (complete: boolean) => void;
 	suggestionProfile?: "default" | "payments";
 	initialPresentation?: ProjectButterPresentation;
 	shell?: ProjectButterShellContext;
@@ -73,7 +72,6 @@ export function ProjectButterJiraWorkItem({
 	journeySession,
 	journeyControls,
 	developmentJourney,
-	onSuggestionReviewComplete,
 	suggestionProfile = "default",
 	initialPresentation = "full-screen",
 	shell = "standalone",
@@ -146,7 +144,16 @@ export function ProjectButterJiraWorkItem({
 	const itemKey = workItem?.code ?? "reference";
 	const authoredFields = journeyEdits.get(itemKey) ?? new Set<ProjectButterJourneyAuthoredField>();
 	const autoAssignTo = autoAssignClaudeToCurrentUser ? currentUser : undefined;
-	const projection = projectMerchantJourney({ content: currentContent, sessions: model.sessions, phase: journeyPhase, session: journeySession, autoAssignTo, authoredFields });
+	const [acknowledgmentTime, setAcknowledgmentTime] = useState(() => Date.now());
+	const invokedAtMs = journeySession?.invokedAtMs;
+	const showAcknowledgment = journeyPhase !== "working" || invokedAtMs == null || acknowledgmentTime >= invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS;
+	useEffect(() => {
+		if (journeyPhase !== "working" || invokedAtMs == null) return;
+		const remaining = Math.max(0, invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS - Date.now());
+		const timer = window.setTimeout(() => setAcknowledgmentTime(Date.now()), remaining);
+		return () => window.clearTimeout(timer);
+	}, [invokedAtMs, journeyPhase]);
+	const projection = projectMerchantJourney({ content: currentContent, sessions: model.sessions, phase: journeyPhase, session: journeySession, autoAssignTo, authoredFields, showAcknowledgment });
 	function markJourneyAuthored(field: ProjectButterJourneyAuthoredField) {
 		if (!journeyPhase && !journeySession) return;
 		setJourneyEdits((items) => new Map(items).set(itemKey, new Set([...(items.get(itemKey) ?? []), field])));
@@ -157,12 +164,11 @@ export function ProjectButterJiraWorkItem({
 		setPreviewSessionId(id);
 		if (id) setActivityView("Activity");
 	}, [setActivityView]);
-	const setDetailFields = currentContent.setDetailFields;
+	const { syncStoryPoints } = currentContent;
 	useEffect(() => {
 		if (!open || !workItem) return;
-		const storyPoints = workItem.storyPoints?.toString() ?? "";
-		setDetailFields((fields) => fields.storyPoints === storyPoints ? fields : { ...fields, storyPoints });
-	}, [open, setDetailFields, workItem]);
+		syncStoryPoints(workItem.storyPoints?.toString() ?? "");
+	}, [open, syncStoryPoints, workItem]);
 	const content = {
 		...projection.content,
 		setDescription: (update: React.SetStateAction<string>) => {
@@ -183,7 +189,7 @@ export function ProjectButterJiraWorkItem({
 		},
 		setActivityEntries: (update: React.SetStateAction<typeof currentContent.activityEntries>) => {
 			currentContent.setActivityEntries((stored) => {
-				const shown = projectMerchantJourney({ content: { ...currentContent, activityEntries: stored }, sessions: model.sessions, phase: journeyPhase, session: journeySession, autoAssignTo, authoredFields }).content.activityEntries;
+				const shown = projectMerchantJourney({ content: { ...currentContent, activityEntries: stored }, sessions: model.sessions, phase: journeyPhase, session: journeySession, autoAssignTo, authoredFields, showAcknowledgment }).content.activityEntries;
 				const next = typeof update === "function" ? update(shown) : update;
 				return merchantJourneyAuthoredActivity(stored, shown, next, journeySession);
 			});
@@ -287,7 +293,6 @@ export function ProjectButterJiraWorkItem({
 			code={workItem?.code ?? "VITA-1"}
 			content={content}
 			developmentJourney={developmentJourney}
-			onSuggestionReviewComplete={onSuggestionReviewComplete}
 			empty={sparse}
 			onDescriptionSuggested={(text) => setDescriptionReveal((current) => ({ id: (current?.id ?? 0) + 1, text }))}
 			onPanelOrderChange={setPanelOrder}

@@ -5,6 +5,7 @@ import { useTransform } from "motion/react";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { AgentSession } from "@/components/blocks/agent-session";
 import { JiraActivity, jiraActivitySegmentsToPlainText } from "@/components/blocks/jira-activity";
+import { JiraActivityEvent } from "@/components/blocks/jira-activity/jira-activity-event";
 import { ScrubberRail } from "@/components/blocks/scrubber/components/scrubber-rail";
 import type { ScrubberEntry } from "@/components/blocks/scrubber/lib/scrubber-entries";
 import { Button } from "@/components/ui/button";
@@ -214,11 +215,17 @@ export function ProjectButterActivity({
 						const item = content.auditChanges[entry.id] ?? HISTORY.get(entry.id);
 						return item && item.changes.length ? (
 							<ProjectButterHistoryChange
+								actor={entry.actor}
 								defaultOpen={expandedAudit}
 								item={item}
 								key={`${item.id}-${expandedAudit}`}
 								timestamp={entry.timestamp}
 							/>
+						) : entry.kind === "event" && entry.id.startsWith("merchant-agent-added-") ? (
+							<div className="flex min-w-0 flex-wrap items-center">
+								<JiraActivityEvent className="text-sm text-text [&_[data-jira-activity-agent-mention]]:align-[-0.2em] [&_[data-jira-activity-user-mention]]:align-[-0.2em]" entry={{ ...entry, showTimestamp: false }} />
+								<span className="ml-2 shrink-0 text-xs text-text-subtlest">{entry.timestamp}</span>
+							</div>
 						) : undefined;
 					}}
 					renderReply={(reply) => sessions.some((session) => `response-${session.id}` === reply.id) ? (

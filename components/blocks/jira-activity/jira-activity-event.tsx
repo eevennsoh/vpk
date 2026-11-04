@@ -51,8 +51,10 @@ function visibleEventSegments(
 export function JiraActivityEvent({
 	entry,
 	onOpenPullRequest,
+	className,
 }: Readonly<{
 	entry: JiraActivityEventEntry;
+	className?: string;
 	/** Opens the in-app pull-request detail for this activity PR row. */
 	onOpenPullRequest?: (entry: JiraActivityEventEntry) => void;
 }>) {
@@ -94,7 +96,7 @@ export function JiraActivityEvent({
 	const isAutomated = entry.segments.some(isAutomationSegment);
 
 	return (
-		<p className="flex min-h-6 min-w-0 items-center py-0.5 text-xs leading-5 text-text-subtlest">
+		<p className={cn("flex min-h-6 min-w-0 items-center py-0.5 text-xs leading-5 text-text-subtlest", className)}>
 			<span className="min-w-0">
 				{entry.showActor === false ? null : (
 					<>

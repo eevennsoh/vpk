@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_DETAIL: ComponentDetail = {
 	description:
-		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: a linked title when a URL is supplied, author and reviewer metadata, repository, branch path, diff stats, expandable CI checks, a Review link, and a Fix PR action when checks fail.",
+		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: a linked title when a URL is supplied, author and reviewer metadata, repository, branch path, diff stats, expandable CI checks, a Review link, and a Fix PR action when checks fail and a handler is supplied.",
 	importStatement: `import { PullRequest } from "@/components/blocks/pull-request";
 import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 	usage: `import { PullRequest } from "@/components/blocks/pull-request";
@@ -44,7 +44,7 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		{
 			title: "Flyout",
 			description:
-				"Overlay summary card: linked title with a trailing status lozenge, author · time · reviewers, then repository, branch path, diff stats, CI checks, Review, and Fix PR when checks fail.",
+				"Overlay summary card: linked title with a trailing status lozenge, author · time · reviewers, then repository, branch path, diff stats, CI checks, Review, and Fix PR when checks fail and a handler is supplied.",
 			demoSlug: "pull-request-demo-flyout",
 		},
 		{
@@ -85,7 +85,7 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 			name: "author",
 			type: "PullRequestAuthor",
 			description:
-				"Author name and optional avatar URL. Leads the compact dropdown row; spacious footer avatar; on the flyout, pairs with `relativeTime`.",
+				"Author name and optional avatar URL. An optional `assistedBy` agent adds a horizontal agent and human avatar group. On the flyout, the author pairs with `relativeTime`.",
 		},
 		{
 			name: "branch",

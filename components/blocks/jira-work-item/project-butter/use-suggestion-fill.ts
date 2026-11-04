@@ -56,6 +56,7 @@ export interface ProjectButterSuggestionFill {
 	/** Details row the filling bar sits below while Accept all runs. */
 	barAfter: ProjectButterDetailFieldId | "top" | null;
 	columnId: string;
+	finishing: boolean;
 	dismissAccepted: () => void;
 	dismissField: (field: ProjectButterSuggestionField) => void;
 	restoreDismissedField: (field: ProjectButterSuggestionField) => void;
@@ -92,6 +93,7 @@ export function useProjectButterSuggestionFill(
 	const descriptionRevealRef = useRef(onDescriptionSuggested);
 	const reducedRef = useRef(shouldReduceMotion);
 	const [running, setRunning] = useState(false);
+	const [finishing, setFinishing] = useState(false);
 	const [activeField, setActiveField] = useState<ProjectButterSuggestionField | null>(null);
 	const [barAfter, setBarAfter] = useState<ProjectButterDetailFieldId | "top" | null>(null);
 	const [dismissed, setDismissed] = useState<ReadonlySet<ProjectButterSuggestionField>>(() => new Set());
@@ -224,6 +226,7 @@ export function useProjectButterSuggestionFill(
 		acceptedTarget.current = null;
 		setAccepted(null);
 		setRunning(false);
+		setFinishing(false);
 		setActiveField(null);
 		setBarAfter(null);
 		for (const timer of shimmerTimers.current.values()) window.clearTimeout(timer);
@@ -264,6 +267,7 @@ export function useProjectButterSuggestionFill(
 			return;
 		}
 		const id = ++runId.current;
+		setFinishing(false);
 		setRunning(true);
 		await wait(motionDuration.slow * 1000);
 		if (id !== runId.current) return;
@@ -287,6 +291,7 @@ export function useProjectButterSuggestionFill(
 				const suggestion = detailSuggestions.find((item) => item.field === field && !undoneFields.current.has(item.field));
 				setActiveField(suggestion?.field ?? null);
 				setBarAfter(field);
+				if (index === Math.max(0, rail.length - 2)) setFinishing(true);
 				if (suggestion) {
 					applyProjectButterSuggestion(suggestion, target);
 					revealFinishesAt = Math.max(revealFinishesAt, performance.now() + shimmerField(suggestion, true));
@@ -297,7 +302,8 @@ export function useProjectButterSuggestionFill(
 				revealRow(rail[index + 1] ?? field);
 				await wait(Math.max(0, FILL_STEP_MS - (performance.now() - stepStart)));
 			}
-			await wait(DETAILS_RAIL_GLIDE.layout.duration * 1000);
+			await wait(Math.max(0, (motionDuration.slow - DETAILS_RAIL_GLIDE.layout.duration) * 1000));
+			await settleLayout();
 		}
 		if (id !== runId.current) return;
 		setActiveField(null);
@@ -319,6 +325,7 @@ export function useProjectButterSuggestionFill(
 		activeField,
 		barAfter,
 		columnId,
+		finishing,
 		dismissAccepted,
 		dismissField,
 		restoreDismissedField: (field) => setDismissed((current) => {
@@ -341,6 +348,7 @@ export function useProjectButterSuggestionFill(
 					runId.current += 1;
 					activeBatch.current = [];
 					setRunning(false);
+					setFinishing(false);
 					setActiveField(null);
 					setBarAfter(null);
 				}

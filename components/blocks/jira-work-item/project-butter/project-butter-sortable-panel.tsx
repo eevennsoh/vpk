@@ -22,6 +22,7 @@ export function ProjectButterSortablePanel({ actions, children, defaultOpen = tr
 		<div data-panel-id={id} ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition: isDragging ? undefined : "transform var(--duration-medium) var(--ease-out-practical)", position: "relative", zIndex: isDragging ? 30 : undefined, boxShadow: isDragging ? token("elevation.shadow.overlay") : undefined }}>
 			<TeamEuRailPanel
 				alwaysShowHeaderActions
+				contentClassName={id === "details" ? "has-[[data-project-butter-suggestion-cursor]]:overflow-visible" : undefined}
 				defaultOpen={defaultOpen}
 				footer={footer}
 				headerActions={<div className="-mr-1 flex items-center gap-1 opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{actions}<Button {...attributes} {...listeners} aria-label={`Drag to reorder ${title}`} className="touch-none [&_svg]:text-icon-subtle" ref={setActivatorNodeRef} size="icon-compact" type="button" variant="ghost"><DragHandleVerticalIcon label="" size="small" /></Button></div>}

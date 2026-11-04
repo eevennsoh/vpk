@@ -165,6 +165,24 @@ test("keyboard undo restores a completed batch from the caught-up controls", asy
 	await view.unmount();
 });
 
+test("keyboard undo works in list view without changing text input behavior", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await view.click(view.getByRole("button", { name: "Show as list" }));
+	await view.click(view.getByRole("button", { name: "Accept assignee" }));
+	await view.focus(view.getByRole("button", { name: "Show as stack" }));
+	await view.press(null, "z", { ctrlKey: true });
+	assert.notEqual(view.queryByRole("button", { name: "Accept assignee" }), null);
+	const input = document.createElement("input");
+	view.getByRole("dialog").append(input);
+	await view.focus(input);
+	const event = new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true });
+	await act(() => input.dispatchEvent(event));
+	assert.equal(event.defaultPrevented, false);
+	assert.notEqual(view.queryByRole("button", { name: "Accept assignee" }), null);
+	input.remove();
+	await view.unmount();
+});
+
 const triggerName = () => {
 	const trigger = document.querySelector("button[aria-labelledby]");
 	return document.getElementById(trigger.getAttribute("aria-labelledby")).textContent;

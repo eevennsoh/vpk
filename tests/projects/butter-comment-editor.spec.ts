@@ -398,6 +398,8 @@ test("a resumed session keeps its conversation after the user sends and reopens 
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 	await mentionCursor();
 	await workItem.getByRole("option", { name: "Start a new session" }).click();
+	await expect(workItem.getByText("New session", { exact: true })).toHaveCount(0);
+	await expect(workItem.getByRole("button", { name: "Choose agent session" })).toHaveCount(0);
 	await editor.pressSequentially(" Second session task");
 	await editor.press("Enter");
 	await mentionCursor();

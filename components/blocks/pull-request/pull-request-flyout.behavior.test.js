@@ -64,6 +64,19 @@ test("flyout adds the repository and a CI summary row", async () => {
 	assert.match(text, /3\/3 builds passed/u);
 });
 
+test("pull request authors can include an assisting agent across card layouts", async () => {
+	for (const variant of ["dropdown", "spacious", "flyout"]) {
+		const view = await renderComponent({
+			entry: "components/blocks/pull-request/components/pull-request.tsx",
+			exportName: "PullRequest",
+			mocks: THEME_MOCK,
+			props: { ...PROPS, variant, author: { name: "Venn", avatarUrl: "/avatar-user/venn/venn.png", assistedBy: { name: "Claude", brandName: "claude" } } },
+		});
+		assert.equal(view.queryByRole("group", { name: "Claude, used by Venn" }) !== null, true, variant);
+		await view.unmount();
+	}
+});
+
 test("development rows show the four pull request status icons and colors", async () => {
 	const statuses = ["Draft", "Open", "Merged", "Failed"];
 	const view = await renderComponent({
@@ -202,6 +215,8 @@ test("Fix PR appears for failed checks and passes only failures to the handler",
 		{ id: "unit", name: "Unit", status: "passed", details: "Passed" },
 	];
 	const fixed = [];
+	const withoutHandler = await renderFlyout({ checks });
+	assert.equal(withoutHandler.fix, false);
 	const view = await renderComponent({
 		entry: "components/blocks/pull-request/components/pull-request.tsx",
 		exportName: "PullRequest",

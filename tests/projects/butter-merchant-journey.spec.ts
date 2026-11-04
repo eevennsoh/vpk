@@ -3,12 +3,12 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
-const JOURNEY_STEPS = ["Prepare", "Invoke", "In progress", "Pull request", "Fix checks", "Done"] as const;
+const JOURNEY_STEPS = ["Prepare & invoke", "In progress", "Pull request", "Fix checks", "Done"] as const;
 type JourneyStep = (typeof JOURNEY_STEPS)[number];
 
 const journeyCard = (page: Page) => page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
 const journeyItem = (page: Page) => page.getByRole("dialog", { name: "Project butter" });
-const wideStep = (page: Page, name: JourneyStep) => page.getByRole("group", { name: "Merchant onboarding journey steps" }).getByRole("button", { name, exact: true });
+const wideStep = (page: Page, name: JourneyStep) => page.getByRole("group", { name: "Merchant onboarding journey steps", includeHidden: true }).getByRole("button", { name, exact: true, includeHidden: true });
 
 async function openMerchantJourney(page: Page) {
 	await page.goto(appUrl("/butter"));
@@ -21,6 +21,7 @@ async function closeJourneyItem(page: Page) {
 }
 
 async function jumpToWideStep(page: Page, name: JourneyStep) {
+	await closeJourneyItem(page);
 	await wideStep(page, name).click();
 	await expect(wideStep(page, name)).toHaveAttribute("aria-pressed", "true");
 }
@@ -28,30 +29,31 @@ async function jumpToWideStep(page: Page, name: JourneyStep) {
 async function expectJourneyStage(page: Page, name: JourneyStep) {
 	const card = journeyCard(page);
 	const item = journeyItem(page);
-	const early = name === "Prepare" || name === "Invoke";
+	const early = name === "Prepare & invoke";
 	const status = name === "Done" ? "Done" : early ? "To do" : "In progress";
 	await expect(card).toHaveAttribute("data-board-column-title", status);
-	if (name === "In progress" || name === "Done") {
+	if (name === "In progress" || name === "Pull request" || name === "Done") {
 		await expect(item).toBeHidden();
+		if (name === "Pull request") await expect(card.getByRole("button", { name: /Pull request #284/ })).toBeVisible();
 		await card.locator('[data-slot="jira-issue-card"]').click();
 	} else await expect(item).toBeVisible();
 	await expect(item.getByRole("button", { name: `Change status in details, ${status}`, exact: true })).toBeVisible();
-	if (name !== "Prepare") await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
+	if (name !== "Prepare & invoke") await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
 	const development = item.getByRole("region", { name: "Pull request development" });
 	const activity = item.getByRole("region", { name: "Activity" });
 	const entries = activity.locator("[data-jira-activity-entry-id]");
-	if (name === "Prepare" || name === "Invoke" || name === "In progress") {
+	if (name === "Prepare & invoke" || name === "In progress") {
 		await expect(development).toHaveCount(0);
 		await expect(card.getByRole("button", { name: /Pull request.*#284/, includeHidden: true })).toHaveCount(0);
 		await expect(entries.getByText(/opened PR #284/)).toHaveCount(0);
 	} else {
 		await expect(development).toHaveAttribute("data-project-butter-development", name === "Done" ? "merged" : name === "Fix checks" ? "failed" : "pr");
 		await expect(entries.getByText(/opened PR #284/)).toBeVisible();
-		await expect(card.getByRole("button", { name: name === "Done" ? /Pull request merged #284/ : /Pull request #284/, includeHidden: true })).toHaveCount(1);
+		await expect(card.getByRole("button", { name: name === "Done" ? /Pull request merged #284/ : /Pull request (?:failed )?#284/, includeHidden: true })).toHaveCount(1);
 	}
 	if (name === "Done") {
 		await expect(entries.getByText(/PR #284 merged/)).toBeVisible();
-		await expect(item.getByRole("button", { name: "Finished, open Claude chat" })).toBeVisible();
+		await expect(item.getByRole("button", { name: /Claude, Completed/ })).toBeVisible();
 	} else {
 		await expect(entries.getByText(/PR #284 merged/)).toHaveCount(0);
 		if (name !== "Fix checks") {
@@ -63,12 +65,26 @@ async function expectJourneyStage(page: Page, name: JourneyStep) {
 	else await expect(activity).toContainText("Venn");
 }
 
+test("Pull request begins on the board and reveals the PR before opening the work item", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await openMerchantJourney(page);
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	await wideStep(page, "Pull request").click();
+	await expect(page.getByRole("tab", { name: "Board", exact: true })).toHaveAttribute("aria-selected", "true");
+	await expect(journeyItem(page)).toBeHidden();
+	const card = journeyCard(page);
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(card.getByRole("button", { name: /Pull request #284/ })).toBeVisible();
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	await expect(journeyItem(page).getByRole("region", { name: "Pull request development" })).toHaveAttribute("data-project-butter-development", "pr");
+});
+
 test("PAY-999 travels from suggestions through Claude's repaired and merged PR", async ({ page }) => {
 	test.setTimeout(90_000);
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await openMerchantJourney(page);
 	const step = (name: JourneyStep) => wideStep(page, name);
-	await expect(step("Prepare")).toHaveAttribute("aria-pressed", "true");
+	await expect(step("Prepare & invoke")).toHaveAttribute("aria-pressed", "true");
 	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
 	await card.locator('[data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
@@ -77,7 +93,8 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await expect(item.getByRole("tablist", { name: "Activity views" })).toHaveCount(0);
 	await item.getByRole("button", { name: /suggestions$/ }).click();
 	await page.getByRole("button", { name: "Accept all" }).click();
-	await expect(step("Invoke")).toHaveAttribute("aria-pressed", "true");
+	await page.getByRole("button", { name: "Close suggestions" }).click();
+	await expect(step("Prepare & invoke")).toHaveAttribute("aria-pressed", "true");
 	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
 	await expect(activity).toContainText("updated description");
 	await item.getByRole("button", { name: /\. Add agent$/ }).click();
@@ -86,14 +103,21 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
 	await expect(activity).toContainText("Venn added Claude and self-assigned the issue");
 	await expect(activity.locator('[data-jira-activity-entry-id^="merchant-agent-added-"]')).toHaveCount(1);
+	const acknowledgment = activity.locator('[data-jira-activity-entry-id^="merchant-started-"]');
+	await expect(acknowledgment).toHaveCount(1);
+	await expect(acknowledgment).toContainText("Claude");
+	await expect(acknowledgment).toContainText("I'm looking into this issue now. I'll report back here with updates as I make progress.");
 	await expect(activity.getByRole("button", { name: /automatically assigned this work item/ })).toHaveCount(0);
 	await expect(activity).toContainText("Claude");
+	await expect(step("Prepare & invoke")).toHaveAttribute("aria-pressed", "true");
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
 	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
 	await expect(step("In progress")).toHaveAttribute("aria-pressed", "true");
 	await step("Pull request").click();
 	await expect(step("Pull request")).toHaveAttribute("aria-pressed", "true");
 	await expect(card.getByRole("button", { name: /Pull request #284/ })).toBeVisible();
+	await expect(item).toBeHidden();
+	await card.locator('[data-slot="jira-issue-card"]').click();
 	const development = item.getByRole("region", { name: "Pull request development" });
 	await expect(development).toContainText("Checks running");
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("opened PR #284");
@@ -108,12 +132,12 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("pushed a fix");
 	await expect(development).toHaveAttribute("data-project-butter-development", "merged", { timeout: 15_000 });
 	await expect(step("Done")).toHaveAttribute("aria-pressed", "true");
-	await expect(item.getByRole("button", { name: "Finished, open Claude chat" })).toBeVisible();
+	await expect(item.getByRole("button", { name: /Claude, Completed/ })).toBeVisible();
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
 	await expect(card).toHaveAttribute("data-board-column-title", "Done");
 	await expect(card.getByRole("button", { name: /Pull request merged #284/ })).toBeVisible();
 	await page.getByRole("button", { name: "Reset", exact: true }).click();
-	await expect(step("Prepare")).toHaveAttribute("aria-pressed", "true");
+	await expect(step("Prepare & invoke")).toHaveAttribute("aria-pressed", "true");
 	await expect(card).toHaveAttribute("data-board-column-title", "To do");
 });
 
@@ -131,6 +155,8 @@ test("disabled automations leave the failed and passed checks for manual action"
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
 	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
 	await page.getByRole("button", { name: "Pull request", exact: true }).click();
+	await expect(card.getByRole("button", { name: /Pull request #284/ })).toBeVisible();
+	await card.locator('[data-slot="jira-issue-card"]').click();
 	const development = item.getByRole("region", { name: "Pull request development" });
 	await development.getByRole("button", { name: /CI checks and automation/ }).click();
 	await page.getByRole("menuitemcheckbox", { name: /Auto-fix/ }).click();
@@ -150,6 +176,24 @@ test("disabled automations leave the failed and passed checks for manual action"
 	await expect(development).toHaveAttribute("data-project-butter-development", "merged");
 });
 
+test("the board PR flyout shows Venn, Claude, repository and current checks", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openMerchantJourney(page);
+	await jumpToWideStep(page, "Pull request");
+	await closeJourneyItem(page);
+	const pr = journeyCard(page).getByRole("button", { name: /Pull request #284/ });
+	await pr.hover();
+	const author = page.getByRole("group", { name: "Claude, used by Venn" });
+	await expect(author).toBeVisible();
+	await expect(page.getByText("payments-platform/payments", { exact: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: /0\/3 builds passed/ })).toBeVisible();
+	const gap = await author.evaluate((element) => {
+		const label = element.nextElementSibling;
+		return label ? label.getBoundingClientRect().left - element.getBoundingClientRect().right : null;
+	});
+	expect(gap).toBe(6);
+});
+
 for (const step of JOURNEY_STEPS) test(`a fresh journey can jump directly to ${step}`, async ({ page }) => {
 	test.setTimeout(60_000);
 	await page.emulateMedia({ reducedMotion: "reduce" });
@@ -164,6 +208,7 @@ test("backward and forward jumps remove future activity and keep the comment dra
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await openMerchantJourney(page);
 	await jumpToWideStep(page, "Pull request");
+	await journeyCard(page).locator('[data-slot="jira-issue-card"]').click();
 	const item = journeyItem(page);
 	const editor = item.getByRole("textbox", { name: "Comment editor" });
 	await page.keyboard.press("m");
@@ -172,8 +217,8 @@ test("backward and forward jumps remove future activity and keep the comment dra
 	await editor.pressSequentially(" Keep the sandbox migration note in this draft");
 	await jumpToWideStep(page, "Done");
 	await expectJourneyStage(page, "Done");
-	await jumpToWideStep(page, "Prepare");
-	await expectJourneyStage(page, "Prepare");
+	await jumpToWideStep(page, "Prepare & invoke");
+	await expectJourneyStage(page, "Prepare & invoke");
 	await page.keyboard.press("m");
 	await expect(editor).toContainText("Keep the sandbox migration note in this draft");
 	await expect(editor.locator('[data-mention-category="subagent"]')).toHaveText("Claude");
@@ -185,8 +230,6 @@ test("backward and forward jumps remove future activity and keep the comment dra
 	await expect(item.getByRole("option", { name: "Continue in existing session" })).toBeVisible();
 	await jumpToWideStep(page, "In progress");
 	await expectJourneyStage(page, "In progress");
-	await jumpToWideStep(page, "Invoke");
-	await expectJourneyStage(page, "Invoke");
 });
 
 test("compact controls jump to every stage and support previous, next, and reset", async ({ page }) => {
@@ -194,10 +237,10 @@ test("compact controls jump to every stage and support previous, next, and reset
 	await page.setViewportSize({ width: 760, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await openMerchantJourney(page);
-	const picker = page.getByRole("button", { name: "Jump to step", exact: true });
+	const picker = page.getByRole("button", { name: "Jump to step", exact: true, includeHidden: true });
 	const previous = page.getByRole("button", { name: "Previous step", exact: true });
 	const next = page.getByRole("button", { name: "Next step", exact: true });
-	await expect(picker).toHaveText("Prepare");
+	await expect(picker).toHaveText("Prepare & invoke");
 	await expect(previous).toBeDisabled();
 	await expect(next).toBeEnabled();
 	await picker.click();
@@ -214,24 +257,27 @@ test("compact controls jump to every stage and support previous, next, and reset
 	await next.click();
 	await expect(picker).toHaveText("Done");
 	await picker.click();
-	await page.getByRole("menuitem", { name: "Prepare", exact: true }).click();
-	await expect(picker).toHaveText("Prepare");
+	await page.getByRole("menuitem", { name: "Prepare & invoke", exact: true }).click();
+	await expect(picker).toHaveText("Prepare & invoke");
 	await expect(journeyItem(page)).toBeVisible();
 	await page.waitForTimeout(5500);
-	await expect(picker).toHaveText("Prepare");
+	await expect(picker).toHaveText("Prepare & invoke");
 	await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", "To do");
 	await expect(journeyItem(page).getByRole("region", { name: "Activity" }).getByText(/pushed a fix|PR #284 merged/)).toHaveCount(0);
 	await closeJourneyItem(page);
 	await next.click();
-	await expect(picker).toHaveText("Invoke");
+	await expect(picker).toHaveText("In progress");
 	await closeJourneyItem(page);
 	await picker.click();
 	await page.getByRole("menuitem", { name: "Pull request", exact: true }).click();
 	await expect(picker).toHaveText("Pull request");
+	await expect(journeyItem(page)).toBeHidden();
+	await expect(journeyCard(page).getByRole("button", { name: /Pull request #284/ })).toBeVisible();
+	await journeyCard(page).locator('[data-slot="jira-issue-card"]').click();
 	await expect(journeyItem(page).getByRole("region", { name: "Pull request development" })).toHaveAttribute("data-project-butter-development", "pr");
 	await closeJourneyItem(page);
 	await page.getByRole("button", { name: "Reset", exact: true }).click();
-	await expect(picker).toHaveText("Prepare");
+	await expect(picker).toHaveText("Prepare & invoke");
 	await expect(previous).toBeDisabled();
 	await expect(next).toBeEnabled();
 	await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", "To do");
