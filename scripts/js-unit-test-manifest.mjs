@@ -14,6 +14,8 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/blocks/jira-work-item/project-butter/merchant-journey-activity.behavior.test.js",
+		"components/projects/butter/data/merchant-journey.test.ts",
 		"components/blocks/agent-directory/directory-view.behavior.test.js",
 		"components/blocks/jira-list/jira-list-interactions.behavior.test.js",
 		"components/blocks/pull-request/pull-request-checks.behavior.test.js",
@@ -24,6 +26,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/project-butter/status.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/activity-response.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/details-fields.behavior.test.js",
+		"components/blocks/jira-work-item/project-butter/development-journey.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/suggestion-model.test.ts",
 		"components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-model.test.ts",
 		"components/blocks/jira-work-item/suggestion-canvas/canvas/gestures.test.ts",

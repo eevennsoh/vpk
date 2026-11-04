@@ -2,6 +2,7 @@
 
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties, type Ref } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
+import type { Editor } from "@tiptap/core";
 import { motion, useReducedMotion } from "motion/react";
 import CloseIcon from "@atlaskit/icon/core/close";
 import { EditorToolbar } from "@/components/blocks/editor-toolbar";
@@ -56,23 +57,26 @@ export function ProjectButterCommentEditor({ agents, focusRequest, newSession, o
 				return false;
 			},
 		},
-		onCreate: ({ editor: activeEditor }) => activeEditor.commands.focus("end", { scrollIntoView: false }),
+		onCreate: ({ editor: activeEditor }) => { reportMentions(activeEditor); activeEditor.commands.focus("end", { scrollIntoView: false }); },
 		onUpdate: ({ editor: activeEditor }) => {
 			const markdown = activeEditor.getMarkdown();
 			lastEditorValue.current = markdown;
 			onValueChange(markdown);
-			const names: string[] = [];
-			let hasMentions = false;
-			activeEditor.state.doc.descendants((node) => {
-				if (node.type.name !== "mention") return;
-				hasMentions = true;
-				if (node.attrs.category === "subagent" && typeof node.attrs.label === "string") names.push(node.attrs.label);
-			});
-			onMentionChange(names, hasMentions);
+			reportMentions(activeEditor);
 			const lineHeight = Number.parseFloat(getComputedStyle(activeEditor.view.dom).lineHeight) || 24;
 			if (!cueShown.current && activeEditor.view.dom.scrollHeight >= lineHeight * 5) { cueShown.current = true; setCue(true); }
 		},
 	});
+	function reportMentions(activeEditor: Editor) {
+		const names: string[] = [];
+		let hasMentions = false;
+		activeEditor.state.doc.descendants((node) => {
+			if (node.type.name !== "mention") return;
+			hasMentions = true;
+			if (node.attrs.category === "subagent" && typeof node.attrs.label === "string") names.push(node.attrs.label);
+		});
+		onMentionChange(names, hasMentions);
+	}
 	useImperativeHandle(ref, () => ({
 		getDraftWithoutAgentMention(name) {
 			return editor?.getText({ textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === name ? "" : `@${node.attrs.label ?? node.attrs.id}` } }).trim() ?? "";

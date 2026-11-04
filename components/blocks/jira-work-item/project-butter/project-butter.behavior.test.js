@@ -367,7 +367,7 @@ for (const presentation of ["full-screen", "modal", "side-panel"]) {
 	}
 }
 
-test("switching presentation and Empty preserves saved edits and clears dismissed comment drafts", async () => {
+test("switching presentation and Empty keeps saved edits and comment drafts scoped to each preset", async () => {
 	const view = await renderWorkItem();
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "Keep this scope");
 	await view.focus(view.getByRole("button", { name: "Description" }));
@@ -383,7 +383,7 @@ test("switching presentation and Empty preserves saved edits and clears dismisse
 	await view.click(view.getByRole("button", { name: "Modal" }));
 	await view.click(view.getByRole("button", { name: "View prototype" }));
 	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent, "Keep this scope");
-	assert.equal((await commentEditor(view)).textContent, "");
+	assert.equal((await commentEditor(view)).textContent, "Keep this comment draft");
 });
 
 test("attachment stacks expand independently and Escape returns focus without closing the work item", async () => {
@@ -593,16 +593,47 @@ test("the source comment editor opens with M, clears cancelled drafts, resizes, 
 	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }) === null, true);
 });
 
-test("outside click and the toolbar close control dismiss and clear the source editor", async () => {
+test("outside click preserves the comment draft and explicit cancel clears it", async () => {
 	const view = await renderWorkItem();
 	await view.fill(await commentEditor(view), "Do not publish this");
 	await view.click(view.getByRole("button", { name: "Development" }));
 	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }) === null, true);
-	assert.equal((await commentEditor(view)).textContent, "");
+	assert.equal((await commentEditor(view)).textContent, "Do not publish this");
 	await view.fill(view.getByRole("textbox", { name: "Comment editor" }), "Another discarded draft");
 	await view.click(view.getByRole("button", { name: "Close comment editor" }));
 	assert.equal((await commentEditor(view)).textContent, "");
 	assert.equal(view.queryByText("Do not publish this") === null, true);
+});
+
+test("closing and reopening the work item preserves its unsubmitted comment", async () => {
+	const props = { initialPreset: "filled", initialPresentation: "modal", shell: "project", onClose() {}, open: true };
+	const view = await renderWorkItem(props);
+	await view.fill(await commentEditor(view), "Keep this unfinished merchant note");
+	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
+	await view.rerender({ ...props, open: false });
+	await view.rerender(props);
+	assert.equal((await commentEditor(view)).textContent, "Keep this unfinished merchant note");
+	await view.click(view.getByRole("button", { name: "Submit" }));
+	assert.equal(view.queryByText("Keep this unfinished merchant note") !== null, true);
+});
+
+test("reopened comment drafts report restored agent mentions before submission", async () => {
+	let mentionedNames = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/project-butter-comment-editor.tsx",
+		exportName: "ProjectButterCommentEditor",
+		props: {
+			agents: [{ id: "claude-code", name: "Claude", byline: "Coding agent" }],
+			focusRequest: 0,
+			newSession: false,
+			value: "@[subagent:claude-code] Keep the merchant checklist",
+			onCancel() {}, onResetSessionTarget() {}, onSave() {}, onValueChange() {},
+			onMentionChange(names) { mentionedNames = names; },
+		},
+	});
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+	assert.equal(view.getByRole("textbox", { name: "Comment editor" }).textContent.includes("Claude"), true);
+	assert.deepEqual(mentionedNames, ["Claude"]);
 });
 
 test("header and Details share status options and custom status updates", async () => {

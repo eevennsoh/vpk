@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import { createProjectButterSessions, PROJECT_BUTTER_SESSIONS, type ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
@@ -13,7 +14,7 @@ interface ProjectButterSessionState {
 	replies: Record<string, string[]>;
 }
 
-export function useProjectButterSessions(preset: JiraWorkItemPreset, itemKey = "reference", initialSessions?: readonly ProjectButterSessionItem[]) {
+export function useProjectButterSessions(preset: JiraWorkItemPreset, itemKey = "reference", initialSessions?: readonly ProjectButterSessionItem[], currentUser?: WorkItemPerson) {
 	const initialState = useMemo<ProjectButterSessionState>(() => {
 		const activeSessionId: string | null = null;
 		const drafts: Record<string, string> = {};
@@ -27,7 +28,7 @@ export function useProjectButterSessions(preset: JiraWorkItemPreset, itemKey = "
 	}), [fieldSetter]);
 	const activeSession = sessions.find((session) => session.id === activeSessionId);
 	function startAgent(agent: AgentSessionItem["agent"], summary: string, prompt?: string) {
-		const session: ProjectButterSessionItem = { id: `${itemKey}:${crypto.randomUUID()}`, agent, title: `Work on ${summary}`, host: "cloud", state: "running", timeLabel: "Just now", invokedAtMs: Date.now(), invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" }, message: `Ready to work on ${summary}.`, prompt };
+		const session: ProjectButterSessionItem = { id: `${itemKey}:${crypto.randomUUID()}`, agent, title: `Work on ${summary}`, host: "cloud", state: "running", timeLabel: "Just now", invokedAtMs: Date.now(), invokedBy: currentUser ? { name: currentUser.name, avatarSrc: currentUser.avatarUrl } : { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" }, message: `Ready to work on ${summary}.`, prompt };
 		setSessions((current) => [...current, session]);
 		setActiveSessionId(session.id);
 		return session;
@@ -35,13 +36,14 @@ export function useProjectButterSessions(preset: JiraWorkItemPreset, itemKey = "
 
 	function startCoding() {
 		const referenceSession = PROJECT_BUTTER_SESSIONS[0];
-		const codingSession = itemKey === "reference" ? referenceSession : {
+		const template = itemKey === "reference" ? referenceSession : {
 			...referenceSession,
 			id: `${itemKey}:coding`,
 			title: `Work on ${itemKey}`,
 			branch: undefined,
 			message: `Ready to work on ${itemKey}.`,
 		};
+		const codingSession = currentUser ? { ...template, invokedBy: { name: currentUser.name, avatarSrc: currentUser.avatarUrl }, invokedAtMs: Date.now(), timeLabel: "Just now" } : template;
 		setSessions((current) => current.some((session) => session.id === codingSession.id)
 			? current
 			: [...current, { ...codingSession, state: "running" }]);
@@ -59,5 +61,5 @@ export function useProjectButterSessions(preset: JiraWorkItemPreset, itemKey = "
 			: candidate));
 	}
 
-	return { activeSession, activeSessionId, drafts, replies, replyToSession, sessions, setActiveSessionId, setDrafts, startCoding, startAgent };
+	return { activeSession, activeSessionId, drafts, replies, replyToSession, sessions, setActiveSessionId, setDrafts, setSessions, startCoding, startAgent };
 }

@@ -206,7 +206,7 @@ test("agent mentions open an existing session or create a separate session", asy
 	const earlier = sessions.getByRole("option", { name: /Check the timeout path/ });
 	const later = sessions.getByRole("option", { name: /Inspect retry behavior/ });
 	await expect(earlier).toContainText("Working");
-	await expect(earlier).toContainText("Annie Cook");
+	await expect(earlier).toContainText("Venn");
 	await expect(earlier).toContainText(/\w{3} \d{1,2}, \d{4}/);
 	await earlier.hover();
 	await expect(workItem.locator("[data-jira-activity-entry-id][data-active]")).toContainText("Check the timeout path");
@@ -412,6 +412,72 @@ test("a resumed session keeps its conversation after the user sends and reopens 
 	await expect(chatInput).toContainText("Follow up later");
 });
 
+test("PAY-999 keeps Claude follow-ups in Venn's existing cloud session", async ({ page }) => {
+	test.setTimeout(90_000);
+	const { threads, openedThreads } = await mockRovoThreads(page);
+	const chatRequests: string[] = [];
+	await page.route("**/api/rovo/chat", async (route) => {
+		chatRequests.push(route.request().postData() ?? "");
+		const turn = chatRequests.length;
+		await route.fulfill({
+			status: 200,
+			headers: { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" },
+			body: [
+				`data: ${JSON.stringify({ type: "start", messageId: `claude-response-${turn}` })}`,
+				`data: ${JSON.stringify({ type: "text-start", id: `claude-text-${turn}` })}`,
+				`data: ${JSON.stringify({ type: "text-delta", id: `claude-text-${turn}`, delta: `Claude acknowledged follow-up ${turn}.` })}`,
+				`data: ${JSON.stringify({ type: "text-end", id: `claude-text-${turn}` })}`,
+				`data: ${JSON.stringify({ type: "data-turn-complete", data: { timestamp: new Date().toISOString() } })}`,
+				'data: {"type":"finish"}',
+				"data: [DONE]",
+				"",
+			].join("\n\n"),
+		});
+	});
+	await page.goto(appUrl("/butter"));
+	const issue = card(page, "PAY-999");
+	await issue.locator('[data-slot="jira-issue-card"]').click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await workItem.getByRole("button", { name: /\. Add agent$/ }).click();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await page.getByRole("option", { name: /^Claude/ }).first().click();
+	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
+	const invocation = workItem.locator('[data-jira-activity-entry-id^="merchant-agent-added-PAY-999:"]');
+	await expect(invocation).toHaveCount(1);
+	await expect(invocation).toContainText("Venn added Claude and self-assigned the issue");
+	const invocationId = await invocation.getAttribute("data-jira-activity-entry-id");
+	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
+	const chat = workItem.locator('[data-rovo-chat-placement="floating"]');
+	const chatInput = chat.getByRole("textbox", { name: "Chat message input" });
+	const followUps = ["Build the merchant onboarding checklist", "Keep the sandbox migration note visible"];
+	const savedThreadUrls: string[] = [];
+	for (const [index, followUp] of followUps.entries()) {
+		await page.keyboard.press("m");
+		await editor.pressSequentially("@Claude");
+		await page.getByRole("option", { name: /^Claude / }).first().click();
+		await editor.pressSequentially(` ${followUp}`);
+		await workItem.getByRole("option", { name: "Continue in existing session" }).click();
+		await expect(chatInput).toHaveText(followUp);
+		await expect(chat.getByRole("log").getByText(followUp, { exact: true })).toHaveCount(0);
+		expect(chatRequests).toHaveLength(index);
+		const saved = page.waitForResponse((response) => response.request().method() === "PUT" && /\/api\/rovo\/threads\//u.test(response.url()) && (response.request().postData() ?? "").includes(`Claude acknowledged follow-up ${index + 1}.`) && response.ok());
+		await chatInput.press("Enter");
+		await expect(chat.getByRole("log").getByText(followUp, { exact: true })).toBeVisible();
+		await expect(chat.getByRole("log").getByText(`Claude acknowledged follow-up ${index + 1}.`, { exact: true })).toBeVisible();
+		savedThreadUrls.push((await saved).url());
+		if (index === 0) await chat.getByRole("button", { name: "Close", exact: true }).click();
+	}
+	expect(savedThreadUrls[1]).toBe(savedThreadUrls[0]);
+	expect(threads.size).toBe(1);
+	const threadId = decodeURIComponent(new URL(savedThreadUrls[0]).pathname.split("/").at(-1) ?? "");
+	expect(openedThreads).toContain(threadId);
+	for (const request of chatRequests) expect(JSON.parse(request)).toMatchObject({ id: threadId });
+	for (const followUp of followUps) await expect(chat.getByRole("log").getByText(followUp, { exact: true })).toBeVisible();
+	await expect(invocation).toHaveCount(1);
+	await expect(invocation).toHaveAttribute("data-jira-activity-entry-id", invocationId!);
+	await page.screenshot({ path: "output/agent-browser/butter-pay-999-claude-continuation.png" });
+});
+
 test("the work-item agent picker offers existing sessions and starts a separate one", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
@@ -553,7 +619,7 @@ test("the board card picker continues a chosen session or creates a separate emp
 	})).toBe(true);
 	await expect.poll(() => sessions.locator(".menu-row-byline").evaluateAll((rows) => rows.every((row) => row.scrollWidth <= row.clientWidth + 1 && row.scrollHeight <= row.clientHeight + 1))).toBe(true);
 	await page.setViewportSize({ width: 1800, height: 1100 });
-	await expect(sessions.getByRole("option", { name: /Check timeouts/ })).toContainText("Annie Cook");
+	await expect(sessions.getByRole("option", { name: /Check timeouts/ })).toContainText("Venn");
 	await sessions.getByRole("option").first().focus();
 	await page.keyboard.press("ArrowDown");
 	await expect(sessions.getByRole("option", { name: /Check timeouts/ })).toBeFocused();

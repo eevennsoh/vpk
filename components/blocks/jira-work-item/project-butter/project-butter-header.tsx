@@ -65,7 +65,7 @@ export function ProjectButterHeader({ content, empty, onBrowseAgents, onCreateAg
 						{secondaryActions}
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
-						<div aria-label="Work item agents" className="flex items-center" role="group"><ProjectButterCrew assignee={workItem ? content.assignee : undefined} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={onOpenSession} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent ?? onStartCoding} sessions={sessions} useReferenceCrew={!empty && !workItem} /></div>
+						<div aria-label="Work item agents" className="flex items-center" role="group"><ProjectButterCrew assignee={workItem ? content.assignee : undefined} currentUser={{ name: content.currentUser.name, avatarUrl: content.currentUser.avatarSrc }} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={onOpenSession} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent ?? onStartCoding} sessions={sessions} useReferenceCrew={!empty && !workItem} /></div>
 						<DropdownMenu>
 							<DropdownMenuTrigger render={<Button aria-label="More work item actions" className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle" size="icon" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="max-h-[var(--available-height)] w-72" positionerClassName="z-[650]">

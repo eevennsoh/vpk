@@ -2,26 +2,16 @@
 
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import EpicIcon from "@atlaskit/icon/core/epic";
-import { useLayoutEffect, useRef, useState } from "react";
-
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import type { SuggestionValue } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 
 function ParagraphValue({ text }: Readonly<{ text: string }>) {
-	const ref = useRef<HTMLParagraphElement>(null);
-	const [scrollable, setScrollable] = useState(false);
-	useLayoutEffect(() => {
-		const element = ref.current;
-		if (!element) return undefined;
-		const measure = () => setScrollable(element.scrollHeight > element.clientHeight);
-		measure();
-		const observer = new ResizeObserver(measure);
-		observer.observe(element);
-		return () => observer.disconnect();
-	}, [text]);
-	return <p aria-label={scrollable ? "Suggested value" : undefined} className="scrollbar-thin max-h-50 overflow-y-auto overscroll-contain text-sm leading-5 text-pretty whitespace-pre-wrap text-text focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" data-suggestion-value-scroll={scrollable ? "" : undefined} ref={ref} role={scrollable ? "region" : undefined} tabIndex={scrollable ? 0 : undefined}>{text}</p>;
+	const { ref, hasVerticalOverflow, showBottomScrollMask } = useHasVerticalOverflow<HTMLParagraphElement>();
+	return <p aria-label={hasVerticalOverflow ? "Suggested value" : undefined} className="scrollbar-thin max-h-50 touch-pan-y touch-pinch-zoom overflow-y-auto overscroll-contain text-sm leading-5 text-pretty whitespace-pre-wrap text-text focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" data-suggestion-value-scroll={hasVerticalOverflow ? "" : undefined} ref={ref} role={hasVerticalOverflow ? "region" : undefined} style={buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask, fadeSize: "var(--ds-space-200)" })} tabIndex={hasVerticalOverflow ? 0 : undefined}><span className="block">{text}</span></p>;
 }
 
 /** Values wrap without truncation; longer paragraphs scroll within the card. */

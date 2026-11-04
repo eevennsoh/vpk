@@ -120,6 +120,9 @@ test("accept all uses actual values and undo preserves later edits", async () =>
 	const view = await renderWorkItem({ initialSuggestion: true, suggestionProfile: "payments" });
 	await view.click(view.getByRole("button", { name: /suggestions/iu }));
 	await view.click(view.getByRole("button", { name: "Accept all" }));
+	for (let waited = 0; document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled") !== "true" && waited < 8_000; waited += 50) {
+		await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+	}
 	const editor = view.getByRole("textbox", { name: "Work item description" });
 	assert.equal(editor.textContent.includes("Help merchants adopt Payments SDK v2"), true);
 	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "true");

@@ -34,6 +34,26 @@ test("Butter starts a second session for an agent already on the card", async ({
 	await expect(issue.locator('[data-agent-id^="PAY-105:test-agent"]')).toHaveCount(2);
 });
 
+test("the Butter board work item combines comments and changes under Activity", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-999").locator('[data-slot="jira-issue-card"]').click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	const activity = dialog.getByRole("region", { name: "Activity" });
+	await expect(activity.getByRole("heading", { name: "Activity" })).toBeVisible();
+	await expect(dialog.getByRole("tablist", { name: "Activity views" })).toHaveCount(0);
+	const summary = dialog.getByRole("textbox", { name: "Work item summary" });
+	await summary.fill("Improve onboarding for merchants");
+	await summary.press("Enter");
+	await expect(activity).toContainText("updated summary");
+	await page.keyboard.press("m");
+	const comment = dialog.getByRole("textbox", { name: "Comment editor" });
+	await comment.fill("Ready for review");
+	await comment.press("Enter");
+	await expect(activity).toContainText("Ready for review");
+	await expect(activity).toContainText("updated summary");
+});
+
 test("empty activity places the comment bar 24 pixels below the tabs", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/jira-work-item#project-butter"));
 	await page.getByRole("switch", { name: "Empty" }).check();

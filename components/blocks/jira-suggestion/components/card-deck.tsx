@@ -37,7 +37,6 @@ export interface CardDeckProps {
 	onWhyIdChange: (id: SuggestionFieldId | null) => void;
 	onGrab: (grab: { id: SuggestionFieldId; progress: MotionValue<number> } | null) => void;
 	onCommit: (direction: SwipeDirection) => void;
-	onUndo: () => void;
 	onUnpack: () => void;
 	/** A decided card that gathered into the stack has landed behind the last sheet and faded: it can go. */
 	onRelease: (id: SuggestionFieldId) => void;
@@ -56,7 +55,7 @@ function isFromControl(event: KeyboardEvent<HTMLDivElement>): boolean {
  */
 export function CardDeck({
 	feed, deck, listed, listIds, gathering, exitKind, morphing, returning, registerDepth, deckRef,
-	whyAnchor, whyContainer, whyId, onWhyIdChange, onGrab, onCommit, onUndo, onUnpack, onRelease,
+	whyAnchor, whyContainer, whyId, onWhyIdChange, onGrab, onCommit, onUnpack, onRelease,
 }: Readonly<CardDeckProps>) {
 	const [hovered, setHovered] = useState(false);
 	const [focused, setFocused] = useState(false);
@@ -87,17 +86,8 @@ export function CardDeck({
 
 	const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (!top || isFromControl(event) || event.altKey || event.shiftKey) return;
-		if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
-			if (!deck.lastDecision) return;
-			event.preventDefault();
-			onUndo();
-			return;
-		}
 		if (event.metaKey || event.ctrlKey) return;
-		if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-			event.preventDefault();
-			commit(event.key === "ArrowRight" ? "accept" : "dismiss");
-		} else if (event.key === "Enter" || event.key === " ") {
+		if (event.key === "Enter" || event.key === " ") {
 			event.preventDefault();
 			onUnpack();
 		}

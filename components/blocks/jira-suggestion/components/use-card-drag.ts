@@ -42,9 +42,10 @@ export function useCardDrag({ enabled, onCommit, onTap, onGrab }: Readonly<CardD
 	const progress = useTransform(dragX, (value) => clamp(value / COMMIT_DISTANCE, -1, 1));
 
 	const onPointerDown = (event: PointerEvent<HTMLElement>) => {
-		if (!enabled || event.button !== 0 || (event.target as Element).closest("button, a, input, [data-suggestion-value-scroll]")) return;
+		if (!enabled || event.button !== 0 || (event.target as Element).closest("button, a, input")) return;
 		const element = event.currentTarget;
-		element.setPointerCapture(event.pointerId);
+		const fromScrollableValue = Boolean((event.target as Element).closest("[data-suggestion-value-scroll]"));
+		if (!fromScrollableValue) element.setPointerCapture(event.pointerId);
 		const scale = element.getBoundingClientRect().width / element.offsetWidth || 1;
 		drag.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, scale, lastX: event.clientX, lastTime: event.timeStamp, velocity: 0, moved: false };
 	};
@@ -53,7 +54,15 @@ export function useCardDrag({ enabled, onCommit, onTap, onGrab }: Readonly<CardD
 		const state = drag.current;
 		if (!state || state.pointerId !== event.pointerId) return;
 		if (!state.moved) {
-			if (Math.hypot(event.clientX - state.startX, event.clientY - state.startY) < TAP_SLOP * state.scale) return;
+			const dx = event.clientX - state.startX;
+			const dy = event.clientY - state.startY;
+			if (Math.hypot(dx, dy) < TAP_SLOP * state.scale) return;
+			if (Math.abs(dy) > Math.abs(dx)) {
+				drag.current = null;
+				if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+				return;
+			}
+			if (!event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);
 			state.moved = true;
 			setDragging(true);
 			onGrab(progress);
@@ -66,6 +75,7 @@ export function useCardDrag({ enabled, onCommit, onTap, onGrab }: Readonly<CardD
 	};
 
 	const onPointerEnd = (event: PointerEvent<HTMLElement>) => {
+		if (event.type === "lostpointercapture" && event.target !== event.currentTarget) return;
 		const state = drag.current;
 		if (!state || state.pointerId !== event.pointerId) return;
 		drag.current = null;
@@ -76,7 +86,7 @@ export function useCardDrag({ enabled, onCommit, onTap, onGrab }: Readonly<CardD
 		setDragging(false);
 		const distance = dragX.get();
 		const flicked = Math.abs(state.velocity) > FLICK_VELOCITY && Math.abs(distance) > FLICK_MIN_DISTANCE && Math.sign(state.velocity) === Math.sign(distance);
-		if (Math.abs(distance) > COMMIT_DISTANCE || flicked) {
+		if (event.type === "pointerup" && (Math.abs(distance) > COMMIT_DISTANCE || flicked)) {
 			onCommit(distance > 0 ? "accept" : "dismiss");
 			return;
 		}

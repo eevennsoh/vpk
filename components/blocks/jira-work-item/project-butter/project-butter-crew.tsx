@@ -48,8 +48,9 @@ function referenceCrew(sessionsByUrgency: readonly AgentSessionItem[]): readonly
 	return members;
 }
 
-export function ProjectButterCrew({ assignee, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: Readonly<{
+export function ProjectButterCrew({ assignee, currentUser, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: Readonly<{
 	assignee?: WorkItemPerson;
+	currentUser?: WorkItemPerson;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onOpenSession: (session: AgentSessionItem) => void;
@@ -70,7 +71,7 @@ export function ProjectButterCrew({ assignee, onBrowseAgents, onCreateAgent, onO
 		...(assignee && assignee.name !== "Automatic" && assignee.name !== "Unassigned" ? [{ name: assignee.name, kind: "person" as const, state: "Working" as const, avatarSrc: assignee.avatarUrl }] : []),
 		...sessions.map((session): CrewMember => ({ name: session.agent.name, kind: "agent", state: session.state === "complete" ? "Completed" : session.state === "needs-input" || session.state === "attention" ? "Needs input" : "Working", visual: { avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo } })),
 	];
-	const crew: readonly CrewMember[] = members.length ? members : [{ name: "Annie Cook", kind: "person", state: "Currently viewing" }];
+	const crew: readonly CrewMember[] = members.length ? members : [{ name: currentUser?.name ?? "Annie Cook", avatarSrc: currentUser?.avatarUrl, kind: "person", state: "Currently viewing" }];
 	const picking = view === "picker" || sessions.length === 0;
 	const label = `${members.length ? "Working on this work item. " : ""}${crew.map((member) => `${member.name}, ${member.state}`).join(". ")}. Add agent`;
 	function changeOpen(next: boolean) {

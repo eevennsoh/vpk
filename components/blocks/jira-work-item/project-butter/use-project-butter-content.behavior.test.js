@@ -243,3 +243,147 @@ test("a board item without the placeholder map stays blank", async () => {
 	assert.equal(field("child"), "");
 	assert.equal(field("attachment"), "");
 });
+
+const JOURNEY_HARNESS = `import React from "react";
+	import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+	import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
+	import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+	import { useProjectButterSessions } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-sessions";
+	import { applyProjectButterSuggestion, listProjectButterSuggestions, revertMatchingProjectButterSuggestions } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
+	const venn = { name: "Venn", avatarUrl: "/avatar-user/venn.png" };
+	const claude = { id: "claude", name: "Claude", brandName: "claude" };
+	export default function Journey({ host = true, assignee, code = "PAY-999" }) {
+		const content = useProjectButterContent("empty", { code, title: "Improve onboarding", assignee: assignee ? { name: assignee } : undefined }, undefined, undefined, venn, host ? { currentUser: venn, showAuditInActivity: true } : undefined);
+		const model = useProjectButterSessions("empty", code, undefined, host ? venn : undefined);
+		function accept() {
+			const snapshot = { ...content.detailFields, description: content.description, descriptionDraft: content.descriptionDraft, dueDate: content.dueDate, reporter: content.reporter };
+			for (const suggestion of listProjectButterSuggestions(snapshot, "payments")) {
+				if (["description", "dueDate", "parent", "labels"].includes(suggestion.field)) applyProjectButterSuggestion(suggestion, content);
+			}
+		}
+		function acceptField(field) {
+			const snapshot = { ...content.detailFields, description: content.description, descriptionDraft: content.descriptionDraft, dueDate: content.dueDate, reporter: content.reporter };
+			const suggestion = listProjectButterSuggestions(snapshot, "payments").find((item) => item.field === field);
+			if (suggestion) applyProjectButterSuggestion(suggestion, content);
+		}
+		function undoLabels() {
+			const snapshot = { ...content.detailFields, description: content.description, descriptionDraft: content.descriptionDraft, dueDate: content.dueDate, reporter: content.reporter };
+			const suggestion = listProjectButterSuggestions({ ...snapshot, labels: [] }, "payments").find((item) => item.field === "labels");
+			if (suggestion) revertMatchingProjectButterSuggestions([suggestion], snapshot, content);
+		}
+		function start() {
+			const session = model.startAgent(claude, content.summary);
+			content.recordSessionInvocation(session, host ? venn : undefined);
+			content.recordSessionInvocation(session, host ? venn : undefined);
+		}
+		return <ThemeWrapper>
+			<button onClick={accept}>Accept suggestions</button>
+			<button onClick={() => acceptField("description")}>Accept description</button>
+			<button onClick={() => acceptField("parent")}>Accept parent</button>
+			<button onClick={() => acceptField("labels")}>Accept labels</button>
+			<button onClick={undoLabels}>Undo labels</button>
+			<button onClick={() => content.setSummary("An edited summary")}>Edit summary</button>
+			<button onClick={start}>Start Claude</button>
+			<button onClick={() => content.recordSessionInvocation(model.startCoding())}>Start coding</button>
+			<p data-field="assignee">{content.assignee.name}</p>
+			<p data-field="invoker">{model.sessions.at(-1)?.invokedBy?.name}</p>
+			<ProjectButterActivity content={content} empty sidePanel={false} sessions={model.sessions} onOpenSession={() => undefined} />
+		</ThemeWrapper>;
+	}`;
+
+test("Butter combines accepted suggestions into one expanding Activity entry", async () => {
+	const view = await renderComponent({ source: JOURNEY_HARNESS });
+	await view.click(view.getByRole("button", { name: "Accept description" }));
+	assert.notEqual(view.queryByRole("button", { name: /Venn\s*updated description\s*Just now/u }), null);
+	await view.click(view.getByRole("button", { name: "Accept parent" }));
+	await view.click(view.getByRole("button", { name: "Accept labels" }));
+	const changes = view.getAllByRole("button", { name: /Venn\s*updated .*Just now/u });
+	assert.equal(changes.length, 1);
+	assert.match(changes[0].textContent, /updated description, parent, and labels/u);
+	await view.click(changes[0]);
+	assert.equal(document.getElementById(changes[0].getAttribute("aria-controls")).textContent.includes("onboarding, sdk-v2"), true);
+	await view.click(view.getByRole("button", { name: "Undo labels" }));
+	assert.notEqual(view.queryByRole("button", { name: /Venn\s*updated description and parent\s*Just now/u }), null);
+	await view.click(view.getByRole("button", { name: "Edit summary" }));
+	assert.notEqual(view.queryByRole("button", { name: /Venn\s*updated summary\s*Just now/u }), null);
+	await view.click(view.getByRole("tab", { name: "Audit" }));
+	assert.equal(view.getAllByRole("button", { name: /Venn\s*updated .*Just now/u }).length, 2);
+});
+
+test("the combined suggestion update uses the edit pencil", async () => {
+	const source = JOURNEY_HARNESS
+		.replace('import React from "react";', 'import React from "react"; import EditIcon from "@atlaskit/icon/core/edit";')
+		.replace("<ThemeWrapper>", '<ThemeWrapper><span data-reference-edit><EditIcon label="" size="small" /></span>');
+	const view = await renderComponent({ source });
+	await view.click(view.getByRole("button", { name: "Accept suggestions" }));
+	const row = document.querySelector('[data-jira-activity-entry-id="butter-accepted-suggestions"]');
+	const pencil = document.querySelector("[data-reference-edit] svg path")?.getAttribute("d");
+	assert.equal(typeof pencil, "string");
+	assert.equal(row?.querySelector('[data-slot="icon"] svg path')?.getAttribute("d"), pencil);
+	await view.unmount();
+});
+
+test("the Butter project shows changes and agent activity in one feed", async () => {
+	const source = JOURNEY_HARNESS.replace("<ProjectButterActivity content=", "<ProjectButterActivity singleView content=");
+	const view = await renderComponent({ source });
+	assert.equal(view.queryByRole("tablist", { name: "Activity views" }), null);
+	assert.notEqual(view.queryByRole("heading", { name: "Activity" }), null);
+	await view.click(view.getByRole("button", { name: "Accept suggestions" }));
+	await view.click(view.getByRole("button", { name: "Start Claude" }));
+	assert.notEqual(view.queryByRole("button", { name: /Venn\s*updated description, due date, parent, and labels\s*Just now/u }), null);
+	assert.notEqual(view.queryByRole("button", { name: /Venn\s*automatically assigned this work item to Venn\s*Just now/u }), null);
+	assert.equal(document.querySelectorAll('[data-jira-activity-entry-id^="invocation-"]').length, 1);
+	await view.unmount();
+});
+
+test("starting Claude records Venn invocation and auto-assignment once in Activity", async () => {
+	const view = await renderComponent({ source: JOURNEY_HARNESS });
+	await view.click(view.getByRole("button", { name: "Start Claude" }));
+	assert.equal(field("assignee"), "Venn");
+	assert.equal(field("invoker"), "Venn");
+	assert.equal(document.querySelectorAll('[data-jira-activity-entry-id^="invocation-"]').length, 1);
+	assert.equal(view.getAllByRole("button", { name: /Venn\s*automatically assigned this work item to Venn\s*Just now/u }).length, 1);
+	assert.equal(document.querySelector('[data-jira-activity-entry-id^="invocation-"]').textContent.includes("Venn"), true);
+	await view.click(view.getByRole("button", { name: "Start Claude" }));
+	assert.equal(document.querySelectorAll('[data-jira-activity-entry-id^="invocation-"]').length, 2);
+	assert.equal(view.getAllByRole("button", { name: /Venn\s*automatically assigned this work item to Venn\s*Just now/u }).length, 1);
+});
+
+test("starting Claude preserves a person manually assigned to the work item", async () => {
+	const view = await renderComponent({ source: JOURNEY_HARNESS, props: { assignee: "Diego Santos" } });
+	await view.click(view.getByRole("button", { name: "Start Claude" }));
+	assert.equal(field("assignee"), "Diego Santos");
+	assert.equal(view.queryByRole("button", { name: /automatically assigned this work item/u }) === null, true);
+	assert.equal(field("invoker"), "Venn");
+});
+
+test("the hosted coding action uses Venn attribution without opting into auto-assignment", async () => {
+	const view = await renderComponent({ source: JOURNEY_HARNESS });
+	await view.click(view.getByRole("button", { name: "Start coding" }));
+	assert.equal(field("invoker"), "Venn");
+	assert.equal(field("assignee"), "Unassigned");
+});
+
+test("the shared work item keeps Annie attribution and separate Audit without Butter host context", async () => {
+	const view = await renderComponent({ source: JOURNEY_HARNESS, props: { host: false } });
+	await view.click(view.getByRole("button", { name: "Accept suggestions" }));
+	assert.equal(view.queryByRole("button", { name: /updated description/u }) === null, true);
+	await view.click(view.getByRole("tab", { name: "Audit" }));
+	assert.equal(view.queryByRole("button", { name: /Annie Cook\s*updated description\s*Just now/u }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Start Claude" }));
+	assert.equal(field("assignee"), "Unassigned");
+	assert.equal(field("invoker"), "Annie Cook");
+});
+
+test("Butter audit and assignment survive switching to another item and back", async () => {
+	const view = await renderComponent({ source: JOURNEY_HARNESS });
+	await view.click(view.getByRole("button", { name: "Accept suggestions" }));
+	await view.click(view.getByRole("button", { name: "Start Claude" }));
+	await view.rerender({ code: "PAY-998" });
+	assert.equal(field("assignee"), "Unassigned");
+	assert.equal(view.queryByRole("button", { name: /Venn\s*updated description/u }) === null, true);
+	await view.rerender({ code: "PAY-999" });
+	assert.equal(field("assignee"), "Venn");
+	assert.equal(view.queryByRole("button", { name: /Venn\s*updated description/u }) !== null, true);
+	assert.equal(document.querySelectorAll('[data-jira-activity-entry-id^="invocation-"]').length, 1);
+});

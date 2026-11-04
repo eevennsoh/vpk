@@ -71,8 +71,8 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
 /**
  * One suggestion's card, a single element for its whole life. The same node is a blank sheet tilted behind the top
  * card, the top card itself, and a row in the list, so switching modes only moves it: Motion's layout animation
- * carries it (transform only) from its stack pose to its list slot and back. Its paper (surface, radius, shadow) is
- * static and never changes with its role; only the content inside fades, in for the top card and rows, out for sheets.
+ * carries it from its stack pose to its list slot and back. The paper's shadow softens into the raised elevation
+ * for list rows while the content fades in for the top card and rows, and out for sheets.
  */
 export function SuggestionCard({
 	suggestion, decision, role, pose, poseTransition, delay, morphing, parked, onParked, peekProgress, zIndex, isNew, entrance, registerDepth,
@@ -225,6 +225,8 @@ export function SuggestionCard({
 				className={cn(
 					"relative",
 					CARD_PAPER,
+					"transition-shadow duration-slower ease-in-out",
+					parked ? "shadow-none" : role === "row" || sheet ? "shadow-sm" : null,
 					// The paper clips its face, so while its size morphs nothing inside can hang past its rounded edge.
 					"overflow-hidden",
 					sheet ? "h-full cursor-pointer" : null,

@@ -25,8 +25,8 @@ export function projectButterSessionInvocation(session: ProjectButterSessionItem
 	};
 }
 
-export function selectProjectButterActivity(entries: readonly JiraActivityEntry[], view: ProjectButterActivityView, sort: ProjectButterActivitySort) {
-	const visible = entries.filter((entry) => view === "Activity" ? entry.kind === "comment" : entry.kind !== "comment");
+export function selectProjectButterActivity(entries: readonly JiraActivityEntry[], view: ProjectButterActivityView, sort: ProjectButterActivitySort, showAuditInActivity = false) {
+	const visible = entries.filter((entry) => view === "Activity" ? showAuditInActivity || entry.kind === "comment" : entry.kind !== "comment");
 	return [...visible].sort((a, b) => {
 		if (sort === "agents" || sort === "comments") {
 			const aAgent = a.actor.kind === "agent" || a.kind === "comment" && a.replies?.some((reply) => reply.sessionItem);

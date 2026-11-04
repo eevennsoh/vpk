@@ -2,7 +2,7 @@ import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 
 // Reference: atlassian/prototyping, wiv-v2/main at 3a53253a, packages/prototypes/wiv-v2.
-export type ProjectButterSessionItem = AgentSessionItem & { message: string; invokedAtMs?: number; prompt?: string };
+export type ProjectButterSessionItem = AgentSessionItem & { message: string; invokedAtMs?: number; prompt?: string; selfAssignedOnStart?: boolean };
 export const PROJECT_BUTTER_SESSION_EPOCH = Date.UTC(2026, 10, 1, 15, 45);
 
 export const PROJECT_BUTTER_SESSIONS: readonly ProjectButterSessionItem[] = [

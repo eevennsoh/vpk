@@ -10,8 +10,8 @@ import { AGENT_LANYARD_AGENTS } from "@/components/blocks/agent-lanyard/data";
 import { AGENT_LANYARD_FIRST_PARTY_AGENTS } from "@/components/blocks/agent-lanyard/first-party-data";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { matchingAgentSessions, sessionChoiceItems } from "@/components/blocks/agent-assignment/components/session-choice-items";
+import { BUTTER_PRIMARY_BOARD_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { createCommentEntry } from "@/components/blocks/jira-activity/lib/jira-activity-reducer";
-import { PROJECT_BUTTER_CURRENT_USER } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 import { ProjectButterCommentEditor, type ProjectButterCommentEditorHandle } from "@/components/blocks/jira-work-item/project-butter/project-butter-comment-editor";
 import { useCommentBarVisibility } from "@/components/blocks/jira-work-item/project-butter/use-comment-bar-visibility";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
@@ -38,7 +38,7 @@ export function ProjectButterCommentBar({ active, compact, content, empty, onOpe
 	const editorRef = useRef<ProjectButterCommentEditorHandle>(null);
 	const openingSession = useRef(false);
 	const currentDraft = useRef(content.commentDraft);
-	const agents = useMemo(() => [...sessions.map((session) => ({ ...session.agent, id: session.agent.id ?? session.id, byline: "Agent on this work item" })), ...[...AGENT_LANYARD_AGENTS, ...AGENT_LANYARD_FIRST_PARTY_AGENTS].map((agent) => ({ ...agent, byline: agent.publisher })), ...DEMO_AGENT_BROWSER_AGENTS].filter((agent, index, all) => all.findIndex((candidate) => candidate.name.toLowerCase() === agent.name.toLowerCase()) === index), [sessions]);
+	const agents = useMemo(() => [...BUTTER_PRIMARY_BOARD_AGENTS, ...sessions.map((session) => ({ ...session.agent, id: session.agent.id ?? session.id, byline: "Agent on this work item" })), ...[...AGENT_LANYARD_AGENTS, ...AGENT_LANYARD_FIRST_PARTY_AGENTS].map((agent) => ({ ...agent, byline: agent.publisher })), ...DEMO_AGENT_BROWSER_AGENTS].filter((agent, index, all) => all.findIndex((candidate) => candidate.name.toLowerCase() === agent.name.toLowerCase()) === index), [sessions]);
 	const mentionedAgent = mentions.length === 1 ? agents.find((agent) => agent.name === mentions[0]) : undefined;
 	const matchingSessions = mentionedAgent ? matchingAgentSessions(mentionedAgent, sessions) : [];
 	const existingSession = matchingSessions[0];
@@ -46,7 +46,6 @@ export function ProjectButterCommentBar({ active, compact, content, empty, onOpe
 	const sessionItems = sessionChoiceItems(matchingSessions);
 	const menuItems = choosingSession ? sessionItems : SESSION_TARGET_MENU_ITEMS;
 	const selectedIndex = Math.min(selectedTargetIndex, Math.max(0, menuItems.length - 1));
-	const { setCommentDraft } = content;
 	const reducedMotion = useReducedMotion();
 	const { barRef, elevated, inActivity, revealActivity } = useCommentBarVisibility(active, empty, sidePanel);
 	const visible = active && (empty || expanded || inActivity);
@@ -68,11 +67,11 @@ export function ProjectButterCommentBar({ active, compact, content, empty, onOpe
 		if (!expanded) return;
 		function onOutside(event: PointerEvent) {
 			if (!(event.target instanceof Element) || barRef.current?.contains(event.target) || event.target.closest("[data-suggestion-option], [role=listbox], [role=menu], [data-slot=popover-content]")) return;
-			currentDraft.current = ""; setExpanded(false); setCommentDraft(""); setMentions([]); setHasMentions(false); setNewSessionAgentName(null); setChoosingSession(false); onPreviewSession(null);
+			setExpanded(false); setMentions([]); setHasMentions(false); setNewSessionAgentName(null); setChoosingSession(false); onPreviewSession(null);
 		}
 		document.addEventListener("pointerdown", onOutside);
 		return () => document.removeEventListener("pointerdown", onOutside);
-	}, [barRef, setCommentDraft, expanded, onPreviewSession]);
+	}, [barRef, expanded, onPreviewSession]);
 	function submit(body: string, plainText: string) {
 		if (showTargetMenu) return;
 		if (mentionedAgent) {
@@ -80,7 +79,7 @@ export function ProjectButterCommentBar({ active, compact, content, empty, onOpe
 			cancel();
 			return;
 		}
-		const entry = { ...createCommentEntry({ id: crypto.randomUUID(), actor: PROJECT_BUTTER_CURRENT_USER, body: hasMentions ? plainText : body, timestamp: "Just now" }), createdAtMs: Date.now() };
+		const entry = { ...createCommentEntry({ id: crypto.randomUUID(), actor: content.currentUser, body: hasMentions ? plainText : body, timestamp: "Just now" }), createdAtMs: Date.now() };
 		content.setActivityEntries((entries) => [...entries, entry]); content.setActivityView("Activity"); content.setActivityFocusId(entry.id); cancel();
 	}
 	function chooseTarget(choice: "continue" | "new") {

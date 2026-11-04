@@ -21,7 +21,6 @@ import {
 import {
 	activityDateLabel,
 	activityDayLabel,
-	PROJECT_BUTTER_CURRENT_USER,
 } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 import {
 	selectProjectButterActivity,
@@ -57,6 +56,7 @@ export function ProjectButterActivity({
 	sessions,
 	onOpenSession,
 	previewSessionId,
+	singleView = false,
 }: Readonly<{
 	content: ProjectButterContent;
 	empty: boolean;
@@ -64,15 +64,16 @@ export function ProjectButterActivity({
 	sessions: readonly ProjectButterSessionItem[];
 	onOpenSession: (id: string) => void;
 	previewSessionId?: string | null;
+	singleView?: boolean;
 }>) {
 	const activityRef = useRef<HTMLElement>(null);
 	const [expandedAudit, setExpandedAudit] = useState(false);
 	const [limit, setLimit] = useState(10);
 	const [hoverId, setHoverId] = useState<string | null>(null);
-	const view = content.activityView;
+	const view = singleView ? "Activity" : content.activityView;
 	const ordered = useMemo(
-		() => selectProjectButterActivity(content.activityEntries, view, content.activitySort),
-		[content.activityEntries, view, content.activitySort],
+		() => selectProjectButterActivity(content.activityEntries, view, content.activitySort, singleView || content.showAuditInActivity),
+		[content.activityEntries, view, content.activitySort, singleView, content.showAuditInActivity],
 	);
 	const previewEntryId = ordered.find((entry) => entry.id === `invocation-${previewSessionId}` || entry.kind === "comment" && (entry.sessionItem?.id === previewSessionId || entry.replies?.some((reply) => reply.sessionItem?.id === previewSessionId)))?.id;
 	const visible = useMemo(
@@ -170,7 +171,7 @@ export function ProjectButterActivity({
 					commentHeaderLayout="inline"
 					composer={null}
 				connectorStyle={view === "Activity" ? "thread" : "timeline"}
-					currentUser={PROJECT_BUTTER_CURRENT_USER}
+					currentUser={content.currentUser}
 					entries={visible}
 					hideHeader
 					onViewSession={(session) => onOpenSession(session.id)}
@@ -242,22 +243,9 @@ export function ProjectButterActivity({
 			) : null}
 		</>
 	);
-	return (
-		<section
-			aria-label="Activity"
-			className="group/activity min-w-0"
-			data-project-butter-activity
-			ref={activityRef}
-		>
-			<h2 className="sr-only">Activity</h2>
-			<Tabs
-				onValueChange={(value) => {
-					if (value === "Activity" || value === "Audit") content.setActivityView(value);
-				}}
-				value={view}
-			>
+	const header = (
 				<div className="sticky top-0 z-20 -mx-1 flex h-14 shrink-0 items-center justify-between gap-3 bg-surface px-1 py-3" data-project-butter-activity-header ref={headerRef}>
-					<TabsList aria-label="Activity views">
+					{singleView ? <h2 className="text-sm font-semibold text-text">Activity</h2> : <TabsList aria-label="Activity views">
 						<TabsTrigger
 							aria-label={`Activity${needsInput.length ? ` ${needsInput.length} need input` : ""}`}
 							value="Activity"
@@ -273,7 +261,7 @@ export function ProjectButterActivity({
 							) : null}
 						</TabsTrigger>
 						<TabsTrigger value="Audit">Audit</TabsTrigger>
-					</TabsList>
+					</TabsList>}
 					<div className={cn("flex items-center gap-1", empty ? "pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100 motion-reduce:transition-none" : null)}>
 						<DropdownMenu>
 							<DropdownMenuTrigger
@@ -303,25 +291,42 @@ export function ProjectButterActivity({
 										</DropdownMenuRadioItem>
 									))}
 								</DropdownMenuRadioGroup>
-								{view === "Audit" ? (
+								{singleView || view === "Audit" ? (
 									<DropdownMenuCheckboxItem
 										checked={expandedAudit}
 										onCheckedChange={setExpandedAudit}
 									>
-										Expand audit details
+										{singleView ? "Expand change details" : "Expand audit details"}
 									</DropdownMenuCheckboxItem>
 								) : null}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>
 				</div>
+	);
+	return (
+		<section
+			aria-label="Activity"
+			className="group/activity min-w-0"
+			data-project-butter-activity
+			ref={activityRef}
+		>
+			{singleView ? <>{header}<div className="min-w-0">{feed}</div></> : <>
+			<h2 className="sr-only">Activity</h2>
+			<Tabs
+				onValueChange={(value) => {
+					if (value === "Activity" || value === "Audit") content.setActivityView(value);
+				}}
+				value={view}
+			>
+				{header}
 				<TabsContent className="mt-0 min-w-0" value="Activity">
 					{view === "Activity" ? feed : null}
 				</TabsContent>
 				<TabsContent className="mt-0 min-w-0" value="Audit">
 					{view === "Audit" ? feed : null}
 				</TabsContent>
-			</Tabs>
+			</Tabs></>}
 		</section>
 	);
 }

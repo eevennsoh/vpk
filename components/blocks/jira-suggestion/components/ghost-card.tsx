@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { motionRecipe } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 import { CARD_PAPER, CARD_PAPER_STYLE } from "./card-face";
 
@@ -17,7 +18,7 @@ export function GhostCard({ ref }: Readonly<{ ref?: Ref<HTMLDivElement> }>) {
 		<motion.div
 			animate={{ opacity: 1, transition: motionRecipe.popup.enter }}
 			aria-hidden="true"
-			className={`relative flex flex-col gap-3 px-4 pt-4 pb-3.5 ${CARD_PAPER}`}
+			className={cn("relative flex flex-col gap-3 px-4 pt-4 pb-3.5", CARD_PAPER, "shadow-sm")}
 			exit={{ opacity: 0, transition: motionRecipe.popup.exit }}
 			initial={{ opacity: 0 }}
 			ref={ref}

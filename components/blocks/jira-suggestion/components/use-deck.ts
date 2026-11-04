@@ -12,6 +12,7 @@ export type SwipeDirection = "accept" | "dismiss";
 interface DeckDecision {
 	ids: readonly SuggestionFieldId[];
 	decision: SwipeDirection;
+	bulk?: boolean;
 }
 
 /** A short confirmation of the latest change, shown where the progress line normally sits. */
@@ -123,7 +124,7 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 		if (ids.length === 0) return;
 		if (decision === "accept") review.acceptAll();
 		else review.dismissAll();
-		record({ ids, decision });
+		record({ ids, decision, bulk: true });
 		setAnnouncement(`${decision === "accept" ? "Accepted" : "Dismissed"} ${ids.length} suggestions.`);
 	};
 

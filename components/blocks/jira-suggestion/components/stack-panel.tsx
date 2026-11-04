@@ -5,6 +5,7 @@ import { AnimatePresence, LayoutGroup, type MotionValue } from "motion/react";
 
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 
 import { CHROME_HEIGHT } from "./constants";
@@ -61,25 +62,41 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 		if (deck.undoDepth === 1 && panelRef.current?.contains(document.activeElement) && document.activeElement?.closest("[data-deck-controls]")) deckRef.current?.focus({ preventScroll: true });
 		view.undo();
 	};
-
 	usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, hasCards: deck.order.length > 0 });
 
-	const onEscape = useEffectEvent((event: KeyboardEvent) => {
-		if (event.key !== "Escape" || event.defaultPrevented) return;
-		event.preventDefault();
-		if (whyId) setWhyId(null);
-		else onClose();
+	const onPanelKeyDown = useEffectEvent((event: KeyboardEvent) => {
+		if (event.defaultPrevented) return;
+		if (event.key === "Escape") {
+			event.preventDefault();
+			if (whyId) { event.stopPropagation(); setWhyId(null); }
+			else onClose();
+			return;
+		}
+		if (event.isComposing || event.altKey || event.shiftKey || whyId) return;
+		const target = event.target;
+		if (!(target instanceof Element) || target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"], [role="menu"], [role="listbox"], [role="slider"], [role="spinbutton"]')) return;
+		if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+			if (!deck.lastDecision || feed.status === "running") return;
+			event.preventDefault();
+			event.stopPropagation();
+			undo();
+		} else if (!event.metaKey && !event.ctrlKey && mode === "stack" && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+			event.preventDefault();
+			event.stopPropagation();
+			commit(event.key === "ArrowRight" ? "accept" : "dismiss");
+		}
 	});
 	useEffect(() => {
 		const panel = panelRef.current;
 		if (!panel) return undefined;
-		const listener = (event: KeyboardEvent) => onEscape(event);
+		const listener = (event: KeyboardEvent) => onPanelKeyDown(event);
 		panel.addEventListener("keydown", listener);
 		return () => panel.removeEventListener("keydown", listener);
 	}, [panelRef]);
 
-	return (
+	const panel = (
 		<div
+			aria-keyshortcuts={mode === "stack" ? "ArrowLeft ArrowRight Meta+Z Control+Z" : "Meta+Z Control+Z"}
 			aria-labelledby={titleId}
 			className="flex max-h-full w-96 max-w-[calc(100vw-1rem)] flex-col rounded-xl bg-surface-overlay outline-none"
 			id={id}
@@ -123,4 +140,5 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 			<p aria-live="polite" className="sr-only">{deck.announcement}</p>
 		</div>
 	);
+	return <TooltipProvider portalContainer={panelRef}>{panel}</TooltipProvider>;
 }

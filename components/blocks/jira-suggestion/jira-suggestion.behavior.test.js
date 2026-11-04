@@ -30,6 +30,36 @@ function withKeyboardFocusVisible() {
 const whyIsOpen = (view) => view.getAllByRole("dialog").length > 1;
 const deckIsOpen = (view) => view.getByRole("button", { name: /^\d+ suggestions?/ }).getAttribute("aria-expanded") === "true";
 
+test("a tap on scrollable suggestion text opens the list, while a vertical gesture does not", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	const text = document.querySelector("[data-top-card] p");
+	assert.notEqual(text, null);
+	text.setAttribute("data-suggestion-value-scroll", "");
+	const pointer = (type, y) => text.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: 50, clientY: y }));
+	await act(() => { pointer("pointerdown", 50); pointer("pointermove", 90); pointer("pointerup", 90); });
+	assert.equal(view.queryByRole("list", { name: "Suggestions" }), null);
+	await act(() => { pointer("pointerdown", 50); pointer("pointerup", 50); });
+	assert.notEqual(view.queryByRole("list", { name: "Suggestions" }), null);
+	await view.unmount();
+});
+
+test("the description fades only while more content remains below", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	const text = document.querySelector("[data-top-card] p");
+	assert.notEqual(text, null);
+	Object.defineProperties(text, {
+		clientHeight: { configurable: true, value: 100 },
+		scrollHeight: { configurable: true, value: 200 },
+		scrollTop: { configurable: true, writable: true, value: 0 },
+	});
+	await act(async () => { text.dispatchEvent(new Event("scroll")); await new Promise((resolve) => setTimeout(resolve, 50)); });
+	assert.equal(text.style.maskImage.includes("linear-gradient"), true);
+	text.scrollTop = 100;
+	await act(async () => { text.dispatchEvent(new Event("scroll")); await new Promise((resolve) => setTimeout(resolve, 50)); });
+	assert.equal(text.style.maskImage, "none");
+	await view.unmount();
+});
+
 test("Escape closes a keyboard-opened why card first, then the deck, returning focus to the trigger", async (t) => {
 	t.after(withKeyboardFocusVisible());
 	const view = await renderComponent({ source: SOURCE });
@@ -110,6 +140,29 @@ test("Accept all can be undone in one step from the caught-up state", async () =
 	await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
 	assert.equal(view.queryByRole("button", { name: "Check again" }) === null, true, "the caught-up state gives way to the deck");
 	assert.equal(view.getAllByRole("button", { name: "Accept description" }).length, 1, "every card is back in the deck");
+});
+
+test("arrow keys and undo work while focus is on the suggestion controls", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await view.focus(view.getByRole("button", { name: "Dismiss description" }));
+	await view.press(null, "ArrowRight");
+	assert.notEqual(view.queryByRole("button", { name: "Accept assignee" }), null);
+	await view.press(null, "z", { metaKey: true });
+	assert.notEqual(view.queryByRole("button", { name: "Accept description" }), null);
+	await view.press(null, "ArrowLeft");
+	assert.notEqual(view.queryByRole("button", { name: "Accept assignee" }), null);
+	await view.unmount();
+});
+
+test("keyboard undo restores a completed batch from the caught-up controls", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await view.click(view.getByRole("button", { name: "Accept all" }));
+	await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+	assert.equal(view.queryByRole("button", { name: "Accept description" }), null);
+	await view.focus(view.getByRole("button", { name: "Check again" }));
+	await view.press(null, "z", { metaKey: true });
+	assert.notEqual(view.queryByRole("button", { name: "Accept description" }), null);
+	await view.unmount();
 });
 
 const triggerName = () => {

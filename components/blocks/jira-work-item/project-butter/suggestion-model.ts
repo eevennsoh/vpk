@@ -50,6 +50,11 @@ export interface ProjectButterSuggestionFieldPatch {
 	costCenter: string;
 }
 
+interface SuggestionAuditCallbacks {
+	beginSuggestionAudit?: (label: string, mode: "accept" | "undo") => void;
+	endSuggestionAudit?: () => void;
+}
+
 const SUGGESTED_DUE_DATE = new Date(Date.UTC(2026, 11, 15));
 const PAYMENTS_DESCRIPTION = [
 	"Help merchants adopt Payments SDK v2 with a clear onboarding path, from initial setup to their first test payment. Document the prerequisites, account configuration, and credentials needed before an integration begins.",
@@ -153,7 +158,7 @@ export function listProjectButterSuggestions(snapshot: ProjectButterSuggestionSn
 /** Write one accepted suggestion into the work item. */
 export function applyProjectButterSuggestion<T extends ProjectButterSuggestionFieldPatch>(
 	suggestion: ProjectButterSuggestion,
-	target: {
+	target: SuggestionAuditCallbacks & {
 		setDescription: (description: string) => void;
 		setDescriptionDraft: (description: string) => void;
 		setDueDate: (date: Date) => void;
@@ -161,31 +166,36 @@ export function applyProjectButterSuggestion<T extends ProjectButterSuggestionFi
 		setDetailFields: (update: (current: T) => T) => void;
 	},
 ): void {
-	switch (suggestion.field) {
-		case "description":
-			target.setDescription(suggestion.text);
-			target.setDescriptionDraft(suggestion.text);
-			return;
-		case "dueDate":
-			target.setDueDate(suggestion.date);
-			return;
-		case "reporter":
-			target.setReporter(suggestion.person);
-			return;
-		case "parent":
-		case "fixVersion":
-		case "storyPoints":
-		case "costCenter":
-			target.setDetailFields((current) => ({ ...current, [suggestion.field]: suggestion.text }));
-			return;
-		case "labels":
-		case "components":
-			target.setDetailFields((current) => ({ ...current, [suggestion.field]: [...suggestion.values] }));
-			return;
-		default: {
-			const unreachable: never = suggestion;
-			throw new Error(`Unhandled suggestion ${JSON.stringify(unreachable)}`);
+	target.beginSuggestionAudit?.(suggestion.label, "accept");
+	try {
+		switch (suggestion.field) {
+			case "description":
+				target.setDescription(suggestion.text);
+				target.setDescriptionDraft(suggestion.text);
+				return;
+			case "dueDate":
+				target.setDueDate(suggestion.date);
+				return;
+			case "reporter":
+				target.setReporter(suggestion.person);
+				return;
+			case "parent":
+			case "fixVersion":
+			case "storyPoints":
+			case "costCenter":
+				target.setDetailFields((current) => ({ ...current, [suggestion.field]: suggestion.text }));
+				return;
+			case "labels":
+			case "components":
+				target.setDetailFields((current) => ({ ...current, [suggestion.field]: [...suggestion.values] }));
+				return;
+			default: {
+				const unreachable: never = suggestion;
+				throw new Error(`Unhandled suggestion ${JSON.stringify(unreachable)}`);
+			}
 		}
+	} finally {
+		target.endSuggestionAudit?.();
 	}
 }
 
@@ -223,7 +233,7 @@ export function projectButterSuggestionMatches(
 export function revertMatchingProjectButterSuggestions<T extends ProjectButterSuggestionFieldPatch>(
 	batch: readonly ProjectButterSuggestion[],
 	snapshot: ProjectButterSuggestionSnapshot,
-	target: {
+	target: SuggestionAuditCallbacks & {
 		setDescription: (description: string) => void;
 		setDescriptionDraft: (description: string) => void;
 		setDueDate: (date: Date | undefined) => void;
@@ -240,7 +250,7 @@ export function revertMatchingProjectButterSuggestions<T extends ProjectButterSu
 /** Restore a field that Accept all wrote, so the batch can be reverted. */
 export function clearProjectButterSuggestion<T extends ProjectButterSuggestionFieldPatch>(
 	field: ProjectButterSuggestionField,
-	target: {
+	target: SuggestionAuditCallbacks & {
 		setDescription: (description: string) => void;
 		setDescriptionDraft: (description: string) => void;
 		setDueDate: (date: Date | undefined) => void;
@@ -248,30 +258,35 @@ export function clearProjectButterSuggestion<T extends ProjectButterSuggestionFi
 		setDetailFields: (update: (current: T) => T) => void;
 	},
 ): void {
-	switch (field) {
-		case "description":
-			target.setDescription("");
-			target.setDescriptionDraft("");
-			return;
-		case "dueDate":
-			target.setDueDate(undefined);
-			return;
-		case "reporter":
-			target.setReporter(null);
-			return;
-		case "parent":
-		case "fixVersion":
-		case "storyPoints":
-		case "costCenter":
-			target.setDetailFields((current) => ({ ...current, [field]: "" }));
-			return;
-		case "labels":
-		case "components":
-			target.setDetailFields((current) => ({ ...current, [field]: [] }));
-			return;
-		default: {
-			const unreachable: never = field;
-			throw new Error(`Unhandled suggestion field ${JSON.stringify(unreachable)}`);
+	target.beginSuggestionAudit?.(LABELS[field], "undo");
+	try {
+		switch (field) {
+			case "description":
+				target.setDescription("");
+				target.setDescriptionDraft("");
+				return;
+			case "dueDate":
+				target.setDueDate(undefined);
+				return;
+			case "reporter":
+				target.setReporter(null);
+				return;
+			case "parent":
+			case "fixVersion":
+			case "storyPoints":
+			case "costCenter":
+				target.setDetailFields((current) => ({ ...current, [field]: "" }));
+				return;
+			case "labels":
+			case "components":
+				target.setDetailFields((current) => ({ ...current, [field]: [] }));
+				return;
+			default: {
+				const unreachable: never = field;
+				throw new Error(`Unhandled suggestion field ${JSON.stringify(unreachable)}`);
+			}
 		}
+	} finally {
+		target.endSuggestionAudit?.();
 	}
 }

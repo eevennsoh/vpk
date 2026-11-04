@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { isLocalAgentListItem } from "@/components/blocks/agent-list";
@@ -10,7 +10,8 @@ import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-ite
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 
 import { AttachmentDropZone } from "@/components/blocks/jira-work-item/project-butter/attachment-drop-overlay";
-import { projectButterSessionInvocation } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
+import { merchantJourneyAuthoredActivity, merchantJourneyAuthoredUpdate, projectMerchantJourney, type ProjectButterJourneyPhase, type ProjectButterJourneyAuthoredField } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
+import { PROJECT_BUTTER_SUGGESTION_FIELDS } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import { ProjectButterEmptyActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-empty-actions";
 import { ProjectButterSessionChat } from "@/components/blocks/jira-work-item/project-butter/project-butter-session-chat";
 import { ProjectButterShell } from "@/components/blocks/jira-work-item/project-butter/project-butter-shell";
@@ -32,6 +33,14 @@ export interface ProjectButterJiraWorkItemProps {
 	initialPreset: JiraWorkItemPreset;
 	initialSuggestion?: boolean;
 	defaultReporter?: WorkItemPerson;
+	currentUser?: WorkItemPerson;
+	showAuditInActivity?: boolean;
+	autoAssignClaudeToCurrentUser?: boolean;
+	journeyPhase?: ProjectButterJourneyPhase;
+	journeySession?: ProjectButterSessionItem;
+	journeyControls?: ReactNode;
+	developmentJourney?: ReactNode;
+	onSuggestionReviewComplete?: (complete: boolean) => void;
 	suggestionProfile?: "default" | "payments";
 	initialPresentation?: ProjectButterPresentation;
 	shell?: ProjectButterShellContext;
@@ -44,6 +53,7 @@ export interface ProjectButterJiraWorkItemProps {
 	onOpenCloudSession?: (session: ProjectButterSessionItem, draft?: string) => boolean | void | Promise<boolean | void>;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
 	onStoryPointsChange?: (storyPoints: number | undefined) => void;
+	onAssigneeChange?: (assignee: WorkItemPerson) => void;
 	/** Resolves a related work key to an opener when the host has that work item (Butter board). */
 	openRelatedItem?: RelatedItemOpener;
 	/** Host project scope for related work: composer match pool and this work item's type. */
@@ -56,6 +66,14 @@ export function ProjectButterJiraWorkItem({
 	initialPreset,
 	initialSuggestion = false,
 	defaultReporter,
+	currentUser,
+	showAuditInActivity,
+	autoAssignClaudeToCurrentUser,
+	journeyPhase,
+	journeySession,
+	journeyControls,
+	developmentJourney,
+	onSuggestionReviewComplete,
 	suggestionProfile = "default",
 	initialPresentation = "full-screen",
 	shell = "standalone",
@@ -68,6 +86,7 @@ export function ProjectButterJiraWorkItem({
 	onOpenCloudSession,
 	overlayContainerRef,
 	onStoryPointsChange,
+	onAssigneeChange,
 	openRelatedItem,
 	relatedScope,
 }: Readonly<ProjectButterJiraWorkItemProps>) {
@@ -109,17 +128,29 @@ export function ProjectButterJiraWorkItem({
 		initialSessions,
 		placeholders,
 		defaultReporter,
+		{ currentUser, showAuditInActivity },
 	);
-	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter);
-	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter);
+	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
+	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
 	const filledSessions = useProjectButterSessions(
 		initialPreset === "running" ? "running" : "filled",
 		workItem?.code,
 		initialSessions,
+		currentUser,
 	);
-	const emptySessions = useProjectButterSessions("empty", workItem?.code);
+	const emptySessions = useProjectButterSessions("empty", workItem?.code, undefined, currentUser);
 	const sparse = empty || suggestion;
 	const currentContent = suggestion ? suggestionContent : empty ? emptyContent : filledContent;
+	const model = sparse ? emptySessions : filledSessions;
+	const [journeyEdits, setJourneyEdits] = useState<ReadonlyMap<string, ReadonlySet<ProjectButterJourneyAuthoredField>>>(() => new Map());
+	const itemKey = workItem?.code ?? "reference";
+	const authoredFields = journeyEdits.get(itemKey) ?? new Set<ProjectButterJourneyAuthoredField>();
+	const autoAssignTo = autoAssignClaudeToCurrentUser ? currentUser : undefined;
+	const projection = projectMerchantJourney({ content: currentContent, sessions: model.sessions, phase: journeyPhase, session: journeySession, autoAssignTo, authoredFields });
+	function markJourneyAuthored(field: ProjectButterJourneyAuthoredField) {
+		if (!journeyPhase && !journeySession) return;
+		setJourneyEdits((items) => new Map(items).set(itemKey, new Set([...(items.get(itemKey) ?? []), field])));
+	}
 	const [previewSessionId, setPreviewSessionId] = useState<string | null>(null);
 	const { setActivityView } = currentContent;
 	const previewSession = useCallback((id: string | null) => {
@@ -133,25 +164,58 @@ export function ProjectButterJiraWorkItem({
 		setDetailFields((fields) => fields.storyPoints === storyPoints ? fields : { ...fields, storyPoints });
 	}, [open, setDetailFields, workItem]);
 	const content = {
-		...currentContent,
+		...projection.content,
+		setDescription: (update: React.SetStateAction<string>) => {
+			markJourneyAuthored("description");
+			currentContent.setDescription(update);
+		},
+		setDueDate: (update: React.SetStateAction<Date | undefined>) => {
+			markJourneyAuthored("dueDate");
+			currentContent.setDueDate(update);
+		},
+		setReporter: (update: React.SetStateAction<WorkItemPerson | null>) => {
+			markJourneyAuthored("reporter");
+			currentContent.setReporter(update);
+		},
+		setStatus: (update: React.SetStateAction<string>) => {
+			markJourneyAuthored("status");
+			currentContent.setStatus(update);
+		},
+		setActivityEntries: (update: React.SetStateAction<typeof currentContent.activityEntries>) => {
+			currentContent.setActivityEntries((stored) => {
+				const shown = projectMerchantJourney({ content: { ...currentContent, activityEntries: stored }, sessions: model.sessions, phase: journeyPhase, session: journeySession, autoAssignTo, authoredFields }).content.activityEntries;
+				const next = typeof update === "function" ? update(shown) : update;
+				return merchantJourneyAuthoredActivity(stored, shown, next, journeySession);
+			});
+		},
+		setAssignee: (update: React.SetStateAction<WorkItemPerson>) => {
+			const next = typeof update === "function" ? update(projection.content.assignee) : update;
+			markJourneyAuthored("assignee");
+			currentContent.setAssignee(next);
+			onAssigneeChange?.(next);
+		},
 		setDetailFields: (update: React.SetStateAction<typeof currentContent.detailFields>) => {
-			const next = typeof update === "function" ? update(currentContent.detailFields) : update;
-			currentContent.setDetailFields(update);
-			if (next.storyPoints !== currentContent.detailFields.storyPoints) {
+			const shown = projection.content.detailFields;
+			const next = typeof update === "function" ? update(shown) : update;
+			for (const field of PROJECT_BUTTER_SUGGESTION_FIELDS) {
+				if (field === "description" || field === "dueDate" || field === "reporter") continue;
+				if (JSON.stringify(shown[field]) !== JSON.stringify(next[field])) markJourneyAuthored(field);
+			}
+			currentContent.setDetailFields((stored) => merchantJourneyAuthoredUpdate(stored, shown, next));
+			if (next.storyPoints !== shown.storyPoints) {
 				onStoryPointsChange?.(next.storyPoints === "" ? undefined : Number(next.storyPoints));
 			}
 		},
 	};
-	const model = sparse ? emptySessions : filledSessions;
 	const {
-		activeSession,
 		drafts,
 		replies,
 		replyToSession,
-		sessions,
 		setActiveSessionId,
 		setDrafts,
 	} = model;
+	const sessions = projection.sessions;
+	const activeSession = sessions.find((session) => session.id === model.activeSessionId);
 	function changeEmpty(next: boolean) {
 		setDescriptionReveal(null);
 		setEmpty(next);
@@ -163,14 +227,11 @@ export function ProjectButterJiraWorkItem({
 		if (next) setEmpty(false);
 	}
 	function addInvocation(session: ProjectButterSessionItem) {
-		const entry = projectButterSessionInvocation(session);
-		content.setActivityEntries((entries) =>
-			entries.some((item) => item.id === entry.id) ? entries : [...entries, entry],
-		);
-		content.setActivityView("Activity");
+		content.recordSessionInvocation(session, !journeyControls && session.agent.name === "Claude" ? autoAssignTo : undefined);
 	}
 	function startAgent(agent: AgentSessionItem["agent"]) {
-		const session = model.startAgent(agent, content.summary);
+		const started = model.startAgent(agent, content.summary);
+		const session = agent.name === "Claude" && autoAssignTo ? { ...started, selfAssignedOnStart: currentContent.assignee.name === "Unassigned" || currentContent.assignee.name === "Automatic" } : started;
 		addInvocation(session);
 		onAgentSessionStart?.(session);
 		setActiveSessionId(null);
@@ -225,6 +286,8 @@ export function ProjectButterJiraWorkItem({
 			key={workItem?.code ?? "reference"}
 			code={workItem?.code ?? "VITA-1"}
 			content={content}
+			developmentJourney={developmentJourney}
+			onSuggestionReviewComplete={onSuggestionReviewComplete}
 			empty={sparse}
 			onDescriptionSuggested={(text) => setDescriptionReveal((current) => ({ id: (current?.id ?? 0) + 1, text }))}
 			onPanelOrderChange={setPanelOrder}
@@ -289,6 +352,7 @@ export function ProjectButterJiraWorkItem({
 					<ProjectButterBody
 						key={workItem?.code ?? "reference"}
 						active={open}
+						singleActivityView={shell === "project"}
 						sidePanel={sidePanel}
 						content={content}
 						descriptionReveal={suggestion ? descriptionReveal : null}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { JiraSuggestionControl } from "@/components/blocks/jira-suggestion";
-import type { SuggestionFieldId, SuggestionValue, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import { FOLLOW_UP_SUGGESTIONS, WORK_ITEM_SUGGESTIONS, type SuggestionFieldId, type SuggestionValue, type WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionFeed, SuggestionRun } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { useSuggestionReview } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
 import type { ProjectButterSuggestion } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
@@ -28,25 +28,46 @@ function suggestionValue(suggestion: ProjectButterSuggestion): SuggestionValue {
 	}
 }
 
-function toCard(suggestion: ProjectButterSuggestion): WorkItemSuggestion {
+function suggestionReason(suggestion: ProjectButterSuggestion, profile: "default" | "payments"): Pick<WorkItemSuggestion, "confidence" | "reason"> {
+	const example = profile === "payments" ? [...WORK_ITEM_SUGGESTIONS, ...FOLLOW_UP_SUGGESTIONS].find((item) => item.id === suggestion.field) : undefined;
+	if (example) {
+		const detail = suggestion.field === "description"
+			? "The onboarding PRD and design review focus on helping merchants get from setup to a first test payment. The suggestion turns that context into a practical SDK quickstart."
+			: suggestion.field === "labels"
+				? "The onboarding and sdk-v2 labels connect this item to related SDK adoption work."
+				: suggestion.field === "components"
+					? "Related work under PAY-100 uses the Payments SDK component."
+					: example.reason.detail;
+		return { confidence: example.confidence, reason: { ...example.reason, detail } };
+	}
+	const source = profile === "payments" ? "Payments SDK v2 planning" : "Similar work items";
+	const headline = suggestion.field === "storyPoints" && profile === "payments"
+		? "A five-point estimate fits the onboarding quickstart."
+		: `${suggestion.label} is suggested from related work.`;
+	const detail = suggestion.field === "storyPoints" && profile === "payments"
+		? "The estimate accounts for setup guidance, sandbox payment examples, and error handling."
+		: `The suggested value, ${suggestion.preview}, is a starting point based on this example project's context.`;
+	return { confidence: "medium", reason: { headline, detail, evidence: [{ id: `butter-${suggestion.field}`, kind: "history", title: source, meta: "Example project context" }] } };
+}
+
+function toCard(suggestion: ProjectButterSuggestion, profile: "default" | "payments"): WorkItemSuggestion {
 	return {
 		id: suggestion.field,
 		label: suggestion.label,
 		currentDisplay: `Add ${suggestion.label.toLowerCase()}`,
 		value: suggestionValue(suggestion),
 		valueText: suggestion.field === "description" ? suggestion.text : suggestion.preview,
-		confidence: "medium",
-		reason: { headline: "Suggested for this empty field.", detail: "", evidence: [] },
+		...suggestionReason(suggestion, profile),
 	};
 }
 
 /** Connect the shared suggestion stack to Butter's editable fields. */
-export function ProjectButterSuggestionPanel({ fill, showIntroLoading = false }: Readonly<{ fill: ProjectButterSuggestionFill; showIntroLoading?: boolean }>) {
+export function ProjectButterSuggestionPanel({ fill, onReviewComplete, profile = "default", showIntroLoading = false }: Readonly<{ fill: ProjectButterSuggestionFill; onReviewComplete?: (complete: boolean) => void; profile?: "default" | "payments"; showIntroLoading?: boolean }>) {
 	const [saved, setSaved] = useState<readonly ProjectButterSuggestion[]>(fill.suggestions);
 	const additions = fill.suggestions.filter((suggestion) => !saved.some((item) => item.field === suggestion.field));
 	const suggestions = additions.length ? [...saved, ...additions] : saved;
 	if (additions.length) setSaved(suggestions);
-	const cards = [...fill.suggestions, ...suggestions.filter((item) => !fill.suggestions.some((current) => current.field === item.field))].map(toCard);
+	const cards = [...fill.suggestions, ...suggestions.filter((item) => !fill.suggestions.some((current) => current.field === item.field))].map((suggestion) => toCard(suggestion, profile));
 	const review = useSuggestionReview(cards);
 	const [runs, setRuns] = useState<readonly SuggestionRun[]>([{ number: 1, ranAt: "Just now", ids: [] }]);
 	const available = new Set(fill.suggestions.map((suggestion) => suggestion.field));
@@ -57,6 +78,7 @@ export function ProjectButterSuggestionPanel({ fill, showIntroLoading = false }:
 		if (!suggestion || !available.has(suggestion.field)) return;
 		fill.acceptField(suggestion);
 		review.accept(id);
+		if (pending.length === 1) onReviewComplete?.(true);
 	};
 	const dismiss = (id: SuggestionFieldId) => {
 		const suggestion = find(id);
@@ -69,6 +91,7 @@ export function ProjectButterSuggestionPanel({ fill, showIntroLoading = false }:
 		if (suggestion && review.decisionOf(id) === "accepted") fill.undoField(suggestion);
 		if (suggestion && review.decisionOf(id) === "dismissed") fill.restoreDismissedField(suggestion.field);
 		review.undo(id);
+		onReviewComplete?.(false);
 	};
 	const feed: SuggestionFeed = {
 		review: {
@@ -78,7 +101,12 @@ export function ProjectButterSuggestionPanel({ fill, showIntroLoading = false }:
 			accept,
 			dismiss,
 			undo,
-			acceptAll: () => pending.forEach((suggestion) => accept(suggestion.id)),
+			acceptAll: () => {
+				if (!pending.length) return;
+				fill.acceptAll(fill.suggestions.filter((suggestion) => pending.some((item) => item.id === suggestion.field)));
+				pending.forEach((suggestion) => review.accept(suggestion.id));
+				onReviewComplete?.(true);
+			},
 			dismissAll: () => pending.forEach((suggestion) => dismiss(suggestion.id)),
 		},
 		status: "idle",

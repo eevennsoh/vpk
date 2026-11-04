@@ -37,6 +37,7 @@ export type JiraActivityEventIcon =
 	| "in-progress"
 	| "linked"
 	| "description"
+	| "edit"
 	| "teamwork-graph"
 	| "commit"
 	| "pull-request"

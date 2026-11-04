@@ -98,7 +98,6 @@ export function PanelBody({ feed, deck, view, mode, maxHeight, grab, deckRef, ch
 					onCommit={onCommit}
 					onGrab={onGrab}
 					onRelease={view.release}
-					onUndo={onUndo}
 					onUnpack={onUnpack}
 					onWhyIdChange={onWhyIdChange}
 					registerDepth={registerDepth}
