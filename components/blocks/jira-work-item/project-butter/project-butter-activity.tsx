@@ -110,12 +110,8 @@ export function ProjectButterActivity({
 						<div className="rounded-lg border border-border" key={session.id}>
 							<AgentSession
 								animateLayout={false}
-								localSessionAction="view"
 								density="long"
 								items={[session]}
-								onSelectedItemIdChange={(sessionId) => {
-									if (sessionId) onOpenSession(sessionId);
-								}}
 								onView={(item) => onOpenSession(item.id)}
 								showBranch
 								showLinkWorkItemMenuItem={false}
