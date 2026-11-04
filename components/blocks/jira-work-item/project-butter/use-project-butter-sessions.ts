@@ -26,8 +26,8 @@ export function useProjectButterSessions(preset: JiraWorkItemPreset, itemKey = "
 		setDrafts: fieldSetter("drafts"), setReplies: fieldSetter("replies"),
 	}), [fieldSetter]);
 	const activeSession = sessions.find((session) => session.id === activeSessionId);
-	function startAgent(agent: AgentSessionItem["agent"], summary: string) {
-		const session: ProjectButterSessionItem = { id: `${itemKey}:${crypto.randomUUID()}`, agent, title: `Work on ${summary}`, host: "cloud", state: "running", timeLabel: "Just now", invokedAtMs: Date.now(), invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" }, message: `Ready to work on ${summary}.` };
+	function startAgent(agent: AgentSessionItem["agent"], summary: string, prompt?: string) {
+		const session: ProjectButterSessionItem = { id: `${itemKey}:${crypto.randomUUID()}`, agent, title: `Work on ${summary}`, host: "cloud", state: "running", timeLabel: "Just now", invokedAtMs: Date.now(), invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" }, message: `Ready to work on ${summary}.`, prompt };
 		setSessions((current) => [...current, session]);
 		setActiveSessionId(session.id);
 		return session;

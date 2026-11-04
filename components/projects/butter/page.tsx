@@ -131,7 +131,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateA
 	onBrowseAgents: () => void;
 	onCreateAgent: () => void;
 	onAgentSessionStart: (issueKey: string, session: AgentSessionItem) => void;
-	onOpenCloudSession: (issueKey: string, issueSummary: string, session: AgentSessionItem & { message: string }) => void;
+	onOpenCloudSession: (issueKey: string, issueSummary: string, session: AgentSessionItem & { message: string; prompt?: string }) => void;
 	onStoryPointsChange: (issueKey: string, storyPoints: number | undefined) => void;
 	onWorkItemClose: () => void;
 }) {
@@ -294,6 +294,7 @@ function ButterApp(): React.ReactElement {
 	const handleViewChat = useCallback((activity: JiraIssueAgentActivity, card: JiraKanbanCardData) => {
 		if (activity.host === "local") return;
 		openAgentChat({
+			sessionId: activity.id,
 			agentId: activity.id.includes(":")
 				? activity.id.slice(activity.id.lastIndexOf(":") + 1)
 				: activity.id,
@@ -672,11 +673,13 @@ function ButterApp(): React.ReactElement {
 				onCreateAgent={createAgent}
 				onAgentSessionStart={handleWorkItemSessionStart}
 				onOpenCloudSession={(issueKey, issueSummary, session) => openAgentChat({
+					sessionId: session.id,
 					agentId: resolveButterChatAgentId(session.agent, session.id),
 					agentName: session.agent.name,
 					issueKey,
 					issueSummary,
 					intro: session.message,
+					request: session.prompt,
 				})}
 				onStoryPointsChange={(issueKey, storyPoints) => setBoardColumns((columns) => columns.map((column) => ({ ...column, cards: column.cards.map((card) => card.code === issueKey ? { ...card, storyPoints } : card) })))}
 				onWorkItemClose={handleWorkItemClose}

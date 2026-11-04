@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { isLocalAgentListItem } from "@/components/blocks/agent-list";
 import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
@@ -73,6 +74,19 @@ export function ProjectButterJiraWorkItem({
 	const [presentation, setPresentation] = useState(initialPresentation);
 	/** The scrolling left column: the whole of it (gutters included) accepts file drops. */
 	const columnRef = useRef<HTMLDivElement>(null);
+	const [layoutElement, setLayoutElement] = useState<HTMLDivElement | null>(null);
+	const inlineDetailsRef = useRef<HTMLDivElement>(null);
+	const railDetailsRef = useRef<HTMLDivElement>(null);
+	const detailsHostRef = useRef<HTMLDivElement | null>(null);
+	const [detailsHost, setDetailsHost] = useState<HTMLDivElement | null>(null);
+	const setInlineDetailsSlot = useCallback((slot: HTMLDivElement | null) => {
+		inlineDetailsRef.current = slot;
+		if (slot && !detailsHostRef.current) {
+			const host = document.createElement("div");
+			detailsHostRef.current = host;
+			setDetailsHost(host);
+		}
+	}, []);
 	const [suggestion, setSuggestion] = useState(initialSuggestion);
 	const [descriptionReveal, setDescriptionReveal] = useState<{ id: number; text: string } | null>(null);
 	const [revealOpen, setRevealOpen] = useState(open);
@@ -155,6 +169,12 @@ export function ProjectButterJiraWorkItem({
 		onAgentSessionStart?.(session);
 		if (onOpenCloudSession) { setActiveSessionId(null); onOpenCloudSession(session); }
 	}
+	function startAgentFromComment(agent: AgentSessionItem["agent"], prompt: string) {
+		const session = model.startAgent(agent, content.summary, prompt);
+		addInvocation(session);
+		onAgentSessionStart?.(session);
+		setActiveSessionId(null);
+	}
 	function startCoding() {
 		const session = model.startCoding();
 		addInvocation(session);
@@ -177,6 +197,21 @@ export function ProjectButterJiraWorkItem({
 		addInvocation({ ...activeSession, state: "running" });
 	}
 	const sidePanel = presentation === "side-panel";
+	useLayoutEffect(() => {
+		const layout = layoutElement;
+		if (!layout || !detailsHost) return;
+		const placeDetails = () => {
+			const slot = sidePanel || layout.getBoundingClientRect().width < 860 ? inlineDetailsRef.current : railDetailsRef.current;
+			if (!slot || detailsHost.parentElement === slot) return;
+			const focused = document.activeElement instanceof HTMLElement && detailsHost.contains(document.activeElement) ? document.activeElement : null;
+			slot.appendChild(detailsHost);
+			focused?.focus({ preventScroll: true });
+		};
+		placeDetails();
+		const observer = new ResizeObserver(placeDetails);
+		observer.observe(layout);
+		return () => observer.disconnect();
+	}, [detailsHost, layoutElement, sidePanel, workItem?.code]);
 	const details = (
 		<ProjectButterDetails
 			key={workItem?.code ?? "reference"}
@@ -232,6 +267,7 @@ export function ProjectButterJiraWorkItem({
 				)}
 				data-project-butter-state={suggestion ? "suggestion" : empty ? "empty" : "filled"}
 				data-project-butter-work-item
+				ref={setLayoutElement}
 			>
 				<div
 					className={cn(
@@ -248,9 +284,10 @@ export function ProjectButterJiraWorkItem({
 						content={content}
 						descriptionReveal={suggestion ? descriptionReveal : null}
 						onDescriptionRevealComplete={finishDescriptionReveal}
-						details={sidePanel ? details : null}
+						detailsSlotRef={setInlineDetailsSlot}
 						empty={sparse}
 						onOpenSession={openSession}
+						onStartAgent={startAgentFromComment}
 						openRelatedItem={openRelatedItem}
 						relatedScope={relatedScope}
 						sessions={sessions}
@@ -258,9 +295,10 @@ export function ProjectButterJiraWorkItem({
 					/>
 				</div>
 				{sidePanel ? null : (
-					<div className="min-w-0 px-6 pb-8 @[860px]/butter:overflow-y-auto">{details}</div>
+					<div className="hidden min-w-0 px-6 pb-8 @[860px]/butter:block @[860px]/butter:overflow-y-auto" ref={railDetailsRef} />
 				)}
 			</div>
+			{detailsHost ? createPortal(details, detailsHost) : null}
 			<ProjectButterSessionChat
 				onClose={() => setActiveSessionId(null)}
 				open={open && Boolean(activeSession && !isLocalAgentListItem(activeSession))}

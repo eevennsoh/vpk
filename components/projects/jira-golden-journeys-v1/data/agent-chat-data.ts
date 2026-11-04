@@ -10,6 +10,7 @@ import type { QuestionCardQuestion } from "@/components/blocks/question-card/typ
 import type { AsxQueueSession } from "@/components/projects/jira-queue/data/queue-sessions";
 
 export interface JgpAgentChatScenario {
+	sessionId?: string;
 	agentId: string;
 	agentName: string;
 	issueKey: string;

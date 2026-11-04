@@ -5,6 +5,40 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("details move after the description in a narrow work item and retain their state", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	const details = dialog.getByRole("complementary", { name: "Work item details" });
+	await expect(details).toHaveCount(1);
+	await details.getByRole("button", { name: "Show more details" }).click();
+	await details.getByRole("button", { name: "Show less details" }).focus();
+	await page.setViewportSize({ width: 800, height: 1100 });
+	await expect.poll(() => dialog.evaluate((root) => {
+		const description = root.querySelector('[aria-label="Description"], [aria-labelledby$="-description"]');
+		const details = root.querySelector('[aria-label="Work item details"]');
+		const related = root.querySelector('[data-component="RelatedWork"]');
+		const activity = root.querySelector('[data-project-butter-activity]');
+		if (!description || !details || !related || !activity) return false;
+		return Boolean(description.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING)
+			&& Boolean(details.compareDocumentPosition(related) & Node.DOCUMENT_POSITION_FOLLOWING)
+			&& Boolean(related.compareDocumentPosition(activity) & Node.DOCUMENT_POSITION_FOLLOWING);
+	})).toBe(true);
+	await expect(details.getByRole("button", { name: "Show less details" })).toBeVisible();
+	await expect(details.getByRole("button", { name: "Show less details" })).toBeFocused();
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await expect.poll(async () => {
+		const [description, rail] = await Promise.all([
+			dialog.getByRole("region", { name: "Description" }).boundingBox(),
+			details.boundingBox(),
+		]);
+		return Boolean(description && rail && rail.x > description.x + description.width);
+	}).toBe(true);
+	await expect(details.getByRole("button", { name: "Show less details" })).toBeVisible();
+	await expect(details.getByRole("button", { name: "Show less details" })).toBeFocused();
+	await expect(details).toHaveCount(1);
+});
+
 test("focusing a list-ending description does not add a blank line", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter"));
