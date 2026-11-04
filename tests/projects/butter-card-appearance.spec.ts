@@ -54,6 +54,26 @@ test("the comment bar has matching left and bottom insets", async ({ page }) => 
 	await expect.poll(insets).toBeLessThan(1);
 });
 
+test("comment dictation does not scale controls with reduced motion", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
+	await page.keyboard.press("m");
+	await page.getByRole("button", { name: "Start dictation" }).click();
+	const scaled = await page.locator("[data-project-butter-comment-editor]").evaluate(async (editor) => {
+		for (let frame = 0; frame < 12; frame += 1) {
+			await new Promise(requestAnimationFrame);
+			for (const element of editor.querySelectorAll("*")) {
+				const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
+				if (Math.abs(matrix.a - 1) > 0.001 || Math.abs(matrix.d - 1) > 0.001) return true;
+			}
+		}
+		return false;
+	});
+	expect(scaled).toBe(false);
+});
+
 test("the board remains visible while a work item loads for the first time", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	const board = page.locator("[data-butter-board-surface]");
