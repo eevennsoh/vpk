@@ -15,14 +15,15 @@ import {
 } from "./project-butter-invocation";
 
 const RUN_ON_LABELS: Readonly<Record<string, string>> = {
+	"claude-code": "Open in Claude",
 	"test-agent": "Open in Cursor",
 	"review-agent": "Open in Codex",
 	"release-agent": "Open in VS Code",
 	"github-copilot": "Open in VS Code",
 };
 const VS_CODE_AGENT_IDS = new Set(["release-agent", "github-copilot"]);
-const RUN_ON_AGENT_IDS = ["claude-code", ...Object.keys(RUN_ON_LABELS), "rovo-cli"];
-const hasWorkspaceOptions = (agentId: string) => agentId === "claude-code" || agentId === "rovo-cli";
+const RUN_ON_AGENT_IDS = [...Object.keys(RUN_ON_LABELS), "rovo-cli"];
+const hasWorkspaceOptions = (agentId: string) => agentId === "rovo-cli";
 
 export function ProjectButterAgentPicker({
 	anchor,

@@ -344,8 +344,9 @@ test("Butter directory picker can be dismissed without trapping focus", async ({
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").getByRole("button", { name: "Add agent to PAY-118" }).focus();
 	await page.keyboard.press("Enter");
-	await page.getByRole("option", { name: /Claude/u }).hover();
-	const submenu = page.getByRole("dialog", { name: "Run Claude on" });
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Rovo CLI");
+	await page.getByRole("option", { name: /Rovo CLI/u }).hover();
+	const submenu = page.getByRole("dialog", { name: "Rovo CLI local options" });
 	const configure = submenu.getByRole("button", { name: "Configure directory" });
 	await configure.click();
 	const field = submenu.getByRole("textbox", { name: "Choose your directory" });
@@ -433,8 +434,9 @@ test("Butter aligns directory chevron and selected workspace checkmarks", async 
 	const add = card(page, "PAY-118").getByRole("button", { name: "Add agent to PAY-118" });
 	await add.focus();
 	await page.keyboard.press("Enter");
-	await page.getByRole("option", { name: /Claude/u }).hover();
-	const submenu = page.getByRole("dialog", { name: "Run Claude on" });
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Rovo CLI");
+	await page.getByRole("option", { name: /Rovo CLI/u }).hover();
+	const submenu = page.getByRole("dialog", { name: "Rovo CLI local options" });
 	await submenu.getByRole("button", { name: "Configure directory" }).click();
 	const field = submenu.getByRole("textbox", { name: "Choose your directory" });
 	await field.click();

@@ -255,7 +255,7 @@ test("Butter groups agents, expands software agents, and searches the full catal
 	assert.equal(view.getByRole("option", { name: /Writing agent/u }) !== null, true);
 });
 
-test("Butter local agents share editable codebase workspaces", async () => {
+test("Rovo CLI retains editable codebase workspaces", async () => {
 	const assigned = [];
 	const view = await renderComponent({
 		entry: "components/blocks/jira-issue/index.tsx",
@@ -312,7 +312,7 @@ test("Butter local agents share editable codebase workspaces", async () => {
 	await view.click(unavailable);
 	assert.equal(view.queryByRole("button", { name: "Command copied" }), null);
 	assert.deepEqual(assigned, []);
-	await view.click(view.getByRole("option", { name: /Claude/u }));
+	await view.click(view.getByRole("option", { name: /Rovo CLI/u }));
 	await view.click(view.getByRole("button", { name: "Configure directory" }));
 	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "~/dev/project");
 	assert.equal(view.queryByRole("button", { name: "Choose workspace" }), null);
@@ -432,7 +432,7 @@ test("adding a workspace selects the chosen path, avoids duplicates, and handles
 	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "/Users/example/project/");
 });
 
-test("Claude offers cloud and the shared local command and workspace picker", async () => {
+test("Claude offers cloud and Open in Claude like the other coding agents", async () => {
 	const assigned = [];
 	const view = await renderComponent({
 		entry: "components/blocks/jira-issue/index.tsx",
@@ -447,22 +447,17 @@ test("Claude offers cloud and the shared local command and workspace picker", as
 	});
 	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
 	await view.click(view.getByRole("option", { name: /Claude/u }));
-	assert.equal(view.getByRole("dialog", { name: "Run Claude on" }) !== null, true);
+	assert.equal(view.getByRole("menu", { name: "Run Claude on" }) !== null, true);
 	assert.equal(view.queryByText(/^Run on$/u), null);
-	assert.equal(view.getByRole("button", { name: "Run on cloud" }) !== null, true);
-	assert.equal(view.queryByRole("button", { name: "Open in Claude app" }), null);
-	await view.click(view.getByRole("button", { name: "Copy command" }));
-	assert.equal(view.getByRole("button", { name: "Command copied" }) !== null, true);
-	await view.click(view.getByRole("button", { name: "Configure directory" }));
-	const field = view.getByRole("textbox", { name: "Choose your directory" });
-	await view.fill(field, "~/dev/claude-project");
-	await view.press(field, "Enter");
-	assert.equal(field.value, "~/dev/claude-project");
-	await view.click(view.getByRole("option", { name: /Rovo CLI/u }));
-	await view.click(view.getByRole("button", { name: "Configure directory" }));
-	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "~/dev/claude-project");
-	await view.click(view.getByRole("option", { name: /Claude/u }));
-	await view.click(view.getByRole("button", { name: "Run on cloud" }));
+	const cloud = view.getByRole("menuitem", { name: "Run on cloud" });
+	const local = view.getByRole("menuitem", { name: "Open in Claude" });
+	assert.equal(view.queryByRole("button", { name: "Copy command" }), null);
+	assert.equal(view.queryByRole("button", { name: "Configure directory" }), null);
+	await view.press(cloud, "ArrowDown");
+	assert.equal(view.isFocused(local), true);
+	await view.click(local);
+	assert.deepEqual(assigned, []);
+	await view.click(cloud);
 	assert.deepEqual(assigned, ["claude-code"]);
 });
 
@@ -481,9 +476,9 @@ test("searching closes the run-location submenu for a filtered agent", async () 
 	});
 	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
 	await view.click(view.getByRole("option", { name: /Claude/u }));
-	assert.equal(view.getByRole("dialog", { name: "Run Claude on" }) !== null, true);
+	assert.equal(view.getByRole("menu", { name: "Run Claude on" }) !== null, true);
 	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Cursor");
-	assert.equal(view.queryByRole("dialog", { name: "Run Claude on" }), null);
+	assert.equal(view.queryByRole("menu", { name: "Run Claude on" }), null);
 	assert.equal(view.queryByRole("option", { name: /Claude/u }), null);
 	assert.equal(view.getByRole("option", { name: /Cursor/u }) !== null, true);
 	assert.deepEqual(assigned, []);
