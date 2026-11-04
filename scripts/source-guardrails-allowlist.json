@@ -749,6 +749,13 @@
 			"reason": "existing baseline",
 			"text": "text: \"const missing = value as any;\",",
 			"type": "broad-any"
+		},
+		{
+			"filePath": "components/blocks/jira-suggestion/components/card-deck.tsx",
+			"occurrence": 1,
+			"reason": "jsx-a11y cannot resolve the deck's conditional role: it is a keyboard composite (role=group, arrow/Enter model) in stack mode and a role=list in list mode",
+			"text": "// eslint-disable-next-line jsx-a11y/no-static-element-interactions -- the role is \"group\" (a composite with the arrow/Enter model above) or \"list\"; the linter cannot read a conditional role",
+			"type": "eslint-disable"
 		}
 	]
 }

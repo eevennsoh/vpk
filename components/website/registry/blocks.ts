@@ -450,6 +450,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"jira-toolbar": dynamic(() => import("../demos/blocks/jira-toolbar-demo"), {
 		ssr: false,
 	}),
+	"jira-suggestion": dynamic(() => import("../demos/blocks/jira-suggestion-demo"), {
+		ssr: false,
+	}),
 	"visual-waveform": dynamic(
 		() => import("../demos/blocks/visual-waveform-demo"),
 		{ ssr: false },
