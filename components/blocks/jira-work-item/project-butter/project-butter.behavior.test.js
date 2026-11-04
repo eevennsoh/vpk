@@ -6,6 +6,23 @@ const { renderComponent } = require("../../../../scripts/lib/render-component.js
 const { JIRA_WORK_ITEM_DETAIL } = require("../../../../app/data/details/blocks/jira-work-item.ts");
 const { reorderProjectButterPanels, PROJECT_BUTTER_PANEL_ORDER } = require("./panel-order.ts");
 
+test("Butter chat keeps the selected session's agent identity", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { BUTTER_CHAT_AGENT_PROFILES, resolveButterChatAgentId } from "@/components/projects/butter/data/chat-agent-profiles";
+			import { PROJECT_BUTTER_SESSIONS } from "@/components/blocks/jira-work-item/project-butter/data";
+			export default function ProfileProbe() {
+				return <>{PROJECT_BUTTER_SESSIONS.filter((session) => session.host === "cloud").map((session) => {
+					const id = resolveButterChatAgentId(session.agent, session.id);
+					const profile = BUTTER_CHAT_AGENT_PROFILES.find((candidate) => candidate.id === id);
+					return <output key={id}>{session.agent.name.toLowerCase()}:{profile?.name.toLowerCase()}</output>;
+				})}</>;
+			}`,
+	});
+	assert.equal(view.queryByText("jira scoping agent:jira scoping agent") !== null, true);
+	assert.equal(view.queryByText("jira coding agent:jira coding agent") !== null, true);
+});
+
 test("one catalog demo opens each presentation directly and keeps its Empty setting", async () => {
 	assert.deepEqual(JIRA_WORK_ITEM_DETAIL.examples.filter((example) => example.demoSlug.startsWith("jira-work-item-demo-project-butter")).map((example) => example.title), ["Project butter"]);
 	const view = await renderComponent({

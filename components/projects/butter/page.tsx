@@ -41,7 +41,7 @@ import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/comp
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
-import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES } from "@/components/projects/butter/data/chat-agent-profiles";
+import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES, resolveButterChatAgentId } from "@/components/projects/butter/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
@@ -672,8 +672,7 @@ function ButterApp(): React.ReactElement {
 				onCreateAgent={createAgent}
 				onAgentSessionStart={handleWorkItemSessionStart}
 				onOpenCloudSession={(issueKey, issueSummary, session) => openAgentChat({
-					agentId: BUTTER_CHAT_AGENT_PROFILES.find((profile) => profile.name.toLowerCase() === session.agent.name.toLowerCase())?.id
-						?? (session.agent.id ?? session.id).split(":").at(-1) ?? session.id,
+					agentId: resolveButterChatAgentId(session.agent, session.id),
 					agentName: session.agent.name,
 					issueKey,
 					issueSummary,
