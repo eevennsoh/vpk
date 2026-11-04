@@ -625,9 +625,8 @@ test("reopened comment drafts report restored agent mentions before submission",
 		props: {
 			agents: [{ id: "claude-code", name: "Claude", byline: "Coding agent" }],
 			focusRequest: 0,
-			newSession: false,
 			value: "@[subagent:claude-code] Keep the merchant checklist",
-			onCancel() {}, onResetSessionTarget() {}, onSave() {}, onValueChange() {},
+			onCancel() {}, onSave() {}, onValueChange() {},
 			onMentionChange(names) { mentionedNames = names; },
 		},
 	});

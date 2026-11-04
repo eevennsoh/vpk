@@ -62,7 +62,7 @@ function toCard(suggestion: ProjectButterSuggestion, profile: "default" | "payme
 }
 
 /** Connect the shared suggestion stack to Butter's editable fields. */
-export function ProjectButterSuggestionPanel({ fill, onReviewComplete, profile = "default", showIntroLoading = false }: Readonly<{ fill: ProjectButterSuggestionFill; onReviewComplete?: (complete: boolean) => void; profile?: "default" | "payments"; showIntroLoading?: boolean }>) {
+export function ProjectButterSuggestionPanel({ fill, profile = "default", showIntroLoading = false }: Readonly<{ fill: ProjectButterSuggestionFill; profile?: "default" | "payments"; showIntroLoading?: boolean }>) {
 	const [saved, setSaved] = useState<readonly ProjectButterSuggestion[]>(fill.suggestions);
 	const additions = fill.suggestions.filter((suggestion) => !saved.some((item) => item.field === suggestion.field));
 	const suggestions = additions.length ? [...saved, ...additions] : saved;
@@ -78,7 +78,6 @@ export function ProjectButterSuggestionPanel({ fill, onReviewComplete, profile =
 		if (!suggestion || !available.has(suggestion.field)) return;
 		fill.acceptField(suggestion);
 		review.accept(id);
-		if (pending.length === 1) onReviewComplete?.(true);
 	};
 	const dismiss = (id: SuggestionFieldId) => {
 		const suggestion = find(id);
@@ -91,7 +90,6 @@ export function ProjectButterSuggestionPanel({ fill, onReviewComplete, profile =
 		if (suggestion && review.decisionOf(id) === "accepted") fill.undoField(suggestion);
 		if (suggestion && review.decisionOf(id) === "dismissed") fill.restoreDismissedField(suggestion.field);
 		review.undo(id);
-		onReviewComplete?.(false);
 	};
 	const feed: SuggestionFeed = {
 		review: {
@@ -105,7 +103,6 @@ export function ProjectButterSuggestionPanel({ fill, onReviewComplete, profile =
 				if (!pending.length) return;
 				fill.acceptAll(fill.suggestions.filter((suggestion) => pending.some((item) => item.id === suggestion.field)));
 				pending.forEach((suggestion) => review.accept(suggestion.id));
-				onReviewComplete?.(true);
 			},
 			dismissAll: () => pending.forEach((suggestion) => dismiss(suggestion.id)),
 		},

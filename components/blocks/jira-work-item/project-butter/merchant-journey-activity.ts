@@ -2,14 +2,15 @@ import type { JiraActivityEntry } from "@/components/blocks/jira-activity";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
-import { projectButterSessionInvocation } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
-import { applyProjectButterSuggestion, listProjectButterSuggestions, type ProjectButterSuggestionField } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
+import { agentMention, projectButterSessionInvocation } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
+import { applyProjectButterSuggestion, listProjectButterSuggestions, type ProjectButterSuggestion, type ProjectButterSuggestionField } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { ProjectButterDevelopmentPhase } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
-import { appendProjectButterAudit } from "@/components/blocks/jira-work-item/project-butter/content-audit";
+import { appendProjectButterAudit, PROJECT_BUTTER_SUGGESTION_AUDIT_ID, updateProjectButterSuggestionAudit } from "@/components/blocks/jira-work-item/project-butter/content-audit";
 
 export type ProjectButterJourneyPhase = "invoke" | "working" | ProjectButterDevelopmentPhase;
 export type ProjectButterJourneyAuthoredField = ProjectButterSuggestionField | "assignee" | "status";
+export const MERCHANT_ACKNOWLEDGMENT_DELAY_MS = 3_000;
 const STAGES: readonly ProjectButterDevelopmentPhase[] = ["pr", "failed", "fixing", "passed", "merged"];
 const MESSAGES = [
 	{ id: "merchant-pr", at: 0, text: "I added the guided SDK v2 quickstart and opened PR #284. CI checks are running." },
@@ -41,7 +42,7 @@ export function merchantJourneyAuthoredUpdate<T extends object>(stored: T, shown
 }
 
 function isGeneratedEntry(id: string, session?: ProjectButterSessionItem) {
-	return GENERATED_IDS.has(id) || Boolean(session && (id === `invocation-${session.id}` || id === `merchant-agent-added-${session.id}`));
+	return GENERATED_IDS.has(id) || Boolean(session && (id === `invocation-${session.id}` || id === `merchant-agent-added-${session.id}` || id === `merchant-started-${session.id}`));
 }
 
 /** Keep edits to visible records and preserve records hidden by the selected step. */
@@ -52,10 +53,11 @@ export function merchantJourneyAuthoredActivity(stored: readonly JiraActivityEnt
 	return [
 		...stored.filter((entry) => !visibleIds.has(entry.id)),
 		...next.flatMap((entry) => {
-			if (!isGeneratedEntry(entry.id, session)) return [entry];
+			if (!isGeneratedEntry(entry.id, session) && entry.id !== PROJECT_BUTTER_SUGGESTION_AUDIT_ID) return [entry];
 			const before = displayed.get(entry.id);
 			const original = saved.get(entry.id);
 			if (JSON.stringify(before) === JSON.stringify(entry)) return original ? [original] : [];
+			if (entry.id === PROJECT_BUTTER_SUGGESTION_AUDIT_ID && !original) return [];
 			return [original && before ? merchantJourneyAuthoredUpdate(original, before, entry) : entry];
 		}),
 	];
@@ -77,13 +79,24 @@ function prepareContent(content: ProjectButterContent, authoredFields: ReadonlyS
 	return prepared;
 }
 
-export function projectMerchantJourney({ content, sessions, phase, session, autoAssignTo, authoredFields = new Set() }: Readonly<{
+function suggestedAuditValue(suggestion: ProjectButterSuggestion): string {
+	switch (suggestion.field) {
+		case "dueDate": return suggestion.date.toISOString().slice(0, 10);
+		case "reporter": return suggestion.person.name;
+		case "labels":
+		case "components": return suggestion.values.join(", ");
+		default: return suggestion.text;
+	}
+}
+
+export function projectMerchantJourney({ content, sessions, phase, session, autoAssignTo, authoredFields = new Set(), showAcknowledgment = true }: Readonly<{
 	content: ProjectButterContent;
 	sessions: readonly ProjectButterSessionItem[];
 	phase?: ProjectButterJourneyPhase;
 	session?: ProjectButterSessionItem;
 	autoAssignTo?: WorkItemPerson;
 	authoredFields?: ReadonlySet<ProjectButterJourneyAuthoredField>;
+	showAcknowledgment?: boolean;
 }>) {
 	if (!phase && !session) return { content, sessions };
 	const prepared = phase ? prepareContent(content, authoredFields) : content;
@@ -108,11 +121,28 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 				actor: content.currentUser,
 				timestamp: "Just now",
 				createdAtMs: projectedSession.invokedAtMs ?? PROJECT_BUTTER_SESSION_EPOCH,
-				segments: [{ type: "text", text: (session?.selfAssignedOnStart ?? Boolean(shouldAssign)) ? "added Claude and self-assigned the issue" : "added Claude" }],
+				segments: [
+					{ type: "text", text: "added " },
+					agentMention(projectedSession.agent),
+					{ type: "text", text: (session?.selfAssignedOnStart ?? Boolean(shouldAssign)) ? " and self-assigned the issue" : "" },
+				],
 			});
 		} else {
 			const invocation = original?.kind === "comment" ? { ...original, replies: original.replies?.map((reply) => reply.id === `response-${projectedSession.id}` ? { ...reply, sessionItem: projectedSession } : reply) } : projectButterSessionInvocation(projectedSession);
 			entries.push(invocation);
+		}
+		if (projectedSession.agent.name === "Claude" && showAcknowledgment) {
+			const id = `merchant-started-${projectedSession.id}`;
+			const previous = content.activityEntries.find((entry) => entry.id === id);
+			entries.push({
+				id,
+				kind: "comment",
+				actor: { id: "merchant-claude", name: "Claude", kind: "agent", brandName: "claude" },
+				timestamp: "Just now",
+				createdAtMs: (projectedSession.invokedAtMs ?? PROJECT_BUTTER_SESSION_EPOCH) + MERCHANT_ACKNOWLEDGMENT_DELAY_MS,
+				body: [{ type: "text", text: "I'm looking into this issue now. I'll report back here with updates as I make progress." }],
+				...(previous?.kind === "comment" ? { replies: previous.replies } : {}),
+			});
 		}
 	}
 	if (phase && phase !== "invoke" && phase !== "working") {
@@ -121,7 +151,14 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 			entries.push(entry.kind === "comment" && original?.kind === "comment" ? { ...entry, replies: original.replies } : entry);
 		}
 	}
-	const presented = { ...prepared, status: active && !authoredFields.has("status") ? phase === "merged" ? "Done" : "In progress" : prepared.status, activityEntries: entries };
+	let presented = { ...prepared, status: active && !authoredFields.has("status") ? phase === "merged" ? "Done" : "In progress" : prepared.status, activityEntries: entries };
+	if (phase) {
+		const snapshot = { ...content.detailFields, description: content.description, descriptionDraft: content.descriptionDraft, dueDate: content.dueDate, reporter: content.reporter };
+		const suggestions = listProjectButterSuggestions(snapshot, "payments").filter((suggestion) => !authoredFields.has(suggestion.field) && (suggestion.field === "description" || (content.detailFields.order.includes(suggestion.field) && !content.detailFields.hidden.includes(suggestion.field))));
+		for (const suggestion of suggestions) {
+			presented = updateProjectButterSuggestionAudit(presented, { id: PROJECT_BUTTER_SUGGESTION_AUDIT_ID, createdAtMs: PROJECT_BUTTER_SESSION_EPOCH, label: suggestion.label, before: "", after: suggestedAuditValue(suggestion) }, content.currentUser, "accept");
+		}
+	}
 	return {
 		content: shouldAssign && projectedSession.prompt
 			? appendProjectButterAudit({ ...presented, assignee: autoAssignTo }, { id: "merchant-assignment", createdAtMs: projectedSession.invokedAtMs ?? PROJECT_BUTTER_SESSION_EPOCH, label: "Assignee", before: "Unassigned", after: autoAssignTo.name, action: `automatically assigned this work item to ${autoAssignTo.name}` }, content.currentUser)

@@ -8,6 +8,7 @@ import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import {
 	PullRequestFlyoutChecks,
 	PullRequestFlyoutMetaRow,
@@ -82,6 +83,9 @@ function PullRequestAuthorAvatar({
 	author,
 	size = "sm",
 }: Readonly<{ author: PullRequestAuthor; size?: "xs" | "sm" }>) {
+	if (author.assistedBy) {
+		return <AgentListAttributionAvatarGroup agent={author.assistedBy} appearance="coding" attributedBy={{ name: author.name, avatarSrc: author.avatarUrl }} sizePx={size === "xs" ? 16 : 24} />;
+	}
 	return (
 		<Avatar label={author.name} size={size} shape="circle">
 			{author.avatarUrl ? (
@@ -314,10 +318,10 @@ function PullRequestSpaciousBody({
 			</div>
 			<div className="flex min-w-0 items-center gap-2">
 				{author ? (
-					<span className="flex min-w-0 items-center gap-1.5 text-xs leading-4 text-text-subtle">
+					<div className="flex min-w-0 items-center gap-1.5 text-xs leading-4 text-text-subtle">
 						<PullRequestAuthorAvatar author={author} size="xs" />
 						<span className="min-w-0 truncate">{author.name}</span>
-					</span>
+					</div>
 				) : null}
 				{/* `ms-auto` keeps the metrics trailing-aligned even without an author. */}
 				<span className="ms-auto flex shrink-0 items-center gap-1.5">
@@ -384,9 +388,11 @@ function PullRequestFlyoutBody({
 >) {
 	const reviewersLabel = reviewers ? pullRequestReviewersLabel(reviewers) : null;
 	const authorMeta = author ? (
-		<span className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtlest">
-			<PullRequestAuthorAvatar author={author} size="xs" />
-			<span className="min-w-0 truncate">{author.name}</span>
+		<div className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtlest">
+			<div className="flex min-w-0 items-center gap-1.5">
+				<PullRequestAuthorAvatar author={author} size="xs" />
+				<span className="min-w-0 truncate">{author.name}</span>
+			</div>
 			{relativeTime ? (
 				<>
 					<span className="shrink-0">·</span>
@@ -399,7 +405,7 @@ function PullRequestFlyoutBody({
 					<span className="shrink-0">{reviewersLabel}</span>
 				</>
 			) : null}
-		</span>
+		</div>
 	) : relativeTime ? (
 		<span className="text-xs leading-4 text-text-subtlest">
 			{toCompactRelativeTimeLabel(relativeTime)}
@@ -410,7 +416,8 @@ function PullRequestFlyoutBody({
 	) : null;
 	const hasBranchPath = Boolean(branch || targetBranch);
 	const failedChecks = checks?.filter((check) => check.status === "failed") ?? [];
-	const hasActions = Boolean(reviewHref || failedChecks.length);
+	const canFix = Boolean(onFix && failedChecks.length);
+	const hasActions = Boolean(reviewHref || canFix);
 
 	return (
 		<>
@@ -464,8 +471,8 @@ function PullRequestFlyoutBody({
 								Review
 							</a>
 						) : null}
-						{failedChecks.length > 0 ? (
-							<Button className="min-w-0 flex-1" onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
+						{canFix && onFix ? (
+							<Button className="min-w-0 flex-1" onClick={() => onFix(failedChecks)} type="button" variant="outline">
 								Fix PR
 							</Button>
 						) : null}

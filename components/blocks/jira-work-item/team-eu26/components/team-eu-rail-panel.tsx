@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 interface TeamEuRailPanelProps {
 	children: ReactNode;
+	contentClassName?: string;
 	defaultOpen?: boolean;
 	headerActions?: ReactNode;
 	footer?: ReactNode;
@@ -24,6 +25,7 @@ interface TeamEuRailPanelProps {
 
 export function TeamEuRailPanel({
 	children,
+	contentClassName,
 	defaultOpen = false,
 	headerActions,
 	footer,
@@ -82,7 +84,7 @@ export function TeamEuRailPanel({
 			<motion.div
 				animate={open ? "open" : "closed"}
 				aria-hidden={!open}
-				className={cn("overflow-hidden", open ? "has-[:focus-visible]:overflow-visible" : undefined)}
+				className={cn("overflow-hidden", open ? "has-[:focus-visible]:overflow-visible" : undefined, open ? contentClassName : undefined)}
 				id={contentId}
 				inert={!open ? true : undefined}
 				initial={false}

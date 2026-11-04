@@ -1,4 +1,5 @@
 import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
+import type { AgentListAgent } from "@/components/blocks/agent-list/agent-list-types";
 
 export type PullRequestStatus = "Open" | "Merged" | "Draft" | "Failed";
 
@@ -15,6 +16,8 @@ export type PullRequestVariant = "dropdown" | "spacious" | "flyout";
 export interface PullRequestAuthor {
 	name: string;
 	avatarUrl?: string;
+	/** Agent that assisted the human author, shown alongside their avatar. */
+	assistedBy?: Pick<AgentListAgent, "name" | "avatarSrc" | "brandName" | "vpkLogo">;
 }
 
 /** Source-control host. Picks the provider mark on the flyout repository / branch row. */

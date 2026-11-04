@@ -10,21 +10,21 @@ export function appendProjectButterAudit<T extends { activityEntries: readonly J
 	return { ...state, activityEntries: [...state.activityEntries, entry], auditChanges: { ...state.auditChanges, [item.id]: item } };
 }
 
-const SUGGESTION_AUDIT_ID = "butter-accepted-suggestions";
+export const PROJECT_BUTTER_SUGGESTION_AUDIT_ID = "butter-accepted-suggestions";
 
 export function updateProjectButterSuggestionAudit<T extends { activityEntries: readonly JiraActivityEntry[]; auditChanges: Readonly<Record<string, ProjectButterReferenceChange>> }>(state: T, change: { id: string; createdAtMs: number; label: string; before: string; after: string }, actor: JiraActivityActor, mode: "accept" | "undo"): T {
-	const previous = state.auditChanges[SUGGESTION_AUDIT_ID];
+	const previous = state.auditChanges[PROJECT_BUTTER_SUGGESTION_AUDIT_ID];
 	if (mode === "undo" && !previous?.changes.some((item) => item.label === change.label)) return appendProjectButterAudit(state, change, actor);
 	const changes = (previous?.changes ?? []).filter((item) => item.label !== change.label);
 	if (mode === "accept") {
 		const original = previous?.changes.find((item) => item.label === change.label);
 		changes.push({ label: change.label, before: original?.before ?? change.before, after: change.after });
 	}
-	const entries = state.activityEntries.filter((entry) => entry.id !== SUGGESTION_AUDIT_ID);
-	const { [SUGGESTION_AUDIT_ID]: _removed, ...otherChanges } = state.auditChanges;
+	const entries = state.activityEntries.filter((entry) => entry.id !== PROJECT_BUTTER_SUGGESTION_AUDIT_ID);
+	const { [PROJECT_BUTTER_SUGGESTION_AUDIT_ID]: _removed, ...otherChanges } = state.auditChanges;
 	if (!changes.length) return { ...state, activityEntries: entries, auditChanges: otherChanges };
 	const action = `updated ${new Intl.ListFormat("en-US", { style: "long", type: "conjunction" }).format(changes.map((item) => item.label.toLowerCase()))}`;
-	const item: ProjectButterReferenceChange = { id: SUGGESTION_AUDIT_ID, actor: actor.name, timestamp: new Date(change.createdAtMs).toISOString(), icon: "edit", action, changes };
+	const item: ProjectButterReferenceChange = { id: PROJECT_BUTTER_SUGGESTION_AUDIT_ID, actor: actor.name, timestamp: new Date(change.createdAtMs).toISOString(), icon: "edit", action, changes };
 	const entry: JiraActivityEntry = { id: item.id, kind: "event", actor, timestamp: "Just now", createdAtMs: change.createdAtMs, icon: item.icon, segments: [{ type: "text", text: action }] };
 	return { ...state, activityEntries: [...entries, entry], auditChanges: { ...otherChanges, [item.id]: item } };
 }

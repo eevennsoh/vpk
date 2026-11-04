@@ -246,6 +246,11 @@ export function useProjectButterContent(
 			setReplyDrafts: fieldSetter("replyDrafts"),
 			setSummary: audited("summary", "Summary", (value) => value),
 			setStatusOptions: fieldSetter("statusOptions"),
+			syncStoryPoints: (storyPoints: string) => {
+				updateState((previous) => previous.detailFields.storyPoints === storyPoints
+					? previous
+					: { ...previous, detailFields: { ...previous.detailFields, storyPoints } });
+			},
 			setDetailFields: (update: SetStateAction<ProjectButterContentState["detailFields"]>) => {
 				const id = crypto.randomUUID();
 				const createdAtMs = Date.now();

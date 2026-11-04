@@ -13,7 +13,6 @@ import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
 import { useCommentEditorResize } from "@/components/blocks/jira-work-item/project-butter/use-comment-editor-resize";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { Button } from "@/components/ui/button";
-import { Tag } from "@/components/ui/tag";
 import { createRichTextEditorExtensions } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { motionDuration, motionEase } from "@/lib/motion";
@@ -27,13 +26,11 @@ export interface ProjectButterCommentEditorHandle {
 	revertAgentMention: (name: string) => void;
 }
 
-export function ProjectButterCommentEditor({ agents, focusRequest, newSession, onCancel, onMentionChange, onResetSessionTarget, onSave, onValueChange, ref, value }: Readonly<{
+export function ProjectButterCommentEditor({ agents, focusRequest, onCancel, onMentionChange, onSave, onValueChange, ref, value }: Readonly<{
 	agents: readonly AgentBrowserAgent[];
 	focusRequest: number;
-	newSession: boolean;
 	onCancel: () => void;
 	onMentionChange: (agentNames: string[], hasMentions: boolean) => void;
-	onResetSessionTarget: () => void;
 	onSave: (body: string, plainText: string) => void;
 	onValueChange: (body: string) => void;
 	ref?: Ref<ProjectButterCommentEditorHandle>;
@@ -110,7 +107,6 @@ export function ProjectButterCommentEditor({ agents, focusRequest, newSession, o
 			{editor ? <EditorToolbar className="min-h-12 shrink-0 rounded-t-xl border-b border-border bg-surface-raised px-3" controlsOverflow="responsive" editor={editor} endSlot={<Button aria-label="Close comment editor" onClick={onCancel} size="icon-compact" type="button" variant="ghost"><CloseIcon label="" size="small" /></Button>} leadingSlot={<JiraCommentEditorToolbarLeading editor={editor} />} /> : <div className="h-12 shrink-0" />}
 			<EditorContent className="rich-text-editor-content min-h-0 flex-1 overflow-y-auto px-4 py-3 [&_.react-renderer.node-mention]:inline-flex [&_.react-renderer.node-mention]:h-lh [&_.react-renderer.node-mention]:items-center [&_.react-renderer.node-mention]:align-middle [&_.rich-text-mention-node]:h-lh [&_.rich-text-mention-node]:items-center [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={editor?.isEmpty ? "true" : undefined} editor={editor} style={placeholderStyle} />
 			<div className="flex shrink-0 items-center justify-end gap-1 px-4 pb-3">
-				{newSession ? <Tag color="gray" onRemove={onResetSessionTarget} removeButtonLabel="Choose agent session" shape="rounded">New session</Tag> : null}
 				<RovoComposerActionButton canSubmit={Boolean(editor?.getText().trim())} composerStatus="ready" dictationState={voice.dictationState} dictationTranscriptPreview={voice.dictationTranscriptPreview} micStream={voice.micStream} onStartDictation={voice.onStartDictation} onStop={voice.onStopDictation} onStopDictation={voice.onStopDictation} showSubmitWhenEmpty />
 			</div>
 		</form>

@@ -4,6 +4,7 @@ import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import { PullRequest } from "@/components/blocks/pull-request";
+import type { PullRequestAuthor } from "@/components/blocks/pull-request/components/pull-request-types";
 import { PullRequestChecksList } from "@/components/blocks/pull-request/components/pull-request-checks-list";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -16,6 +17,7 @@ export interface ProjectButterDevelopmentJourneyProps {
 	autoFixEnabled: boolean;
 	autoMergeEnabled: boolean;
 	agentName?: string;
+	author?: PullRequestAuthor;
 	onAutoFixChange?: (enabled: boolean) => void;
 	onAutoMergeChange?: (enabled: boolean) => void;
 	onFailChecks?: () => void;
@@ -24,14 +26,14 @@ export interface ProjectButterDevelopmentJourneyProps {
 	onOpenPullRequest?: () => void;
 }
 
-export function ProjectButterDevelopmentJourney({ agentName = "Rovo", autoFixEnabled, autoMergeEnabled, onAutoFixChange, onAutoMergeChange, onFailChecks, onFixCheck, onMergePullRequest, onOpenPullRequest, phase }: Readonly<ProjectButterDevelopmentJourneyProps>) {
+export function ProjectButterDevelopmentJourney({ agentName = "Rovo", author, autoFixEnabled, autoMergeEnabled, onAutoFixChange, onAutoMergeChange, onFailChecks, onFixCheck, onMergePullRequest, onOpenPullRequest, phase }: Readonly<ProjectButterDevelopmentJourneyProps>) {
 	const presentation = projectButterDevelopmentPresentation(phase);
 	const checks = projectButterDevelopmentChecks(phase);
 	const automationLabel = autoFixEnabled && autoMergeEnabled ? "Auto-fix & auto-merge enabled" : autoFixEnabled ? "Auto-fix enabled" : autoMergeEnabled ? "Auto-merge enabled" : "Automation disabled";
 	const locked = phase === "merged";
 	return (
 		<section aria-label="Pull request development" className="flex min-w-0 flex-col gap-3" data-ci-status={presentation.ciStatus} data-project-butter-development={phase} data-pr-number={PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number}>
-			<PullRequest {...PROJECT_BUTTER_JOURNEY_PULL_REQUEST} author={{ name: agentName }} onActivate={onOpenPullRequest} status={presentation.status} variant="spacious" />
+			<PullRequest {...PROJECT_BUTTER_JOURNEY_PULL_REQUEST} author={author ?? { name: agentName }} onActivate={onOpenPullRequest} status={presentation.status} variant="spacious" />
 			<div aria-live="polite" className="flex items-start gap-2 text-xs">
 				<span aria-hidden className={cn("mt-0.5 shrink-0", presentation.ciStatus === "failed" ? "text-icon-danger" : "text-icon-success")}>
 					{presentation.ciStatus === "running" ? <Spinner label="" size="sm" /> : presentation.ciStatus === "failed" ? <StatusErrorIcon label="" size="small" /> : <CheckCircleIcon label="" size="small" />}

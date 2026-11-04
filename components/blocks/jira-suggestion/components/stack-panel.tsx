@@ -44,6 +44,10 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 	const view = useDeckView(feed, deck);
 	// A check from the caught-up state runs in place there: the stack and footer only come back for real finds.
 	const mode: BodyMode = view.listed ? "list" : deck.order.length > 0 ? "stack" : "caught-up";
+	const shortcuts = [
+		...(mode === "stack" ? ["ArrowLeft", "ArrowRight"] : []),
+		...(deck.lastDecision && feed.status !== "running" ? ["Meta+Z", "Control+Z"] : []),
+	].join(" ") || undefined;
 
 	const commit = (direction: SwipeDirection) => {
 		const top = deck.order.at(0);
@@ -58,6 +62,7 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 		else view.unpack();
 	};
 	const undo = () => {
+		if (mode === "caught-up" && panelRef.current?.contains(document.activeElement)) panelRef.current.focus({ preventScroll: true });
 		// Undoing the only decision removes the Undo button; hand focus to the stack rather than dropping it.
 		if (deck.undoDepth === 1 && panelRef.current?.contains(document.activeElement) && document.activeElement?.closest("[data-deck-controls]")) deckRef.current?.focus({ preventScroll: true });
 		view.undo();
@@ -96,7 +101,7 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 
 	const panel = (
 		<div
-			aria-keyshortcuts={mode === "stack" ? "ArrowLeft ArrowRight Meta+Z Control+Z" : "Meta+Z Control+Z"}
+			aria-keyshortcuts={shortcuts}
 			aria-labelledby={titleId}
 			className="flex max-h-full w-96 max-w-[calc(100vw-1rem)] flex-col rounded-xl bg-surface-overlay outline-none"
 			id={id}

@@ -1,6 +1,6 @@
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
-import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST } from "../../../blocks/jira-work-item/project-butter/development-journey-model.ts";
+import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, projectButterDevelopmentChecks } from "../../../blocks/jira-work-item/project-butter/development-journey-model.ts";
 import { BUTTER_PAY_CURRENT_USER } from "./current-user.ts";
 
 export type MerchantJourneyPhase = "prepare" | "invoke" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";
@@ -10,14 +10,14 @@ type JourneyActivity = JiraIssueAgentActivity & {
 };
 
 type JourneyCard = JiraKanbanCardData & {
-	merchantJourneyBaseline?: Pick<JiraKanbanCardData, "assignee" | "avatarSrc" | "pullRequestNumber" | "pullRequestPreview" | "pullRequestStatus"> & {
+	merchantJourneyBaseline?: Pick<JiraKanbanCardData, "assignee" | "avatarSrc" | "status" | "pullRequestNumber" | "pullRequestPreview" | "pullRequestStatus"> & {
 		generatedAssignee?: JiraKanbanCardData["assignee"];
 	};
 };
 
 const PR_PREVIEW = {
 	title: PROJECT_BUTTER_JOURNEY_PULL_REQUEST.title,
-	author: { name: "Claude" },
+	author: { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc, assistedBy: { name: "Claude", brandName: "claude" } },
 	repository: "payments-platform/payments",
 	branch: PROJECT_BUTTER_JOURNEY_PULL_REQUEST.branch,
 	targetBranch: PROJECT_BUTTER_JOURNEY_PULL_REQUEST.targetBranch,
@@ -63,11 +63,13 @@ export function projectMerchantJourneyActivities(activities: readonly JourneyAct
 export function merchantJourneyAuthoredCard(card: JiraKanbanCardData): JiraKanbanCardData {
 	const journeyCard: JourneyCard = card;
 	const baseline = journeyCard.merchantJourneyBaseline;
-	if (!baseline?.generatedAssignee || card.assignee !== baseline.generatedAssignee) return card;
+	if (!baseline) return card;
+	const generatedAssignee = baseline.generatedAssignee && card.assignee === baseline.generatedAssignee;
 	return {
 		...card,
-		assignee: baseline.assignee,
-		avatarSrc: card.avatarSrc === baseline.generatedAssignee.avatarSrc ? baseline.avatarSrc : card.avatarSrc,
+		status: baseline.status,
+		assignee: generatedAssignee ? baseline.assignee : card.assignee,
+		avatarSrc: generatedAssignee && card.avatarSrc === baseline.generatedAssignee?.avatarSrc ? baseline.avatarSrc : card.avatarSrc,
 	};
 }
 
@@ -78,12 +80,13 @@ function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: s
 	const baseline = merchantJourneyBaseline ?? {
 		assignee: card.assignee,
 		avatarSrc: card.avatarSrc,
+		status: card.status ?? "To do",
 		generatedAssignee: assignCurrentUser ? BUTTER_PAY_CURRENT_USER : undefined,
 		pullRequestNumber: card.pullRequestNumber === PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number ? undefined : card.pullRequestNumber,
 		pullRequestPreview: card.pullRequestNumber === PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number ? undefined : card.pullRequestPreview,
 		pullRequestStatus: card.pullRequestNumber === PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number ? undefined : card.pullRequestStatus,
 	};
-	const hasPullRequest = !beforeWork && phase !== "working";
+	const hasPullRequest = phase === "pr" || phase === "failed" || phase === "fixing" || phase === "passed" || phase === "merged";
 	const restorePullRequest = card.pullRequestNumber === PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number;
 	const authoredCard = merchantJourneyAuthoredCard(card);
 	return {
@@ -93,7 +96,7 @@ function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: s
 		assignee: beforeWork ? authoredCard.assignee : assignCurrentUser ? BUTTER_PAY_CURRENT_USER : card.assignee,
 		avatarSrc: beforeWork ? authoredCard.avatarSrc : assignCurrentUser ? BUTTER_PAY_CURRENT_USER.avatarSrc : card.avatarSrc,
 		pullRequestNumber: hasPullRequest ? PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number : restorePullRequest ? baseline.pullRequestNumber : card.pullRequestNumber,
-		pullRequestPreview: hasPullRequest ? PR_PREVIEW : restorePullRequest ? baseline.pullRequestPreview : card.pullRequestPreview,
+		pullRequestPreview: hasPullRequest ? { ...PR_PREVIEW, checks: projectButterDevelopmentChecks(phase) } : restorePullRequest ? baseline.pullRequestPreview : card.pullRequestPreview,
 		pullRequestStatus: hasPullRequest ? (phase === "merged" ? "merged" : phase === "failed" ? "failed" : "open") : restorePullRequest ? baseline.pullRequestStatus : card.pullRequestStatus,
 		agentActivities: projectMerchantJourneyActivities(card.agentActivities, phase, session),
 	};

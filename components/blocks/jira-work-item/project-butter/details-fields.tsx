@@ -31,7 +31,7 @@ function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: 
 	}
 }
 
-export function ProjectButterDetailsFields({ content, expanded, fillingBarAfter = null, onRevealInteract, reflow = false, shimmerText }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | "top" | null; onRevealInteract?: (field: ProjectButterDetailFieldId) => void; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
+export function ProjectButterDetailsFields({ content, expanded, fillingBarAfter = null, fillingFinishing = false, onRevealInteract, reflow = false, shimmerText }: Readonly<{ content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | "top" | null; fillingFinishing?: boolean; onRevealInteract?: (field: ProjectButterDetailFieldId) => void; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
 	const id = useId();
 	const rootRef = useRef<HTMLDivElement>(null);
 	const heightRef = useRef<number | null>(null);
@@ -85,7 +85,7 @@ export function ProjectButterDetailsFields({ content, expanded, fillingBarAfter 
 	return (
 		<div className="relative" data-project-butter-detail-fields data-project-butter-field-dragging={dragging ? "true" : undefined} ref={rootRef}>
 			<AnimatePresence initial={false}>
-				{fillingBarAfter ? <ProjectButterSuggestionCursor after={fillingBarAfter} key="filling-cursor" rootRef={rootRef} /> : null}
+				{fillingBarAfter ? <ProjectButterSuggestionCursor after={fillingBarAfter} finishing={fillingFinishing} key="filling-cursor" rootRef={rootRef} /> : null}
 			</AnimatePresence>
 			<DndContext collisionDetection={closestCenter} id={id} modifiers={[restrictToVerticalAxis]} onDragCancel={() => setDragging(false)} onDragStart={() => setDragging(true)} onDragEnd={({ active, over }) => {
 				setDragging(false);
