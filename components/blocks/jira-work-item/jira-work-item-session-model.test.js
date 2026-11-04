@@ -357,21 +357,21 @@ test("agent invocation updates Assignee and Agents according to its source", asy
 		source: "context-pill",
 		agentId: "readiness-checker",
 		agentName: "Readiness Checker",
-		agentAvatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+		agentAvatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 		command: "@Readiness Checker",
 	});
 	assert.deepEqual(state.metadata.assignee, {
 		id: "readiness-checker",
 		kind: "agent",
 		name: "Readiness Checker",
-		avatarUrl: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+		avatarUrl: "/avatar-agent-new/blue/backlog-buddy.svg",
 	});
 	assert.deepEqual(state.metadata.crew, [
 		{
 			id: "readiness-checker",
 			kind: "agent",
 			name: "Readiness Checker",
-			avatarUrl: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+			avatarUrl: "/avatar-agent-new/blue/backlog-buddy.svg",
 		},
 	]);
 
@@ -380,7 +380,7 @@ test("agent invocation updates Assignee and Agents according to its source", asy
 		source: "prompt",
 		agentId: "code-reviewer",
 		agentName: "Code Reviewer",
-		agentAvatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+		agentAvatarSrc: "/avatar-agent-new/lime/auto-review.svg",
 		command: "@Code Reviewer Check the implementation.",
 	};
 	state = model.jiraWorkItemReducer(state, promptInvocation);
@@ -389,13 +389,13 @@ test("agent invocation updates Assignee and Agents according to its source", asy
 			id: "readiness-checker",
 			kind: "agent",
 			name: "Readiness Checker",
-			avatarUrl: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+			avatarUrl: "/avatar-agent-new/blue/backlog-buddy.svg",
 		},
 		{
 			id: "code-reviewer",
 			kind: "agent",
 			name: "Code Reviewer",
-			avatarUrl: "/avatar-agent/dev-agents/code-reviewer.svg",
+			avatarUrl: "/avatar-agent-new/lime/auto-review.svg",
 		},
 	]);
 	assert.equal(state.metadata.assignee.name, "Readiness Checker");
@@ -448,7 +448,7 @@ test("agent assignees and active contributors always remain in Agents metadata",
 				id: "readiness-checker",
 				kind: "agent",
 				name: "Readiness Checker",
-				avatarUrl: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+				avatarUrl: "/avatar-agent-new/blue/backlog-buddy.svg",
 			},
 		},
 	});
@@ -458,7 +458,7 @@ test("agent assignees and active contributors always remain in Agents metadata",
 		type: "launch-session",
 		agentId: "code-reviewer",
 		agentName: "Code Reviewer",
-		agentAvatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+		agentAvatarSrc: "/avatar-agent-new/lime/auto-review.svg",
 	});
 	state = model.jiraWorkItemReducer(state, { type: "edit-metadata", patch: { crew: [] } });
 	assert.deepEqual(state.metadata.crew.map((agent) => agent.id), [

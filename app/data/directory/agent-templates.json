@@ -4,7 +4,7 @@
 		"categoryId": "brainstorm",
 		"name": "Decision Director",
 		"description": "Review DACI decisions, close context gaps, and suggest the next decision-ready resources.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/decision-director.svg",
+		"avatarSrc": "/avatar-agent-new/blue/decision-director.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -56,7 +56,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"explore-ideas",
 					"prioritize-ideas"
@@ -75,7 +75,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"prioritize-ideas",
 					"build-report"
@@ -97,7 +97,7 @@
 		"categoryId": "brainstorm",
 		"name": "OKR Generator",
 		"description": "Create and review clear, measurable OKRs against examples, team priorities, and outcome guidance.",
-		"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg",
+		"avatarSrc": "/avatar-agent-new/purple/research-scout.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -149,7 +149,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"roadmap-builder",
 					"build-report"
@@ -168,7 +168,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"build-report",
 					"prioritize-ideas"
@@ -190,7 +190,7 @@
 		"categoryId": "brainstorm",
 		"name": "Opportunity Explorer",
 		"description": "Explore non-obvious directions before committing.",
-		"avatarSrc": "/avatar-agent/dev-agents/code-planner.svg",
+		"avatarSrc": "/avatar-agent-new/lime/auto-dev.svg",
 		"publisher": "Product Strategy",
 		"attributionKind": "team",
 		"remix": "940",
@@ -241,7 +241,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"explore-ideas",
 					"trend-spotter"
@@ -260,7 +260,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"trend-spotter",
 					"prioritize-ideas"
@@ -282,7 +282,7 @@
 		"categoryId": "brainstorm",
 		"name": "Experiment Planner",
 		"description": "Turn ideas into experiments and decision points.",
-		"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg",
+		"avatarSrc": "/avatar-agent-new/yellow/default.svg",
 		"publisher": "Growth Programs",
 		"remix": "830",
 		"updated": "1 week ago",
@@ -332,7 +332,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"explore-ideas",
 					"test-plan-builder"
@@ -351,7 +351,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"test-plan-builder",
 					"build-report"
@@ -373,7 +373,7 @@
 		"categoryId": "brainstorm",
 		"name": "Tradeoff Mapper",
 		"description": "Compare options by upside, cost, and risk.",
-		"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg",
+		"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 		"publisher": "Decision Systems",
 		"remix": "760",
 		"updated": "3 days ago",
@@ -423,7 +423,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"explore-ideas",
 					"prioritize-ideas"
@@ -442,7 +442,7 @@
 				"id": "diagram-creator",
 				"name": "Diagram Creator",
 				"description": "Generates diagrams and flowcharts from a plain-language description.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/diagram-creator.svg",
+				"avatarSrc": "/avatar-agent-new/blue/product-requirements.svg",
 				"skillIds": [
 					"prioritize-ideas",
 					"build-report"
@@ -464,7 +464,7 @@
 		"categoryId": "brainstorm",
 		"name": "Assumption Tester",
 		"description": "Stress-test ideas against weak assumptions.",
-		"avatarSrc": "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
+		"avatarSrc": "/avatar-agent-new/lime/auto-dev.svg",
 		"publisher": "Product Discovery",
 		"remix": "690",
 		"updated": "5 days ago",
@@ -513,7 +513,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"explore-ideas",
 					"run-deep-research"
@@ -532,7 +532,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"run-deep-research",
 					"build-report"
@@ -554,7 +554,7 @@
 		"categoryId": "brainstorm",
 		"name": "Criteria Builder",
 		"description": "Define practical criteria for choosing a path.",
-		"avatarSrc": "/avatar-agent/product-agents/wildcard-3.svg",
+		"avatarSrc": "/avatar-agent-new/purple/pitch-perfector.svg",
 		"publisher": "Planning Systems",
 		"remix": "540",
 		"updated": "1 month ago",
@@ -603,7 +603,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"prioritize-ideas",
 					"explore-ideas"
@@ -622,7 +622,7 @@
 				"id": "decision-director",
 				"name": "Decision Director",
 				"description": "Applies the DACI framework to structure, document, and communicate decisions.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/decision-director.svg",
+				"avatarSrc": "/avatar-agent-new/blue/decision-director.svg",
 				"skillIds": [
 					"explore-ideas",
 					"build-report"
@@ -644,7 +644,7 @@
 		"categoryId": "brainstorm",
 		"name": "Brainstorm Facilitator",
 		"description": "Guide teams from loose prompts to ranked concepts.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/brainstorm-facilitator.svg",
+		"avatarSrc": "/avatar-agent-new/blue/team-connection.svg",
 		"publisher": "Team Practices",
 		"remix": "510",
 		"updated": "2 days ago",
@@ -694,7 +694,7 @@
 				"id": "diagram-creator",
 				"name": "Diagram Creator",
 				"description": "Generates diagrams and flowcharts from a plain-language description.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/diagram-creator.svg",
+				"avatarSrc": "/avatar-agent-new/blue/product-requirements.svg",
 				"skillIds": [
 					"explore-ideas",
 					"prioritize-ideas"
@@ -713,7 +713,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"prioritize-ideas",
 					"whiteboard-summarizer"
@@ -735,7 +735,7 @@
 		"categoryId": "analyze",
 		"name": "Customer Insights",
 		"description": "Synthesize feedback into themes, customer needs, risks, and recommended product actions.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/customer-insights.svg",
+		"avatarSrc": "/avatar-agent-new/blue/customer-insight.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -788,7 +788,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"customer-insights",
 					"capture-insights"
@@ -807,7 +807,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"capture-insights",
 					"trend-spotter"
@@ -829,7 +829,7 @@
 		"categoryId": "analyze",
 		"name": "Jira Theme Analyzer",
 		"description": "Scan Jira work items to find themes, candidate epics, and patterns worth acting on.",
-		"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg",
+		"avatarSrc": "/avatar-agent-new/lime/auto-review.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -886,7 +886,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"jql-query-builder",
 					"trend-spotter"
@@ -905,7 +905,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"trend-spotter",
 					"build-report"
@@ -927,7 +927,7 @@
 		"categoryId": "analyze",
 		"name": "Transcript Insights Reporter",
 		"description": "Turn transcripts into decisions, insights, recommendations, owners, and follow-up actions.",
-		"avatarSrc": "/avatar-agent/strategy-agents/wildcard-1.svg",
+		"avatarSrc": "/avatar-agent-new/orange/default.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -985,7 +985,7 @@
 				"id": "meeting-insights-reporter",
 				"name": "Meeting Insights Reporter",
 				"description": "Turns meeting notes and transcripts into summaries, decisions, and follow-ups.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg",
+				"avatarSrc": "/avatar-agent-new/blue/comms-drafter.svg",
 				"skillIds": [
 					"summarize-thread",
 					"capture-insights"
@@ -1004,7 +1004,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"capture-insights",
 					"build-report"
@@ -1026,7 +1026,7 @@
 		"categoryId": "analyze",
 		"name": "Meeting Insights",
 		"description": "Find decisions, action items, highlights, and useful context across meeting notes.",
-		"avatarSrc": "/avatar-agent/product-agents/wildcard-6.svg",
+		"avatarSrc": "/avatar-agent-new/purple/product-requirements.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -1084,7 +1084,7 @@
 				"id": "meeting-insights-reporter",
 				"name": "Meeting Insights Reporter",
 				"description": "Turns meeting notes and transcripts into summaries, decisions, and follow-ups.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg",
+				"avatarSrc": "/avatar-agent-new/blue/comms-drafter.svg",
 				"skillIds": [
 					"summarize-thread",
 					"capture-insights"
@@ -1103,7 +1103,7 @@
 				"id": "transcript-insights-reporter",
 				"name": "Transcript Insights Reporter",
 				"description": "Extracts themes, decisions, and action items from long transcripts.",
-				"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/default.svg",
 				"skillIds": [
 					"capture-insights",
 					"build-report"
@@ -1125,7 +1125,7 @@
 		"categoryId": "analyze",
 		"name": "Trend Spotter",
 		"description": "Spot emerging trends across notes and feedback.",
-		"avatarSrc": "/avatar-agent/service-agents/wildcard-5.svg",
+		"avatarSrc": "/avatar-agent-new/yellow/comms-drafter.svg",
 		"publisher": "Market Insights",
 		"remix": "870",
 		"updated": "3 days ago",
@@ -1175,7 +1175,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"trend-spotter",
 					"capture-insights"
@@ -1194,7 +1194,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"capture-insights",
 					"build-report"
@@ -1216,7 +1216,7 @@
 		"categoryId": "analyze",
 		"name": "Sentiment Mapper",
 		"description": "Map sentiment shifts across customer signals.",
-		"avatarSrc": "/avatar-agent/product-agents/wildcard-4.svg",
+		"avatarSrc": "/avatar-agent-new/purple/culture.svg",
 		"publisher": "Customer Voice",
 		"remix": "780",
 		"updated": "2 days ago",
@@ -1266,7 +1266,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"customer-insights",
 					"trend-spotter"
@@ -1285,7 +1285,7 @@
 				"id": "customer-insights",
 				"name": "Customer Insights",
 				"description": "Analyzes customer feedback from connected data sources for themes.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/customer-insights.svg",
+				"avatarSrc": "/avatar-agent-new/blue/customer-insight.svg",
 				"skillIds": [
 					"trend-spotter",
 					"capture-insights"
@@ -1307,7 +1307,7 @@
 		"categoryId": "analyze",
 		"name": "Funnel Analyzer",
 		"description": "Trace product drop-offs, connect them to feedback, and suggest the next investigation.",
-		"avatarSrc": "/avatar-agent/product-agents/wildcard-5.svg",
+		"avatarSrc": "/avatar-agent-new/purple/comms-drafter.svg",
 		"publisher": "Amplitude",
 		"attributionKind": "company",
 		"publisherBrandName": "amplitude",
@@ -1364,7 +1364,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"funnel-analytics",
 					"trend-spotter"
@@ -1383,7 +1383,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"trend-spotter",
 					"build-report"
@@ -1405,7 +1405,7 @@
 		"categoryId": "analyze",
 		"name": "Research Synthesizer",
 		"description": "Pull research into a single, decision-ready brief.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/work-organizer.svg",
+		"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 		"publisher": "Alex Kim",
 		"attributionKind": "person",
 		"remix": "610",
@@ -1456,7 +1456,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 				"skillIds": [
 					"run-deep-research",
 					"capture-insights"
@@ -1475,7 +1475,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"capture-insights",
 					"build-report"
@@ -1497,7 +1497,7 @@
 		"categoryId": "review",
 		"name": "Service Triage",
 		"description": "Triage service requests, recommend field updates, and ask for missing details when needed.",
-		"avatarSrc": "/avatar-agent/service-agents/service-triage.svg",
+		"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -1549,7 +1549,7 @@
 				"id": "service-request-helper",
 				"name": "Service Request Helper",
 				"description": "Helps compose support responses and find the right assignee.",
-				"avatarSrc": "/avatar-agent/service-agents/service-request-helper.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 				"skillIds": [
 					"service-request-triage",
 					"response-drafter"
@@ -1568,7 +1568,7 @@
 				"id": "root-cause-analyzer",
 				"name": "Root Cause Analyzer",
 				"description": "Traces incidents to their root cause from signals and history.",
-				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 				"skillIds": [
 					"response-drafter",
 					"sla-monitor"
@@ -1590,7 +1590,7 @@
 		"categoryId": "review",
 		"name": "Service Request Helper",
 		"description": "Draft support responses, suggest assignees, and summarize requests for faster resolution.",
-		"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+		"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -1647,7 +1647,7 @@
 				"id": "root-cause-analyzer",
 				"name": "Root Cause Analyzer",
 				"description": "Traces incidents to their root cause from signals and history.",
-				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 				"skillIds": [
 					"response-drafter",
 					"service-request-triage"
@@ -1666,7 +1666,7 @@
 				"id": "rovo-ops",
 				"name": "Rovo Ops",
 				"description": "Streamlines incident management and on-call guidance in service projects.",
-				"avatarSrc": "/avatar-agent/service-agents/ops-guide.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 				"skillIds": [
 					"service-request-triage",
 					"summarize-thread"
@@ -1688,7 +1688,7 @@
 		"categoryId": "review",
 		"name": "Rovo Ops",
 		"description": "Guide incident response, on-call actions, mitigation, status updates, and recovery.",
-		"avatarSrc": "/avatar-agent/dev-agents/code-standardizer.svg",
+		"avatarSrc": "/avatar-agent-new/lime/auto-fix.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -1747,7 +1747,7 @@
 				"id": "root-cause-analyzer",
 				"name": "Root Cause Analyzer",
 				"description": "Traces incidents to their root cause from signals and history.",
-				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 				"skillIds": [
 					"incident-responder",
 					"analyze-root-cause"
@@ -1766,7 +1766,7 @@
 				"id": "pipeline-troubleshooter",
 				"name": "Pipeline Troubleshooter",
 				"description": "Diagnoses failing builds, deployment issues, and CI configuration problems.",
-				"avatarSrc": "/avatar-agent/dev-agents/pipeline-troubleshooter.svg",
+				"avatarSrc": "/avatar-agent-new/lime/ops-agent.svg",
 				"skillIds": [
 					"analyze-root-cause",
 					"response-drafter"
@@ -1788,7 +1788,7 @@
 		"categoryId": "review",
 		"name": "Rovo Expert",
 		"description": "Answer Rovo setup and usage questions with concise guidance and helpful links.",
-		"avatarSrc": "/avatar-agent/product-agents/wildcard-3.svg",
+		"avatarSrc": "/avatar-agent-new/purple/pitch-perfector.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -1839,7 +1839,7 @@
 				"id": "rovo-ops",
 				"name": "Rovo Ops",
 				"description": "Streamlines incident management and on-call guidance in service projects.",
-				"avatarSrc": "/avatar-agent/service-agents/ops-guide.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 				"skillIds": [
 					"kb-article-writer",
 					"summarize-thread"
@@ -1858,7 +1858,7 @@
 				"id": "user-manual-writer",
 				"name": "User Manual Writer",
 				"description": "Helps create a personal user manual of your working styles.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/user-manual-writer.svg",
+				"avatarSrc": "/avatar-agent-new/blue/my-user-manual.svg",
 				"skillIds": [
 					"summarize-thread",
 					"search-web"
@@ -1880,7 +1880,7 @@
 		"categoryId": "review",
 		"name": "User Manual Writer",
 		"description": "Help teammates document working style, communication norms, and collaboration preferences.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/user-manual-writer.svg",
+		"avatarSrc": "/avatar-agent-new/blue/my-user-manual.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -1931,7 +1931,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"user-manual-writer",
 					"onboarding-plan"
@@ -1950,7 +1950,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"onboarding-plan",
 					"brand-voice-editor"
@@ -1972,7 +1972,7 @@
 		"categoryId": "review",
 		"name": "Knowledge Base Guide",
 		"description": "Answer policy and process questions from trusted context.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/workflow-builder.svg",
+		"avatarSrc": "/avatar-agent-new/blue/auto-dev.svg",
 		"publisher": "Operations",
 		"remix": "790",
 		"updated": "1 month ago",
@@ -2041,7 +2041,7 @@
 				"id": "user-manual-writer",
 				"name": "User Manual Writer",
 				"description": "Helps create a personal user manual of your working styles.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/user-manual-writer.svg",
+				"avatarSrc": "/avatar-agent-new/blue/my-user-manual.svg",
 				"skillIds": [
 					"summarize-thread",
 					"search-web"
@@ -2063,7 +2063,7 @@
 		"categoryId": "review",
 		"name": "Incident Recap Writer",
 		"description": "Compile post-incident timelines, decisions, and follow-ups.",
-		"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+		"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 		"publisher": "Reliability",
 		"remix": "620",
 		"updated": "2 days ago",
@@ -2114,7 +2114,7 @@
 				"id": "root-cause-analyzer",
 				"name": "Root Cause Analyzer",
 				"description": "Traces incidents to their root cause from signals and history.",
-				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 				"skillIds": [
 					"incident-responder",
 					"analyze-root-cause"
@@ -2133,7 +2133,7 @@
 				"id": "rovo-ops",
 				"name": "Rovo Ops",
 				"description": "Streamlines incident management and on-call guidance in service projects.",
-				"avatarSrc": "/avatar-agent/service-agents/ops-guide.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 				"skillIds": [
 					"analyze-root-cause",
 					"kb-article-writer"
@@ -2155,7 +2155,7 @@
 		"categoryId": "review",
 		"name": "Teamwork Coach",
 		"description": "Review collaboration patterns and suggest healthier rituals.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/teamwork-coach.svg",
+		"avatarSrc": "/avatar-agent-new/blue/team-connection.svg",
 		"publisher": "Team Practices",
 		"remix": "570",
 		"updated": "5 days ago",
@@ -2205,7 +2205,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"team-building-planner",
 					"team-health-survey-skill"
@@ -2224,7 +2224,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"team-health-survey-skill",
 					"summarize-thread"
@@ -2246,7 +2246,7 @@
 		"categoryId": "summarize",
 		"name": "Product Requirements Guide",
 		"description": "Create and review PRDs with customer empathy, evidence, acceptance criteria, and direct feedback.",
-		"avatarSrc": "/avatar-agent/product-agents/wildcard-1.svg",
+		"avatarSrc": "/avatar-agent-new/purple/default.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -2298,7 +2298,7 @@
 				"id": "customer-insights",
 				"name": "Customer Insights",
 				"description": "Analyzes customer feedback from connected data sources for themes.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/customer-insights.svg",
+				"avatarSrc": "/avatar-agent-new/blue/customer-insight.svg",
 				"skillIds": [
 					"prd-builder",
 					"customer-insights"
@@ -2317,7 +2317,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"customer-insights",
 					"build-report"
@@ -2339,7 +2339,7 @@
 		"categoryId": "summarize",
 		"name": "Release Notes Drafter",
 		"description": "Convert Jira work items into grouped release notes for customers and stakeholders.",
-		"avatarSrc": "/avatar-agent/dev-agents/deployment-summarizer.svg",
+		"avatarSrc": "/avatar-agent-new/lime/release-notes.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -2397,7 +2397,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"draft-release-notes",
 					"release-announcement"
@@ -2416,7 +2416,7 @@
 				"id": "code-reviewer",
 				"name": "Code Reviewer",
 				"description": "Reviews changes for correctness, maintainability, and test coverage.",
-				"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg",
+				"avatarSrc": "/avatar-agent-new/lime/auto-review.svg",
 				"skillIds": [
 					"release-announcement",
 					"build-report"
@@ -2438,7 +2438,7 @@
 		"categoryId": "summarize",
 		"name": "Brand Voice Crafter",
 		"description": "Draft or review content against brand voice, tone guidance, and audience needs.",
-		"avatarSrc": "/avatar-agent/strategy-agents/wildcard-3.svg",
+		"avatarSrc": "/avatar-agent-new/orange/pitch-perfector.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -2490,7 +2490,7 @@
 				"id": "social-media-writer",
 				"name": "Social Media Writer",
 				"description": "Drafts concise social posts, campaign variations, and channel-ready copy.",
-				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"brand-voice-editor",
 					"produce-marketing-materials"
@@ -2509,7 +2509,7 @@
 				"id": "global-translator",
 				"name": "Global Translator",
 				"description": "Translates pages, posts, and replies into multiple languages.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/global-translator.svg",
+				"avatarSrc": "/avatar-agent-new/blue/comms-drafter.svg",
 				"skillIds": [
 					"produce-marketing-materials",
 					"translate-content"
@@ -2531,7 +2531,7 @@
 		"categoryId": "summarize",
 		"name": "Social Media Writer",
 		"description": "Draft social posts, improve engagement, and adapt messages by channel and audience.",
-		"avatarSrc": "/avatar-agent/service-agents/wildcard-4.svg",
+		"avatarSrc": "/avatar-agent-new/yellow/culture.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -2583,7 +2583,7 @@
 				"id": "brand-voice-crafter",
 				"name": "Brand Voice Crafter",
 				"description": "Produces content that matches your brand guidelines and tone.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/brand-guardian.svg",
+				"avatarSrc": "/avatar-agent-new/blue/marketing-message-maestro.svg",
 				"skillIds": [
 					"produce-marketing-materials",
 					"brand-voice-editor"
@@ -2602,7 +2602,7 @@
 				"id": "global-translator",
 				"name": "Global Translator",
 				"description": "Translates pages, posts, and replies into multiple languages.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/global-translator.svg",
+				"avatarSrc": "/avatar-agent-new/blue/comms-drafter.svg",
 				"skillIds": [
 					"brand-voice-editor",
 					"translate-content"
@@ -2624,7 +2624,7 @@
 		"categoryId": "summarize",
 		"name": "Global Translator",
 		"description": "Translate writing while preserving meaning, tone, accessibility, and audience context.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/global-translator.svg",
+		"avatarSrc": "/avatar-agent-new/blue/comms-drafter.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -2676,7 +2676,7 @@
 				"id": "brand-voice-crafter",
 				"name": "Brand Voice Crafter",
 				"description": "Produces content that matches your brand guidelines and tone.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/brand-guardian.svg",
+				"avatarSrc": "/avatar-agent-new/blue/marketing-message-maestro.svg",
 				"skillIds": [
 					"translate-content",
 					"brand-voice-editor"
@@ -2695,7 +2695,7 @@
 				"id": "social-media-writer",
 				"name": "Social Media Writer",
 				"description": "Drafts concise social posts, campaign variations, and channel-ready copy.",
-				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"brand-voice-editor",
 					"summarize-thread"
@@ -2717,7 +2717,7 @@
 		"categoryId": "summarize",
 		"name": "Executive Briefing Writer",
 		"description": "Condense dense context for leadership updates.",
-		"avatarSrc": "/avatar-agent/service-agents/wildcard-5.svg",
+		"avatarSrc": "/avatar-agent-new/yellow/comms-drafter.svg",
 		"publisher": "Leadership Operations",
 		"remix": "730",
 		"updated": "3 days ago",
@@ -2767,7 +2767,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"summarize-thread",
 					"build-report"
@@ -2786,7 +2786,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"build-report",
 					"report-compiler"
@@ -2808,7 +2808,7 @@
 		"categoryId": "summarize",
 		"name": "Stakeholder Update Builder",
 		"description": "Package progress into stakeholder-ready updates.",
-		"avatarSrc": "/avatar-agent/service-agents/ops-guide.svg",
+		"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 		"publisher": "Program Management",
 		"remix": "680",
 		"updated": "1 month ago",
@@ -2858,7 +2858,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"build-report",
 					"summarize-thread"
@@ -2877,7 +2877,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"summarize-thread",
 					"report-compiler"
@@ -2899,7 +2899,7 @@
 		"categoryId": "summarize",
 		"name": "Team Recap",
 		"description": "Turn busy channels into concise weekly summaries.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/team-recap.svg",
+		"avatarSrc": "/avatar-agent-new/blue/team-connection.svg",
 		"publisher": "Team Communications",
 		"remix": "590",
 		"updated": "5 days ago",
@@ -2949,7 +2949,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"summarize-thread",
 					"standup-summarizer"
@@ -2968,7 +2968,7 @@
 				"id": "meeting-insights-reporter",
 				"name": "Meeting Insights Reporter",
 				"description": "Turns meeting notes and transcripts into summaries, decisions, and follow-ups.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg",
+				"avatarSrc": "/avatar-agent-new/blue/comms-drafter.svg",
 				"skillIds": [
 					"standup-summarizer",
 					"build-report"
@@ -2990,7 +2990,7 @@
 		"categoryId": "create",
 		"name": "Work Item Planner",
 		"description": "Break large projects, epics, or workstreams into sequenced tasks, owners, and next steps.",
-		"avatarSrc": "/avatar-agent/service-agents/wildcard-2.svg",
+		"avatarSrc": "/avatar-agent-new/yellow/research-scout.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -3042,7 +3042,7 @@
 				"id": "code-planner",
 				"name": "Code Planner",
 				"description": "Plans implementation steps and breaks down technical work.",
-				"avatarSrc": "/avatar-agent/dev-agents/code-planner.svg",
+				"avatarSrc": "/avatar-agent-new/lime/auto-dev.svg",
 				"skillIds": [
 					"create-work-items",
 					"sprint-planner"
@@ -3061,7 +3061,7 @@
 				"id": "blocker-checker",
 				"name": "Blocker Checker",
 				"description": "Flags potentially blocked work items before they stall delivery.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/blocker-checker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"sprint-planner",
 					"dependency-mapper"
@@ -3083,7 +3083,7 @@
 		"categoryId": "create",
 		"name": "Work Item Organizer",
 		"description": "Find, move, update, and organize Jira work items across sprints, epics, and stale queues.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/work-organizer.svg",
+		"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -3135,7 +3135,7 @@
 				"id": "work-item-planner",
 				"name": "Work Item Planner",
 				"description": "Breaks large projects into smaller, actionable, well-scoped tasks.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/work-item-planner.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"bulk-issue-editor",
 					"create-work-items"
@@ -3154,7 +3154,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"create-work-items",
 					"jql-query-builder"
@@ -3176,7 +3176,7 @@
 		"categoryId": "create",
 		"name": "Bug Report Assistant",
 		"description": "Write concise bug reports with reproduction steps, impact, expected behavior, and triage notes.",
-		"avatarSrc": "/avatar-agent/dev-agents/code-vulnerability-scanner-npm-yarn.svg",
+		"avatarSrc": "/avatar-agent-new/lime/auto-review.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -3234,7 +3234,7 @@
 				"id": "unit-test-creator",
 				"name": "Unit Test Creator",
 				"description": "Generates unit tests and coverage for changed code.",
-				"avatarSrc": "/avatar-agent/dev-agents/unit-test-creator.svg",
+				"avatarSrc": "/avatar-agent-new/lime/auto-dev.svg",
 				"skillIds": [
 					"bug-report-assistant",
 					"debug-log-issue"
@@ -3253,7 +3253,7 @@
 				"id": "root-cause-analyzer",
 				"name": "Root Cause Analyzer",
 				"description": "Traces incidents to their root cause from signals and history.",
-				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"avatarSrc": "/avatar-agent-new/yellow/ops-agent.svg",
 				"skillIds": [
 					"debug-log-issue",
 					"test-plan-builder"
@@ -3275,7 +3275,7 @@
 		"categoryId": "create",
 		"name": "Blocker Checker",
 		"description": "Detect blocked work, explain the evidence, and recommend the clearest unblocking move.",
-		"avatarSrc": "/avatar-agent/strategy-agents/wildcard-4.svg",
+		"avatarSrc": "/avatar-agent-new/orange/culture.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -3327,7 +3327,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"dependency-mapper",
 					"standup-summarizer"
@@ -3346,7 +3346,7 @@
 				"id": "work-item-organizer",
 				"name": "Work Item Organizer",
 				"description": "Finds and updates work items and assigns them to epics or sprints.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/work-organizer.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"standup-summarizer",
 					"jql-query-builder"
@@ -3368,7 +3368,7 @@
 		"categoryId": "create",
 		"name": "Readiness Checker",
 		"description": "Review work items against a team's definition of ready and suggest missing details.",
-		"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+		"avatarSrc": "/avatar-agent-new/purple/customer-insight.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -3419,7 +3419,7 @@
 				"id": "work-item-planner",
 				"name": "Work Item Planner",
 				"description": "Breaks large projects into smaller, actionable, well-scoped tasks.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/work-item-planner.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"create-work-items",
 					"build-report"
@@ -3438,7 +3438,7 @@
 				"id": "blocker-checker",
 				"name": "Blocker Checker",
 				"description": "Flags potentially blocked work items before they stall delivery.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/blocker-checker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"build-report",
 					"jql-query-builder"
@@ -3460,7 +3460,7 @@
 		"categoryId": "create",
 		"name": "Progress Tracker",
 		"description": "Summarize in-flight projects, priorities, owners, progress, and work that needs attention.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+		"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 		"publisher": "Atlassian",
 		"attributionKind": "company",
 		"verified": true,
@@ -3512,7 +3512,7 @@
 				"id": "blocker-checker",
 				"name": "Blocker Checker",
 				"description": "Flags potentially blocked work items before they stall delivery.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/blocker-checker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"standup-summarizer",
 					"build-report"
@@ -3531,7 +3531,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"build-report",
 					"milestone-tracker"
@@ -3553,7 +3553,7 @@
 		"categoryId": "create",
 		"name": "Sprint Capacity Planner",
 		"description": "Recommend balanced sprint scope using capacity, velocity, issue size, and delivery risk.",
-		"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg",
+		"avatarSrc": "/avatar-agent-new/purple/research-scout.svg",
 		"publisher": "Smartsheet",
 		"attributionKind": "company",
 		"publisherBrandName": "smartsheet",
@@ -3610,7 +3610,7 @@
 				"id": "work-item-planner",
 				"name": "Work Item Planner",
 				"description": "Breaks large projects into smaller, actionable, well-scoped tasks.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/work-item-planner.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"sprint-planner",
 					"backlog-groomer"
@@ -3629,7 +3629,7 @@
 				"id": "progress-tracker",
 				"name": "Progress Tracker",
 				"description": "Summarizes project movement, blockers, and next actions across work streams.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"backlog-groomer",
 					"milestone-tracker"
@@ -3651,7 +3651,7 @@
 		"categoryId": "create",
 		"name": "Workflow Synthesizer",
 		"description": "Turns scattered requests into durable operating workflows.",
-		"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+		"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 		"publisher": "Revenue Operations",
 		"remix": "640",
 		"updated": "3 days ago",
@@ -3701,7 +3701,7 @@
 				"id": "work-item-organizer",
 				"name": "Work Item Organizer",
 				"description": "Finds and updates work items and assigns them to epics or sprints.",
-				"avatarSrc": "/avatar-agent/teamwork-agents/work-organizer.svg",
+				"avatarSrc": "/avatar-agent-new/blue/backlog-buddy.svg",
 				"skillIds": [
 					"automation-rule-builder",
 					"build-report"
@@ -3720,7 +3720,7 @@
 				"id": "strategic-insight",
 				"name": "Strategic Insight",
 				"description": "Surfaces strategic insights and risks across initiatives.",
-				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"avatarSrc": "/avatar-agent-new/orange/research-scout.svg",
 				"skillIds": [
 					"build-report",
 					"create-work-items"

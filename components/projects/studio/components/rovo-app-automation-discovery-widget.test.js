@@ -204,11 +204,11 @@ test("scripted automation trace renders extra tool cycling moments", () => {
 test("Studio automation discovery create-agent trace drives sidebar generating rows", () => {
 	assert.match(GENERATING_AGENTS_SOURCE, /const STUDIO_AUTOMATION_CREATE_AGENT_DRAFTS_TOOL_NAME = "studio\.create_agent_drafts";/u);
 	assert.match(GENERATING_AGENTS_SOURCE, /import \{ STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE \} from "@\/components\/projects\/studio\/lib\/studio-automation-artifact-list";/u);
-	assert.match(GENERATING_AGENTS_SOURCE, /avatarSrc: "\/avatar-agent\/product-agents\/feedback-analyzer\.svg"[\s\S]*id: "venn-loom-distribution-agent"/u);
+	assert.match(GENERATING_AGENTS_SOURCE, /avatarSrc: "\/avatar-agent-new\/purple\/customer-insight\.svg"[\s\S]*id: "venn-loom-distribution-agent"/u);
 	assert.match(GENERATING_AGENTS_SOURCE, /id: "venn-loom-distribution-agent",[\s\S]*label: "Loom Distribution Agent"/u);
-	assert.match(GENERATING_AGENTS_SOURCE, /avatarSrc: "\/avatar-agent\/service-agents\/service-triage\.svg"[\s\S]*id: "venn-inactive-agent-triage-agent"/u);
+	assert.match(GENERATING_AGENTS_SOURCE, /avatarSrc: "\/avatar-agent-new\/yellow\/ops-agent\.svg"[\s\S]*id: "venn-inactive-agent-triage-agent"/u);
 	assert.match(GENERATING_AGENTS_SOURCE, /id: "venn-inactive-agent-triage-agent",[\s\S]*label: "Inactive Agent Triage Agent"/u);
-	assert.match(GENERATING_AGENTS_SOURCE, /avatarSrc: "\/avatar-agent\/strategy-agents\/strategic-insight\.svg"[\s\S]*id: "venn-weekly-sprint-atlas-digest-agent"/u);
+	assert.match(GENERATING_AGENTS_SOURCE, /avatarSrc: "\/avatar-agent-new\/orange\/research-scout\.svg"[\s\S]*id: "venn-weekly-sprint-atlas-digest-agent"/u);
 	assert.match(GENERATING_AGENTS_SOURCE, /id: "venn-weekly-sprint-atlas-digest-agent",[\s\S]*label: "Weekly Sprint\/Atlas Digest Agent"/u);
 	assert.match(GENERATING_AGENTS_SOURCE, /part\.data\?\.type === STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE/u);
 	assert.match(GENERATING_AGENTS_SOURCE, /event\.toolName === STUDIO_AUTOMATION_CREATE_AGENT_DRAFTS_TOOL_NAME/u);
@@ -219,9 +219,9 @@ test("Studio automation discovery create-agent trace drives sidebar generating r
 });
 
 test("Studio automation discovery draft trace uses distinct agent avatar families", () => {
-	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /id: "loom-agent"[\s\S]*iconSrc: "\/avatar-agent\/product-agents\/feedback-analyzer\.svg"/u);
-	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /id: "triage-agent"[\s\S]*iconSrc: "\/avatar-agent\/service-agents\/service-triage\.svg"/u);
-	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /id: "digest-agent"[\s\S]*iconSrc: "\/avatar-agent\/strategy-agents\/strategic-insight\.svg"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /id: "loom-agent"[\s\S]*iconSrc: "\/avatar-agent-new\/purple\/customer-insight\.svg"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /id: "triage-agent"[\s\S]*iconSrc: "\/avatar-agent-new\/yellow\/ops-agent\.svg"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /id: "digest-agent"[\s\S]*iconSrc: "\/avatar-agent-new\/orange\/research-scout\.svg"/u);
 });
 
 test("generated automation discovery agent fixtures live outside the demo flow module", () => {

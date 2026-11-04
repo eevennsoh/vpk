@@ -49,7 +49,7 @@ const DEPENDENCY_MAPPER_LABELS = [
 const SERVICE_IMPACT_AGENT: JiraIssueAgentActivity = {
 	id: "service-impact-agent",
 	name: "Service impact agent",
-	avatarSrc: "/avatar-agent/service-agents/rca-agent.svg",
+	avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
 	label: "Figuring out which services are affected",
 	labels: SERVICE_IMPACT_LABELS,
 	cycleIntervalMs: 5200,
@@ -60,7 +60,7 @@ const SERVICE_IMPACT_AGENT: JiraIssueAgentActivity = {
 const DEPENDENCY_MAPPER_AGENT: JiraIssueAgentActivity = {
 	id: "dependency-mapper",
 	name: "Dependency mapper",
-	avatarSrc: "/avatar-agent/teamwork-agents/work-item-planner.svg",
+	avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 	label: "Checking dependent components",
 	labels: DEPENDENCY_MAPPER_LABELS,
 	cycleIntervalMs: 6800,

@@ -4,7 +4,7 @@ import SkillIcon from "@atlaskit/icon-lab/core/skill";
 
 import { IconTile } from "@/components/ui/icon-tile";
 
-export const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
+export const AGENT_AVATAR_SRC = "/avatar-agent-new/blue/backlog-buddy.svg";
 
 export function AgentProfileCover() {
 	return (

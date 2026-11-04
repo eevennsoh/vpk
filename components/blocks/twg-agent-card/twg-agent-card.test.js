@@ -172,11 +172,11 @@ test("TWG Agent Card default data includes Teamwork Graph sources and three sugg
 	assert.match(DATA_SOURCE, /description: "Handles reminders, forms, and renewals\."/u);
 	assert.match(DATA_SOURCE, /description: "Drafts timely follow-ups\."/u);
 	assert.match(DATA_SOURCE, /description: "Finds distraction patterns\."/u);
-	assert.match(DATA_SOURCE, /avatarSrc: "\/avatar-agent\/service-agents\/service-request-helper\.svg"/u);
-	assert.match(DATA_SOURCE, /avatarSrc: "\/avatar-agent\/strategy-agents\/talent-finder\.svg"/u);
-	assert.match(DATA_SOURCE, /avatarSrc: "\/avatar-agent\/product-agents\/wildcard-6\.svg"/u);
-	assert.equal((DATA_SOURCE.match(/avatarSrc: "\/avatar-agent\/(?:service-agents|strategy-agents|product-agents)\//gu) ?? []).length, 3);
-	assert.equal((DATA_SOURCE.match(/avatarSrc: "\/avatar-agent\/teamwork-agents\//gu) ?? []).length, 0);
+	assert.match(DATA_SOURCE, /avatarSrc: "\/avatar-agent-new\/yellow\/ops-agent\.svg"/u);
+	assert.match(DATA_SOURCE, /avatarSrc: "\/avatar-agent-new\/lime\/auto-dev\.svg"/u);
+	assert.match(DATA_SOURCE, /avatarSrc: "\/avatar-agent-new\/purple\/product-requirements\.svg"/u);
+	assert.equal((DATA_SOURCE.match(/avatarSrc: "\/avatar-agent-new\/(?:yellow|lime|purple)\//gu) ?? []).length, 3);
+	assert.equal((DATA_SOURCE.match(/avatarSrc: "\/avatar-agent-new\/blue\//gu) ?? []).length, 0);
 	assert.equal((DATA_SOURCE.match(/name: "/gu) ?? []).length, 3);
 });
 
@@ -186,7 +186,7 @@ test("TWG Agent Card catalog wiring is present", () => {
 	assert.match(BLOCK_DETAILS_SOURCE, /"twg-agent-card": \{/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /import \{ TWGAgentCard \} from "@\/components\/blocks\/twg-agent-card";/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /"twg-agent-card": \{[\s\S]*demoLayout: \{ previewHeight: "default" \}/u);
-	assert.match(BLOCK_DETAILS_SOURCE, /avatarSrc: "\/avatar-agent\/service-agents\/service-request-helper\.svg"/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /avatarSrc: "\/avatar-agent-new\/yellow\/ops-agent\.svg"/u);
 	assert.match(REGISTRY_SOURCE, /"twg-agent-card": dynamic\(\(\) => import\("\.\/demos\/blocks\/twg-agent-card-demo"\)/u);
 	assert.match(DEMO_SOURCE, /import \{ TWGAgentCard \} from "@\/components\/blocks\/twg-agent-card";/u);
 	assert.match(DEMO_SOURCE, /className="flex w-full justify-center p-6"/u);

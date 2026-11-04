@@ -154,7 +154,7 @@ function getCardAssigneeAvatarShape(card: JiraKanbanCardData) {
 	if (card.avatarShape) {
 		return card.avatarShape;
 	}
-	return card.avatarSrc?.startsWith("/avatar-agent/") ? "hexagon" as const : undefined;
+	return card.avatarSrc?.match(/^\/avatar-agent(?:-new)?\//u) ? "hexagon" as const : undefined;
 }
 
 function AgentAvatar({ agent, className }: Readonly<{ agent: JiraKanbanAgentData; className?: string }>) {

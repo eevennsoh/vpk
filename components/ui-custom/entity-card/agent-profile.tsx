@@ -29,16 +29,21 @@ import { cn } from "@/lib/utils";
 
 const AGENT_CATEGORY_BANNER_COLOR: Record<string, string> = {
 	"dev-agents": "#82B536",
+	lime: "#82B536",
 	"product-agents": "#BF63F3",
+	purple: "#BF63F3",
 	"service-agents": "#FFC716",
+	yellow: "#FFC716",
 	"strategy-agents": "#FCA700",
+	orange: "#FCA700",
 	"teamwork-agents": "#1868DB",
+	blue: "#1868DB",
 };
 
 const DEFAULT_BANNER_COLOR = "#1868DB";
 
 function getBannerColorFromAvatarSrc(src: string): string {
-	const category = src.match(/\/avatar-agent\/([^/]+)\//)?.[1];
+	const category = src.match(/\/avatar-agent(?:-new)?\/([^/]+)\//)?.[1];
 	return (category && AGENT_CATEGORY_BANNER_COLOR[category]) ?? DEFAULT_BANNER_COLOR;
 }
 

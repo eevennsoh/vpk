@@ -127,7 +127,7 @@ const ROVO_AGENT = {
 } as const satisfies AgentListAgent;
 
 const READINESS_AGENT = {
-	avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+	avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 	id: "readiness-checker",
 	kind: "agent",
 	name: "Readiness Checker",

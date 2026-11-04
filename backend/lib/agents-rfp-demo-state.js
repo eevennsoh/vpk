@@ -17,7 +17,7 @@ const RFP_DRAFTING_TRIGGER_PROMPT = [
 	"When a ticket enters Drafting, inspect the RFP packet, customer context, and required response sections.",
 	"Draft the first-pass response package, flag blockers or missing inputs, attach the draft to the ticket, and move ready tickets to Review.",
 ].join(" ");
-const RFP_DRAFTING_AGENT_AVATAR_SRC = "/avatar-agent/dev-agents/feature-flag-cleaner.svg";
+const RFP_DRAFTING_AGENT_AVATAR_SRC = "/avatar-agent-new/lime/feature-flag.svg";
 const RFP_DRAFTING_BOARD_NAME = "Enterprise RFP Response";
 const RFP_DRAFTING_COLUMN_NAME = "Drafting";
 const RFP_REVIEW_COLUMN_NAME = "Review";

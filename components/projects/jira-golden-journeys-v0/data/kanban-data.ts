@@ -59,19 +59,19 @@ export const ASX_KANBAN_AGENTS: readonly JiraKanbanAgentData[] = [
 		id: "service-impact-agent",
 		name: "Service impact agent",
 		byline: "Service agent by Atlassian",
-		avatarSrc: "/avatar-agent/service-agents/rca-agent.svg",
+		avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
 	},
 	{
 		id: "dependency-mapper",
 		name: "Dependency mapper",
 		byline: "Planning agent by Atlassian",
-		avatarSrc: "/avatar-agent/teamwork-agents/work-item-planner.svg",
+		avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 	},
 	{
 		id: "ai-insights-agent",
 		name: "AI Insights Agent",
 		byline: "Custom agent by Atlassian",
-		avatarSrc: "/avatar-agent/product-agents/wildcard-1.svg",
+		avatarSrc: "/avatar-agent-new/purple/default.svg",
 	},
 	...BOARD_AGENTS,
 ] as const;
