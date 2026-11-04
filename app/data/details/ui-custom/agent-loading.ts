@@ -18,7 +18,7 @@ export const AGENT_LOADING_DETAIL: ComponentDetail = {
       name: "Jira Coding agent",
       status: "finished",
       avatar: {
-        avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
+        avatarSrc: "/avatar-agent-new/lime/auto-dev.svg",
       },
     },
   ]}

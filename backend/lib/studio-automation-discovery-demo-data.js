@@ -16,7 +16,7 @@ const GENERATED_AGENT_FIXTURES = [
 		sourceLabel: "Generated from recent work patterns",
 		description: "Turns every new Studio design Loom into a reviewed distribution pack: sprint-channel announcement, stakeholder FYIs, Atlas update draft, and follow-up tracker.",
 		summary: "Watches for new design Looms, reads the title, transcript, links, and recent Studio context, then drafts tailored shareback copy for Slack, stakeholder FYIs, and Atlas updates without posting until you approve.",
-		avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
+		avatarSrc: "/avatar-agent-new/purple/customer-insight.svg",
 		conversationStarters: [
 			"Draft the full shareback pack for my latest Agent builder Loom.",
 			"Identify the right Slack channels and stakeholders for this Loom.",
@@ -96,7 +96,7 @@ const GENERATED_AGENT_FIXTURES = [
 		sourceLabel: "Generated from recent work patterns",
 		description: "Reviews agent-reaper-bot Jira tickets, checks each agent against live Studio work, and produces a keep, close, or needs-review recommendation with evidence.",
 		summary: "Triage inactive-agent cleanup batches by comparing Jira tickets against active projects, recent Looms, Confluence specs, Slack mentions, and keep-list signals; it drafts closure actions only when the evidence is unambiguous.",
-		avatarSrc: "/avatar-agent/service-agents/service-triage.svg",
+		avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
 		conversationStarters: [
 			"Review today's agent-reaper-bot tickets and classify each one.",
 			"Find inactive agents that are still tied to active Studio work.",
@@ -177,7 +177,7 @@ const GENERATED_AGENT_FIXTURES = [
 		sourceLabel: "Generated from recent work patterns",
 		description: "Creates a weekly Studio digest from Looms, Confluence edits, Slack feedback, Jira movement, Atlas milestones, and calendar context.",
 		summary: "Runs at the end of the week to assemble shipped work, decisions, feedback, blockers, risks, and next focus into review-ready sprint and Atlas update drafts.",
-		avatarSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
+		avatarSrc: "/avatar-agent-new/orange/research-scout.svg",
 		conversationStarters: [
 			"Draft this week's Studio sprint and Atlas digest.",
 			"Pull together this week's Looms, Confluence edits, Jira movement, and Slack feedback.",

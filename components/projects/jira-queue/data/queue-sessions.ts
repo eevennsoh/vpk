@@ -563,7 +563,7 @@ const ASX_QUEUE_LOCAL_AGENTS: Readonly<Record<string, RovoAgentProfile>> = {
 		id: "deal-desk-reviewer",
 		name: "Deal Desk Reviewer",
 		byline: "Agent by Rovo",
-		avatarSrc: "/avatar-agent/product-agents/wildcard-3.svg",
+		avatarSrc: "/avatar-agent-new/purple/pitch-perfector.svg",
 		description:
 			"Reviews non-standard pricing and discount exceptions and confirms an accountable owner before a response goes out.",
 		starters: [],

@@ -407,7 +407,7 @@ export function TagDemoAvatarTags() {
 				onRemove={() => {}}
 				elemBefore={
 					<Avatar size="xs" shape="hexagon">
-						<AvatarImage src="/avatar-agent/dev-agents/code-planner.svg" alt="Plan agent" />
+						<AvatarImage src="/avatar-agent-new/lime/auto-dev.svg" alt="Plan agent" />
 						<AvatarFallback>AI</AvatarFallback>
 					</Avatar>
 				}
@@ -450,7 +450,7 @@ export function TagDemoMentionTags() {
 				variant="editor"
 				elemBefore={
 					<Avatar size="xs" shape="hexagon">
-						<AvatarImage src="/avatar-agent/dev-agents/code-planner.svg" alt="Code Planner" />
+						<AvatarImage src="/avatar-agent-new/lime/auto-dev.svg" alt="Code Planner" />
 						<AvatarFallback>CP</AvatarFallback>
 					</Avatar>
 				}

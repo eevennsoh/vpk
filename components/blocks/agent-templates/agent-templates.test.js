@@ -180,18 +180,18 @@ test("Agent Templates renders the strategy dialog layout with entity-card cards"
 		assert.ok(templateByName.has(name), `template catalog must include ${name}`);
 	}
 	const nameToAvatar = [
-		["OKR Generator", "/avatar-agent/product-agents/wildcard-2.svg"],
-		["Jira Theme Analyzer", "/avatar-agent/dev-agents/code-reviewer.svg"],
-		["Transcript Insights Reporter", "/avatar-agent/strategy-agents/wildcard-1.svg"],
-		["Service Request Helper", "/avatar-agent/strategy-agents/strategic-insight.svg"],
-		["Product Requirements Guide", "/avatar-agent/product-agents/wildcard-1.svg"],
-		["Release Notes Drafter", "/avatar-agent/dev-agents/deployment-summarizer.svg"],
-		["Brand Voice Crafter", "/avatar-agent/strategy-agents/wildcard-3.svg"],
-		["Social Media Writer", "/avatar-agent/service-agents/wildcard-4.svg"],
-		["Work Item Planner", "/avatar-agent/service-agents/wildcard-2.svg"],
-		["Bug Report Assistant", "/avatar-agent/dev-agents/code-vulnerability-scanner-npm-yarn.svg"],
-		["Blocker Checker", "/avatar-agent/strategy-agents/wildcard-4.svg"],
-		["Readiness Checker", "/avatar-agent/product-agents/feedback-analyzer.svg"],
+		["OKR Generator", "/avatar-agent-new/purple/research-scout.svg"],
+		["Jira Theme Analyzer", "/avatar-agent-new/lime/auto-review.svg"],
+		["Transcript Insights Reporter", "/avatar-agent-new/orange/default.svg"],
+		["Service Request Helper", "/avatar-agent-new/orange/research-scout.svg"],
+		["Product Requirements Guide", "/avatar-agent-new/purple/default.svg"],
+		["Release Notes Drafter", "/avatar-agent-new/lime/release-notes.svg"],
+		["Brand Voice Crafter", "/avatar-agent-new/orange/pitch-perfector.svg"],
+		["Social Media Writer", "/avatar-agent-new/yellow/culture.svg"],
+		["Work Item Planner", "/avatar-agent-new/yellow/research-scout.svg"],
+		["Bug Report Assistant", "/avatar-agent-new/lime/auto-review.svg"],
+		["Blocker Checker", "/avatar-agent-new/orange/culture.svg"],
+		["Readiness Checker", "/avatar-agent-new/purple/customer-insight.svg"],
 	];
 	for (const [name, avatarSrc] of nameToAvatar) {
 		assert.equal(templateByName.get(name)?.avatarSrc, avatarSrc, `${name} avatar`);

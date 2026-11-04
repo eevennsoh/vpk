@@ -35,9 +35,9 @@ const HUMAN_GROUP_AVATARS = [
 	{ alt: "Maia Ma", fallback: "ER", src: GROUP_AVATAR_THREE_SRC },
 ] as const;
 const AGENT_GROUP_AVATARS = [
-	{ label: "Code planner", src: "/avatar-agent/dev-agents/code-planner.svg" },
-	{ label: "Feedback analyzer", src: "/avatar-agent/product-agents/feedback-analyzer.svg" },
-	{ label: "Service triage", src: "/avatar-agent/service-agents/service-triage.svg" },
+	{ label: "Code planner", src: "/avatar-agent-new/lime/auto-dev.svg" },
+	{ label: "Feedback analyzer", src: "/avatar-agent-new/purple/customer-insight.svg" },
+	{ label: "Service triage", src: "/avatar-agent-new/yellow/ops-agent.svg" },
 ] as const;
 
 export default function AvatarDemo() {
@@ -480,7 +480,7 @@ export function AvatarDemoShapes() {
 			</div>
 			<div className="flex flex-col items-center gap-1">
 				<Avatar shape="hexagon">
-					<AvatarImage src="/avatar-agent/dev-agents/code-planner.svg" alt="Hexagon" />
+					<AvatarImage src="/avatar-agent-new/lime/auto-dev.svg" alt="Hexagon" />
 					<AvatarFallback>HX</AvatarFallback>
 				</Avatar>
 				<span className="text-xs text-text-subtle">Hexagon</span>
@@ -499,7 +499,7 @@ export function AvatarDemoAgentTiers() {
 				},
 				{
 					label: "1P",
-					avatar: <AgentAvatarVisual avatarSrc="/avatar-agent/teamwork-agents/customer-insights.svg" label="Atlassian agent" sizePx={32} />,
+					avatar: <AgentAvatarVisual avatarSrc="/avatar-agent-new/blue/customer-insight.svg" label="Atlassian agent" sizePx={32} />,
 				},
 				{
 					label: "2P",
@@ -575,7 +575,7 @@ export function AvatarDemoAgentGroup() {
 	);
 }
 
-const AGENT_AVATAR_SRC = "/avatar-agent/dev-agents/code-planner.svg";
+const AGENT_AVATAR_SRC = "/avatar-agent-new/lime/auto-dev.svg";
 const BADGE_SIZES = ["sm", "default", "lg", "xl", "2xl"] as const;
 
 export function AvatarDemoCompany() {
@@ -772,7 +772,7 @@ export function AvatarDemoDisabled() {
 			</div>
 			<div className="flex flex-col items-center gap-1">
 				<Avatar disabled shape="hexagon">
-					<AvatarImage src="/avatar-agent/dev-agents/code-planner.svg" alt="Disabled hexagon" />
+					<AvatarImage src="/avatar-agent-new/lime/auto-dev.svg" alt="Disabled hexagon" />
 					<AvatarFallback>HX</AvatarFallback>
 				</Avatar>
 				<span className="text-xs text-text-subtle">Hexagon</span>

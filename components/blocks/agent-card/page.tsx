@@ -54,7 +54,7 @@ export default function AgentCardPage(): React.ReactElement {
 			<DemoSection label="Expanded">
 				<AgentCard
 					attributionKind="company"
-					avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+					avatarSrc="/avatar-agent-new/blue/decision-director.svg"
 					capabilities={CAPABILITIES}
 					className="w-full max-w-[376px]"
 					collaborators={COLLABORATORS}
@@ -76,7 +76,7 @@ export default function AgentCardPage(): React.ReactElement {
 			<DemoSection label="Experimental (template)">
 				<AgentCard
 					attributionKind="company"
-					avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+					avatarSrc="/avatar-agent-new/blue/decision-director.svg"
 					capabilities={CAPABILITIES}
 					className="max-h-[423px] w-[376px]"
 					collaborators={COLLABORATORS}
@@ -98,7 +98,7 @@ export default function AgentCardPage(): React.ReactElement {
 			<DemoSection label="Experimental (profile)">
 				<AgentCard
 					attributionKind="company"
-					avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+					avatarSrc="/avatar-agent-new/blue/decision-director.svg"
 					className="w-[376px]"
 					description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
 					name="Decision Director"
@@ -118,7 +118,7 @@ export default function AgentCardPage(): React.ReactElement {
 					className="w-[420px]"
 					collaborators={COLLABORATORS}
 					description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
-					iconSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+					iconSrc="/avatar-agent-new/blue/decision-director.svg"
 					name="Decision Director"
 					onSelect={() => {}}
 					publisher="Atlassian"

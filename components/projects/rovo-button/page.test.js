@@ -311,7 +311,7 @@ test("the RFP Drafter artwork survives the banner crop", () => {
 	// One asset serves the 42x48 hex avatar and the 168x192 banner, which the
 	// panel crops to a 48px slice through the artwork's vertical middle.
 	const artworkMatch = ONBOARDING_HOOK_SOURCE.match(
-		/const RFP_DRAFTER_ARTWORK_SRC = "(\/avatar-agent\/teamwork-agents\/[a-z0-9-]+\.svg)";/u,
+		/const RFP_DRAFTER_ARTWORK_SRC = "(\/avatar-agent-new\/blue\/[a-z0-9-]+\.svg)";/u,
 	);
 	assert.ok(artworkMatch, "the artwork should live in one named constant");
 

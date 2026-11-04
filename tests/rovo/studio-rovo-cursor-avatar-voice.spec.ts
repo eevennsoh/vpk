@@ -7,8 +7,8 @@ const STUDIO_URL = appUrl("/studio");
 const STORAGE_KEY = "vpk:studio:session-agents:v1";
 const SEEDED_AGENT_ID = "voice-avatar-blue-agent";
 const SEEDED_AGENT_NAME = "Voice Avatar Blue Agent";
-const INITIAL_AVATAR_SRC = "/avatar-agent/dev-agents/feature-flag-cleaner.svg";
-const BLUE_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
+const INITIAL_AVATAR_SRC = "/avatar-agent-new/lime/feature-flag.svg";
+const BLUE_AVATAR_SRC = "/avatar-agent-new/blue/backlog-buddy.svg";
 const AVATAR_TRIGGER_TARGET_ID = "studio-agent-config:avatar";
 const BLUE_AVATAR_TARGET_ID = "studio-agent-config:avatar:teamwork-agents:blocker-checker";
 
