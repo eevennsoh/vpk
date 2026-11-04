@@ -58,6 +58,8 @@ export interface ProjectButterSuggestionFill {
 	columnId: string;
 	dismissAccepted: () => void;
 	dismissField: (field: ProjectButterSuggestionField) => void;
+	restoreDismissedField: (field: ProjectButterSuggestionField) => void;
+	undoField: (suggestion: ProjectButterSuggestion) => void;
 	running: boolean;
 	shimmerText: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>>;
 	suggestions: readonly ProjectButterSuggestion[];
@@ -264,9 +266,15 @@ export function useProjectButterSuggestionFill(
 		columnId,
 		dismissAccepted,
 		dismissField,
+		restoreDismissedField: (field) => setDismissed((current) => {
+			const next = new Set(current);
+			next.delete(field);
+			return next;
+		}),
 		running,
 		shimmerText,
 		suggestions,
 		undoAccepted,
+		undoField: (suggestion) => revertMatchingProjectButterSuggestions([suggestion], suggestionSnapshot(contentRef.current), contentRef.current),
 	};
 }

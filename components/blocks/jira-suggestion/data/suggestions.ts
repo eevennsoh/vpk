@@ -40,7 +40,7 @@ export type SuggestionValue =
 	| { kind: "labels"; labels: readonly string[] }
 	| { kind: "checklist"; items: readonly string[] };
 
-export type SuggestionFieldId = "description" | "assignee" | "dueDate" | "parent" | "labels" | "acceptanceCriteria" | "components" | "fixVersion";
+export type SuggestionFieldId = "description" | "assignee" | "dueDate" | "parent" | "labels" | "acceptanceCriteria" | "components" | "fixVersion" | "storyPoints" | "reporter" | "costCenter";
 
 export type SuggestionConfidence = "high" | "medium";
 
