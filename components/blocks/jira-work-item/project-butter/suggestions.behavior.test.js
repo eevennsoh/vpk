@@ -156,3 +156,25 @@ test("suggestions remain scoped to the work item", async () => {
 	assert.equal(document.querySelector('[data-field-id="parent"]')?.getAttribute("data-field-filled"), "true");
 	await view.unmount();
 });
+
+test("dismissed suggestions stay dismissed when the suggestion setting is toggled", async () => {
+	const view = await renderWorkItem({ initialSuggestion: true });
+	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
+	await view.click(view.getByRole("button", { name: "Dismiss description" }));
+	await view.click(view.getByRole("button", { name: "Close suggestions" }));
+	await view.click(view.getByRole("button", { name: "Settings" }));
+	await view.click(view.getByRole("switch", { name: "Suggestion" }));
+	await view.click(view.getByRole("switch", { name: "Suggestion" }));
+	await view.click(view.getByRole("button", { name: "View prototype" }));
+	assert.notEqual(view.queryByRole("button", { name: /4 suggestions/iu }), null);
+	await view.unmount();
+});
+
+test("undoing a dismissal restores it to the work item", async () => {
+	const view = await renderWorkItem({ initialSuggestion: true });
+	await view.click(view.getByRole("button", { name: /5 suggestions/iu }));
+	await view.click(view.getByRole("button", { name: "Dismiss description" }));
+	await view.click(view.getByRole("button", { name: "Undo dismissing Description" }));
+	assert.notEqual(view.queryByRole("button", { name: /5 suggestions/iu }), null);
+	await view.unmount();
+});

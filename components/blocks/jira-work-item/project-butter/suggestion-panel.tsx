@@ -58,10 +58,16 @@ export function ProjectButterSuggestionPanel({ fill }: Readonly<{ fill: ProjectB
 		fill.acceptField(suggestion);
 		review.accept(id);
 	};
-	const dismiss = (id: SuggestionFieldId) => review.dismiss(id);
+	const dismiss = (id: SuggestionFieldId) => {
+		const suggestion = find(id);
+		if (!suggestion) return;
+		fill.dismissField(suggestion.field);
+		review.dismiss(id);
+	};
 	const undo = (id: SuggestionFieldId) => {
 		const suggestion = find(id);
 		if (suggestion && review.decisionOf(id) === "accepted") fill.undoField(suggestion);
+		if (suggestion && review.decisionOf(id) === "dismissed") fill.restoreDismissedField(suggestion.field);
 		review.undo(id);
 	};
 	const feed: SuggestionFeed = {
