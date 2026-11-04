@@ -3,7 +3,8 @@
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import FileIcon from "@atlaskit/icon/core/file";
-import LinkExternalIcon from "@atlaskit/icon/core/link-external";
+import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,7 +12,7 @@ import {
 	PullRequestFlyoutChecks,
 	PullRequestFlyoutMetaRow,
 } from "@/components/blocks/pull-request/components/pull-request-flyout-parts";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
@@ -51,6 +52,10 @@ function statusLozengeVariant(
 			return "success";
 		case "Merged":
 			return "discovery";
+		case "Draft":
+			return "neutral";
+		case "Failed":
+			return "danger";
 		default: {
 			const _exhaustive: never = status;
 			return _exhaustive;
@@ -112,11 +117,12 @@ function PullRequestStatusLozenge({
 	status,
 	withIcon = false,
 }: Readonly<{ status: PullRequestStatus; withIcon?: boolean }>) {
+	const StatusIcon = status === "Merged" ? MergeSuccessIcon : status === "Failed" ? MergeFailureIcon : PullRequestIcon;
 	return (
 		<Lozenge
 			elemBefore={
 				withIcon ? (
-					<Icon aria-hidden render={<PullRequestIcon label="" size="small" />} />
+					<Icon aria-hidden render={<StatusIcon label="" size="small" />} />
 				) : undefined
 			}
 			size="compact"
@@ -334,8 +340,7 @@ function PullRequestSpaciousBody({
 /**
  * Flyout body: `#N` + title with the status lozenge trailing, author · time,
  * then a divided section — repository, `source → target` branch path, files /
- * diff, CI checks — and the Review / View pull request actions. Every row and
- * action renders only when its data or link is supplied.
+ * diff and CI checks, followed by Review and failed-check actions.
  */
 function PullRequestFlyoutBody({
 	number,
@@ -354,6 +359,7 @@ function PullRequestFlyoutBody({
 	checks,
 	reviewHref,
 	href,
+	onFix,
 }: Readonly<
 	Pick<
 		PullRequestProps,
@@ -373,6 +379,7 @@ function PullRequestFlyoutBody({
 		| "checks"
 		| "reviewHref"
 		| "href"
+		| "onFix"
 	>
 >) {
 	const reviewersLabel = reviewers ? pullRequestReviewersLabel(reviewers) : null;
@@ -402,13 +409,18 @@ function PullRequestFlyoutBody({
 		<span className="text-xs leading-4 text-text-subtlest">{reviewersLabel}</span>
 	) : null;
 	const hasBranchPath = Boolean(branch || targetBranch);
-	const hasActions = Boolean(reviewHref || href);
+	const failedChecks = checks?.filter((check) => check.status === "failed") ?? [];
+	const hasActions = Boolean(reviewHref || failedChecks.length);
 
 	return (
 		<>
 			<div className="flex w-full min-w-0 items-start gap-3 px-3">
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
-					<PullRequestInlineTitle number={number} title={title} />
+					{href ? (
+						<a className="min-w-0 rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" href={href} rel="noopener noreferrer" target="_blank">
+							<PullRequestInlineTitle number={number} title={title} />
+						</a>
+					) : <PullRequestInlineTitle number={number} title={title} />}
 					{authorMeta}
 				</div>
 				<PullRequestStatusLozenge status={status} />
@@ -452,16 +464,10 @@ function PullRequestFlyoutBody({
 								Review
 							</a>
 						) : null}
-						{href ? (
-							<a
-								className={cn(buttonVariants({ variant: "outline" }), "min-w-0 flex-1")}
-								href={href}
-								rel="noreferrer"
-								target="_blank"
-							>
-								View pull request
-								<Icon aria-hidden render={<LinkExternalIcon label="" size="small" />} />
-							</a>
+						{failedChecks.length > 0 ? (
+							<Button className="min-w-0 flex-1" onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
+								Fix PR
+							</Button>
 						) : null}
 					</div>
 				) : null}
@@ -481,8 +487,7 @@ function PullRequestFlyoutBody({
  *   author / changed-files / diff footer. Selectable dropdown-style chrome.
  * - `flyout`: overlay card — wrapping `#N` + title with a trailing status
  *   lozenge, author · time, then a divided repository, `source → target`
- *   path, files / diff, and an expandable CI checks section, plus Review / View pull request
- *   actions when their links are supplied.
+ *   path, files / diff, and an expandable CI checks section, plus Review and Fix PR actions.
  */
 export function PullRequest({
 	variant = "dropdown",
@@ -502,6 +507,7 @@ export function PullRequest({
 	checks,
 	reviewHref,
 	href,
+	onFix,
 	selected = false,
 	onActivate,
 	className,
@@ -521,6 +527,7 @@ export function PullRequest({
 			deletions={deletions}
 			filesChanged={filesChanged}
 			href={href}
+			onFix={onFix}
 			number={number}
 			provider={provider}
 			relativeTime={relativeTime}
@@ -581,7 +588,7 @@ export function PullRequest({
 		className,
 	);
 
-	if (onActivate) {
+	if (onActivate && !isFlyout) {
 		return (
 			<button
 				aria-label={`Pull request #${number}: ${title}`}

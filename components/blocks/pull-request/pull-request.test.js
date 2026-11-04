@@ -25,7 +25,7 @@ const BLOCK_DETAILS_SOURCE = readDetailCategorySource("blocks");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
 test("PullRequest exposes the dropdown, spacious, and flyout card props contract", () => {
-	assert.match(TYPES_SOURCE, /export type PullRequestStatus = "Open" \| "Merged"/u);
+	assert.match(TYPES_SOURCE, /export type PullRequestStatus = "Open" \| "Merged" \| "Draft" \| "Failed"/u);
 	assert.match(TYPES_SOURCE, /export type PullRequestVariant = "dropdown" \| "spacious" \| "flyout"/u);
 	assert.doesNotMatch(TYPES_SOURCE, /"compact"/u);
 	assert.match(
@@ -102,7 +102,7 @@ test("PullRequest GitHub mark does not add an inline line-box wrapper", () => {
 test("PullRequest selection styling works for read-only and interactive cards", () => {
 	assert.match(
 		COMPONENT_SOURCE,
-		/if \(onActivate\) \{[\s\S]*<button[\s\S]*aria-pressed=\{selected\}[\s\S]*onClick=\{onActivate\}[\s\S]*type="button"/u,
+		/if \(onActivate && !isFlyout\) \{[\s\S]*<button[\s\S]*aria-pressed=\{selected\}[\s\S]*onClick=\{onActivate\}[\s\S]*type="button"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,

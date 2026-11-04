@@ -12,8 +12,7 @@ export function pullRequestChecksTitleState(checks: readonly PullRequestCheck[])
 /**
  * One-line CI summary for a collapsed row: `3/3 builds passed`, with
  * `· N failed` appended once anything has failed. `running` means a job is actively
- * executing (the caller shows a spinner); otherwise `segments` are the status
- * groups for a segmented progress ring.
+ * executing, and `segments` describe the status groups for the progress ring.
  */
 export function pullRequestChecksSummary(checks: readonly PullRequestCheck[]) {
 	const { inProgress, passed, total } = pullRequestChecksTitleState(checks);

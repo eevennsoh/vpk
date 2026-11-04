@@ -1,6 +1,6 @@
 import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
 
-export type PullRequestStatus = "Open" | "Merged";
+export type PullRequestStatus = "Open" | "Merged" | "Draft" | "Failed";
 
 /**
  * Card layout. `dropdown` is the compact two-row list card used in select
@@ -58,8 +58,10 @@ export interface PullRequestProps {
 	checks?: readonly PullRequestCheck[];
 	/** Flyout only. Renders the primary Review action as a link. Omitted without it. */
 	reviewHref?: string;
-	/** Flyout only. Renders the View pull request action as an external link. Omitted without it. */
+	/** Flyout only. Makes the pull request title an external link. */
 	href?: string;
+	/** Called with failing CI checks when Fix PR is activated. */
+	onFix?: (checks: readonly PullRequestCheck[]) => void;
 	/**
 	 * Absolute timestamp (ms). Reserved for callers that already track PR age;
 	 * the card renders `relativeTime` when provided.
@@ -70,8 +72,8 @@ export interface PullRequestProps {
 	/** Marks the card as the active selection, including read-only summaries. */
 	selected?: boolean;
 	/**
-	 * When provided, the card activates as a pressed button (select-to-open).
-	 * Without it, the card remains a non-interactive summary surface.
+	 * On dropdown and spacious cards, activates a pressed button (select-to-open).
+	 * The flyout stays a container for its links and actions.
 	 */
 	onActivate?: () => void;
 	className?: string;

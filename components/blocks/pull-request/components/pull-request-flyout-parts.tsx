@@ -70,6 +70,20 @@ function renderCheckStatusGlyph(check: PullRequestCheck) {
 	);
 }
 
+export function PullRequestChecksSummary({ checks }: Readonly<{ checks: readonly PullRequestCheck[] }>) {
+	if (checks.length === 0) return null;
+	const summary = pullRequestChecksSummary(checks);
+	return (
+		<span className="flex min-w-0 items-center gap-1 text-xs leading-5 text-text-subtle">
+			<span aria-hidden="true" className="grid size-4 shrink-0 place-items-center text-icon-subtlest">
+				<ProgressCircle animated={false} inline label="CI checks" segmented segments={summary.segments} size="xs" />
+			</span>
+			<span className="min-w-0 truncate tabular-nums">{summary.label}</span>
+			{summary.inProgress ? <span className="sr-only">{summary.running ? ", checks running" : ", checks queued"}</span> : null}
+		</span>
+	);
+}
+
 /**
  * Builds row that expands inline into the full CI checks list. The collapsed
  * row is the one-line summary (`2/3 builds passed · 1 failed`); the panel is the
@@ -86,8 +100,6 @@ export function PullRequestFlyoutChecks({
 }>) {
 	if (checks.length === 0) return null;
 
-	const summary = pullRequestChecksSummary(checks);
-
 	return (
 		<Collapsible className="flex min-w-0 flex-col" data-pull-request-checks defaultOpen={defaultOpen}>
 			<CollapsibleTrigger
@@ -96,14 +108,7 @@ export function PullRequestFlyoutChecks({
 					"transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
 				)}
 			>
-				<span aria-hidden="true" className="grid size-4 shrink-0 place-items-center text-icon-subtlest">
-					{summary.running ? (
-						<Spinner label="" size="xs" />
-					) : (
-						<ProgressCircle animated={false} inline label="CI checks" segmented segments={summary.segments} size="xs" />
-					)}
-				</span>
-				<span className="min-w-0 truncate tabular-nums">{summary.label}</span>
+				<PullRequestChecksSummary checks={checks} />
 				{/* Disclosure cue: hidden until the row is hovered or keyboard-focused, points right when
 				    closed and rotates to point down when open. The trigger stays the focus target. */}
 				<span

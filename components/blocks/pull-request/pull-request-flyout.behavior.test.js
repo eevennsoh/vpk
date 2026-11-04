@@ -49,7 +49,9 @@ async function renderFlyout(overrides) {
 	const snapshot = {
 		text: view.container.textContent,
 		review: view.queryByRole("link", { name: /^Review$/u }) !== null,
+		titleHref: view.queryByRole("link", { name: /#7 SHIL-25: Integrate Pull Request Data/u })?.getAttribute("href"),
 		viewPullRequest: view.queryByRole("link", { name: /^View pull request$/u }) !== null,
+		fix: view.queryByRole("button", { name: "Fix PR" }) !== null,
 	};
 	await view.unmount();
 	return snapshot;
@@ -60,6 +62,76 @@ test("flyout adds the repository and a CI summary row", async () => {
 
 	assert.match(text, /atlassian\/shilpas-test-repo/u);
 	assert.match(text, /3\/3 builds passed/u);
+});
+
+test("development rows show the four pull request status icons and colors", async () => {
+	const statuses = ["Draft", "Open", "Merged", "Failed"];
+	const view = await renderComponent({
+		entry: "components/blocks/development-panel/development-panel.tsx",
+		exportName: "DevelopmentPanel",
+		mocks: THEME_MOCK,
+		props: {
+			workItem: { code: "PAY-1", summary: "Work", description: "" },
+			pullRequests: statuses.map((status, index) => ({ number: index + 1, title: "Example", status, additions: 0, deletions: 0 })),
+		},
+	});
+	const rows = statuses.map((status, index) => {
+		const button = view.getByRole("button", { name: `#${index + 1} Example ${status}` });
+		const icon = button.querySelector('[data-slot="icon"]');
+		return {
+			classes: icon?.className,
+			paths: [...button.querySelectorAll("svg path")].map((path) => path.getAttribute("d")),
+		};
+	});
+	await view.unmount();
+	assert.match(rows[0].classes, /text-icon-accent-gray/u);
+	assert.match(rows[1].classes, /text-icon-accent-lime/u);
+	assert.match(rows[2].classes, /text-icon-accent-purple/u);
+	assert.match(rows[3].classes, /text-icon-danger/u);
+	assert.deepEqual(rows[0].paths, rows[1].paths);
+	assert.notDeepEqual(rows[2].paths, rows[1].paths);
+	assert.notDeepEqual(rows[3].paths, rows[2].paths);
+});
+
+test("development rows summarize checks for non-merged pull requests without showing check details", async () => {
+	const checks = [
+		{ id: "lint", name: "Lint details", status: "passed", details: "Complete" },
+		{ id: "test", name: "Test details", status: "running", details: "Running" },
+		{ id: "browser", name: "Browser details", status: "queued", details: "Queued" },
+	];
+	const view = await renderComponent({
+		entry: "components/blocks/development-panel/development-panel.tsx",
+		exportName: "DevelopmentPanel",
+		mocks: THEME_MOCK,
+		props: {
+			workItem: { code: "PAY-1", summary: "Work", description: "" },
+			pullRequests: [
+				{ number: 1, title: "Running", status: "Open", checks, additions: 0, deletions: 0 },
+				{ number: 2, title: "Merged", status: "Merged", checks, additions: 0, deletions: 0 },
+				{ number: 3, title: "No checks", status: "Draft", additions: 0, deletions: 0 },
+				{ number: 4, title: "Failed", status: "Failed", checks: [{ ...checks[0], status: "failed" }], additions: 0, deletions: 0 },
+			],
+		},
+	});
+	const running = view.getByRole("button", { name: /#1 Running/u });
+	const merged = view.getByRole("button", { name: /#2 Merged/u });
+	const noChecks = view.getByRole("button", { name: /#3 No checks/u });
+	const failed = view.getByRole("button", { name: /#4 Failed/u });
+	assert.match(running.textContent, /1\/3 builds passed/u);
+	assert.match(running.textContent, /checks running/u);
+	assert.doesNotMatch(running.textContent, /Lint details|Test details|Browser details/u);
+	assert.doesNotMatch(merged.textContent, /builds? passed/u);
+	assert.doesNotMatch(noChecks.textContent, /builds? passed/u);
+	assert.match(failed.textContent, /0\/1 build passed · 1 failed/u);
+	assert.equal(running.querySelectorAll("button").length, 0);
+	await view.unmount();
+});
+
+test("flyout displays every pull request status", async () => {
+	for (const status of ["Draft", "Open", "Merged", "Failed"]) {
+		const { text } = await renderFlyout({ status });
+		assert.match(text, new RegExp(status, "u"));
+	}
 });
 
 function trigger(view) {
@@ -113,15 +185,47 @@ test("flyout keeps the branch path, file changes, and author metadata", async ()
 	assert.match(text, /Shilpa Airi/u);
 });
 
-test("flyout actions render as links only when their href is supplied", async () => {
+test("flyout title links to the pull request and review remains optional", async () => {
 	const both = await renderFlyout({});
-	assert.deepEqual([both.review, both.viewPullRequest], [true, true]);
+	assert.deepEqual([both.review, both.titleHref, both.viewPullRequest, both.fix], [true, PROPS.href, false, false]);
 
 	const viewOnly = await renderFlyout({ reviewHref: undefined });
-	assert.deepEqual([viewOnly.review, viewOnly.viewPullRequest], [false, true]);
+	assert.deepEqual([viewOnly.review, viewOnly.titleHref, viewOnly.viewPullRequest], [false, PROPS.href, false]);
 
 	const none = await renderFlyout({ reviewHref: undefined, href: undefined });
-	assert.deepEqual([none.review, none.viewPullRequest], [false, false]);
+	assert.deepEqual([none.review, none.titleHref, none.viewPullRequest], [false, undefined, false]);
+});
+
+test("Fix PR appears for failed checks and passes only failures to the handler", async () => {
+	const checks = [
+		{ id: "lint", name: "Lint", status: "failed", details: "Failed" },
+		{ id: "unit", name: "Unit", status: "passed", details: "Passed" },
+	];
+	const fixed = [];
+	const view = await renderComponent({
+		entry: "components/blocks/pull-request/components/pull-request.tsx",
+		exportName: "PullRequest",
+		mocks: THEME_MOCK,
+		props: { ...PROPS, checks, onFix: (failed) => fixed.push(failed) },
+	});
+	await view.click(view.getByRole("button", { name: "Fix PR" }));
+	assert.deepEqual(fixed, [[checks[0]]]);
+	await view.rerender({ ...PROPS, checks: [{ ...checks[0], status: "running" }] });
+	assert.equal(view.queryByRole("button", { name: "Fix PR" }) === null, true);
+	await view.unmount();
+});
+
+test("flyout stays a container when an activation callback is supplied", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/pull-request/components/pull-request.tsx",
+		exportName: "PullRequest",
+		mocks: THEME_MOCK,
+		props: { ...PROPS, onActivate: () => undefined },
+	});
+	const link = view.getByRole("link", { name: /#7 SHIL-25: Integrate Pull Request Data/u });
+	assert.equal(link.closest("button") === null, true);
+	assert.equal(link.getAttribute("target"), "_blank");
+	await view.unmount();
 });
 
 test("flyout omits the repository and builds rows when absent", async () => {

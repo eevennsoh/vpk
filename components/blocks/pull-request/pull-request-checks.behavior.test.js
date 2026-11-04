@@ -43,9 +43,9 @@ test("each summary counts passed checks and calls out failures", async () => {
 	const summary = (id) => section(view, id)?.querySelector("button[aria-expanded]")?.textContent ?? "";
 
 	assert.deepEqual(IDS.map(summary), [
-		"0/3 builds passed",
-		"0/3 builds passed",
-		"1/3 builds passed",
+		"0/3 builds passed, checks queued",
+		"0/3 builds passed, checks running",
+		"1/3 builds passed, checks running",
 		"3/3 builds passed",
 		"2/3 builds passed · 1 failed",
 	]);
@@ -63,16 +63,13 @@ test("every scenario starts expanded so its rows are visible", async () => {
 	await view.unmount();
 });
 
-test("the summary draws a status ring unless a check is running, and running checks draw spinners", async () => {
+test("the summary always draws a status ring, and running checks draw spinners", async () => {
 	const view = await renderGallery();
 	const rings = (id) => count(view, id, '[data-slot="progress-circle"]');
 	const spinners = (id) => count(view, id, '[role="status"]');
 
-	// Rows use the golden-journey glyphs (check-circle, error diamond, dashed circle),
-	// so the summary is the only ring, and it gives way to a spinner while any check runs.
-	assert.deepEqual(IDS.map(rings), [1, 0, 0, 1, 1]);
-	// Spinners: one per running row, plus the summary spinner while any check runs.
-	assert.deepEqual(IDS.map(spinners), [0, 4, 2, 0, 0]);
+	assert.deepEqual(IDS.map(rings), [1, 1, 1, 1, 1]);
+	assert.deepEqual(IDS.map(spinners), [0, 3, 1, 0, 0]);
 	await view.unmount();
 });
 

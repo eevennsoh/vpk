@@ -8,7 +8,7 @@ import {
 
 /**
  * One permutation, drawn exactly as the flyout draws it: the summary row with
- * its status ring (or spinner while anything runs) opening onto the compact
+ * its segmented status ring opening onto the compact
  * check rows. Starts expanded because showing the rows is the point.
  */
 function ChecksScenarioCard({ scenario }: Readonly<{ scenario: PullRequestChecksScenario }>) {
