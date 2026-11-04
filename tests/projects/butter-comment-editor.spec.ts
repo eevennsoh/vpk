@@ -118,6 +118,25 @@ test("comment dictation does not scale controls with reduced motion", async ({ p
 	expect(scaled).toBe(false);
 });
 
+test("agent mentions show complete new avatars for first-party agents", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	await page.keyboard.press("m");
+	const editor = page.getByRole("dialog", { name: "Project butter" }).getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Code");
+	const reviewer = page.getByRole("option", { name: /^Code Reviewer(?:\s|$)/ });
+	const planner = page.getByRole("option", { name: /^Code Planner(?:\s|$)/ });
+	await expect(reviewer.locator('[data-shape="hexagon"] img')).toHaveAttribute("src", "/avatar-agent-new/lime/auto-review.svg");
+	await expect(planner.locator('[data-shape="hexagon"] img')).toHaveAttribute("src", "/avatar-agent-new/lime/auto-dev.svg");
+	await reviewer.click();
+	await expect(editor.locator('[data-mention-category="subagent"] img')).toHaveAttribute("src", "/avatar-agent-new/lime/auto-review.svg");
+	await editor.press("ControlOrMeta+A");
+	await editor.press("Backspace");
+	await editor.pressSequentially("@Jira");
+	const codingAgent = page.getByRole("option", { name: /^Jira Coding Agent(?:\s|$)/ });
+	await expect(codingAgent.locator('[data-shape="hexagon"] img')).toHaveAttribute("src", "/avatar-agent-new/1P/jira-coder.svg");
+});
+
 for (const name of ["Claude", "Ali"]) test(`${name} mention aligns with the surrounding comment text`, async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
