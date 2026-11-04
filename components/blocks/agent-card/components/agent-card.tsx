@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
+import { getUnmaskedAgentAvatarSrc } from "@/lib/agent-avatars";
 import { getSkillIcon } from "@/lib/skill-icons";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -204,10 +205,6 @@ function getExperimentalDetailBackgroundColor(avatarSrc: string | undefined): st
 function getExperimentalDetailTextColor(avatarSrc: string | undefined): string {
 	const category = getAgentAvatarCategory(avatarSrc);
 	return (category ? EXPERIMENTAL_DETAIL_TEXT_COLORS[category] : undefined) ?? EXPERIMENTAL_DETAIL_TEXT_COLOR;
-}
-
-function getUnmaskedAgentAvatarSrc(avatarSrc: string | undefined): string | undefined {
-	return avatarSrc?.replace("/avatar-agent/", "/avatar-agent-unmasked/");
 }
 
 function getProjectBadgeAvatarSrc(seed: string) {
@@ -592,7 +589,7 @@ export function AgentCard({
 		// Cover keeps the inline stats + "Use template" CTA; collaborators move to the
 		// "Trusted by teammates" detail section below.
 		const showCoverActionRow = showInlineStats || showExperimentalCollaborators;
-		const unmaskedAvatarSrc = getUnmaskedAgentAvatarSrc(avatarSrc);
+		const unmaskedAvatarSrc = avatarSrc ? getUnmaskedAgentAvatarSrc(avatarSrc) : undefined;
 		const hasMoreAction = Boolean(moreAction) || Boolean(onMoreActions);
 
 		return (

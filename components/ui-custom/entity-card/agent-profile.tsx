@@ -24,7 +24,7 @@ import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import { DEFAULT_AGENT_PROFILE_AVATAR_SRC, getAgentProfileBannerSrc } from "@/lib/agent-avatars";
+import { DEFAULT_AGENT_PROFILE_AVATAR_SRC, getAgentProfileBannerSrc, getUnmaskedAgentAvatarSrc } from "@/lib/agent-avatars";
 import { cn } from "@/lib/utils";
 
 const AGENT_CATEGORY_BANNER_COLOR: Record<string, string> = {
@@ -45,16 +45,6 @@ const DEFAULT_BANNER_COLOR = "#1868DB";
 function getBannerColorFromAvatarSrc(src: string): string {
 	const category = src.match(/\/avatar-agent(?:-new)?\/([^/]+)\//)?.[1];
 	return (category && AGENT_CATEGORY_BANNER_COLOR[category]) ?? DEFAULT_BANNER_COLOR;
-}
-
-// The decorative avatar bleeding across the banner uses the container-less
-// ("unmasked") illustration so it floats on the smart-folder artwork without its
-// own hexagon tile — a solid tile would otherwise sit as a block on top of the
-// patterned backdrop. Mirrors AgentProfileCover treatment.
-function getUnmaskedAvatarSrc(src: string): string {
-	return src.startsWith("/avatar-agent/")
-		? src.replace("/avatar-agent/", "/avatar-agent-unmasked/")
-		: src;
 }
 
 // How the agent is attributed below its name. Mirrors agent-card's
@@ -248,7 +238,7 @@ export function EntityCardAgentProfile({
 						aria-hidden
 						className="absolute top-1/2 left-[76%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
 						height={192}
-						src={getUnmaskedAvatarSrc(coverSrc)}
+						src={getUnmaskedAgentAvatarSrc(coverSrc)}
 						width={168}
 					/>
 				)}

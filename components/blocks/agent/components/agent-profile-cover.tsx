@@ -19,6 +19,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { getUnmaskedAgentAvatarSrc } from "@/lib/agent-avatars";
 
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 export const AGENT_AVATAR_SRC = "/avatar-agent-new/blue/backlog-buddy.svg";
@@ -177,16 +178,6 @@ function AgentAvatarPickerMenu({
 	);
 }
 
-// The large decorative avatar that bleeds across the banner uses the
-// container-less ("unmasked") illustration so it floats on the cover without its
-// own lime hexagon tile. These assets mirror the masked set one-for-one under
-// /avatar-agent-unmasked/. The small profile avatar below keeps its hexagon.
-function getUnmaskedAvatarSrc(avatarSrc: string): string {
-	return avatarSrc.startsWith("/avatar-agent/")
-		? avatarSrc.replace("/avatar-agent/", "/avatar-agent-unmasked/")
-		: avatarSrc;
-}
-
 export function AgentProfileCover({
 	avatarSrc = AGENT_AVATAR_SRC,
 	onAvatarChange,
@@ -224,7 +215,7 @@ export function AgentProfileCover({
 						aria-hidden
 						className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
 						height={192}
-						src={getUnmaskedAvatarSrc(avatarSrc)}
+						src={getUnmaskedAgentAvatarSrc(avatarSrc)}
 						width={168}
 					/>
 				)}

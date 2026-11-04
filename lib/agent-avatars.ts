@@ -205,6 +205,13 @@ const LEGACY_AGENT_AVATARS: Readonly<Record<string, AgentAvatarSrc>> = {
 	"/avatar-agent/teamwork-agents/workflow-builder.svg": "/avatar-agent-new/blue/auto-dev.svg",
 };
 
+/** Return the container-less artwork used on agent profile covers. */
+export function getUnmaskedAgentAvatarSrc(src: string): string {
+	const match = src.match(/^\/avatar-agent-new\/(blue|lime|orange|purple|yellow)\/([^/]+\.svg)$/u);
+	if (match) return `/avatar-agent-new-unmasked/${match[1]}/${match[2]}`;
+	return src.startsWith("/avatar-agent/") ? src.replace("/avatar-agent/", "/avatar-agent-unmasked/") : src;
+}
+
 export function migrateAgentAvatarSrc(src: string | undefined): string | undefined {
 	return src ? LEGACY_AGENT_AVATARS[src] ?? src : src;
 }
