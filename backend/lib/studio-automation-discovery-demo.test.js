@@ -287,14 +287,14 @@ test("widget payload carries three distinct generated agent results", () => {
 	assert.deepEqual(payload.agents.map((agent) => agent.agentResult.automationRules[0].triggers.length), [2, 2, 2]);
 	assert.ok(payload.agents.every((agent) => agent.agentResult.automationRules[0].prompt.length > 180));
 	assert.deepEqual(payload.agents.map((agent) => agent.item.logoSrc), [
-		"/avatar-agent/product-agents/feedback-analyzer.svg",
-		"/avatar-agent/service-agents/service-triage.svg",
-		"/avatar-agent/strategy-agents/strategic-insight.svg",
+		"/avatar-agent-new/purple/customer-insight.svg",
+		"/avatar-agent-new/yellow/ops-agent.svg",
+		"/avatar-agent-new/orange/research-scout.svg",
 	]);
 	assert.deepEqual(payload.agents.map((agent) => agent.agentResult.avatarSrc), [
-		"/avatar-agent/product-agents/feedback-analyzer.svg",
-		"/avatar-agent/service-agents/service-triage.svg",
-		"/avatar-agent/strategy-agents/strategic-insight.svg",
+		"/avatar-agent-new/purple/customer-insight.svg",
+		"/avatar-agent-new/yellow/ops-agent.svg",
+		"/avatar-agent-new/orange/research-scout.svg",
 	]);
 	assert.ok(payload.agents[0].agentResult.apps.includes("loom"));
 	assert.ok(payload.agents[1].agentResult.apps.includes("jira"));

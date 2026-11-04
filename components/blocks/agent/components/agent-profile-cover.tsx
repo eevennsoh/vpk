@@ -19,21 +19,27 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { getUnmaskedAgentAvatarSrc } from "@/lib/agent-avatars";
 
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
-export const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
+export const AGENT_AVATAR_SRC = "/avatar-agent-new/blue/backlog-buddy.svg";
 const AGENT_AVATAR_OPTION_SRC_SET = new Set<string>(AGENT_AVATAR_OPTION_SRCS);
 const DEFAULT_AGENT_PROFILE_COVER_COLOR = "#1868DB";
 const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"dev-agents": "#82B536",
+	lime: "#82B536",
 	"product-agents": "#BF63F3",
+	purple: "#BF63F3",
 	"service-agents": "#FFC716",
+	yellow: "#FFC716",
 	"strategy-agents": "#FCA700",
+	orange: "#FCA700",
 	"teamwork-agents": DEFAULT_AGENT_PROFILE_COVER_COLOR,
+	blue: DEFAULT_AGENT_PROFILE_COVER_COLOR,
 };
 
 function getAgentProfileCoverBackgroundColor(avatarSrc: string | undefined): string {
-	const category = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
+	const category = avatarSrc?.match(/\/avatar-agent(?:-new)?\/([^/]+)\//u)?.[1];
 	return (category ? AGENT_AVATAR_PROFILE_COVER_COLORS[category] : undefined) ?? DEFAULT_AGENT_PROFILE_COVER_COLOR;
 }
 
@@ -151,10 +157,10 @@ function AgentAvatarPickerMenu({
 							<div className="grid grid-cols-7 gap-1 px-1 pb-1">
 								{group.options.map((option) => (
 									<DropdownMenuRadioItem
-										aria-label={`Use ${option.label} avatar`}
+										aria-label={`Use ${group.label} ${option.label} avatar`}
 										className="group/avatar-option h-12 min-h-0 w-11 justify-center rounded-lg bg-transparent p-1! pr-1! pl-1! data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text active:bg-bg-neutral-subtle-pressed data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
 										key={option.src}
-										title={option.label}
+										title={`${group.label} ${option.label}`}
 										data-screen-assistant-target={screenAssistantTargetPrefix ? getAgentAvatarOptionTargetId(screenAssistantTargetPrefix, group.id, option.src) : undefined}
 										value={option.src}
 									>
@@ -170,16 +176,6 @@ function AgentAvatarPickerMenu({
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
-}
-
-// The large decorative avatar that bleeds across the banner uses the
-// container-less ("unmasked") illustration so it floats on the cover without its
-// own lime hexagon tile. These assets mirror the masked set one-for-one under
-// /avatar-agent-unmasked/. The small profile avatar below keeps its hexagon.
-function getUnmaskedAvatarSrc(avatarSrc: string): string {
-	return avatarSrc.startsWith("/avatar-agent/")
-		? avatarSrc.replace("/avatar-agent/", "/avatar-agent-unmasked/")
-		: avatarSrc;
 }
 
 export function AgentProfileCover({
@@ -219,7 +215,7 @@ export function AgentProfileCover({
 						aria-hidden
 						className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
 						height={192}
-						src={getUnmaskedAvatarSrc(avatarSrc)}
+						src={getUnmaskedAgentAvatarSrc(avatarSrc)}
 						width={168}
 					/>
 				)}

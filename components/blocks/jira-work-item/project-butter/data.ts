@@ -13,7 +13,7 @@ export const PROJECT_BUTTER_SESSIONS: readonly ProjectButterSessionItem[] = [
 		agent: {
 			id: "rovo-dev",
 			name: "Jira Coding agent",
-			avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
+			avatarSrc: "/avatar-agent-new/lime/auto-dev.svg",
 		},
 		invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
 		branch: "feature/VITA-1-onboarding-redesign",
@@ -29,7 +29,7 @@ export const PROJECT_BUTTER_SESSIONS: readonly ProjectButterSessionItem[] = [
 		agent: {
 			id: "work-item-planner",
 			name: "Jira Scoping agent",
-			avatarSrc: "/avatar-agent/teamwork-agents/work-item-planner.svg",
+			avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 		},
 		invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
 		branch: "feature/VITA-1-onboarding-redesign",

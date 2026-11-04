@@ -39,7 +39,7 @@ export function ProjectButterHeader({ content, empty, onBrowseAgents, onCreateAg
 	const sidePanel = presentation === "side-panel";
 	const code = workItem?.code ?? "VITA-1";
 	return (
-		<header className="relative shrink-0">
+		<header className="group/butter-header relative shrink-0">
 			{sidePanel ? null : (
 				<div className="flex min-h-8 items-center justify-between gap-2 px-6 pt-6" data-project-butter-header-key-row>
 					<ProjectButterBreadcrumb aligned code={code} parent={content.detailFields.parent} summary={content.summary} />

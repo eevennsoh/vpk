@@ -139,7 +139,7 @@ test("the PAY board fills every existing status with coding work and the full st
 		["Venn", "Codex", "Cursor", "GitHub Copilot"],
 	);
 	assert.ok(story.JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES.every((assignee) => (
-		assignee.id === "venn" || assignee.avatarSrc.startsWith("/avatar-agent/")
+		assignee.id === "venn" || assignee.avatarSrc.startsWith("/avatar-agent-new/")
 	)));
 
 	assert.deepEqual(

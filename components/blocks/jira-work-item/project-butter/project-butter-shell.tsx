@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import TaskIcon from "@atlaskit/icon/core/task";
 import ProductSidebar from "@/components/blocks/product-sidebar/page";
 import TopNavigation from "@/components/blocks/top-navigation/page";
@@ -42,6 +42,7 @@ export function ProjectButterShell({
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
 }>) {
 	const [settingsOpen, setSettingsOpen] = useState(false);
+	const titleRef = useRef<HTMLHeadingElement>(null);
 	const panelResize = useProjectButterPanelResize(open && presentation === "side-panel");
 	const standalone = shell === "standalone";
 	const sectionLabel = `Work item ${presentation === "full-screen" ? "full screen" : presentation === "side-panel" ? "side panel" : "modal"} view`;
@@ -127,6 +128,7 @@ export function ProjectButterShell({
 			<DialogContent
 				ref={overlayContainerRef}
 				aria-modal="true"
+				initialFocus={titleRef}
 				className={cn(
 					"flex min-h-0 flex-col gap-0 p-0",
 					overlayContainerRef ? "overflow-visible" : "overflow-clip",
@@ -154,7 +156,7 @@ export function ProjectButterShell({
 				showCloseButton={false}
 				size="xl"
 			>
-				<DialogTitle className="sr-only">Project butter</DialogTitle>
+				<DialogTitle ref={titleRef} className="sr-only" tabIndex={-1}>Project butter</DialogTitle>
 				<DialogDescription className="sr-only">
 					{standalone
 						? "Explore the work item in full screen, a modal, or a side panel. Open Settings to change presentation, Empty, or Suggestion."

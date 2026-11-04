@@ -69,9 +69,9 @@ test("JGP chat profiles include every lifecycle-specific agent", async () => {
 		"Claude Code is an agentic coding tool that reads your codebase, edits files, runs commands, and integrates with your development tools.",
 	);
 	assert.deepEqual(JGP_CLAUDE_CODE_AGENT_PROFILE.starters, []);
-	assert.equal(serviceImpactAgent.avatarSrc, "/avatar-agent/service-agents/rca-agent.svg");
-	assert.equal(dependencyMapper.avatarSrc, "/avatar-agent/teamwork-agents/work-item-planner.svg");
-	assert.equal(unitTestCreator.avatarSrc, "/avatar-agent/dev-agents/unit-test-creator.svg");
+	assert.equal(serviceImpactAgent.avatarSrc, "/avatar-agent-new/yellow/ops-agent.svg");
+	assert.equal(dependencyMapper.avatarSrc, "/avatar-agent-new/blue/backlog-buddy.svg");
+	assert.equal(unitTestCreator.avatarSrc, "/avatar-agent-new/lime/auto-dev.svg");
 	assert.equal(profileIds.has("review-agent"), true);
 	assert.equal(codex.name, "Codex");
 	assert.equal(codex.brandName, "openai-codex");
@@ -162,8 +162,8 @@ test("JGP agent chat exposes persistent work-item context for the floating compo
 	assert.equal(contextBar.collapsible, undefined);
 });
 
-test("JGP chat hook selects the agent and cancels stale playback timers", () => {
-	assert.match(HOOK_SOURCE, /selectAgent\(scenario\.agentId, \{ preserveCurrentThread: true \}\);/u);
+test("JGP chat hook opens the chat, selects the session agent, and cancels stale playback", () => {
+	assert.match(HOOK_SOURCE, /openChat\("floating"\);[\s\S]*selectAgent\(scenario\.agentId, \{ preserveCurrentThread: true \}\);/u);
 	assert.match(HOOK_SOURCE, /useEffect\(\(\) => cancelPlayback, \[cancelPlayback\]\);/u);
 	assert.match(HOOK_SOURCE, /setChatContextBar\(buildJgpAgentChatContextBar\(scenario\)\);/u);
 	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(scenario\.question \? null : playback\.assistantMessageId\);/u);

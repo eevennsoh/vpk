@@ -13,7 +13,7 @@ const agents: AgentTemplatesAgent[] = [
     id: "feedback-analyzer",
     name: "Feedback Analyzer",
     byline: "Product agent by Atlassian",
-    avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
+    avatarSrc: "/avatar-agent-new/purple/customer-insight.svg",
     description: "Clusters customer feedback and surfaces themes.",
     verified: true,
     capabilities: [

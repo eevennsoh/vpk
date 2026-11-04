@@ -91,14 +91,19 @@ const subagentTagColorIconClassName: Partial<Record<TagColor, string>> = {
 
 const agentAvatarGroupToTagColor: Readonly<Record<string, TagColor>> = {
 	"dev-agents": "lime",
+	lime: "lime",
 	"product-agents": "purple",
+	purple: "purple",
 	"service-agents": "yellow",
+	yellow: "yellow",
 	"strategy-agents": "orange",
+	orange: "orange",
 	"teamwork-agents": "blue",
+	blue: "blue",
 };
 
 function getTagColorForAgentAvatar(avatarSrc: string | undefined): TagColor | undefined {
-	const group = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
+	const group = avatarSrc?.match(/\/avatar-agent(?:-new)?\/([^/]+)\//u)?.[1];
 	return group ? agentAvatarGroupToTagColor[group] : undefined;
 }
 

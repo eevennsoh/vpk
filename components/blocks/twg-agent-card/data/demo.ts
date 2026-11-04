@@ -16,18 +16,18 @@ export const DEFAULT_TWG_AGENT_CARD_SUGGESTIONS = [
 		id: "life-admin-agent",
 		name: "Life Admin Agent",
 		description: "Handles reminders, forms, and renewals.",
-		avatarSrc: "/avatar-agent/service-agents/service-request-helper.svg",
+		avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
 	},
 	{
 		id: "relationship-rhythm-agent",
 		name: "Relationship Rhythm Agent",
 		description: "Drafts timely follow-ups.",
-		avatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
+		avatarSrc: "/avatar-agent-new/lime/auto-dev.svg",
 	},
 	{
 		id: "focus-recovery-agent",
 		name: "Focus Recovery Agent",
 		description: "Finds distraction patterns.",
-		avatarSrc: "/avatar-agent/product-agents/wildcard-6.svg",
+		avatarSrc: "/avatar-agent-new/purple/product-requirements.svg",
 	},
 ] as const satisfies readonly TWGAgentSuggestion[];

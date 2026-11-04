@@ -341,12 +341,12 @@ test("generated scheduled automation carries a description and app-chip tokens",
 
 test("avatar by option name → sets avatarSrc and the avatar kind", async () => {
 	const { classifyAgentBuildIntent, buildAgentUpdatePatch } = await loadModule();
-	const intent = classifyAgentBuildIntent("use the code reviewer avatar");
+	const intent = classifyAgentBuildIntent("use the auto review avatar");
 	assert.ok(intent.isBuildIntent);
 	assert.ok(intent.kinds.includes("avatar"));
-	assert.ok(intent.avatarSrc && intent.avatarSrc.endsWith("code-reviewer.svg"), intent.avatarSrc ?? "null");
+	assert.ok(intent.avatarSrc && intent.avatarSrc.endsWith("auto-review.svg"), intent.avatarSrc ?? "null");
 
-	const patch = buildAgentUpdatePatch("use the code reviewer avatar", {});
+	const patch = buildAgentUpdatePatch("use the auto review avatar", {});
 	assert.equal(patch.avatarSrc, intent.avatarSrc);
 });
 
@@ -354,9 +354,9 @@ test("avatar by color family → picks that group's avatar", async () => {
 	const { classifyAgentBuildIntent } = await loadModule();
 	const intent = classifyAgentBuildIntent("make the avatar blue");
 	assert.ok(intent.kinds.includes("avatar"));
-	// Blue is the teamwork-agents group.
+	// Blue options come from the blue group.
 	assert.ok(
-		intent.avatarSrc && intent.avatarSrc.startsWith("/avatar-agent/teamwork-agents/"),
+		intent.avatarSrc && intent.avatarSrc.startsWith("/avatar-agent-new/blue/"),
 		intent.avatarSrc ?? "null",
 	);
 });
@@ -401,7 +401,7 @@ test("avatar resolution is scoped to the avatar clause (no cross-clause hijack)"
 	assert.ok(intent.kinds.includes("avatar"));
 	// "code reviewer" lives in the skill clause; the avatar clause asks for blue.
 	assert.ok(
-		intent.avatarSrc && intent.avatarSrc.startsWith("/avatar-agent/teamwork-agents/"),
+		intent.avatarSrc && intent.avatarSrc.startsWith("/avatar-agent-new/blue/"),
 		intent.avatarSrc ?? "null",
 	);
 	// And the skill is still captured from its own clause.

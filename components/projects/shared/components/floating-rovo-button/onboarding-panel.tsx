@@ -22,7 +22,7 @@ export function FloatingRovoButtonOnboardingPanelInner({
 }>) {
 	const titleId = `${onboarding.id}-title`;
 	const descriptionId = `${onboarding.id}-description`;
-	const avatarSrc = onboarding.avatarSrc ?? "/avatar-agent/teamwork-agents/blocker-checker.svg";
+	const avatarSrc = onboarding.avatarSrc ?? "/avatar-agent-new/blue/backlog-buddy.svg";
 	const coverSrc = onboarding.coverSrc ?? avatarSrc;
 	const closeLabel = onboarding.closeLabel ?? "Dismiss onboarding";
 	const phaseOneTransition = shouldReduceMotion

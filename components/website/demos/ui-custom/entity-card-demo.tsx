@@ -209,7 +209,7 @@ export default function EntityCardDemo() {
 					toolCount={36}
 				/>
 				<EntityCardAgentCard
-					avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
+					avatarSrc="/avatar-agent-new/purple/customer-insight.svg"
 					chatCount={9400}
 					description="Surfaces themes and sentiment from raw customer feedback in seconds."
 					feedbackCount={1280}
@@ -322,7 +322,7 @@ export function EntityCardDemoAgents() {
 	return (
 		<div className="w-full max-w-2xl columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
 			<EntityCardAgentCard
-				avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
+				avatarSrc="/avatar-agent-new/purple/customer-insight.svg"
 				chatCount={9400}
 				description="Surfaces themes and sentiment from raw customer feedback in seconds."
 				feedbackCount={1280}
@@ -334,7 +334,7 @@ export function EntityCardDemoAgents() {
 				verified
 			/>
 			<EntityCardAgentCard
-				avatarSrc="/avatar-agent/dev-agents/code-reviewer.svg"
+				avatarSrc="/avatar-agent-new/lime/auto-review.svg"
 				chatCount={1500}
 				description="Reviews PRs for style, correctness, and security gotchas."
 				feedbackCount={340}

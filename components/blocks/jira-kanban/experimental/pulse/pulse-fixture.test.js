@@ -340,7 +340,7 @@ test("Pulse fixture points every avatar at a file that exists", async () => {
 	for (const member of PULSE_TIMELINE.members) {
 		assert.match(
 			member.avatarSrc,
-			member.kind === "agent" ? /^\/avatar-agent\//u : /^\/avatar-user\//u,
+			member.kind === "agent" ? /^\/avatar-agent-new\//u : /^\/avatar-user\//u,
 			`${member.id} uses an avatar from the wrong family`,
 		);
 		sources.add(member.avatarSrc);
@@ -371,7 +371,7 @@ test("Pulse work-item assignees resolve to a roster member and keep agent hex ar
 		assert.equal(assignee.avatarSrc, workItem.assigneeAvatarSrc, `${workItem.key} assignee art does not match the roster`);
 		if (assignee.kind === "agent") {
 			agentAssignees += 1;
-			assert.match(assignee.avatarSrc, /^\/avatar-agent\//u, `${workItem.key} agent assignee uses human art`);
+			assert.match(assignee.avatarSrc, /^\/avatar-agent-new\//u, `${workItem.key} agent assignee uses human art`);
 		} else {
 			assert.match(assignee.avatarSrc, /^\/avatar-user\//u, `${workItem.key} human assignee uses agent art`);
 		}

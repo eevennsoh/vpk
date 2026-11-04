@@ -32,7 +32,7 @@ export const MOCK_TASKS: ProgressStatusGroups = {
 			label: "Task 1",
 			description: "Description",
 			agentName: "Agent name",
-			agentAvatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+			agentAvatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 		},
 	],
 	inProgress: [
@@ -51,7 +51,7 @@ export const MOCK_TASKS: ProgressStatusGroups = {
 			label: "Task 6",
 			description: "Add error handling",
 			agentName: "Backend Agent",
-			agentAvatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+			agentAvatarSrc: "/avatar-agent-new/lime/auto-review.svg",
 		},
 	],
 	failed: [

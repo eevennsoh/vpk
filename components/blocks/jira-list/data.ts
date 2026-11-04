@@ -32,13 +32,13 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		},
 		agentSessions: [
 			sampleAssignedAgent("Survey summarizer", {
-				avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
+				avatarSrc: "/avatar-agent-new/purple/customer-insight.svg",
 			}),
 			sampleAssignedAgent("Readiness checker", {
-				avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+				avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 			}),
 			sampleAssignedAgent("Theme analyzer", {
-				avatarSrc: "/avatar-agent/teamwork-agents/jira-theme-analyzer.svg",
+				avatarSrc: "/avatar-agent-new/blue/research-scout.svg",
 			}),
 		],
 		goals: [{ text: "Improve response quality" }],
@@ -87,7 +87,7 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		},
 		agentSessions: [
 			sampleAssignedAgent("Signal monitor", {
-				avatarSrc: "/avatar-agent/dev-agents/code-observer-signalfx.svg",
+				avatarSrc: "/avatar-agent-new/lime/ops-agent.svg",
 			}),
 		],
 		goals: [{ text: "Reduce escalation volume", emphasis: "warning" }],
@@ -123,10 +123,10 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		},
 		agentSessions: [
 			sampleAssignedAgent("Checklist drafter", {
-				avatarSrc: "/avatar-agent/teamwork-agents/workflow-builder.svg",
+				avatarSrc: "/avatar-agent-new/blue/auto-dev.svg",
 			}),
 			sampleAssignedAgent("Content reviewer", {
-				avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+				avatarSrc: "/avatar-agent-new/lime/auto-review.svg",
 			}),
 		],
 		goals: [{ text: "Publish checklist" }],
@@ -157,10 +157,10 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		},
 		agentSessions: [
 			sampleAssignedAgent("Launch planner", {
-				avatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
+				avatarSrc: "/avatar-agent-new/lime/auto-dev.svg",
 			}),
 			sampleAssignedAgent("Release notes drafter", {
-				avatarSrc: "/avatar-agent/teamwork-agents/release-notes-drafter.svg",
+				avatarSrc: "/avatar-agent-new/blue/release-notes.svg",
 			}),
 		],
 		goals: [{ text: "Align launch narrative" }],
@@ -196,7 +196,7 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		},
 		agentSessions: [
 			sampleAssignedAgent("Approval tracker", {
-				avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 			}),
 		],
 		goals: [{ text: "Unblock launch brief", emphasis: "warning" }],
@@ -224,7 +224,7 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		},
 		agentSessions: [
 			sampleAssignedAgent("Bug triage", {
-				avatarSrc: "/avatar-agent/teamwork-agents/bug-report-assistant.svg",
+				avatarSrc: "/avatar-agent-new/blue/auto-fix.svg",
 			}),
 		],
 		goals: [{ text: "Restore export accuracy" }],
@@ -260,10 +260,10 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		},
 		agentSessions: [
 			sampleAssignedAgent("Insight summarizer", {
-				avatarSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
+				avatarSrc: "/avatar-agent-new/orange/research-scout.svg",
 			}),
 			sampleAssignedAgent("Editor", {
-				avatarSrc: "/avatar-agent/dev-agents/code-documentation-writer.svg",
+				avatarSrc: "/avatar-agent-new/lime/comms-drafter.svg",
 			}),
 		],
 		goals: [{ text: "Increase stakeholder adoption" }],

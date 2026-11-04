@@ -309,7 +309,7 @@ test("buildTemplateAgentResultFromAgent creates a local draft payload from templ
 		id: "decision-director",
 		name: "Decision Director",
 		description: "Review DACI decisions",
-		avatarSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
+		avatarSrc: "/avatar-agent-new/blue/decision-director.svg",
 	});
 
 	assert.equal(result.action, "create");

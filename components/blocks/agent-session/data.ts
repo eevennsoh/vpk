@@ -301,7 +301,7 @@ export const AGENT_SESSION_CLOUD_ITEMS: readonly AgentSessionItem[] = [
 export const AGENT_SESSION_ATTACHED_WORKING_ITEMS: readonly AgentSessionItem[] = [
 	{
 		agent: {
-			avatarSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
+			avatarSrc: "/avatar-agent-new/blue/decision-director.svg",
 			id: "review-agent",
 			kind: "agent",
 			name: "Review Agent",
