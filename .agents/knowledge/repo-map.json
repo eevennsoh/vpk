@@ -4530,10 +4530,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 443,
+			"manifestEntryCount": 444,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 438,
+				"live": 439,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -4582,7 +4582,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 117,
+				"entryCount": 118,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4848,6 +4848,13 @@
 						"slug": "data-table",
 						"name": "Data Table",
 						"importPath": "@/components/blocks/data-table",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "development-panel",
+						"name": "Development Panel",
+						"importPath": "@/components/blocks/development-panel",
 						"status": "live"
 					},
 					{

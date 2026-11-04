@@ -84,6 +84,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"pull-request": dynamic(() => import("../demos/blocks/pull-request-demo"), {
 		ssr: false,
 	}),
+	"development-panel": dynamic(() => import("../demos/blocks/development-panel-demo"), {
+		ssr: false,
+	}),
 	"pull-request-header": dynamic(
 		() => import("../demos/blocks/pull-request-header-demo"),
 		{ ssr: false },
