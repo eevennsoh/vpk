@@ -517,6 +517,7 @@ export function createRichTextEditorExtensions(
 ) {
 	return [
 		StarterKit.configure({
+			trailingNode: options.trailingNode,
 			link: false,
 			underline: false,
 			// Replaced by RichTextCodeBlock so ```mermaid fences get a NodeView.
