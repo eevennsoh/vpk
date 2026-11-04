@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useId, useRef, type ReactElement } from "react";
+import { useReducedMotion } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
@@ -288,9 +289,11 @@ export function JiraIssueAgentRowContent({
 }>): ReactElement {
 	const phase = useProjectButterInvocationPhase();
 	const preview = useProjectButterInvocationPreview();
+	const reduce = useReducedMotion();
 	const selectedAgent = phase === "handoff" || phase === "attached" ? preview.agent : null;
 	const selectedActivity = selectedAgent ? incomingActivities.find((activity) => matchesInvocationAgent(activity, selectedAgent)) : undefined;
 	const activities = selectedActivity ? [selectedActivity, ...incomingActivities.filter((activity) => activity !== selectedActivity)] : incomingActivities;
+	const puzzleHandoff = phase === "handoff" && selectedActivity !== undefined && activities.length > 1 && avatarLayout === "animated";
 	let avatar: ReactElement;
 	if (featuredActivity !== undefined) {
 		avatar = (
@@ -346,7 +349,13 @@ export function JiraIssueAgentRowContent({
 	return (
 		<>
 			<div className="flex min-w-0 flex-1 items-center gap-2">
-				<span className={cn("flex shrink-0", phase === "handoff" && "opacity-0")}>{avatar}</span>
+				<span
+					className={cn("flex shrink-0", puzzleHandoff && !reduce ? "agent-loading-handoff-reveal" : phase === "handoff" && !reduce ? "opacity-0" : null)}
+					data-slot="jira-issue-agent-avatar-handoff"
+					key={selectedAgent?.id ?? "default"}
+				>
+					{avatar}
+				</span>
 				<JiraIssueAgentRowLabel
 					isAwaitingInput={isAwaitingInput}
 					isWorking={isWorking}

@@ -5,6 +5,26 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("attachment cards stay fanned while hovered and settle when the pointer leaves", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const pile = page.locator('[data-attachment-stack="documents"]');
+	const toggle = pile.getByRole("button", { name: "Documents, 2 attachments" });
+	const front = pile.locator("[data-attachment-card]").first().locator(":scope > div").first();
+	const rotation = () => front.evaluate((node) => {
+		const matrix = new DOMMatrixReadOnly(getComputedStyle(node).transform);
+		return Math.atan2(matrix.b, matrix.a) * 180 / Math.PI;
+	});
+	await toggle.hover();
+	await expect.poll(rotation).toBeLessThan(-1);
+	await page.waitForTimeout(600);
+	expect(await rotation()).toBeLessThan(-1);
+	await page.mouse.move(0, 0);
+	await expect.poll(async () => Math.abs(await rotation())).toBeLessThan(0.1);
+	await toggle.click();
+	await expect(pile.getByRole("button", { name: "Close documents" })).toHaveAttribute("aria-expanded", "true");
+});
+
 test("child work item progress has breathing room after its heading", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();

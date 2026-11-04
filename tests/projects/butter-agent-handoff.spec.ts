@@ -72,6 +72,42 @@ test("the handoff and glow survive a card moving into In progress", async ({ pag
 	expect(result.overlap).toBe(false);
 });
 
+test("an added agent enters, holds, and joins the loading puzzle", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	const card = page.locator('[data-issue-key="PAY-105"][data-board-column-title]');
+	await card.getByRole("button", { name: "Add agent to PAY-105" }).focus();
+	await page.keyboard.press("Enter");
+	const option = page.getByRole("dialog", { name: "Agents", exact: true }).getByRole("option", { name: /^Jira Coding Agent/ });
+	const observations = page.evaluate(async () => {
+		const samples: { time: number; opacity: number; scale: number; loadingOpacity: number }[] = [];
+		let start = 0;
+		const deadline = performance.now() + 4000;
+		while (performance.now() < deadline) {
+			const card = document.querySelector('[data-issue-key="PAY-105"][data-board-column-title]');
+			const avatar = card?.querySelector<HTMLElement>('[data-slot="jira-issue-agent-invocation-handoff"] > span');
+			const puzzle = avatar?.querySelector<HTMLElement>('[data-slot="jira-issue-agent-puzzle-transition"]');
+			const front = card?.querySelector<HTMLElement>('[data-agent-loading-slot="front"]');
+			if (avatar && puzzle && front) {
+				start ||= performance.now();
+				const style = getComputedStyle(avatar);
+				const loading = front.closest<HTMLElement>('[data-slot="jira-issue-agent-avatar-handoff"]');
+				samples.push({ time: performance.now() - start, opacity: Number(style.opacity), scale: new DOMMatrixReadOnly(getComputedStyle(puzzle).transform).a, loadingOpacity: loading ? Number(getComputedStyle(loading).opacity) : -1 });
+			} else if (start) break;
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+		}
+		return samples;
+	});
+	await option.click();
+	const samples = await observations;
+	expect(samples.some((sample) => sample.time < 150 && sample.opacity < 0.9)).toBe(true);
+	expect(samples.some((sample) => sample.time > 200 && sample.time < 500 && sample.opacity > 0.95 && sample.scale > 0.98 && sample.loadingOpacity < 0.05), JSON.stringify(samples.filter((_, index) => index % 8 === 0))).toBe(true);
+	expect(samples.some((sample) => sample.time > 550 && sample.scale < 0.95)).toBe(true);
+	expect(samples.some((sample) => sample.loadingOpacity > 0.1 && sample.loadingOpacity < 0.95)).toBe(true);
+	await expect(card.locator('[data-slot="jira-issue-agent-invocation-handoff"]')).toHaveCount(0);
+	await expect(card.locator('[data-agent-loading-slot="front"]')).toHaveAttribute("data-agent-id", /jira-coding$/);
+});
+
 test("reduced motion still replaces the preview and shows Working", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));

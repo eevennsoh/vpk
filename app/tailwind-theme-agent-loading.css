@@ -36,3 +36,13 @@
 		will-change: transform, opacity;
 	}
 }
+
+@keyframes agent-loading-handoff-reveal {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@utility agent-loading-handoff-reveal {
+	animation: agent-loading-handoff-reveal var(--duration-fast) var(--ease-in-out) both;
+	animation-delay: calc(var(--duration-normal) + var(--duration-slower) + var(--duration-slow) - var(--duration-fast));
+}
