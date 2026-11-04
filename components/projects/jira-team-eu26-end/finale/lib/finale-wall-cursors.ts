@@ -42,10 +42,11 @@ import {
 export interface PageCursor {
 	readonly key: string;
 	/**
-	 * Which of the wall's cursors draws it: an index into `FINALE_CURSORS`,
-	 * whose colour it wears. A lane holds one card at a time.
+	 * Which of the wall's cursors draws it. A lane holds one card at a time.
 	 */
 	readonly lane: number;
+	/** Which presenter palette this cursor wears, independent of its rendering lane. */
+	readonly colorIndex: number;
 	/** Who holds the card: a name from the repeating `FINALE_WALL_CURSOR_NAMES` roster. */
 	readonly name: string;
 	/** The tip, on screen. */
@@ -213,7 +214,7 @@ function heldCursor(slot: WallSlot, card: WallArrival, holder: Holder, time: num
 	const away = EASE.in(progress(time, touchdown, touchdown + LEAVE_S));
 	const fade = smoothstep(touchdown, touchdown + LEAVE_FADE_S, time);
 	const going = holder.hand.leave(1 - away);
-	return { key: slot.key, lane: holder.lane, name: holder.name, x: shown.x + coming.x + going.x, y: shown.y + coming.y + going.y, scale: shown.scale, opacity: 1 - fade, pillAbove: holder.hand.pillAbove };
+	return { key: slot.key, lane: holder.lane, colorIndex: holder.lane, name: holder.name, x: shown.x + coming.x + going.x, y: shown.y + coming.y + going.y, scale: shown.scale, opacity: 1 - fade, pillAbove: holder.hand.pillAbove };
 }
 
 /**
@@ -389,8 +390,8 @@ function holdsThrough(column: number, wall: FinaleWall): number {
 }
 
 /** Count accepted earlier holds, including those beyond the visible frame, so seeking and replay preserve the sequence. */
-function wallCursorName(slot: WallSlot, hold: WallHold, wall: FinaleWall): string {
-	const index = perSlot(cursorOrder, wall, slot, () => {
+function wallCursorOrder(slot: WallSlot, hold: WallHold, wall: FinaleWall): number {
+	return perSlot(cursorOrder, wall, slot, () => {
 		const { geometry } = wall;
 		const first = visibleWallBuckets(0, geometry).first;
 		const ahead = Math.ceil(((hold.to - hold.from + LANE_REST_S) * wallSpeed(geometry) + DESCEND_SPAN * geometry.arrivalReach + geometry.maxTileWidth) / geometry.bucketWidth) + 1;
@@ -405,8 +406,10 @@ function wallCursorName(slot: WallSlot, hold: WallHold, wall: FinaleWall): strin
 		}
 		return count;
 	});
-	return FINALE_WALL_CURSOR_NAMES[index % FINALE_WALL_CURSOR_NAMES.length];
 }
+
+/** Shuffled groups of four, with distinct colours at each group and loop boundary. */
+const WALL_CURSOR_COLORS = [0, 1, 3, 2, 0, 3, 1, 2, 3, 0, 2, 1] as const;
 
 /** MCB's lane: his own colour and name, from the slide. */
 const CARRIER_LANE = Math.max(0, FINALE_CURSORS.findIndex((cursor) => cursor.id === "mike"));
@@ -420,7 +423,7 @@ function titleCarrierCursor(time: number, wall: FinaleWall, drops: readonly Bent
 	const carrier = title ? titleCarrierAt(titleCarryOf(title, wall.geometry, viewport), time) : null;
 	if (!carrier) return null;
 	const { label } = FINALE_CURSORS[CARRIER_LANE];
-	return { key: "title", lane: CARRIER_LANE, name: label, x: carrier.x, y: carrier.y, scale: carrier.scale * (1 - TITLE_CARRY_PRESS * carrier.pressed), opacity: carrier.opacity, pillAbove: false };
+	return { key: "title", lane: CARRIER_LANE, colorIndex: CARRIER_LANE, name: label, x: carrier.x, y: carrier.y, scale: carrier.scale * (1 - TITLE_CARRY_PRESS * carrier.pressed), opacity: carrier.opacity, pillAbove: false };
 }
 
 /**
@@ -449,7 +452,10 @@ export function wallCursorsAt(time: number, wall: FinaleWall, drops: readonly Be
 			// The card it takes: the slot's own, or the top one of a print slot's stack.
 			const card = slotArrivals(slot, wall, prints)[0];
 			if (!card || time < hold.from || time > card.descent.touchdown + LEAVE_S) continue;
-			cursors.push(heldCursor(slot, card, { ...hold, name: wallCursorName(slot, hold, wall) }, time, geometry, viewport));
+			const order = wallCursorOrder(slot, hold, wall);
+			const name = FINALE_WALL_CURSOR_NAMES[order % FINALE_WALL_CURSOR_NAMES.length];
+			const colorIndex = WALL_CURSOR_COLORS[order % WALL_CURSOR_COLORS.length];
+			cursors.push({ ...heldCursor(slot, card, { ...hold, name }, time, geometry, viewport), colorIndex });
 		}
 	}
 	return cursors;

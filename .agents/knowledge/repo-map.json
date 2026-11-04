@@ -2696,14 +2696,14 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 73,
-			"pageCount": 57,
+			"ownerImportCount": 75,
+			"pageCount": 58,
 			"primaryOwnerKinds": {
 				"catalog": 18,
 				"dynamic": 8,
 				"inline": 1,
 				"redirect": 2,
-				"shell": 28
+				"shell": 29
 			}
 		},
 		"pages": [
@@ -4317,6 +4317,43 @@
 				"source": "app/sandbox/screen-assistant/page.tsx"
 			},
 			{
+				"ownerCount": 2,
+				"owners": [
+					{
+						"importPath": "@/components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
+						"source": "components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
+						"symbols": [
+							"CanvasWorkspace"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/jira-work-item/suggestion-canvas/registry",
+						"source": "components/blocks/jira-work-item/suggestion-canvas/registry",
+						"symbols": [
+							"SUGGESTION_CANVAS_ENTRIES"
+						]
+					}
+				],
+				"primaryOwner": {
+					"kind": "shell",
+					"sources": [
+						"components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace"
+					]
+				},
+				"routePath": "/sandbox/suggestion-canvas",
+				"shellOwnerCount": 1,
+				"shellOwners": [
+					{
+						"importPath": "@/components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
+						"source": "components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
+						"symbols": [
+							"CanvasWorkspace"
+						]
+					}
+				],
+				"source": "app/sandbox/suggestion-canvas/page.tsx"
+			},
+			{
 				"ownerCount": 1,
 				"owners": [
 					{
@@ -4493,10 +4530,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 442,
+			"manifestEntryCount": 443,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 437,
+				"live": 438,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -4545,7 +4582,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 116,
+				"entryCount": 117,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4930,6 +4967,13 @@
 						"slug": "jira-list",
 						"name": "Jira List",
 						"importPath": "@/components/blocks/jira-list",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-suggestion",
+						"name": "Jira Suggestion",
+						"importPath": "@/components/blocks/jira-suggestion",
 						"status": "live"
 					},
 					{

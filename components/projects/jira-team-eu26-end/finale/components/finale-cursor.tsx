@@ -164,31 +164,35 @@ interface FinaleWallCursorsProps {
 	readonly scale: number;
 }
 
-const NO_NAMES: readonly string[] = FINALE_CURSORS.map(() => "");
+const INITIAL_WALL_LOOKS = FINALE_CURSORS.map((_, colorIndex) => ({ name: "", colorIndex }));
 
 /**
- * The mega bento's cursors: one lane per cursor colour of the slide, named
- * for the teammate holding its card (`PageCursor.name`). An idle lane keeps
- * its last name; as it takes a card from someone else it re-renders with the
- * new name and stays hidden until that name is in, so it never shows the
- * last holder's.
+ * The mega bento's cursors: one lane per cursor, named and coloured for the
+ * teammate holding its card. An idle lane keeps its last look; a new holder
+ * stays hidden until its own look is rendered.
  */
 export function FinaleWallCursors({ cursorsAt, scale }: Readonly<FinaleWallCursorsProps>) {
-	const [names, setNames] = useState(NO_NAMES);
+	const [looks, setLooks] = useState(INITIAL_WALL_LOOKS);
 	const holderAt = (time: number, lane: number) => cursorsAt(time).find((cursor) => cursor.lane === lane);
 
 	useFinaleFrame((time) => {
-		const next = names.map((name, lane) => holderAt(time, lane)?.name ?? name);
-		if (next.some((name, lane) => name !== names[lane])) setNames(next);
+		const next = looks.map((look, lane) => {
+			const holder = holderAt(time, lane);
+			return holder ? { name: holder.name, colorIndex: holder.colorIndex } : look;
+		});
+		if (next.some((look, lane) => look.name !== looks[lane].name || look.colorIndex !== looks[lane].colorIndex)) setLooks(next);
 	});
 
 	return (
 		<FinaleTelepointers
-			looks={FINALE_CURSORS.map(({ id, color, ink }, lane) => ({ id, color, ink, label: names[lane] }))}
+			looks={FINALE_CURSORS.map(({ id }, lane) => {
+				const { color, ink } = FINALE_CURSORS[looks[lane].colorIndex];
+				return { id, color, ink, label: looks[lane].name };
+			})}
 			scale={scale}
 			poseAt={(time, lane) => {
 				const cursor = holderAt(time, lane);
-				return cursor && cursor.name === names[lane] ? cursor : null;
+				return cursor && cursor.name === looks[lane].name && cursor.colorIndex === looks[lane].colorIndex ? cursor : null;
 			}}
 		/>
 	);
