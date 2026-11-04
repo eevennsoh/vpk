@@ -4,6 +4,10 @@ import { useState } from "react";
 
 import { PullRequest } from "@/components/blocks/pull-request/components/pull-request";
 import type { PullRequestVariant } from "@/components/blocks/pull-request/components/pull-request-types";
+import {
+	PULL_REQUEST_CHECKS_SCENARIOS,
+	pullRequestChecksScenario,
+} from "@/components/blocks/pull-request/data/demo-pull-request-checks";
 import { DEMO_PULL_REQUESTS } from "@/components/blocks/pull-request/data/demo-pull-requests";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -18,6 +22,9 @@ export default function PullRequestPage({
 	const [selectedNumber, setSelectedNumber] = useState<number | null>(
 		DEMO_PULL_REQUESTS[0]?.number ?? null,
 	);
+
+	const [checksScenarioId, setChecksScenarioId] = useState("in-progress");
+	const [fixRequest, setFixRequest] = useState<string | null>(null);
 
 	return (
 		<div className="flex h-full min-h-[360px] w-full items-center justify-center bg-surface p-6 text-text">
@@ -45,10 +52,36 @@ export default function PullRequestPage({
 						<ToggleGroupItem value="flyout">Flyout</ToggleGroupItem>
 					</ToggleGroup>
 				)}
+				{isFlyout ? (
+					<ToggleGroup
+						aria-label="CI checks state"
+						onValueChange={(values) => {
+							if (values[0]) {
+								setChecksScenarioId(values[0]);
+								setFixRequest(null);
+							}
+						}}
+						size="sm"
+						value={[checksScenarioId]}
+						variant="outline"
+					>
+						{PULL_REQUEST_CHECKS_SCENARIOS.map((scenario) => (
+							<ToggleGroupItem key={scenario.id} value={scenario.id}>
+								{scenario.shortLabel}
+							</ToggleGroupItem>
+						))}
+					</ToggleGroup>
+				) : null}
 				{DEMO_PULL_REQUESTS.map((item) => (
 					<PullRequest
 						key={item.number}
 						{...item}
+						checks={isFlyout ? pullRequestChecksScenario(checksScenarioId) : item.checks}
+						onFixCheck={
+							isFlyout
+								? (checks) => setFixRequest(`Fix requested for ${checks.map((check) => check.name).join(", ")}`)
+								: undefined
+						}
 						variant={variant}
 						selected={isFlyout ? false : item.number === selectedNumber}
 						onActivate={
@@ -61,6 +94,11 @@ export default function PullRequestPage({
 						}
 					/>
 				))}
+				{isFlyout ? (
+					<p aria-live="polite" className="min-h-4 text-xs text-text-subtle" role="status">
+						{fixRequest}
+					</p>
+				) : null}
 			</div>
 		</div>
 	);

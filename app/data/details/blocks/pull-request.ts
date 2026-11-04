@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_DETAIL: ComponentDetail = {
 	description:
-		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: wrapping `#N` + title with a trailing status lozenge, author avatar + `Name · relativeTime`, then a divided section with the repository name, `source → target` path, files / `+add` `−del`, and a builds summary, followed by Review / View pull request actions when their links are supplied.",
+		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: wrapping `#N` + title with a trailing status lozenge, author avatar + `Name · relativeTime`, then a divided section with the repository name, `source → target` path, files / `+add` `−del`, and an expandable CI checks row, followed by Review / View pull request actions when their links are supplied.",
 	importStatement: `import { PullRequest } from "@/components/blocks/pull-request";
 import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 	usage: `import { PullRequest } from "@/components/blocks/pull-request";
@@ -20,7 +20,7 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
   filesChanged={6}
   relativeTime="1h"
   repository="acme/storefront"
-  builds={{ passed: 3, total: 3 }}
+  checks={checks}
   reviewHref="https://github.com/acme/storefront/pull/1306/files"
   href="https://github.com/acme/storefront/pull/1306"
 />`,
@@ -44,8 +44,14 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		{
 			title: "Flyout",
 			description:
-				"Overlay summary card: wrapping `#N` + title with a trailing status lozenge, author · time, then repository, `source → target`, files / diff stats, builds, and the Review / View pull request actions.",
+				"Overlay summary card: wrapping `#N` + title with a trailing status lozenge, author · time, then repository, `source → target`, files / diff stats, an expandable CI checks row, and the Review / View pull request actions.",
 			demoSlug: "pull-request-demo-flyout",
+		},
+		{
+			title: "CI checks",
+			description:
+				"The flyout's expandable CI checks row in every state: yet to be run, running, a mixed in-progress run, all successful, and failed with a Fix action. The summary shows `passed/total builds passed` with a segmented status ring (a spinner while any check runs). Each check is a single-status ring (lime passed, red failed), a dashed circle when yet to run, or a spinner while running; failure reasons and elapsed times stay available to screen readers.",
+			demoSlug: "pull-request-demo-checks",
 		},
 	],
 	props: [
@@ -121,9 +127,15 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 			description: "Flyout only. `workspace/repo` shown beside the provider mark. Omitted when absent.",
 		},
 		{
-			name: "builds",
-			type: "PullRequestBuilds",
-			description: "Flyout only. `{ passed, total }`, rendered as `3/3 builds passed`. Omitted when absent.",
+			name: "checks",
+			type: "readonly PullRequestCheck[]",
+			description:
+				"Flyout only. CI checks (`queued`, `running`, `passed`, `failed`). The row reads `3/3 builds passed` (plus `· N failed`, with a spinner while unsettled) and expands inline into the full checks list. Omitted when absent or empty.",
+		},
+		{
+			name: "onFixCheck",
+			type: "(checks: readonly PullRequestCheck[]) => void",
+			description: "Flyout only. Called from a failed check's Fix action.",
 		},
 		{
 			name: "reviewHref",

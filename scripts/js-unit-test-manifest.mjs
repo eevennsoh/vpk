@@ -16,6 +16,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
 		"components/blocks/agent-directory/directory-view.behavior.test.js",
 		"components/blocks/jira-list/jira-list-interactions.behavior.test.js",
+		"components/blocks/pull-request/pull-request-checks.behavior.test.js",
 		"components/blocks/pull-request/pull-request-flyout.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/project-butter.behavior.test.js",
 		"components/blocks/jira-work-item/project-butter/suggestions.behavior.test.js",
@@ -558,6 +559,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/experimental/lib/jira-activity-adapter.test.js",
 		"components/blocks/jira-work-item/jira-work-item-shared-channel.test.js",
 		"components/blocks/pull-request/lib/pull-request-check-elapsed.test.js",
+		"components/blocks/pull-request/lib/pull-request-checks-title.test.js",
 		"components/blocks/question-card/lib/focus-policy.test.js",
 		"components/blocks/question-card/lib/footer-actions.test.js",
 		"components/blocks/question-card/lib/option-slots.test.js",

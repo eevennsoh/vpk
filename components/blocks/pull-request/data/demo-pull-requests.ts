@@ -1,9 +1,10 @@
+import { pullRequestChecksScenario } from "@/components/blocks/pull-request/data/demo-pull-request-checks";
 import type { PullRequestProps } from "@/components/blocks/pull-request/components/pull-request-types";
 
 /**
  * Catalog fixtures for the Pull Request block.
  *
- * The dropdown cards ignore `repository`, `builds`, and the action links: the
+ * The dropdown cards ignore `repository`, `checks`, and the action links: the
  * provider mark and `#N` already say where the change lives there. The flyout
  * prints them, matching the production dev-panel hover card content.
  */
@@ -23,7 +24,7 @@ export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
 		deletions: 21,
 		filesChanged: 6,
 		relativeTime: "1h",
-		builds: { passed: 3, total: 3 },
+		checks: pullRequestChecksScenario("passed"),
 		href: "https://github.com/acme/storefront/pull/1306",
 		reviewHref: "https://github.com/acme/storefront/pull/1306/files",
 	},
@@ -42,7 +43,7 @@ export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
 		deletions: 37,
 		filesChanged: 12,
 		relativeTime: "Yesterday",
-		builds: { passed: 3, total: 3 },
+		checks: pullRequestChecksScenario("passed"),
 		href: "https://github.com/acme/storefront/pull/1847",
 	},
 	{
@@ -58,7 +59,7 @@ export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
 		deletions: 48,
 		filesChanged: 9,
 		relativeTime: "20d ago",
-		builds: { passed: 3, total: 3 },
+		checks: pullRequestChecksScenario("passed"),
 		href: "https://bitbucket.org/atlassian/shilpas-test-repo/pull-requests/7",
 		reviewHref: "https://bitbucket.org/atlassian/shilpas-test-repo/pull-requests/7/review",
 	},

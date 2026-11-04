@@ -1,15 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import FileIcon from "@atlaskit/icon/core/file";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-import RetryIcon from "@atlaskit/icon/core/retry";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	PullRequestFlyoutChecks,
+	PullRequestFlyoutMetaRow,
+} from "@/components/blocks/pull-request/components/pull-request-flyout-parts";
 import { buttonVariants } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
@@ -328,24 +329,10 @@ function PullRequestSpaciousBody({
 	);
 }
 
-function PullRequestFlyoutMetaRow({
-	leading,
-	children,
-}: Readonly<{ leading: ReactNode; children: ReactNode }>) {
-	return (
-		<div className="flex min-w-0 items-center gap-1 text-xs leading-5">
-			<span aria-hidden="true" className="grid size-4 shrink-0 place-items-center text-icon-subtlest">
-				{leading}
-			</span>
-			{children}
-		</div>
-	);
-}
-
 /**
  * Flyout body: `#N` + title with the status lozenge trailing, author · time,
  * then a divided section — repository, `source → target` branch path, files /
- * diff, builds — and the Review / View pull request actions. Every row and
+ * diff, CI checks — and the Review / View pull request actions. Every row and
  * action renders only when its data or link is supplied.
  */
 function PullRequestFlyoutBody({
@@ -361,7 +348,8 @@ function PullRequestFlyoutBody({
 	relativeTime,
 	provider = "github",
 	repository,
-	builds,
+	checks,
+	onFixCheck,
 	reviewHref,
 	href,
 }: Readonly<
@@ -379,7 +367,8 @@ function PullRequestFlyoutBody({
 		| "relativeTime"
 		| "provider"
 		| "repository"
-		| "builds"
+		| "checks"
+		| "onFixCheck"
 		| "reviewHref"
 		| "href"
 	>
@@ -441,17 +430,11 @@ function PullRequestFlyoutBody({
 						className="font-normal"
 					/>
 				</PullRequestFlyoutMetaRow>
-				{builds ? (
-					<PullRequestFlyoutMetaRow leading={<Icon aria-hidden render={<RetryIcon label="" size="small" />} />}>
-						<span className="min-w-0 truncate text-xs leading-4 text-text-subtle tabular-nums">
-							{builds.passed}/{builds.total} {builds.total === 1 ? "build" : "builds"} passed
-						</span>
-					</PullRequestFlyoutMetaRow>
-				) : null}
+				{checks ? <PullRequestFlyoutChecks checks={checks} onFixCheck={onFixCheck} /> : null}
 				{hasActions ? (
 					<div className="flex min-w-0 gap-2 pt-1">
 						{reviewHref ? (
-							<a className={cn(buttonVariants(), "min-w-0 flex-1")} href={reviewHref}>
+							<a className={cn(buttonVariants({ variant: "outline" }), "min-w-0 flex-1")} href={reviewHref}>
 								Review
 							</a>
 						) : null}
@@ -484,7 +467,7 @@ function PullRequestFlyoutBody({
  *   author / changed-files / diff footer. Selectable dropdown-style chrome.
  * - `flyout`: overlay card — wrapping `#N` + title with a trailing status
  *   lozenge, author · time, then a divided repository, `source → target`
- *   path, files / diff, and builds section, plus Review / View pull request
+ *   path, files / diff, and an expandable CI checks section, plus Review / View pull request
  *   actions when their links are supplied.
  */
 export function PullRequest({
@@ -501,7 +484,8 @@ export function PullRequest({
 	relativeTime,
 	provider,
 	repository,
-	builds,
+	checks,
+	onFixCheck,
 	reviewHref,
 	href,
 	selected = false,
@@ -519,11 +503,12 @@ export function PullRequest({
 			additions={additions}
 			author={author}
 			branch={branch}
-			builds={builds}
+			checks={checks}
 			deletions={deletions}
 			filesChanged={filesChanged}
 			href={href}
 			number={number}
+			onFixCheck={onFixCheck}
 			provider={provider}
 			relativeTime={relativeTime}
 			repository={repository}

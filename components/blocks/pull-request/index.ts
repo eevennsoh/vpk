@@ -14,3 +14,7 @@ export type {
 export { DEMO_PULL_REQUESTS } from "@/components/blocks/pull-request/data/demo-pull-requests";
 export { parseRunningCheckElapsedSeconds } from "@/components/blocks/pull-request/lib/pull-request-check-elapsed";
 export { pullRequestChecksTitleState } from "@/components/blocks/pull-request/lib/pull-request-checks-title";
+export {
+	PULL_REQUEST_CHECKS_SCENARIOS,
+	type PullRequestChecksScenario,
+} from "@/components/blocks/pull-request/data/demo-pull-request-checks";

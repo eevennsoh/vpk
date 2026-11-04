@@ -1,5 +1,5 @@
 // Behavioral contract for the PullRequest flyout, rendered for real in
-// happy-dom. The flyout adds the repo name, builds, and the Review / View
+// happy-dom. The flyout adds the repo name, an expandable CI checks row, and the Review / View
 // pull request actions on top of the existing branch path and diff metrics.
 // Assertions compare strings and booleans, never DOM nodes: a failed assert on
 // a node can hang the runner.
@@ -8,6 +8,10 @@ const path = require("node:path");
 const test = require("node:test");
 
 const { renderComponent } = require(path.join(process.cwd(), "scripts/lib/render-component.js"));
+
+const THEME_MOCK = {
+	"@/components/utils/theme-wrapper": `export function useTheme() { return { colorMode: "light", theme: "light", isDark: false, actualTheme: "light" }; }`,
+};
 
 const PROPS = {
 	variant: "flyout",
@@ -23,7 +27,11 @@ const PROPS = {
 	deletions: 48,
 	filesChanged: 9,
 	relativeTime: "20d ago",
-	builds: { passed: 3, total: 3 },
+	checks: [
+		{ id: "lint", name: "Lint and typecheck", status: "passed", details: "Completed in 1m 18s" },
+		{ id: "unit", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+		{ id: "browser", name: "Guest checkout browser tests", status: "passed", details: "5 scenarios in 1m 32s" },
+	],
 	href: "https://bitbucket.org/atlassian/shilpas-test-repo/pull-requests/7",
 	reviewHref: "https://bitbucket.org/atlassian/shilpas-test-repo/pull-requests/7/review",
 };
@@ -32,9 +40,7 @@ async function renderFlyout(overrides) {
 	const view = await renderComponent({
 		entry: "components/blocks/pull-request/components/pull-request.tsx",
 		exportName: "PullRequest",
-		mocks: {
-			"@/components/utils/theme-wrapper": `export function useTheme() { return { colorMode: "light", theme: "light", isDark: false, actualTheme: "light" }; }`,
-		},
+		mocks: THEME_MOCK,
 		props: { ...PROPS, ...overrides },
 	});
 	// Queries read the shared document, so capture everything now and unmount
@@ -48,11 +54,51 @@ async function renderFlyout(overrides) {
 	return snapshot;
 }
 
-test("flyout adds the repository and builds rows", async () => {
+test("flyout adds the repository and a CI summary row", async () => {
 	const { text } = await renderFlyout({});
 
 	assert.match(text, /atlassian\/shilpas-test-repo/u);
 	assert.match(text, /3\/3 builds passed/u);
+});
+
+function trigger(view) {
+	return view.getByRole("button", { name: /builds? passed/u });
+}
+
+test("the CI summary row expands inline into the full checks list", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/pull-request/components/pull-request.tsx",
+		exportName: "PullRequest",
+		mocks: THEME_MOCK,
+		props: { ...PROPS },
+	});
+	const expandedBefore = trigger(view).getAttribute("aria-expanded");
+	await view.click(trigger(view));
+	const expandedAfter = trigger(view).getAttribute("aria-expanded");
+	const text = view.container.textContent;
+	await view.unmount();
+
+	assert.deepEqual([expandedBefore, expandedAfter], ["false", "true"]);
+	assert.match(text, /Guest checkout browser tests/u);
+	assert.match(text, /5 scenarios in 1m 32s/u);
+});
+
+test("the summary reflects failures and in-progress runs", async () => {
+	const failed = await renderFlyout({
+		checks: [
+			{ id: "lint", name: "Lint", status: "failed", details: "Failed after 42s" },
+			{ id: "unit", name: "Unit", status: "passed", details: "ok" },
+		],
+	});
+	assert.match(failed.text, /1\/2 builds passed · 1 failed/u);
+
+	const running = await renderFlyout({
+		checks: [
+			{ id: "lint", name: "Lint", status: "running", details: "Running for 6s" },
+			{ id: "unit", name: "Unit", status: "queued", details: "Queued" },
+		],
+	});
+	assert.match(running.text, /0\/2 builds passed/u);
 });
 
 test("flyout keeps the branch path, file changes, and author metadata", async () => {
@@ -78,7 +124,7 @@ test("flyout actions render as links only when their href is supplied", async ()
 });
 
 test("flyout omits the repository and builds rows when absent", async () => {
-	const { text } = await renderFlyout({ repository: undefined, builds: undefined });
+	const { text } = await renderFlyout({ repository: undefined, checks: undefined });
 
 	assert.doesNotMatch(text, /shilpas-test-repo/u);
 	assert.doesNotMatch(text, /builds? passed/u);
@@ -86,7 +132,9 @@ test("flyout omits the repository and builds rows when absent", async () => {
 });
 
 test("flyout singularizes one build", async () => {
-	const { text } = await renderFlyout({ builds: { passed: 1, total: 1 } });
+	const { text } = await renderFlyout({
+		checks: [{ id: "unit", name: "Unit tests", status: "passed", details: "ok" }],
+	});
 
 	assert.match(text, /1\/1 build passed/u);
 });

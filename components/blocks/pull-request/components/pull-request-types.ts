@@ -1,3 +1,5 @@
+import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
+
 export type PullRequestStatus = "Open" | "Merged";
 
 /**
@@ -17,12 +19,6 @@ export interface PullRequestAuthor {
 
 /** Source-control host. Picks the provider mark on the flyout repository / branch row. */
 export type PullRequestProvider = "github" | "bitbucket";
-
-/** Build results, rendered on the flyout as `passed/total builds passed`. */
-export interface PullRequestBuilds {
-	passed: number;
-	total: number;
-}
 
 export interface PullRequestProps {
 	/** Layout. Defaults to the compact dropdown list card. */
@@ -47,8 +43,13 @@ export interface PullRequestProps {
 	provider?: PullRequestProvider;
 	/** Flyout only. `workspace/repo` shown beside the provider mark. */
 	repository?: string;
-	/** Flyout only. Shown as `3/3 builds passed`. */
-	builds?: PullRequestBuilds;
+	/**
+	 * Flyout only. CI checks. The row reads `3/3 builds passed` and expands inline into
+	 * the full checks list. Omitted when absent or empty.
+	 */
+	checks?: readonly PullRequestCheck[];
+	/** Flyout only. Called from a failed check's Fix action. */
+	onFixCheck?: (checks: readonly PullRequestCheck[]) => void;
 	/** Flyout only. Renders the primary Review action as a link. Omitted without it. */
 	reviewHref?: string;
 	/** Flyout only. Renders the View pull request action as an external link. Omitted without it. */

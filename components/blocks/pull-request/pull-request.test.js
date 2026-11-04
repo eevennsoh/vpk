@@ -253,7 +253,7 @@ test("PullRequest flyout variant matches the overlay summary card", () => {
 	assert.match(COMPONENT_SOURCE, /border-t border-border-disabled/u);
 	// File icon leads the files/diff row, not the GitHub branch row.
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/file"/u);
-	assert.match(COMPONENT_SOURCE, /function PullRequestFlyoutMetaRow/u);
+	assert.match(COMPONENT_SOURCE, /PullRequestFlyoutMetaRow,\s*\} from "@\/components\/blocks\/pull-request\/components\/pull-request-flyout-parts"/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/grid size-4 shrink-0 place-items-center text-icon-subtlest/u,
