@@ -84,6 +84,7 @@ test("held cards cycle through teammates in arrival order, one per lane, after M
 
 	const byKey = new Map();
 	const timesByKey = new Map();
+	const colorsByKey = new Map();
 	let held = 0;
 	let carried = 0;
 	let firstTeammate = Number.POSITIVE_INFINITY;
@@ -118,6 +119,8 @@ test("held cards cycle through teammates in arrival order, one per lane, after M
 			const who = `${cursor.name}@${cursor.lane}`;
 			assert.equal(byKey.get(cursor.key) ?? who, who, `slot ${cursor.key} keeps its teammate`);
 			if (!byKey.has(cursor.key)) timesByKey.set(cursor.key, time);
+			assert.equal(colorsByKey.get(cursor.key) ?? cursor.colorIndex, cursor.colorIndex, `slot ${cursor.key} keeps its colour`);
+			colorsByKey.set(cursor.key, cursor.colorIndex);
 			byKey.set(cursor.key, who);
 		}
 	}
@@ -126,10 +129,15 @@ test("held cards cycle through teammates in arrival order, one per lane, after M
 	assert.ok(firstTeammate > titleCarrierGoneTime(), "and has left before any teammate reaches in");
 	assert.ok(byKey.size > FINALE_WALL_CURSOR_NAMES.length * 2, "the roster repeats over multiple loops");
 	assert.deepEqual([...byKey.values()].map((who) => who.split("@")[0]), Array.from({ length: byKey.size }, (_, index) => FINALE_WALL_CURSOR_NAMES[index % FINALE_WALL_CURSOR_NAMES.length]));
+	const colors = [...colorsByKey.values()];
+	assert.equal(new Set(colors).size, FINALE_CURSORS.length, "all cursor colours appear");
+	for (let index = 1; index < colors.length; index += 1) assert.notEqual(colors[index], colors[index - 1], "successive arrivals use different colours");
+	assert.notDeepEqual(colors.slice(0, 4), colors.slice(4, 8), "the colour order varies");
 	const fresh = wallFor(viewport);
 	for (const [key, time] of [...timesByKey].reverse()) {
 		const cursor = wallCursorsAt(time, fresh.wall, fresh.drops, viewport).find((each) => each.key === key);
 		assert.equal(`${cursor.name}@${cursor.lane}`, byKey.get(key), `seeking back to ${key} restores its teammate`);
+		assert.equal(cursor.colorIndex, colorsByKey.get(key), `seeking back to ${key} restores its colour`);
 	}
 	const names = new Set([...byKey.values()].map((who) => who.split("@")[0]));
 	assert.ok(names.size >= FINALE_CURSORS.length, `many teammates over a loop (${[...names].join(", ")})`);
@@ -283,11 +291,12 @@ export default function Harness({ cursorsAt }) {
 
 test("a lane that takes a card from someone else shows the new name at once, on a held clock too", async () => {
 	const { FINALE_CURSORS } = load();
-	const at = (lane, name) => ({ key: `${lane}:${name}`, lane, name, x: 400, y: 300, scale: 1, opacity: 1 });
+	const at = (lane, name, colorIndex = lane) => ({ key: `${lane}:${name}`, lane, colorIndex, name, x: 400, y: 300, scale: 1, opacity: 1 });
 	const script = new Map([
 		[1, [at(0, "Andrea"), at(2, "Brian")]],
-		[2, [at(0, "Charles")]],
+		[2, [at(0, "Charles", 1)]],
 		[3, []],
+		[4, [at(0, "Charles", 2)]],
 	]);
 	const view = await renderComponent({ source: CURSORS_HARNESS, props: { cursorsAt: (time) => script.get(time) ?? [] } });
 	const emit = (time) => React.act(async () => {
@@ -308,9 +317,11 @@ test("a lane that takes a card from someone else shows the new name at once, on 
 		{ name: "Brian", text: "Brian", fill: FINALE_CURSORS[2].color },
 	]);
 	await emit(2);
-	assert.deepEqual(shown(), [{ name: "Charles", text: "Charles", fill: FINALE_CURSORS[0].color }], "lane 0 changes hands; lane 2 lets go");
+	assert.deepEqual(shown(), [{ name: "Charles", text: "Charles", fill: FINALE_CURSORS[1].color }], "lane 0 changes its name and colour; lane 2 lets go");
 	await emit(3);
 	assert.deepEqual(shown(), [], "idle lanes hide");
+	await emit(4);
+	assert.deepEqual(shown(), [{ name: "Charles", text: "Charles", fill: FINALE_CURSORS[2].color }], "a returning name can use a different colour");
 	await emit(1);
 	assert.deepEqual(shown().map((cursor) => cursor.name), ["Andrea", "Brian"], "scrubbing back brings the earlier holders back");
 });
