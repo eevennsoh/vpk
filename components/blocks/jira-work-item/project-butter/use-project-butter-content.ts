@@ -16,12 +16,13 @@ import {
 	PROJECT_BUTTER_CHILD_ITEMS,
 	PROJECT_BUTTER_LINKED_ITEMS,
 } from "@/components/blocks/jira-work-item/project-butter/related-data";
-import type { ProjectButterRelatedItem } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import type { ProjectButterRelatedItem, ProjectButterRelatedKind } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { createProjectButterAttachmentEditor } from "@/components/blocks/jira-work-item/project-butter/attachment-model";
 import { useProjectButterItemState } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-item-state";
 import { createProjectButterRelatedEditorState } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { createProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { createProjectButterStatusOptions } from "@/components/blocks/jira-work-item/project-butter/status-model";
-import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
+import { PROJECT_BUTTER_UNASSIGNED } from "@/components/blocks/jira-work-item/project-butter/people";
 import {
 	createProjectButterSessions,
 	type ProjectButterSessionItem,
@@ -47,7 +48,7 @@ function createContent(
 	workItem?: WorkItemData,
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
-	omitReporter = false,
+	defaultReporter?: WorkItemPerson,
 ) {
 	const empty = preset === "empty" || preset === "blank";
 	const placeholder = empty || !placeholders || !workItem?.code ? undefined : placeholders[workItem.code];
@@ -67,17 +68,11 @@ function createContent(
 			: workItem
 				? []
 				: PROJECT_BUTTER_ATTACHMENTS;
-	const assignee: WorkItemPerson = workItem?.assignee ?? TEAM_EU26_PEOPLE.automatic;
+	const assignee: WorkItemPerson = !workItem?.assignee || workItem.assignee.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : workItem.assignee;
 	const priority: PriorityValue = workItem?.priority ?? (empty ? "Medium" : "High");
-	const reporter: WorkItemPerson | null = omitReporter
-		? null
-		: workItem?.reporter
-			? workItem.reporter
-			: placeholder
-				? projectButterPlaceholderReporter(placeholder)
-				: workItem
-					? null
-					: { name: "Planner agent", avatarUrl: projectButterPersonAvatar("Annie Cook") };
+	const reporterPlaceholder = workItem?.code ? placeholders?.[workItem.code] : undefined;
+	const reporter: WorkItemPerson = workItem?.reporter
+		?? (reporterPlaceholder ? projectButterPlaceholderReporter(reporterPlaceholder) : defaultReporter ?? TEAM_EU26_PEOPLE.annie);
 	const activityFocusId: string | null = null;
 	const dueDate: Date | undefined = workItem
 		? workItem.dueDate
@@ -103,8 +98,13 @@ function createContent(
 	const activitySort: ProjectButterActivitySort = "newest";
 	const replyDrafts: Readonly<Record<string, string>> = {};
 	const auditChanges: Readonly<Record<string, ProjectButterReferenceChange>> = {};
+	const relatedDismissed: readonly ProjectButterRelatedKind[] = [];
 	return {
-		attachmentComposerOpen: false,
+		attachmentEditor: createProjectButterAttachmentEditor(),
+		/** Related work heading open state. Add requests force it open. */
+		relatedSectionOpen: true,
+		/** Groups hidden for the session through their empty-state Dismiss button. */
+		relatedDismissed,
 		activityView,
 		activitySort,
 		replyDrafts,
@@ -155,11 +155,11 @@ export function useProjectButterContent(
 	workItem?: WorkItemData,
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
-	omitReporter = false,
+	defaultReporter?: WorkItemPerson,
 ) {
 	const initialState = useMemo<ProjectButterContentState>(
-		() => createContent(preset, workItem, initialSessions, placeholders, omitReporter),
-		[initialSessions, omitReporter, placeholders, preset, workItem],
+		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter),
+		[defaultReporter, initialSessions, placeholders, preset, workItem],
 	);
 	const { state, fieldSetter, updateState } = useProjectButterItemState(
 		workItem?.code ?? "reference",
@@ -198,7 +198,24 @@ export function useProjectButterContent(
 					appendProjectButterAudit(current, { id, createdAtMs, label, before, after }),
 				);
 			},
-			setAttachmentComposerOpen: fieldSetter("attachmentComposerOpen"),
+			setAttachmentEditor: fieldSetter("attachmentEditor"),
+			setRelatedSectionOpen: fieldSetter("relatedSectionOpen"),
+			setRelatedDismissed: fieldSetter("relatedDismissed"),
+			/**
+			 * The one add path for header +, empty-mode quick actions, empty states and Shift+A/C/K.
+			 * Opens Related work, un-dismisses the group, opens its composer (closing a display popover)
+			 * and bumps its createSignal so a repeat press refocuses the input instead of toggling.
+			 */
+			openRelatedAdd: (kind: ProjectButterRelatedKind) => {
+				updateState((previous) => ({
+					...previous,
+					relatedSectionOpen: true,
+					relatedDismissed: previous.relatedDismissed.filter((candidate) => candidate !== kind),
+					...(kind === "attachments"
+						? { attachmentEditor: { ...previous.attachmentEditor, composerOpen: true, createSignal: previous.attachmentEditor.createSignal + 1 } }
+						: { relatedEditor: { ...previous.relatedEditor, [kind]: { ...previous.relatedEditor[kind], composerOpen: true, editingId: null, displayOptionsOpen: false, createSignal: previous.relatedEditor[kind].createSignal + 1 } } }),
+				}));
+			},
 			setActivityView: fieldSetter("activityView"),
 			setActivitySort: fieldSetter("activitySort"),
 			setReplyDrafts: fieldSetter("replyDrafts"),
@@ -240,7 +257,7 @@ export function useProjectButterContent(
 			setStatus: audited("status", "Status", (value) => value),
 		};
 	}, [fieldSetter, updateState]);
-	return { ...state, ...actions };
+	return { ...state, assignee: state.assignee.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : state.assignee, ...actions };
 }
 
 export type ProjectButterContent = ReturnType<typeof useProjectButterContent>;

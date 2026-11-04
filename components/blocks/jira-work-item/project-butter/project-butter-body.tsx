@@ -6,24 +6,33 @@ import { ProjectButterActivity } from "@/components/blocks/jira-work-item/projec
 import { ProjectButterCommentBar } from "@/components/blocks/jira-work-item/project-butter/project-butter-comment-bar";
 import { ProjectButterDescription } from "@/components/blocks/jira-work-item/project-butter/project-butter-description";
 import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/project-butter/project-butter-related-work";
+import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 
-export function ProjectButterBody({ active, sidePanel, content, details, empty, onOpenSession, sessions }: Readonly<{
+export function ProjectButterBody({ active, sidePanel, content, descriptionReveal, details, empty, onDescriptionRevealComplete, onOpenSession, openRelatedItem, relatedScope, sessions, workItemKey }: Readonly<{
 	active: boolean;
 	sidePanel: boolean;
 	content: ProjectButterContent;
+	descriptionReveal?: { id: number; text: string } | null;
 	details?: ReactNode;
 	empty: boolean;
+	onDescriptionRevealComplete?: () => void;
 	onOpenSession: (sessionId: string) => void;
+	openRelatedItem?: RelatedItemOpener;
+	relatedScope?: ProjectButterRelatedScope;
 	sessions: readonly ProjectButterSessionItem[];
+	workItemKey?: string;
 }>) {
+	const emptyActivity = content.activityView === "Activity"
+		&& !content.activityEntries.some((entry) => entry.kind === "comment")
+		&& !sessions.some((session) => session.state === "needs-input");
 	return (
 		<div className="flex min-w-0 flex-col gap-6">
-			<ProjectButterDescription content={content} empty={empty} />
+			<ProjectButterDescription content={content} empty={empty} onRevealComplete={onDescriptionRevealComplete} reveal={descriptionReveal} />
 			{details}
-			<ProjectButterRelatedWork content={content} empty={empty} />
+			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
 			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} sessions={sessions} sidePanel={sidePanel} />
-			<ProjectButterCommentBar active={active} content={content} empty={empty} sidePanel={sidePanel} />
+			<ProjectButterCommentBar active={active} compact={emptyActivity} content={content} empty={empty} sidePanel={sidePanel} />
 		</div>
 	);
 }

@@ -5,7 +5,7 @@ import type { JiraKanbanIssueMoveRequest } from "@/components/blocks/jira-kanban
 import { mergeJiraKanbanAgentCatalog } from "@/components/blocks/jira-kanban/lib/agent-catalog";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import { linkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
-import { applyAssignedAgentIdsToColumns, getButterCardMove, progressButterWorkItemOnStart } from "@/components/projects/butter/lib/list-rows";
+import { applyAssignedAgentIdsToColumns, assignedAgentsFromCard, getButterCardMove, progressButterWorkItemOnStart } from "@/components/projects/butter/lib/list-rows";
 
 interface PendingAssignment {
 	issueKey: string;
@@ -57,6 +57,14 @@ export function useButterAssignmentMove({
 	const onBoardAssignedAgentIdsChange = useCallback((issueKey: string, agentIds: readonly string[]) => {
 		queueUpdate(issueKey, (columns) => applyAssignedAgentIdsToColumns(columns, issueKey, agentIds, catalog));
 	}, [catalog, queueUpdate]);
+	const onSelectedCardsAgentAssign = useCallback((issueKeys: readonly string[], agentId: string) => {
+		setBoardColumns((columns) => issueKeys.reduce((current, issueKey) => {
+			const card = current.flatMap((column) => column.cards).find((candidate) => candidate.code === issueKey);
+			if (!card) return current;
+			const ids = assignedAgentsFromCard(card, catalog).map((agent) => agent.id);
+			return ids.includes(agentId) ? current : applyAssignedAgentIdsToColumns(current, issueKey, [...ids, agentId], catalog);
+		}, columns));
+	}, [catalog, setBoardColumns]);
 	const startAgentSession = useCallback((issueKey: string, activity: JiraIssueAgentActivity) => {
 		queueUpdate(issueKey, (columns) => progressButterWorkItemOnStart(linkJiraKanbanAgentSession(columns, issueKey, activity), issueKey));
 	}, [queueUpdate]);
@@ -75,5 +83,5 @@ export function useButterAssignmentMove({
 			setBoardColumns([...columns]);
 		}
 	}, [setBoardColumns]);
-	return { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, startAgentSession };
+	return { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, onSelectedCardsAgentAssign, startAgentSession };
 }

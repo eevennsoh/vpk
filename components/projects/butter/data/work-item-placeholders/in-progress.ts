@@ -111,6 +111,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "3-D Secure challenge sequence for confirmPaymentIntent",
 				addedBy: "Jordan Okafor",
 				dateAdded: "15 Aug 2026",
+				previewSrc: "/ambient/atlassian/pictorial/data-center/primary/lime.svg",
 			},
 			{
 				id: "pay-105-recovery-cases",
@@ -118,6 +119,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "checkout-web-challenge-recovery-cases.md",
 				addedBy: "Maya Ferreira",
 				dateAdded: "16 Aug 2026",
+				previewSrc: "/ambient/ado/line/primary/blue.svg",
 			},
 			{
 				id: "pay-105-pr-1851",
@@ -125,6 +127,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "PR 1851 · Port 3DS flow",
 				addedBy: "Jordan Okafor",
 				dateAdded: "17 Aug 2026",
+				previewSrc: "/ambient/atlassian/abstract/combo-1/primary/neutral.svg",
 				url: "https://github.com/payments-platform/payments/pull/1851",
 			},
 			{
@@ -133,6 +136,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "Cursor replaying the 3-D Secure fixtures",
 				addedBy: "Priya Raman",
 				dateAdded: "17 Aug 2026",
+				previewSrc: "/ambient/atlassian/abstract/line-2/primary/yellow.svg",
 			},
 		],
 		comments: [
@@ -274,6 +278,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "legacy-gateway-adapter-retry-timings.md",
 				addedBy: "Maya Ferreira",
 				dateAdded: "14 Aug 2026",
+				previewSrc: "/ambient/atlassian/pictorial/communication/primary/yellow.svg",
 			},
 			{
 				id: "pay-107-webhook-semantics",
@@ -281,6 +286,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "Webhook retry semantics for the v2 payments client",
 				addedBy: "Diego Santos",
 				dateAdded: "15 Aug 2026",
+				previewSrc: "/ambient/ado/shape/primary/purple.svg",
 			},
 			{
 				id: "pay-107-backoff-schedule",
@@ -288,6 +294,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "v2 client exponential backoff schedule",
 				addedBy: "Jordan Okafor",
 				dateAdded: "16 Aug 2026",
+				previewSrc: "/ambient/atlassian/pictorial/clouds/primary/blue.png",
 			},
 			{
 				id: "pay-107-pr-1856",
@@ -295,6 +302,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "PR 1856 · Extract retry policy",
 				addedBy: "Maya Ferreira",
 				dateAdded: "17 Aug 2026",
+				previewSrc: "/ambient/itsm/shape/primary/neutral.svg",
 				url: "https://github.com/payments-platform/payments/pull/1856",
 			},
 		],
@@ -437,6 +445,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "missing-decline-code-fixtures.json",
 				addedBy: "Maya Ferreira",
 				dateAdded: "16 Aug 2026",
+				previewSrc: "/ambient/ado/combo/primary/lime.svg",
 			},
 			{
 				id: "pay-123-coverage-gap",
@@ -444,6 +453,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "Decline-code fixture coverage gap",
 				addedBy: "Jordan Okafor",
 				dateAdded: "16 Aug 2026",
+				previewSrc: "/ambient/atlassian/abstract/line-1/primary/blue.svg",
 			},
 			{
 				id: "pay-123-cursor-recording",
@@ -451,6 +461,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "Cursor recording issuer_unavailable, authentication_required, and try_again_later",
 				addedBy: "Jordan Okafor",
 				dateAdded: "17 Aug 2026",
+				previewSrc: "/ambient/ado/line/primary/neutral.svg",
 			},
 			{
 				id: "pay-123-assertion-worksheet",
@@ -458,6 +469,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "v2 client fixture assertion worksheet",
 				addedBy: "Maya Ferreira",
 				dateAdded: "17 Aug 2026",
+				previewSrc: "/ambient/ado/dots/primary/purple.svg",
 			},
 		],
 		comments: [
@@ -600,6 +612,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "v2-decline-strings-eleven-by-nine.csv",
 				addedBy: "Diego Santos",
 				dateAdded: "15 Aug 2026",
+				previewSrc: "/ambient/atlassian/pictorial/network/primary/yellow.svg",
 			},
 			{
 				id: "pay-130-localisation-matrix",
@@ -607,6 +620,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "Decline string localisation matrix",
 				addedBy: "Jordan Okafor",
 				dateAdded: "15 Aug 2026",
+				previewSrc: "/ambient/itsm/line/ambient/itsm/line/primary/lime.svg",
 			},
 			{
 				id: "pay-130-glossary",
@@ -614,6 +628,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "Nine-language glossary for v2 decline copy",
 				addedBy: "Priya Raman",
 				dateAdded: "16 Aug 2026",
+				previewSrc: "/ambient/atlassian/abstract/shape-1/primary/blue.svg",
 			},
 			{
 				id: "pay-130-english-source",
@@ -621,6 +636,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 				name: "english-source-decline-catalog.json",
 				addedBy: "Jordan Okafor",
 				dateAdded: "15 Aug 2026",
+				previewSrc: "/ambient/atlassian/abstract/combo-2/primary/neutral.svg",
 			},
 		],
 		comments: [

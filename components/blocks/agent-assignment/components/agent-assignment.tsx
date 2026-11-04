@@ -103,6 +103,8 @@ export interface AgentAssignmentProps {
 	onRenameAssignedAgent?: (agent: AgentAssignmentAgent) => void;
 	onCreateAgent?: () => void;
 	onOpenChange?: (open: boolean) => void;
+	/** Hand off the Add agent action to a host-owned picker. */
+	onRequestAddAgent?: () => void;
 	onStartNewSession?: (agent: AgentSelectorAgent) => void;
 	openMode?: "click" | "hover";
 	moreItemsLabel?: string;
@@ -158,6 +160,7 @@ export function AgentAssignment({
 	onRenameAssignedAgent,
 	onCreateAgent,
 	onOpenChange,
+	onRequestAddAgent,
 	onStartNewSession,
 	openMode = "click",
 	moreItemsLabel = "More agents",
@@ -282,6 +285,11 @@ export function AgentAssignment({
 	};
 
 	const handleShowSelector = () => {
+		if (onRequestAddAgent) {
+			handleOpenChange(false);
+			queueMicrotask(onRequestAddAgent);
+			return;
+		}
 		// The assigned list owns focus until its button is activated. Move focus to
 		// the stable menu root before replacing that list so hover-open previews do
 		// not interpret the unmounted button as leaving the popup.

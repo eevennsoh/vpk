@@ -558,6 +558,14 @@
 	initial-value: -10;
 }
 
+/* Project Butter related lists: the last visible row above "Show N more" fades its text
+   (key, summary, relationship, due date) rather than painting a rectangle over the row.
+   Icons, avatars and priority glyphs stay unmasked; rows drop the mask on focus/open menus. */
+@utility related-row-fade {
+	-webkit-mask-image: linear-gradient(to bottom, black 15%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 15%, transparent 100%);
+}
+
 /* Content-visibility: auto (Audit Theme B) — skip rendering work for
    subtrees that are off-screen. Browsers reserve `contain-intrinsic-size`
    so the page layout doesn't jump as content scrolls into view.
@@ -692,10 +700,10 @@
    fade, and the practical `--ease-in` curve suits motion that is leaving. */
 @keyframes jira-list-row-flash {
 	0% {
-		background-color: var(--ds-background-selected);
+		background-color: var(--jira-list-row-flash-color, var(--ds-background-selected));
 	}
 	40% {
-		background-color: var(--ds-background-selected);
+		background-color: var(--jira-list-row-flash-color, var(--ds-background-selected));
 	}
 	100% {
 		background-color: transparent;

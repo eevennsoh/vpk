@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ComponentProps, type Ref } from "react";
 import { useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
@@ -10,12 +10,17 @@ import { DEFAULT_SKILLS } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
+import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
+import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
+import type { ProjectButterRelatedSearchItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { butterRelatedCatalog } from "@/components/projects/butter/data/related-scope";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { countNeedsInputAgents } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-filter";
@@ -31,6 +36,7 @@ import {
 } from "@/components/blocks/jira-list";
 
 import { HeaderLanyards } from "./components/header-lanyards";
+import { Spinner } from "@/components/ui/spinner";
 import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
@@ -52,10 +58,11 @@ import { cn } from "@/lib/utils";
 import { ButterList } from "./components/butter-list";
 
 import { renderButterAgentActivityIndicator } from "./data/agent-activity-indicators";
-import { BUTTER_BOARD_AGENTS } from "@/components/projects/butter/data/presentation-board";
+import { BUTTER_BOARD_AGENTS, BUTTER_SUGGESTION_DEMO_KEY, toButterAgentActivityFromSession } from "@/components/projects/butter/data/presentation-board";
 import {
 	toButterDetachedAgentSession,
 	BUTTER_PAY_BOARD_AGENTS,
+	BUTTER_PAY_CURRENT_USER,
 	BUTTER_PAY_HEADER_ASSIGNEES,
 	BUTTER_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 	BUTTER_PAY_SESSION_MEMBERS,
@@ -81,6 +88,8 @@ const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-di
 const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
 const ProjectButterJiraWorkItem = dynamic(() => import("@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item").then((module) => module.ProjectButterJiraWorkItem));
 
+const BUTTER_DEFAULT_REPORTER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
+const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
 const BUTTER_TABS = getJiraTabs(false);
 const BUTTER_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(BUTTER_TABS);
 const BUTTER_ADD_AGENT_LABEL = "Add agent";
@@ -99,6 +108,69 @@ const BUTTER_SETTINGS_DESIGN_VARIANT_IDS = [
 ] as const;
 const isButterLooseWorkResumable = () => true;
 
+type ButterWorkItemHandle = {
+	open: (card: JiraKanbanCardData, columnTitle: string) => void;
+};
+
+function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWorkItem>) {
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => {
+		const frame = window.requestAnimationFrame(() => setMounted(true));
+		return () => window.cancelAnimationFrame(frame);
+	}, []);
+	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
+}
+
+function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateAgent, onAgentSessionStart, onStoryPointsChange, onWorkItemClose, openRelatedItem, relatedCatalog, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
+	openRelatedItem: RelatedItemOpener;
+	/** Board cards as related-work matches, so composers offer this project's items. */
+	relatedCatalog: readonly ProjectButterRelatedSearchItem[];
+	ref: Ref<ButterWorkItemHandle>;
+	defaultReporter: ComponentProps<typeof ProjectButterJiraWorkItem>["defaultReporter"];
+	onBrowseAgents: () => void;
+	onCreateAgent: () => void;
+	onAgentSessionStart: (issueKey: string, session: AgentSessionItem) => void;
+	onStoryPointsChange: (issueKey: string, storyPoints: number | undefined) => void;
+	onWorkItemClose: () => void;
+}) {
+	const workItem = useButterWorkItem();
+	useImperativeHandle(ref, () => ({ open: workItem.openWorkItem }), [workItem.openWorkItem]);
+	return (
+		<>
+			{workItem.selection ? (
+				<Suspense fallback={workItem.open ? (
+					<div className="pointer-events-none fixed bottom-6 left-1/2 z-[190] flex -translate-x-1/2 items-center gap-2 rounded-lg bg-surface-overlay px-4 py-3 text-sm text-text shadow-overlay" role="status">
+						<Spinner label="" size="xs" />
+						Opening work item…
+					</div>
+				) : null}>
+					<ButterWorkItemDialog
+						initialPresentation="modal"
+						shell="project"
+						initialPreset="filled"
+						initialSuggestion={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY}
+						suggestionProfile={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? "payments" : "default"}
+						defaultReporter={defaultReporter}
+						initialSessions={workItem.selection.initialSessions}
+						onBrowseAgents={onBrowseAgents}
+						onCreateAgent={onCreateAgent}
+						onAgentSessionStart={(session) => { if (workItem.selection) onAgentSessionStart(workItem.selection.workItem.code, session); }}
+						onStoryPointsChange={(points) => { if (workItem.selection) onStoryPointsChange(workItem.selection.workItem.code, points); }}
+						onClose={() => { workItem.closeWorkItem(); onWorkItemClose(); }}
+						open={workItem.open}
+						openRelatedItem={openRelatedItem}
+						relatedScope={{ catalog: relatedCatalog, parentType: workItem.selection.workType }}
+						placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
+						workItem={workItem.selection.workItem}
+					/>
+				</Suspense>
+			) : null}
+			<JgpRovoOverlay {...overlayProps} chat={workItem.open ? "hidden" : "auto"} launcher={workItem.open ? "hidden" : "auto"} />
+		</>
+	);
+}
+
 export default function ButterPage(): React.ReactElement {
 	return (
 		<RovoChatProvider agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
@@ -115,7 +187,14 @@ function ButterApp(): React.ReactElement {
 	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
 	const browseAgents = useCallback(() => setAgentsDirectoryOpen(true), []);
 	const createAgent = useCallback(() => router.push("/studio"), [router]);
-	const workItem = useButterWorkItem();
+	const workItemRef = useRef<ButterWorkItemHandle>(null);
+	const pendingWorkItemAssignment = useRef<Readonly<{ issueKey: string; session: AgentSessionItem }> | null>(null);
+	const [agentAssignmentRequest, setAgentAssignmentRequest] = useState<Readonly<{ issueKey: string; session: AgentSessionItem }>>();
+	const openButterWorkItem = useCallback((card: JiraKanbanCardData, columnTitle: string) => {
+		pendingWorkItemAssignment.current = null;
+		setAgentAssignmentRequest(undefined);
+		workItemRef.current?.open(card, columnTitle);
+	}, []);
 	const {
 		boardColumns,
 		contentMode,
@@ -128,7 +207,7 @@ function ButterApp(): React.ReactElement {
 	} = useButterContent();
 	// Same selector the Needs input focus uses, so the count names the rows it shows.
 	const needsInputCount = countNeedsInputAgents(boardColumns);
-	const { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, startAgentSession } = useButterAssignmentMove({
+	const { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, onSelectedCardsAgentAssign, startAgentSession } = useButterAssignmentMove({
 		agents: BUTTER_BOARD_AGENTS,
 		boardColumns,
 		setBoardColumns,
@@ -263,13 +342,44 @@ function ButterApp(): React.ReactElement {
 			issueSummary: card.title,
 		});
 	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
-	const openListWorkItem = workItem.openWorkItem;
 	const handleListIssueOpen = useCallback((issueKey: string) => {
 		for (const column of boardColumns) {
 			const card = column.cards.find((candidate) => candidate.code === issueKey);
-			if (card) { openListWorkItem(card, column.title); return; }
+			if (card) { openButterWorkItem(card, column.title); return; }
 		}
-	}, [boardColumns, openListWorkItem]);
+	}, [boardColumns, openButterWorkItem]);
+	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
+	const handleListAgentAssigned = useCallback((issueKey: string, agent: AgentSelectorAgent) => {
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+		const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(agent.brandName, agent.vpkLogo, agent.name, agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
+		flashListRow(issueKey, `color-mix(in srgb, ${tint} 28%, transparent)`);
+	}, [flashListRow]);
+	const handleWorkItemSessionStart = useCallback((issueKey: string, session: AgentSessionItem) => {
+		const card = boardColumns.flatMap((column) => column.cards).find((candidate) => candidate.code === issueKey);
+		if (!card || card.agentActivities?.some((activity) => activity.id === session.id)) return;
+		pendingWorkItemAssignment.current = { issueKey, session };
+		startAgentSession(issueKey, toButterAgentActivityFromSession(session));
+	}, [boardColumns, startAgentSession]);
+	const handleWorkItemClose = useCallback(() => {
+		const pending = pendingWorkItemAssignment.current;
+		pendingWorkItemAssignment.current = null;
+		if (!pending) return;
+		if (activeView === "list") {
+			const { issueKey, session } = pending;
+			const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(session.agent.brandName, session.agent.vpkLogo, session.agent.name, session.agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
+			if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) flashListRow(issueKey, `color-mix(in srgb, ${tint} 28%, transparent)`);
+		} else {
+			setAgentAssignmentRequest(pending);
+		}
+	}, [activeView, flashListRow]);
+	const openRelatedItem = useCallback<RelatedItemOpener>((issueKey) => {
+		for (const column of boardColumns) {
+			const card = column.cards.find((candidate) => candidate.code === issueKey);
+			if (card) return () => openButterWorkItem(card, column.title);
+		}
+		return undefined;
+	}, [boardColumns, openButterWorkItem]);
+	const relatedCatalog = useMemo(() => butterRelatedCatalog(boardColumns), [boardColumns]);
 	const {
 		createBoardFromAgentSession,
 		createFromAgentSession,
@@ -280,6 +390,7 @@ function ButterApp(): React.ReactElement {
 		boardColumns,
 		contentMode,
 		listAriaLabel: wacContent ? "Checkout roadmap work items list" : undefined,
+		onAgentAssigned: handleListAgentAssigned,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		onBrowseAgents: browseAgents,
 		onCreateAgent: createAgent,
@@ -293,7 +404,6 @@ function ButterApp(): React.ReactElement {
 	// It only reaches rows the list is rendering. Board-created cards are
 	// assigned to Venn (the prototype current user), so the matching assignee
 	// filter keeps the new row visible long enough for this acknowledgement.
-	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
 	// reads that map, so the session reappears there immediately. Proximity
 	// stays off, so it never parks beside the card.
@@ -429,6 +539,7 @@ function ButterApp(): React.ReactElement {
 						issueDragTransitions
 						issueDropMotion="solitaire"
 						issueMoveRequest={issueMoveRequest}
+						agentAssignmentRequest={agentAssignmentRequest}
 						issueMoveVisual={designVariants.moveVisual}
 						createWellBounce="off"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
@@ -465,9 +576,10 @@ function ButterApp(): React.ReactElement {
 						onAgentSessionsReviewed={reviewAgentSessions}
 						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
 						onBoardColumnsChange={onBoardColumnsChange}
-						onCardClick={workItem.openWorkItem}
+						onCardClick={openButterWorkItem}
 						onCardAgentActivityViewChat={handleViewChat}
 						onCardAssignedAgentIdsChange={onBoardAssignedAgentIdsChange}
+						onSelectedCardsAgentAssign={onSelectedCardsAgentAssign}
 						onCardAgentDoneRunView={handleViewCompletedRun}
 						onCardGenerativeActionSubmit={handleCardGenerativeActionSubmit}
 						onCardAgentSessionLink={handleAgentSessionLink}
@@ -513,16 +625,6 @@ function ButterApp(): React.ReactElement {
 				</div>
 			</AppLayout>
 			</HeaderLanyards>
-			{workItem.selection ? <ProjectButterJiraWorkItem
-				initialPresentation="modal"
-				shell="project"
-				initialPreset="filled"
-				initialSessions={workItem.selection.initialSessions}
-				onClose={workItem.closeWorkItem}
-				open={workItem.open}
-				placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
-				workItem={workItem.selection.workItem}
-			/> : null}
 			{/* Resume swaps the button label to "Copied" — colour and text alone,
 			    which a screen reader on the row never hears. Announce it instead. */}
 			<span aria-live="polite" className="sr-only" role="status">
@@ -548,13 +650,20 @@ function ButterApp(): React.ReactElement {
 					skills={DEFAULT_SKILLS}
 				/>
 			</MountOnFirstUse>
-			<JgpRovoOverlay
-				chat={workItem.open ? "hidden" : "auto"}
-				launcher={workItem.open ? "hidden" : "auto"}
+			<ButterWorkItemSurface
+				ref={workItemRef}
+				defaultReporter={wacContent ? WAC_DEFAULT_REPORTER : BUTTER_DEFAULT_REPORTER}
+				onBrowseAgents={browseAgents}
+				onCreateAgent={createAgent}
+				onAgentSessionStart={handleWorkItemSessionStart}
+				onStoryPointsChange={(issueKey, storyPoints) => setBoardColumns((columns) => columns.map((column) => ({ ...column, cards: column.cards.map((card) => card.code === issueKey ? { ...card, storyPoints } : card) })))}
+				onWorkItemClose={handleWorkItemClose}
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}
 				onComposerPrefillConsumed={handleComposerPrefillConsumed}
+				openRelatedItem={openRelatedItem}
+				relatedCatalog={relatedCatalog}
 			/>
 		</>
 	);

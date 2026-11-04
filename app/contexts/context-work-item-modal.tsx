@@ -113,6 +113,7 @@ export interface WorkItemData {
 	reporter?: WorkItemPerson;
 	priority?: "Highest" | "High" | "Medium" | "Low" | "Lowest";
 	status?: string;
+	storyPoints?: number;
 	/** Epoch ms when the work item was created/reported (story clocks). */
 	createdAtMs?: number;
 	startDate?: string;

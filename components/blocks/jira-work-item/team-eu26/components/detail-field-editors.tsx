@@ -149,10 +149,12 @@ const PERSON_LABEL_TEXT_CLASS = {
 } as const;
 
 export function PersonLabel({
+	avatarSize,
 	person,
 	prefix,
 	size = "sm",
 }: Readonly<{
+	avatarSize?: keyof typeof PERSON_LABEL_AVATAR_PX;
 	person: AgentPlannerAssignee;
 	/** Muted inline text before the name, e.g. "Reported by". */
 	prefix?: string;
@@ -168,10 +170,10 @@ export function PersonLabel({
 					avatarSrc={person.avatarUrl}
 					brandName={person.brandName}
 					fallbackText={fallbackText}
-					sizePx={PERSON_LABEL_AVATAR_PX[size]}
+					sizePx={PERSON_LABEL_AVATAR_PX[avatarSize ?? size]}
 				/>
 			) : (
-				<Avatar className="shrink-0" size={size}>
+				<Avatar className="shrink-0" size={avatarSize ?? size}>
 					{person.avatarUrl ? <AvatarImage alt="" src={person.avatarUrl} /> : null}
 					<AvatarFallback>{fallbackText}</AvatarFallback>
 				</Avatar>

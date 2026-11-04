@@ -4,7 +4,9 @@ import { useCallback, useState } from "react";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
+import type { ProjectButterRelatedWorkType } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { toButterDetachedAgentSession } from "@/components/projects/butter/data/presentation-story";
+import { butterWorkType } from "@/components/projects/butter/data/related-scope";
 
 const PRIORITIES: Readonly<Record<JiraKanbanCardData["priority"], NonNullable<WorkItemData["priority"]>>> = {
 	critical: "Highest",
@@ -16,6 +18,8 @@ const PRIORITIES: Readonly<Record<JiraKanbanCardData["priority"], NonNullable<Wo
 export function useButterWorkItem() {
 	const [selection, setSelection] = useState<{
 		workItem: WorkItemData;
+		/** The card's type, for the related-work parent rules. */
+		workType: ProjectButterRelatedWorkType;
 		initialSessions: readonly ProjectButterSessionItem[];
 	} | null>(null);
 	const [open, setOpen] = useState(false);
@@ -25,10 +29,12 @@ export function useButterWorkItem() {
 				code: card.code,
 				title: card.title,
 				status: card.status ?? columnTitle,
+				storyPoints: card.storyPoints,
 				priority: PRIORITIES[card.priority],
 				assignee: card.assignee ? { name: card.assignee.name, avatarUrl: card.assignee.avatarSrc } : undefined,
 				dueDate: card.dueDate,
 			},
+			workType: butterWorkType(card),
 			initialSessions: [
 				...(card.agentActivities ?? []).map((activity) => ({ ...toButterDetachedAgentSession(activity, card), message: activity.message ?? activity.label })),
 				...(card.agentDoneRuns ?? []).map((run): ProjectButterSessionItem => ({

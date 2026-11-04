@@ -1,27 +1,69 @@
 "use client";
 
+import { useRef } from "react";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { ProjectButterAttachments } from "@/components/blocks/jira-work-item/project-butter/project-butter-attachments";
 import { ProjectButterRelatedItemList } from "@/components/blocks/jira-work-item/project-butter/related-item-list";
-import type { ProjectButterRelatedAddRequest, ProjectButterRelatedListEditor } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { useAttachmentRemoval } from "@/components/blocks/jira-work-item/project-butter/use-attachment-removal";
+import { RelatedWorkCollapsedSummary } from "@/components/blocks/jira-work-item/project-butter/related-work-collapsed-summary";
+import { relatedGroupVisibility, relatedSummaryItems } from "@/components/blocks/jira-work-item/project-butter/related-work-model";
+import { RelatedWorkSection, useRelatedAddShortcuts, useRelatedHeaderReveal } from "@/components/blocks/jira-work-item/project-butter/related-work-section";
+import { nextRelatedKey, relatedItemFromRequest, relatedKeyPrefix, type ProjectButterRelatedAddRequest, type ProjectButterRelatedKind, type ProjectButterRelatedListEditor } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 
-export function ProjectButterRelatedWork({ content, empty = false }: Readonly<{ content: ProjectButterContent; empty?: boolean }>) {
+export function ProjectButterRelatedWork({ active = false, content, empty = false, openRelatedItem, scope, workItemKey = "VITA-1" }: Readonly<{
+	/** The visible work item: enables the Shift+A/C/K add shortcuts. */
+	active?: boolean;
+	content: ProjectButterContent;
+	empty?: boolean;
+	/** Host lookup from a related key to an opener (Butter board cards). Unresolved keys render as plain text. */
+	openRelatedItem?: RelatedItemOpener;
+	/** Host project scope: composer match pool and the open work item's type. */
+	scope?: ProjectButterRelatedScope;
+	/** The open work item's key: never offered as a match, and the prefix for created keys. */
+	workItemKey?: string;
+}>) {
+	const sectionRef = useRef<HTMLElement>(null);
+	const counts = { attachments: content.attachments.length, children: content.relatedWork.children.length, linked: content.relatedWork.linked.length };
+	const visibility = relatedGroupVisibility({
+		counts,
+		composerOpen: { attachments: content.attachmentEditor.composerOpen, children: content.relatedEditor.children.composerOpen, linked: content.relatedEditor.linked.composerOpen },
+		dismissed: content.relatedDismissed,
+		empty,
+		parentIsSubtask: scope?.parentType === "Subtask",
+	});
+	const reveal = useRelatedHeaderReveal(visibility.count);
+	useRelatedAddShortcuts(active, sectionRef, content.openRelatedAdd);
+	const removal = useAttachmentRemoval(content, sectionRef);
 	function addItem(kind: "children" | "linked", request: ProjectButterRelatedAddRequest) {
 		const id = `related-${crypto.randomUUID()}`;
-		content.setRelatedWork((work) => {
-			const nextId = Math.max(100, ...[...work.children, ...work.linked].map((item) => Number(item.key.split("-").at(-1)) || 0)) + 1;
-			const item = request.kind === "existing" ? { ...request.item, id } : { id, key: `VITA-${nextId}`, summary: request.summary, status: "To do" as const, priority: "Medium" as const, assignee: "Unassigned" };
-			return { ...work, [kind]: [{ ...item, ...(kind === "linked" ? { relationship: request.relationship ?? "Clones" } : { relationship: undefined }) }, ...work[kind]] };
-		});
+		const taken = new Set([workItemKey, ...content.relatedWork.children.map((item) => item.key), ...content.relatedWork.linked.map((item) => item.key)]);
+		const item = relatedItemFromRequest(request, { id, key: nextRelatedKey(relatedKeyPrefix(workItemKey), taken), kind, parentType: scope?.parentType });
+		content.setRelatedWork((work) => ({ ...work, [kind]: [item, ...work[kind]] }));
 	}
 	function updateEditor(kind: "children" | "linked", patch: Partial<ProjectButterRelatedListEditor>) {
 		content.setRelatedEditor((editor) => ({ ...editor, [kind]: { ...editor[kind], ...patch } }));
 	}
+	function dismissGroup(kind: ProjectButterRelatedKind) {
+		content.setRelatedDismissed((dismissed) => dismissed.includes(kind) ? dismissed : [...dismissed, kind]);
+	}
+	const asSectionHeader = !reveal.ready;
+	// One tree shape whether or not groups show, so the confirm dialog never remounts mid-exit.
 	return (
 		<>
-				{!empty || content.attachments.length > 0 || content.attachmentComposerOpen ? <ProjectButterAttachments content={content} /> : null}
-				{!empty || content.relatedWork.children.length > 0 || content.relatedEditor.children.composerOpen ? <ProjectButterRelatedItemList editor={content.relatedEditor.children} items={content.relatedWork.children} label="Child work items" onAdd={(request) => addItem("children", request)} onChange={(children) => content.setRelatedWork((work) => ({ ...work, children }))} onEditorChange={(patch) => updateEditor("children", patch)} /> : null}
-				{!empty || content.relatedWork.linked.length > 0 || content.relatedEditor.linked.composerOpen ? <ProjectButterRelatedItemList editor={content.relatedEditor.linked} items={content.relatedWork.linked} label="Linked work" onAdd={(request) => addItem("linked", request)} onChange={(linked) => content.setRelatedWork((work) => ({ ...work, linked }))} onEditorChange={(patch) => updateEditor("linked", patch)} /> : null}
+		{visibility.count === 0 ? null : <RelatedWorkSection
+			animated={reveal.animated}
+			collapsedSummary={<RelatedWorkCollapsedSummary items={relatedSummaryItems(counts, visibility.shown)} />}
+			onOpenChange={content.setRelatedSectionOpen}
+			open={content.relatedSectionOpen}
+			ready={reveal.ready}
+			sectionRef={sectionRef}
+		>
+			{visibility.shown.attachments ? <ProjectButterAttachments asSectionHeader={asSectionHeader} content={content} emptyPreset={empty} emptyState={visibility.allEmpty} onDismissGroup={() => dismissGroup("attachments")} onRequestRemove={removal.requestRemove} /> : null}
+			{visibility.shown.children ? <ProjectButterRelatedItemList asSectionHeader={asSectionHeader} editor={content.relatedEditor.children} emptyState={visibility.allEmpty} items={content.relatedWork.children} kind="children" openItem={openRelatedItem} ownKey={workItemKey} scope={scope} onAdd={(request) => addItem("children", request)} onAddRequest={() => content.openRelatedAdd("children")} onChange={(children) => content.setRelatedWork((work) => ({ ...work, children }))} onDismissGroup={() => dismissGroup("children")} onEditorChange={(patch) => updateEditor("children", patch)} /> : null}
+			{visibility.shown.linked ? <ProjectButterRelatedItemList asSectionHeader={asSectionHeader} editor={content.relatedEditor.linked} emptyState={visibility.allEmpty} items={content.relatedWork.linked} kind="linked" openItem={openRelatedItem} ownKey={workItemKey} scope={scope} onAdd={(request) => addItem("linked", request)} onAddRequest={() => content.openRelatedAdd("linked")} onChange={(linked) => content.setRelatedWork((work) => ({ ...work, linked }))} onDismissGroup={() => dismissGroup("linked")} onEditorChange={(patch) => updateEditor("linked", patch)} /> : null}
+		</RelatedWorkSection>}
+		{removal.dialog}
 		</>
 	);
 }

@@ -31,6 +31,7 @@ export interface ButterWorkItemPlaceholder {
 		addedBy: string;
 		dateAdded: string;
 		url?: string;
+		previewSrc?: string;
 	}[];
 	comments: readonly {
 		id: string;

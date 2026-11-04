@@ -19,7 +19,7 @@ import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 export function ProjectButterStatusGlyph({ status, animated = true }: Readonly<{ status: string; animated?: boolean }>) {
 	return <ProgressCircle
 		animated={animated}
-		animateDashes={false}
+		animateDashes={animated}
 		aria-hidden
 		colorByProgress
 		dashed
@@ -35,6 +35,7 @@ export function ProjectButterStatus({
 	appearance = "icon",
 }: Readonly<{ content: ProjectButterContent; appearance?: "icon" | "field" }>) {
 	const [editor, setEditor] = useState<"create" | "edit" | null>(null);
+	const [menuOpen, setMenuOpen] = useState(false);
 	const [name, setName] = useState("");
 	const value = name.trim();
 	const duplicate = content.statusOptions.some(
@@ -58,12 +59,14 @@ export function ProjectButterStatus({
 	}
 	return (
 		<>
-			<DropdownMenu>
+			<DropdownMenu onOpenChange={(open, details) => { if (appearance !== "field" || (details.event?.type !== "mousedown" && details.event?.type !== "click")) setMenuOpen(open); }} open={menuOpen}>
 				<DropdownMenuTrigger
+					onClick={() => { if (appearance === "field") setMenuOpen((open) => !open); }}
 					render={
 						<LozengeDropdownTrigger
 							appearance={appearance === "field" ? "text" : "icon"}
 							aria-label={`Change status${appearance === "field" ? " in details" : ""}, ${content.status}`}
+							className={appearance === "field" ? "-mx-2 w-[calc(100%+1rem)] max-w-none justify-start bg-transparent px-2 pr-14 hover:bg-transparent active:bg-transparent data-[selected=true]:bg-transparent" : undefined}
 							icon={<ProjectButterStatusGlyph status={content.status} />}
 							size="spacious"
 							variant={projectButterStatusVariant(content.status)}

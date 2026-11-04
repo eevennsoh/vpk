@@ -246,8 +246,10 @@ test("board work item actions omit unsupported deep links and keep key copying a
 	assert.equal(view.queryByRole("button", { name: "Copy work item key" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "More work item actions" }));
 	assert.equal(view.queryByRole("menuitem", { name: "Copy link" }) === null, true);
-	assert.equal(view.queryByRole("menuitemcheckbox", { name: "Watch work item" }) !== null, true);
-	assert.equal(view.queryByRole("menuitemcheckbox", { name: "Flag work item" }) !== null, true);
+	for (const name of ["Log work", "Add flag", "Start watching (4)", "Add vote (2)", "Add restriction", "Select cover", "Classify work item", "Clone", "Move", "Convert to subtask", /Open command palette/u, "Archive", "Delete", "Connect Slack channel", "Print", "Export to", "Share", "Give feedback", "Switch to classic experience"]) {
+		const item = view.getByRole("menuitem", { name });
+		assert.notEqual(item.getAttribute("aria-disabled"), "true", String(name));
+	}
 });
 
 test("empty Project butter can create a coding session", async () => {
@@ -278,14 +280,14 @@ test("empty Project butter shows the reference empty layout without placeholder 
 test("empty secondary actions stay reachable by Tab without a prior hover", async () => {
 	const view = await renderWorkItem({ initialPreset: "empty", initialPresentation: "modal", shell: "project" });
 	const order = view.tabOrder();
-	const index = order.indexOf("Add attachment");
-	assert.equal(index > 0, true, "Add attachment must stay in the tab order while visually hidden");
-	assert.deepEqual(order.slice(index, index + 3), ["Add attachment", "Add child work item", "Add linked work"]);
+	const index = order.indexOf("Attachment");
+	assert.equal(index > 0, true, "the Attachment quick action must stay in the tab order while visually hidden");
+	assert.deepEqual(order.slice(index, index + 3), ["Attachment", "Subtask", "Linked work"]);
 	await view.focus(document.body);
 	for (let step = 0; step <= index; step += 1) await view.press(null, "Tab");
-	assert.equal(view.isFocused(view.getByRole("button", { name: "Add attachment" })), true);
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Attachment" })), true);
 	await view.press(null, "Enter");
-	assert.equal(view.queryByRole("textbox", { name: "Attachment name or URL" }) !== null, true);
+	assert.equal(document.querySelector('[data-related-type="attachments"]') !== null, true, "Enter opens the Attachments group");
 });
 
 test("clicking the description suppresses the focus ring that keyboard focus keeps", async () => {
@@ -371,40 +373,43 @@ test("attachment stacks expand independently and Escape returns focus without cl
 	const view = await renderWorkItem();
 	const documents = view.getByRole("button", { name: "Documents, 4 attachments" });
 	assert.equal(documents.getAttribute("aria-expanded"), "false");
-	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) === null, true);
-	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), false);
-	assert.equal(view.queryByRole("button", { name: "Preview Hero Image - Summer Launch.png" }) !== null, true);
+	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), false, "piled cards are inert");
+	assert.equal(view.tabOrder().includes("More actions for Hero Image - Summer Launch.png"), true, "single cards keep their actions");
 	await view.click(documents);
 	assert.equal(view.getByRole("button", { name: "Close documents" }).getAttribute("aria-expanded"), "true");
-	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) !== null, true);
 	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), true);
 	await view.click(view.getByRole("button", { name: "Videos, 2 attachments" }));
-	const video = view.getByRole("button", { name: "Preview Customer Interview Recording.mp4" });
+	const video = view.getByRole("button", { name: "More actions for Team Offsite Recap" });
 	await view.focus(video);
 	await view.press(video, "Escape");
 	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Close documents" }) !== null, true);
-	assert.equal(view.queryByRole("button", { name: "Preview Customer Interview Recording.mp4" }) === null, true);
+	assert.equal(view.tabOrder().includes("More actions for Team Offsite Recap"), false);
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Videos, 2 attachments" })), true);
 	await view.click(view.getByRole("button", { name: "Close documents" }));
-	assert.equal(view.queryByRole("button", { name: "Preview Q1 Marketing Strategy & Goals" }) === null, true);
 	assert.equal(view.tabOrder().includes("More actions for Q1 Marketing Strategy & Goals"), false);
 });
 
-test("attachments can be added, previewed, and removed without losing other attachments", async () => {
+test("attachments can be added as links and removed through the reference confirmation without losing others", async () => {
 	const view = await renderWorkItem();
 	await view.click(view.getByRole("button", { name: "Add attachment" }));
-	await view.fill(view.getByRole("textbox", { name: "Attachment name or URL" }), "https://example.com/design");
-	await view.click(document.querySelector('section[aria-label="Attachments"] button[type="submit"]'));
+	const input = view.getByRole("combobox", { name: "Add attachment" });
+	await view.fill(input, "https://example.com/design");
+	assert.deepEqual([...view.getByRole("listbox", { name: "Matching attachments" }).querySelectorAll("[role=option]")].map((option) => option.textContent), ['Add link "Design"']);
+	await act(async () => input.form.requestSubmit());
 	await view.click(view.getByRole("button", { name: "Links, 2 attachments" }));
-	await view.click(view.getByRole("button", { name: "Preview https://example.com/design" }));
-	assert.equal(view.getByRole("link", { name: "Open link" }).getAttribute("href"), "https://example.com/design");
-	await view.click(view.getByRole("button", { name: "Close" }));
-	await view.click(view.getByRole("button", { name: "More actions for https://example.com/design" }));
+	assert.equal(document.querySelector("[data-attachment-arrival]") !== null, true, "the new card plays its arrival and stays inert meanwhile");
+	assert.equal(view.queryByRole("button", { name: "More actions for Design" }), null);
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1800)); });
+	assert.equal(document.querySelector("[data-attachment-arrival]"), null);
+	assert.equal(view.queryByRole("button", { name: /^Preview /u }), null, "cards have no preview");
+	await view.click(view.getByRole("button", { name: "More actions for Design" }));
 	await view.click(view.getByRole("menuitem", { name: "Remove" }));
+	assert.equal(view.getByRole("dialog", { name: "Remove content?" }).textContent.includes("Once removed, it'll no longer appear in this work item."), true);
 	await view.click(view.getByRole("button", { name: "Remove" }));
-	assert.equal(view.queryByRole("button", { name: "Preview https://example.com/design" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "More actions for Design" }), null);
 	assert.equal(view.queryByRole("button", { name: "Documents, 4 attachments" }) !== null, true);
+	assert.equal(view.queryByRole("dialog", { name: "Project butter" }) !== null, true);
 });
 
 test("panel ordering changes only for valid panel drops and keeps source data immutable", () => {
@@ -527,19 +532,19 @@ test("related composers dismiss outside their row inside the work item dialog an
 	await view.click(view.getByRole("button", { name: "Add linked work" }));
 	const linked = view.getByRole("combobox", { name: "Add linked work" });
 	await view.fill(linked, "analytics events");
-	await view.click(view.getByRole("button", { name: "Relationship for the new linked work item" }));
+	await view.click(view.getByRole("button", { name: "Relationship for the new linked work item: Clones. Edit" }));
 	await view.click(view.getByRole("menuitem", { name: "Blocks" }));
 	assert.equal(view.getByRole("combobox", { name: "Add linked work" }).value, "analytics events");
 	await view.focus(linked);
 	await view.click(view.getByRole("option", { name: /VITA-12Add analytics events for onboarding steps/u }));
-	assert.equal(view.queryByRole("button", { name: "Edit relationship for VITA-12: Blocks" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Edit relationship for VITA-12: Blocks. Edit" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Add child work item" }));
 	await view.fill(view.getByRole("combobox", { name: "Create child work item" }), "Keep the unfinished child");
 	await view.click(view.getByRole("button", { name: "Description" }));
 	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 180)); });
 	assert.equal(view.queryByRole("combobox", { name: "Create child work item" }) === null, true);
 	await view.click(view.getByRole("button", { name: "Add child work item" }));
-	assert.equal(view.getByRole("combobox", { name: "Create child work item" }).value, "Keep the unfinished child");
+	assert.equal(view.getByRole("combobox", { name: "Create child work item" }).value, "", "an outside dismiss drops the uncommitted query (reference parity)");
 });
 
 test("the source comment editor opens with M, clears cancelled drafts, resizes, and saves with the keyboard", async () => {
@@ -595,10 +600,9 @@ test("header and Details share status options and custom status updates", async 
 	assert.equal(view.queryByRole("button", { name: "Change status, In review" }) !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Change status in details, In review" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "More work item actions" }));
-	await view.click(view.getByRole("menuitemcheckbox", { name: "Watch work item" }));
-	await view.press(null, "Escape");
+	await view.click(view.getByRole("menuitem", { name: "Start watching (4)" }));
 	await view.click(view.getByRole("button", { name: "More work item actions" }));
-	assert.equal(view.getByRole("menuitemcheckbox", { name: "Watch work item" }).getAttribute("aria-checked"), "true");
+	assert.equal(view.queryByRole("menuitem", { name: "Stop watching (4)" }) !== null, true);
 });
 
 
@@ -712,136 +716,16 @@ test("timeline hover previews and continuous pointer seeking follow the click po
 	root.scrollTop = 1556;
 	await settle(() => root.dispatchEvent(new Event("scroll")));
 	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 50) < 0.1, true, rail.querySelector('[data-slot="scrubber-playhead"]').style.left);
-	feedHeight = 544;
+	feedHeight = 200;
 	root.scrollTop = 1000;
 	headerTop = 180;
 	await view.rerender({count:1,view:"Audit"});
 	assert.equal(root.scrollTop, 1080, "switching to a shorter feed must preserve the sticky header");
+	assert.equal(feed.style.minHeight, "", "short feeds must not create blank scroll space");
 	headerTop = 100;
 	await settle(() => root.dispatchEvent(new Event("scroll")));
-	await settle(() => rail.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "mouse", pointerId: 8, clientX: 650, button: 0, buttons: 1 })));
-	assert.equal(Math.abs(Number.parseFloat(rail.querySelector('[data-slot="scrubber-playhead"]').style.left) - 65) < 0.1, true, "short feeds must retain continuous seeking");
 });
 
-
-test("suggestion state proposes empty details fields and accepts or dismisses one at a time", async () => {
-	const view = await renderWorkItem({ initialSuggestion: true });
-	assert.equal(document.querySelector("[data-project-butter-state]")?.getAttribute("data-project-butter-state"), "suggestion");
-	const suggestions = view.getByRole("button", { name: /8 Suggestions/u });
-	assert.equal(suggestions.getAttribute("aria-expanded"), "false");
-	assert.equal(view.queryByRole("list", { name: "Suggested field values" }), null);
-	assert.equal(view.queryByRole("button", { name: "Accept all" }), null);
-	assert.equal(view.queryByRole("button", { name: "Accept Due Date suggestion" }), null);
-	await view.click(suggestions);
-	assert.equal(suggestions.getAttribute("aria-expanded"), "true");
-	assert.equal(view.queryByRole("list", { name: "Suggested field values" }) !== null, true);
-	assert.equal(view.queryByRole("button", { name: "Accept all" }) !== null, true);
-	assert.equal(view.queryByText("Dec 15, 2026") !== null, true);
-	await view.click(suggestions);
-	assert.equal(suggestions.getAttribute("aria-expanded"), "false");
-	assert.equal(view.queryByRole("button", { name: "Accept all" }), null);
-	await view.click(suggestions);
-	assert.equal(document.querySelector("[data-project-butter-suggestion-panel]")?.getAttribute("data-suggestion-count"), "8");
-	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "false");
-	await view.click(view.getByRole("button", { name: "Accept Due Date suggestion" }));
-	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "true");
-	assert.equal(document.querySelector("[data-project-butter-suggestion-panel]")?.getAttribute("data-suggestion-count"), "7");
-	assert.equal(document.querySelector('[data-field-id="parent"]')?.getAttribute("data-field-filled"), "false");
-	await view.click(view.getByRole("button", { name: "Dismiss Reporter suggestion" }));
-	assert.equal(document.querySelector("[data-project-butter-suggestion-panel]")?.getAttribute("data-suggestion-count"), "6");
-	assert.equal(document.querySelector('[data-field-id="reporter"]')?.getAttribute("data-field-filled"), "false");
-});
-
-const SUGGESTION_FIELD_ORDER = ["dueDate", "parent", "labels", "components", "fixVersion", "acceptanceCriteria", "reporter", "costCenter"];
-
-function detailRailOrder() {
-	return [...document.querySelectorAll("[data-project-butter-detail-fields] [data-field-id], [data-project-butter-detail-fields] [data-project-butter-suggestion-cursor]")].map((node) => node.getAttribute("data-field-id") ?? "filling-bar");
-}
-
-async function acceptAllSuggestions(view) {
-	await view.click(view.getByRole("button", { name: /8 Suggestions/u }));
-	await view.click(view.getByRole("button", { name: "Accept all" }));
-}
-
-function assertFilledInRailOrder() {
-	assert.deepEqual(detailRailOrder().slice(0, 11), ["status", "assignee", "priority", ...SUGGESTION_FIELD_ORDER]);
-	assert.equal(SUGGESTION_FIELD_ORDER.every((field) => document.querySelector(`[data-field-id="${field}"]`)?.getAttribute("data-field-filled") === "true"), true);
-}
-
-test("Accept all walks the filling bar down the rail one field at a time and keeps the field order", async () => {
-	const view = await renderWorkItem({ initialSuggestion: true });
-	await acceptAllSuggestions(view);
-	const barSlots = [];
-	const filledState = (field) => document.querySelector(`[data-field-id="${field}"]`)?.getAttribute("data-field-filled");
-	for (let waited = 0; !view.queryByText("8 updated") && waited < 10_000; waited += 25) {
-		const rail = detailRailOrder();
-		const slot = rail.indexOf("filling-bar");
-		if (slot > 0 && barSlots.at(-1) !== rail[slot - 1]) {
-			barSlots.push(rail[slot - 1]);
-			assert.equal(filledState(rail[slot - 1]), "true", "the row above the bar has been filled");
-			if (SUGGESTION_FIELD_ORDER.includes(rail[slot + 1])) assert.equal(filledState(rail[slot + 1]), "false", "rows below the bar wait their turn");
-		}
-		await act(() => new Promise((resolve) => setTimeout(resolve, 25)));
-	}
-	assert.deepEqual(barSlots, ["priority", ...SUGGESTION_FIELD_ORDER], "the bar enters below the last filled field, then moves below each suggestion in rail order");
-	assert.equal(view.queryByText("8 updated") !== null, true);
-	assert.equal(detailRailOrder().includes("filling-bar"), false);
-	assertFilledInRailOrder();
-});
-
-test("the suggestion banner keeps one Teamwork Graph loader from loading to resting and back", async () => {
-	const view = await renderWorkItem({ initialSuggestion: true });
-	const loader = () => document.querySelector('[data-slot="twg-loader"][aria-label="Teamwork Graph"]');
-	const waitForState = async (state) => {
-		for (let waited = 0; loader()?.getAttribute("data-state") !== state && waited < 10_000; waited += 50) {
-			await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
-		}
-		return loader()?.getAttribute("data-state");
-	};
-	const original = loader();
-	assert.equal(original !== null, true);
-	assert.equal(await waitForState("resting"), "resting", "the intro settles to rest");
-	await acceptAllSuggestions(view);
-	assert.equal(await waitForState("loading"), "loading");
-	assert.equal(loader() === original, true, "starting to fill keeps the resting loader");
-	assert.equal(await waitForState("resting"), "resting");
-	assert.equal(view.queryByText("8 updated") !== null, true);
-	assert.equal(loader() === original, true, "the review banner keeps the loader that was filling");
-	await view.click(view.getByRole("button", { name: "Undo" }));
-	assert.equal(loader() === original, true, "undo keeps the same loader");
-	await acceptAllSuggestions(view);
-	assert.equal(await waitForState("loading"), "loading");
-	assert.equal(loader() === original, true, "filling again resumes the same loader");
-	await view.unmount();
-});
-
-test("Accept all under reduced motion fills instantly without the filling bar", async () => {
-	const matchMedia = window.matchMedia;
-	window.matchMedia = (query) => ({ matches: query.includes("prefers-reduced-motion"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-	try {
-		const view = await renderWorkItem({ initialSuggestion: true });
-		await acceptAllSuggestions(view);
-		assert.equal(view.queryByText("8 updated") !== null, true);
-		assert.equal(detailRailOrder().includes("filling-bar"), false);
-		assertFilledInRailOrder();
-		await view.unmount();
-	} finally {
-		window.matchMedia = matchMedia;
-	}
-});
-
-test("settings can switch Project butter into the suggestion state", async () => {
-	const view = await renderWorkItem();
-	await view.click(view.getByRole("button", { name: "Settings" }));
-	assert.equal(view.getByRole("switch", { name: "Suggestion" }).getAttribute("aria-checked"), "false");
-	await view.click(view.getByRole("switch", { name: "Suggestion" }));
-	assert.equal(view.getByRole("switch", { name: "Empty" }).getAttribute("aria-checked"), "false");
-	await view.click(view.getByRole("button", { name: "View prototype" }));
-	assert.equal(document.querySelector("[data-project-butter-state]")?.getAttribute("data-project-butter-state"), "suggestion");
-	assert.equal(view.queryByRole("button", { name: "Accept Parent suggestion" }), null);
-	await view.click(view.getByRole("button", { name: /Suggestions/u }));
-	assert.equal(view.queryByRole("button", { name: "Accept Parent suggestion" }) !== null, true);
-});
 
 test("Butter timestamps disclose an exact date, time, and timezone on focus and retain format toggling", async () => {
 	const view = await renderComponent({

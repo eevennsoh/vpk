@@ -3,6 +3,7 @@
 import { createElement, useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import { mergeJiraKanbanAgentCatalog } from "@/components/blocks/jira-kanban/lib/agent-catalog";
 import { linkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
@@ -97,6 +98,7 @@ export function useButterList({
 	contentMode = "default",
 	listAriaLabel = "Payments SDK v2 migration work items list",
 	onAssignedAgentSelect,
+	onAgentAssigned,
 	onBrowseAgents,
 	onCreateAgent,
 	onIssueOpen,
@@ -107,6 +109,7 @@ export function useButterList({
 	contentMode?: ContentMode;
 	listAriaLabel?: string;
 	onAssignedAgentSelect?: (issueKey: string, agent: JiraListAssignedAgent) => void;
+	onAgentAssigned?: (issueKey: string, agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onIssueOpen?: (issueKey: string) => void;
@@ -405,7 +408,7 @@ export function useButterList({
 			onSummaryChange: handleSummaryChange,
 			onStoryPointsChange: handleStoryPointsChange,
 			onToggleExpand: handleToggleExpand,
-			renderAgentSessions: (row) => createElement(ButterListAgentCell, { agentCatalog: BUTTER_AGENT_CATALOG, onAssignedAgentIdsChange: handleAssignedAgentIdsChange, onAssignedAgentSelect, onBrowseAgents, onCreateAgent, row }),
+			renderAgentSessions: (row) => createElement(ButterListAgentCell, { agentCatalog: BUTTER_AGENT_CATALOG, onAgentAssigned, onAssignedAgentIdsChange: handleAssignedAgentIdsChange, onAssignedAgentSelect, onBrowseAgents, onCreateAgent, row }),
 			onMoveRow: handleMoveRow,
 			onRefresh: handleRefresh,
 			onSelectAllRows: handleSelectAllRows,
@@ -446,6 +449,7 @@ export function useButterList({
 		nextIssueKey,
 		rowIndex,
 		onAssignedAgentSelect,
+		onAgentAssigned,
 		onBrowseAgents,
 		onCreateAgent,
 		selectedIssueKeys,

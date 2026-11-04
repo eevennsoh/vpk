@@ -214,6 +214,7 @@ export function JiraListSortableRow({
 				data-drop-target={isDropTarget || undefined}
 				ref={setNodeRef}
 				style={{
+					...rowProps.style,
 					transform: CSS.Transform.toString(transform),
 					transition,
 				}}

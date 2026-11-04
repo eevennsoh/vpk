@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import EpicIcon from "@atlaskit/icon/core/epic";
 
-import { PARENT_OPTIONS } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
+import { PARENT_OPTIONS, type ParentOption } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
 import {
 	METADATA_PICKER_POPOVER_CLASS,
 	METADATA_PICKER_POSITIONER_CLASS,
@@ -55,10 +55,11 @@ function ArtifactEpicMenuIcon({ color }: Readonly<{ color: ArtifactEpicColor }>)
 export function ArtifactParentField({
 	value,
 	onChange,
-}: Readonly<{ value: string | null; onChange: (key: string) => void }>) {
+	options = PARENT_OPTIONS,
+}: Readonly<{ value: string | null; onChange: (key: string) => void; options?: readonly Pick<ParentOption, "key" | "summary">[] }>) {
 	const [open, setOpen] = useState(false);
-	const selected = PARENT_OPTIONS.find((option) => option.key === value);
-	const items = PARENT_OPTIONS.map((option): RichTextSuggestionMenuItem => ({
+	const selected = options.find((option) => option.key === value);
+	const items = options.map((option): RichTextSuggestionMenuItem => ({
 		description: option.key,
 		icon: null,
 		id: option.key,

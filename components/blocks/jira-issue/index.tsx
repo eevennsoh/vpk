@@ -266,7 +266,7 @@ export function JiraIssue(props: Readonly<JiraIssueProps>) {
 		return <JiraIssueUncapturedWork {...props} />;
 	}
 
-	return props.appearance === "project-butter" ? <ProjectButterInvocationProvider agents={props.assignment?.agents} enabled={Boolean(props.assignment?.onAgentAssign || props.assignment?.onAssignedAgentIdsChange) && !props.selected && !props.dragging}><JiraIssueDefault {...props} /></ProjectButterInvocationProvider> : <JiraIssueDefault {...props} />;
+	return props.appearance === "project-butter" ? <ProjectButterInvocationProvider agents={props.assignment?.agents} enabled={Boolean(props.assignment?.onAgentAssign || props.assignment?.onAssignedAgentIdsChange) && !props.dragging}><JiraIssueDefault {...props} /></ProjectButterInvocationProvider> : <JiraIssueDefault {...props} />;
 }
 
 function JiraIssueDefault({
@@ -650,6 +650,7 @@ function JiraIssueDefault({
 
 	const moreActionMenu = showMoreAction ? (
 		<JiraIssueMoreMenu
+			butterAssignment={appearance === "project-butter" && !selected && !dragging && (assignment?.onAgentAssign || assignment?.onAssignedAgentIdsChange) ? assignment : undefined}
 			availableActions={availableMoreActions ?? (appearance === "project-butter" && !onMoreActionSelect ? [] : undefined)}
 			flagged={metadata?.flagged}
 			selected={selected} onSelectionToggle={onSelectionToggle}
@@ -664,7 +665,7 @@ function JiraIssueDefault({
 	) : null;
 	const summaryContent = (
 		<JiraIssueSummary
-			assignment={assignment} allowAddAgent={(!hasAgentActivityChin || invocationPhase === "handoff") && !selected && !dragging}
+			assignment={assignment} allowAddAgent={!selected && !dragging}
 			appearance={appearance} metadata={metadata} assigneeControl={assigneeControl} subtasks={subtasks} onSubtaskOpen={onSubtaskOpen}
 			assigneeAvatarLabel={assigneeAvatarLabel}
 			assigneeAvatarShape={assigneeAvatarShape}
@@ -843,7 +844,7 @@ function JiraIssueDefault({
 				{/* Running sessions already occupy the chin; attach copy takes the last
 				    row instead of stacking. Split layouts keep the other rows so the
 				    card height — and drop-zone geometry — stays put. */}
-				<ProjectButterInvocationChin hasChin={hasAgentActivityChin} iconScale={iconScale}><JiraIssueAgentActivityRows
+				<ProjectButterInvocationChin activities={activeAgentActivities} hasChin={hasAgentActivityChin} iconScale={iconScale}><JiraIssueAgentActivityRows
 					activities={activeAgentActivities} assignment={assignment}
 					attachPreviewCopy={replaceDetachedTransfer ? undefined : attachChinCopy}
 					iconScale={iconScale}

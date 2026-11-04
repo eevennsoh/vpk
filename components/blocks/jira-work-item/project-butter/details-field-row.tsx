@@ -1,20 +1,33 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import DragHandleVerticalIcon from "@atlaskit/icon/core/drag-handle-vertical";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import DataNumberIcon from "@atlaskit/icon/core/data-number";
+import EpicIcon from "@atlaskit/icon/core/epic";
+import TagIcon from "@atlaskit/icon/core/tag";
+import ComponentIcon from "@atlaskit/icon/core/component";
+import TargetIcon from "@atlaskit/icon/core/target";
+import GlobeIcon from "@atlaskit/icon/core/globe";
+import TextIcon from "@atlaskit/icon/core/text";
+import AssetsObjectIcon from "@atlaskit/icon-lab/core/assets-object";
+import PersonIcon from "@atlaskit/icon-lab/core/person-assignee";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ShimmerWave } from "@/components/ui-custom/shimmer-wave";
+import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 import { cn } from "@/lib/utils";
-import { token } from "@/lib/tokens";
 import { PROJECT_BUTTER_DETAIL_FIELDS, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-rail";
+import { motionDuration, motionEase } from "@/lib/motion";
 
-const SUGGESTION_WAVE_COLORS = ["#FCA700", "#6A9A23", "#1868DB", "#AF59E1"] as const;
+const FIELD_ICONS: Partial<Record<ProjectButterDetailFieldId, typeof DataNumberIcon>> = {
+	parent: EpicIcon, labels: TagIcon, components: ComponentIcon, fixVersion: TagIcon,
+	storyPoints: DataNumberIcon, costCenter: TagIcon, campaignGoal: TargetIcon,
+	campaignBudget: DataNumberIcon, targetPlatforms: TargetIcon, estimatedReach: DataNumberIcon,
+	audienceSegment: TextIcon, campaignRegion: GlobeIcon, assetObject: AssetsObjectIcon,
+};
 
 export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, first, last, reflow = false, shimmerText }: Readonly<{
 	children: ReactNode;
@@ -30,46 +43,36 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 	shimmerText?: string;
 }>) {
 	const [actionsOpen, setActionsOpen] = useState(false);
-	const { attributes, listeners, isDragging, setActivatorNodeRef, setNodeRef, transform } = useSortable({ id });
+	const { listeners, isDragging, setNodeRef, transform } = useSortable({ id });
 	const label = PROJECT_BUTTER_DETAIL_FIELDS[id];
+	const FieldIcon = id === "reporter" && !filled ? PersonIcon : FIELD_ICONS[id];
 	return (
 		<div
 			aria-label={`${label} field`}
-			className={cn("group/butter-field relative min-w-0 rounded-md", isDragging ? "z-30 bg-surface-overlay" : undefined)}
+			className={cn("group/butter-field relative min-w-0 rounded-md touch-pan-x", isDragging ? "z-30" : undefined)}
 			data-field-filled={filled}
 			data-field-id={id}
 			data-field-label={label}
+			data-field-dragging={isDragging ? "true" : undefined}
+			{...listeners}
 			ref={setNodeRef}
 			role="group"
-			style={{ transform: CSS.Transform.toString(transform), transition: isDragging ? undefined : "transform var(--duration-medium) var(--ease-out-practical)", boxShadow: isDragging ? token("elevation.shadow.overlay") : undefined }}
+			style={{ transform: CSS.Transform.toString(transform), transition: isDragging ? undefined : "transform var(--duration-medium) var(--ease-out-practical)" }}
 		>
 			<motion.div className="min-w-0" layout="position" layoutDependency={reflow ? undefined : "settled"} transition={DETAILS_RAIL_GLIDE}>
 				{filled ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">{label}</div> : null}
-				<div className="relative -mx-2 flex min-h-8 min-w-0 items-start rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
-					<div className="min-w-0 flex-1 pr-14 [&_[data-slot=detail-value-trigger]]:min-h-8">
-						{shimmerText ? (
-							<ShimmerWave
-								as="span"
-								baseColor="var(--color-text)"
-								baseGradientColor={SUGGESTION_WAVE_COLORS}
-								className="text-sm"
-								duration={0.9}
-								rotateYDistance={6}
-								scaleDistance={1.04}
-								spread={2}
-								transition={{ repeat: 0, ease: "easeInOut" }}
-								xDistance={0}
-								yDistance={-1}
-								zDistance={6}
-							>
-								{shimmerText}
-							</ShimmerWave>
-						) : children}
+				<div className="relative -mx-2 flex min-h-8 min-w-0 items-center rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
+					<div className={cn("flex min-w-0 flex-1 items-center gap-2 [&_[data-slot=detail-value-trigger]]:min-h-8", id !== "status" ? "pr-8" : undefined)}>
+						{FieldIcon ? <span aria-hidden className="flex size-4 shrink-0 items-center justify-center text-icon-subtle" data-field-icon={id}><FieldIcon label="" size="small" /></span> : null}
+						<AnimatePresence initial={false}>
+							<motion.div className="min-w-0 flex-1" animate={{ opacity: 1 }} initial={{ opacity: 0 }} key={shimmerText ? "shimmer" : "value"} transition={{ duration: motionDuration.fast, ease: motionEase.outPractical }}>
+								{shimmerText ? <SuggestionRainbowText text={shimmerText} /> : children}
+							</motion.div>
+						</AnimatePresence>
 					</div>
-					<div className={cn("absolute right-0 top-0 flex shrink-0 items-center opacity-0 transition-opacity duration-fast ease-out-practical group-hover/butter-field:opacity-100 group-focus-within/butter-field:opacity-100", actionsOpen || isDragging ? "opacity-100" : undefined)}>
-						<Button {...attributes} {...listeners} aria-label={`Drag to reorder ${label} field`} className="touch-pan-x" ref={setActivatorNodeRef} size="icon-compact" type="button" variant="ghost"><DragHandleVerticalIcon label="" size="small" /></Button>
+					<div className={cn("absolute right-1 top-1/2 flex -translate-y-1/2 shrink-0 items-center opacity-0 transition-opacity duration-fast ease-out-practical group-hover/butter-field:opacity-100 group-focus-within/butter-field:opacity-100", actionsOpen || isDragging ? "opacity-100" : undefined)} onPointerDown={(event) => event.stopPropagation()}>
 						<DropdownMenu onOpenChange={setActionsOpen} open={actionsOpen}>
-							<DropdownMenuTrigger render={<Button aria-label={`More ${label.toLowerCase()} field actions`} size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
+							<DropdownMenuTrigger render={<Button aria-label={`More ${label.toLowerCase()} field actions`} className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle" size="icon-compact" type="button" variant="ghost" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
 							<DropdownMenuContent align="end" positionerClassName="z-[700]">
 								<DropdownMenuItem disabled={first} onSelect={() => onMove(-1)}>Move up</DropdownMenuItem>
 								<DropdownMenuItem disabled={last} onSelect={() => onMove(1)}>Move down</DropdownMenuItem>

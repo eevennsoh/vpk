@@ -36,8 +36,7 @@ import {
  * reaches in, catches a card coming down from the air by its middle, rides
  * it into its slot and lets go. A held card is lowered steady rather than let
  * fall over as paper (`finale-wall-motion.ts`'s `held`), on the path it would
- * take alone; only who holds which card, and when, is planned here, the same
- * on every pass of the loop.
+ * take alone; who holds each card follows the repeating roster in arrival order.
  */
 
 export interface PageCursor {
@@ -47,7 +46,7 @@ export interface PageCursor {
 	 * whose colour it wears. A lane holds one card at a time.
 	 */
 	readonly lane: number;
-	/** Who holds the card: a name from `FINALE_WALL_CURSOR_NAMES`, the slot's own on every pass. */
+	/** Who holds the card: a name from the repeating `FINALE_WALL_CURSOR_NAMES` roster. */
 	readonly name: string;
 	/** The tip, on screen. */
 	readonly x: number;
@@ -153,14 +152,13 @@ function arrivedAt(from: number, descent: Descent): number {
 }
 
 /**
- * Who sets a slot's card down, the same on every pass of the loop: a teammate
- * from the avatar roster (the presenters' cursors belong to the bento, and
- * MCB's to the title), each always in the same one of the slide's four
- * cursor colours.
+ * Plan with the widest roster label so a longer name cannot clip or overlap.
+ * The lane is independent of the displayed name's position in the sequence.
  */
 function wallCursorHolder(seed: number): { readonly name: string; readonly lane: number } {
-	const person = Math.floor(hash01(seed * 5.13 + 0.7) * FINALE_WALL_CURSOR_NAMES.length);
-	return { name: FINALE_WALL_CURSOR_NAMES[person], lane: person % FINALE_CURSORS.length };
+	const lane = Math.floor(hash01(seed * 5.13 + 0.7) * FINALE_CURSORS.length);
+	const name = FINALE_WALL_CURSOR_NAMES.reduce((longest, next) => next.length > longest.length ? next : longest);
+	return { name, lane };
 }
 
 interface Box {
@@ -196,7 +194,9 @@ interface WallHold extends Holder {
  */
 function onCard(slot: WallSlot, card: WallArrival, time: number, geometry: WallGeometry, viewport: FinaleViewport, breathing = true): { readonly x: number; readonly y: number; readonly scale: number } {
 	const pose = arrivalCardPose(slot, card, slotOnScreen(slot, wallOffset(time, geometry), geometry), Math.min(time, card.descent.touchdown), viewport, { breathing });
-	return projectLifted(pose, viewport);
+	const projected = projectLifted(pose, viewport);
+	// Leave room for the widest label on portrait walls without moving the grip off the card.
+	return { ...projected, scale: projected.scale * (viewport.width < viewport.height ? 0.75 : 1) };
 }
 
 /**
@@ -370,6 +370,44 @@ function wallHold(slot: WallSlot, wall: FinaleWall): WallHold | null {
 	});
 }
 
+const cursorOrder = new WeakMap<FinaleWall, Map<string, number>>();
+const cursorPrefixes = new WeakMap<FinaleWall, { counts: Map<number, number>; last: number; total: number }>();
+
+function holdsThrough(column: number, wall: FinaleWall): number {
+	let prefix = cursorPrefixes.get(wall);
+	if (!prefix) {
+		const first = visibleWallBuckets(0, wall.geometry).first;
+		prefix = { counts: new Map([[first - 1, 0]]), last: first - 1, total: 0 };
+		cursorPrefixes.set(wall, prefix);
+	}
+	while (prefix.last < column) {
+		prefix.last += 1;
+		prefix.total += wall.bucket(prefix.last).filter((slot) => wallHold(slot, wall) !== null).length;
+		prefix.counts.set(prefix.last, prefix.total);
+	}
+	return prefix.counts.get(column) ?? 0;
+}
+
+/** Count accepted earlier holds, including those beyond the visible frame, so seeking and replay preserve the sequence. */
+function wallCursorName(slot: WallSlot, hold: WallHold, wall: FinaleWall): string {
+	const index = perSlot(cursorOrder, wall, slot, () => {
+		const { geometry } = wall;
+		const first = visibleWallBuckets(0, geometry).first;
+		const ahead = Math.ceil(((hold.to - hold.from + LANE_REST_S) * wallSpeed(geometry) + DESCEND_SPAN * geometry.arrivalReach + geometry.maxTileWidth) / geometry.bucketWidth) + 1;
+		const nearby = Math.max(first, slot.bucket - ahead);
+		let count = holdsThrough(nearby - 1, wall);
+		for (let column = nearby; column <= slot.bucket + ahead; column += 1) {
+			for (const other of wall.bucket(column)) {
+				if (other.key === slot.key) continue;
+				const previous = wallHold(other, wall);
+				if (previous && (previous.from < hold.from || (previous.from === hold.from && other.key < slot.key))) count += 1;
+			}
+		}
+		return count;
+	});
+	return FINALE_WALL_CURSOR_NAMES[index % FINALE_WALL_CURSOR_NAMES.length];
+}
+
 /** MCB's lane: his own colour and name, from the slide. */
 const CARRIER_LANE = Math.max(0, FINALE_CURSORS.findIndex((cursor) => cursor.id === "mike"));
 
@@ -411,7 +449,7 @@ export function wallCursorsAt(time: number, wall: FinaleWall, drops: readonly Be
 			// The card it takes: the slot's own, or the top one of a print slot's stack.
 			const card = slotArrivals(slot, wall, prints)[0];
 			if (!card || time < hold.from || time > card.descent.touchdown + LEAVE_S) continue;
-			cursors.push(heldCursor(slot, card, hold, time, geometry, viewport));
+			cursors.push(heldCursor(slot, card, { ...hold, name: wallCursorName(slot, hold, wall) }, time, geometry, viewport));
 		}
 	}
 	return cursors;

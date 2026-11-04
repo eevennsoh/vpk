@@ -12,8 +12,6 @@ import type {
 	JiraKanbanColumnData,
 } from "@/components/blocks/jira-kanban";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
-import { JIRA_CODING_AGENT_GLYPH } from "@/lib/agent-avatar-visuals";
-import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 
 import { BUTTER_PAY_CURRENT_USER } from "./current-user";
 import { BUTTER_HEADER_AGENT_ASSIGNEES } from "./header-agent-assignees";
@@ -28,6 +26,7 @@ import { PAY_STORY_PEOPLE } from "./presentation-people";
 import { getButterPullRequestPreview } from "./presentation-pull-requests";
 
 export { BUTTER_PAY_CURRENT_USER };
+export { BUTTER_BOARD_AGENTS, BUTTER_PRIMARY_BOARD_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 
 const BUTTER_PAY_CURRENT_USER_INVOKER = {
 	avatarSrc: BUTTER_PAY_CURRENT_USER.avatarSrc,
@@ -95,25 +94,6 @@ export const BUTTER_PAY_BOARD_AGENTS = [
 		brandName: "github-copilot",
 	},
 ] as const satisfies readonly JiraKanbanAgentData[];
-
-/** The five existing board identities, including the WAC header artwork. */
-export const BUTTER_PRIMARY_BOARD_AGENTS = [
-	{ id: "claude-code", name: "Claude", byline: "Coding agent by Anthropic", brandName: "claude", avatarSrc: "/illustration/agent-lanyard/claude.svg", headerId: "wac-claude" },
-	{ id: "test-agent", name: "Cursor", byline: "Coding agent by Cursor", brandName: "cursor", avatarSrc: "/illustration/agent-lanyard/cursor.svg", headerId: "wac-cursor" },
-	{ id: "review-agent", name: "Codex", byline: "Coding agent by OpenAI", brandName: "openai-codex", avatarSrc: "/illustration/agent-lanyard/codex.svg", headerId: "wac-codex" },
-	{ id: "release-agent", name: "GitHub Copilot", byline: "Coding agent by GitHub", brandName: "github-copilot", avatarSrc: "/illustration/agent-lanyard/copilot.svg", headerId: "wac-copilot" },
-	{ id: "figma", name: "Figma", byline: "Design agent by Figma", brandName: "figma", avatarSrc: undefined, headerId: "wac-figma" },
-] as const satisfies readonly (JiraKanbanAgentData & { headerId: string })[];
-
-const CUSTOM_BOARD_AGENT_IDS = ["code-reviewer", "release-notes-drafter", "bug-report-assistant"] as const;
-
-/** Assignment catalog shared by both content presets; custom agents stay unpinned. */
-export const BUTTER_BOARD_AGENTS: readonly JiraKanbanAgentData[] = [
-	...BUTTER_PRIMARY_BOARD_AGENTS,
-	{ id: "jira-coding", name: "Jira Coding Agent", byline: "", avatarSrc: JIRA_CODING_AGENT_GLYPH },
-	{ id: "rovo-cli", name: "Rovo CLI", byline: "", avatarSrc: "/illustration/project-butter-agents/agent-rovo.svg" },
-	...CUSTOM_BOARD_AGENT_IDS.map((id) => ROVO_AGENT_SELECTOR_AGENTS.find((agent) => agent.id === id)!),
-];
 
 export function toButterAgentActivityFromSession(
 	session: AgentSessionItem,
@@ -366,10 +346,12 @@ export const BUTTER_PAY_STATUS_PHASES = [
 	"Done",
 ] as const satisfies readonly string[];
 
+export const BUTTER_SUGGESTION_DEMO_KEY = "PAY-999";
+
 const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 	{
 		title: "To do",
-		count: 4,
+		count: 5,
 		cards: [
 			createCard({
 				assignee: PAY_STORY_PEOPLE.diego,
@@ -377,6 +359,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				tags: [{ text: "wallet", color: "purple" }],
 				title: "Carry card-artwork metadata into the next wallet epic",
 			}),
+			{ code: BUTTER_SUGGESTION_DEMO_KEY, title: "Improve merchant onboarding for Payments SDK v2", tags: [], priority: "medium" },
 			createCard({
 				assignee: PAY_STORY_PEOPLE.priya,
 				code: "PAY-124",

@@ -273,7 +273,7 @@ test("Jira issue exposes separate Work Item agent and skill pickers in the More 
 	assert.match(SOURCE, /<JiraIssueMoreMenu[\s\S]*generativeAction=\{generativeActionPresentation === "more-actions" \? generativeAction : undefined\}[\s\S]*generativeActionIssue=\{\{ issueKey, summary \}\}/u);
 	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenus[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}/u);
 	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenus[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}[\s\S]*onRequestClose=\{\(\) => handleOpenChange\(false\)\}[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Move work item/u);
-	assert.match(MORE_MENU_SOURCE, /generativeAction \? null : <DropdownMenuItem[\s\S]*Add agent/u);
+	assert.match(MORE_MENU_SOURCE, /generativeAction \|\| butterAssignment \? null : <DropdownMenuItem[\s\S]*Add agent/u);
 	assert.match(GENERATIVE_SOURCE, /export function JiraIssueAgentAndSkillSubmenus/u);
 	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Add agent<\/DropdownMenuSubTrigger>/u);
 	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Use skills<\/DropdownMenuSubTrigger>/u);

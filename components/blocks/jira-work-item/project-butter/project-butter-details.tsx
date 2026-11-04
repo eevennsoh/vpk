@@ -7,8 +7,8 @@ import CustomizeIcon from "@atlaskit/icon/core/customize";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { SetToRecurRow } from "@/components/blocks/jira-work-item/team-eu26/components/set-to-recur-popover";
 import { TEAM_EU_REFERENCE_AUTOMATION_RULES } from "@/components/blocks/jira-work-item/team-eu26/data/team-eu-automation-rules";
-import { ProjectButterDevelopmentActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-actions";
 import { ProjectButterDetailsFields } from "@/components/blocks/jira-work-item/project-butter/details-fields";
+import { ProjectButterDevelopmentActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-actions";
 import { PROJECT_BUTTER_DETAIL_FIELDS, PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { ProjectButterSuggestionPanel } from "@/components/blocks/jira-work-item/project-butter/suggestion-panel";
 import { useProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
@@ -24,38 +24,35 @@ import { reorderProjectButterPanels, type ProjectButterPanelId } from "@/compone
 const TITLES: Record<ProjectButterPanelId, string> = { details: "Details", development: "Development", automation: "Automation", apps: "Apps" };
 const APPS = ["My Reminders", "Tempo", "PagerDuty", "Sentry", "Checklist", "Invision for Jira", "Trello Assistant"];
 
-export function ProjectButterDetails({ code = "VITA-1", content, empty, onPanelOrderChange, onStartCoding, panelOrder, sidePanel, suggestion = false }: Readonly<{
+export function ProjectButterDetails({ code = "VITA-1", content, empty, onDescriptionSuggested, onPanelOrderChange, onStartCoding, panelOrder, sidePanel, suggestion = false, suggestionProfile = "default" }: Readonly<{
 	code?: string;
 	content: ProjectButterContent;
 	empty: boolean;
+	onDescriptionSuggested?: (text: string) => void;
 	onPanelOrderChange: (order: ProjectButterPanelId[]) => void;
 	onStartCoding: () => void;
 	panelOrder: ProjectButterPanelId[];
 	sidePanel: boolean;
 	suggestion?: boolean;
+	suggestionProfile?: "default" | "payments";
 }>) {
 	const id = useId();
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 	const [moreFields, setMoreFields] = useState(false);
-	const [openedSuggestion, setOpenedSuggestion] = useState(false);
 	const [developmentFields, setDevelopmentFields] = useState<string[]>([]);
 	const [recentRuns, setRecentRuns] = useState(false);
-	const fill = useProjectButterSuggestionFill(content, suggestion, () => setMoreFields(true));
-	if (suggestion && !openedSuggestion) {
-		setOpenedSuggestion(true);
-		setMoreFields(true);
-	}
+	const fill = useProjectButterSuggestionFill(content, suggestion, () => setMoreFields(true), suggestionProfile, onDescriptionSuggested);
 	const order = panelOrder.filter((panel) => panel !== "apps" || !empty || sidePanel);
 	function panelActions(panel: ProjectButterPanelId) {
 		if (panel === "apps") return null;
 		const Icon = panel === "development" ? CustomizeIcon : ShowMoreHorizontalIcon;
-		return <DropdownMenu><DropdownMenuTrigger render={<Button aria-label={panel === "development" ? "Development settings" : `More ${panel} actions`} size="icon-compact" type="button" variant="ghost" />}><Icon label="" size="small" /></DropdownMenuTrigger><DropdownMenuContent align="end" positionerClassName="z-[650]">
+		return <DropdownMenu><DropdownMenuTrigger render={<Button aria-label={panel === "development" ? "Development settings" : `More ${panel} actions`} className={panel === "development" ? undefined : "[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle"} size="icon-compact" type="button" variant="ghost" />}><Icon label="" size="small" /></DropdownMenuTrigger><DropdownMenuContent align="end" positionerClassName="z-[650]">
 			{panel === "details" ? <><DropdownMenuCheckboxItem checked={moreFields} onCheckedChange={setMoreFields}>Show more fields</DropdownMenuCheckboxItem><DropdownMenuSeparator /><DropdownMenuGroup><DropdownMenuLabel>Visible fields</DropdownMenuLabel>{content.detailFields.order.filter((field) => !PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS.includes(field)).map((field) => <DropdownMenuCheckboxItem checked={!content.detailFields.hidden.includes(field)} key={field} onCheckedChange={(checked) => { content.setDetailFields((current) => ({ ...current, hidden: checked ? current.hidden.filter((hidden) => hidden !== field) : [...current.hidden, field] })); if (checked) setMoreFields(true); }}>{PROJECT_BUTTER_DETAIL_FIELDS[field]}</DropdownMenuCheckboxItem>)}</DropdownMenuGroup></> : panel === "development" ? ["Branches", "Commits", "Pull requests"].map((field) => <DropdownMenuCheckboxItem checked={developmentFields.includes(field)} key={field} onCheckedChange={(checked) => setDevelopmentFields((fields) => checked ? [...fields, field] : fields.filter((item) => item !== field))}>Show {field.toLowerCase()}</DropdownMenuCheckboxItem>) : panel === "automation" ? <DropdownMenuItem onSelect={() => setRecentRuns(true)}>Recent run rules</DropdownMenuItem> : null}
 		</DropdownMenuContent></DropdownMenu>;
 	}
 	return (
 		<aside aria-label="Work item details" className="min-w-0">
-			{suggestion ? <ProjectButterSuggestionPanel fill={fill} /> : null}
+			{suggestion ? <ProjectButterSuggestionPanel fill={fill} showIntroLoading={suggestionProfile === "payments"} /> : null}
 			<div className={cn("relative", suggestion && "[&_[data-field-id]]:scroll-mt-20")} data-project-butter-suggestion-fields={fill.columnId}>
 			<DndContext collisionDetection={closestCenter} id={id} onDragEnd={({ active, over }) => onPanelOrderChange(reorderProjectButterPanels(panelOrder, active.id, over?.id ?? null))} sensors={sensors}>
 				<SortableContext items={order} strategy={verticalListSortingStrategy}>

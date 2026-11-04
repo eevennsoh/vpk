@@ -1,5 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { existsSync } = require("node:fs");
+const { join } = require("node:path");
 
 const { renderComponent } = require("../../../../scripts/lib/render-component.js");
 const { BUTTER_DONE_PLACEHOLDERS } = require("../../../../components/projects/butter/data/work-item-placeholders/done.ts");
@@ -16,6 +18,7 @@ const COLUMN_MAPS = [
 
 const HARNESS = `import React from "react";
 	import { BUTTER_WORK_ITEM_PLACEHOLDERS } from "@/components/projects/butter/data/work-item-placeholders";
+	import { attachmentDisplayName } from "@/components/blocks/jira-work-item/project-butter/attachment-model";
 	import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 
 	const session = {
@@ -40,7 +43,9 @@ const HARNESS = `import React from "react";
 		description,
 		labels,
 		dueDate,
+		storyPoints,
 		reporterName,
+		defaultReporterName,
 		withSession = false,
 		passMap = true,
 	}) {
@@ -50,6 +55,7 @@ const HARNESS = `import React from "react";
 			description,
 			labels,
 			dueDate,
+			storyPoints,
 			reporter: reporterName ? { name: reporterName } : undefined,
 		} : undefined;
 		const content = useProjectButterContent(
@@ -57,6 +63,7 @@ const HARNESS = `import React from "react";
 			workItem,
 			withSession ? [session, waiting] : undefined,
 			passMap ? BUTTER_WORK_ITEM_PLACEHOLDERS : undefined,
+			defaultReporterName ? { name: defaultReporterName } : undefined,
 		);
 		const comments = content.activityEntries.filter((entry) => entry.kind === "comment" && !String(entry.id).startsWith("invocation-"));
 		const replies = comments.flatMap((entry) => entry.kind === "comment" ? entry.replies ?? [] : []);
@@ -65,7 +72,8 @@ const HARNESS = `import React from "react";
 			<p data-field="reporter">{content.reporter?.name ?? ""}</p>
 			<p data-field="child">{content.relatedWork.children.map((item) => item.key).join(",")}</p>
 			<p data-field="linked">{content.relatedWork.linked.map((item) => item.key).join(",")}</p>
-			<p data-field="attachment">{content.attachments.map((item) => item.name).join("|")}</p>
+			<p data-field="attachment">{content.attachments.map(attachmentDisplayName).join("|")}</p>
+			<p data-field="attachment-preview">{content.attachments.map((item) => item.previewSrc ?? "").join("|")}</p>
 			<p data-field="comment">{comments.map(commentText).join(" ")}</p>
 			<p data-field="reply">{replies.map((reply) => reply.body).join(" ")}</p>
 			<p data-field="session">{content.activityEntries.filter((entry) => String(entry.id).startsWith("invocation-")).map((entry) => entry.id).join(",")}</p>
@@ -73,7 +81,7 @@ const HARNESS = `import React from "react";
 			<p data-field="labels">{content.detailFields.labels.join(",")}</p>
 			<p data-field="components">{content.detailFields.components.join(",")}</p>
 			<p data-field="fix">{content.detailFields.fixVersion}</p>
-			<p data-field="criteria">{content.detailFields.acceptanceCriteria}</p>
+			<p data-field="story-points">{content.detailFields.storyPoints}</p>
 			<p data-field="cost">{content.detailFields.costCenter}</p>
 			<p data-field="campaign">{content.detailFields.campaignGoal}</p>
 			<p data-field="platforms">{content.detailFields.targetPlatforms.join(",")}</p>
@@ -106,6 +114,27 @@ test("each column map authors description, children, attachments, and comments",
 	}
 });
 
+test("every attachment previews a distinct primary ambient illustration, varied within each work item", () => {
+	const seen = new Set();
+	for (const [, source, codes] of COLUMN_MAPS) {
+		for (const code of codes) {
+			const families = new Set();
+			const colors = new Set();
+			for (const attachment of source[code].attachments) {
+				const match = /^\/ambient\/(.+)\/primary\/(\w+)\.(?:svg|png)$/u.exec(attachment.previewSrc ?? "");
+				assert.notEqual(match, null, `${attachment.id} previews a primary ambient illustration`);
+				assert.equal(existsSync(join(__dirname, "../../../../public", attachment.previewSrc)), true, attachment.previewSrc);
+				assert.equal(seen.has(attachment.previewSrc), false, `${attachment.previewSrc} is reused`);
+				seen.add(attachment.previewSrc);
+				families.add(match[1]);
+				colors.add(match[2]);
+			}
+			assert.equal(families.size, source[code].attachments.length, `${code} mixes designs`);
+			assert.equal(colors.size, source[code].attachments.length, `${code} mixes colors`);
+		}
+	}
+});
+
 test("opening a card from each column fills that map's sections", async () => {
 	for (const [, source, codes] of COLUMN_MAPS) {
 		for (const code of codes) {
@@ -115,6 +144,7 @@ test("opening a card from each column fills that map's sections", async () => {
 			assert.equal(field("reporter", view.container), placeholder.reporter, code);
 			assert.equal(field("child", view.container).split(",").includes(placeholder.children[0].key), true, code);
 			assert.equal(field("attachment", view.container).includes(placeholder.attachments[0].name), true, code);
+			assert.equal(field("attachment-preview", view.container).includes(placeholder.attachments[0].previewSrc), true, code);
 			assert.equal(field("comment", view.container).includes(placeholder.comments[0].markdown), true, code);
 			assert.equal(field("campaign", view.container), "", code);
 			await view.unmount();
@@ -123,7 +153,7 @@ test("opening a card from each column fills that map's sections", async () => {
 });
 
 test("opened PAY-118 fills description, child, attachment, comment, and detail fields", async () => {
-	await renderHarness({ code: "PAY-118" });
+	await renderHarness({ code: "PAY-118", storyPoints: 5 });
 	assert.equal(field("description").includes("LegacyGatewayAdapter"), true);
 	assert.equal(field("description").includes("PAY-118"), true);
 	assert.equal(field("reporter"), "Priya Raman");
@@ -136,7 +166,7 @@ test("opened PAY-118 fills description, child, attachment, comment, and detail f
 	assert.equal(field("labels"), "wallet");
 	assert.equal(field("components").includes("Frontend"), true);
 	assert.equal(field("fix"), "v2.0");
-	assert.equal(field("criteria").includes("named owner"), true);
+	assert.equal(field("story-points"), "5");
 	assert.equal(field("cost"), "RD-100-ENGINEERING");
 	assert.equal(field("campaign"), "");
 	assert.equal(field("platforms"), "");
@@ -169,13 +199,13 @@ test("placeholder fill keeps a complete agent session in the activity feed", asy
 	assert.equal(field("comment").includes("issuer artwork id"), true);
 });
 
-test("a missing placeholder key stays blank and does not throw", async () => {
+test("a missing placeholder key gets a default reporter and leaves other fields blank", async () => {
 	await renderHarness({ code: "PAY-404" });
 	assert.equal(field("description"), "");
 	assert.equal(field("child"), "");
 	assert.equal(field("attachment"), "");
 	assert.equal(field("comment"), "");
-	assert.equal(field("reporter"), "");
+	assert.equal(field("reporter"), "Annie Cook");
 	assert.equal(field("fix"), "");
 });
 
@@ -184,9 +214,17 @@ test("empty and blank presets stay empty when a placeholder exists", async () =>
 	assert.equal(field("description"), "");
 	assert.equal(field("attachment"), "");
 	assert.equal(field("comment"), "");
+	assert.equal(field("reporter"), "Priya Raman");
 	await renderHarness({ code: "PAY-118", preset: "blank" });
 	assert.equal(field("description"), "");
 	assert.equal(field("child"), "");
+});
+
+test("items without an authored reporter use the host's current person in every preset", async () => {
+	for (const preset of ["filled", "empty", "blank"]) {
+		await renderHarness({ code: "PAY-999", preset, defaultReporterName: "Venn" });
+		assert.equal(field("reporter"), "Venn");
+	}
 });
 
 test("the reference demo stays filled when no board item is open", async () => {

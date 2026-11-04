@@ -296,7 +296,7 @@ test("Artifact Pane labels use colored tags in the field and grouped picker", ()
 	assert.match(LABELS_FIELD_SOURCE, /import DeleteIcon from "@atlaskit\/icon\/core\/delete"/u);
 	assert.match(LABELS_FIELD_SOURCE, /import \{ Tag, TagGroup, type TagColor \} from "@\/components\/ui\/tag"/u);
 	assert.match(LABELS_FIELD_SOURCE, /const LABEL_COLORS = \["blue", "green", "purple", "orange", "teal", "magenta", "yellow"\]/u);
-	assert.match(LABELS_FIELD_SOURCE, /const allLabels = Array\.from\(new Set\(\[\.\.\.value, \.\.\.LABEL_OPTIONS\]\)\);/u);
+	assert.match(LABELS_FIELD_SOURCE, /options = LABEL_OPTIONS[\s\S]*const allLabels = Array\.from\(new Set\(\[\.\.\.value, \.\.\.options\]\)\);/u);
 	assert.match(LABELS_FIELD_SOURCE, /const visibleLabels = allLabels\.filter/u);
 	assert.match(LABELS_FIELD_SOURCE, /<Tag className="self-center justify-self-start" color=\{labelColor\(label\)\}/u);
 	assert.match(LABELS_FIELD_SOURCE, /className="rich-text-command-menu-heading"/u);

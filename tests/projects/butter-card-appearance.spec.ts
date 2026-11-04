@@ -5,6 +5,341 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("empty activity places the comment bar 24 pixels below the tabs", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/jira-work-item#project-butter"));
+	await page.getByRole("switch", { name: "Empty" }).check();
+	await page.getByRole("button", { name: "Modal", exact: true }).click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	const tabs = dialog.getByRole("tablist", { name: "Activity views" });
+	const comment = dialog.getByRole("button", { name: "Add a comment" });
+	await expect(comment).toBeVisible();
+	await expect.poll(async () => {
+		const [tabsBox, commentBox] = await Promise.all([tabs.boundingBox(), comment.boundingBox()]);
+		return tabsBox && commentBox ? commentBox.y - (tabsBox.y + tabsBox.height) : null;
+	}).toBe(24);
+});
+
+test("short work item activity ends without a viewport of blank space", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const feed = page.locator("[data-project-butter-activity-feed]");
+	await expect(feed.locator("[data-jira-activity-entry-id]").last()).toBeVisible();
+	await expect.poll(() => feed.evaluate((element) => {
+		const last = element.querySelectorAll("[data-jira-activity-entry-id]");
+		return element.getBoundingClientRect().bottom - last[last.length - 1].getBoundingClientRect().bottom;
+	})).toBeLessThan(64);
+});
+
+test("the board remains visible while a work item loads for the first time", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	const board = page.locator("[data-butter-board-surface]");
+	await expect(board).toBeVisible();
+	await page.evaluate(() => {
+		Object.assign(window, { workItemEntryTransitions: [] as string[] });
+		document.addEventListener("transitionrun", (event) => {
+			if (event.target instanceof HTMLElement && event.target.matches('[role="dialog"][data-slot="dialog-content"]')) {
+				(window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions.push(event.propertyName);
+			}
+		}, true);
+	});
+	let releaseChunks!: () => void;
+	const chunksReleased = new Promise<void>((resolve) => { releaseChunks = resolve; });
+	let observeChunk!: () => void;
+	const chunkRequested = new Promise<void>((resolve) => { observeChunk = resolve; });
+	await page.route("**/_next/static/**/*.js", async (route) => {
+		observeChunk();
+		await chunksReleased;
+		await route.continue();
+	});
+	try {
+		await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+		await chunkRequested;
+		await expect(board).toBeVisible({ timeout: 5_000 });
+		await expect(page.getByRole("status").filter({ hasText: "Opening work item" })).toBeVisible();
+		await card(page, "PAY-107").locator('[data-slot="jira-issue-card"]').click();
+		await expect(board).toBeVisible();
+	} finally {
+		releaseChunks();
+	}
+	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Move retry and backoff out of LegacyGatewayAdapter" })).toBeVisible();
+	await expect.poll(() => page.evaluate(() => (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions)).toContain("opacity");
+	await page.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeHidden();
+	await page.evaluate(() => { (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions = []; });
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	await expect(page.getByRole("heading", { name: "Port confirmPaymentIntent and the 3-D Secure challenge flow" })).toBeVisible();
+	await expect.poll(() => page.evaluate(() => (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions)).toContain("opacity");
+});
+
+test("the first work item opens without motion when reduced motion is requested", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	await expect(dialog).toBeVisible();
+	await expect(dialog).toHaveCSS("transition-property", "none");
+	await expect(dialog).toHaveCSS("opacity", "1");
+});
+
+test("opening work items leaves every synced session visible after overlapping arrivals", async ({ page }) => {
+	test.setTimeout(240_000);
+	await page.goto(appUrl("/butter"));
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	const column = page.locator("[data-agent-session-column]");
+	await expect(column.locator('[data-testid^="agent-session-row-"]').first()).toBeAttached();
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
+	await page.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(page.locator("[data-butter-board-surface]")).toHaveAttribute("data-agent-session-sync", "settled", { timeout: 220_000 });
+	await expect.poll(() => column.locator('[data-testid^="agent-session-row-"]').evaluateAll((rows) => rows.filter((row) => {
+		const style = getComputedStyle(row);
+		return Number(style.opacity) < 0.99 || style.visibility !== "visible";
+	}).length), { timeout: 10_000 }).toBe(0);
+	await expect(column.locator('[data-testid^="agent-session-row-"]')).toHaveCount(48);
+	await card(page, "PAY-107").locator('[data-slot="jira-issue-card"]').click();
+	await expect(page.getByRole("heading", { name: "Move retry and backoff out of LegacyGatewayAdapter" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeHidden();
+	await expect(column.locator('[data-testid^="agent-session-row-"]')).toHaveCount(48);
+});
+
+test("Butter card overflow opens the agent submenu on hover and previews in the chin", async ({ page }) => {
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	const issue = card(page, "PAY-105");
+	await issue.getByRole("button", { name: "More actions for PAY-105" }).focus();
+	await page.keyboard.press("Enter");
+	const addAgent = page.getByRole("menuitem", { name: /^Add agent/ });
+	await addAgent.hover();
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+	await expect(picker).toHaveCount(1);
+	await expect(addAgent).toHaveAttribute("aria-expanded", "true");
+	await expect(picker.getByText("Software agents", { exact: true })).toBeVisible();
+	await expect(picker).toHaveCSS("opacity", "1");
+	const parentBounds = await page.getByRole("menu", { name: "More actions for PAY-105" }).boundingBox();
+	const submenuBounds = await picker.boundingBox();
+	if (!parentBounds || !submenuBounds) throw new Error("Missing menu geometry");
+	expect(submenuBounds.x).toBeGreaterThanOrEqual(parentBounds.x + parentBounds.width - 4);
+	await picker.getByRole("option", { name: /^Claude/ }).hover();
+	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
+	await page.getByRole("menuitem", { name: /^Use skills/ }).hover();
+	await expect(picker).toHaveCount(0);
+	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-actual"]')).not.toHaveAttribute("inert", "");
+	await page.keyboard.press("Escape");
+	await addAgent.focus();
+	await page.keyboard.press("ArrowRight");
+	await expect(picker).toHaveCount(1);
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
+	await page.keyboard.press("Escape");
+	await expect(addAgent).toBeFocused();
+	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-actual"]')).not.toHaveAttribute("inert", "");
+	await page.keyboard.press("ArrowRight");
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await picker.getByRole("option", { name: /^Claude/ }).click();
+	const cloud = page.getByText("Run on cloud", { exact: true });
+	await expect(cloud).toBeVisible();
+	await cloud.click();
+	await expect(page.getByRole("menu", { name: "More actions for PAY-105" })).toHaveCount(0);
+	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
+});
+
+test("Butter session menu opens the same agent picker", async ({ page }) => {
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	const issue = card(page, "PAY-105");
+	await issue.locator('[data-jira-issue-agent-row-handle]').click();
+	await page.getByRole("button", { name: "Add agent", exact: true }).click();
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+	await expect(picker).toHaveCount(1);
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
+	await picker.getByRole("option", { name: /^Claude/ }).click();
+	await page.getByText("Run on cloud", { exact: true }).click();
+	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
+});
+
+test("a selected Butter card keeps the shared picker available from its session", async ({ page }) => {
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	const issue = card(page, "PAY-105");
+	await issue.locator('[data-slot="jira-issue-project-butter"] p').first().click({ modifiers: ["Shift"] });
+	await issue.locator('[data-jira-issue-agent-row-handle]').click();
+	await page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true }).click();
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+	await expect(picker.getByText("Software agents", { exact: true })).toBeVisible();
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
+	await page.keyboard.press("Escape");
+	await expect(issue.locator('[data-jira-issue-agent-row-handle]')).toBeFocused();
+	await issue.locator('[data-jira-issue-agent-row-handle]').click();
+	await page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true }).click();
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await picker.getByRole("option", { name: /^Claude/ }).click();
+	await page.getByText("Run on cloud", { exact: true }).click();
+	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
+});
+
+test("Butter bulk assignment uses the same picker and adds the agent to each selected card", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	for (const key of ["PAY-105", "PAY-118"]) {
+		await card(page, key).locator('[data-slot="jira-issue-project-butter"] p').first().click({ modifiers: ["Shift"] });
+	}
+	const toolbar = page.getByRole("region", { name: "2 cards selected. Bulk actions available." });
+	await toolbar.getByRole("button", { name: "Add agent", exact: true }).click();
+	await expect(page.getByRole("button", { name: "Browse agents" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Create agent" })).toBeVisible();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await page.getByRole("option", { name: /^Claude/ }).click();
+	const cloud = page.getByText("Run on cloud", { exact: true });
+	await expect(cloud).toBeVisible();
+	const glowOwners = page.evaluate(async () => {
+		const owners = new Set<string>();
+		const start = performance.now();
+		while (performance.now() - start < 5000 && owners.size < 2) {
+			for (const halo of document.querySelectorAll('[data-jira-linking-glow-halo]')) {
+				const owner = halo.closest<HTMLElement>('[data-issue-key]')?.dataset.issueKey;
+				if (owner) owners.add(owner);
+			}
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+		}
+		return [...owners].sort();
+	});
+	await cloud.click();
+	await expect(card(page, "PAY-105").getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(card(page, "PAY-118").getByRole("button", { name: "Claude: Working" })).toBeVisible();
+	expect(await glowOwners).toEqual(["PAY-105", "PAY-118"]);
+});
+
+test("Butter list session menu uses the shared picker and acknowledges the added agent", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter"));
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	const row = page.getByRole("region", { name: "Payments SDK v2 migration work items list" }).locator("tr").filter({ hasText: "PAY-105" });
+	await row.getByRole("button", { name: "Edit agents" }).click();
+	await page.getByRole("button", { name: "Assign agent", exact: true }).click();
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+	await expect(picker.getByText("Software agents", { exact: true })).toBeVisible();
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await picker.getByRole("option", { name: /^Claude/ }).click();
+	await page.getByText("Run on cloud", { exact: true }).click();
+	await expect(row).toHaveCSS("--jira-list-row-flash-color", /217, 119, 87|d97757/);
+	await expect(row.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+});
+
+test("Butter work item uses the shared picker and adds its session to the board card", async ({ page }) => {
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	await card(page, "PAY-105").getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true }).click();
+	const workItem = page.locator('[data-project-butter-work-item]');
+	await expect(workItem).toBeVisible();
+	await page.getByRole("group", { name: "Work item agents" }).getByRole("button").click();
+	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent" }).click();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await expect(page.getByText("Software agents", { exact: true })).toBeVisible();
+	await page.getByRole("option", { name: /^Claude/ }).click();
+	await page.getByText("Run on cloud", { exact: true }).click();
+	await page.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(card(page, "PAY-105").getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(card(page, "PAY-105").locator('[data-jira-linking-glow-halo]')).toBeVisible();
+});
+
+test("Butter work item picker opens the agent directory", async ({ page }) => {
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	await card(page, "PAY-105").getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true }).click();
+	await page.getByRole("group", { name: "Work item agents" }).getByRole("button").click();
+	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent" }).click();
+	await page.getByRole("button", { name: "Browse agents" }).click();
+	const directory = page.getByRole("dialog", { name: "Agents", exact: true }).filter({ has: page.getByRole("tab", { name: "Recommended" }) });
+	await expect(directory).toBeVisible();
+});
+
+test("Butter column agent management uses the shared picker and can add and remove an agent", async ({ page }) => {
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	await page.getByRole("button", { name: "Add agent to To do" }).focus();
+	await page.keyboard.press("Enter");
+	await expect(page.getByText("Software agents", { exact: true })).toBeVisible();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Figma");
+	await page.getByRole("option", { name: /^Figma/ }).click();
+	await expect(page.getByRole("button", { name: "Manage agents for To do" })).toBeVisible();
+	await page.getByRole("button", { name: "Manage agents for To do" }).click();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Figma");
+	await page.getByRole("option", { name: /^Figma/ }).click();
+	await expect(page.getByRole("button", { name: "Add agent to To do" })).toHaveCount(1);
+});
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`Butter previews a new agent in the existing chin (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+		const issue = card(page, "PAY-105");
+		const actual = issue.locator('[data-slot="jira-issue-agent-invocation-actual"]');
+		const chin = issue.locator('[data-slot="jira-issue-agent-invocation-chin"]');
+		await issue.getByRole("button", { name: "Add agent to PAY-105" }).focus();
+		await page.keyboard.press("Enter");
+		await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+		await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
+		await expect(actual).toHaveCSS("opacity", "0");
+		await expect(actual).toHaveAttribute("inert", "");
+		await expect(chin).toHaveCSS("height", "40px");
+		await page.keyboard.press("Escape");
+		await expect(actual).not.toHaveAttribute("inert", "");
+		await expect(actual).toHaveCSS("opacity", "1");
+		await expect(issue.locator('[data-jira-issue-agent-row-handle]')).toBeVisible();
+	});
+}
+
+for (const { issueKey, agent, color } of [
+	{ issueKey: "PAY-105", agent: "Claude", color: "rgb(217, 119, 87)" },
+	{ issueKey: "PAY-118", agent: "Codex", color: "rgb(57, 65, 255)" },
+]) {
+	test(`Butter gives ${issueKey} an agent-colored glow when assigning ${agent}`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: "no-preference" });
+		await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+		const issue = card(page, issueKey);
+		await issue.getByRole("button", { name: `Add agent to ${issueKey}` }).focus();
+		await page.keyboard.press("Enter");
+		const search = page.getByRole("combobox", { name: "Search agents" });
+		await search.fill(agent);
+		const option = page.getByRole("option", { name: new RegExp(`^${agent}`) });
+		await expect(option).toBeVisible();
+		await option.click();
+		const cloud = page.getByText("Run on cloud", { exact: true });
+		await expect(cloud).toBeVisible();
+		const observation = page.evaluate(async () => {
+			const seen: { owner: string | undefined; shadow: string }[] = [];
+			const start = performance.now();
+			while (performance.now() - start < 5000) {
+				for (const halo of document.querySelectorAll<HTMLElement>('[data-jira-linking-glow-halo]')) {
+					seen.push({ owner: halo.closest<HTMLElement>('[data-issue-key]')?.dataset.issueKey, shadow: halo.style.boxShadow });
+				}
+				if (seen.length) break;
+				await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			}
+			return seen;
+		});
+		await cloud.click();
+		const seen = await observation;
+		expect(seen.length).toBeGreaterThan(0);
+		expect(seen.every((glow) => glow.owner === issueKey && glow.shadow.includes(color))).toBe(true);
+		await expect(card(page, issueKey).locator('[data-slot="jira-issue-agent-row"]')).toContainText("Working");
+	});
+}
+
+test("Butter assigns an agent without the glow when reduced motion is enabled", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
+	const issue = card(page, "PAY-105");
+	await issue.getByRole("button", { name: "Add agent to PAY-105" }).focus();
+	await page.keyboard.press("Enter");
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
+	await page.getByRole("option", { name: /^Claude/ }).click();
+	await page.getByText("Run on cloud", { exact: true }).click();
+	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await expect(page.locator('[data-jira-linking-glow-halo], [data-jira-linking-glow-backdrop]')).toHaveCount(0);
+});
+
 test("Butter directory picker can be dismissed without trapping focus", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").getByRole("button", { name: "Add agent to PAY-118" }).focus();
@@ -454,7 +789,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(activity).toHaveCount(1);
 		await expect(activity).toHaveAttribute("aria-label", "Claude: Working");
 		await expect(activity).toBeFocused();
-		await expect(issue.getByRole("button", { name: "Add agent to PAY-118", exact: true })).toHaveCount(0);
+		await expect(issue.getByRole("button", { name: "Add agent to PAY-118", exact: true })).toHaveCount(1);
 	});
 }
 

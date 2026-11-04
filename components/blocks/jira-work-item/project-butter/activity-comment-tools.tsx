@@ -164,6 +164,7 @@ export function ProjectButterCommentTools({
 					render={
 						<Button
 							aria-label="More comment actions"
+							className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle"
 							size="icon-compact"
 							type="button"
 							variant="ghost"

@@ -62,7 +62,6 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 		const root = activityScrollport(feed);
 		const header = headerRef.current;
 		if (!changed || !sticky.current || entries.length === 0 || !feed || !root || !header) return;
-		feed.style.minHeight = `${Math.max(0, root.clientHeight - (header.getBoundingClientRect().height || HEADER_HEIGHT))}px`;
 		root.scrollTop += header.getBoundingClientRect().top - root.getBoundingClientRect().top;
 	}, [entries.length, view]);
 
@@ -73,7 +72,6 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 		const root = activityScrollport(feed);
 		if (!feed || !root || entries.length === 0) return;
 		let frame = 0;
-		const previousMinHeight = feed.style.minHeight;
 		const update = () => {
 			frame = 0;
 			const viewport = root.getBoundingClientRect();
@@ -89,8 +87,6 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 			const end = root.scrollTop + bounds.bottom - viewport.bottom;
 			const nextProgress = Math.min(1, Math.max(0, (root.scrollTop - start) / Math.max(1, end - start)));
 			const nextOffsets = Object.fromEntries(rows.flatMap((row) => row.id ? [[row.id, Math.min(1, Math.max(0, (row.bounds.top - firstTop) / Math.max(1, end - start)))]] : []));
-			const minHeight = `${Math.max(0, root.clientHeight - (headerRef.current?.getBoundingClientRect().height || HEADER_HEIGHT))}px`;
-			if (feed.style.minHeight !== minHeight) feed.style.minHeight = minHeight;
 			progress.set(nextProgress);
 			setEntryOffsets((previous) => Object.keys(previous).length === rows.length && Object.entries(nextOffsets).every(([id, value]) => Math.abs((previous[id] ?? -1) - value) < 0.0001) ? previous : nextOffsets);
 			setVisibleId((nextProgress === 1 ? rows.at(-1) : visible)?.id ?? null);
@@ -102,7 +98,7 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 			if (element) resize?.observe(element);
 		}
 		schedule();
-		return () => { root.removeEventListener("scroll", schedule); resize?.disconnect(); if (frame) cancelAnimationFrame(frame); if (seekFrame.current) cancelAnimationFrame(seekFrame.current); seekFrame.current = 0; feed.style.minHeight = previousMinHeight; };
+		return () => { root.removeEventListener("scroll", schedule); resize?.disconnect(); if (frame) cancelAnimationFrame(frame); if (seekFrame.current) cancelAnimationFrame(seekFrame.current); seekFrame.current = 0; };
 	}, [entries, sidePanel, progress, readingOffset]);
 	return { feedRef, headerRef, timelineRef, progress, entryOffsets, scrollToEntry, seekToProgress, visibleId };
 }

@@ -1,70 +1,119 @@
 "use client";
 
-import { AnimatePresence } from "motion/react";
-import { useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { useRef } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ProgressCircle } from "@/components/ui-custom/progress-circle";
-import { ProjectButterExpandControl } from "@/components/blocks/jira-work-item/project-butter/project-butter-expand-control";
 import { ProjectButterRelatedCreateRow } from "@/components/blocks/jira-work-item/project-butter/related-create-row";
 import { ProjectButterRelatedDisplayOptions } from "@/components/blocks/jira-work-item/project-butter/related-display-options";
+import { RelatedEmptyState } from "@/components/blocks/jira-work-item/project-butter/related-empty-state";
 import { ProjectButterRelatedItemRow } from "@/components/blocks/jira-work-item/project-butter/related-item-row";
-import { orderRelatedItems, type ProjectButterRelatedAddRequest, type ProjectButterRelatedItem, type ProjectButterRelatedListEditor } from "@/components/blocks/jira-work-item/project-butter/related-model";
+import { RelatedListCard } from "@/components/blocks/jira-work-item/project-butter/related-list-card";
+import { RelatedProgress } from "@/components/blocks/jira-work-item/project-butter/related-progress";
+import { RelatedTooltip } from "@/components/blocks/jira-work-item/project-butter/related-tooltip";
+import { RelatedWorkGroup } from "@/components/blocks/jira-work-item/project-butter/related-work-group";
+import { relatedListWindow } from "@/components/blocks/jira-work-item/project-butter/related-work-model";
+import { nextRelatedKey, normalizeRelatedSummary, orderRelatedItems, relatedKeyPrefix, relatedProgressLabel, relatedStatusCounts, type ProjectButterRelatedAddRequest, type ProjectButterRelatedItem, type ProjectButterRelatedListEditor, type ProjectButterRelatedScope, type RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 
-export function ProjectButterRelatedItemList({ editor, items, label, onAdd, onChange, onEditorChange }: Readonly<{
+const LIST_GROUPS = {
+	children: { label: "Child work items", id: "section-subitems", relatedType: "subitems", add: "Add child work item", menu: "Child work item display options", shortcut: "Shift+C" },
+	linked: { label: "Linked work", id: "section-linked-items", relatedType: "linked", add: "Add linked work", menu: "Linked work display options", shortcut: "Shift+K" },
+} as const;
+
+export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptyState = false, items, kind, onAdd, onAddRequest, onChange, onDismissGroup, onEditorChange, openItem, ownKey, scope }: Readonly<{
+	asSectionHeader: boolean;
 	editor: ProjectButterRelatedListEditor;
+	/** Every related group is empty: render the empty state row instead of an empty card. */
+	emptyState?: boolean;
 	items: readonly ProjectButterRelatedItem[];
-	label: string;
+	kind: keyof typeof LIST_GROUPS;
 	onAdd: (request: ProjectButterRelatedAddRequest) => void;
+	/** Shared add path (content.openRelatedAdd). Never toggles the composer closed. */
+	onAddRequest: () => void;
 	onChange: (items: readonly ProjectButterRelatedItem[]) => void;
+	onDismissGroup?: () => void;
 	onEditorChange: (patch: Partial<ProjectButterRelatedListEditor>) => void;
+	/** Opens a related key in the host when it can be resolved; keys render as plain text otherwise. */
+	openItem?: RelatedItemOpener;
+	/** The open work item's key: excluded from matches and the prefix for created and cloned keys. */
+	ownKey: string;
+	/** Host project scope: composer match pool and the parent type rules. */
+	scope?: ProjectButterRelatedScope;
 }>) {
-	const [open, setOpen] = useState(true);
 	const addTrigger = useRef<HTMLButtonElement>(null);
-	const linked = label === "Linked work";
+	const { add, id, label, menu, relatedType, shortcut } = LIST_GROUPS[kind];
+	const linked = kind === "linked";
 	const ordered = orderRelatedItems(items, editor);
-	const shown = editor.expanded ? ordered : ordered.slice(0, editor.composerOpen ? 4 : 5);
-	const remaining = ordered.length - shown.length;
-	const done = items.filter((item) => item.status === "Done").length;
-	const inProgress = items.filter((item) => item.status === "In progress" || item.status === "In review").length;
+	const counts = relatedStatusCounts(items);
+	const { shown } = relatedListWindow(ordered, { expanded: editor.expanded, composerOpen: editor.composerOpen });
 	const editingId = shown.some((item) => item.id === editor.editingId) ? editor.editingId : null;
+	const progressLabel = linked ? undefined : relatedProgressLabel(counts);
 	function update(item: ProjectButterRelatedItem, patch: Partial<ProjectButterRelatedItem>) {
 		onChange(items.map((candidate) => candidate.id === item.id ? { ...candidate, ...patch } : candidate));
 	}
-	function finish(item: ProjectButterRelatedItem, save: boolean) {
-		const draft = editor.summaryDrafts[item.id] ?? item.summary;
-		if (save && !draft.trim()) return;
-		if (save) update(item, { summary: draft.trim() });
+	function withoutDraft(item: ProjectButterRelatedItem) {
 		const drafts = { ...editor.summaryDrafts };
 		delete drafts[item.id];
-		onEditorChange({ editingId: null, summaryDrafts: drafts });
+		return drafts;
 	}
-	function dismissComposer() {
-		onEditorChange({ composerOpen: false });
-		addTrigger.current?.focus();
+	function finish(item: ProjectButterRelatedItem, save: boolean) {
+		const summary = normalizeRelatedSummary(editor.summaryDrafts[item.id] ?? item.summary);
+		// An empty summary reverts rather than saving.
+		if (save && summary && summary !== item.summary) update(item, { summary });
+		onEditorChange({ editingId: null, summaryDrafts: withoutDraft(item) });
+	}
+	function remove(item: ProjectButterRelatedItem) {
+		onEditorChange({ summaryDrafts: withoutDraft(item), ...(editor.editingId === item.id ? { editingId: null } : {}) });
+		onChange(items.filter((candidate) => candidate.id !== item.id));
+	}
+	function clone(item: ProjectButterRelatedItem) {
+		const key = nextRelatedKey(relatedKeyPrefix(ownKey), new Set([ownKey, ...items.map((candidate) => candidate.key)]));
+		const index = items.findIndex((candidate) => candidate.id === item.id);
+		const copy = { ...item, id: `related-${crypto.randomUUID()}`, key };
+		onChange([...items.slice(0, index + 1), copy, ...items.slice(index + 1)]);
 	}
 	return (
-		<Collapsible onOpenChange={setOpen} open={open}>
-		<section aria-label={label} className="min-w-0">
-			<div className="flex items-center justify-between gap-2"><h3><CollapsibleTrigger aria-label={!linked && items.length ? `${label}, ${done} of ${items.length} done` : label} className="group flex items-center gap-2 rounded-sm text-left text-sm font-medium text-text outline-none focus-visible:ring-2 focus-visible:ring-ring">{label}{!linked && items.length ? <span className={cn("flex items-center gap-1 font-normal text-text-subtle", open ? "text-xs" : "text-sm")}><ProgressCircle label={`${done} of ${items.length} child work items done`} segmentGap="none" segmented segments={[{ status: "pending", weight: items.length - done - inProgress }, { status: "in-progress", weight: inProgress }, { status: "passed", weight: done }]} showCompleteIcon={false} size="xs" value={done / items.length * 100} /><span aria-hidden>{done}/{items.length}</span></span> : null}<span className="text-icon-subtle group-data-[panel-open]:rotate-90"><ChevronRightIcon label="" size="small" /></span></CollapsibleTrigger></h3>{open ? <div className="flex items-center gap-1"><Button aria-label={linked ? "Add linked work" : "Add child work item"} data-related-add onClick={() => { onEditorChange({ composerOpen: true, editingId: null }); addTrigger.current?.closest("section")?.querySelector<HTMLInputElement>("[role=combobox]")?.focus(); }} ref={addTrigger} size="icon-compact" type="button" variant="ghost"><AddIcon label="" size="small" /></Button><ProjectButterRelatedDisplayOptions editor={editor} label={label} onChange={onEditorChange} /></div> : null}</div>
-			<CollapsibleContent className="pt-2.5" hiddenUntilFound={false} keepMounted>
-			<div className="relative rounded-lg border border-border py-1.5"><ul aria-label={label}>
-				<AnimatePresence initial={false}>{editor.composerOpen ? <ProjectButterRelatedCreateRow dimmed={editingId !== null} editor={editor} items={items} key="create" linked={linked} onAdd={(request) => { onAdd(request); addTrigger.current?.focus(); }} onChange={onEditorChange} onDismiss={dismissComposer} /> : null}</AnimatePresence>
-				{shown.map((item, index) => <ProjectButterRelatedItemRow dimmed={editingId !== null && editingId !== item.id} draft={editor.summaryDrafts[item.id] ?? item.summary} editing={editingId === item.id} faded={remaining > 0 && index === shown.length - 1} fields={editor.visibleFields} item={item} key={item.id} onChange={(patch) => update(item, patch)} onDraftChange={(summary) => onEditorChange({ summaryDrafts: { ...editor.summaryDrafts, [item.id]: summary } })} onEdit={() => onEditorChange({ editingId: item.id, summaryDrafts: { ...editor.summaryDrafts, [item.id]: editor.summaryDrafts[item.id] ?? item.summary } })} onFinish={(save) => finish(item, save)} onRemove={() => {
-					const drafts = { ...editor.summaryDrafts };
-					delete drafts[item.id];
-					onEditorChange({ summaryDrafts: drafts, ...(editor.editingId === item.id ? { editingId: null } : {}) });
-					onChange(items.filter((candidate) => candidate.id !== item.id));
-				}} />)}
-				{ordered.length === 0 && !editor.composerOpen ? <li className="px-4 py-3 text-sm text-text-subtle">{items.length ? "No matching work items." : `No ${label.toLowerCase()}.`}</li> : null}
-			</ul>
-				{remaining > 0 || editor.expanded && ordered.length > 5 ? <div className={cn(editingId !== null && "opacity-(--opacity-disabled)")} inert={editingId !== null || undefined}><ProjectButterExpandControl ariaLabel={editor.expanded ? `Show less ${label.toLowerCase()}` : `Show ${remaining} more ${label.toLowerCase()}`} expanded={editor.expanded} label={editor.expanded ? "Show less" : `Show ${remaining} more`} onClick={() => onEditorChange({ expanded: !editor.expanded })} /></div> : null}
-			</div>
-			</CollapsibleContent>
-		</section>
-		</Collapsible>
+		<RelatedWorkGroup
+			asSectionHeader={asSectionHeader}
+			extra={<>
+				<RelatedTooltip label={add}><Button aria-keyshortcuts={shortcut} aria-label={add} data-related-add onClick={onAddRequest} ref={addTrigger} size="icon-compact" type="button" variant="ghost"><AddIcon label="" size="small" /></Button></RelatedTooltip>
+				<ProjectButterRelatedDisplayOptions editor={editor} menuLabel={menu} onChange={onEditorChange} />
+			</>}
+			headingGap={linked ? "default" : "wide"}
+			id={id}
+			indicator={progressLabel ? <RelatedProgress counts={counts} /> : undefined}
+			indicatorLabel={progressLabel}
+			label={label}
+			relatedType={relatedType}
+			revealKey={editor.createSignal}
+		>
+			{emptyState && items.length === 0 && !editor.composerOpen ? <RelatedEmptyState kind={kind} onAdd={onAddRequest} onDismiss={onDismissGroup} /> : (
+				<RelatedListCard
+					composer={editor.composerOpen ? <ProjectButterRelatedCreateRow dimmed={editingId !== null} editor={editor} items={items} linked={linked} onAdd={(request) => { onAdd(request); addTrigger.current?.focus(); }} onChange={onEditorChange} onDismiss={(reason) => { if (reason === "escape") addTrigger.current?.focus(); }} catalog={scope?.catalog} ownKey={ownKey} parentType={scope?.parentType} /> : null}
+					empty={<li className="px-4 py-3 text-sm text-text-subtle">{items.length ? "No matching work items." : `No ${label.toLowerCase()}.`}</li>}
+					expanded={editor.expanded}
+					items={ordered}
+					label={label}
+					onExpandedChange={(expanded) => onEditorChange({ expanded })}
+					renderItem={(item, { faded }) => (
+						<ProjectButterRelatedItemRow
+							actions={linked ? undefined : { onClone: () => clone(item), onDelete: () => remove(item) }}
+							dimmed={editingId !== null && editingId !== item.id}
+							draft={editor.summaryDrafts[item.id] ?? item.summary}
+							editing={editingId === item.id}
+							faded={faded}
+							fields={editor.visibleFields}
+							item={item}
+							key={item.id}
+							onChange={(patch) => update(item, patch)}
+							onDraftChange={(summary) => onEditorChange({ summaryDrafts: { ...editor.summaryDrafts, [item.id]: summary } })}
+							onEdit={() => onEditorChange({ editingId: item.id, summaryDrafts: { ...editor.summaryDrafts, [item.id]: editor.summaryDrafts[item.id] ?? item.summary } })}
+							onFinish={(save) => finish(item, save)}
+							openItem={openItem}
+						/>
+					)}
+					toggleDisabled={editingId !== null}
+				/>
+			)}
+		</RelatedWorkGroup>
 	);
 }

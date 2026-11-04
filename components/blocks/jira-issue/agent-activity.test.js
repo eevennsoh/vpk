@@ -84,6 +84,25 @@ test("new Jira agent sessions show Working immediately", async () => {
 	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });
 
+test("adding an agent to an existing row shows Working immediately", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/agent-activity.tsx",
+		exportName: "JiraIssueAgentActivityRows",
+		props: {
+			activities: [
+				{ id: "existing", name: "Existing", state: "working", label: "Working" },
+				{ id: "new", name: "New", state: "working", label: "Working", startupSequence: "jira-work-item-start", startedAtMs: Date.now() },
+			],
+			iconScale: "comfortable",
+			shouldReduceMotion: false,
+			usesStrokeChrome: true,
+		},
+	});
+	assert.equal(Boolean(view.getByText("Working")), true);
+	assert.equal(Boolean(view.queryByText("Let's get started")), false);
+	assert.equal(Boolean(view.queryByText("Gathering context")), false);
+});
+
 for (const { name, iconScale, workingSpinnerVariant, avatar } of [
 	{ name: "comfortable default", iconScale: "comfortable", avatar: true },
 	{ name: "compact default", iconScale: "compact", avatar: false },

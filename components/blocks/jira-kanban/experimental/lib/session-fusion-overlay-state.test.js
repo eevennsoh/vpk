@@ -123,6 +123,11 @@ test("near-black agent tints follow the active theme", () => {
 	assert.equal(cursorFlash.flash.tint, "var(--color-icon)");
 });
 
+test("Jira Coding Agent uses its avatar's green for the acknowledgement", () => {
+	assert.equal(resolveAgentBrandTintColor("jira coding agent"), "#94C748");
+	assert.equal(resolveAgentBrandTintColor("jira-coding"), "#94C748");
+});
+
 test("an unmapped brand still flashes, on a neutral accent", () => {
 	const flash = toBoardAgentSessionLinkFlash({
 		members: [{ id: "mystery-1", name: "Mystery", tintSeed: "mystery" }],

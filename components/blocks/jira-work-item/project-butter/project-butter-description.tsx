@@ -1,20 +1,42 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/team-eu26/components/context-description-editor";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DescriptionRainbowText } from "@/components/blocks/jira-work-item/project-butter/description-rainbow-text";
+import { motionDuration } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 // Clicking a contenteditable matches :focus-visible, so a pointer gesture marks
 // the field and drops the ring. Keyboard focus leaves the mark unset.
-const DESCRIPTION_EDITOR_CLASS = "min-w-0 rounded-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring data-[pointer-focused]:ring-0!";
+const DESCRIPTION_EDITOR_CLASS = "relative min-w-0 rounded-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring data-[pointer-focused]:ring-0!";
 
-export function ProjectButterDescription({ content, empty }: Readonly<{ content: ProjectButterContent; empty: boolean }>) {
+export function ProjectButterDescription({ content, empty, onRevealComplete, reveal }: Readonly<{ content: ProjectButterContent; empty: boolean; onRevealComplete?: () => void; reveal?: { id: number; text: string } | null }>) {
 	const id = useId();
 	const pointerIntent = useRef(false);
 	const [pointerFocused, setPointerFocused] = useState(false);
+	const [settlingReveal, setSettlingReveal] = useState<typeof reveal>(null);
+	const reduced = useReducedMotion();
+	const revealText = reveal && reveal.text === content.descriptionDraft && !content.editingDescription ? reveal.text : null;
+	const settling = Boolean(revealText) && settlingReveal === reveal;
+	const startSettling = useCallback(() => {
+		if (reduced) onRevealComplete?.();
+		else setSettlingReveal(reveal ?? null);
+	}, [onRevealComplete, reduced, reveal]);
+	useEffect(() => {
+		if (!settling) return;
+		const timer = window.setTimeout(() => onRevealComplete?.(), motionDuration.slow * 1000);
+		return () => window.clearTimeout(timer);
+	}, [onRevealComplete, settling]);
+	useEffect(() => {
+		if (!revealText) return;
+		const timer = window.setTimeout(() => onRevealComplete?.(), motionDuration.slowest * 5 * 1000);
+		return () => window.clearTimeout(timer);
+	}, [onRevealComplete, reveal?.id, revealText]);
 	const save = () => {
 		content.setDescription(content.descriptionDraft);
 		content.setEditingDescription(false);
@@ -36,6 +58,7 @@ export function ProjectButterDescription({ content, empty }: Readonly<{ content:
 				}
 			}}
 			onFocusCapture={(event) => {
+				if (revealText) onRevealComplete?.();
 				const fromPointer = pointerIntent.current;
 				pointerIntent.current = false;
 				if (!fromPointer) releasePointerFocus(event.currentTarget);
@@ -54,6 +77,10 @@ export function ProjectButterDescription({ content, empty }: Readonly<{ content:
 			}}
 			role="group"
 		>
+			{revealText ? <div aria-hidden="true" className={cn("tiptap-editor agent-instructions-tiptap-editor context-description-tiptap-editor pointer-events-none absolute inset-0 transition-opacity duration-slow ease-out-practical", empty && "context-description-tiptap-editor-hug", settling ? "opacity-0" : "opacity-100")} data-description-reveal="">
+				<DescriptionRainbowText key={reveal?.id} onComplete={startSettling} text={revealText} />
+			</div> : null}
+			<div className={cn(settling && "transition-opacity duration-slow ease-out-practical", revealText && !settling ? "opacity-0" : "opacity-100")}>
 			<ContextDescriptionEditor
 				aria-label="Work item description"
 				hugContent={empty}
@@ -62,6 +89,7 @@ export function ProjectButterDescription({ content, empty }: Readonly<{ content:
 				placeholderSlot={null}
 				value={content.descriptionDraft}
 			/>
+			</div>
 		</div>
 	);
 	return empty ? (

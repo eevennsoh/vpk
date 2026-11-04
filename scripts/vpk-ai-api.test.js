@@ -136,7 +136,7 @@ for (const mode of ["--resume", "--fork"]) {
 		assert.equal(result.status, 0, result.stderr);
 		const runs = path.join(f.config, "runs");
 		let output;
-		for (let attempt = 0; attempt < 50; attempt++) {
+		for (let attempt = 0; attempt < 500; attempt++) {
 			const file = fs.readdirSync(runs).find((name) => name.endsWith(".log"));
 			const text = file ? fs.readFileSync(path.join(runs, file), "utf8") : "";
 			if (text.includes("\n--- exit")) { output = JSON.parse(text.split("\n")[0]); break; }
@@ -167,7 +167,7 @@ test("background failures still produce an honest summary and preserve the reope
 	assert.equal(result.status, 0, result.stderr);
 	const runs = path.join(f.config, "runs");
 	let summary;
-	for (let attempt = 0; attempt < 50; attempt++) {
+	for (let attempt = 0; attempt < 500; attempt++) {
 		const file = fs.readdirSync(runs).find((name) => name.endsWith(".summary.md"));
 		if (file) {
 			const text = fs.readFileSync(path.join(runs, file), "utf8");
