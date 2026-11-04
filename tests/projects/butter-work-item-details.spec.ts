@@ -239,3 +239,23 @@ test("the status field opens across its row without a second background", async 
 	await expect(page.getByRole("menuitem", { name: "Pinned by default" })).toBeVisible();
 });
 
+
+test("long suggestions scroll inside the card without clipping the panel", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-999").locator('[data-slot="jira-issue-card"]').click();
+	await page.getByRole("button", { name: "5 suggestions" }).click();
+	const value = page.getByRole("region", { name: "Suggested value" });
+	await expect(value).toBeVisible();
+	await expect(page.getByRole("button", { name: "Accept all" })).toBeVisible();
+	const popup = page.locator('[data-slot="popover-content"]').filter({ has: value });
+	await expect(popup).toHaveCSS("overflow-x", "visible");
+	const geometry = await value.evaluate((element) => ({ height: element.clientHeight, total: element.scrollHeight }));
+	expect(geometry.height).toBeLessThanOrEqual(200);
+	expect(geometry.total).toBeGreaterThan(geometry.height);
+	await value.focus();
+	await page.keyboard.press("End");
+	await expect.poll(() => value.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+	await expect(page.getByRole("button", { name: "Accept description" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Accept all" })).toBeVisible();
+});

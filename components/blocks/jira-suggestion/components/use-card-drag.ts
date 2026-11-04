@@ -42,7 +42,7 @@ export function useCardDrag({ enabled, onCommit, onTap, onGrab }: Readonly<CardD
 	const progress = useTransform(dragX, (value) => clamp(value / COMMIT_DISTANCE, -1, 1));
 
 	const onPointerDown = (event: PointerEvent<HTMLElement>) => {
-		if (!enabled || event.button !== 0 || (event.target as Element).closest("button, a, input")) return;
+		if (!enabled || event.button !== 0 || (event.target as Element).closest("button, a, input, [data-suggestion-value-scroll]")) return;
 		const element = event.currentTarget;
 		element.setPointerCapture(event.pointerId);
 		const scale = element.getBoundingClientRect().width / element.offsetWidth || 1;
