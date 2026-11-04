@@ -4,6 +4,32 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("compact session and assignment status glyphs are 12px", async ({ page }) => {
+	await page.goto(AGENT_SESSION_URL, { waitUntil: "domcontentloaded" });
+	for (const section of ["Local — short", "Cloud — short"]) {
+		const example = page.getByRole("heading", { name: section }).locator("xpath=../../..");
+		const info = example.getByRole("button", { name: "Someone is using an agent. Only they can see the work." }).locator("svg");
+		await expect(info).toHaveCSS("width", "12px");
+		await expect(info).toHaveCSS("height", "12px");
+	}
+	const local = page.getByRole("heading", { name: "Local — short" }).locator("xpath=../../..");
+	const finished = local.getByRole("img", { name: "Finished" }).locator("svg");
+	await expect(finished).toHaveCSS("width", "12px");
+	await expect(finished).toHaveCSS("height", "12px");
+
+	await page.goto(appUrl("/components/blocks/agent-assignment"), { waitUntil: "domcontentloaded" });
+	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
+	const menu = page.locator('[aria-label="Agent assignment"]');
+	for (const name of ["Finished", "Needs input", "Someone is using an agent. Only they can see the work."]) {
+		const icon = menu.getByRole("button", { name, exact: true }).locator("svg");
+		await expect(icon).toHaveCSS("width", "12px");
+		await expect(icon).toHaveCSS("height", "12px");
+	}
+	const working = menu.getByRole("button", { name: "Working", exact: true }).locator('[data-slot="spinner"]');
+	await expect(working).toHaveCSS("width", "16.75px");
+	await expect(working).toHaveCSS("height", "16.75px");
+});
+
 test("cloud long metadata stays together before the lifecycle controls", async ({ page }) => {
 	await page.goto(`${AGENT_SESSION_URL}#cloud-—-long`, { waitUntil: "domcontentloaded" });
 	const cloudLong = page.getByRole("heading", { name: "Cloud — long" }).locator("xpath=../../..");

@@ -7,6 +7,7 @@ import InformationCircleIcon from "@atlaskit/icon/core/information-circle";
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 export const AGENT_SESSION_VIEWER_HINT =
 	"Someone is using an agent. Only they can see the work.";
@@ -17,13 +18,13 @@ export const AGENT_SESSION_VIEWER_HINT =
  * Replaces the owner more-menu. The information icon is decorative; the button
  * name and row tooltip carry the same copy so hover and keyboard both get it.
  */
-export function AgentSessionViewerHint() {
+export function AgentSessionViewerHint({ compact = false }: Readonly<{ compact?: boolean }>) {
 	return (
 		<TooltipTrigger
 			render={
 				<Button
 					aria-label={AGENT_SESSION_VIEWER_HINT}
-					className="[&_svg:not([class*='size-'])]:size-4! [&_svg]:text-icon-subtlest"
+					className={cn("[&_svg]:text-icon-subtlest", compact ? "[&_svg:not([class*='size-'])]:size-3!" : "[&_svg:not([class*='size-'])]:size-4!")}
 					onClick={(event) => event.stopPropagation()}
 					onPointerDown={(event) => event.stopPropagation()}
 					size="icon-compact"
@@ -37,7 +38,7 @@ export function AgentSessionViewerHint() {
 				as="span"
 				className="text-icon-subtlest"
 				icon={<InformationCircleIcon color="currentColor" label="" size="medium" />}
-				iconSize="medium"
+				iconSize={compact ? "small" : "medium"}
 				label=""
 				size="small"
 				variant="transparent"
