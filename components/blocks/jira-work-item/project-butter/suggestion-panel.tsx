@@ -1,148 +1,92 @@
 "use client";
 
-import { useId, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import CrossIcon from "@atlaskit/icon/core/cross";
+import { useState } from "react";
 
+import { JiraSuggestionControl } from "@/components/blocks/jira-suggestion";
+import type { SuggestionFieldId, SuggestionValue, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import type { SuggestionFeed, SuggestionRun } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
+import { useSuggestionReview } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-review";
+import type { ProjectButterSuggestion } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import type { ProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
-import { Tile } from "@/components/ui/tile";
-import { TWGLoader } from "@/components/ui-custom/twg-loader";
-import { TwgToolBannerBackground, TwgToolSourceStack, type TwgToolSource } from "@/components/ui-custom/twg-tool";
-import { motionDuration, motionEase } from "@/lib/motion";
+import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
 
-const SUGGESTION_SOURCES = [
+const SOURCES = [
 	{ id: "twg", label: "Teamwork Graph", provider: "twg" },
 	{ id: "jira", label: "Jira", provider: "jira" },
 	{ id: "confluence", label: "Confluence", provider: "confluence" },
 	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
 ] as const satisfies readonly TwgToolSource[];
 
-const SUGGESTION_BANNER_CLASS = "relative flex h-auto w-full items-center justify-start gap-3 overflow-hidden rounded-[calc(0.25*2rem+0.375rem+1px)] border border-border bg-surface-sunken p-1.5 pr-2 text-left transition-[background-color,border-color,box-shadow] has-[[data-suggestion-trigger][aria-expanded=false]:hover]:bg-surface-raised-hovered has-[[data-suggestion-trigger][aria-expanded=true]]:border-border-selected has-[[data-suggestion-trigger][aria-expanded=true]]:bg-bg-selected has-[[data-suggestion-trigger]:focus-visible]:border-ring has-[[data-suggestion-trigger]:focus-visible]:ring-3 has-[[data-suggestion-trigger]:focus-visible]:ring-ring/50";
-
-function TeamworkGraphLoaderTile({ active }: Readonly<{ active: boolean }>) {
-	return (
-		<Tile className="relative z-10 bg-surface" hasBorder label="Teamwork Graph" size="medium" variant="transparent">
-			<TWGLoader active={active} label="Teamwork Graph" size="small" />
-		</Tile>
-	);
+function suggestionValue(suggestion: ProjectButterSuggestion): SuggestionValue {
+	switch (suggestion.field) {
+		case "description": return { kind: "paragraph", text: suggestion.text };
+		case "dueDate": return { kind: "date", iso: suggestion.date.toISOString(), display: suggestion.preview, relative: "" };
+		case "reporter": return { kind: "person", person: { ...suggestion.person, role: "" } };
+		case "labels":
+		case "components": return { kind: "labels", labels: suggestion.values };
+		default: return { kind: "paragraph", text: suggestion.text };
+	}
 }
 
-function suggestionBannerLabel(fill: ProjectButterSuggestionFill): string | null {
-	const count = fill.suggestions.length;
-	const updated = fill.accepted;
-	if (!fill.running && count === 0 && updated == null) return null;
-	if (updated != null && !fill.running) return `${updated.length} updated`;
-	if (fill.running) return "Filling details";
-	return `${count} ${count === 1 ? "Suggestion" : "Suggestions"}`;
+function toCard(suggestion: ProjectButterSuggestion): WorkItemSuggestion {
+	return {
+		id: suggestion.field,
+		label: suggestion.label,
+		currentDisplay: `Add ${suggestion.label.toLowerCase()}`,
+		value: suggestionValue(suggestion),
+		valueText: suggestion.field === "description" ? suggestion.text : suggestion.preview,
+		confidence: "medium",
+		reason: { headline: "Suggested for this empty field.", detail: "", evidence: [] },
+	};
 }
 
-/** One banner element in every state, so the loader tile keeps turning from where it was instead of remounting. */
-function SuggestionBanner({ active, fill, label, reduced, reviewing, showSources }: Readonly<{ active: boolean; fill: ProjectButterSuggestionFill; label: string; reduced: boolean; reviewing: boolean; showSources: boolean }>) {
-	const labelId = useId();
+/** Connect the shared suggestion stack to Butter's editable fields. */
+export function ProjectButterSuggestionPanel({ fill }: Readonly<{ fill: ProjectButterSuggestionFill; showIntroLoading?: boolean }>) {
+	const [saved, setSaved] = useState<readonly ProjectButterSuggestion[]>(fill.suggestions);
+	const additions = fill.suggestions.filter((suggestion) => !saved.some((item) => item.field === suggestion.field));
+	const suggestions = additions.length ? [...saved, ...additions] : saved;
+	if (additions.length) setSaved(suggestions);
+	const cards = [...fill.suggestions, ...suggestions.filter((item) => !fill.suggestions.some((current) => current.field === item.field))].map(toCard);
+	const review = useSuggestionReview(cards);
+	const [runs, setRuns] = useState<readonly SuggestionRun[]>([{ number: 1, ranAt: "Just now", ids: [] }]);
+	const available = new Set(fill.suggestions.map((suggestion) => suggestion.field));
+	const pending = review.pending.filter((suggestion) => fill.suggestions.some((item) => item.field === suggestion.id));
+	const find = (id: SuggestionFieldId) => suggestions.find((suggestion) => suggestion.field === id);
+	const accept = (id: SuggestionFieldId) => {
+		const suggestion = find(id);
+		if (!suggestion || !available.has(suggestion.field)) return;
+		fill.acceptField(suggestion);
+		review.accept(id);
+	};
+	const dismiss = (id: SuggestionFieldId) => review.dismiss(id);
+	const undo = (id: SuggestionFieldId) => {
+		const suggestion = find(id);
+		if (suggestion && review.decisionOf(id) === "accepted") fill.undoField(suggestion);
+		review.undo(id);
+	};
+	const feed: SuggestionFeed = {
+		review: {
+			...review,
+			suggestions: cards.filter((suggestion) => review.decisionOf(suggestion.id) !== "pending" || fill.suggestions.some((item) => item.field === suggestion.id)),
+			pending,
+			accept,
+			dismiss,
+			undo,
+			acceptAll: () => pending.forEach((suggestion) => accept(suggestion.id)),
+			dismissAll: () => pending.forEach((suggestion) => dismiss(suggestion.id)),
+		},
+		status: "idle",
+		runs,
+		newIds: new Set(),
+		acknowledgeNew: () => {},
+		rerun: () => setRuns((current) => [...current, { number: current.length + 1, ranAt: "Just now", ids: [] }]),
+		hasMore: false,
+	};
+
+	if (!suggestions.length) return null;
 	return (
-		<div className={SUGGESTION_BANNER_CLASS} data-suggestion-review={reviewing ? "updated" : undefined}>
-			{reviewing ? null : (
-				<PopoverTrigger aria-labelledby={labelId} className="absolute inset-0 z-20 rounded-[inherit] outline-none" data-suggestion-trigger="" type="button" />
-			)}
-			{showSources ? <motion.div animate={{ opacity: 1 }} className="pointer-events-none absolute inset-0" data-suggestion-grid="" initial={reduced ? false : { opacity: 0 }} style={{ willChange: "opacity" }} transition={{ duration: motionDuration.slowest, ease: motionEase.inOut }}>
-				<TwgToolBannerBackground gridMaskPosition="right 13px center" />
-			</motion.div> : null}
-			<TeamworkGraphLoaderTile active={active} />
-			<span aria-live="polite" className="relative z-10 min-w-0 flex-1 truncate text-sm text-text" id={labelId}>{label}</span>
-			{reviewing ? (
-				<div className="relative z-30 flex shrink-0 items-center gap-1">
-					<Button className="bg-surface hover:bg-surface-hovered active:bg-surface-pressed" onClick={fill.undoAccepted} size="compact" type="button" variant="outline">Undo</Button>
-					<Button onClick={fill.dismissAccepted} size="compact" type="button" variant="default">Done</Button>
-				</div>
-			) : showSources ? (
-				<TwgToolSourceStack className="relative z-10 max-w-[44%] shrink-0" sources={SUGGESTION_SOURCES} />
-			) : null}
+		<div className="sticky top-0 z-40 -mx-6 w-[calc(100%+3rem)] bg-surface px-6 pb-3">
+			<JiraSuggestionControl feed={feed} sources={SOURCES} />
 		</div>
-	);
-}
-
-function SuggestionFieldList({ fill, reduced }: Readonly<{ fill: ProjectButterSuggestionFill; reduced: boolean }>) {
-	return (
-		<ul aria-label="Suggested field values" className="flex max-h-52 flex-col overflow-y-auto">
-			<AnimatePresence initial={false}>
-				{fill.suggestions.map((suggestion) => (
-					<motion.li
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						initial={reduced ? false : { opacity: 0 }}
-						key={suggestion.field}
-						transition={{ duration: motionDuration.fast, ease: motionEase.out }}
-					>
-						<div className="flex items-center gap-1 rounded-md py-0.5 pr-0.5 pl-1.5">
-							<div className="flex min-w-0 flex-1 items-baseline gap-2">
-								<span className="shrink-0 text-xs text-text-subtlest">{suggestion.label}</span>
-								{suggestion.field === "description" ? (
-									<div className="min-w-0 flex-1 text-sm text-text">
-										<span>{suggestion.preview}</span>
-										{suggestion.text !== suggestion.preview ? <details className="mt-1">
-											<summary className="cursor-pointer rounded-sm text-xs text-text-subtle underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-ring">Show full description</summary>
-											<p className="mt-1 whitespace-pre-wrap">{suggestion.text}</p>
-										</details> : null}
-									</div>
-								) : <span className="min-w-0 flex-1 truncate text-sm text-text">{suggestion.preview}</span>}
-							</div>
-							<Button aria-label={`Accept ${suggestion.label} suggestion`} className="text-text [&_svg]:text-icon" disabled={fill.running} onClick={() => fill.acceptField(suggestion)} size="icon-compact" type="button" variant="ghost">
-								<CheckMarkIcon label="" size="small" />
-							</Button>
-							<Button aria-label={`Dismiss ${suggestion.label} suggestion`} disabled={fill.running} onClick={() => fill.dismissField(suggestion.field)} size="icon-compact" type="button" variant="ghost">
-								<CrossIcon label="" size="small" />
-							</Button>
-						</div>
-					</motion.li>
-				))}
-			</AnimatePresence>
-		</ul>
-	);
-}
-
-/** Suggestions for empty Details fields, opened from a trigger above the Details panel. */
-export function ProjectButterSuggestionPanel({ fill, showIntroLoading = false }: Readonly<{ fill: ProjectButterSuggestionFill; showIntroLoading?: boolean }>) {
-	const shouldReduceMotion = useReducedMotion() ?? false;
-	const [open, setOpen] = useState(false);
-	const [intro, setIntro] = useState(true);
-	const label = suggestionBannerLabel(fill);
-	if (label == null) return null;
-	const reviewing = fill.accepted != null && !fill.running;
-	const active = fill.suggestions.find((suggestion) => suggestion.field === fill.activeField);
-
-	return (
-		<Popover onOpenChange={setOpen} open={open && !reviewing}>
-			<div className="sticky top-0 z-40 -mx-6 w-[calc(100%+3rem)] bg-surface px-6 pb-3">
-				<RovoGeneration.Highlight active className="block w-full" onHighlightComplete={() => setIntro(false)}>
-					<SuggestionBanner active={fill.running || intro} fill={fill} label={showIntroLoading && intro ? "Finding suggestions" : label} reduced={shouldReduceMotion} reviewing={reviewing} showSources={!intro} />
-				</RovoGeneration.Highlight>
-			</div>
-			<PopoverContent
-				align="start"
-				aria-busy={fill.running || undefined}
-				aria-label="Field suggestions"
-				className="w-(--anchor-width) max-w-none gap-0 p-3"
-				data-project-butter-suggestion-panel=""
-				data-suggestion-count={fill.suggestions.length}
-				positionerClassName="z-[650]"
-				side="left"
-				sideOffset={8}
-			>
-				<div aria-live="polite" className="sr-only">{active ? `Filling ${active.label}` : ""}</div>
-				<SuggestionFieldList fill={fill} reduced={shouldReduceMotion} />
-				<div className="mt-2 grid grid-cols-2 gap-2">
-					<Button className="w-full" disabled={fill.running || fill.suggestions.length === 0} onClick={() => { for (const suggestion of fill.suggestions) fill.dismissField(suggestion.field); setOpen(false); }} size="compact" type="button" variant="outline">
-						Dismiss all
-					</Button>
-					<Button className="w-full" disabled={fill.running || fill.suggestions.length === 0} onClick={() => { setOpen(false); fill.acceptAll(); }} size="compact" type="button" variant="outline">
-						{fill.running ? "Filling details" : "Accept all"}
-					</Button>
-				</div>
-			</PopoverContent>
-		</Popover>
 	);
 }

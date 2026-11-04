@@ -40,13 +40,14 @@ export interface StackTriggerProps {
 	panelId: string;
 	onToggle: () => void;
 	triggerRef: Ref<HTMLButtonElement>;
+	sources?: readonly TwgToolSource[];
 }
 
 /**
  * The live "N suggestions" banner above Details, matching the Ledger's. Its accessible name is its visible label
  * (the live count or run state), so what a screen reader announces matches what is shown. The graph mark is decorative and animates while the agent re-runs.
  */
-export function StackTrigger({ feed, open, panelId, onToggle, triggerRef }: Readonly<StackTriggerProps>) {
+export function StackTrigger({ feed, open, panelId, onToggle, triggerRef, sources = SUGGESTION_SOURCES }: Readonly<StackTriggerProps>) {
 	const labelId = useId();
 	return (
 		<div
@@ -69,7 +70,7 @@ export function StackTrigger({ feed, open, panelId, onToggle, triggerRef }: Read
 				<TWGLoader active={feed.status === "running"} label="" size="small" />
 			</Tile>
 			<span aria-live="polite" className="relative z-10 min-w-0 flex-1 text-sm text-text" id={labelId}><TriggerLabel feed={feed} /></span>
-			<TwgToolSourceStack className="relative z-10 shrink-0" sources={SUGGESTION_SOURCES} />
+			<TwgToolSourceStack className="relative z-10 shrink-0" sources={sources} />
 		</div>
 	);
 }

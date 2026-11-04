@@ -15,7 +15,7 @@ import { Tag } from "@/components/ui/tag";
 export function CardValue({ value }: Readonly<{ value: SuggestionValue }>) {
 	switch (value.kind) {
 		case "paragraph":
-			return <p className="text-sm leading-5 text-pretty text-text">{value.text}</p>;
+			return <p className="text-sm leading-5 text-pretty whitespace-pre-wrap text-text">{value.text}</p>;
 		case "date":
 			return (
 				<span className="flex items-center gap-2 text-sm leading-5 text-text">
