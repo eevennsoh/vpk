@@ -16,6 +16,7 @@ import type {
 	JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
+import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
 import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
 import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
@@ -36,7 +37,6 @@ import {
 } from "@/components/blocks/jira-list";
 
 import { HeaderLanyards } from "./components/header-lanyards";
-import { Spinner } from "@/components/ui/spinner";
 import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
@@ -86,7 +86,6 @@ import {
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
-const ProjectButterJiraWorkItem = dynamic(() => import("@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item").then((module) => module.ProjectButterJiraWorkItem));
 
 const BUTTER_DEFAULT_REPORTER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
@@ -152,34 +151,27 @@ function ButterWorkItemSurface({ ref, defaultReporter, onBrowseAgents, onCreateA
 	return (
 		<>
 			{workItem.selection ? (
-				<Suspense fallback={workItem.open ? (
-					<div className="pointer-events-none fixed bottom-6 left-1/2 z-[190] flex -translate-x-1/2 items-center gap-2 rounded-lg bg-surface-overlay px-4 py-3 text-sm text-text shadow-overlay" role="status">
-						<Spinner label="" size="xs" />
-						Opening work item…
-					</div>
-				) : null}>
-					<ButterWorkItemDialog
-						initialPresentation="modal"
-						shell="project"
-						initialPreset="filled"
-						initialSuggestion={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY}
-						suggestionProfile={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? "payments" : "default"}
-						defaultReporter={defaultReporter}
-						initialSessions={workItem.selection.initialSessions}
-						overlayContainerRef={setOverlayContainer}
-						onOpenCloudSession={(session) => { if (workItem.selection) onOpenCloudSession(workItem.selection.workItem.code, workItem.selection.workItem.title, session); }}
-						onBrowseAgents={onBrowseAgents}
-						onCreateAgent={onCreateAgent}
-						onAgentSessionStart={(session) => { if (workItem.selection) onAgentSessionStart(workItem.selection.workItem.code, session); }}
-						onStoryPointsChange={(points) => { if (workItem.selection) onStoryPointsChange(workItem.selection.workItem.code, points); }}
-						onClose={() => { workItem.closeWorkItem(); onWorkItemClose(); }}
-						open={workItem.open}
-						openRelatedItem={openRelatedItem}
-						relatedScope={{ catalog: relatedCatalog, parentType: workItem.selection.workType }}
-						placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
-						workItem={workItem.selection.workItem}
-					/>
-				</Suspense>
+				<ButterWorkItemDialog
+					initialPresentation="modal"
+					shell="project"
+					initialPreset="filled"
+					initialSuggestion={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY}
+					suggestionProfile={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? "payments" : "default"}
+					defaultReporter={defaultReporter}
+					initialSessions={workItem.selection.initialSessions}
+					overlayContainerRef={setOverlayContainer}
+					onOpenCloudSession={(session) => { if (workItem.selection) onOpenCloudSession(workItem.selection.workItem.code, workItem.selection.workItem.title, session); }}
+					onBrowseAgents={onBrowseAgents}
+					onCreateAgent={onCreateAgent}
+					onAgentSessionStart={(session) => { if (workItem.selection) onAgentSessionStart(workItem.selection.workItem.code, session); }}
+					onStoryPointsChange={(points) => { if (workItem.selection) onStoryPointsChange(workItem.selection.workItem.code, points); }}
+					onClose={() => { workItem.closeWorkItem(); onWorkItemClose(); }}
+					open={workItem.open}
+					openRelatedItem={openRelatedItem}
+					relatedScope={{ catalog: relatedCatalog, parentType: workItem.selection.workType }}
+					placeholders={BUTTER_WORK_ITEM_PLACEHOLDERS}
+					workItem={workItem.selection.workItem}
+				/>
 			) : null}
 			{overlayHost ? <JgpRovoOverlay {...overlayProps} portalContainer={overlayHost} contained={workItem.open && Boolean(overlayContainer)} /> : null}
 		</>
