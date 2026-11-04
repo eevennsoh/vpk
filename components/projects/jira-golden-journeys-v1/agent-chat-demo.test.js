@@ -161,8 +161,8 @@ test("JGP agent chat exposes persistent work-item context for the floating compo
 	assert.equal(contextBar.collapsible, undefined);
 });
 
-test("JGP chat hook selects the agent before opening and cancels stale playback timers", () => {
-	assert.match(HOOK_SOURCE, /selectAgent\(scenario\.agentId, \{ preserveCurrentThread: true \}\);[\s\S]*openChat\("floating"\);/u);
+test("JGP chat hook opens the chat, selects the session agent, and cancels stale playback", () => {
+	assert.match(HOOK_SOURCE, /openChat\("floating"\);[\s\S]*selectAgent\(scenario\.agentId, \{ preserveCurrentThread: true \}\);/u);
 	assert.match(HOOK_SOURCE, /useEffect\(\(\) => cancelPlayback, \[cancelPlayback\]\);/u);
 	assert.match(HOOK_SOURCE, /setChatContextBar\(buildJgpAgentChatContextBar\(scenario\)\);/u);
 	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(scenario\.question \? null : playback\.assistantMessageId\);/u);
