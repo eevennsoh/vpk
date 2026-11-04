@@ -15,6 +15,7 @@ import { LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import { projectButterStatusProgress, projectButterStatusVariant } from "@/components/blocks/jira-work-item/project-butter/status-model";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
+import { IconTile } from "@/components/ui/icon-tile";
 
 export function ProjectButterStatusGlyph({ status, animated = true }: Readonly<{ status: string; animated?: boolean }>) {
 	return <ProgressCircle
@@ -23,6 +24,7 @@ export function ProjectButterStatusGlyph({ status, animated = true }: Readonly<{
 		aria-hidden
 		colorByProgress
 		dashed
+		inline
 		label={status}
 		size="sm"
 		value={projectButterStatusProgress(status)}
@@ -67,7 +69,7 @@ export function ProjectButterStatus({
 							appearance={appearance === "field" ? "text" : "icon"}
 							aria-label={`Change status${appearance === "field" ? " in details" : ""}, ${content.status}`}
 							className={appearance === "field" ? "-mx-2 w-[calc(100%+1rem)] max-w-none justify-start bg-transparent px-2 pr-14 hover:bg-transparent active:bg-transparent data-[selected=true]:bg-transparent" : undefined}
-							icon={<ProjectButterStatusGlyph status={content.status} />}
+							icon={appearance === "field" ? <IconTile aria-hidden as="span" icon={<ProjectButterStatusGlyph status={content.status} />} label="" size="xxsmall" variant="transparent" /> : <ProjectButterStatusGlyph status={content.status} />}
 							size="spacious"
 							variant={projectButterStatusVariant(content.status)}
 						/>

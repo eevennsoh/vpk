@@ -5,6 +5,19 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("child work item progress has breathing room after its heading", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const heading = page.getByRole("button", { name: /^Collapse Child work items/ });
+	const label = heading.getByText("Child work items", { exact: true });
+	const circle = heading.locator('[data-slot="progress-circle"]');
+	await expect(circle).toBeVisible();
+	await expect.poll(async () => {
+		const [labelBox, circleBox] = await Promise.all([label.boundingBox(), circle.boundingBox()]);
+		return labelBox && circleBox ? circleBox.x - (labelBox.x + labelBox.width) : null;
+	}).toBe(8);
+});
+
 test("work item story points use the number icon and stay in sync with the list", async ({ page }) => {
 	test.setTimeout(90_000);
 	await page.goto(appUrl("/butter"));

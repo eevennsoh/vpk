@@ -38,7 +38,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IconTile } from "@/components/ui/icon-tile";
+import { IconTile, type IconTileIconSize } from "@/components/ui/icon-tile";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SearchIcon } from "@/components/ui/vpk-icons";
@@ -186,7 +186,7 @@ export function PersonLabel({
 	);
 }
 
-export function PriorityLabel({ value }: Readonly<{ value: PriorityValue }>) {
+export function PriorityLabel({ value, iconSize }: Readonly<{ value: PriorityValue; iconSize?: IconTileIconSize }>) {
 	const IconComponent = PRIORITY_ICONS[value];
 	return (
 		<span className="flex min-w-0 items-center gap-2">
@@ -194,6 +194,7 @@ export function PriorityLabel({ value }: Readonly<{ value: PriorityValue }>) {
 				aria-hidden
 				className={PRIORITY_COLOR_CLASSES[value]}
 				icon={<IconComponent color="currentColor" label="" />}
+				iconSize={iconSize}
 				label=""
 				size="small"
 				variant="transparent"

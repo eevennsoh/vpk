@@ -55,6 +55,7 @@ export function AgentSessionsMenu({
 	addAgentLabel,
 	items,
 	localSessionAction = "continue",
+	overlayPositionerClassName = "z-[600]",
 	onAddAgent,
 	onContinueInAgent,
 	onDeleteSession,
@@ -66,6 +67,7 @@ export function AgentSessionsMenu({
 	addAgentLabel: string;
 	items: readonly AgentSessionItem[];
 	localSessionAction?: "continue" | "view";
+	overlayPositionerClassName?: string;
 	onAddAgent?: () => void;
 	onContinueInAgent?: (item: AgentSessionItem) => void;
 	onDeleteSession?: (item: AgentSessionItem) => void;
@@ -97,7 +99,8 @@ export function AgentSessionsMenu({
 							key={item.id}
 							localSessionAction={localSessionAction}
 							moreMenuPortalled={true}
-							moreMenuPositionerClassName="z-[600]"
+							moreMenuPositionerClassName={overlayPositionerClassName}
+							tooltipPositionerClassName={overlayPositionerClassName}
 							onContinueInAgent={onContinueInAgent}
 							onDeleteSession={onDeleteSession}
 							onMoreMenuOpenChange={onMoreMenuOpenChange}

@@ -5,7 +5,7 @@ import BranchIcon from "@atlaskit/icon/core/branch";
 import CopyIcon from "@atlaskit/icon/core/copy";
 import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 import { cn } from "@/lib/utils";
 
 export function ProjectButterDevelopmentActions({ code, description, onStartCoding, summary }: Readonly<{
@@ -32,7 +32,7 @@ export function ProjectButterDevelopmentActions({ code, description, onStartCodi
 	const label = feedback === "copied" ? "Prompt copied" : feedback === "error" ? "Could not copy prompt" : "Copy prompt";
 	const row = "h-8 w-full justify-start gap-2 px-2 font-normal";
 	return <div className="-mx-2 flex flex-col">
-		<Button className={row} onClick={onStartCoding} type="button" variant="ghost"><span aria-hidden className="grid size-4 shrink-0 place-items-center"><Icon className="text-icon-subtle" render={<BranchIcon label="" size="small" />} /></span>Start coding</Button>
+		<Button className={row} onClick={onStartCoding} type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<BranchIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Start coding</Button>
 		<Button aria-label={label} className={row} onClick={() => { void copyPrompt(); }} type="button" variant="ghost">
 			<CopyFeedbackIcon copied={feedback === "copied"} idleIcon={<CopyIcon label="" size="small" />} />
 			<span aria-hidden className="grid text-left">

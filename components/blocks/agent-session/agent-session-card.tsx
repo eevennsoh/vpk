@@ -262,6 +262,7 @@ export function AgentSessionCard({
 	localSessionAction = "continue",
 	moreMenuPortalled,
 	moreMenuPositionerClassName,
+	tooltipPositionerClassName,
 	onArrivalComplete,
 	onDepartureComplete,
 	onStateChangeComplete,
@@ -359,6 +360,7 @@ export function AgentSessionCard({
 	 * behind the picker.
 	 */
 	moreMenuPositionerClassName?: string;
+	tooltipPositionerClassName?: string;
 	/**
 	 * Portal the more-menu. Nested clipped overlays can pass `false`;
 	 * assignment uses the default portal so Rename / Delete escape the picker.
@@ -789,10 +791,10 @@ export function AgentSessionCard({
 					);
 
 					if (role === "expired") {
-						return <AgentSessionExpiredHint disabled={menu.isOpen}>{card}</AgentSessionExpiredHint>;
+						return <AgentSessionExpiredHint disabled={menu.isOpen} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionExpiredHint>;
 					}
 					if (role === "viewer") {
-						return <AgentSessionViewerTooltip>{card}</AgentSessionViewerTooltip>;
+						return <AgentSessionViewerTooltip positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
 					}
 
 					if (isLongDensity || flyoutHandle === undefined || flyoutSession === undefined) {

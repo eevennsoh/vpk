@@ -44,11 +44,13 @@ export function ProjectButterAgentPicker({
 	);
 }
 
-export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCreateAgent, selectedAgentIds }: Readonly<{
+export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCreateAgent, selectedAgentIds, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	selectedAgentIds?: readonly string[];
+	submenuPositionerClassName?: string;
+	workspacePositionerClassName?: string;
 }>) {
 	const agents = useProjectButterInvocationAgents();
 	const actions = useProjectButterInvocationActions();
@@ -211,6 +213,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 					align="start"
 					sideOffset={0}
 					className="w-70 gap-0 p-1"
+					positionerClassName={submenuPositionerClassName}
 					onPointerEnter={cancelClose}
 					onPointerLeave={closeSubmenuLater}
 					onClick={(event) => event.stopPropagation()}
@@ -237,7 +240,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 						<Icon aria-hidden className="size-4 shrink-0" render={<CloudIcon label="" size="small" />} />Run on cloud
 					</Button>
 					</> : null}
-					{hasWorkspaceOptions(submenu.agent.id) ? <ProjectButterLocalAgentMenu key={submenu.agent.id} onPointerEnter={cancelClose} onPointerLeave={closeSubmenuLater} onSelectingFolderChange={(selecting) => { selectingFolder.current = selecting; if (selecting) cancelClose(); }} /> : <>
+					{hasWorkspaceOptions(submenu.agent.id) ? <ProjectButterLocalAgentMenu key={submenu.agent.id} onPointerEnter={cancelClose} onPointerLeave={closeSubmenuLater} onSelectingFolderChange={(selecting) => { selectingFolder.current = selecting; if (selecting) cancelClose(); }} workspacePositionerClassName={workspacePositionerClassName} /> : <>
 					<Button
 						role="menuitem"
 						aria-disabled={VS_CODE_AGENT_IDS.has(submenu.agent.id) ? true : undefined}

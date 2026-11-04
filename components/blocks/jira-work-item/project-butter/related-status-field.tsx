@@ -5,7 +5,7 @@ import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { RelatedStatusGlyph } from "@/components/blocks/jira-work-item/project-butter/related-status-glyph";
+import { ProjectButterStatusGlyph } from "@/components/blocks/jira-work-item/project-butter/project-butter-status";
 import { RelatedTooltip } from "@/components/blocks/jira-work-item/project-butter/related-tooltip";
 import { RELATED_STATUSES, type ProjectButterRelatedStatus } from "@/components/blocks/jira-work-item/project-butter/related-model";
 
@@ -22,7 +22,7 @@ export function RelatedStatusField({ itemKey, onChange, status }: Readonly<{ ite
 		<RelatedTooltip label={status} side="bottom">
 			<DropdownMenu>
 				<DropdownMenuTrigger render={<Button aria-label={`Edit status for ${itemKey}, ${status}`} className="-mx-1.5" size="icon-compact" type="button" variant="ghost" />}>
-					<span className="flex size-3 items-center justify-center"><RelatedStatusGlyph className="scale-75" status={status} /></span>
+					<ProjectButterStatusGlyph status={status} />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start" onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">
 					{RELATED_STATUSES.map((option) => (

@@ -47,11 +47,11 @@ export function AgentSessionViewerHint() {
 }
 
 /** Attach the privacy explanation to the whole viewer row. */
-export function AgentSessionViewerTooltip({ children }: Readonly<{ children: ReactElement }>) {
+export function AgentSessionViewerTooltip({ children, positionerClassName = "z-[600]" }: Readonly<{ children: ReactElement; positionerClassName?: string }>) {
 	return (
 		<Tooltip>
 			<TooltipTrigger render={children} />
-			<TooltipContent className="w-60 whitespace-normal" positionerClassName="z-[600]">
+			<TooltipContent className="w-60 whitespace-normal" positionerClassName={positionerClassName}>
 				{AGENT_SESSION_VIEWER_HINT}
 			</TooltipContent>
 		</Tooltip>

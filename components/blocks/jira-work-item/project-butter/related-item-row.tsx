@@ -53,9 +53,9 @@ export function ProjectButterRelatedItemRow({ actions, dimmed, draft, editing, f
 					{fields.labels && item.labels?.length ? <span className={cn("max-w-24 truncate text-xs text-text-subtle", faded && FADE)}>{item.labels.join(", ")}</span> : null}
 					{fields.dueDate ? <span className={cn("flex", faded && FADE)}><RelatedDueDateField item={item} onChange={(dueDate) => onChange({ dueDate })} /></span> : null}
 					{fields.estimate ? <RelatedEstimateField item={item} onChange={(estimate) => onChange({ estimate })} /> : null}
+					{actions ? <RelatedRowActions itemKey={item.key} onClone={actions.onClone} onDelete={actions.onDelete} /> : null}
 					{fields.priority ? <RelatedPriorityField item={item} onChange={(priority) => onChange({ priority })} /> : null}
 					{fields.assignee ? <RelatedAssigneeField item={item} onChange={(assignee) => onChange({ assignee })} /> : null}
-					{actions ? <RelatedRowActions itemKey={item.key} onClone={actions.onClone} onDelete={actions.onDelete} /> : null}
 				</div>
 			)}
 		</motion.li>

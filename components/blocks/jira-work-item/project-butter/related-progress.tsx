@@ -10,7 +10,7 @@ export function RelatedProgress({ counts }: Readonly<{ counts: RelatedStatusCoun
 		{ status: "passed", weight: counts.done },
 	] satisfies ProgressCircleSegment[]).filter((segment) => segment.weight > 0);
 	return (
-		<span aria-hidden className="flex items-center gap-1" data-component="SubItemsProgress">
+		<span aria-hidden className="ml-1 flex items-center gap-1" data-component="SubItemsProgress">
 			<ProgressCircle inline segmented segments={segments} size="xs" />
 			<span className="inline-flex items-center gap-0.5 rounded-xs px-1 py-0.5 text-xs font-normal text-text tabular-nums">{counts.done}/{counts.total}</span>
 		</span>

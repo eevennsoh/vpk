@@ -15,6 +15,7 @@ import TextIcon from "@atlaskit/icon/core/text";
 import AssetsObjectIcon from "@atlaskit/icon-lab/core/assets-object";
 import PersonIcon from "@atlaskit/icon-lab/core/person-assignee";
 import { Button } from "@/components/ui/button";
+import { IconTile } from "@/components/ui/icon-tile";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 import { cn } from "@/lib/utils";
@@ -63,7 +64,7 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 				{filled ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">{label}</div> : null}
 				<div className="relative -mx-2 flex min-h-8 min-w-0 items-center rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
 					<div className={cn("flex min-w-0 flex-1 items-center gap-2 [&_[data-slot=detail-value-trigger]]:min-h-8", id !== "status" ? "pr-8" : undefined)}>
-						{FieldIcon ? <span aria-hidden className="flex size-4 shrink-0 items-center justify-center text-icon-subtle" data-field-icon={id}><FieldIcon label="" size="small" /></span> : null}
+						{FieldIcon ? <IconTile aria-hidden as="span" className="text-icon-subtle" data-field-icon={id} icon={<FieldIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /> : null}
 						<AnimatePresence initial={false}>
 							<motion.div className="min-w-0 flex-1" animate={{ opacity: 1 }} initial={{ opacity: 0 }} key={shimmerText ? "shimmer" : "value"} transition={{ duration: motionDuration.fast, ease: motionEase.outPractical }}>
 								{shimmerText ? <SuggestionRainbowText text={shimmerText} /> : children}

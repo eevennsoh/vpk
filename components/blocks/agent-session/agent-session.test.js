@@ -712,7 +712,7 @@ test("expired rows explain retention across the row and keep their Delete menu v
 	);
 	assert.match(expiredSource, /<Tooltip disabled=\{disabled\}>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
 	assert.match(CARD_SOURCE, /pinned: role !== "owner" \|\|/u);
-	assert.match(CARD_SOURCE, /if \(role === "expired"\) \{\s*return <AgentSessionExpiredHint disabled=\{menu\.isOpen\}>\{card\}<\/AgentSessionExpiredHint>;/u);
+	assert.match(CARD_SOURCE, /if \(role === "expired"\) \{\s*return <AgentSessionExpiredHint disabled=\{menu\.isOpen\}[^>]*>\{card\}<\/AgentSessionExpiredHint>;/u);
 	assert.doesNotMatch(expiredSource, /CrossIcon|IconTile|Spinner/u);
 	assert.match(PAGE_SOURCE, /withSessionRole\(items\.slice\(-1\), "expired"\)/u);
 	assert.match(PAGE_SOURCE, /items=\{withSessionRole\(items\.slice\(-1\), "expired"\)\}[\s\S]*onDeleteSession=\{handleRemove\}/u);
@@ -731,7 +731,7 @@ test("viewer rows use the outline information circle, not the filled status icon
 	assert.match(VIEWER_HINT_SOURCE, /className="\[&_svg:not\(\[class\*='size-'\]\)\]:size-4! \[&_svg\]:text-icon-subtlest"[\s\S]*className="text-icon-subtlest"/u);
 	assert.match(VIEWER_HINT_SOURCE, /variant="ghost"/u);
 	assert.match(VIEWER_HINT_SOURCE, /<Tooltip>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
-	assert.match(CARD_SOURCE, /if \(role === "viewer"\) \{\s*return <AgentSessionViewerTooltip>\{card\}<\/AgentSessionViewerTooltip>;/u);
+	assert.match(CARD_SOURCE, /if \(role === "viewer"\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
 	assert.doesNotMatch(VIEWER_HINT_SOURCE, /aria-expanded/u);
 	assert.match(
 		VIEWER_HINT_SOURCE,

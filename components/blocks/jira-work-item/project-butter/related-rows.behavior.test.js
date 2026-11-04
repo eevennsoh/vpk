@@ -35,7 +35,7 @@ test("the status menu offers three statuses with icons and updates the row and h
 	assert.equal(progress?.getAttribute("aria-valuemax"), "15");
 	assert.equal(progress?.querySelectorAll("circle").length, 2);
 	const trigger = view.getAllByRole("button", { name: "Edit status for VITA-4, In progress" })[0];
-	assert.equal(trigger.querySelector('svg[data-status="In progress"]') !== null, true, "the row glyph matches the status");
+	assert.equal(trigger.querySelector('[data-slot="progress-circle"]')?.getAttribute("aria-valuenow"), "50", "the row circle matches the status");
 	await view.click(trigger);
 	const items = view.getAllByRole("menuitem").map((item) => item.textContent);
 	assert.deepEqual(items, ["To do", "In progress", "Done"]);
@@ -81,7 +81,13 @@ test("the live summary edit commits on Enter, reverts on Escape or when empty, a
 
 test("child rows offer the reference actions; Clone copies with a new key and Delete removes", async () => {
 	const view = await renderRelated();
-	await view.click(view.getAllByRole("button", { name: "More actions for VITA-5" })[0]);
+	const action = view.getAllByRole("button", { name: "More actions for VITA-5" })[0];
+	const row = action.closest("li");
+	const priority = row.querySelector('button[aria-label^="Edit priority for VITA-5"]');
+	const assignee = row.querySelector('button[aria-label^="Edit assignee for VITA-5"]');
+	assert.equal(Boolean(action.compareDocumentPosition(priority) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	assert.equal(Boolean(priority.compareDocumentPosition(assignee) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	await view.click(action);
 	assert.equal(view.getByRole("menu", { name: "Actions for VITA-5" }) !== null, true);
 	assert.deepEqual(view.getAllByRole("menuitem").map((item) => item.textContent), ["Change parent", "Clone", "Move", "Archive", "Delete"]);
 	await view.click(view.getByRole("menuitem", { name: "Clone" }));

@@ -17,14 +17,14 @@ const RADIUS = CENTER - STROKE_WIDTH / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /** Filled variant: outer ring + gap + inner sector fill. */
-const FILLED_RING_WIDTH = 3;
-const FILLED_RING_RADIUS = CENTER - FILLED_RING_WIDTH / 2; // 10.5
+const FILLED_RING_WIDTH = 2.25;
+const FILLED_RING_RADIUS = CENTER - FILLED_RING_WIDTH / 2;
 const FILLED_CIRCUMFERENCE = 2 * Math.PI * FILLED_RING_RADIUS;
 // 15° gaps throughout; longer 45° dashes at zero, then 15° dashes once started.
 const FILLED_DASH_GAP = FILLED_CIRCUMFERENCE / 24;
 const FILL_TRANSITION = { duration: 0.4, ease: motionEase.out } as const; // duration-slower / ease-out
 const FILLED_GAP = 1.5;
-const FILLED_ARC_OUTER = FILLED_RING_RADIUS - FILLED_RING_WIDTH / 2 - FILLED_GAP; // 7.5
+const FILLED_ARC_OUTER = FILLED_RING_RADIUS - FILLED_RING_WIDTH / 2 - FILLED_GAP;
 
 /** SVG path for a filled sector (pie slice) sweeping clockwise from 12 o'clock. */
 function sectorPath(cx: number, cy: number, r: number, angleDeg: number): string {
@@ -208,7 +208,7 @@ function ProgressCircle({
 	const clampedValue = isIndeterminate ? 0 : Math.min(100, Math.max(0, value ?? 0));
 	const isFilled = variant === "filled";
 	const filledColor = !isIndeterminate && clampedValue === 0
-		? "text-icon-subtlest"
+		? "text-icon-subtle"
 		: !colorByProgress || isIndeterminate
 			? "text-text-subtle"
 			: clampedValue >= 100

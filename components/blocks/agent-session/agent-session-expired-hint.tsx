@@ -11,11 +11,12 @@ export const AGENT_SESSION_EXPIRED_HINT =
 export function AgentSessionExpiredHint({
 	children,
 	disabled = false,
-}: Readonly<{ children: ReactElement; disabled?: boolean }>) {
+	positionerClassName = "z-[600]",
+}: Readonly<{ children: ReactElement; disabled?: boolean; positionerClassName?: string }>) {
 	return (
 		<Tooltip disabled={disabled}>
 			<TooltipTrigger render={children} />
-			<TooltipContent className="w-60 whitespace-normal" positionerClassName="z-[600]" side="right">
+			<TooltipContent className="w-60 whitespace-normal" positionerClassName={positionerClassName} side="right">
 				{AGENT_SESSION_EXPIRED_HINT}
 			</TooltipContent>
 		</Tooltip>

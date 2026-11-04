@@ -19,6 +19,8 @@ test("status changes reuse the controlled circle and synchronize the header and 
 	const view = await renderStatus();
 	const initialCircle = view.getByRole("button", { name: "Change status, In progress" }).querySelector('[data-slot="progress-circle"]');
 	assert.equal(initialCircle?.getAttribute("aria-valuenow"), "50");
+	assert.equal(initialCircle.querySelector('[data-slot="progress-circle-dashes"]').getAttribute("stroke-width"), "2.25");
+	assert.equal(initialCircle.querySelector('[data-slot="progress-circle-solid"]').getAttribute("stroke-width"), "2.25");
 	assert.equal(initialCircle.querySelector('[data-slot="progress-circle-dashes"]').style.animationPlayState, "running");
 	let currentStatus = "In progress";
 	for (const [status, progress] of [["To do", "0"], ["In progress", "50"], ["Done", "100"], ["To do", "0"]]) {
@@ -41,20 +43,21 @@ test("status changes reuse the controlled circle and synchronize the header and 
 			assert.equal(detailsCircle.querySelector('[data-slot="progress-circle-dashes"]').style.animationPlayState, "running");
 		}
 		if (status === "To do") {
-			assert.equal(headerCircle.querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtlest"), true);
-			assert.equal(detailsCircle.querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtlest"), true);
+			assert.equal(headerCircle.querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtle"), true);
+			assert.equal(detailsCircle.querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtle"), true);
 		}
 		currentStatus = status;
 	}
 });
 
-test("filled progress circles use the subtlest icon color at zero", async () => {
+test("filled progress circles use the subtle icon color at zero", async () => {
 	const view = await renderComponent({
 		entry: "components/ui-custom/progress-circle.tsx",
 		exportName: "ProgressCircle",
 		props: { value: 0, variant: "filled", dashed: true },
 	});
-	assert.equal(view.getByRole("progressbar").querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtlest"), true);
+	assert.equal(view.getByRole("progressbar").querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-subtle"), true);
+	assert.equal(view.getByRole("progressbar").querySelector('[data-slot="progress-circle-dashes"]').getAttribute("stroke-width"), "2.25");
 	await view.rerender({ value: 50, variant: "filled", dashed: true, colorByProgress: true });
 	assert.equal(view.getByRole("progressbar").querySelector('[data-slot="progress-circle-dashes"]').classList.contains("text-icon-information"), true);
 });

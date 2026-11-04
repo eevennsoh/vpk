@@ -36,11 +36,12 @@ function readWorkspaces(raw: string): Workspaces {
 }
 
 export function ProjectButterLocalAgentMenu({
-	onPointerEnter, onPointerLeave, onSelectingFolderChange,
+	onPointerEnter, onPointerLeave, onSelectingFolderChange, workspacePositionerClassName,
 }: Readonly<{
 	onPointerEnter: () => void;
 	onPointerLeave: () => void;
 	onSelectingFolderChange: (selecting: boolean) => void;
+	workspacePositionerClassName?: string;
 }>) {
 	const [stored, setStored] = usePersistentState(WORKSPACES_KEY, EMPTY_WORKSPACES);
 	const { paths, selected } = readWorkspaces(stored);
@@ -159,7 +160,7 @@ export function ProjectButterLocalAgentMenu({
 								<ChevronDownIcon aria-hidden label="" size="small" />
 							</InputGroupAddon>
 						</InputGroup>
-						<PopoverContent ref={workspacePopup} anchor={anchor} aria-label="Codebase workspaces" initialFocus={false} finalFocus={false} side="bottom" align="start" sideOffset={4} className="w-(--anchor-width) min-w-0 gap-0 p-1" onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => {
+						<PopoverContent ref={workspacePopup} anchor={anchor} aria-label="Codebase workspaces" initialFocus={false} finalFocus={false} side="bottom" align="start" sideOffset={4} className="w-(--anchor-width) min-w-0 gap-0 p-1" positionerClassName={workspacePositionerClassName} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => {
 								if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setOpen(false); setDraft(null); configureButton.current?.focus(); }
 								if (event.key === "ArrowDown" || event.key === "ArrowUp") {
 									event.preventDefault();
