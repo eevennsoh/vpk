@@ -315,7 +315,7 @@ test("description edits and comment drafts survive closing and reopening the wor
 	await view.rerender({ initialPreset: "filled", onClose() {}, open: true });
 	assert.equal(view.getByRole("textbox", { name: "Work item description" }).textContent, "Updated onboarding scope");
 	assert.equal((await commentEditor(view)).textContent, "Keep this draft");
-	await view.click(view.getByRole("button", { name: "Save comment" }));
+	await view.click(view.getByRole("button", { name: "Submit" }));
 	assert.equal(view.queryByText("Keep this draft") !== null, true);
 	assert.equal((await commentEditor(view)).textContent, "");
 });
@@ -554,9 +554,10 @@ test("the source comment editor opens with M, clears cancelled drafts, resizes, 
 	await view.focus(view.getByRole("button", { name: "More work item actions" }));
 	await view.press(null, "m");
 	const editor = await commentEditor(view);
-	assert.equal(view.getByRole("button", { name: "Save comment" }).disabled, true);
+	assert.equal(view.getByRole("button", { name: "Submit" }).disabled, true);
 	assert.equal(view.queryByRole("button", { name: "Bold" }) !== null, true);
 	await view.fill(editor, "Discard this draft");
+	assert.equal(view.getByRole("button", { name: "Submit" }).disabled, false);
 	await view.press(editor, "Escape");
 	assert.equal(closed, false);
 	assert.equal(view.queryByRole("textbox", { name: "Comment editor" }) === null, true);
@@ -627,7 +628,7 @@ test("new audit records and comment replies survive changing activity views", as
 	await view.click(view.getByRole("tab", { name: "Audit" }));
 	assert.equal(view.queryByRole("button", { name: /Annie Cook\s*updated status\s*Just now/u }) !== null, true);
 	await view.fill(await commentEditor(view), "Posted from Audit");
-	await view.click(view.getByRole("button", { name: "Save comment" }));
+	await view.click(view.getByRole("button", { name: "Submit" }));
 	assert.equal(view.getByRole("tab", { name: /Activity/u }).getAttribute("aria-selected"), "true");
 	assert.equal(view.queryByText("Posted from Audit") !== null, true);
 });

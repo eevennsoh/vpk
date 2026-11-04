@@ -30,6 +30,30 @@ test("short work item activity ends without a viewport of blank space", async ({
 	})).toBeLessThan(64);
 });
 
+test("the comment bar has matching left and bottom insets", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	const scrollport = dialog.locator("[data-project-butter-work-item] > div").first();
+	const bar = dialog.locator("[data-project-butter-comment-bar]");
+	await scrollport.evaluate((element) => {
+		const activity = element.querySelector<HTMLElement>("[data-project-butter-activity]");
+		if (activity) element.scrollTop += activity.getBoundingClientRect().top - element.getBoundingClientRect().top;
+	});
+	await expect(bar.getByRole("button", { name: "Add a comment" })).toBeVisible();
+	const insets = () => bar.evaluate((element) => {
+		const viewport = element.closest("[data-project-butter-work-item]")!.firstElementChild!.getBoundingClientRect();
+		const bounds = element.getBoundingClientRect();
+		return Math.abs((bounds.left - viewport.left) - (viewport.bottom - bounds.bottom));
+	});
+	await expect.poll(insets).toBeLessThan(1);
+	await bar.getByRole("button", { name: "Add a comment" }).click();
+	await expect.poll(insets).toBeLessThan(1);
+	await scrollport.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+	await expect.poll(insets).toBeLessThan(1);
+});
+
 test("the board remains visible while a work item loads for the first time", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	const board = page.locator("[data-butter-board-surface]");
