@@ -329,6 +329,7 @@ export function DateRowField({
 	ariaLabel,
 	dateValueMode = "instant",
 	leadingVisual,
+	trailingVisual,
 	placeholder,
 	value,
 	onChange,
@@ -337,6 +338,7 @@ export function DateRowField({
 	ariaLabel: string;
 	dateValueMode?: "instant" | "utc-date";
 	leadingVisual?: ReactNode;
+	trailingVisual?: ReactNode;
 	placeholder: string;
 	value?: Date;
 	onChange: (next: Date | undefined) => void;
@@ -364,6 +366,7 @@ export function DateRowField({
 			<PopoverTrigger render={<DetailValueTrigger aria-label={ariaLabel} />}>
 				{leadingVisual}
 				<span className={cn("text-sm", value ? "text-text" : "text-text-subtlest")}>{label}</span>
+				{trailingVisual}
 			</PopoverTrigger>
 			<PopoverContent
 				align="start"

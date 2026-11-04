@@ -25,6 +25,17 @@ function fieldLabels() {
 	return [...document.querySelectorAll("[data-project-butter-detail-fields] [data-field-id]")].map((node) => node.getAttribute("data-field-label"));
 }
 
+test("the overdue warning follows the date inside its editable field", async () => {
+	const view = await renderDetails();
+	const trigger = view.getByRole("button", { name: "Change due date, overdue" });
+	const date = [...trigger.querySelectorAll("span")].find((node) => node.textContent === "May 25, 2026");
+	assert.ok(date);
+	assert.equal(date.nextElementSibling?.getAttribute("aria-hidden"), "true");
+	assert.equal(date.nextElementSibling?.querySelector("svg") !== null, true);
+	await view.click(trigger);
+	assert.equal(view.queryByRole("grid") !== null, true);
+});
+
 test("assignee defaults to Unassigned with its avatar and can be reassigned", async () => {
 	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing" } });
 	let assignee = view.getByRole("button", { name: "Change assignee" });
