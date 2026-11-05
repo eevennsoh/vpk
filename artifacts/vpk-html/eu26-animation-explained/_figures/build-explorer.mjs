@@ -33,9 +33,6 @@ const shell = renderStoryShell({
 	steps: storySteps(data), hero, playbackRate: data.playbackRate,
 	controls: '<div id="eu26-explorer-controls" data-vpkh-no-lightbox></div>',
 	appearance: '<div id="eu26-variant-controls" data-vpkh-no-lightbox></div>',
-	diagramNote: 'A 20-second schematic of the supplied choreography. The production experience uses WebGL and shaders; this study uses an interactive SVG model.',
-	appendix: read('../_layout/source-appendix.html'),
-	reference: 'https://statlas.prod.atl-paas.net/jira-team-26-eu-end/',
 });
 source = source.replace(/<main\b[^>]*\bid="content"[^>]*>[\s\S]*?<\/main>/, () => shell);
 const css = `${ACCENT_TOKENS_CSS}

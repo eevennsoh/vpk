@@ -236,7 +236,7 @@ export function model(input, data) {
 		return { ...pose(at, rot, 1, alpha, 1), emitter: side < 0 ? "left" : "right", pair, velocity: [-side * (150 + random(pair, 16) * 120), -(35 + random(pair, 18) * 80), 240 + random(pair, 17) * 100] };
 	});
 	const titleSlot = data.wall.find(slot => slot.reserved === 6), carry = data.titleCarry;
-	let titlePose = pose([...data.title.at], [0, 0, 0], 1, ease((time - 22.2) / 0.3), ease((time - carry.grab) / 0.25));
+	let titlePose = pose([...data.title.at], [0, 0, 0], 1, ease((time - 22.2) / 0.3), ease((time - 22.2) / 0.3));
 	if (time >= carry.grab) {
 		const progress = clamp((time - carry.grab) / (carry.land - carry.grab)), along = ease((time - carry.grab - 0.22) / (carry.land - carry.grab - 0.47));
 		const give = Math.sin(Math.PI * clamp((time - carry.grab) / 0.95)) ** 2;

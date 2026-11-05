@@ -1,13 +1,13 @@
 const escape = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 export const jsonIsland = value => JSON.stringify(value).replaceAll('<', '\\u003c');
 
-export function renderStoryShell({ title, description, eyebrow, steps, hero, controls = '', appearance = '', diagramNote = '', appendix = '', reference, playbackRate = 1, figureHint = 'Scroll to scrub · hover the rail to preview' }) {
+export function renderStoryShell({ title, description, eyebrow, steps, hero, controls = '', appearance = '', playbackRate = 1, figureHint = 'Scroll to scrub · hover the rail to preview' }) {
 	const pad = value => String(value).padStart(2, '0');
 	return `<main id="content" tabindex="-1" data-vpk-story data-story-mode="story">
 	<nav class="story-bar" aria-label="Reading controls">
 		<a class="story-brand" href="#content" aria-label="VPK story, back to beginning">VPK <span>/ FIELD NOTES</span></a>
 		<div class="story-modes" role="group" aria-label="View mode">${[['story', 'Page'], ['slides', 'Slides'], ['twitter', 'X Threads'], ['video', 'Video']].map(([id, label]) => `<button type="button" data-story-mode="${id}" aria-pressed="${id === 'story'}">${label}</button>`).join('')}</div>
-		<div class="story-tools"><a href="#sources">Sources</a><div data-story-theme></div></div>
+		<div class="story-tools"><div data-story-theme></div></div>
 		<div class="story-progress" aria-hidden="true" data-story-progress></div>
 	</nav>
 	<div class="story-layout">
@@ -35,7 +35,6 @@ export function renderStoryShell({ title, description, eyebrow, steps, hero, con
 		</div>
 	</div>
 	${controls}
-	<section id="sources" class="story-footer" aria-labelledby="story-sources-heading"><p class="story-kicker">Behind the drawing</p><h2 id="story-sources-heading">The details, when you need them.</h2><p>${escape(diagramNote)}</p><details><summary>Implementation, references and production timings</summary>${appendix}</details><p class="story-colophon">VPK / Algebrica · Offline HTML · ${reference ? `<a href="${escape(reference)}">Open the production experience ↗</a>` : ''}</p></section>
 	<script type="application/json" data-vpk-story-model>${jsonIsland({ mode: 'story', playbackRate, steps: steps.map(({ id, title, time }) => ({ id, title, time })) })}</script>
 </main>`;
 }

@@ -34,8 +34,7 @@ boundaries. Native scrolling is never intercepted.
 On wide screens the figure sits on a paper card:
 
 - background `--surface-raised`, radius 14px, padding 18px 22px;
-- no border: a 1px ring `color-mix(in oklab, var(--ink) 7%, transparent)` plus a soft lift
-  (`0 1px 2px` at 4%, `0 16px 40px -24px` at 18%);
+- no border and no drop shadow: only a 1px ring `color-mix(in oklab, var(--ink) 7%, transparent)`;
 - four corners of furniture, all Geist Mono 11px with tabular numerals except the title:
   - top left `Fig. 07` (subtlest text);
   - top right the chapter title (Geist 15px, ink);

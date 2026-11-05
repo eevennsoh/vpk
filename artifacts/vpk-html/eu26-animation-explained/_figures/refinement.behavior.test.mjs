@@ -270,14 +270,14 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 				await wait(120);
 				const held = explorer.getState().time === paused;
 				explorer.play();
-				const sources = document.querySelector('#sources');
-				for (const detail of sources.querySelectorAll('details')) detail.open = true;
-				sources.scrollIntoView({ block: 'start', behavior: 'instant' });
-				window.scrollBy({ top: Math.max(0, hero.getBoundingClientRect().bottom + 24), behavior: 'instant' });
+				// Temporary scroll room below the story, so the pinned figure can leave the viewport.
+				const spacer = document.body.appendChild(Object.assign(document.createElement('div'), { style: 'block-size: 300vh' }));
+				window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
 				await until(() => !explorer.getState().visible, 'offscreen wall did not suspend');
 				const offscreen = explorer.getState().time;
 				await wait(120);
 				const suspended = explorer.getState().time === offscreen;
+				spacer.remove();
 				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
 				await until(() => explorer.getState().playing && explorer.getState().time > offscreen, 'wall did not resume');
 				explorer.pause();

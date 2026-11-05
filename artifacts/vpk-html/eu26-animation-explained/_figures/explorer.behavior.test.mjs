@@ -219,14 +219,14 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				await until(() => explorer.getState().playing, 'manual playback did not start');
 				const entered = explorer.getState().time;
 				await until(() => explorer.getState().time > entered + .04, 'visible playback did not advance');
-				const sources = document.querySelector('#sources');
-				for (const detail of sources.querySelectorAll('details')) detail.open = true;
-				sources.scrollIntoView({ block: 'start', behavior: 'instant' });
-				window.scrollBy({ top: Math.max(0, hero.getBoundingClientRect().bottom + 24), behavior: 'instant' });
+				// Temporary scroll room below the story, so the pinned figure can leave the viewport.
+				const spacer = document.body.appendChild(Object.assign(document.createElement('div'), { style: 'block-size: 300vh' }));
+				window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
 				await until(() => !explorer.getState().visible && !explorer.getState().playing, 'offscreen playback did not suspend');
 				const offscreen = explorer.getState().time;
 				await wait(160);
 				const suspended = near(explorer.getState().time, offscreen);
+				spacer.remove();
 				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
 				await until(() => explorer.getState().playing && explorer.getState().time > offscreen + .04, 'playback did not resume on re-entry');
 				explorer.pause();

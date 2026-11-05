@@ -234,7 +234,7 @@ export const data = {
 	wallSource: { commit: "8588b00ff81cb5e8341a462158c747c6d990667c", viewport: { width: 1920, height: 1080 }, zoom: 0.25, density: "dense", padding: { x: 40, y: 40 }, pieceScale: 0.792, gutter: 23.76, worldScale: 0.72 },
 	doneList: { viewport: doneViewport, padding: { x: 2.5, y: 4 }, gap: 12, order: doneOrder, cards: doneOrder.map((card, rank) => ({ card, rank, x: doneViewport.x + 2.5, y: doneViewport.y + 4 + rank * 126, w: 180, d: 114 })) },
 	materialDepths: { story: 1.2, tile: 1.5, wall: 1.1, title: 1.2 },
-	title: { w: 220, d: 104, at: [10, -37, 6], home: [10, 2002, 4], grip: { u: 0.88, v: 0.76 } },
+	title: { w: 220, d: 96, at: [10, -16, 6], home: [10, 2002, 4], grip: { u: 0.88, v: 0.76 } },
 	boardDrags: [
 		{ card: 15, reach: 0, grab: 0, land: 2, leave: 2.65, grip: { u: 0.82, v: 0.24 }, entry: [350, -350, 0] },
 		{ card: 0, reach: 4, grab: 4.3, land: 6, leave: 6.65, grip: { u: 0.82, v: 0.24 }, entry: [350, -350, 0] },
@@ -299,7 +299,7 @@ export function build(kit, { data }) {
 		const plan = { x: -700 + i * 260, y: 1600, w: feature.w, d: feature.d, r: 9 };
 		put(`tile.${i}`, plan, 4, 1.5, `tile.${i}`, true);
 	});
-	put("bento.title", { x: -100, y: 1950, w: 220, d: 104, r: 9 }, 4, 1.2, "title", true);
+	put("bento.title", { x: -100, y: 1954, w: 220, d: 96, r: 9 }, 4, 1.2, "title", true);
 	data.wall.forEach((wall, i) => {
 		const plan = { x: wall.home[0], y: wall.home[1], w: wall.w, d: wall.d, r: wall.r };
 		put(`wall.${i}`, plan, 0, 1.1, `wall.${i}`, true);
