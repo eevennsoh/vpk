@@ -547,6 +547,10 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 @media (min-width: 1024px) {
 	body[data-vpk-layout="story"] {
 		--story-figure-inset: 16px;
+		/* Paper contrast (atlasclass): a warm page under white cards. Mixed from tokens, so dark mode stays a pair. */
+		--story-page: color-mix(in srgb, var(--ill-accent) 3%, color-mix(in srgb, var(--ink) 3%, var(--surface-sunken)));
+		--paper-background: var(--story-page);
+		background: var(--story-page);
 		--story-rail-room: 20px;
 		--story-hero-height: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset) - 104px);
 	}
@@ -575,6 +579,8 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 	body[data-vpk-layout="story"] .story-reading :is(a, button, summary, [tabindex]) { scroll-margin-block-start: calc(var(--story-top) + 96px); }
 	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: calc(100svh - var(--story-top) - 32px); justify-content: center; }
 	body[data-vpk-layout="story"] .story-footer { margin-inline: 0 auto; }
+	body[data-vpk-layout="story"] .story-bar { background: var(--story-page); }
+	body[data-vpk-layout="story"] .story-reading .vpk-code-card { background: var(--surface-raised); }
 
 	body[data-vpk-layout="story"] .story-figure {
 		justify-content: center;
@@ -588,6 +594,7 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 	body[data-vpk-layout="story"] .story-figure-top { padding-inline-end: 120px; }
 	body[data-vpk-layout="story"] .story-figure .story-stage-heading { position: absolute; z-index: 2; inset-block-start: 8px; inset-inline-end: 10px; min-block-size: 0; margin: 0; }
 	body[data-vpk-layout="story"] .story-figure #animation-explorer { flex: 1 1 auto; display: grid !important; align-items: center; }
+	body[data-vpk-layout="story"] .story-figure #animation-explorer .iso-stage { block-size: var(--story-hero-height); }
 }
 
 /* Reading type: mono tracked kickers carry every number and label; the prose stays Geist. */

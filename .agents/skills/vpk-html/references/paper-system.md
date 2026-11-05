@@ -47,7 +47,19 @@ rather than cropping the subject (`eu26-scene-live.mjs` shows the pattern).
 
 ## 3. Figures and diagrams
 
-- Material: paper only. Tops are the lightest face, sides step down the neutral scale, edges 0.55–1px.
+The paper plate (the drawing itself), as rendered in the EU26 study (`_figures/eu26-scene-live.mjs`, tokens in
+`_figures/explorer.css`):
+
+| Element | Spec | Source |
+| --- | --- | --- |
+| Ground | a grid on the floor plane under the subject, projected through the live camera (it moves with every shot); 100-unit cells, every fourth line stronger; `--eu26-ground` = ink 8% into paper, major 15%; 0.6px non-scaling; radial fade (opaque to 32%, gone by 78%) via an `objectBoundingBox` mask | atlasclass ground grids |
+| Ink ramp | silhouette (the base the scene stands on) ink 78% at 0.9px; moving paper ink 52% at 0.7px; interior structure (columns, rails, bars) ink 26% at 0.5px | atlasclass five-step ink edges |
+| Strobe ghosts | while a card is carried, its last four poses as dashed `3 3` outlines, 0.26s apart, fading 0.6 → 0.21; sampled from the model at earlier times (never render history) so scrubbing either way draws the same ghosts | atlasclass strobe images; Salaja dashed ghost states |
+| Paper contrast | the page is warm (`--story-page`: accent 3% into ink 3% into `--surface-sunken`); figure and code cards are `--surface-raised` | atlasclass `#f2f2ef` page under `#fbfbfa` cards |
+
+All four mix existing tokens, so dark mode inverts without a second palette and check-html sees no raw colour.
+
+- Material: paper only. Tops are the lightest face, sides step down the neutral scale.
 - Colour: grayscale plus the one accent `--ill-accent` (ADS orange) on the subject. Colour means "this is the thing";
   never decorate with it.
 - Labels live outside the drawing (corner furniture, captions, the reading page) unless a label names a part.

@@ -1,3 +1,13 @@
+/* Paper plate tokens: an ink ramp (silhouette, card, faint interior) and a ground grid, all mixed from page ink and
+   paper so dark mode inverts without a second palette. */
+:root {
+	--eu26-ink-silhouette: color-mix(in srgb, var(--ink) 78%, var(--paper));
+	--eu26-ink-card: color-mix(in srgb, var(--ink) 52%, var(--paper));
+	--eu26-ink-faint: color-mix(in srgb, var(--ink) 26%, var(--paper));
+	--eu26-ground: color-mix(in srgb, var(--ink) 8%, var(--paper));
+	--eu26-ground-major: color-mix(in srgb, var(--ink) 15%, var(--paper));
+}
+
 #animation-explorer [data-vpk-figure="eu26-hero"] {
 	position: relative;
 	isolation: isolate;
