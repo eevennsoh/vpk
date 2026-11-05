@@ -113,7 +113,7 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 			<PanelHeader
 				feed={feed}
 				onClose={onClose}
-				onRerun={mode === "caught-up" ? undefined : feed.rerun}
+				onRerun={feed.rerun}
 				onToggleView={feed.review.suggestions.length > 0 ? toggleView : undefined}
 				titleId={titleId}
 				toggleRef={toggleRef}

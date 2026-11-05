@@ -43,6 +43,7 @@ import {
 } from "@/components/blocks/jira-work-item/project-butter/reference-activity-body";
 
 const HISTORY = new Map(PROJECT_BUTTER_REFERENCE_HISTORY.map((item) => [item.id, item]));
+const ACTIVITY_EVENT_TEXT = "text-sm text-text [&_[data-jira-activity-agent-mention]]:align-[-0.2em] [&_[data-jira-activity-user-mention]]:align-[-0.2em]";
 const SORTS: readonly { value: ProjectButterActivitySort; label: string }[] = [
 	{ value: "newest", label: "Newest first" },
 	{ value: "oldest", label: "Oldest first" },
@@ -77,6 +78,7 @@ export function ProjectButterActivity({
 		[content.activityEntries, view, content.activitySort, singleView, content.showAuditInActivity],
 	);
 	const previewEntryId = ordered.find((entry) => entry.id === `invocation-${previewSessionId}` || entry.kind === "comment" && (entry.sessionItem?.id === previewSessionId || entry.replies?.some((reply) => reply.sessionItem?.id === previewSessionId)))?.id;
+	const pullRequestStatus = content.activityEntries.some((entry) => entry.id === "merchant-merged") ? "Merged" : "Open";
 	const visible = useMemo(
 		() =>
 			ordered.slice(
@@ -206,6 +208,7 @@ export function ProjectButterActivity({
 						entry.body.every((segment) => segment.type === "text") ? (
 							<ProjectButterReferenceCommentBody
 								markdown={jiraActivitySegmentsToPlainText(entry.body)}
+								pullRequestStatus={entry.id === "merchant-merged" ? pullRequestStatus : undefined}
 							/>
 						) : undefined
 					}
@@ -224,15 +227,17 @@ export function ProjectButterActivity({
 							/>
 						) : entry.kind === "event" && entry.id.startsWith("merchant-agent-added-") ? (
 							<div className="flex min-w-0 flex-wrap items-center">
-								<JiraActivityEvent className="text-sm text-text [&_[data-jira-activity-agent-mention]]:align-[-0.2em] [&_[data-jira-activity-user-mention]]:align-[-0.2em]" entry={{ ...entry, showTimestamp: false }} />
+								<JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={{ ...entry, showTimestamp: false }} />
 								<span className="ml-2 shrink-0 text-xs text-text-subtlest">{entry.timestamp}</span>
 							</div>
+						) : entry.kind === "event" && (entry.icon === "created" || entry.icon === "status") ? (
+							<JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={entry} />
 						) : undefined;
 					}}
 					renderReply={(reply) => sessions.some((session) => `response-${session.id}` === reply.id) ? (
 						<ProjectButterAgentResponse onOpen={onOpenSession} reply={reply} sessions={sessions} />
 					) : undefined}
-					renderReplyBody={(reply) => <ProjectButterReferenceCommentBody markdown={reply.body} />}
+					renderReplyBody={(reply) => <ProjectButterReferenceCommentBody markdown={reply.body} pullRequestStatus={reply.id === "merchant-pr" || reply.id === "merchant-fix" ? pullRequestStatus : undefined} />}
 					renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
 				/>
 			</div>

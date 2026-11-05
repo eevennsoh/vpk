@@ -5,6 +5,53 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("the agent row aligns with the other Details field icons and values", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
+	const fields = page.getByRole("dialog", { name: "Project butter" }).locator("[data-project-butter-detail-fields]");
+	test.skip(await fields.locator('[data-field-id="status"]').count() > 0, "The older work-item layout does not contain the agent field.");
+	const agent = fields.getByRole("button", { name: "Cursor: Working", exact: true });
+	await expect(agent).toBeVisible();
+	const agentField = agent.locator("..");
+	await expect(agentField.getByText("Working", { exact: true })).toBeVisible();
+	await expect(agentField.locator('[data-slot="spinner"]')).toHaveCount(0);
+	const geometry = await fields.evaluate((root) => {
+		const assignee = root.querySelector('[data-field-id="assignee"] [data-slot="avatar"]');
+		const priority = root.querySelector('[data-field-id="priority"] [data-slot="icon-tile"]');
+		const agentSlot = root.querySelector('[data-slot="jira-issue-agent-avatar-handoff"]');
+		const agentAvatar = agentSlot?.querySelector('[data-slot="avatar"]');
+		const assigneeText = assignee?.nextElementSibling;
+		const priorityText = priority?.nextElementSibling;
+		const agentText = agentSlot?.nextElementSibling;
+		if (!assignee || !priority || !agentAvatar || !assigneeText || !priorityText || !agentText) return null;
+		const center = (element: Element) => { const box = element.getBoundingClientRect(); return box.left + box.width / 2; };
+		const avatarBox = agentAvatar.getBoundingClientRect();
+		let clipped = false;
+		for (let ancestor = agentAvatar.parentElement; ancestor && root.contains(ancestor); ancestor = ancestor.parentElement) {
+			const style = getComputedStyle(ancestor);
+			const box = ancestor.getBoundingClientRect();
+			if (style.overflowX !== "visible" && (avatarBox.left < box.left - 0.5 || avatarBox.right > box.right + 0.5)) clipped = true;
+		}
+		return { clipped, icons: [center(assignee), center(agentAvatar), center(priority)], values: [assigneeText.getBoundingClientRect().left, agentText.getBoundingClientRect().left, priorityText.getBoundingClientRect().left] };
+	});
+	expect(geometry).not.toBeNull();
+	if (!geometry) throw new Error("Missing Details field geometry");
+	expect(geometry.clipped).toBe(false);
+	expect(Math.max(...geometry.icons) - Math.min(...geometry.icons)).toBeLessThan(1);
+	expect(Math.max(...geometry.values) - Math.min(...geometry.values)).toBeLessThan(1);
+	await agent.click();
+	const menu = page.getByRole("dialog", { name: "Agent sessions" });
+	await expect(menu).toBeVisible();
+	const panelBox = await fields.locator('xpath=ancestor::*[@data-panel-id="details"]').boundingBox();
+	const menuBox = await menu.boundingBox();
+	expect(panelBox).not.toBeNull();
+	expect(menuBox).not.toBeNull();
+	if (!panelBox || !menuBox) throw new Error("Missing Details panel or agent menu geometry");
+	expect(Math.abs(menuBox.width - panelBox.width)).toBeLessThan(1);
+	expect(Math.abs(menuBox.x - panelBox.x)).toBeLessThan(1);
+});
+
 test("details move after the description in a narrow work item and retain their state", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();

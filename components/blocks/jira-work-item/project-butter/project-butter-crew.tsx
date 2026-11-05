@@ -2,12 +2,17 @@
 
 import { useState } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import { AgentSessionsMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-session-menu";
+import { AgentAssignmentDefaultField } from "@/components/blocks/agent-assignment/components/agent-assignment-default-field";
+import type { AgentAssignmentAgent } from "@/components/blocks/agent-assignment";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/project-butter-agent-picker";
 import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
@@ -48,9 +53,10 @@ function referenceCrew(sessionsByUrgency: readonly AgentSessionItem[]): readonly
 	return members;
 }
 
-export function ProjectButterCrew({ assignee, currentUser, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: Readonly<{
+export function ProjectButterCrew({ assignee, currentUser, field = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: Readonly<{
 	assignee?: WorkItemPerson;
 	currentUser?: WorkItemPerson;
+	field?: boolean;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onOpenSession: (session: AgentSessionItem) => void;
@@ -62,6 +68,19 @@ export function ProjectButterCrew({ assignee, currentUser, onBrowseAgents, onCre
 	const [open, setOpen] = useState(false);
 	const [view, setView] = useState<"sessions" | "picker">("sessions");
 	const orderedSessions = [...sessions].sort((left, right) => SESSION_URGENCY[left.state] - SESSION_URGENCY[right.state]);
+	const assignedAgents: AgentAssignmentAgent[] = orderedSessions.map((session) => {
+		const statusKind = session.state === "running" ? "working" : session.state === "complete" ? "finished" : "needs-input";
+		return {
+			...session.agent,
+			id: session.id,
+			byline: "",
+			statusKind,
+			statusLabel: statusKind === "working" ? "Working" : statusKind === "finished" ? "Finished" : "Needs input",
+			invokedBy: session.invokedBy,
+			host: session.host,
+			role: session.role,
+		};
+	});
 	const pickerAgents = [...BUTTER_PICKER_AGENTS];
 	for (const { agent } of sessions) {
 		const id = agent.id ?? agent.name;
@@ -74,20 +93,27 @@ export function ProjectButterCrew({ assignee, currentUser, onBrowseAgents, onCre
 	const crew: readonly CrewMember[] = members.length ? members : [{ name: currentUser?.name ?? "Annie Cook", avatarSrc: currentUser?.avatarUrl, kind: "person", state: "Currently viewing" }];
 	const picking = view === "picker" || sessions.length === 0;
 	const label = `${members.length ? "Working on this work item. " : ""}${crew.map((member) => `${member.name}, ${member.state}`).join(". ")}. Add agent`;
+	const firstSession = orderedSessions[0];
+	const fieldLabel = firstSession ? `${firstSession.agent.name}: ${firstSession.state === "running" ? "Working" : firstSession.state === "complete" ? "Finished" : "Needs input"}` : "Add agent";
 	function changeOpen(next: boolean) {
 		setOpen(next);
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
 	}
 	return (
 		<Popover onOpenChange={changeOpen} open={open}>
-			<PopoverTrigger render={<button aria-label={label} className="group/crew inline-flex shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!onStartAgent && sessions.length === 0} type="button" />}>
+			{field && sessions.length > 0 ? <div className="relative min-w-0">
+				<PopoverTrigger render={<button aria-label={fieldLabel} className="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring in-[section.rounded-lg]:-inset-x-[17px]" type="button" />} />
+				<div inert><AgentAssignmentDefaultField activityRowFlush addAgentLabel="Add agent" assignedAgents={assignedAgents} compactStatus /></div>
+			</div> : <PopoverTrigger render={<button aria-label={field ? "Add agent" : label} className={field ? "-mx-2 inline-flex min-h-8 items-center gap-2 rounded-sm px-2 text-sm text-text-subtle outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring" : "group/crew inline-flex shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"} disabled={!onStartAgent && (field || sessions.length === 0)} type="button" />}>
+				{field ? <><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AiAgentIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /><span>Add agent</span></> : (
 				<AvatarGroup className="-space-x-1.5" label="People and agents working on this item">
 					{crew.map((member, index) => member.kind === "person" ? <Avatar className="size-7.5" key={`${member.name}-${index}`} label={`${member.name}, ${member.state}`} size="default" title={`${member.name}, ${member.state}`}><AvatarImage src={member.avatarSrc ?? projectButterPersonAvatar(member.name)} /><AvatarFallback>{member.name.slice(0, 1)}</AvatarFallback></Avatar> : <span className="relative shrink-0" key={`${member.name}-${index}`} title={`${member.name}, ${member.state}`}><AgentAvatarVisual {...member.visual} appearance="coding" label={`${member.name}, ${member.state}`} sizePx={30} status={member.state === "Completed" ? "finished" : member.state === "Needs input" ? "needs-input" : undefined} />{member.state === "Working" ? <span className="absolute -right-0.5 -top-0.5 z-10 grid size-3.5 place-items-center rounded-full bg-surface"><Spinner className="size-2.5" label="Working" size="xs" variant="bloom" /></span> : null}</span>)}
 					<Avatar animate={false} borderTone={open ? "selected" : "default"} className="size-7.5" label="Add agent" shape="hexagon" size="default"><AvatarFallback className="bg-transparent text-icon-subtle group-hover/crew:bg-bg-neutral-subtle-hovered"><AddIcon label="" size="small" /></AvatarFallback></Avatar>
 				</AvatarGroup>
-			</PopoverTrigger>
-			<PopoverContent align="end" aria-label={picking ? "Add agent" : "Agent sessions"} className={picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0"} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">
-				{picking && onStartAgent ? <ProjectButterInvocationProvider agents={pickerAgents} enabled><ProjectButterAgentPickerContent sessions={sessions} onContinueSession={(session) => { onOpenSession(session); changeOpen(false); }} onPreviewSession={onPreviewSession} submenuPositionerClassName="z-[700]" workspacePositionerClassName="z-[701]" onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} /></ProjectButterInvocationProvider> : <AgentSessionsMenu addAgentLabel="Add agent" items={orderedSessions} overlayPositionerClassName="z-[700]" onAddAgent={onStartAgent ? () => setView("picker") : undefined} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} />}
+				)}
+			</PopoverTrigger>}
+			<PopoverContent align={field && sessions.length > 0 ? "center" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={field && sessions.length > 0 ? "w-(--anchor-width) max-w-(--available-width) gap-0 overflow-hidden p-0" : picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0"} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">
+				{picking && onStartAgent ? <ProjectButterInvocationProvider agents={pickerAgents} enabled><ProjectButterAgentPickerContent sessions={sessions} onContinueSession={(session) => { onOpenSession(session); changeOpen(false); }} onPreviewSession={onPreviewSession} submenuPositionerClassName="z-[700]" workspacePositionerClassName="z-[701]" onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} />{field && sessions.length > 0 ? <div className="border-t border-border p-1"><Button className="w-full justify-start" onClick={() => setView("sessions")} type="button" variant="ghost">View agent sessions</Button></div> : null}</ProjectButterInvocationProvider> : <AgentSessionsMenu addAgentLabel="Add agent" items={orderedSessions} overlayPositionerClassName="z-[700]" onAddAgent={onStartAgent ? () => setView("picker") : undefined} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} />}
 			</PopoverContent>
 		</Popover>
 	);

@@ -21,12 +21,19 @@ import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
 /** The same review stack embedded beside a real work item's details. */
 export function JiraSuggestionControl({ feed, sources, showIntroLoading = false }: Readonly<{ feed: SuggestionFeed; sources?: readonly TwgToolSource[]; showIntroLoading?: boolean }>) {
 	const [open, setOpen] = useState(false);
+	const interacted = useRef(false);
+	const autoOpened = useRef(false);
 	const panelId = useId();
 	const anchorRef = useRef<HTMLDivElement>(null);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const panelRef = useRef<HTMLDivElement>(null);
 	const deckRef = useRef<HTMLDivElement>(null);
 	const deck = useDeck(feed, () => {});
+	const openAfterIntro = () => {
+		if (interacted.current || autoOpened.current || feed.status === "running" || feed.review.pending.length === 0) return;
+		autoOpened.current = true;
+		setOpen(true);
+	};
 	const close = () => {
 		setOpen(false);
 		feed.acknowledgeNew();
@@ -36,9 +43,9 @@ export function JiraSuggestionControl({ feed, sources, showIntroLoading = false 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
 			<div ref={anchorRef}>
-				<StackTrigger animateIntro feed={feed} onToggle={() => setOpen((current) => !current)} open={open} panelId={panelId} showIntroLoading={showIntroLoading} sources={sources} triggerRef={triggerRef} />
+				<StackTrigger animateIntro feed={feed} onIntroComplete={showIntroLoading ? openAfterIntro : undefined} onToggle={() => { interacted.current = true; setOpen((current) => !current); }} open={open} panelId={panelId} showIntroLoading={showIntroLoading} sources={sources} triggerRef={triggerRef} />
 			</div>
-			<PopoverContent anchor={anchorRef} align="start" aria-label="Work item suggestions" className="w-auto max-w-[calc(100vw-1rem)] gap-0 overflow-visible bg-transparent p-0 shadow-none" positionerClassName="z-[650]" side="left" sideOffset={8}>
+			<PopoverContent anchor={anchorRef} align="start" aria-label="Work item suggestions" className="w-auto max-w-[calc(100vw-1rem)] gap-0 overflow-visible bg-transparent p-0 shadow-none" initialFocus={false} positionerClassName="z-[650]" side="left" sideOffset={8}>
 				<StackPanel deck={deck} deckRef={deckRef} feed={feed} id={panelId} maxHeight={500} onClose={close} overlay={null} panelRef={panelRef} />
 			</PopoverContent>
 		</Popover>

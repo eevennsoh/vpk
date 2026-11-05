@@ -102,7 +102,6 @@ export function SuggestionCard({
 	const x = useTransform([poseX, dragX], ([base, offset]: number[]) => base + offset);
 	const rotate = useTransform([poseRotate, dragX], ([base, offset]: number[]) => base + clamp(offset / 240, -1, 1) * 6);
 	const opacity = useTransform([appear, shown, dragX], ([appeared, visible, offset]: number[]) => appeared * visible * (1 - clamp((Math.abs(offset) - FADE_START) / (FLY_DISTANCE - FADE_START), 0, 1)));
-	const acceptEdge = useTransform(progress, [0, 1], [0, 1]);
 	const contentShown = useMotionValue(sheet ? 0 : 1);
 	const peek = useMotionValue(0);
 	const contentOpacity = useTransform([contentShown, peek], ([base, peeked]: number[]) => Math.max(base, peeked));
@@ -259,8 +258,6 @@ export function SuggestionCard({
 						</motion.div>
 					) : null}
 				</AnimatePresence>
-				{/* The success edge confirms which way a drag would land; the label and the lit ✓ carry the rest. */}
-				{top ? <motion.span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-border-success ring-inset" style={{ opacity: acceptEdge }} /> : null}
 			</motion.div>
 		</div>
 	);

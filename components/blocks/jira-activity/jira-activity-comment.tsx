@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
 import GrowVerticalIcon from "@atlaskit/icon/core/grow-vertical";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -396,6 +396,7 @@ export function JiraActivityComment({
 	const [replyTarget, setReplyTarget] = useState<{
 		key: string;
 		actor: JiraActivityActor;
+		initialDraft: string;
 	} | null>(null);
 	const [localReplyDraft, setLocalReplyDraft] = useState("");
 	const replyDraft = controlledReplyDraft ?? localReplyDraft;
@@ -434,10 +435,10 @@ export function JiraActivityComment({
 			return;
 		}
 		if (controlledReplyDraft !== undefined) {
-			setReplyTarget({ key, actor });
+			setReplyTarget({ key, actor, initialDraft: replyDraft });
 			return;
 		}
-		setReplyTarget({ key, actor });
+		setReplyTarget({ key, actor, initialDraft: "" });
 		setReplyDraft("");
 	}
 
@@ -521,7 +522,14 @@ export function JiraActivityComment({
 			resolved={resolved}
 		/>
 	) : null;
-	const replyMention = replyTarget ? getReplyMention(replyTarget.actor) : undefined;
+	const replyMentionRequest = useMemo(() => {
+		if (!replyTarget) return undefined;
+		const mention = getReplyMention(replyTarget.actor);
+		const prefix = `@${mention.label}`;
+		const draft = replyTarget.initialDraft;
+		if (draft.trim() && !draft.startsWith(`${prefix} `)) return undefined;
+		return { mention, requestKey: 1, textAfter: draft.slice(prefix.length) || " " };
+	}, [replyTarget]);
 	const artifactItems = commentArtifactItems(entry);
 	const reviewStatus = entry.statusLozenge ? (
 		<Lozenge variant={entry.statusLozenge.variant}>{entry.statusLozenge.text}</Lozenge>
@@ -597,9 +605,7 @@ export function JiraActivityComment({
 								}
 							}}
 							onValueChange={setReplyDraft}
-							prefillMentionRequest={
-								replyMention && !replyDraft.trim() ? { mention: replyMention, requestKey: 1 } : undefined
-							}
+							prefillMentionRequest={replyMentionRequest}
 							placeholder={entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply..."}
 							value={replyDraft}
 							variant="flush"

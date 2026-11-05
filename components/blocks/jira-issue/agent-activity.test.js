@@ -104,6 +104,24 @@ test("adding an agent to an existing row shows Working immediately", async () =>
 	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });
 
+test("the compact assignment field shows session state and cycles multiple agents", async () => {
+	const working = { id: "claude", name: "Claude", byline: "", statusKind: "working", statusLabel: "Working" };
+	const other = { id: "cursor", name: "Cursor", byline: "", statusKind: "working", statusLabel: "Working" };
+	const view = await renderComponent({
+		entry: "components/blocks/agent-assignment/components/agent-assignment-default-field.tsx",
+		exportName: "AgentAssignmentDefaultField",
+		props: { addAgentLabel: "Add agent", assignedAgents: [working, other], compactStatus: true },
+	});
+	assert.equal(Boolean(view.getByText("Working")), true);
+	const frontId = () => view.container.querySelector('[data-agent-loading-slot="front"]')?.getAttribute("data-agent-id");
+	assert.equal(frontId(), "claude");
+	await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
+	assert.equal(frontId(), "cursor");
+	await view.rerender({ addAgentLabel: "Add agent", assignedAgents: [{ ...working, statusKind: "needs-input", statusLabel: "Needs input" }], compactStatus: true });
+	assert.equal(Boolean(view.getByText("Needs input")), true);
+	assert.equal(view.container.textContent.includes("Claude"), false);
+});
+
 for (const host of ["local", "cloud"]) {
 	for (const role of ["owner", "viewer"]) {
 		for (const [state, label, indicator] of [

@@ -130,7 +130,7 @@ export interface JiraActivityComposerProps {
 	 * only reliable way in — focusing a ref from a parent effect races the editor.
 	 */
 	autoFocus?: boolean;
-	prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number };
+	prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number; textAfter?: string };
 	mentionSources?: RichTextMentionSources;
 	mentionSectionLabels?: RichTextMentionSectionLabels;
 	suggestionVariant?: RichTextSuggestionVariantConfig;

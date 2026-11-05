@@ -45,17 +45,17 @@ async function expectJourneyStage(page: Page, name: JourneyStep) {
 	if (name === "Prepare & invoke" || name === "In progress") {
 		await expect(development).toHaveCount(0);
 		await expect(card.getByRole("button", { name: /Pull request.*#284/, includeHidden: true })).toHaveCount(0);
-		await expect(entries.getByText(/opened PR #284/)).toHaveCount(0);
+		await expect(entries.getByText(/opened #284: Add merchant onboarding quickstart/)).toHaveCount(0);
 	} else {
 		await expect(development).toHaveAttribute("data-project-butter-development", name === "Done" ? "merged" : name === "Fix checks" ? "failed" : "pr");
-		await expect(entries.getByText(/opened PR #284/)).toBeVisible();
+		await expect(entries.getByText(/opened #284: Add merchant onboarding quickstart/)).toBeVisible();
 		await expect(card.getByRole("button", { name: name === "Done" ? /Pull request merged #284/ : /Pull request (?:failed )?#284/, includeHidden: true })).toHaveCount(1);
 	}
 	if (name === "Done") {
-		await expect(entries.getByText(/PR #284 merged/)).toBeVisible();
+		await expect(entries.getByText(/merged\. PAY-999 is ready for the Done column/)).toBeVisible();
 		await expect(item.getByRole("button", { name: /Claude, Completed/ })).toBeVisible();
 	} else {
-		await expect(entries.getByText(/PR #284 merged/)).toHaveCount(0);
+		await expect(entries.getByText(/merged\. PAY-999 is ready for the Done column/)).toHaveCount(0);
 		if (name !== "Fix checks") {
 			await expect(entries.getByText(/pushed a fix/)).toHaveCount(0);
 			await expect(entries.getByText(/checks passed after the fix/)).toHaveCount(0);
@@ -77,6 +77,70 @@ test("Pull request begins on the board and reveals the PR before opening the wor
 	await expect(card.getByRole("button", { name: /Pull request #284/ })).toBeVisible();
 	await card.locator('[data-slot="jira-issue-card"]').click();
 	await expect(journeyItem(page).getByRole("region", { name: "Pull request development" })).toHaveAttribute("data-project-butter-development", "pr");
+});
+
+for (const [step, source, destination] of [["In progress", "To do", "In progress"], ["Done", "In progress", "Done"]] as const) {
+	test(`${step} replays the card move every time it is selected`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: "no-preference" });
+		await openMerchantJourney(page);
+		const flight = page.locator('[data-issue-drop-flight="PAY-999"]');
+		const button = wideStep(page, step);
+		await button.click();
+		await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", destination);
+		await expect(flight).toHaveCount(0, { timeout: 10_000 });
+		await page.evaluate((target) => {
+			const columns: string[] = [];
+			const positions: number[] = [];
+			const start = performance.now();
+			const record = () => {
+				const column = document.querySelector<HTMLElement>('[data-issue-key="PAY-999"][data-board-column-title]')?.dataset.boardColumnTitle;
+				if (column && columns.at(-1) !== column) columns.push(column);
+				document.documentElement.dataset.journeyReplayColumns = JSON.stringify(columns);
+			};
+			new MutationObserver(record).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-board-column-title"] });
+			record();
+			function sample(now: number) {
+				const moving = document.querySelector<HTMLElement>('[data-issue-drop-flight="PAY-999"]');
+				if (moving) {
+					positions.push(new DOMMatrixReadOnly(getComputedStyle(moving).transform).m41);
+					document.documentElement.dataset.journeyReplayTravel = String(Math.max(...positions) - Math.min(...positions));
+					const arrival = document.querySelector<HTMLElement>(`[data-issue-key="PAY-999"][data-board-column-title="${target}"] [data-slot="jira-creating-card"]`);
+					if (arrival && getComputedStyle(arrival).visibility === "visible" && Number(getComputedStyle(arrival).opacity) > 0.05) document.documentElement.dataset.journeyReplayDuplicate = "true";
+				}
+				if (now - start < 5000) requestAnimationFrame(sample);
+			}
+			requestAnimationFrame(sample);
+		}, destination);
+		await button.click();
+		await expect.poll(async () => JSON.parse((await page.locator("html").getAttribute("data-journey-replay-columns")) ?? "[]")).toContain(source);
+		await expect.poll(async () => Number(await page.locator("html").getAttribute("data-journey-replay-travel"))).toBeGreaterThan(5);
+		await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", destination);
+		await expect(flight).toHaveCount(0, { timeout: 10_000 });
+		await expect(page.locator("html")).not.toHaveAttribute("data-journey-replay-duplicate", "true");
+	});
+}
+
+test("replayed steps settle immediately when reduced motion is enabled", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openMerchantJourney(page);
+	for (const [step, column] of [["In progress", "In progress"], ["Done", "Done"], ["Done", "Done"]] as const) {
+		await wideStep(page, step).click();
+		await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", column);
+		await expect(page.locator('[data-issue-drop-flight="PAY-999"]')).toHaveCount(0);
+	}
+});
+
+test("changing journey steps during a replay settles on the latest selection", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await openMerchantJourney(page);
+	await wideStep(page, "In progress").click();
+	await wideStep(page, "Done").click();
+	await wideStep(page, "In progress").click();
+	await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(page.locator('[data-issue-drop-flight="PAY-999"]')).toHaveCount(0, { timeout: 10_000 });
+	await expect(wideStep(page, "In progress")).toHaveAttribute("aria-pressed", "true");
+	await wideStep(page, "Done").click();
+	await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", "Done");
 });
 
 test("PAY-999 travels from suggestions through Claude's repaired and merged PR", async ({ page }) => {
@@ -131,7 +195,7 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await expect(prFlyout.getByRole("group", { name: "Claude, used by Venn" })).toBeVisible();
 	await expect(prFlyout.getByRole("button", { name: /0\/3 builds passed/ })).toBeVisible();
 	await page.keyboard.press("Escape");
-	await expect(item.getByRole("region", { name: "Activity" })).toContainText("opened PR #284");
+	await expect(item.getByRole("region", { name: "Activity" })).toContainText("opened #284: Add merchant onboarding quickstart");
 	await development.getByRole("button", { name: "Pull request settings" }).click();
 	await expect(page.getByRole("switch", { name: "Auto-fix" })).toHaveAttribute("aria-checked", "true");
 	await expect(page.getByRole("switch", { name: "Merge when ready" })).toHaveAttribute("aria-checked", "true");
@@ -280,7 +344,7 @@ test("compact controls jump to every stage and support previous, next, and reset
 	await page.waitForTimeout(5500);
 	await expect(picker).toHaveText("Prepare & invoke");
 	await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", "To do");
-	await expect(journeyItem(page).getByRole("region", { name: "Activity" }).getByText(/pushed a fix|PR #284 merged/)).toHaveCount(0);
+	await expect(journeyItem(page).getByRole("region", { name: "Activity" }).getByText(/pushed a fix|merged\. PAY-999 is ready for the Done column/)).toHaveCount(0);
 	await closeJourneyItem(page);
 	await next.click();
 	await expect(picker).toHaveText("In progress");

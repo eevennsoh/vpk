@@ -79,6 +79,7 @@ import { BUTTER_SEEDED_AGENT_SESSION_OVERRIDES } from "./data/agent-session-sync
 import { useButterGenerativeActions } from "./hooks/use-butter-generative-actions";
 import { useButterList } from "./hooks/use-butter-list";
 import { useButterAssignmentMove } from "@/components/projects/butter/hooks/use-butter-assignment-move";
+import { useButterJourneyReplay } from "@/components/projects/butter/hooks/use-butter-journey-replay";
 import { useButterContent } from "./hooks/use-butter-content";
 import { BUTTER_WORK_ITEM_PLACEHOLDERS } from "@/components/projects/butter/data/work-item-placeholders";
 import { useButterWorkItem } from "@/components/projects/butter/hooks/use-butter-work-item";
@@ -212,7 +213,7 @@ export default function ButterPage(): React.ReactElement {
 	const [journeySession, setJourneySession] = useState<ProjectButterSessionItem>();
 	const [jumpRevision, setJumpRevision] = useState(0);
 	const [pullRequestVisible, setPullRequestVisible] = useState(false);
-	const journeyRef = useRef<{ selectStep: (step: number) => void }>(null);
+	const journeyRef = useRef<{ selectStep: (step: number) => void; cancelReplay: () => void }>(null);
 	const [autoFixEnabled, setAutoFixEnabled] = useState(true);
 	const [autoMergeEnabled, setAutoMergeEnabled] = useState(true);
 	useEffect(() => {
@@ -242,7 +243,7 @@ export default function ButterPage(): React.ReactElement {
 		});
 		setJumpRevision((current) => current + 1);
 	}, []);
-	const reset = useCallback(() => { setPhase("prepare"); setActiveStep(0); setJourneySession(undefined); setJumpRevision(0); setAutoFixEnabled(true); setAutoMergeEnabled(true); }, []);
+	const reset = useCallback(() => { journeyRef.current?.cancelReplay(); setPhase("prepare"); setActiveStep(0); setJourneySession(undefined); setJumpRevision(0); setAutoFixEnabled(true); setAutoMergeEnabled(true); }, []);
 	const controls = { onSelectStep: selectStep, activeStep };
 	return (
 		<div className="h-dvh w-full overflow-hidden bg-surface">
@@ -280,7 +281,7 @@ function ButterSessionPromptObserver({ activeSessionId, isSwitchingSession, onPr
 }
 
 function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, setJourneySession, journeyControls, autoFixEnabled, setAutoFixEnabled, autoMergeEnabled, setAutoMergeEnabled }: Readonly<{
-	ref: Ref<{ selectStep: (step: number) => void }>;
+	ref: Ref<{ selectStep: (step: number) => void; cancelReplay: () => void }>;
 	phase: MerchantJourneyPhase;
 	pullRequestVisible: boolean;
 	setPhase: React.Dispatch<React.SetStateAction<MerchantJourneyPhase>>;
@@ -317,15 +318,21 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 		toggleWacContent,
 		wacContent,
 	} = useButterContent();
+	const { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, onSelectedCardsAgentAssign, queueUpdate, startAgentSession } = useButterAssignmentMove({
+		agents: BUTTER_BOARD_AGENTS,
+		boardColumns,
+		setBoardColumns,
+	});
+	const { active: replayActive, cancel: cancelReplay, start: startReplay } = useButterJourneyReplay({ boardColumns, journeySession, phase, queueUpdate, setBoardColumns, wacContent });
 	useEffect(() => {
-		if (!wacContent && (phase !== "prepare" || journeySession)) {
+		if (!replayActive && !wacContent && (phase !== "prepare" || journeySession)) {
 			const boardPhase = phase === "pr" && !pullRequestVisible ? "working" : phase;
 			setBoardColumns((columns) => applyMerchantJourneyToBoard(columns, boardPhase, journeySession ? toButterAgentActivityFromSession(journeySession) : undefined));
 		}
-	}, [journeySession, phase, pullRequestVisible, setBoardColumns, wacContent]);
+	}, [journeySession, phase, pullRequestVisible, replayActive, setBoardColumns, wacContent]);
 	const revealedBoardPhase = useRef<MerchantJourneyPhase | null>(null);
 	useEffect(() => {
-		if (wacContent || (phase !== "working" && phase !== "pr" && phase !== "merged")) { revealedBoardPhase.current = null; return; }
+		if (replayActive || wacContent || (phase !== "working" && phase !== "pr" && phase !== "merged")) { revealedBoardPhase.current = null; return; }
 		const column = phase === "merged" ? "Done" : "In progress";
 		if (revealedBoardPhase.current === phase || !boardColumns.some((item) => item.title === column && item.cards.some((card) => card.code === BUTTER_SUGGESTION_DEMO_KEY))) return;
 		const frame = window.requestAnimationFrame(() => {
@@ -333,14 +340,9 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 			document.querySelector<HTMLElement>(`[data-butter-board-surface] [data-issue-key="${BUTTER_SUGGESTION_DEMO_KEY}"][data-board-column-title="${column}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
 		});
 		return () => window.cancelAnimationFrame(frame);
-	}, [boardColumns, phase, wacContent]);
+	}, [boardColumns, phase, replayActive, wacContent]);
 	// Same selector the Needs input focus uses, so the count names the rows it shows.
 	const needsInputCount = countNeedsInputAgents(boardColumns);
-	const { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, onSelectedCardsAgentAssign, startAgentSession } = useButterAssignmentMove({
-		agents: BUTTER_BOARD_AGENTS,
-		boardColumns,
-		setBoardColumns,
-	});
 	const {
 		composerPrefillRequest,
 		prefillComposerText,
@@ -529,16 +531,17 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 			setAgentAssignmentRequest(pending);
 		}
 	}, [activeView, flashListRow]);
-	useImperativeHandle(ref, () => ({ selectStep: (step) => {
+	useImperativeHandle(ref, () => ({ cancelReplay, selectStep: (step) => {
+		startReplay(step);
 		const column = boardColumns.find((candidate) => candidate.cards.some((card) => card.code === BUTTER_SUGGESTION_DEMO_KEY));
 		const card = column?.cards.find((candidate) => candidate.code === BUTTER_SUGGESTION_DEMO_KEY);
 		if (!card || !column) return;
 		if (step === 1 || step === 2 || step === 4) {
 			workItemRef.current?.close();
-			if (step === 2) handleTabChange("Board");
+			handleTabChange("Board");
 		}
 		else openButterWorkItem(card, column.title);
-	} }), [boardColumns, handleTabChange, openButterWorkItem]);
+	} }), [boardColumns, cancelReplay, handleTabChange, openButterWorkItem, startReplay]);
 	const openRelatedItem = useCallback<RelatedItemOpener>((issueKey) => {
 		for (const column of boardColumns) {
 			const card = column.cards.find((candidate) => candidate.code === issueKey);

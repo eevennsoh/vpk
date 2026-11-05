@@ -199,8 +199,9 @@ test("a check from the caught-up state runs in place and says when it found noth
 	await view.click(view.getByRole("button", { name: "Accept all" }));
 	// Let the footer finish folding away, so what follows is about the check, not the exit.
 	await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
-	assert.equal(view.queryByRole("button", { name: "Check for new suggestions" }) === null, true, "caught up offers one way to re-run: the body's Check again");
+	assert.equal(view.queryByRole("button", { name: "Check for new suggestions" }) !== null, true, "the header keeps its check action when caught up");
 	await view.click(view.getByRole("button", { name: "Check again" }));
+	assert.equal(view.getByRole("button", { name: "Checking for new suggestions" }).getAttribute("aria-disabled"), "true");
 	assert.equal(view.queryByRole("button", { name: "Check again" }) !== null, true, "the caught-up state holds while the check runs");
 	assert.equal(document.body.textContent.includes("reviewed"), false, "…with no footer or stack sliding in for it");
 	await act(() => new Promise((resolve) => setTimeout(resolve, 400)));
@@ -209,4 +210,8 @@ test("a check from the caught-up state runs in place and says when it found noth
 	assert.equal(view.queryByRole("button", { name: /^Undo/ }) !== null, true, "…and comes back once the check is done");
 	assert.equal(view.queryByText("Nothing new since you last checked") !== null, true, "a quiet check is acknowledged in the body");
 	assert.equal(view.queryByText("Checked just now") !== null, true, "…and in the header");
+	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
+	assert.equal(view.getByRole("button", { name: "Checking for new suggestions" }).getAttribute("aria-disabled"), "true", "the header action starts the same check");
+	await waitForRun();
+	await view.unmount();
 });

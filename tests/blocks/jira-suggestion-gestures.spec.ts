@@ -24,6 +24,23 @@ for (const direction of ["accept", "dismiss"] as const) {
 		await page.mouse.down();
 		await page.mouse.move(x + (direction === "accept" ? 150 : -150), y, { steps: 12 });
 		await expect(page.locator("[data-top-card]")).toHaveClass(/cursor-grabbing/);
+		if (direction === "accept") {
+			const card = page.locator("[data-top-card]");
+			const hint = card.locator('span[aria-hidden="true"]').filter({ hasText: "Accept" });
+			await expect.poll(() => hint.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.8);
+			const greenBorder = await card.evaluate((element) => {
+				const probe = document.createElement("span");
+				probe.style.color = "var(--ds-border-success)";
+				element.append(probe);
+				const successColor = getComputedStyle(probe).color;
+				probe.remove();
+				return [element, ...element.querySelectorAll("*")].some((child) => {
+					const style = getComputedStyle(child);
+					return Number(style.opacity) > 0 && (style.boxShadow.includes(successColor) || style.borderColor === successColor);
+				});
+			});
+			expect(greenBorder).toBe(false);
+		}
 		await page.mouse.up();
 		await expect(item.getByRole("button", { name: "4 suggestions" })).toBeVisible();
 		const description = item.getByRole("textbox", { name: "Work item description" });

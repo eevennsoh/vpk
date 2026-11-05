@@ -62,7 +62,10 @@ test("Claude selection renders one activity snapshot with an agent mention", asy
 	assert.equal(acknowledgment.length, 1);
 	assert.equal(acknowledgment[0].textContent.includes("Claude"), true);
 	assert.equal(acknowledgment[0].textContent.includes("I'm looking into this issue now. I'll report back here with updates as I make progress."), true);
-	assert.deepEqual([...document.querySelectorAll("[data-jira-activity-entry-id]")].map((entry) => entry.getAttribute("data-jira-activity-entry-id")), ["merchant-started-journey-session", "merchant-agent-added-journey-session", "butter-accepted-suggestions"]);
+	const statusChange = document.querySelectorAll('[data-jira-activity-entry-id="merchant-status-journey-session"]');
+	assert.equal(statusChange.length, 1);
+	assert.match(statusChange[0].textContent, /Claude\s+changed status from To do to In progress/u);
+	assert.deepEqual([...document.querySelectorAll("[data-jira-activity-entry-id]")].map((entry) => entry.getAttribute("data-jira-activity-entry-id")).filter((id) => id !== "butter-empty-created"), ["merchant-started-journey-session", "merchant-status-journey-session", "merchant-agent-added-journey-session", "butter-accepted-suggestions"]);
 	await view.unmount();
 });
 
@@ -85,7 +88,22 @@ test("direct jumps synthesize a session and rewind removes future progress witho
 	assert.equal(field("activity").includes("invocation-journey-session"), false);
 	await view.rerender(props);
 	assert.equal(field("status"), "To do");
-	assert.equal(field("activity"), "");
+	assert.doesNotMatch(field("activity"), /merchant-|butter-accepted-suggestions/u);
+});
+
+test("Claude's status snapshot is shown once from working onward and disappears when rewound", async () => {
+	const view = await renderJourney({ journeyPhase: "working" });
+	assert.equal(field("activity").split("merchant-status-journey-session").length - 1, 1);
+	assert.match(field("activity"), /Claude changed status from To do to In progress/u);
+	await view.rerender({ ...props, journeyPhase: "pr" });
+	assert.equal(field("activity").split("merchant-status-journey-session").length - 1, 1);
+	await view.rerender({ ...props, journeyPhase: "merged" });
+	assert.equal(field("activity").split("merchant-status-journey-session").length - 1, 1);
+	await view.rerender({ ...props, journeyPhase: "invoke" });
+	assert.equal(field("activity").includes("merchant-status-journey-session"), false);
+	await view.rerender({ ...props, journeyPhase: "working" });
+	assert.equal(field("activity").split("merchant-status-journey-session").length - 1, 1);
+	await view.unmount();
 });
 
 test("Claude's updates share the first comment and preserve human replies across journey steps", async () => {
@@ -130,7 +148,7 @@ test("direct Invoke prepares empty ticket fields only in the presentation", asyn
 	assert.equal(field("labels"), "");
 	assert.equal(field("parent"), "");
 	assert.equal(field("points"), "");
-	assert.equal(field("activity"), "");
+	assert.doesNotMatch(field("activity"), /merchant-|butter-accepted-suggestions/u);
 });
 
 test("syncing board story points does not create an activity entry, while a user edit does", async () => {

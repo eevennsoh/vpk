@@ -11,6 +11,7 @@ interface PendingAssignment {
 	issueKey: string;
 	update: (columns: readonly JiraKanbanColumnData[]) => JiraKanbanColumnData[];
 	columnTitle: string;
+	onApplied?: () => void;
 }
 
 function restoreAssignedCardFocus(issueKey: string) {
@@ -43,16 +44,17 @@ export function useButterAssignmentMove({
 	useEffect(() => () => stopFocusRestore.current?.(), []);
 	const sequence = useRef(0);
 	const [issueMoveRequest, setIssueMoveRequest] = useState<JiraKanbanIssueMoveRequest>();
-	const queueUpdate = useCallback((issueKey: string, update: PendingAssignment["update"]) => {
+	const queueUpdate = useCallback((issueKey: string, update: PendingAssignment["update"], onApplied?: () => void, animation?: "flight") => {
 		stopFocusRestore.current?.();
 		stopFocusRestore.current = undefined;
 		const move = getButterCardMove(boardColumns, update(boardColumns), issueKey);
 		if (!move) {
 			setBoardColumns(update);
+			onApplied?.();
 			return;
 		}
-		pending.current = { issueKey, update, columnTitle: move.columnTitle };
-		setIssueMoveRequest({ ...move, id: ++sequence.current, feedback: "none" });
+		pending.current = { issueKey, update, columnTitle: move.columnTitle, onApplied };
+		setIssueMoveRequest({ ...move, id: ++sequence.current, feedback: "none", animation });
 	}, [boardColumns, setBoardColumns]);
 	const onBoardAssignedAgentIdsChange = useCallback((issueKey: string, agentIds: readonly string[]) => {
 		queueUpdate(issueKey, (columns) => applyAssignedAgentIdsToColumns(columns, issueKey, agentIds, catalog));
@@ -77,11 +79,12 @@ export function useButterAssignmentMove({
 			// Add the session in this same commit, so only the arrival owner projects it.
 			pending.current = undefined;
 			setIssueMoveRequest(undefined);
-			setBoardColumns(assignment.update(columns));
-			stopFocusRestore.current = restoreAssignedCardFocus(assignment.issueKey);
+			setBoardColumns((current) => assignment.update(current));
+			assignment.onApplied?.();
+			if (!assignment.onApplied) stopFocusRestore.current = restoreAssignedCardFocus(assignment.issueKey);
 		} else {
 			setBoardColumns([...columns]);
 		}
 	}, [setBoardColumns]);
-	return { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, onSelectedCardsAgentAssign, startAgentSession };
+	return { issueMoveRequest, onBoardAssignedAgentIdsChange, onBoardColumnsChange, onSelectedCardsAgentAssign, queueUpdate, startAgentSession };
 }

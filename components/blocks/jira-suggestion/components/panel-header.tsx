@@ -59,7 +59,7 @@ export interface PanelHeaderProps {
 	view: ViewMode;
 	/** Omitted when there is nothing to lay out (an empty stack). */
 	onToggleView?: () => void;
-	/** Omitted where the body offers its own Check again (caught up), so there is one way to re-run, not two side by side. */
+	/** Re-run the suggestion check from the header. */
 	onRerun?: () => void;
 	onClose: () => void;
 	toggleRef: Ref<HTMLButtonElement>;

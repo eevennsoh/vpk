@@ -33,6 +33,8 @@ test("the reviewed list uses the same caught-up state as the stack", async ({ pa
 	await expect(panel.getByRole("button", { name: "Check again", exact: true })).toBeFocused();
 	await expect(panel.getByRole("button", { name: /^Undo/ })).toHaveCount(1);
 	await expect(panel.getByRole("list", { name: "Suggestions" })).toHaveCount(0);
+	await panel.getByRole("button", { name: "Check for new suggestions" }).click();
+	await expect(panel.getByText("Nothing new since you last checked")).toBeVisible();
 	await panel.getByRole("button", { name: "Check again", exact: true }).click();
 	await expect(panel.getByText("Nothing new since you last checked")).toBeVisible();
 	await panel.getByRole("button", { name: /^Undo/ }).click();
@@ -48,6 +50,7 @@ test("dismissing the stack shows the same caught-up state and can be undone", as
 	await panel.getByRole("button", { name: "Dismiss all" }).click();
 	await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
 	await expect(panel.getByText("5 dismissed")).toBeVisible();
+	await expect(panel.getByRole("button", { name: "Check for new suggestions" })).toBeVisible();
 	await expect(panel.getByRole("button", { name: "Check again" })).toBeVisible();
 	await panel.getByRole("button", { name: /^Undo/ }).click();
 	await expect(panel.getByRole("button", { name: "Accept description" })).toBeVisible();

@@ -41,7 +41,7 @@ export function merchantJourneyAuthoredUpdate<T extends object>(stored: T, shown
 }
 
 function isGeneratedEntry(id: string, session?: ProjectButterSessionItem) {
-	return GENERATED_IDS.has(id) || Boolean(session && (id === `invocation-${session.id}` || id === `merchant-agent-added-${session.id}` || id === `merchant-started-${session.id}`));
+	return GENERATED_IDS.has(id) || Boolean(session && (id === `invocation-${session.id}` || id === `merchant-agent-added-${session.id}` || id === `merchant-status-${session.id}` || id === `merchant-started-${session.id}`));
 }
 
 /** Keep edits to visible records and preserve records hidden by the selected step. */
@@ -132,6 +132,17 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 		} else {
 			const invocation = original?.kind === "comment" ? { ...original, replies: original.replies?.map((reply) => reply.id === `response-${projectedSession.id}` ? { ...reply, sessionItem: projectedSession } : reply) } : projectButterSessionInvocation(projectedSession);
 			entries.push(invocation);
+		}
+		if (projectedSession.agent.name === "Claude") {
+			entries.push({
+				id: `merchant-status-${projectedSession.id}`,
+				kind: "event",
+				actor: { id: "merchant-claude", name: "Claude", kind: "agent", avatarSrc: projectedSession.agent.avatarSrc, brandName: projectedSession.agent.brandName },
+				timestamp: "Just now",
+				createdAtMs: (projectedSession.invokedAtMs ?? PROJECT_BUTTER_SESSION_EPOCH) + 1,
+				icon: "status",
+				segments: [{ type: "text", text: "changed status from To do to In progress" }],
+			});
 		}
 		if (projectedSession.agent.name === "Claude" && showAcknowledgment) {
 			const id = `merchant-started-${projectedSession.id}`;

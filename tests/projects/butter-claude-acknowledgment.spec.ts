@@ -26,8 +26,9 @@ test("Claude acknowledges after Venn's activity snapshots", async ({ page }) => 
 	await expect(acknowledgment).toHaveCount(0);
 	await expect(acknowledgment).toContainText("I'm looking into this issue now", { timeout: 6_000 });
 	await expect(acknowledgment).toHaveCount(1);
-	await expect.poll(async () => activity.locator("[data-jira-activity-entry-id]").evaluateAll((entries) => entries.map((entry) => entry.getAttribute("data-jira-activity-entry-id")))).toEqual([
+	await expect.poll(async () => activity.locator('[data-jira-activity-entry-id^="merchant-started-"], [data-jira-activity-entry-id^="merchant-status-"], [data-jira-activity-entry-id^="merchant-agent-added-"], [data-jira-activity-entry-id="butter-accepted-suggestions"]').evaluateAll((entries) => entries.map((entry) => entry.getAttribute("data-jira-activity-entry-id")))).toEqual([
 		await acknowledgment.getAttribute("data-jira-activity-entry-id"),
+		await activity.locator('[data-jira-activity-entry-id^="merchant-status-"]').getAttribute("data-jira-activity-entry-id"),
 		await activity.locator('[data-jira-activity-entry-id^="merchant-agent-added-"]').getAttribute("data-jira-activity-entry-id"),
 		"butter-accepted-suggestions",
 	]);
@@ -43,6 +44,26 @@ test("the acknowledgment arrives after closing and reopening the work item", asy
 	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
 	await card.locator('[data-slot="jira-issue-card"]').click();
 	await expect(item.locator('[data-jira-activity-entry-id^="merchant-started-"]')).toHaveCount(1, { timeout: 6_000 });
+});
+
+test("replying to Claude keeps the agent mention as a chip when reopening the draft", async ({ page }) => {
+	const { item } = await startClaude(page);
+	const acknowledgment = item.locator('[data-jira-activity-entry-id^="merchant-started-"]');
+	await expect(acknowledgment).toHaveCount(1, { timeout: 6_000 });
+	const reply = acknowledgment.getByRole("button", { name: "Reply", exact: true });
+	await reply.click();
+	const editor = acknowledgment.getByRole("textbox", { name: "Leave a reply..." });
+	const mention = editor.locator('[data-mention-category="subagent"]');
+	await expect(mention).toHaveText("Claude");
+	await editor.pressSequentially("Please include the sandbox checklist");
+	await expect(mention).toHaveCount(1);
+	await reply.click();
+	await reply.click();
+	await expect(mention).toHaveText("Claude");
+	await expect(editor).toContainText("Please include the sandbox checklist");
+	await editor.press("Enter");
+	await expect(acknowledgment).toContainText("Please include the sandbox checklist");
+	await expect(editor).toHaveCount(0);
 });
 
 test("resetting the journey cancels a pending acknowledgment", async ({ page }) => {

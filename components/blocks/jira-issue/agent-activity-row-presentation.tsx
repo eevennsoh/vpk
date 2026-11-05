@@ -282,6 +282,7 @@ export function JiraIssueAgentRowContent({
 	showUnlinkControl,
 	isViewerRow = false,
 	statusIcon,
+	compactAvatarSlot = false,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	avatarLayout: JiraIssueAgentActivityAvatarLayout;
@@ -292,6 +293,7 @@ export function JiraIssueAgentRowContent({
 	showUnlinkControl: boolean;
 	isViewerRow?: boolean;
 	statusIcon: ReactElement;
+	compactAvatarSlot?: boolean;
 }>): ReactElement {
 	const phase = useProjectButterInvocationPhase();
 	const preview = useProjectButterInvocationPreview();
@@ -303,7 +305,7 @@ export function JiraIssueAgentRowContent({
 	let avatar: ReactElement;
 	if (featuredActivity !== undefined) {
 		avatar = (
-			<span className="grid size-6 shrink-0 place-items-center">
+			<span className={cn("flex h-6 shrink-0 items-center justify-center", compactAvatarSlot ? "w-4" : "w-6")}>
 				<AgentAvatarVisual
 					appearance="coding"
 					animate={false}
@@ -341,7 +343,7 @@ export function JiraIssueAgentRowContent({
 		);
 	} else {
 		avatar = (
-			<span className="grid size-6 shrink-0 place-items-center">
+			<span className={cn("flex h-6 shrink-0 items-center justify-center", compactAvatarSlot ? "w-4" : "w-6")}>
 				<AgentLoading
 					agents={activities.map(toAgentLoadingAgent)}
 					announce={false}

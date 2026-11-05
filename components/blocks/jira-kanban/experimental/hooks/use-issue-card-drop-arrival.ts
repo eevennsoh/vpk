@@ -20,6 +20,8 @@ export interface IssueCardMove {
 	readonly target?: JiraKanbanCardDropTarget;
 	/** Assignment owns its card glow separately; suppress the manual-drop trace. */
 	readonly feedback?: "none";
+	/** Use the existing source-to-destination flight even when the board defaults to solitaire. */
+	readonly animation?: "flight";
 }
 
 /** A released cohort whose move commits in the task after its settled face paints. */
@@ -167,10 +169,10 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	// in around it. A host move has no traveller, so it lands like auto arrange:
 	// a deck of the destination's top cards flies from their own slots into the
 	// top of the column, and the cards below it cascade in once it lands.
-	const captureDrop = useCallback((codes: readonly string[], columnTitle: string, grabbed: string | null, feedback?: "none") => {
+	const captureDrop = useCallback((codes: readonly string[], columnTitle: string, grabbed: string | null, feedback?: "none", animation?: "flight") => {
 		// Created-card ids are positive; move ids occupy a separate completion namespace.
 		const next = captureIssueCardDropArrival(columns, codes, columnTitle, --version.current);
-		if (solitaire) {
+		if (solitaire && animation !== "flight") {
 			const reflowBefore = codes.length === 1 && !reduceMotion && boardRef.current
 				? captureIssueCardReflow(boardRef.current, codes, columnTitle) : undefined;
 			snapshots.current = [{ id: next.id, title: columnTitle, flights: [], solitaire: true, feedback, reflowBefore }];
@@ -261,7 +263,7 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		return settledDrop.current !== null;
 	}, []);
 	const handleMove = useCallback((move: IssueCardMove) => {
-		if (enabled && move.cardCodes.length > 0) captureDrop(move.cardCodes, move.columnTitle, null, move.feedback);
+		if (enabled && move.cardCodes.length > 0) captureDrop(move.cardCodes, move.columnTitle, null, move.feedback, move.animation);
 		onMove?.(move);
 	}, [captureDrop, enabled, onMove]);
 	// Auto arrange lands each destination as a deck: its top cards (at most the

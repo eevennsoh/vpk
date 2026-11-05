@@ -12,7 +12,7 @@ import {
 	PROJECT_BUTTER_ATTACHMENTS,
 	type ProjectButterAttachment,
 } from "@/components/blocks/jira-work-item/project-butter/attachment-data";
-import { createProjectButterActivity, PROJECT_BUTTER_CURRENT_USER } from "@/components/blocks/jira-work-item/project-butter/activity-data";
+import { createProjectButterActivity, PROJECT_BUTTER_ACTIVITY_EPOCH, PROJECT_BUTTER_CURRENT_USER } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 import {
 	PROJECT_BUTTER_CHILD_ITEMS,
 	PROJECT_BUTTER_LINKED_ITEMS,
@@ -117,6 +117,11 @@ function createContent(
 		relatedEditor: createProjectButterRelatedEditorState(),
 		relatedWork,
 		activityEntries: [
+			...(workItem?.code === "PAY-999" ? createProjectButterActivity(true).map((entry) => ({
+				...entry,
+				actor: { id: `butter-person-${reporter.name}`, name: reporter.name, kind: "person" as const, avatarSrc: reporter.avatarUrl },
+				createdAtMs: PROJECT_BUTTER_ACTIVITY_EPOCH - 60_000,
+			})) : []),
 			...(placeholder
 				? projectButterPlaceholderComments(placeholder)
 				: workItem

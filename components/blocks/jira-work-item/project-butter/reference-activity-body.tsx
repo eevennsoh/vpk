@@ -1,12 +1,16 @@
 "use client";
 
+import { useMemo, type ComponentProps } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import { MessageResponse } from "@/components/ui-custom/message";
+import { MessageResponse, streamdownComponents } from "@/components/ui-custom/message";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { SmartLink } from "@/components/blocks/smart-link/components/smart-link";
+import { toPullRequestSmartLink, type PullRequestSmartLinkStatus } from "@/components/blocks/smart-link/lib/pull-request-smart-link";
 import { mentionSegmentForActor } from "@/components/blocks/jira-activity/jira-activity-actor-mention";
 import { JiraActivitySegments } from "@/components/blocks/jira-activity/jira-activity-segments";
 import type { JiraActivityActor } from "@/components/blocks/jira-activity";
 import type { ProjectButterReferenceChange } from "@/components/blocks/jira-work-item/project-butter/reference-model";
+import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
 
 export function ProjectButterHistoryChange({ actor, item, timestamp, defaultOpen = false }: Readonly<{ actor: JiraActivityActor; item: ProjectButterReferenceChange; timestamp: string; defaultOpen?: boolean }>) {
 	return (
@@ -19,6 +23,14 @@ export function ProjectButterHistoryChange({ actor, item, timestamp, defaultOpen
 	);
 }
 
-export function ProjectButterReferenceCommentBody({ markdown }: Readonly<{ markdown: string }>) {
-	return <MessageResponse>{markdown}</MessageResponse>;
+export function ProjectButterReferenceCommentBody({ markdown, pullRequestStatus }: Readonly<{ markdown: string; pullRequestStatus?: PullRequestSmartLinkStatus }>) {
+	const components = useMemo(() => {
+		if (!pullRequestStatus) return streamdownComponents;
+		const request = PROJECT_BUTTER_JOURNEY_PULL_REQUEST;
+		const item = toPullRequestSmartLink({ id: "butter-pr-284", number: request.number, title: request.title, status: pullRequestStatus, additions: request.additions, deletions: request.deletions, files: request.filesChanged, branch: request.branch, targetBranch: request.targetBranch, repository: "payments-platform/payments", href: "#pull-request-284", author: { name: "Venn", src: "/avatar-user/venn/venn.png" } });
+		const DefaultAnchor = streamdownComponents.a;
+		return { ...streamdownComponents, a: ({ href, ...props }: ComponentProps<"a"> & { node?: unknown }) => href === "#pull-request-284" ? <SmartLink className="text-[length:inherit] leading-[inherit] [&_[data-smart-link-text]]:[text-box:trim-both_cap_alphabetic]" item={item} positionerClassName="z-[700]" showStatus /> : <DefaultAnchor href={href} {...props} /> };
+	}, [pullRequestStatus]);
+	const body = pullRequestStatus ? markdown.replace(/\bPR #284\b/gu, "[PR #284](#pull-request-284)") : markdown;
+	return <MessageResponse components={components}>{body}</MessageResponse>;
 }
