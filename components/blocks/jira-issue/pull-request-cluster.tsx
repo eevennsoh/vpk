@@ -157,6 +157,7 @@ export function JiraIssuePullRequestCluster({
 					className="border-none bg-transparent shadow-none"
 					deletions={pullRequestPreview?.deletions ?? 0}
 					filesChanged={pullRequestPreview?.filesChanged}
+					href={pullRequestPreview?.href}
 					number={pullRequestNumber}
 					relativeTime={pullRequestPreview?.relativeTime}
 					repository={pullRequestPreview?.repository}

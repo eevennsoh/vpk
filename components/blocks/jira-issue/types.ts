@@ -35,6 +35,7 @@ export type JiraIssueCoverImage = {
 /** Dummy or live overlay fields for the Pull Request hover flyout. */
 export interface JiraIssuePullRequestPreview {
 	title: string;
+	href?: string;
 	author?: PullRequestAuthor;
 	repository?: string;
 	checks?: readonly PullRequestCheck[];

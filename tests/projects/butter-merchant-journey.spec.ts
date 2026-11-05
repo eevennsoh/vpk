@@ -79,6 +79,29 @@ test("Pull request begins on the board and reveals the PR before opening the wor
 	await expect(journeyItem(page).getByRole("region", { name: "Pull request development" })).toHaveAttribute("data-project-butter-development", "pr");
 });
 
+test("pull request flyouts link the title without linking the number", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openMerchantJourney(page);
+	await wideStep(page, "Pull request").click();
+	await journeyCard(page).locator('[data-slot="jira-issue-card"]').click();
+	const development = journeyItem(page).getByRole("region", { name: "Pull request development" });
+	await development.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).click();
+	const flyout = page.getByRole("group", { name: "Pull request #284: Add merchant onboarding quickstart" });
+	const title = flyout.getByRole("link", { name: "Add merchant onboarding quickstart", exact: true });
+	await expect(title).toHaveAttribute("href", "https://github.com/payments-platform/payments/pull/284");
+	await expect(flyout.getByText("#284", { exact: true }).locator("xpath=ancestor::a")).toHaveCount(0);
+	await title.hover();
+	await expect(title).toHaveCSS("text-decoration-line", "underline");
+	await title.focus();
+	await expect(title).toBeFocused();
+	await page.keyboard.press("Escape");
+	await closeJourneyItem(page);
+	await page.locator('[data-issue-key="PAY-119"][data-board-column-title]').getByRole("button", { name: "Pull request #1880: Publish rollback guide" }).click();
+	const boardFlyout = page.getByRole("group", { name: "Pull request #1880: Publish rollback guide" });
+	await expect(boardFlyout.getByRole("link", { name: "Publish rollback guide", exact: true })).toHaveAttribute("href", "https://github.com/payments-platform/payments/pull/1880");
+	await expect(boardFlyout.getByText("#1880", { exact: true }).locator("xpath=ancestor::a")).toHaveCount(0);
+});
+
 for (const [step, destination] of [["In progress", "In progress"], ["Done", "Done"]] as const) {
 	test(`${step} traces the card border after its arrival`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: "no-preference" });

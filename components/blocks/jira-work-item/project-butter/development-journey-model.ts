@@ -5,6 +5,7 @@ export type ProjectButterDevelopmentPhase = "pr" | "failed" | "fixing" | "passed
 export const PROJECT_BUTTER_JOURNEY_PULL_REQUEST = {
 	number: 284,
 	title: "Add merchant onboarding quickstart",
+	href: "https://github.com/payments-platform/payments/pull/284",
 	branch: "rovo/pay-999-merchant-onboarding",
 	targetBranch: "main",
 	additions: 186,

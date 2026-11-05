@@ -182,7 +182,7 @@ test("PullRequest flyout and spacious titles wrap as one inline text run", () =>
 	assert.match(COMPONENT_SOURCE, /function PullRequestInlineTitle/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<span className="text-text-subtlest">#\{number\} <\/span>\s*<span className="text-text">\{title\}<\/span>/u,
+		/<span className="text-text-subtlest">#\{number\} <\/span>[\s\S]*<span className="text-text">\{title\}<\/span>/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -190,7 +190,7 @@ test("PullRequest flyout and spacious titles wrap as one inline text run", () =>
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle number=\{number\} title=\{title\} \/>/u,
+		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle href=\{href\} number=\{number\} title=\{title\} \/>/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,
@@ -227,7 +227,7 @@ test("PullRequest flyout variant matches the overlay summary card", () => {
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle number=\{number\} title=\{title\} \/>/u,
+		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle href=\{href\} number=\{number\} title=\{title\} \/>/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,

@@ -49,7 +49,8 @@ async function renderFlyout(overrides) {
 	const snapshot = {
 		text: view.container.textContent,
 		review: view.queryByRole("link", { name: /^Review$/u }) !== null,
-		titleHref: view.queryByRole("link", { name: /#7 SHIL-25: Integrate Pull Request Data/u })?.getAttribute("href"),
+		titleHref: view.queryByRole("link", { name: "SHIL-25: Integrate Pull Request Data" })?.getAttribute("href"),
+		numberIsLinked: view.container.querySelector("a")?.textContent.includes("#7") ?? false,
 		viewPullRequest: view.queryByRole("link", { name: /^View pull request$/u }) !== null,
 		fix: view.queryByRole("button", { name: "Fix PR" }) !== null,
 		fixDisabled: view.queryByRole("button", { name: "Fix PR" })?.disabled,
@@ -202,6 +203,7 @@ test("flyout keeps the branch path, file changes, and author metadata", async ()
 test("flyout title links to the pull request and review remains optional", async () => {
 	const both = await renderFlyout({});
 	assert.deepEqual([both.review, both.titleHref, both.viewPullRequest, both.fix], [true, PROPS.href, false, false]);
+	assert.equal(both.numberIsLinked, false);
 
 	const viewOnly = await renderFlyout({ reviewHref: undefined });
 	assert.deepEqual([viewOnly.review, viewOnly.titleHref, viewOnly.viewPullRequest], [false, PROPS.href, false]);
@@ -252,7 +254,7 @@ test("flyout stays a container when an activation callback is supplied", async (
 		mocks: THEME_MOCK,
 		props: { ...PROPS, onActivate: () => undefined },
 	});
-	const link = view.getByRole("link", { name: /#7 SHIL-25: Integrate Pull Request Data/u });
+	const link = view.getByRole("link", { name: "SHIL-25: Integrate Pull Request Data" });
 	assert.equal(link.closest("button") === null, true);
 	assert.equal(link.getAttribute("target"), "_blank");
 	await view.unmount();

@@ -196,7 +196,7 @@ function attachPullRequestPreview(
 		throw new Error(`Missing dummy pull-request preview for ${code}`);
 	}
 
-	return preview;
+	return { ...preview, href: preview.repository ? `https://github.com/${preview.repository}/pull/${pullRequestNumber}` : undefined };
 }
 
 function createCard({

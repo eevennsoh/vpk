@@ -17,6 +17,7 @@ type JourneyCard = JiraKanbanCardData & {
 
 const PR_PREVIEW = {
 	title: PROJECT_BUTTER_JOURNEY_PULL_REQUEST.title,
+	href: PROJECT_BUTTER_JOURNEY_PULL_REQUEST.href,
 	author: { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc, assistedBy: { name: "Claude", brandName: "claude" } },
 	repository: "payments-platform/payments",
 	branch: PROJECT_BUTTER_JOURNEY_PULL_REQUEST.branch,

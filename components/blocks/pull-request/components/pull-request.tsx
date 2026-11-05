@@ -153,12 +153,13 @@ function PullRequestProviderMark({ provider }: Readonly<{ provider: PullRequestP
 function PullRequestInlineTitle({
 	number,
 	title,
+	href,
 	className,
-}: Readonly<{ number: number; title: string; className?: string }>) {
+}: Readonly<{ number: number; title: string; href?: string; className?: string }>) {
 	return (
 		<span className={cn("min-w-0 whitespace-normal text-sm leading-5", className)}>
 			<span className="text-text-subtlest">#{number} </span>
-			<span className="text-text">{title}</span>
+			{href ? <a className="rounded-sm text-text outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" href={href} rel="noopener noreferrer" target="_blank">{title}</a> : <span className="text-text">{title}</span>}
 		</span>
 	);
 }
@@ -425,11 +426,7 @@ function PullRequestFlyoutBody({
 		<>
 			<div className="flex w-full min-w-0 items-start gap-3 px-3">
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
-					{href ? (
-						<a className="min-w-0 rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" href={href} rel="noopener noreferrer" target="_blank">
-							<PullRequestInlineTitle number={number} title={title} />
-						</a>
-					) : <PullRequestInlineTitle number={number} title={title} />}
+					<PullRequestInlineTitle href={href} number={number} title={title} />
 					{authorMeta}
 				</div>
 				<PullRequestStatusLozenge status={status} />
