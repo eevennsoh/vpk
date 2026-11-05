@@ -2812,12 +2812,8 @@ section,
 .vpk-code .sh__token--keyword { font-weight: 500; }
 figure.vpk-code > figcaption { margin: 10px 0 0; padding: 0; text-align: start; max-inline-size: none; color: var(--muted-text); font-size: 12px; line-height: 1.5; }
 @media print { .vpk-code-card { box-shadow: none; border: 1px solid var(--rule); } }
-/* Paper plate tokens: an ink ramp (silhouette, card, faint interior) and a ground grid, all mixed from page ink and
-   paper so dark mode inverts without a second palette. */
+/* Ground grid tokens, mixed from page ink and paper so dark mode inverts without a second palette. */
 :root {
-	--eu26-ink-silhouette: color-mix(in srgb, var(--ink) 78%, var(--paper));
-	--eu26-ink-card: color-mix(in srgb, var(--ink) 52%, var(--paper));
-	--eu26-ink-faint: color-mix(in srgb, var(--ink) 26%, var(--paper));
 	--eu26-ground: color-mix(in srgb, var(--ink) 8%, var(--paper));
 	--eu26-ground-major: color-mix(in srgb, var(--ink) 15%, var(--paper));
 }
@@ -3030,7 +3026,7 @@ body[data-vpk-layout="story"] .story-tools .vpk-theme-toggle {
 body[data-vpk-layout="story"] .story-tools :is(.vpk-theme-toggle__label, .vpk-theme-toggle__state) { display: none; }
 body[data-vpk-layout="story"] .story-tools .vpk-theme-toggle svg { display: block; inline-size: 16px; block-size: 16px; }
 
-body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-tools button, .story-follow) {
+body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-tools button) {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -3048,7 +3044,7 @@ body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-to
 	cursor: pointer;
 }
 
-body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-tools button, .story-follow):hover {
+body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-tools button):hover {
 	background: var(--surface-sunken);
 	color: var(--ink);
 }
@@ -3118,9 +3114,6 @@ body[data-vpk-layout="story"] .story-stage-heading {
 	margin-block-end: 8px;
 }
 
-body[data-vpk-layout="story"] .story-follow { flex: 0 0 auto; padding-inline: 10px; }
-body[data-vpk-layout="story"] .story-follow[aria-pressed="true"] { color: var(--ink); }
-body[data-vpk-layout="story"] .story-follow[aria-pressed="false"] { border-color: var(--rule-strong); color: var(--ink); }
 body[data-vpk-layout="story"] #eu26-variant-controls { min-inline-size: 0; margin: 0; }
 
 body[data-vpk-layout="story"] .eu26-explorer-summary { display: none !important; }
@@ -3390,7 +3383,6 @@ body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[ope
 	body[data-vpk-layout="story"] .story-stage { z-index: 20; padding-block: 4px 8px; border-block-end: 1px solid var(--rule); }
 	body[data-vpk-layout="story"] .story-stage-heading { min-block-size: 44px; margin: 0; gap: 4px; }
 	body[data-vpk-layout="story"] #eu26-variant-controls .eu26-variant-choice { padding-inline: 7px; font-size: 11px; gap: 4px; }
-	body[data-vpk-layout="story"] .story-follow { min-inline-size: 44px; padding-inline: 6px; font-size: 11px; }
 	body[data-vpk-layout="story"] #animation-explorer .iso-stage { block-size: var(--story-hero-height); }
 	body[data-vpk-layout="story"] .story-intro { padding-block: 24px 36px; }
 	body[data-vpk-layout="story"] .story-intro h1 { font-size: clamp(32px, 9vw, 42px) !important; }
@@ -3415,7 +3407,7 @@ body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[ope
 
 @media (prefers-reduced-motion: reduce) {
 	body[data-vpk-layout="story"] { scroll-behavior: auto; }
-	body[data-vpk-layout="story"] :is(.story-modes button, .story-follow, .eu26-variant-choice, .eu26-explorer-button, .eu26-state-choice) { transition: none; }
+	body[data-vpk-layout="story"] :is(.story-modes button, .eu26-variant-choice, .eu26-explorer-button, .eu26-state-choice) { transition: none; }
 	body[data-vpk-layout="story"] .story-progress { display: none !important; }
 }
 
@@ -3452,7 +3444,6 @@ body[data-vpk-layout="story"] .story-video-heading { max-inline-size: 1200px; ma
 body[data-vpk-layout="story"] .story-video-chapter { max-inline-size: 1200px; margin: 16px auto 0; color: var(--muted-text); font-size: 14px !important; line-height: 1.6 !important; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-footer { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { position: relative; inset-block-start: auto; }
-body[data-vpk-layout="story"] [data-story-mode="video"] .story-follow { display: none; }
 body[data-vpk-layout="story"] .story-video-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 body[data-vpk-layout="story"] .story-video-toolbar .story-kicker { margin-block-end: 8px; }
 body[data-vpk-layout="story"] .story-video-heading { margin: 0; }
@@ -3491,10 +3482,6 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 @media (min-width: 1024px) {
 	body[data-vpk-layout="story"] {
 		--story-figure-inset: 16px;
-		/* Paper contrast (atlasclass): a warm page under white cards. Mixed from tokens, so dark mode stays a pair. */
-		--story-page: color-mix(in srgb, var(--ill-accent) 3%, color-mix(in srgb, var(--ink) 3%, var(--surface-sunken)));
-		--paper-background: var(--story-page);
-		background: var(--story-page);
 		--story-rail-room: 20px;
 		--story-hero-height: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset) - 104px);
 	}
@@ -3523,8 +3510,6 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 	body[data-vpk-layout="story"] .story-reading :is(a, button, summary, [tabindex]) { scroll-margin-block-start: calc(var(--story-top) + 96px); }
 	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: calc(100svh - var(--story-top) - 32px); justify-content: center; }
 	body[data-vpk-layout="story"] .story-footer { margin-inline: 0 auto; }
-	body[data-vpk-layout="story"] .story-bar { background: var(--story-page); }
-	body[data-vpk-layout="story"] .story-reading .vpk-code-card { background: var(--surface-raised); }
 
 	body[data-vpk-layout="story"] .story-figure {
 		justify-content: center;
@@ -3535,7 +3520,6 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 	}
 	body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure { block-size: auto; }
 	body[data-vpk-layout="story"] .story-figure-corner { display: flex; }
-	body[data-vpk-layout="story"] .story-figure-top { padding-inline-end: 120px; }
 	body[data-vpk-layout="story"] .story-figure .story-stage-heading { position: absolute; z-index: 2; inset-block-start: 8px; inset-inline-end: 10px; min-block-size: 0; margin: 0; }
 	body[data-vpk-layout="story"] .story-figure #animation-explorer { flex: 1 1 auto; display: grid !important; align-items: center; }
 	body[data-vpk-layout="story"] .story-figure #animation-explorer .iso-stage { block-size: var(--story-hero-height); }
@@ -4158,7 +4142,7 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 		<aside class="story-stage" data-story-stage aria-label="Anchored animation">
 			<div class="story-figure">
 				<div class="story-figure-corner story-figure-top" aria-hidden="true"><span class="story-figure-number">Fig. <span data-story-fig-number>01</span></span><span class="story-figure-title" data-story-fig-title>The keynote board</span></div>
-				<div class="story-stage-heading"><div id="eu26-variant-controls" data-vpkh-no-lightbox></div><button type="button" class="story-follow" data-story-action="follow" aria-pressed="true">Follow scroll</button></div>
+				<div class="story-stage-heading"><div id="eu26-variant-controls" data-vpkh-no-lightbox></div></div>
 				<section id="animation-explorer" class="animation-explorer" aria-label="Interactive animation study">
 <!-- vpk-anatomy-hero:start id="eu26-hero" src="_figures/eu26-hero.hero.mjs" -->
 <div data-vpk-engine="anatomy-hero" data-vpk-figure="eu26-hero" data-vpk-camera="45 30" data-vpk-anatomy-tier="hero" data-vpk-anatomy-parts="197" data-vpk-block data-vpkh-no-lightbox>
@@ -4494,21 +4478,6 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 		groundMajor.setAttribute("d", major.join(""));
 	};
 
-	// Strobe ghosts (atlasclass strobe images, Salaja's dashed ghost states): while a cursor carries a card, its last few
-	// authored poses stay as dashed outlines, so the path of the drop is readable in a still frame. Sampled from the
-	// model at earlier times, never from render history, so scrubbing in either direction draws the same ghosts.
-	const ghostLayer = element("g", { "data-eu26-ghosts": "", "aria-hidden": "true", "pointer-events": "none" }, ctx.svg);
-	const GHOST = { count: 4, gap: 0.26, linger: 0.35 };
-	const INK = {
-		chassis: { stroke: "var(--eu26-ink-silhouette)", width: "0.9px" },
-		navigation: { stroke: "var(--eu26-ink-faint)", width: "0.5px" },
-		title: { stroke: "var(--eu26-ink-faint)", width: "0.5px" },
-		column: { stroke: "var(--eu26-ink-faint)", width: "0.5px" },
-		scroll: { stroke: "var(--eu26-ink-faint)", width: "0.5px" },
-		confetti: { stroke: "var(--eu26-ink-card)", width: "0.55px" },
-		card: { stroke: "var(--eu26-ink-card)", width: "0.7px" },
-	};
-	const ghostPaths = Array.from({ length: GHOST.count }, (_, i) => element("path", { "data-eu26-ghost": i, fill: "none", stroke: "var(--eu26-ink-card)", "stroke-width": "0.75", "stroke-dasharray": "3 3", "vector-effect": "non-scaling-stroke", opacity: (0.6 - i * 0.13).toFixed(2) }, ghostLayer));
 
 	const turn = (vector, angles) => {
 		let [x, y, z] = vector;
@@ -4576,12 +4545,7 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 		surface.top.setAttribute("d", shape.top);
 		for (const shade of surface.sides) shade.setAttribute("d", shape.shades[Number(shade.dataset.shade)] || "");
 		surface.edge.setAttribute("d", shape.outline);
-		// Ink ramp (atlasclass ink edges): the board's silhouette is darkest, the moving paper is crisp, the board's
-		// interior structure recedes. Accent mixes start from each surface's own neutral ink.
-		const ink = INK[kind] || INK.card;
-		surface.ink = ink.stroke;
-		surface.edge.style.strokeWidth = ink.width;
-		if (!(surface.el.dataset.eu26Highlight > 0)) surface.edge.style.stroke = ink.stroke;
+		surface.edge.style.strokeWidth = "0.55px";
 	};
 	const skin = () => {
 		for (const surface of surfaces) skinSurface(surface);
@@ -4596,7 +4560,7 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 		surface.top.style.fill = color("var(--anatomy-top)", "var(--ill-accent)");
 		surface.fill.style.fill = color("var(--anatomy-paper)", "var(--ill-accent)");
 		for (const side of surface.sides) side.style.fill = color(`var(--anatomy-shade-${side.dataset.shade})`, "color-mix(in oklab, var(--ill-accent) 70%, var(--ill-line))");
-		surface.edge.style.stroke = color(surface.ink || "var(--anatomy-mid)", "var(--ill-accent-ink)");
+		surface.edge.style.stroke = color("var(--anatomy-mid)", "var(--ill-accent-ink)");
 		el.dataset.eu26Active = amount > 0.5 ? "true" : "false";
 		el.dataset.eu26Highlight = highlight;
 	};
@@ -4739,28 +4703,6 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 		ctx.root.dataset.heroDepthCycles = String(cycles);
 		return visible;
 	};
-	// The projected top face of a surface at a given pose (the same mapping paint() uses).
-	const topFace = (surface, home, pose) => {
-		const plan = surface.drawPlan, z = surface.drawZ + surface.drawHeight;
-		return kit.roundedPlan(plan, 4).map(([x, y]) => {
-			const delta = turn([x, y, z].map((value, i) => (value - home[i]) * (i === 1 ? pose.scaleY ?? pose.scale : pose.scale)), pose.rot);
-			return project(pose.at.map((value, i) => value + delta[i]));
-		});
-	};
-	const drawGhosts = time => {
-		const drag = data.boardDrags.find(each => time > each.grab && time < each.land + GHOST.linger);
-		ghostLayer.style.display = drag ? "" : "none";
-		if (!drag) return;
-		const card = data.cards[drag.card], surface = surfaceOf.get(pieces.get(`story.${drag.card}`));
-		const home = [card.home[0] + card.w / 2, card.home[1] + card.d / 2, card.home[2]];
-		const end = Math.min(time, drag.land);
-		ghostPaths.forEach((path, i) => {
-			const at = end - (i + 1) * GHOST.gap;
-			if (at <= drag.grab || !surface) { path.removeAttribute("d"); return; }
-			const pose = ctx.model({ time: at, variant, transition: null, projectionScale: P.scale }).cards[drag.card];
-			path.setAttribute("d", kit.pathOf(topFace(surface, home, pose), true));
-		});
-	};
 	const render = (time, transition = null) => {
 		const state = ctx.model({ time, variant, transition, projectionScale: P.scale });
 		currentState = state;
@@ -4816,7 +4758,6 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 		const width = state.camera.width * Math.min(1.3, Math.max(1, (state.camera.width / height) / Math.max(0.1, displayWidth / displayHeight)));
 		ctx.svg.setAttribute("viewBox", `${(cx - width / 2).toFixed(3)} ${(cy - height / 2).toFixed(3)} ${width.toFixed(3)} ${height.toFixed(3)}`);
 		drawGround(state.camera.at, width, height);
-		drawGhosts(time);
 		const unit = Math.max(width / displayWidth, height / displayHeight);
 		let clippedCursors = 0;
 		for (const cursor of state.cursors) {
@@ -4851,7 +4792,6 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 		}
 		ctx.svg.appendChild(lighting);
 		if (ctx.svg.lastElementChild !== cursorLayer) ctx.svg.appendChild(cursorLayer);
-		if (ghostLayer.nextElementSibling !== cursorLayer) ctx.svg.insertBefore(ghostLayer, cursorLayer);
 		ctx.root.dataset.heroAzimuth = P.azimuth.toFixed(5);
 		ctx.root.dataset.heroElevation = P.elevation.toFixed(5);
 		ctx.root.dataset.heroProjectionCoherent = "true";

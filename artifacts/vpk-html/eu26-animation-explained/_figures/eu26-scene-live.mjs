@@ -62,21 +62,6 @@ export function live(ctx) {
 		groundMajor.setAttribute("d", major.join(""));
 	};
 
-	// Strobe ghosts (atlasclass strobe images, Salaja's dashed ghost states): while a cursor carries a card, its last few
-	// authored poses stay as dashed outlines, so the path of the drop is readable in a still frame. Sampled from the
-	// model at earlier times, never from render history, so scrubbing in either direction draws the same ghosts.
-	const ghostLayer = element("g", { "data-eu26-ghosts": "", "aria-hidden": "true", "pointer-events": "none" }, ctx.svg);
-	const GHOST = { count: 4, gap: 0.26, linger: 0.35 };
-	const INK = {
-		chassis: { stroke: "var(--eu26-ink-silhouette)", width: "0.9px" },
-		navigation: { stroke: "var(--eu26-ink-faint)", width: "0.5px" },
-		title: { stroke: "var(--eu26-ink-faint)", width: "0.5px" },
-		column: { stroke: "var(--eu26-ink-faint)", width: "0.5px" },
-		scroll: { stroke: "var(--eu26-ink-faint)", width: "0.5px" },
-		confetti: { stroke: "var(--eu26-ink-card)", width: "0.55px" },
-		card: { stroke: "var(--eu26-ink-card)", width: "0.7px" },
-	};
-	const ghostPaths = Array.from({ length: GHOST.count }, (_, i) => element("path", { "data-eu26-ghost": i, fill: "none", stroke: "var(--eu26-ink-card)", "stroke-width": "0.75", "stroke-dasharray": "3 3", "vector-effect": "non-scaling-stroke", opacity: (0.6 - i * 0.13).toFixed(2) }, ghostLayer));
 
 	const turn = (vector, angles) => {
 		let [x, y, z] = vector;
@@ -144,12 +129,7 @@ export function live(ctx) {
 		surface.top.setAttribute("d", shape.top);
 		for (const shade of surface.sides) shade.setAttribute("d", shape.shades[Number(shade.dataset.shade)] || "");
 		surface.edge.setAttribute("d", shape.outline);
-		// Ink ramp (atlasclass ink edges): the board's silhouette is darkest, the moving paper is crisp, the board's
-		// interior structure recedes. Accent mixes start from each surface's own neutral ink.
-		const ink = INK[kind] || INK.card;
-		surface.ink = ink.stroke;
-		surface.edge.style.strokeWidth = ink.width;
-		if (!(surface.el.dataset.eu26Highlight > 0)) surface.edge.style.stroke = ink.stroke;
+		surface.edge.style.strokeWidth = "0.55px";
 	};
 	const skin = () => {
 		for (const surface of surfaces) skinSurface(surface);
@@ -164,7 +144,7 @@ export function live(ctx) {
 		surface.top.style.fill = color("var(--anatomy-top)", "var(--ill-accent)");
 		surface.fill.style.fill = color("var(--anatomy-paper)", "var(--ill-accent)");
 		for (const side of surface.sides) side.style.fill = color(`var(--anatomy-shade-${side.dataset.shade})`, "color-mix(in oklab, var(--ill-accent) 70%, var(--ill-line))");
-		surface.edge.style.stroke = color(surface.ink || "var(--anatomy-mid)", "var(--ill-accent-ink)");
+		surface.edge.style.stroke = color("var(--anatomy-mid)", "var(--ill-accent-ink)");
 		el.dataset.eu26Active = amount > 0.5 ? "true" : "false";
 		el.dataset.eu26Highlight = highlight;
 	};
@@ -307,28 +287,6 @@ export function live(ctx) {
 		ctx.root.dataset.heroDepthCycles = String(cycles);
 		return visible;
 	};
-	// The projected top face of a surface at a given pose (the same mapping paint() uses).
-	const topFace = (surface, home, pose) => {
-		const plan = surface.drawPlan, z = surface.drawZ + surface.drawHeight;
-		return kit.roundedPlan(plan, 4).map(([x, y]) => {
-			const delta = turn([x, y, z].map((value, i) => (value - home[i]) * (i === 1 ? pose.scaleY ?? pose.scale : pose.scale)), pose.rot);
-			return project(pose.at.map((value, i) => value + delta[i]));
-		});
-	};
-	const drawGhosts = time => {
-		const drag = data.boardDrags.find(each => time > each.grab && time < each.land + GHOST.linger);
-		ghostLayer.style.display = drag ? "" : "none";
-		if (!drag) return;
-		const card = data.cards[drag.card], surface = surfaceOf.get(pieces.get(`story.${drag.card}`));
-		const home = [card.home[0] + card.w / 2, card.home[1] + card.d / 2, card.home[2]];
-		const end = Math.min(time, drag.land);
-		ghostPaths.forEach((path, i) => {
-			const at = end - (i + 1) * GHOST.gap;
-			if (at <= drag.grab || !surface) { path.removeAttribute("d"); return; }
-			const pose = ctx.model({ time: at, variant, transition: null, projectionScale: P.scale }).cards[drag.card];
-			path.setAttribute("d", kit.pathOf(topFace(surface, home, pose), true));
-		});
-	};
 	const render = (time, transition = null) => {
 		const state = ctx.model({ time, variant, transition, projectionScale: P.scale });
 		currentState = state;
@@ -384,7 +342,6 @@ export function live(ctx) {
 		const width = state.camera.width * Math.min(1.3, Math.max(1, (state.camera.width / height) / Math.max(0.1, displayWidth / displayHeight)));
 		ctx.svg.setAttribute("viewBox", `${(cx - width / 2).toFixed(3)} ${(cy - height / 2).toFixed(3)} ${width.toFixed(3)} ${height.toFixed(3)}`);
 		drawGround(state.camera.at, width, height);
-		drawGhosts(time);
 		const unit = Math.max(width / displayWidth, height / displayHeight);
 		let clippedCursors = 0;
 		for (const cursor of state.cursors) {
@@ -419,7 +376,6 @@ export function live(ctx) {
 		}
 		ctx.svg.appendChild(lighting);
 		if (ctx.svg.lastElementChild !== cursorLayer) ctx.svg.appendChild(cursorLayer);
-		if (ghostLayer.nextElementSibling !== cursorLayer) ctx.svg.insertBefore(ghostLayer, cursorLayer);
 		ctx.root.dataset.heroAzimuth = P.azimuth.toFixed(5);
 		ctx.root.dataset.heroElevation = P.elevation.toFixed(5);
 		ctx.root.dataset.heroProjectionCoherent = "true";

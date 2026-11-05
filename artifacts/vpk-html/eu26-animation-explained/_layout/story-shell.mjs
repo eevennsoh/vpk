@@ -14,7 +14,7 @@ export function renderStoryShell({ title, description, eyebrow, steps, hero, con
 		<aside class="story-stage" data-story-stage aria-label="Anchored animation">
 			<div class="story-figure">
 				<div class="story-figure-corner story-figure-top" aria-hidden="true"><span class="story-figure-number">Fig. <span data-story-fig-number>01</span></span><span class="story-figure-title" data-story-fig-title>${escape(steps[0].title)}</span></div>
-				<div class="story-stage-heading">${appearance}<button type="button" class="story-follow" data-story-action="follow" aria-pressed="true">Follow scroll</button></div>
+				${appearance ? `<div class="story-stage-heading">${appearance}</div>` : ""}
 				${hero}
 				<div class="story-figure-corner story-figure-bottom" aria-hidden="true"><span class="story-figure-hint">${escape(figureHint)}</span><span class="story-figure-readout" data-story-fig-readout>t 0.0 s · 01 / ${pad(steps.length)}</span></div>
 			</div>

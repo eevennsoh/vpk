@@ -41,25 +41,21 @@ On wide screens the figure sits on a paper card:
   - top right the chapter title (Geist 15px, ink);
   - bottom left one hint line (`Scroll to scrub · hover the rail to preview`);
   - bottom right a live readout (`t 7.6 s · 07 / 12`), updated from the layout runtime, never from a second clock.
+- No Follow scroll toggle: scrolling the page always takes control back from manual playback.
 
 Shots are framed at a fixed aspect. When the figure page is narrower than that aspect, widen the frame (up to 1.3×)
 rather than cropping the subject (`eu26-scene-live.mjs` shows the pattern).
 
 ## 3. Figures and diagrams
 
-The paper plate (the drawing itself), as rendered in the EU26 study (`_figures/eu26-scene-live.mjs`, tokens in
-`_figures/explorer.css`):
+The paper plate keeps one addition from atlasclass: a **ground grid** under the subject (EU26:
+`_figures/eu26-scene-live.mjs`, tokens in `_figures/explorer.css`). It is projected through the live camera so it moves
+with every shot; cells are 100 units with every fourth line stronger (`--eu26-ground` = ink 8% into paper, major 15%),
+0.6px non-scaling, faded radially (opaque to 32%, gone by 78%) by an `objectBoundingBox` mask. The figure stage must
+fill the figure page's height, or the grid is cut at the stage edges. Tried and rejected (6 November 2026): an ink ramp
+by part, dashed strobe ghosts on carried cards, and a warm page under white cards; edges stay one even grey.
 
-| Element | Spec | Source |
-| --- | --- | --- |
-| Ground | a grid on the floor plane under the subject, projected through the live camera (it moves with every shot); 100-unit cells, every fourth line stronger; `--eu26-ground` = ink 8% into paper, major 15%; 0.6px non-scaling; radial fade (opaque to 32%, gone by 78%) via an `objectBoundingBox` mask | atlasclass ground grids |
-| Ink ramp | silhouette (the base the scene stands on) ink 78% at 0.9px; moving paper ink 52% at 0.7px; interior structure (columns, rails, bars) ink 26% at 0.5px | atlasclass five-step ink edges |
-| Strobe ghosts | while a card is carried, its last four poses as dashed `3 3` outlines, 0.26s apart, fading 0.6 → 0.21; sampled from the model at earlier times (never render history) so scrubbing either way draws the same ghosts | atlasclass strobe images; Salaja dashed ghost states |
-| Paper contrast | the page is warm (`--story-page`: accent 3% into ink 3% into `--surface-sunken`); figure and code cards are `--surface-raised` | atlasclass `#f2f2ef` page under `#fbfbfa` cards |
-
-All four mix existing tokens, so dark mode inverts without a second palette and check-html sees no raw colour.
-
-- Material: paper only. Tops are the lightest face, sides step down the neutral scale.
+- Material: paper only. Tops are the lightest face, sides step down the neutral scale, edges one grey at 0.55px.
 - Colour: grayscale plus the one accent `--ill-accent` (ADS orange) on the subject. Colour means "this is the thing";
   never decorate with it.
 - Labels live outside the drawing (corner furniture, captions, the reading page) unless a label names a part.
