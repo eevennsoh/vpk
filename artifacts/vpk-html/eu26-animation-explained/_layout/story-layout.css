@@ -524,3 +524,92 @@ body[data-vpk-layout="story"] .story-layout:fullscreen #animation-explorer .iso-
 	body[data-vpk-layout="story"] .story-video { padding-block: 20px; }
 	body[data-vpk-layout="story"] .story-video-heading { font-size: 26px !important; }
 }
+
+/* The figure page: on wide screens a soft paper card with a 1px ring, no border, and four corners of furniture
+   (Fig. number, chapter title, hint, live readout). Stacked layouts keep the bare figure. */
+body[data-vpk-layout="story"] .story-figure { position: relative; display: flex; flex-direction: column; block-size: 100%; }
+body[data-vpk-layout="story"] .story-figure-corner {
+	display: none;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 16px;
+	color: var(--muted-text);
+	font: 11px/1.4 var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+body[data-vpk-layout="story"] .story-figure-number { flex: 0 0 auto; color: var(--subtlest-text); }
+body[data-vpk-layout="story"] .story-figure-title { color: var(--ink); font: 400 15px/1.3 var(--font-body); letter-spacing: -0.01em; text-align: end; }
+body[data-vpk-layout="story"] .story-figure-hint { color: var(--subtlest-text); }
+body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
+
+/* Two columns from 1024px: the reading page on the left, the figure page pinned on the right (about 41/59).
+   Narrower viewports stack the figure above the text. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"] {
+		--story-figure-inset: 16px;
+		--story-rail-room: 20px;
+		--story-hero-height: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset) - 104px);
+	}
+	body[data-vpk-layout="story"] .story-layout {
+		display: grid;
+		grid-template-columns: minmax(380px, .74fr) minmax(0, 1.26fr);
+		align-items: start;
+		column-gap: clamp(32px, 4vw, 72px);
+		padding-inline-end: var(--story-rail-room);
+	}
+	body[data-vpk-layout="story"] .story-stage {
+		grid-column: 2;
+		grid-row: 1;
+		inset-block-start: calc(var(--story-top) + var(--story-figure-inset));
+		block-size: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset));
+		padding: 0;
+		background: transparent;
+	}
+	body[data-vpk-layout="story"] .story-stage::before { display: none; }
+	body[data-vpk-layout="story"] .story-reading { grid-column: 1; grid-row: 1; inline-size: 100%; max-inline-size: 540px; margin-inline: auto 0; }
+	body[data-vpk-layout="story"] .story-video { grid-column: 1 / -1; grid-row: 1; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { grid-column: 1 / -1; grid-row: 2; block-size: auto; }
+	body[data-vpk-layout="story"] .story-intro { min-block-size: calc(100svh - var(--story-top) - 32px); justify-content: center; padding-block: 48px; }
+	body[data-vpk-layout="story"] .story-step { min-block-size: 78svh; padding-block: 56px 72px; }
+	body[data-vpk-layout="story"] .story-step:last-child { min-block-size: calc(100svh - var(--story-top)); }
+	body[data-vpk-layout="story"] .story-reading :is(a, button, summary, [tabindex]) { scroll-margin-block-start: calc(var(--story-top) + 96px); }
+	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: calc(100svh - var(--story-top) - 32px); justify-content: center; }
+	body[data-vpk-layout="story"] .story-footer { margin-inline: 0 auto; }
+
+	body[data-vpk-layout="story"] .story-figure {
+		justify-content: center;
+		padding: 18px 22px;
+		border-radius: 14px;
+		background: var(--surface-raised);
+		box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 7%, transparent), 0 1px 2px color-mix(in oklab, var(--ink) 4%, transparent), 0 16px 40px -24px color-mix(in oklab, var(--ink) 18%, transparent);
+	}
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure { block-size: auto; }
+	body[data-vpk-layout="story"] .story-figure-corner { display: flex; }
+	body[data-vpk-layout="story"] .story-figure-top { padding-inline-end: 120px; }
+	body[data-vpk-layout="story"] .story-figure .story-stage-heading { position: absolute; z-index: 2; inset-block-start: 8px; inset-inline-end: 10px; min-block-size: 0; margin: 0; }
+	body[data-vpk-layout="story"] .story-figure #animation-explorer { flex: 1 1 auto; display: grid !important; align-items: center; }
+}
+
+/* Reading type: mono tracked kickers carry every number and label; the prose stays Geist. */
+body[data-vpk-layout="story"] :is(.story-kicker, .story-step-kicker) {
+	font-family: var(--font-mono) !important;
+	font-size: 11px !important;
+	font-weight: 500 !important;
+	letter-spacing: .12em;
+	text-transform: uppercase;
+	font-variant-numeric: tabular-nums;
+}
+body[data-vpk-layout="story"] .story-step-kicker .story-step-index { color: var(--ink); }
+body[data-vpk-layout="story"] .story-step-summary { color: var(--ink); }
+body[data-vpk-layout="story"] .story-step-body .vpk-code { margin-block: 8px 20px; }
+/* Steps are start-aligned flex columns; without a cap a wide code block would size them to its max-content width. */
+body[data-vpk-layout="story"] .story-step > *,
+body[data-vpk-layout="story"] .story-step-detail,
+body[data-vpk-layout="story"] .story-step-body { min-inline-size: 0; max-inline-size: 100%; }
+body[data-vpk-layout="story"] .story-step-detail { inline-size: 100%; }
+
+@media print {
+	body[data-vpk-layout="story"] .story-layout { display: block !important; }
+	body[data-vpk-layout="story"] .story-figure { box-shadow: none; padding: 0; }
+	body[data-vpk-layout="story"] .story-figure-corner { display: none !important; }
+}

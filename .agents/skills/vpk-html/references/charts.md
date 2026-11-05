@@ -5,6 +5,9 @@ Structural diagrams remain covered in `references/diagrams.md`.
 
 ## Identity
 
+Charts follow the one paper look in [paper system](paper-system.md) § 4: an anchored chart uses the figure page
+(card, ring, corner furniture and a live readout), and inline charts share the code-block card.
+
 - Use token-only grayscale figure colors from `--ill-*`, `--rule`, `--ink`,
   `--muted-text`, and `--focal`.
 - Use the warm intensity ramp `--heat0` through `--heat4` only for heatmap-like

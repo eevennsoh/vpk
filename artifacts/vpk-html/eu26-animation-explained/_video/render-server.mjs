@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { jsonIsland } from "../_layout/story-shell.mjs";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
-const variants = new Set(["paper", "outline", "sculpted"]);
+const variants = new Set(["paper"]);
 const themes = new Set(["light", "dark"]);
 
 export function runHyperframes({ project, output, log }) {
@@ -68,7 +68,7 @@ export async function createRenderService({ root = directory, port = 0, runner =
 				}
 				let settings;
 				try { settings = JSON.parse(body); } catch { return send(response, 400, { error: "Expected JSON settings" }); }
-				if (!settings || typeof settings !== "object" || Array.isArray(settings) || !variants.has(settings.variant) || !themes.has(settings.theme) || Object.keys(settings).some(key => !["variant", "theme"].includes(key))) return send(response, 400, { error: "Expected variant paper, outline or sculpted and theme light or dark" });
+				if (!settings || typeof settings !== "object" || Array.isArray(settings) || !variants.has(settings.variant) || !themes.has(settings.theme) || Object.keys(settings).some(key => !["variant", "theme"].includes(key))) return send(response, 400, { error: "Expected variant paper and theme light or dark" });
 				const id = crypto.randomBytes(12).toString("hex");
 				const job = { id, ...settings, status: "queued", output: path.join(exportsRoot, id, "eu26-animation.mp4"), log: "" };
 				jobs.set(id, job); active = id;

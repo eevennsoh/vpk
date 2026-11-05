@@ -92,7 +92,7 @@ test('one sticky hero follows a readable story with accessible alternative layou
 						const lower=Math.floor(value),next=Math.min(chapterTimes.length-1,lower+1);
 						frames.push({ mode, value, expectedTime:pages?chapterTimes[lower]+(chapterTimes[next]-chapterTimes[lower])*(value-lower):value*1.7, time: state.time, index: state.selectedIndex,
 							storyIndex: story.getState().index, active: active(), headingTop: heading.top,
-							headingBottom: heading.bottom, stageBottom: stage.getBoundingClientRect().bottom,
+							headingBottom: heading.bottom, readingLine: story.getState().readingLine,
 							viewport: innerHeight, focused: document.activeElement === timeline, playing: state.playing });
 						const heldTime = state.time; await wait(40);
 						if (explorer.getState().time !== heldTime || story.getState().following) throw new Error('programmatic chapter alignment fed back into the clock');
@@ -105,8 +105,10 @@ test('one sticky hero follows a readable story with accessible alternative layou
 				assert.equal(frame.storyIndex, frame.index);
 				assert.deepEqual(frame.active, [frame.index]);
 				assert.ok(Math.abs(frame.time - frame.expectedTime) < .00001);
-				assert.ok(frame.headingTop >= frame.stageBottom + 20 && frame.headingTop < frame.stageBottom + 90,
-					`${frame.mode} selection ${frame.value} brings its text below the diagram`);
+				// Slides shows one step with no scroll anchors, so it only has to be fully visible; scrolling modes land on the reading line.
+				if (frame.mode === 'slides') assert.ok(frame.headingTop >= 0, `slides selection ${frame.value} keeps its heading in view`);
+				else assert.ok(frame.headingTop >= frame.readingLine - 12 && frame.headingTop < frame.readingLine + 58,
+					`${frame.mode} selection ${frame.value} brings its text to the reading line`);
 				assert.ok(frame.headingBottom < frame.viewport - 8);
 				assert.equal(frame.focused, true);
 				assert.equal(frame.playing, false);
@@ -120,14 +122,14 @@ test('one sticky hero follows a readable story with accessible alternative layou
 				explorer.preview(10); await settle();
 				const heading = steps[10].querySelector('h2').getBoundingClientRect();
 				const during = { y: scrollY, index: story.getState().index, active: active(), preview: explorer.getState().previewIndex,
-					headingTop: heading.top, stageBottom: stage.getBoundingClientRect().bottom };
+					headingTop: heading.top, readingLine: story.getState().readingLine };
 				explorer.clearPreview(); await settle();
 				return { before, during, after: { y: scrollY, index: story.getState().index, active: active() } };
 			`);
 			assert.equal(result.during.preview, 10);
 			assert.equal(result.during.index, result.before.index);
 			assert.deepEqual(result.during.active, [10]);
-			assert.ok(result.during.headingTop >= result.during.stageBottom + 20 && result.during.headingTop < result.during.stageBottom + 90);
+			assert.ok(result.during.headingTop >= result.during.readingLine - 12 && result.during.headingTop < result.during.readingLine + 58);
 			assert.deepEqual(result.after, result.before);
 		});
 
@@ -137,11 +139,11 @@ test('one sticky hero follows a readable story with accessible alternative layou
 				await until(() => explorer.getState().time > 8.1, 'playback chapter boundary');
 				explorer.pause(); await settle();
 				const state = explorer.getState(), heading = steps[state.selectedIndex].querySelector('h2').getBoundingClientRect();
-				return { index: state.selectedIndex, active: active(), top: heading.top, bottom: stage.getBoundingClientRect().bottom };
+				return { index: state.selectedIndex, active: active(), top: heading.top, line: story.getState().readingLine };
 			`);
 			assert.equal(result.index, 4);
 			assert.deepEqual(result.active, [4]);
-			assert.ok(result.top >= result.bottom + 20 && result.top < result.bottom + 90);
+			assert.ok(result.top >= result.line - 12 && result.top < result.line + 58);
 		});
 
 		await t.test('all three modes preserve the chapter and Slides hides inactive content from focus', () => {
@@ -276,44 +278,51 @@ test('one sticky hero follows a readable story with accessible alternative layou
 			run('reload');
 			run('wait', '--fn', 'Boolean(window.__vpkStory && window.__eu26Explorer)');
 			run('mouse', 'move', '8', '40');
-			await t.test(`${width}px gives the diagram and every reading mode one shared vertical column`, () => {
+			await t.test(`${width}px places the diagram beside the text from 1024px and above it on narrow screens`, () => {
 				const result = scenario(`
 					await settle(); explorer.pause(); story.setMode('story'); story.suspendFollowing();
 					window.scrollTo({top:0,behavior:'instant'});await settle();
 					const box=element=>{const r=element.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
 					const reading=root.querySelector('[data-story-steps]'),intro=root.querySelector('.story-intro');
 					const initial={stage:box(stage),hero:box(hero),reading:box(reading),intro:box(intro),height:innerHeight};
+					const beside=initial.stage.left>=initial.reading.right-1;
 					const failures=[];
 					for(const mode of ['story','slides','twitter']){
 						story.setMode(mode);await settle();
 						for(const index of [7,9]){
-							story.select(index);await until(()=>story.getState().index===index&&!explorer.getState().transitioning,'single column chapter');await settle();
+							story.select(index);await until(()=>story.getState().index===index&&!explorer.getState().transitioning,'chapter');await settle();
 							const heading=box(steps[index].querySelector('h2')),article=box(steps[index]),column=box(reading),diagram=box(stage);
-							if(heading.top<diagram.bottom+20 || heading.bottom>innerHeight-8)failures.push({mode,index,issue:'heading is outside the clear area below the diagram',heading,diagram});
-							if(Math.abs((article.left+article.right-column.left-column.right)/2)>2 || article.width<column.width*.9 || article.width>column.width+1)failures.push({mode,index,issue:'chapter is not in the shared reading column',article,column});
-							if(Math.abs((diagram.left+diagram.right-column.left-column.right)/2)>2)failures.push({mode,index,issue:'diagram and text use different horizontal columns',diagram,column});
+							if(heading.top<(beside?diagram.top:diagram.bottom+20) || heading.bottom>innerHeight-8)failures.push({mode,index,issue:'heading is outside the clear reading area',heading,diagram});
+							if(article.left<column.left-1 || article.right>column.right+1 || article.width<column.width*.9)failures.push({mode,index,issue:'chapter is not in the reading column',article,column});
+							if(beside ? diagram.left<column.right : Math.abs((diagram.left+diagram.right-column.left-column.right)/2)>2)failures.push({mode,index,issue:beside?'diagram overlaps the reading column':'stacked diagram and text use different columns',diagram,column});
 							if(heading.left<column.left-1 || heading.right>column.right+1 || document.documentElement.scrollWidth>innerWidth+1)failures.push({mode,index,issue:'text overflows its column'});
+							for(const code of steps[index].querySelectorAll('.vpk-code')){const c=box(code);if(c.left<column.left-1||c.right>column.right+1)failures.push({mode,index,issue:'code block overflows the reading column',c,column});}
 							if(mode==='story' && index===7){
-								const source=steps[4].querySelector('.story-step-link'),heldTime=explorer.getState().time;
+								const source=steps[4].querySelector('.vpk-code-head a'),heldTime=explorer.getState().time;
 								if(!source)throw new Error('missing big-burst source link');
 								source.blur();source.focus();await settle();
 								const focused=box(source),sticky=box(stage);
-								if(document.activeElement!==source || focused.top<sticky.bottom+20 || focused.bottom>innerHeight-8)failures.push({mode,index,issue:'native source-link focus is covered by the diagram',focused,sticky});
+								const covered=beside?(focused.right>sticky.left&&focused.left<sticky.right):focused.top<sticky.bottom+20;
+								if(document.activeElement!==source || covered || focused.top<0 || focused.bottom>innerHeight-8)failures.push({mode,index,issue:'native source-link focus is covered by the diagram',focused,sticky});
 								if(explorer.getState().time!==heldTime)failures.push({mode,index,issue:'source-link focus changes the paused animation time'});
 							}
 						}
 					}
-					return {initial,failures};
+					return {initial,beside,failures};
 				`);
 				assert.deepEqual(result.failures, []);
 				const { stage: diagram, hero: drawing, reading, intro, height } = result.initial;
-				assert.ok(intro.top >= diagram.bottom && intro.top - diagram.bottom <= 96, 'the compact introduction follows the diagram directly');
-				assert.ok(intro.height < height * .65, 'the short introduction does not reserve an empty viewport');
-				assert.ok(drawing.width >= reading.width - 1, 'the diagram gains the full reading-column width');
-				if (width > 760) {
-					assert.ok(reading.width >= 840 && reading.width <= 980, `desktop reading width is ${reading.width}px`);
-					assert.ok(drawing.height >= height * .45 && drawing.height <= height * .62, `desktop diagram height is ${drawing.height}px`);
+				if (width >= 1024) {
+					assert.equal(result.beside, true, 'wide screens place the figure beside the text');
+					assert.ok(reading.width >= 380 && reading.width <= 560, `reading column width is ${reading.width}px`);
+					assert.ok(diagram.width > reading.width, 'the figure page is wider than the reading page');
+					assert.ok(diagram.height >= height * .8, `the figure page fills the viewport height (${diagram.height}px)`);
+					assert.ok(drawing.height >= height * .45, `desktop drawing height is ${drawing.height}px`);
 				} else {
+					assert.equal(result.beside, false, 'narrow screens stack the figure above the text');
+					assert.ok(intro.top >= diagram.bottom && intro.top - diagram.bottom <= 96, 'the compact introduction follows the diagram directly');
+					assert.ok(intro.height < height * .65, 'the short introduction does not reserve an empty viewport');
+					assert.ok(drawing.width >= reading.width - 1, 'the diagram gains the full reading-column width');
 					assert.ok(reading.width >= width - 110);
 					assert.ok(drawing.height <= height * .35, 'the mobile diagram leaves room for reading');
 				}

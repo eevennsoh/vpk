@@ -53,7 +53,7 @@ test('Slides uses the chapter timeline horizontally at the bottom', { timeout: 9
 		});
 		await t.test('switching through Video and Page retains the selected frame and restores the Slides rail', () => {
 			const result=probe(`
-				explorer.setVariant('outline');const held=explorer.getState().time,states=[];
+				const held=explorer.getState().time,states=[];
 				for(const mode of ['video','slides','story','slides']) {
 					story.setMode(mode);await settle();
 					states.push({mode,orientation:ui.getState().orientation,kind:ui.getState().navigation,time:explorer.getState().time,variant:explorer.getState().variant,
@@ -62,7 +62,7 @@ test('Slides uses the chapter timeline horizontally at the bottom', { timeout: 9
 				return {held,states,heroes:root.querySelectorAll('[data-vpk-figure="eu26-hero"]').length};
 			`);
 			assert.equal(result.heroes,1);
-			for(const state of result.states) {assert.equal(state.time,result.held);assert.equal(state.variant,'outline');}
+			for(const state of result.states) {assert.equal(state.time,result.held);assert.equal(state.variant,'paper');}
 			assert.equal(result.states[0].inVideo,true);assert.equal(result.states[0].kind,'time');
 			assert.equal(result.states[2].orientation,'vertical');
 			for(const state of [result.states[1],result.states[3]]) {assert.equal(state.orientation,'horizontal');assert.equal(state.count,12);assert.equal(state.inVideo,false);}

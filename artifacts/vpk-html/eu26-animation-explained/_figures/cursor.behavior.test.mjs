@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { data, model } from './eu26-hero.hero.mjs';
 
-const variants = ['paper', 'outline', 'sculpted'];
+const variants = ['paper'];
 const times = [...Array.from({ length: 137 }, (_, index) => index / 4), 35.8, 39.8, 43.8, 99.8, 103.8, 107.8, 500, 1000];
 const distance = (left, right) => Math.hypot(...left.map((value, index) => value - right[index]));
 const poseFor = (state, target) => target.kind === 'title' ? state.titlePose : state[{ story: 'cards', tile: 'tiles', wall: 'wall' }[target.kind]][target.index];
@@ -39,7 +39,7 @@ test('cursor grips contact the posed paper surfaces while dragging', () => {
 				const size = sizeFor(cursor.heldTarget);
 				assert.ok(pose.alpha > .15, 'the carried object is visible');
 				const local = unturn(cursor.at.map((value, index) => value - pose.at[index]), pose.rot);
-				const expected = [(cursor.grip.u - .5) * size.w * pose.scale, (cursor.grip.v - .5) * size.d * (pose.scaleY ?? pose.scale), data.materialDepths[variant][cursor.heldTarget.kind] * pose.scale];
+				const expected = [(cursor.grip.u - .5) * size.w * pose.scale, (cursor.grip.v - .5) * size.d * (pose.scaleY ?? pose.scale), data.materialDepths[cursor.heldTarget.kind] * pose.scale];
 				assert.ok(distance(local, expected) < .05, `${variant} ${cursor.id} contacts its actual grip at ${time} seconds`);
 				if (cursor.heldTarget.kind === 'story') heldStories.add(cursor.heldTarget.index);
 				contacts += 1;

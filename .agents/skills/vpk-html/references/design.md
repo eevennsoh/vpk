@@ -197,6 +197,9 @@ decoration.
 
 ### Figure Grammar
 
+There is one figure style, paper; see [paper system](paper-system.md) for the two-column story layout, the
+figure page, code blocks and the chart direction. Do not offer alternative materials (outline, sculpted) as a picker.
+
 All generated SVGs follow `references/svg-style.md`: token-only grayscale
 fills/strokes, no gradients, no filters, Geist Mono labels, numeric
 stroke-widths from 0.5 to 2.5, and no `--accent*` or `--link*` tokens. User

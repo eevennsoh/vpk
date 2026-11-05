@@ -44,15 +44,15 @@ test('Video is a live HTML preview and rendering starts only from Generate', {ti
 
 		await t.test('paused Page and Video share the same diagram, fractional time and variant',()=>{
 			const result=scenario(`
-				explorer.pause();story.setMode('story');story.suspendFollowing();explorer.setVariant('outline');explorer.seek(12.345);
+				explorer.pause();story.setMode('story');story.suspendFollowing();explorer.seek(12.345);
 				story.setMode('video');await wait(80);
 				const during={state:preview.getState(),sameHero:hero===window.__qaPreviewHero&&svg===window.__qaPreviewSvg,visible:!stage.hidden&&!stage.inert&&svg.getBoundingClientRect().height>0,copyHidden:reading.hidden&&reading.inert,panelVisible:!panel.hidden&&!panel.inert};
 				story.setMode('story');await wait(80);
 				return {during,after:explorer.getState(),restored:!stage.hidden&&!reading.hidden&&!reading.inert&&panel.hidden,calls:window.__qaRenderCalls.length};
 			`);
-			assert.equal(result.during.state.active,true);assert.equal(result.during.state.time,12.345);assert.equal(result.during.state.playing,false);assert.equal(result.during.state.variant,'outline');
+			assert.equal(result.during.state.active,true);assert.equal(result.during.state.time,12.345);assert.equal(result.during.state.playing,false);assert.equal(result.during.state.variant,'paper');
 			for(const key of ['sameHero','visible','copyHidden','panelVisible'])assert.equal(result.during[key],true,key);
-			assert.equal(result.after.time,12.345);assert.equal(result.after.variant,'outline');assert.equal(result.after.playing,false);assert.equal(result.restored,true);assert.equal(result.calls,0);
+			assert.equal(result.after.time,12.345);assert.equal(result.after.variant,'paper');assert.equal(result.after.playing,false);assert.equal(result.restored,true);assert.equal(result.calls,0);
 		});
 
 		await t.test('Video Play advances actual SVG geometry and Pause holds the same frame',()=>{
@@ -146,12 +146,12 @@ test('Video is a live HTML preview and rendering starts only from Generate', {ti
 
 		await t.test('only Generate sends one authenticated render request and exposes the completed download',()=>{
 			const result=scenario(`
-				explorer.pause();explorer.setVariant('outline');const before=window.__qaRenderCalls.length;
+				explorer.pause();const before=window.__qaRenderCalls.length;
 				control('generate').click();await until(()=>preview.getState().exportStatus==='complete','mocked explicit generation');
 				const download=panel.querySelector('[data-video-download]');return {before,calls:window.__qaRenderCalls,status:preview.getState().exportStatus,download:download.href,visible:!download.hidden,media:document.querySelectorAll('video[src]').length};
 			`);
 			assert.equal(result.before,0);assert.equal(result.status,'complete');assert.equal(result.visible,true);assert.equal(result.download,'https://qa-render.invalid/downloads/qa-guide.mp4');assert.equal(result.media,0);
-			assert.equal(result.calls.length,2);assert.equal(result.calls[0].method,'POST');assert.equal(result.calls[0].url,'https://qa-render.invalid/render');assert.equal(result.calls[0].headers['x-vpk-render-key'],'qa-render-key');assert.deepEqual(JSON.parse(result.calls[0].body),{variant:'outline',theme:'light'});
+			assert.equal(result.calls.length,2);assert.equal(result.calls[0].method,'POST');assert.equal(result.calls[0].url,'https://qa-render.invalid/render');assert.equal(result.calls[0].headers['x-vpk-render-key'],'qa-render-key');assert.deepEqual(JSON.parse(result.calls[0].body),{variant:'paper',theme:'light'});
 			assert.equal(result.calls[1].method,'GET');assert.equal(result.calls[1].url,'https://qa-render.invalid/jobs/qa-guide');
 		});
 	}finally{run('close');}

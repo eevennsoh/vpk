@@ -94,23 +94,16 @@ export function live(ctx) {
 		const { el, plan, z, h } = surface;
 		const kind = el.dataset.eu26Kind;
 		const paper = ["story", "tile", "wall", "title"].includes(kind);
-		const outline = variant === "outline";
-		const sculpted = variant === "sculpted";
-		const height = paper ? data.materialDepths[variant][kind] : sculpted ? kind === "chassis" ? 24 : kind === "column" ? 6 : h : outline ? Math.min(h, 0.6) : h;
-		const altered = { ...plan, r: outline ? Math.min(plan.r, 0.7) : sculpted && paper ? 12 : plan.r };
-		if (sculpted && kind === "chassis") { altered.y += 48; altered.d -= 48; altered.r = 17; }
-		surface.drawPlan = altered;
-		surface.drawZ = sculpted && kind === "chassis" ? -26 : z;
+		const height = paper ? data.materialDepths[kind] : h;
+		surface.drawPlan = plan;
+		surface.drawZ = z;
 		surface.drawHeight = height;
-		const shape = kit.slabOf(altered, surface.drawZ, height, P, 4, sculpted ? 0.8 : 0);
+		const shape = kit.slabOf(plan, z, height, P, 4, 0);
 		surface.fill.setAttribute("d", shape.fill);
 		surface.top.setAttribute("d", shape.top);
 		for (const shade of surface.sides) shade.setAttribute("d", shape.shades[Number(shade.dataset.shade)] || "");
 		surface.edge.setAttribute("d", shape.outline);
-		for (const fill of [surface.fill, ...surface.sides]) fill.style.display = outline ? "none" : "";
-		surface.top.style.display = outline && !paper ? "none" : "";
-		surface.edge.style.strokeWidth = outline ? "0.85px" : sculpted ? "0.8px" : "0.55px";
-		el.dataset.eu26Suppressed = sculpted && ["navigation", "title", "scroll"].includes(kind) ? "true" : "false";
+		surface.edge.style.strokeWidth = "0.55px";
 	};
 	const skin = () => {
 		for (const surface of surfaces) skinSurface(surface);
@@ -118,16 +111,14 @@ export function live(ctx) {
 	};
 	const accent = (el, value) => {
 		if (!el) return;
-		const outline = variant === "outline";
 		const amount = Math.max(0, Math.min(1, Number(value) || 0));
 		const highlight = amount.toFixed(5), surface = surfaceOf.get(el);
-		if (el.dataset.eu26Highlight === highlight && el.dataset.eu26AccentVariant === variant) return;
-		el.dataset.eu26AccentVariant = variant;
+		if (el.dataset.eu26Highlight === highlight) return;
 		const color = (neutral, active) => amount < 0.0001 ? neutral : amount > 0.9999 ? active : `color-mix(in oklab, ${active} ${(amount * 100).toFixed(3)}%, ${neutral})`;
-		surface.top.style.fill = outline ? "var(--anatomy-top)" : color("var(--anatomy-top)", "var(--ill-accent)");
-		surface.fill.style.fill = outline ? "" : color("var(--anatomy-paper)", "var(--ill-accent)");
-		for (const side of surface.sides) side.style.fill = outline ? "" : color(`var(--anatomy-shade-${side.dataset.shade})`, "color-mix(in oklab, var(--ill-accent) 70%, var(--ill-line))");
-		surface.edge.style.stroke = color("var(--anatomy-mid)", outline ? "var(--ill-accent)" : "var(--ill-accent-ink)");
+		surface.top.style.fill = color("var(--anatomy-top)", "var(--ill-accent)");
+		surface.fill.style.fill = color("var(--anatomy-paper)", "var(--ill-accent)");
+		for (const side of surface.sides) side.style.fill = color(`var(--anatomy-shade-${side.dataset.shade})`, "color-mix(in oklab, var(--ill-accent) 70%, var(--ill-line))");
+		surface.edge.style.stroke = color("var(--anatomy-mid)", "var(--ill-accent-ink)");
 		el.dataset.eu26Active = amount > 0.5 ? "true" : "false";
 		el.dataset.eu26Highlight = highlight;
 	};
@@ -191,7 +182,7 @@ export function live(ctx) {
 		lighting.style.display = effect.alpha > 0.002 && faces.length ? "" : "none";
 		lighting.style.opacity = String(effect.alpha);
 		if (faces.length) {
-			const viewport = data.doneList.viewport, z = 4 + data.materialDepths[variant].story;
+			const viewport = data.doneList.viewport, z = 4 + data.materialDepths.story;
 			const from = project([viewport.x + viewport.w / 2, viewport.y, z]);
 			const to = project([viewport.x + viewport.w / 2, viewport.y + viewport.d, z]);
 			const along = effect.sweep * 1.8 - 0.4, direction = to.map((value, axis) => value - from[axis]);
@@ -279,7 +270,7 @@ export function live(ctx) {
 		P.elevation = state.camera.elevation ?? 30;
 		const azimuth = P.azimuth * Math.PI / 180, elevation = P.elevation * Math.PI / 180;
 		view = [Math.cos(azimuth) * Math.cos(elevation), Math.sin(azimuth) * Math.cos(elevation), Math.sin(elevation)];
-		const viewport = data.doneList.viewport, paperDepth = data.materialDepths[variant].story;
+		const viewport = data.doneList.viewport, paperDepth = data.materialDepths.story;
 		const windowRing = kit.roundedPlan(viewport, 4);
 		const windowPoints = [4, 4 + paperDepth].flatMap(z => windowRing.map(([x, y]) => project([x, y, z])));
 		const sorted = windowPoints.sort((a, b) => a[0] - b[0] || a[1] - b[1]), lower = [], upper = [];
@@ -319,7 +310,10 @@ export function live(ctx) {
 		lightDone(state);
 		const center = project(state.camera.at);
 		arrange();
-		const { width, height } = state.camera, [cx, cy] = center;
+		const { height } = state.camera, [cx, cy] = center;
+		// Shots are framed at 1.58:1 and lean on scene beyond the frame's sides. A narrower display (the two-column figure
+		// page) widens the frame up to 1.3x so the board is not cropped.
+		const width = state.camera.width * Math.min(1.3, Math.max(1, (state.camera.width / height) / Math.max(0.1, displayWidth / displayHeight)));
 		ctx.svg.setAttribute("viewBox", `${(cx - width / 2).toFixed(3)} ${(cy - height / 2).toFixed(3)} ${width.toFixed(3)} ${height.toFixed(3)}`);
 		const unit = Math.max(width / displayWidth, height / displayHeight);
 		let clippedCursors = 0;

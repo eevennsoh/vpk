@@ -74,7 +74,7 @@ export function model(input, data) {
 		return [x * Math.cos(rz) - y * Math.sin(rz), x * Math.sin(rz) + y * Math.cos(rz), z];
 	};
 	const surfacePoint = (posed, w, d, kind, grip) => {
-		const offset = turn([(grip.u - 0.5) * w * posed.scale, (grip.v - 0.5) * d * (posed.scaleY ?? posed.scale), data.materialDepths[variant][kind] * posed.scale], posed.rot);
+		const offset = turn([(grip.u - 0.5) * w * posed.scale, (grip.v - 0.5) * d * (posed.scaleY ?? posed.scale), data.materialDepths[kind] * posed.scale], posed.rot);
 		return posed.at.map((value, i) => value + offset[i]);
 	};
 	let index = 0;
@@ -151,7 +151,7 @@ export function model(input, data) {
 			scaleY = mix(1, wall.d / feature.d, toss);
 			alpha *= 1 - ease((time - 26) / 0.7);
 		}
-		const highlight = i === 0 ? 1 : variant === "sculpted" ? ease((time - 22.4) / 0.8) * (1 - ease((time - 25.8) / 1)) : 0;
+		const highlight = i === 0 ? 1 : 0;
 		return { ...pose(at, rot, scale, alpha, highlight), scaleY };
 	});
 	const wrap = (value, center, period) => value - Math.floor((value - center + period / 2) / period) * period;

@@ -137,9 +137,9 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 			assert.notDeepEqual(result[2].gradient, result[3].gradient, 'directional gradient moves across the Done faces');
 		});
 
-		await t.test('all variants paint intermediate orange-to-white card colors', () => {
+		await t.test('the paper style paints intermediate orange-to-white card colors', () => {
 			const results = scenario(`
-				return ['paper', 'outline', 'sculpted'].map(variant => {
+				return ['paper'].map(variant => {
 					explorer.setVariant(variant);
 					const samples = [13.2, 14.4, 15.8].map(time => {
 						explorer.seek(time);
@@ -172,7 +172,7 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
 				const failures = [];
 				let contacts = 0;
-				for (const variant of ['paper', 'outline', 'sculpted']) {
+				for (const variant of ['paper']) {
 					explorer.setVariant(variant);
 					for (const sample of ${JSON.stringify(samples)}) {
 						explorer.seek(sample.time);
@@ -194,7 +194,7 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 				return { failures, contacts };
 			`);
 			assert.deepEqual(result.failures, []);
-			assert.equal(result.contacts, 18, 'all three helpers keep contact in all three styles at early and distant wall times');
+			assert.equal(result.contacts, 6, 'all three helpers keep contact at early and distant wall times');
 		});
 
 		await t.test('one wall reuses its original DOM cards through complete cycles', () => {
@@ -299,7 +299,7 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 			const result = scenario(`
 				await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 				const failures = [];
-				for (const variant of ['paper', 'outline', 'sculpted']) {
+				for (const variant of ['paper']) {
 					explorer.setVariant(variant);
 					for (const time of [35.8, 36.5, 39.8, 43.8, 99.8, 107.8, 500, 1000]) {
 						explorer.seek(time);

@@ -21,6 +21,7 @@ Load only the references needed for the requested document:
 | Reviewable documents, review rounds, decision blocks | [review loop](references/review-loop.md) |
 | Template-specific guidance | `references/playbooks/<template>.md` when it exists |
 | Visual identity, typography, spacing, color, motion | [design](references/design.md) |
+| The one paper look: two-column story layout, figure page, code blocks, chart direction | [paper system](references/paper-system.md) |
 | Concise, plain prose for all visible text; review checklist | [writing](references/writing.md) |
 | Banned styling and content failure modes | [anti-patterns](references/anti-patterns.md) |
 | Source attribution and missing evidence | [source policy](references/source-policy.md) |

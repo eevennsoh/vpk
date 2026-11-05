@@ -8,7 +8,7 @@ export const hero = {
 	tier: "hero",
 	width: 1200,
 	height: 760,
-	label: "A quiet model of a board becomes a paper-card field, assembles six tiles, then opens into a continuous wall. Compare paper, outline and sculpted treatments.",
+	label: "A quiet model of a board becomes a paper-card field, assembles six tiles, then opens into a continuous wall.",
 	plate: {
 		fig: "Fig 1",
 		title: "From one Done card to a world of work",
@@ -202,8 +202,6 @@ export const data = {
 	playbackRate: 1.7,
 	variants: [
 		{ id: "paper", title: "Paper model", description: "Thin, opaque paper; orange marks completion before the field returns to quiet white." },
-		{ id: "outline", title: "Outline model", description: "Open structural linework with an orange edge marking the same subject." },
-		{ id: "sculpted", title: "Sculpted model", description: "Thicker rounded pieces, fewer board controls, and orange moving parts." },
 	],
 	states: [
 		{ id: "board", title: "The keynote board", phase: "board", time: 0, description: "Three chapters of work sit beside an empty Done column." },
@@ -235,7 +233,7 @@ export const data = {
 	wall: sourceWall(),
 	wallSource: { commit: "8588b00ff81cb5e8341a462158c747c6d990667c", viewport: { width: 1920, height: 1080 }, zoom: 0.25, density: "dense", padding: { x: 40, y: 40 }, pieceScale: 0.792, gutter: 23.76, worldScale: 0.72 },
 	doneList: { viewport: doneViewport, padding: { x: 2.5, y: 4 }, gap: 12, order: doneOrder, cards: doneOrder.map((card, rank) => ({ card, rank, x: doneViewport.x + 2.5, y: doneViewport.y + 4 + rank * 126, w: 180, d: 114 })) },
-	materialDepths: { paper: { story: 1.2, tile: 1.5, wall: 1.1, title: 1.2 }, outline: { story: 0.6, tile: 0.6, wall: 0.6, title: 0.6 }, sculpted: { story: 3.3, tile: 15, wall: 7, title: 10 } },
+	materialDepths: { story: 1.2, tile: 1.5, wall: 1.1, title: 1.2 },
 	title: { w: 220, d: 104, at: [10, -37, 6], home: [10, 2002, 4], grip: { u: 0.88, v: 0.76 } },
 	boardDrags: [
 		{ card: 15, reach: 0, grab: 0, land: 2, leave: 2.65, grip: { u: 0.82, v: 0.24 }, entry: [350, -350, 0] },

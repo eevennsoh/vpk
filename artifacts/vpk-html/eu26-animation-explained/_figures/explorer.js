@@ -66,7 +66,7 @@
 		const variantDescription = node('p', 'eu26-variant-description');
 		variantDescription.id = 'eu26-variant-description';
 		variantDescription.setAttribute('aria-live', 'polite');
-		if (variantControls && variants.length) {
+		if (variantControls && variants.length > 1) {
 			variantControls.setAttribute('data-vpkh-no-lightbox', '');
 			const variantLabel = node('p', 'eu26-variant-label', 'Visual direction');
 			variantLabel.id = 'eu26-variant-label';

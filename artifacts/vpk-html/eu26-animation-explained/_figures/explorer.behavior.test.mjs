@@ -186,60 +186,26 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			}
 		});
 
-		await t.test('three visual variants preserve progress and repaint the actual hero and thumbnails', () => {
+		await t.test('the single paper style ships without a style picker and keeps the orange focal', () => {
 			const result = scenario(`
-				const variantControls = document.querySelector('#eu26-variant-controls');
-				const buttons = [...variantControls.querySelectorAll('button')];
-				const nativeButtons = buttons.every(button => button.type === 'button' && (button.getAttribute('aria-label') || button.textContent).trim().length > 0);
+				const picker = document.querySelectorAll('#eu26-variant-controls button').length;
 				explorer.seek(19);
-				const before = explorer.getState();
-				const progress = timeline.value;
-				const heroVariants = [];
-				const thumbnailVariants = [];
-				const variants = [];
-				let preserved = true;
-				let orangeFocal = true;
-				let outlineOpaque = true;
-				let noArtworkOrLabels = true;
-				let oneSelected = true;
-				for (const button of buttons) {
-					button.click();
-					const state = explorer.getState();
-					variants.push(state.variant);
-					preserved = preserved && near(state.time, before.time) && near(state.renderTime, before.time) && state.selectedIndex === before.selectedIndex && timeline.value === progress;
-					heroVariants.push(visual(hero));
-					thumbnailVariants.push([...controls.querySelectorAll('.eu26-state-thumb > svg')].map(svg => visual(svg)).join('|'));
-					oneSelected = oneSelected && buttons.filter(choice => choice.getAttribute('aria-pressed') === 'true').length === 1 && button.getAttribute('aria-pressed') === 'true';
-					noArtworkOrLabels = noArtworkOrLabels && hero.querySelectorAll('svg text, svg image, svg foreignObject').length === 0;
-					const probe = document.createElement('span');
-					probe.style.color = 'var(--ill-accent)';
-					hero.append(probe);
-					const orange = getComputedStyle(probe).color;
-					probe.remove();
-					const focal = hero.querySelector('[data-focal="hero-card"]');
-					const focalRect = focal.getBoundingClientRect();
-					if (state.variant === 'outline') {
-						probe.style.color = 'var(--anatomy-top)';
-						hero.append(probe);
-						const material = getComputedStyle(probe).color;
-						probe.remove();
-						const top = getComputedStyle(focal.querySelector('.iso-top'));
-						outlineOpaque = top.fill === material && top.opacity === '1' && top.display !== 'none';
-					}
-					orangeFocal = orangeFocal && focalRect.width > 0 && focalRect.height > 0 && [...focal.querySelectorAll('.iso-top, .iso-edge')].some(part => {
-						const style = getComputedStyle(part);
-						return style.fill === orange || style.stroke === orange;
-					});
-				}
-				explorer.setVariant(variants[0]);
-				return { buttons: buttons.length, nativeButtons, variants: new Set(variants).size, heroVariants: new Set(heroVariants).size, thumbnailVariants: new Set(thumbnailVariants).size, preserved, oneSelected, orangeFocal, outlineOpaque, noArtworkOrLabels };
+				const state = explorer.getState();
+				const probe = document.createElement('span');
+				probe.style.color = 'var(--ill-accent)';
+				hero.append(probe);
+				const orange = getComputedStyle(probe).color;
+				probe.remove();
+				const focal = hero.querySelector('[data-focal="hero-card"]');
+				const rect = focal.getBoundingClientRect();
+				const orangeFocal = rect.width > 0 && rect.height > 0 && [...focal.querySelectorAll('.iso-top, .iso-edge')].some(part => { const style = getComputedStyle(part); return style.fill === orange || style.stroke === orange; });
+				const noArtworkOrLabels = hero.querySelectorAll('svg text, svg image, svg foreignObject').length === 0;
+				return { picker, variant: state.variant, orangeFocal, noArtworkOrLabels };
 			`);
-			assert.equal(result.buttons, 3);
-			assert.equal(result.nativeButtons, true);
-			assert.equal(result.variants, 3);
-			assert.equal(result.heroVariants, 3, 'variant selection changes rendered hero geometry or paint');
-			assert.equal(result.thumbnailVariants, 3, 'the actual thumbnail graphics follow each variant');
-			for (const key of ['preserved', 'oneSelected', 'orangeFocal', 'outlineOpaque', 'noArtworkOrLabels']) assert.equal(result[key], true, key);
+			assert.equal(result.picker, 0, 'no style picker with one paper style');
+			assert.equal(result.variant, 'paper');
+			assert.equal(result.orangeFocal, true);
+			assert.equal(result.noArtworkOrLabels, true);
 		});
 
 		await t.test('manual playback suspends work offscreen and resumes on re-entry', () => {
@@ -321,9 +287,9 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			assert.equal(result.distinctPoses, 12, 'each committed state changes the rendered anatomy');
 		});
 
-		await t.test('projected paper ordering stays acyclic between keyframes in every variant', () => {
+		await t.test('projected paper ordering stays acyclic between keyframes', () => {
 			const result = scenario(`
-				const variants = [...document.querySelectorAll('#eu26-variant-controls [data-eu26-variant]')].map(button => button.dataset.eu26Variant);
+				const variants = ['paper'];
 				const samples = [...new Set([...stateTimes, ...Array.from({ length: 36 }, (_, index) => duration * (index + 1) / 37), 2.33, 6.22, 14, 14.055, 14.1, 14.145, 14.15, 14.255, 14.28, 14.31, 20.4, 23.625])];
 				const failures = [];
 				for (const variant of variants) {
@@ -336,11 +302,11 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				explorer.setVariant(variants[0]);
 				return { samples: samples.length * variants.length, failures };
 			`);
-			assert.equal(result.samples, 180);
+			assert.equal(result.samples, 60);
 			assert.deepEqual(result.failures, [], 'the renderer can order visible paper planes at every sampled pose');
 		});
 
-		await t.test('visible cursor arrows contact carried cards and fit the camera in every variant', async () => {
+		await t.test('visible cursor arrows contact carried cards and fit the camera', async () => {
 			const { data, model } = await import('./eu26-hero.hero.mjs');
 			const cursorTimes = [1.2, 1.6, 4.8, 5.4, 23, 24, 25, 26.2, 27.5, 29, 31, 33.5, 34];
 			const samples = data.variants.flatMap(({ id: variant }) => cursorTimes.map(time => ({ variant, time, cursors: model({ time, variant }, data).cursors.filter(cursor => cursor.alpha > .15) })));

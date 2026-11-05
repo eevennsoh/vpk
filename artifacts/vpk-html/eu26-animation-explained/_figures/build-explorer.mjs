@@ -5,6 +5,7 @@ import { buildHeroFile } from '../../../../.agents/skills/vpk-html/scripts/anato
 import { runRuntimePipeline } from '../../../../.agents/skills/vpk-html/scripts/runtime/pipeline.mjs';
 import { ACCENT_TOKENS_CSS } from '../../../../.agents/skills/vpk-html/scripts/iso/accent.mjs';
 import { inlineIcon } from '../../../../.agents/skills/vpk-html/scripts/icons.mjs';
+import { CODE_BLOCK_CSS } from '../../../../.agents/skills/vpk-html/scripts/code/highlight.mjs';
 import { data } from './eu26-hero.hero.mjs';
 import { storySteps } from './story-content.mjs';
 import { renderStoryShell, jsonIsland } from '../_layout/story-shell.mjs';
@@ -29,7 +30,7 @@ const shell = renderStoryShell({
 	title: 'From Done to an endless wall.',
 	description: 'How one card drop becomes a celebration, a 3D field, and a world of moving work.',
 	eyebrow: 'Jira / Team ’26 Europe / Motion study',
-	steps: storySteps(data), hero,
+	steps: storySteps(data), hero, playbackRate: data.playbackRate,
 	controls: '<div id="eu26-explorer-controls" data-vpkh-no-lightbox></div>',
 	appearance: '<div id="eu26-variant-controls" data-vpkh-no-lightbox></div>',
 	diagramNote: 'A 20-second schematic of the supplied choreography. The production experience uses WebGL and shaders; this study uses an interactive SVG model.',
@@ -42,6 +43,7 @@ const css = `${ACCENT_TOKENS_CSS}
 #animation-explorer [data-vpk-engine="anatomy-hero"] .iso-plate-corners,#animation-explorer [data-vpk-engine="anatomy-hero"] figcaption{display:none!important}
 #animation-explorer svg *{transition:none!important;animation:none!important}
 @media print{[data-eu26-cursor-layer]{display:none!important}}
+${CODE_BLOCK_CSS}
 ${read('explorer.css')}
 ${read('../_layout/story-layout.css')}
 ${read('../_layout/footer-timeline.css')}`;
@@ -59,10 +61,10 @@ const contract = JSON.parse(read('../eu26-animation-explained.content.json'));
 contract.brief.figure_engine = 'anatomy-hero';
 contract.brief.figure_engine_source = 'user';
 contract.brief.figures = [{ id: 'eu26-hero', kind: 'explainer', engine: 'anatomy-hero', tier: 'hero', job: 'One anchored animation follows the reader through twelve states in Page, Slides, X Threads and Video views.' }];
-contract.brief.length_target = 'Single-column Page, Slides, X Threads and Video views with a right chapter navigator and twelve states.';
+contract.brief.length_target = 'Two-column Page (stacked below 1024px), Slides, X Threads and Video; twelve states and a chapter rail.';
 contract.brief.size_budget_kb = 5000;
 contract.brief.explicit_deviations = [
-	'The user requested one column: a wide anchored diagram above short text in every view. Native scrolling and state jumps use heading anchors below the diagram so the text stays clear.',
+	'User asked for two columns: text left, the figure right on a paper card with a live readout; stacked on narrow screens. Paper is the only style. Each step quotes real source.',
 	'The user requested orange accents, border light and a directional gradient. These override fixed-camera and grayscale anatomy defaults; all cover artwork and diagram labels are omitted.',
 	'Authored camera shots coordinate focus, zoom and angles. Navigation blends poses directly; scrolling and scrubbing seek exact time. Reduced motion selects still states.',
 	'Play runs a 20-second sequence, then one irregular masonry field continues until paused. A bounded pool recycles individual cards without cloning neighboring layouts.',
