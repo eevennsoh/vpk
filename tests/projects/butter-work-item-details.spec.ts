@@ -234,9 +234,9 @@ test("Butter details fields drag from the label and value on the vertical axis",
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
 	const fields = page.locator("[data-project-butter-detail-fields]");
 	const priority = fields.getByRole("group", { name: "Priority field" });
-	const status = fields.getByRole("group", { name: "Status field" });
+	const assignee = fields.getByRole("group", { name: "Assignee field" });
 	const label = priority.getByText("Priority", { exact: true });
-	const [labelBox, targetBox] = await Promise.all([label.boundingBox(), status.boundingBox()]);
+	const [labelBox, targetBox] = await Promise.all([label.boundingBox(), assignee.boundingBox()]);
 	if (!labelBox || !targetBox) throw new Error("Missing field geometry");
 	await page.mouse.move(labelBox.x + 4, labelBox.y + labelBox.height / 2);
 	await page.mouse.down();
@@ -248,16 +248,6 @@ test("Butter details fields drag from the label and value on the vertical axis",
 	await page.mouse.up();
 	await expect(fields.locator("[data-field-id]").first()).toHaveAttribute("data-field-id", "priority");
 	await expect(fields.getByRole("button", { name: /Drag to reorder/ })).toHaveCount(0);
-	const statusValue = status.getByRole("button", { name: "Change status in details, To do" });
-	const dueDate = fields.getByRole("group", { name: "Due Date field" });
-	const [valueBox, dueDateBox] = await Promise.all([statusValue.boundingBox(), dueDate.boundingBox()]);
-	if (!valueBox || !dueDateBox) throw new Error("Missing value geometry");
-	await page.mouse.move(valueBox.x + 20, valueBox.y + valueBox.height / 2);
-	await page.mouse.down();
-	await page.mouse.move(dueDateBox.x + 20, dueDateBox.y + dueDateBox.height / 2, { steps: 8 });
-	await page.mouse.up();
-	await expect(fields.locator("[data-field-id]").last()).toHaveAttribute("data-field-id", "status");
-	await expect(page.getByRole("menuitem", { name: "In progress", exact: true })).toHaveCount(0);
 	await priority.hover();
 	const actions = priority.getByRole("button", { name: "More priority field actions" });
 	const [rowBox, actionBox] = await Promise.all([priority.boundingBox(), actions.boundingBox()]);
@@ -267,23 +257,30 @@ test("Butter details fields drag from the label and value on the vertical axis",
 	await expect(page.getByRole("menuitem", { name: "Move down" })).toBeVisible();
 });
 
-test("the status field opens across its row without a second background", async ({ page }) => {
+test("status and agent controls follow the new work item layout", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
-	const row = page.getByRole("group", { name: "Status field" });
-	const status = row.getByRole("button", { name: "Change status in details, To do" });
-	const bounds = await status.boundingBox();
-	if (!bounds) throw new Error("Status field is missing");
-	await status.click({ position: { x: bounds.width - 75, y: bounds.height / 2 } });
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	const details = dialog.getByRole("complementary", { name: "Work item details" });
+	const assignee = details.getByRole("group", { name: "Assignee field" });
+	const addAgent = details.getByRole("button", { name: "Add agent", exact: true });
+	const priority = details.getByRole("group", { name: "Priority field" });
+	const [assigneeBox, agentBox, priorityBox] = await Promise.all([assignee.boundingBox(), addAgent.boundingBox(), priority.boundingBox()]);
+	if (!assigneeBox || !agentBox || !priorityBox) throw new Error("Missing details geometry");
+	expect(agentBox.y).toBeGreaterThan(assigneeBox.y + assigneeBox.height - 1);
+	expect(agentBox.y + agentBox.height).toBeLessThanOrEqual(priorityBox.y);
+	await expect(details.getByRole("group", { name: "Status field" })).toHaveCount(0);
+	const status = dialog.getByRole("button", { name: "Change status, To do" });
+	await status.click();
 	await expect(page.getByRole("menuitem", { name: "In progress", exact: true })).toBeVisible();
-	await expect(status).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 	await page.keyboard.press("Escape");
-	await expect(status).toBeFocused();
+	await addAgent.focus();
 	await page.keyboard.press("Enter");
-	await expect(page.getByRole("menuitem", { name: "Done", exact: true })).toBeVisible();
+	await expect(page.getByRole("combobox", { name: "Search agents" })).toBeVisible();
+	await page.getByRole("combobox", { name: "Search agents" }).fill("Figma");
+	await expect(page.getByRole("option", { name: /^Figma/ })).toBeVisible();
 	await page.keyboard.press("Escape");
-	await row.getByRole("button", { name: "More status field actions" }).click();
-	await expect(page.getByRole("menuitem", { name: "Pinned by default" })).toBeVisible();
+	await expect(addAgent).toBeFocused();
 });
 
 

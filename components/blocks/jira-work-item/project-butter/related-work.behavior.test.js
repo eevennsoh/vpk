@@ -201,6 +201,18 @@ function renderCrew(props) {
 	});
 }
 
+test("the details add-agent field opens the searchable picker even with existing sessions", async () => {
+	const selected = [];
+	const view = await renderCrew({ field: true, onStartAgent: (agent) => selected.push(agent.id), sessions: [crewSession("existing", "running", "Claude")] });
+	const trigger = view.getByRole("button", { name: "Add agent" });
+	await view.focus(trigger);
+	await view.press(trigger, "Enter");
+	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Figma");
+	await view.click(view.getByRole("option", { name: /^Figma/u }));
+	assert.deepEqual(selected, ["figma"]);
+	assert.equal(view.queryByRole("combobox", { name: "Search agents" }), null);
+});
+
 test("empty crew shows the current viewer and adds the chosen searchable agent", async () => {
 	const selected = [];
 	const view = await renderCrew({ onStartAgent: (agent) => selected.push(agent) });

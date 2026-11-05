@@ -36,13 +36,13 @@ export function ProjectButterStatusGlyph({ status, animated = true }: Readonly<{
 export function ProjectButterStatus({
 	content,
 	appearance = "icon",
-}: Readonly<{ content: ProjectButterContent; appearance?: "icon" | "field" }>) {
+}: Readonly<{ content: ProjectButterContent; appearance?: "icon" | "field" | "lozenge" }>) {
 	const [editor, setEditor] = useState<"create" | "edit" | null>(null);
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [name, setName] = useState("");
 	const [paintedStatus, setPaintedStatus] = useState(content.status);
 	const reducedMotion = useReducedMotion();
-	const stageAutoProgress = appearance === "icon" && !reducedMotion && paintedStatus === "To do" && content.status === "In progress" && content.assignee.name === content.currentUser.name;
+	const stageAutoProgress = appearance !== "field" && !reducedMotion && paintedStatus === "To do" && content.status === "In progress" && content.assignee.name === content.currentUser.name;
 	const glyphStatus = stageAutoProgress ? paintedStatus : content.status;
 	useEffect(() => {
 		let secondFrame = 0;
@@ -78,7 +78,7 @@ export function ProjectButterStatus({
 					onClick={() => { if (appearance === "field") setMenuOpen((open) => !open); }}
 					render={
 						<LozengeDropdownTrigger
-							appearance={appearance === "field" ? "text" : "icon"}
+							appearance={appearance === "field" ? "text" : appearance}
 							aria-label={`Change status${appearance === "field" ? " in details" : ""}, ${content.status}`}
 							className={appearance === "field" ? "-mx-2 w-[calc(100%+1rem)] max-w-none justify-start bg-transparent px-2 pr-14 hover:bg-transparent active:bg-transparent data-[selected=true]:bg-transparent" : undefined}
 							icon={appearance === "field" ? <IconTile aria-hidden as="span" icon={<ProjectButterStatusGlyph status={content.status} />} label="" size="xxsmall" variant="transparent" /> : <ProjectButterStatusGlyph status={glyphStatus} />}
