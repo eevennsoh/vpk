@@ -594,3 +594,15 @@ body[data-vpk-layout="story"] .story-step-detail { inline-size: 100%; }
 	body[data-vpk-layout="story"] .story-figure { box-shadow: none; padding: 0; }
 	body[data-vpk-layout="story"] .story-figure-corner { display: none !important; }
 }
+
+/* Video: the heading stays on top, the figure follows, and the timeline, chapter and status sit under the figure like a
+   player. The panel's children join the layout's single column (display: contents) so order can interleave them with
+   the stage at every width; the panel itself is unchanged in the DOM. */
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { display: flex; flex-direction: column; align-items: stretch; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video:not([hidden]) { display: contents; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-toolbar { order: 0; padding-block: 28px 20px; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { order: 1; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { order: 2; margin-block: 20px 6px; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { order: 3; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { order: 4; }
+body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { order: 5; align-self: start; }
