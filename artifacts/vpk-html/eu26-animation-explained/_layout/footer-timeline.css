@@ -578,3 +578,52 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 	grid-column: 2;
 	grid-row: 1;
 }
+
+/* Reading controls in the rail column. Above 760px the old top bar becomes a vertical icon stack pinned above the
+   chapter ticks (view modes, a rule, sources, theme) and the page has no header; the rail starts below the stack. */
+@media (min-width: 761px) {
+	body[data-vpk-layout="story"] {
+		--story-bar-height: 0px;
+		--story-top: 0px;
+		--story-tool-size: 40px;
+		--eu26-dock-top: calc(16px + 6 * var(--story-tool-size) + 5 * 2px + 13px + 24px);
+	}
+	body[data-vpk-layout="story"] .story-bar {
+		position: fixed;
+		inset-block-start: 16px;
+		inset-inline-end: var(--eu26-dock-right);
+		z-index: 56;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		inline-size: var(--eu26-dock-width);
+		min-block-size: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+	}
+	body[data-vpk-layout="story"] .story-bar :is(.story-modes, .story-tools) { flex-direction: column; align-items: center; gap: 2px; justify-self: auto; }
+	body[data-vpk-layout="story"] .story-bar .story-tools { margin-block-start: 6px; padding-block-start: 6px; border-block-start: 1px solid var(--rule); }
+}
+body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources, .story-tools .vpk-theme-toggle) {
+	inline-size: var(--story-tool-size, 40px);
+	block-size: var(--story-tool-size, 40px);
+	min-inline-size: 0;
+	min-block-size: 0;
+	padding: 0;
+	border-radius: 6px;
+	color: var(--muted-text);
+}
+body[data-vpk-layout="story"] .story-bar .story-sources { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+body[data-vpk-layout="story"] .story-bar .story-sources:hover { background: var(--surface-sunken); color: var(--ink); }
+body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources) svg { display: block; inline-size: 16px; block-size: 16px; }
+body[data-vpk-layout="story"] .story-bar .story-modes button[aria-pressed="true"] { color: var(--ink); }
+
+/* At 760px and below the rail is narrow, so the controls stay a single row at the top of the page. */
+@media (max-width: 760px) {
+	body[data-vpk-layout="story"] { --story-bar-height: 52px; --story-top: 52px; }
+	body[data-vpk-layout="story"] .story-bar { display: flex; justify-content: space-between; align-items: center; min-block-size: var(--story-bar-height); padding-block: 4px; }
+	body[data-vpk-layout="story"] .story-bar :is(.story-modes, .story-tools) { flex-direction: row; gap: 2px; }
+}

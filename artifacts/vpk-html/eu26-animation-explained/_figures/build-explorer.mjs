@@ -33,6 +33,8 @@ const shell = renderStoryShell({
 	steps: storySteps(data), hero, playbackRate: data.playbackRate,
 	controls: '<div id="eu26-explorer-controls" data-vpkh-no-lightbox></div>',
 	appearance: '<div id="eu26-variant-controls" data-vpkh-no-lightbox></div>',
+	sourcesHref: 'https://bitbucket.org/atlassian/jira-team-eu26-motion/src/8588b00ff81cb5e8341a462158c747c6d990667c/components/projects/jira-team-eu26-end/finale/',
+	icons: Object.fromEntries(Object.entries({ page: 'page', slides: 'screen', threads: 'comment', video: 'video', sources: 'link-external' }).map(([key, name]) => [key, inlineIcon(name)])),
 });
 source = source.replace(/<main\b[^>]*\bid="content"[^>]*>[\s\S]*?<\/main>/, () => shell);
 const css = `${ACCENT_TOKENS_CSS}

@@ -1,14 +1,15 @@
 const escape = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 export const jsonIsland = value => JSON.stringify(value).replaceAll('<', '\\u003c');
 
-export function renderStoryShell({ title, description, eyebrow, steps, hero, controls = '', appearance = '', playbackRate = 1, figureHint = 'Scroll to scrub · hover the rail to preview' }) {
+export function renderStoryShell({ title, description, eyebrow, steps, hero, controls = '', appearance = '', playbackRate = 1, figureHint = 'Scroll to scrub · hover the rail to preview', sourcesHref = '', icons = {} }) {
 	const pad = value => String(value).padStart(2, '0');
+	// The reading controls live in the rail column above the chapter ticks: view modes, sources, theme. Icon buttons carry
+	// their names in aria-label and a hover title, so the stack stays one tick-rail wide.
+	const modes = [['story', 'Page', icons.page], ['slides', 'Slides', icons.slides], ['twitter', 'X Threads', icons.threads], ['video', 'Video', icons.video]];
 	return `<main id="content" tabindex="-1" data-vpk-story data-story-mode="story">
 	<nav class="story-bar" aria-label="Reading controls">
-		<a class="story-brand" href="#content" aria-label="VPK story, back to beginning">VPK <span>/ FIELD NOTES</span></a>
-		<div class="story-modes" role="group" aria-label="View mode">${[['story', 'Page'], ['slides', 'Slides'], ['twitter', 'X Threads'], ['video', 'Video']].map(([id, label]) => `<button type="button" data-story-mode="${id}" aria-pressed="${id === 'story'}">${label}</button>`).join('')}</div>
-		<div class="story-tools"><div data-story-theme></div></div>
-		<div class="story-progress" aria-hidden="true" data-story-progress></div>
+		<div class="story-modes" role="group" aria-label="View mode">${modes.map(([id, label, icon]) => `<button type="button" data-story-mode="${id}" aria-pressed="${id === 'story'}" aria-label="${label}" title="${label}">${icon || escape(label)}</button>`).join('')}</div>
+		<div class="story-tools">${sourcesHref ? `<a class="story-sources" href="${escape(sourcesHref)}" target="_blank" rel="noopener" aria-label="Sources (opens the finale source)" title="Sources">${icons.sources || 'Sources'}</a>` : ''}<div data-story-theme></div></div>
 	</nav>
 	<div class="story-layout">
 		<aside class="story-stage" data-story-stage aria-label="Anchored animation">

@@ -35,7 +35,7 @@ test('Video is a live HTML preview and rendering starts only from Generate', {ti
 					throw new Error('Unexpected QA export request');
 				};
 				window.__qaPreviewHero=hero;window.__qaPreviewSvg=svg;
-				return {modes:[...root.querySelectorAll('button[data-story-mode]')].map(button=>[button.dataset.storyMode,button.textContent.trim()]),kind:preview.getState().kind,
+				return {modes:[...root.querySelectorAll('button[data-story-mode]')].map(button=>[button.dataset.storyMode,(button.getAttribute('aria-label')||button.textContent).trim()]),kind:preview.getState().kind,
 					media:document.querySelectorAll('video[src],source[type^="video"],link[as="video"]').length,heroes:root.querySelectorAll('[data-vpk-figure="eu26-hero"]').length,calls:window.__qaRenderCalls.length};
 			`);
 			assert.deepEqual(result.modes,[['story','Page'],['slides','Slides'],['twitter','X Threads'],['video','Video']]);
