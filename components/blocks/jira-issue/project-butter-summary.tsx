@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import BugIcon from "@atlaskit/icon/core/bug";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
@@ -11,7 +11,6 @@ import TaskIcon from "@atlaskit/icon/core/task";
 import StatusWorkflowWarningIcon from "@atlaskit/icon-lab/core/status-workflow-warning";
 import { Tag, TagGroup } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
-import { motionDuration, motionEase } from "@/lib/motion";
 import type { JiraIssueDefaultProps } from "./index";
 import { ButterPriorityIcon } from "./priority";
 import { formatButterDueDate } from "./project-butter-model";
@@ -30,6 +29,7 @@ type ProjectButterSummaryProps = Pick<
 	| "subtasks"
 	| "onSubtaskOpen"
 	| "pullRequestNumber"
+	| "animatePullRequestOnMount"
 	| "pullRequestPreview"
 	| "pullRequestStatus"
 	| "pullRequestTitle"
@@ -58,6 +58,7 @@ export function ProjectButterSummary({
 	onSubtaskOpen,
 	assignee,
 	moreAction,
+	animatePullRequestOnMount,
 	pullRequestNumber,
 	pullRequestPreview,
 	pullRequestStatus,
@@ -113,6 +114,7 @@ export function ProjectButterSummary({
 					metadata={metadata}
 					priority={priority}
 					assignee={assignee}
+					animatePullRequestOnMount={animatePullRequestOnMount}
 					pullRequestNumber={pullRequestNumber}
 					pullRequestPreview={pullRequestPreview}
 					pullRequestStatus={pullRequestStatus}
@@ -131,6 +133,7 @@ function ProjectButterFooter({
 	metadata,
 	priority = "major",
 	assignee,
+	animatePullRequestOnMount,
 	pullRequestNumber,
 	pullRequestPreview,
 	pullRequestStatus,
@@ -143,6 +146,7 @@ function ProjectButterFooter({
 		| "priority"
 		| "assignee"
 		| "pullRequestNumber"
+		| "animatePullRequestOnMount"
 		| "pullRequestPreview"
 		| "pullRequestStatus"
 		| "showPriorityIndicator"
@@ -167,8 +171,8 @@ function ProjectButterFooter({
 					</span>
 				) : null}
 				{pullRequestNumber ? (
-					<motion.span animate={{ opacity: 1, transform: "scale(1)" }} className="inline-flex" initial={initiallyHasPullRequest || reducedMotion ? false : { opacity: 0, transform: "scale(0.9)" }} transition={{ duration: motionDuration.medium, ease: motionEase.outPractical }}>
 					<JiraIssuePullRequestCluster
+						animateIcon={!reducedMotion && (!initiallyHasPullRequest || Boolean(animatePullRequestOnMount))}
 						pullRequestNumber={pullRequestNumber}
 						pullRequestPreview={pullRequestPreview}
 						pullRequestStatus={pullRequestStatus}
@@ -176,7 +180,6 @@ function ProjectButterFooter({
 						usesStrokeChrome
 						tone="subtle"
 					/>
-					</motion.span>
 				) : null}
 				{showPriorityIndicator ? (
 					<span className="grid size-6 shrink-0 place-items-center">

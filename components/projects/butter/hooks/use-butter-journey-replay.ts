@@ -14,7 +14,7 @@ export function useButterJourneyReplay({ boardColumns, journeySession, phase, qu
 	boardColumns: readonly JiraKanbanColumnData[];
 	journeySession?: ProjectButterSessionItem;
 	phase: MerchantJourneyPhase;
-	queueUpdate: (issueKey: string, update: BoardUpdate, onApplied?: () => void, animation?: "flight") => void;
+	queueUpdate: (issueKey: string, update: BoardUpdate, onApplied?: () => void, animation?: "fade", feedback?: "trace") => void;
 	setBoardColumns: Dispatch<SetStateAction<JiraKanbanColumnData[]>>;
 	wacContent: boolean;
 }>) {
@@ -39,7 +39,7 @@ export function useButterJourneyReplay({ boardColumns, journeySession, phase, qu
 		started.current = replay.id;
 		document.querySelector<HTMLElement>(`[data-butter-board-surface] [data-issue-key="${BUTTER_SUGGESTION_DEMO_KEY}"][data-board-column-title="${sourceColumn}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
 		const session = journeySession ? toButterAgentActivityFromSession(journeySession) : undefined;
-		queueUpdate(BUTTER_SUGGESTION_DEMO_KEY, (columns) => applyMerchantJourneyToBoard(columns, replay.target, session), () => setReplay((current) => current?.id === replay.id ? null : current), "flight");
+		queueUpdate(BUTTER_SUGGESTION_DEMO_KEY, (columns) => applyMerchantJourneyToBoard(columns, replay.target, session), () => setReplay((current) => current?.id === replay.id ? null : current), "fade", "trace");
 	}, [boardColumns, journeySession, phase, queueUpdate, replay]);
 	return { active: replay !== null, start, cancel };
 }

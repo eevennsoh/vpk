@@ -84,9 +84,11 @@ export function ProjectButterDetailsFields({ agentField, content, expanded, fill
 	const visible = expanded ? order : order.slice(0, 2);
 	return (
 		<div className="relative" data-project-butter-detail-fields data-project-butter-field-dragging={dragging ? "true" : undefined} ref={rootRef}>
-			<AnimatePresence initial={false}>
-				{fillingBarAfter ? <ProjectButterSuggestionCursor after={fillingBarAfter} finishing={fillingFinishing} key="filling-cursor" rootRef={rootRef} /> : null}
-			</AnimatePresence>
+			<div className="pointer-events-none absolute -inset-x-2 top-0 -bottom-4 z-20 overflow-clip" data-project-butter-suggestion-clip>
+				<AnimatePresence initial={false}>
+					{fillingBarAfter ? <ProjectButterSuggestionCursor after={fillingBarAfter} finishing={fillingFinishing} key="filling-cursor" rootRef={rootRef} /> : null}
+				</AnimatePresence>
+			</div>
 			<DndContext collisionDetection={closestCenter} id={id} modifiers={[restrictToVerticalAxis]} onDragCancel={() => setDragging(false)} onDragStart={() => setDragging(true)} onDragEnd={({ active, over }) => {
 				setDragging(false);
 				content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, active.id, over?.id ?? null) }));

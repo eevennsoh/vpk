@@ -440,6 +440,7 @@ export function ExperimentalJiraKanbanCard({
 			onDragEnd={onDragEnd}
 			onDragStart={onDragStart}
 			priority={card.priority}
+			animatePullRequestOnMount={card.animatePullRequestOnMount}
 			pullRequestNumber={card.pullRequestNumber}
 			pullRequestPreview={card.pullRequestPreview}
 			pullRequestStatus={card.pullRequestStatus}

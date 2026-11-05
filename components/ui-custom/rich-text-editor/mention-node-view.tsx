@@ -8,6 +8,7 @@ import PageIcon from "@atlaskit/icon/core/page";
 import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
 import { HoverCard, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tag } from "@/components/ui/tag";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { SkillTag } from "@/components/ui-custom/skill-tag";
 import { getSkillTagCatalogProps } from "@/components/ui-custom/skill-tag-catalog";
 import { getMentionCategory } from "./extensions";
@@ -89,7 +90,9 @@ export function RichTextMentionNodeView({ node, selected }: Readonly<ReactNodeVi
 			// logos keep their own color — so only the frame goes neutral, not the icon.
 			color="gray"
 			variant="editor"
-			elemBefore={visual ? (
+			elemBefore={category === "subagent" && visual?.kind === "third-party" ? (
+				<AgentAvatarVisual avatarClassName="after:border-0" brandName={visual.name} fallbackText={label} sizePx={16} />
+			) : visual ? (
 				<RichTextMentionVisualMark
 					category={category as RichTextMentionCategory}
 					label={label}
@@ -98,7 +101,7 @@ export function RichTextMentionNodeView({ node, selected }: Readonly<ReactNodeVi
 			) : (
 				<PageIcon label="" size="small" />
 			)}
-			type={getRichTextMentionTagType(visual)}
+			type={category === "subagent" && visual?.kind === "third-party" ? "agent" : getRichTextMentionTagType(visual)}
 		>
 			{label}
 		</Tag>

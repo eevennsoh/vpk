@@ -18,6 +18,7 @@ import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/
 import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
+import { cn } from "@/lib/utils";
 
 type CrewMember = { name: string; kind: "person"; state: "Working" | "Currently viewing"; avatarSrc?: string } | { id?: string; name: string; kind: "agent"; state: "Working" | "Needs input" | "Completed"; visual: Pick<AgentAvatarVisualProps, "avatarSrc" | "brandName" | "vpkLogo"> };
 type AgentCrewMember = Extract<CrewMember, { kind: "agent" }>;
@@ -94,7 +95,8 @@ export function ProjectButterCrew({ assignee, currentUser, field = false, onBrow
 	const picking = view === "picker" || sessions.length === 0;
 	const label = `${members.length ? "Working on this work item. " : ""}${crew.map((member) => `${member.name}, ${member.state}`).join(". ")}. Add agent`;
 	const firstSession = orderedSessions[0];
-	const fieldLabel = firstSession ? `${firstSession.agent.name}: ${firstSession.state === "running" ? "Working" : firstSession.state === "complete" ? "Finished" : "Needs input"}` : "Add agent";
+	const fieldState = firstSession ? firstSession.state === "running" ? "Working" : firstSession.state === "complete" ? "Finished" : "Needs input" : "";
+	const fieldLabel = firstSession ? `${sessions.length === 1 ? firstSession.agent.name : `${sessions.length} agents`}: ${fieldState}` : "Add agent";
 	function changeOpen(next: boolean) {
 		setOpen(next);
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
@@ -112,7 +114,7 @@ export function ProjectButterCrew({ assignee, currentUser, field = false, onBrow
 				</AvatarGroup>
 				)}
 			</PopoverTrigger>}
-			<PopoverContent align={field && sessions.length > 0 ? "center" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={field && sessions.length > 0 ? "w-(--anchor-width) max-w-(--available-width) gap-0 overflow-hidden p-0" : picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0"} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">
+			<PopoverContent align={field && sessions.length > 0 ? "center" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={cn(field && sessions.length > 0 ? "w-(--anchor-width) max-w-(--available-width) gap-0 overflow-hidden p-0" : picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0", picking && "shadow-2xl")} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">
 				{picking && onStartAgent ? <ProjectButterInvocationProvider agents={pickerAgents} enabled><ProjectButterAgentPickerContent sessions={sessions} onContinueSession={(session) => { onOpenSession(session); changeOpen(false); }} onPreviewSession={onPreviewSession} submenuPositionerClassName="z-[700]" workspacePositionerClassName="z-[701]" onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} />{field && sessions.length > 0 ? <div className="border-t border-border p-1"><Button className="w-full justify-start" onClick={() => setView("sessions")} type="button" variant="ghost">View agent sessions</Button></div> : null}</ProjectButterInvocationProvider> : <AgentSessionsMenu addAgentLabel="Add agent" items={orderedSessions} overlayPositionerClassName="z-[700]" onAddAgent={onStartAgent ? () => setView("picker") : undefined} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} />}
 			</PopoverContent>
 		</Popover>

@@ -343,6 +343,7 @@ export function JiraActivityComposer({
 				className={cn(
 					floatingComposerTextareaClassName,
 					"text-sm leading-5",
+					variant === "flush" && "[&_.rich-text-mention-chip]:text-[length:inherit]",
 					isExpandableComment && isExpanded && "min-h-36 py-3",
 				)}
 				enableDirectoryAutocomplete={false}

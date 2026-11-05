@@ -95,6 +95,7 @@ function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: s
 		status: phase === "merged" ? "Done" : beforeWork ? "To do" : "In progress",
 		assignee: beforeWork ? authoredCard.assignee : assignCurrentUser ? BUTTER_PAY_CURRENT_USER : card.assignee,
 		avatarSrc: beforeWork ? authoredCard.avatarSrc : assignCurrentUser ? BUTTER_PAY_CURRENT_USER.avatarSrc : card.avatarSrc,
+		animatePullRequestOnMount: phase === "pr",
 		pullRequestNumber: hasPullRequest ? PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number : restorePullRequest ? baseline.pullRequestNumber : card.pullRequestNumber,
 		pullRequestPreview: hasPullRequest ? { ...PR_PREVIEW, checks: projectButterDevelopmentChecks(phase) } : restorePullRequest ? baseline.pullRequestPreview : card.pullRequestPreview,
 		pullRequestStatus: hasPullRequest ? (phase === "merged" ? "merged" : phase === "failed" ? "failed" : "open") : restorePullRequest ? baseline.pullRequestStatus : card.pullRequestStatus,

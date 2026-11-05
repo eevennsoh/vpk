@@ -185,6 +185,7 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	/** Jira issue key, e.g. RFP-101. */
 	issueKey: string;
 	pullRequestNumber?: number;
+	animatePullRequestOnMount?: boolean;
 	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
 	pullRequestTitle?: string;
@@ -309,6 +310,7 @@ function JiraIssueDefault({
 	moreMenuActions,
 	parentEpicControl,
 	priority = "major",
+	animatePullRequestOnMount,
 	pullRequestNumber,
 	pullRequestPreview,
 	pullRequestStatus,
@@ -681,6 +683,7 @@ function JiraIssueDefault({
 			moreAction={usesCompactVisual ? moreActionMenu : undefined}
 			parentEpicControl={parentEpicControl}
 			priority={priority}
+			animatePullRequestOnMount={animatePullRequestOnMount}
 			pullRequestNumber={resolvedPullRequestNumber}
 			pullRequestPreview={pullRequestPreview}
 			pullRequestStatus={pullRequestStatus}

@@ -79,8 +79,24 @@ test("Pull request begins on the board and reveals the PR before opening the wor
 	await expect(journeyItem(page).getByRole("region", { name: "Pull request development" })).toHaveAttribute("data-project-butter-development", "pr");
 });
 
+for (const [step, destination] of [["In progress", "In progress"], ["Done", "Done"]] as const) {
+	test(`${step} traces the card border after its arrival`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: "no-preference" });
+		await openMerchantJourney(page);
+		const trace = page.locator(`[data-issue-drop-trace][data-board-column-title="${destination}"]`);
+		for (let replay = 0; replay < 2; replay++) {
+			await wideStep(page, step).click();
+			await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", destination);
+			await expect(trace).toHaveCount(1, { timeout: 10_000 });
+			await expect(trace.locator("g rect[stroke]")).toHaveAttribute("stroke", destination === "Done" ? /--ds-border-success/ : /--ds-border-bold/);
+			await expect(page.locator('[data-issue-drop-flight="PAY-999"]')).toHaveCount(0);
+			await expect(trace).toHaveCount(0, { timeout: 10_000 });
+		}
+	});
+}
+
 for (const [step, source, destination] of [["In progress", "To do", "In progress"], ["Done", "In progress", "Done"]] as const) {
-	test(`${step} replays the card move every time it is selected`, async ({ page }) => {
+	test(`${step} fades out at the source and fades in at the destination on replay`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: "no-preference" });
 		await openMerchantJourney(page);
 		const flight = page.locator('[data-issue-drop-flight="PAY-999"]');
@@ -88,9 +104,10 @@ for (const [step, source, destination] of [["In progress", "To do", "In progress
 		await button.click();
 		await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", destination);
 		await expect(flight).toHaveCount(0, { timeout: 10_000 });
-		await page.evaluate((target) => {
+		await page.evaluate(({ target, sourceColumn, nextCode }) => {
 			const columns: string[] = [];
 			const positions: number[] = [];
+			let nextStart: number | undefined;
 			const start = performance.now();
 			const record = () => {
 				const column = document.querySelector<HTMLElement>('[data-issue-key="PAY-999"][data-board-column-title]')?.dataset.boardColumnTitle;
@@ -101,19 +118,48 @@ for (const [step, source, destination] of [["In progress", "To do", "In progress
 			record();
 			function sample(now: number) {
 				const moving = document.querySelector<HTMLElement>('[data-issue-drop-flight="PAY-999"]');
+				const next = document.querySelector<HTMLElement>(`[data-issue-key="${nextCode}"][data-board-column-title="${sourceColumn}"] [data-slot="jira-issue-surface"]`);
 				if (moving) {
-					positions.push(new DOMMatrixReadOnly(getComputedStyle(moving).transform).m41);
+					const style = getComputedStyle(moving);
+					const transform = new DOMMatrixReadOnly(style.transform);
+					positions.push(transform.m41);
+					if (next && moving.firstElementChild) {
+						const nextTop = next.getBoundingClientRect().top;
+						const gap = nextTop - moving.firstElementChild.getBoundingClientRect().bottom;
+						nextStart ??= nextTop;
+						document.documentElement.dataset.journeyReplaySourceGap = String(Math.min(Number(document.documentElement.dataset.journeyReplaySourceGap ?? Infinity), gap));
+					}
 					document.documentElement.dataset.journeyReplayTravel = String(Math.max(...positions) - Math.min(...positions));
+					if (Number(style.opacity) < 0.9 && transform.a < 0.99) document.documentElement.dataset.journeyReplayFadedOut = "true";
+					for (const animation of moving.getAnimations()) {
+						const frames = animation.effect instanceof KeyframeEffect ? animation.effect.getKeyframes() : [];
+						const last = frames.at(-1);
+						if (typeof last?.transform === "string" && Number(last.opacity) === 0 && new DOMMatrixReadOnly(last.transform).a < 0.99) {
+							document.documentElement.dataset.journeyReplayFadedOut = "true";
+							document.documentElement.dataset.journeyReplayExitDuration = String(animation.effect?.getTiming().duration);
+						}
+					}
 					const arrival = document.querySelector<HTMLElement>(`[data-issue-key="PAY-999"][data-board-column-title="${target}"] [data-slot="jira-creating-card"]`);
 					if (arrival && getComputedStyle(arrival).visibility === "visible" && Number(getComputedStyle(arrival).opacity) > 0.05) document.documentElement.dataset.journeyReplayDuplicate = "true";
+				}
+				if (!moving && next && nextStart !== undefined) document.documentElement.dataset.journeyReplaySourceShift = String(nextStart - next.getBoundingClientRect().top);
+				const arrival = document.querySelector<HTMLElement>(`[data-issue-key="PAY-999"][data-board-column-title="${target}"] [data-slot="jira-creating-card"]`);
+				if (!moving && arrival) {
+					const style = getComputedStyle(arrival);
+					if (style.visibility === "visible" && Number(style.opacity) < 0.9 && new DOMMatrixReadOnly(style.transform).a < 0.99) document.documentElement.dataset.journeyReplayFadedIn = "true";
 				}
 				if (now - start < 5000) requestAnimationFrame(sample);
 			}
 			requestAnimationFrame(sample);
-		}, destination);
+		}, { target: destination, sourceColumn: source, nextCode: step === "Done" ? "PAY-105" : "PAY-124" });
 		await button.click();
 		await expect.poll(async () => JSON.parse((await page.locator("html").getAttribute("data-journey-replay-columns")) ?? "[]")).toContain(source);
-		await expect.poll(async () => Number(await page.locator("html").getAttribute("data-journey-replay-travel"))).toBeGreaterThan(5);
+		await expect(page.locator("html")).toHaveAttribute("data-journey-replay-faded-out", "true");
+		await expect(page.locator("html")).toHaveAttribute("data-journey-replay-faded-in", "true");
+		await expect.poll(async () => Number(await page.locator("html").getAttribute("data-journey-replay-source-shift"))).toBeGreaterThan(20);
+		expect(Number(await page.locator("html").getAttribute("data-journey-replay-source-gap"))).toBeGreaterThanOrEqual(-2);
+		expect(Number(await page.locator("html").getAttribute("data-journey-replay-exit-duration"))).toBeGreaterThanOrEqual(350);
+		expect(Number(await page.locator("html").getAttribute("data-journey-replay-travel"))).toBeLessThan(1);
 		await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", destination);
 		await expect(flight).toHaveCount(0, { timeout: 10_000 });
 		await expect(page.locator("html")).not.toHaveAttribute("data-journey-replay-duplicate", "true");
@@ -127,6 +173,7 @@ test("replayed steps settle immediately when reduced motion is enabled", async (
 		await wideStep(page, step).click();
 		await expect(journeyCard(page)).toHaveAttribute("data-board-column-title", column);
 		await expect(page.locator('[data-issue-drop-flight="PAY-999"]')).toHaveCount(0);
+		await expect(page.locator("[data-issue-drop-trace]")).toHaveCount(0);
 	}
 });
 

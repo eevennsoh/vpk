@@ -117,8 +117,42 @@ function measureSiblingReflow(elements: readonly HTMLElement[], before: readonly
 	});
 }
 
+function createSiblingReflowAnimations(reflows: readonly { node: HTMLElement; x: number; y: number }[], delay = 0, fill: FillMode = "both"): Animation[] {
+	return reflows.map(({ node, x, y }) => node.animate([
+		{ transform: `translate3d(${x}px, ${y}px, 0)` },
+		{ transform: "translate3d(0, 0, 0)" },
+	], { delay, duration: JIRA_KANBAN_CARD_REFLOW.duration * 1000, easing: `cubic-bezier(${JIRA_KANBAN_CARD_REFLOW.ease.join(",")})`, fill }));
+}
+
+/** Keep the vacated slot until the source has disappeared, then close it. */
+export function animateIssueCardReflow(root: HTMLElement, before: readonly IssueCardReflowPosition[], delay: number): () => void {
+	const elements = [...root.querySelectorAll<HTMLElement>("[data-issue-key]")];
+	const view = root.ownerDocument.defaultView!;
+	const reflows = measureSiblingReflow(elements, before, { left: 0, right: view.innerWidth, top: 0, bottom: view.innerHeight });
+	const animations = createSiblingReflowAnimations(reflows, delay, "backwards");
+	return () => animations.forEach((animation) => animation.cancel());
+}
+
 function intersectsClip(rect: DOMRect, clip: DropClip): boolean {
 	return rect.width > 0 && rect.height > 0 && rect.right > clip.left && rect.left < clip.right && rect.bottom > clip.top && rect.top < clip.bottom;
+}
+
+function measureDropCards(elements: readonly HTMLElement[], columnTitle: string, codes: readonly string[]): DropCard[] {
+	return codes.flatMap((code) => {
+		const issue = elements.find((node) => node.dataset.issueKey === code && node.dataset.boardColumnTitle === columnTitle);
+		const node = issue?.parentElement;
+		const surface = issue?.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
+		return node && surface ? [{ code, node, surface, shell: issue.querySelector<HTMLElement>('[data-slot="jira-issue-agent-shell"]'), rect: node.getBoundingClientRect(), surfaceRect: surface.getBoundingClientRect(), radius: getComputedStyle(surface).borderTopLeftRadius }] : [];
+	});
+}
+
+function dropClip(root: HTMLElement, cards: readonly DropCard[]): DropClip {
+	const view = root.ownerDocument.defaultView!;
+	const list = cards[0]?.surface.closest<HTMLElement>("[data-jira-kanban-card-list]")?.getBoundingClientRect();
+	return {
+		left: Math.max(0, list?.left ?? 0), right: Math.min(view.innerWidth, list?.right ?? view.innerWidth),
+		top: Math.max(0, list?.top ?? 0), bottom: Math.min(view.innerHeight, list?.bottom ?? view.innerHeight),
+	};
 }
 
 /** The destination's tint, read with the final slots so no write precedes it. */
@@ -251,23 +285,42 @@ function createCollectionTrace(cards: readonly DropCard[], doc: Document, column
 	} };
 }
 
+/** Reuse manual-drop feedback after a flying card lands, without replaying its entrance. */
+export function animateIssueDropTrace(root: HTMLElement, columnTitle: string, codes: readonly string[]): () => void {
+	const elements = [...root.querySelectorAll<HTMLElement>("[data-issue-key]")];
+	const measured = measureDropCards(elements, columnTitle, codes);
+	const clip = dropClip(root, measured);
+	const cards = measured.filter(({ surfaceRect }) => intersectsClip(surfaceRect, clip));
+	if (!cards.length) return () => {};
+	const trace = createCollectionTrace(cards, root.ownerDocument, columnTitle, clip);
+	const destination = cards[0].surface.closest("[data-jira-kanban-column]");
+	const view = root.ownerDocument.defaultView!;
+	let stopped = false;
+	const stop = () => {
+		if (stopped) return;
+		stopped = true;
+		root.ownerDocument.removeEventListener("scroll", onScroll, true);
+		view.removeEventListener("resize", stop);
+		trace.restore();
+		trace.animation.cancel();
+	};
+	const onScroll = (event: Event) => {
+		const target = event.target;
+		if (target === root.ownerDocument || target instanceof Element && destination && (destination.contains(target) || target.contains(destination))) stop();
+	};
+	root.ownerDocument.addEventListener("scroll", onScroll, true);
+	view.addEventListener("resize", stop);
+	void trace.animation.finished.then(stop, stop);
+	return stop;
+}
+
 /** Animate real cards in their final slots; the transaction has already committed. */
 export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string, codes: readonly string[], reducedMotion: boolean, onComplete: () => void, glowColors?: Readonly<Record<string, string>>, feedback: "trace" | "none" = "trace", reflowBefore: readonly IssueCardReflowPosition[] = []): () => void {
 	if (reducedMotion) { onComplete(); return () => {}; }
 	const elements = [...root.querySelectorAll<HTMLElement>("[data-issue-key]")];
-	const measured: DropCard[] = codes.flatMap((code) => {
-		const issue = elements.find((node) => node.dataset.issueKey === code && node.dataset.boardColumnTitle === columnTitle);
-		// The outer slot has FLIP disabled by this arrival and no card-hover transform.
-		const node = issue?.parentElement;
-		const surface = issue?.querySelector<HTMLElement>('[data-slot="jira-issue-surface"]');
-		return node && surface ? [{ code, node, surface, shell: issue.querySelector<HTMLElement>('[data-slot="jira-issue-agent-shell"]'), rect: node.getBoundingClientRect(), surfaceRect: surface.getBoundingClientRect(), radius: getComputedStyle(surface).borderTopLeftRadius }] : [];
-	});
+	const measured = measureDropCards(elements, columnTitle, codes);
 	const view = root.ownerDocument.defaultView!;
-	const list = measured[0]?.surface.closest<HTMLElement>("[data-jira-kanban-card-list]")?.getBoundingClientRect();
-	const clip: DropClip = {
-		left: Math.max(0, list?.left ?? 0), right: Math.min(view.innerWidth, list?.right ?? view.innerWidth),
-		top: Math.max(0, list?.top ?? 0), bottom: Math.min(view.innerHeight, list?.bottom ?? view.innerHeight),
-	};
+	const clip = dropClip(root, measured);
 	// Decide from final slots before unfolding: hidden cards must not fly through
 	// the visible stack or extend the trace's sweep and per-frame geometry work.
 	const cards = measured.filter(({ surfaceRect }) => intersectsClip(surfaceRect, clip));
@@ -284,11 +337,7 @@ export function animateIssueSolitaireDrop(root: HTMLElement, columnTitle: string
 			}));
 		}
 	} else if (feedback === "trace" && cards.length) effects.push(createCollectionTrace(cards, root.ownerDocument, columnTitle, clip));
-	for (const { node, x, y } of reflows) {
-		const animation = node.animate([
-			{ transform: `translate3d(${x}px, ${y}px, 0)` },
-			{ transform: "translate3d(0, 0, 0)" },
-		], { duration: JIRA_KANBAN_CARD_REFLOW.duration * 1000, easing: `cubic-bezier(${JIRA_KANBAN_CARD_REFLOW.ease.join(",")})`, fill: "both" });
+	for (const animation of createSiblingReflowAnimations(reflows)) {
 		effects.push({ animation, restore: () => animation.cancel() });
 	}
 	if (codes.length === 1 && !glowColors && cards.length) {

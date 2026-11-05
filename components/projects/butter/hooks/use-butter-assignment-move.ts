@@ -44,7 +44,7 @@ export function useButterAssignmentMove({
 	useEffect(() => () => stopFocusRestore.current?.(), []);
 	const sequence = useRef(0);
 	const [issueMoveRequest, setIssueMoveRequest] = useState<JiraKanbanIssueMoveRequest>();
-	const queueUpdate = useCallback((issueKey: string, update: PendingAssignment["update"], onApplied?: () => void, animation?: "flight") => {
+	const queueUpdate = useCallback((issueKey: string, update: PendingAssignment["update"], onApplied?: () => void, animation?: "fade", feedback?: "trace") => {
 		stopFocusRestore.current?.();
 		stopFocusRestore.current = undefined;
 		const move = getButterCardMove(boardColumns, update(boardColumns), issueKey);
@@ -54,7 +54,7 @@ export function useButterAssignmentMove({
 			return;
 		}
 		pending.current = { issueKey, update, columnTitle: move.columnTitle, onApplied };
-		setIssueMoveRequest({ ...move, id: ++sequence.current, feedback: "none", animation });
+		setIssueMoveRequest({ ...move, id: ++sequence.current, feedback: feedback ?? "none", animation });
 	}, [boardColumns, setBoardColumns]);
 	const onBoardAssignedAgentIdsChange = useCallback((issueKey: string, agentIds: readonly string[]) => {
 		queueUpdate(issueKey, (columns) => applyAssignedAgentIdsToColumns(columns, issueKey, agentIds, catalog));

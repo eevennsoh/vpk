@@ -10,7 +10,7 @@ async function startClaude(page: Page) {
 	await item.getByRole("button", { name: /suggestions$/ }).click();
 	await page.getByRole("button", { name: "Accept all" }).click();
 	await page.getByRole("button", { name: "Close suggestions" }).click();
-	await item.getByRole("button", { name: /\. Add agent$/ }).click();
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
@@ -55,6 +55,9 @@ test("replying to Claude keeps the agent mention as a chip when reopening the dr
 	const editor = acknowledgment.getByRole("textbox", { name: "Leave a reply..." });
 	const mention = editor.locator('[data-mention-category="subagent"]');
 	await expect(mention).toHaveText("Claude");
+	const tag = mention.locator('[data-slot="tag"]');
+	await expect(tag.locator('[data-slot="avatar"][data-shape="hexagon"]')).toBeVisible();
+	await expect.poll(async () => tag.evaluate((element) => getComputedStyle(element).fontSize)).toBe(await editor.evaluate((element) => getComputedStyle(element).fontSize));
 	await editor.pressSequentially("Please include the sandbox checklist");
 	await expect(mention).toHaveCount(1);
 	await reply.click();
