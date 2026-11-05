@@ -603,6 +603,7 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video:not([hidden
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-toolbar { order: 0; padding-block: 28px 20px; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { order: 1; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { order: 2; margin-block: 20px 6px; }
-body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { order: 3; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { order: 3; margin-inline: 0; text-align: start; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure-hint { visibility: hidden; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { order: 4; }
 body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { order: 5; align-self: start; }

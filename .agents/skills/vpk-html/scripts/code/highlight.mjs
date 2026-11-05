@@ -38,8 +38,10 @@ export const CODE_BLOCK_CSS = `${CODE_TOKENS_CSS}
 .vpk-code-head a { color: inherit; text-decoration: none; }
 .vpk-code-head a:hover { color: var(--ink); }
 .vpk-code-lang { color: var(--subtlest-text); }
-.vpk-code pre { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; display: block; inline-size: 100%; max-inline-size: 100%; box-sizing: border-box; margin: 0; padding: 12px 0; text-align: start; white-space: normal; overflow-x: auto; background: transparent; border: 0; font: 12px/1.7 var(--font-mono); tab-size: 2; }
+.vpk-code pre { display: block; inline-size: 100%; max-inline-size: 100%; box-sizing: border-box; margin: 0; padding: 12px 0; text-align: start; white-space: normal; overflow-x: auto; background: transparent; border: 0; font: 12px/1.7 var(--font-mono); tab-size: 2; }
 .vpk-code code { display: block; inline-size: max-content; min-inline-size: 100%; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: inherit; font: inherit; counter-reset: vpk-line var(--vpk-code-start, 0); }
+/* Geist Mono draws === and => as joined glyphs; code shows the characters as typed. After the font shorthand, which resets ligatures. */
+.vpk-code code, .vpk-code code * { font-variant-ligatures: none !important; font-feature-settings: "liga" 0, "calt" 0 !important; }
 .vpk-code .sh__line { display: block; padding-inline: 14px 18px; white-space: pre; }
 .vpk-code .sh__line::before { counter-increment: vpk-line; content: counter(vpk-line); display: inline-block; inline-size: 3ch; margin-inline-end: 14px; color: var(--subtlest-text); text-align: end; opacity: .7; user-select: none; }
 .vpk-code .sh__line[data-mark] { background: color-mix(in oklab, var(--ill-accent) 14%, transparent); box-shadow: inset 2px 0 var(--ill-accent); }
