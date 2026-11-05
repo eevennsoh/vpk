@@ -14,7 +14,7 @@ export function ProjectButterSuggestionCursor({ after, finishing, rootRef }: Rea
 	const cursorRef = useRef<HTMLDivElement>(null);
 	const reduced = useReducedMotion();
 	const departure = reduced ? { duration: 0 } : {
-		scale: { duration: motionDuration.slow, ease: motionEase.inOut },
+		scale: { delay: motionDuration.xxshort * 0.8, duration: motionDuration.slow, ease: motionEase.inOut },
 		opacity: { delay: motionDuration.xxshort, duration: motionDuration.medium, ease: motionEase.in },
 	};
 	useLayoutEffect(() => {
