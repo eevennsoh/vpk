@@ -103,9 +103,12 @@ export function ProjectButterCrew({ assignee, currentUser, field = false, onBrow
 	}
 	return (
 		<Popover onOpenChange={changeOpen} open={open}>
-			{field && sessions.length > 0 ? <div className="relative min-w-0">
-				<PopoverTrigger render={<button aria-label={fieldLabel} className="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring in-[section.rounded-lg]:-inset-x-[17px]" type="button" />} />
-				<div inert><AgentAssignmentDefaultField activityRowFlush addAgentLabel="Add agent" assignedAgents={assignedAgents} compactStatus /></div>
+			{field && sessions.length > 0 ? <div aria-label="Agent field" className="min-w-0" role="group">
+				<div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">Agent</div>
+				<div className="relative min-w-0">
+					<PopoverTrigger render={<button aria-label={fieldLabel} className="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring in-[section.rounded-lg]:-inset-x-[17px]" type="button" />} />
+					<div inert><AgentAssignmentDefaultField activityRowFlush addAgentLabel="Add agent" assignedAgents={assignedAgents} compactStatus /></div>
+				</div>
 			</div> : <PopoverTrigger render={<button aria-label={field ? "Add agent" : label} className={field ? "-mx-2 inline-flex min-h-8 items-center gap-2 rounded-sm px-2 text-sm text-text-subtle outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring" : "group/crew inline-flex shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"} disabled={!onStartAgent && (field || sessions.length === 0)} type="button" />}>
 				{field ? <><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AiAgentIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /><span>Add agent</span></> : (
 				<AvatarGroup className="-space-x-1.5" label="People and agents working on this item">

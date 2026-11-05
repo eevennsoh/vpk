@@ -219,6 +219,7 @@ test("the details agent field shows the shared working row and opens its session
 	const selected = [];
 	const sessions = [crewSession("existing", "running", "Claude"), crewSession("cursor", "running", "Cursor")];
 	const view = await renderCrew({ field: true, sessions, onStartAgent: (agent) => selected.push(agent.id), onOpenSession: (session) => opened.push(session.id) });
+	assert.equal(view.queryByText("Agent") !== null, true);
 	assert.equal(view.queryByText("Working") !== null, true);
 	await view.click(view.getByRole("button", { name: "2 agents: Working" }));
 	assert.equal(view.queryByRole("dialog", { name: "Agent sessions" }) !== null, true);

@@ -13,6 +13,7 @@ test("the agent row aligns with the other Details field icons and values", async
 	test.skip(await fields.locator('[data-field-id="status"]').count() > 0, "The older work-item layout does not contain the agent field.");
 	const agent = fields.getByRole("button", { name: "Cursor: Working", exact: true });
 	await expect(agent).toBeVisible();
+	await expect(fields.getByText("Agent", { exact: true })).toBeVisible();
 	const agentField = agent.locator("..");
 	await expect(agentField.getByText("Working", { exact: true })).toBeVisible();
 	await expect(agentField.locator('[data-slot="spinner"]')).toHaveCount(0);
