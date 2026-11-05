@@ -22,6 +22,9 @@ const item: SmartLinkItem = {
   onActionSelect={(action, smartLink) => console.log(action.id, smartLink.id)}
 />
 
+{/* Let a long title wrap with surrounding text */}
+<SmartLink item={item} wrap />
+
 {/* Bordered block card for the same item */}
 <SmartLink appearance="card" item={item} />`,
 		demoLayout: {
@@ -40,6 +43,18 @@ const item: SmartLinkItem = {
 				type: '"inline" | "card"',
 				default: '"inline"',
 				description: "Presentation mode. inline is the chip with hover flyout; card is the bordered block card for the same item.",
+			},
+			{
+				name: "size",
+				type: '"small" | "medium" | "large"',
+				default: '"small"',
+				description: "Inline label size: 12px, 14px, or 16px.",
+			},
+			{
+				name: "wrap",
+				type: "boolean",
+				default: "false",
+				description: "Allows an inline link title to wrap across lines instead of truncating.",
 			},
 			{
 				name: "side",
@@ -86,6 +101,7 @@ const item: SmartLinkItem = {
 			{ title: "Card", description: "Bordered block cards for every smart-link variant — Jira, Confluence, article, team, goal, project, Loom, file, generic, and pull request.", demoSlug: "smart-link-demo-card" },
 			{ title: "Removable (overlay)", description: "Smart Links with an X revealed over the trailing edge on hover or keyboard focus.", demoSlug: "smart-link-demo-removable-overlay" },
 			{ title: "Inline status", description: "Work item status rendered as a lozenge at the end of the inline chip.", demoSlug: "smart-link-demo-status" },
-			{ title: "Sizes", description: "12px and 16px inline chips for compact prose or prominent references.", demoSlug: "smart-link-demo-sizes" },
+			{ title: "Sizes", description: "12px, 14px, and 16px inline chips for compact prose or prominent references.", demoSlug: "smart-link-demo-sizes" },
+			{ title: "Wrapping", description: "Long titles wrap across lines in all three inline sizes.", demoSlug: "smart-link-demo-wrapping" },
 		],
 	};

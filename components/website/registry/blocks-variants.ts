@@ -537,6 +537,7 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	),
 	"smart-link-demo-status": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoStatus })), { ssr: false }),
 	"smart-link-demo-sizes": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoSizes })), { ssr: false }),
+	"smart-link-demo-wrapping": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoWrapping })), { ssr: false }),
 	"smart-link-demo-removable-overlay": dynamic(
 		() =>
 			import("../demos/blocks/smart-link-demo").then((mod) => ({

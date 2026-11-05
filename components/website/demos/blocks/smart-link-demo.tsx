@@ -140,8 +140,36 @@ export function SmartLinkDemoSizes() {
 				<SmartLink item={item} showStatus size="small" />
 			</div>
 			<div className="flex flex-col items-start gap-2">
+				<span className="text-xs font-medium leading-4 text-text-subtlest">Medium · 14px</span>
+				<SmartLink item={item} showStatus size="medium" />
+			</div>
+			<div className="flex flex-col items-start gap-2">
 				<span className="text-xs font-medium leading-4 text-text-subtlest">Large · 16px</span>
 				<SmartLink item={item} showStatus size="large" />
+			</div>
+		</div>
+	);
+}
+
+export function SmartLinkDemoWrapping() {
+	const item = {
+		...SMART_LINK_DEMO_ITEMS[0],
+		title: "Cards have inertia when dragging them around in Bento · Design Spells",
+	};
+
+	return (
+		<div className="flex min-h-[220px] w-full flex-col items-start gap-8 bg-surface px-6 py-12 text-text">
+			<div className="w-full max-w-xs space-y-2">
+				<span className="text-xs font-medium leading-4 text-text-subtlest">Small · 12px</span>
+				<p className="text-xs leading-[1.4]"><SmartLink item={item} size="small" wrap /></p>
+			</div>
+			<div className="w-full max-w-xs space-y-2">
+				<span className="text-xs font-medium leading-4 text-text-subtlest">Medium · 14px</span>
+				<p className="text-sm leading-[1.4]"><SmartLink item={item} size="medium" wrap /></p>
+			</div>
+			<div className="w-full max-w-xs space-y-2">
+				<span className="text-xs font-medium leading-4 text-text-subtlest">Large · 16px</span>
+				<p className="text-base leading-[1.4]"><SmartLink item={item} size="large" wrap /></p>
 			</div>
 		</div>
 	);

@@ -18,6 +18,9 @@ export default function SmartLinkPage({
 		<div className="min-h-[560px] w-full bg-surface px-8 py-16 text-text">
 			<div className="mx-auto max-w-5xl space-y-12">
 				<div className="space-y-4 text-sm leading-6">
+					<p className="max-w-sm">
+						<SmartLink item={{ ...items[0], title: "Cards have inertia when dragging them around in Bento · Design Spells" }} size="large" wrap />
+					</p>
 					<p>
 						<SmartLink item={items[0]} /> keeps planning work connected to source context while updates flow through related references.
 					</p>
