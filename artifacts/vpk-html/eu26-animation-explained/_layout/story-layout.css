@@ -376,7 +376,7 @@ body[data-vpk-layout="story"] .story-index a { display: inline-flex; align-items
 body[data-vpk-layout="story"] .story-index a[aria-current]:not([aria-current="false"]) { color: var(--ink); text-decoration: underline; text-underline-offset: 5px; }
 
 
-body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-intro { display: none; }
+body[data-vpk-layout="story"] [data-vpk-story]:is([data-story-mode="slides"], [data-story-mode="twitter"]) .story-intro { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { min-block-size: calc(100svh - var(--story-bar-height)); }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-reading { overflow: visible; }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: 0; padding-block: 32px; }
@@ -622,4 +622,21 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { m
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { margin-block: 2px 0; }
 @media (max-width: 760px) {
 	body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { block-size: calc(100svh - var(--story-bar-height) - 1px); }
+}
+
+/* Slides looks exactly like Page (text left, figure page right), only shorter: the page is one viewport and the figure
+   page ends above the bottom slide timeline (16px inset + 60px timeline + 12px gap). A chapter whose text is taller than
+   the figure scrolls inside its reading column. [data-vpk-story] outranks footer-timeline.css's slides padding. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"] { --story-slides-reserve: calc(16px + 60px + 12px); }
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-layout {
+		box-sizing: border-box;
+		block-size: 100svh;
+		min-block-size: 0;
+		padding-block: calc(var(--story-top) + var(--story-figure-inset)) var(--story-slides-reserve);
+	}
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-stage { position: relative; inset-block-start: auto; block-size: 100%; }
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] #animation-explorer .iso-stage { block-size: calc(var(--story-hero-height) - var(--story-slides-reserve) + var(--story-figure-inset)); }
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-reading { block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-step { min-block-size: 0; justify-content: start; padding-block: 56px 32px; }
 }
