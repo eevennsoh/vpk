@@ -79,18 +79,22 @@ export type {
 	SmartLinkVisual,
 } from "@/components/blocks/smart-link/components/smart-link-types";
 
-// Inline chip geometry per size. `small` keeps the original VPK Tag metrics
-// (12px label on a 20px pill); medium and large scale to 14px and 16px.
 const triggerSizeClasses: Record<SmartLinkSize, string> = {
-	small: "h-5 gap-1 ps-px pe-[3px] text-xs leading-4",
-	medium: "h-6 gap-1 ps-0.5 pe-0.5 text-sm leading-5",
-	large: "h-7 gap-1.5 ps-1 pe-1 text-base leading-6",
+	small: "h-[16.5px] gap-1 pe-[3px] text-xs leading-4",
+	medium: "h-[19px] gap-1 pe-0.5 text-sm leading-5",
+	large: "h-[21.5px] gap-1.5 pe-1 text-base leading-6",
 };
 
 const wrappingTriggerSizeClasses: Record<SmartLinkSize, string> = {
-	small: "px-px text-xs leading-[1.4]",
-	medium: "px-[1.5px] text-sm leading-[1.4]",
-	large: "px-0.5 text-base leading-[1.4]",
+	small: "pe-px text-xs leading-[1.4]",
+	medium: "pe-[1.5px] text-sm leading-[1.4]",
+	large: "pe-0.5 text-base leading-[1.4]",
+};
+
+const triggerIconInsetClasses: Record<SmartLinkSize, string> = {
+	small: "ps-px",
+	medium: "ps-[1.5px]",
+	large: "ps-0.5",
 };
 
 const triggerVisualClasses: Record<SmartLinkSize, string> = {
@@ -102,19 +106,15 @@ const triggerVisualClasses: Record<SmartLinkSize, string> = {
 // Status lozenge height per chip size so it fits inside the pill's inner height
 // without being clipped by the chip's `overflow-hidden`.
 const triggerStatusClasses: Record<SmartLinkSize, string> = {
-	small: "h-4 text-[11px]",
-	medium: "h-4 text-[11px]",
-	large: "h-5 text-xs",
+	small: "h-3.5 py-0 text-[11px] leading-none",
+	medium: "h-4 py-0 text-[11px] leading-none",
+	large: "h-[18px] py-0 text-xs leading-none",
 };
 
-// Right padding when a status lozenge trails the label. A bare-text chip pads the
-// right more than its top/bottom gap; the lozenge already carries its own inset,
-// so tighten the right padding per size until the gap beside it equals the chip's
-// top/bottom gap (each value = top/bottom gap − 1px chip border).
 const triggerStatusPaddingClasses: Record<SmartLinkSize, string> = {
-	small: "pe-px", // 1px pad + 1px border = 2px, matching the 2px top/bottom gap
-	medium: "pe-0.5",
-	large: "pe-[3px]", // 3px pad + 1px border = 4px, matching the 4px top/bottom gap
+	small: "pe-[0.25px]",
+	medium: "pe-[0.5px]",
+	large: "pe-[0.75px]",
 };
 
 type SmartLinkTriggerBaseProps = {
@@ -158,14 +158,11 @@ function SmartLinkTrigger({
 	// card uses (`item.status`), which keeps the glyph consistent everywhere.
 	const iconTone = statusIconTone(item.variant, item.variant === "goal" ? status : item.status);
 	const triggerClassName = cn(
-		// Extends the VPK Tag visual contract: the small size keeps the same
-		// compact pill metrics (h-5, text-xs/leading-4, rounded-sm) so the
-		// inline chip sits on a single text line. Per-size gaps/padding live in
-		// triggerSizeClasses.
 		"group/smart-link relative rounded-sm border border-border bg-bg-neutral-subtle py-0 align-middle font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 		wrap
 			? cn("box-decoration-clone whitespace-normal [overflow-wrap:anywhere]", onActivate ? "inline-block max-w-full text-start" : "inline", wrappingTriggerSizeClasses[size])
 			: cn("inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden", triggerSizeClasses[size]),
+		triggerIconInsetClasses[size],
 		// Match the gap beside a trailing status lozenge to the chip's
 		// top/bottom gap (see triggerStatusPaddingClasses).
 		status ? triggerStatusPaddingClasses[size] : null,
