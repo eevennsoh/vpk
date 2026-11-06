@@ -3547,6 +3547,9 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { order: 1;
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { order: 2; margin-block: 20px 6px; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { order: 3; margin-inline: 0; text-align: start; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure-hint { visibility: hidden; }
+/* One hint per mode: scrolling modes scrub by scroll; Slides steps with the arrow keys or its bottom timeline. */
+body[data-vpk-layout="story"] [data-vpk-story]:not([data-story-mode="slides"]) .story-figure-hint[data-hint-for="slides"],
+body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-figure-hint[data-hint-for="scroll"] { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { order: 4; }
 body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { order: 5; align-self: start; }
 
@@ -4143,6 +4146,10 @@ body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-ti
 	margin-block: 0;
 	padding: 8px 12px;
 	background: var(--paper);
+}
+/* Two columns: the Slides timeline centres under the figure page (story-layout.js publishes the offset). */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-timeline-view="slides"] { translate: var(--story-stage-shift, 0px) 0; }
 }
 body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .eu26-dock-bar {
 	grid-template-columns: minmax(0, 1fr) auto;
@@ -4955,7 +4962,7 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 } });</script>
 <!-- vpk-anatomy-hero:end id="eu26-hero" -->
 </section>
-				<div class="story-figure-corner story-figure-bottom" aria-hidden="true"><span class="story-figure-hint">Scroll to scrub · hover the rail to preview</span><span class="story-figure-readout" data-story-fig-readout>t 0.0 s · 01 / 12</span></div>
+				<div class="story-figure-corner story-figure-bottom" aria-hidden="true"><span class="story-figure-hint" data-hint-for="scroll">Scroll to scrub · hover the rail to preview</span><span class="story-figure-hint" data-hint-for="slides">Arrow keys or the timeline below</span><span class="story-figure-readout" data-story-fig-readout>t 0.0 s · 01 / 12</span></div>
 			</div>
 		</aside>
 		<section class="story-video" data-story-video hidden inert aria-labelledby="video-heading">
@@ -6255,6 +6262,9 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			// Side by side, the stage never covers the text, so read at a fixed line in the upper third.
 			const beside = stageRect.left >= readingRect.right - 1 || stageRect.right <= readingRect.left + 1;
 			readingLine = beside ? stickyTop + (viewport - stickyTop) * 0.4 : Math.min(viewport - 24, stickyTop + stageRect.height + 32);
+			// Side by side, bottom controls (the Slides timeline) centre under the figure page, not the whole window.
+			const shift = beside ? Math.round((stageRect.left + stageRect.right) / 2 - document.documentElement.clientWidth / 2) : 0;
+			root.style.setProperty('--story-stage-shift', `${shift}px`);
 			const scrollY = window.scrollY;
 			anchors = mode === 'slides' || mode === 'video' ? [] : articles.map(article => {
 				const target = article.querySelector('h2') || article;

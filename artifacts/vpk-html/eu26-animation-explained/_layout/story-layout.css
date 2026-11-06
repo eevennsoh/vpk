@@ -605,6 +605,9 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { order: 1;
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { order: 2; margin-block: 20px 6px; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { order: 3; margin-inline: 0; text-align: start; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure-hint { visibility: hidden; }
+/* One hint per mode: scrolling modes scrub by scroll; Slides steps with the arrow keys or its bottom timeline. */
+body[data-vpk-layout="story"] [data-vpk-story]:not([data-story-mode="slides"]) .story-figure-hint[data-hint-for="slides"],
+body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-figure-hint[data-hint-for="scroll"] { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { order: 4; }
 body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { order: 5; align-self: start; }
 

@@ -25,13 +25,15 @@ test('Slides uses the chapter timeline horizontally at the bottom', { timeout: 9
 				explorer.pause();root.querySelector('button[data-story-mode="slides"]').click();await settle();
 				const ticks=[...dock.querySelectorAll('.eu26-timeline-tick')],centers=ticks.map(tick=>{const r=rect(tick);return(r.left+r.right)/2;});
 				return {state:ui.getState(),count:ticks.length,range:[input.min,input.max,input.step,input.getAttribute('aria-orientation')],
-					position:getComputedStyle(dock).position,dock:rect(dock),width:innerWidth,height:innerHeight,
+					position:getComputedStyle(dock).position,dock:rect(dock),stage:rect(document.querySelector('[data-story-stage]')),width:innerWidth,height:innerHeight,
 					gaps:centers.slice(1).map((center,index)=>center-centers[index]),timers:dock.querySelectorAll('output,.eu26-timeline-timestamp').length};
 			`);
 			assert.equal(result.state.orientation,'horizontal');assert.equal(result.state.navigation,'pages');
 			assert.equal(result.count,12);assert.deepEqual(result.range,['0','11','any','horizontal']);assert.equal(result.timers,0);
 			assert.equal(result.position,'fixed');assert.ok(result.height-result.dock.bottom>=15 && result.height-result.dock.bottom<=25);
-			assert.ok(Math.abs((result.dock.left+result.dock.right)/2-result.width/2)<1);
+			// From 1024px the timeline centres under the figure page beside the text; narrower, under the whole window.
+			const centre=result.width>=1024?(result.stage.left+result.stage.right)/2:result.width/2;
+			assert.ok(Math.abs((result.dock.left+result.dock.right)/2-centre)<1.5,`slides timeline centres under ${result.width>=1024?'the figure page':'the window'}`);
 			assert.ok(Math.max(...result.gaps)-Math.min(...result.gaps)<.02);
 		});
 		await t.test('native slide scrubbing and arrow keys synchronize the visible text and model', () => {

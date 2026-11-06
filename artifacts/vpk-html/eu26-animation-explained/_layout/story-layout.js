@@ -113,6 +113,9 @@
 			// Side by side, the stage never covers the text, so read at a fixed line in the upper third.
 			const beside = stageRect.left >= readingRect.right - 1 || stageRect.right <= readingRect.left + 1;
 			readingLine = beside ? stickyTop + (viewport - stickyTop) * 0.4 : Math.min(viewport - 24, stickyTop + stageRect.height + 32);
+			// Side by side, bottom controls (the Slides timeline) centre under the figure page, not the whole window.
+			const shift = beside ? Math.round((stageRect.left + stageRect.right) / 2 - document.documentElement.clientWidth / 2) : 0;
+			root.style.setProperty('--story-stage-shift', `${shift}px`);
 			const scrollY = window.scrollY;
 			anchors = mode === 'slides' || mode === 'video' ? [] : articles.map(article => {
 				const target = article.querySelector('h2') || article;
