@@ -6,17 +6,20 @@ const at = (time, variant = 'paper') => model({ time, variant }, data);
 const distance = (left, right) => Math.hypot(...left.map((value, index) => value - right[index]));
 const wallPieces = state => [...state.wall, ...state.wallCopies];
 
-test('intro cards stay on the board while the cursor carries the active card above its landing surface', () => {
+test('intro cards hold until the group drag, column 3 closes its gap, then every board card leaves for Done', () => {
 	const initial = at(0);
-	const moved = new Set(data.doneList.cards.slice(0, 3).map(row => row.card));
+	const pitch = data.cards[1].home[1] - data.cards[0].home[1];
+	const moved = new Set([15]);
 	const retained = initial.cards.flatMap((pose, index) => pose.alpha > .99 && !moved.has(index) ? [index] : []);
+	const reflowed = new Set(retained.filter(index => index > 15));
 	assert.ok(retained.length >= 6, 'the source columns keep the previous visible cards');
-	for (const time of [0, .5, 1, 1.9, 2, 4, 5.7, 6, 10, 13]) {
+	for (const time of [0, .5, 1, 1.9, 2, 4]) {
 		const state = at(time);
 		for (const index of retained) {
 			assert.equal(state.cards[index].alpha, 1, `story ${index} remains visible at ${time}s`);
-			assert.deepEqual(state.cards[index].at, initial.cards[index].at, `story ${index} keeps its board position`);
-			assert.equal(state.cards[index].clip, false, 'a previous source card is not clipped to Done');
+			assert.equal(state.cards[index].clip, false, 'a source card is not clipped to Done before the group drag');
+			if (!reflowed.has(index)) assert.deepEqual(state.cards[index].at, initial.cards[index].at, `story ${index} keeps its board position`);
+			else if (time >= 1.4) assert.ok(Math.abs(state.cards[index].at[1] - (initial.cards[index].at[1] - pitch)) < 1e-6, `story ${index} moves up one row to close the gap`);
 		}
 		if (time < 2) {
 			const cursor = state.cursors.find(cursor => cursor.id === 'main');
@@ -26,6 +29,10 @@ test('intro cards stay on the board while the cursor carries the active card abo
 			assert.equal(state.cards[15].clip, false, 'the card crosses the board edge without a Done-window clip');
 			assert.ok(state.cards[15].at[2] >= data.cards[15].home[2], 'the card stays above the board');
 		}
+	}
+	for (const time of [6.5, 10]) {
+		const state = at(time);
+		for (const index of retained) assert.ok(state.cards[index].alpha < .001 || state.cards[index].clip, `story ${index} has left the board for Done at ${time}s`);
 	}
 	const landed = at(2).cards[15];
 	const firstRow = data.doneList.cards[0];

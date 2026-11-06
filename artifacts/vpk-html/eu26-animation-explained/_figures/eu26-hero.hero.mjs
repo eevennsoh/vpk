@@ -194,7 +194,8 @@ function sourceWall() {
 	});
 }
 const doneOrder = [15, ...Array.from({ length: 23 }, (_, i) => i).filter(i => i !== 15)];
-const doneViewport = { x: 225, y: -158, w: 185, d: 374, r: 6 };
+// The Done list window reaches the column's inner bottom edge, so the list looks full and its last visible card is clipped.
+const doneViewport = { x: 225, y: -158, w: 185, d: 448, r: 6 };
 
 export const data = {
 	motion: motionConfig,
@@ -289,7 +290,6 @@ export function build(kit, { data }) {
 	for (let i = 0; i < 4; i += 1) {
 		const x = -394 + i * 205;
 		put(`board.column${i}`, { x, y: -184, w: 193, d: 478, r: 6 }, -2, 1, "chrome");
-		put(`board.scroll${i}`, { x: x + 187, y: -148, w: 2, d: 420, r: 1 }, -0.9, 0.4, "chrome");
 	}
 	data.cards.forEach((card, i) => {
 		const plan = { x: card.home[0], y: card.home[1], w: card.w, d: card.d, r: 4.5 };

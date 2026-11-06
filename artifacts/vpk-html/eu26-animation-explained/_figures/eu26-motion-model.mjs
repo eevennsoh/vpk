@@ -91,11 +91,38 @@ export function model(input, data) {
 		const radius = 190 + Math.sqrt(i + 1) * 100 + (random(i, 2) - 0.5) * 150;
 		return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.66 - 25, 35 + random(i, 3) * 245];
 	};
+	const pitch = data.cards[1].home[1] - data.cards[0].home[1];
+	// Done shows every row whose top edge falls inside its window; the last of them is clipped by the column's bottom edge.
+	const windowBottom = data.doneList.viewport.y + data.doneList.viewport.d;
+	const visibleRows = data.doneList.cards.filter(row => row.y < windowBottom).length;
+	const stackSlot = data.doneList.cards.find(row => row.rank === visibleRows - 1);
+	// The cursor's card in the group drag (card 0): the rest of the selection gathers under it as a deck.
+	const leaderRow = data.doneList.cards.find(row => row.card === 0), leaderCard = data.cards[0];
+	const leaderAt = atTime => {
+		const s = ease((atTime - 4.3) / 1.2);
+		const from = [leaderCard.home[0] + leaderCard.w / 2, leaderCard.home[1] + leaderCard.d / 2, leaderCard.home[2]];
+		const to = [leaderRow.x + leaderRow.w / 2, leaderRow.y + leaderRow.d / 2, 4];
+		const at = between(from, to, s);
+		at[2] += Math.sin(s * Math.PI) * 75;
+		return at;
+	};
 	const cards = data.cards.map((card, i) => {
-		const home = [card.home[0] + card.w / 2, card.home[1] + card.d / 2, card.home[2]];
+		const column = card.home[0] === data.cards[0].home[0] ? 0 : card.home[0] === data.cards[8].home[0] ? 1 : 2;
+		// Close the gap: as the first card (15) leaves its column, the cards below it slide up one row and the next hidden
+		// card scrolls into view, as a real board reflows.
+		const reflow = column === 2 && card.row > 1 ? ease((time - 0.7) / 0.7) : 0;
+		const home = [card.home[0] + card.w / 2, card.home[1] + card.d / 2 - pitch * reflow, card.home[2]];
 		const row = data.doneList.cards.find(row => row.card === i);
-		const done = [row.x + row.w / 2, row.y + row.d / 2, 4], inWindow = row.rank < 3;
-		let at = home, rot = [0, 0, 0], alpha = card.row < 3 ? 1 : 0;
+		const done = [row.x + row.w / 2, row.y + row.d / 2, 4], inWindow = row.rank < visibleRows;
+		// Every other completed card joins the multi-select drag: it gathers under the cursor's card as a tidy deck, travels
+		// with it, then sinks into Done's stack below the window once the deck lands, so no card flies off the board.
+		const moved = i !== 15 && !inWindow;
+		const stack = [stackSlot.x + stackSlot.w / 2, stackSlot.y + stackSlot.d / 2, 3];
+		const deckIndex = row.rank - visibleRows + 2;
+		const groupDelay = Math.min(0.3, 0.025 * deckIndex);
+		const groupU = moved ? clamp((time - 4.3 - groupDelay) / 1.9) : 0;
+		const shown = card.row < 3 || (column === 2 && card.row === 3) ? (card.row < 3 ? 1 : reflow) : 0;
+		let at = home, rot = [0, 0, 0], alpha = shown;
 		if (i === 15 && time > 0) {
 			const s = ease(time / 2);
 			at = between(home, done, s);
@@ -103,25 +130,45 @@ export function model(input, data) {
 			rot = [0, Math.sin(s * Math.PI) * 0.2, Math.sin(s * Math.PI) * -0.18];
 		}
 		if (time > 4.3 && inWindow) {
-			const s = ease((time - 4.3 - (row.rank === 2 ? 0.14 : 0)) / 1.2);
-			at = between(i === 15 ? done : home, done, s);
-			at[2] += Math.sin(s * Math.PI) * (i === 15 ? 0 : 75);
+			if (row.rank >= 2) {
+				// Later visible Done cards ride in the cursor's deck, then settle into their own rows.
+				const deck = leaderAt(time).map((value, axis) => value + [-3, 4, -1.2][axis] * (row.rank - 1));
+				const gather = ease((time - 4.3) / 0.55), settle = ease((time - 5.3) / 0.5);
+				at = between(between(home, deck, gather), done, settle);
+				at[2] += Math.sin(gather * Math.PI) * 30 * (1 - settle);
+			} else {
+				const s = ease((time - 4.3) / 1.2);
+				at = between(i === 15 ? done : home, done, s);
+				at[2] += Math.sin(s * Math.PI) * (i === 15 ? 0 : 75);
+			}
 			alpha = 1;
 		}
+		if (moved && groupU > 0) {
+			// Deck slot under the leader: each card sits a little lower and behind the one above it.
+			const deck = leaderAt(time).map((value, axis) => value + [-3, 4, -1.2][axis] * Math.min(deckIndex, 6));
+			const gather = ease((time - 4.3 - groupDelay) / 0.55);
+			const sink = ease((time - 5.2 - groupDelay * 0.25) / 0.5);
+			at = between(between(home, deck, gather), stack, sink);
+			at[2] += Math.sin(gather * Math.PI) * 30 * (1 - sink);
+			alpha = shown > 0 ? 1 - ease((time - 5.45 - groupDelay * 0.25) / 0.35) : 0;
+		}
+		// Cards sunk below the window launch the field from their own (hidden) Done rows, so no two start from one pose.
+		const rest = inWindow || moved ? done : home;
 		if (time > 13) {
 			const delay = i === 15 ? 0 : random(i, 4) * 0.18;
 			const u = clamp((time - 13 - delay) / (2.88 - delay)), s = ease(u), impulse = u * (1 - u) ** 2 * 4;
-			at = between(inWindow ? done : home, fieldAt(i), s);
+			at = between(rest, fieldAt(i), s);
 			const velocity = [(random(i, 5) - 0.5) * 520, (random(i, 6) - 0.5) * 420, 180 + random(i, 7) * 350];
 			velocity[0] += i === 17 ? 160 : i === 20 ? 140 : 0;
 			at = at.map((value, axis) => value + velocity[axis] * impulse * (i === 15 ? 0.28 : 1));
-			const pitch = (random(i, 8) - 0.5) * 1.05, yaw = (random(i, 9) - 0.5) * 1.1;
-			rot = i === 15 ? [0, 0, 0] : [pitch * s + Math.sin(u * Math.PI) * (random(i, 10) - 0.5) * 1.8, yaw * s + Math.sin(u * Math.PI) * (random(i, 11) - 0.5) * 2.1, (random(i, 12) - 0.5) * 0.9 * s];
-			alpha = mix(inWindow || card.row < 3 ? 1 : 0, 1, ease(u / 0.32));
+			const pitchAngle = (random(i, 8) - 0.5) * 1.05, yaw = (random(i, 9) - 0.5) * 1.1;
+			rot = i === 15 ? [0, 0, 0] : [pitchAngle * s + Math.sin(u * Math.PI) * (random(i, 10) - 0.5) * 1.8, yaw * s + Math.sin(u * Math.PI) * (random(i, 11) - 0.5) * 2.1, (random(i, 12) - 0.5) * 0.9 * s];
+			alpha = mix(inWindow ? 1 : 0, 1, ease(u / 0.32));
 		}
 		if (time > 19) alpha *= 1 - ease((time - 19) / 1.2);
 		const highlight = i === 15 ? 1 : ease((time - 4.3) / 1.2) * (1 - ease((time - 13.2) / 2.5));
-		return { ...pose(at, rot, 1, alpha, highlight), clip: time <= 13 && inWindow && ((i === 15 && time >= 2) || (i !== 15 && time >= 5.5)), listAt: done, rank: row.rank, listVisible: inWindow };
+		const clip = time <= 13 && ((inWindow && ((i === 15 && time >= 2) || (i !== 15 && time >= 5.5))) || (moved && groupU > 0.6));
+		return { ...pose(at, rot, 1, alpha, highlight), clip, listAt: done, rank: row.rank, listVisible: inWindow };
 	});
 	const field = data.wallField, periodX = field?.periodX ?? 3800, periodY = field?.periodY ?? 3800;
 	const lastShot = data.cameraKeys[data.cameraKeys.length - 1], lastCamera = { ...lastShot, height: lastShot.width * 760 / 1200 };

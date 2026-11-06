@@ -45,13 +45,13 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 	run('wait', '--fn', 'Boolean(window.__eu26Explorer)');
 	try {
 		await t.test('the intro keeps previous cards and the complete landing face', () => {
-			const retained = data.cards.flatMap((card, index) => card.row < 3 && !data.doneList.cards.slice(0, 3).some(row => row.card === index) ? [index] : []);
+			const retained = data.cards.flatMap((card, index) => card.row < 3 && index !== 15 ? [index] : []);
 			const result = scenario(`
 				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
 				explorer.setVariant('paper');
 				const retained = ${JSON.stringify(retained)};
 				const failures = [];
-				for (const time of [0, .4, 1, 1.9, 2, 6, 13]) {
+				for (const time of [0, .4, 1, 1.9, 2]) {
 					explorer.seek(time);
 					for (const index of retained) if (!visible(piece('story.' + index))) failures.push('previous card ' + index + ' hidden at ' + time);
 					const active = piece('story.15');

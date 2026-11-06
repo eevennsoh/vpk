@@ -156,7 +156,8 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 					const rectangle = { x: pose.at[0] - card.w * pose.scale / 2, y: pose.at[1] - card.d * pose.scale / 2, w: card.w * pose.scale, d: card.d * pose.scale };
 					return overlaps(rectangle, viewport) ? [rectangle] : [];
 				});
-				assert.equal(visible.length, 3, `three readable rows remain in the Done window at ${time} seconds`);
+				assert.equal(visible.length, 4, `Done is full at ${time} seconds: three readable rows and a fourth clipped by the column`);
+					assert.ok(Math.max(...visible.map(card => card.y + card.d)) > viewport.y + viewport.d, 'the lowest visible Done card runs past the window edge');
 				for (let left = 0; left < visible.length; left++) {
 					for (let right = left + 1; right < visible.length; right++) assert.equal(overlaps(visible[left], visible[right]), false, `visible Done cards do not overlap at ${time} seconds`);
 				}
