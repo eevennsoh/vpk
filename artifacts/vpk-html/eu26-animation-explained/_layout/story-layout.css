@@ -502,22 +502,9 @@ body[data-vpk-layout="story"] .story-layout:fullscreen #animation-explorer .iso-
 	body[data-vpk-layout="story"] .story-video { padding-block: 20px; }
 }
 
-/* The figure page: on wide screens a soft paper card with a 1px ring, no border, and four corners of furniture
-   (Fig. number, chapter title, hint, live readout). Stacked layouts keep the bare figure. */
+/* The figure page: on wide screens a soft paper card with a 1px ring and no border; the drawing alone fills it.
+   Stacked layouts keep the bare figure. */
 body[data-vpk-layout="story"] .story-figure { position: relative; display: flex; flex-direction: column; block-size: 100%; }
-body[data-vpk-layout="story"] .story-figure-corner {
-	display: none;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 16px;
-	color: var(--muted-text);
-	font: 11px/1.4 var(--font-mono);
-	font-variant-numeric: tabular-nums;
-}
-body[data-vpk-layout="story"] .story-figure-number { flex: 0 0 auto; color: var(--subtlest-text); }
-body[data-vpk-layout="story"] .story-figure-title { color: var(--ink); font: 400 15px/1.3 var(--font-body); letter-spacing: -0.01em; text-align: end; }
-body[data-vpk-layout="story"] .story-figure-hint { color: var(--subtlest-text); }
-body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 
 /* Two columns from 1024px: the reading page on the left, the figure page pinned on the right (about 41/59).
    Narrower viewports stack the figure above the text. */
@@ -525,7 +512,7 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 	body[data-vpk-layout="story"] {
 		--story-figure-inset: 16px;
 		--story-rail-room: 20px;
-		--story-hero-height: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset) - 104px);
+		--story-hero-height: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset) - 40px);
 	}
 	body[data-vpk-layout="story"] .story-layout {
 		display: grid;
@@ -560,7 +547,6 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 		box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 7%, transparent);
 	}
 	body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure { block-size: auto; }
-	body[data-vpk-layout="story"] .story-figure-corner { display: flex; }
 	body[data-vpk-layout="story"] .story-figure .story-stage-heading { position: absolute; z-index: 2; inset-block-start: 8px; inset-inline-end: 10px; min-block-size: 0; margin: 0; }
 	body[data-vpk-layout="story"] .story-figure #animation-explorer { flex: 1 1 auto; display: grid !important; align-items: center; }
 	body[data-vpk-layout="story"] .story-figure #animation-explorer .iso-stage { block-size: var(--story-hero-height); }
@@ -587,7 +573,6 @@ body[data-vpk-layout="story"] .story-step-detail { inline-size: 100%; }
 @media print {
 	body[data-vpk-layout="story"] .story-layout { display: block !important; }
 	body[data-vpk-layout="story"] .story-figure { box-shadow: none; padding: 0; }
-	body[data-vpk-layout="story"] .story-figure-corner { display: none !important; }
 }
 
 /* Video: the heading stays on top, the figure follows, and the timeline, chapter and status sit under the figure like a
@@ -598,10 +583,6 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video:not([hidden
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { order: 1; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { order: 2; margin-block: 20px 6px; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { order: 3; margin-inline: 0; text-align: start; }
-body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure-hint { visibility: hidden; }
-/* One hint per mode: scrolling modes scrub by scroll; Slides steps with the arrow keys or its bottom timeline. */
-body[data-vpk-layout="story"] [data-vpk-story]:not([data-story-mode="slides"]) .story-figure-hint[data-hint-for="slides"],
-body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-figure-hint[data-hint-for="scroll"] { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { order: 4; }
 body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { order: 5; align-self: start; }
 /* Generate sits in the timeline's action row beside Fullscreen (video-view.js moves it) and exists only in Video. */

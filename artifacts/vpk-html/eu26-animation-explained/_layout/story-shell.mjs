@@ -1,8 +1,7 @@
 const escape = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 export const jsonIsland = value => JSON.stringify(value).replaceAll('<', '\\u003c');
 
-export function renderStoryShell({ title, description, eyebrow, steps, hero, controls = '', appearance = '', playbackRate = 1, figureHint = 'Scroll to scrub · hover the rail to preview', slidesHint = 'Arrow keys or the timeline below', sourcesHref = '', icons = {} }) {
-	const pad = value => String(value).padStart(2, '0');
+export function renderStoryShell({ title, description, eyebrow, steps, hero, controls = '', appearance = '', playbackRate = 1, sourcesHref = '', icons = {} }) {
 	// The reading controls live in the rail column above the chapter ticks: view modes, sources, theme. Icon buttons carry
 	// their names in aria-label and a hover title, so the stack stays one tick-rail wide.
 	const modes = [['story', 'Page', icons.page], ['slides', 'Slides', icons.slides], ['twitter', 'X Threads', icons.threads], ['video', 'Video', icons.video]];
@@ -14,10 +13,8 @@ export function renderStoryShell({ title, description, eyebrow, steps, hero, con
 	<div class="story-layout">
 		<aside class="story-stage" data-story-stage aria-label="Anchored animation">
 			<div class="story-figure">
-				<div class="story-figure-corner story-figure-top" aria-hidden="true"><span class="story-figure-number">Fig. <span data-story-fig-number>01</span></span><span class="story-figure-title" data-story-fig-title>${escape(steps[0].title)}</span></div>
 				${appearance ? `<div class="story-stage-heading">${appearance}</div>` : ""}
 				${hero}
-				<div class="story-figure-corner story-figure-bottom" aria-hidden="true"><span class="story-figure-hint" data-hint-for="scroll">${escape(figureHint)}</span><span class="story-figure-hint" data-hint-for="slides">${escape(slidesHint)}</span><span class="story-figure-readout" data-story-fig-readout>t 0.0 s · 01 / ${pad(steps.length)}</span></div>
 			</div>
 		</aside>
 		<section class="story-video" data-story-video hidden inert aria-label="Video preview">
