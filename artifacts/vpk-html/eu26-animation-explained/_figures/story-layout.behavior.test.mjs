@@ -92,7 +92,7 @@ test('one sticky hero follows a readable story with accessible alternative layou
 						const lower=Math.floor(value),next=Math.min(chapterTimes.length-1,lower+1);
 						frames.push({ mode, value, expectedTime:pages?chapterTimes[lower]+(chapterTimes[next]-chapterTimes[lower])*(value-lower):value*1.7, time: state.time, index: state.selectedIndex,
 							storyIndex: story.getState().index, active: active(), headingTop: heading.top,
-							headingBottom: heading.bottom, readingLine: story.getState().readingLine,
+							headingBottom: heading.bottom, readingLine: story.getState().readingLine, scrollY,
 							viewport: innerHeight, focused: document.activeElement === timeline, playing: state.playing });
 						const heldTime = state.time; await wait(40);
 						if (explorer.getState().time !== heldTime || story.getState().following) throw new Error('programmatic chapter alignment fed back into the clock');
@@ -107,7 +107,8 @@ test('one sticky hero follows a readable story with accessible alternative layou
 				assert.ok(Math.abs(frame.time - frame.expectedTime) < .00001);
 				// Slides shows one step with no scroll anchors, so it only has to be fully visible; scrolling modes land on the reading line.
 				if (frame.mode === 'slides') assert.ok(frame.headingTop >= 0, `slides selection ${frame.value} keeps its heading in view`);
-				else assert.ok(frame.headingTop >= frame.readingLine - 12 && frame.headingTop < frame.readingLine + 58,
+				// X Threads has no cover above its first step, so the page cannot scroll above 0 and that heading may sit above the line.
+				else assert.ok((frame.headingTop >= frame.readingLine - 12 || (frame.scrollY === 0 && frame.headingTop >= 0)) && frame.headingTop < frame.readingLine + 58,
 					`${frame.mode} selection ${frame.value} brings its text to the reading line`);
 				assert.ok(frame.headingBottom < frame.viewport - 8);
 				assert.equal(frame.focused, true);

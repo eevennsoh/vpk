@@ -3318,7 +3318,7 @@ body[data-vpk-layout="story"] .story-index a { display: inline-flex; align-items
 body[data-vpk-layout="story"] .story-index a[aria-current]:not([aria-current="false"]) { color: var(--ink); text-decoration: underline; text-underline-offset: 5px; }
 
 
-body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-intro { display: none; }
+body[data-vpk-layout="story"] [data-vpk-story]:is([data-story-mode="slides"], [data-story-mode="twitter"]) .story-intro { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { min-block-size: calc(100svh - var(--story-bar-height)); }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-reading { overflow: visible; }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: 0; padding-block: 32px; }
