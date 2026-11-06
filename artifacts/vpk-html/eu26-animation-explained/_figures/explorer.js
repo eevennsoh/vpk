@@ -94,7 +94,7 @@
 			controls.prepend(thumbnailCss);
 		}
 
-		function snapshot(index) {
+		function snapshot(index, scope = 'thumb') {
 			renderPose(states[index].time);
 			const svg = root.querySelector('svg');
 			const copy = svg.cloneNode(true);
@@ -107,7 +107,7 @@
 				if (style.display === 'none' || style.visibility === 'hidden' || source.matches('script, animate, animateTransform, set, [data-eu26-hover]')) copiedElements[item].remove();
 			}
 			const elements = [copy, ...copy.querySelectorAll('*')];
-			const ids = new Map(elements.filter(element => element.id).map(element => [element.id, `eu26-thumb-${index}-${element.id}`]));
+			const ids = new Map(elements.filter(element => element.id).map(element => [element.id, `eu26-${scope}-${index}-${element.id}`]));
 			const rewriteUrls = value => value.replace(/url\(\s*(['"]?)#([^\s)'"]+)\1\s*\)/g, (match, quote, id) => ids.has(id) ? `url(#${ids.get(id)})` : match);
 			for (const element of elements) {
 				if (element.id) element.id = ids.get(element.id);

@@ -47,13 +47,13 @@ const scenario = (source, execute = run) => evaluate(`(async () => {
 	${source}
 })()`, execute);
 
-test('continuous scrubbing preserves every in-between frame with twelve Page and Slides ticks', { timeout:60000 }, () => {
+test('continuous scrubbing preserves every in-between frame with twelve Page ticks', { timeout:60000 }, () => {
 	const command = (...args) => execFileSync('agent-browser', ['--session', `${session}-continuous`, ...args], { encoding:'utf8', timeout:45000 });
 	const probe = source => scenario(source, command);
 	command('set','viewport','1440','900'); command('set','media','light'); command('open',`file://${artifact}`);
 	command('wait','--fn','Boolean(window.__eu26Timeline && window.__eu26Explorer && window.__vpkStory)');
 	try {
-		for (const mode of ['story','slides']) {
+		for (const mode of ['story']) { // Slides steps with its thumbnail carousel (slides-timeline.behavior.test.mjs)
 			const samples = probe(`
 				story.setMode('${mode}'); explorer.pause(); ui.dismiss();
 				const states=JSON.parse(document.querySelector('[data-eu26-explorer-model]').textContent).states;
@@ -160,7 +160,8 @@ test('the vertical timeline reveals a reachable preview stack without taking ove
 					for(const mode of ['story','slides','twitter','video']) {
 						story.setMode(mode);await wait(60);
 						if(mode==='slides') {
-							if(slider.getAttribute('aria-orientation')!=='horizontal'||dock.querySelectorAll('.eu26-timeline-tick').length!==chapterNames.length)failures.push('Slides does not keep one horizontal tick per slide');
+							const strip=dock.querySelector('.eu26-slide-carousel');
+							if(!strip||strip.hidden||strip.querySelectorAll('[data-eu26-slide-index]').length!==chapterNames.length)failures.push('Slides does not show one carousel thumbnail per slide');
 							continue;
 						}
 						if(mode==='video') {
@@ -448,7 +449,7 @@ test('Frames galleries follow their view orientation and keep horizontal navigat
 			`);
 			for(const sample of result) assert.deepEqual(sample,{mode:sample.mode,transport:0,chapterButtons:0,replay:sample.mode==='video',caption:false,label:data.states[7].title});
 		});
-		for(const mode of ['slides','video']) {
+		for(const mode of ['video']) { // Slides has no Frames gallery; its carousel is the strip
 			await t.test(`${mode} lays frames left to right and centers keyboard previews`,()=>{
 				const layout=probe(`
 					story.setMode('${mode}');explorer.pause();explorer.seek(16);ui.setExpanded(true);await wait(220);
@@ -478,7 +479,7 @@ test('Frames galleries follow their view orientation and keep horizontal navigat
 					command('set','media',theme);
 					const failures=probe(`
 						const failures=[];
-						for(const mode of ['slides','video']) {
+						for(const mode of ['video']) {
 							story.setMode(mode);explorer.pause();ui.setExpanded(true);await wait(220);
 							const r=rect(tray),header=rect(document.querySelector('.story-bar'));
 							if(r.left<8||r.right>innerWidth-8||r.top<header.bottom+8||r.bottom>innerHeight-8)failures.push(mode+' gallery escapes viewport');

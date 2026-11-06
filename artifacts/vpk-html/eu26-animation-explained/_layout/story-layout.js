@@ -116,6 +116,7 @@
 			// Side by side, bottom controls (the Slides timeline) centre under the figure page, not the whole window.
 			const shift = beside ? Math.round((stageRect.left + stageRect.right) / 2 - document.documentElement.clientWidth / 2) : 0;
 			root.style.setProperty('--story-stage-shift', `${shift}px`);
+			root.style.setProperty('--story-stage-width', `${Math.round(beside ? stageRect.width : document.documentElement.clientWidth)}px`);
 			const scrollY = window.scrollY;
 			anchors = mode === 'slides' || mode === 'video' ? [] : articles.map(article => {
 				const target = article.querySelector('h2') || article;

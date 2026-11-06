@@ -139,12 +139,39 @@
 			return choice;
 		});
 		tray.append(list);
+		// Slides navigates with a left-to-right thumbnail carousel instead of the tick ruler. It reuses the gallery's
+		// snapshots and its select path; only the Slides view shows it (footer-timeline.css).
+		const carousel = node('ol', 'eu26-slide-carousel');
+		carousel.setAttribute('role', 'list');
+		carousel.setAttribute('aria-label', 'Slides');
+		const slideButtons = states.map((state, index) => {
+			const item = node('li', 'eu26-slide-item');
+			const choice = node('button', 'eu26-slide-thumb');
+			choice.type = 'button';
+			choice.dataset.eu26SlideIndex = String(index);
+			choice.setAttribute('aria-label', `${index + 1}. ${state.title}`);
+			choice.tabIndex = index === 0 ? 0 : -1;
+			const thumbnail = node('span', 'eu26-state-thumb eu26-slide-image');
+			thumbnail.setAttribute('aria-hidden', 'true');
+			thumbnail.append(snapshot(index, 'slide'));
+			const caption = node('span', 'eu26-slide-caption');
+			caption.setAttribute('aria-hidden', 'true');
+			caption.append(node('span', 'eu26-slide-number', String(index + 1).padStart(2, '0')), node('span', 'eu26-slide-title', state.title));
+			choice.append(thumbnail, caption);
+			item.append(choice);
+			carousel.append(item);
+			return choice;
+		});
+		const centreSlide = index => {
+			const card = slideButtons[index].getBoundingClientRect(), track = carousel.getBoundingClientRect();
+			carousel.scrollTo({ left: Math.max(0, carousel.scrollLeft + card.left - track.left - (carousel.clientWidth - card.width) / 2), behavior: 'instant' });
+		};
 		const hint = node('p', 'eu26-explorer-hint eu26-dock-sr', 'Explore chapters with the rail. Select a preview to move there. Frames opens every chapter. Use the arrow keys to navigate. Escape closes previews.');
 		hint.id = 'eu26-explorer-hint';
 		const announcement = node('p', 'eu26-explorer-announcement');
 		announcement.setAttribute('aria-live', 'polite');
 		announcement.setAttribute('aria-atomic', 'true');
-		controls.append(bar, context, tray, playbackStatus, hint, announcement);
+		controls.append(bar, carousel, context, tray, playbackStatus, hint, announcement);
 
 		let expanded = false, pinned = false, pointerInside = false, focusInside = false, dismissed = false;
 		let dragging = false, pointerId = null, hoverLocked = false, hoverIndex = null, hoverTime = null, focusIndex = null;
@@ -439,8 +466,10 @@
 				scheduleLens(null);
 				const choice = event.target.closest('[data-eu26-state-index]');
 				hoverFrameIndex = choice && list.contains(choice) ? Number(choice.dataset.eu26StateIndex) : null;
-				if (expanded && hoverFrameIndex !== null) previewFrame(hoverFrameIndex, 'hover');
-				else if (!context.contains(event.target) && !(horizontal && event.target === controls)) clearSource('hover');
+				const slide = event.target.closest('[data-eu26-slide-index]');
+				if (slide && carousel.contains(slide)) { if (!slideHoverPaused) previewFrame(Number(slide.dataset.eu26SlideIndex), 'hover'); }
+				else if (expanded && hoverFrameIndex !== null) previewFrame(hoverFrameIndex, 'hover');
+				else if (!context.contains(event.target) && !(horizontal && event.target === controls) && !carousel.contains(event.target)) clearSource('hover');
 			}
 			refreshContext();
 		});
@@ -557,6 +586,25 @@
 			});
 		}
 		document.addEventListener('pointerdown', event => { if (!controls.contains(event.target) && (expanded || contextVisible)) dismiss(); });
+		const inSlides = () => controls.dataset.timelineView === 'slides';
+		// Selecting re-centres the strip under a still pointer; hover previews wait until the pointer really moves.
+		let slideHoverPaused = false;
+		carousel.addEventListener('pointermove', () => { slideHoverPaused = false; }, { passive: true });
+		const selectSlide = (index, focus = false) => {
+			const target = Math.max(0, Math.min(states.length - 1, index));
+			slideHoverPaused = true;
+			clearSources(); lockHover(); onAction('select', target);
+			if (focus) slideButtons[target].focus({ preventScroll: true });
+		};
+		for (const [index, choice] of slideButtons.entries()) {
+			choice.addEventListener('click', () => selectSlide(index));
+			choice.addEventListener('keydown', event => {
+				const target = { ArrowLeft: index - 1, ArrowRight: index + 1, Home: 0, End: states.length - 1 }[event.key];
+				if (target === undefined) return;
+				event.preventDefault(); selectSlide(target, true);
+			});
+		}
+		// Page-level arrow keys in Slides are owned by story-layout.js; the carousel handles only its own focused keys.
 		document.addEventListener('keydown', event => {
 			if (event.key === 'Escape' && (expanded || contextVisible) && !controls.contains(event.target)) { event.preventDefault(); dismiss(); }
 		});
@@ -588,6 +636,13 @@
 				else choice.removeAttribute('aria-current');
 				choice.toggleAttribute('data-preview', index === previewIndex);
 			}
+			for (const [index, choice] of slideButtons.entries()) {
+				if (index === selectedIndex) choice.setAttribute('aria-current', 'step');
+				else choice.removeAttribute('aria-current');
+				choice.toggleAttribute('data-preview', index === previewIndex);
+				choice.tabIndex = index === selectedIndex ? 0 : -1;
+			}
+			if (selectedChanged && inSlides()) centreSlide(selectedIndex);
 			fraction = pageBased ? pagePosition(displayTime) / Math.max(1, states.length - 1) : Math.max(0, Math.min(1, displayTime / duration));
 			playbackFraction = Math.max(0, Math.min(1, time / duration));
 			playbackSeconds = playbackFraction * durationSeconds;
@@ -603,6 +658,10 @@
 			const nextPageBased = ['story', 'slides'].includes(storyRoot?.dataset.storyMode);
 			controls.dataset.orientation = nextHorizontal ? 'horizontal' : 'vertical';
 			controls.dataset.timelineView = storyRoot?.dataset.storyMode || 'story';
+			// Slides swaps the tick ruler for the carousel; the unused set leaves layout, tab order and the a11y tree.
+			const slidesView = storyRoot?.dataset.storyMode === 'slides';
+			carousel.hidden = carousel.inert = !slidesView;
+			bar.hidden = bar.inert = slidesView;
 			if (horizontal === nextHorizontal && pageBased === nextPageBased) return;
 			dismiss(); finishDrag(); finishGesture();
 			const focused = controls.contains(document.activeElement) ? document.activeElement : null;
@@ -627,6 +686,7 @@
 			buildTicks();
 			dismissed = false;
 			focused?.focus({ preventScroll: true }); contextBoard.wake();
+			if (inSlides()) requestAnimationFrame(() => centreSlide(selectedIndex));
 		};
 		storyRoot?.addEventListener('vpk:story-mode', orient);
 		controls.dataset.expanded = 'false';

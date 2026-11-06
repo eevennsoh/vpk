@@ -3569,7 +3569,7 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { ma
    page ends above the bottom slide timeline (16px inset + 60px timeline + 12px gap). A chapter whose text is taller than
    the figure scrolls inside its reading column. [data-vpk-story] outranks footer-timeline.css's slides padding. */
 @media (min-width: 1024px) {
-	body[data-vpk-layout="story"] { --story-slides-reserve: calc(16px + 60px + 12px); }
+	body[data-vpk-layout="story"] { --story-slides-reserve: calc(16px + 128px + 12px); }
 	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-layout {
 		box-sizing: border-box;
 		block-size: 100svh;
@@ -4131,7 +4131,7 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-orientation="horizontal"]
 }
 
 body[data-vpk-layout="story"]:has([data-vpk-story][data-story-mode="slides"]) { --eu26-dock-reserve: 0px; }
-body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { padding-block-end: 112px; }
+body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { padding-block-end: 148px; }
 body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-timeline-view="slides"] {
 	position: fixed;
 	inset-inline: 0;
@@ -4146,6 +4146,79 @@ body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-ti
 /* Two columns: the Slides timeline centres under the figure page (story-layout.js publishes the offset). */
 @media (min-width: 1024px) {
 	body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-timeline-view="slides"] { translate: var(--story-stage-shift, 0px) 0; }
+}
+
+/* Slides carousel: a left-to-right strip of chapter thumbnails replaces the tick ruler and Frames button in Slides.
+   Hover previews a slide, click or Enter selects it, and the arrow keys step through the deck. */
+body[data-vpk-layout="story"] .eu26-slide-carousel { display: none; }
+body[data-vpk-layout="story"] #eu26-explorer-controls[data-timeline-view="slides"] :is(.eu26-dock-bar, .eu26-chapter-context) { display: none !important; }
+body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-timeline-view="slides"] {
+	inline-size: min(var(--story-stage-width, 100dvw), calc(100dvw - 32px));
+	padding: 0;
+	background: var(--paper-background);
+}
+body[data-vpk-layout="story"] #eu26-explorer-controls[data-timeline-view="slides"] .eu26-slide-carousel {
+	display: flex;
+	gap: 10px;
+	margin: 0;
+	padding: 4px 24px 6px;
+	list-style: none;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	scroll-snap-type: x proximity;
+	scroll-padding-inline: 24px;
+	scrollbar-width: none;
+	mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+}
+body[data-vpk-layout="story"] .eu26-slide-carousel::-webkit-scrollbar { display: none; }
+body[data-vpk-layout="story"] .eu26-slide-item { flex: 0 0 120px; margin: 0; padding: 0; scroll-snap-align: center; }
+body[data-vpk-layout="story"] .eu26-slide-thumb {
+	display: grid;
+	gap: 6px;
+	inline-size: 100%;
+	block-size: auto; /* the template sizes every button at 34px */
+	height: auto;
+	margin: 0;
+	padding: 4px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--muted-text);
+	text-align: start;
+	cursor: pointer;
+	transition: background-color var(--vpk-tip-exit, 100ms ease-in);
+}
+body[data-vpk-layout="story"] .eu26-slide-image {
+	display: block;
+	aspect-ratio: 8 / 5;
+	border-radius: 5px;
+	background: var(--paper);
+	box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 9%, transparent);
+	overflow: clip;
+	opacity: .64;
+	transition: opacity var(--vpk-tip-exit, 100ms ease-in), box-shadow var(--vpk-tip-exit, 100ms ease-in);
+}
+body[data-vpk-layout="story"] .eu26-slide-image .eu26-thumb-svg { display: block; inline-size: 100% !important; block-size: 100% !important; max-inline-size: none !important; max-block-size: none !important; }
+body[data-vpk-layout="story"] .eu26-slide-image .iso-edge { vector-effect: non-scaling-stroke; stroke-width: .65px !important; }
+body[data-vpk-layout="story"] .eu26-slide-caption { display: flex; gap: 6px; min-inline-size: 0; font: 11px/16px var(--font-body); }
+body[data-vpk-layout="story"] .eu26-slide-number { flex: 0 0 auto; color: var(--subtlest-text); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+body[data-vpk-layout="story"] .eu26-slide-title { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body[data-vpk-layout="story"] .eu26-slide-thumb:is(:hover, [data-preview]) .eu26-slide-image { opacity: 1; }
+body[data-vpk-layout="story"] .eu26-slide-thumb:hover { background: var(--surface-sunken); }
+body[data-vpk-layout="story"] .eu26-slide-thumb[aria-current="step"] { color: var(--ink); }
+body[data-vpk-layout="story"] .eu26-slide-thumb[aria-current="step"] .eu26-slide-image {
+	opacity: 1;
+	background: color-mix(in srgb, var(--ill-accent) 7%, var(--paper));
+	box-shadow: 0 0 0 2px var(--ill-accent);
+}
+body[data-vpk-layout="story"] .eu26-slide-thumb[aria-current="step"] .eu26-slide-number { color: var(--ink); }
+body[data-vpk-layout="story"] .eu26-slide-thumb:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+	body[data-vpk-layout="story"] :is(.eu26-slide-thumb, .eu26-slide-image) { transition: none; }
+}
+@media (max-width: 760px) {
+	body[data-vpk-layout="story"] .eu26-slide-item { flex-basis: 96px; }
+	body[data-vpk-layout="story"] #eu26-explorer-controls[data-timeline-view="slides"] .eu26-slide-carousel { padding-inline: 16px; scroll-padding-inline: 16px; }
 }
 body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .eu26-dock-bar {
 	grid-template-columns: minmax(0, 1fr) auto;
@@ -6261,6 +6334,7 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			// Side by side, bottom controls (the Slides timeline) centre under the figure page, not the whole window.
 			const shift = beside ? Math.round((stageRect.left + stageRect.right) / 2 - document.documentElement.clientWidth / 2) : 0;
 			root.style.setProperty('--story-stage-shift', `${shift}px`);
+			root.style.setProperty('--story-stage-width', `${Math.round(beside ? stageRect.width : document.documentElement.clientWidth)}px`);
 			const scrollY = window.scrollY;
 			anchors = mode === 'slides' || mode === 'video' ? [] : articles.map(article => {
 				const target = article.querySelector('h2') || article;
@@ -6637,12 +6711,39 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			return choice;
 		});
 		tray.append(list);
+		// Slides navigates with a left-to-right thumbnail carousel instead of the tick ruler. It reuses the gallery's
+		// snapshots and its select path; only the Slides view shows it (footer-timeline.css).
+		const carousel = node('ol', 'eu26-slide-carousel');
+		carousel.setAttribute('role', 'list');
+		carousel.setAttribute('aria-label', 'Slides');
+		const slideButtons = states.map((state, index) => {
+			const item = node('li', 'eu26-slide-item');
+			const choice = node('button', 'eu26-slide-thumb');
+			choice.type = 'button';
+			choice.dataset.eu26SlideIndex = String(index);
+			choice.setAttribute('aria-label', `${index + 1}. ${state.title}`);
+			choice.tabIndex = index === 0 ? 0 : -1;
+			const thumbnail = node('span', 'eu26-state-thumb eu26-slide-image');
+			thumbnail.setAttribute('aria-hidden', 'true');
+			thumbnail.append(snapshot(index, 'slide'));
+			const caption = node('span', 'eu26-slide-caption');
+			caption.setAttribute('aria-hidden', 'true');
+			caption.append(node('span', 'eu26-slide-number', String(index + 1).padStart(2, '0')), node('span', 'eu26-slide-title', state.title));
+			choice.append(thumbnail, caption);
+			item.append(choice);
+			carousel.append(item);
+			return choice;
+		});
+		const centreSlide = index => {
+			const card = slideButtons[index].getBoundingClientRect(), track = carousel.getBoundingClientRect();
+			carousel.scrollTo({ left: Math.max(0, carousel.scrollLeft + card.left - track.left - (carousel.clientWidth - card.width) / 2), behavior: 'instant' });
+		};
 		const hint = node('p', 'eu26-explorer-hint eu26-dock-sr', 'Explore chapters with the rail. Select a preview to move there. Frames opens every chapter. Use the arrow keys to navigate. Escape closes previews.');
 		hint.id = 'eu26-explorer-hint';
 		const announcement = node('p', 'eu26-explorer-announcement');
 		announcement.setAttribute('aria-live', 'polite');
 		announcement.setAttribute('aria-atomic', 'true');
-		controls.append(bar, context, tray, playbackStatus, hint, announcement);
+		controls.append(bar, carousel, context, tray, playbackStatus, hint, announcement);
 
 		let expanded = false, pinned = false, pointerInside = false, focusInside = false, dismissed = false;
 		let dragging = false, pointerId = null, hoverLocked = false, hoverIndex = null, hoverTime = null, focusIndex = null;
@@ -6937,8 +7038,10 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 				scheduleLens(null);
 				const choice = event.target.closest('[data-eu26-state-index]');
 				hoverFrameIndex = choice && list.contains(choice) ? Number(choice.dataset.eu26StateIndex) : null;
-				if (expanded && hoverFrameIndex !== null) previewFrame(hoverFrameIndex, 'hover');
-				else if (!context.contains(event.target) && !(horizontal && event.target === controls)) clearSource('hover');
+				const slide = event.target.closest('[data-eu26-slide-index]');
+				if (slide && carousel.contains(slide)) { if (!slideHoverPaused) previewFrame(Number(slide.dataset.eu26SlideIndex), 'hover'); }
+				else if (expanded && hoverFrameIndex !== null) previewFrame(hoverFrameIndex, 'hover');
+				else if (!context.contains(event.target) && !(horizontal && event.target === controls) && !carousel.contains(event.target)) clearSource('hover');
 			}
 			refreshContext();
 		});
@@ -7055,6 +7158,25 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			});
 		}
 		document.addEventListener('pointerdown', event => { if (!controls.contains(event.target) && (expanded || contextVisible)) dismiss(); });
+		const inSlides = () => controls.dataset.timelineView === 'slides';
+		// Selecting re-centres the strip under a still pointer; hover previews wait until the pointer really moves.
+		let slideHoverPaused = false;
+		carousel.addEventListener('pointermove', () => { slideHoverPaused = false; }, { passive: true });
+		const selectSlide = (index, focus = false) => {
+			const target = Math.max(0, Math.min(states.length - 1, index));
+			slideHoverPaused = true;
+			clearSources(); lockHover(); onAction('select', target);
+			if (focus) slideButtons[target].focus({ preventScroll: true });
+		};
+		for (const [index, choice] of slideButtons.entries()) {
+			choice.addEventListener('click', () => selectSlide(index));
+			choice.addEventListener('keydown', event => {
+				const target = { ArrowLeft: index - 1, ArrowRight: index + 1, Home: 0, End: states.length - 1 }[event.key];
+				if (target === undefined) return;
+				event.preventDefault(); selectSlide(target, true);
+			});
+		}
+		// Page-level arrow keys in Slides are owned by story-layout.js; the carousel handles only its own focused keys.
 		document.addEventListener('keydown', event => {
 			if (event.key === 'Escape' && (expanded || contextVisible) && !controls.contains(event.target)) { event.preventDefault(); dismiss(); }
 		});
@@ -7086,6 +7208,13 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 				else choice.removeAttribute('aria-current');
 				choice.toggleAttribute('data-preview', index === previewIndex);
 			}
+			for (const [index, choice] of slideButtons.entries()) {
+				if (index === selectedIndex) choice.setAttribute('aria-current', 'step');
+				else choice.removeAttribute('aria-current');
+				choice.toggleAttribute('data-preview', index === previewIndex);
+				choice.tabIndex = index === selectedIndex ? 0 : -1;
+			}
+			if (selectedChanged && inSlides()) centreSlide(selectedIndex);
 			fraction = pageBased ? pagePosition(displayTime) / Math.max(1, states.length - 1) : Math.max(0, Math.min(1, displayTime / duration));
 			playbackFraction = Math.max(0, Math.min(1, time / duration));
 			playbackSeconds = playbackFraction * durationSeconds;
@@ -7101,6 +7230,10 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			const nextPageBased = ['story', 'slides'].includes(storyRoot?.dataset.storyMode);
 			controls.dataset.orientation = nextHorizontal ? 'horizontal' : 'vertical';
 			controls.dataset.timelineView = storyRoot?.dataset.storyMode || 'story';
+			// Slides swaps the tick ruler for the carousel; the unused set leaves layout, tab order and the a11y tree.
+			const slidesView = storyRoot?.dataset.storyMode === 'slides';
+			carousel.hidden = carousel.inert = !slidesView;
+			bar.hidden = bar.inert = slidesView;
 			if (horizontal === nextHorizontal && pageBased === nextPageBased) return;
 			dismiss(); finishDrag(); finishGesture();
 			const focused = controls.contains(document.activeElement) ? document.activeElement : null;
@@ -7125,6 +7258,7 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			buildTicks();
 			dismissed = false;
 			focused?.focus({ preventScroll: true }); contextBoard.wake();
+			if (inSlides()) requestAnimationFrame(() => centreSlide(selectedIndex));
 		};
 		storyRoot?.addEventListener('vpk:story-mode', orient);
 		controls.dataset.expanded = 'false';
@@ -7236,7 +7370,7 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			controls.prepend(thumbnailCss);
 		}
 
-		function snapshot(index) {
+		function snapshot(index, scope = 'thumb') {
 			renderPose(states[index].time);
 			const svg = root.querySelector('svg');
 			const copy = svg.cloneNode(true);
@@ -7249,7 +7383,7 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 				if (style.display === 'none' || style.visibility === 'hidden' || source.matches('script, animate, animateTransform, set, [data-eu26-hover]')) copiedElements[item].remove();
 			}
 			const elements = [copy, ...copy.querySelectorAll('*')];
-			const ids = new Map(elements.filter(element => element.id).map(element => [element.id, `eu26-thumb-${index}-${element.id}`]));
+			const ids = new Map(elements.filter(element => element.id).map(element => [element.id, `eu26-${scope}-${index}-${element.id}`]));
 			const rewriteUrls = value => value.replace(/url\(\s*(['"]?)#([^\s)'"]+)\1\s*\)/g, (match, quote, id) => ids.has(id) ? `url(#${ids.get(id)})` : match);
 			for (const element of elements) {
 				if (element.id) element.id = ids.get(element.id);

@@ -627,7 +627,7 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { ma
    page ends above the bottom slide timeline (16px inset + 60px timeline + 12px gap). A chapter whose text is taller than
    the figure scrolls inside its reading column. [data-vpk-story] outranks footer-timeline.css's slides padding. */
 @media (min-width: 1024px) {
-	body[data-vpk-layout="story"] { --story-slides-reserve: calc(16px + 60px + 12px); }
+	body[data-vpk-layout="story"] { --story-slides-reserve: calc(16px + 128px + 12px); }
 	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-layout {
 		box-sizing: border-box;
 		block-size: 100svh;

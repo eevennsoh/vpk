@@ -79,7 +79,7 @@ test('one sticky hero follows a readable story with accessible alternative layou
 			const result = scenario(`
 				const frames = [];
 				const chapterTimes=JSON.parse(document.querySelector('[data-eu26-explorer-model]').textContent).states.map(state=>state.time);
-				for (const mode of ['story', 'slides', 'twitter']) {
+				for (const mode of ['story', 'twitter']) { // Slides steps with its carousel (slides-timeline.behavior.test.mjs)
 					story.setMode(mode); story.select(0); await settle();
 					timeline.focus({ preventScroll: true });
 					const pages=['story','slides'].includes(mode);
@@ -342,7 +342,7 @@ test('one sticky hero follows a readable story with accessible alternative layou
 					for (const mode of ['story', 'slides', 'twitter']) {
 						story.setMode(mode); await settle();
 						if (document.documentElement.scrollWidth > innerWidth + 1) failures.push(mode + ' page overflows');
-						for (const button of [...modes, ...controls.querySelectorAll('[data-eu26-action]')].filter(button => getComputedStyle(button).display !== 'none' && getComputedStyle(button).visibility !== 'hidden')) {
+						for (const button of [...modes, ...controls.querySelectorAll('[data-eu26-action]')].filter(button => button.checkVisibility({ visibilityProperty: true }))) {
 							const rect = button.getBoundingClientRect();
 							if (rect.width <= 0 || rect.height < 32 || rect.left < -1 || rect.right > innerWidth + 1) failures.push(mode + ' clips ' + button.textContent.trim());
 						}

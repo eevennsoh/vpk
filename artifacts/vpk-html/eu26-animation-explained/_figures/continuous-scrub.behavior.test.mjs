@@ -21,7 +21,7 @@ test('pointer scrubbing renders intermediate poses and tick spacing matches acro
 	run('set','viewport','1440','1000');run('set','media','light');run('open',new URL('../eu26-animation-explained.html',import.meta.url).href);
 	run('wait','--fn','Boolean(window.__eu26Timeline && window.__eu26Explorer)');
 	try {
-		for(const mode of ['story','slides','twitter','video']) await t.test(`${mode} hover and drag move continuously inside a single chapter`,()=>{
+		for(const mode of ['story','twitter','video']) await t.test(`${mode} hover and drag move continuously inside a single chapter`,()=>{
 			run('mouse','move','8','40');
 			const setup=scenario(`story.setMode('${mode}');explorer.pause();explorer.clearPreview();explorer.seek(6.5);if('${mode}'==='video')input.scrollIntoView({block:'center',behavior:'instant'});await wait(120);const r=input.getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height,scroll:scrollY,horizontal:input.getAttribute('aria-orientation')==='horizontal',pages:window.__eu26Timeline.getState().navigation==='pages'};`);
 			const point=position=>{
@@ -68,10 +68,10 @@ test('pointer scrubbing renders intermediate poses and tick spacing matches acro
 			for(const frame of result){assert.ok(Math.abs(frame.top-result[0].top)<1,'new chapter text appears in the same screen position');assert.equal(frame.animations,0,'text has no slide or fade transition');}
 		});
 
-		for(const width of [1440,390,320])await t.test(`${width}px uses the same gap in all four views`,()=>{
+		for(const width of [1440,390,320])await t.test(`${width}px uses the same gap in every tick view`,()=>{
 			run('set','viewport',String(width),'1000');run('mouse','move','8','40');
-			const result=scenario(`const values=[];for(const mode of ['story','slides','twitter','video']){story.setMode(mode);explorer.clearPreview();await wait(850);const horizontal=input.getAttribute('aria-orientation')==='horizontal',rows=[...dock.querySelectorAll('.eu26-timeline-mark')].map(row=>{const r=row.getBoundingClientRect();return horizontal?r.left:r.top;}),gaps=rows.slice(1).map((value,index)=>value-rows[index]);values.push({mode,count:rows.length,min:Math.min(...gaps),max:Math.max(...gaps)});}return values;`);
-			for(const value of result){assert.ok(Math.abs(value.max-value.min)<.02,`${value.mode} gaps are uniform`);assert.ok(Math.abs(value.min-result[0].min)<.02,`${value.mode} uses the shared spacing`);if(['story','slides'].includes(value.mode))assert.equal(value.count,12);}
+			const result=scenario(`const values=[];for(const mode of ['story','twitter','video']){story.setMode(mode);explorer.clearPreview();await wait(850);const horizontal=input.getAttribute('aria-orientation')==='horizontal',rows=[...dock.querySelectorAll('.eu26-timeline-mark')].map(row=>{const r=row.getBoundingClientRect();return horizontal?r.left:r.top;}),gaps=rows.slice(1).map((value,index)=>value-rows[index]);values.push({mode,count:rows.length,min:Math.min(...gaps),max:Math.max(...gaps)});}return values;`);
+			for(const value of result){assert.ok(Math.abs(value.max-value.min)<.02,`${value.mode} gaps are uniform`);assert.ok(Math.abs(value.min-result[0].min)<.02,`${value.mode} uses the shared spacing`);if(value.mode==='story')assert.equal(value.count,12);}
 			assert.ok(result[0].min>=12&&result[0].min<=20);
 		});
 	} finally {run('close');}
