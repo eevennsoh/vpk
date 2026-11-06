@@ -632,11 +632,22 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { ma
 		align-items: stretch;
 		padding-block: var(--story-figure-inset) 12px;
 	}
-	body[data-vpk-layout="story"] [data-story-mode="video"] .story-reading { grid-column: 1; grid-row: 1 / -1; align-self: start; max-block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-reading { grid-column: 1; grid-row: 1; align-self: start; max-block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
 	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step { min-block-size: 0; padding-block: 56px 32px; }
 	body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { grid-column: 2; grid-row: 1; min-block-size: 0; }
-	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { grid-column: 2; grid-row: 2; }
-	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { grid-column: 2; grid-row: 3; }
-	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { grid-column: 2; grid-row: 4; }
-	body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { grid-column: 2; grid-row: 5; }
+	/* The player controls (timeline, chapter, status) span both columns and centre on the screen, like Slides' strip.
+	   The grid is offset left by half the right-side reserves (icon rail + rail room), so shift back by that much and
+	   narrow by twice it so the row never runs under the rail. */
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { --story-video-centre-shift: calc((var(--eu26-dock-reserve, 0px) + var(--story-rail-room, 0px)) / 2); }
+	body[data-vpk-layout="story"] [data-story-mode="video"] :is(.story-video-timeline, .story-video-chapter, .story-video-status, [data-video-download]) {
+		grid-column: 1 / -1;
+		justify-self: center;
+		box-sizing: border-box;
+		inline-size: min(960px, calc(100% - 2 * var(--story-video-centre-shift)));
+		translate: var(--story-video-centre-shift) 0;
+	}
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { grid-row: 2; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { grid-row: 3; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { grid-row: 4; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { grid-row: 5; }
 }
