@@ -542,7 +542,10 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			`);
 			assert.ok(result.samples.length > 3);
 			assert.ok(result.elapsed >= 220 && result.elapsed <= 480, `state navigation finishes within its 240–420ms duration plus one frame (${result.elapsed.toFixed(0)}ms)`);
-			assert.ok(result.samples.every(sample => Math.abs(sample.azimuth - 45) < .001 && Math.abs(sample.elevation - 30) < .001), 'the jump does not fast-forward through unrelated orbits');
+			// The jump blends straight from the board camera (45°, 30°) to the frontal wall (90°, 90°): one direction only, never
+			// detouring through another shot's angles.
+			assert.ok(result.samples.every(sample => sample.azimuth >= 45 - .001 && sample.azimuth <= 90 + .001 && sample.elevation >= 30 - .001 && sample.elevation <= 90 + .001), 'the jump stays between its endpoint cameras');
+			assert.ok(result.samples.every((sample, index) => index === 0 || (sample.azimuth >= result.samples[index - 1].azimuth - .001 && sample.elevation >= result.samples[index - 1].elevation - .001)), 'the jump does not fast-forward through unrelated orbits');
 			assert.ok(result.samples.every(sample => ['board', 'wallGlide'].includes(sample.phase)), 'unrelated chapters do not flash past');
 		});
 

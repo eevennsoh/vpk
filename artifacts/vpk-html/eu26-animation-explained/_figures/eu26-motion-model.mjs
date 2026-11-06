@@ -1,54 +1,18 @@
 export const motionConfig = {
 	seed: 26031,
-	wall: { start: 27, velocity: [-32, -8], repeatX: 3, helperStart: 35, helperPeriod: 12 },
+	// The source wall scrolls sideways only (finale-wall-motion.ts wallOffset), so the glide has no vertical component.
+	wall: { start: 27, velocity: [-32, 0], repeatX: 3, helperStart: 35, helperPeriod: 12 },
 };
 
+// The wall is the source's packed masonry (sourceWall in eu26-hero.hero.mjs, ported from finale-wall-layout.ts), shown
+// as one horizontal band that repeats every packed-wall width, the way the source loops its wall while scrolling.
 export function createWallField(data) {
 	const camera = data.cameraKeys[data.cameraKeys.length - 1], center = [...camera.at];
-	const periodX = 3800, periodY = 3800, gutter = 22;
-	const random = (i, channel) => {
-		const value = Math.sin((i + 1) * 127.1 + channel * 311.7 + (data.motion?.seed ?? 26031) * 0.013) * 43758.5453;
-		return value - Math.floor(value);
-	};
-	const delta = (a, b, period) => a - b - Math.round((a - b) / period) * period;
-	const wrap = (value, axis, period) => value - Math.floor((value - center[axis] + period / 2) / period) * period;
-	const pinned = new Set(data.actors.map(actor => actor.slotKey));
-	const positions = data.wall.map(() => null), occupied = [];
-	const place = (card, index, at) => {
-		positions[index] = at;
-		occupied.push({ at, w: card.w, d: card.d });
-	};
-	data.wall.forEach((card, index) => {
-		if (card.reserved !== undefined || pinned.has(card.key)) place(card, index, [card.at[0] + card.w / 2, card.at[1] + card.d / 2, card.at[2]]);
-	});
-	data.wall.forEach((card, index) => {
-		if (positions[index]) return;
-		const gap = gutter + random(index, 22) * 24;
-		const goal = [center[0] + (((index * 0.61803398875 + random(index, 23) * 0.07) % 1) - 0.5) * periodX, center[1] + (((index * 0.41421356237 + random(index, 24) * 0.07) % 1) - 0.5) * periodY];
-		const candidates = [];
-		const add = (x, y, edge = false) => {
-			const at = [wrap(x, 0, periodX), wrap(y, 1, periodY), 0];
-			const dx = delta(at[0], goal[0], periodX), dy = delta(at[1], goal[1], periodY);
-			candidates.push({ at, score: dx * dx + dy * dy - (edge ? 320 * 320 : 0) });
-		};
-		add(goal[0], goal[1]);
-		for (const rect of occupied) {
-			for (const side of [-1, 1]) {
-				const x = rect.at[0] + side * ((rect.w + card.w) / 2 + gap);
-				const y = rect.at[1] + side * ((rect.d + card.d) / 2 + gap);
-				for (const align of [-1, 0, 1]) {
-					add(x, rect.at[1] + align * (rect.d - card.d) / 2, true);
-					add(rect.at[0] + align * (rect.w - card.w) / 2, y, true);
-				}
-			}
-		}
-		for (let attempt = 0; attempt < 48; attempt += 1) add(center[0] + (random(index, 25 + attempt * 2) - 0.5) * periodX, center[1] + (random(index, 26 + attempt * 2) - 0.5) * periodY);
-		candidates.sort((a, b) => a.score - b.score);
-		const chosen = candidates.find(candidate => !occupied.some(rect => Math.abs(delta(candidate.at[0], rect.at[0], periodX)) < (card.w + rect.w) / 2 + gap && Math.abs(delta(candidate.at[1], rect.at[1], periodY)) < (card.d + rect.d) / 2 + gap));
-		if (!chosen) throw new Error("No free native-size wall position for " + card.key);
-		place(card, index, chosen.at);
-	});
-	return { layout: "single-masonry", positions, periodX, periodY, center, gutter, sourceCount: data.wall.length };
+	const lefts = data.wall.map(card => card.at[0]), rights = data.wall.map(card => card.at[0] + card.w);
+	const gutter = data.wallSource?.gutter * (data.wallSource?.worldScale ?? 0.72) || 17;
+	const periodX = Math.max(...rights) - Math.min(...lefts) + gutter, periodY = 1e6;
+	const positions = data.wall.map(card => [card.at[0] + card.w / 2, card.at[1] + card.d / 2, card.at[2]]);
+	return { layout: "source-masonry", positions, periodX, periodY, center, gutter, sourceCount: data.wall.length };
 }
 
 export function model(input, data) {
@@ -84,7 +48,7 @@ export function model(input, data) {
 	const ca = data.cameraKeys[cameraIndex], cb = data.cameraKeys[cameraIndex + 1];
 	const cs = cameraEase((time - ca.time) / (cb.time - ca.time));
 	const width = ca.width === cb.width ? ca.width : Math.exp(mix(Math.log(ca.width), Math.log(cb.width), cs));
-	const camera = { at: between(ca.at, cb.at, cs), width, height: width * 760 / 1200, azimuth: mix(ca.azimuth, cb.azimuth, cs), elevation: mix(ca.elevation, cb.elevation, cs) };
+	const camera = { at: between(ca.at, cb.at, cs), width, height: width * 760 / 1200, azimuth: mix(ca.azimuth, cb.azimuth, cs), elevation: mix(ca.elevation, cb.elevation, cs), cover: mix(ca.cover ?? 0, cb.cover ?? 0, cs) };
 	const fieldAt = i => {
 		if (i === 15) return [-15, -28, 96];
 		const angle = i * 2.39996 + (random(i, 1) - 0.5) * 0.7;
@@ -174,11 +138,11 @@ export function model(input, data) {
 	const lastShot = data.cameraKeys[data.cameraKeys.length - 1], lastCamera = { ...lastShot, height: lastShot.width * 760 / 1200 };
 	const wallStart = data.motion?.wall?.start ?? 27, velocityX = data.motion?.wall?.velocity?.[0] ?? -32;
 	const wallPeriod = periodX / Math.abs(velocityX) * (data.motion?.wall?.repeatX ?? 3);
-	const wallVelocity = [velocityX, -periodY / wallPeriod];
+	const wallVelocity = [velocityX, data.motion?.wall?.velocity?.[1] ?? 0];
 	const wallShift = atTime => {
 		const initial = Math.max(0, Math.min(atTime, wallStart) - 24), tail = Math.max(0, atTime - wallStart);
 		const blend = Math.min(tail, 3), integral = blend - blend ** 3 / 9 + blend ** 4 / 54;
-		return [-20 * initial + wallVelocity[0] * tail + (-20 - wallVelocity[0]) * integral, 5.6 * initial + wallVelocity[1] * tail + (5.6 - wallVelocity[1]) * integral, 0];
+		return [-20 * initial + wallVelocity[0] * tail + (-20 - wallVelocity[0]) * integral, wallVelocity[1] * tail, 0];
 	};
 	const shift = wallShift(time);
 	const tiles = data.features.map((feature, i) => {
@@ -215,7 +179,7 @@ export function model(input, data) {
 		return [wrap(origin[0] + movement[0], lastCamera.at[0], periodX), wrap(origin[1] + movement[1], lastCamera.at[1], periodY), origin[2]];
 	};
 	const pool = data.wall.map((card, sourceIndex) => ({ card, sourceIndex, kind: "wall", index: sourceIndex, key: card.key }));
-	const originalActions = data.actors.map((actor, i) => ({ ...actor, incoming: [360 + i * 20, 420 + i * 15, 160], entry: [950, 1050, 0], target: pool.find(entry => entry.card.key === actor.slotKey) }));
+	const originalActions = data.actors.map(actor => ({ ...actor, entry: [950, 1050, 0], target: pool.find(entry => entry.card.key === actor.slotKey) }));
 	const helperStart = data.motion?.wall?.helperStart ?? 35, helperPeriod = data.motion?.wall?.helperPeriod ?? 12;
 	const helperCycle = Math.max(0, Math.floor((time - helperStart) / helperPeriod));
 	const recurringTargets = new Set();
@@ -224,7 +188,10 @@ export function model(input, data) {
 		const candidates = pool.filter(entry => entry.card.reserved === undefined && !recurringTargets.has(entry.key)).map(entry => {
 			const projected = screenAt(baseWallAt(entry.card, entry.sourceIndex, grab), grab);
 			const x = projected[0] * projectionScale, y = projected[1] * projectionScale;
-			return { entry, safe: Math.abs(x) < lastCamera.width / 2 - 360 && Math.abs(y) < lastCamera.height / 2 - 360, score: Math.abs(x) * 0.45 + Math.abs(y - (lastCamera.height / 2 - 360)) };
+			// Recurring helpers work in the centre zone that stays on screen even when a narrow frame crops the wall's sides
+			// (cover fit), favouring cards on its right, where the sideways-scrolling wall feeds in.
+			const zoneX = lastCamera.height * 0.45 - 110, zoneY = lastCamera.height / 2 - 150;
+			return { entry, safe: Math.abs(x) < zoneX && Math.abs(y) < zoneY, score: Math.abs(y) * 0.45 + Math.abs(x - zoneX * 0.55) };
 		});
 		candidates.sort((a, b) => Number(b.safe) - Number(a.safe) || a.score - b.score || a.entry.sourceIndex - b.entry.sourceIndex);
 		recurringTargets.add(candidates[0].entry.key);
@@ -253,11 +220,12 @@ export function model(input, data) {
 		const marginX = (card.w * Math.abs(Math.sin(azimuth)) + card.d * Math.abs(Math.cos(azimuth))) * projectionScale / 2 + 12;
 		const marginY = (card.w * Math.abs(Math.cos(azimuth)) + card.d * Math.abs(Math.sin(azimuth))) * Math.sin(elevation) * projectionScale / 2 + 12;
 		const visible = Math.abs(projected[0]) * projectionScale < camera.width / 2 + marginX && Math.abs(projected[1]) * projectionScale < camera.height / 2 + marginY;
-		if (!visible) alpha = 0;
+		// Off-frame cards are culled, except one a cursor is carrying in from beyond the edge.
+		if (!visible && !action) alpha = 0;
 		const highlight = card.reserved === 0 ? 1 : 0;
-		const entryProgress = clamp((camera.height / 2 + marginY - projected[1] * projectionScale) / (marginY * 2));
-		const enteringBottom = time >= wallStart && visible && projected[1] * projectionScale > camera.height / 2 - marginY;
-		return { ...pose(at, rot, 1, alpha, highlight), sourceIndex: i, key: entry.key, index: entry.index, incoming: enteringBottom || Boolean(action && time < action.land), entryEdge: enteringBottom ? "bottom" : null, entryProgress, visible, screen: projected };
+		const entryProgress = clamp((camera.width / 2 + marginX - projected[0] * projectionScale) / (marginX * 2));
+		const enteringRight = time >= wallStart && visible && projected[0] * projectionScale > camera.width / 2 - marginX;
+		return { ...pose(at, rot, 1, alpha, highlight), sourceIndex: i, key: entry.key, index: entry.index, incoming: enteringRight || Boolean(action && time < action.land), entryEdge: enteringRight ? "right" : null, entryProgress, visible, screen: projected };
 	});
 	const wall = wallPoses, wallCopies = [];
 	const confetti = Array.from({ length: 56 }, (_, i) => {
@@ -325,7 +293,7 @@ export function model(input, data) {
 	})];
 	const doneEffect = { trace: ease((time - 10.8) / 1.1), sweep: ease((time - 11.9) / 1.1), alpha: ease((time - 10.8) / 0.14) * (1 - ease((time - 12.8) / 0.3)) };
 	const elapsed = Math.max(0, time - wallStart), steadyElapsed = Math.max(0, elapsed - 3), period = wallPeriod;
-	const wallLoop = { active: time >= wallStart, layout: "single-masonry", cycle: Math.floor(steadyElapsed / period), offset: steadyElapsed % period, period, elapsed, shift, velocity: wallVelocity, periodX, periodY, poolSize: pool.length, virtualPoolSize: pool.length, copyPoolLimit: 0, visibleCount: wallPoses.filter(each => each.alpha > 0.002).length, incomingCount: wallPoses.filter(each => each.incoming && each.alpha > 0.002).length, feedEdge: "bottom" };
+	const wallLoop = { active: time >= wallStart, layout: "source-masonry", cycle: Math.floor(steadyElapsed / period), offset: steadyElapsed % period, period, elapsed, shift, velocity: wallVelocity, periodX, periodY, poolSize: pool.length, virtualPoolSize: pool.length, copyPoolLimit: 0, visibleCount: wallPoses.filter(each => each.alpha > 0.002).length, incomingCount: wallPoses.filter(each => each.incoming && each.alpha > 0.002).length, feedEdge: "right" };
 	const state = { time, variant, index, phase: data.states[index].phase, camera, cards, tiles, wall, wallCopies, wallLoop, confetti, cursors, titlePose, doneEffect, chrome: 1 - ease((time - 13.25) / 1.3), flash: 0, flashY: 0, title: titlePose.alpha };
 	if (!options.transition) return state;
 	const { from, progress } = options.transition, s = clamp(progress);

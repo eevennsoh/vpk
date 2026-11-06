@@ -339,7 +339,9 @@ export function live(ctx) {
 		const { height } = state.camera, [cx, cy] = center;
 		// Shots are framed at 1.58:1 and lean on scene beyond the frame's sides. A narrower display (the two-column figure
 		// page) widens the frame up to 1.3x so the board is not cropped.
-		const width = state.camera.width * Math.min(1.3, Math.max(1, (state.camera.width / height) / Math.max(0.1, displayWidth / displayHeight)));
+		const contain = state.camera.width * Math.min(1.3, Math.max(1, (state.camera.width / height) / Math.max(0.1, displayWidth / displayHeight)));
+		// Cover shots (the frontal wall) fill the frame's height and crop the sides instead of letterboxing.
+		const width = contain + ((state.camera.cover ?? 0) * (height * displayWidth / Math.max(1, displayHeight) - contain));
 		ctx.svg.setAttribute("viewBox", `${(cx - width / 2).toFixed(3)} ${(cy - height / 2).toFixed(3)} ${width.toFixed(3)} ${height.toFixed(3)}`);
 		drawGround(state.camera.at, width, height);
 		const unit = Math.max(width / displayWidth, height / displayHeight);

@@ -215,7 +215,8 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 						const next = after.get(key);
 						if (!next) continue;
 						const delta = Math.hypot(previous.x - next.x, previous.y - next.y);
-						if (delta > .2) failures.push('visible recycle jump: ' + key + ' at ' + time);
+						// A recycle jump would move a card hundreds of pixels; carried cards legitimately move a pixel or so per 2 ms.
+						if (delta > 2) failures.push('visible recycle jump: ' + key + ' at ' + time);
 						if (delta > .0001) moving++;
 					}
 					if (moving < 10) failures.push('wall stopped at ' + time);

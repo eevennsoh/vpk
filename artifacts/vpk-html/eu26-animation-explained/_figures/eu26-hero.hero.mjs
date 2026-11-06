@@ -242,9 +242,9 @@ export const data = {
 	],
 	titleCarry: { reach: 22.5, grab: 23.1, land: 26.4, leave: 27, entry: [400, -360, 30] },
 	actors: [
-		{ id: "teammate-1", slotKey: "library-picker", reach: 26.5, grab: 27.15, land: 28.9, leave: 29.55, incoming: [220, -140, 170], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
-		{ id: "teammate-2", slotKey: "library-loomRecordBar", reach: 28, grab: 28.65, land: 30.5, leave: 31.15, incoming: [260, -180, 180], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
-		{ id: "teammate-3", slotKey: "library-glyphChat", reach: 31, grab: 31.65, land: 34, leave: 34.65, incoming: [200, -130, 145], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
+		{ id: "teammate-1", slotKey: "library-quizArtifact", reach: 26.5, grab: 27.15, land: 28.9, leave: 29.55, incoming: [170, -30, 170], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
+		{ id: "teammate-2", slotKey: "library-hold", reach: 28, grab: 28.65, land: 30.5, leave: 31.15, incoming: [180, 40, 180], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
+		{ id: "teammate-3", slotKey: "library-loomRecordBar", reach: 31, grab: 31.65, land: 34, leave: 34.65, incoming: [130, -20, 145], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
 	],
 	cameraKeys: [
 		{ time: 0, at: [0, 0, 0], width: 1220, azimuth: 45, elevation: 30 },
@@ -261,8 +261,9 @@ export const data = {
 		{ time: 19.2, at: [-15, -28, 96], width: 540, azimuth: 125, elevation: 48 },
 		{ time: 21.6, at: [10, -4, 5], width: 1040, azimuth: 90, elevation: 90 },
 		{ time: 22.4, at: [10, -4, 5], width: 1040, azimuth: 90, elevation: 90 },
-		{ time: 26.8, at: [-90, -15, 8], width: 2152.8, azimuth: 45, elevation: 30 },
-		{ time: 34, at: [-90, -15, 8], width: 2152.8, azimuth: 45, elevation: 30 },
+		// The wall is shown flat and frontal, like the source's screen: one band of the packed masonry, centred and filling the frame.
+		{ time: 26.8, at: [0, 0, 0], width: 1300, azimuth: 90, elevation: 90, cover: 1 },
+		{ time: 34, at: [0, 0, 0], width: 1300, azimuth: 90, elevation: 90, cover: 1 },
 	],
 };
 data.wallField = createWallField(data);
