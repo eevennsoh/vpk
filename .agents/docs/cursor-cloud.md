@@ -32,7 +32,7 @@ CI=true pnpm install --frozen-lockfile
 | Express Backend | `pnpm run dev:backend` | 8080 | Yes |
 | Rovo Serve | `pnpm run dev:rovo` | 8000 | Only for Rovo-selected chat/tool flows |
 
-Start frontend + backend together: `pnpm run dev`. On Linux, export `HOST=127.0.0.1` first so Next listens on IPv4 loopback; `next dev --hostname localhost` binds `::1` only, and `control-vpk` opens `http://127.0.0.1:<port>` (already listed in `allowedDevOrigins`). Start all three (including Rovo): `pnpm run rovo` (requires the `rovo` CLI on PATH).
+Start frontend + backend together: `pnpm run dev`. Without a Portless route, the frontend defaults to `localhost`, which can bind only to IPv6 on Linux. Export `HOST=127.0.0.1` when tools need the IPv4 loopback address, such as `control-vpk`'s fallback URL. A registered Portless route already makes the launcher bind to IPv4. Start all three (including Rovo): `pnpm run rovo` (requires the `rovo` CLI on PATH).
 
 Cloud agent `start`:
 
