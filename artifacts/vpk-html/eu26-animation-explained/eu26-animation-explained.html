@@ -3559,8 +3559,11 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { ma
 	}
 	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-stage { position: relative; inset-block-start: auto; block-size: 100%; }
 	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] #animation-explorer .iso-stage { block-size: calc(var(--story-hero-height) - var(--story-slides-reserve) + var(--story-figure-inset)); }
-	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-reading { block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
-	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-step { min-block-size: 0; justify-content: start; padding-block: 56px 32px; }
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-reading { display: flex; flex-direction: column; block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
+	/* Centred against the figure card like Page; auto margins fall back to top-aligned scrolling when a chapter is taller. */
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-step { min-block-size: 0; justify-content: start; margin-block: auto; padding-block: 24px; }
+	/* "View this moment" scrolls Page to a chapter; Slides and Video already show the moment, so the link only adds height. */
+	body[data-vpk-layout="story"] [data-vpk-story]:is([data-story-mode="slides"], [data-story-mode="video"]) .story-step-play { display: none; }
 }
 
 /* Wide Video uses Page's exact columns: the current chapter's text on the left, the figure page on the right with the
@@ -3574,8 +3577,8 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { ma
 		align-items: stretch;
 		padding-block: var(--story-figure-inset) 12px;
 	}
-	body[data-vpk-layout="story"] [data-story-mode="video"] .story-reading { grid-column: 1; grid-row: 1; align-self: start; max-block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
-	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step { min-block-size: 0; padding-block: 56px 32px; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-reading { grid-column: 1; grid-row: 1; align-self: safe center; max-block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step { min-block-size: 0; padding-block: 24px; }
 	body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { grid-column: 2; grid-row: 1; min-block-size: 0; }
 	/* The player controls (timeline, chapter, status) span both columns and centre on the screen, like Slides' strip.
 	   The grid is offset left by half the right-side reserves (icon rail + rail room), so shift back by that much and
