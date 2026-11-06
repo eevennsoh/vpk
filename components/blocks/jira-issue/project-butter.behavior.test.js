@@ -513,6 +513,27 @@ test("Butter software agents offer run locations before cloud assignment", async
 	assert.deepEqual(assigned, ["review-agent"]);
 });
 
+test("Butter labels the single resumable session and continues it", async () => {
+	const opened = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			appearance: "project-butter", issueKey: "PD-40", summary: "Test",
+			assignment: {
+				agents: [{ id: "test-agent", name: "Cursor", byline: "" }],
+				onAgentAssign: () => undefined,
+				sessions: [{ id: "session-1", title: "Sample session", state: "running", host: "cloud", agent: { id: "test-agent", name: "Cursor" } }],
+				onOpenSession: (session) => opened.push(session.id),
+			},
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
+	await view.click(view.getByRole("option", { name: /Cursor/u }));
+	await view.click(view.getByRole("menuitem", { name: "Continue with last session" }));
+	assert.deepEqual(opened, ["session-1"]);
+});
+
 test("Butter restores the add-agent control when assignment does not create a row", async () => {
 	const assigned = [];
 	const view = await renderComponent({

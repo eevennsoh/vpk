@@ -2697,11 +2697,11 @@
 	"appPages": {
 		"summary": {
 			"ownerImportCount": 75,
-			"pageCount": 59,
+			"pageCount": 60,
 			"primaryOwnerKinds": {
 				"catalog": 20,
 				"dynamic": 8,
-				"inline": 1,
+				"inline": 2,
 				"redirect": 2,
 				"shell": 28
 			}
@@ -4317,6 +4317,18 @@
 					}
 				],
 				"source": "app/rovo/[[...id]]/page.tsx"
+			},
+			{
+				"ownerCount": 0,
+				"owners": [],
+				"primaryOwner": {
+					"kind": "inline",
+					"source": "app/sandbox/agent-selector-canvas/page.tsx"
+				},
+				"routePath": "/sandbox/agent-selector-canvas",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/sandbox/agent-selector-canvas/page.tsx"
 			},
 			{
 				"ownerCount": 3,
