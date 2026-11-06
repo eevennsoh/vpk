@@ -151,7 +151,8 @@ export function model(input, data) {
 			scaleY = mix(1, wall.d / feature.d, toss);
 			alpha *= 1 - ease((time - 26) / 0.7);
 		}
-		const highlight = i === 0 ? 1 : 0;
+		// The hero tile hands the orange to the Team ’26 title as it lands (same 0.3s curve), so only one tile is orange.
+		const highlight = i === 0 ? 1 - ease((time - 22.2) / 0.3) : 0;
 		return { ...pose(at, rot, scale, alpha, highlight), scaleY };
 	});
 	const wrap = (value, center, period) => value - Math.floor((value - center + period / 2) / period) * period;
