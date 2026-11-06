@@ -2,20 +2,23 @@
 
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import EpicIcon from "@atlaskit/icon/core/epic";
-
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import type { SuggestionValue } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 
-/**
- * The deck's value renderer. Every value wraps at full card width; nothing is clipped,
- * clamped or ellipsised, and the card grows to fit, so a reviewer always judges the whole suggestion.
- */
+function ParagraphValue({ text }: Readonly<{ text: string }>) {
+	const { ref, hasVerticalOverflow, showBottomScrollMask } = useHasVerticalOverflow<HTMLParagraphElement>();
+	return <p aria-label={hasVerticalOverflow ? "Suggested value" : undefined} className="scrollbar-thin max-h-50 touch-pan-y touch-pinch-zoom overflow-y-auto overscroll-contain text-sm leading-5 text-pretty whitespace-pre-wrap text-text focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" data-suggestion-value-scroll={hasVerticalOverflow ? "" : undefined} ref={ref} role={hasVerticalOverflow ? "region" : undefined} style={buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask, fadeSize: "var(--ds-space-200)" })} tabIndex={hasVerticalOverflow ? 0 : undefined}><span className="block">{text}</span></p>;
+}
+
+/** Values wrap without truncation; longer paragraphs scroll within the card. */
 export function CardValue({ value }: Readonly<{ value: SuggestionValue }>) {
 	switch (value.kind) {
 		case "paragraph":
-			return <p className="text-sm leading-5 text-pretty text-text">{value.text}</p>;
+			return <ParagraphValue text={value.text} />;
 		case "date":
 			return (
 				<span className="flex items-center gap-2 text-sm leading-5 text-text">

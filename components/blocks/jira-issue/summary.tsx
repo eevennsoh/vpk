@@ -107,6 +107,7 @@ export function JiraIssueSummary({
 	moreAction,
 	parentEpicControl,
 	priority,
+	animatePullRequestOnMount,
 	pullRequestNumber,
 	pullRequestPreview,
 	pullRequestStatus,
@@ -138,6 +139,7 @@ export function JiraIssueSummary({
 	moreAction?: ReactNode;
 	parentEpicControl?: ReactNode;
 	priority: JiraIssuePriority;
+	animatePullRequestOnMount?: boolean;
 	pullRequestNumber?: number;
 	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
@@ -159,7 +161,7 @@ export function JiraIssueSummary({
 			assignment={assignment} allowAddAgent={allowAddAgent}
 			issueKey={issueKey} summary={summary} metadata={metadata} priority={priority} tags={tags}
 			parentEpicControl={parentEpicControl} subtasks={subtasks} onSubtaskOpen={onSubtaskOpen} moreAction={moreAction}
-			pullRequestNumber={pullRequestNumber} pullRequestPreview={pullRequestPreview} pullRequestStatus={pullRequestStatus}
+			animatePullRequestOnMount={animatePullRequestOnMount} pullRequestNumber={pullRequestNumber} pullRequestPreview={pullRequestPreview} pullRequestStatus={pullRequestStatus}
 			pullRequestTitle={pullRequestTitle} showPriorityIndicator={showPriorityIndicator} showFooterMetadata={showFooterMetadata}
 			assignee={assigneeControl ?? (isMounted ? <JiraIssueAssignee assigneeAvatarLabel={assigneeAvatarLabel} assigneeAvatarShape={assigneeAvatarShape} assigneeAvatarSrc={assigneeAvatarSrc} assigneePulse={assigneePulse} assigneeUnassignedKind={assigneeUnassignedKind} issueKey={issueKey} size="sm" /> : null)}
 		/>;

@@ -488,7 +488,7 @@ test("Agent Directory uses one unsegmented results grid and updated sidebar labe
 		{
 			name: "RFP Drafter",
 			byline: "Custom agent by Maya Chen",
-			avatarSrc: "/avatar-agent/dev-agents/feature-flag-cleaner.svg",
+			avatarSrc: "/avatar-agent-new/lime/feature-flag.svg",
 			description: "Drafts first-pass RFP response packages for Enterprise RFP Response",
 			attributionKind: "person",
 			favorite: true,

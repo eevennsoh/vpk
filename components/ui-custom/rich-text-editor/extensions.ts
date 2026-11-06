@@ -457,7 +457,14 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 export function createRichTextMentionExtension(
 	options: RichTextEditorExtensionOptions = {},
 ) {
-	return RichTextMention.configure({
+	const getMentionSources = options.getMentionSources;
+	const mention = getMentionSources ? RichTextMention.extend({
+		parseMarkdown: createMentionTokenParser((category, id) => {
+			const item = getMentionSources()?.[category]?.find((candidate) => candidate.id === id);
+			return item ? { label: item.label, attrs: getRichTextMentionVisualAttrs(item.visual) } : resolveMentionToken(category, id);
+		}),
+	}) : RichTextMention;
+	return mention.configure({
 		HTMLAttributes: {
 			class: "rich-text-mention",
 		},
@@ -517,6 +524,7 @@ export function createRichTextEditorExtensions(
 ) {
 	return [
 		StarterKit.configure({
+			trailingNode: options.trailingNode,
 			link: false,
 			underline: false,
 			// Replaced by RichTextCodeBlock so ```mermaid fences get a NodeView.

@@ -19,7 +19,7 @@ function DemoFrame({ children }: Readonly<{ children: React.ReactNode }>) {
 function TileLeadingAvatar({ label = "" }: Readonly<{ label?: string; size?: "small" | "medium" }>) {
 	return (
 		<Tile aria-hidden label={label || "Agent"} variant="transparent" size="small" isSnug>
-			<Image alt="" aria-hidden src="/avatar-agent/teamwork-agents/release-notes-drafter.svg" width={24} height={24} />
+			<Image alt="" aria-hidden src="/avatar-agent-new/blue/release-notes.svg" width={24} height={24} />
 		</Tile>
 	);
 }

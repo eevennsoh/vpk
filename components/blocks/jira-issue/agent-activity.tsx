@@ -31,7 +31,6 @@ import {
 import type { AgentListHost, AgentListInvoker } from "@/components/blocks/agent-list";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
-import { agentIdentityLabel } from "@/components/blocks/agent-session/agent-session-identity-label";
 import { AgentSessionDragPill } from "@/components/blocks/agent-session/agent-session-drag-chip";
 import { AgentSessionShortLifecycleIcon } from "@/components/blocks/agent-session/agent-session-lifecycle";
 import {
@@ -102,6 +101,10 @@ export interface JiraIssueAgentActivity {
 	label: string;
 	labels?: readonly string[];
 	message?: string;
+	/** Original user request, retained when a session is shown in a picker. */
+	prompt?: string;
+	/** A newly created session that has not received its first prompt yet. */
+	waitingForPrompt?: boolean;
 	/** Stable start time supplied by a real running session. */
 	startedAtMs?: number;
 	/** Optional seeded runtime for demos; active timers continue from this value. */
@@ -298,18 +301,14 @@ function resolveJiraIssueAgentRowPresentation(
 	const featuredActivity = summary.featuredActivityIndex !== null
 		? activities[summary.featuredActivityIndex]
 		: undefined;
-	const rowLabel = isViewerRow
-		? isSingleAgent
-			? agentIdentityLabel(activities[0], activities[0].invokedBy)
-			: "Agent sessions"
-		: isCompletedRow
+	const rowLabel = isCompletedRow
 		? featuredActivity?.label ?? "Finished"
 		: summary.label;
 	const activityKey = activities.map((activity) => activity.id).join("\n");
 	const startupSequenceKey = isSingleAgent && featuredActivity?.startupSequence === "jira-work-item-start"
 		? activityKey
 		: null;
-	const rowAriaLabel = isViewerRow ? rowLabel : isSingleAgent
+	const rowAriaLabel = isSingleAgent
 			? `${activities[0]?.name ?? "Agent"}: ${rowLabel}`
 			: `${summary.activityCount} agents: ${rowLabel}`;
 
@@ -630,7 +629,7 @@ function JiraIssueAgentActivityRow({
 	const statusIcon = (
 		<JiraIssueAgentStatusAffordance
 			interactive={showAssignmentFlyout}
-			statusIcon={isViewerRow ? undefined : (
+			statusIcon={
 				animateStateTransition ? <AgentSessionShortLifecycleIcon
 					accessibleState={lifecycleState}
 					animateTransition
@@ -653,7 +652,7 @@ function JiraIssueAgentActivityRow({
 					renderAgentActivityIndicator={renderAgentActivityIndicator}
 					workingSpinnerVariant={workingSpinnerVariant}
 				/>
-			)}
+			}
 		/>
 	);
 	const rowHandle = (
@@ -679,8 +678,8 @@ function JiraIssueAgentActivityRow({
 				activities={activities}
 				avatarLayout={avatarLayout}
 				featuredActivity={isViewerRow && activities.length > 1 ? undefined : featuredActivity}
-				isAwaitingInput={!isViewerRow && isAwaitingInput}
-				isWorking={!isViewerRow && !isCompletedRow && !isAwaitingInput}
+				isAwaitingInput={isAwaitingInput}
+				isWorking={!isCompletedRow && !isAwaitingInput}
 				rowLabel={rowLabel}
 				showUnlinkControl={showUnlinkControl}
 				statusIcon={statusIcon}

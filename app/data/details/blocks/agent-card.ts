@@ -12,7 +12,7 @@ export const AGENT_CARD_DETAIL: ComponentDetail = {
   publisher="Atlassian"
   attributionKind="company"
   verified
-  avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+  avatarSrc="/avatar-agent-new/blue/decision-director.svg"
   description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
   sources={[
     { id: "jira", label: "Jira", provider: "jira" },

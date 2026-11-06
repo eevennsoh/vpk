@@ -1,4 +1,7 @@
-export type PullRequestStatus = "Open" | "Merged";
+import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
+import type { AgentListAgent } from "@/components/blocks/agent-list/agent-list-types";
+
+export type PullRequestStatus = "Open" | "Merged" | "Draft" | "Failed";
 
 /**
  * Card layout. `dropdown` is the compact two-row list card used in select
@@ -13,6 +16,17 @@ export type PullRequestVariant = "dropdown" | "spacious" | "flyout";
 export interface PullRequestAuthor {
 	name: string;
 	avatarUrl?: string;
+	/** Agent that assisted the human author, shown alongside their avatar. */
+	assistedBy?: Pick<AgentListAgent, "name" | "avatarSrc" | "brandName" | "vpkLogo">;
+}
+
+/** Source-control host. Picks the provider mark on the flyout repository / branch row. */
+export type PullRequestProvider = "github" | "bitbucket";
+
+/** Reviewer sign-off, shown on the flyout as `0/1 reviewer` (or `No reviewers` at total 0). */
+export interface PullRequestReviewers {
+	approved: number;
+	total: number;
 }
 
 export interface PullRequestProps {
@@ -34,6 +48,25 @@ export interface PullRequestProps {
 	deletions: number;
 	/** Number of changed files, rendered as `N files` on every card. */
 	filesChanged?: number;
+	/** Flyout only. Provider mark for the repository row. Defaults to `github`. */
+	provider?: PullRequestProvider;
+	/** Flyout only. Reviewer sign-off, appended to the `Name · time` line. Omitted when absent. */
+	reviewers?: PullRequestReviewers;
+	/** Flyout only. `workspace/repo` shown beside the provider mark. */
+	repository?: string;
+	/**
+	 * Flyout only. CI checks. The row reads `3/3 builds passed` and expands inline into
+	 * the full checks list. Omitted when absent or empty.
+	 */
+	checks?: readonly PullRequestCheck[];
+	/** Flyout only. Renders the primary Review action as a link. Omitted without it. */
+	reviewHref?: string;
+	/** Flyout only. Show a Review button when no review destination is available. */
+	showReview?: boolean;
+	/** Flyout only. Makes the pull request title an external link. */
+	href?: string;
+	/** Called with failing CI checks when Fix PR is activated. */
+	onFix?: (checks: readonly PullRequestCheck[]) => void;
 	/**
 	 * Absolute timestamp (ms). Reserved for callers that already track PR age;
 	 * the card renders `relativeTime` when provided.
@@ -44,8 +77,8 @@ export interface PullRequestProps {
 	/** Marks the card as the active selection, including read-only summaries. */
 	selected?: boolean;
 	/**
-	 * When provided, the card activates as a pressed button (select-to-open).
-	 * Without it, the card remains a non-interactive summary surface.
+	 * On dropdown and spacious cards, activates a pressed button (select-to-open).
+	 * The flyout stays a container for its links and actions.
 	 */
 	onActivate?: () => void;
 	className?: string;

@@ -59,6 +59,8 @@ export type TWGAppstackProps = Omit<ComponentProps<"div">, "children"> & {
 	overflowCount?: number;
 	animated?: boolean;
 	direction?: TwgAppstackAnimationDirection;
+	/** Called when the animated source entrance has finished. */
+	onEntranceComplete?: () => void;
 };
 
 export type TwgToolSourceStackProps = TWGAppstackProps;
@@ -336,6 +338,7 @@ export function TWGAppstack({
 	direction = "right-to-left",
 	iconSize = "small",
 	maxVisible = 6,
+	onEntranceComplete,
 	overflowCount,
 	sources,
 	...props
@@ -343,6 +346,7 @@ export function TWGAppstack({
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimate = animated && !shouldReduceMotion;
 	const hasRenderedSources = useRef(false);
+	const entranceComplete = useRef(false);
 	const shouldStaggerEntrance = !hasRenderedSources.current;
 	const sizing = APPSTACK_SIZES[iconSize];
 
@@ -389,6 +393,7 @@ export function TWGAppstack({
 				animate={{ filter: "blur(0px)", opacity: 1, rotate: rotation, scale: 1, x: 0 }}
 				className={itemClassName}
 				layout={shouldReduceMotion ? false : "position"}
+				onAnimationComplete={index === (direction === "left-to-right" ? itemCount - 1 : 0) ? () => { if (!entranceComplete.current) { entranceComplete.current = true; onEntranceComplete?.(); } } : undefined}
 				initial={{
 					filter: "blur(6px)",
 					opacity: 0,

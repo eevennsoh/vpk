@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/team-eu26/components/context-description-editor";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
-import { PROJECT_BUTTER_CURRENT_USER } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 
 function commentLink(id: string) {
 	return `${location.origin}${location.pathname}#comment-${encodeURIComponent(id)}`;
@@ -107,7 +106,7 @@ export function ProjectButterCommentTools({
 	const [editing, setEditing] = useState(false);
 	const [draft, setDraft] = useState("");
 	const original = reply ? reply.body : jiraActivitySegmentsToPlainText(entry.body);
-	const editable = (reply?.actor ?? entry.actor).name === PROJECT_BUTTER_CURRENT_USER.name;
+	const editable = (reply?.actor ?? entry.actor).name === content.currentUser.name;
 	const id = reply?.id ?? entry.id;
 	function save() {
 		if (!draft.trim()) return;

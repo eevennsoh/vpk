@@ -67,9 +67,11 @@ function ConfidenceMeter({ confidence }: Readonly<{ confidence: SuggestionConfid
 function SourceMeta({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
 	const parts = evidence.meta.split(" · ").filter((part) => part !== evidence.duration);
 	return (
-		<p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-4 text-text-subtlest">
+		<p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-4 text-text-subtlest">
 			{parts.map((part, index) => (
-				<span className={cn("whitespace-nowrap tabular-nums", index === 0 && parts.length > 1 ? "text-text-subtle" : null)} key={part}>{part}</span>
+				<span className={cn("min-w-0 max-w-full break-words tabular-nums", index === 0 && parts.length > 1 ? "text-text-subtle" : null)} key={part}>
+					{part.split(/([A-Z][A-Z0-9]+-\d+)/u).map((text, tokenIndex) => /^[A-Z][A-Z0-9]+-\d+$/u.test(text) ? <span className="whitespace-nowrap" key={`${tokenIndex}-${text}`}>{text}</span> : text)}
+				</span>
 			))}
 			{evidence.duration ? (
 				<span className="inline-flex h-4 items-center gap-0.5 rounded-sm bg-bg-neutral pr-1 pl-0.5 whitespace-nowrap text-text-subtle tabular-nums">

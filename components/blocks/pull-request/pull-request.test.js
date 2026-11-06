@@ -25,7 +25,7 @@ const BLOCK_DETAILS_SOURCE = readDetailCategorySource("blocks");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
 test("PullRequest exposes the dropdown, spacious, and flyout card props contract", () => {
-	assert.match(TYPES_SOURCE, /export type PullRequestStatus = "Open" \| "Merged"/u);
+	assert.match(TYPES_SOURCE, /export type PullRequestStatus = "Open" \| "Merged" \| "Draft" \| "Failed"/u);
 	assert.match(TYPES_SOURCE, /export type PullRequestVariant = "dropdown" \| "spacious" \| "flyout"/u);
 	assert.doesNotMatch(TYPES_SOURCE, /"compact"/u);
 	assert.match(
@@ -83,7 +83,7 @@ test("PullRequest card reuses Avatar, Lozenge, BrandLogoMark, and ArrowRight", (
 	assert.match(COMPONENT_SOURCE, /case "Open":[\s\S]*return "success"/u);
 	assert.match(COMPONENT_SOURCE, /case "Merged":[\s\S]*return "discovery"/u);
 	assert.match(COMPONENT_SOURCE, /const _exhaustive: never = status/u);
-	assert.doesNotMatch(COMPONENT_SOURCE, /\bRelativeTime\b|from "@\/components\/ui\/elapsed-time"|BranchIcon|IconTile/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /\bRelativeTime\b|from "@\/components\/ui\/elapsed-time"|IconTile/u);
 });
 
 test("PullRequest GitHub mark does not add an inline line-box wrapper", () => {
@@ -102,7 +102,7 @@ test("PullRequest GitHub mark does not add an inline line-box wrapper", () => {
 test("PullRequest selection styling works for read-only and interactive cards", () => {
 	assert.match(
 		COMPONENT_SOURCE,
-		/if \(onActivate\) \{[\s\S]*<button[\s\S]*aria-pressed=\{selected\}[\s\S]*onClick=\{onActivate\}[\s\S]*type="button"/u,
+		/if \(onActivate && !isFlyout\) \{[\s\S]*<button[\s\S]*aria-pressed=\{selected\}[\s\S]*onClick=\{onActivate\}[\s\S]*type="button"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -182,7 +182,7 @@ test("PullRequest flyout and spacious titles wrap as one inline text run", () =>
 	assert.match(COMPONENT_SOURCE, /function PullRequestInlineTitle/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<span className="text-text-subtlest">#\{number\} <\/span>\s*<span className="text-text">\{title\}<\/span>/u,
+		/<span className="text-text-subtlest">#\{number\} <\/span>[\s\S]*<span className="text-text">\{title\}<\/span>/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -190,7 +190,7 @@ test("PullRequest flyout and spacious titles wrap as one inline text run", () =>
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle number=\{number\} title=\{title\} \/>/u,
+		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle href=\{href\} number=\{number\} title=\{title\} \/>/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,
@@ -218,17 +218,16 @@ test("PullRequest flyout variant matches the overlay summary card", () => {
 	assert.match(COMPONENT_SOURCE, /function PullRequestFlyoutBody/u);
 	assert.match(COMPONENT_SOURCE, /function PullRequestStatusLozenge/u);
 	assert.match(COMPONENT_SOURCE, /function PullRequestGitHubMark/u);
-	// No card prints the repo: the GitHub mark and `#N` already say where the
-	// change lives, so the pill and its `repository` prop are both gone.
-	assert.doesNotMatch(COMPONENT_SOURCE, /PullRequestRepositoryTag|repository/u);
-	assert.doesNotMatch(TYPES_SOURCE, /repository/u);
+	// Only the flyout prints the repo (beside its provider mark); the dropdown
+	// cards stay repo-free because the mark and `#N` already say where it lives.
+	assert.doesNotMatch(COMPONENT_SOURCE, /PullRequestRepositoryTag/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/function PullRequestDropdownBody[\s\S]*text-sm font-medium leading-5[\s\S]*function PullRequestFlyoutBody/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle number=\{number\} title=\{title\} \/>/u,
+		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle href=\{href\} number=\{number\} title=\{title\} \/>/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,
@@ -245,11 +244,7 @@ test("PullRequest flyout variant matches the overlay summary card", () => {
 	assert.doesNotMatch(COMPONENT_SOURCE, /Created by \{author\.name\}/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*<PullRequestGitHubMark \/>[\s\S]*<PullRequestBranchPath branch=\{branch\} targetBranch=\{targetBranch\} \/>/u,
-	);
-	assert.doesNotMatch(
-		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*<PullRequestMetaLeadingIcon \/>[\s\S]*<PullRequestGitHubMark \/>/u,
+		/function PullRequestFlyoutBody[\s\S]*<PullRequestProviderMark provider=\{provider\} \/>[\s\S]*<PullRequestBranchPath branch=\{branch\} targetBranch=\{targetBranch\} \/>/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -258,14 +253,14 @@ test("PullRequest flyout variant matches the overlay summary card", () => {
 	assert.match(COMPONENT_SOURCE, /border-t border-border-disabled/u);
 	// File icon leads the files/diff row, not the GitHub branch row.
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/file"/u);
-	assert.match(COMPONENT_SOURCE, /function PullRequestMetaLeadingIcon/u);
+	assert.match(COMPONENT_SOURCE, /PullRequestFlyoutMetaRow,\s*\} from "@\/components\/blocks\/pull-request\/components\/pull-request-flyout-parts"/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/grid size-4 shrink-0 place-items-center text-icon-subtlest/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*<PullRequestMetaLeadingIcon \/>[\s\S]*\{filesChanged\} \{filesChanged === 1 \? "file" : "files"\}/u,
+		/function PullRequestFlyoutBody[\s\S]*<FileIcon label="" size="small" \/>[\s\S]*\{filesChanged\} \{filesChanged === 1 \? "file" : "files"\}/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,

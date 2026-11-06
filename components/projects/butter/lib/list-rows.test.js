@@ -159,6 +159,26 @@ test("createListRows preserves local and cloud session hosts", () => {
 	assert.deepEqual(rows.map((row) => row.agentSessions[0].host), ["local", "cloud"]);
 });
 
+for (const [role, host] of [["owner", "local"], ["owner", "cloud"], ["viewer", "local"], ["viewer", "cloud"]]) {
+	test(`starting Cursor again preserves the ${host} ${role} session and adds a distinct session`, () => {
+		const existing = { id: "PAY-105:test-agent", name: "Cursor", state: "working", role, host };
+		const columns = [{ title: "In progress", cards: [{ code: "PAY-105", title: "Test", agentActivities: [existing] }] }];
+		const updated = applyAssignedAgentIdsToColumns(columns, "PAY-105", ["test-agent", "test-agent"], PAY_BOARD_CATALOG);
+		const activities = updated[0].cards[0].agentActivities;
+		assert.equal(activities.length, 2);
+		assert.deepEqual(activities[0], existing);
+		assert.notEqual(activities[0].id, activities[1].id);
+		assert.equal(activities[1].name, "Cursor");
+		assert.equal(activities[1].state, "working");
+		const row = createListRows(updated, PAY_BOARD_CATALOG)[0];
+		assert.equal(row.agentSessions.length, 2);
+		assert.notEqual(row.agentSessions[0].id, row.agentSessions[1].id);
+		const again = applyAssignedAgentIdsToColumns(updated, "PAY-105", [...row.agentSessions.map((session) => session.id), "test-agent"], PAY_BOARD_CATALOG);
+		assert.equal(again[0].cards[0].agentActivities.length, 3);
+		assert.equal(new Set(again[0].cards[0].agentActivities.map((session) => session.id)).size, 3);
+	});
+}
+
 test("finished list sessions preserve the human who invoked the run", () => {
 	const invokedBy = { name: "Maya Ferreira", avatarSrc: "/maya.png" };
 	const rows = createListRows([{ title: "Done", cards: [{

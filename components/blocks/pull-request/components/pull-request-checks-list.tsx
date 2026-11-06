@@ -15,6 +15,8 @@ import { Spinner } from "@/components/ui/spinner";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { cn } from "@/lib/utils";
 
+export type PullRequestChecksDensity = "rail" | "menu" | "compact";
+
 export interface PullRequestCheck {
 	id: string;
 	name: string;
@@ -228,36 +230,57 @@ function checkRowLinkProps(checkUrl: string | undefined) {
  * Rail density keeps pane full-bleed; width `!` beats the unlayered menu
  * `width: 100%` so `-mx-2` still reaches the ArtifactPane edges.
  */
+/**
+ * `compact` re-scales the row to the flyout's detail rows: a 16px icon column
+ * with a 4px gap (so icons line up with the summary row above), a single
+ * `text-xs` title line, and a content-sized height instead of the menu's fixed
+ * 44px. The byline stays in the DOM as screen-reader text, since it carries the
+ * failure reason and elapsed time. Rows are read-only status lines (no Fix
+ * action, no link glyph), and hover matches the flyout's summary row (the host
+ * sets the row radius).
+ */
+const COMPACT_ROW_CLASS_NAME =
+	"h-auto! min-h-6 grid-cols-[16px_minmax(0,1fr)]! gap-x-1! px-1! py-1! [&_.rich-text-command-menu-avatar]:size-4! [&_.menu-row-title]:text-xs! [&_.menu-row-title]:leading-4! [&_.menu-row-byline]:sr-only";
+
 function CheckRow({
 	bleed = false,
+	compact = false,
 	check,
 	onFixCheck,
+	renderStatusIcon,
 }: Readonly<{
 	bleed?: boolean;
+	compact?: boolean;
 	check: PullRequestCheck;
 	onFixCheck?: (checks: readonly PullRequestCheck[]) => void;
+	renderStatusIcon?: (check: PullRequestCheck) => ReactNode;
 }>) {
 	const isFailed = check.status === "failed";
 	return (
 		<li
 			className={cn(
 				"group/check-row rich-text-command-menu-item hover:bg-bg-neutral-subtle-hovered! focus-visible:bg-bg-neutral-subtle-hovered! focus-visible:outline-none",
-				isFailed ? "grid-cols-[24px_minmax(0,1fr)_auto]!" : undefined,
+				compact ? COMPACT_ROW_CLASS_NAME : undefined,
+				isFailed && !compact ? "grid-cols-[24px_minmax(0,1fr)_auto]!" : undefined,
 				bleed ? "-mx-2 w-[calc(100%+1rem)]!" : undefined,
 			)}
-			data-has-trailing={isFailed ? "true" : undefined}
+			data-has-trailing={isFailed && !compact ? "true" : undefined}
 			{...checkRowLinkProps(check.url)}
 		>
 			<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center">
-				<CheckStatusIcon check={check} />
+				{renderStatusIcon ? renderStatusIcon(check) : <CheckStatusIcon check={check} />}
 			</span>
 			<span className="rich-text-command-menu-copy">
-				<span className="menu-row-title">{check.name}</span>
+				<span className="menu-row-title">
+					{compact ? <span className="sr-only">{CHECK_STATUS[check.status].label}: </span> : null}
+					{check.name}
+				</span>
 				<span className="menu-row-byline">
 					<CheckDetails check={check} />
 				</span>
 			</span>
-			{isFailed ? (
+			{/* Compact rows are read-only status lines: no Fix action and no link glyph. */}
+			{compact ? null : isFailed ? (
 				<CheckRowTrailing check={check} onFixCheck={onFixCheck} />
 			) : (
 				<span className="rich-text-command-menu-shortcut">
@@ -292,11 +315,20 @@ export function PullRequestChecksList({
 	checks,
 	density = "rail",
 	onFixCheck,
+	renderStatusIcon,
 }: Readonly<{
 	checks: readonly PullRequestCheck[];
-	/** `menu` uses editor-palette option chrome; `rail` full-bleeds in ArtifactPane. */
-	density?: "rail" | "menu";
+	/**
+	 * `menu` uses editor-palette option chrome; `rail` full-bleeds in ArtifactPane;
+	 * `compact` is the `text-xs`, 16px-icon-column row for dense cards.
+	 */
+	density?: PullRequestChecksDensity;
 	onFixCheck?: (checks: readonly PullRequestCheck[]) => void;
+	/**
+	 * Replaces the status glyph on `compact` rows, e.g. with a status
+	 * ring. Ignored by `rail` and `menu`, which keep the shared status icons.
+	 */
+	renderStatusIcon?: (check: PullRequestCheck) => ReactNode;
 }>) {
 	if (checks.length === 0) {
 		return <p className="text-xs text-text-subtle">No CI checks reported</p>;
@@ -305,10 +337,12 @@ export function PullRequestChecksList({
 	return (
 		<ul className="flex flex-col" data-jira-work-item-pull-request-checks>
 			{checks.map((check) =>
-				density === "menu" ? (
-					<CheckMenuRow check={check} key={check.id} onFixCheck={onFixCheck} />
-				) : (
+				density === "rail" ? (
 					<CheckRailRow check={check} key={check.id} onFixCheck={onFixCheck} />
+				) : density === "compact" ? (
+					<CheckRow check={check} compact key={check.id} onFixCheck={onFixCheck} renderStatusIcon={renderStatusIcon} />
+				) : (
+					<CheckMenuRow check={check} key={check.id} onFixCheck={onFixCheck} />
 				),
 			)}
 		</ul>

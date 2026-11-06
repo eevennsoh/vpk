@@ -442,14 +442,19 @@ const BANNER_HEXAGON_PATH =
 const DEFAULT_BANNER_COVER_COLOR = "#1868DB";
 const BANNER_COVER_COLORS: Record<string, string> = {
 	"dev-agents": "#82B536",
+	lime: "#82B536",
 	"product-agents": "#BF63F3",
+	purple: "#BF63F3",
 	"service-agents": "#FFC716",
+	yellow: "#FFC716",
 	"strategy-agents": "#FCA700",
+	orange: "#FCA700",
 	"teamwork-agents": DEFAULT_BANNER_COVER_COLOR,
+	blue: DEFAULT_BANNER_COVER_COLOR,
 };
 
 function getBannerCoverColor(avatarSrc: string | undefined): string {
-	const category = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
+	const category = avatarSrc?.match(/\/avatar-agent(?:-new)?\/([^/]+)\//u)?.[1];
 	return (category ? BANNER_COVER_COLORS[category] : undefined) ?? DEFAULT_BANNER_COVER_COLOR;
 }
 

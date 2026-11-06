@@ -166,8 +166,8 @@ export function TileDemoInset() {
 }
 
 const SNUG_AGENT_AVATARS = [
-	{ label: "Code Reviewer", src: "/avatar-agent/dev-agents/code-reviewer.svg" },
-	{ label: "Code Planner", src: "/avatar-agent/dev-agents/code-planner.svg" },
+	{ label: "Code Reviewer", src: "/avatar-agent-new/lime/auto-review.svg" },
+	{ label: "Code Planner", src: "/avatar-agent-new/lime/auto-dev.svg" },
 ] as const;
 
 const SNUG_PROJECT_AVATARS = [

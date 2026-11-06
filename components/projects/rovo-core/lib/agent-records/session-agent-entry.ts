@@ -21,7 +21,7 @@ const SESSION_AGENT_DEFAULT_ID = "session-agent";
 const SESSION_AGENT_DEFAULT_NAME = "Untitled agent";
 const SESSION_AGENT_LEGACY_DEFAULT_NAME = "New agent";
 const SESSION_AGENT_DEFAULT_BYLINE = "Custom agent by You";
-const SESSION_AGENT_DEFAULT_AVATAR_SRC = "/avatar-agent/strategy-agents/wildcard-4.svg";
+const SESSION_AGENT_DEFAULT_AVATAR_SRC = "/avatar-agent-new/orange/culture.svg";
 const SESSION_AGENT_MAX_CONVERSATION_STARTERS = 3;
 
 export type AgentResultPayload = RovoDataParts["agent-result"] & Record<string, unknown>;

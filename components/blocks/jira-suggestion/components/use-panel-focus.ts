@@ -41,6 +41,10 @@ export function usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, ha
 
 	useEffect(() => {
 		const active = document.activeElement;
+		if (holdsFocus.current && mode === "caught-up" && active instanceof Element && (active.closest("footer") || deckRef.current?.contains(active))) {
+			checkRef.current?.focus({ preventScroll: true });
+			return;
+		}
 		if (!holdsFocus.current || (active != null && active !== document.body && active !== panelRef.current)) return;
 		const target = mode === "caught-up" ? checkRef.current : mode === "stack" && hasCards ? deckRef.current : toggleRef.current;
 		(target ?? panelRef.current)?.focus({ preventScroll: true });

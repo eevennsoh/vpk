@@ -4,6 +4,7 @@ import { useId, useRef, useState, type ComponentProps, type CSSProperties, type 
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 export type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
 import type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
+import { summarizeJiraIssueAgentActivities } from "@/components/blocks/jira-issue/agent-activity-model";
 import {
 	JiraIssueAgentActivityRows,
 	type JiraIssueAgentActivity,
@@ -184,6 +185,7 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	/** Jira issue key, e.g. RFP-101. */
 	issueKey: string;
 	pullRequestNumber?: number;
+	animatePullRequestOnMount?: boolean;
 	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
 	pullRequestTitle?: string;
@@ -308,6 +310,7 @@ function JiraIssueDefault({
 	moreMenuActions,
 	parentEpicControl,
 	priority = "major",
+	animatePullRequestOnMount,
 	pullRequestNumber,
 	pullRequestPreview,
 	pullRequestStatus,
@@ -680,6 +683,7 @@ function JiraIssueDefault({
 			moreAction={usesCompactVisual ? moreActionMenu : undefined}
 			parentEpicControl={parentEpicControl}
 			priority={priority}
+			animatePullRequestOnMount={animatePullRequestOnMount}
 			pullRequestNumber={resolvedPullRequestNumber}
 			pullRequestPreview={pullRequestPreview}
 			pullRequestStatus={pullRequestStatus}
@@ -844,7 +848,7 @@ function JiraIssueDefault({
 				{/* Running sessions already occupy the chin; attach copy takes the last
 				    row instead of stacking. Split layouts keep the other rows so the
 				    card height — and drop-zone geometry — stays put. */}
-				<ProjectButterInvocationChin activities={activeAgentActivities} hasChin={hasAgentActivityChin} iconScale={iconScale}><JiraIssueAgentActivityRows
+				<ProjectButterInvocationChin activities={activeAgentActivities} allowPuzzle={agentActivityLayout === "merged" && summarizeJiraIssueAgentActivities(activeAgentActivities.filter((activity) => activity.state !== "completed")).featuredActivityIndex === null} hasChin={hasAgentActivityChin} iconScale={iconScale}><JiraIssueAgentActivityRows
 					activities={activeAgentActivities} assignment={assignment}
 					attachPreviewCopy={replaceDetachedTransfer ? undefined : attachChinCopy}
 					iconScale={iconScale}

@@ -2696,14 +2696,14 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 75,
-			"pageCount": 58,
+			"ownerImportCount": 73,
+			"pageCount": 57,
 			"primaryOwnerKinds": {
 				"catalog": 18,
 				"dynamic": 8,
 				"inline": 1,
 				"redirect": 2,
-				"shell": 29
+				"shell": 28
 			}
 		},
 		"pages": [
@@ -4317,43 +4317,6 @@
 				"source": "app/sandbox/screen-assistant/page.tsx"
 			},
 			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
-						"source": "components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
-						"symbols": [
-							"CanvasWorkspace"
-						]
-					},
-					{
-						"importPath": "@/components/blocks/jira-work-item/suggestion-canvas/registry",
-						"source": "components/blocks/jira-work-item/suggestion-canvas/registry",
-						"symbols": [
-							"SUGGESTION_CANVAS_ENTRIES"
-						]
-					}
-				],
-				"primaryOwner": {
-					"kind": "shell",
-					"sources": [
-						"components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace"
-					]
-				},
-				"routePath": "/sandbox/suggestion-canvas",
-				"shellOwnerCount": 1,
-				"shellOwners": [
-					{
-						"importPath": "@/components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
-						"source": "components/blocks/jira-work-item/suggestion-canvas/canvas/canvas-workspace",
-						"symbols": [
-							"CanvasWorkspace"
-						]
-					}
-				],
-				"source": "app/sandbox/suggestion-canvas/page.tsx"
-			},
-			{
 				"ownerCount": 1,
 				"owners": [
 					{
@@ -4530,10 +4493,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 443,
+			"manifestEntryCount": 444,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 438,
+				"live": 439,
 				"frozen": 4,
 				"superseded": 1
 			}
@@ -4582,7 +4545,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 117,
+				"entryCount": 118,
 				"entries": [
 					{
 						"category": "blocks",
@@ -4848,6 +4811,13 @@
 						"slug": "data-table",
 						"name": "Data Table",
 						"importPath": "@/components/blocks/data-table",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "development-panel",
+						"name": "Development Panel",
+						"importPath": "@/components/blocks/development-panel",
 						"status": "live"
 					},
 					{

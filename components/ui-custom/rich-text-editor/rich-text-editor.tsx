@@ -45,6 +45,7 @@ import {
 import type { EditorToolbarInsertReferenceCategory, EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { isRichTextReferenceCategory } from "./reference-categories";
 import type {
+	RichTextEditorExtensionOptions,
 	RichTextMentionItem,
 	RichTextMentionRemovalRequest,
 	RichTextMentionSources,
@@ -59,6 +60,7 @@ interface RichTextEditorProps
 	value?: string;
 	placeholder?: string;
 	placeholderSlot?: ReactNode;
+	trailingNode?: RichTextEditorExtensionOptions["trailingNode"];
 	dataFlowConfig?: StudioAgentDataFlowConfig;
 	dataFlowDiagramLabel?: string;
 	editorClassName?: string;
@@ -354,6 +356,7 @@ export function RichTextEditor({
 	value,
 	placeholder,
 	placeholderSlot,
+	trailingNode,
 	dataFlowConfig,
 	dataFlowDiagramLabel,
 	className,
@@ -533,6 +536,7 @@ export function RichTextEditor({
 	const extensions = useMemo(
 		() => {
 			const richTextExtensions = createRichTextEditorExtensions({
+				trailingNode,
 				getMentionSources: () => mentionSourcesRef.current,
 				onAskRovo: (activeEditor) => onAskRovoRef.current?.(activeEditor),
 				// Read through a ref so a changing handler doesn't rebuild the editor
@@ -549,7 +553,7 @@ export function RichTextEditor({
 			}
 			return richTextExtensions;
 		},
-		[directoryAutocompleteController, enableDirectoryAutocomplete, frontmatterEnabled, hasOpenDirectory, suggestionVariant],
+		[directoryAutocompleteController, enableDirectoryAutocomplete, frontmatterEnabled, hasOpenDirectory, suggestionVariant, trailingNode],
 	);
 	const editor = useEditor({
 		extensions,

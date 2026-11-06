@@ -3,7 +3,12 @@
 import { useEffect, useId, useRef, useState, type ComponentProps } from "react";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import ScreenIcon from "@atlaskit/icon/core/screen";
+import AiChatIcon from "@atlaskit/icon/core/ai-chat";
+import AddIcon from "@atlaskit/icon/core/add";
 import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { matchingAgentSessions, sessionChoiceItems } from "@/components/blocks/agent-assignment/components/session-choice-items";
+import { RichTextSuggestionMenu } from "@/components/ui-custom/rich-text-editor";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -31,24 +36,31 @@ export function ProjectButterAgentPicker({
 	onAssign,
 	onBrowseAgents,
 	onCreateAgent,
+	onContinueSession,
+	sessions,
 }: Readonly<{
 	anchor?: ComponentProps<typeof PopoverContent>["anchor"];
 	id?: string;
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
+	onContinueSession?: (session: AgentSessionItem) => void;
+	sessions?: readonly AgentSessionItem[];
 }>) {
 	return (
 		<PopoverContent id={id} anchor={anchor} aria-label="Agents" side="right" align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
-			<ProjectButterAgentPickerContent onAssign={onAssign} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} />
+			<ProjectButterAgentPickerContent onAssign={onAssign} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onContinueSession={onContinueSession} sessions={sessions} />
 		</PopoverContent>
 	);
 }
 
-export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCreateAgent, selectedAgentIds, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
+export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onPreviewSession, sessions = [], selectedAgentIds, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
+	onContinueSession?: (session: AgentSessionItem) => void;
 	onCreateAgent?: () => void;
+	onPreviewSession?: (sessionId: string | null) => void;
+	sessions?: readonly AgentSessionItem[];
 	selectedAgentIds?: readonly string[];
 	submenuPositionerClassName?: string;
 	workspacePositionerClassName?: string;
@@ -66,6 +78,13 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 	const submenuContent = useRef<HTMLDivElement | null>(null);
 	const submenuId = useId();
 	const [submenu, setSubmenu] = useState<{ agent: AgentSelectorAgent; anchor: HTMLElement } | null>(null);
+	const [choosingSession, setChoosingSession] = useState(false);
+	const [selectedSessionIndex, setSelectedSessionIndex] = useState(0);
+	const sessionsFor = (agent: AgentSelectorAgent) => onContinueSession ? matchingAgentSessions(agent, sessions) : [];
+	const hasSubmenu = (agent: AgentSelectorAgent) => RUN_ON_AGENT_IDS.includes(agent.id) || sessionsFor(agent).length > 0;
+	const matchingSessions = submenu ? sessionsFor(submenu.agent) : [];
+	const sessionItems = sessionChoiceItems(matchingSessions);
+	const selectedIndex = Math.min(selectedSessionIndex, Math.max(0, sessionItems.length - 1));
 	useEffect(() => {
 		if (!submenu) return;
 		submenu.anchor.setAttribute("aria-controls", submenuId);
@@ -79,13 +98,17 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 		cancelClose();
 		closeTimer.current = setTimeout(() => {
 			if (selectingFolder.current) return;
+			if (choosingSession && submenuContent.current?.contains(document.activeElement)) return;
 			if (document.activeElement?.closest("[data-butter-local-menu], [aria-label='Codebase workspaces']")) return;
 			setSubmenu(null);
+			setChoosingSession(false);
+			onPreviewSession?.(null);
 			actions?.preview(null, -1);
 		}, 180);
 	};
 	const openSubmenu = (agent: AgentSelectorAgent, anchor: HTMLElement, focus = false) => {
 		cancelClose();
+		if (submenu?.agent.id !== agent.id || submenu.anchor !== anchor) { setChoosingSession(false); onPreviewSession?.(null); }
 		setSubmenu((current) => current?.agent.id === agent.id && current.anchor === anchor ? current : { agent, anchor });
 		if (focus) requestAnimationFrame(() => (agent.id === "rovo-cli" ? submenuContent.current?.querySelector<HTMLButtonElement>("button") : cloudButton.current)?.focus());
 	};
@@ -138,7 +161,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 				const option = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-slot="command-item"][data-value]') : null;
 				if (option && event.currentTarget.contains(option)) {
 					const agent = agents.find((candidate) => candidate.id === option.dataset.value);
-					if (agent && RUN_ON_AGENT_IDS.includes(agent.id)) openSubmenu(agent, option);
+					if (agent && hasSubmenu(agent)) openSubmenu(agent, option);
 					else { cancelClose(); setSubmenu(null); }
 				}
 				schedulePreview(event.currentTarget);
@@ -158,7 +181,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 				if (event.key === "ArrowRight") {
 					const option = event.currentTarget.querySelector<HTMLElement>('[data-slot="command-item"][aria-selected="true"]');
 					const agent = agents.find((candidate) => candidate.id === option?.dataset.value);
-					if (option && agent && RUN_ON_AGENT_IDS.includes(agent.id)) {
+					if (option && agent && hasSubmenu(agent)) {
 						event.preventDefault();
 						openSubmenu(agent, option, true);
 					}
@@ -178,7 +201,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 				onAgentToggle={(agentId) => {
 					const agent = agents.find((candidate) => candidate.id === agentId);
 					if (!agent) return;
-					if (RUN_ON_AGENT_IDS.includes(agent.id)) {
+					if (hasSubmenu(agent)) {
 						const option = popup.current?.querySelector<HTMLElement>(`[data-slot="command-item"][data-value="${agent.id}"]`);
 						if (option) openSubmenu(agent, option, true);
 					} else onAssign(agent);
@@ -197,31 +220,44 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 				showByline={false}
 				selectedAgentIds={selectedAgentIds}
 				showSelectedTickInSingleSelect
-				submenuAgentIds={RUN_ON_AGENT_IDS}
+				submenuAgentIds={pickerAgents.filter(hasSubmenu).map((agent) => agent.id)}
 				selectionMode="single"
 			/>
-		<Popover open={submenu !== null} onOpenChange={(open) => { if (!open) setSubmenu((current) => current?.agent.id === submenu?.agent.id ? null : current); }}>
+		<Popover open={submenu !== null} onOpenChange={(open) => { if (!open) { setChoosingSession(false); onPreviewSession?.(null); setSubmenu((current) => current?.agent.id === submenu?.agent.id ? null : current); } }}>
 			{submenu ? (
 				<PopoverContent
 					id={submenuId}
 					ref={submenuContent}
 					anchor={submenu.anchor}
-					aria-label={submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
-					role={hasWorkspaceOptions(submenu.agent.id) ? "dialog" : "menu"}
+					aria-label={choosingSession ? `Choose a ${submenu.agent.name} session` : submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
+					role={choosingSession || hasWorkspaceOptions(submenu.agent.id) ? "dialog" : "menu"}
 					initialFocus={false}
 					finalFocus={false}
 					side="right"
 					align="start"
 					sideOffset={0}
-					className="w-70 gap-0 p-1"
+					className={cn("gap-0 p-1", choosingSession ? "w-96 max-w-[calc(100vw-24px)]" : "w-70")}
 					positionerClassName={submenuPositionerClassName}
 					onPointerEnter={cancelClose}
 					onPointerLeave={closeSubmenuLater}
 					onClick={(event) => event.stopPropagation()}
 					onPointerDown={(event) => event.stopPropagation()}
+					onFocusCapture={(event) => {
+						if (!choosingSession || !(event.target instanceof HTMLElement)) return;
+						const options = [...event.currentTarget.querySelectorAll<HTMLElement>('[role="option"]')];
+						const index = options.indexOf(event.target);
+						if (index >= 0 && sessionItems[index]) { setSelectedSessionIndex(index); onPreviewSession?.(sessionItems[index].id); }
+					}}
 					onKeyDown={(event) => {
-						if (submenu.agent.id === "rovo-cli") return;
+						if (submenu.agent.id === "rovo-cli" && !choosingSession) return;
 						if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target) || event.target instanceof HTMLInputElement) return;
+						if (choosingSession && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+							event.preventDefault();
+							const options = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]')];
+							const current = options.indexOf(document.activeElement instanceof HTMLButtonElement ? document.activeElement : options[0]);
+							options[(current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length]?.focus();
+							return;
+						}
 						if (!hasWorkspaceOptions(submenu.agent.id) && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
 							event.preventDefault();
 							const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
@@ -232,16 +268,20 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 							event.preventDefault();
 							event.stopPropagation();
 							setSubmenu(null);
+							setChoosingSession(false);
+							onPreviewSession?.(null);
 							popup.current?.querySelector<HTMLInputElement>('input[aria-label="Search agents"]')?.focus();
 						}
 					}}
 				>
-					{submenu.agent.id !== "rovo-cli" ? <>
-					<Button ref={cloudButton} role={hasWorkspaceOptions(submenu.agent.id) ? undefined : "menuitem"} className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign(submenu.agent)}>
-						<Icon aria-hidden className="size-4 shrink-0" render={<CloudIcon label="" size="small" />} />Run on cloud
-					</Button>
-					</> : null}
-					{hasWorkspaceOptions(submenu.agent.id) ? <ProjectButterLocalAgentMenu key={submenu.agent.id} onPointerEnter={cancelClose} onPointerLeave={closeSubmenuLater} onSelectingFolderChange={(selecting) => { selectingFolder.current = selecting; if (selecting) cancelClose(); }} workspacePositionerClassName={workspacePositionerClassName} /> : <>
+					{choosingSession ? <RichTextSuggestionMenu className="rich-text-command-menu-embedded [&_.rich-text-command-menu-item]:h-auto! [&_.rich-text-command-menu-item]:min-h-11 [&_.rich-text-command-menu-item]:py-2! [&_.menu-row-title]:line-clamp-2 [&_.menu-row-title]:whitespace-normal [&_.menu-row-byline]:whitespace-normal" emptyLabel="No active sessions" items={sessionItems} onHover={(index) => { setSelectedSessionIndex(index); if (sessionItems[index]) onPreviewSession?.(sessionItems[index].id); }} onHoverEnd={() => onPreviewSession?.(null)} onSelect={(item) => { const session = matchingSessions.find((candidate) => candidate.id === item.id); if (session) { onPreviewSession?.(null); onContinueSession?.(session); } }} selectedIndex={selectedIndex} showReturnShortcut={false} title={`Choose a ${submenu.agent.name} session`} /> : <>
+					{matchingSessions.length > 0 ? <div role="group" aria-label="Run on cloud">
+						<div className="px-2 pt-2 pb-1 text-xs font-medium text-text-subtle">Run on cloud</div>
+						<Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => { if (matchingSessions.length === 1) onContinueSession?.(matchingSessions[0]); else { cancelClose(); setChoosingSession(true); setSelectedSessionIndex(0); requestAnimationFrame(() => submenuContent.current?.querySelector<HTMLButtonElement>('[role="option"]')?.focus()); } }}><Icon aria-hidden className="size-4 shrink-0" render={<AiChatIcon label="" size="small" />} />Continue to existing session{matchingSessions.length > 1 ? ` (${matchingSessions.length})` : ""}</Button>
+						{submenu.agent.id !== "rovo-cli" ? <Button role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" size="small" />} />Start a new session</Button> : null}
+					</div> : submenu.agent.id !== "rovo-cli" ? <Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<CloudIcon label="" size="small" />} />Run on cloud</Button> : null}
+					{matchingSessions.length > 0 && RUN_ON_AGENT_IDS.includes(submenu.agent.id) ? <hr className="my-1 border-0 border-t border-border" /> : null}
+					{hasWorkspaceOptions(submenu.agent.id) ? <ProjectButterLocalAgentMenu key={submenu.agent.id} onPointerEnter={cancelClose} onPointerLeave={closeSubmenuLater} onSelectingFolderChange={(selecting) => { selectingFolder.current = selecting; if (selecting) cancelClose(); }} workspacePositionerClassName={workspacePositionerClassName} /> : RUN_ON_AGENT_IDS.includes(submenu.agent.id) ? <>
 					<Button
 						role="menuitem"
 						aria-disabled={VS_CODE_AGENT_IDS.has(submenu.agent.id) ? true : undefined}
@@ -255,6 +295,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCr
 							{VS_CODE_AGENT_IDS.has(submenu.agent.id) ? <span className="menu-row-byline">Not installed</span> : null}
 						</span>
 					</Button>
+					</> : null}
 					</>}
 				</PopoverContent>
 			) : null}

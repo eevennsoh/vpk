@@ -290,7 +290,7 @@ export function buildStudioAssistantKnowledgeContext(): string {
 		"Draft fields you can set:",
 		"- name, description, instructions, contextDescription, byline, guardrail — plain text. (instructions is a full Markdown replacement.)",
 		"- skills, apps, knowledge, subagents — arrays chosen from the [Catalog] below; pass catalog ids or display names. Unknown items are dropped.",
-		"- avatarSrc — an avatar option path like /avatar-agent/<group>/<name>.svg. The group also sets the accent color: dev-agents=Lime, product-agents=Purple, service-agents=Yellow, strategy-agents=Orange, teamwork-agents=Blue.",
+		"- avatarSrc — an avatar option path like /avatar-agent-new/<color>/<name>.svg. The color is lime, purple, yellow, orange, or blue and also sets the accent color.",
 		'- memoryMode ("on"|"off"); knowledgeMode ("all"|"custom"|"none"); reasoningMode (one of ' +
 			REASONING_MODE_VALUES.map((value) => `"${value}"`).join(", ") +
 			").",

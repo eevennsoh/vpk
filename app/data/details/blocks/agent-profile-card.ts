@@ -80,7 +80,7 @@ export const AGENT_PROFILE_CARD_DETAIL: ComponentDetail = {
 			{
 				name: "avatarSrc",
 				type: "string",
-				default: '"/avatar-agent/teamwork-agents/blocker-checker.svg"',
+				default: '"/avatar-agent-new/blue/backlog-buddy.svg"',
 				description: "Agent avatar asset.",
 			},
 			{

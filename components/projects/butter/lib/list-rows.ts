@@ -174,6 +174,12 @@ export function assignedAgentsFromCard(
 ): JiraListAssignedAgent[] {
 	const assigned: JiraListAssignedAgent[] = [];
 	const seenIds = new Set<string>();
+	const seenSessionIds = new Set<string>();
+	const activityCounts = new Map<string, number>();
+	for (const activity of card.agentActivities ?? []) {
+		const id = resolveCatalogAgentId(activity.name, activity.id, catalog);
+		activityCounts.set(id, (activityCounts.get(id) ?? 0) + 1);
+	}
 
 	for (const activity of card.agentActivities ?? []) {
 		const agent = toAssignedAgent({
@@ -188,10 +194,15 @@ export function assignedAgentsFromCard(
 			role: activity.role,
 			state: activity.state,
 		});
-		if (seenIds.has(agent.id)) {
+		const catalogId = agent.id;
+		if ((activityCounts.get(catalogId) ?? 0) > 1) {
+			agent.id = activity.id;
+		}
+		if (seenSessionIds.has(agent.id)) {
 			continue;
 		}
-		seenIds.add(agent.id);
+		seenSessionIds.add(agent.id);
+		seenIds.add(catalogId);
 		assigned.push(agent);
 	}
 
@@ -219,9 +230,10 @@ export function assignedAgentsFromCard(
 function createAssignedActivity(
 	card: JiraKanbanCardData,
 	agent: JiraKanbanAgentData,
+	id: string = `${card.code}:${agent.id}`,
 ): JiraIssueAgentActivity {
 	return {
-		id: `${card.code}:${agent.id}`,
+		id,
 		name: agent.name,
 		avatarSrc: agent.avatarSrc,
 		agentBrandName: agent.brandName,
@@ -252,14 +264,14 @@ function canonicalizeAssignedAgentIds(
 		...(card.agentActivities ?? []).map((activity) => ({ id: activity.id, name: activity.name })),
 		...(card.agentDoneRuns ?? []).map((run) => ({ id: run.id, name: run.agentName })),
 	];
-	return [...new Set(agentIds.map((agentId) => {
+	return agentIds.map((agentId) => {
 		const row = rows.find((candidate) => (
 			candidate.id === agentId || candidate.id === `${card.code}:${agentId}`
 		));
 		return row
 			? resolveCatalogAgentId(row.name, row.id, catalog)
 			: resolveCatalogIdHint(agentId, catalog) ?? agentId;
-	}))];
+	});
 }
 
 export function applyAssignedAgentIdsToCard(
@@ -275,16 +287,27 @@ export function applyAssignedAgentIdsToCard(
 	const doneRuns = (card.agentDoneRuns ?? []).filter((run) => (
 		nextIdSet.has(resolveCatalogAgentId(run.agentName, run.id, catalog))
 	));
-	const presentIds = new Set([
+	const presentIds = [
 		...activities.map((activity) => resolveCatalogAgentId(activity.name, activity.id, catalog)),
 		...doneRuns.map((run) => resolveCatalogAgentId(run.agentName, run.id, catalog)),
-	]);
+	];
+	const remainingCounts = new Map<string, number>();
+	for (const id of presentIds) remainingCounts.set(id, (remainingCounts.get(id) ?? 0) + 1);
+	const sessionIds = new Set([...activities.map((activity) => activity.id), ...doneRuns.map((run) => run.id)]);
 	const addedActivities = nextIds.flatMap((agentId) => {
-		if (presentIds.has(agentId)) {
+		const remaining = remainingCounts.get(agentId) ?? 0;
+		if (remaining > 0) {
+			remainingCounts.set(agentId, remaining - 1);
 			return [];
 		}
 		const agent = catalog.find((candidate) => candidate.id === agentId);
-		return agent ? [createAssignedActivity(card, agent)] : [];
+		if (!agent) return [];
+		const baseId = `${card.code}:${agent.id}`;
+		let id = baseId;
+		let sequence = 2;
+		while (sessionIds.has(id)) id = `${baseId}:session-${sequence++}`;
+		sessionIds.add(id);
+		return [createAssignedActivity(card, agent, id)];
 	});
 	const nextActivities = [...activities, ...addedActivities];
 

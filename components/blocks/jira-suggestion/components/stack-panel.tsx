@@ -5,6 +5,7 @@ import { AnimatePresence, LayoutGroup, type MotionValue } from "motion/react";
 
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 
 import { CHROME_HEIGHT } from "./constants";
@@ -42,7 +43,11 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 	const titleId = `${id}-title`;
 	const view = useDeckView(feed, deck);
 	// A check from the caught-up state runs in place there: the stack and footer only come back for real finds.
-	const mode: BodyMode = view.listed ? "list" : deck.order.length > 0 ? "stack" : "caught-up";
+	const mode: BodyMode = deck.order.length === 0 ? "caught-up" : view.listed ? "list" : "stack";
+	const shortcuts = [
+		...(mode === "stack" ? ["ArrowLeft", "ArrowRight"] : []),
+		...(deck.lastDecision && feed.status !== "running" ? ["Meta+Z", "Control+Z"] : []),
+	].join(" ") || undefined;
 
 	const commit = (direction: SwipeDirection) => {
 		const top = deck.order.at(0);
@@ -57,31 +62,48 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 		else view.unpack();
 	};
 	const undo = () => {
+		if (mode === "caught-up" && panelRef.current?.contains(document.activeElement)) panelRef.current.focus({ preventScroll: true });
 		// Undoing the only decision removes the Undo button; hand focus to the stack rather than dropping it.
 		if (deck.undoDepth === 1 && panelRef.current?.contains(document.activeElement) && document.activeElement?.closest("[data-deck-controls]")) deckRef.current?.focus({ preventScroll: true });
 		view.undo();
 	};
-
 	usePanelFocus({ panelRef, deckRef, checkRef, toggleRef, mode, hasCards: deck.order.length > 0 });
 
-	const onEscape = useEffectEvent((event: KeyboardEvent) => {
-		if (event.key !== "Escape" || event.defaultPrevented) return;
-		event.preventDefault();
-		if (whyId) setWhyId(null);
-		else onClose();
+	const onPanelKeyDown = useEffectEvent((event: KeyboardEvent) => {
+		if (event.defaultPrevented) return;
+		if (event.key === "Escape") {
+			event.preventDefault();
+			if (whyId) { event.stopPropagation(); setWhyId(null); }
+			else onClose();
+			return;
+		}
+		if (event.isComposing || event.altKey || event.shiftKey || whyId) return;
+		const target = event.target;
+		if (!(target instanceof Element) || target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"], [role="menu"], [role="listbox"], [role="slider"], [role="spinbutton"]')) return;
+		if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+			if (!deck.lastDecision || feed.status === "running") return;
+			event.preventDefault();
+			event.stopPropagation();
+			undo();
+		} else if (!event.metaKey && !event.ctrlKey && mode === "stack" && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+			event.preventDefault();
+			event.stopPropagation();
+			commit(event.key === "ArrowRight" ? "accept" : "dismiss");
+		}
 	});
 	useEffect(() => {
 		const panel = panelRef.current;
 		if (!panel) return undefined;
-		const listener = (event: KeyboardEvent) => onEscape(event);
+		const listener = (event: KeyboardEvent) => onPanelKeyDown(event);
 		panel.addEventListener("keydown", listener);
 		return () => panel.removeEventListener("keydown", listener);
 	}, [panelRef]);
 
-	return (
+	const panel = (
 		<div
+			aria-keyshortcuts={shortcuts}
 			aria-labelledby={titleId}
-			className="flex max-h-full w-96 flex-col rounded-xl bg-surface-overlay outline-none"
+			className="flex max-h-full w-96 max-w-[calc(100vw-1rem)] flex-col rounded-xl bg-surface-overlay outline-none"
 			id={id}
 			ref={panelRef}
 			role="dialog"
@@ -91,7 +113,7 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 			<PanelHeader
 				feed={feed}
 				onClose={onClose}
-				onRerun={mode === "caught-up" ? undefined : feed.rerun}
+				onRerun={feed.rerun}
 				onToggleView={feed.review.suggestions.length > 0 ? toggleView : undefined}
 				titleId={titleId}
 				toggleRef={toggleRef}
@@ -123,4 +145,5 @@ export function StackPanel({ id, feed, deck, panelRef, deckRef, overlay, maxHeig
 			<p aria-live="polite" className="sr-only">{deck.announcement}</p>
 		</div>
 	);
+	return <TooltipProvider portalContainer={panelRef}>{panel}</TooltipProvider>;
 }

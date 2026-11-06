@@ -41,7 +41,7 @@ import type {
  * picks looked fine inside the whole card at 1x and only fell apart when the
  * 48px strip was viewed in isolation, magnified.
  */
-const RFP_DRAFTER_ARTWORK_SRC = "/avatar-agent/teamwork-agents/job-listing-assistant.svg";
+const RFP_DRAFTER_ARTWORK_SRC = "/avatar-agent-new/blue/comms-drafter.svg";
 const CREATION_DURATION_MS = 900;
 
 function getDemoPrimaryActionLabel(status: FloatingRovoButtonOnboardingStatus): string {

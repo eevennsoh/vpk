@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 export type ViewMode = "stack" | "list";
 
 const ICON_BUTTON =
-	"flex size-7 pointer-coarse:size-8 items-center justify-center rounded-md text-icon-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-icon active:bg-bg-neutral-subtle-pressed focus-visible:ring-2 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:hover:bg-transparent aria-disabled:hover:text-icon-subtle aria-disabled:active:bg-transparent";
+	"flex size-7 any-pointer-coarse:size-8 items-center justify-center rounded-md text-icon-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-icon active:bg-bg-neutral-subtle-pressed focus-visible:ring-2 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:hover:bg-transparent aria-disabled:hover:text-icon-subtle aria-disabled:active:bg-transparent";
 
 const relative = (ranAt: string) => {
 	const minutes = /^(\d+)m ago$/.exec(ranAt);
@@ -59,7 +59,7 @@ export interface PanelHeaderProps {
 	view: ViewMode;
 	/** Omitted when there is nothing to lay out (an empty stack). */
 	onToggleView?: () => void;
-	/** Omitted where the body offers its own Check again (caught up), so there is one way to re-run, not two side by side. */
+	/** Re-run the suggestion check from the header. */
 	onRerun?: () => void;
 	onClose: () => void;
 	toggleRef: Ref<HTMLButtonElement>;

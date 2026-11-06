@@ -3,14 +3,11 @@
 import type { Ref } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import RefreshIcon from "@atlaskit/icon/core/refresh";
-import UndoIcon from "@atlaskit/icon/core/undo";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Button } from "@/components/ui/button";
 import { motionRecipe } from "@/lib/motion";
 import { token } from "@/lib/tokens";
-import { cn } from "@/lib/utils";
 
 import { FADE_OUT, FAN, INSTANT } from "./constants";
 import type { Deck } from "./use-deck";
@@ -65,17 +62,11 @@ export function CaughtUp({ feed, deck, checkRef, onUndo }: Readonly<{ feed: Sugg
 							initial={{ opacity: 0, scale: 0.8 }}
 							key="undo"
 						>
-							<Button aria-label={deck.undoLabel ?? "Undo"} onClick={onUndo} type="button" variant="ghost">
-								<UndoIcon color="currentColor" label="" size="small" />
-								Undo
-							</Button>
+							<Button aria-label={deck.undoLabel ?? "Undo"} onClick={onUndo} type="button" variant="outline">Undo</Button>
 						</motion.div>
 					) : null}
 					<motion.div key="check" layout="position" transition={reduced ? INSTANT : FAN}>
 						<Button aria-disabled={running || undefined} onClick={running ? undefined : feed.rerun} ref={checkRef} type="button" variant="outline">
-							<span aria-hidden="true" className={cn("flex", running ? "animate-spin" : null)}>
-								<RefreshIcon color="currentColor" label="" size="small" />
-							</span>
 							Check again
 						</Button>
 					</motion.div>

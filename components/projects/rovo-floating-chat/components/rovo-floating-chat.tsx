@@ -7,9 +7,9 @@ import { useRovoChat } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
-import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
 import type {
+	ChatComposerPrefillRequest,
 	ChatPanelCustomAgentTabs,
 	ChatPanelGreetingProps,
 	ChatSubmitInterceptOutcome,
@@ -26,7 +26,7 @@ interface RovoFloatingChatProps {
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
 	autoFocusComposer?: boolean;
 	chatContextBar?: ChatContextBarDescriptor | null;
-	composerPrefillRequest?: { mention: RichTextMentionItem; requestKey: number };
+	composerPrefillRequest?: ChatComposerPrefillRequest;
 	onComposerPrefillConsumed?: (requestKey: number) => void;
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
@@ -41,6 +41,7 @@ interface RovoFloatingChatProps {
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
 	startRealtimeVoiceRequestKey?: number;
 	externalThinkingMessageId?: string | null;
+	isSwitchingSession?: boolean;
 	interceptClarificationAnswers?: boolean;
 	markAnsweredQuestionTraces?: boolean;
 	showAgentBackButton?: boolean;
@@ -73,6 +74,7 @@ export default function RovoFloatingChat({
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
 	startRealtimeVoiceRequestKey = 0,
 	externalThinkingMessageId,
+	isSwitchingSession = false,
 	interceptClarificationAnswers = false,
 	markAnsweredQuestionTraces = false,
 	showAgentBackButton = true,
@@ -89,6 +91,8 @@ export default function RovoFloatingChat({
 
 	return (
 		<motion.div
+			aria-busy={isSwitchingSession || undefined}
+			inert={isSwitchingSession}
 			aria-label={embedded ? "Agent chat" : undefined}
 			initial={embedded || shouldReduceMotion ? false : { opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}

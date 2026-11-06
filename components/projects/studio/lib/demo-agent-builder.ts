@@ -494,7 +494,7 @@ function extractNameHint(clause: string): string | null {
 // Classification
 // ---------------------------------------------------------------------------
 
-/** Detects an avatar change: a named option ("code reviewer avatar") or a color
+/** Detects an avatar change: a named option ("auto review avatar") or a color
  *  family ("make it blue"). Returns the chosen option src, or null. */
 function extractAvatarSrc(prompt: string): string | null {
 	// Scope to the clause(s) that actually mention the avatar, so an option label

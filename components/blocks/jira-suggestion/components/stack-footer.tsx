@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import CrossIcon from "@atlaskit/icon/core/cross";
 
 import { Button } from "@/components/ui/button";
 import { motionRecipe } from "@/lib/motion";
@@ -13,13 +12,12 @@ import type { Deck, DeckReceipt } from "./use-deck";
 /** One line in the progress slot: a mark for which way it went, then what. "Nothing new" after an empty re-run. */
 function Receipt({ receipt }: Readonly<{ receipt: DeckReceipt }>) {
 	if (receipt.kind === "nothing-new") return <span className="text-xs whitespace-nowrap text-text-subtlest">No new suggestions</span>;
-	const accepted = receipt.kind === "accept";
 	return (
 		<span className="flex min-w-0 items-center gap-1 text-xs whitespace-nowrap">
-			<span className={accepted ? "flex shrink-0 text-icon-success" : "flex shrink-0 text-icon-subtlest"}>
-				{accepted ? <CheckMarkIcon color="currentColor" label="" size="small" /> : <CrossIcon color="currentColor" label="" size="small" />}
+			<span className="flex shrink-0 text-icon-success">
+				<CheckMarkIcon color="currentColor" label="" size="small" />
 			</span>
-			<span className="min-w-0 text-text-subtle">{receipt.subject} {accepted ? "added" : "dismissed"}</span>
+			<span className="min-w-0 text-text-subtle">{receipt.subject} added</span>
 		</span>
 	);
 }

@@ -77,13 +77,14 @@ export function TopFace({ suggestion, isNew, progress }: Readonly<{ suggestion: 
 
 /** The quiet "Why · N sources" line along the top card's lower edge. */
 export function TopWhy({ suggestion, whyOpen, onWhyOpenChange, whyAnchor, whyContainer }: Readonly<WhyProps & { suggestion: WorkItemSuggestion }>) {
+	if (suggestion.reason.evidence.length === 0) return null;
 	return <CardWhy anchor={whyAnchor} appearance="line" container={whyContainer} onOpenChange={onWhyOpenChange} open={whyOpen} suggestion={suggestion} />;
 }
 
 /** Every face shares one padding, so a card changing face (row, sheet, top) never shifts its label or value. */
 const FACE_PADDING = "px-4 pt-2.5 pb-3";
 
-const ROUND = "flex size-7 pointer-coarse:size-8 items-center justify-center rounded-full outline-none transition-colors duration-xxshort ease-out-practical focus-visible:ring-2 focus-visible:ring-ring";
+const ROUND = "flex size-7 any-pointer-coarse:size-8 items-center justify-center rounded-full outline-none transition-colors duration-xxshort ease-out-practical focus-visible:ring-2 focus-visible:ring-ring";
 
 function RoundAction({ label, hint, className, onClick, children }: Readonly<{ label: string; hint: string; className: string; onClick: () => void; children: ReactNode }>) {
 	return (
@@ -105,7 +106,7 @@ export function RowFace({ suggestion, isNew, controls, onDecide, whyOpen, onWhyO
 		<CardFace
 			actions={controls ? (
 				<>
-					<CardWhy anchor={whyAnchor} appearance="icon" container={whyContainer} onOpenChange={onWhyOpenChange} open={whyOpen} suggestion={suggestion} />
+					{suggestion.reason.evidence.length ? <CardWhy anchor={whyAnchor} appearance="icon" container={whyContainer} onOpenChange={onWhyOpenChange} open={whyOpen} suggestion={suggestion} /> : null}
 					<RoundAction className="text-icon-subtle hover:bg-bg-neutral-subtle-hovered hover:text-icon active:bg-bg-neutral-subtle-pressed" hint="Dismiss" label={`Dismiss ${field}`} onClick={() => onDecide("dismiss")}>
 						<CrossIcon color="currentColor" label="" size="small" />
 					</RoundAction>
@@ -135,7 +136,7 @@ export function DecidedFace({ suggestion, decision, onRestore }: Readonly<{ sugg
 			</span>
 			<button
 				aria-label={`Undo ${suggestion.label.toLowerCase()}`}
-				className="-mr-2 inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs text-text-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
+				className="-mr-2 inline-flex h-7 any-pointer-coarse:min-h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs text-text-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
 				onClick={onRestore}
 				type="button"
 			>

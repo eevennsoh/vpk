@@ -203,9 +203,9 @@ export const STUDIO_AUTOMATION_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY = {
 			title: "Cycling through three Studio drafts",
 			fallbackDescription: "Creating the Loom distribution, lifecycle triage, and weekly digest agents.",
 			sources: [
-				{ id: "loom-agent", label: "Loom Distribution Agent", provider: "twg", iconSrc: "/avatar-agent/product-agents/feedback-analyzer.svg" },
-				{ id: "triage-agent", label: "Inactive Agent Triage Agent", provider: "twg", iconSrc: "/avatar-agent/service-agents/service-triage.svg" },
-				{ id: "digest-agent", label: "Weekly Sprint/Atlas Digest Agent", provider: "twg", iconSrc: "/avatar-agent/strategy-agents/strategic-insight.svg" },
+				{ id: "loom-agent", label: "Loom Distribution Agent", provider: "twg", iconSrc: "/avatar-agent-new/purple/customer-insight.svg" },
+				{ id: "triage-agent", label: "Inactive Agent Triage Agent", provider: "twg", iconSrc: "/avatar-agent-new/yellow/ops-agent.svg" },
+				{ id: "digest-agent", label: "Weekly Sprint/Atlas Digest Agent", provider: "twg", iconSrc: "/avatar-agent-new/orange/research-scout.svg" },
 			],
 		},
 		detail: {

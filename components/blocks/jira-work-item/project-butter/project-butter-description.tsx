@@ -10,10 +10,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { DescriptionRainbowText } from "@/components/blocks/jira-work-item/project-butter/description-rainbow-text";
 import { motionDuration } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import type { RichTextEditorExtensionOptions } from "@/components/ui-custom/rich-text-editor/types";
 
 // Clicking a contenteditable matches :focus-visible, so a pointer gesture marks
 // the field and drops the ring. Keyboard focus leaves the mark unset.
 const DESCRIPTION_EDITOR_CLASS = "relative min-w-0 rounded-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring data-[pointer-focused]:ring-0!";
+const DESCRIPTION_TRAILING_NODE = { notAfter: ["bulletList", "orderedList", "taskList"] } satisfies NonNullable<RichTextEditorExtensionOptions["trailingNode"]>;
 
 export function ProjectButterDescription({ content, empty, onRevealComplete, reveal }: Readonly<{ content: ProjectButterContent; empty: boolean; onRevealComplete?: () => void; reveal?: { id: number; text: string } | null }>) {
 	const id = useId();
@@ -87,6 +89,7 @@ export function ProjectButterDescription({ content, empty, onRevealComplete, rev
 				onMarkdownChange={content.setDescriptionDraft}
 				placeholder={empty ? "Add description" : "Add a description"}
 				placeholderSlot={null}
+				trailingNode={DESCRIPTION_TRAILING_NODE}
 				value={content.descriptionDraft}
 			/>
 			</div>

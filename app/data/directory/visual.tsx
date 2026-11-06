@@ -42,7 +42,7 @@ import type { DirectoryIconKey, DirectoryVisual, SkillIconKey } from "./types";
 /**
  * Shared visual resolver for directory items whose mark comes from a brand logo
  * or an avatar/image path (agents and tools). A `logoName` renders the ADS brand
- * logo; avatars under `/avatar-agent/` are hexagon agent avatars; avatars under
+ * logo; avatars under `/avatar-agent-new/` are hexagon agent avatars; avatars under
  * `/avatar-project/` are square project avatars; any other path is a square
  * image. Returns `undefined` when the item has neither. Single source so agent
  * and tool tokens never diverge in shape.
@@ -64,7 +64,7 @@ export function avatarVisualFromSrc(
 		return undefined;
 	}
 
-	const isAgentAvatar = avatarSrc.startsWith("/avatar-agent/");
+	const isAgentAvatar = (avatarSrc.startsWith("/avatar-agent/") || avatarSrc.startsWith("/avatar-agent-new/"));
 	const isProjectAvatar = avatarSrc.startsWith("/avatar-project/");
 	return {
 		kind: isAgentAvatar || isProjectAvatar ? "avatar" : "image",

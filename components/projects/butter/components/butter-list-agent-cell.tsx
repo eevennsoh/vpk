@@ -31,7 +31,7 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 				<ProjectButterAddAgent alwaysVisible issueKey={row.issueKey} assignment={{
 					agents: agentCatalog,
 					assignedAgents: sessions.map((agent) => ({ ...agent, byline: agent.byline ?? "" })),
-					onAgentAssign: (agent) => { if (!sessions.some((session) => session.id === agent.id)) onAgentAssigned?.(row.issueKey, agent); },
+					onAgentAssign: (agent) => onAgentAssigned?.(row.issueKey, agent),
 					onAssignedAgentIdsChange: (ids) => onAssignedAgentIdsChange(row.issueKey, ids),
 					onBrowseAgents,
 					onCreateAgent,

@@ -66,6 +66,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"pull-request-demo-checks": dynamic(
+		() =>
+			import("../demos/blocks/pull-request-demo").then((mod) => ({
+				default: mod.PullRequestDemoChecks,
+			})),
+		{ ssr: false },
+	),
 	"omnibar-demo-expanded": dynamic(
 		() =>
 			import("../demos/blocks/omnibar-demo").then((mod) => ({

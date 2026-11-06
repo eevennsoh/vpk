@@ -8,14 +8,16 @@ validation_command: git status --short
 
 Use this deliberately ungated path to commit the entire eligible working tree
 and fast-forward it directly to remote `main`. It creates no PR or feature
-branch and performs no review gate.
+branch and performs no review or CI gate. Skip local CI checks and request that
+GitHub skip push-triggered workflows using a commit-message marker.
 
 ## When to use
 
 Use only when the user explicitly chooses the fast direct-to-main path. Use
-`vpk-git-ship` when they want a PR, CI gate, review, selective shipping, or when
-branch protection rejects direct pushes. Use `vpk-git-clean` for worktree,
-branch, or ref cleanup.
+`vpk-git-ship` when they want a PR, CI gate, review, or selective shipping.
+If branch protection rejects a direct push, stop; the user can separately
+choose a gated workflow. Use `vpk-git-clean` for worktree, branch, or ref
+cleanup.
 
 ## Hard invariants
 
@@ -27,7 +29,7 @@ branch, or ref cleanup.
 - Push only when `origin/main` is an ancestor of `HEAD`. Never force-push or
   rewrite remote history.
 - If protected `main` rejects the push with `GH006`, leave the local commit
-  intact and fall back to `/vpk-git-ship`; do not bypass branch protection.
+  intact and stop; do not bypass branch protection or start a gated workflow.
 - Preserve dirty or divergent state in the persistent `main` checkout. A
   successful remote push does not authorize discarding local work to sync it.
 
@@ -58,12 +60,16 @@ branch, or ref cleanup.
    only safe paths and report every exclusion. Re-read `git status --short`
    before committing.
 
-5. Generate an imperative subject of about 50 characters from the actual diff.
-   Add a short body only for distinct concerns, follow repository log style,
-   and omit co-author footers unless requested. Commit once.
+5. Generate an imperative subject of about 50 characters from the actual diff
+   and include `[skip ci]` in the commit message so GitHub skips workflows
+   triggered by the push. Add a short body only for distinct concerns, follow
+   repository log style, and omit co-author footers unless requested. Commit
+   once. If the tree is clean but commits are ahead, create an empty commit with
+   `[skip ci]` rather than rewriting existing commits.
 
-6. Run `pnpm run verify:fast` (~10s). It is the only check before this commit
-   lands on `main`; if it fails, fix the cause or stop and report the failure.
+6. Do not run or wait for local or hosted CI checks as part of this fast-ship
+   workflow, including `verify:fast`, lint, typecheck, or tests. Preserve the
+   inventory, secret-exclusion, and fast-forward checks in this skill.
 
 7. Fetch and prove fast-forward ancestry immediately before pushing:
 
@@ -79,8 +85,8 @@ branch, or ref cleanup.
 
 8. If the ancestry check is non-zero, stop with the local commit intact and
    report that `origin/main` advanced. The user must merge or rebase onto the
-   current remote tip before retrying. If push returns `GH006`, route to
-   `/vpk-git-ship` instead.
+   current remote tip before retrying. If push returns `GH006`, stop and report
+   the rejection.
 
 9. After a successful push, sync local `main` only when it can fast-forward
    without touching user edits. If this checkout owns `main`, it already moved.
@@ -112,6 +118,7 @@ git rev-parse origin/main
 ```
 
 Report branch and unrelated-change warnings, committed and excluded paths,
-commit hash and subject, push result, protected-main fallback when applicable,
-local-main sync state, and that `CI / PR checks` may run after an accepted push
-but did not gate this direct path.
+commit hash and subject, push result, protected-main rejection when applicable,
+local-main sync state, and that local CI checks were skipped. Report the
+`[skip ci]` marker and do not claim it suppresses checks from other CI providers
+or workflows triggered by events that GitHub does not skip.

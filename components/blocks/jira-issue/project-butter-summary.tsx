@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { useReducedMotion } from "motion/react";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import BugIcon from "@atlaskit/icon/core/bug";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
@@ -28,6 +29,7 @@ type ProjectButterSummaryProps = Pick<
 	| "subtasks"
 	| "onSubtaskOpen"
 	| "pullRequestNumber"
+	| "animatePullRequestOnMount"
 	| "pullRequestPreview"
 	| "pullRequestStatus"
 	| "pullRequestTitle"
@@ -56,6 +58,7 @@ export function ProjectButterSummary({
 	onSubtaskOpen,
 	assignee,
 	moreAction,
+	animatePullRequestOnMount,
 	pullRequestNumber,
 	pullRequestPreview,
 	pullRequestStatus,
@@ -111,6 +114,7 @@ export function ProjectButterSummary({
 					metadata={metadata}
 					priority={priority}
 					assignee={assignee}
+					animatePullRequestOnMount={animatePullRequestOnMount}
 					pullRequestNumber={pullRequestNumber}
 					pullRequestPreview={pullRequestPreview}
 					pullRequestStatus={pullRequestStatus}
@@ -129,6 +133,7 @@ function ProjectButterFooter({
 	metadata,
 	priority = "major",
 	assignee,
+	animatePullRequestOnMount,
 	pullRequestNumber,
 	pullRequestPreview,
 	pullRequestStatus,
@@ -141,6 +146,7 @@ function ProjectButterFooter({
 		| "priority"
 		| "assignee"
 		| "pullRequestNumber"
+		| "animatePullRequestOnMount"
 		| "pullRequestPreview"
 		| "pullRequestStatus"
 		| "showPriorityIndicator"
@@ -150,6 +156,8 @@ function ProjectButterFooter({
 	> & { pullRequestTitle: string }
 >) {
 	const dueDate = formatButterDueDate(metadata?.dueDate);
+	const [initiallyHasPullRequest] = useState(() => Boolean(pullRequestNumber));
+	const reducedMotion = useReducedMotion();
 	return (
 		<div className="flex min-h-6 min-w-0 items-center justify-between gap-1">
 			<div className={cn("flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5 text-xs leading-4 text-text-subtle", !dueDate && "-ml-1")}>
@@ -164,6 +172,7 @@ function ProjectButterFooter({
 				) : null}
 				{pullRequestNumber ? (
 					<JiraIssuePullRequestCluster
+						animateIcon={!reducedMotion && (!initiallyHasPullRequest || Boolean(animatePullRequestOnMount))}
 						pullRequestNumber={pullRequestNumber}
 						pullRequestPreview={pullRequestPreview}
 						pullRequestStatus={pullRequestStatus}

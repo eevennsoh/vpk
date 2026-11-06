@@ -1,6 +1,6 @@
 "use client";
 
-import type { MouseEvent, PointerEvent } from "react";
+import { useLayoutEffect, useRef, type MouseEvent, type PointerEvent } from "react";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
@@ -14,9 +14,10 @@ import type {
 import { PullRequest } from "@/components/blocks/pull-request/components/pull-request";
 import type { PullRequestStatus } from "@/components/blocks/pull-request/components/pull-request-types";
 import { Button } from "@/components/ui/button";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { motionDuration } from "@/lib/motion";
 import { token } from "@/lib/tokens";
 
 function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus | undefined): {
@@ -71,6 +72,7 @@ function stopNestedActivation(event: MouseEvent<HTMLElement> | PointerEvent<HTML
 }
 
 export function JiraIssuePullRequestCluster({
+	animateIcon = false,
 	iconScale = "compact",
 	pullRequestNumber,
 	pullRequestPreview,
@@ -79,6 +81,7 @@ export function JiraIssuePullRequestCluster({
 	usesStrokeChrome,
 	tone = "status",
 }: Readonly<{
+	animateIcon?: boolean;
 	iconScale?: JiraIssueIconScale;
 	pullRequestNumber: number;
 	pullRequestPreview?: JiraIssuePullRequestPreview;
@@ -91,6 +94,16 @@ export function JiraIssuePullRequestCluster({
 	const overlayTitle = pullRequestPreview?.title ?? pullRequestTitle;
 	const accessibleName = `${label} #${pullRequestNumber}: ${overlayTitle}`;
 	const iconMetrics = resolveJiraIssueIconMetrics(iconScale);
+	const iconRef = useRef<HTMLSpanElement>(null);
+	useLayoutEffect(() => {
+		const icon = iconRef.current;
+		if (!animateIcon || !icon) return;
+		const animation = icon.animate([
+			{ opacity: 0, transform: "scale(0.65)" },
+			{ opacity: 1, transform: "scale(1)" },
+		], { duration: motionDuration.slow * 1000, easing: getComputedStyle(icon).getPropertyValue("--ease-out-practical").trim(), fill: "backwards" });
+		return () => animation.cancel();
+	}, [animateIcon]);
 
 	if (!usesStrokeChrome) {
 		return (
@@ -106,14 +119,12 @@ export function JiraIssuePullRequestCluster({
 	}
 
 	return (
-		<HoverCard>
-			<HoverCardTrigger
-				closeDelay={80}
-				delay={120}
+		<Popover>
+			<PopoverTrigger
 				render={(
 					<Button
 						aria-label={accessibleName}
-						className={cn(tone === "subtle" ? "text-icon-subtle" : colorClass, "[&_svg]:text-current", iconMetrics.compactIconClassName)}
+						className={cn(tone === "subtle" ? "text-icon-subtle" : colorClass, "[&_svg]:text-current aria-expanded:bg-bg-selected aria-expanded:text-icon-selected aria-expanded:hover:bg-bg-selected-hovered", iconMetrics.compactIconClassName)}
 						onClick={stopNestedActivation}
 						onPointerDown={stopNestedActivation}
 						size="icon-compact"
@@ -122,11 +133,17 @@ export function JiraIssuePullRequestCluster({
 					/>
 				)}
 			>
-				<Icon render={<StatusIcon label="" size="small" color="currentColor" />} />
-			</HoverCardTrigger>
-			<HoverCardContent
+				<span className="inline-flex" ref={iconRef}>
+					<Icon render={<StatusIcon label="" size="small" color="currentColor" />} />
+				</span>
+			</PopoverTrigger>
+			<PopoverContent
 				align="end"
+				aria-label={`Pull request #${pullRequestNumber} details`}
 				className="w-[320px] max-w-[calc(100vw-48px)] overflow-hidden rounded-xl border-none bg-surface-overlay p-0 text-text shadow-none"
+				initialFocus={false}
+				onClick={stopNestedActivation}
+				onPointerDown={stopNestedActivation}
 				positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
 				side="bottom"
 				sideOffset={8}
@@ -136,17 +153,20 @@ export function JiraIssuePullRequestCluster({
 					additions={pullRequestPreview?.additions ?? 0}
 					author={pullRequestPreview?.author}
 					branch={pullRequestPreview?.branch}
+					checks={pullRequestPreview?.checks}
 					className="border-none bg-transparent shadow-none"
 					deletions={pullRequestPreview?.deletions ?? 0}
 					filesChanged={pullRequestPreview?.filesChanged}
+					href={pullRequestPreview?.href}
 					number={pullRequestNumber}
 					relativeTime={pullRequestPreview?.relativeTime}
+					repository={pullRequestPreview?.repository}
 					status={toPullRequestCardStatus(pullRequestStatus)}
 					targetBranch={pullRequestPreview?.targetBranch}
 					title={overlayTitle}
 					variant="flyout"
 				/>
-			</HoverCardContent>
-		</HoverCard>
+			</PopoverContent>
+		</Popover>
 	);
 }

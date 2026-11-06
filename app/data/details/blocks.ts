@@ -47,6 +47,7 @@ import { ANSWER_CARD_DETAIL } from "./blocks/answer-card";
 import { SPOTLIGHT_DETAIL } from "./blocks/spotlight";
 import { SMART_LINK_DETAIL } from "./blocks/smart-link";
 import { PULL_REQUEST_DETAIL } from "./blocks/pull-request";
+import { DEVELOPMENT_PANEL_DETAIL } from "./blocks/development-panel";
 import { PULL_REQUEST_HEADER_DETAIL } from "./blocks/pull-request-header";
 import { PULL_REQUEST_REVIEW_DETAIL } from "./blocks/pull-request-review";
 import { PULL_REQUEST_FIX_DETAIL } from "./blocks/pull-request-fix";
@@ -166,6 +167,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	spotlight: SPOTLIGHT_DETAIL,
 	"smart-link": SMART_LINK_DETAIL,
 	"pull-request": PULL_REQUEST_DETAIL,
+	"development-panel": DEVELOPMENT_PANEL_DETAIL,
 	"pull-request-header": PULL_REQUEST_HEADER_DETAIL,
 	"pull-request-review": PULL_REQUEST_REVIEW_DETAIL,
 	"pull-request-fix": PULL_REQUEST_FIX_DETAIL,

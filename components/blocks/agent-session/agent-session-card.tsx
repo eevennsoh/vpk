@@ -548,7 +548,7 @@ export function AgentSessionCard({
 
 		switch (role) {
 			case "viewer":
-				return <AgentSessionViewerHint />;
+				return <AgentSessionViewerHint compact={!isLongDensity || !showLifecycleLabel} />;
 			case "expired":
 			case "owner":
 				return (
