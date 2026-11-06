@@ -126,6 +126,7 @@ export function JiraGoldenJourneysV0HeaderControls(
 			<ButtonGroup
 				aria-label="Open a Jira Golden Journeys v0 section"
 				className="w-max [&>[data-slot]~[data-slot]]:-ml-px [&>[data-slot]~[data-slot]]:border-l!"
+				data-card-kanban-navigation={props.selectedId === "card" ? "" : undefined}
 				variant="connected"
 			>
 				{isAutomatedSequence || state.count === 1 ? (
@@ -157,8 +158,8 @@ export function JiraGoldenJourneysV0CompactHeaderControls(
 	const activeLabel = progressLabel(state.label, state.position, state.count);
 
 	return (
-		<div className="flex items-center text-sm text-text">
-			<Button
+		<div className="flex items-center text-sm text-text" data-card-kanban-navigation={props.selectedId === "card" ? "" : undefined}>
+			{props.selectedId !== "card" ? <Button
 				aria-label="Previous section step"
 				className="mr-2"
 				disabled={state.previous === null}
@@ -168,7 +169,7 @@ export function JiraGoldenJourneysV0CompactHeaderControls(
 				variant="outline"
 			>
 				<ChevronLeftIcon label="" size="small" />
-			</Button>
+			</Button> : null}
 			{state.options.length > 0 ? (
 				<DropdownMenu>
 					<DropdownMenuTrigger
@@ -198,7 +199,7 @@ export function JiraGoldenJourneysV0CompactHeaderControls(
 			) : (
 				<span className="mr-2 px-1 py-0.5 tabular-nums">{activeLabel}</span>
 			)}
-			<Button
+			{props.selectedId !== "card" ? <Button
 				aria-label="Next section step"
 				disabled={state.next === null}
 				onClick={() => state.next?.()}
@@ -207,7 +208,7 @@ export function JiraGoldenJourneysV0CompactHeaderControls(
 				variant="outline"
 			>
 				<ChevronRightIcon label="" size="small" />
-			</Button>
+			</Button> : null}
 		</div>
 	);
 }

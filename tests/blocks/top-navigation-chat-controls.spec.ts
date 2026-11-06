@@ -70,3 +70,23 @@ test("shared surface controls open and close the original Golden Journeys floati
 	await expect(chat).not.toBeVisible();
 	await expect(page.getByRole("button", { name: "Open Rovo chat", exact: true })).toBeVisible();
 });
+
+for (const width of [1440, 390]) test(`Card kanban steps use keyboard navigation at ${width}px`, async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width, height: 900 });
+	await page.goto(`${origin}/jira-golden-journeys-v0`, { waitUntil: "domcontentloaded" });
+	await page.getByRole("button", { name: "Select Card kanban" }).click();
+	await expect(page.getByText("Card kanban · 1 of 5").filter({ visible: true })).toBeVisible();
+	await page.keyboard.press("ArrowRight");
+	await expect(page.getByText("Card kanban · 2 of 5").filter({ visible: true })).toBeVisible();
+	await page.keyboard.press("ArrowLeft");
+	await expect(page.getByText("Card kanban · 1 of 5").filter({ visible: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Previous section step" })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Next section step" })).toHaveCount(0);
+	for (let step = 0; step < 4; step += 1) {
+		await page.keyboard.press("ArrowRight");
+	}
+	await expect(page.getByText("Card kanban · 5 of 5").filter({ visible: true })).toBeVisible();
+	await page.keyboard.press("ArrowRight");
+	await expect(page.getByText("Card kanban · 5 of 5").filter({ visible: true })).toBeVisible();
+});
