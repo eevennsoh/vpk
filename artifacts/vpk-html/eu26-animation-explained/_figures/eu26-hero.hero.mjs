@@ -208,7 +208,7 @@ export const data = {
 		{ id: "board", title: "The keynote board", phase: "board", time: 0, description: "Three chapters of work sit beside an empty Done column." },
 		{ id: "drop", title: "One card lands", phase: "drop", time: 2, description: "A human cursor carries Agent Session Tracking into Done, then releases it." },
 		{ id: "puff", title: "A local reward", phase: "puff", time: 4, description: "A small puff opens around the landed card, then clears." },
-		{ id: "all-done", title: "The whole deck completes", phase: "allDone", time: 6, description: "The main cursor brings the next work into Done. All 23 stories are complete; three spaced rows stay visible." },
+		{ id: "all-done", title: "The whole deck completes", phase: "allDone", time: 6, description: "The cursor drags the rest of the selected work into Done as one stack. All 23 stories are complete and Done fills to its edge." },
 		{ id: "big-burst", title: "The celebration grows", phase: "bigBurst", time: 8, description: "A broad confetti burst changes the scale of the reward." },
 		{ id: "vortex", title: "Particles find an orbit", phase: "vortex", time: 10, description: "The burst gathers into a rotating funnel above Done." },
 		{ id: "column-flash", title: "Completion light", phase: "columnFlash", time: 13, description: "A light traces the three card borders, then a directional gradient passes across their faces." },

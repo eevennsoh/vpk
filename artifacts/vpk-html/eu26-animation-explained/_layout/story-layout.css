@@ -381,14 +381,100 @@ body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { min-blo
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-reading { overflow: visible; }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: 0; padding-block: 32px; }
 
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step { min-block-size: 0; padding-block: 44px 64px; padding-inline-start: 28px; border-inline-start: 1px solid var(--rule); }
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step::before { content: ""; position: absolute; inset-inline-start: -3px; inset-block-start: 49px; inline-size: 5px; block-size: 5px; border-radius: 50%; background: var(--ink); }
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step h2 { font-size: 25px !important; }
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-summary { font-size: 16px !important; }
+/* X Threads follows Lifeline's vertical timeline (github.com/evilrabbit/lifeline, lifeline-vertical.tsx): a
+   2.5rem | 1rem | 1fr grid with a 12px gap, a right-aligned step number, a 10px tick on one dashed rail, the time as the
+   15px label, muted content, and the current step in full while the rest recede. */
+body[data-vpk-layout="story"] .story-thread-labels { display: none; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] {
+	--thread-grid: 2.5rem 1rem minmax(0, 1fr);
+	--thread-rail-x: calc(2.5rem + 12px + .5rem);
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-thread-labels {
+	display: grid;
+	grid-template-columns: var(--thread-grid);
+	column-gap: 12px;
+	align-items: end;
+	margin-block: 32px 24px;
+	color: var(--muted-text);
+	font: 500 11px/16px var(--font-mono);
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-thread-labels > :first-child { text-align: end; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step {
+	display: grid;
+	grid-template-columns: var(--thread-grid);
+	column-gap: 12px;
+	align-items: start;
+	min-block-size: 0;
+	padding-block: 0 40px;
+	padding-inline-start: 0;
+	border: 0;
+	opacity: .38;
+	transition: opacity var(--vpk-tip-enter, 150ms ease-out);
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step[aria-current="step"],
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step:hover,
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step:focus-within { opacity: 1; }
+/* One continuous dashed rail: each step draws its own segment through the rail column. */
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step::before {
+	content: "";
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: var(--thread-rail-x);
+	inline-size: 0;
+	block-size: auto;
+	border-inline-start: 1px dashed var(--rule-strong);
+	border-radius: 0;
+	background: none;
+	pointer-events: none;
+}
+/* Header row: the kicker's spans become the number and the time; the "/ 12" counter text is dropped. */
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-kicker { display: contents; font-size: 0 !important; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-kicker .story-step-index {
+	grid-column: 1;
+	grid-row: 1;
+	align-self: center;
+	color: var(--muted-text);
+	font: 500 11px/16px var(--font-mono);
+	text-align: end;
+	font-variant-numeric: tabular-nums;
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-kicker::after {
+	content: "";
+	position: relative;
+	z-index: 1;
+	grid-column: 2;
+	grid-row: 1;
+	align-self: center;
+	justify-self: center;
+	inline-size: 10px;
+	block-size: 1px;
+	background: var(--rule-strong);
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step[aria-current="step"] .story-step-kicker::after { inline-size: 14px; background: var(--ink); }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-kicker .story-step-time {
+	grid-column: 3;
+	grid-row: 1;
+	margin: 0;
+	color: var(--muted-text);
+	font: 500 15px/20px var(--font-body);
+	letter-spacing: 0;
+	text-transform: none;
+	font-variant-numeric: tabular-nums;
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step[aria-current="step"] .story-step-time { color: var(--ink); }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step > :not(.story-step-kicker) { grid-column: 3; min-inline-size: 0; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step h2 { margin: 24px 0 12px; font-size: 22px !important; letter-spacing: -0.02em !important; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-summary { margin-block-end: 16px; color: var(--muted-text); font-size: 15px !important; line-height: 1.6 !important; }
 body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail > summary,
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[open] > summary { display: flex; gap: 14px; min-block-size: 44px; color: var(--ink); }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[open] > summary { display: flex; gap: 12px; min-block-size: 44px; color: var(--muted-text); font-size: 13px; }
 body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail > summary::after { content: ""; inline-size: 5px; block-size: 5px; border-inline-end: 1px solid currentColor; border-block-end: 1px solid currentColor; transform: rotate(45deg); }
 body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[open] > summary::after { transform: rotate(225deg); }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-play { color: var(--muted-text); }
+@media (prefers-reduced-motion: reduce) {
+	body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step { transition: none; }
+}
 
 @supports (scroll-target-group: auto) {
 	body[data-vpk-layout="story"] .story-index { scroll-target-group: auto; }
@@ -443,8 +529,7 @@ body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[ope
 	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { min-block-size: calc(100svh - var(--story-bar-height)); }
 	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-reading { max-block-size: none; overflow: visible; }
 	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: 0; padding-block: 28px 40px; }
-	body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step { padding-block: 32px 48px; }
-	body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step::before { inset-block-start: 37px; }
+	body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step { padding-block: 0 32px; }
 }
 
 @media (max-width: 380px) {

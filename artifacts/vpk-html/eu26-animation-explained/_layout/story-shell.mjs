@@ -23,6 +23,7 @@ export function renderStoryShell({ title, description, eyebrow, steps, hero, con
 			<p class="story-video-status" data-video-status role="status"></p><a class="story-video-download" data-video-download hidden download>Download video</a>
 		</section>
 		<div class="story-reading" data-story-steps>
+			<div class="story-thread-labels" aria-hidden="true"><span>Step</span><span></span><span>Time</span></div>
 			<header class="story-intro"><p class="story-kicker">${escape(eyebrow)}</p><h1>${escape(title)}</h1><p class="story-deck">${escape(description)}</p><p class="story-reading-hint">One drawing. ${steps.length} moments. Scroll to follow the work.</p><a class="story-start" href="#${escape(steps[0].id)}" data-story-jump="0">Begin the story <span aria-hidden="true">↓</span></a></header>
 			${steps.map((step, index) => `<article id="${escape(step.id)}" class="story-step" data-story-step data-story-index="${index}" aria-labelledby="${escape(step.id)}-heading">
 				<p class="story-step-kicker"><span class="story-step-index">${String(index + 1).padStart(2, '0')}</span> / ${String(steps.length).padStart(2, '0')} <span class="story-step-time">${(step.seconds ?? step.time).toFixed(1)}s</span></p>
