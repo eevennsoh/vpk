@@ -551,6 +551,10 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-orientation="horizontal"]
 }
 
 body[data-vpk-layout="story"]:has([data-vpk-story][data-story-mode="slides"]) { --eu26-dock-reserve: 0px; }
+/* Wide Slides keeps Page's right reserve too (the icon rail is there in every view), so its columns match Page's. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"]:has([data-vpk-story][data-story-mode="slides"]) { --eu26-dock-reserve: 96px; }
+}
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { padding-block-end: 148px; }
 body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-timeline-view="slides"] {
 	position: fixed;

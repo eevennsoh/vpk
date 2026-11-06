@@ -4147,6 +4147,10 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-orientation="horizontal"]
 }
 
 body[data-vpk-layout="story"]:has([data-vpk-story][data-story-mode="slides"]) { --eu26-dock-reserve: 0px; }
+/* Wide Slides keeps Page's right reserve too (the icon rail is there in every view), so its columns match Page's. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"]:has([data-vpk-story][data-story-mode="slides"]) { --eu26-dock-reserve: 96px; }
+}
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { padding-block-end: 148px; }
 body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-timeline-view="slides"] {
 	position: fixed;
@@ -5115,7 +5119,7 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 		</div>
 	</div>
 	<div id="eu26-explorer-controls" data-vpkh-no-lightbox></div>
-	<script type="application/json" data-vpk-story-model>{"mode":"story","playbackRate":1.7,"steps":[{"id":"board","title":"The keynote board","time":0},{"id":"drop","title":"One card lands","time":2},{"id":"puff","title":"A local reward","time":4},{"id":"all-done","title":"The whole deck completes","time":6},{"id":"big-burst","title":"The celebration grows","time":8},{"id":"vortex","title":"Particles find an orbit","time":10},{"id":"column-flash","title":"Completion light","time":13},{"id":"field","title":"The cards become a field","time":16},{"id":"hero-landing","title":"Find the hero card","time":19},{"id":"bento","title":"Six features assemble","time":22},{"id":"wall-throw","title":"Throw into a larger world","time":25},{"id":"wall-glide","title":"A wall that people keep moving","time":34}]}</script>
+	<script type="application/json" data-vpk-story-model>{"mode":"story","steps":[{"id":"board","title":"The keynote board","time":0},{"id":"drop","title":"One card lands","time":2},{"id":"puff","title":"A local reward","time":4},{"id":"all-done","title":"The whole deck completes","time":6},{"id":"big-burst","title":"The celebration grows","time":8},{"id":"vortex","title":"Particles find an orbit","time":10},{"id":"column-flash","title":"Completion light","time":13},{"id":"field","title":"The cards become a field","time":16},{"id":"hero-landing","title":"Find the hero card","time":19},{"id":"bento","title":"Six features assemble","time":22},{"id":"wall-throw","title":"Throw into a larger world","time":25},{"id":"wall-glide","title":"A wall that people keep moving","time":34}]}</script>
 </main></div>
 <script data-vpk-docnav-runtime>
 (() => {
@@ -6263,22 +6267,6 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			const span = steps[steps.length - 1].time - steps[0].time;
 			return Math.max(0, Math.min(1, span ? (time - steps[0].time) / span : index / Math.max(1, steps.length - 1)));
 		};
-		const figNumber = stage.querySelector('[data-story-fig-number]');
-		const figTitle = stage.querySelector('[data-story-fig-title]');
-		const figReadout = stage.querySelector('[data-story-fig-readout]');
-		const rate = Number(config.playbackRate) > 0 ? Number(config.playbackRate) : 1;
-		const pad = value => String(value).padStart(2, '0');
-		let figIndex = -1, figText = '';
-		// Figure corner furniture: the chapter number and title follow the shown chapter, the readout follows exact time.
-		function syncFigure(displayIndex) {
-			if (figIndex !== displayIndex) {
-				figIndex = displayIndex;
-				if (figNumber) figNumber.textContent = pad(displayIndex + 1);
-				if (figTitle) figTitle.textContent = steps[displayIndex].title;
-			}
-			const text = `t ${(Math.max(0, time) / rate).toFixed(1)} s · ${pad(displayIndex + 1)} / ${pad(steps.length)}`;
-			if (figReadout && text !== figText) figReadout.textContent = figText = text;
-		}
 		const getState = () => ({ mode, index, time, displayIndex: preview?.index ?? index, progress: progress(), following, reducedMotion, readingLine, stepCount: steps.length, stepId: steps[index].id || articles[index].id, suspendedReason });
 		const wideQuery = window.matchMedia('(min-width: 1024px)');
 		let syncedWide = null;
@@ -6301,7 +6289,6 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			root.dataset.storyIndex = String(displayIndex);
 			root.dataset.storyFollowing = String(following);
 			root.dataset.storyNativeProgress = String(supportsTimeline && !reducedMotion);
-			syncFigure(displayIndex);
 			if (syncedIndex !== displayIndex || syncedMode !== mode || syncedWide !== wideQuery.matches) {
 				syncedWide = wideQuery.matches;
 				if (syncedMode !== mode) for (const detail of stepDetails) detail.open = mode !== 'twitter';

@@ -35,22 +35,6 @@
 			const span = steps[steps.length - 1].time - steps[0].time;
 			return Math.max(0, Math.min(1, span ? (time - steps[0].time) / span : index / Math.max(1, steps.length - 1)));
 		};
-		const figNumber = stage.querySelector('[data-story-fig-number]');
-		const figTitle = stage.querySelector('[data-story-fig-title]');
-		const figReadout = stage.querySelector('[data-story-fig-readout]');
-		const rate = Number(config.playbackRate) > 0 ? Number(config.playbackRate) : 1;
-		const pad = value => String(value).padStart(2, '0');
-		let figIndex = -1, figText = '';
-		// Figure corner furniture: the chapter number and title follow the shown chapter, the readout follows exact time.
-		function syncFigure(displayIndex) {
-			if (figIndex !== displayIndex) {
-				figIndex = displayIndex;
-				if (figNumber) figNumber.textContent = pad(displayIndex + 1);
-				if (figTitle) figTitle.textContent = steps[displayIndex].title;
-			}
-			const text = `t ${(Math.max(0, time) / rate).toFixed(1)} s · ${pad(displayIndex + 1)} / ${pad(steps.length)}`;
-			if (figReadout && text !== figText) figReadout.textContent = figText = text;
-		}
 		const getState = () => ({ mode, index, time, displayIndex: preview?.index ?? index, progress: progress(), following, reducedMotion, readingLine, stepCount: steps.length, stepId: steps[index].id || articles[index].id, suspendedReason });
 		const wideQuery = window.matchMedia('(min-width: 1024px)');
 		let syncedWide = null;
@@ -73,7 +57,6 @@
 			root.dataset.storyIndex = String(displayIndex);
 			root.dataset.storyFollowing = String(following);
 			root.dataset.storyNativeProgress = String(supportsTimeline && !reducedMotion);
-			syncFigure(displayIndex);
 			if (syncedIndex !== displayIndex || syncedMode !== mode || syncedWide !== wideQuery.matches) {
 				syncedWide = wideQuery.matches;
 				if (syncedMode !== mode) for (const detail of stepDetails) detail.open = mode !== 'twitter';

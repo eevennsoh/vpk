@@ -1,7 +1,7 @@
 const escape = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 export const jsonIsland = value => JSON.stringify(value).replaceAll('<', '\\u003c');
 
-export function renderStoryShell({ title, description, eyebrow, steps, hero, controls = '', appearance = '', playbackRate = 1, sourcesHref = '', icons = {} }) {
+export function renderStoryShell({ title, description, eyebrow, steps, hero, controls = '', appearance = '', sourcesHref = '', icons = {} }) {
 	// The reading controls live in the rail column above the chapter ticks: view modes, sources, theme. Icon buttons carry
 	// their names in aria-label and a hover title, so the stack stays one tick-rail wide.
 	const modes = [['story', 'Page', icons.page], ['slides', 'Slides', icons.slides], ['twitter', 'X Threads', icons.threads], ['video', 'Video', icons.video]];
@@ -33,6 +33,6 @@ export function renderStoryShell({ title, description, eyebrow, steps, hero, con
 		</div>
 	</div>
 	${controls}
-	<script type="application/json" data-vpk-story-model>${jsonIsland({ mode: 'story', playbackRate, steps: steps.map(({ id, title, time }) => ({ id, title, time })) })}</script>
+	<script type="application/json" data-vpk-story-model>${jsonIsland({ mode: 'story', steps: steps.map(({ id, title, time }) => ({ id, title, time })) })}</script>
 </main>`;
 }

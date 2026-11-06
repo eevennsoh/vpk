@@ -30,7 +30,7 @@ const shell = renderStoryShell({
 	title: 'From Done to an endless wall.',
 	description: 'How one card drop becomes a celebration, a 3D field, and a world of moving work.',
 	eyebrow: 'Jira / Team ’26 Europe / Motion study',
-	steps: storySteps(data), hero, playbackRate: data.playbackRate,
+	steps: storySteps(data), hero,
 	controls: '<div id="eu26-explorer-controls" data-vpkh-no-lightbox></div>',
 	appearance: '<div id="eu26-variant-controls" data-vpkh-no-lightbox></div>',
 	sourcesHref: 'https://bitbucket.org/atlassian/jira-team-eu26-motion/src/8588b00ff81cb5e8341a462158c747c6d990667c/components/projects/jira-team-eu26-end/finale/',
