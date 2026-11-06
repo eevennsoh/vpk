@@ -607,3 +607,19 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { o
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure-hint { visibility: hidden; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { order: 4; }
 body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { order: 5; align-self: start; }
+
+/* Video fits one viewport: title row, figure, timeline and chapter line never need scrolling. The chrome keeps its
+   natural height and the figure takes the remainder, so the whole player is visible at any window size. */
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { box-sizing: border-box; block-size: 100svh; padding-block-end: 12px; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-toolbar { padding-block: 16px 12px; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { flex: 1 1 0; min-block-size: 220px; block-size: auto; padding: 0; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure { block-size: 100%; min-block-size: 0; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure #animation-explorer { flex: 1 1 0; min-block-size: 0; display: block !important; }
+body[data-vpk-layout="story"] [data-story-mode="video"] #animation-explorer :is([data-vpk-figure="eu26-hero"], .iso-figure, .iso-plate) { block-size: 100%; }
+body[data-vpk-layout="story"] [data-story-mode="video"] #animation-explorer .iso-stage { block-size: 100% !important; min-block-size: 0; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { margin-block: 12px 4px; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { margin-block-start: 6px; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { margin-block: 2px 0; }
+@media (max-width: 760px) {
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { block-size: calc(100svh - var(--story-bar-height) - 1px); }
+}
