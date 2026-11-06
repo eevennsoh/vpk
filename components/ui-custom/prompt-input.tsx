@@ -845,7 +845,7 @@ export type PromptInputTextareaProps = ComponentProps<
   /** Caps plain-text directory autocomplete matches before external rendering. */
   directoryAutocompleteLimit?: number;
   /** Keyed request to replace the composer draft with a rich mention token. */
-  prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number };
+  prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number; textAfter?: string };
   /** Acknowledges a rich mention request after the editor applies it. */
   onPrefillMentionConsumed?: (requestKey: number) => void;
   /** Receives composer-owned autocomplete state for external list rendering. */
@@ -1435,6 +1435,7 @@ export const PromptInputTextarea = ({
     let cancelled = false;
     const requestKey = prefillMentionRequest.requestKey;
     const mention = prefillMentionRequest.mention;
+    const textAfter = prefillMentionRequest.textAfter ?? " ";
     pendingMentionPrefillKeyRef.current = requestKey;
 
     const prefillFrame = requestAnimationFrame(() => {
@@ -1456,7 +1457,7 @@ export const PromptInputTextarea = ({
         .selectAll()
         .insertContent([
           { type: "mention", attrs: getMentionNodeAttrs(mention) },
-          { type: "text", text: " " },
+          { type: "text", text: textAfter },
         ])
         .run();
       editor.createNodeViews();

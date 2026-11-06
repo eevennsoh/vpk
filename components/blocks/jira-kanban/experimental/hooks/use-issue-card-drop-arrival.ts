@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { flushSync } from "react-dom";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { animateIssueSolitaireDrop, captureIssueCardReflow, resolveIssueSolitaireLanding, type IssueCardReflowPosition } from "../lib/issue-solitaire-drop";
+import { animateIssueCardReflow, animateIssueDropTrace, animateIssueSolitaireDrop, captureIssueCardReflow, resolveIssueSolitaireLanding, type IssueCardReflowPosition } from "../lib/issue-solitaire-drop";
 import { settleIssueCohortPreview } from "../lib/issue-drag-preview";
 import { afterNextPresentedFrame } from "../lib/issue-drop-handoff";
 import { getAutoArrangePlan } from "../lib/board-auto-arrange";
@@ -11,7 +11,7 @@ import type { JiraKanbanProps } from "@/components/blocks/jira-kanban/index";
 import type { JiraKanbanCardDropTarget } from "@/components/blocks/jira-kanban/card-drop";
 import { captureIssueCardDropArrival, resolveIssueCardDropArrival, resolveIssueDropDeck, resolveVisibleIssueDropCodes, type IssueCardDropArrival } from "../lib/board-card-arrival";
 import type { JiraKanbanCreatedCardArrival } from "./use-created-card-arrival";
-import { captureIssueCardDropFlights, hasIssueDropTarget, startIssueCardDropFlights, type IssueCardDropFlight, type IssueDropPoint } from "../lib/issue-card-drop-flight";
+import { captureIssueCardDropFlights, hasIssueDropTarget, ISSUE_CARD_FADE_EXIT_MS, startIssueCardDropFlights, type IssueCardDropFlight, type IssueDropPoint } from "../lib/issue-card-drop-flight";
 
 /** A host-requested multi-card move, committed like one cohort drop. */
 export interface IssueCardMove {
@@ -19,7 +19,9 @@ export interface IssueCardMove {
 	readonly columnTitle: string;
 	readonly target?: JiraKanbanCardDropTarget;
 	/** Assignment owns its card glow separately; suppress the manual-drop trace. */
-	readonly feedback?: "none";
+	readonly feedback?: "trace" | "none";
+	/** Fade the source in place before revealing the destination. */
+	readonly animation?: "fade";
 }
 
 /** A released cohort whose move commits in the task after its settled face paints. */
@@ -54,7 +56,9 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const releasePoint = useRef<IssueDropPoint | null>(null);
 	const grabOffset = useRef<IssueDropPoint>({ x: 0, y: 0 });
-	const snapshots = useRef<{ id: number; title: string; flights: IssueCardDropFlight[]; started?: boolean; solitaire?: boolean; feedback?: "none"; reflowBefore?: readonly IssueCardReflowPosition[] }[]>([]);
+	const snapshots = useRef<{ id: number; title: string; flights: IssueCardDropFlight[]; started?: boolean; solitaire?: boolean; feedback?: "trace" | "none"; animation?: "fade"; reflowBefore?: readonly IssueCardReflowPosition[] }[]>([]);
+	const stopFlightTrace = useRef<(() => void) | undefined>(undefined);
+	useEffect(() => () => stopFlightTrace.current?.(), []);
 	const arrivals = useMemo(() => drop.flatMap((item) => {
 		const arrival = resolveIssueCardDropArrival(item, columns);
 		return arrival ? [arrival] : [];
@@ -67,6 +71,8 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	useLayoutEffect(() => {
 		const root = boardRef.current;
 		if (!enabled) {
+			stopFlightTrace.current?.();
+			stopFlightTrace.current = undefined;
 			snapshots.current = [];
 			releasePoint.current = null;
 			setDrop([]);
@@ -75,6 +81,8 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		if (!canDrop || !root) return;
 		const captureStart = (event: globalThis.DragEvent) => {
 			if (!(event.target instanceof Element) || !root.contains(event.target)) return;
+			stopFlightTrace.current?.();
+			stopFlightTrace.current = undefined;
 			if (snapshots.current.length) setDrop([]);
 			snapshots.current = [];
 			releasePoint.current = null;
@@ -113,7 +121,9 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 				return () => {};
 			}
 			captured.started = true;
-			return startIssueCardDropFlights(root, captured.title, captured.flights, (code) => {
+			const stopReflow = captured.animation === "fade" && captured.reflowBefore
+				? animateIssueCardReflow(root, captured.reflowBefore, ISSUE_CARD_FADE_EXIT_MS) : undefined;
+			const stopFlight = startIssueCardDropFlights(root, captured.title, captured.flights, (code) => {
 				setDrop((current) => current.map((item) => item.id === captured.id
 					? { ...item, pendingCardCodes: item.pendingCardCodes?.filter((pending) => pending !== code) } : item));
 			}, () => {
@@ -121,7 +131,8 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 				if (captured.flights.every((flight) => !hasIssueDropTarget(root, captured.title, flight.code))) {
 					setDrop((current) => current.filter((item) => item.id !== captured.id));
 				}
-			});
+			}, captured.animation);
+			return () => { stopFlight(); stopReflow?.(); };
 		});
 		return () => cleanups.forEach((cleanup) => cleanup());
 	}, [boardRef, committedArrivals, enabled, flightBatchId, hasFlights, reduceMotion]);
@@ -167,10 +178,12 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	// in around it. A host move has no traveller, so it lands like auto arrange:
 	// a deck of the destination's top cards flies from their own slots into the
 	// top of the column, and the cards below it cascade in once it lands.
-	const captureDrop = useCallback((codes: readonly string[], columnTitle: string, grabbed: string | null, feedback?: "none") => {
+	const captureDrop = useCallback((codes: readonly string[], columnTitle: string, grabbed: string | null, feedback?: "trace" | "none", animation?: "fade") => {
+		stopFlightTrace.current?.();
+		stopFlightTrace.current = undefined;
 		// Created-card ids are positive; move ids occupy a separate completion namespace.
 		const next = captureIssueCardDropArrival(columns, codes, columnTitle, --version.current);
-		if (solitaire) {
+		if (solitaire && animation !== "fade") {
 			const reflowBefore = codes.length === 1 && !reduceMotion && boardRef.current
 				? captureIssueCardReflow(boardRef.current, codes, columnTitle) : undefined;
 			snapshots.current = [{ id: next.id, title: columnTitle, flights: [], solitaire: true, feedback, reflowBefore }];
@@ -188,7 +201,9 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 			root, preview: dragged ? getPreview() : null, nativePreview: dragged ? nativePreviewRef.current : null, pointer: dragged ? releasePoint.current : null,
 			grabOffset: grabOffset.current, grabbed: grabbed ?? leadCardCodes[0], codes: leadCardCodes,
 		}) : [];
-		snapshots.current = [{ id: next.id, title: columnTitle, flights }];
+		const reflowBefore = animation === "fade" && flights.length && root
+			? captureIssueCardReflow(root, movedCodes, columnTitle).filter((position) => position.columnTitle !== columnTitle) : undefined;
+		snapshots.current = [{ id: next.id, title: columnTitle, flights, feedback, animation, reflowBefore }];
 		setFlightBatchId(next.id);
 		releasePoint.current = null;
 		setDrop([leadCardCodes?.length ? { ...next, animatedCardCodes: movedCodes, pendingCardCodes: flights.map((flight) => flight.code), leadCardCodes, holdBelowLeads: !dragged } : next]);
@@ -261,13 +276,15 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		return settledDrop.current !== null;
 	}, []);
 	const handleMove = useCallback((move: IssueCardMove) => {
-		if (enabled && move.cardCodes.length > 0) captureDrop(move.cardCodes, move.columnTitle, null, move.feedback);
+		if (enabled && move.cardCodes.length > 0) captureDrop(move.cardCodes, move.columnTitle, null, move.feedback, move.animation);
 		onMove?.(move);
 	}, [captureDrop, enabled, onMove]);
 	// Auto arrange lands each destination as a deck: its top cards (at most the
 	// drag deck's depth) fly into the top of the column — from the held traveller
 	// during a drag, else from their own slots — and the rest cascade in below.
 	const handleAutoArrange = useCallback((codes: ReadonlySet<string>) => {
+		stopFlightTrace.current?.();
+		stopFlightTrace.current = undefined;
 		const plan = getAutoArrangePlan(columns, codes);
 		const root = boardRef.current;
 		const captured = [...new Set(plan.map((move) => move.columnTitle))].map((title) => {
@@ -288,8 +305,16 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		onAutoArrange?.(codes);
 	}, [boardRef, columns, draggedCardCode, enabled, getPreview, nativePreviewRef, onAutoArrange, reduceMotion, solitaire]);
 	const handleComplete = useCallback((id: number) => {
-		if (id < 0) setDrop((current) => current.filter((item) => item.id !== id));
+		if (id < 0) {
+			const captured = snapshots.current.find((item) => item.id === id);
+			const root = boardRef.current;
+			if (root && captured?.started && captured.feedback === "trace" && !reduceMotion) {
+				stopFlightTrace.current?.();
+				stopFlightTrace.current = animateIssueDropTrace(root, captured.title, captured.flights.map((flight) => flight.code));
+			}
+			setDrop((current) => current.filter((item) => item.id !== id));
+		}
 		else onCreatedComplete?.(id);
-	}, [onCreatedComplete]);
+	}, [boardRef, onCreatedComplete, reduceMotion]);
 	return { isReflowing: enabled && solitaire && arrivals.some((arrival) => arrival.cardCodes.length === 1), arrivalForColumn: (title: string) => enabled ? arrivals.find((arrival) => arrival.columnTitle === title) : undefined, handleDrop: onDrop ? handleDrop : undefined, handleMove: onMove ? handleMove : undefined, handleAutoArrange: onAutoArrange ? handleAutoArrange : undefined, handleComplete, deferDragEnd };
 }

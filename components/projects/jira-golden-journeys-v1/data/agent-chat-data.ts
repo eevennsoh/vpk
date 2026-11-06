@@ -10,6 +10,7 @@ import type { QuestionCardQuestion } from "@/components/blocks/question-card/typ
 import type { AsxQueueSession } from "@/components/projects/jira-queue/data/queue-sessions";
 
 export interface JgpAgentChatScenario {
+	sessionId?: string;
 	agentId: string;
 	agentName: string;
 	issueKey: string;
@@ -64,7 +65,7 @@ const JGP_AGENT_PROFILES = [
 		id: "response-reviewer",
 		name: "Response Reviewer",
 		byline: "RFP review agent by Rovo",
-		avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+		avatarSrc: "/avatar-agent-new/lime/auto-review.svg",
 		description: "Reviews enterprise responses for product, security, legal, and delivery risks before bid decisions.",
 		starters: [],
 		contextDescription: "Answer as Response Reviewer for the selected Jira RFP work item.",
@@ -73,7 +74,7 @@ const JGP_AGENT_PROFILES = [
 		id: "service-impact-agent",
 		name: "Service impact agent",
 		byline: "JGP demo agent by Rovo",
-		avatarSrc: "/avatar-agent/service-agents/rca-agent.svg",
+		avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
 		description: "Maps affected services, owners, and customer-facing impact for Jira work items.",
 		starters: [],
 		contextDescription: "Answer as Service impact agent for the selected JGP Jira issue.",
@@ -82,7 +83,7 @@ const JGP_AGENT_PROFILES = [
 		id: "dependency-mapper",
 		name: "Dependency mapper",
 		byline: "JGP demo agent by Rovo",
-		avatarSrc: "/avatar-agent/teamwork-agents/work-item-planner.svg",
+		avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 		description: "Finds dependent components, linked work, and blocked handoffs.",
 		starters: [],
 		contextDescription: "Answer as Dependency mapper for the selected JGP Jira issue.",
@@ -91,7 +92,7 @@ const JGP_AGENT_PROFILES = [
 		id: "unit-test-creator",
 		name: "Unit Test Creator",
 		byline: "JGP demo agent by Rovo",
-		avatarSrc: "/avatar-agent/dev-agents/unit-test-creator.svg",
+		avatarSrc: "/avatar-agent-new/lime/auto-dev.svg",
 		description: "Creates focused regression coverage and review-ready test artifacts for Jira work items.",
 		starters: [],
 		contextDescription: "Answer as Unit Test Creator for the selected JGP Jira issue.",
@@ -100,7 +101,7 @@ const JGP_AGENT_PROFILES = [
 		id: "review-agent",
 		name: "Codex",
 		byline: "Reviews every pull request",
-		avatarSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
+		avatarSrc: "/avatar-agent-new/blue/decision-director.svg",
 		brandName: "openai-codex",
 		description: "Confirms sandbox key retention and replay risk before the PAY-112 replay work continues.",
 		starters: [],
@@ -270,6 +271,25 @@ function buildJgpQuestionCardParts(
 			},
 		},
 	];
+}
+
+/** Reconstructs the session's recorded messages without starting a new turn. */
+export function buildJgpAgentSessionMessages(
+	scenario: JgpAgentChatScenario,
+	sessionKey: string,
+): RovoUIMessage[] {
+	const request = scenario.request?.trim();
+	const mentionOnly = request?.toLowerCase() === `@${scenario.agentName}`.toLowerCase();
+	const messages: RovoUIMessage[] = [];
+	if (request && !mentionOnly) {
+		messages.push({ id: `${sessionKey}-user`, role: "user", parts: [{ type: "text", text: request, state: "done" }] });
+	}
+	const questionParts = buildJgpQuestionCardParts(scenario, sessionKey);
+	const assistantParts = questionParts ?? (!mentionOnly && scenario.intro?.trim()
+		? [{ type: "text" as const, text: scenario.intro, state: "done" as const }]
+		: []);
+	if (assistantParts.length) messages.push({ id: `${sessionKey}-assistant`, role: "assistant", parts: assistantParts });
+	return messages;
 }
 
 /**

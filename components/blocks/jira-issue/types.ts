@@ -1,5 +1,7 @@
 import type { TagColor } from "@/components/ui/tag";
 import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
+import type { PullRequestAuthor } from "@/components/blocks/pull-request/components/pull-request-types";
+import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
 
 /** Raised elevation is the default card chrome. Stroke is a 1px border with no shadow. */
 export type JiraIssueChrome = "raised" | "stroke";
@@ -33,11 +35,10 @@ export type JiraIssueCoverImage = {
 /** Dummy or live overlay fields for the Pull Request hover flyout. */
 export interface JiraIssuePullRequestPreview {
 	title: string;
-	author?: {
-		name: string;
-		avatarUrl?: string;
-	};
+	href?: string;
+	author?: PullRequestAuthor;
 	repository?: string;
+	checks?: readonly PullRequestCheck[];
 	branch?: string;
 	targetBranch?: string;
 	additions: number;

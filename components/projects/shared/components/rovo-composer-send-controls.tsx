@@ -332,9 +332,9 @@ export function RovoComposerActionButton({
 				{isDictationActive ? (
 					<motion.div
 						key="dictation-active"
-						initial={{ opacity: 0, transform: "scale(0.8)" }}
-						animate={{ opacity: 1, transform: "scale(1)" }}
-						exit={{ opacity: 0, transform: "scale(0.8)" }}
+						initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
@@ -351,9 +351,9 @@ export function RovoComposerActionButton({
 				) : shouldShowRealtimeVoiceRail ? (
 					<motion.div
 						key="live-voice-active"
-						initial={{ opacity: 0, transform: "scale(0.8)" }}
-						animate={{ opacity: 1, transform: "scale(1)" }}
-						exit={{ opacity: 0, transform: "scale(0.8)" }}
+						initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
@@ -425,9 +425,9 @@ export function RovoComposerActionButton({
 				) : resolvedRealtimeVoiceActive ? (
 					<motion.div
 						key="waveform"
-						initial={{ opacity: 0, transform: "scale(0.8)" }}
-						animate={{ opacity: 1, transform: "scale(1)" }}
-						exit={{ opacity: 0, transform: "scale(0.8)" }}
+						initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
@@ -454,9 +454,9 @@ export function RovoComposerActionButton({
 				) : idleAction === "submit" || idleAction === "voice-start" ? (
 					<motion.div
 						key={idleAction === "submit" ? "submit-actions" : "voice-start"}
-						initial={{ opacity: 0, transform: "scale(0.8)" }}
-						animate={{ opacity: 1, transform: "scale(1)" }}
-						exit={{ opacity: 0, transform: "scale(0.8)" }}
+						initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
@@ -493,9 +493,9 @@ export function RovoComposerActionButton({
 				) : idleAction === "background-stop" ? (
 					<motion.div
 						key="background-stop"
-						initial={{ opacity: 0, transform: "scale(0.8)" }}
-						animate={{ opacity: 1, transform: "scale(1)" }}
-						exit={{ opacity: 0, transform: "scale(0.8)" }}
+						initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
@@ -516,9 +516,9 @@ export function RovoComposerActionButton({
 				{resolvedComposerBusy ? (
 					<motion.div
 						key="stop"
-						initial={{ opacity: 0, transform: "scale(0.8)" }}
-						animate={{ opacity: 1, transform: "scale(1)" }}
-						exit={{ opacity: 0, transform: "scale(0.8)" }}
+						initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
@@ -575,6 +575,7 @@ export function RovoComposerSendControls({
 	onWebResultsChange,
 	...props
 }: Readonly<RovoComposerSendControlsProps>): ReactElement {
+	const shouldReduceMotion = useReducedMotion();
 	useEffect(() => {
 		if (hideReasoningSelector && open) {
 			onOpenChange?.(false);
@@ -587,9 +588,9 @@ export function RovoComposerSendControls({
 				{hideReasoningSelector ? null : (
 					<motion.div
 						key="reasoning-selector"
-						initial={{ opacity: 0, transform: "scale(0.8)" }}
-						animate={{ opacity: 1, transform: "scale(1)" }}
-						exit={{ opacity: 0, transform: "scale(0.8)" }}
+						initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8 }}
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>

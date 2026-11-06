@@ -16,13 +16,13 @@ export function RelatedStatusIcon({ status }: Readonly<{ status: ProjectButterRe
 	return <span className="flex shrink-0 text-icon-subtle"><TaskToDoIcon color="currentColor" label="" size="small" /></span>;
 }
 
-/** Icon-only status picker for a related row: morphing glyph trigger, three-item menu with icons. */
+/** Icon-only status picker for a related row with a three-item menu. */
 export function RelatedStatusField({ itemKey, onChange, status }: Readonly<{ itemKey: string; onChange: (status: ProjectButterRelatedStatus) => void; status: ProjectButterRelatedStatus }>) {
 	return (
 		<RelatedTooltip label={status} side="bottom">
 			<DropdownMenu>
 				<DropdownMenuTrigger render={<Button aria-label={`Edit status for ${itemKey}, ${status}`} className="-mx-1.5" size="icon-compact" type="button" variant="ghost" />}>
-					<ProjectButterStatusGlyph status={status} />
+					<ProjectButterStatusGlyph animated={false} status={status} />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start" onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]">
 					{RELATED_STATUSES.map((option) => (

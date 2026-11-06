@@ -1,7 +1,10 @@
 import { animateSessionChipDrop } from "@/components/blocks/jira-dropzone/lib/session-chip-drop-flight";
 import { JIRA_DROPZONE_FULL_MOTION_PROFILE } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-motion";
 import { token } from "@/lib/tokens";
+import { motionDuration } from "@/lib/motion";
 import { createIssueFacePreview } from "./issue-drag-preview";
+
+export const ISSUE_CARD_FADE_EXIT_MS = motionDuration.slower * 1000;
 
 export interface IssueDropPoint { readonly x: number; readonly y: number }
 export interface IssueCardDropFlight {
@@ -85,19 +88,31 @@ export function captureIssueCardDropFlights({ root, preview, nativePreview, poin
 }
 
 /** Jira Linking's upward toss and falling absorption, followed by the real issue entrance. */
-export function startIssueCardDropFlights(root: HTMLElement, title: string, flights: readonly IssueCardDropFlight[], onLanded: (code: string) => void, onFinished: () => void): () => void {
+export function startIssueCardDropFlights(root: HTMLElement, title: string, flights: readonly IssueCardDropFlight[], onLanded: (code: string) => void, onFinished: () => void, animation?: "fade"): () => void {
 	let remaining = flights.length;
 	const cleanups = flights.map((flight) => {
 		root.ownerDocument.body.append(flight.node);
+		const landed = () => {
+			flight.node.remove();
+			onLanded(flight.code);
+			if (--remaining === 0) onFinished();
+		};
+		if (animation === "fade") {
+			const face = flight.node.firstElementChild?.firstElementChild;
+			if (face instanceof HTMLElement) face.style.boxShadow = "";
+			const atOrigin = `translate3d(${flight.from.x}px, ${flight.from.y}px, 0)`;
+			const playback = flight.node.animate([
+				{ transform: `${atOrigin} scale(1)`, opacity: 1 },
+				{ transform: `${atOrigin} scale(0.95)`, opacity: 0 },
+			], { duration: ISSUE_CARD_FADE_EXIT_MS, easing: getComputedStyle(root).getPropertyValue("--ease-in-out").trim() || "ease-in-out", fill: "forwards" });
+			playback.onfinish = landed;
+			return () => { playback.cancel(); flight.node.remove(); };
+		}
 		const stop = animateSessionChipDrop(flight.node, {
 			from: flight.from,
 			durationMs: JIRA_DROPZONE_FULL_MOTION_PROFILE.durationMs,
 			resolveLandingPoint: () => resolveIssueDropLandingPoint(root, title, flight.code),
-			onLanded: () => {
-				flight.node.remove();
-				onLanded(flight.code);
-				if (--remaining === 0) onFinished();
-			},
+			onLanded: landed,
 		});
 		return () => { stop(); flight.node.remove(); };
 	});

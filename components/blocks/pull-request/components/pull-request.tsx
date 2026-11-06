@@ -1,25 +1,37 @@
 "use client";
 
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
+import BranchIcon from "@atlaskit/icon/core/branch";
 import FileIcon from "@atlaskit/icon/core/file";
+import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
+import {
+	PullRequestFlyoutChecks,
+	PullRequestFlyoutMetaRow,
+} from "@/components/blocks/pull-request/components/pull-request-flyout-parts";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { pullRequestReviewersLabel } from "@/components/blocks/pull-request/lib/pull-request-reviewers-label";
 import { toCompactRelativeTimeLabel } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 import type {
 	PullRequestAuthor,
 	PullRequestProps,
+	PullRequestProvider,
 	PullRequestStatus,
 } from "@/components/blocks/pull-request/components/pull-request-types";
 
 export type {
 	PullRequestAuthor,
 	PullRequestProps,
+	PullRequestReviewers,
 	PullRequestStatus,
 	PullRequestVariant,
 } from "@/components/blocks/pull-request/components/pull-request-types";
@@ -41,6 +53,10 @@ function statusLozengeVariant(
 			return "success";
 		case "Merged":
 			return "discovery";
+		case "Draft":
+			return "neutral";
+		case "Failed":
+			return "danger";
 		default: {
 			const _exhaustive: never = status;
 			return _exhaustive;
@@ -67,6 +83,9 @@ function PullRequestAuthorAvatar({
 	author,
 	size = "sm",
 }: Readonly<{ author: PullRequestAuthor; size?: "xs" | "sm" }>) {
+	if (author.assistedBy) {
+		return <AgentListAttributionAvatarGroup agent={author.assistedBy} appearance="coding" attributedBy={{ name: author.name, avatarSrc: author.avatarUrl }} sizePx={size === "xs" ? 16 : 24} />;
+	}
 	return (
 		<Avatar label={author.name} size={size} shape="circle">
 			{author.avatarUrl ? (
@@ -102,11 +121,12 @@ function PullRequestStatusLozenge({
 	status,
 	withIcon = false,
 }: Readonly<{ status: PullRequestStatus; withIcon?: boolean }>) {
+	const StatusIcon = status === "Merged" ? MergeSuccessIcon : status === "Failed" ? MergeFailureIcon : PullRequestIcon;
 	return (
 		<Lozenge
 			elemBefore={
 				withIcon ? (
-					<Icon aria-hidden render={<PullRequestIcon label="" size="small" />} />
+					<Icon aria-hidden render={<StatusIcon label="" size="small" />} />
 				) : undefined
 			}
 			size="compact"
@@ -121,25 +141,25 @@ function PullRequestGitHubMark() {
 	return <BrandLogoMark frame="chip" label="GitHub" name="github" />;
 }
 
+function PullRequestProviderMark({ provider }: Readonly<{ provider: PullRequestProvider }>) {
+	return provider === "bitbucket" ? (
+		<AtlassianLogoMark frame="chip" label="Bitbucket" name="bitbucket" />
+	) : (
+		<PullRequestGitHubMark />
+	);
+}
+
 /** `#N` + title as one wrapping text run so line 2 starts under the number. */
 function PullRequestInlineTitle({
 	number,
 	title,
+	href,
 	className,
-}: Readonly<{ number: number; title: string; className?: string }>) {
+}: Readonly<{ number: number; title: string; href?: string; className?: string }>) {
 	return (
 		<span className={cn("min-w-0 whitespace-normal text-sm leading-5", className)}>
 			<span className="text-text-subtlest">#{number} </span>
-			<span className="text-text">{title}</span>
-		</span>
-	);
-}
-
-/** Leading file glyph matching session-flyout `DetailsMetaRow`. */
-function PullRequestMetaLeadingIcon() {
-	return (
-		<span className="grid size-4 shrink-0 place-items-center text-icon-subtlest" aria-hidden="true">
-			<Icon aria-hidden render={<FileIcon label="" size="small" />} />
+			{href ? <a className="rounded-sm text-text outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" href={href} rel="noopener noreferrer" target="_blank">{title}</a> : <span className="text-text">{title}</span>}
 		</span>
 	);
 }
@@ -299,10 +319,10 @@ function PullRequestSpaciousBody({
 			</div>
 			<div className="flex min-w-0 items-center gap-2">
 				{author ? (
-					<span className="flex min-w-0 items-center gap-1.5 text-xs leading-4 text-text-subtle">
+					<div className="flex min-w-0 items-center gap-1.5 text-xs leading-4 text-text-subtle">
 						<PullRequestAuthorAvatar author={author} size="xs" />
 						<span className="min-w-0 truncate">{author.name}</span>
-					</span>
+					</div>
 				) : null}
 				{/* `ms-auto` keeps the metrics trailing-aligned even without an author. */}
 				<span className="ms-auto flex shrink-0 items-center gap-1.5">
@@ -323,9 +343,9 @@ function PullRequestSpaciousBody({
 }
 
 /**
- * Flyout body (Figma 3134:2238): `#N` + title with the status lozenge trailing,
- * author avatar + `Name · relativeTime`, then a divided GitHub branch path and
- * files / diff footer.
+ * Flyout body: `#N` + title with the status lozenge trailing, author · time,
+ * then a divided section — repository, `source → target` branch path, files /
+ * diff and CI checks, followed by Review and failed-check actions.
  */
 function PullRequestFlyoutBody({
 	number,
@@ -338,6 +358,14 @@ function PullRequestFlyoutBody({
 	deletions,
 	filesChanged,
 	relativeTime,
+	provider = "github",
+	repository,
+	reviewers,
+	checks,
+	reviewHref,
+	showReview,
+	href,
+	onFix,
 }: Readonly<
 	Pick<
 		PullRequestProps,
@@ -351,39 +379,78 @@ function PullRequestFlyoutBody({
 		| "deletions"
 		| "filesChanged"
 		| "relativeTime"
+		| "provider"
+		| "repository"
+		| "reviewers"
+		| "checks"
+		| "reviewHref"
+		| "showReview"
+		| "href"
+		| "onFix"
 	>
 >) {
+	const reviewersLabel = reviewers ? pullRequestReviewersLabel(reviewers) : null;
 	const authorMeta = author ? (
-		<span className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtlest">
-			<PullRequestAuthorAvatar author={author} size="xs" />
-			<span className="min-w-0 truncate">{author.name}</span>
+		<div className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtlest">
+			<div className="flex min-w-0 items-center gap-1.5">
+				<PullRequestAuthorAvatar author={author} size="xs" />
+				<span className="min-w-0 truncate">{author.name}</span>
+			</div>
 			{relativeTime ? (
 				<>
 					<span className="shrink-0">·</span>
 					<span className="shrink-0">{toCompactRelativeTimeLabel(relativeTime)}</span>
 				</>
 			) : null}
-		</span>
+			{reviewersLabel ? (
+				<>
+					<span className="shrink-0">·</span>
+					<span className="shrink-0">{reviewersLabel}</span>
+				</>
+			) : null}
+		</div>
 	) : relativeTime ? (
-		<span className="text-xs leading-4 text-text-subtlest">{toCompactRelativeTimeLabel(relativeTime)}</span>
+		<span className="text-xs leading-4 text-text-subtlest">
+			{toCompactRelativeTimeLabel(relativeTime)}
+			{reviewersLabel ? ` · ${reviewersLabel}` : null}
+		</span>
+	) : reviewersLabel ? (
+		<span className="text-xs leading-4 text-text-subtlest">{reviewersLabel}</span>
 	) : null;
+	const hasBranchPath = Boolean(branch || targetBranch);
+	const failedChecks = checks?.filter((check) => check.status === "failed") ?? [];
+	const hasFailedChecks = status !== "Merged" && failedChecks.length > 0;
+	const hasActions = Boolean(reviewHref || showReview || hasFailedChecks);
 
 	return (
 		<>
 			<div className="flex w-full min-w-0 items-start gap-3 px-3">
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
-					<PullRequestInlineTitle number={number} title={title} />
+					<PullRequestInlineTitle href={href} number={number} title={title} />
 					{authorMeta}
 				</div>
 				<PullRequestStatusLozenge status={status} />
 			</div>
 			<div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-disabled p-3">
-				<div className="flex min-w-0 items-center gap-1 text-xs leading-5">
-					<PullRequestGitHubMark />
-					<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
-				</div>
-				<div className="flex min-w-0 items-center gap-1 text-xs leading-5">
-					<PullRequestMetaLeadingIcon />
+				{repository ? (
+					<PullRequestFlyoutMetaRow leading={<PullRequestProviderMark provider={provider} />}>
+						<span className="min-w-0 truncate text-xs leading-4 text-text">{repository}</span>
+					</PullRequestFlyoutMetaRow>
+				) : null}
+				{hasBranchPath ? (
+					<div className="flex min-w-0 items-center gap-1 text-xs leading-5">
+						{/* With a repository row the provider mark leads that row instead. */}
+						{repository ? (
+							<span aria-hidden="true" className="grid size-4 shrink-0 place-items-center text-icon-subtlest">
+								<Icon aria-hidden render={<BranchIcon label="" size="small" />} />
+							</span>
+						) : (
+							<PullRequestProviderMark provider={provider} />
+						)}
+						<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
+					</div>
+				) : null}
+				<PullRequestFlyoutMetaRow leading={<Icon aria-hidden render={<FileIcon label="" size="small" />} />}>
 					{filesChanged != null ? (
 						<span className="text-xs leading-4 text-text-subtle tabular-nums">
 							{filesChanged} {filesChanged === 1 ? "file" : "files"}
@@ -394,7 +461,22 @@ function PullRequestFlyoutBody({
 						deletions={deletions}
 						className="font-normal"
 					/>
-				</div>
+				</PullRequestFlyoutMetaRow>
+				{checks ? <PullRequestFlyoutChecks checks={checks} /> : null}
+				{hasActions ? (
+					<div className="flex min-w-0 gap-2 pt-1">
+						{reviewHref ? (
+							<a className={cn(buttonVariants({ variant: "outline" }), "min-w-0 flex-1")} href={reviewHref}>
+								Review
+							</a>
+						) : showReview ? <Button className="min-w-0 flex-1" type="button" variant="outline">Review</Button> : null}
+						{hasFailedChecks ? (
+							<Button className="min-w-0 flex-1" disabled={!onFix} onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
+								Fix PR
+							</Button>
+						) : null}
+					</div>
+				) : null}
 			</div>
 		</>
 	);
@@ -410,8 +492,8 @@ function PullRequestFlyoutBody({
  *   lozenge (with glyph), then GitHub mark + `source → target` path, then an
  *   author / changed-files / diff footer. Selectable dropdown-style chrome.
  * - `flyout`: overlay card — wrapping `#N` + title with a trailing status
- *   lozenge, author · time, then a divided GitHub mark + `source → target`
- *   path and files / diff footer.
+ *   lozenge, author · time, then a divided repository, `source → target`
+ *   path, files / diff, and an expandable CI checks section, plus Review and Fix PR actions.
  */
 export function PullRequest({
 	variant = "dropdown",
@@ -425,6 +507,14 @@ export function PullRequest({
 	deletions,
 	filesChanged,
 	relativeTime,
+	provider,
+	repository,
+	reviewers,
+	checks,
+	reviewHref,
+	showReview,
+	href,
+	onFix,
 	selected = false,
 	onActivate,
 	className,
@@ -440,10 +530,18 @@ export function PullRequest({
 			additions={additions}
 			author={author}
 			branch={branch}
+			checks={checks}
 			deletions={deletions}
 			filesChanged={filesChanged}
+			href={href}
+			onFix={onFix}
 			number={number}
+			provider={provider}
 			relativeTime={relativeTime}
+			repository={repository}
+			reviewHref={reviewHref}
+			showReview={showReview}
+			reviewers={reviewers}
 			status={status}
 			targetBranch={targetBranch}
 			title={title}
@@ -498,7 +596,7 @@ export function PullRequest({
 		className,
 	);
 
-	if (onActivate) {
+	if (onActivate && !isFlyout) {
 		return (
 			<button
 				aria-label={`Pull request #${number}: ${title}`}

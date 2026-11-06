@@ -868,7 +868,7 @@ test("maps a Claude Code channel comment to the brand mark instead of a template
 			author: {
 				name: "Claude Code",
 				brandName: "claude",
-				avatarUrl: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
+				avatarUrl: "/avatar-agent-new/lime/auto-dev.svg",
 			},
 			content: "PR #1847 is open.",
 			createdAtMs: Date.UTC(2026, 4, 12, 13, 30),

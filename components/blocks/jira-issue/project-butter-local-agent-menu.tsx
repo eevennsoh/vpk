@@ -4,10 +4,10 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import CopyIcon from "@atlaskit/icon/core/copy";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
+import ScreenIcon from "@atlaskit/icon/core/screen";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
@@ -127,14 +127,14 @@ export function ProjectButterLocalAgentMenu({
 	return (
 		<Collapsible data-butter-local-menu className="min-w-0" open={directoryVisible} onOpenChange={(nextOpen) => { setDirectoryVisible(nextOpen); if (!nextOpen) { setOpen(false); setDraft(null); } }}>
 			<div className="group/copy-command relative">
-				<Button aria-label={copied ? "Command copied" : "Copy command"} className="h-8 w-full justify-start gap-3 pl-2 pr-10 text-sm font-normal group-hover/copy-command:bg-bg-neutral-subtle-hovered" variant="ghost" onClick={() => {
+				<Button aria-label={copied ? "Command copied" : "Open in Rovo CLI"} className="h-8 w-full justify-start gap-3 pl-2 pr-10 text-sm font-normal group-hover/copy-command:bg-bg-neutral-subtle-hovered" variant="ghost" onClick={() => {
 					setCopied(true);
 					if (copiedTimer.current !== null) clearTimeout(copiedTimer.current);
 					copiedTimer.current = setTimeout(() => setCopied(false), 1800);
 				}}>
-					<CopyFeedbackIcon copied={copied} idleIcon={<CopyIcon label="" size="small" />} />
+					<CopyFeedbackIcon copied={copied} idleIcon={<ScreenIcon label="" size="small" />} />
 					<span aria-hidden className="grid min-w-0 text-left">
-						<span className={cn("col-start-1 row-start-1 transition-opacity duration-normal ease-out-practical", copied ? "opacity-0" : "opacity-100")}>Copy command</span>
+						<span className={cn("col-start-1 row-start-1 transition-opacity duration-normal ease-out-practical", copied ? "opacity-0" : "opacity-100")}>Open in Rovo CLI</span>
 						<span className={cn("col-start-1 row-start-1 transition-opacity duration-normal ease-out-practical", copied ? "opacity-100" : "opacity-0")}>Command copied</span>
 					</span>
 				</Button>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTransform } from "motion/react";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { AgentSession } from "@/components/blocks/agent-session";
 import { JiraActivity, jiraActivitySegmentsToPlainText } from "@/components/blocks/jira-activity";
+import { JiraActivityEvent } from "@/components/blocks/jira-activity/jira-activity-event";
 import { ScrubberRail } from "@/components/blocks/scrubber/components/scrubber-rail";
 import type { ScrubberEntry } from "@/components/blocks/scrubber/lib/scrubber-entries";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,6 @@ import {
 import {
 	activityDateLabel,
 	activityDayLabel,
-	PROJECT_BUTTER_CURRENT_USER,
 } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 import {
 	selectProjectButterActivity,
@@ -33,7 +33,7 @@ import {
 	ProjectButterTimestamp,
 } from "@/components/blocks/jira-work-item/project-butter/activity-comment-tools";
 import { ProjectButterAgentResponse } from "@/components/blocks/jira-work-item/project-butter/activity-agent-response";
-import { useProjectButterActivityNavigation } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
+import { activityScrollport, useProjectButterActivityNavigation } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_REFERENCE_HISTORY } from "@/components/blocks/jira-work-item/project-butter/reference-data";
@@ -43,6 +43,7 @@ import {
 } from "@/components/blocks/jira-work-item/project-butter/reference-activity-body";
 
 const HISTORY = new Map(PROJECT_BUTTER_REFERENCE_HISTORY.map((item) => [item.id, item]));
+const ACTIVITY_EVENT_TEXT = "text-sm text-text [&_[data-jira-activity-agent-mention]]:align-[-0.2em] [&_[data-jira-activity-user-mention]]:align-[-0.2em]";
 const SORTS: readonly { value: ProjectButterActivitySort; label: string }[] = [
 	{ value: "newest", label: "Newest first" },
 	{ value: "oldest", label: "Oldest first" },
@@ -56,28 +57,35 @@ export function ProjectButterActivity({
 	sidePanel,
 	sessions,
 	onOpenSession,
+	previewSessionId,
+	singleView = false,
 }: Readonly<{
 	content: ProjectButterContent;
 	empty: boolean;
 	sidePanel: boolean;
 	sessions: readonly ProjectButterSessionItem[];
 	onOpenSession: (id: string) => void;
+	previewSessionId?: string | null;
+	singleView?: boolean;
 }>) {
+	const activityRef = useRef<HTMLElement>(null);
 	const [expandedAudit, setExpandedAudit] = useState(false);
 	const [limit, setLimit] = useState(10);
 	const [hoverId, setHoverId] = useState<string | null>(null);
-	const view = content.activityView;
+	const view = singleView ? "Activity" : content.activityView;
 	const ordered = useMemo(
-		() => selectProjectButterActivity(content.activityEntries, view, content.activitySort),
-		[content.activityEntries, view, content.activitySort],
+		() => selectProjectButterActivity(content.activityEntries, view, singleView ? "newest" : content.activitySort, singleView || content.showAuditInActivity),
+		[content.activityEntries, view, content.activitySort, singleView, content.showAuditInActivity],
 	);
+	const previewEntryId = ordered.find((entry) => entry.id === `invocation-${previewSessionId}` || entry.kind === "comment" && (entry.sessionItem?.id === previewSessionId || entry.replies?.some((reply) => reply.sessionItem?.id === previewSessionId)))?.id;
+	const pullRequestStatus = content.activityEntries.some((entry) => entry.id === "merchant-merged") ? "Merged" : "Open";
 	const visible = useMemo(
 		() =>
 			ordered.slice(
 				0,
-				Math.max(limit, ordered.findIndex((entry) => entry.id === content.activityFocusId) + 1),
+				Math.max(limit, ordered.findIndex((entry) => entry.id === content.activityFocusId) + 1, ordered.findIndex((entry) => entry.id === previewEntryId) + 1),
 			),
-		[ordered, limit, content.activityFocusId],
+		[ordered, limit, content.activityFocusId, previewEntryId],
 	);
 	const needsInput = sessions
 		.filter((session) => session.state === "needs-input")
@@ -88,6 +96,17 @@ export function ProjectButterActivity({
 		content.activityFocusId,
 		view,
 	);
+	useEffect(() => {
+		if (!previewSessionId) return;
+		const activity = activityRef.current;
+		const root = activityScrollport(activity);
+		const entry = previewEntryId
+			? [...(activity?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [])].find((node) => node.dataset.jiraActivityEntryId === previewEntryId)
+			: [...(activity?.querySelectorAll<HTMLElement>("[data-project-butter-needs-input-session]") ?? [])].find((node) => node.dataset.projectButterNeedsInputSession === previewSessionId);
+		if (!root || !entry) return;
+		const offset = (headerRef.current?.getBoundingClientRect().height ?? 0) + (previewEntryId ? timelineRef.current?.getBoundingClientRect().height ?? 0 : 0) + 12;
+		root.scrollTo({ top: root.scrollTop + entry.getBoundingClientRect().top - root.getBoundingClientRect().top - offset, behavior: "auto" });
+	}, [headerRef, previewEntryId, previewSessionId, timelineRef, visible.length]);
 	const activeOffset = useTransform(progress, (value) => 0.02 + value * 0.96);
 	const activeIndex = Math.max(
 		0,
@@ -107,15 +126,11 @@ export function ProjectButterActivity({
 				<section aria-label="Needs input" className="mb-6 space-y-1">
 					<h3 className="mb-2 text-xs font-medium text-text-subtle">Needs input</h3>
 					{needsInput.map((session) => (
-						<div className="rounded-lg border border-border" key={session.id}>
+						<div className={cn("rounded-lg border border-border", previewSessionId === session.id && "bg-bg-selected ring-2 ring-border-focused")} data-project-butter-needs-input-session={session.id} key={session.id}>
 							<AgentSession
 								animateLayout={false}
-								localSessionAction="view"
 								density="long"
 								items={[session]}
-								onSelectedItemIdChange={(sessionId) => {
-									if (sessionId) onOpenSession(sessionId);
-								}}
 								onView={(item) => onOpenSession(item.id)}
 								showBranch
 								showLinkWorkItemMenuItem={false}
@@ -153,15 +168,16 @@ export function ProjectButterActivity({
 					</div>
 				</div>
 			) : null}
-			<div className="[&_[data-jira-activity-entry-id]]:scroll-mt-28" data-project-butter-activity-feed ref={feedRef}>
+			<div className={cn("[&_[data-jira-activity-entry-id]]:scroll-mt-28", previewEntryId && "[&_[data-active]]:rounded-md [&_[data-active]]:bg-bg-selected [&_[data-active]]:ring-2 [&_[data-active]]:ring-border-focused")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={feedRef}>
 				<JiraActivity
-					activeEntryId={visible[activeIndex]?.id}
+					activeEntryId={previewEntryId ?? visible[activeIndex]?.id}
 					commentHeaderLayout="inline"
 					composer={null}
 				connectorStyle={view === "Activity" ? "thread" : "timeline"}
-					currentUser={PROJECT_BUTTER_CURRENT_USER}
+					currentUser={content.currentUser}
 					entries={visible}
 					hideHeader
+					sortOrder="ascending"
 					onViewSession={(session) => onOpenSession(session.id)}
 					onEntriesChange={(entries) => {
 						const ids = new Set(visible.map((entry) => entry.id));
@@ -192,6 +208,7 @@ export function ProjectButterActivity({
 						entry.body.every((segment) => segment.type === "text") ? (
 							<ProjectButterReferenceCommentBody
 								markdown={jiraActivitySegmentsToPlainText(entry.body)}
+								pullRequestStatus={entry.id === "merchant-merged" ? pullRequestStatus : undefined}
 							/>
 						) : undefined
 					}
@@ -202,17 +219,25 @@ export function ProjectButterActivity({
 						const item = content.auditChanges[entry.id] ?? HISTORY.get(entry.id);
 						return item && item.changes.length ? (
 							<ProjectButterHistoryChange
+								actor={entry.actor}
 								defaultOpen={expandedAudit}
 								item={item}
 								key={`${item.id}-${expandedAudit}`}
 								timestamp={entry.timestamp}
 							/>
+						) : entry.kind === "event" && entry.id.startsWith("merchant-agent-added-") ? (
+							<div className="flex min-w-0 flex-wrap items-center">
+								<JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={{ ...entry, showTimestamp: false }} />
+								<span className="ml-2 shrink-0 text-xs text-text-subtlest">{entry.timestamp}</span>
+							</div>
+						) : entry.kind === "event" && (entry.icon === "created" || entry.icon === "status") ? (
+							<JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={entry} />
 						) : undefined;
 					}}
 					renderReply={(reply) => sessions.some((session) => `response-${session.id}` === reply.id) ? (
 						<ProjectButterAgentResponse onOpen={onOpenSession} reply={reply} sessions={sessions} />
 					) : undefined}
-					renderReplyBody={(reply) => <ProjectButterReferenceCommentBody markdown={reply.body} />}
+					renderReplyBody={(reply) => <ProjectButterReferenceCommentBody markdown={reply.body} pullRequestStatus={reply.id === "merchant-pr" || reply.id === "merchant-fix" ? pullRequestStatus : undefined} />}
 					renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
 				/>
 			</div>
@@ -231,21 +256,9 @@ export function ProjectButterActivity({
 			) : null}
 		</>
 	);
-	return (
-		<section
-			aria-label="Activity"
-			className="group/activity min-w-0"
-			data-project-butter-activity
-		>
-			<h2 className="sr-only">Activity</h2>
-			<Tabs
-				onValueChange={(value) => {
-					if (value === "Activity" || value === "Audit") content.setActivityView(value);
-				}}
-				value={view}
-			>
+	const header = (
 				<div className="sticky top-0 z-20 -mx-1 flex h-14 shrink-0 items-center justify-between gap-3 bg-surface px-1 py-3" data-project-butter-activity-header ref={headerRef}>
-					<TabsList aria-label="Activity views">
+					{singleView ? <h2 className="text-sm font-semibold text-text">Activity</h2> : <TabsList aria-label="Activity views">
 						<TabsTrigger
 							aria-label={`Activity${needsInput.length ? ` ${needsInput.length} need input` : ""}`}
 							value="Activity"
@@ -261,7 +274,7 @@ export function ProjectButterActivity({
 							) : null}
 						</TabsTrigger>
 						<TabsTrigger value="Audit">Audit</TabsTrigger>
-					</TabsList>
+					</TabsList>}
 					<div className={cn("flex items-center gap-1", empty ? "pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100 motion-reduce:transition-none" : null)}>
 						<DropdownMenu>
 							<DropdownMenuTrigger
@@ -278,7 +291,7 @@ export function ProjectButterActivity({
 								<ShowMoreHorizontalIcon label="" size="small" />
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end" positionerClassName="z-[650]">
-								<DropdownMenuRadioGroup
+								{!singleView ? <DropdownMenuRadioGroup
 									onValueChange={(value) => {
 										const selected = SORTS.find((sort) => sort.value === value);
 										if (selected) content.setActivitySort(selected.value);
@@ -290,26 +303,43 @@ export function ProjectButterActivity({
 											{sort.label}
 										</DropdownMenuRadioItem>
 									))}
-								</DropdownMenuRadioGroup>
-								{view === "Audit" ? (
+								</DropdownMenuRadioGroup> : null}
+								{singleView || view === "Audit" ? (
 									<DropdownMenuCheckboxItem
 										checked={expandedAudit}
 										onCheckedChange={setExpandedAudit}
 									>
-										Expand audit details
+										{singleView ? "Expand change details" : "Expand audit details"}
 									</DropdownMenuCheckboxItem>
 								) : null}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>
 				</div>
+	);
+	return (
+		<section
+			aria-label="Activity"
+			className="group/activity min-w-0"
+			data-project-butter-activity
+			ref={activityRef}
+		>
+			{singleView ? <>{header}<div className="min-w-0">{feed}</div></> : <>
+			<h2 className="sr-only">Activity</h2>
+			<Tabs
+				onValueChange={(value) => {
+					if (value === "Activity" || value === "Audit") content.setActivityView(value);
+				}}
+				value={view}
+			>
+				{header}
 				<TabsContent className="mt-0 min-w-0" value="Activity">
 					{view === "Activity" ? feed : null}
 				</TabsContent>
 				<TabsContent className="mt-0 min-w-0" value="Audit">
 					{view === "Audit" ? feed : null}
 				</TabsContent>
-			</Tabs>
+			</Tabs></>}
 		</section>
 	);
 }

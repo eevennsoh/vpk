@@ -506,7 +506,7 @@ test("agent session profile previews open left for selected and non-selected row
 	const selectedProfile = page.getByTestId("agent-list-profile-readiness-checker");
 	await expect(selectedProfile).toBeVisible();
 	await expect(selectedProfile.getByRole("heading", { name: "Readiness Checker" })).toBeVisible();
-	await expect(selectedProfile.locator('img[src="/avatar-agent/service-agents/service-triage.svg"]')).toHaveCount(1);
+	await expect(selectedProfile.locator('img[src="/avatar-agent-new/yellow/ops-agent.svg"]')).toHaveCount(1);
 	await expect(selectedRow.getByRole("button", { exact: true, name: "View" })).toHaveCount(0);
 
 	const [selectedRowBox, selectedProfileBox] = await Promise.all([

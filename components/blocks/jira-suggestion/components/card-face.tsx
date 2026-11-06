@@ -8,11 +8,9 @@ import { cn } from "@/lib/utils";
 import { CardValue } from "./card-value";
 
 /**
- * One paper for every card and sheet, identical in every role and every frame, so the morph between stack and list
- * never changes material. Dark theme steps up one surface from the popover and adds a hairline edge, since the
- * overlay shadow barely registers on a dark popover and the fanned sheets would otherwise read as one card. The shadow is the overlay elevation (`shadow-2xl` maps to
- * --ds-shadow-overlay) as a class: Motion cannot scale-correct a var() shadow and would drop it mid-morph. The radius
- * is an inline style so Motion keeps it undistorted while a card's size morphs.
+ * Shared paper for cards and sheets. The stack uses overlay elevation; list rows override it with raised elevation.
+ * Shadows remain classes because Motion cannot scale-correct a var() shadow. The inline radius stays undistorted
+ * during the size morph; the dark surface and hairline keep overlapping sheets distinct.
  */
 export const CARD_PAPER = "bg-surface shadow-2xl dark:bg-surface-overlay-hovered dark:ring-1 dark:ring-border";
 export const CARD_PAPER_STYLE = { borderRadius: 8 } as const;

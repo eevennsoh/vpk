@@ -36,6 +36,14 @@ test("the status menu offers three statuses with icons and updates the row and h
 	assert.equal(progress?.querySelectorAll("circle").length, 2);
 	const trigger = view.getAllByRole("button", { name: "Edit status for VITA-4, In progress" })[0];
 	assert.equal(trigger.querySelector('[data-slot="progress-circle"]')?.getAttribute("aria-valuenow"), "50", "the row circle matches the status");
+	for (const label of ["Child work items", "Linked work"]) {
+		const statusButtons = view.getByRole("list", { name: label }).querySelectorAll('button[aria-label^="Edit status for "]');
+		assert.ok(statusButtons.length > 0);
+		for (const button of statusButtons) {
+			const dashes = button.querySelector('[data-slot="progress-circle-dashes"]');
+			if (dashes) assert.equal(dashes.style.animationPlayState, "paused", `${label} status stays still`);
+		}
+	}
 	await view.click(trigger);
 	const items = view.getAllByRole("menuitem").map((item) => item.textContent);
 	assert.deepEqual(items, ["To do", "In progress", "Done"]);

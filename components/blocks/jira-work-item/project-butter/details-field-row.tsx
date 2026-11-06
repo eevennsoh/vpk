@@ -30,13 +30,14 @@ const FIELD_ICONS: Partial<Record<ProjectButterDetailFieldId, typeof DataNumberI
 	audienceSegment: TextIcon, campaignRegion: GlobeIcon, assetObject: AssetsObjectIcon,
 };
 
-export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, first, last, reflow = false, shimmerText }: Readonly<{
+export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, onRevealInteract, first, last, reflow = false, shimmerText }: Readonly<{
 	children: ReactNode;
 	filled: boolean;
 	id: ProjectButterDetailFieldId;
 	onClear?: () => void;
 	onHide?: () => void;
 	onMove: (direction: -1 | 1) => void;
+	onRevealInteract?: (field: ProjectButterDetailFieldId) => void;
 	first: boolean;
 	last: boolean;
 	/** Glide to new rail positions. A fixed layout dependency otherwise keeps Motion out of dnd-kit drags. */
@@ -55,6 +56,7 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 			data-field-id={id}
 			data-field-label={label}
 			data-field-dragging={isDragging ? "true" : undefined}
+			onFocusCapture={() => { if (shimmerText) onRevealInteract?.(id); }}
 			{...listeners}
 			ref={setNodeRef}
 			role="group"
@@ -65,11 +67,14 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 				<div className="relative -mx-2 flex min-h-8 min-w-0 items-center rounded-md px-2 transition-colors duration-fast ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
 					<div className={cn("flex min-w-0 flex-1 items-center gap-2 [&_[data-slot=detail-value-trigger]]:min-h-8", id !== "status" ? "pr-8" : undefined)}>
 						{FieldIcon ? <IconTile aria-hidden as="span" className="text-icon-subtle" data-field-icon={id} icon={<FieldIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /> : null}
-						<AnimatePresence initial={false}>
-							<motion.div className="min-w-0 flex-1" animate={{ opacity: 1 }} initial={{ opacity: 0 }} key={shimmerText ? "shimmer" : "value"} transition={{ duration: motionDuration.fast, ease: motionEase.outPractical }}>
-								{shimmerText ? <SuggestionRainbowText text={shimmerText} /> : children}
+						<div className="relative min-w-0 flex-1">
+							<motion.div animate={{ opacity: shimmerText ? 0 : 1 }} className="min-w-0 group-focus-within/butter-field:opacity-100!" data-project-butter-field-control initial={false} transition={{ duration: motionDuration.medium, ease: motionEase.outPractical }}>
+								{children}
 							</motion.div>
-						</AnimatePresence>
+							<AnimatePresence initial={false}>
+								{shimmerText ? <motion.div animate={{ opacity: 1 }} aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden group-focus-within/butter-field:opacity-0!" exit={{ opacity: 0 }} initial={{ opacity: 0 }} key="shimmer" transition={{ duration: motionDuration.medium, ease: motionEase.outPractical }}><SuggestionRainbowText text={shimmerText} /></motion.div> : null}
+							</AnimatePresence>
+						</div>
 					</div>
 					<div className={cn("absolute right-1 top-1/2 flex -translate-y-1/2 shrink-0 items-center opacity-0 transition-opacity duration-fast ease-out-practical group-hover/butter-field:opacity-100 group-focus-within/butter-field:opacity-100", actionsOpen || isDragging ? "opacity-100" : undefined)} onPointerDown={(event) => event.stopPropagation()}>
 						<DropdownMenu onOpenChange={setActionsOpen} open={actionsOpen}>

@@ -60,5 +60,6 @@ export function useDeckView(feed: SuggestionFeed, deck: Deck) {
 		deck.undo();
 	};
 
-	return { listed, listIds, gathering, exitKind: exitKind ?? deck.exitDirection, returning, unpack, collapse, undo, release };
+	const bulkAccept = deck.lastDecision?.bulk && deck.lastDecision.decision === "accept";
+	return { listed, listIds, gathering, exitKind: exitKind ?? (bulkAccept ? "silent" : deck.exitDirection), returning, unpack, collapse, undo, release };
 }

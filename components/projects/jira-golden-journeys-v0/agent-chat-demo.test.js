@@ -44,8 +44,8 @@ test("ASX chat profiles include every lifecycle-specific agent", async () => {
 	assert.equal(profileIds.has("rfp-drafter"), true);
 	assert.equal(profileIds.has("service-impact-agent"), true);
 	assert.equal(profileIds.has("dependency-mapper"), true);
-	assert.equal(serviceImpactAgent.avatarSrc, "/avatar-agent/service-agents/rca-agent.svg");
-	assert.equal(dependencyMapper.avatarSrc, "/avatar-agent/teamwork-agents/work-item-planner.svg");
+	assert.equal(serviceImpactAgent.avatarSrc, "/avatar-agent-new/yellow/ops-agent.svg");
+	assert.equal(dependencyMapper.avatarSrc, "/avatar-agent-new/blue/backlog-buddy.svg");
 	assert.notEqual(serviceImpactAgent.avatarSrc, dependencyMapper.avatarSrc);
 });
 

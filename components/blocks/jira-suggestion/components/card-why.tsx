@@ -29,7 +29,7 @@ export interface CardWhyProps {
 
 const TRIGGER: Readonly<Record<CardWhyProps["appearance"], string>> = {
 	line: "-mx-1.5 h-6 gap-1 rounded-md px-1.5 text-xs text-text-subtlest hover:text-text-subtle focus-visible:text-text-subtle data-popup-open:text-text-subtle",
-	icon: "size-7 justify-center rounded-full text-icon-subtlest hover:text-icon-subtle focus-visible:text-icon-subtle data-popup-open:text-icon-discovery",
+	icon: "size-7 justify-center rounded-full text-icon-subtlest hover:text-icon-subtle focus-visible:text-icon-subtle",
 };
 
 /**
@@ -50,7 +50,11 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 		if (next && popupRef.current?.contains(next)) return;
 		reopenOnFocus.current = true;
 	};
-	const changeOpen = (next: boolean) => {
+	const changeOpen = (next: boolean, details: PopoverPrimitive.Root.ChangeEventDetails) => {
+		if (!next && details.reason === "escape-key") {
+			details.event.preventDefault();
+			details.event.stopPropagation();
+		}
 		// Closing while the trigger holds focus (Escape, or a tap outside the card) must not bounce straight back open.
 		const active = document.activeElement;
 		if (!next && active && (active === triggerRef.current || popupRef.current?.contains(active))) reopenOnFocus.current = false;
@@ -79,11 +83,11 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 					</>
 				) : <LightbulbIcon color="currentColor" label="" size="small" />}
 			</PopoverPrimitive.Trigger>
-			<PopoverPrimitive.Portal container={container}>
+			<PopoverPrimitive.Portal container={container ?? undefined}>
 				<PopoverPrimitive.Positioner
 					align="start"
 					anchor={anchor}
-					className="pointer-events-auto isolate z-40"
+					className={cn("pointer-events-auto isolate", container ? "z-40" : "z-[700]")}
 					collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "end" }}
 					collisionBoundary={container ?? "clipping-ancestors"}
 					collisionPadding={8}
@@ -91,7 +95,7 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 					sideOffset={8}
 				>
 					<PopoverPrimitive.Popup
-						className={`flex max-h-(--available-height) w-60 flex-col overflow-hidden rounded-xl bg-surface-overlay text-sm text-text outline-hidden ${POPUP_MOTION}`}
+						className={`flex max-h-(--available-height) w-72 max-w-(--available-width) flex-col overflow-hidden rounded-xl bg-surface-overlay text-sm text-text outline-hidden ${POPUP_MOTION}`}
 						finalFocus={(closeType) => (closeType === "keyboard" ? triggerRef.current : false)}
 						initialFocus={false}
 						ref={popupRef}

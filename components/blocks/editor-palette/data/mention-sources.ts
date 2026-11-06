@@ -39,13 +39,27 @@ function normalizeLookupValue(value: string): string {
 	return value.trim().toLowerCase();
 }
 
+const FIRST_PARTY_MENTION_AVATARS: Readonly<Record<string, string>> = {
+	"/1p/agent-lanyard/glyph-content-reviewer.svg": "/avatar-agent-new/blue/auto-review.svg",
+	"/1p/agent-lanyard/glyph-jira-admin.svg": "/avatar-agent-new/1P/jira-admin-helper.svg",
+	"/1p/agent-lanyard/glyph-jira-delivery.svg": "/avatar-agent-new/1P/work-starter.svg",
+	"/1p/agent-lanyard/glyph-jira-planner.svg": "/avatar-agent-new/1P/planner.svg",
+	"/1p/agent-lanyard/glyph-jira-triage.svg": "/avatar-agent-new/1P/work-triage.svg",
+	"/1p/agent-lanyard/glyph-code-reviewer.svg": "/avatar-agent-new/lime/auto-review.svg",
+	"/1p/agent-lanyard/glyph-jira-autodev.svg": "/avatar-agent-new/1P/auto-dev.svg",
+	"/1p/agent-lanyard/glyph-jira-coding.svg": "/avatar-agent-new/1P/jira-coder.svg",
+	"/1p/agent-lanyard/glyph-ops-expert.svg": "/avatar-agent-new/1P/ops-expert.svg",
+	"/1p/agent-lanyard/glyph-request-resolver.svg": "/avatar-agent-new/1P/request-resolver.svg",
+};
+
 export function mapAgentToMentionItem(agent: AgentBrowserAgent): RichTextMentionItem {
+	const avatarSrc = agent.avatarSrc ? FIRST_PARTY_MENTION_AVATARS[agent.avatarSrc] ?? agent.avatarSrc : undefined;
 	return {
 		category: "subagent",
 		description: agent.description ?? agent.byline,
 		id: toMentionId("subagent", agent.id),
 		label: agent.name,
-		visual: resolveDirectoryVisual(getAgentDirectoryVisual(agent)),
+		visual: resolveDirectoryVisual(getAgentDirectoryVisual({ ...agent, avatarSrc })),
 	};
 }
 

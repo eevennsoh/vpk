@@ -3,6 +3,7 @@
 import { useMemo, type SetStateAction } from "react";
 
 import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
+import type { JiraActivityActor } from "@/components/blocks/jira-activity";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import type { PriorityValue } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { TEAM_EU26_DESCRIPTION } from "@/components/blocks/jira-work-item/team-eu26/data/high-confidence-work-item";
@@ -11,7 +12,7 @@ import {
 	PROJECT_BUTTER_ATTACHMENTS,
 	type ProjectButterAttachment,
 } from "@/components/blocks/jira-work-item/project-butter/attachment-data";
-import { createProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/activity-data";
+import { createProjectButterActivity, PROJECT_BUTTER_ACTIVITY_EPOCH, PROJECT_BUTTER_CURRENT_USER } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 import {
 	PROJECT_BUTTER_CHILD_ITEMS,
 	PROJECT_BUTTER_LINKED_ITEMS,
@@ -33,7 +34,7 @@ import {
 	type ProjectButterActivitySort,
 } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
 import type { ProjectButterReferenceChange } from "@/components/blocks/jira-work-item/project-butter/reference-model";
-import { appendProjectButterAudit } from "@/components/blocks/jira-work-item/project-butter/content-audit";
+import { appendProjectButterAudit, projectButterDetailChanges, updateProjectButterSuggestionAudit } from "@/components/blocks/jira-work-item/project-butter/content-audit";
 import {
 	projectButterPlaceholderAttachments,
 	projectButterPlaceholderComments,
@@ -100,6 +101,7 @@ function createContent(
 	const auditChanges: Readonly<Record<string, ProjectButterReferenceChange>> = {};
 	const relatedDismissed: readonly ProjectButterRelatedKind[] = [];
 	return {
+		suggestionAudit: null as { label: string; mode: "accept" | "undo" } | null,
 		attachmentEditor: createProjectButterAttachmentEditor(),
 		/** Related work heading open state. Add requests force it open. */
 		relatedSectionOpen: true,
@@ -115,6 +117,11 @@ function createContent(
 		relatedEditor: createProjectButterRelatedEditorState(),
 		relatedWork,
 		activityEntries: [
+			...(workItem?.code === "PAY-999" ? createProjectButterActivity(true).map((entry) => ({
+				...entry,
+				actor: { id: `butter-person-${reporter.name}`, name: reporter.name, kind: "person" as const, avatarSrc: reporter.avatarUrl },
+				createdAtMs: PROJECT_BUTTER_ACTIVITY_EPOCH - 60_000,
+			})) : []),
 			...(placeholder
 				? projectButterPlaceholderComments(placeholder)
 				: workItem
@@ -156,7 +163,10 @@ export function useProjectButterContent(
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
 	defaultReporter?: WorkItemPerson,
+	activityContext?: Readonly<{ currentUser?: WorkItemPerson; showAuditInActivity?: boolean }>,
 ) {
+	const person = activityContext?.currentUser;
+	const currentUser = useMemo<JiraActivityActor>(() => person ? { id: `butter-person-${person.name}`, name: person.name, kind: "person", avatarSrc: person.avatarUrl } : PROJECT_BUTTER_CURRENT_USER, [person]);
 	const initialState = useMemo<ProjectButterContentState>(
 		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter),
 		[defaultReporter, initialSessions, placeholders, preset, workItem],
@@ -184,19 +194,39 @@ export function useProjectButterContent(
 					const before = describe(previous[field]);
 					const after = describe(value);
 					const next = { ...previous, [field]: value };
-					return before === after
-						? next
-						: appendProjectButterAudit(next, { id, createdAtMs, label, before, after });
+					if (before === after) return next;
+					const change = { id, createdAtMs, label, before, after };
+					return previous.suggestionAudit?.label === label
+						? updateProjectButterSuggestionAudit(next, change, currentUser, previous.suggestionAudit.mode)
+						: appendProjectButterAudit(next, change, currentUser);
 				});
 			};
 		}
 		return {
+			beginSuggestionAudit: (label: string, mode: "accept" | "undo") => {
+				if (activityContext?.showAuditInActivity) updateState((current) => ({ ...current, suggestionAudit: { label, mode } }));
+			},
+			endSuggestionAudit: () => {
+				if (activityContext?.showAuditInActivity) updateState((current) => ({ ...current, suggestionAudit: null }));
+			},
 			recordAudit: (label: string, before: string, after: string) => {
 				const id = crypto.randomUUID();
 				const createdAtMs = Date.now();
 				updateState((current) =>
-					appendProjectButterAudit(current, { id, createdAtMs, label, before, after }),
+					appendProjectButterAudit(current, { id, createdAtMs, label, before, after }, currentUser),
 				);
+			},
+			recordSessionInvocation: (session: ProjectButterSessionItem, autoAssignTo?: WorkItemPerson) => {
+				const entry = projectButterSessionInvocation(session);
+				const id = crypto.randomUUID();
+				const createdAtMs = Date.now();
+				updateState((previous) => {
+					if (previous.activityEntries.some((item) => item.id === entry.id)) return { ...previous, activityView: "Activity" };
+					const next = { ...previous, activityView: "Activity" as const, activityEntries: [...previous.activityEntries, entry] };
+					return autoAssignTo && (previous.assignee.name === "Unassigned" || previous.assignee.name === "Automatic")
+						? appendProjectButterAudit({ ...next, assignee: autoAssignTo }, { id, createdAtMs, label: "Assignee", before: "Unassigned", after: autoAssignTo.name, action: `automatically assigned this work item to ${autoAssignTo.name}` }, currentUser)
+						: next;
+				});
 			},
 			setAttachmentEditor: fieldSetter("attachmentEditor"),
 			setRelatedSectionOpen: fieldSetter("relatedSectionOpen"),
@@ -221,11 +251,24 @@ export function useProjectButterContent(
 			setReplyDrafts: fieldSetter("replyDrafts"),
 			setSummary: audited("summary", "Summary", (value) => value),
 			setStatusOptions: fieldSetter("statusOptions"),
-			setDetailFields: audited(
-				"detailFields",
-				"Details",
-				({ order: _order, hidden: _hidden, ...values }) => JSON.stringify(values, null, 2),
-			),
+			syncStoryPoints: (storyPoints: string) => {
+				updateState((previous) => previous.detailFields.storyPoints === storyPoints
+					? previous
+					: { ...previous, detailFields: { ...previous.detailFields, storyPoints } });
+			},
+			setDetailFields: (update: SetStateAction<ProjectButterContentState["detailFields"]>) => {
+				const id = crypto.randomUUID();
+				const createdAtMs = Date.now();
+				updateState((previous) => {
+					const detailFields = typeof update === "function" ? update(previous.detailFields) : update;
+					return projectButterDetailChanges(previous.detailFields, detailFields).reduce((next, change, index) => {
+						const audit = { ...change, id: `${id}-${index}`, createdAtMs };
+						return previous.suggestionAudit?.label === change.label
+							? updateProjectButterSuggestionAudit(next, audit, currentUser, previous.suggestionAudit.mode)
+							: appendProjectButterAudit(next, audit, currentUser);
+					}, { ...previous, detailFields });
+				});
+			},
 			setRelatedEditor: fieldSetter("relatedEditor"),
 			setRelatedWork: audited("relatedWork", "Related work", (value) =>
 				[...value.children, ...value.linked]
@@ -256,8 +299,8 @@ export function useProjectButterContent(
 			setPriority: audited("priority", "Priority", (value) => value),
 			setStatus: audited("status", "Status", (value) => value),
 		};
-	}, [fieldSetter, updateState]);
-	return { ...state, assignee: state.assignee.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : state.assignee, ...actions };
+	}, [activityContext?.showAuditInActivity, currentUser, fieldSetter, updateState]);
+	return { ...state, currentUser, showAuditInActivity: activityContext?.showAuditInActivity ?? false, assignee: state.assignee.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : state.assignee, ...actions };
 }
 
 export type ProjectButterContent = ReturnType<typeof useProjectButterContent>;

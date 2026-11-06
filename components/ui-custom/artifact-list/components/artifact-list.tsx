@@ -60,7 +60,7 @@ export interface ArtifactListItem {
 	 */
 	logoSrc?: string;
 	/**
-	 * Agent avatar image path (e.g. `/avatar-agent/teamwork-agents/teamwork-coach.svg`)
+	 * Agent avatar image path (e.g. `/avatar-agent-new/blue/team-connection.svg`)
 	 * rendered 20px inset on the neutral tile. Takes precedence over `logoSrc`/`icon`.
 	 */
 	avatarSrc?: string;

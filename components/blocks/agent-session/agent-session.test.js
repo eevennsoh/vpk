@@ -685,7 +685,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(TYPES_SOURCE, /export type AgentSessionRole = "owner" \| "viewer" \| "expired"/u);
 	assert.match(CARD_SOURCE, /const canOpenLocalMenu = role === "owner" && !isCloudSession/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
-	assert.match(CARD_SOURCE, /case "viewer":\s*return <AgentSessionViewerHint \/>;/u);
+	assert.match(CARD_SOURCE, /case "viewer":\s*return <AgentSessionViewerHint compact=\{!isLongDensity \|\| !showLifecycleLabel\} \/>;/u);
 	assert.match(CARD_SOURCE, /case "expired":\s*case "owner":\s*return \(\s*<AgentSessionMoreMenu/u);
 	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired" \|\| role === "viewer"\s*\? null/u);
 	assert.match(INDEX_SOURCE, /const isLongDensity = variant === "large" && density === "long";/u);
@@ -728,7 +728,7 @@ test("viewer rows use the outline information circle, not the filled status icon
 		/import InformationCircleIcon from "@atlaskit\/icon\/core\/information-circle";/u,
 	);
 	assert.doesNotMatch(VIEWER_HINT_SOURCE, /status-information|StatusInformationIcon/u);
-	assert.match(VIEWER_HINT_SOURCE, /className="\[&_svg:not\(\[class\*='size-'\]\)\]:size-4! \[&_svg\]:text-icon-subtlest"[\s\S]*className="text-icon-subtlest"/u);
+	assert.match(VIEWER_HINT_SOURCE, /\[&_svg\]:text-icon-subtlest[\s\S]*className="text-icon-subtlest"/u);
 	assert.match(VIEWER_HINT_SOURCE, /variant="ghost"/u);
 	assert.match(VIEWER_HINT_SOURCE, /<Tooltip>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
 	assert.match(CARD_SOURCE, /if \(role === "viewer"\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
@@ -737,7 +737,7 @@ test("viewer rows use the outline information circle, not the filled status icon
 		VIEWER_HINT_SOURCE,
 		/icon=\{<InformationCircleIcon color="currentColor" label="" size="medium" \/>\}/u,
 	);
-	assert.match(VIEWER_HINT_SOURCE, /iconSize="medium"/u);
+	assert.match(VIEWER_HINT_SOURCE, /iconSize=\{compact \? "small" : "medium"\}/u);
 	assert.match(VIEWER_HINT_SOURCE, /size="small"/u);
 	assert.match(VIEWER_HINT_SOURCE, /variant="transparent"/u);
 	assert.match(

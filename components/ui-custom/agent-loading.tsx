@@ -61,12 +61,15 @@ export interface AgentLoadingProps {
 	className?: string;
 	/** `default` is the authored 24×24 canvas; `small` scales it to 16×16. */
 	size?: AgentLoadingSize;
+	/** Present a newly added front agent at its original size before it joins the group. */
+	intro?: { agentId: string; avatarSize: 20 | 24 };
 }
 
 function renderAgentLoadingAvatar(
 	agent: AgentLoadingAgent,
 	slot: AgentLoadingSlotName,
 	shouldReduceMotion: boolean | null,
+	intro: AgentLoadingProps["intro"],
 ) {
 	const slotStyle = getAgentLoadingSlotStyle(slot);
 	const transition = shouldReduceMotion ? AGENT_LOADING_MOTION_REDUCED : AGENT_LOADING_MOTION_SWAP;
@@ -90,13 +93,19 @@ function renderAgentLoadingAvatar(
 			style={AGENT_LOADING_SLOT_STYLE}
 			transition={transition}
 		>
-			<AgentAvatarVisual
-				{...agent.avatar}
-				avatarClassName="size-4"
-				label={undefined}
-				loading={agent.avatar.loading ?? "eager"}
-				sizePx={16}
-			/>
+			<span
+				className={cn("block size-4", intro ? agent.id === intro.agentId ? "agent-loading-intro-front" : "agent-loading-intro-other" : null)}
+				data-agent-loading-intro-size={intro && agent.id === intro.agentId ? intro.avatarSize : undefined}
+			>
+				<AgentAvatarVisual
+					{...agent.avatar}
+					animate={intro ? false : agent.avatar.animate}
+					avatarClassName="size-4"
+					label={undefined}
+					loading={agent.avatar.loading ?? "eager"}
+					sizePx={16}
+				/>
+			</span>
 		</motion.span>
 	);
 }
@@ -152,6 +161,7 @@ export function AgentLoading({
 	announce = true,
 	className,
 	size = "default",
+	intro,
 }: Readonly<AgentLoadingProps>) {
 	const [frontAgentId, setFrontAgentId] = useState<string | null>(
 		() => agents[0]?.id ?? null,
@@ -241,7 +251,7 @@ export function AgentLoading({
 				<span data-agent-loading-canvas="">
 					<AnimatePresence initial={false}>
 						{slottedAgents.map(({ agent, slot }) => (
-							renderAgentLoadingAvatar(agent, slot, shouldReduceMotion)
+							renderAgentLoadingAvatar(agent, slot, shouldReduceMotion, shouldReduceMotion ? undefined : intro)
 						))}
 					</AnimatePresence>
 				</span>

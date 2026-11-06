@@ -4,6 +4,7 @@ import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AppIcon from "@atlaskit/icon/core/app";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import CommitIcon from "@atlaskit/icon/core/commit";
+import EditIcon from "@atlaskit/icon/core/edit";
 import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StopwatchIcon from "@atlaskit/icon/core/stopwatch";
@@ -30,6 +31,7 @@ const EVENT_ICON: Record<JiraActivityEventIcon, typeof AddIcon> = {
 	"in-progress": ProjectStatusIcon,
 	linked: BranchIcon,
 	description: AlignTextLeftIcon,
+	edit: EditIcon,
 	"teamwork-graph": TeamworkGraphIcon,
 	commit: CommitIcon,
 	"pull-request": PullRequestIcon,

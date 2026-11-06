@@ -47,7 +47,7 @@ export interface ContextBarPullRequestProps extends Omit<ComponentProps<"div">, 
 	showStatusLozenge?: boolean;
 	/** Optional repo label between the number and the branch. */
 	showRepository?: boolean;
-	/** Override the status-derived number color (Open = success, Merged = discovery). */
+	/** Override the status-derived number color. */
 	numberClassName?: string;
 	/** CI checks menu: status, check rows, auto-fix / auto-merge. */
 	ci?: ContextBarPullRequestCi;
@@ -66,6 +66,10 @@ function statusLozengeVariant(status: PullRequestStatus): NonNullable<LozengePro
 			return "success";
 		case "Merged":
 			return "discovery";
+		case "Draft":
+			return "neutral";
+		case "Failed":
+			return "danger";
 		default: {
 			const _exhaustive: never = status;
 			return _exhaustive;
@@ -79,6 +83,10 @@ function defaultNumberClassName(status: PullRequestStatus): string {
 			return "text-text-success";
 		case "Merged":
 			return "font-medium text-text-discovery";
+		case "Draft":
+			return "text-text-subtle";
+		case "Failed":
+			return "text-text-danger";
 		default: {
 			const _exhaustive: never = status;
 			return _exhaustive;

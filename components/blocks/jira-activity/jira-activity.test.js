@@ -397,13 +397,13 @@ test("non-Rovo agent spines keep hexagon art, not the Rovo product mark", () => 
 		assert.notEqual(entry.actor.vpkLogo, "rovo");
 		assert.equal(
 			entry.actor.avatarSrc,
-			"/avatar-agent/teamwork-agents/progress-tracker.svg",
+			"/avatar-agent-new/blue/backlog-buddy.svg",
 		);
 		assert.equal(activityActorVpkLogo(entry.actor), undefined);
 		assert.deepEqual(mentionSegmentForActor(entry.actor), {
 			type: "agent-mention",
 			text: "Progress tracker",
-			avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+			avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 		});
 	}
 

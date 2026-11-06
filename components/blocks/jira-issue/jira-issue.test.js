@@ -442,8 +442,8 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /if \(!usesStrokeChrome\) \{[\s\S]*#\{pullRequestNumber\}/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /iconScale = "compact",/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /const iconMetrics = resolveJiraIssueIconMetrics\(iconScale\);/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className=\{cn\(tone === "subtle" \? "text-icon-subtle" : colorClass, "\[&_svg\]:text-current", iconMetrics\.compactIconClassName\)\}/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<HoverCard>[\s\S]*render=\{\(\s*<Button[\s\S]*aria-label=\{accessibleName\}[\s\S]*onClick=\{stopNestedActivation\}[\s\S]*onPointerDown=\{stopNestedActivation\}[\s\S]*size="icon-compact"[\s\S]*type="button"[\s\S]*variant="ghost"/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className=\{cn\(tone === "subtle" \? "text-icon-subtle" : colorClass,[\s\S]*iconMetrics\.compactIconClassName\)\}/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<Popover>[\s\S]*render=\{\(\s*<Button[\s\S]*aria-label=\{accessibleName\}[\s\S]*onClick=\{stopNestedActivation\}[\s\S]*onPointerDown=\{stopNestedActivation\}[\s\S]*size="icon-compact"[\s\S]*type="button"[\s\S]*variant="ghost"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<Button[\s\S]*size="icon-compact"[\s\S]*variant="ghost"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<PullRequest[\s\S]*relativeTime=\{pullRequestPreview\?\.relativeTime\}[\s\S]*variant="flyout"/u);
 	assert.doesNotMatch(PULL_REQUEST_CLUSTER_SOURCE, /onActivate=/u);

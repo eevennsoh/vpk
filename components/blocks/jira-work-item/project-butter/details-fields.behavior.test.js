@@ -25,6 +25,18 @@ function fieldLabels() {
 	return [...document.querySelectorAll("[data-project-butter-detail-fields] [data-field-id]")].map((node) => node.getAttribute("data-field-label"));
 }
 
+test("the overdue warning follows the date inside its editable field", async () => {
+	const view = await renderDetails();
+	await view.click(view.getByRole("button", { name: "Show more details" }));
+	const trigger = view.getByRole("button", { name: "Change due date, overdue" });
+	const date = [...trigger.querySelectorAll("span")].find((node) => node.textContent === "May 25, 2026");
+	assert.ok(date);
+	assert.equal(date.nextElementSibling?.getAttribute("aria-hidden"), "true");
+	assert.equal(date.nextElementSibling?.querySelector("svg") !== null, true);
+	await view.click(trigger);
+	assert.equal(view.queryByRole("grid") !== null, true);
+});
+
 test("assignee defaults to Unassigned with its avatar and can be reassigned", async () => {
 	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing" } });
 	let assignee = view.getByRole("button", { name: "Change assignee" });
@@ -92,7 +104,7 @@ test("Development copies the current work item prompt", async (t) => {
 	assert.equal(view.getByRole("button", { name: "Prompt copied" }) !== null, true);
 	assert.equal(view.getAllByRole("status").some((status) => status.textContent === "Prompt copied"), true);
 	await view.rerender({ workItem: { code: "PAY-119", title: "Runbook", description: "Write it" } });
-	await view.click(view.getByRole("button", { name: "Copy prompt" }));
+	await view.click(view.getByRole("button", { name: "Prompt copied" }));
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork", "PAY-119: Runbook\n\nWrite it"]);
 });
 
@@ -169,7 +181,7 @@ test("other multi-value fields keep selected options available for deselection",
 
 test("Details expands, clears seeded fields, reorders and restores hidden fields", async () => {
 	const view = await renderDetails();
-	assert.deepEqual(fieldLabels(), ["Status", "Assignee", "Priority", "Due Date"]);
+	assert.deepEqual(fieldLabels(), ["Assignee", "Priority"]);
 	await view.click(view.getByRole("button", { name: "Show more details" }));
 	assert.equal(view.queryByText("User Experience Overhaul") !== null, true);
 	assert.equal(view.queryByText("social-media") !== null, true);
@@ -222,7 +234,7 @@ test("expanded Details offers at most eight fields for filled and sparse items",
 	for (const empty of [false, true]) {
 		const view = await renderDetails({ empty });
 		await view.click(view.getByRole("button", { name: "Show more details" }));
-		assert.deepEqual(fieldLabels(), ["Status", "Assignee", "Priority", "Due Date", "Parent", "Labels", "Story points", "Reporter"]);
+		assert.deepEqual(fieldLabels(), ["Assignee", "Priority", "Due Date", "Parent", "Labels", "Story points", "Reporter"]);
 		await view.click(view.getByRole("button", { name: "More details actions" }));
 		assert.equal(view.queryByRole("menuitemcheckbox", { name: "Campaign budget" }), null);
 		assert.equal(view.queryByRole("menuitemcheckbox", { name: "Fix Version" }), null);
@@ -238,6 +250,6 @@ test("field actions support keyboard reordering without a drag handle", async ()
 	const moveUp = view.getByRole("menuitem", { name: "Move up" });
 	await view.focus(moveUp);
 	await view.press(moveUp, "Enter");
-	assert.deepEqual(fieldLabels(), ["Status", "Priority", "Assignee", "Due Date"]);
+	assert.deepEqual(fieldLabels(), ["Priority", "Assignee"]);
 	assert.equal(view.queryByRole("button", { name: "Drag to reorder Priority field" }), null);
 });

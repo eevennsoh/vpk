@@ -26,7 +26,7 @@ function cohortBoard(count) {
 }
 
 function harness({ reduced = false, reject = false, enabled = true, withMove = false, board, dragged = "A", selected = ["A", "B"], solitaire = false, landing = { left: 40, top: 80, width: 280 }, faceWidth = 280 } = {}) {
-	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [], reveals = [], events = [], frames = [], timers = [], landings = [];
+	const states = [], refs = [], effects = [], scheduled = [], captures = [], flights = [], reveals = [], traces = [], reflows = [], events = [], frames = [], timers = [], landings = [];
 	let stateIndex = 0, refIndex = 0, effectIndex = 0, api;
 	const face = { offsetHeight: 199, offsetWidth: faceWidth };
 	const createPreview = () => ({ querySelector: (selector) => selector === "[data-issue-cohort-front]" ? face : null, remove() { events.push("remove preview"); this.removed = true; } });
@@ -86,7 +86,9 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 			if (name.includes("board-auto-arrange")) return autoModel;
 			if (name.includes("board-card-arrival")) return arrivalModel;
 			if (name.includes("issue-solitaire-drop")) return {
-				captureIssueCardReflow: () => [],
+				captureIssueCardReflow: () => [{ code: "B", columnTitle: "To do", bounds: {} }],
+				animateIssueCardReflow(root, before, delay) { const reflow = { before, delay, stopped: false }; reflows.push(reflow); return () => { reflow.stopped = true; }; },
+				animateIssueDropTrace(root, title, codes) { const trace = { title, codes: [...codes], stopped: false }; traces.push(trace); return () => { trace.stopped = true; }; },
 				resolveIssueSolitaireLanding(root, title, codes, beforeCardCode, height) { landings.push({ title, codes: [...codes], beforeCardCode, height }); return landing; },
 				animateIssueSolitaireDrop(root, title, codes, reduced, complete, glowColors, feedback = "trace") {
 					events.push("reveal");
@@ -97,9 +99,10 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 				},
 			};
 			if (name.includes("issue-card-drop-flight")) return {
+				ISSUE_CARD_FADE_EXIT_MS: 400,
 				captureIssueCardDropFlights(options) { events.push("capture"); captures.push({ preview: options.preview, pointer: options.pointer, grabbed: options.grabbed, codes: [...options.codes], allCards: options.allCards }); return options.codes.map((code) => ({ code, node: {}, from: { x: 100, y: 100 } })); },
 				hasIssueDropTarget: () => true,
-				startIssueCardDropFlights(root, title, items, landed, finished) { const flight = { title, items, landed, finished, stopped: false }; flights.push(flight); return () => { flight.stopped = true; }; },
+				startIssueCardDropFlights(root, title, items, landed, finished, animation) { const flight = { title, items, landed, finished, animation, stopped: false }; flights.push(flight); return () => { flight.stopped = true; }; },
 			};
 			throw new Error(`Unexpected import ${name}`);
 		},
@@ -111,7 +114,7 @@ function harness({ reduced = false, reject = false, enabled = true, withMove = f
 		return api;
 	}
 	render();
-	return { render, captures, flights, reveals, events, landings, released: () => released, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review", target) { api.handleDrop(title, target); preview = null; },
+	return { render, captures, flights, reveals, traces, reflows, events, landings, released: () => released, api: () => api, columns: () => columns, setEnabled(value) { enabled = value; }, arrange() { api.handleAutoArrange(new Set(["A", "B"])); preview = null; }, drop(title = "Review", target) { api.handleDrop(title, target); preview = null; },
 		/** Native dragend right after the drop, as Chromium dispatches it. */
 		dragEnd() { if (!api.deferDragEnd(() => events.push("dragend"))) events.push("dragend"); },
 		/** The frame after release paints; the task it queues then runs. */
@@ -179,6 +182,27 @@ test("assignment moves keep arrival geometry without borrowing manual drop feedb
 	const manual = harness({ solitaire: true });
 	manual.drop(); manual.render();
 	assert.equal(manual.reveals[0].feedback, "trace");
+});
+
+test("a requested fade traces its arriving card and cancels the trace on the next move", () => {
+	const h = harness({ withMove: true, solitaire: true, dragged: null, selected: [] });
+	h.api().handleMove({ cardCodes: ["A"], columnTitle: "Review", target: { beforeCardCode: null }, animation: "fade", feedback: "trace" });
+	h.render();
+	assert.equal(h.flights[0].animation, "fade");
+	assert.equal(h.reflows[0].delay, 400);
+	assert.equal(h.reflows[0].before[0].columnTitle, "To do");
+	assert.equal(h.traces.length, 0);
+	h.flights[0].landed("A");
+	assert.equal(h.traces.length, 0);
+	const landed = h.render();
+	landed.handleComplete(landed.arrivalForColumn("Review").id);
+	assert.deepEqual(h.traces.map(({ title, codes }) => ({ title, codes })), [{ title: "Review", codes: ["A"] }]);
+	h.render().handleMove({ cardCodes: ["A"], columnTitle: "Done", target: { beforeCardCode: null }, animation: "fade", feedback: "none" });
+	assert.equal(h.traces[0].stopped, true);
+	h.render();
+	assert.equal(h.reflows[0].stopped, true);
+	h.flights.at(-1).landed("A");
+	assert.equal(h.traces.length, 1);
 });
 
 test("reduced motion and rejected arrangements never launch flights", () => {

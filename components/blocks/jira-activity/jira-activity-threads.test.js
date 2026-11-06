@@ -579,13 +579,13 @@ test("disclosing Reply focuses the composer through the editor's own autofocus",
 });
 
 test("disclosing Reply prefills a rich mention token for the target actor", () => {
-	assert.match(COMPOSER_SOURCE, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number \}/u);
+	assert.match(COMPOSER_SOURCE, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number; textAfter\?: string \}/u);
 	assert.match(COMPOSER_SOURCE, /prefillMentionRequest=\{prefillMentionRequest\}/u);
 	assert.match(COMMENT_SOURCE, /function getReplyMention\(actor: JiraActivityActor\): RichTextMentionItem/u);
 	assert.match(COMMENT_SOURCE, /category === "human"|actor\.kind === "person"/u);
-	assert.match(COMMENT_SOURCE, /prefillMentionRequest=\{/u);
+	assert.match(COMMENT_SOURCE, /prefillMentionRequest=\{replyMentionRequest\}/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /setReplyDraft\(`@\$\{actor\.name\} `\)/u);
-	assert.match(COMMENT_SOURCE, /setReplyTarget\(\{ key, actor \}\);\s*setReplyDraft\(""\);/u);
+	assert.match(COMMENT_SOURCE, /setReplyTarget\(\{ key, actor, initialDraft: "" \}\);\s*setReplyDraft\(""\);/u);
 	assert.match(PROMPT_INPUT_SOURCE, /prefillValueSyncGuardKeyRef\.current = requestKey;/u);
 	assert.match(PROMPT_INPUT_SOURCE, /editor\.createNodeViews\(\);/u);
 	assert.match(

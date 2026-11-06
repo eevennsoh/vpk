@@ -99,7 +99,7 @@ function SegmentContent({
 		case "user-mention":
 			return (
 				<Tag
-					className="mx-0.5 align-middle"
+					className="mx-0.5 align-middle text-[length:inherit]"
 					color="gray"
 					data-jira-activity-user-mention
 					elemBefore={
@@ -121,7 +121,7 @@ function SegmentContent({
 		case "agent-mention":
 			return (
 				<Tag
-					className="mx-0.5 align-middle"
+					className="mx-0.5 align-middle text-[length:inherit]"
 					color="gray"
 					data-jira-activity-agent-mention
 					elemBefore={
@@ -158,7 +158,7 @@ function SegmentContent({
 			// dark-mode treatment for near-black marks itself.
 			return (
 				<Tag
-					className="mx-0.5 align-middle"
+					className="mx-0.5 align-middle text-[length:inherit]"
 					color="gray"
 					data-jira-activity-app-mention
 					elemBefore={

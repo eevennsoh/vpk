@@ -442,6 +442,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = catalogEntries([
 	blockComponent("skills-directory", "Skills Directory"),
 	blockComponent("smart-link", "Smart Link"),
 	blockComponent("pull-request", "Pull Request"),
+	blockComponent("development-panel", "Development Panel"),
 	blockComponent("pull-request-header", "Pull Request Header"),
 	blockComponent("pull-request-review", "Pull Request Review"),
 	blockComponent("pull-request-fix", "Pull Request Fix"),

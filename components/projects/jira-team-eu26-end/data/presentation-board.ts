@@ -31,9 +31,9 @@ const JIRA_TEAM_EU26_PAY_CURRENT_USER_INVOKER = {
 } as const satisfies NonNullable<JiraIssueAgentActivity["invokedBy"]>;
 
 const PAY_AVATARS = {
-	releaseAgent: "/avatar-agent/strategy-agents/strategic-insight.svg",
-	reviewAgent: "/avatar-agent/teamwork-agents/decision-director.svg",
-	testAgent: "/avatar-agent/service-agents/rca-agent.svg",
+	releaseAgent: "/avatar-agent-new/orange/research-scout.svg",
+	reviewAgent: "/avatar-agent-new/blue/decision-director.svg",
+	testAgent: "/avatar-agent-new/yellow/ops-agent.svg",
 } as const;
 
 /** Codex pauses PAY-112 until a human picks the sandbox retention call. */

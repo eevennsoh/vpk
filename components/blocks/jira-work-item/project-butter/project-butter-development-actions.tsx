@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { cn } from "@/lib/utils";
 
-export function ProjectButterDevelopmentActions({ code, description, onStartCoding, summary }: Readonly<{
+export function ProjectButterDevelopmentActions({ code, description, onStartCoding, showStartCoding = true, summary }: Readonly<{
 	code: string;
 	description: string;
-	onStartCoding: () => void;
+	onStartCoding?: () => void;
+	showStartCoding?: boolean;
 	summary: string;
 }>) {
 	const [feedback, setFeedback] = useState<"idle" | "copied" | "error">("idle");
@@ -30,9 +31,9 @@ export function ProjectButterDevelopmentActions({ code, description, onStartCodi
 		}
 	}
 	const label = feedback === "copied" ? "Prompt copied" : feedback === "error" ? "Could not copy prompt" : "Copy prompt";
-	const row = "h-8 w-full justify-start gap-2 px-2 font-normal";
+	const row = "h-8 w-full justify-start gap-2 border-0 px-2 font-normal";
 	return <div className="-mx-2 flex flex-col">
-		<Button className={row} onClick={onStartCoding} type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<BranchIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Start coding</Button>
+		{showStartCoding ? <Button className={row} onClick={onStartCoding} type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<BranchIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Start coding</Button> : null}
 		<Button aria-label={label} className={row} onClick={() => { void copyPrompt(); }} type="button" variant="ghost">
 			<CopyFeedbackIcon copied={feedback === "copied"} idleIcon={<CopyIcon label="" size="small" />} />
 			<span aria-hidden className="grid text-left">

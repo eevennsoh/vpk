@@ -20,7 +20,7 @@ const venn = {
 	role: "Software engineer",
 };
 const releaseAgent = {
-	avatarSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
+	avatarSrc: "/avatar-agent-new/orange/research-scout.svg",
 	id: "release-agent",
 	kind: "agent",
 	name: "Release Captain Agent",

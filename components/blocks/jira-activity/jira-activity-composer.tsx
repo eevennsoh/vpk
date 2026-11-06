@@ -130,7 +130,7 @@ export interface JiraActivityComposerProps {
 	 * only reliable way in — focusing a ref from a parent effect races the editor.
 	 */
 	autoFocus?: boolean;
-	prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number };
+	prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number; textAfter?: string };
 	mentionSources?: RichTextMentionSources;
 	mentionSectionLabels?: RichTextMentionSectionLabels;
 	suggestionVariant?: RichTextSuggestionVariantConfig;
@@ -343,6 +343,7 @@ export function JiraActivityComposer({
 				className={cn(
 					floatingComposerTextareaClassName,
 					"text-sm leading-5",
+					variant === "flush" && "[&_.rich-text-mention-chip]:text-[length:inherit]",
 					isExpandableComment && isExpanded && "min-h-36 py-3",
 				)}
 				enableDirectoryAutocomplete={false}

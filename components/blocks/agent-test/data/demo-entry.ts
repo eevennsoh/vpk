@@ -44,7 +44,7 @@ export function buildAgentTestDemoEntry(
 			description: result.description ?? result.summary,
 			// Real agents always carry an avatar; the demo mirrors that so the
 			// greeting renders the agent identity rather than a bare heading.
-			avatarSrc: "/avatar-agent/service-agents/service-request-helper.svg",
+			avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
 			starters: [],
 		},
 		resultKey: `agent-test:${result.agentId ?? "agent-test-demo"}`,

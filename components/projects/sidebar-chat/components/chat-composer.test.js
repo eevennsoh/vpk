@@ -302,8 +302,8 @@ test("compact chat opts its Rovo composer textarea into visual trace auto-taggin
 	assert.match(promptInput, /onPrefillMentionConsumed\?: \(requestKey: number\) => void;/u);
 	assert.match(promptInput, /onPrefillMentionConsumed\?\.\(requestKey\);/u);
 	assert.match(promptInput, /enableVisualTraceAutoTagging = false/u);
-	assert.match(sidebarPanel, /composerPrefillRequest\?: \{ mention\?: RichTextMentionItem; text\?: string; requestKey: number \};/u);
-	assert.match(sidebarPanel, /if \(!composerPrefillRequest\?\.mention\) \{[\s\S]*setPrompt\(composerPrefillRequest\?\.text \?\? ""\);[\s\S]*\}/u);
+	assert.match(sidebarPanel, /composerPrefillRequest\?: ChatComposerPrefillRequest;/u);
+	assert.match(sidebarPanel, /if \(!composerPrefillRequest\?\.mention\) \{[\s\S]*setPrompt\(next\);[\s\S]*onComposerPrefillConsumed\?\.\(requestKey\);[\s\S]*\}/u);
 	assert.match(sidebarPanel, /onPrefillMentionConsumed=\{onComposerPrefillConsumed\}/u);
 	assert.match(sidebarPanel, /prefillMentionRequest=\{[\s\S]*composerPrefillRequest\?\.mention[\s\S]*mention: composerPrefillRequest\.mention,[\s\S]*requestKey: composerPrefillRequest\.requestKey/u);
 	assert.match(sidebarComposer, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number \};/u);

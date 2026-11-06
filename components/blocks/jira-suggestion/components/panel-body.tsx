@@ -2,12 +2,9 @@
 
 import { useEffect, useLayoutEffect, useRef, type Ref, type RefObject } from "react";
 import { AnimatePresence, motion, type MotionValue } from "motion/react";
-import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
-import { Button } from "@/components/ui/button";
-import { motionRecipe } from "@/lib/motion";
 
 import { CardDeck } from "./card-deck";
 import { CaughtUp } from "./caught-up";
@@ -76,15 +73,6 @@ export function PanelBody({ feed, deck, view, mode, maxHeight, grab, deckRef, ch
 					{listed && running ? (
 						<motion.div animate={SWAP} className="pb-2.5" exit={SWAP_OUT} initial={{ opacity: 0 }} key="ghost"><GhostCard /></motion.div>
 					) : null}
-					{listed && !running && deck.order.length === 0 ? (
-						<motion.div animate={{ opacity: 1, transition: motionRecipe.popup.enter }} className="flex items-center justify-between gap-3 pb-3 pl-1" exit={SWAP_OUT} initial={{ opacity: 0 }} key="caught-up">
-							<p className="text-sm font-medium text-text">All caught up</p>
-							<Button onClick={feed.rerun} size="compact" type="button" variant="ghost">
-								<RefreshIcon color="currentColor" label="" size="small" />
-								Check again
-							</Button>
-						</motion.div>
-					) : null}
 				</AnimatePresence>
 				<CardDeck
 					deck={deck}
@@ -98,7 +86,6 @@ export function PanelBody({ feed, deck, view, mode, maxHeight, grab, deckRef, ch
 					onCommit={onCommit}
 					onGrab={onGrab}
 					onRelease={view.release}
-					onUndo={onUndo}
 					onUnpack={onUnpack}
 					onWhyIdChange={onWhyIdChange}
 					registerDepth={registerDepth}

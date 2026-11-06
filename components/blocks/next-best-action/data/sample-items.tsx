@@ -25,7 +25,7 @@ export const SAMPLE_NEXT_BEST_ACTIONS: readonly NextBestActionItem[] = [
 		title: "Create a “Sprint triage” agent",
 		source: "Suggested agent",
 		owner: "Would cover 23 untriaged bugs",
-		avatarSrc: "/avatar-agent/teamwork-agents/blocker-checker.svg",
+		avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg",
 		rowActionLabel: "Create",
 	},
 	{

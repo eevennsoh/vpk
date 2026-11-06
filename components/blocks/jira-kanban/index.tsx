@@ -102,6 +102,7 @@ export interface JiraKanbanCardData {
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 	pullRequestNumber?: number;
+	animatePullRequestOnMount?: boolean;
 	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
 }

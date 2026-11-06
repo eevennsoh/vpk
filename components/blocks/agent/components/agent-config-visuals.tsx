@@ -13,10 +13,15 @@ import { getSkillConfigLabel } from "@/components/blocks/agent/lib/agent-config-
 // to the Tag color that matches its brand accent (see AGENT_AVATAR_GROUP_ACCENTS).
 const agentAvatarGroupToTagColor: Readonly<Record<string, TagColor>> = {
 	"dev-agents": "lime",
+	lime: "lime",
 	"product-agents": "purple",
+	purple: "purple",
 	"service-agents": "yellow",
+	yellow: "yellow",
 	"strategy-agents": "orange",
+	orange: "orange",
 	"teamwork-agents": "blue",
+	blue: "blue",
 };
 
 export const tagColorToMenuIconClassName: Partial<Record<TagColor, string>> = {
@@ -64,6 +69,6 @@ export function getSkillTagPropsForLabel(label: string): { color: SkillTagColor;
 }
 
 export function getTagColorForAgentAvatar(avatarSrc: string | undefined): TagColor | undefined {
-	const group = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
+	const group = avatarSrc?.match(/\/avatar-agent(?:-new)?\/([^/]+)\//u)?.[1];
 	return group ? agentAvatarGroupToTagColor[group] : undefined;
 }

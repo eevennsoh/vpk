@@ -190,3 +190,23 @@ test("unified directory + selector are a superset floor of the legacy forks (not
 		agents.ROVO_AGENT_SELECTOR_AGENTS,
 	);
 });
+
+test("mention visuals use complete new avatars for every first-party lanyard agent", async () => {
+	const { mapAgentToMentionItem, AGENT_LANYARD_FIRST_PARTY_AGENTS } = await loadDirectoryModule(`
+		export { mapAgentToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
+		export { AGENT_LANYARD_FIRST_PARTY_AGENTS } from "@/components/blocks/agent-lanyard/first-party-data";
+	`);
+	for (const agent of AGENT_LANYARD_FIRST_PARTY_AGENTS) {
+		const { visual } = mapAgentToMentionItem(agent);
+		assert.equal(visual.kind, "avatar", agent.name);
+		assert.equal(visual.shape, "hexagon", agent.name);
+		assert.ok(visual.src.startsWith("/avatar-agent-new/"), agent.name);
+		assert.ok(fs.existsSync(path.join(process.cwd(), "public", visual.src)), agent.name);
+	}
+	assert.deepEqual(mapAgentToMentionItem({ id: "custom", name: "Custom", byline: "", avatarSrc: "/custom.svg" }).visual, {
+		kind: "image", shape: "square", src: "/custom.svg",
+	});
+	assert.deepEqual(mapAgentToMentionItem({ id: "claude", name: "Claude", byline: "", brandName: "claude" }).visual, {
+		kind: "third-party", name: "claude",
+	});
+});

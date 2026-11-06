@@ -6,19 +6,21 @@ import { createPortal } from "react-dom";
 
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
-import type { ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
+import type { ChatComposerPrefillRequest, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { AgentResultCreator } from "@/components/projects/sidebar-chat/components/agent-result-card";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type { FloatingRovoButtonInsightsConfig } from "@/components/projects/shared/components/floating-rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
-import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 
 interface JgpRovoOverlayProps {
+	portalContainer?: HTMLElement | null;
+	contained?: boolean;
 	agentCreator?: AgentResultCreator;
 	chatContextBar?: ChatContextBarDescriptor | null;
-	composerPrefillRequest?: { mention: RichTextMentionItem; requestKey: number };
+	composerPrefillRequest?: ChatComposerPrefillRequest;
 	onComposerPrefillConsumed?: (requestKey: number) => void;
 	externalThinkingMessageId?: string | null;
+	isSwitchingSession?: boolean;
 	/**
 	 * Hide the viewport floating chat. Work-item and Pulse Insights surfaces
 	 * that already embed chat also hide it via `data-jira-work-item-open` /
@@ -39,11 +41,14 @@ interface JgpRovoOverlayProps {
 
 /** Keeps JGP Rovo surfaces in the viewport stacking context above the Gallery dock. */
 export function JgpRovoOverlay({
+	portalContainer,
+	contained = false,
 	agentCreator,
 	chatContextBar,
 	composerPrefillRequest,
 	onComposerPrefillConsumed,
 	externalThinkingMessageId,
+	isSwitchingSession = false,
 	chat = "auto",
 	insights = null,
 	launcher = "auto",
@@ -88,13 +93,14 @@ export function JgpRovoOverlay({
 		onApply: onQuestionAnswer,
 	}), [onQuestionAnswer]);
 
+	const embeddedInDialog = contained;
 	const showLauncher = launcher === "auto"
 		&& chatSurface === null
 		&& !isRovoCanvasOpen
-		&& !isEmbeddedHostOpen;
+		&& (!isEmbeddedHostOpen || embeddedInDialog);
 	const showFloatingChat = chat === "auto"
 		&& chatSurface === "floating"
-		&& !isEmbeddedHostOpen;
+		&& (!isEmbeddedHostOpen || embeddedInDialog);
 
 	// Autofocus belongs to a genuine chat open; host visibility changes must
 	// preserve their own focus restoration when floating chat remounts.
@@ -109,6 +115,7 @@ export function JgpRovoOverlay({
 
 	return createPortal(
 		<>
+			{isSwitchingSession ? <span className="fixed right-6 bottom-6 z-[561] rounded-lg bg-surface-overlay px-4 py-3 text-sm text-text-subtle shadow-overlay" role="status">Opening session…</span> : null}
 			{showLauncher ? (
 				<FloatingRovoButton
 					ariaLabel="Open Rovo chat"
@@ -125,6 +132,7 @@ export function JgpRovoOverlay({
 						key="floating-chat"
 						autoFocusComposer={composerFocusState.autoFocus}
 						chatContextBar={chatContextBar}
+						isSwitchingSession={isSwitchingSession}
 						composerPrefillRequest={composerPrefillRequest}
 						onComposerPrefillConsumed={onComposerPrefillConsumed}
 						externalThinkingMessageId={externalThinkingMessageId}
@@ -140,6 +148,6 @@ export function JgpRovoOverlay({
 				) : null}
 			</AnimatePresence>
 		</>,
-		portalRoot,
+		portalContainer ?? portalRoot,
 	);
 }

@@ -36,7 +36,7 @@ test("Studio RFP demo agent matches the /jira RFP story and starts with the Jira
 	assert.equal(STUDIO_RFP_DEMO_AGENT_SOURCE_KEY, "studio-rfp-demo-agent:v2");
 	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.agentId, "rfp-drafting-agent");
 	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.name, "RFP Drafter");
-	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.avatarSrc, "/avatar-agent/dev-agents/feature-flag-cleaner.svg");
+	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.avatarSrc, "/avatar-agent-new/lime/feature-flag.svg");
 	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.summary, /first-pass RFP response packages/u);
 	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /## Role/u);
 	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /## Mission/u);

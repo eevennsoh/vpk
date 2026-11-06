@@ -71,8 +71,8 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
 /**
  * One suggestion's card, a single element for its whole life. The same node is a blank sheet tilted behind the top
  * card, the top card itself, and a row in the list, so switching modes only moves it: Motion's layout animation
- * carries it (transform only) from its stack pose to its list slot and back. Its paper (surface, radius, shadow) is
- * static and never changes with its role; only the content inside fades, in for the top card and rows, out for sheets.
+ * carries it from its stack pose to its list slot and back. The paper's shadow softens into the raised elevation
+ * for list rows while the content fades in for the top card and rows, and out for sheets.
  */
 export function SuggestionCard({
 	suggestion, decision, role, pose, poseTransition, delay, morphing, parked, onParked, peekProgress, zIndex, isNew, entrance, registerDepth,
@@ -102,7 +102,6 @@ export function SuggestionCard({
 	const x = useTransform([poseX, dragX], ([base, offset]: number[]) => base + offset);
 	const rotate = useTransform([poseRotate, dragX], ([base, offset]: number[]) => base + clamp(offset / 240, -1, 1) * 6);
 	const opacity = useTransform([appear, shown, dragX], ([appeared, visible, offset]: number[]) => appeared * visible * (1 - clamp((Math.abs(offset) - FADE_START) / (FLY_DISTANCE - FADE_START), 0, 1)));
-	const acceptEdge = useTransform(progress, [0, 1], [0, 1]);
 	const contentShown = useMotionValue(sheet ? 0 : 1);
 	const peek = useMotionValue(0);
 	const contentOpacity = useTransform([contentShown, peek], ([base, peeked]: number[]) => Math.max(base, peeked));
@@ -225,6 +224,8 @@ export function SuggestionCard({
 				className={cn(
 					"relative",
 					CARD_PAPER,
+					"transition-shadow duration-slower ease-in-out",
+					parked ? "shadow-none" : role === "row" || sheet ? "shadow-sm" : null,
 					// The paper clips its face, so while its size morphs nothing inside can hang past its rounded edge.
 					"overflow-hidden",
 					sheet ? "h-full cursor-pointer" : null,
@@ -257,8 +258,6 @@ export function SuggestionCard({
 						</motion.div>
 					) : null}
 				</AnimatePresence>
-				{/* The success edge confirms which way a drag would land; the label and the lit ✓ carry the rest. */}
-				{top ? <motion.span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-border-success ring-inset" style={{ opacity: acceptEdge }} /> : null}
 			</motion.div>
 		</div>
 	);

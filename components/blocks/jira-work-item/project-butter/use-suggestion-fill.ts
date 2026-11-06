@@ -17,7 +17,7 @@ import type { ProjectButterContent } from "@/components/blocks/jira-work-item/pr
 import { DETAILS_RAIL_GLIDE, SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 import type { ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 
-const FILL_STEP_MS = (DETAILS_RAIL_GLIDE.layout.duration - motionDuration.xxshort) * 1000;
+const FILL_STEP_MS = DETAILS_RAIL_GLIDE.layout.duration * 1000;
 
 function wait(ms: number): Promise<void> {
 	return new Promise((resolve) => {
@@ -49,16 +49,20 @@ function suggestionSnapshot(content: ProjectButterContent): ProjectButterSuggest
 }
 
 export interface ProjectButterSuggestionFill {
-	acceptAll: () => void;
+	acceptAll: (batch?: readonly ProjectButterSuggestion[]) => void;
 	acceptField: (suggestion: ProjectButterSuggestion) => void;
 	accepted: readonly ProjectButterSuggestion[] | null;
 	activeField: ProjectButterSuggestionField | null;
 	/** Details row the filling bar sits below while Accept all runs. */
 	barAfter: ProjectButterDetailFieldId | "top" | null;
 	columnId: string;
+	finishing: boolean;
 	dismissAccepted: () => void;
 	dismissField: (field: ProjectButterSuggestionField) => void;
+	restoreDismissedField: (field: ProjectButterSuggestionField) => void;
+	undoField: (suggestion: ProjectButterSuggestion) => void;
 	running: boolean;
+	settleField: (field: ProjectButterDetailFieldId) => void;
 	shimmerText: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>>;
 	suggestions: readonly ProjectButterSuggestion[];
 	undoAccepted: () => void;
@@ -78,13 +82,18 @@ export function useProjectButterSuggestionFill(
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const columnId = useId();
 	const runId = useRef(0);
+	const activeBatch = useRef<readonly ProjectButterSuggestion[]>([]);
+	const undoneFields = useRef(new Set<ProjectButterSuggestionField>());
 	const shimmerTimers = useRef(new Map<ProjectButterDetailFieldId, number>());
+	const batchHandoffTimer = useRef<number | undefined>(undefined);
+	const batchHandoffFields = useRef(new Map<ProjectButterDetailFieldId, string>());
 	const contentRef = useRef(content);
 	const acceptedTarget = useRef<ProjectButterContent | null>(null);
 	const revealRef = useRef(onRevealMore);
 	const descriptionRevealRef = useRef(onDescriptionSuggested);
 	const reducedRef = useRef(shouldReduceMotion);
 	const [running, setRunning] = useState(false);
+	const [finishing, setFinishing] = useState(false);
 	const [activeField, setActiveField] = useState<ProjectButterSuggestionField | null>(null);
 	const [barAfter, setBarAfter] = useState<ProjectButterDetailFieldId | "top" | null>(null);
 	const [dismissed, setDismissed] = useState<ReadonlySet<ProjectButterSuggestionField>>(() => new Set());
@@ -101,6 +110,7 @@ export function useProjectButterSuggestionFill(
 	useEffect(() => () => {
 		runId.current += 1;
 		for (const timer of shimmerTimers.current.values()) window.clearTimeout(timer);
+		if (batchHandoffTimer.current !== undefined) window.clearTimeout(batchHandoffTimer.current);
 	}, []);
 
 	const suggestions = enabled
@@ -132,14 +142,46 @@ export function useProjectButterSuggestionFill(
 		});
 	}
 
-	function shimmerField(suggestion: ProjectButterSuggestion) {
-		if (suggestion.field === "description") return;
+	function settleField(field: ProjectButterDetailFieldId) {
+		const timer = shimmerTimers.current.get(field);
+		if (timer !== undefined) window.clearTimeout(timer);
+		shimmerTimers.current.delete(field);
+		batchHandoffFields.current.delete(field);
+		setShimmerText((current) => {
+			if (!(field in current)) return current;
+			const next = { ...current };
+			delete next[field];
+			return next;
+		});
+	}
+
+	function finishBatchHandoff() {
+		if (batchHandoffTimer.current !== undefined) window.clearTimeout(batchHandoffTimer.current);
+		batchHandoffTimer.current = undefined;
+		const fields = new Map(batchHandoffFields.current);
+		batchHandoffFields.current.clear();
+		setShimmerText((current) => {
+			const next = { ...current };
+			for (const [field, text] of fields) if (next[field] === text) delete next[field];
+			return next;
+		});
+	}
+
+	function shimmerField(suggestion: ProjectButterSuggestion, batch = false): number {
+		if (suggestion.field === "description") return 0;
 		const previous = shimmerTimers.current.get(suggestion.field);
 		if (previous !== undefined) window.clearTimeout(previous);
+		shimmerTimers.current.delete(suggestion.field);
+		batchHandoffFields.current.delete(suggestion.field);
 		setShimmerText((current) => ({ ...current, [suggestion.field]: suggestion.preview }));
 		const holdMs = getShimmerWaveEndTime(suggestion.preview, SUGGESTION_REVEAL_DURATION, SUGGESTION_REVEAL_SPREAD) * 1000 + 40;
+		if (batch) {
+			batchHandoffFields.current.set(suggestion.field, suggestion.preview);
+			return holdMs;
+		}
 		const timer = window.setTimeout(() => finishShimmer(suggestion.field, suggestion.preview), holdMs);
 		shimmerTimers.current.set(suggestion.field, timer);
+		return holdMs;
 	}
 
 	/** Rows' outer boxes carry no layout transform, so this scrolls to where the bar is heading, not where it is mid-glide. */
@@ -150,7 +192,7 @@ export function useProjectButterSuggestionFill(
 	}
 
 	function acceptField(suggestion: ProjectButterSuggestion) {
-		if (running) return;
+		undoneFields.current.delete(suggestion.field);
 		revealRef.current();
 		if (suggestion.field === "description" && (contentRef.current.description.trim() || contentRef.current.descriptionDraft.trim())) return;
 		applyProjectButterSuggestion(suggestion, contentRef.current);
@@ -184,10 +226,14 @@ export function useProjectButterSuggestionFill(
 		acceptedTarget.current = null;
 		setAccepted(null);
 		setRunning(false);
+		setFinishing(false);
 		setActiveField(null);
 		setBarAfter(null);
 		for (const timer of shimmerTimers.current.values()) window.clearTimeout(timer);
 		shimmerTimers.current.clear();
+		if (batchHandoffTimer.current !== undefined) window.clearTimeout(batchHandoffTimer.current);
+		batchHandoffTimer.current = undefined;
+		batchHandoffFields.current.clear();
 		setShimmerText({});
 	}
 
@@ -196,11 +242,19 @@ export function useProjectButterSuggestionFill(
 		setAccepted(null);
 	}
 
-	async function acceptAll() {
-		if (running || suggestions.length === 0 || accepted) return;
-		const batch = suggestions;
+	async function acceptAll(selected: readonly ProjectButterSuggestion[] = suggestions) {
+		const batch = selected.filter((suggestion) => suggestions.some((item) => item.field === suggestion.field));
+		if (batch.length === 0) return;
+		if (running) {
+			for (const suggestion of batch) acceptField(suggestion);
+			return;
+		}
+		if (batchHandoffTimer.current !== undefined) finishBatchHandoff();
 		const target = contentRef.current;
 		const applied: ProjectButterSuggestion[] = [];
+		let revealFinishesAt = 0;
+		activeBatch.current = batch;
+		undoneFields.current.clear();
 		revealRef.current();
 		if (reducedRef.current) {
 			for (const suggestion of batch) {
@@ -209,14 +263,16 @@ export function useProjectButterSuggestionFill(
 				applied.push(suggestion);
 			}
 			if (applied.length) rememberAccepted(applied, target);
+			activeBatch.current = [];
 			return;
 		}
 		const id = ++runId.current;
+		setFinishing(false);
 		setRunning(true);
 		await wait(motionDuration.slow * 1000);
 		if (id !== runId.current) return;
 		const description = batch.find((suggestion) => suggestion.field === "description");
-		if (description && !contentRef.current.description.trim() && !contentRef.current.descriptionDraft.trim()) {
+		if (description && !undoneFields.current.has("description") && !contentRef.current.description.trim() && !contentRef.current.descriptionDraft.trim()) {
 			setActiveField("description");
 			applyProjectButterSuggestion(description, target);
 			if (!reducedRef.current) descriptionRevealRef.current?.(description.text);
@@ -232,41 +288,72 @@ export function useProjectButterSuggestionFill(
 			for (const [index, field] of rail.entries()) {
 				if (id !== runId.current) return;
 				const stepStart = performance.now();
-				const suggestion = detailSuggestions.find((item) => item.field === field);
+				const suggestion = detailSuggestions.find((item) => item.field === field && !undoneFields.current.has(item.field));
 				setActiveField(suggestion?.field ?? null);
 				setBarAfter(field);
+				if (index === Math.max(0, rail.length - 2)) setFinishing(true);
 				if (suggestion) {
 					applyProjectButterSuggestion(suggestion, target);
-					shimmerField(suggestion);
+					revealFinishesAt = Math.max(revealFinishesAt, performance.now() + shimmerField(suggestion, true));
 				}
 				if (suggestion) applied.push(suggestion);
 				await settleLayout();
+				if (id !== runId.current) return;
 				revealRow(rail[index + 1] ?? field);
 				await wait(Math.max(0, FILL_STEP_MS - (performance.now() - stepStart)));
 			}
-			await wait(DETAILS_RAIL_GLIDE.layout.duration * 1000);
+			await wait(Math.max(0, (motionDuration.slow - DETAILS_RAIL_GLIDE.layout.duration) * 1000));
+			await settleLayout();
 		}
 		if (id !== runId.current) return;
 		setActiveField(null);
 		setBarAfter(null);
 		if (applied.length) rememberAccepted(applied, target);
+		if (batchHandoffFields.current.size) {
+			batchHandoffTimer.current = window.setTimeout(finishBatchHandoff, Math.max(0, revealFinishesAt - performance.now()));
+		}
+		activeBatch.current = [];
 		setRunning(false);
 	}
 
 	return {
-		acceptAll: () => {
-			void acceptAll();
+		acceptAll: (batch) => {
+			void acceptAll(batch);
 		},
 		acceptField,
 		accepted,
 		activeField,
 		barAfter,
 		columnId,
+		finishing,
 		dismissAccepted,
 		dismissField,
+		restoreDismissedField: (field) => setDismissed((current) => {
+			const next = new Set(current);
+			next.delete(field);
+			return next;
+		}),
 		running,
+		settleField,
 		shimmerText,
 		suggestions,
 		undoAccepted,
+		undoField: (suggestion) => {
+			if (suggestion.field !== "description") {
+				settleField(suggestion.field);
+			}
+			if (activeBatch.current.some((item) => item.field === suggestion.field)) {
+				undoneFields.current.add(suggestion.field);
+				if (activeBatch.current.every((item) => undoneFields.current.has(item.field))) {
+					runId.current += 1;
+					activeBatch.current = [];
+					setRunning(false);
+					setFinishing(false);
+					setActiveField(null);
+					setBarAfter(null);
+				}
+			}
+			revertMatchingProjectButterSuggestions([suggestion], suggestionSnapshot(contentRef.current), contentRef.current);
+		},
 	};
 }

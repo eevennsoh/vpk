@@ -121,7 +121,7 @@ test("JGP scenarios use the focus-work lifecycle and deterministic snapshots", a
 	const activeActivities = column(review, "In progress").cards[0].agentActivities;
 	assert.deepEqual(activeActivities.map((activity) => activity.name), ["Cursor", "Code Reviewer"]);
 	assert.equal(activeActivities[0].agentBrandName, "cursor");
-	assert.match(activeActivities[1].avatarSrc, /^\/avatar-agent\//u);
+	assert.match(activeActivities[1].avatarSrc, /^\/avatar-agent-new\//u);
 	assert.ok(activeActivities.every((activity) => activity.message && activity.initialElapsedSeconds > 0));
 	assert.ok(activeActivities.every((activity) => (activity.labels?.length ?? 0) >= 3));
 	const carlCodes = review.columns

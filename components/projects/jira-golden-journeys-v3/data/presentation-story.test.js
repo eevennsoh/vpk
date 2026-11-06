@@ -74,7 +74,7 @@ test("the PAY board fills every existing status with coding work and the full st
 		agentCards.flatMap((card) => [
 			...(card.agentActivities?.map((activity) => activity.avatarSrc) ?? []),
 			...(card.agentDoneRuns?.map((run) => run.agentAvatarSrc) ?? []),
-		]).filter(Boolean).map((src) => src.match(/\/avatar-agent\/([^/]+)\//u)?.[1]),
+		]).filter(Boolean).map((src) => src.match(/\/avatar-agent-new\/([^/]+)\//u)?.[1]),
 	);
 	assert.ok(cards.some((card) => !card.agentActivities?.length && !card.agentDoneRuns?.length));
 	assert.ok(agentStates.has("working"));
@@ -110,7 +110,7 @@ test("the PAY board fills every existing status with coding work and the full st
 		["venn", "review-agent", "test-agent", "release-agent"],
 	);
 	assert.ok(story.JIRA_GOLDEN_JOURNEYS_V3_PAY_HEADER_ASSIGNEES.every((assignee) => (
-		assignee.id === "venn" || assignee.avatarSrc.startsWith("/avatar-agent/")
+		assignee.id === "venn" || assignee.avatarSrc.startsWith("/avatar-agent-new/")
 	)));
 
 	assert.deepEqual(

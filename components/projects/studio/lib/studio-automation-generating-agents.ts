@@ -12,17 +12,17 @@ export interface StudioAutomationGeneratingAgent {
 
 const STUDIO_AUTOMATION_GENERATING_AGENTS: readonly Omit<StudioAutomationGeneratingAgent, "lastTouchedAt">[] = [
 	{
-		avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
+		avatarSrc: "/avatar-agent-new/purple/customer-insight.svg",
 		id: "venn-loom-distribution-agent",
 		label: "Loom Distribution Agent",
 	},
 	{
-		avatarSrc: "/avatar-agent/service-agents/service-triage.svg",
+		avatarSrc: "/avatar-agent-new/yellow/ops-agent.svg",
 		id: "venn-inactive-agent-triage-agent",
 		label: "Inactive Agent Triage Agent",
 	},
 	{
-		avatarSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
+		avatarSrc: "/avatar-agent-new/orange/research-scout.svg",
 		id: "venn-weekly-sprint-atlas-digest-agent",
 		label: "Weekly Sprint/Atlas Digest Agent",
 	},

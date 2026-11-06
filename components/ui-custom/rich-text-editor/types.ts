@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { Editor } from "@tiptap/core";
+import type { StarterKitOptions } from "@tiptap/starter-kit";
 
 import type { AtlassianLogoName } from "@/components/ui/logo";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -138,6 +139,7 @@ export function resolveCommandVariant(
 }
 
 export interface RichTextEditorExtensionOptions {
+	trailingNode?: StarterKitOptions["trailingNode"];
 	getMentionSources?: () => RichTextMentionSources | undefined;
 	/** Overrides section copy without changing the stored mention categories. */
 	mentionSectionLabels?: RichTextMentionSectionLabels;

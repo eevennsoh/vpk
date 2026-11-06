@@ -54,8 +54,8 @@ test("template cards use a monochrome glyph rather than the full agent avatar", 
 		props: {
 			agents: [],
 			templateAgents: [
-				{ id: "okr-generator", name: "OKR Generator", byline: "Template", categoryId: "brainstorm", avatarSrc: "/avatar-agent/product-agents/okr-generator.svg" },
-				{ id: "custom", name: "Custom template", byline: "Template", avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg" },
+				{ id: "okr-generator", name: "OKR Generator", byline: "Template", categoryId: "brainstorm", avatarSrc: "/avatar-agent-new/purple/okr-oracle.svg" },
+				{ id: "custom", name: "Custom template", byline: "Template", avatarSrc: "/avatar-agent-new/blue/backlog-buddy.svg" },
 				{ id: "decision-director", name: "Decision Director", byline: "Template" },
 			],
 		},
@@ -64,7 +64,7 @@ test("template cards use a monochrome glyph rather than the full agent avatar", 
 	for (const name of ["OKR Generator", "Custom template"]) {
 		const card = view.getByRole("heading", { name }).closest("article");
 		const avatar = card.querySelector('[data-slot="agent-lanyard-template-avatar"]');
-		assert.equal(Boolean(avatar?.querySelector('img[src*="/avatar-agent/"]')), false);
+		assert.equal(Boolean(avatar?.querySelector('img[src*="/avatar-agent-new/"]')), false);
 		assert.equal(Boolean(avatar?.querySelector("svg")), true);
 	}
 	const known = view.getByRole("heading", { name: "Decision Director" }).closest("article");

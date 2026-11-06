@@ -37,12 +37,41 @@
 	}
 }
 
-@keyframes agent-loading-handoff-reveal {
-	from { opacity: 0; }
-	to { opacity: 1; }
+@keyframes agent-loading-intro-front {
+	0%, 62.5% { transform: translate(4px, 4px) scale(var(--agent-intro-scale)); }
+	100% { transform: translate(0, 0) scale(1); }
 }
 
-@utility agent-loading-handoff-reveal {
-	animation: agent-loading-handoff-reveal var(--duration-fast) var(--ease-in-out) both;
-	animation-delay: calc(var(--duration-normal) + var(--duration-slower) + var(--duration-slow) - var(--duration-fast));
+@keyframes agent-loading-intro-other {
+	0%, 62.5% { opacity: 0; }
+	100% { opacity: 1; }
+}
+
+@utility agent-loading-intro-front {
+	--agent-intro-scale: 1.25;
+	transform-origin: center;
+	animation: agent-loading-intro-front calc(var(--duration-normal) + var(--duration-slowest) + var(--duration-slow) + var(--duration-slowest)) var(--ease-in-out) both;
+	&[data-agent-loading-intro-size="24"] { --agent-intro-scale: 1.5; }
+}
+
+@utility agent-loading-intro-other {
+	animation: agent-loading-intro-other calc(var(--duration-normal) + var(--duration-slowest) + var(--duration-slow) + var(--duration-slowest)) var(--ease-in-out) both;
+}
+
+@keyframes agent-handoff-label-out {
+	from { opacity: 1; transform: translateY(0); }
+	to { opacity: 0; transform: translateY(-8px); }
+}
+
+@keyframes agent-handoff-label-in {
+	from { opacity: 0; transform: translateY(8px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+@utility agent-handoff-label-out {
+	animation: agent-handoff-label-out var(--duration-medium) var(--ease-in-out) both;
+}
+
+@utility agent-handoff-label-in {
+	animation: agent-handoff-label-in var(--duration-medium) var(--ease-in-out) both;
 }

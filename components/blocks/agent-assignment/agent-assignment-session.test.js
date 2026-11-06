@@ -56,7 +56,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	assert.match(sessionMenu, /onDeleteSession=\{onDeleteSession\}/u);
 	assert.match(sessionMenu, /onRenameSession=\{onRenameSession\}/u);
 	assert.match(sessionMenu, /onToggleVisibility=\{onToggleVisibility\}/u);
-	assert.match(sessionMenu, /moreMenuPositionerClassName="z-\[600\]"/u);
+	assert.match(sessionMenu, /overlayPositionerClassName = "z-\[600\]"[\s\S]*moreMenuPositionerClassName=\{overlayPositionerClassName\}/u);
 	assert.match(sessionMenu, /moreMenuPortalled=\{true\}/u);
 	assert.doesNotMatch(sessionMenu, /moreMenuPortalled=\{false\}/u);
 	assert.match(sessionMenu, /onMoreMenuOpenChange=\{onMoreMenuOpenChange\}/u);

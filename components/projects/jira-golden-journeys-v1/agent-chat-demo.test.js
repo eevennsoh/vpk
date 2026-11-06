@@ -24,6 +24,7 @@ async function loadHarness() {
 					JGP_ROVO_COMPLETED_SESSION_PATCH,
 					JGP_ROVO_SESSION_SEEDS,
 					buildJgpAgentChatPlayback,
+					buildJgpAgentSessionMessages,
 					buildJgpAgentChatContextBar,
 					buildJgpRovoContinuationPlayback,
 				} from "./components/projects/jira-golden-journeys-v1/data/agent-chat-data";
@@ -68,9 +69,9 @@ test("JGP chat profiles include every lifecycle-specific agent", async () => {
 		"Claude Code is an agentic coding tool that reads your codebase, edits files, runs commands, and integrates with your development tools.",
 	);
 	assert.deepEqual(JGP_CLAUDE_CODE_AGENT_PROFILE.starters, []);
-	assert.equal(serviceImpactAgent.avatarSrc, "/avatar-agent/service-agents/rca-agent.svg");
-	assert.equal(dependencyMapper.avatarSrc, "/avatar-agent/teamwork-agents/work-item-planner.svg");
-	assert.equal(unitTestCreator.avatarSrc, "/avatar-agent/dev-agents/unit-test-creator.svg");
+	assert.equal(serviceImpactAgent.avatarSrc, "/avatar-agent-new/yellow/ops-agent.svg");
+	assert.equal(dependencyMapper.avatarSrc, "/avatar-agent-new/blue/backlog-buddy.svg");
+	assert.equal(unitTestCreator.avatarSrc, "/avatar-agent-new/lime/auto-dev.svg");
 	assert.equal(profileIds.has("review-agent"), true);
 	assert.equal(codex.name, "Codex");
 	assert.equal(codex.brandName, "openai-codex");
@@ -161,11 +162,22 @@ test("JGP agent chat exposes persistent work-item context for the floating compo
 	assert.equal(contextBar.collapsible, undefined);
 });
 
-test("JGP chat hook selects the agent before opening and cancels stale playback timers", () => {
-	assert.match(HOOK_SOURCE, /selectAgent\(scenario\.agentId, \{ preserveCurrentThread: true \}\);[\s\S]*openChat\("floating"\);/u);
+test("JGP chat hook opens the chat, selects the session agent, and cancels stale playback", () => {
+	assert.match(HOOK_SOURCE, /openChat\("floating"\);[\s\S]*selectAgent\(scenario\.agentId, \{ preserveCurrentThread: true \}\);/u);
 	assert.match(HOOK_SOURCE, /useEffect\(\(\) => cancelPlayback, \[cancelPlayback\]\);/u);
 	assert.match(HOOK_SOURCE, /setChatContextBar\(buildJgpAgentChatContextBar\(scenario\)\);/u);
 	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(scenario\.question \? null : playback\.assistantMessageId\);/u);
+});
+
+test("resuming an agent session restores recorded content without inventing a turn", async () => {
+	const { buildJgpAgentSessionMessages } = await loadHarness();
+	const scenario = { agentId: "cursor", agentName: "Cursor", issueKey: "PAY-105", issueSummary: "Review the flow", intro: "Ready to work." };
+	assert.deepEqual(buildJgpAgentSessionMessages({ ...scenario, request: "@Cursor" }, "session-a"), []);
+	assert.deepEqual(buildJgpAgentSessionMessages({ ...scenario, request: "@Cursor Check the flow" }, "session-b").map((message) => [message.role, message.parts[0].text]), [
+		["user", "@Cursor Check the flow"],
+		["assistant", "Ready to work."],
+	]);
+	assert.deepEqual(buildJgpAgentSessionMessages(scenario, "session-c").map((message) => [message.role, message.parts[0].text]), [["assistant", "Ready to work."]]);
 });
 
 test("JGP global Rovo uses one input-required session that continues to PR completion", async () => {

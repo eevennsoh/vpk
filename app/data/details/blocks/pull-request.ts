@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_DETAIL: ComponentDetail = {
 	description:
-		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: wrapping `#N` + title with a trailing status lozenge, author avatar + `Name · relativeTime`, then a divided GitHub mark + `source → target` path and files / `+add` `−del` footer.",
+		"Pull-request summary card in three layouts. `dropdown` is a compact two-row list card (author avatar, then `#N` + title with a trailing status lozenge, then GitHub mark + `source → target` branch path and the files / diff metrics) built for selectable lists such as the Jira work-item Pull requests select. `spacious` is the three-row dropdown/summary card: wrapping `#N` + title with a trailing glyph status lozenge, GitHub mark + `source → target`, then an author / files / diff footer. `flyout` is the overlay summary card: a linked title when a URL is supplied, author and reviewer metadata, repository, branch path, diff stats, expandable CI checks, a Review link, and a Fix PR action when checks fail.",
 	importStatement: `import { PullRequest } from "@/components/blocks/pull-request";
 import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 	usage: `import { PullRequest } from "@/components/blocks/pull-request";
@@ -19,6 +19,10 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
   deletions={21}
   filesChanged={6}
   relativeTime="1h"
+  repository="acme/storefront"
+  checks={checks}
+  reviewHref="https://github.com/acme/storefront/pull/1306/files"
+  href="https://github.com/acme/storefront/pull/1306"
 />`,
 	demoLayout: {
 		previewContentWidth: "full",
@@ -40,8 +44,14 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		{
 			title: "Flyout",
 			description:
-				"Overlay summary card: wrapping `#N` + title with a trailing status lozenge, author · time, then GitHub `source → target` and files / diff stats.",
+				"Overlay summary card: linked title with a trailing status lozenge, author · time · reviewers, then repository, branch path, diff stats, CI checks, Review, and Fix PR when an unmerged PR has failed checks.",
 			demoSlug: "pull-request-demo-flyout",
+		},
+		{
+			title: "CI checks",
+			description:
+				"The flyout's expandable CI checks row in every state: yet to be run, running, a mixed in-progress run, all successful, and failed. The summary shows `passed/total builds passed` with a segmented status ring. Each check is a single-status ring (lime passed, red failed), a dashed circle when yet to run, or a spinner while running; failure reasons and elapsed times stay available to screen readers.",
+			demoSlug: "pull-request-demo-checks",
 		},
 	],
 	props: [
@@ -67,15 +77,15 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		},
 		{
 			name: "status",
-			type: '"Open" | "Merged"',
+			type: '"Open" | "Merged" | "Draft" | "Failed"',
 			required: true,
-			description: "Review state rendered as a status lozenge (Open = success, Merged = discovery).",
+			description: "Review state rendered as a status lozenge: Draft, Open, Merged, or Failed.",
 		},
 		{
 			name: "author",
 			type: "PullRequestAuthor",
 			description:
-				"Author name and optional avatar URL. Leads the compact dropdown row; spacious footer avatar; on the flyout, pairs with `relativeTime`.",
+				"Author name and optional avatar URL. An optional `assistedBy` agent adds a horizontal agent and human avatar group. On the flyout, the author pairs with `relativeTime`.",
 		},
 		{
 			name: "branch",
@@ -104,6 +114,49 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 			type: "number",
 			description:
 				"Number of changed files, rendered as `N files` on every card.",
+		},
+		{
+			name: "reviewers",
+			type: "{ approved: number; total: number }",
+			description:
+				"Flyout only. Reviewer sign-off appended to the `Name · time` line: `0/1 reviewer`, `1/2 reviewers`, or `No reviewers` when `total` is 0. Omitted when absent.",
+		},
+		{
+			name: "provider",
+			type: '"github" | "bitbucket"',
+			default: '"github"',
+			description: "Flyout only. Source-control host mark shown on the repository row (or the branch row when no repository is given).",
+		},
+		{
+			name: "repository",
+			type: "string",
+			description: "Flyout only. `workspace/repo` shown beside the provider mark. Omitted when absent.",
+		},
+		{
+			name: "checks",
+			type: "readonly PullRequestCheck[]",
+			description:
+				"Flyout only. CI checks (`queued`, `running`, `passed`, `failed`). The row reads `3/3 builds passed` (plus `· N failed` when applicable) with a segmented status ring, and expands inline into the full checks list. Omitted when absent or empty.",
+		},
+		{
+			name: "reviewHref",
+			type: "string",
+			description: "Flyout only. Renders the Review action as a link.",
+		},
+		{
+			name: "showReview",
+			type: "boolean",
+			description: "Flyout only. Shows an enabled Review button when a review destination is unavailable.",
+		},
+		{
+			name: "href",
+			type: "string",
+			description: "Flyout only. Makes the pull request title an external link when supplied.",
+		},
+		{
+			name: "onFix",
+			type: "(checks: readonly PullRequestCheck[]) => void",
+			description: "Called with failed CI checks when Fix PR is selected. Fix PR is disabled without a handler and omitted for merged PRs.",
 		},
 		{
 			name: "timestampMs",

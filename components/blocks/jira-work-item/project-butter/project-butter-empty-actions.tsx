@@ -63,7 +63,7 @@ export function ProjectButterEmptyActions({ content }: Readonly<{ content: Proje
 		if (fromEscape && document.activeElement === document.body) closed.focus();
 	}, [attachmentOpen, childrenOpen, linkedOpen]);
 	return (
-		<div className="group/empty-actions flex items-center">
+		<div className="group/empty-actions flex items-center has-[button]:mt-2">
 			<div aria-label="Add related work" className="pointer-events-none flex items-center gap-2 opacity-0 transition-opacity duration-normal ease-out group-hover/empty-actions:pointer-events-auto group-hover/empty-actions:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100" role="group">
 				<AnimatePresence initial={false}>
 					{content.attachments.length === 0 && !attachmentOpen ? <EmptyAction buttonRef={attachment} icon={<AttachmentIcon label="" size="small" />} key="attachments" label="Attachment" onClick={() => content.openRelatedAdd("attachments")} shortcut="Shift+A" /> : null}
