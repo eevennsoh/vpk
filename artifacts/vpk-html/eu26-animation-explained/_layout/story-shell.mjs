@@ -20,8 +20,8 @@ export function renderStoryShell({ title, description, eyebrow, steps, hero, con
 				<div class="story-figure-corner story-figure-bottom" aria-hidden="true"><span class="story-figure-hint" data-hint-for="scroll">${escape(figureHint)}</span><span class="story-figure-hint" data-hint-for="slides">${escape(slidesHint)}</span><span class="story-figure-readout" data-story-fig-readout>t 0.0 s · 01 / ${pad(steps.length)}</span></div>
 			</div>
 		</aside>
-		<section class="story-video" data-story-video hidden inert aria-labelledby="video-heading">
-			<div class="story-video-toolbar"><div><p class="story-kicker">HTML preview</p><h1 id="video-heading" class="story-video-heading">${escape(title)}</h1></div><button type="button" data-video-action="generate" class="story-video-generate">Generate video</button></div>
+		<section class="story-video" data-story-video hidden inert aria-label="Video preview">
+			<button type="button" data-video-action="generate" class="story-video-generate">Generate video</button>
 			<div class="story-video-timeline" data-video-timeline></div>
 			<p class="story-video-chapter" data-video-chapter>${escape(steps[0].title)}</p><p class="story-video-status" data-video-status role="status">Preview instantly. Generate a video when you're ready.</p><a data-video-download hidden download>Download video</a>
 		</section>

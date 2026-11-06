@@ -61,6 +61,9 @@
 			else stage.requestFullscreen?.();
 		});
 		generateButton.addEventListener('click', generate);
+		// Generate lives in the timeline's action row, after Fullscreen, so the player has no separate title bar.
+		const fullscreenButton = root.querySelector('[data-video-action="fullscreen"]');
+		if (fullscreenButton) fullscreenButton.after(generateButton);
 		root.addEventListener('eu26:state', sync);
 		root.addEventListener('vpk:story-mode', event => {
 			if (event.detail.mode !== 'video') return;

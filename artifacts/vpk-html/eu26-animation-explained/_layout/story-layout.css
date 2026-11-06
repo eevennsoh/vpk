@@ -488,12 +488,8 @@ body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[ope
 }
 
 body[data-vpk-layout="story"] .story-video { inline-size: 100%; min-inline-size: 0; margin: 0; padding-block: 28px; }
-body[data-vpk-layout="story"] .story-video-heading { max-inline-size: 1200px; margin: 0 auto 20px; font-size: clamp(24px, 2.6vw, 36px) !important; line-height: 1.15 !important; font-weight: 400 !important; letter-spacing: -0.035em !important; }
 body[data-vpk-layout="story"] .story-video-chapter { max-inline-size: 1200px; margin: 16px auto 0; color: var(--muted-text); font-size: 14px !important; line-height: 1.6 !important; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { position: relative; inset-block-start: auto; }
-body[data-vpk-layout="story"] .story-video-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-body[data-vpk-layout="story"] .story-video-toolbar .story-kicker { margin-block-end: 8px; }
-body[data-vpk-layout="story"] .story-video-heading { margin: 0; }
 body[data-vpk-layout="story"] .story-video :is(button, input) { min-block-size: 44px; }
 body[data-vpk-layout="story"] .story-video button { padding: 10px 14px; border: 1px solid var(--rule); border-radius: 4px; color: var(--ink); background: var(--surface-raised); font: 13px/1.4 var(--font-body); cursor: pointer; }
 body[data-vpk-layout="story"] .story-video .story-video-generate { border-color: var(--ill-accent); background: var(--ill-accent); color: var(--ill-accent-ink); }
@@ -504,7 +500,6 @@ body[data-vpk-layout="story"] .story-layout:fullscreen { inline-size: 100%; bloc
 body[data-vpk-layout="story"] .story-layout:fullscreen #animation-explorer .iso-stage { block-size: max(180px, calc(100dvh - 240px)); }
 @media (max-width: 760px) {
 	body[data-vpk-layout="story"] .story-video { padding-block: 20px; }
-	body[data-vpk-layout="story"] .story-video-heading { font-size: 26px !important; }
 }
 
 /* The figure page: on wide screens a soft paper card with a 1px ring, no border, and four corners of furniture
@@ -600,7 +595,6 @@ body[data-vpk-layout="story"] .story-step-detail { inline-size: 100%; }
    the stage at every width; the panel itself is unchanged in the DOM. */
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { display: flex; flex-direction: column; align-items: stretch; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video:not([hidden]) { display: contents; }
-body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-toolbar { order: 0; padding-block: 28px 20px; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { order: 1; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { order: 2; margin-block: 20px 6px; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { order: 3; margin-inline: 0; text-align: start; }
@@ -610,11 +604,13 @@ body[data-vpk-layout="story"] [data-vpk-story]:not([data-story-mode="slides"]) .
 body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-figure-hint[data-hint-for="scroll"] { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { order: 4; }
 body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { order: 5; align-self: start; }
+/* Generate sits in the timeline's action row beside Fullscreen (video-view.js moves it) and exists only in Video. */
+body[data-vpk-layout="story"] [data-vpk-story]:not([data-story-mode="video"]) .story-video-generate { display: none; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-generate { flex: 0 0 auto; min-block-size: 44px; padding-inline: 14px; white-space: nowrap; }
 
 /* Video fits one viewport: title row, figure, timeline and chapter line never need scrolling. The chrome keeps its
    natural height and the figure takes the remainder, so the whole player is visible at any window size. */
-body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { box-sizing: border-box; block-size: 100svh; padding-block-end: 12px; }
-body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-toolbar { padding-block: 16px 12px; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { box-sizing: border-box; block-size: 100svh; padding-block: 16px 12px; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { flex: 1 1 0; min-block-size: 220px; block-size: auto; padding: 0; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure { block-size: 100%; min-block-size: 0; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure #animation-explorer { flex: 1 1 0; min-block-size: 0; display: block !important; }
