@@ -83,8 +83,16 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"butter": {
-		description: "Butter — the Payments SDK board with Project butter issue cards, Board/List views, session filters and drag-to-link agent sessions. Cards use key-first headers, wrapping labels and hover-revealed agent invocation through the board’s assignment flow.",
+		description: "Project Butter v0 — the Payments SDK board with Project butter issue cards, Board/List views, session filters and drag-to-link agent sessions. Cards use key-first headers, wrapping labels and hover-revealed agent invocation through the board’s assignment flow.",
 		importStatement: `import ButterPage from "@/components/projects/butter";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
+	"butter-v1": {
+		description: "Project Butter v1 — the Payments SDK board with Project butter issue cards, Board/List views, session filters and drag-to-link agent sessions. Cards use key-first headers, wrapping labels and hover-revealed agent invocation through the board’s assignment flow.",
+		importStatement: `import ButterPage from "@/components/projects/butter-v1";`,
 		demoLayout: {
 			previewHeight: "fixed",
 			previewContentWidth: "full",

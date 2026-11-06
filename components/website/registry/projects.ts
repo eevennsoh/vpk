@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 
 export const PROJECT_DEMOS: Record<string, ComponentType> = {
 	butter: dynamic(() => import("../demos/projects/butter-demo"), { ssr: false }),
+	"butter-v1": dynamic(() => import("../demos/projects/butter-v1-demo"), { ssr: false }),
 	admin: dynamic(() => import("../demos/projects/admin-demo"), { ssr: false }),
 	confluence: dynamic(() => import("../demos/projects/confluence-demo"), {
 		ssr: false,

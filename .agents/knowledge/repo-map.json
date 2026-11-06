@@ -2696,10 +2696,10 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 73,
-			"pageCount": 57,
+			"ownerImportCount": 75,
+			"pageCount": 59,
 			"primaryOwnerKinds": {
-				"catalog": 18,
+				"catalog": 20,
 				"dynamic": 8,
 				"inline": 1,
 				"redirect": 2,
@@ -3020,7 +3020,7 @@
 					"kind": "catalog",
 					"category": "projects",
 					"slug": "butter",
-					"status": "live",
+					"status": "frozen",
 					"basedOn": "jira-team-eu26",
 					"loader": "loadDemoComponent",
 					"source": "components/projects/butter",
@@ -3031,6 +3031,60 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/butter/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "butter",
+					"status": "frozen",
+					"basedOn": "jira-team-eu26",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/butter",
+					"entry": "components/projects/butter/page.tsx",
+					"demo": "components/website/demos/projects/butter-demo.tsx"
+				},
+				"routePath": "/butter-v0",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/butter-v0/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "butter-v1",
+					"status": "live",
+					"basedOn": "butter",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/butter-v1",
+					"entry": "components/projects/butter-v1/page.tsx",
+					"demo": "components/website/demos/projects/butter-v1-demo.tsx"
+				},
+				"routePath": "/butter-v1",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/butter-v1/page.tsx"
 			},
 			{
 				"ownerCount": 2,
@@ -4493,11 +4547,11 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 444,
+			"manifestEntryCount": 445,
 			"categoryCount": 8,
 			"statusCounts": {
 				"live": 439,
-				"frozen": 4,
+				"frozen": 5,
 				"superseded": 1
 			}
 		},
@@ -5378,7 +5432,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 20,
+				"entryCount": 21,
 				"entries": [
 					{
 						"category": "projects",
@@ -5390,11 +5444,20 @@
 					{
 						"category": "projects",
 						"slug": "butter",
-						"name": "Butter",
+						"name": "Project Butter v0",
 						"importPath": "@/components/projects/butter",
-						"status": "live",
+						"status": "frozen",
 						"basedOn": "jira-team-eu26",
-						"note": "Independent Butter fork of the Team ’26 EU Payments SDK board."
+						"note": "Project Butter v0; its v1 fork has its own project and work-item code."
+					},
+					{
+						"category": "projects",
+						"slug": "butter-v1",
+						"name": "Project Butter v1",
+						"importPath": "@/components/projects/butter-v1",
+						"status": "live",
+						"basedOn": "butter",
+						"note": "Project Butter v1, forked from v0 with its own project and work-item code."
 					},
 					{
 						"category": "projects",

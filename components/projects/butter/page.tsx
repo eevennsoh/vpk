@@ -249,7 +249,7 @@ export default function ButterPage(): React.ReactElement {
 		<div className="h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
 				items={BUTTER_GALLERY_ITEMS}
-				title="Project butter"
+				title="Project Butter v0"
 				showTopBarBorder
 				onReset={reset}
 				topBarCenter={<MerchantJourneyControls {...controls} />}
