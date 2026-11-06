@@ -52,27 +52,33 @@
 			if (figReadout && text !== figText) figReadout.textContent = figText = text;
 		}
 		const getState = () => ({ mode, index, time, displayIndex: preview?.index ?? index, progress: progress(), following, reducedMotion, readingLine, stepCount: steps.length, stepId: steps[index].id || articles[index].id, suspendedReason });
+		const wideQuery = window.matchMedia('(min-width: 1024px)');
+		let syncedWide = null;
+		wideQuery.addEventListener('change', () => { if (mode === 'video') sync(); });
 		function sync() {
 			const displayIndex = preview?.index ?? index;
 			root.dataset.storyMode = mode;
 			const isVideo = mode === 'video';
+			// Wide Video keeps Page's columns: the current chapter's text on the left, the player on the right.
+			const videoText = isVideo && wideQuery.matches, single = mode === 'slides' || videoText;
 			const currentFocus = document.activeElement;
-			if (isVideo && container.contains(currentFocus)) {
+			if (isVideo && !videoText && container.contains(currentFocus)) {
 				root.querySelector('button[data-story-mode="video"]')?.focus({ preventScroll: true });
 			} else if (!isVideo && videoPanel?.contains(currentFocus)) {
 				root.querySelector(`button[data-story-mode="${mode}"]`)?.focus({ preventScroll: true });
 			}
 			stage.hidden = stage.inert = false;
-			container.hidden = container.inert = isVideo;
+			container.hidden = container.inert = isVideo && !videoText;
 			if (videoPanel) videoPanel.hidden = videoPanel.inert = !isVideo;
 			root.dataset.storyIndex = String(displayIndex);
 			root.dataset.storyFollowing = String(following);
 			root.dataset.storyNativeProgress = String(supportsTimeline && !reducedMotion);
 			syncFigure(displayIndex);
-			if (syncedIndex !== displayIndex || syncedMode !== mode) {
+			if (syncedIndex !== displayIndex || syncedMode !== mode || syncedWide !== wideQuery.matches) {
+				syncedWide = wideQuery.matches;
 				if (syncedMode !== mode) for (const detail of stepDetails) detail.open = mode !== 'twitter';
 				const focused = document.activeElement;
-				if (mode === 'slides' && articles.some((article, position) => position !== displayIndex && article.contains(focused))) {
+				if (single && articles.some((article, position) => position !== displayIndex && article.contains(focused))) {
 					articles[displayIndex].hidden = false;
 					articles[displayIndex].inert = false;
 					articles[displayIndex].removeAttribute('aria-hidden');
@@ -80,7 +86,7 @@
 					articles[displayIndex].focus({ preventScroll: true });
 				}
 				articles.forEach((article, position) => {
-					const active = position === displayIndex, hidden = mode === 'slides' && !active;
+					const active = position === displayIndex, hidden = single && !active;
 					article.hidden = hidden;
 					article.inert = hidden;
 					article.toggleAttribute('data-active', active);
@@ -113,9 +119,7 @@
 			// Side by side, the stage never covers the text, so read at a fixed line in the upper third.
 			const beside = stageRect.left >= readingRect.right - 1 || stageRect.right <= readingRect.left + 1;
 			readingLine = beside ? stickyTop + (viewport - stickyTop) * 0.4 : Math.min(viewport - 24, stickyTop + stageRect.height + 32);
-			// Side by side, bottom controls (the Slides timeline) centre under the figure page, not the whole window.
-			const shift = beside ? Math.round((stageRect.left + stageRect.right) / 2 - document.documentElement.clientWidth / 2) : 0;
-			root.style.setProperty('--story-stage-shift', `${shift}px`);
+			// The Slides carousel centres on the screen at the figure page's width.
 			root.style.setProperty('--story-stage-width', `${Math.round(beside ? stageRect.width : document.documentElement.clientWidth)}px`);
 			const scrollY = window.scrollY;
 			anchors = mode === 'slides' || mode === 'video' ? [] : articles.map(article => {

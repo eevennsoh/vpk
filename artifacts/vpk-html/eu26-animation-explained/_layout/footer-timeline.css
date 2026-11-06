@@ -452,6 +452,10 @@ body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock :is(but
 }
 
 body[data-vpk-layout="story"]:has([data-vpk-story][data-story-mode="video"]) { --eu26-dock-reserve: 0px; }
+/* Wide Video keeps Page's right reserve (the icon rail stays there), so its columns sit exactly where Page's do. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"]:has([data-vpk-story][data-story-mode="video"]) { --eu26-dock-reserve: 96px; }
+}
 
 body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-orientation="horizontal"] {
 	position: relative;
@@ -558,10 +562,6 @@ body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-ti
 	margin-block: 0;
 	padding: 8px 12px;
 	background: var(--paper);
-}
-/* Two columns: the Slides timeline centres under the figure page (story-layout.js publishes the offset). */
-@media (min-width: 1024px) {
-	body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-timeline-view="slides"] { translate: var(--story-stage-shift, 0px) 0; }
 }
 
 /* Slides carousel: a left-to-right strip of chapter thumbnails replaces the tick ruler and Frames button in Slides.

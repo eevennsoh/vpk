@@ -22,7 +22,7 @@ test('Slides navigates with a left-to-right thumbnail carousel at the bottom', {
 	run('open',new URL('../eu26-animation-explained.html',import.meta.url).href);
 	run('wait','--fn','Boolean(window.__vpkStory && window.__eu26Timeline)');
 	try {
-		await t.test('twelve thumbnails replace the tick ruler, centred under the figure page', () => {
+		await t.test('twelve thumbnails replace the tick ruler, centred on the screen', () => {
 			const result=probe(`
 				explorer.pause();root.querySelector('button[data-story-mode="slides"]').click();await settle();await wait(120);
 				const boxes=slides.map(rect),stage=rect(document.querySelector('[data-story-stage]')),card=rect(document.querySelector('.story-figure'));
@@ -39,7 +39,7 @@ test('Slides navigates with a left-to-right thumbnail carousel at the bottom', {
 			assert.equal(result.images,true,'every thumbnail shows its chapter drawing');
 			assert.equal(result.labels[0],'1. The keynote board');assert.equal(result.current,0);
 			assert.equal(result.position,'fixed');assert.ok(result.height-result.dock.bottom>=15 && result.height-result.dock.bottom<=25);
-			assert.ok(Math.abs((result.dock.left+result.dock.right)/2-(result.stage.left+result.stage.right)/2)<1.5,'the carousel centres under the figure page');
+			assert.ok(Math.abs((result.dock.left+result.dock.right)/2-result.width/2)<1.5,'the carousel centres on the screen');
 			assert.ok(result.dock.top>=result.card.bottom+8,'the figure card ends above the carousel');
 			assert.equal(result.scroll,0,'Slides fits one viewport');
 		});

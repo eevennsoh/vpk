@@ -166,7 +166,7 @@ test('the vertical timeline reveals a reachable preview stack without taking ove
 						}
 						if(mode==='video') {
 							const r=rect(dock);
-							if(getComputedStyle(dock).position!=='relative'||!document.querySelector('[data-video-timeline]').contains(dock)||slider.getAttribute('aria-orientation')!=='horizontal'||r.width<innerWidth*.6)failures.push('Video does not use its inline horizontal ruler');
+							if(getComputedStyle(dock).position!=='relative'||!document.querySelector('[data-video-timeline]').contains(dock)||slider.getAttribute('aria-orientation')!=='horizontal'||r.width<Math.min(innerWidth*.6,rect(document.querySelector('[data-story-stage]')).width-1))failures.push('Video does not use its inline horizontal ruler');
 							continue;
 						}
 						const r=rect(dock),style=getComputedStyle(dock),top=parseFloat(style.top),bottom=parseFloat(style.bottom);

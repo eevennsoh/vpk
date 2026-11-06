@@ -3444,22 +3444,9 @@ body[data-vpk-layout="story"] .story-layout:fullscreen #animation-explorer .iso-
 	body[data-vpk-layout="story"] .story-video { padding-block: 20px; }
 }
 
-/* The figure page: on wide screens a soft paper card with a 1px ring, no border, and four corners of furniture
-   (Fig. number, chapter title, hint, live readout). Stacked layouts keep the bare figure. */
+/* The figure page: on wide screens a soft paper card with a 1px ring and no border; the drawing alone fills it.
+   Stacked layouts keep the bare figure. */
 body[data-vpk-layout="story"] .story-figure { position: relative; display: flex; flex-direction: column; block-size: 100%; }
-body[data-vpk-layout="story"] .story-figure-corner {
-	display: none;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 16px;
-	color: var(--muted-text);
-	font: 11px/1.4 var(--font-mono);
-	font-variant-numeric: tabular-nums;
-}
-body[data-vpk-layout="story"] .story-figure-number { flex: 0 0 auto; color: var(--subtlest-text); }
-body[data-vpk-layout="story"] .story-figure-title { color: var(--ink); font: 400 15px/1.3 var(--font-body); letter-spacing: -0.01em; text-align: end; }
-body[data-vpk-layout="story"] .story-figure-hint { color: var(--subtlest-text); }
-body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 
 /* Two columns from 1024px: the reading page on the left, the figure page pinned on the right (about 41/59).
    Narrower viewports stack the figure above the text. */
@@ -3467,7 +3454,7 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 	body[data-vpk-layout="story"] {
 		--story-figure-inset: 16px;
 		--story-rail-room: 20px;
-		--story-hero-height: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset) - 104px);
+		--story-hero-height: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset) - 40px);
 	}
 	body[data-vpk-layout="story"] .story-layout {
 		display: grid;
@@ -3502,7 +3489,6 @@ body[data-vpk-layout="story"] .story-figure-readout { color: var(--ink); }
 		box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 7%, transparent);
 	}
 	body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure { block-size: auto; }
-	body[data-vpk-layout="story"] .story-figure-corner { display: flex; }
 	body[data-vpk-layout="story"] .story-figure .story-stage-heading { position: absolute; z-index: 2; inset-block-start: 8px; inset-inline-end: 10px; min-block-size: 0; margin: 0; }
 	body[data-vpk-layout="story"] .story-figure #animation-explorer { flex: 1 1 auto; display: grid !important; align-items: center; }
 	body[data-vpk-layout="story"] .story-figure #animation-explorer .iso-stage { block-size: var(--story-hero-height); }
@@ -3529,7 +3515,6 @@ body[data-vpk-layout="story"] .story-step-detail { inline-size: 100%; }
 @media print {
 	body[data-vpk-layout="story"] .story-layout { display: block !important; }
 	body[data-vpk-layout="story"] .story-figure { box-shadow: none; padding: 0; }
-	body[data-vpk-layout="story"] .story-figure-corner { display: none !important; }
 }
 
 /* Video: the heading stays on top, the figure follows, and the timeline, chapter and status sit under the figure like a
@@ -3540,10 +3525,6 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video:not([hidden
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { order: 1; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { order: 2; margin-block: 20px 6px; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { order: 3; margin-inline: 0; text-align: start; }
-body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure-hint { visibility: hidden; }
-/* One hint per mode: scrolling modes scrub by scroll; Slides steps with the arrow keys or its bottom timeline. */
-body[data-vpk-layout="story"] [data-vpk-story]:not([data-story-mode="slides"]) .story-figure-hint[data-hint-for="slides"],
-body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-figure-hint[data-hint-for="scroll"] { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { order: 4; }
 body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { order: 5; align-self: start; }
 /* Generate sits in the timeline's action row beside Fullscreen (video-view.js moves it) and exists only in Video. */
@@ -3580,6 +3561,26 @@ body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { ma
 	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] #animation-explorer .iso-stage { block-size: calc(var(--story-hero-height) - var(--story-slides-reserve) + var(--story-figure-inset)); }
 	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-reading { block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
 	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-step { min-block-size: 0; justify-content: start; padding-block: 56px 32px; }
+}
+
+/* Wide Video uses Page's exact columns: the current chapter's text on the left, the figure page on the right with the
+   timeline, chapter line and status under it. The whole player still fits one viewport. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="video"] .story-intro { display: none; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout {
+		display: grid;
+		grid-template-columns: minmax(380px, .74fr) minmax(0, 1.26fr);
+		grid-template-rows: minmax(0, 1fr) auto auto auto auto;
+		align-items: stretch;
+		padding-block: var(--story-figure-inset) 12px;
+	}
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-reading { grid-column: 1; grid-row: 1 / -1; align-self: start; max-block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step { min-block-size: 0; padding-block: 56px 32px; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { grid-column: 2; grid-row: 1; min-block-size: 0; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { grid-column: 2; grid-row: 2; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-chapter { grid-column: 2; grid-row: 3; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-status { grid-column: 2; grid-row: 4; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] [data-video-download] { grid-column: 2; grid-row: 5; }
 }
 
 body[data-vpk-layout="story"] {
@@ -4036,6 +4037,10 @@ body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock :is(but
 }
 
 body[data-vpk-layout="story"]:has([data-vpk-story][data-story-mode="video"]) { --eu26-dock-reserve: 0px; }
+/* Wide Video keeps Page's right reserve (the icon rail stays there), so its columns sit exactly where Page's do. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"]:has([data-vpk-story][data-story-mode="video"]) { --eu26-dock-reserve: 96px; }
+}
 
 body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-orientation="horizontal"] {
 	position: relative;
@@ -4142,10 +4147,6 @@ body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-ti
 	margin-block: 0;
 	padding: 8px 12px;
 	background: var(--paper);
-}
-/* Two columns: the Slides timeline centres under the figure page (story-layout.js publishes the offset). */
-@media (min-width: 1024px) {
-	body[data-vpk-layout="story"] #eu26-explorer-controls.eu26-timeline-dock[data-timeline-view="slides"] { translate: var(--story-stage-shift, 0px) 0; }
 }
 
 /* Slides carousel: a left-to-right strip of chapter thumbnails replaces the tick ruler and Frames button in Slides.
@@ -4346,7 +4347,6 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 	<div class="story-layout">
 		<aside class="story-stage" data-story-stage aria-label="Anchored animation">
 			<div class="story-figure">
-				<div class="story-figure-corner story-figure-top" aria-hidden="true"><span class="story-figure-number">Fig. <span data-story-fig-number>01</span></span><span class="story-figure-title" data-story-fig-title>The keynote board</span></div>
 				<div class="story-stage-heading"><div id="eu26-variant-controls" data-vpkh-no-lightbox></div></div>
 				<section id="animation-explorer" class="animation-explorer" aria-label="Interactive animation study">
 <!-- vpk-anatomy-hero:start id="eu26-hero" src="_figures/eu26-hero.hero.mjs" -->
@@ -5031,7 +5031,6 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 } });</script>
 <!-- vpk-anatomy-hero:end id="eu26-hero" -->
 </section>
-				<div class="story-figure-corner story-figure-bottom" aria-hidden="true"><span class="story-figure-hint" data-hint-for="scroll">Scroll to scrub · hover the rail to preview</span><span class="story-figure-hint" data-hint-for="slides">Arrow keys or the timeline below</span><span class="story-figure-readout" data-story-fig-readout>t 0.0 s · 01 / 12</span></div>
 			</div>
 		</aside>
 		<section class="story-video" data-story-video hidden inert aria-label="Video preview">
@@ -6270,27 +6269,33 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			if (figReadout && text !== figText) figReadout.textContent = figText = text;
 		}
 		const getState = () => ({ mode, index, time, displayIndex: preview?.index ?? index, progress: progress(), following, reducedMotion, readingLine, stepCount: steps.length, stepId: steps[index].id || articles[index].id, suspendedReason });
+		const wideQuery = window.matchMedia('(min-width: 1024px)');
+		let syncedWide = null;
+		wideQuery.addEventListener('change', () => { if (mode === 'video') sync(); });
 		function sync() {
 			const displayIndex = preview?.index ?? index;
 			root.dataset.storyMode = mode;
 			const isVideo = mode === 'video';
+			// Wide Video keeps Page's columns: the current chapter's text on the left, the player on the right.
+			const videoText = isVideo && wideQuery.matches, single = mode === 'slides' || videoText;
 			const currentFocus = document.activeElement;
-			if (isVideo && container.contains(currentFocus)) {
+			if (isVideo && !videoText && container.contains(currentFocus)) {
 				root.querySelector('button[data-story-mode="video"]')?.focus({ preventScroll: true });
 			} else if (!isVideo && videoPanel?.contains(currentFocus)) {
 				root.querySelector(`button[data-story-mode="${mode}"]`)?.focus({ preventScroll: true });
 			}
 			stage.hidden = stage.inert = false;
-			container.hidden = container.inert = isVideo;
+			container.hidden = container.inert = isVideo && !videoText;
 			if (videoPanel) videoPanel.hidden = videoPanel.inert = !isVideo;
 			root.dataset.storyIndex = String(displayIndex);
 			root.dataset.storyFollowing = String(following);
 			root.dataset.storyNativeProgress = String(supportsTimeline && !reducedMotion);
 			syncFigure(displayIndex);
-			if (syncedIndex !== displayIndex || syncedMode !== mode) {
+			if (syncedIndex !== displayIndex || syncedMode !== mode || syncedWide !== wideQuery.matches) {
+				syncedWide = wideQuery.matches;
 				if (syncedMode !== mode) for (const detail of stepDetails) detail.open = mode !== 'twitter';
 				const focused = document.activeElement;
-				if (mode === 'slides' && articles.some((article, position) => position !== displayIndex && article.contains(focused))) {
+				if (single && articles.some((article, position) => position !== displayIndex && article.contains(focused))) {
 					articles[displayIndex].hidden = false;
 					articles[displayIndex].inert = false;
 					articles[displayIndex].removeAttribute('aria-hidden');
@@ -6298,7 +6303,7 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 					articles[displayIndex].focus({ preventScroll: true });
 				}
 				articles.forEach((article, position) => {
-					const active = position === displayIndex, hidden = mode === 'slides' && !active;
+					const active = position === displayIndex, hidden = single && !active;
 					article.hidden = hidden;
 					article.inert = hidden;
 					article.toggleAttribute('data-active', active);
@@ -6331,9 +6336,7 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			// Side by side, the stage never covers the text, so read at a fixed line in the upper third.
 			const beside = stageRect.left >= readingRect.right - 1 || stageRect.right <= readingRect.left + 1;
 			readingLine = beside ? stickyTop + (viewport - stickyTop) * 0.4 : Math.min(viewport - 24, stickyTop + stageRect.height + 32);
-			// Side by side, bottom controls (the Slides timeline) centre under the figure page, not the whole window.
-			const shift = beside ? Math.round((stageRect.left + stageRect.right) / 2 - document.documentElement.clientWidth / 2) : 0;
-			root.style.setProperty('--story-stage-shift', `${shift}px`);
+			// The Slides carousel centres on the screen at the figure page's width.
 			root.style.setProperty('--story-stage-width', `${Math.round(beside ? stageRect.width : document.documentElement.clientWidth)}px`);
 			const scrollY = window.scrollY;
 			anchors = mode === 'slides' || mode === 'video' ? [] : articles.map(article => {

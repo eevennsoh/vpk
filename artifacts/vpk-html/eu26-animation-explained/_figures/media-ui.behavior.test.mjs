@@ -46,7 +46,7 @@ test('Video is a live HTML preview and rendering starts only from Generate', {ti
 			const result=scenario(`
 				explorer.pause();story.setMode('story');story.suspendFollowing();explorer.seek(12.345);
 				story.setMode('video');await wait(80);
-				const during={state:preview.getState(),sameHero:hero===window.__qaPreviewHero&&svg===window.__qaPreviewSvg,visible:!stage.hidden&&!stage.inert&&svg.getBoundingClientRect().height>0,copyHidden:reading.hidden&&reading.inert,panelVisible:!panel.hidden&&!panel.inert};
+				const during={state:preview.getState(),sameHero:hero===window.__qaPreviewHero&&svg===window.__qaPreviewSvg,visible:!stage.hidden&&!stage.inert&&svg.getBoundingClientRect().height>0,copyHidden:innerWidth>=1024?(!reading.hidden&&[...reading.querySelectorAll('[data-story-step]')].filter(step=>!step.hidden).length===1):(reading.hidden&&reading.inert),panelVisible:!panel.hidden&&!panel.inert};
 				story.setMode('story');await wait(80);
 				return {during,after:explorer.getState(),restored:!stage.hidden&&!reading.hidden&&!reading.inert&&panel.hidden,calls:window.__qaRenderCalls.length};
 			`);
