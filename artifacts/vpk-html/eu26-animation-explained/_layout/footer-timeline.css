@@ -585,19 +585,21 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 	body[data-vpk-layout="story"] {
 		--story-bar-height: 0px;
 		--story-top: 0px;
-		--story-tool-size: 40px;
+		--story-tool-size: 44px;
 		--eu26-dock-top: calc(16px + 6 * var(--story-tool-size) + 5 * 2px + 13px + 24px);
 	}
 	body[data-vpk-layout="story"] .story-bar {
 		position: fixed;
 		inset-block-start: 16px;
-		inset-inline-end: var(--eu26-dock-right);
+		/* The Frames button's right edge sits 3px inside the dock edge; anchoring the 44px stack to the same edge puts
+		   every icon on the Frames button's and the tick marks' centre line. */
+		inset-inline-end: calc(var(--eu26-dock-right) + 3px);
 		z-index: 56;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 2px;
-		inline-size: var(--eu26-dock-width);
+		inline-size: 44px;
 		min-block-size: 0;
 		margin: 0;
 		padding: 0;
@@ -608,8 +610,8 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 	body[data-vpk-layout="story"] .story-bar .story-tools { margin-block-start: 6px; padding-block-start: 6px; border-block-start: 1px solid var(--rule); }
 }
 body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources, .story-tools .vpk-theme-toggle) {
-	inline-size: var(--story-tool-size, 40px);
-	block-size: var(--story-tool-size, 40px);
+	inline-size: var(--story-tool-size, 44px);
+	block-size: var(--story-tool-size, 44px);
 	min-inline-size: 0;
 	min-block-size: 0;
 	padding: 0;
@@ -618,8 +620,44 @@ body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources
 }
 body[data-vpk-layout="story"] .story-bar .story-sources { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 body[data-vpk-layout="story"] .story-bar .story-sources:hover { background: var(--surface-sunken); color: var(--ink); }
-body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources) svg { display: block; inline-size: 16px; block-size: 16px; }
+/* Same box and glyph as the rail's Frames button (44px, 15px icon), so the stack and the ticks read as one column. */
+body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources, .vpk-theme-toggle) svg { display: block; inline-size: 15px !important; block-size: 15px !important; }
 body[data-vpk-layout="story"] .story-bar .story-modes button[aria-pressed="true"] { color: var(--ink); }
+
+/* Rail tooltips: every icon in the rail names itself on hover and keyboard focus, opening to the left in the chapter
+   label's style. Replaces the slow native title tooltip; the accessible name stays on aria-label. */
+body[data-vpk-layout="story"] [data-tip] { position: relative; }
+body[data-vpk-layout="story"] [data-tip]::after {
+	content: attr(data-tip);
+	position: absolute;
+	inset-inline-end: calc(100% + 8px);
+	inset-block-start: 50%;
+	z-index: 60;
+	padding: 6px 10px;
+	border: 1px solid var(--rule);
+	border-radius: 6px;
+	background: var(--surface-overlay);
+	color: var(--ink);
+	font: 500 12px/1.3 var(--font-body);
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	translate: 4px -50%;
+	transition: opacity var(--vpk-dur-fast) var(--ease-out), translate var(--vpk-dur-fast) var(--ease-out);
+}
+body[data-vpk-layout="story"] [data-tip]:is(:hover, :focus-visible, :focus-within)::after { opacity: 1; translate: 0 -50%; transition-delay: 150ms; }
+body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [data-tip]::after { display: none; }
+@media (max-width: 760px) {
+	/* The controls are a top row on small screens: tooltips open below instead of to the left. */
+	body[data-vpk-layout="story"] .story-bar [data-tip]::after { inset-inline-end: auto; inset-inline-start: 50%; inset-block-start: calc(100% + 6px); translate: -50% -4px; }
+	body[data-vpk-layout="story"] .story-bar .story-tools [data-tip]::after { inset-inline-start: auto; inset-inline-end: 0; translate: 0 -4px; }
+	body[data-vpk-layout="story"] .story-bar [data-tip]:is(:hover, :focus-visible, :focus-within)::after { translate: -50% 0; }
+	body[data-vpk-layout="story"] .story-bar .story-tools [data-tip]:is(:hover, :focus-visible, :focus-within)::after { translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+	body[data-vpk-layout="story"] [data-tip]::after { transition: none; translate: 0 -50%; }
+}
+@media print { body[data-vpk-layout="story"] [data-tip]::after { display: none; } }
 
 /* At 760px and below the rail is narrow, so the controls stay a single row at the top of the page. */
 @media (max-width: 760px) {

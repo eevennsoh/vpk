@@ -33,7 +33,7 @@
 			button.type = 'button';
 			button.dataset.eu26Action = action;
 			button.setAttribute('aria-label', label);
-			button.title = label;
+			button.dataset.tip = label;
 			const icon = node('span', 'eu26-dock-icon');
 			icon.setAttribute('aria-hidden', 'true');
 			setIcon(icon, action, symbol);
@@ -576,7 +576,7 @@
 			if (selectedChanged && expanded && !browsingFrames()) { rovingIndex = selectedIndex; scrollFrame(selectedIndex); syncTabStops(); }
 			setIcon(playButton.querySelector('.eu26-dock-icon'), playAction === 'Pause' ? 'pause' : 'play', playAction === 'Pause' ? 'Ⅱ' : '▶');
 			playButton.setAttribute('aria-label', `${playAction} ${horizontal && !pageBased ? 'video preview' : 'animation'}`);
-			playButton.title = `${playAction} ${horizontal && !pageBased ? 'video preview' : 'animation'}`;
+			playButton.dataset.tip = `${playAction} ${horizontal && !pageBased ? 'video preview' : 'animation'}`;
 			playButton.setAttribute('aria-pressed', String(playAction === 'Pause'));
 			timeline.value = String(pageBased ? pagePosition(time) : time / playbackRate);
 			timeline.setAttribute('aria-valuetext', horizontal && !pageBased ? `${formatTime(time / playbackRate)} of ${formatTime(durationSeconds)}. ${states[selectedIndex].title}` : states[selectedIndex].title);

@@ -8,8 +8,8 @@ export function renderStoryShell({ title, description, eyebrow, steps, hero, con
 	const modes = [['story', 'Page', icons.page], ['slides', 'Slides', icons.slides], ['twitter', 'X Threads', icons.threads], ['video', 'Video', icons.video]];
 	return `<main id="content" tabindex="-1" data-vpk-story data-story-mode="story">
 	<nav class="story-bar" aria-label="Reading controls">
-		<div class="story-modes" role="group" aria-label="View mode">${modes.map(([id, label, icon]) => `<button type="button" data-story-mode="${id}" aria-pressed="${id === 'story'}" aria-label="${label}" title="${label}">${icon || escape(label)}</button>`).join('')}</div>
-		<div class="story-tools">${sourcesHref ? `<a class="story-sources" href="${escape(sourcesHref)}" target="_blank" rel="noopener" aria-label="Sources (opens the finale source)" title="Sources">${icons.sources || 'Sources'}</a>` : ''}<div data-story-theme></div></div>
+		<div class="story-modes" role="group" aria-label="View mode">${modes.map(([id, label, icon]) => `<button type="button" data-story-mode="${id}" aria-pressed="${id === 'story'}" aria-label="${label}" data-tip="${label}">${icon || escape(label)}</button>`).join('')}</div>
+		<div class="story-tools">${sourcesHref ? `<a class="story-sources" href="${escape(sourcesHref)}" target="_blank" rel="noopener" aria-label="Sources (opens the finale source)" data-tip="Sources">${icons.sources || 'Sources'}</a>` : ''}<div data-story-theme data-tip="Theme"></div></div>
 	</nav>
 	<div class="story-layout">
 		<aside class="story-stage" data-story-stage aria-label="Anchored animation">

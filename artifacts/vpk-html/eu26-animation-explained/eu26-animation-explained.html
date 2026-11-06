@@ -4137,19 +4137,21 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 	body[data-vpk-layout="story"] {
 		--story-bar-height: 0px;
 		--story-top: 0px;
-		--story-tool-size: 40px;
+		--story-tool-size: 44px;
 		--eu26-dock-top: calc(16px + 6 * var(--story-tool-size) + 5 * 2px + 13px + 24px);
 	}
 	body[data-vpk-layout="story"] .story-bar {
 		position: fixed;
 		inset-block-start: 16px;
-		inset-inline-end: var(--eu26-dock-right);
+		/* The Frames button's right edge sits 3px inside the dock edge; anchoring the 44px stack to the same edge puts
+		   every icon on the Frames button's and the tick marks' centre line. */
+		inset-inline-end: calc(var(--eu26-dock-right) + 3px);
 		z-index: 56;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 2px;
-		inline-size: var(--eu26-dock-width);
+		inline-size: 44px;
 		min-block-size: 0;
 		margin: 0;
 		padding: 0;
@@ -4160,8 +4162,8 @@ body[data-vpk-layout="story"] .eu26-timeline-dock[data-timeline-view="slides"] .
 	body[data-vpk-layout="story"] .story-bar .story-tools { margin-block-start: 6px; padding-block-start: 6px; border-block-start: 1px solid var(--rule); }
 }
 body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources, .story-tools .vpk-theme-toggle) {
-	inline-size: var(--story-tool-size, 40px);
-	block-size: var(--story-tool-size, 40px);
+	inline-size: var(--story-tool-size, 44px);
+	block-size: var(--story-tool-size, 44px);
 	min-inline-size: 0;
 	min-block-size: 0;
 	padding: 0;
@@ -4170,8 +4172,44 @@ body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources
 }
 body[data-vpk-layout="story"] .story-bar .story-sources { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 body[data-vpk-layout="story"] .story-bar .story-sources:hover { background: var(--surface-sunken); color: var(--ink); }
-body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources) svg { display: block; inline-size: 16px; block-size: 16px; }
+/* Same box and glyph as the rail's Frames button (44px, 15px icon), so the stack and the ticks read as one column. */
+body[data-vpk-layout="story"] .story-bar :is(.story-modes button, .story-sources, .vpk-theme-toggle) svg { display: block; inline-size: 15px !important; block-size: 15px !important; }
 body[data-vpk-layout="story"] .story-bar .story-modes button[aria-pressed="true"] { color: var(--ink); }
+
+/* Rail tooltips: every icon in the rail names itself on hover and keyboard focus, opening to the left in the chapter
+   label's style. Replaces the slow native title tooltip; the accessible name stays on aria-label. */
+body[data-vpk-layout="story"] [data-tip] { position: relative; }
+body[data-vpk-layout="story"] [data-tip]::after {
+	content: attr(data-tip);
+	position: absolute;
+	inset-inline-end: calc(100% + 8px);
+	inset-block-start: 50%;
+	z-index: 60;
+	padding: 6px 10px;
+	border: 1px solid var(--rule);
+	border-radius: 6px;
+	background: var(--surface-overlay);
+	color: var(--ink);
+	font: 500 12px/1.3 var(--font-body);
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	translate: 4px -50%;
+	transition: opacity var(--vpk-dur-fast) var(--ease-out), translate var(--vpk-dur-fast) var(--ease-out);
+}
+body[data-vpk-layout="story"] [data-tip]:is(:hover, :focus-visible, :focus-within)::after { opacity: 1; translate: 0 -50%; transition-delay: 150ms; }
+body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [data-tip]::after { display: none; }
+@media (max-width: 760px) {
+	/* The controls are a top row on small screens: tooltips open below instead of to the left. */
+	body[data-vpk-layout="story"] .story-bar [data-tip]::after { inset-inline-end: auto; inset-inline-start: 50%; inset-block-start: calc(100% + 6px); translate: -50% -4px; }
+	body[data-vpk-layout="story"] .story-bar .story-tools [data-tip]::after { inset-inline-start: auto; inset-inline-end: 0; translate: 0 -4px; }
+	body[data-vpk-layout="story"] .story-bar [data-tip]:is(:hover, :focus-visible, :focus-within)::after { translate: -50% 0; }
+	body[data-vpk-layout="story"] .story-bar .story-tools [data-tip]:is(:hover, :focus-visible, :focus-within)::after { translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+	body[data-vpk-layout="story"] [data-tip]::after { transition: none; translate: 0 -50%; }
+}
+@media print { body[data-vpk-layout="story"] [data-tip]::after { display: none; } }
 
 /* At 760px and below the rail is narrow, so the controls stay a single row at the top of the page. */
 @media (max-width: 760px) {
@@ -4183,8 +4221,8 @@ body[data-vpk-layout="story"] .story-bar .story-modes button[aria-pressed="true"
 <body data-vpk-layout="story" data-vpk-docnav="off" data-vpk-enhancements="off">
 <a class="skip-link" href="#content">Skip to animation walkthrough</a><div class="page"><main id="content" tabindex="-1" data-vpk-story data-story-mode="story">
 	<nav class="story-bar" aria-label="Reading controls">
-		<div class="story-modes" role="group" aria-label="View mode"><button type="button" data-story-mode="story" aria-pressed="true" aria-label="Page" title="Page"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M1 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2zm2-.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM12 6H4V4.5h8zm-2 3.5H4V8h6z" clip-rule="evenodd"/></svg></button><button type="button" data-story-mode="slides" aria-pressed="false" aria-label="Slides" title="Slides"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M1 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8.75v1.5H12V15H4v-1.5h3.25V12H3a2 2 0 0 1-2-2zm2-.5a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5z" clip-rule="evenodd"/></svg></button><button type="button" data-story-mode="twitter" aria-pressed="false" aria-label="X Threads" title="X Threads"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M0 3.125A2.625 2.625 0 0 1 2.625.5h10.75A2.625 2.625 0 0 1 16 3.125v8.25A2.625 2.625 0 0 1 13.375 14H4.449l-3.327 1.901A.75.75 0 0 1 0 15.25zM2.625 2C2.004 2 1.5 2.504 1.5 3.125v10.833L4.05 12.5h9.325c.621 0 1.125-.504 1.125-1.125v-8.25C14.5 2.504 13.996 2 13.375 2zM12 6.5H4V5h8zm-3 3H4V8h5z" clip-rule="evenodd"/></svg></button><button type="button" data-story-mode="video" aria-pressed="false" aria-label="Video" title="Video"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M2 4a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-7A.5.5 0 0 0 10 4zm-2 .5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v.218l2.137-1.203A1.25 1.25 0 0 1 16 4.605v6.79a1.25 1.25 0 0 1-1.863 1.09L12 11.282v.218a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm12 5.061 2.5 1.407V5.032L12 6.44z" clip-rule="evenodd"/></svg></button></div>
-		<div class="story-tools"><a class="story-sources" href="https://bitbucket.org/atlassian/jira-team-eu26-motion/src/8588b00ff81cb5e8341a462158c747c6d990667c/components/projects/jira-team-eu26-end/finale/" target="_blank" rel="noopener" aria-label="Sources (opens the finale source)" title="Sources"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M3 2.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-3H15v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h3v1.5zM10 1h4.25a.75.75 0 0 1 .75.75V6h-1.5V3.56L7.53 9.53 6.47 8.47l5.97-5.97H10z" clip-rule="evenodd"/></svg></a><div data-story-theme></div></div>
+		<div class="story-modes" role="group" aria-label="View mode"><button type="button" data-story-mode="story" aria-pressed="true" aria-label="Page" data-tip="Page"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M1 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2zm2-.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM12 6H4V4.5h8zm-2 3.5H4V8h6z" clip-rule="evenodd"/></svg></button><button type="button" data-story-mode="slides" aria-pressed="false" aria-label="Slides" data-tip="Slides"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M1 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8.75v1.5H12V15H4v-1.5h3.25V12H3a2 2 0 0 1-2-2zm2-.5a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5z" clip-rule="evenodd"/></svg></button><button type="button" data-story-mode="twitter" aria-pressed="false" aria-label="X Threads" data-tip="X Threads"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M0 3.125A2.625 2.625 0 0 1 2.625.5h10.75A2.625 2.625 0 0 1 16 3.125v8.25A2.625 2.625 0 0 1 13.375 14H4.449l-3.327 1.901A.75.75 0 0 1 0 15.25zM2.625 2C2.004 2 1.5 2.504 1.5 3.125v10.833L4.05 12.5h9.325c.621 0 1.125-.504 1.125-1.125v-8.25C14.5 2.504 13.996 2 13.375 2zM12 6.5H4V5h8zm-3 3H4V8h5z" clip-rule="evenodd"/></svg></button><button type="button" data-story-mode="video" aria-pressed="false" aria-label="Video" data-tip="Video"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M2 4a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-7A.5.5 0 0 0 10 4zm-2 .5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v.218l2.137-1.203A1.25 1.25 0 0 1 16 4.605v6.79a1.25 1.25 0 0 1-1.863 1.09L12 11.282v.218a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm12 5.061 2.5 1.407V5.032L12 6.44z" clip-rule="evenodd"/></svg></button></div>
+		<div class="story-tools"><a class="story-sources" href="https://bitbucket.org/atlassian/jira-team-eu26-motion/src/8588b00ff81cb5e8341a462158c747c6d990667c/components/projects/jira-team-eu26-end/finale/" target="_blank" rel="noopener" aria-label="Sources (opens the finale source)" data-tip="Sources"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path fill="currentcolor" fill-rule="evenodd" d="M3 2.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-3H15v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h3v1.5zM10 1h4.25a.75.75 0 0 1 .75.75V6h-1.5V3.56L7.53 9.53 6.47 8.47l5.97-5.97H10z" clip-rule="evenodd"/></svg></a><div data-story-theme data-tip="Theme"></div></div>
 	</nav>
 	<div class="story-layout">
 		<aside class="story-stage" data-story-stage aria-label="Anchored animation">
@@ -6444,7 +6482,7 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			button.type = 'button';
 			button.dataset.eu26Action = action;
 			button.setAttribute('aria-label', label);
-			button.title = label;
+			button.dataset.tip = label;
 			const icon = node('span', 'eu26-dock-icon');
 			icon.setAttribute('aria-hidden', 'true');
 			setIcon(icon, action, symbol);
@@ -6987,7 +7025,7 @@ self.vpkAnatomy = createAnatomyRuntime(self, getFrameLoop(self), kit);
 			if (selectedChanged && expanded && !browsingFrames()) { rovingIndex = selectedIndex; scrollFrame(selectedIndex); syncTabStops(); }
 			setIcon(playButton.querySelector('.eu26-dock-icon'), playAction === 'Pause' ? 'pause' : 'play', playAction === 'Pause' ? 'Ⅱ' : '▶');
 			playButton.setAttribute('aria-label', `${playAction} ${horizontal && !pageBased ? 'video preview' : 'animation'}`);
-			playButton.title = `${playAction} ${horizontal && !pageBased ? 'video preview' : 'animation'}`;
+			playButton.dataset.tip = `${playAction} ${horizontal && !pageBased ? 'video preview' : 'animation'}`;
 			playButton.setAttribute('aria-pressed', String(playAction === 'Pause'));
 			timeline.value = String(pageBased ? pagePosition(time) : time / playbackRate);
 			timeline.setAttribute('aria-valuetext', horizontal && !pageBased ? `${formatTime(time / playbackRate)} of ${formatTime(durationSeconds)}. ${states[selectedIndex].title}` : states[selectedIndex].title);
