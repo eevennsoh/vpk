@@ -146,7 +146,7 @@ function PulseWorkItemList({
 					&& (isWorkItemInteractive?.(workItem) ?? true);
 				return (
 					<li data-work-item-key={workItem.key} key={workItem.key}>
-						<JiraIssue
+						<JiraIssue appearance="default"
 							assigneeAvatarLabel={face.name}
 							assigneeAvatarShape={face.kind === "agent" ? "hexagon" : "circle"}
 							assigneeAvatarSrc={face.avatarSrc}

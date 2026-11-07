@@ -63,7 +63,7 @@ import {
 	JiraIssueAgentStatusIcon,
 	type JiraIssueAgentAssignment,
 } from "./agent-activity-row-presentation";
-import { motionEase } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 
 export type { JiraIssueAgentAssignment } from "./agent-activity-row-presentation";
 
@@ -143,6 +143,7 @@ const JIRA_ISSUE_SESSION_DRAG_SPRING = { damping: 26, mass: 0.6, stiffness: 420,
 
 const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
 const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: motionEase.in }; // duration-fast + ease-in
+const JIRA_ISSUE_FINISHED_EXIT: Transition = { duration: motionDuration.medium, ease: motionEase.in };
 const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: motionEase.inOut }; // duration-medium + ease-in-out
 const JIRA_ISSUE_MOTION_REDUCED: Transition = { duration: 0 };
 const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity" };
@@ -151,7 +152,7 @@ function getJiraIssueLayoutTransition(shouldReduceMotion: boolean | null): Trans
 	return shouldReduceMotion ? JIRA_ISSUE_MOTION_REDUCED : JIRA_ISSUE_MOTION_LAYOUT;
 }
 
-function getJiraIssuePresenceMotion(shouldReduceMotion: boolean | null) {
+function getJiraIssuePresenceMotion(shouldReduceMotion: boolean | null, completed: boolean) {
 	if (shouldReduceMotion) {
 		return {
 			animate: undefined,
@@ -161,9 +162,13 @@ function getJiraIssuePresenceMotion(shouldReduceMotion: boolean | null) {
 	}
 
 	return {
-		animate: { opacity: 1, y: 0, transition: JIRA_ISSUE_MOTION_ENTER },
-		exit: { opacity: 0, y: -4, transition: JIRA_ISSUE_MOTION_EXIT },
-		initial: { opacity: 0, y: -4 },
+		animate: completed
+			? { opacity: 1, transform: "scale(1)", transition: JIRA_ISSUE_MOTION_ENTER }
+			: { opacity: 1, y: 0, transition: JIRA_ISSUE_MOTION_ENTER },
+		exit: completed
+			? { opacity: 0, transform: "scale(0.96)", transition: JIRA_ISSUE_FINISHED_EXIT }
+			: { opacity: 0, y: -4, transition: JIRA_ISSUE_MOTION_EXIT },
+		initial: completed ? { opacity: 0, transform: "scale(1)" } : { opacity: 0, y: -4 },
 	} as const;
 }
 
@@ -737,6 +742,8 @@ export function JiraIssueAgentActivityRows({
 	flushBottom = false,
 	iconScale = "compact",
 	instantSessionTransfer = false,
+	completedTransferKey,
+	retainCompletedGutter = false,
 	linkFlash,
 	layout = "merged",
 	onOpenChange,
@@ -764,6 +771,10 @@ export function JiraIssueAgentActivityRows({
 	inheritChinSurface?: boolean;
 	/** Board-controlled moves remount the presence boundary so one row cannot linger in two cards. */
 	instantSessionTransfer?: boolean;
+	/** Stable source identities let timed-out completed rows exit while real transfers still remount. */
+	completedTransferKey?: string;
+	/** Keep the exiting row's inset until its containing chin has closed. */
+	retainCompletedGutter?: boolean;
 	/** One-shot brand sweep across the row a session was just linked into. */
 	linkFlash?: JiraIssueAgentLinkFlash;
 	/** `split` gives every active agent its own chin row instead of one merged row. */
@@ -783,12 +794,12 @@ export function JiraIssueAgentActivityRows({
 	const [sessionDragging, setSessionDragging] = useState(false);
 	const [assignmentHoverOpen, setAssignmentHoverOpen] = useState(false);
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
-	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
+	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion, completedTransferKey !== undefined);
 	const hasActivities = activities.length > 0;
 	const hasAttachPreview = Boolean(attachPreviewCopy);
 	const rowGroups = groupJiraIssueAgentActivityRows(activities, layout);
 	const rowPresenceKey = instantSessionTransfer
-		? rowGroups.map((rowGroup) => rowGroup.key).join("|")
+		? completedTransferKey ?? rowGroups.map((rowGroup) => rowGroup.key).join("|")
 		: "animated";
 	// A pointer drag re-renders the row on every move. Hovering the assignment
 	// flyout also remounts trigger attrs. Freezing `layout` keeps Motion from
@@ -809,7 +820,7 @@ export function JiraIssueAgentActivityRows({
 				// the card hugs what remains instead of trailing an empty band. The
 				// dragged row flags itself with `data-session-chip-out`, so this
 				// resolves in the same commit rather than through a state round-trip.
-				(hasActivities || hasAttachPreview) && cn(
+				(hasActivities || hasAttachPreview || retainCompletedGutter) && cn(
 					flushContent ? "px-0" : "px-1",
 					flushBottom ? "pt-1 pb-0" : "py-1",
 					"has-[[data-session-chip-out]]:py-0",
@@ -819,7 +830,7 @@ export function JiraIssueAgentActivityRows({
 			data-session-attach-growth={!hasActivities && hasAttachPreview ? "" : undefined}
 			transition={layoutTransition}
 		>
-			<AnimatePresence key={rowPresenceKey} initial={false} mode="popLayout">
+			<AnimatePresence key={rowPresenceKey} initial={false} mode={completedTransferKey === undefined ? "popLayout" : "sync"}>
 				{rowGroups.map((rowGroup, index) => {
 					// A grouped chin is many agents, not one session. Drag uses
 					// the single-row gate: transferring `activities[0]`

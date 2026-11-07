@@ -122,7 +122,7 @@ export function KanbanStage(): React.ReactElement {
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				selectedAssigneeIds={selectedAssigneeIds}
 			/>
-			<JiraKanban
+			<JiraKanban variant="standard"
 				agents={ASX_KANBAN_AGENTS}
 				ariaLabel="RFP board columns. Assign agents or drag Intake cards into Drafting to start work."
 				boardColumns={filteredBoardColumns}

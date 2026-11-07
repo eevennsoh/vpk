@@ -220,7 +220,7 @@ export function KanbanStage({ scenario = "local-review" }: Readonly<KanbanStageP
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				selectedAssigneeIds={selectedAssigneeIds}
 			/>
-			<JiraKanban
+			<JiraKanban variant="standard"
 				agents={JGP_KANBAN_AGENTS}
 				animateCardMoves={scenario === "local-completed"}
 				ariaLabel="Jira board focus work. Assign a coding agent or drag To do cards into In progress to start work."
