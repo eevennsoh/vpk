@@ -35,6 +35,7 @@ export function createMerchantJourneyAgentActivity(sessionId: string): JourneyAc
 		avatarSrc: "/illustration/agent-lanyard/claude.svg",
 		agentBrandName: "claude",
 		label: "Working",
+		sessionTitle: "Improve merchant onboarding",
 		state: "working",
 		host: "cloud",
 		timeLabel: "Just now",

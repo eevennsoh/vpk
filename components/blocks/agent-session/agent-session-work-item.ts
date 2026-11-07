@@ -42,6 +42,7 @@ export function toJiraIssueAgentActivityFromSession(item: AgentSessionItem): Jir
 		avatarSrc: item.agent.avatarSrc,
 		id: item.id,
 		label: item.title,
+		sessionTitle: item.title,
 		name: item.agent.name,
 		state: item.state === "needs-input" || item.state === "attention"
 			? "awaiting-input"

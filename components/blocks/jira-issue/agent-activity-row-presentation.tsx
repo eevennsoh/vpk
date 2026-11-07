@@ -54,6 +54,7 @@ export type JiraIssueAgentAssignment = Partial<
 		| "onRenameAssignedAgent"
 		| "onStartNewSession"
 		| "pinnedItemsLabel"
+		| "showSessionAddAgent"
 		| "usedAgentIds"
 	>
 > & {
@@ -416,6 +417,7 @@ export function JiraIssueAgentAssignmentHandle({
 		<div aria-controls={invocationEnabled && assignment?.onAssignedAgentIdsChange && pickerOpen ? pickerId : undefined} className="flex h-full min-w-0 flex-1 items-center" ref={assignmentHandleRef}>
 			<AgentAssignment
 				addAgentLabel={assignment?.addAgentLabel ?? (activities.every((activity) => activity.role === "viewer") ? "New session" : undefined)}
+				showSessionAddAgent={assignment?.showSessionAddAgent}
 				agents={agents}
 				assignedAgents={assignedAgents}
 				defaultPinnedAgentIds={assignment?.defaultPinnedAgentIds}
@@ -446,7 +448,7 @@ export function JiraIssueAgentAssignmentHandle({
 				trigger={rowHandle}
 				usedAgentIds={assignment?.usedAgentIds}
 			/>
-			{invocationEnabled && assignment?.onAssignedAgentIdsChange ? <ProjectButterMenuAgentPicker assignment={assignment} id={pickerId} source="session" triggerRef={assignmentHandleRef} /> : null}
+			{invocationEnabled && assignment?.onAssignedAgentIdsChange && assignment.showSessionAddAgent !== false ? <ProjectButterMenuAgentPicker assignment={assignment} id={pickerId} source="session" triggerRef={assignmentHandleRef} /> : null}
 		</div>
 	);
 }

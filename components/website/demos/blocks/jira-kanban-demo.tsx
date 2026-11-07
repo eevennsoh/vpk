@@ -39,7 +39,37 @@ function createEmptyColumnExample(): JiraKanbanColumnData[] {
 }
 
 export default function JiraKanbanDemo() {
-	return <Page />;
+	return <JiraKanbanDemoProjectButter />;
+}
+
+export function JiraKanbanDemoProjectButter({ emptyColumns = false }: Readonly<{ emptyColumns?: boolean }> = {}) {
+	const [boardColumns, setBoardColumns] = useState(
+		emptyColumns ? createEmptyColumnExample : createJiraGoldenJourneysV4PayBoardColumns,
+	);
+	return (
+		<ExperimentalPage
+			agentActivityLayout="merged"
+			agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
+			agentSessionMultiSelect={false}
+			agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
+			ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
+			boardColumns={boardColumns}
+			cardAppearance="project-butter"
+			cardGenerativeActionPresentation="more-actions"
+			columnChrome="default"
+			columnSizing="content"
+			createWellBounce="off"
+			defaultShowUntracked={false}
+			headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
+			iconScale="comfortable"
+			insightsEnabled={false}
+			issueDragTransitions
+			issueDropMotion="solitaire"
+			issueSelectionAppearance="fused-backdrop"
+			onBoardColumnsChange={(columns) => setBoardColumns([...columns])}
+			showAgentSessionColumn
+		/>
+	);
 }
 
 export function JiraKanbanDemoStandard() {
@@ -52,15 +82,11 @@ export function JiraKanbanDemoExperimental() {
 
 function JiraKanbanDemoExperimentalV2Body({
 	columnChrome: columnChromeProp,
-	emptyColumns = false,
 }: Readonly<{
 	columnChrome: KanbanColumnChrome;
-	emptyColumns?: boolean;
 }>) {
 	const [activeView, setActiveView] = useState<"board" | "list">("board");
-	const [boardColumns, setBoardColumns] = useState(
-		emptyColumns ? createEmptyColumnExample : createJiraGoldenJourneysV4PayBoardColumns,
-	);
+	const [boardColumns, setBoardColumns] = useState(createJiraGoldenJourneysV4PayBoardColumns);
 	const [columnChrome, setColumnChrome] = useState(columnChromeProp);
 
 	return (
@@ -132,5 +158,5 @@ export function JiraKanbanDemoExperimentalV2Simple() {
 }
 
 export function JiraKanbanDemoEmptyColumns() {
-	return <JiraKanbanDemoExperimentalV2Body columnChrome="default" emptyColumns />;
+	return <JiraKanbanDemoProjectButter emptyColumns />;
 }

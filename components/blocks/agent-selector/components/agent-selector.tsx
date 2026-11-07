@@ -722,9 +722,11 @@ export function AgentSelector({
 			</div>
 			<CommandList
 				aria-label={listLabel}
+				showScrollbar={searchVariant === "palette" && Boolean(sections)}
 				className={cn(
 					"min-h-0 max-h-none flex-1 p-0",
 					searchVariant === "palette" && "[&_[cmdk-group]:first-child]:!pt-0",
+					searchVariant === "palette" && sections && "[&_[cmdk-group]:first-child_[cmdk-group-heading]]:!pt-2",
 					// Fade the list under the sticky search header once it has scrolled,
 					// matching the editor-palette command menus. `scroll-mask-top` keeps
 					// the scrollbar gutter opaque so only the content column fades; the

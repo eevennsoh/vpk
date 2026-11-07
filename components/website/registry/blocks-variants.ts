@@ -213,6 +213,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"jira-kanban-demo-project-butter": dynamic(
+		() =>
+			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
+				default: mod.JiraKanbanDemoProjectButter,
+			})),
+		{ ssr: false },
+	),
 	"jira-kanban-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/jira-kanban-demo").then((mod) => ({

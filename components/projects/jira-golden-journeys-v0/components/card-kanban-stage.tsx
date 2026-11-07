@@ -183,7 +183,7 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 					 * re-centering the group and shoving the toggle bar upward.
 					 */}
 					<div className="h-[149px] w-[280px]">
-						<JiraIssue
+						<JiraIssue appearance="default"
 							agentActivities={agentActivities}
 							agentActivityMode={agentActivityMode}
 							agentDoneRuns={state === "agent-completed-work" ? ASX_CARD_KANBAN_DONE_RUNS : undefined}

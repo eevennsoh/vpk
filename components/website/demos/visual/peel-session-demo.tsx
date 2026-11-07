@@ -48,7 +48,7 @@ export function PeelSessionDemo({ active = true }: Readonly<{ active?: boolean }
 					)}
 				</div>
 				<div ref={targetRef} className="w-[276px] max-w-full" data-testid="peel-work-item">
-					<JiraIssue
+					<JiraIssue appearance="default"
 						issueKey={PEEL_WORK_ITEM.key}
 						summary={PEEL_WORK_ITEM.summary}
 						tags={[{ text: "wallet", color: "standard" }]}

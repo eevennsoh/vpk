@@ -251,7 +251,7 @@ export function ProjectButterJiraWorkItem({
 		setActiveSessionId(null);
 	}
 	function startCoding() {
-		const session = model.startCoding();
+		const session = model.startCoding(content.summary);
 		addInvocation(session);
 		onAgentSessionStart?.(session);
 		if (onOpenCloudSession) { setActiveSessionId(null); onOpenCloudSession(session); }

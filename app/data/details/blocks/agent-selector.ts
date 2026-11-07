@@ -28,7 +28,7 @@ const agents: AgentSelectorAgent[] = [
 			{ title: "Standalone picker", description: "Persistent standalone surfaces for the default and selected-agent action states.", demoSlug: "agent-selector-demo-standalone" },
 			{ title: "Selected agent actions", description: "Top actions for a selected custom agent before switching to another agent.", demoSlug: "agent-selector-demo-selected-agent-actions" },
 			{ title: "Jira kanban", description: "Same palette as Assign agent: Pinned by space / More agents grouping, filled pins only on space-pinned agents, hover reveals an outline pin on unpinned rows, and the footer offers Browse agents and Create agent.", demoSlug: "agent-selector-demo-jira" },
-			{ title: "Project butter", description: "The Butter board picker, with software agents, run-location submenus, and directory actions.", demoSlug: "agent-selector-demo-project-butter" },
+			{ title: "Project Butter submenu", description: "The Project Butter selector with run-location submenus and directory actions.", demoSlug: "agent-selector-demo-project-butter" },
 			{ title: "Inline expansion", description: "Import `InlineAgentSelector` from the Agent Selector package. Supply each agent's actions with `getActions`; one action runs directly and multiple actions expand inline. Favorites can be controlled with `favoriteAgentIds` and `onFavoriteAgentIdsChange`.", demoSlug: "agent-selector-demo-inline-expansion" },
 		],
 		props: [

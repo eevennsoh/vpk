@@ -40,6 +40,7 @@ import {
 	type JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue/completed-agent-runs";
 import { resolveComfortableCompletedRunViewChat, toJiraIssueAgentActivityFromCompletedRun } from "@/components/blocks/jira-issue/completed-agent-runs-model";
+import { useVisibleCompletedRuns } from "@/components/blocks/jira-issue/use-visible-completed-runs";
 import {
 	getCompletedCount,
 	getJiraIssueAgentSurfaceOffsets,
@@ -61,9 +62,11 @@ import type {
 	JiraIssueChrome,
 	JiraIssueCoverImage,
 	JiraIssueIconScale,
+	JiraIssueParticipant,
 	JiraIssuePriority,
 	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
+	JiraIssueSubtask,
 	JiraIssueTag,
 } from "@/components/blocks/jira-issue/types";
 import type { SmartLinkItem } from "@/components/blocks/smart-link";
@@ -97,9 +100,11 @@ export type {
 	JiraIssueChrome,
 	JiraIssueCoverImage,
 	JiraIssueIconScale,
+	JiraIssueParticipant,
 	JiraIssuePriority,
 	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
+	JiraIssueSubtask,
 	JiraIssueTag,
 	JiraIssueVariant,
 } from "@/components/blocks/jira-issue/types";
@@ -129,24 +134,6 @@ export type {
 export type { JiraIssueMoreAction, JiraIssueMoreMenuActions } from "@/components/blocks/jira-issue/more-menu";
 
 export type JiraIssueGenerativeActionPresentation = "sparkle" | "more-actions";
-
-export interface JiraIssueSubtask {
-	priority?: JiraIssuePriority;
-	summary: string;
-	issueKey: string;
-	status?: string;
-	issueTypeLabel?: string;
-	assigneeAvatarSrc?: string;
-	assigneeAvatarLabel?: string;
-	assigneeUnassignedKind?: AvatarUnassignedKind;
-}
-
-export interface JiraIssueParticipant {
-	id: string;
-	name: string;
-	avatarSrc: string;
-	avatarShape?: NonNullable<AvatarProps["shape"]>;
-}
 
 export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"article">, "children"> {
 	variant: "uncaptured-work";
@@ -268,11 +255,11 @@ export function JiraIssue(props: Readonly<JiraIssueProps>) {
 		return <JiraIssueUncapturedWork {...props} />;
 	}
 
-	return props.appearance === "project-butter" ? <ProjectButterInvocationProvider agents={props.assignment?.agents} enabled={Boolean(props.assignment?.onAgentAssign || props.assignment?.onAssignedAgentIdsChange) && !props.dragging}><JiraIssueDefault {...props} /></ProjectButterInvocationProvider> : <JiraIssueDefault {...props} />;
+	return props.appearance !== "default" ? <ProjectButterInvocationProvider agents={props.assignment?.agents} enabled={Boolean(props.assignment?.onAgentAssign || props.assignment?.onAssignedAgentIdsChange) && !props.dragging}><JiraIssueDefault {...props} /></ProjectButterInvocationProvider> : <JiraIssueDefault {...props} />;
 }
 
 function JiraIssueDefault({
-	appearance = "default", metadata, assigneeControl, onSubtaskOpen, availableMoreActions,
+	appearance = "project-butter", metadata, assigneeControl, onSubtaskOpen, availableMoreActions,
 	"aria-pressed": ariaPressed,
 	active = false,
 	agentActivities,
@@ -289,7 +276,7 @@ function JiraIssueDefault({
 	assigneePulse = false,
 	assigneeUnassignedKind,
 	chrome = "raised",
-	compact = false, iconScale = "compact", parentOwnsLayout = false,
+	compact = false, iconScale = appearance === "project-butter" ? "comfortable" : "compact", parentOwnsLayout = false,
 	className,
 	coverImage,
 	defaultSubtasksExpanded = false,
@@ -350,6 +337,7 @@ function JiraIssueDefault({
 		handleGenerativeActionFocusCapture, handleGenerativeActionBlurCapture,
 	} = useJiraIssueGenerativeActionReveal();
 	const [agentActivityHoverOpen, setAgentActivityHoverOpen] = useState(false);
+	const [agentActivityFocused, setAgentActivityFocused] = useState(false);
 	const [moreActionMenuOpen, setMoreActionMenuOpen] = useState(false);
 	const [internalAgentSessionDragState, setInternalAgentSessionDragState] = useState<JiraIssueAgentSessionDragState>(
 		JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
@@ -403,17 +391,18 @@ function JiraIssueDefault({
 				? "completed"
 				: "none";
 	const resolvedAgentActivityMode = agentActivityMode ?? inferredAgentActivityMode;
+	const visibleAgentDoneRuns = useVisibleCompletedRuns(agentDoneRuns, resolvedAgentActivityMode === "completed", agentActivityHoverOpen || agentActivityFocused);
 	// Comfortable (experimental v2) paints finished agents as normal session
 	// rows. The compact merged "N Finished" chip is original-experimental only.
 	const finishedAgentActivities = iconScale === "comfortable" && resolvedAgentActivityMode === "completed"
-		? agentDoneRuns.map(toJiraIssueAgentActivityFromCompletedRun)
+		? visibleAgentDoneRuns.map(toJiraIssueAgentActivityFromCompletedRun)
 		: [];
 	const activeAgentActivities = resolvedAgentActivityMode === "none"
 		? []
 		: resolvedAgentActivityMode === "completed"
 			? finishedAgentActivities
 			: nonCompletedAgentActivities;
-	const hasCompletedAgentChin = resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0;
+	const hasCompletedAgentChin = resolvedAgentActivityMode === "completed" && visibleAgentDoneRuns.length > 0;
 	const hasAgentDoneNotification = iconScale !== "comfortable" && hasCompletedAgentChin;
 	const handleAgentActivityViewChat = resolveComfortableCompletedRunViewChat(
 		onAgentActivityViewChat, onAgentDoneRunView, agentDoneRuns, iconScale,
@@ -800,6 +789,12 @@ function JiraIssueDefault({
 			className={agentActivityShellClassName}
 			data-slot="jira-issue-agent-shell"
 			initial={false}
+			onFocusCapture={(event) => {
+				if (event.target instanceof Element && event.target.closest('[data-jira-issue-agent-row-handle], [data-slot="jira-issue-agent-row"]')) setAgentActivityFocused(true);
+			}}
+			onBlurCapture={(event) => {
+				if (event.target instanceof Element && event.target.closest('[data-jira-issue-agent-row-handle], [data-slot="jira-issue-agent-row"]')) setAgentActivityFocused(false);
+			}}
 			layout={!(shouldReduceMotion || agentActivityHoverOpen || parentOwnsLayout)}
 			layoutRoot={!parentOwnsLayout}
 			style={AGENT_ACTIVITY_SHELL_STYLE}
@@ -848,13 +843,15 @@ function JiraIssueDefault({
 				{/* Running sessions already occupy the chin; attach copy takes the last
 				    row instead of stacking. Split layouts keep the other rows so the
 				    card height — and drop-zone geometry — stays put. */}
-				<ProjectButterInvocationChin activities={activeAgentActivities} allowPuzzle={agentActivityLayout === "merged" && summarizeJiraIssueAgentActivities(activeAgentActivities.filter((activity) => activity.state !== "completed")).featuredActivityIndex === null} hasChin={hasAgentActivityChin} iconScale={iconScale}><JiraIssueAgentActivityRows
+				<ProjectButterInvocationChin activities={activeAgentActivities} allowPuzzle={agentActivityLayout === "merged" && summarizeJiraIssueAgentActivities(activeAgentActivities.filter((activity) => activity.state !== "completed")).featuredActivityIndex === null} hasChin={hasAgentActivityChin} iconScale={iconScale} retainCompletedContent={resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0}><JiraIssueAgentActivityRows
 					activities={activeAgentActivities} assignment={assignment}
 					attachPreviewCopy={replaceDetachedTransfer ? undefined : attachChinCopy}
 					iconScale={iconScale}
 					inheritChinSurface
 					linkFlash={agentLinkFlash}
 					instantSessionTransfer={agentSessionDragControl !== undefined}
+					completedTransferKey={resolvedAgentActivityMode === "completed" ? agentDoneRuns.map((run) => run.id).join("|") : undefined}
+					retainCompletedGutter={appearance === "project-butter" && resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0}
 					layout={agentActivityLayout}
 					onOpenChange={handleAgentActivityOpenChange}
 					onViewChat={handleAgentActivityViewChat}
@@ -881,7 +878,7 @@ function JiraIssueDefault({
 								onSubmit={onAgentDoneRunSubmit}
 								onView={onAgentDoneRunView}
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
-								runs={agentDoneRuns}
+								runs={visibleAgentDoneRuns}
 								usesStrokeChrome={usesCompactVisual}
 							/>
 						</motion.div>

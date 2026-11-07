@@ -102,3 +102,11 @@ test("Jira working narration is normalized once for the assignment status sequen
 	assert.equal(assigned.statusCycleIntervalMs, 1_500);
 	assert.equal(assigned.statusCycleJitterMs, 75);
 });
+
+test("an activity's session title survives the assignment bridge", async () => {
+	const { toAgentAssignmentAgent, toAssignmentSessionItem } = await loadIssueAssignmentBridge();
+	const activity = { id: "session-1", name: "Cursor", label: "Working", sessionTitle: "Replay 3-D Secure fixtures", state: "working" };
+	const assigned = toAgentAssignmentAgent(activity);
+	assert.equal(toAssignmentSessionItem(assigned).title, "Replay 3-D Secure fixtures");
+	assert.equal(toAssignmentSessionItem(assigned).agent.name, "Cursor");
+});

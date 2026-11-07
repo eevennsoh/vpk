@@ -28,18 +28,18 @@ export function useProjectButterSessions(preset: JiraWorkItemPreset, itemKey = "
 	}), [fieldSetter]);
 	const activeSession = sessions.find((session) => session.id === activeSessionId);
 	function startAgent(agent: AgentSessionItem["agent"], summary: string, prompt?: string) {
-		const session: ProjectButterSessionItem = { id: `${itemKey}:${crypto.randomUUID()}`, agent, title: `Work on ${summary}`, host: "cloud", state: "running", timeLabel: "Just now", invokedAtMs: Date.now(), invokedBy: currentUser ? { name: currentUser.name, avatarSrc: currentUser.avatarUrl } : { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" }, message: `Ready to work on ${summary}.`, prompt };
+		const session: ProjectButterSessionItem = { id: `${itemKey}:${crypto.randomUUID()}`, agent, title: summary.trim() || `Work on ${itemKey}`, host: "cloud", state: "running", timeLabel: "Just now", invokedAtMs: Date.now(), invokedBy: currentUser ? { name: currentUser.name, avatarSrc: currentUser.avatarUrl } : { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" }, message: `Ready to work on ${summary}.`, prompt };
 		setSessions((current) => [...current, session]);
 		setActiveSessionId(session.id);
 		return session;
 	}
 
-	function startCoding() {
+	function startCoding(summary: string) {
 		const referenceSession = PROJECT_BUTTER_SESSIONS[0];
 		const template = itemKey === "reference" ? referenceSession : {
 			...referenceSession,
 			id: `${itemKey}:coding`,
-			title: `Work on ${itemKey}`,
+			title: summary.trim() || `Work on ${itemKey}`,
 			branch: undefined,
 			message: `Ready to work on ${itemKey}.`,
 		};

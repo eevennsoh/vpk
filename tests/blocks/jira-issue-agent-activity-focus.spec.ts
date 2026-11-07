@@ -4,6 +4,21 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1800, height: 1100 }, colorScheme: "light" });
 
+test("expanded subtask metadata shares a vertical center", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/jira-issue#subtasks-expanded"));
+	const card = page.locator('[data-slot="jira-issue-subtask-card"]').filter({ hasText: "JDSN-230" });
+	await expect(card).toBeVisible();
+	const elements = [
+		card.getByText("JDSN-230", { exact: true }),
+		card.locator('[data-slot="tag"]'),
+		card.getByRole("img", { name: "Unassigned person" }),
+	];
+	const boxes = await Promise.all(elements.map((element) => element.boundingBox()));
+	for (const box of boxes) expect(box).not.toBeNull();
+	const centers = boxes.map((box) => box!.y + box!.height / 2);
+	expect(Math.max(...centers) - Math.min(...centers)).toBeLessThan(1);
+});
+
 for (const example of ["agent-activity-states-experimental-v2", "project-butter"]) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		test(`${example} session selection focuses chat with ${reducedMotion} motion`, async ({ page }) => {
