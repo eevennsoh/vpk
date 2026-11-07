@@ -2067,7 +2067,7 @@
   },
   "components/projects/jira-team-eu26-end/jira-team-eu26-end.test.js": {
     "no-restricted-syntax": {
-      "count": 332
+      "count": 331
     }
   },
   "components/projects/jira-team-eu26-end/terminal-story.test.js": {
