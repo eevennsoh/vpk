@@ -513,7 +513,7 @@ function AgentSelectorGroup({
 }: Readonly<AgentSelectorGroupProps>): ReactElement | null {
 	return agents.length > 0 ? (
 		<CommandGroup
-			className={cn("!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold", paletteHeading && "!py-0 **:[[cmdk-group-heading]]:!px-2 **:[[cmdk-group-heading]]:!pt-3 **:[[cmdk-group-heading]]:!pb-1 **:[[cmdk-group-heading]]:!text-text-subtlest")}
+			className={cn("!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold", paletteHeading && "!py-0 **:[[cmdk-group-heading]]:!px-2 **:[[cmdk-group-heading]]:!pt-3 **:[[cmdk-group-heading]]:!pb-1 **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest")}
 			heading={heading}
 		>
 			{agents.map((agent) => (
@@ -696,7 +696,7 @@ export function AgentSelector({
 					// and metadata pickers.
 					// `hostOwnsKeyNavigation` hands Arrow/Enter back to the cmdk root,
 					// which owns row highlighting and activation for this list.
-					<div className="-mx-1 -mt-1 mb-1 overflow-hidden rounded-t-xl">
+					<div className={cn("-mx-1 -mt-1 overflow-hidden rounded-t-xl", !sections && "mb-1")}>
 						<RichTextCommandMenuSearchField
 							activeDescendantId={activeOption.activeOptionId ?? null}
 							autoFocus
@@ -726,7 +726,6 @@ export function AgentSelector({
 				className={cn(
 					"min-h-0 max-h-none flex-1 p-0",
 					searchVariant === "palette" && "[&_[cmdk-group]:first-child]:!pt-0",
-					searchVariant === "palette" && sections && "[&_[cmdk-group]:first-child_[cmdk-group-heading]]:!pt-2",
 					// Fade the list under the sticky search header once it has scrolled,
 					// matching the editor-palette command menus. `scroll-mask-top` keeps
 					// the scrollbar gutter opaque so only the content column fades; the

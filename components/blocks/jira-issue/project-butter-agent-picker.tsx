@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { ProjectButterLocalAgentMenu } from "./project-butter-local-agent-menu";
-import { ProjectButterInlineAgentSelector } from "./project-butter-inline-agent-selector";
 import {
 	useProjectButterInvocationActions,
 	useProjectButterInvocationAgents,
@@ -55,7 +54,7 @@ export function ProjectButterAgentPicker({
 	);
 }
 
-export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onPreviewSession, sessions = [], selectedAgentIds, presentation = "submenu", submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
+export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onPreviewSession, sessions = [], selectedAgentIds, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
 	onContinueSession?: (session: AgentSessionItem) => void;
@@ -63,7 +62,6 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 	onPreviewSession?: (sessionId: string | null) => void;
 	sessions?: readonly AgentSessionItem[];
 	selectedAgentIds?: readonly string[];
-	presentation?: "submenu" | "inline";
 	submenuPositionerClassName?: string;
 	workspacePositionerClassName?: string;
 }>) {
@@ -82,13 +80,6 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 	const [submenu, setSubmenu] = useState<{ agent: AgentSelectorAgent; anchor: HTMLElement } | null>(null);
 	const [choosingSession, setChoosingSession] = useState(false);
 	const [query, setQuery] = useState("");
-	const [showMore, setShowMore] = useState(false);
-	const [previousPresentation, setPreviousPresentation] = useState(presentation);
-	if (previousPresentation !== presentation) {
-		setPreviousPresentation(presentation);
-		setSubmenu(null);
-		setChoosingSession(false);
-	}
 	const [selectedSessionIndex, setSelectedSessionIndex] = useState(0);
 	const sessionsFor = (agent: AgentSelectorAgent) => onContinueSession ? matchingAgentSessions(agent, sessions) : [];
 	const hasSubmenu = (agent: AgentSelectorAgent) => RUN_ON_AGENT_IDS.includes(agent.id) || sessionsFor(agent).length > 0;
@@ -188,47 +179,6 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 		</>
 	) : null;
 
-	if (presentation === "inline") {
-		return <ProjectButterInlineAgentSelector
-			agents={pickerAgents}
-			expandedAgentId={submenu?.agent.id}
-			expandedId={submenuId}
-			hasActions={hasSubmenu}
-			onBrowseAgents={onBrowseAgents ? () => { actions.close(); onBrowseAgents(); } : undefined}
-			onCreateAgent={onCreateAgent ? () => { actions.close(); onCreateAgent(); } : undefined}
-			onQueryChange={(value) => { setQuery(value); setSubmenu(null); }}
-			onShowMore={() => setShowMore(true)}
-			onToggle={(agent, anchor, focus) => {
-				if (!hasSubmenu(agent)) { onAssign(agent); return; }
-				if (submenu?.agent.id === agent.id && !focus) { setSubmenu(null); return; }
-				openSubmenu(agent, anchor, focus);
-			}}
-			query={query}
-			showMore={showMore}
-			expandedContent={submenu ? (
-				<div
-				aria-label={choosingSession ? `Choose a ${submenu.agent.name} session` : submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
-				className="ml-8 border-l border-border pl-2"
-				id={submenuId}
-				onKeyDownCapture={(event) => {
-					if (event.key === "Escape" || event.key === "ArrowLeft") {
-						event.preventDefault();
-						event.stopPropagation();
-						setSubmenu(null);
-						setChoosingSession(false);
-						submenu.anchor.focus();
-					} else if ((event.key === "ArrowDown" || event.key === "ArrowUp") && !hasWorkspaceOptions(submenu.agent.id)) {
-						event.preventDefault();
-						const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>(choosingSession ? '[role="option"]' : '[role="menuitem"]'));
-						const current = items.indexOf(document.activeElement instanceof HTMLButtonElement ? document.activeElement : items[0]);
-						items[(current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
-					}
-				}}
-				ref={submenuContent}
-				role={choosingSession || hasWorkspaceOptions(submenu.agent.id) ? "group" : "menu"}
-			>{submenuActions}</div>) : null}
-		/>;
-	}
 
 	return (
 		<>
