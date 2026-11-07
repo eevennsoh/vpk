@@ -727,12 +727,12 @@
   },
   "components/blocks/jira-activity/jira-activity-alignment.test.js": {
     "no-restricted-syntax": {
-      "count": 40
+      "count": 36
     }
   },
   "components/blocks/jira-activity/jira-activity-event-row.test.js": {
     "no-restricted-syntax": {
-      "count": 18
+      "count": 16
     }
   },
   "components/blocks/jira-activity/jira-activity-threads.test.js": {
