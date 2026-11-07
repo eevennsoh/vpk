@@ -28,16 +28,15 @@ export function ProjectButterBody({ active, sidePanel, content, descriptionRevea
 	singleActivityView?: boolean;
 	workItemKey?: string;
 }>) {
-	const emptyActivity = (singleActivityView || content.activityView === "Activity")
-		&& !content.activityEntries.some((entry) => singleActivityView || entry.kind === "comment")
-		&& !sessions.some((session) => session.state === "needs-input");
+	// The bar keeps 24px below the Activity header with no rows, and 24px below the lone "created" row of a new item.
+	const activityRows = content.activityEntries.length === 0 ? "none" : content.activityEntries.every((entry) => entry.kind === "event" && entry.icon === "created") ? "origin" : "feed";
 	return (
 		<div className="flex min-w-0 flex-col gap-6">
 			<ProjectButterDescription content={content} empty={empty} onRevealComplete={onDescriptionRevealComplete} reveal={descriptionReveal} />
 			<div className={sidePanel ? undefined : "@[860px]/butter:hidden"} ref={detailsSlotRef} />
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
 			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} previewSessionId={previewSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} />
-			<ProjectButterCommentBar active={active} compact={emptyActivity} content={content} empty={empty} onOpenSession={onOpenSession} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent} sessions={sessions} sidePanel={sidePanel} />
+			<ProjectButterCommentBar active={active} activityRows={activityRows} content={content} empty={empty} onOpenSession={onOpenSession} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent} sessions={sessions} sidePanel={sidePanel} />
 		</div>
 	);
 }

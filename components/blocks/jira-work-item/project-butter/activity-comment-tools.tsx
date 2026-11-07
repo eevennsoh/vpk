@@ -3,6 +3,8 @@
 import { useId, useState } from "react";
 import EditIcon from "@atlaskit/icon/core/edit";
 import LinkIcon from "@atlaskit/icon/core/link";
+import PinIcon from "@atlaskit/icon/core/pin";
+import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import type {
 	JiraActivityCommentEntry,
@@ -91,6 +93,19 @@ export function ProjectButterCopyCommentLink({ id }: Readonly<{ id: string }>) {
 		>
 			<LinkIcon label="" size="small" />
 		</Button>
+	);
+}
+
+/** Pins a top-level comment to the head of the feed; pressed while pinned. */
+export function ProjectButterPinComment({ pinned, onToggle }: Readonly<{ pinned: boolean; onToggle: () => void }>) {
+	const label = pinned ? "Unpin comment" : "Pin comment";
+	return (
+		<Tooltip>
+			<TooltipTrigger render={<Button aria-label={label} aria-pressed={pinned} onClick={onToggle} size="icon-compact" type="button" variant="ghost" />}>
+				{pinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />}
+			</TooltipTrigger>
+			<TooltipContent positionerClassName="z-[650]">{label}</TooltipContent>
+		</Tooltip>
 	);
 }
 

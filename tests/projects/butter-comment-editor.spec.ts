@@ -48,14 +48,14 @@ test("the comment bar has matching left and bottom insets", async ({ page }) => 
 		const activity = element.querySelector<HTMLElement>("[data-project-butter-activity]");
 		if (activity) element.scrollTop += activity.getBoundingClientRect().top - element.getBoundingClientRect().top;
 	});
-	await expect(bar.getByRole("button", { name: "Add a comment" })).toBeVisible();
+	await expect(bar.getByRole("textbox", { name: "Comment editor" })).toBeVisible();
 	const insets = () => bar.evaluate((element) => {
 		const viewport = element.closest("[data-project-butter-work-item]")!.firstElementChild!.getBoundingClientRect();
 		const bounds = element.getBoundingClientRect();
 		return Math.abs((bounds.left - viewport.left) - (viewport.bottom - bounds.bottom));
 	});
 	await expect.poll(insets).toBeLessThan(1);
-	await bar.getByRole("button", { name: "Add a comment" }).click();
+	await bar.getByRole("textbox", { name: "Comment editor" }).click();
 	await expect.poll(insets).toBeLessThan(1);
 	await scrollport.evaluate((element) => { element.scrollTop = element.scrollHeight; });
 	await expect.poll(insets).toBeLessThan(1);
@@ -84,9 +84,8 @@ test("the comment bar reveals quickly and covers content below it while scrollin
 	});
 	expect(revealMs).toBeLessThan(220);
 	await scrollport.evaluate((root) => { root.scrollTop += 160; });
-	const commentButton = bar.getByRole("button", { name: "Add a comment" });
-	await expect(commentButton).toHaveCSS("border-top-left-radius", "12px");
-	await expect.poll(() => commentButton.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none");
+	const composer = bar.locator("[data-project-butter-comment-editor]");
+	await expect.poll(() => composer.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none");
 	await expect.poll(() => bar.evaluate((element) => {
 		const root = element.closest("[data-project-butter-work-item]")!.firstElementChild!;
 		const barBounds = element.getBoundingClientRect();
@@ -193,7 +192,7 @@ test("agent mentions open an existing session or create a separate session", asy
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toHaveText("What should I check next?");
 	await expect(chat.getByRole("log").getByText("What should I check next?", { exact: true })).toHaveCount(0);
 	await chat.getByRole("textbox", { name: "Chat message input" }).fill("Existing chat draft");
-	await workItem.getByRole("button", { name: "Add a comment" }).click();
+	await workItem.getByRole("textbox", { name: "Comment editor" }).click();
 	await editor.pressSequentially("@Claude");
 	await page.getByRole("option", { name: /^Claude / }).click();
 	await editor.pressSequentially(" More context");
@@ -201,14 +200,14 @@ test("agent mentions open an existing session or create a separate session", asy
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("More context");
 	await expect(chat.getByRole("log").getByText("More context", { exact: true })).toHaveCount(0);
-	await workItem.getByRole("button", { name: "Add a comment" }).click();
+	await workItem.getByRole("textbox", { name: "Comment editor" }).click();
 	await editor.pressSequentially("@Claude");
 	await page.getByRole("option", { name: /^Claude / }).click();
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("More context");
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
-	if (await editor.isVisible()) await workItem.getByRole("button", { name: "Close comment editor" }).click();
+	if (await editor.isVisible()) await editor.press("Escape");
 	await mentionClaude();
 	await expect(choices).toBeVisible();
 	if (await choices.getByRole("option", { name: "Continue in existing session" }).getAttribute("aria-selected") === "true") await editor.press("ArrowDown");
@@ -413,7 +412,7 @@ test("a resumed session keeps its conversation after the user sends and reopens 
 	expect(secondSaveResponse.url()).not.toBe(firstSaveResponse.url());
 	const firstThreadId = decodeURIComponent(new URL(firstSaveResponse.url()).pathname.split("/").at(-1) ?? "");
 	expect(JSON.stringify(threads.get(firstThreadId))).not.toContain("Second session message");
-	await workItem.getByRole("button", { name: "Add a comment" }).click();
+	await workItem.getByRole("textbox", { name: "Comment editor" }).click();
 	await editor.pressSequentially("@Cursor");
 	await page.getByRole("option", { name: /^Cursor / }).first().click();
 	await editor.pressSequentially(" Follow up later");

@@ -24,7 +24,7 @@ export function merchantJourneyActivity(phase: ProjectButterDevelopmentPhase, in
 	const step = STAGES.indexOf(phase);
 	return MESSAGES.filter((message) => step >= message.at).map((message) => ({
 		id: message.id,
-		actor: { id: "merchant-claude", name: "Claude", kind: "agent" as const, brandName: "claude" as const },
+		actor: { id: "merchant-claude", name: "Claude", kind: "agent" as const, appearance: "coding" as const, brandName: "claude" as const },
 		timestamp: "Just now",
 		createdAtMs: invokedAtMs + (message.at + 1) * 60_000,
 		body: message.text,
@@ -41,7 +41,7 @@ export function merchantJourneyAuthoredUpdate<T extends object>(stored: T, shown
 }
 
 function isGeneratedEntry(id: string, session?: ProjectButterSessionItem) {
-	return GENERATED_IDS.has(id) || Boolean(session && (id === `invocation-${session.id}` || id === `merchant-agent-added-${session.id}` || id === `merchant-status-${session.id}` || id === `merchant-started-${session.id}`));
+	return GENERATED_IDS.has(id) || Boolean(session && (id === `invocation-${session.id}` || id === `agent-added-${session.id}` || id === `merchant-agent-added-${session.id}` || id === `merchant-status-${session.id}` || id === `merchant-started-${session.id}`));
 }
 
 /** Keep edits to visible records and preserve records hidden by the selected step. */
@@ -130,14 +130,14 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 				],
 			});
 		} else {
-			const invocation = original?.kind === "comment" ? { ...original, replies: original.replies?.map((reply) => reply.id === `response-${projectedSession.id}` ? { ...reply, sessionItem: projectedSession } : reply) } : projectButterSessionInvocation(projectedSession);
-			entries.push(invocation);
+			const [added, thread] = projectButterSessionInvocation(projectedSession);
+			entries.push(content.activityEntries.find((entry) => entry.id === added.id) ?? added, original?.kind === "comment" ? original : thread);
 		}
 		if (projectedSession.agent.name === "Claude") {
 			entries.push({
 				id: `merchant-status-${projectedSession.id}`,
 				kind: "event",
-				actor: { id: "merchant-claude", name: "Claude", kind: "agent", avatarSrc: projectedSession.agent.avatarSrc, brandName: projectedSession.agent.brandName },
+				actor: { id: "merchant-claude", name: "Claude", kind: "agent", appearance: "coding", avatarSrc: projectedSession.agent.avatarSrc, brandName: projectedSession.agent.brandName },
 				timestamp: "Just now",
 				createdAtMs: (projectedSession.invokedAtMs ?? PROJECT_BUTTER_SESSION_EPOCH) + 1,
 				icon: "status",
@@ -161,7 +161,7 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 			entries.push({
 				id,
 				kind: "comment",
-				actor: { id: "merchant-claude", name: "Claude", kind: "agent", brandName: "claude" },
+				actor: { id: "merchant-claude", name: "Claude", kind: "agent", appearance: "coding", brandName: "claude" },
 				timestamp: "Just now",
 				createdAtMs: (projectedSession.invokedAtMs ?? PROJECT_BUTTER_SESSION_EPOCH) + MERCHANT_ACKNOWLEDGMENT_DELAY_MS,
 				body: [{ type: "text", text: "I'm looking into this issue now. I'll report back here with updates as I make progress." }],

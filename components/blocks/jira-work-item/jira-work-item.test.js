@@ -691,7 +691,8 @@ test("JiraWorkItem keeps the standard + experimental registry, detail, demo, and
 	assert.match(demoSource, /<JiraWorkItem variant="default" \/>/u);
 	// The hero demo remains the variant chooser page; version examples group their preset states.
 	assert.match(demoSource, /import JiraWorkItemPage from "@\/components\/blocks\/jira-work-item\/page";/u);
-	assert.match(demoSource, /return <JiraWorkItemPage \/>;/u);
+	// The catalog page hosts Project butter with its Rovo chat (the website layer owns that host).
+	assert.match(demoSource, /return <JiraWorkItemPage projectButterWorkItem=\{ProjectButterChatWorkItem\} \/>;/u);
 	assert.match(demoSource, /const PRESET_OPTIONS[\s\S]*label: "With content"[\s\S]*label: "Empty state"[\s\S]*label: "Agents running"/u);
 	assert.match(demoSource, /function JiraWorkItemPresetDemo\(/u);
 	assert.match(demoSource, /const \[activePreset, setActivePreset\] = useState<JiraWorkItemExperimentalPreset \| null>\(null\);/u);

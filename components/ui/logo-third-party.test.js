@@ -356,8 +356,8 @@ test("tileBackground overrides target the Tile span with important themeable fil
 	);
 	assert.match(
 		LOGO_THIRD_PARTY_SOURCE,
-		/borderless: "\[&>span\]:bg-transparent! \[&>span\]:border-0!"/u,
-		"borderless must still strip both the fill and the border",
+		/borderless: "\[&>span\]:bg-transparent! \[&>span\]:border-0! \[&>span>span\]:flex! \[&>span>span\]:items-center! \[&>span>span\]:justify-center!"/u,
+		"borderless must strip both the fill and the border, and re-center the glyph the border used to inset",
 	);
 
 	// Every override has to win against unlayered @compiled CSS.

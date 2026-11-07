@@ -2,6 +2,7 @@ import type { JiraActivityActor, JiraActivityCommentEntry, JiraActivityEntry } f
 import { PROJECT_BUTTER_REFERENCE_COMMENTS, PROJECT_BUTTER_REFERENCE_HISTORY } from "@/components/blocks/jira-work-item/project-butter/reference-data";
 import type { ProjectButterReferenceComment } from "@/components/blocks/jira-work-item/project-butter/reference-model";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 export const PROJECT_BUTTER_REFERENCE_EPOCH = Date.UTC(2026, 9, 28, 9, 53);
 const MINUTE = 60_000;
@@ -9,9 +10,17 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 const AGE_STOPS = [22 * MINUTE, 2 * HOUR, 6 * HOUR, 12 * HOUR, DAY, 2 * DAY, 3 * DAY, 5 * DAY, 8 * DAY, 12 * DAY, 17 * DAY, 22 * DAY];
 
+/** Partner agents show their brand mark; other agents use the shared default agent art (never initials). */
+const AGENT_BRANDS: Readonly<Record<string, ThirdPartyLogoName>> = { Canva: "canva", Claude: "claude", Cursor: "cursor" };
+const DEFAULT_AGENT_AVATAR = "/avatar-agent-new/blue/default.svg";
+
 function actor(name: string, agent?: string, isAgent = false): JiraActivityActor {
 	const identity = agent ?? name;
-	return { id: `butter-actor-${identity}`, name: agent ? `${agent} with ${name}` : name, kind: agent || isAgent ? "agent" : "person", avatarSrc: agent || isAgent ? undefined : projectButterPersonAvatar(name), ...(identity === "Claude" ? { brandName: "claude" } : identity === "Cursor" ? { brandName: "cursor" } : agent || isAgent ? { vpkLogo: "rovo" } : {}) };
+	const id = `butter-actor-${identity}`;
+	const label = agent ? `${agent} with ${name}` : name;
+	if (!agent && !isAgent) return { id, name: label, kind: "person", avatarSrc: projectButterPersonAvatar(name) };
+	const brandName = AGENT_BRANDS[identity];
+	return { id, name: label, kind: "agent", appearance: "coding", ...(brandName ? { brandName } : { avatarSrc: DEFAULT_AGENT_AVATAR }) };
 }
 
 function timestamp(value: string): number {

@@ -25,13 +25,14 @@ test("the Butter board work item combines comments and changes under Activity", 
 	await expect(activity).toContainText("updated summary");
 });
 
-test("empty activity places the comment bar 24 pixels below the tabs", async ({ page }) => {
+test("empty activity starts with who created the work item and places the comment bar 24 pixels below it", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/jira-work-item#project-butter"));
 	await page.getByRole("switch", { name: "Empty" }).check();
 	await page.getByRole("button", { name: "Modal", exact: true }).click();
 	const dialog = page.getByRole("dialog", { name: "Project butter" });
-	const tabs = dialog.getByRole("tablist", { name: "Activity views" });
-	const comment = dialog.getByRole("button", { name: "Add a comment" });
+	const tabs = dialog.locator('[data-jira-activity-entry-id="butter-empty-created"]');
+	await expect(tabs).toContainText("created this work item");
+	const comment = dialog.locator("[data-project-butter-comment-editor]");
 	await expect(comment).toBeVisible();
 	await expect.poll(async () => {
 		const [tabsBox, commentBox] = await Promise.all([tabs.boundingBox(), comment.boundingBox()]);

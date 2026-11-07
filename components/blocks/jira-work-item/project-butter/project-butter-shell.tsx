@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
 
 export function ProjectButterShell({
+	chatPanel,
 	children,
 	empty,
 	onClose,
@@ -29,6 +30,8 @@ export function ProjectButterShell({
 	suggestion = false,
 	overlayContainerRef,
 }: Readonly<{
+	/** Host-owned sidebar chat beside the standalone work item; also shows the Ask Rovo pill that opens it. */
+	chatPanel?: ReactNode;
 	children: ReactNode;
 	empty: boolean;
 	onClose: () => void;
@@ -170,7 +173,7 @@ export function ProjectButterShell({
 							avatarSrc: projectButterPersonAvatar("Annie Cook"),
 							initials: "AC",
 						}}
-						hideRovoAction
+						hideRovoAction={!chatPanel}
 						onSettingsClick={() => setSettingsOpen(true)}
 						product="jira"
 						shellHeight="parent"
@@ -185,7 +188,13 @@ export function ProjectButterShell({
 							/>
 						)}
 					>
-						{surface}
+						{chatPanel ? (
+							// Stands in for the surface as the nav body's flex child, so the work item keeps a bounded height and scrolls.
+							<div className="relative flex min-h-0 min-w-0 flex-1">
+								<div className="flex min-h-0 min-w-0 flex-1">{surface}</div>
+								{chatPanel}
+							</div>
+						) : surface}
 					</TopNavigation>
 				) : (
 					surface
