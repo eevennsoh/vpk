@@ -111,7 +111,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				return {
 					heroes: document.querySelectorAll('[data-vpk-figure="eu26-hero"]').length,
 					solids: hero.querySelectorAll('.iso-solid').length,
-					artworkAndLabels: hero.querySelectorAll('svg text, svg image, svg foreignObject').length,
+					artworkAndLabels: hero.querySelectorAll('svg image, svg foreignObject').length + [...hero.querySelectorAll('svg text')].filter(text => !(text.classList.contains('dtt') && ['Team ’26', 'Europe'].includes(text.textContent) && text.closest('[data-eu26-detail]'))).length,
 					faceDetails: hero.querySelectorAll('[data-part] > [data-eu26-detail]').length,
 					visibleWithoutDetail: [...hero.querySelectorAll('[data-eu26-piece^="story."][data-part]')].filter(part => part.style.display !== 'none' && !part.querySelector(':scope > [data-eu26-detail]')).length,
 					hiddenWithDetail: [...hero.querySelectorAll('[data-eu26-piece][data-part]')].filter(part => part.style.display === 'none' && part.querySelector(':scope > [data-eu26-detail]')).length,
@@ -206,13 +206,41 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				const focal = hero.querySelector('[data-focal="hero-card"]');
 				const rect = focal.getBoundingClientRect();
 				const orangeFocal = rect.width > 0 && rect.height > 0 && [...focal.querySelectorAll('.iso-top, .iso-edge')].some(part => { const style = getComputedStyle(part); return style.fill === orange || style.stroke === orange; });
-				const noArtworkOrLabels = hero.querySelectorAll('svg text, svg image, svg foreignObject').length === 0;
+				const noArtworkOrLabels = hero.querySelectorAll('svg image, svg foreignObject').length + [...hero.querySelectorAll('svg text')].filter(text => !(text.classList.contains('dtt') && ['Team ’26', 'Europe'].includes(text.textContent) && text.closest('[data-eu26-detail]'))).length === 0;
 				return { picker, variant: state.variant, orangeFocal, noArtworkOrLabels };
 			`);
 			assert.equal(result.picker, 0, 'no style picker with one paper style');
 			assert.equal(result.variant, 'paper');
 			assert.equal(result.orangeFocal, true);
 			assert.equal(result.noArtworkOrLabels, true);
+		});
+
+		await t.test('wall tiles animate deterministically and the wall loops without a seam', () => {
+			const result = scenario(`
+				const read = () => [...hero.querySelectorAll('[data-anim]')].filter(el => el.closest('[data-part]')?.style.display !== 'none').map(el => (el.getAttribute('transform') || '') + (el.getAttribute('width') || '') + (el.getAttribute('y') || '') + (el.getAttribute('stroke-dasharray') || '') + el.style.opacity).join('|');
+				explorer.seek(42.7); const direct = read();
+				explorer.seek(90); explorer.seek(30); explorer.seek(42.7); const revisited = read();
+				const lanyards = () => [...hero.querySelectorAll('[data-anim="lanyard"]')].filter(el => el.closest('[data-part]')?.style.display !== 'none').map(el => Number(/translate\\(0 (-?[\\d.]+)\\)/.exec(el.getAttribute('transform'))?.[1] ?? 0));
+				explorer.seek(42.7); const midDrop = Math.min(...lanyards());
+				explorer.seek(47); const rested = Math.min(...lanyards());
+				let maxJump = 0, previous = null;
+				for (let time = 40; time <= 120; time += 0.25) {
+					explorer.seek(time);
+					const viewBox = hero.querySelector('svg').viewBox.baseVal, now = new Map();
+					for (const el of hero.querySelectorAll('[data-eu26-piece^="wall."]')) {
+						if (el.style.display === 'none') continue;
+						const box = el.getBBox();
+						if (box.x + box.width > viewBox.x && box.x < viewBox.x + viewBox.width) now.set(el.dataset.eu26Piece, box.x);
+					}
+					if (previous) for (const [key, x] of now) if (previous.has(key)) maxJump = Math.max(maxJump, Math.abs(x - previous.get(key)));
+					previous = now;
+				}
+				return { same: direct === revisited && direct.length > 0, midDrop, rested, maxJump };
+			`);
+			assert.equal(result.same, true, 'tile motion is a pure function of time');
+			assert.ok(result.midDrop < -20, `a lanyard is mid-drop at 42.7 s (offset ${result.midDrop})`);
+			assert.ok(Math.abs(result.rested) < 1, 'the lanyard settles in its slot');
+			assert.ok(result.maxJump < 40, `wall tiles never jump across the frame (largest step ${result.maxJump})`);
 		});
 
 		await t.test('manual playback suspends work offscreen and resumes on re-entry', () => {

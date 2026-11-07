@@ -11,6 +11,52 @@ export function live(ctx) {
 	const shapeRefs = el => ({ fill: el.querySelector(".iso-fill"), top: el.querySelector(".iso-top"), edge: el.querySelector(".iso-edge"), sides: [...el.querySelectorAll(".iso-shade")], detail: detailOf.get(el.dataset.part) || null });
 	const surfaces = [...ctx.svg.querySelectorAll("[data-eu26-plan]")].map(el => ({ el, ...JSON.parse(el.dataset.eu26Plan), ...shapeRefs(el) }));
 	const surfaceOf = new Map(surfaces.map(surface => [surface.el, surface]));
+	// Wall-tile motion: each tagged inner outline is a pure function of time (and, for lanyards, of when the tile entered
+	// the frame), so scrubbing and the endless loop stay deterministic. Reduced motion holds every settled state.
+	const reducedMotion = ctx.svg.ownerDocument.defaultView.matchMedia?.("(prefers-reduced-motion: reduce)");
+	surfaces.forEach((surface, index) => {
+		surface.seed = (index * 0.6180339) % 1;
+		surface.anims = surface.detail ? [...surface.detail.querySelectorAll("[data-anim]")].map(el => ({ el, kind: el.dataset.anim, i: Number(el.dataset.i || 0), x: Number(el.getAttribute("x")), y: Number(el.getAttribute("y")), w: Number(el.getAttribute("width")), h: Number(el.getAttribute("height")), rows: Number(el.dataset.rows || 0), step: Number(el.dataset.step || 0), reach: Number(el.dataset.reach || 0), px: Number(el.dataset.px || 0), py: Number(el.dataset.py || 0), drop: Number(el.dataset.drop || 0) })) : [];
+	});
+	const unit = u => Math.max(0, Math.min(1, u));
+	const smooth = u => { const v = unit(u); return v * v * (3 - 2 * v); };
+	const overshoot = u => { const v = unit(u) - 1; return 1 + 2.4 * v * v * v + 1.4 * v * v; };
+	const animateTile = (surface, time, entered) => {
+		const settled = reducedMotion?.matches;
+		const phase = period => (((time + surface.seed * period) % period) + period) % period;
+		for (const anim of surface.anims) {
+			const { el, kind, i } = anim;
+			if (kind === "bar") {
+				const at = phase(8) - i * 0.16;
+				const share = settled ? 1 : at > 7.2 ? 1 - 0.6 * smooth((at - 7.2) / 0.8) : 0.4 + 0.6 * overshoot(at / 1.3);
+				el.setAttribute("height", (anim.h * share).toFixed(3));
+				el.setAttribute("y", (anim.y + anim.h * (1 - share)).toFixed(3));
+			} else if (kind === "type") {
+				const at = phase(7);
+				const typed = settled ? 1 : at > 6.2 ? 1 - smooth((at - 6.2) / 0.6) : Math.round(smooth(at / 3.4) * 18) / 18;
+				el.setAttribute("width", Math.max(0.01, anim.w * typed).toFixed(3));
+			} else if (kind === "row") {
+				const step = settled ? 0 : phase(anim.rows * 1.7) / 1.7, row = Math.floor(step);
+				const slide = row < anim.rows - 1 ? smooth((step - row - 0.72) / 0.28) : 0;
+				el.setAttribute("y", (anim.y + anim.step * (row + slide)).toFixed(3));
+			} else if (kind === "sweep") {
+				const at = phase(6), arc = settled ? 1 : at > 5.3 ? 1 - smooth((at - 5.3) / 0.7) : smooth(at / 2.6);
+				el.setAttribute("stroke-dasharray", `${arc.toFixed(4)} 1`);
+			} else if (kind === "bubble") {
+				const at = phase(6.5), shown = settled ? 1 : smooth((at - 0.4 - i * 1.1) / 0.35) * (1 - smooth((at - 5.8) / 0.5));
+				el.style.opacity = shown.toFixed(3);
+			} else if (kind === "drift") {
+				const dx = settled ? 0 : anim.reach * 1.4 * Math.sin(time * 0.55 + surface.seed * 6.3 + i * 2.1);
+				const dy = settled ? 0 : anim.reach * Math.sin(time * 0.41 + surface.seed * 4.1 + i * 1.3);
+				el.setAttribute("transform", `translate(${dx.toFixed(3)} ${dy.toFixed(3)})`);
+			} else if (kind === "lanyard") {
+				// Dropped from above the frame as the tile slides in, then a damped swing about the strap's top.
+				const since = settled ? 99 : entered;
+				const fall = 1 - smooth(since / 0.85), swing = since > 0.55 ? 8 * Math.exp(-1.5 * (since - 0.55)) * Math.sin(5.4 * (since - 0.55)) : 0;
+				el.setAttribute("transform", `translate(0 ${(-anim.drop * fall).toFixed(3)}) rotate(${swing.toFixed(3)} ${anim.px} ${anim.py})`);
+			}
+		}
+	};
 	const doneWindow = ctx.svg.querySelector("[data-eu26-done-window]");
 	const cursorLayer = ctx.svg.querySelector("[data-eu26-cursor-layer]");
 	const cursorParts = new Map([...ctx.svg.querySelectorAll("[data-eu26-cursor]")].map(el => [el.dataset.eu26Cursor, el]));
@@ -388,6 +434,13 @@ export function live(ctx) {
 		const width = contain + ((state.camera.cover ?? 0) * (height * displayWidth / Math.max(1, displayHeight) - contain));
 		ctx.svg.setAttribute("viewBox", `${(cx - width / 2).toFixed(3)} ${(cy - height / 2).toFixed(3)} ${width.toFixed(3)} ${height.toFixed(3)}`);
 		drawGround(state.camera.at, width, height);
+		const origin = project([0, 0, 0]), across = project([1, 0, 0]), speed = Math.abs(data.motion?.wall?.velocity?.[0] ?? 32) * Math.hypot(across[0] - origin[0], across[1] - origin[1]);
+		data.wall.forEach((card, i) => {
+			const el = pieces.get(`wall.${i}`), surface = surfaceOf.get(el);
+			if (!surface.anims.length || el.style.display === "none") return;
+			const xs = (surface.frame?.face || [[cx, cy]]).map(point => point[0]), left = (Math.min(...xs) + Math.max(...xs)) / 2;
+			animateTile(surface, state.time, (cx + width / 2 - left) / Math.max(1e-6, speed));
+		});
 		const unit = Math.max(width / displayWidth, height / displayHeight);
 		let clippedCursors = 0;
 		for (const cursor of state.cursors) {

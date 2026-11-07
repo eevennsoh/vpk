@@ -65,10 +65,12 @@ export function tileDetail(feature, { sx = 1, sy = sx } = {}) {
 	return p.markup();
 }
 
-export function titleDetail({ w = 220, d = 96, sx = 1, sy = sx } = {}) {
-	const p = pen(0, 0, sx, sy);
-	p.rect(12, 12, w - 24, d - 24, 6, "df");
-	return p.markup();
+// The one lettered face: the Team ’26 lockup, two bold left-aligned lines like the source's title tile. Two static
+// <text> nodes inside the tile's matrix group cost a negligible relayout, so no glyph table is needed.
+export function titleDetail({ d = 96, sx = 1, sy = sx } = {}) {
+	const p = pen(0, 0, sx, sy), size = Math.round(d * 0.3 * Math.min(sx, sy) * 100) / 100;
+	const [x, first] = p.at(16, d * 0.46), [, second] = p.at(16, d * 0.8);
+	return `<text class="dtt" x="${x}" y="${first}" font-size="${size}">Team ’26</text><text class="dtt" x="${x}" y="${second}" font-size="${size}">Europe</text>`;
 }
 
 export const wrapDetail = wrap;
