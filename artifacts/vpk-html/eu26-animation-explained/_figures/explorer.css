@@ -123,3 +123,47 @@
 	#eu26-variant-controls .eu26-variant-choice { transition: none; }
 }
 @media print { #eu26-variant-controls { display: none !important; } }
+
+/* Face detail: simplified product UI drawn on each paper face. Neutral tokens by default; on the orange subject the
+   live renderer sets --eu26-hl (0-100%) and every role mixes towards the accent ink, so detail stays legible on orange. */
+#animation-explorer [data-eu26-detail] { pointer-events: none; }
+#animation-explorer [data-eu26-face] {
+	--d-line: color-mix(in oklab, var(--ill-accent-ink) var(--eu26-hl, 0%), var(--anatomy-mid));
+	--d-ink: color-mix(in oklab, var(--ill-accent-ink) var(--eu26-hl, 0%), var(--anatomy-hi));
+	--d-faint: color-mix(in oklab, color-mix(in oklab, var(--ill-accent-ink) 30%, var(--ill-accent)) var(--eu26-hl, 0%), var(--ill-guide-dashed));
+	--d-panel: color-mix(in oklab, color-mix(in oklab, var(--ill-accent-ink) 10%, var(--ill-accent)) var(--eu26-hl, 0%), var(--ill-tone1));
+	--d-paper: color-mix(in oklab, color-mix(in oklab, var(--paper) 55%, var(--ill-accent)) var(--eu26-hl, 0%), var(--anatomy-top));
+	--d-bar: color-mix(in oklab, color-mix(in oklab, var(--ill-accent-ink) 25%, var(--ill-accent)) var(--eu26-hl, 0%), var(--ill-tone2));
+	--d-bar-dark: color-mix(in oklab, color-mix(in oklab, var(--ill-accent-ink) 45%, var(--ill-accent)) var(--eu26-hl, 0%), var(--ill-tone3));
+	--d-mid: color-mix(in oklab, color-mix(in oklab, var(--ill-accent-ink) 60%, var(--ill-accent)) var(--eu26-hl, 0%), var(--ill-ink50));
+	--d-solid: color-mix(in oklab, var(--ill-accent-ink) var(--eu26-hl, 0%), var(--anatomy-strong));
+	--d-text: color-mix(in oklab, var(--ill-accent-ink) var(--eu26-hl, 0%), var(--anatomy-text));
+	--d-muted: color-mix(in oklab, var(--ill-accent-ink) var(--eu26-hl, 0%), var(--anatomy-muted));
+	--d-inverse: color-mix(in oklab, var(--ill-accent) var(--eu26-hl, 0%), var(--paper));
+	pointer-events: none;
+}
+#animation-explorer [data-eu26-face] :is(.dl, .dk, .df, .dki, .dps, .dw, .dwf) {
+	stroke-width: 0.5px;
+	vector-effect: non-scaling-stroke;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+#animation-explorer [data-eu26-face] .dl { fill: none; stroke: var(--d-line); }
+#animation-explorer [data-eu26-face] .dk { fill: none; stroke: var(--d-ink); stroke-width: 0.6px; }
+#animation-explorer [data-eu26-face] .df { fill: none; stroke: var(--d-faint); }
+#animation-explorer [data-eu26-face] .dki { fill: none; stroke: var(--d-inverse); stroke-width: 0.7px; }
+#animation-explorer [data-eu26-face] .dp { fill: var(--d-panel); stroke: none; }
+#animation-explorer [data-eu26-face] .dps { fill: var(--d-panel); stroke: var(--d-line); }
+#animation-explorer [data-eu26-face] .dw { fill: var(--d-paper); stroke: var(--d-line); }
+#animation-explorer [data-eu26-face] .dwf { fill: var(--d-paper); stroke: var(--d-faint); }
+#animation-explorer [data-eu26-face] .db { fill: var(--d-bar); stroke: none; }
+#animation-explorer [data-eu26-face] .dbd { fill: var(--d-bar-dark); stroke: none; }
+#animation-explorer [data-eu26-face] .dg { fill: var(--d-mid); stroke: none; }
+#animation-explorer [data-eu26-face] .dd { fill: var(--d-solid); stroke: none; }
+#animation-explorer [data-eu26-face] .dwi { fill: var(--d-inverse); stroke: none; }
+#animation-explorer [data-eu26-face] .dpointer { fill: var(--d-solid); stroke: var(--d-inverse); stroke-width: 0.6px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+/* Copy arrives as glyph outlines; stroke matches fill so a stroke-width attribute can stand in for heavier weights. */
+#animation-explorer [data-eu26-face] .dt { fill: var(--d-text); stroke: var(--d-text); }
+#animation-explorer [data-eu26-face] .dtm { fill: var(--d-muted); stroke: var(--d-muted); }
+#animation-explorer [data-eu26-face] .dtx { fill: var(--d-muted); stroke: var(--d-muted); }
+#animation-explorer [data-eu26-face] .dti { fill: var(--d-inverse); stroke: var(--d-inverse); }

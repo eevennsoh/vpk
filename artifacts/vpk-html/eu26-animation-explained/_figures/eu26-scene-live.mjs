@@ -4,7 +4,11 @@ export function live(ctx) {
 	let variant = "paper", currentTime = 0, currentTransition = null, currentState = null;
 	let displayWidth = ctx.svg.clientWidth || ctx.stage?.clientWidth || 1200;
 	let displayHeight = ctx.svg.clientHeight || ctx.stage?.clientHeight || 760, sizeChanged = false;
-	const shapeRefs = el => ({ fill: el.querySelector(".iso-fill"), top: el.querySelector(".iso-top"), edge: el.querySelector(".iso-edge"), sides: [...el.querySelectorAll(".iso-shade")] });
+	// Face details ship in one hidden layer; each surface adopts its own while it is on screen and lets it go when hidden,
+	// so the live DOM holds only the detail that paints (hidden subtrees still cost style and layout walks every frame).
+	const detailOf = new Map([...ctx.svg.querySelectorAll("[data-eu26-details] > [data-eu26-detail]")].map(detail => [detail.dataset.eu26Detail, detail]));
+	ctx.svg.querySelector("[data-eu26-details]")?.remove();
+	const shapeRefs = el => ({ fill: el.querySelector(".iso-fill"), top: el.querySelector(".iso-top"), edge: el.querySelector(".iso-edge"), sides: [...el.querySelectorAll(".iso-shade")], detail: detailOf.get(el.dataset.part) || null });
 	const surfaces = [...ctx.svg.querySelectorAll("[data-eu26-plan]")].map(el => ({ el, ...JSON.parse(el.dataset.eu26Plan), ...shapeRefs(el) }));
 	const surfaceOf = new Map(surfaces.map(surface => [surface.el, surface]));
 	const doneWindow = ctx.svg.querySelector("[data-eu26-done-window]");
@@ -101,6 +105,17 @@ export function live(ctx) {
 		}
 		for (const side of surface.sides) side.setAttribute("d", buckets[Number(side.dataset.shade)].join(""));
 		el.removeAttribute("transform");
+		// Face detail is drawn in the plan's local units; the face is planar, so one affine matrix from three projected
+		// corners places all of it. It belongs to the top face only, so the back of a turning card shows bare paper.
+		if (surface.detail) {
+			if (front) {
+				const faceZ = z + height, origin = project(world([plan.x, plan.y, faceZ]));
+				const across = project(world([plan.x + plan.w, plan.y, faceZ])), down = project(world([plan.x, plan.y + plan.d, faceZ]));
+				const matrix = [(across[0] - origin[0]) / plan.w, (across[1] - origin[1]) / plan.w, (down[0] - origin[0]) / plan.d, (down[1] - origin[1]) / plan.d, origin[0], origin[1]];
+				surface.detail.setAttribute("transform", `matrix(${matrix.map(value => value.toFixed(5)).join(" ")})`);
+				if (surface.detail.style.display) surface.detail.style.display = "";
+			} else if (surface.detail.style.display !== "none") surface.detail.style.display = "none";
+		}
 		const face = front ? top : bottom;
 		const clipped = pose.clip && doneClip.length ? intersection(face, doneClip) : face;
 		surface.frame = { bounds: pose.clip ? clipped : [...top, ...bottom], polygon: clipped, face, center: world([plan.x + plan.w / 2, plan.y + plan.d / 2, front ? z + height : z]) };
@@ -111,7 +126,12 @@ export function live(ctx) {
 		if (pose.clip) el.setAttribute("clip-path", "url(#eu26-done-window)");
 		else el.removeAttribute("clip-path");
 		el.style.display = pose.alpha < 0.002 ? "none" : "";
-		if (pose.alpha < 0.002) return;
+		const detail = surfaceOf.get(el).detail;
+		if (pose.alpha < 0.002) {
+			detail?.remove();
+			return;
+		}
+		if (detail && detail.parentNode !== el) el.appendChild(detail);
 		if (pose.alpha > 0.998) el.style.removeProperty("opacity");
 		else el.style.opacity = pose.alpha.toFixed(4);
 		paint(el, home, pose);
@@ -145,6 +165,7 @@ export function live(ctx) {
 		surface.fill.style.fill = color("var(--anatomy-paper)", "var(--ill-accent)");
 		for (const side of surface.sides) side.style.fill = color(`var(--anatomy-shade-${side.dataset.shade})`, "color-mix(in oklab, var(--ill-accent) 70%, var(--ill-line))");
 		surface.edge.style.stroke = color("var(--anatomy-mid)", "var(--ill-accent-ink)");
+		surface.detail?.firstElementChild?.style.setProperty("--eu26-hl", `${(amount * 100).toFixed(2)}%`);
 		el.dataset.eu26Active = amount > 0.5 ? "true" : "false";
 		el.dataset.eu26Highlight = highlight;
 	};
@@ -281,7 +302,23 @@ export function live(ctx) {
 		}
 		const signature = order.map(item => item.el.dataset.eu26Piece).join("|");
 		if (signature !== lastOrder) {
-			for (const item of order) ctx.svg.appendChild(item.el);
+			// The visible surfaces form one contiguous run in depth order just before the lighting layer, as a full
+			// re-append would leave them, but only out-of-place surfaces move: re-inserting a node restyles and re-lays-out
+			// its whole subtree, face detail included. Hidden surfaces carry no detail, so they are the cheap ones to move.
+			const visibleSet = new Set(order.map(item => item.el));
+			let first = null;
+			for (const child of ctx.svg.children) if (visibleSet.has(child)) { first = child; break; }
+			for (let node = first; node && node !== lighting;) {
+				const next = node.nextElementSibling;
+				if (surfaceOf.has(node) && !visibleSet.has(node)) ctx.svg.insertBefore(node, first);
+				node = next;
+			}
+			let ref = lighting.parentNode === ctx.svg ? lighting : null;
+			for (let i = order.length - 1; i >= 0; i -= 1) {
+				const el = order[i].el;
+				if (el.nextElementSibling !== ref) ctx.svg.insertBefore(el, ref);
+				ref = el;
+			}
 			lastOrder = signature;
 		}
 		ctx.root.dataset.heroDepthCycles = String(cycles);

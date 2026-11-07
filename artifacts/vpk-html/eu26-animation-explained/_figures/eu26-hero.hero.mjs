@@ -1,5 +1,8 @@
 import { createWallField, model, motionConfig } from './eu26-motion-model.mjs';
 import { live } from './eu26-scene-live.mjs';
+import { cardDetail, chromeDetail, tileDetail, titleDetail, wrapDetail } from './eu26-face-detail.mjs';
+import { lanyardDetail, PIECES } from './eu26-face-wall.mjs';
+import { pen } from './eu26-face-pen.mjs';
 
 export { model, live };
 
@@ -280,30 +283,34 @@ export function build(kit, { data }) {
 	const board = { x: -430, y: -286, w: 860, d: 596, r: 10 };
 	const P = camera.fit(k.boxCorners(board, -12, 35), hero.width, hero.height, { pad: 34 });
 	const R = A.recorder(P);
-	const put = (name, plan, z, h, piece = name, hidden = false, focal = false) => {
+	// Face details are drawn in plan units, so they stay out of the audited part markup; live() adopts each one into
+	// its surface's own group at start-up and places it with that face's projection every frame.
+	const details = [];
+	const put = (name, plan, z, h, piece = name, hidden = false, focal = false, detail = "") => {
+		if (detail) details.push(detail.replace("<g data-eu26-detail", `<g data-eu26-detail="${name}"`));
 		const kind = piece === "chrome" ? name.split(".")[1].replace(/\d/g, "") : piece.split(".")[0];
 		const attrs = `data-eu26-piece="${piece}" data-part="${name}" data-eu26-kind="${kind}" data-eu26-plan='${JSON.stringify({ plan, z, h })}'${hidden ? ' style="display:none"' : ""}${focal ? ' data-focal="hero-card"' : ""}`;
 		R.put({ name, at: [plan.x + plan.w / 2, plan.y + plan.d / 2, z + h / 2], svg: `<g ${attrs}>${S(k.slabOf(plan, z, h, P, 4, Math.min(h * 0.16, 0.25)), { tone: focal ? "hi" : "mid", crease: "none", lit: focal })}</g>`, shapes: [R.solid(A.slab(plan, z, h, { name, ground: true }, 4))] });
 	};
-	put("board.chassis", board, -12, 10, "chrome");
-	put("board.navigation", { x: -430, y: -286, w: 860, d: 42, r: 8 }, -2, 2, "chrome");
-	put("board.title", { x: -430, y: -242, w: 860, d: 53, r: 2 }, -2, 2, "chrome");
+	put("board.chassis", board, -12, 10, "chrome", false, false, chromeDetail("board.chassis"));
+	put("board.navigation", { x: -430, y: -286, w: 860, d: 42, r: 8 }, -2, 2, "chrome", false, false, chromeDetail("board.navigation"));
+	put("board.title", { x: -430, y: -242, w: 860, d: 53, r: 2 }, -2, 2, "chrome", false, false, chromeDetail("board.title"));
 	for (let i = 0; i < 4; i += 1) {
 		const x = -394 + i * 205;
-		put(`board.column${i}`, { x, y: -184, w: 193, d: 478, r: 6 }, -2, 1, "chrome");
+		put(`board.column${i}`, { x, y: -184, w: 193, d: 478, r: 6 }, -2, 1, "chrome", false, false, chromeDetail(`board.column${i}`));
 	}
 	data.cards.forEach((card, i) => {
 		const plan = { x: card.home[0], y: card.home[1], w: card.w, d: card.d, r: 4.5 };
-		put(`story.${i}`, plan, card.home[2], 1.2, `story.${i}`, card.row > 2, i === 15);
+		put(`story.${i}`, plan, card.home[2], 1.2, `story.${i}`, card.row > 2, i === 15, cardDetail(card, stories[i]));
 	});
 	data.features.forEach((feature, i) => {
 		const plan = { x: -700 + i * 260, y: 1600, w: feature.w, d: feature.d, r: 9 };
-		put(`tile.${i}`, plan, 4, 1.5, `tile.${i}`, true);
+		put(`tile.${i}`, plan, 4, 1.5, `tile.${i}`, true, false, wrapDetail(tileDetail(feature)));
 	});
-	put("bento.title", { x: -100, y: 1954, w: 220, d: 96, r: 9 }, 4, 1.2, "title", true);
+	put("bento.title", { x: -100, y: 1954, w: 220, d: 96, r: 9 }, 4, 1.2, "title", true, false, wrapDetail(titleDetail()));
 	data.wall.forEach((wall, i) => {
 		const plan = { x: wall.home[0], y: wall.home[1], w: wall.w, d: wall.d, r: wall.r };
-		put(`wall.${i}`, plan, 0, 1.1, `wall.${i}`, true);
+		put(`wall.${i}`, plan, 0, 1.1, `wall.${i}`, true, false, wrapDetail(wallDetail(wall, data)));
 	});
 	for (let i = 0; i < 56; i += 1) {
 		const plan = { x: -700 + i * 24, y: 4000, w: 4 + i % 3, d: 9 + i % 4, r: 0.7 };
@@ -311,7 +318,29 @@ export function build(kit, { data }) {
 	}
 	const window = k.planOutline(data.doneList.viewport, 5.2, P, 4);
 	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><circle data-eu26-cursor-ring cx="0" cy="0" r="0" fill="none"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/></g>`).join("")}</g>`;
-	return { P, R, before: [`<defs><clipPath id="eu26-done-window" clipPathUnits="userSpaceOnUse"><path data-eu26-done-window d="${window}"/></clipPath></defs>`], after: [cursorLayer] };
+	return { P, R, before: [`<defs><clipPath id="eu26-done-window" clipPathUnits="userSpaceOnUse"><path data-eu26-done-window d="${window}"/></clipPath></defs>`], after: [`<g data-eu26-details aria-hidden="true" style="display:none">${details.join("")}</g>`, cursorLayer] };
+}
+
+// Wall faces: bento holes repeat their tile's face at the slot's size, lanyards hang a badge, and every library piece
+// draws its product UI in the source's natural pixels, scaled and inset exactly as wallPiecesLayout places it.
+function wallDetail(slot, data) {
+	if (slot.reserved !== undefined) {
+		if (slot.reserved === 6) return titleDetail({ w: data.title.w, d: data.title.d, sx: slot.w / data.title.w, sy: slot.d / data.title.d });
+		const feature = data.features[slot.reserved];
+		return tileDetail(feature, { sx: slot.w / feature.w, sy: slot.d / feature.d });
+	}
+	if (slot.key.startsWith('lanyard-')) {
+		const p = pen(0, 0, slot.w / 360, slot.d / 480);
+		pen().rect(0, 0, slot.w, slot.d, slot.r, 'dp').out.forEach(item => p.out.push(item));
+		lanyardDetail(p, 360, 480);
+		return p.markup();
+	}
+	const [id, w, h, scale, px, py] = WALL_PIECES.find(piece => 'library-' + piece[0] === slot.key);
+	const unit = slot.w / (w * scale + px * 2);
+	const p = pen(px * unit, py * unit, scale * unit);
+	p.out.push(...pen().rect(0, 0, slot.w, slot.d, slot.r, 'dp').out);
+	PIECES[id](p, w, h);
+	return p.markup();
 }
 
 // Each paper surface is an intentionally suspended choreography prop; its slab is its true footprint.
