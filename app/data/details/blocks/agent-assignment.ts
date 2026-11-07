@@ -51,6 +51,12 @@ export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
 			description: "Called when an unassigned agent is chosen, before the controlled id change. Use it to invoke the agent and create its running session.",
 		},
 		{
+			name: "showSessionAddAgent",
+			type: "boolean",
+			default: "true",
+			description: "Show the Add agent action in the Default session menu.",
+		},
+		{
 			name: "onAssignedAgentIdsChange",
 			type: "(agentIds: readonly string[]) => void",
 			required: true,

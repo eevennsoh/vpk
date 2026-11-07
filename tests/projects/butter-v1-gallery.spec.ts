@@ -152,11 +152,22 @@ test("Butter session menus name the work instead of the agent", async ({ page })
 	const assignment = page.getByRole("dialog", { name: "Agent assignment" });
 	await expect(assignment.getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
 	await expect(assignment.getByText("Cursor", { exact: true })).toBeVisible();
+	await expect(assignment.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Select e2e Journey" }).click();
 	const journeyCard = page.locator('[data-butter-board-surface] [data-issue-key="PAY-105"][data-board-column-title]');
 	await journeyCard.getByRole("button", { name: "Cursor: Working" }).click();
-	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
+	const journeyAssignment = page.getByRole("dialog", { name: "Agent assignment" });
+	await expect(journeyAssignment.getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
+	await expect(journeyAssignment.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
+});
+
+test("the original Butter session menu still offers Add agent", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter"));
+	await page.locator('[data-issue-key="PAY-105"][data-board-column-title]').getByRole("button", { name: "Cursor: Working" }).click();
+	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true })).toBeVisible();
 });
 
 test("session titles describe their work in grouped, review, and List views", async ({ page }) => {
@@ -185,6 +196,7 @@ test("session titles describe their work in grouped, review, and List views", as
 	const row = page.getByRole("region", { name: "Payments SDK v2 migration work items list" }).locator("tr").filter({ hasText: "PAY-105" });
 	await row.getByRole("button", { name: "Edit agents" }).click();
 	await expect(page.getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
+	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Assign agent", exact: true })).toBeVisible();
 });
 
 test("a new board session uses the work-item summary as its title", async ({ page }) => {
@@ -217,5 +229,7 @@ test("a coding session started from a work item uses its summary", async ({ page
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 	await item.getByRole("group", { name: "Agent field" }).getByRole("button").click();
-	await expect(page.getByRole("dialog", { name: "Agent sessions" }).getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true })).toBeVisible();
+	const sessions = page.getByRole("dialog", { name: "Agent sessions" });
+	await expect(sessions.getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true })).toBeVisible();
+	await expect(sessions.getByRole("button", { name: "Add agent", exact: true })).toBeVisible();
 });
