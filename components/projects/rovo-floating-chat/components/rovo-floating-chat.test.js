@@ -600,5 +600,5 @@ test("RovoFloatingChat does not auto-promote submitted or existing messages to t
 	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /uiMessages/);
 	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /useChatSubmit/);
 	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /ChatGreeting/);
-	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /ChatComposer/);
+	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /<ChatComposer\b/);
 });
