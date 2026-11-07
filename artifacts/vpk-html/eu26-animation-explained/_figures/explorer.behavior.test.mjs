@@ -42,7 +42,8 @@ const scenario = body => evaluate(`(async () => {
 	};
 	const settled = async index => until(() => {
 		const state = explorer.getState();
-		return state.selectedIndex === index && !state.transitioning && near(state.renderTime, stateTimes[index]);
+		// Wall chapters keep drawing past their time on the idle wall clock, so they settle at or after it.
+		return state.selectedIndex === index && !state.transitioning && (near(state.renderTime, stateTimes[index]) || (stateTimes[index] >= 27 && state.renderTime >= stateTimes[index]));
 	}, 'state ' + index + ' did not settle');
 	const visual = root => {
 		const svg = root.matches('svg') ? root : root.querySelector('svg');
