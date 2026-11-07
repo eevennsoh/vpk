@@ -122,7 +122,7 @@ test("Gallery consumers give it a parent with a definite height", () => {
 			if ((ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) && opening.tagName.getText(source) === "Gallery") {
 				const parent = ts.isJsxElement(node.parent) ? node.parent.openingElement : null;
 				const className = parent?.attributes.properties.find((property) => ts.isJsxAttribute(property) && property.name.getText(source) === "className");
-				assert.ok(className && ts.isStringLiteral(className.initializer) && className.initializer.text.split(/\s+/u).includes("h-dvh"), `${consumer} must wrap Gallery in a parent with a definite height`);
+				assert.ok(className?.initializer && ts.isStringLiteral(className.initializer) && className.initializer.text.split(/\s+/u).includes("h-dvh"), `${consumer} must wrap Gallery in a parent with a definite height`);
 			}
 			ts.forEachChild(node, checkGallery);
 		};

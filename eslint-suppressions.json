@@ -692,7 +692,7 @@
   },
   "components/blocks/gallery/gallery.test.js": {
     "no-restricted-syntax": {
-      "count": 7
+      "count": 6
     }
   },
   "components/blocks/generative-card/index.tsx": {
