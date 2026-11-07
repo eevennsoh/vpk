@@ -20,6 +20,7 @@ import { useProjectButterSessions } from "@/components/blocks/jira-work-item/pro
 import { cn } from "@/lib/utils";
 import { ProjectButterBody } from "@/components/blocks/jira-work-item/project-butter/project-butter-body";
 import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
+import { ProjectButterDetailsRail } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
 import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
 import { ProjectButterSession } from "@/components/blocks/jira-work-item/project-butter/project-butter-session";
@@ -339,7 +340,7 @@ export function ProjectButterJiraWorkItem({
 					"grid min-h-0 flex-1",
 					sidePanel
 						? "grid-cols-1 overflow-y-auto"
-						: "grid-cols-1 overflow-y-auto @[860px]/butter:grid-cols-[minmax(0,1fr)_minmax(280px,420px)] @[860px]/butter:overflow-clip",
+						: "grid-cols-1 overflow-y-auto @[860px]/butter:grid-cols-[minmax(0,1fr)_auto] @[860px]/butter:overflow-clip",
 				)}
 				data-project-butter-state={suggestion ? "suggestion" : empty ? "empty" : "filled"}
 				data-project-butter-work-item
@@ -374,7 +375,7 @@ export function ProjectButterJiraWorkItem({
 					/>
 				</div>
 				{sidePanel ? null : (
-					<div className="hidden min-w-0 px-6 pb-8 @[860px]/butter:block @[860px]/butter:overflow-y-auto" ref={railDetailsRef} />
+					<ProjectButterDetailsRail ref={railDetailsRef} />
 				)}
 			</div>
 			{detailsHost ? createPortal(details, detailsHost) : null}
