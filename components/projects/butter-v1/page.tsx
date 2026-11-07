@@ -133,6 +133,17 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
 }
 
+function getMerchantWorkItemProps(issueKey: string, journey: Pick<ComponentProps<typeof ProjectButterJiraWorkItem>, "journeyPhase" | "journeySession" | "journeyControls" | "developmentJourney">) {
+	const isMerchant = issueKey === BUTTER_SUGGESTION_DEMO_KEY;
+	return {
+		initialSuggestion: isMerchant,
+		suggestionProfile: isMerchant ? "payments" as const : "default" as const,
+		showAuditInActivity: isMerchant,
+		autoAssignClaudeToCurrentUser: isMerchant,
+		...(isMerchant ? journey : {}),
+	};
+}
+
 function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySession, journeyControls, developmentJourney, hideLauncherWhenClosed, onBrowseAgents, onCreateAgent, onAgentSessionStart, onOpenCloudSession, onStoryPointsChange, onAssigneeChange, onWorkItemClose, openRelatedItem, relatedCatalog, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
 	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
 	openRelatedItem: RelatedItemOpener;
@@ -175,16 +186,9 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 					initialPresentation="modal"
 					shell="project"
 					initialPreset="filled"
-					initialSuggestion={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY}
-					suggestionProfile={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? "payments" : "default"}
+					{...getMerchantWorkItemProps(workItem.selection.workItem.code, { journeyPhase, journeySession, journeyControls, developmentJourney })}
 					defaultReporter={defaultReporter}
 					currentUser={defaultReporter}
-					showAuditInActivity={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY}
-					autoAssignClaudeToCurrentUser={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY}
-					journeyPhase={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? journeyPhase : undefined}
-					journeySession={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? journeySession : undefined}
-					journeyControls={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? journeyControls : undefined}
-					developmentJourney={workItem.selection.workItem.code === BUTTER_SUGGESTION_DEMO_KEY ? developmentJourney : undefined}
 					initialSessions={workItem.selection.initialSessions}
 					overlayContainerRef={setOverlayContainer}
 					onOpenCloudSession={(session, draft) => workItem.selection ? onOpenCloudSession(workItem.selection.workItem.code, workItem.selection.workItem.title, session, draft) : Promise.resolve(false)}
