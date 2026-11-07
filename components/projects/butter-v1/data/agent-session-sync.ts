@@ -45,7 +45,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		sourceTitle: "PAY-107",
 		state: "running",
 		timeLabel: "Just now",
-		title: "Challenge webhook gap notes just landed from a local Cursor session",
 	},
 	{
 		agentId: "codex",
@@ -70,7 +69,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		sourceTitle: "PAY-112",
 		state: "needs-input",
 		timeLabel: "Just now",
-		title: "Sandbox 401 root cause just arrived from a local Codex session",
 	},
 	{
 		agentId: "claude",
@@ -94,7 +92,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Replay-risk blast radius",
 		sourceTitle: "PAY-118",
 		timeLabel: "Just now",
-		title: "Replay-risk blast radius just synced from a local Claude session",
 	},
 	{
 		agentId: "claude",
@@ -119,7 +116,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		sourceTitle: "PAY-121",
 		state: "running",
 		timeLabel: "Just now",
-		title: "Kill switch rollout notes just appeared from a local Claude session",
 	},
 	{
 		agentId: "codex",
@@ -134,7 +130,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		sourceTitle: "PAY-115",
 		state: "needs-input",
 		timeLabel: "Just now",
-		title: "Retry telemetry review just synced from a local Codex session",
 	},
 	{
 		agentId: "cursor",
@@ -149,7 +144,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		sourceTitle: "PAY-119",
 		state: "running",
 		timeLabel: "Just now",
-		title: "Contract test gaps just landed from a local Cursor session",
 	},
 	{
 		agentId: "cursor",
@@ -163,7 +157,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Deprecation copy pass",
 		sourceTitle: "PAY-104",
 		timeLabel: "Just now",
-		title: "Deprecation copy pass just arrived from a local Cursor session",
 	},
 	{
 		agentId: "claude",
@@ -178,7 +171,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		sourceTitle: "PAY-132",
 		state: "needs-input",
 		timeLabel: "Just now",
-		title: "Release gate decision just synced from a local Claude session",
 	},
 	{
 		agentId: "cursor",
@@ -202,7 +194,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Timeout budget map",
 		sourceTitle: "PAY-133",
 		timeLabel: "Just now",
-		title: "Timeout budget map just synced from a local Cursor session",
 	},
 	{
 		agentId: "codex",
@@ -226,7 +217,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Idempotency race",
 		sourceTitle: "PAY-134",
 		timeLabel: "Just now",
-		title: "Idempotency race reproduction just arrived from a local Codex session",
 	},
 	{
 		agentId: "cursor",
@@ -250,7 +240,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Settlement schema parity",
 		sourceTitle: "PAY-135",
 		timeLabel: "Just now",
-		title: "Settlement schema parity notes just landed from a local Cursor session",
 	},
 	{
 		agentId: "claude",
@@ -274,7 +263,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Reconciliation alerts",
 		sourceTitle: "PAY-136",
 		timeLabel: "Just now",
-		title: "Reconciliation alert calibration just appeared from a local Claude session",
 	},
 	{
 		agentId: "codex",
@@ -298,7 +286,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Ledger replay checklist",
 		sourceTitle: "PAY-137",
 		timeLabel: "Just now",
-		title: "Ledger replay checklist just synced from a local Codex session",
 	},
 	{
 		agentId: "codex",
@@ -322,7 +309,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Token rotation drill",
 		sourceTitle: "PAY-138",
 		timeLabel: "Just now",
-		title: "Token rotation drill evidence just arrived from a local Codex session",
 	},
 	{
 		agentId: "cursor",
@@ -346,7 +332,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Webhook ordering matrix",
 		sourceTitle: "PAY-139",
 		timeLabel: "Just now",
-		title: "Webhook ordering matrix just landed from a local Cursor session",
 	},
 	{
 		agentId: "claude",
@@ -370,7 +355,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Refund audit metadata",
 		sourceTitle: "PAY-140",
 		timeLabel: "Just now",
-		title: "Refund audit metadata just appeared from a local Claude session",
 	},
 	{
 		agentId: "codex",
@@ -384,7 +368,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Currency rounding fixtures",
 		sourceTitle: "PAY-141",
 		timeLabel: "Just now",
-		title: "Currency rounding fixtures just synced from a local Codex session",
 	},
 	{
 		agentId: "cursor",
@@ -398,7 +381,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Merchant mapping exceptions",
 		sourceTitle: "PAY-142",
 		timeLabel: "Just now",
-		title: "Merchant mapping exceptions just landed from a local Cursor session",
 	},
 	{
 		agentId: "claude",
@@ -412,7 +394,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Rate-limit sampling",
 		sourceTitle: "PAY-143",
 		timeLabel: "Just now",
-		title: "Rate-limit sampling notes just synced from a local Claude session",
 	},
 	{
 		agentId: "claude",
@@ -426,7 +407,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Chargeback replay comparison",
 		sourceTitle: "PAY-144",
 		timeLabel: "Just now",
-		title: "Chargeback replay comparison just appeared from a local Claude session",
 	},
 	{
 		agentId: "codex",
@@ -440,7 +420,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Cutover runbook gaps",
 		sourceTitle: "PAY-145",
 		timeLabel: "Just now",
-		title: "Cutover runbook gaps just arrived from a local Codex session",
 	},
 	{
 		agentId: "cursor",
@@ -454,7 +433,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Support diagnostic payload",
 		sourceTitle: "PAY-146",
 		timeLabel: "Just now",
-		title: "Support diagnostic payload notes just landed from a local Cursor session",
 	},
 	{
 		agentId: "cursor",
@@ -468,7 +446,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Rollback metric thresholds",
 		sourceTitle: "PAY-147",
 		timeLabel: "Just now",
-		title: "Rollback metric thresholds just synced from a local Cursor session",
 	},
 	{
 		agentId: "claude",
@@ -482,7 +459,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Traffic ramp observations",
 		sourceTitle: "PAY-148",
 		timeLabel: "Just now",
-		title: "Traffic ramp observations just appeared from a local Claude session",
 	},
 	{
 		agentId: "cursor",
@@ -506,7 +482,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Authentication fallback trace",
 		sourceTitle: "PAY-149",
 		timeLabel: "Just now",
-		title: "Authentication fallback trace just landed from a local Cursor session",
 	},
 	{
 		agentId: "codex",
@@ -530,7 +505,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Payout batch recovery",
 		sourceTitle: "PAY-150",
 		timeLabel: "Just now",
-		title: "Payout batch recovery evidence just arrived from a local Codex session",
 	},
 	{
 		agentId: "codex",
@@ -554,7 +528,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Decline response parity",
 		sourceTitle: "PAY-151",
 		timeLabel: "Just now",
-		title: "Decline response parity results just synced from a local Codex session",
 	},
 	{
 		agentId: "claude",
@@ -578,7 +551,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Account migration locks",
 		sourceTitle: "PAY-152",
 		timeLabel: "Just now",
-		title: "Account migration lock notes just appeared from a local Claude session",
 	},
 	{
 		agentId: "cursor",
@@ -592,7 +564,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Fee rounding edge cases",
 		sourceTitle: "PAY-153",
 		timeLabel: "Just now",
-		title: "Fee rounding edge cases just landed from a local Cursor session",
 	},
 	{
 		agentId: "codex",
@@ -606,7 +577,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Retry header audit",
 		sourceTitle: "PAY-154",
 		timeLabel: "Just now",
-		title: "Retry header audit just arrived from a local Codex session",
 	},
 	{
 		agentId: "claude",
@@ -620,7 +590,6 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Capture metric coverage",
 		sourceTitle: "PAY-155",
 		timeLabel: "Just now",
-		title: "Capture metric coverage just synced from a local Claude session",
 	},
 	{
 		agentId: "claude",
@@ -634,9 +603,8 @@ const BUTTER_SYNC_SESSION_SOURCE = [
 		shortTitle: "Final readiness observations",
 		sourceTitle: "PAY-156",
 		timeLabel: "Just now",
-		title: "Final readiness observations just appeared from a local Claude session",
 	},
-] as const satisfies readonly ButterSyncSession[];
+] as const satisfies readonly Omit<ButterSyncSession, "title">[];
 
 export const BUTTER_SYNC_SESSION_COHORT_BY_ID: ReadonlyMap<string, ButterSessionCohort> = new Map([
 	// Five replay both state changes; the first arrives early enough to see the full path.
@@ -684,13 +652,13 @@ const BUTTER_SEEDED_FINISHED_IDS = new Set([
 	"lw-ship-p95-session",
 ]);
 
-function getSessionDetailPrefix(session: PulseAgentSession): string {
+function getSessionDetailPrefix(session: Pick<PulseAgentSession, "detail">): string {
 	return session.detail.split(" · ").slice(0, 2).join(" · ");
 }
 
-function toFinishedSessionCopy(session: PulseAgentSession): Pick<PulseAgentSession, "title" | "detail"> {
+function toFinishedSessionCopy(session: Pick<PulseAgentSession, "shortTitle" | "detail">): Pick<PulseAgentSession, "title" | "detail"> {
 	return {
-		title: `${session.shortTitle} finished in a local agent session`,
+		title: session.shortTitle,
 		detail: `${getSessionDetailPrefix(session)} · session finished and findings are ready to review`,
 	};
 }
@@ -702,7 +670,7 @@ export const BUTTER_SEEDED_AGENT_SESSION_OVERRIDES: ReadonlyMap<string, PulseAge
 			? toFinishedSessionCopy(session)
 			: session.state === "needs-input"
 				? {
-					title: `${session.shortTitle} is in progress in a local agent session`,
+					title: session.shortTitle,
 					detail: `${getSessionDetailPrefix(session)} · work is underway in this session`,
 				}
 				: {};
@@ -710,7 +678,7 @@ export const BUTTER_SEEDED_AGENT_SESSION_OVERRIDES: ReadonlyMap<string, PulseAge
 			...session,
 			...copy,
 			agentId: session.agentId === "copilot" ? "cursor" : session.agentId,
-			title: (copy.title ?? session.title).replace("GitHub Copilot", "Cursor"),
+			title: session.shortTitle,
 			state: finished ? "complete" : "running",
 		}] as const;
 	}),
@@ -722,6 +690,7 @@ export const BUTTER_SYNC_SESSIONS = BUTTER_SYNC_SESSION_SOURCE.map(
 		const finished = cohort === "finished-initially";
 		return {
 			...session,
+			title: session.shortTitle,
 			...(finished ? toFinishedSessionCopy(session) : {}),
 			state: finished ? "complete" : "running",
 		};
@@ -796,9 +765,7 @@ export function advanceButterSyncSession(
 		...session,
 		state: nextState,
 		timeLabel: "Just now",
-		title: nextState === "needs-input"
-			? `${session.shortTitle} needs input`
-			: `${session.shortTitle} finished`,
+		title: session.shortTitle,
 		detail: nextState === "needs-input"
 			? cohort === "full-path"
 				? `${detailPrefix} · waiting for a teammate to unblock this session`

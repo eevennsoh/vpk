@@ -43,6 +43,8 @@ import { cn } from "@/lib/utils";
 export type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
 
 export interface AgentAssignmentAgent extends AgentSelectorAgent {
+	/** Display-safe work title for this session, distinct from agent identity and status. */
+	sessionTitle?: string;
 	status?: ReactNode;
 	/** Minimum time a status remains visible before advancing. */
 	statusCycleIntervalMs?: number;

@@ -1,0 +1,65 @@
+import { expect, test } from "@playwright/test";
+import { appUrl } from "@/tests/helpers/origin";
+
+test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
+
+test("Butter v1 gallery shows the Project Butter agent selector", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const gallery = page.getByRole("group", { name: "Gallery items" });
+	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
+	await expect(picker.getByRole("group", { name: "Software agents" })).toBeVisible();
+	await expect(picker.getByRole("group", { name: "Other agents" })).toBeVisible();
+	await expect(picker.getByText("Jira Coding Agent", { exact: true })).toBeVisible();
+	await expect(picker.getByText("Claude", { exact: true })).toBeVisible();
+	await expect(picker.getByText("Cursor", { exact: true })).toBeVisible();
+	await expect(picker.getByRole("button", { name: "Browse agents" })).toBeVisible();
+	await expect(picker.getByRole("button", { name: "Create agent" })).toBeVisible();
+	const search = picker.getByRole("combobox", { name: "Search agents" });
+	await search.fill("Claude");
+	await expect(picker.getByText("Claude", { exact: true })).toBeVisible();
+	await expect(picker.getByText("Cursor", { exact: true })).toHaveCount(0);
+	await gallery.getByRole("button", { name: "Select Work item" }).click();
+	await expect(picker).toBeHidden();
+	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await expect(search).toHaveValue("Claude");
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
+	await expect(search).toHaveValue("");
+});
+
+test("Duplicative sessions offers existing Claude sessions or a new one", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const gallery = page.getByRole("group", { name: "Gallery items" });
+	const labels = ["Select Board", "Select Agent selector", "Select Duplicative sessions", "Select Work item", "Select Pull request", "Select e2e Journey"];
+	await expect(gallery.getByRole("button")).toHaveCount(labels.length);
+	for (const [index, label] of labels.entries()) await expect(gallery.getByRole("button").nth(index)).toHaveAccessibleName(label);
+	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
+	await picker.getByRole("option", { name: /^Claude/ }).click();
+	const actions = page.getByRole("menu", { name: "Run Claude on" });
+	await expect(actions.getByRole("menuitem", { name: "Start a new session" })).toBeVisible();
+	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
+	await expect(sessions.getByRole("option")).toHaveCount(2);
+	await sessions.getByRole("option", { name: /Check the onboarding tests/ }).click();
+	await expect(picker.getByRole("status")).toHaveText("Selected session: Check the onboarding tests");
+	await picker.getByRole("option", { name: /^Claude/ }).click();
+	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
+	await expect(picker.getByRole("status")).toHaveText("Started a new Claude session");
+	await picker.getByRole("option", { name: /^Claude/ }).click();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (3)" })).toBeVisible();
+	await actions.getByRole("menuitem", { name: "Continue to existing session (3)" }).click();
+	await expect(page.getByRole("listbox", { name: "Choose a Claude session" }).getByRole("option", { name: /Review onboarding changes/ })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await expect(page.getByRole("region", { name: "Project Butter agent selector" })).toBeVisible();
+	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await expect(picker.getByRole("status")).toHaveText("Started a new Claude session");
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
+	await expect(picker.getByRole("status")).toHaveCount(0);
+	await picker.getByRole("option", { name: /^Claude/ }).click();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (2)" })).toBeVisible();
+});

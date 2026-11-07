@@ -14,6 +14,7 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		"components/projects/butter-v1/data/session-copy.test.js",
 		"components/blocks/jira-work-item/project-butter/merchant-journey-activity.behavior.test.js",
 		"components/projects/butter/data/merchant-journey.test.ts",
 		"components/blocks/agent-directory/directory-view.behavior.test.js",

@@ -48,6 +48,7 @@ export interface JiraListGoal {
 
 export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "host" | "invokedBy" | "role"> {
 	id: string;
+	sessionTitle?: string;
 	name: string;
 	byline?: string;
 	avatarSrc?: string;

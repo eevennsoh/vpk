@@ -76,6 +76,7 @@ function toAssignedAgentFromActivity(
 	return {
 		id: canonicalizeAssignedAgentId(cardCode, activity.id),
 		name: activity.name,
+		...(activity.sessionTitle ? { sessionTitle: activity.sessionTitle } : {}),
 		byline: "",
 		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
@@ -96,6 +97,7 @@ function toAssignedAgentFromDoneRun(
 	return {
 		id: canonicalizeAssignedAgentId(cardCode, run.id),
 		name: run.agentName,
+		sessionTitle: run.summary,
 		byline: "",
 		...(run.agentAvatarSrc ? { avatarSrc: run.agentAvatarSrc } : {}),
 		...(run.agentBrandName ? { brandName: run.agentBrandName } : {}),
@@ -169,7 +171,7 @@ function resolveKanbanCardAssignment(
 		...(onCreateCloudSession ? {
 			sessions: (card.agentActivities ?? []).map((activity) => ({
 				id: activity.id,
-				title: activity.label,
+				title: activity.sessionTitle ?? activity.label,
 				prompt: activity.prompt,
 				startedAtMs: activity.startedAtMs,
 				invokedBy: activity.invokedBy,

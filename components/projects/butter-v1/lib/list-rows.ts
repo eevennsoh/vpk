@@ -142,6 +142,7 @@ function toAssignedAgent(
 		idHint?: string;
 		invokedBy?: JiraListAssignedAgent["invokedBy"];
 		name: string;
+		sessionTitle?: string;
 		role?: JiraListAssignedAgent["role"];
 		state?: string;
 	}>,
@@ -153,6 +154,7 @@ function toAssignedAgent(
 	return {
 		id,
 		name: catalogAgent?.name ?? input.name,
+		...(input.sessionTitle ? { sessionTitle: input.sessionTitle } : {}),
 		...(catalogAgent?.byline ? { byline: catalogAgent.byline } : {}),
 		...((catalogAgent?.avatarSrc ?? input.avatarSrc)
 			? { avatarSrc: catalogAgent?.avatarSrc ?? input.avatarSrc }
@@ -191,6 +193,7 @@ export function assignedAgentsFromCard(
 			idHint: activity.id,
 			invokedBy: activity.invokedBy,
 			name: activity.name,
+			sessionTitle: activity.sessionTitle,
 			role: activity.role,
 			state: activity.state,
 		});
@@ -215,6 +218,7 @@ export function assignedAgentsFromCard(
 			idHint: run.id,
 			invokedBy: run.invokedBy,
 			name: run.agentName,
+			sessionTitle: run.summary,
 			state: run.state,
 		});
 		if (seenIds.has(agent.id)) {
@@ -238,6 +242,7 @@ function createAssignedActivity(
 		avatarSrc: agent.avatarSrc,
 		agentBrandName: agent.brandName,
 		label: `Assigned to ${card.title}`,
+		sessionTitle: card.title,
 		message: `${agent.name} is working and will post the next result to the Jira work item.`,
 		invokedBy: CURRENT_USER_INVOKER,
 		role: "owner",

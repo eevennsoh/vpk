@@ -36,6 +36,7 @@ interface AppLayoutProps {
 	sidebarContent?: React.ReactNode;
 	topNavigationSearchAlignment?: "responsive" | "sidebar";
 	shellHeight?: "viewport" | "parent";
+	hideShellChrome?: boolean;
 	embedded?: boolean;
 	embeddedHeight?: "parent" | "viewport";
 	hideFloatingRovo?: boolean;
@@ -147,6 +148,7 @@ export default function AppLayout({
 	sidebarContent,
 	topNavigationSearchAlignment = "responsive",
 	shellHeight = "viewport",
+	hideShellChrome = false,
 	embedded = false,
 	embeddedHeight = "viewport",
 	hideFloatingRovo,
@@ -180,7 +182,7 @@ export default function AppLayout({
 	const isFloatingChatActive = chatSurface === "floating";
 	const showChatPanel = !isEmbedded && !shouldHideRovoAction && isSidebarChatActive;
 	const showFloatingChat = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;
-	const showFloatingRovoButton = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction;
+	const showFloatingRovoButton = !isEmbedded && !hideShellChrome && !hideFloatingRovo && !shouldHideRovoAction;
 	const embeddedShellHeight = embeddedHeight === "parent" ? "100%" : "100dvh";
 	// Embedded mode styles (fallback when not using the TopNavigation shell)
 	const shellStyle = {
@@ -305,6 +307,7 @@ export default function AppLayout({
 	// Use the canonical TopNavigation shell variant
 	return (
 		<TopNavigation
+			hideShellChrome={hideShellChrome}
 			currentUser={currentUser}
 			defaultSidebarOpen={defaultSidebarOpen}
 			product={product}

@@ -149,6 +149,17 @@ test("private session titles identify the agent and owner without changing owner
 	assert.equal(toAssignmentSessionItem({ ...agent, role: undefined }).title, "Claude");
 });
 
+test("an explicit session title describes the work while retaining agent identity", async () => {
+	const { toAssignmentActivity, toAssignmentSessionItem } = await loadAssignmentSessionMapper();
+	const agent = assignmentAgent({ name: "Cursor", sessionTitle: "Replay 3-D Secure fixtures", statusKind: "working" });
+	const session = toAssignmentSessionItem(agent);
+	assert.equal(session.title, "Replay 3-D Secure fixtures");
+	assert.equal(session.agent.name, "Cursor");
+	assert.equal(toAssignmentSessionItem({ ...agent, role: "viewer" }).title, "Replay 3-D Secure fixtures");
+	assert.equal(toAssignmentSessionItem({ ...agent, role: "expired" }).title, "Cursor session expired");
+	assert.equal(toAssignmentActivity(agent).sessionTitle, "Replay 3-D Secure fixtures");
+});
+
 test("expired session titles identify expiry while retaining the agent and elapsed stamp", async () => {
 	const { toAssignmentSessionItem } = await loadAssignmentSessionMapper();
 	const session = toAssignmentSessionItem(assignmentAgent({
