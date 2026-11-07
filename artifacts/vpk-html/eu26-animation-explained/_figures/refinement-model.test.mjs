@@ -165,54 +165,58 @@ test('the source masonry wall keeps scrolling sideways through distant times wit
 	}
 });
 
-test('new wall cards wait in the air above their own slot, come down, land blank and then show their face', () => {
-	const seen = new Map();
-	for (let time = 35; time < 130; time += .1) {
-		const state = at(time);
-		state.wall.forEach((pose, index) => {
-			if (!pose.arrival || pose.alpha < .05) return;
-			const key = `${pose.key}@${pose.arrival.touchdown.toFixed(3)}`;
-			const entry = seen.get(key) || { index, touchdown: pose.arrival.touchdown, waiting: false, landed: false };
-			if (pose.arrival.since < 0) {
-				assert.ok(pose.at[2] > 50 && pose.scale > 1.05, 'a waiting card is lifted toward the lens and looks larger');
-				assert.ok(pose.rot[0] > .1, 'a waiting card is tipped back');
-				assert.equal(pose.face, 0, 'a waiting card is a blank sheet');
-				entry.waiting = true;
+test('no card ever moves on its own: every visible card not yet landed is held by a visible teammate cursor', () => {
+	for (const aspect of [undefined, 0.83]) {
+		let held = 0;
+		for (let time = 27; time <= 120 + 1e-9; time += .05) {
+			const state = model({ time, variant: 'paper', aspect }, data);
+			const holders = new Set(state.cursors.filter(cursor => cursor.role === 'teammate' && cursor.heldTarget && cursor.alpha > .5).map(cursor => cursor.heldTarget.key));
+			for (const pose of state.wall) {
+				if (pose.alpha < .02 || !pose.arrival || time >= pose.arrival.touchdown) continue;
+				assert.ok(holders.has(pose.key), `${pose.key} moves without a cursor at ${time.toFixed(2)} s (aspect ${aspect ?? 'default'})`);
+				assert.ok(pose.scale <= 1.04 && pose.rot.every(angle => Math.abs(angle) <= .04) && pose.at[2] <= 10, 'a carried card is at its own size, a touch lifted and nearly flat');
+				held++;
 			}
-			if (time > pose.arrival.touchdown + .05 && time < pose.arrival.touchdown + .5) {
-				assert.ok(Math.abs(pose.at[2]) < 1e-6 && Math.abs(pose.scale - 1) < 1e-6, 'it lands flat at its own size');
-				assert.ok(pose.face < 1, 'its face comes up only after touchdown');
-				assert.ok(pose.ring !== null, 'a landing ring swells off its edge');
-				entry.landed = true;
-			}
-			seen.set(key, entry);
-		});
+		}
+		assert.ok(held > 200, `cards are carried in through the loop (${held} samples)`);
 	}
-	const complete = [...seen.values()].filter(entry => entry.waiting && entry.landed);
-	assert.ok(complete.length >= 9, `arrivals repeat through the loop (${complete.length})`);
-	for (const entry of complete) {
-		const after = at(entry.touchdown + 1.2).wall[entry.index], resting = at(entry.touchdown + 1.2);
-		assert.equal(after.face, 1, 'the face is fully up a moment after landing');
-		assert.equal(after.ring, null);
-		assert.ok(Math.abs(after.at[0] - resting.wall[entry.index].at[0]) < 1e-9);
-	}
-	// Reduced motion: every card is already in its slot.
-	const reduced = model({ time: 60, variant: 'paper', reduced: true }, data);
-	assert.ok(reduced.wall.every(pose => pose.arrival === null && pose.face === 1 && Math.abs(pose.at[2]) < 1e-6), 'reduced motion shows the wall landed');
 });
 
-test('stack slots deal their own cards top first, a beat apart, never as one block', () => {
+test('a carried card lands blank, then its ring plays and its face comes up; reduced motion shows the wall landed', () => {
+	const seen = new Map();
+	for (let time = 35; time < 130; time += .1) {
+		at(time).wall.forEach((pose, index) => {
+			if (pose.arrival && pose.alpha > .05) seen.set(`${pose.key}@${pose.arrival.touchdown.toFixed(3)}`, { index, touchdown: pose.arrival.touchdown });
+		});
+	}
+	assert.ok(seen.size >= 9, `arrivals repeat through the loop (${seen.size})`);
+	for (const { index, touchdown } of seen.values()) {
+		const before = at(touchdown - .05).wall[index], landed = at(touchdown + .2).wall[index], settled = at(touchdown + 1.2).wall[index];
+		assert.equal(before.face, 0, 'a carried card is a blank sheet');
+		assert.ok(Math.abs(landed.at[2]) < 1e-6 && Math.abs(landed.scale - 1) < 1e-6, 'it rests flat at its own size once set down');
+		assert.ok(landed.face < 1 && landed.ring !== null, 'the ring plays before the face comes up');
+		assert.equal(settled.face, 1);
+		assert.equal(settled.ring, null);
+	}
+	const reduced = model({ time: 60, variant: 'paper', reduced: true }, data);
+	assert.ok(reduced.wall.every(pose => pose.arrival === null && pose.face === 1 && Math.abs(pose.at[2]) < 1e-6), 'reduced motion shows the wall landed');
+	assert.ok(reduced.cursors.filter(cursor => cursor.role === 'teammate').every(cursor => cursor.alpha === 0), 'and no teammate cursor moves');
+});
+
+test('a stack carried in deals its own cards top first, a beat apart; a stack no hand brings is already dealt', () => {
 	const slots = [...new Set(data.wallCards.map(card => card.slot))];
-	assert.ok(slots.length >= 2);
 	let dealt = 0;
 	for (const slot of slots) {
-		let touchdown = null;
-		for (let time = 35; time < 240 && touchdown === null; time += .25) {
-			const pose = at(time).wall[slot];
-			if (pose.arrival && pose.arrival.since < 0 && pose.alpha > .05) touchdown = pose.arrival.touchdown;
-		}
-		if (touchdown === null) continue;
 		const children = data.wallCards.map((card, index) => ({ card, index })).filter(each => each.card.slot === slot);
+		let touchdown = null;
+		for (let time = 30; time < 240 && touchdown === null; time += .25) {
+			const pose = at(time).wall[slot];
+			if (pose.arrival && pose.alpha > .05) touchdown = pose.arrival.touchdown;
+		}
+		if (touchdown === null) {
+			for (const time of [40, 90, 150]) for (const { index } of children) assert.ok(Math.abs(at(time).wallCards[index].at[2] - 1.1) < 1e-6, 'an uncarried stack is already dealt');
+			continue;
+		}
 		const landedAt = children.map(({ index }) => {
 			for (let time = touchdown - 1; time < touchdown + 2; time += .01) if (Math.abs(at(time).wallCards[index].at[2] - 1.1) < 1e-3) return time;
 			return Infinity;
@@ -220,5 +224,5 @@ test('stack slots deal their own cards top first, a beat apart, never as one blo
 		for (let i = 1; i < landedAt.length; i++) assert.ok(landedAt[i] - landedAt[i - 1] > .04 && landedAt[i] - landedAt[i - 1] < .2, 'each card lands a beat after the one above it');
 		dealt++;
 	}
-	assert.ok(dealt >= 2, 'stack slots deal within the first loops');
+	assert.ok(dealt >= 1, 'at least one stack is carried in and dealt');
 });

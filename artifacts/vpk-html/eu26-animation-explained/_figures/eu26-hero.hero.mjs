@@ -331,7 +331,7 @@ export function build(kit, { data }) {
 		put(`confetti.${i}`, plan, 0, 0.3, `confetti.${i}`, true);
 	}
 	const window = k.planOutline(data.doneList.viewport, 5.2, P, 4);
-	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><circle data-eu26-cursor-ring cx="0" cy="0" r="0" fill="none"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/></g>`).join("")}</g>`;
+	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><circle data-eu26-cursor-ring cx="0" cy="0" r="0" fill="none"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/>${id === "main" ? "" : `<rect data-eu26-cursor-pill x="0" y="0" width="0" height="0" style="display:none"/><text data-eu26-cursor-name x="0" y="0" style="display:none"></text>`}</g>`).join("")}</g>`;
 	return { P, R, before: [`<defs><clipPath id="eu26-done-window" clipPathUnits="userSpaceOnUse"><path data-eu26-done-window d="${window}"/></clipPath></defs>`], after: [`<g data-eu26-details aria-hidden="true" style="display:none">${details.join("")}</g>`, cursorLayer] };
 }
 

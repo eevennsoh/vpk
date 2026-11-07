@@ -69,29 +69,32 @@ test('the title is carried into its reserved wall gap', () => {
 	}
 });
 
-test('teammates catch a card already coming down and ride it into its slot', () => {
+test('named teammates bring each new card in from off the frame and set it down in its slot', () => {
+	const names = data.motion.names;
 	for (const variant of variants) {
 		const rides = new Map();
 		for (let time = 27; time <= 130; time += 0.05) {
 			const state = model({ time, variant }, data);
 			for (const cursor of state.cursors.filter(cursor => cursor.role === 'teammate' && cursor.heldTarget?.kind === 'wall' && cursor.alpha > .5)) {
-				const pose = state.wall[cursor.heldTarget.index], key = `${cursor.id}:${cursor.heldTarget.key}`;
-				const ride = rides.get(key) || { id: cursor.id, target: cursor.heldTarget.key, index: cursor.heldTarget.index, first: time, heights: [] };
-				ride.heights.push(pose.at[2]);
+				const key = `${cursor.id}:${cursor.heldTarget.key}`;
+				const ride = rides.get(key) || { id: cursor.id, name: cursor.name, above: cursor.pillAbove, target: cursor.heldTarget.key, index: cursor.heldTarget.index, first: time, heights: [] };
+				ride.heights.push(state.wall[cursor.heldTarget.index].at[2]);
 				ride.last = time;
 				rides.set(key, ride);
 			}
 		}
-		assert.ok(rides.size >= 6, `teammates catch cards through the loop (${rides.size})`);
+		assert.ok(rides.size >= 12, `teammates bring cards in through the loop (${rides.size})`);
 		assert.equal(new Set([...rides.values()].map(ride => ride.id)).size, 3, 'all three teammates take part');
+		assert.ok([...rides.values()].every(ride => names.includes(ride.name)), 'every cursor wears a roster name');
+		assert.ok(new Set([...rides.values()].map(ride => ride.name)).size >= 5, 'names follow the repeating roster');
+		assert.ok([...rides.values()].some(ride => ride.above) && [...rides.values()].some(ride => !ride.above), 'cards in the top third are reached from above, turned over');
 		for (const ride of rides.values()) {
-			if (ride.last > 129) continue; // a ride still in progress when the scan ends
-			const before = model({ time: ride.first - 0.7, variant }, data).wall[ride.index];
-			assert.ok(before.alpha > .05 && before.at[2] > 20, `${ride.target} was already waiting in the air before ${ride.id} reached it (not carried in from off the frame)`);
-			assert.ok(ride.heights[0] > 5, `${ride.id} catches ${ride.target} above the wall`);
-			for (let i = 1; i < ride.heights.length; i++) assert.ok(ride.heights[i] <= ride.heights[i - 1] + 1e-6, `${ride.target} only comes down while held`);
+			if (ride.last > 129) continue;
+			const before = model({ time: ride.first - 0.1, variant }, data).wall[ride.index];
+			assert.ok(before.alpha < .02, `${ride.target} is not seen before ${ride.id} brings it in`);
+			for (let i = 1; i < ride.heights.length; i++) assert.ok(ride.heights[i] <= ride.heights[i - 1] + 1e-6, `${ride.target} is only lowered while held`);
 			const landed = model({ time: ride.last + 0.2, variant }, data).wall[ride.index];
-			assert.ok(Math.abs(landed.at[2]) < 1e-6 && landed.rot.every(angle => Math.abs(angle) < 1e-6) && Math.abs(landed.scale - 1) < 1e-6, `${ride.target} rests flat in its slot after the ride`);
+			assert.ok(Math.abs(landed.at[2]) < 1e-6 && landed.rot.every(angle => Math.abs(angle) < 1e-6) && Math.abs(landed.scale - 1) < 1e-6, `${ride.target} rests flat in its slot after it is set down`);
 		}
 	}
 });

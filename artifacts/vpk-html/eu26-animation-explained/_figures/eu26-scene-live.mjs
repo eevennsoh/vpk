@@ -162,7 +162,7 @@ export function live(ctx) {
 	};
 	const paint = (el, home, pose) => {
 		const surface = surfaceOf.get(el), plan = surface.drawPlan, z = surface.drawZ, height = surface.drawHeight;
-		const ring = kit.roundedPlan(plan, 4);
+		const ring = kit.roundedPlan(pose.radius ? { ...plan, r: pose.radius } : plan, 4);
 		const world = point => {
 			const delta = turn(point.map((value, i) => (value - home[i]) * (i === 1 ? pose.scaleY ?? pose.scale : pose.scale)), pose.rot);
 			return pose.at.map((value, i) => value + delta[i]);
@@ -449,7 +449,7 @@ export function live(ctx) {
 		return visible;
 	};
 	const render = (time, transition = null) => {
-		const state = ctx.model({ time, variant, transition, projectionScale: P.scale, reduced: Boolean(reducedMotion?.matches), aspect: displayWidth / Math.max(1, displayHeight) });
+		const state = ctx.model({ time, variant, transition, projectionScale: P.scale, reduced: Boolean(reducedMotion?.matches), aspect: displayWidth / Math.max(1, displayHeight), displayHeight });
 		currentState = state;
 		currentTime = time;
 		currentTransition = transition;
@@ -525,11 +525,18 @@ export function live(ctx) {
 		let clippedCursors = 0;
 		for (const cursor of state.cursors) {
 			const el = cursorParts.get(cursor.id), tip = project(cursor.at);
-			const margin = Math.min(tip[0] - 7 * unit - (cx - width / 2), cx + width / 2 - tip[0] - 22 * unit, tip[1] - 7 * unit - (cy - height / 2), cy + height / 2 - tip[1] - 30 * unit);
+			// A teammate's cursor wears its name in a pill beside the arrow; turned over (pillAbove) for a card in the frame's top
+			// third, its arrow points down onto the card and the pill sits above. It grows with the card it holds (perspective).
+			const fit = cursor.role === "teammate" ? Math.max(0.55, Math.min(1, displayHeight / 640)) : 1;
+			const above = Boolean(cursor.pillAbove), flip = above ? -1 : 1, size = unit * (1 - cursor.pressed * 0.08) * (cursor.scale ?? 1) * fit;
+			const pillW = cursor.name ? (cursor.name.length * 6.6 + 14) : 0, pillH = cursor.name ? 18 : 0;
+			const reachRight = Math.max(22, cursor.name ? 14 + pillW : 0) * size, reachDown = (above ? 7 : Math.max(30, cursor.name ? 19 + pillH : 0)) * size, reachUp = (above ? Math.max(30, 19 + pillH) : 7) * size;
+			const margin = Math.min(tip[0] - 7 * unit - (cx - width / 2), cx + width / 2 - tip[0] - reachRight, tip[1] - reachUp - (cy - height / 2), cy + height / 2 - tip[1] - reachDown);
 			const attached = cursor.heldTarget || cursor.phase === "release";
 			const inside = margin >= 0, alpha = cursor.alpha * (attached ? 1 : Math.max(0, Math.min(1, margin / (18 * unit))));
-			if (attached && cursor.alpha > 0.002 && !inside) clippedCursors += 1;
-			el.style.display = alpha > 0.002 && inside ? "" : "none";
+			// A hand carrying its card in from off the frame crosses the edge with it; it counts as clipped only once it is over the slot.
+			if (attached && !cursor.entering && cursor.alpha > 0.002 && !inside) clippedCursors += 1;
+			el.style.display = alpha > 0.002 && (inside || attached) ? "" : "none";
 			if (alpha < 0.002 || alpha > 0.998) el.style.removeProperty("opacity");
 			else el.style.opacity = alpha.toFixed(4);
 			el.dataset.cursorPhase = cursor.phase;
@@ -537,8 +544,25 @@ export function live(ctx) {
 			el.dataset.heldTarget = cursor.heldTarget?.key || "";
 			el.dataset.tipX = tip[0].toFixed(5);
 			el.dataset.tipY = tip[1].toFixed(5);
-			const pressed = cursor.pressed, size = unit * (1 - pressed * 0.08);
-			const points = [[0, 0], [0, 23], [6, 17.5], [11.2, 28], [16, 25.5], [10.7, 15.7], [20.8, 15.7]].map(([x, y]) => [tip[0] + x * size, tip[1] + y * size]);
+			const pressed = cursor.pressed;
+			const points = [[0, 0], [0, 23], [6, 17.5], [11.2, 28], [16, 25.5], [10.7, 15.7], [20.8, 15.7]].map(([x, y]) => [tip[0] + x * size, tip[1] + y * size * flip]);
+			const pill = el.querySelector("[data-eu26-cursor-pill]"), label = el.querySelector("[data-eu26-cursor-name]");
+			if (pill && label) {
+				const shown = Boolean(cursor.name);
+				pill.style.display = label.style.display = shown ? "" : "none";
+				if (shown) {
+					const top = above ? tip[1] - (19 + pillH) * size : tip[1] + 19 * size;
+					pill.setAttribute("x", (tip[0] + 14 * size).toFixed(3));
+					pill.setAttribute("y", top.toFixed(3));
+					pill.setAttribute("width", (pillW * size).toFixed(3));
+					pill.setAttribute("height", (pillH * size).toFixed(3));
+					pill.setAttribute("rx", (pillH / 2 * size).toFixed(3));
+					label.setAttribute("x", (tip[0] + 21 * size).toFixed(3));
+					label.setAttribute("y", (top + 12.6 * size).toFixed(3));
+					label.setAttribute("font-size", (11 * size).toFixed(3));
+					if (label.textContent !== cursor.name) label.textContent = cursor.name;
+				}
+			}
 			const arrow = el.querySelector("[data-eu26-cursor-tip]"), ring = el.querySelector("[data-eu26-cursor-ring]");
 			arrow.setAttribute("d", kit.pathOf(points, true));
 			arrow.setAttribute("fill", "var(--anatomy-text)");
@@ -585,5 +609,5 @@ export function live(ctx) {
 	ctx.svg.ownerDocument.defaultView.addEventListener("pagehide", () => resize.disconnect(), { once: true });
 	skin();
 	render(0);
-	return { tick() { if (sizeChanged) { sizeChanged = false; render(currentTime, currentTransition); } return false; }, rest() { render(0); } };
+	return { tick() { if (sizeChanged) { sizeChanged = false; render(currentTime, currentTransition); ctx.root.dispatchEvent(new CustomEvent("eu26:resized")); } return false; }, rest() { render(0); } };
 }

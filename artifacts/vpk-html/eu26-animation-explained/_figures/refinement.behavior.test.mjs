@@ -172,7 +172,7 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 					for (let time = 34; time < 200; time += 0.25) {
 						explorer.seek(time);
 						for (const cursor of capture().cursors) {
-							if (cursor.phase !== 'carry' || cursor.heldTarget?.kind !== 'wall' || cursor.alpha < .5) continue;
+							if (cursor.phase !== 'carry' || cursor.entering || cursor.heldTarget?.kind !== 'wall' || cursor.alpha < .5) continue;
 							const key = cursor.id + ':' + cursor.heldTarget.key + ':' + Math.floor(time / 20);
 							if (seen.has(key)) continue;
 							seen.add(key);

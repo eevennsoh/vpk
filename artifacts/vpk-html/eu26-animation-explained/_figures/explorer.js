@@ -243,6 +243,13 @@
 			timelineTime: clampTime(player.time), wallElapsed: Math.max(0, player.time - wallStart), looping: player.time >= wallStart,
 			playbackRate, durationSeconds, elapsedSeconds: player.time / playbackRate, timelineSeconds: clampTime(player.time) / playbackRate,
 		});
+		// The wall's teammates plan their holds for the frame they are drawn in, so thumbnails are retaken when the frame resizes.
+		root.addEventListener('eu26:resized', () => {
+			const renderTime = player.renderTime;
+			for (const [index, choice] of stateButtons.entries()) choice.querySelector('.eu26-state-thumb').replaceChildren(snapshot(index));
+			if (player.tween) renderTween(player.tween);
+			else renderPose(renderTime);
+		});
 		const setVariant = id => {
 			if (id === player.variant || !variants.some(variant => variant.id === id)) return getState();
 			const renderTime = player.renderTime;

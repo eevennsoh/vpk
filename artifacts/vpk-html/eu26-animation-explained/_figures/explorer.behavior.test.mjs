@@ -112,7 +112,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				return {
 					heroes: document.querySelectorAll('[data-vpk-figure="eu26-hero"]').length,
 					solids: hero.querySelectorAll('.iso-solid').length,
-					artworkAndLabels: hero.querySelectorAll('svg image, svg foreignObject').length + [...hero.querySelectorAll('svg text')].filter(text => !(text.classList.contains('dtt') && ['Team ’26', 'Europe'].includes(text.textContent) && text.closest('[data-eu26-detail]'))).length,
+					artworkAndLabels: hero.querySelectorAll('svg image, svg foreignObject').length + [...hero.querySelectorAll('svg text')].filter(text => !((text.classList.contains('dtt') && ['Team ’26', 'Europe'].includes(text.textContent) && text.closest('[data-eu26-detail]')) || (text.matches('[data-eu26-cursor-name]') && text.closest('[data-eu26-cursor^="teammate-"]')))).length,
 					faceDetails: hero.querySelectorAll('[data-part] > [data-eu26-detail]').length,
 					visibleWithoutDetail: [...hero.querySelectorAll('[data-eu26-piece^="story."][data-part]')].filter(part => part.style.display !== 'none' && !part.querySelector(':scope > [data-eu26-detail]')).length,
 					hiddenWithDetail: [...hero.querySelectorAll('[data-eu26-piece][data-part]')].filter(part => part.style.display === 'none' && part.querySelector(':scope > [data-eu26-detail]')).length,
@@ -209,7 +209,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				const focal = hero.querySelector('[data-focal="hero-card"]');
 				const rect = focal.getBoundingClientRect();
 				const orangeFocal = rect.width > 0 && rect.height > 0 && [...focal.querySelectorAll('.iso-top, .iso-edge')].some(part => { const style = getComputedStyle(part); return style.fill === orange || style.stroke === orange; });
-				const noArtworkOrLabels = hero.querySelectorAll('svg image, svg foreignObject').length + [...hero.querySelectorAll('svg text')].filter(text => !(text.classList.contains('dtt') && ['Team ’26', 'Europe'].includes(text.textContent) && text.closest('[data-eu26-detail]'))).length === 0;
+				const noArtworkOrLabels = hero.querySelectorAll('svg image, svg foreignObject').length + [...hero.querySelectorAll('svg text')].filter(text => !((text.classList.contains('dtt') && ['Team ’26', 'Europe'].includes(text.textContent) && text.closest('[data-eu26-detail]')) || (text.matches('[data-eu26-cursor-name]') && text.closest('[data-eu26-cursor^="teammate-"]')))).length === 0;
 				return { picker, variant: state.variant, orangeFocal, noArtworkOrLabels };
 			`);
 			assert.equal(result.picker, 0, 'no style picker with one paper style');
@@ -363,7 +363,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 					const times = ${JSON.stringify(cursorTimes)}, riders = new Set();
 					for (let time = 27; time < 140 && riders.size < 3; time += 0.25) {
 						explorer.seek(time);
-						const rider = capture().cursors.find(cursor => cursor.role === 'teammate' && cursor.phase === 'carry' && cursor.alpha > .5 && !riders.has(cursor.id));
+						const rider = capture().cursors.find(cursor => cursor.role === 'teammate' && cursor.phase === 'carry' && !cursor.entering && cursor.alpha > .5 && !riders.has(cursor.id));
 						if (rider) { riders.add(rider.id); times.push(time); }
 					}
 					const samples = ${JSON.stringify(data.variants.map(variant => variant.id))}.flatMap(variant => times.map(time => { explorer.setVariant(variant); explorer.seek(time); return { variant, time, cursors: capture().cursors.filter(cursor => cursor.alpha > .15) }; }));
@@ -381,14 +381,14 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 						for (const arrow of arrows) {
 							visibleActors.add(arrow.id);
 							const rect = arrow.rect;
-							if (rect.width <= 0 || rect.height <= 0 || rect.left < frame.left - 1 || rect.top < frame.top - 1 || rect.right > frame.right + 1 || rect.bottom > frame.bottom + 1) failures.push({ time: sample.time, variant: sample.variant, id: arrow.id, issue: 'cursor is clipped by the camera' });
+							if (!sample.cursors.find(cursor => cursor.id === arrow.id)?.entering && (rect.width <= 0 || rect.height <= 0 || rect.left < frame.left - 1 || rect.top < frame.top - 1 || rect.right > frame.right + 1 || rect.bottom > frame.bottom + 1)) failures.push({ time: sample.time, variant: sample.variant, id: arrow.id, issue: 'cursor is clipped by the camera' });
 							if (arrow.point.x >= 0 && arrow.point.x < innerWidth && arrow.point.y >= 0 && arrow.point.y < innerHeight) {
 								const hit = document.elementFromPoint(arrow.point.x, arrow.point.y);
 								if (hit?.closest('[data-eu26-cursor-layer]')) failures.push({ time: sample.time, id: arrow.id, issue: 'cursor intercepts the actual pointer' });
 								transparentHits += 1;
 							}
 							const cursor = sample.cursors.find(cursor => cursor.id === arrow.id);
-							if (!cursor.heldTarget) continue;
+							if (!cursor.heldTarget || cursor.entering) continue;
 							const target = cursor.heldTarget;
 							const key = target.kind === 'title' ? 'title' : target.kind + '.' + target.index;
 							const face = hero.querySelector('[data-eu26-piece="' + key + '"] .iso-top');
