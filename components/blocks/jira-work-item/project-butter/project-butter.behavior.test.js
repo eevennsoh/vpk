@@ -59,8 +59,10 @@ async function commentEditor(view) {
 }
 
 async function openSession(view, name) {
-	await view.click(view.getByRole("button", { name: "Add agent" }));
-	await view.click(view.getByRole("button", { name: "View agent sessions" }));
+	const field = view.getByRole("group", { name: "Agent field" });
+	const trigger = field.querySelector("button");
+	assert.ok(trigger);
+	await view.click(trigger);
 	const menu = view.getByRole("dialog", { name: "Agent sessions" });
 	const titles = { Claude: "Review Teamwork onboarding guide", "Jira Coding agent": "Draft billing flow PRD", "Jira Scoping agent": "Troubleshoot 403 API errors", Codex: "Review rollback" };
 	const row = [...menu.querySelectorAll("li")].find((item) => item.textContent.includes(titles[name] ?? name));
@@ -148,7 +150,7 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("button", { name: "Change priority. Current priority: High" }) !== null, true);
 	assert.equal(view.queryByText("Board owner") !== null, true);
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
-	assert.equal(view.queryByRole("button", { name: "Add agent" }) !== null, true);
+	assert.equal(view.queryByRole("group", { name: "Agent field" }) !== null, true);
 	assert.equal(view.queryByText("Sarah Lim") === null, true);
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "First card saved scope");
 	await view.focus(view.getByRole("button", { name: "Description" }));

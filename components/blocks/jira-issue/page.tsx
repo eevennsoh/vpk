@@ -594,6 +594,7 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 	return (
 		<div className="flex h-full min-h-[360px] w-full items-center justify-center bg-surface p-6">
 			<JiraIssue
+				appearance="default"
 				assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
 				assigneeUnassignedKind={hasCompactIssueContext ? "person" : undefined}
 				chrome={isExperimentalVariant ? "stroke" : undefined}
@@ -885,6 +886,7 @@ function JiraIssueAgentActivityStatesDemo({
 				<div className="flex w-[276px] flex-col gap-2">
 					<JiraIssue
 						key={isTransferPhase ? agentActivityState : "base"}
+						appearance="default"
 						agentActivities={agentActivities}
 						assignment={demoSessionRole ? {
 							assignedAgents: agentActivityState === "agent-session-expired" ? agentActivities?.map(toAgentAssignmentAgent) : undefined,

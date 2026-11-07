@@ -4,6 +4,19 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ ignoreHTTPSErrors: true });
 
+test("agent favorites reveal on hover or keyboard focus, not lingering pointer focus", async ({ page }) => {
+	await page.goto(appUrl("/sandbox/agent-selector-canvas"));
+	const favorite = page.locator('[data-favorite-id="jira-coding"]').first();
+	const agent = favorite.locator("..").getByRole("button", { name: "Jira Coding Agent", exact: true });
+	await agent.click();
+	await page.mouse.move(0, 0);
+	await expect(agent).toBeFocused();
+	await expect(favorite).toHaveCSS("opacity", "0");
+	await page.keyboard.press("Tab");
+	await expect(favorite).toBeFocused();
+	await expect(favorite).toHaveCSS("opacity", "1");
+});
+
 test("editor palette search uses a compact input with equal insets", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/editor-palette#search"));
 	const search = page.getByRole("textbox", { name: "Search tools", exact: true });

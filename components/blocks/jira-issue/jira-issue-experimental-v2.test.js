@@ -35,7 +35,7 @@ test("Jira issue agent activity experimental v2 duplicates the playground with l
 	assert.match(TYPES_SOURCE, /export type JiraIssueIconScale = "compact" \| "comfortable";/u);
 	assert.match(SOURCE, /iconScale\?: JiraIssueIconScale;/u);
 	assert.match(SOURCE, /subtaskChrome\?: JiraIssueChrome;/u);
-	assert.match(SOURCE, /iconScale = "compact",/u);
+	assert.match(SOURCE, /iconScale = appearance === "project-butter" \? "comfortable" : "compact",/u);
 	assert.match(SOURCE, /iconScale=\{iconScale\}/u);
 	assert.match(SOURCE, /subtaskChrome=\{subtaskChrome\}/u);
 	assert.match(LIB_SOURCE, /export function resolveJiraIssueIconMetrics/u);
@@ -70,7 +70,7 @@ test("Jira issue agent activity experimental v2 duplicates the playground with l
 	assert.match(SUBTASKS_SOURCE, /iconSize=\{iconMetrics\.iconTileIconSize\}/u);
 	assert.match(SUBTASKS_SOURCE, /size=\{iconMetrics\.iconTileSize\}/u);
 	assert.doesNotMatch(SUBTASKS_SOURCE, /<TagGroup className="min-w-0 gap-1 overflow-hidden">/u);
-	assert.match(SUBTASKS_SOURCE, /<div className="flex shrink-0 items-center gap-1">\s*<Tag>\{subtask\.status \?\? "To Do"\}<\/Tag>/u);
+	assert.match(SUBTASKS_SOURCE, /<div className="flex shrink-0 items-center gap-1">\s*<Tag\b[^>]*>\{subtask\.status \?\? "To Do"\}<\/Tag>/u);
 	assert.match(SUBTASKS_SOURCE, /<div className="flex min-w-0 items-center">/u);
 	assert.match(SUBTASKS_SOURCE, /<div className="flex shrink-0 items-center gap-1\.5">/u);
 	assert.doesNotMatch(SUBTASKS_SOURCE, /comfortableIcons \? "gap-1" : "gap-0"/u);
@@ -147,7 +147,7 @@ test("Jira issue renders expandable subtasks with nested subtask cards", () => {
 	assert.match(SUBTASKS_SOURCE, /className=\{cn\(\s*"border bg-surface p-3",\s*usesStrokeChrome \? undefined : "hover:bg-surface-hovered",\s*chromeStyles\.restClassName,\s*chromeStyles\.hoverClassName,\s*\)\}/);
 	assert.match(SUBTASKS_SOURCE, /<div className="flex min-w-0 flex-col gap-2">/);
 	assert.match(SUBTASKS_SOURCE, /<p className="text-sm leading-5 text-text">\{subtask\.summary\}<\/p>/);
-	assert.match(SUBTASKS_SOURCE, /<Tag>\{subtask\.status \?\? "To Do"\}<\/Tag>/);
+	assert.match(SUBTASKS_SOURCE, /<Tag\b[^>]*>\{subtask\.status \?\? "To Do"\}<\/Tag>/);
 	assert.doesNotMatch(SUBTASKS_SOURCE.slice(0, SUBTASKS_SOURCE.indexOf("export function JiraIssueSeparator")), /Lozenge/);
 	assert.match(SUBTASKS_SOURCE, /boxShadow: chromeStyles\.boxShadow/);
 	assert.doesNotMatch(

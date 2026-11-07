@@ -378,7 +378,7 @@ export function ExperimentalJiraKanbanCard({
 
 	const issue = (
 		<JiraIssue
-			appearance={appearance}
+			appearance={appearance ?? "default"}
 			metadata={{ issueType: card.issueType, dueDate: card.dueDate }}
 			selectionBackdrop={selectionBackdrop}
 			active={active}

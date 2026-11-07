@@ -566,7 +566,7 @@ function JiraLinkingStage({ label, sessions, variant }: Readonly<JiraLinkingStag
 							<div key={card.id} className="min-w-0" data-jira-linking-card-state={card.id}>
 								<p className="mb-2 text-xs font-medium text-text-subtle">{card.caption}</p>
 								<div ref={card.id === "active" ? activeIssueRef : emptyIssueRef}>
-									<JiraIssue
+									<JiraIssue appearance="default"
 										agentActivities={linkedActivities.length > 0 ? linkedActivities : undefined}
 										agentActivityLayout="merged"
 										agentLinkFlash={linkFlashes[card.id] ?? undefined}

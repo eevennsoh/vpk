@@ -213,6 +213,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"jira-kanban-demo-project-butter": dynamic(
+		() =>
+			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
+				default: mod.JiraKanbanDemoProjectButter,
+			})),
+		{ ssr: false },
+	),
 	"jira-kanban-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
@@ -596,6 +603,17 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			import("../demos/blocks/agent-selector-demo").then((mod) => ({
 				default: mod.AgentSelectorDemoJira,
 			})),
+		{ ssr: false },
+	),
+	"agent-selector-demo-project-butter": dynamic(
+		() =>
+			import("../demos/blocks/agent-selector-demo").then((mod) => ({
+				default: mod.AgentSelectorDemoProjectButter,
+			})),
+		{ ssr: false },
+	),
+	"agent-selector-demo-inline-expansion": dynamic(
+		() => import("../demos/blocks/agent-selector-demo").then((mod) => ({ default: mod.AgentSelectorDemoInlineExpansion })),
 		{ ssr: false },
 	),
 	"skill-selector-demo-standalone": dynamic(

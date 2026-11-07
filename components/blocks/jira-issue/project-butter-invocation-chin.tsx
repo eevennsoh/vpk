@@ -118,8 +118,9 @@ export function ProjectButterInvocationChin({
 	iconScale,
 	activities,
 	allowPuzzle = false,
+	retainCompletedContent = false,
 	children,
-}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly Readonly<{ id: string; name: string }>[]; allowPuzzle?: boolean; children: ReactNode }>) {
+}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly Readonly<{ id: string; name: string }>[]; allowPuzzle?: boolean; retainCompletedContent?: boolean; children: ReactNode }>) {
 	const phase = useProjectButterInvocationPhase();
 	const actions = useProjectButterInvocationActions();
 	const preview = useProjectButterInvocationPreview();
@@ -150,7 +151,7 @@ export function ProjectButterInvocationChin({
 				aria-hidden={phase === "choosing" || undefined}
 				inert={phase === "choosing" || undefined}
 				initial={false}
-				animate={{ opacity: hasChin && phase !== "choosing" ? 1 : 0, transform: hasChin ? "translateY(0px)" : "translateY(20px)" }}
+				animate={{ opacity: (hasChin || retainCompletedContent) && phase !== "choosing" ? 1 : 0, transform: hasChin || retainCompletedContent ? "translateY(0px)" : "translateY(20px)" }}
 				transition={reduce || phase === "handoff" ? { duration: 0 } : BUTTER_INVOCATION_HANDOFF}
 			>
 				{children}

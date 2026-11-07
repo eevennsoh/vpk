@@ -59,6 +59,22 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 	} = controller;
 	const state = ASX_CARD_KANBAN_STATES[activeIndex].value;
 
+	useEffect(() => {
+		function handleKeyDown(event: KeyboardEvent): void {
+			if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			const target = event.target;
+			if (!(target instanceof HTMLElement)) return;
+			if (target !== document.body && !target.matches('[aria-label="Select Card kanban"]') && !target.closest("[data-card-kanban-navigation]")) return;
+			const nextIndex = activeIndex + (event.key === "ArrowRight" ? 1 : -1);
+			if (nextIndex < 0 || nextIndex >= ASX_CARD_KANBAN_STATES.length) return;
+			event.preventDefault();
+			setActiveIndex(nextIndex);
+		}
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [activeIndex, setActiveIndex]);
+
 	useEffect(() => () => {
 		if (completionTimeoutRef.current !== null) {
 			window.clearTimeout(completionTimeoutRef.current);
@@ -167,7 +183,7 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 					 * re-centering the group and shoving the toggle bar upward.
 					 */}
 					<div className="h-[149px] w-[280px]">
-						<JiraIssue
+						<JiraIssue appearance="default"
 							agentActivities={agentActivities}
 							agentActivityMode={agentActivityMode}
 							agentDoneRuns={state === "agent-completed-work" ? ASX_CARD_KANBAN_DONE_RUNS : undefined}

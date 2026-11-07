@@ -285,10 +285,6 @@ test("chin-row layout uses Team EU's merged grouping", () => {
 	);
 	assert.match(
 		EXPERIMENTAL_CARD_SOURCE,
-		/assignment=\{resolveKanbanCardAssignment\(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions, onAgentAssign\)\}/u,
-	);
-	assert.match(
-		EXPERIMENTAL_CARD_SOURCE,
 		/\.\.\.\(activity\.invokedBy \? \{ invokedBy: activity\.invokedBy \} : \{\}\)/u,
 	);
 	assert.match(

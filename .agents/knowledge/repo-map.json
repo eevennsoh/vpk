@@ -2697,11 +2697,11 @@
 	"appPages": {
 		"summary": {
 			"ownerImportCount": 75,
-			"pageCount": 59,
+			"pageCount": 60,
 			"primaryOwnerKinds": {
 				"catalog": 20,
 				"dynamic": 8,
-				"inline": 1,
+				"inline": 2,
 				"redirect": 2,
 				"shell": 28
 			}
@@ -4317,6 +4317,18 @@
 					}
 				],
 				"source": "app/rovo/[[...id]]/page.tsx"
+			},
+			{
+				"ownerCount": 0,
+				"owners": [],
+				"primaryOwner": {
+					"kind": "inline",
+					"source": "app/sandbox/agent-selector-canvas/page.tsx"
+				},
+				"routePath": "/sandbox/agent-selector-canvas",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/sandbox/agent-selector-canvas/page.tsx"
 			},
 			{
 				"ownerCount": 3,
@@ -7810,7 +7822,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 21
+			"localSkillCount": 22
 		},
 		"localSkills": [
 			{
@@ -7836,6 +7848,12 @@
 				"name": "vpk-component-ext",
 				"path": ".agents/skills/vpk-component-ext/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component-ext"
+			},
+			{
+				"description": "Convene independent GPT Sol and Claude Opus reviews through VPK Remote, reconcile their findings, and repeat after accepted fixes. Use when the user invokes vpk-council or explicitly asks for a VPK council review.",
+				"name": "vpk-council",
+				"path": ".agents/skills/vpk-council/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-council"
 			},
 			{
 				"description": "Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros.",

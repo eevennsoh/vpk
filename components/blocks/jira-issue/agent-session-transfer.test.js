@@ -472,7 +472,7 @@ test("Jira issue splits the finished review chin into one row per completed run"
 	assert.match(COMPLETED_RUNS_SOURCE, /hasFailed \? "text-icon-danger" : "text-icon-subtle"/u);
 	// Each row opens its own run's shared session flyout rather than the aggregate AgentList.
 	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*session=\{\{ \.\.\.session,/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} onOpenChange=\{onOpenChange\} \/>/u);
 	assert.match(SOURCE, /<JiraIssueAgentDone[\s\S]*layout=\{agentActivityLayout\}/u);
 });
 
@@ -647,7 +647,7 @@ test("Jira issue card hugs its content the moment the chip leaves the chin", () 
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row-wrap"/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?flushBottom \? "pt-1 pb-0" : "py-1",[\s\S]*?"has-\[\[data-session-chip-out\]\]:py-0"/u,
+		/\(hasActivities \|\| hasAttachPreview \|\| retainCompletedGutter\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?flushBottom \? "pt-1 pb-0" : "py-1",[\s\S]*?"has-\[\[data-session-chip-out\]\]:py-0"/u,
 	);
 	assert.match(
 		SOURCE,

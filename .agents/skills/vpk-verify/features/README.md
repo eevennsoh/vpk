@@ -62,6 +62,7 @@ After changing this index or a feature file, run `pnpm run verify:vpk-feature-ma
 - [Jira Golden Journeys v2](./jira-golden-journeys-v2.md) covers story chapters, Details/Activity, guided pull-request detail, keyboard focus, and narrow layout.
 - [Jira Golden Journeys v3](./jira-golden-journeys-v3.md) covers Track/Learn/Build/Terminal, PAY-101 sections, PR #1839, and narrow `Jump to chapter`.
 - [Jira Golden Journeys v4](./jira-golden-journeys-v4.md) covers the Payments SDK board/list in Jira chrome, Unlink sessions, and view controls.
+- [Project Butter v1](./butter-v1.md) covers direct project entry and Board/List switching.
 - [Jira Team EU26](./jira-team-eu26.md) covers direct project entry, Board/List, current settings, session filters and column states, drag/drop/cancel, and narrow motion-off proof.
 - [Jira Team EU26 End](./jira-team-eu26-end.md) covers the keynote board, drags into Done, `Play closing`, the recap finale, and `?finale` cue links.
 

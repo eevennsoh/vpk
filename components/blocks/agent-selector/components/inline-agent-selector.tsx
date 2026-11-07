@@ -64,7 +64,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, onBr
 					<span aria-hidden className="grid size-6 shrink-0 place-items-center"><AgentAvatarVisual appearance={agent.brandName === "openai-codex" || agent.brandName === "cursor" || agent.brandName === "github-copilot" ? "coding" : undefined} avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} logoName={agent.logoName} fallbackText={agent.name.slice(0, 2).toUpperCase()} label={agent.name} sizePx={24} /></span>
 					<span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}</span>
 				</button>
-				<FavoriteButton id={agent.id} name={agent.name} favorite={favorite} focusVisibleOnly onToggle={(restoreFocus) => {
+				<FavoriteButton id={agent.id} name={agent.name} favorite={favorite} onToggle={(restoreFocus) => {
 					const nextFavorites = favorite ? favorites.filter((id) => id !== agent.id) : [...favorites, agent.id];
 					if (favoriteAgentIds === undefined) setInternalFavorites(nextFavorites);
 					onFavoriteAgentIdsChange?.(nextFavorites);
