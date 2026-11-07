@@ -10,6 +10,9 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	for (const name of ["Board", "Agent selector", "Work item", "Pull request", "e2e Journey"]) {
 		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
 	}
+	await expect(gallery.getByRole("button", { name: "Select Board" })).toHaveAttribute("aria-pressed", "true");
+	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
+	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
 	const boardTile = await gallery.getByRole("button", { name: "Select Board" }).boundingBox();
 	const agentTile = await gallery.getByRole("button", { name: "Select Agent selector" }).boundingBox();
 	if (!boardTile || !agentTile) throw new Error("Gallery tiles have no bounds");
@@ -72,6 +75,7 @@ test("switching between the board and journey does not produce runtime errors", 
 	page.on("console", (message) => { if (message.type() === "error" && !message.text().startsWith("Failed to load resource:")) errors.push(message.text()); });
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
+	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
 	await expect(page.getByRole("region", { name: /Unlink sessions/ })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select Board" }).click();
 	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
@@ -84,6 +88,7 @@ test("the standalone board hides an open sidebar chat and restores its draft", a
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey" }).click();
 	await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
 	const composer = page.getByRole("textbox", { name: "Chat message input", exact: true });
 	await composer.fill("Keep this draft");
@@ -147,6 +152,7 @@ test("journey board filters survive switching gallery tiles", async ({ page }) =
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey" }).click();
 	const filter = page.getByRole("button", { name: "Filter board by Venn" });
 	await filter.click();
 	await expect(filter).toHaveAttribute("aria-pressed", "true");
@@ -189,6 +195,7 @@ test("session titles describe their work in grouped, review, and List views", as
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey" }).click();
 	const unlinked = page.getByRole("region", { name: /Unlink sessions/ });
 	await expect(unlinked.getByText("Keep or delete the adapter", { exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "Select Board" }).click();

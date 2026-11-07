@@ -12,6 +12,7 @@ import { BUTTER_DIRECTORY_AGENT_PROFILES } from "@/components/projects/butter-v1
 import { BUTTER_PAY_CURRENT_USER } from "@/components/projects/butter-v1/data/current-user";
 import { InlineAgentSelectorDemo } from "@/components/website/demos/blocks/inline-agent-selector-demo";
 import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
@@ -37,39 +38,47 @@ export function ButterAgentSelectorGallery({ variant = "default", presentation =
 	const router = useRouter();
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>([]);
 	const [sessions, setSessions] = useState(EXISTING_SESSIONS);
+	const [favoriteAgentIds, setFavoriteAgentIds] = useState<readonly string[]>([]);
 	const [sessionStatus, setSessionStatus] = useState("");
 	const [directoryOpen, setDirectoryOpen] = useState(false);
 	const [pickerKey, setPickerKey] = useState(0);
 	const createAgent = () => router.push("/studio");
-	if (variant === "default" && presentation === "inline") {
-		return <section aria-label={label ?? "Project Butter agent selector"} className="pointer-events-auto my-auto max-w-full"><InlineAgentSelectorDemo /></section>;
-	}
+	const startSession = (agent: (typeof BUTTER_PICKER_AGENTS)[number]) => {
+		if (variant === "duplicative-sessions") {
+			setSessions((current) => [...current, { id: `demo-new-session-${pickerKey}`, title: "Review onboarding changes", agent: { id: agent.id, name: agent.name, brandName: agent.brandName, avatarSrc: agent.avatarSrc }, host: "cloud", state: "running", timeLabel: "Just now", invokedBy: BUTTER_PAY_CURRENT_USER }]);
+			setSessionStatus(`Started a new ${agent.name} session`);
+		}
+		setSelectedAgentIds([agent.id]);
+		setPickerKey((current) => current + 1);
+	};
+	const continueSession = (session: AgentSessionItem) => {
+		setSessionStatus(`Selected session: ${session.title}`);
+		setSelectedAgentIds(session.agent.id ? [session.agent.id] : []);
+		setPickerKey((current) => current + 1);
+	};
+	const inlineSessionProps = variant === "duplicative-sessions" ? {
+		sessions, status: sessionStatus, favoriteAgentIds, onFavoriteAgentIdsChange: setFavoriteAgentIds, includeRovoCli: true,
+		onContinueSession: continueSession, onStartSession: startSession,
+		onBrowseAgents: () => setDirectoryOpen(true), onCreateAgent: createAgent,
+	} : {};
 
 	return (
 		<>
 			<div className="pointer-events-auto my-auto flex w-80 max-w-full shrink-0 flex-col items-center gap-4">
-				<section aria-label={label ?? (variant === "duplicative-sessions" ? "Duplicative sessions agent selector" : "Project Butter agent selector")} className="w-full overflow-hidden rounded-xl bg-popover text-popover-foreground" style={{ boxShadow: token("elevation.shadow.overlay") }}>
+				<section aria-label={label ?? (variant === "duplicative-sessions" ? "Duplicative sessions agent selector" : "Project Butter agent selector")} className={cn("w-full", presentation === "submenu" && "overflow-hidden rounded-xl bg-popover text-popover-foreground")} style={presentation === "submenu" ? { boxShadow: token("elevation.shadow.overlay") } : undefined}>
 					{variant === "duplicative-sessions" ? <h1 className="sr-only">Duplicative sessions</h1> : null}
-					<ProjectButterInvocationProvider agents={BUTTER_PICKER_AGENTS} enabled>
+					{presentation === "inline" ? <InlineAgentSelectorDemo key={pickerKey} {...inlineSessionProps} /> : <ProjectButterInvocationProvider agents={BUTTER_PICKER_AGENTS} enabled>
 						<ProjectButterAgentPickerContent
 							key={pickerKey}
-							onAssign={(agent) => {
-								if (variant === "duplicative-sessions") {
-									setSessions((current) => [...current, { id: `demo-new-session-${pickerKey}`, title: "Review onboarding changes", agent: { id: agent.id, name: agent.name, brandName: agent.brandName, avatarSrc: agent.avatarSrc }, host: "cloud", state: "running", timeLabel: "Just now", invokedBy: BUTTER_PAY_CURRENT_USER }]);
-									setSessionStatus(`Started a new ${agent.name} session`);
-								}
-								setSelectedAgentIds([agent.id]);
-								setPickerKey((current) => current + 1);
-							}}
+							onAssign={startSession}
 							onBrowseAgents={() => setDirectoryOpen(true)}
-							onContinueSession={variant === "duplicative-sessions" ? (session) => { setSessionStatus(`Selected session: ${session.title}`); setSelectedAgentIds(session.agent.id ? [session.agent.id] : []); setPickerKey((current) => current + 1); } : undefined}
+							onContinueSession={variant === "duplicative-sessions" ? continueSession : undefined}
 							onCreateAgent={createAgent}
-							presentation={presentation}
 							sessions={variant === "duplicative-sessions" ? sessions : undefined}
 							selectedAgentIds={selectedAgentIds}
 						/>
-					</ProjectButterInvocationProvider>
-					{sessionStatus ? <p role="status" className="border-t border-border px-3 py-2 text-sm text-text-subtle">{sessionStatus}</p> : null}
+					</ProjectButterInvocationProvider>}
+					{presentation === "submenu" && sessionStatus ? <p role="status" className="border-t border-border px-3 py-2 text-sm text-text-subtle">{sessionStatus}</p> : null}
 				</section>
 			</div>
 			{directoryOpen ? <AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} onCreateAgent={createAgent} onOpenChange={setDirectoryOpen} onSelectAgent={() => setDirectoryOpen(false)} open={directoryOpen} variant="standard-v2" /> : null}

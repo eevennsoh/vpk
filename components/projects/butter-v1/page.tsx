@@ -63,6 +63,8 @@ import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { ButterList } from "./components/butter-list";
 import { ButterAgentSelectorControls, ButterAgentSelectorGallery, type ButterAgentPresentation } from "./components/butter-agent-selector-gallery";
+import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MerchantJourneyCompactControls, MerchantJourneyControls } from "./components/merchant-journey-controls";
 import { applyMerchantJourneyToBoard, merchantJourneyAuthoredCard, type MerchantJourneyPhase } from "./data/merchant-journey";
 import { BUTTER_GALLERY_ITEMS } from "./data/gallery-items";
@@ -211,7 +213,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 }
 
 export default function ButterPage(): React.ReactElement {
-	const [selectedId, setSelectedId] = useState("e2e-journey");
+	const [selectedId, setSelectedId] = useState("board");
 	const [journeyResetKey, setJourneyResetKey] = useState(0);
 	const [collapsedBoardColumns, setCollapsedBoardColumns] = useState<ReadonlySet<string>>(() => new Set());
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
@@ -219,6 +221,7 @@ export default function ButterPage(): React.ReactElement {
 	const [agentSelectorPresentation, setAgentSelectorPresentation] = useState<ButterAgentPresentation>("inline");
 	const [duplicativeSessionsPresentation, setDuplicativeSessionsPresentation] = useState<ButterAgentPresentation>("inline");
 	const [pullRequestResetKey, setPullRequestResetKey] = useState(0);
+	const [pullRequestStatus, setPullRequestStatus] = useState<ButterPullRequestStatus>("open");
 	const journeyActive = selectedId === "e2e-journey";
 	const boardOnly = selectedId === "board";
 	const [phase, setPhase] = useState<MerchantJourneyPhase>("prepare");
@@ -259,15 +262,20 @@ export default function ButterPage(): React.ReactElement {
 	}, []);
 	const reset = useCallback(() => { journeyRef.current?.cancelReplay(); setPhase("prepare"); setActiveStep(0); setJourneySession(undefined); setJumpRevision(0); setAutoFixEnabled(true); setAutoMergeEnabled(true); setPullRequestVisible(false); setJourneyResetKey((current) => current + 1); }, []);
 	const controls = { onSelectStep: selectStep, activeStep };
-	const selectorControls = selectedId === "agent-selector"
+	const galleryControls = selectedId === "agent-selector"
 		? <ButterAgentSelectorControls presentation={agentSelectorPresentation} onPresentationChange={setAgentSelectorPresentation} />
 		: selectedId === "duplicative-sessions"
 			? <ButterAgentSelectorControls presentation={duplicativeSessionsPresentation} onPresentationChange={setDuplicativeSessionsPresentation} />
-			: null;
+			: selectedId === "pull-request"
+				? <ToggleGroup aria-label="Pull request status" onValueChange={(values) => { if (values[0] === "open" || values[0] === "merged") setPullRequestStatus(values[0]); }} size="sm" value={[pullRequestStatus]} variant="outline">
+					<ToggleGroupItem value="open">Open PR</ToggleGroupItem>
+					<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
+				</ToggleGroup>
+				: null;
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
-				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto [&_[aria-label='Gallery_items']]:pointer-events-auto", selectorControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
+				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto [&_[aria-label='Gallery_items']]:pointer-events-auto", galleryControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
 				items={BUTTER_GALLERY_ITEMS}
 				selectedColor={token("color.text")}
 				selectedId={selectedId}
@@ -275,9 +283,9 @@ export default function ButterPage(): React.ReactElement {
 				title="Project Butter v1"
 				showTopBarBorder
 				stagePosition="center"
-				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorPresentation("inline"); setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsPresentation("inline"); setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "pull-request") setPullRequestResetKey((current) => current + 1); }}
-				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : selectorControls}
-				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : selectorControls}
+				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorPresentation("inline"); setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsPresentation("inline"); setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } }}
+				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
+				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
 				renderSelectedItem={(item) => item.id === "e2e-journey" || item.id === "board" || item.id === "agent-selector" || item.id === "duplicative-sessions" || item.id === "pull-request" ? null : (
 					<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">{item.title}</h2>
 				)}
@@ -294,7 +302,7 @@ export default function ButterPage(): React.ReactElement {
 			</RetainedView>
 			<RetainedView active={selectedId === "pull-request"} retain>
 				<div key={pullRequestResetKey} className="absolute inset-x-0 top-12 bottom-0 transform-gpu overflow-hidden">
-					<ButterGalleryPullRequest />
+					<ButterGalleryPullRequest status={pullRequestStatus} />
 				</div>
 			</RetainedView>
 			<RetainedView active={journeyActive || boardOnly} retain>

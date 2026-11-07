@@ -573,7 +573,7 @@ test("AgentSelector Command root uses DropdownMenuContent container radius", () 
 	assert.match(COMPONENT_SOURCE, /flex-1 rounded-xl p-1/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /rounded-xl!/u);
 	assert.doesNotMatch(skillSource, /rounded-xl!/u);
-	assert.match(COMPONENT_SOURCE, /-mx-1 -mt-1 mb-1 overflow-hidden rounded-t-xl/u);
+	assert.match(COMPONENT_SOURCE, /-mx-1 -mt-1 overflow-hidden rounded-t-xl/u);
 });
 
 test("AgentSelector can swap its boxed search for the editor-palette bar", () => {
