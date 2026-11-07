@@ -24,6 +24,15 @@ export function model(input, data) {
 	const cameraEase = x => { const u = clamp(x); return u * u * u * (u * (u * 6 - 15) + 10); };
 	const projectionScale = (options.projectionScale ?? data.motion?.projectionScale ?? 0.8692407110335721) * Math.sqrt(1.6);
 	const mix = (a, b, s) => a + (b - a) * s;
+	// Camera moves bend the parallel view into perspective and back, peaking mid-move (a dolly-zoom style lens bloom).
+	// Bigger moves (more turn, tilt or zoom) bend further; holds and tiny reframes stay flat. A key's `lens` caps the bend
+	// for a move into it, where tilted paper fans would otherwise overlap in a ring the depth sort cannot order.
+	const lensBloom = (a, b, s) => {
+		const turn = Math.abs(((b.azimuth - a.azimuth + 540) % 360) - 180) / 45, tilt = Math.abs(b.elevation - a.elevation) / 30;
+		const zoom = Math.abs(Math.log(b.width / a.width)) / 0.7, travel = Math.hypot(...b.at.map((v, i) => v - a.at[i])) / 300;
+		const size = turn + tilt + zoom + travel;
+		return size < 0.05 ? 0 : Math.sin(Math.PI * clamp(s)) * Math.min(0.55, b.lens ?? 1, 0.2 + size * 0.25);
+	};
 	const between = (a, b, s) => a.map((v, i) => mix(v, b[i], s));
 	const pose = (at, rot = [0, 0, 0], scale = 1, alpha = 1, highlight = 0) => ({ at, rot, scale, alpha, highlight });
 	const random = (i, channel = 0) => {
@@ -48,7 +57,7 @@ export function model(input, data) {
 	const ca = data.cameraKeys[cameraIndex], cb = data.cameraKeys[cameraIndex + 1];
 	const cs = cameraEase((time - ca.time) / (cb.time - ca.time));
 	const width = ca.width === cb.width ? ca.width : Math.exp(mix(Math.log(ca.width), Math.log(cb.width), cs));
-	const camera = { at: between(ca.at, cb.at, cs), width, height: width * 760 / 1200, azimuth: mix(ca.azimuth, cb.azimuth, cs), elevation: mix(ca.elevation, cb.elevation, cs), cover: mix(ca.cover ?? 0, cb.cover ?? 0, cs) };
+	const camera = { at: between(ca.at, cb.at, cs), width, height: width * 760 / 1200, azimuth: mix(ca.azimuth, cb.azimuth, cs), elevation: mix(ca.elevation, cb.elevation, cs), cover: mix(ca.cover ?? 0, cb.cover ?? 0, cs), persp: mix(ca.persp ?? 0, cb.persp ?? 0, cs) + lensBloom(ca, cb, cs) };
 	const fieldAt = i => {
 		if (i === 15) return [-15, -28, 96];
 		const angle = i * 2.39996 + (random(i, 1) - 0.5) * 0.7;
@@ -314,7 +323,7 @@ export function model(input, data) {
 	return {
 		...state,
 		time: mix(from.time, time, s),
-		camera: { at: between(from.camera.at, camera.at, s), width: directWidth, height: directWidth * 760 / 1200, azimuth: from.camera.azimuth + angle * s, elevation: mix(from.camera.elevation, camera.elevation, s) },
+		camera: { at: between(from.camera.at, camera.at, s), width: directWidth, height: directWidth * 760 / 1200, azimuth: from.camera.azimuth + angle * s, elevation: mix(from.camera.elevation, camera.elevation, s), cover: mix(from.camera.cover ?? 0, camera.cover ?? 0, s), persp: mix(from.camera.persp ?? 0, camera.persp ?? 0, s) + lensBloom(from.camera, camera, s) },
 		...Object.fromEntries(["cards", "tiles", "wall", "confetti"].map(key => [key, state[key].map((posed, i) => blendPose(from[key][i], posed))])),
 		wallCopies: [],
 		titlePose: blendPose(from.titlePose, titlePose),

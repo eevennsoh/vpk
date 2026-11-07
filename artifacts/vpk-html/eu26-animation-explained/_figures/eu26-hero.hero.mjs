@@ -258,7 +258,7 @@ export const data = {
 		{ time: 10.6, at: [250, -20, 130], width: 1240, azimuth: 67, elevation: 43 },
 		{ time: 11.8, at: [288, -40, 15], width: 800, azimuth: 74, elevation: 50 },
 		{ time: 13, at: [288, -40, 15], width: 800, azimuth: 74, elevation: 50 },
-		{ time: 15.8, at: [-15, -28, 96], width: 2050, azimuth: 84, elevation: 42 },
+		{ time: 15.8, at: [-15, -28, 96], width: 2050, azimuth: 84, elevation: 42, lens: 0.3 },
 		{ time: 16.2, at: [-15, -28, 96], width: 2050, azimuth: 84, elevation: 42 },
 		{ time: 18.8, at: [-15, -28, 96], width: 540, azimuth: 125, elevation: 48 },
 		{ time: 19.2, at: [-15, -28, 96], width: 540, azimuth: 125, elevation: 48 },

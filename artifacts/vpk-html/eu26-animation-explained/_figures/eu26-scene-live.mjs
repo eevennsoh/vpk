@@ -64,7 +64,16 @@ export function live(ctx) {
 	let lastOrder = "";
 	const pieces = new Map([...ctx.svg.querySelectorAll("[data-eu26-piece]")].map(el => [el.dataset.eu26Piece, el]));
 	const chrome = [...ctx.svg.querySelectorAll('[data-eu26-piece="chrome"]')];
-	const project = point => kit.iso(point, P);
+	// The camera is parallel at rest. During a camera move the model raises `persp`, and points toward the viewer spread
+	// away from the frame centre (and far points draw in), so the scene briefly bends into perspective and settles flat.
+	let lens = null;
+	const project = point => {
+		const flat = kit.iso(point, P);
+		if (!lens) return flat;
+		const depth = (point[0] - lens.at[0]) * view[0] + (point[1] - lens.at[1]) * view[1] + (point[2] - lens.at[2]) * view[2];
+		const spread = 1 / Math.max(0.35, 1 - depth * lens.k);
+		return [lens.centre[0] + (flat[0] - lens.centre[0]) * spread, lens.centre[1] + (flat[1] - lens.centre[1]) * spread];
+	};
 	let view = [Math.sqrt(0.375), Math.sqrt(0.375), 0.5], doneClip = [];
 	const doc = ctx.svg.ownerDocument, namespace = "http://www.w3.org/2000/svg";
 	const element = (tag, attrs, parent) => {
@@ -251,15 +260,27 @@ export function live(ctx) {
 		const rot = pose?.rot || [0, 0, 0], scale = pose?.scale || 1;
 		const top = turn([0, 0, height], rot), center = surface.frame?.center || world.map((n, i) => n + top[i]);
 		const ex = turn([scale, 0, 0], rot), ey = turn([0, pose?.scaleY ?? scale, 0], rot);
-		const px = kit.axisVector(P, ex), py = kit.axisVector(P, ey), origin = project(center);
+		const px = kit.axisVector(P, ex), py = kit.axisVector(P, ey), origin = kit.iso(center, P);
 		const det = px[0] * py[1] - py[0] * px[1];
 		const depth = kit.depthOf(center, P);
 		const xs = polygon.map(point => point[0]), ys = polygon.map(point => point[1]);
-		return { el, polygon, bounds, depth, box: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)], at(screen) {
+		// Depth of this plane under a parallel screen point (the inverse of the parallel projection).
+		const flatDepth = screen => {
 			if (Math.abs(det) < 0.00001) return depth;
 			const x = screen[0] - origin[0], y = screen[1] - origin[1];
 			const lx = (x * py[1] - y * py[0]) / det, ly = (y * px[0] - x * px[1]) / det;
 			return depth + lx * kit.depthOf(ex, P) + ly * kit.depthOf(ey, P);
+		};
+		const lensNow = lens, lensDepth = lensNow ? kit.depthOf(lensNow.at, P) : 0;
+		return { el, polygon, bounds, depth, box: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)], at(screen) {
+			if (!lensNow) return flatDepth(screen);
+			// Under the lens, undo the spread first; the spread depends on the depth being solved, so iterate to a fixed point.
+			let d = depth;
+			for (let i = 0; i < 4; i += 1) {
+				const spread = 1 / Math.max(0.35, 1 - (d - lensDepth) * lensNow.k);
+				d = flatDepth([lensNow.centre[0] + (screen[0] - lensNow.centre[0]) / spread, lensNow.centre[1] + (screen[1] - lensNow.centre[1]) / spread]);
+			}
+			return d;
 		} };
 	};
 	const lightDone = state => {
@@ -386,6 +407,8 @@ export function live(ctx) {
 		P.elevation = state.camera.elevation ?? 30;
 		const azimuth = P.azimuth * Math.PI / 180, elevation = P.elevation * Math.PI / 180;
 		view = [Math.cos(azimuth) * Math.cos(elevation), Math.sin(azimuth) * Math.cos(elevation), Math.sin(elevation)];
+		const persp = state.camera.persp ?? 0;
+		lens = persp > 0.001 ? { at: state.camera.at, centre: kit.iso(state.camera.at, P), k: persp * P.scale * Math.sqrt(1.6) / state.camera.height } : null;
 		const viewport = data.doneList.viewport, paperDepth = data.materialDepths.story;
 		const windowRing = kit.roundedPlan(viewport, 4);
 		const windowPoints = [4, 4 + paperDepth].flatMap(z => windowRing.map(([x, y]) => project([x, y, z])));
