@@ -18,8 +18,9 @@ export function live(ctx) {
 		surface.seed = (index * 0.6180339) % 1;
 		surface.anims = surface.detail ? [...surface.detail.querySelectorAll("[data-anim]")].map(el => ({ el, kind: el.dataset.anim, i: Number(el.dataset.i || 0), x: Number(el.getAttribute("x")), y: Number(el.getAttribute("y")), w: Number(el.getAttribute("width")), h: Number(el.getAttribute("height")), rows: Number(el.dataset.rows || 0), step: Number(el.dataset.step || 0), reach: Number(el.dataset.reach || 0), px: Number(el.dataset.px || 0), py: Number(el.dataset.py || 0), drop: Number(el.dataset.drop || 0) })) : [];
 		// Lettering keeps its proportions while its plate changes shape (the title morphs from the bento's wide box to
-		// its squarer wall gap): each line is counter-scaled about its own baseline origin, as the source sizes its ink.
-		surface.letters = surface.detail ? [...surface.detail.querySelectorAll("text")].map(el => ({ el, x: Number(el.getAttribute("x")), y: Number(el.getAttribute("y")), last: "" })) : [];
+		// its squarer wall gap): the lines are counter-scaled together about the lockup's centre, so they stay centred
+		// and evenly spaced, as the source sizes its ink.
+		surface.letters = surface.detail ? [...surface.detail.querySelectorAll("text")].map(el => ({ el, x: Number(el.dataset.cx ?? el.getAttribute("x")), y: Number(el.dataset.cy ?? el.getAttribute("y")), last: "" })) : [];
 	});
 	const unit = u => Math.max(0, Math.min(1, u));
 	const smooth = u => { const v = unit(u); return v * v * (3 - 2 * v); };

@@ -65,12 +65,16 @@ export function tileDetail(feature, { sx = 1, sy = sx } = {}) {
 	return p.markup();
 }
 
-// The one lettered face: the Team ’26 lockup, two bold left-aligned lines like the source's title tile. Two static
-// <text> nodes inside the tile's matrix group cost a negligible relayout, so no glyph table is needed.
-export function titleDetail({ d = 96, sx = 1, sy = sx } = {}) {
+// The one lettered face: the Team ’26 lockup, two bold lines centred on the tile both ways. Two static <text> nodes
+// inside the tile's matrix group cost a negligible relayout, so no glyph table is needed. Line spacing is set from the
+// type size, not the plate's y scale, so the wall slot's copy matches the dragged tile exactly; data-cx/cy name the
+// block centre the scene counter-scales about while the plate changes shape.
+export function titleDetail({ w = 220, d = 96, sx = 1, sy = sx } = {}) {
 	const p = pen(0, 0, sx, sy), size = Math.round(d * 0.3 * Math.min(sx, sy) * 100) / 100;
-	const [x, first] = p.at(16, d * 0.46), [, second] = p.at(16, d * 0.8);
-	return `<text class="dtt" x="${x}" y="${first}" font-size="${size}">Team ’26</text><text class="dtt" x="${x}" y="${second}" font-size="${size}">Europe</text>`;
+	const [cx, cy] = p.at(w / 2, d / 2), lead = size * 1.08, cap = size * 0.72;
+	const first = Math.round((cy - (lead + cap) / 2 + cap) * 100) / 100, second = Math.round((first + lead) * 100) / 100;
+	const attrs = `class="dtt" text-anchor="middle" x="${cx}" font-size="${size}" data-cx="${cx}" data-cy="${cy}"`;
+	return `<text ${attrs} y="${first}">Team ’26</text><text ${attrs} y="${second}">Europe</text>`;
 }
 
 export const wrapDetail = wrap;
