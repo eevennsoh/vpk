@@ -61,9 +61,11 @@ import type {
 	JiraIssueChrome,
 	JiraIssueCoverImage,
 	JiraIssueIconScale,
+	JiraIssueParticipant,
 	JiraIssuePriority,
 	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
+	JiraIssueSubtask,
 	JiraIssueTag,
 } from "@/components/blocks/jira-issue/types";
 import type { SmartLinkItem } from "@/components/blocks/smart-link";
@@ -97,9 +99,11 @@ export type {
 	JiraIssueChrome,
 	JiraIssueCoverImage,
 	JiraIssueIconScale,
+	JiraIssueParticipant,
 	JiraIssuePriority,
 	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
+	JiraIssueSubtask,
 	JiraIssueTag,
 	JiraIssueVariant,
 } from "@/components/blocks/jira-issue/types";
@@ -129,24 +133,6 @@ export type {
 export type { JiraIssueMoreAction, JiraIssueMoreMenuActions } from "@/components/blocks/jira-issue/more-menu";
 
 export type JiraIssueGenerativeActionPresentation = "sparkle" | "more-actions";
-
-export interface JiraIssueSubtask {
-	priority?: JiraIssuePriority;
-	summary: string;
-	issueKey: string;
-	status?: string;
-	issueTypeLabel?: string;
-	assigneeAvatarSrc?: string;
-	assigneeAvatarLabel?: string;
-	assigneeUnassignedKind?: AvatarUnassignedKind;
-}
-
-export interface JiraIssueParticipant {
-	id: string;
-	name: string;
-	avatarSrc: string;
-	avatarShape?: NonNullable<AvatarProps["shape"]>;
-}
 
 export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"article">, "children"> {
 	variant: "uncaptured-work";

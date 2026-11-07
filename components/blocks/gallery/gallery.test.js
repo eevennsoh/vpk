@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const ts = require("typescript");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
 
@@ -115,11 +116,17 @@ test("Gallery consumers give it a parent with a definite height", () => {
 
 	assert.ok(consumers.length >= 4, `expected several Gallery consumers, found ${consumers.length}`);
 	for (const consumer of consumers) {
-		assert.match(
-			readProjectFile(consumer),
-			/className="relative h-dvh w-full/u,
-			`${consumer} must wrap Gallery in a parent with a definite height`,
-		);
+		const source = ts.createSourceFile(consumer, readProjectFile(consumer), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+		const checkGallery = (node) => {
+			const opening = ts.isJsxElement(node) ? node.openingElement : node;
+			if ((ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) && opening.tagName.getText(source) === "Gallery") {
+				const parent = ts.isJsxElement(node.parent) ? node.parent.openingElement : null;
+				const className = parent?.attributes.properties.find((property) => ts.isJsxAttribute(property) && property.name.getText(source) === "className");
+				assert.ok(className && ts.isStringLiteral(className.initializer) && className.initializer.text.split(/\s+/u).includes("h-dvh"), `${consumer} must wrap Gallery in a parent with a definite height`);
+			}
+			ts.forEachChild(node, checkGallery);
+		};
+		checkGallery(source);
 	}
 });
 
