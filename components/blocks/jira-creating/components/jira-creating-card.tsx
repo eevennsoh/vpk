@@ -26,7 +26,7 @@ export function JiraCreateCard({
 			enterDelayS={enterDelayS}
 			itemId={itemId}
 		>
-			<JiraIssue
+			<JiraIssue appearance="default"
 				agentActivities={card.agentActivities}
 				agentActivityLayout={activityCount > 1 ? "split" : "merged"}
 				agentActivityMode={card.agentActivityMode ?? (activityCount > 0 ? "working" : "none")}

@@ -49,7 +49,7 @@ function TodoColumnItem({
 			layout={!shouldReduceMotion}
 			transition={getJiraCreateLayoutTransition(shouldReduceMotion)}
 		>
-			<JiraIssue
+			<JiraIssue appearance="default"
 				assigneeAvatarLabel={item.card.assigneeAvatarLabel}
 				assigneeAvatarSrc={item.card.assigneeAvatarSrc}
 				chrome="stroke"

@@ -9,6 +9,71 @@ const subtasks = [
 	{ issueKey: "PD-43", summary: "Test date-range edge cases", status: "To Do", priority: "minor" },
 ];
 
+test("finished runs dismiss independently without removing failures or interrupting an open flyout", async () => {
+	const originalSet = window.setTimeout;
+	const originalClear = window.clearTimeout;
+	const pending = new Map();
+	let nextTimer = 0;
+	window.setTimeout = (callback, delay) => {
+		assert.equal(delay, 5000);
+		pending.set(++nextTimer, callback);
+		return nextTimer;
+	};
+	window.clearTimeout = (id) => pending.delete(id);
+	const runs = [{ id: "one", state: "done" }, { id: "failed", state: "failed" }];
+	const source = `
+		import { useVisibleCompletedRuns } from "@/components/blocks/jira-issue/use-visible-completed-runs";
+		export function Fixture({ runs, enabled = true, paused = false }) {
+			return <output>{useVisibleCompletedRuns(runs, enabled, paused).map((run) => run.id).join(",")}</output>;
+		}
+	`;
+	try {
+		const view = await renderComponent({ source, exportName: "Fixture", props: { runs } });
+		assert.equal(view.container.textContent, "one,failed");
+		const firstTimer = [...pending.keys()][0];
+		await view.rerender({ runs: [...runs] });
+		assert.deepEqual([...pending.keys()], [firstTimer]);
+		const addedRuns = [...runs, { id: "two", state: "done" }];
+		await view.rerender({ runs: addedRuns });
+		assert.equal(pending.size, 2);
+		await act(async () => { const callback = pending.get(firstTimer); pending.delete(firstTimer); callback(); });
+		assert.equal(view.container.textContent, "failed,two");
+		await view.rerender({ runs: addedRuns, paused: true });
+		assert.equal(pending.size, 0);
+		assert.equal(view.container.textContent, "failed,two");
+		await view.rerender({ runs: addedRuns, paused: false });
+		const secondTimer = [...pending.keys()][0];
+		await act(async () => { const callback = pending.get(secondTimer); pending.delete(secondTimer); callback(); });
+		assert.equal(view.container.textContent, "failed");
+		await view.rerender({ runs: [{ id: "failed", state: "failed" }] });
+		await view.rerender({ runs: addedRuns, enabled: false });
+		assert.equal(view.container.textContent, "one,failed,two");
+		assert.equal(pending.size, 0);
+		await view.rerender({ runs: addedRuns, enabled: true });
+		assert.equal(pending.size, 2);
+		await view.unmount();
+		assert.equal(pending.size, 0);
+	} finally {
+		window.setTimeout = originalSet;
+		window.clearTimeout = originalClear;
+	}
+});
+
+test("JiraIssue defaults to Project butter and keeps the earlier appearance available", async () => {
+	const view = await renderComponent({
+		source: `
+			import { JiraIssue } from "@/components/blocks/jira-issue";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			export function Fixture(props) { return <ThemeWrapper><JiraIssue {...props} /></ThemeWrapper>; }
+		`,
+		exportName: "Fixture",
+		props: { issueKey: "PD-40", summary: "Default card" },
+	});
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-project-butter"]') !== null, true);
+	await view.rerender({ issueKey: "PD-40", summary: "Earlier card", appearance: "default" });
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-project-butter"]'), null);
+});
+
 test("Project butter renders explicit card metadata and a subtask progress popover", async () => {
 	const opened = [];
 	const view = await renderComponent({

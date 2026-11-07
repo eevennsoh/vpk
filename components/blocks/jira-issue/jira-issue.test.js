@@ -714,11 +714,11 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome: boolean;/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden has-\[:focus-visible\]:overflow-visible",[\s\S]*\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?flushBottom \? "pt-1 pb-0" : "py-1",[\s\S]*?"has-\[\[data-session-chip-out\]\]:py-0",[\s\S]*?\),\s*\)\}/u,
+		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden has-\[:focus-visible\]:overflow-visible",[\s\S]*\(hasActivities \|\| hasAttachPreview \|\| retainCompletedGutter\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?flushBottom \? "pt-1 pb-0" : "py-1",[\s\S]*?"has-\[\[data-session-chip-out\]\]:py-0",[\s\S]*?\),\s*\)\}/u,
 	);
 	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
-	assert.match(SOURCE, /const hasCompletedAgentChin = resolvedAgentActivityMode === "completed" && agentDoneRuns\.length > 0;/);
+	assert.match(SOURCE, /const hasCompletedAgentChin = resolvedAgentActivityMode === "completed" && visibleAgentDoneRuns\.length > 0;/);
 	assert.match(SOURCE, /const hasAgentDoneNotification = iconScale !== "comfortable" && hasCompletedAgentChin;/);
 	assert.match(SOURCE, /const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"[\s\S]*\|\| resolvedAgentActivityMode === "awaiting-input"[\s\S]*\|\| hasCompletedAgentChin[\s\S]*\|\| isAttachingSession[\s\S]*\|\| agentSessionTargetHighlighted[\s\S]*\|\| selectionBackdropState.active;/);
 	assert.match(SOURCE, /const agentActivitySurfaceInset = hasActiveAgentActivityShell \? 4 : 0;/);
@@ -798,7 +798,7 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 	assert.match(COMPLETED_RUNS_SOURCE, /flyout="session"/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /AgentStatesComposer/u);
 	assert.doesNotMatch(SOURCE, /showSeparator/);
-	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*runs=\{agentDoneRuns\}/u);
+	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*runs=\{visibleAgentDoneRuns\}/u);
 });
 
 test("Jira issue animates agent state transitions with Motion", () => {
@@ -811,10 +811,10 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
 	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence key=\{rowPresenceKey\} initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup, index\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence key=\{rowPresenceKey\} initial=\{false\} mode=\{completedTransferKey === undefined \? "popLayout" : "sync"\}>[\s\S]*\{rowGroups\.map\(\(rowGroup, index\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks && appearance !== "project-butter";/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
-	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);
+	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{visibleAgentDoneRuns\}/u);
 	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| appearance === "project-butter"\s*\n\t\t\|\| agentActivityShellMounted\s*\n\t\t\|\| selectionBackdropState.active\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined\s*\n\t\t\|\| Boolean\(agentSessionTargetPreview\);/);
 	assert.match(SOURCE, /const agentActivityBackdropAnimation = \{[\s\S]*left: 0,[\s\S]*opacity: hasActiveAgentActivityShell \? 1 : attachNearness,[\s\S]*right: 0,[\s\S]*top: selectionBackdropState.top/);
 	assert.match(SOURCE, /an inset of 4\s*\n\t\/\/ puts them 4px from the article edge, flush with the `px-1` gutter the chin/);

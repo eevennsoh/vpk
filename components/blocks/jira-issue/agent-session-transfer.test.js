@@ -647,7 +647,7 @@ test("Jira issue card hugs its content the moment the chip leaves the chin", () 
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row-wrap"/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/\(hasActivities \|\| hasAttachPreview\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?flushBottom \? "pt-1 pb-0" : "py-1",[\s\S]*?"has-\[\[data-session-chip-out\]\]:py-0"/u,
+		/\(hasActivities \|\| hasAttachPreview \|\| retainCompletedGutter\) && cn\([\s\S]*?flushContent \? "px-0" : "px-1",[\s\S]*?flushBottom \? "pt-1 pb-0" : "py-1",[\s\S]*?"has-\[\[data-session-chip-out\]\]:py-0"/u,
 	);
 	assert.match(
 		SOURCE,

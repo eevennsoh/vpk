@@ -515,7 +515,7 @@ export default function AgentsView({
 					<BoardToolbar avatars={toolbarAvatars} onReset={handleResetDemo} />
 
 					{/* Board columns */}
-					<JiraKanban
+					<JiraKanban variant="standard"
 						agents={boardAgents}
 						ariaLabel="RFP board columns. Scroll horizontally to review all statuses."
 						assignedAgentIdsByColumn={assignedAgentIdsByColumn}

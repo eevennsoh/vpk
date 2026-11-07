@@ -64,6 +64,7 @@ import {
 import { motionEase } from "@/lib/motion";
 
 export type { KanbanColumnChrome };
+export { JiraKanban } from "./project-butter-jira-kanban";
 
 export type JiraKanbanPriority = JiraIssuePriority;
 
@@ -510,7 +511,7 @@ function getCommonSelectedCardStatus(
 	return foundSelectedCard ? commonStatus : null;
 }
 
-export function JiraKanban({
+export function StandardJiraKanban({
 	activeCardCode,
 	agents,
 	animateCardMoves = false,
@@ -740,7 +741,7 @@ export function JiraKanban({
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
-											<JiraIssue
+											<JiraIssue appearance="default"
 												coverImage={card.coverImage}
 												active={isActive}
 												chrome={chrome.cardChrome}
