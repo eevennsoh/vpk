@@ -104,6 +104,7 @@ export function toButterAgentActivityFromSession(
 		avatarSrc: session.agent.avatarSrc,
 		agentBrandName: session.agent.brandName,
 		label: session.title,
+		sessionTitle: session.title,
 		...(session.prompt ? { prompt: session.prompt } : {}),
 		...(session.invokedAtMs ?? session.startedAtMs ? { startedAtMs: session.invokedAtMs ?? session.startedAtMs } : {}),
 		state: session.state === "needs-input" || session.state === "attention"
@@ -126,7 +127,7 @@ export function toButterDetachedAgentSession(
 		id: activity.id,
 		...(activity.prompt ? { prompt: activity.prompt } : {}),
 		...(activity.startedAtMs ? { startedAtMs: activity.startedAtMs, invokedAtMs: activity.startedAtMs } : {}),
-		title: activity.label,
+		title: activity.sessionTitle ?? activity.label,
 		state: activity.state === "awaiting-input"
 			? "needs-input"
 			: activity.state === "completed"
@@ -252,6 +253,7 @@ function createActivity({
 	message,
 	question,
 	role,
+	sessionTitle,
 	state,
 	timeLabel,
 }: Readonly<{
@@ -268,6 +270,7 @@ function createActivity({
 	message?: string;
 	question?: JiraIssueAgentActivity["question"];
 	role?: JiraIssueAgentActivity["role"];
+	sessionTitle?: string;
 	state: "working" | "awaiting-input";
 	timeLabel: string;
 }>): JiraIssueAgentActivity {
@@ -283,6 +286,7 @@ function createActivity({
 		cycleIntervalJitterMs,
 		cycleIntervalMs,
 		label,
+		sessionTitle: sessionTitle ?? label,
 		labels: state === "working"
 			? labels ?? [label]
 			: [label],
@@ -505,6 +509,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					agentBrandName: "openai-codex",
 					host: "cloud",
 					label: "Needs the retention window",
+					sessionTitle: "Review sandbox key retention",
 					message: BUTTER_PAY_112_RETENTION_MESSAGE,
 					question: BUTTER_PAY_112_RETENTION_QUESTION,
 					role: "owner",

@@ -76,6 +76,7 @@ function toAssignedAgentFromActivity(
 	return {
 		id: canonicalizeAssignedAgentId(cardCode, activity.id),
 		name: activity.name,
+		...(activity.sessionTitle ? { sessionTitle: activity.sessionTitle } : {}),
 		byline: "",
 		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
@@ -96,6 +97,7 @@ function toAssignedAgentFromDoneRun(
 	return {
 		id: canonicalizeAssignedAgentId(cardCode, run.id),
 		name: run.agentName,
+		sessionTitle: run.summary,
 		byline: "",
 		...(run.agentAvatarSrc ? { avatarSrc: run.agentAvatarSrc } : {}),
 		...(run.agentBrandName ? { brandName: run.agentBrandName } : {}),
@@ -118,6 +120,7 @@ function resolveKanbanCardAssignment(
 	onOpenSession?: (activity: JiraIssueAgentActivity, card: JiraKanbanCardData, columnTitle: string) => void,
 	onCreateCloudSession?: (agent: AgentSelectorAgent, card: JiraKanbanCardData) => void,
 	columnTitle = "",
+	showSessionAddAgent?: boolean,
 ): JiraIssueAgentAssignment | undefined {
 	if (!onAssignedAgentIdsChange) {
 		return undefined;
@@ -155,6 +158,7 @@ function resolveKanbanCardAssignment(
 
 	return {
 		addAgentLabel,
+		showSessionAddAgent,
 		...(assignmentAgents.length > 0 ? { agents: assignmentAgents } : {}),
 		assignedAgents,
 		defaultPinnedAgentIds: pinnedAgentIds,
@@ -169,7 +173,7 @@ function resolveKanbanCardAssignment(
 		...(onCreateCloudSession ? {
 			sessions: (card.agentActivities ?? []).map((activity) => ({
 				id: activity.id,
-				title: activity.label,
+				title: activity.sessionTitle ?? activity.label,
 				prompt: activity.prompt,
 				startedAtMs: activity.startedAtMs,
 				invokedBy: activity.invokedBy,
@@ -214,6 +218,7 @@ interface ExperimentalJiraKanbanCardProps {
 	active: boolean;
 	appearance?: JiraIssueAppearance;
 	addAgentLabel?: string;
+	showSessionAddAgent?: boolean;
 	agentActivityLayout: JiraIssueAgentActivityLayout;
 	/** One-shot brand sweep across the chin rows a drop just added. */
 	agentLinkFlash?: JiraIssueAgentLinkFlash;
@@ -291,6 +296,7 @@ export function ExperimentalJiraKanbanCard({
 	active,
 	appearance,
 	addAgentLabel,
+	showSessionAddAgent,
 	agents,
 	agentActivityLayout,
 	agentLinkFlash,
@@ -378,7 +384,7 @@ export function ExperimentalJiraKanbanCard({
 			active={active}
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
-			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions, onAgentAssign, onAgentActivityViewChat, onCreateCloudSession, columnTitle)}
+			assignment={resolveKanbanCardAssignment(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions, onAgentAssign, onAgentActivityViewChat, onCreateCloudSession, columnTitle, showSessionAddAgent)}
 			agentLinkFlash={agentLinkFlash}
 			agentActivityMode={agentActivityMode}
 			agentSessionDragControl={agentSessionDragControl}

@@ -6,10 +6,12 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import type { AgentSelectorAgent } from "./agent-selector";
 import { FavoriteButton } from "./favorite-button";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { SearchIcon } from "@/components/ui/vpk-icons";
+import { cn } from "@/lib/utils";
 
 export interface InlineAgentAction {
 	id: string;
@@ -38,6 +40,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, onBr
 	const favorites = favoriteAgentIds ?? internalFavorites;
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const root = useRef<HTMLDivElement>(null);
+	const { ref: listRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const focusFrame = useRef<number | null>(null);
 	useEffect(() => () => { if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current); }, []);
 	const software = softwareAgentIds.flatMap((id) => agents.filter((agent) => agent.id === id));
@@ -77,7 +80,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, onBr
 	const section = (name: string, items: readonly AgentSelectorAgent[]) => items.length ? <section aria-label={name}><h3 className="px-2 pt-2 pb-1 text-xs font-semibold text-text-subtlest">{name}</h3>{items.map(row)}{name === "Software agents" && !query && !expanded && softwareAgents.length > initialSoftwareLimit ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={() => setExpanded(true)}>Show more</button> : null}</section> : null;
 	return <div ref={root} className="flex h-[26rem] w-80 max-w-full flex-col overflow-hidden rounded-xl bg-popover p-1 text-popover-foreground shadow-2xl">
 		<div className="-mx-1 -mt-1 mb-1 shrink-0 overflow-hidden rounded-t-xl"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div>
-		<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{section("Favorites", favoriteAgents)}{section("Software agents", shownSoftware)}{section("Other agents", otherAgents)}{!favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
+		<div ref={listRef} className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain", showTopScrollMask && "scroll-mask-top [--scroll-mask-fade-size:3rem]")}>{section("Favorites", favoriteAgents)}{section("Software agents", shownSoftware)}{section("Other agents", otherAgents)}{!favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
 		{onBrowseAgents || onCreateAgent ? <div className="shrink-0 border-t border-border pt-1">{onBrowseAgents ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={onBrowseAgents}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" size="small" />} />Browse agents</Button> : null}{onCreateAgent ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={onCreateAgent}><Icon aria-hidden className="size-6" render={<AddIcon label="" size="small" />} />Create agent</Button> : null}</div> : null}
 		<p role="status" className="sr-only">{status}</p>
 		{status ? <div aria-hidden className="shrink-0 truncate border-t border-border px-2 py-1 text-xs text-text-subtle">{status}</div> : null}

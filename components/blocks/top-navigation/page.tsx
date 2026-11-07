@@ -71,6 +71,8 @@ interface TopNavigationProps {
 	defaultSidebarOpen?: boolean;
 	/** Size the shell to the viewport, or fill a height-constrained parent. */
 	shellHeight?: "viewport" | "parent";
+	/** Hide shell navigation while retaining the mounted content. */
+	hideShellChrome?: boolean;
 	/** Preserve the legacy leading inset used by sidebar-owned product shells. */
 	searchAlignment?: "responsive" | "sidebar";
 	hideRovoAction?: boolean;
@@ -168,6 +170,7 @@ export default function TopNavigation({
 	showSearch = true,
 	defaultSidebarOpen = true,
 	shellHeight = "viewport",
+	hideShellChrome = false,
 	searchAlignment = "responsive",
 	hideRovoAction = false,
 	settingsDesignVariantIds,
@@ -471,7 +474,7 @@ export default function TopNavigation({
 			open={sidebarOpen}
 			style={sidebarStyle}
 		>
-			{resolvedSidebar ?? (
+			{hideShellChrome ? null : resolvedSidebar ?? (
 				<StudioSidebar
 					headerOffsetPx={sidebarSlotState.headerOffsetPx}
 					isResizing={sidebarSlotState.isResizing}
@@ -483,7 +486,7 @@ export default function TopNavigation({
 			{/* Persistent side-nav chrome: aligns to the sidebar width when open and
 			    collapses to the shared left chrome width when closed. Hosts the sidebar toggle,
 			    app switcher, and product logo. */}
-			<div
+			{hideShellChrome ? null : <div
 				className={cn(
 					"fixed top-0 left-0 z-50 flex items-center px-3",
 					hasMountedChrome && !sidebarResize.isResizing && "transition-[width,border-color] duration-medium ease-in-out",
@@ -518,11 +521,11 @@ export default function TopNavigation({
 					onHoverEnter={nav.handleHoverEnter}
 					onHoverLeave={nav.handleHoverLeave}
 				/>
-			</div>
+			</div>}
 
 			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				{/* Top navigation bar */}
-				<div
+				{hideShellChrome ? null : <div
 					ref={setNavigationContainer}
 					className={cn(
 						"sticky top-0 z-40 flex shrink-0 items-center gap-2 border-b px-3 transition-[padding] duration-medium ease-in-out",
@@ -538,7 +541,7 @@ export default function TopNavigation({
 				>
 					{middleZone}
 					{rightCluster}
-				</div>
+				</div>}
 
 				{/* Framed content area. Hosts supply real content via `children`;
 				    the block demo renders an empty placeholder body. */}

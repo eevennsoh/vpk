@@ -92,6 +92,7 @@ function createWacCard(base: JiraKanbanCardData, content: WacCardContent): JiraK
 		avatarSrc: agent.avatarSrc,
 		agentBrandName: agent.brandName,
 		label: content.title,
+		sessionTitle: content.title,
 		message: content.needsInput ? `${agent.name} needs input on: ${content.title}.` : `${agent.name} is working on: ${content.title}.`,
 		state: content.needsInput ? "awaiting-input" : "working",
 		host: "local",
@@ -193,7 +194,6 @@ interface WacSessionContent {
 	id: string;
 	shortTitle: string;
 	agentId?: PulseAgentSession["agentId"];
-	keepNarrative?: boolean;
 }
 
 const WAC_SESSION_CONTENT = [
@@ -202,10 +202,10 @@ const WAC_SESSION_CONTENT = [
 	{ id: "lw-sync-decline-parity", shortTitle: "Update runbook docs", agentId: "copilot" },
 	{ id: "lw-sync-payout-recovery", shortTitle: "Recover failed merchant payout batches" },
 	{ id: "lw-sync-auth-fallback", shortTitle: "Lock database records during account migration" },
-	{ id: "lw-sync-retry-headers", shortTitle: "Retry header audit", keepNarrative: true },
+	{ id: "lw-sync-retry-headers", shortTitle: "Retry header audit" },
 	{ id: "lw-sync-rollback-metrics", shortTitle: "Rollback metric thresholds", agentId: "copilot" },
 	{ id: "lw-sync-account-locks", shortTitle: "Trace gateway outage failures" },
-	{ id: "lw-sync-fee-rounding", shortTitle: "Fee rounding edge cases", keepNarrative: true },
+	{ id: "lw-sync-fee-rounding", shortTitle: "Fee rounding edge cases" },
 	{ id: "lw-sync-token-rotation", shortTitle: "Rotate payment API security tokens" },
 ] as const satisfies readonly WacSessionContent[];
 
@@ -219,7 +219,7 @@ function toWacSession(session: PulseAgentSession, content?: WacSessionContent): 
 		id: `wac:${session.id}`,
 		memberIds,
 		shortTitle: content.shortTitle,
-		title: content.keepNarrative ? session.title : content.shortTitle,
+		title: content.shortTitle,
 		agentId: content.agentId ?? session.agentId,
 		detail: `${session.detail.split(" · ").slice(0, 2).join(" · ")} · ${content.shortTitle}`,
 		pullRequest: session.pullRequest ? {

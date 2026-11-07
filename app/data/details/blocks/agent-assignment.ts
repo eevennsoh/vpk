@@ -43,12 +43,18 @@ export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
 			name: "assignedAgents",
 			type: "readonly AgentAssignmentAgent[]",
 			required: true,
-			description: "Controlled assigned agents. Set statusKind to working, needs-input, finished, or idle. Working rows can supply a statusSequence that cycles on hover; other kinds use a static byline and a rest-state trailing icon.",
+			description: "Controlled assigned agents. Set sessionTitle to name the work separately from the agent and status. Set statusKind to working, needs-input, finished, or idle. Working rows can supply a statusSequence that cycles on hover; other kinds use a static byline and a rest-state trailing icon.",
 		},
 		{
 			name: "onAgentAssign",
 			type: "(agent: AgentSelectorAgent) => void",
 			description: "Called when an unassigned agent is chosen, before the controlled id change. Use it to invoke the agent and create its running session.",
+		},
+		{
+			name: "showSessionAddAgent",
+			type: "boolean",
+			default: "true",
+			description: "Show the Add agent action in the Default session menu.",
 		},
 		{
 			name: "onAssignedAgentIdsChange",

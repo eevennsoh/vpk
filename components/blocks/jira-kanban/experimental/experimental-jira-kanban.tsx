@@ -109,11 +109,14 @@ import {
  * shared so both variants remain interchangeable inside an owning surface.
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
+	/** Center columns when they fit, while retaining horizontal scrolling when they do not. */
+	contentAlignment?: "start" | "center";
 	/** Enables AI destination preview and Return during pointer-driven issue dragging. */
 	onAutoArrange?: (codes: ReadonlySet<string>) => void;
 	/** Fuses selected wells, keeps issue surfaces white, and gives every issue a well. */
 	issueSelectionAppearance?: "card" | "fused-backdrop";
 	addAgentLabel?: string;
+	showSessionAddAgent?: boolean;
 	/** Issue-only previews, grouped workflow targets and ordered drops. */
 	issueDragTransitions?: boolean;
 	/** False restores the original issue move visuals without changing drop behavior. */
@@ -409,6 +412,7 @@ function ExperimentalJiraKanbanView({
 	onAutoArrange,
 	activeCardCode,
 	addAgentLabel,
+	showSessionAddAgent,
 	agentActivityLayout = "merged",
 	agentSessionColumn,
 	agents,
@@ -434,6 +438,7 @@ function ExperimentalJiraKanbanView({
 	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
 	columnSizing = "fill",
 	columnWidth = "fixed",
+	contentAlignment = "start",
 	createdCardArrival,
 	createWorkItemDropZoneLabel,
 	detachedAgentSessionsByCard,
@@ -810,7 +815,7 @@ function ExperimentalJiraKanbanView({
 				>
 				<LayoutGroup id={cardLayoutGroupId}>
 						<div
-							className={cn("flex w-max items-stretch", columnSizing === "fill" ? "min-h-full min-w-full" : "h-full")}
+							className={cn("flex w-max items-stretch", columnSizing === "fill" ? "min-h-full min-w-full" : "h-full", contentAlignment === "center" ? "mx-auto" : null)}
 							style={{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" ? "100%" : undefined }}
 						>
 						<ExclusiveCreateWellProximityProvider>
@@ -939,6 +944,7 @@ function ExperimentalJiraKanbanView({
 								<ExperimentalJiraKanbanCard
 									appearance={cardAppearance}
 									addAgentLabel={addAgentLabel}
+									showSessionAddAgent={showSessionAddAgent}
 												active={isActive}
 													agents={agents}
 													agentActivityLayout={agentActivityLayout}

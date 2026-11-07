@@ -95,6 +95,8 @@ export interface JiraIssueAgentActivity {
 	/** Opt in to the session column's status-icon transition. */
 	stateTransition?: "agent-session";
 	name: string;
+	/** Display-safe title of the session's work, independent of changing status narration. */
+	sessionTitle?: string;
 	avatarSrc?: string;
 	agentBrandName?: ThirdPartyLogoName;
 	agentVpkLogo?: "rovo";
@@ -210,6 +212,7 @@ export function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentA
 	return {
 		id: activity.id,
 		name: activity.name,
+		...(activity.sessionTitle ? { sessionTitle: activity.sessionTitle } : {}),
 		byline: "",
 		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
