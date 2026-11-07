@@ -21,6 +21,8 @@ export interface JiraActivityActor {
 	vpkLogo?: "rovo";
 	/** Third-party brand mark for `app` actors, rendered via `LogoThirdParty`. */
 	brandName?: ThirdPartyLogoName;
+	/** Opt agents into the coding-brand canvas (dark Cursor tile, Codex artwork). */
+	appearance?: "default" | "coding";
 }
 
 /**

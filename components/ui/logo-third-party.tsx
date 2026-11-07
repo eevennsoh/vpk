@@ -79,8 +79,12 @@ export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg"
  * unlayered rules beat every layered Tailwind utility regardless of specificity.
  */
 const TILE_CHROME_OVERRIDES = {
-	/** Strip the whole tile — `background-color:#fff` and the 1px border. */
-	borderless: "[&>span]:bg-transparent! [&>span]:border-0!",
+	/**
+	 * Strip the whole tile — `background-color:#fff` and the 1px border. Without the
+	 * border the glyph span grows to the full tile, and its block layout pins the
+	 * smaller svg to the top-left (2px off at xxsmall), so the glyph span centers it.
+	 */
+	borderless: "[&>span]:bg-transparent! [&>span]:border-0! [&>span>span]:flex! [&>span>span]:items-center! [&>span>span]:justify-center!",
 	/** Swap the hardcoded `#fff` for the themeable raised-surface token. */
 	surface: "[&>span]:bg-surface-raised!",
 	/** Drop the fill, keep the (already themeable) hairline border. */

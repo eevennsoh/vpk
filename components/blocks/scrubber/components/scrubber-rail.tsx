@@ -6,7 +6,7 @@ import { ScrubberMark } from "@/components/blocks/scrubber/components/scrubber-m
 import { useScrubberNavigation } from "@/components/blocks/scrubber/hooks/use-scrubber-navigation";
 import { useScrubberPointer } from "@/components/blocks/scrubber/hooks/use-scrubber-pointer";
 import type { ScrubberEntry } from "@/components/blocks/scrubber/lib/scrubber-entries";
-import { toMarkState, toResolvedIndex } from "@/components/blocks/scrubber/lib/scrubber-geometry";
+import { toMarkState, toNearestEntryIndex, toResolvedIndex } from "@/components/blocks/scrubber/lib/scrubber-geometry";
 import { cn } from "@/lib/utils";
 
 /**
@@ -144,7 +144,11 @@ export function ScrubberRail({
 		selectOnHover: selectionMode === "hover",
 	});
 
-	const hoverPosition = useTransform(pointerOffset, (value) => `${Math.min(1, Math.max(0, value)) * 100}%`);
+	// The hover plate snaps to the dot it would select, so it never sits half over a dot.
+	const hoverPosition = useTransform(pointerOffset, (value) => {
+		const nearest = toNearestEntryIndex(entries, Math.min(1, Math.max(0, value)));
+		return `${(nearest === null ? Math.min(1, Math.max(0, value)) : entries[nearest]!.offset) * 100}%`;
+	});
 	const hoverOpacity = useTransform(pointerOffset, (value) => value < 0 ? 0 : 1);
 	const activeEntry = entries[resolvedIndex] ?? null;
 	// Clamped rather than tied to `isActive`: roving tabindex only works if

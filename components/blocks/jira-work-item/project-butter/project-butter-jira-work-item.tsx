@@ -52,6 +52,8 @@ export interface ProjectButterJiraWorkItemProps {
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
 	onOpenCloudSession?: (session: ProjectButterSessionItem, draft?: string) => boolean | void | Promise<boolean | void>;
+	/** Standalone only: the host's sidebar chat, mounted beside the work item. Pair with `onOpenCloudSession`. */
+	chatPanel?: ReactNode;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
 	onStoryPointsChange?: (storyPoints: number | undefined) => void;
 	onAssigneeChange?: (assignee: WorkItemPerson) => void;
@@ -84,6 +86,7 @@ export function ProjectButterJiraWorkItem({
 	onCreateAgent,
 	onAgentSessionStart,
 	onOpenCloudSession,
+	chatPanel,
 	overlayContainerRef,
 	onStoryPointsChange,
 	onAssigneeChange,
@@ -317,6 +320,7 @@ export function ProjectButterJiraWorkItem({
 			suggestion={suggestion}
 			open={open}
 			presentation={presentation}
+			chatPanel={chatPanel}
 			shell={shell}
 		>
 			<ProjectButterHeader

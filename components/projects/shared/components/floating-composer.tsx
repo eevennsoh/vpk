@@ -79,6 +79,9 @@ export function FloatingComposer({
 	className,
 	inputContext,
 	layout = "auto",
+	// The input group's edges sit flush with the leading "+" and trailing actions,
+	// so clipping it would cut their outward focus rings. The shell clips nothing else.
+	allowOverflow = true,
 	...props
 }: Readonly<FloatingComposerProps>) {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -269,6 +272,7 @@ export function FloatingComposer({
 	return (
 		<PromptInput
 			variant="floating"
+			allowOverflow={allowOverflow}
 			className={cn(
 				composerPromptInputClassName,
 				"p-2",

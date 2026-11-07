@@ -10,6 +10,7 @@ import RovoFloatingChat from "@/components/projects/rovo-floating-chat/component
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import type { ProjectButterPresentation } from "@/components/blocks/jira-work-item/project-butter/presentation";
+import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/experimental/experimental-jira-work-item";
 import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
 import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
@@ -63,7 +64,16 @@ export interface JiraWorkItemProps {
 	projectButterPresentation?: ProjectButterPresentation;
 	/** Opens Project butter in the suggestion state, with Teamwork Graph fills for empty fields. */
 	projectButterSuggestion?: boolean;
+	/** Project butter: a host sidebar chat plus the opener that routes agent sessions into it. */
+	projectButterChat?: ProjectButterChatHost;
 }
+
+export type ProjectButterChatHost = Readonly<{
+	panel: ReactNode;
+	onOpenCloudSession: (session: ProjectButterSessionItem, draft?: string) => boolean | void | Promise<boolean | void>;
+	/** Receives the work item dialog, so the host can render floating Rovo chrome inside it. */
+	overlayContainerRef?: (element: HTMLDivElement | null) => void;
+}>;
 
 export function JiraWorkItem({
 	initialIssueOpen = false,
@@ -72,6 +82,7 @@ export function JiraWorkItem({
 	initialExperimentalPreset = "filled",
 	projectButterPresentation = "full-screen",
 	projectButterSuggestion = false,
+	projectButterChat,
 }: Readonly<JiraWorkItemProps>) {
 	return variant === "default" ? (
 		<JiraWorkItemDefaultView initialIssueOpen={initialIssueOpen} onIssueClose={onIssueClose} />
@@ -81,6 +92,7 @@ export function JiraWorkItem({
 			onIssueClose={onIssueClose}
 			initialExperimentalPreset={initialExperimentalPreset}
 			projectButterPresentation={projectButterPresentation}
+			projectButterChat={projectButterChat}
 			projectButterSuggestion={projectButterSuggestion}
 			surface={variant}
 		/>
@@ -134,6 +146,7 @@ function JiraWorkItemExperimentalView({
 	surface,
 	projectButterPresentation,
 	projectButterSuggestion,
+	projectButterChat,
 }: Readonly<{
 	initialIssueOpen: boolean;
 	onIssueClose?: () => void;
@@ -141,6 +154,7 @@ function JiraWorkItemExperimentalView({
 	surface: ExperimentalVariant;
 	projectButterPresentation: ProjectButterPresentation;
 	projectButterSuggestion: boolean;
+	projectButterChat?: ProjectButterChatHost;
 }>) {
 	const [isIssueOpen, setIsIssueOpen] = useState(initialIssueOpen);
 	const ExperimentalSurface = EXPERIMENTAL_SURFACES[surface];
@@ -152,7 +166,7 @@ function JiraWorkItemExperimentalView({
 
 	return (
 		<JiraWorkItemShell onOpen={() => setIsIssueOpen(true)}>
-			{surface === "project-butter" ? <ProjectButterJiraWorkItem initialPresentation={projectButterPresentation} initialPreset={initialExperimentalPreset} initialSuggestion={projectButterSuggestion} onClose={handleIssueClose} open={isIssueOpen} /> : <ExperimentalSurface
+			{surface === "project-butter" ? <ProjectButterJiraWorkItem chatPanel={projectButterChat?.panel} initialPresentation={projectButterPresentation} onOpenCloudSession={projectButterChat?.onOpenCloudSession} overlayContainerRef={projectButterChat?.overlayContainerRef} initialPreset={initialExperimentalPreset} initialSuggestion={projectButterSuggestion} onClose={handleIssueClose} open={isIssueOpen} /> : <ExperimentalSurface
 				open={isIssueOpen}
 				onClose={handleIssueClose}
 				initialPreset={initialExperimentalPreset}

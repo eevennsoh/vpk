@@ -103,8 +103,8 @@ export function ProjectButterCrew({ assignee, currentUser, field = false, onBrow
 	}
 	return (
 		<Popover onOpenChange={changeOpen} open={open}>
-			{field && sessions.length > 0 ? <div aria-label="Agent field" className="min-w-0" role="group">
-				<div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">Agent</div>
+			{field && sessions.length > 0 ? <div aria-label="Agents field" className="min-w-0" role="group">
+				<div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">Agents</div>
 				<div className="relative min-w-0">
 					<PopoverTrigger render={<button aria-label={fieldLabel} className="absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring in-[section.rounded-lg]:-inset-x-[17px]" type="button" />} />
 					<div inert><AgentAssignmentDefaultField activityRowFlush addAgentLabel="Add agent" assignedAgents={assignedAgents} compactStatus /></div>
