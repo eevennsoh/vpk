@@ -9,6 +9,29 @@ const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
 const AGENT_SESSION_PANEL_WIDTH_PX = 360;
 const AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32;
 
+test("Project Butter empty columns follow the Team EU26 session controls", async ({ page }) => {
+	const route = withDesignVariants("/components/blocks/jira-kanban#empty-columns", {
+		advancedTimeline: false,
+		agentSessionColumnResizing: true,
+		manualLink: false,
+	});
+	await page.goto(appUrl(route));
+	const example = page.locator("#empty-columns");
+	const column = example.locator("[data-agent-session-column]");
+	await expect(column).toBeVisible();
+	await expect(example.getByRole("separator", { name: "Resize Unlink sessions column" })).toBeVisible();
+	await expect(column.getByRole("button", { name: /filter sessions/i })).toHaveCount(0);
+	await column.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+	await expect(column.getByRole("button", { name: "Expand Unlink sessions column" })).toBeVisible();
+	await column.getByRole("button", { name: "Expand Unlink sessions column" }).click();
+	await expect(column.getByRole("button", { name: "Collapse Unlink sessions column" })).toBeVisible();
+
+	await page.goto(appUrl(withDesignVariants("/components/blocks/jira-kanban#empty-columns", {
+		agentSessionColumnResizing: false,
+	})));
+	await expect(example.getByRole("separator", { name: "Resize Unlink sessions column" })).toHaveCount(0);
+});
+
 function getPanel(page: Page): Locator {
 	// The panel is a <section> with an accessible name, so it exposes role
 	// "region".

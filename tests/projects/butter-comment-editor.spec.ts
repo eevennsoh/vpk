@@ -523,10 +523,10 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	const actions = page.getByRole("menu", { name: "Run Claude on" });
 	await expect(actions.getByRole("group", { name: "Run on cloud" })).toBeVisible();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (2)" })).toBeVisible();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
 	await expect(actions.getByRole("menuitem", { name: "Start a new session" })).toBeVisible();
 	await expect(actions.getByRole("separator")).toBeVisible();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
 	await expect(sessions.getByRole("option")).toHaveCount(2);
 	const earlier = sessions.getByRole("option", { name: /Check timeout behavior/ });
@@ -548,7 +548,7 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (3)" })).toBeVisible();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
 });
 
 test("a first cloud session started from the board does not open chat", async ({ page }) => {
@@ -563,7 +563,7 @@ test("a first cloud session started from the board does not open chat", async ({
 	await expect(page.locator('[data-rovo-chat-placement="floating"]')).toBeHidden();
 });
 
-test("long session titles and metadata stay inside their own selectable rows", async ({ page }) => {
+test("long session titles stay inside their own selectable rows", async ({ page }) => {
 	test.setTimeout(60_000);
 	await page.goto(appUrl("/butter"));
 	const issue = card(page, "PAY-105");
@@ -579,7 +579,7 @@ test("long session titles and metadata stay inside their own selectable rows", a
 	await chooseClaude();
 	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
 	await chooseClaude();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	const list = page.getByRole("listbox", { name: "Choose a Claude session" });
 	await expect(list.getByRole("option")).toHaveCount(2);
 	const rowsAreContained = () => list.evaluate((element) => {
@@ -587,9 +587,8 @@ test("long session titles and metadata stay inside their own selectable rows", a
 		return rows.every((row, index) => {
 			const bounds = row.getBoundingClientRect();
 			const title = row.querySelector<HTMLElement>(".menu-row-title")?.getBoundingClientRect();
-			const byline = row.querySelector<HTMLElement>(".menu-row-byline")?.getBoundingClientRect();
 			const next = rows[index + 1]?.getBoundingClientRect();
-			return Boolean(title && byline && title.top >= bounds.top && title.bottom <= byline.top + 1 && byline.bottom <= bounds.bottom + 1 && (!next || bounds.bottom <= next.top + 1));
+			return Boolean(title && title.top >= bounds.top && title.bottom <= bounds.bottom + 1 && (!next || bounds.bottom <= next.top + 1));
 		});
 	});
 	await expect.poll(rowsAreContained).toBe(true);
@@ -624,22 +623,22 @@ test("the board card picker continues a chosen session or creates a separate emp
 	}
 	await openClaudePicker();
 	const actions = page.getByRole("menu", { name: "Run Claude on" });
-	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
 	await expect(sessions.getByRole("option")).toHaveCount(2);
 	await expect.poll(() => sessions.locator("..").evaluate((menu) => ({
 		shadow: getComputedStyle(menu).boxShadow,
 		border: getComputedStyle(menu).borderTopWidth,
 	}))).toEqual({ shadow: "none", border: "0px" });
-	await expect.poll(() => sessions.locator(".menu-row-byline").evaluateAll((rows) => rows.every((row) => row.scrollWidth <= row.clientWidth + 1 && row.scrollHeight <= row.clientHeight + 1))).toBe(true);
+	await expect(sessions.locator(".menu-row-byline")).toHaveCount(0);
 	await page.setViewportSize({ width: 900, height: 800 });
 	await expect.poll(() => sessions.evaluate((list) => {
 		const bounds = list.getBoundingClientRect();
 		return bounds.left >= 0 && bounds.right <= window.innerWidth;
 	})).toBe(true);
-	await expect.poll(() => sessions.locator(".menu-row-byline").evaluateAll((rows) => rows.every((row) => row.scrollWidth <= row.clientWidth + 1 && row.scrollHeight <= row.clientHeight + 1))).toBe(true);
+	await expect(sessions.locator(".menu-row-byline")).toHaveCount(0);
 	await page.setViewportSize({ width: 1800, height: 1100 });
-	await expect(sessions.getByRole("option", { name: /Check timeouts/ })).toContainText("Venn");
+	await expect(sessions.getByRole("option", { name: "Check timeouts" })).toBeVisible();
 	await sessions.getByRole("option").first().focus();
 	await page.keyboard.press("ArrowDown");
 	await expect(sessions.getByRole("option", { name: /Check timeouts/ })).toBeFocused();
@@ -652,8 +651,8 @@ test("the board card picker continues a chosen session or creates a separate emp
 	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
 	await expect(chat).toBeHidden();
 	await openClaudePicker();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (3)" })).toBeVisible();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (3)" }).click();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	await expect.poll(() => sessions.getByRole("option", { name: /Work on Port confirmPaymentIntent/ }).locator(".menu-row-title").evaluate((title) => title.scrollHeight <= title.clientHeight + 1)).toBe(true);
 	await sessions.getByRole("option", { name: /Work on Port confirmPaymentIntent/ }).click();
 	const input = chat.getByRole("textbox", { name: "Chat message input" });
@@ -665,7 +664,7 @@ test("the board card picker continues a chosen session or creates a separate emp
 	await expect(chat.getByRole("log").getByText("Investigate decline handling", { exact: true })).toBeVisible();
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 	await openClaudePicker();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (3)" }).click();
-	await expect(sessions.getByRole("option", { name: /Investigate decline handling/ })).toContainText("Working");
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
+	await expect(sessions.getByRole("option", { name: "Investigate decline handling" })).toBeVisible();
 });
 

@@ -8,6 +8,7 @@ import Page from "@/components/blocks/jira-kanban/page";
 import ExperimentalPage from "@/components/blocks/jira-kanban/experimental/page";
 import ExperimentalV2Page from "@/components/blocks/jira-kanban/experimental-v2/page";
 import { JiraList } from "@/components/blocks/jira-list";
+import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
 	createJiraGoldenJourneysV4PayBoardColumns,
@@ -43,14 +44,25 @@ export default function JiraKanbanDemo() {
 }
 
 export function JiraKanbanDemoProjectButter({ emptyColumns = false }: Readonly<{ emptyColumns?: boolean }> = {}) {
+	const { designVariants } = useDesignVariants();
 	const [boardColumns, setBoardColumns] = useState(
 		emptyColumns ? createEmptyColumnExample : createJiraGoldenJourneysV4PayBoardColumns,
 	);
 	return (
 		<ExperimentalPage
+			advancedAgentSessionTimeline={designVariants.advancedTimeline}
 			agentActivityLayout="merged"
 			agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
+			agentSessionColumnGlow={{
+				glowBloom: designVariants.sessionBloom,
+				glowReach: designVariants.sessionProximity,
+				glowStroke: designVariants.sessionStroke,
+			}}
+			agentSessionColumnResizable={designVariants.agentSessionColumnResizing}
+			agentSessionLinkingVariant="glow"
 			agentSessionMultiSelect={false}
+			agentSessionPresentation="column"
+			agentSessionPreviewEffect={designVariants.sessionPeel ? "peel" : undefined}
 			agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
 			ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 			boardColumns={boardColumns}
@@ -59,6 +71,7 @@ export function JiraKanbanDemoProjectButter({ emptyColumns = false }: Readonly<{
 			columnChrome="default"
 			columnSizing="content"
 			createWellBounce="off"
+			createWorkItemDropZoneLabel="Drop to create work item"
 			defaultShowUntracked={false}
 			headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
 			iconScale="comfortable"
@@ -68,6 +81,13 @@ export function JiraKanbanDemoProjectButter({ emptyColumns = false }: Readonly<{
 			issueSelectionAppearance="fused-backdrop"
 			onBoardColumnsChange={(columns) => setBoardColumns([...columns])}
 			showAgentSessionColumn
+			showAgentSessionFilter={false}
+			showAgentSessionFlyoutFooter={false}
+			showAgentSessionLinkAction={false}
+			showAgentSessionLinkWorkItemMenuItem={designVariants.manualLink}
+			showAgentSessionOverflow={false}
+			showAgentSessionUnlinkWell={false}
+			suggestSessionBoardLinkOnHover={false}
 		/>
 	);
 }

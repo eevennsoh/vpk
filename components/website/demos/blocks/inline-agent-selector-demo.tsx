@@ -40,7 +40,7 @@ export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onSt
 		if (matching.length > 0) {
 			continueActions.push({
 				id: "continue",
-				label: matching.length > 1 ? `Continue to existing session (${matching.length})` : "Continue with last session",
+				label: matching.length > 1 ? "Continue to existing session" : "Continue with last session",
 				icon: <Icon render={<AiChatIcon label="" size="small" />} />,
 				onSelect: () => { if (matching.length === 1) onContinueSession?.(matching[0]); else setChoosingAgentId(agent.id); },
 				focusFirstActionAfterSelect: matching.length > 1,

@@ -229,7 +229,7 @@ test("Duplicative sessions offers existing Claude sessions or a new one", async 
 	await picker.getByRole("option", { name: /^Claude/ }).click();
 	const actions = page.getByRole("menu", { name: "Run Claude on" });
 	await expect(actions.getByRole("menuitem", { name: "Start a new session" })).toBeVisible();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
 	await expect(sessions.getByRole("option")).toHaveCount(2);
 	await sessions.getByRole("option", { name: /Check the onboarding tests/ }).click();
@@ -238,8 +238,8 @@ test("Duplicative sessions offers existing Claude sessions or a new one", async 
 	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
 	await expect(picker.getByRole("status")).toHaveText("Started a new Claude session");
 	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (3)" })).toBeVisible();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (3)" }).click();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	await expect(page.getByRole("listbox", { name: "Choose a Claude session" }).getByRole("option", { name: /Review onboarding changes/ })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
@@ -251,7 +251,7 @@ test("Duplicative sessions offers existing Claude sessions or a new one", async 
 	await expect(modes.getByRole("button", { name: "Inline expand" })).toHaveAttribute("aria-pressed", "true");
 	await modes.getByRole("button", { name: "Submenu" }).click();
 	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (2)" })).toBeVisible();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
 	await modes.getByRole("button", { name: "Inline expand" }).click();
 	await picker.getByRole("button", { name: "Add Claude to favorites" }).click();
 	const inlineClaude = picker.getByRole("button", { name: "Claude", exact: true });
@@ -260,7 +260,7 @@ test("Duplicative sessions offers existing Claude sessions or a new one", async 
 	const expandedRow = inlineClaude.locator("../..");
 	await expect(expandedRow.getByRole("button", { name: "Start a new session" })).toBeVisible();
 	await expect(expandedRow.getByRole("menu")).toHaveCount(0);
-	const continueButton = picker.getByRole("button", { name: "Continue to existing session (2)" });
+	const continueButton = picker.getByRole("button", { name: "Continue to existing session" });
 	await continueButton.focus();
 	await page.keyboard.press("Enter");
 	const backButton = expandedRow.getByRole("button", { name: "Back" });

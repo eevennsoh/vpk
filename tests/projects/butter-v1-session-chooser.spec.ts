@@ -22,10 +22,12 @@ test("session chooser matches the run menu inset and uses a plain chat icon", as
 	const runMenu = page.getByRole("menu", { name: "Run Cursor on" });
 	const reference = await insets(runMenu, runMenu.getByRole("menuitem"));
 	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await page.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	await page.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	const chooser = page.getByRole("dialog", { name: "Choose a Claude session" });
 	const sessions = chooser.getByRole("option");
 	await expect(sessions).toHaveCount(2);
+	await expect(sessions.nth(0)).toHaveText("Review the onboarding quickstart");
+	await expect(sessions.nth(1)).toHaveText("Check the onboarding tests");
 	expect(await insets(chooser, sessions)).toEqual(reference);
 	await expect(sessions.first().locator("[data-slot=icon-tile]")).toHaveCount(0);
 	await expect(sessions.first().locator("svg")).toBeVisible();
