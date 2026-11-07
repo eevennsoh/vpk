@@ -37,7 +37,7 @@ const notes = [
 	['The camera recoils, opens the field, then closes on Agent Session Tracking. Camera framing has its own authored path, separate from each card’s pose, so the subject remains clear as the space changes.', 'lib/finale-camera.ts'],
 	['The hero lands first, then five other sheets assemble around it. In production, each animated sheet hands off to its matching HTML tile after touchdown. The shared pose makes that change read as one object.', 'lib/finale-sheet-gl.ts'],
 	['The six tiles travel toward moving gaps in a larger wall. A staged cursor carries the title into its own slot. The cards keep their mixed proportions through the journey rather than becoming uniform tiles.', 'lib/finale-wall-motion.ts'],
-	['One irregular field of wide, tall, square and small cards glides diagonally. The study recycles each card offscreen, with no duplicate wall rows. Teammate cursors keep placing work; Play lets this final state continue until paused.', 'lib/finale-wall-layout.ts'],
+	['A packed wall of wide, tall, square and small cards, seen straight on, scrolls sideways. New columns enter from the right as old ones leave, with no duplicate rows. Teammate cursors keep placing work; Play lets this final state continue until paused.', 'lib/finale-wall-layout.ts'],
 ];
 export function storySteps(data) {
 	return data.states.map((state, index) => ({ ...state, seconds: state.time / data.playbackRate, body: notes[index][0], source: notes[index][1].split('/').at(-1), href: sourceRoot + notes[index][1], code: codeFor(index) }));
