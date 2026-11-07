@@ -57,7 +57,7 @@ export function ButterAgentSelectorGallery({ variant = "default", presentation =
 		setPickerKey((current) => current + 1);
 	};
 	const inlineSessionProps = variant === "duplicative-sessions" ? {
-		sessions, status: sessionStatus, favoriteAgentIds, onFavoriteAgentIdsChange: setFavoriteAgentIds,
+		sessions, status: sessionStatus, favoriteAgentIds, onFavoriteAgentIdsChange: setFavoriteAgentIds, includeRovoCli: true,
 		onContinueSession: continueSession, onStartSession: startSession,
 		onBrowseAgents: () => setDirectoryOpen(true), onCreateAgent: createAgent,
 	} : {};

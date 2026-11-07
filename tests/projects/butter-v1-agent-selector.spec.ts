@@ -195,6 +195,24 @@ test("Agent Selector examples use the Butter submenu and inline presentations", 
 	await expect.poll(() => list.evaluate((element) => getComputedStyle(element).maskImage)).toContain("linear-gradient");
 });
 
+test("duplicative inline search includes bylines and retains Rovo CLI workspaces", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
+	const search = picker.getByRole("textbox", { name: "Search agents" });
+	await search.fill("Anthropic");
+	await expect(picker.getByRole("button", { name: "Claude", exact: true })).toBeVisible();
+	await search.fill("Rovo CLI");
+	await picker.getByRole("button", { name: "Rovo CLI", exact: true }).click();
+	await expect(picker.getByRole("button", { name: "Open in Rovo CLI" })).toBeVisible();
+	await picker.getByRole("button", { name: "Configure directory" }).click();
+	const directory = picker.getByRole("textbox", { name: "Choose your directory" });
+	await directory.fill("/tmp/selector-workspace");
+	await directory.press("Enter");
+	await expect(directory).toHaveValue("/tmp/selector-workspace");
+});
+
 test("Duplicative sessions offers existing Claude sessions or a new one", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

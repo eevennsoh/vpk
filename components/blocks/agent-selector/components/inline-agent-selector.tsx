@@ -25,6 +25,7 @@ export type InlineAgentSelectorProps = {
 	agents: readonly AgentSelectorAgent[];
 	softwareAgentIds: readonly string[];
 	getActions: (agent: AgentSelectorAgent) => readonly InlineAgentAction[];
+	renderAdditionalActions?: (agent: AgentSelectorAgent) => ReactNode;
 	onActiveAgentChange?: (agent: AgentSelectorAgent | null) => void;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
@@ -35,7 +36,7 @@ export type InlineAgentSelectorProps = {
 	| { favoriteAgentIds?: undefined; onFavoriteAgentIdsChange?: (ids: readonly string[]) => void }
 );
 
-export function InlineAgentSelector({ agents, softwareAgentIds, getActions, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
+export function InlineAgentSelector({ agents, softwareAgentIds, getActions, renderAdditionalActions, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
 	const [query, setQuery] = useState("");
 	const [expanded, setExpanded] = useState(false);
 	const [internalFavorites, setInternalFavorites] = useState<readonly string[]>([]);
@@ -47,7 +48,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, onAc
 	useEffect(() => () => { if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current); }, []);
 	const software = softwareAgentIds.flatMap((id) => agents.filter((agent) => agent.id === id));
 	const others = agents.filter((agent) => !softwareAgentIds.includes(agent.id));
-	const matches = (agent: AgentSelectorAgent) => agent.name.toLowerCase().includes(query.trim().toLowerCase());
+	const matches = (agent: AgentSelectorAgent) => `${agent.name} ${agent.byline}`.toLowerCase().includes(query.trim().toLowerCase());
 	const favoriteAgents = [...software, ...others].filter((agent) => favorites.includes(agent.id) && matches(agent));
 	const softwareAgents = software.filter((agent) => !favorites.includes(agent.id) && matches(agent));
 	const otherAgents = others.filter((agent) => !favorites.includes(agent.id) && matches(agent));
@@ -55,11 +56,12 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, onAc
 	const row = (agent: AgentSelectorAgent) => {
 		const favorite = favorites.includes(agent.id);
 		const actions = getActions(agent);
-		const hasChoices = actions.length > 1;
+		const additionalActions = renderAdditionalActions?.(agent);
+		const hasChoices = actions.length > 1 || Boolean(additionalActions);
 		const showInline = hasChoices && activeId === agent.id;
 		return <div key={agent.id} className="group/agent rounded-md hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
 			<div className="flex min-h-9 items-center gap-1 pl-2 pr-1.5">
-				<button data-agent-id={agent.id} type="button" disabled={actions.length === 0} className="flex min-h-9 min-w-0 flex-1 items-center gap-3 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50" aria-expanded={hasChoices ? showInline : undefined} onClick={() => {
+				<button data-agent-id={agent.id} type="button" disabled={actions.length === 0 && !additionalActions} className="flex min-h-9 min-w-0 flex-1 items-center gap-3 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50" aria-expanded={hasChoices ? showInline : undefined} onClick={() => {
 					if (hasChoices) { setActiveId(showInline ? null : agent.id); onActiveAgentChange?.(showInline ? null : agent); }
 					else { setActiveId(null); onActiveAgentChange?.(null); actions[0]?.onSelect(); }
 				}}>
@@ -84,7 +86,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, onAc
 					if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current);
 					focusFrame.current = requestAnimationFrame(() => { focusFrame.current = null; if (container?.isConnected) container.querySelector<HTMLButtonElement>("button")?.focus(); });
 				}
-			}}><span aria-hidden className="grid size-6 shrink-0 place-items-center">{action.icon}</span><span className="truncate">{action.label}</span></Button>)}</div> : null}
+			}}><span aria-hidden className="grid size-6 shrink-0 place-items-center">{action.icon}</span><span className="truncate">{action.label}</span></Button>)}{additionalActions}</div> : null}
 		</div>;
 	};
 	const section = (name: string, items: readonly AgentSelectorAgent[]) => items.length ? <section aria-label={name}><h3 className="rich-text-command-menu-heading">{name}</h3>{items.map(row)}{name === "Software agents" && !query && !expanded && softwareAgents.length > initialSoftwareLimit ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={() => setExpanded(true)}>Show more</button> : null}</section> : null;
