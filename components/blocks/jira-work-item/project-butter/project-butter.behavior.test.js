@@ -921,7 +921,7 @@ test("the wide Details column has a keyboard-resizable separator like the experi
 test("the Details rail's resize bound leaves the description 480px, between 280 and 640", async () => {
 	await renderComponent({
 		source: `import React from "react";
-			import { projectButterDetailsMaxWidth } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
+			import { projectButterDetailsMaxWidth } from "@/components/blocks/jira-work-item/project-butter/details-rail-model";
 			export default function BoundProbe() { return <p>{[700, 920, 1000, 1280, 1600].map(projectButterDetailsMaxWidth).join(",")}</p>; }`,
 	});
 	assert.equal(document.querySelector("p").textContent, "280,440,520,640,640");
