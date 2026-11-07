@@ -126,7 +126,7 @@
 
 /* Paper shading after the reference video: near-white tops, side faces one pale step darker, soft grey hairlines.
    The anatomy kit paints every face and edge through these tokens; this re-tunes them for this figure only. */
-#animation-explorer [data-vpk-figure="eu26-hero"] svg {
+:is(#animation-explorer [data-vpk-figure="eu26-hero"] svg, svg.eu26-thumb-svg) {
 	--anatomy-top: var(--paper);
 	--anatomy-paper: var(--paper);
 	--anatomy-shade-3: color-mix(in srgb, var(--ink) 4%, var(--paper));
@@ -138,7 +138,7 @@
 	--anatomy-lo: color-mix(in srgb, var(--ink) 20%, var(--paper));
 	--eu26-shadow: color-mix(in srgb, var(--ink) 6%, var(--paper));
 }
-[data-theme="dark"] #animation-explorer [data-vpk-figure="eu26-hero"] svg {
+[data-theme="dark"] :is(#animation-explorer [data-vpk-figure="eu26-hero"] svg, svg.eu26-thumb-svg) {
 	--anatomy-top: color-mix(in srgb, var(--ink) 10%, var(--paper));
 	--anatomy-paper: color-mix(in srgb, var(--ink) 10%, var(--paper));
 	--anatomy-shade-3: color-mix(in srgb, var(--ink) 7%, var(--paper));
@@ -150,30 +150,30 @@
 	--anatomy-lo: color-mix(in srgb, var(--ink) 22%, var(--paper));
 	--eu26-shadow: color-mix(in srgb, var(--surface-sunken) 75%, var(--paper));
 }
-#animation-explorer [data-eu26-shadows] { fill: var(--eu26-shadow); stroke: none; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-shadows] { fill: var(--eu26-shadow); stroke: none; }
 
 /* Face detail: a wireframe of containers on each paper face. On the orange subject the live renderer sets
    --eu26-hl (0-100%) and the outlines and panels mix towards deeper and paler orange. */
-#animation-explorer [data-eu26-detail] { pointer-events: none; }
-#animation-explorer [data-eu26-face] {
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-detail] { pointer-events: none; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] {
 	--d-line: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 55%, var(--ill-accent-ink)) var(--eu26-hl, 0%), var(--anatomy-mid));
 	--d-faint: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 75%, var(--ill-accent-ink)) var(--eu26-hl, 0%), var(--anatomy-lo));
 	--d-panel: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 82%, var(--paper)) var(--eu26-hl, 0%), var(--anatomy-shade-3));
 	--d-paper: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 62%, var(--paper)) var(--eu26-hl, 0%), var(--anatomy-top));
 }
-[data-theme="dark"] #animation-explorer [data-eu26-face] {
+[data-theme="dark"] :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] {
 	--d-panel: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 78%, var(--ink)) var(--eu26-hl, 0%), var(--anatomy-shade-3));
 	--d-paper: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 62%, var(--ink)) var(--eu26-hl, 0%), var(--anatomy-top));
 }
-#animation-explorer [data-eu26-face] :is(.dl, .df, .dp, .dw) {
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] :is(.dl, .df, .dp, .dw) {
 	stroke-width: 0.5px;
 	vector-effect: non-scaling-stroke;
 	stroke-linejoin: round;
 }
-#animation-explorer [data-eu26-face] .dl { fill: none; stroke: var(--d-line); }
-#animation-explorer [data-eu26-face] .df { fill: none; stroke: var(--d-faint); }
-#animation-explorer [data-eu26-face] .dp { fill: var(--d-panel); stroke: var(--d-faint); }
-#animation-explorer [data-eu26-face] .dw { fill: var(--d-paper); stroke: var(--d-line); }
-#animation-explorer [data-eu26-face] .ds { fill: none; stroke: var(--d-line); stroke-width: 1.4px; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .dl { fill: none; stroke: var(--d-line); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .df { fill: none; stroke: var(--d-faint); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .dp { fill: var(--d-panel); stroke: var(--d-faint); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .dw { fill: var(--d-paper); stroke: var(--d-line); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .ds { fill: none; stroke: var(--d-line); stroke-width: 1.4px; vector-effect: non-scaling-stroke; stroke-linecap: round; }
 /* The Team ’26 lockup is the one lettered face: bold, left-aligned, ink on the orange title and soft ink in its wall slot. */
-#animation-explorer [data-eu26-face] .dtt { fill: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 50%, var(--ill-accent-ink)) var(--eu26-hl, 0%), var(--anatomy-hi)); stroke: none; font-family: var(--font-display) !important; font-weight: 700; letter-spacing: -0.03em; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .dtt { fill: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 50%, var(--ill-accent-ink)) var(--eu26-hl, 0%), var(--anatomy-hi)); stroke: none; font-family: var(--font-display) !important; font-weight: 700; letter-spacing: -0.03em; }
