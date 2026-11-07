@@ -53,6 +53,10 @@ export function live(ctx) {
 	ctx.svg.insertBefore(ground, defs.nextSibling);
 	const groundMinor = element("path", { "data-eu26-ground-minor": "", fill: "none", stroke: "var(--eu26-ground)", "stroke-width": "0.6", "vector-effect": "non-scaling-stroke" }, ground);
 	const groundMajor = element("path", { "data-eu26-ground-major": "", fill: "none", stroke: "var(--eu26-ground-major)", "stroke-width": "0.6", "vector-effect": "non-scaling-stroke" }, ground);
+	// Soft cast shadows: each visible face is dropped onto the ground plane, offset by its height, as one pale path
+	// under everything, so depth reads from the ground rather than from dark side faces.
+	const shadows = element("path", { "data-eu26-shadows": "", "aria-hidden": "true", "pointer-events": "none" });
+	ctx.svg.insertBefore(shadows, ground.nextSibling);
 	const GROUND = { z: -12, step: 100, major: 4 };
 	const drawGround = (at, width, height) => {
 		const reach = Math.max(width, height) / Math.max(0.01, P.scale ?? 1) * 0.95;
@@ -116,6 +120,8 @@ export function live(ctx) {
 				if (surface.detail.style.display) surface.detail.style.display = "";
 			} else if (surface.detail.style.display !== "none") surface.detail.style.display = "none";
 		}
+		const lift = Math.min(140, Math.max(10, (Math.max(...topWorld.map(point => point[2])) - GROUND.z) * 0.5));
+		surface.shadow = kit.pathOf(topWorld.map(([x, y]) => project([x + lift * 0.7, y + lift * 0.45, GROUND.z])), true);
 		const face = front ? top : bottom;
 		const clipped = pose.clip && doneClip.length ? intersection(face, doneClip) : face;
 		surface.frame = { bounds: pose.clip ? clipped : [...top, ...bottom], polygon: clipped, face, center: world([plan.x + plan.w / 2, plan.y + plan.d / 2, front ? z + height : z]) };
@@ -163,8 +169,8 @@ export function live(ctx) {
 		const color = (neutral, active) => amount < 0.0001 ? neutral : amount > 0.9999 ? active : `color-mix(in oklab, ${active} ${(amount * 100).toFixed(3)}%, ${neutral})`;
 		surface.top.style.fill = color("var(--anatomy-top)", "var(--ill-accent)");
 		surface.fill.style.fill = color("var(--anatomy-paper)", "var(--ill-accent)");
-		for (const side of surface.sides) side.style.fill = color(`var(--anatomy-shade-${side.dataset.shade})`, "color-mix(in oklab, var(--ill-accent) 70%, var(--ill-line))");
-		surface.edge.style.stroke = color("var(--anatomy-mid)", "var(--ill-accent-ink)");
+		for (const side of surface.sides) side.style.fill = color(`var(--anatomy-shade-${side.dataset.shade})`, "color-mix(in oklab, var(--ill-accent) 86%, var(--ill-accent-ink))");
+		surface.edge.style.stroke = color("var(--anatomy-mid)", "color-mix(in oklab, var(--ill-accent) 55%, var(--ill-accent-ink))");
 		surface.detail?.firstElementChild?.style.setProperty("--eu26-hl", `${(amount * 100).toFixed(2)}%`);
 		el.dataset.eu26Active = amount > 0.5 ? "true" : "false";
 		el.dataset.eu26Highlight = highlight;
@@ -248,6 +254,7 @@ export function live(ctx) {
 	};
 	const arrange = () => {
 		const visible = surfaces.map(surface => surface.el).filter(el => el.style.display !== "none").map(geometry).filter(item => item.polygon.length > 2);
+		shadows.setAttribute("d", visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path")).map(item => surfaceOf.get(item.el).shadow || "").join(""));
 		const edges = visible.map(() => new Set()), incoming = visible.map(() => 0);
 		for (let a = 0; a < visible.length; a += 1) for (let b = a + 1; b < visible.length; b += 1) {
 			if (visible[a].el.dataset.eu26Kind === "confetti" || visible[b].el.dataset.eu26Kind === "confetti") continue;

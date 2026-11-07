@@ -111,8 +111,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				return {
 					heroes: document.querySelectorAll('[data-vpk-figure="eu26-hero"]').length,
 					solids: hero.querySelectorAll('.iso-solid').length,
-					artworkAndLabels: hero.querySelectorAll('svg image, svg foreignObject').length,
-					strayText: [...hero.querySelectorAll('svg text')].filter(text => !text.closest('[data-eu26-detail]')).length,
+					artworkAndLabels: hero.querySelectorAll('svg text, svg image, svg foreignObject').length,
 					faceDetails: hero.querySelectorAll('[data-part] > [data-eu26-detail]').length,
 					visibleWithoutDetail: [...hero.querySelectorAll('[data-eu26-piece][data-part]')].filter(part => part.style.display !== 'none' && !part.querySelector(':scope > [data-eu26-detail]')).length,
 					hiddenWithDetail: [...hero.querySelectorAll('[data-eu26-piece][data-part]')].filter(part => part.style.display === 'none' && part.querySelector(':scope > [data-eu26-detail]')).length,
@@ -132,8 +131,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			`);
 			assert.equal(result.heroes, 1);
 			assert.ok(result.solids > 80, `expected detailed anatomy, found ${result.solids} solid parts`);
-			assert.equal(result.artworkAndLabels, 0, 'the hero draws its faces as line-work, never raster artwork');
-			assert.equal(result.strayText, 0, 'SVG text appears only on face-detail layers');
+			assert.equal(result.artworkAndLabels, 0, 'faces are container outlines: no text, labels or artwork');
 			assert.ok(result.faceDetails >= 15, `the board's chrome and cards carry face detail inside their own groups, found ${result.faceDetails}`);
 			assert.equal(result.visibleWithoutDetail, 0, 'every visible surface shows its face detail');
 			assert.equal(result.hiddenWithDetail, 0, 'hidden surfaces release their detail from the live DOM');
@@ -208,7 +206,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				const focal = hero.querySelector('[data-focal="hero-card"]');
 				const rect = focal.getBoundingClientRect();
 				const orangeFocal = rect.width > 0 && rect.height > 0 && [...focal.querySelectorAll('.iso-top, .iso-edge')].some(part => { const style = getComputedStyle(part); return style.fill === orange || style.stroke === orange; });
-				const noArtworkOrLabels = hero.querySelectorAll('svg image, svg foreignObject').length === 0;
+				const noArtworkOrLabels = hero.querySelectorAll('svg text, svg image, svg foreignObject').length === 0;
 				return { picker, variant: state.variant, orangeFocal, noArtworkOrLabels };
 			`);
 			assert.equal(result.picker, 0, 'no style picker with one paper style');
