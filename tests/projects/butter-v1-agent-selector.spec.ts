@@ -85,6 +85,21 @@ test("Inline selector fades the list only after scrolling", async ({ page }) => 
 	}
 });
 
+test("Agent Selector examples use the Butter submenu and inline presentations", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
+	const examples = page.getByRole("region", { name: "Project Butter agent selector" });
+	await expect(examples).toHaveCount(2);
+	await examples.nth(0).getByRole("option", { name: /^Claude/ }).click();
+	await expect(page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await examples.nth(1).getByRole("button", { name: "Cursor", exact: true }).click();
+	await expect(examples.nth(1).getByRole("button", { name: "Continue with last session" })).toBeVisible();
+	const list = examples.nth(1).getByRole("region", { name: "Software agents" }).locator("..");
+	await list.evaluate((element) => { element.scrollTop = 200; });
+	await expect.poll(() => list.evaluate((element) => getComputedStyle(element).maskImage)).toContain("linear-gradient");
+});
+
 test("Duplicative sessions offers existing Claude sessions or a new one", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

@@ -206,13 +206,11 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 			query={query}
 			showMore={showMore}
 			expandedContent={submenu ? (
-				// The panel is a menu or a group depending on its contents; keyboard handling belongs to the panel.
-				// eslint-disable-next-line jsx-a11y/no-static-element-interactions
 				<div
 				aria-label={choosingSession ? `Choose a ${submenu.agent.name} session` : submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
 				className="ml-8 border-l border-border pl-2"
 				id={submenuId}
-				onKeyDown={(event) => {
+				onKeyDownCapture={(event) => {
 					if (event.key === "Escape" || event.key === "ArrowLeft") {
 						event.preventDefault();
 						event.stopPropagation();
