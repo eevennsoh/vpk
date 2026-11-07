@@ -97,6 +97,17 @@ export function pinProjectButterComments(entries: readonly JiraActivityEntry[], 
 	return [...pinned, ...entries.filter((entry) => !pinnedSet.has(entry.id))];
 }
 
+/** Undo `pinProjectButterComments` before persisting: pinned clones get their canonical tag back, so "Pinned" never reaches state. */
+export function unpinProjectButterEntries(entries: readonly JiraActivityEntry[], canonical: readonly JiraActivityEntry[]): JiraActivityEntry[] {
+	const byId = new Map(canonical.map((entry) => [entry.id, entry]));
+	return entries.map((entry) => {
+		if (entry.kind !== "comment" || entry.tag !== PINNED_TAG) return entry;
+		const original = byId.get(entry.id);
+		const { tag: _pinned, ...rest } = entry;
+		return original?.kind === "comment" && original.tag ? { ...rest, tag: original.tag } : rest;
+	});
+}
+
 function joinNames(names: readonly string[]): string {
 	return names.length < 2 ? names[0] ?? "" : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }

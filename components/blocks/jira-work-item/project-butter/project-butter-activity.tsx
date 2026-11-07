@@ -15,6 +15,7 @@ import {
 	projectButterSessionIdFromEntry,
 	pinProjectButterComments,
 	selectProjectButterActivity,
+	unpinProjectButterEntries,
 	type ProjectButterUpdateGroups,
 } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
 import {
@@ -173,7 +174,8 @@ export function ProjectButterActivity({
 					onEntriesChange={(entries) => {
 						const ids = new Set(visible.map((entry) => entry.id));
 						const createdAtMs = Date.now();
-						const normalized = entries
+						// Pinned rows are presentation clones; restore their stored tag before writing back.
+						const normalized = unpinProjectButterEntries(entries, content.activityEntries)
 							.filter((entry) => !groups.has(entry.id))
 							.map((entry) => entry.kind === "comment" ? { ...entry, replies: entry.replies?.map((reply) => ({ ...reply, createdAtMs: reply.createdAtMs ?? createdAtMs })) } : entry);
 						const groupedEvents = rows.flatMap((row) => groups.get(row.id) ?? []);

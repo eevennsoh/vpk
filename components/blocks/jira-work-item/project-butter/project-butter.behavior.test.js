@@ -871,3 +871,30 @@ test("Butter timestamps disclose an exact date, time, and timezone on focus and 
 	await view.click(trigger);
 	assert.equal(trigger.textContent, "45 minutes ago");
 });
+
+// Regression (PR review): continuing a session from the comment bar passes the typed draft;
+// the hosted chat must carry it into the opened session's composer, not drop it.
+test("the hosted chat seeds an opened session's composer with the comment bar draft", async () => {
+	const view = await renderComponent({
+		entry: "components/website/demos/blocks/project-butter-chat-work-item.tsx",
+		exportName: "ProjectButterChatWorkItem",
+		mocks: {
+			"@/components/blocks/jira-work-item": `import React from "react";
+				export default function JiraWorkItem({ projectButterChat }) {
+					const session = { id: "butter-claude", agent: { id: "claude", name: "Claude" }, message: "Hi", prompt: "Review the guide" };
+					return <div>{projectButterChat.panel}<button type="button" onClick={() => projectButterChat.onOpenCloudSession(session, "Focus on returning users")}>Continue session</button><button type="button" onClick={() => projectButterChat.onOpenCloudSession(session)}>Open session</button></div>;
+				}`,
+			"@/app/contexts/context-rovo-chat": `export function RovoChatProvider({ children }) { return children; }`,
+			"@/app/contexts/context-rovo-chat-controls": `export function useRovoChatControls() { return { chatSurface: "sidebar", openChat() {}, toggleChat() {} }; }`,
+			"@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo": `export function useJgpAgentChatDemo() { return { chatContextBar: null, externalThinkingMessageId: null, isSwitchingSession: false, openAgentChat: async () => true }; }`,
+			"@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay": `export function JgpRovoOverlay() { return null; }`,
+			"@/components/projects/sidebar-chat/page": `import React from "react"; export default function ChatPanel({ composerPrefillRequest }) { return <p data-chat-prefill="">{composerPrefillRequest ? composerPrefillRequest.requestKey + ":" + composerPrefillRequest.text : "none"}</p>; }`,
+		},
+	});
+	const prefill = () => document.querySelector("[data-chat-prefill]")?.textContent;
+	assert.equal(prefill(), "none");
+	await view.click(view.getByRole("button", { name: "Open session" }));
+	assert.equal(prefill(), "none", "opening without a draft leaves the composer alone");
+	await view.click(view.getByRole("button", { name: "Continue session" }));
+	assert.equal(prefill(), "1:Focus on returning users");
+});

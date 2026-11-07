@@ -133,7 +133,12 @@ test("pinning a comment from its header lifts it to the top of the feed until it
 	assert.equal(lead.dataset.jiraActivityEntryId, id);
 	assert.equal(lead.textContent.includes("Pinned"), true);
 	assert.equal(lead.querySelector('button[aria-label="Unpin comment"]').getAttribute("aria-pressed"), "true");
-	await view.click(lead.querySelector('button[aria-label="Unpin comment"]'));
+	// Regression (PR review): replying while pinned writes the row back to state; the transient tag must not persist.
+	await view.click([...lead.querySelectorAll("button")].find((button) => button.getAttribute("aria-label") === "Reply" || button.textContent === "Reply"));
+	await view.fill(view.getByRole("textbox", { name: "Leave a reply..." }), "Reply while pinned");
+	await view.click(lead.querySelector('form[aria-label="Reply editor"] button[aria-label="Submit"]'));
+	assert.equal(rows()[0].textContent.includes("Reply while pinned"), true);
+	await view.click(rows()[0].querySelector('button[aria-label="Unpin comment"]'));
 	assert.notEqual(rows()[0].dataset.jiraActivityEntryId, id);
 	assert.equal(comments().some((node) => node.dataset.jiraActivityEntryId === id && !node.textContent.includes("Pinned")), true);
 });
