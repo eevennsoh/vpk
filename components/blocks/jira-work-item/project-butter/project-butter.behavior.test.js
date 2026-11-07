@@ -81,6 +81,11 @@ async function expandUpdates(view) {
 	for (const button of [...document.querySelectorAll('[data-project-butter-update-group] button[aria-expanded="false"]')]) await view.click(button);
 }
 
+/** The feed pages 10 rows at a time; older session threads sit behind "Show more activity". */
+async function showAllActivity(view) {
+	for (let more = view.queryByRole("button", { name: "Show more activity" }); more; more = view.queryByRole("button", { name: "Show more activity" })) await view.click(more);
+}
+
 const feedIds = () => [...document.querySelectorAll("[data-project-butter-activity-feed] > div > ol > li")].map((row) => row.getAttribute("data-jira-activity-entry-id"));
 
 const commentBarVisible = () => document.querySelector("[data-project-butter-comment-bar]")?.getAttribute("data-visible") === "true";
@@ -92,7 +97,7 @@ async function commentEditor(view) {
 }
 
 async function openSession(view, name) {
-	const field = view.getByRole("group", { name: "Agent field" });
+	const field = view.getByRole("group", { name: "Agents field" });
 	const trigger = field.querySelector("button");
 	assert.ok(trigger);
 	await view.click(trigger);
@@ -154,10 +159,12 @@ test("Project butter shows the reference sessions and keeps replies scoped to ea
 	const view = await renderWorkItem();
 	assert.equal(view.queryByRole("complementary", { name: "Product navigation" }) !== null, true);
 	assert.equal(document.querySelector('div[aria-label="Product navigation"]:not([role])') === null, true);
+	await showAllActivity(view);
 	assert.equal(view.queryByText("Draft billing flow PRD") !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Open Jira Scoping agent chat" }) !== null, true);
 	assert.equal(view.queryByText("Review Teamwork onboarding guide") !== null, true);
-	await view.click(view.getByRole("button", { name: /^Draft billing flow PRD/u }));
+	// The session's inline chip (which replaced the standalone response card) opens its chat.
+	await view.click(view.getByRole("button", { name: /open Jira Coding agent chat$/iu }));
 	await view.fill(view.getByRole("textbox", { name: "Reply to Jira Coding agent" }), "Ship the MVP path first");
 	await openSession(view, "Jira Scoping agent");
 	await view.fill(view.getByRole("textbox", { name: "Reply to Jira Scoping agent" }), "Focus on first-run setup");
@@ -213,11 +220,12 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("button", { name: "Change priority. Current priority: High" }) !== null, true);
 	assert.equal(view.queryByText("Board owner") !== null, true);
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
-	assert.equal(view.queryByRole("group", { name: "Agent field" }) !== null, true);
+	assert.equal(view.queryByRole("group", { name: "Agents field" }) !== null, true);
 	assert.equal(view.queryByText("Sarah Lim") === null, true);
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "First card saved scope");
 	await view.focus(view.getByRole("button", { name: "Description" }));
-	await view.click(view.getByRole("button", { name: /^Inspect payment calls/u }));
+	await showAllActivity(view);
+	await view.click(view.getByRole("button", { name: /open Claude chat$/iu }));
 	await view.fill(view.getByRole("textbox", { name: "Reply to Claude" }), "First card reply draft");
 	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
 	assert.equal(view.queryByRole("dialog") === null, true);
