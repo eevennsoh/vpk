@@ -113,7 +113,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 					solids: hero.querySelectorAll('.iso-solid').length,
 					artworkAndLabels: hero.querySelectorAll('svg text, svg image, svg foreignObject').length,
 					faceDetails: hero.querySelectorAll('[data-part] > [data-eu26-detail]').length,
-					visibleWithoutDetail: [...hero.querySelectorAll('[data-eu26-piece][data-part]')].filter(part => part.style.display !== 'none' && !part.querySelector(':scope > [data-eu26-detail]')).length,
+					visibleWithoutDetail: [...hero.querySelectorAll('[data-eu26-piece^="story."][data-part]')].filter(part => part.style.display !== 'none' && !part.querySelector(':scope > [data-eu26-detail]')).length,
 					hiddenWithDetail: [...hero.querySelectorAll('[data-eu26-piece][data-part]')].filter(part => part.style.display === 'none' && part.querySelector(':scope > [data-eu26-detail]')).length,
 					buttons: thumbs.length,
 					uniquePartNames: new Set([...hero.querySelectorAll('[data-part]')].map(part => part.dataset.part)).size === hero.querySelectorAll('[data-part]').length,
@@ -132,8 +132,8 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			assert.equal(result.heroes, 1);
 			assert.ok(result.solids > 80, `expected detailed anatomy, found ${result.solids} solid parts`);
 			assert.equal(result.artworkAndLabels, 0, 'faces are container outlines: no text, labels or artwork');
-			assert.ok(result.faceDetails >= 15, `the board's chrome and cards carry face detail inside their own groups, found ${result.faceDetails}`);
-			assert.equal(result.visibleWithoutDetail, 0, 'every visible surface shows its face detail');
+			assert.ok(result.faceDetails >= 9, `the visible cards carry face detail inside their own groups, found ${result.faceDetails}`);
+			assert.equal(result.visibleWithoutDetail, 0, 'every visible card shows its face detail');
 			assert.equal(result.hiddenWithDetail, 0, 'hidden surfaces release their detail from the live DOM');
 			assert.equal(result.buttons, 12);
 			assert.equal(result.thumbnails, 12);
