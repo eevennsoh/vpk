@@ -794,7 +794,7 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 	assert.match(CHANGED_FILES_SOURCE, /const statusPresentation = status === "failed"[\s\S]*<StatusErrorIcon[\s\S]*: null/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /import \{[\s\S]*toAgentSessionFlyoutItem,[\s\S]*\} from "@\/components\/blocks\/agent-list"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*session=\{\{ \.\.\.session, status: run\.state === "failed" \? "stopped" : session\.status \}\}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} onOpenChange=\{onOpenChange\} \/>/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /flyout="session"/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /AgentStatesComposer/u);
 	assert.doesNotMatch(SOURCE, /showSeparator/);

@@ -59,6 +59,74 @@ test("finished runs dismiss independently without removing failures or interrupt
 	}
 });
 
+test("an open split completed-run flyout pauses dismissal until it closes", async () => {
+	const originalSet = window.setTimeout;
+	const originalClear = window.clearTimeout;
+	const pending = new Map();
+	let nextTimer = 0;
+	window.setTimeout = (callback, delay, ...args) => {
+		if (delay !== 5000) return originalSet(callback, delay, ...args);
+		pending.set(--nextTimer, callback);
+		return nextTimer;
+	};
+	window.clearTimeout = (id) => {
+		if (pending.has(id)) pending.delete(id);
+		else originalClear(id);
+	};
+	const runs = ["one", "two"].map((id) => ({ id, state: "done", agentName: id, summary: id, issueKey: "PD-40", issueSummary: "Issue" }));
+	try {
+		const view = await renderComponent({
+			source: `
+				import { useState } from "react";
+				import { JiraIssueAgentDone } from "@/components/blocks/jira-issue/completed-agent-runs";
+				import { useVisibleCompletedRuns } from "@/components/blocks/jira-issue/use-visible-completed-runs";
+				export function Fixture({ runs }) {
+					const [open, setOpen] = useState(false);
+					const visible = useVisibleCompletedRuns(runs, true, open);
+					return <JiraIssueAgentDone layout="split" runs={visible} onOpenChange={setOpen} usesStrokeChrome />;
+				}
+			`,
+			exportName: "Fixture",
+			mocks: {
+				"@/components/blocks/product-sidebar/variants/jira-session-flyout": `
+					export const createJiraSessionFlyoutHandle = () => ({});
+					export function JiraSessionFlyoutTrigger({ render }) { return render; }
+					export function JiraSessionFlyoutSurface({ onOpenChange }) {
+						return <><button onClick={() => onOpenChange?.(true)}>Open preview</button><button onClick={() => onOpenChange?.(false)}>Close preview</button></>;
+					}
+				`,
+			},
+			props: { runs },
+		});
+		assert.equal(pending.size, 2);
+		await view.click(view.getAllByRole("button", { name: "Open preview" })[0]);
+		assert.equal(pending.size, 0);
+		assert.equal(view.getAllByRole("button", { name: /finished:/u }).length, 2);
+		await view.click(view.getAllByRole("button", { name: "Open preview" })[1]);
+		await view.click(view.getAllByRole("button", { name: "Close preview" })[0]);
+		assert.equal(pending.size, 0);
+		await view.click(view.getAllByRole("button", { name: "Close preview" })[1]);
+		assert.equal(pending.size, 2);
+		await view.click(view.getAllByRole("button", { name: "Open preview" })[1]);
+		assert.equal(pending.size, 0);
+		await view.rerender({ runs: [runs[0]] });
+		assert.equal(pending.size, 1);
+		await view.rerender({ runs });
+		assert.equal(pending.size, 2);
+		await act(async () => {
+			for (const [id, callback] of pending) {
+				pending.delete(id);
+				callback();
+			}
+		});
+		assert.equal(view.container.textContent.includes("Open preview"), false);
+		await view.unmount();
+	} finally {
+		window.setTimeout = originalSet;
+		window.clearTimeout = originalClear;
+	}
+});
+
 test("JiraIssue defaults to Project butter and keeps the earlier appearance available", async () => {
 	const view = await renderComponent({
 		source: `
