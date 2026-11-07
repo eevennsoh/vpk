@@ -906,3 +906,13 @@ test("the hosted chat seeds an opened session's composer with the comment bar dr
 	await view.click(view.getByRole("button", { name: "Continue session" }));
 	assert.equal(prefill(), "1:Focus on returning users");
 });
+
+test("the wide Details column has a keyboard-resizable separator like the experimental work items", async () => {
+	const view = await renderWorkItem();
+	const handle = view.getByRole("separator", { name: "Resize details panel" });
+	assert.deepEqual(["aria-valuemin", "aria-valuemax", "aria-valuenow"].map((name) => handle.getAttribute(name)), ["280", "640", "420"]);
+	await view.press(handle, "ArrowLeft");
+	assert.equal(Number(handle.getAttribute("aria-valuenow")) > 420, true, "ArrowLeft widens the right-hand rail");
+	await view.press(handle, "ArrowRight");
+	assert.equal(handle.getAttribute("aria-valuenow"), "420");
+});
