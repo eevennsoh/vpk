@@ -33,7 +33,7 @@ export function ButterAgentSelectorControls({ presentation, onPresentationChange
 	</ToggleGroup>;
 }
 
-export function ButterAgentSelectorGallery({ variant = "default", presentation = "inline" }: Readonly<{ variant?: "default" | "duplicative-sessions"; presentation?: ButterAgentPresentation }>) {
+export function ButterAgentSelectorGallery({ variant = "default", presentation = "inline", label }: Readonly<{ variant?: "default" | "duplicative-sessions"; presentation?: ButterAgentPresentation; label?: string }>) {
 	const router = useRouter();
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>([]);
 	const [sessions, setSessions] = useState(EXISTING_SESSIONS);
@@ -42,13 +42,13 @@ export function ButterAgentSelectorGallery({ variant = "default", presentation =
 	const [pickerKey, setPickerKey] = useState(0);
 	const createAgent = () => router.push("/studio");
 	if (variant === "default" && presentation === "inline") {
-		return <section aria-label="Project Butter agent selector" className="pointer-events-auto my-auto max-w-full"><InlineAgentSelectorDemo /></section>;
+		return <section aria-label={label ?? "Project Butter agent selector"} className="pointer-events-auto my-auto max-w-full"><InlineAgentSelectorDemo /></section>;
 	}
 
 	return (
 		<>
 			<div className="pointer-events-auto my-auto flex w-80 max-w-full shrink-0 flex-col items-center gap-4">
-				<section aria-label={variant === "duplicative-sessions" ? "Duplicative sessions agent selector" : "Project Butter agent selector"} className="w-full overflow-hidden rounded-xl bg-popover text-popover-foreground" style={{ boxShadow: token("elevation.shadow.overlay") }}>
+				<section aria-label={label ?? (variant === "duplicative-sessions" ? "Duplicative sessions agent selector" : "Project Butter agent selector")} className="w-full overflow-hidden rounded-xl bg-popover text-popover-foreground" style={{ boxShadow: token("elevation.shadow.overlay") }}>
 					{variant === "duplicative-sessions" ? <h1 className="sr-only">Duplicative sessions</h1> : null}
 					<ProjectButterInvocationProvider agents={BUTTER_PICKER_AGENTS} enabled>
 						<ProjectButterAgentPickerContent
