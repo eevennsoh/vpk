@@ -47,6 +47,8 @@ const LAYOUTS = {
 	glyph(p, w, h) { card(p, w, h); p.rect(w * 0.28, h * 0.28, w * 0.44, h * 0.44, w * 0.1); },
 	ring(p, w, h) { card(p, w, h); p.ring(w / 2, h / 2, Math.min(w, h) * 0.3, Math.min(w, h) * 0.18); p.circle(w / 2, h / 2, Math.min(w, h) * 0.24, "ds", 'data-anim="sweep" pathLength="1"'); },
 	shield(p, w, h) { card(p, w, h); const s = Math.min(w, h) * 0.5, x = (w - s) / 2, y = (h - s) / 2; p.poly([[x + s / 2, y], [x + s, y + s * 0.18], [x + s * 0.94, y + s * 0.6], [x + s / 2, y + s], [x + s * 0.06, y + s * 0.6], [x, y + s * 0.18]]); },
+	// A stack slot's own tile is only its frame: its rows are cards of their own that deal in one after another.
+	stackbase(p, w, h) { card(p, w, h); },
 	// A sticker: one simple shape with no card.
 	stamp(p, w, h) { p.rect(0, 0, w, h, Math.min(w, h) * 0.2, "dw"); p.circle(w / 2, h / 2, Math.min(w, h) * 0.28); },
 	// Named cursors: small pointers with name pills, no card.
@@ -67,7 +69,7 @@ const PIECE_LAYOUT = {
 	search: "pill", bubbles: "chat", twg: "rows", voice: "pill", picker: "rows", hold: "input",
 	glyphSearch: "glyph", appConfluence: "app", mosaic: "slide", quizArtifact: "slide", rovoDevCli: "media",
 	agentPresence: "cursors", loomRecordBar: "toolbar", governance: "rows", stampTyping: "stamp", agentIdentities: "table",
-	searchDrop: "rows", composer: "input", reasoning: "rows", avatars: "people", compact: "chat", glyphChat: "glyph",
+	searchDrop: "stackbase", composer: "input", reasoning: "rows", avatars: "people", compact: "chat", glyphChat: "glyph",
 	appJira: "app", filmFacets: "slide", dashboardArtifact: "chart", codeCard: "media", mentions: "rows",
 	loomTeleprompter: "phone", iso42001: "shield", stampPhotos: "stamp", atlassianMcp: "profile", filters: "pill",
 	starters: "pill", workPill: "pill", badgeRovo: "profile", switch: "pill", glyphForYou: "glyph", appSlack: "app",
@@ -78,11 +80,19 @@ const PIECE_LAYOUT = {
 	ringsTile: "ring", appGithub: "app", twgSearchCli: "media", readiness: "donut", stampRovoMark: "stamp",
 	agentSessions: "rows", appDrive: "app", highReadiness: "pill", stampTangle: "stamp", requestResolver: "table",
 	appLoom: "app", stampLoops: "stamp", jiraList: "table", presenceFacepile: "people", stampRibbon: "stamp",
-	riskStack: "rows", rovoWithYou: "chat", stampSignal: "stamp", costByModel: "chart", workflowCard: "rows",
+	riskStack: "stackbase", rovoWithYou: "chat", stampSignal: "stamp", costByModel: "chart", workflowCard: "rows",
 	stampGrid: "stamp", spendCard: "donut", conversation: "chat", stampSparkle: "stamp", dimensions: "chart",
 	stampFields: "stamp", potentialSavings: "chart", stampSquiggle: "stamp", sessionCard: "toolbar", stampSmile: "stamp",
-	agentSessionStack: "rows",
+	agentSessionStack: "stackbase",
 };
+
+// One dealt card of a stack slot: an avatar and a pill, in its own plan units.
+export function stackCardDetail({ w, d }) {
+	const p = pen();
+	p.circle(d * 0.5, d / 2, d * 0.22);
+	p.pill(d, d * 0.32, w * 0.46, d * 0.36, "dp");
+	return p.markup();
+}
 
 export const PIECES = Object.fromEntries(Object.entries(PIECE_LAYOUT).map(([id, layout]) => [id, (p, w, h) => LAYOUTS[layout](p, w, h)]));
 

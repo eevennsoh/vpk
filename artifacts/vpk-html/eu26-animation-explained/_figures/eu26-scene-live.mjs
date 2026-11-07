@@ -17,12 +17,38 @@ export function live(ctx) {
 	surfaces.forEach((surface, index) => {
 		surface.seed = (index * 0.6180339) % 1;
 		surface.anims = surface.detail ? [...surface.detail.querySelectorAll("[data-anim]")].map(el => ({ el, kind: el.dataset.anim, i: Number(el.dataset.i || 0), x: Number(el.getAttribute("x")), y: Number(el.getAttribute("y")), w: Number(el.getAttribute("width")), h: Number(el.getAttribute("height")), rows: Number(el.dataset.rows || 0), step: Number(el.dataset.step || 0), reach: Number(el.dataset.reach || 0), px: Number(el.dataset.px || 0), py: Number(el.dataset.py || 0), drop: Number(el.dataset.drop || 0) })) : [];
+		// Lettering keeps its proportions while its plate changes shape (the title morphs from the bento's wide box to
+		// its squarer wall gap): each line is counter-scaled about its own baseline origin, as the source sizes its ink.
+		surface.letters = surface.detail ? [...surface.detail.querySelectorAll("text")].map(el => ({ el, x: Number(el.getAttribute("x")), y: Number(el.getAttribute("y")), last: "" })) : [];
 	});
 	const unit = u => Math.max(0, Math.min(1, u));
 	const smooth = u => { const v = unit(u); return v * v * (3 - 2 * v); };
 	const overshoot = u => { const v = unit(u) - 1; return 1 + 2.4 * v * v * v + 1.4 * v * v; };
-	const animateTile = (surface, time, entered) => {
-		const settled = reducedMotion?.matches;
+	// A landing card is a blank sheet until its hand-over: its face fades up, and a pale ring swells off its edge and fades.
+	const landTile = (surface, posed) => {
+		const face = surface.detail?.firstElementChild;
+		if (!face) return;
+		const shown = posed.face ?? 1;
+		if (shown >= 0.999) face.style.removeProperty("opacity");
+		else face.style.opacity = shown.toFixed(3);
+		let ring = surface.ring;
+		if (posed.ring === null || posed.ring === undefined) {
+			if (ring) ring.style.display = "none";
+			return;
+		}
+		if (!ring) ring = surface.ring = element("rect", { class: "dring" }, surface.detail);
+		if (ring.parentNode !== surface.detail) surface.detail.appendChild(ring);
+		const age = posed.ring, grow = smooth((age + 0.1) / 1.1) * 16, plan = surface.drawPlan;
+		ring.setAttribute("x", (-grow).toFixed(3));
+		ring.setAttribute("y", (-grow).toFixed(3));
+		ring.setAttribute("width", (plan.w + grow * 2).toFixed(3));
+		ring.setAttribute("height", (plan.d + grow * 2).toFixed(3));
+		ring.setAttribute("rx", ((plan.r ?? 6) + grow).toFixed(3));
+		ring.style.display = "";
+		ring.style.opacity = (0.9 * smooth((age + 0.1) / 0.15) * (1 - smooth(age / 1))).toFixed(3);
+	};
+	const animateTile = (surface, time, entered, hold = false) => {
+		const settled = reducedMotion?.matches || hold;
 		const phase = period => (((time + surface.seed * period) % period) + period) % period;
 		for (const anim of surface.anims) {
 			const { el, kind, i } = anim;
@@ -172,11 +198,25 @@ export function live(ctx) {
 				const across = project(world([plan.x + plan.w, plan.y, faceZ])), down = project(world([plan.x, plan.y + plan.d, faceZ]));
 				const matrix = [(across[0] - origin[0]) / plan.w, (across[1] - origin[1]) / plan.w, (down[0] - origin[0]) / plan.d, (down[1] - origin[1]) / plan.d, origin[0], origin[1]];
 				surface.detail.setAttribute("transform", `matrix(${matrix.map(value => value.toFixed(5)).join(" ")})`);
+				if (surface.letters.length) {
+					const sx = pose.scale ?? 1, sy = pose.scaleY ?? sx, even = Math.min(sx, sy);
+					const counter = Math.abs(sx - sy) < 1e-4 ? "" : `translate(X Y) scale(${(even / sx).toFixed(5)} ${(even / sy).toFixed(5)}) translate(-X -Y)`;
+					for (const letter of surface.letters) {
+						const value = counter.replace("X Y", `${letter.x} ${letter.y}`).replace("-X -Y", `${-letter.x} ${-letter.y}`);
+						if (value !== letter.last) { letter.last = value; value ? letter.el.setAttribute("transform", value) : letter.el.removeAttribute("transform"); }
+					}
+				}
 				if (surface.detail.style.display) surface.detail.style.display = "";
 			} else if (surface.detail.style.display !== "none") surface.detail.style.display = "none";
 		}
-		const lift = Math.min(140, Math.max(10, (Math.max(...topWorld.map(point => point[2])) - GROUND.z) * 0.5));
-		surface.shadow = kit.pathOf(topWorld.map(([x, y]) => project([x + lift * 0.7, y + lift * 0.45, GROUND.z])), true);
+		// A card high above the ground casts a small, far shadow that grows and closes in as it comes down.
+		const topZ = Math.max(...topWorld.map(point => point[2])), lift = Math.min(140, Math.max(10, (topZ - GROUND.z) * 0.5));
+		const reach = Math.max(0.35, Math.min(1, 1 - Math.max(0, topZ - 40) / 700));
+		const mid = topWorld.reduce((sum, point) => [sum[0] + point[0] / topWorld.length, sum[1] + point[1] / topWorld.length], [0, 0]);
+		surface.shadow = kit.pathOf(topWorld.map(([x, y]) => project([mid[0] + (x - mid[0]) * reach + lift * 0.7, mid[1] + (y - mid[1]) * reach + lift * 0.45, GROUND.z])), true);
+		// Footprint and lowest point in world space, so arrange() can tell what rests on the board.
+		const xs = topWorld.map(point => point[0]), ys = topWorld.map(point => point[1]);
+		surface.rest = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), mid, low: Math.min(...bottomWorld.map(point => point[2])), top: topZ };
 		const face = front ? top : bottom;
 		const clipped = pose.clip && doneClip.length ? intersection(face, doneClip) : face;
 		surface.frame = { bounds: pose.clip ? clipped : [...top, ...bottom], polygon: clipped, face, center: world([plan.x + plan.w / 2, plan.y + plan.d / 2, front ? z + height : z]) };
@@ -321,7 +361,17 @@ export function live(ctx) {
 	};
 	const arrange = () => {
 		const visible = surfaces.map(surface => surface.el).filter(el => el.style.display !== "none").map(geometry).filter(item => item.polygon.length > 2);
-		shadows.setAttribute("d", visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path")).map(item => surfaceOf.get(item.el).shadow || "").join(""));
+		// Only things standing on the ground cast onto it: a card or chrome piece resting on the visible board (its middle
+		// over the board, its underside at or just above the board's top) casts nothing, or its offset shadow would poke
+		// out past the board's front edge.
+		const chassis = visible.find(item => item.el.dataset.part === "board.chassis");
+		const board = chassis && surfaceOf.get(chassis.el).rest;
+		const restsOnBoard = item => {
+			if (!board || item === chassis) return false;
+			const rest = surfaceOf.get(item.el).rest;
+			return !!rest && rest.low <= board.top + 12 && rest.mid[0] >= board.x0 && rest.mid[0] <= board.x1 && rest.mid[1] >= board.y0 && rest.mid[1] <= board.y1;
+		};
+		shadows.setAttribute("d", visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path") && !restsOnBoard(item)).map(item => surfaceOf.get(item.el).shadow || "").join(""));
 		const edges = visible.map(() => new Set()), incoming = visible.map(() => 0);
 		for (let a = 0; a < visible.length; a += 1) for (let b = a + 1; b < visible.length; b += 1) {
 			if (visible[a].el.dataset.eu26Kind === "confetti" || visible[b].el.dataset.eu26Kind === "confetti") continue;
@@ -399,7 +449,7 @@ export function live(ctx) {
 		return visible;
 	};
 	const render = (time, transition = null) => {
-		const state = ctx.model({ time, variant, transition, projectionScale: P.scale });
+		const state = ctx.model({ time, variant, transition, projectionScale: P.scale, reduced: Boolean(reducedMotion?.matches), aspect: displayWidth / Math.max(1, displayHeight) });
 		currentState = state;
 		currentTime = time;
 		currentTransition = transition;
@@ -437,6 +487,13 @@ export function live(ctx) {
 			const el = pieces.get(`wall.${i}`);
 			set(el, [card.home[0] + card.w / 2, card.home[1] + card.d / 2, 0], state.wall[i]);
 			accent(el, state.wall[i].highlight ?? (card.reserved === 0 ? 1 : 0));
+			if (el.style.display !== "none") landTile(surfaceOf.get(el), state.wall[i]);
+		});
+		(data.wallCards ?? []).forEach((child, j) => {
+			const el = pieces.get(`wallcard.${j}`);
+			set(el, [child.home[0] + child.w / 2, child.home[1] + child.d / 2, 0], state.wallCards[j]);
+			accent(el, 0);
+			if (el.style.display !== "none") landTile(surfaceOf.get(el), state.wallCards[j]);
 		});
 
 		state.confetti.forEach((pose, i) => {
@@ -462,7 +519,7 @@ export function live(ctx) {
 			const el = pieces.get(`wall.${i}`), surface = surfaceOf.get(el);
 			if (!surface.anims.length || el.style.display === "none") return;
 			const xs = (surface.frame?.face || [[cx, cy]]).map(point => point[0]), left = (Math.min(...xs) + Math.max(...xs)) / 2;
-			animateTile(surface, state.time, (cx + width / 2 - left) / Math.max(1e-6, speed));
+			animateTile(surface, state.time, (cx + width / 2 - left) / Math.max(1e-6, speed), (state.wall[i].face ?? 1) < 0.999);
 		});
 		const unit = Math.max(width / displayWidth, height / displayHeight);
 		let clippedCursors = 0;

@@ -1,7 +1,10 @@
 export const motionConfig = {
 	seed: 26031,
 	// The source wall scrolls sideways only (finale-wall-motion.ts wallOffset), so the glide has no vertical component.
-	wall: { start: 27, velocity: [-32, 0], repeatX: 3, helperStart: 35, helperPeriod: 12 },
+	wall: { start: 27, velocity: [-32, 0], repeatX: 3 },
+	// The source's arrivals (finale-wall-motion.ts): a card waits in the air above its slot and comes down as its slot's
+	// leading edge crosses its own line, DESCEND_FROM + DESCEND_SPAN * hash entry reaches in from the frame's right edge.
+	arrival: { from: 0.45, span: 0.7, reachShare: 0.16, edgeWidth: 300, descendS: 0.95, handoff: 0.6, faceUp: 0.072, breath: { x: 8, y: 10, tip: 0.06, turn: 0.08 }, dealS: 0.09 },
 };
 
 // The wall is the source's packed masonry (sourceWall in eu26-hero.hero.mjs, ported from finale-wall-layout.ts), shown
@@ -188,53 +191,109 @@ export function model(input, data) {
 		return [wrap(origin[0] + movement[0], lastCamera.at[0], periodX), wrap(origin[1] + movement[1], lastCamera.at[1], periodY), origin[2]];
 	};
 	const pool = data.wall.map((card, sourceIndex) => ({ card, sourceIndex, kind: "wall", index: sourceIndex, key: card.key }));
-	const originalActions = data.actors.map(actor => ({ ...actor, entry: [950, 1050, 0], target: pool.find(entry => entry.card.key === actor.slotKey) }));
-	const helperStart = data.motion?.wall?.helperStart ?? 35, helperPeriod = data.motion?.wall?.helperPeriod ?? 12;
-	const helperCycle = Math.max(0, Math.floor((time - helperStart) / helperPeriod));
-	const recurringTargets = new Set();
-	const repeatingActions = time < helperStart ? [] : data.actors.map((actor, i) => {
-		const reach = helperStart + helperCycle * helperPeriod + i * helperPeriod / data.actors.length, grab = reach + 0.65;
-		const candidates = pool.filter(entry => entry.card.reserved === undefined && !recurringTargets.has(entry.key)).map(entry => {
-			const projected = screenAt(baseWallAt(entry.card, entry.sourceIndex, grab), grab);
-			const x = projected[0] * projectionScale, y = projected[1] * projectionScale;
-			// Recurring helpers work in the centre zone that stays on screen even when a narrow frame crops the wall's sides
-			// (cover fit), favouring cards on its right, where the sideways-scrolling wall feeds in.
-			const zoneX = lastCamera.height * 0.45 - 110, zoneY = lastCamera.height / 2 - 150;
-			return { entry, safe: Math.abs(x) < zoneX && Math.abs(y) < zoneY, score: Math.abs(y) * 0.45 + Math.abs(x - zoneX * 0.55) };
-		});
-		candidates.sort((a, b) => Number(b.safe) - Number(a.safe) || a.score - b.score || a.entry.sourceIndex - b.entry.sourceIndex);
-		recurringTargets.add(candidates[0].entry.key);
-		return { ...actor, reach, grab, land: grab + 1.8, leave: grab + 2.45, recurring: true, incoming: [40, 55, 20], entry: [950, 1050, 0], target: candidates[0].entry };
-	});
-	const actions = [...originalActions, ...repeatingActions];
+	// Arrivals, as the source plays them: every card that reaches the wall after it appeared waits in the air above its own
+	// slot (lifted toward the lens, tipped back, turned, breathing), comes down as its slot crosses its own line, touches
+	// down as a blank sheet with a landing ring, then its face comes up. Pure in time: each loop of the wall repeats it.
+	const A = data.motion?.arrival ?? {}, speed = Math.abs(velocityX) || 32;
+	// The wall is a cover shot: the frame shows its full height and as much width as the display allows (aspect).
+	const aspect = options.aspect ?? lastCamera.width / lastCamera.height, viewHalf = lastCamera.height * aspect / 2 / projectionScale, focal = 1.866 * lastCamera.height / projectionScale;
+	// The source measures its arrival lines in reference-card reaches from the right edge; a reach is a share of the frame width.
+	const reachLine = (A.reachShare ?? 0.16) * viewHalf * 2;
+	const inOut = u => { const v = clamp(u); return v < 0.5 ? 4 * v * v * v : 1 - (-2 * v + 2) ** 3 / 2; };
+	// A slot's line (its own place across the frame) and fall time are constants of the slot and the frame size.
+	const lineOf = (card, i) => Math.min(viewHalf - reachLine * ((A.from ?? 0.45) + (A.span ?? 0.7) * random(i, 31)), viewHalf - card.w * 0.75 + Math.min(card.w, A.edgeWidth ?? 300) / 2);
+	const fallOf = i => (A.descendS ?? 0.95) * mix(0.85, 1.25, random(i, 32));
+	const arrivalOf = (card, i) => {
+		if (options.reduced || card.reserved !== undefined || card.key.startsWith("lanyard-")) return null;
+		const base = baseWallAt(card, i);
+		// Each slot has its own line; a wide card lands with at least three quarters of it inside the frame.
+		const line = lineOf(card, i);
+		const edge = base[0] - lastCamera.at[0] - card.w / 2 + Math.min(card.w, A.edgeWidth ?? 300) / 2;
+		// The wall still has to travel `line - edge` before this slot crosses its line (negative once it has). Its glide
+		// ramps up after it appears, so the crossing moment is solved on the actual travel curve, not at a constant speed.
+		const delta = line - edge, target = shift[0] + delta;
+		let lo = delta >= 0 ? 24 : time, hi = delta >= 0 ? time : time + -delta / 20 + 1;
+		if (delta >= 0 && wallShift(lo)[0] < target) return null;
+		for (let step = 0; step < 32; step += 1) {
+			const mid = (lo + hi) / 2;
+			if (wallShift(mid)[0] > target) lo = mid;
+			else hi = mid;
+		}
+		const crossed = (lo + hi) / 2, since = time - crossed;
+		if (crossed < wallStart) return null;
+		const fall = fallOf(i);
+		return { base, since, fall, touchdown: crossed + fall };
+	};
+	// The waiting pose: up toward the lens at its own height, a little off its slot, leaning its own way and breathing. The
+	// wall is filmed flat, so the lens is applied here: lifted cards spread from the frame centre and grow by focal / (focal - z).
+	const waitingPose = (card, i, base) => {
+		const seed = random(i, 33) * 9.7, breath = time + seed * 1.7, B = A.breath ?? { x: 8, y: 10, tip: 0.06, turn: 0.08 };
+		const z = focal * mix(0.1, 0.32, random(i, 34)), grow = focal / (focal - z);
+		const x = base[0] + (random(i, 35) - 0.5) * card.w * 0.35 + Math.cos(breath * 0.7) * B.x;
+		const y = base[1] + (random(i, 36) - 0.5) * card.d * 0.45 + Math.sin(breath * 0.9) * B.y;
+		// Tilts stay shallow enough that a waiting card never dips through the wall plane, so depth stays orderable.
+		const tipLimit = Math.asin(Math.min(1, 0.8 * z / (card.d / 2 * grow))), turnLimit = Math.asin(Math.min(1, 0.8 * z / (card.w / 2 * grow)));
+		// A stack carries its own cards on its face, so it leans less; separate layers stay cleanly orderable.
+		const stacked = (data.wallCards ?? []).some(child => child.slot === i);
+		const tip = Math.min(tipLimit, stacked ? 0.42 : Infinity, mix(0.2, 0.75, random(i, 37)) + Math.sin(breath * 0.6) * B.tip);
+		const turnY = Math.max(-turnLimit, Math.min(turnLimit, mix(-0.25, 0.8, random(i, 38)) + Math.cos(breath * 0.5) * B.turn));
+		const c = lastCamera.at;
+		return { at: [c[0] + (x - c[0]) * grow, c[1] + (y - c[1]) * grow, z], rot: [tip, turnY, (random(i, 39) - 0.5) * 0.6], scale: grow };
+	};
+	// Blank until the hand-over, then the face comes up; a ring swells from the edge from just before touchdown.
+	const landing = (since, fall) => {
+		const after = since - fall;
+		return { face: clamp((after - (A.handoff ?? 0.6)) / (A.faceUp ?? 0.072)), ring: after >= -0.1 && after < 1 ? after : null };
+	};
+	const descend = (waiting, rest, since, fall) => {
+		if (since >= fall) return { at: rest, rot: [0, 0, 0], scale: 1, ghost: 1 };
+		const down = since <= 0 ? 0 : inOut(since / fall);
+		return { at: between(waiting.at, rest, down), rot: between(waiting.rot, [0, 0, 0], down), scale: mix(waiting.scale, 1, down), ghost: mix(0.42, 1, down) };
+	};
+	const arrivals = pool.map(entry => arrivalOf(entry.card, entry.sourceIndex));
 	const wallPoses = pool.map(entry => {
 		const { card, sourceIndex: i } = entry;
 		const fromCenter = Math.min(1.6, Math.abs(card.source.x - 960) / 2400 + Math.abs(card.source.y - 540) / 1600);
-		const s = ease((time - 23 - fromCenter * 0.3) / 1.3), at = baseWallAt(card, i);
+		const s = ease((time - 23 - fromCenter * 0.3) / 1.3);
+		let at = baseWallAt(card, i), scale = 1, face = 1, ring = null, ghost = 1;
 		at[2] += (1 - s) * (170 + i % 4 * 45);
 		let rot = [(1 - s) * 0.4, (1 - s) * -0.32, (1 - s) * (i % 2 ? 0.14 : -0.14)];
 		const handoff = card.reserved !== undefined && card.reserved < 6 ? ease((time - 25.9 - card.reserved * 0.05) / 0.7) : card.reserved === 6 ? ease((time - data.titleCarry.land) / 0.3) : 1;
-		let alpha = s * handoff;
-		const action = actions.find(action => action.target?.key === entry.key && time <= action.leave && (time >= action.reach || action.reach < helperStart));
-		if (action) {
-			const lowered = ease((time - action.grab) / (action.land - action.grab));
-			const base = baseWallAt(card, i);
-			const incoming = (1 - lowered) * (action.recurring ? ease((time - action.reach) / 0.45) : 1);
-			for (let axis = 0; axis < 3; axis += 1) at[axis] = base[axis] + action.incoming[axis] * incoming;
-			rot = [incoming * 0.08, incoming * -0.1, incoming * 0.04];
-			alpha = action.recurring ? 1 : ease((time - action.reach + 0.25) / 0.35);
+		const alpha = s * handoff, arrival = arrivals[i];
+		if (arrival && arrival.since < arrival.fall + 1.5) {
+			const placed = descend(waitingPose(card, i, arrival.base), arrival.base, arrival.since, arrival.fall);
+			({ at, rot, scale, ghost } = placed);
+			({ face, ring } = landing(arrival.since, arrival.fall));
 		}
 		const projected = screenAt(at);
 		const azimuth = camera.azimuth * Math.PI / 180, elevation = camera.elevation * Math.PI / 180;
-		const marginX = (card.w * Math.abs(Math.sin(azimuth)) + card.d * Math.abs(Math.cos(azimuth))) * projectionScale / 2 + 12;
-		const marginY = (card.w * Math.abs(Math.cos(azimuth)) + card.d * Math.abs(Math.sin(azimuth))) * Math.sin(elevation) * projectionScale / 2 + 12;
+		const marginX = (card.w * Math.abs(Math.sin(azimuth)) + card.d * Math.abs(Math.cos(azimuth))) * scale * projectionScale / 2 + 12;
+		const marginY = (card.w * Math.abs(Math.cos(azimuth)) + card.d * Math.abs(Math.sin(azimuth))) * Math.sin(elevation) * scale * projectionScale / 2 + 12;
 		const visible = Math.abs(projected[0]) * projectionScale < camera.width / 2 + marginX && Math.abs(projected[1]) * projectionScale < camera.height / 2 + marginY;
-		// Off-frame cards are culled, except one a cursor is carrying in from beyond the edge.
-		if (!visible && !action) alpha = 0;
 		const highlight = card.reserved === 0 ? 1 : 0;
 		const entryProgress = clamp((camera.width / 2 + marginX - projected[0] * projectionScale) / (marginX * 2));
 		const enteringRight = time >= wallStart && visible && projected[0] * projectionScale > camera.width / 2 - marginX;
-		return { ...pose(at, rot, 1, alpha, highlight), sourceIndex: i, key: entry.key, index: entry.index, incoming: enteringRight || Boolean(action && time < action.land), entryEdge: enteringRight ? "right" : null, entryProgress, visible, screen: projected };
+		const arriving = Boolean(arrival && arrival.since < arrival.fall + 0.75);
+		return { ...pose(at, rot, scale, visible ? alpha * ghost : 0, highlight), sourceIndex: i, key: entry.key, index: entry.index, incoming: enteringRight || arriving, entryEdge: enteringRight ? "right" : null, entryProgress, visible, screen: projected, face, ring, ghost, arrival: arrival ? { since: arrival.since, touchdown: arrival.touchdown } : null };
+	});
+	// Stack slots deal their own cards: they wait on the slot's waiting stack and peel off it top first, a beat apart.
+	const wallCards = (data.wallCards ?? []).map(child => {
+		const i = child.slot, card = data.wall[i], parent = wallPoses[i], arrival = arrivals[i];
+		const rest = [parent.at[0], parent.at[1], parent.at[2]];
+		let delay = 0;
+		for (let step = 1; step <= child.index + 1; step += 1) delay += (A.dealS ?? 0.09) * mix(0.7, 1.3, random(i * 7 + step, 40));
+		let at = [rest[0] + child.dx, rest[1] + child.dy, rest[2] + 1.1], rot = [0, 0, 0], scale = 1, face = 1, ring = null, ghost = 1;
+		if (arrival && arrival.since - delay < arrival.fall + 1.5) {
+			const since = arrival.since - delay, waiting = waitingPose(card, i, arrival.base);
+			const lift = (4 + (3 - child.index) * 4) * waiting.scale;
+			const carried = turn([child.dx * waiting.scale, child.dy * waiting.scale, lift], waiting.rot);
+			const restAt = [arrival.base[0] + child.dx, arrival.base[1] + child.dy, 1.1];
+			({ at, rot, scale, ghost } = descend({ at: waiting.at.map((value, axis) => value + carried[axis]), rot: waiting.rot, scale: waiting.scale }, restAt, since, arrival.fall));
+			({ face, ring } = landing(since, arrival.fall));
+		} else if (arrival || card) {
+			at = [baseWallAt(card, i)[0] + child.dx, baseWallAt(card, i)[1] + child.dy, 1.1 + (1 - ease((time - 23) / 1.3)) * 170];
+		}
+		return { ...pose(at, rot, scale, parent.visible ? Math.min(1, parent.alpha / Math.max(0.01, parent.ghost ?? 1)) * ghost : 0, 0), key: `${card.key}#${child.index}`, face, ring };
 	});
 	const wall = wallPoses, wallCopies = [];
 	const confetti = Array.from({ length: 56 }, (_, i) => {
@@ -293,17 +352,41 @@ export function model(input, data) {
 	} else if (time >= carry.reach && time <= carry.leave) {
 		main = cursorOn("main", "presenter", { ...carry, grip: data.title.grip }, { kind: "title", index: 6, key: "title" }, titlePose, data.title.w, data.title.d, "title");
 	}
-	const cursors = [main, ...data.actors.map(actor => {
-		const action = actions.find(action => action.id === actor.id && time >= action.reach && time <= action.leave);
-		if (!action) return hiddenCursor(actor.id, "teammate");
-		const entry = action.target, slot = entry.card, target = { kind: entry.kind, index: entry.index, key: entry.key, sourceIndex: entry.sourceIndex };
-		const posed = wallPoses[entry.index];
-		return cursorOn(actor.id, "teammate", action, target, posed, slot.w, slot.d, "wall");
+	const zoneX = viewHalf * projectionScale - 140, zoneY = lastCamera.height / 2 - 150, lanes = data.actors.length;
+	// Which slots a teammate may catch, and who: only cards that land well inside the frame, and the roster repeats through
+	// them in wall order. Both depend only on the slot and the frame size, so a hold never changes hands as the wall loops.
+	const laneOf = new Map();
+	pool.forEach(({ card }, i) => {
+		if (card.reserved !== undefined || card.key.startsWith("lanyard-") || random(i, 41) > 0.8 || fallOf(i) < 0.65) return;
+		const landX = (lineOf(card, i) - Math.min(card.w, A.edgeWidth ?? 300) / 2 + card.w / 2 - speed * fallOf(i)) * projectionScale;
+		const landY = (baseWallAt(card, i)[1] - lastCamera.at[1]) * projectionScale;
+		// The card must already be waiting inside the frame when the hand reaches for it (1.2 s before it lands), lens and all.
+		const z = focal * mix(0.1, 0.32, random(i, 34)), grow = focal / (focal - z);
+		const waitX = (landX / projectionScale + speed * 1.2 + (random(i, 35) - 0.5) * card.w * 0.35) * grow;
+		if (Math.abs(waitX) + (A.breath?.x ?? 8) * grow > viewHalf - 12) return;
+		if (Math.abs(landX) <= zoneX && Math.abs(landY) <= zoneY) laneOf.set(i, laneOf.size % lanes);
+	});
+	const holds = [];
+	pool.forEach((entry, i) => {
+		const arrival = arrivals[i];
+		if (!arrival || !laneOf.has(i)) return;
+		const land = arrival.touchdown;
+		holds.push({ entry, lane: laneOf.get(i), reach: land - 1.2, grab: land - 0.6, land, leave: land + 0.45 });
+	});
+	// A lane holds one card at a time: a hold that would overlap an earlier one in its lane is left to come down alone.
+	holds.sort((a, b) => a.reach - b.reach || a.entry.sourceIndex - b.entry.sourceIndex);
+	const laneFree = Array(lanes).fill(-Infinity), kept = [];
+	for (const hold of holds) if (hold.reach >= laneFree[hold.lane] + 0.15) { kept.push(hold); laneFree[hold.lane] = hold.leave; }
+	const cursors = [main, ...data.actors.map((actor, lane) => {
+		const hold = kept.find(each => each.lane === lane && time >= each.reach && time <= each.leave);
+		if (!hold) return hiddenCursor(actor.id, "teammate");
+		const { entry } = hold, slot = entry.card, target = { kind: entry.kind, index: entry.index, key: entry.key, sourceIndex: entry.sourceIndex };
+		return cursorOn(actor.id, "teammate", { ...hold, grip: { u: 0.5, v: 0.5 }, entry: [320, 260, 0] }, target, wallPoses[entry.index], slot.w, slot.d, "wall");
 	})];
 	const doneEffect = { trace: ease((time - 10.8) / 1.1), sweep: ease((time - 11.9) / 1.1), alpha: ease((time - 10.8) / 0.14) * (1 - ease((time - 12.8) / 0.3)) };
 	const elapsed = Math.max(0, time - wallStart), steadyElapsed = Math.max(0, elapsed - 3), period = wallPeriod;
 	const wallLoop = { active: time >= wallStart, layout: "source-masonry", cycle: Math.floor(steadyElapsed / period), offset: steadyElapsed % period, period, elapsed, shift, velocity: wallVelocity, periodX, periodY, poolSize: pool.length, virtualPoolSize: pool.length, copyPoolLimit: 0, visibleCount: wallPoses.filter(each => each.alpha > 0.002).length, incomingCount: wallPoses.filter(each => each.incoming && each.alpha > 0.002).length, feedEdge: "right" };
-	const state = { time, variant, index, phase: data.states[index].phase, camera, cards, tiles, wall, wallCopies, wallLoop, confetti, cursors, titlePose, doneEffect, chrome: 1 - ease((time - 13.25) / 1.3), flash: 0, flashY: 0, title: titlePose.alpha };
+	const state = { time, variant, index, phase: data.states[index].phase, camera, cards, tiles, wall, wallCards, wallCopies, wallLoop, confetti, cursors, titlePose, doneEffect, chrome: 1 - ease((time - 13.25) / 1.3), flash: 0, flashY: 0, title: titlePose.alpha };
 	if (!options.transition) return state;
 	const { from, progress } = options.transition, s = clamp(progress);
 	if (s <= 0) return from;
@@ -324,7 +407,7 @@ export function model(input, data) {
 		...state,
 		time: mix(from.time, time, s),
 		camera: { at: between(from.camera.at, camera.at, s), width: directWidth, height: directWidth * 760 / 1200, azimuth: from.camera.azimuth + angle * s, elevation: mix(from.camera.elevation, camera.elevation, s), cover: mix(from.camera.cover ?? 0, camera.cover ?? 0, s), persp: mix(from.camera.persp ?? 0, camera.persp ?? 0, s) + lensBloom(from.camera, camera, s) },
-		...Object.fromEntries(["cards", "tiles", "wall", "confetti"].map(key => [key, state[key].map((posed, i) => blendPose(from[key][i], posed))])),
+		...Object.fromEntries(["cards", "tiles", "wall", "wallCards", "confetti"].map(key => [key, state[key].map((posed, i) => blendPose(from[key][i], posed))])),
 		wallCopies: [],
 		titlePose: blendPose(from.titlePose, titlePose),
 		cursors: cursors.map((cursor, i) => {

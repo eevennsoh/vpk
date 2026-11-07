@@ -1,7 +1,7 @@
 import { createWallField, model, motionConfig } from './eu26-motion-model.mjs';
 import { live } from './eu26-scene-live.mjs';
 import { cardDetail, chromeDetail, tileDetail, titleDetail, wrapDetail } from './eu26-face-detail.mjs';
-import { lanyardDetail, PIECES } from './eu26-face-wall.mjs';
+import { lanyardDetail, PIECES, stackCardDetail } from './eu26-face-wall.mjs';
 import { pen } from './eu26-face-pen.mjs';
 
 export { model, live };
@@ -270,6 +270,16 @@ export const data = {
 	],
 };
 data.wallField = createWallField(data);
+// Stack slots hold cards of their own (the source's print slots): three rows inside the tile's padding, each its own
+// surface, which wait on the slot's stack in the air and peel off it top first as the slot comes down.
+data.wallCards = data.wall.flatMap((slot, index) => {
+	if (!['library-searchDrop', 'library-agentSessionStack', 'library-riskStack'].includes(slot.key)) return [];
+	const pad = 40 * 0.792 * 0.72, gap = 6, rows = 3, w = slot.w - pad * 2, d = (slot.d - pad * 2 - gap * (rows - 1)) / rows;
+	return Array.from({ length: rows }, (_, row) => ({ slot: index, index: row, w, d, dx: 0, dy: -slot.d / 2 + pad + d / 2 + row * (d + gap) }));
+});
+// Each dealt card parks on its own spot until the wall needs it, so no two overlap at rest.
+let parkX = -900;
+for (const child of data.wallCards) { child.home = [parkX, 3300, 0]; parkX += child.w + 32; }
 
 export function present(state, data) {
 	const frame = data.states[state.index];
@@ -311,6 +321,10 @@ export function build(kit, { data }) {
 	data.wall.forEach((wall, i) => {
 		const plan = { x: wall.home[0], y: wall.home[1], w: wall.w, d: wall.d, r: wall.r };
 		put(`wall.${i}`, plan, 0, 1.1, `wall.${i}`, true, false, wrapDetail(wallDetail(wall, data)));
+	});
+	data.wallCards.forEach((child, j) => {
+		const plan = { x: child.home[0], y: child.home[1], w: child.w, d: child.d, r: 8 };
+		put(`wallcard.${j}`, plan, 0, 1.1, `wallcard.${j}`, true, false, wrapDetail(stackCardDetail(child)));
 	});
 	for (let i = 0; i < 56; i += 1) {
 		const plan = { x: -700 + i * 24, y: 4000, w: 4 + i % 3, d: 9 + i % 4, r: 0.7 };

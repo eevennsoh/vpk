@@ -165,23 +165,60 @@ test('the source masonry wall keeps scrolling sideways through distant times wit
 	}
 });
 
-test('incoming wall cards keep arriving from the right after the original three helpers finish', () => {
-	let arrivals = 0;
-	const helpers = new Set();
-	for (let time = 35.75; time < 72; time += .5) {
-		const state = at(time), later = at(time + .2);
-		const laterByKey = new Map(wallPieces(later).map(piece => [piece.key, piece]));
-		const handled = new Set([...state.cursors, ...later.cursors].filter(cursor => cursor.alpha > .01).map(cursor => cursor.target?.key));
-		for (const piece of wallPieces(state)) {
-			if (piece.entryEdge !== 'right' || piece.alpha <= .5 || handled.has(piece.key)) continue;
-			const next = laterByKey.get(piece.key);
-			if (!next || next.alpha <= .5) continue;
-			assert.ok(next.screen[0] < piece.screen[0], 'an incoming card travels left from the right edge');
-			assert.ok(next.entryProgress >= piece.entryProgress, 'the right-fed card progresses into the wall');
-			arrivals++;
-		}
-		for (const cursor of state.cursors) if (cursor.heldTarget && cursor.role === 'teammate') helpers.add(cursor.id);
+test('new wall cards wait in the air above their own slot, come down, land blank and then show their face', () => {
+	const seen = new Map();
+	for (let time = 35; time < 130; time += .1) {
+		const state = at(time);
+		state.wall.forEach((pose, index) => {
+			if (!pose.arrival || pose.alpha < .05) return;
+			const key = `${pose.key}@${pose.arrival.touchdown.toFixed(3)}`;
+			const entry = seen.get(key) || { index, touchdown: pose.arrival.touchdown, waiting: false, landed: false };
+			if (pose.arrival.since < 0) {
+				assert.ok(pose.at[2] > 50 && pose.scale > 1.05, 'a waiting card is lifted toward the lens and looks larger');
+				assert.ok(pose.rot[0] > .1, 'a waiting card is tipped back');
+				assert.equal(pose.face, 0, 'a waiting card is a blank sheet');
+				entry.waiting = true;
+			}
+			if (time > pose.arrival.touchdown + .05 && time < pose.arrival.touchdown + .5) {
+				assert.ok(Math.abs(pose.at[2]) < 1e-6 && Math.abs(pose.scale - 1) < 1e-6, 'it lands flat at its own size');
+				assert.ok(pose.face < 1, 'its face comes up only after touchdown');
+				assert.ok(pose.ring !== null, 'a landing ring swells off its edge');
+				entry.landed = true;
+			}
+			seen.set(key, entry);
+		});
 	}
-	assert.ok(arrivals >= 9, 'arrivals repeat beyond a one-shot entrance');
-	assert.equal(helpers.size, 3, 'all three helpers participate in the repeating wall');
+	const complete = [...seen.values()].filter(entry => entry.waiting && entry.landed);
+	assert.ok(complete.length >= 9, `arrivals repeat through the loop (${complete.length})`);
+	for (const entry of complete) {
+		const after = at(entry.touchdown + 1.2).wall[entry.index], resting = at(entry.touchdown + 1.2);
+		assert.equal(after.face, 1, 'the face is fully up a moment after landing');
+		assert.equal(after.ring, null);
+		assert.ok(Math.abs(after.at[0] - resting.wall[entry.index].at[0]) < 1e-9);
+	}
+	// Reduced motion: every card is already in its slot.
+	const reduced = model({ time: 60, variant: 'paper', reduced: true }, data);
+	assert.ok(reduced.wall.every(pose => pose.arrival === null && pose.face === 1 && Math.abs(pose.at[2]) < 1e-6), 'reduced motion shows the wall landed');
+});
+
+test('stack slots deal their own cards top first, a beat apart, never as one block', () => {
+	const slots = [...new Set(data.wallCards.map(card => card.slot))];
+	assert.ok(slots.length >= 2);
+	let dealt = 0;
+	for (const slot of slots) {
+		let touchdown = null;
+		for (let time = 35; time < 240 && touchdown === null; time += .25) {
+			const pose = at(time).wall[slot];
+			if (pose.arrival && pose.arrival.since < 0 && pose.alpha > .05) touchdown = pose.arrival.touchdown;
+		}
+		if (touchdown === null) continue;
+		const children = data.wallCards.map((card, index) => ({ card, index })).filter(each => each.card.slot === slot);
+		const landedAt = children.map(({ index }) => {
+			for (let time = touchdown - 1; time < touchdown + 2; time += .01) if (Math.abs(at(time).wallCards[index].at[2] - 1.1) < 1e-3) return time;
+			return Infinity;
+		});
+		for (let i = 1; i < landedAt.length; i++) assert.ok(landedAt[i] - landedAt[i - 1] > .04 && landedAt[i] - landedAt[i - 1] < .2, 'each card lands a beat after the one above it');
+		dealt++;
+	}
+	assert.ok(dealt >= 2, 'stack slots deal within the first loops');
 });

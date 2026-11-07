@@ -158,30 +158,38 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 			}
 		});
 
-		await t.test('repeating helper cursors grip the correct recycled card after 35 and 100 seconds', () => {
-			const samples = [35.8, 39.8, 43.8, 99.8, 103.8, 107.8].map(time => {
-				const cursor = model(time, data).cursors.find(cursor => cursor.phase === 'carry' && cursor.heldTarget?.kind === 'wall');
-				assert.ok(cursor, `a helper carries a recycled card at ${time}s`);
-				assert.deepEqual(cursor.grip, { u: .5, v: .5 }, 'the helper grips the center of its card face');
-				const card = data.wall[cursor.heldTarget.sourceIndex];
-				return { time, id: cursor.id, key: cursor.heldTarget.key, sourceIndex: cursor.heldTarget.sourceIndex, index: cursor.heldTarget.index, width: card.w, height: card.d };
-			});
-			assert.equal(new Set(samples.slice(0, 3).map(sample => sample.id)).size, 3);
-			assert.equal(new Set(samples.slice(3).map(sample => sample.id)).size, 3);
+		await t.test('teammate cursors grip the centre of the arriving card they ride down, early and late in the loop', () => {
 			const result = scenario(`
 				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
 				const failures = [];
 				let contacts = 0;
 				for (const variant of ['paper']) {
 					explorer.setVariant(variant);
-					for (const sample of ${JSON.stringify(samples)}) {
+					// The page's own model (its frame aspect) decides when teammates ride cards: find every ride, then check the
+					// drawn contact on four early and four late ones.
+					const capture = () => { const event = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(event); return event.detail.state; };
+					const samples = [], seen = new Set();
+					for (let time = 34; time < 200; time += 0.25) {
+						explorer.seek(time);
+						for (const cursor of capture().cursors) {
+							if (cursor.phase !== 'carry' || cursor.heldTarget?.kind !== 'wall' || cursor.alpha < .5) continue;
+							const key = cursor.id + ':' + cursor.heldTarget.key + ':' + Math.floor(time / 20);
+							if (seen.has(key)) continue;
+							seen.add(key);
+							samples.push({ time, id: cursor.id, key: cursor.heldTarget.key, sourceIndex: cursor.heldTarget.sourceIndex, index: cursor.heldTarget.index, grip: cursor.grip });
+						}
+					}
+					if (samples.length < 6) failures.push({ issue: 'too few teammate rides', samples: samples.length });
+					if (new Set(samples.map(sample => sample.id)).size < 3) failures.push({ issue: 'not all three teammates ride cards' });
+					if (!samples.some(sample => sample.time > 100)) failures.push({ issue: 'no ride late in the loop' });
+					const checked = [...samples.filter(sample => sample.time < 100).slice(0, 4), ...samples.filter(sample => sample.time >= 100).slice(0, 4)];
+					for (const sample of checked) {
+						if (sample.grip.u !== .5 || sample.grip.v !== .5) failures.push({ ...sample, issue: 'grip is not the card centre' });
 						explorer.seek(sample.time);
 						const cursor = hero.querySelector('[data-eu26-cursor="' + sample.id + '"]');
 						const matches = [...hero.querySelectorAll('[data-eu26-piece="wall.' + sample.index + '"]')];
 						if (matches.length !== 1) { failures.push({ variant, ...sample, issue: 'pooled target is missing or duplicated' }); continue; }
 						const card = matches[0], face = card.querySelector('.iso-top'), tip = cursor.querySelector('[data-eu26-cursor-tip]');
-						const plan = JSON.parse(card.dataset.eu26Plan).plan;
-						if (plan.w !== sample.width || plan.d !== sample.height) failures.push({ variant, ...sample, issue: 'recycled target retained another card geometry' });
 						if (!visible(card) || !visible(cursor) || cursor.dataset.heldTarget !== sample.key || cursor.dataset.cursorPhase !== 'carry') failures.push({ variant, ...sample, issue: 'visible cursor lost its current pooled target' });
 						const nose = tip.getPointAtLength(0), screen = new DOMPoint(nose.x, nose.y).matrixTransform(tip.getScreenCTM());
 						const contact = screen.matrixTransform(face.getScreenCTM().inverse()), box = bounds(face);
@@ -194,7 +202,7 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 				return { failures, contacts };
 			`);
 			assert.deepEqual(result.failures, []);
-			assert.equal(result.contacts, 6, 'all three helpers keep contact at early and distant wall times');
+			assert.ok(result.contacts >= 6, 'teammates keep contact at early and distant wall times');
 		});
 
 		await t.test('one wall reuses its original DOM cards through complete cycles', () => {

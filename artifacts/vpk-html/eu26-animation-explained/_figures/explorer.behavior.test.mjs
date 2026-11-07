@@ -184,7 +184,9 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				assert.ok(card.source && card.source.width > 0 && card.source.height > 0, 'every rendered wall card records its source dimensions');
 				assert.ok(Math.abs(card.w / card.d - card.source.width / card.source.height) < .00001, 'rendered wall cards preserve their source aspect ratios');
 			}
-			const rectangles = cards.map(card => ({ key: card.key, x: card.pose.at[0] - card.w * card.pose.scale / 2, y: card.pose.at[1] - card.d * card.pose.scale / 2, w: card.w * card.pose.scale, d: card.d * card.pose.scale }));
+			const resting = cards.filter(card => Math.abs(card.pose.at[2]) < 1e-6 && Math.abs(card.pose.scale - 1) < 1e-6);
+			assert.ok(resting.length > 10, 'most of the wall rests in its slots');
+			const rectangles = resting.map(card => ({ key: card.key, x: card.pose.at[0] - card.w * card.pose.scale / 2, y: card.pose.at[1] - card.d * card.pose.scale / 2, w: card.w * card.pose.scale, d: card.d * card.pose.scale }));
 			for (let left = 0; left < rectangles.length; left++) {
 				for (let right = left + 1; right < rectangles.length; right++) {
 					const a = rectangles[left], b = rectangles[right];
@@ -228,8 +230,11 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				for (let time = 40; time <= 120; time += 0.25) {
 					explorer.seek(time);
 					const viewBox = hero.querySelector('svg').viewBox.baseVal, now = new Map();
+					const event = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(event);
+					const wallState = event.detail.state.wall;
 					for (const el of hero.querySelectorAll('[data-eu26-piece^="wall."]')) {
 						if (el.style.display === 'none') continue;
+						if (wallState[Number(el.dataset.eu26Piece.slice(5))].incoming) continue;
 						const box = el.getBBox();
 						if (box.x + box.width > viewBox.x && box.x < viewBox.x + viewBox.width) now.set(el.dataset.eu26Piece, box.x);
 					}
@@ -343,9 +348,8 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 		});
 
 		await t.test('visible cursor arrows contact carried cards and fit the camera', async () => {
-			const { data, model } = await import('./eu26-hero.hero.mjs');
-			const cursorTimes = [1.2, 1.6, 4.8, 5.4, 23, 24, 25, 26.2, 27.5, 29, 31, 33.5, 34];
-			const samples = data.variants.flatMap(({ id: variant }) => cursorTimes.map(time => ({ variant, time, cursors: model({ time, variant }, data).cursors.filter(cursor => cursor.alpha > .15) })));
+			const { data } = await import('./eu26-hero.hero.mjs');
+			const cursorTimes = [1.2, 1.6, 4.8, 5.4, 23, 24, 25, 26.2];
 			for (const [width, height] of [[1440, 900], [390, 844]]) {
 				run('set', 'viewport', String(width), String(height));
 				const result = scenario(`
@@ -354,7 +358,16 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 					let contacts = 0;
 					let transparentHits = 0;
 					const visibleActors = new Set();
-					for (const sample of ${JSON.stringify(samples)}) {
+					const capture = () => { const event = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(event); return event.detail.state; };
+					// The guided cursors at fixed moments, then every teammate ride on the wall as this frame plays it.
+					const times = ${JSON.stringify(cursorTimes)}, riders = new Set();
+					for (let time = 27; time < 140 && riders.size < 3; time += 0.25) {
+						explorer.seek(time);
+						const rider = capture().cursors.find(cursor => cursor.role === 'teammate' && cursor.phase === 'carry' && cursor.alpha > .5 && !riders.has(cursor.id));
+						if (rider) { riders.add(rider.id); times.push(time); }
+					}
+					const samples = ${JSON.stringify(data.variants.map(variant => variant.id))}.flatMap(variant => times.map(time => { explorer.setVariant(variant); explorer.seek(time); return { variant, time, cursors: capture().cursors.filter(cursor => cursor.alpha > .15) }; }));
+					for (const sample of samples) {
 						explorer.setVariant(sample.variant);
 						explorer.seek(sample.time);
 						const svg = hero.querySelector('svg');
@@ -762,7 +775,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 
 		await t.test('reduced motion and pause leave no independent cursor animation', () => {
 			const result = scenario(`
-				explorer.seek(29);
+				explorer.seek(25);
 				const layer = hero.querySelector('[data-eu26-cursor-layer]');
 				const before = cursorDrawings(hero);
 				let changes = 0;
@@ -773,8 +786,8 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				return { reduced: explorer.getState().reducedMotion, time: explorer.getState().time, arrows: before.length, same: JSON.stringify(before) === JSON.stringify(cursorDrawings(hero)), changes, runningAnimations: layer.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running').length };
 			`);
 			assert.equal(result.reduced, true);
-			assert.equal(result.time, 29);
-			assert.ok(result.arrows >= 2);
+			assert.equal(result.time, 25);
+			assert.ok(result.arrows >= 1, 'the presenter carrying the title is drawn');
 			assert.equal(result.same, true);
 			assert.equal(result.changes, 0);
 			assert.equal(result.runningAnimations, 0);

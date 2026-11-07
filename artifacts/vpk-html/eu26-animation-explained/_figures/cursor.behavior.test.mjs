@@ -3,7 +3,8 @@ import test from 'node:test';
 import { data, model } from './eu26-hero.hero.mjs';
 
 const variants = ['paper'];
-const times = [...Array.from({ length: 137 }, (_, index) => index / 4), 35.8, 39.8, 43.8, 99.8, 103.8, 107.8, 500, 1000];
+// The guided sequence every quarter second, then the looping wall densely enough to meet every teammate's hold.
+const times = [...Array.from({ length: 137 }, (_, index) => index / 4), ...Array.from({ length: 412 }, (_, index) => 34.25 + index / 4), 500, 1000];
 const distance = (left, right) => Math.hypot(...left.map((value, index) => value - right[index]));
 const poseFor = (state, target) => target.kind === 'title' ? state.titlePose : state[{ story: 'cards', tile: 'tiles', wall: 'wall' }[target.kind]][target.index];
 const sizeFor = target => target.kind === 'title' ? data.title : data[{ story: 'cards', tile: 'features', wall: 'wall' }[target.kind]][target.index];
@@ -68,26 +69,29 @@ test('the title is carried into its reserved wall gap', () => {
 	}
 });
 
-test('teammates lift and translate the wall cards they hold', () => {
+test('teammates catch a card already coming down and ride it into its slot', () => {
 	for (const variant of variants) {
-		const edits = new Map();
-		for (const time of times.filter(time => time >= 26.5 && time <= 34)) {
+		const rides = new Map();
+		for (let time = 27; time <= 130; time += 0.05) {
 			const state = model({ time, variant }, data);
-			const drift = Math.max(0, time - 24) * 20;
-			for (const cursor of state.cursors.filter(cursor => cursor.role === 'teammate' && cursor.phase === 'carry' && cursor.heldTarget?.kind === 'wall' && cursor.alpha > .5)) {
-				const card = data.wall[cursor.heldTarget.index];
-				const pose = state.wall[cursor.heldTarget.index];
-				const baseline = [card.at[0] + card.w / 2 - drift, card.at[1] + card.d / 2 + drift * .28, card.at[2]];
-				const previous = edits.get(cursor.id) || { lift: 0, travel: 0, target: cursor.heldTarget.key };
-				assert.equal(cursor.heldTarget.key, previous.target, 'each teammate retains ownership of the same wall card');
-				edits.set(cursor.id, { target: previous.target, lift: Math.max(previous.lift, pose.at[2] - baseline[2]), travel: Math.max(previous.travel, Math.hypot(pose.at[0] - baseline[0], pose.at[1] - baseline[1])) });
+			for (const cursor of state.cursors.filter(cursor => cursor.role === 'teammate' && cursor.heldTarget?.kind === 'wall' && cursor.alpha > .5)) {
+				const pose = state.wall[cursor.heldTarget.index], key = `${cursor.id}:${cursor.heldTarget.key}`;
+				const ride = rides.get(key) || { id: cursor.id, target: cursor.heldTarget.key, index: cursor.heldTarget.index, first: time, heights: [] };
+				ride.heights.push(pose.at[2]);
+				ride.last = time;
+				rides.set(key, ride);
 			}
 		}
-		assert.ok(edits.size >= 2, 'at least two teammates perform real edits');
-		assert.equal(new Set([...edits.values()].map(edit => edit.target)).size, edits.size, 'teammates hold different cards');
-		for (const [id, edit] of edits) {
-			assert.ok(edit.lift > 10, `${variant} ${id} lifts its card above the baseline glide`);
-			assert.ok(edit.travel > 12, `${variant} ${id} translates its card beyond the baseline glide`);
+		assert.ok(rides.size >= 6, `teammates catch cards through the loop (${rides.size})`);
+		assert.equal(new Set([...rides.values()].map(ride => ride.id)).size, 3, 'all three teammates take part');
+		for (const ride of rides.values()) {
+			if (ride.last > 129) continue; // a ride still in progress when the scan ends
+			const before = model({ time: ride.first - 0.7, variant }, data).wall[ride.index];
+			assert.ok(before.alpha > .05 && before.at[2] > 20, `${ride.target} was already waiting in the air before ${ride.id} reached it (not carried in from off the frame)`);
+			assert.ok(ride.heights[0] > 5, `${ride.id} catches ${ride.target} above the wall`);
+			for (let i = 1; i < ride.heights.length; i++) assert.ok(ride.heights[i] <= ride.heights[i - 1] + 1e-6, `${ride.target} only comes down while held`);
+			const landed = model({ time: ride.last + 0.2, variant }, data).wall[ride.index];
+			assert.ok(Math.abs(landed.at[2]) < 1e-6 && landed.rot.every(angle => Math.abs(angle) < 1e-6) && Math.abs(landed.scale - 1) < 1e-6, `${ride.target} rests flat in its slot after the ride`);
 		}
 	}
 });
