@@ -47,9 +47,13 @@
 			hoverPreview: null,
 			focusIndex: null,
 			apiPreviewIndex: null,
+			// Scroll can only reach the last chapter, so the endless wall keeps its own clock on top of it.
+			idle: 0,
 		};
 		const previewIndex = () => player.apiPreviewIndex ?? player.hoverPreview?.index ?? player.focusIndex;
 		const running = () => player.wantsPlay && player.visible && !document.hidden && !player.printing && previewIndex() === null && !player.tween;
+		const idling = () => storyLayout && !isVideoPreview() && !player.wantsPlay && !player.tween && player.time >= wallStart && player.visible && !document.hidden && !player.printing && previewIndex() === null && !loop.reducedMotion();
+		const shownTime = () => player.time + (storyLayout && !isVideoPreview() && player.time >= wallStart ? player.idle : 0);
 		const wantsPause = () => player.wantsPlay || (player.tween && !player.tween.paused);
 		const renderPose = (time, transition = null) => {
 			player.renderTime = playbackTime(time);
@@ -206,9 +210,12 @@
 				if (isVideoPreview() && player.time >= duration) player.wantsPlay = false;
 				player.selectedIndex = stateAt(player.time);
 				renderPose(player.time);
+			} else if (idling()) {
+				player.idle += elapsed * playbackRate;
+				renderPose(shownTime());
 			}
 			sync();
-			return Boolean(player.tween && !player.tween.paused) || running();
+			return Boolean(player.tween && !player.tween.paused) || running() || idling();
 		}, { rest: () => {
 			player.printing = true;
 			renderPose(duration);
@@ -225,7 +232,7 @@
 			const preview = previewIndex();
 			if (preview !== null) renderPose(player.apiPreviewIndex !== null ? states[preview].time : player.hoverPreview?.time ?? states[preview].time);
 			else if (player.tween) renderTween(player.tween);
-			else renderPose(player.time);
+			else renderPose(shownTime());
 			wake();
 		};
 		const getState = () => ({
@@ -258,8 +265,9 @@
 			player.tween = null;
 			clearPreviewSources();
 			player.time = playbackTime(time);
+			if (player.time < wallStart) player.idle = 0;
 			player.selectedIndex = stateAt(player.time);
-			renderPose(player.time);
+			renderPose(shownTime());
 			wake(options);
 			return getState();
 		};
@@ -279,6 +287,7 @@
 			clearPreviewSources();
 			player.selectedIndex = target;
 			player.time = states[target].time;
+			player.idle = 0;
 			const motionToken = getComputedStyle(document.documentElement).getPropertyValue('--vpk-dur-fast').trim();
 			const motionSeconds = (Number.parseFloat(motionToken) || 140) / (motionToken.endsWith('ms') || !motionToken ? 1000 : 1);
 			const navigationSeconds = Math.min(0.42, Math.max(0.24, motionSeconds * 2 + Math.abs(from - player.time) / duration * 0.14));
@@ -307,6 +316,7 @@
 				player.selectedIndex = 0;
 				player.tween = null;
 			}
+			if (player.time >= wallStart) { player.time = shownTime(); player.idle = 0; }
 			if (player.tween) player.tween.paused = false;
 			else player.selectedIndex = stateAt(player.time);
 			player.wantsPlay = true;

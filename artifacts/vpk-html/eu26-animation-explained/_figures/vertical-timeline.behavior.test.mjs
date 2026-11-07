@@ -282,7 +282,8 @@ test('the vertical timeline reveals a reachable preview stack without taking ove
 				const caption=rect(cards[11].querySelector('.eu26-state-text')),viewport=rect(list);
 				return {time:explorer.getState().time,render:explorer.getState().renderTime,hero:Number(hero.dataset.heroTime),value:Number(slider.value),index:ui.getState().selectedIndex,scroll:list.scrollTop,caption,viewport};
 			`);
-			assert.equal(result.time,34); assert.equal(result.render,34); assert.equal(result.hero,34); assert.equal(result.value,11); assert.equal(result.index,11); assert.ok(result.scroll>0);
+			// The timeline holds at the end; the drawing keeps going because the endless wall idles past it.
+			assert.equal(result.time,34); assert.ok(result.render>=34,'the wall keeps moving past the end'); assert.ok(result.hero>=34); assert.equal(result.value,11); assert.equal(result.index,11); assert.ok(result.scroll>0);
 			assert.ok(result.caption.top>=result.viewport.top && result.caption.bottom<=result.viewport.bottom,'the final selected caption is visible after a range seek');
 		});
 

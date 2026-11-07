@@ -176,4 +176,4 @@
 #animation-explorer [data-eu26-face] .dw { fill: var(--d-paper); stroke: var(--d-line); }
 #animation-explorer [data-eu26-face] .ds { fill: none; stroke: var(--d-line); stroke-width: 1.4px; vector-effect: non-scaling-stroke; stroke-linecap: round; }
 /* The Team ’26 lockup is the one lettered face: bold, left-aligned, ink on the orange title and soft ink in its wall slot. */
-#animation-explorer [data-eu26-face] .dtt { fill: color-mix(in oklab, var(--ill-accent-ink) var(--eu26-hl, 0%), var(--anatomy-hi)); stroke: none; font-family: var(--font-display) !important; font-weight: 700; letter-spacing: -0.03em; }
+#animation-explorer [data-eu26-face] .dtt { fill: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 50%, var(--ill-accent-ink)) var(--eu26-hl, 0%), var(--anatomy-hi)); stroke: none; font-family: var(--font-display) !important; font-weight: 700; letter-spacing: -0.03em; }
