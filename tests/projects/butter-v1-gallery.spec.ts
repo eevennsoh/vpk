@@ -80,6 +80,21 @@ test("switching between the board and journey does not produce runtime errors", 
 	expect(errors).toEqual([]);
 });
 
+test("the standalone board hides an open sidebar chat and restores its draft", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Ask Rovo", exact: true }).click();
+	const composer = page.getByRole("textbox", { name: "Chat message input", exact: true });
+	await composer.fill("Keep this draft");
+	await page.getByRole("button", { name: "Select Board" }).click();
+	await expect(composer).toBeHidden();
+	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
+	await page.getByRole("button", { name: "Select e2e Journey" }).click();
+	await expect(composer).toBeVisible();
+	await expect(composer).toContainText("Keep this draft");
+});
+
 test("the standalone board is centered and remains scrollable on narrow screens", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

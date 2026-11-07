@@ -178,7 +178,7 @@ export default function AppLayout({
 	});
 	const chatPanelWidth = chatResize.sidebarWidth;
 	const shouldHideRovoAction = hideRovoAction || isRovoCanvasOpen;
-	const isSidebarChatActive = chatSurface === "sidebar";
+	const isSidebarChatActive = !hideShellChrome && chatSurface === "sidebar";
 	const isFloatingChatActive = chatSurface === "floating";
 	const showChatPanel = !isEmbedded && !shouldHideRovoAction && isSidebarChatActive;
 	const showFloatingChat = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;
