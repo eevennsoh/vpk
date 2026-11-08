@@ -28,8 +28,42 @@ export function createWallField(data) {
 	return { layout: "source-masonry", positions, periodX, periodY, center, gutter, sourceCount: data.wall.length };
 }
 
+// Anchor-locked camera moves (figure-motion.md, "Snap between camera poses"). A key with `lock: [x, y, z]` keeps that
+// world point where the previous key showed it, as a share of the frame, while zoom, turn and tilt change together:
+// lockCameraKeys solves the key's target once (through model's `aim` entry, so one solver serves build and runtime), and
+// model() solves the target per frame through the move. A key with `hold: true` repeats the previous pose.
+export function lockCameraKeys(keys) {
+	const resolved = [];
+	for (const key of keys) {
+		const prev = resolved.at(-1);
+		if (key.hold) {
+			const { at, width, azimuth, elevation, cover, persp } = prev;
+			resolved.push({ time: key.time, at: [...at], width, azimuth, elevation, ...(cover === undefined ? {} : { cover }), ...(persp === undefined ? {} : { persp }) });
+		} else if (key.lock) {
+			const base = { ...key, at: key.at ?? prev.at };
+			resolved.push({ ...base, at: model({ aim: { camera: base, from: prev, point: key.lock } }) });
+		} else resolved.push({ ...key });
+	}
+	return resolved;
+}
+
 export function model(input, data) {
 	const options = input !== null && typeof input === "object" ? input : { time: input };
+	// screenOf is the flat projection in world units about the camera target. aimAt moves the target within the screen
+	// plane (u maps to screen x, v to screen y, both square to the view) until the point projects at `goal`; depth along
+	// the view is untouched, so the lens centre keeps its depth. lockGoal keeps the point's share of the frame.
+	const screenOf = (camera, point) => {
+		const a = camera.azimuth * Math.PI / 180, e = camera.elevation * Math.PI / 180;
+		const [x, y, z] = point.map((value, axis) => value - camera.at[axis]);
+		return [x * Math.sin(a) - y * Math.cos(a), (x * Math.cos(a) + y * Math.sin(a)) * Math.sin(e) - z * Math.cos(e)];
+	};
+	const aimAt = (camera, point, goal) => {
+		const a = camera.azimuth * Math.PI / 180, e = camera.elevation * Math.PI / 180, [sx, sy] = screenOf(camera, point);
+		const u = [Math.sin(a), -Math.cos(a), 0], v = [Math.cos(a) * Math.sin(e), Math.sin(a) * Math.sin(e), -Math.cos(e)];
+		return camera.at.map((value, axis) => value + (sx - goal[0]) * u[axis] + (sy - goal[1]) * v[axis]);
+	};
+	const lockGoal = (from, point, width) => screenOf(from, point).map(value => value * width / from.width);
+	if (options.aim) return aimAt(options.aim.camera, options.aim.point, lockGoal(options.aim.from, options.aim.point, options.aim.camera.width));
 	const time = Math.max(0, Number.isFinite(Number(options.time)) ? Number(options.time) : 0);
 	const variant = data.variants.some(each => each.id === options.variant) ? options.variant : "paper";
 	const clamp = x => Math.max(0, Math.min(1, x));
@@ -71,6 +105,13 @@ export function model(input, data) {
 	const cs = cameraEase((time - ca.time) / (cb.time - ca.time));
 	const width = ca.width === cb.width ? ca.width : Math.exp(mix(Math.log(ca.width), Math.log(cb.width), cs));
 	const camera = { at: between(ca.at, cb.at, cs), width, height: width * 760 / 1200, azimuth: mix(ca.azimuth, cb.azimuth, cs), elevation: mix(ca.elevation, cb.elevation, cs), cover: mix(ca.cover ?? 0, cb.cover ?? 0, cs), persp: mix(ca.persp ?? 0, cb.persp ?? 0, cs) + lensBloom(ca, cb, cs) };
+	if (cb.lock && cs > 0 && cs < 1) {
+		// The lens spreads points about the target by depth, so aim the flat projection inside that spread.
+		const a = camera.azimuth * Math.PI / 180, e = camera.elevation * Math.PI / 180, view = [Math.cos(a) * Math.cos(e), Math.sin(a) * Math.cos(e), Math.sin(e)];
+		const rel = cb.lock.reduce((sum, value, axis) => sum + (value - camera.at[axis]) * view[axis], 0);
+		const spread = 1 / Math.max(0.35, 1 - rel * camera.persp * projectionScale / camera.height);
+		camera.at = aimAt(camera, cb.lock, lockGoal(ca, cb.lock, camera.width).map(value => value / spread));
+	}
 	const fieldAt = i => {
 		if (i === 15) return [-15, -28, 96];
 		const angle = i * 2.39996 + (random(i, 1) - 0.5) * 0.7;

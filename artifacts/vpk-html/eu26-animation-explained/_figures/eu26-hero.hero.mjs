@@ -1,4 +1,4 @@
-import { createWallField, model, motionConfig } from './eu26-motion-model.mjs';
+import { createWallField, lockCameraKeys, model, motionConfig } from './eu26-motion-model.mjs';
 import { live } from './eu26-scene-live.mjs';
 import { cardDetail, chromeDetail, tileDetail, titleDetail, wrapDetail } from './eu26-face-detail.mjs';
 import { lanyardDetail, pieceInset, PIECES, stackCardDetail } from './eu26-face-wall.mjs';
@@ -196,6 +196,8 @@ function sourceWall() {
 		return { ...slot, home, at: [(slot.source.x - 960) * worldScale, (slot.source.y - 540) * worldScale, 0], w, d, r: 20 * worldScale, seed: 211 + index * 37 };
 	});
 }
+// Camera anchors: the Done column, the hero card's place in the field, and the Team ’26 title in the bento.
+const CAMERA_ANCHORS = { done: [317.5, 55, 0], hero: [-15, -28, 96], title: [10, -16, 6] };
 const doneOrder = [15, ...Array.from({ length: 23 }, (_, i) => i).filter(i => i !== 15)];
 // The Done list window reaches the column's inner bottom edge, so the list looks full and its last visible card is clipped.
 const doneViewport = { x: 225, y: -158, w: 185, d: 448, r: 6 };
@@ -249,30 +251,38 @@ export const data = {
 		{ id: "teammate-2", slotKey: "library-hold", reach: 28, grab: 28.65, land: 30.5, leave: 31.15, incoming: [180, 40, 180], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
 		{ id: "teammate-3", slotKey: "library-loomRecordBar", reach: 31, grab: 31.65, land: 34, leave: 34.65, incoming: [130, -20, 145], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
 	],
-	// Held poses joined by snaps (figure-motion.md, "Snap between camera poses"): each move takes 0.6-0.75 model seconds,
-	// 0.35-0.44 s at playbackRate 1.7, eased in and out by cameraEase, and the pose after it holds at least as long.
-	cameraKeys: [
+	// Held poses joined by snaps (figure-motion.md, "Snap between camera poses"): each move takes 0.6 model seconds, 0.35 s
+	// at playbackRate 1.7, eased in and out by cameraEase, then holds. A move that zooms or turns is locked on its anchor
+	// (`lock`, solved by lockCameraKeys), so the subject keeps its place on screen; recentring is its own pan snap.
+	cameraKeys: lockCameraKeys([
 		{ time: 0, at: [0, 0, 0], width: 1220, azimuth: 45, elevation: 30 },
-		{ time: .9, at: [0, 0, 0], width: 1220, azimuth: 45, elevation: 30 },
-		{ time: 1.6, at: [248, -40, 40], width: 1000, azimuth: 55, elevation: 38 },
-		{ time: 4, at: [248, -40, 40], width: 1000, azimuth: 55, elevation: 38 },
-		{ time: 4.75, at: [250, -20, 130], width: 1240, azimuth: 67, elevation: 43 },
-		{ time: 11.1, at: [250, -20, 130], width: 1240, azimuth: 67, elevation: 43 },
-		{ time: 11.8, at: [288, -40, 15], width: 800, azimuth: 74, elevation: 50 },
-		{ time: 13.1, at: [288, -40, 15], width: 800, azimuth: 74, elevation: 50 },
-		{ time: 13.85, at: [-15, -28, 96], width: 2050, azimuth: 84, elevation: 42, lens: 0.3 },
-		{ time: 15.6, at: [-15, -28, 96], width: 2050, azimuth: 84, elevation: 42 },
-		// The one held perspective pose: once the field has formed, only the focal length opens, around the hero card.
-		{ time: 16.2, at: [-15, -28, 96], width: 2050, azimuth: 84, elevation: 42, persp: 0.3 },
-		{ time: 17.4, at: [-15, -28, 96], width: 2050, azimuth: 84, elevation: 42, persp: 0.3 },
-		{ time: 18, at: [-15, -28, 96], width: 540, azimuth: 125, elevation: 48 },
-		{ time: 19.3, at: [-15, -28, 96], width: 540, azimuth: 125, elevation: 48 },
-		{ time: 20, at: [10, -4, 5], width: 1040, azimuth: 90, elevation: 90 },
-		{ time: 23, at: [10, -4, 5], width: 1040, azimuth: 90, elevation: 90 },
+		{ time: .5, hold: true },
+		{ time: 1.1, lock: CAMERA_ANCHORS.done, width: 1000, azimuth: 55, elevation: 38 },
+		{ time: 1.35, hold: true },
+		{ time: 1.95, at: [248, -40, 40], width: 1000, azimuth: 55, elevation: 38 },
+		{ time: 4, hold: true },
+		{ time: 4.6, lock: CAMERA_ANCHORS.done, width: 1240, azimuth: 67, elevation: 43 },
+		{ time: 11.2, hold: true },
+		{ time: 11.8, lock: CAMERA_ANCHORS.done, width: 800, azimuth: 74, elevation: 50 },
+		{ time: 13.1, hold: true },
+		{ time: 13.7, lock: CAMERA_ANCHORS.done, width: 2050, azimuth: 84, elevation: 42, lens: 0.3 },
+		{ time: 14.4, hold: true },
+		{ time: 15, at: CAMERA_ANCHORS.hero, width: 2050, azimuth: 84, elevation: 42, lens: 0.3 },
+		{ time: 15.6, hold: true },
+		// The one held perspective pose, at the story's turn: once the field has formed, only the focal length opens, about
+		// the hero card at the frame centre.
+		{ time: 16.2, at: CAMERA_ANCHORS.hero, width: 2050, azimuth: 84, elevation: 42, persp: 0.65 },
+		{ time: 17.4, hold: true },
+		{ time: 18, lock: CAMERA_ANCHORS.hero, width: 540, azimuth: 125, elevation: 48 },
+		{ time: 19.3, hold: true },
+		{ time: 20, lock: CAMERA_ANCHORS.hero, width: 1040, azimuth: 90, elevation: 90 },
+		{ time: 20.6, hold: true },
+		{ time: 21.2, at: [10, -4, 5], width: 1040, azimuth: 90, elevation: 90 },
+		{ time: 23, hold: true },
 		// The wall is shown flat and frontal, like the source's screen: one band of the packed masonry, centred and filling the frame.
-		{ time: 23.7, at: [0, 0, 0], width: 1300, azimuth: 90, elevation: 90, cover: 1 },
-		{ time: 34, at: [0, 0, 0], width: 1300, azimuth: 90, elevation: 90, cover: 1 },
-	],
+		{ time: 23.6, lock: CAMERA_ANCHORS.title, width: 1300, azimuth: 90, elevation: 90, cover: 1 },
+		{ time: 34, hold: true },
+	]),
 };
 data.wallField = createWallField(data);
 // Stack slots hold cards of their own (the source's print slots): three rows inside the tile's card, each its own
