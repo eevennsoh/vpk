@@ -1,19 +1,27 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
-import { JiraIssue } from "@/components/blocks/jira-issue";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import { JiraIssue, type JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
+import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
+import { ButterInlineAgentPickerContext } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { BOARD_COLUMN_WIDTH_PX } from "@/components/blocks/jira-kanban/experimental/lib/board-column-collapse";
-import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter-v1/project-butter-jira-work-item";
-import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter-v1/data";
+import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
+import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { renderButterAgentActivityIndicator } from "@/components/projects/butter-v1/data/agent-activity-indicators";
-import { BUTTER_CHAT_AGENT_PROFILES } from "@/components/projects/butter-v1/data/chat-agent-profiles";
+import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES } from "@/components/projects/butter-v1/data/chat-agent-profiles";
 import { BUTTER_PAY_CURRENT_USER } from "@/components/projects/butter-v1/data/current-user";
 import { applyMerchantJourneyToBoard, merchantJourneyAuthoredCard } from "@/components/projects/butter-v1/data/merchant-journey";
-import { BUTTER_SUGGESTION_DEMO_KEY } from "@/components/projects/butter-v1/data/presentation-board";
+import { BUTTER_SUGGESTION_DEMO_KEY, toButterAgentActivityFromSession } from "@/components/projects/butter-v1/data/presentation-board";
 import { createButterPayBoardColumns } from "@/components/projects/butter-v1/data/presentation-story";
 import { BUTTER_WORK_ITEM_PLACEHOLDERS } from "@/components/projects/butter-v1/data/work-item-placeholders";
 import { useButterWorkItem } from "@/components/projects/butter-v1/hooks/use-butter-work-item";
 import { token } from "@/lib/tokens";
+
+const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 
 export type ButterPullRequestStatus = "open" | "merged";
 
@@ -41,19 +49,34 @@ function pullRequestCard(phase: "pr" | "merged") {
 const PULL_REQUEST_CARDS = { open: pullRequestCard("pr"), merged: pullRequestCard("merged") };
 
 export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{ status?: ButterPullRequestStatus }>) {
+	const router = useRouter();
 	const workItem = useButterWorkItem();
+	const [directoryOpen, setDirectoryOpen] = useState(false);
+	const [addedActivities, setAddedActivities] = useState<readonly JiraIssueAgentActivity[]>([]);
 	const phase = status === "merged" ? "merged" : "pr";
-	const card = PULL_REQUEST_CARDS[status];
+	const baseCard = PULL_REQUEST_CARDS[status];
+	const card = { ...baseCard, agentActivities: [...(baseCard.agentActivities ?? []), ...addedActivities] };
+	const addAgent = (agent: AgentSelectorAgent) => {
+		const activity = toButterAgentActivityFromSession({ id: `${card.code}:${crypto.randomUUID()}`, agent: { id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }, title: card.title, state: "needs-input", host: "cloud", timeLabel: "Just now", invokedBy: { name: CURRENT_USER.name, avatarSrc: CURRENT_USER.avatarUrl } });
+		setAddedActivities((activities) => [...activities, activity]);
+	};
 
 	return (
 		<RovoChatProvider agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
 			<div className="flex h-full min-h-0 min-w-0 flex-col items-center overflow-y-auto bg-surface" data-butter-gallery-pull-request="">
 				<div className="my-auto flex w-full shrink-0 flex-col" style={{ maxWidth: BOARD_CARD_WIDTH }}>
+					<ButterInlineAgentPickerContext value>
 					<JiraIssue
 						appearance="project-butter"
 						agentActivityLayout="merged"
 						agentActivities={card.agentActivities}
 						agentActivityMode={card.agentActivityMode}
+						assignment={{
+							agents: BUTTER_PICKER_AGENTS,
+							onAgentAssign: addAgent,
+							onBrowseAgents: () => setDirectoryOpen(true),
+							onCreateAgent: () => router.push("/studio"),
+						}}
 						assigneeAvatarLabel={card.assignee?.name}
 						assigneeAvatarSrc={card.avatarSrc ?? card.assignee?.avatarSrc}
 						compact
@@ -69,8 +92,10 @@ export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{
 						summary={card.title}
 						tags={card.tags}
 					/>
+					</ButterInlineAgentPickerContext>
 				</div>
 			</div>
+			{directoryOpen ? <AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} onCreateAgent={() => router.push("/studio")} onOpenChange={setDirectoryOpen} onSelectAgent={() => setDirectoryOpen(false)} open={directoryOpen} variant="standard-v2" /> : null}
 			{workItem.selection ? (
 				<ProjectButterJiraWorkItem
 					autoAssignClaudeToCurrentUser

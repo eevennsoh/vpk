@@ -1,6 +1,6 @@
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
-import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, projectButterDevelopmentChecks } from "../../../blocks/jira-work-item/project-butter-v1/development-journey-model.ts";
+import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, projectButterDevelopmentChecks } from "../../../blocks/jira-work-item/project-butter/development-journey-model.ts";
 import { BUTTER_PAY_CURRENT_USER } from "./current-user.ts";
 
 export type MerchantJourneyPhase = "prepare" | "invoke" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";

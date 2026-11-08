@@ -25,7 +25,7 @@ export function ProjectButterDetailFieldValue({ content, id }: Readonly<{ conten
 		content.setDetailFields((current) => ({ ...current, [key]: value }));
 	}
 	if (id === "status") return <ProjectButterStatus appearance="field" content={content} />;
-	if (id === "assignee") return <PersonRowField ariaLabel="Change assignee" onChange={content.setAssignee} people={[PROJECT_BUTTER_UNASSIGNED, ...PEOPLE]} placeholder="Unassigned" renderValue={(person) => person.name === "Unassigned" ? <span className="flex items-center gap-2"><AvatarUnassigned label="" size="xs" /><span>Unassigned</span></span> : <PersonLabel avatarSize="xs" person={person} />} value={content.assignee} />;
+	if (id === "assignee") return <PersonRowField ariaLabel="Change assignee" onChange={content.setAssignee} people={[PROJECT_BUTTER_UNASSIGNED, ...PEOPLE, ...(content.defaultAssignee && !PEOPLE.some((person) => person.name === content.defaultAssignee?.name) ? [content.defaultAssignee] : [])]} placeholder="Unassigned" renderValue={(person) => person.name === "Unassigned" ? <span className="flex items-center gap-2"><AvatarUnassigned label="" size="xs" /><span>Unassigned</span></span> : <PersonLabel avatarSize="xs" person={person} />} value={content.assignee} />;
 	if (id === "priority") return <PriorityRowField onChange={content.setPriority} renderValue={(value) => <span className="[&_[data-slot=icon-tile]]:size-4"><PriorityLabel iconSize="small" value={value} /></span>} value={content.priority} />;
 	if (id === "dueDate") {
 		const overdue = Boolean(content.dueDate && content.dueDate.getTime() < Date.UTC(2026, 9, 28));

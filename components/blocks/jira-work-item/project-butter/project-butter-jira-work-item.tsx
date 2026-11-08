@@ -36,6 +36,7 @@ export interface ProjectButterJiraWorkItemProps {
 	initialPreset: JiraWorkItemPreset;
 	initialSuggestion?: boolean;
 	defaultReporter?: WorkItemPerson;
+	defaultAssignee?: WorkItemPerson;
 	currentUser?: WorkItemPerson;
 	showAuditInActivity?: boolean;
 	autoAssignClaudeToCurrentUser?: boolean;
@@ -70,6 +71,7 @@ export function ProjectButterJiraWorkItem({
 	initialPreset,
 	initialSuggestion = false,
 	defaultReporter,
+	defaultAssignee,
 	currentUser,
 	showAuditInActivity,
 	autoAssignClaudeToCurrentUser,
@@ -132,7 +134,7 @@ export function ProjectButterJiraWorkItem({
 		initialSessions,
 		placeholders,
 		defaultReporter,
-		{ currentUser, showAuditInActivity },
+		{ currentUser, showAuditInActivity, defaultAssignee },
 	);
 	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
 	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
@@ -255,7 +257,7 @@ export function ProjectButterJiraWorkItem({
 		setActiveSessionId(null);
 	}
 	function startCoding() {
-		const session = model.startCoding();
+		const session = model.startCoding(content.summary);
 		addInvocation(session);
 		onAgentSessionStart?.(session);
 		if (onOpenCloudSession) { setActiveSessionId(null); onOpenCloudSession(session); }
@@ -357,7 +359,7 @@ export function ProjectButterJiraWorkItem({
 					<ProjectButterBody
 						key={workItem?.code ?? "reference"}
 						active={open}
-						singleActivityView={shell === "project"}
+						singleActivityView={shell !== "standalone"}
 						sidePanel={sidePanel}
 						content={content}
 						descriptionReveal={suggestion ? descriptionReveal : null}

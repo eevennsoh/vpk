@@ -246,7 +246,7 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("dialog") === null, true);
 	await view.click(view.getByRole("button", { name: "Open third card" }));
 	await view.click(view.getByRole("button", { name: "Start coding" }));
-	assert.equal(view.getAllByRole("heading", { name: "Work on PAY-120" }).length > 0, true);
+	assert.equal(view.getAllByRole("heading", { name: "Third board item" }).length > 1, true);
 	assert.equal(view.queryByText("Ready to work on PAY-120.") !== null, true);
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
 	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));

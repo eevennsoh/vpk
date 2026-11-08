@@ -3,8 +3,8 @@
 import { useCallback, useState } from "react";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
-import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter-v1/data";
-import type { ProjectButterRelatedWorkType } from "@/components/blocks/jira-work-item/project-butter-v1/related-model";
+import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
+import type { ProjectButterRelatedWorkType } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { toButterDetachedAgentSession } from "@/components/projects/butter-v1/data/presentation-story";
 import { butterWorkType } from "@/components/projects/butter-v1/data/related-scope";
 

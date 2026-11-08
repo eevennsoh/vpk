@@ -1,4 +1,4 @@
-import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-item/project-butter-v1/placeholder-fill";
+import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-item/project-butter/placeholder-fill";
 import { BUTTER_DONE_PLACEHOLDERS } from "./done";
 import { BUTTER_IN_PROGRESS_PLACEHOLDERS } from "./in-progress";
 import { BUTTER_IN_REVIEW_PLACEHOLDERS } from "./in-review";

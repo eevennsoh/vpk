@@ -3,10 +3,39 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("the work item Agents popup matches the Assignee picker", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const item = page.getByRole("region", { name: "Work item full screen view" });
+	await item.getByRole("button", { name: "Change assignee" }).click();
+	const assignee = page.getByRole("dialog").filter({ has: page.getByRole("textbox", { name: "Search people" }) });
+	const assigneeBounds = await assignee.boundingBox();
+	const assigneeShadow = await assignee.locator(".rich-text-command-menu").evaluate((element) => getComputedStyle(element).boxShadow);
+	await page.keyboard.press("Escape");
+	await item.getByRole("group", { name: "Agents field" }).getByRole("button").click();
+	const agents = page.getByRole("dialog", { name: "Agent sessions" });
+	const agentBounds = await agents.boundingBox();
+	if (!assigneeBounds || !agentBounds) throw new Error("Picker bounds are unavailable");
+	expect(agentBounds.x).toBeCloseTo(assigneeBounds.x, 0);
+	expect(agentBounds.width).toBeCloseTo(assigneeBounds.width, 0);
+	expect((await agents.evaluate((element) => getComputedStyle(element).boxShadow)).endsWith(assigneeShadow)).toBe(true);
+	await agents.getByRole("button", { name: "Add agent", exact: true }).click();
+	expect((await page.getByRole("dialog", { name: "Add agent" }).evaluate((element) => getComputedStyle(element).boxShadow)).endsWith(assigneeShadow)).toBe(true);
+});
+
 test("Butter v1 keeps the journey while browsing the gallery placeholders", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
+	await expect.poll(() => gallery.getByRole("button").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")))).toEqual([
+		"Select Agent selector",
+		"Select Duplicative sessions",
+		"Select Board",
+		"Select Work item",
+		"Select Pull request",
+		"Select e2e Journey",
+	]);
 	for (const name of ["Board", "Agent selector", "Work item", "Pull request", "e2e Journey"]) {
 		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
 	}
@@ -230,9 +259,24 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	const card = page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-118"][data-board-column-title]');
 	await card.getByRole("button", { name: "Add agent to PAY-118" }).focus();
 	await page.keyboard.press("Enter");
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Cursor");
-	await page.getByRole("option", { name: /^Cursor/ }).click();
-	await page.getByRole("menu", { name: "Run Cursor on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
+	const picker = page.getByRole("dialog", { name: "Agents" });
+	const search = picker.getByRole("textbox", { name: "Search agents" });
+	for (const [name, action] of [["Claude", "Open in Claude"], ["Codex", "Open in Codex"], ["GitHub Copilot", "Open in VS Code"]]) {
+		await search.fill(name);
+		await picker.getByRole("button", { name, exact: true }).click();
+		await expect(picker.getByRole("button", { name: action })).toBeEnabled();
+	}
+	await search.fill("Cursor");
+	const cursor = picker.getByRole("button", { name: "Cursor", exact: true });
+	await cursor.hover();
+	await expect(page.getByRole("menu", { name: "Run Cursor on" })).toHaveCount(0);
+	await cursor.click();
+	await expect(cursor).toHaveAttribute("aria-expanded", "true");
+	const local = picker.getByRole("button", { name: "Open in Cursor" });
+	await expect(local).toBeEnabled();
+	await local.click();
+	await expect(picker.getByRole("status")).toHaveText("Open locally · Cursor (preview)");
+	await picker.getByRole("button", { name: "Start a new session" }).click();
 	await card.getByRole("button", { name: /^Cursor: / }).click();
 	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Carry card-artwork metadata into the next wallet epic", { exact: true })).toBeVisible();
 });
@@ -250,7 +294,7 @@ test("a coding session started from a work item uses its summary", async ({ page
 	const chat = item.locator('[data-rovo-chat-placement="floating"]');
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
-	await item.getByRole("group", { name: "Agent field" }).getByRole("button").click();
+	await item.getByRole("group", { name: "Agents field" }).getByRole("button").click();
 	const sessions = page.getByRole("dialog", { name: "Agent sessions" });
 	await expect(sessions.getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true })).toBeVisible();
 	await expect(sessions.getByRole("button", { name: "Add agent", exact: true })).toBeVisible();

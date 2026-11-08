@@ -79,14 +79,14 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 					if (restoreFocus) focusFrame.current = requestAnimationFrame(() => { focusFrame.current = null; [...(root.current?.querySelectorAll<HTMLButtonElement>("[data-favorite-id]") ?? [])].find((button) => button.dataset.favoriteId === agent.id)?.focus(); });
 				}} />
 			</div>
-			{showInline ? <div className="flex flex-col px-1.5 pb-1.5">{actions.map((action) => <Button key={action.id} type="button" variant="ghost" className="h-8 justify-start gap-3 border-0 px-0.5 text-sm font-normal" onClick={(event) => {
+			{showInline ? <div className="flex min-w-0 flex-col px-1.5 pb-1.5">{actions.map((action) => <Button key={action.id} type="button" variant="ghost" className="h-8 min-w-0 justify-start gap-3 border-0 px-0.5 text-sm font-normal" onClick={(event) => {
 				const container = event.currentTarget.parentElement;
 				action.onSelect();
 				if (action.focusFirstActionAfterSelect) {
 					if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current);
 					focusFrame.current = requestAnimationFrame(() => { focusFrame.current = null; if (container?.isConnected) container.querySelector<HTMLButtonElement>("button")?.focus(); });
 				}
-			}}><span aria-hidden className="grid size-6 shrink-0 place-items-center">{action.icon}</span><span className="truncate">{action.label}</span></Button>)}{additionalActions}</div> : null}
+			}}><span aria-hidden className="grid size-6 shrink-0 place-items-center">{action.icon}</span><span className="min-w-0 truncate">{action.label}</span></Button>)}{additionalActions}</div> : null}
 		</div>;
 	};
 	const section = (name: string, items: readonly AgentSelectorAgent[]) => items.length ? <section aria-label={name}><h3 className="rich-text-command-menu-heading">{name}</h3>{items.map(row)}{name === "Software agents" && !query && !expanded && softwareAgents.length > initialSoftwareLimit ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={() => setExpanded(true)}>Show more</button> : null}</section> : null;
@@ -95,6 +95,5 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 		<div ref={listRef} className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain", showTopScrollMask && "scroll-mask-top [--scroll-mask-fade-size:3rem]")}>{section("Favorites", favoriteAgents)}{section("Software agents", shownSoftware)}{section("Other agents", otherAgents)}{!favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
 		{onBrowseAgents || onCreateAgent ? <div className="shrink-0 border-t border-border pt-1">{onBrowseAgents ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={onBrowseAgents}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" />} />Browse agents</Button> : null}{onCreateAgent ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={onCreateAgent}><Icon aria-hidden className="size-6" render={<AddIcon label="" />} />Create agent</Button> : null}</div> : null}
 		<p role="status" className="sr-only">{status}</p>
-		{status ? <div aria-hidden className="shrink-0 truncate border-t border-border px-2 py-1 text-xs text-text-subtle">{status}</div> : null}
 	</div>;
 }

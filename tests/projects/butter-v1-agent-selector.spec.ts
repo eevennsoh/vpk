@@ -14,6 +14,10 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	await expect(picker.getByText("Jira Coding Agent", { exact: true })).toBeVisible();
 	await expect(picker.getByText("Claude", { exact: true })).toBeVisible();
 	await expect(picker.getByText("Cursor", { exact: true })).toBeVisible();
+	await picker.getByRole("button", { name: "Cursor", exact: true }).click();
+	await expect(picker.getByRole("button", { name: /Continue (with last|to existing) session/ })).toHaveCount(0);
+	await expect(picker.getByRole("button", { name: "Start a new session" })).toBeVisible();
+	await expect(picker.getByRole("button", { name: "Open in Cursor" })).toBeVisible();
 	await expect(picker.getByRole("button", { name: "Browse agents" })).toBeVisible();
 	await expect(picker.getByRole("button", { name: "Create agent" })).toBeVisible();
 	await expect(page.getByLabel("Project Butter issue card")).toHaveCount(0);
@@ -189,7 +193,7 @@ test("Agent Selector examples use the Butter submenu and inline presentations", 
 	await expect(page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await inline.getByRole("button", { name: "Cursor", exact: true }).click();
-	await expect(inline.getByRole("button", { name: "Continue with last session" })).toBeVisible();
+	await expect(inline.getByRole("button", { name: "Start a new session" })).toBeVisible();
 	const list = inline.getByRole("region", { name: "Software agents" }).locator("..");
 	await list.evaluate((element) => { element.scrollTop = 200; });
 	await expect.poll(() => list.evaluate((element) => getComputedStyle(element).maskImage)).toContain("linear-gradient");
@@ -218,7 +222,7 @@ test("Duplicative sessions offers existing Claude sessions or a new one", async 
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
-	const labels = ["Select Board", "Select Agent selector", "Select Duplicative sessions", "Select Work item", "Select Pull request", "Select e2e Journey"];
+	const labels = ["Select Agent selector", "Select Duplicative sessions", "Select Board", "Select Work item", "Select Pull request", "Select e2e Journey"];
 	await expect(gallery.getByRole("button")).toHaveCount(labels.length);
 	for (const [index, label] of labels.entries()) await expect(gallery.getByRole("button").nth(index)).toHaveAccessibleName(label);
 	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
@@ -237,6 +241,8 @@ test("Duplicative sessions offers existing Claude sessions or a new one", async 
 	await picker.getByRole("option", { name: /^Claude/ }).click();
 	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
 	await expect(picker.getByRole("status")).toHaveText("Started a new Claude session");
+	await expect(picker.getByRole("status")).toHaveClass(/\bsr-only\b/);
+	await expect(picker.getByText("Started a new Claude session", { exact: true })).toHaveCount(1);
 	await picker.getByRole("option", { name: /^Claude/ }).click();
 	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
 	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
@@ -270,6 +276,8 @@ test("Duplicative sessions offers existing Claude sessions or a new one", async 
 	await page.keyboard.press("Enter");
 	await picker.getByRole("button", { name: "Review the onboarding quickstart" }).click();
 	await expect(picker.getByRole("status")).toHaveText("Selected session: Review the onboarding quickstart");
+	await expect(picker.getByRole("status")).toHaveClass(/\bsr-only\b/);
+	await expect(picker.getByText("Selected session: Review the onboarding quickstart", { exact: true })).toHaveCount(1);
 	await expect(picker.getByRole("button", { name: "Remove Claude from favorites" })).toHaveAttribute("aria-pressed", "true");
 	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
 	await expect(modes.getByRole("button", { name: "Inline expand" })).toHaveAttribute("aria-pressed", "true");

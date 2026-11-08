@@ -175,7 +175,7 @@ export function ScrubberRail({
 				onPointerLeave={handlePointerLeave}
 				className={cn("relative min-w-0", onSeek && "cursor-grab active:cursor-grabbing", axis === "y" ? "h-full w-6 shrink-0" : "h-3.5 w-full", selectionMode === "drag" && "touch-none")}
 			>
-				{appearance === "dots" ? <span aria-hidden className={cn("pointer-events-none absolute border-dashed border-border", axis === "y" ? "inset-y-0 left-1/2 border-l" : "inset-x-0 top-1/2 border-t")} /> : null}
+				{appearance === "dots" ? <span aria-hidden className={cn("pointer-events-none absolute border-dashed border-border", axis === "y" ? "inset-y-0 left-1/2 -translate-x-1/2 border-l" : "inset-x-0 top-1/2 -translate-y-1/2 border-t")} /> : null}
 				{entries.map((entry, index) => (
 					<ScrubberMark
 						key={entry.id}

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
-import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter-v1/data";
+import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { applyMerchantJourneyToBoard, type MerchantJourneyPhase } from "@/components/projects/butter-v1/data/merchant-journey";
 import { BUTTER_SUGGESTION_DEMO_KEY, toButterAgentActivityFromSession } from "@/components/projects/butter-v1/data/presentation-board";
 

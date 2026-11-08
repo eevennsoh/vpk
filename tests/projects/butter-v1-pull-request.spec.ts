@@ -3,6 +3,36 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 10000, ignoreHTTPSErrors: true, viewport: { width: 1600, height: 1000 } });
 
+test("Pull request card reveals its inline agent selector in both PR states", async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Pull request" }).click();
+	const stage = page.locator("[data-butter-gallery-pull-request]");
+	const card = stage.locator('[data-slot="jira-issue-card"]');
+	const addAgent = stage.getByRole("button", { name: "Add agent to PAY-999" });
+	for (const status of ["Open PR", "Merged PR"]) {
+		await page.getByRole("group", { name: "Pull request status" }).getByRole("button", { name: status }).click();
+		await card.hover();
+		await expect(addAgent).toBeVisible();
+		await addAgent.click();
+		const picker = page.getByRole("dialog", { name: "Agents" });
+		const cursor = picker.getByRole("button", { name: "Cursor", exact: true });
+		await cursor.click();
+		await expect(cursor).toHaveAttribute("aria-expanded", "true");
+		await expect(picker.getByRole("button", { name: "Open in Cursor" })).toBeEnabled();
+		await expect(picker.getByRole("button", { name: "Start a new session" })).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(picker).toBeHidden();
+	}
+	await addAgent.focus();
+	await page.keyboard.press("Enter");
+	const picker = page.getByRole("dialog", { name: "Agents" });
+	await picker.getByRole("button", { name: "Cursor", exact: true }).click();
+	await picker.getByRole("button", { name: "Start a new session" }).click();
+	await expect(stage.getByRole("button", { name: /Cursor: / })).toBeVisible();
+});
+
 test("Pull request tile opens the PAY-999 work item with its PR", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -33,6 +63,7 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	const workItem = page.getByRole("dialog", { name: "Project butter" });
 	await expect(workItem).toBeVisible();
 	await expect(workItem.getByRole("heading", { name: "Improve merchant onboarding for Payments SDK v2" })).toBeVisible();
+	await expect(workItem.getByText("Agents", { exact: true })).toBeVisible();
 	await expect(workItem.getByRole("region", { name: "Pull request development" })).toContainText("Add merchant onboarding quickstart");
 	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
 	await expect(workItem).toBeHidden();

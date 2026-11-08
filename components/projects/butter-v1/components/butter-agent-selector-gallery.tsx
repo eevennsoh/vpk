@@ -78,7 +78,7 @@ export function ButterAgentSelectorGallery({ variant = "default", presentation =
 							selectedAgentIds={selectedAgentIds}
 						/>
 					</ProjectButterInvocationProvider>}
-					{presentation === "submenu" && sessionStatus ? <p role="status" className="border-t border-border px-3 py-2 text-sm text-text-subtle">{sessionStatus}</p> : null}
+					{presentation === "submenu" ? <p role="status" className="sr-only">{sessionStatus}</p> : null}
 				</section>
 			</div>
 			{directoryOpen ? <AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} onCreateAgent={createAgent} onOpenChange={setDirectoryOpen} onSelectAgent={() => setDirectoryOpen(false)} open={directoryOpen} variant="standard-v2" /> : null}

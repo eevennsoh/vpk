@@ -45,8 +45,6 @@ export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onSt
 				onSelect: () => { if (matching.length === 1) onContinueSession?.(matching[0]); else setChoosingAgentId(agent.id); },
 				focusFirstActionAfterSelect: matching.length > 1,
 			});
-		} else if (!onContinueSession && agent.id === "test-agent") {
-			continueActions.push({ id: "continue", label: "Continue with last session", icon: <Icon render={<AiChatIcon label="" size="small" />} />, onSelect: () => simulate("Continue session on Cloud") });
 		}
 		if (agent.id === "rovo-cli") return continueActions;
 		return [

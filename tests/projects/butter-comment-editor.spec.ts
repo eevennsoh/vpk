@@ -5,6 +5,29 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("the comment shadow fades without moving the scrollbar over details", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/jira-work-item"));
+	await page.getByRole("button", { name: "Full screen", exact: true }).click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	await page.keyboard.press("m");
+	const bar = dialog.locator("[data-project-butter-comment-bar]");
+	await expect(bar.getByRole("textbox", { name: "Comment editor" })).toBeVisible();
+	const geometry = await bar.evaluate((element) => {
+		const scrollport = element.closest("[data-project-butter-work-item]")!.firstElementChild!;
+		const details = element.closest("[data-project-butter-work-item]")!.querySelector("[data-project-butter-details-rail]")!;
+		const shadow = element.querySelector("[data-project-butter-comment-shadow]")!;
+		return {
+			scrollbarOverlapsDetails: scrollport.getBoundingClientRect().right > details.getBoundingClientRect().left,
+			shadowRoom: scrollport.getBoundingClientRect().right - shadow.getBoundingClientRect().right,
+			shadow: getComputedStyle(shadow).boxShadow,
+		};
+	});
+	expect(geometry.scrollbarOverlapsDetails).toBe(false);
+	expect(geometry.shadowRoom).toBeGreaterThanOrEqual(48);
+	expect(geometry.shadow).not.toBe("none");
+	await expect(dialog.getByRole("separator", { name: "Resize details panel" })).toBeVisible();
+});
+
 async function mockRovoThreads(page: Page) {
 	const threads = new Map<string, Record<string, unknown>>();
 	const openedThreads: string[] = [];
@@ -84,8 +107,8 @@ test("the comment bar reveals quickly and covers content below it while scrollin
 	});
 	expect(revealMs).toBeLessThan(220);
 	await scrollport.evaluate((root) => { root.scrollTop += 160; });
-	const composer = bar.locator("[data-project-butter-comment-editor]");
-	await expect.poll(() => composer.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none");
+	const shadow = bar.locator("[data-project-butter-comment-shadow]");
+	await expect.poll(() => shadow.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none");
 	await expect.poll(() => bar.evaluate((element) => {
 		const root = element.closest("[data-project-butter-work-item]")!.firstElementChild!;
 		const barBounds = element.getBoundingClientRect();

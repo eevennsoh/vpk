@@ -153,7 +153,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 
 	const submenuActions = submenu ? (
 		<>
-					{choosingSession ? <RichTextSuggestionMenu className="rich-text-command-menu-embedded [&_.rich-text-command-menu-list]:p-0! [&_.rich-text-command-menu-item]:h-auto! [&_.rich-text-command-menu-item]:min-h-11 [&_.rich-text-command-menu-item]:py-2! [&_.menu-row-title]:line-clamp-2 [&_.menu-row-title]:whitespace-normal [&_.menu-row-byline]:whitespace-normal" emptyLabel="No active sessions" items={sessionItems} onHover={(index) => { setSelectedSessionIndex(index); if (sessionItems[index]) onPreviewSession?.(sessionItems[index].id); }} onHoverEnd={() => onPreviewSession?.(null)} onSelect={(item) => { const session = matchingSessions.find((candidate) => candidate.id === item.id); if (session) { onPreviewSession?.(null); onContinueSession?.(session); } }} selectedIndex={selectedIndex} showReturnShortcut={false} title={`Choose a ${submenu.agent.name} session`} /> : <>
+					{choosingSession ? <RichTextSuggestionMenu className="rich-text-command-menu-embedded [&_.rich-text-command-menu-list]:p-0! [&_.rich-text-command-menu-item]:h-8!" emptyLabel="No active sessions" items={sessionItems} onHover={(index) => { setSelectedSessionIndex(index); if (sessionItems[index]) onPreviewSession?.(sessionItems[index].id); }} onHoverEnd={() => onPreviewSession?.(null)} onSelect={(item) => { const session = matchingSessions.find((candidate) => candidate.id === item.id); if (session) { onPreviewSession?.(null); onContinueSession?.(session); } }} selectedIndex={selectedIndex} showReturnShortcut={false} title={`Choose a ${submenu.agent.name} session`} /> : <>
 					{matchingSessions.length > 0 ? <div role="group" aria-label="Run on cloud">
 						<div className="px-2 pt-2 pb-1 text-xs font-medium text-text-subtle">Run on cloud</div>
 						<Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => { if (matchingSessions.length === 1) onContinueSession?.(matchingSessions[0]); else { cancelClose(); setChoosingSession(true); setSelectedSessionIndex(0); requestAnimationFrame(() => submenuContent.current?.querySelector<HTMLButtonElement>('[role="option"]')?.focus()); } }}><Icon aria-hidden className="size-4 shrink-0" render={<AiChatIcon label="" size="small" />} />{matchingSessions.length > 1 ? "Continue to existing session" : "Continue with last session"}</Button>
@@ -268,7 +268,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 					side="right"
 					align="start"
 					sideOffset={0}
-					className={cn("gap-0 p-1", choosingSession ? "w-96 max-w-[calc(100vw-24px)]" : "w-70")}
+					className="w-70 max-w-[calc(100vw-24px)] gap-0 p-1"
 					positionerClassName={submenuPositionerClassName}
 					onPointerEnter={cancelClose}
 					onPointerLeave={closeSubmenuLater}

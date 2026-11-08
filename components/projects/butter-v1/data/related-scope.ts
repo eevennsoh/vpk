@@ -1,6 +1,6 @@
 // Butter board -> Project Butter related-work scope. Type-only `@/` imports, so node:test can load it directly.
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
-import type { ProjectButterRelatedSearchItem, ProjectButterRelatedStatus, ProjectButterRelatedWorkType } from "@/components/blocks/jira-work-item/project-butter-v1/related-model";
+import type { ProjectButterRelatedSearchItem, ProjectButterRelatedStatus, ProjectButterRelatedWorkType } from "@/components/blocks/jira-work-item/project-butter/related-model";
 
 const WORK_TYPES: Readonly<Record<NonNullable<JiraKanbanCardData["issueType"]>, ProjectButterRelatedWorkType>> = {
 	bug: "Bug",

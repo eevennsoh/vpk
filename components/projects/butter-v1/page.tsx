@@ -14,18 +14,20 @@ import { Gallery } from "@/components/blocks/gallery";
 import { useRovoChat } from "@/app/contexts/context-rovo-chat";
 import { getMessageText } from "@/lib/rovo-ui-messages";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import { ButterInlineAgentPickerContext } from "@/components/blocks/jira-issue/project-butter-invocation";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
-import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter-v1/project-butter-jira-work-item";
-import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter-v1/data";
-import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter-v1/project-butter-development-journey";
+import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
+import { PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
+import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
+import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
 import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
 import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
-import type { ProjectButterRelatedSearchItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter-v1/related-model";
+import type { ProjectButterRelatedSearchItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { butterRelatedCatalog } from "@/components/projects/butter-v1/data/related-scope";
 import type { JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
@@ -221,6 +223,7 @@ export default function ButterPage(): React.ReactElement {
 	const [agentSelectorPresentation, setAgentSelectorPresentation] = useState<ButterAgentPresentation>("inline");
 	const [duplicativeSessionsPresentation, setDuplicativeSessionsPresentation] = useState<ButterAgentPresentation>("inline");
 	const [pullRequestResetKey, setPullRequestResetKey] = useState(0);
+	const [workItemResetKey, setWorkItemResetKey] = useState(0);
 	const [pullRequestStatus, setPullRequestStatus] = useState<ButterPullRequestStatus>("open");
 	const journeyActive = selectedId === "e2e-journey";
 	const boardOnly = selectedId === "board";
@@ -275,7 +278,7 @@ export default function ButterPage(): React.ReactElement {
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
-				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto [&_[aria-label='Gallery_items']]:pointer-events-auto", galleryControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
+				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto", selectedId === "pull-request" || selectedId === "work-item" ? "[&_[aria-label='Gallery_items']]:pointer-events-none [&_[aria-label='Gallery_items']>div]:pointer-events-auto" : "[&_[aria-label='Gallery_items']]:pointer-events-auto", galleryControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
 				items={BUTTER_GALLERY_ITEMS}
 				selectedColor={token("color.text")}
 				selectedId={selectedId}
@@ -283,10 +286,10 @@ export default function ButterPage(): React.ReactElement {
 				title="Project Butter v1"
 				showTopBarBorder
 				stagePosition="center"
-				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorPresentation("inline"); setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsPresentation("inline"); setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } }}
+				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorPresentation("inline"); setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsPresentation("inline"); setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } }}
 				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
 				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
-				renderSelectedItem={(item) => item.id === "e2e-journey" || item.id === "board" || item.id === "agent-selector" || item.id === "duplicative-sessions" || item.id === "pull-request" ? null : (
+				renderSelectedItem={(item) => item.id === "e2e-journey" || item.id === "board" || item.id === "agent-selector" || item.id === "duplicative-sessions" || item.id === "work-item" || item.id === "pull-request" ? null : (
 					<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">{item.title}</h2>
 				)}
 			/>
@@ -299,6 +302,11 @@ export default function ButterPage(): React.ReactElement {
 				<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex justify-center overflow-y-auto px-4 pt-4 pb-56">
 					<ButterAgentSelectorGallery key={duplicativeSessionsResetKey} presentation={duplicativeSessionsPresentation} variant="duplicative-sessions" />
 				</div>
+			</RetainedView>
+			<RetainedView active={selectedId === "work-item"} retain>
+				<RovoChatProvider key={workItemResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
+					<ButterGalleryWorkItem open={selectedId === "work-item"} onClose={() => setSelectedId("board")} />
+				</RovoChatProvider>
 			</RetainedView>
 			<RetainedView active={selectedId === "pull-request"} retain>
 				<div key={pullRequestResetKey} className="absolute inset-x-0 top-12 bottom-0 transform-gpu overflow-hidden">
@@ -313,6 +321,19 @@ export default function ButterPage(): React.ReactElement {
 				</div>
 			</RetainedView>
 		</div>
+	);
+}
+
+function ButterGalleryWorkItem({ open, onClose }: Readonly<{ open: boolean; onClose: () => void }>) {
+	return (
+		<>
+			<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex items-start justify-center overflow-hidden">
+				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
+					<ProjectButterJiraWorkItem defaultAssignee={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onClose={onClose} open={open} shell="gallery" />
+				</div>
+			</div>
+			{open ? <JgpRovoOverlay /> : null}
+		</>
 	);
 }
 
@@ -744,6 +765,7 @@ function ButterApp({ ref, boardOnly, collapsedColumns, onCollapsedColumnsChange,
 					data-butter-content={wacContent ? "wac" : "default"}
 					data-agent-session-sync={agentSessionsSettled ? "settled" : "pending"}
 				>
+					<ButterInlineAgentPickerContext value={boardOnly}>
 					<ExperimentalJiraKanbanPage
 						showSessionAddAgent={false}
 						boardOnly={boardOnly}
@@ -852,6 +874,7 @@ function ButterApp({ ref, boardOnly, collapsedColumns, onCollapsedColumnsChange,
 							/>
 						)}
 					/>
+					</ButterInlineAgentPickerContext>
 				</div>
 			</AppLayout>
 			</HeaderLanyards>

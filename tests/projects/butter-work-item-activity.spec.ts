@@ -5,6 +5,19 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("activity timeline dots are centered on the dashed line", async ({ page }) => {
+	await page.goto(appUrl("/butter"));
+	await card(page, "PAY-999").locator('[data-slot="jira-issue-card"]').click();
+	const rail = page.getByRole("listbox", { name: "Navigate activity" });
+	await expect(rail).toBeVisible();
+	const line = rail.locator(":scope > span").first();
+	const dot = rail.locator('[data-slot="scrubber-playhead"]');
+	await expect.poll(async () => {
+		const [lineBox, dotBox] = await Promise.all([line.boundingBox(), dot.boundingBox()]);
+		return lineBox && dotBox ? Math.abs(lineBox.y + lineBox.height / 2 - dotBox.y - dotBox.height / 2) : null;
+	}).toBeLessThan(0.1);
+});
+
 test("the Butter board work item combines comments and changes under Activity", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter"));

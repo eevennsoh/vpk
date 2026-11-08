@@ -23,6 +23,7 @@ const ActionsContext = createContext<{
 	settle: (sequence: number) => void;
 	abort: (sequence: number) => void;
 } | null>(null);
+export const ButterInlineAgentPickerContext = createContext(false);
 
 export function ProjectButterInvocationProvider({
 	agents = PROJECT_BUTTER_AGENTS,

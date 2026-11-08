@@ -290,7 +290,7 @@ const JOURNEY_HARNESS = `import React from "react";
 			<button onClick={undoLabels}>Undo labels</button>
 			<button onClick={() => content.setSummary("An edited summary")}>Edit summary</button>
 			<button onClick={start}>Start Claude</button>
-			<button onClick={() => content.recordSessionInvocation(model.startCoding())}>Start coding</button>
+			<button onClick={() => content.recordSessionInvocation(model.startCoding(content.summary))}>Start coding</button>
 			<p data-field="assignee">{content.assignee.name}</p>
 			<p data-field="invoker">{model.sessions.at(-1)?.invokedBy?.name}</p>
 			<ProjectButterActivity content={content} empty sidePanel={false} sessions={model.sessions} onOpenSession={() => undefined} />
