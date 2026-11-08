@@ -30,6 +30,7 @@ test("Work item gallery displays the Project Butter screen with floating Rovo", 
 	await summary.fill("Updated onboarding flow");
 	await summary.press("Enter");
 	await expect(summary).toHaveText("Updated onboarding flow");
+	await expect(workItem.getByRole("button", { name: /Venn\s+updated summary/ })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select Pull request" }).click();
 	await expect(page.locator("[data-butter-gallery-pull-request]")).toBeVisible();
 	await expect(workItem).toBeHidden();

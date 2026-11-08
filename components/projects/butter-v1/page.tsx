@@ -329,7 +329,7 @@ function ButterGalleryWorkItem({ open, onClose }: Readonly<{ open: boolean; onCl
 		<>
 			<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex items-start justify-center overflow-hidden">
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem defaultAssignee={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onClose={onClose} open={open} shell="gallery" />
+					<ProjectButterJiraWorkItem currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onClose={onClose} open={open} shell="gallery" />
 				</div>
 			</div>
 			{open ? <JgpRovoOverlay /> : null}
