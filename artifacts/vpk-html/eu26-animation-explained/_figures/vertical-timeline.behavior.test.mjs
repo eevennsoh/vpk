@@ -74,9 +74,11 @@ test('continuous scrubbing preserves every in-between frame with twelve Page tic
 				assert.ok(Math.abs(sample.hero-sample.time)<.001);
 				assert.equal(sample.text,sample.index,'the active text follows the animation segment');
 			}
+			// The field burst (13-16 s): cards fly apart and the camera snaps wide, so every sample differs. The next segment
+			// holds a camera pose over the settled field by design (figure-motion.md, held poses), so it is not a scrub probe.
 			const geometry = probe(`
 				const poses=[];
-				for(const position of [7.125,7.25,7.5,7.25]) {
+				for(const position of [6.125,6.25,6.5,6.25]) {
 					slider.value=String(position);slider.dispatchEvent(new Event('input',{bubbles:true}));
 					poses.push(hero.querySelector('svg').innerHTML);
 				}
