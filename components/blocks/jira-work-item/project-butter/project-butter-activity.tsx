@@ -138,11 +138,11 @@ export function ProjectButterActivity({
 		return entry.icon === "created" || entry.icon === "status" ? <JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={entry} /> : undefined;
 	};
 	const header = (
-		<div className="sticky top-0 z-20 -mx-1 mb-3 flex h-16 shrink-0 items-center gap-4 bg-surface px-1 py-3 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-linear-to-b after:from-surface after:to-transparent" data-project-butter-activity-header ref={headerRef}>
+		<div className="sticky top-0 z-20 -mx-1 mb-3 flex shrink-0 items-center gap-4 bg-surface px-1 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-linear-to-b after:from-surface after:to-transparent" data-project-butter-activity-header ref={headerRef}>
 			{/* Once the header sticks, the visible row's relative time stands in for the title; the h2 keeps its name for assistive tech. */}
-			<div className="shrink-0 text-sm font-semibold text-text">
+			<div className="shrink-0 text-sm font-medium text-text">
 				{/* Classes sit on the h2 itself: the base h2 heading font would otherwise win over the wrapper's inherited text-sm. */}
-				<h2 className={cn("text-sm font-semibold text-text", stuck && visibleRow ? "sr-only" : undefined)}>Activity</h2>
+				<h2 className={cn("text-sm font-medium text-text", stuck && visibleRow ? "sr-only" : undefined)}>Activity</h2>
 				{stuck && visibleRow ? <span aria-hidden data-project-butter-activity-header-time>{visibleRow.timestamp || activityDayLabel(visibleRow)}</span> : null}
 			</div>
 			<ProjectButterActivityTimeline onSeek={seekToProgress} onSelect={scrollToEntry} progress={progress} rows={rows} visibleId={visibleId} />
