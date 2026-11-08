@@ -79,7 +79,7 @@ Offset ground shadows by height: `lift = clamp((topZ - groundZ) * 0.5, 10, 140)`
 
 **GOOD:** near-white tops, pale sides, grey hairlines, shadows paler than any side. The tell: apart from cursors and the named lettering exceptions, the darkest light-theme pixel is a hairline (42%).
 
-Orange goes on the subject only, mixed in `oklab` from `--ill-accent` into `--ill-accent-ink`: top 100%, side 86%, outlines 55%, faint outlines 75%, lettering 50%. Inner panels mix it toward `--paper` in light (82%, 62%) and `--ink` in dark (78%, 62%).
+Orange goes on the subject only (cursors are the one exception, [figure-motion.md § cursors](figure-motion.md#every-cursor-is-one-rounded-arrowhead)), mixed in `oklab` from `--ill-accent` into `--ill-accent-ink`: top 100%, side 86%, outlines 55%, faint outlines 75%, lettering 50%. Inner panels mix it toward `--paper` in light (82%, 62%) and `--ink` in dark (78%, 62%). When the subject hands its orange on, every copy of the old holder goes neutral with it: a bento wall slot that repeats the first tile never keeps the accent after the title takes it (`highlight = 0` on every slot in `eu26-motion-model.mjs`).
 
 **BAD, spread:** orange off the subject, or a second hue for a state. The tell: at 240px you count two orange things.
 

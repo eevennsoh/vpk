@@ -140,38 +140,24 @@ Too little: the wall freezes at the end. Too much: the clock idles in Video mode
 | landing | blank sheet; face up 0.6 s after touchdown over 0.072 s | face 0 at −0.05 s; flat, face < 1 at +0.2 s; face 1 at +1.2 s |
 | ring | from 0.1 s before touchdown, grows 16 units, peak opacity 0.9, gone by 1 s | playing at +0.2 s, gone at +1.2 s |
 | stack deal | top first, 0.09 s × 0.7–1.3 apart | each card lands 0.04–0.2 s after the one above |
+| reach | `reachShare` 0.3: a teammate reaches in no further than 0.3 of the frame width from the leading edge (the source’s 0.16 starved the portrait two-column frame to ~15 carried cards per 103 s; 0.3 gives ~34, landscape ~49, up to 3 hands on screen) | every hold keeps its cursor, pill and card inside the 8 px margin |
 
 The lanyard drops over 0.85 s and swings per the `swing` line in [§ Pose](#pose-is-a-pure-function-of-time). Too little: the card floats in alone or hangs above its slot. Too much: the carried card balloons past 1.04× or tilts past 0.04 rad. The tell: a 0.05 s sweep ([verification.md § 7](verification.md#7-sweep-time-for-invariants)) finds a moving card with no cursor attached.
 
 ## Every cursor is one rounded arrowhead
 
-**Draw every cursor as stageshow’s solid arrowhead (`M4 3 18.5 9.6 11.8 11.8 9.6 18.5Z`, hotspot 4,3) with a paper halo, never a macOS pointer with a tail.** A teammate is one tone everywhere: arrow and name flag share it, and the flag rides 11 px right and 15 px below the tip. It is never turned over, whichever edge the hand came from. Source: stageshow `kit/cursor.tsx` and `examples/presence`.
+**Draw every cursor as stageshow’s solid arrowhead (`M4 3 18.5 9.6 11.8 11.8 9.6 18.5Z`, hotspot 4,3) with a paper halo, never a macOS pointer with a tail.** Every cursor, the main one and each teammate, wears `--ill-accent`; teammates are told apart by their names, not by tones, and the main cursor carries no flag. The flag always rides below-right of the tip (11, 15 arrow units) and is never turned over, whichever edge the hand came from; a hold whose pill would leave the frame is not planned (`pillBox` in `eu26-motion-model.mjs`). Source: stageshow `kit/cursor.tsx` and `examples/presence`; scale matched to `teu26.mp4`.
 
 | Part | Value |
 |---|---|
-| arrow | fill and 1.8 px stroke in the person’s tone, `stroke-linejoin: round`, `vector-effect: non-scaling-stroke` |
+| arrow | fill and 1.8 px stroke in `--ill-accent`, `stroke-linejoin: round`, `vector-effect: non-scaling-stroke`; 2.3× stageshow’s 16 px arrow (`motionConfig.cursor.arrow`), about 36 px at 1080 px, a third of a small tile |
 | halo | the same path behind it, 4 px paper stroke; it replaces a drop shadow on paper |
-| flag | radius 6 px, 11 px weight-600 name, 3 px × 7 px padding; paper text on dark tones, ink on the lightest |
-| tones | the main cursor in text ink; teammates at 80%, 58% and 38% ink in paper |
-| press | scale 0.9 about the tip; one accent ripple (radius 4 → 18 px, opacity `4p(1 − p)`) while the press goes in or lets go |
+| flag | `--ill-accent` pill at 1.8× stageshow’s 19 px flag (`cursor.flag`), so its height (19 × 1.8 = 34 units) matches the arrow’s (15.5 × 2.3 = 36); radius 6 and 11-unit weight-600 name, both scaled with it |
+| name | dark orange, `color-mix(in oklab, var(--ill-accent) 50%, var(--ill-accent-ink))`, never black or white; measured with `getComputedTextLength()` once per name (cached after fonts load), centred with `text-anchor: middle`, 7 units of padding each side |
+| press | scale 0.9 about the tip, arrow only; one accent ripple (radius 4 → 18 arrow units, opacity `4p(1 − p)`) while the press goes in or lets go |
 | held | no ring stays under a grip |
 
-Too little: a bare arrow with no name reads as a second pointer. Too much: a coloured arrow beside a grey flag, or a flag turned over above the tip. The tell: the cursor is the darkest, heaviest mark in a paper frame.
-
-## Tiles play one story, then hold
-
-**Each tile does one small thing once, then holds the result.** A carried card starts its story when its face is up (touchdown + 0.72 s). A card already in place starts as its centre enters the frame. Parts stagger 0.09 s in reading order, and every story ends within 2.5 s. Nothing rewinds in view, so the eye goes to the edge where cards arrive (stageshow `references/bento.md` rule 11).
-
-| Part | Story |
-|---|---|
-| bar | grows from 15% to its value over 0.9 s with a light overshoot |
-| input | types in 18 steps over 1.6 s and keeps the text |
-| list highlight | steps to its row, 0.45 s a step, and stays |
-| ring | sweeps once to 72% over 1.4 s |
-| bubble | arrives whole from 4 units above, 0.6 s after the one before |
-| named cursor in a tile | travels once to its target over 1.1 s and rests |
-
-Too little: a wall that never moves inside its tiles. Too much: every tile on its own loop, values dipping and retyping in view. The tell: freeze-frame two moments 3 s apart and a tile that entered more than 3 s ago has changed (`explorer.behavior.test.mjs` asserts this).
+Too little: a bare arrow with no name reads as a second pointer, and a grey or ink cursor reads as chrome rather than a person. Too much: a flag turned over or flipped left to dodge the edge, or a name wider than its pill. The tell: the gaps left and right of a name differ, or the pill and arrow differ in height by more than a few units.
 
 ## Camera moves bloom the lens
 
@@ -234,7 +220,7 @@ cameraKeys: [
 - **Let the frame join the choreography only when the reference does.** Reshaping or skewing the figure container and letting a near object break its edge (camera4) are strong moves; use them once, at the act they mark, and only with a reference frame that shows them.
 - **Land on flat.** Every reference ends a sequence on a flat frontal pose, and the EU26 wall is flat by the user’s call. A held deep pose belongs in the middle of a sequence.
 
-Calibrate against the EU26 figure: its camera moves run 1.2-2.6 model seconds, 0.7-1.5 s at `playbackRate` 1.7, against the references’ 0.3-0.5 s; every perspective there is transient lens bloom with no held deep pose. The line weight and fills these references share (one even hairline, flat fills, no gradients) are owned by [figure-fidelity.md](figure-fidelity.md); this section owns only how the camera moves.
+Calibrate against the EU26 figure (`cameraKeys` in `eu26-hero.hero.mjs`): every move runs 0.6-0.75 model seconds, 0.35-0.44 s at `playbackRate` 1.7, and each pose then holds at least as long (it once ran 1.2-4.4 model seconds, 0.7-2.6 s). Its one held deep pose opens the lens to `persp: 0.3` over the settled card field (16.2-17.4 s) with nothing else changing, around the hero card; the field’s depth sort stays cycle-free there (a 0.05 s scan of `data-hero-depth-cycles` from 0 to 34 s reads 0 throughout), and the sequence lands flat on the frontal wall. The line weight and fills these references share (one even hairline, flat fills, no gradients) are owned by [figure-fidelity.md](figure-fidelity.md); this section owns only how the camera moves.
 
 GOOD: hold flat 0.8 s, snap 0.4 s into a low wide pose, hold it 1.2 s, snap back to flat. BAD: a 2.5 s move that eases continuously from one pose to the next. The tell: no two consecutive 0.1 s frames are identical, so the viewer never gets a still picture to read.
 
