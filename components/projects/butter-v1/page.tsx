@@ -14,7 +14,7 @@ import { Gallery } from "@/components/blocks/gallery";
 import { useRovoChat } from "@/app/contexts/context-rovo-chat";
 import { getMessageText } from "@/lib/rovo-ui-messages";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import { ButterInlineAgentPickerContext } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { ButterInlineAgentPickerContext } from "@/components/blocks/jira-issue/project-butter-inline-picker-context";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,

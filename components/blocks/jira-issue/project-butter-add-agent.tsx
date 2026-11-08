@@ -9,8 +9,8 @@ import { DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from 
 import { cn } from "@/lib/utils";
 import { ProjectButterAgentPicker, ProjectButterAgentPickerContent } from "./project-butter-agent-picker";
 import { ProjectButterInlineAgentPicker } from "./project-butter-inline-agent-picker";
+import { ButterInlineAgentPickerContext } from "./project-butter-inline-picker-context";
 import {
-	ButterInlineAgentPickerContext,
 	useProjectButterInvocationActions,
 	useProjectButterInvocationAgents,
 	useProjectButterInvocationPhase,

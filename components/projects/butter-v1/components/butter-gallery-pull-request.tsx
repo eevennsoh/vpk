@@ -7,7 +7,7 @@ import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { JiraIssue, type JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
-import { ButterInlineAgentPickerContext } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { ButterInlineAgentPickerContext } from "@/components/blocks/jira-issue/project-butter-inline-picker-context";
 import { BOARD_COLUMN_WIDTH_PX } from "@/components/blocks/jira-kanban/experimental/lib/board-column-collapse";
 import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
