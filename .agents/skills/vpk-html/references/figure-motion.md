@@ -4,7 +4,7 @@ Owner of time-driven figure motion for [SKILL.md](../SKILL.md). Load when a figu
 
 Contents: [video first](#match-the-production-video-first) · [pure time](#pose-is-a-pure-function-of-time) · [golden seeds](#stagger-with-golden-ratio-seeds) ·
 [reduced motion](#reduced-motion-holds-settled-states) · [seamless loops](#endless-loops-recycle-with-no-seam) ·
-[idle clock](#an-idle-clock-runs-on-top-of-scrolled-time) · [carried arrivals](#a-named-cursor-carries-every-arrival) · [lens bloom](#camera-moves-bloom-the-lens) · [handoffs](#handoffs-cross-fade-and-interpolate) · [collections](#collections-reflow-like-the-product)
+[idle clock](#an-idle-clock-runs-on-top-of-scrolled-time) · [carried arrivals](#a-named-cursor-carries-every-arrival) · [cursors](#every-cursor-is-one-rounded-arrowhead) · [tile stories](#tiles-play-one-story-then-hold) · [lens bloom](#camera-moves-bloom-the-lens) · [handoffs](#handoffs-cross-fade-and-interpolate) · [collections](#collections-reflow-like-the-product)
 
 ## Match the production video first
 
@@ -37,7 +37,7 @@ Draw randomness from a seeded hash of the index (`Math.sin((i + 1) * 127.1 + cha
 
 ## Stagger with golden-ratio seeds
 
-**Give each repeating element the phase seed `index × 0.6180339 mod 1`.** Consecutive seeds sit far apart, so a wall of tiles on 6–8 s loops never pulses in unison. Keep one period per channel and vary only the phase.
+**Give each repeating element the phase seed `index × 0.6180339 mod 1`.** Consecutive seeds sit far apart, so channels that genuinely repeat (a waiting hand’s breath, an ambient drift) never pulse in unison. Keep one period per channel and vary only the phase. Tile micro-interactions never repeat: [§ Tile stories](#tiles-play-one-story-then-hold).
 
 ```js
 surface.seed = (index * 0.6180339) % 1;
@@ -142,6 +142,36 @@ Too little: the wall freezes at the end. Too much: the clock idles in Video mode
 | stack deal | top first, 0.09 s × 0.7–1.3 apart | each card lands 0.04–0.2 s after the one above |
 
 The lanyard drops over 0.85 s and swings per the `swing` line in [§ Pose](#pose-is-a-pure-function-of-time). Too little: the card floats in alone or hangs above its slot. Too much: the carried card balloons past 1.04× or tilts past 0.04 rad. The tell: a 0.05 s sweep ([verification.md § 7](verification.md#7-sweep-time-for-invariants)) finds a moving card with no cursor attached.
+
+## Every cursor is one rounded arrowhead
+
+**Draw every cursor as stageshow’s solid arrowhead (`M4 3 18.5 9.6 11.8 11.8 9.6 18.5Z`, hotspot 4,3) with a paper halo, never a macOS pointer with a tail.** A teammate is one tone everywhere: arrow and name flag share it, and the flag rides 11 px right and 15 px below the tip. It is never turned over, whichever edge the hand came from. Source: stageshow `kit/cursor.tsx` and `examples/presence`.
+
+| Part | Value |
+|---|---|
+| arrow | fill and 1.8 px stroke in the person’s tone, `stroke-linejoin: round`, `vector-effect: non-scaling-stroke` |
+| halo | the same path behind it, 4 px paper stroke; it replaces a drop shadow on paper |
+| flag | radius 6 px, 11 px weight-600 name, 3 px × 7 px padding; paper text on dark tones, ink on the lightest |
+| tones | the main cursor in text ink; teammates at 80%, 58% and 38% ink in paper |
+| press | scale 0.9 about the tip; one accent ripple (radius 4 → 18 px, opacity `4p(1 − p)`) while the press goes in or lets go |
+| held | no ring stays under a grip |
+
+Too little: a bare arrow with no name reads as a second pointer. Too much: a coloured arrow beside a grey flag, or a flag turned over above the tip. The tell: the cursor is the darkest, heaviest mark in a paper frame.
+
+## Tiles play one story, then hold
+
+**Each tile does one small thing once, then holds the result.** A carried card starts its story when its face is up (touchdown + 0.72 s). A card already in place starts as its centre enters the frame. Parts stagger 0.09 s in reading order, and every story ends within 2.5 s. Nothing rewinds in view, so the eye goes to the edge where cards arrive (stageshow `references/bento.md` rule 11).
+
+| Part | Story |
+|---|---|
+| bar | grows from 15% to its value over 0.9 s with a light overshoot |
+| input | types in 18 steps over 1.6 s and keeps the text |
+| list highlight | steps to its row, 0.45 s a step, and stays |
+| ring | sweeps once to 72% over 1.4 s |
+| bubble | arrives whole from 4 units above, 0.6 s after the one before |
+| named cursor in a tile | travels once to its target over 1.1 s and rests |
+
+Too little: a wall that never moves inside its tiles. Too much: every tile on its own loop, values dipping and retyping in view. The tell: freeze-frame two moments 3 s apart and a tile that entered more than 3 s ago has changed (`explorer.behavior.test.mjs` asserts this).
 
 ## Camera moves bloom the lens
 

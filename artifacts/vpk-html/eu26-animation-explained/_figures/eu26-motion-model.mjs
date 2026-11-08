@@ -213,16 +213,17 @@ export function model(input, data) {
 	const edgeOffset = card => Math.min(card.w, A.edgeWidth ?? 300) / 2 - card.w / 2;
 	const lineOf = (card, i) => Math.min(viewHalf - reachLine * ((A.from ?? 0.45) + (A.span ?? 0.7) * random(i, 31)), viewHalf - card.w * 0.75 + Math.min(card.w, A.edgeWidth ?? 300) / 2);
 	const fallOf = i => (A.descendS ?? 0.95) * mix(0.85, 1.25, random(i, 32));
-	// The cursor's own box beside its tip (arrow and name pill), in world units: below and right of the tip, or above it when
-	// turned over for a card in the frame's top third.
-	// The cursor is drawn in screen pixels (arrow 22 x 30, name pill up to the longest roster name), so its box in world units
+	// The cursor's own box beside its tip (arrow and name flag), in world units. The name always rides below and right of the
+	// tip, as stageshow's presence cursors do; a card in the frame's top third is still reached from above (its reach), but
+	// the cursor is never turned over.
+	// The cursor is drawn in screen pixels (arrow 16 x 16, name flag up to the longest roster name), so its box in world units
 	// follows the display: one pixel covers lastCamera.height / displayHeight of the frame.
 	const worldPerPx = lastCamera.height / (options.displayHeight ?? 828) / projectionScale, marginWorld = HAND.margin * worldPerPx;
 	// Like the source (which sizes its cursors by the stage fit), teammate cursors shrink on small frames.
 	const cursorFit = Math.max(0.55, Math.min(1, (options.displayHeight ?? 828) / 640)), fitPx = worldPerPx * cursorFit;
-	const pillBox = above => ({ left: -7 * fitPx, right: 74 * fitPx, top: (above ? -37 : -7) * fitPx, bottom: (above ? 7 : 37) * fitPx });
+	const pillBox = () => ({ left: -7 * fitPx, right: 74 * fitPx, top: -7 * fitPx, bottom: 37 * fitPx });
 	const bandOf = y => Math.min(2, Math.max(0, Math.floor((y + viewHalfY) / (viewHalfY * 2) * 3)));
-	const BANDS = [{ reach: -Math.PI / 2 - 0.4, above: true }, { reach: 0.35, above: false }, { reach: Math.PI / 2 + 0.4, above: false }];
+	const BANDS = [{ reach: -Math.PI / 2 - 0.4, above: false }, { reach: 0.35, above: false }, { reach: Math.PI / 2 + 0.4, above: false }];
 	const offFrame = (box, angle) => {
 		const dx = Math.cos(angle), dy = Math.sin(angle);
 		const across = dx > 1e-6 ? (viewHalf - box.left) / dx : dx < -1e-6 ? (box.right + viewHalf) / -dx : Infinity;

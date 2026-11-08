@@ -87,7 +87,7 @@ test('named teammates bring each new card in from off the frame and set it down 
 		assert.equal(new Set([...rides.values()].map(ride => ride.id)).size, 3, 'all three teammates take part');
 		assert.ok([...rides.values()].every(ride => names.includes(ride.name)), 'every cursor wears a roster name');
 		assert.ok(new Set([...rides.values()].map(ride => ride.name)).size >= 5, 'names follow the repeating roster');
-		assert.ok([...rides.values()].some(ride => ride.above) && [...rides.values()].some(ride => !ride.above), 'cards in the top third are reached from above, turned over');
+		assert.ok([...rides.values()].every(ride => !ride.above), 'a name flag always rides below and right of the tip; no cursor is turned over');
 		for (const ride of rides.values()) {
 			if (ride.last > 129) continue;
 			const before = model({ time: ride.first - 0.1, variant }, data).wall[ride.index];

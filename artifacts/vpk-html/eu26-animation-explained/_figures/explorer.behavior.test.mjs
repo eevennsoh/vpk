@@ -249,6 +249,24 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			assert.ok(result.maxJump < 40, `wall tiles never jump across the frame (largest step ${result.maxJump})`);
 		});
 
+		await t.test('each wall tile plays its micro-interaction once and then holds (stageshow bento rule 11)', () => {
+			const result = scenario(`
+				const capture = time => { explorer.seek(time); const event = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(event); return event.detail.state; };
+				const sig = key => [...hero.querySelector('[data-eu26-piece="' + key + '"]').querySelectorAll('[data-anim]')].filter(el => el.dataset.anim !== 'lanyard').map(el => (el.getAttribute('transform') || '') + (el.getAttribute('width') || '') + (el.getAttribute('height') || '') + (el.getAttribute('y') || '') + (el.getAttribute('stroke-dasharray') || '') + el.style.opacity).join('|');
+				const shown = () => [...hero.querySelectorAll('[data-eu26-piece^="wall."]')].filter(el => el.style.display !== 'none' && el.querySelector('[data-anim]')).map(el => el.dataset.eu26Piece);
+				// A tile's story starts as its centre enters the frame (or after a carried card's face is up) and lasts under 3 s,
+				// so a tile wholly inside the frame at 54 s has finished by 60 s.
+				const s54 = capture(54); const early = new Set(shown().filter(key => { const w = s54.wall[Number(key.slice(5))]; return w.entryProgress >= 1 && !w.incoming; }));
+				const state = capture(60), holdKeys = shown().filter(key => early.has(key) && !(state.wall[Number(key.slice(5))].arrival?.touchdown > 53));
+				const at60 = new Map(holdKeys.map(key => [key, sig(key)]));
+				capture(63);
+				const moved = holdKeys.filter(key => hero.querySelector('[data-eu26-piece="' + key + '"]').style.display !== 'none' && sig(key) !== at60.get(key));
+				return { checked: holdKeys.length, moved };
+			`);
+			assert.ok(result.checked >= 3, `enough settled tiles to judge (${result.checked})`);
+			assert.deepEqual(result.moved, [], 'a tile whose story has played holds its result');
+		});
+
 		await t.test('manual playback suspends work offscreen and resumes on re-entry', () => {
 			run('reload');
 			run('wait', '--fn', 'Boolean(window.__eu26Explorer)');

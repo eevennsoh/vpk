@@ -180,13 +180,15 @@
 /* The Team ’26 lockup is the one lettered face: bold, left-aligned, ink on the orange title and soft ink in its wall slot. */
 :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .dtt { fill: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 50%, var(--ill-accent-ink)) var(--eu26-hl, 0%), var(--anatomy-hi)); stroke: none; font-family: var(--font-display) !important; font-weight: 700; letter-spacing: -0.03em; text-rendering: geometricPrecision; font-kerning: normal; }
 
-/* Teammate cursors (finale-wall-cursors.ts): each wears its name in a pill, in muted paper-style tones per lane. The name is the
-   only lettering besides the Team ’26 lockup. */
-#animation-explorer [data-eu26-cursor-pill] { stroke: none; }
-#animation-explorer [data-eu26-cursor-name] { font-family: var(--font-body) !important; font-weight: 600; letter-spacing: 0.01em; }
-#animation-explorer [data-eu26-cursor="teammate-1"] [data-eu26-cursor-pill] { fill: color-mix(in srgb, var(--ink) 78%, var(--paper)); }
-#animation-explorer [data-eu26-cursor="teammate-1"] [data-eu26-cursor-name] { fill: var(--paper); }
-#animation-explorer [data-eu26-cursor="teammate-2"] [data-eu26-cursor-pill] { fill: color-mix(in srgb, var(--ink) 30%, var(--paper)); }
-#animation-explorer [data-eu26-cursor="teammate-2"] [data-eu26-cursor-name] { fill: var(--ink); }
-#animation-explorer [data-eu26-cursor="teammate-3"] [data-eu26-cursor-pill] { fill: var(--paper); stroke: color-mix(in srgb, var(--ink) 45%, var(--paper)); stroke-width: 0.8px; vector-effect: non-scaling-stroke; }
-#animation-explorer [data-eu26-cursor="teammate-3"] [data-eu26-cursor-name] { fill: var(--ink); }
+/* Cursors (after stageshow kit/cursor.css and examples/presence): one solid rounded arrowhead, a paper halo, and for a
+   teammate one tone everywhere, arrow and name flag alike. The name is the only lettering besides the Team ’26 lockup. A press
+   sends one accent ripple from the tip. */
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor] { --who: var(--anatomy-text); --who-text: var(--paper); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor="teammate-1"] { --who: color-mix(in srgb, var(--ink) 80%, var(--paper)); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor="teammate-2"] { --who: color-mix(in srgb, var(--ink) 58%, var(--paper)); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor="teammate-3"] { --who: color-mix(in srgb, var(--ink) 38%, var(--paper)); --who-text: var(--ink); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-tip] { fill: var(--who); stroke: var(--who); stroke-width: 1.8px; vector-effect: non-scaling-stroke; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-halo] { stroke: var(--paper); stroke-width: 4px; vector-effect: non-scaling-stroke; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-ring] { fill: color-mix(in srgb, var(--ill-accent) 10%, transparent); stroke: var(--ill-accent); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-pill] { fill: var(--who); stroke: none; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-name] { fill: var(--who-text); font-family: var(--font-body) !important; font-weight: 600; letter-spacing: 0.01em; }

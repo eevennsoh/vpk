@@ -48,34 +48,42 @@ export function live(ctx) {
 		ring.style.display = "";
 		ring.style.opacity = (0.9 * smooth((age + 0.1) / 0.15) * (1 - smooth(age / 1))).toFixed(3);
 	};
-	const animateTile = (surface, time, entered, hold = false) => {
-		const settled = reducedMotion?.matches || hold;
-		const phase = period => (((time + surface.seed * period) % period) + period) % period;
+	// Tile micro-interactions (stageshow references/bento.md rule 11 and motion.md): each tile does one small thing once, when
+	// its face is up (a carried card) or as it enters the frame (a card already in place), staggered about 0.1 s across its
+	// parts, and then holds the result. Nothing rewinds in view and no tile loops, so the eye goes where cards are arriving.
+	// `story` is seconds since the tile's story began; `entered` is seconds since the tile came into the frame (the lanyard).
+	const animateTile = (surface, time, entered, story) => {
+		const settled = reducedMotion?.matches;
+		const at = settled ? 99 : story;
+		const travel = t => smooth(Math.max(0, Math.min(1, t)));
 		for (const anim of surface.anims) {
 			const { el, kind, i } = anim;
 			if (kind === "bar") {
-				const at = phase(8) - i * 0.16;
-				const share = settled ? 1 : at > 7.2 ? 1 - 0.6 * smooth((at - 7.2) / 0.8) : 0.4 + 0.6 * overshoot(at / 1.3);
+				// Bars grow from a stub to their value, a light overshoot, in reading order.
+				const t = (at - i * 0.09) / 0.9, share = t <= 0 ? 0.15 : t >= 1 ? 1 : 0.15 + 0.85 * overshoot(t);
 				el.setAttribute("height", (anim.h * share).toFixed(3));
 				el.setAttribute("y", (anim.y + anim.h * (1 - share)).toFixed(3));
 			} else if (kind === "type") {
-				const at = phase(7);
-				const typed = settled ? 1 : at > 6.2 ? 1 - smooth((at - 6.2) / 0.6) : Math.round(smooth(at / 3.4) * 18) / 18;
+				// The input fills in typing steps, then holds what was typed.
+				const typed = Math.round(travel((at - 0.2) / 1.6) * 18) / 18;
 				el.setAttribute("width", Math.max(0.01, anim.w * typed).toFixed(3));
 			} else if (kind === "row") {
-				const step = settled ? 0 : phase(anim.rows * 1.7) / 1.7, row = Math.floor(step);
-				const slide = row < anim.rows - 1 ? smooth((step - row - 0.72) / 0.28) : 0;
+				// The highlight steps down to its row and stays; each step decelerates like a selection that follows.
+				const target = Math.min(2, anim.rows - 1), step = Math.max(0, at - 0.3) / 0.45, row = Math.min(target, Math.floor(step));
+				const slide = row < target ? travel((step - row - 0.35) / 0.65) : 0;
 				el.setAttribute("y", (anim.y + anim.step * (row + slide)).toFixed(3));
 			} else if (kind === "sweep") {
-				const at = phase(6), arc = settled ? 1 : at > 5.3 ? 1 - smooth((at - 5.3) / 0.7) : smooth(at / 2.6);
-				el.setAttribute("stroke-dasharray", `${arc.toFixed(4)} 1`);
+				// The ring sweeps once to its value and holds it.
+				el.setAttribute("stroke-dasharray", `${(0.72 * travel((at - 0.2) / 1.4)).toFixed(4)} 1`);
 			} else if (kind === "bubble") {
-				const at = phase(6.5), shown = settled ? 1 : smooth((at - 0.4 - i * 1.1) / 0.35) * (1 - smooth((at - 5.8) / 0.5));
+				// Messages arrive whole from just above, one after another, and stay.
+				const shown = travel((at - 0.3 - i * 0.6) / 0.35);
 				el.style.opacity = shown.toFixed(3);
+				el.setAttribute("transform", `translate(0 ${(-4 * (1 - shown)).toFixed(3)})`);
 			} else if (kind === "drift") {
-				const dx = settled ? 0 : anim.reach * 1.4 * Math.sin(time * 0.55 + surface.seed * 6.3 + i * 2.1);
-				const dy = settled ? 0 : anim.reach * Math.sin(time * 0.41 + surface.seed * 4.1 + i * 1.3);
-				el.setAttribute("transform", `translate(${dx.toFixed(3)} ${dy.toFixed(3)})`);
+				// Named cursors travel once to the thing they work on and rest there; every move goes somewhere.
+				const go = travel((at - 0.4 - i * 0.35) / 1.1);
+				el.setAttribute("transform", `translate(${(anim.reach * 1.4 * (1 - go)).toFixed(3)} ${(anim.reach * (1 - go)).toFixed(3)})`);
 			} else if (kind === "lanyard") {
 				// Dropped from above the frame as the tile slides in, then a damped swing about the strap's top.
 				const since = settled ? 99 : entered;
@@ -520,19 +528,25 @@ export function live(ctx) {
 			const el = pieces.get(`wall.${i}`), surface = surfaceOf.get(el);
 			if (!surface.anims.length || el.style.display === "none") return;
 			const xs = (surface.frame?.face || [[cx, cy]]).map(point => point[0]), left = (Math.min(...xs) + Math.max(...xs)) / 2;
-			animateTile(surface, state.time, (cx + width / 2 - left) / Math.max(1e-6, speed), (state.wall[i].face ?? 1) < 0.999);
+			// A carried card's story starts once its face is up (touchdown plus the hand-over); a card already in place starts as
+			// it comes into the frame.
+			const entered = (cx + width / 2 - left) / Math.max(1e-6, speed), carried = state.wall[i].arrival;
+			const story = carried ? state.time - (carried.touchdown + 0.72) : entered - 0.3;
+			animateTile(surface, state.time, entered, story);
 		});
 		const unit = Math.max(width / displayWidth, height / displayHeight);
 		let clippedCursors = 0;
 		for (const cursor of state.cursors) {
 			const el = cursorParts.get(cursor.id), tip = project(cursor.at);
-			// A teammate's cursor wears its name in a pill beside the arrow; turned over (pillAbove) for a card in the frame's top
-			// third, its arrow points down onto the card and the pill sits above. It grows with the card it holds (perspective).
+			// Cursors follow stageshow (kit/cursor.tsx, examples/presence): one solid rounded arrowhead for every cursor, tip at the
+			// hotspot, a paper halo instead of a drop shadow so it reads on grey tiles. A teammate is one tone everywhere, arrow and
+			// name flag alike, and the flag rides below and right of the tip. A press dips the arrow to 0.9 about its tip and sends
+			// one accent ripple out; there is no ring held under a grip. It grows with the card it holds (perspective).
 			const fit = cursor.role === "teammate" ? Math.max(0.55, Math.min(1, displayHeight / 640)) : 1;
-			const above = Boolean(cursor.pillAbove), flip = above ? -1 : 1, size = unit * (1 - cursor.pressed * 0.08) * (cursor.scale ?? 1) * fit;
-			const pillW = cursor.name ? (cursor.name.length * 6.6 + 14) : 0, pillH = cursor.name ? 18 : 0;
-			const reachRight = Math.max(22, cursor.name ? 14 + pillW : 0) * size, reachDown = (above ? 7 : Math.max(30, cursor.name ? 19 + pillH : 0)) * size, reachUp = (above ? Math.max(30, 19 + pillH) : 7) * size;
-			const margin = Math.min(tip[0] - 7 * unit - (cx - width / 2), cx + width / 2 - tip[0] - reachRight, tip[1] - reachUp - (cy - height / 2), cy + height / 2 - tip[1] - reachDown);
+			const size = unit * (1 - cursor.pressed * 0.1) * (cursor.scale ?? 1) * fit;
+			const pillW = cursor.name ? (cursor.name.length * 6.3 + 14) : 0, pillH = cursor.name ? 19 : 0;
+			const reachRight = Math.max(18, cursor.name ? 11 + pillW : 0) * size, reachDown = Math.max(18, cursor.name ? 15 + pillH : 0) * size, reachUp = 4 * size;
+			const margin = Math.min(tip[0] - 4 * unit - (cx - width / 2), cx + width / 2 - tip[0] - reachRight, tip[1] - reachUp - (cy - height / 2), cy + height / 2 - tip[1] - reachDown);
 			const attached = cursor.heldTarget || cursor.phase === "release";
 			const inside = margin >= 0, alpha = cursor.alpha * (attached ? 1 : Math.max(0, Math.min(1, margin / (18 * unit))));
 			// A hand carrying its card in from off the frame crosses the edge with it; it counts as clipped only once it is over the slot.
@@ -546,37 +560,36 @@ export function live(ctx) {
 			el.dataset.tipX = tip[0].toFixed(5);
 			el.dataset.tipY = tip[1].toFixed(5);
 			const pressed = cursor.pressed;
-			const points = [[0, 0], [0, 23], [6, 17.5], [11.2, 28], [16, 25.5], [10.7, 15.7], [20.8, 15.7]].map(([x, y]) => [tip[0] + x * size, tip[1] + y * size * flip]);
+			// stageshow's SolidArrow (M4 3 18.5 9.6 11.8 11.8 9.6 18.5Z), relative to its hotspot at 4,3.
+			const points = [[0, 0], [14.5, 6.6], [7.8, 8.8], [5.6, 15.5]].map(([x, y]) => [tip[0] + x * size, tip[1] + y * size]);
 			const pill = el.querySelector("[data-eu26-cursor-pill]"), label = el.querySelector("[data-eu26-cursor-name]");
 			if (pill && label) {
 				const shown = Boolean(cursor.name);
 				pill.style.display = label.style.display = shown ? "" : "none";
 				if (shown) {
-					const top = above ? tip[1] - (19 + pillH) * size : tip[1] + 19 * size;
-					pill.setAttribute("x", (tip[0] + 14 * size).toFixed(3));
+					const top = tip[1] + 15 * size;
+					pill.setAttribute("x", (tip[0] + 11 * size).toFixed(3));
 					pill.setAttribute("y", top.toFixed(3));
 					pill.setAttribute("width", (pillW * size).toFixed(3));
 					pill.setAttribute("height", (pillH * size).toFixed(3));
-					pill.setAttribute("rx", (pillH / 2 * size).toFixed(3));
-					label.setAttribute("x", (tip[0] + 21 * size).toFixed(3));
-					label.setAttribute("y", (top + 12.6 * size).toFixed(3));
+					pill.setAttribute("rx", (6 * size).toFixed(3));
+					label.setAttribute("x", (tip[0] + 18 * size).toFixed(3));
+					label.setAttribute("y", (top + 13.4 * size).toFixed(3));
 					label.setAttribute("font-size", (11 * size).toFixed(3));
 					if (label.textContent !== cursor.name) label.textContent = cursor.name;
 				}
 			}
-			const arrow = el.querySelector("[data-eu26-cursor-tip]"), ring = el.querySelector("[data-eu26-cursor-ring]");
-			arrow.setAttribute("d", kit.pathOf(points, true));
-			arrow.setAttribute("fill", "var(--anatomy-text)");
-			arrow.setAttribute("stroke", "var(--paper)");
-			arrow.setAttribute("vector-effect", "non-scaling-stroke");
-			arrow.setAttribute("stroke-width", "1.25");
-			ring.setAttribute("cx", String(tip[0]));
-			ring.setAttribute("cy", String(tip[1]));
-			ring.setAttribute("r", String((4 + pressed * 2) * unit));
-			ring.setAttribute("stroke", "var(--ill-accent)");
-			ring.setAttribute("vector-effect", "non-scaling-stroke");
-			ring.setAttribute("stroke-width", "1.2");
-			ring.style.display = pressed > 0.01 ? "" : "none";
+			const arrow = el.querySelector("[data-eu26-cursor-tip]"), halo = el.querySelector("[data-eu26-cursor-halo]"), ring = el.querySelector("[data-eu26-cursor-ring]");
+			const d = kit.pathOf(points, true);
+			arrow.setAttribute("d", d);
+			halo.setAttribute("d", d);
+			// One ripple per press change: a ring spreads from the tip and fades while the press goes in or lets go.
+			const ripple = 4 * pressed * (1 - pressed);
+			ring.setAttribute("cx", tip[0].toFixed(3));
+			ring.setAttribute("cy", tip[1].toFixed(3));
+			ring.setAttribute("r", ((4 + 14 * (1 - Math.abs(1 - 2 * pressed))) * unit).toFixed(3));
+			ring.style.opacity = ripple.toFixed(3);
+			ring.style.display = ripple > 0.02 ? "" : "none";
 		}
 		ctx.svg.appendChild(lighting);
 		if (ctx.svg.lastElementChild !== cursorLayer) ctx.svg.appendChild(cursorLayer);
