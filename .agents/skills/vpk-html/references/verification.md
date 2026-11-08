@@ -2,22 +2,23 @@
 
 Owner of how you prove a vpk-html artifact for [SKILL.md](../SKILL.md). Load when you validate a figure (Phase E), port a production video or its source, or hear “too detailed”, “too dark” or “not true to production”.
 
-Contents: [Swap constants](#swap-the-eu26-constants-before-you-copy-a-fence) · [1 Order](#1-prove-the-work-in-this-order) · [2 Reference frames](#2-extract-reference-frames-before-you-draw) · [3 Your frames](#3-capture-your-frames-at-the-reference-times) · [4 Dark theme](#4-check-dark-theme-at-the-same-times) · [5 Error filter](#5-filter-every-command-on-error) · [6 Wheel scroll](#6-scroll-to-the-end-with-the-wheel-not-seek) · [7 Time sweeps](#7-sweep-time-for-invariants) · [8 Baselines](#8-keep-test-baselines-honest) · [9 Show frames](#9-show-frames-before-you-claim-done) · [10 Complaints](#10-map-each-user-complaint-to-its-cause)
+Contents: [Set these first](#set-these-constants-before-you-copy-a-fence) · [1 Order](#1-prove-the-work-in-this-order) · [2 Reference frames](#2-extract-reference-frames-before-you-draw) · [3 Your frames](#3-capture-your-frames-at-the-reference-times) · [4 Dark theme](#4-check-dark-theme-at-the-same-times) · [5 Error filter](#5-filter-every-command-on-error) · [6 Wheel scroll](#6-scroll-to-the-end-with-the-wheel-not-seek) · [7 Time sweeps](#7-sweep-time-for-invariants) · [8 Baselines](#8-keep-test-baselines-honest) · [9 Show frames](#9-show-frames-before-you-claim-done) · [10 Complaints](#10-map-each-user-complaint-to-its-cause)
 
-## Swap the EU26 constants before you copy a fence
+## Set these constants before you copy a fence
 
-The scripts in § 2–7 are the worked EU26 example. Swap these constants everywhere they appear; § 7 lists the sweep-only ones.
+Set these first: every fence in § 2–7 reads them by name and holds nothing else to swap. The last column is the worked EU26 example; § 7’s sweep adds its own rows.
 
-| EU26 constant | Where | Substitute |
-| --- | --- | --- |
-| `"/jira-team-eu26-end"` (`ROUTE`) | § 2 | the production route you port |
-| `?finale=${t}&hold` | § 2 | that route’s seek query that freezes it at `t` seconds; with none, the route is not a reference (§ 2) |
-| `window.__eu26Explorer` (`seek`, `getState`) | § 3, § 7 | keep it: the copied kit (`_layout/`, `build-explorer.mjs`, per [story modes](story-modes.md)) exposes the explorer under this name, so only a hand-built page swaps in its own global with a synchronous `seek(seconds)` |
-| `window.__vpkStory.setMode(m)` | § 3 | keep it; it is the kit’s mode switch |
-| `[data-vpk-figure="eu26-hero"]` | § 3, § 4, § 6, § 7 | `[data-vpk-figure="<your hero id>"]`, the id your build writes on the hero root |
-| `MODES` `page, carousel, lifeline, theater` | § 3 | keep them after the [story modes](story-modes.md) rename; an unrenamed kit says `story, slides, twitter, video` |
-| `TIMES` `02, 13, 27`, `MOVES` `22` and the chapter list | § 2, § 3, § 7 | your 3 reference times, your camera-move starts and your steps’ `time` values |
-| the printed shade values | § 4 | your figure’s own print; the rule (dark sides at or below the dark top) holds for any figure |
+| Name | Fences | Set to | EU26 worked example |
+| --- | --- | --- | --- |
+| `ROUTE` | § 2 | the production route you port | `"/jira-team-eu26-end"` |
+| `SEEK_QUERY` | § 2 | a function of `t` returning the route’s query that freezes it at `t` seconds; with none, the route is not a reference (§ 2) | ``t => `?finale=${t}&hold` `` |
+| `TIMES`, `MOVES` | § 2, § 3 | your 3 reference times and your camera-move starts, in seconds (the shell fences take `TIMES` zero-padded) | `[2, 13, 27]`, `[22]` |
+| `MODES` | § 3 | your story modes after the [story modes](story-modes.md) rename; an unrenamed kit says `story, slides, twitter, video` | `page, carousel, lifeline, theater` |
+| `SEEK_FN` | § 3, § 7 | the name of the window global with a synchronous `seek(seconds)` and `getState()`; the copied kit (`_layout/`, `build-explorer.mjs`, per [story modes](story-modes.md)) keeps the EU26 name, so only a hand-built page changes it | `"__eu26Explorer"` |
+| `ROOT_SELECTOR` | § 3, § 4, § 6, § 7 | `[data-vpk-figure="<your hero id>"]`, the id your build writes on the hero root | `'[data-vpk-figure="eu26-hero"]'` |
+| `CHAPTERS`, `TRANSITIONS` | § 7 | your steps’ `time` values, and the instants either side of each hand-off | `[0, 2, 4, 6, 8, 10, 13, 16, 19, 22, 25]`, `[14.1, 14.15, 20.4]` |
+
+`window.__vpkStory.setMode(m)` is the kit’s mode switch; keep it. § 4’s printed shade values are EU26’s; compare your figure’s own print against the rule there.
 
 ## 1. Prove the work in this order
 
@@ -38,26 +39,30 @@ The scripts in § 2–7 are the worked EU26 example. Swap these constants everyw
 
 ```sh
 REF=reference.mp4; OUT=output/vpk-html/<slug>/frames/ref; mkdir -p "$OUT"
-for t in 02 13 27; do ffmpeg -v error -ss "$t" -i "$REF" -frames:v 1 "$OUT/t$t.png"; done  # zero-padded: sheets sort in time order
-ffmpeg -v error -ss 22 -t 1 -i "$REF" -vf "fps=10,scale=320:-2,tile=10x1" -frames:v 1 "$OUT/strip-22s.png"  # 0.1 s strip
+TIMES="02 13 27"; MOVES="22"  # set first; EU26 values shown
+for t in $TIMES; do ffmpeg -v error -ss "$t" -i "$REF" -frames:v 1 "$OUT/t$t.png"; done  # zero-padded: sheets sort in time order
+for m in $MOVES; do ffmpeg -v error -ss "$m" -t 1 -i "$REF" -vf "fps=10,scale=320:-2,tile=10x1" -frames:v 1 "$OUT/strip-${m}s.png"; done  # 0.1 s strip
 ```
 
 ### Reference is a live route
 
-When the reference is a production route rather than a video file, freeze it at each time with its seek query (for `/jira-team-eu26-end` that is `?finale=<seconds>&hold`) and screenshot each frame. Capture the 3 reference times, then a 0.1 s strip of each camera move as 10 held loads from t to t+0.9, and tile the strip with the same ffmpeg `tile=10x1`. Run it headless outside the sandbox (§ 3) against this worktree’s dev origin from `pnpm ports`, from the repository root; save it as `output/vpk-html/<slug>/capture-ref.mjs`.
+When the reference is a production route rather than a video file, freeze it at each time with its seek query (`SEEK_QUERY`) and screenshot each frame. Capture the 3 reference times, then a 0.1 s strip of each camera move as 10 held loads from t to t+0.9, and tile the strip with the same ffmpeg `tile=10x1`. Run it headless outside the sandbox (§ 3) against this worktree’s dev origin from `pnpm ports`, from the repository root; save it as `output/vpk-html/<slug>/capture-ref.mjs`.
 
 ```js
 import { chromium } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 
 const ORIGIN = process.argv[2]; // this worktree’s dev origin from `pnpm ports`
-const ROUTE = "/jira-team-eu26-end", OUT = "output/vpk-html/<slug>/frames/ref";
+// Set first (EU26 values shown):
+const ROUTE = "/jira-team-eu26-end";
+const SEEK_QUERY = t => `?finale=${t}&hold`;
 const TIMES = [2, 13, 27], MOVES = [22]; // chapter times and camera-move starts, in seconds
+const OUT = "output/vpk-html/<slug>/frames/ref";
 const pad = (t) => String(Math.round(t * 10)).padStart(3, "0"); // t022 = 2.2 s, sorts in time order
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const shot = async (t, file) => {
-	await page.goto(`${ORIGIN}${ROUTE}?finale=${t}&hold`, { waitUntil: "networkidle" });
+	await page.goto(`${ORIGIN}${ROUTE}${SEEK_QUERY(t)}`, { waitUntil: "networkidle" });
 	await page.waitForTimeout(500); // let the held frame settle
 	await page.screenshot({ path: `${OUT}/${file}` });
 };
@@ -81,10 +86,13 @@ This script is for story explainers (it loops over modes); a template document u
 import { chromium } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 
+// Set first (EU26 values shown):
+const MODES = ["page", "carousel", "lifeline", "theater"];
+const TIMES = ["02", "13", "27"]; // the § 2 times, zero-padded
+const SEEK_FN = "__eu26Explorer";
+const ROOT_SELECTOR = '[data-vpk-figure="eu26-hero"]';
 const FILE = "artifacts/vpk-html/<slug>/<slug>.html";
 const OUT = "output/vpk-html/<slug>/frames/ours";
-const MODES = ["page", "carousel", "lifeline", "theater"]; // the unrenamed EU26 kit uses story, slides, twitter, video
-const TIMES = ["02", "13", "27"]; // the § 2 times
 const VIEWPORTS = [[1440, 900], [390, 844]]; // 2 columns from 1024 px, stacked below
 const painted = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
@@ -98,15 +106,15 @@ for (const [width, height] of VIEWPORTS) {
 		await page.goto(pathToFileURL(FILE).href);
 		for (const mode of MODES) {
 			for (const t of TIMES) {
-				await page.evaluate(([m, s]) => {
+				await page.evaluate(([m, s, fn]) => {
 					window.__vpkStory.setMode(m);
 					if (document.querySelector('[data-vpk-story]').dataset.storyMode !== m) throw new Error(`mode ${m} did not apply`);
-					window.__eu26Explorer.seek(s); // EU26 hook: call your figure’s seek
-				}, [mode, Number(t)]);
+					window[fn].seek(s);
+				}, [mode, Number(t), SEEK_FN]);
 				await page.evaluate(painted);
 				await page.screenshot({ path: `${OUT}/page-${mode}-w${width}-${theme}-t${t}.png` });
 				if (mode === "page" && width === 1440) {
-					const figure = page.locator('[data-vpk-figure="eu26-hero"]');
+					const figure = page.locator(ROOT_SELECTOR);
 					await figure.screenshot({ path: `${OUT}/fig-${theme}-t${t}.png` });
 				}
 			}
@@ -121,10 +129,11 @@ Build the contact sheets next. Pick one surface’s rectangle once on the t02 pa
 
 ```sh
 cd output/vpk-html/<slug>/frames
+TIMES="02 13 27"; MODES="page carousel lifeline theater"  # set first; EU26 values shown
 CO="crop=iw*.40:ih*.20:iw*.30:ih*.45"   # the surface in ours
 CR="crop=iw*.30:ih*.25:iw*.50:ih*.40"   # the same surface in the reference
 for th in light dark; do
-	for t in 02 13 27; do
+	for t in $TIMES; do
 		ffmpeg -v error -y -i "ours/fig-$th-t$t.png" -i "ref/t$t.png" \
 			-filter_complex "[0]scale=-2:480[a];[1]scale=-2:480[b];[a][b]hstack" "pair-$th-t$t.png"
 		ffmpeg -v error -y -i "ours/fig-$th-t$t.png" -i "ref/t$t.png" \
@@ -139,7 +148,7 @@ sheet() {
 }
 sheet pair reference
 sheet crop crops
-for m in page carousel lifeline theater; do
+for m in $MODES; do
 	for w in 1440 390; do sheet "ours/page-$m-w$w" "$m-w$w"; done
 done
 ```
@@ -149,8 +158,8 @@ done
 Measure the shading tokens in each theme and compare them with the light and dark rows of [figure fidelity § 3](figure-fidelity.md#3-shading-after-the-reference-video). Run it in `capture.mjs` after `goto`. It reads the green channel, which is exact for neutral ink and paper; for a tinted `--paper`, average the three channels.
 
 ```js
-console.log(theme, await page.evaluate(() => {
-	const svg = document.querySelector('[data-vpk-figure="eu26-hero"] svg.iso-svg');
+console.log(theme, await page.evaluate(root => {
+	const svg = document.querySelector(`${root} svg.iso-svg`);
 	const probe = svg.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "rect"));
 	const green = value => {
 		probe.style.fill = `color-mix(in srgb, ${value} 100%, transparent)`;
@@ -163,7 +172,7 @@ console.log(theme, await page.evaluate(() => {
 	const out = Object.fromEntries(names.map(n => [n, percent(n)]));
 	probe.remove();
 	return out;
-}));
+}, ROOT_SELECTOR));
 ```
 
 The EU26 figure prints light `top 0, shade-3…0 4 6 7 8, hi mid lo 42 30 20` and dark `10, 7 6 5 4, 44 32 22`. The tell: a dark side measured above the dark top’s 10%, so sides read brighter than tops. In the dark page sheet, every line of text stays legible and thumbnails and snapshots switch with the page ([figure fidelity § 4](figure-fidelity.md#4-copies-outside-the-root-share-the-colour-scope)).
@@ -186,7 +195,7 @@ run node --test <suites>
 Run this only on a page with a scroll-driven figure; a template document skips it. Scroll-driven figures clamp time at the last chapter; the EU26 endless wall froze there, and every `seek()` test still passed. The tell: the behaviour suite never calls `mouse.wheel` or scrolls the page. For a figure with an idle clock, also assert the timeline holds while render time advances ([figure motion § An idle clock](figure-motion.md#an-idle-clock-runs-on-top-of-scrolled-time)).
 
 ```js
-const stage = '[data-vpk-figure="eu26-hero"] svg.iso-svg'; // the live stage, not a thumbnail
+const stage = `${ROOT_SELECTOR} svg.iso-svg`; // the live stage, not a thumbnail
 const atEnd = () => page.evaluate(() => innerHeight + scrollY >= document.documentElement.scrollHeight - 1);
 await page.mouse.move(720, 450);
 for (let step = 0; step < 400 && !(await atEnd()); step++) {
@@ -200,7 +209,7 @@ if ((await frame()) === before) throw new Error("figure stopped moving at the en
 
 ## 7. Sweep time for invariants
 
-Motion is a pure function of time, so sweep the model in Node at 0.05 s and assert what must always hold. Save as `output/vpk-html/<slug>/sweep.mjs`; the import resolves from there. The example is the EU26 wall invariant, so swap its constants before you run it (the explorer global and hero selector are in [Swap the EU26 constants](#swap-the-eu26-constants-before-you-copy-a-fence)):
+Motion is a pure function of time, so sweep the model in Node at 0.05 s and assert what must always hold. Save as `output/vpk-html/<slug>/sweep.mjs`; the import resolves from there. The example is the EU26 wall invariant, so set its constants before you run it (`SEEK_FN`, `ROOT_SELECTOR`, `CHAPTERS` and `TRANSITIONS` are in [Set these first](#set-these-constants-before-you-copy-a-fence)):
 
 | Constant | EU26 value | Substitute |
 | --- | --- | --- |
@@ -208,7 +217,6 @@ Motion is a pure function of time, so sweep the model in Node at 0.05 s and asse
 | `START`, `END` | `27`, `130` s | the first and last second of the chapters your invariant covers; `0` to `data.duration` sweeps the whole figure |
 | `variant` | `"paper"` | a variant your hero’s `data.variants` lists |
 | the loop body | wall cards airborne only while a cursor carries them | the property your figure must always hold, written against your model’s state |
-| the chapter, transition and even times below | EU26 chapter times, `14.1`, `14.15`, `20.4` | your steps’ `time` values, the instants either side of each hand-off, and 36 even times |
 
 ```js
 import assert from "node:assert/strict";
@@ -233,18 +241,19 @@ console.log(`${airborneSamples} airborne samples, 0 uncarried`);
 Test the property, not raw position: the EU26 wall scrolls every card, so “position changed” flags thousands of settled cards. On EU26 the sweep prints a count of airborne samples and 0 uncarried; on your figure, 0 samples where the property’s condition applies means the window or the property is wrong. Depth sorting lives in the renderer, so sample it in the page: chapter times, 36 even times and hand-picked transitions. `seek()` renders synchronously; add this to `capture.mjs`.
 
 ```js
-const cycles = await page.evaluate(() => {
-	const { seek, getState } = window.__eu26Explorer;
-	const hero = document.querySelector('[data-vpk-figure="eu26-hero"]');
+// Set first (EU26 values shown):
+const CHAPTERS = [0, 2, 4, 6, 8, 10, 13, 16, 19, 22, 25];
+const TRANSITIONS = [14.1, 14.15, 20.4];
+const cycles = await page.evaluate(([fn, root, chapters, transitions]) => {
+	const { seek, getState } = window[fn];
+	const hero = document.querySelector(root);
 	const d = getState().duration;
-	const chapters = [0, 2, 4, 6, 8, 10, 13, 16, 19, 22, 25, d]; // EU26 chapter times
-	const transitions = [14.1, 14.15, 20.4];
 	const even = Array.from({ length: 36 }, (_, i) => d * (i + 1) / 37);
-	return [...chapters, ...transitions, ...even].filter(t => {
+	return [...chapters, d, ...transitions, ...even].filter(t => {
 		seek(t);
 		return hero.dataset.heroDepthCycles !== "0";
 	});
-});
+}, [SEEK_FN, ROOT_SELECTOR, CHAPTERS, TRANSITIONS]);
 if (cycles.length) throw new Error(`depth-sort cycles at ${cycles.join(", ")} s`);
 ```
 
