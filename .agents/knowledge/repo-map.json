@@ -3807,27 +3807,27 @@
 				"ownerCount": 1,
 				"owners": [
 					{
-						"importPath": "@/components/blocks/jira-list/page",
-						"source": "components/blocks/jira-list/page",
+						"importPath": "@/components/website/demos/blocks/jira-list-demo",
+						"source": "components/website/demos/blocks/jira-list-demo",
 						"symbols": [
-							"JiraListPage"
+							"JiraListDemo"
 						]
 					}
 				],
 				"primaryOwner": {
 					"kind": "shell",
 					"sources": [
-						"components/blocks/jira-list/page"
+						"components/website/demos/blocks/jira-list-demo"
 					]
 				},
 				"routePath": "/preview/blocks/jira-list",
 				"shellOwnerCount": 1,
 				"shellOwners": [
 					{
-						"importPath": "@/components/blocks/jira-list/page",
-						"source": "components/blocks/jira-list/page",
+						"importPath": "@/components/website/demos/blocks/jira-list-demo",
+						"source": "components/website/demos/blocks/jira-list-demo",
 						"symbols": [
-							"JiraListPage"
+							"JiraListDemo"
 						]
 					}
 				],

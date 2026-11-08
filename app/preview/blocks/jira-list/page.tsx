@@ -1,5 +1,5 @@
-import JiraListPage from "@/components/blocks/jira-list/page";
+import JiraListDemo from "@/components/website/demos/blocks/jira-list-demo";
 
 export default function JiraListPreviewPage() {
-	return <JiraListPage />;
+	return <JiraListDemo />;
 }
