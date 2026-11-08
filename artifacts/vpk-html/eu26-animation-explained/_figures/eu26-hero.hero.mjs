@@ -1,7 +1,7 @@
 import { createWallField, model, motionConfig } from './eu26-motion-model.mjs';
 import { live } from './eu26-scene-live.mjs';
 import { cardDetail, chromeDetail, tileDetail, titleDetail, wrapDetail } from './eu26-face-detail.mjs';
-import { lanyardDetail, PIECES, stackCardDetail } from './eu26-face-wall.mjs';
+import { lanyardDetail, pieceInset, PIECES, stackCardDetail } from './eu26-face-wall.mjs';
 import { pen } from './eu26-face-pen.mjs';
 
 export { model, live };
@@ -270,12 +270,16 @@ export const data = {
 	],
 };
 data.wallField = createWallField(data);
-// Stack slots hold cards of their own (the source's print slots): three rows inside the tile's padding, each its own
-// surface, which wait on the slot's stack in the air and peel off it top first as the slot comes down.
+// Stack slots hold cards of their own (the source's print slots): three rows inside the tile's card, each its own
+// surface, which wait on the slot's stack in the air and peel off it top first as the slot comes down. The rows sit
+// one row margin inside the card (the same margin the rows layout uses), so no row outline lands on the card's edge.
 data.wallCards = data.wall.flatMap((slot, index) => {
 	if (!['library-searchDrop', 'library-agentSessionStack', 'library-riskStack'].includes(slot.key)) return [];
-	const pad = 40 * 0.792 * 0.72, gap = 6, rows = 3, w = slot.w - pad * 2, d = (slot.d - pad * 2 - gap * (rows - 1)) / rows;
-	return Array.from({ length: rows }, (_, row) => ({ slot: index, index: row, w, d, dx: 0, dy: -slot.d / 2 + pad + d / 2 + row * (d + gap) }));
+	const [, pw, ph, scale, px, py] = WALL_PIECES.find(piece => 'library-' + piece[0] === slot.key);
+	const unit = slot.w / (pw * scale + px * 2), margin = pieceInset(pw, ph) * scale * unit;
+	const padX = px * unit + margin, padY = py * unit + margin, gap = 6, rows = 3;
+	const w = slot.w - padX * 2, d = (slot.d - padY * 2 - gap * (rows - 1)) / rows;
+	return Array.from({ length: rows }, (_, row) => ({ slot: index, index: row, w, d, dx: 0, dy: -slot.d / 2 + padY + d / 2 + row * (d + gap) }));
 });
 // Each dealt card parks on its own spot until the wall needs it, so no two overlap at rest.
 let parkX = -900;
@@ -355,6 +359,23 @@ function wallDetail(slot, data) {
 	p.out.push(...pen().rect(0, 0, slot.w, slot.d, slot.r, 'dp').out);
 	PIECES[id](p, w, h);
 	return p.markup();
+}
+
+// Every paper face's detail in its own plan units, for the overlap check: story cards, bento tiles, wall slots
+// (a stack slot with its dealt rows laid in at rest) and the face outline each detail sits on.
+export function surfaceDetails(source = data) {
+	const faces = [];
+	source.cards.forEach((card, i) => faces.push({ name: `story.${i}`, w: card.w, d: card.d, r: 4.5, markup: cardDetail(card, stories[i]) }));
+	source.features.forEach((feature, i) => faces.push({ name: `tile.${i}`, w: feature.w, d: feature.d, r: 9, markup: tileDetail(feature) }));
+	source.wall.forEach((slot, i) => {
+		let markup = wallDetail(slot, source);
+		for (const child of source.wallCards.filter(each => each.slot === i)) {
+			const x = slot.w / 2 + child.dx - child.w / 2, y = slot.d / 2 + child.dy - child.d / 2;
+			markup += pen().rect(x, y, child.w, child.d, 8, 'dw').markup() + stackCardDetail(child).replace(/(x|cx)="([\d.-]+)"/g, (m, k, v) => `${k}="${Number(v) + x}"`).replace(/(y|cy)="([\d.-]+)"/g, (m, k, v) => `${k}="${Number(v) + y}"`);
+		}
+		faces.push({ name: `wall.${i}:${slot.key}`, w: slot.w, d: slot.d, r: slot.r, markup });
+	});
+	return faces;
 }
 
 // Each paper surface is an intentionally suspended choreography prop; its slab is its true footprint.

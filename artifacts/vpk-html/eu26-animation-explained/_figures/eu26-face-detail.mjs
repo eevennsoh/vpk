@@ -15,7 +15,7 @@ export function chromeDetail() {
 const two = p => { p.rect(22, 8, 62, 62, 4, "dw"); p.rect(90, 8, 62, 62, 4, "dw"); };
 const toolbar = p => { p.pill(22, 26, 126, 22, "dw"); p.pill(96, 30, 48, 14, "dp"); };
 const COVERS = {
-	"TEU-1": p => { p.rect(50, 8, 76, 66, 5, "dw"); p.pill(56, 14, 64, 12); p.rect(56, 36, 64, 11, 3, "dp"); },
+	"TEU-1": p => { p.rect(50, 8, 76, 60, 5, "dw"); p.pill(56, 14, 64, 12); p.rect(56, 36, 64, 11, 3, "dp"); },
 	"TEU-101": two,
 	"TEU-2": p => { p.rect(12, 24, 146, 28, 5, "dw"); },
 	"TEU-4": p => { for (let i = 0; i < 3; i += 1) p.rect(6 + i * 54, 8, 50, 60, 3, i === 1 ? "dp" : "dw"); },
@@ -30,8 +30,8 @@ const COVERS = {
 	"TEU-8": p => { p.rect(10, 6, 150, 64, 4, "dp"); p.pill(20, 50, 64, 12, "dw"); p.circle(144, 56, 9, "dw"); },
 	"TEU-107": p => { p.rect(6, 8, 76, 62, 4, "dw"); p.pill(12, 54, 40, 9, "dp"); p.rect(88, 14, 76, 50, 4, "dp"); },
 	"TEU-9": p => { p.rect(14, 6, 142, 66, 4, "dw"); p.line(14, 14, 156, 14, "df"); p.rect(64, 20, 84, 36, 2, "dp"); },
-	"TEU-10": p => { p.rect(36, 18, 120, 44, 5, "dw"); p.rect(44, 62, 104, 12, 0, "dp"); p.rect(26, 10, 56, 15, 4, "dw"); },
-	"TEU-11": p => { p.rect(26, 4, 140, 70, 4, "dw"); p.bars(44, 18, 116, 52, [0.5, 0.72, 0.95, 0.6]); },
+	"TEU-10": p => { p.rect(36, 18, 120, 40, 5, "dw"); p.rect(44, 62, 104, 8, 2, "dp"); p.rect(26, 10, 56, 15, 4, "dw"); },
+	"TEU-11": p => { p.rect(26, 6, 140, 62, 4, "dw"); p.bars(44, 18, 116, 44, [0.5, 0.72, 0.95, 0.6]); },
 	"TEU-109": two,
 	"TEU-111": p => { p.pill(28, 30, 116, 18, "dw"); p.pill(108, 34, 30, 10, "dp"); },
 	"TEU-108": p => { p.ring(86, 38, 28, 22); p.pill(96, 54, 64, 10, "dw"); },
@@ -51,7 +51,7 @@ export function cardDetail(card, story) {
 
 // ---------- Bento tiles and the title ----------
 const TILES = {
-	sessions(p) { p.rect(14, 26, 192, 148, 6, "dp"); p.rect(22, 44, 160, 56, 6, "dw"); p.rect(28, 100, 148, 22, 0, "df"); p.rect(28, 130, 148, 40, 6, "dw"); p.rect(10, 32, 80, 22, 5, "dw"); },
+	sessions(p) { p.rect(14, 26, 192, 148, 6, "dp"); p.rect(22, 44, 160, 56, 6, "dw"); p.rect(28, 104, 148, 20, 0, "df"); p.rect(28, 130, 148, 40, 6, "dw"); p.rect(10, 32, 80, 22, 5, "dw"); },
 	artifacts(p) { p.rect(118, 24, 96, 64, 4, "dp"); p.rect(12, 92, 92, 70, 4, "dp"); p.rect(62, 50, 112, 92, 5, "dw"); p.rect(66, 54, 104, 60, 3, "dp"); },
 	chat(p) { p.rect(26, 24, 168, 16, 5, "df"); p.rect(16, 44, 188, 36, 6, "dw"); p.circle(33, 62, 9); p.rect(26, 86, 168, 28, 5, "df"); },
 	cost(p) { p.rect(16, 26, 188, 148, 6, "dw"); p.ring(58, 80, 30, 20); p.rect(100, 50, 98, 60, 4, "df"); p.pill(24, 150, 176, 8); },

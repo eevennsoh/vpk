@@ -3,6 +3,7 @@
 import { pen } from "./eu26-face-pen.mjs";
 
 const inset = (w, h) => Math.max(10, Math.min(w, h) * 0.12);
+export const pieceInset = inset;
 const card = (p, w, h) => p.rect(0, 0, w, h, 14, "dw");
 
 const LAYOUTS = {
