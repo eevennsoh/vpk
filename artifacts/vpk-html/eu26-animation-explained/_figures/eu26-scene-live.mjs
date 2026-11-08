@@ -543,10 +543,26 @@ export function live(ctx) {
 			// name flag alike, and the flag rides below and right of the tip. A press dips the arrow to 0.9 about its tip and sends
 			// one accent ripple out; there is no ring held under a grip. It grows with the card it holds (perspective).
 			const fit = cursor.role === "teammate" ? Math.max(0.55, Math.min(1, displayHeight / 640)) : 1;
-			const size = unit * (1 - cursor.pressed * 0.1) * (cursor.scale ?? 1) * fit;
-			const pillW = cursor.name ? (cursor.name.length * 6.3 + 14) : 0, pillH = cursor.name ? 19 : 0;
-			const reachRight = Math.max(18, cursor.name ? 11 + pillW : 0) * size, reachDown = Math.max(18, cursor.name ? 15 + pillH : 0) * size, reachUp = 4 * size;
-			const margin = Math.min(tip[0] - 4 * unit - (cx - width / 2), cx + width / 2 - tip[0] - reachRight, tip[1] - reachUp - (cy - height / 2), cy + height / 2 - tip[1] - reachDown);
+			// Arrow and flag scale apart (motionConfig.cursor, matched to teu26.mp4); the press dips only the arrow.
+			const CURSOR = { arrow: 2.3, flag: 1.8, ...(data.motion?.cursor ?? {}) };
+			const base = unit * (cursor.scale ?? 1) * fit, size = base * CURSOR.arrow * (1 - cursor.pressed * 0.1), flag = base * CURSOR.flag, rest = base * CURSOR.arrow;
+			const pill = el.querySelector("[data-eu26-cursor-pill]"), label = el.querySelector("[data-eu26-cursor-name]");
+			// The flag hugs its name: the text is measured once per name at 11 units (then scaled with the flag) and padded 7 units
+			// each side, so the gaps left and right of the name are equal for every roster name.
+			const nameWidth = name => {
+				if (label.__eu26Width?.name === name) return label.__eu26Width.width;
+				label.setAttribute("font-size", "11");
+				label.textContent = name;
+				let width = 0;
+				try { width = label.getComputedTextLength(); } catch { width = 0; }
+				if (!(width > 0)) width = name.length * 6.3;
+				else if (doc.fonts?.status !== "loading") label.__eu26Width = { name, width };
+				return width;
+			};
+			const pillW = cursor.name && label ? nameWidth(cursor.name) + 14 : 0, pillH = cursor.name ? 19 : 0;
+			const reachRight = Math.max(18 * rest, cursor.name ? 11 * rest + pillW * flag : 0), reachDown = Math.max(18 * rest, cursor.name ? 15 * rest + pillH * flag : 0), reachUp = 4 * rest;
+			const reachLeft = 4 * unit;
+			const margin = Math.min(tip[0] - reachLeft - (cx - width / 2), cx + width / 2 - tip[0] - reachRight, tip[1] - reachUp - (cy - height / 2), cy + height / 2 - tip[1] - reachDown);
 			const attached = cursor.heldTarget || cursor.phase === "release";
 			const inside = margin >= 0, alpha = cursor.alpha * (attached ? 1 : Math.max(0, Math.min(1, margin / (18 * unit))));
 			// A hand carrying its card in from off the frame crosses the edge with it; it counts as clipped only once it is over the slot.
@@ -562,20 +578,20 @@ export function live(ctx) {
 			const pressed = cursor.pressed;
 			// stageshow's SolidArrow (M4 3 18.5 9.6 11.8 11.8 9.6 18.5Z), relative to its hotspot at 4,3.
 			const points = [[0, 0], [14.5, 6.6], [7.8, 8.8], [5.6, 15.5]].map(([x, y]) => [tip[0] + x * size, tip[1] + y * size]);
-			const pill = el.querySelector("[data-eu26-cursor-pill]"), label = el.querySelector("[data-eu26-cursor-name]");
 			if (pill && label) {
 				const shown = Boolean(cursor.name);
 				pill.style.display = label.style.display = shown ? "" : "none";
 				if (shown) {
-					const top = tip[1] + 15 * size;
-					pill.setAttribute("x", (tip[0] + 11 * size).toFixed(3));
+					const top = tip[1] + 15 * rest, leftEdge = tip[0] + 11 * rest;
+					pill.setAttribute("x", leftEdge.toFixed(3));
 					pill.setAttribute("y", top.toFixed(3));
-					pill.setAttribute("width", (pillW * size).toFixed(3));
-					pill.setAttribute("height", (pillH * size).toFixed(3));
-					pill.setAttribute("rx", (6 * size).toFixed(3));
-					label.setAttribute("x", (tip[0] + 18 * size).toFixed(3));
-					label.setAttribute("y", (top + 13.4 * size).toFixed(3));
-					label.setAttribute("font-size", (11 * size).toFixed(3));
+					pill.setAttribute("width", (pillW * flag).toFixed(3));
+					pill.setAttribute("height", (pillH * flag).toFixed(3));
+					pill.setAttribute("rx", (6 * flag).toFixed(3));
+					label.setAttribute("text-anchor", "middle");
+					label.setAttribute("x", (leftEdge + pillW * flag / 2).toFixed(3));
+					label.setAttribute("y", (top + 13.4 * flag).toFixed(3));
+					label.setAttribute("font-size", (11 * flag).toFixed(3));
 					if (label.textContent !== cursor.name) label.textContent = cursor.name;
 				}
 			}
@@ -587,7 +603,7 @@ export function live(ctx) {
 			const ripple = 4 * pressed * (1 - pressed);
 			ring.setAttribute("cx", tip[0].toFixed(3));
 			ring.setAttribute("cy", tip[1].toFixed(3));
-			ring.setAttribute("r", ((4 + 14 * (1 - Math.abs(1 - 2 * pressed))) * unit).toFixed(3));
+			ring.setAttribute("r", ((4 + 14 * (1 - Math.abs(1 - 2 * pressed))) * rest).toFixed(3));
 			ring.style.opacity = ripple.toFixed(3);
 			ring.style.display = ripple > 0.02 ? "" : "none";
 		}

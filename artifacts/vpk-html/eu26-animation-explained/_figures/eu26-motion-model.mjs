@@ -4,10 +4,15 @@ export const motionConfig = {
 	wall: { start: 27, velocity: [-32, 0], repeatX: 3 },
 	// The source's arrivals (finale-wall-motion.ts): a card waits in the air above its slot and comes down as its slot's
 	// leading edge crosses its own line, DESCEND_FROM + DESCEND_SPAN * hash entry reaches in from the frame's right edge.
-	arrival: { from: 0.45, span: 0.7, reachShare: 0.16, edgeWidth: 300, descendS: 0.95, handoff: 0.6, faceUp: 0.072, dealS: 0.09 },
+	// reachShare 0.3 (the source's 0.16 starved the portrait two-column figure to ~15 carried cards per 103 s; 0.3 gives ~34,
+	// landscape ~49, with up to 3 teammates on screen at once).
+	arrival: { from: 0.45, span: 0.7, reachShare: 0.3, edgeWidth: 300, descendS: 0.95, handoff: 0.6, faceUp: 0.072, dealS: 0.09 },
 	// finale-wall-cursors.ts: a teammate's hand glides in over ENTER_S (--duration-slowest), rides at least RIDE_S, leaves over
 	// LEAVE_S (--duration-slower) fading by --duration-medium, stays CURSOR_MARGIN inside the frame and rests LANE_REST_S.
 	hand: { enter: 0.6, ride: 0.2, leave: 0.4, fade: 0.2, margin: 8, rest: 0.15, apart: 16, lift: 8, grow: 0.03, tilt: 0.03, swing: 0.3, bow: 0.2 },
+	// Cursor scale against stageshow's 16px arrow and 19px name flag, matched to teu26.mp4: at 1080 px the arrow stands about
+	// 36 px (a third of a small tile). The name pill stands at least as tall as the arrow there (19 x 1.8 = 34 flag units vs 15.5 x 2.3 = 36 arrow units); taller pills stop fitting the portrait frame while they ride.
+	cursor: { arrow: 2.3, flag: 1.8 },
 	// FINALE_WALL_CURSOR_NAMES: teammates set arriving cards down in this order, repeating after the last name.
 	names: ["Venn", "Eduardo", "Jason", "Vohmann", "Charlie", "Carola", "Harry", "Sofia", "Jannis"],
 };
@@ -206,7 +211,7 @@ export function model(input, data) {
 	const aspect = options.aspect ?? lastCamera.width / lastCamera.height;
 	const viewHalf = lastCamera.height * aspect / 2 / projectionScale, viewHalfY = lastCamera.height / 2 / projectionScale;
 	// The source measures its arrival lines in reference-card reaches from the right edge; a reach is a share of the frame width.
-	const reachLine = (A.reachShare ?? 0.16) * viewHalf * 2;
+	const reachLine = (A.reachShare ?? 0.3) * viewHalf * 2;
 	const inOut = u => { const v = clamp(u); return v < 0.5 ? 4 * v * v * v : 1 - (-2 * v + 2) ** 3 / 2; };
 	const outPractical = u => 1 - (1 - clamp(u)) ** 3, easeIn = u => clamp(u) ** 3;
 	// A slot's line (its own place across the frame) and fall time are constants of the slot and the frame size.
@@ -221,7 +226,13 @@ export function model(input, data) {
 	const worldPerPx = lastCamera.height / (options.displayHeight ?? 828) / projectionScale, marginWorld = HAND.margin * worldPerPx;
 	// Like the source (which sizes its cursors by the stage fit), teammate cursors shrink on small frames.
 	const cursorFit = Math.max(0.55, Math.min(1, (options.displayHeight ?? 828) / 640)), fitPx = worldPerPx * cursorFit;
-	const pillBox = () => ({ left: -7 * fitPx, right: 74 * fitPx, top: -7 * fitPx, bottom: 37 * fitPx });
+	const CURSOR = { arrow: 2.3, flag: 1.8, ...(data.motion?.cursor ?? {}) };
+	// The flag sits at (11, 15) arrow units from the tip, always below-right, and holds the longest roster name (58 flag
+	// units by 19). A hold whose flag would leave the frame is not planned.
+	const pillBox = (_above, flagLeft = false) => {
+		const reach = (11 * CURSOR.arrow + 63 * CURSOR.flag) * fitPx, top = -4 * CURSOR.arrow * fitPx, bottom = (15 * CURSOR.arrow + 22 * CURSOR.flag) * fitPx;
+		return flagLeft ? { left: -(63 * CURSOR.flag + 2 * CURSOR.arrow) * fitPx, right: 16 * CURSOR.arrow * fitPx, top, bottom } : { left: -4 * CURSOR.arrow * fitPx, right: reach, top, bottom };
+	};
 	const bandOf = y => Math.min(2, Math.max(0, Math.floor((y + viewHalfY) / (viewHalfY * 2) * 3)));
 	const BANDS = [{ reach: -Math.PI / 2 - 0.4, above: false }, { reach: 0.35, above: false }, { reach: Math.PI / 2 + 0.4, above: false }];
 	const offFrame = (box, angle) => {
@@ -240,15 +251,24 @@ export function model(input, data) {
 		const y = wrap(origin[1] + shift[1], lastCamera.at[1], periodY) - lastCamera.at[1];
 		const phase = (((30 + (line - (origin[0] - lastCamera.at[0] + edgeOffset(card)) - steady) / velocityX) % loopSeconds) + loopSeconds) % loopSeconds;
 		const band = BANDS[bandOf(y)], reach = band.reach + (random(i, 43) - 0.5) * 2 * HAND.swing, bow = (random(i, 44) - 0.5) * 2 * HAND.bow;
+		const fits = flagLeft => {
+			for (let tau = 0; tau <= fall + 1e-9; tau += fall / 8) {
+				const x = centreAtLine - speed * tau, p = pillBox(band.above, flagLeft);
+				if (x + p.left < -viewHalf + marginWorld || x + p.right > viewHalf - marginWorld || y + p.top < -viewHalfY + marginWorld || y + p.bottom > viewHalfY - marginWorld) return false;
+			}
+			return true;
+		};
+		// The name always rides below-right of the tip; a hold whose flag would leave the frame is not taken.
+		const flagLeft = fits(false) ? false : null;
+		if (flagLeft === null) return null;
 		const box = (tau, extra = 0) => {
-			const x = centreAtLine - speed * tau, p = pillBox(band.above), grown = 1 + HAND.grow;
+			const x = centreAtLine - speed * tau, p = pillBox(band.above, flagLeft), grown = 1 + HAND.grow;
 			return { left: Math.min(x - card.w * grown / 2, x + p.left) - extra, right: Math.max(x + card.w * grown / 2, x + p.right) + extra, top: Math.min(y - card.d * grown / 2, y + p.top) - extra, bottom: Math.max(y + card.d * grown / 2, y + p.bottom) + extra };
 		};
-		// While it is on the card (from crossing to touchdown, at least RIDE_S) the cursor and its pill stay inside the margin.
+		// While it is on the card (from crossing to touchdown, at least RIDE_S) the cursor and its pill stay inside the margin
+		// (fits, above); the card it holds stays wholly in the frame too while it is set down.
 		for (let tau = 0; tau <= fall + 1e-9; tau += fall / 8) {
-			const x = centreAtLine - speed * tau, p = pillBox(band.above);
-			if (x + p.left < -viewHalf + marginWorld || x + p.right > viewHalf - marginWorld || y + p.top < -viewHalfY + marginWorld || y + p.bottom > viewHalfY - marginWorld) return null;
-			// The card it holds stays wholly in the frame too while it is set down.
+			const x = centreAtLine - speed * tau;
 			const halfW = card.w * (1 + HAND.grow) / 2, halfD = card.d * (1 + HAND.grow) / 2;
 			if (x - halfW < -viewHalf || x + halfW > viewHalf || y - halfD < -viewHalfY || y + halfD > viewHalfY) return null;
 		}
@@ -256,7 +276,7 @@ export function model(input, data) {
 		// In from wholly off the frame, card and all (the card is carried in, never seen on its own), and back off it after.
 		const enterDistance = offFrame(box(-HAND.enter), reach) + HAND.apart;
 		const leaveDistance = offFrame(box(fall + HAND.leave), reach) + HAND.apart;
-		return { i, phase, fall, reach, bow, above: band.above, enterDistance, leaveDistance, landAt: [centreAtLine - speed * fall, y] };
+		return { i, phase, fall, reach, bow, above: band.above, flagLeft, enterDistance, leaveDistance, landAt: [centreAtLine - speed * fall, y] };
 	});
 	// Lanes: the three teammates take holds in arrival order, each resting LANE_REST_S between holds, two cursors never near each
 	// other. Planned over two passes so the loop's wrap is accounted for; the second pass is the one every loop plays.
@@ -340,7 +360,8 @@ export function model(input, data) {
 		const marginX = (card.w * Math.abs(Math.sin(azimuth)) + card.d * Math.abs(Math.cos(azimuth))) * scale * projectionScale / 2 + 12;
 		const marginY = (card.w * Math.abs(Math.cos(azimuth)) + card.d * Math.abs(Math.sin(azimuth))) * Math.sin(elevation) * scale * projectionScale / 2 + 12;
 		const visible = Math.abs(projected[0]) * projectionScale < camera.width / 2 + marginX && Math.abs(projected[1]) * projectionScale < camera.height / 2 + marginY;
-		const highlight = card.reserved === 0 ? 1 : 0;
+		// The bento's first tile hands its orange to Team ’26 at 22.2 s, so its wall gap never re-lights: orange stays on the subject.
+		const highlight = 0;
 		const entryProgress = clamp((camera.width / 2 + marginX - projected[0] * projectionScale) / (marginX * 2));
 		const enteringRight = time >= wallStart && visible && projected[0] * projectionScale > camera.width / 2 - marginX;
 		const arriving = Boolean(arrival && arrival.since >= -HAND.enter && arrival.since < arrival.fall + 0.75);
@@ -444,8 +465,9 @@ export function model(input, data) {
 		const held = after < 0, phase = held ? (arrival.since < -HAND.enter + 0.1 ? "grab" : "carry") : after <= 0.12 ? "release" : "leave";
 		return {
 			id: actor.id, role: "teammate", phase, target, heldTarget: held ? target : null, at: [contact[0] + away[0], contact[1] + away[1], contact[2]],
-			pressed: held ? 1 : 1 - ease(after / 0.12), alpha: 1 - ease(after / HAND.fade), grip, frameShare: held ? 1 : 0,
-			name: arrival.name, pillAbove: arrival.hold.above, scale: posed.scale, entering: arrival.since < 0,
+			// A hand is never shown on a card that is not drawn (still culled off the frame as it is carried in).
+			pressed: held ? 1 : 1 - ease(after / 0.12), alpha: (held && posed.alpha <= 0.002 ? 0 : 1) * (1 - ease(after / HAND.fade)), grip, frameShare: held ? 1 : 0,
+			name: arrival.name, pillAbove: arrival.hold.above, flagLeft: Boolean(arrival.hold.flagLeft), scale: posed.scale, entering: arrival.since < 0,
 		};
 	})];
 		const doneEffect = { trace: ease((time - 10.8) / 1.1), sweep: ease((time - 11.9) / 1.1), alpha: ease((time - 10.8) / 0.14) * (1 - ease((time - 12.8) / 0.3)) };

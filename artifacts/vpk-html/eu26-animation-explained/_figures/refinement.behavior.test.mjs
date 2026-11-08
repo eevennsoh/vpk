@@ -218,10 +218,13 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 					const before = snapshot();
 					draw(time + .001);
 					const after = snapshot();
+					// A card a teammate is carrying in moves fast by design; only resting cards can show a recycle jump.
+					const captured = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(captured);
+					const carried = new Set((captured.detail.state?.wall ?? []).map((pose, index) => pose?.arrival && (captured.detail.state.time ?? time) < pose.arrival.touchdown ? 'wall.' + index : null).filter(Boolean));
 					let moving = 0;
 					for (const [key, previous] of before) {
 						const next = after.get(key);
-						if (!next) continue;
+						if (!next || carried.has(key)) continue;
 						const delta = Math.hypot(previous.x - next.x, previous.y - next.y);
 						// A recycle jump would move a card hundreds of pixels; carried cards legitimately move a pixel or so per 2 ms.
 						if (delta > 2) failures.push('visible recycle jump: ' + key + ' at ' + time);
