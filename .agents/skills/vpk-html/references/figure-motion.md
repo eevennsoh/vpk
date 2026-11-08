@@ -214,13 +214,25 @@ cameraKeys: [
 ],
 ```
 
-- **Keep one anchor fixed across a move.** Choose the subject (the cone row, the room’s back wall, the dragged card) and keep its screen position within a few percent while the lens and dolly change around it. Too little: the subject slides with the camera and the move reads as a pan. Too much: a frozen subject over a lurching background reads as a glitch.
-- **Change one thing per move.** Each reference move changes focal length, or turns the box, or reshapes the frame, never all three. The tell: you cannot name the one thing a move changes.
+- **Lock every compound move on its anchor.** Name the subject the move is about (the Done column, the hero card, the title tile), then let zoom, turn, tilt and target change together only while that anchor’s projected centre stays within 3% of the frame width and height for the whole move. Solve the target per frame from the anchor rather than adding keys: `lockCameraKeys` in `eu26-motion-model.mjs` turns a key’s `lock: [x, y, z]` into the target that keeps the point’s share of the frame, and `model()` re-aims inside the lens spread every frame. Where the end pose needs the anchor somewhere else, split the move: a locked snap, a short hold, then a pan snap that changes only the target.
+
+```js
+// From eu26-motion-model.mjs: move the target in the screen plane until the anchor projects at `goal`.
+const u = [sin(az), -cos(az), 0], v = [cos(az) * sin(el), sin(az) * sin(el), -cos(el)]; // screen x, screen y
+const [sx, sy] = screenOf(camera, anchor);
+camera.at = camera.at.map((c, i) => c + (sx - goal[0]) * u[i] + (sy - goal[1]) * v[i]);
+// goal = the anchor's screen offset at the move's start × width(t) / width(start), divided by the lens spread.
+```
+
+  GOOD: EU26 board → drop is a 0.35 s zoom and turn with the Done column held to 0%, a 0.15 s hold, then a 0.35 s pan that centres it. BAD: one 0.41 s move that zooms, turns and recentres at once, so the Done column slides 16.5% of the frame width. The tell: pause on the middle frame and the subject is somewhere neither key put it.
+- **Hold a deep perspective once, at the story’s turn.** One held pose with a strong lens marks the act where the story changes scale; every other pose stays flat. Open only the focal length into it, with the anchor at the frame centre (the lens spreads about the target, so a centred anchor cannot drift). Too little: a lens so mild that the held pose reads as flat. Too much: a second deep pose, or a deep wall or board, so depth stops meaning anything.
+
+  GOOD: EU26 holds `persp: 0.65` over the settled card field, from the paper cards becoming a field until the camera crosses to the hero card (16.2–17.4 s, 0.7 s real), with board, bento and wall flat. BAD: perspective that only appears as mid-move bloom, or 0.3, which reads as a tilt. The tell: in a 0.1 s strip, the ground grid converges in exactly one held run of frames.
 - **Swap the illustration style as a layer, never with a cut.** A palette or fill change (camera3) runs on the same camera time; fills cross-fade, line work stays put.
 - **Let the frame join the choreography only when the reference does.** Reshaping or skewing the figure container and letting a near object break its edge (camera4) are strong moves; use them once, at the act they mark, and only with a reference frame that shows them.
 - **Land on flat.** Every reference ends a sequence on a flat frontal pose, and the EU26 wall is flat by the user’s call. A held deep pose belongs in the middle of a sequence.
 
-Calibrate against the EU26 figure (`cameraKeys` in `eu26-hero.hero.mjs`): every move runs 0.6-0.75 model seconds, 0.35-0.44 s at `playbackRate` 1.7, and each pose then holds at least as long (it once ran 1.2-4.4 model seconds, 0.7-2.6 s). Its one held deep pose opens the lens to `persp: 0.3` over the settled card field (16.2-17.4 s) with nothing else changing, around the hero card; the field’s depth sort stays cycle-free there (a 0.05 s scan of `data-hero-depth-cycles` from 0 to 34 s reads 0 throughout), and the sequence lands flat on the frontal wall. The line weight and fills these references share (one even hairline, flat fills, no gradients) are owned by [figure-fidelity.md](figure-fidelity.md); this section owns only how the camera moves.
+Calibrate against the EU26 figure (`cameraKeys` in `eu26-hero.hero.mjs`): every move runs 0.6–0.7 model seconds, 0.35–0.41 s at `playbackRate` 1.7, and each pose then holds (it once ran 1.2–4.4 model seconds, 0.7–2.6 s). Eight moves hold their anchor at 0% drift: seven through `lock`, and the lens move because its anchor sits at the frame centre. Three pans move only the target: board → drop, the field to the hero card, and the bento recentre. The field’s depth sort stays cycle-free at `persp` 0.65 (a 0.05 s scan of `data-hero-depth-cycles` from 0 to 34 s reads 0 throughout), and the sequence lands flat on the frontal wall. The line weight and fills these references share (one even hairline, flat fills, no gradients) are owned by [figure-fidelity.md](figure-fidelity.md); this section owns only how the camera moves.
 
 GOOD: hold flat 0.8 s, snap 0.4 s into a low wide pose, hold it 1.2 s, snap back to flat. BAD: a 2.5 s move that eases continuously from one pose to the next. The tell: no two consecutive 0.1 s frames are identical, so the viewer never gets a still picture to read.
 
