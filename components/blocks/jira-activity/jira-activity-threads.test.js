@@ -735,13 +735,13 @@ test("thread connectors branch only inside discussions while the spine continues
 	assert.equal(stems.length, 1);
 	assert.equal(thread.contains(stems[0]), true);
 	assert.equal(stems[0].classList.contains("bg-bg-accent-gray-subtler"), true);
-	assert.equal(visibleBranches().length, 2, "collapsed toggle and latest reply each get one branch");
+	assert.equal(visibleBranches().length, 1, "only the latest reply branches from the timeline");
 	assert.equal(visibleBranches().at(-1).parentElement.querySelector("[data-jira-activity-thread-continuation]") === null, true);
 	assert.equal(visibleBranches().every((branch) => branch.getAttribute("aria-hidden") === "true"), true);
 	await view.click(view.getByRole("button", { name: "Show more replies" }));
-	assert.equal(visibleBranches().length, 3);
-	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
 	assert.equal(visibleBranches().length, 2);
+	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
+	assert.equal(visibleBranches().length, 1);
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Show more replies" })), true);
 	await view.click(view.getAllByRole("button", { name: "Reply" }).at(-1));
 	assert.equal(standalone.querySelector("[data-jira-activity-thread-stem]") !== null, true);
