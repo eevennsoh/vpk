@@ -51,7 +51,7 @@ const FEED_ROWS = [
  * page-colored separator behind each face, which shows as a white rim on the thread's hover plate.
  */
 function ReplyFaces({ replies }: Readonly<{ replies: readonly JiraActivityReply[] }>) {
-	const actors = [...new Map(replies.map((reply) => [reply.actor.id, reply.actor])).values()].slice(-3);
+	const actors = [...new Map(replies.map((reply) => [reply.actor.id, reply.actor])).values()].slice(-3).reverse();
 	return (
 		<span aria-label={`Reply participants: ${actors.map((actor) => actor.name).join(", ")}`} className="flex shrink-0 gap-0.5" role="group">
 			{actors.map((actor) => actor.kind === "person" ? (
