@@ -6,14 +6,17 @@ Contents: [Set these first](#set-these-constants-before-you-copy-a-fence) · [1 
 
 ## Set these constants before you copy a fence
 
-Set these first: every fence in § 2–7 reads them by name and holds nothing else to swap. The last column is the worked EU26 example; § 7’s sweep adds its own rows.
+Set these first: every fence in § 2–7 reads them by name and holds nothing else to swap. The last column is the worked EU26 example; § 7’s sweep sets its own constants in its table. `<slug>` in a path is your artifact’s slug.
 
 | Name | Fences | Set to | EU26 worked example |
 | --- | --- | --- | --- |
 | `ROUTE` | § 2 | the production route you port | `"/jira-team-eu26-end"` |
 | `SEEK_QUERY` | § 2 | a function of `t` returning the route’s query that freezes it at `t` seconds; with none, the route is not a reference (§ 2) | ``t => `?finale=${t}&hold` `` |
-| `TIMES`, `MOVES` | § 2, § 3 | your 3 reference times and your camera-move starts, in seconds (the shell fences take `TIMES` zero-padded) | `[2, 13, 27]`, `[22]` |
-| `MODES` | § 3 | your story modes after the [story modes](story-modes.md) rename; an unrenamed kit says `story, slides, twitter, video` | `page, carousel, lifeline, theater` |
+| `TIMES`, `MOVES` | § 2, § 3 | your reference times and your camera-move starts, in seconds; the sheet’s tile count is the number of `TIMES` | `[2, 13, 27]`, `[22]` (sh: `"2 13 27"`, `"22"`) |
+| frame name | § 2, § 3 | fixed, never swapped: `t` plus the time in tenths of a second, 3 digits, so names sort in time order. js `pad(t)`, sh `frame $t` | `t020.png`, `t130.png`, `t270.png` |
+| `VIEWPORTS` | § 3 | the capture sizes; the sheet fence takes their widths as `WIDTHS` | `[[1440, 900], [390, 844]]` (sh: `"1440 390"`) |
+| `CO`, `CR` | § 3 | one surface’s rectangle as ffmpeg `crop=w:h:x:y` fractions of the image, `CO` in yours and `CR` in the reference; pick both once on the first time’s pair | `"crop=iw*.40:ih*.20:iw*.30:ih*.45"`, `"crop=iw*.30:ih*.25:iw*.50:ih*.40"` |
+| `MODES` | § 3 | your page’s mode ids, page mode first (the figure crops come from it): `page, carousel, lifeline, theater` after the [story modes](story-modes.md) rename | `story, slides, twitter, video` (the EU26 page predates the rename) |
 | `SEEK_FN` | § 3, § 7 | the name of the window global with a synchronous `seek(seconds)` and `getState()`; the copied kit (`_layout/`, `build-explorer.mjs`, per [story modes](story-modes.md)) keeps the EU26 name, so only a hand-built page changes it | `"__eu26Explorer"` |
 | `ROOT_SELECTOR` | § 3, § 4, § 6, § 7 | `[data-vpk-figure="<your hero id>"]`, the id your build writes on the hero root | `'[data-vpk-figure="eu26-hero"]'` |
 | `CHAPTERS`, `TRANSITIONS` | § 7 | your steps’ `time` values, and the instants either side of each hand-off | `[0, 2, 4, 6, 8, 10, 13, 16, 19, 22, 25]`, `[14.1, 14.15, 20.4]` |
@@ -38,9 +41,10 @@ Set these first: every fence in § 2–7 reads them by name and holds nothing el
 | One thumbnail frame per chapter | A 0.1 s strip across each move, so timing and arcs show, and one surface cropped at native scale (§ 3) |
 
 ```sh
+TIMES="2 13 27"; MOVES="22"  # set first; EU26 values shown
 REF=reference.mp4; OUT=output/vpk-html/<slug>/frames/ref; mkdir -p "$OUT"
-TIMES="02 13 27"; MOVES="22"  # set first; EU26 values shown
-for t in $TIMES; do ffmpeg -v error -ss "$t" -i "$REF" -frames:v 1 "$OUT/t$t.png"; done  # zero-padded: sheets sort in time order
+frame() { awk -v t="$1" 'BEGIN { printf "t%03d", t * 10 + 0.5 }'; }  # 2.2 s -> t022: names sort in time order
+for t in $TIMES; do ffmpeg -v error -y -ss "$t" -i "$REF" -frames:v 1 "$OUT/$(frame "$t").png"; done
 for m in $MOVES; do ffmpeg -v error -ss "$m" -t 1 -i "$REF" -vf "fps=10,scale=320:-2,tile=10x1" -frames:v 1 "$OUT/strip-${m}s.png"; done  # 0.1 s strip
 ```
 
@@ -58,7 +62,7 @@ const ROUTE = "/jira-team-eu26-end";
 const SEEK_QUERY = t => `?finale=${t}&hold`;
 const TIMES = [2, 13, 27], MOVES = [22]; // chapter times and camera-move starts, in seconds
 const OUT = "output/vpk-html/<slug>/frames/ref";
-const pad = (t) => String(Math.round(t * 10)).padStart(3, "0"); // t022 = 2.2 s, sorts in time order
+const pad = (t) => String(Math.round(t * 10)).padStart(3, "0"); // frame name: 2.2 s -> t022, sorts in time order
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const shot = async (t, file) => {
@@ -87,13 +91,14 @@ import { chromium } from "@playwright/test";
 import { pathToFileURL } from "node:url";
 
 // Set first (EU26 values shown):
-const MODES = ["page", "carousel", "lifeline", "theater"];
-const TIMES = ["02", "13", "27"]; // the § 2 times, zero-padded
+const MODES = ["story", "slides", "twitter", "video"];
+const TIMES = [2, 13, 27]; // the § 2 times, in seconds
+const VIEWPORTS = [[1440, 900], [390, 844]]; // 2 columns from 1024 px, stacked below
 const SEEK_FN = "__eu26Explorer";
 const ROOT_SELECTOR = '[data-vpk-figure="eu26-hero"]';
 const FILE = "artifacts/vpk-html/<slug>/<slug>.html";
 const OUT = "output/vpk-html/<slug>/frames/ours";
-const VIEWPORTS = [[1440, 900], [390, 844]]; // 2 columns from 1024 px, stacked below
+const pad = (t) => String(Math.round(t * 10)).padStart(3, "0"); // frame name, as in § 2
 const painted = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
 const browser = await chromium.launch();
@@ -110,12 +115,12 @@ for (const [width, height] of VIEWPORTS) {
 					window.__vpkStory.setMode(m);
 					if (document.querySelector('[data-vpk-story]').dataset.storyMode !== m) throw new Error(`mode ${m} did not apply`);
 					window[fn].seek(s);
-				}, [mode, Number(t), SEEK_FN]);
+				}, [mode, t, SEEK_FN]);
 				await page.evaluate(painted);
-				await page.screenshot({ path: `${OUT}/page-${mode}-w${width}-${theme}-t${t}.png` });
-				if (mode === "page" && width === 1440) {
+				await page.screenshot({ path: `${OUT}/page-${mode}-w${width}-${theme}-t${pad(t)}.png` });
+				if (mode === MODES[0] && width === VIEWPORTS[0][0]) { // figure crops come from the first mode at the first viewport
 					const figure = page.locator(ROOT_SELECTOR);
-					await figure.screenshot({ path: `${OUT}/fig-${theme}-t${t}.png` });
+					await figure.screenshot({ path: `${OUT}/fig-${theme}-t${pad(t)}.png` });
 				}
 			}
 		}
@@ -125,31 +130,35 @@ for (const [width, height] of VIEWPORTS) {
 await browser.close();
 ```
 
-Build the contact sheets next. Pick one surface’s rectangle once on the t02 pair, as fractions of each image, and reuse both at every time. Each sheet row is one theme, light over dark, times left to right.
+Build the contact sheets next. Pick one surface’s rectangle once on the first time’s pair, as fractions of each image (`CO`, `CR`), and reuse both at every time. Each sheet row is one theme, light over dark, times left to right.
 
 ```sh
-cd output/vpk-html/<slug>/frames
-TIMES="02 13 27"; MODES="page carousel lifeline theater"  # set first; EU26 values shown
+# set first; EU26 values shown
+TIMES="2 13 27"; MODES="story slides twitter video"; WIDTHS="1440 390"
 CO="crop=iw*.40:ih*.20:iw*.30:ih*.45"   # the surface in ours
 CR="crop=iw*.30:ih*.25:iw*.50:ih*.40"   # the same surface in the reference
+cd output/vpk-html/<slug>/frames
+frame() { awk -v t="$1" 'BEGIN { printf "t%03d", t * 10 + 0.5 }'; }  # as in § 2
+N=$(echo $TIMES | wc -w | tr -d ' ')  # one tile per reference time
 for th in light dark; do
 	for t in $TIMES; do
-		ffmpeg -v error -y -i "ours/fig-$th-t$t.png" -i "ref/t$t.png" \
-			-filter_complex "[0]scale=-2:480[a];[1]scale=-2:480[b];[a][b]hstack" "pair-$th-t$t.png"
-		ffmpeg -v error -y -i "ours/fig-$th-t$t.png" -i "ref/t$t.png" \
-			-filter_complex "[0]$CO,scale=-2:480[a];[1]$CR,scale=-2:480[b];[a][b]hstack" "crop-$th-t$t.png"
+		f=$(frame "$t")
+		ffmpeg -v error -y -i "ours/fig-$th-$f.png" -i "ref/$f.png" \
+			-filter_complex "[0]scale=-2:480[a];[1]scale=-2:480[b];[a][b]hstack" "pair-$th-$f.png"
+		ffmpeg -v error -y -i "ours/fig-$th-$f.png" -i "ref/$f.png" \
+			-filter_complex "[0]$CO,scale=-2:480[a];[1]$CR,scale=-2:480[b];[a][b]hstack" "crop-$th-$f.png"
 	done
 done
 sheet() {
 	for th in light dark; do
-		ffmpeg -v error -y -pattern_type glob -i "$1-$th-t*.png" -vf tile=3x1 -frames:v 1 "row-$th.png"
+		ffmpeg -v error -y -pattern_type glob -i "$1-$th-t*.png" -vf "tile=${N}x1" -frames:v 1 "row-$th.png"
 	done
 	ffmpeg -v error -y -i row-light.png -i row-dark.png -filter_complex vstack "sheet-$2.png"
 }
 sheet pair reference
 sheet crop crops
 for m in $MODES; do
-	for w in 1440 390; do sheet "ours/page-$m-w$w" "$m-w$w"; done
+	for w in $WIDTHS; do sheet "ours/page-$m-w$w" "$m-w$w"; done
 done
 ```
 
@@ -215,7 +224,7 @@ Motion is a pure function of time, so sweep the model in Node at 0.05 s and asse
 | --- | --- | --- |
 | `HERO` | `eu26-animation-explained/_figures/eu26-hero.hero.mjs` | `<slug>/_figures/<your hero module>`, the module the build points at |
 | `START`, `END` | `27`, `130` s | the first and last second of the chapters your invariant covers; `0` to `data.duration` sweeps the whole figure |
-| `variant` | `"paper"` | a variant your hero’s `data.variants` lists |
+| `VARIANT` | `"paper"` | a variant your hero’s `data.variants` lists |
 | the loop body | wall cards airborne only while a cursor carries them | the property your figure must always hold, written against your model’s state |
 
 ```js
@@ -223,11 +232,12 @@ import assert from "node:assert/strict";
 
 const HERO = "eu26-animation-explained/_figures/eu26-hero.hero.mjs"; // swap: your hero module
 const START = 27, END = 130; // swap: the window your invariant covers, in seconds
+const VARIANT = "paper"; // swap: a variant your hero’s data.variants lists
 const { data, model } = await import(new URL(`../../../artifacts/vpk-html/${HERO}`, import.meta.url));
 let airborneSamples = 0;
 for (let k = 0; k <= Math.round((END - START) / 0.05); k++) {
 	const time = START + k * 0.05;
-	const state = model({ time, variant: "paper" }, data);
+	const state = model({ time, variant: VARIANT }, data);
 	state.wall.forEach((card, index) => {
 		const airborne = card.alpha > .02 && card.at[2] > 1e-3; // off the wall plane, so not riding the wall scroll
 		const carried = state.cursors.some(c => c.heldTarget?.kind === "wall" && c.heldTarget.index === index);
