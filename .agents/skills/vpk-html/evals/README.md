@@ -18,7 +18,7 @@ Never write results into the skill folder or `artifacts/`. Save each run; never 
 
 ## Measure recall on near misses, precision on guards and siblings
 
-The vpk-html description says “Use only when”, so `run-triggers.mjs` scores it as explicit-only: literal `invoke` rows are reported but leave the recall headline. Recall comes from `near-miss-positive` rows, false positives from `guard` and `sibling` rows. `--with-skills .agents/skills` installs the project siblings (vpk-explain, vpk-artifact, vpk-build) beside vpk-html in the `/tmp` sandbox, so the sibling rows compete as they do in the repo.
+The vpk-html description says “Use only when”, so `run-triggers.mjs` scores it as explicit-only: literal `invoke` rows are reported but leave the recall headline. Recall comes from `near-miss-positive` rows, false positives from `guard` and `sibling` rows. `--with-skills .agents/skills` installs the project siblings (vpk-explain, vpk-artifact, vpk-build) beside vpk-html in the `/tmp` sandbox, so only the vpk-* sibling rows compete as they do in the repo. The other three name global winners the flag does not install: hyperframes and frontend-design compete only on a machine that has them as user skills (`~/.claude/skills`, which `claude -p` loads in any directory), and dataviz is not a user skill there, so its row tests only that vpk-html stays silent. Each of those rows says so in its `note`.
 
 ```sh
 node ~/.agents/skills/create-skill/scripts/run-triggers.mjs .agents/skills/vpk-html --with-skills .agents/skills --out "$ROUND" --runs 3

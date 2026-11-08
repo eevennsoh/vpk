@@ -2,8 +2,6 @@
 
 Owner of editorial document patterns for [SKILL.md](../SKILL.md). Load when you place assets, metadata, long docs or spreads in an editorial template.
 
-This reference distills the editorial research pass into reusable document-pattern decisions for vpk-html. Use it when choosing or adapting one of the editorial document templates added in WP5.
-
 ## Pick the pattern by the reader’s task
 
 | Pattern | When to use | Concrete CSS moves | Templates using it |

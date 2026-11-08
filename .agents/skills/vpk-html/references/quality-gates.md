@@ -2,7 +2,7 @@
 
 Owner of the advisory content-quality gates for [SKILL.md](../SKILL.md). Load when you run a `--check-*` gate, read a gate finding, or tune `checks-thresholds.json`. Proving a figure against production is [verification](verification.md).
 
-Contents: Run gates on filled artifacts · Fix each finding in the page · Check by hand what no gate catches yet · Audit engine figures · Check lab and film documents · Tune thresholds
+Contents: [Run gates on filled artifacts](#run-gates-on-filled-artifacts-never-raw-templates) · [Fix each finding in the page](#fix-each-finding-in-the-page-not-in-the-report) · [Story-explainer checks](#story-explainer-checks-in-check-html-and-the-three-left-by-hand) · [Audit engine figures](#audit-engine-figures-with---check-iso-and---check-figures) · [Check lab and film documents](#check-lab-and-film-documents-with-kitmjs---check) · [Tune thresholds](#tune-thresholds-for-a-document-class-never-for-one-page)
 
 The gates are heuristics on the same headless-Chromium DOM that `--verify` opens (`scripts/gates.mjs`). They never modify the artifact and only warn; `--strict` makes a finding exit 1. Thresholds live in `references/checks-thresholds.json`.
 
@@ -45,19 +45,26 @@ A figure camera move timed from the production reference can exceed 300ms and wa
 
 The tell: a finding closed with no change to the page and no line under Not verified.
 
-## Check by hand what no gate catches yet
+## Story-explainer checks in check-html, and the three left by hand
 
-These story-explainer checks are planned for `check-html.mjs` but not yet in any script. Until they land, run the manual check and report each one under Not verified.
+`check-html.mjs` runs four checks on any page whose `<body>` carries `data-vpk-layout="story"` (`scripts/check-html-story.mjs`, tests in `check-html-story.test.mjs`). Each is a failure, not a warning.
 
-| Planned id | Catches | Check by hand |
+| Id | Fails on | Fix |
 | --- | --- | --- |
-| `rail-title` | A reading control tooltip set with `title` | `grep -n ' title="' <file>` inside the rail; tooltips use `data-tip` ([accessibility](accessibility.md#name-icon-buttons-with-aria-label-and-show-the-tooltip-from-data-tip)) |
-| `figure-text` | Text in a product-UI scene outside the named exceptions | Count `<text>` per scene in the DOM ([figure fidelity § 2](figure-fidelity.md#2-no-text-in-product-ui-scenes-except-named-exceptions)) |
-| `duplicate-id` | Repeated element ids, often from snapshots without a scope | `document.querySelectorAll('[id]')` grouped by id, after thumbnails render |
-| `straight-apostrophe` | `'` or `"` in visible prose ([writing § Keep exactly](writing.md#keep-exactly)) | Search visible text nodes for `'` and `"` |
-| `inline-script-syntax` | A syntax error in an inline script | The `pageerror` line of the [verification § 5](verification.md#5-filter-every-command-on-error) filter |
-| `figure-ink-fill` | A figure fill above 42% ink, or solid black | The token probe in [verification § 4](verification.md#4-check-dark-theme-at-the-same-times) |
-| `figure-copy-scope` | Thumbnails or snapshots outside the colour scope | The dark page sheet ([figure fidelity § 4](figure-fidelity.md#4-copies-outside-the-root-share-the-colour-scope)) |
+| `rail-title` | A `button`, `a`, `summary`, `label`, `input` or `select` with a `title=` tooltip | `aria-label` plus `data-tip` ([accessibility](accessibility.md#name-icon-buttons-with-aria-label-and-show-the-tooltip-from-data-tip)) |
+| `duplicate-id` | One id on two elements in the static markup (templates, scripts and comments excluded) | Prefix each copy’s ids with its scope |
+| `straight-apostrophe` | `'` or `"` (or its entity) in a visible text node or a `data-tip`; `pre`, `code`, `kbd`, `samp` and `textarea` keep their quotes ([writing § Keep exactly](writing.md#keep-exactly)) | `’`, `“`, `”` |
+| `inline-script-syntax` | A classic inline script that does not parse | Fix the script; a straight quote inside a quoted string is the usual cause |
+
+A script cannot hold these three from the HTML file, so check them by hand and report each under Not verified:
+
+| Check | Catches | Why no script holds it | Check by hand |
+| --- | --- | --- | --- |
+| `figure-text` | Text in a product-UI scene outside the named exceptions | Scenes are drawn at run time by figure modules (the EU26 page’s 12 `data-vpk-figure` hosts hold no static `<text>`), and the exceptions are selectors in the brief, so only the rendered DOM can be tested | Your behaviour test asserts it ([figure fidelity § 2](figure-fidelity.md#2-no-text-in-product-ui-scenes-except-named-exceptions)) |
+| `figure-ink-fill` | A figure fill above 42% ink, or solid black | Fills resolve from tokens per theme at run time | The token probe in [verification § 4](verification.md#4-check-dark-theme-at-the-same-times) |
+| `figure-copy-scope` | Thumbnails or snapshots outside the colour scope, and ids they repeat | The copies exist only after the runtime renders them | The dark page sheet ([figure fidelity § 4](figure-fidelity.md#4-copies-outside-the-root-share-the-colour-scope)), plus `document.querySelectorAll('[id]')` grouped by id |
+
+A module script (`type="module"`) is not parsed by `inline-script-syntax`; the `pageerror` line of the [verification § 5](verification.md#5-filter-every-command-on-error) filter catches its syntax errors.
 
 ## Audit engine figures with --check-iso and --check-figures
 

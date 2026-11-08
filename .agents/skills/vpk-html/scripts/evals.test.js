@@ -69,6 +69,26 @@ test("evaluation corpus rejects duplicate ids and incomplete reader jobs", async
 	assert.match(issues.join("\n"), /reader_job\.deep_audit/);
 });
 
+test("the story-kit template is valid only for a story-explainer scenario", async () => {
+	const { validateEvalCorpus, STORY_KIT } = await loadEvals();
+	const scenario = (id, category) => ({
+		id,
+		name: `s${id}`,
+		category,
+		template: STORY_KIT,
+		prompt: "/vpk-html Build a two-column story explainer from the supplied notes.",
+		expected_output: "A single offline HTML story explainer.",
+		files: [],
+		viewport: { width: 1440, height: 900 },
+		reader_job: { quick_read: "Follow the story.", deep_audit: "Check the figure." },
+		expectations: ["The output is a single HTML file."],
+		human_rubric: ["The figure matches the reference."],
+	});
+	const issues = validateEvalCorpus({ version: 1, skill_name: "vpk-html", evals: [scenario(1, "story-explainer"), scenario(2, "brief")] }, { minimumEvalCount: 2, skillRoot: SKILL_ROOT }).join("\n");
+	assert.doesNotMatch(issues, /evals\[0\]\.template/);
+	assert.match(issues, /template "story-kit" is only for category "story-explainer"/);
+});
+
 test("catalog documentation check reports stale generated counts", async () => {
 	const { validateCatalogSnapshot } = await loadEvals();
 	const documents = {

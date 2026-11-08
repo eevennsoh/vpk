@@ -4,7 +4,7 @@ Owner of the landing track for [SKILL.md](../SKILL.md). Load when you derive a l
 
 The document path produces one offline single file. The **landing track** is for screen-first product pages and docs sites, which have different needs: they live on the web, may load remote assets (analytics, OG images), and ship **companion files** (sitemap, robots, llms.txt, vercel.json).
 
-This mode is opt-in and tightly scoped. A landing page is marked `data-vpk-landing="true"` on `<html>`, exactly parallel to the `data-vpk-upstream-demo` opt-in. That attribute loosens **only** the remote-asset and external-stylesheet checks in `check-html.mjs`. Every other offline invariant still applies: embedded fonts, the dark-mode token block, a `<main>` landmark, accessibility markers, and no unresolved `{{...}}`. The default document path is unaffected: without the attribute, the strict single-file rules hold.
+A landing page is marked `data-vpk-landing="true"` on `<html>`, exactly parallel to the `data-vpk-upstream-demo` opt-in. That attribute loosens **only** the remote-asset and external-stylesheet checks in `check-html.mjs`. Every other offline invariant still applies: embedded fonts, the dark-mode token block, a `<main>` landmark, accessibility markers, and no unresolved `{{...}}`. The default document path is unaffected: without the attribute, the strict single-file rules hold.
 
 ## Start from one of two generated shells
 

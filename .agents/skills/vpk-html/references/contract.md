@@ -4,7 +4,9 @@ Owner of the contract, the content IR and the definition of done for [SKILL.md](
 
 Contents: [Lock seven contract fields before any HTML](#lock-seven-contract-fields-before-any-html) · [Question budget](#question-budget) · [Figure engine](#figure-engine) · [Content IR](#content-ir) · [Each mode locks its own brief fields](#each-mode-locks-its-own-brief-fields) · [After two rounds on one element, show variants](#after-two-rounds-on-one-element-show-variants) · [Definition of done](#definition-of-done) · [Playbooks](#playbooks)
 
-The contract makes the agent’s plan explicit before any HTML is written, and the definition of done makes the closing message honest. The content IR records the contract and the supplied facts beside the artifact, so a check can prove the page kept them. The contract and definition-of-done wording are adapted from kami (MIT).
+The content IR records the contract and the supplied facts beside the artifact, so a check can prove the page kept them.
+
+Credits: the contract and definition-of-done wording are adapted from kami (MIT).
 
 ## Lock seven contract fields before any HTML
 
@@ -26,14 +28,16 @@ A template’s playbook can add items, for example the film source and labs of a
 
 ## Question budget
 
-Ask at most one compact question, and only when two or more of purpose, audience, hard constraints or success cannot be inferred, when the figure engine is open, or when a product-UI or animation port has no production video. When both are open, ask for both in that one question. **Asking ends the turn**: wait for the answer before drafting figures. When you ask, end the message with the rest of the contract as one line in the usual format (all seven fields, including the length/viewport target and the verification commands), with the engine marked open. When nothing needs asking, state the contract and continue; adjust if the user pushes back.
+Ask at most one compact question, and only when two or more of purpose, audience, hard constraints or success cannot be inferred, when the figure engine is open, or when a product-UI or animation port has neither a production video nor a production route to capture from ([verification § 2](verification.md#reference-is-a-live-route)). When both are open, ask for both in that one question. **Asking ends the turn**: wait for the answer before drafting figures. When you ask, end the message with the rest of the contract as one line in the usual format (all seven fields, including the length/viewport target and the verification commands), with the engine marked open. When nothing needs asking, state the contract and continue; adjust if the user pushes back.
 
 | Open at contract lock | → Your turn |
 |---|---|
 | Nothing, or only one of purpose, audience, constraints, success | → state the contract line and keep going |
 | Two or more of purpose, audience, constraints, success | → one compact question, then stop |
 | The figure engine, technical figures planned | → the engine question from Figure engine, then stop |
-| A product-UI or animation port with no production video | → ask for the video; with the engine also open, both in one question |
+| A product-UI or animation port with neither a production video nor a production route | → ask for the video; with the engine also open, both in one question |
+
+With nobody to ask (evals, automation), a missing video never stalls the run: use the supplied route, or failing that the supplied source, as the reference, list “no production video” under **Not verified** in the [Definition of done](#definition-of-done) and continue.
 
 ## Figure engine
 
@@ -45,7 +49,7 @@ This section holds the only copy of the engine question. Ask it when the plan in
 
 When you ask, say which planned figure each option would draw and what the others become. With the anatomy hero alone, the other figures are static diagrams.
 
-With nobody to ask (evals, automation, the backend report generator), use the iso kit: write `figure_engine: "iso-kit"` and `figure_engine_source: "default"` in the brief, and list the choice in `assumptions` and in DoD item 3. Exception: a story explainer’s scrubbed figure defaults to `anatomy-hero` (`figure_engine_source: "default"`), because only the hero module takes `model({ time })`.
+With nobody to ask (evals, automation, the backend report generator), use the iso kit: write `figure_engine: "iso-kit"` and `figure_engine_source: "default"` in the brief, and list the choice in `assumptions` and under **Not verified** in the [Definition of done](#definition-of-done). Exception: a story explainer’s scrubbed figure defaults to `anatomy-hero` (`figure_engine_source: "default"`), because only the hero module takes `model({ time })`.
 
 **Engine record.** Record it in the `vpk-figure-engine` meta; values and the `both` rule live in [figure engines](figure-engines.md). An absent meta means `none`. Engine roots carry `data-vpk-engine="iso-kit"` or `"anatomy-hero"`, `data-vpk-figure="<id>"` (`^[a-z][a-z0-9-]{0,39}$`) and `data-vpk-camera="45 30"`:
 
@@ -82,7 +86,7 @@ A worked example that passes full coverage against a shipped demo: `references/s
 | Field | Rule |
 | --- | --- |
 | `reader_job` (required) | `{ quick_read, deep_audit }`, each 1–240 characters |
-| `template` (required) | `x.html` or `x`; must exist in `assets/templates/`. A story explainer records `template: "code-understanding.html"` and `figure_engine: "anatomy-hero"`; its layout comes from the story kit |
+| `template` (required) | `x.html` or `x`; must exist in `assets/templates/`. A story explainer records `template: "code-understanding.html"` and `figure_engine: "anatomy-hero"`; its layout comes from the story kit. evals.json names this deliverable `story-kit`; the sidecar still records `code-understanding.html`, because B1 requires a file in `assets/templates/` |
 | `formats` (required) | 1–7 of `html, pdf, landing, github, artifacts, gist, mp4`; includes `html` |
 | `acceptance_checks` (required) | the verification commands (field 7) |
 | `audience`, `length_target`, `narrative` | short strings |
@@ -143,13 +147,7 @@ node .agents/skills/vpk-html/scripts/build.mjs --check-content <file.html|conten
 
 **Review round.** Run `build.mjs --review <files> <artifact> --format json` (`vpk-review-tasks/1`) and work one task at a time: `brief.target.element` = `[data-vpk-id="<blockId>"]` (or the quote when `blockId` is null); `brief.target.surface` = the artifact basename; viewport and theme from the comment’s `layout` field, else "any" and "light"; `brief.preserve` = the block ids of the other open tasks; `brief.evidence` = the saved `--review` output. Finish with the printed `--stamp … --addresses <ids>`. See [review loop](review-loop.md).
 
-| Situation | `review.runtime` |
-|---|---|
-| Interactive; the request mentions reviewers, comments, feedback, sign-off, approval, "share for review", or decisions for others to answer | `true`; say "review runtime on" in the contract line, never ask just for this |
-| Interactive, none of the above | `false`; offer `--inject-review` in one closing line |
-| Non-interactive (evals, the work-item report generator, automation) | `false` unless the prompt asks for a reviewable document |
-| The document has decision blocks | `true` (decisions capture nothing without the runtime) |
-| `return_paths` | omit it: all four ship, and Send appears only when a VPK host answers |
+Set `review.runtime` per [review loop § When the runtime ships](review-loop.md#when-the-runtime-ships-contract-field-6).
 
 ## After two rounds on one element, show variants
 
@@ -165,7 +163,7 @@ A template that reaches step 3, or gets an eval finding, earns a playbook.
 
 This section owns the closing reply; [SKILL.md § Phase F](../SKILL.md#phase-f-deliver) points here. Close with these six headings, in order:
 
-1. **Changed**: the path and size of every deliverable, `<slug>.content.json` included. Flag the HTML when check-html warns that it exceeds the 1.57 MB data-URL budget.
+1. **Changed**: the path and size of every deliverable, `<slug>.content.json` included. Flag the HTML when check-html warns that it exceeds the [data-URL budget](production.md#size-budget).
 2. **Frames shown**: the sheet and strip paths of [verification § 9](verification.md#9-show-frames-before-you-claim-done), or "none".
 3. **Checks run**: each command run in this session and its result, plus whether the prose passed the [writing](writing.md) review checklist. Never report a check you did not run.
 4. **Not verified**: every skipped step, `[DATA NEEDED]` gap, assumption (a defaulted figure engine included), open finding and `warn` line.

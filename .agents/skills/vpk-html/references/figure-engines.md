@@ -22,7 +22,7 @@ Record the engine in one meta tag. The question that picks it lives in [contract
 | Interaction | select, explode, step or scrub, no tour | a slider (pointer, keys, idle tour) or live-owned input | per figure | each figure’s own pointer answer (riffle also takes arrow keys); no `play` tour |
 | Labels | diagrams: short leaders ending in an ink dot (numbered gutter tags on narrow stages); product-UI scenes: no text ([figure-fidelity.md § 2](figure-fidelity.md)) | nothing inside the drawing; plate corners and legend only outside story explainers ([paper-system.md](paper-system.md)) | per engine | none in the drawing; a mono readout under it |
 
-Part-count tiers (`figures.parts`): § 2 step 1. With nobody to ask, use the iso kit.
+Part-count tiers (`figures.parts`): § 2 step 1. With nobody to ask, default per [contract § Figure engine](contract.md#figure-engine).
 
 ## 2. Anatomy hero workflow
 

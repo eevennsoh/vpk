@@ -2,15 +2,30 @@
 
 Owner of how you prove a vpk-html artifact for [SKILL.md](../SKILL.md). Load when you validate a figure (Phase E), port a production video or its source, or hear “too detailed”, “too dark” or “not true to production”.
 
-Contents: 1 Order · 2 Reference frames · 3 Your frames · 4 Dark theme · 5 Error filter · 6 Wheel scroll · 7 Time sweeps · 8 Baselines · 9 Show frames · 10 Complaints
+Contents: [Swap constants](#swap-the-eu26-constants-before-you-copy-a-fence) · [1 Order](#1-prove-the-work-in-this-order) · [2 Reference frames](#2-extract-reference-frames-before-you-draw) · [3 Your frames](#3-capture-your-frames-at-the-reference-times) · [4 Dark theme](#4-check-dark-theme-at-the-same-times) · [5 Error filter](#5-filter-every-command-on-error) · [6 Wheel scroll](#6-scroll-to-the-end-with-the-wheel-not-seek) · [7 Time sweeps](#7-sweep-time-for-invariants) · [8 Baselines](#8-keep-test-baselines-honest) · [9 Show frames](#9-show-frames-before-you-claim-done) · [10 Complaints](#10-map-each-user-complaint-to-its-cause)
+
+## Swap the EU26 constants before you copy a fence
+
+The scripts in § 2–7 are the worked EU26 example. Swap these constants everywhere they appear; § 7 lists the sweep-only ones.
+
+| EU26 constant | Where | Substitute |
+| --- | --- | --- |
+| `"/jira-team-eu26-end"` (`ROUTE`) | § 2 | the production route you port |
+| `?finale=${t}&hold` | § 2 | that route’s seek query that freezes it at `t` seconds; with none, the route is not a reference (§ 2) |
+| `window.__eu26Explorer` (`seek`, `getState`) | § 3, § 7 | keep it: the copied kit (`_layout/`, `build-explorer.mjs`, per [story modes](story-modes.md)) exposes the explorer under this name, so only a hand-built page swaps in its own global with a synchronous `seek(seconds)` |
+| `window.__vpkStory.setMode(m)` | § 3 | keep it; it is the kit’s mode switch |
+| `[data-vpk-figure="eu26-hero"]` | § 3, § 4, § 6, § 7 | `[data-vpk-figure="<your hero id>"]`, the id your build writes on the hero root |
+| `MODES` `page, carousel, lifeline, theater` | § 3 | keep them after the [story modes](story-modes.md) rename; an unrenamed kit says `story, slides, twitter, video` |
+| `TIMES` `02, 13, 27`, `MOVES` `22` and the chapter list | § 2, § 3, § 7 | your 3 reference times, your camera-move starts and your steps’ `time` values |
+| the printed shade values | § 4 | your figure’s own print; the rule (dark sides at or below the dark top) holds for any figure |
 
 ## 1. Prove the work in this order
 
 ```
 1 reference frames on disk, before you draw; show them with your plan     § 2  (no reference: skip; page sheets still pair light and dark)
 2 --verify + check-html, Error-filtered                                     § 5
-3 figure beside reference, crops, 0.1 s strips; a page sheet per touched mode; light and dark   § 3-4
-4 wheel-scroll test to the end of the page; time-sweep invariants          § 6-7
+3 figure beside reference, crops, 0.1 s strips; a page sheet per touched mode (story explainer) or the page sheets (template document); light and dark   § 3-4, § 9
+4 wheel-scroll test to the end of the page; time-sweep invariants (pages with a scroll-driven figure only)   § 6-7
 5 show the sheets, then stop and wait for the user’s call                  § 9
 ```
 
@@ -27,11 +42,40 @@ for t in 02 13 27; do ffmpeg -v error -ss "$t" -i "$REF" -frames:v 1 "$OUT/t$t.p
 ffmpeg -v error -ss 22 -t 1 -i "$REF" -vf "fps=10,scale=320:-2,tile=10x1" -frames:v 1 "$OUT/strip-22s.png"  # 0.1 s strip
 ```
 
-The tell: you can’t name the reference timestamp a shape came from. The video decides what appears and the source supplies the numbers ([figure motion § Match the production video first](figure-motion.md#match-the-production-video-first)). Use Homebrew `ffmpeg`; Playwright’s bundled ffmpeg has no `fps` or `tile` filter. Evidence lives under `output/vpk-html/<slug>/`, never inside `artifacts/`.
+### Reference is a live route
+
+When the reference is a production route rather than a video file, freeze it at each time with its seek query (for `/jira-team-eu26-end` that is `?finale=<seconds>&hold`) and screenshot each frame. Capture the 3 reference times, then a 0.1 s strip of each camera move as 10 held loads from t to t+0.9, and tile the strip with the same ffmpeg `tile=10x1`. Run it headless outside the sandbox (§ 3) against this worktree’s dev origin from `pnpm ports`, from the repository root; save it as `output/vpk-html/<slug>/capture-ref.mjs`.
+
+```js
+import { chromium } from "@playwright/test";
+import { execFileSync } from "node:child_process";
+
+const ORIGIN = process.argv[2]; // this worktree’s dev origin from `pnpm ports`
+const ROUTE = "/jira-team-eu26-end", OUT = "output/vpk-html/<slug>/frames/ref";
+const TIMES = [2, 13, 27], MOVES = [22]; // chapter times and camera-move starts, in seconds
+const pad = (t) => String(Math.round(t * 10)).padStart(3, "0"); // t022 = 2.2 s, sorts in time order
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+const shot = async (t, file) => {
+	await page.goto(`${ORIGIN}${ROUTE}?finale=${t}&hold`, { waitUntil: "networkidle" });
+	await page.waitForTimeout(500); // let the held frame settle
+	await page.screenshot({ path: `${OUT}/${file}` });
+};
+for (const t of TIMES) await shot(t, `t${pad(t)}.png`);
+for (const m of MOVES) {
+	for (let i = 0; i < 10; i++) await shot(+(m + i / 10).toFixed(1), `strip-${m}s-${i}.png`);
+	execFileSync("ffmpeg", ["-v", "error", "-y", "-start_number", "0", "-i", `${OUT}/strip-${m}s-%d.png`, "-vf", "scale=320:-2,tile=10x1", "-frames:v", "1", `${OUT}/strip-${m}s.png`]);
+}
+await browser.close();
+```
+
+Start the dev server first (`pnpm run dev:tmux:start`). A route with no seek query is not a reference: ask for the video, or with nobody to ask record it under Not verified ([contract § Question budget](contract.md#question-budget)).
+
+The tell: you can’t name the reference timestamp a shape came from. The video or route decides what appears and the source supplies the numbers ([figure motion § Match the production video first](figure-motion.md#match-the-production-video-first)). Use Homebrew `ffmpeg`; Playwright’s bundled ffmpeg has no `fps` or `tile` filter. Evidence lives under `output/vpk-html/<slug>/`, never inside `artifacts/`.
 
 ## 3. Capture your frames at the reference times
 
-Run headless Playwright outside the sandbox: inside it Chromium dies with an AppKit SIGTRAP, and a hidden desktop Browser pane throttles `requestAnimationFrame` to about 1 Hz. Save as `output/vpk-html/<slug>/capture.mjs` and run it from the repository root.
+This script is for story explainers (it loops over modes); a template document uses `build.mjs --screenshot` per § 9. Run headless Playwright outside the sandbox: inside it Chromium dies with an AppKit SIGTRAP, and a hidden desktop Browser pane throttles `requestAnimationFrame` to about 1 Hz. Save as `output/vpk-html/<slug>/capture.mjs` and run it from the repository root.
 
 ```js
 import { chromium } from "@playwright/test";
@@ -139,7 +183,7 @@ run node --test <suites>
 
 ## 6. Scroll to the end with the wheel, not `seek()`
 
-Scroll-driven figures clamp time at the last chapter; the EU26 endless wall froze there, and every `seek()` test still passed. The tell: the behaviour suite never calls `mouse.wheel` or scrolls the page. For a figure with an idle clock, also assert the timeline holds while render time advances ([figure motion § An idle clock](figure-motion.md#an-idle-clock-runs-on-top-of-scrolled-time)).
+Run this only on a page with a scroll-driven figure; a template document skips it. Scroll-driven figures clamp time at the last chapter; the EU26 endless wall froze there, and every `seek()` test still passed. The tell: the behaviour suite never calls `mouse.wheel` or scrolls the page. For a figure with an idle clock, also assert the timeline holds while render time advances ([figure motion § An idle clock](figure-motion.md#an-idle-clock-runs-on-top-of-scrolled-time)).
 
 ```js
 const stage = '[data-vpk-figure="eu26-hero"] svg.iso-svg'; // the live stage, not a thumbnail
@@ -156,7 +200,7 @@ if ((await frame()) === before) throw new Error("figure stopped moving at the en
 
 ## 7. Sweep time for invariants
 
-Motion is a pure function of time, so sweep the model in Node at 0.05 s and assert what must always hold. Save as `output/vpk-html/<slug>/sweep.mjs`; the import resolves from there. The example is the EU26 wall invariant, so swap its constants before you run it:
+Motion is a pure function of time, so sweep the model in Node at 0.05 s and assert what must always hold. Save as `output/vpk-html/<slug>/sweep.mjs`; the import resolves from there. The example is the EU26 wall invariant, so swap its constants before you run it (the explorer global and hero selector are in [Swap the EU26 constants](#swap-the-eu26-constants-before-you-copy-a-fence)):
 
 | Constant | EU26 value | Substitute |
 | --- | --- | --- |
@@ -165,7 +209,6 @@ Motion is a pure function of time, so sweep the model in Node at 0.05 s and asse
 | `variant` | `"paper"` | a variant your hero’s `data.variants` lists |
 | the loop body | wall cards airborne only while a cursor carries them | the property your figure must always hold, written against your model’s state |
 | the chapter, transition and even times below | EU26 chapter times, `14.1`, `14.15`, `20.4` | your steps’ `time` values, the instants either side of each hand-off, and 36 even times |
-| `window.__eu26Explorer`, `[data-vpk-figure="eu26-hero"]` | the EU26 explorer and hero | your explorer global and hero selector |
 
 ```js
 import assert from "node:assert/strict";
@@ -222,9 +265,16 @@ node --test --test-concurrency=1 <file>   # run a long real-time suite alone: a 
 
 ## 9. Show frames before you claim done
 
-**Stop.** Show each mode’s sheet and the 0.1 s strip of every move you changed, then wait for the user’s call. Done means `frames/` holds `sheet-reference.png` and `sheet-crops.png` when a reference exists, plus `sheet-<mode>-w1440.png` and `sheet-<mode>-w390.png` for every touched mode, each in light and dark at the 3 reference times or, with no reference, 3 chapter starts, you looked at each pair at 1× and at a crop, and every check you report ran in this session. If the user says they will verify it, or `VPK_VERIFY=manual` is set, stop browser checks and report NOT VERIFIED with each skipped step. Without rendered frames in both themes at both widths, close with “build verified, visuals unconfirmed” plus each skipped step, never “done”.
+**Stop.** Show each mode’s sheet and the 0.1 s strip of every move you changed, then wait for the user’s call. Done means `frames/` holds the sheets of the row below that matches the page, you looked at each pair at 1× and at a crop, and every check you report ran in this session.
 
-Verdict words: VERIFIED when the user saw every sheet above; NOT VERIFIED when the build passed but visuals are unconfirmed, including a user or `VPK_VERIFY=manual` opt-out; INCONCLUSIVE when a check could not run.
+| Page | Sheets in `output/vpk-html/<slug>/frames/` |
+| --- | --- |
+| Story explainer (modes and chapters) | `sheet-reference.png` and `sheet-crops.png` when a reference exists, plus `sheet-<mode>-w1440.png` and `sheet-<mode>-w390.png` for every touched mode, each in light and dark at the 3 reference times or, with no reference, 3 chapter starts |
+| Template document (no modes, no chapters) | The output of `build.mjs --screenshot artifacts/vpk-html/<slug>/<slug>.html --out output/vpk-html/<slug>/frames`: `<slug>-light-<W>.png`, `<slug>-dark-<W>.png`, `<slug>-light-390.png` and `<slug>-dark-390.png`, where `<W>` is the width of `brief.viewport` (default 1440) |
+
+For either page: if the user says they will verify it, or `VPK_VERIFY=manual` is set, stop browser checks and report NOT VERIFIED with each skipped step. Without rendered frames in both themes at both widths, close with “build verified, visuals unconfirmed” plus each skipped step, never “done”.
+
+Verdict words: VERIFIED when the user saw every sheet above; NOT VERIFIED when the build passed but visuals are unconfirmed, including a user or `VPK_VERIFY=manual` opt-out and an unattended run with nobody to ask (list the sheet paths under Frames shown and “no user review” under Not verified); INCONCLUSIVE when a check could not run.
 
 | Wrong | Right |
 | --- | --- |

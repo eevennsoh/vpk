@@ -33,11 +33,11 @@ cp -r .agents/skills/vpk-html "$ROUND/baseline-skill"   # before you edit: this 
 | Wrong | Right |
 | --- | --- |
 | Reroll the candidate until it wins | One first attempt each; a loss is data |
-| Claim the skill improved from one win | Run 5 per side; report the median and range of each graded value; record a gap smaller than the range as “no measurable difference” |
+| Claim the skill improved from one win | Run 3 per side; report the median and range of each graded value; record a gap smaller than the range as “no measurable difference” |
 
 The tell: a losing run that was replaced rather than counted.
 
-This exceeds create-skill’s 3-run Generator floor on purpose: figure scores vary more than prose scores.
+This is create-skill’s 3-run Generator floor. Figure scores vary more than prose scores, so when the two sides’ ranges overlap on a figure value, add 2 runs per side before you call the gap. A scenario with no run on one side backs no claim; list it under “not run” in the round’s `grading.json`.
 
 1. Snapshot the skill with the commands above before you edit it.
 2. Hold the scenario prompt, inputs, model and viewport fixed. Append the scenario’s viewport from `evals.json` to each run prompt; the prompts do not carry it. Record skill revision and model beside each run. Generate one attempt from each.
@@ -48,7 +48,7 @@ This exceeds create-skill’s 3-run Generator floor on purpose: figure scores va
 6. Rerun affected scenarios after each correction. At milestones, run the full corpus against the saved baseline.
 
 Completion criterion:
-- [ ] Baseline and candidate ran on identical inputs, with no rerolls, and 5 per side behind any claim of improvement.
+- [ ] Baseline and candidate ran on identical inputs, with no rerolls, and 3 per side behind any claim of improvement (5 where figure ranges overlapped).
 - [ ] `review.md` or the viewer records a choice for every scenario.
 
 ## Grade in three layers

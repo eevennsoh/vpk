@@ -22,6 +22,8 @@ From 1024px every mode shares the columns of [paper system](paper-system.md) § 
 
 ## Copy the kit, then rename its mode ids
 
+The kit is repo-only: it lives in `artifacts/vpk-html/eu26-animation-explained/` and `build-explorer.mjs` imports VPK app code (`components/ui-custom/hooks/magnetic-proximity-model.ts`). When that folder is missing, as in a copy installed outside the VPK repository, say a story explainer needs the VPK repository, offer a template page instead, and stop before Phase C.
+
 Two rules hold throughout: never edit the originals in `eu26-animation-explained/`, and never run a blanket `sed s/story/page/`, which rewrites `data-vpk-layout="story"`, `layout === 'story'`, class names and APIs. The script below touches only quoted mode ids on lines that name a mode; the kit predates the ids above and still says `story`, `slides`, `twitter`, `video`.
 
 1. Copy the seven code files (`*.mjs`, `*.js`, `*.css`) in `artifacts/vpk-html/eu26-animation-explained/_layout/` into your artifact’s `_layout/`, and `_figures/build-explorer.mjs` and `_figures/story-content.mjs` into its `_figures/`.

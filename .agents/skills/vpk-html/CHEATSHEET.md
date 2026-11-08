@@ -6,7 +6,7 @@ The one intent → template, diagram and illustration lookup for [SKILL.md](SKIL
 
 | User intent | Route |
 |---|---|
-| Two-column explainer: text left, a figure right that scrubs with scroll | Copy the kit per [story modes](references/story-modes.md#copy-the-kit-then-rename-its-mode-ids); look per [paper system](references/paper-system.md); the sidecar records `template: "code-understanding.html"` and `figure_engine: "anatomy-hero"` |
+| Two-column explainer: text left, a figure right that scrubs with scroll | Copy the kit per [story modes](references/story-modes.md#copy-the-kit-then-rename-its-mode-ids); look per [paper system](references/paper-system.md); the sidecar fields are in [contract § Content IR](references/contract.md#content-ir) |
 | Read it as Slides, X Threads or Video | A mode of the same page: [story modes](references/story-modes.md) |
 | A slide deck with presenter view | A standalone deck: [Documents](#documents) or [Engineering templates](#engineering-templates) |
 | An X thread to approve and post | A standalone composer: [Documents](#documents) |

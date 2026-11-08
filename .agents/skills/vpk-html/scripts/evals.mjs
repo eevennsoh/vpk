@@ -12,6 +12,7 @@ const SKILL_ROOT = path.resolve(__dirname, "..");
 const DEFAULT_CORPUS_PATH = path.join(SKILL_ROOT, "evals", "evals.json");
 const CATALOG_SNAPSHOT_DOCUMENTS = ["README.md", "llms.txt"];
 const CATALOG_CLAIM_DOCUMENTS = [...CATALOG_SNAPSHOT_DOCUMENTS, "references/diagrams.md"];
+export const STORY_KIT = "story-kit";
 const SNAPSHOT_PATTERN = /vpk-html-catalog-counts:\s*templates=(\d+)\s+diagrams=(\d+)\s+demos=(\d+)/;
 const CATALOG_CLAIM_PATTERNS = {
 	templates: [
@@ -97,7 +98,10 @@ export function validateEvalCorpus(corpus, {
 		}
 		requireString(issues, entry.category, `${label}.category`);
 		requireString(issues, entry.template, `${label}.template`);
-		if (isNonEmptyString(entry.template)) {
+		if (entry.template === STORY_KIT) {
+			// Story explainers copy the repo-only story kit (references/story-modes.md), not a template.
+			if (entry.category !== "story-explainer") issues.push(`${label}.template "${STORY_KIT}" is only for category "story-explainer"`);
+		} else if (isNonEmptyString(entry.template)) {
 			if (path.basename(entry.template) !== entry.template || !entry.template.endsWith(".html")) {
 				issues.push(`${label}.template must be an HTML filename under assets/templates`);
 			} else if (!fs.existsSync(path.join(skillRoot, "assets", "templates", entry.template))) {

@@ -1,6 +1,6 @@
 # vpk-html
 
-> Offline, single-file HTML documents, led by two-column story explainers whose figure scrubs with the text (Page, Slides, X Threads, Video). Copy a template, fill it with supplied material, ship one file. Agents start at SKILL.md.
+> Offline, single-file HTML documents, including repo-only two-column story explainers whose figure scrubs with the text (Page, Slides, X Threads, Video). Copy a template, fill it with supplied material, ship one file. Agents start at SKILL.md.
 
 <!-- vpk-html-catalog-counts: templates=35 diagrams=61 demos=133 -->
 

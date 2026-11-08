@@ -38,9 +38,9 @@ export const LEGACY_TEMPLATES_WITHOUT_PLAYBOOK = html([
 ]);
 
 // Templates with no eval scenario yet. implementation-plan left with eval 8 (B2);
-// research-concept-explainer left with eval 9 (B3); code-understanding left with the story-explainer evals.
+// research-concept-explainer left with eval 9 (B3). code-understanding is back: the story-explainer evals copy the story kit (template "story-kit").
 export const LEGACY_TEMPLATES_WITHOUT_EVAL = html([
-	"annual-report", "broadsheet", "changelog", "code-review-pr", "component-variants",
+	"annual-report", "broadsheet", "changelog", "code-review-pr", "code-understanding", "component-variants",
 	"design-system", "editor-feature-flags", "editor-prompt-tuner", "editor-triage-board", "equity-report",
 	"exploration-visual-designs", "feature-essay", "flowchart-diagram", "incident-report",
 	"interview", "letter", "long-doc", "lookbook", "portfolio", "pr-writeup", "prototype-animation",

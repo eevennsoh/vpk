@@ -1,6 +1,6 @@
 {
 	"name": "vpk-html",
-	"description": "Builds offline, single-file HTML, led by two-column paper-system story explainers where the text scrolls on the left while an animated figure on the right scrubs with it, readable as Page, Slides, X Threads or Video. Also renders reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes and engineering pages from supplied material.",
+	"description": "Renders supplied material into offline, single-file HTML: reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes and engineering pages. Two-column story explainers are repo-only: their kit lives in the VPK repository under artifacts/vpk-html/eu26-animation-explained/ and imports VPK app code, so an installed copy outside that repository renders the templates only.",
 	"owner": {
 		"name": "Ee Venn Soh",
 		"email": "esoh@atlassian.com"
@@ -8,7 +8,7 @@
 	"plugins": [
 		{
 			"name": "vpk-html",
-			"description": "Builds offline, single-file HTML, led by two-column paper-system story explainers where the text scrolls on the left while an animated figure on the right scrubs with it, readable as Page, Slides, X Threads or Video. Also renders reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes and engineering pages from supplied material.",
+			"description": "Renders supplied material into offline, single-file HTML: reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes and engineering pages. Two-column story explainers are repo-only: their kit lives in the VPK repository under artifacts/vpk-html/eu26-animation-explained/ and imports VPK app code, so an installed copy outside that repository renders the templates only.",
 			"category": "documents",
 			"source": "./",
 			"homepage": "https://github.com/eevennsoh/vpk",

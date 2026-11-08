@@ -19,14 +19,16 @@ The tell: removing the paragraph loses no information.
 
 ## 2. Fabrication: every number has a source
 
-| Wrong | Right |
+The rows cover content you added yourself; supplied material renders as given.
+
+| Wrong (added by you) | Right |
 | --- | --- |
-| “Improved performance by 40%” with no source | Find the real number, or drop the quantity. |
+| “Improved performance by 40%” you added with no source | Find a primary source for the number, or drop the quantity. |
 | “Lewis et al. 2020” you never opened | Cite only papers you can link and have checked. |
 | “One customer said ‘This changed everything.’” | Use a real, attributed quote or paraphrase without quotes. |
 | A code example calling a function that does not exist | Check every API, function and flag against the codebase. |
 
-When data is missing, mark the gap: `[DATA NEEDED: revenue figures for Q2]`. The tell: a precise number with no link, file or date beside it.
+Who supplied a claim decides whether you verify it, render it as given or mark a gap: see [source policy § Decide by who supplied the claim](source-policy.md#decide-by-who-supplied-the-claim).
 
 ## 3. Mimicry: inherit the genre’s substance, not its surface
 
@@ -52,14 +54,14 @@ The tell: the reader scrolls past it.
 
 ## 5. Source gaps: date every currentness claim
 
-| Wrong | Right |
+| Wrong (added by you) | Right |
 | --- | --- |
 | “Uses the latest Postgres” | “Postgres 16.2, checked 2026-11-07.” |
 | “Recent papers show…” | Cite the paper, or drop the recency claim. |
 | “Raised $40M in March 2026” | Link the press release or remove the figure. |
 | “Costs $X per seat” | Verify and date it, or write “see the vendor’s pricing page”. |
 
-When a fact is uncertain, ask the user. The tell: “latest”, “recent” or “current” with no version or date.
+Who supplied a claim decides whether you verify it, render it as given or mark a gap: see [source policy § Decide by who supplied the claim](source-policy.md#decide-by-who-supplied-the-claim).
 
 ## 6. Tone contamination: hold the genre’s register
 
@@ -103,9 +105,9 @@ Spot these in captured light and dark frames before the user does. [Verification
 | Holds | Section |
 | --- | --- |
 | Every paragraph does work | [§ 1](#1-emptiness-every-paragraph-does-work) |
-| Every number, citation, version and date has a source | [§ 2](#2-fabrication-every-number-has-a-source) |
+| Every number you added has a primary source; supplied numbers render as given | [§ 2](#2-fabrication-every-number-has-a-source) |
 | It reads like a real example of its genre | [§ 3](#3-mimicry-inherit-the-genres-substance-not-its-surface) |
 | Every slot earns its space | [§ 4](#4-excess-a-template-slot-is-permission-not-a-requirement) |
-| Currentness claims carry a version or a check date | [§ 5](#5-source-gaps-date-every-currentness-claim) |
+| Currentness claims you added carry a version or a check date | [§ 5](#5-source-gaps-date-every-currentness-claim) |
 | The register holds end to end | [§ 6](#6-tone-contamination-hold-the-genres-register) |
 | No figure failure shows in light or dark frames | [§ 7](#7-figure-failures-the-corrections-users-have-had-to-make) |

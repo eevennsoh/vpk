@@ -2,7 +2,7 @@
 
 <!-- vpk-html-catalog-counts: templates=35 diagrams=61 demos=133 -->
 
-Offline, single-file HTML documents for the VPK monorepo, led by two-column story explainers whose figure scrubs with the text. **[See the index →](index.html)** Agents start at [SKILL.md](SKILL.md), whose hard rules set the look.
+Offline, single-file HTML documents for the VPK monorepo, including two-column story explainers whose figure scrubs with the text (repo-only: the story kit lives in `artifacts/vpk-html/eu26-animation-explained/`). **[See the index →](index.html)** Agents start at [SKILL.md](SKILL.md), whose hard rules set the look.
 
 vpk-html uses [kami’s](https://github.com/tw93/Kami) template-edit architecture: copy an HTML template, fill its `{{placeholders}}` with real content, and ship one self-contained file.
 
