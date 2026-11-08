@@ -154,3 +154,17 @@ test("starting a list session moves focus to its activity", async () => {
 	await new Promise((resolve) => setTimeout(resolve, 40));
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Claude: Working" })), true);
 });
+
+test("Jira List preview uses Butter data and restores edits on refresh", async () => {
+	const view = await renderComponent({ entry: "components/website/demos/blocks/jira-list-demo.tsx" });
+	assert.equal(Boolean(view.getByRole("button", { name: "Add agent to PAY-118" })), true);
+	assert.equal(Boolean(view.getByRole("button", { name: "Edit story points for PAY-118, no estimate" })), true);
+	await view.click(view.getByRole("button", { name: /Edit summary for PAY-118:/u }));
+	const summary = view.getByRole("textbox", { name: "Summary for PAY-118" });
+	await view.fill(summary, "Updated preview item");
+	await view.press(summary, "Enter");
+	assert.equal(view.container.textContent.includes("Updated preview item"), true);
+	await view.click(view.getByRole("button", { name: "Refresh work items" }));
+	assert.equal(view.container.textContent.includes("Updated preview item"), false);
+	assert.equal(view.container.textContent.includes("Carry card-artwork metadata"), true);
+});
