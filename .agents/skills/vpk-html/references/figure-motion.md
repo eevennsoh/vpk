@@ -4,7 +4,7 @@ Owner of time-driven figure motion for [SKILL.md](../SKILL.md). Load when a figu
 
 Contents: [video first](#match-the-production-video-first) · [pure time](#pose-is-a-pure-function-of-time) · [golden seeds](#stagger-with-golden-ratio-seeds) ·
 [reduced motion](#reduced-motion-holds-settled-states) · [seamless loops](#endless-loops-recycle-with-no-seam) ·
-[idle clock](#an-idle-clock-runs-on-top-of-scrolled-time) · [carried arrivals](#a-named-cursor-carries-every-arrival) · [cursors](#every-cursor-is-one-rounded-arrowhead) · [tile stories](#tiles-play-one-story-then-hold) · [lens bloom](#camera-moves-bloom-the-lens) · [handoffs](#handoffs-cross-fade-and-interpolate) · [collections](#collections-reflow-like-the-product)
+[idle clock](#an-idle-clock-runs-on-top-of-scrolled-time) · [carried arrivals](#a-named-cursor-carries-every-arrival) · [cursors](#every-cursor-is-one-rounded-arrowhead) · [tile stories](#tiles-play-one-story-then-hold) · [lens bloom](#camera-moves-bloom-the-lens) · [held poses](#snap-between-camera-poses-then-hold-them) · [handoffs](#handoffs-cross-fade-and-interpolate) · [collections](#collections-reflow-like-the-product)
 
 ## Match the production video first
 
@@ -205,6 +205,38 @@ for (let i = 0; i < 4; i++) {
 ```
 
 Cap a move with the key’s `lens` where tilted fans would overlap in a cycle. Too little: the camera slides flat. Too much: bloom past 0.55, so fans overlap and faces swap order mid-move. The tell: the depth-cycle count (`dataset.heroDepthCycles`, `eu26-scene-live.mjs:448`) rises above 0; [verification.md § 7](verification.md#7-sweep-time-for-invariants) owns the assertion.
+
+## Snap between camera poses, then hold them
+
+**Treat the camera as a short list of held poses joined by fast eased moves; hold each pose at least twice as long as the move into it.** The four camera references (`~/Desktop/camera.mp4`, `camera2.mp4`, `camera3.mp4`, `camera4.mp4`, measured from 0.1 s strips, 2026-11-08) never drift continuously: they hold, snap and hold again. A pose is a destination, so a key may carry its own `persp` (the term `lensBloom` adds to above) and hold a deep perspective as deliberately as a flat one.
+
+| Reference | Held poses | Move into the next pose | What carries the change |
+| --- | --- | --- | --- |
+| camera (street, 7 s) | Flat frontal, then a low wide one-point view with lines converging on one vanishing point | 0.3-0.4 s, ease in and out; holds 0.5-0.8 s with a slow drift | Focal length opens while the camera drops; the cone row stays at the bottom centre of the frame |
+| camera2 (rooms, 5.7 s) | A room box in one-point perspective, then the next room flat and frontal | 0.4 s quarter turn about the vertical axis, like a cube face turning | The box edge is the hinge; the landing pose is flat |
+| camera3 (subway, 9.4 s) | The same path as a full-colour pass, then a flat two-tone pass | Camera path unchanged across the swap | Fills and palette swap while geometry and camera stay continuous |
+| camera4 (gym, 15 s) | A deep symmetric one-point view | 0.5 s; the frame rectangle shrinks and skews while a foreground ball crosses the near plane | The frame shape and a near object move; the room holds still |
+
+```js
+// A held deep pose and a held flat pose, joined by short moves (model seconds; divide by playbackRate for wall time).
+cameraKeys: [
+	{ time: 0, ...flatFront },                           // hold flat
+	{ time: 0.8, ...flatFront },
+	{ time: 1.2, ...lowWide, persp: 0.45 },              // 0.4 s snap into a held perspective pose
+	{ time: 2.4, ...lowWide, persp: 0.45 },              // hold 1.2 s, three times the move
+	{ time: 2.8, ...nextFront },                         // 0.4 s snap back to flat; lensBloom still peaks mid-move
+],
+```
+
+- **Keep one anchor fixed across a move.** Choose the subject (the cone row, the room’s back wall, the dragged card) and keep its screen position within a few percent while the lens and dolly change around it. Too little: the subject slides with the camera and the move reads as a pan. Too much: a frozen subject over a lurching background reads as a glitch.
+- **Change one thing per move.** Each reference move changes focal length, or turns the box, or reshapes the frame, never all three. The tell: you cannot name the one thing a move changes.
+- **Swap the illustration style as a layer, never with a cut.** A palette or fill change (camera3) runs on the same camera time; fills cross-fade, line work stays put.
+- **Let the frame join the choreography only when the reference does.** Reshaping or skewing the figure container and letting a near object break its edge (camera4) are strong moves; use them once, at the act they mark, and only with a reference frame that shows them.
+- **Land on flat.** Every reference ends a sequence on a flat frontal pose, and the EU26 wall is flat by the user’s call. A held deep pose belongs in the middle of a sequence.
+
+Calibrate against the EU26 figure: its camera moves run 1.2-2.6 model seconds, 0.7-1.5 s at `playbackRate` 1.7, against the references’ 0.3-0.5 s; every perspective there is transient lens bloom with no held deep pose. The line weight and fills these references share (one even hairline, flat fills, no gradients) are owned by [figure-fidelity.md](figure-fidelity.md); this section owns only how the camera moves.
+
+GOOD: hold flat 0.8 s, snap 0.4 s into a low wide pose, hold it 1.2 s, snap back to flat. BAD: a 2.5 s move that eases continuously from one pose to the next. The tell: no two consecutive 0.1 s frames are identical, so the viewer never gets a still picture to read.
 
 ## Handoffs cross-fade and interpolate
 
