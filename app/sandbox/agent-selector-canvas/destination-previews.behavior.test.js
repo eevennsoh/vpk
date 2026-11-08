@@ -21,7 +21,7 @@ test("inline preview runs a sole cloud option directly and expands multiple opti
 
 	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Cursor");
 	await view.click(view.getByRole("button", { name: "Cursor" }));
-	assert.equal(view.queryByRole("button", { name: "Continue with last session" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Continue with last session" }), null);
 	assert.equal(view.queryByRole("button", { name: "Start a new session" }) !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Open in Cursor" }) !== null, true);
 });
