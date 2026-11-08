@@ -17,7 +17,7 @@ test("committed vpk-html evaluation corpus is complete and catalog claims are cu
 	const result = checkEvaluationSystem();
 
 	assert.equal(result.ok, true, result.issues.join("\n"));
-	assert.equal(result.evalCount, 11);
+	assert.equal(result.evalCount, 14);
 	assert.equal(result.playbookCount, 4);
 	assert.deepEqual(result.catalogCounts, {
 		demos: 133,
@@ -137,9 +137,30 @@ test("build command exposes the vpk-html evaluation health check", () => {
 
 	assert.match(buildSource, /--check-evals/);
 	assert.match(skillSource, /references\/evaluation\.md/);
-	assert.match(skillSource, /reader's job/i);
+	assert.match(skillSource, /reader[’']s job/i);
 	assert.match(evaluationSource, /If no compatible viewer is installed/);
 	assert.match(evaluationSource, /review\.md/);
+});
+
+test("evaluation.md's run-every-suite glob reaches every test file under scripts/", () => {
+	const evaluation = fs.readFileSync(path.join(SKILL_ROOT, "references", "evaluation.md"), "utf8");
+	const command = evaluation.match(/^node --test "(\.agents\/skills\/vpk-html\/scripts\/[^"]+)"$/m);
+	assert.ok(command, "evaluation.md gives a quoted node --test glob");
+	const repoRoot = path.join(SKILL_ROOT, "..", "..", "..");
+	const matched = new Set(fs.globSync(command[1], { cwd: repoRoot }).map(file => path.resolve(repoRoot, file)));
+	const onDisk = [];
+	const walk = dir => {
+		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+			if (entry.name === "node_modules") continue;
+			const full = path.join(dir, entry.name);
+			if (entry.isDirectory()) walk(full);
+			else if (/\.test\.m?js$/.test(entry.name)) onDisk.push(full);
+		}
+	};
+	walk(path.join(SKILL_ROOT, "scripts"));
+	assert.ok(onDisk.length > 20, `found the nested suites (${onDisk.length})`);
+	const missed = onDisk.filter(file => !matched.has(file)).map(file => path.relative(SKILL_ROOT, file));
+	assert.deepEqual(missed, [], `the glob misses ${missed.length} suites`);
 });
 
 test("design-system demo derives catalog metrics instead of hard-coding them", () => {

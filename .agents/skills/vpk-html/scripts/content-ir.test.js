@@ -133,8 +133,8 @@ test("brief rules B1–B9 each fire", async t => {
 	assert.match(text(brief({ figure_engine: "both", figures: [iso] })), /B5: figure_engine both needs/);
 	assert.deepEqual(run(brief({ figure_engine: "both", figures: [iso, hero] })), []);
 	const twoHeroes = [hero, { ...hero, id: "dial-2" }];
-	assert.match(text(brief({ figure_engine: "anatomy-hero", figures: twoHeroes })), /B6: 2 anatomy-hero figures/);
-	assert.deepEqual(run(brief({ figure_engine: "anatomy-hero", figures: twoHeroes, explicit_deviations: ["Two anatomy heroes by request"] })), []);
+	// B6 is retired: several anatomy heroes need no deviation.
+	assert.deepEqual(run(brief({ figure_engine: "anatomy-hero", figures: twoHeroes })), []);
 	const b7 = run(brief({ figure_engine: "iso-kit", figure_engine_source: "default", figures: [iso] }));
 	assert.equal(b7.length, 1);
 	assert.equal(b7[0].severity, "warning");

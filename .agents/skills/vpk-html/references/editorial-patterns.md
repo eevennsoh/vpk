@@ -1,10 +1,10 @@
-# Editorial Patterns
+# Editorial patterns
 
-This reference distills the editorial research pass into reusable document-pattern
-decisions for vpk-html. Use it when choosing or adapting one of the editorial
-document templates added in WP5.
+Owner of editorial document patterns for [SKILL.md](../SKILL.md). Load when you place assets, metadata, long docs or spreads in an editorial template.
 
-## Pattern Reference
+This reference distills the editorial research pass into reusable document-pattern decisions for vpk-html. Use it when choosing or adapting one of the editorial document templates added in WP5.
+
+## Pick the pattern by the reader’s task
 
 | Pattern | When to use | Concrete CSS moves | Templates using it |
 |---|---|---|---|
@@ -21,11 +21,13 @@ document templates added in WP5.
 | Full-Bleed Caption Grid | Use for lookbooks when the page needs plates but no external imagery is available. | Use token-only SVG plates as full-width figures; pair each plate with a 30-60 word caption; use a three-column uppercase plate index. | Lookbook / Gallery Portfolio |
 | Modular Text-as-Nav | Use when portfolio rows should act as both navigation and project summary. | Rows contain number, project name, and one-line description; every row links to a section; asymmetric rhythm comes from row padding and section plate height, not decorative cards. | Lookbook / Gallery Portfolio |
 
-## Guardrails
+## Every pattern keeps the Algebrica identity
 
-- Keep the Algebrica identity: paper, ink, hairlines, no shadows, no external assets.
-- Use shared tokens and `scripts/shared.mjs` for fonts and theme CSS.
-- Use SVG plates only with the grayscale `--ill-*` ramp and Geist Mono labels.
-- Do not import new display fonts. Condensed or wood-type effects must come from Geist scale, weight, casing, and positive tracking.
-- Speaker notes belong in hidden `<aside class="speaker-notes" aria-hidden="true">` elements when they help future deck or presenter reuse.
-- Broadsheet pages can remain non-docnav. Annual reports, interviews, lookbooks, and essays generally benefit from `data-vpk-docnav="true"` because section-stepped reading matches their structure.
+| Wrong | → Right |
+|---|---|
+| Shadows, external assets or a card-heavy surface | → paper, ink and hairlines |
+| Fonts or theme CSS written per template | → shared tokens and `scripts/shared.mjs` |
+| A coloured or photographic SVG plate | → the grayscale `--ill-*` ramp with Geist Mono labels |
+| An imported condensed or wood-type display font | → Geist scale, weight, casing and positive tracking |
+| Speaker notes in visible markup | → hidden `<aside class="speaker-notes" aria-hidden="true">` |
+| `data-vpk-docnav="true"` on a broadsheet by habit | → non-docnav broadsheets; docnav for annual reports, interviews, lookbooks and essays, whose reading is section-stepped |

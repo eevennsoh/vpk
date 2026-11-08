@@ -1,13 +1,12 @@
 # Production Checks
 
-If a check fails for an environment reason, run
-`node .agents/skills/vpk-html/scripts/build.mjs --doctor` (add `--online` for
-`gh`/`twg` auth). In sandboxed agent shells, commands that launch Chromium,
-write under `.agents/skills/`, or write `~/.config/vpk/` must run unsandboxed,
-and node needs `OPENSSL_CONF=/dev/null`.
+Owner of shared runtime, tokens and environment checks for [SKILL.md](../SKILL.md). Load when you change shared runtime or tokens, or the environment fails.
 
-Run these checks after changing the skill, templates, theme, scripts, assets, or
-examples:
+Contents: [Runtime pipeline and library refresh](#runtime-pipeline-and-library-refresh) · [In-page runtimes are registry adapters, never shared.mjs](#in-page-runtimes-are-registry-adapters-never-sharedmjs) · [Size budget](#size-budget) · [One-shot and generator scripts](#one-shot-and-generator-scripts) · [Review runtime](#review-runtime) · [A new template is done when every catalog surface knows it](#a-new-template-is-done-when-every-catalog-surface-knows-it)
+
+If a check fails for an environment reason, run `node .agents/skills/vpk-html/scripts/build.mjs --doctor` (add `--online` for `gh`/`twg` auth). In sandboxed agent shells, commands that launch Chromium, write under `.agents/skills/`, or write `~/.config/vpk/` must run unsandboxed, and node needs `OPENSSL_CONF=/dev/null`.
+
+Run these checks after changing the skill, templates, theme, scripts, assets, or examples:
 
 ```bash
 node .agents/skills/vpk-html/scripts/ensure-fonts.mjs
@@ -20,22 +19,16 @@ pnpm run lint
 pnpm run typecheck
 ```
 
-Gate raw templates with `--check-templates`, not with `check-html.mjs`: unfilled
-`{{...}}` placeholders are expected in a template (by design for the x-thread
-template and many older ones). Filled demos and artifacts go through
-`check-html.mjs`.
+Gate raw templates with `--check-templates`, not with `check-html.mjs`: unfilled `{{...}}` placeholders are expected in a template (by design for the x-thread template and many older ones). Filled demos and artifacts go through `check-html.mjs`.
 
-When changing the shared color/font contract, edit `references/tokens.json`,
-then regenerate and check the mirrored CSS:
+When changing the shared color/font contract, edit `references/tokens.json`, then regenerate and check the mirrored CSS:
 
 ```bash
 node .agents/skills/vpk-html/scripts/build.mjs --write-styles
 node .agents/skills/vpk-html/scripts/build.mjs --sync
 ```
 
-Do not hand-edit token copies into individual demos or templates. Port scripts
-should import `scripts/shared.mjs` and inline the shared block, font stacks, and
-Kami-to-VPK color map from there.
+Do not hand-edit token copies into individual demos or templates. Port scripts should import `scripts/shared.mjs` and inline the shared block, font stacks, and Kami-to-VPK color map from there.
 
 Routine user renders require:
 
@@ -46,20 +39,13 @@ node .agents/skills/vpk-html/scripts/check-html.mjs artifacts/vpk-html/<slug>/<s
 node .agents/skills/vpk-html/scripts/build.mjs --check-content artifacts/vpk-html/<slug>/<slug>.html
 ```
 
-x-thread artifacts also run
-`node .agents/skills/vpk-html/scripts/x-thread.mjs check <file>`.
+x-thread artifacts also run `node .agents/skills/vpk-html/scripts/x-thread.mjs check <file>`.
 
-Each generated user artifact should live in its own ignored folder at
-`artifacts/vpk-html/<slug>/`. Keep PDFs, screenshots, and local validation captures
-for that artifact inside the same folder, using a nested `screenshots/` folder
-when there are many images.
+Each generated user artifact should live in its own ignored folder at `artifacts/vpk-html/<slug>/`. Keep PDFs, screenshots, and local validation captures for that artifact inside the same folder, using a nested `screenshots/` folder when there are many images.
 
 ## Runtime pipeline and library refresh
 
-Every runtime that ships inside an HTML file (shared CSS, fonts, theme toggle,
-document nav or deck runtime, SMIL starter, in-page runtime modules, and the
-enhancement chrome) reaches the file through one pipeline,
-`scripts/runtime/pipeline.mjs`, with two commands:
+Every runtime that ships inside an HTML file (shared CSS, fonts, theme toggle, document nav or deck runtime, SMIL starter, in-page runtime modules, and the enhancement chrome) reaches the file through one pipeline, `scripts/runtime/pipeline.mjs`, with two commands:
 
 ```bash
 # Committed skill library: templates, demos, diagrams, illustrations, landing, index.html
@@ -69,14 +55,9 @@ node .agents/skills/vpk-html/scripts/build.mjs --refresh-library --check  # drif
 node .agents/skills/vpk-html/scripts/build.mjs --inject-runtime artifacts/vpk-html/<slug>/<slug>.html
 ```
 
-Both write under `.agents/skills/` or `artifacts/`, so run them unsandboxed.
-`retrofit.mjs`, `inject-enhancements.mjs` and `build-index.mjs` are aliases of
-`--refresh-library` (they print a note and accept `--check`). `index.html` is
-generated by the refresh from `build-index.mjs` `SECTIONS`, with the refreshed
-demo sizes; edit the generator, never `index.html`.
+Both write under `.agents/skills/` or `artifacts/`, so run them unsandboxed. `retrofit.mjs`, `inject-enhancements.mjs` and `build-index.mjs` are aliases of `--refresh-library` (they print a note and accept `--check`). `index.html` is generated by the refresh from `build-index.mjs` `SECTIONS`, with the refreshed demo sizes; edit the generator, never `index.html`.
 
-The kind of a file comes from its path relative to the skill root (symlinked
-`.claude/skills/…` paths resolve to the same kind):
+The kind of a file comes from its path relative to the skill root (symlinked `.claude/skills/…` paths resolve to the same kind):
 
 | Path | Kind | Steps |
 |---|---|---|
@@ -87,88 +68,47 @@ The kind of a file comes from its path relative to the skill root (symlinked
 | `assets/html-effectiveness/**`, `assets/video/**`, `assets/lab/**` | skip | none |
 | anything else (user artifacts) | artifact | font-faces, theme, nav, runtimes, enhancements |
 
-Order rule: `retrofit → font-faces → theme → nav → registry runtimes →
-enhancements`. Runtime blocks are replaced in place and inserted before the
-last `</body>` only when absent; the enhancement block is stripped and
-re-appended, so it always runs last. Diagram and illustration primitives get no
-theme, nav or enhancement chrome because their `<svg>` blocks are pasted into
-documents that already carry it. Landing shells belong to `landing.mjs`.
+Order rule: `retrofit → font-faces → theme → nav → registry runtimes → enhancements`. Runtime blocks are replaced in place and inserted before the last `</body>` only when absent; the enhancement block is stripped and re-appended, so it always runs last. Diagram and illustration primitives get no theme, nav or enhancement chrome because their `<svg>` blocks are pasted into documents that already carry it. Landing shells belong to `landing.mjs`.
 
-Run `--refresh-library` after any committed-HTML edit, any runtime or shared CSS
-edit, and any dependency update that touches `@atlaskit/icon` (its glyphs are
-baked into the theme runtime and the enhancement block). `library.test.js`
-enforces the fixed point in CI and fails with the file list and this fix.
+Run `--refresh-library` after any committed-HTML edit, any runtime or shared CSS edit, and any dependency update that touches `@atlaskit/icon` (its glyphs are baked into the theme runtime and the enhancement block). `library.test.js` enforces the fixed point in CI and fails with the file list and this fix.
 
-For artifacts, `--inject-runtime` also repairs corrupted `@font-face`
-descriptors, normalises autoplay SMIL to the gated form and adds the shared
-starter, and adds the enhancement chrome (control palette, theme-toggle
-styling, scroll fades, figure lightbox). Hand-built artifacts gain chrome they
-never had.
+For artifacts, `--inject-runtime` also repairs corrupted `@font-face` descriptors, normalises autoplay SMIL to the gated form and adds the shared starter, and adds the enhancement chrome (control palette, theme-toggle styling, scroll fades, figure lightbox). Hand-built artifacts gain chrome they never had.
 
-## Runtime modules
+## In-page runtimes are registry adapters, never shared.mjs
 
-In-page runtimes never go into `scripts/shared.mjs`. Each one is an adapter
-`scripts/runtime/<id>.mjs` registered in `scripts/runtime/registry.mjs`
-(`RUNTIME_STEPS`, first-insertion order: `smil-starter`, `review`, `lab`,
-`iso`, `anatomy-hero`), with its domain logic in `scripts/<domain>/`. An entry
-is `{ id, kinds, apply(html, ctx) }` or
-`defineMarkedRuntime({ id, kinds, appliesTo, build, normalize?, legacy?, budgetBytes })`
-from `scripts/runtime/define.mjs`:
+In-page runtimes never go into `scripts/shared.mjs`. Each one is an adapter `scripts/runtime/<id>.mjs` registered in `scripts/runtime/registry.mjs` (`RUNTIME_STEPS`, first-insertion order: `smil-starter`, `review`, `lab`, `iso`, `anatomy-hero`), with its domain logic in `scripts/<domain>/`. An entry is `{ id, kinds, apply(html, ctx) }` or `defineMarkedRuntime({ id, kinds, appliesTo, build, normalize?, legacy?, budgetBytes })` from `scripts/runtime/define.mjs`:
 
-- `build()` returns the complete block including `<!-- vpk-<id>:start -->` and
-  `<!-- vpk-<id>:end -->`; `budgetBytes` bounds it; `appliesTo` false removes it.
-- `apply` is pure, deterministic and idempotent. Blocks must pass check-html
-  inside a minimal valid page (no raw colours in CSS or JS strings, SVG
-  grammar, button names, no `<script src>`).
-- Import rules: `runtime/blocks.mjs` imports nothing local; `define.mjs` imports
-  only `blocks.mjs`; adapters import `blocks.mjs`, `define.mjs`, `../shared.mjs`
-  and their own domain, never `registry.mjs`, `pipeline.mjs` or
-  `check-html.mjs`, and read no files at module top level; CLIs import the
-  pipeline dynamically and call `main().catch(…)` without a top-level `await`
-  (the pipeline imports the CLI module back, so awaiting would deadlock).
-  `runtime/pipeline.test.js` evaluates each module as a fresh entry and
-  requires empty output.
-- Styles are `:where()`-scoped under a host the runtime owns, motion honours
-  `prefers-reduced-motion`, and state lives in `WeakMap`s, not attributes.
+| Part | Rule |
+| --- | --- |
+| `build()` | Returns the complete block including `<!-- vpk-<id>:start -->` and `<!-- vpk-<id>:end -->`; `budgetBytes` bounds it; `appliesTo` false removes it |
+| `apply` | Pure, deterministic and idempotent. Blocks must pass check-html inside a minimal valid page (no raw colours in CSS or JS strings, SVG grammar, button names, no `<script src>`) |
+| Imports | `runtime/blocks.mjs` imports nothing local; `define.mjs` imports only `blocks.mjs`; adapters import `blocks.mjs`, `define.mjs`, `../shared.mjs` and their own domain, never `registry.mjs`, `pipeline.mjs` or `check-html.mjs`, and read no files at module top level. `runtime/pipeline.test.js` evaluates each module as a fresh entry and requires empty output |
+| CLIs | Import the pipeline dynamically and call `main().catch(…)` without a top-level `await` (the pipeline imports the CLI module back, so awaiting would deadlock) |
+| Styles and state | `:where()`-scoped under a host the runtime owns; motion honours `prefers-reduced-motion`; state lives in `WeakMap`s, not attributes |
 
-The single in-page frame loop is `scripts/runtime/frame-loop.mjs`
-(`window.vpkFrameLoop`). It is not a registry step: each runtime block inlines
-it. SMIL is never driven by the frame loop; it goes through the shared starter
-and `window.vpkSmil` (`references/svg-style.md` § SMIL motion).
+The single in-page frame loop is `scripts/runtime/frame-loop.mjs` (`window.vpkFrameLoop`). It is not a registry step: each runtime block inlines it. SMIL is never driven by the frame loop; it goes through the shared starter and `window.vpkSmil` (`references/svg-style.md` § SMIL motion).
 
 ## Size budget
 
-Chromium caps URLs at 2 MiB (2,097,152 characters). A viewer that opens HTML as
-a `data:text/html;base64,…` URL renders it blank above
-floor((2,097,152 − 22) / 4) × 3 = **1,572,846 bytes** (shown as 1.57 MB).
-`scripts/media/size-budget.mjs` exports the value (`DATA_URL_SAFE_HTML_BYTES`)
-and `weightWarnings()`; `references/checks-thresholds.json` mirrors it as
-`sizeBudget.warnBytes` under a test. `check-html.mjs` prints an advisory
-`warn …` line on stderr (the exit code does not change), and `--verify` prints
-the page weight with the largest embedded media. Full browsers are unaffected.
-Viewers that percent-encode HTML fail earlier; base64 is the optimistic bound.
+| Value | Bytes | Where |
+| --- | --- | --- |
+| Chromium URL cap | 2,097,152 characters | Chromium |
+| Safe HTML for a base64 `data:` URL | **1,572,846** (1.57 MB) | `DATA_URL_SAFE_HTML_BYTES` in `scripts/media/size-budget.mjs`; `sizeBudget.warnBytes` in `references/checks-thresholds.json` |
+
+Chromium caps URLs at 2 MiB (2,097,152 characters). A viewer that opens HTML as a `data:text/html;base64,…` URL renders it blank above floor((2,097,152 − 22) / 4) × 3 = **1,572,846 bytes** (shown as 1.57 MB). `scripts/media/size-budget.mjs` exports the value (`DATA_URL_SAFE_HTML_BYTES`) and `weightWarnings()`; `references/checks-thresholds.json` mirrors it as `sizeBudget.warnBytes` under a test. `check-html.mjs` prints an advisory `warn …` line on stderr (the exit code does not change), and `--verify` prints the page weight with the largest embedded media. Full browsers are unaffected. Viewers that percent-encode HTML fail earlier; base64 is the optimistic bound.
 
 ## One-shot and generator scripts
 
-- `port-kami.mjs` re-ports from a Kami checkout for comparison:
-  `--source <kami-checkout> --out <dir> [--templates|--diagrams|--demos]`.
-  It checks the source before writing; `--in-place` overwrites committed
-  assets and must be explicit.
-- `migrate-identity.mjs` is the retired 2026-07 identity migration. It exits 1
-  unless `--legacy-one-shot` is passed, and should only replay on a scratch copy.
-- Generators (`build-illustrations.mjs`, `build-demos.mjs`, the `port-*`
-  scripts, `generate-design-pages.mjs`) regenerate from source and drop later
-  in-place migrations: review their diff and finish with `--refresh-library`.
-- `build-illustrations.mjs` (v2) writes only the iso-kit brief exemplars by default, through the
-  runtime pipeline; `--check` exits 1 on drift and `--legacy` also rewrites the five hand-drawn
-  exemplars (review that diff). Iso figures in documents: `scripts/iso/build-figure.mjs --inject
+- `port-kami.mjs` re-ports from a Kami checkout for comparison: `--source <kami-checkout> --out <dir> [--templates|--diagrams|--demos]`. It checks the source before writing; `--in-place` overwrites committed assets and must be explicit.
+- `migrate-identity.mjs` is the retired 2026-07 identity migration. It exits 1 unless `--legacy-one-shot` is passed, and should only replay on a scratch copy.
+- Generators (`build-illustrations.mjs`, `build-demos.mjs`, the `port-*` scripts, `generate-design-pages.mjs`) regenerate from source and drop later in-place migrations: review their diff and finish with `--refresh-library`.
+- `build-illustrations.mjs` (v2) writes only the iso-kit brief exemplars by default, through the runtime pipeline; `--check` exits 1 on drift and `--legacy` also rewrites the five hand-drawn exemplars (review that diff). Iso figures in documents: `scripts/iso/build-figure.mjs --inject
   <file> [--check]`. Lint the skill scripts explicitly, because `pnpm run lint` skips `.agents/`:
   `./node_modules/.bin/eslint --max-warnings 0 .agents/skills/vpk-html/scripts/iso`. `build.mjs --check-iso`
   exits 0 when clean, 1 on errors under `--strict`, and 2 for a missing file or bad usage.
 - The iso kit has one style (`manual`, `references/illustrations.md` § 7 "Style"); there is no preset to choose or compare.
-- Motion case study: `lab/build-template.mjs` regenerates `motion-case-study.html` (`--check` compares only its owned regions); `lab/build-demo.mjs` rebuilds the demo from `assets/lab/fixtures/demo.content.json` (fixture capture → encode → embed; unsandboxed, needs Playwright, ffmpeg ≥ 5 and cwebp or the mjpeg fallback; `--check` is structural). `lab/kit.mjs --check assets/templates/motion-case-study.html assets/demos/demo-motion-case-study.html` guards the kit block. Unit tests: `node --test scripts/lab/*.test.mjs scripts/media/*.test.mjs`.
-- X thread: `x-thread/build-template.mjs [--check]` regenerates `x-thread.html` and `demo-x-thread.html`;
-  `x-thread.mjs verify <file>` is the Chromium smoke (unsandboxed).
+- Motion case study: `lab/build-template.mjs` regenerates `motion-case-study.html` (`--check` compares only its owned regions); `lab/build-demo.mjs` rebuilds the demo from `assets/lab/fixtures/demo.content.json` (fixture capture → encode → embed; unsandboxed, needs Playwright, ffmpeg ≥ 5 and cwebp or the mjpeg fallback; `--check` is structural). `lab/kit.mjs --check assets/templates/motion-case-study.html assets/demos/demo-motion-case-study.html` guards the kit block. Unit tests, from the repo root: `node --test ".agents/skills/vpk-html/scripts/{lab,media}/*.test.mjs"`.
+- X thread: `x-thread/build-template.mjs [--check]` regenerates `x-thread.html` and `demo-x-thread.html`; `x-thread.mjs verify <file>` is the Chromium smoke (unsandboxed).
 - Anatomy hero and figure-engine demos:
   ```bash
   node .agents/skills/vpk-html/scripts/figures/build-engine-demo.mjs --page anatomy   # rebuild demo-anatomy-hero.html (unsandboxed); --check is read-only
@@ -181,13 +121,7 @@ Viewers that percent-encode HTML fail earlier; base64 is the optimistic bound.
 
 ## Review runtime
 
-The review loop lives in `scripts/review/`: serialized in-page modules
-(`review/{text,schema,markup,anchor,anchor-dom,merge,markdown,layout-audit}.mjs`, `review/runtime/*.mjs`,
-including `layout`, `owner` and `threads`) and Node-only tools (`inject`, `stamp`, `cli`, `browser-resolve`,
-`build-review-demo`, and the e2e runner `review-e2e` with its split files `review-e2e-{core,keyboard,p3,m2}`).
-`scripts/runtime/review.mjs` is a replace-only registry step:
-`--refresh-library` refreshes the `vpk-review` and `vpk-review-content` blocks
-of reviewable files in place and never inserts them (`--inject-review` does).
+The review loop lives in `scripts/review/`: serialized in-page modules (`review/{text,schema,markup,anchor,anchor-dom,merge,markdown,layout-audit}.mjs`, `review/runtime/*.mjs`, including `layout`, `owner` and `threads`) and Node-only tools (`inject`, `stamp`, `cli`, `browser-resolve`, `build-review-demo`, and the e2e runner `review-e2e` with its split files `review-e2e-{core,keyboard,p3,m2}`). `scripts/runtime/review.mjs` is a replace-only registry step: `--refresh-library` refreshes the `vpk-review` and `vpk-review-content` blocks of reviewable files in place and never inserts them (`--inject-review` does).
 
 ```bash
 OPENSSL_CONF=/dev/null node .agents/skills/vpk-html/scripts/review/build-review-demo.mjs --check   # drift guard, sandbox OK
@@ -197,35 +131,22 @@ node .agents/skills/vpk-html/scripts/review/review-e2e.mjs --scenario all --out 
 pnpm exec playwright test tests/blocks/html-selector-vpk-review.spec.ts   # host spec; needs pnpm run dev:tmux:start
 ```
 
-`inject.test.js` T-INJ5 guards the minified block size and T-DEMO1 the demo. The block budget is 141,312 B
-for the whole block, measured with esbuild `minify`, `iife` and `treeShaking` (decision 21). `--scenario all`
-runs 31 scenarios, among them `keyboard-picker`, `toast-mobile`, `layout`, `owner`, `reattach`, `meter`,
-`xthread` and `engines`. `build.mjs --check-layout` and `build.mjs --review ... --browser` launch Chromium, so
-run them unsandboxed.
-`--inject-review` and `--stamp` on files under `.agents/skills/` need an
-unsandboxed shell; they refuse templates (exit 4).
+`inject.test.js` T-INJ5 guards the minified block size and T-DEMO1 the demo. The block budget is 141,312 B for the whole block, measured with esbuild `minify`, `iife` and `treeShaking` (decision 21). `--scenario all` runs 31 scenarios, among them `keyboard-picker`, `toast-mobile`, `layout`, `owner`, `reattach`, `meter`, `xthread` and `engines`. `build.mjs --check-layout` and `build.mjs --review ... --browser` launch Chromium, so run them unsandboxed. `--inject-review` and `--stamp` on files under `.agents/skills/` need an unsandboxed shell; they refuse templates (exit 4).
 
-## Adding a template or demo
+## A new template is done when every catalog surface knows it
 
 A new template or demo is not done until every catalog surface knows it, in the same change:
 
-1. `assets/templates/<name>.html` passes `build.mjs --check-templates`.
-2. Its demo `assets/demos/demo-<name>.html` passes `check-html.mjs` and has exactly one row in
-   `SECTIONS` in `scripts/build-index.mjs`; run `build.mjs --refresh-library` to regenerate `index.html`.
-3. Route the template: a row in `CHEATSHEET.md` and in the template map in `references/authoring-detail.md`.
-4. Write `references/playbooks/<name>.md` (format in `references/contract.md`).
-5. If the template keeps content in the HTML, add `references/schemas/<type>.json` and its example
-   `references/schemas/examples/<type>.content.json`, write the island with `scripts/json-island.mjs`
-   `serializeJsonIsland` as `data-vpk-content="<type>"`, and register a hook in `CONTENT_TYPE_HOOKS`
-   (`scripts/content-ir.mjs`) only when the template has rules beyond the schema.
-6. Add one frozen scenario to `evals/evals.json` at the next free id; playbooks reference it by name.
-7. Update the counts in `README.md` and `llms.txt` (the `--check-evals` failure prints them), the counts in
-   `scripts/evals.test.js`, and regenerate `assets/demos/demo-design-system.html` with
-   `node scripts/generate-design-pages.mjs`.
-8. When `references/*.md` changed, regenerate `.agents/skills/INDEX.md` with
-   `node scripts/validate-skills.js --update-index`.
-9. Run `--check-evals`, `--check-templates`, the skill's `node --test` suites,
-   `node scripts/validate-skills.js`, and `node scripts/verify-doc-script-references.js`.
+| Step | Do |
+| --- | --- |
+| 1 | `assets/templates/<name>.html` passes `build.mjs --check-templates` |
+| 2 | Its demo `assets/demos/demo-<name>.html` passes `check-html.mjs` and has exactly one row in `SECTIONS` in `scripts/build-index.mjs`; run `build.mjs --refresh-library` to regenerate `index.html` |
+| 3 | Route the template: a row in `CHEATSHEET.md` and in the template map in `references/authoring-detail.md` |
+| 4 | Write `references/playbooks/<name>.md` (format in `references/contract.md`) |
+| 5 | If the template keeps content in the HTML, add `references/schemas/<type>.json` and its example `references/schemas/examples/<type>.content.json`, write the island with `scripts/json-island.mjs` `serializeJsonIsland` as `data-vpk-content="<type>"`, and register a hook in `CONTENT_TYPE_HOOKS` (`scripts/content-ir.mjs`) only when the template has rules beyond the schema |
+| 6 | Add one frozen scenario to `evals/evals.json` at the next free id; playbooks reference it by name |
+| 7 | Update the counts in `README.md` and `llms.txt` (the `--check-evals` failure prints them), the counts in `scripts/evals.test.js`, and regenerate `assets/demos/demo-design-system.html` with `node scripts/generate-design-pages.mjs` |
+| 8 | When `references/*.md` changed, regenerate `.agents/skills/INDEX.md` with `node scripts/validate-skills.js --update-index` |
+| 9 | Run `--check-evals`, `--check-templates`, the skill’s `node --test` suites, `node scripts/validate-skills.js`, and `node scripts/verify-doc-script-references.js` |
 
-`--check-evals` enforces steps 3, 4 and 6 for every template outside the legacy baselines in
-`scripts/playbooks.mjs`; those baselines may only shrink.
+`--check-evals` enforces steps 3, 4 and 6 for every template outside the legacy baselines in `scripts/playbooks.mjs`; those baselines may only shrink.

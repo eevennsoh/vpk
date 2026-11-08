@@ -1,0 +1,11 @@
+{
+	"source": "artifacts/vpk-html/eu26-animation-explained/_figures/explorer.css and eu26-scene-live.mjs",
+	"mix": "color-mix(in srgb, var(--ink) N%, var(--paper))",
+	"rows": [
+		{ "part": "Top face", "light": [0], "dark": [10], "token": "`--anatomy-top`, `--anatomy-paper`" },
+		{ "part": "Side faces, by facing", "light": [4, 6, 7, 8], "dark": [7, 6, 5, 4], "token": "`--anatomy-shade-3` … `--anatomy-shade-0`" },
+		{ "part": "Hairlines hi, mid, lo", "light": [42, 30, 20], "dark": [44, 32, 22], "token": "`--anatomy-hi`, `--anatomy-mid`, `--anatomy-lo`" },
+		{ "part": "Ground shadow", "light": [6], "dark": "`--surface-sunken` 75% into paper", "token": "`--eu26-shadow`" },
+		{ "part": "Landing ring, live figure only", "light": [24], "dark": [24], "token": "`.dring`, 1.2px" }
+	]
+}

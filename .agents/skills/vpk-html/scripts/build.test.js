@@ -569,28 +569,36 @@ test("v2 agent tooling surface", () => {
 
 test("SKILL.md workflow skeleton", () => {
 	const skill = fs.readFileSync(path.join(__dirname, "..", "SKILL.md"), "utf8");
-	const steps = [...skill.matchAll(/^### (\d+)\. (.+)$/gm)].map(match => [Number(match[1]), match[2].trim()]);
-	assert.deepEqual(steps, [
-		[1, "Frame the reader's job and choose a template"],
-		[2, "Lock the contract"],
-		[3, "Distill and source the material"],
-		[4, "Copy and fill"],
-		[5, "Validate the source artifact"],
-		[6, "Review loop (opt-in)"],
-		[7, "Produce optional derivatives and publish"],
-		[8, "Close with the definition of done"],
+	const phases = [...skill.matchAll(/^## Phase ([A-Z]): (.+)$/gm)].map(match => [match[1], match[2].trim()]);
+	assert.deepEqual(phases, [
+		["A", "Frame"],
+		["B", "Reference"],
+		["C", "Draft"],
+		["D", "Figure"],
+		["E", "Verify"],
+		["F", "Deliver"],
 	]);
-	// The body of one step: from its heading line to the next heading of any level.
-	const step = number => skill.split(/^### /m).find(chunk => chunk.startsWith(`${number}. `)).split(/^## /m)[0].replace(/^.*\n/, "");
-	const lock = step(2);
-	for (const engine of ["iso kit", "anatomy hero", "both"]) assert.ok(lock.includes(`**${engine}**`), `step 2 offers ${engine}`);
-	assert.ok(lock.includes(`<meta name="vpk-figure-engine" content="none|iso-kit|anatomy-hero|both">`));
-	assert.match(lock, /With nobody to ask, use the iso kit/);
+	// The body of one phase: from its heading line to the next H2.
+	const phase = letter => skill.split(/^## Phase /m).find(chunk => chunk.startsWith(`${letter}: `)).split(/^## /m)[0].replace(/^.*\n/, "");
+	for (const letter of ["A", "B", "C", "D", "E", "F"]) assert.match(phase(letter), /^Completion criterion:\n- \[ \] /m, `phase ${letter} ends with checkable completion criteria`);
+	for (const letter of ["B", "E"]) assert.match(phase(letter), /^\*\*Stop\.\*\* Show /m, `phase ${letter} stops to show frames`);
+	const lock = phase("A");
 	assert.match(lock, /If you ask, stop and wait for the answer/);
-	assert.match(lock, /needs it\. There\s+is no part or size cap, and a page may carry several\./);
-	assert.match(lock, /When you ask, say which planned figure each option would draw and what the\s+others become\. With the anatomy hero alone, the other figures are static\s+diagrams\./);
-	assert.ok(!/[;] /.test(lock.slice(lock.indexOf("- **iso kit**"), lock.indexOf("When you ask, say"))), "the engine options use full stops, not semicolons");
-	assert.equal(step(8).match(/^\d+\. /gm).length, 6, "the definition of done has six items");
+	assert.ok(lock.includes("references/contract.md#figure-engine"), "Frame routes the engine question to its owner");
+	assert.ok(!lock.includes("**iso kit**"), "the engine options live only in contract.md");
+	const contract = fs.readFileSync(path.join(__dirname, "..", "references", "contract.md"), "utf8");
+	const engine = contract.split(/^## Figure engine$/m)[1].split(/^## /m)[0];
+	for (const option of ["iso kit", "anatomy hero", "both"]) assert.ok(engine.includes(`**${option}**`), `the engine question offers ${option}`);
+	assert.ok(engine.includes("values and the `both` rule live in [figure engines](figure-engines.md)"), "the engine meta values have one owner");
+	assert.ok(!engine.includes(`<meta name="vpk-figure-engine"`), "contract.md holds no copy of the meta enum");
+	assert.ok(fs.readFileSync(path.join(__dirname, "..", "references", "figure-engines.md"), "utf8").includes(`<meta name="vpk-figure-engine" content="none|iso-kit|anatomy-hero|both|hairline|anatomy-gl">`));
+	assert.match(engine, /With nobody to ask \([^)]*\), use the iso kit/);
+	assert.match(engine, /needs it\. There\s+is no part or size cap, and a page may carry several\./);
+	assert.match(engine, /When you ask, say which planned figure each option would draw and what the\s+others become\. With the anatomy hero alone, the other figures are static\s+diagrams\./);
+	assert.ok(!/[;] /.test(engine.slice(engine.indexOf("- **iso kit**"), engine.indexOf("When you ask, say"))), "the engine options use full stops, not semicolons");
+	const done = contract.split(/^## Definition of done$/m)[1].split(/^## /m)[0];
+	assert.equal(done.match(/^\d+\. /gm).length, 6, "the definition of done has six items");
+	assert.ok(phase("F").includes("references/contract.md#definition-of-done"), "Deliver routes the reply to the definition of done");
 });
 
 test("P4 cycle 2 item 1: a question turn still ends with the one-line contract", () => {

@@ -1,86 +1,60 @@
 # vpk-html Charts
 
-This is the Phase E foundation and catalog for charts and data diagrams.
-Structural diagrams remain covered in `references/diagrams.md`.
+Owner of data charts for [SKILL.md](../SKILL.md). Load when you draw a data chart.
 
-## Identity
+This is the foundation and catalog for charts and data diagrams. Structural diagrams remain covered in `references/diagrams.md`.
 
-Charts follow the one paper look in [paper system](paper-system.md) § 4: an anchored chart uses the figure page
-(card, ring, corner furniture and a live readout), and inline charts share the code-block card.
+## Charts take the paper look and stay grayscale
 
-- Use token-only grayscale figure colors from `--ill-*`, `--rule`, `--ink`,
-  `--muted-text`, and `--focal`.
-- Use the warm intensity ramp `--heat0` through `--heat4` only for heatmap-like
-  density or intensity.
-- Distinguish multi-series charts by tone, dash, marker shape, stroke width,
-  direct labels, and layering. Do not introduce hue.
-- Use one darkest-ink focal role when a chart has a primary argument.
-- SVG labels use Geist Mono. Stroke widths stay numeric and within 0.5-2.5.
-- No raw hex, gradients, filters, drop shadows, `--accent*`, or `--link*`
-  tokens inside generated SVGs.
+Charts follow the one paper look in [paper system](paper-system.md) § 4: an anchored chart uses the figure page (card, ring, corner furniture and a live readout), and inline charts share the code-block card.
 
-## Static First
+| Wrong | → Right |
+|---|---|
+| A hex fill, gradient, filter or drop shadow in the SVG | → token-only grayscale from `--ill-*`, `--rule`, `--ink`, `--muted-text` and `--focal` |
+| `--accent*` or `--link*` tokens inside a generated SVG | → the same grayscale tokens; accent belongs to the page, not the figure |
+| Heat tokens on a plain bar or line | → `--heat0` to `--heat4` only for heatmap-like density or intensity |
+| A new hue per series | → tone, dash, marker shape, stroke width, direct labels and layering |
+| Several marks competing for emphasis | → one darkest-ink focal role when the chart has a primary argument |
+| Proportional labels or `stroke-width="thin"` | → Geist Mono labels and numeric strokes within 0.5-2.5 |
 
-Every chart must be complete as static HTML/SVG:
+## Render the static chart first
 
-- The full figure, data marks, direct labels, caption, and fallback legend are
-  visible with JavaScript disabled.
-- Motion classes may enhance first paint, but reduced motion and print must
-  show the final state immediately.
-- Tooltip and legend behavior are progressive enhancement only.
-- Keep artifacts single-file and offline: no external scripts, stylesheets,
-  images, or fonts.
+| Condition | → Required result |
+|---|---|
+| JavaScript disabled | → the full figure, data marks, direct labels, caption and fallback legend are visible |
+| Reduced motion or print | → motion classes snap to the final state immediately |
+| Tooltip or legend script fails | → nothing is lost: both are progressive enhancement only |
+| Any external script, stylesheet, image or font | → none: artifacts stay single-file and offline |
 
-## Animation Utilities
+## Animate with the shared chart utilities
 
-Shared chart animation CSS comes from `scripts/shared.mjs` and is emitted into
-`styles.css` and every template's shared identity block.
+Shared chart animation CSS comes from `scripts/shared.mjs` and is emitted into `styles.css` and every template’s shared identity block.
 
-- `.vpk-chart-draw`: stroke draw-in. Set `--vpk-draw-length` on the mark to a
-  path/polyline length estimate. The utility sets `stroke-dasharray` and
-  `stroke-dashoffset`, then animates the offset to `0`.
-- `.vpk-chart-grow`: bar/area grow-in. Uses `transform: scaleY` with
-  `transform-box: fill-box` and `transform-origin: center bottom`.
-- `.vpk-chart-reveal`: point or label reveal. Use for dots, markers, callouts,
-  and direct labels.
-- `.vpk-chart-focal-pulse`: short emphasis pulse for the single focal value.
-  Do not apply it to an entire series.
-- Stagger any of the above with `style="--vpk-stagger-index: N;"`.
+| Utility | Effect | Use on |
+|---|---|---|
+| `.vpk-chart-draw` | Stroke draw-in: sets `stroke-dasharray` and `stroke-dashoffset`, then animates the offset to `0` | Lines and paths; set `--vpk-draw-length` on the mark to a path/polyline length estimate |
+| `.vpk-chart-grow` | Grow-in with `transform: scaleY`, `transform-box: fill-box`, `transform-origin: center bottom` | Bars and areas |
+| `.vpk-chart-reveal` | Point or label reveal | Dots, markers, callouts and direct labels |
+| `.vpk-chart-focal-pulse` | Short emphasis pulse | The single focal value, never a whole series |
+| `style="--vpk-stagger-index: N;"` | Staggers any of the above | Any animated mark |
 
-Reduced motion forces draw/grow/reveal/pulse utilities to their final visible
-state. Do not write chart-specific keyframes unless the shared vocabulary cannot
-express the behavior.
+Reduced motion forces draw/grow/reveal/pulse utilities to their final visible state. Do not write chart-specific keyframes unless the shared vocabulary cannot express the behavior.
 
-Prefer these utilities. SMIL is allowed for motion they can't express, under
-`svg-style.md` § SMIL motion; 22 shipped chart primitives use it.
+Prefer these utilities. SMIL is allowed for motion they can’t express, under `svg-style.md` § SMIL motion; 22 shipped chart primitives use it.
 
-## Interaction Pattern
+## Wire interaction through the inline chart runtime
 
-Use the inline `data-vpk-chart-runtime` pattern from `scripts/shared.mjs` or the
-worked `assets/diagrams/line-chart.html` scaffold. It is dependency-free and
-copyable into single-file templates.
+Use the inline `data-vpk-chart-runtime` pattern from `scripts/shared.mjs`. It is dependency-free and copyable into single-file templates. `assets/diagrams/line-chart.html` is the worked scaffold: figure block, caption, direct value labels, focal mark, animation classes, tooltip hooks, legend toggles, `data-series` grouping and keyboard traversal.
 
-Required conventions:
+| Element | Attributes | Runtime behavior |
+|---|---|---|
+| SVG root | `data-vpk-chart` | Scopes the runtime |
+| Series group and each interactive point | `data-series="<id>"` | Groups marks for legend toggles |
+| Focusable data point | `data-vpk-point`, `aria-label`, `data-tooltip` | Adds `tabindex="0"` and `role="button"` when absent; Arrow keys move between points, Home and End jump to the first and last |
+| Legend button | `data-vpk-legend-toggle data-series="<id>" aria-pressed="true"` | Toggling dims the matching series with `.is-muted` |
+| Tooltip | `role="tooltip"`, `.vpk-chart-tooltip` | Token-styled; appears on hover/focus only |
 
-- Put `data-vpk-chart` on the SVG root.
-- Put `data-series="<id>"` on each series group and on each interactive point.
-- Put `data-vpk-point`, `aria-label`, and `data-tooltip` on focusable data
-  points. The runtime adds `tabindex="0"` and `role="button"` when absent.
-- Put `data-vpk-legend-toggle data-series="<id>" aria-pressed="true"` on each
-  legend button. Toggling dims the matching series by adding `.is-muted`.
-- Arrow keys move focus between data points; Home and End jump to the first and
-  last point.
-- Tooltips are `role="tooltip"`, token-styled with `.vpk-chart-tooltip`, and
-  appear on hover/focus only.
-
-Keep direct labels in the SVG whenever they read better than a legend. Use
-legend toggles for series visibility, not as the only way to identify series.
-
-## Worked Example
-
-`assets/diagrams/line-chart.html` demonstrates the full scaffold: figure block,
-caption, direct value labels, focal mark, animation classes, tooltip hooks,
-legend toggles, `data-series` grouping, and keyboard traversal.
+Keep direct labels in the SVG whenever they read better than a legend. Use legend toggles for series visibility, not as the only way to identify series.
 
 ## Catalog
 
