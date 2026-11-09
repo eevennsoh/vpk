@@ -423,3 +423,13 @@
 :root {
 	--radius: var(--ds-radius-medium); /* 6px (0.375rem) */
 }
+
+@utility child-overlay-surface {
+	&:has(> [data-overlay-surface]:only-child, > :only-child > [data-overlay-surface]:only-child) {
+		gap: 0;
+		overflow: visible;
+		background: transparent;
+		padding: 0;
+		box-shadow: none;
+	}
+}

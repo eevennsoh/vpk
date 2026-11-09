@@ -190,6 +190,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 		<>
 			{workItem.selection ? (
 				<ButterWorkItemDialog
+					cloudAgentSelector
 					initialPresentation="modal"
 					shell="project"
 					initialPreset="filled"
@@ -218,7 +219,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 }
 
 export default function ButterPage(): React.ReactElement {
-	const [selectedId, setSelectedId] = useState("board");
+	const [selectedId, setSelectedId] = useState("agent-selector");
 	const [journeyResetKey, setJourneyResetKey] = useState(0);
 	const [collapsedBoardColumns, setCollapsedBoardColumns] = useState<ReadonlySet<string>>(() => new Set());
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
@@ -300,7 +301,7 @@ export default function ButterPage(): React.ReactElement {
 						<h1 className="sr-only">Agent selector</h1>
 						<div className="flex w-80 max-w-full shrink-0 flex-col gap-2">
 							<h2 className="text-center text-xs font-semibold text-text-subtlest">Cloud</h2>
-							<ButterAgentSelectorGallery cloudOnly />
+							<ButterAgentSelectorGallery cloudOnly showCreateAgent={false} />
 						</div>
 						<div className="flex w-80 max-w-full shrink-0 flex-col gap-2">
 							<h2 className="text-center text-xs font-semibold text-text-subtlest">Local</h2>
@@ -313,7 +314,7 @@ export default function ButterPage(): React.ReactElement {
 			</RetainedView>
 			<RetainedView active={selectedId === "duplicative-sessions"} retain>
 				<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex justify-center overflow-y-auto px-4 pt-4 pb-56">
-					<ButterAgentSelectorGallery key={duplicativeSessionsResetKey} variant="duplicative-sessions" />
+					<ButterAgentSelectorGallery key={duplicativeSessionsResetKey} variant="duplicative-sessions" showCreateAgent={false} />
 				</div>
 			</RetainedView>
 			<RetainedView active={selectedId === "work-item"} retain>
@@ -344,7 +345,7 @@ function ButterGalleryWorkItem({ open, onClose }: Readonly<{ open: boolean; onCl
 		<>
 			<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex items-start justify-center overflow-hidden">
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} open={open} shell="gallery" />
+					<ProjectButterJiraWorkItem cloudAgentSelector currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} open={open} shell="gallery" />
 				</div>
 			</div>
 			{open ? <JgpRovoOverlay /> : null}
@@ -521,7 +522,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 			id: `${card.code}:${crypto.randomUUID()}`,
 			agent: { id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo },
 			title: card.title,
-			state: "needs-input",
+			state: "running",
 			host: "cloud",
 			startedAtMs: Date.now(),
 			timeLabel: "Just now",

@@ -52,9 +52,35 @@ test("Rovo CLI configures its directory separately from selecting the agent", as
 	await configure.click();
 	await expect(page.getByRole("textbox", { name: "Choose your directory" })).toHaveValue("/tmp/rovo-config-test");
 	await page.keyboard.press("Escape");
+	await row.evaluate((element) => element.setAttribute("data-test-preserved", "yes"));
 	await row.click();
+	const copied = local.getByRole("button", { name: "Command copied", exact: true });
+	const success = copied.locator(".text-icon-success svg");
+	await expect(copied).toBeVisible();
+	await expect(copied).toHaveAttribute("data-test-preserved", "yes");
+	await expect(success).toHaveCSS("width", "16px");
+	await expect(success).toHaveCSS("height", "16px");
+	await expect.poll(async () => {
+		const bounds = await success.boundingBox();
+		return bounds ? [Math.round(bounds.width), Math.round(bounds.height)] : null;
+	}).toEqual([16, 16]);
 	await expect.poll(() => page.evaluate(() => window.localStorage.getItem("jira-local-agent-last-used"))).toContain("rovo-cli");
 	await expect(page.getByRole("dialog", { name: "Rovo CLI local options" })).toHaveCount(0);
+});
+
+test("Rovo CLI copy feedback reaches its full size with reduced motion", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	const local = page.getByRole("region", { name: "Jira Local Agent" });
+	await local.getByRole("button", { name: "Rovo CLI", exact: true }).click();
+	const success = local.getByRole("button", { name: "Command copied", exact: true }).locator(".text-icon-success svg");
+	await expect(success).toHaveCSS("width", "16px");
+	await expect(success).toHaveCSS("height", "16px");
+	await expect.poll(async () => {
+		const bounds = await success.boundingBox();
+		return bounds ? [Math.round(bounds.width), Math.round(bounds.height)] : null;
+	}).toEqual([16, 16]);
 });
 
 for (const presentation of ["submenu", "inline"] as const) {

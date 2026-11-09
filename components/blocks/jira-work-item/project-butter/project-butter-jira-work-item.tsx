@@ -38,6 +38,7 @@ export interface ProjectButterJiraWorkItemProps {
 	defaultReporter?: WorkItemPerson;
 	defaultAssignee?: WorkItemPerson;
 	currentUser?: WorkItemPerson;
+	cloudAgentSelector?: boolean;
 	showAuditInActivity?: boolean;
 	autoAssignClaudeToCurrentUser?: boolean;
 	journeyPhase?: ProjectButterJourneyPhase;
@@ -73,6 +74,7 @@ export function ProjectButterJiraWorkItem({
 	defaultReporter,
 	defaultAssignee,
 	currentUser,
+	cloudAgentSelector = false,
 	showAuditInActivity,
 	autoAssignClaudeToCurrentUser,
 	journeyPhase,
@@ -291,7 +293,7 @@ export function ProjectButterJiraWorkItem({
 	}, [detailsHost, layoutElement, sidePanel, workItem?.code]);
 	const details = (
 		<ProjectButterDetails
-			agentField={<ProjectButterCrew field onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={(session) => openSession(session.id)} onPreviewSession={previewSession} onStartAgent={startAgent} sessions={sessions} />}
+			agentField={<ProjectButterCrew field cloudAgentSelector={cloudAgentSelector} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={(session) => openSession(session.id)} onPreviewSession={previewSession} onStartAgent={startAgent} sessions={sessions} />}
 			key={workItem?.code ?? "reference"}
 			code={workItem?.code ?? "VITA-1"}
 			content={content}

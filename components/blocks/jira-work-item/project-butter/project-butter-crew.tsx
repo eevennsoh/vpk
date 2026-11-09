@@ -17,6 +17,7 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/project-butter-agent-picker";
+import { ProjectButterCloudAgentPicker } from "@/components/blocks/jira-issue/project-butter-inline-agent-picker";
 import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
@@ -56,8 +57,9 @@ function referenceCrew(sessionsByUrgency: readonly AgentSessionItem[]): readonly
 	return members;
 }
 
-export function ProjectButterCrew({ assignee, currentUser, field = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: Readonly<{
+export function ProjectButterCrew({ assignee, cloudAgentSelector = false, currentUser, field = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: Readonly<{
 	assignee?: WorkItemPerson;
+	cloudAgentSelector?: boolean;
 	currentUser?: WorkItemPerson;
 	field?: boolean;
 	onBrowseAgents?: () => void;
@@ -116,7 +118,7 @@ export function ProjectButterCrew({ assignee, currentUser, field = false, onBrow
 				)}
 			</PopoverTrigger>}
 			<PopoverContent align={field ? "start" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={cn(field ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0 shadow-2xl" : "w-[280px] gap-0 overflow-hidden p-0")} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]" sideOffset={field ? 8 : undefined}>
-				{field && onStartAgent ? <InlineAgentSelector
+				{field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} /> : field && onStartAgent ? <InlineAgentSelector
 					agents={pickerAgents.filter((agent) => agent.id !== "github-copilot" && agent.id !== "rovo-cli")}
 					softwareAgentIds={["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"]}
 					initialSoftwareLimit={5}

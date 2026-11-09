@@ -102,6 +102,7 @@ export interface AgentSelectorProps {
 	 * Submenu rows use action semantics and never expose a checkbox state.
 	 */
 	submenuAgentIds?: readonly string[];
+	showSubmenuChevron?: boolean;
 	/**
 	 * Agents that are already committed elsewhere and must not be re-selected.
 	 * Disabled rows get `aria-disabled`, a subtle trailing marker, and their
@@ -262,6 +263,7 @@ function AgentSelectorItem({
 	pinningEnabled,
 	pinningAppearance,
 	showSelectedTickInSingleSelect,
+	showSubmenuChevron,
 	showByline,
 	supportsMultipleSelection,
 }: Readonly<{
@@ -282,6 +284,7 @@ function AgentSelectorItem({
 	pinningAppearance: "pin" | "favorite";
 	/** Opt-in single-select tick on the selected row. */
 	showSelectedTickInSingleSelect: boolean;
+	showSubmenuChevron: boolean;
 	showByline: boolean;
 	supportsMultipleSelection: boolean;
 }>): ReactElement {
@@ -470,7 +473,7 @@ function AgentSelectorItem({
 						</Button>
 					</span>
 				) : null}
-				{isSubmenuTrigger ? <Icon aria-hidden className="ml-1 mr-1.5 size-3 shrink-0 text-icon-subtle" render={<ChevronRightIcon label="" size="small" />} /> : null}
+				{isSubmenuTrigger && showSubmenuChevron ? <Icon aria-hidden className="ml-1 mr-1.5 size-3 shrink-0 text-icon-subtle" render={<ChevronRightIcon label="" size="small" />} /> : null}
 				{showSingleSelectTick ? (
 					// Align the check with the favorite star while keeping a 4px gap when both appear.
 					<IconTile
@@ -504,6 +507,7 @@ interface AgentSelectorGroupProps {
 	pinningAppearance: "pin" | "favorite";
 	selectedAgentIdSet: ReadonlySet<string>;
 	showSelectedTickInSingleSelect: boolean;
+	showSubmenuChevron: boolean;
 	showByline: boolean;
 	children?: ReactNode;
 	paletteHeading?: boolean;
@@ -526,6 +530,7 @@ function AgentSelectorGroup({
 	pinningAppearance,
 	selectedAgentIdSet,
 	showSelectedTickInSingleSelect,
+	showSubmenuChevron,
 	showByline,
 	children,
 	paletteHeading = false,
@@ -554,6 +559,7 @@ function AgentSelectorGroup({
 					pinningEnabled={pinningEnabled}
 					pinningAppearance={pinningAppearance}
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
+					showSubmenuChevron={showSubmenuChevron}
 					showByline={showByline}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
@@ -599,6 +605,7 @@ export function AgentSelector({
 	selectedActionsLabel = "Selected agent actions",
 	selectedAgentIds,
 	submenuAgentIds,
+	showSubmenuChevron = true,
 	disabledAgentIds,
 	disabledAgentLabel,
 	inProgressAgentIds,
@@ -769,11 +776,11 @@ export function AgentSelector({
 			>
 				{visibleAgents.length === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
 				{sectionLayout ? (<>
-					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionFavorites} disabledAgentIdSet={disabledAgentIdSet} heading={pinnedItemsLabel} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} pinningAppearance={pinningAppearance} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
-					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.agents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.heading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} pinningAppearance={pinningAppearance} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading>
+					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionFavorites} disabledAgentIdSet={disabledAgentIdSet} heading={pinnedItemsLabel} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} pinningAppearance={pinningAppearance} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} showSubmenuChevron={showSubmenuChevron} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
+					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.agents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.heading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} pinningAppearance={pinningAppearance} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} showSubmenuChevron={showSubmenuChevron} supportsMultipleSelection={supportsMultipleSelection} paletteHeading>
 						{sectionLayout.showMore ? <CommandItem className="h-8 px-2 text-xs text-text-subtlest hover:underline data-selected:bg-transparent data-selected:text-text-subtlest data-selected:underline" onSelect={() => setSectionsExpanded(true)} showCheckIcon={false} value="__show_more_agents__">Show more</CommandItem> : null}
 					</AgentSelectorGroup>
-					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.otherAgents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.otherHeading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} pinningAppearance={pinningAppearance} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
+					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.otherAgents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.otherHeading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} pinningAppearance={pinningAppearance} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} showSubmenuChevron={showSubmenuChevron} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
 				</>) : (<>
 				<AgentSelectorGroup
 					avatarSize={avatarSize}
@@ -791,6 +798,7 @@ export function AgentSelector({
 					showSelectedTickInSingleSelect={false}
 					showByline={showByline}
 					submenuAgentIdSet={submenuAgentIdSet}
+					showSubmenuChevron={showSubmenuChevron}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				<AgentSelectorGroup
@@ -809,6 +817,7 @@ export function AgentSelector({
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
 					showByline={showByline}
 					submenuAgentIdSet={submenuAgentIdSet}
+					showSubmenuChevron={showSubmenuChevron}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				{separatePinned && pinnedAgents.length > 0 && moreAgents.length > 0 ? <hr className="my-1 border-0 border-t border-border" /> : null}
@@ -828,6 +837,7 @@ export function AgentSelector({
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
 					showByline={showByline}
 					submenuAgentIdSet={submenuAgentIdSet}
+					showSubmenuChevron={showSubmenuChevron}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				</>)}

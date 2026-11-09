@@ -77,8 +77,8 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	for (const name of ["Board", "Agent selector", "Work item", "List", "Pull request", "e2e Journey"]) {
 		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
 	}
-	await expect(gallery.getByRole("button", { name: "Select Board" })).toHaveAttribute("aria-pressed", "true");
-	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
+	await expect(gallery.getByRole("button", { name: "Select Agent selector" })).toHaveAttribute("aria-pressed", "true");
+	await expect(page.getByRole("region", { name: "Project Butter agent selector" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
 	const boardTile = await gallery.getByRole("button", { name: "Select Board" }).boundingBox();
 	const agentTile = await gallery.getByRole("button", { name: "Select Agent selector" }).boundingBox();
@@ -357,6 +357,7 @@ test("Escape closes the local-agent picker without closing the work item", async
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	await page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });

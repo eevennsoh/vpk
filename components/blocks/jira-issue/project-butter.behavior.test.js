@@ -46,7 +46,10 @@ test("Jira Local Agent remembers the last used agent and copies the work item pr
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork"]);
 	assert.equal(view.getByRole("button", { name: "Prompt copied" }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Rovo CLI" }));
-	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Rovo CLI"), true);
+	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].getAttribute("data-agent-id"), "rovo-cli");
+	assert.equal([...document.querySelectorAll('[role="status"]')].some((status) => status.textContent === "Command copied"), true);
+	assert.equal(view.getByRole("button", { name: "Command copied" }).querySelector(".text-icon-success") !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Rovo CLI" }), null);
 	assert.equal(view.queryByRole("textbox", { name: "Choose your directory" }), null);
 	await view.click(view.getByRole("button", { name: "Configure Rovo CLI" }));
 	assert.equal(view.queryByRole("button", { name: "Open in Rovo CLI" }), null);
