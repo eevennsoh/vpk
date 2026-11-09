@@ -93,20 +93,24 @@ unavailable.
    `node scripts/generate-cursor-rules.js`, and
    `node scripts/validate-skills.js --update-index`. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
    guardrails, ESLint suppression ratchet — about half of first-run CI
-   failures). Then push with upstream when needed and create the PR with
-   `gh pr create` or capture the updated PR URL. List only checks actually run.
+   failures). Before pushing, also run the focused tests and every colocated
+   exact-file source-contract suite guarding changed source, as required by
+   `AGENTS.md`. Run the full local unit gate when the change or a prior failure
+   warrants it; do not duplicate a full local run solely to wait for GitHub CI.
+   Then push with upstream when needed and create the PR with `gh pr create` or
+   capture the updated PR URL. List only checks actually run.
 7. Report the PR URL, branch, commit, and checks URL. `--pr` stops here.
 
-Local validation may be deferred to CI for the create-only path. If the flow
-will merge and GitHub has no required checks, run the relevant `AGENTS.md`
-validation locally; include focused tests and browser evidence when the changed
-surface requires them.
+For the create-only path, other local validation may be deferred to CI when
+project instructions permit it. If the flow will merge and GitHub has no
+required checks, run the relevant `AGENTS.md` validation locally; include
+focused tests and browser evidence when the changed surface requires them.
 
 ## Full ship sequence
 
 1. Run the create/update flow and capture the PR number and head SHA.
-2. Poll briefly for the configured Codex auto-review only when this run pushed a
-   new head. With `--bypass`, record `bypassed/no credit` and continue.
+2. Monitor the configured Codex auto-review and CI concurrently when this run
+   pushed a new head. With `--bypass`, record `bypassed/no credit` and continue.
 3. Execute [review-gate.md](references/review-gate.md). Fix valid findings,
    explain invalid ones, and stop on ambiguous product judgment.
 4. Wait for checks, merge only on a clear gate, then synchronize persistent `main` using
@@ -128,8 +132,9 @@ sync, and local branch/worktree edge cases.
 ## Stop rules
 
 Stop without destroying state when the checkout has overlapping edits with no
-safe preservation path; required checks fail (or local `ci:pr` fails when
-Actions is billing-blocked) or stay interrupted after three reruns; merge state is `DIRTY`; review
+safe preservation path; required checks fail and cannot be safely fixed within
+the requested work, or stay interrupted after three reruns; local `ci:pr` fails
+when Actions is billing-blocked; merge state is `DIRTY`; review
 threads remain unresolved or cannot be reconciled through documented APIs;
 GitHub ownership or ancestry is ambiguous; or the merge poll times out. Preserve
 the branch, commit, and PR so the user can resume the same flow.

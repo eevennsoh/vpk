@@ -11,11 +11,13 @@ at once, before CI finishes. Wait on the gate first:
 
 ```bash
 node .agents/skills/vpk-git-ship/scripts/review-gate-status.js \
-  --pr <number> --repo <owner>/<repo> --wait 1200 --rerun-interrupted 3 --require-clear --json
+  --pr <number> --repo <owner>/<repo> --wait 1800 --rerun-interrupted 3 --require-clear --json
 ```
 
 Run it as a background command so the harness notifies on exit; a full wait
-plus reruns can take an hour.
+plus reruns can take an hour. Check progress when a state changes or a run
+exceeds its expected duration, and report the current job, elapsed time, and
+known blocker. A pending check is not evidence of failure or a stalled test.
 
 - Exit 0: checks passed, review gate clear, merge state `CLEAN`. Merge now:
   `gh pr merge <number> --merge --delete-branch`.
@@ -24,8 +26,12 @@ plus reruns can take an hour.
   asking or waiting: run `pnpm run ci:pr` locally at the PR head, comment the
   result on the PR, and merge with the same command only if it exited 0. Follow
   [Billing-blocked CI](review-gate.md#billing-blocked-ci).
-- Exit 2 with `checks.state: "failing"`: stop and report each failing check's
-  name and URL. Do not retry or fix unless the user asked for remediation.
+- Exit 2 with `checks.state: "failing"`: inspect the check logs. When the user
+  asked to ship or finish the PR, fix a failure attributable to the requested
+  changes when the fix is clear and within scope. Run the relevant local checks,
+  commit and push, then repeat the full current-head review and CI gate. Do not
+  blindly rerun a real failure. Stop and report unrelated failures, unclear
+  product decisions, or failures that cannot be safely fixed in scope.
 - Exit 2 with `checks.state: "interrupted"`: a run was cancelled or timed out
   three times without a verdict (`reruns` lists the run IDs). This is not a
   test failure. Stop, preserve the PR, and report it as a CI capacity problem

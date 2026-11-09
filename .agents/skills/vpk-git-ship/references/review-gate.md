@@ -29,6 +29,11 @@ status and continue. Do not post `@codex review`; automatic review is already
 configured and a manual mention can duplicate it. For an existing PR whose head
 was not pushed in this run, inspect current status without waiting.
 
+CI runs while this review wait is underway. Start the check wait and review
+polling concurrently; do not add their wait times. If CI finishes first, still
+complete the bounded review wait, then re-fetch the full gate before merging.
+If the head changes, discard the old-head result and start a fresh review wait.
+
 ## Fetch every review surface
 
 Run the repo-owned read-only status helper from the VPK checkout:
@@ -57,7 +62,7 @@ call:
 
 ```bash
 node .agents/skills/vpk-git-ship/scripts/review-gate-status.js \
-  --pr <number> --repo <owner>/<repo> --wait 1200 --rerun-interrupted 3 --require-clear
+  --pr <number> --repo <owner>/<repo> --wait 1800 --rerun-interrupted 3 --require-clear
 ```
 
 `--wait` polls every 30 seconds while any check is pending, for up to the given
@@ -69,8 +74,13 @@ review, check, or merge-state condition remains; inspect the same JSON rather
 than weakening the gate. Exit 3 means the only blocker is billing-blocked
 GitHub Actions; follow [Billing-blocked CI](#billing-blocked-ci). An API/schema failure exits 1. If a REST comment stays
 missing after the bounded retries, or any surface cannot be fetched, stop and
-report its ID. Do not use scraped HTML, undocumented endpoints, or browser
-automation to manufacture a thread ID.
+report its ID. The 30-minute wait allows the current 25-minute CI job to reach a
+verdict; it does not extend the job timeout. On a transient network error, retry
+the read-only gate after checking the current head and run status, up to three
+times with short backoff. Preserve the total interrupted-run rerun count across
+attempts, and do not repeat a rerun whose outcome is unknown. If the error
+persists, stop rather than treating the gate as clear. Do not use scraped HTML,
+undocumented endpoints, or browser automation to manufacture a thread ID.
 
 ## Billing-blocked CI
 
