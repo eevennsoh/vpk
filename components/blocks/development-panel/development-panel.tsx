@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, type ReactElement, type ReactNode } from "react";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
@@ -54,16 +54,14 @@ const STATUS_COLORS: Record<PullRequestStatus, string> = {
 	Failed: "text-icon-danger",
 };
 
-function StartCodingMenu() {
+function StartCodingMenu({ trigger }: Readonly<{ trigger?: ReactElement }>) {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger render={<Button aria-label="Start coding" size="icon-compact" type="button" variant="ghost" />}>
-				<BranchIcon label="" size="small" />
-			</DropdownMenuTrigger>
+			{trigger ? <DropdownMenuTrigger render={trigger} /> : <DropdownMenuTrigger render={<Button aria-label="Start coding" size="icon-compact" type="button" variant="ghost" />}><BranchIcon label="" size="small" /></DropdownMenuTrigger>}
 			<DropdownMenuContent align="start" className="w-72 [&_[role=menuitem]>span:first-child]:size-4">
 				<DropdownMenuGroup><DropdownMenuLabel>Create branch in...</DropdownMenuLabel>
 				<DropdownMenuItem elemBefore={<AtlassianLogoMark frame="chip" label="" name="bitbucket" />}>Bitbucket Cloud</DropdownMenuItem>
-				<DropdownMenuItem elemBefore={<span aria-hidden><LogoThirdParty className="[&_svg]:size-3!" label="" name="github" size="xxsmall" tileBackground="surface" /></span>}>GitHub</DropdownMenuItem></DropdownMenuGroup>
+				<DropdownMenuItem elemBefore={<LogoThirdParty label="" name="github" size="xxsmall" tileBackground="surface" />}>GitHub</DropdownMenuItem></DropdownMenuGroup>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem elemBefore={<IconTile aria-hidden as="span" icon={<BranchIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />}>Copy create branch command</DropdownMenuItem>
 				<DropdownMenuItem elemBefore={<IconTile aria-hidden as="span" icon={<CommitIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />}>Copy create commit command</DropdownMenuItem>
@@ -82,7 +80,7 @@ function StartCodingMenu() {
 
 function ConnectionRow({ icon, name, connected }: Readonly<{ icon: ReactNode; name: string; connected?: boolean }>) {
 	return (
-		<div className="flex min-h-10 items-center gap-3 px-4 text-sm text-text-subtle">
+		<div className="flex min-h-10 items-center gap-3 px-2 text-sm text-text-subtle">
 			<span aria-hidden className="flex size-5 shrink-0 items-center justify-center">{icon}</span>
 			<span className="min-w-0 flex-1">{name}</span>
 			{connected ? <span aria-label="Connected" className="text-icon-success" role="img"><CheckMarkIcon label="" size="medium" /></span> : <Button aria-label={`Request ${name}`} size="compact" type="button" variant="outline">Request</Button>}
@@ -99,23 +97,23 @@ function DevelopmentSettings() {
 			<PopoverTrigger render={<Button aria-label="Development settings" size="icon-compact" type="button" variant="ghost" />}>
 				<CustomizeIcon label="" size="small" />
 			</PopoverTrigger>
-			<PopoverContent align="end" aria-label="Development settings" className="w-[350px] max-w-[calc(100vw-2rem)] gap-0 p-0">
-				<section aria-labelledby={repositoriesId} className="py-3">
-					<h3 className="px-4 pb-2 text-xs font-semibold text-text-subtle" id={repositoriesId}>Code repositories</h3>
+			<PopoverContent align="end" aria-label="Development settings" className="w-[350px] max-w-[calc(100vw-2rem)] gap-0 p-1">
+				<section aria-labelledby={repositoriesId} className="py-2">
+					<h3 className="px-2 pb-1 text-xs font-semibold text-text-subtle" id={repositoriesId}>Code repositories</h3>
 					<ConnectionRow connected icon={<AtlassianLogoMark frame="chip" label="" name="bitbucket" />} name="Bitbucket" />
 					<ConnectionRow connected icon={<LogoThirdParty label="" name="github" size="xxsmall" tileBackground="surface" />} name="GitHub for Atlassian" />
 					<ConnectionRow icon={<LogoThirdParty label="" name="gitlab" size="xxsmall" tileBackground="surface" />} name="GitLab for Jira Cloud" />
 				</section>
-				<Separator className="mx-2 data-horizontal:w-auto" />
-				<section aria-labelledby={agentsId} className="py-3">
-					<h3 className="px-4 pb-2 text-xs font-semibold text-text-subtle" id={agentsId}>Agents</h3>
+				<Separator className="mx-1 data-horizontal:w-auto" />
+				<section aria-labelledby={agentsId} className="py-2">
+					<h3 className="px-2 pb-1 text-xs font-semibold text-text-subtle" id={agentsId}>Agents</h3>
 					<ConnectionRow connected icon={<AgentAvatarVisual animate={false} appearance="coding" avatarSrc={JIRA_CODING_AGENT_GLYPH} label="" sizePx={20} />} name="Jira Coding Agent" />
 					<ConnectionRow icon={<AgentAvatarVisual animate={false} appearance="coding" brandName="github-copilot" label="" sizePx={20} />} name="GitHub Copilot for Jira" />
 					<ConnectionRow connected icon={<AgentAvatarVisual animate={false} appearance="coding" brandName="cursor" label="" sizePx={20} />} name="Cursor" />
 					<ConnectionRow icon={<AgentAvatarVisual animate={false} appearance="coding" brandName="claude" label="" sizePx={20} />} name="Claude Agent for Jira" />
 				</section>
-				<Separator className="mx-2 data-horizontal:w-auto" />
-				<div className="p-2"><Button className="w-full justify-start gap-3 px-[7px] font-normal" type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AngleBracketsIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Manage connections</Button></div>
+				<Separator className="mx-1 data-horizontal:w-auto" />
+				<div className="pt-1"><Button className="w-full justify-start gap-3 px-2 font-normal" type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AngleBracketsIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Manage connections</Button></div>
 			</PopoverContent>
 		</Popover>
 	);
@@ -146,7 +144,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, onStartCoding, p
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>
-				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} onStartCoding={onStartCoding} /></div>}
+				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} onStartCoding={onStartCoding} renderStartCoding={onStartCoding ? undefined : (trigger) => <StartCodingMenu trigger={trigger} />} /></div>}
 			</div>
 		</TeamEuRailPanel>
 	);
