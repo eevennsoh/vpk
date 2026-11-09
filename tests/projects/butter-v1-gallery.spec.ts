@@ -318,7 +318,7 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Carry card-artwork metadata into the next wallet epic", { exact: true })).toBeVisible();
 });
 
-test("a coding session started from a work item uses its summary", async ({ page }) => {
+test("start coding opens the development dropdown in a work item", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -328,11 +328,12 @@ test("a coding session started from a work item uses its summary", async ({ page
 	await board.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
 	await item.getByRole("button", { name: "Start coding" }).click();
-	const chat = item.locator('[data-rovo-chat-placement="floating"]');
-	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
-	await chat.getByRole("button", { name: "Close", exact: true }).click();
-	await item.getByRole("group", { name: "Agents field" }).getByRole("button").click();
-	const sessions = page.getByRole("dialog", { name: "Agent sessions" });
-	await expect(sessions.getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true })).toBeVisible();
-	await expect(sessions.getByRole("button", { name: "Add agent", exact: true })).toBeVisible();
+	const menu = page.getByRole("menu", { name: "Start coding" });
+	for (const name of ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"]) {
+		await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
+	}
+	await expect(menu.getByRole("menuitem", { name: "Branch name settings" })).toBeVisible();
+	await expect(item.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(item.getByRole("button", { name: "Start coding" })).toBeFocused();
 });

@@ -246,8 +246,8 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("dialog") === null, true);
 	await view.click(view.getByRole("button", { name: "Open third card" }));
 	await view.click(view.getByRole("button", { name: "Start coding" }));
-	assert.equal(view.getAllByRole("heading", { name: "Third board item" }).length > 1, true);
-	assert.equal(view.queryByText("Ready to work on PAY-120.") !== null, true);
+	assert.equal(view.queryByRole("menuitem", { name: "Bitbucket Cloud" }) !== null, true);
+	assert.equal(view.queryByText("Ready to work on PAY-120."), null);
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
 	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
 	await view.click(view.getByRole("button", { name: "Open critical card" }));
@@ -343,12 +343,12 @@ test("board work item actions omit unsupported deep links and keep key copying a
 	}
 });
 
-test("empty Project butter can create a coding session", async () => {
+test("empty Project butter opens the start coding menu", async () => {
 	const view = await renderWorkItem({ initialPreset: "empty" });
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
 	await view.click(view.getByRole("button", { name: "Start coding" }));
-	assert.equal(view.queryByRole("textbox", { name: "Reply to Jira Coding agent" }) !== null, true);
-	assert.equal(view.queryByText("No agent sessions yet. Start coding to begin work on this item.") === null, true);
+	assert.equal(view.queryByRole("menuitem", { name: "Bitbucket Cloud" }) !== null, true);
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Jira Coding agent" }), null);
 });
 
 test("activity header keeps only the filter menu in both states", async () => {

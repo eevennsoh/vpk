@@ -34,7 +34,6 @@ import { JIRA_CODING_AGENT_GLYPH } from "@/lib/agent-avatar-visuals";
 export interface DevelopmentPanelProps {
 	pullRequests?: readonly PullRequestProps[];
 	workItem: { code: string; summary: string; description: string };
-	onStartCoding?: () => void;
 	pullRequestSettings?: PullRequestSettingsProps;
 	headerExtra?: ReactNode;
 	footerExtra?: ReactNode;
@@ -98,15 +97,14 @@ function DevelopmentSettings() {
 				<CustomizeIcon label="" size="small" />
 			</PopoverTrigger>
 			<PopoverContent align="end" aria-label="Development settings" className="w-[350px] max-w-[calc(100vw-2rem)] gap-0 p-1">
-				<section aria-labelledby={repositoriesId} className="py-2">
-					<h3 className="px-2 pb-1 text-xs font-semibold text-text-subtle" id={repositoriesId}>Code repositories</h3>
+				<section aria-labelledby={repositoriesId}>
+					<h3 className="px-2 pt-3 pb-1 text-xs leading-4 font-semibold text-text-subtlest" id={repositoriesId}>Code repositories</h3>
 					<ConnectionRow connected icon={<AtlassianLogoMark frame="chip" label="" name="bitbucket" />} name="Bitbucket" />
 					<ConnectionRow connected icon={<LogoThirdParty label="" name="github" size="xxsmall" tileBackground="surface" />} name="GitHub for Atlassian" />
 					<ConnectionRow icon={<LogoThirdParty label="" name="gitlab" size="xxsmall" tileBackground="surface" />} name="GitLab for Jira Cloud" />
 				</section>
-				<Separator className="mx-1 data-horizontal:w-auto" />
-				<section aria-labelledby={agentsId} className="py-2">
-					<h3 className="px-2 pb-1 text-xs font-semibold text-text-subtle" id={agentsId}>Agents</h3>
+				<section aria-labelledby={agentsId} className="pb-2">
+					<h3 className="px-2 pt-3 pb-1 text-xs leading-4 font-semibold text-text-subtlest" id={agentsId}>Agents</h3>
 					<ConnectionRow connected icon={<AgentAvatarVisual animate={false} appearance="coding" avatarSrc={JIRA_CODING_AGENT_GLYPH} label="" sizePx={20} />} name="Jira Coding Agent" />
 					<ConnectionRow icon={<AgentAvatarVisual animate={false} appearance="coding" brandName="github-copilot" label="" sizePx={20} />} name="GitHub Copilot for Jira" />
 					<ConnectionRow connected icon={<AgentAvatarVisual animate={false} appearance="coding" brandName="cursor" label="" sizePx={20} />} name="Cursor" />
@@ -119,7 +117,7 @@ function DevelopmentSettings() {
 	);
 }
 
-export function DevelopmentPanel({ pullRequests = [], workItem, onStartCoding, pullRequestSettings, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
+export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
 	const hasPullRequests = pullRequests.length > 0;
 	return (
 		<TeamEuRailPanel
@@ -144,7 +142,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, onStartCoding, p
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>
-				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} onStartCoding={onStartCoding} renderStartCoding={onStartCoding ? undefined : (trigger) => <StartCodingMenu trigger={trigger} />} /></div>}
+				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} /></div>}
 			</div>
 		</TeamEuRailPanel>
 	);

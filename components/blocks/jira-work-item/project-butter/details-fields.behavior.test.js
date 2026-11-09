@@ -14,8 +14,7 @@ function renderDetails(props = {}) {
 				const filledContent = useProjectButterContent("filled", workItem);
 				const emptyContent = useProjectButterContent("empty", workItem);
 				const [order, setOrder] = useState(["details", "development", "automation", "apps"]);
-				const [coding, setCoding] = useState(false);
-				return <ThemeWrapper><ProjectButterDetails code={workItem?.code} content={empty ? emptyContent : filledContent} empty={empty} key={sidePanel ? "side-panel" : "wide"} onPanelOrderChange={setOrder} onStartCoding={() => setCoding(true)} panelOrder={order} sidePanel={sidePanel} />{coding ? <p>Coding started</p> : null}</ThemeWrapper>;
+				return <ThemeWrapper><ProjectButterDetails code={workItem?.code} content={empty ? emptyContent : filledContent} empty={empty} key={sidePanel ? "side-panel" : "wide"} onPanelOrderChange={setOrder} panelOrder={order} sidePanel={sidePanel} /></ThemeWrapper>;
 			}`,
 		props,
 	});
