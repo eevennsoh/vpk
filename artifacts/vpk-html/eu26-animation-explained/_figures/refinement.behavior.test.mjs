@@ -150,6 +150,71 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 			assert.deepEqual(result, []);
 		});
 
+		await t.test('overlapping field cards only swap paint order when their depth order clearly changes', () => {
+			// The probe reports every overlapping pair arrange() orders by depth, with the planes' depth gap at the overlap's
+			// area centroid (positive when b is nearer). Frames are drawn in sequence, as playback does.
+			const frames = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				hero.dataset.heroDepthProbe = 'on';
+				const out = [];
+				for (let step = 0; ; step++) {
+					const time = 15.5 + step * .025;
+					if (time > 22 + 1e-9) break;
+					draw(time);
+					const order = [...svg.querySelectorAll(':scope > [data-eu26-piece]')].filter(el => getComputedStyle(el).display !== 'none').map(el => el.dataset.eu26Piece);
+					out.push({ time: Number(time.toFixed(3)), order, pairs: (hero.eu26DepthPairs || []).map(pair => [pair.a, pair.b, Number(pair.gap.toFixed(3))]) });
+				}
+				delete hero.dataset.heroDepthProbe;
+				return out;
+			`);
+			const CLEAR = 3, FIRM = 8;
+			let previous = new Map(), pairs = 0, flips = 0;
+			const sudden = [], wrong = [], perPair = new Map();
+			for (const frame of frames) {
+				const slot = new Map(frame.order.map((name, index) => [name, index])), current = new Map();
+				for (const [a, b, gap] of frame.pairs) {
+					pairs += 1;
+					const bFront = slot.get(b) > slot.get(a), key = `${a}|${b}`;
+					current.set(key, bFront);
+					if (Math.abs(gap) > FIRM && bFront !== gap > 0) wrong.push(`${frame.time}: ${key} gap ${gap} but ${bFront ? b : a} paints in front`);
+					if (!previous.has(key) || previous.get(key) === bFront) continue;
+					flips += 1;
+					perPair.set(key, (perPair.get(key) || 0) + 1);
+					if ((bFront ? gap : -gap) < CLEAR) sudden.push(`${frame.time}: ${key} swapped with gap ${gap}`);
+				}
+				previous = current;
+			}
+			assert.ok(frames.length >= 260 && pairs > 1000, `sampled ${frames.length} frames and ${pairs} overlapping pairs`);
+			assert.deepEqual(sudden, [], 'no pair swaps unless the depth gap clearly favours the new order');
+			assert.deepEqual(wrong, [], 'a clearly nearer card always paints in front');
+			assert.ok(Math.max(0, ...perPair.values()) <= 2, `no pair keeps swapping (${JSON.stringify(Object.fromEntries(perPair))})`);
+			assert.ok(flips < 20, `${flips} swaps in 6.5 s of orbit`);
+		});
+
+		await t.test('only one surface is orange through the hero-to-bento and bento-to-title hand-offs', () => {
+			const result = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				const failures = [], seen = new Set();
+				for (let step = 0; ; step++) {
+					const time = 18.5 + step * .02;
+					if (time > 23.5 + 1e-9) break;
+					draw(time);
+					const lit = [...svg.querySelectorAll(':scope > [data-eu26-piece]')].filter(el => getComputedStyle(el).display !== 'none' && !el.dataset.eu26Piece.startsWith('confetti')).flatMap(el => {
+						const face = el.querySelector('[data-eu26-face]'), share = face ? parseFloat(face.style.getPropertyValue('--eu26-hl')) / 100 : NaN;
+						const highlight = Math.max(Number.isFinite(share) ? share : 0, Number(el.dataset.eu26Highlight || 0)), alpha = Number(getComputedStyle(el).opacity);
+						return highlight > .05 && alpha > .05 ? [el.dataset.eu26Piece] : [];
+					});
+					lit.forEach(name => seen.add(name));
+					if (lit.length > 1) failures.push(time.toFixed(2) + ': ' + lit.join(', '));
+				}
+				return { failures, seen: [...seen] };
+			`);
+			assert.deepEqual(result.failures, []);
+			assert.deepEqual(result.seen, ['story.15', 'tile.0', 'title'], 'the orange passes hero card, Agent Sessions tile, Team ’26 title');
+		});
+
 		await t.test('camera angle changes repaint board geometry and leave the bento front-facing', () => {
 			const result = scenario(`
 				const placement = [3, 4.3, 5.8, 7].map(time => {

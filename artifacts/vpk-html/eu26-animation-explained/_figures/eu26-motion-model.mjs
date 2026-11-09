@@ -69,6 +69,9 @@ export function model(input, data) {
 	const clamp = x => Math.max(0, Math.min(1, x));
 	const clampTo = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 	const ease = x => { const u = clamp(x); return u * u * (3 - 2 * u); };
+	// The hero card turns into the first bento tile here (cards and tiles below), just after the hero-landing state at 19 s
+	// shows it whole: its face clears over the first 0.2 s, then the tile takes over its pose and flies.
+	const HANDOFF = 19.2;
 	const cameraEase = x => { const u = clamp(x); return u * u * u * (u * (u * 6 - 15) + 10); };
 	const projectionScale = (options.projectionScale ?? data.motion?.projectionScale ?? 0.8692407110335721) * Math.sqrt(1.6);
 	const mix = (a, b, s) => a + (b - a) * s;
@@ -199,7 +202,6 @@ export function model(input, data) {
 			const velocity = [(random(i, 5) - 0.5) * 520, (random(i, 6) - 0.5) * 420, 180 + random(i, 7) * 350];
 			velocity[0] += i === 17 ? 160 : i === 20 ? 140 : 0;
 			at = at.map((value, axis) => value + velocity[axis] * impulse * (i === 15 ? 0.28 : 1));
-			const pitchAngle = (random(i, 8) - 0.5) * 1.05, yaw = (random(i, 9) - 0.5) * 1.1;
 			if (i !== 15) {
 				// Orbiting cards never pass over the hero: in the view plane each card keeps one card width clear of it, pushed
 				// smoothly out along its own fixed side (from its resting field place), so the push never flips direction.
@@ -213,12 +215,17 @@ export function model(input, data) {
 				const clear = 230 * ease((time - 15) / 1.5), reach = across < clear ? (1 - (across / clear) ** 2) ** 2 : 0, push = Math.max(0, clear - ahead) * reach;
 				if (push > 0) at = at.map((value, axis) => value + side[axis] * push);
 			}
+			const pitchAngle = (random(i, 8) - 0.5) * 1.05, yaw = (random(i, 9) - 0.5) * 1.1;
 			// After the burst each card keeps a slow tumble and turns with its orbit.
 			const { tau, turn } = orbit(i, time), sway = clamp(tau / 3);
 			rot = i === 15 ? [0, 0, 0] : [pitchAngle * s + Math.sin(u * Math.PI) * (random(i, 10) - 0.5) * 1.8 + Math.sin(tau * 0.9 + random(i, 15) * 6.283) * 0.14 * sway, yaw * s + Math.sin(u * Math.PI) * (random(i, 11) - 0.5) * 2.1 + Math.cos(tau * 0.7 + random(i, 16) * 6.283) * 0.16 * sway, (random(i, 12) - 0.5) * 0.9 * s + turn * s];
 			alpha = mix(inWindow ? 1 : 0, 1, ease(u / 0.32));
 		}
-		if (time > 19) alpha *= 1 - ease((time - 19) / 1.2);
+		if (time > 19 && i !== 15) alpha *= 1 - ease((time - 19) / 1.2);
+		// The hero becomes the first bento tile at HANDOFF: its face clears, then the tile takes over its exact pose (see tiles),
+		// so one orange surface carries on and no fading orange copy is left behind.
+		if (i === 15 && time >= HANDOFF) alpha = 0;
+		const face = i === 15 ? 1 - ease((time - HANDOFF + 0.2) / 0.2) : 1;
 		const highlight = i === 15 ? 1 : ease((time - 4.3) / 1.2) * (1 - ease((time - 13.2) / 2.5));
 		// clip names the list window a card is cut by: Done once it has landed there, or its own column while it still rests
 		// (or reflows) in a row that reaches the column's bottom edge. A lifted card is never clipped.
@@ -229,7 +236,7 @@ export function model(input, data) {
 		// followers keep their Done order beneath it, however their arcs and offsets cross in depth on the way.
 		const leads = i === 0 || (i !== 15 && (inWindow ? row.rank >= 2 : moved));
 		const deckOrder = leads && time >= groupDrag.grab && time <= groupDrag.land ? { id: "group-drag", rank: row.rank - leaderRow.rank } : null;
-		return { ...pose(at, rot, 1, alpha, highlight), clip, stack: deckOrder, listAt: done, rank: row.rank, listVisible: inWindow };
+		return { ...pose(at, rot, 1, alpha, highlight), face, clip, stack: deckOrder, listAt: done, rank: row.rank, listVisible: inWindow };
 	});
 	const field = data.wallField, periodX = field?.periodX ?? 3800, periodY = field?.periodY ?? 3800;
 	const lastShot = data.cameraKeys[data.cameraKeys.length - 1], lastCamera = { ...lastShot, height: lastShot.width * 760 / 1200 };
@@ -244,11 +251,21 @@ export function model(input, data) {
 	const shift = wallShift(time);
 	const tiles = data.features.map((feature, i) => {
 		const target = [feature.at[0] + feature.w / 2, feature.at[1] + feature.d / 2, feature.at[2]];
-		const s = ease((time - 19 - i * 0.24) / 1.55), from = i === 0 ? [-15, -28, 96] : fieldAt(feature.card, time);
+		const s = ease((time - (i === 0 ? HANDOFF : 19 + i * 0.24)) / 1.55), from = i === 0 ? [-15, -28, 96] : fieldAt(feature.card, time);
 		let at = between(from, target, s);
 		at[2] += Math.sin(s * Math.PI) * 150;
 		let rot = [(1 - s) * (i % 2 ? -0.5 : 0.5), (1 - s) * -0.45, (1 - s) * (i % 2 ? -0.5 : 0.5)];
-		let scale = mix(0.82, 1, s), scaleY = scale, alpha = ease((time - 19 - i * 0.2) / 0.5);
+		let scale = mix(0.82, 1, s), scaleY = scale, alpha = ease((time - 19 - i * 0.2) / 0.5), face = 1;
+		if (i === 0) {
+			// The hero card morphs into this tile: it starts opaque at the card's pose and footprint, turns only mid-flight,
+			// and its sessions face fades up on the blank orange sheet the card's face cleared to.
+			const card = data.cards[feature.card], arc = Math.sin(s * Math.PI);
+			rot = [arc * 0.35, arc * -0.3, arc * 0.35];
+			scale = mix(card.w / feature.w, 1, s);
+			scaleY = mix(card.d / feature.d, 1, s);
+			alpha = time >= HANDOFF ? 1 : 0;
+			face = ease((time - HANDOFF - 0.05) / 0.35);
+		}
 		if (time > 22.4) {
 			const toss = ease((time - 22.4 - i * 0.07) / 3.7), wall = data.wall.find(slot => slot.reserved === i);
 			const destination = [wall.at[0] + wall.w / 2 + shift[0], wall.at[1] + wall.d / 2 + shift[1], wall.at[2] + 3];
@@ -259,9 +276,10 @@ export function model(input, data) {
 			scaleY = mix(1, wall.d / feature.d, toss);
 			alpha *= 1 - ease((time - 26) / 0.7);
 		}
-		// The hero tile hands the orange to the Team ’26 title as it lands (same 0.3s curve), so only one tile is orange.
-		const highlight = i === 0 ? 1 - ease((time - 22.2) / 0.3) : 0;
-		return { ...pose(at, rot, scale, alpha, highlight), scaleY };
+		// The hero tile hands the orange to the Team ’26 title as it lands: the tile goes neutral before the title warms, so
+		// only one tile is ever orange.
+		const highlight = i === 0 ? 1 - ease((time - 22.2) / 0.15) : 0;
+		return { ...pose(at, rot, scale, alpha, highlight), scaleY, face };
 	});
 	const wrap = (value, center, period) => value - Math.floor((value - center + period / 2) / period) * period;
 	const screenAt = (point, atTime = time) => {
@@ -558,7 +576,7 @@ export function model(input, data) {
 		return { ...pose(at, rot, scale, alpha, 1), act: i < puffCount && time < finaleStart ? "puff" : "finale", shape: shape.shape };
 	});
 	const titleSlot = data.wall.find(slot => slot.reserved === 6), carry = data.titleCarry;
-	let titlePose = pose([...data.title.at], [0, 0, 0], 1, ease((time - 22.2) / 0.3), ease((time - 22.2) / 0.3));
+	let titlePose = pose([...data.title.at], [0, 0, 0], 1, ease((time - 22.2) / 0.3), ease((time - 22.35) / 0.15));
 	if (time >= carry.grab) {
 		const progress = clamp((time - carry.grab) / (carry.land - carry.grab)), along = ease((time - carry.grab - 0.22) / (carry.land - carry.grab - 0.47));
 		const give = Math.sin(Math.PI * clamp((time - carry.grab) / 0.95)) ** 2;

@@ -98,6 +98,9 @@ export function live(ctx) {
 	const cursorParts = new Map([...ctx.svg.querySelectorAll("[data-eu26-cursor]")].map(el => [el.dataset.eu26Cursor, el]));
 	const poses = new Map();
 	let lastOrder = "";
+	// Overlapping pairs remember which one was in front for the next frame (see arrange).
+	const PAIR_HYSTERESIS = 6, PAIR_MEMORY = 0.1;
+	let pairFronts = new Map(), pairTime = -Infinity;
 	const pieces = new Map([...ctx.svg.querySelectorAll("[data-eu26-piece]")].map(el => [el.dataset.eu26Piece, el]));
 	const chrome = [...ctx.svg.querySelectorAll('[data-eu26-piece="chrome"]')];
 	// The camera is parallel at rest. During a camera move the model raises `persp`, and points toward the viewer spread
@@ -379,7 +382,7 @@ export function live(ctx) {
 		ctx.root.dataset.heroDoneSweep = Number(effect.sweep).toFixed(5);
 		ctx.root.dataset.heroDoneAlpha = Number(effect.alpha).toFixed(5);
 	};
-	const arrange = () => {
+	const arrange = time => {
 		const visible = surfaces.map(surface => surface.el).filter(el => el.style.display !== "none").map(geometry).filter(item => item.polygon.length > 2);
 		// Only things standing on the ground cast onto it: a card or chrome piece resting on the visible board (its middle
 		// over the board, its underside at or just above the board's top) casts nothing, or its offset shadow would poke
@@ -393,6 +396,14 @@ export function live(ctx) {
 		};
 		drawShadows(visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path") && !restsOnBoard(item)).map(item => surfaceOf.get(item.el).shadow || "").filter(Boolean));
 		const edges = visible.map(() => new Set()), incoming = visible.map(() => 0);
+		// A seek (anything but the next frame of continuous playback or scrubbing) forgets the held pair orders, so a still
+		// frame always paints the same however it was reached.
+		if (!(Math.abs(time - pairTime) <= PAIR_MEMORY)) pairFronts = new Map();
+		pairTime = time;
+		const fronts = new Map();
+		// Opt-in probe for tests: every overlapping pair with its centroid depth gap (positive when b is nearer).
+		const probe = ctx.root.dataset.heroDepthProbe === "on" ? [] : null;
+		if (probe) ctx.root.eu26DepthPairs = probe;
 		// A held card and the cards it leads share a stack: higher ranks paint first, the held card (rank 0) last.
 		const stacks = visible.map(item => poses.get(item.el)?.stack ?? null);
 		const stacked = (a, b) => stacks[a] && stacks[b] && stacks[a].id === stacks[b].id;
@@ -408,12 +419,28 @@ export function live(ctx) {
 			if (ab[2] <= bb[0] || bb[2] <= ab[0] || ab[3] <= bb[1] || bb[3] <= ab[1]) continue;
 			const overlap = intersection(visible[a].polygon, visible[b].polygon);
 			if (overlap.length < 3) continue;
-			const at = overlap.reduce((sum, point) => [sum[0] + point[0] / overlap.length, sum[1] + point[1] / overlap.length], [0, 0]);
-			const da = visible[a].at(at), db = visible[b].at(at);
-			const back = da <= db ? a : b, front = da <= db ? b : a;
+			// Compare the two planes at the overlap's area centroid: the depth gap there is the mean gap over the overlap, and
+			// it moves continuously as the overlap gains or loses corners (a corner average jumps). Tilted cards that pass
+			// through each other keep their last order until the gap clearly favours the other one, so a pair hovering at an
+			// even split cannot flicker in front of and behind each other.
+			let twice = 0, cx = 0, cy = 0;
+			for (let i = 0; i < overlap.length; i += 1) {
+				const p = overlap[i], q = overlap[(i + 1) % overlap.length], w = p[0] * q[1] - q[0] * p[1];
+				twice += w; cx += (p[0] + q[0]) * w; cy += (p[1] + q[1]) * w;
+			}
+			if (Math.abs(twice) < 0.01) continue;
+			const at = [cx / (3 * twice), cy / (3 * twice)];
+			const nameA = visible[a].el.dataset.eu26Piece, nameB = visible[b].el.dataset.eu26Piece;
+			const pair = nameA < nameB ? `${nameA}|${nameB}` : `${nameB}|${nameA}`;
+			const gap = visible[b].at(at) - visible[a].at(at), held = pairFronts.get(pair);
+			const bFront = held === nameB ? gap > -PAIR_HYSTERESIS : held === nameA ? gap > PAIR_HYSTERESIS : gap >= 0;
+			fronts.set(pair, bFront ? nameB : nameA);
+			const back = bFront ? a : b, front = bFront ? b : a;
 			edges[back].add(front);
 			incoming[front] += 1;
+			if (probe) probe.push({ a: nameA, b: nameB, gap, area: Math.abs(twice) / 2 });
 		}
+		pairFronts = fronts;
 		const remaining = new Set(visible.map((_, i) => i)), order = [];
 		const ready = [], compare = (a, b) => visible[a].depth - visible[b].depth || a - b;
 		const push = index => {
@@ -516,11 +543,13 @@ export function live(ctx) {
 			const el = pieces.get(`story.${i}`);
 			set(el, [card.home[0] + card.w / 2, card.home[1] + card.d / 2, card.home[2]], state.cards[i]);
 			accent(el, state.cards[i].highlight ?? (i === 15 ? 1 : 0));
+			if (el.style.display !== "none") landTile(surfaceOf.get(el), state.cards[i]);
 		});
 		data.features.forEach((tile, i) => {
 			const el = pieces.get(`tile.${i}`);
 			set(el, [-700 + i * 260 + tile.w / 2, 1600 + tile.d / 2, 4], state.tiles[i]);
 			accent(el, state.tiles[i].highlight ?? (i === 0 ? 1 : 0));
+			if (el.style.display !== "none") landTile(surfaceOf.get(el), state.tiles[i]);
 		});
 		data.wall.forEach((card, i) => {
 			const el = pieces.get(`wall.${i}`);
@@ -544,7 +573,7 @@ export function live(ctx) {
 		accent(pieces.get("title"), state.titlePose.highlight ?? 0);
 		lightDone(state);
 		const center = project(state.camera.at);
-		arrange();
+		arrange(time);
 		const { height } = state.camera, [cx, cy] = center;
 		// Shots are framed at 1.58:1 and lean on scene beyond the frame's sides. A narrower display (the two-column figure
 		// page) widens the frame up to 1.3x so the board is not cropped.
