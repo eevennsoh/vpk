@@ -18,32 +18,54 @@ Run it as a background command so the harness notifies on exit; a full wait
 plus reruns can take an hour. Check progress when a state changes or a run
 exceeds its expected duration, and report the current job, elapsed time, and
 known blocker. A pending check is not evidence of failure or a stalled test.
+Record current-head review status concurrently, bounded to three minutes as in
+[review-gate.md](review-gate.md). Reuse valid evidence on unchanged code rather
+than starting duplicate full local CI while Actions is healthy.
 
-- Exit 0: checks passed, review gate clear, merge state `CLEAN`. Merge now:
-  `gh pr merge <number> --merge --delete-branch`.
+- Exit 0: record checks, current-head review and `CLEAN` merge state. Merge with
+  the canonical helper and the reviewed SHA:
+
+  ```bash
+  node .agents/skills/vpk-git-ship/scripts/merge-remote.js \
+    --pr <number> --repo <owner>/<repo> --head <reviewed-head-sha>
+  ```
 - Exit 3 with `checks.state: "billing-blocked"`: GitHub Actions did not run
   because of account billing, and nothing else blocks. Skip GitHub CI without
   asking or waiting: run `pnpm run ci:pr` locally at the PR head, comment the
-  result on the PR, and merge with the same command only if it exited 0. Follow
+  result on the PR, then follow the explicit expected-SHA REST path only if local
+  CI exited 0. The canonical helper refuses exit 3; it has no bypass flag. Follow
   [Billing-blocked CI](review-gate.md#billing-blocked-ci).
 - Exit 2 with `checks.state: "failing"`: inspect the check logs. When the user
   asked to ship or finish the PR, fix a failure attributable to the requested
-  changes when the fix is clear and within scope. Run the relevant local checks,
-  commit and push, then repeat the full current-head review and CI gate. Do not
+  changes when the fix is clear and within scope. Batch fixes and validate ALL
+  colocated contracts and affected browser checks against the final reconciled
+  candidate before pushing. Reuse unaffected evidence, commit and push, then repeat the full current-head review and CI gate. Do not
   blindly rerun a real failure. Stop and report unrelated failures, unclear
   product decisions, or failures that cannot be safely fixed in scope.
 - Exit 2 with `checks.state: "interrupted"`: a run was cancelled or timed out
   three times without a verdict (`reruns` lists the run IDs). This is not a
-  test failure. Stop, preserve the PR, and report it as a CI capacity problem
-  (usually the job `timeout-minutes` in `.github/workflows/ci.yml`). Never
+  test failure. Stop, preserve the PR, and report the interrupted runs and known
+  cause; do not infer capacity or timeout without evidence. Never
   merge on an interrupted run.
 - Exit 2 with `checks.state: "pending"`: the wait ran out. Stop and
   preserve the PR; report the pending checks.
 - Exit 2 with checks passing: a review or merge-state condition remains; see
   [review-gate.md](review-gate.md).
 
-`--delete-branch` deletes the remote source branch; local worktrees and
-branches remain cleanup work.
+The helper obtains a fresh full review gate, rejects a changed reviewed SHA,
+then uses the documented REST merge endpoint (`PUT /repos/{owner}/{repo}/pulls/{number}/merge`)
+with `sha` and `merge_method: merge`. It verifies the merged PR before considering
+branch deletion. Deletion requires the original and current head to belong to
+the same repository, retain their branch name and SHA, and differ from the base
+and default branch. A fresh ref read is followed by a Git push with an explicit
+repository URL and `--force-with-lease=<head-ref>:<reviewed-sha>`; this makes a
+concurrent push reject deletion. REST ref deletion has no documented expected-SHA
+condition, so the helper never uses it. Fork and changed refs are preserved.
+
+The helper never switches checkout, deletes a local branch, or syncs main. A
+merge or deletion request with an unknown outcome is reconciled, never blindly
+retried. Persistent-main synchronization below remains a separate step. Local
+branches and worktrees belong to `vpk-git-clean`.
 
 If `BLOCKED` appears while checks look green, repeat the review-gate GraphQL and
 REST reconciliation once. Merge only after every surfaced thread is resolved.
@@ -52,7 +74,7 @@ rule (for example CODEOWNERS or a required human review); do not use
 `--admin`.
 
 For merge-back of an existing PR, run the same wait-and-gate command first; the
-merge command is the same.
+canonical remote merge helper is the same.
 
 Prefer merge commits unless the user explicitly asks for squash or rebase.
 
@@ -61,7 +83,9 @@ Prefer merge commits unless the user explicitly asks for squash or rebase.
 - Resolve conflicts only in the PR branch or its owning worktree, never by
   overwriting persistent-main edits.
 - Inspect both sides and preserve unrelated changes. Push the conflict fix, then
-  rerun checks and the full review gate because the PR head changed.
+  validate the final reconciled candidate before pushing: focused checks, ALL
+  colocated contracts and affected browser checks. Then require hosted CI and a
+  fresh current-head review gate.
 - If a required check fails, report its name and URL. Fix it only when the user
   asked to finish the PR; otherwise leave the branch and PR intact.
 - If review is re-requested or approval is dismissed after a push, wait for the
@@ -108,11 +132,9 @@ would be affected, preserve them with the narrowest safe mechanism and restore
 them unstaged afterward. If there is no safe preservation path, stop and report
 the blocker rather than forcing a sync.
 
-Only switch to `main` and delete the local feature branch when running in the
-persistent checkout and its tree is clean. In a secondary worktree, or whenever
-local edits exist, stay put. Never remove the current worktree or delete the
-branch it is using. Defer that to `vpk-git-clean` from the main checkout.
-
+Keep the current checkout on its owning branch. Never switch to `main` or delete
+local branches as part of remote merge or sync. Defer landed branch/worktree
+cleanup to `vpk-git-clean` from the main checkout.
 Verify synchronization:
 
 ```bash
@@ -148,16 +170,15 @@ performs those removals separately.
 
 ## Edge cases
 
-- A remote merge can succeed even when local branch deletion fails because a
-  worktree still owns the branch. Verify the PR and merge commit, sync `main`,
-  and defer local deletion.
-- A merge helper may complain that `main` is already checked out elsewhere.
-  Use the owning worktree with `git -C`; do not attach `main` twice.
+- A remote merge can succeed while a later remote deletion lease is rejected.
+  Record the merge commit, preserve the advanced ref, and sync `main` separately;
+  a failed deletion is not a failed merge. Local worktree ownership is irrelevant
+  to the remote helper.
 - If the persistent checkout is intentionally on another branch, preserve that
   branch and report that local `main` was not switched. Sync only when it is safe.
 - If the merge command returns an error after GitHub may have accepted it,
   re-read `state`, `mergedAt`, and `mergeCommit` before retrying. Never create a
-  duplicate PR or duplicate merge because the local cleanup portion failed.
+  duplicate PR or duplicate merge because a subsequent branch deletion failed.
 
 ## Final evidence
 

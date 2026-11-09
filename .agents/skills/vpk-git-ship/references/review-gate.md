@@ -43,12 +43,16 @@ node .agents/skills/vpk-git-ship/scripts/review-gate-status.js \
   --pr <number> --repo <owner>/<repo> --json
 ```
 
-The helper captures the current head and check rollup, pages GraphQL
+The helper reads the PR, GraphQL threads, REST comments and REST reviews
+concurrently using asynchronous child processes. It captures the current head
+and check rollup, pages GraphQL
 `reviewThreads` until `hasNextPage` is false, fetches paginated REST comments and
 reviews, and maps every top-level REST comment to a GraphQL thread by database
 ID. When GraphQL temporarily omits a REST comment, it re-fetches every surface
 at five-second intervals for up to 30 seconds. Its JSON is the rerunnable review
-artifact; do not replace it with an ad-hoc partial query.
+artifact; do not replace it with an ad-hoc partial query. It verifies the head
+across thread pages and again after reconciliation. A changed head requires a
+fresh candidate review and gate; malformed or unavailable surfaces fail closed.
 
 Inspect `unresolvedThreads`, `missingRestCommentIds`, and
 `nonApprovingReviews`. Classify every listed non-approving review using its ID
@@ -65,21 +69,30 @@ node .agents/skills/vpk-git-ship/scripts/review-gate-status.js \
   --pr <number> --repo <owner>/<repo> --wait 1800 --rerun-interrupted 3 --require-clear
 ```
 
-`--wait` polls every 30 seconds while any check is pending, for up to the given
-seconds. A cancelled or timed-out run is `interrupted`, not `failing`:
-`--rerun-interrupted 3` reruns it (`gh run rerun`) up to three times, waiting
-the full `--wait` after each, and never reruns a real failure. `PR checks` is required by default; pass `--required-check <name>`
+`--wait` polls the head and check rollup every 30 seconds while checks are
+pending. Unchanged pending runs use one light PR request; changed state and the
+wait deadline trigger complete reconciliation. `merge-remote.js` always obtains
+another full authoritative gate immediately before merging. A cancelled or timed-out run is `interrupted`, not `failing`:
+`--rerun-interrupted 3` reruns it through the documented Actions rerun API up to
+three times, waiting
+the full `--wait` after each, and never reruns a real failure. The count is a
+total mutation budget across all run IDs; attempted mutations are recorded on
+stderr before sending and included in errors, including unknown outcomes. `PR checks` is required by default; pass `--required-check <name>`
 (repeatable) to replace that list. Exit 2 means at least one
 review, check, or merge-state condition remains; inspect the same JSON rather
 than weakening the gate. Exit 3 means the only blocker is billing-blocked
 GitHub Actions; follow [Billing-blocked CI](#billing-blocked-ci). An API/schema failure exits 1. If a REST comment stays
 missing after the bounded retries, or any surface cannot be fetched, stop and
-report its ID. The 30-minute wait allows the current 25-minute CI job to reach a
-verdict; it does not extend the job timeout. On a transient network error, retry
-the read-only gate after checking the current head and run status, up to three
-times with short backoff. Preserve the total interrupted-run rerun count across
-attempts, and do not repeat a rerun whose outcome is unknown. If the error
-persists, stop rather than treating the gate as clear. Do not use scraped HTML,
+report its ID. Each process has a 60-second request timeout. Transient read
+errors (HTTP 408/429/500/502/503/504, reset, timeout, temporary DNS, unexpected EOF)
+get at most two retries with 250/500 ms backoff. Invalid JSON/schema, permission
+errors and authentication failures are not transient; an invalid injected
+`GITHUB_TOKEN` may fall back to keyring auth once. No mutation is automatically
+retried. Retries happen inside the same gate invocation, preserving rerun
+accounting. Do not restart a failed helper with a fresh rerun budget; reconcile
+the recorded attempts and current run state first, especially unknown outcomes.
+An aggregate failure can accompany a cancelled shard: inspect it before choosing
+remediation; a reported failure is never blindly rerun. Do not use scraped HTML,
 undocumented endpoints, or browser automation to manufacture a thread ID.
 
 ## Billing-blocked CI
@@ -116,8 +129,25 @@ user, wait, or retry. Instead:
    gh pr comment <number> --body "GitHub Actions was billing-blocked (jobs not started: account payment or spending limit). Local \`pnpm run ci:pr\` exited <ci_status> on <head-sha>."
    ```
 
-5. Merge with `gh pr merge <number> --merge --delete-branch`. Never add
-   `--admin`; branch protection is not enforced here, so it is not needed.
+5. The canonical remote merge helper deliberately refuses exit 3 and has no
+   bypass flag. For this exception only, run a **fresh** full gate after local CI
+   and the comment; require exit 3 again with the exact locally validated SHA,
+   clear reviews, an open non-draft PR, and `CLEAN` or `UNSTABLE` merge state.
+   If the head changed, reconcile and validate that candidate first. Then use
+   the documented REST merge API with the validated expected SHA:
+
+   ```bash
+   gh api --method PUT repos/<owner>/<repo>/pulls/<number>/merge \
+     -f sha=<locally-validated-head-sha> -f merge_method=merge
+   ```
+
+   Require `merged: true`, then independently verify `state`, `merged`,
+   `merge_commit_sha` and the head through `GET /repos/{owner}/{repo}/pulls/{number}`.
+   If the request errors, read that state before considering another mutation.
+   Preserve the remote branch on this explicit path and defer deletion to safe
+   cleanup; do not use `gh pr merge --delete-branch` or an unconditional REST ref
+   deletion. Continue the separate persistent-main sync only after confirming
+   the merge. Never use `--admin`.
 
 Billing-blocked is the only CI exception. A check with `checks.state:
 "failing"`, including a real failure next to billing-blocked checks, still
@@ -128,8 +158,9 @@ blocks.
 Classify every unresolved thread, regardless of reviewer:
 
 - **Valid:** a real bug, contract gap, missing test, incorrect visual state, or
-  clarity issue. Make the smallest source fix, run focused validation, commit,
-  and push.
+  clarity issue. Batch valid fixes, then validate the final reconciled candidate:
+  focused tests, ALL colocated contracts for affected owners, and affected browser
+  checks. Reuse unchanged evidence; commit and push once those checks pass.
 - **Invalid or already handled:** current source or a newer diff proves the
   concern no longer applies. Do not change code; reply with specific evidence.
 - **Ambiguous or product judgment:** stop before merge and report the URL and
@@ -165,7 +196,7 @@ gh api graphql -f threadId="<PRRT-id>" \
 The mutation requires the GraphQL `PRRT_...` ID, not a REST comment ID. Re-fetch
 all pages and REST surfaces afterward. Continue only when every handled thread
 returns `isResolved: true`, no unresolved thread remains, and required checks
-are passing or pending under auto-merge.
+pass before the canonical remote merge. Do not enable auto-merge.
 
 ## Failure and re-review cases
 
