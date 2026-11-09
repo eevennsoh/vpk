@@ -14,7 +14,7 @@ import { AnimatePresence, motion, useReducedMotion, type Transition, type Varian
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 
-import { ROVO_AGENT_SELECTOR_AGENTS, type SkillsDirectorySkill } from "@/app/data/directory";
+import { ROVO_AGENT_SELECTOR_AGENTS, type SkillDirectorySkill } from "@/app/data/directory";
 import {
 	EDITOR_PALETTE_MENTION_SOURCES,
 	mapAgentToMentionItem,
@@ -183,7 +183,7 @@ export function ActivityComposer({
 	/** Expanded PullRequestFix card (Fix / Fix all); replaces the activity prompt. */
 	pullRequestFix?: ActivityComposerPullRequestFix;
 	pullRequestReview?: ActivityComposerPullRequestReview;
-	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
+	onSkillInvoke?: (skill: SkillDirectorySkill) => boolean | void;
 }>) {
 	const { state, actions, meta } = useJiraWorkItem();
 	const { requestRevealLatestActivity } = useMetadataRail();
@@ -339,7 +339,7 @@ export function ActivityComposer({
 		actions.invokeAgent(agent, "context-pill", `@${agent.name}`);
 	};
 
-	const handleInvokeSkill = (skill: SkillsDirectorySkill) => {
+	const handleInvokeSkill = (skill: SkillDirectorySkill) => {
 		if (onSkillInvoke?.(skill) === true) return;
 		actions.launchSession(
 			{ id: `skill:${skill.id}`, name: "Rovo" },

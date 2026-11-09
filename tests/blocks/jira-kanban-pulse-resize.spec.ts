@@ -4,7 +4,7 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const JIRA_KANBAN_EXPERIMENTAL_URL = appUrl("/preview/blocks/jira-kanban-demo-experimental");
 
-const JIRA_GOLDEN_JOURNEYS_V3_URL = appUrl("/jira-golden-journeys-v3");
+const JIRA_GOLDEN_JOURNEY_V3_URL = appUrl("/jira-golden-journey-v3");
 
 async function openPulseInsights(page: Page) {
 	await page.getByRole("button", { name: /^Insights/u }).click();
@@ -31,9 +31,9 @@ test("Pulse Insights has one resize handle between the article and the work rail
 		.toBeGreaterThan(startRailWidth);
 });
 
-test("golden journeys v3 Track Insights exposes the article/work-rail resize handle", async ({ page }) => {
+test("golden journey v3 Track Insights exposes the article/work-rail resize handle", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(JIRA_GOLDEN_JOURNEYS_V3_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(JIRA_GOLDEN_JOURNEY_V3_URL, { waitUntil: "domcontentloaded" });
 	await page.getByRole("button", { name: "Track", exact: true }).click();
 	await openPulseInsights(page);
 
@@ -41,9 +41,9 @@ test("golden journeys v3 Track Insights exposes the article/work-rail resize han
 	await expect(page.getByText("We agreed to delete the adapter, not wrap it")).toBeVisible();
 });
 
-test("golden journeys v3 Track Insights hides the floating Rovo button", async ({ page }) => {
+test("golden journey v3 Track Insights hides the floating Rovo button", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(JIRA_GOLDEN_JOURNEYS_V3_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(JIRA_GOLDEN_JOURNEY_V3_URL, { waitUntil: "domcontentloaded" });
 	await page.getByRole("button", { name: "Track", exact: true }).click();
 	await expect(page.getByRole("button", { name: "Open Rovo chat" })).toBeVisible();
 
@@ -52,9 +52,9 @@ test("golden journeys v3 Track Insights hides the floating Rovo button", async (
 	await expect(page.getByRole("heading", { name: "Work items" })).toBeVisible();
 });
 
-test("golden journeys v3 Track Insights prompt replaces the work rail with embedded chat", async ({ page }) => {
+test("golden journey v3 Track Insights prompt replaces the work rail with embedded chat", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(JIRA_GOLDEN_JOURNEYS_V3_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(JIRA_GOLDEN_JOURNEY_V3_URL, { waitUntil: "domcontentloaded" });
 	await page.getByRole("button", { name: "Track", exact: true }).click();
 	await openPulseInsights(page);
 

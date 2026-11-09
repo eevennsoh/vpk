@@ -5,7 +5,7 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
-test("work item keeps the Rovo launcher and opens cloud sessions in its floating chat", async ({ page }) => {
+test("work item keeps the Rovo launcher and opens local session menus", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
 	const workItem = page.getByRole("dialog", { name: "Project butter" });
@@ -32,15 +32,7 @@ test("work item keeps the Rovo launcher and opens cloud sessions in its floating
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(launcher).toBeVisible();
 
-	await workItem.getByRole("button", { name: "Start coding" }).click();
-	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
-	await chat.getByRole("button", { name: "Close", exact: true }).click();
-	await workItem.getByRole("button", { name: /^Working on this work item\./ }).click();
-	await page.getByRole("button", { name: /^Work on PAY-105 Jira Coding agent/ }).click();
-	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
-	await expect(workItem.getByRole("dialog", { name: "Work on PAY-105" })).toHaveCount(0);
-	await chat.getByRole("button", { name: "Close", exact: true }).click();
-	await workItem.getByRole("button", { name: /^Working on this work item\./ }).click();
+	await workItem.getByRole("button", { name: "Cursor: Working" }).click();
 	await page.getByRole("button", { name: /^Replaying 3-D Secure fixtures Cursor/ }).click();
 	const continueMenu = page.getByRole("menu", { name: /^Replaying 3-D Secure fixtures Cursor/ });
 	await expect(continueMenu.getByRole("menuitem", { name: "Cursor" })).toBeVisible();

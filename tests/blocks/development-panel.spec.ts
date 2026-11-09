@@ -2,6 +2,24 @@ import { expect, test } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
+test("start coding opens the same menu before and after pull requests are created", async ({ page }) => {
+	await page.goto(appUrl("/preview/blocks/development-panel"));
+	const panel = page.getByRole("region", { name: "Development" });
+	const items = ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"];
+	for (const state of ["Before setup", "Pull requests created"]) {
+		await page.getByRole("button", { name: state }).click();
+		const trigger = panel.getByRole("button", { name: "Start coding" });
+		await trigger.click();
+		const menu = page.getByRole("menu", { name: "Start coding" });
+		await expect(menu).toBeVisible();
+		for (const name of items) await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
+		await expect(menu.getByRole("menuitem", { name: "Branch name settings" })).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(menu).not.toBeVisible();
+		await expect(trigger).toBeFocused();
+	}
+});
+
 test("development rows align their icons and labels with the heading", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
@@ -26,7 +44,6 @@ test("development rows align their icons and labels with the heading", async ({ 
 	await copyPrompt.click();
 	await expect(panel.getByRole("button", { name: "Prompt copied" })).toBeVisible();
 	await expect(page.locator("html")).toHaveAttribute("data-copied-prompt", "PAY-999: Improve merchant onboarding for Payments SDK v2");
-	await startCoding.click();
 	await page.getByRole("button", { name: "Pull requests created" }).click();
 
 	const heading = await panel.getByRole("heading", { name: "Development" }).boundingBox();
@@ -76,16 +93,40 @@ test("start coding menu uses compact icons and a GitHub app tile", async ({ page
 		expect(icon?.height).toBeCloseTo(12, 1);
 	}
 	const github = menu.getByRole("menuitem", { name: "GitHub", exact: true });
-	const githubIcon = await github.locator(":scope > span:first-child svg").boundingBox();
-	expect(githubIcon?.width).toBeCloseTo(12, 1);
-	expect(githubIcon?.height).toBeCloseTo(12, 1);
-	const hasAppTile = await github.locator(":scope > span:first-child").evaluate((element) =>
-		Array.from(element.querySelectorAll("span")).some((span) => {
-			const rect = span.getBoundingClientRect();
-			return Math.abs(rect.width - 16) < 0.05 && Math.abs(rect.height - 16) < 0.05 && parseFloat(getComputedStyle(span).borderTopWidth) > 0;
-		}),
-	);
-	expect(hasAppTile).toBe(true);
+	const githubGeometry = await github.evaluate((row) => {
+		const slot = row.querySelector(":scope > span:first-child");
+		const tile = [...(slot?.querySelectorAll("span") ?? [])].find((span) => parseFloat(getComputedStyle(span).borderTopWidth) > 0);
+		const icon = tile?.querySelector("svg");
+		const rect = (element: Element | null | undefined) => {
+			if (!element) return null;
+			const bounds = element.getBoundingClientRect();
+			return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2, width: bounds.width, height: bounds.height };
+		};
+		return { row: rect(row), slot: rect(slot), tile: rect(tile), icon: rect(icon) };
+	});
+	const { row, slot, tile, icon } = githubGeometry;
+	if (!row || !slot || !tile || !icon) throw new Error("GitHub logo did not render");
+	expect(tile.width).toBeCloseTo(16, 1);
+	expect(tile.height).toBeCloseTo(16, 1);
+	for (const part of [slot, tile, icon]) {
+		expect(part.x).toBeCloseTo(slot.x, 1);
+		expect(part.y).toBeCloseTo(row.y, 1);
+	}
+});
+
+test("development settings surfaces match the start coding menu inset", async ({ page }) => {
+	await page.goto(appUrl("/preview/blocks/development-panel"));
+	await page.getByRole("button", { name: "Pull requests created" }).click();
+	await page.getByRole("button", { name: "Start coding" }).click();
+	const menu = page.getByRole("menu", { name: "Start coding" });
+	const inset = await menu.evaluate((element) => getComputedStyle(element).padding);
+	await page.keyboard.press("Escape");
+	for (const name of ["Pull request settings", "Development settings"]) {
+		await page.getByRole("button", { name, exact: true }).click();
+		const settings = page.getByRole("dialog", { name });
+		await expect(settings).toHaveCSS("padding", inset);
+		await page.keyboard.press("Escape");
+	}
 });
 
 test("pull request settings work in both development panel states", async ({ page }) => {

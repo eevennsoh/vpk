@@ -3,7 +3,7 @@ import {
 	createAgentTriggerValue,
 	type AgentAutomationRule,
 	type AgentTriggerValue,
-} from "@/components/blocks/triggers/data/trigger-catalog";
+} from "@/components/blocks/trigger/data/trigger-catalog";
 import {
 	RFP_DRAFTING_AGENT_AVATAR_SRC,
 	RFP_DRAFTING_AGENT_CONVERSATION_STARTERS,

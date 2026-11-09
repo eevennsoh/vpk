@@ -21,9 +21,9 @@
  */
 
 import { useSyncExternalStore } from "react";
-import type { SkillsDirectorySkill } from "./skills";
+import type { SkillDirectorySkill } from "./skills";
 
-let createdSkills: readonly SkillsDirectorySkill[] = [];
+let createdSkills: readonly SkillDirectorySkill[] = [];
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -33,7 +33,7 @@ function emit(): void {
 }
 
 /** Current runtime-created skills (newest last). Safe to call outside React. */
-export function getCreatedSkills(): readonly SkillsDirectorySkill[] {
+export function getCreatedSkills(): readonly SkillDirectorySkill[] {
 	return createdSkills;
 }
 
@@ -41,7 +41,7 @@ export function getCreatedSkills(): readonly SkillsDirectorySkill[] {
  * Adds (or replaces, by id) a runtime-created skill and notifies subscribers.
  * Replacing by id keeps re-runs of the demo idempotent.
  */
-export function addCreatedSkill(skill: SkillsDirectorySkill): void {
+export function addCreatedSkill(skill: SkillDirectorySkill): void {
 	createdSkills = [...createdSkills.filter((entry) => entry.id !== skill.id), skill];
 	emit();
 }
@@ -64,6 +64,6 @@ export function subscribe(listener: () => void): () => void {
 }
 
 /** Reactive accessor for React surfaces. */
-export function useCreatedSkills(): readonly SkillsDirectorySkill[] {
+export function useCreatedSkills(): readonly SkillDirectorySkill[] {
 	return useSyncExternalStore(subscribe, getCreatedSkills, getCreatedSkills);
 }

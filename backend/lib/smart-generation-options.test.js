@@ -27,7 +27,7 @@ test("inferSmartWidthClass derives width from measured container or viewport", (
 
 test("inferSmartWidthClass falls back to surface defaults", () => {
 	assert.equal(inferSmartWidthClass({ surface: "sidebar" }), "compact");
-	assert.equal(inferSmartWidthClass({ surface: "multiports" }), "compact");
+	assert.equal(inferSmartWidthClass({ surface: "multiport" }), "compact");
 	assert.equal(inferSmartWidthClass({ surface: "fullscreen" }), "wide");
 	assert.equal(inferSmartWidthClass({ surface: "studio" }), null);
 });

@@ -33,7 +33,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Keep AnimatedDots keyframes outside component content so CSS source never
+/* Keep AnimatedDot keyframes outside component content so CSS source never
    contributes to an ancestor's accessible name. Timings remain instance-owned. */
 @keyframes dot-reveal {
 	0%,

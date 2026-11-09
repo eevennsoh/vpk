@@ -20,14 +20,14 @@ import {
 	AgentMoreOptionsMenu,
 	toggleAgentConfigDisabledItem,
 } from "@/components/blocks/agent";
-import type { AgentAutomationRule } from "@/components/blocks/triggers/page";
-import { DEFAULT_CONFIGURED_AUTOMATION_RULES } from "@/components/blocks/triggers/data/trigger-catalog";
+import type { AgentAutomationRule } from "@/components/blocks/trigger/page";
+import { DEFAULT_CONFIGURED_AUTOMATION_RULES } from "@/components/blocks/trigger/data/trigger-catalog";
 import {
-	ConversationStartersDialog,
+	ConversationStarterDialog,
 	DEFAULT_STARTER_ICON,
 	type ConversationStarter,
 	type StarterIconKey,
-} from "@/components/blocks/conversation-starters";
+} from "@/components/blocks/conversation-starter";
 import { AgentTestPanel } from "@/components/blocks/agent-test";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
@@ -37,7 +37,7 @@ import { cn } from "@/lib/utils";
 
 const AGENT_DEMO_SURFACE_CLASSNAME = "min-h-[852px] w-full";
 type AgentDemoView = "test" | "configure";
-const TRIGGER_MANAGE_DOCS_PATH = "/components/blocks/triggers#manage";
+const TRIGGER_MANAGE_DOCS_PATH = "/components/blocks/trigger#manage";
 
 const initialAgentConfig: AgentConfigFormValue = {
 	name: "",
@@ -391,7 +391,7 @@ export function AgentDemoFull() {
 					/>
 				)}
 			</Agent>
-			<ConversationStartersDialog
+			<ConversationStarterDialog
 				open={activeDirectory === "conversationStarters"}
 				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
 				starters={conversationStarterDialogValue}
@@ -479,7 +479,7 @@ export function AgentDemoEmpty() {
 					/>
 				)}
 			</Agent>
-			<ConversationStartersDialog
+			<ConversationStarterDialog
 				open={activeDirectory === "conversationStarters"}
 				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
 				starters={conversationStarterDialogValue}

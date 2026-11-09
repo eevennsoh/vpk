@@ -246,8 +246,8 @@ test("Butter board activation opens the selected item and preserves edits separa
 	assert.equal(view.queryByRole("dialog") === null, true);
 	await view.click(view.getByRole("button", { name: "Open third card" }));
 	await view.click(view.getByRole("button", { name: "Start coding" }));
-	assert.equal(view.getAllByRole("heading", { name: "Third board item" }).length > 1, true);
-	assert.equal(view.queryByText("Ready to work on PAY-120.") !== null, true);
+	assert.equal(view.queryByRole("menuitem", { name: "Bitbucket Cloud" }) !== null, true);
+	assert.equal(view.queryByText("Ready to work on PAY-120."), null);
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
 	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
 	await view.click(view.getByRole("button", { name: "Open critical card" }));
@@ -343,12 +343,12 @@ test("board work item actions omit unsupported deep links and keep key copying a
 	}
 });
 
-test("empty Project butter can create a coding session", async () => {
+test("empty Project butter opens the start coding menu", async () => {
 	const view = await renderWorkItem({ initialPreset: "empty" });
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
 	await view.click(view.getByRole("button", { name: "Start coding" }));
-	assert.equal(view.queryByRole("textbox", { name: "Reply to Jira Coding agent" }) !== null, true);
-	assert.equal(view.queryByText("No agent sessions yet. Start coding to begin work on this item.") === null, true);
+	assert.equal(view.queryByRole("menuitem", { name: "Bitbucket Cloud" }) !== null, true);
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Jira Coding agent" }), null);
 });
 
 test("activity header keeps only the filter menu in both states", async () => {
@@ -894,8 +894,8 @@ test("the hosted chat seeds an opened session's composer with the comment bar dr
 				}`,
 			"@/app/contexts/context-rovo-chat": `export function RovoChatProvider({ children }) { return children; }`,
 			"@/app/contexts/context-rovo-chat-controls": `export function useRovoChatControls() { return { chatSurface: "sidebar", openChat() {}, toggleChat() {} }; }`,
-			"@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo": `export function useJgpAgentChatDemo() { return { chatContextBar: null, externalThinkingMessageId: null, isSwitchingSession: false, openAgentChat: async () => true }; }`,
-			"@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay": `export function JgpRovoOverlay() { return null; }`,
+			"@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo": `export function useJgpAgentChatDemo() { return { chatContextBar: null, externalThinkingMessageId: null, isSwitchingSession: false, openAgentChat: async () => true }; }`,
+			"@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay": `export function JgpRovoOverlay() { return null; }`,
 			"@/components/projects/sidebar-chat/page": `import React from "react"; export default function ChatPanel({ composerPrefillRequest }) { return <p data-chat-prefill="">{composerPrefillRequest ? composerPrefillRequest.requestKey + ":" + composerPrefillRequest.text : "none"}</p>; }`,
 		},
 	});

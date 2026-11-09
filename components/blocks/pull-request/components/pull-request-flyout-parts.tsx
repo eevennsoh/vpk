@@ -35,7 +35,7 @@ export function PullRequestFlyoutMetaRow({
 }
 
 /**
- * Per-check glyphs are the ones the golden journeys' CI list always used: the
+ * Per-check glyphs are the ones the golden journey' CI list always used: the
  * green check-circle for passed, the red error diamond for failed, the dashed
  * circle for yet to run, and a bare spinner while running. All sit at 12px in
  * the 16px icon column. Decorative — the row spells the status out for

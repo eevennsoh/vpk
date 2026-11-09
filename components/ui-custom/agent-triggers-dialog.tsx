@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 import {
 	TriggerConfigAutomationDialog,
 	type AgentAutomationRule,
-} from "@/components/blocks/triggers/page";
+} from "@/components/blocks/trigger/page";
 
 export interface AgentTriggersDialogProps {
 	open: boolean;

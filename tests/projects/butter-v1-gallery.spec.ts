@@ -3,6 +3,42 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("the List gallery item shows the interactive Jira list", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const gallery = page.getByRole("group", { name: "Gallery items" });
+	await gallery.getByRole("button", { name: "Select List" }).click();
+	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	await expect(list).toBeVisible();
+	await expect(list.getByRole("button", { name: "PAY-118", exact: true })).toBeVisible();
+	await list.getByRole("button", { name: "PAY-118", exact: true }).click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await expect(workItem).toBeVisible();
+	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
+	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
+	await gallery.getByRole("button", { name: "Select List" }).click();
+	await expect(list).toBeVisible();
+});
+
+test("the gallery list hugs its content and centers when space permits", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List" }).click();
+	const list = page.getByTestId("jira-list");
+	const scrollport = page.getByTestId("jira-list-table-scroll");
+	await expect(list).toBeVisible();
+	await expect.poll(() => scrollport.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+	const bounds = await list.boundingBox();
+	if (!bounds) throw new Error("List has no bounds");
+	expect(bounds.y - 48).toBeCloseTo(1300 - bounds.y - bounds.height, 0);
+
+	await page.setViewportSize({ width: 1800, height: 600 });
+	await expect.poll(() => scrollport.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeGreaterThan(0);
+	await expect(list.getByRole("button", { name: "Refresh work items" })).toBeVisible();
+});
+
 test("the work item Agents popup matches the Assignee picker", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -33,10 +69,12 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 		"Select Duplicative sessions",
 		"Select Board",
 		"Select Work item",
+		"Select List",
 		"Select Pull request",
+		"Select Development panel",
 		"Select e2e Journey",
 	]);
-	for (const name of ["Board", "Agent selector", "Work item", "Pull request", "e2e Journey"]) {
+	for (const name of ["Board", "Agent selector", "Work item", "List", "Pull request", "e2e Journey"]) {
 		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
 	}
 	await expect(gallery.getByRole("button", { name: "Select Board" })).toHaveAttribute("aria-pressed", "true");
@@ -96,6 +134,19 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	await expect(workItem).toBeHidden();
 	await page.getByRole("button", { name: "Open gallery" }).click();
 	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toBeVisible();
+});
+
+test("the Development panel gallery item shows the populated interactive panel", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Development panel" }).click();
+	const panel = page.getByRole("region", { name: "Development" });
+	await expect(panel.getByText("1/3 builds passed")).toBeVisible();
+	await expect(panel.getByRole("button", { name: /#1306 Add guest checkout/ })).toBeVisible();
+	await expect(panel.getByRole("button", { name: /#1847 Fix threaded comment/ })).toBeVisible();
+	await expect(panel.getByRole("button", { name: /#7 SHIL-25/ })).toBeVisible();
+	await panel.getByRole("button", { name: /#1306 Add guest checkout/ }).click();
+	await expect(page.getByText("acme/storefront").first()).toBeVisible();
 });
 
 test("switching between the board and journey does not produce runtime errors", async ({ page }) => {
@@ -281,7 +332,7 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Carry card-artwork metadata into the next wallet epic", { exact: true })).toBeVisible();
 });
 
-test("a coding session started from a work item uses its summary", async ({ page }) => {
+test("start coding opens the development dropdown in a work item", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -291,11 +342,12 @@ test("a coding session started from a work item uses its summary", async ({ page
 	await board.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
 	await item.getByRole("button", { name: "Start coding" }).click();
-	const chat = item.locator('[data-rovo-chat-placement="floating"]');
-	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
-	await chat.getByRole("button", { name: "Close", exact: true }).click();
-	await item.getByRole("group", { name: "Agents field" }).getByRole("button").click();
-	const sessions = page.getByRole("dialog", { name: "Agent sessions" });
-	await expect(sessions.getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true })).toBeVisible();
-	await expect(sessions.getByRole("button", { name: "Add agent", exact: true })).toBeVisible();
+	const menu = page.getByRole("menu", { name: "Start coding" });
+	for (const name of ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"]) {
+		await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
+	}
+	await expect(menu.getByRole("menuitem", { name: "Branch name settings" })).toBeVisible();
+	await expect(item.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(item.getByRole("button", { name: "Start coding" })).toBeFocused();
 });

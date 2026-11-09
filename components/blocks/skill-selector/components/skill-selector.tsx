@@ -7,7 +7,7 @@ import {
 	DEFAULT_SKILLS,
 	getSkillDirectoryVisual,
 	resolveDirectoryVisual,
-	type SkillsDirectorySkill,
+	type SkillDirectorySkill,
 } from "@/app/data/directory";
 import {
 	AgentSelector,
@@ -23,7 +23,7 @@ export type SkillSelectorAction = AgentSelectorAction;
 const CREATE_SKILL_DIRECTORY_ID = "create-skill";
 
 export interface SkillSelectorProps {
-	skills?: readonly SkillsDirectorySkill[];
+	skills?: readonly SkillDirectorySkill[];
 	browseSkillsLabel?: string;
 	className?: string;
 	createSkillLabel?: string;
@@ -49,7 +49,7 @@ export interface SkillSelectorProps {
 	selectionMode?: "multiple" | "single";
 }
 
-function SkillSelectorVisual({ skill }: Readonly<{ skill: SkillsDirectorySkill }>): ReactElement {
+function SkillSelectorVisual({ skill }: Readonly<{ skill: SkillDirectorySkill }>): ReactElement {
 	const visual = resolveDirectoryVisual(getSkillDirectoryVisual(skill));
 	return visual ? (
 		<RichTextMentionVisualMark category="skill" label={skill.name} size="menu-compact" visual={visual} />

@@ -1,5 +1,5 @@
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
-import type { AgentTemplatesAgent } from "@/components/blocks/agent-templates";
+import type { AgentTemplateAgent } from "@/components/blocks/agent-template";
 import {
 	AGENT_LANYARD_AGENTS,
 	AGENT_LANYARD_FIRST_PARTY_AGENTS,
@@ -135,7 +135,7 @@ export function toDirectoryLanyard(agent: AgentBrowserAgent): AgentLanyardAgent 
 		: { ...identity, avatarSrc: agent.avatarSrc ?? "/1p/agent-lanyard/glyph-custom-white.svg" };
 }
 
-export function toDirectoryTemplate(agent: AgentTemplatesAgent): AgentLanyardTemplate {
+export function toDirectoryTemplate(agent: AgentTemplateAgent): AgentLanyardTemplate {
 	const known = AGENT_LANYARD_TEMPLATES.find((candidate) => sameIdentity(agent, candidate));
 	return {
 		id: agent.id,
@@ -188,12 +188,12 @@ const TEMPLATE_ICON_LABELS: Readonly<Record<string, string>> = {
 	"workflow-synthesizer": "workflow-design",
 };
 
-export function getDirectoryTemplateIconLabel(agent: AgentTemplatesAgent): string | undefined {
+export function getDirectoryTemplateIconLabel(agent: AgentTemplateAgent): string | undefined {
 	if (AGENT_LANYARD_TEMPLATES.some((candidate) => sameIdentity(agent, candidate))) return undefined;
 	return TEMPLATE_ICON_LABELS[agent.id] ?? "capability";
 }
 
-export function filterDirectoryAgents<Agent extends AgentTemplatesAgent>(
+export function filterDirectoryAgents<Agent extends AgentTemplateAgent>(
 	agents: readonly Agent[], query: string, filters: Readonly<DirectoryFilters>,
 	ownedAgentIds: readonly string[] = [],
 ): Agent[] {

@@ -1,6 +1,6 @@
-import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { SkillDirectorySkill } from "@/app/data/directory";
 
-export const WORK_ITEM_SKILLS: readonly SkillsDirectorySkill[] = [
+export const WORK_ITEM_SKILLS: readonly SkillDirectorySkill[] = [
 	{
 		id: "summarize-work-item",
 		name: "Summarize work item",

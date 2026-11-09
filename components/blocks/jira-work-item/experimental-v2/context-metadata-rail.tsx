@@ -65,7 +65,7 @@ interface MetadataRailProviderProps {
 	children: ReactNode;
 	/**
 	 * When this key changes to a non-null value, open Activity and scroll to the
-	 * latest entry (e.g. jira-golden-journeys-v2 Plan orchestration reveal), or to
+	 * latest entry (e.g. jira-golden-journey-v2 Plan orchestration reveal), or to
 	 * `revealActivityEntryId` when that prop is set.
 	 */
 	revealActivityKey?: string | number | null;

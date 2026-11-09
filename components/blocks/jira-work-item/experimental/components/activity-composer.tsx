@@ -5,7 +5,7 @@ import { useState, type KeyboardEvent } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 
-import { ROVO_AGENT_SELECTOR_AGENTS, type SkillsDirectorySkill } from "@/app/data/directory";
+import { ROVO_AGENT_SELECTOR_AGENTS, type SkillDirectorySkill } from "@/app/data/directory";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental/context-jira-work-item";
 import { ActivityComposerContextPills } from "@/components/blocks/jira-work-item/experimental/components/activity-composer-context-pills";
@@ -90,7 +90,7 @@ export function ActivityComposer() {
 		actions.invokeAgent(agent, "context-pill", `@${agent.name}`);
 	};
 
-	const handleInvokeSkill = (skill: SkillsDirectorySkill) => {
+	const handleInvokeSkill = (skill: SkillDirectorySkill) => {
 		actions.launchSession(
 			{ id: `skill:${skill.id}`, name: "Rovo" },
 			`/${skill.name}`,

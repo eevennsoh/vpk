@@ -901,7 +901,7 @@ test("Experimental v2 is exposed as an independently owned copy of Experimental"
 	assert.doesNotMatch(EXPERIMENTAL_V2_PREVIEW_SOURCE, /<main/u);
 });
 
-test("Experimental v2 mirrors the Golden Journeys v4 board and list contract", () => {
+test("Experimental v2 mirrors the Golden Journey v4 board and list contract", () => {
 	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /activeView\?: ExperimentalV2JiraKanbanView;/u);
 	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /insightsEnabled\?: boolean;/u);
 	assert.match(
@@ -922,8 +922,8 @@ test("Experimental v2 mirrors the Golden Journeys v4 board and list contract", (
 	const v2ViewSwitcherIndex = EXPERIMENTAL_V2_HEADER_SOURCE.indexOf('aria-label="Work items view"');
 	assert.ok(v2ModeToggleIndex > 0 && v2ModeToggleIndex < v2OverflowIndex);
 	assert.ok(v2OverflowIndex > 0 && v2OverflowIndex < v2ViewSwitcherIndex);
-	assert.match(DEMO_SOURCE, /createJiraGoldenJourneysV4PayBoardColumns/u);
-	assert.match(DEMO_SOURCE, /JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS/u);
+	assert.match(DEMO_SOURCE, /createJiraGoldenJourneyV4PayBoardColumns/u);
+	assert.match(DEMO_SOURCE, /JIRA_GOLDEN_JOURNEY_V4_PAY_BOARD_AGENTS/u);
 	assert.match(DEMO_SOURCE, /<ExperimentalV2Page[\s\S]*insightsEnabled=\{false\}/u);
 	assert.match(DEMO_SOURCE, /activeView=\{activeView\}[\s\S]*onViewChange=\{setActiveView\}/u);
 	assert.match(DEMO_SOURCE, /renderListContent=\{\(columns\) =>/u);

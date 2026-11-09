@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_LIST_DETAIL: ComponentDetail = {
 	description:
-		'A grouped list of single-row entries styled like the Jira "For you" feed. Each row leads with an identity — hexagon art for an agent, a circular photo for a person — and a title line whose treatment reflects the state: a running session shimmers the work-item title (the shimmer alone signals progress), an awaiting session replaces the title with "Needs input" plus animated dots, an `attention` row keeps its own title beside a warning glyph (for notifications such as "Priya mentioned you"), and a complete session shows a solid title. A metadata line lists optional leading metadata, the actor name, pull-request status (PR created / PR merged; omitted until a PR exists), and the time last. Optional `summary` copy wraps below that metadata. Local sessions swap the live runtime and agent name for a devices icon, and the machine name, followed by a static timestamp. Hovering or keyboard-focusing an agent-session row opens the shared session-details flyout; `flyout="composer"` swaps that for a per-row Agent States card with a prompt composer and agent at-mentions. Non-session rows can opt out via `flyout="none"`. Every actionable row offers a primary action — Reply on person rows, Resume on local sessions, View on cloud agent sessions — plus a hover Archive icon; the action opens the Rovo floating chat in the demo.',
+		'A grouped list of single-row entries styled like the Jira "For you" feed. Each row leads with an identity — hexagon art for an agent, a circular photo for a person — and a title line whose treatment reflects the state: a running session shimmers the work-item title (the shimmer alone signals progress), an awaiting session replaces the title with "Needs input" plus animated dots, an `attention` row keeps its own title beside a warning glyph (for notifications such as "Priya mentioned you"), and a complete session shows a solid title. A metadata line lists optional leading metadata, the actor name, pull-request status (PR created / PR merged; omitted until a PR exists), and the time last. Optional `summary` copy wraps below that metadata. Local sessions swap the live runtime and agent name for a devices icon, and the machine name, followed by a static timestamp. Hovering or keyboard-focusing an agent-session row opens the shared session-details flyout; `flyout="composer"` swaps that for a per-row Agent State card with a prompt composer and agent at-mentions. Non-session rows can opt out via `flyout="none"`. Every actionable row offers a primary action — Reply on person rows, Resume on local sessions, View on cloud agent sessions — plus a hover Archive icon; the action opens the Rovo floating chat in the demo.',
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { AgentList } from "@/components/blocks/agent-list";`,
 	usage: `import { AgentList } from "@/components/blocks/agent-list";
@@ -20,7 +20,7 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 		{
 			title: "Composer flyout",
 			description:
-				'The `flyout="composer"` variant keeps a per-row Agent States card instead of the list\'s shared moving flyout, preserving local composer state while the viewer replies to the agent.',
+				'The `flyout="composer"` variant keeps a per-row Agent State card instead of the list\'s shared moving flyout, preserving local composer state while the viewer replies to the agent.',
 			demoSlug: "agent-list-demo-composer",
 		},
 	],
@@ -37,7 +37,7 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 			type: '"session" | "composer" | "none"',
 			default: '"session"',
 			description:
-				"Which flyout a row opens on hover or keyboard focus. `session` uses the list's shared moving session-details surface; `composer` keeps a stateful Agent States flyout per row; `none` opens nothing, for rows that are not agent sessions and have no session to preview.",
+				"Which flyout a row opens on hover or keyboard focus. `session` uses the list's shared moving session-details surface; `composer` keeps a stateful Agent State flyout per row; `none` opens nothing, for rows that are not agent sessions and have no session to preview.",
 		},
 		{
 			name: "variant",
@@ -64,7 +64,7 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 			type: '"floating" | "sidebar"',
 			default: '"sidebar"',
 			description:
-				"Chat surface opened after sending from the Agent States composer flyout. Consumers with a floating Rovo launcher opt into floating; other surfaces fall back to sidebar chat.",
+				"Chat surface opened after sending from the Agent State composer flyout. Consumers with a floating Rovo launcher opt into floating; other surfaces fall back to sidebar chat.",
 		},
 		{
 			name: "onView",
@@ -82,7 +82,7 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 			name: "onSubmitPrompt",
 			type: "(item: AgentListItem, prompt: string) => void | Promise<void>",
 			description:
-				"Overrides the default chat destination for submissions from the Agent States composer flyout.",
+				"Overrides the default chat destination for submissions from the Agent State composer flyout.",
 		},
 		{
 			name: "className",

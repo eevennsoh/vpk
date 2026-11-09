@@ -93,7 +93,7 @@ export interface ParsedDesignVariantOverrides {
  * The baseline state. Frozen and held in one place so the server/hydration
  * snapshot keeps a stable identity across renders.
  *
- * Panel starts off: Golden Journeys v4 ships untracked work in the in-flow
+ * Panel starts off: Golden Journey v4 ships untracked work in the in-flow
  * board column unless the user turns the floating side surface on.
  *
  * Simple views starts on: Team EU ships one Work items tab and moves

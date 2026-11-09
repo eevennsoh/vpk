@@ -50,7 +50,7 @@ test("assignment flyout access is independent of the session lifecycle", () => {
 test("chin rows keep lifecycle copy stable while flyout rows retain detailed status sequences", () => {
 	assert.match(
 		AGENT_ACTIVITY_PRESENTATION_SOURCE,
-		/if \(isAwaitingInput\) \{[\s\S]*<span[\s\S]*\{rowLabel\}[\s\S]*<AnimatedDots/u,
+		/if \(isAwaitingInput\) \{[\s\S]*<span[\s\S]*\{rowLabel\}[\s\S]*<AnimatedDot/u,
 	);
 	assert.doesNotMatch(
 		AGENT_ACTIVITY_PRESENTATION_SOURCE,

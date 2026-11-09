@@ -8,13 +8,13 @@ import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import {
-	JiraInsightsProvider,
-	JiraInsightsScrubber,
-	useJiraInsights,
+	JiraInsightProvider,
+	JiraInsightScrubber,
+	useJiraInsight,
 	type JiraInsightSource,
-	type JiraInsightsSnapshot,
-} from "@/components/blocks/jira-insights";
-import { EMPTY_JIRA_INSIGHTS_SNAPSHOT } from "@/components/blocks/jira-insights/data";
+	type JiraInsightSnapshot,
+} from "@/components/blocks/jira-insight";
+import { EMPTY_JIRA_INSIGHT_SNAPSHOT } from "@/components/blocks/jira-insight/data";
 import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
 import type {
 	JiraWorkItemComposerDelivery,
@@ -108,7 +108,7 @@ interface TeamEu26JiraWorkItemBaseProps {
 	automationRules?: readonly WorkItemAutomationRule[];
 	/**
 	 * When set, open this pull-request identity after each `stageKey` reset
-	 * (once per stage). Used by jira-golden-journeys-v2 Review and Fix to land on PR detail
+	 * (once per stage). Used by jira-golden-journey-v2 Review and Fix to land on PR detail
 	 * without an extra click. Clearing the PR does not re-open until the next stage.
 	 */
 	autoOpenPullRequestIdentity?: string | null;
@@ -118,7 +118,7 @@ interface TeamEu26JiraWorkItemBaseProps {
 	initialPreset: JiraWorkItemPreset;
 	initialState?: JiraWorkItemState;
 	initialStateRevision?: string | number;
-	insightsSnapshot?: JiraInsightsSnapshot;
+	insightsSnapshot?: JiraInsightSnapshot;
 	/** Preserve an explicit user dismissal while an authored snapshot updates in place. */
 	preserveActiveSessionOnHydration?: boolean;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
@@ -135,7 +135,7 @@ interface TeamEu26JiraWorkItemBaseProps {
 	pullRequestApprovalStates?: Readonly<Record<string, "available" | "approved">>;
 	/**
 	 * When this key changes to a non-null value, open the Activity metadata tab
-	 * and scroll to the latest entry (e.g. jira-golden-journeys-v2 Plan orchestration), or
+	 * and scroll to the latest entry (e.g. jira-golden-journey-v2 Plan orchestration), or
 	 * to `revealActivityEntryId` when that prop is set.
 	 */
 	revealActivityKey?: string | number | null;
@@ -170,7 +170,7 @@ interface TeamEu26JiraWorkItemContentProps {
 	composerAgents?: readonly AgentSelectorAgent[];
 	composerToolsAfterAdd?: ReactNode;
 	hasInsights: boolean;
-	insightsSnapshot: JiraInsightsSnapshot;
+	insightsSnapshot: JiraInsightSnapshot;
 	inlineSurface: "card" | "card-fill" | "fill";
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onClose: () => void;
@@ -217,7 +217,7 @@ function InsightsAwareComposer({
 	const { activityEvents } = useJiraWorkItemMeta();
 	const { contextResources } = useJiraWorkItemState();
 	const { insightsSelected } = useSectionNavigation();
-	const { unreadCheckpointIds } = useJiraInsights();
+	const { unreadCheckpointIds } = useJiraInsight();
 	const activityTimestamps = useMemo(
 		() => activityEvents.flatMap((entry) => (
 			entry.createdAtMs == null ? [] : [entry.createdAtMs]
@@ -232,7 +232,7 @@ function InsightsAwareComposer({
 	);
 
 	return insightsSelected && hasInsights ? (
-		<JiraInsightsScrubber activityTimestamps={activityTimestamps} />
+		<JiraInsightScrubber activityTimestamps={activityTimestamps} />
 	) : (
 		<ActivityComposer {...composerProps} />
 	);
@@ -242,7 +242,7 @@ function InsightsAwareActivityPanel({
 	surface = "activity",
 	...props
 }: Readonly<ComponentProps<typeof ActivityPanel>>) {
-	const { onSourceSelect } = useJiraInsights();
+	const { onSourceSelect } = useJiraInsight();
 
 	return (
 		<ActivityPanel
@@ -260,7 +260,7 @@ function WorkItemInsightsProvider({
 }: Readonly<{
 	children: ReactNode;
 	onOpenPullRequestIdentity?: (identity: string) => void;
-	snapshot: JiraInsightsSnapshot;
+	snapshot: JiraInsightSnapshot;
 }>) {
 	const actions = useJiraWorkItemActions();
 	const { requestRevealLatestActivity } = useMetadataRail();
@@ -285,9 +285,9 @@ function WorkItemInsightsProvider({
 	}, [actions, onOpenPullRequestIdentity, requestRevealLatestActivity, selectSection]);
 
 	return (
-		<JiraInsightsProvider onSourceSelect={handleInsightSourceSelect} snapshot={snapshot}>
+		<JiraInsightProvider onSourceSelect={handleInsightSourceSelect} snapshot={snapshot}>
 			{children}
-		</JiraInsightsProvider>
+		</JiraInsightProvider>
 	);
 }
 
@@ -452,7 +452,7 @@ function TeamEu26JiraWorkItemContent({
 		));
 		if (entry) handlePullRequestSelect(entry);
 	}, [handlePullRequestSelect, pullRequestEntries]);
-	// jira-golden-journeys-v2 Review: open the guided PR once per stage so detail is default.
+	// jira-golden-journey-v2 Review: open the guided PR once per stage so detail is default.
 	useLayoutEffect(() => {
 		if (!autoOpenPullRequestIdentity) return;
 		const stageToken = stageKey ?? "";
@@ -844,7 +844,7 @@ export function TeamEu26JiraWorkItem(props: Readonly<TeamEu26JiraWorkItemProps>)
 		() => initialState ?? createTeamEu26VitaOneState(initialPreset, workItem),
 		[initialPreset, initialState, workItem],
 	);
-	const insightsSnapshot = props.insightsSnapshot ?? EMPTY_JIRA_INSIGHTS_SNAPSHOT;
+	const insightsSnapshot = props.insightsSnapshot ?? EMPTY_JIRA_INSIGHT_SNAPSHOT;
 
 	return (
 		// Keep the WorkItemModalProvider mounted (isOpen always true) so the reused

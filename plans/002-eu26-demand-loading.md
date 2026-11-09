@@ -6,7 +6,7 @@ Priority P1 · Effort 1–2 days · Risk medium · Depends on 001 · Planned at 
 
 - `components/projects/page.tsx:197–233`: `!isEmbedded && !shouldHideRovoAction` mounts `<ChatPanel abortOnUnmount={false}>` even when the wrapper is inert, aria-hidden and translated offscreen.
 - `components/projects/jira-team-eu26/page.tsx:343`: `hideFloatingRovo` hides shell floating UI but does not disable that sidebar mount.
-- `components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx:107` conditionally mounts floating chat; `components/projects/rovo-floating-chat/components/rovo-floating-chat.tsx:11` imports another ChatPanel. The browser confirmed two editors when floating chat opened, one hidden.
+- `components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay.tsx:107` conditionally mounts floating chat; `components/projects/rovo-floating-chat/components/rovo-floating-chat.tsx:11` imports another ChatPanel. The browser confirmed two editors when floating chat opened, one hidden.
 - `components/projects/jira-team-eu26/page.tsx:6–8,31,451–465` eagerly imports directory data/dialogs and renders closed dialogs.
 - `components/blocks/jira-kanban/experimental/page.tsx:95,949` statically imports optional `ExperimentalPulse`, despite EU26 setting `insightsEnabled={false}`. Pulse session data remains needed.
 

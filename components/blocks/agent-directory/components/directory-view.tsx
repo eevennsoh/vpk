@@ -12,7 +12,7 @@ import TaskIcon from "@atlaskit/icon/core/task";
 import TeamsIcon from "@atlaskit/icon/core/teams";
 
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
-import type { AgentTemplatesAgent, AgentTemplatesCategoryId } from "@/components/blocks/agent-templates";
+import type { AgentTemplateAgent, AgentTemplateCategoryId } from "@/components/blocks/agent-template";
 import { AgentLanyard, AGENT_LANYARD_COLLECTIONS } from "@/components/blocks/agent-lanyard";
 import { AgentLanyardActions } from "@/components/blocks/agent-lanyard/components/agent-lanyard-actions";
 import { AgentLanyardFirstPartyAvatar } from "@/components/blocks/agent-lanyard/agent-lanyard-first-party-avatar";
@@ -53,11 +53,11 @@ import {
 
 export interface AgentDirectoryViewProps {
 	agents: readonly AgentBrowserAgent[];
-	templateAgents: readonly AgentTemplatesAgent[];
+	templateAgents: readonly AgentTemplateAgent[];
 	ownedAgentIds?: readonly string[];
-	initialTemplateCategory?: AgentTemplatesCategoryId | null;
+	initialTemplateCategory?: AgentTemplateCategoryId | null;
 	onSelectAgent?: (agent: AgentBrowserAgent) => void;
-	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
+	onSelectTemplateAgent?: (agent: AgentTemplateAgent) => void;
 	onCreateAgent?: () => void;
 }
 
@@ -152,7 +152,7 @@ function DirectoryHero({
 
 function DirectoryTemplateCard({
 	agent, onSelectAgent,
-}: Readonly<{ agent: AgentTemplatesAgent; onSelectAgent?: (agent: AgentTemplatesAgent) => void }>) {
+}: Readonly<{ agent: AgentTemplateAgent; onSelectAgent?: (agent: AgentTemplateAgent) => void }>) {
 	const iconLabel = getDirectoryTemplateIconLabel(agent);
 	return (
 		<div className="relative min-w-0">
@@ -271,8 +271,8 @@ function DirectoryViewMode({ list, onChange }: Readonly<{ list: boolean; onChang
 
 function DirectoryRecommendations({ agents, templateAgents, onSelectTemplateAgent, onCategorySelect, ...actions }: Readonly<{
 	agents: readonly AgentBrowserAgent[];
-	templateAgents: readonly AgentTemplatesAgent[];
-	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
+	templateAgents: readonly AgentTemplateAgent[];
+	onSelectTemplateAgent?: (agent: AgentTemplateAgent) => void;
 	onCategorySelect: (category: DirectoryCategory) => void;
 } & DirectoryAgentActions>) {
 	const { featured, coding, recommended, popular } = getDirectoryRecommendations(agents);
@@ -293,18 +293,18 @@ function DirectoryRecommendations({ agents, templateAgents, onSelectTemplateAgen
 }
 
 function DirectoryTemplateGrid({ agents, onSelect }: Readonly<{
-	agents: readonly AgentTemplatesAgent[];
-	onSelect?: (agent: AgentTemplatesAgent) => void;
+	agents: readonly AgentTemplateAgent[];
+	onSelect?: (agent: AgentTemplateAgent) => void;
 }>) {
 	return <div className={cn(DIRECTORY_GRID_CLASS_NAME, "-m-1 p-1")}>{agents.map((agent) => <DirectoryTemplateCard key={agent.id} agent={agent} onSelectAgent={onSelect} />)}</div>;
 }
 
 function DirectorySearchResults({ agents, templates, list, onListChange, onSelectTemplateAgent, empty, actions }: Readonly<{
 	agents: readonly AgentBrowserAgent[];
-	templates: readonly AgentTemplatesAgent[];
+	templates: readonly AgentTemplateAgent[];
 	list: boolean;
 	onListChange: (list: boolean) => void;
-	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
+	onSelectTemplateAgent?: (agent: AgentTemplateAgent) => void;
 	empty: ReactNode;
 	actions: DirectoryAgentActions;
 }>) {
@@ -342,7 +342,7 @@ function DirectoryCatalogResults({ agents, tab, list, onListChange, empty, actio
 	return <DirectorySection title={verified ? "Verified by your administrators" : `${shownAgents.length} ${shownAgents.length === 1 ? "agent" : "agents"}`} description={verified ? "Agents reviewed and verified by your organization" : undefined} action={verified ? undefined : <DirectoryViewMode list={list} onChange={onListChange} />}>{shownAgents.length > 0 ? <DirectoryAgentGrid agents={shownAgents} list={list} {...actions} /> : empty}</DirectorySection>;
 }
 
-function matchesTemplateCategory(agent: AgentTemplatesAgent, category: AgentTemplatesCategoryId | null, searchActive: boolean, tab: DirectoryTab): boolean {
+function matchesTemplateCategory(agent: AgentTemplateAgent, category: AgentTemplateCategoryId | null, searchActive: boolean, tab: DirectoryTab): boolean {
 	return !category || searchActive || tab !== "templates" || agent.categoryId === category;
 }
 
@@ -352,10 +352,10 @@ function hasActiveDirectoryFilters(filters: DirectoryFilters): boolean {
 
 function DirectoryResults({ agents, templateAgents, ownedAgentIds, tab, templateCategory, query, filters, list, onListChange, onClear, onCategorySelect, onCreateAgent, onSelectTemplateAgent, actions }: Readonly<{
 	agents: readonly AgentBrowserAgent[];
-	templateAgents: readonly AgentTemplatesAgent[];
+	templateAgents: readonly AgentTemplateAgent[];
 	ownedAgentIds: readonly string[];
 	tab: DirectoryTab;
-	templateCategory: AgentTemplatesCategoryId | null;
+	templateCategory: AgentTemplateCategoryId | null;
 	query: string;
 	filters: DirectoryFilters;
 	list: boolean;
@@ -363,7 +363,7 @@ function DirectoryResults({ agents, templateAgents, ownedAgentIds, tab, template
 	onClear: () => void;
 	onCategorySelect: (category: DirectoryCategory) => void;
 	onCreateAgent?: () => void;
-	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
+	onSelectTemplateAgent?: (agent: AgentTemplateAgent) => void;
 	actions: DirectoryAgentActions;
 }>) {
 	const hasSearch = query.trim().length > 0;

@@ -340,7 +340,7 @@
       "count": 42
     }
   },
-  "components/blocks/agent-insights/agent-insights.test.js": {
+  "components/blocks/agent-insight/agent-insight.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -525,17 +525,17 @@
       "count": 1
     }
   },
-  "components/blocks/agent-states/agent-states.test.js": {
+  "components/blocks/agent-state/agent-state.test.js": {
     "no-restricted-syntax": {
       "count": 39
     }
   },
-  "components/blocks/agent-surfaces/agent-surfaces.test.js": {
+  "components/blocks/agent-surface/agent-surface.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/blocks/agent-templates/agent-templates.test.js": {
+  "components/blocks/agent-template/agent-template.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
@@ -553,7 +553,7 @@
       "count": 1
     }
   },
-  "components/blocks/agent-users/agent-users.test.js": {
+  "components/blocks/agent-user/agent-user.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -586,12 +586,12 @@
       "count": 1
     }
   },
-  "components/blocks/apps-directory/apps-directory.test.js": {
+  "components/blocks/app-directory/app-directory.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
   },
-  "components/blocks/apps-directory/components/apps-directory.tsx": {
+  "components/blocks/app-directory/components/app-directory.tsx": {
     "react-hooks/refs": {
       "count": 9
     },
@@ -647,12 +647,12 @@
       "count": 1
     }
   },
-  "components/blocks/conversation-starters/components/conversation-starters.tsx": {
+  "components/blocks/conversation-starter/components/conversation-starter.tsx": {
     "react-hooks/refs": {
       "count": 3
     }
   },
-  "components/blocks/conversation-starters/conversation-starters.test.js": {
+  "components/blocks/conversation-starter/conversation-starter.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -777,7 +777,7 @@
       "count": 8
     }
   },
-  "components/blocks/jira-insights/components/jira-insights-timeline-rail.tsx": {
+  "components/blocks/jira-insight/components/jira-insight-timeline-rail.tsx": {
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
     },
@@ -1629,17 +1629,17 @@
       "count": 22
     }
   },
-  "components/blocks/skills-directory/components/skills-directory-sidebar.tsx": {
+  "components/blocks/skill-directory/components/skill-directory-sidebar.tsx": {
     "react-hooks/refs": {
       "count": 3
     }
   },
-  "components/blocks/skills-directory/components/skills-directory.tsx": {
+  "components/blocks/skill-directory/components/skill-directory.tsx": {
     "react-hooks/refs": {
       "count": 3
     }
   },
-  "components/blocks/skills-directory/skills-directory.test.js": {
+  "components/blocks/skill-directory/skill-directory.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
@@ -1654,17 +1654,17 @@
       "count": 1
     }
   },
-  "components/blocks/subagents/page.tsx": {
+  "components/blocks/subagent/page.tsx": {
     "no-restricted-imports": {
       "count": 1
     }
   },
-  "components/blocks/subagents/subagents-navigator.tsx": {
+  "components/blocks/subagent/subagent-navigator.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
     }
   },
-  "components/blocks/subagents/subagents.test.js": {
+  "components/blocks/subagent/subagent.test.js": {
     "no-restricted-syntax": {
       "count": 136
     }
@@ -1691,12 +1691,12 @@
       "count": 4
     }
   },
-  "components/blocks/tools-directory/components/tools-directory.tsx": {
+  "components/blocks/tool-directory/components/tool-directory.tsx": {
     "react-hooks/refs": {
       "count": 9
     }
   },
-  "components/blocks/tools-directory/tools-directory.test.js": {
+  "components/blocks/tool-directory/tool-directory.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
@@ -1719,22 +1719,22 @@
       "count": 14
     }
   },
-  "components/blocks/triggers/components/agent-automation-flow-cover.test.js": {
+  "components/blocks/trigger/components/agent-automation-flow-cover.test.js": {
     "no-restricted-syntax": {
       "count": 41
     }
   },
-  "components/blocks/triggers/manage-triggers-dialog.test.js": {
+  "components/blocks/trigger/manage-triggers-dialog.test.js": {
     "no-restricted-syntax": {
       "count": 51
     }
   },
-  "components/blocks/triggers/page.tsx": {
+  "components/blocks/trigger/page.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "components/blocks/triggers/triggers.test.js": {
+  "components/blocks/trigger/trigger.test.js": {
     "no-restricted-syntax": {
       "count": 71
     }
@@ -1849,157 +1849,157 @@
       "count": 44
     }
   },
-  "components/projects/jira-golden-journeys-v0/agent-chat-demo.test.js": {
+  "components/projects/jira-golden-journey-v0/agent-chat-demo.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/projects/jira-golden-journeys-v0/card-kanban-stage.test.js": {
+  "components/projects/jira-golden-journey-v0/card-kanban-stage.test.js": {
     "no-restricted-syntax": {
       "count": 30
     }
   },
-  "components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay.tsx": {
+  "components/projects/jira-golden-journey-v0/components/jira-golden-journey-v0-rovo-overlay.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
-  "components/projects/jira-golden-journeys-v0/components/rovo-stage.tsx": {
+  "components/projects/jira-golden-journey-v0/components/rovo-stage.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "components/projects/jira-golden-journeys-v0/components/terminal-stage.tsx": {
+  "components/projects/jira-golden-journey-v0/components/terminal-stage.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
     }
   },
-  "components/projects/jira-golden-journeys-v0/hooks/use-terminal-demo.ts": {
+  "components/projects/jira-golden-journey-v0/hooks/use-terminal-demo.ts": {
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
-  "components/projects/jira-golden-journeys-v0/kanban-stage.test.js": {
+  "components/projects/jira-golden-journey-v0/kanban-stage.test.js": {
     "no-restricted-syntax": {
       "count": 50
     }
   },
-  "components/projects/jira-golden-journeys-v0/lib/terminal-demo-state.test.js": {
+  "components/projects/jira-golden-journey-v0/lib/terminal-demo-state.test.js": {
     "no-restricted-syntax": {
       "count": 21
     }
   },
-  "components/projects/jira-golden-journeys-v0/queue-stage.test.js": {
+  "components/projects/jira-golden-journey-v0/queue-stage.test.js": {
     "no-restricted-syntax": {
       "count": 187
     }
   },
-  "components/projects/jira-golden-journeys-v0/work-item-stage.test.js": {
+  "components/projects/jira-golden-journey-v0/work-item-stage.test.js": {
     "no-restricted-syntax": {
       "count": 27
     }
   },
-  "components/projects/jira-golden-journeys-v1/agent-chat-demo.test.js": {
+  "components/projects/jira-golden-journey-v1/agent-chat-demo.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/projects/jira-golden-journeys-v1/card-kanban-stage.test.js": {
+  "components/projects/jira-golden-journey-v1/card-kanban-stage.test.js": {
     "no-restricted-syntax": {
       "count": 26
     }
   },
-  "components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx": {
+  "components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
-  "components/projects/jira-golden-journeys-v1/components/rovo-stage.tsx": {
+  "components/projects/jira-golden-journey-v1/components/rovo-stage.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "components/projects/jira-golden-journeys-v1/components/terminal-stage.tsx": {
+  "components/projects/jira-golden-journey-v1/components/terminal-stage.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
     }
   },
-  "components/projects/jira-golden-journeys-v1/hooks/use-terminal-demo.ts": {
+  "components/projects/jira-golden-journey-v1/hooks/use-terminal-demo.ts": {
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
-  "components/projects/jira-golden-journeys-v1/kanban-stage.test.js": {
+  "components/projects/jira-golden-journey-v1/kanban-stage.test.js": {
     "no-restricted-syntax": {
       "count": 100
     }
   },
-  "components/projects/jira-golden-journeys-v1/lib/terminal-demo-state.test.js": {
+  "components/projects/jira-golden-journey-v1/lib/terminal-demo-state.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/projects/jira-golden-journeys-v1/queue-stage.test.js": {
+  "components/projects/jira-golden-journey-v1/queue-stage.test.js": {
     "no-restricted-syntax": {
       "count": 206
     }
   },
-  "components/projects/jira-golden-journeys-v1/session-gallery.test.js": {
+  "components/projects/jira-golden-journey-v1/session-gallery.test.js": {
     "no-restricted-syntax": {
       "count": 175
     }
   },
-  "components/projects/jira-golden-journeys-v2/use-hotfix-story.ts": {
+  "components/projects/jira-golden-journey-v2/use-hotfix-story.ts": {
     "react-hooks/set-state-in-effect": {
       "count": 2
     }
   },
-  "components/projects/jira-golden-journeys-v3/jira-golden-journeys-v3.test.js": {
+  "components/projects/jira-golden-journey-v3/jira-golden-journey-v3.test.js": {
     "no-restricted-syntax": {
       "count": 65
     }
   },
-  "components/projects/jira-golden-journeys-v3/page.tsx": {
+  "components/projects/jira-golden-journey-v3/page.tsx": {
     "react-hooks/refs": {
       "count": 1
     }
   },
-  "components/projects/jira-golden-journeys-v3/terminal-story.test.js": {
+  "components/projects/jira-golden-journey-v3/terminal-story.test.js": {
     "no-restricted-syntax": {
       "count": 17
     }
   },
-  "components/projects/jira-golden-journeys-v4/data/agent-session-sync.test.js": {
+  "components/projects/jira-golden-journey-v4/data/agent-session-sync.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-board-gap.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-board-gap.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
   },
-  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-create-session.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-create-session.test.js": {
     "no-restricted-syntax": {
       "count": 26
     }
   },
-  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-generative-actions.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-generative-actions.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
   },
-  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-untracked-chrome.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-untracked-chrome.test.js": {
     "no-restricted-syntax": {
       "count": 107
     }
   },
-  "components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4.test.js": {
     "no-restricted-syntax": {
       "count": 247
     }
   },
-  "components/projects/jira-golden-journeys-v4/terminal-story.test.js": {
+  "components/projects/jira-golden-journey-v4/terminal-story.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
@@ -2795,7 +2795,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/animated-dots.test.js": {
+  "components/ui-custom/animated-dot.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
@@ -3172,7 +3172,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/sources-preview-menu.test.js": {
+  "components/ui-custom/source-preview-menu.test.js": {
     "no-restricted-syntax": {
       "count": 31
     }
@@ -3644,7 +3644,7 @@
       "count": 5
     }
   },
-  "components/website/demos/ui-custom/attachments-demo.tsx": {
+  "components/website/demos/ui-custom/attachment-demo.tsx": {
     "no-restricted-syntax": {
       "count": 4
     }
@@ -3674,7 +3674,7 @@
       "count": 2
     }
   },
-  "components/website/demos/ui-custom/sources-demo-preview-menu.test.js": {
+  "components/website/demos/ui-custom/source-demo-preview-menu.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
@@ -3743,7 +3743,7 @@
       "count": 1
     }
   },
-  "components/website/demos/utils/multiports-demo.tsx": {
+  "components/website/demos/utils/multiport-demo.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
     },

@@ -46,7 +46,7 @@ export type AgentListHost = "cloud" | "local";
  *
  * - `session` (default) — the shared session-details flyout. It is
  *   shared across the whole list via one payload handle.
- * - `composer` — the per-row Agent States card, which adds a prompt composer so
+ * - `composer` — the per-row Agent State card, which adds a prompt composer so
  *   the viewer can reply to the agent without leaving the list.
  * - `none` — no flyout. For rows that are not agent sessions (a teammate's
  *   comment, an @mention) and therefore have no session summary to preview.
@@ -195,7 +195,7 @@ export interface AgentListCustomFlyoutActions {
 
 export interface AgentListProps {
 	className?: string;
-	/** Chat surface opened after an Agent States composer submission. */
+	/** Chat surface opened after an Agent State composer submission. */
 	composerChatSurface?: ChatSurface;
 	/** Which flyout a row opens on hover or keyboard focus. Defaults to `session`. */
 	flyout?: AgentListFlyout;
@@ -219,6 +219,6 @@ export interface AgentListProps {
 	canViewItem?: (item: AgentListItem) => boolean;
 	/** Called when the hover Archive icon is activated. */
 	onArchive?: (item: AgentListItem) => void;
-	/** Overrides the default chat destination for Agent States composer submissions. */
+	/** Overrides the default chat destination for Agent State composer submissions. */
 	onSubmitPrompt?: (item: AgentListItem, prompt: string) => Promise<void> | void;
 }

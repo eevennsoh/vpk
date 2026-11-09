@@ -45,9 +45,9 @@ import { HeaderLanyards } from "./components/header-lanyards";
 import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
-import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
+import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
 import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES, resolveButterChatAgentId } from "@/components/projects/butter/data/chat-agent-profiles";
-import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
+import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
 	DEFAULT_JIRA_WORK_ITEM_VIEW,
@@ -93,7 +93,7 @@ import {
 } from "./data/wac-content";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
-const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
+const SkillDirectoryDialog = dynamic(() => import("@/components/blocks/skill-directory").then((module) => module.SkillDirectoryDialog));
 
 const BUTTER_DEFAULT_REPORTER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
@@ -297,7 +297,7 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 	const { designVariants } = useDesignVariants();
 	const { activeSessionId, chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
-	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
+	const [skillDirectoryOpen, setSkillDirectoryOpen] = useState(false);
 	const browseAgents = useCallback(() => setAgentsDirectoryOpen(true), []);
 	const createAgent = useCallback(() => router.push("/studio"), [router]);
 	const workItemRef = useRef<ButterWorkItemHandle>(null);
@@ -356,7 +356,7 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 		});
 	const cardGenerativeActionFooterActions = {
 		onBrowseAgents: browseAgents,
-		onBrowseSkills: () => setSkillsDirectoryOpen(true),
+		onBrowseSkills: () => setSkillDirectoryOpen(true),
 		onCreateAgent: createAgent,
 		onCreateSkill: () => router.push("/skills"),
 	};
@@ -814,11 +814,11 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 					/>
 				</Suspense>
 			</MountOnFirstUse>
-			<MountOnFirstUse active={skillsDirectoryOpen}>
-				<SkillsDirectoryDialog
+			<MountOnFirstUse active={skillDirectoryOpen}>
+				<SkillDirectoryDialog
 					onCreateSkill={() => router.push("/skills")}
-					onOpenChange={setSkillsDirectoryOpen}
-					open={skillsDirectoryOpen}
+					onOpenChange={setSkillDirectoryOpen}
+					open={skillDirectoryOpen}
 					skills={DEFAULT_SKILLS}
 				/>
 			</MountOnFirstUse>

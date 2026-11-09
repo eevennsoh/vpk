@@ -12,9 +12,9 @@ export function ProjectButterExpandControl({ ariaLabel, chevron = false, expande
 	onClick: () => void;
 }>) {
 	return (
-		<div className="absolute -bottom-[0.5px] left-1/2 z-10 -translate-x-1/2 translate-y-1/2">
+		<div className="absolute -bottom-[0.5px] left-1/2 z-10 flex -translate-x-1/2 translate-y-1/2 items-center justify-center">
 			<Button aria-expanded={expanded} aria-label={ariaLabel ?? (chevron ? label : undefined)} className={chevron ? "w-10" : undefined} onClick={onClick} size="disclosure" type="button" variant="disclosure">
-				{chevron ? <span className={cn("inline-flex transition-transform duration-normal ease-out-practical", expanded && "rotate-180")}><ChevronDownIcon label="" size="small" /></span> : label}
+				{chevron ? <span className={cn("inline-flex items-center justify-center transition-transform duration-normal ease-out-practical", expanded && "rotate-180")}><ChevronDownIcon label="" size="small" /></span> : label}
 			</Button>
 		</div>
 	);

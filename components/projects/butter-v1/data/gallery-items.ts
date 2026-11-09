@@ -26,9 +26,21 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		size: "landscape",
 	},
 	{
+		id: "list",
+		title: "List",
+		description: "The Jira list.",
+		size: "1x1",
+	},
+	{
 		id: "pull-request",
 		title: "Pull request",
 		description: "Review a pull request.",
+		size: "portrait",
+	},
+	{
+		id: "development-panel",
+		title: "Development panel",
+		description: "View development activity and pull requests.",
 		size: "portrait",
 	},
 	{

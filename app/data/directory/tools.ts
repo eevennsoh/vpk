@@ -20,10 +20,10 @@ export type ToolCategory =
 
 /**
  * A single read-only / write-delete permission row shown in a tool's detail
- * view. Mirrors the component-layer `ToolsDirectoryPermission` so the data can
+ * view. Mirrors the component-layer `ToolDirectoryPermission` so the data can
  * be authored here without importing the UI module.
  */
-export interface ToolsDirectoryPermission {
+export interface ToolDirectoryPermission {
 	id: string;
 	name: string;
 	description: string;
@@ -32,12 +32,12 @@ export interface ToolsDirectoryPermission {
 }
 
 /**
- * Data-shape mirror of the component-layer `ToolsDirectoryTool` (which extends
+ * Data-shape mirror of the component-layer `ToolDirectoryTool` (which extends
  * `AgentBrowserAgent`). Owned here so JSON data and loaders never depend on the
  * UI module. The directory UI relies on `avatarSrc`/`logoName` to render the
  * brand mark, so both are preserved verbatim.
  */
-export interface ToolsDirectoryTool {
+export interface ToolDirectoryTool {
 	id: string;
 	name: string;
 	byline: string;
@@ -55,11 +55,11 @@ export interface ToolsDirectoryTool {
 	/** Short example prompt revealed on the app card's hover state to help users get started. */
 	promptSuggestion?: string;
 	publisherName?: string;
-	readOnlyTools?: readonly ToolsDirectoryPermission[];
+	readOnlyTools?: readonly ToolDirectoryPermission[];
 	teammateCount: number;
 	toolCount: number;
 	verified?: boolean;
-	writeDeleteTools?: readonly ToolsDirectoryPermission[];
+	writeDeleteTools?: readonly ToolDirectoryPermission[];
 }
 
 /**
@@ -70,17 +70,17 @@ export interface ToolsDirectoryTool {
  * callers get full typing without re-declaring the data inline.
  */
 interface ToolsData {
-	tools: readonly ToolsDirectoryTool[];
-	sessionTools: readonly ToolsDirectoryTool[];
+	tools: readonly ToolDirectoryTool[];
+	sessionTools: readonly ToolDirectoryTool[];
 }
 
 const data = toolsData as ToolsData;
 
 /** Always-available tools shown in the directory list. */
-export const DEMO_TOOLS: readonly ToolsDirectoryTool[] = data.tools;
+export const DEMO_TOOLS: readonly ToolDirectoryTool[] = data.tools;
 
 /** Session-scoped tools (team-published) appended to the directory list. */
-export const DEMO_SESSION_TOOLS: readonly ToolsDirectoryTool[] = data.sessionTools;
+export const DEMO_SESSION_TOOLS: readonly ToolDirectoryTool[] = data.sessionTools;
 
 /**
  * Derives the JSON-serializable mention-token visual for a tool: a `logoName`
@@ -89,11 +89,11 @@ export const DEMO_SESSION_TOOLS: readonly ToolsDirectoryTool[] = data.sessionToo
  * project avatar; otherwise it is a square image. Shares one resolver with
  * agents (see {@link avatarVisualFromSrc}) so the two never diverge.
  */
-export function getToolDirectoryVisual(tool: ToolsDirectoryTool): DirectoryVisual | undefined {
+export function getToolDirectoryVisual(tool: ToolDirectoryTool): DirectoryVisual | undefined {
 	return avatarVisualFromSrc(tool.logoName, tool.avatarSrc, tool.brandName);
 }
 
 /** Convenience lookup across both tool groups. */
-export function getToolById(id: string): ToolsDirectoryTool | undefined {
+export function getToolById(id: string): ToolDirectoryTool | undefined {
 	return DEMO_TOOLS.find((tool) => tool.id === id) ?? DEMO_SESSION_TOOLS.find((tool) => tool.id === id);
 }

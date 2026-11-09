@@ -8,14 +8,14 @@ import {
 	PULSE_SOURCE_PREVIEW_PAGES,
 	PULSE_SOURCES,
 } from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-sources-preview";
-import { SourcesPreviewMenu } from "@/components/ui-custom/sources-preview-menu";
+import { SourcePreviewMenu } from "@/components/ui-custom/source-preview-menu";
 import { TWGAppstack } from "@/components/ui-custom/twg-appstack";
 
 export function PulseSourcesAppstack() {
 	const toasterId = useId();
 
 	return (
-		<SourcesPreviewMenu
+		<SourcePreviewMenu
 			pages={PULSE_SOURCE_PREVIEW_PAGES}
 			toasterId={toasterId}
 			trigger={
@@ -34,6 +34,6 @@ export function PulseSourcesAppstack() {
 				maxVisible={4}
 				sources={PULSE_SOURCES}
 			/>
-		</SourcesPreviewMenu>
+		</SourcePreviewMenu>
 	);
 }

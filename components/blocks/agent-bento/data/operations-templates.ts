@@ -1,6 +1,6 @@
 // Minimal "Start with these agent templates" prompt-starter set, sourced from the
 // centralized agent-template catalog (`app/data/directory/agent-templates.json`)
-// so the bento, the agent-templates directory, and agent-directory stay in sync.
+// so the bento, the agent-template directory, and agent-directory stay in sync.
 import { getAgentTemplateConfigById } from "@/app/data/directory/agent-templates";
 
 export interface AgentBentoOperationsTemplate {

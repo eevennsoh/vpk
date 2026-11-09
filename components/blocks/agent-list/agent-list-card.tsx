@@ -10,12 +10,12 @@ import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import {
-	AgentStates,
-	type AgentStatesState,
-} from "@/components/blocks/agent-states";
+	AgentState,
+	type AgentStateState,
+} from "@/components/blocks/agent-state";
 import {
 	JiraSessionFlyoutTrigger,
 	type JiraSessionFlyoutHandle,
@@ -163,7 +163,7 @@ function getSessionTitle(item: AgentListItem): string {
 	return item.state === "needs-input" ? AWAITING_INPUT_TITLE : item.title;
 }
 
-function getAgentStatesState(state: AgentListState): AgentStatesState {
+function getAgentStateState(state: AgentListState): AgentStateState {
 	switch (state) {
 		case "running":
 			return "working";
@@ -360,7 +360,7 @@ export function AgentListActivityHeader({
 			: "Last update";
 	const hasTrailingActions = Boolean(onView || action);
 	// When the title already leads with the agent name, keep dots off that line —
-	// the needs-input status in metadata owns the Rovo animated-dots indicator.
+	// the needs-input status in metadata owns the Rovo animated-dot indicator.
 	const showTitleDots = stateMeta.showDots && !leadWithAgentName;
 	// Revealed on hover/focus, but kept in the tab order: a `display: none`
 	// wrapper could never satisfy its own `:focus-visible` reveal condition.
@@ -405,7 +405,7 @@ export function AgentListActivityHeader({
 							{title}
 						</span>
 					)}
-					{showTitleDots ? <AnimatedDots /> : null}
+					{showTitleDots ? <AnimatedDot /> : null}
 				</div>
 				{/* Fixed chips stay shrink-0; Working for… owns the ellipsis when
 				    hover actions expand and steal width from this flex-1 column. */}
@@ -433,7 +433,7 @@ export function AgentListActivityHeader({
 							<Shimmer as="span" duration={1.4} spread={2}>
 								{NEEDS_INPUT_STATUS_LABEL}
 							</Shimmer>
-							<AnimatedDots />
+							<AnimatedDot />
 						</span>
 					) : !messageTimestamp || item.state !== "complete" ? (
 						<span
@@ -737,7 +737,7 @@ export function AgentListRow({
 									{stateAwareTitle ? getSessionTitle(item) : item.title}
 								</span>
 							)}
-							{stateAwareTitle && stateMeta.showDots ? <AnimatedDots /> : null}
+							{stateAwareTitle && stateMeta.showDots ? <AnimatedDot /> : null}
 						</span>
 						{metadataOutsideViewTrigger ? null : resolvedMetadata}
 					</AgentListRowBody>
@@ -833,7 +833,7 @@ export function AgentListCard({
 	isSelected?: boolean;
 	item: AgentListItem;
 	onArchive?: (item: AgentListItem) => void;
-	/** Composer variant only: called when the Agent States composer submits. */
+	/** Composer variant only: called when the Agent State composer submits. */
 	onFlyoutSubmit?: (prompt: string) => void;
 	onView?: (item: AgentListItem) => void;
 	renderFlyout?: (item: AgentListItem, actions: AgentListCustomFlyoutActions) => ReactNode;
@@ -912,7 +912,7 @@ export function AgentListCard({
 		);
 	}
 
-	// The composer variant keeps a per-row Agent States card: it owns local
+	// The composer variant keeps a per-row Agent State card: it owns local
 	// composer state, so it cannot share a single popup across the list the way
 	// the payload-driven session flyout does.
 	if (flyout === "composer") {
@@ -939,7 +939,7 @@ export function AgentListCard({
 					side="left"
 					sideOffset={12}
 				>
-					<AgentStates
+					<AgentState
 						agent={{
 							avatarSrc: item.agent.avatarSrc,
 							brandName: item.agent.brandName,
@@ -950,7 +950,7 @@ export function AgentListCard({
 						onSubmit={onFlyoutSubmit}
 						onView={() => onView?.(item)}
 						startedAtMs={item.startedAtMs}
-						state={getAgentStatesState(item.state)}
+						state={getAgentStateState(item.state)}
 					/>
 				</HoverCardContent>
 			</HoverCard>

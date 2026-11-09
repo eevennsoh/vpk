@@ -37,12 +37,12 @@ test("assistant thinking trace uses a rainbow spinner + shimmer + dots for respo
 	);
 
 	assert.match(source, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(source, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/u);
+	assert.match(source, /import \{ AnimatedDot \} from "@\/components\/ui-custom\/animated-dot";/u);
 	// The trailing step renders a rainbow spinner icon (no wash), shimmering
 	// "Generating a response" text, and animated dots.
 	assert.match(source, /iconRender=\{<Spinner variant="rainbow"/u);
 	assert.match(source, /iconShimmer=\{false\}/u);
-	assert.match(source, /<Shimmer[\s\S]*Generating a response[\s\S]*<\/Shimmer>\s*<AnimatedDots \/>/u);
+	assert.match(source, /<Shimmer[\s\S]*Generating a response[\s\S]*<\/Shimmer>\s*<AnimatedDot \/>/u);
 	// The old pencil icon is gone.
 	assert.equal(/StepPencilIcon/u.test(source), false);
 });

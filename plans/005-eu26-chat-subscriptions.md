@@ -4,7 +4,7 @@ Priority P2, investigation first · Effort 2–3 days if justified · Risk highe
 
 ## Current state
 
-`app/contexts/context-rovo-chat.tsx:2223–2359` creates one context value containing message data (`uiMessages`), surface state and actions. `useRovoChat()` reads that whole context. `components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo.ts:20` needs actions but subscribes to the full value; `:53–59` calls `replaceMessages` for playback frames. EU26 calls this hook at project `page.tsx:96`. `components/projects/page.tsx:155` needs surface/actions, and board `experimental/page.tsx:292` reads optional chat context.
+`app/contexts/context-rovo-chat.tsx:2223–2359` creates one context value containing message data (`uiMessages`), surface state and actions. `useRovoChat()` reads that whole context. `components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo.ts:20` needs actions but subscribes to the full value; `:53–59` calls `replaceMessages` for playback frames. EU26 calls this hook at project `page.tsx:96`. `components/projects/page.tsx:155` needs surface/actions, and board `experimental/page.tsx:292` reads optional chat context.
 
 Changing the context invalidates consumers even if they only destructure actions. This is a source-confirmed subscription boundary; repeated board cost during playback/real streaming has not yet been established. The hidden duplicate renderer is handled first in 002.
 
