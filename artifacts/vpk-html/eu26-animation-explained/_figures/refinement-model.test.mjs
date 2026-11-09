@@ -84,12 +84,12 @@ test('the first drop puffs confetti out from under every edge of the landed card
 });
 
 test('the finale fires two cannons, hangs, then a vortex drains every piece onto the Done column foot', () => {
-	const viewport = data.doneList.viewport, centerX = viewport.x + viewport.w / 2, footY = viewport.y + viewport.d;
+	const viewport = data.doneList.viewport, footY = viewport.y + viewport.d, boardX = data.board.x + data.board.w / 2;
 	const launch = at(6.3).confetti.filter(piece => piece.alpha > 0.5);
-	assert.ok(launch.some(piece => piece.at[0] < centerX - 150) && launch.some(piece => piece.at[0] > centerX + 150), 'both cannons fire from opposite sides');
+	assert.ok(launch.some(piece => piece.at[0] < boardX - 150) && launch.some(piece => piece.at[0] > boardX + 150), 'both cannons fire from opposite sides');
 	const rise = at(6.3).confetti.map((piece, index) => [piece, at(6.6).confetti[index]]).filter(([piece]) => piece.alpha > 0.5);
 	assert.ok(rise.filter(([a, b]) => b.at[2] > a.at[2]).length > rise.length * 0.8, 'the fan rises');
-	assert.ok(rise.filter(([a, b]) => Math.abs(b.at[0] - centerX) < Math.abs(a.at[0] - centerX)).length > rise.length * 0.7, 'and closes inward');
+	assert.ok(rise.filter(([a, b]) => Math.abs(b.at[0] - boardX) < Math.abs(a.at[0] - boardX)).length > rise.length * 0.7, 'and closes inward');
 	// Bullet time: the hang barely moves.
 	const hang = Math.max(...at(8.5).confetti.map((piece, index) => distance(piece.at, at(8.6).confetti[index].at)));
 	const pop = Math.max(...at(6.3).confetti.map((piece, index) => distance(piece.at, at(6.4).confetti[index].at)));
@@ -97,6 +97,42 @@ test('the finale fires two cannons, hangs, then a vortex drains every piece onto
 	const near = at(12.2).confetti.filter(piece => piece.alpha > 0.01);
 	assert.ok(near.every(piece => Math.abs(piece.at[1] - footY) < 40 && piece.at[0] > viewport.x - 20 && piece.at[0] < viewport.x + viewport.w + 20 && piece.at[2] < 40), 'the last pieces land on the column foot');
 	assert.ok(at(12.7).confetti.every(piece => piece.alpha === 0), 'every piece is gone before the column flash');
+});
+
+test('the finale cannons fire from the board\'s near corners and every piece stays over the board', () => {
+	const board = data.board;
+	// How far a plan point lies outside the board chassis (0 inside).
+	const outside = ([x, y]) => Math.max(0, board.x - x, x - (board.x + board.w), board.y - y, y - (board.y + board.d));
+	let samples = 0, near = 0, worst = 0;
+	for (let step = 0; step <= 130; step += 1) {
+		for (const piece of at(6 + step * 0.05).confetti) {
+			if (piece.alpha <= 0) continue;
+			const off = outside(piece.at);
+			samples += 1;
+			if (off <= 40) near += 1;
+			worst = Math.max(worst, off);
+		}
+	}
+	assert.ok(samples > 140 * 60, `the finale is sampled (${samples})`);
+	assert.ok(near / samples >= 0.97, `pieces stay over the board (${(100 * near / samples).toFixed(1)}% within 40 units)`);
+	assert.ok(worst <= 120, `no piece lands out on the ground (${worst.toFixed(1)} units past the edge)`);
+	// Each cannon's pieces start at its corner: the board's near-left and near-right corners at the 6 s camera (+y faces the viewer).
+	const corners = [[board.x, board.y + board.d], [board.x + board.w, board.y + board.d]];
+	const view = at(6).camera, a = view.azimuth * Math.PI / 180, depth = ([x, y]) => x * Math.cos(a) + y * Math.sin(a);
+	const chassis = [[board.x, board.y], [board.x + board.w, board.y], ...corners];
+	assert.deepEqual([...chassis].sort((l, r) => depth(r) - depth(l)).slice(0, 2).sort((l, r) => l[0] - r[0]), corners, 'the cannon corners are the two nearest the viewer');
+	const fine = Array.from({ length: 241 }, (_, step) => at(6 + step / 400));
+	const count = data.confetti.length, starts = Array.from({ length: count }, (_, index) => fine.find(state => state.confetti[index].alpha > 0)?.confetti[index].at);
+	for (const [index, start] of starts.entries()) {
+		assert.ok(start, `piece ${index} fires in the first 0.6 s`);
+		const corner = corners[index < count / 2 ? 0 : 1];
+		assert.ok(Math.hypot(start[0] - corner[0], start[1] - corner[1]) < 60, `piece ${index} leaves its corner (${start[0].toFixed(0)}, ${start[1].toFixed(0)})`);
+	}
+	// The burst spreads across the board.
+	for (const time of [7, 7.5, 9]) {
+		const xs = at(time).confetti.filter(piece => piece.alpha > 0.5).map(piece => piece.at[0]);
+		assert.ok(Math.max(...xs) - Math.min(...xs) > board.w * 0.6, `the burst spreads across the board at ${time}s`);
+	}
 });
 
 test('placement camera tilts and zooms, then faces the assembled six-tile bento', () => {

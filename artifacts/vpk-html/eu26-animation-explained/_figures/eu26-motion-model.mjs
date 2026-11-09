@@ -534,25 +534,41 @@ export function model(input, data) {
 	const finaleStart = 6, eased = (u, [a, b]) => { const t = clamp((u - a) / (b - a)); return (b - a) * (t ** 3 - t ** 4 / 2) + Math.max(0, u - b); };
 	const PACE = { burst: 1, slow: [0.45, 0.85], hang: 0.12, rush: [3.4, 3.8], pull: 0.3 };
 	const showAt = u => u <= 0 ? 0 : u * PACE.burst + (PACE.hang - PACE.burst) * eased(u, PACE.slow) + (PACE.pull - PACE.hang) * eased(u, PACE.rush);
-	const GATHER = { start: 1, spread: 0.25, first: 1.4, end: 1.8, min: 0.4 }, center = data.doneList.viewport.x + data.doneList.viewport.w / 2;
+	const GATHER = { start: 1, spread: 0.25, first: 1.4, end: 1.8, min: 0.4 };
 	const foot = { x: data.doneList.viewport.x, w: data.doneList.viewport.w, y: data.doneList.viewport.y + data.doneList.viewport.d, inset: 10 };
-	// Source px to board units: the production board spans about 1800 px for this figure's 860 units.
-	const world = 0.48;
+	// The cannons sit at the board's two near corners (the viewer's side, +y at the finale camera) and every piece is aimed
+	// at a spot over the board: a fan from each corner, up and inward, its reach set so the spent launch comes to rest
+	// inside the board's plan. Peaks stay lower toward the far edge, so a lifted piece still reads over the board.
+	const board = data.board, inset = 15, nearY = board.y + board.d - inset, settleBy = 0.9;
 	const finale = pieces.map((_, i) => {
 		const left = i < pieces.length / 2, side = left ? -1 : 1, gentle = random(i, 60) < 0.25;
-		const angle = (60 + (0.5 - random(i, 61)) * 60) * Math.PI / 180, speed = 2200 * world * (gentle ? 0.16 + random(i, 62) * 0.3 : 0.55 + random(i, 63) * 0.9);
-		const drag = 2.35 + random(i, 64) * 0.5, across = (random(i, 65) - 0.6) * 0.5;
+		const origin = [board.x + board.w / 2 + side * (board.w / 2 - inset), nearY, 6 + random(i, 67) * 10];
+		// Plan heading from the corner: 8-82 degrees between along the near edge (inward) and straight into the board.
+		const heading = (8 + 74 * random(i, 61)) * Math.PI / 180, dir = [-side * Math.cos(heading), -Math.sin(heading)];
+		const room = Math.min((board.w - 2 * inset) / Math.cos(heading), (board.d - 2 * inset) / Math.sin(heading));
+		const reach = room * (gentle ? 0.1 + 0.25 * random(i, 62) : 0.3 + 0.62 * random(i, 63));
+		const drag = 2.35 + random(i, 64) * 0.5, landY = origin[1] + dir[1] * reach;
+		const peak = (landY - board.y) * (gentle ? 0.15 + 0.15 * random(i, 65) : 0.25 + 0.3 * random(i, 66));
+		const fall = (55 + random(i, 69) * 55) * (gentle ? 0.45 : 1), push = drag / settleBy;
 		const piece = {
-			origin: [center + side * 330, 330 + random(i, 66) * 30, random(i, 67) * 30], delay: 0.25 * (gentle ? 0.35 + 0.65 * random(i, 68) : random(i, 68) ** 1.5), drag,
-			velocity: [-side * Math.cos(angle) * speed, across * speed * 0.5 - Math.cos(angle) * speed * 0.35, Math.sin(angle) * speed],
-			fall: (120 + random(i, 69) * 110) * world * (gentle ? 0.45 : 1),
-			flutter: [world * (14 + random(i, 70) * 22), 4.5 + random(i, 71) * 4, random(i, 72) * Math.PI * 2],
+			origin, delay: 0.25 * (gentle ? 0.35 + 0.65 * random(i, 68) : random(i, 68) ** 1.5), drag,
+			velocity: [dir[0] * reach * push, dir[1] * reach * push, peak * drag + fall / drag],
+			fall, flutter: [7 + random(i, 70) * 10, 4.5 + random(i, 71) * 4, random(i, 72) * Math.PI * 2],
 			spin: [random(i, 73) * Math.PI * 2, 8 + 8 * random(i, 74), 1.5 + 2 * random(i, 75), 1.4], axis: unit(i, 76), yaw: random(i, 78) * Math.PI * 2,
 		};
 		const sink = [foot.x + foot.inset + (foot.w - 2 * foot.inset) * (random(i, 79) + random(i, 80)) / 2, foot.y, 0];
 		const settle = flight(piece, Math.max(0, GATHER.start - piece.delay));
 		return { ...piece, sink, far: Math.hypot(settle[0] - sink[0], settle[1] - sink[1], settle[2]), swirl: -(1.4 + random(i, 81)) * Math.PI };
 	});
+	// The vortex turns each piece about its sink in the board's own frame: the offset is measured against the board's
+	// reach from the sink on that side, turned, and held to its square size, so the spiral sweeps the board, not the ground.
+	const swirlIn = (piece, [dx, dy], turnBy, hold) => {
+		const [sx, sy] = piece.sink, west = sx - board.x, east = board.x + board.w - sx, north = sy - board.y, south = board.y + board.d - sy;
+		const nx = dx / (dx < 0 ? west : east), ny = dy / (dy < 0 ? north : south), size = Math.max(Math.abs(nx), Math.abs(ny));
+		const cos = Math.cos(turnBy), sin = Math.sin(turnBy), tx = nx * cos - ny * sin, ty = nx * sin + ny * cos;
+		const fit = size * hold / Math.max(1e-9, Math.abs(tx), Math.abs(ty));
+		return [sx + tx * fit * (tx < 0 ? west : east), sy + ty * fit * (ty < 0 ? north : south)];
+	};
 	const farthest = Math.max(1, ...finale.map(piece => piece.far));
 	const confetti = pieces.map((shape, i) => {
 		let at = [shape.home[0], shape.home[1], 0], rot = [0, 0, 0], alpha = 0, scale = 1;
@@ -567,9 +583,8 @@ export function model(input, data) {
 		if (time > finaleStart && time < 12.6) {
 			const piece = finale[i], show = showAt(time - finaleStart), e = Math.max(0, show - piece.delay), free = flight(piece, e);
 			const f = piece.far / farthest, start = GATHER.start + GATHER.spread * (1 - f), end = Math.min(GATHER.end, Math.max(start + GATHER.min, GATHER.first + (GATHER.end - GATHER.first) * f));
-			const s = clamp((show - start) / (end - start)), hold = 1 - s * s, turnBy = piece.swirl * s * s, [sx, sy] = piece.sink;
-			const dx = free[0] - sx, dy = free[1] - sy, cos = Math.cos(turnBy), sin = Math.sin(turnBy);
-			at = [sx + (dx * cos - dy * sin) * hold, sy + (dx * sin + dy * cos) * hold, Math.max(0, free[2]) * hold];
+			const s = clamp((show - start) / (end - start)), hold = 1 - s * s;
+			at = [...swirlIn(piece, [free[0] - piece.sink[0], free[1] - piece.sink[1]], piece.swirl * s * s, hold), Math.max(0, free[2]) * hold];
 			rot = tumble(piece, e);
 			alpha = (show > piece.delay ? ease((show - piece.delay) / 0.02) : 0) * (1 - ease((s - 0.8) / 0.2));
 		}

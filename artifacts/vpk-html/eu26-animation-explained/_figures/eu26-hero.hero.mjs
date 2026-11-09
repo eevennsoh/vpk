@@ -253,6 +253,8 @@ export const data = {
 	confetti: confettiPieces(),
 	wall: sourceWall(),
 	wallSource: { commit: "8588b00ff81cb5e8341a462158c747c6d990667c", viewport: { width: 1920, height: 1080 }, zoom: 0.25, density: "dense", padding: { x: 40, y: 40 }, pieceScale: 0.792, gutter: 23.76, worldScale: 0.72 },
+	// The board chassis plan; the finale confetti stays over it.
+	board: { x: -430, y: -286, w: 860, d: 596, r: 10 },
 	columnViewports: [0, 1, 2].map(listViewport),
 	doneList: { viewport: doneViewport, padding: { x: 2.5, y: 4 }, gap: 12, order: doneOrder, cards: doneOrder.map((card, rank) => ({ card, rank, x: doneViewport.x + 2.5, y: doneViewport.y + 4 + rank * 126, w: 180, d: 114 })) },
 	materialDepths: { story: 1.2, tile: 1.5, wall: 1.1, title: 1.2 },
@@ -325,7 +327,7 @@ export function present(state, data) {
 
 export function build(kit, { data }) {
 	const { k, A, S, camera } = kit;
-	const board = { x: -430, y: -286, w: 860, d: 596, r: 10 };
+	const { board } = data;
 	const P = camera.fit(k.boxCorners(board, -12, 35), hero.width, hero.height, { pad: 34 });
 	const R = A.recorder(P);
 	// Face details are drawn in plan units, so they stay out of the audited part markup; live() adopts each one into
