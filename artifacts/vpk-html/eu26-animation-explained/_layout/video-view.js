@@ -5,7 +5,10 @@
 		const explorer = window.__eu26Explorer;
 		const island = document.querySelector('[data-eu26-explorer-model]');
 		if (!root || !panel || !explorer || !island || root.dataset.videoMounted) return;
-		const { duration } = JSON.parse(island.textContent);
+		let model = null;
+		try { model = JSON.parse(island.textContent || ''); } catch { return; }
+		const duration = Number(model?.duration);
+		if (!(duration > 0)) return;
 		const active = () => root.dataset.storyMode === 'video';
 		const generateButton = panel.querySelector('[data-video-action="generate"]');
 		const status = panel.querySelector('[data-video-status]');

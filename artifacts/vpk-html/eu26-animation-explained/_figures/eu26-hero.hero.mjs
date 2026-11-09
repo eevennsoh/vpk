@@ -317,7 +317,7 @@ export function build(kit, { data }) {
 	const details = [];
 	const put = (name, plan, z, h, piece = name, hidden = false, focal = false, detail = "") => {
 		if (detail) details.push(detail.replace("<g data-eu26-detail", `<g data-eu26-detail="${name}"`));
-		const kind = piece === "chrome" ? name.split(".")[1].replace(/\d/g, "") : piece.split(".")[0];
+		const kind = piece === "chrome" ? (name.split(".")[1] ?? "").replace(/\d/g, "") : piece.split(".")[0];
 		const attrs = `data-eu26-piece="${piece}" data-part="${name}" data-eu26-kind="${kind}" data-eu26-plan='${JSON.stringify({ plan, z, h })}'${hidden ? ' style="display:none"' : ""}${focal ? ' data-focal="hero-card"' : ""}`;
 		R.put({ name, at: [plan.x + plan.w / 2, plan.y + plan.d / 2, z + h / 2], svg: `<g ${attrs}>${S(k.slabOf(plan, z, h, P, 4, Math.min(h * 0.16, 0.25)), { tone: focal ? "hi" : "mid", crease: "none", lit: focal })}</g>`, shapes: [R.solid(A.slab(plan, z, h, { name, ground: true }, 4))] });
 	};
