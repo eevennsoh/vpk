@@ -6,7 +6,7 @@
  *
  *   node scripts/build.mjs --playbook [<template>] [--json]
  *
- * --check-evals runs collectRoutingIssues and collectPlaybookIssues (evals.mjs), so the
+ * --check-evals runs collectRoutingIssues (every template and diagram has a CHEATSHEET row) and collectPlaybookIssues (evals.mjs), so the
  * rules hold in CI. The legacy baselines below may only shrink.
  */
 
@@ -38,7 +38,7 @@ export const LEGACY_TEMPLATES_WITHOUT_PLAYBOOK = html([
 ]);
 
 // Templates with no eval scenario yet. implementation-plan left with eval 8 (B2);
-// research-concept-explainer left with eval 9 (B3).
+// research-concept-explainer left with eval 9 (B3). code-understanding is back: the story-explainer evals copy the story kit (template "story-kit").
 export const LEGACY_TEMPLATES_WITHOUT_EVAL = html([
 	"annual-report", "broadsheet", "changelog", "code-review-pr", "code-understanding", "component-variants",
 	"design-system", "editor-feature-flags", "editor-prompt-tuner", "editor-triage-board", "equity-report",
@@ -51,10 +51,12 @@ const normalizeTitle = title => title.trim().replace(/\s+/g, " ").toLowerCase();
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const readIfExists = file => (fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null);
 
-function listTemplates(skillRoot) {
-	const dir = path.join(skillRoot, "assets", "templates");
+function listHtml(skillRoot, folder) {
+	const dir = path.join(skillRoot, "assets", folder);
 	return fs.existsSync(dir) ? fs.readdirSync(dir).filter(name => name.endsWith(".html")).sort() : [];
 }
+
+const listTemplates = skillRoot => listHtml(skillRoot, "templates");
 
 function loadCorpus(skillRoot) {
 	try { return JSON.parse(fs.readFileSync(path.join(skillRoot, "evals", "evals.json"), "utf8")); }
@@ -77,13 +79,17 @@ export function parsePlaybook(source, file = "playbook.md") {
 	}
 	const sections = {};
 	let current = null;
+	let afterTitle = false;
+	let loadLine = null;
 	for (const line of (block ? text.slice(block[0].length) : text).split("\n")) {
+		if (/^#\s/.test(line)) { afterTitle = true; continue; }
+		if (afterTitle && loadLine === null && line.trim()) { loadLine = /^##\s/.test(line) ? "" : line.trim(); afterTitle = false; }
 		const heading = /^##\s+(.+?)\s*$/.exec(line);
 		if (heading) { current = normalizeTitle(heading[1]); sections[current] ??= []; continue; }
 		if (current && /^- \S/.test(line)) sections[current].push(line.slice(2).trim());
 	}
 	const lineCount = text.endsWith("\n") ? text.split("\n").length - 1 : text.split("\n").length;
-	return { file, stem: path.basename(file, ".md"), frontmatter, sections, lineCount, issues };
+	return { file, stem: path.basename(file, ".md"), frontmatter, sections, lineCount, loadLine, issues };
 }
 
 export function loadPlaybooks(skillRoot = SKILL_ROOT) {
@@ -92,6 +98,9 @@ export function loadPlaybooks(skillRoot = SKILL_ROOT) {
 	return fs.readdirSync(dir).filter(name => name.endsWith(".md")).sort()
 		.map(name => parsePlaybook(fs.readFileSync(path.join(dir, name), "utf8"), path.join(dir, name)));
 }
+
+// Every pointer states when to load it: the line under each playbook's H1.
+export const playbookLoadLine = template => `Load before you draft \`${template}\`. Back to [SKILL.md](../../SKILL.md).`;
 
 export function validatePlaybook(playbook, { skillRoot = SKILL_ROOT, corpus = loadCorpus(skillRoot), indexHtml = readIfExists(path.join(skillRoot, "index.html")) ?? "" } = {}) {
 	const label = `references/playbooks/${playbook.stem}.md`;
@@ -126,6 +135,10 @@ export function validatePlaybook(playbook, { skillRoot = SKILL_ROOT, corpus = lo
 		const engines = Array.isArray(meta.figure_engines) ? meta.figure_engines : [];
 		if (engines.length === 0) add(`figure_engines must list at least one of: ${FIGURE_ENGINES.join(", ")}`);
 		for (const engine of engines) if (!FIGURE_ENGINES.includes(engine)) add(`figure_engines entry "${engine}" is not one of: ${FIGURE_ENGINES.join(", ")}`);
+	}
+	if (template) {
+		const expected = playbookLoadLine(template);
+		if (playbook.loadLine !== expected) add(`the first line under the H1 must be "${expected}" (load condition and back-link)`);
 	}
 	for (const section of REQUIRED_SECTIONS) {
 		const bullets = sections[normalizeTitle(section)];
@@ -175,6 +188,9 @@ export function collectRoutingIssues(skillRoot = SKILL_ROOT) {
 	for (const template of listTemplates(skillRoot)) {
 		if (!cheatsheet.includes(`assets/templates/${template}`)) issues.push(`CHEATSHEET.md does not route assets/templates/${template}`);
 		if (!new RegExp(`\\|\\s*\`?${escapeRegExp(template)}\`?\\s*\\|`).test(authoring)) issues.push(`references/authoring-detail.md has no template-map row for ${template}`);
+	}
+	for (const diagram of listHtml(skillRoot, "diagrams")) {
+		if (!cheatsheet.includes(`assets/diagrams/${diagram}`)) issues.push(`CHEATSHEET.md does not route assets/diagrams/${diagram}`);
 	}
 	return issues;
 }

@@ -11,7 +11,7 @@
  * and assets/demos/demo-illustration-<slug>.html. GALLERY puts the core ones on the hub page,
  * assets/demos/demo-illustration-gallery.html (one inlined iso block, a distinct FIG_nnn per figure), with links to
  * GALLERY_PAGES: assets/demos/demo-illustration-gallery-<source>-<group>.html. An exemplar with a `gallery` key
- * appears only on that gallery page (no standalone page); every page must fit the data-URL viewer budget.
+ * appears only on that gallery page (no standalone page); a page over the data-URL viewer budget warns and still builds.
  * Every output passes check-html and the iso audit before anything is written.
  * LEGACY_EXAMPLES are the five v1 hand SVGs. They are maintained in place by
  * build.mjs --refresh-library; --legacy regenerates them and warns, because the committed copies

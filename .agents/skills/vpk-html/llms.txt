@@ -1,180 +1,67 @@
 # vpk-html
 
-# vpk-html-catalog-counts: templates=35 diagrams=61 demos=133
+> Offline, single-file HTML documents, including repo-only two-column story explainers whose figure scrubs with the text (Page, Slides, X Threads, Video). Copy a template, fill it with supplied material, ship one file. Agents start at SKILL.md.
 
-> Algebrica editorial document design skill for AI agents. Built on kami's
-> template-edit architecture: the LLM copies an HTML template, fills
-> {{placeholders}} with real content, and ships a single offline HTML file.
-
-## Identity
-
-- Surface: white ADS `elevation.surface` via `--paper` and a plain `--paper-background` page backdrop; all colours come from the VPK app's ADS tokens
-- Chrome: grayscale ink `--accent`; neutral gray `--accent-soft` washes for pill controls, selection, focus, and key-insight emphasis
-- Figures: sampled grayscale token ramp only (iso kit: plus one accent, `--ill-accent`, on the focal and hovered part); `--focal` marks the single darkest-ink element, with tone/dash/marker series differentiation
-- Components: collapsed 12px article tables, 12px-radius list-table cards, vote chips, grayscale pill buttons, tinted code cards, centered section heads, steps lists, and warm heatmap dots
-- Display/body: Geist
-- Mono: Geist Mono
-- Numeric: Geist Mono Numeric with `unicode-range: U+0030-0039`
-- Type scale: 13px labels/UI, 17px / 23px justified long-form prose, 36px normal-weight page titles
-- Case: normal case except the breadcrumb/eyebrow role, which is Geist Mono 12px / 600 uppercase with 2px tracking
-- Frame: flat surfaces, hairline borders, 6px generic radius, 12px list-table radius, borders over shadows
-
-Local font files are inlined as base64 data URIs in every template, so filled
-documents are fully portable.
+<!-- vpk-html-catalog-counts: templates=35 diagrams=61 demos=133 -->
 
 ## Invocation
 
-Strict — only on the literal `/vpk-html` command. Opening a Markdown file or
-asking for HTML in natural language does not trigger the skill.
+The trigger and its guard live in the SKILL.md frontmatter description.
 
-Optional doc-type hints and flags: `/vpk-html resume`, `/vpk-html one-pager`,
-`/vpk-html slides`, `/vpk-html --github`.
+## Entry points
 
-## Capabilities
+- SKILL.md: router, rules, phases A-F, gotchas, reply
+- CHEATSHEET.md: intent → template, diagram or illustration; every template and diagram has a row
+- README.md: human catalog and quick start
+- index.html: demo catalog
+- assets/templates/: document templates
+- assets/diagrams/: SVG diagram and chart primitives
+- assets/illustrations/: technical illustration exemplars
+- assets/demos/: HTML demos
 
-- 35 HTML document templates at assets/templates/: 15 general document shells plus
-  20 Phase 2 engineering shells mapped from the html-effectiveness use-case
-  catalog.
-- 61 standalone SVG diagram/chart primitives at assets/diagrams/.
-- 12 technical illustration exemplars at assets/illustrations/:
-  isometric-device, exploded-assembly, annotated-mechanism,
-  hatched-cross-section, isometric-pipeline, and the iso-kit
-  iso-exploded-stack, iso-flatpack-shelf, iso-phone-anatomy,
-  iso-cache-shelves, iso-parcel-tray, iso-turntable-anatomy and
-  iso-card-stack-ui (all seven on assets/demos/demo-illustration-gallery.html).
-- 133 HTML demos at assets/demos/: filled document showcases, restyled
-  html-effectiveness demo ports, diagram previews, illustration previews, and
-  vpk-native examples.
-- Shared motion layer across generated HTML: entrance choreography, document
-  section reveal, micro-interactions, slide transitions, reduced-motion
-  movement reduction, and print neutralization.
-- Presentation mode for decks: Left/Right navigation, #slide-N deep links,
-  hidden speaker notes, and a synced presenter window.
-- Video export is documented as a user-gated Hyperframes conversion track, not
-  the browser presentation runtime; model the worked example at
-  assets/video/landing-demo-separation/.
-- GitHub Pages publish is an opt-in live-hosting track: validate the artifact,
-  publish it as index.html from a standalone repo, enable Pages from main /,
-  and return the hosted URL.
-- LLM-facing reference docs for anti-patterns, diagrams, writing,
-  resume-writing, design, illustrations, presentation, video export
-  (worked example: assets/video/landing-demo-separation/), GitHub Pages
-  publishing, production, source policy, accessibility, quality gates, and
-  tokens.
-- Frozen evaluation scenarios at evals/evals.json cover eleven recurring reader
-  jobs with fixed prompts, viewports, expectations, and human rubrics.
-- Contract + content IR (<slug>.content.json) with a coverage check and a
-  registry for in-file content islands; per-template playbooks; --doctor;
-  plan-then-confirm publishing to Atlassian Artifacts or gists, with a
-  preflight shared by --github.
-- Motion case studies: a captured film embedded as H.264 with cue sheet, chapters, a Gantt synced to the film and interactive grayscale labs; documents over the data-URL budget ship an automatic lite copy.
-- X thread composer: paste notes into an ordered thread, twitter-text v3 weighted counts, approve or skip each post, a free web-intent posting chain with in_reply_to, JSON export and import for the agent, optional numbering, reply-to-a-post, fit-to-280, keyboard reorder, and a notes-to-content draft command.
-- Figure engines (anatomy hero, mixing with the iso kit): references/figure-engines.md (worked example: assets/demos/demo-figure-engines.html)
-- Single offline HTML output — no remote fonts, stylesheets, scripts, or images.
+## References
 
-## Key files
+Load conditions live in SKILL.md § Read when; each reference repeats its own in its opening paragraph. Topics:
 
-- SKILL.md — Agent-facing skill manifest (kami Step 1–7 workflow)
-- README.md — Human-facing introduction
-- CHEATSHEET.md — Route table mapping user intent → template file
-- index.html — Local Algebrica-style reference index
-- assets/templates/*.html — 35 offline document templates
-- assets/diagrams/*.html — 61 SVG diagram/chart primitives
-- assets/illustrations/*.html — 12 technical illustration exemplars
-- assets/demos/ — 133 curated, restyled, diagram, and illustration showcases
-- references/contract.md — Contract fields, figure-engine record, content IR, feedback protocol, definition of done, playbook format
-- references/publish.md — Artifacts and gist publishing, preflight, viewer capabilities
-- references/review-loop.md — Reviewable documents: block ids, comments, decision blocks, the four return paths, --review/--stamp
-- scripts/review/*.mjs — Review loop runtime, stamping, anchoring, merge, CLI
-- references/schemas/ — Content-IR schemas and example sidecars
-- references/playbooks/ — Per-template playbooks
-- references/lab-kit.md — vpk-lab kit API, markup contract, grayscale and review rules
-- references/media-pipeline.md — Film capture → encode → embed, presets, size budget and the lite copy
-- references/x-thread.md — X thread template: counting, state, the free posting chain, CLI
-- references/playbooks/x-thread.md — X thread playbook
-- references/figure-engines.md — Anatomy hero and mixed figure engines: contract, checks, line and runtime checks
-- references/anti-patterns.md — 6 AI-output failure modes (consult before drafting)
-- references/diagrams.md — Diagram selection guide + focal rule
-- references/illustrations.md — Technical illustrations and the iso kit (brief, rules R1–R16, checks A1–A17; SMIL contract in svg-style.md)
-- references/svg-style.md — Required token-only grayscale SVG grammar + lint rules + SMIL motion contract
-- references/charts.md — Chart animation, interaction, and chart catalog foundation
-- references/presentation.md — Deck runtime, presenter window, speaker notes
-- references/video-export.md — Hyperframes MP4 conversion contract and worked example
-- references/github-pages.md — Optional live GitHub Pages publishing
-- references/resume-writing.md — Resume quality bar (Action + Scope + Result + Outcome)
-- references/writing.md — Concise plain-prose rules, source discipline, review checklist
-- references/design.md — Visual identity rules
-- references/production.md — Troubleshooting (page overflow, font issues)
-- references/source-policy.md — Source attribution rules
-- references/accessibility.md — Accessibility expectations
-- references/evaluation.md — Frozen comparison rounds and feedback routing
-- styles.css — Shared stylesheet token map
-- references/tokens.json — Programmatic token data
-
-## Commands
-
-- node scripts/build.mjs                            (validate all templates)
-- node scripts/build.mjs --check-placeholders <file>
-- node scripts/build.mjs --sync                     (validate styles.css and generated HTML mirror tokens.json)
-- node scripts/build.mjs --write-styles             (regenerate styles.css from tokens.json)
-- node scripts/build.mjs --check-templates
-- node scripts/build.mjs --check-evals
-- node scripts/build.mjs --verify <file>
-- node scripts/check-html.mjs <file>
-- node scripts/ensure-fonts.mjs
-- node scripts/build.mjs --pdf <file> [--out <f.pdf>]   (optional derived PDF export)
-- node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   (landing companions + responsive verify)
-- node scripts/build.mjs --github <file> [--repo owner/name] [--public|--private]   (publish to GitHub Pages)
-- node scripts/build.mjs --publish artifacts|gist <file> [--confirm]   (plan, then publish after the user agrees)
-- node scripts/build.mjs --doctor [--json] [--online]   (environment + capability check)
-- node scripts/build.mjs --check-content <file|content.json> [<file>]   (contract + content IR + coverage)
-- node scripts/build.mjs --playbook [<template>]   (list or print template playbooks)
-- node scripts/build.mjs --screenshot <file> [--theme light|dark|both]   (review captures)
-- node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]   (advisory gates)
-- node scripts/build.mjs --check-focal|--check-motion-budget|--check-caption-echo|--check-layout <file> [--strict]   (advisory polish gates)
-- node scripts/build.mjs --refresh-library [--check]  (refresh every committed HTML through the runtime pipeline; --check is the drift guard)
-- node scripts/build.mjs --inject-runtime <file...>  (apply the runtime pipeline — fonts, theme, nav, runtime modules, enhancements — to artifacts)
-- node scripts/runtime/smil-starter.mjs --sweep [--strict]  (Chromium SMIL behaviour sweep)
-- node scripts/build.mjs --inject-review <file...>  (make a document reviewable: doc id, block ids, ledger, review runtime)
-- node scripts/build.mjs --review <reviews...> <artifact> [--format md|json] [--browser]  (returned reviews → numbered tasks; --browser resolves anchors in Chromium)
-- node scripts/build.mjs --stamp <artifact> [--revision-label <t>] [--addresses <ids>]  (record a revision after an edit)
-- node scripts/build.mjs --embed-review <files...> <artifact> | --strip-review <file> [--all]  (carry or remove embedded comments)
-- node scripts/iso/build-figure.mjs --brief <brief.json> --out <file> | --inject <doc.html> [--check]   (iso-kit figures)
-- node scripts/build.mjs --check-iso <file> [--strict] [--json]   (audit iso-kit plates)
-- node scripts/build.mjs --build-hero <file> [--audit] [--check] [--json]   (rebuild anatomy-hero regions)
-- node scripts/build.mjs --check-figures <file> [--strict] [--json]   (figure-engine record and anatomy hero checks)
-- node scripts/lab/kit.mjs --inject|--check <file>   (vpk-lab kit block: film, cue sheet, Gantt, labs)
-- node scripts/lab/render-case-study.mjs <content.json> --into <file> [--check]   (motion-case-study regions and island)
-- node scripts/media/{capture,encode,embed}.mjs …   (captured film pipeline: capture → encode → embed)
-- node scripts/x-thread.mjs count|fill|check|import|verify|draft|export …   (X threads: weighted counts, render from content.json, checks, fold browser exports back, Chromium smoke, notes to content.json, export as json/md/text)
-- node scripts/x-thread/build-template.mjs [--check]   (regenerate the x-thread template and demo)
-- node scripts/port-kami.mjs --source <kami-checkout> --out <dir> [--templates|--diagrams|--demos]  (re-port from a Kami checkout for comparison; --in-place overwrites)
-- node scripts/retrofit.mjs                           (alias of --refresh-library)
-- node scripts/port-engineering.mjs                  (regenerate Phase 2 engineering templates)
-- node scripts/build-demos.mjs [--curated|--landing]  (regenerate curated vpk-native demos + landing mock previews)
-- node scripts/port-engineering-demos.mjs            (copy + restyle Phase 2 upstream demo ports)
-- node scripts/build-illustrations.mjs                (regenerate the iso-kit brief exemplars and their demos; --check, --legacy)
-- node scripts/landing.mjs                           (regenerate assets/landing/ shells)
-
-## Workflow
-
-```
-1. Confirm /vpk-html invocation
-2. Frame the reader job (30-second decision/action + deeper evidence audit)
-3. Pick template from CHEATSHEET.md (read references/playbooks/<template>.md if it exists)
-4. Lock the contract (references/contract.md → <slug>.content.json)
-5. Source + material pass (for branded / fact-heavy docs)
-6. Distill raw content (if input is unstructured)
-7. Layout note (≤80 words, transparent)
-8. Copy template, fill placeholders
-9. Build & verify (placeholders, verify, check-html, --check-content, --screenshot)
-10. Definition of done (references/contract.md)
-```
+- references/accessibility.md: controls, focus, hidden chrome
+- references/anti-patterns.md: drafting and figure failures
+- references/authoring-detail.md: filling templates, assets, metadata
+- references/brand-profile.md: applying a brand
+- references/charts.md: data charts
+- references/contract.md: contract, content IR, reply
+- references/design.md: non-story template styling
+- references/diagrams.md: SVG diagrams and SMIL motion
+- references/editorial-patterns.md: long documents and spreads
+- references/evaluation.md: maintaining this skill
+- references/figure-craft.md: concept, pointers, step guides
+- references/figure-engines.md: engines, builds, frame cost
+- references/figure-fidelity.md: product-UI outlines and shading
+- references/figure-motion.md: time-pure motion, production matching
+- references/github-pages.md: GitHub Pages track
+- references/illustrations.md: iso-kit briefs
+- references/lab-kit.md: case studies, films, labs
+- references/landing.md: landing-site derivation
+- references/media-pipeline.md: media capture and embedding
+- references/paper-system.md: story layout, rail, code
+- references/pdf-export.md: PDF derivation
+- references/presentation.md: decks
+- references/production.md: shared runtime and tokens
+- references/publish.md: Artifacts, gist, Pages sharing
+- references/quality-gates.md: --check-* gates
+- references/resume-writing.md: resumes
+- references/review-loop.md: reviewable pages
+- references/source-policy.md: sources and citations
+- references/story-modes.md: Page, Slides, X Threads, Video
+- references/svg-style.md: SVG drawing style
+- references/verification.md: frames, sweeps, complaint map
+- references/video-export.md: MP4 export
+- references/writing.md: visible words
+- references/x-thread.md: postable X threads
+- references/playbooks/: per-template guidance, read before drafting that template
+- references/schemas/: content-IR schemas
+- references/tokens.json, references/checks-thresholds.json, references/paper-shading.json: data read by scripts and tests
+- evals/: scenarios, triggers, rubric and critic brief
 
 ## License
 
-Inherits the VPK monorepo. The 8 base HTML templates and the original 14
-diagram primitives in assets/templates/ and assets/diagrams/ are ported from
-tw93/kami (MIT) and re-skinned with vpk-html's identity. The 20 Phase 2
-engineering templates and 25 Phase E chart additions are original vpk-html
-shells/primitives based on the local effectiveness and chart-catalog work.
+Inherits the VPK monorepo. The 8 base templates and the original 14 diagram primitives are ported from tw93/kami (MIT); the rest is original vpk-html work. LICENSE lists vendored code.

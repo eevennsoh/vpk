@@ -13,13 +13,13 @@ const scenario = source => evaluate(`(async()=>{
 	${source}
 })()`);
 
-test('all timeline views scale neighboring ticks and Slides keeps a fixed bottom baseline', { timeout: 60000 }, async t => {
+test('Page, X Threads and Video scale neighboring ticks from their default lengths', { timeout: 60000 }, async t => {
 	run('set', 'viewport', '1440', '1000');
 	run('set', 'media', 'light');
 	run('open', new URL('../eu26-animation-explained.html', import.meta.url).href);
 	run('wait', '--fn', 'Boolean(window.__eu26Timeline && window.__eu26Explorer)');
 	try {
-		for (const mode of ['story', 'slides', 'twitter', 'video']) {
+		for (const mode of ['story', 'twitter', 'video']) { // Slides navigates with thumbnails, not ticks (slides-timeline.behavior.test.mjs)
 			await t.test(`${mode} grows the selected tick and neighbors from their default lengths`, () => {
 				run('mouse', 'move', '8', '40');
 				const before = scenario(`
@@ -41,10 +41,7 @@ test('all timeline views scale neighboring ticks and Slides keeps a fixed bottom
 				assert.ok(after.neighbor[axis] > before.neighborBase + .5, 'a neighboring tick also grows');
 				assert.ok(Math.abs(after.far[axis] - before.far[axis]) < .2, 'distant ticks retain their normal length');
 				assert.deepEqual(after.input, before.input, 'decorative growth never moves the native hit target');
-				if (mode === 'slides') {
-					assert.ok(Math.max(...after.bottoms) - Math.min(...after.bottoms) < .1, 'Slides ticks share one bottom baseline');
-					assert.ok(Math.abs(after.box.bottom - before.box.bottom) < .1 && after.box.top < before.box.top - 4, 'Slides grows upward from its fixed bottom');
-				} else if (!before.horizontal) {
+				if (!before.horizontal) {
 					assert.ok(Math.abs(after.box.right - before.box.right) < .1, 'vertical ticks keep their right anchor');
 				}
 				run('mouse', 'move', '8', '40');
@@ -53,9 +50,9 @@ test('all timeline views scale neighboring ticks and Slides keeps a fixed bottom
 			});
 		}
 
-		await t.test('reduced motion retains default lengths in every view', () => {
+		await t.test('reduced motion retains default lengths in every tick view', () => {
 			run('set', 'media', 'light', 'reduced-motion');
-			for (const mode of ['story', 'slides', 'twitter', 'video']) {
+			for (const mode of ['story', 'twitter', 'video']) { // Slides navigates with thumbnails, not ticks (slides-timeline.behavior.test.mjs)
 				run('mouse', 'move', '8', '40');
 				const target = scenario(`story.setMode('${mode}');explorer.clearPreview();explorer.seek(13);if('${mode}'==='video')input.scrollIntoView({block:'center',behavior:'instant'});await wait(80);const tick=dock.querySelector('.eu26-timeline-playhead'),r=rect(tick);return {x:(r.left+r.right)/2,y:(r.top+r.bottom)/2};`);
 				run('mouse', 'move', String(Math.round(target.x)), String(Math.round(target.y)));

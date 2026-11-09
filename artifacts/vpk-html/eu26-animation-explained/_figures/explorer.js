@@ -47,9 +47,13 @@
 			hoverPreview: null,
 			focusIndex: null,
 			apiPreviewIndex: null,
+			// Scroll can only reach the last chapter, so the endless wall keeps its own clock on top of it.
+			idle: 0,
 		};
 		const previewIndex = () => player.apiPreviewIndex ?? player.hoverPreview?.index ?? player.focusIndex;
 		const running = () => player.wantsPlay && player.visible && !document.hidden && !player.printing && previewIndex() === null && !player.tween;
+		const idling = () => storyLayout && !isVideoPreview() && !player.wantsPlay && !player.tween && player.time >= wallStart && player.visible && !document.hidden && !player.printing && previewIndex() === null && !loop.reducedMotion();
+		const shownTime = () => player.time + (storyLayout && !isVideoPreview() && player.time >= wallStart ? player.idle : 0);
 		const wantsPause = () => player.wantsPlay || (player.tween && !player.tween.paused);
 		const renderPose = (time, transition = null) => {
 			player.renderTime = playbackTime(time);
@@ -66,7 +70,7 @@
 		const variantDescription = node('p', 'eu26-variant-description');
 		variantDescription.id = 'eu26-variant-description';
 		variantDescription.setAttribute('aria-live', 'polite');
-		if (variantControls && variants.length) {
+		if (variantControls && variants.length > 1) {
 			variantControls.setAttribute('data-vpkh-no-lightbox', '');
 			const variantLabel = node('p', 'eu26-variant-label', 'Visual direction');
 			variantLabel.id = 'eu26-variant-label';
@@ -94,7 +98,7 @@
 			controls.prepend(thumbnailCss);
 		}
 
-		function snapshot(index) {
+		function snapshot(index, scope = 'thumb') {
 			renderPose(states[index].time);
 			const svg = root.querySelector('svg');
 			const copy = svg.cloneNode(true);
@@ -107,7 +111,7 @@
 				if (style.display === 'none' || style.visibility === 'hidden' || source.matches('script, animate, animateTransform, set, [data-eu26-hover]')) copiedElements[item].remove();
 			}
 			const elements = [copy, ...copy.querySelectorAll('*')];
-			const ids = new Map(elements.filter(element => element.id).map(element => [element.id, `eu26-thumb-${index}-${element.id}`]));
+			const ids = new Map(elements.filter(element => element.id).map(element => [element.id, `eu26-${scope}-${index}-${element.id}`]));
 			const rewriteUrls = value => value.replace(/url\(\s*(['"]?)#([^\s)'"]+)\1\s*\)/g, (match, quote, id) => ids.has(id) ? `url(#${ids.get(id)})` : match);
 			for (const element of elements) {
 				if (element.id) element.id = ids.get(element.id);
@@ -206,9 +210,12 @@
 				if (isVideoPreview() && player.time >= duration) player.wantsPlay = false;
 				player.selectedIndex = stateAt(player.time);
 				renderPose(player.time);
+			} else if (idling()) {
+				player.idle += elapsed * playbackRate;
+				renderPose(shownTime());
 			}
 			sync();
-			return Boolean(player.tween && !player.tween.paused) || running();
+			return Boolean(player.tween && !player.tween.paused) || running() || idling();
 		}, { rest: () => {
 			player.printing = true;
 			renderPose(duration);
@@ -225,7 +232,7 @@
 			const preview = previewIndex();
 			if (preview !== null) renderPose(player.apiPreviewIndex !== null ? states[preview].time : player.hoverPreview?.time ?? states[preview].time);
 			else if (player.tween) renderTween(player.tween);
-			else renderPose(player.time);
+			else renderPose(shownTime());
 			wake();
 		};
 		const getState = () => ({
@@ -235,6 +242,13 @@
 			visible: player.visible, reducedMotion: loop.reducedMotion(), duration, transitioning: !!player.tween,
 			timelineTime: clampTime(player.time), wallElapsed: Math.max(0, player.time - wallStart), looping: player.time >= wallStart,
 			playbackRate, durationSeconds, elapsedSeconds: player.time / playbackRate, timelineSeconds: clampTime(player.time) / playbackRate,
+		});
+		// The wall's teammates plan their holds for the frame they are drawn in, so thumbnails are retaken when the frame resizes.
+		root.addEventListener('eu26:resized', () => {
+			const renderTime = player.renderTime;
+			for (const [index, choice] of stateButtons.entries()) choice.querySelector('.eu26-state-thumb').replaceChildren(snapshot(index));
+			if (player.tween) renderTween(player.tween);
+			else renderPose(renderTime);
 		});
 		const setVariant = id => {
 			if (id === player.variant || !variants.some(variant => variant.id === id)) return getState();
@@ -258,8 +272,9 @@
 			player.tween = null;
 			clearPreviewSources();
 			player.time = playbackTime(time);
+			if (player.time < wallStart) player.idle = 0;
 			player.selectedIndex = stateAt(player.time);
-			renderPose(player.time);
+			renderPose(shownTime());
 			wake(options);
 			return getState();
 		};
@@ -279,6 +294,7 @@
 			clearPreviewSources();
 			player.selectedIndex = target;
 			player.time = states[target].time;
+			player.idle = 0;
 			const motionToken = getComputedStyle(document.documentElement).getPropertyValue('--vpk-dur-fast').trim();
 			const motionSeconds = (Number.parseFloat(motionToken) || 140) / (motionToken.endsWith('ms') || !motionToken ? 1000 : 1);
 			const navigationSeconds = Math.min(0.42, Math.max(0.24, motionSeconds * 2 + Math.abs(from - player.time) / duration * 0.14));
@@ -307,6 +323,7 @@
 				player.selectedIndex = 0;
 				player.tween = null;
 			}
+			if (player.time >= wallStart) { player.time = shownTime(); player.idle = 0; }
 			if (player.tween) player.tween.paused = false;
 			else player.selectedIndex = stateAt(player.time);
 			player.wantsPlay = true;

@@ -86,7 +86,7 @@ body[data-vpk-layout="story"] .story-tools .vpk-theme-toggle {
 body[data-vpk-layout="story"] .story-tools :is(.vpk-theme-toggle__label, .vpk-theme-toggle__state) { display: none; }
 body[data-vpk-layout="story"] .story-tools .vpk-theme-toggle svg { display: block; inline-size: 16px; block-size: 16px; }
 
-body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-tools button, .story-follow) {
+body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-tools button) {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -104,7 +104,7 @@ body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-to
 	cursor: pointer;
 }
 
-body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-tools button, .story-follow):hover {
+body[data-vpk-layout="story"] :is(.story-modes button, .story-tools a, .story-tools button):hover {
 	background: var(--surface-sunken);
 	color: var(--ink);
 }
@@ -174,9 +174,6 @@ body[data-vpk-layout="story"] .story-stage-heading {
 	margin-block-end: 8px;
 }
 
-body[data-vpk-layout="story"] .story-follow { flex: 0 0 auto; padding-inline: 10px; }
-body[data-vpk-layout="story"] .story-follow[aria-pressed="true"] { color: var(--ink); }
-body[data-vpk-layout="story"] .story-follow[aria-pressed="false"] { border-color: var(--rule-strong); color: var(--ink); }
 body[data-vpk-layout="story"] #eu26-variant-controls { min-inline-size: 0; margin: 0; }
 
 body[data-vpk-layout="story"] .eu26-explorer-summary { display: none !important; }
@@ -378,31 +375,106 @@ body[data-vpk-layout="story"] .story-index { display: flex; flex-wrap: wrap; gap
 body[data-vpk-layout="story"] .story-index a { display: inline-flex; align-items: center; justify-content: center; min-inline-size: 44px; min-block-size: 44px; color: var(--muted-text); font: 11px/1.4 var(--font-mono); text-decoration: none; }
 body[data-vpk-layout="story"] .story-index a[aria-current]:not([aria-current="false"]) { color: var(--ink); text-decoration: underline; text-underline-offset: 5px; }
 
-body[data-vpk-layout="story"] .story-footer { max-inline-size: 960px; margin-inline: auto; padding-block: 64px 48px; border-block-start: 1px solid var(--rule); color: var(--muted-text); font-size: 12px; line-height: 1.8; }
-body[data-vpk-layout="story"] .story-footer > * { max-inline-size: 80ch; }
-body[data-vpk-layout="story"] .story-footer :is(p, ul, ol, details) { margin-block: 0 18px; }
-body[data-vpk-layout="story"] .story-footer :is(ul, ol) { padding-inline-start: 18px; }
-body[data-vpk-layout="story"] .story-footer summary { display: flex; align-items: center; min-block-size: 44px; color: var(--ink); cursor: pointer; }
-body[data-vpk-layout="story"] .story-footer a { overflow-wrap: anywhere; }
-body[data-vpk-layout="story"] .story-footer :is(p, li, dd) { font-size: 13px !important; line-height: 1.8 !important; }
-body[data-vpk-layout="story"] .story-footer h2 { margin-block: 0 20px; font-size: 28px !important; font-weight: 400 !important; line-height: 1.2 !important; letter-spacing: -0.03em !important; }
-body[data-vpk-layout="story"] .story-footer .story-kicker { font-size: 12px !important; }
-body[data-vpk-layout="story"] .story-colophon { color: var(--muted-text); font-size: 11px !important; }
 
-body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-intro { display: none; }
+body[data-vpk-layout="story"] [data-vpk-story]:is([data-story-mode="slides"], [data-story-mode="twitter"]) .story-intro { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { min-block-size: calc(100svh - var(--story-bar-height)); }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-reading { overflow: visible; }
 body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: 0; padding-block: 32px; }
-body[data-vpk-layout="story"] [data-story-mode="slides"] .story-footer { display: none; }
 
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step { min-block-size: 0; padding-block: 44px 64px; padding-inline-start: 28px; border-inline-start: 1px solid var(--rule); }
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step::before { content: ""; position: absolute; inset-inline-start: -3px; inset-block-start: 49px; inline-size: 5px; block-size: 5px; border-radius: 50%; background: var(--ink); }
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step h2 { font-size: 25px !important; }
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-summary { font-size: 16px !important; }
+/* X Threads follows Lifeline's vertical timeline (github.com/evilrabbit/lifeline, lifeline-vertical.tsx): a
+   2.5rem | 1rem | 1fr grid with a 12px gap, a right-aligned step number, a 10px tick on one dashed rail, the time as the
+   15px label, muted content, and the current step in full while the rest recede. */
+body[data-vpk-layout="story"] .story-thread-labels { display: none; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] {
+	--thread-grid: 2.5rem 1rem minmax(0, 1fr);
+	--thread-rail-x: calc(2.5rem + 12px + .5rem);
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-thread-labels {
+	display: grid;
+	grid-template-columns: var(--thread-grid);
+	column-gap: 12px;
+	align-items: end;
+	margin-block: 32px 24px;
+	color: var(--muted-text);
+	font: 500 11px/16px var(--font-mono);
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-thread-labels > :first-child { text-align: end; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step {
+	display: grid;
+	grid-template-columns: var(--thread-grid);
+	column-gap: 12px;
+	align-items: start;
+	min-block-size: 0;
+	padding-block: 0 40px;
+	padding-inline-start: 0;
+	border: 0;
+	opacity: .38;
+	transition: opacity var(--vpk-tip-enter, 150ms ease-out);
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step[aria-current="step"],
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step:hover,
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step:focus-within { opacity: 1; }
+/* One continuous dashed rail: each step draws its own segment through the rail column. */
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step::before {
+	content: "";
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: var(--thread-rail-x);
+	inline-size: 0;
+	block-size: auto;
+	border-inline-start: 1px dashed var(--rule-strong);
+	border-radius: 0;
+	background: none;
+	pointer-events: none;
+}
+/* Header row: the kicker's spans become the number and the time; the "/ 12" counter text is dropped. */
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-kicker { display: contents; font-size: 0 !important; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-kicker .story-step-index {
+	grid-column: 1;
+	grid-row: 1;
+	align-self: center;
+	color: var(--muted-text);
+	font: 500 11px/16px var(--font-mono);
+	text-align: end;
+	font-variant-numeric: tabular-nums;
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-kicker::after {
+	content: "";
+	position: relative;
+	z-index: 1;
+	grid-column: 2;
+	grid-row: 1;
+	align-self: center;
+	justify-self: center;
+	inline-size: 10px;
+	block-size: 1px;
+	background: var(--rule-strong);
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step[aria-current="step"] .story-step-kicker::after { inline-size: 14px; background: var(--ink); }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-kicker .story-step-time {
+	grid-column: 3;
+	grid-row: 1;
+	margin: 0;
+	color: var(--muted-text);
+	font: 500 15px/20px var(--font-body);
+	letter-spacing: 0;
+	text-transform: none;
+	font-variant-numeric: tabular-nums;
+}
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step[aria-current="step"] .story-step-time { color: var(--ink); }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step > :not(.story-step-kicker) { grid-column: 3; min-inline-size: 0; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step h2 { margin: 24px 0 12px; font-size: 22px !important; letter-spacing: -0.02em !important; }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-summary { margin-block-end: 16px; color: var(--muted-text); font-size: 15px !important; line-height: 1.6 !important; }
 body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail > summary,
-body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[open] > summary { display: flex; gap: 14px; min-block-size: 44px; color: var(--ink); }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[open] > summary { display: flex; gap: 12px; min-block-size: 44px; color: var(--muted-text); font-size: 13px; }
 body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail > summary::after { content: ""; inline-size: 5px; block-size: 5px; border-inline-end: 1px solid currentColor; border-block-end: 1px solid currentColor; transform: rotate(45deg); }
 body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[open] > summary::after { transform: rotate(225deg); }
+body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-play { color: var(--muted-text); }
+@media (prefers-reduced-motion: reduce) {
+	body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step { transition: none; }
+}
 
 @supports (scroll-target-group: auto) {
 	body[data-vpk-layout="story"] .story-index { scroll-target-group: auto; }
@@ -446,7 +518,6 @@ body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[ope
 	body[data-vpk-layout="story"] .story-stage { z-index: 20; padding-block: 4px 8px; border-block-end: 1px solid var(--rule); }
 	body[data-vpk-layout="story"] .story-stage-heading { min-block-size: 44px; margin: 0; gap: 4px; }
 	body[data-vpk-layout="story"] #eu26-variant-controls .eu26-variant-choice { padding-inline: 7px; font-size: 11px; gap: 4px; }
-	body[data-vpk-layout="story"] .story-follow { min-inline-size: 44px; padding-inline: 6px; font-size: 11px; }
 	body[data-vpk-layout="story"] #animation-explorer .iso-stage { block-size: var(--story-hero-height); }
 	body[data-vpk-layout="story"] .story-intro { padding-block: 24px 36px; }
 	body[data-vpk-layout="story"] .story-intro h1 { font-size: clamp(32px, 9vw, 42px) !important; }
@@ -455,12 +526,10 @@ body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[ope
 	body[data-vpk-layout="story"] .story-step h2 { font-size: 30px !important; }
 	body[data-vpk-layout="story"] .story-step-summary { font-size: 16px !important; }
 	body[data-vpk-layout="story"] .story-step-body :is(p, li, dd) { font-size: 14px !important; }
-	body[data-vpk-layout="story"] .story-footer { max-inline-size: 960px; margin-inline: auto; padding-block: 44px 32px; }
 	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-layout { min-block-size: calc(100svh - var(--story-bar-height)); }
 	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-reading { max-block-size: none; overflow: visible; }
 	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: 0; padding-block: 28px 40px; }
-	body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step { padding-block: 32px 48px; }
-	body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step::before { inset-block-start: 37px; }
+	body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step { padding-block: 0 32px; }
 }
 
 @media (max-width: 380px) {
@@ -471,7 +540,7 @@ body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[ope
 
 @media (prefers-reduced-motion: reduce) {
 	body[data-vpk-layout="story"] { scroll-behavior: auto; }
-	body[data-vpk-layout="story"] :is(.story-modes button, .story-follow, .eu26-variant-choice, .eu26-explorer-button, .eu26-state-choice) { transition: none; }
+	body[data-vpk-layout="story"] :is(.story-modes button, .eu26-variant-choice, .eu26-explorer-button, .eu26-state-choice) { transition: none; }
 	body[data-vpk-layout="story"] .story-progress { display: none !important; }
 }
 
@@ -483,9 +552,9 @@ body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[ope
 	body[data-vpk-layout="story"] .story-stage::before { display: none; }
 	body[data-vpk-layout="story"] #animation-explorer .iso-stage { block-size: 300px; }
 	body[data-vpk-layout="story"] .story-reading { max-block-size: none !important; overflow: visible !important; }
-	body[data-vpk-layout="story"] :is(.story-intro, .story-step, .story-footer),
+	body[data-vpk-layout="story"] :is(.story-intro, .story-step),
 	body[data-vpk-layout="story"] .story-step[hidden],
-	body[data-vpk-layout="story"] [data-story-mode] :is(.story-intro, .story-step, .story-footer) { display: block !important; min-block-size: 0; padding-block: 20px; opacity: 1 !important; transform: none !important; break-inside: avoid; }
+	body[data-vpk-layout="story"] [data-story-mode] :is(.story-intro, .story-step) { display: block !important; min-block-size: 0; padding-block: 20px; opacity: 1 !important; transform: none !important; break-inside: avoid; }
 	body[data-vpk-layout="story"] .story-intro h1 { max-inline-size: none; font-size: 36px !important; }
 	body[data-vpk-layout="story"] .story-step h2 { font-size: 24px !important; }
 }
@@ -504,23 +573,174 @@ body[data-vpk-layout="story"] [data-story-mode="twitter"] .story-step-detail[ope
 }
 
 body[data-vpk-layout="story"] .story-video { inline-size: 100%; min-inline-size: 0; margin: 0; padding-block: 28px; }
-body[data-vpk-layout="story"] .story-video-heading { max-inline-size: 1200px; margin: 0 auto 20px; font-size: clamp(24px, 2.6vw, 36px) !important; line-height: 1.15 !important; font-weight: 400 !important; letter-spacing: -0.035em !important; }
-body[data-vpk-layout="story"] .story-video-chapter { max-inline-size: 1200px; margin: 16px auto 0; color: var(--muted-text); font-size: 14px !important; line-height: 1.6 !important; }
-body[data-vpk-layout="story"] [data-story-mode="video"] .story-footer { display: none; }
 body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { position: relative; inset-block-start: auto; }
-body[data-vpk-layout="story"] [data-story-mode="video"] .story-follow { display: none; }
-body[data-vpk-layout="story"] .story-video-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-body[data-vpk-layout="story"] .story-video-toolbar .story-kicker { margin-block-end: 8px; }
-body[data-vpk-layout="story"] .story-video-heading { margin: 0; }
 body[data-vpk-layout="story"] .story-video :is(button, input) { min-block-size: 44px; }
 body[data-vpk-layout="story"] .story-video button { padding: 10px 14px; border: 1px solid var(--rule); border-radius: 4px; color: var(--ink); background: var(--surface-raised); font: 13px/1.4 var(--font-body); cursor: pointer; }
 body[data-vpk-layout="story"] .story-video .story-video-generate { border-color: var(--ill-accent); background: var(--ill-accent); color: var(--ill-accent-ink); }
 body[data-vpk-layout="story"] .story-video button:disabled { opacity: .6; cursor: wait; }
 body[data-vpk-layout="story"] .story-video-timeline { margin-block: 22px 10px; }
-body[data-vpk-layout="story"] .story-video-status { margin: 10px 0; color: var(--muted-text); font-size: 13px !important; line-height: 1.6 !important; }
+/* Export progress is announced to screen readers and shown on Generate itself (video-view.js); no visible status line. */
+body[data-vpk-layout="story"] .story-video-status { position: absolute !important; inline-size: 1px; block-size: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+body[data-vpk-layout="story"] .story-video-download { display: inline-flex; align-items: center; flex: 0 0 auto; min-block-size: 44px; padding-inline: 8px; color: var(--ink); font-size: 13px; white-space: nowrap; }
 body[data-vpk-layout="story"] .story-layout:fullscreen { inline-size: 100%; block-size: 100dvh; padding: 16px 24px; overflow: auto; background: var(--paper-background); }
 body[data-vpk-layout="story"] .story-layout:fullscreen #animation-explorer .iso-stage { block-size: max(180px, calc(100dvh - 240px)); }
 @media (max-width: 760px) {
 	body[data-vpk-layout="story"] .story-video { padding-block: 20px; }
-	body[data-vpk-layout="story"] .story-video-heading { font-size: 26px !important; }
+}
+
+/* The figure page: on wide screens a soft paper card with a 1px ring and no border; the drawing alone fills it.
+   Stacked layouts keep the bare figure. */
+body[data-vpk-layout="story"] .story-figure { position: relative; display: flex; flex-direction: column; block-size: 100%; }
+
+/* Two columns from 1024px: the reading page on the left, the figure page pinned on the right (about 41/59).
+   Narrower viewports stack the figure above the text. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"] {
+		--story-figure-inset: 16px;
+		--story-rail-room: 20px;
+		--story-hero-height: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset) - 40px);
+	}
+	body[data-vpk-layout="story"] .story-layout {
+		display: grid;
+		grid-template-columns: minmax(380px, .74fr) minmax(0, 1.26fr);
+		align-items: start;
+		column-gap: clamp(32px, 4vw, 72px);
+		padding-inline-end: var(--story-rail-room);
+	}
+	body[data-vpk-layout="story"] .story-stage {
+		grid-column: 2;
+		grid-row: 1;
+		inset-block-start: calc(var(--story-top) + var(--story-figure-inset));
+		block-size: calc(100svh - var(--story-top) - 2 * var(--story-figure-inset));
+		padding: 0;
+		background: transparent;
+	}
+	body[data-vpk-layout="story"] .story-stage::before { display: none; }
+	body[data-vpk-layout="story"] .story-reading { grid-column: 1; grid-row: 1; inline-size: 100%; max-inline-size: 540px; margin-inline: auto 0; }
+	body[data-vpk-layout="story"] .story-video { grid-column: 1 / -1; grid-row: 1; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { grid-column: 1 / -1; grid-row: 2; block-size: auto; }
+	body[data-vpk-layout="story"] .story-intro { min-block-size: calc(100svh - var(--story-top) - 32px); justify-content: center; padding-block: 48px; }
+	body[data-vpk-layout="story"] .story-step { min-block-size: 78svh; padding-block: 56px 72px; }
+	body[data-vpk-layout="story"] .story-step:last-child { min-block-size: calc(100svh - var(--story-top)); }
+	body[data-vpk-layout="story"] .story-reading :is(a, button, summary, [tabindex]) { scroll-margin-block-start: calc(var(--story-top) + 96px); }
+	body[data-vpk-layout="story"] [data-story-mode="slides"] .story-step { min-block-size: calc(100svh - var(--story-top) - 32px); justify-content: center; }
+
+	body[data-vpk-layout="story"] .story-figure {
+		justify-content: center;
+		padding: 18px 22px;
+		border-radius: 14px;
+		background: var(--surface-raised);
+		box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 7%, transparent);
+	}
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure { block-size: auto; }
+	body[data-vpk-layout="story"] .story-figure .story-stage-heading { position: absolute; z-index: 2; inset-block-start: 8px; inset-inline-end: 10px; min-block-size: 0; margin: 0; }
+	body[data-vpk-layout="story"] .story-figure #animation-explorer { flex: 1 1 auto; display: grid !important; align-items: center; }
+	body[data-vpk-layout="story"] .story-figure #animation-explorer .iso-stage { block-size: var(--story-hero-height); }
+}
+
+/* Reading type: mono tracked kickers carry every number and label; the prose stays Geist. */
+body[data-vpk-layout="story"] :is(.story-kicker, .story-step-kicker) {
+	font-family: var(--font-mono) !important;
+	font-size: 11px !important;
+	font-weight: 500 !important;
+	letter-spacing: .12em;
+	text-transform: uppercase;
+	font-variant-numeric: tabular-nums;
+}
+body[data-vpk-layout="story"] .story-step-kicker .story-step-index { color: var(--ink); }
+body[data-vpk-layout="story"] .story-step-summary { color: var(--ink); }
+body[data-vpk-layout="story"] .story-step-body .vpk-code { margin-block: 8px 20px; }
+/* Steps are start-aligned flex columns; without a cap a wide code block would size them to its max-content width. */
+body[data-vpk-layout="story"] .story-step > *,
+body[data-vpk-layout="story"] .story-step-detail,
+body[data-vpk-layout="story"] .story-step-body { min-inline-size: 0; max-inline-size: 100%; }
+body[data-vpk-layout="story"] .story-step-detail { inline-size: 100%; }
+
+@media print {
+	body[data-vpk-layout="story"] .story-layout { display: block !important; }
+	body[data-vpk-layout="story"] .story-figure { box-shadow: none; padding: 0; }
+}
+
+/* Video: the heading stays on top, the figure follows, and the timeline, chapter and status sit under the figure like a
+   player. The panel's children join the layout's single column (display: contents) so order can interleave them with
+   the stage at every width; the panel itself is unchanged in the DOM. */
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { display: flex; flex-direction: column; align-items: stretch; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video:not([hidden]) { display: contents; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { order: 1; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { order: 2; margin-block: 20px 6px; }
+/* Generate sits in the timeline's action row beside Fullscreen (video-view.js moves it) and exists only in Video. */
+body[data-vpk-layout="story"] [data-vpk-story]:not([data-story-mode="video"]) .story-video-generate { display: none; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-generate { flex: 0 0 auto; min-block-size: 44px; padding-inline: 14px; white-space: nowrap; }
+
+/* Video fits one viewport: the figure and timeline never need scrolling. The chrome keeps its
+   natural height and the figure takes the remainder, so the whole player is visible at any window size. */
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { box-sizing: border-box; block-size: 100svh; padding-block: 16px 12px; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { flex: 1 1 0; min-block-size: 220px; block-size: auto; padding: 0; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure { block-size: 100%; min-block-size: 0; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-figure #animation-explorer { flex: 1 1 0; min-block-size: 0; display: block !important; }
+body[data-vpk-layout="story"] [data-story-mode="video"] #animation-explorer :is([data-vpk-figure="eu26-hero"], .iso-figure, .iso-plate) { block-size: 100%; }
+body[data-vpk-layout="story"] [data-story-mode="video"] #animation-explorer .iso-stage { block-size: 100% !important; min-block-size: 0; }
+body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { margin-block: 12px 4px; }
+@media (max-width: 760px) {
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { block-size: calc(100svh - var(--story-bar-height) - 1px); }
+}
+
+/* Slides looks exactly like Page (text left, figure page right), only shorter: the page is one viewport and the figure
+   page ends above the bottom slide timeline (16px inset + 60px timeline + 12px gap). A chapter whose text is taller than
+   the figure scrolls inside its reading column. [data-vpk-story] outranks footer-timeline.css's slides padding. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"] { --story-slides-reserve: calc(16px + 128px + 12px); }
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-layout {
+		box-sizing: border-box;
+		block-size: 100svh;
+		min-block-size: 0;
+		padding-block: calc(var(--story-top) + var(--story-figure-inset)) var(--story-slides-reserve);
+	}
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-stage { position: relative; inset-block-start: auto; block-size: 100%; }
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] #animation-explorer .iso-stage { block-size: calc(var(--story-hero-height) - var(--story-slides-reserve) + var(--story-figure-inset)); }
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-reading { display: flex; flex-direction: column; block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
+	/* Centred against the figure card like Page; auto margins fall back to top-aligned scrolling when a chapter is taller. */
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="slides"] .story-step { min-block-size: 0; justify-content: start; margin-block: auto; padding-block: 24px; }
+	/* "View this moment" scrolls Page to a chapter; Slides and Video already show the moment, so the link only adds height. */
+	body[data-vpk-layout="story"] [data-vpk-story]:is([data-story-mode="slides"], [data-story-mode="video"]) .story-step-play { display: none; }
+}
+
+/* Wide Video uses Page's exact columns: the current chapter's text on the left, the figure page on the right with the
+   timeline under it. The whole player still fits one viewport. */
+@media (min-width: 1024px) {
+	body[data-vpk-layout="story"] [data-vpk-story][data-story-mode="video"] .story-intro { display: none; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout {
+		display: grid;
+		grid-template-columns: minmax(380px, .74fr) minmax(0, 1.26fr);
+		grid-template-rows: minmax(0, 1fr) auto;
+		align-items: stretch;
+		padding-block: var(--story-figure-inset) 12px;
+	}
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-reading { grid-column: 1; grid-row: 1; align-self: safe center; max-block-size: 100%; overflow-y: auto; scrollbar-width: thin; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step { min-block-size: 0; padding-block: 24px; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-stage { grid-column: 2; grid-row: 1; min-block-size: 0; }
+	/* The timeline row spans both columns and centre on the screen, like Slides' strip.
+	   The grid is offset left by half the right-side reserves (icon rail + rail room), so shift back by that much and
+	   narrow by twice it so the row never runs under the rail. */
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-layout { --story-video-centre-shift: calc((var(--eu26-dock-reserve, 0px) + var(--story-rail-room, 0px)) / 2); }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline {
+		grid-column: 1 / -1;
+		justify-self: center;
+		box-sizing: border-box;
+		inline-size: min(960px, calc(100% - 2 * var(--story-video-centre-shift)));
+		translate: var(--story-video-centre-shift) 0;
+	}
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-video-timeline { grid-row: 2; }
+}
+/* Video never scrolls its text: below 880px of height the chapter tightens its type and spacing (code excerpt included),
+   measured so every chapter fits beside the figure from 1280x720 up. */
+@media (min-width: 1024px) and (max-height: 880px) {
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step { padding-block: 12px; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step-kicker { margin-block-end: 10px !important; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step h2 { margin-block-end: 12px; font-size: 28px !important; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step-summary { margin-block-end: 12px; font-size: 15px !important; line-height: 1.55 !important; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step-body :is(p, li, dd) { font-size: 13px !important; line-height: 1.65 !important; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .story-step-body .vpk-code { margin-block: 4px 0; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .vpk-code pre { padding-block: 8px; font-size: 11px; line-height: 1.55; }
+	body[data-vpk-layout="story"] [data-story-mode="video"] .vpk-code figcaption { display: none; }
 }

@@ -1,15 +1,14 @@
-# Video Export
+# Video export
 
-Two different things are called video here. A **captured film** goes the other
-way: a running page is held one frame at a time (or screencast), encoded to
-H.264 and embedded *into* an HTML document, as in `motion-case-study.html`. That
-pipeline is `scripts/media/{capture,encode,embed}.mjs`; see
-[media pipeline](media-pipeline.md). This page covers the second thing: turning
-a **deck into an MP4** deliverable.
+Owner of MP4 export for [SKILL.md](../SKILL.md). Load when you make an MP4.
 
-vpk-html's browser presentation mode does not render MP4. Video export is a
-conversion contract: re-author the deck into a HyperFrames general-video
-composition.
+Contents: [Contract](#contract) · [Each slide dwells for its narration](#each-slide-dwells-for-its-narration) · [Entrances follow the deck’s reading order](#entrances-follow-the-decks-reading-order) · [Narration leads, music ducks under it](#narration-leads-music-ducks-under-it) · [Render](#render) · [Worked example: landing demo separation](#worked-example-landing-demo-separation)
+
+The Video *mode* (Theater) of a story explainer plays in the page and lives in [story modes](story-modes.md).
+
+Two different things are called video here. A **captured film** goes the other way: a running page is held one frame at a time (or screencast), encoded to H.264 and embedded *into* an HTML document, as in `motion-case-study.html`. That pipeline is `scripts/media/{capture,encode,embed}.mjs`; see [media pipeline](media-pipeline.md). This page covers the second thing: turning a **deck into an MP4** deliverable.
+
+vpk-html’s browser presentation mode does not render MP4. Video export is a conversion contract: re-author the deck into a HyperFrames general-video composition.
 
 ## Contract
 
@@ -21,59 +20,52 @@ composition.
 | `--font-*` / color tokens | copied into composition CSS |
 | slide order | one continuous timeline |
 
-Do not use slideshow mode for MP4; it is for browser playback, not rendered
-video.
+Do not use slideshow mode for MP4; it is for browser playback, not rendered video.
 
-Use `assets/video/landing-demo-separation/` as the first worked example of this
-contract.
+Use `assets/video/landing-demo-separation/` as the first worked example of this contract.
 
-## Timing
+## Each slide dwells for its narration
 
-1. Extract each slide's speaker notes.
-2. Generate narration with the best available TTS provider; use local Kokoro as
-   the fallback.
-3. Set slide dwell to narration duration plus padding.
-4. Use a minimum dwell for slides without notes.
-5. Accumulate `data-start` values across one continuous timeline.
+| Step | Do |
+|---|---|
+| 1 | Extract each slide’s speaker notes |
+| 2 | Generate narration with the best available TTS provider; use local Kokoro as the fallback |
+| 3 | Set slide dwell to narration duration plus padding |
+| 4 | Use a minimum dwell for slides without notes |
+| 5 | Accumulate `data-start` values across one continuous timeline |
 
-## Animation
+## Entrances follow the deck’s reading order
 
-Mirror vpk-html's motion semantics:
+| Wrong | → Right |
+|---|---|
+| Clips entering in DOM or random order | → the deck’s visual reading path |
+| A new duration or easing per scene | → the vpk entrance duration/easing, slower only for narration alignment |
+| A playing GSAP timeline | → a paused timeline on `window.__timelines`, so Hyperframes can seek deterministically |
 
-- entrance clips use the same order as the deck's visual reading path
-- use the vpk entrance duration/easing unless the scene needs slower narration
-  alignment
-- build paused GSAP timelines on `window.__timelines` so Hyperframes can seek
-  deterministically
+## Narration leads, music ducks under it
 
-## Audio
-
-Use narration as the primary track. Add subtle background music only when it
-does not compete with speech. Duck BGM under narration.
+| Track | Rule |
+|---|---|
+| Narration | The primary track |
+| Background music | Subtle, only when it does not compete with speech; ducked under narration |
 
 ## Render
 
-Load the Hyperframes skills for the selected environment, then render only after
-the user approves a video export:
+Load the Hyperframes skills for the selected environment, then render only after the user approves a video export:
 
 ```bash
 npx hyperframes render --quality high
 ```
 
-The rendered MP4 is derived output; the source of truth remains the vpk-html
-deck and the generated Hyperframes composition.
+The rendered MP4 is derived output; the source of truth remains the vpk-html deck and the generated Hyperframes composition.
 
-## Worked Example: Landing Demo Separation
+## Worked example: landing demo separation
 
-Example directory:
-`assets/video/landing-demo-separation/`
+Example directory: `assets/video/landing-demo-separation/`
 
-Source deck:
-`assets/demos/demo-slides.html`
+Source deck: `assets/demos/demo-slides.html`
 
-This example re-authors the five-slide "Landing Demo Separation" deck into a
-narrated HyperFrames composition. The speaker notes become the narration script;
-the scene DOM contains only visible slide content.
+This example re-authors the five-slide "Landing Demo Separation" deck into a narrated HyperFrames composition. The speaker notes become the narration script; the scene DOM contains only visible slide content.
 
 ### Scene Mapping
 
@@ -85,24 +77,18 @@ the scene DOM contains only visible slide content.
 | 4 | `03` | placeholder rule plus pinned callout | 57.8 | 12.7 | `audio/s4.mp3` |
 | 5 | `04` | closing counts and future-addition rule | 70.5 | 11.5 | `audio/s5.mp3` |
 
-Scene dwell is narration duration plus 1.2 seconds of lead-in and 0.8 seconds
-of tail, rounded to one decimal. The example root duration is 82 seconds.
+Scene dwell is narration duration plus 1.2 seconds of lead-in and 0.8 seconds of tail, rounded to one decimal. The example root duration is 82 seconds.
 
 ### Narration Generation
 
-The checked-in narration was generated from `audio/audio_request.json` using
-Kokoro TTS voice `am_michael`; provenance is recorded in `audio/audio_meta.json`.
-The committed MP3 files are `audio/s1.mp3` through `audio/s5.mp3`.
+The checked-in narration was generated from `audio/audio_request.json` using Kokoro TTS voice `am_michael`; provenance is recorded in `audio/audio_meta.json`. The committed MP3 files are `audio/s1.mp3` through `audio/s5.mp3`.
 
 Provider order for new examples:
 
-1. Use HeyGen or ElevenLabs when the orchestrator has an approved voice/provider
-   slot and the user wants that provider.
-2. Fall back to local Kokoro when external credentials are absent, rate-limited,
-   or not needed.
+1. Use HeyGen or ElevenLabs when the orchestrator has an approved voice/provider slot and the user wants that provider.
+2. Fall back to local Kokoro when external credentials are absent, rate-limited, or not needed.
 
-Orchestrator-side audio generation should keep the request file with the
-composition. A typical helper invocation is:
+Orchestrator-side audio generation should keep the request file with the composition. A typical helper invocation is:
 
 ```bash
 HYPERFRAMES_PYTHON=/path/to/hyperframes/.venv/bin/python \
@@ -111,31 +97,20 @@ node /path/to/hyperframes/scripts/audio.mjs \
   --out .agents/skills/vpk-html/assets/video/landing-demo-separation/audio
 ```
 
-`HYPERFRAMES_PYTHON` should point at the HyperFrames Python virtualenv that has
-Kokoro dependencies installed. The `audio.mjs` helper is orchestrator-owned; the
-vpk-html skill commits the request, metadata, and resulting audio assets needed
-for deterministic composition playback.
+`HYPERFRAMES_PYTHON` should point at the HyperFrames Python virtualenv that has Kokoro dependencies installed. The `audio.mjs` helper is orchestrator-owned; the vpk-html skill commits the request, metadata, and resulting audio assets needed for deterministic composition playback.
 
 ### Composition Anatomy
 
 `index.html` mirrors the checked-in HyperFrames reference shape:
 
-- the root `div data-composition-id="landing-demo-separation"` is a direct child
-  of `body`
-- five scene divs use `class="clip"`, explicit `data-start`, `data-duration`,
-  and `data-track-index="0"`
-- five voiceover `<audio>` elements are direct children of the root, starting
-  1.2 seconds after their scene begins
-- the optional user-provided music slot is a commented root child targeting
-  `audio/bgm.mp3`
-- one synchronous `gsap.timeline({ paused: true })` is registered at
-  `window.__timelines["landing-demo-separation"]`
-- CSS resolves vpk-html identity values into standalone literal colors and
-  font stacks; the composition does not load `styles.css` or webfonts
+- the root `div data-composition-id="landing-demo-separation"` is a direct child of `body`
+- five scene divs use `class="clip"`, explicit `data-start`, `data-duration`, and `data-track-index="0"`
+- five voiceover `<audio>` elements are direct children of the root, starting 1.2 seconds after their scene begins
+- the optional user-provided music slot is a commented root child targeting `audio/bgm.mp3`
+- one synchronous `gsap.timeline({ paused: true })` is registered at `window.__timelines["landing-demo-separation"]`
+- CSS resolves vpk-html identity values into standalone literal colors and font stacks; the composition does not load `styles.css` or webfonts
 
-The composition must stay deterministic: no random values, no wall-clock time,
-no autoplaying media, no display/visibility animation, and no network beyond the
-GSAP CDN script.
+The composition must stay deterministic: no random values, no wall-clock time, no autoplaying media, no display/visibility animation, and no network beyond the GSAP CDN script.
 
 ### Verify
 
