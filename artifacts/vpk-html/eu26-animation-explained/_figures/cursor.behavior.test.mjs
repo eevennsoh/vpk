@@ -6,8 +6,10 @@ const variants = ['paper'];
 // The guided sequence every quarter second, then the looping wall densely enough to meet every teammate's hold.
 const times = [...Array.from({ length: 137 }, (_, index) => index / 4), ...Array.from({ length: 412 }, (_, index) => 34.25 + index / 4), 500, 1000];
 const distance = (left, right) => Math.hypot(...left.map((value, index) => value - right[index]));
-const poseFor = (state, target) => target.kind === 'title' ? state.titlePose : state[{ story: 'cards', tile: 'tiles', wall: 'wall' }[target.kind]][target.index];
-const sizeFor = target => target.kind === 'title' ? data.title : data[{ story: 'cards', tile: 'features', wall: 'wall' }[target.kind]][target.index];
+// A teammate carrying a stack slot holds the stack's top card (target.piece), so the grip is on that card.
+const heldCard = target => target.piece?.startsWith('wallcard.') ? Number(target.piece.split('.')[1]) : null;
+const poseFor = (state, target) => heldCard(target) !== null ? state.wallCards[heldCard(target)] : target.kind === 'title' ? state.titlePose : state[{ story: 'cards', tile: 'tiles', wall: 'wall' }[target.kind]][target.index];
+const sizeFor = target => heldCard(target) !== null ? data.wallCards[heldCard(target)] : target.kind === 'title' ? data.title : data[{ story: 'cards', tile: 'features', wall: 'wall' }[target.kind]][target.index];
 
 function unturn(vector, [rx, ry, rz]) {
 	const [x, y, z] = vector;
