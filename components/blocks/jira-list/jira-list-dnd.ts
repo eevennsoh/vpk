@@ -122,23 +122,17 @@ export function getDragInsertionPosition(
 export function getBodyCellClassName({
 	isEditing = false,
 	isSelected,
-	isLastColumn = false,
-	isLastRow = false,
 	align = "left",
 }: Readonly<{
 	isEditing?: boolean;
 	isSelected: boolean;
-	isLastColumn?: boolean;
-	isLastRow?: boolean;
 	align?: "left" | "center";
 }>) {
 	return cn(
-		"relative h-10 border-b border-r border-border px-3 py-0 align-middle whitespace-nowrap transition-colors",
+		"relative h-10 px-3 py-0 align-middle whitespace-nowrap transition-colors",
 		align === "center" && "text-center",
-		isLastColumn && "border-r-0",
-		isLastRow && "border-b-0",
 		isEditing
-			? "border-r-transparent bg-surface transition-none"
+			? "bg-surface transition-none"
 			: isSelected
 				? "bg-bg-selected"
 				: "bg-surface group-hover/row:bg-bg-neutral-subtle-hovered group-focus-within/row:bg-bg-neutral-subtle-hovered",

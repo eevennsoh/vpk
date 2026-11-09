@@ -143,35 +143,28 @@ const ISSUE_TYPE_OPTIONS: readonly {
 ];
 
 const HEADER_CELL_CLASS =
-	"h-10 border-b border-r border-border bg-surface-sunken px-3 py-0 text-left align-middle text-xs font-semibold text-text-subtle whitespace-nowrap";
+	"h-10 bg-surface-sunken px-3 py-0 text-left align-middle text-xs font-semibold text-text-subtle whitespace-nowrap";
 
 interface JiraListTrailingEdgeLayout {
-	draftRowIsLastColumn: boolean;
 	frameTopBorderClassName?: string;
 	headerCellClassName: string;
-	lastBodyColumnIndex: number | null;
 	lastHeaderCellClassName: string;
 }
 
 function getJiraListTrailingEdgeLayout(
 	scrollEndInset: number,
-	columnCount: number,
 	bordered: boolean,
 ): JiraListTrailingEdgeLayout {
 	if (scrollEndInset > 0) {
 		return {
-			draftRowIsLastColumn: false,
 			headerCellClassName: cn(HEADER_CELL_CLASS, bordered && "border-t"),
-			lastBodyColumnIndex: null,
 			lastHeaderCellClassName: "rounded-tr-xl",
 		};
 	}
 
 	return {
-		draftRowIsLastColumn: true,
 		frameTopBorderClassName: "border-t",
 		headerCellClassName: HEADER_CELL_CLASS,
-		lastBodyColumnIndex: columnCount - 1,
 		lastHeaderCellClassName: "border-r-0",
 	};
 }
@@ -227,6 +220,7 @@ export function JiraList({
 	bordered = true,
 	className,
 	createLabel = "Create",
+	footerCountAlignment = "center",
 	totalCountLabel = `${rows.length}`,
 	visibleCount = rows.length,
 	selectedIssueKeys = new Set<string>(),
@@ -403,7 +397,7 @@ export function JiraList({
 		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, onSelectRow, selectedIssueKeys, openCopyTooltipIssueKey, statusOptions,
 	]);
 	const orderedColumns = useMemo(() => getOrderedColumns(baseColumns, extraColumns), [baseColumns, extraColumns]);
-	const trailingEdgeLayout = getJiraListTrailingEdgeLayout(scrollEndInset, orderedColumns.length, bordered);
+	const trailingEdgeLayout = getJiraListTrailingEdgeLayout(scrollEndInset, bordered);
 	const columnBoundaries = getJiraListColumnBoundaries(
 		orderedColumns,
 		insertionAnchorId,
@@ -592,8 +586,6 @@ export function JiraList({
 			return null;
 		}
 
-		const isLastRow = insertAtIndex === rows.length;
-
 		return (
 			<TableRow
 				className="group/row border-0 hover:bg-transparent focus-within:bg-transparent"
@@ -602,7 +594,7 @@ export function JiraList({
 			>
 				<TableCell
 					className={cn(
-						getBodyCellClassName({ isLastRow, isSelected: false, align: "center" }),
+						getBodyCellClassName({ isSelected: false, align: "center" }),
 						"sticky left-0 z-10 px-0",
 					)}
 				>
@@ -616,8 +608,6 @@ export function JiraList({
 				<TableCell
 					className={cn(
 						getBodyCellClassName({
-							isLastColumn: trailingEdgeLayout.draftRowIsLastColumn,
-							isLastRow,
 							isSelected: false,
 						}),
 						"px-2",
@@ -681,7 +671,7 @@ export function JiraList({
 							<col className={column.widthClassName} key={column.id} />
 						))}
 					</colgroup>
-					<TableHeader inert={Boolean(editingSummary)} className={cn("sticky top-0 z-20 bg-surface-sunken", bordered ? "shadow-[inset_0_-1px_0_var(--ds-border)]" : "bg-transparent")}>
+					<TableHeader inert={Boolean(editingSummary)} className={cn("sticky top-0 z-20 bg-surface-sunken", !bordered && "bg-transparent")}>
 						<TableRow className="border-0 hover:bg-transparent">
 							<TableHead
 								className={cn(
@@ -713,7 +703,7 @@ export function JiraList({
 												columnIndex,
 												orderedColumns.length,
 											),
-											!bordered && columnIndex === orderedColumns.length - 1 && "rounded-r-xl border-r-0",
+											!bordered && columnIndex === orderedColumns.length - 1 && "rounded-r-xl",
 											"relative overflow-visible",
 										)}
 										key={column.id}
@@ -775,8 +765,6 @@ export function JiraList({
 									row.issueKey,
 								);
 								const isFlashing = flashingIssueKeys.has(row.issueKey);
-								const isLastRow = rowIndex === rows.length - 1
-									&& draftWorkItem?.insertAtIndex !== rows.length;
 								return (
 									<Fragment key={row.issueKey}>
 										{renderDraftWorkItemRow(rowIndex)}
@@ -807,12 +795,11 @@ export function JiraList({
 												className={cn(
 													getBodyCellClassName({
 														isEditing,
-														isLastRow,
 														isSelected: isHighlighted,
 														align: "center",
 													}),
 													"sticky left-0 isolate overflow-visible bg-surface! px-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:transition-colors",
-											!bordered && "group-hover/row:rounded-l-xl group-hover/row:before:rounded-l-xl group-focus-within/row:rounded-l-xl group-focus-within/row:before:rounded-l-xl",
+											!bordered && "rounded-l-xl before:rounded-l-xl",
 													isEditing
 														? "before:bg-transparent"
 														: isHighlighted
@@ -843,11 +830,9 @@ export function JiraList({
 															isEditing,
 															isSelected: isHighlighted,
 															align: column.align,
-															isLastColumn: columnIndex === trailingEdgeLayout.lastBodyColumnIndex,
-															isLastRow,
 														}),
 														column.id === "work" && "ps-2",
-														!bordered && columnIndex === orderedColumns.length - 1 && "border-r-0 group-hover/row:rounded-r-xl group-focus-within/row:rounded-r-xl",
+														!bordered && columnIndex === orderedColumns.length - 1 && "rounded-r-xl",
 														isEditing && column.id === "work" && "z-30 overflow-visible",
 														insertionLineClassName,
 														getRowFlashCellClassName(isFlashing),
@@ -928,8 +913,12 @@ export function JiraList({
 								</div>
 							) : null}
 							<div
-								className="absolute left-1/2 inline-flex -translate-x-1/2 items-center gap-1"
+								className={cn(
+									"inline-flex items-center gap-1",
+									footerCountAlignment === "end" ? "ms-auto" : "absolute left-1/2 -translate-x-1/2",
+								)}
 								data-testid="jira-list-footer-count"
+								style={footerCountAlignment === "end" && scrollEndInset > 0 ? { marginInlineEnd: scrollEndInset } : undefined}
 							>
 								<p className="text-sm font-medium text-text-subtle tabular-nums">
 									{visibleCount} of {totalCountLabel}

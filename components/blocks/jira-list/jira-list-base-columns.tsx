@@ -1,7 +1,6 @@
 "use client";
 
 import type { Dispatch, MouseEvent as ReactMouseEvent, SetStateAction } from "react";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 
@@ -22,6 +21,7 @@ import type {
 } from "@/components/blocks/jira-list/jira-list-types";
 import { JiraListPointsCell } from "@/components/blocks/jira-list/jira-list-points-cell";
 import { JiraListIssueSelection } from "@/components/blocks/jira-list/jira-list-work-controls";
+import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -129,26 +129,14 @@ export function createJiraListBaseColumns({
 												render={
 													<Button
 														aria-label={`${isCopiedRow ? "Copied link" : "Copy link"} for ${row.issueKey}`}
-														className={cn(
-															"ms-0.5 size-6 shrink-0 translate-x-1 scale-95 transition-[translate,scale] duration-normal ease-out-practical motion-reduce:transition-none group-hover/issue-key:translate-x-0 group-hover/issue-key:scale-100 group-has-[:focus-visible]/issue-key:translate-x-0 group-has-[:focus-visible]/issue-key:scale-100",
-															isCopiedRow && "translate-x-0 scale-100",
-														)}
+														className="ms-0.5 size-6 shrink-0 hover:bg-transparent active:bg-transparent"
 														onClick={() => onCopyLink(row)}
-														size="icon-compact"
+														size="icon"
 														variant="ghost"
 													/>
 												}
 											>
-												<Icon
-													className={isCopiedRow ? "text-icon-success" : "text-icon-subtle"}
-													render={
-														isCopiedRow ? (
-															<CheckMarkIcon label="" size="small" />
-														) : (
-															<LinkIcon label="" size="small" />
-														)
-													}
-												/>
+												<CopyFeedbackIcon copied={isCopiedRow} idleIcon={<LinkIcon label="" size="small" />} />
 											</TooltipTrigger>
 											<TooltipContent>{isCopiedRow ? "Copied" : "Copy link"}</TooltipContent>
 										</Tooltip>
