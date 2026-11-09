@@ -207,29 +207,50 @@ test("the empty details agent field opens the searchable picker", async () => {
 	const trigger = view.getByRole("button", { name: "Add agent" });
 	await view.focus(trigger);
 	await view.press(trigger, "Enter");
-	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Figma");
-	await view.click(view.getByRole("option", { name: /^Figma/u }));
+	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Figma");
+	await view.click(view.getByRole("button", { name: "Figma" }));
 	assert.deepEqual(selected, ["figma"]);
-	assert.equal(view.queryByRole("combobox", { name: "Search agents" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Search agents" }), null);
 	await view.unmount();
 });
 
-test("the details agent field shows the shared working row and opens its sessions", async () => {
+test("the details agent field opens the searchable selector and continues sessions", async () => {
 	const opened = [];
 	const selected = [];
 	const sessions = [crewSession("existing", "running", "Claude"), crewSession("cursor", "running", "Cursor")];
 	const view = await renderCrew({ field: true, sessions, onStartAgent: (agent) => selected.push(agent.id), onOpenSession: (session) => opened.push(session.id) });
 	assert.equal(view.queryByText("Agents") !== null, true);
-	assert.equal(view.queryByText("Working") !== null, true);
+	const field = view.getByRole("group", { name: "Agents field" });
+	assert.equal(field.querySelectorAll('[data-slot="avatar"]').length, 2);
+	assert.equal(view.queryByText("Working"), null);
 	await view.click(view.getByRole("button", { name: "2 agents: Working" }));
-	assert.equal(view.queryByRole("dialog", { name: "Agent sessions" }) !== null, true);
-	await view.click(view.getByRole("button", { name: /^Claude work/u }));
+	assert.equal(view.queryByRole("dialog", { name: "Add agent" }) !== null, true);
+	assert.equal(view.queryByText("Software agents") !== null, true);
+	await view.click(view.getByRole("button", { name: "Claude" }));
+	await view.click(view.getByRole("button", { name: "Claude work" }));
 	assert.deepEqual(opened, ["existing"]);
 	await view.click(view.getByRole("button", { name: "2 agents: Working" }));
-	await view.click(view.getByRole("button", { name: "Add agent" }));
-	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Figma");
-	await view.click(view.getByRole("option", { name: /^Figma/u }));
+	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Figma");
+	await view.click(view.getByRole("button", { name: "Figma" }));
 	assert.deepEqual(selected, ["figma"]);
+	await view.unmount();
+});
+
+test("the details agent stack shows each agent once while retaining every session", async () => {
+	const sessions = [
+		{ ...crewSession("claude-first", "running", "Claude"), title: "First Claude session" },
+		{ ...crewSession("claude-second", "needs-input", "CLAUDE"), title: "Second Claude session" },
+		crewSession("cursor", "running", "Cursor"),
+	];
+	const opened = [];
+	const view = await renderCrew({ field: true, sessions, onStartAgent() {}, onOpenSession: (session) => opened.push(session.id) });
+	const field = view.getByRole("group", { name: "Agents field" });
+	assert.equal(field.querySelectorAll('[data-slot="avatar"]').length, 2);
+	await view.click(view.getByRole("button", { name: "2 agents: Needs input" }));
+	await view.click(view.getByRole("button", { name: "Claude" }));
+	assert.equal(view.queryByRole("button", { name: "First Claude session" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Second Claude session" }));
+	assert.deepEqual(opened, ["claude-second"]);
 	await view.unmount();
 });
 
