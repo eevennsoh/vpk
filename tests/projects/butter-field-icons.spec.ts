@@ -21,7 +21,7 @@ test("work item field and development icons fit 12-pixel glyphs in 16-pixel slot
 	expect(Math.abs(chevronBounds.y + chevronBounds.height / 2 - (buttonBounds.y + buttonBounds.height / 2))).toBeLessThan(0.5);
 	await page.getByRole("button", { name: "Show more details" }).click();
 	const calendarColor = await page.locator('[data-field-id="dueDate"] svg').first().evaluate((icon) => getComputedStyle(icon).color);
-	const subtleColor = await page.getByRole("button", { name: "Start coding", exact: true }).locator("svg").first().evaluate((icon) => getComputedStyle(icon).color);
+	const subtleColor = await page.getByRole("button", { name: "Configure repository", exact: true }).locator("svg").first().evaluate((icon) => getComputedStyle(icon).color);
 	expect(calendarColor).toBe(subtleColor);
 	for (const field of ["priority", "dueDate", "parent", "labels", "storyPoints"]) {
 		const icon = page.locator(`[data-field-id="${field}"] svg`).first();
@@ -36,7 +36,7 @@ test("work item field and development icons fit 12-pixel glyphs in 16-pixel slot
 		expect(Math.abs(iconBounds.x - slotBounds.x - 2), field).toBeLessThan(0.5);
 		expect(Math.abs(iconBounds.y - slotBounds.y - 2), field).toBeLessThan(0.5);
 	}
-	for (const action of ["Start coding", "Copy prompt"]) {
+	for (const action of ["Configure repository", "Copy prompt"]) {
 		const icon = page.getByRole("button", { name: action, exact: true }).locator("svg").first();
 		await expect(icon, action).toHaveCSS("width", "12px");
 		await expect(icon, action).toHaveCSS("height", "12px");

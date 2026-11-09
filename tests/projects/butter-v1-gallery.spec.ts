@@ -332,7 +332,7 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Carry card-artwork metadata into the next wallet epic", { exact: true })).toBeVisible();
 });
 
-test("start coding opens the development dropdown in a work item", async ({ page }) => {
+test("configure repository opens the development dropdown in a work item", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -341,13 +341,13 @@ test("start coding opens the development dropdown in a work item", async ({ page
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	await board.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
-	await item.getByRole("button", { name: "Start coding" }).click();
-	const menu = page.getByRole("menu", { name: "Start coding" });
+	await item.getByRole("button", { name: "Configure repository" }).click();
+	const menu = page.getByRole("menu", { name: "Configure repository" });
 	for (const name of ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"]) {
 		await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
 	}
 	await expect(menu.getByRole("menuitem", { name: "Branch name settings" })).toBeVisible();
 	await expect(item.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
 	await page.keyboard.press("Escape");
-	await expect(item.getByRole("button", { name: "Start coding" })).toBeFocused();
+	await expect(item.getByRole("button", { name: "Configure repository" })).toBeFocused();
 });
