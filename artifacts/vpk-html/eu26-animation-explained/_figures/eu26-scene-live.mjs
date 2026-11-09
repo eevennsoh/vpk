@@ -92,11 +92,15 @@ export function live(ctx) {
 			}
 		}
 	};
-	const doneWindow = ctx.svg.querySelector("[data-eu26-done-window]");
+	// The list windows a card can be clipped by (pose.clip): Done and the three story columns, re-projected every frame.
+	const listWindows = [...data.columnViewports.map((viewport, i) => ({ key: `column${i}`, viewport, el: ctx.svg.querySelector(`[data-eu26-column-window="${i}"]`) })), { key: "done", viewport: data.doneList.viewport, el: ctx.svg.querySelector("[data-eu26-done-window]") }];
 	const cursorLayer = ctx.svg.querySelector("[data-eu26-cursor-layer]");
 	const cursorParts = new Map([...ctx.svg.querySelectorAll("[data-eu26-cursor]")].map(el => [el.dataset.eu26Cursor, el]));
 	const poses = new Map();
 	let lastOrder = "";
+	// Overlapping pairs remember which one was in front for the next frame (see arrange).
+	const PAIR_HYSTERESIS = 6, PAIR_MEMORY = 0.1;
+	let pairFronts = new Map(), pairTime = -Infinity;
 	const pieces = new Map([...ctx.svg.querySelectorAll("[data-eu26-piece]")].map(el => [el.dataset.eu26Piece, el]));
 	const chrome = [...ctx.svg.querySelectorAll('[data-eu26-piece="chrome"]')];
 	// The camera is parallel at rest. During a camera move the model raises `persp`, and points toward the viewer spread
@@ -109,7 +113,7 @@ export function live(ctx) {
 		const spread = 1 / Math.max(0.35, 1 - depth * lens.k);
 		return [lens.centre[0] + (flat[0] - lens.centre[0]) * spread, lens.centre[1] + (flat[1] - lens.centre[1]) * spread];
 	};
-	let view = [Math.sqrt(0.375), Math.sqrt(0.375), 0.5], doneClip = [];
+	let view = [Math.sqrt(0.375), Math.sqrt(0.375), 0.5], clipWindows = {};
 	const doc = ctx.svg.ownerDocument, namespace = "http://www.w3.org/2000/svg";
 	const element = (tag, attrs, parent) => {
 		const el = doc.createElementNS(namespace, tag);
@@ -236,13 +240,14 @@ export function live(ctx) {
 		const xs = topWorld.map(point => point[0]), ys = topWorld.map(point => point[1]);
 		surface.rest = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), mid, low: Math.min(...bottomWorld.map(point => point[2])), top: topZ };
 		const face = front ? top : bottom;
-		const clipped = pose.clip && doneClip.length ? intersection(face, doneClip) : face;
+		const cut = pose.clip ? clipWindows[pose.clip] : null;
+		const clipped = cut?.length ? intersection(face, cut) : face;
 		surface.frame = { bounds: pose.clip ? clipped : [...top, ...bottom], polygon: clipped, face, center: world([plan.x + plan.w / 2, plan.y + plan.d / 2, front ? z + height : z]) };
 	};
 	const set = (el, home, pose) => {
 		if (!el) return;
 		poses.set(el, pose);
-		if (pose.clip) el.setAttribute("clip-path", "url(#eu26-done-window)");
+		if (pose.clip) el.setAttribute("clip-path", `url(#eu26-${pose.clip}-window)`);
 		else el.removeAttribute("clip-path");
 		el.style.display = pose.alpha < 0.002 ? "none" : "";
 		const detail = surfaceOf.get(el).detail;
@@ -377,7 +382,7 @@ export function live(ctx) {
 		ctx.root.dataset.heroDoneSweep = Number(effect.sweep).toFixed(5);
 		ctx.root.dataset.heroDoneAlpha = Number(effect.alpha).toFixed(5);
 	};
-	const arrange = () => {
+	const arrange = time => {
 		const visible = surfaces.map(surface => surface.el).filter(el => el.style.display !== "none").map(geometry).filter(item => item.polygon.length > 2);
 		// Only things standing on the ground cast onto it: a card or chrome piece resting on the visible board (its middle
 		// over the board, its underside at or just above the board's top) casts nothing, or its offset shadow would poke
@@ -391,18 +396,51 @@ export function live(ctx) {
 		};
 		drawShadows(visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path") && !restsOnBoard(item)).map(item => surfaceOf.get(item.el).shadow || "").filter(Boolean));
 		const edges = visible.map(() => new Set()), incoming = visible.map(() => 0);
+		// A seek (anything but the next frame of continuous playback or scrubbing) forgets the held pair orders, so a still
+		// frame always paints the same however it was reached.
+		if (!(Math.abs(time - pairTime) <= PAIR_MEMORY)) pairFronts = new Map();
+		pairTime = time;
+		const fronts = new Map();
+		// Opt-in probe for tests: every overlapping pair with its centroid depth gap (positive when b is nearer).
+		const probe = ctx.root.dataset.heroDepthProbe === "on" ? [] : null;
+		if (probe) ctx.root.eu26DepthPairs = probe;
+		// A held card and the cards it leads share a stack: higher ranks paint first, the held card (rank 0) last.
+		const stacks = visible.map(item => poses.get(item.el)?.stack ?? null);
+		const stacked = (a, b) => stacks[a] && stacks[b] && stacks[a].id === stacks[b].id;
 		for (let a = 0; a < visible.length; a += 1) for (let b = a + 1; b < visible.length; b += 1) {
+			if (stacked(a, b)) {
+				const back = stacks[a].rank > stacks[b].rank ? a : b, front = back === a ? b : a;
+				edges[back].add(front);
+				incoming[front] += 1;
+				continue;
+			}
 			if (visible[a].el.dataset.eu26Kind === "confetti" || visible[b].el.dataset.eu26Kind === "confetti") continue;
 			const ab = visible[a].box, bb = visible[b].box;
 			if (ab[2] <= bb[0] || bb[2] <= ab[0] || ab[3] <= bb[1] || bb[3] <= ab[1]) continue;
 			const overlap = intersection(visible[a].polygon, visible[b].polygon);
 			if (overlap.length < 3) continue;
-			const at = overlap.reduce((sum, point) => [sum[0] + point[0] / overlap.length, sum[1] + point[1] / overlap.length], [0, 0]);
-			const da = visible[a].at(at), db = visible[b].at(at);
-			const back = da <= db ? a : b, front = da <= db ? b : a;
+			// Compare the two planes at the overlap's area centroid: the depth gap there is the mean gap over the overlap, and
+			// it moves continuously as the overlap gains or loses corners (a corner average jumps). Tilted cards that pass
+			// through each other keep their last order until the gap clearly favours the other one, so a pair hovering at an
+			// even split cannot flicker in front of and behind each other.
+			let twice = 0, cx = 0, cy = 0;
+			for (let i = 0; i < overlap.length; i += 1) {
+				const p = overlap[i], q = overlap[(i + 1) % overlap.length], w = p[0] * q[1] - q[0] * p[1];
+				twice += w; cx += (p[0] + q[0]) * w; cy += (p[1] + q[1]) * w;
+			}
+			if (Math.abs(twice) < 0.01) continue;
+			const at = [cx / (3 * twice), cy / (3 * twice)];
+			const nameA = visible[a].el.dataset.eu26Piece, nameB = visible[b].el.dataset.eu26Piece;
+			const pair = nameA < nameB ? `${nameA}|${nameB}` : `${nameB}|${nameA}`;
+			const gap = visible[b].at(at) - visible[a].at(at), held = pairFronts.get(pair);
+			const bFront = held === nameB ? gap > -PAIR_HYSTERESIS : held === nameA ? gap > PAIR_HYSTERESIS : gap >= 0;
+			fronts.set(pair, bFront ? nameB : nameA);
+			const back = bFront ? a : b, front = bFront ? b : a;
 			edges[back].add(front);
 			incoming[front] += 1;
+			if (probe) probe.push({ a: nameA, b: nameB, gap, area: Math.abs(twice) / 2 });
 		}
+		pairFronts = fronts;
 		const remaining = new Set(visible.map((_, i) => i)), order = [];
 		const ready = [], compare = (a, b) => visible[a].depth - visible[b].depth || a - b;
 		const push = index => {
@@ -442,6 +480,13 @@ export function live(ctx) {
 			order.push(visible[chosen]);
 			for (const next of edges[chosen]) if (--incoming[next] === 0 && remaining.has(next)) push(next);
 		}
+		// A depth cycle broken through a stack could still reorder it, so each stack's members are dealt back into the slots
+		// they took, in rank order.
+		for (const id of new Set(stacks.filter(Boolean).map(stack => stack.id))) {
+			const slots = order.flatMap((item, slot) => poses.get(item.el)?.stack?.id === id ? [slot] : []);
+			const members = slots.map(slot => order[slot]).sort((a, b) => poses.get(b.el).stack.rank - poses.get(a.el).stack.rank);
+			slots.forEach((slot, n) => { order[slot] = members[n]; });
+		}
 		const signature = order.map(item => item.el.dataset.eu26Piece).join("|");
 		if (signature !== lastOrder) {
 			// The visible surfaces form one contiguous run in depth order just before the lighting layer, as a full
@@ -477,14 +522,17 @@ export function live(ctx) {
 		view = [Math.cos(azimuth) * Math.cos(elevation), Math.sin(azimuth) * Math.cos(elevation), Math.sin(elevation)];
 		const persp = state.camera.persp ?? 0;
 		lens = persp > 0.001 ? { at: state.camera.at, centre: kit.iso(state.camera.at, P), k: persp * P.scale * Math.sqrt(1.6) / state.camera.height } : null;
-		const viewport = data.doneList.viewport, paperDepth = data.materialDepths.story;
-		const windowRing = kit.roundedPlan(viewport, 4);
-		const windowPoints = [4, 4 + paperDepth].flatMap(z => windowRing.map(([x, y]) => project([x, y, z])));
-		const sorted = windowPoints.sort((a, b) => a[0] - b[0] || a[1] - b[1]), lower = [], upper = [];
-		for (const point of sorted) { while (lower.length > 1 && cross(lower.at(-2), lower.at(-1), point) <= 0) lower.pop(); lower.push(point); }
-		for (const point of [...sorted].reverse()) { while (upper.length > 1 && cross(upper.at(-2), upper.at(-1), point) <= 0) upper.pop(); upper.push(point); }
-		doneClip = [...lower.slice(0, -1), ...upper.slice(0, -1)];
-		if (doneWindow) doneWindow.setAttribute("d", kit.pathOf(doneClip, true));
+		const paperDepth = data.materialDepths.story;
+		clipWindows = {};
+		for (const { key, viewport, el } of listWindows) {
+			const windowRing = kit.roundedPlan(viewport, 4);
+			const windowPoints = [4, 4 + paperDepth].flatMap(z => windowRing.map(([x, y]) => project([x, y, z])));
+			const sorted = windowPoints.sort((a, b) => a[0] - b[0] || a[1] - b[1]), lower = [], upper = [];
+			for (const point of sorted) { while (lower.length > 1 && cross(lower.at(-2), lower.at(-1), point) <= 0) lower.pop(); lower.push(point); }
+			for (const point of [...sorted].reverse()) { while (upper.length > 1 && cross(upper.at(-2), upper.at(-1), point) <= 0) upper.pop(); upper.push(point); }
+			clipWindows[key] = [...lower.slice(0, -1), ...upper.slice(0, -1)];
+			if (el) el.setAttribute("d", kit.pathOf(clipWindows[key], true));
+		}
 		for (const el of chrome) {
 			const surface = surfaceOf.get(el);
 			const home = [surface.plan.x + surface.plan.w / 2, surface.plan.y + surface.plan.d / 2, surface.z];
@@ -495,11 +543,13 @@ export function live(ctx) {
 			const el = pieces.get(`story.${i}`);
 			set(el, [card.home[0] + card.w / 2, card.home[1] + card.d / 2, card.home[2]], state.cards[i]);
 			accent(el, state.cards[i].highlight ?? (i === 15 ? 1 : 0));
+			if (el.style.display !== "none") landTile(surfaceOf.get(el), state.cards[i]);
 		});
 		data.features.forEach((tile, i) => {
 			const el = pieces.get(`tile.${i}`);
 			set(el, [-700 + i * 260 + tile.w / 2, 1600 + tile.d / 2, 4], state.tiles[i]);
 			accent(el, state.tiles[i].highlight ?? (i === 0 ? 1 : 0));
+			if (el.style.display !== "none") landTile(surfaceOf.get(el), state.tiles[i]);
 		});
 		data.wall.forEach((card, i) => {
 			const el = pieces.get(`wall.${i}`);
@@ -516,14 +566,14 @@ export function live(ctx) {
 
 		state.confetti.forEach((pose, i) => {
 			const el = pieces.get(`confetti.${i}`);
-			set(el, [-700 + i * 24 + (4 + i % 3) / 2, 4000 + (9 + i % 4) / 2, 0], pose);
+			set(el, data.confetti[i].home, pose);
 			accent(el, pose.highlight ?? 1);
 		});
 		set(pieces.get("title"), data.title.home, state.titlePose);
 		accent(pieces.get("title"), state.titlePose.highlight ?? 0);
 		lightDone(state);
 		const center = project(state.camera.at);
-		arrange();
+		arrange(time);
 		const { height } = state.camera, [cx, cy] = center;
 		// Shots are framed at 1.58:1 and lean on scene beyond the frame's sides. A narrower display (the two-column figure
 		// page) widens the frame up to 1.3x so the board is not cropped.
@@ -549,8 +599,8 @@ export function live(ctx) {
 			const el = cursorParts.get(cursor.id), tip = project(cursor.at);
 			// Cursors follow stageshow (kit/cursor.tsx, examples/presence): one solid rounded arrowhead for every cursor, tip at the
 			// hotspot, a paper halo instead of a drop shadow so it reads on grey tiles. A teammate is one tone everywhere, arrow and
-			// name flag alike, and the flag rides below and right of the tip. A press dips the arrow to 0.9 about its tip and sends
-			// one accent ripple out; there is no ring held under a grip. It grows with the card it holds (perspective).
+			// name flag alike, and the flag rides below and right of the tip. A press dips the arrow to 0.9 about its tip; no ring or
+			// ripple marks a click. It grows with the card it holds (perspective).
 			const fit = cursor.role === "teammate" ? Math.max(0.55, Math.min(1, displayHeight / 640)) : 1;
 			// Arrow and flag scale apart (motionConfig.cursor, matched to teu26.mp4); the press dips only the arrow.
 			const CURSOR = { arrow: 2.3, flag: 1.8, ...(data.motion?.cursor ?? {}) };
@@ -584,7 +634,6 @@ export function live(ctx) {
 			el.dataset.heldTarget = cursor.heldTarget?.key || "";
 			el.dataset.tipX = tip[0].toFixed(5);
 			el.dataset.tipY = tip[1].toFixed(5);
-			const pressed = cursor.pressed;
 			// stageshow's SolidArrow (M4 3 18.5 9.6 11.8 11.8 9.6 18.5Z), relative to its hotspot at 4,3.
 			const points = [[0, 0], [14.5, 6.6], [7.8, 8.8], [5.6, 15.5]].map(([x, y]) => [tip[0] + x * size, tip[1] + y * size]);
 			if (pill && label) {
@@ -604,17 +653,10 @@ export function live(ctx) {
 					if (label.textContent !== cursor.name) label.textContent = cursor.name;
 				}
 			}
-			const arrow = el.querySelector("[data-eu26-cursor-tip]"), halo = el.querySelector("[data-eu26-cursor-halo]"), ring = el.querySelector("[data-eu26-cursor-ring]");
+			const arrow = el.querySelector("[data-eu26-cursor-tip]"), halo = el.querySelector("[data-eu26-cursor-halo]");
 			const d = kit.pathOf(points, true);
 			arrow.setAttribute("d", d);
 			halo.setAttribute("d", d);
-			// One ripple per press change: a ring spreads from the tip and fades while the press goes in or lets go.
-			const ripple = 4 * pressed * (1 - pressed);
-			ring.setAttribute("cx", tip[0].toFixed(3));
-			ring.setAttribute("cy", tip[1].toFixed(3));
-			ring.setAttribute("r", ((4 + 14 * (1 - Math.abs(1 - 2 * pressed))) * rest).toFixed(3));
-			ring.style.opacity = ripple.toFixed(3);
-			ring.style.display = ripple > 0.02 ? "" : "none";
 		}
 		ctx.svg.appendChild(lighting);
 		if (ctx.svg.lastElementChild !== cursorLayer) ctx.svg.appendChild(cursorLayer);
