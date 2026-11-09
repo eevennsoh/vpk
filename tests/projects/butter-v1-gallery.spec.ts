@@ -3,6 +3,42 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("the List gallery item shows the interactive Jira list", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const gallery = page.getByRole("group", { name: "Gallery items" });
+	await gallery.getByRole("button", { name: "Select List" }).click();
+	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	await expect(list).toBeVisible();
+	await expect(list.getByRole("button", { name: "PAY-118", exact: true })).toBeVisible();
+	await list.getByRole("button", { name: "PAY-118", exact: true }).click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	await expect(workItem).toBeVisible();
+	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
+	await gallery.getByRole("button", { name: "Select Board" }).click();
+	await expect(page.getByRole("region", { name: "Payments SDK v2 Kanban board" })).toBeVisible();
+	await gallery.getByRole("button", { name: "Select List" }).click();
+	await expect(list).toBeVisible();
+});
+
+test("the gallery list hugs its content and centers when space permits", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List" }).click();
+	const list = page.getByTestId("jira-list");
+	const scrollport = page.getByTestId("jira-list-table-scroll");
+	await expect(list).toBeVisible();
+	await expect.poll(() => scrollport.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+	const bounds = await list.boundingBox();
+	if (!bounds) throw new Error("List has no bounds");
+	expect(bounds.y - 48).toBeCloseTo(1300 - bounds.y - bounds.height, 0);
+
+	await page.setViewportSize({ width: 1800, height: 600 });
+	await expect.poll(() => scrollport.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeGreaterThan(0);
+	await expect(list.getByRole("button", { name: "Refresh work items" })).toBeVisible();
+});
+
 test("the work item Agents popup matches the Assignee picker", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -33,10 +69,11 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 		"Select Duplicative sessions",
 		"Select Board",
 		"Select Work item",
+		"Select List",
 		"Select Pull request",
 		"Select e2e Journey",
 	]);
-	for (const name of ["Board", "Agent selector", "Work item", "Pull request", "e2e Journey"]) {
+	for (const name of ["Board", "Agent selector", "Work item", "List", "Pull request", "e2e Journey"]) {
 		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
 	}
 	await expect(gallery.getByRole("button", { name: "Select Board" })).toHaveAttribute("aria-pressed", "true");

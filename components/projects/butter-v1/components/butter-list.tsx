@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 interface ButterListProps {
 	addAgentLabel: string;
 	columns: readonly JiraKanbanColumnData[];
+	centered?: boolean;
 	getProps: (columns: readonly JiraKanbanColumnData[]) => JiraListProps;
 	onVisibleRowsChange: (rows: readonly JiraListRowData[]) => void;
 	rowFlash: JiraListProps["rowFlash"];
@@ -22,6 +23,7 @@ const PANEL_END_GAP_PX = 24;
 export function ButterList({
 	addAgentLabel,
 	columns,
+	centered = false,
 	getProps,
 	onVisibleRowsChange,
 	scrollEndInset,
@@ -35,14 +37,15 @@ export function ButterList({
 	return (
 		<div className={cn(
 			// Add the board's transparent 2px drop border to match its painted gutter.
-			"min-h-0 flex-1 overflow-hidden pb-6 ps-6.5 pt-0.5",
+			"min-h-0 flex-1 overflow-hidden ps-6.5",
+			centered ? "flex flex-col py-6" : "pb-6 pt-0.5",
 			scrollEndInset > 0 ? "pe-0" : "pe-4 md:pe-5",
 		)}>
 			<JiraList
 				{...listProps}
 				{...layout}
 				addAgentLabel={addAgentLabel}
-				className={cn(listProps.className, "h-full max-h-full")}
+				className={cn(listProps.className, "max-h-full", centered && "my-auto")}
 				scrollEndInset={scrollEndInset > 0 ? scrollEndInset + PANEL_END_GAP_PX : 0}
 			/>
 		</div>
