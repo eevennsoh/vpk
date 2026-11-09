@@ -5,6 +5,19 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("reply disclosure icon has no background on the hovered activity row", async ({ page }) => {
+	await page.goto(appUrl("/preview/projects/butter-v1?embedded=1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]');
+	const toggle = thread.getByRole("button", { name: /Show 4 more replies/ });
+	await toggle.hover();
+	const icon = thread.locator('button[aria-controls] > span[aria-hidden]');
+	await expect(icon).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await toggle.click();
+	await expect(page.getByRole("button", { name: "Hide replies" })).toHaveAttribute("aria-expanded", "true");
+	await expect(icon).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+});
+
 test("activity timeline dots are centered on the dashed line", async ({ page }) => {
 	await page.goto(appUrl("/butter"));
 	await card(page, "PAY-999").locator('[data-slot="jira-issue-card"]').click();
