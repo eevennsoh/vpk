@@ -2952,7 +2952,6 @@ figure.vpk-code > figcaption { margin: 10px 0 0; padding: 0; text-align: start; 
 	--anatomy-hi: color-mix(in srgb, var(--ink) 42%, var(--paper));
 	--anatomy-mid: color-mix(in srgb, var(--ink) 30%, var(--paper));
 	--anatomy-lo: color-mix(in srgb, var(--ink) 20%, var(--paper));
-	--eu26-shadow: color-mix(in srgb, var(--ink) 6%, var(--paper));
 }
 [data-theme="dark"] :is(#animation-explorer [data-vpk-figure="eu26-hero"] svg, svg.eu26-thumb-svg) {
 	--anatomy-top: color-mix(in srgb, var(--ink) 10%, var(--paper));
@@ -2964,9 +2963,9 @@ figure.vpk-code > figcaption { margin: 10px 0 0; padding: 0; text-align: start; 
 	--anatomy-hi: color-mix(in srgb, var(--ink) 44%, var(--paper));
 	--anatomy-mid: color-mix(in srgb, var(--ink) 32%, var(--paper));
 	--anatomy-lo: color-mix(in srgb, var(--ink) 22%, var(--paper));
-	--eu26-shadow: color-mix(in srgb, var(--surface-sunken) 75%, var(--paper));
 }
-:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-shadows] { fill: var(--eu26-shadow); stroke: none; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-shadows] > path { fill: var(--ink); fill-opacity: .06; stroke: none; }
+[data-theme="dark"] :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-shadows] > path { fill: var(--surface-sunken); fill-opacity: .55; }
 
 /* Face detail: a wireframe of containers on each paper face. On the orange subject the live renderer sets
    --eu26-hl (0-100%) and the outlines and panels mix towards deeper and paler orange. */
@@ -5179,10 +5178,19 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 	ctx.svg.insertBefore(ground, defs.nextSibling);
 	const groundMinor = element("path", { "data-eu26-ground-minor": "", fill: "none", stroke: "var(--eu26-ground)", "stroke-width": "0.6", "vector-effect": "non-scaling-stroke" }, ground);
 	const groundMajor = element("path", { "data-eu26-ground-major": "", fill: "none", stroke: "var(--eu26-ground-major)", "stroke-width": "0.6", "vector-effect": "non-scaling-stroke" }, ground);
-	// Soft cast shadows: each visible face is dropped onto the ground plane, offset by its height, as one pale path
-	// under everything, so depth reads from the ground rather than from dark side faces.
-	const shadows = element("path", { "data-eu26-shadows": "", "aria-hidden": "true", "pointer-events": "none" });
+	// Soft cast shadows: each visible face is dropped onto the ground plane, offset by its height, as its own translucent
+	// path under everything, so where two shadows overlap they compound and read darker, as real shadows do.
+	const shadows = element("g", { "data-eu26-shadows": "", "aria-hidden": "true", "pointer-events": "none" });
 	ctx.svg.insertBefore(shadows, ground.nextSibling);
+	const shadowPaths = [];
+	const drawShadows = list => {
+		while (shadowPaths.length < list.length) shadowPaths.push(element("path", {}, shadows));
+		shadowPaths.forEach((path, i) => {
+			const d = list[i] || "";
+			if (path.getAttribute("d") !== d) path.setAttribute("d", d);
+			path.style.display = d ? "" : "none";
+		});
+	};
 	const GROUND = { z: -12, step: 100, major: 4 };
 	const drawGround = (at, width, height) => {
 		const reach = Math.max(width, height) / Math.max(0.01, P.scale ?? 1) * 0.95;
@@ -5416,7 +5424,7 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 			const rest = surfaceOf.get(item.el).rest;
 			return !!rest && rest.low <= board.top + 12 && rest.mid[0] >= board.x0 && rest.mid[0] <= board.x1 && rest.mid[1] >= board.y0 && rest.mid[1] <= board.y1;
 		};
-		shadows.setAttribute("d", visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path") && !restsOnBoard(item)).map(item => surfaceOf.get(item.el).shadow || "").join(""));
+		drawShadows(visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path") && !restsOnBoard(item)).map(item => surfaceOf.get(item.el).shadow || "").filter(Boolean));
 		const edges = visible.map(() => new Set()), incoming = visible.map(() => 0);
 		for (let a = 0; a < visible.length; a += 1) for (let b = a + 1; b < visible.length; b += 1) {
 			if (visible[a].el.dataset.eu26Kind === "confetti" || visible[b].el.dataset.eu26Kind === "confetti") continue;

@@ -136,7 +136,6 @@
 	--anatomy-hi: color-mix(in srgb, var(--ink) 42%, var(--paper));
 	--anatomy-mid: color-mix(in srgb, var(--ink) 30%, var(--paper));
 	--anatomy-lo: color-mix(in srgb, var(--ink) 20%, var(--paper));
-	--eu26-shadow: color-mix(in srgb, var(--ink) 6%, var(--paper));
 }
 [data-theme="dark"] :is(#animation-explorer [data-vpk-figure="eu26-hero"] svg, svg.eu26-thumb-svg) {
 	--anatomy-top: color-mix(in srgb, var(--ink) 10%, var(--paper));
@@ -148,9 +147,9 @@
 	--anatomy-hi: color-mix(in srgb, var(--ink) 44%, var(--paper));
 	--anatomy-mid: color-mix(in srgb, var(--ink) 32%, var(--paper));
 	--anatomy-lo: color-mix(in srgb, var(--ink) 22%, var(--paper));
-	--eu26-shadow: color-mix(in srgb, var(--surface-sunken) 75%, var(--paper));
 }
-:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-shadows] { fill: var(--eu26-shadow); stroke: none; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-shadows] > path { fill: var(--ink); fill-opacity: .06; stroke: none; }
+[data-theme="dark"] :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-shadows] > path { fill: var(--surface-sunken); fill-opacity: .55; }
 
 /* Face detail: a wireframe of containers on each paper face. On the orange subject the live renderer sets
    --eu26-hl (0-100%) and the outlines and panels mix towards deeper and paler orange. */

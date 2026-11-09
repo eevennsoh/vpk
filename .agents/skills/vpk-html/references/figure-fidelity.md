@@ -61,13 +61,17 @@ Product-UI scenes set the values below in figure-scoped light and dark token blo
 | Top face | 0% | 10% | `--anatomy-top`, `--anatomy-paper` |
 | Side faces, by facing | 4%, 6%, 7%, 8% | 7%, 6%, 5%, 4% | `--anatomy-shade-3` … `--anatomy-shade-0` |
 | Hairlines hi, mid, lo | 42%, 30%, 20% | 44%, 32%, 22% | `--anatomy-hi`, `--anatomy-mid`, `--anatomy-lo` |
-| Ground shadow | 6% | `--surface-sunken` 75% into paper | `--eu26-shadow` |
+| Ground shadow, per surface, compounding | 6% | `--surface-sunken` at 55% opacity | `[data-eu26-shadows] > path` fill-opacity |
 | Landing ring, live figure only | 24% | 24% | `.dring`, 1.2px |
 <!-- paper-shading:end -->
 
 Sides stay darker than tops in both themes (less ink in dark). Surface edges are 0.55px, detail strokes 0.5px, both `vector-effect: non-scaling-stroke`.
 
 Offset ground shadows by height: `lift = clamp((topZ - groundZ) * 0.5, 10, 140)`, shifted `lift * 0.7` across and `lift * 0.45` down (`eu26-scene-live.mjs`). Parts resting on a supporting surface cast none, so no shadow pokes past its edge.
+
+Give every casting surface its own translucent shadow path (ink at 6% opacity in light) rather than one merged path, so overlaps compound the way real shadows do: two overlapping shadows read about 12%, three about 17%.
+
+**BAD, merged shadow:** every shadow is one path with one fill. The tell: where two shadows cross, the overlap is the same flat grey as each alone.
 
 **BAD, leaking shadow:** a card resting on a column casts its shadow past the column edge. The tell: a pale band sits beside a column on bare ground.
 

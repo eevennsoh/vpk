@@ -143,10 +143,19 @@ export function live(ctx) {
 	ctx.svg.insertBefore(ground, defs.nextSibling);
 	const groundMinor = element("path", { "data-eu26-ground-minor": "", fill: "none", stroke: "var(--eu26-ground)", "stroke-width": "0.6", "vector-effect": "non-scaling-stroke" }, ground);
 	const groundMajor = element("path", { "data-eu26-ground-major": "", fill: "none", stroke: "var(--eu26-ground-major)", "stroke-width": "0.6", "vector-effect": "non-scaling-stroke" }, ground);
-	// Soft cast shadows: each visible face is dropped onto the ground plane, offset by its height, as one pale path
-	// under everything, so depth reads from the ground rather than from dark side faces.
-	const shadows = element("path", { "data-eu26-shadows": "", "aria-hidden": "true", "pointer-events": "none" });
+	// Soft cast shadows: each visible face is dropped onto the ground plane, offset by its height, as its own translucent
+	// path under everything, so where two shadows overlap they compound and read darker, as real shadows do.
+	const shadows = element("g", { "data-eu26-shadows": "", "aria-hidden": "true", "pointer-events": "none" });
 	ctx.svg.insertBefore(shadows, ground.nextSibling);
+	const shadowPaths = [];
+	const drawShadows = list => {
+		while (shadowPaths.length < list.length) shadowPaths.push(element("path", {}, shadows));
+		shadowPaths.forEach((path, i) => {
+			const d = list[i] || "";
+			if (path.getAttribute("d") !== d) path.setAttribute("d", d);
+			path.style.display = d ? "" : "none";
+		});
+	};
 	const GROUND = { z: -12, step: 100, major: 4 };
 	const drawGround = (at, width, height) => {
 		const reach = Math.max(width, height) / Math.max(0.01, P.scale ?? 1) * 0.95;
@@ -380,7 +389,7 @@ export function live(ctx) {
 			const rest = surfaceOf.get(item.el).rest;
 			return !!rest && rest.low <= board.top + 12 && rest.mid[0] >= board.x0 && rest.mid[0] <= board.x1 && rest.mid[1] >= board.y0 && rest.mid[1] <= board.y1;
 		};
-		shadows.setAttribute("d", visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path") && !restsOnBoard(item)).map(item => surfaceOf.get(item.el).shadow || "").join(""));
+		drawShadows(visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path") && !restsOnBoard(item)).map(item => surfaceOf.get(item.el).shadow || "").filter(Boolean));
 		const edges = visible.map(() => new Set()), incoming = visible.map(() => 0);
 		for (let a = 0; a < visible.length; a += 1) for (let b = a + 1; b < visible.length; b += 1) {
 			if (visible[a].el.dataset.eu26Kind === "confetti" || visible[b].el.dataset.eu26Kind === "confetti") continue;
