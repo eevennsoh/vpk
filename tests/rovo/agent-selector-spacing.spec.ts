@@ -28,7 +28,7 @@ test("Jira Local Agent keeps the recent agent close to its separator", async ({ 
 	const popup = page.getByRole("dialog", { name: "Local software agents" });
 	const gaps = await popup.evaluate((menu) => {
 		const options = menu.querySelectorAll('[role="option"]');
-		const separator = menu.querySelector('[role="separator"]');
+		const separator = menu.querySelector("hr");
 		if (!options[0] || !options[1] || !separator) throw new Error("Missing recent agent or separator");
 		return [separator.getBoundingClientRect().top - options[0].getBoundingClientRect().bottom, options[1].getBoundingClientRect().top - separator.getBoundingClientRect().bottom];
 	});
@@ -41,7 +41,7 @@ test("Jira Local Agent footer has equal spacing around its separator", async ({ 
 	const popup = page.getByRole("dialog", { name: "Local software agents" });
 	const gaps = await popup.evaluate((menu) => {
 		const lastAgent = Array.from(menu.querySelectorAll('[role="option"]')).at(-1);
-		const separator = Array.from(menu.querySelectorAll('[role="separator"]')).at(-1);
+		const separator = Array.from(menu.querySelectorAll("hr")).at(-1);
 		const copy = menu.querySelector('[aria-label="Copy prompt"]');
 		if (!lastAgent || !separator || !copy) throw new Error("Missing local agent menu content");
 		return [separator.getBoundingClientRect().top - lastAgent.getBoundingClientRect().bottom, copy.getBoundingClientRect().top - separator.getBoundingClientRect().bottom];

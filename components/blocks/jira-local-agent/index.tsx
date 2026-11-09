@@ -25,7 +25,7 @@ export function JiraLocalAgent({ presentation = "submenu", workItem }: Readonly<
 				<PopoverContent aria-label="Local software agents" align="start" sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] gap-0 overflow-hidden p-0 [&_[cmdk-group]:last-child]:!pb-0">
 					{presentation === "inline" ? <InlineLocalAgentPicker onLocalUse={setLastUsedAgentId} recentAgentId={lastUsedAgentId} /> : <ProjectButterAgentPickerContent localOnly onLocalUse={setLastUsedAgentId} recentAgentId={lastUsedAgentId} />}
 					<div className="px-1 pb-1">
-						<div role="separator" className={cn(dropdownStyles.separator, "mt-0")} />
+						<hr className={cn(dropdownStyles.separator, "mt-0 border-0")} />
 						<div className="px-2"><ProjectButterDevelopmentActions {...workItem} presentation="menu" showStartCoding={false} /></div>
 					</div>
 				</PopoverContent>

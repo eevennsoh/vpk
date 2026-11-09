@@ -788,7 +788,7 @@ export function AgentSelector({
 					submenuAgentIdSet={submenuAgentIdSet}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
-				{separatePinned && pinnedAgents.length > 0 && moreAgents.length > 0 ? <div role="separator" className="my-1 border-t border-border" /> : null}
+				{separatePinned && pinnedAgents.length > 0 && moreAgents.length > 0 ? <hr className="my-1 border-0 border-t border-border" /> : null}
 				<AgentSelectorGroup
 					avatarSize={avatarSize}
 					agents={moreAgents}
