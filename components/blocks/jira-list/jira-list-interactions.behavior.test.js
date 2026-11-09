@@ -7,6 +7,20 @@ const rows = [
 	{ issueKey: "PAY-2", summary: "Second item", issueType: "task", status: "To do", priority: "medium" },
 ];
 
+test("an active work item does not select its checkbox", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-list/index.tsx",
+		exportName: "JiraList",
+		props: { activeIssueKey: "PAY-1", rows, selectedIssueKeys: new Set(["PAY-2"]) },
+	});
+	const first = view.getByRole("checkbox", { name: "Select PAY-1" });
+	const second = view.getByRole("checkbox", { name: "Select PAY-2" });
+	assert.equal(first.getAttribute("aria-checked"), "false");
+	assert.equal(second.getAttribute("aria-checked"), "true");
+	assert.equal(first.closest("tr").getAttribute("aria-selected"), "true");
+	await view.unmount();
+});
+
 test("summary editing isolates other rows and saves or cancels the draft", async () => {
 	const changes = [];
 	const view = await renderComponent({

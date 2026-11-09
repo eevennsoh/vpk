@@ -114,7 +114,7 @@ export function JiraListSummaryEditor({ draft, editorRef, finish }: Readonly<{
 				aria-label={`Summary for ${draft.issueKey}`}
 				ref={inputRef}
 				variant="none"
-				className="h-6 min-w-0 flex-1 rounded-none px-0 py-0 text-[13px] font-medium leading-5 text-text focus-visible:ring-0"
+				className="h-6 min-w-0 flex-1 rounded-none px-0 py-0 text-sm font-normal leading-5 text-text focus-visible:ring-0"
 				value={value}
 				onChange={(event) => setValue(event.currentTarget.value)}
 				onKeyDown={(event) => {
