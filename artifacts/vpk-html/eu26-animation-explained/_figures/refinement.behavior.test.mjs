@@ -316,7 +316,7 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 							const key = cursor.id + ':' + cursor.heldTarget.key + ':' + Math.floor(time / 20);
 							if (seen.has(key)) continue;
 							seen.add(key);
-							samples.push({ time, id: cursor.id, key: cursor.heldTarget.key, sourceIndex: cursor.heldTarget.sourceIndex, index: cursor.heldTarget.index, grip: cursor.grip });
+							samples.push({ time, id: cursor.id, key: cursor.heldTarget.key, sourceIndex: cursor.heldTarget.sourceIndex, index: cursor.heldTarget.index, piece: cursor.heldTarget.piece, grip: cursor.grip });
 						}
 					}
 					if (samples.length < 6) failures.push({ issue: 'too few teammate rides', samples: samples.length });
@@ -327,7 +327,7 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 						if (sample.grip.u !== .5 || sample.grip.v !== .5) failures.push({ ...sample, issue: 'grip is not the card centre' });
 						explorer.seek(sample.time);
 						const cursor = hero.querySelector('[data-eu26-cursor="' + sample.id + '"]');
-						const matches = [...hero.querySelectorAll('[data-eu26-piece="wall.' + sample.index + '"]')];
+						const matches = [...hero.querySelectorAll('[data-eu26-piece="' + sample.piece + '"]')];
 						if (matches.length !== 1) { failures.push({ variant, ...sample, issue: 'pooled target is missing or duplicated' }); continue; }
 						const card = matches[0], face = card.querySelector('.iso-top'), tip = cursor.querySelector('[data-eu26-cursor-tip]');
 						if (!visible(card) || !visible(cursor) || cursor.dataset.heldTarget !== sample.key || cursor.dataset.cursorPhase !== 'carry') failures.push({ variant, ...sample, issue: 'visible cursor lost its current pooled target' });
@@ -343,6 +343,62 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 			`);
 			assert.deepEqual(result.failures, []);
 			assert.ok(result.contacts >= 6, 'teammates keep contact at early and distant wall times');
+		});
+
+		await t.test('a teammate holds the top card of the stack it carries: it paints over the rest, and the cursor over all of them, from grab to release', () => {
+			// The carried stack is the slot plus the cards it deals; the held card is the one under the cursor's tip.
+			const members = Object.fromEntries([...new Set(data.wallCards.map(child => child.slot))].map(slot => [slot, data.wallCards.flatMap((child, j) => child.slot === slot ? ['wallcard.' + j] : [])]));
+			const result = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				const members = ${JSON.stringify(members)};
+				const after = (a, b) => Boolean(b.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING);
+				const capture = () => { const event = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(event); return event.detail.state; };
+				// Every carry on this frame's own clock: a coarse sweep finds each one, then it is sampled every 0.025 s from grab to release.
+				const carries = new Map();
+				for (let time = 34; time < 176; time += 0.25) {
+					draw(time);
+					for (const cursor of capture().cursors) {
+						if (cursor.role !== 'teammate' || !cursor.heldTarget) continue;
+						const key = cursor.id + ':' + cursor.heldTarget.key;
+						const last = [...carries.values()].reverse().find(carry => carry.key === key && time - carry.to < 0.6);
+						if (last) last.to = time;
+						else carries.set(key + '@' + time, { key, id: cursor.id, from: time, to: time });
+					}
+				}
+				const failures = [];
+				let samples = 0, stackSamples = 0;
+				for (const carry of carries.values()) {
+					const start = carry.from - 0.3, end = carry.to + 0.3;
+					for (let step = 0, time = start; time <= end + 1e-9; step++, time = start + step * 0.025) {
+						draw(time);
+						const cursor = capture().cursors.find(each => each.id === carry.id);
+						if (!cursor.heldTarget || cursor.id + ':' + cursor.heldTarget.key !== carry.key || cursor.alpha < .5) continue;
+						const target = cursor.heldTarget, heldName = target.piece ?? 'wall.' + target.index;
+						const stack = ['wall.' + target.index, ...(members[target.sourceIndex] ?? [])];
+						const held = piece(heldName), arrow = hero.querySelector('[data-eu26-cursor="' + carry.id + '"]');
+						const at = Number(time.toFixed(3)) + ' ' + carry.id + ' ' + target.key;
+						samples++;
+						if (stack.length > 1) stackSamples++;
+						if (!visible(held)) { failures.push(at + ': held ' + heldName + ' hidden'); continue; }
+						for (const name of stack) {
+							if (name === heldName) continue;
+							const other = piece(name);
+							if (getComputedStyle(other).display === 'none') continue;
+							if (!after(held, other)) failures.push(at + ': ' + name + ' paints over the held ' + heldName);
+							if (!after(arrow, other)) failures.push(at + ': ' + name + ' paints over the cursor');
+						}
+						if (!after(arrow, held)) failures.push(at + ': held ' + heldName + ' paints over the cursor');
+						const tip = arrow.querySelector('[data-eu26-cursor-tip]'), face = held.querySelector('.iso-top');
+						const nose = tip.getPointAtLength(0), screen = new DOMPoint(nose.x, nose.y).matrixTransform(tip.getScreenCTM());
+						if (!face.isPointInFill(screen.matrixTransform(face.getScreenCTM().inverse()))) failures.push(at + ': cursor tip is off the held ' + heldName);
+					}
+				}
+				return { carries: carries.size, actors: new Set([...carries.values()].map(carry => carry.id)).size, samples, stackSamples, failures };
+			`);
+			assert.ok(result.carries >= 20 && result.actors === data.actors.length, `every teammate carries cards (${result.carries} carries)`);
+			assert.ok(result.stackSamples >= 60, `at least one stack is carried in (${result.stackSamples} samples)`);
+			assert.deepEqual(result.failures, []);
 		});
 
 		await t.test('one wall reuses its original DOM cards through complete cycles', () => {

@@ -6,7 +6,7 @@ export const motionConfig = {
 	// leading edge crosses its own line, DESCEND_FROM + DESCEND_SPAN * hash entry reaches in from the frame's right edge.
 	// reachShare 0.3 (the source's 0.16 starved the portrait two-column figure to ~15 carried cards per 103 s; 0.3 gives ~34,
 	// landscape ~49, with up to 3 teammates on screen at once).
-	arrival: { from: 0.45, span: 0.7, reachShare: 0.3, edgeWidth: 300, descendS: 0.95, handoff: 0.6, faceUp: 0.072, dealS: 0.09 },
+	arrival: { from: 0.45, span: 0.7, reachShare: 0.3, edgeWidth: 300, descendS: 0.95, handoff: 0.6, faceUp: 0.072, dealS: 0.09, settleS: 0.2 },
 	// finale-wall-cursors.ts: a teammate's hand glides in over ENTER_S (--duration-slowest), rides at least RIDE_S, leaves over
 	// LEAVE_S (--duration-slower) fading by --duration-medium, stays CURSOR_MARGIN inside the frame and rests LANE_REST_S.
 	hand: { enter: 0.6, ride: 0.2, leave: 0.4, fade: 0.2, margin: 8, rest: 0.15, apart: 16, lift: 8, grow: 0.03, tilt: 0.03, swing: 0.3, bow: 0.2 },
@@ -427,10 +427,11 @@ export function model(input, data) {
 		const down = since <= 0 ? 0 : inOut(since / fall);
 		return { at: [base[0] + coming[0], base[1] + coming[1], base[2] + (HAND.lift + extraLift) * (1 - down)], rot: tilt.map(angle => angle * (1 - down)), scale: 1 + HAND.grow * (1 - down) };
 	};
-	// Blank until the hand-over, then the face comes up; a ring swells from the edge from just before touchdown.
+	// Blank until the hand-over, then the face comes up; a ring swells from the edge from RING_LEAD before touchdown.
+	const RING_LEAD = 0.1;
 	const landing = (since, fall) => {
 		const after = since - fall;
-		return { face: clamp((after - (A.handoff ?? 0.6)) / (A.faceUp ?? 0.072)), ring: after >= -0.1 && after < 1 ? after : null };
+		return { face: clamp((after - (A.handoff ?? 0.6)) / (A.faceUp ?? 0.072)), ring: after >= -RING_LEAD && after < 1 ? after : null };
 	};
 	const arrivals = pool.map(entry => arrivalOf(entry.card, entry.sourceIndex));
 	const wallPoses = pool.map(entry => {
@@ -461,33 +462,51 @@ export function model(input, data) {
 		const arriving = Boolean(arrival && arrival.since >= -HAND.enter && arrival.since < arrival.fall + 0.75);
 		return { ...pose(at, rot, scale, visible ? s * handoff * shown : 0, highlight), sourceIndex: i, key: entry.key, index: entry.index, incoming: enteringRight || arriving, entryEdge: enteringRight ? "right" : null, entryProgress, visible, screen: projected, face, ring, arrival: arrival ? { since: arrival.since, touchdown: arrival.touchdown, held: true } : null };
 	});
-	// A stack slot carried in deals its own cards as it is set down: they ride in on it, then settle top first, a beat apart.
-	// A stack no hand brings in is already dealt.
-	const wallCards = (data.wallCards ?? []).map(child => {
-		const i = child.slot, card = data.wall[i], parent = wallPoses[i], arrival = arrivals[i];
+	// A stack slot carried in deals its own cards once it is set down. The hand holds the stack's top card (the highest
+	// lift), with the rest of the stack carried rigidly beneath it. All of the stack shares one paint stack while held, so the
+	// held card paints last (rank 0) and the others follow by descending height. Once the hand lets go, each card settles onto
+	// the slot on its own clock, top first, a beat apart. A stack that no hand brings in is already dealt.
+	const stackLift = child => (3 - child.index) * 2;
+	const dealDelay = (i, index) => {
 		let delay = 0;
-		for (let step = 1; step <= child.index + 1; step += 1) delay += (A.dealS ?? 0.09) * mix(0.7, 1.3, random(i * 7 + step, 40));
-		const base = baseWallAt(card, i);
+		for (let step = 1; step <= index + 1; step += 1) delay += (A.dealS ?? 0.09) * mix(0.7, 1.3, random(i * 7 + step, 40));
+		return delay;
+	};
+	// Paint ranks while carried: the slot's cards from the top down (the held card is rank 0), then the slot beneath them.
+	const stackRanks = new Map(), slotRanks = new Map();
+	for (const slot of new Set((data.wallCards ?? []).map(child => child.slot))) {
+		const members = (data.wallCards ?? []).flatMap((child, j) => child.slot === slot ? [j] : []).sort((a, b) => stackLift(data.wallCards[b]) - stackLift(data.wallCards[a]));
+		members.forEach((j, rank) => stackRanks.set(j, rank));
+		slotRanks.set(slot, members.length);
+	}
+	const carriedStack = (i, rank) => arrivals[i] && arrivals[i].since >= -HAND.enter && arrivals[i].since < arrivals[i].fall ? { id: `carry:${pool[i].key}`, rank } : null;
+	const wallCards = (data.wallCards ?? []).map((child, j) => {
+		const i = child.slot, card = data.wall[i], parent = wallPoses[i], arrival = arrivals[i];
+		const delay = dealDelay(i, child.index), base = baseWallAt(card, i), lift = stackLift(child);
 		let at = [base[0] + child.dx, base[1] + child.dy, 1.1 + (1 - ease((time - 23) / 1.3)) * 170], rot = [0, 0, 0], scale = 1, face = 1, ring = null;
-		if (arrival && arrival.since - delay < arrival.fall + 1.5) {
-			const stackLift = (3 - child.index) * 2;
-			if (arrival.since < 0) {
-				// Riding in on the stack the hand carries: on its face, turned with it.
-				const carried = heldPose(arrival, i), offset = turn([child.dx * carried.scale, child.dy * carried.scale, (1.1 + stackLift) * carried.scale], carried.rot);
+		// The card's own touchdown, in the slot's `since`: settleS after the hand lets go of it, a beat after the card above.
+		// Its settle ends there and its landing (ring, then face) starts there, so neither runs ahead of the other.
+		const settleS = A.settleS ?? 0.2, land = arrival ? arrival.fall + delay - dealDelay(i, 0) + settleS : 0;
+		if (arrival && arrival.since < land + 1.5) {
+			if (arrival.since < arrival.fall) {
+				// Carried: on the slot's face and turned with it, until the hand lets go of the top card.
+				const carried = heldPose(arrival, i), offset = turn([child.dx * carried.scale, child.dy * carried.scale, (1.1 + lift) * carried.scale], carried.rot);
 				at = carried.at.map((value, axis) => value + offset[axis]);
 				rot = carried.rot;
 				scale = carried.scale;
 			} else {
-				// Peeling off: each card settles on its own clock, `delay` behind the slot, from where it rode in.
-				const down = inOut((arrival.since - delay) / arrival.fall), tilt = heldPose({ ...arrival, since: 0 }, i).rot;
-				at = [arrival.base[0] + child.dx, arrival.base[1] + child.dy, 1.1 + (HAND.lift + stackLift) * (1 - down)];
-				rot = tilt.map(angle => angle * (1 - down));
-				scale = 1 + HAND.grow * (1 - down);
+				// Dealt: from where it was let go, each card drops onto the slot, speeding up until it touches down at `land`.
+				const down = easeIn((arrival.since - (land - settleS)) / settleS);
+				at = [base[0] + child.dx, base[1] + child.dy, 1.1 + lift * (1 - down)];
 			}
-			({ face, ring } = landing(arrival.since - delay, arrival.fall));
+			// Nothing to swell ahead of: the ring opens as the card touches down, not RING_LEAD before.
+			({ face, ring } = landing(arrival.since, land + RING_LEAD));
 		}
-		return { ...pose(at, rot, scale, parent.alpha, 0), key: `${card.key}#${child.index}`, face, ring };
+		return { ...pose(at, rot, scale, parent.alpha, 0), key: `${card.key}#${child.index}`, face, ring, stack: carriedStack(i, stackRanks.get(j)) };
 	});
+	for (const [i, rank] of slotRanks) wallPoses[i].stack = carriedStack(i, rank);
+	// The card a teammate's hand holds: the stack's top card if the slot carries one, else the slot itself.
+	const heldCardOf = new Map([...stackRanks].filter(([, rank]) => rank === 0).map(([j]) => [data.wallCards[j].slot, j]));
 	const wall = wallPoses, wallCopies = [];
 	// Confetti after the source (finale-confetti.ts). Every flight is ballistic under linear drag toward a terminal fall,
 	// with a falling-leaf sway that grows as the launch is spent, and a tumble that dies from a fast start to a slow rest.
@@ -632,8 +651,11 @@ export function model(input, data) {
 		const index = arrivals.findIndex(arrival => arrival && arrival.lane === lane && arrival.since >= -HAND.enter && arrival.since <= arrival.fall + HAND.leave);
 		if (index < 0) return hiddenCursor(actor.id, "teammate");
 		const arrival = arrivals[index], entry = pool[index], slot = entry.card, posed = wallPoses[index];
-		const target = { kind: entry.kind, index: entry.index, key: entry.key, sourceIndex: entry.sourceIndex };
-		const grip = { u: 0.5, v: 0.5 }, contact = surfacePoint(posed, slot.w, slot.d, "wall", grip), after = arrival.since - arrival.fall;
+		// The hand carries the slot (its target) by the card it holds: a stack's top card, else the slot itself.
+		const top = heldCardOf.get(index), heldCard = top === undefined ? null : data.wallCards[top];
+		const target = { kind: entry.kind, index: entry.index, key: entry.key, sourceIndex: entry.sourceIndex, piece: heldCard ? `wallcard.${top}` : `wall.${entry.index}` };
+		const grip = { u: 0.5, v: 0.5 }, after = arrival.since - arrival.fall;
+		const contact = heldCard ? surfacePoint(wallCards[top], heldCard.w, heldCard.d, "wall", grip) : surfacePoint(posed, slot.w, slot.d, "wall", grip);
 		const away = after > 0 ? leg(arrival.hold.reach, arrival.hold.leaveDistance, -arrival.hold.bow * 0.5, 1 - easeIn(after / HAND.leave)) : [0, 0];
 		const held = after < 0, phase = held ? (arrival.since < -HAND.enter + 0.1 ? "grab" : "carry") : after <= 0.12 ? "release" : "leave";
 		return {
