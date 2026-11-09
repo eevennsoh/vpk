@@ -71,6 +71,7 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 		"Select Work item",
 		"Select List",
 		"Select Pull request",
+		"Select Development panel",
 		"Select e2e Journey",
 	]);
 	for (const name of ["Board", "Agent selector", "Work item", "List", "Pull request", "e2e Journey"]) {
@@ -133,6 +134,19 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	await expect(workItem).toBeHidden();
 	await page.getByRole("button", { name: "Open gallery" }).click();
 	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toBeVisible();
+});
+
+test("the Development panel gallery item shows the populated interactive panel", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Development panel" }).click();
+	const panel = page.getByRole("region", { name: "Development" });
+	await expect(panel.getByText("1/3 builds passed")).toBeVisible();
+	await expect(panel.getByRole("button", { name: /#1306 Add guest checkout/ })).toBeVisible();
+	await expect(panel.getByRole("button", { name: /#1847 Fix threaded comment/ })).toBeVisible();
+	await expect(panel.getByRole("button", { name: /#7 SHIL-25/ })).toBeVisible();
+	await panel.getByRole("button", { name: /#1306 Add guest checkout/ }).click();
+	await expect(page.getByText("acme/storefront").first()).toBeVisible();
 });
 
 test("switching between the board and journey does not produce runtime errors", async ({ page }) => {
