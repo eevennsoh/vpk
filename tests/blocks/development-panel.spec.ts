@@ -2,16 +2,33 @@ import { expect, test } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
-test("start coding opens the same menu before and after pull requests are created", async ({ page }) => {
+test("Open in shows local agents in both development panel states", async ({ page }) => {
+	await page.goto(appUrl("/preview/blocks/development-panel"));
+	const panel = page.getByRole("region", { name: "Development" });
+	for (const state of ["Before setup", "Pull requests created"]) {
+		await page.getByRole("button", { name: state }).click();
+		const trigger = panel.getByRole("button", { name: "Open in", exact: true });
+		await trigger.click();
+		const picker = page.getByRole("dialog", { name: "Local software agents" });
+		for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot", "Rovo CLI"]) {
+			await expect(picker.getByRole("option", { name: new RegExp(name, "u") })).toBeVisible();
+		}
+		await page.keyboard.press("Escape");
+		await expect(trigger).toBeFocused();
+	}
+});
+
+test("configure repository opens the same menu before and after pull requests are created", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
 	const items = ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"];
 	for (const state of ["Before setup", "Pull requests created"]) {
 		await page.getByRole("button", { name: state }).click();
-		const trigger = panel.getByRole("button", { name: "Start coding" });
+		const trigger = panel.getByRole("button", { name: "Configure repository" });
 		await trigger.click();
-		const menu = page.getByRole("menu", { name: "Start coding" });
+		const menu = page.getByRole("menu", { name: "Configure repository" });
 		await expect(menu).toBeVisible();
+		await expect(menu).toHaveCSS("border-radius", "8px");
 		for (const name of items) await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
 		await expect(menu.getByRole("menuitem", { name: "Branch name settings" })).toBeVisible();
 		await page.keyboard.press("Escape");
@@ -23,7 +40,7 @@ test("start coding opens the same menu before and after pull requests are create
 test("development rows align their icons and labels with the heading", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
-	const startCoding = panel.getByRole("button", { name: "Start coding" });
+	const startCoding = panel.getByRole("button", { name: "Configure repository" });
 	const copyPrompt = panel.getByRole("button", { name: "Copy prompt" });
 	const emptyPositions = await startCoding.evaluate((element) => {
 		const icon = element.querySelector("svg");
@@ -78,11 +95,11 @@ test("development rows align their icons and labels with the heading", async ({ 
 	await expect(page.locator("html")).toHaveAttribute("data-copied-prompt", "PAY-999: Improve merchant onboarding for Payments SDK v2");
 });
 
-test("start coding menu uses compact icons and a GitHub app tile", async ({ page }) => {
+test("configure repository menu uses compact icons and a GitHub app tile", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	await page.getByRole("button", { name: "Pull requests created" }).click();
-	await page.getByRole("button", { name: "Start coding" }).click();
-	const menu = page.getByRole("menu", { name: "Start coding" });
+	await page.getByRole("button", { name: "Configure repository" }).click();
+	const menu = page.getByRole("menu", { name: "Configure repository" });
 	for (const name of ["Copy create branch command", "Copy create commit command", "Copy work item key", "Branch name settings"]) {
 		const item = menu.getByRole("menuitem", { name });
 		const slot = await item.locator(":scope > span:first-child").boundingBox();
@@ -114,11 +131,11 @@ test("start coding menu uses compact icons and a GitHub app tile", async ({ page
 	}
 });
 
-test("development settings surfaces match the start coding menu inset", async ({ page }) => {
+test("development settings surfaces match the configure repository menu inset", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	await page.getByRole("button", { name: "Pull requests created" }).click();
-	await page.getByRole("button", { name: "Start coding" }).click();
-	const menu = page.getByRole("menu", { name: "Start coding" });
+	await page.getByRole("button", { name: "Configure repository" }).click();
+	const menu = page.getByRole("menu", { name: "Configure repository" });
 	const inset = await menu.evaluate((element) => getComputedStyle(element).padding);
 	await page.keyboard.press("Escape");
 	for (const name of ["Pull request settings", "Development settings"]) {

@@ -41,7 +41,7 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		id: "development-panel",
 		title: "Development panel",
 		description: "View development activity and pull requests.",
-		size: "portrait",
+		size: "landscape",
 	},
 	{
 		id: "e2e-journey",

@@ -13,6 +13,7 @@ import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import SettingsIcon from "@atlaskit/icon/core/settings";
 
+import { JiraLocalAgent } from "@/components/blocks/jira-local-agent";
 import { TeamEuRailPanel } from "@/components/blocks/jira-work-item/team-eu26/components/team-eu-rail-panel";
 import { getPullRequestStatusPresentation, type PullRequestStatusIconKind } from "@/components/blocks/jira-work-item/team-eu26/lib/pull-request-status-presentation";
 import { ProjectButterDevelopmentActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-actions";
@@ -56,8 +57,8 @@ const STATUS_COLORS: Record<PullRequestStatus, string> = {
 function StartCodingMenu({ trigger }: Readonly<{ trigger?: ReactElement }>) {
 	return (
 		<DropdownMenu>
-			{trigger ? <DropdownMenuTrigger render={trigger} /> : <DropdownMenuTrigger render={<Button aria-label="Start coding" size="icon-compact" type="button" variant="ghost" />}><BranchIcon label="" size="small" /></DropdownMenuTrigger>}
-			<DropdownMenuContent align="start" className="w-72 [&_[role=menuitem]>span:first-child]:size-4">
+			{trigger ? <DropdownMenuTrigger render={trigger} /> : <DropdownMenuTrigger render={<Button aria-label="Configure repository" size="icon-compact" type="button" variant="ghost" />}><BranchIcon label="" size="small" /></DropdownMenuTrigger>}
+			<DropdownMenuContent align="start" className="w-72 rounded-lg [&_[role=menuitem]>span:first-child]:size-4">
 				<DropdownMenuGroup><DropdownMenuLabel>Create branch in...</DropdownMenuLabel>
 				<DropdownMenuItem elemBefore={<AtlassianLogoMark frame="chip" label="" name="bitbucket" />}>Bitbucket Cloud</DropdownMenuItem>
 				<DropdownMenuItem elemBefore={<LogoThirdParty label="" name="github" size="xxsmall" tileBackground="surface" />}>GitHub</DropdownMenuItem></DropdownMenuGroup>
@@ -119,6 +120,7 @@ function DevelopmentSettings() {
 
 export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
 	const hasPullRequests = pullRequests.length > 0;
+	const openIn = <JiraLocalAgent workItem={workItem} trigger={<Button className="h-8 w-full justify-start gap-2 border-0 px-2 font-normal" type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AngleBracketsIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Open in</Button>} />;
 	return (
 		<TeamEuRailPanel
 			alwaysShowHeaderActions={Boolean(headerExtra)}
@@ -126,7 +128,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 			headerActions={<div className="flex items-center opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{hasPullRequests ? <StartCodingMenu /> : null}<PullRequestSettings {...pullRequestSettings} /><DevelopmentSettings />{headerExtra}</div>}
 			surface={surface}
 			title="Development"
-			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button><div className="px-2"><ProjectButterDevelopmentActions {...workItem} showStartCoding={false} /></div>{footerExtra}</div> : null}
+			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button><div className="px-2"><ProjectButterDevelopmentActions {...workItem} openIn={openIn} showStartCoding={false} /></div>{footerExtra}</div> : null}
 		>
 			<div className={hasPullRequests ? "px-2 pb-2" : "px-4 pb-4"}>
 				{hasPullRequests ? pullRequests.map((request) => {
@@ -142,7 +144,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>
-				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} /></div>}
+				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} openIn={openIn} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} /></div>}
 			</div>
 		</TeamEuRailPanel>
 	);
