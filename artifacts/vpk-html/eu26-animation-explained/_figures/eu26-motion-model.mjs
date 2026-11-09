@@ -67,6 +67,7 @@ export function model(input, data) {
 	const time = Math.max(0, Number.isFinite(Number(options.time)) ? Number(options.time) : 0);
 	const variant = data.variants.some(each => each.id === options.variant) ? options.variant : "paper";
 	const clamp = x => Math.max(0, Math.min(1, x));
+	const clampTo = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 	const ease = x => { const u = clamp(x); return u * u * (3 - 2 * u); };
 	const cameraEase = x => { const u = clamp(x); return u * u * u * (u * (u * 6 - 15) + 10); };
 	const projectionScale = (options.projectionScale ?? data.motion?.projectionScale ?? 0.8692407110335721) * Math.sqrt(1.6);
@@ -469,28 +470,92 @@ export function model(input, data) {
 		return { ...pose(at, rot, scale, parent.alpha, 0), key: `${card.key}#${child.index}`, face, ring };
 	});
 	const wall = wallPoses, wallCopies = [];
-	const confetti = Array.from({ length: 56 }, (_, i) => {
-		const pair = Math.floor(i / 2), side = i % 2 ? 1 : -1, centerX = data.doneList.viewport.x + data.doneList.viewport.w / 2;
-		const origin = [centerX + side * data.doneList.viewport.w / 2, data.doneList.viewport.y + data.doneList.viewport.d * 0.82, 18];
-		let at = origin, rot = [0, 0, side * random(pair, 15) * Math.PI], alpha = 0;
-		const launch = (elapsed, large) => {
-			const speed = (large ? 150 : 90) + random(pair, 16) * (large ? 120 : 55), up = (large ? 240 : 150) + random(pair, 17) * 100;
-			return [origin[0] - side * speed * elapsed, origin[1] - (35 + random(pair, 18) * 80) * elapsed, origin[2] + up * elapsed - (large ? 110 : 120) * elapsed ** 2];
+	// Confetti after the source (finale-confetti.ts). Every flight is ballistic under linear drag toward a terminal fall,
+	// with a falling-leaf sway that grows as the launch is spent, and a tumble that dies from a fast start to a slow rest.
+	// 1. The first drop puffs (createFinaleConfettiPuff): paper squirts out from under every edge of the landed card, skewed
+	//    to settle close in, decelerates hard, lies all but still for a beat and fades. It never crosses back over the card.
+	// 2. The whole deck landing fires the finale: two cannons at the near corners shoot a broad diagonal fan up and inward
+	//    (a quarter as a gentle trail), the show drops into bullet time at the apex, then a vortex pulls every piece down
+	//    onto the Done column's foot, farthest first, gone as it lands, so the column flash rises from a clean foot.
+	const pieces = data.confetti ?? [];
+	const flight = (piece, e) => {
+		const decay = 1 - Math.exp(-piece.drag * e), reach = decay / piece.drag, sway = piece.flutter[0] * decay * decay, phase = piece.flutter[1] * e + piece.flutter[2];
+		return [piece.origin[0] + piece.velocity[0] * reach + sway * Math.sin(phase), piece.origin[1] + piece.velocity[1] * reach + sway * 0.6 * Math.cos(phase), piece.origin[2] + piece.velocity[2] * reach - piece.fall * (e - reach)];
+	};
+	const tumble = (piece, e) => {
+		const [phase, start, rest, decay] = piece.spin, angle = phase + rest * e + (start - rest) * (1 - Math.exp(-decay * e)) / decay;
+		return [piece.axis[0] * angle, piece.axis[1] * angle, piece.axis[2] * angle + piece.yaw];
+	};
+	const unit = (i, channel) => {
+		const z = random(i, channel) * 2 - 1, a = random(i, channel + 1) * Math.PI * 2, ring = Math.sqrt(1 - z * z);
+		return [ring * Math.cos(a), ring * Math.sin(a), z];
+	};
+	const rate = data.playbackRate ?? 1;
+	// The puff, in the source's real seconds (model seconds / playbackRate). Its scatter holds through the puff chapter.
+	const landed = data.doneList.cards[0], puffCount = Math.min(pieces.length, 60), puffStart = 2, puffFade = [4.25, 0.7];
+	const perimeter = 2 * (landed.w + landed.d), fan = 0.35 * Math.min(landed.w, landed.d);
+	const puff = Array.from({ length: puffCount }, (_, i) => {
+		let u = (i + random(i, 40)) / puffCount * perimeter, x, y;
+		if (u < landed.w) [x, y] = [landed.x + u, landed.y];
+		else if ((u -= landed.w) < landed.d) [x, y] = [landed.x + landed.w, landed.y + u];
+		else if ((u -= landed.d) < landed.w) [x, y] = [landed.x + landed.w - u, landed.y + landed.d];
+		else [x, y] = [landed.x, landed.y + landed.d - (u - landed.w)];
+		// Outward from the nearest point of the card inset by `fan`: square to an edge, fanning round each corner.
+		const nx = x - clampTo(x, landed.x + fan, landed.x + landed.w - fan), ny = y - clampTo(y, landed.y + fan, landed.y + landed.d - fan);
+		const spread = (random(i, 41) + random(i, 42) - 1) * 24 * Math.PI / 180, base = Math.atan2(ny, nx) + spread;
+		const dir = [Math.cos(base), Math.sin(base)], reach = 12 + 93 * random(i, 43) ** 2, drag = 6.5 + 3 * random(i, 44);
+		return {
+			origin: [x + dir[0] * 2, y + dir[1] * 2, 4.5], delay: 0.05 * random(i, 45) ** 2, drag, fall: 4,
+			velocity: [dir[0] * Math.max(reach, 8) * drag, dir[1] * Math.max(reach, 8) * drag, (0.05 + 0.2 * random(i, 46)) * reach * drag],
+			flutter: [1 + 2 * random(i, 47), 3 + 3 * random(i, 48), random(i, 49) * Math.PI * 2],
+			spin: [random(i, 50) * Math.PI * 2, 6 + 8 * random(i, 51), 0.3 + 0.6 * random(i, 52), 5], axis: unit(i, 53), yaw: random(i, 55) * Math.PI * 2,
 		};
-		if (time > 2 && time < 5) {
-			const elapsed = time - 2, s = clamp(elapsed / 2.7);
-			at = launch(elapsed, false);
-			alpha = ease(elapsed / 0.14) * (1 - ease((elapsed - 1.5) / 1.2));
-			rot = [Math.sin(elapsed * 4 + pair) * 0.8, side * elapsed * (1 + random(pair, 19)), side * (random(pair, 20) + s * 5)];
+	});
+	// The finale's show clock (FINALE_CONFETTI_PACE): explode at full pace, ease into bullet time while the fan hangs, then
+	// pick up to pull the pieces in. Show seconds accrue as the integral of the pace over model seconds since launch.
+	const finaleStart = 6, eased = (u, [a, b]) => { const t = clamp((u - a) / (b - a)); return (b - a) * (t ** 3 - t ** 4 / 2) + Math.max(0, u - b); };
+	const PACE = { burst: 1, slow: [0.45, 0.85], hang: 0.12, rush: [3.4, 3.8], pull: 0.3 };
+	const showAt = u => u <= 0 ? 0 : u * PACE.burst + (PACE.hang - PACE.burst) * eased(u, PACE.slow) + (PACE.pull - PACE.hang) * eased(u, PACE.rush);
+	const GATHER = { start: 1, spread: 0.25, first: 1.4, end: 1.8, min: 0.4 }, center = data.doneList.viewport.x + data.doneList.viewport.w / 2;
+	const foot = { x: data.doneList.viewport.x, w: data.doneList.viewport.w, y: data.doneList.viewport.y + data.doneList.viewport.d, inset: 10 };
+	// Source px to board units: the production board spans about 1800 px for this figure's 860 units.
+	const world = 0.48;
+	const finale = pieces.map((_, i) => {
+		const left = i < pieces.length / 2, side = left ? -1 : 1, gentle = random(i, 60) < 0.25;
+		const angle = (60 + (0.5 - random(i, 61)) * 60) * Math.PI / 180, speed = 2200 * world * (gentle ? 0.16 + random(i, 62) * 0.3 : 0.55 + random(i, 63) * 0.9);
+		const drag = 2.35 + random(i, 64) * 0.5, across = (random(i, 65) - 0.6) * 0.5;
+		const piece = {
+			origin: [center + side * 330, 330 + random(i, 66) * 30, random(i, 67) * 30], delay: 0.25 * (gentle ? 0.35 + 0.65 * random(i, 68) : random(i, 68) ** 1.5), drag,
+			velocity: [-side * Math.cos(angle) * speed, across * speed * 0.5 - Math.cos(angle) * speed * 0.35, Math.sin(angle) * speed],
+			fall: (120 + random(i, 69) * 110) * world * (gentle ? 0.45 : 1),
+			flutter: [world * (14 + random(i, 70) * 22), 4.5 + random(i, 71) * 4, random(i, 72) * Math.PI * 2],
+			spin: [random(i, 73) * Math.PI * 2, 8 + 8 * random(i, 74), 1.5 + 2 * random(i, 75), 1.4], axis: unit(i, 76), yaw: random(i, 78) * Math.PI * 2,
+		};
+		const sink = [foot.x + foot.inset + (foot.w - 2 * foot.inset) * (random(i, 79) + random(i, 80)) / 2, foot.y, 0];
+		const settle = flight(piece, Math.max(0, GATHER.start - piece.delay));
+		return { ...piece, sink, far: Math.hypot(settle[0] - sink[0], settle[1] - sink[1], settle[2]), swirl: -(1.4 + random(i, 81)) * Math.PI };
+	});
+	const farthest = Math.max(1, ...finale.map(piece => piece.far));
+	const confetti = pieces.map((shape, i) => {
+		let at = [shape.home[0], shape.home[1], 0], rot = [0, 0, 0], alpha = 0, scale = 1;
+		if (i < puffCount && time > puffStart && time < puffFade[0] + puffFade[1]) {
+			const piece = puff[i], e = Math.max(0, (time - puffStart) / rate - piece.delay);
+			at = flight(piece, e);
+			at[2] = Math.max(at[2], 3.4);
+			rot = tumble(piece, e);
+			scale = 0.7;
+			alpha = (e > 0 ? ease(e / 0.03) : 0) * (1 - ease((time - puffFade[0]) / puffFade[1]));
 		}
-		if (time >= 6 && time < 12.5) {
-			const elapsed = time - 6, vortex = ease((time - 8) / 2), angle = pair * 2.39996 + side * Math.PI / 2 + (time - 8) * 1.5;
-			const radius = 55 + pair % 8 * 11, orbit = [centerX + Math.cos(angle) * radius, -50 + Math.sin(angle) * radius * 0.66, 35 + pair / 28 * 290];
-			at = between(launch(Math.min(elapsed, 2.4), true), orbit, vortex);
-			alpha = ease(elapsed / 0.25) * (1 - ease((time - 11) / 1.5));
-			rot = [Math.sin(elapsed * 3 + pair) * 0.8, side * Math.cos(elapsed * 2 + pair) * 0.7, angle];
+		if (time > finaleStart && time < 12.6) {
+			const piece = finale[i], show = showAt(time - finaleStart), e = Math.max(0, show - piece.delay), free = flight(piece, e);
+			const f = piece.far / farthest, start = GATHER.start + GATHER.spread * (1 - f), end = Math.min(GATHER.end, Math.max(start + GATHER.min, GATHER.first + (GATHER.end - GATHER.first) * f));
+			const s = clamp((show - start) / (end - start)), hold = 1 - s * s, turnBy = piece.swirl * s * s, [sx, sy] = piece.sink;
+			const dx = free[0] - sx, dy = free[1] - sy, cos = Math.cos(turnBy), sin = Math.sin(turnBy);
+			at = [sx + (dx * cos - dy * sin) * hold, sy + (dx * sin + dy * cos) * hold, Math.max(0, free[2]) * hold];
+			rot = tumble(piece, e);
+			alpha = (show > piece.delay ? ease((show - piece.delay) / 0.02) : 0) * (1 - ease((s - 0.8) / 0.2));
 		}
-		return { ...pose(at, rot, 1, alpha, 1), emitter: side < 0 ? "left" : "right", pair, velocity: [-side * (150 + random(pair, 16) * 120), -(35 + random(pair, 18) * 80), 240 + random(pair, 17) * 100] };
+		return { ...pose(at, rot, scale, alpha, 1), act: i < puffCount && time < finaleStart ? "puff" : "finale", shape: shape.shape };
 	});
 	const titleSlot = data.wall.find(slot => slot.reserved === 6), carry = data.titleCarry;
 	let titlePose = pose([...data.title.at], [0, 0, 0], 1, ease((time - 22.2) / 0.3), ease((time - 22.2) / 0.3));

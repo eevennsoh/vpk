@@ -64,21 +64,39 @@ test('every story column shows a fourth card clipped at its bottom edge, release
 	assert.deepEqual([...rows].sort(), ['0', '1', '2', '3']);
 });
 
-test('paired confetti cannons rise inward from both outer edges', () => {
-	const centerX = data.doneList.viewport.x + data.doneList.viewport.w / 2;
-	for (const launch of [2, 6]) {
-		const early = at(launch + .05).confetti;
-		const later = at(launch + .2).confetti;
-		assert.equal(early.filter(particle => particle.alpha > 0).length, 56);
-		for (let index = 0; index < early.length; index += 2) {
-			const left = early[index], right = early[index + 1];
-			assert.ok(left.at[0] < centerX && right.at[0] > centerX, 'both emitters start at opposite outer edges');
-			assert.ok(Math.abs(left.at[0] + right.at[0] - 2 * centerX) < .00001, 'paired trajectories are symmetric');
-			assert.ok(Math.abs(left.at[2] - right.at[2]) < .00001, 'paired trajectories rise together');
-			assert.ok(later[index].at[0] > left.at[0] && later[index + 1].at[0] < right.at[0], 'both cannons move inward');
-			assert.ok(later[index].at[2] > left.at[2] && later[index + 1].at[2] > right.at[2], 'both cannons move upward');
-		}
+test('the first drop puffs confetti out from under every edge of the landed card, then it settles and fades', () => {
+	const card = data.doneList.cards[0];
+	// Distance outside the card's footprint (0 inside it).
+	const outside = ([x, y]) => Math.hypot(Math.max(card.x - x, 0, x - card.x - card.w), Math.max(card.y - y, 0, y - card.y - card.d));
+	const early = at(2.12).confetti, mid = at(2.4).confetti, late = at(3.4).confetti;
+	const puff = early.map((piece, index) => [piece, index]).filter(([piece]) => piece.alpha > 0.5 && piece.act === 'puff');
+	assert.ok(puff.length >= 40, `a ring of paper leaves the card (${puff.length})`);
+	const sides = new Set(puff.map(([piece]) => piece.at[1] < card.y ? 'top' : piece.at[1] > card.y + card.d ? 'bottom' : piece.at[0] < card.x ? 'left' : 'right'));
+	assert.deepEqual([...sides].sort(), ['bottom', 'left', 'right', 'top'], 'it leaves every edge at once');
+	for (const [piece, index] of puff) {
+		assert.ok(outside(piece.at) > 0, 'no piece crosses back over the card');
+		assert.ok(outside(mid[index].at) >= outside(piece.at) - 3, 'each piece skids outward');
+		const fast = distance(at(2.12).confetti[index].at, at(2.2).confetti[index].at), slow = distance(at(3.0).confetti[index].at, at(3.08).confetti[index].at);
+		assert.ok(slow < fast * 0.5, 'drag spends the launch: the puff decelerates hard');
+		assert.ok(late[index].at[2] < 30, 'the puff stays low on the page');
 	}
+	assert.ok(at(5).confetti.every(piece => piece.alpha === 0), 'the puff is gone before the next drag');
+});
+
+test('the finale fires two cannons, hangs, then a vortex drains every piece onto the Done column foot', () => {
+	const viewport = data.doneList.viewport, centerX = viewport.x + viewport.w / 2, footY = viewport.y + viewport.d;
+	const launch = at(6.3).confetti.filter(piece => piece.alpha > 0.5);
+	assert.ok(launch.some(piece => piece.at[0] < centerX - 150) && launch.some(piece => piece.at[0] > centerX + 150), 'both cannons fire from opposite sides');
+	const rise = at(6.3).confetti.map((piece, index) => [piece, at(6.6).confetti[index]]).filter(([piece]) => piece.alpha > 0.5);
+	assert.ok(rise.filter(([a, b]) => b.at[2] > a.at[2]).length > rise.length * 0.8, 'the fan rises');
+	assert.ok(rise.filter(([a, b]) => Math.abs(b.at[0] - centerX) < Math.abs(a.at[0] - centerX)).length > rise.length * 0.7, 'and closes inward');
+	// Bullet time: the hang barely moves.
+	const hang = Math.max(...at(8.5).confetti.map((piece, index) => distance(piece.at, at(8.6).confetti[index].at)));
+	const pop = Math.max(...at(6.3).confetti.map((piece, index) => distance(piece.at, at(6.4).confetti[index].at)));
+	assert.ok(hang < pop * 0.2, `the hang is slow motion (${hang.toFixed(1)} vs ${pop.toFixed(1)})`);
+	const near = at(12.2).confetti.filter(piece => piece.alpha > 0.01);
+	assert.ok(near.every(piece => Math.abs(piece.at[1] - footY) < 40 && piece.at[0] > viewport.x - 20 && piece.at[0] < viewport.x + viewport.w + 20 && piece.at[2] < 40), 'the last pieces land on the column foot');
+	assert.ok(at(12.7).confetti.every(piece => piece.alpha === 0), 'every piece is gone before the column flash');
 });
 
 test('placement camera tilts and zooms, then faces the assembled six-tile bento', () => {

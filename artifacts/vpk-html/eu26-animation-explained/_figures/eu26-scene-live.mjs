@@ -537,7 +537,7 @@ export function live(ctx) {
 
 		state.confetti.forEach((pose, i) => {
 			const el = pieces.get(`confetti.${i}`);
-			set(el, [-700 + i * 24 + (4 + i % 3) / 2, 4000 + (9 + i % 4) / 2, 0], pose);
+			set(el, data.confetti[i].home, pose);
 			accent(el, pose.highlight ?? 1);
 		});
 		set(pieces.get("title"), data.title.home, state.titlePose);

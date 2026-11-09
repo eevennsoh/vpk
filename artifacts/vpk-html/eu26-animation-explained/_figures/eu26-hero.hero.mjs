@@ -196,6 +196,18 @@ function sourceWall() {
 		return { ...slot, home, at: [(slot.source.x - 960) * worldScale, (slot.source.y - 540) * worldScale, 0], w, d, r: 20 * worldScale, seed: 211 + index * 37 };
 	});
 }
+// The confetti's variety (finale-confetti.ts VARIETY, less the satin ribbons): a third are discs (sequins and round
+// paper), the rest paper rectangles 9-14 long at 0.45-0.65 of their length wide. Parked off stage until thrown.
+function confettiPieces(count = 140) {
+	const hash = (i, channel) => { const v = Math.sin((i + 1) * 91.7 + channel * 47.3) * 24634.6345; return v - Math.floor(v); };
+	let parkX = -700;
+	return Array.from({ length: count }, (_, i) => {
+		const disc = hash(i, 1) < 0.33, length = disc ? 6 + 3 * hash(i, 2) : 9 + 5 * hash(i, 2), width = disc ? length : length * (0.45 + 0.2 * hash(i, 3));
+		const plan = { x: parkX, y: 4000, w: +width.toFixed(2), d: +length.toFixed(2), r: disc ? +(width / 2).toFixed(2) : 0.7 };
+		parkX += 24;
+		return { shape: disc ? "disc" : "rect", plan, home: [plan.x + plan.w / 2, plan.y + plan.d / 2, 0] };
+	});
+}
 // Camera anchors: the Done column, the hero card's place in the field, and the Team ’26 title in the bento.
 const CAMERA_ANCHORS = { done: [317.5, 55, 0], hero: [-15, -28, 96], title: [10, -16, 6] };
 const doneOrder = [15, ...Array.from({ length: 23 }, (_, i) => i).filter(i => i !== 15)];
@@ -238,6 +250,7 @@ export const data = {
 		{ card: 16, title: "Agent Effectiveness", kind: "chart", at: [145, -4, 6], w: 220, d: 180 },
 		{ card: 10, title: "Record for Agent", kind: "record", at: [-100, 55, 6], w: 220, d: 121 },
 	],
+	confetti: confettiPieces(),
 	wall: sourceWall(),
 	wallSource: { commit: "8588b00ff81cb5e8341a462158c747c6d990667c", viewport: { width: 1920, height: 1080 }, zoom: 0.25, density: "dense", padding: { x: 40, y: 40 }, pieceScale: 0.792, gutter: 23.76, worldScale: 0.72 },
 	columnViewports: [0, 1, 2].map(listViewport),
@@ -348,10 +361,7 @@ export function build(kit, { data }) {
 		const plan = { x: child.home[0], y: child.home[1], w: child.w, d: child.d, r: 8 };
 		put(`wallcard.${j}`, plan, 0, 1.1, `wallcard.${j}`, true, false, wrapDetail(stackCardDetail(child)));
 	});
-	for (let i = 0; i < 56; i += 1) {
-		const plan = { x: -700 + i * 24, y: 4000, w: 4 + i % 3, d: 9 + i % 4, r: 0.7 };
-		put(`confetti.${i}`, plan, 0, 0.3, `confetti.${i}`, true);
-	}
+	data.confetti.forEach((piece, i) => put(`confetti.${i}`, piece.plan, 0, 0.3, `confetti.${i}`, true));
 	const windows = [...data.columnViewports.map((viewport, i) => [`column${i}`, viewport, `data-eu26-column-window="${i}"`]), ["done", data.doneList.viewport, "data-eu26-done-window"]]
 		.map(([key, viewport, marker]) => `<clipPath id="eu26-${key}-window" clipPathUnits="userSpaceOnUse"><path ${marker} d="${k.planOutline(viewport, 5.2, P, 4)}"/></clipPath>`).join("");
 	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><path data-eu26-cursor-halo d="M0 0Z" fill="none" stroke-linejoin="round"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/>${id === "main" ? "" : `<rect data-eu26-cursor-pill x="0" y="0" width="0" height="0" style="display:none"/><text data-eu26-cursor-name x="0" y="0" style="display:none"></text>`}</g>`).join("")}</g>`;
