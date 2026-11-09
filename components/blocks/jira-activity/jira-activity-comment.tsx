@@ -3,7 +3,6 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
 import GrowVerticalIcon from "@atlaskit/icon/core/grow-vertical";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
 import type { AgentListItem } from "@/components/blocks/agent-list";
 import { EmojiReactionBar } from "@/components/blocks/emoji-picker/components/emoji-reaction-bar";
@@ -507,15 +506,15 @@ export function JiraActivityComment({
 			aria-controls={repliesId}
 			aria-expanded={repliesExpanded}
 			// Threaded: trim the leading inset so faces and label start on the reply text column, while the hover plate stays clear of the connector curve.
-			className={cn("justify-self-start", threaded ? "-ml-1 pl-1 font-normal text-text-subtle" : null)}
+			className={cn("relative justify-self-start", threaded ? "-ml-1 pl-1 font-normal text-text-subtle" : null)}
 			onClick={() => setRepliesExpanded((expanded) => !expanded)}
 			size="compact"
 			type="button"
 			variant={threaded ? "ghost" : "link"}
 		>
+			{threaded ? <span aria-hidden className="absolute -left-7 flex size-4 items-center justify-center bg-surface text-icon-subtle"><GrowVerticalIcon label="" size="small" /></span> : null}
 			{renderEarlierRepliesLabel ? renderEarlierRepliesLabel(replies.slice(0, replies.length - replyPreviewCount), repliesExpanded) : <>
 				{repliesExpanded ? "Hide earlier replies" : "Show more replies"}
-				{threaded ? <ChevronDownIcon label="" size="small" /> : null}
 			</>}
 		</Button>
 	) : null;
@@ -671,7 +670,7 @@ export function JiraActivityComment({
 			replies={
 				hasReplies ? (
 					<>
-					{threaded && earlierRepliesToggle ? <div className="relative py-3"><ThreadContinuation /><div className="relative flex"><ThreadConnector centered continued={false} />{earlierRepliesToggle}</div></div> : earlierRepliesToggle}
+					{threaded && earlierRepliesToggle ? <div className="relative py-3"><ThreadContinuation /><div className="relative flex">{earlierRepliesToggle}</div></div> : earlierRepliesToggle}
 					<div
 						aria-label="Replies"
 						className={cn("grid", threaded ? "gap-0" : "gap-2", repliesExpanded || hasReplyPreview ? null : "hidden")}
