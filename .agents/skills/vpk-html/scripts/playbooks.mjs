@@ -99,7 +99,7 @@ export function loadPlaybooks(skillRoot = SKILL_ROOT) {
 		.map(name => parsePlaybook(fs.readFileSync(path.join(dir, name), "utf8"), path.join(dir, name)));
 }
 
-// Every pointer states when to load it: the line under each playbook's H1 (create-skill's rule).
+// Every pointer states when to load it: the line under each playbook's H1.
 export const playbookLoadLine = template => `Load before you draft \`${template}\`. Back to [SKILL.md](../../SKILL.md).`;
 
 export function validatePlaybook(playbook, { skillRoot = SKILL_ROOT, corpus = loadCorpus(skillRoot), indexHtml = readIfExists(path.join(skillRoot, "index.html")) ?? "" } = {}) {

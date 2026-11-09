@@ -6,12 +6,12 @@ Owner of how you measure and improve the vpk-html skill itself for [SKILL.md](..
 
 ```bash
 node .agents/skills/vpk-html/scripts/build.mjs --check-evals
-node ~/.agents/skills/create-skill/scripts/validate-skill.mjs .agents/skills/vpk-html --strict
+node scripts/validate-skills.js
 ```
 
 It validates `evals/evals.json` (schema, template references, reader jobs) and the catalog counts on disk. Every template outside the legacy baseline in `scripts/playbooks.mjs` needs at least one scenario; playbooks name scenarios by `name`, never by id. Every file in `assets/diagrams/` needs a CHEATSHEET row; `--check-evals` fails when one is missing.
 
-`validate-skill.mjs --strict` is create-skill’s gate: every reference H2 needs something to copy (a fence, a table, GOOD/BAD or wrong → right), and it must exit 0.
+`validate-skills.js` is the repo’s skill gate (frontmatter, links, INDEX row); it must exit 0.
 
 To run every script suite, pass a quoted recursive glob; a bare folder fails with `Cannot find module`, and a single `*` misses the suites in `iso/`, `anatomy/`, `lab/`, `runtime/`, `review/`, `code/`, `media/`, `x-thread/` and the other subfolders:
 
@@ -37,7 +37,7 @@ cp -r .agents/skills/vpk-html "$ROUND/baseline-skill"   # before you edit: this 
 
 The tell: a losing run that was replaced rather than counted.
 
-This is create-skill’s 3-run Generator floor. Figure scores vary more than prose scores, so when the two sides’ ranges overlap on a figure value, add 2 runs per side before you call the gap. A scenario with no run on one side backs no claim; list it under “not run” in the round’s `grading.json`.
+Run 3 per side, the same floor skill-creator’s benchmark uses. Figure scores vary more than prose scores, so when the two sides’ ranges overlap on a figure value, add 2 runs per side before you call the gap. A scenario with no run on one side backs no claim; list it under “not run” in the round’s `grading.json`.
 
 1. Snapshot the skill with the commands above before you edit it.
 2. Hold the scenario prompt, inputs, model and viewport fixed. Append the scenario’s viewport from `evals.json` to each run prompt; the prompts do not carry it. Record skill revision and model beside each run. Generate one attempt from each.
@@ -63,7 +63,7 @@ A figure verdict cites its frame paths, per [verification § 9](verification.md#
 
 ## Run a fresh critic, then filter it
 
-Brief a subagent that did not write the change with [critic-prompt.md](../evals/critic-prompt.md) and [rubric.md](../evals/rubric.md); use another model family when one is available. This loop reviews artifacts produced by a round. A change to the skill’s own files also follows create-skill’s review loop to its SKILL.md success bar (`~/.agents/skills/create-skill/references/review-loop.md`).
+Brief a subagent that did not write the change with [critic-prompt.md](../evals/critic-prompt.md) and [rubric.md](../evals/rubric.md); use another model family when one is available. This loop reviews artifacts produced by a round. A change to the skill’s own files goes through the installed `skill-creator` skill: its eval, benchmark and description-optimisation loop.
 
 Sort every finding:
 

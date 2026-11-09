@@ -24,13 +24,17 @@ Scenarios 3–5, 7–12 are conformance-only: `build.mjs --check-evals` proves e
 
 ## Measure recall on near misses, precision on guards and siblings
 
-The vpk-html description says “Use only when”, so `run-triggers.mjs` scores it as explicit-only: literal `invoke` rows are reported but leave the recall headline. Recall comes from `near-miss-positive` rows, false positives from `guard` and `sibling` rows. `--with-skills .agents/skills` installs every other folder with a `SKILL.md` under `.agents/skills` beside vpk-html in the `/tmp` sandbox: the 20 vpk-* skills (vpk-artifact, vpk-build, vpk-component, vpk-component-ext, vpk-deploy, vpk-design, vpk-domain, vpk-explain, vpk-git-clean, vpk-git-ship, vpk-git-ship-fast, vpk-host, vpk-remote, vpk-scheduled-automation, vpk-setup, vpk-symphony, vpk-system-clean, vpk-tidy, vpk-tunnel, vpk-verify; list them with `ls .agents/skills/*/SKILL.md`). So the vpk-explain and vpk-artifact sibling rows compete as they do in the repo. The other three name global winners the flag does not install: hyperframes and frontend-design compete only on a machine that has them as user skills (`~/.claude/skills`, which `claude -p` loads in any directory), and dataviz is not a user skill there, so its row tests only that vpk-html stays silent. Each of those rows says so in its `note`.
+The vpk-html description says “Use only when”, so recall comes from `near-miss-positive` rows and false positives from `guard` and `sibling` rows; literal `invoke` rows are reported but leave the recall headline. Each row’s `note` says what it tests. Rows marked `"where": "repo"` name the VPK app and only mean something run from the repo root.
+
+Run the rows with the installed `skill-creator` skill’s trigger eval; `triggers.json` is already its `{query, should_trigger}` format:
 
 ```sh
-node ~/.agents/skills/create-skill/scripts/run-triggers.mjs .agents/skills/vpk-html --with-skills .agents/skills --out "$ROUND" --runs 3
+SC=$(dirname "$(find ~/.claude/plugins -path '*skill-creator/SKILL.md' | head -1)")
+(cd "$SC" && python3 -m scripts.run_eval --eval-set "$OLDPWD/.agents/skills/vpk-html/evals/triggers.json" \
+  --skill-path "$OLDPWD/.agents/skills/vpk-html" --runs-per-query 3 --timeout 60 --verbose) > "$ROUND/triggers.json"
 ```
 
-It writes `$ROUND/triggers-<date>.json`. Thresholds, detection and the `--runs 5` rerun rule live in `~/.agents/skills/create-skill/references/eval-protocol.md` § Trigger runs; it exits 1 when one misses. A `refused` line names the fix, for example unlinking `~/.claude/skills/vpk-html` for the run. Read the failing row’s transcripts first, saved as `$ROUND/transcripts/<row index>-<run>.jsonl`. When they match a cause in that § Trigger runs table, apply that fix; otherwise the fix goes to the description in `SKILL.md`, never to a reworded query.
+Ship on recall 0.85 or more on the near-miss rows and false positives 0.10 or less on the guard and sibling rows. For a failing description, use skill-creator’s `run_loop` (train/test split, held-out selection) rather than hand rewording; the fix goes to the description in `SKILL.md`, never to a reworded query, unless the row leans on content it does not carry.
 
 ## Brief a fresh critic with only the text block
 
