@@ -101,11 +101,10 @@ async function openSession(view, name) {
 	const trigger = field.querySelector("button");
 	assert.ok(trigger);
 	await view.click(trigger);
-	const menu = view.getByRole("dialog", { name: "Agent sessions" });
+	const menu = view.getByRole("dialog", { name: "Add agent" });
 	const titles = { Claude: "Review Teamwork onboarding guide", "Jira Coding agent": "Draft billing flow PRD", "Jira Scoping agent": "Troubleshoot 403 API errors", Codex: "Review rollback" };
-	const row = [...menu.querySelectorAll("li")].find((item) => item.textContent.includes(titles[name] ?? name));
-	assert.ok(row, `No session for ${name}`);
-	await view.click(row.querySelector("button"));
+	await view.click([...menu.querySelectorAll("button[data-agent-id]")].find((button) => button.textContent.toLowerCase().includes(name.toLowerCase())));
+	await view.click(view.getByRole("button", { name: titles[name] ?? name }));
 }
 
 function renderWorkItem(props = {}) {

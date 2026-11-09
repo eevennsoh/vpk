@@ -331,14 +331,21 @@ export default function ButterPage(): React.ReactElement {
 }
 
 function ButterGalleryWorkItem({ open, onClose }: Readonly<{ open: boolean; onClose: () => void }>) {
+	const router = useRouter();
+	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	return (
 		<>
 			<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex items-start justify-center overflow-hidden">
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onClose={onClose} open={open} shell="gallery" />
+					<ProjectButterJiraWorkItem currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} open={open} shell="gallery" />
 				</div>
 			</div>
 			{open ? <JgpRovoOverlay /> : null}
+			<MountOnFirstUse active={agentsDirectoryOpen}>
+				<Suspense fallback={null}>
+					<AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} variant="standard-v2" onCreateAgent={() => router.push("/studio")} onOpenChange={setAgentsDirectoryOpen} onSelectAgent={() => setAgentsDirectoryOpen(false)} open={agentsDirectoryOpen} />
+				</Suspense>
+			</MountOnFirstUse>
 		</>
 	);
 }
