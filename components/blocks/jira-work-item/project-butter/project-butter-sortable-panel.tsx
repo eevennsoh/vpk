@@ -30,7 +30,7 @@ export function ProjectButterSortablePanel({ actions, children, defaultOpen = tr
 				surface={sidePanel ? "inline" : "card"}
 				title={title}
 			>
-				<div className={sidePanel ? "pb-4" : "px-4 pb-4"}>{children}</div>
+				<div className={sidePanel ? "pb-4" : id === "apps" ? "px-4 pb-2" : "px-4 pb-4"}>{children}</div>
 			</TeamEuRailPanel>}
 		</div>
 	);

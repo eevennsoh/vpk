@@ -208,6 +208,10 @@ export interface JiraActivityReaction {
 /** A comment card with a rich body, optional collapsible, and replies. */
 export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	kind: "comment";
+	/** Person shown alongside the agent in the timeline identity. */
+	attributedBy?: { name: string; avatarSrc?: string };
+	/** Optional activity-specific label in place of the actor's name. */
+	headerLabel?: string;
 	/** Optional parent activity for inline review comments nested under a review summary. */
 	parentId?: string;
 	/** Optional trailing tag on the header, e.g. "Automation". */

@@ -130,8 +130,8 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 				],
 			});
 		} else {
-			const [added, thread] = projectButterSessionInvocation(projectedSession);
-			entries.push(content.activityEntries.find((entry) => entry.id === added.id) ?? added, original?.kind === "comment" ? original : thread);
+			const thread = projectButterSessionInvocation(projectedSession);
+			entries.push(original?.kind === "comment" ? original : thread);
 		}
 		if (projectedSession.agent.name === "Claude") {
 			entries.push({

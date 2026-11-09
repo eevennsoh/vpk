@@ -211,6 +211,10 @@ test("the empty details agent field opens the searchable picker", async () => {
 	await view.click(view.getByRole("button", { name: "Figma" }));
 	assert.deepEqual(selected, ["figma"]);
 	assert.equal(view.queryByRole("textbox", { name: "Search agents" }), null);
+	await view.rerender({ field: true, onStartAgent: (agent) => selected.push(agent.id), sessions: [crewSession("figma-new", "running", "Figma")] });
+	const avatar = view.getByRole("group", { name: "Agents field" }).querySelector('[data-slot="avatar"]');
+	assert.equal(Boolean(avatar), true);
+	assert.equal(avatar.hasAttribute("data-avatar-enter"), false);
 	await view.unmount();
 });
 
@@ -222,7 +226,7 @@ test("the details agent field opens the searchable selector and continues sessio
 	assert.equal(view.queryByText("Agents") !== null, true);
 	const field = view.getByRole("group", { name: "Agents field" });
 	assert.equal(field.querySelectorAll('[data-slot="avatar"]').length, 2);
-	assert.equal(view.queryByText("Working"), null);
+	assert.equal(field.textContent.includes("Working"), true);
 	await view.click(view.getByRole("button", { name: "2 agents: Working" }));
 	assert.equal(view.queryByRole("dialog", { name: "Add agent" }) !== null, true);
 	assert.equal(view.queryByText("Software agents") !== null, true);
@@ -233,6 +237,56 @@ test("the details agent field opens the searchable selector and continues sessio
 	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Figma");
 	await view.click(view.getByRole("button", { name: "Figma" }));
 	assert.deepEqual(selected, ["figma"]);
+	await view.rerender({ field: true, sessions: [...sessions, crewSession("figma-new", "running", "Figma")], onStartAgent: (agent) => selected.push(agent.id), onOpenSession: (session) => opened.push(session.id) });
+	const front = field.querySelector('[data-agent-loading-slot="front"]');
+	assert.equal(front?.getAttribute("data-agent-id"), "figma-new");
+	assert.equal(Boolean(field.querySelector('[data-agent-loading-slot="back"]')), true);
+	assert.equal(front?.querySelector('[data-agent-loading-intro-size]')?.getAttribute("data-agent-loading-intro-size"), "24");
+	await view.unmount();
+});
+
+test("the details agent field displays the most urgent session state", async () => {
+	const sessions = [crewSession("claude", "running", "Claude"), crewSession("cursor", "complete", "Cursor")];
+	const props = { field: true, sessions, onStartAgent() {} };
+	const view = await renderCrew(props);
+	const field = view.getByRole("group", { name: "Agents field" });
+	assert.equal(field.textContent.includes("Working"), true);
+	await view.rerender({ ...props, sessions: [sessions[0], { ...sessions[1], state: "needs-input" }] });
+	assert.equal(field.textContent.includes("Needs input"), true);
+	await view.rerender({ ...props, sessions: sessions.map((session) => ({ ...session, state: "complete" })) });
+	assert.equal(field.textContent.includes("Finished"), true);
+	await view.unmount();
+});
+
+test("a newly selected agent shows its current state even when another session needs input", async () => {
+	const sessions = [crewSession("claude", "needs-input", "Claude"), crewSession("cursor", "running", "Cursor")];
+	const props = { field: true, sessions, onStartAgent() {} };
+	const view = await renderCrew(props);
+	const field = view.getByRole("group", { name: "Agents field" });
+	assert.equal(field.textContent.includes("Needs input..."), true);
+	await view.click(view.getByRole("button", { name: "2 agents: Needs input" }));
+	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "Figma");
+	await view.click(view.getByRole("button", { name: "Figma" }));
+	const selected = crewSession("figma-new", "running", "Figma");
+	await view.rerender({ ...props, sessions: [...sessions, selected] });
+	assert.equal(view.queryByRole("button", { name: "3 agents: Working" }) !== null, true);
+	assert.equal(field.querySelector(".shimmer")?.textContent, "Working");
+	await view.rerender({ ...props, sessions: [...sessions, { ...selected, state: "needs-input" }] });
+	assert.equal(field.textContent.includes("Needs input..."), true);
+	assert.equal(view.queryByRole("button", { name: "3 agents: Needs input" }) !== null, true);
+	await view.unmount();
+});
+
+test("starting another session for an agent shows the new session state", async () => {
+	const sessions = [crewSession("claude-old", "needs-input", "Claude"), crewSession("cursor", "running", "Cursor")];
+	const props = { field: true, sessions, onStartAgent() {} };
+	const view = await renderCrew(props);
+	await view.click(view.getByRole("button", { name: "2 agents: Needs input" }));
+	await view.click(view.getByRole("button", { name: "Claude" }));
+	await view.click(view.getByRole("button", { name: "Start a new session" }));
+	await view.rerender({ ...props, sessions: [...sessions, crewSession("claude-new", "running", "Claude")] });
+	assert.equal(view.queryByRole("button", { name: "2 agents: Working" }) !== null, true);
+	assert.equal(view.getByRole("group", { name: "Agents field" }).querySelector('[data-agent-loading-slot="front"]')?.getAttribute("data-agent-id"), "claude-new");
 	await view.unmount();
 });
 

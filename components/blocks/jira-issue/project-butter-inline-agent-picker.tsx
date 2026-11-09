@@ -1,7 +1,7 @@
 "use client";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { InlineAgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { Icon } from "@/components/ui/icon";
 import { BUTTER_PICKER_AGENTS } from "./project-butter-agent-catalog";
@@ -9,11 +9,7 @@ import { useProjectButterInvocationActions } from "./project-butter-invocation";
 
 const SOFTWARE_IDS = ["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent", "rovo-cli"];
 
-export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status }: Readonly<{
-	onAssign: (agent: AgentSelectorAgent) => void;
-	onBrowseAgents?: () => void;
-	status?: string;
-}>) {
+export function ProjectButterAgentPreviewBoundary({ agents, children }: Readonly<{ agents: readonly AgentSelectorAgent[]; children: ReactNode }>) {
 	const invocation = useProjectButterInvocationActions();
 	const pointer = useRef<{ x: number; y: number } | null>(null);
 	const frame = useRef<number | null>(null);
@@ -22,7 +18,7 @@ export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status
 		if (!invocation) return;
 		const row = target?.closest<HTMLButtonElement>("button[data-agent-id]");
 		if (!row || !root.contains(row)) return;
-		const agent = BUTTER_PICKER_AGENTS.find((candidate) => candidate.id === row.dataset.agentId);
+		const agent = agents.find((candidate) => candidate.id === row.dataset.agentId);
 		if (!agent) return;
 		const rows = [...root.querySelectorAll<HTMLButtonElement>("button[data-agent-id]")];
 		invocation.preview(agent, rows.indexOf(row));
@@ -39,17 +35,30 @@ export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status
 		if (!invocation) return;
 		pointer.current = { x: event.clientX, y: event.clientY };
 		schedulePreview(event.currentTarget);
-	}} onScrollCapture={(event) => { if (pointer.current) schedulePreview(event.currentTarget); }} onFocusCapture={(event) => { preview(event.currentTarget, event.target); }} onPointerLeave={() => {
+	}} onScrollCapture={(event) => { if (pointer.current) schedulePreview(event.currentTarget); }} onFocusCapture={(event) => {
+		pointer.current = null;
+		if (frame.current !== null) cancelAnimationFrame(frame.current);
+		frame.current = null;
+		preview(event.currentTarget, event.target);
+	}} onPointerLeave={() => {
 		pointer.current = null;
 		if (frame.current !== null) cancelAnimationFrame(frame.current);
 		frame.current = null;
 		invocation?.preview(null, -1);
-	}}><InlineAgentSelector
+	}}>{children}</div>;
+}
+
+export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status }: Readonly<{
+	onAssign: (agent: AgentSelectorAgent) => void;
+	onBrowseAgents?: () => void;
+	status?: string;
+}>) {
+	return <ProjectButterAgentPreviewBoundary agents={BUTTER_PICKER_AGENTS}><InlineAgentSelector
 		agents={BUTTER_PICKER_AGENTS.filter((agent) => agent.id !== "github-copilot" && agent.id !== "rovo-cli")}
 		softwareAgentIds={SOFTWARE_IDS}
 		initialSoftwareLimit={3}
 		getActions={(agent) => [{ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => onAssign(agent) }]}
 		onBrowseAgents={onBrowseAgents}
 		status={status}
-	/></div>;
+	/></ProjectButterAgentPreviewBoundary>;
 }

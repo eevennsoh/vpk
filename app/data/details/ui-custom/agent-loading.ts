@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_LOADING_DETAIL: ComponentDetail = {
 	description:
-		"A compact multi-agent status indicator that cycles hexagonal agent avatars through front, back, and hidden slots, then stops when every agent is finished.",
+		"A compact multi-agent status indicator that shows two hexagonal agent avatars and cycles through all agents until every agent is finished.",
 	usage: `import { AgentLoading } from "@/components/ui-custom/agent-loading";
 
 <AgentLoading

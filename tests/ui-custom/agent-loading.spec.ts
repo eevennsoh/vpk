@@ -10,10 +10,10 @@ test("Claude avatars use the brand background and a white starburst", async ({ p
 	const claude = page.locator('[data-agent-id="claude"] [data-slot="avatar-hexagon-artwork"]').first();
 	for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
 		await page.setViewportSize(viewport);
-		await expect(claude.locator(":scope > span")).toHaveCSS("background-color", "rgb(217, 119, 87)");
+		await expect(claude.locator(":scope > span").first()).toHaveCSS("background-color", "rgb(217, 119, 87)");
 		await expect(claude.locator("svg")).toHaveCSS("filter", "brightness(0) invert(1)");
 		const cursor = page.locator('[data-agent-id="cursor"] [data-slot="avatar-hexagon-artwork"]').first();
-		await expect(cursor.locator(":scope > span")).not.toHaveCSS("background-color", "rgb(217, 119, 87)");
+		await expect(cursor.locator(":scope > span").first()).not.toHaveCSS("background-color", "rgb(217, 119, 87)");
 	}
 });
 
@@ -32,6 +32,70 @@ test("the live demo can cycle two, three, and four agents", async ({ page }) => 
 	await expect(page.getByRole("status").filter({ hasText: "Needs input" }).first()).toContainText(
 		"4 agents working",
 	);
+});
+
+test("two avatars stay visible while three and four agents rotate through", async ({ page }) => {
+	test.setTimeout(45_000);
+	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });
+	const loading = page.getByRole("status").filter({ hasText: "Needs input" }).first().locator(".agent-loading");
+	for (const slot of ["front", "back"]) {
+		await expect(loading.locator(`[data-agent-loading-slot="${slot}"]`)).toHaveCSS("opacity", /^(1|0\.8)$/);
+	}
+	await expect(loading.locator('[data-agent-loading-slot="hidden"]')).toHaveCSS("opacity", "0");
+	const threeSeen = new Set<string>();
+	await expect.poll(async () => {
+		const id = await loading.locator('[data-agent-loading-slot="front"]').last().getAttribute("data-agent-id");
+		if (id) threeSeen.add(id);
+		return threeSeen.size;
+	}, { timeout: 12_000, intervals: [300] }).toBe(3);
+
+	await page.getByRole("button", { name: "4 agents" }).click();
+	const seen = new Set<string>();
+	await expect.poll(async () => {
+		const id = await loading.locator('[data-agent-loading-slot="front"]').last().getAttribute("data-agent-id");
+		if (id) seen.add(id);
+		return seen.size;
+	}, { timeout: 15_000, intervals: [300] }).toBe(4);
+	for (const slot of ["front", "back"]) {
+		await expect(loading.locator(`[data-agent-loading-slot="${slot}"]`).last()).toHaveCSS("opacity", /^(1|0\.8)$/);
+	}
+	await expect(loading.locator('[data-agent-loading-slot="hidden"]').last()).toHaveCSS("opacity", "0");
+});
+
+test("rotation follows the original back-to-front sequence and coordinated fade", async ({ page }) => {
+	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });
+	const loading = page.getByRole("status").filter({ hasText: "Needs input" }).first().locator(".agent-loading");
+	for (const count of [2, 3, 4]) {
+		await page.getByRole("button", { name: `${count} agents` }).click();
+		const previousBack = await loading.locator('[data-agent-loading-slot="back"]').getAttribute("data-agent-id");
+		const motion = await loading.evaluate(async (element, agentCount) => {
+			const start = performance.now();
+			let faded = false;
+			let coordinated = false;
+			let restHasTwo = true;
+			const frontAgents = new Set<string>();
+			while (performance.now() - start < 3_100) {
+				const avatars = [...element.querySelectorAll<HTMLElement>("[data-agent-loading-slot]")];
+				const opacities = avatars
+					.map((avatar) => Number(getComputedStyle(avatar).opacity));
+				const front = avatars.find((avatar) => avatar.dataset.agentLoadingSlot === "front");
+				if (front?.dataset.agentId) frontAgents.add(front.dataset.agentId);
+				if (element.getAttribute("data-swapping") === "true") {
+					const partial = opacities.filter((opacity) => agentCount === 2 ? opacity > 0.81 && opacity < 0.99 : opacity > 0.05 && opacity < 0.75);
+					faded ||= partial.length > 0;
+					coordinated ||= partial.length > 1;
+				} else {
+					restHasTwo &&= opacities.filter((opacity) => opacity > 0.01).length === 2;
+				}
+				await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			}
+			return { frontAgents: [...frontAgents], faded, coordinated, restHasTwo };
+		}, count);
+		expect(motion.faded).toBe(true);
+		expect(motion.coordinated).toBe(true);
+		expect(motion.restHasTwo).toBe(true);
+		expect(motion.frontAgents).toContain(previousBack);
+	}
 });
 
 test("a live reduced-motion preference stops Agent Loading before it resumes", async ({ page }) => {

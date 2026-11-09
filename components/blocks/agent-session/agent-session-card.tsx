@@ -747,7 +747,7 @@ export function AgentSessionCard({
 										? <AgentSessionLongMetadata item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
-								metadataOutsideViewTrigger={isTitleLed && renderAgentAvatar !== undefined}
+								metadataOutsideViewTrigger={isTitleLed && (renderAgentAvatar !== undefined || item.privateTo !== undefined)}
 								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
 								renderIdentity={() => {

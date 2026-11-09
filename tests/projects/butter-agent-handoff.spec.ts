@@ -54,6 +54,23 @@ test("Butter v1 starts a working session with reduced motion", async ({ page }) 
 	await expect(card.locator(".agent-loading-intro-front")).toHaveCount(0);
 });
 
+test("Butter v1 shows two avatars for three working agents in the board chin", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	const card = page.locator('[data-issue-key="PAY-105"][data-board-column-title]');
+	for (const name of ["Claude", "Jira Coding Agent"]) {
+		await card.getByRole("button", { name: "Add agent to PAY-105" }).focus();
+		await page.keyboard.press("Enter");
+		await page.getByRole("dialog", { name: "Agents", exact: true }).getByRole("button", { name, exact: true }).click();
+	}
+	await expect(card.getByRole("button", { name: "3 agents: Working" })).toBeVisible();
+	for (const slot of ["front", "back"]) {
+		await expect(card.locator(`[data-agent-loading-slot="${slot}"]`)).toHaveCSS("opacity", /^(1|0\.8)$/);
+	}
+	await expect(card.locator('[data-agent-loading-slot="hidden"]')).toHaveCSS("opacity", "0");
+});
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Butter v1 previews the agent under the pointer while scrolling (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });

@@ -136,7 +136,7 @@ function createContent(
 				: workItem
 					? []
 					: createProjectButterActivity(empty)),
-			...sessions.flatMap(projectButterSessionInvocation),
+			...sessions.map(projectButterSessionInvocation),
 		].sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0)),
 		activityFocusId,
 		dueDate,
@@ -224,12 +224,12 @@ export function useProjectButterContent(
 				);
 			},
 			recordSessionInvocation: (session: ProjectButterSessionItem, autoAssignTo?: WorkItemPerson) => {
-				const [added, entry] = projectButterSessionInvocation(session);
+				const entry = projectButterSessionInvocation(session);
 				const id = crypto.randomUUID();
 				const createdAtMs = Date.now();
 				updateState((previous) => {
 					if (previous.activityEntries.some((item) => item.id === entry.id)) return { ...previous, activityView: "Activity" };
-					const next = { ...previous, activityView: "Activity" as const, activityEntries: [...previous.activityEntries, added, entry] };
+					const next = { ...previous, activityView: "Activity" as const, activityEntries: [...previous.activityEntries, entry] };
 					return autoAssignTo && (previous.assignee.name === "Unassigned" || previous.assignee.name === "Automatic")
 						? appendProjectButterAudit({ ...next, assignee: autoAssignTo }, { id, createdAtMs, label: "Assignee", before: "Unassigned", after: autoAssignTo.name, action: `automatically assigned this work item to ${autoAssignTo.name}` }, currentUser)
 						: next;

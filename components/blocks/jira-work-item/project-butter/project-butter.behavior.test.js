@@ -144,12 +144,12 @@ test("a host chat shows Ask Rovo and receives agent session links instead of the
 	});
 	assert.equal(view.queryByRole("button", { name: "Ask Rovo" }) !== null, true, "a host chat exposes the global Ask Rovo pill");
 	assert.equal(document.querySelector('aside[aria-label="Host chat"]') !== null, true, "the host chat mounts beside the work item");
-	await view.click(view.getByRole("button", { name: "Finished, open Cursor chat" }));
+	await view.click(view.getByRole("button", { name: /^Compare the Q3 revenue forecast/u }));
 	assert.deepEqual(opened, ["butter-cursor-forecast"]);
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Cursor" }), null, "the floating session card must not open when a host owns the chat");
 	await view.rerender({ hosted: false });
 	assert.equal(view.queryByRole("button", { name: "Ask Rovo" }), null, "without a host chat there is nothing for Ask Rovo to open");
-	await view.click(view.getByRole("button", { name: "Finished, open Cursor chat" }));
+	await view.click(view.getByRole("button", { name: /^Compare the Q3 revenue forecast/u }));
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Cursor" }) !== null, true, "without a host the floating card stays the fallback");
 	delete globalThis.__butterOpened;
 });
@@ -160,10 +160,9 @@ test("Project butter shows the reference sessions and keeps replies scoped to ea
 	assert.equal(document.querySelector('div[aria-label="Product navigation"]:not([role])') === null, true);
 	await showAllActivity(view);
 	assert.equal(view.queryByText("Draft billing flow PRD") !== null, true);
-	assert.equal(view.queryByRole("button", { name: "Open Jira Scoping agent chat" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: /^Troubleshoot 403 API errors/u }) !== null, true);
 	assert.equal(view.queryByText("Review Teamwork onboarding guide") !== null, true);
-	// The session's inline chip (which replaced the standalone response card) opens its chat.
-	await view.click(view.getByRole("button", { name: /open Jira Coding agent chat$/iu }));
+	await view.click(view.getByRole("button", { name: /^Draft billing flow PRD/u }));
 	await view.fill(view.getByRole("textbox", { name: "Reply to Jira Coding agent" }), "Ship the MVP path first");
 	await openSession(view, "Jira Scoping agent");
 	await view.fill(view.getByRole("textbox", { name: "Reply to Jira Scoping agent" }), "Focus on first-run setup");
@@ -224,7 +223,7 @@ test("Butter board activation opens the selected item and preserves edits separa
 	await view.fill(view.getByRole("textbox", { name: "Work item description" }), "First card saved scope");
 	await view.focus(view.getByRole("button", { name: "Description" }));
 	await showAllActivity(view);
-	await view.click(view.getByRole("button", { name: /open Claude chat$/iu }));
+	await view.click(view.getByRole("button", { name: /^Inspect payment calls/u }));
 	await view.fill(view.getByRole("textbox", { name: "Reply to Claude" }), "First card reply draft");
 	await view.click(view.getByRole("button", { name: "Close Project butter work item" }));
 	assert.equal(view.queryByRole("dialog") === null, true);
@@ -778,7 +777,7 @@ test("own comments can be edited and deleted with both actions recorded in Activ
 
 test("pinned local sessions open the continuation menu in place", async () => {
 	const view = await renderWorkItem();
-	await view.click(view.getByRole("button", { name: "Continue Claude session" }));
+	await view.click(view.getByRole("button", { name: /^Review Teamwork onboarding guide/u }));
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }), null);
 	assert.equal(view.queryByRole("menuitem", { name: /Terminal/u }) !== null, true);
 	await view.press(document.body, "Escape");

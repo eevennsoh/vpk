@@ -18,7 +18,7 @@ import {
 	useProjectButterInvocationPreview,
 } from "./project-butter-invocation";
 
-function InvocationPreview({ iconScale }: Readonly<{ iconScale?: JiraIssueIconScale }>) {
+export function ProjectButterInvocationPreview({ className, compactWhenReduced = false, iconScale }: Readonly<{ className?: string; compactWhenReduced?: boolean; iconScale?: JiraIssueIconScale }>) {
 	const { agent, previousAgent, direction, sequence } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const animate = !reduce && sequence > 0 && agent?.id !== previousAgent?.id;
@@ -29,12 +29,12 @@ function InvocationPreview({ iconScale }: Readonly<{ iconScale?: JiraIssueIconSc
 			data-slot="jira-issue-agent-invocation-preview"
 			data-agent-id={agent?.id ?? "default"}
 			data-direction={direction === 1 ? "forward" : "backward"}
-			className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)))}
+			className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)), className)}
 		>
-			<span className="flex size-6 shrink-0 items-center justify-center">
+			<span className={cn("flex size-6 shrink-0 items-center justify-center", agent && compactWhenReduced && reduce ? "items-start justify-start" : undefined)}>
 				{agent ? (
 					(agent.visual ?? (
-						<span className="block size-4" style={{ transform: `scale(${getJiraIssueAgentAvatarSize(agent.brandName, agent.avatarSrc) / 16})` }}>
+						<span className="block size-4" style={{ transform: `scale(${compactWhenReduced && reduce ? 1 : getJiraIssueAgentAvatarSize(agent.brandName, agent.avatarSrc) / 16})` }}>
 						<AgentAvatarVisual
 							appearance="coding"
 							avatarClassName="size-4"
@@ -158,7 +158,7 @@ export function ProjectButterInvocationChin({
 				{children}
 			</motion.div>
 			{previewing && !intoPuzzle ? <div className="pointer-events-none absolute inset-x-0 top-0 px-1 py-1">
-				{phase === "choosing" ? <InvocationPreview iconScale={iconScale} /> : <InvocationHandoff iconScale={iconScale} showStatus={!activities?.length} />}
+				{phase === "choosing" ? <ProjectButterInvocationPreview iconScale={iconScale} /> : <InvocationHandoff iconScale={iconScale} showStatus={!activities?.length} />}
 			</div> : null}
 		</motion.div>
 	);

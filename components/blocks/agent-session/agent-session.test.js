@@ -143,7 +143,8 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 		METADATA_SOURCE,
 		/<span\s+aria-label=\{label\}\s+className=\{cn\([\s\S]*?\)\}\s+role="img"/u,
 	);
-	assert.doesNotMatch(METADATA_SOURCE, /Tooltip|tabIndex|handleTooltipWheel/u);
+	const hostSegment = METADATA_SOURCE.slice(METADATA_SOURCE.indexOf("export function AgentSessionHostSegment"), METADATA_SOURCE.indexOf("function toArtifactLabel"));
+	assert.doesNotMatch(hostSegment, /Tooltip|tabIndex|handleTooltipWheel/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "host"/u);
 	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`[\s\S]*export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*underline-offset-2 hover:underline[\s\S]*\{pullRequestLabel\}/u);
