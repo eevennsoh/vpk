@@ -1,5 +1,61 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
+
+async function expectSingleSelectorSurface(popup: Locator) {
+	const selector = popup.locator("[data-overlay-surface]");
+	await expect(selector).toBeVisible();
+	await expect(popup).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(popup).toHaveCSS("overflow", "visible");
+	const shadows = await popup.evaluate((element) => getComputedStyle(element).boxShadow.match(/rgba?\([^)]+\)/g) ?? []);
+	expect(shadows.every((color) => color === "rgba(0, 0, 0, 0)")).toBe(true);
+	await expect(selector).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(selector).not.toHaveCSS("box-shadow", "none");
+}
+
+test("the board's agent submenu has one surface", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	const card = page.locator('[data-issue-key="PAY-118"][data-board-column-title]');
+	await card.getByRole("button", { name: "More actions for PAY-118" }).focus();
+	await page.keyboard.press("Enter");
+	const menu = page.getByRole("menu", { name: "More actions for PAY-118" });
+	await expect(menu).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(menu).not.toHaveCSS("box-shadow", "none");
+	await page.getByRole("menuitem", { name: /^Add agent/ }).hover();
+	await expectSingleSelectorSurface(page.getByRole("dialog", { name: "Agents", exact: true }));
+});
+
+test("Butter v1 board and work item use the direct cloud agent selector", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const gallery = page.getByRole("group", { name: "Gallery items" });
+	await gallery.getByRole("button", { name: "Select Work item" }).click();
+	const workItem = page.getByRole("region", { name: "Work item full screen view" });
+	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button").click();
+	const workItemPicker = page.getByRole("dialog", { name: "Add agent" });
+	await expectSingleSelectorSurface(workItemPicker);
+	await expect(workItemPicker.getByRole("button", { name: "Browse agents" })).toBeVisible();
+	await expect(workItemPicker.getByRole("button", { name: "Create agent" })).toHaveCount(0);
+	await expect(workItemPicker.getByRole("button", { name: "Show more" })).toBeVisible();
+	await workItemPicker.getByRole("button", { name: "Claude", exact: true }).click();
+	await expect(workItemPicker).toHaveCount(0);
+	await expect(workItem.getByText("Start a new session", { exact: true })).toHaveCount(0);
+	await expect(workItem.getByRole("list", { name: "Activity timeline" })).toContainText("Redesign onboarding flow for new users");
+
+	await gallery.getByRole("button", { name: "Select Board" }).click();
+	const card = page.locator('[data-issue-key="PAY-118"][data-board-column-title]');
+	await card.hover();
+	await card.getByRole("button", { name: "Add agent to PAY-118" }).click();
+	const boardPicker = page.getByRole("dialog", { name: "Agents", exact: true });
+	await expectSingleSelectorSurface(boardPicker);
+	await expect(boardPicker.getByRole("button", { name: "Browse agents" })).toBeVisible();
+	await expect(boardPicker.getByRole("button", { name: "Create agent" })).toHaveCount(0);
+	await expect(boardPicker.getByRole("button", { name: "Show more" })).toBeVisible();
+	await boardPicker.getByRole("button", { name: "Claude", exact: true }).click();
+	await expect(boardPicker).toHaveCount(0);
+	await expect(card.getByRole("button", { name: /Claude: (Working|Needs input)/ })).toBeVisible();
+});
 
 test("Work item gallery displays the Project Butter screen with floating Rovo", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });

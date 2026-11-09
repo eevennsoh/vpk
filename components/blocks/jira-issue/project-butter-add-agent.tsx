@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ProjectButterAgentPicker, ProjectButterAgentPickerContent } from "./project-butter-agent-picker";
-import { ProjectButterInlineAgentPicker } from "./project-butter-inline-agent-picker";
+import { ProjectButterCloudAgentPicker } from "./project-butter-inline-agent-picker";
 import { ButterInlineAgentPickerContext } from "./project-butter-inline-picker-context";
 import {
 	useProjectButterInvocationActions,
@@ -48,18 +48,19 @@ export function ProjectButterMenuAgentSubmenu({ assignment, onRequestClose, trig
 	triggerRef: RefObject<HTMLElement | null>;
 }>) {
 	const actions = useProjectButterInvocationActions();
+	const cloudPicker = use(ButterInlineAgentPickerContext);
 	const assignAgent = useButterAgentAssignment(assignment, triggerRef);
 	return (
 		<DropdownMenuSub onOpenChange={(open) => open ? actions?.open("menu") : actions?.close()}>
 			<DropdownMenuSubTrigger aria-haspopup="dialog">Add agent</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent aria-label="Agents" role="dialog" className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
-				<ProjectButterAgentPickerContent
+				{cloudPicker ? <ProjectButterCloudAgentPicker onAssign={(agent) => { assignAgent(agent); onRequestClose(); }} onBrowseAgents={assignment.onBrowseAgents ? () => { onRequestClose(); assignment.onBrowseAgents?.(); } : undefined} /> : <ProjectButterAgentPickerContent
 					sessions={assignment.sessions}
 					onContinueSession={assignment.onOpenSession ? (session) => { actions?.close(); onRequestClose(); assignment.onOpenSession?.(session); } : undefined}
 					onAssign={(agent) => { assignAgent(agent); onRequestClose(); }}
 					onBrowseAgents={assignment.onBrowseAgents ? () => { onRequestClose(); assignment.onBrowseAgents?.(); } : undefined}
 					onCreateAgent={assignment.onCreateAgent ? () => { onRequestClose(); assignment.onCreateAgent?.(); } : undefined}
-				/>
+				/>}
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
 	);
@@ -74,10 +75,11 @@ export function ProjectButterMenuAgentPicker({ assignment, id, source: pickerSou
 	const phase = useProjectButterInvocationPhase();
 	const source = useProjectButterInvocationSource();
 	const actions = useProjectButterInvocationActions();
+	const cloudPicker = use(ButterInlineAgentPickerContext);
 	const assignAgent = useButterAgentAssignment(assignment, triggerRef);
 	return (
 		<Popover open={phase === "choosing" && source === pickerSource} onOpenChange={(open) => open ? actions?.open(pickerSource) : actions?.close()}>
-			<ProjectButterAgentPicker id={id} anchor={triggerRef} onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents} onCreateAgent={assignment.onCreateAgent} sessions={assignment.sessions} onContinueSession={assignment.onOpenSession ? (session) => { actions?.close(); assignment.onOpenSession?.(session); } : undefined} />
+			{cloudPicker ? <PopoverContent id={id} anchor={triggerRef} aria-label="Agents" side="right" align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}><ProjectButterCloudAgentPicker onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents ? () => { actions?.close(); assignment.onBrowseAgents?.(); } : undefined} /></PopoverContent> : <ProjectButterAgentPicker id={id} anchor={triggerRef} onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents} onCreateAgent={assignment.onCreateAgent} sessions={assignment.sessions} onContinueSession={assignment.onOpenSession ? (session) => { actions?.close(); assignment.onOpenSession?.(session); } : undefined} />}
 		</Popover>
 	);
 }
@@ -151,7 +153,7 @@ export function ProjectButterAddAgent({
 					</TooltipContent>
 				</Tooltip>
 				{inlinePicker ? <PopoverContent aria-label="Agents" side="right" align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0 [&>div]:max-h-[var(--available-height,26rem)]" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
-					<ProjectButterInlineAgentPicker sessions={assignment.sessions} onContinueSession={assignment.onOpenSession ? (session) => { actions.close(); assignment.onOpenSession?.(session); } : undefined} onAssign={(agent) => { setTooltipOpen(false); assignAgent(agent); }} onBrowseAgents={assignment.onBrowseAgents ? () => { actions.close(); assignment.onBrowseAgents?.(); } : undefined} onCreateAgent={assignment.onCreateAgent ? () => { actions.close(); assignment.onCreateAgent?.(); } : undefined} />
+					<ProjectButterCloudAgentPicker onAssign={(agent) => { setTooltipOpen(false); assignAgent(agent); }} onBrowseAgents={assignment.onBrowseAgents ? () => { actions.close(); assignment.onBrowseAgents?.(); } : undefined} />
 				</PopoverContent> : <ProjectButterAgentPicker
 					sessions={assignment.sessions}
 					onContinueSession={assignment.onOpenSession ? (session) => { actions.close(); assignment.onOpenSession?.(session); } : undefined}

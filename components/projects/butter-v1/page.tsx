@@ -11,6 +11,7 @@ import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse, RetainedView } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { Gallery } from "@/components/blocks/gallery";
+import { JiraLocalAgentMenu } from "@/components/blocks/jira-local-agent";
 import { DEVELOPMENT_PANEL_PULL_REQUESTS } from "@/components/blocks/pull-request/data/demo-pull-requests";
 import { useRovoChat } from "@/app/contexts/context-rovo-chat";
 import { getMessageText } from "@/lib/rovo-ui-messages";
@@ -65,7 +66,7 @@ import AppLayout from "@/components/projects/page";
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { ButterList } from "./components/butter-list";
-import { ButterAgentSelectorControls, ButterAgentSelectorGallery, type ButterAgentPresentation } from "./components/butter-agent-selector-gallery";
+import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-gallery";
 import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MerchantJourneyCompactControls, MerchantJourneyControls } from "./components/merchant-journey-controls";
@@ -189,6 +190,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 		<>
 			{workItem.selection ? (
 				<ButterWorkItemDialog
+					cloudAgentSelector
 					initialPresentation="modal"
 					shell="project"
 					initialPreset="filled"
@@ -217,13 +219,11 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 }
 
 export default function ButterPage(): React.ReactElement {
-	const [selectedId, setSelectedId] = useState("board");
+	const [selectedId, setSelectedId] = useState("agent-selector");
 	const [journeyResetKey, setJourneyResetKey] = useState(0);
 	const [collapsedBoardColumns, setCollapsedBoardColumns] = useState<ReadonlySet<string>>(() => new Set());
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
 	const [duplicativeSessionsResetKey, setDuplicativeSessionsResetKey] = useState(0);
-	const [agentSelectorPresentation, setAgentSelectorPresentation] = useState<ButterAgentPresentation>("inline");
-	const [duplicativeSessionsPresentation, setDuplicativeSessionsPresentation] = useState<ButterAgentPresentation>("inline");
 	const [pullRequestResetKey, setPullRequestResetKey] = useState(0);
 	const [workItemResetKey, setWorkItemResetKey] = useState(0);
 	const [pullRequestStatus, setPullRequestStatus] = useState<ButterPullRequestStatus>("open");
@@ -267,16 +267,12 @@ export default function ButterPage(): React.ReactElement {
 	}, []);
 	const reset = useCallback(() => { journeyRef.current?.cancelReplay(); setPhase("prepare"); setActiveStep(0); setJourneySession(undefined); setJumpRevision(0); setAutoFixEnabled(true); setAutoMergeEnabled(true); setPullRequestVisible(false); setJourneyResetKey((current) => current + 1); }, []);
 	const controls = { onSelectStep: selectStep, activeStep };
-	const galleryControls = selectedId === "agent-selector"
-		? <ButterAgentSelectorControls presentation={agentSelectorPresentation} onPresentationChange={setAgentSelectorPresentation} />
-		: selectedId === "duplicative-sessions"
-			? <ButterAgentSelectorControls presentation={duplicativeSessionsPresentation} onPresentationChange={setDuplicativeSessionsPresentation} />
-			: selectedId === "pull-request"
-				? <ToggleGroup aria-label="Pull request status" onValueChange={(values) => { if (values[0] === "open" || values[0] === "merged") setPullRequestStatus(values[0]); }} size="sm" value={[pullRequestStatus]} variant="outline">
-					<ToggleGroupItem value="open">Open PR</ToggleGroupItem>
-					<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
-				</ToggleGroup>
-				: null;
+	const galleryControls = selectedId === "pull-request"
+		? <ToggleGroup aria-label="Pull request status" onValueChange={(values) => { if (values[0] === "open" || values[0] === "merged") setPullRequestStatus(values[0]); }} size="sm" value={[pullRequestStatus]} variant="outline">
+			<ToggleGroupItem value="open">Open PR</ToggleGroupItem>
+			<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
+		</ToggleGroup>
+		: null;
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
@@ -288,7 +284,7 @@ export default function ButterPage(): React.ReactElement {
 				title="Project Butter v1"
 				showTopBarBorder
 				stagePosition="center"
-				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorPresentation("inline"); setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsPresentation("inline"); setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } }}
+				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } }}
 				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
 				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
 				renderSelectedItem={(item) => item.id === "development-panel" ? (
@@ -301,12 +297,24 @@ export default function ButterPage(): React.ReactElement {
 			/>
 			<RetainedView active={selectedId === "agent-selector"} retain>
 				<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex justify-center overflow-y-auto px-4 pt-4 pb-56">
-					<ButterAgentSelectorGallery key={agentSelectorResetKey} presentation={agentSelectorPresentation} />
+					<div key={agentSelectorResetKey} className="my-auto flex w-full flex-col items-center justify-center gap-6 md:flex-row md:items-start">
+						<h1 className="sr-only">Agent selector</h1>
+						<div className="flex w-80 max-w-full shrink-0 flex-col gap-2">
+							<h2 className="text-center text-xs font-semibold text-text-subtlest">Cloud</h2>
+							<ButterAgentSelectorGallery cloudOnly showCreateAgent={false} />
+						</div>
+						<div className="flex w-80 max-w-full shrink-0 flex-col gap-2">
+							<h2 className="text-center text-xs font-semibold text-text-subtlest">Local</h2>
+							<section aria-label="Jira Local Agent" className="pointer-events-auto w-full overflow-hidden rounded-xl bg-popover text-popover-foreground" style={{ boxShadow: token("elevation.shadow.overlay") }}>
+								<JiraLocalAgentMenu workItem={{ code: "PAY-999", summary: "Improve merchant onboarding for Payments SDK v2", description: "" }} />
+							</section>
+						</div>
+					</div>
 				</div>
 			</RetainedView>
 			<RetainedView active={selectedId === "duplicative-sessions"} retain>
 				<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex justify-center overflow-y-auto px-4 pt-4 pb-56">
-					<ButterAgentSelectorGallery key={duplicativeSessionsResetKey} presentation={duplicativeSessionsPresentation} variant="duplicative-sessions" />
+					<ButterAgentSelectorGallery key={duplicativeSessionsResetKey} variant="duplicative-sessions" showCreateAgent={false} />
 				</div>
 			</RetainedView>
 			<RetainedView active={selectedId === "work-item"} retain>
@@ -337,7 +345,7 @@ function ButterGalleryWorkItem({ open, onClose }: Readonly<{ open: boolean; onCl
 		<>
 			<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex items-start justify-center overflow-hidden">
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} open={open} shell="gallery" />
+					<ProjectButterJiraWorkItem cloudAgentSelector currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} open={open} shell="gallery" />
 				</div>
 			</div>
 			{open ? <JgpRovoOverlay /> : null}
@@ -514,7 +522,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 			id: `${card.code}:${crypto.randomUUID()}`,
 			agent: { id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo },
 			title: card.title,
-			state: "needs-input",
+			state: "running",
 			host: "cloud",
 			startedAtMs: Date.now(),
 			timeLabel: "Just now",

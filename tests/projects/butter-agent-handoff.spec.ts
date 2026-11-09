@@ -3,6 +3,88 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
+test("Butter v1 cycles the selected agent into Working and scales its avatar", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	for (const { key, name, agentId } of [{ key: "PAY-105", name: "Claude", agentId: "claude-code" }, { key: "PAY-105", name: "Cursor", agentId: "test-agent" }]) {
+		const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
+		await card.hover();
+		await card.getByRole("button", { name: `Add agent to ${key}` }).click();
+		const agent = page.getByRole("dialog", { name: "Agents", exact: true }).getByRole("button", { name, exact: true });
+		await agent.hover();
+		const samplesPromise = page.evaluate(async ({ issueKey, selectedAgentId }) => {
+			const button = document.querySelector<HTMLButtonElement>(`[role="dialog"][aria-label="Agents"] button[data-agent-id="${selectedAgentId}"]`);
+			if (!button) throw new Error("Agent button not found");
+			await new Promise<void>((resolve) => button.addEventListener("click", () => resolve(), { once: true, capture: true }));
+			const samples: { time: number; outgoing: string; incoming: string; incomingOpacity: number; avatarScale: number }[] = [];
+			const start = performance.now();
+			while (performance.now() - start < 1600) {
+				const card = document.querySelector(`[data-issue-key="${issueKey}"][data-board-column-title]`);
+				const outgoing = card?.querySelector('[data-handoff-label="outgoing"]')?.textContent ?? "";
+				const incomingElement = card?.querySelector<HTMLElement>('[data-handoff-label="incoming"]');
+				const incoming = incomingElement?.textContent ?? "";
+				const avatar = card?.querySelector<HTMLElement>('.agent-loading-intro-front, [data-slot="jira-issue-agent-invocation-handoff"] > span');
+				samples.push({ time: performance.now() - start, outgoing, incoming, incomingOpacity: incomingElement ? Number(getComputedStyle(incomingElement).opacity) : -1, avatarScale: avatar ? new DOMMatrixReadOnly(getComputedStyle(avatar).transform).a : 0 });
+				await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			}
+			return samples;
+		}, { issueKey: key, selectedAgentId: agentId });
+		await agent.click();
+		const samples = await samplesPromise;
+		expect(samples.some((sample) => sample.outgoing === `Add ${name}` && sample.incoming === "Working"), JSON.stringify(samples)).toBe(true);
+		expect(samples.some((sample) => sample.avatarScale !== 0 && sample.avatarScale !== 1), JSON.stringify(samples)).toBe(true);
+		if (samples.some((sample) => sample.avatarScale > 0.8 && sample.avatarScale < 0.9)) {
+			expect(samples.some((sample) => sample.incomingOpacity > 0.9 && sample.avatarScale > 0.9 && sample.avatarScale < 1)).toBe(true);
+		}
+		await expect(card.getByRole("button", { name: /Working/ })).toBeVisible();
+	}
+});
+
+test("Butter v1 starts a working session with reduced motion", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	const card = page.locator('[data-issue-key="PAY-118"][data-board-column-title]');
+	await card.getByRole("button", { name: "Add agent to PAY-118" }).focus();
+	await page.keyboard.press("Enter");
+	await page.getByRole("dialog", { name: "Agents", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
+	await expect(card.getByRole("button", { name: "Claude: Working" })).toBeVisible();
+	await expect(card.locator('[data-slot="jira-issue-agent-invocation-handoff"]')).toHaveCount(0);
+	await expect(card.locator(".agent-loading-intro-front")).toHaveCount(0);
+});
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`Butter v1 previews the agent under the pointer while scrolling (${reducedMotion})`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Select Board" }).click();
+		const card = page.locator('[data-issue-key="PAY-105"][data-board-column-title]');
+		await card.getByRole("button", { name: "Add agent to PAY-105" }).focus();
+		await page.keyboard.press("Enter");
+		const picker = page.getByRole("dialog", { name: "Agents", exact: true });
+		const claude = picker.getByRole("button", { name: "Claude", exact: true });
+		await claude.hover();
+		const preview = card.locator('[data-slot="jira-issue-agent-invocation-preview"]');
+		await expect(preview).toHaveAttribute("data-agent-id", "claude-code");
+		const box = await claude.boundingBox();
+		if (!box) throw new Error("Claude row is not visible");
+		const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+		await page.mouse.wheel(0, 120);
+		await expect.poll(async () => page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest<HTMLButtonElement>("button[data-agent-id]")?.dataset.agentId ?? "", point)).not.toBe("claude-code");
+		const hovered = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest<HTMLButtonElement>("button[data-agent-id]")?.dataset.agentId, point);
+		if (!hovered) throw new Error("Scrolling did not move another agent beneath the pointer");
+		await expect(preview).toHaveAttribute("data-agent-id", hovered);
+		await expect(preview).toHaveAttribute("data-direction", "forward");
+		await expect(preview.locator("[data-preview-layer]")).toHaveCount(reducedMotion === "reduce" ? 0 : 2);
+		await page.mouse.wheel(0, -120);
+		await expect(preview).toHaveAttribute("data-agent-id", "claude-code");
+		await expect(preview).toHaveAttribute("data-direction", "backward");
+		await card.getByRole("button", { name: "Add agent to PAY-105" }).click();
+		await expect(preview).toHaveCount(0);
+	});
+}
+
 async function selectCodingAgent(page: Page, key: string) {
 	const card = page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 	await card.getByRole("button", { name: `Add agent to ${key}` }).focus();

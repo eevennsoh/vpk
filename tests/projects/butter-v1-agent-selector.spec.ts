@@ -1,7 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
+
+const iconInkCenter = (locator: Locator) => locator.evaluate((element) => {
+	if (!(element instanceof SVGSVGElement)) throw new Error("Expected an SVG icon");
+	const bounds = element.getBoundingClientRect();
+	const ink = element.getBBox();
+	const viewBox = element.viewBox.baseVal;
+	return bounds.x + (ink.x + ink.width / 2 - viewBox.x) * bounds.width / viewBox.width;
+});
 
 test("Butter v1 gallery shows the Project Butter agent selector", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
@@ -14,14 +22,36 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	await expect(picker.getByText("Jira Coding Agent", { exact: true })).toBeVisible();
 	await expect(picker.getByText("Claude", { exact: true })).toBeVisible();
 	await expect(picker.getByText("Cursor", { exact: true })).toBeVisible();
-	await picker.getByRole("button", { name: "Cursor", exact: true }).click();
-	await expect(picker.getByRole("button", { name: /Continue (with last|to existing) session/ })).toHaveCount(0);
-	await expect(picker.getByRole("button", { name: "Start a new session" })).toBeVisible();
-	await expect(picker.getByRole("button", { name: "Open in Cursor" })).toBeVisible();
-	await expect(picker.getByRole("button", { name: "Browse agents" })).toBeVisible();
-	await expect(picker.getByRole("button", { name: "Create agent" })).toBeVisible();
-	await expect(page.getByLabel("Project Butter issue card")).toHaveCount(0);
 	const search = picker.getByRole("textbox", { name: "Search agents" });
+	await expect(picker.getByRole("button", { name: "Show more" })).toBeVisible();
+	await expect(picker.getByRole("button", { name: "Codex", exact: true })).toHaveCount(0);
+	await search.fill("Codex");
+	await expect(picker.getByRole("button", { name: "Codex", exact: true })).toBeVisible();
+	await search.fill("");
+	await picker.getByRole("button", { name: "Show more" }).focus();
+	await page.keyboard.press("Enter");
+	await expect(picker.getByRole("button", { name: "Codex", exact: true })).toBeFocused();
+	await expect(picker.getByRole("button", { name: "Show more" })).toHaveCount(0);
+	const cursor = picker.getByRole("button", { name: "Cursor", exact: true });
+	await cursor.click();
+	await expect(picker.getByRole("status")).toHaveText("Start on Cloud · Cursor (preview)");
+	await expect(cursor).not.toHaveAttribute("aria-expanded");
+	await expect(picker.getByRole("button", { name: "Start a new session" })).toHaveCount(0);
+	await expect(picker.getByRole("button", { name: "Open in Cursor" })).toHaveCount(0);
+	await expect(picker.getByRole("button", { name: "Rovo CLI", exact: true })).toHaveCount(0);
+	for (const name of ["Jira Coding Agent", "Claude", "Codex", "GitHub Copilot"]) {
+		const agent = picker.getByRole("button", { name, exact: true });
+		await agent.click();
+		await expect(picker.getByRole("status")).toHaveText(`Start on Cloud · ${name} (preview)`);
+		await expect(agent).not.toHaveAttribute("aria-expanded");
+	}
+	const local = page.getByRole("region", { name: "Jira Local Agent" });
+	await local.getByRole("button", { name: "Configure Rovo CLI" }).click();
+	await expect(page.getByRole("dialog", { name: "Rovo CLI local options" }).getByRole("textbox", { name: "Choose your directory" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(picker.getByRole("button", { name: "Browse agents" })).toBeVisible();
+	await expect(picker.getByRole("button", { name: "Create agent" })).toHaveCount(0);
+	await expect(page.getByLabel("Project Butter issue card")).toHaveCount(0);
 	await search.fill("Claude");
 	await expect(picker.getByText("Claude", { exact: true })).toBeVisible();
 	await expect(picker.getByText("Cursor", { exact: true })).toHaveCount(0);
@@ -31,51 +61,201 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	await expect(search).toHaveValue("Claude");
 	await page.getByRole("button", { name: "Reset", exact: true }).click();
 	await expect(search).toHaveValue("");
+	await expect(picker.getByRole("button", { name: "Show more" })).toBeVisible();
 });
 
 
-test("Agent selector switches between submenu and inline actions", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
+test("Agent selector shows the local menu beside the selector without a separate gallery tile", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("group", { name: "Gallery items" }).getByRole("button", { name: "Select Agent selector" }).click();
+	const gallery = page.getByRole("group", { name: "Gallery items" });
+	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await expect(gallery.getByRole("button", { name: "Select Jira Local Agent" })).toHaveCount(0);
 	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
-	const modes = page.getByRole("heading", { name: "Project Butter v1" }).locator("..").getByRole("group", { name: "Agent actions presentation" });
-	await expect(modes).toBeVisible();
-	await expect(picker.getByRole("group", { name: "Agent actions presentation" })).toHaveCount(0);
-	await expect(modes.getByRole("button", { name: "Inline expand" })).toHaveAttribute("aria-pressed", "true");
-	const inlineBounds = await picker.boundingBox();
-	expect(inlineBounds).not.toBeNull();
-	const inlineSearch = await picker.getByRole("textbox", { name: "Search agents" }).boundingBox();
-	const inlineHeading = await picker.getByText("Software agents", { exact: true }).boundingBox();
-	const inlineShowMore = await picker.getByRole("button", { name: "Show more" }).boundingBox();
-	const inlineOtherHeading = await picker.getByText("Other agents", { exact: true }).boundingBox();
-	expect(inlineSearch).not.toBeNull();
-	expect(inlineHeading).not.toBeNull();
-	await modes.getByRole("button", { name: "Submenu" }).click();
-	const submenuBounds = await picker.boundingBox();
-	expect(submenuBounds?.width).toBe(inlineBounds?.width);
-	expect(submenuBounds?.x).toBe(inlineBounds?.x);
-	const submenuSearch = await picker.getByRole("combobox", { name: "Search agents" }).boundingBox();
-	const submenuHeading = await picker.getByText("Software agents", { exact: true }).boundingBox();
-	const submenuShowMore = await picker.getByRole("option", { name: "Show more" }).boundingBox();
-	const submenuOtherHeading = await picker.getByText("Other agents", { exact: true }).boundingBox();
-	expect(submenuSearch).not.toBeNull();
-	expect(submenuHeading).not.toBeNull();
-	if (!inlineSearch || !inlineHeading || !submenuSearch || !submenuHeading || !inlineShowMore || !inlineOtherHeading || !submenuShowMore || !submenuOtherHeading) throw new Error("Selector layout is not visible");
-	expect(submenuHeading.y + submenuHeading.height - submenuSearch.y - submenuSearch.height)
-		.toBe(inlineHeading.y + inlineHeading.height - inlineSearch.y - inlineSearch.height);
-	expect(submenuOtherHeading.y + submenuOtherHeading.height - submenuShowMore.y - submenuShowMore.height)
-		.toBe(inlineOtherHeading.y + inlineOtherHeading.height - inlineShowMore.y - inlineShowMore.height);
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await expect(page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" })).toBeVisible();
-	await modes.getByRole("button", { name: "Inline expand" }).click();
-	const claude = picker.getByRole("button", { name: "Claude", exact: true });
-	await claude.click();
-	await expect(claude).toHaveAttribute("aria-expanded", "true");
-	await expect(picker.getByRole("button", { name: "Start a new session" })).toBeVisible();
-	await expect(picker.getByRole("button", { name: "Open in Claude" })).toBeVisible();
-	await picker.getByRole("button", { name: "Add Claude to favorites" }).click();
-	await expect(picker.getByRole("region", { name: "Favorites" }).getByRole("button", { name: "Claude", exact: true })).toBeVisible();
+	const menu = page.getByRole("region", { name: "Jira Local Agent" });
+	await expect(picker).toBeVisible();
+	const pickerBounds = await picker.boundingBox();
+	const menuBounds = await menu.boundingBox();
+	if (!pickerBounds || !menuBounds) throw new Error("Agent menus are not visible");
+	expect(menuBounds.x).toBeGreaterThanOrEqual(pickerBounds.x + pickerBounds.width);
+	await expect(menu.getByText("Claude", { exact: true })).toBeVisible();
+	await expect(menu.getByRole("button", { name: "Open local agent" })).toHaveCount(0);
+	await expect(page.getByRole("group", { name: "Agent actions presentation" })).toHaveCount(0);
+	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await expect(menu).toBeHidden();
+	await expect(page.getByRole("group", { name: "Agent actions presentation" })).toHaveCount(0);
+});
+
+test("local Copy prompt aligns its icon and label with agent rows and cloud actions", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	const local = page.getByRole("region", { name: "Jira Local Agent" });
+	const cloud = page.getByRole("region", { name: "Project Butter agent selector" });
+	const agent = local.getByRole("button", { name: "Claude", exact: true });
+	const copy = local.getByRole("button", { name: "Copy prompt" });
+	const browse = cloud.getByRole("button", { name: "Browse agents" });
+	const position = async (locator: typeof local, relativeTo: typeof local) => {
+		const bounds = await locator.boundingBox();
+		const container = await relativeTo.boundingBox();
+		if (!bounds || !container) throw new Error("Menu element is not visible");
+		return { x: bounds.x - container.x, width: bounds.width };
+	};
+	const avatar = await position(agent.locator(":scope > span").first(), local);
+	const copySlot = await position(copy.locator(":scope > span").first(), local);
+	const browseSlot = await position(browse.locator("[data-slot=icon]").first(), cloud);
+	expect(copySlot).toEqual(avatar);
+	expect(copySlot).toEqual(browseSlot);
+	expect((await position(copy.getByText("Copy prompt").first(), local)).x).toBe(browseSlot.x + browseSlot.width + 12);
+});
+
+for (const reducedMotion of ["reduce", "no-preference"] as const) {
+	test(`local Copy prompt shows a 16px success icon with ${reducedMotion} motion`, async ({ page }) => {
+		await page.setViewportSize({ width: 1600, height: 1000 });
+		await page.emulateMedia({ reducedMotion });
+		await page.addInitScript(() => {
+			Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => undefined } });
+		});
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Select Agent selector" }).click();
+		const local = page.getByRole("region", { name: "Jira Local Agent" });
+		await local.getByRole("button", { name: "Copy prompt" }).click();
+		const copied = local.getByRole("button", { name: "Prompt copied" });
+		await expect(copied).toBeVisible();
+		const success = copied.locator("svg").nth(1);
+		await expect(success).toHaveCSS("width", "16px");
+		await expect(success).toHaveCSS("height", "16px");
+		await expect.poll(async () => {
+			const bounds = await success.boundingBox();
+			return bounds ? [Math.round(bounds.width), Math.round(bounds.height)] : null;
+		}).toEqual([16, 16]);
+	});
+}
+
+test("single-line favorite buttons have equal trailing and vertical gaps", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	const checkGaps = async (row: ReturnType<typeof page.locator>, star: ReturnType<typeof page.locator>) => {
+		await row.hover();
+		const [rowBounds, starBounds] = await Promise.all([row.boundingBox(), star.boundingBox()]);
+		if (!rowBounds || !starBounds) throw new Error("Agent row or favorite button is not visible");
+		const top = starBounds.y - rowBounds.y;
+		const bottom = rowBounds.y + rowBounds.height - starBounds.y - starBounds.height;
+		const right = rowBounds.x + rowBounds.width - starBounds.x - starBounds.width;
+		expect(right).toBeCloseTo(top, 1);
+		expect(right).toBeCloseTo(bottom, 1);
+	};
+
+	await page.goto(appUrl("/preview/blocks/agent-selector"));
+	let row = page.locator('[data-slot=command-item][data-value="release-notes-drafter"]');
+	let star = row.locator('[data-favorite-id="release-notes-drafter"]');
+	await checkGaps(row, star);
+	await star.click();
+	row = page.locator('[data-slot=command-item][data-value="release-notes-drafter"]');
+	star = row.locator('[data-favorite-id="release-notes-drafter"]');
+	await expect(star).toHaveAttribute("aria-pressed", "true");
+	await checkGaps(row, star);
+
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	const inline = page.getByRole("region", { name: "Project Butter agent selector" });
+	const inlineButton = inline.getByRole("button", { name: "Claude", exact: true });
+	await checkGaps(inlineButton.locator("../.."), inline.getByRole("button", { name: "Add Claude to favorites" }));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	const duplicates = page.getByRole("region", { name: "Duplicative sessions agent selector" });
+	const duplicateRow = duplicates.getByRole("option", { name: /^Jira Coding Agent/ });
+	await checkGaps(duplicateRow, duplicates.getByRole("button", { name: "Add Jira Coding Agent to favorites" }));
+
+	await page.goto(appUrl("/components/blocks/agent-selector#project-butter-submenu"));
+	const submenu = page.getByRole("region", { name: "Submenu agent selector" });
+	row = submenu.locator('[data-slot=command-item][data-value="release-notes-drafter"]');
+	await checkGaps(row, row.locator('[data-favorite-id="release-notes-drafter"]'));
+});
+
+test("selected check and favorite star share an optical center", async ({ page }) => {
+	await page.goto(appUrl("/preview/blocks/agent-selector"));
+	const selected = page.locator('[data-slot=command-item][data-value="github-copilot"]');
+	const other = page.locator('[data-slot=command-item][data-value="release-notes-drafter"]');
+	await other.hover();
+	const star = other.locator('[data-favorite-id="release-notes-drafter"] svg');
+	const check = selected.locator('[data-slot=icon-tile] svg');
+	expect(await iconInkCenter(check)).toBeCloseTo(await iconInkCenter(star), 0);
+});
+
+test("submenu chevrons align with the trailing favorite star", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(appUrl("/components/blocks/agent-selector#project-butter-submenu"));
+	const selector = page.getByRole("region", { name: "Submenu agent selector" });
+	const starRow = selector.locator('[data-slot=command-item][data-value="readiness-checker"]');
+	const submenuRow = selector.locator('[data-slot=command-item][data-value="claude-code"]');
+	await starRow.hover();
+	const star = starRow.locator('[data-favorite-id="readiness-checker"] svg');
+	const chevron = submenuRow.locator(":scope > div > [data-slot=icon]").last().locator("svg");
+	const [starBounds, arrowBounds] = await Promise.all([star.boundingBox(), chevron.boundingBox()]);
+	if (!starBounds || !arrowBounds) throw new Error("Favorite star or chevron is not visible");
+	expect(arrowBounds.x + arrowBounds.width / 2).toBeCloseTo(starBounds.x + starBounds.width / 2, 1);
+	expect(await iconInkCenter(chevron)).toBeCloseTo(await iconInkCenter(star), 0);
+	await submenuRow.hover();
+	const submenuStar = submenuRow.getByRole("button", { name: "Add Claude to favorites" });
+	await expect(submenuStar).toHaveCSS("opacity", "1");
+	const [hoverArrow, hoverStar] = await Promise.all([chevron.boundingBox(), submenuStar.boundingBox()]);
+	if (!hoverArrow || !hoverStar) throw new Error("Hovered submenu controls are not visible");
+	expect(hoverArrow.x).toBeCloseTo(arrowBounds.x, 1);
+	expect(hoverArrow.x - hoverStar.x - hoverStar.width).toBeCloseTo(4, 1);
+});
+
+test("agent rows and footer actions use the same hover color across selector variants", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	const background = (locator: ReturnType<typeof page.locator>) => locator.evaluate((element) => getComputedStyle(element).backgroundColor);
+	const compare = async (row: ReturnType<typeof page.locator>, rowSurface: ReturnType<typeof page.locator>, actions: ReturnType<typeof page.locator>[]) => {
+		await row.hover();
+		await expect.poll(() => background(rowSurface)).not.toBe("rgba(0, 0, 0, 0)");
+		const rowColor = await background(rowSurface);
+		for (const action of actions) {
+			await action.hover();
+			await expect.poll(() => background(action)).toBe(rowColor);
+		}
+	};
+
+	await page.goto(appUrl("/preview/blocks/agent-selector"));
+	const original = page.locator("[data-slot=command]");
+	const originalRow = original.locator('[data-value="release-notes-drafter"]');
+	await compare(originalRow, originalRow, [original.locator("button").filter({ hasText: "Browse agents" }), original.locator("button").filter({ hasText: "Create agent" })]);
+
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	const inline = page.getByRole("region", { name: "Project Butter agent selector" });
+	const inlineRow = inline.getByRole("button", { name: "Claude", exact: true });
+	await compare(inlineRow, inlineRow.locator("../.."), [inline.getByRole("button", { name: "Browse agents" })]);
+	const local = page.getByRole("region", { name: "Jira Local Agent" });
+	const localRow = local.getByRole("button", { name: "Claude", exact: true });
+	await compare(localRow, localRow.locator("../.."), [local.getByRole("button", { name: "Copy prompt" })]);
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	const duplicates = page.getByRole("region", { name: "Duplicative sessions agent selector" });
+	const duplicateRow = duplicates.getByRole("option", { name: /^Jira Coding Agent/ });
+	await compare(duplicateRow, duplicateRow, [duplicates.getByRole("button", { name: "Browse agents" })]);
+	await expect(duplicates.getByRole("button", { name: "Create agent" })).toHaveCount(0);
+
+	await page.goto(appUrl("/components/blocks/jira-local-agent"));
+	await page.getByRole("button", { name: "Inline expand" }).click();
+	await page.getByRole("button", { name: "Open local agent" }).click();
+	const inlineLocal = page.getByRole("dialog", { name: "Local software agents" });
+	const inlineLocalRow = inlineLocal.getByRole("button", { name: "Claude", exact: true });
+	await compare(inlineLocalRow, inlineLocalRow.locator("../.."), [inlineLocal.getByRole("button", { name: "Copy prompt" })]);
+
+	await page.goto(appUrl("/components/blocks/agent-selector#project-butter-submenu"));
+	const submenu = page.getByRole("region", { name: "Submenu agent selector" });
+	const submenuRow = submenu.getByRole("option", { name: /^Claude/ });
+	await compare(submenuRow, submenuRow, [submenu.getByRole("button", { name: "Browse agents" }), submenu.getByRole("button", { name: "Create agent" })]);
+});
+
+test("agent selector offers descriptions as an opt-in example", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector"));
+	const preview = page.locator("#preview [role=listbox]");
+	const example = page.locator("#include-byline [role=listbox]");
+	await expect(preview).toHaveCount(1);
+	await expect(example).toHaveCount(1);
+	await expect(preview.getByText("Custom agent by Diego Alvarez", { exact: true })).toHaveCount(0);
+	await expect(example.getByText("Custom agent by Diego Alvarez", { exact: true })).toHaveCount(1);
 });
 
 test("selector presentations fade the list only after scrolling", async ({ page }) => {
@@ -90,13 +270,10 @@ test("selector presentations fade the list only after scrolling", async ({ page 
 		await list.evaluate((element) => { element.scrollTop = 0; });
 		await expect(list).toHaveCSS("mask-image", "none");
 	};
-	for (const [item, label] of [["Select Agent selector", "Project Butter agent selector"], ["Select Duplicative sessions", "Duplicative sessions agent selector"]] as const) {
-		await gallery.getByRole("button", { name: item }).click();
-		const picker = page.getByRole("region", { name: label });
-		await checkFade(picker.getByRole("region", { name: "Software agents" }).locator(".."));
-		await page.getByRole("button", { name: "Submenu", exact: true }).click();
-		await checkFade(picker.locator("[cmdk-list]"));
-	}
+	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await checkFade(page.getByRole("region", { name: "Project Butter agent selector" }).getByRole("region", { name: "Software agents" }).locator(".."));
+	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await checkFade(page.getByRole("region", { name: "Duplicative sessions agent selector" }).locator("[cmdk-list]"));
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
 	await checkFade(page.getByRole("region", { name: "Submenu agent selector" }).locator("[cmdk-list]"));
 	await checkFade(page.getByRole("region", { name: "Inline expansion agent selector" }).getByRole("region", { name: "Software agents" }).locator(".."));
@@ -126,27 +303,17 @@ test("selector subsection headings match the editor palette", async ({ page }) =
 	}
 	await picker.getByRole("button", { name: "Add Claude to favorites" }).click();
 	expect(await picker.getByText("Favorites", { exact: true }).evaluate(measure)).toEqual(reference);
-	await page.getByRole("button", { name: "Submenu", exact: true }).click();
-	expect(await searchGap(picker)).toBe(referenceGap);
-	for (const name of ["Software agents", "Other agents"]) {
-		expect(await picker.getByText(name, { exact: true }).evaluate(measure)).toEqual(reference);
-	}
 	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	const duplicatePicker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
 	expect(await searchGap(duplicatePicker)).toBe(referenceGap);
 	for (const name of ["Software agents", "Other agents"]) {
 		expect(await duplicatePicker.getByText(name, { exact: true }).evaluate(measure)).toEqual(reference);
 	}
-	const search = duplicatePicker.getByRole("textbox", { name: "Search agents" });
+	const search = duplicatePicker.getByRole("combobox", { name: "Search agents" });
 	await search.fill("Claude");
-	await expect(duplicatePicker.getByRole("button", { name: "Claude", exact: true })).toBeVisible();
+	await expect(duplicatePicker.getByRole("option", { name: /^Claude/ })).toBeVisible();
 	await duplicatePicker.getByRole("button", { name: "Clear search" }).click();
 	await expect(search).toHaveValue("");
-	await page.getByRole("button", { name: "Submenu", exact: true }).click();
-	expect(await searchGap(duplicatePicker)).toBe(referenceGap);
-	for (const name of ["Software agents", "Other agents"]) {
-		expect(await duplicatePicker.getByText(name, { exact: true }).evaluate(measure)).toEqual(reference);
-	}
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
 	for (const label of ["Submenu agent selector", "Inline expansion agent selector"]) {
 		const example = page.getByRole("region", { name: label });
@@ -163,24 +330,20 @@ test("selector footer icons are 16 pixels in each presentation", async ({ page }
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
 	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
-	const checkIcons = async (selector: typeof picker) => {
-		for (const name of ["Browse agents", "Create agent"]) {
+	const checkIcons = async (selector: typeof picker, names: string[]) => {
+		for (const name of names) {
 			const icon = selector.getByRole("button", { name }).locator("svg").first();
 			await expect(icon).toHaveCSS("width", "16px");
 			await expect(icon).toHaveCSS("height", "16px");
 		}
 	};
-	await checkIcons(picker);
-	await page.getByRole("button", { name: "Submenu", exact: true }).click();
-	await checkIcons(picker);
+	await checkIcons(picker, ["Browse agents"]);
 	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	const duplicatePicker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	await checkIcons(duplicatePicker);
-	await page.getByRole("button", { name: "Submenu", exact: true }).click();
-	await checkIcons(duplicatePicker);
+	await checkIcons(duplicatePicker, ["Browse agents"]);
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
 	for (const label of ["Submenu agent selector", "Inline expansion agent selector"]) {
-		await checkIcons(page.getByRole("region", { name: label }));
+		await checkIcons(page.getByRole("region", { name: label }), ["Browse agents", "Create agent"]);
 	}
 });
 
@@ -199,88 +362,135 @@ test("Agent Selector examples use the Butter submenu and inline presentations", 
 	await expect.poll(() => list.evaluate((element) => getComputedStyle(element).maskImage)).toContain("linear-gradient");
 });
 
-test("duplicative inline search includes bylines and retains Rovo CLI workspaces", async ({ page }) => {
+test("Butter submenu lets each agent be favorited without activating its row", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	const search = picker.getByRole("textbox", { name: "Search agents" });
-	await search.fill("Anthropic");
-	await expect(picker.getByRole("button", { name: "Claude", exact: true })).toBeVisible();
-	await search.fill("Rovo CLI");
-	await picker.getByRole("button", { name: "Rovo CLI", exact: true }).click();
-	await expect(picker.getByRole("button", { name: "Open in Rovo CLI" })).toBeVisible();
-	const directory = picker.getByRole("textbox", { name: "Choose your directory" });
-	await directory.fill("/tmp/selector-workspace");
-	await directory.press("Enter");
-	await expect(directory).toHaveValue("/tmp/selector-workspace");
+	await page.goto(appUrl("/components/blocks/agent-selector#project-butter-submenu"));
+	const picker = page.getByRole("region", { name: "Submenu agent selector" });
+	const claude = picker.getByRole("option", { name: /^Claude/ });
+	await claude.hover();
+	const star = picker.getByRole("button", { name: "Add Claude to favorites" });
+	await expect(star).toHaveCSS("opacity", "1");
+	await star.click();
+	const favorites = picker.getByRole("group", { name: "Favorites" });
+	const remove = favorites.getByRole("button", { name: "Remove Claude from favorites" });
+	await expect(remove).toHaveAttribute("aria-pressed", "true");
+	await expect(page.getByRole("menu", { name: "Run Claude on" })).toHaveCount(0);
+	await remove.focus();
+	await page.keyboard.press("Enter");
+	await expect(picker.getByRole("button", { name: "Add Claude to favorites" })).toBeFocused();
+	await expect(picker.getByRole("group", { name: "Favorites" })).toHaveCount(0);
+	for (const name of ["Jira Coding Agent", "Cursor", "Release Notes Drafter"]) {
+		const row = picker.getByRole("option", { name: new RegExp(`^${name}`) });
+		await row.hover();
+		await expect(picker.getByRole("button", { name: `Add ${name} to favorites` })).toHaveCSS("opacity", "1");
+	}
 });
 
-test("Duplicative sessions offers existing Claude sessions or a new one", async ({ page }) => {
+test("Duplicative sessions starts directly or chooses from existing sessions", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
-	const labels = ["Select Agent selector", "Select Duplicative sessions", "Select Board", "Select Work item", "Select Pull request", "Select e2e Journey"];
-	await expect(gallery.getByRole("button")).toHaveCount(labels.length);
-	for (const [index, label] of labels.entries()) await expect(gallery.getByRole("button").nth(index)).toHaveAccessibleName(label);
 	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	const modes = page.getByRole("heading", { name: "Project Butter v1" }).locator("..").getByRole("group", { name: "Agent actions presentation" });
-	await expect(modes.getByRole("button", { name: "Inline expand" })).toHaveAttribute("aria-pressed", "true");
-	await modes.getByRole("button", { name: "Submenu" }).click();
+	const claude = picker.getByRole("option", { name: /^Claude/ });
+	const cursor = picker.getByRole("option", { name: /^Cursor/ });
+	await expect(claude).toHaveAttribute("aria-haspopup", "menu");
+	await expect(claude.locator(":scope > div > [data-slot=icon]")).toHaveCount(0);
+	await expect(cursor).not.toHaveAttribute("aria-haspopup", "menu");
+	await claude.hover();
+	await expect(page.getByRole("menu", { name: "Claude sessions" })).toBeVisible();
+	await claude.click();
+	let menu = page.getByRole("menu", { name: "Claude sessions" });
+	await expect(menu.getByRole("menuitem")).toHaveText(["Start a new session", "Review the onboarding quickstart", "Check the onboarding tests"]);
+	await expect(menu.locator("hr")).toHaveCount(1);
+	await expect(menu.getByText(/Open in|Continue to existing session|Run on cloud/)).toHaveCount(0);
+	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await expect(menu).toBeHidden();
+	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	await picker.getByRole("option", { name: /^Claude/ }).click();
-	const actions = page.getByRole("menu", { name: "Run Claude on" });
-	await expect(actions.getByRole("menuitem", { name: "Start a new session" })).toBeVisible();
-	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
-	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
-	await expect(sessions.getByRole("option")).toHaveCount(2);
-	await sessions.getByRole("option", { name: /Check the onboarding tests/ }).click();
+	menu = page.getByRole("menu", { name: "Claude sessions" });
+	await menu.getByRole("menuitem", { name: "Check the onboarding tests" }).click();
 	await expect(picker.getByRole("status")).toHaveText("Selected session: Check the onboarding tests");
 	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
+	await page.getByRole("menu", { name: "Claude sessions" }).getByRole("menuitem", { name: "Start a new session" }).click();
 	await expect(picker.getByRole("status")).toHaveText("Started a new Claude session");
-	await expect(picker.getByRole("status")).toHaveClass(/\bsr-only\b/);
-	await expect(picker.getByText("Started a new Claude session", { exact: true })).toHaveCount(1);
 	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
-	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
-	await expect(page.getByRole("listbox", { name: "Choose a Claude session" }).getByRole("option", { name: /Review onboarding changes/ })).toBeVisible();
+	await expect(page.getByRole("menu", { name: "Claude sessions" }).getByRole("menuitem", { name: "Review onboarding changes" })).toBeVisible();
 	await page.keyboard.press("Escape");
+	await picker.getByRole("option", { name: /^Cursor/ }).click();
+	await expect(picker.getByRole("status")).toHaveText("Started a new Cursor session");
+	await picker.getByRole("option", { name: /^Cursor/ }).click();
+	menu = page.getByRole("menu", { name: "Cursor sessions" });
+	await expect(menu.getByRole("menuitem")).toHaveText(["Start a new session", "Review onboarding changes"]);
+	await expect(menu.getByRole("menuitem", { name: "Start a new session" })).toBeFocused();
+	await page.keyboard.press("ArrowDown");
+	await expect(menu.getByRole("menuitem", { name: "Review onboarding changes" })).toBeFocused();
+	await page.keyboard.press("Escape");
+	await expect(picker.getByRole("combobox", { name: "Search agents" })).toBeFocused();
 	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
-	await expect(page.getByRole("region", { name: "Project Butter agent selector" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await expect(picker.getByRole("status")).toHaveText("Started a new Claude session");
+	await expect(picker.getByRole("status")).toHaveText("Started a new Cursor session");
 	await page.getByRole("button", { name: "Reset", exact: true }).click();
 	await expect(picker.getByRole("status")).toHaveText("");
-	await expect(modes.getByRole("button", { name: "Inline expand" })).toHaveAttribute("aria-pressed", "true");
-	await modes.getByRole("button", { name: "Submenu" }).click();
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
-	await modes.getByRole("button", { name: "Inline expand" }).click();
-	await picker.getByRole("button", { name: "Add Claude to favorites" }).click();
-	const inlineClaude = picker.getByRole("button", { name: "Claude", exact: true });
-	await inlineClaude.click();
-	await expect(inlineClaude).toHaveAttribute("aria-expanded", "true");
-	const expandedRow = inlineClaude.locator("../..");
-	await expect(expandedRow.getByRole("button", { name: "Start a new session" })).toBeVisible();
-	await expect(expandedRow.getByRole("menu")).toHaveCount(0);
-	const continueButton = picker.getByRole("button", { name: "Continue to existing session" });
-	await continueButton.focus();
+	await expect(picker.getByRole("option", { name: /^Cursor/ })).not.toHaveAttribute("aria-haspopup", "menu");
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Rovo CLI");
+	await picker.getByRole("option", { name: /^Rovo CLI/ }).click();
+	await expect(picker.getByRole("status")).toHaveText("Started a new Rovo CLI session");
+	await picker.getByRole("combobox", { name: "Search agents" }).fill("Rovo CLI");
+	await picker.getByRole("option", { name: /^Rovo CLI/ }).click();
+	const rovoMenu = page.getByRole("menu", { name: "Rovo CLI sessions" });
+	await expect(rovoMenu.getByRole("menuitem")).toHaveText(["Start a new session", "Review onboarding changes"]);
+	await expect(rovoMenu.getByText(/Open in/)).toHaveCount(0);
+});
+
+
+test("Duplicative sessions submenu supports keyboard selection", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
+	const search = picker.getByRole("combobox", { name: "Search agents" });
+	await search.fill("Claude");
+	await expect(picker.getByRole("option", { name: /^Claude/ })).toHaveAttribute("aria-selected", "true");
+	await search.press("ArrowRight");
+	const menu = page.getByRole("menu", { name: "Claude sessions" });
+	await expect(menu.getByRole("menuitem", { name: "Start a new session" })).toBeFocused();
+	await page.keyboard.press("End");
+	await expect(menu.getByRole("menuitem", { name: "Check the onboarding tests" })).toBeFocused();
+	await page.keyboard.press("Home");
+	await expect(menu.getByRole("menuitem", { name: "Start a new session" })).toBeFocused();
+	await page.keyboard.press("ArrowDown");
+	await page.keyboard.press("ArrowDown");
+	await expect(menu.getByRole("menuitem", { name: "Check the onboarding tests" })).toBeFocused();
 	await page.keyboard.press("Enter");
-	const backButton = expandedRow.getByRole("button", { name: "Back" });
-	await expect(backButton).toBeFocused();
-	await page.keyboard.press("Enter");
-	await expect(continueButton).toBeFocused();
-	await page.keyboard.press("Enter");
-	await picker.getByRole("button", { name: "Review the onboarding quickstart" }).click();
-	await expect(picker.getByRole("status")).toHaveText("Selected session: Review the onboarding quickstart");
-	await expect(picker.getByRole("status")).toHaveClass(/\bsr-only\b/);
-	await expect(picker.getByText("Selected session: Review the onboarding quickstart", { exact: true })).toHaveCount(1);
-	await expect(picker.getByRole("button", { name: "Remove Claude from favorites" })).toHaveAttribute("aria-pressed", "true");
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
-	await expect(modes.getByRole("button", { name: "Inline expand" })).toHaveAttribute("aria-pressed", "true");
-	await modes.getByRole("button", { name: "Submenu" }).click();
-	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await expect(modes.getByRole("button", { name: "Inline expand" })).toHaveAttribute("aria-pressed", "true");
+	await expect(picker.getByRole("status")).toHaveText("Selected session: Check the onboarding tests");
+});
+
+
+test("Jira kanban headings match the submenu and have no extra inter-group gap", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector#jira-kanban"));
+	const jira = page.locator("#jira-kanban");
+	const submenu = page.getByRole("region", { name: "Submenu agent selector" });
+	await expect(jira.locator("[cmdk-group-heading]")).toHaveCount(2);
+	await expect(submenu.locator("[cmdk-group-heading]")).toHaveCount(2);
+	const headings = async (selector: typeof jira) => selector.locator("[cmdk-group-heading]").evaluateAll((elements) => elements.map((element) => {
+		const style = getComputedStyle(element);
+		const group = element.parentElement;
+		if (!group) throw new Error("Missing agent group");
+		return { padding: style.padding, height: element.getBoundingClientRect().height, groupPadding: getComputedStyle(group).padding };
+	}));
+	const reference = await headings(submenu);
+	expect(await headings(jira)).toEqual(reference);
+	const gap = await jira.evaluate((element) => {
+		const groups = [...element.querySelectorAll("[cmdk-group]")];
+		const last = groups[0]?.querySelector('[data-value="rfp-drafting-agent"]');
+		const nextHeading = groups[1]?.querySelector("[cmdk-group-heading]");
+		if (!last || !nextHeading) throw new Error("Missing pinned row or next heading");
+		return nextHeading.getBoundingClientRect().top - last.getBoundingClientRect().bottom;
+	});
+	expect(gap).toBe(0);
+	await expect(jira.getByText("Pinned by space", { exact: true })).toBeVisible();
+	await expect(jira.locator('[aria-label="Unpin Readiness Checker"]')).toHaveAttribute("aria-pressed", "true");
+	await expect(jira.locator('[data-favorite-id]')).toHaveCount(0);
 });

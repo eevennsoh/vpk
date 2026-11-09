@@ -584,6 +584,7 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	),
 
 	// Agent Selector
+	"agent-selector-demo-include-byline": dynamic(() => import("../demos/blocks/agent-selector-demo").then((mod) => ({ default: mod.AgentSelectorDemoIncludeByline })), { ssr: false }),
 	"agent-selector-demo-standalone": dynamic(
 		() =>
 			import("../demos/blocks/agent-selector-demo").then((mod) => ({

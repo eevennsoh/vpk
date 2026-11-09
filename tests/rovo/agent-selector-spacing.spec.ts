@@ -4,6 +4,126 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ ignoreHTTPSErrors: true });
 
+test("standalone selected agents keep a 4px gap between favorite and check", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
+	const examples = page.locator("#standalone-picker [data-agent-selector-demo=standalone]");
+	for (const [index, agentId] of ["github-copilot", "ai-insights-agent"].entries()) {
+		const row = examples.nth(index).locator(`[data-slot=command-item][data-value="${agentId}"]`);
+		const favorite = row.locator("[data-favorite-id]");
+		const check = row.locator(":scope > div > [data-slot=icon-tile]");
+		await expect(row).toBeVisible();
+		const [starBounds, checkBounds] = await Promise.all([favorite.boundingBox(), check.boundingBox()]);
+		if (!starBounds || !checkBounds) throw new Error("Selected agent controls are not rendered");
+		expect(checkBounds.x - starBounds.x - starBounds.width).toBe(4);
+	}
+});
+
+test("Rovo CLI configures its directory separately from selecting the agent", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.addInitScript(() => {
+		window.localStorage.removeItem("jira-local-agent-last-used");
+		window.localStorage.removeItem("butter-local-agent-workspaces");
+	});
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	const local = page.getByRole("region", { name: "Jira Local Agent" });
+	const row = local.getByRole("button", { name: "Rovo CLI", exact: true });
+	await row.hover();
+	await expect(page.getByRole("dialog", { name: "Rovo CLI local options" })).toHaveCount(0);
+	const configure = local.getByRole("button", { name: "Configure Rovo CLI" });
+	await configure.focus();
+	await page.keyboard.press("Enter");
+	const menu = page.getByRole("dialog", { name: "Rovo CLI local options" });
+	const directory = menu.getByRole("textbox", { name: "Choose your directory" });
+	await expect(directory).toBeVisible();
+	await page.keyboard.press("Tab");
+	await expect(directory).toBeFocused();
+	await expect(menu.getByRole("button", { name: "Open in Rovo CLI" })).toHaveCount(0);
+	expect(await page.evaluate(() => window.localStorage.getItem("jira-local-agent-last-used"))).toBeNull();
+	await directory.fill("/tmp/rovo-config-test");
+	await directory.press("ArrowLeft");
+	await expect(menu).toBeVisible();
+	await directory.press("Enter");
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("dialog", { name: "Codebase workspaces" })).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(menu).toHaveCount(0);
+	await expect(configure).toBeFocused();
+	await configure.click();
+	await expect(page.getByRole("textbox", { name: "Choose your directory" })).toHaveValue("/tmp/rovo-config-test");
+	await page.keyboard.press("Escape");
+	await row.evaluate((element) => element.setAttribute("data-test-preserved", "yes"));
+	await row.click();
+	const copied = local.getByRole("button", { name: "Command copied", exact: true });
+	const success = copied.locator(".text-icon-success svg");
+	await expect(copied).toBeVisible();
+	await expect(copied).toHaveAttribute("data-test-preserved", "yes");
+	await expect(success).toHaveCSS("width", "16px");
+	await expect(success).toHaveCSS("height", "16px");
+	await expect.poll(async () => {
+		const bounds = await success.boundingBox();
+		return bounds ? [Math.round(bounds.width), Math.round(bounds.height)] : null;
+	}).toEqual([16, 16]);
+	await expect.poll(() => page.evaluate(() => window.localStorage.getItem("jira-local-agent-last-used"))).toContain("rovo-cli");
+	await expect(page.getByRole("dialog", { name: "Rovo CLI local options" })).toHaveCount(0);
+});
+
+test("Rovo CLI copy feedback reaches its full size with reduced motion", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	const local = page.getByRole("region", { name: "Jira Local Agent" });
+	await local.getByRole("button", { name: "Rovo CLI", exact: true }).click();
+	const success = local.getByRole("button", { name: "Command copied", exact: true }).locator(".text-icon-success svg");
+	await expect(success).toHaveCSS("width", "16px");
+	await expect(success).toHaveCSS("height", "16px");
+	await expect.poll(async () => {
+		const bounds = await success.boundingBox();
+		return bounds ? [Math.round(bounds.width), Math.round(bounds.height)] : null;
+	}).toEqual([16, 16]);
+});
+
+for (const presentation of ["submenu", "inline"] as const) {
+	test(`Rovo CLI ${presentation} workspace icons use their intended sizes`, async ({ page }) => {
+		await page.addInitScript(() => window.localStorage.setItem("butter-local-agent-workspaces", JSON.stringify(JSON.stringify({ paths: ["/example/project"], selected: null }))));
+		await page.goto(appUrl("/components/blocks/jira-local-agent"));
+		if (presentation === "inline") await page.getByRole("button", { name: "Inline expand" }).click();
+		await page.getByRole("button", { name: "Open local agent" }).click();
+		const local = page.getByRole("dialog", { name: "Local software agents" });
+		if (presentation === "inline") await local.getByRole("button", { name: "Rovo CLI", exact: true }).click();
+		else await local.getByRole("button", { name: "Configure Rovo CLI" }).click();
+		const menu = page.locator("[data-butter-local-menu]");
+		if (presentation === "inline") {
+			const screen = menu.getByRole("button", { name: "Open in Rovo CLI" }).locator("svg").first();
+			await expect(screen).toHaveCSS("width", "16px");
+			await expect(screen).toHaveCSS("height", "16px");
+		} else {
+			await expect(menu.getByRole("button", { name: "Open in Rovo CLI" })).toHaveCount(0);
+		}
+		const chevron = menu.locator("[data-slot=input-group-addon] svg");
+		await menu.getByRole("textbox", { name: "Choose your directory" }).click();
+		const workspaces = page.getByRole("dialog", { name: "Codebase workspaces" });
+		const add = workspaces.getByRole("button", { name: "Add workspace" }).locator("svg");
+		const noWorkspace = workspaces.getByRole("button", { name: "No workspace" });
+		const savedWorkspace = workspaces.getByRole("button", { name: "/example/project", exact: true });
+		const remove = workspaces.locator('[aria-label="Remove /example/project"] svg');
+		for (const icon of [add, noWorkspace.locator("svg").nth(0), savedWorkspace.locator("svg"), remove]) {
+			await expect(icon).toHaveCSS("width", "16px");
+			await expect(icon).toHaveCSS("height", "16px");
+		}
+		await expect(chevron).toHaveCSS("width", "12px");
+		await expect(chevron).toHaveCSS("height", "12px");
+		await expect(noWorkspace.locator("svg").nth(1)).toHaveCSS("width", "12px");
+		await expect(noWorkspace.locator("svg").nth(1)).toHaveCSS("height", "12px");
+		await savedWorkspace.click();
+		await menu.getByRole("textbox", { name: "Choose your directory" }).click();
+		const selected = workspaces.getByRole("button", { name: "/example/project", exact: true });
+		await expect(selected).toHaveAttribute("aria-current", "true");
+		await expect(selected.locator("svg").nth(1)).toHaveCSS("width", "12px");
+		await expect(selected.locator("svg").nth(1)).toHaveCSS("height", "12px");
+	});
+}
+
 test("inline Rovo CLI aligns its action and directory label to the agent avatar", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/jira-local-agent"));
 	await page.getByRole("button", { name: "Inline expand" }).click();
@@ -21,13 +141,34 @@ test("inline Rovo CLI aligns its action and directory label to the agent avatar"
 	expect(Math.abs(icon.x + icon.width / 2 - avatar.x - avatar.width / 2)).toBeLessThan(0.5);
 });
 
+for (const recentAgent of [false, true]) {
+	test(`local agent heading matches the cloud heading${recentAgent ? " with a recent agent" : ""}`, async ({ page }) => {
+		await page.addInitScript((recent) => {
+			if (recent) window.localStorage.setItem("jira-local-agent-last-used", JSON.stringify("claude-code"));
+			else window.localStorage.removeItem("jira-local-agent-last-used");
+		}, recentAgent);
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Select Agent selector" }).click();
+		const cloud = page.getByRole("region", { name: "Project Butter agent selector" });
+		const local = page.getByRole("region", { name: "Jira Local Agent" });
+		const style = (element: Element) => {
+			const computed = getComputedStyle(element);
+			return { padding: computed.padding, lineHeight: computed.lineHeight, height: element.getBoundingClientRect().height };
+		};
+		const reference = await cloud.getByText("Other agents", { exact: true }).evaluate(style);
+		const heading = local.getByRole("heading", { name: "Open in" });
+		await expect(heading).toHaveCount(1);
+		expect(await heading.evaluate(style)).toEqual(reference);
+	});
+}
+
 test("Jira Local Agent keeps the recent agent close to its separator", async ({ page }) => {
 	await page.addInitScript(() => window.localStorage.setItem("jira-local-agent-last-used", JSON.stringify("claude-code")));
 	await page.goto(appUrl("/components/blocks/jira-local-agent"));
 	await page.getByRole("button", { name: "Open local agent" }).click();
 	const popup = page.getByRole("dialog", { name: "Local software agents" });
 	const gaps = await popup.evaluate((menu) => {
-		const options = menu.querySelectorAll('[role="option"]');
+		const options = menu.querySelectorAll('[data-agent-id]');
 		const separator = menu.querySelector("hr");
 		if (!options[0] || !options[1] || !separator) throw new Error("Missing recent agent or separator");
 		return [separator.getBoundingClientRect().top - options[0].getBoundingClientRect().bottom, options[1].getBoundingClientRect().top - separator.getBoundingClientRect().bottom];
@@ -40,7 +181,7 @@ test("Jira Local Agent footer has equal spacing around its separator", async ({ 
 	await page.getByRole("button", { name: "Open local agent" }).click();
 	const popup = page.getByRole("dialog", { name: "Local software agents" });
 	const gaps = await popup.evaluate((menu) => {
-		const lastAgent = Array.from(menu.querySelectorAll('[role="option"]')).at(-1);
+		const lastAgent = Array.from(menu.querySelectorAll('[data-agent-id]')).at(-1);
 		const separator = Array.from(menu.querySelectorAll("hr")).at(-1);
 		const copy = menu.querySelector('[aria-label="Copy prompt"]');
 		if (!lastAgent || !separator || !copy) throw new Error("Missing local agent menu content");
@@ -119,3 +260,20 @@ for (const route of ["/components/projects/sidebar-chat", "/components/blocks/ag
 		}
 	});
 }
+
+
+test("agent selector exposes its native scrollbar when the list overflows", async ({ page }) => {
+	await page.goto(appUrl("/preview/blocks/agent-selector"));
+	const list = page.locator("[data-slot=command-list]");
+	await expect(list).toBeVisible();
+	const before = await list.evaluate((element) => ({
+		clientHeight: element.clientHeight,
+		scrollHeight: element.scrollHeight,
+		scrollbarWidth: getComputedStyle(element).scrollbarWidth,
+	}));
+	expect(before.scrollHeight).toBeGreaterThan(before.clientHeight);
+	expect(before.scrollbarWidth).not.toBe("none");
+	await list.hover();
+	await page.mouse.wheel(0, 240);
+	await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+});
