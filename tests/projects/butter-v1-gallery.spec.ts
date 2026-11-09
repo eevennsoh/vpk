@@ -66,6 +66,10 @@ test("the work item shows automation rules and recent runs in the card", async (
 	await expect.poll(() => recentRows.first().evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(recentBackground);
 	await automation.getByRole("button", { name: "Back to automation" }).click();
 	await expect(automation.getByRole("button", { name: "Set to recur" })).toBeVisible();
+	await automation.getByRole("button", { name: "Automation", exact: true }).click();
+	await automation.getByRole("button", { name: "More automation actions" }).click();
+	await page.getByRole("menuitem", { name: "Recent run rules" }).click();
+	await expect(automation.getByRole("list", { name: "Recent automation runs" })).toBeVisible();
 });
 
 test("the List gallery item shows the interactive Jira list", async ({ page }) => {

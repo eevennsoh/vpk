@@ -16,6 +16,8 @@ interface TeamEuRailPanelProps {
 	children: ReactNode;
 	contentClassName?: string;
 	defaultOpen?: boolean;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 	headerActions?: ReactNode;
 	footer?: ReactNode;
 	alwaysShowHeaderActions?: boolean;
@@ -27,13 +29,16 @@ export function TeamEuRailPanel({
 	children,
 	contentClassName,
 	defaultOpen = false,
+	open: controlledOpen,
+	onOpenChange,
 	headerActions,
 	footer,
 	alwaysShowHeaderActions = false,
 	surface = "card",
 	title,
 }: Readonly<TeamEuRailPanelProps>) {
-	const [open, setOpen] = useState(defaultOpen);
+	const [internalOpen, setInternalOpen] = useState(defaultOpen);
+	const open = controlledOpen ?? internalOpen;
 	const contentId = useId();
 	const headingId = useId();
 	const shouldReduceMotion = Boolean(useReducedMotion());
@@ -49,7 +54,11 @@ export function TeamEuRailPanel({
 					aria-expanded={open}
 					aria-labelledby={headingId}
 					className="absolute inset-0 z-0 cursor-pointer rounded-t-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-					onClick={() => setOpen((current) => !current)}
+					onClick={() => {
+						const nextOpen = !open;
+						if (controlledOpen === undefined) setInternalOpen(nextOpen);
+						onOpenChange?.(nextOpen);
+					}}
 					type="button"
 				/>
 				<h2
