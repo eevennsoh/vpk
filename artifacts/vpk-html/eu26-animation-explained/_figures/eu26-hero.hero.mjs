@@ -354,7 +354,7 @@ export function build(kit, { data }) {
 	}
 	const windows = [...data.columnViewports.map((viewport, i) => [`column${i}`, viewport, `data-eu26-column-window="${i}"`]), ["done", data.doneList.viewport, "data-eu26-done-window"]]
 		.map(([key, viewport, marker]) => `<clipPath id="eu26-${key}-window" clipPathUnits="userSpaceOnUse"><path ${marker} d="${k.planOutline(viewport, 5.2, P, 4)}"/></clipPath>`).join("");
-	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><circle data-eu26-cursor-ring cx="0" cy="0" r="0"/><path data-eu26-cursor-halo d="M0 0Z" fill="none" stroke-linejoin="round"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/>${id === "main" ? "" : `<rect data-eu26-cursor-pill x="0" y="0" width="0" height="0" style="display:none"/><text data-eu26-cursor-name x="0" y="0" style="display:none"></text>`}</g>`).join("")}</g>`;
+	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><path data-eu26-cursor-halo d="M0 0Z" fill="none" stroke-linejoin="round"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/>${id === "main" ? "" : `<rect data-eu26-cursor-pill x="0" y="0" width="0" height="0" style="display:none"/><text data-eu26-cursor-name x="0" y="0" style="display:none"></text>`}</g>`).join("")}</g>`;
 	return { P, R, before: [`<defs>${windows}</defs>`], after: [`<g data-eu26-details aria-hidden="true" style="display:none">${details.join("")}</g>`, cursorLayer] };
 }
 

@@ -570,8 +570,8 @@ export function live(ctx) {
 			const el = cursorParts.get(cursor.id), tip = project(cursor.at);
 			// Cursors follow stageshow (kit/cursor.tsx, examples/presence): one solid rounded arrowhead for every cursor, tip at the
 			// hotspot, a paper halo instead of a drop shadow so it reads on grey tiles. A teammate is one tone everywhere, arrow and
-			// name flag alike, and the flag rides below and right of the tip. A press dips the arrow to 0.9 about its tip and sends
-			// one accent ripple out; there is no ring held under a grip. It grows with the card it holds (perspective).
+			// name flag alike, and the flag rides below and right of the tip. A press dips the arrow to 0.9 about its tip; no ring or
+			// ripple marks a click. It grows with the card it holds (perspective).
 			const fit = cursor.role === "teammate" ? Math.max(0.55, Math.min(1, displayHeight / 640)) : 1;
 			// Arrow and flag scale apart (motionConfig.cursor, matched to teu26.mp4); the press dips only the arrow.
 			const CURSOR = { arrow: 2.3, flag: 1.8, ...(data.motion?.cursor ?? {}) };
@@ -605,7 +605,6 @@ export function live(ctx) {
 			el.dataset.heldTarget = cursor.heldTarget?.key || "";
 			el.dataset.tipX = tip[0].toFixed(5);
 			el.dataset.tipY = tip[1].toFixed(5);
-			const pressed = cursor.pressed;
 			// stageshow's SolidArrow (M4 3 18.5 9.6 11.8 11.8 9.6 18.5Z), relative to its hotspot at 4,3.
 			const points = [[0, 0], [14.5, 6.6], [7.8, 8.8], [5.6, 15.5]].map(([x, y]) => [tip[0] + x * size, tip[1] + y * size]);
 			if (pill && label) {
@@ -625,17 +624,10 @@ export function live(ctx) {
 					if (label.textContent !== cursor.name) label.textContent = cursor.name;
 				}
 			}
-			const arrow = el.querySelector("[data-eu26-cursor-tip]"), halo = el.querySelector("[data-eu26-cursor-halo]"), ring = el.querySelector("[data-eu26-cursor-ring]");
+			const arrow = el.querySelector("[data-eu26-cursor-tip]"), halo = el.querySelector("[data-eu26-cursor-halo]");
 			const d = kit.pathOf(points, true);
 			arrow.setAttribute("d", d);
 			halo.setAttribute("d", d);
-			// One ripple per press change: a ring spreads from the tip and fades while the press goes in or lets go.
-			const ripple = 4 * pressed * (1 - pressed);
-			ring.setAttribute("cx", tip[0].toFixed(3));
-			ring.setAttribute("cy", tip[1].toFixed(3));
-			ring.setAttribute("r", ((4 + 14 * (1 - Math.abs(1 - 2 * pressed))) * rest).toFixed(3));
-			ring.style.opacity = ripple.toFixed(3);
-			ring.style.display = ripple > 0.02 ? "" : "none";
 		}
 		ctx.svg.appendChild(lighting);
 		if (ctx.svg.lastElementChild !== cursorLayer) ctx.svg.appendChild(cursorLayer);
