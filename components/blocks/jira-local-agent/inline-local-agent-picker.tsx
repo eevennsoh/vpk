@@ -58,6 +58,7 @@ export function InlineLocalAgentPicker({ recentAgentId, onLocalUse, presentation
 			</PopoverContent>
 		</Popover> : null : undefined}
 		showFavorites={false}
+		showHeadings={false}
 		showSearch={false}
 		status={commandCopied ? "Command copied" : undefined}
 		softwareAgentIds={LOCAL_AGENT_IDS}

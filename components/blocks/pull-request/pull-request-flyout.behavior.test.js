@@ -66,6 +66,17 @@ test("flyout adds the repository and a CI summary row", async () => {
 	assert.match(text, /3\/3 builds passed/u);
 });
 
+test("summary flyout keeps its header and author without the details section", async () => {
+	const { text, review, titleHref } = await renderFlyout({ showDetails: false });
+	assert.match(text, /#7 SHIL-25: Integrate Pull Request Data/u);
+	assert.match(text, /Merged/u);
+	assert.match(text, /Shilpa Airi/u);
+	assert.match(text, /20d/u);
+	assert.doesNotMatch(text, /atlassian\/shilpas-test-repo|SHIL-25-dev-panel|9 files|312|48|builds passed/u);
+	assert.equal(review, false);
+	assert.equal(titleHref, PROPS.href);
+});
+
 test("pull request authors can include an assisting agent across card layouts", async () => {
 	for (const variant of ["dropdown", "spacious", "flyout"]) {
 		const view = await renderComponent({

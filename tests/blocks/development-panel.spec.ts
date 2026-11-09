@@ -12,7 +12,16 @@ test("Open in shows local agents in both development panel states", async ({ pag
 		const picker = page.getByRole("dialog", { name: "Local software agents" });
 		for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot", "Rovo CLI"]) {
 			await expect(picker.getByRole("button", { name: new RegExp(`^${name}`, "u") })).toBeVisible();
+			await expect(picker.getByRole("button", { name: new RegExp(`^${name}`, "u") })).not.toBeFocused();
 		}
+		await expect(trigger).toBeFocused();
+		const firstAgent = picker.locator('[data-agent-id="claude-code"]');
+		await page.keyboard.press("Tab");
+		await expect(firstAgent).toBeFocused();
+		await page.keyboard.press("Escape");
+		await expect(trigger).toBeFocused();
+		await trigger.press("Enter");
+		await expect(firstAgent).toBeFocused();
 		await page.keyboard.press("Escape");
 		await expect(trigger).toBeFocused();
 	}
@@ -41,7 +50,7 @@ test("development rows align their icons and labels with the heading", async ({ 
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
 	const startCoding = panel.getByRole("button", { name: "Configure repository" });
-	const copyPrompt = panel.getByRole("button", { name: "Copy prompt" });
+	await expect(panel.getByRole("button", { name: "Copy prompt" })).toHaveCount(0);
 	const emptyPositions = await startCoding.evaluate((element) => {
 		const icon = element.querySelector("svg");
 		const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
@@ -51,16 +60,6 @@ test("development rows align their icons and labels with the heading", async ({ 
 		if (text) range.selectNodeContents(text);
 		return { icon: icon?.getBoundingClientRect().left, label: text ? range.getBoundingClientRect().left : undefined };
 	});
-	const copyPositions = await copyPrompt.evaluate((element) => ({
-		icon: element.querySelector("svg")?.getBoundingClientRect().left,
-		label: element.querySelector<HTMLElement>(":scope > span:last-child")?.getBoundingClientRect().left,
-	}));
-	await page.evaluate(() => {
-		Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (text: string) => { document.documentElement.dataset.copiedPrompt = text; } } });
-	});
-	await copyPrompt.click();
-	await expect(panel.getByRole("button", { name: "Prompt copied" })).toBeVisible();
-	await expect(page.locator("html")).toHaveAttribute("data-copied-prompt", "PAY-999: Improve merchant onboarding for Payments SDK v2");
 	await page.getByRole("button", { name: "Pull requests created" }).click();
 
 	const heading = await panel.getByRole("heading", { name: "Development" }).boundingBox();
@@ -75,24 +74,12 @@ test("development rows align their icons and labels with the heading", async ({ 
 	if (!heading || positions[0]?.icon == null || positions[0]?.label == null) throw new Error("Development rows did not render");
 	expect(emptyPositions.icon).toBeCloseTo(positions[0].icon, 0);
 	expect(emptyPositions.label).toBeCloseTo(positions[0].label, 0);
-	expect(copyPositions.icon).toBeCloseTo(positions[0].icon, 0);
-	expect(copyPositions.label).toBeCloseTo(positions[0].label, 0);
 	for (const position of positions) {
 		expect(position.iconSlot).toBeCloseTo(heading.x, 0);
 		expect(position.icon).toBeCloseTo(positions[0].icon, 0);
 		expect(position.label).toBeCloseTo(positions[0].label, 0);
 	}
-	await page.evaluate(() => { delete document.documentElement.dataset.copiedPrompt; });
-	const pullRequestCopy = panel.getByRole("button", { name: "Copy prompt" });
-	const pullRequestCopyPositions = await pullRequestCopy.evaluate((element) => ({
-		icon: element.querySelector("svg")?.getBoundingClientRect().left,
-		label: element.querySelector<HTMLElement>(":scope > span:last-child")?.getBoundingClientRect().left,
-	}));
-	expect(pullRequestCopyPositions.icon).toBeCloseTo(positions[0].icon, 0);
-	expect(pullRequestCopyPositions.label).toBeCloseTo(positions[0].label, 0);
-	await pullRequestCopy.click();
-	await expect(panel.getByRole("button", { name: "Prompt copied" })).toBeVisible();
-	await expect(page.locator("html")).toHaveAttribute("data-copied-prompt", "PAY-999: Improve merchant onboarding for Payments SDK v2");
+	await expect(panel.getByRole("button", { name: "Copy prompt" })).toHaveCount(0);
 });
 
 test("configure repository menu uses compact icons and a GitHub app tile", async ({ page }) => {
@@ -131,52 +118,89 @@ test("configure repository menu uses compact icons and a GitHub app tile", async
 	}
 });
 
-test("development settings surfaces match the configure repository menu inset", async ({ page }) => {
+test("Configure combines automation with the complete Connections submenu", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	await page.getByRole("button", { name: "Pull requests created" }).click();
 	await page.getByRole("button", { name: "Configure repository" }).click();
 	const menu = page.getByRole("menu", { name: "Configure repository" });
 	const inset = await menu.evaluate((element) => getComputedStyle(element).padding);
 	await page.keyboard.press("Escape");
-	for (const name of ["Pull request settings", "Development settings"]) {
-		await page.getByRole("button", { name, exact: true }).click();
-		const settings = page.getByRole("dialog", { name });
-		await expect(settings).toHaveCSS("padding", inset);
-		await page.keyboard.press("Escape");
+	await expect(page.getByRole("button", { name: "Pull request settings", exact: true })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Development settings", exact: true })).toHaveCount(0);
+	const configure = page.getByRole("button", { name: "Configure", exact: true });
+	await expect(configure).toHaveCount(1);
+	await configure.click();
+	const settings = page.getByRole("menu", { name: "Configure", exact: true });
+	await expect(settings).toHaveCSS("padding", inset);
+	await expect(settings.getByRole("menuitemcheckbox")).toHaveText(["Auto-fix", "Merge when ready", "Auto-archive on merge or close"]);
+	await expect(settings.getByRole("separator")).toHaveCount(1);
+	const connections = settings.getByRole("menuitem", { name: "Connections", exact: true });
+	await expect(connections.locator("svg")).toBeVisible();
+	await connections.hover();
+	const submenu = page.getByRole("dialog", { name: "Connections", exact: true });
+	await expect(submenu).toBeVisible();
+	await expect(submenu).toHaveCSS("padding", inset);
+	for (const label of ["Code repositories", "Agents"]) {
+		await expect(submenu.getByRole("heading", { name: label, exact: true })).toBeVisible();
 	}
+	for (const label of ["Bitbucket", "GitHub for Atlassian", "GitLab for Jira Cloud", "Jira Coding Agent", "GitHub Copilot for Jira", "Cursor", "Claude Agent for Jira"]) {
+		const name = submenu.getByText(label, { exact: true });
+		await expect(name).toBeVisible();
+		await expect(name.locator("..")).toHaveCSS("height", "32px");
+	}
+	await expect(submenu.getByRole("img", { name: "Connected", exact: true })).toHaveCount(4);
+	await expect(submenu.getByRole("button", { name: /^Request / })).toHaveCount(3);
+	await submenu.getByRole("button", { name: "Request GitLab for Jira Cloud" }).hover();
+	await expect(submenu).toBeVisible();
+	await expect(submenu.getByRole("button", { name: "Manage connections" })).toBeVisible();
+	await submenu.getByRole("button", { name: "Request GitLab for Jira Cloud" }).focus();
+	await page.keyboard.press("Escape");
+	await expect(submenu).toBeHidden();
+	await expect(settings).toBeVisible();
+	await expect(connections).toBeFocused();
+	await page.keyboard.press("ArrowRight");
+	await expect(submenu).toBeVisible();
+	await page.keyboard.press("Tab");
+	await expect(submenu.getByRole("button", { name: "Request GitLab for Jira Cloud" })).toBeFocused();
+	await page.keyboard.press("Escape");
+	await page.keyboard.press("Escape");
+	await expect(settings).toBeHidden();
+	await expect(configure).toBeFocused();
 });
 
-test("pull request settings work in both development panel states", async ({ page }) => {
+test("automation defaults are enabled and choices persist across development panel states", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
-	const settingsButton = panel.getByRole("button", { name: "Pull request settings" });
+	const settingsButton = panel.getByRole("button", { name: "Configure", exact: true });
 	await settingsButton.click();
-	const settings = page.getByRole("dialog", { name: "Pull request settings" });
+	const settings = page.getByRole("menu", { name: "Configure", exact: true });
 	for (const name of ["Auto-fix", "Merge when ready", "Auto-archive on merge or close"]) {
-		const option = settings.getByRole("switch", { name });
+		const defaultChecked = name !== "Auto-archive on merge or close";
+		const option = settings.getByRole("menuitemcheckbox", { name });
 		const row = option;
-		await expect(option).not.toBeChecked();
+		await expect(row).toHaveCSS("height", "32px");
+		await expect(option).toHaveAttribute("aria-checked", String(defaultChecked));
 		await row.hover({ position: { x: 4, y: 20 } });
 		await expect(row).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 		await row.click({ position: { x: 150, y: 20 } });
-		await expect(option).toBeChecked();
+		await expect(option).toHaveAttribute("aria-checked", String(!defaultChecked));
 		const rowBox = await row.boundingBox();
 		if (!rowBox) throw new Error("Settings row did not render");
 		await row.click({ position: { x: rowBox.width - 14, y: 20 } });
-		await expect(option).not.toBeChecked();
+		await expect(option).toHaveAttribute("aria-checked", String(defaultChecked));
 		await row.click({ position: { x: 150, y: 20 } });
-		await expect(option).toBeChecked();
+		await expect(option).toHaveAttribute("aria-checked", String(!defaultChecked));
 	}
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Pull requests created" }).click();
-	await settingsButton.click();
+	await settingsButton.press("Enter");
 	for (const name of ["Auto-fix", "Merge when ready", "Auto-archive on merge or close"]) {
-		await expect(settings.getByRole("switch", { name })).toBeChecked();
+		await expect(settings.getByRole("menuitemcheckbox", { name })).toHaveAttribute("aria-checked", String(name === "Auto-archive on merge or close"));
 	}
-	await settings.getByRole("switch", { name: "Auto-fix" }).focus();
+	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix" })).toBeFocused();
 	await page.keyboard.press("Space");
-	await expect(settings.getByRole("switch", { name: "Auto-fix" })).not.toBeChecked();
-	await expect(settings.getByRole("switch", { name: "Merge when ready" })).toBeChecked();
+	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix" })).toBeChecked();
+	await expect(settings.getByRole("menuitemcheckbox", { name: "Merge when ready" })).not.toBeChecked();
 });
 
 test("non-merged pull requests show a compact CI summary without check details", async ({ page }) => {

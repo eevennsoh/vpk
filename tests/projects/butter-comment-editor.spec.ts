@@ -5,6 +5,66 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+async function openGalleryCommentEditor(page: Page) {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	return page.getByRole("region", { name: "Work item full screen view" }).getByRole("textbox", { name: "Comment editor" });
+}
+
+async function mentionGalleryClaude(page: Page) {
+	const editor = page.getByRole("region", { name: "Work item full screen view" }).getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("option", { name: /^Claude / }).first().click();
+	return editor;
+}
+
+test("gallery Claude mentions offer the existing completed session", async ({ page }) => {
+	const editor = await openGalleryCommentEditor(page);
+	await mentionGalleryClaude(page);
+	const choices = page.getByRole("listbox", { name: "Choose agent session" });
+	await expect(choices.getByRole("option")).toHaveText(["Continue in existing session", "Start a new session"]);
+	await editor.pressSequentially(" Review the remaining action items");
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	const session = page.getByRole("region", { name: "Rewrite the incident postmortem session" });
+	await expect(session).toBeVisible();
+	await expect(session.getByRole("textbox", { name: "Reply to Claude" })).toHaveValue("Review the remaining action items");
+});
+
+test("gallery Claude session choices support multiple sessions and Back", async ({ page }) => {
+	const editor = await openGalleryCommentEditor(page);
+	await mentionGalleryClaude(page);
+	const choices = page.getByRole("listbox", { name: "Choose agent session" });
+	await choices.getByRole("option", { name: "Start a new session" }).click();
+	await editor.pressSequentially(" A second Claude review");
+	await editor.press("Enter");
+	await page.keyboard.press("m");
+	await mentionGalleryClaude(page);
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	const sessions = page.getByRole("listbox", { name: "Choose a session" });
+	await expect(sessions.getByRole("option")).toHaveCount(2);
+	await expect(sessions.getByRole("option", { name: /Rewrite the incident postmortem/ })).toContainText("Completed");
+	const targetMenu = page.locator("[data-project-butter-session-target-menu]");
+	await targetMenu.getByRole("button", { name: "Back", exact: true }).click();
+	await expect(choices).toBeVisible();
+	await expect(editor).toContainText("Claude");
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await targetMenu.getByRole("button", { name: "Back", exact: true }).focus();
+	await page.keyboard.press("Enter");
+	await expect(choices).toBeVisible();
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await editor.press("ArrowLeft");
+	await expect(choices).toBeVisible();
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await editor.press("Escape");
+	await expect(choices).toBeVisible();
+	await expect(editor).toContainText("Claude");
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await sessions.getByRole("option", { name: /A second Claude review/ }).click();
+	await expect(page.getByRole("textbox", { name: "Reply to Claude" })).toBeVisible();
+});
+
 test("the comment shadow fades without moving the scrollbar over details", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/jira-work-item"));
 	await page.getByRole("button", { name: "Full screen", exact: true }).click();
