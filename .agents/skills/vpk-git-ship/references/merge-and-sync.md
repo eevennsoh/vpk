@@ -62,9 +62,20 @@ repository URL and `--force-with-lease=<head-ref>:<reviewed-sha>`; this makes a
 concurrent push reject deletion. REST ref deletion has no documented expected-SHA
 condition, so the helper never uses it. Fork and changed refs are preserved.
 
-The helper never switches checkout, deletes a local branch, or syncs main. A
-merge or deletion request with an unknown outcome is reconciled, never blindly
-retried. Persistent-main synchronization below remains a separate step. Local
+After a verified merge, the JSON retains `mergeCommit` and the full `gate`, and
+`branchDeletion` reports `{ state, ref?, reason?, stage?, error?, warning? }`:
+`deleted` means the leased Git deletion succeeded; `preserved` means identity or
+an advanced ref prevented deletion; `unconfirmed` means ref lookup or deletion
+failed. A lookup 404 can mean automatic deletion or hidden permission failure,
+so it never proves deletion. Report the actual state and warning, reconcile or
+defer cleanup, and continue the separate main sync. Never repeat a verified
+merge because cleanup is unconfirmed. An advanced ref is never deleted.
+
+The helper never switches checkout, deletes a local branch, or syncs main.
+Genuinely unconfirmed merges still fail closed; an unknown merge mutation is
+reconciled once without retrying it. Cleanup failures after verified merge return
+the structured outcome with exit 0; callers must inspect `branchDeletion.state`
+instead of equating command success with deletion. Persistent-main synchronization below remains a separate step. Local
 branches and worktrees belong to `vpk-git-clean`.
 
 If `BLOCKED` appears while checks look green, repeat the review-gate GraphQL and

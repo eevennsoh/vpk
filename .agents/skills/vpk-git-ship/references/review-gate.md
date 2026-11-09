@@ -91,8 +91,13 @@ errors and authentication failures are not transient; an invalid injected
 retried. Retries happen inside the same gate invocation, preserving rerun
 accounting. Do not restart a failed helper with a fresh rerun budget; reconcile
 the recorded attempts and current run state first, especially unknown outcomes.
-An aggregate failure can accompany a cancelled shard: inspect it before choosing
-remediation; a reported failure is never blindly rerun. Do not use scraped HTML,
+A failed required `PR checks` inherits an interrupted verdict only when its
+Actions run URL is known, at least one other nonpassing check in the same run is
+cancelled or timed out, and every other nonpassing check in that run is also
+interrupted. Real failures, missing/pending checks, billing-blocked checks and
+unmatched URLs cannot establish that exception. Other required names never
+inherit it. The aggregate and its interrupted shards share one rerun attempt per
+run; stale job URLs cannot spend the budget twice. Do not use scraped HTML,
 undocumented endpoints, or browser automation to manufacture a thread ID.
 
 ## Billing-blocked CI
@@ -105,6 +110,15 @@ have failed or your spending limit needs to be increased. Please check the
 check's annotations and lists those checks under `checks.billingBlocked`, not
 `checks.failing`. When they are the only non-passing checks, `checks.state` is
 `billing-blocked`. It never reruns them.
+
+The required `PR checks` aggregate can report `FAILURE`, `SKIPPED` or `CANCELLED`
+without its own billing annotation. It inherits billing-blocked only when at
+least one nonpassing prerequisite in the same valid Actions run is positively
+billing-blocked, and every other nonpassing check in that run is also positively
+billing-blocked. Unknown or malformed nonpassing check URLs cannot establish
+this exception. Other required names never inherit it. Real failures, pending
+or missing requirements, skipped/neutral prerequisites and mixed billing plus
+interruptions still block the local fallback.
 
 If billing is the problem, always skip GitHub CI. On exit 3, do not ask the
 user, wait, or retry. Instead:

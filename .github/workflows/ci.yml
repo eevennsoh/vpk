@@ -60,16 +60,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Restore ESLint content cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules/.cache/eslint
-          # A unique save key refreshes the cache; the prefix shares only compatible
-          # lock/config/suppression caches. ESLint validates individual file contents.
-          key: eslint-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'package.json', 'eslint.config.mjs', 'eslint-suppressions.json') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            eslint-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'package.json', 'eslint.config.mjs', 'eslint-suppressions.json') }}-
-
       - name: Repository guards
         env:
           # origin/main is the pushed commit itself; ratchet against the previous tip.
@@ -99,6 +89,16 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Fetch PR base for ratchet checks
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --depth=1 origin "+refs/heads/${GITHUB_BASE_REF}:refs/remotes/origin/${GITHUB_BASE_REF}"
+
+      - name: Fetch pre-push tip for ratchet checks
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: git fetch --no-tags --depth=1 origin "$BEFORE_SHA"
+
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
 
@@ -126,6 +126,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Unit tests
+        env:
+          VPK_SUPPRESSIONS_BASE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: time pnpm run test:unit:js --shard "${{ matrix.shard }}/4"
 
   aggregate:

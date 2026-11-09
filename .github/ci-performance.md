@@ -21,14 +21,14 @@ batch sizes scale their historical duration per file; new batches use one second
 per file until measured. Nothing is selected by changed paths. Every shard runs
 the unfiltered manifest checks before selecting its batches.
 
-With the new workflow regression suite, selection is 1,329 files in 272 batches:
+With the workflow and remote-merge regression suites, selection is 1,330 files in 272 batches:
 
 | Shard | Batches | Files | Historical-weight estimate (seconds) |
 | --- | ---: | ---: | ---: |
-| 1/4 | 51 | 107 | 186.36 |
-| 2/4 | 73 | 568 | 186.36 |
-| 3/4 | 74 | 272 | 186.41 |
-| 4/4 | 74 | 382 | 186.35 |
+| 1/4 | 51 | 103 | 186.38 |
+| 2/4 | 73 | 577 | 186.38 |
+| 3/4 | 73 | 265 | 186.38 |
+| 4/4 | 75 | 385 | 186.43 |
 
 These are balancing estimates, **not measured hosted runtimes or a speedup**.
 Runner scheduling, five installations, resource contention, cache availability
@@ -45,9 +45,20 @@ seconds, exit status and a slowest-ten summary (including on failure). Refresh
 weights only from comparable successful runs, match VM batches by file and other
 batches by directory, and retain the coverage/manifest tests when rebalancing.
 
-Both ESLint commands use content validation and separate cache files under
-ignored `node_modules/.cache/eslint/`. CI restores only a prefix matching the OS,
-Node major, lockfile, package scripts, ESLint configuration and suppression
-ledger; a unique run key saves the refreshed cache. Source edits are validated
-by content, even when their size and mtime are unchanged. The workflow tests
-exercise that case and all 25 aggregate result combinations.
+ESLint caching was evaluated and rejected for both local commands and hosted
+CI. The real `shadcn/no-restyle` rule follows imported wrappers and reads CSS;
+a caller-content/config cache cannot track those dependencies. Review reproduced
+an unchanged caller's `className="border"` passing from cache after only its
+wrapper changed from a `div` to `PopoverContent`. The workflow regression now
+warms the real lint operation, changes only that imported wrapper and requires
+the unchanged caller's violation on the second uncached run, using both lint
+commands' options and actual rule configuration. Static validation still runs
+alongside unit shards, so the timing target remains plausible but unmeasured.
+
+Static and unit jobs both fetch the PR base or pre-push tip and retain the same
+`VPK_SUPPRESSIONS_BASE` mapping. Workflow tests execute the fetch commands with a
+fake Git function and compare both jobs' environments. All 25 aggregate result
+combinations still require success from both dependencies. A failed required
+`PR checks` is rerunnable only when every other nonpassing check in its known
+Actions run is cancelled or timed out, with at least one such interruption;
+real failures, pending/missing checks and billing keep their separate gates.

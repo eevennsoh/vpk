@@ -54,22 +54,33 @@ async function mergeRemote({ prNumber, repository, expectedHead, collectGate = c
 	if (result?.merged !== true || !SHA.test(result.sha ?? "")) throw new Error("GitHub did not confirm a merge; remote branch preserved");
 	const merged = await readPr();
 	if (!merged.merged || merged.state !== "closed" || merged.merge_commit_sha !== result.sha) throw new Error("Merged PR could not be verified; remote branch preserved");
-	const report = { repository, prNumber, head: expectedHead, mergeCommit: result.sha, branchDeletion: "preserved", gate };
+	const report = { repository, prNumber, head: expectedHead, mergeCommit: result.sha,
+		branchDeletion: { state: "preserved", reason: "Head identity is ineligible for deletion" }, gate };
 	if (pr.head.repo?.full_name?.toLowerCase() !== repository.toLowerCase() ||
 		merged.head.repo?.full_name?.toLowerCase() !== repository.toLowerCase() ||
 		merged.head.ref !== pr.head.ref || merged.head.sha !== expectedHead ||
 		pr.head.ref === pr.base.ref || pr.head.ref === repo.default_branch) return report;
 	const ref = `refs/heads/${pr.head.ref}`;
-	const remoteRef = await runGh(["api", `repos/${repository}/git/ref/heads/${pr.head.ref.split("/").map(encodeURIComponent).join("/")}`]);
-	if (remoteRef.ref !== ref || remoteRef.object?.sha !== expectedHead) return report;
+	const unconfirmed = (stage, error) => ({ ...report, branchDeletion: {
+		state: "unconfirmed", ref, stage, error: error.message,
+		warning: "Merge verified. Reconcile or defer remote branch cleanup; do not repeat the merge. A ref lookup 404 does not prove deletion.",
+	} });
+	let remoteRef;
+	try {
+		remoteRef = await runGh(["api", `repos/${repository}/git/ref/heads/${pr.head.ref.split("/").map(encodeURIComponent).join("/")}`]);
+	} catch (error) { return unconfirmed("ref-read", error); }
+	if (remoteRef?.ref !== ref || !SHA.test(remoteRef.object?.sha ?? "")) {
+		return unconfirmed("ref-read", new Error("Invalid remote ref response"));
+	}
+	if (remoteRef.object.sha !== expectedHead) return { ...report, branchDeletion: { state: "preserved", ref, reason: "Remote ref advanced", observedHead: remoteRef.object.sha } };
 	// REST DELETE has no documented expected-SHA condition. Git's lease makes deletion
 	// atomic if someone pushes between the REST read and the delete. An explicit URL
 	// avoids updating a local remote-tracking ref; no checkout or local branch changes.
 	try {
 		await deleteRef(["-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential", "-c", "core.hooksPath=/dev/null",
 			"push", "--porcelain", "--no-follow-tags", `--force-with-lease=${ref}:${expectedHead}`, `https://github.com/${repository}.git`, `:${ref}`]);
-	} catch (error) { throw new Error(`PR merged at ${result.sha}; ${error.message}. Reconcile the remote ref before retrying deletion.`); }
-	return { ...report, branchDeletion: "deleted", deletedRef: ref };
+	} catch (error) { return unconfirmed("lease-delete", error); }
+	return { ...report, branchDeletion: { state: "deleted", ref } };
 }
 
 async function main(argv) {

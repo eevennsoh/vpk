@@ -45,7 +45,7 @@ function executeGh(command, args, options) {
 }
 
 function workflowRunId(url) {
-	const match = /\/actions\/runs\/(\d+)/u.exec(url ?? "");
+	const match = /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/(\d+)(?:\/attempts\/\d+)?(?:\/job\/\d+)?\/?$/u.exec(url ?? "");
 	return match ? match[1] : null;
 }
 
@@ -229,6 +229,26 @@ function classifyChecks(checks, requiredChecks = []) {
 			billingBlocked.push(check);
 		} else {
 			failing.push(check);
+		}
+	}
+	// Only the known required aggregate may inherit a prerequisite verdict. Billing
+	// may leave it failed, skipped or cancelled; interruption recovery still applies
+	// only to a failed aggregate. Both require positive proof from the same Actions
+	// run. Unknown URLs and skipped/neutral prerequisites cannot establish it.
+	const nonpassing = normalized.filter((check) => !passing.includes(check) || check.conclusion !== "SUCCESS");
+	for (const aggregate of [...failing, ...interrupted]) {
+		if (aggregate.name !== "PR checks" || !requiredChecks.includes(aggregate.name) || !["FAILURE", "SKIPPED", "CANCELLED"].includes(aggregate.conclusion)) continue;
+		const runId = workflowRunId(aggregate.url);
+		if (!runId || nonpassing.some((check) => !workflowRunId(check.url))) continue;
+		const siblings = nonpassing.filter((check) => check !== aggregate && workflowRunId(check.url) === runId);
+		if (siblings.length > 0 && siblings.every((check) => billingBlocked.includes(check))) {
+			const source = failing.includes(aggregate) ? failing : interrupted;
+			source.splice(source.indexOf(aggregate), 1);
+			aggregate.billingBlocked = true;
+			billingBlocked.push(aggregate);
+		} else if (aggregate.conclusion === "FAILURE" && siblings.length > 0 && siblings.every((check) => interrupted.includes(check))) {
+			failing.splice(failing.indexOf(aggregate), 1);
+			interrupted.push(aggregate);
 		}
 	}
 	let state = "passing";

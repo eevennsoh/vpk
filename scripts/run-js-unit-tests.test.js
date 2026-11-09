@@ -502,20 +502,26 @@ test("runTestFiles invokes node:test once per batch", async () => {
 	]);
 });
 
-test("four deterministic balanced shards cover the full selected inventory exactly once", async () => {
+test("four shards cover the inventory and ordinary Butter growth exactly once within an indivisible-batch bound", async () => {
 	const { readFileSync } = require("node:fs");
 	const { buildTestFileBatches, listCandidateTestFiles, partitionTestBatches, selectRunnableTestFiles } = await import("./run-js-unit-tests.mjs");
 	const entries = listCandidateTestFiles().map((filePath) => ({ filePath, source: readFileSync(filePath, "utf8") }));
 	const selected = selectRunnableTestFiles(entries);
-	const batches = buildTestFileBatches(selected);
-	const shards = partitionTestBatches(batches);
-	const union = shards.flatMap((shard) => shard.batches.flatMap((batch) => batch.files));
-	assert.ok(selected.length >= 1328);
-	assert.equal(shards.length, 4);
-	assert.equal(new Set(union).size, union.length);
-	assert.deepEqual([...union].sort(), [...selected].sort());
-	assert.deepEqual(partitionTestBatches([...batches].reverse()), shards);
-	assert.ok(Math.max(...shards.map((shard) => shard.seconds)) - Math.min(...shards.map((shard) => shard.seconds)) < 2);
+	const growth = ["council-growth-one", "council-growth-two"].map((name) => `components/blocks/jira-work-item/project-butter/${name}.test.js`);
+	assert.ok(selected.length > 0);
+	assert.ok(growth.every((file) => !selected.includes(file)));
+	for (const files of [selected, [...selected, ...growth]]) {
+		const batches = buildTestFileBatches(files, { readFile: (file) => growth.includes(file) ? NODE_TEST_SOURCE : readFileSync(file, "utf8") });
+		const shards = partitionTestBatches(batches);
+		const union = shards.flatMap((shard) => shard.batches.flatMap((batch) => batch.files));
+		assert.equal(shards.length, 4);
+		assert.equal(new Set(union).size, union.length);
+		assert.deepEqual([...union].sort(), [...files].sort());
+		assert.deepEqual(partitionTestBatches([...batches].reverse()), shards);
+		const largestBatch = Math.max(...batches.map((batch) => partitionTestBatches([batch])[0].seconds));
+		const spread = Math.max(...shards.map((shard) => shard.seconds)) - Math.min(...shards.map((shard) => shard.seconds));
+		assert.ok(spread <= largestBatch, `Spread ${spread} exceeds largest indivisible batch ${largestBatch}`);
+	}
 });
 
 test("new batches use deterministic file weights and VM batches retain their flags", async () => {

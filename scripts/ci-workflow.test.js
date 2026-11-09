@@ -1,7 +1,6 @@
 const assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
-const { mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } = require("node:fs");
-const { tmpdir } = require("node:os");
+const { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
@@ -45,9 +44,6 @@ test("CI retains event coverage, cancellation, ratchets and authenticated frozen
 	assert.match(workflow, /workflow_dispatch:/u);
 	assert.match(workflow, /cancel-in-progress: true/u);
 	assert.match(workflow, /permissions:\n  contents: read/u);
-	assert.match(jobs.static, /if: github.event_name == 'pull_request'[\s\S]*git fetch[^\n]*GITHUB_BASE_REF/u);
-	assert.match(jobs.static, /BEFORE_SHA: \$\{\{ github.event.before \}\}[\s\S]*git fetch[^\n]*BEFORE_SHA/u);
-	assert.match(jobs.static, /VPK_SUPPRESSIONS_BASE: \$\{\{ github.event_name == 'push' && github.event.before \|\| '' \}\}/u);
 	for (const job of [jobs.static, jobs.unit]) {
 		const steps = ["actions/checkout@", "pnpm/action-setup@", "actions/setup-node@", "node scripts/verify-pnpm-lockfile.js", "node scripts/write-npmrc.mjs", "pnpm install --frozen-lockfile"];
 		let previous = -1;
@@ -58,45 +54,78 @@ test("CI retains event coverage, cancellation, ratchets and authenticated frozen
 		assert.match(job, /node-version: 24/u);
 		assert.match(job, /ATLASSIAN_NPM_TOKEN: \$\{\{ secrets.ATLASSIAN_NPM_TOKEN \}\}/u);
 	}
-	assert.match(jobs.static, /path: node_modules\/\.cache\/eslint/u);
-	for (const file of ["pnpm-lock.yaml", "package.json", "eslint.config.mjs", "eslint-suppressions.json"]) {
-		assert.equal(jobs.static.split(`'${file}'`).length - 1, 2, `Cache key and restore prefix: ${file}`);
-	}
+	assert.doesNotMatch(workflow, /actions\/cache@|\.cache\/eslint|--cache/u);
 });
 
-test("ESLint content cache reuses unchanged files and invalidates same-size edits with identical mtime", async () => {
-	const { ESLint } = require("eslint");
-	for (const name of ["lint", "lint:design-system"]) {
-		const command = require("../package.json").scripts[name];
-		assert.match(command, /--cache --cache-strategy content --cache-location node_modules\/\.cache\/eslint\//u);
+function stepsFor(job) {
+	return job.split(/^      - /gmu).slice(1).map((source) => ({
+		name: /^name: (.+)$/mu.exec(source)?.[1],
+		condition: /^        if: (.+)$/mu.exec(source)?.[1],
+		run: /^        run: (.+)$/mu.exec(source)?.[1],
+		env: Object.fromEntries([...source.matchAll(/^          (\w+): (.+)$/gmu)].map((match) => [match[1], match[2]])),
+	}));
+}
+
+test("static and unit jobs preserve the same base fetches and validation environment", () => {
+	const [staticSteps, unitSteps] = [jobs.static, jobs.unit].map(stepsFor);
+	for (const name of ["Fetch PR base for ratchet checks", "Fetch pre-push tip for ratchet checks"]) {
+		const fetch = staticSteps.find((step) => step.name === name);
+		assert.ok(fetch);
+		assert.deepEqual(unitSteps.find((step) => step.name === name), fetch);
+		for (const steps of [staticSteps, unitSteps]) {
+			assert.ok(steps.findIndex((step) => step.name === name) < steps.findIndex((step) => step.name === "Install dependencies"));
+		}
+		const isPr = name.includes("PR base");
+		assert.equal(fetch.condition, `github.event_name == '${isPr ? "pull_request" : "push"}'`);
+		assert.deepEqual(fetch.env, isPr ? {} : { BEFORE_SHA: "${{ github.event.before }}" });
+		const result = spawnSync("bash", ["-eu", "-c", `git() { printf '%s\\n' "$@"; }\n${fetch.run}`], {
+			encoding: "utf8", env: { ...process.env, GITHUB_BASE_REF: "release/test", BEFORE_SHA: "a".repeat(40) },
+		});
+		assert.equal(result.status, 0, result.stderr);
+		assert.deepEqual(result.stdout.trim().split("\n"), ["fetch", "--no-tags", "--depth=1", "origin",
+			isPr ? "+refs/heads/release/test:refs/remotes/origin/release/test" : "a".repeat(40)]);
 	}
-	const root = mkdtempSync(path.join(tmpdir(), "vpk-eslint-content-"));
+	const guards = staticSteps.find((step) => step.name === "Repository guards");
+	const units = unitSteps.find((step) => step.name === "Unit tests");
+	assert.deepEqual(units.env, guards.env);
+	assert.deepEqual(units.env, { VPK_SUPPRESSIONS_BASE: "${{ github.event_name == 'push' && github.event.before || '' }}" });
+});
+
+test("uncached lint observes real no-restyle violations after changing only an imported wrapper", async () => {
+	mkdirSync(path.join(__dirname, "../output"), { recursive: true });
+	const root = mkdtempSync(path.join(__dirname, "../output/lint-dependency-"));
 	try {
-		const file = path.join(root, "input.js");
-		const cacheLocation = path.join(root, "cache");
-		let ruleRuns = 0;
-		const probe = {
-			meta: { name: "vpk-cache-probe", version: "1" },
-			rules: { run: { meta: { schema: [] }, create() { ruleRuns += 1; return {}; } } },
-		};
-		const lint = () => new ESLint({ cwd: root, overrideConfigFile: true,
-			overrideConfig: [{ plugins: { probe }, rules: { "no-debugger": "error", "probe/run": "error" } }],
-			cache: true, cacheStrategy: "content", cacheLocation }).lintFiles([file]);
-		writeFileSync(file, "void 1;  ");
-		utimesSync(file, new Date("2026-01-01T00:00:00Z"), new Date("2026-01-01T00:00:00Z"));
-		const original = statSync(file);
-		assert.equal((await lint())[0].errorCount, 0);
-		assert.equal(ruleRuns, 1);
-		const cached = readFileSync(cacheLocation, "utf8");
-		assert.equal((await lint())[0].errorCount, 0);
-		assert.equal(ruleRuns, 1, "unchanged content skips rule execution");
-		assert.equal(readFileSync(cacheLocation, "utf8"), cached);
-		writeFileSync(file, "debugger;");
-		utimesSync(file, original.atime, original.mtime);
-		assert.equal(statSync(file).size, original.size);
-		assert.equal(statSync(file).mtimeMs, original.mtimeMs);
-		assert.equal((await lint())[0].messages[0].ruleId, "no-debugger");
-		assert.equal(ruleRuns, 2, "changed content executes rules again");
+		const caller = path.join(root, "caller.tsx");
+		const wrapper = path.join(root, "wrapper.tsx");
+		const callerSource = 'import { Surface } from "./wrapper";\nexport const Fixture = () => <Surface className="border" />;\n';
+		writeFileSync(caller, callerSource);
+		const eslintBin = path.join(path.dirname(require.resolve("eslint/package.json")), "bin/eslint.js");
+		for (const name of ["lint", "lint:design-system"]) {
+			const command = require("../package.json").scripts[name].split(/\s+/u);
+			assert.equal(command[0], "eslint");
+			assert.ok(!command.some((arg) => arg.startsWith("--cache")), `${name} must inspect imported dependencies every run`);
+			const options = command.slice(command.findIndex((arg) => arg.startsWith("--")));
+			const config = path.join(root, `${name.replace(":", "-")}.config.mjs`);
+			const representative = name === "lint" ? "components/blocks/demo/fixture.tsx" : "components/projects/jira-team-eu26/fixture.tsx";
+			writeFileSync(config, `import eslint from ${JSON.stringify(require.resolve("eslint"))};
+const { languageOptions, plugins, rules, settings, linterOptions } = await new eslint.ESLint().calculateConfigForFile(${JSON.stringify(representative)});
+export default [{ files: ["**/*.tsx"], languageOptions, plugins, rules, settings, linterOptions }];\n`);
+			const lint = () => {
+				const result = spawnSync(process.execPath, [eslintBin, ...options, "--config", config, "--format", "json", caller], { encoding: "utf8" });
+				assert.ok(result.status === 0 || result.status === 1, result.stderr);
+				const [finding] = JSON.parse(result.stdout);
+				assert.equal(finding.fatalErrorCount, 0, result.stdout);
+				return { status: result.status, findings: finding.messages.filter((message) => message.ruleId === "shadcn/no-restyle") };
+			};
+			writeFileSync(wrapper, 'export function Surface({ className }: { className?: string }) { return <div className={className} />; }\n');
+			assert.deepEqual(lint(), { status: 0, findings: [] }, `${name}: warm lint must pass`);
+			writeFileSync(wrapper, 'import { PopoverContent } from "@/components/ui/popover";\nexport function Surface({ className }: { className?: string }) { return <PopoverContent className={className} />; }\n');
+			assert.equal(readFileSync(caller, "utf8"), callerSource);
+			const changed = lint();
+			assert.equal(changed.status, 1, `${name}: unchanged caller must now fail`);
+			assert.equal(changed.findings.length, 1);
+			assert.match(changed.findings[0].message, /surfaces are defined by overlay elevation/u);
+		}
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
