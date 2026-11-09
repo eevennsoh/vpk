@@ -6,6 +6,7 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import { InlineAgentSelector } from "@/components/blocks/agent-selector";
+import { isLocalAgentListItem } from "@/components/blocks/agent-list";
 import { Icon } from "@/components/ui/icon";
 import { AgentSessionsMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-session-menu";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
@@ -120,7 +121,7 @@ export function ProjectButterCrew({ assignee, currentUser, field = false, onBrow
 					softwareAgentIds={["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"]}
 					initialSoftwareLimit={5}
 					getActions={(agent) => [
-						...orderedSessions.filter((session) => session.agent.name.toLowerCase() === agent.name.toLowerCase()).map((session) => ({ id: session.id, label: session.title, icon: <Icon render={<AiChatIcon label="" size="small" />} />, onSelect: () => { onOpenSession(session); changeOpen(false); } })),
+						...orderedSessions.filter((session) => !isLocalAgentListItem(session) && session.agent.name.toLowerCase() === agent.name.toLowerCase()).map((session) => ({ id: session.id, label: session.title, icon: <Icon render={<AiChatIcon label="" size="small" />} />, onSelect: () => { onOpenSession(session); changeOpen(false); } })),
 						{ id: "start", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => { onStartAgent({ id: agent.id.startsWith("session-agent:") ? agent.id.slice("session-agent:".length) : agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); } },
 					]}
 					onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined}

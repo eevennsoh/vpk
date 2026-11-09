@@ -240,6 +240,8 @@ test("the details agent stack shows each agent once while retaining every sessio
 	const sessions = [
 		{ ...crewSession("claude-first", "running", "Claude"), title: "First Claude session" },
 		{ ...crewSession("claude-second", "needs-input", "CLAUDE"), title: "Second Claude session" },
+		{ ...crewSession("claude-local", "running", "Claude"), title: "Local Claude session", host: "local" },
+		{ ...crewSession("claude-legacy-local", "running", "Claude"), title: "Legacy local Claude session", sessionDetails: { host: "local" } },
 		crewSession("cursor", "running", "Cursor"),
 	];
 	const opened = [];
@@ -249,6 +251,8 @@ test("the details agent stack shows each agent once while retaining every sessio
 	await view.click(view.getByRole("button", { name: "2 agents: Needs input" }));
 	await view.click(view.getByRole("button", { name: "Claude" }));
 	assert.equal(view.queryByRole("button", { name: "First Claude session" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Local Claude session" }), null);
+	assert.equal(view.queryByRole("button", { name: "Legacy local Claude session" }), null);
 	await view.click(view.getByRole("button", { name: "Second Claude session" }));
 	assert.deepEqual(opened, ["claude-second"]);
 	await view.unmount();
