@@ -124,6 +124,7 @@ export interface JiraListProps {
 	bordered?: boolean;
 	className?: string;
 	createLabel?: string;
+	footerCountAlignment?: "center" | "end";
 	totalCountLabel?: string;
 	visibleCount?: number;
 	selectedIssueKeys?: ReadonlySet<string>;

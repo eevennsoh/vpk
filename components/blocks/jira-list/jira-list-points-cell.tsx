@@ -63,7 +63,7 @@ export function JiraListPointsCell({ issueKey, onChange, points }: Readonly<{
 				<input
 					aria-label={`Story points for ${issueKey}`}
 					autoFocus
-					className="h-8 w-12 rounded-sm border border-border-focused bg-surface px-1 text-sm text-text outline-none"
+					className="h-8 w-12 rounded-sm border border-border-focused bg-surface px-1 text-sm text-text outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 					min="0"
 					onBlur={commit}
 					onChange={(event) => setDraft(event.currentTarget.value)}

@@ -66,7 +66,7 @@ export function RowBoundaryCreateControls({
 						<Button
 							aria-label={`Create work item ${position} ${row.issueKey}`}
 							className={cn(
-								"fixed z-30 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-overlay! text-icon-subtle opacity-0 transition-opacity duration-fast hover:bg-surface-overlay-hovered! active:bg-surface-overlay-pressed! focus-visible:pointer-events-auto focus-visible:bg-surface-overlay! focus-visible:opacity-100",
+								"fixed z-30 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-overlay! text-icon-subtle opacity-0 transition-none hover:bg-surface-overlay-hovered! active:bg-surface-overlay-pressed! focus-visible:pointer-events-auto focus-visible:bg-surface-overlay! focus-visible:opacity-100",
 								isVisible && "pointer-events-auto opacity-100",
 							)}
 							data-insertion-position={position}
@@ -173,7 +173,7 @@ export function JiraListSortableRow({
 						{...listeners}
 						aria-label="Drag to reorder"
 						className={cn(
-							"fixed z-30 size-6 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none border border-border bg-surface-overlay! text-icon-subtle opacity-0 transition-opacity duration-fast hover:bg-surface-overlay-hovered! active:cursor-grabbing active:bg-surface-overlay-pressed! focus-visible:bg-surface-overlay! focus-visible:opacity-100",
+							"fixed z-30 size-5 -translate-x-full -translate-y-1/2 cursor-grab touch-none bg-transparent! text-icon-subtle opacity-0 transition-opacity duration-fast after:absolute after:-inset-0.5 hover:bg-transparent! active:cursor-grabbing active:bg-transparent! focus-visible:bg-transparent! focus-visible:opacity-100",
 							showHandle && "pointer-events-auto opacity-100",
 						)}
 						data-testid={`jira-list-drag-handle-${row.issueKey}`}
@@ -189,7 +189,7 @@ export function JiraListSortableRow({
 							positionAnchor: getRowAnchorName(instanceId, rowIndex),
 							top: "anchor(center)",
 						}}
-						variant="outline"
+						variant="ghost"
 					/>
 				}
 			>
