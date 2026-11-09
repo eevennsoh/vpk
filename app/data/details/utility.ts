@@ -178,8 +178,9 @@ function TimelineExample() {
 	"streamdown": {
 		description: "A streaming-optimized React Markdown renderer with syntax highlighting, Mermaid diagrams, math rendering, and CJK support. The demo showcases the current animated streaming API, line numbers, link-safety handling, custom HTML tags, normalized HTML indentation, and both streaming and static rendering modes.",
 	},
-	"multiports": {
+	"multiport": {
 		description: "A concurrent chat testing surface that renders three independent Sidebar Chat panels side by side. Supports Tab key navigation between panels for multi-stream validation.",
+		importStatement: `import MultiportDemo from "@/components/website/demos/utils/multiport-demo";`,
 	},
 	"image-generation": {
 		description: "An interactive test harness for image generation via AI Gateway. Sends prompts to /api/chat-sdk with provider: \"google\", streams SSE responses, and displays both text and generated images with download support. Configure AI_GATEWAY_URL_GOOGLE (preferred), or use a Google/Gemini AI_GATEWAY_URL, to enable native image generation.",
@@ -191,9 +192,10 @@ function TimelineExample() {
 		description: "A client-side showcase of json-render, rendering structured JSON specs into live UI with data dashboards, interactive forms, chart visualizations, and 3D scenes powered by React Three Fiber.",
 		demoLayout: { previewContentWidth: "full" },
 	},
-	"tools-invocation": {
+	"tool-invocation": {
 		description:
 			"A simulated chat interface demonstrating real-time AI agent tool invocations with permission control. Shows tool calls with expandable arguments, results, Allow/Deny permission flows, and various tool states (running, completed, denied, error). Inspired by streaming agent architectures.",
+		importStatement: `import ToolInvocationDemo from "@/components/website/demos/utils/tool-invocation-demo";`,
 		demoLayout: { previewContentWidth: "full" },
 	},
 	"visual-json": {

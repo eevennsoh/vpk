@@ -12,11 +12,13 @@ import type {
 	ProjectButterPresentation,
 	ProjectButterShellContext,
 } from "@/components/blocks/jira-work-item/project-butter/presentation";
+import { PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
 
 export function ProjectButterShell({
+	chatPanel,
 	children,
 	empty,
 	onClose,
@@ -29,6 +31,8 @@ export function ProjectButterShell({
 	suggestion = false,
 	overlayContainerRef,
 }: Readonly<{
+	/** Host-owned sidebar chat beside the standalone work item; also shows the Ask Rovo pill that opens it. */
+	chatPanel?: ReactNode;
 	children: ReactNode;
 	empty: boolean;
 	onClose: () => void;
@@ -104,6 +108,7 @@ export function ProjectButterShell({
 			)}
 		</div>
 	);
+	if (shell === "gallery") return surface;
 	return (
 		<Dialog
 			onOpenChange={(nextOpen, details) => {
@@ -135,7 +140,7 @@ export function ProjectButterShell({
 					standalone || presentation === "full-screen"
 						? "left-0 top-0 h-dvh w-screen max-w-none translate-x-0 translate-y-0 rounded-none sm:max-w-none"
 						: presentation === "modal"
-							? "h-[calc(100dvh-4rem)] max-h-[960px] w-[calc(100vw-4rem)] max-w-[1280px] sm:max-w-[1280px]"
+							? cn(PROJECT_BUTTER_MODAL_SIZE, "sm:max-w-[1280px]")
 							: "left-auto right-0 top-0 h-dvh max-w-full translate-x-0 translate-y-0 rounded-none sm:max-w-none",
 					overlayContainerRef ? cn(
 						"translate-none data-starting-style:scale-none data-ending-style:scale-none",
@@ -170,7 +175,7 @@ export function ProjectButterShell({
 							avatarSrc: projectButterPersonAvatar("Annie Cook"),
 							initials: "AC",
 						}}
-						hideRovoAction
+						hideRovoAction={!chatPanel}
 						onSettingsClick={() => setSettingsOpen(true)}
 						product="jira"
 						shellHeight="parent"
@@ -185,7 +190,13 @@ export function ProjectButterShell({
 							/>
 						)}
 					>
-						{surface}
+						{chatPanel ? (
+							// Stands in for the surface as the nav body's flex child, so the work item keeps a bounded height and scrolls.
+							<div className="relative flex min-h-0 min-w-0 flex-1">
+								<div className="flex min-h-0 min-w-0 flex-1">{surface}</div>
+								{chatPanel}
+							</div>
+						) : surface}
 					</TopNavigation>
 				) : (
 					surface

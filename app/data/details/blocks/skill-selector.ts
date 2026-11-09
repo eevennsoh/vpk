@@ -15,15 +15,15 @@ export const SKILL_SELECTOR_DETAIL: ComponentDetail = {
 	examples: [
 		{
 			title: "Standalone picker",
-			description: "The selector prefilled from the Skills Directory catalog.",
+			description: "The selector prefilled from the Skill Directory catalog.",
 			demoSlug: "skill-selector-demo-standalone",
 		},
 	],
 	props: [
 		{
 			name: "skills",
-			type: "readonly SkillsDirectorySkill[]",
-			description: "Skills to render. Defaults to the complete Skills Directory catalog.",
+			type: "readonly SkillDirectorySkill[]",
+			description: "Skills to render. Defaults to the complete Skill Directory catalog.",
 		},
 		{
 			name: "pinnedSkillIds",

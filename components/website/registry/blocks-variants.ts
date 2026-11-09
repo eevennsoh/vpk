@@ -213,6 +213,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"jira-kanban-demo-project-butter": dynamic(
+		() =>
+			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
+				default: mod.JiraKanbanDemoProjectButter,
+			})),
+		{ ssr: false },
+	),
 	"jira-kanban-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
@@ -463,10 +470,10 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	),
 
 	// Subagents
-	"subagents-demo-empty": dynamic(
+	"subagent-demo-empty": dynamic(
 		() =>
-			import("../demos/blocks/subagents-demo").then((mod) => ({
-				default: mod.SubagentsDemoEmpty,
+			import("../demos/blocks/subagent-demo").then((mod) => ({
+				default: mod.SubagentDemoEmpty,
 			})),
 		{ ssr: false },
 	),
@@ -537,6 +544,7 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	),
 	"smart-link-demo-status": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoStatus })), { ssr: false }),
 	"smart-link-demo-sizes": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoSizes })), { ssr: false }),
+	"smart-link-demo-wrapping": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoWrapping })), { ssr: false }),
 	"smart-link-demo-removable-overlay": dynamic(
 		() =>
 			import("../demos/blocks/smart-link-demo").then((mod) => ({
@@ -595,6 +603,17 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			import("../demos/blocks/agent-selector-demo").then((mod) => ({
 				default: mod.AgentSelectorDemoJira,
 			})),
+		{ ssr: false },
+	),
+	"agent-selector-demo-project-butter": dynamic(
+		() =>
+			import("../demos/blocks/agent-selector-demo").then((mod) => ({
+				default: mod.AgentSelectorDemoProjectButter,
+			})),
+		{ ssr: false },
+	),
+	"agent-selector-demo-inline-expansion": dynamic(
+		() => import("../demos/blocks/agent-selector-demo").then((mod) => ({ default: mod.AgentSelectorDemoInlineExpansion })),
 		{ ssr: false },
 	),
 	"skill-selector-demo-standalone": dynamic(
@@ -798,45 +817,45 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	),
 
 	// Triggers
-	"triggers-demo-configured": dynamic(
+	"trigger-demo-configured": dynamic(
 		() =>
-			import("../demos/blocks/triggers-demo").then((mod) => ({
-				default: mod.TriggersDemoConfigured,
+			import("../demos/blocks/trigger-demo").then((mod) => ({
+				default: mod.TriggerDemoConfigured,
 			})),
 		{ ssr: false },
 	),
-	"triggers-demo-empty": dynamic(
+	"trigger-demo-empty": dynamic(
 		() =>
-			import("../demos/blocks/triggers-demo").then((mod) => ({
-				default: mod.TriggersDemoEmpty,
+			import("../demos/blocks/trigger-demo").then((mod) => ({
+				default: mod.TriggerDemoEmpty,
 			})),
 		{ ssr: false },
 	),
-	"triggers-demo-picker": dynamic(
+	"trigger-demo-picker": dynamic(
 		() =>
-			import("../demos/blocks/triggers-demo").then((mod) => ({
-				default: mod.TriggersDemoPicker,
+			import("../demos/blocks/trigger-demo").then((mod) => ({
+				default: mod.TriggerDemoPicker,
 			})),
 		{ ssr: false },
 	),
-	"triggers-demo-multiple": dynamic(
+	"trigger-demo-multiple": dynamic(
 		() =>
-			import("../demos/blocks/triggers-demo").then((mod) => ({
-				default: mod.TriggersDemoMultiple,
+			import("../demos/blocks/trigger-demo").then((mod) => ({
+				default: mod.TriggerDemoMultiple,
 			})),
 		{ ssr: false },
 	),
-	"triggers-demo-needs-connection": dynamic(
+	"trigger-demo-needs-connection": dynamic(
 		() =>
-			import("../demos/blocks/triggers-demo").then((mod) => ({
-				default: mod.TriggersDemoNeedsConnection,
+			import("../demos/blocks/trigger-demo").then((mod) => ({
+				default: mod.TriggerDemoNeedsConnection,
 			})),
 		{ ssr: false },
 	),
-	"triggers-demo-manage": dynamic(
+	"trigger-demo-manage": dynamic(
 		() =>
-			import("../demos/blocks/triggers-demo").then((mod) => ({
-				default: mod.TriggersDemoManage,
+			import("../demos/blocks/trigger-demo").then((mod) => ({
+				default: mod.TriggerDemoManage,
 			})),
 		{ ssr: false },
 	),

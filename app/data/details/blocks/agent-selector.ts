@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SELECTOR_DETAIL: ComponentDetail = {
-		description: "Searchable command-list selector for assigning AI agents, with selected agents pinned first, optional selected-agent actions, and optional browse/create actions. Gallery demos use the borderless editor-palette search bar (`searchVariant=\"palette\"`), matching Assign agents on work items.",
+			description: "Searchable command-list selector for assigning AI agents, with selected agents pinned first, optional selected-agent actions, and optional browse/create actions. The same package exports `InlineAgentSelector` for per-agent actions and favorites. Gallery demos use the borderless editor-palette search bar (`searchVariant=\"palette\"`), matching Assign agents on work items.",
 		importStatement: `import { AgentSelector } from "@/components/blocks/agent-selector";`,
 		usage: `import { AgentSelector } from "@/components/blocks/agent-selector";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -28,6 +28,8 @@ const agents: AgentSelectorAgent[] = [
 			{ title: "Standalone picker", description: "Persistent standalone surfaces for the default and selected-agent action states.", demoSlug: "agent-selector-demo-standalone" },
 			{ title: "Selected agent actions", description: "Top actions for a selected custom agent before switching to another agent.", demoSlug: "agent-selector-demo-selected-agent-actions" },
 			{ title: "Jira kanban", description: "Same palette as Assign agent: Pinned by space / More agents grouping, filled pins only on space-pinned agents, hover reveals an outline pin on unpinned rows, and the footer offers Browse agents and Create agent.", demoSlug: "agent-selector-demo-jira" },
+			{ title: "Project Butter submenu", description: "The Project Butter selector with run-location submenus and directory actions.", demoSlug: "agent-selector-demo-project-butter" },
+			{ title: "Inline expansion", description: "Import `InlineAgentSelector` from the Agent Selector package. Supply each agent's actions with `getActions`; one action runs directly and multiple actions expand inline. Favorites can be controlled with `favoriteAgentIds` and `onFavoriteAgentIdsChange`.", demoSlug: "agent-selector-demo-inline-expansion" },
 		],
 		props: [
 			{

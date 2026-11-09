@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
 import GrowVerticalIcon from "@atlaskit/icon/core/grow-vertical";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ShrinkVerticalIcon from "@atlaskit/icon/core/shrink-vertical";
 
 import type { AgentListItem } from "@/components/blocks/agent-list";
+import { EmojiReactionBar } from "@/components/blocks/emoji-picker/components/emoji-reaction-bar";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -94,6 +95,18 @@ function getReplyMention(actor: JiraActivityActor): RichTextMentionItem {
 	};
 }
 
+/** What a consumer-supplied reply composer receives; the thread keeps owning the draft, focus and submit flow. */
+export type JiraActivityReplyComposerProps = Readonly<{
+	/** True when the composer mounted from a Reply click and should take focus. */
+	autoFocus: boolean;
+	onSubmit: (body: string) => void;
+	onValueChange: (value: string) => void;
+	placeholder: string;
+	/** Replying to a specific reply leads the draft with a mention of its author. */
+	prefillMention?: Readonly<{ mention: RichTextMentionItem; textAfter: string }>;
+	value: string;
+}>;
+
 function ActivityActorAvatar({
 	actor,
 	sizePx = 32,
@@ -112,6 +125,7 @@ function ActivityActorAvatar({
 
 	return (
 		<AgentAvatarVisual
+			appearance={actor.appearance}
 			avatarSrc={actor.avatarSrc}
 			brandName={actor.brandName}
 			fallbackText={initialsOf(actor.name)}
@@ -235,6 +249,7 @@ function ThreadReplyCard({
 	hidden = false,
 	threaded = false,
 	continued = false,
+	actionsPlacement = "footer",
 }: Readonly<{
 	reply: JiraActivityReply;
 	currentUser: JiraActivityActor;
@@ -258,6 +273,7 @@ function ThreadReplyCard({
 	hidden?: boolean;
 	threaded?: boolean;
 	continued?: boolean;
+	actionsPlacement?: "footer" | "hover";
 }>) {
 	const [reactions, setReactions] = useState<readonly JiraActivityReaction[]>(reply.reactions ?? []);
 	const replyButtonRef = useRef<HTMLButtonElement>(null);
@@ -289,12 +305,29 @@ function ThreadReplyCard({
 	const addToChatAction = onAddToChat ? (
 		<JiraActivityAddToChatButton onClick={onAddToChat} />
 	) : null;
+	const hoverActions = actionsPlacement === "hover" && !resolved && commentActions !== "none";
+	// One action row: the header hosts it in hover mode (pills stay below), the footer otherwise.
+	const actionRow = (
+		<JiraActivityCommentActions
+			onReply={
+				commentActions === "reply-and-reactions" && allowReply
+					? () => onReply(replyButtonRef.current)
+					: undefined
+			}
+			onToggleReaction={toggleReaction}
+			reactions={hoverActions ? [] : reactionSummaries}
+			replyComposerId={replySelected ? replyComposerId : undefined}
+			replyExpanded={replySelected}
+			replyRef={replyButtonRef}
+			trailingActions={tools}
+		/>
+	);
 
 	return (
 		<div className={cn("relative pt-3", threaded ? "pb-3" : null, indented ? "pl-6" : null)} hidden={hidden}>
 			{threaded && continued ? <ThreadContinuation /> : null}
 			{content === undefined ? <JiraActivityCard
-				action={addToChatAction ?? undefined}
+				action={hoverActions ? <>{addToChatAction}{actionRow}</> : addToChatAction ?? undefined}
 				agentName={reply.actor.name}
 				className="rounded-none"
 				activityGroup="activity-reply"
@@ -306,21 +339,9 @@ function ThreadReplyCard({
 				footerActions={
 					resolved ? (
 						onReopen ? <ReopenThreadAction onReopen={onReopen} /> : undefined
-					) : commentActions === "none" ? undefined : (
-						<JiraActivityCommentActions
-							onReply={
-								commentActions === "reply-and-reactions" && allowReply
-									? () => onReply(replyButtonRef.current)
-									: undefined
-							}
-							onToggleReaction={toggleReaction}
-							reactions={reactionSummaries}
-							replyComposerId={replySelected ? replyComposerId : undefined}
-							replyExpanded={replySelected}
-							replyRef={replyButtonRef}
-							trailingActions={tools}
-						/>
-					)
+					) : commentActions === "none" ? undefined : hoverActions ? (
+						reactionSummaries.length > 0 ? <EmojiReactionBar onToggleReaction={toggleReaction} reactions={reactionSummaries} showAddReaction={false} /> : undefined
+					) : actionRow
 				}
 				timestamp={reply.timestamp}
 				timestampContent={timestampContent}
@@ -359,6 +380,9 @@ export function JiraActivityComment({
 	replyDraft: controlledReplyDraft,
 	onReplyDraftChange,
 	commentActions = "reply-and-reactions",
+	commentActionsPlacement = "footer",
+	renderEarlierRepliesLabel,
+	renderReplyComposer,
 	threaded = false,
 	headerLayout = "stacked",
 }: Readonly<{
@@ -382,6 +406,10 @@ export function JiraActivityComment({
 	replyDraft?: string;
 	onReplyDraftChange?: (value: string) => void;
 	commentActions?: "none" | "reactions" | "reply-and-reactions";
+	commentActionsPlacement?: "footer" | "hover";
+	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean) => ReactNode;
+	/** Replaces the default reply composer so a surface can reuse its own comment box. */
+	renderReplyComposer?: (composer: JiraActivityReplyComposerProps) => ReactNode;
 	threaded?: boolean;
 }>) {
 	const replies = entry.replies ?? [];
@@ -471,35 +499,31 @@ export function JiraActivityComment({
 			type="button"
 			variant="outline"
 		>
-			<GrowVerticalIcon label="" />
+			{repliesExpanded ? <ShrinkVerticalIcon label="" /> : <GrowVerticalIcon label="" />}
 		</Button>
 	) : null;
 	const earlierRepliesToggle = hasReplyPreview && replies.length > replyPreviewCount ? (
 		<Button
 			aria-controls={repliesId}
 			aria-expanded={repliesExpanded}
-			className={cn("justify-self-start", threaded ? "font-normal text-text-subtle" : null)}
+			// Threaded: trim the leading inset so faces and label start on the reply text column, while the hover plate stays clear of the connector curve.
+			className={cn("relative justify-self-start", threaded ? "-ml-1 pl-1 font-normal text-text-subtle" : null)}
 			onClick={() => setRepliesExpanded((expanded) => !expanded)}
 			size="compact"
 			type="button"
 			variant={threaded ? "ghost" : "link"}
 		>
-			{repliesExpanded ? "Hide earlier replies" : "Show more replies"}
-			{threaded ? <ChevronDownIcon label="" size="small" /> : null}
+			{threaded ? <span aria-hidden className="absolute -left-7 flex size-4 items-center justify-center text-icon-subtle">{repliesExpanded ? <ShrinkVerticalIcon label="" size="small" /> : <GrowVerticalIcon label="" size="small" />}</span> : null}
+			{renderEarlierRepliesLabel ? renderEarlierRepliesLabel(replies.slice(0, replies.length - replyPreviewCount), repliesExpanded) : <>
+				{repliesExpanded ? "Hide earlier replies" : "Show more replies"}
+			</>}
 		</Button>
 	) : null;
 	const addToChatAction = onAddToChat ? (
 		<JiraActivityAddToChatButton onClick={onAddToChat} />
 	) : null;
-	// Far-right: optional consumer action, Add to chat, then expand/collapse.
-	const headerAction = action || repliesToggle || addToChatAction ? (
-		<div className="flex shrink-0 items-center gap-1">
-			{action}
-			{addToChatAction}
-			{repliesToggle}
-		</div>
-	) : undefined;
-	const commentActionControls = commentActions === "none" ? null : (
+	const hoverActions = commentActionsPlacement === "hover" && commentActions !== "none" && !resolved;
+	const actionRow = (
 		<JiraActivityCommentActions
 			onReply={
 				collapsible && allowReply
@@ -508,13 +532,28 @@ export function JiraActivityComment({
 			}
 			onResolve={!resolved && allowResolve && onResolve ? handleResolveToggle : undefined}
 			onToggleReaction={onToggleReaction}
-			reactions={reactionSummaries}
+			reactions={hoverActions ? [] : reactionSummaries}
 			replyComposerId={replyTarget?.key === entry.id ? composerId : undefined}
 			replyExpanded={replyTarget?.key === entry.id}
 			replyRef={replyButtonRef}
 			trailingActions={renderCommentTools?.(entry)}
 		/>
 	);
+	// Footer mode keeps the full row under the body; hover mode lifts Reply,
+	// Add reaction, and tools into the header slot and leaves only pills below.
+	const commentActionControls = commentActions === "none" ? null
+		: hoverActions
+			? reactionSummaries.length > 0 ? <EmojiReactionBar onToggleReaction={onToggleReaction} reactions={reactionSummaries} showAddReaction={false} /> : null
+			: actionRow;
+	// Far-right: optional consumer action, hover actions, Add to chat, then expand/collapse.
+	const headerAction = action || repliesToggle || addToChatAction || hoverActions ? (
+		<div className="flex shrink-0 items-center gap-1">
+			{action}
+			{hoverActions ? actionRow : null}
+			{addToChatAction}
+			{repliesToggle}
+		</div>
+	) : undefined;
 	const collapsedThreadSummary = hasReplies && !repliesExpanded && !hasReplyPreview ? (
 		<CollapsedThreadSummary
 			onExpand={() => setRepliesExpanded(true)}
@@ -530,6 +569,14 @@ export function JiraActivityComment({
 		if (draft.trim() && !draft.startsWith(`${prefix} `)) return undefined;
 		return { mention, requestKey: 1, textAfter: draft.slice(prefix.length) || " " };
 	}, [replyTarget]);
+	const replyPlaceholder = entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply...";
+	function submitReply(body: string) {
+		onSubmitReply(body);
+		if (collapsible) {
+			setReplyTarget(null);
+			setReplyDraft("");
+		}
+	}
 	const artifactItems = commentArtifactItems(entry);
 	const reviewStatus = entry.statusLozenge ? (
 		<Lozenge variant={entry.statusLozenge.variant}>{entry.statusLozenge.text}</Lozenge>
@@ -590,33 +637,41 @@ export function JiraActivityComment({
 						className={threaded ? "relative py-3" : "-ml-10 w-[calc(100%+2.5rem)]"}
 						id={composerId}
 					>
-						{threaded ? <ThreadConnector continued={false} /> : null}
-						<JiraActivityComposer
-							author={currentUser}
-							// In collapsible mode the composer only mounts on a Reply
-							// click, so mounting is exactly the moment to take focus.
-							autoFocus={collapsible}
-							key={replyTarget?.key ?? "thread-reply"}
-							onSubmit={(body) => {
-								onSubmitReply(body);
-								if (collapsible) {
-									setReplyTarget(null);
-									setReplyDraft("");
-								}
-							}}
-							onValueChange={setReplyDraft}
-							prefillMentionRequest={replyMentionRequest}
-							placeholder={entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply..."}
-							value={replyDraft}
-							variant="flush"
-						/>
+						{/* Centered: the branch meets the composer at its vertical middle, whatever the composer's height. */}
+						{threaded ? <ThreadConnector centered continued={false} /> : null}
+						{renderReplyComposer ? (
+							<Fragment key={replyTarget?.key ?? "thread-reply"}>
+								{renderReplyComposer({
+									autoFocus: collapsible,
+									onSubmit: submitReply,
+									onValueChange: setReplyDraft,
+									placeholder: replyPlaceholder,
+									prefillMention: replyMentionRequest ? { mention: replyMentionRequest.mention, textAfter: replyMentionRequest.textAfter } : undefined,
+									value: replyDraft,
+								})}
+							</Fragment>
+						) : (
+							<JiraActivityComposer
+								author={currentUser}
+								// In collapsible mode the composer only mounts on a Reply
+								// click, so mounting is exactly the moment to take focus.
+								autoFocus={collapsible}
+								key={replyTarget?.key ?? "thread-reply"}
+								onSubmit={submitReply}
+								onValueChange={setReplyDraft}
+								prefillMentionRequest={replyMentionRequest}
+								placeholder={replyPlaceholder}
+								value={replyDraft}
+								variant="flush"
+							/>
+						)}
 					</div>
 				) : undefined
 			}
 			replies={
 				hasReplies ? (
 					<>
-					{threaded && earlierRepliesToggle ? <div className="relative py-3"><ThreadContinuation /><div className="relative flex"><ThreadConnector centered continued={false} />{earlierRepliesToggle}</div></div> : earlierRepliesToggle}
+					{threaded && earlierRepliesToggle ? <div className="relative py-3"><ThreadContinuation /><div className="relative flex">{earlierRepliesToggle}</div></div> : earlierRepliesToggle}
 					<div
 						aria-label="Replies"
 						className={cn("grid", threaded ? "gap-0" : "gap-2", repliesExpanded || hasReplyPreview ? null : "hidden")}
@@ -652,6 +707,7 @@ export function JiraActivityComment({
 								indented={!nested && !threaded}
 								threaded={threaded}
 								continued={index < replies.length - 1 || composerVisible}
+								actionsPlacement={commentActionsPlacement}
 								showResolvedStatus={resolved && index === replies.length - 1}
 								timestampContent={renderTimestamp?.(reply)}
 								tools={renderCommentTools?.(entry, reply)}

@@ -116,10 +116,10 @@ export const AGENT_SESSION_FLYOUT_LIST_CLASSNAME =
 	"flex max-w-sm flex-col gap-1 rounded-lg border border-border bg-surface p-1";
 
 /**
- * The `/jira-golden-journeys-v0` queue session flyout showcase. The compact session list feeds the
+ * The `/jira-golden-journey-v0` queue session flyout showcase. The compact session list feeds the
  * shared `JiraSessionFlyoutSurface` — the exact direction-aware flyout used by
  * the live Jira product sidebar. It defaults to session details and can opt
- * into the Agent States composer or an untracked-work suggestion.
+ * into the Agent State composer or an untracked-work suggestion.
  */
 
 export interface AgentSessionFlyoutProps extends Pick<
@@ -130,11 +130,11 @@ export interface AgentSessionFlyoutProps extends Pick<
 	| "onLinkWorkItem"
 	| "showUntrackedWorkFooter"
 > {
-	/** Sessions to render in the compact list. Defaults to the `/jira-golden-journeys-v0` queue seeds. */
+	/** Sessions to render in the compact list. Defaults to the `/jira-golden-journey-v0` queue seeds. */
 	sessions?: readonly JiraSidebarSessionItem[];
 	/**
 	 * Hover flyout body. Defaults to session details; pass `"composer"` for the
-	 * Agent States card or `"untracked-work"` for an embedded PR summary and
+	 * Agent State card or `"untracked-work"` for an embedded PR summary and
 	 * suggested Jira relationship.
 	 */
 	content?: JiraSessionFlyoutContent;

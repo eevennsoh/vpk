@@ -9,8 +9,21 @@ test("work item field and development icons fit 12-pixel glyphs in 16-pixel slot
 	});
 	await page.goto(appUrl("/butter"));
 	await page.locator('[data-issue-key="PAY-118"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+	const expander = page.getByRole("button", { name: "Show more details" });
+	const panel = page.getByRole("region", { name: "Details", exact: true });
+	const [buttonBounds, chevronBounds, panelBounds] = await Promise.all([
+		expander.boundingBox(),
+		expander.locator("svg").boundingBox(),
+		panel.boundingBox(),
+	]);
+	if (!buttonBounds || !chevronBounds || !panelBounds) throw new Error("Missing details expander geometry");
+	expect(Math.abs(buttonBounds.y + buttonBounds.height / 2 - (panelBounds.y + panelBounds.height - 0.5))).toBeLessThan(0.5);
+	expect(Math.abs(chevronBounds.y + chevronBounds.height / 2 - (buttonBounds.y + buttonBounds.height / 2))).toBeLessThan(0.5);
 	await page.getByRole("button", { name: "Show more details" }).click();
-	for (const field of ["status", "priority", "dueDate", "parent", "labels", "storyPoints"]) {
+	const calendarColor = await page.locator('[data-field-id="dueDate"] svg').first().evaluate((icon) => getComputedStyle(icon).color);
+	const subtleColor = await page.getByRole("button", { name: "Start coding", exact: true }).locator("svg").first().evaluate((icon) => getComputedStyle(icon).color);
+	expect(calendarColor).toBe(subtleColor);
+	for (const field of ["priority", "dueDate", "parent", "labels", "storyPoints"]) {
 		const icon = page.locator(`[data-field-id="${field}"] svg`).first();
 		await expect(icon, field).toBeVisible();
 		await expect(icon, field).toHaveCSS("width", "12px");

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PreviewCategoryLayout, getCategoryPreviewMetadata, type PreviewLayoutProps } from "@/app/preview/_shared/preview-metadata";
 
-const CHAT_CAPABLE_UTILITY_PREVIEWS = new Set(["tools-invocation"]);
+const CHAT_CAPABLE_UTILITY_PREVIEWS = new Set(["tool-invocation"]);
 
 export async function generateMetadata({ params }: PreviewLayoutProps): Promise<Metadata> {
 	return getCategoryPreviewMetadata(params, "utility");

@@ -73,7 +73,7 @@ export function useDisabledLabelSet(
 }
 
 // A single automation row inside the collapsed Automations dropdown. Mirrors the
-// subagent switcher (SubagentsSwitcherButton) hover model: a Switch parks at the
+// subagent switcher (SubagentSwitcherButton) hover model: a Switch parks at the
 // far right and stays visible while off, an edit button slides in on hover, and a
 // disabled (off) trigger reads as muted. Unlike a DropdownMenuItem this is a plain
 // row so toggling/editing never closes the menu.

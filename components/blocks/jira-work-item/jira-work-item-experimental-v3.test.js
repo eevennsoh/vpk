@@ -478,7 +478,7 @@ test("PR select shares the section navigation list without becoming a section", 
 	);
 	assert.doesNotMatch(
 		readBlockFile("experimental-v3/components/insights-panel.tsx"),
-		/JiraInsightsContent|onSourceSelect|data-work-item-insights-panel|<section/u,
+		/JiraInsightContent|onSourceSelect|data-work-item-insights-panel|<section/u,
 	);
 	assert.match(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
@@ -507,17 +507,17 @@ test("PR select shares the section navigation list without becoming a section", 
 		/<WorkItemSectionNav[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
 	);
 	assert.doesNotMatch(compositionSource, /<InsightsAwareComposer[\s\S]*onSectionSelect=/u);
-	assert.match(compositionSource, /insightsSnapshot\?: JiraInsightsSnapshot/u);
-	assert.match(compositionSource, /const insightsSnapshot = props\.insightsSnapshot \?\? EMPTY_JIRA_INSIGHTS_SNAPSHOT/u);
+	assert.match(compositionSource, /insightsSnapshot\?: JiraInsightSnapshot/u);
+	assert.match(compositionSource, /const insightsSnapshot = props\.insightsSnapshot \?\? EMPTY_JIRA_INSIGHT_SNAPSHOT/u);
 	assert.match(
 		compositionSource,
 		/<SectionNavigationProvider active=\{open\}>[\s\S]*<WorkItemInsightsProvider[\s\S]*snapshot=\{insightsSnapshot\}/u,
 	);
-	assert.match(compositionSource, /<JiraInsightsProvider onSourceSelect=\{handleInsightSourceSelect\} snapshot=\{snapshot\}>/u);
+	assert.match(compositionSource, /<JiraInsightProvider onSourceSelect=\{handleInsightSourceSelect\} snapshot=\{snapshot\}>/u);
 	assert.match(compositionSource, /function InsightsAwareComposer/u);
 	assert.match(compositionSource, /insightsSelected && hasInsights/u);
 	assert.match(compositionSource, /activityEvents\.flatMap/u);
-	assert.match(compositionSource, /<JiraInsightsScrubber activityTimestamps=\{activityTimestamps\} \/>/u);
+	assert.match(compositionSource, /<JiraInsightScrubber activityTimestamps=\{activityTimestamps\} \/>/u);
 	assert.match(
 		compositionSource,
 		/usePublishInsightsCount\(\s*resolveNewInsightsCount\(\s*contextResources,\s*hasInsights \? unreadCheckpointIds\.length : undefined,/u,
@@ -538,7 +538,7 @@ test("experimental v3 insight sources reuse work-item, session, activity, and pu
 	assert.match(compositionSource, /actions\.openSession\(source\.sessionId\)/u);
 	assert.match(compositionSource, /source\.kind === "pull-request"/u);
 	assert.match(compositionSource, /onOpenPullRequestIdentity\?\.\(source\.identity\)/u);
-	assert.match(compositionSource, /const \{ onSourceSelect \} = useJiraInsights\(\)/u);
+	assert.match(compositionSource, /const \{ onSourceSelect \} = useJiraInsight\(\)/u);
 	assert.match(compositionSource, /<ActivityPanel[\s\S]*\{\.\.\.props\}[\s\S]*onInsightSourceSelect=\{onSourceSelect\}[\s\S]*surface=\{surface\}/u);
 	assert.doesNotMatch(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
@@ -559,7 +559,7 @@ test("experimental v3 shares one insight selection between the filtered feed and
 	assert.match(metadataSource, /inert=\{pullRequestSelected \|\| insightsSelected \? true : undefined\}/u);
 	assert.match(
 		metadataSource,
-		/!pullRequestSelected && insightsSelected \? \([\s\S]*<JiraInsightsEditorialPane/u,
+		/!pullRequestSelected && insightsSelected \? \([\s\S]*<JiraInsightEditorialPane/u,
 	);
 	assert.match(
 		metadataSource,
@@ -631,14 +631,14 @@ test("Activity sort hover-reveals from the section group, not a local copy", () 
 test("experimental v3 uses one chronological Activity feed for activity and insights", () => {
 	const activityPanelSource = readBlockFile("experimental-v3/components/activity-panel.tsx");
 
-	assert.match(activityPanelSource, /useJiraInsights\(\)/u);
+	assert.match(activityPanelSource, /useJiraInsight\(\)/u);
 	assert.match(activityPanelSource, /mergeJiraActivityEntriesWithInsights/u);
 	assert.match(activityPanelSource, /createdAtMs: createdAtByEntryId\.get\(entry\.id\)/u);
 	assert.match(activityPanelSource, /const effectiveFilter = surface === "insights" \? "insights-only" : filter/u);
-	assert.match(activityPanelSource, /filterMode="jira-insights"/u);
+	assert.match(activityPanelSource, /filterMode="jira-insight"/u);
 	assert.match(activityPanelSource, /activeEntryId=\{activeCheckpointId \?\? undefined\}/u);
 	assert.match(activityPanelSource, /renderEntry=\{renderActivityEntry\}/u);
-	assert.match(activityPanelSource, /<JiraInsightsCheckpoint/u);
+	assert.match(activityPanelSource, /<JiraInsightCheckpoint/u);
 	assert.match(activityPanelSource, /id=\{surface === "insights" \? "insights" : "activity"\}/u);
 });
 
@@ -778,7 +778,7 @@ test("the v3 working-session byline is one shared module, not a per-surface copy
 	assert.match(bylineSource, /<CyclingByline className="menu-row-byline">/u);
 	assert.match(
 		bylineSource,
-		/needsUserInput && activity !== null \? \(\s*<span className="inline-flex min-w-0 items-baseline">\s*<Shimmer as="span">\{activity\}<\/Shimmer>\s*<AnimatedDots \/>\s*<\/span>\s*\) : activity/u,
+		/needsUserInput && activity !== null \? \(\s*<span className="inline-flex min-w-0 items-baseline">\s*<Shimmer as="span">\{activity\}<\/Shimmer>\s*<AnimatedDot \/>\s*<\/span>\s*\) : activity/u,
 	);
 
 	// The composer imports the byline rather than redefining it, and the
@@ -790,7 +790,7 @@ test("the v3 working-session byline is one shared module, not a per-surface copy
 	);
 	assert.doesNotMatch(contextPillsSource, /function WorkingSessionActivityByline|function getWorkingSessionActivity/u);
 	assert.doesNotMatch(contextPillsSource, /WORKING_SESSION_ACTIVITY_SCRIPTS|CI_REPAIR_ACTIVITY_SCRIPT|NEEDS_INPUT_STATUS_LABEL = /u);
-	assert.doesNotMatch(contextPillsSource, /import \{ AnimatedDots \}|import \{ CyclingByline \}/u);
+	assert.doesNotMatch(contextPillsSource, /import \{ AnimatedDot \}|import \{ CyclingByline \}/u);
 	assert.match(contextPillsSource, /import \{ Shimmer \} from "@\/components\/ui-custom\/shimmer";/u);
 
 	// The composer menu still drives the byline the same way it always did.

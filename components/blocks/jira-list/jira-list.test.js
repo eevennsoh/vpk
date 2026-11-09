@@ -27,7 +27,7 @@ const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const FOR_YOU_STAGE_SOURCE = readFileSync(
 	join(
 		process.cwd(),
-		"components/projects/jira-golden-journeys-v1/components/for-you-stage.tsx",
+		"components/projects/jira-golden-journey-v1/components/for-you-stage.tsx",
 	),
 	"utf8",
 );

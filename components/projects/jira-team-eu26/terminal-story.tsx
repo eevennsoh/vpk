@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 
-import { TerminalStage } from "@/components/projects/jira-golden-journeys-v1/components/terminal-stage";
-import type { TerminalDemoController } from "@/components/projects/jira-golden-journeys-v1/hooks/use-terminal-demo";
+import { TerminalStage } from "@/components/projects/jira-golden-journey-v1/components/terminal-stage";
+import type { TerminalDemoController } from "@/components/projects/jira-golden-journey-v1/hooks/use-terminal-demo";
 
 export interface JiraTeamEu26TerminalStoryProps {
 	controller: TerminalDemoController;

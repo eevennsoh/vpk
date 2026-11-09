@@ -43,6 +43,8 @@ import { cn } from "@/lib/utils";
 export type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
 
 export interface AgentAssignmentAgent extends AgentSelectorAgent {
+	/** Display-safe work title for this session, distinct from agent identity and status. */
+	sessionTitle?: string;
 	status?: ReactNode;
 	/** Minimum time a status remains visible before advancing. */
 	statusCycleIntervalMs?: number;
@@ -82,6 +84,8 @@ export interface AgentAssignmentProps {
 	activityIconScale?: JiraIssueIconScale;
 	/** Copy for the empty field and the action in the assigned-agents menu. */
 	addAgentLabel?: string;
+	/** Show the add action in the attached-session menu. */
+	showSessionAddAgent?: boolean;
 	/** Let attached activity identities begin at the empty Assign agent label's edge. */
 	activityRowFlush?: boolean;
 	/** Override the flyout's anchor when its trigger is inset within a row. */
@@ -145,6 +149,7 @@ export function AgentAssignment({
 	allowArchive = true,
 	activityIconScale,
 	addAgentLabel = "Assign agent",
+	showSessionAddAgent = true,
 	activityRowFlush,
 	hoverAnchor,
 	className,
@@ -388,7 +393,7 @@ export function AgentAssignment({
 	) : (
 		<AssignedAgentsSessionMenu
 			addAgentLabel={addAgentLabel}
-			onAddAgent={onAssignedAgentIdsChange ? handleShowSelector : undefined}
+			onAddAgent={showSessionAddAgent && onAssignedAgentIdsChange ? handleShowSelector : undefined}
 			onContinueInAgent={onContinueExistingSession
 				? (item) => runAssignedSessionAction(assignedAgents, item.id, onContinueExistingSession)
 				: undefined}

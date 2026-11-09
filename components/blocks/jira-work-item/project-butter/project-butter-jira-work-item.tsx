@@ -20,6 +20,7 @@ import { useProjectButterSessions } from "@/components/blocks/jira-work-item/pro
 import { cn } from "@/lib/utils";
 import { ProjectButterBody } from "@/components/blocks/jira-work-item/project-butter/project-butter-body";
 import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
+import { ProjectButterDetailsRail } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
 import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
 import { ProjectButterSession } from "@/components/blocks/jira-work-item/project-butter/project-butter-session";
@@ -35,6 +36,7 @@ export interface ProjectButterJiraWorkItemProps {
 	initialPreset: JiraWorkItemPreset;
 	initialSuggestion?: boolean;
 	defaultReporter?: WorkItemPerson;
+	defaultAssignee?: WorkItemPerson;
 	currentUser?: WorkItemPerson;
 	showAuditInActivity?: boolean;
 	autoAssignClaudeToCurrentUser?: boolean;
@@ -52,6 +54,8 @@ export interface ProjectButterJiraWorkItemProps {
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
 	onOpenCloudSession?: (session: ProjectButterSessionItem, draft?: string) => boolean | void | Promise<boolean | void>;
+	/** Standalone only: the host's sidebar chat, mounted beside the work item. Pair with `onOpenCloudSession`. */
+	chatPanel?: ReactNode;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
 	onStoryPointsChange?: (storyPoints: number | undefined) => void;
 	onAssigneeChange?: (assignee: WorkItemPerson) => void;
@@ -67,6 +71,7 @@ export function ProjectButterJiraWorkItem({
 	initialPreset,
 	initialSuggestion = false,
 	defaultReporter,
+	defaultAssignee,
 	currentUser,
 	showAuditInActivity,
 	autoAssignClaudeToCurrentUser,
@@ -84,6 +89,7 @@ export function ProjectButterJiraWorkItem({
 	onCreateAgent,
 	onAgentSessionStart,
 	onOpenCloudSession,
+	chatPanel,
 	overlayContainerRef,
 	onStoryPointsChange,
 	onAssigneeChange,
@@ -128,7 +134,7 @@ export function ProjectButterJiraWorkItem({
 		initialSessions,
 		placeholders,
 		defaultReporter,
-		{ currentUser, showAuditInActivity },
+		{ currentUser, showAuditInActivity, defaultAssignee },
 	);
 	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
 	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
@@ -250,12 +256,6 @@ export function ProjectButterJiraWorkItem({
 		onAgentSessionStart?.(session);
 		setActiveSessionId(null);
 	}
-	function startCoding() {
-		const session = model.startCoding();
-		addInvocation(session);
-		onAgentSessionStart?.(session);
-		if (onOpenCloudSession) { setActiveSessionId(null); onOpenCloudSession(session); }
-	}
 	function openSession(id: string, draft?: string): boolean | void | Promise<boolean | void> {
 		const session = sessions.find((item) => item.id === id);
 		if (!session || isLocalAgentListItem(session)) return false;
@@ -299,7 +299,6 @@ export function ProjectButterJiraWorkItem({
 			empty={sparse}
 			onDescriptionSuggested={(text) => setDescriptionReveal((current) => ({ id: (current?.id ?? 0) + 1, text }))}
 			onPanelOrderChange={setPanelOrder}
-			onStartCoding={startCoding}
 			panelOrder={panelOrder}
 			sidePanel={sidePanel}
 			suggestion={suggestion}
@@ -317,6 +316,7 @@ export function ProjectButterJiraWorkItem({
 			suggestion={suggestion}
 			open={open}
 			presentation={presentation}
+			chatPanel={chatPanel}
 			shell={shell}
 		>
 			<ProjectButterHeader
@@ -335,7 +335,7 @@ export function ProjectButterJiraWorkItem({
 					"grid min-h-0 flex-1",
 					sidePanel
 						? "grid-cols-1 overflow-y-auto"
-						: "grid-cols-1 overflow-y-auto @[860px]/butter:grid-cols-[minmax(0,1fr)_minmax(280px,420px)] @[860px]/butter:overflow-clip",
+						: "grid-cols-1 overflow-y-auto @[860px]/butter:grid-cols-[minmax(0,1fr)_auto] @[860px]/butter:overflow-clip",
 				)}
 				data-project-butter-state={suggestion ? "suggestion" : empty ? "empty" : "filled"}
 				data-project-butter-work-item
@@ -352,7 +352,7 @@ export function ProjectButterJiraWorkItem({
 					<ProjectButterBody
 						key={workItem?.code ?? "reference"}
 						active={open}
-						singleActivityView={shell === "project"}
+						singleActivityView={shell !== "standalone"}
 						sidePanel={sidePanel}
 						content={content}
 						descriptionReveal={suggestion ? descriptionReveal : null}
@@ -370,7 +370,7 @@ export function ProjectButterJiraWorkItem({
 					/>
 				</div>
 				{sidePanel ? null : (
-					<div className="hidden min-w-0 px-6 pb-8 @[860px]/butter:block @[860px]/butter:overflow-y-auto" ref={railDetailsRef} />
+					<ProjectButterDetailsRail ref={railDetailsRef} />
 				)}
 			</div>
 			{detailsHost ? createPortal(details, detailsHost) : null}

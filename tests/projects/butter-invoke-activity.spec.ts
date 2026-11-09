@@ -26,7 +26,7 @@ test("jumping to Pull request shows the accepted suggestions in Activity", async
 	if (await summary.getAttribute("aria-expanded") !== "true") await summary.click();
 	await expect(accepted).toContainText("PAY-100 Payments SDK v2 migration");
 	await expect(accepted).toContainText("onboarding, sdk-v2");
-	await activity.getByRole("button", { name: "More activity actions" }).click();
+	await activity.getByRole("button", { name: "Filter activity" }).click();
 	await page.getByRole("menuitemcheckbox", { name: "Expand change details" }).click();
 	await expect(summary).toHaveAttribute("aria-expanded", "true");
 	if (await summary.getAttribute("aria-expanded") === "true") await summary.click();

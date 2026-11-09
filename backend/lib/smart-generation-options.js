@@ -33,7 +33,7 @@ function inferSmartWidthClass({ containerWidthPx, viewportWidthPx, surface }) {
 		return "wide";
 	}
 
-	if (surface === "sidebar" || surface === "multiports") {
+	if (surface === "sidebar" || surface === "multiport") {
 		return "compact";
 	}
 	if (surface === "fullscreen") {

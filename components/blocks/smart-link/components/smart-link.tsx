@@ -79,38 +79,42 @@ export type {
 	SmartLinkVisual,
 } from "@/components/blocks/smart-link/components/smart-link-types";
 
-// Inline chip geometry per size. `small` keeps the original VPK Tag metrics
-// (12px label on a 20px pill); `large` scales the label to 16px on a 28px pill
-// for prominent references.
 const triggerSizeClasses: Record<SmartLinkSize, string> = {
-	small: "h-5 gap-1 ps-px pe-[3px] text-xs leading-4",
-	large: "h-7 gap-1.5 ps-1 pe-1 text-base leading-6",
+	small: "h-[16.5px] gap-1 pe-[3px] text-xs leading-4",
+	medium: "h-[19px] gap-1 pe-0.5 text-sm leading-5",
+	large: "h-[21.5px] gap-1.5 pe-1 text-base leading-6",
 };
 
-// Icon wrapper size. App logos (AtlassianLogo/BrandLogoMark) render an
-// intrinsically 16px glyph at the trigger size, so both chip sizes keep a 16px
-// wrapper that hugs the glyph — a larger box leaves dead space to the right of
-// the left-aligned SVG. `[&>*]:size-full` stretches the logo's container span to
-// the wrapper (a no-op at 16px, but keeps other visual kinds filling the box).
+const wrappingTriggerSizeClasses: Record<SmartLinkSize, string> = {
+	small: "pe-px text-xs leading-[1.4]",
+	medium: "pe-[1.5px] text-sm leading-[1.4]",
+	large: "pe-0.5 text-base leading-[1.4]",
+};
+
+const triggerIconInsetClasses: Record<SmartLinkSize, string> = {
+	small: "ps-px",
+	medium: "ps-[1.5px]",
+	large: "ps-0.5",
+};
+
 const triggerVisualClasses: Record<SmartLinkSize, string> = {
-	small: "size-4 [&>svg]:size-4",
-	large: "size-4 [&>svg]:size-4",
+	small: "size-3 [&>*]:scale-75",
+	medium: "size-3.5 [&>*]:scale-[0.875]",
+	large: "size-4",
 };
 
 // Status lozenge height per chip size so it fits inside the pill's inner height
 // without being clipped by the chip's `overflow-hidden`.
 const triggerStatusClasses: Record<SmartLinkSize, string> = {
-	small: "h-4 text-[11px]",
-	large: "h-5 text-xs",
+	small: "h-3.5 py-0 text-[11px] leading-none",
+	medium: "h-4 py-0 text-[11px] leading-none",
+	large: "h-[18px] py-0 text-xs leading-none",
 };
 
-// Right padding when a status lozenge trails the label. A bare-text chip pads the
-// right more than its top/bottom gap; the lozenge already carries its own inset,
-// so tighten the right padding per size until the gap beside it equals the chip's
-// top/bottom gap (each value = top/bottom gap − 1px chip border).
 const triggerStatusPaddingClasses: Record<SmartLinkSize, string> = {
-	small: "pe-px", // 1px pad + 1px border = 2px, matching the 2px top/bottom gap
-	large: "pe-[3px]", // 3px pad + 1px border = 4px, matching the 4px top/bottom gap
+	small: "pe-[0.25px]",
+	medium: "pe-[0.5px]",
+	large: "pe-[0.75px]",
 };
 
 type SmartLinkTriggerBaseProps = {
@@ -118,6 +122,7 @@ type SmartLinkTriggerBaseProps = {
 	open: boolean;
 	removable?: boolean;
 	size?: SmartLinkSize;
+	wrap?: boolean;
 	showStatus?: boolean;
 	selected?: boolean;
 };
@@ -139,6 +144,7 @@ function SmartLinkTrigger({
 	open,
 	removable = false,
 	size = "small",
+	wrap = false,
 	showStatus = false,
 	selected = false,
 	onActivate,
@@ -152,19 +158,18 @@ function SmartLinkTrigger({
 	// card uses (`item.status`), which keeps the glyph consistent everywhere.
 	const iconTone = statusIconTone(item.variant, item.variant === "goal" ? status : item.status);
 	const triggerClassName = cn(
-		// Extends the VPK Tag visual contract: the small size keeps the same
-		// compact pill metrics (h-5, text-xs/leading-4, rounded-sm) so the
-		// inline chip sits on a single text line; the large size scales the
-		// label to 16px. Per-size gaps/padding live in triggerSizeClasses.
-		"group/smart-link relative inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 align-middle font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-		triggerSizeClasses[size],
+		"group/smart-link relative rounded-sm border border-border bg-bg-neutral-subtle py-0 align-middle font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+		wrap
+			? cn("box-decoration-clone whitespace-normal [overflow-wrap:anywhere]", onActivate ? "inline-block max-w-full text-start" : "inline", wrappingTriggerSizeClasses[size])
+			: cn("inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden", triggerSizeClasses[size]),
+		triggerIconInsetClasses[size],
 		// Match the gap beside a trailing status lozenge to the chip's
 		// top/bottom gap (see triggerStatusPaddingClasses).
 		status ? triggerStatusPaddingClasses[size] : null,
 		// Status chips hug icon + title + lozenge, then cap at the parent so a
 		// long title truncates against the lozenge instead of overflowing. Without
 		// a status the chip keeps the compact inline Tag cap.
-		status ? "max-w-full" : "max-w-[11.25rem]",
+		wrap ? null : status ? "max-w-full" : "max-w-[11.25rem]",
 		open && "border-border-selected",
 		onActivate &&
 			selected &&
@@ -175,7 +180,8 @@ function SmartLinkTrigger({
 		<>
 			<span
 				className={cn(
-					"flex shrink-0 items-center justify-center [&>*]:size-full",
+					wrap ? "relative -top-px me-1 inline-flex align-middle" : "flex shrink-0",
+					"items-center justify-center [&>*]:size-4!",
 					triggerVisualClasses[size],
 				)}
 			>
@@ -183,8 +189,8 @@ function SmartLinkTrigger({
 			</span>
 			<span
 				className={cn(
-					"min-w-0 truncate whitespace-nowrap",
-					status ? null : "grow",
+					wrap ? null : "min-w-0 truncate whitespace-nowrap",
+					status || wrap ? null : "grow",
 					removable &&
 						!status &&
 						"group-hover/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
@@ -196,7 +202,7 @@ function SmartLinkTrigger({
 			{status ? (
 				<Lozenge
 					className={cn(
-						"shrink-0",
+						wrap ? "ms-1 align-middle" : "shrink-0",
 						triggerStatusClasses[size],
 						removable &&
 							"group-hover/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-has-[:focus-visible]/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-hover/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-has-[:focus-visible]/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))]",
@@ -832,6 +838,7 @@ export function SmartLink({
 	alignOffset,
 	positionerClassName,
 	size = "small",
+	wrap = false,
 	showStatus = false,
 	openDelay = 120,
 	closeDelay = 80,
@@ -890,6 +897,7 @@ export function SmartLink({
 						selected={selected}
 						showStatus={showStatus}
 						size={size}
+						wrap={wrap}
 					/>
 				}
 			/>

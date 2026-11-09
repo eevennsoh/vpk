@@ -35,7 +35,7 @@ export function AgentList({
 	// Optional read, strict requirement: only the composer flyout sends
 	// prompts, so a read-only list of comments and @mentions renders fine with no
 	// chat runtime. The default session-details flyout has nothing to submit. A
-	// composer needs a real destination — its Agent States card clears the reply
+	// composer needs a real destination — its Agent State card clears the reply
 	// as soon as it submits, so a swallowed prompt would look like a successful
 	// send — and fails here, at render, not after the viewer has typed one.
 	const chat = useOptionalRovoChat();
@@ -59,7 +59,7 @@ export function AgentList({
 	// One payload-aware flyout for the whole list: the popup stays mounted and
 	// follows the hovered row, so sliding down the list crossfades instead of
 	// tearing down and remounting a card per row. Unused by the composer variant,
-	// whose Agent States card owns local state and must stay per-row.
+	// whose Agent State card owns local state and must stay per-row.
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
 
 	return (

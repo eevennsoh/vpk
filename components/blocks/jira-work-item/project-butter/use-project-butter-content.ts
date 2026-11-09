@@ -29,7 +29,9 @@ import {
 	type ProjectButterSessionItem,
 } from "@/components/blocks/jira-work-item/project-butter/data";
 import {
+	PROJECT_BUTTER_ACTIVITY_FILTERS_ALL,
 	projectButterSessionInvocation,
+	type ProjectButterActivityFilters,
 	type ProjectButterActivityView,
 	type ProjectButterActivitySort,
 } from "@/components/blocks/jira-work-item/project-butter/activity-feed-model";
@@ -50,6 +52,7 @@ function createContent(
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
 	defaultReporter?: WorkItemPerson,
+	defaultAssignee?: WorkItemPerson,
 ) {
 	const empty = preset === "empty" || preset === "blank";
 	const placeholder = empty || !placeholders || !workItem?.code ? undefined : placeholders[workItem.code];
@@ -69,7 +72,8 @@ function createContent(
 			: workItem
 				? []
 				: PROJECT_BUTTER_ATTACHMENTS;
-	const assignee: WorkItemPerson = !workItem?.assignee || workItem.assignee.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : workItem.assignee;
+	const assignedPerson = workItem?.assignee ?? (!workItem && !empty ? defaultAssignee : undefined);
+	const assignee: WorkItemPerson = !assignedPerson || assignedPerson.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : assignedPerson;
 	const priority: PriorityValue = workItem?.priority ?? (empty ? "Medium" : "High");
 	const reporterPlaceholder = workItem?.code ? placeholders?.[workItem.code] : undefined;
 	const reporter: WorkItemPerson = workItem?.reporter
@@ -97,7 +101,10 @@ function createContent(
 		: (initialSessions ?? (workItem ? [] : createProjectButterSessions(preset)));
 	const activityView: ProjectButterActivityView = "Activity";
 	const activitySort: ProjectButterActivitySort = "newest";
+	const activityFilters: ProjectButterActivityFilters = PROJECT_BUTTER_ACTIVITY_FILTERS_ALL;
 	const replyDrafts: Readonly<Record<string, string>> = {};
+	/** Top-level comments pinned to the head of the feed, most recently pinned first. */
+	const pinnedCommentIds: readonly string[] = [];
 	const auditChanges: Readonly<Record<string, ProjectButterReferenceChange>> = {};
 	const relatedDismissed: readonly ProjectButterRelatedKind[] = [];
 	return {
@@ -109,7 +116,9 @@ function createContent(
 		relatedDismissed,
 		activityView,
 		activitySort,
+		activityFilters,
 		replyDrafts,
+		pinnedCommentIds,
 		auditChanges,
 		summary: workItem?.title ?? "Redesign onboarding flow for new users",
 		statusOptions: createProjectButterStatusOptions(status),
@@ -127,9 +136,7 @@ function createContent(
 				: workItem
 					? []
 					: createProjectButterActivity(empty)),
-			...sessions
-				.filter((session) => session.state !== "needs-input")
-				.map(projectButterSessionInvocation),
+			...sessions.flatMap(projectButterSessionInvocation),
 		].sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0)),
 		activityFocusId,
 		dueDate,
@@ -163,13 +170,13 @@ export function useProjectButterContent(
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
 	defaultReporter?: WorkItemPerson,
-	activityContext?: Readonly<{ currentUser?: WorkItemPerson; showAuditInActivity?: boolean }>,
+	activityContext?: Readonly<{ currentUser?: WorkItemPerson; showAuditInActivity?: boolean; defaultAssignee?: WorkItemPerson }>,
 ) {
 	const person = activityContext?.currentUser;
 	const currentUser = useMemo<JiraActivityActor>(() => person ? { id: `butter-person-${person.name}`, name: person.name, kind: "person", avatarSrc: person.avatarUrl } : PROJECT_BUTTER_CURRENT_USER, [person]);
 	const initialState = useMemo<ProjectButterContentState>(
-		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter),
-		[defaultReporter, initialSessions, placeholders, preset, workItem],
+		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter, activityContext?.defaultAssignee),
+		[activityContext?.defaultAssignee, defaultReporter, initialSessions, placeholders, preset, workItem],
 	);
 	const { state, fieldSetter, updateState } = useProjectButterItemState(
 		workItem?.code ?? "reference",
@@ -217,12 +224,12 @@ export function useProjectButterContent(
 				);
 			},
 			recordSessionInvocation: (session: ProjectButterSessionItem, autoAssignTo?: WorkItemPerson) => {
-				const entry = projectButterSessionInvocation(session);
+				const [added, entry] = projectButterSessionInvocation(session);
 				const id = crypto.randomUUID();
 				const createdAtMs = Date.now();
 				updateState((previous) => {
 					if (previous.activityEntries.some((item) => item.id === entry.id)) return { ...previous, activityView: "Activity" };
-					const next = { ...previous, activityView: "Activity" as const, activityEntries: [...previous.activityEntries, entry] };
+					const next = { ...previous, activityView: "Activity" as const, activityEntries: [...previous.activityEntries, added, entry] };
 					return autoAssignTo && (previous.assignee.name === "Unassigned" || previous.assignee.name === "Automatic")
 						? appendProjectButterAudit({ ...next, assignee: autoAssignTo }, { id, createdAtMs, label: "Assignee", before: "Unassigned", after: autoAssignTo.name, action: `automatically assigned this work item to ${autoAssignTo.name}` }, currentUser)
 						: next;
@@ -248,7 +255,16 @@ export function useProjectButterContent(
 			},
 			setActivityView: fieldSetter("activityView"),
 			setActivitySort: fieldSetter("activitySort"),
+			setActivityFilters: fieldSetter("activityFilters"),
 			setReplyDrafts: fieldSetter("replyDrafts"),
+			toggleCommentPin: (id: string) => {
+				updateState((previous) => ({
+					...previous,
+					pinnedCommentIds: previous.pinnedCommentIds.includes(id)
+						? previous.pinnedCommentIds.filter((candidate) => candidate !== id)
+						: [id, ...previous.pinnedCommentIds],
+				}));
+			},
 			setSummary: audited("summary", "Summary", (value) => value),
 			setStatusOptions: fieldSetter("statusOptions"),
 			syncStoryPoints: (storyPoints: string) => {
@@ -300,7 +316,7 @@ export function useProjectButterContent(
 			setStatus: audited("status", "Status", (value) => value),
 		};
 	}, [activityContext?.showAuditInActivity, currentUser, fieldSetter, updateState]);
-	return { ...state, currentUser, showAuditInActivity: activityContext?.showAuditInActivity ?? false, assignee: state.assignee.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : state.assignee, ...actions };
+	return { ...state, currentUser, defaultAssignee: activityContext?.defaultAssignee, showAuditInActivity: activityContext?.showAuditInActivity ?? false, assignee: state.assignee.name === "Automatic" ? PROJECT_BUTTER_UNASSIGNED : state.assignee, ...actions };
 }
 
 export type ProjectButterContent = ReturnType<typeof useProjectButterContent>;

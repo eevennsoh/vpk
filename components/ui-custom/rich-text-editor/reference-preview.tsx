@@ -16,8 +16,8 @@ import {
 	type DirectoryVisual,
 	type KnowledgeDirectoryApp,
 	type KnowledgeDirectoryContent,
-	type SkillsDirectorySkill,
-	type ToolsDirectoryTool,
+	type SkillDirectorySkill,
+	type ToolDirectoryTool,
 } from "@/app/data/directory";
 import { resolveCatalogIds } from "@/app/data/directory/resolve-ids";
 import { SmartLinkCard, type SmartLinkItem, type SmartLinkVariant, type SmartLinkVisual } from "@/components/blocks/smart-link";
@@ -28,11 +28,11 @@ import { EntityCard } from "@/components/ui-custom/entity-card";
 import type { RichTextReferenceCategory } from "./types";
 
 export type RichTextReferencePreview =
-	| { kind: "skill"; skill: SkillsDirectorySkill }
-	| { kind: "tool"; tool: ToolsDirectoryTool | DirectoryApp }
+	| { kind: "skill"; skill: SkillDirectorySkill }
+	| { kind: "tool"; tool: ToolDirectoryTool | DirectoryApp }
 	| { kind: "knowledge"; item: SmartLinkItem };
 
-const REFERENCE_PREVIEW_TOOLS = [...DEMO_TOOLS, ...DEMO_SESSION_TOOLS] as readonly ToolsDirectoryTool[];
+const REFERENCE_PREVIEW_TOOLS = [...DEMO_TOOLS, ...DEMO_SESSION_TOOLS] as readonly ToolDirectoryTool[];
 
 const smartLinkVariantByKnowledgeAppId: Readonly<Record<string, SmartLinkVariant>> = {
 	confluence: "confluence",
@@ -59,12 +59,12 @@ function normalizeReferenceLabel(value: string): string {
 	return value.trim().toLowerCase();
 }
 
-function findReferenceSkill(label: string): SkillsDirectorySkill | undefined {
+function findReferenceSkill(label: string): SkillDirectorySkill | undefined {
 	const skillId = resolveReferenceCatalogId("skill", label);
 	return skillId ? DEFAULT_SKILLS.find((skill) => skill.id === skillId) : undefined;
 }
 
-function findReferenceTool(label: string): ToolsDirectoryTool | undefined {
+function findReferenceTool(label: string): ToolDirectoryTool | undefined {
 	const toolId = resolveReferenceCatalogId("tool", label);
 	return toolId ? REFERENCE_PREVIEW_TOOLS.find((tool) => tool.id === toolId) : undefined;
 }
@@ -207,7 +207,7 @@ export function getRichTextReferencePreview(
 	}
 }
 
-function getReferenceToolLogo(tool: ToolsDirectoryTool): ReactNode {
+function getReferenceToolLogo(tool: ToolDirectoryTool): ReactNode {
 	if (tool.logoName || tool.id === "atlassian") {
 		return <AtlassianLogoMark label={tool.name} name={tool.logoName ?? "atlassian"} size="medium" />;
 	}

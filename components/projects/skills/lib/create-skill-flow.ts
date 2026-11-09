@@ -22,7 +22,7 @@
  */
 
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
-import type { SkillsDirectorySkill } from "@/app/data/directory/skills";
+import type { SkillDirectorySkill } from "@/app/data/directory/skills";
 
 /**
  * Local copy of `slugifySkillName` from `app/data/directory/skills.ts`. Inlined so
@@ -383,14 +383,14 @@ function uniquifySkillId(baseId: string, reservedSkillIds: readonly string[]): s
 }
 
 /**
- * Derives a believable `SkillsDirectorySkill` from the user's free-form prompt
+ * Derives a believable `SkillDirectorySkill` from the user's free-form prompt
  * (and, optionally, the clarification summary text). Deterministic.
  */
 export function deriveSkillFromPrompt(
 	prompt: string,
 	clarificationText?: string,
 	options: DeriveSkillFromPromptOptions = {},
-): SkillsDirectorySkill {
+): SkillDirectorySkill {
 	// Strip the leading "/Create skill" mention, then any "create a skill that…"
 	// filler and leading stop-words, leaving the user's actual intent.
 	const cleaned = prompt.replace(CREATE_SKILL_MENTION_STRIP_RE, "").trim();
@@ -439,7 +439,7 @@ export function deriveSkillFromPrompt(
 		id,
 		name,
 		description,
-		icon: iconKey as SkillsDirectorySkill["icon"],
+		icon: iconKey as SkillDirectorySkill["icon"],
 		publisherName: "Venn",
 		publisherAvatarSrc: "/avatar-user/venn/venn.png",
 		companyId: "you",
@@ -530,7 +530,7 @@ function stage2Steps(activeIndex: number, allComplete = false): SkillCreationTra
 }
 
 export function buildCreateSkillStage2(
-	skill: SkillsDirectorySkill,
+	skill: SkillDirectorySkill,
 	onComplete?: () => void,
 ): CreateSkillStageOutcome {
 	const resultPayload: SkillCreationResultPayload = {

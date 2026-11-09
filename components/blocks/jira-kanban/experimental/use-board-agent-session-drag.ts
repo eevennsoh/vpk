@@ -631,7 +631,7 @@ export function useBoardAgentSessionDrag({
 	 *
 	 * Glow only. Fuse acknowledges a link with a chin-row sweep keyed to the
 	 * activity id the host minted, and that id is the host's own convention —
-	 * `jira-golden-journeys-v4` builds `${card.code}:${selection.id}` from a
+	 * `jira-golden-journey-v4` builds `${card.code}:${selection.id}` from a
 	 * mention id this board never sees. A sweep the board cannot target would
 	 * silently never play, so fuse boards keep the assign menu they have today.
 	 */

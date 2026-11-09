@@ -64,8 +64,8 @@ async function loadHarness() {
 			contents: `
 				import { useEffect, useRef, useState } from "react";
 				import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
-				import { RovoStage } from "@/components/projects/jira-golden-journeys-v1/components/rovo-stage";
-				import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
+				import { RovoStage } from "@/components/projects/jira-golden-journey-v1/components/rovo-stage";
+				import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journey-v1/data/agent-chat-data";
 				function Controls() {
 					const { sendPrompt, applyLocalTurn, activeThreadId, queueCount } = useRovoChat();
 					const controller = useRef(null);

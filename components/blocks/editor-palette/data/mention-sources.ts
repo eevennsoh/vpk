@@ -19,8 +19,8 @@ import {
 	type DirectoryApp,
 	type DirectoryTeam,
 	type KnowledgeDirectoryApp,
-	type SkillsDirectorySkill,
-	type ToolsDirectoryTool,
+	type SkillDirectorySkill,
+	type ToolDirectoryTool,
 } from "@/app/data/directory";
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
 import type {
@@ -63,7 +63,7 @@ export function mapAgentToMentionItem(agent: AgentBrowserAgent): RichTextMention
 	};
 }
 
-export function mapSkillToMentionItem(skill: SkillsDirectorySkill): RichTextMentionItem {
+export function mapSkillToMentionItem(skill: SkillDirectorySkill): RichTextMentionItem {
 	return {
 		category: "skill",
 		description: skill.description,
@@ -73,7 +73,7 @@ export function mapSkillToMentionItem(skill: SkillsDirectorySkill): RichTextMent
 	};
 }
 
-function mapToolToMentionItem(tool: ToolsDirectoryTool): RichTextMentionItem {
+function mapToolToMentionItem(tool: ToolDirectoryTool): RichTextMentionItem {
 	return {
 		category: "tool",
 		description: tool.description,

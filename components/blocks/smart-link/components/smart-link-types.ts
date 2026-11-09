@@ -24,8 +24,8 @@ export type SmartLinkVariant =
  */
 export type SmartLinkAppearance = "inline" | "card";
 
-/** Inline chip size: "small" renders a 12px label, "large" a 16px label. */
-export type SmartLinkSize = "small" | "large";
+/** Inline chip label sizes: small 12px, medium 14px, and large 16px. */
+export type SmartLinkSize = "small" | "medium" | "large";
 
 export type SmartLinkTone = "neutral" | "information" | "discovery" | "magenta" | "warning";
 
@@ -127,8 +127,10 @@ export interface SmartLinkProps {
 	align?: React.ComponentProps<typeof HoverCardContent>["align"];
 	alignOffset?: React.ComponentProps<typeof HoverCardContent>["alignOffset"];
 	positionerClassName?: React.ComponentProps<typeof HoverCardContent>["positionerClassName"];
-	/** Inline chip size: "small" (12px label, default) or "large" (16px label). */
+	/** Inline chip size: small (12px, default), medium (14px), or large (16px). */
 	size?: SmartLinkSize;
+	/** Allow the inline title to wrap across lines instead of truncating. */
+	wrap?: boolean;
 	/** When true, render the item's status as a lozenge at the end of the inline chip. */
 	showStatus?: boolean;
 	openDelay?: number;

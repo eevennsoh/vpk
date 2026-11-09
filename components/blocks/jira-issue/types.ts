@@ -2,6 +2,7 @@ import type { TagColor } from "@/components/ui/tag";
 import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import type { PullRequestAuthor } from "@/components/blocks/pull-request/components/pull-request-types";
 import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
+import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
 
 /** Raised elevation is the default card chrome. Stroke is a 1px border with no shadow. */
 export type JiraIssueChrome = "raised" | "stroke";
@@ -9,6 +10,24 @@ export type JiraIssueChrome = "raised" | "stroke";
 export type JiraIssueIconScale = "compact" | "comfortable";
 export type JiraIssuePriority = "major" | "medium" | "minor" | "critical";
 export type JiraIssueAppearance = "default" | "project-butter";
+
+export interface JiraIssueSubtask {
+	priority?: JiraIssuePriority;
+	summary: string;
+	issueKey: string;
+	status?: string;
+	issueTypeLabel?: string;
+	assigneeAvatarSrc?: string;
+	assigneeAvatarLabel?: string;
+	assigneeUnassignedKind?: AvatarUnassignedKind;
+}
+
+export interface JiraIssueParticipant {
+	id: string;
+	name: string;
+	avatarSrc: string;
+	avatarShape?: NonNullable<AvatarProps["shape"]>;
+}
 
 export interface JiraIssueCardMetadata {
 	issueType?: "task" | "story" | "epic" | "bug" | "subtask";

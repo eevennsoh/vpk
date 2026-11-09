@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
 import { JiraActivityChangedFiles } from "./jira-activity-changed-files";
-import { JiraActivityComment } from "./jira-activity-comment";
+import { JiraActivityComment, type JiraActivityReplyComposerProps } from "./jira-activity-comment";
 import type { JiraActivityCardProps } from "./jira-activity-card";
 import { JiraActivityComposer } from "./jira-activity-composer";
 import { JiraActivityEvent } from "./jira-activity-event";
@@ -92,6 +92,17 @@ export interface JiraActivityProps {
 	 * - "reply-and-reactions": Reply plus reactions; the composer is hidden until Reply.
 	 */
 	commentActions?: "none" | "reactions" | "reply-and-reactions";
+	/**
+	 * Where Reply / Add reaction / comment tools sit. `footer` keeps the
+	 * always-visible row under the body; `hover` moves them into the header's
+	 * hover- and focus-revealed action slot and leaves only existing reaction
+	 * pills under the body.
+	 */
+	commentActionsPlacement?: "footer" | "hover";
+	/** Replaces the threaded "Show more replies" label, e.g. with a count and participant faces. */
+	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean) => ReactNode;
+	/** Replaces every thread's default reply composer, e.g. with the surface's own comment box. */
+	renderReplyComposer?: (composer: JiraActivityReplyComposerProps) => ReactNode;
 	/** Handles a reaction toggle externally instead of applying it to local state. */
 	onToggleReaction?: (entry: JiraActivityCommentEntry, emoji: string) => void;
 	className?: string;
@@ -152,6 +163,9 @@ export function JiraActivity({
 	onSubmitReply,
 	onResolveComment,
 	commentActions = "reply-and-reactions",
+	commentActionsPlacement = "footer",
+	renderEarlierRepliesLabel,
+	renderReplyComposer,
 	onToggleReaction,
 	className,
 	headerClassName,
@@ -346,6 +360,9 @@ export function JiraActivity({
 								onReplyDraftChange={onReplyDraftChange ? (value) => onReplyDraftChange(entry.id, value) : undefined}
 								actorsById={actorsById}
 								commentActions={commentActions}
+								commentActionsPlacement={commentActionsPlacement}
+								renderEarlierRepliesLabel={renderEarlierRepliesLabel}
+								renderReplyComposer={renderReplyComposer}
 								currentUser={currentUser}
 								entry={entry}
 								onAddReplyToChat={
@@ -382,6 +399,7 @@ export function JiraActivity({
 								className="group/activity-event flex min-w-0 gap-2"
 								data-active={entry.id === activeEntryId ? "" : undefined}
 								data-jira-activity-entry-id={entry.id}
+								data-jira-activity-entry-kind={entry.kind}
 								data-jira-activity-parent-id={
 									entry.kind === "comment" ? entry.parentId : undefined
 								}
@@ -408,8 +426,10 @@ export function JiraActivity({
 												? (entry.pullRequest ? "pull-request" : entry.icon)
 												: undefined
 										}
-											isLast={isLast || connectorStyle === "thread"}
+										// Threads keep one continuous spine: each stem runs on past its replies' branches to the next row.
+										isLast={isLast}
 										size={isCardEntry ? "card" : "event"}
+										tone={connectorStyle === "thread" ? "thread" : "timeline"}
 									/>
 								)}
 								<div
@@ -444,6 +464,7 @@ export function JiraActivity({
 export { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
 export { JiraActivityCard, type JiraActivityCardProps } from "./jira-activity-card";
 export { JiraActivityComposer, type JiraActivityComposerProps } from "./jira-activity-composer";
+export { JiraActivityEntryGlyph } from "./jira-activity-node";
 export {
 	JiraActivityHeader,
 	JiraActivityViewControl,
@@ -469,3 +490,4 @@ export {
 	serializeActivityCommentsContext,
 	type ActivityChatCommentContext,
 } from "./lib/jira-activity-comment-text";
+export type { JiraActivityReplyComposerProps } from "./jira-activity-comment";

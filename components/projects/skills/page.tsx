@@ -13,7 +13,7 @@ import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
 import { addCreatedSkill, useCreatedSkills } from "@/app/data/directory/created-skills-store";
 import { mapSkillToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
 import type { RichTextMentionItem, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
-import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
+import { SkillDirectoryDialog, type SkillDirectorySkill } from "@/components/blocks/skill-directory";
 import { PromptInputActionMenuItem } from "@/components/ui-custom/prompt-input";
 import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
@@ -80,7 +80,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 	const flowCounterRef = useRef(0);
 	const pendingFlowIdRef = useRef<string>("");
 	const [configSkillId, setConfigSkillId] = useState<string | null>(null);
-	const [isSkillsDirectoryOpen, setIsSkillsDirectoryOpen] = useState(false);
+	const [isSkillDirectoryOpen, setIsSkillDirectoryOpen] = useState(false);
 	const [prefillRequest, setPrefillRequest] = useState<{ mention?: RichTextMentionItem; text?: string; requestKey: number }>();
 	// Flow ids whose question round has been answered. Each awaiting trace flips
 	// to "Questions answered" only when its own flow id lands here.
@@ -206,10 +206,10 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 
 	const handleViewAllSkills = useCallback(() => {
 		setConfigSkillId(null);
-		setIsSkillsDirectoryOpen(true);
+		setIsSkillDirectoryOpen(true);
 	}, []);
 	const handleAddDirectorySkills = useCallback(
-		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
+		(_skillIds: readonly string[], skills: readonly SkillDirectorySkill[]) => {
 			const skill = skills[0];
 			if (!skill) {
 				return;
@@ -217,12 +217,12 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 			prefillCounterRef.current += 1;
 			setPrefillRequest({ mention: mapSkillToMentionItem(skill), requestKey: prefillCounterRef.current });
 			setConfigSkillId(null);
-			setIsSkillsDirectoryOpen(false);
+			setIsSkillDirectoryOpen(false);
 		},
 		[],
 	);
 	const handleCreateSpace = useCallback(() => {
-		setIsSkillsDirectoryOpen(false);
+		setIsSkillDirectoryOpen(false);
 	}, []);
 	const addMenuItemsBefore = (
 		<>
@@ -239,7 +239,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 	// from a result card's Edit, which closes on exit) and the "View all skills"
 	// browse grid.
 	const isDetailOpen = configSkillId !== null;
-	const isDialogOpen = isDetailOpen || isSkillsDirectoryOpen;
+	const isDialogOpen = isDetailOpen || isSkillDirectoryOpen;
 
 	return (
 		<>
@@ -258,12 +258,12 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				composerMentionSources={composerMentionSources}
 				autoFocusComposer
 			/>
-			<SkillsDirectoryDialog
+			<SkillDirectoryDialog
 				open={isDialogOpen}
 				onOpenChange={(open) => {
 					if (!open) {
 						setConfigSkillId(null);
-						setIsSkillsDirectoryOpen(false);
+						setIsSkillDirectoryOpen(false);
 					}
 				}}
 				initialDetailSkillId={configSkillId}

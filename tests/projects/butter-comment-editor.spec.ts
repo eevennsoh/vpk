@@ -5,6 +5,29 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("the comment shadow fades without moving the scrollbar over details", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/jira-work-item"));
+	await page.getByRole("button", { name: "Full screen", exact: true }).click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	await page.keyboard.press("m");
+	const bar = dialog.locator("[data-project-butter-comment-bar]");
+	await expect(bar.getByRole("textbox", { name: "Comment editor" })).toBeVisible();
+	const geometry = await bar.evaluate((element) => {
+		const scrollport = element.closest("[data-project-butter-work-item]")!.firstElementChild!;
+		const details = element.closest("[data-project-butter-work-item]")!.querySelector("[data-project-butter-details-rail]")!;
+		const shadow = element.querySelector("[data-project-butter-comment-shadow]")!;
+		return {
+			scrollbarOverlapsDetails: scrollport.getBoundingClientRect().right > details.getBoundingClientRect().left,
+			shadowRoom: scrollport.getBoundingClientRect().right - shadow.getBoundingClientRect().right,
+			shadow: getComputedStyle(shadow).boxShadow,
+		};
+	});
+	expect(geometry.scrollbarOverlapsDetails).toBe(false);
+	expect(geometry.shadowRoom).toBeGreaterThanOrEqual(48);
+	expect(geometry.shadow).not.toBe("none");
+	await expect(dialog.getByRole("separator", { name: "Resize details panel" })).toBeVisible();
+});
+
 async function mockRovoThreads(page: Page) {
 	const threads = new Map<string, Record<string, unknown>>();
 	const openedThreads: string[] = [];
@@ -48,14 +71,14 @@ test("the comment bar has matching left and bottom insets", async ({ page }) => 
 		const activity = element.querySelector<HTMLElement>("[data-project-butter-activity]");
 		if (activity) element.scrollTop += activity.getBoundingClientRect().top - element.getBoundingClientRect().top;
 	});
-	await expect(bar.getByRole("button", { name: "Add a comment" })).toBeVisible();
+	await expect(bar.getByRole("textbox", { name: "Comment editor" })).toBeVisible();
 	const insets = () => bar.evaluate((element) => {
 		const viewport = element.closest("[data-project-butter-work-item]")!.firstElementChild!.getBoundingClientRect();
 		const bounds = element.getBoundingClientRect();
 		return Math.abs((bounds.left - viewport.left) - (viewport.bottom - bounds.bottom));
 	});
 	await expect.poll(insets).toBeLessThan(1);
-	await bar.getByRole("button", { name: "Add a comment" }).click();
+	await bar.getByRole("textbox", { name: "Comment editor" }).click();
 	await expect.poll(insets).toBeLessThan(1);
 	await scrollport.evaluate((element) => { element.scrollTop = element.scrollHeight; });
 	await expect.poll(insets).toBeLessThan(1);
@@ -84,9 +107,8 @@ test("the comment bar reveals quickly and covers content below it while scrollin
 	});
 	expect(revealMs).toBeLessThan(220);
 	await scrollport.evaluate((root) => { root.scrollTop += 160; });
-	const commentButton = bar.getByRole("button", { name: "Add a comment" });
-	await expect(commentButton).toHaveCSS("border-top-left-radius", "12px");
-	await expect.poll(() => commentButton.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none");
+	const shadow = bar.locator("[data-project-butter-comment-shadow]");
+	await expect.poll(() => shadow.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none");
 	await expect.poll(() => bar.evaluate((element) => {
 		const root = element.closest("[data-project-butter-work-item]")!.firstElementChild!;
 		const barBounds = element.getBoundingClientRect();
@@ -193,7 +215,7 @@ test("agent mentions open an existing session or create a separate session", asy
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toHaveText("What should I check next?");
 	await expect(chat.getByRole("log").getByText("What should I check next?", { exact: true })).toHaveCount(0);
 	await chat.getByRole("textbox", { name: "Chat message input" }).fill("Existing chat draft");
-	await workItem.getByRole("button", { name: "Add a comment" }).click();
+	await workItem.getByRole("textbox", { name: "Comment editor" }).click();
 	await editor.pressSequentially("@Claude");
 	await page.getByRole("option", { name: /^Claude / }).click();
 	await editor.pressSequentially(" More context");
@@ -201,14 +223,14 @@ test("agent mentions open an existing session or create a separate session", asy
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("More context");
 	await expect(chat.getByRole("log").getByText("More context", { exact: true })).toHaveCount(0);
-	await workItem.getByRole("button", { name: "Add a comment" }).click();
+	await workItem.getByRole("textbox", { name: "Comment editor" }).click();
 	await editor.pressSequentially("@Claude");
 	await page.getByRole("option", { name: /^Claude / }).click();
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("More context");
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
-	if (await editor.isVisible()) await workItem.getByRole("button", { name: "Close comment editor" }).click();
+	if (await editor.isVisible()) await editor.press("Escape");
 	await mentionClaude();
 	await expect(choices).toBeVisible();
 	if (await choices.getByRole("option", { name: "Continue in existing session" }).getAttribute("aria-selected") === "true") await editor.press("ArrowDown");
@@ -413,7 +435,7 @@ test("a resumed session keeps its conversation after the user sends and reopens 
 	expect(secondSaveResponse.url()).not.toBe(firstSaveResponse.url());
 	const firstThreadId = decodeURIComponent(new URL(firstSaveResponse.url()).pathname.split("/").at(-1) ?? "");
 	expect(JSON.stringify(threads.get(firstThreadId))).not.toContain("Second session message");
-	await workItem.getByRole("button", { name: "Add a comment" }).click();
+	await workItem.getByRole("textbox", { name: "Comment editor" }).click();
 	await editor.pressSequentially("@Cursor");
 	await page.getByRole("option", { name: /^Cursor / }).first().click();
 	await editor.pressSequentially(" Follow up later");
@@ -524,10 +546,10 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	const actions = page.getByRole("menu", { name: "Run Claude on" });
 	await expect(actions.getByRole("group", { name: "Run on cloud" })).toBeVisible();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (2)" })).toBeVisible();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
 	await expect(actions.getByRole("menuitem", { name: "Start a new session" })).toBeVisible();
 	await expect(actions.getByRole("separator")).toBeVisible();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
 	await expect(sessions.getByRole("option")).toHaveCount(2);
 	const earlier = sessions.getByRole("option", { name: /Check timeout behavior/ });
@@ -549,7 +571,7 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (3)" })).toBeVisible();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
 });
 
 test("a first cloud session started from the board does not open chat", async ({ page }) => {
@@ -564,7 +586,7 @@ test("a first cloud session started from the board does not open chat", async ({
 	await expect(page.locator('[data-rovo-chat-placement="floating"]')).toBeHidden();
 });
 
-test("long session titles and metadata stay inside their own selectable rows", async ({ page }) => {
+test("long session titles stay inside their own selectable rows", async ({ page }) => {
 	test.setTimeout(60_000);
 	await page.goto(appUrl("/butter"));
 	const issue = card(page, "PAY-105");
@@ -580,7 +602,7 @@ test("long session titles and metadata stay inside their own selectable rows", a
 	await chooseClaude();
 	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
 	await chooseClaude();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	const list = page.getByRole("listbox", { name: "Choose a Claude session" });
 	await expect(list.getByRole("option")).toHaveCount(2);
 	const rowsAreContained = () => list.evaluate((element) => {
@@ -588,9 +610,8 @@ test("long session titles and metadata stay inside their own selectable rows", a
 		return rows.every((row, index) => {
 			const bounds = row.getBoundingClientRect();
 			const title = row.querySelector<HTMLElement>(".menu-row-title")?.getBoundingClientRect();
-			const byline = row.querySelector<HTMLElement>(".menu-row-byline")?.getBoundingClientRect();
 			const next = rows[index + 1]?.getBoundingClientRect();
-			return Boolean(title && byline && title.top >= bounds.top && title.bottom <= byline.top + 1 && byline.bottom <= bounds.bottom + 1 && (!next || bounds.bottom <= next.top + 1));
+			return Boolean(title && title.top >= bounds.top && title.bottom <= bounds.bottom + 1 && (!next || bounds.bottom <= next.top + 1));
 		});
 	});
 	await expect.poll(rowsAreContained).toBe(true);
@@ -625,22 +646,22 @@ test("the board card picker continues a chosen session or creates a separate emp
 	}
 	await openClaudePicker();
 	const actions = page.getByRole("menu", { name: "Run Claude on" });
-	await actions.getByRole("menuitem", { name: "Continue to existing session (2)" }).click();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
 	await expect(sessions.getByRole("option")).toHaveCount(2);
 	await expect.poll(() => sessions.locator("..").evaluate((menu) => ({
 		shadow: getComputedStyle(menu).boxShadow,
 		border: getComputedStyle(menu).borderTopWidth,
 	}))).toEqual({ shadow: "none", border: "0px" });
-	await expect.poll(() => sessions.locator(".menu-row-byline").evaluateAll((rows) => rows.every((row) => row.scrollWidth <= row.clientWidth + 1 && row.scrollHeight <= row.clientHeight + 1))).toBe(true);
+	await expect(sessions.locator(".menu-row-byline")).toHaveCount(0);
 	await page.setViewportSize({ width: 900, height: 800 });
 	await expect.poll(() => sessions.evaluate((list) => {
 		const bounds = list.getBoundingClientRect();
 		return bounds.left >= 0 && bounds.right <= window.innerWidth;
 	})).toBe(true);
-	await expect.poll(() => sessions.locator(".menu-row-byline").evaluateAll((rows) => rows.every((row) => row.scrollWidth <= row.clientWidth + 1 && row.scrollHeight <= row.clientHeight + 1))).toBe(true);
+	await expect(sessions.locator(".menu-row-byline")).toHaveCount(0);
 	await page.setViewportSize({ width: 1800, height: 1100 });
-	await expect(sessions.getByRole("option", { name: /Check timeouts/ })).toContainText("Venn");
+	await expect(sessions.getByRole("option", { name: "Check timeouts" })).toBeVisible();
 	await sessions.getByRole("option").first().focus();
 	await page.keyboard.press("ArrowDown");
 	await expect(sessions.getByRole("option", { name: /Check timeouts/ })).toBeFocused();
@@ -653,8 +674,8 @@ test("the board card picker continues a chosen session or creates a separate emp
 	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
 	await expect(chat).toBeHidden();
 	await openClaudePicker();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session (3)" })).toBeVisible();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (3)" }).click();
+	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
 	await expect.poll(() => sessions.getByRole("option", { name: /Work on Port confirmPaymentIntent/ }).locator(".menu-row-title").evaluate((title) => title.scrollHeight <= title.clientHeight + 1)).toBe(true);
 	await sessions.getByRole("option", { name: /Work on Port confirmPaymentIntent/ }).click();
 	const input = chat.getByRole("textbox", { name: "Chat message input" });
@@ -666,7 +687,7 @@ test("the board card picker continues a chosen session or creates a separate emp
 	await expect(chat.getByRole("log").getByText("Investigate decline handling", { exact: true })).toBeVisible();
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 	await openClaudePicker();
-	await actions.getByRole("menuitem", { name: "Continue to existing session (3)" }).click();
-	await expect(sessions.getByRole("option", { name: /Investigate decline handling/ })).toContainText("Working");
+	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
+	await expect(sessions.getByRole("option", { name: "Investigate decline handling" })).toBeVisible();
 });
 

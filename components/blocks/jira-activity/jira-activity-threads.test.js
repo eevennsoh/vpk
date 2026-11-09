@@ -276,13 +276,13 @@ test("comments with nested replies expose one shared header control to collapse 
 	);
 	assert.match(COMMENT_SOURCE, /const hasReplies = replies\.length > 0/u);
 	assert.match(COMMENT_SOURCE, /repliesExpanded \? "Hide all replies" : "Show all replies"/u);
-	assert.match(COMMENT_SOURCE, /aria-controls=\{repliesId\}[\s\S]*aria-expanded=\{repliesExpanded\}[\s\S]*size="icon-compact"[\s\S]*variant="outline"[\s\S]*<GrowVerticalIcon label="" \/>/u);
+	assert.match(COMMENT_SOURCE, /aria-controls=\{repliesId\}[\s\S]*aria-expanded=\{repliesExpanded\}[\s\S]*size="icon-compact"[\s\S]*variant="outline"/u);
 	assert.match(COMMENT_SOURCE, /className="aria-expanded:border-border aria-expanded:bg-bg-neutral-subtle/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /aria-expanded:border-transparent|aria-expanded:bg-transparent/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /opacity-0[\s\S]*group-hover\/activity-card:opacity-100/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/const headerAction = action \|\| repliesToggle \|\| addToChatAction \? \(\s*<div className="flex shrink-0 items-center gap-1">[\s\S]*\{action\}[\s\S]*\{addToChatAction\}[\s\S]*\{repliesToggle\}/u,
+		/const headerAction = action \|\| repliesToggle \|\| addToChatAction(?: \|\| hoverActions)? \? \(\s*<div className="flex shrink-0 items-center gap-1">[\s\S]*\{action\}[\s\S]*\{addToChatAction\}[\s\S]*\{repliesToggle\}/u,
 	);
 	// The shared control rides the card's hover scope, but stays in the tab order:
 	// a `display: none` wrapper could never satisfy its own focus-visible reveal.
@@ -723,21 +723,25 @@ function renderThreadConnectors(connectorStyle) {
 	});
 }
 
-test("thread connectors branch only inside discussions and stop at the last visible reply", async () => {
+test("thread connectors branch only inside discussions while the spine continues to the next row", async () => {
 	const view = await renderThreadConnectors("thread");
 	const thread = document.querySelector('[data-jira-activity-entry-id="thread"]');
 	const standalone = document.querySelector('[data-jira-activity-entry-id="standalone"]');
 	const visibleBranches = () => [...thread.querySelectorAll("[data-jira-activity-thread-branch]")].filter((node) => !node.closest("[hidden]"));
 	assert.equal(thread.querySelector("[data-jira-activity-thread-stem]") !== null, true);
 	assert.equal(standalone.querySelector("[data-jira-activity-thread-stem]") === null, true);
-	assert.equal(document.querySelector("[data-jira-activity-timeline-stem]") === null, true);
-	assert.equal(visibleBranches().length, 2, "collapsed toggle and latest reply each get one branch");
+	// One continuous spine: every row but the last runs a thread-toned stem on to the next row, past its reply branches.
+	const stems = [...document.querySelectorAll("[data-jira-activity-timeline-stem]")];
+	assert.equal(stems.length, 1);
+	assert.equal(thread.contains(stems[0]), true);
+	assert.equal(stems[0].classList.contains("bg-bg-accent-gray-subtler"), true);
+	assert.equal(visibleBranches().length, 1, "only the latest reply branches from the timeline");
 	assert.equal(visibleBranches().at(-1).parentElement.querySelector("[data-jira-activity-thread-continuation]") === null, true);
 	assert.equal(visibleBranches().every((branch) => branch.getAttribute("aria-hidden") === "true"), true);
 	await view.click(view.getByRole("button", { name: "Show more replies" }));
-	assert.equal(visibleBranches().length, 3);
-	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
 	assert.equal(visibleBranches().length, 2);
+	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
+	assert.equal(visibleBranches().length, 1);
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Show more replies" })), true);
 	await view.click(view.getAllByRole("button", { name: "Reply" }).at(-1));
 	assert.equal(standalone.querySelector("[data-jira-activity-thread-stem]") !== null, true);

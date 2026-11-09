@@ -2696,12 +2696,12 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 73,
-			"pageCount": 57,
+			"ownerImportCount": 75,
+			"pageCount": 60,
 			"primaryOwnerKinds": {
-				"catalog": 18,
+				"catalog": 20,
 				"dynamic": 8,
-				"inline": 1,
+				"inline": 2,
 				"redirect": 2,
 				"shell": 28
 			}
@@ -3020,7 +3020,7 @@
 					"kind": "catalog",
 					"category": "projects",
 					"slug": "butter",
-					"status": "live",
+					"status": "frozen",
 					"basedOn": "jira-team-eu26",
 					"loader": "loadDemoComponent",
 					"source": "components/projects/butter",
@@ -3031,6 +3031,60 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/butter/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "butter",
+					"status": "frozen",
+					"basedOn": "jira-team-eu26",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/butter",
+					"entry": "components/projects/butter/page.tsx",
+					"demo": "components/website/demos/projects/butter-demo.tsx"
+				},
+				"routePath": "/butter-v0",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/butter-v0/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"primaryOwner": {
+					"kind": "catalog",
+					"category": "projects",
+					"slug": "butter-v1",
+					"status": "live",
+					"basedOn": "butter",
+					"loader": "loadDemoComponent",
+					"source": "components/projects/butter-v1",
+					"entry": "components/projects/butter-v1/page.tsx",
+					"demo": "components/website/demos/projects/butter-v1-demo.tsx"
+				},
+				"routePath": "/butter-v1",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/butter-v1/page.tsx"
 			},
 			{
 				"ownerCount": 2,
@@ -3195,17 +3249,17 @@
 				"primaryOwner": {
 					"kind": "catalog",
 					"category": "projects",
-					"slug": "jira-golden-journeys-v0",
+					"slug": "jira-golden-journey-v0",
 					"status": "frozen",
 					"loader": "loadDemoComponent",
-					"source": "components/projects/jira-golden-journeys-v0",
-					"entry": "components/projects/jira-golden-journeys-v0/page.tsx",
-					"demo": "components/website/demos/projects/jira-golden-journeys-v0-demo.tsx"
+					"source": "components/projects/jira-golden-journey-v0",
+					"entry": "components/projects/jira-golden-journey-v0/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journey-v0-demo.tsx"
 				},
-				"routePath": "/jira-golden-journeys-v0",
+				"routePath": "/jira-golden-journey-v0",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
-				"source": "app/jira-golden-journeys-v0/page.tsx"
+				"source": "app/jira-golden-journey-v0/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -3221,17 +3275,17 @@
 				"primaryOwner": {
 					"kind": "catalog",
 					"category": "projects",
-					"slug": "jira-golden-journeys-v1",
+					"slug": "jira-golden-journey-v1",
 					"status": "frozen",
 					"loader": "loadDemoComponent",
-					"source": "components/projects/jira-golden-journeys-v1",
-					"entry": "components/projects/jira-golden-journeys-v1/page.tsx",
-					"demo": "components/website/demos/projects/jira-golden-journeys-v1-demo.tsx"
+					"source": "components/projects/jira-golden-journey-v1",
+					"entry": "components/projects/jira-golden-journey-v1/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journey-v1-demo.tsx"
 				},
-				"routePath": "/jira-golden-journeys-v1",
+				"routePath": "/jira-golden-journey-v1",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
-				"source": "app/jira-golden-journeys-v1/page.tsx"
+				"source": "app/jira-golden-journey-v1/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -3247,17 +3301,17 @@
 				"primaryOwner": {
 					"kind": "catalog",
 					"category": "projects",
-					"slug": "jira-golden-journeys-v2",
+					"slug": "jira-golden-journey-v2",
 					"status": "frozen",
 					"loader": "loadDemoComponent",
-					"source": "components/projects/jira-golden-journeys-v2",
-					"entry": "components/projects/jira-golden-journeys-v2/page.tsx",
-					"demo": "components/website/demos/projects/jira-golden-journeys-v2-demo.tsx"
+					"source": "components/projects/jira-golden-journey-v2",
+					"entry": "components/projects/jira-golden-journey-v2/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journey-v2-demo.tsx"
 				},
-				"routePath": "/jira-golden-journeys-v2",
+				"routePath": "/jira-golden-journey-v2",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
-				"source": "app/jira-golden-journeys-v2/page.tsx"
+				"source": "app/jira-golden-journey-v2/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -3273,18 +3327,18 @@
 				"primaryOwner": {
 					"kind": "catalog",
 					"category": "projects",
-					"slug": "jira-golden-journeys-v3",
+					"slug": "jira-golden-journey-v3",
 					"status": "frozen",
-					"basedOn": "jira-golden-journeys-v2",
+					"basedOn": "jira-golden-journey-v2",
 					"loader": "loadDemoComponent",
-					"source": "components/projects/jira-golden-journeys-v3",
-					"entry": "components/projects/jira-golden-journeys-v3/page.tsx",
-					"demo": "components/website/demos/projects/jira-golden-journeys-v3-demo.tsx"
+					"source": "components/projects/jira-golden-journey-v3",
+					"entry": "components/projects/jira-golden-journey-v3/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journey-v3-demo.tsx"
 				},
-				"routePath": "/jira-golden-journeys-v3",
+				"routePath": "/jira-golden-journey-v3",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
-				"source": "app/jira-golden-journeys-v3/page.tsx"
+				"source": "app/jira-golden-journey-v3/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -3300,18 +3354,18 @@
 				"primaryOwner": {
 					"kind": "catalog",
 					"category": "projects",
-					"slug": "jira-golden-journeys-v4",
+					"slug": "jira-golden-journey-v4",
 					"status": "superseded",
-					"basedOn": "jira-golden-journeys-v3",
+					"basedOn": "jira-golden-journey-v3",
 					"loader": "loadDemoComponent",
-					"source": "components/projects/jira-golden-journeys-v4",
-					"entry": "components/projects/jira-golden-journeys-v4/page.tsx",
-					"demo": "components/website/demos/projects/jira-golden-journeys-v4-demo.tsx"
+					"source": "components/projects/jira-golden-journey-v4",
+					"entry": "components/projects/jira-golden-journey-v4/page.tsx",
+					"demo": "components/website/demos/projects/jira-golden-journey-v4-demo.tsx"
 				},
-				"routePath": "/jira-golden-journeys-v4",
+				"routePath": "/jira-golden-journey-v4",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
-				"source": "app/jira-golden-journeys-v4/page.tsx"
+				"source": "app/jira-golden-journey-v4/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -3355,7 +3409,7 @@
 					"category": "projects",
 					"slug": "jira-team-eu26",
 					"status": "live",
-					"basedOn": "jira-golden-journeys-v4",
+					"basedOn": "jira-golden-journey-v4",
 					"loader": "loadDemoComponent",
 					"source": "components/projects/jira-team-eu26",
 					"entry": "components/projects/jira-team-eu26/page.tsx",
@@ -3753,27 +3807,27 @@
 				"ownerCount": 1,
 				"owners": [
 					{
-						"importPath": "@/components/blocks/jira-list/page",
-						"source": "components/blocks/jira-list/page",
+						"importPath": "@/components/website/demos/blocks/jira-list-demo",
+						"source": "components/website/demos/blocks/jira-list-demo",
 						"symbols": [
-							"JiraListPage"
+							"JiraListDemo"
 						]
 					}
 				],
 				"primaryOwner": {
 					"kind": "shell",
 					"sources": [
-						"components/blocks/jira-list/page"
+						"components/website/demos/blocks/jira-list-demo"
 					]
 				},
 				"routePath": "/preview/blocks/jira-list",
 				"shellOwnerCount": 1,
 				"shellOwners": [
 					{
-						"importPath": "@/components/blocks/jira-list/page",
-						"source": "components/blocks/jira-list/page",
+						"importPath": "@/components/website/demos/blocks/jira-list-demo",
+						"source": "components/website/demos/blocks/jira-list-demo",
 						"symbols": [
-							"JiraListPage"
+							"JiraListDemo"
 						]
 					}
 				],
@@ -4265,6 +4319,18 @@
 				"source": "app/rovo/[[...id]]/page.tsx"
 			},
 			{
+				"ownerCount": 0,
+				"owners": [],
+				"primaryOwner": {
+					"kind": "inline",
+					"source": "app/sandbox/agent-selector-canvas/page.tsx"
+				},
+				"routePath": "/sandbox/agent-selector-canvas",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/sandbox/agent-selector-canvas/page.tsx"
+			},
+			{
 				"ownerCount": 3,
 				"owners": [
 					{
@@ -4493,11 +4559,11 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 444,
+			"manifestEntryCount": 445,
 			"categoryCount": 8,
 			"statusCounts": {
 				"live": 439,
-				"frozen": 4,
+				"frozen": 5,
 				"superseded": 1
 			}
 		},
@@ -4605,9 +4671,9 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "agent-insights",
-						"name": "Agent Insights",
-						"importPath": "@/components/blocks/agent-insights",
+						"slug": "agent-insight",
+						"name": "Agent Insight",
+						"importPath": "@/components/blocks/agent-insight",
 						"status": "live"
 					},
 					{
@@ -4668,23 +4734,23 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "agent-states",
-						"name": "Agent States",
-						"importPath": "@/components/blocks/agent-states",
+						"slug": "agent-state",
+						"name": "Agent State",
+						"importPath": "@/components/blocks/agent-state",
 						"status": "live"
 					},
 					{
 						"category": "blocks",
-						"slug": "agent-surfaces",
-						"name": "Agent Surfaces",
-						"importPath": "@/components/blocks/agent-surfaces",
+						"slug": "agent-surface",
+						"name": "Agent Surface",
+						"importPath": "@/components/blocks/agent-surface",
 						"status": "live"
 					},
 					{
 						"category": "blocks",
-						"slug": "agent-templates",
-						"name": "Agent Templates",
-						"importPath": "@/components/blocks/agent-templates",
+						"slug": "agent-template",
+						"name": "Agent Template",
+						"importPath": "@/components/blocks/agent-template",
 						"status": "live"
 					},
 					{
@@ -4696,9 +4762,9 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "agent-users",
-						"name": "Agent Users",
-						"importPath": "@/components/blocks/agent-users",
+						"slug": "agent-user",
+						"name": "Agent User",
+						"importPath": "@/components/blocks/agent-user",
 						"status": "live"
 					},
 					{
@@ -4706,6 +4772,13 @@
 						"slug": "answer-card",
 						"name": "Answer Card",
 						"importPath": "@/components/blocks/answer-card",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "app-directory",
+						"name": "App Directory",
+						"importPath": "@/components/blocks/app-directory",
 						"status": "live"
 					},
 					{
@@ -4720,13 +4793,6 @@
 						"slug": "approval-card",
 						"name": "Approval Card",
 						"importPath": "@/components/blocks/approval-card",
-						"status": "live"
-					},
-					{
-						"category": "blocks",
-						"slug": "apps-directory",
-						"name": "Apps Directory",
-						"importPath": "@/components/blocks/apps-directory",
 						"status": "live"
 					},
 					{
@@ -4787,9 +4853,9 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "conversation-starters",
-						"name": "Conversation Starters",
-						"importPath": "@/components/blocks/conversation-starters",
+						"slug": "conversation-starter",
+						"name": "Conversation Starter",
+						"importPath": "@/components/blocks/conversation-starter",
 						"status": "live"
 					},
 					{
@@ -4906,9 +4972,9 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "jira-insights",
-						"name": "Jira Insights",
-						"importPath": "@/components/blocks/jira-insights",
+						"slug": "jira-insight",
+						"name": "Jira Insight",
+						"importPath": "@/components/blocks/jira-insight",
 						"status": "live"
 					},
 					{
@@ -5096,9 +5162,9 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "settings-dialog",
-						"name": "Settings Dialog",
-						"importPath": "@/components/blocks/settings-dialog",
+						"slug": "setting-dialog",
+						"name": "Setting Dialog",
+						"importPath": "@/components/blocks/setting-dialog",
 						"status": "live"
 					},
 					{
@@ -5264,16 +5330,16 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "skill-selector",
-						"name": "Skill Selector",
-						"importPath": "@/components/blocks/skill-selector",
+						"slug": "skill-directory",
+						"name": "Skill Directory",
+						"importPath": "@/components/blocks/skill-directory",
 						"status": "live"
 					},
 					{
 						"category": "blocks",
-						"slug": "skills-directory",
-						"name": "Skills Directory",
-						"importPath": "@/components/blocks/skills-directory",
+						"slug": "skill-selector",
+						"name": "Skill Selector",
+						"importPath": "@/components/blocks/skill-selector",
 						"status": "live"
 					},
 					{
@@ -5292,9 +5358,9 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "subagents",
-						"name": "Subagents",
-						"importPath": "@/components/blocks/subagents",
+						"slug": "subagent",
+						"name": "Subagent",
+						"importPath": "@/components/blocks/subagent",
 						"status": "live"
 					},
 					{
@@ -5320,9 +5386,9 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "tools-directory",
-						"name": "Tools Directory",
-						"importPath": "@/components/blocks/tools-directory",
+						"slug": "tool-directory",
+						"name": "Tool Directory",
+						"importPath": "@/components/blocks/tool-directory",
 						"status": "live"
 					},
 					{
@@ -5334,16 +5400,16 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "trigger-config",
-						"name": "Trigger Config",
-						"importPath": "@/components/blocks/trigger-config",
+						"slug": "trigger",
+						"name": "Trigger",
+						"importPath": "@/components/blocks/trigger",
 						"status": "live"
 					},
 					{
 						"category": "blocks",
-						"slug": "triggers",
-						"name": "Triggers",
-						"importPath": "@/components/blocks/triggers",
+						"slug": "trigger-config",
+						"name": "Trigger Config",
+						"importPath": "@/components/blocks/trigger-config",
 						"status": "live"
 					},
 					{
@@ -5378,7 +5444,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 20,
+				"entryCount": 21,
 				"entries": [
 					{
 						"category": "projects",
@@ -5390,11 +5456,20 @@
 					{
 						"category": "projects",
 						"slug": "butter",
-						"name": "Butter",
+						"name": "Project Butter v0",
 						"importPath": "@/components/projects/butter",
-						"status": "live",
+						"status": "frozen",
 						"basedOn": "jira-team-eu26",
-						"note": "Independent Butter fork of the Team ’26 EU Payments SDK board."
+						"note": "Project Butter v0; its v1 fork has its own project and work-item code."
+					},
+					{
+						"category": "projects",
+						"slug": "butter-v1",
+						"name": "Project Butter v1",
+						"importPath": "@/components/projects/butter-v1",
+						"status": "live",
+						"basedOn": "butter",
+						"note": "Project Butter v1, forked from v0 with its own project and work-item code."
 					},
 					{
 						"category": "projects",
@@ -5426,43 +5501,43 @@
 					},
 					{
 						"category": "projects",
-						"slug": "jira-golden-journeys-v0",
-						"name": "Jira Golden Journeys v0",
-						"importPath": "@/components/projects/jira-golden-journeys-v0",
+						"slug": "jira-golden-journey-v0",
+						"name": "Jira Golden Journey v0",
+						"importPath": "@/components/projects/jira-golden-journey-v0",
 						"status": "frozen",
 						"note": "Formerly asx. Its Rovo overlay and agent-chat hook are also imported by every jira-work-item variant and the jira-issue demo."
 					},
 					{
 						"category": "projects",
-						"slug": "jira-golden-journeys-v1",
-						"name": "Jira Golden Journeys v1",
-						"importPath": "@/components/projects/jira-golden-journeys-v1",
+						"slug": "jira-golden-journey-v1",
+						"name": "Jira Golden Journey v1",
+						"importPath": "@/components/projects/jira-golden-journey-v1",
 						"status": "frozen",
 						"note": "Its Rovo overlay, terminal stage and agent-chat hook are imported by v3, v4 and both Jira Team EU26 boards, so edits there reach live boards."
 					},
 					{
 						"category": "projects",
-						"slug": "jira-golden-journeys-v2",
-						"name": "Jira Golden Journeys v2",
-						"importPath": "@/components/projects/jira-golden-journeys-v2",
+						"slug": "jira-golden-journey-v2",
+						"name": "Jira Golden Journey v2",
+						"importPath": "@/components/projects/jira-golden-journey-v2",
 						"status": "frozen",
 						"note": "Formerly jira-agents; the only project that renders jira-work-item/experimental-v2."
 					},
 					{
 						"category": "projects",
-						"slug": "jira-golden-journeys-v3",
-						"name": "Jira Golden Journeys v3",
-						"importPath": "@/components/projects/jira-golden-journeys-v3",
+						"slug": "jira-golden-journey-v3",
+						"name": "Jira Golden Journey v3",
+						"importPath": "@/components/projects/jira-golden-journey-v3",
 						"status": "frozen",
-						"basedOn": "jira-golden-journeys-v2"
+						"basedOn": "jira-golden-journey-v2"
 					},
 					{
 						"category": "projects",
-						"slug": "jira-golden-journeys-v4",
-						"name": "Jira Golden Journeys v4",
-						"importPath": "@/components/projects/jira-golden-journeys-v4",
+						"slug": "jira-golden-journey-v4",
+						"name": "Jira Golden Journey v4",
+						"importPath": "@/components/projects/jira-golden-journey-v4",
 						"status": "superseded",
-						"basedOn": "jira-golden-journeys-v3",
+						"basedOn": "jira-golden-journey-v3",
 						"note": "Superseded by jira-team-eu26, its 2026-09-09 copy; the jira-kanban block demo still reads its board data."
 					},
 					{
@@ -5478,7 +5553,7 @@
 						"name": "Jira Team EU26",
 						"importPath": "@/components/projects/jira-team-eu26",
 						"status": "live",
-						"basedOn": "jira-golden-journeys-v4",
+						"basedOn": "jira-golden-journey-v4",
 						"note": "Team ’26 EU Payments SDK board; jira-team-eu26-end imports its header and agent data."
 					},
 					{
@@ -6141,8 +6216,8 @@
 					},
 					{
 						"category": "ui-charts",
-						"slug": "chart-utilities",
-						"name": "Chart Utilities",
+						"slug": "chart-utility",
+						"name": "Chart Utility",
 						"importPath": "@/components/ui-charts",
 						"status": "live"
 					},
@@ -6301,15 +6376,15 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "animated-dots",
-						"name": "Animated Dots",
-						"importPath": "@/components/ui-custom/animated-dots",
+						"slug": "animated-dot",
+						"name": "Animated Dot",
+						"importPath": "@/components/ui-custom/animated-dot",
 						"status": "live"
 					},
 					{
 						"category": "ui-custom",
 						"slug": "animated-icon",
-						"name": "Animated Icons",
+						"name": "Animated Icon",
 						"importPath": "@/components/ui-custom/animated-icon",
 						"status": "live"
 					},
@@ -6329,9 +6404,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "attachments",
-						"name": "Attachments",
-						"importPath": "@/components/ui-custom/attachments",
+						"slug": "attachment",
+						"name": "Attachment",
+						"importPath": "@/components/ui-custom/attachment",
 						"status": "live"
 					},
 					{
@@ -6413,9 +6488,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "controls",
-						"name": "Controls",
-						"importPath": "@/components/ui-custom/controls",
+						"slug": "control",
+						"name": "Control",
+						"importPath": "@/components/ui-custom/control",
 						"status": "live"
 					},
 					{
@@ -6441,9 +6516,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "environment-variables",
-						"name": "Environment Variables",
-						"importPath": "@/components/ui-custom/environment-variables",
+						"slug": "environment-variable",
+						"name": "Environment Variable",
+						"importPath": "@/components/ui-custom/environment-variable",
 						"status": "live"
 					},
 					{
@@ -6721,9 +6796,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "sources",
-						"name": "Sources",
-						"importPath": "@/components/ui-custom/sources",
+						"slug": "source",
+						"name": "Source",
+						"importPath": "@/components/ui-custom/source",
 						"status": "live"
 					},
 					{
@@ -6763,9 +6838,9 @@
 					},
 					{
 						"category": "ui-custom",
-						"slug": "test-results",
-						"name": "Test Results",
-						"importPath": "@/components/ui-custom/test-results",
+						"slug": "test-result",
+						"name": "Test Result",
+						"importPath": "@/components/ui-custom/test-result",
 						"status": "live"
 					},
 					{
@@ -6860,9 +6935,9 @@
 					},
 					{
 						"category": "utility",
-						"slug": "multiports",
-						"name": "Multiports",
-						"importPath": "@/components/website/demos/utils/multiports-demo",
+						"slug": "multiport",
+						"name": "Multiport",
+						"importPath": "@/components/website/demos/utils/multiport-demo",
 						"status": "live"
 					},
 					{
@@ -6881,9 +6956,9 @@
 					},
 					{
 						"category": "utility",
-						"slug": "tools-invocation",
-						"name": "Tools Invocation",
-						"importPath": "@/components/website/demos/utils/tools-invocation-demo",
+						"slug": "tool-invocation",
+						"name": "Tool Invocation",
+						"importPath": "@/components/website/demos/utils/tool-invocation-demo",
 						"status": "live"
 					},
 					{
@@ -7747,7 +7822,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 21
+			"localSkillCount": 22
 		},
 		"localSkills": [
 			{
@@ -7773,6 +7848,12 @@
 				"name": "vpk-component-ext",
 				"path": ".agents/skills/vpk-component-ext/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component-ext"
+			},
+			{
+				"description": "Convene independent GPT Sol and Claude Opus reviews through VPK Remote, reconcile their findings, and repeat after accepted fixes. Use when the user invokes vpk-council or explicitly asks for a VPK council review.",
+				"name": "vpk-council",
+				"path": ".agents/skills/vpk-council/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-council"
 			},
 			{
 				"description": "Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros.",

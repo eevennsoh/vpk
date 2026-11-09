@@ -15,7 +15,7 @@ import { serializeSkillMd, type FrontmatterEntries } from "./skill-frontmatter";
 /**
  * `SkillIconKey` is the closed set of Atlaskit icon keys directory items can
  * use. It is owned by `./types` (so JSON data can reference it without pulling
- * in the JSX resolver) and re-exported here for existing Skills Directory
+ * in the JSX resolver) and re-exported here for existing Skill Directory
  * callers that imported it from the data module.
  */
 export type { SkillIconKey };
@@ -100,13 +100,13 @@ export const SKILL_SOURCE_ICON_COLOR: Record<SkillSource, string> = {
 	product: SKILL_COLLECTIONS.product.iconClassName,
 };
 
-export interface SkillsDirectoryToolTag {
+export interface SkillDirectoryToolTag {
 	id: string;
 	name: string;
 	icon?: SkillIconKey;
 }
 
-export interface SkillsDirectoryFileTreeItem {
+export interface SkillDirectoryFileTreeItem {
 	id: string;
 	label: string;
 	kind: "folder" | "file";
@@ -115,7 +115,7 @@ export interface SkillsDirectoryFileTreeItem {
 	selected?: boolean;
 }
 
-export interface SkillsDirectorySkill {
+export interface SkillDirectorySkill {
 	id: string;
 	name: string;
 	description: string;
@@ -128,7 +128,7 @@ export interface SkillsDirectorySkill {
 	iconColor?: string;
 	/** Provenance — drives the leading visual. See {@link SkillSource}. */
 	source?: SkillSource;
-	/** Collection taxonomy used by SkillTag and the Skills Directory sidebar. */
+	/** Collection taxonomy used by SkillTag and the Skill Directory sidebar. */
 	collectionId?: SkillCollectionId;
 	collectionDescription?: string;
 	collectionProducts?: readonly string[];
@@ -143,7 +143,7 @@ export interface SkillsDirectorySkill {
 	teammateCount?: number;
 	viewCount?: number;
 	verified?: boolean;
-	tools?: readonly SkillsDirectoryToolTag[];
+	tools?: readonly SkillDirectoryToolTag[];
 	instructions?: string;
 	/**
 	 * The full raw SKILL.md (YAML frontmatter `---` block + markdown body),
@@ -157,9 +157,9 @@ export interface SkillsDirectorySkill {
 	addedBy?: string;
 	/** ISO-8601 last-updated timestamp, rendered as a medium date in the meta row. */
 	lastUpdatedAt?: string;
-	fileTreeItems?: readonly SkillsDirectoryFileTreeItem[];
+	fileTreeItems?: readonly SkillDirectoryFileTreeItem[];
 	favorite?: boolean;
-	/** Legacy aliases kept for existing Skills Directory callers. */
+	/** Legacy aliases kept for existing Skill Directory callers. */
 	publisher?: string;
 	publisherLogoSrc?: string;
 	category?: SkillCategory;
@@ -167,12 +167,12 @@ export interface SkillsDirectorySkill {
 
 /**
  * The complete skills directory catalog, sourced from `skills.json` as the
- * single source of truth. The JSON is structurally a `SkillsDirectorySkill[]`;
+ * single source of truth. The JSON is structurally a `SkillDirectorySkill[]`;
  * we assert the type here so callers get full typing without the loader having
  * to re-declare the data inline.
  */
-export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] =
-	skillsData as readonly SkillsDirectorySkill[];
+export const DEFAULT_SKILLS: readonly SkillDirectorySkill[] =
+	skillsData as readonly SkillDirectorySkill[];
 
 const PERSONAL_SKILL_PUBLISHERS = new Set(["you", "by you"]);
 
@@ -180,11 +180,11 @@ function normalizeSkillPublisherName(publisher: string): string {
 	return PERSONAL_SKILL_PUBLISHERS.has(publisher.trim().toLowerCase()) ? "Venn" : publisher;
 }
 
-export function getSkillPublisherName(skill: SkillsDirectorySkill): string {
+export function getSkillPublisherName(skill: SkillDirectorySkill): string {
 	return normalizeSkillPublisherName(skill.publisherName ?? skill.publisher ?? "Atlassian");
 }
 
-export function getSkillPublisherAvatarSrc(skill: SkillsDirectorySkill): string | undefined {
+export function getSkillPublisherAvatarSrc(skill: SkillDirectorySkill): string | undefined {
 	return skill.publisherAvatarSrc ?? skill.publisherLogoSrc;
 }
 
@@ -192,7 +192,7 @@ export function getSkillPublisherAvatarSrc(skill: SkillsDirectorySkill): string 
  * Whether the publisher is a person (human avatar) rather than a company.
  * Human avatars render as rounded circles; company logos render square.
  */
-export function isSkillPublisherPerson(skill: SkillsDirectorySkill): boolean {
+export function isSkillPublisherPerson(skill: SkillDirectorySkill): boolean {
 	return skill.companyId === "you";
 }
 
@@ -200,20 +200,20 @@ export function isSkillPublisherPerson(skill: SkillsDirectorySkill): boolean {
  * Publishers default to the Atlassian brand mark when no custom avatar image is
  * set, rendered via the ADS logo component rather than a static asset.
  */
-export function getSkillPublisherLogoName(skill: SkillsDirectorySkill): AtlassianLogoName | undefined {
+export function getSkillPublisherLogoName(skill: SkillDirectorySkill): AtlassianLogoName | undefined {
 	return getSkillPublisherAvatarSrc(skill) || skill.publisherBrandName ? undefined : "atlassian";
 }
 
-export function getSkillCategoryId(skill: SkillsDirectorySkill): SkillCategory | undefined {
+export function getSkillCategoryId(skill: SkillDirectorySkill): SkillCategory | undefined {
 	return skill.categoryId ?? skill.category;
 }
 
-export function getSkillCollectionId(skill: Pick<SkillsDirectorySkill, "collectionId" | "source">): SkillCollectionId {
+export function getSkillCollectionId(skill: Pick<SkillDirectorySkill, "collectionId" | "source">): SkillCollectionId {
 	if (skill.collectionId) return skill.collectionId;
 	return skill.source ? SKILL_SOURCE_COLLECTION[skill.source] : "default";
 }
 
-export function getSkillCollection(skill: Pick<SkillsDirectorySkill, "collectionId" | "source">): SkillCollectionMetadata {
+export function getSkillCollection(skill: Pick<SkillDirectorySkill, "collectionId" | "source">): SkillCollectionMetadata {
 	return getSkillCollectionMetadata(getSkillCollectionId(skill));
 }
 
@@ -223,13 +223,13 @@ export function getSkillCollection(skill: Pick<SkillsDirectorySkill, "collection
  * single source of truth — see {@link SKILL_SOURCE_ICON_COLOR}); otherwise it
  * falls back to the skill's explicit `iconColor`.
  */
-export function getSkillIconColor(skill: SkillsDirectorySkill): string | undefined {
+export function getSkillIconColor(skill: SkillDirectorySkill): string | undefined {
 	return skill.source || skill.collectionId
 		? getSkillCollection(skill).iconClassName
 		: skill.iconColor;
 }
 
-export function getSkillIconTileVariant(skill: Pick<SkillsDirectorySkill, "collectionId" | "source">) {
+export function getSkillIconTileVariant(skill: Pick<SkillDirectorySkill, "collectionId" | "source">) {
 	return getSkillCollection(skill).iconTileVariant;
 }
 
@@ -248,11 +248,11 @@ function stripInitialH1(markdown: string): string {
 }
 
 /**
- * The full raw SKILL.md for a skill. Returns the authored {@link SkillsDirectorySkill.skillMd}
+ * The full raw SKILL.md for a skill. Returns the authored {@link SkillDirectorySkill.skillMd}
  * when present; otherwise synthesizes a minimal standard-compliant file from the
  * skill's name/description/instructions so every skill renders a frontmatter card.
  */
-export function getSkillMarkdown(skill: SkillsDirectorySkill): string {
+export function getSkillMarkdown(skill: SkillDirectorySkill): string {
 	if (skill.skillMd) {
 		return skill.skillMd;
 	}
@@ -264,20 +264,20 @@ export function getSkillMarkdown(skill: SkillsDirectorySkill): string {
 }
 
 /** Authoring org for the detail "Created by" row (falls back to the publisher). */
-export function getSkillCreatedBy(skill: SkillsDirectorySkill): string {
+export function getSkillCreatedBy(skill: SkillDirectorySkill): string {
 	return skill.createdBy ?? getSkillPublisherName(skill);
 }
 
 /** Medium-formatted last-updated label, or "" when the skill has no timestamp. */
-export function getSkillLastUpdatedLabel(skill: SkillsDirectorySkill): string {
+export function getSkillLastUpdatedLabel(skill: SkillDirectorySkill): string {
 	return skill.lastUpdatedAt ? SKILL_MEDIUM_DATE.format(new Date(skill.lastUpdatedAt)) : "";
 }
 
 /** Convenience lookup for sidebar references. */
 export function getSkillById(
-	skills: readonly SkillsDirectorySkill[],
+	skills: readonly SkillDirectorySkill[],
 	id: string,
-): SkillsDirectorySkill | undefined {
+): SkillDirectorySkill | undefined {
 	return skills.find((skill) => skill.id === id);
 }
 
@@ -292,7 +292,7 @@ export function getSkillById(
  *   {@link DirectoryVisual} `icon` shape for rehydration via
  *   `resolveDirectoryVisual`.
  */
-export function getSkillDirectoryVisual(skill: SkillsDirectorySkill): DirectoryVisual {
+export function getSkillDirectoryVisual(skill: SkillDirectorySkill): DirectoryVisual {
 	if ((skill.source === "2p" || skill.source === "3p") && skill.publisherBrandName) {
 		return { kind: "third-party", name: skill.publisherBrandName };
 	}

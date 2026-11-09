@@ -21,7 +21,7 @@ export function ProjectButterSortablePanel({ actions, children, defaultOpen = tr
 	const { attributes, listeners, isDragging, setActivatorNodeRef, setNodeRef, transform } = useSortable({ id });
 	const dragHandle = <Button {...attributes} {...listeners} aria-label={`Drag to reorder ${title}`} className="touch-none [&_svg]:text-icon-subtle" ref={setActivatorNodeRef} size="icon-compact" type="button" variant="ghost"><DragHandleVerticalIcon label="" size="small" /></Button>;
 	return (
-		<div data-panel-id={id} ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition: isDragging ? undefined : "transform var(--duration-medium) var(--ease-out-practical)", position: "relative", zIndex: isDragging ? 30 : undefined, boxShadow: isDragging ? token("elevation.shadow.overlay") : undefined }}>
+		<div className="[&>section>div>h2]:font-medium" data-panel-id={id} ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition: isDragging ? undefined : "transform var(--duration-medium) var(--ease-out-practical)", position: "relative", zIndex: isDragging ? 30 : undefined, boxShadow: isDragging ? token("elevation.shadow.overlay") : undefined }}>
 			{renderPanel ? renderPanel(dragHandle) : <TeamEuRailPanel
 				alwaysShowHeaderActions
 				defaultOpen={defaultOpen}

@@ -24,7 +24,7 @@ import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issu
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
@@ -54,6 +54,7 @@ export type JiraIssueAgentAssignment = Partial<
 		| "onRenameAssignedAgent"
 		| "onStartNewSession"
 		| "pinnedItemsLabel"
+		| "showSessionAddAgent"
 		| "usedAgentIds"
 	>
 > & {
@@ -247,7 +248,7 @@ function JiraIssueAgentRowLabel({
 		return (
 			<span className="flex min-w-0 flex-1 items-baseline overflow-hidden text-sm leading-5 text-text">
 				<span className="block min-w-0 truncate text-sm leading-5">{rowLabel}</span>
-				<AnimatedDots />
+				<AnimatedDot />
 			</span>
 		);
 	}
@@ -416,6 +417,7 @@ export function JiraIssueAgentAssignmentHandle({
 		<div aria-controls={invocationEnabled && assignment?.onAssignedAgentIdsChange && pickerOpen ? pickerId : undefined} className="flex h-full min-w-0 flex-1 items-center" ref={assignmentHandleRef}>
 			<AgentAssignment
 				addAgentLabel={assignment?.addAgentLabel ?? (activities.every((activity) => activity.role === "viewer") ? "New session" : undefined)}
+				showSessionAddAgent={assignment?.showSessionAddAgent}
 				agents={agents}
 				assignedAgents={assignedAgents}
 				defaultPinnedAgentIds={assignment?.defaultPinnedAgentIds}
@@ -446,7 +448,7 @@ export function JiraIssueAgentAssignmentHandle({
 				trigger={rowHandle}
 				usedAgentIds={assignment?.usedAgentIds}
 			/>
-			{invocationEnabled && assignment?.onAssignedAgentIdsChange ? <ProjectButterMenuAgentPicker assignment={assignment} id={pickerId} source="session" triggerRef={assignmentHandleRef} /> : null}
+			{invocationEnabled && assignment?.onAssignedAgentIdsChange && assignment.showSessionAddAgent !== false ? <ProjectButterMenuAgentPicker assignment={assignment} id={pickerId} source="session" triggerRef={assignmentHandleRef} /> : null}
 		</div>
 	);
 }

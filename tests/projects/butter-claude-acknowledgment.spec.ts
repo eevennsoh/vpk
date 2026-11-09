@@ -33,7 +33,7 @@ test("Claude acknowledges after Venn's activity snapshots", async ({ page }) => 
 		"butter-accepted-suggestions",
 	]);
 	await activity.getByRole("heading", { name: "Activity" }).hover();
-	await activity.getByRole("button", { name: "More activity actions" }).click();
+	await activity.getByRole("button", { name: "Filter activity" }).click();
 	await expect(page.getByRole("menuitemradio", { name: "Oldest first" })).toHaveCount(0);
 });
 
@@ -50,6 +50,8 @@ test("replying to Claude keeps the agent mention as a chip when reopening the dr
 	const { item } = await startClaude(page);
 	const acknowledgment = item.locator('[data-jira-activity-entry-id^="merchant-started-"]');
 	await expect(acknowledgment).toHaveCount(1, { timeout: 6_000 });
+	// Comment actions reveal on hover or keyboard focus.
+	await acknowledgment.hover();
 	const reply = acknowledgment.getByRole("button", { name: "Reply", exact: true });
 	await reply.click();
 	const editor = acknowledgment.getByRole("textbox", { name: "Leave a reply..." });

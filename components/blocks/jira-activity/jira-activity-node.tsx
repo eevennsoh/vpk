@@ -51,20 +51,23 @@ function initialsOf(name: string): string {
 
 function ActorGlyph({
 	actor,
+	animate,
 	sizePx,
 }: Readonly<{
 	actor: JiraActivityActor;
+	/** `false` skips the avatar's enter scale/fade for high-frequency surfaces such as a scrubber. */
+	animate?: boolean;
 	sizePx: 16 | 32;
 }>) {
 	if (actor.kind === "person") {
 		// Card leads are named in the adjacent header copy; event glyphs keep an accessible label.
 		return sizePx === 32 ? (
-			<Avatar aria-hidden size="default">
+			<Avatar animate={animate} aria-hidden size="default">
 				{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
 			</Avatar>
 		) : (
-			<Avatar label={actor.name} size="xs">
+			<Avatar animate={animate} label={actor.name} size="xs">
 				{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
 			</Avatar>
@@ -74,6 +77,8 @@ function ActorGlyph({
 	// Agents render as hexagon art; apps render their third-party brand mark.
 	return (
 		<AgentAvatarVisual
+			animate={animate}
+			appearance={actor.appearance}
 			avatarSrc={actor.avatarSrc}
 			brandName={actor.brandName}
 			fallbackText={initialsOf(actor.name)}
@@ -95,6 +100,11 @@ function EventGlyph({ icon }: Readonly<{ icon: JiraActivityEventIcon }>) {
 	);
 }
 
+/** The 16px glyph an event row leads with: its semantic icon when set, else the actor avatar. */
+export function JiraActivityEntryGlyph({ actor, animate, icon }: Readonly<{ actor: JiraActivityActor; animate?: boolean; icon?: JiraActivityEventIcon }>) {
+	return icon !== undefined ? <EventGlyph icon={icon} /> : <ActorGlyph actor={actor} animate={animate} sizePx={16} />;
+}
+
 /**
  * Leading timeline cell: event glyph or card-sized actor avatar above a `w-px`
  * connector. Card entries place their size-8 identity in an `h-10` track (4px
@@ -113,10 +123,13 @@ export function JiraActivityNode({
 	icon,
 	isLast,
 	size = "event",
+	tone = "timeline",
 }: Readonly<{
 	actor: JiraActivityActor;
 	icon?: JiraActivityEventIcon;
 	isLast: boolean;
+	/** `thread` paints the stem in the opaque thread-line color, so it reads as one line where it meets a thread's own connector. */
+	tone?: "timeline" | "thread";
 	/** `card` centers a size-8 avatar in h-10; `event` centers a 16px glyph in h-6. */
 	size?: "event" | "card";
 }>) {
@@ -139,13 +152,11 @@ export function JiraActivityNode({
 				 */}
 				{isCard ? (
 					<ActorGlyph actor={actor} sizePx={32} />
-				) : icon !== undefined ? (
-					<EventGlyph icon={icon} />
 				) : (
-					<ActorGlyph actor={actor} sizePx={16} />
+					<JiraActivityEntryGlyph actor={actor} icon={icon} />
 				)}
 			</div>
-			{isLast ? null : <div className="min-h-4 w-px flex-1 bg-border" data-jira-activity-timeline-stem />}
+			{isLast ? null : <div className={cn("min-h-4 w-px flex-1", tone === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} data-jira-activity-timeline-stem />}
 		</div>
 	);
 }

@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 
-import { AgentAutomationFlowCover } from "@/components/blocks/triggers/components/agent-automation-flow-cover";
+import { AgentAutomationFlowCover } from "@/components/blocks/trigger/components/agent-automation-flow-cover";
 import {
 	AgentConfigFieldsCore,
 	type AgentConfigFieldsCoreProps,

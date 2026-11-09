@@ -160,7 +160,7 @@ const EMPTY_IN_PROGRESS_AGENT_IDS: readonly string[] = [];
 const EMPTY_DISABLED_AGENT_IDS: readonly string[] = [];
 const EMPTY_SUBMENU_AGENT_IDS: readonly string[] = [];
 const EMPTY_SELECTED_AGENT_ACTIONS: readonly AgentSelectorAction[] = [];
-const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal";
+const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 border-0 pl-2 pr-3 py-0 text-left text-sm font-normal";
 const ACTION_ICON_CLASS = "grid size-6 shrink-0 place-items-center text-icon-subtle";
 const ACTION_LABEL_CLASS = "text-text-subtle";
 // The trailing `auto` column reserves a lane for CommandItem's check icon,
@@ -316,6 +316,7 @@ function AgentSelectorItem({
 			aria-haspopup={isSubmenuTrigger ? "menu" : undefined}
 			className={cn(
 				AGENT_ROW_BASE_CLASS,
+				"data-selected:bg-bg-neutral-subtle-hovered",
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
 				!showByline && "h-9",
 			)}
@@ -513,7 +514,7 @@ function AgentSelectorGroup({
 }: Readonly<AgentSelectorGroupProps>): ReactElement | null {
 	return agents.length > 0 ? (
 		<CommandGroup
-			className={cn("!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold", paletteHeading && "!py-0 **:[[cmdk-group-heading]]:!px-2 **:[[cmdk-group-heading]]:!pt-3 **:[[cmdk-group-heading]]:!pb-1 **:[[cmdk-group-heading]]:!text-text-subtlest")}
+			className={cn("!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold", paletteHeading && "!py-0 **:[[cmdk-group-heading]]:!px-2 **:[[cmdk-group-heading]]:!pt-3 **:[[cmdk-group-heading]]:!pb-1 **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest")}
 			heading={heading}
 		>
 			{agents.map((agent) => (
@@ -696,7 +697,7 @@ export function AgentSelector({
 					// and metadata pickers.
 					// `hostOwnsKeyNavigation` hands Arrow/Enter back to the cmdk root,
 					// which owns row highlighting and activation for this list.
-					<div className="-mx-1 -mt-1 mb-1 overflow-hidden rounded-t-xl">
+					<div className={cn("-mx-1 -mt-1 overflow-hidden rounded-t-xl", !sections && "mb-1")}>
 						<RichTextCommandMenuSearchField
 							activeDescendantId={activeOption.activeOptionId ?? null}
 							autoFocus
@@ -722,6 +723,7 @@ export function AgentSelector({
 			</div>
 			<CommandList
 				aria-label={listLabel}
+				showScrollbar={searchVariant === "palette" && Boolean(sections)}
 				className={cn(
 					"min-h-0 max-h-none flex-1 p-0",
 					searchVariant === "palette" && "[&_[cmdk-group]:first-child]:!pt-0",

@@ -19,7 +19,7 @@ import RetryIcon from "@atlaskit/icon/core/retry";
 import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import { MOCK_TASKS, type ProgressStatusGroups, type ProgressTask } from "./data/mock-tasks";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { formatElapsedTime, getElapsedSeconds, resolveInitialNowMs } from "@/lib/elapsed-time";
 
 const SUMMARY_RING_SEGMENTED_GRADIENT =
@@ -478,7 +478,7 @@ export default function AgentsProgress({
 								<>
 									<span className="inline-flex items-baseline text-xs leading-4 text-text-subtlest">
 										{statusText}
-										<AnimatedDots className="[&>span]:text-xs" />
+										<AnimatedDot className="[&>span]:text-xs" />
 									</span>
 								</>
 							) : (

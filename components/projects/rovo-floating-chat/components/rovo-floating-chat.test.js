@@ -567,9 +567,9 @@ test("Floating chat thinking status uses ChainOfThought dots without literal ell
 	assert.doesNotMatch(STREAMING_THINKING_INDICATOR_SOURCE, /<Reasoning/);
 	assert.match(
 		CHAIN_OF_THOUGHT_SOURCE,
-		/const shouldShowAnimatedDots =\s*resolvedState === "preload" \|\| resolvedState === "thinking";/
+		/const shouldShowAnimatedDot =\s*resolvedState === "preload" \|\| resolvedState === "thinking";/
 	);
-	assert.match(CHAIN_OF_THOUGHT_SOURCE, /shouldShowAnimatedDots && typeof text === "string"[\s\S]*stripTrailingDots\(text\)/);
+	assert.match(CHAIN_OF_THOUGHT_SOURCE, /shouldShowAnimatedDot && typeof text === "string"[\s\S]*stripTrailingDots\(text\)/);
 	assert.match(REASONING_LABELS_SOURCE, /preloadShimmer: "Thinking"/);
 	assert.doesNotMatch(REASONING_LABELS_SOURCE, /Rovo is cooking/);
 });
@@ -600,5 +600,5 @@ test("RovoFloatingChat does not auto-promote submitted or existing messages to t
 	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /uiMessages/);
 	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /useChatSubmit/);
 	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /ChatGreeting/);
-	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /ChatComposer/);
+	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /<ChatComposer\b/);
 });

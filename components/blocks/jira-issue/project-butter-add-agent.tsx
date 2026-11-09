@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type RefObject } from "react";
+import { use, useEffect, useId, useRef, useState, type RefObject } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { Avatar } from "@/components/ui/avatar";
-import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ProjectButterAgentPicker, ProjectButterAgentPickerContent } from "./project-butter-agent-picker";
+import { ProjectButterInlineAgentPicker } from "./project-butter-inline-agent-picker";
+import { ButterInlineAgentPickerContext } from "./project-butter-inline-picker-context";
 import {
 	useProjectButterInvocationActions,
 	useProjectButterInvocationAgents,
@@ -92,6 +94,7 @@ export function ProjectButterAddAgent({
 	const phase = useProjectButterInvocationPhase();
 	const source = useProjectButterInvocationSource();
 	const actions = useProjectButterInvocationActions();
+	const inlinePicker = use(ButterInlineAgentPickerContext);
 	const open = phase === "choosing" && source === "footer";
 	const exiting = phase === "handoff";
 	useEffect(() => () => actions?.close(), [actions]);
@@ -147,13 +150,15 @@ export function ProjectButterAddAgent({
 						Add agent
 					</TooltipContent>
 				</Tooltip>
-				<ProjectButterAgentPicker
+				{inlinePicker ? <PopoverContent aria-label="Agents" side="right" align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0 [&>div]:max-h-[var(--available-height,26rem)]" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
+					<ProjectButterInlineAgentPicker sessions={assignment.sessions} onContinueSession={assignment.onOpenSession ? (session) => { actions.close(); assignment.onOpenSession?.(session); } : undefined} onAssign={(agent) => { setTooltipOpen(false); assignAgent(agent); }} onBrowseAgents={assignment.onBrowseAgents ? () => { actions.close(); assignment.onBrowseAgents?.(); } : undefined} onCreateAgent={assignment.onCreateAgent ? () => { actions.close(); assignment.onCreateAgent?.(); } : undefined} />
+				</PopoverContent> : <ProjectButterAgentPicker
 					sessions={assignment.sessions}
 					onContinueSession={assignment.onOpenSession ? (session) => { actions.close(); assignment.onOpenSession?.(session); } : undefined}
 					onAssign={(agent) => { setTooltipOpen(false); assignAgent(agent); }}
 					onBrowseAgents={assignment.onBrowseAgents}
 					onCreateAgent={assignment.onCreateAgent}
-				/>
+				/>}
 			</Popover>
 		</div>
 	);

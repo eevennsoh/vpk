@@ -25,7 +25,7 @@ import { CodeBlock } from "@/components/ui-custom/code-block";
 import { MessageContent, MessageResponse } from "@/components/ui-custom/message";
 import { isTimelineOnlyContent } from "@/components/ui-custom/reasoning";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Spinner } from "@/components/ui/spinner";
 import { ToolInput, ToolOutput } from "@/components/ui-custom/tool";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -842,7 +842,7 @@ export function AssistantThinkingTrace({
 									<Shimmer as="span" duration={1.4} spread={2} className="min-w-0 truncate text-left">
 										Generating a response
 									</Shimmer>
-									<AnimatedDots />
+									<AnimatedDot />
 								</span>
 							}
 							description={null}

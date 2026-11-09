@@ -79,6 +79,7 @@ export interface GalleryTrackProps {
 	activeVisual: GallerySelectionVisual | null;
 	exitingVisual: GallerySelectionVisual | null;
 	palette?: GalleryPalette;
+	selectedColor?: string;
 	onSelect: (id: string, origin: GallerySelectionOrigin) => void;
 	className?: string;
 }
@@ -89,6 +90,7 @@ export function GalleryTrack({
 	activeVisual,
 	exitingVisual,
 	palette,
+	selectedColor,
 	onSelect,
 	className,
 }: Readonly<GalleryTrackProps>): JSX.Element {
@@ -190,6 +192,7 @@ export function GalleryTrack({
 						isSelected={selectedId === item.id}
 						selectionVisual={getSelectionVisual(item.id, activeVisual, exitingVisual)}
 						palette={palette}
+						selectedColor={selectedColor}
 						onSelect={onSelect}
 					/>
 				))}

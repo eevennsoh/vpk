@@ -192,6 +192,7 @@ function toAssignmentAgent(assigned: JiraListAssignedAgent): AgentAssignmentAgen
 	return {
 		id: assigned.id,
 		name: assigned.name,
+		...(assigned.sessionTitle ? { sessionTitle: assigned.sessionTitle } : {}),
 		byline: assigned.byline ?? "",
 		...(assigned.avatarSrc ? { avatarSrc: assigned.avatarSrc } : {}),
 		...(assigned.brandName ? { brandName: assigned.brandName } : {}),
@@ -217,6 +218,7 @@ function toListAssignedAgent(agent: AgentAssignmentAgent): JiraListAssignedAgent
 	return {
 		id: agent.id,
 		name: agent.name,
+		...(agent.sessionTitle ? { sessionTitle: agent.sessionTitle } : {}),
 		byline: agent.byline,
 		...(agent.avatarSrc ? { avatarSrc: agent.avatarSrc } : {}),
 		...(agent.brandName ? { brandName: agent.brandName } : {}),

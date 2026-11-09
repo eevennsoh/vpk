@@ -16,7 +16,7 @@ test("isSmartRouteTargetSurface rejects unsupported surfaces", () => {
 	assert.equal(isSmartRouteTargetSurface("unknown-surface"), false);
 	assert.equal(isSmartRouteTargetSurface(null), false);
 	assert.deepEqual(Array.from(SMART_ROUTE_TARGET_SURFACES), [
-		"multiports",
+		"multiport",
 		"sidebar",
 		"fullscreen",
 		"rovo",

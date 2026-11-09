@@ -552,9 +552,10 @@ test("PR activity nodes use PullRequestIcon, not BranchIcon", () => {
 
 test("event rows prefer EventGlyph over ActorGlyph whenever icon is set", () => {
 	// Commit/push gutters must not fall through to AgentAvatarVisual.
+	// The choice lives in JiraActivityEntryGlyph, shared by event rows and the Butter timeline preview.
 	assert.match(
 		NODE_SOURCE,
-		/icon !== undefined \? \(\s*<EventGlyph icon=\{icon\} \/>\s*\) : \(\s*<ActorGlyph/u,
+		/function JiraActivityEntryGlyph[\s\S]*?icon !== undefined \? <EventGlyph icon=\{icon\} \/> : <ActorGlyph[\s\S]*?<JiraActivityEntryGlyph actor=\{actor\} icon=\{icon\} \/>/u,
 	);
 	assert.match(NODE_SOURCE, /commit: CommitIcon/u);
 	assert.match(

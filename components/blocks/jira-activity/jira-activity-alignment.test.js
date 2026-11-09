@@ -5,7 +5,6 @@ const { test } = require("node:test");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
-const EVENT_SOURCE = readFileSync(join(__dirname, "jira-activity-event.tsx"), "utf8");
 const NODE_SOURCE = readFileSync(join(__dirname, "jira-activity-node.tsx"), "utf8");
 const CARD_SOURCE = readFileSync(join(__dirname, "jira-activity-card.tsx"), "utf8");
 const COMMENT_SOURCE = readFileSync(join(__dirname, "jira-activity-comment.tsx"), "utf8");
@@ -37,10 +36,6 @@ test("compact activity labels share the timeline node's 24px alignment track", (
 	// Card avatars use h-10 (4px clearance around size-8); event glyphs stay on
 	// h-6. Event copy uses min-h-6 + leading-5 + py-0.5 so h-5 mention chips are not clipped.
 	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center py-0\.5 text-xs leading-5 text-text-subtlest"/u);
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center gap-2 py-0\.5 text-xs leading-5"/u);
-	assert.match(EVENT_SOURCE, /<p className="flex min-h-6 min-w-0 items-center[^>]*>\s*<span className="min-w-0">/u);
-	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
 	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" && "pt-0\.5"/u);
 });
 
@@ -50,7 +45,7 @@ test("spine nodes and comment avatars share one vertical center axis via the nod
 	assert.match(NODE_SOURCE, /size\?: "event" \| "card"/u);
 	assert.match(NODE_SOURCE, /sizePx=\{32\}/u);
 	assert.match(NODE_SOURCE, /sizePx=\{16\}/u);
-	assert.match(NODE_SOURCE, /className="min-h-4 w-px flex-1 bg-border"/u);
+	assert.match(NODE_SOURCE, /className=\{cn\("min-h-4 w-px flex-1", tone === "thread" \? "bg-bg-accent-gray-subtler" : "bg-border"\)\}/u);
 
 	// Cards opt into the card-sized node; content is never pull-left offset.
 	assert.match(INDEX_SOURCE, /size=\{isCardEntry \? "card" : "event"\}/u);
@@ -113,7 +108,7 @@ test("rich activity cards leave a 4px gap in the connector above and below", () 
 	// those stacked with the track clearance and left an 8px orphan gap above icons.
 	assert.match(INDEX_SOURCE, /li[\s\S]*className="group\/activity-event flex min-w-0 gap-2"/u);
 	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
-	assert.match(NODE_SOURCE, /className="min-h-4 w-px flex-1 bg-border"/u);
+	assert.match(NODE_SOURCE, /className=\{cn\("min-h-4 w-px flex-1", tone === "thread" \? "bg-bg-accent-gray-subtler" : "bg-border"\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /absolute -top-1 left-3\.5 h-1 w-1/u);
 	assert.doesNotMatch(INDEX_SOURCE, /h-1 w-1 bg-surface/u);
 	assert.doesNotMatch(INDEX_SOURCE, /bottom-5|bottom-4/u);

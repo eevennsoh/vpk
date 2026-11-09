@@ -471,7 +471,7 @@ test("parses @mentions on first paint when agent sessions are staged hidden from
 		},
 	];
 
-	// Jira Golden Journeys v2 keeps agent cards hidden until the lead/consult steps, so the
+	// Jira Golden Journey v2 keeps agent cards hidden until the lead/consult steps, so the
 	// composed stream is only the human prompt — the same first-paint shape the
 	// Activity tab shows right after submit.
 	const composed = adapter.composeActivitySessionThread(events, {

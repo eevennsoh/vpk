@@ -4,7 +4,7 @@ import { LayoutGroup } from "motion/react";
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { useRovoChatControls } from "@/app/contexts";
-import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { SkillDirectorySkill } from "@/app/data/directory";
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -88,7 +88,7 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	automationRules?: readonly WorkItemAutomationRule[];
 	/**
 	 * When set, open this pull-request identity after each `stageKey` reset
-	 * (once per stage). Used by jira-golden-journeys-v2 Review and Fix to land on PR detail
+	 * (once per stage). Used by jira-golden-journey-v2 Review and Fix to land on PR detail
 	 * without an extra click. Clearing the PR does not re-open until the next stage.
 	 */
 	autoOpenPullRequestIdentity?: string | null;
@@ -109,13 +109,13 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	 */
 	onPullRequestFix?: (identity: string, agentId: PullRequestFixAgentId) => void;
 	onSessionReply?: SessionReplyInterceptor;
-	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
+	onSkillInvoke?: (skill: SkillDirectorySkill) => boolean | void;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
 	pullRequestApprovalStates?: Readonly<Record<string, "available" | "approved">>;
 	/**
 	 * When this key changes to a non-null value, open the Activity metadata tab
-	 * and scroll to the latest entry (e.g. jira-golden-journeys-v2 Plan orchestration), or
+	 * and scroll to the latest entry (e.g. jira-golden-journey-v2 Plan orchestration), or
 	 * to `revealActivityEntryId` when that prop is set.
 	 */
 	revealActivityKey?: string | number | null;
@@ -157,7 +157,7 @@ interface ExperimentalV2JiraWorkItemContentProps {
 	onPullRequestApprove?: (identity: string) => void;
 	onPullRequestFix?: (identity: string, agentId: PullRequestFixAgentId) => void;
 	onSessionReply?: SessionReplyInterceptor;
-	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
+	onSkillInvoke?: (skill: SkillDirectorySkill) => boolean | void;
 	open: boolean;
 	outputs?: readonly string[];
 	presentation: "modal" | "inline";
@@ -385,7 +385,7 @@ function ExperimentalV2JiraWorkItemContent({
 		});
 		setPanelView("details");
 	}, [pullRequestApprovalStates, setPanelView]);
-	// jira-golden-journeys-v2 Review: open the guided PR once per stage so detail is default.
+	// jira-golden-journey-v2 Review: open the guided PR once per stage so detail is default.
 	useLayoutEffect(() => {
 		if (!autoOpenPullRequestIdentity) return;
 		const stageToken = stageKey ?? "";

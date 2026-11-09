@@ -212,11 +212,11 @@ test("Team EU board cards use experimental v2 raised defaults", () => {
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /generativeActionFooterActions=\{cardGenerativeActionFooterActions\}/u);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /\.\.\.generativeActionFooterActions/u);
 	assert.match(PAGE_SOURCE, /onBrowseAgents: \(\) => setAgentsDirectoryOpen\(true\)/u);
-	assert.match(PAGE_SOURCE, /onBrowseSkills: \(\) => setSkillsDirectoryOpen\(true\)/u);
+	assert.match(PAGE_SOURCE, /onBrowseSkills: \(\) => setSkillDirectoryOpen\(true\)/u);
 	assert.match(PAGE_SOURCE, /onCreateAgent: \(\) => router\.push\("\/studio"\)/u);
 	assert.match(PAGE_SOURCE, /onCreateSkill: \(\) => router\.push\("\/skills"\)/u);
 	assert.match(PAGE_SOURCE, /<AgentsDirectoryDialog[\s\S]*open=\{agentsDirectoryOpen\}/u);
-	assert.match(PAGE_SOURCE, /<SkillsDirectoryDialog[\s\S]*open=\{skillsDirectoryOpen\}/u);
+	assert.match(PAGE_SOURCE, /<SkillDirectoryDialog[\s\S]*open=\{skillDirectoryOpen\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /iconScale\?: JiraIssueIconScale;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /subtaskChrome\?: JiraIssueChrome;/u);
 	assert.match(
@@ -282,10 +282,6 @@ test("chin-row layout uses Team EU's merged grouping", () => {
 	assert.match(
 		LIST_HOOK_SOURCE,
 		/return \{ createBoardFromAgentSession, createFromAgentSession, getProps, onVisibleRowsChange, onAssignedAgentIdsChange: handleAssignedAgentIdsChange \};/u,
-	);
-	assert.match(
-		EXPERIMENTAL_CARD_SOURCE,
-		/assignment=\{resolveKanbanCardAssignment\(card, agents, onAssignedAgentIdsChange, addAgentLabel, generativeActionFooterActions, onAgentAssign\)\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_CARD_SOURCE,

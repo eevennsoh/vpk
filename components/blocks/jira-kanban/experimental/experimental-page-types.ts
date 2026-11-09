@@ -21,6 +21,7 @@ import type {
 	JiraKanbanProps,
 } from "../index";
 import type { ExperimentalJiraKanbanProps } from "./experimental-jira-kanban";
+import type { CollapsedBoardColumns } from "./lib/board-column-collapse";
 import type { HeaderAssigneeRenderer, ExperimentalJiraKanbanView } from "./experimental-board-header";
 import type { ExperimentalJiraKanbanMode } from "./pulse/components/pulse-mode-controls";
 import type { PulseAgentSession, PulseLooseWork, PulseMember, PulseWorkItem } from "./pulse/types";
@@ -50,10 +51,15 @@ export interface ExperimentalJiraKanbanPageHandle {
 }
 
 export interface ExperimentalJiraKanbanPageProps {
+	/** Show only centered Kanban columns, without the board header. */
+	boardOnly?: boolean;
+	collapsedColumns?: CollapsedBoardColumns;
+	onCollapsedColumnsChange?: (columns: CollapsedBoardColumns) => void;
 	/** Enables the optional arrange action, destination counts, and shortcut. */
 	autoArrangeEnabled?: boolean;
 	getStatusVariant?: NonNullable<JiraKanbanProps["selectionToolbar"]>["getStatusVariant"];
 	addAgentLabel?: ExperimentalJiraKanbanProps["addAgentLabel"];
+	showSessionAddAgent?: ExperimentalJiraKanbanProps["showSessionAddAgent"];
 	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	issueMoveVisual?: ExperimentalJiraKanbanProps["issueMoveVisual"];
 	issueDropMotion?: ExperimentalJiraKanbanProps["issueDropMotion"];

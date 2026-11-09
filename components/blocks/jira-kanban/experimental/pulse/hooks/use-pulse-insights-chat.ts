@@ -21,7 +21,7 @@ export interface UsePulseInsightsChatResult {
  * Insights chat — hide the viewport FAB, and open the rail-embedded panel.
  *
  * The document flag is set for as long as Pulse is mounted, even on routes
- * that never mount a chat provider, so the Golden Journeys overlay can hide
+ * that never mount a chat provider, so the Golden Journey overlay can hide
  * its launcher before anyone has asked a question. Asking is a no-op without
  * a provider; the page's article-answer path remains the fallback.
  */

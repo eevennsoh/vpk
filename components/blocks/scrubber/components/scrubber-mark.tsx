@@ -67,7 +67,7 @@ export function ScrubberMark({
 			)}
 		>
 			<span className="sr-only">{toScrubberMarkLabel(entry)}</span>
-			{appearance === "dots" ? <><span aria-hidden className="absolute size-5 rounded-full bg-bg-neutral opacity-0 group-hover/mark:opacity-100 group-focus-visible/mark:opacity-100" /><span aria-hidden className={cn("relative size-1.5 rounded-full bg-current", isActive && showActiveIndicator ? "opacity-100" : "opacity-0")} /></> : <ScrubberRule
+			{appearance === "dots" ? <><span aria-hidden className={cn("absolute size-5 rounded-full bg-bg-neutral opacity-0 group-focus-visible/mark:opacity-100", showActiveIndicator && "group-hover/mark:opacity-100")} /><span aria-hidden className={cn("relative size-1.5 rounded-full bg-current", isActive && showActiveIndicator ? "opacity-100" : "opacity-0")} /></> : <ScrubberRule
 				axis={axis}
 				// The button is the hit target; the rule overflows it at full swell
 				// and must not stretch the target into whatever sits beside the rail.

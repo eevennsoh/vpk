@@ -90,7 +90,7 @@ test("Jira sidebar session rows use two-line avatar and issue metadata without t
 test("Jira session lifecycle metadata reuses the established Rovo visuals", () => {
 	assert.match(JIRA_SIDEBAR_SOURCE, /"awaiting-input" \| "running" \| "pr-open" \| "merged" \| "stopped"/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /<Shimmer as="span" className="min-w-0 truncate" duration=\{1\.4\} spread=\{2\}>\s*Needs input/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /import \{ AnimatedDot \} from "@\/components\/ui-custom\/animated-dot";/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /<StatusInformationIcon label="Needs input"/u);
 	assert.match(
 		JIRA_SIDEBAR_SOURCE,

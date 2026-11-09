@@ -87,12 +87,12 @@ test("running drops the redundant label; awaiting swaps the title to the Needs i
 	// so the state is not said twice with the work name nowhere on the card.
 	assert.match(CARD_SOURCE, /stateAwareTitle = true,/u);
 	assert.match(CARD_SOURCE, /\{stateAwareTitle \? getSessionTitle\(item\) : item\.title\}/u);
-	assert.match(CARD_SOURCE, /\{stateAwareTitle && stateMeta\.showDots \? <AnimatedDots/u);
+	assert.match(CARD_SOURCE, /\{stateAwareTitle && stateMeta\.showDots \? <AnimatedDot/u);
 	assert.match(
 		CARD_SOURCE,
 		/const title = leadWithAgentName \? item\.agent\.name : getSessionTitle\(item\);/u,
 	);
-	assert.match(CARD_SOURCE, /stateMeta\.showDots \? <AnimatedDots/);
+	assert.match(CARD_SOURCE, /stateMeta\.showDots \? <AnimatedDot/);
 });
 
 test("the awaiting lifecycle glyph is centered inside its tile", () => {
@@ -406,14 +406,14 @@ test("the session adapter derives flyout payloads the row model does not carry",
 	assert.match(DATA_SOURCE, /pullRequestNumber: 284,/u);
 });
 
-test("the composer variant keeps the per-row Agent States flyout on the left", () => {
+test("the composer variant keeps the per-row Agent State flyout on the left", () => {
 	assert.match(TYPES_SOURCE, /id\?: string;[\s\S]*name: string;/u);
 	assert.match(CARD_SOURCE, /if \(flyout === "composer"\) \{/u);
 	assert.match(CARD_SOURCE, /<HoverCard[\s\S]*<HoverCardTrigger/u);
-	assert.match(CARD_SOURCE, /<AgentStates/u);
+	assert.match(CARD_SOURCE, /<AgentState/u);
 	assert.match(CARD_SOURCE, /side="left"/u);
 	assert.match(CARD_SOURCE, /positionerClassName="z-\[575\]/u);
-	assert.match(CARD_SOURCE, /state=\{getAgentStatesState\(item\.state\)\}/u);
+	assert.match(CARD_SOURCE, /state=\{getAgentStateState\(item\.state\)\}/u);
 	assert.match(CARD_SOURCE, /onSubmit=\{onFlyoutSubmit\}/u);
 	assert.match(CARD_SOURCE, /name: item\.agent\.name/u);
 	assert.match(CARD_SOURCE, /avatarSrc: item\.agent\.avatarSrc/u);
@@ -439,7 +439,7 @@ test("flyout=\"none\" renders the row alone for entries that are not agent sessi
 	);
 });
 
-test("Agent States composer submissions open the configured chat surface with sidebar fallback", () => {
+test("Agent State composer submissions open the configured chat surface with sidebar fallback", () => {
 	assert.match(TYPES_SOURCE, /composerChatSurface\?: ChatSurface;/u);
 	assert.match(TYPES_SOURCE, /onSubmitPrompt\?: \(item: AgentListItem, prompt: string\) => Promise<void> \| void;/u);
 	assert.match(INDEX_SOURCE, /composerChatSurface = "sidebar"/u);
@@ -458,7 +458,7 @@ test("Agent States composer submissions open the configured chat surface with si
 
 test("the composer refuses to render without a chat destination", () => {
 	// The optional read exists for read-only lists, not to make the composer
-	// silently lossy: AgentStatesComposer clears the reply right after calling
+	// silently lossy: AgentStateComposer clears the reply right after calling
 	// back, so a swallowed prompt looks exactly like a successful send. Failing
 	// at render beats failing after the viewer has typed one.
 	assert.match(
@@ -777,10 +777,10 @@ test("needs-input activity headers shimmer Needs input with trailing Rovo dots i
 		CARD_SOURCE,
 		/const showTitleDots = stateMeta\.showDots && !leadWithAgentName;/u,
 	);
-	assert.match(CARD_SOURCE, /\{showTitleDots \? <AnimatedDots \/> : null\}/u);
+	assert.match(CARD_SOURCE, /\{showTitleDots \? <AnimatedDot \/> : null\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/needsInput \? \(\s*<span[\s\S]*title=\{NEEDS_INPUT_STATUS_LABEL\}[\s\S]*<Shimmer as="span" duration=\{1\.4\} spread=\{2\}>[\s\S]*\{NEEDS_INPUT_STATUS_LABEL\}[\s\S]*<\/Shimmer>\s*<AnimatedDots \/>/u,
+		/needsInput \? \(\s*<span[\s\S]*title=\{NEEDS_INPUT_STATUS_LABEL\}[\s\S]*<Shimmer as="span" duration=\{1\.4\} spread=\{2\}>[\s\S]*\{NEEDS_INPUT_STATUS_LABEL\}[\s\S]*<\/Shimmer>\s*<AnimatedDot \/>/u,
 	);
 	// Running sessions still surface the Working for duration; needs-input does not.
 	assert.match(

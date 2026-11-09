@@ -5,7 +5,7 @@ import {
 	getAgentAutomationRuleLabel,
 	inferAutomationRules,
 	type AgentAutomationRule,
-} from "@/components/blocks/triggers/data/trigger-catalog";
+} from "@/components/blocks/trigger/data/trigger-catalog";
 
 export type AgentConfigTextFieldName =
 	| "name"

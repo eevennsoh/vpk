@@ -29,7 +29,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const FILE = path.join(__dirname, "..", "app", "data", "directory", "agent-templates.json");
+const FILE = path.join(__dirname, "..", "app", "data", "directory", "agent-template.json");
 
 const CATEGORY_COPY = {
 	brainstorm: {

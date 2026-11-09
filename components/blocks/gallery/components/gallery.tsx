@@ -95,6 +95,8 @@ export interface GalleryProps {
 	className?: string;
 	/** Palette used for selected-card liquid highlights. Defaults to the standard blue treatment. */
 	palette?: GalleryPalette;
+	/** Solid selected-card color; omitting it uses the liquid gradient. */
+	selectedColor?: string;
 	/** Called after the selected prototype is reset to its initial mounted state. */
 	onReset?: (item: GalleryItem) => void;
 	/** Optional route-owned theme displayed by the Gallery theme control. */
@@ -119,6 +121,7 @@ export function Gallery({
 	renderSelectedItem = renderDefaultSelectedItem,
 	className,
 	palette,
+	selectedColor,
 	onReset,
 	theme,
 	onThemeCycle,
@@ -271,6 +274,7 @@ export function Gallery({
 							activeVisual={visualState.active}
 							exitingVisual={visualState.exiting}
 							palette={palette}
+							selectedColor={selectedColor}
 							onSelect={handleSelect}
 						/>
 					</motion.div>
