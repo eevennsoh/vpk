@@ -22,8 +22,6 @@ const EXISTING_SESSIONS: readonly AgentSessionItem[] = [
 	{ id: "demo-onboarding-guide", title: "Review the onboarding quickstart", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "running", timeLabel: "2m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
 	{ id: "demo-onboarding-tests", title: "Check the onboarding tests", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "needs-input", timeLabel: "10m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
 	{ id: "demo-onboarding-flow", title: "Inspect the onboarding flow", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "running", timeLabel: "18m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
-	{ id: "demo-onboarding-copy", title: "Refine the onboarding copy", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "needs-input", timeLabel: "25m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
-	{ id: "demo-onboarding-checklist", title: "Validate the onboarding checklist", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "running", timeLabel: "40m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
 ];
 
 export type ButterAgentPresentation = "submenu" | "inline";
@@ -50,7 +48,7 @@ export function ButterAgentSelectorGallery({ variant = "default", presentation =
 	const createAgent = () => router.push("/studio");
 	const startSession = (agent: (typeof BUTTER_PICKER_AGENTS)[number]) => {
 		if (variant === "duplicative-sessions") {
-			setSessions((current) => [...current, { id: `demo-new-session-${pickerKey}`, title: "Review onboarding changes", agent: { id: agent.id, name: agent.name, brandName: agent.brandName, avatarSrc: agent.avatarSrc }, host: "cloud", state: "running", timeLabel: "Just now", invokedBy: BUTTER_PAY_CURRENT_USER }]);
+			setSessions((current) => [{ id: `demo-new-session-${pickerKey}`, title: "Review onboarding changes", agent: { id: agent.id, name: agent.name, brandName: agent.brandName, avatarSrc: agent.avatarSrc }, host: "cloud", state: "running", timeLabel: "Just now", invokedBy: BUTTER_PAY_CURRENT_USER }, ...current.slice(0, 2)]);
 			setSessionStatus(`Started a new ${agent.name} session`);
 		}
 		setSelectedAgentIds([agent.id]);

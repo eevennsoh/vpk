@@ -348,9 +348,10 @@ export function AgentSessionCard({
 	onView?: (item: AgentSessionItem) => void;
 	/**
 	 * Article inset. Assignment pickers use `compact` (`px-3 py-2` / 8px
-	 * vertical) so stacked menu rows sit tighter than catalog cards.
+	 * vertical) so stacked menu rows sit tighter than catalog cards. `menu`
+	 * aligns row content with an 8px menu heading inset.
 	 */
-	padding?: "default" | "compact";
+	padding?: "default" | "compact" | "menu";
 	renderAgentAvatar?: AgentSessionAvatarPreview;
 	/** Keep status and replacement actions centered beside the shared title/metadata column. */
 	trailingAlign?: "center" | "metadata";
@@ -685,7 +686,7 @@ export function AgentSessionCard({
 						// The glow layers sit at `-z-[1]`; without a stacking context
 						// here they would escape behind the list surface.
 						glow && "isolate",
-						padding === "compact" ? "px-3 py-2" : "p-3",
+						padding === "menu" ? "p-2" : padding === "compact" ? "px-3 py-2" : "p-3",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
 						// Hover and the retained flyout highlight must paint immediately;

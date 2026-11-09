@@ -164,8 +164,8 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 			<hr className="my-1 border-0 border-t border-border" />
 			<div role="group" aria-labelledby={`${submenuId}-existing`}>
 				<div id={`${submenuId}-existing`} className="rich-text-command-menu-heading">Continue with existing sessions</div>
-				<ul aria-labelledby={`${submenuId}-existing`} className="flex min-w-0 flex-col gap-1">
-					{matchingSessions.map((session) => <AgentSessionCard animateLayout={false} item={session} key={session.id} localSessionAction="view" onView={onContinueSession} padding="compact" showMoreMenu={false} />)}
+				<ul aria-labelledby={`${submenuId}-existing`} className="flex min-w-0 flex-col">
+					{matchingSessions.map((session) => <AgentSessionCard animateLayout={false} item={session} key={session.id} localSessionAction="view" onView={onContinueSession} padding="menu" showMoreMenu={false} />)}
 				</ul>
 			</div>
 		</>
