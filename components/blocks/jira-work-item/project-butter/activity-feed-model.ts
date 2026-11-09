@@ -10,7 +10,6 @@ export type ProjectButterActivityFilters = Readonly<{ updates: boolean; agents: 
 export const PROJECT_BUTTER_ACTIVITY_FILTERS_ALL: ProjectButterActivityFilters = { updates: true, agents: true, comments: true };
 
 const INVOCATION_PREFIX = "invocation-";
-const AGENT_ADDED_PREFIX = "agent-added-";
 const UPDATE_GROUP_PREFIX = "updates-";
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -21,10 +20,6 @@ export function agentMention(agent: ProjectButterSessionItem["agent"]): JiraActi
 
 export function projectButterSessionIdFromEntry(id: string): string | null {
 	return id.startsWith(INVOCATION_PREFIX) ? id.slice(INVOCATION_PREFIX.length) : null;
-}
-
-export function projectButterSessionFollowUp(session: Pick<ProjectButterSessionItem, "title" | "followUp">): string {
-	return session.followUp ?? `I'll work on ${session.title} and report back here with updates as I make progress.`;
 }
 
 function relativeLabel(atMs: number, fallback: string): string {
@@ -49,31 +44,29 @@ function invoker(session: ProjectButterSessionItem): JiraActivityActor {
 }
 
 /**
- * Explore WIP session start: "{Invoker} added {Agent}" on the rail, then the
- * agent's own thread — "I started a session [chip] and I am looking into it."
+ * Session starts produce one thread with the session card.
  * Seeded dialogue replies follow; a session without dialogue ends on its latest message.
  */
-export function projectButterSessionInvocation(session: ProjectButterSessionItem): readonly [JiraActivityEventEntry, JiraActivityCommentEntry] {
+export function projectButterSessionInvocation(session: ProjectButterSessionItem): JiraActivityCommentEntry {
 	const createdAtMs = session.invokedAtMs ?? PROJECT_BUTTER_SESSION_EPOCH;
 	const timestamp = relativeLabel(createdAtMs, session.timeLabel ?? "Just now");
 	const person = invoker(session);
 	const agent = agentActor(session);
-	const added: JiraActivityEventEntry = { id: `${AGENT_ADDED_PREFIX}${session.id}`, kind: "event", actor: person, timestamp, createdAtMs: createdAtMs - 1, icon: "delegated", segments: [{ type: "text", text: `added ${session.agent.name}` }] };
 	const reply = (id: string, actor: JiraActivityActor, body: string, atMs: number): JiraActivityReply => ({ id, actor, body, timestamp: relativeLabel(atMs, session.timeLabel ?? ""), createdAtMs: atMs });
 	const prompt = session.prompt ? [reply(`prompt-${session.id}`, person, session.prompt, createdAtMs)] : [];
 	const dialogue = (session.activityReplies ?? []).map((item) => reply(item.id, item.author === session.agent.name ? agent : personActor(item.author), item.body, createdAtMs + item.minutesAfter * MINUTE));
 	const latest = dialogue.length === 0 && session.state !== "running" ? [reply(`response-${session.id}`, agent, session.message, createdAtMs + MINUTE)] : [];
 	const thread: JiraActivityCommentEntry = {
-		id: `${INVOCATION_PREFIX}${session.id}`, kind: "comment", actor: agent, timestamp, createdAtMs,
-		body: [{ type: "text", text: `I started a session ${session.title} and I am looking into it. ${projectButterSessionFollowUp(session)}` }],
+		id: `${INVOCATION_PREFIX}${session.id}`, kind: "comment", actor: agent, attributedBy: { name: person.name, avatarSrc: person.avatarSrc }, headerLabel: `${person.name} added ${agent.name}`, timestamp, createdAtMs,
+		body: [{ type: "text", text: session.title }],
 		replies: [...prompt, ...dialogue, ...latest],
 		allowReply: true, defaultRepliesExpanded: false, replyPreviewCount: 1,
 	};
-	return [added, thread];
+	return thread;
 }
 
 function entryKind(entry: JiraActivityEntry): keyof ProjectButterActivityFilters {
-	if (entry.id.startsWith(INVOCATION_PREFIX) || entry.id.startsWith(AGENT_ADDED_PREFIX)) return "agents";
+	if (entry.id.startsWith(INVOCATION_PREFIX)) return "agents";
 	return entry.kind === "comment" ? "comments" : "updates";
 }
 
@@ -112,11 +105,10 @@ function joinNames(names: readonly string[]): string {
 	return names.length < 2 ? names[0] ?? "" : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }
 
-/** "4 updates: added Claude, changed status, assignee and description." */
+/** "4 updates: changed status, assignee and description." */
 export function projectButterUpdateSummary(events: readonly JiraActivityEventEntry[], fieldLabels: (entry: JiraActivityEventEntry) => readonly string[]): string {
-	const added = events.filter((entry) => entry.id.startsWith(AGENT_ADDED_PREFIX)).map((entry) => (entry.segments[0]?.type === "text" ? entry.segments[0].text : ""));
-	const fields = [...new Set(events.filter((entry) => !entry.id.startsWith(AGENT_ADDED_PREFIX)).flatMap((entry) => fieldLabels(entry).map((label) => label.toLowerCase())))];
-	const parts = [...added, ...(fields.length ? [`changed ${joinNames(fields)}`] : [])];
+	const fields = [...new Set(events.flatMap((entry) => fieldLabels(entry).map((label) => label.toLowerCase())))];
+	const parts = fields.length ? [`changed ${joinNames(fields)}`] : [];
 	return `${events.length} updates${parts.length ? `: ${parts.join(", ")}` : ""}.`;
 }
 

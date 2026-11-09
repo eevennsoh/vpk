@@ -66,7 +66,7 @@ test("the hover-revealed timestamp stays decorative with an always-present sr-on
 });
 
 test("event labels share the timeline node's 24px vertical alignment track", () => {
-	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
+	assert.match(NODE_SOURCE, /isCard \? "h-8" : "h-6"/u);
 	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
 	assert.match(INDEX_SOURCE, /hideHeader \? "pt-1" : null/u);
 	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" && "pt-0\.5"/u);

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Lozenge } from "@/components/ui/lozenge";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
@@ -109,9 +110,11 @@ export type JiraActivityReplyComposerProps = Readonly<{
 
 function ActivityActorAvatar({
 	actor,
+	attributedBy,
 	sizePx = 32,
 }: Readonly<{
 	actor: JiraActivityActor;
+	attributedBy?: JiraActivityCommentEntry["attributedBy"];
 	sizePx?: 16 | 32;
 }>) {
 	if (actor.kind === "person") {
@@ -121,6 +124,10 @@ function ActivityActorAvatar({
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
 			</Avatar>
 		);
+	}
+
+	if (actor.kind === "agent" && attributedBy) {
+		return <HumanAgentAvatar agent={{ name: actor.name, appearance: actor.appearance, avatarSrc: actor.avatarSrc, brandName: actor.brandName, fallbackText: initialsOf(actor.name), vpkLogo: activityActorVpkLogo(actor) }} human={attributedBy} sizePx={sizePx} />;
 	}
 
 	return (
@@ -228,6 +235,7 @@ function ThreadConnector({ continued, centered = false }: Readonly<{ continued: 
 
 function ThreadReplyCard({
 	reply,
+	attributedBy,
 	currentUser,
 	actorsById,
 	onReply,
@@ -252,6 +260,7 @@ function ThreadReplyCard({
 	actionsPlacement = "footer",
 }: Readonly<{
 	reply: JiraActivityReply;
+	attributedBy?: JiraActivityCommentEntry["attributedBy"];
 	currentUser: JiraActivityActor;
 	actorsById: ReadonlyMap<string, JiraActivityActor>;
 	onReply: (button: HTMLButtonElement | null) => void;
@@ -331,7 +340,7 @@ function ThreadReplyCard({
 				agentName={reply.actor.name}
 				className="rounded-none"
 				activityGroup="activity-reply"
-				headerAvatar={<ActivityActorAvatar actor={reply.actor} />}
+				headerAvatar={<ActivityActorAvatar actor={reply.actor} attributedBy={attributedBy} />}
 				headerConnector={threaded ? <ThreadConnector centered continued={false} /> : undefined}
 				headerLayout={headerLayout}
 				item={reply.sessionItem}
@@ -601,7 +610,7 @@ export function JiraActivityComment({
 	return (
 		<JiraActivityCard
 			action={headerAction}
-			agentName={entry.actor.name}
+			agentName={entry.headerLabel ?? entry.actor.name}
 			className={nested ? "rounded-none" : undefined}
 			// Timeline node owns the size-8 avatar; nested replies keep pl-6. The
 			// flush composer pulls back across w-8 + gap-2 so it lines up with the
@@ -690,6 +699,7 @@ export function JiraActivityComment({
 					>
 						{replies.map((reply, index) => (
 							<ThreadReplyCard
+								attributedBy={reply.actor.kind === "agent" && reply.actor.id === entry.actor.id ? entry.attributedBy : undefined}
 								headerLayout={headerLayout}
 								allowReply={allowReply}
 								bodyContent={renderReplyBody?.(reply)}

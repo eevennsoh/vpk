@@ -377,9 +377,9 @@ export function AgentListActivityHeader({
 		<div
 			className={cn(
 				"flex min-w-0 items-center gap-2",
-				// Timeline node owns the size-8 avatar in an h-10 track; keep this
+				// Timeline node owns the size-8 avatar in an h-8 track; keep this
 				// two-line header on the same first-row height for optical center.
-				hideAvatar ? "min-h-10" : null,
+				hideAvatar ? "min-h-8" : null,
 			)}
 		>
 			{hideAvatar ? null : (

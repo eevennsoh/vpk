@@ -43,7 +43,7 @@ export function ProjectButterActivityTimeline({ rows, visibleId, progress, onSel
 		// The first and last stops sit exactly on the rail's ends.
 		offset: activityStopOffset(index, rows.length),
 		heading: activityDateLabel(entry),
-		label: `Go to step ${index + 1}: ${entry.actor.name}: ${rowLabel(entry)}`,
+		label: `Go to step ${index + 1}: ${entry.kind === "comment" ? entry.headerLabel ?? entry.actor.name : entry.actor.name}: ${rowLabel(entry)}`,
 	}));
 	const previewIndex = entries.findIndex((entry) => entry.id === hoverId);
 	const labelRefs = useRef(new Map<string, HTMLSpanElement>());

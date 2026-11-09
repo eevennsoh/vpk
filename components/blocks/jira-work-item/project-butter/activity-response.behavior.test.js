@@ -18,41 +18,47 @@ async function renderActivity(props = {}) {
 	});
 }
 
-test("a session start is the agent's own comment with an inline session chip", async () => {
+test("a session start presents the long-form agent session card in its thread", async () => {
 	await renderActivity();
 	const start = document.querySelector('[data-project-butter-session-start="butter-scoping"]');
-	const copy = start.textContent.replace(/\s+/gu, " ").trim();
-	assert.equal(copy.startsWith("I started a session "), true);
-	assert.equal(copy.endsWith("Troubleshoot 403 API errors and I am looking into it. I'll work on Troubleshoot 403 API errors and report back here with updates as I make progress."), true);
+	assert.equal(start.textContent.includes("Troubleshoot 403 API errors"), true);
+	assert.equal(start.textContent.includes("Working"), true);
+	assert.equal(start.querySelector('[data-testid="agent-session-row-butter-scoping"]') !== null, true);
 	const thread = start.closest("[data-jira-activity-entry-id]");
 	assert.equal(thread.dataset.jiraActivityEntryId, "invocation-butter-scoping");
-	assert.equal(thread.textContent.includes("Jira Scoping agent"), true);
-	// The invoker's "added" row sits on the rail, alone or folded into an adjacent update summary.
-	const feed = document.querySelector("[data-project-butter-activity-feed]").textContent.replace(/\s+/gu, " ");
-	assert.equal(feed.includes("Annie Cook added Jira Scoping agent") || /updates: added Jira Scoping agent/u.test(feed), true);
+	assert.equal(thread.querySelector('[data-slot="jira-activity-comment-header"]').textContent.includes("Annie Cook added Jira Scoping agent"), true);
+	assert.equal(start.querySelector('[aria-label="Private to Annie Cook"]') !== null, true);
+	assert.equal(thread.querySelector('[data-slot="jira-activity-comment-header"] [aria-label="Private to Annie Cook"]') === null, true);
+	const identity = thread.firstElementChild.querySelector('[data-slot="human-agent-avatar"]');
+	assert.equal(identity?.getAttribute("aria-label"), "Jira Scoping agent, used by Annie Cook");
+	assert.equal(identity?.querySelector('[data-avatar-role="human"]') !== null, true);
+	assert.equal(identity?.querySelector('[data-avatar-role="agent"]') !== null, true);
+	assert.equal(document.querySelector('[data-jira-activity-entry-id="agent-added-butter-scoping"]') === null, true);
 	assert.equal(thread.querySelector("[data-jira-activity-agent-mention]") === null, true, "the invoker no longer at-mentions the agent");
 });
 
-test("a running session chip opens chat with the keyboard", async () => {
+test("a running session card opens chat with the keyboard", async () => {
 	const opened = [];
 	const view = await renderActivity({ onOpen: (id) => opened.push(id) });
-	const chip = view.getByRole("button", { name: "Open Jira Scoping agent chat" });
-	assert.equal(chip.closest("[data-project-butter-session-start]") !== null, true);
-	assert.equal(chip.textContent.includes("Troubleshoot 403 API errors"), true);
+	const card = view.getByRole("button", { name: /^Troubleshoot 403 API errors/u });
+	assert.equal(card.closest("[data-project-butter-session-start]") !== null, true);
+	assert.equal(card.textContent.includes("Troubleshoot 403 API errors"), true);
 	const thread = document.querySelector('[data-jira-activity-entry-id="invocation-butter-scoping"]');
 	assert.equal(thread.querySelector('[aria-label="Replies"]') === null, true, "a running session without messages has no replies yet");
-	await view.press(chip, "Enter");
+	await view.press(card, "Enter");
 	assert.deepEqual(opened, ["butter-scoping"]);
 });
 
-test("the session chip follows live session state", async () => {
+test("the session card follows live session state", async () => {
 	const opened = [];
 	const onOpen = (id) => opened.push(id);
 	const view = await renderActivity({ onOpen });
 	await view.rerender({ state: "needs-input", onOpen });
-	await view.click(view.getByRole("button", { name: "Needs input, open Jira Scoping agent chat" }));
+	assert.equal(document.querySelector('[data-project-butter-session-start="butter-scoping"] button[aria-label="Needs input"]') !== null, true);
+	await view.click(view.getByRole("button", { name: /^Troubleshoot 403 API errors/u }));
 	await view.rerender({ state: "complete", onOpen });
-	await view.click(view.getByRole("button", { name: "Finished, open Jira Scoping agent chat" }));
+	assert.equal(document.querySelector('[data-project-butter-session-start="butter-scoping"] button[aria-label="Finished"]') !== null, true);
+	await view.click(view.getByRole("button", { name: /^Troubleshoot 403 API errors/u }));
 	assert.deepEqual(opened, ["butter-scoping", "butter-scoping"]);
 });
 
@@ -70,6 +76,11 @@ test("a seeded session thread shows its latest reply behind Show N more replies"
 			}`,
 	});
 	const thread = document.querySelector('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]');
+	assert.equal(thread.firstElementChild.querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label"), "Cursor, used by Annie Cook");
+	const replyIdentity = thread.querySelector('[aria-label="Replies"] [data-slot="human-agent-avatar"]');
+	assert.equal(replyIdentity?.getAttribute("aria-label"), "Cursor, used by Annie Cook");
+	assert.equal(replyIdentity?.querySelector('[data-avatar-role="human"]') !== null, true);
+	assert.equal(replyIdentity?.querySelector('[data-avatar-role="agent"]') !== null, true);
 	const toggle = view.getByRole("button", { name: /Show 4 more replies/u });
 	assert.equal(toggle.getAttribute("aria-expanded"), "false");
 	const shown = () => [...thread.querySelectorAll('[aria-label="Replies"] > div')].filter((node) => !node.hidden).map((node) => node.textContent);
@@ -77,6 +88,9 @@ test("a seeded session thread shows its latest reply behind Show N more replies"
 	assert.equal(shown()[0].includes("Which revenue line should we keep?"), true);
 	await view.click(toggle);
 	assert.equal(shown().length, 5);
+	const humanReplies = [...thread.querySelectorAll('[aria-label="Replies"] > div')].filter((node) => node.querySelector('[data-slot="jira-activity-comment-header"]')?.textContent.includes("Annie Cook"));
+	assert.equal(humanReplies.length > 0, true);
+	assert.equal(humanReplies.every((node) => node.querySelector('[data-slot="human-agent-avatar"]') === null), true);
 	assert.equal(view.getByRole("button", { name: "Hide replies" }).getAttribute("aria-expanded"), "true");
 });
 
@@ -94,6 +108,22 @@ test("shared Activity still renders ordinary reply cards when no reply replaceme
 	assert.equal(view.queryByText("Custom reply row") !== null, true);
 	await view.rerender({ replace: false });
 	assert.equal(view.queryByText("Ordinary reply") !== null, true);
+});
+
+test("agent reply attribution applies only to the agent that owns the session", async () => {
+	await renderComponent({
+		source: `import React from "react";
+			import { JiraActivity } from "@/components/blocks/jira-activity";
+			const agent = { id: "agent-a", name: "Agent A", kind: "agent" };
+			const entry = { id: "parent", kind: "comment", actor: agent, attributedBy: { name: "Annie" }, body: [{ type: "text", text: "Parent" }], timestamp: "Today", replies: [
+				{ id: "same", actor: agent, timestamp: "Today", body: "Same agent" },
+				{ id: "other", actor: { id: "agent-b", name: "Agent B", kind: "agent" }, timestamp: "Today", body: "Other agent" },
+			] };
+			export default function ReplyAttributionProbe() { return <JiraActivity composer={null} entries={[entry]} hideHeader />; }`,
+	});
+	const replies = [...document.querySelectorAll('[aria-label="Replies"] > div')];
+	assert.equal(replies[0].querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label"), "Agent A, used by Annie");
+	assert.equal(replies[1].querySelector('[data-slot="human-agent-avatar"]'), null);
 });
 
 // Regression: "Canva with Sarah Lim" rendered "CW" because unbranded agents only carried a Rovo

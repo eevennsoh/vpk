@@ -60,21 +60,23 @@ export function ProjectButterTimestamp({
 	const showTooltip = tooltipOpen && !full && Number.isFinite(parsed);
 	if (!item.timestamp) return null;
 	return (
-		<Tooltip disabled={full || !Number.isFinite(parsed)} onOpenChange={setTooltipOpen} open={showTooltip}>
-			<TooltipTrigger
-				render={<button
-					aria-describedby={showTooltip ? tooltipId : undefined}
-					aria-label={`${visibleTimestamp}. Show ${full ? "relative" : "full"} timestamp`}
-					aria-pressed={full}
-					className="whitespace-nowrap rounded-sm text-xs font-normal text-text-subtle outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
-					onClick={() => setFull((value) => !value)}
-					type="button"
-				/>}
-			>
-				<time dateTime={Number.isFinite(parsed) ? new Date(parsed).toISOString() : undefined}>{visibleTimestamp}</time>
-			</TooltipTrigger>
-			<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="bottom">{detailed}</TooltipContent>
-		</Tooltip>
+		<span className="inline-flex items-center gap-1">
+			<Tooltip disabled={full || !Number.isFinite(parsed)} onOpenChange={setTooltipOpen} open={showTooltip}>
+				<TooltipTrigger
+					render={<button
+						aria-describedby={showTooltip ? tooltipId : undefined}
+						aria-label={`${visibleTimestamp}. Show ${full ? "relative" : "full"} timestamp`}
+						aria-pressed={full}
+						className="whitespace-nowrap rounded-sm text-xs font-normal text-text-subtle outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
+						onClick={() => setFull((value) => !value)}
+						type="button"
+					/>}
+				>
+					<time dateTime={Number.isFinite(parsed) ? new Date(parsed).toISOString() : undefined}>{visibleTimestamp}</time>
+				</TooltipTrigger>
+				<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="bottom">{detailed}</TooltipContent>
+			</Tooltip>
+		</span>
 	);
 
 }

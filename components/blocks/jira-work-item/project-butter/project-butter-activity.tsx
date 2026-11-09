@@ -124,12 +124,6 @@ export function ProjectButterActivity({
 	const renderEvent = (entry: JiraActivityEventEntry): ReactNode | undefined => {
 		const item = content.auditChanges[entry.id] ?? HISTORY.get(entry.id);
 		if (item && item.changes.length) return <ProjectButterHistoryChange actor={entry.actor} defaultOpen={expandedAudit} item={item} key={`${item.id}-${expandedAudit}`} timestamp={entry.timestamp} />;
-		if (entry.id.startsWith("agent-added-")) return (
-			<p className="flex min-h-6 min-w-0 flex-wrap items-center gap-x-2 text-sm text-text">
-				<span>{entry.actor.name} {jiraActivitySegmentsToPlainText(entry.segments)}</span>
-				<span className="shrink-0 text-xs text-text-subtlest">{entry.timestamp}</span>
-			</p>
-		);
 		if (entry.id.startsWith("merchant-agent-added-")) return (
 			<div className="flex min-w-0 flex-wrap items-center">
 				<JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={{ ...entry, showTimestamp: false }} />

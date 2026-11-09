@@ -235,7 +235,7 @@ export function JiraIssueAgentStatusAffordance({
 	);
 }
 
-function JiraIssueAgentRowLabel({
+export function JiraIssueAgentRowLabel({
 	isAwaitingInput,
 	isWorking,
 	rowLabel,

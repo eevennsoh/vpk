@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useReducedMotion } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
@@ -12,13 +13,17 @@ import { AgentSessionsMenu } from "@/components/blocks/agent-assignment/componen
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { AgentAvatarVisual, type AgentAvatarVisualProps } from "@/components/ui-custom/agent-avatar-visual";
+import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/project-butter-agent-picker";
-import { ProjectButterCloudAgentPicker } from "@/components/blocks/jira-issue/project-butter-inline-agent-picker";
-import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { JiraIssueAgentRowLabel } from "@/components/blocks/jira-issue/agent-activity-row-presentation";
+import { getJiraIssueAgentAvatarSize } from "@/components/blocks/jira-issue/agent-activity-avatar";
+import { ProjectButterAgentPreviewBoundary, ProjectButterCloudAgentPicker } from "@/components/blocks/jira-issue/project-butter-inline-agent-picker";
+import { ProjectButterInvocationPreview } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
+import { ProjectButterInvocationProvider, useProjectButterInvocationActions } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
 import { cn } from "@/lib/utils";
@@ -57,7 +62,7 @@ function referenceCrew(sessionsByUrgency: readonly AgentSessionItem[]): readonly
 	return members;
 }
 
-export function ProjectButterCrew({ assignee, cloudAgentSelector = false, currentUser, field = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: Readonly<{
+type ProjectButterCrewProps = Readonly<{
 	assignee?: WorkItemPerson;
 	cloudAgentSelector?: boolean;
 	currentUser?: WorkItemPerson;
@@ -69,9 +74,18 @@ export function ProjectButterCrew({ assignee, cloudAgentSelector = false, curren
 	onStartAgent?: (agent: AgentSessionItem["agent"]) => void;
 	sessions: readonly AgentSessionItem[];
 	useReferenceCrew?: boolean;
-}>) {
+}>;
+
+export function ProjectButterCrew(props: ProjectButterCrewProps) {
+	return props.field ? <ProjectButterInvocationProvider enabled><ProjectButterCrewContent {...props} /></ProjectButterInvocationProvider> : <ProjectButterCrewContent {...props} />;
+}
+
+function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, currentUser, field = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: ProjectButterCrewProps) {
 	const [open, setOpen] = useState(false);
+	const reduceMotion = useReducedMotion();
+	const invocation = useProjectButterInvocationActions();
 	const [view, setView] = useState<"sessions" | "picker">("sessions");
+	const [selectedAgent, setSelectedAgent] = useState<{ name: string; sequence: number; intro: boolean; existingSessionIds: readonly string[] } | null>(null);
 	const orderedSessions = [...sessions].sort((left, right) => SESSION_URGENCY[left.state] - SESSION_URGENCY[right.state]);
 	const agentNames = new Set<string>();
 	const agentSessions = orderedSessions.filter(({ agent }) => {
@@ -94,46 +108,59 @@ export function ProjectButterCrew({ assignee, cloudAgentSelector = false, curren
 	const picking = field || view === "picker" || sessions.length === 0;
 	const label = `${members.length ? "Working on this work item. " : ""}${crew.map((member) => `${member.name}, ${member.state}`).join(". ")}. Add agent`;
 	const firstSession = orderedSessions[0];
-	const fieldState = firstSession ? firstSession.state === "running" ? "Working" : firstSession.state === "complete" ? "Finished" : "Needs input" : "";
+	const selectedSession = selectedAgent ? sessions.find(({ id, agent }) => !selectedAgent.existingSessionIds.includes(id) && agent.name.toLowerCase() === selectedAgent.name.toLowerCase()) : undefined;
+	const displayedSession = selectedSession ?? firstSession;
+	const fieldState = displayedSession ? displayedSession.state === "running" ? "Working" : displayedSession.state === "complete" ? "Finished" : "Needs input" : "";
 	const fieldLabel = firstSession ? `${agentSessions.length === 1 ? firstSession.agent.name : `${agentSessions.length} agents`}: ${fieldState}` : "Add agent";
+	const loadingSessions = selectedSession ? [selectedSession, ...agentSessions.filter(({ agent }) => agent.name.toLowerCase() !== selectedSession.agent.name.toLowerCase())] : agentSessions;
+	const loadingAgents: AgentLoadingAgent[] = loadingSessions.map(({ id, agent, state }) => {
+		const catalogAgent = fieldPickerAgents.find((candidate) => candidate.name.toLowerCase() === agent.name.toLowerCase());
+		const visual = catalogAgent ?? agent;
+		return {
+			id,
+			name: agent.name,
+			status: state === "complete" ? "finished" : "working",
+			avatar: { animate: false, appearance: "coding", avatarSrc: visual.avatarSrc, brandName: visual.brandName, vpkLogo: visual.vpkLogo, logoName: catalogAgent?.logoName, fallbackText: agent.name.slice(0, 2).toUpperCase() },
+		};
+	});
+	function startFieldAgent(agent: AgentSessionItem["agent"]) {
+		const intro = agentSessions.some((session) => session.agent.name.toLowerCase() !== agent.name.toLowerCase()) && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		setSelectedAgent((current) => ({ name: agent.name, sequence: (current?.sequence ?? 0) + 1, intro, existingSessionIds: sessions.map((session) => session.id) }));
+		onStartAgent?.(agent);
+	}
 	function changeOpen(next: boolean) {
 		setOpen(next);
+		if (field) { if (next) invocation?.open("footer"); else invocation?.close(); }
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
 	}
 	return (
 		<Popover onOpenChange={changeOpen} open={open}>
-			{field && sessions.length > 0 ? <div aria-label="Agents field" className="min-w-0" role="group">
-				<div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">Agents</div>
+			{field ? <div aria-label="Agents field" className="min-w-0" role="group">
+				{sessions.length > 0 ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">Agents</div> : null}
 				<div className="relative min-w-0">
-					<PopoverTrigger render={<button aria-label={fieldLabel} className="absolute inset-0 -inset-x-2 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" type="button" />} />
-					<AvatarGroup aria-hidden className="pointer-events-none relative z-10 min-h-8 items-center -space-x-1.5" label="Assigned agents">
-						{agentSessions.map((session) => {
-							const catalogAgent = fieldPickerAgents.find((candidate) => candidate.name.toLowerCase() === session.agent.name.toLowerCase());
-							const agent = catalogAgent ?? session.agent;
-							return <AgentAvatarVisual key={session.id} appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} logoName={catalogAgent?.logoName} fallbackText={agent.name.slice(0, 2).toUpperCase()} label={session.agent.name} sizePx={24} />;
-						})}
-					</AvatarGroup>
+					<PopoverTrigger render={<button aria-label={fieldLabel} className="absolute inset-0 -inset-x-2 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!onStartAgent && sessions.length === 0} type="button" />} />
+					<div aria-hidden className="pointer-events-none relative z-10 flex min-h-8 items-center gap-2" onAnimationEnd={(event) => { if (event.animationName === "agent-loading-intro-front") setSelectedAgent((current) => current ? { ...current, intro: false } : current); }}>
+						{open ? <ProjectButterInvocationPreview className="px-0" compactWhenReduced /> : loadingAgents.length ? <>{loadingAgents.length > 1 ? <AgentLoading agents={loadingAgents} announce={false} intro={selectedSession && selectedAgent?.intro ? { agentId: selectedSession.id, avatarSize: getJiraIssueAgentAvatarSize(selectedSession.agent.brandName, selectedSession.agent.avatarSrc) } : undefined} key={selectedSession ? selectedAgent?.sequence : "default"} /> : <span className={cn("grid size-6 shrink-0", reduceMotion ? "place-items-start" : "place-items-center")}><AgentAvatarVisual {...loadingAgents[0].avatar} label="" sizePx={reduceMotion ? 16 : getJiraIssueAgentAvatarSize(loadingSessions[0].agent.brandName, loadingSessions[0].agent.avatarSrc)} /></span>}<JiraIssueAgentRowLabel isAwaitingInput={fieldState === "Needs input"} isWorking={fieldState === "Working"} rowLabel={fieldState} /></> : <><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AiAgentIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /><span className="text-sm text-text-subtle">Add agent</span></>}
+					</div>
 				</div>
-			</div> : <PopoverTrigger render={<button aria-label={field ? "Add agent" : label} className={field ? "-mx-2 inline-flex min-h-8 items-center gap-2 rounded-sm px-2 text-sm text-text-subtle outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring" : "group/crew inline-flex shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"} disabled={!onStartAgent && (field || sessions.length === 0)} type="button" />}>
-				{field ? <><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AiAgentIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /><span>Add agent</span></> : (
+			</div> : <PopoverTrigger render={<button aria-label={label} className="group/crew inline-flex shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!onStartAgent && sessions.length === 0} type="button" />}>
 				<AvatarGroup className="-space-x-1.5" label="People and agents working on this item">
 					{crew.map((member, index) => member.kind === "person" ? <Avatar className="size-7.5" key={`${member.name}-${index}`} label={`${member.name}, ${member.state}`} size="default" title={`${member.name}, ${member.state}`}><AvatarImage src={member.avatarSrc ?? projectButterPersonAvatar(member.name)} /><AvatarFallback>{member.name.slice(0, 1)}</AvatarFallback></Avatar> : <span className="relative shrink-0" key={`${member.name}-${index}`} title={`${member.name}, ${member.state}`}><AgentAvatarVisual {...member.visual} appearance="coding" label={`${member.name}, ${member.state}`} sizePx={30} status={member.state === "Completed" ? "finished" : member.state === "Needs input" ? "needs-input" : undefined} />{member.state === "Working" ? <span className="absolute -right-0.5 -top-0.5 z-10 grid size-3.5 place-items-center rounded-full bg-surface"><Spinner className="size-2.5" label="Working" size="xs" variant="bloom" /></span> : null}</span>)}
 					<Avatar animate={false} borderTone={open ? "selected" : "default"} className="size-7.5" label="Add agent" shape="hexagon" size="default"><AvatarFallback className="bg-transparent text-icon-subtle group-hover/crew:bg-bg-neutral-subtle-hovered"><AddIcon label="" size="small" /></AvatarFallback></Avatar>
 				</AvatarGroup>
-				)}
 			</PopoverTrigger>}
-			<PopoverContent align={field ? "start" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={cn(field ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0 shadow-2xl" : "w-[280px] gap-0 overflow-hidden p-0")} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]" sideOffset={field ? 8 : undefined}>
-				{field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} /> : field && onStartAgent ? <InlineAgentSelector
+			<PopoverContent align={field ? "start" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={cn(field ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0 shadow-2xl" : "w-[280px] gap-0 overflow-hidden p-0")} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); if (field) changeOpen(false); } }} positionerClassName="z-[650]" sideOffset={field ? 8 : undefined}>
+				{field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker onAssign={(agent) => { startFieldAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} /> : field && onStartAgent ? <ProjectButterAgentPreviewBoundary agents={fieldPickerAgents}><InlineAgentSelector
 					agents={fieldPickerAgents}
 					softwareAgentIds={["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"]}
 					initialSoftwareLimit={5}
 					getActions={(agent) => [
 						...orderedSessions.filter((session) => !isLocalAgentListItem(session) && session.agent.name.toLowerCase() === agent.name.toLowerCase()).map((session) => ({ id: session.id, label: session.title, icon: <Icon render={<AiChatIcon label="" size="small" />} />, onSelect: () => { onOpenSession(session); changeOpen(false); } })),
-						{ id: "start", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => { onStartAgent({ id: agent.id.startsWith("session-agent:") ? agent.id.slice("session-agent:".length) : agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); } },
+						{ id: "start", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => { startFieldAgent({ id: agent.id.startsWith("session-agent:") ? agent.id.slice("session-agent:".length) : agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); } },
 					]}
 					onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined}
 					onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined}
-				/> : picking && onStartAgent ? <ProjectButterInvocationProvider agents={pickerAgents} enabled><ProjectButterAgentPickerContent sessions={sessions} onContinueSession={(session) => { onOpenSession(session); changeOpen(false); }} onPreviewSession={onPreviewSession} submenuPositionerClassName="z-[700]" workspacePositionerClassName="z-[701]" onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} /></ProjectButterInvocationProvider> : <AgentSessionsMenu addAgentLabel="Add agent" items={orderedSessions} overlayPositionerClassName="z-[700]" onAddAgent={onStartAgent ? () => setView("picker") : undefined} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} />}
+				/></ProjectButterAgentPreviewBoundary> : picking && onStartAgent ? <ProjectButterInvocationProvider agents={pickerAgents} enabled><ProjectButterAgentPickerContent sessions={sessions} onContinueSession={(session) => { onOpenSession(session); changeOpen(false); }} onPreviewSession={onPreviewSession} submenuPositionerClassName="z-[700]" workspacePositionerClassName="z-[701]" onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} /></ProjectButterInvocationProvider> : <AgentSessionsMenu addAgentLabel="Add agent" items={orderedSessions} overlayPositionerClassName="z-[700]" onAddAgent={onStartAgent ? () => setView("picker") : undefined} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} />}
 			</PopoverContent>
 		</Popover>
 	);

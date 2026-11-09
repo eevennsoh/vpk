@@ -29,6 +29,8 @@ export type AgentSessionRole = "owner" | "viewer" | "expired";
  */
 export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
+	/** Person with exclusive access to this session, when explicitly private. */
+	privateTo?: string;
 	/** Human-readable tool calls cycled in the long-form metadata line. */
 	toolCalls?: readonly string[];
 };

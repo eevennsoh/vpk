@@ -12,8 +12,6 @@ export type ProjectButterSessionItem = AgentSessionItem & {
 	selfAssignedOnStart?: boolean;
 	/** Thread replies seeded into Activity below the session's start comment. */
 	activityReplies?: readonly ProjectButterSessionReply[];
-	/** Second sentence of the agent's start comment. */
-	followUp?: string;
 };
 export const PROJECT_BUTTER_SESSION_EPOCH = Date.UTC(2026, 10, 1, 15, 45);
 
@@ -71,7 +69,6 @@ export const PROJECT_BUTTER_SESSIONS: readonly ProjectButterSessionItem[] = [
 		host: "cloud",
 		state: "complete",
 		timeLabel: "18m ago",
-		followUp: "I'll compare the two revenue lines and report back here as I pin down which one to keep.",
 		message: "Which revenue line should we keep?",
 		activityReplies: [
 			{ id: "butter-cursor-annie-toolbar", author: "Annie Cook", minutesAfter: 5, body: "Did the indent and outdent controls make it onto the whiteboard toolbar?" },
@@ -90,7 +87,6 @@ export const PROJECT_BUTTER_SESSIONS: readonly ProjectButterSessionItem[] = [
 		host: "cloud",
 		state: "complete",
 		timeLabel: "2h ago",
-		followUp: "I'll rewrite the postmortem from the incident notes and report back here as the draft takes shape.",
 		message: "I rewrote the postmortem from the incident notes. The timeline, impact, and follow-up actions are ready for review.",
 		activityReplies: [
 			["Sarah Lim", "The onboarding guide still sends people to the old identity page."],

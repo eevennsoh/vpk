@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useInView } from "motion/react";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import BranchIcon from "@atlaskit/icon/core/branch";
+import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 
 import {
@@ -15,6 +16,7 @@ import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +35,20 @@ function MetadataDot() {
 		<span aria-hidden="true" className="shrink-0 text-text-subtlest">
 			·
 		</span>
+	);
+}
+
+function SessionPrivacy({ person }: Readonly<{ person: string }>) {
+	const label = `Private to ${person}`;
+	const [open, setOpen] = useState(false);
+	const tooltipId = useId();
+	return (
+		<Tooltip onOpenChange={setOpen} open={open}>
+			<TooltipTrigger render={<button aria-describedby={open ? tooltipId : undefined} aria-label={label} className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-icon-subtlest outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3!" type="button" />}>
+				<LockLockedIcon color="currentColor" label="" size="small" />
+			</TooltipTrigger>
+			<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="top">{label}</TooltipContent>
+		</Tooltip>
 	);
 }
 
@@ -254,6 +270,7 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 				</span>
 			))}
+			{item.privateTo ? <><MetadataDot /><SessionPrivacy person={item.privateTo} /></> : null}
 		</span>
 	);
 }

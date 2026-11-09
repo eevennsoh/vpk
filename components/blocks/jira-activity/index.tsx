@@ -409,9 +409,7 @@ export function JiraActivity({
 								key={entry.id}
 							>
 								{/*
-								 * Spine gaps come from JiraActivityNode's icon track (h-10 / h-6):
-								 * the connector only starts below that track, so each node gets a
-								 * clean 4px break without opaque color-matching covers.
+								 * The node gives its connector a 4px break below each icon.
 								 */}
 								{isNestedComment ? (
 									<div
@@ -424,6 +422,7 @@ export function JiraActivity({
 								) : (
 									<JiraActivityNode
 										actor={entry.actor}
+										attributedBy={entry.kind === "comment" ? entry.attributedBy : undefined}
 										icon={
 											entry.kind === "event"
 												? (entry.pullRequest ? "pull-request" : entry.icon)
