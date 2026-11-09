@@ -114,6 +114,42 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 			assert.deepEqual(result.lifted, [[], []], 'no card keeps a column clip once lifted out of its column');
 		});
 
+		await t.test('the gripped card paints over every card it leads, and the cursor over all of them, through the group drag', () => {
+			const drag = data.boardDrags.find(action => action.card === 0);
+			const samples = [];
+			for (let step = 0, time = drag.grab; time <= drag.land + 1e-9; step++, time = drag.grab + step * .025) {
+				const state = model({ time, variant: 'paper' }, data);
+				const target = state.cursors[0].heldTarget, attached = ['grab', 'carry', 'release'].includes(state.cursors[0].phase);
+				const followers = state.cards.flatMap((pose, index) => pose.stack && pose.alpha > .002 && index !== drag.card ? [index] : []);
+				samples.push({ time: Number(time.toFixed(4)), held: drag.card, gripped: attached && (time >= drag.land || (target?.kind === 'story' && target.index === drag.card)), followers });
+			}
+			assert.ok(samples.length >= (drag.land - drag.grab) / .05, 'samples the drag at least every 0.05 s');
+			assert.ok(samples.every(sample => sample.gripped), 'the cursor holds its card from grab to landing');
+			assert.ok(samples.filter(sample => sample.followers.length).length > samples.length * .8, 'the selection follows as a stack for most of the drag');
+			const result = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				const after = (a, b) => Boolean(b.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING);
+				const cursor = hero.querySelector('[data-eu26-cursor="main"]');
+				const failures = [];
+				for (const sample of ${JSON.stringify(samples)}) {
+					draw(sample.time);
+					const held = piece('story.' + sample.held);
+					if (!visible(held)) failures.push(sample.time + ': gripped card hidden');
+					if (getComputedStyle(cursor).display === 'none') failures.push(sample.time + ': cursor hidden');
+					for (const index of sample.followers) {
+						const follower = piece('story.' + index);
+						if (getComputedStyle(follower).display === 'none') continue;
+						if (!after(held, follower)) failures.push(sample.time + ': story.' + index + ' paints over the gripped card');
+						if (!after(cursor, follower)) failures.push(sample.time + ': story.' + index + ' paints over the cursor');
+					}
+					if (!after(cursor, held)) failures.push(sample.time + ': gripped card paints over the cursor');
+				}
+				return failures;
+			`);
+			assert.deepEqual(result, []);
+		});
+
 		await t.test('camera angle changes repaint board geometry and leave the bento front-facing', () => {
 			const result = scenario(`
 				const placement = [3, 4.3, 5.8, 7].map(time => {

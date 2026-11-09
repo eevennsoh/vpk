@@ -4606,6 +4606,7 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 	const stackSlot = data.doneList.cards.find(row => row.rank === visibleRows - 1);
 	// The cursor's card in the group drag (card 0): the rest of the selection gathers under it as a deck.
 	const leaderRow = data.doneList.cards.find(row => row.card === 0), leaderCard = data.cards[0];
+	const groupDrag = data.boardDrags.find(action => action.card === 0);
 	const leaderAt = atTime => {
 		const s = ease((atTime - 4.3) / 1.2);
 		const from = [leaderCard.home[0] + leaderCard.w / 2, leaderCard.home[1] + leaderCard.d / 2, leaderCard.home[2]];
@@ -4682,7 +4683,11 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 		const inDone = time <= 13 && ((inWindow && ((i === 15 && time >= 2) || (i !== 15 && time >= 5.5))) || (moved && groupU > 0.6));
 		const atHome = i !== 15 && time <= 4.3 + (moved ? groupDelay : 0);
 		const clip = inDone ? "done" : atHome && card.row >= 3 ? `column${column}` : false;
-		return { ...pose(at, rot, 1, alpha, highlight), clip, listAt: done, rank: row.rank, listVisible: inWindow };
+		// The cursor's card leads the deck from grab to release: it paints over every card it leads (stack rank 0), and the
+		// followers keep their Done order beneath it, however their arcs and offsets cross in depth on the way.
+		const leads = i === 0 || (i !== 15 && (inWindow ? row.rank >= 2 : moved));
+		const deckOrder = leads && time >= groupDrag.grab && time <= groupDrag.land ? { id: "group-drag", rank: row.rank - leaderRow.rank } : null;
+		return { ...pose(at, rot, 1, alpha, highlight), clip, stack: deckOrder, listAt: done, rank: row.rank, listVisible: inWindow };
 	});
 	const field = data.wallField, periodX = field?.periodX ?? 3800, periodY = field?.periodY ?? 3800;
 	const lastShot = data.cameraKeys[data.cameraKeys.length - 1], lastCamera = { ...lastShot, height: lastShot.width * 760 / 1200 };
@@ -5434,7 +5439,16 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 		};
 		drawShadows(visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path") && !restsOnBoard(item)).map(item => surfaceOf.get(item.el).shadow || "").filter(Boolean));
 		const edges = visible.map(() => new Set()), incoming = visible.map(() => 0);
+		// A held card and the cards it leads share a stack: higher ranks paint first, the held card (rank 0) last.
+		const stacks = visible.map(item => poses.get(item.el)?.stack ?? null);
+		const stacked = (a, b) => stacks[a] && stacks[b] && stacks[a].id === stacks[b].id;
 		for (let a = 0; a < visible.length; a += 1) for (let b = a + 1; b < visible.length; b += 1) {
+			if (stacked(a, b)) {
+				const back = stacks[a].rank > stacks[b].rank ? a : b, front = back === a ? b : a;
+				edges[back].add(front);
+				incoming[front] += 1;
+				continue;
+			}
 			if (visible[a].el.dataset.eu26Kind === "confetti" || visible[b].el.dataset.eu26Kind === "confetti") continue;
 			const ab = visible[a].box, bb = visible[b].box;
 			if (ab[2] <= bb[0] || bb[2] <= ab[0] || ab[3] <= bb[1] || bb[3] <= ab[1]) continue;
@@ -5484,6 +5498,13 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 			remaining.delete(chosen);
 			order.push(visible[chosen]);
 			for (const next of edges[chosen]) if (--incoming[next] === 0 && remaining.has(next)) push(next);
+		}
+		// A depth cycle broken through a stack could still reorder it, so each stack's members are dealt back into the slots
+		// they took, in rank order.
+		for (const id of new Set(stacks.filter(Boolean).map(stack => stack.id))) {
+			const slots = order.flatMap((item, slot) => poses.get(item.el)?.stack?.id === id ? [slot] : []);
+			const members = slots.map(slot => order[slot]).sort((a, b) => poses.get(b.el).stack.rank - poses.get(a.el).stack.rank);
+			slots.forEach((slot, n) => { order[slot] = members[n]; });
 		}
 		const signature = order.map(item => item.el.dataset.eu26Piece).join("|");
 		if (signature !== lastOrder) {

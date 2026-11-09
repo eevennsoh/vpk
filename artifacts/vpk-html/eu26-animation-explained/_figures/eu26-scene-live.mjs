@@ -393,7 +393,16 @@ export function live(ctx) {
 		};
 		drawShadows(visible.filter(item => item.el.dataset.eu26Kind !== "confetti" && !item.el.getAttribute("clip-path") && !restsOnBoard(item)).map(item => surfaceOf.get(item.el).shadow || "").filter(Boolean));
 		const edges = visible.map(() => new Set()), incoming = visible.map(() => 0);
+		// A held card and the cards it leads share a stack: higher ranks paint first, the held card (rank 0) last.
+		const stacks = visible.map(item => poses.get(item.el)?.stack ?? null);
+		const stacked = (a, b) => stacks[a] && stacks[b] && stacks[a].id === stacks[b].id;
 		for (let a = 0; a < visible.length; a += 1) for (let b = a + 1; b < visible.length; b += 1) {
+			if (stacked(a, b)) {
+				const back = stacks[a].rank > stacks[b].rank ? a : b, front = back === a ? b : a;
+				edges[back].add(front);
+				incoming[front] += 1;
+				continue;
+			}
 			if (visible[a].el.dataset.eu26Kind === "confetti" || visible[b].el.dataset.eu26Kind === "confetti") continue;
 			const ab = visible[a].box, bb = visible[b].box;
 			if (ab[2] <= bb[0] || bb[2] <= ab[0] || ab[3] <= bb[1] || bb[3] <= ab[1]) continue;
@@ -443,6 +452,13 @@ export function live(ctx) {
 			remaining.delete(chosen);
 			order.push(visible[chosen]);
 			for (const next of edges[chosen]) if (--incoming[next] === 0 && remaining.has(next)) push(next);
+		}
+		// A depth cycle broken through a stack could still reorder it, so each stack's members are dealt back into the slots
+		// they took, in rank order.
+		for (const id of new Set(stacks.filter(Boolean).map(stack => stack.id))) {
+			const slots = order.flatMap((item, slot) => poses.get(item.el)?.stack?.id === id ? [slot] : []);
+			const members = slots.map(slot => order[slot]).sort((a, b) => poses.get(b.el).stack.rank - poses.get(a.el).stack.rank);
+			slots.forEach((slot, n) => { order[slot] = members[n]; });
 		}
 		const signature = order.map(item => item.el.dataset.eu26Piece).join("|");
 		if (signature !== lastOrder) {

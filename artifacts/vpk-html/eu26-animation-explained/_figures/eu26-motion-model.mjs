@@ -125,6 +125,7 @@ export function model(input, data) {
 	const stackSlot = data.doneList.cards.find(row => row.rank === visibleRows - 1);
 	// The cursor's card in the group drag (card 0): the rest of the selection gathers under it as a deck.
 	const leaderRow = data.doneList.cards.find(row => row.card === 0), leaderCard = data.cards[0];
+	const groupDrag = data.boardDrags.find(action => action.card === 0);
 	const leaderAt = atTime => {
 		const s = ease((atTime - 4.3) / 1.2);
 		const from = [leaderCard.home[0] + leaderCard.w / 2, leaderCard.home[1] + leaderCard.d / 2, leaderCard.home[2]];
@@ -201,7 +202,11 @@ export function model(input, data) {
 		const inDone = time <= 13 && ((inWindow && ((i === 15 && time >= 2) || (i !== 15 && time >= 5.5))) || (moved && groupU > 0.6));
 		const atHome = i !== 15 && time <= 4.3 + (moved ? groupDelay : 0);
 		const clip = inDone ? "done" : atHome && card.row >= 3 ? `column${column}` : false;
-		return { ...pose(at, rot, 1, alpha, highlight), clip, listAt: done, rank: row.rank, listVisible: inWindow };
+		// The cursor's card leads the deck from grab to release: it paints over every card it leads (stack rank 0), and the
+		// followers keep their Done order beneath it, however their arcs and offsets cross in depth on the way.
+		const leads = i === 0 || (i !== 15 && (inWindow ? row.rank >= 2 : moved));
+		const deckOrder = leads && time >= groupDrag.grab && time <= groupDrag.land ? { id: "group-drag", rank: row.rank - leaderRow.rank } : null;
+		return { ...pose(at, rot, 1, alpha, highlight), clip, stack: deckOrder, listAt: done, rank: row.rank, listVisible: inWindow };
 	});
 	const field = data.wallField, periodX = field?.periodX ?? 3800, periodY = field?.periodY ?? 3800;
 	const lastShot = data.cameraKeys[data.cameraKeys.length - 1], lastCamera = { ...lastShot, height: lastShot.width * 760 / 1200 };
