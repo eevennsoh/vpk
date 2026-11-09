@@ -22,7 +22,7 @@ export function JiraLocalAgent({ presentation = "submenu", trigger, workItem }: 
 				{trigger ? <PopoverTrigger render={trigger} /> : <PopoverTrigger render={<Button aria-label="Open local agent" size="icon" variant="ghost" />}>
 					<CodeIcon aria-hidden size="small" />
 				</PopoverTrigger>}
-				<PopoverContent aria-label="Local software agents" align="start" sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] gap-0 overflow-hidden p-0 [&_[cmdk-group]:last-child]:!pb-0">
+				<PopoverContent aria-label="Local software agents" align="start" sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] gap-0 overflow-hidden p-0 [&_[cmdk-group]:last-child]:!pb-0" onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }}>
 					{presentation === "inline" ? <InlineLocalAgentPicker onLocalUse={setLastUsedAgentId} recentAgentId={lastUsedAgentId} /> : <ProjectButterAgentPickerContent localOnly onLocalUse={setLastUsedAgentId} recentAgentId={lastUsedAgentId} />}
 					<div className="px-1 pb-1">
 						<hr className={cn(dropdownStyles.separator, "mt-0 border-0")} />

@@ -351,3 +351,23 @@ test("configure repository opens the development dropdown in a work item", async
 	await page.keyboard.press("Escape");
 	await expect(item.getByRole("button", { name: "Configure repository" })).toBeFocused();
 });
+
+
+test("Escape closes the local-agent picker without closing the work item", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	await expect(item).toBeVisible();
+	const trigger = item.getByRole("button", { name: "Open in", exact: true });
+	await trigger.click();
+	const picker = page.getByRole("dialog", { name: "Local software agents" });
+	await expect(picker).toBeVisible();
+	await picker.getByRole("button", { name: "Copy prompt" }).focus();
+	await page.keyboard.press("Escape");
+	await expect(picker).toBeHidden();
+	await expect(item).toBeVisible();
+	await expect(trigger).toBeFocused();
+});
