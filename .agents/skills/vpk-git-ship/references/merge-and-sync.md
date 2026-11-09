@@ -93,10 +93,10 @@ Prefer merge commits unless the user explicitly asks for squash or rebase.
 
 - Resolve conflicts only in the PR branch or its owning worktree, never by
   overwriting persistent-main edits.
-- Inspect both sides and preserve unrelated changes. Push the conflict fix, then
-  validate the final reconciled candidate before pushing: focused checks, ALL
-  colocated contracts and affected browser checks. Then require hosted CI and a
-  fresh current-head review gate.
+- Inspect both sides and preserve unrelated changes. Validate the final reconciled
+  candidate before pushing: focused checks, ALL colocated contracts and affected
+  browser checks. Then push the conflict fix and require hosted CI and a fresh
+  current-head review gate.
 - If a required check fails, report its name and URL. Fix it only when the user
   asked to finish the PR; otherwise leave the branch and PR intact.
 - If review is re-requested or approval is dismissed after a push, wait for the
