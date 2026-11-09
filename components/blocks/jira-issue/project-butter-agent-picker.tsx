@@ -54,8 +54,10 @@ export function ProjectButterAgentPicker({
 	);
 }
 
-export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onLocalUse, onPreviewSession, recentAgentId, sessions = [], selectedAgentIds, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
+export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAgentIds, onFavoriteAgentIdsChange, onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onLocalUse, onPreviewSession, recentAgentId, sessions = [], sessionChoicesOnly = false, selectedAgentIds, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
 	localOnly?: boolean;
+	favoriteAgentIds?: readonly string[];
+	onFavoriteAgentIdsChange?: (ids: readonly string[]) => void;
 	recentAgentId?: string | null;
 	onLocalUse?: (agentId: string) => void;
 	onAssign?: (agent: AgentSelectorAgent) => void;
@@ -64,6 +66,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, o
 	onCreateAgent?: () => void;
 	onPreviewSession?: (sessionId: string | null) => void;
 	sessions?: readonly AgentSessionItem[];
+	sessionChoicesOnly?: boolean;
 	selectedAgentIds?: readonly string[];
 	submenuPositionerClassName?: string;
 	workspacePositionerClassName?: string;
@@ -85,7 +88,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, o
 	const [query, setQuery] = useState("");
 	const [selectedSessionIndex, setSelectedSessionIndex] = useState(0);
 	const sessionsFor = (agent: AgentSelectorAgent) => onContinueSession ? matchingAgentSessions(agent, sessions) : [];
-	const hasSubmenu = (agent: AgentSelectorAgent) => localOnly ? hasWorkspaceOptions(agent.id) : RUN_ON_AGENT_IDS.includes(agent.id) || sessionsFor(agent).length > 0;
+	const hasSubmenu = (agent: AgentSelectorAgent) => sessionChoicesOnly ? sessionsFor(agent).length > 0 : localOnly ? hasWorkspaceOptions(agent.id) : RUN_ON_AGENT_IDS.includes(agent.id) || sessionsFor(agent).length > 0;
 	const matchingSessions = submenu ? sessionsFor(submenu.agent) : [];
 	const sessionItems = sessionChoiceItems(matchingSessions).map(({ id, label, icon }) => ({ id, label, icon, leadingVisual: icon }));
 	const selectedIndex = Math.min(selectedSessionIndex, Math.max(0, sessionItems.length - 1));
@@ -102,7 +105,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, o
 		cancelClose();
 		closeTimer.current = setTimeout(() => {
 			if (selectingFolder.current) return;
-			if (choosingSession && submenuContent.current?.contains(document.activeElement)) return;
+			if ((choosingSession || sessionChoicesOnly) && submenuContent.current?.contains(document.activeElement)) return;
 			if (document.activeElement?.closest("[data-butter-local-menu], [aria-label='Codebase workspaces']")) return;
 			setSubmenu(null);
 			setChoosingSession(false);
@@ -114,7 +117,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, o
 		cancelClose();
 		if (submenu?.agent.id !== agent.id || submenu.anchor !== anchor) { setChoosingSession(false); onPreviewSession?.(null); }
 		setSubmenu((current) => current?.agent.id === agent.id && current.anchor === anchor ? current : { agent, anchor });
-		if (focus) requestAnimationFrame(() => (localOnly || agent.id === "rovo-cli" ? submenuContent.current?.querySelector<HTMLButtonElement>("button") : cloudButton.current)?.focus());
+		if (focus) requestAnimationFrame(() => (localOnly || (!sessionChoicesOnly && agent.id === "rovo-cli") ? submenuContent.current?.querySelector<HTMLButtonElement>("button") : cloudButton.current)?.focus());
 	};
 	useEffect(
 		() => () => {
@@ -154,7 +157,16 @@ export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, o
 		});
 	};
 
-	const submenuActions = submenu ? (
+	const submenuActions = submenu && sessionChoicesOnly ? (
+		<>
+			<Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" />} />Start a new session</Button>
+			<hr className="my-1 border-0 border-t border-border" />
+			<div role="group" aria-labelledby={`${submenuId}-existing`}>
+				<div id={`${submenuId}-existing`} className="rich-text-command-menu-heading">Continue with existing sessions</div>
+				{matchingSessions.map((session) => <Button key={session.id} role="menuitem" className="h-8 w-full min-w-0 justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onContinueSession?.(session)}><Icon aria-hidden className="size-4 shrink-0" render={<AiChatIcon label="" />} /><span className="min-w-0 truncate">{session.title}</span></Button>)}
+			</div>
+		</>
+	) : submenu ? (
 		<>
 					{choosingSession ? <RichTextSuggestionMenu className="rich-text-command-menu-embedded [&_.rich-text-command-menu-list]:p-0! [&_.rich-text-command-menu-item]:h-8!" emptyLabel="No active sessions" items={sessionItems} onHover={(index) => { setSelectedSessionIndex(index); if (sessionItems[index]) onPreviewSession?.(sessionItems[index].id); }} onHoverEnd={() => onPreviewSession?.(null)} onSelect={(item) => { const session = matchingSessions.find((candidate) => candidate.id === item.id); if (session) { onPreviewSession?.(null); onContinueSession?.(session); } }} selectedIndex={selectedIndex} showReturnShortcut={false} title={`Choose a ${submenu.agent.name} session`} /> : <>
 					{!localOnly && matchingSessions.length > 0 ? <div role="group" aria-label="Run on cloud">
@@ -254,11 +266,13 @@ export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, o
 					pointer.current = null;
 					if (popup.current) schedulePreview(popup.current);
 				}}
-				pinningEnabled={false}
+				pinningEnabled={!localOnly && Boolean(onFavoriteAgentIdsChange)}
+				pinningAppearance="favorite"
+				onPinnedAgentIdsChange={onFavoriteAgentIdsChange ? (ids) => { cancelClose(); setSubmenu(null); onFavoriteAgentIdsChange(ids); } : undefined}
 				disabledAgentIds={localOnly ? [...VS_CODE_AGENT_IDS] : undefined}
 				disabledAgentLabel={localOnly ? "Not installed" : undefined}
-				pinnedAgentIds={localOnly && recentAgentId ? [recentAgentId] : undefined}
-				pinnedItemsLabel={localOnly ? "Open in" : undefined}
+				pinnedAgentIds={localOnly && recentAgentId ? [recentAgentId] : favoriteAgentIds}
+				pinnedItemsLabel={localOnly ? "Open in" : "Favorites"}
 				moreItemsLabel={localOnly ? "" : undefined}
 				query={query}
 				searchVariant="palette"
@@ -277,8 +291,8 @@ export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, o
 					id={submenuId}
 					ref={submenuContent}
 					anchor={submenu.anchor}
-					aria-label={choosingSession ? `Choose a ${submenu.agent.name} session` : submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
-					role={choosingSession || hasWorkspaceOptions(submenu.agent.id) ? "dialog" : "menu"}
+					aria-label={sessionChoicesOnly ? `${submenu.agent.name} sessions` : choosingSession ? `Choose a ${submenu.agent.name} session` : submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
+					role={!sessionChoicesOnly && (choosingSession || hasWorkspaceOptions(submenu.agent.id)) ? "dialog" : "menu"}
 					initialFocus={false}
 					finalFocus={false}
 					side="right"
@@ -297,7 +311,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, o
 						if (index >= 0 && sessionItems[index]) { setSelectedSessionIndex(index); onPreviewSession?.(sessionItems[index].id); }
 					}}
 					onKeyDown={(event) => {
-						if (submenu.agent.id === "rovo-cli" && !choosingSession) return;
+						if (!sessionChoicesOnly && submenu.agent.id === "rovo-cli" && !choosingSession) return;
 						if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target) || event.target instanceof HTMLInputElement) return;
 						if (choosingSession && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
 							event.preventDefault();
@@ -306,11 +320,12 @@ export function ProjectButterAgentPickerContent({ localOnly = false, onAssign, o
 							options[(current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length]?.focus();
 							return;
 						}
-						if (!hasWorkspaceOptions(submenu.agent.id) && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+						if ((sessionChoicesOnly || !hasWorkspaceOptions(submenu.agent.id)) && (event.key === "ArrowDown" || event.key === "ArrowUp" || (sessionChoicesOnly && (event.key === "Home" || event.key === "End")))) {
 							event.preventDefault();
 							const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
 							const current = items.indexOf(document.activeElement instanceof HTMLButtonElement ? document.activeElement : items[0]);
-							items[(current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
+							const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+							items[next]?.focus();
 						}
 						if (event.key === "ArrowLeft" || event.key === "Escape") {
 							event.preventDefault();
