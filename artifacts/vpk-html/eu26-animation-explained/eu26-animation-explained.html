@@ -4729,9 +4729,10 @@ body[data-vpk-layout="story"] #eu26-explorer-controls[data-expanded="true"] [dat
 		return [-20 * initial + wallVelocity[0] * tail + (-20 - wallVelocity[0]) * integral, wallVelocity[1] * tail, 0];
 	};
 	const shift = wallShift(time);
+	// Each tile leaves from its card's actual pose this frame (orbit plus hero clearance), so it grows out of the card.
 	const tiles = data.features.map((feature, i) => {
 		const target = [feature.at[0] + feature.w / 2, feature.at[1] + feature.d / 2, feature.at[2]];
-		const s = ease((time - (i === 0 ? HANDOFF : 19 + i * 0.24)) / 1.55), from = i === 0 ? [-15, -28, 96] : fieldAt(feature.card, time);
+		const s = ease((time - (i === 0 ? HANDOFF : 19 + i * 0.24)) / 1.55), from = i === 0 ? [-15, -28, 96] : cards[feature.card].at;
 		let at = between(from, target, s);
 		at[2] += Math.sin(s * Math.PI) * 150;
 		let rot = [(1 - s) * (i % 2 ? -0.5 : 0.5), (1 - s) * -0.45, (1 - s) * (i % 2 ? -0.5 : 0.5)];

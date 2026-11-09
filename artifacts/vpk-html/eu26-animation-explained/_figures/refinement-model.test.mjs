@@ -305,3 +305,14 @@ test('a stack carried in deals its own cards top first, a beat apart; a stack no
 	}
 	assert.ok(dealt >= 1, 'at least one stack is carried in and dealt');
 });
+
+test("each bento tile starts from its story card's actual field pose", () => {
+	data.features.forEach((feature, i) => {
+		if (i === 0) return;
+		const start = 19 + i * 0.24 + 0.001;
+		const state = model({ time: start, variant: "paper" }, data);
+		const tile = state.tiles[i].at, card = state.cards[feature.card].at;
+		const gap = Math.hypot(tile[0] - card[0], tile[1] - card[1], tile[2] - card[2]);
+		assert.ok(gap < 12, `tile ${i} starts ${gap.toFixed(1)} units from card ${feature.card}`);
+	});
+});
