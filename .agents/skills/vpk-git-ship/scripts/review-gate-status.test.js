@@ -43,10 +43,12 @@ function fixtureRunner({
 		if (args[0] === "pr") {
 			return {
 				headRefOid: "abc123",
+				isDraft: false,
+				state: "OPEN",
 				mergeStateStatus,
 				number: 42,
 				reviewDecision,
-				statusCheckRollup: typeof checks === "function" ? checks(calls.filter((call) => call[0] === "pr").length) : checks,
+				statusCheckRollup: typeof checks === "function" ? checks(calls.filter((call) => call[0] === "pr" && call.at(-1) !== "headRefOid,updatedAt").length) : checks,
 				updatedAt: "2026-09-05T00:00:00Z",
 				url: "https://github.com/owner/repo/pull/42",
 			};
@@ -57,6 +59,7 @@ function fixtureRunner({
 				data: {
 					repository: {
 						pullRequest: {
+							headRefOid: "abc123",
 							mergeStateStatus,
 							reviewDecision,
 							reviewThreads: {
@@ -168,6 +171,7 @@ test("retries a temporarily incomplete GraphQL-to-REST reconciliation", async ()
 			if (attempt === 1) {
 				return {
 					data: { repository: { pullRequest: {
+						headRefOid: "abc123",
 						mergeStateStatus: "CLEAN",
 						reviewDecision: "APPROVED",
 						reviewThreads: {
@@ -193,9 +197,9 @@ test("retries a temporarily incomplete GraphQL-to-REST reconciliation", async ()
 	assert.deepEqual(delays, [5000]);
 });
 
-test("retries read-only gh calls without an invalid injected GITHUB_TOKEN", () => {
+test("retries read-only gh calls without an invalid injected GITHUB_TOKEN", async () => {
 	const calls = [];
-	const result = runGhJson(["repo", "view", "--json", "nameWithOwner"], {
+	const result = await runGhJson(["repo", "view", "--json", "nameWithOwner"], {
 		env: {
 			GITHUB_TOKEN: "invalid-test-token",
 			PATH: "/usr/bin",
@@ -530,4 +534,460 @@ test("never reruns or waits on a billing-blocked run", async () => {
 	assert.equal(settled.checks.state, "billing-blocked");
 	assert.equal(settled.checkPolls, 1);
 	assert.deepEqual(rerunCalls, []);
+});
+
+test("default gh adapter starts concurrent child processes rather than blocking Promise.all", async () => {
+	const { mkdtempSync, writeFileSync, rmSync } = require("node:fs");
+	const { tmpdir } = require("node:os");
+	const path = require("node:path");
+	const root = mkdtempSync(path.join(tmpdir(), "vpk-fake-gh-"));
+	try {
+		writeFileSync(path.join(root, "gh"), `#!${process.execPath}\nconst fs = require('node:fs'); const path = require('node:path');
+const root = process.env.FAKE_GH_ROOT; const name = process.argv[2];
+fs.writeFileSync(path.join(root, name), 'started');
+const deadline = Date.now() + 2000;
+const timer = setInterval(() => {
+ if (fs.existsSync(path.join(root, name === 'one' ? 'two' : 'one'))) { clearInterval(timer); process.stdout.write(JSON.stringify({ concurrent: true })); }
+ else if (Date.now() >= deadline) { clearInterval(timer); process.exit(1); }
+}, 10);\n`, { mode: 0o755 });
+		const env = { PATH: root, FAKE_GH_ROOT: root };
+		const result = await Promise.all([runGhJson(["one"], { env }), runGhJson(["two"], { env })]);
+		assert.deepEqual(result, [{ concurrent: true }, { concurrent: true }]);
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("snapshot starts all four independent review reads before awaiting any", async () => {
+	const runner = fixtureRunner();
+	let active = 0;
+	let maximum = 0;
+	const status = await collectReviewGateStatus({ prNumber: 42, repository: "owner/repo", runGh: async (args) => {
+		maximum = Math.max(maximum, ++active);
+		await new Promise((resolve) => setImmediate(resolve));
+		active -= 1;
+		return runner.runGh(args);
+	} });
+	assert.equal(maximum, 4);
+	assert.equal(status.readyToMerge, true);
+});
+
+test("transient read retries are bounded, back off, and preserve authentication/schema failures", async () => {
+	let attempts = 0;
+	const delays = [];
+	const spawn = async () => (++attempts < 3 ? { status: 1, stderr: "HTTP 502: Bad Gateway" } : { status: 0, stdout: '{}' });
+	assert.deepEqual(await runGhJson(["api", "test"], { spawn, sleep: async (ms) => delays.push(ms) }), {});
+	assert.equal(attempts, 3);
+	assert.deepEqual(delays, [250, 500]);
+	for (const stderr of ['Post "https://api.github.com/graphql": EOF', "unexpected EOF"]) {
+		attempts = 0;
+		assert.deepEqual(await runGhJson(["api", "test"], { spawn: async () => (++attempts === 1 ? { status: 1, stderr } : { status: 0, stdout: '{}' }), sleep: async () => {} }), {});
+		assert.equal(attempts, 2);
+	}
+	for (const failure of [{ status: 1, stderr: "HTTP 503" }, { status: 1, stderr: "HTTP 401: Bad credentials" }, { status: 1, stderr: "HTTP 403: Resource not accessible" }, { status: 0, stdout: 'invalid JSON' }, { status: 0, stdout: '{"errors":[{"message":"schema mismatch"}]}' }]) {
+		attempts = 0;
+		await assert.rejects(runGhJson(["api", "test"], { env: {}, spawn: async () => { attempts += 1; return failure; }, sleep: async () => {} }));
+		assert.equal(attempts, failure.stderr === "HTTP 503" ? 3 : 1);
+	}
+	attempts = 0;
+	await assert.rejects(runGhJson(["api", "mutation"], { readOnly: false, spawn: async () => { attempts += 1; return { status: 1, stderr: "HTTP 502" }; } }));
+	assert.equal(attempts, 1);
+});
+
+test("unchanged pending checks use light polling, then fully reconcile new review blockers", async () => {
+	const runner = fixtureRunner({ checks: (calls) => [{ name: "PR checks", status: calls >= 5 ? "COMPLETED" : "IN_PROGRESS", conclusion: calls >= 5 ? "SUCCESS" : null }] });
+	let clock = 0;
+	let graphCalls = 0;
+	const status = await collectReviewGateStatus({ prNumber: 42, waitSeconds: 600, now: () => clock,
+		delay: async (ms) => { clock += ms; }, runGh: async (args) => {
+			const result = await runner.runGh(args);
+			if (args[1] === "graphql" && ++graphCalls === 2) result.data.repository.pullRequest.reviewThreads.nodes[0].isResolved = false;
+			return result;
+		} });
+	assert.equal(status.fullReconciliations, 2);
+	assert.equal(status.lightweightPolls, 4);
+	assert.equal(status.reviewGateClear, false);
+	assert.equal(status.readyToMerge, false);
+});
+
+test("head changes during snapshots, pagination and light waits fail closed", async () => {
+	for (const change of ["confirmation", "graphql", "poll"]) {
+		const runner = fixtureRunner({ checks: [{ name: "PR checks", status: "IN_PROGRESS", conclusion: null }] });
+		let prCalls = 0;
+		let clock = 0;
+		await assert.rejects(collectReviewGateStatus({ prNumber: 42, waitSeconds: 100, now: () => clock, delay: async (ms) => { clock += ms; }, runGh: async (args) => {
+			const result = await runner.runGh(args);
+			if (args[0] === "pr") prCalls += 1;
+			if ((change === "confirmation" && args.at(-1) === "headRefOid,updatedAt") || (change === "poll" && prCalls >= 3 && args[0] === "pr")) result.headRefOid = "changed";
+			if (change === "graphql" && args[1] === "graphql") result.data.repository.pullRequest.headRefOid = "changed";
+			return result;
+		} }), /head changed/u);
+	}
+});
+
+test("malformed review surfaces and pagination cannot produce a clear gate", async () => {
+	for (const surface of ["pr", "graphql", "comments", "reviews", "cursor"]) {
+		const runner = fixtureRunner();
+		await assert.rejects(collectReviewGateStatus({ prNumber: 42, runGh: async (args) => {
+			const result = await runner.runGh(args);
+			if (surface === "pr" && args[0] === "pr") delete result.statusCheckRollup;
+			if (surface === "graphql" && args[1] === "graphql") delete result.data.repository.pullRequest.reviewThreads;
+			if (surface === "cursor" && args[1] === "graphql") result.data.repository.pullRequest.reviewThreads.pageInfo = { hasNextPage: true, endCursor: null };
+			if (["comments", "reviews"].includes(surface) && args[1]?.endsWith(`/${surface}`)) return {};
+			return result;
+		} }), /Invalid|paginated|endCursor/u);
+	}
+});
+
+test("required skipped checks, drafts and closed PRs never pass", async () => {
+	for (const changes of [{ state: "MERGED" }, { isDraft: true }, { statusCheckRollup: [{ name: "PR checks", conclusion: "SKIPPED", status: "COMPLETED" }] }]) {
+		const runner = fixtureRunner();
+		const status = await collectReviewGateStatus({ prNumber: 42, runGh: async (args) => {
+			const result = await runner.runGh(args);
+			return args[0] === "pr" ? { ...result, ...changes } : result;
+		} });
+		assert.equal(status.readyToMerge, false);
+		assert.equal(gateExitCode(status, { requireClear: true }), 2);
+	}
+});
+
+test("multiple interrupted runs respect the total budget and unknown reruns are never retried", async () => {
+	const runner = fixtureRunner({ checks: [1, 2, 3].map((id) => ({ name: id === 1 ? "PR checks" : `shard ${id}`, conclusion: "CANCELLED", status: "COMPLETED", detailsUrl: `https://github.com/owner/repo/actions/runs/${id}/job/${id}` })) });
+	const reruns = [];
+	const status = await collectReviewGateStatus({ prNumber: 42, runGh: runner.runGh, rerunInterrupted: 2, rerunRun: async (id) => reruns.push(id), delay: async () => {} });
+	assert.deepEqual(reruns, ["1", "2"]);
+	assert.deepEqual(status.reruns, reruns);
+	let mutations = 0;
+	await assert.rejects(collectReviewGateStatus({ prNumber: 42, runGh: runner.runGh, rerunInterrupted: 3, rerunRun: async () => { mutations += 1; throw new Error("HTTP 502"); } }), /outcome unknown.*Attempted runs: 1/u);
+	assert.equal(mutations, 1);
+});
+
+function actionCheck(name, conclusion, run = "777", job = "1") {
+	return { name, conclusion, status: conclusion ? "COMPLETED" : "IN_PROGRESS",
+		detailsUrl: `https://github.com/owner/repo/actions/runs/${run}/job/${job}` };
+}
+
+function interruptedAggregate(run = "777", job = "1") {
+	return [actionCheck("PR checks", "FAILURE", run, `${job}0`),
+		actionCheck("Unit shard 1/4", "CANCELLED", run, `${job}1`),
+		actionCheck("Unit shard 2/4", "TIMED_OUT", run, `${job}2`),
+		actionCheck("Static validation", "SUCCESS", run, `${job}3`)];
+}
+
+function billingAggregate(conclusion = "FAILURE") {
+	return [actionCheck("PR checks", conclusion, "777", "10"),
+		actionCheck("Unit shard 1/4", "FAILURE", "777", "11"),
+		actionCheck("Static validation", "SUCCESS", "777", "12")];
+}
+
+async function collectBillingAggregate(fixture = {}, options = {}) {
+	const runner = fixtureRunner({ checks: billingAggregate(), annotations: { 11: BILLING_ANNOTATIONS },
+		mergeStateStatus: "UNSTABLE", ...fixture });
+	const reruns = [];
+	const status = await collectReviewGateStatus({ prNumber: 42, consistencyRetries: 0, runGh: runner.runGh,
+		rerunInterrupted: 3, rerunRun: async (id) => reruns.push(id), delay: async () => {}, ...options });
+	assert.deepEqual(reruns, []);
+	assert.deepEqual(status.reruns, []);
+	assert.ok(runner.calls.every((args) => !args.includes("--method") && !args.includes("-X")));
+	return status;
+}
+
+test("required PR aggregate inherits only positively established same-run billing blockers", async () => {
+	for (const conclusion of ["FAILURE", "SKIPPED", "CANCELLED"]) {
+		for (const mergeStateStatus of ["CLEAN", "UNSTABLE"]) {
+			const checks = [...billingAggregate(conclusion), actionCheck("Unit shard 2/4", "FAILURE", "777", "13")];
+			const status = await collectBillingAggregate({ checks, mergeStateStatus,
+				annotations: { 11: BILLING_ANNOTATIONS, 13: BILLING_ANNOTATIONS } }, { waitSeconds: 600 });
+			assert.equal(status.checks.state, "billing-blocked");
+			assert.deepEqual(status.checks.billingBlocked.map((check) => check.name).sort(), ["PR checks", "Unit shard 1/4", "Unit shard 2/4"]);
+			assert.equal(status.checks.billingBlocked.find((check) => check.name === "PR checks").billingBlocked, true);
+			assert.equal(status.checks.failing.length, 0);
+			assert.equal(status.checks.interrupted.length, 0);
+			assert.equal(status.checkPolls, 1);
+			assert.equal(status.readyToMerge, false);
+			assert.equal(status.clearExceptBillingBlockedChecks, true);
+			assert.equal(gateExitCode(status, { requireClear: true }), 3);
+		}
+	}
+});
+
+test("aggregate billing fallback fails closed for missing evidence, mixed blockers and requirements", async (t) => {
+	const aggregate = actionCheck("PR checks", "FAILURE", "777", "10");
+	const shard = actionCheck("Unit shard 1/4", "FAILURE", "777", "11");
+	const cases = [
+		["no billing annotation", { annotations: {} }],
+		["unrelated annotation", { annotations: { 11: [BILLING_ANNOTATIONS[1]] } }],
+		["real prerequisite failure", { checks: [...billingAggregate(), actionCheck("Unit shard 2/4", "FAILURE", "777", "13")] }],
+		...[null, "SKIPPED", "NEUTRAL", "CANCELLED", "TIMED_OUT"].map((conclusion) =>
+			[`mixed prerequisite ${conclusion}`, { checks: [...billingAggregate(), actionCheck("Unit shard 2/4", conclusion, "777", "13")] }]),
+		["other workflow failure", { checks: [...billingAggregate(), actionCheck("Security", "FAILURE", "778", "13")] }],
+		["other workflow pending", { checks: [...billingAggregate(), actionCheck("Security", null, "778", "13")] }],
+		["unmatched run", { checks: [aggregate, actionCheck("Unit shard 1/4", "FAILURE", "778", "11")] }],
+		...[null, "https://example.test/actions/runs/777/job/11", "https://github.com/owner/repo/actions/runs/777broken/job/11"].flatMap((url) => [
+			[`unknown aggregate URL ${url}`, { checks: [{ ...aggregate, detailsUrl: url?.replace("/job/11", "/job/10") ?? null }, shard] }],
+			[`unknown prerequisite URL ${url}`, { checks: [aggregate, { ...shard, detailsUrl: url }] }],
+		]),
+		["unattributed nonpassing check", { checks: [...billingAggregate(), { name: "Security", conclusion: "SKIPPED", status: "COMPLETED" }] }],
+		["ordinary required skipped", { checks: [actionCheck("PR checks", "SKIPPED")] }],
+		["skipped without positive evidence", { checks: billingAggregate("SKIPPED"), annotations: {} }],
+		["neutral aggregate", { checks: billingAggregate("NEUTRAL") }],
+		["pending aggregate", { checks: billingAggregate(null) }],
+		["timed-out aggregate", { checks: billingAggregate("TIMED_OUT") }],
+		["unknown required aggregate", { checks: [actionCheck("Other checks", "FAILURE", "777", "10"), shard] }, { requiredChecks: ["Other checks"] }],
+		["unknown skipped aggregate", { checks: [actionCheck("Other checks", "SKIPPED", "777", "10"), shard] }, { requiredChecks: ["Other checks"] }],
+		["unknown cancelled aggregate", { checks: [actionCheck("Other checks", "CANCELLED", "777", "10"), shard] }, { requiredChecks: ["Other checks"] }],
+		["aggregate not required", {}, { requiredChecks: [] }],
+		["missing required check", {}, { requiredChecks: ["PR checks", "Security"] }],
+		["missing aggregate", { checks: [shard] }],
+	];
+	for (const [name, fixture, options] of cases) {
+		await t.test(name, async () => {
+			const status = await collectBillingAggregate(fixture, options);
+			assert.equal(status.readyToMerge, false);
+			assert.equal(status.clearExceptBillingBlockedChecks, false);
+			assert.equal(gateExitCode(status, { requireClear: true }), 2);
+		});
+	}
+	await t.test("unavailable billing annotations", async () => {
+		const runner = fixtureRunner({ checks: billingAggregate() });
+		const status = await collectBillingAggregate({}, { runGh: async (args) => {
+			if (args[1]?.includes("/check-runs/11/")) throw new Error("HTTP 503: annotation unavailable");
+			return runner.runGh(args);
+		} });
+		assert.equal(status.checks.state, "failing");
+		assert.equal(gateExitCode(status, { requireClear: true }), 2);
+	});
+});
+
+test("propagated billing never overrides conflicts, reviews, drafts or closed PRs", async () => {
+	for (const blocker of ["DIRTY", "BLOCKED", "CHANGES_REQUESTED", "unresolved", "draft", "closed"]) {
+		const runner = fixtureRunner({ checks: billingAggregate("CANCELLED"), annotations: { 11: BILLING_ANNOTATIONS },
+			mergeStateStatus: ["DIRTY", "BLOCKED"].includes(blocker) ? blocker : "UNSTABLE",
+			reviewDecision: blocker === "CHANGES_REQUESTED" ? blocker : "APPROVED" });
+		const status = await collectBillingAggregate({}, { runGh: async (args) => {
+			const result = await runner.runGh(args);
+			if (args[0] === "pr" && blocker === "draft") result.isDraft = true;
+			if (args[0] === "pr" && blocker === "closed") result.state = "CLOSED";
+			if (args[1] === "graphql" && blocker === "unresolved") result.data.repository.pullRequest.reviewThreads.nodes[0].isResolved = false;
+			return result;
+		} });
+		assert.equal(status.checks.state, "billing-blocked");
+		assert.equal(status.readyToMerge, false);
+		assert.equal(status.clearExceptBillingBlockedChecks, false);
+		assert.equal(gateExitCode(status, { requireClear: true }), 2);
+	}
+});
+
+test("CLI preserves billing exit 3 and other gate blockers without mutation", async () => {
+	const { mkdtempSync, writeFileSync, readFileSync, rmSync } = require("node:fs");
+	const { spawnSync } = require("node:child_process");
+	const { tmpdir } = require("node:os");
+	const path = require("node:path");
+	const root = mkdtempSync(path.join(tmpdir(), "vpk-billing-gh-"));
+	try {
+		writeFileSync(path.join(root, "gh"), `#!${process.execPath}
+const fs = require("node:fs");
+const path = require("node:path");
+const root = process.env.FAKE_GH_ROOT;
+const args = process.argv.slice(2);
+fs.appendFileSync(path.join(root, "calls.jsonl"), JSON.stringify(args) + "\\n");
+const fixture = JSON.parse(fs.readFileSync(path.join(root, "fixture.json"), "utf8"));
+let result;
+if (args[0] === "pr" && args[1] === "view") result = fixture.pr;
+else if (args[0] === "api" && args[1] === "graphql") result = fixture.graphql;
+else if (args[1]?.endsWith("/comments")) result = fixture.comments;
+else if (args[1]?.endsWith("/reviews")) result = fixture.reviews;
+else if (args[1]?.endsWith("/annotations")) result = [args[1].includes("/11/") ? fixture.annotations : []];
+else { process.stderr.write("Unexpected fake API request"); process.exit(1); }
+process.stdout.write(JSON.stringify(result));
+`, { mode: 0o755 });
+		const cases = [
+			...["FAILURE", "SKIPPED", "CANCELLED"].map((conclusion) => ({ fixture: { checks: billingAggregate(conclusion) }, expected: 3 })),
+			{ fixture: { checks: [...billingAggregate(), actionCheck("Unit shard 2/4", "FAILURE", "777", "13")] }, expected: 2 },
+			{ annotations: [BILLING_ANNOTATIONS[1]], expected: 2 },
+			{ fixture: { checks: billingAggregate().map((check) => check.name === "PR checks" ? { ...check, detailsUrl: null } : check) }, expected: 2 },
+			{ fixture: { checks: [...billingAggregate(), actionCheck("Unit shard 2/4", "CANCELLED", "777", "13")] }, expected: 2 },
+			{ args: ["--required-check", "PR checks", "--required-check", "Security"], expected: 2 },
+			{ fixture: { mergeStateStatus: "DIRTY" }, expected: 2 },
+			{ fixture: { reviewDecision: "CHANGES_REQUESTED" }, expected: 2 },
+		];
+		for (const { fixture, annotations = BILLING_ANNOTATIONS, args = [], expected } of cases) {
+			const runner = fixtureRunner({ checks: billingAggregate(), mergeStateStatus: "UNSTABLE", ...fixture });
+			writeFileSync(path.join(root, "fixture.json"), JSON.stringify({
+				pr: await runner.runGh(["pr"]), graphql: await runner.runGh(["api", "graphql"]),
+				comments: await runner.runGh(["api", "/comments"]), reviews: await runner.runGh(["api", "/reviews"]),
+				annotations,
+			}));
+			writeFileSync(path.join(root, "calls.jsonl"), "");
+			const result = spawnSync(process.execPath, [path.join(__dirname, "review-gate-status.js"),
+				"--pr", "42", "--repo", "owner/repo", "--require-clear", "--json", "--rerun-interrupted", "3", ...args],
+			{ encoding: "utf8", env: { PATH: root, FAKE_GH_ROOT: root }, timeout: 10000 });
+			assert.equal(result.status, expected, result.stderr);
+			const status = JSON.parse(result.stdout);
+			assert.equal(status.clearExceptBillingBlockedChecks, expected === 3);
+			assert.equal(status.readyToMerge, false);
+			assert.deepEqual(status.reruns, []);
+			if (expected === 3) {
+				assert.equal(status.checks.state, "billing-blocked");
+				assert.match(result.stderr, /pnpm run ci:pr/u);
+			}
+			const calls = readFileSync(path.join(root, "calls.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line));
+			assert.ok(calls.some((args) => args[1] === "repos/owner/repo/check-runs/11/annotations"));
+			assert.ok(calls.every((args) => !args.includes("--method") && !args.includes("-X")));
+		}
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("failed PR aggregate and interrupted shards rerun once per run, including stale rollups", async () => {
+	let clock = 0;
+	const runner = fixtureRunner({ checks: () => clock < 60000 ? interruptedAggregate() :
+		[actionCheck("PR checks", clock < 90000 ? null : "SUCCESS", "777", "20")] });
+	const reruns = [];
+	const status = await collectReviewGateStatus({ prNumber: 42, runGh: runner.runGh, waitSeconds: 180,
+		rerunInterrupted: 3, rerunRun: async (id) => reruns.push(id),
+		delay: async (ms) => { clock += ms; }, now: () => clock });
+	assert.deepEqual(reruns, ["777"]);
+	assert.deepEqual(status.reruns, reruns);
+	assert.equal(status.readyToMerge, true);
+	assert.equal(gateExitCode(status, { requireClear: true }), 0);
+});
+
+test("aggregate interruptions retain per-attempt and total-run rerun budgets", async () => {
+	for (const budget of [0, 1, 2]) {
+		let clock = 0;
+		let job = 1;
+		const reruns = [];
+		const runner = fixtureRunner({ checks: () => interruptedAggregate("777", String(job)) });
+		const status = await collectReviewGateStatus({ prNumber: 42, runGh: runner.runGh, waitSeconds: 60,
+			rerunInterrupted: budget, rerunRun: async (id) => { reruns.push(id); job += 1; },
+			delay: async (ms) => { clock += ms; }, now: () => clock });
+		assert.deepEqual(reruns, Array(budget).fill("777"));
+		assert.deepEqual(status.reruns, reruns);
+		assert.equal(status.checks.state, "interrupted");
+		assert.equal(status.checks.interrupted.length, 3);
+		assert.equal(status.readyToMerge, false);
+		assert.equal(gateExitCode(status, { requireClear: true }), 2);
+	}
+	const runner = fixtureRunner({ checks: ["777", "778", "779"].flatMap((id) => interruptedAggregate(id)) });
+	const reruns = [];
+	const status = await collectReviewGateStatus({ prNumber: 42, runGh: runner.runGh, rerunInterrupted: 2,
+		rerunRun: async (id) => reruns.push(id), delay: async () => {} });
+	assert.deepEqual(reruns, ["777", "778"]);
+	assert.deepEqual(status.reruns, reruns);
+	assert.equal(status.readyToMerge, false);
+});
+
+test("aggregate recovery fails closed for real failures, unrelated interruptions and unknown URLs", async () => {
+	for (const checks of [
+		[...interruptedAggregate(), actionCheck("Unit shard 3/4", "FAILURE", "777", "14")],
+		[actionCheck("PR checks", "FAILURE"), actionCheck("Unit shard 1/4", "CANCELLED", "778")],
+		[...interruptedAggregate(), actionCheck("Unit shard 3/4", null, "777", "14")],
+		[...interruptedAggregate(), actionCheck("Unit shard 3/4", "SKIPPED", "777", "14")],
+		[...interruptedAggregate(), actionCheck("Unit shard 3/4", "NEUTRAL", "777", "14")],
+		[{ ...actionCheck("PR checks", "FAILURE"), detailsUrl: null }, actionCheck("Unit shard 1/4", "CANCELLED")],
+		[actionCheck("PR checks", "FAILURE"), { ...actionCheck("Unit shard 1/4", "CANCELLED"), detailsUrl: null }],
+		[{ ...actionCheck("PR checks", "FAILURE"), detailsUrl: "https://example.test/actions/runs/777/job/1" }, actionCheck("Unit shard 1/4", "TIMED_OUT")],
+		[actionCheck("PR checks", "FAILURE"), { ...actionCheck("Unit shard 1/4", "TIMED_OUT"), detailsUrl: "https://github.com/owner/repo/actions/runs/777broken" }],
+		[actionCheck("PR checks", "FAILURE")],
+	]) {
+		const runner = fixtureRunner({ checks });
+		const reruns = [];
+		const status = await collectReviewGateStatus({ prNumber: 42, runGh: runner.runGh, rerunInterrupted: 3,
+			rerunRun: async (id) => reruns.push(id), delay: async () => {} });
+		assert.deepEqual(reruns, []);
+		assert.equal(status.checks.state, "failing");
+		assert.equal(status.readyToMerge, false);
+		assert.equal(gateExitCode(status, { requireClear: true }), 2);
+	}
+});
+
+test("only the known required aggregate can inherit interruptions; missing requirements still block", async () => {
+	for (const [requiredChecks, checks] of [
+		[["Other checks"], [actionCheck("Other checks", "FAILURE"), actionCheck("Unit shard 1/4", "CANCELLED")]],
+		[[], interruptedAggregate()],
+		[["PR checks", "Security"], interruptedAggregate()],
+	]) {
+		const runner = fixtureRunner({ checks });
+		const reruns = [];
+		const status = await collectReviewGateStatus({ prNumber: 42, runGh: runner.runGh, requiredChecks, rerunInterrupted: 3,
+			rerunRun: async (id) => reruns.push(id), delay: async () => {} });
+		assert.deepEqual(reruns, []);
+		assert.equal(status.checks.state, "failing");
+		assert.equal(status.readyToMerge, false);
+	}
+});
+
+test("billing-blocked siblings cannot turn an aggregate failure into a rerunnable interruption", async () => {
+	const runner = fixtureRunner({ checks: [...interruptedAggregate(), actionCheck("Unit shard 3/4", "FAILURE", "777", "99")],
+		annotations: { 99: BILLING_ANNOTATIONS } });
+	const reruns = [];
+	const status = await collectReviewGateStatus({ prNumber: 42, runGh: runner.runGh, rerunInterrupted: 3,
+		rerunRun: async (id) => reruns.push(id), delay: async () => {} });
+	assert.deepEqual(reruns, []);
+	assert.equal(status.checks.billingBlocked.length, 1);
+	assert.equal(status.checks.state, "failing");
+	assert.equal(gateExitCode(status, { requireClear: true }), 2);
+});
+
+test("default rerun accepts an empty successful POST response without retrying the mutation", async () => {
+	const { rerunWorkflowRun } = require("./review-gate-status");
+	const calls = [];
+	await rerunWorkflowRun("777", { repository: "owner/repo", spawn: async (_command, args) => { calls.push(args); return { status: 0, stdout: "" }; } });
+	assert.deepEqual(calls, [["api", "repos/owner/repo/actions/runs/777/rerun", "--method", "POST"]]);
+});
+
+test("read failures after a rerun preserve accounting so callers cannot silently reset the budget", async () => {
+	const runner = fixtureRunner({ checks: [{ name: "PR checks", conclusion: "CANCELLED", status: "COMPLETED", detailsUrl: "https://github.com/owner/repo/actions/runs/777/job/1" }] });
+	let reran = false;
+	await assert.rejects(collectReviewGateStatus({ prNumber: 42, rerunInterrupted: 3, delay: async () => {}, rerunRun: async () => { reran = true; }, runGh: async (args) => {
+		if (reran) throw new Error("HTTP 503 after bounded read retries");
+		return runner.runGh(args);
+	} }), (error) => { assert.deepEqual(error.reruns, ["777"]); return /attempted reruns/u.test(error.message); });
+});
+
+test("GraphQL pagination head changes and repeated cursors are rejected", async () => {
+	for (const change of ["head", "cursor"]) {
+		const runner = fixtureRunner({ graphPages: [{ pageInfo: { hasNextPage: true, endCursor: "same" }, threads: [] }, { pageInfo: { hasNextPage: true, endCursor: "same" }, threads: [] }] });
+		let pages = 0;
+		await assert.rejects(collectReviewGateStatus({ prNumber: 42, runGh: async (args) => {
+			const result = await runner.runGh(args);
+			if (args[1] === "graphql" && ++pages === 2 && change === "head") result.data.repository.pullRequest.headRefOid = "different";
+			return result;
+		} }), /head changed|repeated endCursor/u);
+	}
+});
+
+test("review updates during pending checks trigger full reconciliation even without check changes", async () => {
+	const runner = fixtureRunner({ checks: [{ name: "PR checks", conclusion: null, status: "IN_PROGRESS" }] });
+	let clock = 0;
+	let graphs = 0;
+	const status = await collectReviewGateStatus({ prNumber: 42, waitSeconds: 60, now: () => clock, delay: async (ms) => { clock += ms; }, runGh: async (args) => {
+		const result = await runner.runGh(args);
+		if (args[0] === "pr" && clock >= 30000) result.updatedAt = "2026-09-06T00:00:00Z";
+		if (args[1] === "graphql") {
+			graphs += 1;
+			if (clock >= 30000) result.data.repository.pullRequest.reviewThreads.nodes[0].isResolved = false;
+		}
+		return result;
+	} });
+	assert.equal(graphs, 3); // initial, changed review, deadline
+	assert.equal(status.readyToMerge, false);
+	assert.equal(status.reviewGateClear, false);
+});
+
+test("mutation arguments disable retries even when a caller omits readOnly: false", async () => {
+	for (const args of [["api", "test", "--method", "PUT"], ["api", "test", "-XPOST"], ["api", "test", "-f", "sha=test"], ["api", "graphql", "-f", "query=mutation{test}"]]) {
+		let calls = 0;
+		await assert.rejects(runGhJson(args, { spawn: async () => { calls += 1; return { status: 1, stderr: "HTTP 502" }; }, sleep: async () => {} }));
+		assert.equal(calls, 1);
+	}
+});
+
+test("nullable review decisions normalize gh's empty string and GraphQL null consistently", async () => {
+	const runner = fixtureRunner({ reviewDecision: null });
+	const status = await collectReviewGateStatus({ prNumber: 42, runGh: async (args) => {
+		const result = await runner.runGh(args);
+		if (args[0] === "pr") result.reviewDecision = "";
+		return result;
+	} });
+	assert.equal(status.reviewDecision, null);
+	assert.equal(status.readyToMerge, true);
 });

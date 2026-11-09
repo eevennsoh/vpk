@@ -36,7 +36,7 @@ Symphony issue already following `vpk-symphony/references/git/land.md`.
   current plan), so `gh pr merge --auto` merges immediately, without waiting
   for CI (PR #1973 merged while CI was still running). The skill is the gate:
   wait with `review-gate-status.js --wait --rerun-interrupted 3`, then merge
-  only when `--require-clear` exits 0. A cancelled or timed-out CI run is
+  only through `scripts/merge-remote.js` with the reviewed head SHA after `--require-clear` exits 0. A cancelled or timed-out CI run is
   rerun, never merged on. Never bypass it with admin flags. Follow
   [review-gate.md](references/review-gate.md) before every merge.
   **One exception: billing.** When the gate exits 3 (`checks.state:
@@ -87,17 +87,22 @@ unavailable.
    contains unrelated experiments, secrets, or `.env*`; report every skipped
    path. Generate a concise imperative commit subject from the diff, with no
    co-author footer unless requested.
-6. Regenerate derived files before verifying, then fold any changes into the
-   commit: `node scripts/generate-repo-map.js`,
+6. Batch review fixes and reconcile conflicts before final validation. Regenerate
+   derived files, then fold any changes into the candidate commit: `node scripts/generate-repo-map.js`,
    `node scripts/generate-api-surfaces.js`,
    `node scripts/generate-cursor-rules.js`, and
    `node scripts/validate-skills.js --update-index`. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
    guardrails, ESLint suppression ratchet — about half of first-run CI
-   failures). Before pushing, also run the focused tests and every colocated
-   exact-file source-contract suite guarding changed source, as required by
-   `AGENTS.md`. Run the full local unit gate when the change or a prior failure
-   warrants it; do not duplicate a full local run solely to wait for GitHub CI.
-   Then push with upstream when needed and create the PR with `gh pr create` or
+   failures). Before pushing the **final reconciled candidate**, run the focused
+   tests and ALL colocated exact-file contracts guarding affected source, plus
+   affected browser checks when the surface requires them. Include contracts
+   beside owners moved or renamed in this change. Check the final diff after
+   every fix; do not discover browser-role or source-contract failures only after
+   hosted CI completes. Reuse recorded validation for unchanged code and inputs;
+   invalidate affected evidence after conflict resolution or review fixes.
+   Do not duplicate full local CI while hosted CI is healthy. A full local unit
+   gate is warranted for a diagnosed unit failure or billing fallback, not as
+   a way to wait for Actions. Then push with upstream when needed and create the PR with `gh pr create` or
    capture the updated PR URL. List only checks actually run.
 7. Report the PR URL, branch, commit, and checks URL. `--pr` stops here.
 
@@ -113,7 +118,9 @@ focused tests and browser evidence when the changed surface requires them.
    pushed a new head. With `--bypass`, record `bypassed/no credit` and continue.
 3. Execute [review-gate.md](references/review-gate.md). Fix valid findings,
    explain invalid ones, and stop on ambiguous product judgment.
-4. Wait for checks, merge only on a clear gate, then synchronize persistent `main` using
+4. Record current-head review and CI evidence. Wait for checks, merge through
+   `scripts/merge-remote.js --pr <number> --repo <owner/name> --head <reviewed-head-sha>`
+   (fresh gate and expected-SHA remote merge), then synchronize persistent `main` using
    [merge-and-sync.md](references/merge-and-sync.md).
 5. Report the merge commit, remote branch deletion, main-sync state, review and
    validation evidence, plus the deferred `vpk-git-clean` handoff.
