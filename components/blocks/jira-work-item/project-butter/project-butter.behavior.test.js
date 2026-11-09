@@ -23,34 +23,36 @@ test("Butter chat keeps the selected session's agent identity", async () => {
 	assert.equal(view.queryByText("jira coding agent:jira coding agent") !== null, true);
 });
 
-test("the Agents field stack matches the selector's artwork and brand canvases", async () => {
+test("the Agents field loader matches the selector's artwork and brand canvases", async () => {
 	const names = ["Jira Coding Agent", "Claude", "Cursor", "Codex", "GitHub Copilot"];
 	const view = await renderComponent({
 		source: `import React, { useState } from "react";
 			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
 			import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
-			import { PROJECT_BUTTER_SESSIONS } from "@/components/blocks/jira-work-item/project-butter/data";
-			import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
-			export default function AvatarProbe() {
+			export default function AvatarProbe({ name }) {
 				const [selected, setSelected] = useState(null);
-				const sessions = [...PROJECT_BUTTER_SESSIONS,
-					...BUTTER_PICKER_AGENTS.filter((agent) => ["Codex", "GitHub Copilot"].includes(agent.name)).map((agent) => ({ id: agent.id, agent, title: agent.name, host: "cloud", state: "running", timeLabel: "Now" }))];
+				const sessions = [name, "Other"].map((agentName, index) => ({ id: index ? "other" : "target", agent: { name: agentName }, title: agentName, host: "cloud", state: "running", timeLabel: "Now" }));
 				return <ThemeWrapper><ProjectButterCrew field sessions={sessions} onOpenSession={setSelected} onStartAgent={setSelected} /><output>{selected?.name ?? selected?.title}</output></ThemeWrapper>;
 			}`,
+		props: { name: names[0] },
 	});
-	const field = view.getByRole("group", { name: "Agents field" });
-	await view.click(field.querySelector("button"));
-	const picker = view.getByRole("dialog", { name: "Add agent" });
 	const visual = (avatar) => ({
 		images: [...avatar.querySelectorAll("img")].map((image) => image.getAttribute("src")),
 		paths: [...avatar.querySelectorAll("svg path")].map((path) => path.getAttribute("d")),
 		canvases: [...avatar.querySelectorAll("[style]")].map((element) => element.style.backgroundColor).filter(Boolean),
 	});
 	for (const name of names) {
-		const stacked = [...field.querySelectorAll('[data-slot="avatar"]')].find((avatar) => avatar.getAttribute("aria-label")?.toLowerCase() === name.toLowerCase());
+		await view.rerender({ name });
+		const field = view.getByRole("group", { name: "Agents field" });
+		const stacked = field.querySelector('[data-agent-id="target"] [data-slot="avatar"]');
+		assert.notEqual(stacked, null, `${name} appears in the loader`);
+		const stackVisual = visual(stacked);
+		await view.click(field.querySelector("button"));
+		const picker = view.getByRole("dialog", { name: "Add agent" });
 		const option = [...picker.querySelectorAll("button[data-agent-id]")].find((button) => button.textContent.includes(name));
-		assert.equal(Boolean(stacked && option), true, `${name} appears in the stack and selector`);
-		assert.deepEqual(visual(stacked), visual(option.querySelector('[data-slot="avatar"]')), name);
+		assert.notEqual(option, undefined, `${name} appears in the selector`);
+		assert.deepEqual(stackVisual, visual(option.querySelector('[data-slot="avatar"]')), name);
+		await view.click(field.querySelector("button"));
 	}
 });
 
@@ -135,7 +137,10 @@ async function openSession(view, name) {
 	const menu = view.getByRole("dialog", { name: "Add agent" });
 	const titles = { Claude: "Review Teamwork onboarding guide", "Jira Coding agent": "Draft billing flow PRD", "Jira Scoping agent": "Troubleshoot 403 API errors", Codex: "Review rollback" };
 	await view.click([...menu.querySelectorAll("button[data-agent-id]")].find((button) => button.textContent.toLowerCase().includes(name.toLowerCase())));
-	await view.click(view.getByRole("button", { name: titles[name] ?? name }));
+	const title = titles[name] ?? name;
+	const action = [...menu.querySelectorAll("button")].find((button) => button.textContent.trim() === title);
+	assert.ok(action, `Session action ${title} appears in the agent selector`);
+	await view.click(action);
 }
 
 function renderWorkItem(props = {}) {
