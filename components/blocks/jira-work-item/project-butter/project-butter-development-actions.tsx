@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { cn } from "@/lib/utils";
 
-export function ProjectButterDevelopmentActions({ code, description, openIn, presentation = "default", renderStartCoding, showStartCoding = true, summary }: Readonly<{
+export function ProjectButterDevelopmentActions({ code, description, openIn, presentation = "default", renderStartCoding, showCopyPrompt = true, showStartCoding = true, summary }: Readonly<{
 	code: string;
 	description: string;
 	openIn?: ReactNode;
 	presentation?: "default" | "menu";
 	renderStartCoding?: (trigger: ReactElement) => ReactNode;
+	showCopyPrompt?: boolean;
 	showStartCoding?: boolean;
 	summary: string;
 }>) {
@@ -38,13 +39,13 @@ export function ProjectButterDevelopmentActions({ code, description, openIn, pre
 	return <div className="-mx-2 flex flex-col">
 		{showStartCoding ? renderStartCoding ? renderStartCoding(startCoding) : startCoding : null}
 		{openIn}
-		<Button aria-label={label} className={presentation === "menu" ? "h-8 min-h-8 w-full justify-start gap-3 border-0 pl-2 pr-3 py-0 text-left text-sm font-normal" : row} onClick={() => { void copyPrompt(); }} type="button" variant="ghost">
+		{showCopyPrompt ? <><Button aria-label={label} className={presentation === "menu" ? "h-8 min-h-8 w-full justify-start gap-3 border-0 pl-2 pr-3 py-0 text-left text-sm font-normal" : row} onClick={() => { void copyPrompt(); }} type="button" variant="ghost">
 			<CopyFeedbackIcon className={presentation === "menu" ? "size-6 [&_svg]:size-4!" : undefined} copied={feedback === "copied"} idleIcon={<CopyIcon label="" size={presentation === "menu" ? "medium" : "small"} />} />
 			<span aria-hidden className={cn("grid text-left", presentation === "menu" && "text-text-subtle")}>
 				<span className={cn("col-start-1 row-start-1 transition-opacity duration-normal ease-out-practical", feedback === "idle" ? "opacity-100" : "opacity-0")}>Copy prompt</span>
 				<span className={cn("col-start-1 row-start-1 transition-opacity duration-normal ease-out-practical", feedback !== "idle" ? "opacity-100" : "opacity-0")}>{label}</span>
 			</span>
 		</Button>
-		<span className="sr-only" role="status">{feedback === "idle" ? "" : label}</span>
+		<span className="sr-only" role="status">{feedback === "idle" ? "" : label}</span></> : null}
 	</div>;
 }

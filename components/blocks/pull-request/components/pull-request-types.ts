@@ -32,6 +32,8 @@ export interface PullRequestReviewers {
 export interface PullRequestProps {
 	/** Layout. Defaults to the compact dropdown list card. */
 	variant?: PullRequestVariant;
+	/** Flyout only. Omit the lower metadata and actions section when false. */
+	showDetails?: boolean;
 	/** Pull request number (shown as `#1306` in subtle text). */
 	number: number;
 	/** Pull request title (shown after the number). */

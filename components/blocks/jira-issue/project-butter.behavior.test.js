@@ -19,6 +19,7 @@ test("Jira Local Agent remembers the last used agent and copies the work item pr
 	assert.equal(view.queryByRole("button", { name: "Claude" }), null);
 	await view.click(view.getByRole("button", { name: "Open local agent" }));
 	assert.equal(view.queryByRole("combobox", { name: "Search agents" }), null);
+	assert.equal(view.queryByRole("heading", { name: "Open in" }) === null, true);
 	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot", "Rovo CLI"]) {
 		assert.equal(view.getByRole("button", { name: name === "Rovo CLI" ? /^Rovo CLI$/u : new RegExp(name, "u") }) !== null, true);
 	}
@@ -32,6 +33,7 @@ test("Jira Local Agent remembers the last used agent and copies the work item pr
 	await view.click(view.getByRole("button", { name: "Codex" }));
 	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Codex"), true);
 	assert.equal(view.container.ownerDocument.querySelectorAll("hr").length, 2);
+	assert.equal(view.getByRole("button", { name: "Codex" }).closest(".group\\/agent").nextElementSibling?.tagName, "HR");
 	assert.equal(view.queryByRole("menuitem", { name: "Open in Codex" }), null);
 	assert.equal(view.queryByRole("menuitem", { name: "Run on cloud" }), null);
 	const copilot = view.getByRole("button", { name: /GitHub Copilot/u });

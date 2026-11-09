@@ -220,6 +220,8 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 
 export default function ButterPage(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState("agent-selector");
+	const startGalleryTransition = useInstantTransition();
+	const selectGalleryItem = (id: string) => startGalleryTransition(() => setSelectedId(id));
 	const [journeyResetKey, setJourneyResetKey] = useState(0);
 	const [collapsedBoardColumns, setCollapsedBoardColumns] = useState<ReadonlySet<string>>(() => new Set());
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
@@ -280,7 +282,7 @@ export default function ButterPage(): React.ReactElement {
 				items={BUTTER_GALLERY_ITEMS}
 				selectedColor={token("color.text")}
 				selectedId={selectedId}
-				onSelectedChange={setSelectedId}
+				onSelectedChange={selectGalleryItem}
 				title="Project Butter v1"
 				showTopBarBorder
 				stagePosition="center"
@@ -319,7 +321,7 @@ export default function ButterPage(): React.ReactElement {
 			</RetainedView>
 			<RetainedView active={selectedId === "work-item"} retain>
 				<RovoChatProvider key={workItemResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
-					<ButterGalleryWorkItem open={selectedId === "work-item"} onClose={() => setSelectedId("board")} />
+					<ButterGalleryWorkItem open={selectedId === "work-item"} onClose={() => selectGalleryItem("board")} />
 				</RovoChatProvider>
 			</RetainedView>
 			<RetainedView active={selectedId === "pull-request"} retain>

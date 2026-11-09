@@ -1,11 +1,10 @@
 "use client";
 
-import { useId, useState, type ReactElement, type ReactNode } from "react";
+import { useId, type ReactElement, type ReactNode } from "react";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CommitIcon from "@atlaskit/icon/core/commit";
-import CustomizeIcon from "@atlaskit/icon/core/customize";
 import DataNumberIcon from "@atlaskit/icon/core/data-number";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
@@ -18,7 +17,7 @@ import { TeamEuRailPanel } from "@/components/blocks/jira-work-item/team-eu26/co
 import { getPullRequestStatusPresentation, type PullRequestStatusIconKind } from "@/components/blocks/jira-work-item/team-eu26/lib/pull-request-status-presentation";
 import { ProjectButterDevelopmentActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-actions";
 import { BranchNameSettings } from "@/components/blocks/development-panel/branch-name-settings";
-import { PullRequestSettings, type PullRequestSettingsProps } from "@/components/blocks/development-panel/pull-request-settings";
+import { DevelopmentSettings, type DevelopmentSettingsOptions } from "@/components/blocks/development-panel/development-settings";
 import { PullRequest, type PullRequestProps, type PullRequestStatus } from "@/components/blocks/pull-request";
 import { PullRequestChecksSummary } from "@/components/blocks/pull-request/components/pull-request-flyout-parts";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -35,7 +34,7 @@ import { JIRA_CODING_AGENT_GLYPH } from "@/lib/agent-avatar-visuals";
 export interface DevelopmentPanelProps {
 	pullRequests?: readonly PullRequestProps[];
 	workItem: { code: string; summary: string; description: string };
-	pullRequestSettings?: PullRequestSettingsProps;
+	pullRequestSettings?: DevelopmentSettingsOptions;
 	headerExtra?: ReactNode;
 	footerExtra?: ReactNode;
 	surface?: "card" | "inline";
@@ -80,24 +79,19 @@ function StartCodingMenu({ trigger }: Readonly<{ trigger?: ReactElement }>) {
 
 function ConnectionRow({ icon, name, connected }: Readonly<{ icon: ReactNode; name: string; connected?: boolean }>) {
 	return (
-		<div className="flex min-h-10 items-center gap-3 px-2 text-sm text-text-subtle">
+		<div className="flex min-h-8 items-center gap-3 px-2 text-sm text-text-subtle">
 			<span aria-hidden className="flex size-5 shrink-0 items-center justify-center">{icon}</span>
 			<span className="min-w-0 flex-1">{name}</span>
-			{connected ? <span aria-label="Connected" className="text-icon-success" role="img"><CheckMarkIcon label="" size="medium" /></span> : <Button aria-label={`Request ${name}`} size="compact" type="button" variant="outline">Request</Button>}
+			{connected ? <Icon className="text-icon-subtle" label="Connected" render={<CheckMarkIcon label="" size="small" />} /> : <Button aria-label={`Request ${name}`} size="compact" type="button" variant="outline">Request</Button>}
 		</div>
 	);
 }
 
-function DevelopmentSettings() {
-	const [open, setOpen] = useState(false);
+function DevelopmentConnections() {
 	const repositoriesId = useId();
 	const agentsId = useId();
 	return (
-		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<Button aria-label="Development settings" size="icon-compact" type="button" variant="ghost" />}>
-				<CustomizeIcon label="" size="small" />
-			</PopoverTrigger>
-			<PopoverContent align="end" aria-label="Development settings" className="w-[350px] max-w-[calc(100vw-2rem)] gap-0 p-1">
+		<>
 				<section aria-labelledby={repositoriesId}>
 					<h3 className="px-2 pt-3 pb-1 text-xs leading-4 font-semibold text-text-subtlest" id={repositoriesId}>Code repositories</h3>
 					<ConnectionRow connected icon={<AtlassianLogoMark frame="chip" label="" name="bitbucket" />} name="Bitbucket" />
@@ -113,8 +107,7 @@ function DevelopmentSettings() {
 				</section>
 				<Separator className="mx-1 data-horizontal:w-auto" />
 				<div className="pt-1"><Button className="w-full justify-start gap-3 px-2 font-normal" type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AngleBracketsIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Manage connections</Button></div>
-			</PopoverContent>
-		</Popover>
+		</>
 	);
 }
 
@@ -125,10 +118,10 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 		<TeamEuRailPanel
 			alwaysShowHeaderActions={Boolean(headerExtra)}
 			defaultOpen
-			headerActions={<div className="flex items-center opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{hasPullRequests ? <StartCodingMenu /> : null}<PullRequestSettings {...pullRequestSettings} /><DevelopmentSettings />{headerExtra}</div>}
+			headerActions={<div className="flex items-center gap-1 opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{hasPullRequests ? <StartCodingMenu /> : null}<DevelopmentSettings {...pullRequestSettings} connections={<DevelopmentConnections />} />{headerExtra}</div>}
 			surface={surface}
 			title="Development"
-			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button><div className="px-2"><ProjectButterDevelopmentActions {...workItem} openIn={openIn} showStartCoding={false} /></div>{footerExtra}</div> : null}
+			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button><div className="px-2"><ProjectButterDevelopmentActions {...workItem} openIn={openIn} showCopyPrompt={false} showStartCoding={false} /></div>{footerExtra}</div> : null}
 		>
 			<div className={hasPullRequests ? "px-2 pb-2" : "px-4 pb-4"}>
 				{hasPullRequests ? pullRequests.map((request) => {
@@ -144,7 +137,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>
-				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} openIn={openIn} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} /></div>}
+				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} openIn={openIn} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} showCopyPrompt={false} /></div>}
 			</div>
 		</TeamEuRailPanel>
 	);

@@ -12,6 +12,76 @@ async function expectSingleSelectorSurface(popup: Locator) {
 	await expect(selector).not.toHaveCSS("box-shadow", "none");
 }
 
+async function sampleLayoutSize(locator: Locator) {
+	return locator.evaluate((element) => new Promise<{
+		width: number;
+		height: number;
+		parts: { id: string; x: number; y: number; width: number; height: number }[];
+	}[]>((resolve) => {
+		const samples: { width: number; height: number; parts: { id: string; x: number; y: number; width: number; height: number }[] }[] = [];
+		const started = performance.now();
+		const sample = () => {
+			const bounds = element.getBoundingClientRect();
+			const parts = [...element.querySelectorAll('[data-panel-id], [data-attachment-stack], [data-attachment-card], [data-pile-toggle], [data-attachment-card] img')].map((part) => {
+				const rect = part.getBoundingClientRect();
+				const id = part.tagName === "IMG" ? `image:${part.closest("[data-attachment-card]")?.getAttribute("data-attachment-card")}`
+					: [...part.attributes].filter((attribute) => ["data-panel-id", "data-attachment-stack", "data-attachment-card", "data-pile-toggle"].includes(attribute.name)).map((attribute) => `${attribute.name}:${attribute.value}`).join(":");
+				return { id, x: rect.x - bounds.x, y: rect.y - bounds.y, width: rect.width, height: rect.height };
+			});
+			samples.push({ width: bounds.width, height: bounds.height, parts });
+			if (performance.now() - started < 600) requestAnimationFrame(sample);
+			else resolve(samples);
+		};
+		requestAnimationFrame(sample);
+	}));
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`gallery content stays in place across tab switches with ${reducedMotion} motion`, async ({ page }) => {
+		test.setTimeout(60_000);
+		await page.setViewportSize({ width: 1600, height: 1000 });
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(appUrl("/butter-v1"));
+		await page.evaluate(() => document.fonts.ready.then(() => undefined));
+		const workItem = page.getByRole("region", { name: "Work item full screen view" });
+		const details = workItem.locator('[data-panel-id="details"]');
+		const views = [
+			{ name: "Agent selector", content: page.getByRole("region", { name: "Project Butter agent selector" }) },
+			{ name: "Duplicative sessions", content: page.getByRole("region", { name: "Duplicative sessions agent selector" }) },
+			{ name: "Board", content: page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-jira-kanban-column="To do"]') },
+			{ name: "List", content: page.getByTestId("jira-list") },
+			{ name: "Pull request", content: page.locator('[data-butter-gallery-pull-request] [data-slot="jira-issue-card"]') },
+			{ name: "Development panel", content: page.getByRole("region", { name: "Development", exact: true }) },
+			{ name: "e2e Journey", content: page.locator('[data-butter-board-surface] [data-jira-kanban-column="To do"]') },
+		];
+		await page.getByRole("button", { name: "Select Work item" }).click();
+		await expect(details).toBeVisible();
+		const initial = (await sampleLayoutSize(workItem)).at(-1);
+		if (!initial) throw new Error("Work item details have no bounds");
+		for (const view of views) {
+			await test.step(view.name, async () => {
+				await page.getByRole("button", { name: `Select ${view.name}` }).click();
+				await expect(view.content).toBeVisible();
+				const samples = await sampleLayoutSize(view.content);
+				for (const dimension of ["width", "height"] as const) {
+					const values = samples.map((sample) => sample[dimension]);
+					expect(Math.max(...values) - Math.min(...values), `${view.name} ${dimension} changed after appearing`).toBeLessThanOrEqual(1);
+				}
+				await page.getByRole("button", { name: "Select Work item" }).click();
+				const returned = await sampleLayoutSize(workItem);
+				for (const part of initial.parts) {
+					const positions = returned.map((sample) => sample.parts.find((candidate) => candidate.id === part.id));
+					expect(positions.every(Boolean), `${part.id} disappeared after ${view.name}`).toBe(true);
+					for (const dimension of ["x", "y", "width", "height"] as const) {
+						const drift = Math.max(...positions.map((position) => Math.abs((position?.[dimension] ?? Infinity) - part[dimension])));
+						expect(drift, `${part.id} ${dimension} jumped after ${view.name}`).toBeLessThanOrEqual(1);
+					}
+				}
+			});
+		}
+	});
+}
+
 test("the board's agent submenu has one surface", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -65,6 +135,7 @@ test("Work item gallery displays the Project Butter screen with floating Rovo", 
 	const workItem = page.getByRole("region", { name: "Work item full screen view" });
 	await expect(workItem).toBeVisible();
 	await expect(page.getByRole("dialog", { name: "Project butter" })).toHaveCount(0);
+	await expect(workItem.getByRole("complementary", { name: "Work item details" }).getByRole("button", { name: "Copy prompt", exact: true })).toHaveCount(0);
 	await expect(workItem.getByText("Agents", { exact: true })).toBeVisible();
 	const assignee = workItem.getByRole("button", { name: "Change assignee" });
 	await expect(assignee).toContainText("Venn");
@@ -101,6 +172,7 @@ for (const viewport of [{ width: 1600, height: 1200 }, { width: 1600, height: 10
 		await page.setViewportSize(viewport);
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Select Board" }).click();
 		const boardColumn = page.locator('[data-jira-kanban-column="To do"]');
 		const boardBounds = await boardColumn.boundingBox();
 		await page.getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true }).click();

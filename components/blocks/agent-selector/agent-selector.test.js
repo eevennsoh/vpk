@@ -307,7 +307,6 @@ test("AgentSelector hides command checkmarks for single-select usage by default"
 	// Checkbox semantics (role + aria-checked) stay tied to multiple-select only;
 	// a single-select tick is a visual affordance, not a checkbox.
 	assert.match(COMPONENT_SOURCE, /aria-checked=\{showCheckIcon \? isChecked : undefined\}/u);
-	assert.match(COMPONENT_SOURCE, /aria-haspopup=\{isSubmenuTrigger \? "menu" : undefined\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /role=\{(?:rowRole|supportsMultipleSelection)/u);
 });
 
@@ -330,14 +329,26 @@ test("AgentSelector filled pins stay on the pinned set when assigned agents sit 
 });
 
 test("AgentSelector exposes submenu rows as actions while retaining checkbox semantics for toggles", async () => {
-	const harness = await loadAgentSelectorHarness();
-	const markup = harness.renderMixedAgentRows();
-
-	assert.match(markup, /<div(?=[^>]*data-agent-id="session-agent")(?=[^>]*role="option")(?=[^>]*aria-haspopup="menu")[^>]*>/u);
-	assert.doesNotMatch(markup, /<div(?=[^>]*data-agent-id="session-agent")(?=[^>]*aria-checked)[^>]*>/u);
-	assert.match(markup, /<div(?=[^>]*data-agent-id="toggle-agent")(?=[^>]*role="option")(?=[^>]*aria-checked="false")[^>]*>/u);
-	assert.doesNotMatch(markup, /<div(?=[^>]*data-agent-id="toggle-agent")(?=[^>]*aria-haspopup)[^>]*>/u);
-	assert.match(COMPONENT_SOURCE, /onPointerDown=\{\(event\) => \{[\s\S]*isSubmenuTrigger[\s\S]*event\.preventDefault\(\);\s*onToggle\?\.\(agent\.id\);/u);
+	const selected = [];
+	const props = {
+		agents: [{ id: "session-agent", name: "Session agent", byline: "" }, { id: "toggle-agent", name: "Toggle agent", byline: "" }],
+		submenuAgentIds: ["session-agent"],
+		pinningEnabled: false,
+		onAgentToggle: (id) => selected.push(id),
+	};
+	const view = await renderComponent({ entry: "components/blocks/agent-selector/components/agent-selector.tsx", exportName: "AgentSelector", props });
+	const session = view.getByRole("option", { name: /Session agent/u });
+	const toggle = view.getByRole("option", { name: /Toggle agent/u });
+	assert.equal(session.getAttribute("aria-haspopup"), "menu");
+	assert.equal(session.hasAttribute("aria-checked"), false);
+	assert.equal(toggle.getAttribute("aria-checked"), "false");
+	assert.equal(toggle.hasAttribute("aria-haspopup"), false);
+	await view.rerender({ ...props, submenuRole: "dialog" });
+	assert.equal(view.getByRole("option", { name: /Session agent/u }).getAttribute("aria-haspopup"), "dialog");
+	const search = view.getByRole("combobox", { name: "Search agents" });
+	await view.fill(search, "Session agent");
+	await view.press(search, "Enter");
+	assert.deepEqual(selected, ["session-agent"]);
 });
 
 test("AgentSelector single-select tick uses the VPK check in a transparent icon tile", () => {

@@ -21,6 +21,9 @@ const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-di
 const EXISTING_SESSIONS: readonly AgentSessionItem[] = [
 	{ id: "demo-onboarding-guide", title: "Review the onboarding quickstart", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "running", timeLabel: "2m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
 	{ id: "demo-onboarding-tests", title: "Check the onboarding tests", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "needs-input", timeLabel: "10m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
+	{ id: "demo-onboarding-flow", title: "Inspect the onboarding flow", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "running", timeLabel: "18m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
+	{ id: "demo-onboarding-copy", title: "Refine the onboarding copy", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "needs-input", timeLabel: "25m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
+	{ id: "demo-onboarding-checklist", title: "Validate the onboarding checklist", agent: { id: "claude-code", name: "Claude", brandName: "claude" }, host: "cloud", state: "running", timeLabel: "40m ago", invokedBy: BUTTER_PAY_CURRENT_USER },
 ];
 
 export type ButterAgentPresentation = "submenu" | "inline";

@@ -351,6 +351,7 @@ function PullRequestFlyoutBody({
 	number,
 	title,
 	status,
+	showDetails,
 	author,
 	branch,
 	targetBranch,
@@ -372,6 +373,7 @@ function PullRequestFlyoutBody({
 		| "number"
 		| "title"
 		| "status"
+		| "showDetails"
 		| "author"
 		| "branch"
 		| "targetBranch"
@@ -431,7 +433,7 @@ function PullRequestFlyoutBody({
 				</div>
 				<PullRequestStatusLozenge status={status} />
 			</div>
-			<div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-disabled p-3">
+			{showDetails ? <div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-disabled p-3">
 				{repository ? (
 					<PullRequestFlyoutMetaRow leading={<PullRequestProviderMark provider={provider} />}>
 						<span className="min-w-0 truncate text-xs leading-4 text-text">{repository}</span>
@@ -477,7 +479,7 @@ function PullRequestFlyoutBody({
 						) : null}
 					</div>
 				) : null}
-			</div>
+			</div> : null}
 		</>
 	);
 }
@@ -497,6 +499,7 @@ function PullRequestFlyoutBody({
  */
 export function PullRequest({
 	variant = "dropdown",
+	showDetails = true,
 	number,
 	title,
 	status,
@@ -541,6 +544,7 @@ export function PullRequest({
 			repository={repository}
 			reviewHref={reviewHref}
 			showReview={showReview}
+			showDetails={showDetails}
 			reviewers={reviewers}
 			status={status}
 			targetBranch={targetBranch}
@@ -574,6 +578,7 @@ export function PullRequest({
 
 	const surfaceClassName = cn(
 		"flex w-full min-w-0 text-text",
+		isFlyout && !showDetails ? "pb-3" : null,
 		isFlyout
 			? "flex-col items-stretch gap-3 rounded-lg bg-surface-raised pt-3 shadow-2xl"
 			: isSpacious
