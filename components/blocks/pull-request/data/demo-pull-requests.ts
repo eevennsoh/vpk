@@ -68,3 +68,7 @@ export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
 		reviewHref: "https://bitbucket.org/atlassian/shilpas-test-repo/pull-requests/7/review",
 	},
 ];
+
+export const DEVELOPMENT_PANEL_PULL_REQUESTS = DEMO_PULL_REQUESTS.map((request) =>
+	request.number === 1306 ? { ...request, checks: pullRequestChecksScenario("in-progress") } : request,
+);
