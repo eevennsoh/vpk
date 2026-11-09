@@ -80,6 +80,8 @@ export interface AgentSelectorProps {
 	 *   selector opened from those surfaces reads as one family.
 	 */
 	searchVariant?: "boxed" | "palette";
+	showSearch?: boolean;
+	separatePinned?: boolean;
 	pinnedAgentIds?: readonly string[];
 	pinnedItemsLabel?: string;
 	pinningEnabled?: boolean;
@@ -100,6 +102,7 @@ export interface AgentSelectorProps {
 	 * toggle is a no-op. Generic + domain-neutral; absent = no disabled rows.
 	 */
 	disabledAgentIds?: readonly string[];
+	disabledAgentLabel?: string;
 	/**
 	 * Opt-in (Jira kanban) treatment: agents currently running on the item.
 	 * These render in a dedicated section pinned to the top of the list (above
@@ -160,7 +163,7 @@ const EMPTY_IN_PROGRESS_AGENT_IDS: readonly string[] = [];
 const EMPTY_DISABLED_AGENT_IDS: readonly string[] = [];
 const EMPTY_SUBMENU_AGENT_IDS: readonly string[] = [];
 const EMPTY_SELECTED_AGENT_ACTIONS: readonly AgentSelectorAction[] = [];
-const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal";
+const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 border-0 pl-2 pr-3 py-0 text-left text-sm font-normal hover:bg-muted";
 const ACTION_ICON_CLASS = "grid size-6 shrink-0 place-items-center text-icon-subtle";
 const ACTION_LABEL_CLASS = "text-text-subtle";
 // The trailing `auto` column reserves a lane for CommandItem's check icon,
@@ -241,6 +244,7 @@ function AgentSelectorLogo({ agent, size }: Readonly<{ agent: AgentSelectorAgent
 function AgentSelectorItem({
 	agent,
 	avatarSize,
+	disabledAgentLabel,
 	isChecked,
 	isDisabled,
 	isInProgress,
@@ -256,6 +260,7 @@ function AgentSelectorItem({
 }: Readonly<{
 	agent: AgentSelectorAgent;
 	avatarSize: 20 | 24;
+	disabledAgentLabel: string;
 	isChecked: boolean;
 	isDisabled: boolean;
 	/** In-progress rows swap the pin/check affordance for a stop-on-hover control. */
@@ -373,7 +378,7 @@ function AgentSelectorItem({
 					</motion.span>
 				</motion.span> : <span className={cn(AGENT_LABEL_CLASS, "flex-1")}>{agent.name}</span>}
 				{isDisabled ? (
-					<span className="ml-2 shrink-0 text-xs font-medium text-text-subtlest">Working</span>
+					<span className="ml-2 shrink-0 text-xs font-medium text-text-subtlest">{disabledAgentLabel}</span>
 				) : null}
 				{isInProgress ? (
 					// The rainbow spinner marks a running agent at rest; hovering/focusing
@@ -475,6 +480,7 @@ interface AgentSelectorGroupProps {
 	agents: readonly AgentSelectorAgent[];
 	avatarSize: 20 | 24;
 	disabledAgentIdSet: ReadonlySet<string>;
+	disabledAgentLabel?: string;
 	heading?: string;
 	/** Renders every row in this group with the in-progress stop-on-hover treatment. */
 	isInProgressGroup?: boolean;
@@ -496,6 +502,7 @@ function AgentSelectorGroup({
 	agents,
 	avatarSize,
 	disabledAgentIdSet,
+	disabledAgentLabel = "Working",
 	heading,
 	isInProgressGroup = false,
 	onAgentToggle,
@@ -520,6 +527,7 @@ function AgentSelectorGroup({
 				<AgentSelectorItem
 					agent={agent}
 					avatarSize={avatarSize}
+					disabledAgentLabel={disabledAgentLabel}
 					isChecked={selectedAgentIdSet.has(agent.id)}
 					isDisabled={disabledAgentIdSet.has(agent.id)}
 					isInProgress={isInProgressGroup}
@@ -562,6 +570,8 @@ export function AgentSelector({
 	query,
 	searchPlaceholder = "Search agents",
 	searchVariant = "boxed",
+	showSearch = true,
+	separatePinned = false,
 	pinnedAgentIds,
 	pinnedItemsLabel = "Pinned",
 	pinningEnabled = true,
@@ -573,6 +583,7 @@ export function AgentSelector({
 	selectedAgentIds,
 	submenuAgentIds,
 	disabledAgentIds,
+	disabledAgentLabel,
 	inProgressAgentIds,
 	inProgressLabel = "In progress",
 	onStopAgent,
@@ -595,7 +606,7 @@ export function AgentSelector({
 	const pinnedAgentIdSet = useMemo(() => new Set(resolvedPinnedAgentIds), [resolvedPinnedAgentIds]);
 	const inProgressAgentIdSet = useMemo(() => new Set(inProgressIds), [inProgressIds]);
 	const listOverflow = useHasVerticalOverflow<HTMLDivElement>();
-	const activeOption = useActiveAgentOption(listOverflow.ref);
+	const { activeOptionId, ref: activeOptionRef } = useActiveAgentOption(listOverflow.ref, !showSearch);
 	const visibleAgents = useMemo(() => {
 		const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 		const selectedAgents = selectedIds
@@ -687,9 +698,9 @@ export function AgentSelector({
 					))}
 				</div>
 			) : null}
-			<div className={cn("shrink-0", hasSelectedAgentActions && "pt-4")}>
+			{showSearch ? <div className={cn("shrink-0", hasSelectedAgentActions && !heading && "pt-4")}>
 				{heading ? (
-					<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">{heading}</p>
+					<p className="rich-text-command-menu-heading">{heading}</p>
 				) : null}
 				{searchVariant === "palette" ? (
 					// Let the shared search field own its inset, like the "/" menu
@@ -698,7 +709,7 @@ export function AgentSelector({
 					// which owns row highlighting and activation for this list.
 					<div className={cn("-mx-1 -mt-1 overflow-hidden rounded-t-xl", !sections && "mb-1")}>
 						<RichTextCommandMenuSearchField
-							activeDescendantId={activeOption.activeOptionId ?? null}
+							activeDescendantId={activeOptionId ?? null}
 							autoFocus
 							hostOwnsKeyNavigation
 							icon={<SearchIcon className="size-4 text-icon-subtle" />}
@@ -719,13 +730,14 @@ export function AgentSelector({
 						wrapperClassName="p-0"
 					/>
 				)}
-			</div>
+			</div> : null}
 			<CommandList
 				aria-label={listLabel}
 				showScrollbar={searchVariant === "palette" && Boolean(sections)}
 				className={cn(
 					"min-h-0 max-h-none flex-1 p-0",
 					searchVariant === "palette" && "[&_[cmdk-group]:first-child]:!pt-0",
+					separatePinned && "[&_[cmdk-group]]:!py-0",
 					// Fade the list under the sticky search header once it has scrolled,
 					// matching the editor-palette command menus. `scroll-mask-top` keeps
 					// the scrollbar gutter opaque so only the content column fades; the
@@ -734,7 +746,7 @@ export function AgentSelector({
 					listOverflow.showTopScrollMask
 						&& "scroll-mask-top overscroll-contain [--scroll-mask-fade-size:3rem]",
 				)}
-				ref={activeOption.ref}
+				ref={activeOptionRef}
 			>
 				{visibleAgents.length === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
 				{sectionLayout ? (<>
@@ -764,6 +776,7 @@ export function AgentSelector({
 					avatarSize={avatarSize}
 					agents={pinnedAgents}
 					disabledAgentIdSet={disabledAgentIdSet}
+					disabledAgentLabel={disabledAgentLabel}
 					heading={pinnedItemsLabel}
 					onAgentToggle={onAgentToggle}
 					onTogglePinned={handleTogglePinned}
@@ -775,11 +788,13 @@ export function AgentSelector({
 					submenuAgentIdSet={submenuAgentIdSet}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
+				{separatePinned && pinnedAgents.length > 0 && moreAgents.length > 0 ? <div role="separator" className="my-1 border-t border-border" /> : null}
 				<AgentSelectorGroup
 					avatarSize={avatarSize}
 					agents={moreAgents}
 					disabledAgentIdSet={disabledAgentIdSet}
-					heading={hasPinnedAgents || inProgressAgents.length > 0 ? moreItemsLabel : undefined}
+					disabledAgentLabel={disabledAgentLabel}
+					heading={hasPinnedAgents || inProgressAgents.length > 0 ? moreItemsLabel : !showSearch ? heading : undefined}
 					onAgentToggle={onAgentToggle}
 					onTogglePinned={handleTogglePinned}
 					pinnedAgentIdSet={pinnedAgentIdSet}

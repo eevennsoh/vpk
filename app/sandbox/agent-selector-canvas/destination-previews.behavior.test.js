@@ -26,6 +26,19 @@ test("inline preview runs a sole cloud option directly and expands multiple opti
 	assert.equal(view.queryByRole("button", { name: "Open in Cursor" }) !== null, true);
 });
 
+test("inline preview includes Rovo CLI with local workspace options", async () => {
+	const view = await renderComponent({
+		entry: "app/sandbox/agent-selector-canvas/destination-previews.tsx",
+		exportName: "InlineActionsPreview",
+		mocks: { "@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });" },
+	});
+	await view.click(view.getByRole("button", { name: "Rovo CLI" }));
+	assert.equal(view.getByRole("button", { name: "Rovo CLI" }).getAttribute("aria-expanded"), "true");
+	assert.equal(view.queryByRole("button", { name: "Configure directory" }), null);
+	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }) !== null, true);
+	await view.unmount();
+});
+
 test("inline selector invokes supplied actions and disables agents without actions", async () => {
 	const calls = [];
 	const view = await renderComponent({

@@ -368,15 +368,12 @@
   },
   "components/blocks/agent-selector/agent-selector.test.js": {
     "no-restricted-syntax": {
-      "count": 157
+      "count": 154
     }
   },
   "components/blocks/agent-selector/components/agent-selector.tsx": {
     "no-restricted-syntax": {
       "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 3
     }
   },
   "components/blocks/agent-selector/page.tsx": {
