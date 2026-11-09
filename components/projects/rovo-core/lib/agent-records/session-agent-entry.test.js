@@ -32,7 +32,7 @@ const MOCK_MODULES = new Map([
 		`,
 	],
 	[
-		"@/components/blocks/conversation-starters",
+		"@/components/blocks/conversation-starter",
 		`
 			export const DEFAULT_STARTER_ICON = "ai-chat";
 			export function getStarterIcon(key) {

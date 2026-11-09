@@ -894,8 +894,8 @@ test("the hosted chat seeds an opened session's composer with the comment bar dr
 				}`,
 			"@/app/contexts/context-rovo-chat": `export function RovoChatProvider({ children }) { return children; }`,
 			"@/app/contexts/context-rovo-chat-controls": `export function useRovoChatControls() { return { chatSurface: "sidebar", openChat() {}, toggleChat() {} }; }`,
-			"@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo": `export function useJgpAgentChatDemo() { return { chatContextBar: null, externalThinkingMessageId: null, isSwitchingSession: false, openAgentChat: async () => true }; }`,
-			"@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay": `export function JgpRovoOverlay() { return null; }`,
+			"@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo": `export function useJgpAgentChatDemo() { return { chatContextBar: null, externalThinkingMessageId: null, isSwitchingSession: false, openAgentChat: async () => true }; }`,
+			"@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay": `export function JgpRovoOverlay() { return null; }`,
 			"@/components/projects/sidebar-chat/page": `import React from "react"; export default function ChatPanel({ composerPrefillRequest }) { return <p data-chat-prefill="">{composerPrefillRequest ? composerPrefillRequest.requestKey + ":" + composerPrefillRequest.text : "none"}</p>; }`,
 		},
 	});

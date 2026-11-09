@@ -19,7 +19,7 @@ import {
 } from "@/app/contexts/context-work-item-modal";
 import { ArtifactPane, type ArtifactPaneSectionItem } from "@/components/blocks/artifact-pane";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
-import { JiraInsightsEditorialPane } from "@/components/blocks/jira-insights/components/jira-insights-editorial-pane";
+import { JiraInsightEditorialPane } from "@/components/blocks/jira-insight/components/jira-insight-editorial-pane";
 import { getAttachmentLabel } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
 import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/session-state";
@@ -382,7 +382,7 @@ export function MetadataRail({
 						/>
 					</div>
 					{!pullRequestSelected && insightsSelected ? (
-						<JiraInsightsEditorialPane />
+						<JiraInsightEditorialPane />
 					) : null}
 					{selectedPullRequestEntry ? (
 						<PullRequestContextRail

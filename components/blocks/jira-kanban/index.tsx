@@ -29,7 +29,7 @@ import { AgentSelector } from "@/components/blocks/agent-selector";
 import type { JiraKanbanCardDropTarget } from "./card-drop";
 import { hasJiraSelectionToggleModifier } from "./selection-modifiers";
 import { JiraToolbar, type JiraToolbarProps } from "@/components/blocks/jira-toolbar";
-import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { SkillDirectorySkill } from "@/app/data/directory";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import {
@@ -168,7 +168,7 @@ export interface JiraKanbanSelectionToolbarConfig {
 	onWatchOptions?: () => void;
 	pinnedItemsLabel?: string;
 	selectedAgentIds?: readonly string[];
-	skills?: readonly SkillsDirectorySkill[];
+	skills?: readonly SkillDirectorySkill[];
 }
 
 export interface JiraKanbanProps {

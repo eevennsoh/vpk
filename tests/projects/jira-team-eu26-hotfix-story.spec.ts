@@ -18,7 +18,7 @@ test("finished agent sessions show their Cloud metadata in the assignment flyout
 	await expect(flyout.getByText("This week", { exact: true })).toBeVisible();
 });
 
-test("the Payments board is the only Golden Journeys content inside Jira chrome", async ({ page }) => {
+test("the Payments board is the only Golden Journey content inside Jira chrome", async ({ page }) => {
 	await openBoard(page);
 
 	await expect(page.getByRole("button", { name: "Expand sidebar" })).toBeVisible();

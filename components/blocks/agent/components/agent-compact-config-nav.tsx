@@ -6,8 +6,8 @@ import { useCallback, useState } from "react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 
-import { TriggerProviderSearchList, type AgentAutomationRule } from "@/components/blocks/triggers/page";
-import { createAgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
+import { TriggerProviderSearchList, type AgentAutomationRule } from "@/components/blocks/trigger/page";
+import { createAgentTriggerValue } from "@/components/blocks/trigger/data/trigger-catalog";
 import { getToolIdFromMentionId } from "@/components/blocks/editor-palette/data/mention-sources";
 import { EditorPaletteSearchPicker, type EditorPaletteSearchCategory } from "@/components/blocks/editor-palette/page";
 import { useHasHorizontalOverflow } from "@/components/hooks/use-has-horizontal-overflow";

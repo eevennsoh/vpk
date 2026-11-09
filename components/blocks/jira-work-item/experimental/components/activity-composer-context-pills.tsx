@@ -3,7 +3,7 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useState, type ReactNode } from "react";
 
-import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { SkillDirectorySkill } from "@/app/data/directory";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental/components/activity-composer-skill-context-pill";
@@ -33,7 +33,7 @@ const PILL_REVEAL_VARIANTS = {
 
 interface ActivityComposerContextPillsProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
-	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
+	onInvokeSkill: (skill: SkillDirectorySkill) => void;
 }
 
 function RevealingPill({ children }: Readonly<{ children: ReactNode }>) {

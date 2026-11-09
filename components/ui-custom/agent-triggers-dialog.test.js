@@ -20,8 +20,8 @@ const FILLED_CONFIG_SUMMARY_SOURCE = readFileSync(
 	join(__dirname, "..", "blocks", "agent", "components", "agent-filled-config-summary.tsx"),
 	"utf8",
 );
-const TRIGGERS_PAGE_SOURCE = readFileSync(
-	join(__dirname, "..", "blocks", "triggers", "page.tsx"),
+const TRIGGER_PAGE_SOURCE = readFileSync(
+	join(__dirname, "..", "blocks", "trigger", "page.tsx"),
 	"utf8",
 );
 const AGENT_DEMO_SOURCE = readFileSync(
@@ -38,31 +38,31 @@ test("AgentTriggersDialog delegates to the trigger-config automation modal", () 
 });
 
 test("TriggerConfigAutomationDialog hosts AgentConfigFields with Active, Save and Cancel", () => {
-	assert.match(TRIGGERS_PAGE_SOURCE, /export function TriggerConfigAutomationDialog/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /<Switch checked=\{active\}/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /<AgentConfigFields/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /onAutomationRulesChange=\{handleAutomationRulesChange\}/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /Cancel/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /\{saveLabel\}/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /export function TriggerConfigAutomationDialog/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /<Switch checked=\{active\}/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /<AgentConfigFields/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /onAutomationRulesChange=\{handleAutomationRulesChange\}/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /Cancel/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /\{saveLabel\}/u);
 });
 
 test("TriggerConfigAutomationDialog re-seeds draft on open so Cancel discards", () => {
-	assert.match(TRIGGERS_PAGE_SOURCE, /if \(open && !wasOpen\.current\)/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /setDraftRule\(nextSeed\)/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /if \(open && !wasOpen\.current\)/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /setDraftRule\(nextSeed\)/u);
 });
 
 test("TriggerConfigAutomationDialog Save commits the automation rule and closes; Cancel only closes", () => {
-	assert.match(TRIGGERS_PAGE_SOURCE, /onSave\(createAgentAutomationRule\(\{/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /disabled=\{draftRule\.triggers\.length === 0\}/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /onOpenChange\(false\)/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /<Button onClick=\{\(\) => onOpenChange\(false\)\} type="button" variant="ghost">/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /onSave\(createAgentAutomationRule\(\{/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /disabled=\{draftRule\.triggers\.length === 0\}/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /onOpenChange\(false\)/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /<Button onClick=\{\(\) => onOpenChange\(false\)\} type="button" variant="ghost">/u);
 });
 
 test("TriggerPicker is exported and accepts a custom trigger element", () => {
-	assert.match(TRIGGERS_PAGE_SOURCE, /export function TriggerPicker\(/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /trigger\?: ReactElement/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /render=\{trigger \?\? <TriggerAddRow label=\{label\} \/>\}/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /export function TriggerPicker\(/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /trigger\?: ReactElement/u);
+	assert.match(TRIGGER_PAGE_SOURCE, /render=\{trigger \?\? <TriggerAddRow label=\{label\} \/>\}/u);
 });
 
 test("Trigger summary row routes add-event selections to a new automation draft", () => {

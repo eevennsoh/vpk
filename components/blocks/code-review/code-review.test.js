@@ -669,7 +669,7 @@ test("Code Review agent types explicitly control empty greeting placement", () =
 		"components/projects/sidebar-chat/page.tsx",
 	);
 	const kanbanStage = readProjectFile(
-		"components/projects/jira-golden-journeys-v1/components/kanban-stage.tsx",
+		"components/projects/jira-golden-journey-v1/components/kanban-stage.tsx",
 	);
 	const chatGreeting = readProjectFile(
 		"components/projects/sidebar-chat/components/chat-greeting.tsx",

@@ -34,41 +34,41 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewContentWidth: "full",
 		},
 	},
-	"jira-golden-journeys-v0": {
+	"jira-golden-journey-v0": {
 		description: "The original agent-session pattern gallery: each card (Terminal, Rovo, Queue, For you, Kanban, List, Work item) opens that pattern's design in the stage.",
-		importStatement: `import JiraGoldenJourneysV0Page from "@/components/projects/jira-golden-journeys-v0";`,
+		importStatement: `import JiraGoldenJourneyV0Page from "@/components/projects/jira-golden-journey-v0";`,
 		demoLayout: {
 			previewHeight: "fixed",
 			previewContentWidth: "full",
 		},
 	},
-	"jira-golden-journeys-v1": {
+	"jira-golden-journey-v1": {
 		description: "Two presenter-paced session walkthroughs, stepped screen by screen: Carl's local Claude Code session on JGP-247 and Sarah's global session delegating five Jira tasks to Cursor.",
-		importStatement: `import JiraGoldenJourneysV1Page from "@/components/projects/jira-golden-journeys-v1";`,
+		importStatement: `import JiraGoldenJourneyV1Page from "@/components/projects/jira-golden-journey-v1";`,
 		demoLayout: {
 			previewHeight: "fixed",
 			previewContentWidth: "full",
 		},
 	},
-	"jira-golden-journeys-v2": {
+	"jira-golden-journey-v2": {
 		description: "A guest-checkout work item moved through seven delivery chapters, Intake to Release, with a Details/Activity rail and a guided PR #1847 review.",
-		importStatement: `import JiraGoldenJourneysV2Page from "@/components/projects/jira-golden-journeys-v2";`,
+		importStatement: `import JiraGoldenJourneyV2Page from "@/components/projects/jira-golden-journey-v2";`,
 		demoLayout: {
 			previewHeight: "fixed",
 			previewContentWidth: "full",
 		},
 	},
-	"jira-golden-journeys-v3": {
+	"jira-golden-journey-v3": {
 		description: "Four delivery chapters, Track, Learn, Build and Terminal: a Payments SDK board, the PAY-101 work item with scroll-linked sections and PR #1839, and a terminal session.",
-		importStatement: `import JiraGoldenJourneysV3Page from "@/components/projects/jira-golden-journeys-v3";`,
+		importStatement: `import JiraGoldenJourneyV3Page from "@/components/projects/jira-golden-journey-v3";`,
 		demoLayout: {
 			previewHeight: "fixed",
 			previewContentWidth: "full",
 		},
 	},
-	"jira-golden-journeys-v4": {
+	"jira-golden-journey-v4": {
 		description: "The Payments SDK v2 migration board in full Jira chrome, with Board/List views and an Unlink sessions column, without a story gallery.",
-		importStatement: `import JiraGoldenJourneysV4Page from "@/components/projects/jira-golden-journeys-v4";`,
+		importStatement: `import JiraGoldenJourneyV4Page from "@/components/projects/jira-golden-journey-v4";`,
 		demoLayout: {
 			previewHeight: "fixed",
 			previewContentWidth: "full",

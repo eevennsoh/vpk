@@ -1,6 +1,6 @@
-import type { AgentTemplatesAgent } from "@/components/blocks/agent-templates";
+import type { AgentTemplateAgent } from "@/components/blocks/agent-template";
 
-type StudioTemplatePromptAgent = Pick<AgentTemplatesAgent, "capabilities" | "description" | "name" | "skills" | "sources">;
+type StudioTemplatePromptAgent = Pick<AgentTemplateAgent, "capabilities" | "description" | "name" | "skills" | "sources">;
 
 export function buildFallbackTemplatePrompt(agent: StudioTemplatePromptAgent): string {
 	const appList = agent.sources?.map((source) => source.label).join(", ");

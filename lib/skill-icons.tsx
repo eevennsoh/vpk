@@ -3,7 +3,7 @@
 import type { ComponentProps, ComponentType, ReactNode } from "react";
 
 // Skill-tag icons mapping. Skill tags appear in the Studio bento tiles
-// (`HOME_STARTER_VIEWS`) and the agent-templates directory cards
+// (`HOME_STARTER_VIEWS`) and the agent-template directory cards
 // (`SKILL_LABELS` / `defaultSkills`). Both data sources reference this map so a
 // given skill label always renders the same suitable ADS icon.
 //

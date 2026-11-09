@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { getAppById, type DirectoryApp } from "@/app/data/directory/apps";
-import type { AgentTemplatesAgent } from "@/components/blocks/agent-templates";
+import type { AgentTemplateAgent } from "@/components/blocks/agent-template";
 import type {
 	AgentBrowserTemplateBuildOptions,
 	AgentBrowserTemplateBuildResult,
@@ -60,7 +60,7 @@ function getTemplateDirectoryAppLogo(app: DirectoryApp) {
 }
 
 function getTemplateSourceLogo(
-	source: NonNullable<AgentTemplatesAgent["sources"]>[number],
+	source: NonNullable<AgentTemplateAgent["sources"]>[number],
 ) {
 	const directoryApp = getAppById(source.id);
 
@@ -95,9 +95,9 @@ function getTemplateSourceLogo(
 }
 
 export interface UseTemplateBuildFlowOptions {
-	agent: AgentTemplatesAgent;
+	agent: AgentTemplateAgent;
 	onBuildAgent?: (
-		agent: AgentTemplatesAgent,
+		agent: AgentTemplateAgent,
 		options: AgentBrowserTemplateBuildOptions
 	) => AgentBrowserTemplateBuildResult | null;
 	onCancel: () => void;
@@ -194,13 +194,13 @@ export function useTemplateBuildFlow({
 }
 
 export interface TemplateBuildFlowProps {
-	agent: AgentTemplatesAgent;
+	agent: AgentTemplateAgent;
 	onBuildAgent?: (
-		agent: AgentTemplatesAgent,
+		agent: AgentTemplateAgent,
 		options: AgentBrowserTemplateBuildOptions
 	) => AgentBrowserTemplateBuildResult | null;
 	onCancel: () => void;
-	onOpenBuiltAgent: (agent: AgentTemplatesAgent, profileId: string) => void;
+	onOpenBuiltAgent: (agent: AgentTemplateAgent, profileId: string) => void;
 }
 
 export function TemplateBuildFlow({

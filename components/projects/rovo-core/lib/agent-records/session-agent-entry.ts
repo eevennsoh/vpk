@@ -8,7 +8,7 @@ import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
 	type StarterIconKey,
-} from "@/components/blocks/conversation-starters";
+} from "@/components/blocks/conversation-starter";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
