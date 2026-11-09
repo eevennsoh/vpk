@@ -134,9 +134,9 @@ export function model(input, data) {
 		return at;
 	};
 	const cards = data.cards.map((card, i) => {
-		const column = card.home[0] === data.cards[0].home[0] ? 0 : card.home[0] === data.cards[8].home[0] ? 1 : 2;
+		const column = card.column;
 		// Close the gap: as the first card (15) leaves its column, the cards below it slide up one row and the next hidden
-		// card scrolls into view, as a real board reflows.
+		// card scrolls into view from under the column's bottom edge, as a real board reflows.
 		const reflow = column === 2 && card.row > 1 ? ease((time - 0.7) / 0.7) : 0;
 		const home = [card.home[0] + card.w / 2, card.home[1] + card.d / 2 - pitch * reflow, card.home[2]];
 		const row = data.doneList.cards.find(row => row.card === i);
@@ -148,7 +148,9 @@ export function model(input, data) {
 		const deckIndex = row.rank - visibleRows + 2;
 		const groupDelay = Math.min(0.3, 0.025 * deckIndex);
 		const groupU = moved ? clamp((time - 4.3 - groupDelay) / 1.9) : 0;
-		const shown = card.row < 3 || (column === 2 && card.row === 3) ? (card.row < 3 ? 1 : reflow) : 0;
+		// Each story column shows rows 0-3, the last clipped by the column's bottom edge like Done's; column 2's row 4 only
+		// scrolls in as the column closes its gap.
+		const shown = card.row < 4 ? 1 : column === 2 && card.row === 4 ? reflow : 0;
 		let at = home, rot = [0, 0, 0], alpha = shown;
 		if (i === 15 && time > 0) {
 			const s = ease(time / 2);
@@ -194,7 +196,11 @@ export function model(input, data) {
 		}
 		if (time > 19) alpha *= 1 - ease((time - 19) / 1.2);
 		const highlight = i === 15 ? 1 : ease((time - 4.3) / 1.2) * (1 - ease((time - 13.2) / 2.5));
-		const clip = time <= 13 && ((inWindow && ((i === 15 && time >= 2) || (i !== 15 && time >= 5.5))) || (moved && groupU > 0.6));
+		// clip names the list window a card is cut by: Done once it has landed there, or its own column while it still rests
+		// (or reflows) in a row that reaches the column's bottom edge. A lifted card is never clipped.
+		const inDone = time <= 13 && ((inWindow && ((i === 15 && time >= 2) || (i !== 15 && time >= 5.5))) || (moved && groupU > 0.6));
+		const atHome = i !== 15 && time <= 4.3 + (moved ? groupDelay : 0);
+		const clip = inDone ? "done" : atHome && card.row >= 3 ? `column${column}` : false;
 		return { ...pose(at, rot, 1, alpha, highlight), clip, listAt: done, rank: row.rank, listVisible: inWindow };
 	});
 	const field = data.wallField, periodX = field?.periodX ?? 3800, periodY = field?.periodY ?? 3800;
@@ -527,7 +533,7 @@ export function model(input, data) {
 		scaleY: mix(a.scaleY ?? a.scale ?? 1, b.scaleY ?? b.scale ?? 1, s),
 		alpha: mix(a.alpha, b.alpha, s),
 		highlight: mix(a.highlight ?? 0, b.highlight ?? 0, s),
-		clip: Boolean(a.clip && b.clip),
+		clip: a.clip === b.clip ? b.clip : false,
 	});
 	const directWidth = Math.exp(mix(Math.log(from.camera.width), Math.log(camera.width), s));
 	const angle = ((camera.azimuth - from.camera.azimuth + 540) % 360) - 180;

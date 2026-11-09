@@ -12,28 +12,28 @@ export function chromeDetail() {
 }
 
 // ---------- Story cards: a cover of a few containers (in a 170 x 74 box) above an empty title band ----------
-const two = p => { p.rect(22, 8, 62, 62, 4, "dw"); p.rect(90, 8, 62, 62, 4, "dw"); };
-const toolbar = p => { p.pill(22, 26, 126, 22, "dw"); p.pill(96, 30, 48, 14, "dp"); };
+// Within a column, the visible rows (0-3) each lead with a different container family (window, ring, split, stack,
+// list, media, pill, bars, grid), so no two neighbours share a silhouette at thumbnail size.
 const COVERS = {
 	"TEU-1": p => { p.rect(50, 8, 76, 60, 5, "dw"); p.pill(56, 14, 64, 12); p.rect(56, 36, 64, 11, 3, "dp"); },
-	"TEU-101": two,
-	"TEU-2": p => { p.rect(12, 24, 146, 28, 5, "dw"); },
-	"TEU-4": p => { for (let i = 0; i < 3; i += 1) p.rect(6 + i * 54, 8, 50, 60, 3, i === 1 ? "dp" : "dw"); },
+	"TEU-101": p => { p.line(43, 38, 58, 38, "df"); p.line(112, 38, 127, 38, "df"); p.circle(30, 38, 13, "dw"); p.ring(85, 38, 27, 15, "dw"); p.circle(140, 38, 13, "dw"); },
+	"TEU-2": p => { p.rect(8, 8, 38, 58, 4, "dw"); p.rect(52, 8, 110, 58, 4, "dw"); },
+	"TEU-4": p => { p.rect(8, 22, 66, 44, 4, "dp"); p.rect(96, 8, 66, 44, 4, "dp"); p.rect(42, 14, 86, 48, 4, "dw"); },
 	"TEU-102": p => { p.pill(14, 8, 142, 14, "dw"); p.rect(14, 28, 142, 16, 3, "dw"); p.rect(14, 50, 142, 16, 3, "dw"); },
 	"TEU-3": p => { p.rect(14, 24, 142, 26, 6, "dw"); },
 	"TEU-103": p => { p.rect(12, 8, 66, 62, 4, "dw"); p.circle(45, 30, 11); },
 	"TEU-104": p => { p.rect(28, 8, 100, 18, 6, "dw"); p.rect(46, 32, 100, 18, 6, "dp"); p.rect(28, 56, 80, 14, 6, "dw"); },
-	"TEU-105": p => { p.rect(14, 18, 142, 38, 6, "dw"); },
-	"TEU-5": toolbar,
+	"TEU-105": p => { p.rect(22, 8, 126, 16, 4, "dw"); p.rect(22, 30, 126, 16, 4, "dw"); p.rect(22, 52, 126, 16, 4, "dw"); },
+	"TEU-5": p => { p.rect(18, 6, 134, 62, 5, "dw"); p.circle(85, 37, 13, "dp"); p.circle(37, 51, 10, "dw"); },
 	"TEU-106": p => { p.pill(6, 26, 158, 22, "dw"); p.pill(98, 30, 62, 14, "dp"); },
 	"TEU-7": p => { p.rect(6, 8, 158, 36, 4, "dw"); p.rect(60, 14, 70, 8, 2, "dp"); p.pill(56, 52, 70, 14, "dw"); },
 	"TEU-8": p => { p.rect(10, 6, 150, 64, 4, "dp"); p.pill(20, 50, 64, 12, "dw"); p.circle(144, 56, 9, "dw"); },
 	"TEU-107": p => { p.rect(6, 8, 76, 62, 4, "dw"); p.pill(12, 54, 40, 9, "dp"); p.rect(88, 14, 76, 50, 4, "dp"); },
-	"TEU-9": p => { p.rect(14, 6, 142, 66, 4, "dw"); p.line(14, 14, 156, 14, "df"); p.rect(64, 20, 84, 36, 2, "dp"); },
+	"TEU-9": p => { p.rect(12, 8, 112, 58, 4, "dw"); p.line(12, 18, 124, 18, "df"); p.circle(128, 48, 19, "dp"); },
 	"TEU-10": p => { p.rect(36, 18, 120, 40, 5, "dw"); p.rect(44, 62, 104, 8, 2, "dp"); p.rect(26, 10, 56, 15, 4, "dw"); },
 	"TEU-11": p => { p.rect(26, 6, 140, 62, 4, "dw"); p.bars(44, 18, 116, 44, [0.5, 0.72, 0.95, 0.6]); },
-	"TEU-109": two,
-	"TEU-111": p => { p.pill(28, 30, 116, 18, "dw"); p.pill(108, 34, 30, 10, "dp"); },
+	"TEU-109": p => { p.ring(40, 38, 26, 15, "dw"); p.rect(80, 14, 78, 18, 4, "dw"); p.rect(80, 42, 54, 18, 4, "dw"); },
+	"TEU-111": p => { p.rect(10, 8, 86, 58, 4, "dw"); p.rect(102, 8, 58, 26, 4, "dw"); p.rect(102, 40, 58, 26, 4, "dp"); },
 	"TEU-108": p => { p.ring(86, 38, 28, 22); p.pill(96, 54, 64, 10, "dw"); },
 	"TEU-112": p => { p.rect(30, 6, 110, 66, 4, "dw"); p.pill(36, 16, 98, 6, "dp"); },
 	"TEU-12": p => { p.rect(24, 6, 122, 66, 4, "dw"); p.ring(54, 39, 22, 14); p.rect(86, 22, 52, 34, 3, "df"); },

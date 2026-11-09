@@ -158,7 +158,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			for (const time of [6, 8, 10, 13]) {
 				const state = model(time, data);
 				const visible = state.cards.flatMap((pose, index) => {
-					if (pose.alpha <= .001 || !pose.clip) return [];
+					if (pose.alpha <= .001 || pose.clip !== 'done') return [];
 					const card = data.cards[index];
 					const rectangle = { x: pose.at[0] - card.w * pose.scale / 2, y: pose.at[1] - card.d * pose.scale / 2, w: card.w * pose.scale, d: card.d * pose.scale };
 					return overlaps(rectangle, viewport) ? [rectangle] : [];

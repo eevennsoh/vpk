@@ -75,6 +75,45 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 			assert.ok(result.faceArea > 1000);
 		});
 
+		await t.test('each story column renders a fourth card clipped at its bottom edge on the board', () => {
+			const rowThree = [0, 1, 2].map(column => data.cards.findIndex(card => card.column === column && card.row === 3));
+			const scrolled = data.cards.findIndex(card => card.column === 2 && card.row === 4);
+			const result = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				const sampleFace = (name, clip) => {
+					const face = piece(name).querySelector('.iso-top');
+					let inside = 0;
+					for (let sample = 0; sample < 64; sample++) {
+						const edge = face.getPointAtLength(face.getTotalLength() * sample / 64);
+						if (clip.isPointInFill(new DOMPoint(edge.x, edge.y))) inside++;
+					}
+					return inside;
+				};
+				const columns = ${JSON.stringify(rowThree)}.map((index, column) => {
+					explorer.seek(0);
+					const clip = hero.querySelector('[data-eu26-column-window="' + column + '"]');
+					const el = piece('story.' + index);
+					return { visible: visible(el), clipPath: el.getAttribute('clip-path'), clipId: clip?.parentElement.id, inside: clip ? sampleFace('story.' + index, clip) : -1 };
+				});
+				explorer.seek(2);
+				const scrolledIn = { visible: visible(piece('story.${scrolled}')), clipPath: piece('story.${scrolled}').getAttribute('clip-path') };
+				const lifted = [6, 16].map(time => {
+					explorer.seek(time);
+					return [...${JSON.stringify(rowThree.slice(0, 2))}, ${scrolled}].map(index => piece('story.' + index).getAttribute('clip-path') || '').filter(value => value.includes('column'));
+				});
+				return { columns, scrolledIn, lifted };
+			`);
+			result.columns.forEach((column, index) => {
+				assert.equal(column.visible, true, `column ${index} shows its row-3 card`);
+				assert.equal(column.clipPath, `url(#${column.clipId})`, `column ${index} clips its row-3 card by its own window`);
+				assert.equal(column.clipId, `eu26-column${index}-window`);
+				assert.ok(column.inside > 16 && column.inside < 60, `column ${index}'s row-3 card is partly inside and partly cut by the column bottom (${column.inside}/64 edge samples inside)`);
+			});
+			assert.deepEqual(result.scrolledIn, { visible: true, clipPath: 'url(#eu26-column2-window)' }, 'column 2 scrolls its next card into the clipped slot');
+			assert.deepEqual(result.lifted, [[], []], 'no card keeps a column clip once lifted out of its column');
+		});
+
 		await t.test('camera angle changes repaint board geometry and leave the bento front-facing', () => {
 			const result = scenario(`
 				const placement = [3, 4.3, 5.8, 7].map(time => {

@@ -17,7 +17,8 @@ test('intro cards hold until the group drag, column 3 closes its gap, then every
 		const state = at(time);
 		for (const index of retained) {
 			assert.equal(state.cards[index].alpha, 1, `story ${index} remains visible at ${time}s`);
-			assert.equal(state.cards[index].clip, false, 'a source card is not clipped to Done before the group drag');
+			assert.notEqual(state.cards[index].clip, 'done', 'a source card is not clipped to Done before the group drag');
+			assert.equal(state.cards[index].clip, data.cards[index].row === 3 || (reflowed.has(index) && data.cards[index].row === 4) ? `column${data.cards[index].column}` : false, `story ${index} is clipped only by its own column, and only in the row at its bottom edge`);
 			if (!reflowed.has(index)) assert.deepEqual(state.cards[index].at, initial.cards[index].at, `story ${index} keeps its board position`);
 			else if (time >= 1.4) assert.ok(Math.abs(state.cards[index].at[1] - (initial.cards[index].at[1] - pitch)) < 1e-6, `story ${index} moves up one row to close the gap`);
 		}
@@ -37,6 +38,30 @@ test('intro cards hold until the group drag, column 3 closes its gap, then every
 	const landed = at(2).cards[15];
 	const firstRow = data.doneList.cards[0];
 	assert.deepEqual(landed.at.slice(0, 2), [firstRow.x + firstRow.w / 2, firstRow.y + firstRow.d / 2]);
+});
+
+test('every story column shows a fourth card clipped at its bottom edge, released once the card is lifted', () => {
+	const rowThree = column => data.cards.findIndex(card => card.column === column && card.row === 3);
+	for (const column of [0, 1, 2]) {
+		const index = rowThree(column), card = data.cards[index], viewport = data.columnViewports[column];
+		const state = at(0).cards[index];
+		assert.equal(state.alpha, 1, `column ${column} shows its row-3 card`);
+		assert.equal(state.clip, `column${column}`, `column ${column} clips its row-3 card`);
+		assert.ok(card.home[1] < viewport.y + viewport.d && card.home[1] + card.d > viewport.y + viewport.d, 'the row-3 card runs past the column window bottom');
+		assert.ok(viewport.x >= -394 + column * 205 && viewport.x + viewport.w <= -394 + column * 205 + 193 && viewport.y + viewport.d <= 294, 'the window sits inside its column');
+	}
+	// Column 2 closes its gap as card 15 leaves: row 4 scrolls up into the clipped row-3 slot.
+	const scrolled = data.cards.findIndex(card => card.column === 2 && card.row === 4);
+	assert.equal(at(0).cards[scrolled].alpha, 0);
+	assert.equal(at(2).cards[scrolled].alpha, 1);
+	assert.equal(at(2).cards[scrolled].clip, 'column2');
+	// Lifted into the group drag, every row-3 card leaves its column clip behind.
+	for (const index of [rowThree(0), rowThree(1), scrolled]) {
+		for (const time of [4.9, 5.2]) assert.equal(at(time).cards[index].clip, false, `story ${index} is not clipped while carried at ${time}s`);
+		assert.ok(at(16).cards[index].alpha > .5 && at(16).cards[index].clip === false, `story ${index} joins the field unclipped`);
+	}
+	const rows = new Set([0, 1, 2].flatMap(column => at(0).cards.flatMap((pose, index) => data.cards[index].column === column && pose.alpha > .99 ? [data.cards[index].row] : [])).map(String));
+	assert.deepEqual([...rows].sort(), ['0', '1', '2', '3']);
 });
 
 test('paired confetti cannons rise inward from both outer edges', () => {

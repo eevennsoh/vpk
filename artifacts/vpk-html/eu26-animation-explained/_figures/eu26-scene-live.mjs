@@ -92,7 +92,8 @@ export function live(ctx) {
 			}
 		}
 	};
-	const doneWindow = ctx.svg.querySelector("[data-eu26-done-window]");
+	// The list windows a card can be clipped by (pose.clip): Done and the three story columns, re-projected every frame.
+	const listWindows = [...data.columnViewports.map((viewport, i) => ({ key: `column${i}`, viewport, el: ctx.svg.querySelector(`[data-eu26-column-window="${i}"]`) })), { key: "done", viewport: data.doneList.viewport, el: ctx.svg.querySelector("[data-eu26-done-window]") }];
 	const cursorLayer = ctx.svg.querySelector("[data-eu26-cursor-layer]");
 	const cursorParts = new Map([...ctx.svg.querySelectorAll("[data-eu26-cursor]")].map(el => [el.dataset.eu26Cursor, el]));
 	const poses = new Map();
@@ -109,7 +110,7 @@ export function live(ctx) {
 		const spread = 1 / Math.max(0.35, 1 - depth * lens.k);
 		return [lens.centre[0] + (flat[0] - lens.centre[0]) * spread, lens.centre[1] + (flat[1] - lens.centre[1]) * spread];
 	};
-	let view = [Math.sqrt(0.375), Math.sqrt(0.375), 0.5], doneClip = [];
+	let view = [Math.sqrt(0.375), Math.sqrt(0.375), 0.5], clipWindows = {};
 	const doc = ctx.svg.ownerDocument, namespace = "http://www.w3.org/2000/svg";
 	const element = (tag, attrs, parent) => {
 		const el = doc.createElementNS(namespace, tag);
@@ -236,13 +237,14 @@ export function live(ctx) {
 		const xs = topWorld.map(point => point[0]), ys = topWorld.map(point => point[1]);
 		surface.rest = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), mid, low: Math.min(...bottomWorld.map(point => point[2])), top: topZ };
 		const face = front ? top : bottom;
-		const clipped = pose.clip && doneClip.length ? intersection(face, doneClip) : face;
+		const cut = pose.clip ? clipWindows[pose.clip] : null;
+		const clipped = cut?.length ? intersection(face, cut) : face;
 		surface.frame = { bounds: pose.clip ? clipped : [...top, ...bottom], polygon: clipped, face, center: world([plan.x + plan.w / 2, plan.y + plan.d / 2, front ? z + height : z]) };
 	};
 	const set = (el, home, pose) => {
 		if (!el) return;
 		poses.set(el, pose);
-		if (pose.clip) el.setAttribute("clip-path", "url(#eu26-done-window)");
+		if (pose.clip) el.setAttribute("clip-path", `url(#eu26-${pose.clip}-window)`);
 		else el.removeAttribute("clip-path");
 		el.style.display = pose.alpha < 0.002 ? "none" : "";
 		const detail = surfaceOf.get(el).detail;
@@ -477,14 +479,17 @@ export function live(ctx) {
 		view = [Math.cos(azimuth) * Math.cos(elevation), Math.sin(azimuth) * Math.cos(elevation), Math.sin(elevation)];
 		const persp = state.camera.persp ?? 0;
 		lens = persp > 0.001 ? { at: state.camera.at, centre: kit.iso(state.camera.at, P), k: persp * P.scale * Math.sqrt(1.6) / state.camera.height } : null;
-		const viewport = data.doneList.viewport, paperDepth = data.materialDepths.story;
-		const windowRing = kit.roundedPlan(viewport, 4);
-		const windowPoints = [4, 4 + paperDepth].flatMap(z => windowRing.map(([x, y]) => project([x, y, z])));
-		const sorted = windowPoints.sort((a, b) => a[0] - b[0] || a[1] - b[1]), lower = [], upper = [];
-		for (const point of sorted) { while (lower.length > 1 && cross(lower.at(-2), lower.at(-1), point) <= 0) lower.pop(); lower.push(point); }
-		for (const point of [...sorted].reverse()) { while (upper.length > 1 && cross(upper.at(-2), upper.at(-1), point) <= 0) upper.pop(); upper.push(point); }
-		doneClip = [...lower.slice(0, -1), ...upper.slice(0, -1)];
-		if (doneWindow) doneWindow.setAttribute("d", kit.pathOf(doneClip, true));
+		const paperDepth = data.materialDepths.story;
+		clipWindows = {};
+		for (const { key, viewport, el } of listWindows) {
+			const windowRing = kit.roundedPlan(viewport, 4);
+			const windowPoints = [4, 4 + paperDepth].flatMap(z => windowRing.map(([x, y]) => project([x, y, z])));
+			const sorted = windowPoints.sort((a, b) => a[0] - b[0] || a[1] - b[1]), lower = [], upper = [];
+			for (const point of sorted) { while (lower.length > 1 && cross(lower.at(-2), lower.at(-1), point) <= 0) lower.pop(); lower.push(point); }
+			for (const point of [...sorted].reverse()) { while (upper.length > 1 && cross(upper.at(-2), upper.at(-1), point) <= 0) upper.pop(); upper.push(point); }
+			clipWindows[key] = [...lower.slice(0, -1), ...upper.slice(0, -1)];
+			if (el) el.setAttribute("d", kit.pathOf(clipWindows[key], true));
+		}
 		for (const el of chrome) {
 			const surface = surfaceOf.get(el);
 			const home = [surface.plan.x + surface.plan.w / 2, surface.plan.y + surface.plan.d / 2, surface.z];
