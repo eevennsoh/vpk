@@ -154,8 +154,8 @@ The lanyard drops over 0.85 s and swings per the `swing` line in [§ Pose](#pose
 | halo | the same path behind it, 4 px paper stroke; it replaces a drop shadow on paper |
 | flag | `--ill-accent` pill at 1.8× stageshow’s 19 px flag (`cursor.flag`), so its height (19 × 1.8 = 34 units) matches the arrow’s (15.5 × 2.3 = 36); radius 6 and 11-unit weight-600 name, both scaled with it |
 | name | dark orange, `color-mix(in oklab, var(--ill-accent) 50%, var(--ill-accent-ink))`, never black or white; measured with `getComputedTextLength()` once per name (cached after fonts load), centred with `text-anchor: middle`, 7 units of padding each side |
-| press | scale 0.9 about the tip, arrow only; one accent ripple (radius 4 → 18 arrow units, opacity `4p(1 − p)`) while the press goes in or lets go |
-| held | no ring stays under a grip |
+| press | scale 0.9 about the tip, arrow only; no ring, ripple or halo burst marks the click |
+| held | nothing stays under a grip |
 
 Too little: a bare arrow with no name reads as a second pointer, and a grey or ink cursor reads as chrome rather than a person. Too much: a flag turned over or flipped left to dodge the edge, or a name wider than its pill. The tell: the gaps left and right of a name differ, or the pill and arrow differ in height by more than a few units.
 

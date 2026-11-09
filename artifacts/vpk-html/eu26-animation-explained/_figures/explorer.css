@@ -181,11 +181,10 @@
 
 /* Cursors (after stageshow kit/cursor.css and examples/presence): one solid rounded arrowhead, a paper halo, and for a
    teammate one tone everywhere, arrow and name flag alike. The name is the only lettering besides the Team ’26 lockup. A press
-   sends one accent ripple from the tip. */
+   dips the arrow; no ring marks a click. */
 /* Every cursor wears the orange-yellow accent; its name uses the Team ’26 lockup's dark orange instead of black or white. */
 :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor] { --who: var(--ill-accent); --who-text: color-mix(in oklab, var(--ill-accent) 50%, var(--ill-accent-ink)); }
 :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-tip] { fill: var(--who); stroke: var(--who); stroke-width: 1.8px; vector-effect: non-scaling-stroke; }
 :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-halo] { stroke: var(--paper); stroke-width: 4px; vector-effect: non-scaling-stroke; }
-:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-ring] { fill: color-mix(in srgb, var(--ill-accent) 10%, transparent); stroke: var(--ill-accent); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
 :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-pill] { fill: var(--who); stroke: none; }
 :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-name] { fill: var(--who-text); font-family: var(--font-body) !important; font-weight: 600; letter-spacing: 0.01em; }

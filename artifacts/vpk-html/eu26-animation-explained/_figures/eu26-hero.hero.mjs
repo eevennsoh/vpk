@@ -196,11 +196,25 @@ function sourceWall() {
 		return { ...slot, home, at: [(slot.source.x - 960) * worldScale, (slot.source.y - 540) * worldScale, 0], w, d, r: 20 * worldScale, seed: 211 + index * 37 };
 	});
 }
+// The confetti's variety (finale-confetti.ts VARIETY, less the satin ribbons): a third are discs (sequins and round
+// paper), the rest paper rectangles 9-14 long at 0.45-0.65 of their length wide. Parked off stage until thrown.
+function confettiPieces(count = 140) {
+	const hash = (i, channel) => { const v = Math.sin((i + 1) * 91.7 + channel * 47.3) * 24634.6345; return v - Math.floor(v); };
+	let parkX = -700;
+	return Array.from({ length: count }, (_, i) => {
+		const disc = hash(i, 1) < 0.33, length = disc ? 6 + 3 * hash(i, 2) : 9 + 5 * hash(i, 2), width = disc ? length : length * (0.45 + 0.2 * hash(i, 3));
+		const plan = { x: parkX, y: 4000, w: +width.toFixed(2), d: +length.toFixed(2), r: disc ? +(width / 2).toFixed(2) : 0.7 };
+		parkX += 24;
+		return { shape: disc ? "disc" : "rect", plan, home: [plan.x + plan.w / 2, plan.y + plan.d / 2, 0] };
+	});
+}
 // Camera anchors: the Done column, the hero card's place in the field, and the Team ’26 title in the bento.
 const CAMERA_ANCHORS = { done: [317.5, 55, 0], hero: [-15, -28, 96], title: [10, -16, 6] };
 const doneOrder = [15, ...Array.from({ length: 23 }, (_, i) => i).filter(i => i !== 15)];
-// The Done list window reaches the column's inner bottom edge, so the list looks full and its last visible card is clipped.
-const doneViewport = { x: 225, y: -158, w: 185, d: 448, r: 6 };
+// Each column's list window reaches the column's inner bottom edge, so every list looks full and its last visible card
+// (row 3) is clipped. Columns 0-2 hold the stories; column 3 is Done.
+const listViewport = column => ({ x: -390 + column * 205, y: -158, w: 185, d: 448, r: 6 });
+const doneViewport = listViewport(3);
 
 export const data = {
 	motion: motionConfig,
@@ -226,7 +240,7 @@ export const data = {
 	cards: stories.map(([code, title], index) => {
 		const column = index < 8 ? 0 : index < 14 ? 1 : 2;
 		const row = index - [0, 8, 14][column];
-		return { code, title, row, home: [-387.5 + column * 205, -154 + row * 126, 4], w: 180, d: 114 };
+		return { code, title, column, row, home: [-387.5 + column * 205, -154 + row * 126, 4], w: 180, d: 114 };
 	}),
 	features: [
 		{ card: 15, title: "Agent Sessions", kind: "sessions", at: [-345, -208, 6], w: 220, d: 180 },
@@ -236,8 +250,12 @@ export const data = {
 		{ card: 16, title: "Agent Effectiveness", kind: "chart", at: [145, -4, 6], w: 220, d: 180 },
 		{ card: 10, title: "Record for Agent", kind: "record", at: [-100, 55, 6], w: 220, d: 121 },
 	],
+	confetti: confettiPieces(),
 	wall: sourceWall(),
 	wallSource: { commit: "8588b00ff81cb5e8341a462158c747c6d990667c", viewport: { width: 1920, height: 1080 }, zoom: 0.25, density: "dense", padding: { x: 40, y: 40 }, pieceScale: 0.792, gutter: 23.76, worldScale: 0.72 },
+	// The board chassis plan; the finale confetti stays over it.
+	board: { x: -430, y: -286, w: 860, d: 596, r: 10 },
+	columnViewports: [0, 1, 2].map(listViewport),
 	doneList: { viewport: doneViewport, padding: { x: 2.5, y: 4 }, gap: 12, order: doneOrder, cards: doneOrder.map((card, rank) => ({ card, rank, x: doneViewport.x + 2.5, y: doneViewport.y + 4 + rank * 126, w: 180, d: 114 })) },
 	materialDepths: { story: 1.2, tile: 1.5, wall: 1.1, title: 1.2 },
 	title: { w: 220, d: 96, at: [10, -16, 6], home: [10, 2002, 4], grip: { u: 0.88, v: 0.76 } },
@@ -309,16 +327,16 @@ export function present(state, data) {
 
 export function build(kit, { data }) {
 	const { k, A, S, camera } = kit;
-	const board = { x: -430, y: -286, w: 860, d: 596, r: 10 };
+	const { board } = data;
 	const P = camera.fit(k.boxCorners(board, -12, 35), hero.width, hero.height, { pad: 34 });
 	const R = A.recorder(P);
 	// Face details are drawn in plan units, so they stay out of the audited part markup; live() adopts each one into
 	// its surface's own group at start-up and places it with that face's projection every frame.
 	const details = [];
-	const put = (name, plan, z, h, piece = name, hidden = false, focal = false, detail = "") => {
+	const put = (name, plan, z, h, piece = name, hidden = false, focal = false, detail = "", clip = "") => {
 		if (detail) details.push(detail.replace("<g data-eu26-detail", `<g data-eu26-detail="${name}"`));
 		const kind = piece === "chrome" ? (name.split(".")[1] ?? "").replace(/\d/g, "") : piece.split(".")[0];
-		const attrs = `data-eu26-piece="${piece}" data-part="${name}" data-eu26-kind="${kind}" data-eu26-plan='${JSON.stringify({ plan, z, h })}'${hidden ? ' style="display:none"' : ""}${focal ? ' data-focal="hero-card"' : ""}`;
+		const attrs = `data-eu26-piece="${piece}" data-part="${name}" data-eu26-kind="${kind}" data-eu26-plan='${JSON.stringify({ plan, z, h })}'${hidden ? ' style="display:none"' : ""}${clip ? ` clip-path="url(#eu26-${clip}-window)"` : ""}${focal ? ' data-focal="hero-card"' : ""}`;
 		R.put({ name, at: [plan.x + plan.w / 2, plan.y + plan.d / 2, z + h / 2], svg: `<g ${attrs}>${S(k.slabOf(plan, z, h, P, 4, Math.min(h * 0.16, 0.25)), { tone: focal ? "hi" : "mid", crease: "none", lit: focal })}</g>`, shapes: [R.solid(A.slab(plan, z, h, { name, ground: true }, 4))] });
 	};
 	put("board.chassis", board, -12, 10, "chrome", false, false, chromeDetail("board.chassis"));
@@ -330,7 +348,7 @@ export function build(kit, { data }) {
 	}
 	data.cards.forEach((card, i) => {
 		const plan = { x: card.home[0], y: card.home[1], w: card.w, d: card.d, r: 4.5 };
-		put(`story.${i}`, plan, card.home[2], 1.2, `story.${i}`, card.row > 2, i === 15, cardDetail(card, stories[i]));
+		put(`story.${i}`, plan, card.home[2], 1.2, `story.${i}`, card.row > 3, i === 15, cardDetail(card, stories[i]), card.row === 3 ? `column${card.column}` : "");
 	});
 	data.features.forEach((feature, i) => {
 		const plan = { x: -700 + i * 260, y: 1600, w: feature.w, d: feature.d, r: 9 };
@@ -345,13 +363,11 @@ export function build(kit, { data }) {
 		const plan = { x: child.home[0], y: child.home[1], w: child.w, d: child.d, r: 8 };
 		put(`wallcard.${j}`, plan, 0, 1.1, `wallcard.${j}`, true, false, wrapDetail(stackCardDetail(child)));
 	});
-	for (let i = 0; i < 56; i += 1) {
-		const plan = { x: -700 + i * 24, y: 4000, w: 4 + i % 3, d: 9 + i % 4, r: 0.7 };
-		put(`confetti.${i}`, plan, 0, 0.3, `confetti.${i}`, true);
-	}
-	const window = k.planOutline(data.doneList.viewport, 5.2, P, 4);
-	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><circle data-eu26-cursor-ring cx="0" cy="0" r="0"/><path data-eu26-cursor-halo d="M0 0Z" fill="none" stroke-linejoin="round"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/>${id === "main" ? "" : `<rect data-eu26-cursor-pill x="0" y="0" width="0" height="0" style="display:none"/><text data-eu26-cursor-name x="0" y="0" style="display:none"></text>`}</g>`).join("")}</g>`;
-	return { P, R, before: [`<defs><clipPath id="eu26-done-window" clipPathUnits="userSpaceOnUse"><path data-eu26-done-window d="${window}"/></clipPath></defs>`], after: [`<g data-eu26-details aria-hidden="true" style="display:none">${details.join("")}</g>`, cursorLayer] };
+	data.confetti.forEach((piece, i) => put(`confetti.${i}`, piece.plan, 0, 0.3, `confetti.${i}`, true));
+	const windows = [...data.columnViewports.map((viewport, i) => [`column${i}`, viewport, `data-eu26-column-window="${i}"`]), ["done", data.doneList.viewport, "data-eu26-done-window"]]
+		.map(([key, viewport, marker]) => `<clipPath id="eu26-${key}-window" clipPathUnits="userSpaceOnUse"><path ${marker} d="${k.planOutline(viewport, 5.2, P, 4)}"/></clipPath>`).join("");
+	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><path data-eu26-cursor-halo d="M0 0Z" fill="none" stroke-linejoin="round"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/>${id === "main" ? "" : `<rect data-eu26-cursor-pill x="0" y="0" width="0" height="0" style="display:none"/><text data-eu26-cursor-name x="0" y="0" style="display:none"></text>`}</g>`).join("")}</g>`;
+	return { P, R, before: [`<defs>${windows}</defs>`], after: [`<g data-eu26-details aria-hidden="true" style="display:none">${details.join("")}</g>`, cursorLayer] };
 }
 
 // Wall faces: bento holes repeat their tile's face at the slot's size, lanyards hang a badge, and every library piece
