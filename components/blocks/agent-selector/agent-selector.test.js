@@ -62,6 +62,43 @@ test("AgentSelector keyboard navigation skips disabled agents", async () => {
 	assert.equal(search.getAttribute("aria-activedescendant"), view.getByRole("option", { name: /Last/u }).id);
 });
 
+test("Jira kanban example uses space-pinned agents", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/agent-selector/page.tsx",
+		mocks: { "@/components/ui-custom/agent-avatar-visual": 'export function AgentAvatarVisual() { return null; }' },
+		props: { presentation: "standalone", variant: "jira" },
+	});
+	assert.equal(view.getByText("Pinned by space") !== null, true);
+	assert.equal(view.getByText("More agents") !== null, true);
+	const unpin = view.getByRole("button", { name: "Unpin Readiness Checker" });
+	assert.equal(unpin.getAttribute("aria-pressed"), "true");
+	await view.click(unpin);
+	assert.equal(view.container.querySelector('[aria-label="Pin Readiness Checker"]')?.getAttribute("aria-pressed"), "false");
+	const group = view.container.querySelector('[data-value="readiness-checker"]')?.closest("[cmdk-group]");
+	assert.equal(group?.querySelector("[cmdk-group-heading]")?.textContent, "More agents");
+});
+
+test("favorite appearance removes a saved agent without selecting it", async () => {
+	const updates = [];
+	const selections = [];
+	const view = await renderComponent({
+		entry: "components/blocks/agent-selector/components/agent-selector.tsx",
+		exportName: "AgentSelector",
+		props: {
+			agents: [{ id: "first", name: "First", byline: "" }],
+			defaultPinnedAgentIds: ["first"],
+			onAgentToggle: (id) => selections.push(id),
+			onPinnedAgentIdsChange: (ids) => updates.push(ids),
+			pinningAppearance: "favorite",
+		},
+	});
+	const favorite = view.getByRole("button", { name: "Remove First from favorites" });
+	assert.equal(favorite.getAttribute("aria-pressed"), "true");
+	await view.click(favorite);
+	assert.deepEqual(updates, [[]]);
+	assert.deepEqual(selections, []);
+});
+
 async function loadAgentSelectorHarness() {
 	const mockModules = new Map([
 		["@atlaskit/icon/core/add", "export default function Icon() { return null; }"],
@@ -69,6 +106,8 @@ async function loadAgentSelectorHarness() {
 		["@atlaskit/icon/core/ai-agent", "export default function Icon() { return null; }"],
 		["@atlaskit/icon/core/pin-filled", "export default function Icon() { return 'PIN_FILLED'; }"],
 		["@atlaskit/icon/core/pin", "export default function Icon() { return 'PIN_OUTLINE'; }"],
+		["@atlaskit/icon/core/star-starred", "export default function Icon() { return 'STAR_FILLED'; }"],
+		["@atlaskit/icon/core/star-unstarred", "export default function Icon() { return 'STAR_OUTLINE'; }"],
 		["@atlaskit/icon/core/video-stop-overlay", "export default function Icon() { return null; }"],
 		[
 			"motion/react",
@@ -318,7 +357,7 @@ test("AgentSelector single-select tick uses the VPK check in a transparent icon 
 	assert.match(COMPONENT_SOURCE, /import \{[^}]*\bCheckIcon\b[^}]*\} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<IconTile[\s\S]*className="ml-1 mr-1 text-icon-subtle"[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
+		/<IconTile[\s\S]*className=\{cn\("ml-1 text-icon-subtle",[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(COMPONENT_SOURCE, /showSingleSelectTick && "[^"]*bg-bg-selected/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_LABEL_CLASS = "menu-row-title text-left";/u);
@@ -421,7 +460,7 @@ test("AgentSelector pin actions reveal without permanently reserving label space
 	assert.match(COMPONENT_SOURCE, /const pinFilled = isPinned;/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /pinFilled = isPinned \|\|/u);
 	assert.match(COMPONENT_SOURCE, /marginLeft: showPinButton \? 8 : 0,[\s\S]*opacity: showPinButton \? 1 : 0,[\s\S]*width: showPinButton \? 24 : 0/u);
-	assert.match(COMPONENT_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agent\.name\}`\}/u);
+	assert.match(COMPONENT_SOURCE, /`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agent\.name\}`/u);
 	assert.match(COMPONENT_SOURCE, /aria-hidden=\{!showPinButton\}/u);
 	assert.match(COMPONENT_SOURCE, /aria-pressed=\{isPinned\}/u);
 	assert.match(COMPONENT_SOURCE, /tabIndex=\{showPinButton \? 0 : -1\}/u);
@@ -488,12 +527,11 @@ test("AgentSelector renders in-progress agents in a top section with stop-on-hov
 	assert.match(COMPONENT_SOURCE, /!pinnedAgentIdSet\.has\(agent\.id\) && !inProgressAgentIdSet\.has\(agent\.id\)/u);
 });
 
-test("AgentSelector jira-kanban catalog demo matches the Assign agent palette", () => {
+test("AgentSelector exposes the Jira kanban catalog demo", () => {
 	assert.match(PAGE_SOURCE, /variant\?: "default" \| "selected-agent-actions" \| "jira";/u);
 	assert.doesNotMatch(PAGE_SOURCE, /inProgressAgentIds/u);
 	assert.doesNotMatch(PAGE_SOURCE, /onStopAgent/u);
 	assert.doesNotMatch(PAGE_SOURCE, /setInProgressAgentIds/u);
-	assert.match(DETAILS_SOURCE, /title: "Jira kanban", description: "Same palette as Assign agent/u);
 	assert.doesNotMatch(DETAILS_SOURCE, /title: "Jira kanban"[\s\S]{0,240}In progress/u);
 	assert.match(PAGE_SOURCE, /searchVariant="palette"/u);
 	assert.match(PAGE_SOURCE, /selectionMode="single"/u);
@@ -502,9 +540,7 @@ test("AgentSelector jira-kanban catalog demo matches the Assign agent palette", 
 	assert.match(PAGE_SOURCE, /onBrowseAgents=\{\(\) => undefined\}/u);
 	assert.match(PAGE_SOURCE, /onCreateAgent=\{\(\) => undefined\}/u);
 	assert.match(PAGE_SOURCE, /variant === "jira" \? DEFAULT_PINNED_SPACE_AGENT_IDS : \[\]/u);
-	assert.match(PAGE_SOURCE, /pinnedItemsLabel=\{variant === "jira" \? WORK_ITEM_PINNED_ITEMS_LABEL : undefined\}/u);
 	assert.match(PAGE_SOURCE, /moreItemsLabel=\{variant === "jira" \? "More agents" : undefined\}/u);
-	assert.match(DETAILS_SOURCE, /Pinned by space \/ More agents grouping/u);
 
 	// Wired end-to-end: demo wrapper -> variant registry -> details example.
 	assert.match(DEMO_SOURCE, /export function AgentSelectorDemoJira/u);

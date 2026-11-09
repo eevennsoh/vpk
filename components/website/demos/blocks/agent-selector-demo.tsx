@@ -14,6 +14,10 @@ export default function AgentSelectorDemo(): ReactElement {
 	);
 }
 
+export function AgentSelectorDemoIncludeByline(): ReactElement {
+	return <div className="flex min-h-[32rem] items-start justify-center p-6 pt-8"><div className="w-full max-w-80"><AgentSelectorPage includeByline presentation="standalone" /></div></div>;
+}
+
 export function AgentSelectorDemoSelectedAgentActions(): ReactElement {
 	return (
 		<div className="flex min-h-[32rem] items-start justify-center p-6 pt-8">

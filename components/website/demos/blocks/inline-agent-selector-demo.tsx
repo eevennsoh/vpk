@@ -15,7 +15,7 @@ import { Icon } from "@/components/ui/icon";
 const softwareIds = ["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent", "rovo-cli"];
 const localLabels: Readonly<Record<string, string>> = { "claude-code": "Claude", "test-agent": "Cursor", "review-agent": "Codex" };
 
-export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onStartSession, onBrowseAgents, onCreateAgent, status, favoriteAgentIds, onFavoriteAgentIdsChange, includeRovoCli = true, initialSoftwareLimit = softwareIds.length }: Readonly<{
+export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onStartSession, onBrowseAgents, onCreateAgent, status, favoriteAgentIds, onFavoriteAgentIdsChange, cloudOnly = false, initialSoftwareLimit = softwareIds.length }: Readonly<{
 	sessions?: readonly AgentSessionItem[];
 	onContinueSession?: (session: AgentSessionItem) => void;
 	onStartSession?: (agent: AgentSelectorAgent) => void;
@@ -24,14 +24,16 @@ export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onSt
 	status?: string;
 	favoriteAgentIds?: readonly string[];
 	onFavoriteAgentIdsChange?: (ids: readonly string[]) => void;
-	includeRovoCli?: boolean;
+	cloudOnly?: boolean;
 	initialSoftwareLimit?: number;
 }> = {}) {
+	const includeRovoCli = !cloudOnly;
 	const [feedback, setFeedback] = useState("");
 	const [choosingAgentId, setChoosingAgentId] = useState<string | null>(null);
 	const agents = BUTTER_PICKER_AGENTS.filter((agent) => agent.id !== "github-copilot" && (includeRovoCli || agent.id !== "rovo-cli"));
 	const getActions = (agent: AgentSelectorAgent): InlineAgentAction[] => {
 		const simulate = (action: string) => setFeedback(`${action} · ${agent.name} (preview)`);
+		if (cloudOnly) return [{ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => { if (onStartSession) onStartSession(agent); else simulate("Start on Cloud"); } }];
 		const matching = onContinueSession ? matchingAgentSessions(agent, sessions) : [];
 		if (choosingAgentId === agent.id) return [
 			{ id: "back", label: "Back", icon: <Icon render={<ArrowLeftIcon label="" size="small" />} />, onSelect: () => setChoosingAgentId(null), focusFirstActionAfterSelect: true },

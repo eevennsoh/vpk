@@ -16,38 +16,40 @@ test("Jira Local Agent remembers the last used agent and copies the work item pr
 	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value) => copied.push(value) } });
 	t.after(() => { window.localStorage.removeItem("jira-local-agent-last-used"); if (originalClipboard) Object.defineProperty(navigator, "clipboard", originalClipboard); else delete navigator.clipboard; });
 	const view = await renderComponent({ entry: "components/blocks/jira-local-agent/index.tsx", exportName: "JiraLocalAgent", props: { workItem: { code: "PAY-118", summary: "Billing", description: "Carry the artwork" } } });
-	assert.equal(view.queryByRole("option", { name: /Claude/u }), null);
+	assert.equal(view.queryByRole("button", { name: "Claude" }), null);
 	await view.click(view.getByRole("button", { name: "Open local agent" }));
 	assert.equal(view.queryByRole("combobox", { name: "Search agents" }), null);
 	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot", "Rovo CLI"]) {
-		assert.equal(view.getByRole("option", { name: new RegExp(name, "u") }) !== null, true);
+		assert.equal(view.getByRole("button", { name: name === "Rovo CLI" ? /^Rovo CLI$/u : new RegExp(name, "u") }) !== null, true);
 	}
 	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot"]) {
-		assert.equal(view.getByRole("option", { name: new RegExp(name, "u") }).hasAttribute("aria-haspopup"), false);
+		assert.equal(view.getByRole("button", { name: new RegExp(name, "u") }).hasAttribute("aria-haspopup"), false);
 	}
-	assert.equal(view.getByRole("option", { name: /Rovo CLI/u }).getAttribute("aria-haspopup"), "menu");
-	assert.equal(view.queryByRole("option", { name: /Jira Coding Agent/u }), null);
-	assert.equal(view.queryByRole("option", { name: /Figma/u }), null);
-	await view.click(view.getByRole("option", { name: /Codex/u }));
-	assert.equal(view.getAllByRole("option")[0].textContent.includes("Codex"), true);
+	assert.equal(view.getByRole("button", { name: "Rovo CLI" }).hasAttribute("aria-haspopup"), false);
+	assert.equal(view.getByRole("button", { name: "Configure Rovo CLI" }).getAttribute("aria-haspopup"), "dialog");
+	assert.equal(view.queryByRole("button", { name: /Jira Coding Agent/u }), null);
+	assert.equal(view.queryByRole("button", { name: /Figma/u }), null);
+	await view.click(view.getByRole("button", { name: "Codex" }));
+	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Codex"), true);
 	assert.equal(view.container.ownerDocument.querySelectorAll("hr").length, 2);
 	assert.equal(view.queryByRole("menuitem", { name: "Open in Codex" }), null);
 	assert.equal(view.queryByRole("menuitem", { name: "Run on cloud" }), null);
-	const copilot = view.getByRole("option", { name: /GitHub Copilot/u });
-	assert.equal(copilot.getAttribute("aria-disabled"), "true");
+	const copilot = view.getByRole("button", { name: /GitHub Copilot/u });
+	assert.equal(copilot.disabled, true);
 	assert.equal(copilot.textContent.includes("Not installed"), true);
 	await view.click(view.getByRole("button", { name: "Open local agent" }));
 	await view.click(view.getByRole("button", { name: "Open local agent" }));
-	assert.equal(view.getAllByRole("option")[0].textContent.includes("Codex"), true);
-	assert.equal(view.getAllByRole("option").length, 5);
+	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Codex"), true);
+	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]").length, 5);
 	assert.equal(view.container.ownerDocument.querySelectorAll("hr").length, 2);
 	await view.click(view.getByRole("button", { name: "Copy prompt" }));
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork"]);
 	assert.equal(view.getByRole("button", { name: "Prompt copied" }) !== null, true);
-	await view.click(view.getByRole("option", { name: /Rovo CLI/u }));
-	assert.equal(view.getAllByRole("option")[0].textContent.includes("Rovo CLI"), true);
-	await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
-	assert.equal(view.queryByRole("button", { name: "Configure directory" }), null);
+	await view.click(view.getByRole("button", { name: "Rovo CLI" }));
+	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Rovo CLI"), true);
+	assert.equal(view.queryByRole("textbox", { name: "Choose your directory" }), null);
+	await view.click(view.getByRole("button", { name: "Configure Rovo CLI" }));
+	assert.equal(view.queryByRole("button", { name: "Open in Rovo CLI" }), null);
 	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }) !== null, true);
 	await view.unmount();
 });
