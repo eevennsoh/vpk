@@ -45,6 +45,8 @@ export interface JiraActivityProps {
 	composer?: ReactNode | null;
 	/** Connect every timeline entry, or draw branches only within comment threads. */
 	connectorStyle?: "timeline" | "thread";
+	/** Continue the last timeline stem into a decorative fade. */
+	fadeAfterLast?: boolean;
 	/** Plain comment and reply header layout. */
 	commentHeaderLayout?: JiraActivityCardProps["headerLayout"];
 	/** Optional trailing action for each comment card. */
@@ -145,6 +147,7 @@ export function JiraActivity({
 	actors = [],
 	composer,
 	connectorStyle = "timeline",
+	fadeAfterLast = false,
 	commentHeaderLayout,
 	renderCommentAction,
 	renderCommentTools,
@@ -312,7 +315,7 @@ export function JiraActivity({
 					aria-label="Activity timeline"
 					// Rail mode omits the sticky header; a little top pad keeps the
 					// first mention chip clear of the metadata scrollport clip edge.
-					className={cn("flex flex-col", hideHeader ? "pt-1" : null)}
+					className={cn("flex flex-col", hideHeader ? "pt-1" : null, fadeAfterLast && orderedEntries.length > 0 ? "pb-4" : null)}
 				>
 					{orderedEntries.map((entry, index) => {
 						const customEntry = renderEntry?.(entry);
@@ -427,7 +430,7 @@ export function JiraActivity({
 												: undefined
 										}
 										// Threads keep one continuous spine: each stem runs on past its replies' branches to the next row.
-										isLast={isLast}
+										isLast={isLast && !fadeAfterLast}
 										size={isCardEntry ? "card" : "event"}
 										tone={connectorStyle === "thread" ? "thread" : "timeline"}
 									/>
@@ -437,9 +440,13 @@ export function JiraActivity({
 										"min-w-0 flex-1",
 										spacingClassName,
 										isNestedComment ? "pt-3 pl-6" : null,
+										isLast && fadeAfterLast ? "relative" : null,
 									)}
 								>
 									{customEntry !== undefined ? customEntry : defaultEntry}
+									{isLast && fadeAfterLast ? (
+										<span aria-hidden className={cn("absolute -left-6 top-full h-4 w-px -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black,transparent)]", connectorStyle === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} data-jira-activity-end-fade />
+									) : null}
 								</div>
 							</li>
 						);
