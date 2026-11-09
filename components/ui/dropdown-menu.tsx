@@ -157,6 +157,7 @@ function DropdownMenuContent({
 				className={cn(
 					dropdownStyles.popup,
 					dropdownMenuOverlayShadow,
+					"child-overlay-surface",
 					className,
 				)}
 				{...props}

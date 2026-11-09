@@ -54,7 +54,7 @@ export function ProjectButterAgentPicker({
 	);
 }
 
-export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAgentIds, onFavoriteAgentIdsChange, onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onLocalUse, onPreviewSession, recentAgentId, sessions = [], sessionChoicesOnly = false, selectedAgentIds, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
+export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAgentIds, onFavoriteAgentIdsChange, onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onLocalUse, onPreviewSession, recentAgentId, sessions = [], sessionChoicesOnly = false, selectedAgentIds, showSubmenuChevron = true, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
 	localOnly?: boolean;
 	favoriteAgentIds?: readonly string[];
 	onFavoriteAgentIdsChange?: (ids: readonly string[]) => void;
@@ -68,6 +68,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 	sessions?: readonly AgentSessionItem[];
 	sessionChoicesOnly?: boolean;
 	selectedAgentIds?: readonly string[];
+	showSubmenuChevron?: boolean;
 	submenuPositionerClassName?: string;
 	workspacePositionerClassName?: string;
 }>) {
@@ -283,6 +284,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 				selectedAgentIds={selectedAgentIds}
 				showSelectedTickInSingleSelect
 				submenuAgentIds={pickerAgents.filter(hasSubmenu).map((agent) => agent.id)}
+				showSubmenuChevron={showSubmenuChevron}
 				selectionMode="single"
 			/>
 		<Popover open={submenu !== null} onOpenChange={(open) => { if (!open) { setChoosingSession(false); onPreviewSession?.(null); setSubmenu((current) => current?.agent.id === submenu?.agent.id ? null : current); } }}>

@@ -93,12 +93,13 @@ function InvocationPreview({ iconScale }: Readonly<{ iconScale?: JiraIssueIconSc
 
 function InvocationHandoff({ iconScale, showStatus }: Readonly<{ iconScale?: JiraIssueIconScale; showStatus: boolean }>) {
 	const { agent } = useProjectButterInvocationPreview();
+	const reduce = useReducedMotion();
 	if (!agent) return null;
 	return (
 		<div aria-hidden="true" className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)))} data-agent-id={agent.id} data-slot="jira-issue-agent-invocation-handoff">
-			<span className="flex size-6 shrink-0 items-center justify-center">
+			<motion.span className="flex size-6 shrink-0 items-center justify-center" initial={reduce ? false : { transform: "scale(0.85)" }} animate={{ transform: "scale(1)" }} transition={reduce ? { duration: 0 } : { ...BUTTER_INVOCATION_HANDOFF, delay: BUTTER_INVOCATION_CYCLE.duration }} style={{ willChange: "transform" }}>
 				{agent.visual ?? <AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={getJiraIssueAgentAvatarSize(agent.brandName, agent.avatarSrc)} animate={false} />}
-			</span>
+			</motion.span>
 			{showStatus ? <JiraIssueAgentHandoffLabel name={agent.name}>Working</JiraIssueAgentHandoffLabel> : null}
 		</div>
 	);
@@ -133,7 +134,7 @@ export function ProjectButterInvocationChin({
 		if (phase !== "handoff" || !actions) return;
 		const timer = setTimeout(
 			() => selectedAttached ? actions.settle(preview.sequence) : actions.abort(preview.sequence),
-			selectedAttached ? (reduce ? 0 : (intoPuzzle ? BUTTER_INVOCATION_PUZZLE_DURATION + motionDuration.xxshort : BUTTER_INVOCATION_CYCLE.duration) * 1000) : 3000,
+			selectedAttached ? (reduce ? 0 : (intoPuzzle ? BUTTER_INVOCATION_PUZZLE_DURATION + motionDuration.xxshort : BUTTER_INVOCATION_CYCLE.duration + BUTTER_INVOCATION_HANDOFF.duration) * 1000) : 3000,
 		);
 		return () => clearTimeout(timer);
 	}, [actions, phase, preview.sequence, reduce, selectedAttached, intoPuzzle]);
