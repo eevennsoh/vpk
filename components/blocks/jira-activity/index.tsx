@@ -315,7 +315,7 @@ export function JiraActivity({
 					aria-label="Activity timeline"
 					// Rail mode omits the sticky header; a little top pad keeps the
 					// first mention chip clear of the metadata scrollport clip edge.
-					className={cn("flex flex-col", hideHeader ? "pt-1" : null)}
+					className={cn("flex flex-col", hideHeader ? "pt-1" : null, fadeAfterLast && orderedEntries.length > 0 ? "pb-4" : null)}
 				>
 					{orderedEntries.map((entry, index) => {
 						const customEntry = renderEntry?.(entry);
@@ -399,7 +399,7 @@ export function JiraActivity({
 						return (
 							<li
 								aria-current={entry.id === activeEntryId ? "step" : undefined}
-								className="group/activity-event flex min-w-0 gap-2"
+								className="group/activity-event relative flex min-w-0 gap-2"
 								data-active={entry.id === activeEntryId ? "" : undefined}
 								data-jira-activity-entry-id={entry.id}
 								data-jira-activity-entry-kind={entry.kind}
@@ -444,14 +444,14 @@ export function JiraActivity({
 								>
 									{customEntry !== undefined ? customEntry : defaultEntry}
 								</div>
+								{isLast && fadeAfterLast ? (
+									<span aria-hidden className="absolute top-full left-0 flex w-8 justify-center" data-jira-activity-end-fade>
+										<span className={cn("h-4 w-px [mask-image:linear-gradient(to_bottom,black,transparent)]", connectorStyle === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} />
+									</span>
+								) : null}
 							</li>
 						);
 					})}
-					{fadeAfterLast && orderedEntries.length > 0 ? (
-						<li aria-hidden className="flex w-8 justify-center" data-jira-activity-end-fade>
-							<span className={cn("h-4 w-px [mask-image:linear-gradient(to_bottom,black,transparent)]", connectorStyle === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} />
-						</li>
-					) : null}
 				</ol>
 			)}
 

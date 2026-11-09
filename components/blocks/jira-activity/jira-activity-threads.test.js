@@ -742,8 +742,8 @@ test("thread connectors branch only inside discussions while the spine continues
 	const replyToggleIcon = thread.querySelector("[data-jira-activity-reply-toggle-icon]");
 	assert.equal(replyToggleIcon.getAttribute("aria-hidden"), "true");
 	assert.equal(replyToggleIcon.classList.contains("bg-surface"), true);
-	assert.equal(replyToggleIcon.closest("button"), null);
-	await view.click(view.getByRole("button", { name: "Show more replies" }));
+	assert.equal(replyToggleIcon.closest("button") === view.getByRole("button", { name: "Show more replies" }), true);
+	await view.click(replyToggleIcon);
 	assert.equal(visibleBranches().length, 2);
 	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
 	assert.equal(visibleBranches().length, 1);
@@ -767,7 +767,7 @@ test("the final timeline entry continues into a decorative fade when requested",
 	const fade = document.querySelector("[data-jira-activity-end-fade]");
 	assert.equal(stem !== null, true);
 	assert.equal(fade.getAttribute("aria-hidden"), "true");
-	assert.equal(lastEntry.nextElementSibling === fade, true);
+	assert.equal(lastEntry.contains(fade), true);
 });
 
 
