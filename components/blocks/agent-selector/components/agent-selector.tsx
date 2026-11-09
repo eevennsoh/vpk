@@ -160,7 +160,7 @@ const EMPTY_IN_PROGRESS_AGENT_IDS: readonly string[] = [];
 const EMPTY_DISABLED_AGENT_IDS: readonly string[] = [];
 const EMPTY_SUBMENU_AGENT_IDS: readonly string[] = [];
 const EMPTY_SELECTED_AGENT_ACTIONS: readonly AgentSelectorAction[] = [];
-const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal";
+const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 border-0 pl-2 pr-3 py-0 text-left text-sm font-normal";
 const ACTION_ICON_CLASS = "grid size-6 shrink-0 place-items-center text-icon-subtle";
 const ACTION_LABEL_CLASS = "text-text-subtle";
 // The trailing `auto` column reserves a lane for CommandItem's check icon,
@@ -316,6 +316,7 @@ function AgentSelectorItem({
 			aria-haspopup={isSubmenuTrigger ? "menu" : undefined}
 			className={cn(
 				AGENT_ROW_BASE_CLASS,
+				"data-selected:bg-bg-neutral-subtle-hovered",
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
 				!showByline && "h-9",
 			)}

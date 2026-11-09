@@ -37,8 +37,8 @@ export function ProjectButterInlineAgentPicker({ onAssign, onBrowseAgents, onCon
 			id: "continue", label: matching.length > 1 ? "Continue to existing session" : "Continue with last session", icon: <Icon render={<AiChatIcon label="" size="small" />} />,
 			onSelect: () => { if (matching.length === 1) onContinueSession?.(matching[0]); else setChoosingAgentId(agent.id); }, focusFirstActionAfterSelect: matching.length > 1,
 		}] : [];
-		if (agent.id !== "rovo-cli") actions.push({ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" size="small" />} />, onSelect: () => onAssign(agent) });
-		if (LOCAL_LABELS[agent.id]) actions.push({ id: "local", label: LOCAL_LABELS[agent.id], icon: <Icon render={<ScreenIcon label="" size="small" />} />, onSelect: () => setStatus(`Open locally · ${agent.name} (preview)`) });
+		if (agent.id !== "rovo-cli") actions.push({ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => onAssign(agent) });
+		if (LOCAL_LABELS[agent.id]) actions.push({ id: "local", label: LOCAL_LABELS[agent.id], icon: <Icon render={<ScreenIcon label="" />} />, onSelect: () => setStatus(`Open locally · ${agent.name} (preview)`) });
 		return actions;
 	};
 	return <InlineAgentSelector agents={pickerAgents} softwareAgentIds={SOFTWARE_IDS} getActions={getActions} renderAdditionalActions={(agent) => agent.id === "rovo-cli" && choosingAgentId !== agent.id ? <ProjectButterLocalAgentMenu onPointerEnter={() => undefined} onPointerLeave={() => undefined} onSelectingFolderChange={() => undefined} /> : null} onActiveAgentChange={(agent) => { setChoosingAgentId(null); invocation?.preview(agent, agent ? agents.findIndex((candidate) => candidate.id === agent.id) : -1); }} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} status={status} />;

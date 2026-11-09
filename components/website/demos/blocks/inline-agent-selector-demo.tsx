@@ -49,8 +49,8 @@ export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onSt
 		if (agent.id === "rovo-cli") return continueActions;
 		return [
 			...continueActions,
-			{ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" size="small" />} />, onSelect: () => { if (onStartSession) onStartSession(agent); else simulate("Start on Cloud"); } },
-			...(localLabels[agent.id] ? [{ id: "local", label: `Open in ${localLabels[agent.id]}`, icon: <Icon render={<ScreenIcon label="" size="small" />} />, onSelect: () => simulate("Open locally") }] : []),
+			{ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => { if (onStartSession) onStartSession(agent); else simulate("Start on Cloud"); } },
+			...(localLabels[agent.id] ? [{ id: "local", label: `Open in ${localLabels[agent.id]}`, icon: <Icon render={<ScreenIcon label="" />} />, onSelect: () => simulate("Open locally") }] : []),
 		];
 	};
 	const favoriteProps = favoriteAgentIds && onFavoriteAgentIdsChange ? { favoriteAgentIds, onFavoriteAgentIdsChange } : { favoriteAgentIds: undefined, onFavoriteAgentIdsChange: undefined };
