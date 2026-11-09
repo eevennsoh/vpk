@@ -19,10 +19,9 @@ export interface ProjectButterDevelopmentJourneyProps {
 	workItem?: DevelopmentPanelProps["workItem"];
 	headerExtra?: ReactNode;
 	surface?: DevelopmentPanelProps["surface"];
-	onStartCoding?: () => void;
 }
 
-export function ProjectButterDevelopmentJourney({ agentName = "Rovo", author, autoFixEnabled, autoMergeEnabled, headerExtra, onAutoFixChange, onAutoMergeChange, onFixCheck, onMergePullRequest, onStartCoding, phase, surface, workItem = { code: "PAY-999", summary: "Improve merchant onboarding for Payments SDK v2", description: "" } }: Readonly<ProjectButterDevelopmentJourneyProps>) {
+export function ProjectButterDevelopmentJourney({ agentName = "Rovo", author, autoFixEnabled, autoMergeEnabled, headerExtra, onAutoFixChange, onAutoMergeChange, onFixCheck, onMergePullRequest, phase, surface, workItem = { code: "PAY-999", summary: "Improve merchant onboarding for Payments SDK v2", description: "" } }: Readonly<ProjectButterDevelopmentJourneyProps>) {
 	const pullRequestSettings = { autoFix: autoFixEnabled, mergeWhenReady: autoMergeEnabled, onAutoFixChange, onMergeWhenReadyChange: onAutoMergeChange };
 	const presentation = phase ? projectButterDevelopmentPresentation(phase) : undefined;
 	const checks = phase ? projectButterDevelopmentChecks(phase) : [];
@@ -32,7 +31,6 @@ export function ProjectButterDevelopmentJourney({ agentName = "Rovo", author, au
 			<DevelopmentPanel
 				footerExtra={footerExtra}
 				headerExtra={headerExtra}
-				onStartCoding={onStartCoding}
 				pullRequests={presentation ? [{ ...PROJECT_BUTTER_JOURNEY_PULL_REQUEST, author: author ?? { name: agentName }, checks, onFix: onFixCheck ? () => onFixCheck() : undefined, showReview: true, relativeTime: "Just now", repository: "payments-platform/payments", status: presentation.status }] : []}
 				pullRequestSettings={pullRequestSettings}
 				surface={surface}

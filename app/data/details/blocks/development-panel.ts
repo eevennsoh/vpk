@@ -7,6 +7,5 @@ export const DEVELOPMENT_PANEL_DETAIL: ComponentDetail = {
 	props: [
 		{ name: "pullRequests", type: "readonly PullRequestProps[]", default: "[]", description: "Pull requests linked to the work item. An empty list shows Start coding and Copy prompt." },
 		{ name: "workItem", type: "{ code: string; summary: string; description: string }", required: true, description: "Work item details used by Copy prompt." },
-		{ name: "onStartCoding", type: "() => void", description: "Called when Start coding is selected in the before-setup state." },
 	],
 };

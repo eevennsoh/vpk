@@ -256,12 +256,6 @@ export function ProjectButterJiraWorkItem({
 		onAgentSessionStart?.(session);
 		setActiveSessionId(null);
 	}
-	function startCoding() {
-		const session = model.startCoding(content.summary);
-		addInvocation(session);
-		onAgentSessionStart?.(session);
-		if (onOpenCloudSession) { setActiveSessionId(null); onOpenCloudSession(session); }
-	}
 	function openSession(id: string, draft?: string): boolean | void | Promise<boolean | void> {
 		const session = sessions.find((item) => item.id === id);
 		if (!session || isLocalAgentListItem(session)) return false;
@@ -305,7 +299,6 @@ export function ProjectButterJiraWorkItem({
 			empty={sparse}
 			onDescriptionSuggested={(text) => setDescriptionReveal((current) => ({ id: (current?.id ?? 0) + 1, text }))}
 			onPanelOrderChange={setPanelOrder}
-			onStartCoding={startCoding}
 			panelOrder={panelOrder}
 			sidePanel={sidePanel}
 			suggestion={suggestion}
