@@ -377,6 +377,11 @@ export function useButterList({
 			listOrder,
 		);
 		const rows = arrangeListHierarchy(orderedRows, expandedKeys);
+		const rowKeys = new Set(orderedRows.map((row) => row.issueKey));
+		const parentKeys = new Set(orderedRows.flatMap((row) => (
+			row.parentIssueKey && rowKeys.has(row.parentIssueKey) ? [row.parentIssueKey] : []
+		)));
+		const allExpanded = parentKeys.size > 0 && [...parentKeys].every((key) => expandedKeys.has(key));
 
 		return {
 			agentCatalog: BUTTER_AGENT_CATALOG,
@@ -393,6 +398,19 @@ export function useButterList({
 					summary: draftWorkItem.summary,
 				} satisfies JiraListDraftWorkItem
 				: null,
+			hierarchyExpansion: {
+				allExpanded,
+				disabled: parentKeys.size === 0,
+				onToggleAll: () => setExpandedKeys((current) => {
+					const next = new Set(current);
+					const collapse = [...parentKeys].every((key) => current.has(key));
+					for (const key of parentKeys) {
+						if (collapse) next.delete(key);
+						else next.add(key);
+					}
+					return next;
+				}),
+			},
 			onAssignedAgentIdsChange: handleAssignedAgentIdsChange,
 			onAssignedAgentSelect,
 			onCopyLink: handleCopyLink,
@@ -453,6 +471,7 @@ export function useButterList({
 		onBrowseAgents,
 		onCreateAgent,
 		selectedIssueKeys,
+		setExpandedKeys,
 	]);
 
 	return { createBoardFromAgentSession, createFromAgentSession, getProps, onVisibleRowsChange, onAssignedAgentIdsChange: handleAssignedAgentIdsChange };

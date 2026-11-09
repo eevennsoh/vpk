@@ -1097,7 +1097,7 @@
   },
   "components/blocks/jira-list/jira-list.test.js": {
     "no-restricted-syntax": {
-      "count": 334
+      "count": 329
     }
   },
   "components/blocks/jira-toolbar/jira-toolbar.test.js": {

@@ -29,7 +29,7 @@ const buttonVariants = cva(
 		variants: {
 			selectedAppearance: {
 				default: "",
-				"icon-only": "aria-pressed:bg-transparent aria-pressed:border-transparent aria-pressed:focus-visible:border-ring aria-pressed:hover:bg-bg-neutral-subtle-hovered aria-pressed:active:bg-bg-neutral-subtle-pressed [&_svg]:text-inherit",
+				"icon-only": "aria-pressed:bg-transparent aria-pressed:border-transparent aria-pressed:focus-visible:border-ring aria-pressed:hover:bg-bg-neutral-subtle-hovered aria-pressed:active:bg-bg-neutral-subtle-pressed aria-expanded:bg-transparent aria-expanded:text-text-subtle aria-expanded:border-transparent aria-expanded:focus-visible:border-ring aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_[data-slot=icon]]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle [&_svg]:text-inherit",
 			},
 			variant: {
 				default:

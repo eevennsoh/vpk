@@ -121,6 +121,7 @@ export interface JiraListProps {
 	addAgentLabel?: string;
 	activeIssueKey?: string;
 	ariaLabel?: string;
+	bordered?: boolean;
 	className?: string;
 	createLabel?: string;
 	totalCountLabel?: string;
@@ -157,6 +158,11 @@ export interface JiraListProps {
 	onStoryPointsChange?: (issueKey: string, points: number | undefined) => void;
 	renderAgentSessions?: (row: JiraListRowData) => ReactNode;
 	onToggleExpand?: (issueKey: string) => void;
+	hierarchyExpansion?: {
+		allExpanded: boolean;
+		disabled: boolean;
+		onToggleAll: () => void;
+	};
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
 	/** One-shot acknowledgement for rows a dropped session created or joined. */
 	rowFlash?: JiraListRowFlash;
