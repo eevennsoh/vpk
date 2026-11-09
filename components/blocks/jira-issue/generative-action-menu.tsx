@@ -11,7 +11,7 @@ import {
 	type ReactElement,
 } from "react";
 
-import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { SkillDirectorySkill } from "@/app/data/directory";
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
@@ -153,7 +153,7 @@ function mapRovoItemToAgent(item: RovoSparkleItem): AgentSelectorAgent {
 	};
 }
 
-function mapRovoItemToSkill(item: RovoSparkleItem): SkillsDirectorySkill {
+function mapRovoItemToSkill(item: RovoSparkleItem): SkillDirectorySkill {
 	return {
 		id: item.id,
 		name: item.label,

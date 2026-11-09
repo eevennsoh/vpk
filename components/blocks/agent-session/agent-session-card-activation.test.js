@@ -104,7 +104,7 @@ function loadHarness() {
 				export function createJiraSessionFlyoutHandle() { return { id: "inactive", close() {}, open() {} }; }
 				export function formatSessionChecks() { return ""; } export const JIRA_SESSION_UPDATED_LABEL = "Updated"; export function prStateLozenge() { return ""; }
 			`],
-			["agent-states", `export function AgentStates() { return null; }`],
+			["agent-state", `export function AgentState() { return null; }`],
 			["agent-profile-card", `export function AgentProfileCard() { return null; }`],
 			["smart-link", `export function SmartLink() { return null; } export const SMART_LINK_MODAL_ACTIONS = [];`],
 			["avatar", `export function Avatar() { return null; } export function AvatarFallback() { return null; } export function AvatarImage() { return null; }`],

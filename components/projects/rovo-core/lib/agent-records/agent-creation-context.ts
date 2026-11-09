@@ -50,7 +50,7 @@ interface LabelledEntry {
 
 /**
  * Minimal structural shape of a Browse-all template agent we read for
- * provenance. The real `AgentTemplatesAgent` is structurally assignable to this.
+ * provenance. The real `AgentTemplateAgent` is structurally assignable to this.
  */
 interface TemplateAgentLike {
 	id?: string;
@@ -94,7 +94,7 @@ export interface StudioCreationTemplateContext {
 	capabilities?: string[];
 	/**
 	 * Real catalog ids this template binds, surfaced as strong defaults so the
-	 * model reuses them verbatim. Populated by the agent-templates data layer
+	 * model reuses them verbatim. Populated by the agent-template data layer
 	 * (task #3); referenced defensively here so this module compiles before that
 	 * lands.
 	 */
@@ -651,7 +651,7 @@ function formatTemplateContextBlock(template: StudioCreationTemplateContext): st
 		lines.push(`- Capabilities: ${template.capabilities.join(", ")}`);
 	}
 
-	// Bound catalog ids + tokenized body are added by the agent-templates data
+	// Bound catalog ids + tokenized body are added by the agent-template data
 	// layer (task #3). Reference them defensively so this compiles before that
 	// lands; when present they are the strongest defaults — reuse these exact ids.
 	const boundIds: string[] = [];

@@ -179,9 +179,9 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	);
 	assert.match(
 		source,
-		/<AgentStates[\s\S]*agent=\{\{[\s\S]*brandName: session\.brandName,[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStatesState\(session\.status\)\}/u,
+		/<AgentState[\s\S]*agent=\{\{[\s\S]*brandName: session\.brandName,[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStateState\(session\.status\)\}/u,
 	);
-	assert.match(source, /function toAgentStatesState\(/u);
+	assert.match(source, /function toAgentStateState\(/u);
 	assert.match(source, /status === "awaiting-input"\) return "awaiting-input"/u);
 	assert.match(source, /status === "running"\) return "working"/u);
 	assert.match(source, /return "completed"/u);
@@ -356,7 +356,7 @@ test("details render a PR Smart Link while untracked work embeds its PR summary"
 	assert.doesNotMatch(pullRequestSectionSource, /SmartLink/u);
 });
 
-test("shared Agent States flyout forwards submission, timing, and stopped lifecycle data", () => {
+test("shared Agent State flyout forwards submission, timing, and stopped lifecycle data", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	const queueSource = readRepoFile("components/projects/jira-queue/data/queue-sessions.ts");
@@ -367,10 +367,10 @@ test("shared Agent States flyout forwards submission, timing, and stopped lifecy
 		assert.match(source, new RegExp(`${prop}=\\{session\\.${prop}\\}`, "u"));
 		assert.match(jiraSource, new RegExp(`${prop}\\?: number;`, "u"));
 	}
-	assert.match(source, /function toAgentStatesMessage\(/u);
+	assert.match(source, /function toAgentStateMessage\(/u);
 	assert.match(source, /status !== "stopped"\) return undefined;/u);
 	assert.match(source, /This session was stopped before the requested work was completed\./u);
-	assert.match(source, /message=\{toAgentStatesMessage\(session\.status\)\}/u);
+	assert.match(source, /message=\{toAgentStateMessage\(session\.status\)\}/u);
 	assert.match(queueSource, /const QUEUE_SESSION_TIMING:/u);
 	assert.match(queueSource, /stopped: \{ completedSecondsAgo:/u);
 });
@@ -459,9 +459,9 @@ test("nested Jira previews open right by default while Queue Details overrides t
 	assert.match(artifactsSource, /<SmartLink align="center" alignOffset=\{0\}[\s\S]*side="left"/u);
 });
 
-// The block delegates to the shared surface and reuses the /jira-golden-journeys-v0 seeds rather than
+// The block delegates to the shared surface and reuses the /jira-golden-journey-v0 seeds rather than
 // re-declaring its own flyout card or placeholder lifecycle copy.
-test("block delegates to the shared flyout surface and reuses /jira-golden-journeys-v0 data", () => {
+test("block delegates to the shared flyout surface and reuses /jira-golden-journey-v0 data", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
 	const dataSource = readRepoFile(FLYOUT_DEMO_DATA_PATH);
 	assert.match(
@@ -590,9 +590,9 @@ test("demo presents the four sessions as one uninterrupted chat-history list", (
 	assert.doesNotMatch(source, /gap-8/u);
 });
 
-// The four /jira-golden-journeys-v0 seeds must cover the states shown in the flyout screenshots and
+// The four /jira-golden-journey-v0 seeds must cover the states shown in the flyout screenshots and
 // carry the PR metadata the flyout renders for local sessions.
-test("/jira-golden-journeys-v0 seeds provide the four expected states with PR fields", () => {
+test("/jira-golden-journey-v0 seeds provide the four expected states with PR fields", () => {
 	const seeds = readRepoFile("components/projects/jira-queue/data/queue-sessions.ts");
 
 	for (const status of ["awaiting-input", "running", "pr-open", "merged"]) {

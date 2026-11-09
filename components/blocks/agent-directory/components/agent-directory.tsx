@@ -11,18 +11,18 @@ import {
 	type AgentBrowserVariant,
 	type AgentBrowserSidebarGroup,
 } from "@/components/blocks/agent-browser";
-import type { AgentTemplatesAgent, AgentTemplatesCategoryId } from "@/components/blocks/agent-templates";
+import type { AgentTemplateAgent, AgentTemplateCategoryId } from "@/components/blocks/agent-template";
 import {
 	DEMO_AGENT_TEMPLATES,
 	DEMO_AGENT_TEMPLATES_SESSION,
-} from "@/components/blocks/agent-templates/data/demo-template-agents";
+} from "@/components/blocks/agent-template/data/demo-template-agents";
 import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agent-directory/data/sidebar-groups";
 import { AgentDirectoryView } from "@/components/blocks/agent-directory/components/directory-view";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export type AgentsDirectoryAgent = AgentBrowserAgent;
-export type AgentsDirectoryTemplateAgent = AgentTemplatesAgent;
+export type AgentsDirectoryTemplateAgent = AgentTemplateAgent;
 export type AgentsDirectorySidebarGroup = AgentBrowserSidebarGroup;
 export type AgentsDirectoryVariant = AgentBrowserVariant | "standard-v1" | "standard-v2";
 export type AgentsDirectoryTemplateBuildOptions = AgentBrowserTemplateBuildOptions;
@@ -45,7 +45,7 @@ export interface AgentsDirectoryDialogProps {
 	sidebarGroups?: readonly AgentsDirectorySidebarGroup[];
 	templateAgents?: readonly AgentsDirectoryTemplateAgent[];
 	/** Template category selected when the directory first opens (e.g. open straight onto "Planning"). */
-	initialTemplateCategory?: AgentTemplatesCategoryId | null;
+	initialTemplateCategory?: AgentTemplateCategoryId | null;
 	title?: string;
 	variant?: AgentsDirectoryVariant;
 }

@@ -781,7 +781,7 @@ test("ContextBarPullRequest is a generic PR variation of ContextBar", () => {
 	assert.match(CONTEXT_BAR_PR_SOURCE, /token\("elevation.shadow.overlay"\)/u);
 	assert.match(CONTEXT_BAR_PR_SOURCE, /className="w-auto overflow-hidden rounded-xl border-0 bg-surface-overlay p-0 text-text shadow-none"/u);
 	assert.match(CONTEXT_BAR_PR_SOURCE, /hover:underline[\s\S]*data-pr-number-link/u);
-	assert.doesNotMatch(CONTEXT_BAR_PR_SOURCE, /SHOP-4821|1847|jira-golden-journeys/u);
+	assert.doesNotMatch(CONTEXT_BAR_PR_SOURCE, /SHOP-4821|1847|jira-golden-journey/u);
 	assert.doesNotMatch(
 		CONTEXT_BAR_PR_SOURCE.slice(
 			CONTEXT_BAR_PR_SOURCE.indexOf("function PullRequestNumberLink"),
@@ -828,7 +828,7 @@ test("ContextBarPullRequest is a generic PR variation of ContextBar", () => {
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /onSelect=\{\(\) => \{\s*onCheckedChange\(!checked\);\s*\}\}/u);
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /checked=\{checked\}[\s\S]*onCheckedChange=\{onCheckedChange\}/u);
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /focus-visible:ring-3[\s\S]*motion-reduce:transition-none/u);
-	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /SHOP-4821|1847|jira-golden-journeys/u);
+	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /SHOP-4821|1847|jira-golden-journey/u);
 	assert.match(CONTEXT_BAR_PR_SOURCE, /ci === undefined \? null : \(/u);
 	assert.match(CONTEXT_BAR_PR_SOURCE, /<ContextBarPullRequestAutomation/u);
 });
@@ -949,7 +949,7 @@ test("ContextBarCreatePullRequest is the pre-PR variation of ContextBar", () => 
 	assert.match(CONTEXT_BAR_INDEX_SOURCE, /ContextBarCreatePullRequest/u);
 	assert.match(CONTEXT_BAR_DEMO_SOURCE, /export function ContextBarDemoCreatePullRequest/u);
 	assert.match(CONTEXT_BAR_DEMO_SOURCE, /<ContextBarCreatePullRequest/u);
-	assert.doesNotMatch(CONTEXT_BAR_CREATE_PR_SOURCE, /SHOP-4821|1847|jira-golden-journeys/u);
+	assert.doesNotMatch(CONTEXT_BAR_CREATE_PR_SOURCE, /SHOP-4821|1847|jira-golden-journey/u);
 });
 
 test("ContextBarCreatePullRequest renders branch, diff stats, and a Create PR split button", async () => {

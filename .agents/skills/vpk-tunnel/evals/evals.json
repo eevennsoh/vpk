@@ -38,11 +38,11 @@
 		},
 		{
 			"id": 4,
-			"prompt": "vpk-tunnel so people can look at jira-golden-journeys-v4. The public homepage looks empty.",
+			"prompt": "vpk-tunnel so people can look at jira-golden-journey-v4. The public homepage looks empty.",
 			"expected_output": "Resolves the project route on the selected Portless hostname, defaults to private sharing unless external/public access was selected, and treats a blank tunnel page as a blocked-origin failure.",
 			"files": [],
 			"expectations": [
-				"The tunnel link path is /jira-golden-journeys-v4 rather than /.",
+				"The tunnel link path is /jira-golden-journey-v4 rather than /.",
 				"The catalog homepage is not handed to reviewers as the project surface.",
 				"A public URL that only renders Skip to content is not reported as live.",
 				"Missing allowedDevOrigins Atlas Tunnel hosts require a frontend restart, re-resolve, and a new start.",
@@ -51,7 +51,7 @@
 		},
 		{
 			"id": 5,
-			"prompt": "vpk-tunnel jira-golden-journeys-v4. Hide the react-grab control for testers.",
+			"prompt": "vpk-tunnel jira-golden-journey-v4. Hide the react-grab control for testers.",
 			"expected_output": "Defaults to private access, resolves the project route, and confirms the react-grab development control is absent on the tunnel URL.",
 			"files": [],
 			"expectations": [

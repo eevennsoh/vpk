@@ -10,15 +10,15 @@ import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
 	type StarterIconKey,
-} from "@/components/blocks/conversation-starters";
-import { AgentAutomationFlowCover } from "@/components/blocks/triggers/components/agent-automation-flow-cover";
+} from "@/components/blocks/conversation-starter";
+import { AgentAutomationFlowCover } from "@/components/blocks/trigger/components/agent-automation-flow-cover";
 import {
 	getAgentAutomationRuleLabel,
 	getAgentTriggerReadableLabel,
 	getTriggerProvider,
 	type AgentAutomationRule,
 	type AgentTriggerValue,
-} from "@/components/blocks/triggers/data/trigger-catalog";
+} from "@/components/blocks/trigger/data/trigger-catalog";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import ChatPanel, { type ChatPanelAgentVersionOption } from "@/components/projects/sidebar-chat/page";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";

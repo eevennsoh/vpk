@@ -33,7 +33,7 @@ import {
 	useState,
 } from "react";
 
-import { AnimatedDots } from "./animated-dots";
+import { AnimatedDot } from "./animated-dot";
 import { AnimatedRovo } from "./animated-rovo";
 
 import { CodeBlock } from "./code-block";
@@ -524,7 +524,7 @@ function StreamingReasoningLabel({
 						{renderedLabel}
 					</Shimmer>
 				)}
-				{animatedDots ? <AnimatedDots /> : null}
+				{animatedDots ? <AnimatedDot /> : null}
 			</span>
 		</>
 	);

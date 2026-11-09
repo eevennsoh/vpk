@@ -127,7 +127,7 @@ test("Agent Directory experimental variation has searchable multi-select filters
 	assert.match(source, /<ExperimentalFilterOptionAvatar option=\{option\} \/>/u);
 	assert.match(source, /function ExperimentalAgentBrowser\(\{[\s\S]*initialTemplateCategory = null,[\s\S]*\}: Readonly<AgentBrowserProps>\)/u);
 	assert.match(source, /const \[templateModeActive, setTemplateModeActive\] = useState\(Boolean\(initialTemplateCategory\)\);/u);
-	assert.match(source, /const \[activeTemplateCategory, setActiveTemplateCategory\] = useState<AgentTemplatesCategoryId \| null>\(initialTemplateCategory\);/u);
+	assert.match(source, /const \[activeTemplateCategory, setActiveTemplateCategory\] = useState<AgentTemplateCategoryId \| null>\(initialTemplateCategory\);/u);
 	// Mode switching now lives in an outline ToggleGroup next to the search input.
 	assert.match(source, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.match(source, /<ToggleGroup[\s\S]*onValueChange=\{handleToggleMode\}[\s\S]*value=\{\[templateModeActive \? "templates" : "agents"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="agents">Agents<\/ToggleGroupItem>[\s\S]*<ToggleGroupItem value="templates">Templates<\/ToggleGroupItem>/u);
@@ -145,25 +145,25 @@ test("Agent Directory experimental variation has searchable multi-select filters
 	assert.match(source, /Agent templates/u);
 	assert.match(source, /templateModeActive && activeTemplateCategoryOption \? \([\s\S]*<ExperimentalTemplateMode/u);
 	assert.match(source, /function handleEnterTemplateMode\(\)[\s\S]*setTemplateModeActive\(true\);/u);
-	assert.match(source, /function handleSelectTemplateCategory\(categoryId: AgentTemplatesCategoryId\)/u);
+	assert.match(source, /function handleSelectTemplateCategory\(categoryId: AgentTemplateCategoryId\)/u);
 });
 
-test("Agent Directory includes Agent Templates as a sidebar mode", () => {
+test("Agent Directory includes Agent Template as a sidebar mode", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const agentsDirectorySource = readProjectFile("components/blocks/agent-directory/components/agent-directory.tsx");
-	const agentTemplatesSource = readProjectFile("components/blocks/agent-templates/components/agent-templates.tsx");
+	const agentTemplateSource = readProjectFile("components/blocks/agent-template/components/agent-template.tsx");
 	const studioShellSource = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
 
-	assert.match(agentTemplatesSource, /export const AGENT_TEMPLATES_CATEGORIES/u);
-	assert.match(source, /AGENT_TEMPLATES_CATEGORIES/u);
-	assert.match(source, /type AgentTemplatesCategory/u);
-	assert.match(source, /templateCategories\?: readonly AgentTemplatesCategory\[\];/u);
-	assert.match(source, /templateAgents\?: readonly AgentTemplatesAgent\[\];/u);
-	assert.match(source, /onSelectTemplateAgent\?: \(agent: AgentTemplatesAgent\) => void;/u);
+	assert.match(agentTemplateSource, /export const AGENT_TEMPLATE_CATEGORIES/u);
+	assert.match(source, /AGENT_TEMPLATE_CATEGORIES/u);
+	assert.match(source, /type AgentTemplateCategory/u);
+	assert.match(source, /templateCategories\?: readonly AgentTemplateCategory\[\];/u);
+	assert.match(source, /templateAgents\?: readonly AgentTemplateAgent\[\];/u);
+	assert.match(source, /onSelectTemplateAgent\?: \(agent: AgentTemplateAgent\) => void;/u);
 	assert.match(source, /<SidebarTemplateGroup[\s\S]*categories=\{templateCategories\}[\s\S]*onSelectCategory=\{onSelectTemplateCategory\}/u);
 	assert.match(source, /Agent templates/u);
 	assert.match(source, /<SidebarNavItem[\s\S]*isSelected=\{activeCategory === category\.id\}[\s\S]*label=\{category\.label\}[\s\S]*leading=\{<SidebarTemplateIcon category=\{category\} \/>\}/u);
-	assert.match(source, /function SidebarTemplateIcon\(\{ category \}: Readonly<\{ category: AgentTemplatesCategory \}>\)/u);
+	assert.match(source, /function SidebarTemplateIcon\(\{ category \}: Readonly<\{ category: AgentTemplateCategory \}>\)/u);
 	assert.match(source, /src=\{category\.iconSrc\}/u);
 	assert.match(source, /className=\{cn\("size-6 object-contain", category\.iconClassName\)\}/u);
 	assert.match(source, /activeTemplateCategoryOption \? \(/u);
@@ -239,7 +239,7 @@ test("Agent Directory experimental templates use the setup flow before opening c
 	assert.doesNotMatch(source, /import StatusSuccessIcon from "@atlaskit\/icon\/core\/status-success";/u);
 	assert.match(source, /export interface AgentBrowserTemplateBuildOptions/u);
 	assert.match(source, /export interface AgentBrowserTemplateBuildResult \{[\s\S]*profileId: string;[\s\S]*onCancel\?: \(\) => void;/u);
-	assert.match(source, /onBuildTemplateAgent\?: \([\s\S]*agent: AgentTemplatesAgent,[\s\S]*options: AgentBrowserTemplateBuildOptions[\s\S]*\) => AgentBrowserTemplateBuildResult \| null;/u);
+	assert.match(source, /onBuildTemplateAgent\?: \([\s\S]*agent: AgentTemplateAgent,[\s\S]*options: AgentBrowserTemplateBuildOptions[\s\S]*\) => AgentBrowserTemplateBuildResult \| null;/u);
 	assert.match(source, /onOpenBuiltTemplateAgentConfig\?: \(profileId: string\) => void;/u);
 	assert.doesNotMatch(source, /function ExperimentalTemplateSetupCard/u);
 	assert.match(source, /activeSetupAgentIds\.has\(agent\.id\) \? \([\s\S]*<TemplateBuildFlow[\s\S]*agent=\{agent\}[\s\S]*onCancel=\{\(\) => handleCancelSetupAgent\(agent\.id\)\}[\s\S]*onBuildAgent=\{onBuildAgent\}[\s\S]*onOpenBuiltAgent=\{handleOpenBuiltAgent\}/u);
@@ -286,7 +286,7 @@ test("Agent Directory experimental templates use the setup flow before opening c
 	assert.doesNotMatch(templateBuildFlowSource, /hiddenAppCount/u);
 	assert.doesNotMatch(templateBuildFlowSource, /\+\{hiddenAppCount\} more/u);
 	assert.doesNotMatch(templateBuildFlowSource, /AGENT_BROWSER_TEMPLATE_THIRD_PARTY_PROVIDER_LOGOS/u);
-	assert.match(templateBuildFlowSource, /function getTemplateSourceLogo\([\s\S]*source: NonNullable<AgentTemplatesAgent\["sources"\]>\[number\],[\s\S]*\) \{[\s\S]*const directoryApp = getAppById\(source\.id\);[\s\S]*if \(directoryApp\) \{[\s\S]*return getTemplateDirectoryAppLogo\(directoryApp\);[\s\S]*if \(source\.iconSrc\) \{[\s\S]*return <BrandLogoMark frame="tile" label=\{source\.label\} size="medium" src=\{source\.iconSrc\} \/>;[\s\S]*if \(source\.provider === "google-drive" \|\| source\.provider === "salesforce"\) \{[\s\S]*<BrandLogoMark[\s\S]*name=\{source\.provider\}[\s\S]*return <AtlassianLogoMark label=\{source\.label\} name=\{source\.provider as AtlassianLogoName\} size="medium" \/>;/u);
+	assert.match(templateBuildFlowSource, /function getTemplateSourceLogo\([\s\S]*source: NonNullable<AgentTemplateAgent\["sources"\]>\[number\],[\s\S]*\) \{[\s\S]*const directoryApp = getAppById\(source\.id\);[\s\S]*if \(directoryApp\) \{[\s\S]*return getTemplateDirectoryAppLogo\(directoryApp\);[\s\S]*if \(source\.iconSrc\) \{[\s\S]*return <BrandLogoMark frame="tile" label=\{source\.label\} size="medium" src=\{source\.iconSrc\} \/>;[\s\S]*if \(source\.provider === "google-drive" \|\| source\.provider === "salesforce"\) \{[\s\S]*<BrandLogoMark[\s\S]*name=\{source\.provider\}[\s\S]*return <AtlassianLogoMark label=\{source\.label\} name=\{source\.provider as AtlassianLogoName\} size="medium" \/>;/u);
 	assert.match(templateBuildFlowSource, /function getTemplateDirectoryAppLogo\(app: DirectoryApp\) \{[\s\S]*if \(app\.logoName \|\| app\.id === "atlassian"\) \{[\s\S]*return <AtlassianLogoMark label=\{app\.name\} name=\{app\.logoName \?\? "atlassian"\} size="medium" \/>;[\s\S]*const src = app\.logoSrc \?\? app\.avatarSrc;[\s\S]*return src \? <BrandLogoMark frame="tile" label=\{app\.name\} size="medium" src=\{src\} \/> : null;/u);
 	assert.match(templateBuildFlowSource, /<GreetingPromptRow[\s\S]*description=\{`Use \$\{source\.label\} context while setting up \$\{agent\.name\}\.`\}[\s\S]*visual=\{getTemplateSourceLogo\(source\)\}/u);
 	assert.match(greetingPromptRowSource, /selected\?: boolean;/u);

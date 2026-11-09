@@ -27,25 +27,25 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-directory-demo"),
 		{ ssr: false },
 	),
-	"agent-templates": dynamic(
-		() => import("../demos/blocks/agent-templates-demo"),
+	"agent-template": dynamic(
+		() => import("../demos/blocks/agent-template-demo"),
 		{ ssr: false },
 	),
-	"apps-directory": dynamic(
-		() => import("../demos/blocks/apps-directory-demo"),
+	"app-directory": dynamic(
+		() => import("../demos/blocks/app-directory-demo"),
 		{ ssr: false },
 	),
-	"apps-directory-demo-standard": dynamic(
+	"app-directory-demo-standard": dynamic(
 		() =>
-			import("../demos/blocks/apps-directory-demo").then((mod) => ({
-				default: mod.AppsDirectoryDemoStandard,
+			import("../demos/blocks/app-directory-demo").then((mod) => ({
+				default: mod.AppDirectoryDemoStandard,
 			})),
 		{ ssr: false },
 	),
-	"apps-directory-demo-experimental": dynamic(
+	"app-directory-demo-experimental": dynamic(
 		() =>
-			import("../demos/blocks/apps-directory-demo").then((mod) => ({
-				default: mod.AppsDirectoryDemoExperimental,
+			import("../demos/blocks/app-directory-demo").then((mod) => ({
+				default: mod.AppDirectoryDemoExperimental,
 			})),
 		{ ssr: false },
 	),
@@ -56,25 +56,25 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/artifact-pane-demo"),
 		{ ssr: false },
 	),
-	"tools-directory": dynamic(
-		() => import("../demos/blocks/tools-directory-demo"),
+	"tool-directory": dynamic(
+		() => import("../demos/blocks/tool-directory-demo"),
 		{ ssr: false },
 	),
-	"skills-directory": dynamic(
-		() => import("../demos/blocks/skills-directory-demo"),
+	"skill-directory": dynamic(
+		() => import("../demos/blocks/skill-directory-demo"),
 		{ ssr: false },
 	),
-	"skills-directory-demo-standard": dynamic(
+	"skill-directory-demo-standard": dynamic(
 		() =>
-			import("../demos/blocks/skills-directory-demo").then((mod) => ({
-				default: mod.SkillsDirectoryDemoStandard,
+			import("../demos/blocks/skill-directory-demo").then((mod) => ({
+				default: mod.SkillDirectoryDemoStandard,
 			})),
 		{ ssr: false },
 	),
-	"skills-directory-demo-experimental": dynamic(
+	"skill-directory-demo-experimental": dynamic(
 		() =>
-			import("../demos/blocks/skills-directory-demo").then((mod) => ({
-				default: mod.SkillsDirectoryDemoExperimental,
+			import("../demos/blocks/skill-directory-demo").then((mod) => ({
+				default: mod.SkillDirectoryDemoExperimental,
 			})),
 		{ ssr: false },
 	),
@@ -106,12 +106,12 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/knowledge-directory-demo"),
 		{ ssr: false },
 	),
-	"conversation-starters": dynamic(
-		() => import("../demos/blocks/conversation-starters-demo"),
+	"conversation-starter": dynamic(
+		() => import("../demos/blocks/conversation-starter-demo"),
 		{ ssr: false },
 	),
-	"agent-users": dynamic(
-		() => import("../demos/blocks/agent-users-demo"),
+	"agent-user": dynamic(
+		() => import("../demos/blocks/agent-user-demo"),
 		{ ssr: false },
 	),
 	"agent-access": dynamic(() => import("../demos/blocks/agent-access-demo"), {
@@ -121,8 +121,8 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-evaluation-demo"),
 		{ ssr: false },
 	),
-	"agent-insights": dynamic(
-		() => import("../demos/blocks/agent-insights-demo"),
+	"agent-insight": dynamic(
+		() => import("../demos/blocks/agent-insight-demo"),
 		{ ssr: false },
 	),
 	"3d-lanyard": dynamic(
@@ -136,16 +136,16 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"agent-test": dynamic(() => import("../demos/blocks/agent-test-demo"), {
 		ssr: false,
 	}),
-	"agent-surfaces": dynamic(
-		() => import("../demos/blocks/agent-surfaces-demo"),
+	"agent-surface": dynamic(
+		() => import("../demos/blocks/agent-surface-demo"),
 		{ ssr: false },
 	),
 	"agent-progress": dynamic(
 		() => import("../demos/blocks/agent-progress-demo"),
 		{ ssr: false },
 	),
-	"agent-states": dynamic(
-		() => import("../demos/blocks/agent-states-demo"),
+	"agent-state": dynamic(
+		() => import("../demos/blocks/agent-state-demo"),
 		{ ssr: false },
 	),
 	"agent-assignment": dynamic(
@@ -233,7 +233,7 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/task-progress-demo"),
 		{ ssr: false },
 	),
-	triggers: dynamic(() => import("../demos/blocks/triggers-demo"), {
+	trigger: dynamic(() => import("../demos/blocks/trigger-demo"), {
 		ssr: false,
 	}),
 	"answer-card": dynamic(() => import("../demos/blocks/answer-card-demo"), {
@@ -249,7 +249,7 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/chat-configuration-demo"),
 		{ ssr: false },
 	),
-	subagents: dynamic(() => import("../demos/blocks/subagents-demo"), {
+	subagent: dynamic(() => import("../demos/blocks/subagent-demo"), {
 		ssr: false,
 	}),
 	"app-sidebar": dynamic(() => import("../demos/blocks/app-sidebar-demo"), {
@@ -354,8 +354,8 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		{ ssr: false },
 	),
 	memory: dynamic(() => import("../demos/blocks/memory-demo"), { ssr: false }),
-	"settings-dialog": dynamic(
-		() => import("../demos/blocks/settings-dialog-demo"),
+	"setting-dialog": dynamic(
+		() => import("../demos/blocks/setting-dialog-demo"),
 		{ ssr: false },
 	),
 	"product-sidebar": dynamic(
@@ -426,7 +426,7 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"jira-activity": dynamic(() => import("../demos/blocks/jira-activity-demo"), {
 		ssr: false,
 	}),
-	"jira-insights": dynamic(() => import("../demos/blocks/jira-insights-demo"), {
+	"jira-insight": dynamic(() => import("../demos/blocks/jira-insight-demo"), {
 		ssr: false,
 	}),
 	"jira-issue": dynamic(() => import("../demos/blocks/jira-issue-demo"), {

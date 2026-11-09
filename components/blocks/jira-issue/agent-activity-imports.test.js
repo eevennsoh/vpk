@@ -2,7 +2,7 @@
  * Import contract for the aggregate agent activity row.
  *
  * The row draws its own avatars through `AgentAvatarVisual`, so it must not
- * pull agent-list or agent-states *components* into the Jira Issue bundle.
+ * pull agent-list or agent-state *components* into the Jira Issue bundle.
  *
  * The guard reads value imports alone. Type-only specifiers erase at build
  * time and cost nothing, so barring them would police spelling rather than
@@ -28,9 +28,9 @@ const ROW_PRESENTATION_SOURCE = readFileSync(
 const ROW_SOURCE = [AGENT_ACTIVITY_SOURCE, ROW_PRESENTATION_SOURCE].join("\n");
 const VALUE_IMPORTS = ROW_SOURCE.replace(/^import type [\s\S]*?;$/gmu, "");
 
-test("the aggregate agent row pulls no agent-list or agent-states components", () => {
+test("the aggregate agent row pulls no agent-list or agent-state components", () => {
 	assert.doesNotMatch(VALUE_IMPORTS, /from "@\/components\/blocks\/agent-list/u);
-	assert.doesNotMatch(VALUE_IMPORTS, /from "@\/components\/blocks\/agent-states/u);
+	assert.doesNotMatch(VALUE_IMPORTS, /from "@\/components\/blocks\/agent-state/u);
 });
 
 test("the row still draws its own avatars through AgentAvatarVisual", () => {

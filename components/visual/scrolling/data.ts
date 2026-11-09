@@ -145,7 +145,7 @@ const READINESS_AGENT = {
  *    adds 28px+, giving ragged card heights; omitting it keeps every card at a
  *    uniform 62px so the fixed gap and the deck-collapse maths stay symmetric.
  * 3. **Mostly `state: "complete"`.** `running` mounts a `PixelLoader` and
- *    `needs-input` mounts a title `Shimmer` plus `AnimatedDots`; one of each is
+ *    `needs-input` mounts a title `Shimmer` plus `AnimatedDot`; one of each is
  *    enough variety without N x (1 + cloneCount) animated subtrees competing
  *    with the entrance spring.
  * 4. **One avatar and one machine per person.** All eight cards are on screen at

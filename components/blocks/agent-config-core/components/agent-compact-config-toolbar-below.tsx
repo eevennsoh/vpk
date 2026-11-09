@@ -10,7 +10,7 @@ import { AgentCompactEmptyConfigNav, type AgentConfigToolbarFieldName } from "@/
 import { AgentFilledConfigSummary } from "@/components/blocks/agent-config-core/components/agent-filled-config-summary";
 import type { KnowledgeModeValue, MemoryModeValue, ReasoningModeValue } from "@/components/blocks/agent-config-core/components/agent-reasoning-memory-selectors";
 import { getNonEmptyConfigItems, type AgentConfigFormValue, type AgentConfigListFieldName, type AgentConfigReferenceListFieldName, type AgentConfigTextFieldName, type AgentDirectoryKind, type AgentHideableConfigField } from "@/components/blocks/agent-config-core/lib/agent-config-model";
-import type { AgentAutomationRule, AgentTriggerValue } from "@/components/blocks/triggers/page";
+import type { AgentAutomationRule, AgentTriggerValue } from "@/components/blocks/trigger/page";
 import { Button } from "@/components/ui/button";
 
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;
@@ -24,7 +24,7 @@ export interface AgentCompactConfigToolbarBelowProps {
 	avatarSrc?: string;
 	// When false, the footer is permanently expanded: the collapse/expand toggle
 	// is hidden (the separator stays) and the compact nav is never shown. Used by
-	// single-row surfaces like the skills-directory detail view.
+	// single-row surfaces like the skill-directory detail view.
 	collapsible?: boolean;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	visibleFieldNames?: ReadonlySet<AgentConfigToolbarFieldName>;

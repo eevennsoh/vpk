@@ -2,7 +2,7 @@ import type { AtlassianLogoName } from "@/components/ui/logo";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 import { DEFAULT_KNOWLEDGE_APPS, type KnowledgeDirectoryApp } from "./knowledge";
-import { DEMO_SESSION_TOOLS, DEMO_TOOLS, type ToolsDirectoryTool } from "./tools";
+import { DEMO_SESSION_TOOLS, DEMO_TOOLS, type ToolDirectoryTool } from "./tools";
 import type { DirectoryVisual } from "./types";
 import { avatarVisualFromSrc } from "./visual";
 
@@ -15,15 +15,15 @@ import { avatarVisualFromSrc } from "./visual";
  * - Tools that also have a knowledge entry (e.g. Jira, Confluence) → both facets.
  * - Tools without a knowledge entry (e.g. Slack, Gmail) → tool facet only.
  * - Knowledge-only sources (e.g. Projects, Goals) → knowledge facet only; these
- *   are synthesized into the tool-shaped record so the existing apps-directory UI
- *   (keyed on {@link ToolsDirectoryTool}) renders them without special casing.
+ *   are synthesized into the tool-shaped record so the existing app-directory UI
+ *   (keyed on {@link ToolDirectoryTool}) renders them without special casing.
  *
- * The record is a superset of {@link ToolsDirectoryTool} so the merged
- * apps-directory block consumes it directly; the extra `hasToolFacet` /
+ * The record is a superset of {@link ToolDirectoryTool} so the merged
+ * app-directory block consumes it directly; the extra `hasToolFacet` /
  * `hasKnowledgeFacet` / `knowledgeApp` fields drive facet-aware rendering and the
  * `@[app:id]` mention/catalog layer.
  */
-export interface DirectoryApp extends ToolsDirectoryTool {
+export interface DirectoryApp extends ToolDirectoryTool {
 	hasToolFacet: boolean;
 	hasKnowledgeFacet: boolean;
 	knowledgeApp?: KnowledgeDirectoryApp;

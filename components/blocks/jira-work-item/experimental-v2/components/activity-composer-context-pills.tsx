@@ -3,13 +3,13 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
-import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { SkillDirectorySkill } from "@/app/data/directory";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-skill-context-pill";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
 import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
@@ -72,7 +72,7 @@ const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[
 
 interface ActivityComposerContextPillsProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
-	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
+	onInvokeSkill: (skill: SkillDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string, sessionId: string) => void;
 	workingSessions: readonly AgentSession[];
 }
@@ -139,7 +139,7 @@ function WorkingSessionActivityByline({
 			{needsUserInput ? (
 				<span className="inline-flex min-w-0 items-baseline">
 					<Shimmer as="span">{activity}</Shimmer>
-					<AnimatedDots />
+					<AnimatedDot />
 				</span>
 			) : activity}
 		</CyclingByline>

@@ -9,9 +9,9 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { AgentAccess } from "@/components/blocks/agent-access";
 import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
-import { AgentInsights } from "@/components/blocks/agent-insights";
-import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
-import { AgentUsers } from "@/components/blocks/agent-users";
+import { AgentInsight } from "@/components/blocks/agent-insight";
+import { AgentSurface } from "@/components/blocks/agent-surface";
+import { AgentUser } from "@/components/blocks/agent-user";
 import { AGENT_AVATAR_SRC } from "@/components/blocks/agent-config-core/components/agent-profile-cover";
 import {
 	Accordion,
@@ -43,16 +43,16 @@ export const Agent = memo(({ className, ...props }: Readonly<AgentProps>) => (
 	/>
 ));
 
-export type AgentCompactSurfacesPanelProps = ComponentProps<typeof AgentSurfaces>;
+export type AgentCompactSurfacesPanelProps = ComponentProps<typeof AgentSurface>;
 
-export type AgentCompactInsightsPanelProps = ComponentProps<typeof AgentInsights>;
+export type AgentCompactInsightsPanelProps = ComponentProps<typeof AgentInsight>;
 
 export function AgentCompactInsightsPanel(props: Readonly<AgentCompactInsightsPanelProps>) {
-	return <AgentInsights {...props} />;
+	return <AgentInsight {...props} />;
 }
 
 export function AgentCompactSurfacesPanel(props: Readonly<AgentCompactSurfacesPanelProps>) {
-	return <AgentSurfaces {...props} />;
+	return <AgentSurface {...props} />;
 }
 
 export type AgentCompactEvaluationPanelProps = ComponentProps<typeof AgentEvaluation>;
@@ -61,10 +61,10 @@ export function AgentCompactEvaluationPanel(props: Readonly<AgentCompactEvaluati
 	return <AgentEvaluation {...props} />;
 }
 
-export type AgentCompactUsersPanelProps = ComponentProps<typeof AgentUsers>;
+export type AgentCompactUsersPanelProps = ComponentProps<typeof AgentUser>;
 
 export function AgentCompactUsersPanel(props: Readonly<AgentCompactUsersPanelProps>) {
-	return <AgentUsers {...props} />;
+	return <AgentUser {...props} />;
 }
 
 export type AgentCompactAccessPanelProps = ComponentProps<typeof AgentAccess>;

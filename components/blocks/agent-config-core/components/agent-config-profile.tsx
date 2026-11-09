@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 
 import { AgentProfileCover } from "@/components/blocks/agent-config-core/components/agent-profile-cover";
-import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
+import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagent/lib/subagent-prompts";
 import { Button } from "@/components/ui/button";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import type {

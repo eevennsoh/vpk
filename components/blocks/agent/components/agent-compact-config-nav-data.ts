@@ -6,7 +6,7 @@ import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 
-import { DEFAULT_STARTER_ICON, type StarterIconKey } from "@/components/blocks/conversation-starters";
+import { DEFAULT_STARTER_ICON, type StarterIconKey } from "@/components/blocks/conversation-starter";
 import {
 	getAgentAutomationItems,
 	getNonEmptyConfigItems,

@@ -24,7 +24,7 @@ import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issu
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
@@ -248,7 +248,7 @@ function JiraIssueAgentRowLabel({
 		return (
 			<span className="flex min-w-0 flex-1 items-baseline overflow-hidden text-sm leading-5 text-text">
 				<span className="block min-w-0 truncate text-sm leading-5">{rowLabel}</span>
-				<AnimatedDots />
+				<AnimatedDot />
 			</span>
 		);
 	}

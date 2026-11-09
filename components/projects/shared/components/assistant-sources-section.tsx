@@ -1,5 +1,5 @@
 import type { RovoSourcePart } from "@/lib/rovo-ui-messages";
-import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ui-custom/sources";
+import { SourceItem, Source, SourceContent, SourceTrigger } from "@/components/ui-custom/source";
 
 interface AssistantSourcesSectionProps {
 	messageId: string;
@@ -21,17 +21,17 @@ export function AssistantSourcesSection({
 	sources,
 }: Readonly<AssistantSourcesSectionProps>): React.ReactElement {
 	return (
-		<Sources className="px-6 pt-2">
-			<SourcesTrigger count={sources.length} />
-			<SourcesContent>
+		<Source className="px-6 pt-2">
+			<SourceTrigger count={sources.length} />
+			<SourceContent>
 				{sources.map((sourcePart, index) => (
-					<Source
+					<SourceItem
 						href={sourcePart.type === "source-url" ? sourcePart.url : undefined}
 						key={`${messageId}-source-${sourcePart.sourceId}-${index}`}
 						title={getSourceTitle(sourcePart)}
 					/>
 				))}
-			</SourcesContent>
-		</Sources>
+			</SourceContent>
+		</Source>
 	);
 }

@@ -23,38 +23,38 @@ import { KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload } from "@/c
 import { Memory } from "@/components/blocks/memory";
 import { AgentAccess } from "@/components/blocks/agent-access";
 import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
-import { AgentInsights } from "@/components/blocks/agent-insights";
-import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
+import { AgentInsight } from "@/components/blocks/agent-insight";
+import { AgentSurface } from "@/components/blocks/agent-surface";
 import { DEFAULT_KNOWLEDGE_APPS } from "@/app/data/directory/knowledge";
-import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
+import { SkillDirectoryDialog, type SkillDirectorySkill } from "@/components/blocks/skill-directory";
 import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
-import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
-import { AppsDirectoryDialog, type AppsDirectoryAddPayload } from "@/components/blocks/apps-directory";
+import { ToolDirectoryDialog } from "@/components/blocks/tool-directory";
+import { AppDirectoryDialog, type AppDirectoryAddPayload } from "@/components/blocks/app-directory";
 import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/app/data/directory/tools";
 import { DIRECTORY_APPS, getAppById } from "@/app/data/directory/apps";
 import {
-	ConversationStartersDialog,
+	ConversationStarterDialog,
 	DEFAULT_STARTER_ICON,
 	type ConversationStarter,
 	type StarterIconKey,
-} from "@/components/blocks/conversation-starters";
+} from "@/components/blocks/conversation-starter";
 import {
 	getTriggerProvider,
 	markSessionProviderConnected,
 	type AgentAutomationRule,
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
-} from "@/components/blocks/triggers/data/trigger-catalog";
-import { AgentTriggerProviderTileIcon } from "@/components/blocks/triggers/page";
+} from "@/components/blocks/trigger/data/trigger-catalog";
+import { AgentTriggerProviderTileIcon } from "@/components/blocks/trigger/page";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
-import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
-import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
-import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
-import { AgentUsers } from "@/components/blocks/agent-users";
+import { ManageSubagentsDialog } from "@/components/blocks/subagent/components/manage-subagents-dialog";
+import { SubagentNavigator } from "@/components/blocks/subagent/subagent-navigator";
+import type { SubagentBaseAgent } from "@/components/blocks/subagent/data/demo-agents";
+import { getListItems, updateConfigListItem } from "@/components/blocks/subagent/lib/subagent-prompts";
+import { AgentUser } from "@/components/blocks/agent-user";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
-import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
+import { useSubagentNavigatorTop } from "@/components/projects/studio/hooks/use-subagent-navigator-top";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import {
 	Agent,
@@ -108,7 +108,7 @@ type AgentResult = RovoDataParts["agent-result"];
 export type AgentConfigView = "configure" | "insights" | "test";
 type PublishDropdownView = "summary" | "draftChanges" | "history" | "versionDetail";
 
-function getSkillByConfigLabel(value: string): SkillsDirectorySkill | undefined {
+function getSkillByConfigLabel(value: string): SkillDirectorySkill | undefined {
 	const normalized = getSkillConfigLabel(value);
 	return DEFAULT_SKILLS.find((skill) => skill.id === normalized || getSkillConfigLabel(skill.name) === normalized);
 }
@@ -672,12 +672,12 @@ export function RovoAppAgentConfigPanel({
 		: null;
 	const isPreviewingVersion = Boolean(previewVersion);
 	const draft = previewVersion?.snapshot ?? entry.draftResult;
-	// The floating SubagentsNavigator must top-align with the first line of the
+	// The floating SubagentNavigator must top-align with the first line of the
 	// instructions editor. That line moves as the profile/content above it
 	// reflows or scrolls, so measure it relative to the positioned TabsContent
 	// (the navigator's positioning context) instead of using a fixed `top`.
 	const configureTabRef = useRef<HTMLDivElement | null>(null);
-	const navigatorTop = useSubagentsNavigatorTop(configureTabRef);
+	const navigatorTop = useSubagentNavigatorTop(configureTabRef);
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
 	const [activeCompactSection, setActiveCompactSection] = useState<AgentCompactHeaderSection | null>(null);
 	const [instructionsViewMode, setInstructionsViewMode] = useState<EditorToolbarViewMode>("rendered");
@@ -1094,7 +1094,7 @@ export function RovoAppAgentConfigPanel({
 		[appendListValues, updateActiveConfig, addedAppIds],
 	);
 	const handleAddApp = useCallback(
-		(payload: AppsDirectoryAddPayload) => {
+		(payload: AppDirectoryAddPayload) => {
 			const app = getAppById(payload.appId);
 			if (!app) {
 				return;
@@ -1174,7 +1174,7 @@ export function RovoAppAgentConfigPanel({
 		[addedToolIds, appendListValues, updateActiveConfig],
 	);
 	const handleAddSkills = useCallback(
-		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
+		(_skillIds: readonly string[], skills: readonly SkillDirectorySkill[]) => {
 			appendListValues("skills", skills.map((skill) => getSkillConfigLabel(skill.name)));
 			setDirectorySkillIds([]);
 		},
@@ -1183,7 +1183,7 @@ export function RovoAppAgentConfigPanel({
 	// Disable persists into the agent config's `disabledItems.skills` (same store the
 	// compact-nav row toggles use), so a parked skill stays added but off.
 	const handleToggleSkillEnabled = useCallback(
-		(skill: SkillsDirectorySkill, enabled: boolean) => {
+		(skill: SkillDirectorySkill, enabled: boolean) => {
 			updateActiveConfig((config) => toggleAgentConfigDisabledItem(config, "skills", skill.name, enabled));
 		},
 		[updateActiveConfig],
@@ -1191,7 +1191,7 @@ export function RovoAppAgentConfigPanel({
 	// Remove strips the skill from the canonical skills[] (and clears any disabled
 	// entry) so it is actually off the agent, not just deselected in the dialog.
 	const handleRemoveSkills = useCallback(
-		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
+		(_skillIds: readonly string[], skills: readonly SkillDirectorySkill[]) => {
 			const removeNames = new Set(skills.map((skill) => getSkillConfigLabel(skill.name)));
 			updateActiveConfig((config) => {
 				const next = {
@@ -1346,7 +1346,7 @@ export function RovoAppAgentConfigPanel({
 			: activeView === "configure"
 				? activeCompactSection ?? "details"
 				: null;
-	const shouldShowSubagentsNavigator =
+	const shouldShowSubagentNavigator =
 		activeView === "configure" &&
 		activeCompactSection === null &&
 		instructionsViewMode !== "data-flow";
@@ -1429,9 +1429,9 @@ export function RovoAppAgentConfigPanel({
 	// `name` is still required by AgentHeader (accessibility/fallback); the compact
 	// nav supplied via `leadingContent` is what actually renders on the left.
 
-	// Base agent shape the floating SubagentsNavigator expects. The navigator only
+	// Base agent shape the floating SubagentNavigator expects. The navigator only
 	// reads `config.name` + `avatarSrc`, so derive both from the live draft.
-	const navigatorBaseAgent = useMemo<SubagentsBaseAgent>(
+	const navigatorBaseAgent = useMemo<SubagentBaseAgent>(
 		() => ({ id: profileId, avatarSrc: agentAvatarSrc, config: baseConfig }),
 		[agentAvatarSrc, baseConfig, profileId],
 	);
@@ -1532,12 +1532,12 @@ export function RovoAppAgentConfigPanel({
 								    subagents. Self-hides until at least one subagent exists.
 								    The wrapper carries the measured `top` so the switcher
 								    top-aligns with the first line of the instructions editor. */}
-								{shouldShowSubagentsNavigator ? (
+								{shouldShowSubagentNavigator ? (
 									<div
 										className="absolute right-4 z-20 hidden md:block"
 										style={{ top: navigatorTop }}
 									>
-										<SubagentsNavigator
+										<SubagentNavigator
 											activeSubagentId={activeSubagentId}
 											baseAgent={navigatorBaseAgent}
 											onCreateSubagent={createSubagent}
@@ -1577,13 +1577,13 @@ export function RovoAppAgentConfigPanel({
 											</div>
 										</div>
 									) : activeCompactSection === "surfaces" ? (
-										<AgentSurfaces className="-mr-4 pr-4" />
+										<AgentSurface className="-mr-4 pr-4" />
 									) : activeCompactSection === "users" ? (
 										<div
 											className="-mr-4 flex min-h-0 flex-1 flex-col overflow-y-auto pr-4"
 											data-agent-compact-section="users"
 										>
-											<AgentUsers />
+											<AgentUser />
 										</div>
 									) : (
 										<AgentConfigFields
@@ -1672,7 +1672,7 @@ export function RovoAppAgentConfigPanel({
 						{testPanel}
 					</TabsContent>
 					<TabsContent value="insights" keepMounted={false} className="min-h-0 flex-1 data-[hidden]:hidden">
-						<AgentInsights />
+						<AgentInsight />
 					</TabsContent>
 				</Tabs>
 			</Agent>
@@ -1715,7 +1715,7 @@ export function RovoAppAgentConfigPanel({
 				}}
 				onAddKnowledge={handleAddKnowledge}
 			/>
-			<ToolsDirectoryDialog
+			<ToolDirectoryDialog
 				addedToolIds={addedToolIds}
 				initialSelectedToolId={directorySelectedToolId}
 				open={activeDirectory === "tools"}
@@ -1729,7 +1729,7 @@ export function RovoAppAgentConfigPanel({
 				sessionTools={DEMO_SESSION_TOOLS}
 				tools={DEMO_TOOLS}
 			/>
-			<AppsDirectoryDialog
+			<AppDirectoryDialog
 				key={`apps-${directorySelectedAppId ?? "browse"}`}
 				variant="experimental"
 				addedToolIds={addedAppIds}
@@ -1745,7 +1745,7 @@ export function RovoAppAgentConfigPanel({
 				}}
 				tools={DIRECTORY_APPS}
 			/>
-			<SkillsDirectoryDialog
+			<SkillDirectoryDialog
 				addedSkillIds={addedSkillIds}
 				disabledSkillIds={disabledSkillIds}
 				variant="experimental"
@@ -1771,7 +1771,7 @@ export function RovoAppAgentConfigPanel({
 				onOpenChange={(open) => setActiveDirectory(open ? "memory" : null)}
 				showTrigger={false}
 			/>
-			<ConversationStartersDialog
+			<ConversationStarterDialog
 				open={activeDirectory === "conversationStarters"}
 				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
 				starters={conversationStarterDialogValue}

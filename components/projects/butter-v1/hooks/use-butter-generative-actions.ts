@@ -11,8 +11,8 @@ import {
 	createJgpKanbanActivity,
 	getJgpGenerativeAgentSelection,
 	JGP_KANBAN_DEFAULT_AGENT_ID,
-} from "@/components/projects/jira-golden-journeys-v1/data/kanban-activity-data";
-import type { UseJgpAgentChatDemoResult } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
+} from "@/components/projects/jira-golden-journey-v1/data/kanban-activity-data";
+import type { UseJgpAgentChatDemoResult } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
 import { progressButterWorkItemOnStart } from "@/components/projects/butter-v1/lib/list-rows";
 import { BUTTER_BOARD_AGENTS } from "@/components/projects/butter-v1/data/presentation-board";
 

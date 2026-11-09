@@ -2,7 +2,7 @@
 
 import { Canvas } from "@/components/ui-custom/canvas";
 import { Connection } from "@/components/ui-custom/connection";
-import { Controls } from "@/components/ui-custom/controls";
+import { Control } from "@/components/ui-custom/control";
 import { Edge } from "@/components/ui-custom/edge";
 import {
 	Node,
@@ -99,7 +99,7 @@ export function FlowPanelDemoStatusLozenge() {
 				nodes={nodes}
 				nodeTypes={nodeTypes}
 			>
-				<Controls />
+				<Control />
 				<FlowPanel position="top-right">
 					<div className="flex items-center gap-2 px-2 py-1">
 						<Lozenge variant="success">Running</Lozenge>

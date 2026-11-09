@@ -15,22 +15,22 @@ const RESULT_CARD_SOURCE = fs.readFileSync(
 
 test("Skills project add menu opens the experimental skills directory", () => {
 	const addMenuIndex = SOURCE.indexOf("const addMenuItemsBefore = (");
-	const dialogIndex = SOURCE.indexOf("<SkillsDirectoryDialog");
+	const dialogIndex = SOURCE.indexOf("<SkillDirectoryDialog");
 	const createSpaceIndex = SOURCE.indexOf("Create space", addMenuIndex);
 	const viewAllSkillsIndex = SOURCE.indexOf("View all skills", addMenuIndex);
 
 	assert.match(SOURCE, /import \{ DEFAULT_SKILLS \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(SOURCE, /import \{ mapSkillToMentionItem \} from "@\/components\/blocks\/editor-palette\/data\/mention-sources";/u);
-	assert.match(SOURCE, /import \{ SkillsDirectoryDialog, type SkillsDirectorySkill \} from "@\/components\/blocks\/skills-directory";/u);
+	assert.match(SOURCE, /import \{ SkillDirectoryDialog, type SkillDirectorySkill \} from "@\/components\/blocks\/skill-directory";/u);
 	assert.match(SOURCE, /import type \{ RichTextMentionItem, RichTextMentionSources \} from "@\/components\/ui-custom\/rich-text-editor";/u);
 	assert.match(SOURCE, /import \{ PromptInputActionMenuItem \} from "@\/components\/ui-custom\/prompt-input";/u);
 	assert.match(SOURCE, /import FolderAddIcon from "@atlaskit\/icon-lab\/core\/folder-add";/u);
 	assert.match(SOURCE, /import SkillIcon from "@atlaskit\/icon-lab\/core\/skill";/u);
-	assert.match(SOURCE, /const \[isSkillsDirectoryOpen, setIsSkillsDirectoryOpen\] = useState\(false\);/u);
+	assert.match(SOURCE, /const \[isSkillDirectoryOpen, setIsSkillDirectoryOpen\] = useState\(false\);/u);
 	assert.match(SOURCE, /const \[prefillRequest, setPrefillRequest\] = useState<\{ mention\?: RichTextMentionItem; text\?: string; requestKey: number \}>/u);
 	assert.match(SOURCE, /const STATIC_SKILL_IDS = DEFAULT_SKILLS\.map\(\(skill\) => skill\.id\);/u);
-	assert.match(SOURCE, /const handleViewAllSkills = useCallback\(\(\) => \{[\s\S]*setIsSkillsDirectoryOpen\(true\);[\s\S]*\}, \[\]\);/u);
-	assert.match(SOURCE, /const handleAddDirectorySkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*setPrefillRequest\(\{ mention: mapSkillToMentionItem\(skill\), requestKey: prefillCounterRef\.current \}\);[\s\S]*setConfigSkillId\(null\);[\s\S]*setIsSkillsDirectoryOpen\(false\);/u);
+	assert.match(SOURCE, /const handleViewAllSkills = useCallback\(\(\) => \{[\s\S]*setIsSkillDirectoryOpen\(true\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SOURCE, /const handleAddDirectorySkills = useCallback\([\s\S]*skills: readonly SkillDirectorySkill\[\][\s\S]*setPrefillRequest\(\{ mention: mapSkillToMentionItem\(skill\), requestKey: prefillCounterRef\.current \}\);[\s\S]*setConfigSkillId\(null\);[\s\S]*setIsSkillDirectoryOpen\(false\);/u);
 	assert.doesNotMatch(SOURCE, /buildSkillMentionText/u);
 
 	assert.ok(addMenuIndex > -1);
@@ -43,9 +43,9 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	assert.doesNotMatch(SOURCE, /stabilizeHeroOnMount/u);
 	assert.doesNotMatch(SOURCE, /What skill should I run/u);
 	// The directory dialog is shared with the create-skill config view, so its
-	// `open` is the combined `isDialogOpen` (which includes isSkillsDirectoryOpen)
+	// `open` is the combined `isDialogOpen` (which includes isSkillDirectoryOpen)
 	// and it uses the runtime `dialogSkills` list. Still the experimental variant.
-	assert.match(SOURCE, /const isDialogOpen = [\s\S]*isSkillsDirectoryOpen/u);
+	assert.match(SOURCE, /const isDialogOpen = [\s\S]*isSkillDirectoryOpen/u);
 	assert.match(SOURCE.slice(dialogIndex), /open=\{isDialogOpen\}[\s\S]*skills=\{dialogSkills\}[\s\S]*variant="experimental"[\s\S]*onAddSkills=\{handleAddDirectorySkills\}[\s\S]*selectionExperience="chat-single-add"/u);
 });
 

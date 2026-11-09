@@ -1,6 +1,6 @@
-# Scaffold a Jira Golden Journeys Variant
+# Scaffold a Jira Golden Journey Variant
 
-Use the generator when a new Jira Golden Journeys version must begin as an
+Use the generator when a new Jira Golden Journey version must begin as an
 independent copy of an existing version. Do not use it for ordinary edits to an
 existing v0-v3 route.
 

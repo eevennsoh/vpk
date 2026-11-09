@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "mot
 
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 
-import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
+import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagent/lib/subagent-prompts";
 import { AgentProfileCover } from "@/components/blocks/agent/components/agent-profile-cover";
 import type { AgentConfigFormValue, AgentConfigTextFieldName } from "@/components/blocks/agent/lib/agent-config-model";
 import { Button } from "@/components/ui/button";
