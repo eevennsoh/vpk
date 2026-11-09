@@ -86,6 +86,21 @@ function AutomationEmptyIllustration() {
 	);
 }
 
+export function AutomationRuleList({ rules }: Readonly<{ rules: readonly WorkItemAutomationRule[] }>) {
+	return (
+		<ul aria-label="Available automations" className="-mx-2 pb-2">
+			{rules.map((rule) => (
+				<li key={rule.id}>
+					<div className="flex min-h-10 min-w-0 items-center gap-2 rounded-md px-2 text-sm text-text hover:bg-bg-neutral-subtle-hovered">
+						<IconTile aria-hidden as="span" icon={<AutomationIcon label="" size="small" />} label="" size="small" variant={rule.iconVariant} />
+						<span className="min-w-0 truncate">{rule.title}</span>
+					</div>
+				</li>
+			))}
+		</ul>
+	);
+}
+
 export function TeamEuAutomationPanel({
 	empty = false,
 	onShowRecentRuns,
@@ -99,23 +114,7 @@ export function TeamEuAutomationPanel({
 		<TeamEuRailPanel defaultOpen={empty} title="Automation">
 			<div className="pb-3">
 				{rules.length > 0 ? (
-					<ul aria-label="Available automations" className="px-2 pb-2">
-						{rules.map((rule) => (
-							<li key={rule.id}>
-								<div className="flex h-10 min-w-0 items-center gap-2 rounded-md px-2 text-sm text-text">
-									<IconTile
-										aria-hidden
-										as="span"
-										icon={<AutomationIcon label="" size="small" />}
-										label=""
-										size="small"
-										variant={rule.iconVariant}
-									/>
-									<span className="truncate">{rule.title}</span>
-								</div>
-							</li>
-						))}
-					</ul>
+					<div className="px-4"><AutomationRuleList rules={rules} /></div>
 				) : (
 					<AutomationEmptyIllustration />
 				)}
@@ -140,15 +139,16 @@ export function TeamEuAutomationPanel({
 }
 
 export function TeamEuRecentAutomationRuns({
+	backLabel = "Back to work item details",
 	onBack,
 	rules,
-}: Readonly<{ onBack: () => void; rules: readonly WorkItemAutomationRule[] }>) {
+}: Readonly<{ backLabel?: string; onBack: () => void; rules: readonly WorkItemAutomationRule[] }>) {
 	const runs = recentRules(rules);
 	return (
 		<section aria-labelledby="team-eu-recent-runs-heading" className="pt-1">
-			<div className="flex min-h-10 items-center gap-1 px-3">
+			<div className="flex h-8 items-center gap-2 px-2">
 				<Button
-					aria-label="Back to work item details"
+					aria-label={backLabel}
 					onClick={onBack}
 					size="icon-compact"
 					type="button"
@@ -164,17 +164,19 @@ export function TeamEuRecentAutomationRuns({
 				</h2>
 			</div>
 			{runs.length > 0 ? (
-				<ul aria-label="Recent automation runs" className="px-2">
+				<ul aria-label="Recent automation runs">
 					{runs.map((rule) => (
 						<li
-							className="flex h-10 min-w-0 items-center gap-2 px-2 text-sm"
+							className="flex h-8 min-w-0 items-center gap-2 rounded-md px-2 text-sm hover:bg-bg-neutral-subtle-hovered"
 							key={rule.id}
 						>
-							<Icon
-								aria-hidden
-								className="shrink-0 text-icon-success"
-								render={<StatusSuccessIcon label="" size="small" />}
-							/>
+							<span className="flex w-6 shrink-0 justify-center">
+								<Icon
+									aria-hidden
+									className="text-icon-success"
+									render={<StatusSuccessIcon label="" size="small" />}
+								/>
+							</span>
 							<span className="min-w-0 flex-1 truncate">{rule.title}</span>
 							<time className="shrink-0 text-text-subtlest">
 								{rule.lastRunAt}
