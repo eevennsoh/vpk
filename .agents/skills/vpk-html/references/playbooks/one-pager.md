@@ -7,6 +7,8 @@ figure_engines: [none, iso-kit]
 
 # one-pager playbook
 
+Load before you draft `one-pager.html`. Back to [SKILL.md](../../SKILL.md).
+
 Format and checker: [contract](../contract.md#playbooks). Routing for every template:
 [authoring detail](../authoring-detail.md).
 

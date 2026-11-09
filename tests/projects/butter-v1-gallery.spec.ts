@@ -332,7 +332,7 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Carry card-artwork metadata into the next wallet epic", { exact: true })).toBeVisible();
 });
 
-test("start coding opens the development dropdown in a work item", async ({ page }) => {
+test("configure repository opens the development dropdown in a work item", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -341,13 +341,33 @@ test("start coding opens the development dropdown in a work item", async ({ page
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	await board.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
-	await item.getByRole("button", { name: "Start coding" }).click();
-	const menu = page.getByRole("menu", { name: "Start coding" });
+	await item.getByRole("button", { name: "Configure repository" }).click();
+	const menu = page.getByRole("menu", { name: "Configure repository" });
 	for (const name of ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"]) {
 		await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
 	}
 	await expect(menu.getByRole("menuitem", { name: "Branch name settings" })).toBeVisible();
 	await expect(item.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
 	await page.keyboard.press("Escape");
-	await expect(item.getByRole("button", { name: "Start coding" })).toBeFocused();
+	await expect(item.getByRole("button", { name: "Configure repository" })).toBeFocused();
+});
+
+
+test("Escape closes the local-agent picker without closing the work item", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	await expect(item).toBeVisible();
+	const trigger = item.getByRole("button", { name: "Open in", exact: true });
+	await trigger.click();
+	const picker = page.getByRole("dialog", { name: "Local software agents" });
+	await expect(picker).toBeVisible();
+	await picker.getByRole("button", { name: "Copy prompt" }).focus();
+	await page.keyboard.press("Escape");
+	await expect(picker).toBeHidden();
+	await expect(item).toBeVisible();
+	await expect(trigger).toBeFocused();
 });

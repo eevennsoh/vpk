@@ -95,7 +95,7 @@ test("only an authorized POST invokes the mock runner; one job at a time and cap
 test("mock runner errors become a failed job", async () => {
 	const service = await fixture(async () => { throw new Error("Mock CLI unavailable"); });
 	try {
-		const response = await fetch(service.config.endpoint, { method: "POST", headers: { "x-vpk-render-key": service.config.token }, body: JSON.stringify({ variant: "outline", theme: "dark" }) });
+		const response = await fetch(service.config.endpoint, { method: "POST", headers: { "x-vpk-render-key": service.config.token }, body: JSON.stringify({ variant: "paper", theme: "dark" }) });
 		const job = await response.json();
 		let state;
 		for (let attempt = 0; attempt < 100; attempt++) {

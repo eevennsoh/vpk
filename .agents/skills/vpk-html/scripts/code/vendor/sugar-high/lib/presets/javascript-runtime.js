@@ -1,0 +1,842 @@
+// @ts-check
+
+import {
+  T_BREAK, T_CLASS as T_CLS_NUMBER, T_COMMENT, T_ENTITY, T_IDENTIFIER,
+  T_JSX_LITERALS, T_KEYWORD, T_PROPERTY, T_SIGN, T_SPACE, T_STRING,
+} from '../shared.js'
+
+const JSXBrackets = new Set(['<', '>', '{', '}', '[', ']'])
+const Keywords_Js = new Set([
+  'for', 'do', 'while', 'if', 'else', 'return', 'function', 'var', 'let', 'const',
+  'true', 'false', 'undefined', 'this', 'new', 'delete', 'typeof', 'in', 'instanceof',
+  'void', 'break', 'continue', 'switch', 'case', 'default', 'throw', 'try', 'catch',
+  'finally', 'debugger', 'with', 'yield', 'async', 'await', 'class', 'extends', 'super',
+  'import', 'export', 'from', 'static',
+])
+
+const Keywords_Ts = new Set([
+  ...Keywords_Js,
+  'type', 'interface', 'enum', 'implements', 'readonly', 'abstract', 'declare',
+  'namespace', 'module', 'private', 'protected', 'public', 'override', 'keyof', 'infer',
+  'is', 'asserts', 'satisfies', 'as', 'unknown', 'never', 'any', 'number', 'string',
+  'boolean', 'bigint', 'symbol', 'object',
+])
+
+const Signs = new Set([
+  '+',
+  '-',
+  '*',
+  '/',
+  '%',
+  '=',
+  '!',
+  '&',
+  '|',
+  '^',
+  '~',
+  '!',
+  '?',
+  ':',
+  '.',
+  ',',
+  ';',
+  `'`,
+  '"',
+  '.',
+  '(',
+  ')',
+  '[',
+  ']',
+  '#',
+  '@',
+  '\\',
+  ...JSXBrackets,
+])
+
+const DefaultOptions = {
+  keywords: Keywords_Js,
+  onCommentStart: isCommentStart_Js,
+  onCommentEnd: isCommentEnd_Js,
+  jsx: true,
+  regex: true,
+  templateStrings: true,
+}
+
+/**
+ * Apply caller overrides to the JavaScript-compatible defaults.
+ * @param {HighlightOptions | undefined} options
+ * @returns {HighlightOptions}
+ */
+function resolveHighlightOptions(options) {
+  return {
+    ...DefaultOptions,
+    ...options,
+  }
+}
+
+/**
+ * Fast, heuristic TS detection. It intentionally prefers speed over full parsing.
+ * @param {string} code
+ * @returns {boolean}
+ */
+function isLikelyTypeScript(code) {
+  let tsScore = 0
+
+  // TS-only declarations and operators.
+  if (/\binterface\s+[A-Za-z_$][\w$]*/.test(code)) tsScore += 2
+  if (/\btype\s+[A-Za-z_$][\w$]*\s*=/.test(code)) tsScore += 2
+  if (/\benum\s+[A-Za-z_$][\w$]*/.test(code)) tsScore += 2
+  if (/\b(?:implements|readonly|declare|namespace|satisfies|infer|keyof|asserts)\b/.test(code)) tsScore += 2
+
+  // Common TS annotations/signatures.
+  if (/:\s*[A-Za-z_$][\w$]*(?:<[^>\n]+>)?(?:\[\])?(?=\s*[,)=;{])/m.test(code)) tsScore += 1
+  if (/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*:\s*/.test(code)) tsScore += 1
+  if (/\)\s*:\s*[A-Za-z_$][\w$]*(?:<[^>\n]+>)?(?:\[\])?\s*(?:=>|\{)/.test(code)) tsScore += 1
+
+  return tsScore >= 2
+}
+
+/** Find the end of a balanced type argument list, including quoted literal types. */
+function typeArgumentEnd(code, startIndex) {
+  let depth = 0
+  let braces = 0
+  for (let i = startIndex; i < code.length; i++) {
+    const ch = code[i]
+    if (ch === '"' || ch === "'") {
+      const quote = ch
+      while (++i < code.length && code[i] !== quote) {
+        if (code[i] === '\\') i++
+      }
+    } else if (ch === '{') {
+      braces++
+    } else if (ch === '}') {
+      if (!braces) return -1
+      braces--
+    } else if (ch === ';' && !braces) {
+      return -1
+    } else if (ch === '<') {
+      depth++
+    } else if (ch === '>' && code[i - 1] !== '=') {
+      if (--depth === 0) return i + 1
+    }
+  }
+  return -1
+}
+
+/** Detect `<T, U = ...>(...) => ...` without entering JSX mode. */
+function isTypeParameterListStart(code, startIndex) {
+  const end = typeArgumentEnd(code, startIndex)
+  if (end < 0 || !/^\s*\(/.test(code.slice(end))) return false
+  return /\)\s*(?::[\s\S]{0,120}?)?=>/.test(code.slice(end, end + 320))
+}
+
+/**
+ *
+ * 0  - identifier
+ * 1  - keyword
+ * 2  - string
+ * 3  - Class, number and null
+ * 4  - property
+ * 5  - entity
+ * 6  - jsx literals
+ * 7  - sign
+ * 8  - comment
+ * 9  - break
+ * 10 - space
+ *
+ */
+/** Whether `str[i]` matches RegExp `\s`, with an ASCII fast path. */
+function isSpace(str, i) {
+  const c = str.charCodeAt(i)
+  return c < 128 ? c === 32 || c >= 9 && c <= 13 : /\s/.test(str[i])
+}
+
+/** Whether a non-empty string is all `\s`, optionally excluding line breaks. */
+function isSpaces(str, breaks) {
+  if (!str) return false
+  for (let i = 0; i < str.length; i++) {
+    if (!isSpace(str, i) || !breaks && (str[i] === '\n' || str[i] === '\r')) return false
+  }
+  return true
+}
+
+function isSign(ch) {
+  return Signs.has(ch)
+}
+
+function isWord(chr) {
+  if (!chr) return false
+  for (let i = 0; i < chr.length; i++) {
+    const c = chr.charCodeAt(i)
+    if (!(c >= 128 || c >= 97 && c <= 122 || c >= 65 && c <= 90 ||
+      c >= 48 && c <= 57 || c === 95 || c === 36)) return false
+  }
+  return true
+}
+
+function isSigns(value) {
+  for (let i = 0; i < value.length; i++) {
+    if (!Signs.has(value[i])) return false
+  }
+  return true
+}
+
+function isCls(str) {
+  return /^[0-9A-Z\p{Lu}]/u.test(str) || str === 'null'
+}
+
+function isAlpha(chr) {
+  if (!chr || chr.length !== 1) return false
+  const c = chr.charCodeAt(0)
+  return c >= 65 && c <= 90 || c >= 97 && c <= 122
+}
+
+function isIdentifierChar(chr) {
+  if (!chr || chr.length !== 1) return false
+  const c = chr.charCodeAt(0)
+  return c >= 128 || c >= 65 && c <= 90 || c >= 97 && c <= 122 || c === 36 || c === 95
+}
+
+function isIdentifier(str) {
+  return isIdentifierChar(str[0]) && isWord(str)
+}
+
+function isStrTemplateChr(chr) {
+  return chr === '`'
+}
+
+function isSingleQuotes(chr) {
+  return chr === '"' || chr === "'"
+}
+
+function isStringQuotation(chr) {
+  return isSingleQuotes(chr) || isStrTemplateChr(chr)
+}
+
+/** @returns {0|1|2}  */
+function isCommentStart_Js(curr, next) {
+  if (curr !== '/') return 0
+  return next === '*' ? 2 : next === '/' ? 1 : 0
+}
+
+/** @returns {0|1|2}  */
+function isCommentEnd_Js(prev, curr) {
+  return prev === '*' && curr === '/'
+    ? 2
+    : curr === '\n' ? 1 : 0
+}
+
+function isPropertyKey(code, quoteEnd) {
+  let i = quoteEnd + 1
+  while (i < code.length && isSpace(code, i)) i++
+  return code[i] === ':'
+}
+
+/**
+ * @param {string} code
+ * @param {HighlightOptions | undefined} options
+ * Optional `onQuote(curr, i, code)` at `code[i] === "'"`: return length to consume from `i` (>= 1),
+ * or null/undefined/below 1 for default JS single-quoted strings. No substring allocation.
+ * @return {Array<[number, string]>}
+ */
+function tokenize(code, options) {
+  const mergedOptions = resolveHighlightOptions(options)
+  const hasCustomKeywords = mergedOptions.keywords !== DefaultOptions.keywords
+  let isTs = mergedOptions.typescript
+  // The TypeScript heuristic scans the whole input, so run it only once a TS-only keyword appears.
+  const tsKeywords = () => (isTs ??= isLikelyTypeScript(code)) ? Keywords_Ts : Keywords_Js
+  /** @type {Set<string> | undefined} */
+  let keywordSet = hasCustomKeywords ? mergedOptions.keywords : isTs == null ? undefined : tsKeywords()
+  /** @param {string} word */
+  const hasKeyword = (word) => keywordSet ? keywordSet.has(word)
+    : Keywords_Js.has(word) || Keywords_Ts.has(word) && (keywordSet = tsKeywords()).has(word)
+
+  const {
+    onCommentStart,
+    onCommentEnd,
+  } = mergedOptions
+
+  const resolvedTypeKeywords =
+    mergedOptions.typeKeywords instanceof Set ? mergedOptions.typeKeywords : null
+  const supportsJsx = mergedOptions.jsx !== false
+  const supportsRegex = mergedOptions.regex !== false
+  const supportsTemplateStrings = mergedOptions.templateStrings !== false
+  const normalizeKeyword = mergedOptions.caseInsensitive
+    ? (token) => token.toLowerCase()
+    : (token) => token
+  const isTemplateQuote = (chr) => supportsTemplateStrings && isStrTemplateChr(chr)
+
+  let current = ''
+  let type = -1
+  /** @type {[number, string]} */
+  let last = [-1, '']
+  /** @type {[number, string]} */
+  let beforeLast = [-2, '']
+  /** @type {Array<[number, string]>} */
+  const tokens = []
+
+  /**
+   * TS generics (`Map<string>`) and JSX (`<div>`) share the same `<Name …>` lexical shape.
+   * Recognized type argument lists are consumed in JavaScript mode before the JSX tag lexer.
+   * __jsxEnter gates that mode; nested elements and fragments restore their parent's
+   * tag and expression state when they close.
+   * @type {boolean}
+   */
+  let __jsxEnter = false
+  /** @type {0 | 1 | 2} 0 = none; 1 = inside `<open`; 2 = inside `</close` */
+  let __jsxTag = 0
+  let __jsxExprDepth = 0
+  let __jsxTagExpr = 0
+
+  // Each nested element or fragment saves its parent's tag and expression state.
+  /** @type {Array<[0 | 1 | 2, number, number]>} */
+  const jsxContexts = []
+  /** @param {0 | 1} tag */
+  const openJsx = (tag) => {
+    jsxContexts.push([__jsxTag, __jsxExprDepth, __jsxTagExpr])
+    __jsxTag = tag
+    __jsxExprDepth = __jsxTagExpr = 0
+    __jsxEnter = true
+  }
+  const closeJsx = () => {
+    [__jsxTag, __jsxExprDepth, __jsxTagExpr] = jsxContexts.pop() || [0, 0, 0]
+    __jsxEnter = jsxContexts.length > 0
+  }
+
+  const __jsxChild = () => __jsxEnter && !__jsxExprDepth && !__jsxTag
+  // < __content__ >
+  const inJsxTag = () => __jsxTag
+  // {'__content__'}
+  const inJsxLiterals = () => __jsxChild() && jsxContexts.length
+
+  /** @type {string | null} */
+  let __strQuote = null
+  let __strTokenStart = 0
+  let __regexQuoteStart = false
+  // One entry per open template, outermost first: -1 means literal text;
+  // otherwise it counts unmatched `{` inside `${...}`, excluding its opening brace.
+  const templateStack = []
+  const inStringQuotes = () => __strQuote !== null
+  const inRegexQuotes = () => __regexQuoteStart
+  const inStrTemplateLiterals = () => templateStack.length > 0 && templateStack[templateStack.length - 1] === -1
+  const inStrTemplateExpr = () => templateStack.length > 0 && templateStack[templateStack.length - 1] >= 0
+  const inStringContent = () => inStringQuotes() || inStrTemplateLiterals()
+
+  /**
+   *
+   * @param {string} token
+   * @returns {number}
+   */
+  function classify(token) {
+    const isLineBreak = token === '\n' || token === '\r\n'
+    // First checking if they're attributes values
+    if (inJsxTag()) {
+      if (inStringQuotes()) {
+        return T_STRING
+      }
+
+      const [, lastToken] = last
+      if (isIdentifier(token)) {
+        // classify jsx open tag
+        if ((lastToken === '<' || lastToken === '</'))
+          return T_ENTITY
+        if (!__jsxTagExpr && isSpaces(tokens[tokens.length - 1]?.[1], true))
+          return T_PROPERTY
+      }
+    }
+    // Then determine if they're jsx literals
+    const isJsxLiterals = inJsxLiterals()
+    if (isJsxLiterals) return T_JSX_LITERALS
+
+    // Determine strings first before other types
+    if (inStringQuotes() || inStrTemplateLiterals()) {
+      return T_STRING
+    } else if (resolvedTypeKeywords && resolvedTypeKeywords.has(normalizeKeyword(token))) {
+      return last[1] === '.' ? T_IDENTIFIER : T_CLS_NUMBER
+    } else if (hasKeyword(normalizeKeyword(token))) {
+      return last[1] === '.' ? T_IDENTIFIER : T_KEYWORD
+    } else if (isLineBreak) {
+      return T_BREAK
+    } else if (isSpaces(token)) {
+      return T_SPACE
+    } else if (isSigns(token)) {
+      return T_SIGN
+    } else if (isCls(token)) {
+      return inJsxTag() && !__jsxTagExpr ? T_IDENTIFIER : T_CLS_NUMBER
+    } else {
+      if (isIdentifier(token)) {
+        const isLastPropDot = last[1] === '.' && isIdentifier(beforeLast[1])
+
+        if (!inStringContent() && !isLastPropDot) return T_IDENTIFIER
+        if (isLastPropDot) return T_PROPERTY
+      }
+      return T_STRING
+    }
+  }
+
+  /**
+   *
+   * @param {number | undefined} [type_]
+   * @param {string | undefined} [token_]
+   */
+  const append = (type_, token_) => {
+    if (token_) {
+      current = token_
+    }
+    if (current) {
+      type = typeof type_ === 'number' ? type_ : classify(current)
+      /** @type [number, string]  */
+      const pair = [type, current]
+      if (type !== T_SPACE && type !== T_BREAK) {
+        beforeLast = last
+        last = pair
+      }
+      if (inJsxTag() && type === T_SIGN) {
+        if (current === '{' || current === '${') __jsxTagExpr++
+        if (current === '}') __jsxTagExpr--
+      }
+      tokens.push(pair)
+    }
+    current = ''
+  }
+  for (let i = 0; i < code.length; i++) {
+    const curr = code[i]
+    const prev = code[i - 1]
+    const next = code[i + 1]
+
+    // onQuote(curr, i, code): length from i; end = i + len (capped).
+    if (
+      typeof mergedOptions.onQuote === 'function' &&
+      curr === "'" &&
+      !inStringQuotes() &&
+      !inJsxLiterals() &&
+      !inStrTemplateLiterals()
+    ) {
+      const rawLen = mergedOptions.onQuote(curr, i, code)
+      if (
+        typeof rawLen === 'number' &&
+        rawLen >= 1 &&
+        !Number.isNaN(rawLen)
+      ) {
+        const len = Math.min(rawLen, code.length - i)
+        const end = i + len
+        append()
+        current = code.slice(i, end)
+        append(T_IDENTIFIER)
+        i = end - 1
+        continue
+      }
+    }
+
+    // Determine string quotation outside of jsx literals and template literals.
+    // Inside jsx literals or template literals, string quotation is still part of it.
+    if (isSingleQuotes(curr) && !inJsxLiterals() && !inStrTemplateLiterals()) {
+      append()
+      let isStringClose = false
+      if (__strQuote && curr === __strQuote) {
+        __strQuote = null
+        isStringClose = true
+      } else if (!__strQuote) {
+        __strQuote = curr
+        __strTokenStart = tokens.length
+      }
+
+      append(T_STRING, curr)
+      if (mergedOptions.quotedKeys && isStringClose && isPropertyKey(code, i)) {
+        for (let tokenIndex = __strTokenStart; tokenIndex < tokens.length; tokenIndex++) {
+          tokens[tokenIndex][0] = T_PROPERTY
+        }
+      }
+      continue
+    }
+
+    if (isTemplateQuote(curr) && !inStringQuotes() && !inJsxLiterals()) {
+      append()
+      if (inStrTemplateLiterals()) templateStack.pop()
+      else templateStack.push(-1)
+      append(T_STRING, curr)
+      continue
+    }
+
+    if (inStrTemplateLiterals()) {
+      if (curr === '$' && next === '{') {
+        templateStack[templateStack.length - 1] = 0
+        append(T_STRING)
+        append(T_SIGN, '${')
+        i++
+        continue
+      }
+    }
+
+    if (inStrTemplateExpr() && !inStringQuotes() && !inJsxLiterals()) {
+      const depthIndex = templateStack.length - 1
+      if (curr === '{') templateStack[depthIndex]++
+      if (curr === '}') {
+        if (templateStack[depthIndex] === 0) {
+          append()
+          templateStack[depthIndex] = -1
+          append(T_SIGN, curr)
+          continue
+        }
+        templateStack[depthIndex]--
+      }
+    }
+
+    // Parse type arguments in JavaScript mode even when surrounded by JSX.
+    if (supportsJsx && curr === '<' && !inStringContent() && !inJsxLiterals()) {
+      const lhs = current.trim() || last[1]
+      const followsValue = (isIdentifier(lhs) && !hasKeyword(lhs)) ||
+        isCls(lhs) || lhs === ')' || lhs === ']'
+      const end = (followsValue || isTypeParameterListStart(code, i))
+        ? typeArgumentEnd(code, i) : -1
+      if (end > i) {
+        append()
+        for (const [kind, value] of tokenize(code.slice(i, end), {
+          ...mergedOptions, jsx: false, typescript: tsKeywords() === Keywords_Ts,
+        })) append(kind, value)
+        i = end - 1
+        continue
+      }
+    }
+
+    if (__jsxChild()) {
+      if (curr === '{') {
+        append()
+        append(T_SIGN, curr)
+        __jsxExprDepth = 1
+        continue
+      }
+    }
+
+    if (supportsJsx && curr === '<' && !inStringContent() && (next === '>' || code.slice(i, i + 3) === '</>')) {
+      append()
+      const closing = next === '/'
+      if (closing) closeJsx()
+      else openJsx(0)
+      append(T_SIGN, closing ? '</>' : '<>')
+      i += closing ? 2 : 1
+      continue
+    }
+
+    if (__jsxEnter) {
+      // <: open tag sign
+      // new '<' not inside jsx
+      if ((!__jsxTag || __jsxTagExpr) && curr === '<' && !inStringContent() && (next === '/' || isIdentifierChar(next))) {
+        append()
+        if (next === '/') {
+          // close tag
+          __jsxTag = 2
+          current = '</'
+          i++
+        } else {
+          // open tag
+          openJsx(1)
+          current = curr
+        }
+        append(T_SIGN)
+        continue
+      }
+      if (__jsxTag) {
+        // >: open tag close sign or closing tag closing sign
+        // and it's not `=>` or `/>`
+        // `curr` could be `>` or `/`
+        if (curr === '>' && !'/='.includes(prev) && !inStringContent() && !__jsxTagExpr) {
+          append()
+          if (__jsxTag === 1) {
+            __jsxTag = 0
+          } else {
+            closeJsx()
+          }
+          append(T_SIGN, curr)
+          continue
+        }
+
+        // Self-closing tag: restore the containing element or expression.
+        if (curr === '/' && next === '>' && !inStringContent() && !__jsxTagExpr) {
+          // if current token is not part of close tag sign, push it first
+          if (current !== '<' && current !== '/') {
+            append()
+          }
+
+          closeJsx()
+
+          current = '/>'
+          i++
+          append(T_SIGN)
+          continue
+        }
+
+        // <: open tag sign
+        if (curr === '<' && !inStringContent() && !__jsxTagExpr) {
+          append()
+          current = curr
+          append(T_SIGN)
+          continue
+        }
+
+        // jsx property
+        // `-` in data-prop / aria-label. Consume the complete attribute as one property.
+        if (curr === '-' && current && !inStringContent() && !inJsxLiterals()) {
+          let end = i + 1
+          while (end < code.length && /[$\w-]/.test(code[end])) end++
+          append(T_PROPERTY, current + code.slice(i, end))
+          i = end - 1
+          continue
+        }
+        // `=` in property=<value>
+        if (next === '=' && !inStringContent()) {
+          // if current is not a space, ensure `prop` is a property
+          if (!isSpaces(curr)) {
+            // If there're leading spaces, append them first
+            if (isSpaces(current)) {
+              append()
+            }
+
+            // Now check if the accumulated token is a property
+            const prop = current + curr
+            if (isIdentifier(prop)) {
+              append(T_PROPERTY, prop)
+              continue
+            }
+          }
+        }
+      }
+    }
+
+    // if it's not in a jsx tag declaration or a string, close child if next is jsx close tag
+    if (supportsJsx && !__jsxTag && curr === '<' && (isIdentifierChar(next) || next === '/')) {
+      let prevNonSpace = i - 1
+      while (prevNonSpace >= 0 && isSpace(code, prevNonSpace)) prevNonSpace--
+      const prevChar = prevNonSpace >= 0 ? code[prevNonSpace] : ''
+
+      const [lastType, lastTok] = last
+      // Without a space before `<`, the LHS is often still in `current` (not flushed), so `last` is stale.
+      let typeArgFromPending = false
+      let jsxFromPending = false
+      if (current && !isSpaces(current)) {
+        const w = current
+        // Unflushed LHS before `<`: numbers/null/Upper (isCls), and booleans, behave like `foo<` (type
+        // args / `<`). Any other keyword (`return`, `void`, …) is JSX-friendly — no keyword allowlist.
+        if (isCls(w) || w === 'true' || w === 'false') {
+          typeArgFromPending = true
+        } else if (hasKeyword(w) && isIdentifier(w)) {
+          jsxFromPending = true
+        } else if (isIdentifier(w)) {
+          typeArgFromPending = true
+        }
+      }
+
+      const isTsTypeArgStart =
+        curr === '<' &&
+        /[$\w\]\)]/.test(prevChar) &&
+        (typeArgFromPending ||
+          (!jsxFromPending &&
+            (lastType === T_IDENTIFIER ||
+              lastType === T_CLS_NUMBER ||
+              (lastType === T_SIGN && (lastTok === ')' || lastTok === ']')))))
+      const isTsGenericStart = curr === '<' && isTypeParameterListStart(code, i)
+      if (curr === '<' && (next === '/' || isAlpha(next))) {
+        if (
+          !isTsTypeArgStart &&
+          !isTsGenericStart &&
+          !inStringContent() &&
+          !inJsxLiterals() &&
+          !inRegexQuotes()
+        ) {
+          append()
+          if (next === '/') __jsxTag = 2
+          else openJsx(1)
+        }
+      }
+    }
+
+    const isQuotationChar = isSingleQuotes(curr) || isTemplateQuote(curr)
+    const isStringTemplateLiterals = inStrTemplateLiterals()
+    const isRegexChar = supportsRegex && !__jsxEnter && curr === '/' && !isCommentStart_Js(curr, next)
+    const isJsxLiterals = inJsxLiterals()
+
+    // string quotation
+    if (isQuotationChar || isStringTemplateLiterals || isSingleQuotes(__strQuote)) {
+      current += curr
+      // Consume the escaped character before the next delimiter check.
+      if (curr === '\\') current += code[++i] || ''
+      // Inside string content only quotes, escapes and template delimiters change state.
+      const stops = __strQuote ? '"\'\\' : inStrTemplateLiterals() ? '`$\\' : ''
+      if (stops) {
+        let end = i + 1
+        while (end < code.length && !stops.includes(code[end])) end++
+        current += code.slice(i + 1, end)
+        i = end - 1
+      }
+    } else if (isRegexChar) {
+      append()
+      const [lastType, lastToken] = last
+      // Special cases that are not considered as regex:
+      // * (expr1) / expr2: `)` before `/` operator is still in expression
+      // * <non comment start>/ expr: non comment start before `/` is not regex
+      if (
+        isRegexChar &&
+        lastType !== -1 &&
+        !(
+          (lastType === T_SIGN && ')' !== lastToken) ||
+          lastType === T_COMMENT
+        )
+      ) {
+        current = curr
+        append()
+        continue
+      }
+
+      __regexQuoteStart = true
+      const start = i++
+
+      let foundClose = false
+
+      // `/` is literal inside regex character classes, e.g. `[/]`.
+      let inCharClass = false
+
+      // traverse to find closing regex slash
+      for (; i < code.length && code[i] !== '\n'; i++) {
+        const ch = code[i]
+        if (ch === '\\') {
+          if (code[i + 1] === '\n') break
+          i++
+          continue
+        }
+        if (ch === '[') inCharClass = true
+        if (ch === ']') inCharClass = false
+        if (ch === '/' && !inCharClass) {
+          foundClose = true
+          // end of regex, append regex flags
+          while (code.charCodeAt(i + 1) >= 97 && code.charCodeAt(i + 1) <= 122) {
+            i++
+          }
+          break
+        }
+      }
+      __regexQuoteStart = false
+
+      if (start !== i && foundClose) {
+        // If current line is fully closed with string quotes or regex slashes,
+        // add them to tokens
+        current = code.slice(start, i + 1)
+        append(T_STRING)
+      } else {
+        // If it doesn't match any of the above, just leave it as operator and move on
+        current = curr
+        append()
+        i = start
+      }
+    } else if (onCommentStart(curr, next, i, code)) {
+      append()
+      const start = i
+      const startCommentType = onCommentStart(curr, next, i, code)
+
+      // just match the comment, commentType === true
+      // inline comment, commentType === 1
+      // block comment, commentType === 2
+      if (startCommentType) {
+        for (; i < code.length; i++) {
+          const endCommentType = onCommentEnd(code[i - 1], code[i], i, code)
+          if (endCommentType == startCommentType) break
+        }
+      }
+      current = code.slice(start, i + 1)
+      append(T_COMMENT)
+    } else if (curr === ' ' || curr === '\n' || (curr === '\r' && next === '\n')) {
+      if (
+        curr === ' ' &&
+        (
+          (isSpaces(current) || !current) ||
+          isJsxLiterals
+        )
+      ) {
+        let end = i + 1
+        while (code[end] === ' ') end++
+        current += code.slice(i, end)
+        i = end - 1
+        if (code[end] === '<') {
+          append()
+        }
+      } else {
+        append()
+        current = curr
+        if (curr === '\r') {
+          current = '\r\n'
+          i++
+        }
+        append()
+      }
+    } else {
+      if (__jsxExprDepth && curr === '}') {
+        append()
+        current = curr
+        append()
+        __jsxExprDepth--
+      } else if (
+        // it's jsx literals and is not a jsx bracket
+        (isJsxLiterals && !JSXBrackets.has(curr)) ||
+        // it's template literal content (including quotes)
+        inStrTemplateLiterals() ||
+        // same type char as previous one in current token
+        ((isWord(curr) === isWord(current[current.length - 1]) || __jsxChild()) && !Signs.has(curr))
+      ) {
+        current += curr
+        // JSX text only changes state at brackets, spaces, line breaks and comment slashes.
+        if (isJsxLiterals && !JSXBrackets.has(curr) && onCommentStart === isCommentStart_Js) {
+          let end = i + 1
+          while (end < code.length && !' \n\r/<>{}[]'.includes(code[end])) end++
+          current += code.slice(i + 1, end)
+          i = end - 1
+        }
+      } else {
+        if (prev === '<' && curr === '/') {
+          current = '</'
+        }
+        append()
+
+        if (prev !== '<' || curr !== '/') {
+          current = curr
+
+        }
+        if (curr === '<' && next === '/' || curr === '/' && next === '>') {
+          current = curr + next
+          append()
+          i++
+        }
+        else if (JSXBrackets.has(curr)) append()
+      }
+      // Word characters cannot change JavaScript syntax state. Consume the rest
+      // together; custom comment hooks and JSX attributes still inspect each character.
+      if (!__jsxTag && !isJsxLiterals && onCommentStart === isCommentStart_Js && isWord(curr)) {
+        let end = i + 1
+        while (end < code.length && isWord(code[end])) end++
+        current += code.slice(i + 1, end)
+        i = end - 1
+      }
+      if (__jsxExprDepth && curr === '{') __jsxExprDepth++
+    }
+  }
+
+  append()
+
+  return tokens
+}
+
+export { tokenize }
+
+/**
+ * @typedef {Object} HighlightOptions
+ * @property {Set<string>} [keywords]
+ * @property {Set<string>} [typeKeywords]
+ * @property {(curr: string, next: string, index: number, code: string) => number | boolean} [onCommentStart]
+ * @property {(prev: string, curr: string, index: number, code: string) => number | boolean} [onCommentEnd]
+ * @property {(curr: string, i: number, code: string) => number | null | undefined} [onQuote]
+ * @property {boolean} [quotedKeys]
+ * @property {boolean} [jsx] Whether JSX tag parsing is enabled.
+ * @property {boolean} [regex] Whether JavaScript-style regular expressions are enabled.
+ * @property {boolean} [templateStrings] Whether JavaScript template strings are enabled.
+ * @property {boolean} [caseInsensitive] Whether keyword matching ignores case.
+ * @property {boolean} [typescript] Override heuristic TypeScript detection.
+ * @property {(line: import('../core.js').AnnotateLine) => void} [annotateLine]
+ */

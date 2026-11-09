@@ -7911,7 +7911,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-host"
 			},
 			{
-				"description": "Render supplied material into offline, single-file HTML documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces with the Algebrica editorial identity. Use only when explicitly invoked as vpk-html or /vpk-html, optionally with a document hint or --github.",
+				"description": "Use only when the message names the skill, as vpk-html, vpk html, vpkhtml or /vpk-html, in any case or with a one-letter slip, optionally with a document hint or --github; never from a mention in a path, quoted text or an earlier turn, or from vpk and html in separate phrases. Fills a vpk-html template with supplied material as one offline file. For an explanation that does not name it use vpk-explain; for a standalone chart use dataviz; for packaging an app route use vpk-artifact.",
 				"name": "vpk-html",
 				"path": ".agents/skills/vpk-html/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-html"

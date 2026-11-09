@@ -47,13 +47,13 @@ const scenario = (source, execute = run) => evaluate(`(async () => {
 	${source}
 })()`, execute);
 
-test('continuous scrubbing preserves every in-between frame with twelve Page and Slides ticks', { timeout:60000 }, () => {
+test('continuous scrubbing preserves every in-between frame with twelve Page ticks', { timeout:60000 }, () => {
 	const command = (...args) => execFileSync('agent-browser', ['--session', `${session}-continuous`, ...args], { encoding:'utf8', timeout:45000 });
 	const probe = source => scenario(source, command);
 	command('set','viewport','1440','900'); command('set','media','light'); command('open',`file://${artifact}`);
 	command('wait','--fn','Boolean(window.__eu26Timeline && window.__eu26Explorer && window.__vpkStory)');
 	try {
-		for (const mode of ['story','slides']) {
+		for (const mode of ['story']) { // Slides steps with its thumbnail carousel (slides-timeline.behavior.test.mjs)
 			const samples = probe(`
 				story.setMode('${mode}'); explorer.pause(); ui.dismiss();
 				const states=JSON.parse(document.querySelector('[data-eu26-explorer-model]').textContent).states;
@@ -74,9 +74,11 @@ test('continuous scrubbing preserves every in-between frame with twelve Page and
 				assert.ok(Math.abs(sample.hero-sample.time)<.001);
 				assert.equal(sample.text,sample.index,'the active text follows the animation segment');
 			}
+			// The field burst (13-16 s): cards fly apart and the camera snaps wide, so every sample differs. The next segment
+			// holds a camera pose over the settled field by design (figure-motion.md, held poses), so it is not a scrub probe.
 			const geometry = probe(`
 				const poses=[];
-				for(const position of [7.125,7.25,7.5,7.25]) {
+				for(const position of [6.125,6.25,6.5,6.25]) {
 					slider.value=String(position);slider.dispatchEvent(new Event('input',{bubbles:true}));
 					poses.push(hero.querySelector('svg').innerHTML);
 				}
@@ -160,12 +162,13 @@ test('the vertical timeline reveals a reachable preview stack without taking ove
 					for(const mode of ['story','slides','twitter','video']) {
 						story.setMode(mode);await wait(60);
 						if(mode==='slides') {
-							if(slider.getAttribute('aria-orientation')!=='horizontal'||dock.querySelectorAll('.eu26-timeline-tick').length!==chapterNames.length)failures.push('Slides does not keep one horizontal tick per slide');
+							const strip=dock.querySelector('.eu26-slide-carousel');
+							if(!strip||strip.hidden||strip.querySelectorAll('[data-eu26-slide-index]').length!==chapterNames.length)failures.push('Slides does not show one carousel thumbnail per slide');
 							continue;
 						}
 						if(mode==='video') {
 							const r=rect(dock);
-							if(getComputedStyle(dock).position!=='relative'||!document.querySelector('[data-video-timeline]').contains(dock)||slider.getAttribute('aria-orientation')!=='horizontal'||r.width<innerWidth*.6)failures.push('Video does not use its inline horizontal ruler');
+							if(getComputedStyle(dock).position!=='relative'||!document.querySelector('[data-video-timeline]').contains(dock)||slider.getAttribute('aria-orientation')!=='horizontal'||r.width<Math.min(innerWidth*.6,rect(document.querySelector('[data-story-stage]')).width-1))failures.push('Video does not use its inline horizontal ruler');
 							continue;
 						}
 						const r=rect(dock),style=getComputedStyle(dock),top=parseFloat(style.top),bottom=parseFloat(style.bottom);
@@ -242,7 +245,7 @@ test('the vertical timeline reveals a reachable preview stack without taking ove
 			run('focus',choice(6));
 			scenario(`await wait(80); return null;`);
 			run('press','ArrowDown');
-			const focus = scenario(`await wait(100); const a=rect(cards[7]),b=rect(list); const article=document.querySelector('[data-story-step][aria-current="step"]'),heading=rect(article.querySelector('h2')),stage=rect(document.querySelector('[data-story-stage]')); return {index:document.activeElement.dataset.eu26StateIndex,textIndex:Number(article.dataset.storyIndex),clearance:heading.top-stage.bottom,center:Math.abs((a.top+a.bottom-b.top-b.bottom)/2),tabstops:cards.filter(card=>card.tabIndex===0).length,preview:explorer.getState().previewIndex};`);
+			const focus = scenario(`await wait(100); const a=rect(cards[7]),b=rect(list); const article=document.querySelector('[data-story-step][aria-current="step"]'),heading=rect(article.querySelector('h2')),stage=rect(document.querySelector('[data-story-stage]')); return {index:document.activeElement.dataset.eu26StateIndex,textIndex:Number(article.dataset.storyIndex),clearance:heading.top-(window.__vpkStory.getState().readingLine-32),center:Math.abs((a.top+a.bottom-b.top-b.bottom)/2),tabstops:cards.filter(card=>card.tabIndex===0).length,preview:explorer.getState().previewIndex};`);
 			assert.equal(focus.index,'7'); assert.equal(focus.textIndex,7); assert.ok(focus.clearance>=20 && focus.clearance<90); assert.ok(focus.center<=12,`focused card center differs by ${focus.center}px`); assert.equal(focus.tabstops,1); assert.equal(focus.preview,7);
 			run('press','Enter');
 			assert.equal(scenario(`await until(()=>!explorer.getState().transitioning && explorer.getState().time===16,'native commit'); return explorer.getState().selectedIndex;`),7);
@@ -281,7 +284,8 @@ test('the vertical timeline reveals a reachable preview stack without taking ove
 				const caption=rect(cards[11].querySelector('.eu26-state-text')),viewport=rect(list);
 				return {time:explorer.getState().time,render:explorer.getState().renderTime,hero:Number(hero.dataset.heroTime),value:Number(slider.value),index:ui.getState().selectedIndex,scroll:list.scrollTop,caption,viewport};
 			`);
-			assert.equal(result.time,34); assert.equal(result.render,34); assert.equal(result.hero,34); assert.equal(result.value,11); assert.equal(result.index,11); assert.ok(result.scroll>0);
+			// The timeline holds at the end; the drawing keeps going because the endless wall idles past it.
+			assert.equal(result.time,34); assert.ok(result.render>=34,'the wall keeps moving past the end'); assert.ok(result.hero>=34); assert.equal(result.value,11); assert.equal(result.index,11); assert.ok(result.scroll>0);
 			assert.ok(result.caption.top>=result.viewport.top && result.caption.bottom<=result.viewport.bottom,'the final selected caption is visible after a range seek');
 		});
 
@@ -448,7 +452,7 @@ test('Frames galleries follow their view orientation and keep horizontal navigat
 			`);
 			for(const sample of result) assert.deepEqual(sample,{mode:sample.mode,transport:0,chapterButtons:0,replay:sample.mode==='video',caption:false,label:data.states[7].title});
 		});
-		for(const mode of ['slides','video']) {
+		for(const mode of ['video']) { // Slides has no Frames gallery; its carousel is the strip
 			await t.test(`${mode} lays frames left to right and centers keyboard previews`,()=>{
 				const layout=probe(`
 					story.setMode('${mode}');explorer.pause();explorer.seek(16);ui.setExpanded(true);await wait(220);
@@ -478,7 +482,7 @@ test('Frames galleries follow their view orientation and keep horizontal navigat
 					command('set','media',theme);
 					const failures=probe(`
 						const failures=[];
-						for(const mode of ['slides','video']) {
+						for(const mode of ['video']) {
 							story.setMode(mode);explorer.pause();ui.setExpanded(true);await wait(220);
 							const r=rect(tray),header=rect(document.querySelector('.story-bar'));
 							if(r.left<8||r.right>innerWidth-8||r.top<header.bottom+8||r.bottom>innerHeight-8)failures.push(mode+' gallery escapes viewport');

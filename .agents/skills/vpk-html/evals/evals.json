@@ -5,6 +5,7 @@
 		{
 			"id": 1,
 			"name": "renewal-recommendation",
+			"meta_ok": "“peer benchmark” is a supplied business fact, not a word about grading the skill",
 			"category": "executive-proposal",
 			"template": "one-pager.html",
 			"viewport": { "width": 1440, "height": 1000 },
@@ -16,16 +17,15 @@
 			"expected_output": "A single offline HTML proposal whose recommendation is immediately legible and whose commercial evidence remains auditable.",
 			"files": [],
 			"expectations": [
-				"The output is one self-contained HTML file under artifacts/vpk-html.",
-				"The page preserves every supplied number and the twelve-month renewal recommendation.",
-				"The contractor exclusion is presented as a visible caveat rather than omitted or softened.",
-				"The artifact passes the required placeholder, render, and HTML checks."
+				"The output is one self-contained HTML file under artifacts/vpk-html/<slug>/ that embeds the three Geist faces (Geist, Geist Mono, Geist Mono Numeric) as data-URI @font-face rules and loads nothing from the network.",
+				"Every supplied number and the twelve-month renewal recommendation appear unchanged; the contractor exclusion is a visible caveat, and the page infers nothing the source does not state about it, such as how many of the 240 seats the contractors hold or a seat-level rate; that unknown reads [DATA NEEDED: …].",
+				"build.mjs --check-placeholders, build.mjs --verify and check-html.mjs exit 0 on the artifact, and build.mjs --check-content passes on its <slug>.content.json, which names the scenario’s template."
 			],
 			"human_rubric": [
 				"A decision-maker can find the recommendation within thirty seconds.",
 				"The commercial and adoption evidence supports comparison instead of becoming generic cards.",
 				"Supporting detail remains available without competing with the recommendation.",
-				"The page feels Algebrica editorial rather than like a SaaS dashboard."
+				"The page feels Algebrica editorial (white paper, dark ink type, quiet rules, line-art figures; design.md) rather than like a SaaS dashboard."
 			]
 		},
 		{
@@ -42,10 +42,9 @@
 			"expected_output": "A single offline HTML status report that makes the rollout decision and regional exception unmistakable.",
 			"files": [],
 			"expectations": [
-				"The output is one self-contained HTML file under artifacts/vpk-html.",
-				"All latency, error-rate, capacity, duration, and request-volume values are preserved.",
-				"The 50% rollout recommendation and ap-southeast-2 cap are both explicit.",
-				"The artifact passes the required placeholder, render, and HTML checks."
+				"The output is one self-contained HTML file under artifacts/vpk-html/<slug>/ that embeds the three Geist faces (Geist, Geist Mono, Geist Mono Numeric) as data-URI @font-face rules and loads nothing from the network.",
+				"All latency, error-rate, capacity, duration, and request-volume values appear unchanged beside an explicit 50% rollout recommendation and ap-southeast-2 cap, and the unsupplied owner and exit criterion for that cap read [DATA NEEDED: …] rather than being omitted or invented.",
+				"build.mjs --check-placeholders, build.mjs --verify and check-html.mjs exit 0 on the artifact, and build.mjs --check-content passes on its <slug>.content.json, which names the scenario’s template."
 			],
 			"human_rubric": [
 				"The rollout state and exception can be understood within thirty seconds.",
@@ -57,6 +56,7 @@
 		{
 			"id": 3,
 			"name": "runtime-benchmark",
+			"meta_ok": "the deliverable is a runtime benchmark report",
 			"category": "benchmark-report",
 			"template": "research-feature-explainer.html",
 			"viewport": { "width": 1366, "height": 900 },
@@ -68,10 +68,10 @@
 			"expected_output": "A single offline HTML benchmark report with comparable evidence and a qualified recommendation.",
 			"files": [],
 			"expectations": [
-				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"The output is one self-contained HTML file under artifacts/vpk-html/<slug>/ that embeds the three Geist faces (Geist, Geist Mono, Geist Mono Numeric) as data-URI @font-face rules and loads nothing from the network.",
 				"Every runtime measurement, sample size, and compatibility percentage is preserved.",
 				"Runtime B is recommended while its two XML namespace failures remain visible.",
-				"The artifact passes the required placeholder, render, and HTML checks."
+				"build.mjs --check-placeholders, build.mjs --verify and check-html.mjs exit 0 on the artifact, and build.mjs --check-content passes on its <slug>.content.json, which names the scenario’s template."
 			],
 			"human_rubric": [
 				"The three runtimes can be compared on common visual scales.",
@@ -94,10 +94,10 @@
 			"expected_output": "A single offline interactive HTML planning page with functioning controls and transparent calculations.",
 			"files": [],
 			"expectations": [
-				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"The output is one self-contained HTML file under artifacts/vpk-html/<slug>/ that embeds the three Geist faces (Geist, Geist Mono, Geist Mono Numeric) as data-URI @font-face rules and loads nothing from the network.",
 				"The default inputs and calculation formula exactly match the prompt.",
 				"Changing any control updates projected load, utilization, and shard count without network access.",
-				"The artifact passes the required placeholder, render, and HTML checks."
+				"build.mjs --check-placeholders, build.mjs --verify and check-html.mjs exit 0 on the artifact, and build.mjs --check-content passes on its <slug>.content.json, which names the scenario’s template."
 			],
 			"human_rubric": [
 				"The controls are the visual focus because the reader came to change assumptions.",
@@ -109,6 +109,7 @@
 		{
 			"id": 5,
 			"name": "build-versus-buy",
+			"meta_ok": "“evaluations per minute” is the service’s supplied load figure",
 			"category": "technical-decision",
 			"template": "exploration-code-approaches.html",
 			"viewport": { "width": 1440, "height": 1000 },
@@ -120,10 +121,10 @@
 			"expected_output": "A single offline HTML decision brief with a qualified recommendation and comparable options.",
 			"files": [],
 			"expectations": [
-				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"The output is one self-contained HTML file under artifacts/vpk-html/<slug>/ that embeds the three Geist faces (Geist, Geist Mono, Geist Mono Numeric) as data-URI @font-face rules and loads nothing from the network.",
 				"All staffing, timing, cost, throughput, contract, and audit-history facts are preserved.",
 				"The twelve-month extend-and-reassess recommendation is explicit and qualified.",
-				"The artifact passes the required placeholder, render, and HTML checks."
+				"build.mjs --check-placeholders, build.mjs --verify and check-html.mjs exit 0 on the artifact, and build.mjs --check-content passes on its <slug>.content.json, which names the scenario’s template."
 			],
 			"human_rubric": [
 				"A technical leader can choose an approach within thirty seconds.",
@@ -146,10 +147,11 @@
 			"expected_output": "A single offline HTML governance brief that makes conditional approval, owners, and residual uncertainty clear.",
 			"files": [],
 			"expectations": [
-				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"The output is one self-contained HTML file under artifacts/vpk-html/<slug>/ that embeds the three Geist faces (Geist, Geist Mono, Geist Mono Numeric) as data-URI @font-face rules and loads nothing from the network.",
 				"All control, training, exception, incident, duration, owner, and date facts are preserved.",
 				"Expansion is conditional on exactly the two supplied requirements.",
-				"The artifact passes the required placeholder, render, and HTML checks."
+				"The training condition’s deadline, which the prompt never supplies, reads [DATA NEEDED: …] beside Workplace Technology, not omitted, invented or borrowed from 2026-09-18.",
+				"build.mjs --check-placeholders, build.mjs --verify and check-html.mjs exit 0 on the artifact, and build.mjs --check-content passes on its <slug>.content.json, which names the scenario’s template."
 			],
 			"human_rubric": [
 				"The approval state and two blockers are obvious within thirty seconds.",
@@ -172,10 +174,10 @@
 			"expected_output": "A single offline six-slide HTML deck with a clear approval ask and auditable rollout evidence.",
 			"files": [],
 			"expectations": [
-				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"The output is one self-contained HTML file under artifacts/vpk-html/<slug>/ that embeds the three Geist faces (Geist, Geist Mono, Geist Mono Numeric) as data-URI @font-face rules and loads nothing from the network.",
 				"The deck contains exactly six slides and preserves all supplied migration facts.",
 				"Wave ownership, rollback thresholds, and the two uncertified extensions remain visible.",
-				"The artifact passes the required placeholder, render, and HTML checks."
+				"build.mjs --check-placeholders, build.mjs --verify and check-html.mjs exit 0 on the artifact, and build.mjs --check-content passes on its <slug>.content.json, which names the scenario’s template."
 			],
 			"human_rubric": [
 				"The approval ask is clear before detailed rollout mechanics.",
@@ -241,6 +243,7 @@
 		{
 			"id": 10,
 			"name": "x-launch-thread",
+			"meta_ok": "“Benchmark scripts” is verbatim supplied post text",
 			"category": "social-thread",
 			"template": "x-thread.html",
 			"viewport": { "width": 1440, "height": 900 },
@@ -292,7 +295,94 @@
 				"A reader can play the film, step it frame by frame and jump to any scene from the cue sheet or the Gantt without hunting for controls.",
 				"The five dwell times read as one plan on one clock, not as a list of numbers.",
 				"The lab lets the reader change a dwell and see where every later scene would start, using the same arithmetic as the cited source.",
-				"The page reads as an Algebrica editorial case study, not as a video player with a caption."
+				"The page reads as an Algebrica editorial case study (white paper, dark ink type, quiet rules, line-art figures; design.md), not as a video player with a caption."
+			]
+		},
+		{
+			"id": 12,
+			"name": "story-explainer-production-reference-match",
+			"category": "story-explainer",
+			"template": "story-kit",
+			"viewport": { "width": 1440, "height": 900 },
+			"reader_job": {
+				"quick_read": "See how the Team ’26 finale goes from one card drop to the scrolling wall, one chapter per step.",
+				"deep_audit": "Compare any chapter of the figure with the production route frozen at the same time and find the same objects, carriers and shading."
+			},
+			"prompt": "/vpk-html Build a two-column story explainer of how the Team ’26 finale goes from one card drop to the scrolling wall, for the design leads. The production scene is the /jira-team-eu26-end route on this worktree’s dev origin: add ?finale=<seconds>&hold to freeze it at any time, and capture your reference frames from there. Its source is components/projects/jira-team-eu26-end/finale/. Port the scene as a product-UI figure that matches production: new wall cards are always carried in by a named teammate cursor, the lanyard drops and swings, and chapter moves bloom the lens and settle flat. Use the source for exact numbers only; do not show states production never shows. Offer Page, Slides, X Threads and Video.",
+			"expected_output": "A single offline HTML story explainer whose figure matches the production route at the chapter times, in light and dark.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file; at 1440×900 the content column sits left of the figure column, and at 390×844 they stack with no horizontal scroll.",
+				"output/vpk-html/<slug>/frames/ref holds reference frames captured from /jira-team-eu26-end?finale=<seconds>&hold at 3 chapter times and a 0.1 s strip per camera move, with modification times earlier than the first figure file, and frames/ holds sheet-reference.png, sheet-crops.png, and sheet-<mode>-w1440.png and sheet-<mode>-w390.png for all four modes.",
+				"The verification § 4 probe prints light top 0, every side face 4 to 8 and hairlines 20 to 42 percent ink into paper; dark top 10 with every side face below 10; no figure fill outside cursor arrows, cursor pills and the named lettering exceptions measures above 42 percent ink.",
+				"The figure plan names a reference timestamp for each planned shape and move, and at each of the 3 reference times the figure holds the same objects as the production frame at that time: the same number of wall cards, the same named cursors, and the lanyard present or absent as production shows it.",
+				"In the product-UI scene each card has 3 to 8 container outlines and each tile 1 or 2 inner outlines, and the scene holds zero text elements other than the title lockup and cursor name pills.",
+				"A 0.05 s model sweep from the wall start to the duration finds 0 samples where a visible wall card is off the wall plane with no cursor holding it, and the in-page depth-cycle sample at chapter times, 36 even times and the transitions returns 0 cycles.",
+				"check-html.mjs and build.mjs --verify, run through the verification § 5 filter, print no failure line, and every warn line is explained under Not verified.",
+				"The final reply links the sheet paths and waits for the user’s call instead of claiming done."
+			],
+			"human_rubric": [
+				"Beside the reference at thumbnail size, a reviewer cannot tell which column is production.",
+				"The scene is neither empty outlines nor labelled UI: each surface is nameable at 240px and carries no UI text.",
+				"Tops read near-white with pale sides in light theme; dark theme reads as the inverse with no side brighter than its top.",
+				"Orange marks only the subject, and the eye lands on it first in both themes."
+			]
+		},
+		{
+			"id": 13,
+			"name": "story-explainer-scroll-to-end-motion",
+			"category": "story-explainer",
+			"template": "story-kit",
+			"viewport": { "width": 1440, "height": 900 },
+			"reader_job": {
+				"quick_read": "Scroll to the end and watch the wall keep running after the last chapter.",
+				"deep_audit": "Verify that the final act keeps moving on an idle clock, stops where it must, and holds a settled state under reduced motion."
+			},
+			"prompt": "/vpk-html Build a two-column story explainer whose scroll-driven figure ends on an endless card wall that keeps scrolling after the reader reaches the last chapter. Chapters: one card drop, a column filling, a multi-select drag, the wall. All motion must scrub deterministically from the page scroll, loop with no seam, and hold settled states under reduced motion. Ship behaviour tests with the page.",
+			"expected_output": "A single offline HTML story explainer whose final act keeps moving at the end of the page, proven by tests that scroll with the wheel.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file, and its behaviour suite contains a test that calls mouse.wheel or scrolls the page to the end and passes headless.",
+				"After wheel-scrolling to the end of the page in Page mode at 1440×900, the live figure's markup differs between two reads 2 s apart, while the timeline's current chapter stays the same.",
+				"Under reduced-motion emulation, the same two reads 2 s apart at the end of the page are identical.",
+				"In Video mode, a frame read 2 s after playback reaches the duration equals the frame at the duration.",
+				"Seeking to the same time from two different starting times renders identical figure markup, and scrubbing back above the final act's start time resets the idle clock to 0.",
+				"Across 0.05 s samples through at least one full wall loop, no visible card moves by more than one sample’s scroll distance between consecutive samples, so the loop has no seam and no card jumps.",
+				"After the multi-select drag’s leave event no column has a gap wider than one pitch; every selected card moves within 0.3 s of the leader; the filled column’s last visible row crosses the clip edge."
+			],
+			"human_rubric": [
+				"The ending feels alive rather than frozen, and the reader never sees a seam in the loop.",
+				"Scrubbing back and forth feels exact: the same scroll position always shows the same pose.",
+				"Reduced motion shows a calm, finished state, not a half-moved one."
+			]
+		},
+		{
+			"id": 14,
+			"name": "story-explainer-modes-and-chrome",
+			"category": "story-explainer",
+			"template": "story-kit",
+			"viewport": { "width": 1440, "height": 900 },
+			"reader_job": {
+				"quick_read": "Switch between Page, Slides, X Threads and Video and read the same story in each.",
+				"deep_audit": "Check every rail control, mode layout, code excerpt and dark thumbnail against the kit rules."
+			},
+			"prompt": "/vpk-html Build a two-column story explainer of how our board reflows when a card leaves a column, for the platform team. Source is files/board-src/; quote the reflow code from it. Offer Page, Slides, X Threads and Video, with a contact sheet of the figure in light and dark.",
+			"expected_output": "A single offline HTML story explainer whose four modes, rail controls, code excerpts and dark thumbnails follow the kit.",
+			"files": [
+				"files/board-src/board-reflow.mjs"
+			],
+			"expectations": [
+				"Every rail button is at least 44×44 with a 15px icon, carries aria-label plus data-tip, and the page has zero [title] attributes on controls.",
+				"In X Threads the first visible step is 01, with no h1 above it.",
+				"In Video at 1440×900 and 390×844, scrollHeight <= innerHeight and no title or chapter line is visible.",
+				"Each code block’s lines equal the cited source lines, and the page ships no highlighter script.",
+				"In the dark contact sheet, thumbnail ink percentages equal the live figure’s.",
+				"The light and dark contact sheets and every other capture sit under output/vpk-html/; artifacts/vpk-html/<slug>/ holds only the HTML, its <slug>.content.json and _figures/ tests."
+			],
+			"human_rubric": [
+				"Slides read as a centred carousel, one chapter per slide.",
+				"Video fits one viewport with Generate in the timeline row.",
+				"Dark thumbnails read as the same figure as the live one."
 			]
 		}
 	]

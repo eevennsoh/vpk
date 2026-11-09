@@ -71,7 +71,7 @@ export function tset(tw, to, now, delay = 0, reduced = false) {
 
 export const tdone = (tw, now, reduced = false) => reduced || now >= tw.t0 + tw.dur;
 
-// Neighbour stagger (rule 02): |rank − reference rank| × 40 ms.
+// Neighbour stagger (rule 02): |rank − reference rank| × 10 ms.
 export const selectDelay = (rank, ref) => (ref === null || ref === undefined ? 0 : Math.abs(rank - ref) * 10);
 
 // Pure select core. Units are logical parts in painter order (tray halves share one unit).
