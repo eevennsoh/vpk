@@ -3,7 +3,27 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 10000, ignoreHTTPSErrors: true, viewport: { width: 1600, height: 1000 } });
 
-test("Pull request card reveals its inline agent selector in both PR states", async ({ page }) => {
+test("kanban pull request previews show only the summary in both PR states", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Pull request" }).click();
+	const stage = page.locator("[data-butter-gallery-pull-request]");
+	for (const state of ["Open PR", "Merged PR"]) {
+		await page.getByRole("group", { name: "Pull request status" }).getByRole("button", { name: state }).click();
+		await stage.getByRole("button", { name: /Pull request.*#284/ }).click();
+		const preview = page.getByRole("dialog", { name: "Pull request #284 details" });
+		await expect(preview).toContainText("#284 Add merchant onboarding quickstart");
+		await expect(preview).toContainText("Venn");
+		await expect(preview).toContainText(state === "Open PR" ? "Open" : "Merged");
+		await expect(preview).not.toContainText("payments-platform/payments");
+		await expect(preview).not.toContainText("rovo/pay-999-merchant-onboarding");
+		await expect(preview).not.toContainText("6 files");
+		await expect(preview.getByRole("button", { name: /builds? passed/ })).toHaveCount(0);
+		await expect(preview.getByRole("group", { name: /additions, .* deletions/ })).toHaveCount(0);
+		await page.keyboard.press("Escape");
+	}
+});
+
+test("Pull request card assigns cloud agents in both PR states", async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 720 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -12,6 +32,7 @@ test("Pull request card reveals its inline agent selector in both PR states", as
 	const card = stage.locator('[data-slot="jira-issue-card"]');
 	const addAgent = stage.getByRole("button", { name: "Add agent to PAY-999" });
 	for (const status of ["Open PR", "Merged PR"]) {
+		await page.getByRole("button", { name: "Reset", exact: true }).click();
 		await page.getByRole("group", { name: "Pull request status" }).getByRole("button", { name: status }).click();
 		await card.hover();
 		await expect(addAgent).toBeVisible();
@@ -19,18 +40,16 @@ test("Pull request card reveals its inline agent selector in both PR states", as
 		const picker = page.getByRole("dialog", { name: "Agents" });
 		const cursor = picker.getByRole("button", { name: "Cursor", exact: true });
 		await cursor.click();
-		await expect(cursor).toHaveAttribute("aria-expanded", "true");
-		await expect(picker.getByRole("button", { name: "Open in Cursor" })).toBeEnabled();
-		await expect(picker.getByRole("button", { name: "Start a new session" })).toBeVisible();
-		await page.keyboard.press("Escape");
 		await expect(picker).toBeHidden();
+		await expect(stage.getByRole("button", { name: status === "Open PR" ? /^2 agents:/ : /^Cursor:/ })).toBeVisible();
 	}
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
 	await addAgent.focus();
 	await page.keyboard.press("Enter");
 	const picker = page.getByRole("dialog", { name: "Agents" });
 	await picker.getByRole("button", { name: "Cursor", exact: true }).click();
-	await picker.getByRole("button", { name: "Start a new session" }).click();
-	await expect(stage.getByRole("button", { name: /Cursor: / })).toBeVisible();
+	await expect(picker).toBeHidden();
+	await expect(stage.getByRole("button", { name: /^2 agents:/ })).toBeVisible();
 });
 
 test("Pull request tile opens the PAY-999 work item with its PR", async ({ page }) => {

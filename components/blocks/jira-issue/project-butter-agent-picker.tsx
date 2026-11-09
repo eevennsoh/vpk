@@ -6,7 +6,7 @@ import ScreenIcon from "@atlaskit/icon/core/screen";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import AddIcon from "@atlaskit/icon/core/add";
 import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { AgentSessionCard, type AgentSessionItem } from "@/components/blocks/agent-session";
 import { matchingAgentSessions, sessionChoiceItems } from "@/components/blocks/agent-assignment/components/session-choice-items";
 import { RichTextSuggestionMenu } from "@/components/ui-custom/rich-text-editor";
 import { Popover, PopoverContent } from "@/components/ui/popover";
@@ -160,11 +160,13 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 
 	const submenuActions = submenu && sessionChoicesOnly ? (
 		<>
-			<Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" />} />Start a new session</Button>
+			<Button ref={cloudButton} className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" />} />Start a new session</Button>
 			<hr className="my-1 border-0 border-t border-border" />
 			<div role="group" aria-labelledby={`${submenuId}-existing`}>
 				<div id={`${submenuId}-existing`} className="rich-text-command-menu-heading">Continue with existing sessions</div>
-				{matchingSessions.map((session) => <Button key={session.id} role="menuitem" className="h-8 w-full min-w-0 justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onContinueSession?.(session)}><Icon aria-hidden className="size-4 shrink-0" render={<AiChatIcon label="" />} /><span className="min-w-0 truncate">{session.title}</span></Button>)}
+				<ul aria-labelledby={`${submenuId}-existing`} className="flex min-w-0 flex-col">
+					{matchingSessions.map((session) => <AgentSessionCard animateLayout={false} item={session} key={session.id} localSessionAction="view" onView={onContinueSession} padding="menu" showMoreMenu={false} />)}
+				</ul>
 			</div>
 		</>
 	) : submenu ? (
@@ -284,6 +286,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 				selectedAgentIds={selectedAgentIds}
 				showSelectedTickInSingleSelect
 				submenuAgentIds={pickerAgents.filter(hasSubmenu).map((agent) => agent.id)}
+				submenuRole={sessionChoicesOnly ? "dialog" : "menu"}
 				showSubmenuChevron={showSubmenuChevron}
 				selectionMode="single"
 			/>
@@ -294,13 +297,13 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 					ref={submenuContent}
 					anchor={submenu.anchor}
 					aria-label={sessionChoicesOnly ? `${submenu.agent.name} sessions` : choosingSession ? `Choose a ${submenu.agent.name} session` : submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
-					role={!sessionChoicesOnly && (choosingSession || hasWorkspaceOptions(submenu.agent.id)) ? "dialog" : "menu"}
+					role={sessionChoicesOnly || choosingSession || hasWorkspaceOptions(submenu.agent.id) ? "dialog" : "menu"}
 					initialFocus={false}
 					finalFocus={false}
 					side="right"
 					align="start"
 					sideOffset={0}
-					className="w-70 max-w-[calc(100vw-24px)] gap-0 p-1"
+					className={cn("w-70 max-w-[calc(100vw-24px)] gap-0 p-1", sessionChoicesOnly && "max-h-[min(26rem,var(--available-height,26rem))] overflow-y-auto")}
 					positionerClassName={submenuPositionerClassName}
 					onPointerEnter={cancelClose}
 					onPointerLeave={closeSubmenuLater}
@@ -324,7 +327,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 						}
 						if ((sessionChoicesOnly || !hasWorkspaceOptions(submenu.agent.id)) && (event.key === "ArrowDown" || event.key === "ArrowUp" || (sessionChoicesOnly && (event.key === "Home" || event.key === "End")))) {
 							event.preventDefault();
-							const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+							const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>(sessionChoicesOnly ? 'button:not(:disabled)' : '[role="menuitem"]'));
 							const current = items.indexOf(document.activeElement instanceof HTMLButtonElement ? document.activeElement : items[0]);
 							const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
 							items[next]?.focus();

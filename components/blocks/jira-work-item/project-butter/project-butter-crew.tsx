@@ -99,6 +99,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 		const id = agent.id ?? agent.name;
 		if (!pickerAgents.some((candidate) => candidate.name.toLowerCase() === agent.name.toLowerCase())) pickerAgents.push({ ...agent, id: pickerAgents.some((candidate) => candidate.id === id) ? `session-agent:${id}` : id, byline: "On this work item" });
 	}
+	const fieldPickerAgents = pickerAgents.filter((agent) => agent.id !== "github-copilot" && agent.id !== "rovo-cli");
 	const members: readonly CrewMember[] = useReferenceCrew ? referenceCrew(orderedSessions) : [
 		...(assignee && assignee.name !== "Automatic" && assignee.name !== "Unassigned" ? [{ name: assignee.name, kind: "person" as const, state: "Working" as const, avatarSrc: assignee.avatarUrl }] : []),
 		...sessions.map((session): CrewMember => ({ name: session.agent.name, kind: "agent", state: session.state === "complete" ? "Completed" : session.state === "needs-input" || session.state === "attention" ? "Needs input" : "Working", visual: { avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo } })),
@@ -112,12 +113,16 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 	const fieldState = displayedSession ? displayedSession.state === "running" ? "Working" : displayedSession.state === "complete" ? "Finished" : "Needs input" : "";
 	const fieldLabel = firstSession ? `${agentSessions.length === 1 ? firstSession.agent.name : `${agentSessions.length} agents`}: ${fieldState}` : "Add agent";
 	const loadingSessions = selectedSession ? [selectedSession, ...agentSessions.filter(({ agent }) => agent.name.toLowerCase() !== selectedSession.agent.name.toLowerCase())] : agentSessions;
-	const loadingAgents: AgentLoadingAgent[] = loadingSessions.map(({ id, agent, state }) => ({
-		id,
-		name: agent.name,
-		status: state === "complete" ? "finished" : "working",
-		avatar: { animate: false, appearance: "coding", avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo, fallbackText: agent.name.slice(0, 2).toUpperCase() },
-	}));
+	const loadingAgents: AgentLoadingAgent[] = loadingSessions.map(({ id, agent, state }) => {
+		const catalogAgent = fieldPickerAgents.find((candidate) => candidate.name.toLowerCase() === agent.name.toLowerCase());
+		const visual = catalogAgent ?? agent;
+		return {
+			id,
+			name: agent.name,
+			status: state === "complete" ? "finished" : "working",
+			avatar: { animate: false, appearance: "coding", avatarSrc: visual.avatarSrc, brandName: visual.brandName, vpkLogo: visual.vpkLogo, logoName: catalogAgent?.logoName, fallbackText: agent.name.slice(0, 2).toUpperCase() },
+		};
+	});
 	function startFieldAgent(agent: AgentSessionItem["agent"]) {
 		const intro = agentSessions.some((session) => session.agent.name.toLowerCase() !== agent.name.toLowerCase()) && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 		setSelectedAgent((current) => ({ name: agent.name, sequence: (current?.sequence ?? 0) + 1, intro, existingSessionIds: sessions.map((session) => session.id) }));
@@ -145,8 +150,8 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 				</AvatarGroup>
 			</PopoverTrigger>}
 			<PopoverContent align={field ? "start" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={cn(field ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0 shadow-2xl" : "w-[280px] gap-0 overflow-hidden p-0")} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); if (field) changeOpen(false); } }} positionerClassName="z-[650]" sideOffset={field ? 8 : undefined}>
-				{field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker onAssign={(agent) => { startFieldAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} /> : field && onStartAgent ? <ProjectButterAgentPreviewBoundary agents={pickerAgents}><InlineAgentSelector
-					agents={pickerAgents.filter((agent) => agent.id !== "github-copilot" && agent.id !== "rovo-cli")}
+				{field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker onAssign={(agent) => { startFieldAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} /> : field && onStartAgent ? <ProjectButterAgentPreviewBoundary agents={fieldPickerAgents}><InlineAgentSelector
+					agents={fieldPickerAgents}
 					softwareAgentIds={["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"]}
 					initialSoftwareLimit={5}
 					getActions={(agent) => [

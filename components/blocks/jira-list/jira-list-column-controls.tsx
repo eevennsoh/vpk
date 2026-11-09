@@ -93,6 +93,7 @@ export function JiraListColumnBoundary({
 										onFocus={() => setIsFocused(true)}
 										onPointerEnter={() => setIsHovered(true)}
 										onPointerLeave={() => setIsHovered(false)}
+										shape="circle"
 										size="icon"
 										style={{
 											// Hang on the header's top edge so the control sits outside

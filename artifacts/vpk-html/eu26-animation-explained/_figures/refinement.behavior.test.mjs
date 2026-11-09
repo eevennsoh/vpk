@@ -75,6 +75,146 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 			assert.ok(result.faceArea > 1000);
 		});
 
+		await t.test('each story column renders a fourth card clipped at its bottom edge on the board', () => {
+			const rowThree = [0, 1, 2].map(column => data.cards.findIndex(card => card.column === column && card.row === 3));
+			const scrolled = data.cards.findIndex(card => card.column === 2 && card.row === 4);
+			const result = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				const sampleFace = (name, clip) => {
+					const face = piece(name).querySelector('.iso-top');
+					let inside = 0;
+					for (let sample = 0; sample < 64; sample++) {
+						const edge = face.getPointAtLength(face.getTotalLength() * sample / 64);
+						if (clip.isPointInFill(new DOMPoint(edge.x, edge.y))) inside++;
+					}
+					return inside;
+				};
+				const columns = ${JSON.stringify(rowThree)}.map((index, column) => {
+					explorer.seek(0);
+					const clip = hero.querySelector('[data-eu26-column-window="' + column + '"]');
+					const el = piece('story.' + index);
+					return { visible: visible(el), clipPath: el.getAttribute('clip-path'), clipId: clip?.parentElement.id, inside: clip ? sampleFace('story.' + index, clip) : -1 };
+				});
+				explorer.seek(2);
+				const scrolledIn = { visible: visible(piece('story.${scrolled}')), clipPath: piece('story.${scrolled}').getAttribute('clip-path') };
+				const lifted = [6, 16].map(time => {
+					explorer.seek(time);
+					return [...${JSON.stringify(rowThree.slice(0, 2))}, ${scrolled}].map(index => piece('story.' + index).getAttribute('clip-path') || '').filter(value => value.includes('column'));
+				});
+				return { columns, scrolledIn, lifted };
+			`);
+			result.columns.forEach((column, index) => {
+				assert.equal(column.visible, true, `column ${index} shows its row-3 card`);
+				assert.equal(column.clipPath, `url(#${column.clipId})`, `column ${index} clips its row-3 card by its own window`);
+				assert.equal(column.clipId, `eu26-column${index}-window`);
+				assert.ok(column.inside > 16 && column.inside < 60, `column ${index}'s row-3 card is partly inside and partly cut by the column bottom (${column.inside}/64 edge samples inside)`);
+			});
+			assert.deepEqual(result.scrolledIn, { visible: true, clipPath: 'url(#eu26-column2-window)' }, 'column 2 scrolls its next card into the clipped slot');
+			assert.deepEqual(result.lifted, [[], []], 'no card keeps a column clip once lifted out of its column');
+		});
+
+		await t.test('the gripped card paints over every card it leads, and the cursor over all of them, through the group drag', () => {
+			const drag = data.boardDrags.find(action => action.card === 0);
+			const samples = [];
+			for (let step = 0, time = drag.grab; time <= drag.land + 1e-9; step++, time = drag.grab + step * .025) {
+				const state = model({ time, variant: 'paper' }, data);
+				const target = state.cursors[0].heldTarget, attached = ['grab', 'carry', 'release'].includes(state.cursors[0].phase);
+				const followers = state.cards.flatMap((pose, index) => pose.stack && pose.alpha > .002 && index !== drag.card ? [index] : []);
+				samples.push({ time: Number(time.toFixed(4)), held: drag.card, gripped: attached && (time >= drag.land || (target?.kind === 'story' && target.index === drag.card)), followers });
+			}
+			assert.ok(samples.length >= (drag.land - drag.grab) / .05, 'samples the drag at least every 0.05 s');
+			assert.ok(samples.every(sample => sample.gripped), 'the cursor holds its card from grab to landing');
+			assert.ok(samples.filter(sample => sample.followers.length).length > samples.length * .8, 'the selection follows as a stack for most of the drag');
+			const result = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				const after = (a, b) => Boolean(b.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING);
+				const cursor = hero.querySelector('[data-eu26-cursor="main"]');
+				const failures = [];
+				for (const sample of ${JSON.stringify(samples)}) {
+					draw(sample.time);
+					const held = piece('story.' + sample.held);
+					if (!visible(held)) failures.push(sample.time + ': gripped card hidden');
+					if (getComputedStyle(cursor).display === 'none') failures.push(sample.time + ': cursor hidden');
+					for (const index of sample.followers) {
+						const follower = piece('story.' + index);
+						if (getComputedStyle(follower).display === 'none') continue;
+						if (!after(held, follower)) failures.push(sample.time + ': story.' + index + ' paints over the gripped card');
+						if (!after(cursor, follower)) failures.push(sample.time + ': story.' + index + ' paints over the cursor');
+					}
+					if (!after(cursor, held)) failures.push(sample.time + ': gripped card paints over the cursor');
+				}
+				return failures;
+			`);
+			assert.deepEqual(result, []);
+		});
+
+		await t.test('overlapping field cards only swap paint order when their depth order clearly changes', () => {
+			// The probe reports every overlapping pair arrange() orders by depth, with the planes' depth gap at the overlap's
+			// area centroid (positive when b is nearer). Frames are drawn in sequence, as playback does.
+			const frames = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				hero.dataset.heroDepthProbe = 'on';
+				const out = [];
+				for (let step = 0; ; step++) {
+					const time = 15.5 + step * .025;
+					if (time > 22 + 1e-9) break;
+					draw(time);
+					const order = [...svg.querySelectorAll(':scope > [data-eu26-piece]')].filter(el => getComputedStyle(el).display !== 'none').map(el => el.dataset.eu26Piece);
+					out.push({ time: Number(time.toFixed(3)), order, pairs: (hero.eu26DepthPairs || []).map(pair => [pair.a, pair.b, Number(pair.gap.toFixed(3))]) });
+				}
+				delete hero.dataset.heroDepthProbe;
+				return out;
+			`);
+			const CLEAR = 3, FIRM = 8;
+			let previous = new Map(), pairs = 0, flips = 0;
+			const sudden = [], wrong = [], perPair = new Map();
+			for (const frame of frames) {
+				const slot = new Map(frame.order.map((name, index) => [name, index])), current = new Map();
+				for (const [a, b, gap] of frame.pairs) {
+					pairs += 1;
+					const bFront = slot.get(b) > slot.get(a), key = `${a}|${b}`;
+					current.set(key, bFront);
+					if (Math.abs(gap) > FIRM && bFront !== gap > 0) wrong.push(`${frame.time}: ${key} gap ${gap} but ${bFront ? b : a} paints in front`);
+					if (!previous.has(key) || previous.get(key) === bFront) continue;
+					flips += 1;
+					perPair.set(key, (perPair.get(key) || 0) + 1);
+					if ((bFront ? gap : -gap) < CLEAR) sudden.push(`${frame.time}: ${key} swapped with gap ${gap}`);
+				}
+				previous = current;
+			}
+			assert.ok(frames.length >= 260 && pairs > 1000, `sampled ${frames.length} frames and ${pairs} overlapping pairs`);
+			assert.deepEqual(sudden, [], 'no pair swaps unless the depth gap clearly favours the new order');
+			assert.deepEqual(wrong, [], 'a clearly nearer card always paints in front');
+			assert.ok(Math.max(0, ...perPair.values()) <= 2, `no pair keeps swapping (${JSON.stringify(Object.fromEntries(perPair))})`);
+			assert.ok(flips < 20, `${flips} swaps in 6.5 s of orbit`);
+		});
+
+		await t.test('only one surface is orange through the hero-to-bento and bento-to-title hand-offs', () => {
+			const result = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				const failures = [], seen = new Set();
+				for (let step = 0; ; step++) {
+					const time = 18.5 + step * .02;
+					if (time > 23.5 + 1e-9) break;
+					draw(time);
+					const lit = [...svg.querySelectorAll(':scope > [data-eu26-piece]')].filter(el => getComputedStyle(el).display !== 'none' && !el.dataset.eu26Piece.startsWith('confetti')).flatMap(el => {
+						const face = el.querySelector('[data-eu26-face]'), share = face ? parseFloat(face.style.getPropertyValue('--eu26-hl')) / 100 : NaN;
+						const highlight = Math.max(Number.isFinite(share) ? share : 0, Number(el.dataset.eu26Highlight || 0)), alpha = Number(getComputedStyle(el).opacity);
+						return highlight > .05 && alpha > .05 ? [el.dataset.eu26Piece] : [];
+					});
+					lit.forEach(name => seen.add(name));
+					if (lit.length > 1) failures.push(time.toFixed(2) + ': ' + lit.join(', '));
+				}
+				return { failures, seen: [...seen] };
+			`);
+			assert.deepEqual(result.failures, []);
+			assert.deepEqual(result.seen, ['story.15', 'tile.0', 'title'], 'the orange passes hero card, Agent Sessions tile, Team ’26 title');
+		});
+
 		await t.test('camera angle changes repaint board geometry and leave the bento front-facing', () => {
 			const result = scenario(`
 				const placement = [3, 4.3, 5.8, 7].map(time => {
@@ -176,7 +316,7 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 							const key = cursor.id + ':' + cursor.heldTarget.key + ':' + Math.floor(time / 20);
 							if (seen.has(key)) continue;
 							seen.add(key);
-							samples.push({ time, id: cursor.id, key: cursor.heldTarget.key, sourceIndex: cursor.heldTarget.sourceIndex, index: cursor.heldTarget.index, grip: cursor.grip });
+							samples.push({ time, id: cursor.id, key: cursor.heldTarget.key, sourceIndex: cursor.heldTarget.sourceIndex, index: cursor.heldTarget.index, piece: cursor.heldTarget.piece, grip: cursor.grip });
 						}
 					}
 					if (samples.length < 6) failures.push({ issue: 'too few teammate rides', samples: samples.length });
@@ -187,7 +327,7 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 						if (sample.grip.u !== .5 || sample.grip.v !== .5) failures.push({ ...sample, issue: 'grip is not the card centre' });
 						explorer.seek(sample.time);
 						const cursor = hero.querySelector('[data-eu26-cursor="' + sample.id + '"]');
-						const matches = [...hero.querySelectorAll('[data-eu26-piece="wall.' + sample.index + '"]')];
+						const matches = [...hero.querySelectorAll('[data-eu26-piece="' + sample.piece + '"]')];
 						if (matches.length !== 1) { failures.push({ variant, ...sample, issue: 'pooled target is missing or duplicated' }); continue; }
 						const card = matches[0], face = card.querySelector('.iso-top'), tip = cursor.querySelector('[data-eu26-cursor-tip]');
 						if (!visible(card) || !visible(cursor) || cursor.dataset.heldTarget !== sample.key || cursor.dataset.cursorPhase !== 'carry') failures.push({ variant, ...sample, issue: 'visible cursor lost its current pooled target' });
@@ -203,6 +343,62 @@ test('refined offline EU26 motion renders its geometry and keeps the final wall 
 			`);
 			assert.deepEqual(result.failures, []);
 			assert.ok(result.contacts >= 6, 'teammates keep contact at early and distant wall times');
+		});
+
+		await t.test('a teammate holds the top card of the stack it carries: it paints over the rest, and the cursor over all of them, from grab to release', () => {
+			// The carried stack is the slot plus the cards it deals; the held card is the one under the cursor's tip.
+			const members = Object.fromEntries([...new Set(data.wallCards.map(child => child.slot))].map(slot => [slot, data.wallCards.flatMap((child, j) => child.slot === slot ? ['wallcard.' + j] : [])]));
+			const result = scenario(`
+				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
+				explorer.setVariant('paper');
+				const members = ${JSON.stringify(members)};
+				const after = (a, b) => Boolean(b.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING);
+				const capture = () => { const event = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(event); return event.detail.state; };
+				// Every carry on this frame's own clock: a coarse sweep finds each one, then it is sampled every 0.025 s from grab to release.
+				const carries = new Map();
+				for (let time = 34; time < 176; time += 0.25) {
+					draw(time);
+					for (const cursor of capture().cursors) {
+						if (cursor.role !== 'teammate' || !cursor.heldTarget) continue;
+						const key = cursor.id + ':' + cursor.heldTarget.key;
+						const last = [...carries.values()].reverse().find(carry => carry.key === key && time - carry.to < 0.6);
+						if (last) last.to = time;
+						else carries.set(key + '@' + time, { key, id: cursor.id, from: time, to: time });
+					}
+				}
+				const failures = [];
+				let samples = 0, stackSamples = 0;
+				for (const carry of carries.values()) {
+					const start = carry.from - 0.3, end = carry.to + 0.3;
+					for (let step = 0, time = start; time <= end + 1e-9; step++, time = start + step * 0.025) {
+						draw(time);
+						const cursor = capture().cursors.find(each => each.id === carry.id);
+						if (!cursor.heldTarget || cursor.id + ':' + cursor.heldTarget.key !== carry.key || cursor.alpha < .5) continue;
+						const target = cursor.heldTarget, heldName = target.piece ?? 'wall.' + target.index;
+						const stack = ['wall.' + target.index, ...(members[target.sourceIndex] ?? [])];
+						const held = piece(heldName), arrow = hero.querySelector('[data-eu26-cursor="' + carry.id + '"]');
+						const at = Number(time.toFixed(3)) + ' ' + carry.id + ' ' + target.key;
+						samples++;
+						if (stack.length > 1) stackSamples++;
+						if (!visible(held)) { failures.push(at + ': held ' + heldName + ' hidden'); continue; }
+						for (const name of stack) {
+							if (name === heldName) continue;
+							const other = piece(name);
+							if (getComputedStyle(other).display === 'none') continue;
+							if (!after(held, other)) failures.push(at + ': ' + name + ' paints over the held ' + heldName);
+							if (!after(arrow, other)) failures.push(at + ': ' + name + ' paints over the cursor');
+						}
+						if (!after(arrow, held)) failures.push(at + ': held ' + heldName + ' paints over the cursor');
+						const tip = arrow.querySelector('[data-eu26-cursor-tip]'), face = held.querySelector('.iso-top');
+						const nose = tip.getPointAtLength(0), screen = new DOMPoint(nose.x, nose.y).matrixTransform(tip.getScreenCTM());
+						if (!face.isPointInFill(screen.matrixTransform(face.getScreenCTM().inverse()))) failures.push(at + ': cursor tip is off the held ' + heldName);
+					}
+				}
+				return { carries: carries.size, actors: new Set([...carries.values()].map(carry => carry.id)).size, samples, stackSamples, failures };
+			`);
+			assert.ok(result.carries >= 20 && result.actors === data.actors.length, `every teammate carries cards (${result.carries} carries)`);
+			assert.ok(result.stackSamples >= 60, `at least one stack is carried in (${result.stackSamples} samples)`);
+			assert.deepEqual(result.failures, []);
 		});
 
 		await t.test('one wall reuses its original DOM cards through complete cycles', () => {

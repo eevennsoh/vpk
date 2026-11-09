@@ -35,6 +35,7 @@ export function ProjectButterDetailsFields({ agentField, content, expanded, fill
 	const id = useId();
 	const rootRef = useRef<HTMLDivElement>(null);
 	const heightRef = useRef<number | null>(null);
+	const previousExpandedRef = useRef(expanded);
 	const animatingRef = useRef(false);
 	const reduced = useReducedMotion();
 	const [dragging, setDragging] = useState(false);
@@ -51,9 +52,11 @@ export function ProjectButterDetailsFields({ agentField, content, expanded, fill
 		const root = rootRef.current;
 		if (!root) return;
 		const from = heightRef.current;
-		const to = root.scrollHeight;
+		const to = root.getBoundingClientRect().height;
+		const expansionChanged = previousExpandedRef.current !== expanded;
+		previousExpandedRef.current = expanded;
 		heightRef.current = to;
-		if (reduced || from === null || Math.abs(from - to) < 1) return;
+		if (!expansionChanged || reduced || from === null || Math.abs(from - to) < 1) return;
 		let active = true;
 		animatingRef.current = true;
 		root.style.height = `${from}px`;

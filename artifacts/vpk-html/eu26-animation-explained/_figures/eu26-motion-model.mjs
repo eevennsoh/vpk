@@ -6,7 +6,7 @@ export const motionConfig = {
 	// leading edge crosses its own line, DESCEND_FROM + DESCEND_SPAN * hash entry reaches in from the frame's right edge.
 	// reachShare 0.3 (the source's 0.16 starved the portrait two-column figure to ~15 carried cards per 103 s; 0.3 gives ~34,
 	// landscape ~49, with up to 3 teammates on screen at once).
-	arrival: { from: 0.45, span: 0.7, reachShare: 0.3, edgeWidth: 300, descendS: 0.95, handoff: 0.6, faceUp: 0.072, dealS: 0.09 },
+	arrival: { from: 0.45, span: 0.7, reachShare: 0.3, edgeWidth: 300, descendS: 0.95, handoff: 0.6, faceUp: 0.072, dealS: 0.09, settleS: 0.2 },
 	// finale-wall-cursors.ts: a teammate's hand glides in over ENTER_S (--duration-slowest), rides at least RIDE_S, leaves over
 	// LEAVE_S (--duration-slower) fading by --duration-medium, stays CURSOR_MARGIN inside the frame and rests LANE_REST_S.
 	hand: { enter: 0.6, ride: 0.2, leave: 0.4, fade: 0.2, margin: 8, rest: 0.15, apart: 16, lift: 8, grow: 0.03, tilt: 0.03, swing: 0.3, bow: 0.2 },
@@ -67,7 +67,11 @@ export function model(input, data) {
 	const time = Math.max(0, Number.isFinite(Number(options.time)) ? Number(options.time) : 0);
 	const variant = data.variants.some(each => each.id === options.variant) ? options.variant : "paper";
 	const clamp = x => Math.max(0, Math.min(1, x));
+	const clampTo = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 	const ease = x => { const u = clamp(x); return u * u * (3 - 2 * u); };
+	// The hero card turns into the first bento tile here (cards and tiles below), just after the hero-landing state at 19 s
+	// shows it whole: its face clears over the first 0.2 s, then the tile takes over its pose and flies.
+	const HANDOFF = 19.2;
 	const cameraEase = x => { const u = clamp(x); return u * u * u * (u * (u * 6 - 15) + 10); };
 	const projectionScale = (options.projectionScale ?? data.motion?.projectionScale ?? 0.8692407110335721) * Math.sqrt(1.6);
 	const mix = (a, b, s) => a + (b - a) * s;
@@ -112,11 +116,18 @@ export function model(input, data) {
 		const spread = 1 / Math.max(0.35, 1 - rel * camera.persp * projectionScale / camera.height);
 		camera.at = aimAt(camera, cb.lock, lockGoal(ca, cb.lock, camera.width).map(value => value / spread));
 	}
-	const fieldAt = i => {
+	// The field never holds still (teu26.mp4): from the burst on, every card keeps orbiting the hero, nearer cards faster,
+	// bobbing on its own phase, so the scroll through the field always shows motion. The hero stays put as the camera anchor.
+	const orbit = (i, atTime) => {
+		const tau = Math.max(0, atTime - 13), radius = 190 + Math.sqrt(i + 1) * 100 + (random(i, 2) - 0.5) * 150;
+		return { tau, radius, turn: tau * 0.6 * 190 / radius * (0.8 + random(i, 13) * 0.4) };
+	};
+	const fieldAt = (i, atTime = 13) => {
 		if (i === 15) return [-15, -28, 96];
-		const angle = i * 2.39996 + (random(i, 1) - 0.5) * 0.7;
-		const radius = 190 + Math.sqrt(i + 1) * 100 + (random(i, 2) - 0.5) * 150;
-		return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.66 - 25, 35 + random(i, 3) * 245];
+		const { tau, radius, turn } = orbit(i, atTime);
+		const angle = i * 2.39996 + (random(i, 1) - 0.5) * 0.7 + turn;
+		const bob = Math.sin(tau * 1.3 + random(i, 14) * 6.283) * 22 * clamp(tau / 2);
+		return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.66 - 25, 35 + random(i, 3) * 245 + bob];
 	};
 	const pitch = data.cards[1].home[1] - data.cards[0].home[1];
 	// Done shows every row whose top edge falls inside its window; the last of them is clipped by the column's bottom edge.
@@ -125,6 +136,7 @@ export function model(input, data) {
 	const stackSlot = data.doneList.cards.find(row => row.rank === visibleRows - 1);
 	// The cursor's card in the group drag (card 0): the rest of the selection gathers under it as a deck.
 	const leaderRow = data.doneList.cards.find(row => row.card === 0), leaderCard = data.cards[0];
+	const groupDrag = data.boardDrags.find(action => action.card === 0);
 	const leaderAt = atTime => {
 		const s = ease((atTime - 4.3) / 1.2);
 		const from = [leaderCard.home[0] + leaderCard.w / 2, leaderCard.home[1] + leaderCard.d / 2, leaderCard.home[2]];
@@ -134,9 +146,9 @@ export function model(input, data) {
 		return at;
 	};
 	const cards = data.cards.map((card, i) => {
-		const column = card.home[0] === data.cards[0].home[0] ? 0 : card.home[0] === data.cards[8].home[0] ? 1 : 2;
+		const column = card.column;
 		// Close the gap: as the first card (15) leaves its column, the cards below it slide up one row and the next hidden
-		// card scrolls into view, as a real board reflows.
+		// card scrolls into view from under the column's bottom edge, as a real board reflows.
 		const reflow = column === 2 && card.row > 1 ? ease((time - 0.7) / 0.7) : 0;
 		const home = [card.home[0] + card.w / 2, card.home[1] + card.d / 2 - pitch * reflow, card.home[2]];
 		const row = data.doneList.cards.find(row => row.card === i);
@@ -148,7 +160,9 @@ export function model(input, data) {
 		const deckIndex = row.rank - visibleRows + 2;
 		const groupDelay = Math.min(0.3, 0.025 * deckIndex);
 		const groupU = moved ? clamp((time - 4.3 - groupDelay) / 1.9) : 0;
-		const shown = card.row < 3 || (column === 2 && card.row === 3) ? (card.row < 3 ? 1 : reflow) : 0;
+		// Each story column shows rows 0-3, the last clipped by the column's bottom edge like Done's; column 2's row 4 only
+		// scrolls in as the column closes its gap.
+		const shown = card.row < 4 ? 1 : column === 2 && card.row === 4 ? reflow : 0;
 		let at = home, rot = [0, 0, 0], alpha = shown;
 		if (i === 15 && time > 0) {
 			const s = ease(time / 2);
@@ -184,18 +198,45 @@ export function model(input, data) {
 		if (time > 13) {
 			const delay = i === 15 ? 0 : random(i, 4) * 0.18;
 			const u = clamp((time - 13 - delay) / (2.88 - delay)), s = ease(u), impulse = u * (1 - u) ** 2 * 4;
-			at = between(rest, fieldAt(i), s);
+			at = between(rest, fieldAt(i, time), s);
 			const velocity = [(random(i, 5) - 0.5) * 520, (random(i, 6) - 0.5) * 420, 180 + random(i, 7) * 350];
 			velocity[0] += i === 17 ? 160 : i === 20 ? 140 : 0;
 			at = at.map((value, axis) => value + velocity[axis] * impulse * (i === 15 ? 0.28 : 1));
+			if (i !== 15) {
+				// Orbiting cards never pass over the hero: in the view plane each card keeps one card width clear of it, pushed
+				// smoothly out along its own fixed side (from its resting field place), so the push never flips direction.
+				const a = camera.azimuth * Math.PI / 180, e = camera.elevation * Math.PI / 180, view = [Math.cos(a) * Math.cos(e), Math.sin(a) * Math.cos(e), Math.sin(e)];
+				const hero = [-15, -28, 96], flatOf = point => {
+					const off = point.map((value, axis) => value - hero[axis]), along = off.reduce((sum, value, axis) => sum + value * view[axis], 0);
+					return off.map((value, axis) => value - along * view[axis]);
+				};
+				const flat = flatOf(at), base = flatOf(fieldAt(i)), length = Math.hypot(...base) || 1, side = base.map(value => value / length);
+				const ahead = flat.reduce((sum, value, axis) => sum + value * side[axis], 0), across = Math.hypot(...flat.map((value, axis) => value - ahead * side[axis]));
+				const clear = 230 * ease((time - 15) / 1.5), reach = across < clear ? (1 - (across / clear) ** 2) ** 2 : 0, push = Math.max(0, clear - ahead) * reach;
+				if (push > 0) at = at.map((value, axis) => value + side[axis] * push);
+			}
 			const pitchAngle = (random(i, 8) - 0.5) * 1.05, yaw = (random(i, 9) - 0.5) * 1.1;
-			rot = i === 15 ? [0, 0, 0] : [pitchAngle * s + Math.sin(u * Math.PI) * (random(i, 10) - 0.5) * 1.8, yaw * s + Math.sin(u * Math.PI) * (random(i, 11) - 0.5) * 2.1, (random(i, 12) - 0.5) * 0.9 * s];
+			// After the burst each card keeps a slow tumble and turns with its orbit.
+			const { tau, turn } = orbit(i, time), sway = clamp(tau / 3);
+			rot = i === 15 ? [0, 0, 0] : [pitchAngle * s + Math.sin(u * Math.PI) * (random(i, 10) - 0.5) * 1.8 + Math.sin(tau * 0.9 + random(i, 15) * 6.283) * 0.14 * sway, yaw * s + Math.sin(u * Math.PI) * (random(i, 11) - 0.5) * 2.1 + Math.cos(tau * 0.7 + random(i, 16) * 6.283) * 0.16 * sway, (random(i, 12) - 0.5) * 0.9 * s + turn * s];
 			alpha = mix(inWindow ? 1 : 0, 1, ease(u / 0.32));
 		}
-		if (time > 19) alpha *= 1 - ease((time - 19) / 1.2);
+		if (time > 19 && i !== 15) alpha *= 1 - ease((time - 19) / 1.2);
+		// The hero becomes the first bento tile at HANDOFF: its face clears, then the tile takes over its exact pose (see tiles),
+		// so one orange surface carries on and no fading orange copy is left behind.
+		if (i === 15 && time >= HANDOFF) alpha = 0;
+		const face = i === 15 ? 1 - ease((time - HANDOFF + 0.2) / 0.2) : 1;
 		const highlight = i === 15 ? 1 : ease((time - 4.3) / 1.2) * (1 - ease((time - 13.2) / 2.5));
-		const clip = time <= 13 && ((inWindow && ((i === 15 && time >= 2) || (i !== 15 && time >= 5.5))) || (moved && groupU > 0.6));
-		return { ...pose(at, rot, 1, alpha, highlight), clip, listAt: done, rank: row.rank, listVisible: inWindow };
+		// clip names the list window a card is cut by: Done once it has landed there, or its own column while it still rests
+		// (or reflows) in a row that reaches the column's bottom edge. A lifted card is never clipped.
+		const inDone = time <= 13 && ((inWindow && ((i === 15 && time >= 2) || (i !== 15 && time >= 5.5))) || (moved && groupU > 0.6));
+		const atHome = i !== 15 && time <= 4.3 + (moved ? groupDelay : 0);
+		const clip = inDone ? "done" : atHome && card.row >= 3 ? `column${column}` : false;
+		// The cursor's card leads the deck from grab to release: it paints over every card it leads (stack rank 0), and the
+		// followers keep their Done order beneath it, however their arcs and offsets cross in depth on the way.
+		const leads = i === 0 || (i !== 15 && (inWindow ? row.rank >= 2 : moved));
+		const deckOrder = leads && time >= groupDrag.grab && time <= groupDrag.land ? { id: "group-drag", rank: row.rank - leaderRow.rank } : null;
+		return { ...pose(at, rot, 1, alpha, highlight), face, clip, stack: deckOrder, listAt: done, rank: row.rank, listVisible: inWindow };
 	});
 	const field = data.wallField, periodX = field?.periodX ?? 3800, periodY = field?.periodY ?? 3800;
 	const lastShot = data.cameraKeys[data.cameraKeys.length - 1], lastCamera = { ...lastShot, height: lastShot.width * 760 / 1200 };
@@ -208,13 +249,24 @@ export function model(input, data) {
 		return [-20 * initial + wallVelocity[0] * tail + (-20 - wallVelocity[0]) * integral, wallVelocity[1] * tail, 0];
 	};
 	const shift = wallShift(time);
+	// Each tile leaves from its card's actual pose this frame (orbit plus hero clearance), so it grows out of the card.
 	const tiles = data.features.map((feature, i) => {
 		const target = [feature.at[0] + feature.w / 2, feature.at[1] + feature.d / 2, feature.at[2]];
-		const s = ease((time - 19 - i * 0.24) / 1.55), from = i === 0 ? [-15, -28, 96] : fieldAt(feature.card);
+		const s = ease((time - (i === 0 ? HANDOFF : 19 + i * 0.24)) / 1.55), from = i === 0 ? [-15, -28, 96] : cards[feature.card].at;
 		let at = between(from, target, s);
 		at[2] += Math.sin(s * Math.PI) * 150;
 		let rot = [(1 - s) * (i % 2 ? -0.5 : 0.5), (1 - s) * -0.45, (1 - s) * (i % 2 ? -0.5 : 0.5)];
-		let scale = mix(0.82, 1, s), scaleY = scale, alpha = ease((time - 19 - i * 0.2) / 0.5);
+		let scale = mix(0.82, 1, s), scaleY = scale, alpha = ease((time - 19 - i * 0.2) / 0.5), face = 1;
+		if (i === 0) {
+			// The hero card morphs into this tile: it starts opaque at the card's pose and footprint, turns only mid-flight,
+			// and its sessions face fades up on the blank orange sheet the card's face cleared to.
+			const card = data.cards[feature.card], arc = Math.sin(s * Math.PI);
+			rot = [arc * 0.35, arc * -0.3, arc * 0.35];
+			scale = mix(card.w / feature.w, 1, s);
+			scaleY = mix(card.d / feature.d, 1, s);
+			alpha = time >= HANDOFF ? 1 : 0;
+			face = ease((time - HANDOFF - 0.05) / 0.35);
+		}
 		if (time > 22.4) {
 			const toss = ease((time - 22.4 - i * 0.07) / 3.7), wall = data.wall.find(slot => slot.reserved === i);
 			const destination = [wall.at[0] + wall.w / 2 + shift[0], wall.at[1] + wall.d / 2 + shift[1], wall.at[2] + 3];
@@ -225,9 +277,10 @@ export function model(input, data) {
 			scaleY = mix(1, wall.d / feature.d, toss);
 			alpha *= 1 - ease((time - 26) / 0.7);
 		}
-		// The hero tile hands the orange to the Team ’26 title as it lands (same 0.3s curve), so only one tile is orange.
-		const highlight = i === 0 ? 1 - ease((time - 22.2) / 0.3) : 0;
-		return { ...pose(at, rot, scale, alpha, highlight), scaleY };
+		// The hero tile hands the orange to the Team ’26 title as it lands: the tile goes neutral before the title warms, so
+		// only one tile is ever orange.
+		const highlight = i === 0 ? 1 - ease((time - 22.2) / 0.15) : 0;
+		return { ...pose(at, rot, scale, alpha, highlight), scaleY, face };
 	});
 	const wrap = (value, center, period) => value - Math.floor((value - center + period / 2) / period) * period;
 	const screenAt = (point, atTime = time) => {
@@ -374,10 +427,11 @@ export function model(input, data) {
 		const down = since <= 0 ? 0 : inOut(since / fall);
 		return { at: [base[0] + coming[0], base[1] + coming[1], base[2] + (HAND.lift + extraLift) * (1 - down)], rot: tilt.map(angle => angle * (1 - down)), scale: 1 + HAND.grow * (1 - down) };
 	};
-	// Blank until the hand-over, then the face comes up; a ring swells from the edge from just before touchdown.
+	// Blank until the hand-over, then the face comes up; a ring swells from the edge from RING_LEAD before touchdown.
+	const RING_LEAD = 0.1;
 	const landing = (since, fall) => {
 		const after = since - fall;
-		return { face: clamp((after - (A.handoff ?? 0.6)) / (A.faceUp ?? 0.072)), ring: after >= -0.1 && after < 1 ? after : null };
+		return { face: clamp((after - (A.handoff ?? 0.6)) / (A.faceUp ?? 0.072)), ring: after >= -RING_LEAD && after < 1 ? after : null };
 	};
 	const arrivals = pool.map(entry => arrivalOf(entry.card, entry.sourceIndex));
 	const wallPoses = pool.map(entry => {
@@ -408,59 +462,156 @@ export function model(input, data) {
 		const arriving = Boolean(arrival && arrival.since >= -HAND.enter && arrival.since < arrival.fall + 0.75);
 		return { ...pose(at, rot, scale, visible ? s * handoff * shown : 0, highlight), sourceIndex: i, key: entry.key, index: entry.index, incoming: enteringRight || arriving, entryEdge: enteringRight ? "right" : null, entryProgress, visible, screen: projected, face, ring, arrival: arrival ? { since: arrival.since, touchdown: arrival.touchdown, held: true } : null };
 	});
-	// A stack slot carried in deals its own cards as it is set down: they ride in on it, then settle top first, a beat apart.
-	// A stack no hand brings in is already dealt.
-	const wallCards = (data.wallCards ?? []).map(child => {
-		const i = child.slot, card = data.wall[i], parent = wallPoses[i], arrival = arrivals[i];
+	// A stack slot carried in deals its own cards once it is set down. The hand holds the stack's top card (the highest
+	// lift), with the rest of the stack carried rigidly beneath it. All of the stack shares one paint stack while held, so the
+	// held card paints last (rank 0) and the others follow by descending height. Once the hand lets go, each card settles onto
+	// the slot on its own clock, top first, a beat apart. A stack that no hand brings in is already dealt.
+	const stackLift = child => (3 - child.index) * 2;
+	const dealDelay = (i, index) => {
 		let delay = 0;
-		for (let step = 1; step <= child.index + 1; step += 1) delay += (A.dealS ?? 0.09) * mix(0.7, 1.3, random(i * 7 + step, 40));
-		const base = baseWallAt(card, i);
+		for (let step = 1; step <= index + 1; step += 1) delay += (A.dealS ?? 0.09) * mix(0.7, 1.3, random(i * 7 + step, 40));
+		return delay;
+	};
+	// Paint ranks while carried: the slot's cards from the top down (the held card is rank 0), then the slot beneath them.
+	const stackRanks = new Map(), slotRanks = new Map();
+	for (const slot of new Set((data.wallCards ?? []).map(child => child.slot))) {
+		const members = (data.wallCards ?? []).flatMap((child, j) => child.slot === slot ? [j] : []).sort((a, b) => stackLift(data.wallCards[b]) - stackLift(data.wallCards[a]));
+		members.forEach((j, rank) => stackRanks.set(j, rank));
+		slotRanks.set(slot, members.length);
+	}
+	const carriedStack = (i, rank) => arrivals[i] && arrivals[i].since >= -HAND.enter && arrivals[i].since < arrivals[i].fall ? { id: `carry:${pool[i].key}`, rank } : null;
+	const wallCards = (data.wallCards ?? []).map((child, j) => {
+		const i = child.slot, card = data.wall[i], parent = wallPoses[i], arrival = arrivals[i];
+		const delay = dealDelay(i, child.index), base = baseWallAt(card, i), lift = stackLift(child);
 		let at = [base[0] + child.dx, base[1] + child.dy, 1.1 + (1 - ease((time - 23) / 1.3)) * 170], rot = [0, 0, 0], scale = 1, face = 1, ring = null;
-		if (arrival && arrival.since - delay < arrival.fall + 1.5) {
-			const stackLift = (3 - child.index) * 2;
-			if (arrival.since < 0) {
-				// Riding in on the stack the hand carries: on its face, turned with it.
-				const carried = heldPose(arrival, i), offset = turn([child.dx * carried.scale, child.dy * carried.scale, (1.1 + stackLift) * carried.scale], carried.rot);
+		// The card's own touchdown, in the slot's `since`: settleS after the hand lets go of it, a beat after the card above.
+		// Its settle ends there and its landing (ring, then face) starts there, so neither runs ahead of the other.
+		const settleS = A.settleS ?? 0.2, land = arrival ? arrival.fall + delay - dealDelay(i, 0) + settleS : 0;
+		if (arrival && arrival.since < land + 1.5) {
+			if (arrival.since < arrival.fall) {
+				// Carried: on the slot's face and turned with it, until the hand lets go of the top card.
+				const carried = heldPose(arrival, i), offset = turn([child.dx * carried.scale, child.dy * carried.scale, (1.1 + lift) * carried.scale], carried.rot);
 				at = carried.at.map((value, axis) => value + offset[axis]);
 				rot = carried.rot;
 				scale = carried.scale;
 			} else {
-				// Peeling off: each card settles on its own clock, `delay` behind the slot, from where it rode in.
-				const down = inOut((arrival.since - delay) / arrival.fall), tilt = heldPose({ ...arrival, since: 0 }, i).rot;
-				at = [arrival.base[0] + child.dx, arrival.base[1] + child.dy, 1.1 + (HAND.lift + stackLift) * (1 - down)];
-				rot = tilt.map(angle => angle * (1 - down));
-				scale = 1 + HAND.grow * (1 - down);
+				// Dealt: from where it was let go, each card drops onto the slot, speeding up until it touches down at `land`.
+				const down = easeIn((arrival.since - (land - settleS)) / settleS);
+				at = [base[0] + child.dx, base[1] + child.dy, 1.1 + lift * (1 - down)];
 			}
-			({ face, ring } = landing(arrival.since - delay, arrival.fall));
+			// Nothing to swell ahead of: the ring opens as the card touches down, not RING_LEAD before.
+			({ face, ring } = landing(arrival.since, land + RING_LEAD));
 		}
-		return { ...pose(at, rot, scale, parent.alpha, 0), key: `${card.key}#${child.index}`, face, ring };
+		return { ...pose(at, rot, scale, parent.alpha, 0), key: `${card.key}#${child.index}`, face, ring, stack: carriedStack(i, stackRanks.get(j)) };
 	});
+	for (const [i, rank] of slotRanks) wallPoses[i].stack = carriedStack(i, rank);
+	// The card a teammate's hand holds: the stack's top card if the slot carries one, else the slot itself.
+	const heldCardOf = new Map([...stackRanks].filter(([, rank]) => rank === 0).map(([j]) => [data.wallCards[j].slot, j]));
 	const wall = wallPoses, wallCopies = [];
-	const confetti = Array.from({ length: 56 }, (_, i) => {
-		const pair = Math.floor(i / 2), side = i % 2 ? 1 : -1, centerX = data.doneList.viewport.x + data.doneList.viewport.w / 2;
-		const origin = [centerX + side * data.doneList.viewport.w / 2, data.doneList.viewport.y + data.doneList.viewport.d * 0.82, 18];
-		let at = origin, rot = [0, 0, side * random(pair, 15) * Math.PI], alpha = 0;
-		const launch = (elapsed, large) => {
-			const speed = (large ? 150 : 90) + random(pair, 16) * (large ? 120 : 55), up = (large ? 240 : 150) + random(pair, 17) * 100;
-			return [origin[0] - side * speed * elapsed, origin[1] - (35 + random(pair, 18) * 80) * elapsed, origin[2] + up * elapsed - (large ? 110 : 120) * elapsed ** 2];
+	// Confetti after the source (finale-confetti.ts). Every flight is ballistic under linear drag toward a terminal fall,
+	// with a falling-leaf sway that grows as the launch is spent, and a tumble that dies from a fast start to a slow rest.
+	// 1. The first drop puffs (createFinaleConfettiPuff): paper squirts out from under every edge of the landed card, skewed
+	//    to settle close in, decelerates hard, lies all but still for a beat and fades. It never crosses back over the card.
+	// 2. The whole deck landing fires the finale: two cannons at the near corners shoot a broad diagonal fan up and inward
+	//    (a quarter as a gentle trail), the show drops into bullet time at the apex, then a vortex pulls every piece down
+	//    onto the Done column's foot, farthest first, gone as it lands, so the column flash rises from a clean foot.
+	const pieces = data.confetti ?? [];
+	const flight = (piece, e) => {
+		const decay = 1 - Math.exp(-piece.drag * e), reach = decay / piece.drag, sway = piece.flutter[0] * decay * decay, phase = piece.flutter[1] * e + piece.flutter[2];
+		return [piece.origin[0] + piece.velocity[0] * reach + sway * Math.sin(phase), piece.origin[1] + piece.velocity[1] * reach + sway * 0.6 * Math.cos(phase), piece.origin[2] + piece.velocity[2] * reach - piece.fall * (e - reach)];
+	};
+	const tumble = (piece, e) => {
+		const [phase, start, rest, decay] = piece.spin, angle = phase + rest * e + (start - rest) * (1 - Math.exp(-decay * e)) / decay;
+		return [piece.axis[0] * angle, piece.axis[1] * angle, piece.axis[2] * angle + piece.yaw];
+	};
+	const unit = (i, channel) => {
+		const z = random(i, channel) * 2 - 1, a = random(i, channel + 1) * Math.PI * 2, ring = Math.sqrt(1 - z * z);
+		return [ring * Math.cos(a), ring * Math.sin(a), z];
+	};
+	const rate = data.playbackRate ?? 1;
+	// The puff, in the source's real seconds (model seconds / playbackRate). Its scatter holds through the puff chapter.
+	const landed = data.doneList.cards[0], puffCount = Math.min(pieces.length, 60), puffStart = 2, puffFade = [4.25, 0.7];
+	const perimeter = 2 * (landed.w + landed.d), fan = 0.35 * Math.min(landed.w, landed.d);
+	const puff = Array.from({ length: puffCount }, (_, i) => {
+		let u = (i + random(i, 40)) / puffCount * perimeter, x, y;
+		if (u < landed.w) [x, y] = [landed.x + u, landed.y];
+		else if ((u -= landed.w) < landed.d) [x, y] = [landed.x + landed.w, landed.y + u];
+		else if ((u -= landed.d) < landed.w) [x, y] = [landed.x + landed.w - u, landed.y + landed.d];
+		else [x, y] = [landed.x, landed.y + landed.d - (u - landed.w)];
+		// Outward from the nearest point of the card inset by `fan`: square to an edge, fanning round each corner.
+		const nx = x - clampTo(x, landed.x + fan, landed.x + landed.w - fan), ny = y - clampTo(y, landed.y + fan, landed.y + landed.d - fan);
+		const spread = (random(i, 41) + random(i, 42) - 1) * 24 * Math.PI / 180, base = Math.atan2(ny, nx) + spread;
+		const dir = [Math.cos(base), Math.sin(base)], reach = 12 + 93 * random(i, 43) ** 2, drag = 6.5 + 3 * random(i, 44);
+		return {
+			origin: [x + dir[0] * 2, y + dir[1] * 2, 4.5], delay: 0.05 * random(i, 45) ** 2, drag, fall: 4,
+			velocity: [dir[0] * Math.max(reach, 8) * drag, dir[1] * Math.max(reach, 8) * drag, (0.05 + 0.2 * random(i, 46)) * reach * drag],
+			flutter: [1 + 2 * random(i, 47), 3 + 3 * random(i, 48), random(i, 49) * Math.PI * 2],
+			spin: [random(i, 50) * Math.PI * 2, 6 + 8 * random(i, 51), 0.3 + 0.6 * random(i, 52), 5], axis: unit(i, 53), yaw: random(i, 55) * Math.PI * 2,
 		};
-		if (time > 2 && time < 5) {
-			const elapsed = time - 2, s = clamp(elapsed / 2.7);
-			at = launch(elapsed, false);
-			alpha = ease(elapsed / 0.14) * (1 - ease((elapsed - 1.5) / 1.2));
-			rot = [Math.sin(elapsed * 4 + pair) * 0.8, side * elapsed * (1 + random(pair, 19)), side * (random(pair, 20) + s * 5)];
+	});
+	// The finale's show clock (FINALE_CONFETTI_PACE): explode at full pace, ease into bullet time while the fan hangs, then
+	// pick up to pull the pieces in. Show seconds accrue as the integral of the pace over model seconds since launch.
+	const finaleStart = 6, eased = (u, [a, b]) => { const t = clamp((u - a) / (b - a)); return (b - a) * (t ** 3 - t ** 4 / 2) + Math.max(0, u - b); };
+	const PACE = { burst: 1, slow: [0.45, 0.85], hang: 0.12, rush: [3.4, 3.8], pull: 0.3 };
+	const showAt = u => u <= 0 ? 0 : u * PACE.burst + (PACE.hang - PACE.burst) * eased(u, PACE.slow) + (PACE.pull - PACE.hang) * eased(u, PACE.rush);
+	const GATHER = { start: 1, spread: 0.25, first: 1.4, end: 1.8, min: 0.4 };
+	const foot = { x: data.doneList.viewport.x, w: data.doneList.viewport.w, y: data.doneList.viewport.y + data.doneList.viewport.d, inset: 10 };
+	// The cannons sit at the board's two near corners (the viewer's side, +y at the finale camera) and every piece is aimed
+	// at a spot over the board: a fan from each corner, up and inward, its reach set so the spent launch comes to rest
+	// inside the board's plan. Peaks stay lower toward the far edge, so a lifted piece still reads over the board.
+	const board = data.board, inset = 15, nearY = board.y + board.d - inset, settleBy = 0.9;
+	const finale = pieces.map((_, i) => {
+		const left = i < pieces.length / 2, side = left ? -1 : 1, gentle = random(i, 60) < 0.25;
+		const origin = [board.x + board.w / 2 + side * (board.w / 2 - inset), nearY, 6 + random(i, 67) * 10];
+		// Plan heading from the corner: 8-82 degrees between along the near edge (inward) and straight into the board.
+		const heading = (8 + 74 * random(i, 61)) * Math.PI / 180, dir = [-side * Math.cos(heading), -Math.sin(heading)];
+		const room = Math.min((board.w - 2 * inset) / Math.cos(heading), (board.d - 2 * inset) / Math.sin(heading));
+		const reach = room * (gentle ? 0.1 + 0.25 * random(i, 62) : 0.3 + 0.62 * random(i, 63));
+		const drag = 2.35 + random(i, 64) * 0.5, landY = origin[1] + dir[1] * reach;
+		const peak = (landY - board.y) * (gentle ? 0.15 + 0.15 * random(i, 65) : 0.25 + 0.3 * random(i, 66));
+		const fall = (55 + random(i, 69) * 55) * (gentle ? 0.45 : 1), push = drag / settleBy;
+		const piece = {
+			origin, delay: 0.25 * (gentle ? 0.35 + 0.65 * random(i, 68) : random(i, 68) ** 1.5), drag,
+			velocity: [dir[0] * reach * push, dir[1] * reach * push, peak * drag + fall / drag],
+			fall, flutter: [7 + random(i, 70) * 10, 4.5 + random(i, 71) * 4, random(i, 72) * Math.PI * 2],
+			spin: [random(i, 73) * Math.PI * 2, 8 + 8 * random(i, 74), 1.5 + 2 * random(i, 75), 1.4], axis: unit(i, 76), yaw: random(i, 78) * Math.PI * 2,
+		};
+		const sink = [foot.x + foot.inset + (foot.w - 2 * foot.inset) * (random(i, 79) + random(i, 80)) / 2, foot.y, 0];
+		const settle = flight(piece, Math.max(0, GATHER.start - piece.delay));
+		return { ...piece, sink, far: Math.hypot(settle[0] - sink[0], settle[1] - sink[1], settle[2]), swirl: -(1.4 + random(i, 81)) * Math.PI };
+	});
+	// The vortex turns each piece about its sink in the board's own frame: the offset is measured against the board's
+	// reach from the sink on that side, turned, and held to its square size, so the spiral sweeps the board, not the ground.
+	const swirlIn = (piece, [dx, dy], turnBy, hold) => {
+		const [sx, sy] = piece.sink, west = sx - board.x, east = board.x + board.w - sx, north = sy - board.y, south = board.y + board.d - sy;
+		const nx = dx / (dx < 0 ? west : east), ny = dy / (dy < 0 ? north : south), size = Math.max(Math.abs(nx), Math.abs(ny));
+		const cos = Math.cos(turnBy), sin = Math.sin(turnBy), tx = nx * cos - ny * sin, ty = nx * sin + ny * cos;
+		const fit = size * hold / Math.max(1e-9, Math.abs(tx), Math.abs(ty));
+		return [sx + tx * fit * (tx < 0 ? west : east), sy + ty * fit * (ty < 0 ? north : south)];
+	};
+	const farthest = Math.max(1, ...finale.map(piece => piece.far));
+	const confetti = pieces.map((shape, i) => {
+		let at = [shape.home[0], shape.home[1], 0], rot = [0, 0, 0], alpha = 0, scale = 1;
+		if (i < puffCount && time > puffStart && time < puffFade[0] + puffFade[1]) {
+			const piece = puff[i], e = Math.max(0, (time - puffStart) / rate - piece.delay);
+			at = flight(piece, e);
+			at[2] = Math.max(at[2], 3.4);
+			rot = tumble(piece, e);
+			scale = 0.7;
+			alpha = (e > 0 ? ease(e / 0.03) : 0) * (1 - ease((time - puffFade[0]) / puffFade[1]));
 		}
-		if (time >= 6 && time < 12.5) {
-			const elapsed = time - 6, vortex = ease((time - 8) / 2), angle = pair * 2.39996 + side * Math.PI / 2 + (time - 8) * 1.5;
-			const radius = 55 + pair % 8 * 11, orbit = [centerX + Math.cos(angle) * radius, -50 + Math.sin(angle) * radius * 0.66, 35 + pair / 28 * 290];
-			at = between(launch(Math.min(elapsed, 2.4), true), orbit, vortex);
-			alpha = ease(elapsed / 0.25) * (1 - ease((time - 11) / 1.5));
-			rot = [Math.sin(elapsed * 3 + pair) * 0.8, side * Math.cos(elapsed * 2 + pair) * 0.7, angle];
+		if (time > finaleStart && time < 12.6) {
+			const piece = finale[i], show = showAt(time - finaleStart), e = Math.max(0, show - piece.delay), free = flight(piece, e);
+			const f = piece.far / farthest, start = GATHER.start + GATHER.spread * (1 - f), end = Math.min(GATHER.end, Math.max(start + GATHER.min, GATHER.first + (GATHER.end - GATHER.first) * f));
+			const s = clamp((show - start) / (end - start)), hold = 1 - s * s;
+			at = [...swirlIn(piece, [free[0] - piece.sink[0], free[1] - piece.sink[1]], piece.swirl * s * s, hold), Math.max(0, free[2]) * hold];
+			rot = tumble(piece, e);
+			alpha = (show > piece.delay ? ease((show - piece.delay) / 0.02) : 0) * (1 - ease((s - 0.8) / 0.2));
 		}
-		return { ...pose(at, rot, 1, alpha, 1), emitter: side < 0 ? "left" : "right", pair, velocity: [-side * (150 + random(pair, 16) * 120), -(35 + random(pair, 18) * 80), 240 + random(pair, 17) * 100] };
+		return { ...pose(at, rot, scale, alpha, 1), act: i < puffCount && time < finaleStart ? "puff" : "finale", shape: shape.shape };
 	});
 	const titleSlot = data.wall.find(slot => slot.reserved === 6), carry = data.titleCarry;
-	let titlePose = pose([...data.title.at], [0, 0, 0], 1, ease((time - 22.2) / 0.3), ease((time - 22.2) / 0.3));
+	let titlePose = pose([...data.title.at], [0, 0, 0], 1, ease((time - 22.2) / 0.3), ease((time - 22.35) / 0.15));
 	if (time >= carry.grab) {
 		const progress = clamp((time - carry.grab) / (carry.land - carry.grab)), along = ease((time - carry.grab - 0.22) / (carry.land - carry.grab - 0.47));
 		const give = Math.sin(Math.PI * clamp((time - carry.grab) / 0.95)) ** 2;
@@ -500,8 +651,11 @@ export function model(input, data) {
 		const index = arrivals.findIndex(arrival => arrival && arrival.lane === lane && arrival.since >= -HAND.enter && arrival.since <= arrival.fall + HAND.leave);
 		if (index < 0) return hiddenCursor(actor.id, "teammate");
 		const arrival = arrivals[index], entry = pool[index], slot = entry.card, posed = wallPoses[index];
-		const target = { kind: entry.kind, index: entry.index, key: entry.key, sourceIndex: entry.sourceIndex };
-		const grip = { u: 0.5, v: 0.5 }, contact = surfacePoint(posed, slot.w, slot.d, "wall", grip), after = arrival.since - arrival.fall;
+		// The hand carries the slot (its target) by the card it holds: a stack's top card, else the slot itself.
+		const top = heldCardOf.get(index), heldCard = top === undefined ? null : data.wallCards[top];
+		const target = { kind: entry.kind, index: entry.index, key: entry.key, sourceIndex: entry.sourceIndex, piece: heldCard ? `wallcard.${top}` : `wall.${entry.index}` };
+		const grip = { u: 0.5, v: 0.5 }, after = arrival.since - arrival.fall;
+		const contact = heldCard ? surfacePoint(wallCards[top], heldCard.w, heldCard.d, "wall", grip) : surfacePoint(posed, slot.w, slot.d, "wall", grip);
 		const away = after > 0 ? leg(arrival.hold.reach, arrival.hold.leaveDistance, -arrival.hold.bow * 0.5, 1 - easeIn(after / HAND.leave)) : [0, 0];
 		const held = after < 0, phase = held ? (arrival.since < -HAND.enter + 0.1 ? "grab" : "carry") : after <= 0.12 ? "release" : "leave";
 		return {
@@ -527,7 +681,7 @@ export function model(input, data) {
 		scaleY: mix(a.scaleY ?? a.scale ?? 1, b.scaleY ?? b.scale ?? 1, s),
 		alpha: mix(a.alpha, b.alpha, s),
 		highlight: mix(a.highlight ?? 0, b.highlight ?? 0, s),
-		clip: Boolean(a.clip && b.clip),
+		clip: a.clip === b.clip ? b.clip : false,
 	});
 	const directWidth = Math.exp(mix(Math.log(from.camera.width), Math.log(camera.width), s));
 	const angle = ((camera.azimuth - from.camera.azimuth + 540) % 360) - 180;

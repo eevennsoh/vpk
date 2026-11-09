@@ -17,7 +17,8 @@ test('intro cards hold until the group drag, column 3 closes its gap, then every
 		const state = at(time);
 		for (const index of retained) {
 			assert.equal(state.cards[index].alpha, 1, `story ${index} remains visible at ${time}s`);
-			assert.equal(state.cards[index].clip, false, 'a source card is not clipped to Done before the group drag');
+			assert.notEqual(state.cards[index].clip, 'done', 'a source card is not clipped to Done before the group drag');
+			assert.equal(state.cards[index].clip, data.cards[index].row === 3 || (reflowed.has(index) && data.cards[index].row === 4) ? `column${data.cards[index].column}` : false, `story ${index} is clipped only by its own column, and only in the row at its bottom edge`);
 			if (!reflowed.has(index)) assert.deepEqual(state.cards[index].at, initial.cards[index].at, `story ${index} keeps its board position`);
 			else if (time >= 1.4) assert.ok(Math.abs(state.cards[index].at[1] - (initial.cards[index].at[1] - pitch)) < 1e-6, `story ${index} moves up one row to close the gap`);
 		}
@@ -39,20 +40,98 @@ test('intro cards hold until the group drag, column 3 closes its gap, then every
 	assert.deepEqual(landed.at.slice(0, 2), [firstRow.x + firstRow.w / 2, firstRow.y + firstRow.d / 2]);
 });
 
-test('paired confetti cannons rise inward from both outer edges', () => {
-	const centerX = data.doneList.viewport.x + data.doneList.viewport.w / 2;
-	for (const launch of [2, 6]) {
-		const early = at(launch + .05).confetti;
-		const later = at(launch + .2).confetti;
-		assert.equal(early.filter(particle => particle.alpha > 0).length, 56);
-		for (let index = 0; index < early.length; index += 2) {
-			const left = early[index], right = early[index + 1];
-			assert.ok(left.at[0] < centerX && right.at[0] > centerX, 'both emitters start at opposite outer edges');
-			assert.ok(Math.abs(left.at[0] + right.at[0] - 2 * centerX) < .00001, 'paired trajectories are symmetric');
-			assert.ok(Math.abs(left.at[2] - right.at[2]) < .00001, 'paired trajectories rise together');
-			assert.ok(later[index].at[0] > left.at[0] && later[index + 1].at[0] < right.at[0], 'both cannons move inward');
-			assert.ok(later[index].at[2] > left.at[2] && later[index + 1].at[2] > right.at[2], 'both cannons move upward');
+test('every story column shows a fourth card clipped at its bottom edge, released once the card is lifted', () => {
+	const rowThree = column => data.cards.findIndex(card => card.column === column && card.row === 3);
+	for (const column of [0, 1, 2]) {
+		const index = rowThree(column), card = data.cards[index], viewport = data.columnViewports[column];
+		const state = at(0).cards[index];
+		assert.equal(state.alpha, 1, `column ${column} shows its row-3 card`);
+		assert.equal(state.clip, `column${column}`, `column ${column} clips its row-3 card`);
+		assert.ok(card.home[1] < viewport.y + viewport.d && card.home[1] + card.d > viewport.y + viewport.d, 'the row-3 card runs past the column window bottom');
+		assert.ok(viewport.x >= -394 + column * 205 && viewport.x + viewport.w <= -394 + column * 205 + 193 && viewport.y + viewport.d <= 294, 'the window sits inside its column');
+	}
+	// Column 2 closes its gap as card 15 leaves: row 4 scrolls up into the clipped row-3 slot.
+	const scrolled = data.cards.findIndex(card => card.column === 2 && card.row === 4);
+	assert.equal(at(0).cards[scrolled].alpha, 0);
+	assert.equal(at(2).cards[scrolled].alpha, 1);
+	assert.equal(at(2).cards[scrolled].clip, 'column2');
+	// Lifted into the group drag, every row-3 card leaves its column clip behind.
+	for (const index of [rowThree(0), rowThree(1), scrolled]) {
+		for (const time of [4.9, 5.2]) assert.equal(at(time).cards[index].clip, false, `story ${index} is not clipped while carried at ${time}s`);
+		assert.ok(at(16).cards[index].alpha > .5 && at(16).cards[index].clip === false, `story ${index} joins the field unclipped`);
+	}
+	const rows = new Set([0, 1, 2].flatMap(column => at(0).cards.flatMap((pose, index) => data.cards[index].column === column && pose.alpha > .99 ? [data.cards[index].row] : [])).map(String));
+	assert.deepEqual([...rows].sort(), ['0', '1', '2', '3']);
+});
+
+test('the first drop puffs confetti out from under every edge of the landed card, then it settles and fades', () => {
+	const card = data.doneList.cards[0];
+	// Distance outside the card's footprint (0 inside it).
+	const outside = ([x, y]) => Math.hypot(Math.max(card.x - x, 0, x - card.x - card.w), Math.max(card.y - y, 0, y - card.y - card.d));
+	const early = at(2.12).confetti, mid = at(2.4).confetti, late = at(3.4).confetti;
+	const puff = early.map((piece, index) => [piece, index]).filter(([piece]) => piece.alpha > 0.5 && piece.act === 'puff');
+	assert.ok(puff.length >= 40, `a ring of paper leaves the card (${puff.length})`);
+	const sides = new Set(puff.map(([piece]) => piece.at[1] < card.y ? 'top' : piece.at[1] > card.y + card.d ? 'bottom' : piece.at[0] < card.x ? 'left' : 'right'));
+	assert.deepEqual([...sides].sort(), ['bottom', 'left', 'right', 'top'], 'it leaves every edge at once');
+	for (const [piece, index] of puff) {
+		assert.ok(outside(piece.at) > 0, 'no piece crosses back over the card');
+		assert.ok(outside(mid[index].at) >= outside(piece.at) - 3, 'each piece skids outward');
+		const fast = distance(at(2.12).confetti[index].at, at(2.2).confetti[index].at), slow = distance(at(3.0).confetti[index].at, at(3.08).confetti[index].at);
+		assert.ok(slow < fast * 0.5, 'drag spends the launch: the puff decelerates hard');
+		assert.ok(late[index].at[2] < 30, 'the puff stays low on the page');
+	}
+	assert.ok(at(5).confetti.every(piece => piece.alpha === 0), 'the puff is gone before the next drag');
+});
+
+test('the finale fires two cannons, hangs, then a vortex drains every piece onto the Done column foot', () => {
+	const viewport = data.doneList.viewport, footY = viewport.y + viewport.d, boardX = data.board.x + data.board.w / 2;
+	const launch = at(6.3).confetti.filter(piece => piece.alpha > 0.5);
+	assert.ok(launch.some(piece => piece.at[0] < boardX - 150) && launch.some(piece => piece.at[0] > boardX + 150), 'both cannons fire from opposite sides');
+	const rise = at(6.3).confetti.map((piece, index) => [piece, at(6.6).confetti[index]]).filter(([piece]) => piece.alpha > 0.5);
+	assert.ok(rise.filter(([a, b]) => b.at[2] > a.at[2]).length > rise.length * 0.8, 'the fan rises');
+	assert.ok(rise.filter(([a, b]) => Math.abs(b.at[0] - boardX) < Math.abs(a.at[0] - boardX)).length > rise.length * 0.7, 'and closes inward');
+	// Bullet time: the hang barely moves.
+	const hang = Math.max(...at(8.5).confetti.map((piece, index) => distance(piece.at, at(8.6).confetti[index].at)));
+	const pop = Math.max(...at(6.3).confetti.map((piece, index) => distance(piece.at, at(6.4).confetti[index].at)));
+	assert.ok(hang < pop * 0.2, `the hang is slow motion (${hang.toFixed(1)} vs ${pop.toFixed(1)})`);
+	const near = at(12.2).confetti.filter(piece => piece.alpha > 0.01);
+	assert.ok(near.every(piece => Math.abs(piece.at[1] - footY) < 40 && piece.at[0] > viewport.x - 20 && piece.at[0] < viewport.x + viewport.w + 20 && piece.at[2] < 40), 'the last pieces land on the column foot');
+	assert.ok(at(12.7).confetti.every(piece => piece.alpha === 0), 'every piece is gone before the column flash');
+});
+
+test('the finale cannons fire from the board\'s near corners and every piece stays over the board', () => {
+	const board = data.board;
+	// How far a plan point lies outside the board chassis (0 inside).
+	const outside = ([x, y]) => Math.max(0, board.x - x, x - (board.x + board.w), board.y - y, y - (board.y + board.d));
+	let samples = 0, near = 0, worst = 0;
+	for (let step = 0; step <= 130; step += 1) {
+		for (const piece of at(6 + step * 0.05).confetti) {
+			if (piece.alpha <= 0) continue;
+			const off = outside(piece.at);
+			samples += 1;
+			if (off <= 40) near += 1;
+			worst = Math.max(worst, off);
 		}
+	}
+	assert.ok(samples > 140 * 60, `the finale is sampled (${samples})`);
+	assert.ok(near / samples >= 0.97, `pieces stay over the board (${(100 * near / samples).toFixed(1)}% within 40 units)`);
+	assert.ok(worst <= 120, `no piece lands out on the ground (${worst.toFixed(1)} units past the edge)`);
+	// Each cannon's pieces start at its corner: the board's near-left and near-right corners at the 6 s camera (+y faces the viewer).
+	const corners = [[board.x, board.y + board.d], [board.x + board.w, board.y + board.d]];
+	const view = at(6).camera, a = view.azimuth * Math.PI / 180, depth = ([x, y]) => x * Math.cos(a) + y * Math.sin(a);
+	const chassis = [[board.x, board.y], [board.x + board.w, board.y], ...corners];
+	assert.deepEqual([...chassis].sort((l, r) => depth(r) - depth(l)).slice(0, 2).sort((l, r) => l[0] - r[0]), corners, 'the cannon corners are the two nearest the viewer');
+	const fine = Array.from({ length: 241 }, (_, step) => at(6 + step / 400));
+	const count = data.confetti.length, starts = Array.from({ length: count }, (_, index) => fine.find(state => state.confetti[index].alpha > 0)?.confetti[index].at);
+	for (const [index, start] of starts.entries()) {
+		assert.ok(start, `piece ${index} fires in the first 0.6 s`);
+		const corner = corners[index < count / 2 ? 0 : 1];
+		assert.ok(Math.hypot(start[0] - corner[0], start[1] - corner[1]) < 60, `piece ${index} leaves its corner (${start[0].toFixed(0)}, ${start[1].toFixed(0)})`);
+	}
+	// The burst spreads across the board.
+	for (const time of [7, 7.5, 9]) {
+		const xs = at(time).confetti.filter(piece => piece.alpha > 0.5).map(piece => piece.at[0]);
+		assert.ok(Math.max(...xs) - Math.min(...xs) > board.w * 0.6, `the burst spreads across the board at ${time}s`);
 	}
 });
 
@@ -225,4 +304,45 @@ test('a stack carried in deals its own cards top first, a beat apart; a stack no
 		dealt++;
 	}
 	assert.ok(dealt >= 1, 'at least one stack is carried in and dealt');
+});
+
+test("each bento tile starts from its story card's actual field pose", () => {
+	data.features.forEach((feature, i) => {
+		if (i === 0) return;
+		const start = 19 + i * 0.24 + 0.001;
+		const state = model({ time: start, variant: "paper" }, data);
+		const tile = state.tiles[i].at, card = state.cards[feature.card].at;
+		const gap = Math.hypot(tile[0] - card[0], tile[1] - card[1], tile[2] - card[2]);
+		assert.ok(gap < 12, `tile ${i} starts ${gap.toFixed(1)} units from card ${feature.card}`);
+	});
+});
+
+test('a dealt card rings and turns its face only once it has touched down on its slot', () => {
+	const slots = [...new Set(data.wallCards.map(card => card.slot))];
+	const releases = [];
+	for (const slot of slots) {
+		let before = null;
+		for (let time = 30; time < 240; time += .05) {
+			// Seconds since the hand let go of the stack (the slot's own touchdown).
+			const arrival = at(time).wall[slot].arrival, past = arrival ? time - arrival.touchdown : null;
+			if (past !== null && past >= 0 && before !== null && before < 0) releases.push({ slot, release: time - past });
+			before = past;
+		}
+	}
+	assert.ok(releases.length >= 2, `found ${releases.length} stack releases`);
+	for (const { slot, release } of releases) {
+		for (const [index, card] of data.wallCards.entries()) {
+			if (card.slot !== slot) continue;
+			let touched = null, started = null;
+			for (let time = release - .3; time < release + 1.2 && (started === null || touched === null); time += .001) {
+				const pose = at(time).wallCards[index];
+				if (touched === null && time >= release && Math.abs(pose.at[2] - 1.1) <= .2) touched = time;
+				if (started === null && (pose.ring !== null || pose.face > 0)) started = time;
+			}
+			const label = `card ${index} of slot ${slot} released at ${release.toFixed(3)} s`;
+			assert.ok(touched !== null && started !== null, `${label} touches down and lands`);
+			assert.ok(started >= touched, `${label}: ring/face start at ${started.toFixed(3)} s, before touchdown at ${touched.toFixed(3)} s`);
+			assert.ok(started - touched <= .05, `${label}: ring/face start ${(started - touched).toFixed(3)} s after touchdown`);
+		}
+	}
 });

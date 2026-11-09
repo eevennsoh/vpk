@@ -158,7 +158,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			for (const time of [6, 8, 10, 13]) {
 				const state = model(time, data);
 				const visible = state.cards.flatMap((pose, index) => {
-					if (pose.alpha <= .001 || !pose.clip) return [];
+					if (pose.alpha <= .001 || pose.clip !== 'done') return [];
 					const card = data.cards[index];
 					const rectangle = { x: pose.at[0] - card.w * pose.scale / 2, y: pose.at[1] - card.d * pose.scale / 2, w: card.w * pose.scale, d: card.d * pose.scale };
 					return overlaps(rectangle, viewport) ? [rectangle] : [];
@@ -393,7 +393,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 						const layer = svg.querySelector('[data-eu26-cursor-layer]');
 						if (svg.lastElementChild !== layer || layer.getAttribute('aria-hidden') !== 'true') failures.push({ time: sample.time, issue: 'cursor layer must be decorative and topmost' });
 						if (layer.querySelector('a, button, input, [tabindex="0"]') || [...layer.querySelectorAll('*')].some(element => getComputedStyle(element).pointerEvents !== 'none')) failures.push({ time: sample.time, issue: 'cursor drawing captures user input' });
-						if ([...layer.querySelectorAll('[data-eu26-cursor-tip],[data-eu26-cursor-ring]')].some(element => Number.parseFloat(getComputedStyle(element).strokeWidth) > 2)) failures.push({ time: sample.time, issue: 'cursor outline becomes too thick at this viewport' });
+						if ([...layer.querySelectorAll('[data-eu26-cursor-tip]')].some(element => Number.parseFloat(getComputedStyle(element).strokeWidth) > 2)) failures.push({ time: sample.time, issue: 'cursor outline becomes too thick at this viewport' });
 						const arrows = cursorDrawings(hero);
 						if (arrows.some(arrow => !sample.cursors.some(cursor => cursor.id === arrow.id)) || sample.cursors.some(cursor => cursor.heldTarget && !arrows.some(arrow => arrow.id === cursor.id))) failures.push({ time: sample.time, variant: sample.variant, issue: 'a held actor is missing or an unmodeled arrow is visible' });
 						for (const arrow of arrows) {

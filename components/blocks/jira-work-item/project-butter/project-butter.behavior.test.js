@@ -23,6 +23,37 @@ test("Butter chat keeps the selected session's agent identity", async () => {
 	assert.equal(view.queryByText("jira coding agent:jira coding agent") !== null, true);
 });
 
+test("the Agents field stack matches the selector's artwork and brand canvases", async () => {
+	const names = ["Jira Coding Agent", "Claude", "Cursor", "Codex", "GitHub Copilot"];
+	const view = await renderComponent({
+		source: `import React, { useState } from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
+			import { PROJECT_BUTTER_SESSIONS } from "@/components/blocks/jira-work-item/project-butter/data";
+			import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
+			export default function AvatarProbe() {
+				const [selected, setSelected] = useState(null);
+				const sessions = [...PROJECT_BUTTER_SESSIONS,
+					...BUTTER_PICKER_AGENTS.filter((agent) => ["Codex", "GitHub Copilot"].includes(agent.name)).map((agent) => ({ id: agent.id, agent, title: agent.name, host: "cloud", state: "running", timeLabel: "Now" }))];
+				return <ThemeWrapper><ProjectButterCrew field sessions={sessions} onOpenSession={setSelected} onStartAgent={setSelected} /><output>{selected?.name ?? selected?.title}</output></ThemeWrapper>;
+			}`,
+	});
+	const field = view.getByRole("group", { name: "Agents field" });
+	await view.click(field.querySelector("button"));
+	const picker = view.getByRole("dialog", { name: "Add agent" });
+	const visual = (avatar) => ({
+		images: [...avatar.querySelectorAll("img")].map((image) => image.getAttribute("src")),
+		paths: [...avatar.querySelectorAll("svg path")].map((path) => path.getAttribute("d")),
+		canvases: [...avatar.querySelectorAll("[style]")].map((element) => element.style.backgroundColor).filter(Boolean),
+	});
+	for (const name of names) {
+		const stacked = [...field.querySelectorAll('[data-slot="avatar"]')].find((avatar) => avatar.getAttribute("aria-label")?.toLowerCase() === name.toLowerCase());
+		const option = [...picker.querySelectorAll("button[data-agent-id]")].find((button) => button.textContent.includes(name));
+		assert.equal(Boolean(stacked && option), true, `${name} appears in the stack and selector`);
+		assert.deepEqual(visual(stacked), visual(option.querySelector('[data-slot="avatar"]')), name);
+	}
+});
+
 test("one catalog demo opens each presentation directly and keeps its Empty setting", async () => {
 	assert.deepEqual(JIRA_WORK_ITEM_DETAIL.examples.filter((example) => example.demoSlug.startsWith("jira-work-item-demo-project-butter")).map((example) => example.title), ["Project butter"]);
 	const view = await renderComponent({
@@ -515,7 +546,9 @@ test("panel ordering changes only for valid panel drops and keeps source data im
 test("panel controls remain reachable while collapsed and development settings show connections", async () => {
 	const view = await renderWorkItem();
 	assert.equal(view.tabOrder().includes("Drag to reorder Automation"), true);
-	await view.click(view.getByRole("button", { name: "Development settings" }));
+	await view.click(view.getByRole("button", { name: "Configure", exact: true }));
+	await view.focus(view.getByRole("menuitem", { name: "Connections", exact: true }));
+	await view.press(null, "ArrowRight");
 	assert.equal(view.queryByRole("button", { name: "Request GitLab for Jira Cloud" }) !== null, true);
 	await view.press(null, "Escape");
 	await view.click(view.getByRole("button", { name: "Automation" }));

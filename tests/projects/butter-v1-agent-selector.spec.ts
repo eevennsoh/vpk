@@ -85,6 +85,38 @@ test("Agent selector shows the local menu beside the selector without a separate
 	await expect(page.getByRole("group", { name: "Agent actions presentation" })).toHaveCount(0);
 });
 
+test("workspace trash icon is 12px with a visible 4px gap before the checkmark", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	await page.getByRole("region", { name: "Jira Local Agent" }).getByRole("button", { name: "Configure Rovo CLI" }).click();
+	const directory = page.getByRole("textbox", { name: "Choose your directory" });
+	await directory.fill("dadf");
+	await page.getByRole("button", { name: "Create “dadf”" }).click();
+	const workspace = page.getByRole("button", { name: "dadf", exact: true });
+	await workspace.hover();
+	const remove = page.getByRole("button", { name: "Remove dadf", exact: true });
+	await expect(remove).toBeVisible();
+	await expect(remove.locator("svg")).toHaveCSS("width", "12px");
+	await expect(remove.locator("svg")).toHaveCSS("height", "12px");
+	const inkEdge = (locator: Locator, edge: "left" | "right") => locator.evaluate((element, side) => {
+		if (!(element instanceof SVGSVGElement)) throw new Error("Expected an SVG icon");
+		const bounds = element.getBoundingClientRect();
+		const ink = element.getBBox();
+		const viewBox = element.viewBox.baseVal;
+		return bounds.x + (ink.x + (side === "right" ? ink.width : 0) - viewBox.x) * bounds.width / viewBox.width;
+	}, edge);
+	await expect.poll(async () => {
+		const [trashRight, checkLeft] = await Promise.all([
+			inkEdge(remove.locator("svg"), "right"),
+			inkEdge(workspace.locator("svg").last(), "left"),
+		]);
+		return Math.round(checkLeft - trashRight);
+	}).toBe(4);
+	await remove.click();
+	await expect(workspace).toHaveCount(0);
+});
+
 test("local Copy prompt aligns its icon and label with agent rows and cloud actions", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Agent selector" }).click();
@@ -395,37 +427,41 @@ test("Duplicative sessions starts directly or chooses from existing sessions", a
 	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
 	const claude = picker.getByRole("option", { name: /^Claude/ });
 	const cursor = picker.getByRole("option", { name: /^Cursor/ });
-	await expect(claude).toHaveAttribute("aria-haspopup", "menu");
+	await expect(claude).toHaveAttribute("aria-haspopup", "dialog");
 	await expect(claude.locator(":scope > div > [data-slot=icon]")).toHaveCount(0);
 	await expect(cursor).not.toHaveAttribute("aria-haspopup", "menu");
 	await claude.hover();
-	await expect(page.getByRole("menu", { name: "Claude sessions" })).toBeVisible();
+	await expect(page.getByRole("dialog", { name: "Claude sessions" })).toBeVisible();
 	await claude.click();
-	let menu = page.getByRole("menu", { name: "Claude sessions" });
-	await expect(menu.getByRole("menuitem")).toHaveText(["Start a new session", "Review the onboarding quickstart", "Check the onboarding tests"]);
+	let menu = page.getByRole("dialog", { name: "Claude sessions" });
+	await expect(menu.getByRole("button", { name: "Start a new session" })).toBeVisible();
+	await expect(menu.locator('article[data-variant="uncaptured-work"]')).toHaveCount(5);
+	await expect(menu.getByRole("list").getByRole("button")).toContainText(["Review the onboarding quickstart", "Check the onboarding tests", "Inspect the onboarding flow", "Refine the onboarding copy", "Validate the onboarding checklist"]);
+	await expect(menu.getByTestId("agent-session-row-demo-onboarding-guide")).toContainText("Claude");
+	await expect(menu.getByTestId("agent-session-row-demo-onboarding-guide")).toContainText("2m");
 	await expect(menu.locator("hr")).toHaveCount(1);
 	await expect(menu.getByText(/Open in|Continue to existing session|Run on cloud/)).toHaveCount(0);
 	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
 	await expect(menu).toBeHidden();
 	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	await picker.getByRole("option", { name: /^Claude/ }).click();
-	menu = page.getByRole("menu", { name: "Claude sessions" });
-	await menu.getByRole("menuitem", { name: "Check the onboarding tests" }).click();
+	menu = page.getByRole("dialog", { name: "Claude sessions" });
+	await menu.getByRole("button", { name: "Check the onboarding tests" }).click();
 	await expect(picker.getByRole("status")).toHaveText("Selected session: Check the onboarding tests");
 	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await page.getByRole("menu", { name: "Claude sessions" }).getByRole("menuitem", { name: "Start a new session" }).click();
+	await page.getByRole("dialog", { name: "Claude sessions" }).getByRole("button", { name: "Start a new session" }).click();
 	await expect(picker.getByRole("status")).toHaveText("Started a new Claude session");
 	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await expect(page.getByRole("menu", { name: "Claude sessions" }).getByRole("menuitem", { name: "Review onboarding changes" })).toBeVisible();
+	await expect(page.getByRole("dialog", { name: "Claude sessions" }).getByRole("button", { name: "Review onboarding changes" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await picker.getByRole("option", { name: /^Cursor/ }).click();
 	await expect(picker.getByRole("status")).toHaveText("Started a new Cursor session");
 	await picker.getByRole("option", { name: /^Cursor/ }).click();
-	menu = page.getByRole("menu", { name: "Cursor sessions" });
-	await expect(menu.getByRole("menuitem")).toHaveText(["Start a new session", "Review onboarding changes"]);
-	await expect(menu.getByRole("menuitem", { name: "Start a new session" })).toBeFocused();
+	menu = page.getByRole("dialog", { name: "Cursor sessions" });
+	await expect(menu.getByRole("button")).toContainText(["Start a new session", "Review onboarding changes"]);
+	await expect(menu.getByRole("button", { name: "Start a new session" })).toBeFocused();
 	await page.keyboard.press("ArrowDown");
-	await expect(menu.getByRole("menuitem", { name: "Review onboarding changes" })).toBeFocused();
+	await expect(menu.getByRole("button", { name: "Review onboarding changes" })).toBeFocused();
 	await page.keyboard.press("Escape");
 	await expect(picker.getByRole("combobox", { name: "Search agents" })).toBeFocused();
 	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
@@ -439,8 +475,8 @@ test("Duplicative sessions starts directly or chooses from existing sessions", a
 	await expect(picker.getByRole("status")).toHaveText("Started a new Rovo CLI session");
 	await picker.getByRole("combobox", { name: "Search agents" }).fill("Rovo CLI");
 	await picker.getByRole("option", { name: /^Rovo CLI/ }).click();
-	const rovoMenu = page.getByRole("menu", { name: "Rovo CLI sessions" });
-	await expect(rovoMenu.getByRole("menuitem")).toHaveText(["Start a new session", "Review onboarding changes"]);
+	const rovoMenu = page.getByRole("dialog", { name: "Rovo CLI sessions" });
+	await expect(rovoMenu.getByRole("button")).toContainText(["Start a new session", "Review onboarding changes"]);
 	await expect(rovoMenu.getByText(/Open in/)).toHaveCount(0);
 });
 
@@ -454,15 +490,15 @@ test("Duplicative sessions submenu supports keyboard selection", async ({ page }
 	await search.fill("Claude");
 	await expect(picker.getByRole("option", { name: /^Claude/ })).toHaveAttribute("aria-selected", "true");
 	await search.press("ArrowRight");
-	const menu = page.getByRole("menu", { name: "Claude sessions" });
-	await expect(menu.getByRole("menuitem", { name: "Start a new session" })).toBeFocused();
+	const menu = page.getByRole("dialog", { name: "Claude sessions" });
+	await expect(menu.getByRole("button", { name: "Start a new session" })).toBeFocused();
 	await page.keyboard.press("End");
-	await expect(menu.getByRole("menuitem", { name: "Check the onboarding tests" })).toBeFocused();
+	await expect(menu.getByRole("button", { name: "Validate the onboarding checklist" })).toBeFocused();
 	await page.keyboard.press("Home");
-	await expect(menu.getByRole("menuitem", { name: "Start a new session" })).toBeFocused();
+	await expect(menu.getByRole("button", { name: "Start a new session" })).toBeFocused();
 	await page.keyboard.press("ArrowDown");
 	await page.keyboard.press("ArrowDown");
-	await expect(menu.getByRole("menuitem", { name: "Check the onboarding tests" })).toBeFocused();
+	await expect(menu.getByRole("button", { name: "Check the onboarding tests" })).toBeFocused();
 	await page.keyboard.press("Enter");
 	await expect(picker.getByRole("status")).toHaveText("Selected session: Check the onboarding tests");
 });

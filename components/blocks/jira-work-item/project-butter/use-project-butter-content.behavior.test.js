@@ -119,7 +119,7 @@ test("each column map authors description, children, attachments, and comments",
 	}
 });
 
-test("every attachment previews a distinct primary ambient illustration, varied within each work item", () => {
+test("every board attachment previews a distinct primary ambient illustration, varied within each work item", () => {
 	const seen = new Set();
 	for (const [, source, codes] of COLUMN_MAPS) {
 		for (const code of codes) {
@@ -138,6 +138,18 @@ test("every attachment previews a distinct primary ambient illustration, varied 
 			assert.equal(colors.size, source[code].attachments.length, `${code} mixes colors`);
 		}
 	}
+});
+
+test("default Gallery attachments all have distinct primary ambient previews", async () => {
+	const view = await renderHarness({});
+	const previews = field("attachment-preview", view.container).split("|");
+	assert.equal(previews.length, 8);
+	for (const preview of previews) {
+		assert.match(preview, /^\/ambient\/.+\/primary\/\w+\.(?:svg|png)$/u);
+		assert.equal(existsSync(join(__dirname, "../../../../public", preview)), true, preview);
+	}
+	assert.equal(new Set(previews).size, previews.length);
+	await view.unmount();
 });
 
 test("opening a card from each column fills that map's sections", async () => {
