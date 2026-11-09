@@ -7,10 +7,12 @@ import DragHandleVerticalIcon from "@atlaskit/icon/core/drag-handle-vertical";
 import { TeamEuRailPanel } from "@/components/blocks/jira-work-item/team-eu26/components/team-eu-rail-panel";
 import { Button } from "@/components/ui/button";
 import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 
-export function ProjectButterSortablePanel({ actions, children, defaultOpen = true, footer, id, renderPanel, sidePanel, title }: Readonly<{
+export function ProjectButterSortablePanel({ actions, children, contentClassName, defaultOpen = true, footer, id, renderPanel, sidePanel, title }: Readonly<{
 	actions: ReactNode;
 	children: ReactNode;
+	contentClassName?: string;
 	defaultOpen?: boolean;
 	footer?: ReactNode;
 	id: string;
@@ -30,7 +32,7 @@ export function ProjectButterSortablePanel({ actions, children, defaultOpen = tr
 				surface={sidePanel ? "inline" : "card"}
 				title={title}
 			>
-				<div className={sidePanel ? "pb-4" : "px-4 pb-4"}>{children}</div>
+				<div className={cn(sidePanel ? "pb-4" : "px-4 pb-4", contentClassName)}>{children}</div>
 			</TeamEuRailPanel>}
 		</div>
 	);

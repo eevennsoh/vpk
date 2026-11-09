@@ -3,6 +3,71 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("the work item shows automation rules and recent runs in the card", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1200 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const details = page.getByRole("complementary", { name: "Work item details" });
+	await details.getByRole("button", { name: "Automation", exact: true }).click();
+	const automation = details.getByRole("region", { name: "Automation" });
+	const ruleRows = automation.getByRole("list", { name: "Available automations" }).getByRole("listitem");
+	await expect(ruleRows).toHaveCount(8);
+	const rule = ruleRows.first().locator("div").first();
+	const ruleBackground = await rule.evaluate((element) => getComputedStyle(element).backgroundColor);
+	await rule.hover();
+	await expect.poll(() => rule.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(ruleBackground);
+	const recentButton = automation.getByRole("button", { name: "Recent run rules" });
+	await expect.poll(async () => {
+		const card = await automation.boundingBox();
+		const row = await automation.getByRole("button", { name: "Set to recur" }).boundingBox();
+		return card && row ? card.y + card.height - (row.y + row.height) - (row.x - card.x) : null;
+	}).toBeCloseTo(0, 0);
+	const buttonBounds = await recentButton.boundingBox();
+	const labelBounds = await recentButton.locator("span").first().boundingBox();
+	const recurBounds = await automation.getByRole("button", { name: "Set to recur" }).boundingBox();
+	const automationBounds = await automation.boundingBox();
+	const repositoryBounds = await details.getByRole("button", { name: "Configure repository" }).boundingBox();
+	if (!buttonBounds || !labelBounds || !recurBounds || !automationBounds || !repositoryBounds) throw new Error("Action button bounds are unavailable");
+	expect(automationBounds.y + automationBounds.height - (recurBounds.y + recurBounds.height)).toBeCloseTo(recurBounds.x - automationBounds.x, 0);
+	expect(automationBounds.x + automationBounds.width - (recurBounds.x + recurBounds.width)).toBeCloseTo(recurBounds.x - automationBounds.x, 0);
+	for (const bounds of [buttonBounds, recurBounds]) {
+		expect(bounds.width).toBeCloseTo(repositoryBounds.width, 0);
+		expect(bounds.height).toBeCloseTo(repositoryBounds.height, 0);
+	}
+	expect(labelBounds.x - buttonBounds.x).toBeGreaterThanOrEqual(8);
+	await recentButton.click();
+	const recentRows = automation.getByRole("list", { name: "Recent automation runs" }).getByRole("listitem");
+	await expect(recentRows).toHaveCount(4);
+	await expect.poll(async () => {
+		const card = await automation.boundingBox();
+		const row = await recentRows.last().boundingBox();
+		return card && row ? card.y + card.height - (row.y + row.height) - (row.x - card.x) : null;
+	}).toBeCloseTo(0, 0);
+	const recentCardBounds = await automation.boundingBox();
+	const lastRunBounds = await recentRows.last().boundingBox();
+	if (!recentCardBounds || !lastRunBounds) throw new Error("Recent runs bounds are unavailable");
+	expect(recentCardBounds.y + recentCardBounds.height - (lastRunBounds.y + lastRunBounds.height)).toBeCloseTo(lastRunBounds.x - recentCardBounds.x, 0);
+	expect(recentCardBounds.x + recentCardBounds.width - (lastRunBounds.x + lastRunBounds.width)).toBeCloseTo(lastRunBounds.x - recentCardBounds.x, 0);
+	const recentHeaderBounds = await automation.getByRole("heading", { name: "Recent run rules" }).locator("..").boundingBox();
+	if (!recentHeaderBounds) throw new Error("Recent runs header bounds are unavailable");
+	expect(recentHeaderBounds.height).toBeCloseTo(repositoryBounds.height, 0);
+	for (const row of await recentRows.all()) {
+		const bounds = await row.boundingBox();
+		if (!bounds) throw new Error("Recent run row bounds are unavailable");
+		expect(bounds.width).toBeCloseTo(repositoryBounds.width, 0);
+		expect(bounds.height).toBeCloseTo(repositoryBounds.height, 0);
+	}
+	const backIcon = await automation.getByRole("button", { name: "Back to automation" }).locator("svg").boundingBox();
+	const statusIcon = await recentRows.first().locator("svg").boundingBox();
+	if (!backIcon || !statusIcon) throw new Error("Recent run icon bounds are unavailable");
+	expect(backIcon.x + backIcon.width / 2).toBeCloseTo(statusIcon.x + statusIcon.width / 2, 0);
+	const recentBackground = await recentRows.first().evaluate((element) => getComputedStyle(element).backgroundColor);
+	await recentRows.first().hover();
+	await expect.poll(() => recentRows.first().evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(recentBackground);
+	await automation.getByRole("button", { name: "Back to automation" }).click();
+	await expect(automation.getByRole("button", { name: "Set to recur" })).toBeVisible();
+});
+
 test("the List gallery item shows the interactive Jira list", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
