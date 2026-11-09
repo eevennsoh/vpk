@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
 import GrowVerticalIcon from "@atlaskit/icon/core/grow-vertical";
+import ShrinkVerticalIcon from "@atlaskit/icon/core/shrink-vertical";
 
 import type { AgentListItem } from "@/components/blocks/agent-list";
 import { EmojiReactionBar } from "@/components/blocks/emoji-picker/components/emoji-reaction-bar";
@@ -498,7 +499,7 @@ export function JiraActivityComment({
 			type="button"
 			variant="outline"
 		>
-			<GrowVerticalIcon label="" />
+			{repliesExpanded ? <ShrinkVerticalIcon label="" /> : <GrowVerticalIcon label="" />}
 		</Button>
 	) : null;
 	const earlierRepliesToggle = hasReplyPreview && replies.length > replyPreviewCount ? (
@@ -512,7 +513,7 @@ export function JiraActivityComment({
 			type="button"
 			variant={threaded ? "ghost" : "link"}
 		>
-			{threaded ? <span aria-hidden className="absolute -left-7 flex size-4 items-center justify-center bg-surface text-icon-subtle"><GrowVerticalIcon label="" size="small" /></span> : null}
+			{threaded ? <span aria-hidden className="absolute -left-7 flex size-4 items-center justify-center text-icon-subtle">{repliesExpanded ? <ShrinkVerticalIcon label="" size="small" /> : <GrowVerticalIcon label="" size="small" />}</span> : null}
 			{renderEarlierRepliesLabel ? renderEarlierRepliesLabel(replies.slice(0, replies.length - replyPreviewCount), repliesExpanded) : <>
 				{repliesExpanded ? "Hide earlier replies" : "Show more replies"}
 			</>}
