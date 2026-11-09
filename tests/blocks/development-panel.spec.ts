@@ -11,7 +11,7 @@ test("Open in shows local agents in both development panel states", async ({ pag
 		await trigger.click();
 		const picker = page.getByRole("dialog", { name: "Local software agents" });
 		for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot", "Rovo CLI"]) {
-			await expect(picker.getByRole("option", { name: new RegExp(name, "u") })).toBeVisible();
+			await expect(picker.getByRole("button", { name: new RegExp(`^${name}`, "u") })).toBeVisible();
 		}
 		await page.keyboard.press("Escape");
 		await expect(trigger).toBeFocused();
