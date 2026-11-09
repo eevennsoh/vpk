@@ -321,6 +321,7 @@ function AgentSelectorItem({
 			aria-haspopup={isSubmenuTrigger ? "menu" : undefined}
 			className={cn(
 				AGENT_ROW_BASE_CLASS,
+				"data-selected:bg-bg-neutral-subtle-hovered",
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
 				!showByline && "h-9",
 			)}
