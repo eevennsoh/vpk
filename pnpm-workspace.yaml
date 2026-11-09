@@ -46,7 +46,7 @@ minimumReleaseAgeExclude:
   - fast-uri@3.1.9
   # First-party ADS icons. `question-circle-filled` first ships in icon-lab
   # 7.8.0 (the only filled question glyph in the design system) and is required
-  # by the jira-golden-journeys-v4 Team EU variation; icon-lab 7.8.0 in turn
+  # by the jira-golden-journey-v4 Team EU variation; icon-lab 7.8.0 in turn
   # needs @atlaskit/icon >= 37.6.0. Taken ahead of the 7-day gate by explicit
   # request, matching the @atlaskit/tokens carve-out above. Version-pinned so
   # the gate re-applies automatically on any future bump; both clear the window

@@ -11,6 +11,7 @@ import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse, RetainedView } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { Gallery } from "@/components/blocks/gallery";
+import { DEVELOPMENT_PANEL_PULL_REQUESTS } from "@/components/blocks/pull-request/data/demo-pull-requests";
 import { useRovoChat } from "@/app/contexts/context-rovo-chat";
 import { getMessageText } from "@/lib/rovo-ui-messages";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -47,9 +48,9 @@ import { HeaderLanyards } from "./components/header-lanyards";
 import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
-import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
+import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
 import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES, resolveButterChatAgentId } from "@/components/projects/butter-v1/data/chat-agent-profiles";
-import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
+import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
 	DEFAULT_JIRA_WORK_ITEM_VIEW,
@@ -100,8 +101,9 @@ import {
 } from "./data/wac-content";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
-const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
+const SkillDirectoryDialog = dynamic(() => import("@/components/blocks/skill-directory").then((module) => module.SkillDirectoryDialog));
 const ButterGalleryPullRequest = dynamic(() => import("./components/butter-gallery-pull-request"));
+const DevelopmentPanel = dynamic(() => import("@/components/blocks/development-panel").then((module) => module.DevelopmentPanel));
 
 const BUTTER_DEFAULT_REPORTER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
@@ -289,7 +291,11 @@ export default function ButterPage(): React.ReactElement {
 				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorPresentation("inline"); setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsPresentation("inline"); setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } }}
 				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
 				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
-				renderSelectedItem={(item) => item.id === "e2e-journey" || item.id === "board" || item.id === "list" || item.id === "agent-selector" || item.id === "duplicative-sessions" || item.id === "work-item" || item.id === "pull-request" ? null : (
+				renderSelectedItem={(item) => item.id === "development-panel" ? (
+					<div className="pointer-events-auto w-full max-w-sm">
+						<DevelopmentPanel pullRequests={DEVELOPMENT_PANEL_PULL_REQUESTS} workItem={{ code: "PAY-999", summary: "Improve merchant onboarding for Payments SDK v2", description: "" }} />
+					</div>
+				) : item.id === "e2e-journey" || item.id === "board" || item.id === "list" || item.id === "agent-selector" || item.id === "duplicative-sessions" || item.id === "work-item" || item.id === "pull-request" ? null : (
 					<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">{item.title}</h2>
 				)}
 			/>
@@ -372,7 +378,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 	const { designVariants } = useDesignVariants();
 	const { activeSessionId, chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
-	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
+	const [skillDirectoryOpen, setSkillDirectoryOpen] = useState(false);
 	const browseAgents = useCallback(() => setAgentsDirectoryOpen(true), []);
 	const createAgent = useCallback(() => router.push("/studio"), [router]);
 	const workItemRef = useRef<ButterWorkItemHandle>(null);
@@ -431,7 +437,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 		});
 	const cardGenerativeActionFooterActions = {
 		onBrowseAgents: browseAgents,
-		onBrowseSkills: () => setSkillsDirectoryOpen(true),
+		onBrowseSkills: () => setSkillDirectoryOpen(true),
 		onCreateAgent: createAgent,
 		onCreateSkill: () => router.push("/skills"),
 	};
@@ -897,11 +903,11 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 					/>
 				</Suspense>
 			</MountOnFirstUse>
-			<MountOnFirstUse active={skillsDirectoryOpen}>
-				<SkillsDirectoryDialog
+			<MountOnFirstUse active={skillDirectoryOpen}>
+				<SkillDirectoryDialog
 					onCreateSkill={() => router.push("/skills")}
-					onOpenChange={setSkillsDirectoryOpen}
-					open={skillsDirectoryOpen}
+					onOpenChange={setSkillDirectoryOpen}
+					open={skillDirectoryOpen}
 					skills={DEFAULT_SKILLS}
 				/>
 			</MountOnFirstUse>

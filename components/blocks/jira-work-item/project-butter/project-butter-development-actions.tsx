@@ -8,10 +8,9 @@ import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { cn } from "@/lib/utils";
 
-export function ProjectButterDevelopmentActions({ code, description, onStartCoding, renderStartCoding, showStartCoding = true, summary }: Readonly<{
+export function ProjectButterDevelopmentActions({ code, description, renderStartCoding, showStartCoding = true, summary }: Readonly<{
 	code: string;
 	description: string;
-	onStartCoding?: () => void;
 	renderStartCoding?: (trigger: ReactElement) => ReactNode;
 	showStartCoding?: boolean;
 	summary: string;
@@ -33,7 +32,7 @@ export function ProjectButterDevelopmentActions({ code, description, onStartCodi
 	}
 	const label = feedback === "copied" ? "Prompt copied" : feedback === "error" ? "Could not copy prompt" : "Copy prompt";
 	const row = "h-8 w-full justify-start gap-2 border-0 px-2 font-normal";
-	const startCoding = <Button className={row} onClick={onStartCoding} type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<BranchIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Start coding</Button>;
+	const startCoding = <Button className={row} type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<BranchIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Start coding</Button>;
 	return <div className="-mx-2 flex flex-col">
 		{showStartCoding ? renderStartCoding ? renderStartCoding(startCoding) : startCoding : null}
 		<Button aria-label={label} className={row} onClick={() => { void copyPrompt(); }} type="button" variant="ghost">

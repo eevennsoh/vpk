@@ -4,7 +4,7 @@ import type { DirectoryVisual } from "./types";
 /**
  * People directory data layer. This module owns the canonical `AgentPerson`
  * interface (faithfully mirrored from the agent Users screen's original
- * `components/blocks/agent-users/data/users.ts`) and sources its catalog from
+ * `components/blocks/agent-user/data/users.ts`) and sources its catalog from
  * `people.json` as the single source of truth, matching the loader pattern used
  * by `skills.ts`.
  */

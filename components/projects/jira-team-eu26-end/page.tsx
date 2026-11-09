@@ -33,10 +33,10 @@ import {
 	type JiraListInsertion,
 } from "@/components/blocks/jira-list";
 
-import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
+import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
 import { JIRA_TEAM_EU26_CHAT_AGENT_PROFILES } from "@/components/projects/jira-team-eu26/data/chat-agent-profiles";
 import { JIRA_TEAM_EU26_BOARD_AGENTS } from "@/components/projects/jira-team-eu26/data/presentation-board";
-import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
+import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
 import {
 	DEFAULT_JIRA_WORK_ITEM_VIEW,
@@ -78,7 +78,7 @@ import { useJiraTeamEu26List } from "./hooks/use-jira-team-eu26-end-list";
 import { useJiraTeamEu26EndPlayClosing } from "./hooks/use-jira-team-eu26-end-play-closing";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
-const SkillsDirectoryDialog = dynamic(() => import("@/components/blocks/skills-directory").then((module) => module.SkillsDirectoryDialog));
+const SkillDirectoryDialog = dynamic(() => import("@/components/blocks/skill-directory").then((module) => module.SkillDirectoryDialog));
 
 const JIRA_TEAM_EU26_TABS = getJiraTeamEu26EndTabs();
 const JIRA_TEAM_EU26_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(JIRA_TEAM_EU26_TABS);
@@ -116,7 +116,7 @@ function JiraTeamEu26App(): React.ReactElement {
 	const { designVariants } = useDesignVariants();
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
-	const [skillsDirectoryOpen, setSkillsDirectoryOpen] = useState(false);
+	const [skillDirectoryOpen, setSkillDirectoryOpen] = useState(false);
 	const [boardColumns, setBoardColumns] = useState(createJiraTeamEu26EndKeynoteBoardColumns);
 	const themedBoardColumns = useMemo(() => withJiraTeamEu26EndDoneDestinations(
 		restoreJiraTeamEu26EndKeynoteCoverArtwork(boardColumns, actualTheme),
@@ -134,7 +134,7 @@ function JiraTeamEu26App(): React.ReactElement {
 		});
 	const cardGenerativeActionFooterActions = {
 		onBrowseAgents: () => setAgentsDirectoryOpen(true),
-		onBrowseSkills: () => setSkillsDirectoryOpen(true),
+		onBrowseSkills: () => setSkillDirectoryOpen(true),
 		onCreateAgent: () => router.push("/studio"),
 		onCreateSkill: () => router.push("/skills"),
 	};
@@ -516,11 +516,11 @@ function JiraTeamEu26App(): React.ReactElement {
 					open={agentsDirectoryOpen}
 				/>
 			</MountOnFirstUse>
-			<MountOnFirstUse active={skillsDirectoryOpen}>
-				<SkillsDirectoryDialog
+			<MountOnFirstUse active={skillDirectoryOpen}>
+				<SkillDirectoryDialog
 					onCreateSkill={() => router.push("/skills")}
-					onOpenChange={setSkillsDirectoryOpen}
-					open={skillsDirectoryOpen}
+					onOpenChange={setSkillDirectoryOpen}
+					open={skillDirectoryOpen}
 					skills={DEFAULT_SKILLS}
 				/>
 			</MountOnFirstUse>

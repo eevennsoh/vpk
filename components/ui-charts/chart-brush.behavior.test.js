@@ -90,7 +90,7 @@ test("both brush handles are focusable sliders and keyboard changes emit a selec
 
 test("the actual LineChart brush demo renders reachable controls in its 64px strip", async () => {
 	const view = await renderComponent({
-		entry: "components/website/demos/ui-charts/chart-utilities-demo.tsx",
+		entry: "components/website/demos/ui-charts/chart-utility-demo.tsx",
 		exportName: "BrushDemo",
 		mocks: {
 			"@/components/ui-charts/measured-parent-size": `export function MeasuredParentSize({ children }) { return children({ width: 600, height: 64 }); }`,

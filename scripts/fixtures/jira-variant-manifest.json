@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"family": "jira-golden-journeys",
+	"family": "jira-golden-journey",
 	"copyTemplates": [
 		{
 			"source": "components/projects/{sourceSlug}",

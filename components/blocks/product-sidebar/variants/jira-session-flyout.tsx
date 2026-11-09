@@ -25,7 +25,7 @@ import TaskIcon from "@atlaskit/icon/core/task";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 
-import { AgentStates, type AgentStatesState } from "@/components/blocks/agent-states";
+import { AgentState, type AgentStateState } from "@/components/blocks/agent-state";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -87,7 +87,7 @@ export interface JiraSessionFlyoutSurfaceProps {
 	instantPosition?: boolean;
 	/**
 	 * Flyout body. `details` (default) is the compact session hover card, `composer`
-	 * is the Agent States card, and `untracked-work` suggests a related Jira item.
+	 * is the Agent State card, and `untracked-work` suggests a related Jira item.
 	 */
 	content?: JiraSessionFlyoutContent;
 	/** Shows untracked-work actions and fallback rationale when no suggestion is available. Defaults to true. */
@@ -194,7 +194,7 @@ export function JiraSessionFlyoutTrigger({
 /**
  * The rich Jira agent-session detail body used by the queue and For You detail
  * panels. Hover session details use `JiraSessionDetailsCard` instead. The
- * composer Agent States card is an opt-in on the shared hover surface.
+ * composer Agent State card is an opt-in on the shared hover surface.
  *
  * The body reuses the shared design-system components: the work item is a
  * SmartLink, the agent is an agent-type Tag pill, PR state is a Lozenge, and the
@@ -206,14 +206,14 @@ export function JiraSessionFlyoutTrigger({
  */
 
 /** Queue lifecycle mapped onto the compact, property-free agent card states. */
-function toAgentStatesState(status: JiraSidebarSessionStatus): AgentStatesState {
+function toAgentStateState(status: JiraSidebarSessionStatus): AgentStateState {
 	if (status === "awaiting-input") return "awaiting-input";
 	if (status === "running") return "working";
 	return "completed";
 }
 
 /** Copy for terminal states that cannot use the successful completion default. */
-function toAgentStatesMessage(status: JiraSidebarSessionStatus): string | undefined {
+function toAgentStateMessage(status: JiraSidebarSessionStatus): string | undefined {
 	if (status !== "stopped") return undefined;
 	return "This session was stopped before the requested work was completed.";
 }
@@ -635,7 +635,7 @@ function JiraSessionComposerFlyout({
 	session,
 }: Pick<JiraSessionFlyoutPayloadProps, "onSubmitPrompt" | "session">) {
 	return (
-		<AgentStates
+		<AgentState
 			agent={{
 				avatarSrc: session.agentAvatarSrc,
 				brandName: session.brandName,
@@ -646,10 +646,10 @@ function JiraSessionComposerFlyout({
 			completedAtMs={session.completedAtMs}
 			completedSecondsAgo={session.completedSecondsAgo}
 			initialElapsedSeconds={session.initialElapsedSeconds}
-			message={toAgentStatesMessage(session.status)}
+			message={toAgentStateMessage(session.status)}
 			onSubmit={onSubmitPrompt ? (prompt) => onSubmitPrompt(session, prompt) : undefined}
 			startedAtMs={session.startedAtMs}
-			state={toAgentStatesState(session.status)}
+			state={toAgentStateState(session.status)}
 		/>
 	);
 }
@@ -687,7 +687,7 @@ function JiraSessionFlyoutPayload({ content, ...props }: JiraSessionFlyoutPayloa
 
 /**
  * One payload-aware flyout shared by every session row in a list. Defaults to
- * the compact session hover card; pass `content="composer"` for the Agent States
+ * the compact session hover card; pass `content="composer"` for the Agent State
  * prompt composer or `content="untracked-work"` for a Jira-link suggestion.
  * Base UI's viewport keeps the popup mounted while the anchor
  * changes. The shell follows the new row and immediately adopts its measured

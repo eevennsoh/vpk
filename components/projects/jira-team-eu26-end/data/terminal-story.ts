@@ -1,5 +1,5 @@
-import type { TerminalBeat } from "@/components/projects/jira-golden-journeys-v1/lib/terminal-demo-state";
-import type { TerminalStoryDefinition } from "@/components/projects/jira-golden-journeys-v1/lib/terminal-story-definition";
+import type { TerminalBeat } from "@/components/projects/jira-golden-journey-v1/lib/terminal-demo-state";
+import type { TerminalStoryDefinition } from "@/components/projects/jira-golden-journey-v1/lib/terminal-story-definition";
 
 const JIRA_TEAM_EU26_BASE_URL = "https://jira-team-eu26.atlassian.net";
 

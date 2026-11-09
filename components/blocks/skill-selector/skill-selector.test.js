@@ -10,7 +10,7 @@ const DETAILS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app/data/detail
 const REGISTRY_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/website/registry/blocks.ts"), "utf8");
 const VARIANT_REGISTRY_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/website/registry/blocks-variants.ts"), "utf8");
 
-test("SkillSelector reuses AgentSelector design with Skills Directory data", () => {
+test("SkillSelector reuses AgentSelector design with Skill Directory data", () => {
 	assert.match(COMPONENT_SOURCE, /DEFAULT_SKILLS/u);
 	assert.match(COMPONENT_SOURCE, /skills = DEFAULT_SKILLS/u);
 	assert.match(COMPONENT_SOURCE, /<AgentSelector/u);

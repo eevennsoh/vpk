@@ -7,7 +7,7 @@ const CHAT_CAPABLE_COMPONENT_DOCS = new Set([
 	"projects/sidebar-chat",
 	"projects/skills",
 	"projects/studio",
-	"utility/tools-invocation",
+	"utility/tool-invocation",
 ]);
 
 interface ComponentDocLayoutProps {

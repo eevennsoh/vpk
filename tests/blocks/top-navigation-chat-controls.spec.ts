@@ -58,9 +58,9 @@ for (const route of ["/jira-team-eu26", "/confluence"]) {
 }
 
 
-test("shared surface controls open and close the original Golden Journeys floating chat", async ({ page }) => {
+test("shared surface controls open and close the original Golden Journey floating chat", async ({ page }) => {
 	test.setTimeout(60_000);
-	await page.goto(`${origin}/jira-golden-journeys-v0`, { waitUntil: "domcontentloaded" });
+	await page.goto(`${origin}/jira-golden-journey-v0`, { waitUntil: "domcontentloaded" });
 	await page.getByRole("button", { name: "Select Kanban", exact: true }).click();
 	await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
 	const chat = page.locator('[data-rovo-chat-placement="floating"]');
@@ -74,7 +74,7 @@ test("shared surface controls open and close the original Golden Journeys floati
 for (const width of [1440, 390]) test(`Card kanban steps use keyboard navigation at ${width}px`, async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width, height: 900 });
-	await page.goto(`${origin}/jira-golden-journeys-v0`, { waitUntil: "domcontentloaded" });
+	await page.goto(`${origin}/jira-golden-journey-v0`, { waitUntil: "domcontentloaded" });
 	await page.getByRole("button", { name: "Select Card kanban" }).click();
 	await expect(page.getByText("Card kanban · 1 of 5").filter({ visible: true })).toBeVisible();
 	await page.keyboard.press("ArrowRight");

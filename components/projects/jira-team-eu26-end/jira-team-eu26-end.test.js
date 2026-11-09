@@ -92,7 +92,7 @@ test("the keynote uses the same card movement presentation as Team EU26", () => 
 });
 
 test("the keynote floating chat retains MCB creator attribution through its active overlay", () => {
-	const overlay = readProjectFile("components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx");
+	const overlay = readProjectFile("components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay.tsx");
 	assert.match(PAGE_SOURCE, /<JgpRovoOverlay\s+agentCreator=\{JIRA_TEAM_EU26_END_PRESENTERS\.mike\}/u);
 	assert.match(overlay, /agentCreator\?: AgentResultCreator;/u);
 	assert.match(overlay, /<RovoFloatingChat\s+agentCreator=\{agentCreator\}/u);
@@ -246,11 +246,11 @@ test("Team EU board cards use experimental v2 raised defaults", () => {
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /generativeActionFooterActions=\{cardGenerativeActionFooterActions\}/u);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /\.\.\.generativeActionFooterActions/u);
 	assert.match(PAGE_SOURCE, /onBrowseAgents: \(\) => setAgentsDirectoryOpen\(true\)/u);
-	assert.match(PAGE_SOURCE, /onBrowseSkills: \(\) => setSkillsDirectoryOpen\(true\)/u);
+	assert.match(PAGE_SOURCE, /onBrowseSkills: \(\) => setSkillDirectoryOpen\(true\)/u);
 	assert.match(PAGE_SOURCE, /onCreateAgent: \(\) => router\.push\("\/studio"\)/u);
 	assert.match(PAGE_SOURCE, /onCreateSkill: \(\) => router\.push\("\/skills"\)/u);
 	assert.match(PAGE_SOURCE, /<AgentsDirectoryDialog[\s\S]*open=\{agentsDirectoryOpen\}/u);
-	assert.match(PAGE_SOURCE, /<SkillsDirectoryDialog[\s\S]*open=\{skillsDirectoryOpen\}/u);
+	assert.match(PAGE_SOURCE, /<SkillDirectoryDialog[\s\S]*open=\{skillDirectoryOpen\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /iconScale\?: JiraIssueIconScale;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /subtaskChrome\?: JiraIssueChrome;/u);
 	assert.match(

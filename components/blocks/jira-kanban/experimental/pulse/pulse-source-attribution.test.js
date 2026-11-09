@@ -41,7 +41,7 @@ test("Pulse opens the shared sources preview menu from the app stack button", ()
 		APPSTACK_SOURCE,
 		/import \{\s*PULSE_SOURCE_PREVIEW_PAGES,\s*PULSE_SOURCES,\s*\} from "@\/components\/blocks\/jira-kanban\/experimental\/pulse\/data\/pulse-sources-preview";/u,
 	);
-	assert.match(APPSTACK_SOURCE, /<SourcesPreviewMenu/u);
+	assert.match(APPSTACK_SOURCE, /<SourcePreviewMenu/u);
 	assert.match(APPSTACK_SOURCE, /pages=\{PULSE_SOURCE_PREVIEW_PAGES\}/u);
 	assert.match(
 		APPSTACK_SOURCE,
@@ -56,7 +56,7 @@ test("Pulse opens the shared sources preview menu from the app stack button", ()
 		/className="w-auto min-w-fit shrink-0 justify-start overflow-visible"/u,
 	);
 	assert.doesNotMatch(APPSTACK_SOURCE, /variant="ghost"/u);
-	assert.doesNotMatch(APPSTACK_SOURCE, /SOURCES_PREVIEW_PAGES/u);
+	assert.doesNotMatch(APPSTACK_SOURCE, /\bSOURCE_PREVIEW_PAGES\b/u);
 	assert.doesNotMatch(APPSTACK_SOURCE, /function SourcePreviewCard/u);
 	assert.doesNotMatch(STORY_SOURCE, /function SourcePreviewCard/u);
 });

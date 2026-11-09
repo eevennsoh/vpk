@@ -16,7 +16,7 @@ const EXPERIMENTAL_PAGE_SOURCE = [
 	readProjectFile("components/blocks/jira-kanban/experimental/experimental-page-types.ts"),
 ].join("\n");
 const JGP_ROVO_OVERLAY_SOURCE = readProjectFile(
-	"components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx",
+	"components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay.tsx",
 );
 const ROVO_FLOATING_CHAT_SOURCE = readProjectFile(
 	"components/projects/rovo-floating-chat/components/rovo-floating-chat.tsx",

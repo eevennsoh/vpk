@@ -1,6 +1,6 @@
 import type { JiraWorkItemContextResources } from "@/components/blocks/jira-work-item/data/session-state";
 
-/** Seeded count for filled / Golden Journeys surfaces so the notification is visible. */
+/** Seeded count for filled / Golden Journey surfaces so the notification is visible. */
 export const DEFAULT_NEW_INSIGHTS_COUNT = 2;
 
 /**

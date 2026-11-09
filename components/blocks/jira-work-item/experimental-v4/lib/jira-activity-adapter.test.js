@@ -721,10 +721,10 @@ test("maps an agent progress checklist, outputs, and image proof into its Jira c
 		},
 	}];
 	const imageAttachment = {
-		src: "/jira-golden-journeys-v2/guest-checkout-final.png",
+		src: "/jira-golden-journey-v2/guest-checkout-final.png",
 		alt: "Final guest checkout design",
 		filename: "guest-checkout-final.png",
-		href: "/jira-golden-journeys-v2/guest-checkout-final.png",
+		href: "/jira-golden-journey-v2/guest-checkout-final.png",
 	};
 	const [entry] = adapter.mapActivityEventsToJiraEntries([
 		{

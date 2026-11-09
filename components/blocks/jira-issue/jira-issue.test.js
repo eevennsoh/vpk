@@ -398,7 +398,7 @@ test("Jira issue keeps activity rows composer-free and uses one shared assignmen
 	);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /rowSessionFlyout|JiraSessionFlyoutTrigger|JiraSessionFlyoutSurface/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentList/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentState/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="w-full shadow-overlay"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /activities\.map\(\(activity, index\)/u);
 });
@@ -661,7 +661,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isAwaitingInput = !isCompletedRow && summary\.priorityState === "awaiting-input";/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /shouldCycleSingleAgentLabel|JiraIssueCyclingAgentLabel/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /status: activity\.label,[\s\S]*statusSequence: activity\.state === "working" \? getJiraIssueAgentWorkingLabels\(activity\) : undefined,[\s\S]*statusCycleIntervalMs: activity\.cycleIntervalMs[\s\S]*statusCycleJitterMs: activity\.cycleIntervalJitterMs/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /\{rowLabel\}[\s\S]*<AnimatedDots/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /\{rowLabel\}[\s\S]*<AnimatedDot/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
 		/if \(isAwaitingInput\) \{[\s\S]*className="flex min-w-0 flex-1 items-baseline overflow-hidden text-sm leading-5 text-text"/u,
@@ -677,7 +677,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="block min-w-0 flex-1 truncate text-sm leading-5 text-text"[\s\S]*\{rowLabel\}/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/if \(isAwaitingInput\) \{[\s\S]*?<span className="block min-w-0 truncate text-sm leading-5">\{rowLabel\}<\/span>[\s\S]*?<AnimatedDots \/>/u,
+		/if \(isAwaitingInput\) \{[\s\S]*?<span className="block min-w-0 truncate text-sm leading-5">\{rowLabel\}<\/span>[\s\S]*?<AnimatedDot \/>/u,
 	);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /PixelLoader/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="flex min-w-0 flex-1 items-center gap-2"/u);
@@ -709,7 +709,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<HoverCard/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentList/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentState/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentActivityRow[\s\S]*onOpenChange=\{\(open\) => \{[\s\S]*setAssignmentHoverOpen\(open\);[\s\S]*onOpenChange\?\.\(open\);[\s\S]*onViewChat=\{onViewChat\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome: boolean;/u);
 	assert.match(
@@ -796,7 +796,7 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*session=\{\{ \.\.\.session, status: run\.state === "failed" \? "stopped" : session\.status \}\}/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} onOpenChange=\{onOpenChange\} \/>/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /flyout="session"/u);
-	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /AgentStatesComposer/u);
+	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /AgentStateComposer/u);
 	assert.doesNotMatch(SOURCE, /showSeparator/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*runs=\{visibleAgentDoneRuns\}/u);
 });
@@ -875,9 +875,9 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /id: "dependency-mapper"[\s\S]*labels: DEPENDENCY_MAPPER_LABELS,[\s\S]*cycleIntervalMs: 6800,[\s\S]*cycleIntervalJitterMs: 2200/);
 	assert.match(PAGE_SOURCE, /const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = \[[\s\S]*\.\.\.JIRA_ISSUE_AGENT_ACTIVITIES\[0\],[\s\S]*label: "Needs input"[\s\S]*state: "awaiting-input"[\s\S]*JIRA_ISSUE_AGENT_ACTIVITIES\[1\]/);
 	assert.match(PAGE_SOURCE, /import \{ RovoChatProvider \} from "@\/app\/contexts";/);
-	assert.match(PAGE_SOURCE, /import \{ ASX_CHAT_AGENT_PROFILES \} from "@\/components\/projects\/jira-golden-journeys-v0\/data\/agent-chat-data";/);
-	assert.match(PAGE_SOURCE, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/jira-golden-journeys-v0\/components\/jira-golden-journeys-v0-rovo-overlay";/);
-	assert.match(PAGE_SOURCE, /import \{ useAsxAgentChatDemo \} from "@\/components\/projects\/jira-golden-journeys-v0\/hooks\/use-jira-golden-journeys-v0-agent-chat-demo";/);
+	assert.match(PAGE_SOURCE, /import \{ ASX_CHAT_AGENT_PROFILES \} from "@\/components\/projects\/jira-golden-journey-v0\/data\/agent-chat-data";/);
+	assert.match(PAGE_SOURCE, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/jira-golden-journey-v0\/components\/jira-golden-journey-v0-rovo-overlay";/);
+	assert.match(PAGE_SOURCE, /import \{ useAsxAgentChatDemo \} from "@\/components\/projects\/jira-golden-journey-v0\/hooks\/use-jira-golden-journey-v0-agent-chat-demo";/);
 	assert.match(PAGE_SOURCE, /import \{[\s\S]*JiraIssue,[\s\S]*type JiraIssueAgentActivity,[\s\S]*type JiraIssueCompletedAgentRun,[\s\S]*type JiraIssueGenerativeActionRequest,[\s\S]*\} from "@\/components\/blocks\/jira-issue";/);
 	// The demo drops into the floating chat with the activity's agent already
 	// selected (matching ASX), not a blank vanilla Rovo chat.

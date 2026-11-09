@@ -30,10 +30,10 @@ function versionIdentity(version) {
 		experimentalPascal: `ExperimentalV${number}`,
 		experimentalSlug: `experimental-v${number}`,
 		number: Number(number),
-		pascal: `JiraGoldenJourneysV${number}`,
+		pascal: `JiraGoldenJourneyV${number}`,
 		previousVersion: `v${Number(number) - 1}`,
-		slug: `jira-golden-journeys-v${number}`,
-		title: `Jira Golden Journeys v${number}`,
+		slug: `jira-golden-journey-v${number}`,
+		title: `Jira Golden Journey v${number}`,
 		version: `v${number}`,
 	};
 }
@@ -323,17 +323,17 @@ function addFixtureValidationCommands(root, { failValidation = false } = {}) {
 		}],
 		validationCommands: [
 			{
-				command: ["node", "scripts/verify-fixture.js", "repo-map", "jira-golden-journeys-v3"],
+				command: ["node", "scripts/verify-fixture.js", "repo-map", "jira-golden-journey-v3"],
 				id: "verify-repo-map",
 			},
 			{
 				command: failValidation
 					? ["node", "scripts/fail-validation.js"]
-					: ["node", "scripts/verify-fixture.js", "catalog", "jira-golden-journeys-v3"],
+					: ["node", "scripts/verify-fixture.js", "catalog", "jira-golden-journey-v3"],
 				id: "verify-catalog",
 			},
 			{
-				command: ["node", "scripts/verify-fixture.js", "lazy", "jira-golden-journeys-v3"],
+				command: ["node", "scripts/verify-fixture.js", "lazy", "jira-golden-journey-v3"],
 				id: "verify-lazy-load",
 			},
 		],
@@ -354,10 +354,10 @@ test("dry-run planning is deterministic for the v1 to v2 fixture shape", async (
 		const second = summarizePlan(createJiraVariantPlan(options));
 
 		assert.deepEqual(first, second);
-		assert.equal(first.source.slug, "jira-golden-journeys-v1");
-		assert.equal(first.target.slug, "jira-golden-journeys-v2");
-		assert.ok(first.copies.some((entry) => entry.target === "app/jira-golden-journeys-v2/page.tsx"));
-		assert.ok(first.copies.some((entry) => entry.target === "app/data/jira-golden-journeys-v2-contract.test.js"));
+		assert.equal(first.source.slug, "jira-golden-journey-v1");
+		assert.equal(first.target.slug, "jira-golden-journey-v2");
+		assert.ok(first.copies.some((entry) => entry.target === "app/jira-golden-journey-v2/page.tsx"));
+		assert.ok(first.copies.some((entry) => entry.target === "app/data/jira-golden-journey-v2-contract.test.js"));
 		assert.ok(first.registrations.some((entry) => entry.file === "scripts/js-unit-test-manifest.mjs"));
 	} finally {
 		rmSync(root, { force: true, recursive: true });
@@ -393,8 +393,8 @@ test("dry-run planning covers v2 to v3 assets, browser tests, and lazy-load wiri
 			target: "v3",
 		}));
 
-		assert.ok(summary.copies.some((entry) => entry.target === "tests/projects/jira-golden-journeys-v3-story.spec.ts"));
-		assert.ok(summary.copies.some((entry) => entry.target === "public/illustration/jira-golden-journeys-v3/proof.png"));
+		assert.ok(summary.copies.some((entry) => entry.target === "tests/projects/jira-golden-journey-v3-story.spec.ts"));
+		assert.ok(summary.copies.some((entry) => entry.target === "public/illustration/jira-golden-journey-v3/proof.png"));
 		assert.ok(summary.copies.some((entry) => (
 			entry.target === "components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item.tsx"
 		)));
@@ -496,7 +496,7 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 		]) {
 			assert.match(prepared(contractOwner), /"experimental-v4": ExperimentalV4JiraWorkItem/u);
 		}
-		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journeys-v4")), false);
+		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v4")), false);
 		assert.equal(existsSync(path.join(root, "components/blocks/jira-work-item/experimental-v4")), false);
 	} finally {
 		rmSync(root, { force: true, recursive: true });
@@ -541,7 +541,7 @@ test("planner rejects symbolic links anywhere in a copied source chain", async (
 		writeFixtureFile(external, "outside.ts", "export const outside = true;\n");
 		symlinkSync(
 			path.join(external, "outside.ts"),
-			path.join(root, "components/projects/jira-golden-journeys-v1/outside.ts"),
+			path.join(root, "components/projects/jira-golden-journey-v1/outside.ts"),
 		);
 		const { createJiraVariantPlan, loadVariantManifest } = await loadGenerator();
 		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
@@ -613,7 +613,7 @@ test("scoped glob traversal ignores unrelated special files and broken links", a
 		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
 		const plan = createJiraVariantPlan({ manifest, root, source: "v1", target: "v2" });
 		assert.ok(plan.copyOperations.some((entry) => (
-			entry.target === "tests/projects/jira-golden-journeys-v2-story.spec.ts"
+			entry.target === "tests/projects/jira-golden-journey-v2-story.spec.ts"
 		)));
 	} finally {
 		rmSync(root, { force: true, recursive: true });
@@ -623,12 +623,12 @@ test("scoped glob traversal ignores unrelated special files and broken links", a
 test("planner stops when any target path already exists", async () => {
 	const root = createFixtureWorkspace({ source: "v1" });
 	try {
-		writeFixtureFile(root, "app/jira-golden-journeys-v2/page.tsx", "occupied\n");
+		writeFixtureFile(root, "app/jira-golden-journey-v2/page.tsx", "occupied\n");
 		const { createJiraVariantPlan, loadVariantManifest } = await loadGenerator();
 		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
 		assert.throws(
 			() => createJiraVariantPlan({ manifest, root, source: "v1", target: "v2" }),
-			/target path already exists: app\/jira-golden-journeys-v2/u,
+			/target path already exists: app\/jira-golden-journey-v2/u,
 		);
 	} finally {
 		rmSync(root, { force: true, recursive: true });
@@ -638,8 +638,8 @@ test("planner stops when any target path already exists", async () => {
 test("planner rejects ambiguous source content that already contains the target identity", async () => {
 	const root = createFixtureWorkspace({ source: "v1" });
 	try {
-		const sourcePath = path.join(root, "components/projects/jira-golden-journeys-v1/page.tsx");
-		writeFileSync(sourcePath, `${readFileSync(sourcePath, "utf8")}\n// jira-golden-journeys-v2\n`);
+		const sourcePath = path.join(root, "components/projects/jira-golden-journey-v1/page.tsx");
+		writeFileSync(sourcePath, `${readFileSync(sourcePath, "utf8")}\n// jira-golden-journey-v2\n`);
 		const { createJiraVariantPlan, loadVariantManifest } = await loadGenerator();
 		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
 		assert.throws(
@@ -667,7 +667,7 @@ test("planner rejects duplicate rewrite sources and unresolved source identifier
 		incompleteManifest.rewrites = incompleteManifest.rewrites.filter((entry) => entry.from !== "{sourcePascal}");
 		assert.throws(
 			() => createJiraVariantPlan({ manifest: incompleteManifest, root, source: "v1", target: "v2" }),
-			/unresolved source identifier.*JiraGoldenJourneysV1/u,
+			/unresolved source identifier.*JiraGoldenJourneyV1/u,
 		);
 	} finally {
 		rmSync(root, { force: true, recursive: true });
@@ -677,7 +677,7 @@ test("planner rejects duplicate rewrite sources and unresolved source identifier
 test("fixture helper does not create a target before the generator runs", () => {
 	const root = createFixtureWorkspace({ source: "v1" });
 	try {
-		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journeys-v2")), false);
+		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v2")), false);
 	} finally {
 		rmSync(root, { force: true, recursive: true });
 	}
@@ -708,16 +708,16 @@ test("mutation applies the approved plan and reports registration and validation
 			entry.skipped || entry.insertedCount > 0
 		)));
 		const targetPage = readFileSync(
-			path.join(root, "components/projects/jira-golden-journeys-v3/page.tsx"),
+			path.join(root, "components/projects/jira-golden-journey-v3/page.tsx"),
 			"utf8",
 		);
-		assert.match(targetPage, /JiraGoldenJourneysV3Page/u);
+		assert.match(targetPage, /JiraGoldenJourneyV3Page/u);
 		assert.match(targetPage, /ExperimentalV3JiraWorkItem/u);
-		assert.doesNotMatch(targetPage, /jira-golden-journeys-v2|JiraGoldenJourneysV2|ExperimentalV2/u);
+		assert.doesNotMatch(targetPage, /jira-golden-journey-v2|JiraGoldenJourneyV2|ExperimentalV2/u);
 		// A fork records where it came from so `control-vpk where` can tell agents which variant is which.
 		assert.match(
 			readFileSync(path.join(root, "app/data/component-manifest.ts"), "utf8"),
-			/"projects\/jira-golden-journeys-v3": \{\n\t\tbasedOn: "jira-golden-journeys-v2",\n\t\},/u,
+			/"projects\/jira-golden-journey-v3": \{\n\t\tbasedOn: "jira-golden-journey-v2",\n\t\},/u,
 		);
 		assert.deepEqual(
 			JSON.parse(readFileSync(path.join(root, ".agents/knowledge/repo-map.json"), "utf8")),
@@ -739,10 +739,10 @@ test("mutation stops before writing when a planned source changes", async () => 
 		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
 		Object.assign(manifest, addFixtureValidationCommands(root));
 		const plan = createJiraVariantPlan({ manifest, root, source: "v2", target: "v3" });
-		writeFixtureFile(root, "components/projects/jira-golden-journeys-v2/page.tsx", "changed after planning\n");
+		writeFixtureFile(root, "components/projects/jira-golden-journey-v2/page.tsx", "changed after planning\n");
 
 		assert.throws(() => applyJiraVariantPlan(plan), /source changed after planning/u);
-		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journeys-v3")), false);
+		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v3")), false);
 	} finally {
 		rmSync(root, { force: true, recursive: true });
 	}
@@ -763,7 +763,7 @@ test("mutation rolls back copied paths, registrations, and generated files on va
 		const plan = createJiraVariantPlan({ manifest, root, source: "v2", target: "v3" });
 
 		assert.throws(() => applyJiraVariantPlan(plan), /command verify-catalog failed with status 7/u);
-		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journeys-v3")), false);
+		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v3")), false);
 		assert.equal(readFileSync(path.join(root, "app/data/components.ts"), "utf8"), componentsBefore);
 		assert.equal(readFileSync(path.join(root, ".agents/knowledge/repo-map.json"), "utf8"), repoMapBefore);
 	} finally {
@@ -801,7 +801,7 @@ test("CLI dry-run JSON is stable and never creates the target", async () => {
 			"run",
 			"verify:repo-map",
 		]);
-		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journeys-v3")), false);
+		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v3")), false);
 	} finally {
 		rmSync(root, { force: true, recursive: true });
 	}
@@ -849,7 +849,7 @@ test("CLI apply requires the exact reviewed plan fingerprint before writing", as
 		});
 		assert.equal(missing.status, 1);
 		assert.match(missing.stderr, /--apply requires --plan-fingerprint/u);
-		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journeys-v3")), false);
+		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v3")), false);
 
 		const wrong = spawnSync(process.execPath, [
 			...baseArgs,
@@ -859,7 +859,7 @@ test("CLI apply requires the exact reviewed plan fingerprint before writing", as
 		], { cwd: process.cwd(), encoding: "utf8" });
 		assert.equal(wrong.status, 1);
 		assert.match(wrong.stderr, /reviewed plan fingerprint does not match/u);
-		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journeys-v3")), false);
+		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v3")), false);
 
 		const dryRun = spawnSync(process.execPath, baseArgs, {
 			cwd: process.cwd(),
@@ -875,7 +875,7 @@ test("CLI apply requires the exact reviewed plan fingerprint before writing", as
 		], { cwd: process.cwd(), encoding: "utf8" });
 		assert.equal(applied.status, 0, applied.stderr);
 		assert.equal(JSON.parse(applied.stdout).planFingerprint, planFingerprint);
-		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journeys-v3")), true);
+		assert.equal(existsSync(path.join(root, "components/projects/jira-golden-journey-v3")), true);
 	} finally {
 		rmSync(root, { force: true, recursive: true });
 	}

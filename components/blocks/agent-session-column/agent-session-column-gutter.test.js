@@ -33,7 +33,7 @@ const EXPERIMENTAL_HEADER_SOURCE = readFileSync(
 	"utf8",
 );
 const JIRA_PROJECT_SOURCE = readFileSync(
-	join(__dirname, "../../projects/jira-golden-journeys-v4/page.tsx"),
+	join(__dirname, "../../projects/jira-golden-journey-v4/page.tsx"),
 	"utf8",
 );
 const BOARD_SOURCE = readFileSync(

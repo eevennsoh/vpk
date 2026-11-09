@@ -38,6 +38,12 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		size: "portrait",
 	},
 	{
+		id: "development-panel",
+		title: "Development panel",
+		description: "View development activity and pull requests.",
+		size: "portrait",
+	},
+	{
 		id: "e2e-journey",
 		title: "e2e Journey",
 		description: "Follow PAY-999 from preparation through delivery.",

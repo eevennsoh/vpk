@@ -16,21 +16,21 @@ test("keeps existing local-dev path exclusions", () => {
 	assert.equal(isReactGrabDisabledPath("/make"), true);
 	assert.equal(isReactGrabDisabledPath("/jira-team-eu26-end"), true);
 	assert.equal(isReactGrabDisabledPath("/jira-team-eu26"), false);
-	assert.equal(isReactGrabDisabledPath("/jira-golden-journeys-v4"), false);
+	assert.equal(isReactGrabDisabledPath("/jira-golden-journey-v4"), false);
 });
 
 test("hides react-grab on Atlas Tunnel hosts even for project routes", () => {
 	assert.equal(
 		shouldDisableReactGrab({
 			hostname: "esoh-297426c52eae.public.atlastunnel.com",
-			pathname: "/jira-golden-journeys-v4",
+			pathname: "/jira-golden-journey-v4",
 		}),
 		true,
 	);
 	assert.equal(
 		shouldDisableReactGrab({
 			hostname: "project.localhost",
-			pathname: "/jira-golden-journeys-v4",
+			pathname: "/jira-golden-journey-v4",
 		}),
 		false,
 	);

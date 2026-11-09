@@ -14,7 +14,7 @@ const EXPECTED_SLUGS = [
 	"area-chart",
 	"bar-chart",
 	"candlestick-chart",
-	"chart-utilities",
+	"chart-utility",
 	"choropleth-chart",
 	"composed-chart",
 	"funnel-chart",

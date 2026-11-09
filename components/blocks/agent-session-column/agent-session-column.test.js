@@ -245,7 +245,7 @@ test("the board column commits through the same captured set as Insights", () =>
 		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, agentSessionMemberId\),\s*PULSE_TIMELINE\.members,\s*PULSE_TIMELINE\.workItems,/u,
 	);
 	// The header's assignee filter narrows the status columns, so it narrows
-	// this column too. Golden Journeys aliases board assignees onto session
+	// this column too. Golden Journey aliases board assignees onto session
 	// members before the loose-work filter runs.
 	assert.match(BOARD_PAGE_SOURCE, /agentSessionAssigneeIdAliases\?: Readonly<Record<string, string>>;/u);
 	assert.match(

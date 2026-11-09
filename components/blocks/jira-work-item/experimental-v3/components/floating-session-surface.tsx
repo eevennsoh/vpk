@@ -6,8 +6,8 @@ import { useRovoChatControls } from "@/app/contexts";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { SESSION_SCRIPTS } from "@/components/blocks/jira-work-item/data/session-scripts";
-import { AsxRovoOverlay } from "@/components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay";
-import { useAsxAgentChatDemo } from "@/components/projects/jira-golden-journeys-v0/hooks/use-jira-golden-journeys-v0-agent-chat-demo";
+import { AsxRovoOverlay } from "@/components/projects/jira-golden-journey-v0/components/jira-golden-journey-v0-rovo-overlay";
+import { useAsxAgentChatDemo } from "@/components/projects/jira-golden-journey-v0/hooks/use-jira-golden-journey-v0-agent-chat-demo";
 import type { ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 
 export type SessionReplyInterceptor = (

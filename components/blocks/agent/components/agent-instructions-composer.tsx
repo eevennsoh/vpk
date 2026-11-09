@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
 
-import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
-import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
+import { AgentTemplateDialog } from "@/components/blocks/agent-template";
+import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-template/data/demo-template-agents";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import {
@@ -246,7 +246,7 @@ export function AgentInstructionsComposer({
 					{bottomSlot}
 				</div>
 			) : null}
-			<AgentTemplatesDialog
+			<AgentTemplateDialog
 				agents={DEMO_AGENT_TEMPLATES}
 				open={templatesOpen}
 				onOpenChange={setTemplatesOpen}

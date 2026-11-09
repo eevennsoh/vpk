@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { withDesignVariants } from "@/tests/helpers/design-variants";
 import { appUrl } from "@/tests/helpers/origin";
 
-const JIRA_GOLDEN_JOURNEYS_V4_ROUTE = "/jira-golden-journeys-v4";
+const JIRA_GOLDEN_JOURNEY_V4_ROUTE = "/jira-golden-journey-v4";
 
 const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
 const AGENT_SESSION_PANEL_WIDTH_PX = 360;
@@ -53,8 +53,8 @@ async function openBoard(page: Page, options?: { panelVariant?: boolean }): Prom
 	// independent of the settings dropdown; one test below opens the board
 	// without it and drives the real menu to prove the toggle is wired.
 	const route = options?.panelVariant === undefined
-		? JIRA_GOLDEN_JOURNEYS_V4_ROUTE
-		: withDesignVariants(JIRA_GOLDEN_JOURNEYS_V4_ROUTE, { panel: options.panelVariant });
+		? JIRA_GOLDEN_JOURNEY_V4_ROUTE
+		: withDesignVariants(JIRA_GOLDEN_JOURNEY_V4_ROUTE, { panel: options.panelVariant });
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto(appUrl(route), { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({

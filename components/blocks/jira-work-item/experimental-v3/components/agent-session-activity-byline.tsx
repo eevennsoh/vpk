@@ -4,7 +4,7 @@ import { useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 
@@ -111,7 +111,7 @@ export function WorkingSessionActivityByline({
 			{needsUserInput && activity !== null ? (
 				<span className="inline-flex min-w-0 items-baseline">
 					<Shimmer as="span">{activity}</Shimmer>
-					<AnimatedDots />
+					<AnimatedDot />
 				</span>
 			) : activity}
 		</CyclingByline>
