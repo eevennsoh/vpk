@@ -513,7 +513,6 @@ export function JiraActivityComment({
 			type="button"
 			variant={threaded ? "ghost" : "link"}
 		>
-			{threaded ? <span aria-hidden className="absolute -left-7 flex size-4 items-center justify-center text-icon-subtle">{repliesExpanded ? <ShrinkVerticalIcon label="" size="small" /> : <GrowVerticalIcon label="" size="small" />}</span> : null}
 			{renderEarlierRepliesLabel ? renderEarlierRepliesLabel(replies.slice(0, replies.length - replyPreviewCount), repliesExpanded) : <>
 				{repliesExpanded ? "Hide earlier replies" : "Show more replies"}
 			</>}
@@ -671,7 +670,15 @@ export function JiraActivityComment({
 			replies={
 				hasReplies ? (
 					<>
-					{threaded && earlierRepliesToggle ? <div className="relative py-3"><ThreadContinuation /><div className="relative flex">{earlierRepliesToggle}</div></div> : earlierRepliesToggle}
+					{threaded && earlierRepliesToggle ? (
+						<div className="relative py-3">
+							<ThreadContinuation />
+							<span aria-hidden className="absolute -left-6 top-1/2 flex h-5 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-surface text-icon-subtle" data-jira-activity-reply-toggle-icon>
+								{repliesExpanded ? <ShrinkVerticalIcon label="" size="small" /> : <GrowVerticalIcon label="" size="small" />}
+							</span>
+							<div className="relative flex">{earlierRepliesToggle}</div>
+						</div>
+					) : earlierRepliesToggle}
 					<div
 						aria-label="Replies"
 						className={cn("grid", threaded ? "gap-0" : "gap-2", repliesExpanded || hasReplyPreview ? null : "hidden")}

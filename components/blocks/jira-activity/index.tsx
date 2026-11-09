@@ -45,6 +45,8 @@ export interface JiraActivityProps {
 	composer?: ReactNode | null;
 	/** Connect every timeline entry, or draw branches only within comment threads. */
 	connectorStyle?: "timeline" | "thread";
+	/** Continue the last timeline stem into a decorative fade. */
+	fadeAfterLast?: boolean;
 	/** Plain comment and reply header layout. */
 	commentHeaderLayout?: JiraActivityCardProps["headerLayout"];
 	/** Optional trailing action for each comment card. */
@@ -145,6 +147,7 @@ export function JiraActivity({
 	actors = [],
 	composer,
 	connectorStyle = "timeline",
+	fadeAfterLast = false,
 	commentHeaderLayout,
 	renderCommentAction,
 	renderCommentTools,
@@ -427,7 +430,7 @@ export function JiraActivity({
 												: undefined
 										}
 										// Threads keep one continuous spine: each stem runs on past its replies' branches to the next row.
-										isLast={isLast}
+										isLast={isLast && !fadeAfterLast}
 										size={isCardEntry ? "card" : "event"}
 										tone={connectorStyle === "thread" ? "thread" : "timeline"}
 									/>
@@ -444,6 +447,11 @@ export function JiraActivity({
 							</li>
 						);
 					})}
+					{fadeAfterLast && orderedEntries.length > 0 ? (
+						<li aria-hidden className="flex w-8 justify-center" data-jira-activity-end-fade>
+							<span className={cn("h-4 w-px [mask-image:linear-gradient(to_bottom,black,transparent)]", connectorStyle === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} />
+						</li>
+					) : null}
 				</ol>
 			)}
 

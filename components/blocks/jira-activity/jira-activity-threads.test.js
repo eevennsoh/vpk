@@ -702,13 +702,14 @@ test("opening a controlled reply preserves a saved draft and prefills a mention 
 	assert.equal(emptyEditor.querySelector('[data-mention-category="human"]') !== null, true);
 });
 
-function renderThreadConnectors(connectorStyle) {
+function renderThreadConnectors(connectorStyle, fadeAfterLast = false) {
 	const actor = { id: "thread-author", name: "Annie Cook", kind: "person" };
 	return renderComponent({
 		entry: "components/blocks/jira-activity/index.tsx",
 		exportName: "JiraActivity",
 		props: {
 			connectorStyle,
+			fadeAfterLast,
 			composer: null,
 			hideHeader: true,
 			currentUser: actor,
@@ -738,6 +739,10 @@ test("thread connectors branch only inside discussions while the spine continues
 	assert.equal(visibleBranches().length, 1, "only the latest reply branches from the timeline");
 	assert.equal(visibleBranches().at(-1).parentElement.querySelector("[data-jira-activity-thread-continuation]") === null, true);
 	assert.equal(visibleBranches().every((branch) => branch.getAttribute("aria-hidden") === "true"), true);
+	const replyToggleIcon = thread.querySelector("[data-jira-activity-reply-toggle-icon]");
+	assert.equal(replyToggleIcon.getAttribute("aria-hidden"), "true");
+	assert.equal(replyToggleIcon.classList.contains("bg-surface"), true);
+	assert.equal(replyToggleIcon.closest("button"), null);
 	await view.click(view.getByRole("button", { name: "Show more replies" }));
 	assert.equal(visibleBranches().length, 2);
 	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
@@ -753,6 +758,16 @@ test("the default activity connector remains a continuous timeline", async () =>
 	assert.equal(document.querySelectorAll("[data-jira-activity-timeline-stem]").length, 1);
 	assert.equal(document.querySelector("[data-jira-activity-thread-branch]") === null, true);
 	assert.equal(document.querySelector("[data-jira-activity-thread-stem]") === null, true);
+});
+
+test("the final timeline entry continues into a decorative fade when requested", async () => {
+	await renderThreadConnectors("thread", true);
+	const lastEntry = document.querySelector('[data-jira-activity-entry-id="standalone"]');
+	const stem = lastEntry.querySelector("[data-jira-activity-timeline-stem]");
+	const fade = document.querySelector("[data-jira-activity-end-fade]");
+	assert.equal(stem !== null, true);
+	assert.equal(fade.getAttribute("aria-hidden"), "true");
+	assert.equal(lastEntry.nextElementSibling === fade, true);
 });
 
 
