@@ -33,6 +33,8 @@ cleanup.
   intact and stop; do not bypass branch protection or start a gated workflow.
 - Preserve dirty or divergent state in the persistent `main` checkout. A
   successful remote push does not authorize discarding local work to sync it.
+- Always attempt to sync local `main` with freshly fetched `origin/main`, even
+  when there is nothing to commit or push. Report any blocker.
 
 ## Workflow
 
@@ -48,8 +50,9 @@ cleanup.
    ```
 
    If the tree is clean and there are no commits ahead of the freshly fetched
-   `origin/main`, report that there is nothing to commit or push. A branch
-   behind `main` alone does not need an empty commit or a push.
+   `origin/main`, attempt the local-main sync in step 9 before reporting that
+   there is nothing to commit or push. A branch behind `main` alone does not
+   need an empty commit or a push.
 
 2. Record the current branch. On a feature branch or detached HEAD, warn once
    that its resulting commit will be pushed directly to `main`, then continue;
@@ -104,27 +107,25 @@ cleanup.
    push returns `GH006`, stop and report the rejection; do not treat protection
    failures as a non-fast-forward retry.
 
-9. After a successful push, sync local `main` only when it can fast-forward
-   without touching user edits. If this checkout owns `main`, it already moved.
-   Otherwise find the owner with `git worktree list --porcelain` and use:
-
-   ```bash
-   git fetch origin main:main
-   # If main is checked out at <path>:
-   git -C <path> merge --ff-only origin/main
-   ```
+9. Before reporting any outcome, including a failed or rejected ship, attempt to
+   sync local `main` when a fresh fetch is possible. Find its owner with
+   `git worktree list --porcelain`. If checked out, check that worktree is clean
+   and run `git -C <path> merge --ff-only origin/main`; if not checked out,
+   fast-forward the ref with `git fetch origin main:main`. Compare the resulting
+   `main` and `origin/main` commits: report synced only when they match. Do not
+   overwrite dirty, ahead, or divergent local work; report the blocker instead.
 
    Remote SSH operations and writes to another checkout may require sandbox
-   approval. If local `main` is dirty or divergent, stop syncing and report it;
-   the remote push remains complete.
+   approval. A failed local sync does not undo a successful remote push.
 
 ## Stop rules
 
-Stop when there is nothing to land, secrets cannot be excluded, a merge cannot
-be resolved safely, the bounded non-fast-forward retry is exhausted, direct push
-is protected by `GH006`, or fetch/push fails after the single appropriate
-environment retry. Never retry blindly or undo a successful push because the
-optional local-main sync failed.
+Stop shipping when there is nothing to land, secrets cannot be excluded, a merge
+cannot be resolved safely, the bounded non-fast-forward retry is exhausted,
+direct push is protected by `GH006`, or fetch/push fails after the single
+appropriate environment retry. Attempt step 9 where safe before reporting the
+outcome; do not retry a failed fetch blindly or undo a successful push because
+the local-main sync failed.
 
 ## Proof and report
 
