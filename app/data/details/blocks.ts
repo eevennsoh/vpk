@@ -33,6 +33,7 @@ import { CURSOR_DETAIL } from "./blocks/cursor";
 import { AGENT_PROGRESS_DETAIL } from "./blocks/agent-progress";
 import { AGENT_ASSIGNMENT_DETAIL } from "./blocks/agent-assignment";
 import { AGENT_SELECTOR_DETAIL } from "./blocks/agent-selector";
+import { JIRA_LOCAL_AGENT_DETAIL } from "./blocks/jira-local-agent";
 import { SKILL_SELECTOR_DETAIL } from "./blocks/skill-selector";
 import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
 import { AGENT_SESSION_DETAIL } from "./blocks/agent-session";
@@ -153,6 +154,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-progress": AGENT_PROGRESS_DETAIL,
 	"agent-assignment": AGENT_ASSIGNMENT_DETAIL,
 	"agent-selector": AGENT_SELECTOR_DETAIL,
+	"jira-local-agent": JIRA_LOCAL_AGENT_DETAIL,
 	"skill-selector": SKILL_SELECTOR_DETAIL,
 	"jira-work-item": JIRA_WORK_ITEM_DETAIL,
 	"agent-session": AGENT_SESSION_DETAIL,

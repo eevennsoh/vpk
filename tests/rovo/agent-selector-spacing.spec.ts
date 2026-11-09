@@ -4,6 +4,57 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ ignoreHTTPSErrors: true });
 
+test("inline Rovo CLI aligns its action and directory label to the agent avatar", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/jira-local-agent"));
+	await page.getByRole("button", { name: "Inline expand" }).click();
+	await page.getByRole("button", { name: "Open local agent" }).click();
+	const agent = page.locator('[data-agent-id="rovo-cli"]');
+	await agent.click();
+	const menu = page.locator("[data-butter-local-menu]");
+	const [avatar, icon, label] = await Promise.all([
+		agent.locator('[aria-hidden="true"]').first().boundingBox(),
+		menu.getByRole("button", { name: "Open in Rovo CLI" }).locator("svg").first().boundingBox(),
+		menu.getByText("Choose your directory").boundingBox(),
+	]);
+	if (!avatar || !icon || !label) throw new Error("Missing Rovo CLI alignment elements");
+	expect(Math.abs(label.x - avatar.x)).toBeLessThan(0.5);
+	expect(Math.abs(icon.x + icon.width / 2 - avatar.x - avatar.width / 2)).toBeLessThan(0.5);
+});
+
+test("Jira Local Agent keeps the recent agent close to its separator", async ({ page }) => {
+	await page.addInitScript(() => window.localStorage.setItem("jira-local-agent-last-used", JSON.stringify("claude-code")));
+	await page.goto(appUrl("/components/blocks/jira-local-agent"));
+	await page.getByRole("button", { name: "Open local agent" }).click();
+	const popup = page.getByRole("dialog", { name: "Local software agents" });
+	const gaps = await popup.evaluate((menu) => {
+		const options = menu.querySelectorAll('[role="option"]');
+		const separator = menu.querySelector("hr");
+		if (!options[0] || !options[1] || !separator) throw new Error("Missing recent agent or separator");
+		return [separator.getBoundingClientRect().top - options[0].getBoundingClientRect().bottom, options[1].getBoundingClientRect().top - separator.getBoundingClientRect().bottom];
+	});
+	expect(gaps).toEqual([4, 4]);
+});
+
+test("Jira Local Agent footer has equal spacing around its separator", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/jira-local-agent"));
+	await page.getByRole("button", { name: "Open local agent" }).click();
+	const popup = page.getByRole("dialog", { name: "Local software agents" });
+	const gaps = await popup.evaluate((menu) => {
+		const lastAgent = Array.from(menu.querySelectorAll('[role="option"]')).at(-1);
+		const separator = Array.from(menu.querySelectorAll("hr")).at(-1);
+		const copy = menu.querySelector('[aria-label="Copy prompt"]');
+		if (!lastAgent || !separator || !copy) throw new Error("Missing local agent menu content");
+		return [separator.getBoundingClientRect().top - lastAgent.getBoundingClientRect().bottom, copy.getBoundingClientRect().top - separator.getBoundingClientRect().bottom];
+	});
+	expect(gaps).toEqual([4, 4]);
+	const copyIcon = popup.getByRole("button", { name: "Copy prompt" }).locator("svg").first();
+	const size = await copyIcon.evaluate((icon) => {
+		const { width, height } = icon.getBoundingClientRect();
+		return { width, height };
+	});
+	expect(size).toEqual({ width: 16, height: 16 });
+});
+
 test("agent favorites reveal on hover or keyboard focus, not lingering pointer focus", async ({ page }) => {
 	await page.goto(appUrl("/sandbox/agent-selector-canvas"));
 	const favorite = page.locator('[data-favorite-id="jira-coding"]').first();

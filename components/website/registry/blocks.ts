@@ -156,6 +156,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-selector-demo"),
 		{ ssr: false },
 	),
+	"jira-local-agent": dynamic(
+		() => import("../demos/blocks/jira-local-agent-demo"),
+		{ ssr: false },
+	),
 	"skill-selector": dynamic(
 		() => import("../demos/blocks/skill-selector-demo"),
 		{ ssr: false },

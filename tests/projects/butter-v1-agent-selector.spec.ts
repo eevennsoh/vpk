@@ -210,7 +210,6 @@ test("duplicative inline search includes bylines and retains Rovo CLI workspaces
 	await search.fill("Rovo CLI");
 	await picker.getByRole("button", { name: "Rovo CLI", exact: true }).click();
 	await expect(picker.getByRole("button", { name: "Open in Rovo CLI" })).toBeVisible();
-	await picker.getByRole("button", { name: "Configure directory" }).click();
 	const directory = picker.getByRole("textbox", { name: "Choose your directory" });
 	await directory.fill("/tmp/selector-workspace");
 	await directory.press("Enter");

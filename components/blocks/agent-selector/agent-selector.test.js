@@ -375,10 +375,15 @@ test("AgentSelector group headings use the semibold subheading treatment", () =>
 	);
 });
 
-test("AgentSelector omits the top picker heading unless a consumer supplies one", () => {
-	assert.match(COMPONENT_SOURCE, /\theading,\n/u);
-	assert.doesNotMatch(COMPONENT_SOURCE, /heading = "Select an agent"/u);
-	assert.match(COMPONENT_SOURCE, /\{heading \? \([\s\S]*<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">\{heading\}<\/p>[\s\S]*\) : null\}/u);
+test("AgentSelector shows a picker heading only when supplied", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/agent-selector/components/agent-selector.tsx",
+		exportName: "AgentSelector",
+		props: { agents: [], heading: "Switch to another agent" },
+	});
+	assert.equal(view.getByText("Switch to another agent").textContent, "Switch to another agent");
+	await view.rerender({ agents: [] });
+	assert.equal(view.queryByText("Switch to another agent"), null);
 });
 
 test("AgentSelector rows use greeting prompt text rhythm and shared agent avatars", () => {
@@ -422,7 +427,7 @@ test("AgentSelector pin actions reveal without permanently reserving label space
 	assert.match(COMPONENT_SOURCE, /tabIndex=\{showPinButton \? 0 : -1\}/u);
 	assert.match(COMPONENT_SOURCE, /event\.preventDefault\(\);[\s\S]*event\.stopPropagation\(\);[\s\S]*onTogglePinned\(agent\.id\);/u);
 	assert.match(COMPONENT_SOURCE, /heading=\{pinnedItemsLabel\}/u);
-	assert.match(COMPONENT_SOURCE, /heading=\{hasPinnedAgents \|\| inProgressAgents\.length > 0 \? moreItemsLabel : undefined\}/u);
+	assert.match(COMPONENT_SOURCE, /heading=\{hasPinnedAgents \|\| inProgressAgents\.length > 0 \? moreItemsLabel : !showSearch \? heading : undefined\}/u);
 	assert.match(COMPONENT_SOURCE, /moreItemsLabel = "More agents"/u);
 	assert.match(COMPONENT_SOURCE, /pinnedItemsLabel = "Pinned"/u);
 	// Pin reveal is instant: a plain span with conditional inline styles, no
@@ -607,7 +612,7 @@ test("AgentSelector fades its list under the search header once scrolled", () =>
 	// it must fade rather than hard-clip — the same treatment the editor-palette
 	// command menus use. Gated on showTopScrollMask so a short list is unmasked.
 	assert.match(COMPONENT_SOURCE, /useHasVerticalOverflow<HTMLDivElement>\(\)/u);
-	assert.match(COMPONENT_SOURCE, /useActiveAgentOption\(listOverflow\.ref\)[\s\S]*ref=\{activeOption\.ref\}/u);
+	assert.match(COMPONENT_SOURCE, /useActiveAgentOption\(listOverflow\.ref, !showSearch\)[\s\S]*ref=\{activeOptionRef\}/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/listOverflow\.showTopScrollMask\s*&& "scroll-mask-top overscroll-contain \[--scroll-mask-fade-size:3rem\]"/u,

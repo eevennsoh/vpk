@@ -15,7 +15,7 @@ import { Icon } from "@/components/ui/icon";
 const softwareIds = ["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent", "rovo-cli"];
 const localLabels: Readonly<Record<string, string>> = { "claude-code": "Claude", "test-agent": "Cursor", "review-agent": "Codex" };
 
-export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onStartSession, onBrowseAgents, onCreateAgent, status, favoriteAgentIds, onFavoriteAgentIdsChange, includeRovoCli = false }: Readonly<{
+export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onStartSession, onBrowseAgents, onCreateAgent, status, favoriteAgentIds, onFavoriteAgentIdsChange, includeRovoCli = true, initialSoftwareLimit = softwareIds.length }: Readonly<{
 	sessions?: readonly AgentSessionItem[];
 	onContinueSession?: (session: AgentSessionItem) => void;
 	onStartSession?: (agent: AgentSelectorAgent) => void;
@@ -25,6 +25,7 @@ export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onSt
 	favoriteAgentIds?: readonly string[];
 	onFavoriteAgentIdsChange?: (ids: readonly string[]) => void;
 	includeRovoCli?: boolean;
+	initialSoftwareLimit?: number;
 }> = {}) {
 	const [feedback, setFeedback] = useState("");
 	const [choosingAgentId, setChoosingAgentId] = useState<string | null>(null);
@@ -54,5 +55,5 @@ export function InlineAgentSelectorDemo({ sessions = [], onContinueSession, onSt
 		];
 	};
 	const favoriteProps = favoriteAgentIds && onFavoriteAgentIdsChange ? { favoriteAgentIds, onFavoriteAgentIdsChange } : { favoriteAgentIds: undefined, onFavoriteAgentIdsChange: undefined };
-	return <InlineAgentSelector agents={agents} softwareAgentIds={softwareIds} getActions={getActions} renderAdditionalActions={includeRovoCli ? (agent) => agent.id === "rovo-cli" && choosingAgentId !== agent.id ? <ProjectButterLocalAgentMenu onPointerEnter={() => undefined} onPointerLeave={() => undefined} onSelectingFolderChange={() => undefined} /> : null : undefined} onActiveAgentChange={() => setChoosingAgentId(null)} status={status ?? feedback} onBrowseAgents={onBrowseAgents ?? (() => setFeedback("Browse agents (preview)"))} onCreateAgent={onCreateAgent ?? (() => setFeedback("Create agent (preview)"))} {...favoriteProps} />;
+	return <InlineAgentSelector agents={agents} softwareAgentIds={softwareIds} initialSoftwareLimit={initialSoftwareLimit} getActions={getActions} renderAdditionalActions={includeRovoCli ? (agent) => agent.id === "rovo-cli" && choosingAgentId !== agent.id ? <ProjectButterLocalAgentMenu inline /> : null : undefined} onActiveAgentChange={() => setChoosingAgentId(null)} status={status ?? feedback} onBrowseAgents={onBrowseAgents ?? (() => setFeedback("Browse agents (preview)"))} onCreateAgent={onCreateAgent ?? (() => setFeedback("Create agent (preview)"))} {...favoriteProps} />;
 }

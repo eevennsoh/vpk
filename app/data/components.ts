@@ -355,6 +355,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("agent-progress", "Agent Progress"),
 	blockComponent("agent-assignment", "Agent Assignment"),
 	blockComponent("agent-selector", "Agent Selector"),
+	blockComponent("jira-local-agent", "Jira Local Agent"),
 	blockComponent("skill-selector", "Skill Selector"),
 	blockComponent("jira-work-item", "Jira Work Item"),
 	blockComponent("agent-session-flyout", "Agent Session Flyout"),

@@ -4559,10 +4559,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 445,
+			"manifestEntryCount": 446,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 439,
+				"live": 440,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -4611,7 +4611,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 118,
+				"entryCount": 119,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5003,6 +5003,13 @@
 						"slug": "jira-list",
 						"name": "Jira List",
 						"importPath": "@/components/blocks/jira-list",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-local-agent",
+						"name": "Jira Local Agent",
+						"importPath": "@/components/blocks/jira-local-agent",
 						"status": "live"
 					},
 					{
