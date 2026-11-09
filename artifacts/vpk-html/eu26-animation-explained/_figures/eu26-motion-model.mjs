@@ -112,11 +112,18 @@ export function model(input, data) {
 		const spread = 1 / Math.max(0.35, 1 - rel * camera.persp * projectionScale / camera.height);
 		camera.at = aimAt(camera, cb.lock, lockGoal(ca, cb.lock, camera.width).map(value => value / spread));
 	}
-	const fieldAt = i => {
+	// The field never holds still (teu26.mp4): from the burst on, every card keeps orbiting the hero, nearer cards faster,
+	// bobbing on its own phase, so the scroll through the field always shows motion. The hero stays put as the camera anchor.
+	const orbit = (i, atTime) => {
+		const tau = Math.max(0, atTime - 13), radius = 190 + Math.sqrt(i + 1) * 100 + (random(i, 2) - 0.5) * 150;
+		return { tau, radius, turn: tau * 0.6 * 190 / radius * (0.8 + random(i, 13) * 0.4) };
+	};
+	const fieldAt = (i, atTime = 13) => {
 		if (i === 15) return [-15, -28, 96];
-		const angle = i * 2.39996 + (random(i, 1) - 0.5) * 0.7;
-		const radius = 190 + Math.sqrt(i + 1) * 100 + (random(i, 2) - 0.5) * 150;
-		return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.66 - 25, 35 + random(i, 3) * 245];
+		const { tau, radius, turn } = orbit(i, atTime);
+		const angle = i * 2.39996 + (random(i, 1) - 0.5) * 0.7 + turn;
+		const bob = Math.sin(tau * 1.3 + random(i, 14) * 6.283) * 22 * clamp(tau / 2);
+		return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.66 - 25, 35 + random(i, 3) * 245 + bob];
 	};
 	const pitch = data.cards[1].home[1] - data.cards[0].home[1];
 	// Done shows every row whose top edge falls inside its window; the last of them is clipped by the column's bottom edge.
@@ -187,12 +194,27 @@ export function model(input, data) {
 		if (time > 13) {
 			const delay = i === 15 ? 0 : random(i, 4) * 0.18;
 			const u = clamp((time - 13 - delay) / (2.88 - delay)), s = ease(u), impulse = u * (1 - u) ** 2 * 4;
-			at = between(rest, fieldAt(i), s);
+			at = between(rest, fieldAt(i, time), s);
 			const velocity = [(random(i, 5) - 0.5) * 520, (random(i, 6) - 0.5) * 420, 180 + random(i, 7) * 350];
 			velocity[0] += i === 17 ? 160 : i === 20 ? 140 : 0;
 			at = at.map((value, axis) => value + velocity[axis] * impulse * (i === 15 ? 0.28 : 1));
 			const pitchAngle = (random(i, 8) - 0.5) * 1.05, yaw = (random(i, 9) - 0.5) * 1.1;
-			rot = i === 15 ? [0, 0, 0] : [pitchAngle * s + Math.sin(u * Math.PI) * (random(i, 10) - 0.5) * 1.8, yaw * s + Math.sin(u * Math.PI) * (random(i, 11) - 0.5) * 2.1, (random(i, 12) - 0.5) * 0.9 * s];
+			if (i !== 15) {
+				// Orbiting cards never pass over the hero: in the view plane each card keeps one card width clear of it, pushed
+				// smoothly out along its own fixed side (from its resting field place), so the push never flips direction.
+				const a = camera.azimuth * Math.PI / 180, e = camera.elevation * Math.PI / 180, view = [Math.cos(a) * Math.cos(e), Math.sin(a) * Math.cos(e), Math.sin(e)];
+				const hero = [-15, -28, 96], flatOf = point => {
+					const off = point.map((value, axis) => value - hero[axis]), along = off.reduce((sum, value, axis) => sum + value * view[axis], 0);
+					return off.map((value, axis) => value - along * view[axis]);
+				};
+				const flat = flatOf(at), base = flatOf(fieldAt(i)), length = Math.hypot(...base) || 1, side = base.map(value => value / length);
+				const ahead = flat.reduce((sum, value, axis) => sum + value * side[axis], 0), across = Math.hypot(...flat.map((value, axis) => value - ahead * side[axis]));
+				const clear = 230 * ease((time - 15) / 1.5), reach = across < clear ? (1 - (across / clear) ** 2) ** 2 : 0, push = Math.max(0, clear - ahead) * reach;
+				if (push > 0) at = at.map((value, axis) => value + side[axis] * push);
+			}
+			// After the burst each card keeps a slow tumble and turns with its orbit.
+			const { tau, turn } = orbit(i, time), sway = clamp(tau / 3);
+			rot = i === 15 ? [0, 0, 0] : [pitchAngle * s + Math.sin(u * Math.PI) * (random(i, 10) - 0.5) * 1.8 + Math.sin(tau * 0.9 + random(i, 15) * 6.283) * 0.14 * sway, yaw * s + Math.sin(u * Math.PI) * (random(i, 11) - 0.5) * 2.1 + Math.cos(tau * 0.7 + random(i, 16) * 6.283) * 0.16 * sway, (random(i, 12) - 0.5) * 0.9 * s + turn * s];
 			alpha = mix(inWindow ? 1 : 0, 1, ease(u / 0.32));
 		}
 		if (time > 19) alpha *= 1 - ease((time - 19) / 1.2);
@@ -221,7 +243,7 @@ export function model(input, data) {
 	const shift = wallShift(time);
 	const tiles = data.features.map((feature, i) => {
 		const target = [feature.at[0] + feature.w / 2, feature.at[1] + feature.d / 2, feature.at[2]];
-		const s = ease((time - 19 - i * 0.24) / 1.55), from = i === 0 ? [-15, -28, 96] : fieldAt(feature.card);
+		const s = ease((time - 19 - i * 0.24) / 1.55), from = i === 0 ? [-15, -28, 96] : fieldAt(feature.card, time);
 		let at = between(from, target, s);
 		at[2] += Math.sin(s * Math.PI) * 150;
 		let rot = [(1 - s) * (i % 2 ? -0.5 : 0.5), (1 - s) * -0.45, (1 - s) * (i % 2 ? -0.5 : 0.5)];
