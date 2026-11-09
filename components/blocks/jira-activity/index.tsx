@@ -399,7 +399,7 @@ export function JiraActivity({
 						return (
 							<li
 								aria-current={entry.id === activeEntryId ? "step" : undefined}
-								className="group/activity-event relative flex min-w-0 gap-2"
+								className="group/activity-event flex min-w-0 gap-2"
 								data-active={entry.id === activeEntryId ? "" : undefined}
 								data-jira-activity-entry-id={entry.id}
 								data-jira-activity-entry-kind={entry.kind}
@@ -440,15 +440,14 @@ export function JiraActivity({
 										"min-w-0 flex-1",
 										spacingClassName,
 										isNestedComment ? "pt-3 pl-6" : null,
+										isLast && fadeAfterLast ? "relative" : null,
 									)}
 								>
 									{customEntry !== undefined ? customEntry : defaultEntry}
+									{isLast && fadeAfterLast ? (
+										<span aria-hidden className={cn("absolute -left-6 top-full h-4 w-px -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black,transparent)]", connectorStyle === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} data-jira-activity-end-fade />
+									) : null}
 								</div>
-								{isLast && fadeAfterLast ? (
-									<span aria-hidden className="absolute top-full left-0 flex w-8 justify-center" data-jira-activity-end-fade>
-										<span className={cn("h-4 w-px [mask-image:linear-gradient(to_bottom,black,transparent)]", connectorStyle === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} />
-									</span>
-								) : null}
 							</li>
 						);
 					})}
