@@ -92,26 +92,33 @@ test("Details initializes each item independently and calculates cost per reach"
 	assert.equal(boardItem.fixVersion, "");
 });
 
-test("Development copies the current work item prompt", async (t) => {
+test("Development keeps repository setup and local agents without a Copy prompt row", async () => {
+	const view = await renderDetails();
+	assert.equal(view.queryByRole("button", { name: "Copy prompt" }) === null, true);
+	assert.equal(view.getByRole("button", { name: "Configure repository" }) !== null, true);
+	assert.equal(view.getByRole("button", { name: "Open in", exact: true }) !== null, true);
+});
+
+test("the local agent menu copies the current work item prompt", async (t) => {
 	const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 	const copied = [];
 	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value) => copied.push(value) } });
 	t.after(() => { if (original) Object.defineProperty(navigator, "clipboard", original); else delete navigator.clipboard; });
-	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing", description: "Carry the artwork" } });
+	const view = await renderComponent({ entry: "components/blocks/jira-local-agent/index.tsx", exportName: "JiraLocalAgentMenu", props: { workItem: { code: "PAY-118", summary: "Billing", description: "Carry the artwork" } } });
 	await view.click(view.getByRole("button", { name: "Copy prompt" }));
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork"]);
 	assert.equal(view.getByRole("button", { name: "Prompt copied" }) !== null, true);
 	assert.equal(view.getAllByRole("status").some((status) => status.textContent === "Prompt copied"), true);
-	await view.rerender({ workItem: { code: "PAY-119", title: "Runbook", description: "Write it" } });
+	await view.rerender({ workItem: { code: "PAY-119", summary: "Runbook", description: "Write it" } });
 	await view.click(view.getByRole("button", { name: "Prompt copied" }));
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork", "PAY-119: Runbook\n\nWrite it"]);
 });
 
-test("Development does not claim a rejected clipboard write succeeded", async (t) => {
+test("the local agent menu does not claim a rejected clipboard write succeeded", async (t) => {
 	const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { throw new Error("Denied"); } } });
 	t.after(() => { if (original) Object.defineProperty(navigator, "clipboard", original); else delete navigator.clipboard; });
-	const view = await renderDetails();
+	const view = await renderComponent({ entry: "components/blocks/jira-local-agent/index.tsx", exportName: "JiraLocalAgentMenu", props: { workItem: { code: "PAY-118", summary: "Billing", description: "" } } });
 	await view.click(view.getByRole("button", { name: "Copy prompt" }));
 	assert.equal(view.getByRole("button", { name: "Could not copy prompt" }) !== null, true);
 });

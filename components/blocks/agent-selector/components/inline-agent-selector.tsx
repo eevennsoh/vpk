@@ -34,6 +34,7 @@ export type InlineAgentSelectorProps = {
 	initialSoftwareLimit?: number;
 	showSearch?: boolean;
 	showFavorites?: boolean;
+	showHeadings?: boolean;
 	recentAgentId?: string | null;
 	softwareHeading?: string;
 	disabledLabel?: string;
@@ -65,7 +66,7 @@ function groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites,
 	return { recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware };
 }
 
-export function InlineAgentSelector({ agents, softwareAgentIds, getActions, renderAdditionalActions, renderAgentAction, renderAgentFeedback, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, showSearch = true, showFavorites = true, recentAgentId, softwareHeading = "Software agents", disabledLabel, compact = false, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
+export function InlineAgentSelector({ agents, softwareAgentIds, getActions, renderAdditionalActions, renderAgentAction, renderAgentFeedback, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, showSearch = true, showFavorites = true, showHeadings = true, recentAgentId, softwareHeading = "Software agents", disabledLabel, compact = false, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
 	const [query, setQuery] = useState("");
 	const [expanded, setExpanded] = useState(false);
 	const [internalFavorites, setInternalFavorites] = useState<readonly string[]>([]);
@@ -118,7 +119,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 			}}><span aria-hidden className="grid size-6 shrink-0 place-items-center">{action.icon}</span><span className="min-w-0 truncate">{action.label}</span></Button>)}{additionalActions}</div> : null}
 		</div>;
 	};
-	const section = (name: string, items: readonly AgentSelectorAgent[], showMore = false, separateFirst = false) => items.length ? <section aria-label={name}><h3 className="rich-text-command-menu-heading">{name}</h3>{items.flatMap((agent, index) => separateFirst && index === 0 && items.length > 1 ? [row(agent), <hr key="recent-separator" className="my-1 border-0 border-t border-border" />] : [row(agent)])}{showMore && !query && !expanded && softwareAgents.length > initialSoftwareLimit ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={(event) => {
+	const section = (name: string, items: readonly AgentSelectorAgent[], showMore = false, separateFirst = false) => items.length ? <section aria-label={name}>{showHeadings ? <h3 className="rich-text-command-menu-heading">{name}</h3> : null}{items.flatMap((agent, index) => separateFirst && index === 0 && items.length > 1 ? [row(agent), <hr key="recent-separator" className="my-1 border-0 border-t border-border" />] : [row(agent)])}{showMore && !query && !expanded && softwareAgents.length > initialSoftwareLimit ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={(event) => {
 		const revealedIds = new Set(softwareAgents.slice(initialSoftwareLimit).map((agent) => agent.id));
 		setExpanded(true);
 		if (event.detail !== 0) return;

@@ -85,6 +85,7 @@ export function ProjectButterCrew({ assignee, cloudAgentSelector = false, curren
 		const id = agent.id ?? agent.name;
 		if (!pickerAgents.some((candidate) => candidate.name.toLowerCase() === agent.name.toLowerCase())) pickerAgents.push({ ...agent, id: pickerAgents.some((candidate) => candidate.id === id) ? `session-agent:${id}` : id, byline: "On this work item" });
 	}
+	const fieldPickerAgents = pickerAgents.filter((agent) => agent.id !== "github-copilot" && agent.id !== "rovo-cli");
 	const members: readonly CrewMember[] = useReferenceCrew ? referenceCrew(orderedSessions) : [
 		...(assignee && assignee.name !== "Automatic" && assignee.name !== "Unassigned" ? [{ name: assignee.name, kind: "person" as const, state: "Working" as const, avatarSrc: assignee.avatarUrl }] : []),
 		...sessions.map((session): CrewMember => ({ name: session.agent.name, kind: "agent", state: session.state === "complete" ? "Completed" : session.state === "needs-input" || session.state === "attention" ? "Needs input" : "Working", visual: { avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo } })),
@@ -106,7 +107,11 @@ export function ProjectButterCrew({ assignee, cloudAgentSelector = false, curren
 				<div className="relative min-w-0">
 					<PopoverTrigger render={<button aria-label={fieldLabel} className="absolute inset-0 -inset-x-2 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" type="button" />} />
 					<AvatarGroup aria-hidden className="pointer-events-none relative z-10 min-h-8 items-center -space-x-1.5" label="Assigned agents">
-						{agentSessions.map((session) => <AgentAvatarVisual key={session.id} avatarSrc={session.agent.avatarSrc} brandName={session.agent.brandName} vpkLogo={session.agent.vpkLogo} fallbackText={session.agent.name.slice(0, 2).toUpperCase()} label={session.agent.name} sizePx={24} />)}
+						{agentSessions.map((session) => {
+							const catalogAgent = fieldPickerAgents.find((candidate) => candidate.name.toLowerCase() === session.agent.name.toLowerCase());
+							const agent = catalogAgent ?? session.agent;
+							return <AgentAvatarVisual key={session.id} appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} logoName={catalogAgent?.logoName} fallbackText={agent.name.slice(0, 2).toUpperCase()} label={session.agent.name} sizePx={24} />;
+						})}
 					</AvatarGroup>
 				</div>
 			</div> : <PopoverTrigger render={<button aria-label={field ? "Add agent" : label} className={field ? "-mx-2 inline-flex min-h-8 items-center gap-2 rounded-sm px-2 text-sm text-text-subtle outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring" : "group/crew inline-flex shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"} disabled={!onStartAgent && (field || sessions.length === 0)} type="button" />}>
@@ -119,7 +124,7 @@ export function ProjectButterCrew({ assignee, cloudAgentSelector = false, curren
 			</PopoverTrigger>}
 			<PopoverContent align={field ? "start" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={cn(field ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0 shadow-2xl" : "w-[280px] gap-0 overflow-hidden p-0")} onKeyDown={(event) => { if (event.key === "Escape") event.stopPropagation(); }} positionerClassName="z-[650]" sideOffset={field ? 8 : undefined}>
 				{field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} /> : field && onStartAgent ? <InlineAgentSelector
-					agents={pickerAgents.filter((agent) => agent.id !== "github-copilot" && agent.id !== "rovo-cli")}
+					agents={fieldPickerAgents}
 					softwareAgentIds={["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"]}
 					initialSoftwareLimit={5}
 					getActions={(agent) => [
