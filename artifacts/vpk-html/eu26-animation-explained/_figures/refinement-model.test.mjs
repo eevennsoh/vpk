@@ -316,3 +316,33 @@ test("each bento tile starts from its story card's actual field pose", () => {
 		assert.ok(gap < 12, `tile ${i} starts ${gap.toFixed(1)} units from card ${feature.card}`);
 	});
 });
+
+test('a dealt card rings and turns its face only once it has touched down on its slot', () => {
+	const slots = [...new Set(data.wallCards.map(card => card.slot))];
+	const releases = [];
+	for (const slot of slots) {
+		let before = null;
+		for (let time = 30; time < 240; time += .05) {
+			// Seconds since the hand let go of the stack (the slot's own touchdown).
+			const arrival = at(time).wall[slot].arrival, past = arrival ? time - arrival.touchdown : null;
+			if (past !== null && past >= 0 && before !== null && before < 0) releases.push({ slot, release: time - past });
+			before = past;
+		}
+	}
+	assert.ok(releases.length >= 2, `found ${releases.length} stack releases`);
+	for (const { slot, release } of releases) {
+		for (const [index, card] of data.wallCards.entries()) {
+			if (card.slot !== slot) continue;
+			let touched = null, started = null;
+			for (let time = release - .3; time < release + 1.2 && (started === null || touched === null); time += .001) {
+				const pose = at(time).wallCards[index];
+				if (touched === null && time >= release && Math.abs(pose.at[2] - 1.1) <= .2) touched = time;
+				if (started === null && (pose.ring !== null || pose.face > 0)) started = time;
+			}
+			const label = `card ${index} of slot ${slot} released at ${release.toFixed(3)} s`;
+			assert.ok(touched !== null && started !== null, `${label} touches down and lands`);
+			assert.ok(started >= touched, `${label}: ring/face start at ${started.toFixed(3)} s, before touchdown at ${touched.toFixed(3)} s`);
+			assert.ok(started - touched <= .05, `${label}: ring/face start ${(started - touched).toFixed(3)} s after touchdown`);
+		}
+	}
+});

@@ -427,10 +427,11 @@ export function model(input, data) {
 		const down = since <= 0 ? 0 : inOut(since / fall);
 		return { at: [base[0] + coming[0], base[1] + coming[1], base[2] + (HAND.lift + extraLift) * (1 - down)], rot: tilt.map(angle => angle * (1 - down)), scale: 1 + HAND.grow * (1 - down) };
 	};
-	// Blank until the hand-over, then the face comes up; a ring swells from the edge from just before touchdown.
+	// Blank until the hand-over, then the face comes up; a ring swells from the edge from RING_LEAD before touchdown.
+	const RING_LEAD = 0.1;
 	const landing = (since, fall) => {
 		const after = since - fall;
-		return { face: clamp((after - (A.handoff ?? 0.6)) / (A.faceUp ?? 0.072)), ring: after >= -0.1 && after < 1 ? after : null };
+		return { face: clamp((after - (A.handoff ?? 0.6)) / (A.faceUp ?? 0.072)), ring: after >= -RING_LEAD && after < 1 ? after : null };
 	};
 	const arrivals = pool.map(entry => arrivalOf(entry.card, entry.sourceIndex));
 	const wallPoses = pool.map(entry => {
@@ -483,20 +484,23 @@ export function model(input, data) {
 		const i = child.slot, card = data.wall[i], parent = wallPoses[i], arrival = arrivals[i];
 		const delay = dealDelay(i, child.index), base = baseWallAt(card, i), lift = stackLift(child);
 		let at = [base[0] + child.dx, base[1] + child.dy, 1.1 + (1 - ease((time - 23) / 1.3)) * 170], rot = [0, 0, 0], scale = 1, face = 1, ring = null;
-		if (arrival && arrival.since - delay < arrival.fall + 1.5) {
-			const after = arrival.since - arrival.fall;
-			if (after < 0) {
+		// The card's own touchdown, in the slot's `since`: settleS after the hand lets go of it, a beat after the card above.
+		// Its settle ends there and its landing (ring, then face) starts there, so neither runs ahead of the other.
+		const settleS = A.settleS ?? 0.2, land = arrival ? arrival.fall + delay - dealDelay(i, 0) + settleS : 0;
+		if (arrival && arrival.since < land + 1.5) {
+			if (arrival.since < arrival.fall) {
 				// Carried: on the slot's face and turned with it, until the hand lets go of the top card.
 				const carried = heldPose(arrival, i), offset = turn([child.dx * carried.scale, child.dy * carried.scale, (1.1 + lift) * carried.scale], carried.rot);
 				at = carried.at.map((value, axis) => value + offset[axis]);
 				rot = carried.rot;
 				scale = carried.scale;
 			} else {
-				// Dealt: from where it was let go, each card settles onto the slot on its own clock, a beat after the one above it.
-				const down = inOut((after - (delay - dealDelay(i, 0))) / (A.settleS ?? 0.2));
+				// Dealt: from where it was let go, each card drops onto the slot, speeding up until it touches down at `land`.
+				const down = easeIn((arrival.since - (land - settleS)) / settleS);
 				at = [base[0] + child.dx, base[1] + child.dy, 1.1 + lift * (1 - down)];
 			}
-			({ face, ring } = landing(arrival.since - delay, arrival.fall));
+			// Nothing to swell ahead of: the ring opens as the card touches down, not RING_LEAD before.
+			({ face, ring } = landing(arrival.since, land + RING_LEAD));
 		}
 		return { ...pose(at, rot, scale, parent.alpha, 0), key: `${card.key}#${child.index}`, face, ring, stack: carriedStack(i, stackRanks.get(j)) };
 	});
