@@ -112,6 +112,7 @@ import {
 import { useJiraListRowFlashKeys } from "@/components/blocks/jira-list/jira-list-row-flash";
 import { JiraListSummaryEditor, useJiraListSummaryEdit } from "@/components/blocks/jira-list/jira-list-summary-editor";
 import { createJiraListBaseColumns } from "@/components/blocks/jira-list/jira-list-base-columns";
+import { JiraListHierarchyButton } from "@/components/blocks/jira-list/jira-list-work-controls";
 import {
 	IssueTypeGlyph,
 	JiraListAvatar,
@@ -155,11 +156,12 @@ interface JiraListTrailingEdgeLayout {
 function getJiraListTrailingEdgeLayout(
 	scrollEndInset: number,
 	columnCount: number,
+	bordered: boolean,
 ): JiraListTrailingEdgeLayout {
 	if (scrollEndInset > 0) {
 		return {
 			draftRowIsLastColumn: false,
-			headerCellClassName: cn(HEADER_CELL_CLASS, "border-t"),
+			headerCellClassName: cn(HEADER_CELL_CLASS, bordered && "border-t"),
 			lastBodyColumnIndex: null,
 			lastHeaderCellClassName: "rounded-tr-xl",
 		};
@@ -222,6 +224,7 @@ export function JiraList({
 	rows,
 	activeIssueKey,
 	ariaLabel = "Jira list view",
+	bordered = true,
 	className,
 	createLabel = "Create",
 	totalCountLabel = `${rows.length}`,
@@ -255,6 +258,7 @@ export function JiraList({
 	onStoryPointsChange,
 	renderAgentSessions,
 	onToggleExpand,
+	hierarchyExpansion,
 	agentSessionDropIntent,
 	rowFlash,
 	onTrailingContentUnderlapChange,
@@ -298,6 +302,15 @@ export function JiraList({
 	const sessionInsertionTarget = getAgentSessionInsertionTarget(agentSessionDropIntent);
 	const flashingIssueKeys = useJiraListRowFlashKeys(rowFlash);
 	const activeInsertionTarget = sessionInsertionTarget ?? focusedCreateTarget ?? hoveredCreateTarget;
+	const insertionTargetIndex = activeInsertionTarget
+		? rows.findIndex((row) => row.issueKey === activeInsertionTarget.issueKey)
+		: -1;
+	const nextInsertionRow = insertionTargetIndex >= 0 ? rows[insertionTargetIndex + 1] : undefined;
+	const insertionLineTarget: JiraListInsertionTarget | null = activeInsertionTarget?.position === "after"
+		&& nextInsertionRow
+		&& draftWorkItem?.insertAtIndex !== insertionTargetIndex + 1
+		? { issueKey: nextInsertionRow.issueKey, position: "before" }
+		: activeInsertionTarget;
 	const draggingIndex = draggingIssueKey
 		? rows.findIndex((row) => row.issueKey === draggingIssueKey)
 		: -1;
@@ -379,20 +392,18 @@ export function JiraList({
 		onStoryPointsChange,
 		renderAgentSessions,
 		onStatusChange,
-		onToggleExpand,
+		onSelectRow,
+		selectedIssueKeys,
 		openCopyTooltipIssueKey,
 		setOpenCopyTooltipIssueKey,
 		statusOptions,
 	}), [
 		agentCatalog, addAgentLabel, copiedIssueKey, editingSummary?.issueKey, onAgentAssign, onAssignedAgentIdsChange,
 		onAssignedAgentSelect, onCopyLink, onIssueClick, onIssueKeyClick,
-		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, onToggleExpand, openCopyTooltipIssueKey, statusOptions,
+		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, onSelectRow, selectedIssueKeys, openCopyTooltipIssueKey, statusOptions,
 	]);
 	const orderedColumns = useMemo(() => getOrderedColumns(baseColumns, extraColumns), [baseColumns, extraColumns]);
-	const trailingEdgeLayout = getJiraListTrailingEdgeLayout(
-		scrollEndInset,
-		orderedColumns.length,
-	);
+	const trailingEdgeLayout = getJiraListTrailingEdgeLayout(scrollEndInset, orderedColumns.length, bordered);
 	const columnBoundaries = getJiraListColumnBoundaries(
 		orderedColumns,
 		insertionAnchorId,
@@ -630,6 +641,7 @@ export function JiraList({
 			className={cn(
 				"relative flex max-h-[640px] flex-col overflow-visible rounded-xl border-x border-b border-border bg-surface",
 				trailingEdgeLayout.frameTopBorderClassName,
+				!bordered && "border-0",
 				className,
 			)}
 			data-testid="jira-list"
@@ -664,27 +676,29 @@ export function JiraList({
 					containerClassName="min-w-[1570px] shrink-0 overflow-visible"
 					>
 					<colgroup>
-						<col className="w-10" />
+						<col className="w-8" />
 						{orderedColumns.map((column) => (
 							<col className={column.widthClassName} key={column.id} />
 						))}
 					</colgroup>
-					<TableHeader inert={Boolean(editingSummary)} className="sticky top-0 z-20 bg-surface-sunken shadow-[inset_0_-1px_0_var(--ds-border)]">
+					<TableHeader inert={Boolean(editingSummary)} className={cn("sticky top-0 z-20 bg-surface-sunken", bordered ? "shadow-[inset_0_-1px_0_var(--ds-border)]" : "bg-transparent")}>
 						<TableRow className="border-0 hover:bg-transparent">
 							<TableHead
 								className={cn(
 									trailingEdgeLayout.headerCellClassName,
 									"sticky left-0 z-30 px-0",
+									!bordered && "rounded-l-xl",
 								)}
 							>
-								<div className="flex items-center justify-center">
-									<Checkbox
-										aria-label="Select all work items"
-										checked={allRowsSelected}
-										disabled={selectableRowCount === 0}
-										isIndeterminate={someRowsSelected}
-										onCheckedChange={(checked) => onSelectAllRows?.(Boolean(checked))}
-									/>
+								<div className="flex items-center justify-end pe-0.5">
+									{hierarchyExpansion ? (
+										<JiraListHierarchyButton
+											disabled={hierarchyExpansion.disabled}
+											expanded={hierarchyExpansion.allExpanded}
+											label={hierarchyExpansion.allExpanded ? "Collapse all subtasks" : "Expand all subtasks"}
+											onClick={hierarchyExpansion.onToggleAll}
+										/>
+									) : null}
 								</div>
 							</TableHead>
 							{orderedColumns.map((column, columnIndex) => {
@@ -692,12 +706,14 @@ export function JiraList({
 									<TableHead
 										className={cn(
 											trailingEdgeLayout.headerCellClassName,
+											column.id === "work" && "ps-2",
 											column.align === "center" && "text-center",
 											getJiraListLastHeaderCellClassName(
 												trailingEdgeLayout,
 												columnIndex,
 												orderedColumns.length,
 											),
+											!bordered && columnIndex === orderedColumns.length - 1 && "rounded-r-xl border-r-0",
 											"relative overflow-visible",
 										)}
 										key={column.id}
@@ -712,8 +728,18 @@ export function JiraList({
 												className={cn(
 													"inline-flex min-w-0 items-center gap-1 truncate",
 													column.align === "center" && "justify-center",
+												column.id === "work" && "gap-1.5 overflow-visible",
 												)}
 											>
+												{column.id === "work" ? (
+													<Checkbox
+														aria-label="Select all work items"
+														checked={allRowsSelected}
+														disabled={selectableRowCount === 0}
+														isIndeterminate={someRowsSelected}
+														onCheckedChange={(checked) => onSelectAllRows?.(Boolean(checked))}
+													/>
+												) : null}
 												{column.headerContent ?? column.label}
 											</div>
 											<JiraListColumnActions label={column.label} />
@@ -740,16 +766,9 @@ export function JiraList({
 									draggingIndex,
 									dragOverIndex,
 								);
-								const hoverInsertionPosition = (
-									onCreate
-									&& hoveredRowTarget?.issueKey === row.issueKey
-									&& hoveredRowTarget.zone !== "drag"
-								)
-									? hoveredRowTarget.zone
-									: undefined;
-								const insertionLinePosition = activeInsertionTarget?.issueKey === row.issueKey
-									? activeInsertionTarget.position
-									: hoverInsertionPosition ?? dragInsertionPosition;
+								const insertionLinePosition = insertionLineTarget?.issueKey === row.issueKey
+									? insertionLineTarget.position
+									: dragInsertionPosition;
 								const insertionLineClassName = getInsertionLineClassName(insertionLinePosition);
 								const isSessionAttachTarget = isAgentSessionAttachTarget(
 									agentSessionDropIntent,
@@ -758,7 +777,6 @@ export function JiraList({
 								const isFlashing = flashingIssueKeys.has(row.issueKey);
 								const isLastRow = rowIndex === rows.length - 1
 									&& draftWorkItem?.insertAtIndex !== rows.length;
-
 								return (
 									<Fragment key={row.issueKey}>
 										{renderDraftWorkItemRow(rowIndex)}
@@ -794,6 +812,7 @@ export function JiraList({
 														align: "center",
 													}),
 													"sticky left-0 isolate overflow-visible bg-surface! px-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:transition-colors",
+											!bordered && "group-hover/row:rounded-l-xl group-hover/row:before:rounded-l-xl group-focus-within/row:rounded-l-xl group-focus-within/row:before:rounded-l-xl",
 													isEditing
 														? "before:bg-transparent"
 														: isHighlighted
@@ -807,12 +826,14 @@ export function JiraList({
 												data-insertion-line={insertionLinePosition}
 												style={{ anchorName: getRowAnchorName(insertionAnchorId, rowIndex) }}
 											>
-												<div inert={isEditing} className={cn("relative z-10 flex items-center justify-center", isDimmed && "opacity-20")}>
-													<Checkbox
-														aria-label={`Select ${row.issueKey}`}
-														checked={isSelected}
-														onCheckedChange={(checked) => onSelectRow?.(row.issueKey, Boolean(checked))}
-													/>
+												<div inert={isEditing} className={cn("relative z-10 flex items-center justify-end pe-0.5", isDimmed && "opacity-20")}>
+													{row.hasChildren && onToggleExpand ? (
+														<JiraListHierarchyButton
+															expanded={Boolean(row.isExpanded)}
+															label={`${row.isExpanded ? "Collapse" : "Expand"} ${row.issueKey}`}
+															onClick={() => onToggleExpand(row.issueKey)}
+														/>
+													) : null}
 												</div>
 											</TableCell>
 											{orderedColumns.map((column, columnIndex) => (
@@ -822,10 +843,11 @@ export function JiraList({
 															isEditing,
 															isSelected: isHighlighted,
 															align: column.align,
-															isLastColumn:
-																columnIndex === trailingEdgeLayout.lastBodyColumnIndex,
+															isLastColumn: columnIndex === trailingEdgeLayout.lastBodyColumnIndex,
 															isLastRow,
 														}),
+														column.id === "work" && "ps-2",
+														!bordered && columnIndex === orderedColumns.length - 1 && "border-r-0 group-hover/row:rounded-r-xl group-focus-within/row:rounded-r-xl",
 														isEditing && column.id === "work" && "z-30 overflow-visible",
 														insertionLineClassName,
 														getRowFlashCellClassName(isFlashing),

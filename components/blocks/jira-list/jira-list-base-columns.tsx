@@ -2,8 +2,6 @@
 
 import type { Dispatch, MouseEvent as ReactMouseEvent, SetStateAction } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 
@@ -11,7 +9,6 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { PRIORITY_LABELS } from "@/components/blocks/jira-list/jira-list-cell-data";
 import {
 	HierarchyConnector,
-	IssueTypeGlyph,
 	JiraListAgentSessionsCell,
 	JiraListAvatar,
 	JiraListLabelsCell,
@@ -24,6 +21,7 @@ import type {
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list/jira-list-types";
 import { JiraListPointsCell } from "@/components/blocks/jira-list/jira-list-points-cell";
+import { JiraListIssueSelection } from "@/components/blocks/jira-list/jira-list-work-controls";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -51,7 +49,8 @@ export function createJiraListBaseColumns({
 	onStoryPointsChange,
 	renderAgentSessions,
 	onStatusChange,
-	onToggleExpand,
+	onSelectRow,
+	selectedIssueKeys,
 	openCopyTooltipIssueKey,
 	setOpenCopyTooltipIssueKey,
 	statusOptions,
@@ -70,7 +69,8 @@ export function createJiraListBaseColumns({
 	onStoryPointsChange?: JiraListProps["onStoryPointsChange"];
 	renderAgentSessions?: JiraListProps["renderAgentSessions"];
 	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
-	onToggleExpand?: (issueKey: string) => void;
+	onSelectRow?: JiraListProps["onSelectRow"];
+	selectedIssueKeys: ReadonlySet<string>;
 	openCopyTooltipIssueKey: string | null;
 	setOpenCopyTooltipIssueKey: Dispatch<SetStateAction<string | null>>;
 	statusOptions: readonly JiraListStatusOption[];
@@ -91,30 +91,13 @@ export function createJiraListBaseColumns({
 					<div className="flex min-w-0 items-center gap-2">
 						<div className="flex min-w-0 flex-1 items-center gap-1.5">
 							<HierarchyConnector indentLevel={indentLevel} />
-							{row.hasChildren && onToggleExpand ? (
-								<Button
-									aria-label={`${row.isExpanded ? "Collapse" : "Expand"} ${row.issueKey}`}
-									aria-expanded={Boolean(row.isExpanded)}
-									className="size-5 shrink-0 rounded-sm px-0 hover:bg-transparent focus-visible:bg-bg-neutral-subtle-hovered"
-									onClick={() => onToggleExpand?.(row.issueKey)}
-									size="icon-compact"
-									variant="ghost"
-								>
-									<Icon
-										className="text-icon-subtle"
-										render={
-											row.isExpanded ? (
-												<ChevronDownIcon label="" size="small" />
-											) : (
-												<ChevronRightIcon label="" size="small" />
-											)
-										}
-									/>
-								</Button>
-							) : indentLevel > 0 ? (
-								<span aria-hidden="true" className="block size-5 shrink-0" />
-							) : null}
-							<IssueTypeGlyph issueType={row.issueType} />
+							<JiraListIssueSelection
+								checked={selectedIssueKeys.has(row.issueKey)}
+								issueKey={row.issueKey}
+								issueType={row.issueType}
+								onChange={onSelectRow}
+								showCheckbox={selectedIssueKeys.size > 0}
+							/>
 							<div className="group/issue-key flex shrink-0 items-center">
 								{onIssueKeyClick ? (
 									<Button
@@ -174,7 +157,7 @@ export function createJiraListBaseColumns({
 							</div>
 							{onSummaryEditStart || onIssueClick ? (
 								<button
-									className={cn("min-w-0 flex-1 truncate rounded-sm text-left text-[13px] font-medium text-text hover:text-link focus-visible:text-link focus-visible:outline-none", isEditing && "invisible")}
+									className={cn("min-w-0 flex-1 truncate rounded-sm text-left text-sm font-normal text-text hover:text-link focus-visible:text-link focus-visible:outline-none", isEditing && "invisible")}
 									aria-label={onSummaryEditStart ? `Edit summary for ${row.issueKey}: ${row.summary}` : undefined}
 									data-summary-trigger={row.issueKey}
 									onClick={(event) => onSummaryEditStart ? onSummaryEditStart(row, event) : onIssueClick?.(row)}
@@ -183,7 +166,7 @@ export function createJiraListBaseColumns({
 									{row.summary}
 								</button>
 							) : (
-								<span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text">
+								<span className="min-w-0 flex-1 truncate text-sm font-normal text-text">
 									{row.summary}
 								</span>
 							)}
