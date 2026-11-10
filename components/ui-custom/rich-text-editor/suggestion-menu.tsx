@@ -989,6 +989,7 @@ function RichTextSuggestionMenuOption({
 	// hover must not keep the byline or hide the rest-state spinner.
 	const isHoverActionsRevealed = hasHoverActions && (isRowPointerActive || isRowFocusWithin);
 	const isBylineRevealed = hasHoverActions ? isHoverActionsRevealed : isSelected;
+	const shouldPromoteByline = isBylineRevealed || isRowPointerActive || isRowFocusWithin;
 	const shouldShowReturnShortcut = showReturnShortcut && !item.disabled && !hasHoverActions && (isSelected || isRowPointerActive || isRowFocusWithin);
 	const shouldYieldTrailingToHoverActions = isHoverActionsRevealed;
 	// A persistent trailing indicator (e.g. a status glyph) shows at rest, so the
@@ -1034,7 +1035,7 @@ function RichTextSuggestionMenuOption({
 					<motion.span
 						className="menu-row-title min-w-0"
 						custom={Boolean(prefersReducedMotion)}
-						style={{ willChange: "transform" }}
+						style={{ willChange: shouldPromoteByline ? "transform" : "auto" }}
 						variants={nestedCommandLabelVariants}
 					>
 						{item.label}
@@ -1042,7 +1043,7 @@ function RichTextSuggestionMenuOption({
 					<motion.span
 						className="menu-row-byline min-w-0"
 						custom={Boolean(prefersReducedMotion)}
-						style={{ willChange: "transform, opacity" }}
+						style={{ willChange: shouldPromoteByline ? "transform, opacity" : "auto" }}
 						variants={nestedCommandDescriptionVariants}
 					>
 						{revealedMetadata}

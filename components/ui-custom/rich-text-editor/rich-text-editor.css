@@ -604,6 +604,17 @@
 	overflow-y: auto;
 }
 
+/* The capped drill-in panels reserve 44px for Back and 292px for the list.
+   Keep their layout while skipping offscreen paint and compositor layers. */
+.rich-text-command-menu-showcase[data-nested="true"] {
+	content-visibility: auto;
+	contain-intrinsic-block-size: auto 336px;
+}
+
+.rich-text-command-menu-showcase .rich-text-command-menu-list {
+	contain: layout style paint;
+}
+
 .rich-text-command-menu-item {
 	display: grid;
 	width: 100%;
