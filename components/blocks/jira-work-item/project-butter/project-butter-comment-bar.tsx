@@ -38,6 +38,7 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 	const [choosingSession, setChoosingSession] = useState(false);
 	const editorRef = useRef<ProjectButterCommentEditorHandle>(null);
 	const backRef = useRef<HTMLButtonElement>(null);
+	const sessionListRef = useRef<HTMLUListElement>(null);
 	const openingSession = useRef(false);
 	const currentDraft = useRef(content.commentDraft);
 	const agents = useProjectButterMentionAgents(sessions);
@@ -128,7 +129,10 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 					if (choosingSession) {
 						onPreviewSession(matchingSessions[next]?.id ?? null);
 						if (next === -1) backRef.current?.focus({ preventScroll: true });
-						else if (event.target === backRef.current) setFocusRequest((value) => value + 1);
+						else {
+							sessionListRef.current?.children[next]?.scrollIntoView({ block: "nearest" });
+							if (event.target === backRef.current) setFocusRequest((value) => value + 1);
+						}
 					}
 				}
 				break;
@@ -163,7 +167,7 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 			{showTargetMenu && existingSession ? <div className="absolute inset-x-0 bottom-full z-20 mb-2" data-project-butter-session-target-menu>
 				{choosingSession ? <div className="rich-text-command-menu rich-text-command-menu-borderless w-full!" data-nested="true">
 					<button className={cn("rich-text-command-menu-item rich-text-command-menu-back", selectedIndex === -1 && "rich-text-command-menu-item-selected")} onClick={backToTargets} onFocus={() => { setSelectedTargetIndex(-1); onPreviewSession(null); }} onMouseDown={(event) => event.preventDefault()} onMouseEnter={() => { setSelectedTargetIndex(-1); onPreviewSession(null); }} ref={backRef} type="button"><span className="inline-flex size-6 items-center justify-center"><ArrowLeftIcon label="" size="small" /></span><span className="menu-row-title">Back</span></button>
-					<ul aria-label="Choose a session" className="rich-text-command-menu-list p-1">
+					<ul aria-label="Choose a session" className="rich-text-command-menu-list p-1" ref={sessionListRef}>
 						{matchingSessions.map((session, index) => <AgentSessionCard animateLayout={false} density="long" hoverTone="menu" isSelected={index === selectedIndex} item={{ ...session, title: session.prompt?.replace(`@${session.agent.name}`, "").trim() || session.title }} key={session.id} onItemHover={(item) => { if (item) setSelectedTargetIndex(index); onPreviewSession(item?.id ?? null); }} onView={() => openSelectedSession(session)} padding="compact" showMoreMenu={false} />)}
 					</ul>
 				</div> : <RichTextSuggestionMenu className="rich-text-command-menu-borderless w-full!" emptyLabel="" items={SESSION_TARGET_MENU_ITEMS} onHover={setSelectedTargetIndex} onSelect={(item) => chooseTarget(item.id === "new" ? "new" : "continue")} selectedIndex={selectedIndex} title="Choose agent session" />}
