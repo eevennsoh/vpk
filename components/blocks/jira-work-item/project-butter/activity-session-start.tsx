@@ -5,7 +5,7 @@ import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-ite
 
 export function ProjectButterSessionStart({ session, onOpen }: Readonly<{ session: ProjectButterSessionItem; onOpen: (id: string) => void }>) {
 	return (
-		<div className="rounded-lg border border-border bg-surface" data-project-butter-session-start={session.id}>
+		<div className="relative rounded-lg border border-border bg-surface" data-project-butter-session-start={session.id}>
 			<AgentSession animateLayout={false} density="long" items={[{ ...session, privateTo: session.invokedBy?.name ?? "Annie Cook" }]} onView={(item) => onOpen(item.id)} selectedItemId={null} showLinkWorkItemMenuItem={false} variant="large" />
 		</div>
 	);

@@ -10,7 +10,7 @@ import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/pro
 import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 
-export function ProjectButterBody({ active, sidePanel, content, descriptionReveal, detailsSlotRef, empty, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, openRelatedItem, previewSessionId, relatedScope, sessions, singleActivityView = false, workItemKey }: Readonly<{
+export function ProjectButterBody({ active, sidePanel, content, descriptionReveal, detailsSlotRef, empty, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, onStartedSessionRevealed, openRelatedItem, previewSessionId, startedSessionId, relatedScope, sessions, singleActivityView = false, workItemKey }: Readonly<{
 	active: boolean;
 	sidePanel: boolean;
 	content: ProjectButterContent;
@@ -21,8 +21,10 @@ export function ProjectButterBody({ active, sidePanel, content, descriptionRevea
 	onOpenSession: (sessionId: string, draft?: string) => boolean | void | Promise<boolean | void>;
 	onPreviewSession: (sessionId: string | null) => void;
 	onStartAgent: (agent: AgentSessionItem["agent"], prompt: string) => void;
+	onStartedSessionRevealed: () => void;
 	openRelatedItem?: RelatedItemOpener;
 	previewSessionId: string | null;
+	startedSessionId: string | null;
 	relatedScope?: ProjectButterRelatedScope;
 	sessions: readonly ProjectButterSessionItem[];
 	singleActivityView?: boolean;
@@ -35,7 +37,7 @@ export function ProjectButterBody({ active, sidePanel, content, descriptionRevea
 			<ProjectButterDescription content={content} empty={empty} onRevealComplete={onDescriptionRevealComplete} reveal={descriptionReveal} />
 			<div className={sidePanel ? undefined : "@[860px]/butter:hidden"} ref={detailsSlotRef} />
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
-			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} previewSessionId={previewSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} />
+			<ProjectButterActivity content={content} empty={empty} onOpenSession={onOpenSession} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} />
 			<ProjectButterCommentBar active={active} activityRows={activityRows} content={content} empty={empty} onOpenSession={onOpenSession} onPreviewSession={onPreviewSession} onStartAgent={onStartAgent} sessions={sessions} sidePanel={sidePanel} />
 		</div>
 	);
