@@ -386,15 +386,13 @@ export function JiraList({
 		onStoryPointsChange,
 		renderAgentSessions,
 		onStatusChange,
-		onSelectRow,
-		selectedIssueKeys,
 		openCopyTooltipIssueKey,
 		setOpenCopyTooltipIssueKey,
 		statusOptions,
 	}), [
 		agentCatalog, addAgentLabel, copiedIssueKey, editingSummary?.issueKey, onAgentAssign, onAssignedAgentIdsChange,
 		onAssignedAgentSelect, onCopyLink, onIssueClick, onIssueKeyClick,
-		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, onSelectRow, selectedIssueKeys, openCopyTooltipIssueKey, statusOptions,
+		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, openCopyTooltipIssueKey, statusOptions,
 	]);
 	const orderedColumns = useMemo(() => getOrderedColumns(baseColumns, extraColumns), [baseColumns, extraColumns]);
 	const trailingEdgeLayout = getJiraListTrailingEdgeLayout(scrollEndInset, bordered);
@@ -666,9 +664,9 @@ export function JiraList({
 					containerClassName="min-w-[1570px] shrink-0 overflow-visible"
 					>
 					<colgroup>
-						<col className="w-8" />
+						<col className="w-15" />
 						{orderedColumns.map((column) => (
-							<col className={column.widthClassName} key={column.id} />
+							<col className={column.id === "work" ? undefined : column.widthClassName} key={column.id} />
 						))}
 					</colgroup>
 					<TableHeader inert={Boolean(editingSummary)} className={cn("sticky top-0 z-20 bg-surface-sunken", !bordered && "bg-transparent")}>
@@ -680,7 +678,14 @@ export function JiraList({
 									!bordered && "rounded-l-xl",
 								)}
 							>
-								<div className="flex items-center justify-end pe-0.5">
+								<div className="flex items-center ps-3">
+									<Checkbox
+										aria-label="Select all work items"
+										checked={allRowsSelected}
+										disabled={selectableRowCount === 0}
+										isIndeterminate={someRowsSelected}
+										onCheckedChange={(checked) => onSelectAllRows?.(Boolean(checked))}
+									/>
 									{hierarchyExpansion ? (
 										<JiraListHierarchyButton
 											disabled={hierarchyExpansion.disabled}
@@ -696,7 +701,7 @@ export function JiraList({
 									<TableHead
 										className={cn(
 											trailingEdgeLayout.headerCellClassName,
-											column.id === "work" && "ps-2",
+											column.id === "work" && "ps-1",
 											column.align === "center" && "text-center",
 											getJiraListLastHeaderCellClassName(
 												trailingEdgeLayout,
@@ -721,15 +726,6 @@ export function JiraList({
 												column.id === "work" && "gap-1.5 overflow-visible",
 												)}
 											>
-												{column.id === "work" ? (
-													<Checkbox
-														aria-label="Select all work items"
-														checked={allRowsSelected}
-														disabled={selectableRowCount === 0}
-														isIndeterminate={someRowsSelected}
-														onCheckedChange={(checked) => onSelectAllRows?.(Boolean(checked))}
-													/>
-												) : null}
 												{column.headerContent ?? column.label}
 											</div>
 											<JiraListColumnActions label={column.label} />
@@ -795,14 +791,14 @@ export function JiraList({
 												className={cn(
 													getBodyCellClassName({
 														isEditing,
-														isSelected: isHighlighted,
+																isSelected: isActive,
 														align: "center",
 													}),
 													"sticky left-0 isolate overflow-visible bg-surface! px-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:transition-colors",
 											!bordered && "rounded-l-xl before:rounded-l-xl",
 													isEditing
 														? "before:bg-transparent"
-														: isHighlighted
+																		: isActive
 														? "before:bg-bg-selected"
 														: "before:bg-transparent group-hover/row:before:bg-bg-neutral-subtle-hovered group-focus-within/row:before:bg-bg-neutral-subtle-hovered",
 													insertionLinePosition ? "z-30" : "z-10",
@@ -813,7 +809,12 @@ export function JiraList({
 												data-insertion-line={insertionLinePosition}
 												style={{ anchorName: getRowAnchorName(insertionAnchorId, rowIndex) }}
 											>
-												<div inert={isEditing} className={cn("relative z-10 flex items-center justify-end pe-0.5", isDimmed && "opacity-20")}>
+														<div inert={isEditing} className={cn("relative z-10 flex items-center ps-3", isDimmed && "opacity-20")}>
+															<Checkbox
+																aria-label={`Select ${row.issueKey}`}
+																checked={isSelected}
+																onCheckedChange={(checked) => onSelectRow?.(row.issueKey, Boolean(checked))}
+															/>
 													{row.hasChildren && onToggleExpand ? (
 														<JiraListHierarchyButton
 															expanded={Boolean(row.isExpanded)}
@@ -828,10 +829,10 @@ export function JiraList({
 													className={cn(
 														getBodyCellClassName({
 															isEditing,
-															isSelected: isHighlighted,
+																				isSelected: isActive,
 															align: column.align,
 														}),
-														column.id === "work" && "ps-2",
+																column.id === "work" && "ps-1",
 														!bordered && columnIndex === orderedColumns.length - 1 && "rounded-r-xl",
 														isEditing && column.id === "work" && "z-30 overflow-visible",
 														insertionLineClassName,

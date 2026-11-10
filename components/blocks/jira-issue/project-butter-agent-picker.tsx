@@ -38,6 +38,7 @@ export function ProjectButterAgentPicker({
 	onCreateAgent,
 	onContinueSession,
 	sessions,
+	side = "right",
 }: Readonly<{
 	anchor?: ComponentProps<typeof PopoverContent>["anchor"];
 	id?: string;
@@ -46,9 +47,10 @@ export function ProjectButterAgentPicker({
 	onCreateAgent?: () => void;
 	onContinueSession?: (session: AgentSessionItem) => void;
 	sessions?: readonly AgentSessionItem[];
+	side?: ComponentProps<typeof PopoverContent>["side"];
 }>) {
 	return (
-		<PopoverContent id={id} anchor={anchor} aria-label="Agents" side="right" align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
+		<PopoverContent id={id} anchor={anchor} aria-label="Agents" side={side} align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
 			<ProjectButterAgentPickerContent onAssign={onAssign} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onContinueSession={onContinueSession} sessions={sessions} />
 		</PopoverContent>
 	);
@@ -165,7 +167,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 			<div role="group" aria-labelledby={`${submenuId}-existing`}>
 				<div id={`${submenuId}-existing`} className="rich-text-command-menu-heading">Continue with existing sessions</div>
 				<ul aria-labelledby={`${submenuId}-existing`} className="flex min-w-0 flex-col">
-					{matchingSessions.map((session) => <AgentSessionCard animateLayout={false} item={session} key={session.id} localSessionAction="view" onView={onContinueSession} padding="menu" showMoreMenu={false} />)}
+					{matchingSessions.map((session) => <AgentSessionCard animateLayout={false} item={session} key={session.id} localSessionAction="view" onView={onContinueSession} padding="menu" showMoreMenu={false} showWorkingSpinner />)}
 				</ul>
 			</div>
 		</>

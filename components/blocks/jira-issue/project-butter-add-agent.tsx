@@ -88,10 +88,12 @@ export function ProjectButterAddAgent({
 	alwaysVisible = false,
 	issueKey,
 	assignment,
+	side = "right",
 }: Readonly<{
 	alwaysVisible?: boolean;
 	issueKey: string;
 	assignment?: JiraIssueAgentAssignment;
+	side?: "left" | "right";
 }>) {
 	const phase = useProjectButterInvocationPhase();
 	const source = useProjectButterInvocationSource();
@@ -152,9 +154,10 @@ export function ProjectButterAddAgent({
 						Add agent
 					</TooltipContent>
 				</Tooltip>
-				{inlinePicker ? <PopoverContent aria-label="Agents" side="right" align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0 [&>div]:max-h-[var(--available-height,26rem)]" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
+				{inlinePicker ? <PopoverContent aria-label="Agents" side={side} align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0 [&>div]:max-h-[var(--available-height,26rem)]" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
 					<ProjectButterCloudAgentPicker onAssign={(agent) => { setTooltipOpen(false); assignAgent(agent); }} onBrowseAgents={assignment.onBrowseAgents ? () => { actions.close(); assignment.onBrowseAgents?.(); } : undefined} />
 				</PopoverContent> : <ProjectButterAgentPicker
+					side={side}
 					sessions={assignment.sessions}
 					onContinueSession={assignment.onOpenSession ? (session) => { actions.close(); assignment.onOpenSession?.(session); } : undefined}
 					onAssign={(agent) => { setTooltipOpen(false); assignAgent(agent); }}

@@ -158,40 +158,34 @@ test("list work items align around the subtask expand control", async ({ page })
 	const selectAll = list.getByRole("checkbox", { name: "Select all work items" });
 	const selectAllBounds = await selectAll.boundingBox();
 	if (!selectBounds || !expandBounds || !expandAllBounds || !selectAllBounds) throw new Error("Hierarchy control bounds are unavailable");
-	const workLabelX = await selectAll.evaluate((checkbox) => {
-		const label = Array.from(checkbox.parentElement?.childNodes ?? []).find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === "Work");
-		if (!label) throw new Error("Work label is unavailable");
-		const range = document.createRange();
-		range.selectNodeContents(label);
-		return range.getBoundingClientRect().x;
-	});
-	expect(workLabelX).toBeCloseTo(leafBounds.x, 1);
+	const headerBounds = await selectAll.locator("xpath=ancestor::th").boundingBox();
+	if (!headerBounds) throw new Error("Selection header bounds are unavailable");
+	expect(selectAllBounds.x - headerBounds.x).toBeCloseTo(selectAllBounds.y - headerBounds.y, 1);
+	expect(selectAllBounds.x - headerBounds.x).toBeCloseTo(headerBounds.y + headerBounds.height - selectAllBounds.y - selectAllBounds.height, 1);
 	expect(selectAllBounds.x).toBeCloseTo(selectBounds.x, 1);
-	expect(selectBounds.x - (expandBounds.x + expandBounds.width)).toBeGreaterThanOrEqual(4);
+	expect(expandBounds.x - (selectBounds.x + selectBounds.width)).toBeGreaterThanOrEqual(4);
 	expect(expandBounds.x).toBeCloseTo(expandAllBounds.x, 1);
-	const expectBalancedBoundary = async (name: string) => {
+	const expectCompactGap = async (name: string) => {
 		for (const width of [1200, 1800]) {
 			await page.setViewportSize({ width, height: 1300 });
-			const chevron = await list.getByRole("button", { name }).locator("svg path").boundingBox();
-			const line = await page.getByTestId("jira-list-column-boundary-0").locator("[data-boundary-line]").boundingBox();
-			const checkbox = await selectAll.boundingBox();
-			if (!chevron || !line || !checkbox) throw new Error("Column boundary bounds are unavailable");
-			const beforeLine = line.x - (chevron.x + chevron.width);
-			const afterLine = checkbox.x - (line.x + line.width);
-			expect(Math.abs(beforeLine - afterLine)).toBeLessThanOrEqual(1.5);
+			const chevron = await list.getByRole("button", { name }).boundingBox();
+			const work = await list.getByRole("columnheader", { name: /Work/u }).boundingBox();
+			if (!chevron || !work) throw new Error("Column bounds are unavailable");
+			expect(work.x - (chevron.x + chevron.width)).toBeGreaterThanOrEqual(0);
+			expect(work.x - (chevron.x + chevron.width)).toBeLessThanOrEqual(8);
 		}
 	};
-	await expectBalancedBoundary("Expand all subtasks");
+	await expectCompactGap("Expand all subtasks");
 	await expand.click();
 	const collapse = list.getByRole("button", { name: "Collapse PAY-101" });
 	await expect(collapse).toHaveAttribute("aria-expanded", "true");
 	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toBeVisible();
-	await expectBalancedBoundary("Collapse all subtasks");
+	await expectCompactGap("Collapse all subtasks");
 	await collapse.click();
 	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toHaveCount(0);
 });
 
-test("issue icons reveal selection checkboxes without shifting work items", async ({ page }) => {
+test("selection checkboxes leave issue icons visible without shifting work items", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
@@ -202,9 +196,8 @@ test("issue icons reveal selection checkboxes without shifting work items", asyn
 	const second = secondRow.getByRole("checkbox", { name: "Select PAY-999" });
 	const icon = firstRow.getByRole("img", { name: "task" });
 	const selectAll = list.getByRole("checkbox", { name: "Select all work items" });
-	await expect(selectAll.locator("xpath=ancestor::th")).toContainText("Work");
 	await page.mouse.move(0, 0);
-	await expect(first).toHaveCSS("opacity", "0");
+	await expect(first).toBeVisible();
 	await expect(icon).toBeVisible();
 	const before = await firstRow.getByRole("button", { name: "PAY-118", exact: true }).boundingBox();
 	const iconBounds = await icon.boundingBox();
@@ -212,22 +205,28 @@ test("issue icons reveal selection checkboxes without shifting work items", asyn
 	if (!before || !iconBounds || !checkboxBounds) throw new Error("Issue control bounds are unavailable");
 	expect(iconBounds.width).toBeCloseTo(checkboxBounds.width, 0);
 	await first.hover();
-	await expect(first).toHaveCSS("opacity", "1");
-	await expect(second).toHaveCSS("opacity", "0");
+	await expect(icon).toBeVisible();
+	await expect(second).toBeVisible();
 	await first.click();
 	await page.mouse.move(0, 0);
 	await expect(first).toBeChecked();
-	await expect(second).toHaveCSS("opacity", "1");
+	await expect(icon).toBeVisible();
 	await expect(selectAll).toHaveAttribute("aria-checked", "mixed");
+	await page.getByRole("heading", { name: "Project Butter v1" }).click();
+	await page.mouse.move(0, 0);
+	const rowBackgrounds = (row: typeof firstRow) => row.locator("td").evaluateAll((cells) => cells.map((cell, index) => (
+		getComputedStyle(cell, index === 0 ? "::before" : null).backgroundColor
+	)));
+	await expect.poll(() => rowBackgrounds(firstRow)).toEqual(await rowBackgrounds(secondRow));
 	const after = await firstRow.getByRole("button", { name: "PAY-118", exact: true }).boundingBox();
 	if (!after) throw new Error("Selected work item bounds are unavailable");
 	expect(after.x).toBeCloseTo(before.x, 1);
 	await first.click();
 	await page.mouse.move(0, 0);
-	await expect(second).toHaveCSS("opacity", "0");
+	await expect(second).toBeVisible();
 	await page.keyboard.press("Tab");
 	await second.focus();
-	await expect(second).toHaveCSS("opacity", "1");
+	await expect(second).toBeVisible();
 	await second.press("Space");
 	await expect(second).toBeChecked();
 	await selectAll.click();

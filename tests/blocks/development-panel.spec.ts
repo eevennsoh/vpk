@@ -233,3 +233,41 @@ test("non-merged pull requests show a compact CI summary without check details",
 	await flyoutChecks.click();
 	await expect(page.getByText("Lint and typecheck")).toBeVisible();
 });
+
+test("CI checks follow the automation settings and allow manual repair and merge", async ({ page }) => {
+	await page.clock.install();
+	await page.goto(appUrl("/preview/blocks/development-panel"));
+	await page.getByRole("button", { name: "Configure", exact: true }).click();
+	const settings = page.getByRole("menu", { name: "Configure", exact: true });
+	await settings.getByRole("menuitemcheckbox", { name: "Auto-fix" }).click();
+	await settings.getByRole("menuitemcheckbox", { name: "Merge when ready" }).click();
+	await page.keyboard.press("Escape");
+	await page.getByRole("button", { name: "Pull requests created" }).click();
+	const request = page.getByRole("button", { name: /#1306 Add guest checkout/u });
+	await expect(request).toContainText("1/3 builds passed");
+	await page.clock.fastForward(5000);
+	await expect(request).toContainText("2/3 builds passed · 1 failed");
+	await request.click();
+	const flyout = page.getByRole("group", { name: "Pull request #1306: Add guest checkout to the storefront" });
+	await flyout.getByRole("button", { name: "Fix PR" }).click();
+	await expect(request).toContainText("checks running");
+	await page.clock.fastForward(5000);
+	await expect(request).toContainText("3/3 builds passed");
+	await page.keyboard.press("Escape");
+	await page.getByRole("button", { name: "Merge pull request" }).click();
+	await expect(request).toContainText("Merged");
+	await page.getByRole("button", { name: "Before setup" }).click();
+	await page.getByRole("button", { name: "Pull requests created" }).click();
+	await expect(request).toContainText("1/3 builds passed");
+});
+
+test("CI checks automatically repair and merge when enabled", async ({ page }) => {
+	await page.clock.install();
+	await page.goto(appUrl("/preview/blocks/development-panel"));
+	await page.getByRole("button", { name: "Pull requests created" }).click();
+	const request = page.getByRole("button", { name: /#1306 Add guest checkout/u });
+	for (const label of ["2/3 builds passed · 1 failed", "checks running", "3/3 builds passed", "Merged"]) {
+		await page.clock.fastForward(5000);
+		await expect(request).toContainText(label);
+	}
+});

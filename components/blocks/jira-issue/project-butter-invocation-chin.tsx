@@ -30,7 +30,7 @@ function InvocationPreviewAvatar({ agent, compact }: Readonly<{ agent: ReturnTyp
 	);
 }
 
-export function ProjectButterInvocationPreview({ className, compactWhenReduced = false, iconScale }: Readonly<{ className?: string; compactWhenReduced?: boolean; iconScale?: JiraIssueIconScale }>) {
+export function ProjectButterInvocationPreview({ className, compactWhenReduced = false, flush = false, iconScale }: Readonly<{ className?: string; compactWhenReduced?: boolean; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
 	const { agent, previousAgent, direction, sequence } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const animate = !reduce && sequence > 0 && agent?.id !== previousAgent?.id;
@@ -41,10 +41,10 @@ export function ProjectButterInvocationPreview({ className, compactWhenReduced =
 			data-slot="jira-issue-agent-invocation-preview"
 			data-agent-id={agent?.id ?? "default"}
 			data-direction={direction === 1 ? "forward" : "backward"}
-			className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)), className)}
+			className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", !flush && (iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale))), className)}
 		>
 			<InvocationPreviewAvatar agent={agent} compact={compactWhenReduced && Boolean(reduce)} />
-			<span className={cn("flex h-5 min-w-0 flex-1 items-center text-sm leading-5 text-text", iconScale === undefined && "-ml-0.5 pr-2")}>
+			<span className={cn("flex h-5 min-w-0 flex-1 items-center text-sm leading-5 text-text", iconScale === undefined && !flush && "-ml-0.5 pr-2")}>
 				Add&nbsp;
 				<span className="relative h-5 min-w-0 flex-1 overflow-hidden text-left">
 					{animate ? (
@@ -83,12 +83,12 @@ export function ProjectButterInvocationPreview({ className, compactWhenReduced =
 	);
 }
 
-function InvocationHandoff({ iconScale, showStatus }: Readonly<{ iconScale?: JiraIssueIconScale; showStatus: boolean }>) {
+function InvocationHandoff({ className, iconScale, showStatus }: Readonly<{ className?: string; iconScale?: JiraIssueIconScale; showStatus: boolean }>) {
 	const { agent } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	if (!agent) return null;
 	return (
-		<div aria-hidden="true" className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)))} data-agent-id={agent.id} data-slot="jira-issue-agent-invocation-handoff">
+		<div aria-hidden="true" className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)), className)} data-agent-id={agent.id} data-slot="jira-issue-agent-invocation-handoff">
 			<motion.span className="flex size-6 shrink-0 items-center justify-center" initial={reduce ? false : { transform: "scale(0.85)" }} animate={{ transform: "scale(1)" }} transition={reduce ? { duration: 0 } : { ...BUTTER_INVOCATION_HANDOFF, delay: BUTTER_INVOCATION_CYCLE.duration }} style={{ willChange: "transform" }}>
 				{agent.visual ?? <AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={getJiraIssueAgentAvatarSize(agent.brandName, agent.avatarSrc)} animate={false} />}
 			</motion.span>
@@ -112,8 +112,9 @@ export function ProjectButterInvocationChin({
 	activities,
 	allowPuzzle = false,
 	retainCompletedContent = false,
+	flushPreview = false,
 	children,
-}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly Readonly<{ id: string; name: string }>[]; allowPuzzle?: boolean; retainCompletedContent?: boolean; children: ReactNode }>) {
+}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly Readonly<{ id: string; name: string }>[]; allowPuzzle?: boolean; retainCompletedContent?: boolean; flushPreview?: boolean; children: ReactNode }>) {
 	const phase = useProjectButterInvocationPhase();
 	const actions = useProjectButterInvocationActions();
 	const preview = useProjectButterInvocationPreview();
@@ -149,8 +150,8 @@ export function ProjectButterInvocationChin({
 			>
 				{children}
 			</motion.div>
-			{previewing && !intoPuzzle ? <div className="pointer-events-none absolute inset-x-0 top-0 px-1 py-1">
-				{phase === "choosing" ? <ProjectButterInvocationPreview iconScale={iconScale} /> : <InvocationHandoff iconScale={iconScale} showStatus={!activities?.length} />}
+			{previewing && !intoPuzzle ? <div className={cn("pointer-events-none absolute inset-x-0 top-0 py-1", !flushPreview && "px-1")}>
+				{phase === "choosing" ? <ProjectButterInvocationPreview iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
 			</div> : null}
 		</motion.div>
 	);

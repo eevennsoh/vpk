@@ -719,6 +719,29 @@ test("Butter labels the single resumable session and continues it", async () => 
 	assert.deepEqual(opened, ["session-1"]);
 });
 
+test("Butter session choices show the state of every session", async () => {
+	const view = await renderComponent({ source: `
+		import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/project-butter-agent-picker";
+		import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
+		const agent = { id: "claude-code", name: "Claude", byline: "" };
+		const sessions = ["running", "needs-input"].map((state) => ({
+			id: state, title: state, state, host: "cloud", agent,
+		}));
+		export default function Fixture() {
+			return <ProjectButterInvocationProvider agents={[agent]} enabled>
+				<ProjectButterAgentPickerContent onAssign={() => {}} onContinueSession={() => {}} sessionChoicesOnly sessions={sessions} />
+			</ProjectButterInvocationProvider>;
+		}
+	` });
+	await view.click(view.getByRole("option", { name: /Claude/u }));
+	const dialog = view.getByRole("dialog", { name: "Claude sessions" });
+	for (const [title, state] of [["running", "Working"], ["needs-input", "Needs input"]]) {
+		const row = [...dialog.querySelectorAll("li")].find((item) => item.textContent.includes(title));
+		assert.equal(Boolean(row?.querySelector(`[role="img"][aria-label="${state}"]`)), true, title);
+	}
+	await view.unmount();
+});
+
 test("Butter restores the add-agent control when assignment does not create a row", async () => {
 	const assigned = [];
 	const view = await renderComponent({

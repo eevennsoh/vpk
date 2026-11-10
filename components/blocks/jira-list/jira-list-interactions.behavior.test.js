@@ -39,6 +39,31 @@ test("an active work item does not select its checkbox", async () => {
 	await view.unmount();
 });
 
+test("selection controls precede hierarchy controls and leave the issue type visible", async () => {
+	const changes = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-list/index.tsx",
+		exportName: "JiraList",
+		props: {
+			rows: [{ ...rows[0], hasChildren: true }],
+			hierarchyExpansion: { allExpanded: false, disabled: false, onToggleAll() {} },
+			onSelectRow: (key, checked) => changes.push([key, checked]),
+			onToggleExpand() {},
+		},
+	});
+	const checkbox = view.getByRole("checkbox", { name: "Select PAY-1" });
+	const expand = view.getByRole("button", { name: "Expand PAY-1" });
+	const headerCheckbox = view.getByRole("checkbox", { name: "Select all work items" });
+	const expandAll = view.getByRole("button", { name: "Expand all subtasks" });
+	assert.equal(Boolean(checkbox.compareDocumentPosition(expand) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	assert.equal(Boolean(headerCheckbox.compareDocumentPosition(expandAll) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+	assert.equal(Boolean(view.getByRole("img", { name: "task" })), true);
+	await view.click(checkbox);
+	assert.deepEqual(changes, [["PAY-1", true]]);
+	assert.equal(Boolean(view.getByRole("img", { name: "task" })), true);
+	await view.unmount();
+});
+
 test("summary editing isolates other rows and saves or cancels the draft", async () => {
 	const changes = [];
 	const view = await renderComponent({

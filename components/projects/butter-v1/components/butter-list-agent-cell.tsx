@@ -2,7 +2,7 @@
 
 import { ProjectButterAddAgent } from "@/components/blocks/jira-issue/project-butter-add-agent";
 import { ProjectButterInvocationChin } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
-import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { ProjectButterInvocationProvider, useProjectButterInvocationPhase } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraListProps, JiraListRowData } from "@/components/blocks/jira-list";
@@ -26,6 +26,7 @@ export function ButterListAgentCell({ agentCatalog, onAgentAssigned, onAssignedA
 
 function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedAgentIdsChange, onAssignedAgentSelect, onBrowseAgents, onCreateAgent, row }: Parameters<typeof ButterListAgentCell>[0]) {
 	const sessions = row.agentSessions ?? [];
+	const phase = useProjectButterInvocationPhase();
 	const crewSessions: AgentSessionItem[] = sessions.map((session) => ({
 		id: session.id,
 		title: session.sessionTitle ?? row.summary,
@@ -37,7 +38,7 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 	}));
 	return (
 			<div className="group/jira-issue flex min-w-0 items-center gap-1" data-butter-agent-surface>
-				<ProjectButterAddAgent alwaysVisible issueKey={row.issueKey} assignment={{
+				<ProjectButterAddAgent alwaysVisible side="left" issueKey={row.issueKey} assignment={{
 					agents: agentCatalog,
 					assignedAgents: sessions.map((agent) => ({ ...agent, byline: agent.byline ?? "" })),
 					onAgentAssign: (agent) => onAgentAssigned?.(row.issueKey, agent),
@@ -45,9 +46,9 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 					onBrowseAgents,
 					onCreateAgent,
 				}} />
-				{sessions.length === 0 ? <span className="pointer-events-none shrink-0 text-sm text-text-subtlest">Add agent</span> : null}
-				<div className="min-w-0 flex-1">
-					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0}>
+				{sessions.length === 0 && phase !== "choosing" && phase !== "handoff" ? <span className="pointer-events-none shrink-0 text-sm text-text-subtlest">Add agent</span> : null}
+				<div className="min-w-0 flex-1 pt-1">
+					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0} flushPreview>
 						{sessions.length > 0 ? <ProjectButterCrew
 							field
 							cloudAgentSelector

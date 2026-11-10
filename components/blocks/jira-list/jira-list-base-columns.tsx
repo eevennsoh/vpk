@@ -8,6 +8,7 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { PRIORITY_LABELS } from "@/components/blocks/jira-list/jira-list-cell-data";
 import {
 	HierarchyConnector,
+	IssueTypeGlyph,
 	JiraListAgentSessionsCell,
 	JiraListAvatar,
 	JiraListLabelsCell,
@@ -20,7 +21,6 @@ import type {
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list/jira-list-types";
 import { JiraListPointsCell } from "@/components/blocks/jira-list/jira-list-points-cell";
-import { JiraListIssueSelection } from "@/components/blocks/jira-list/jira-list-work-controls";
 import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,8 +49,6 @@ export function createJiraListBaseColumns({
 	onStoryPointsChange,
 	renderAgentSessions,
 	onStatusChange,
-	onSelectRow,
-	selectedIssueKeys,
 	openCopyTooltipIssueKey,
 	setOpenCopyTooltipIssueKey,
 	statusOptions,
@@ -69,8 +67,6 @@ export function createJiraListBaseColumns({
 	onStoryPointsChange?: JiraListProps["onStoryPointsChange"];
 	renderAgentSessions?: JiraListProps["renderAgentSessions"];
 	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
-	onSelectRow?: JiraListProps["onSelectRow"];
-	selectedIssueKeys: ReadonlySet<string>;
 	openCopyTooltipIssueKey: string | null;
 	setOpenCopyTooltipIssueKey: Dispatch<SetStateAction<string | null>>;
 	statusOptions: readonly JiraListStatusOption[];
@@ -91,13 +87,7 @@ export function createJiraListBaseColumns({
 					<div className="flex min-w-0 items-center gap-2">
 						<div className="flex min-w-0 flex-1 items-center gap-1.5">
 							<HierarchyConnector indentLevel={indentLevel} />
-							<JiraListIssueSelection
-								checked={selectedIssueKeys.has(row.issueKey)}
-								issueKey={row.issueKey}
-								issueType={row.issueType}
-								onChange={onSelectRow}
-								showCheckbox={selectedIssueKeys.size > 0}
-							/>
+							<IssueTypeGlyph issueType={row.issueType} large />
 							<div className="group/issue-key flex shrink-0 items-center">
 								{onIssueKeyClick ? (
 									<Button
