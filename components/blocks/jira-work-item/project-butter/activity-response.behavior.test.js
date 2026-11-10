@@ -250,3 +250,38 @@ test("starting an agent from the details field reveals its activity card with a 
 		window.setTimeout = originalSetTimeout;
 	}
 });
+
+test("starting an agent with reduced motion scrolls directly to its activity card without a glow", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { SidebarProvider } from "@/app/contexts/context-sidebar";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
+			export default function TestWorkItem(props) { return <ThemeWrapper><SidebarProvider><ProjectButterJiraWorkItem {...props} /></SidebarProvider></ThemeWrapper>; }`,
+		mocks: { "@/app/contexts": `const controls = { chatSurface: null, openChat() {}, toggleChat() {} };
+			export const useRovoChatControls = () => controls;
+			export const useOptionalRovoChatControls = () => controls;
+			export const useOptionalRovoChat = () => null;` },
+		props: { initialPreset: "filled", onClose() {}, open: true, cloudAgentSelector: true, shell: "gallery" },
+	});
+	const originalMatchMedia = window.matchMedia;
+	window.matchMedia = () => ({ matches: true, addEventListener() {}, removeEventListener() {} });
+	const feed = document.querySelector("[data-project-butter-activity-feed]");
+	const scrollport = feed.parentElement;
+	scrollport.style.overflowY = "auto";
+	scrollport.scrollTop = 500;
+	scrollport.getBoundingClientRect = () => ({ top: 0, bottom: 700, height: 700 });
+	const scrolls = [];
+	scrollport.scrollTo = (options) => scrolls.push(options);
+	try {
+		await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
+		await view.click(view.getByRole("button", { name: "Claude" }));
+		const card = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:"));
+		assert.equal(Boolean(card), true);
+		assert.equal(scrolls.at(-1)?.behavior, "auto");
+		assert.equal(card.querySelector("[data-jira-linking-glow-trace], [data-jira-linking-glow-backdrop]"), null);
+	} finally {
+		await view.unmount();
+		window.matchMedia = originalMatchMedia;
+	}
+});
