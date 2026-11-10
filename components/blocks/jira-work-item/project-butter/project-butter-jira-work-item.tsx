@@ -23,7 +23,6 @@ import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project
 import { ProjectButterDetailsRail } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
 import { ProjectButterSession } from "@/components/blocks/jira-work-item/project-butter/project-butter-session";
 import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-item/project-butter/placeholder-fill";
@@ -56,7 +55,7 @@ export interface ProjectButterJiraWorkItemProps {
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
-	onOpenCloudSession?: (session: ProjectButterSessionItem, draft?: string) => boolean | void | Promise<boolean | void>;
+	onOpenCloudSession?: (session: ProjectButterSessionItem, draft: string | undefined, workItem: { code: string; summary: string }) => boolean | void | Promise<boolean | void>;
 	/** Standalone only: the host's sidebar chat, mounted beside the work item. Pair with `onOpenCloudSession`. */
 	chatPanel?: ReactNode;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
@@ -279,7 +278,7 @@ export function ProjectButterJiraWorkItem({
 		if (!session || isLocalAgentListItem(session)) return false;
 		if (onOpenCloudSession) {
 			setActiveSessionId(null);
-			return onOpenCloudSession(session, draft);
+			return onOpenCloudSession(session, draft, { code: workItem?.code ?? "VITA-1", summary: content.summary });
 		} else {
 			if (draft) setDrafts((current) => ({ ...current, [id]: current[id]?.trim() ? `${current[id].trimEnd()}\n\n${draft}` : draft }));
 			setActiveSessionId(id);
@@ -355,19 +354,19 @@ export function ProjectButterJiraWorkItem({
 					sidePanel
 						? "grid-cols-1 overflow-y-auto"
 						: "grid-cols-1 overflow-y-auto @[860px]/butter:grid-cols-[minmax(0,1fr)_auto] @[860px]/butter:overflow-clip",
+					showLayoutFade && "scroll-mask-top [--scroll-mask-fade-size:3rem]",
 				)}
 				data-project-butter-state={suggestion ? "suggestion" : empty ? "empty" : "filled"}
 				data-project-butter-work-item
 				ref={setLayoutRef}
-				style={buildScrollMaskStyle({ fadeTop: showLayoutFade, fadeBottom: false })}
 			>
 				<div
 					className={cn(
 						"min-w-0 px-6 pb-6",
 						!sidePanel && "@[860px]/butter:overflow-y-auto",
+						showColumnFade && "scroll-mask-top [--scroll-mask-fade-size:3rem]",
 					)}
 					ref={setColumnRef}
-					style={buildScrollMaskStyle({ fadeTop: showColumnFade, fadeBottom: false })}
 				>
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody

@@ -10,20 +10,20 @@ const NO_FLASHING_KEYS: ReadonlySet<string> = new Set<string>();
 
 /**
  * Has to outlast the `jira-list-row-flash` utility in `app/globals.css`, which
- * runs for `--duration-slowest` (600ms). Holding the class a beat longer lets
- * the animation finish before the row hands its background back to the cell's
- * own classes.
+ * runs for `--duration-slowest` (600ms). The assignment sweep uses the shared
+ * 800ms linking glow, so retain the acknowledgement until it has finished too.
  */
-export const JIRA_LIST_ROW_FLASH_HOLD_MS = 700;
+export const JIRA_LIST_ROW_FLASH_HOLD_MS = 900;
 
 export function appendRowFlash(
 	current: JiraListRowFlash,
 	issueKeys: readonly string[],
 	color?: string,
+	variant?: JiraListRowFlash["variant"],
 ): JiraListRowFlash {
 	return issueKeys.length === 0
 		? current
-		: { issueKeys: [...issueKeys], token: current.token + 1, ...(color ? { color } : {}) };
+		: { issueKeys: [...issueKeys], token: current.token + 1, ...(color ? { color } : {}), ...(variant ? { variant } : {}) };
 }
 
 /**
@@ -36,16 +36,17 @@ export function appendRowFlash(
  */
 export function useJiraListRowFlashSource(): Readonly<{
 	flash: JiraListRowFlash;
-	flashRow: (issueKey: string, color?: string) => void;
+	flashRow: (issueKey: string, color?: string, variant?: JiraListRowFlash["variant"]) => void;
 }> {
 	const [flash, setFlash] = useState<JiraListRowFlash>(NO_JIRA_LIST_ROW_FLASH);
 	const batchRef = useRef<string[]>([]);
 	const colorRef = useRef<string | undefined>(undefined);
+	const variantRef = useRef<JiraListRowFlash["variant"]>(undefined);
 
-	const flashRow = useCallback((issueKey: string, color?: string) => {
+	const flashRow = useCallback((issueKey: string, color?: string, variant?: JiraListRowFlash["variant"]) => {
 		const isFirstOfBatch = batchRef.current.length === 0;
 		batchRef.current.push(issueKey);
-		if (isFirstOfBatch) colorRef.current = color;
+		if (isFirstOfBatch) { colorRef.current = color; variantRef.current = variant; }
 		if (!isFirstOfBatch) {
 			return;
 		}
@@ -54,8 +55,10 @@ export function useJiraListRowFlashSource(): Readonly<{
 			const issueKeys = batchRef.current;
 			batchRef.current = [];
 			const color = colorRef.current;
+			const variant = variantRef.current;
 			colorRef.current = undefined;
-			setFlash((current) => appendRowFlash(current, issueKeys, color));
+			variantRef.current = undefined;
+			setFlash((current) => appendRowFlash(current, issueKeys, color, variant));
 		});
 	}, []);
 

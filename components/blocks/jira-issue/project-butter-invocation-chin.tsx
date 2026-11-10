@@ -137,7 +137,7 @@ export function ProjectButterInvocationChin({
 			data-slot="jira-issue-agent-invocation-chin"
 			className="relative overflow-hidden has-[:focus-visible]:overflow-visible"
 			initial={false}
-			animate={{ height: previewing ? 40 : hasChin ? "auto" : 0, marginTop: previewing || hasChin ? -4 : 0 }}
+			animate={{ height: previewing ? (flushPreview ? 32 : 40) : hasChin ? "auto" : 0, marginTop: previewing || hasChin ? -4 : 0 }}
 			transition={reduce ? { duration: 0 } : BUTTER_INVOCATION_REVEAL}
 		>
 			<motion.div
@@ -145,12 +145,12 @@ export function ProjectButterInvocationChin({
 				aria-hidden={phase === "choosing" || undefined}
 				inert={phase === "choosing" || undefined}
 				initial={false}
-				animate={{ opacity: (hasChin || retainCompletedContent) && phase !== "choosing" ? 1 : 0, transform: hasChin || retainCompletedContent ? "translateY(0px)" : "translateY(20px)" }}
+				animate={{ opacity: (hasChin || retainCompletedContent) && phase !== "choosing" ? 1 : 0, transform: flushPreview || hasChin || retainCompletedContent ? "translateY(0px)" : "translateY(20px)" }}
 				transition={reduce || phase === "handoff" ? { duration: 0 } : BUTTER_INVOCATION_HANDOFF}
 			>
 				{children}
 			</motion.div>
-			{previewing && !intoPuzzle ? <div className={cn("pointer-events-none absolute inset-x-0 top-0 py-1", !flushPreview && "px-1")}>
+			{previewing && !intoPuzzle ? <div className={cn("pointer-events-none absolute inset-x-0 top-0", !flushPreview && "p-1")}>
 				{phase === "choosing" ? <ProjectButterInvocationPreview iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
 			</div> : null}
 		</motion.div>

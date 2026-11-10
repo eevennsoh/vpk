@@ -35,9 +35,10 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 		host: session.host,
 		invokedBy: session.invokedBy,
 		role: session.role,
+		timeLabel: session.timeLabel,
 	}));
 	return (
-			<div className="group/jira-issue flex min-w-0 items-center gap-1" data-butter-agent-surface>
+			<div className="group/jira-issue flex min-w-0 items-center gap-2" data-butter-agent-surface>
 				<ProjectButterAddAgent alwaysVisible side="left" issueKey={row.issueKey} assignment={{
 					agents: agentCatalog,
 					assignedAgents: sessions.map((agent) => ({ ...agent, byline: agent.byline ?? "" })),
@@ -48,16 +49,14 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 				}} />
 				{sessions.length === 0 && phase !== "choosing" && phase !== "handoff" ? <span className="pointer-events-none shrink-0 text-sm text-text-subtlest">Add agent</span> : null}
 				<div className="min-w-0 flex-1 pt-1">
-					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0} flushPreview>
+					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0} allowPuzzle flushPreview>
 						{sessions.length > 0 ? <ProjectButterCrew
 							field
-							cloudAgentSelector
+							fieldSessionMenu
 							showFieldLabel={false}
+							showSessionStatus
 							sessions={crewSessions}
 							onOpenSession={(session) => { const selected = sessions.find((candidate) => candidate.id === session.id); if (selected) onAssignedAgentSelect?.(row.issueKey, selected); }}
-							onStartAgent={(agent) => { const selected = agentCatalog.find((candidate) => candidate.id === agent.id); if (selected) { onAgentAssigned?.(row.issueKey, selected); onAssignedAgentIdsChange(row.issueKey, [...sessions.map((session) => session.id), selected.id]); } }}
-							onBrowseAgents={onBrowseAgents}
-							onCreateAgent={onCreateAgent}
 						/> : null}
 					</ProjectButterInvocationChin>
 				</div>

@@ -12,6 +12,8 @@ for (const width of [700, 1600]) {
 		await expect(scroller).toHaveCSS("mask-image", "none");
 		await scroller.evaluate((element) => { element.scrollTop = 200; });
 		await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
+		await expect(scroller).toHaveCSS("--scroll-mask-fade-size", "3rem");
+		await expect(column.locator('[data-slot="scroll-mask-blur"]')).toHaveCount(0);
 		await scroller.evaluate((element) => { element.scrollTop = 0; });
 		await expect(scroller).toHaveCSS("mask-image", "none");
 	});
@@ -27,6 +29,8 @@ test("the details rail fades independently when it scrolls", async ({ page }) =>
 	await expect(scroller).toHaveCSS("mask-image", "none");
 	await scroller.evaluate((element) => { element.scrollTop = 200; });
 	await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
+	await expect(scroller).toHaveCSS("--scroll-mask-fade-size", "3rem");
+	await expect(rail.locator('[data-slot="scroll-mask-blur"]')).toHaveCount(0);
 	await scroller.evaluate((element) => { element.scrollTop = 0; });
 	await expect(scroller).toHaveCSS("mask-image", "none");
 });
@@ -158,7 +162,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.goto(appUrl("/butter-v1"));
 		await page.getByRole("button", { name: "Select Work item" }).click();
 		const field = page.getByRole("group", { name: "Agents field" });
-		await field.getByRole("button", { name: /agents: Needs input/ }).click();
+		await field.getByRole("button", { name: /\d+ agents/ }).click();
 		const preview = field.locator('[data-slot="jira-issue-agent-invocation-preview"]');
 		await expect(preview).toHaveAttribute("data-agent-id", "default");
 		await expect(preview).toContainText("Add");
@@ -183,91 +187,20 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(preview).toHaveAttribute("data-agent-id", "jira-coding");
 		await page.keyboard.press("Escape");
 		await expect(preview).toHaveCount(0);
-		await expect(field.getByRole("button", { name: /agents: Needs input/ })).toBeVisible();
+		await expect(field.getByRole("button", { name: /\d+ agents/ })).toBeVisible();
 	});
 }
 
-for (const agent of [{ name: "Claude", id: "claude-code" }, { name: "Figma", id: "figma" }]) {
-	test(`${agent.name} holds its preview size before scaling into the original loader`, async ({ page }) => {
-		await page.setViewportSize({ width: 1600, height: 1200 });
-		await page.emulateMedia({ reducedMotion: "no-preference" });
-		await page.goto(appUrl("/butter-v1"));
-		await page.getByRole("button", { name: "Select Work item" }).click();
-		const field = page.getByRole("group", { name: "Agents field" });
-		const existingIds = await field.locator("[data-agent-loading-slot]").evaluateAll((avatars) => avatars.map((avatar) => avatar.getAttribute("data-agent-id")));
-		await field.getByRole("button", { name: /agents: Needs input/ }).click();
-		const option = page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: agent.name, exact: true });
-		await option.hover();
-		const preview = field.locator(`[data-slot="jira-issue-agent-invocation-preview"][data-agent-id="${agent.id}"] [data-slot="avatar"]`);
-		await expect(preview).toBeVisible();
-		const previewBox = await preview.boundingBox();
-		if (!previewBox) throw new Error("The selected agent preview must be visible");
-		const samplesPromise = page.evaluate(async ({ previousIds, agentId }) => {
-			const button = document.querySelector<HTMLButtonElement>(`[role="dialog"][aria-label="Add agent"] button[data-agent-id="${agentId}"]`);
-			if (!button) throw new Error("The selected agent is missing from the selector");
-			await new Promise<void>((resolve) => button.addEventListener("click", () => resolve(), { once: true, capture: true }));
-			const start = performance.now();
-			const samples: { time: number; slot: string; width: number; x: number; y: number; opacity: number; visible: number; frontId: string; backId: string }[] = [];
-			let selectedId = "";
-			while (performance.now() - start < 3_400) {
-				const field = document.querySelector('[aria-label="Agents field"]');
-				const front = field?.querySelector<HTMLElement>('[data-agent-loading-slot="front"]');
-				if (front?.dataset.agentId && !previousIds.includes(front.dataset.agentId)) selectedId ||= front.dataset.agentId;
-				const avatar = selectedId ? field?.querySelector<HTMLElement>(`[data-agent-id="${selectedId}"]`) : null;
-				const visual = avatar?.querySelector<HTMLElement>('[data-slot="avatar"]');
-				if (field && avatar && visual) {
-					const rect = visual.getBoundingClientRect();
-					const visible = [...field.querySelectorAll<HTMLElement>("[data-agent-loading-slot]")].filter((slot) => {
-						const inner = slot.firstElementChild;
-						return Number(getComputedStyle(slot).opacity) * (inner ? Number(getComputedStyle(inner).opacity) : 1) > 0.01;
-					}).length;
-					const currentFront = field.querySelector<HTMLElement>('[data-agent-loading-slot="front"]:not([data-agent-id="' + selectedId + '"])') ?? field.querySelector<HTMLElement>('[data-agent-loading-slot="front"]');
-					const back = field.querySelector<HTMLElement>('[data-agent-loading-slot="back"]');
-					samples.push({ time: performance.now() - start, slot: avatar.dataset.agentLoadingSlot ?? "", width: rect.width, x: rect.x, y: rect.y, opacity: Number(getComputedStyle(avatar).opacity) * Number(getComputedStyle(visual).opacity), visible, frontId: currentFront?.dataset.agentId ?? "", backId: back?.dataset.agentId ?? "" });
-				}
-				await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-			}
-			return samples;
-		}, { previousIds: existingIds, agentId: agent.id });
-		await option.click();
-		const samples = await samplesPromise;
-		expect(samples.length).toBeGreaterThan(0);
-		expect(samples[0].width).toBeCloseTo(previewBox.width, 0);
-		expect(samples[0].x + samples[0].width / 2).toBeCloseTo(previewBox.x + previewBox.width / 2, 0);
-		expect(samples[0].y + samples[0].width / 2).toBeCloseTo(previewBox.y + previewBox.height / 2, 0);
-		expect(samples[0].visible).toBe(1);
-		expect(samples[0].backId).not.toBe("");
-		const initialHold = samples.filter((sample) => sample.time < 850);
-		expect(initialHold.every((sample) => sample.slot === "front" && Math.abs(sample.width - previewBox.width) < 0.5 && sample.opacity > 0.95 && sample.visible === 1)).toBe(true);
-		expect(samples.some((sample) => sample.time > 1_000 && sample.width > 16.5 && sample.width < previewBox.width - 0.5)).toBe(true);
-		expect(samples.some((sample) => sample.time < 1_900 && Math.abs(sample.width - 16) < 0.5 && sample.visible === 2)).toBe(true);
-		expect(samples.some((sample) => sample.time > 1_900 && sample.opacity > 0.05 && sample.opacity < 0.95)).toBe(true);
-		expect(samples.some((sample) => sample.frontId === samples[0].backId)).toBe(true);
-	});
-}
-
-test("the selected agent keeps its preview size with reduced motion", async ({ page }) => {
+test("the agent field shows an avatar stack without session state", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1200 });
-	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
 	const field = page.getByRole("group", { name: "Agents field" });
-	await field.getByRole("button", { name: /agents: Needs input/ }).click();
-	const figma = page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Figma", exact: true });
-	await figma.hover();
-	const preview = field.locator('[data-slot="jira-issue-agent-invocation-preview"][data-agent-id="figma"] [data-slot="avatar"]');
-	await expect(preview).toBeVisible();
-	const previewBox = await preview.boundingBox();
-	if (!previewBox) throw new Error("The selected agent preview must be visible");
-	await figma.click();
-	const loading = field.locator(".agent-loading");
-	await expect(loading).toHaveAttribute("data-reduced-motion", "true");
-	const front = loading.locator('[data-agent-loading-slot="front"] [data-slot="avatar"]');
-	await expect(front).toBeVisible();
-	const frontBox = await front.boundingBox();
-	if (!frontBox) throw new Error("The selected agent must remain visible");
-	expect(frontBox.width).toBeCloseTo(previewBox.width, 0);
-	await expect(field.locator(".agent-loading-intro-front")).toHaveCount(0);
+	await expect(field.getByRole("button", { name: "4 agents" })).toBeVisible();
+	await expect(field.locator('[data-slot="avatar"]')).toHaveCount(4);
+	await expect(field).not.toContainText(/Needs input|Working|Finished/);
+	await field.getByRole("button", { name: "4 agents" }).click();
+	await expect(page.getByRole("dialog", { name: "Add agent" })).toBeVisible();
 });
 
 async function sampleLayoutSize(locator: Locator) {
@@ -383,6 +316,29 @@ test("Butter v1 board and work item use the direct cloud agent selector", async 
 	await boardPicker.getByRole("button", { name: "Claude", exact: true }).click();
 	await expect(boardPicker).toHaveCount(0);
 	await expect(card.getByRole("button", { name: /Claude: (Working|Needs input)/ })).toBeVisible();
+});
+
+test("gallery session cards open the selected agent in floating Rovo chat", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const workItem = page.getByRole("region", { name: "Work item full screen view" });
+	await workItem.getByRole("button", { name: "Compare the Q3 revenue forecast", exact: true }).click();
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	await expect(chat).toBeVisible();
+	await expect(chat).toContainText("Cursor");
+	await expect(chat).toContainText("Which revenue line should we keep?");
+	await expect(page.getByRole("textbox", { name: "Reply to Cursor" })).toHaveCount(0);
+	await chat.getByRole("button", { name: "Close", exact: true }).click();
+
+	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button").click();
+	await page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Jira Coding Agent", exact: true }).click();
+	const session = workItem.locator('[data-project-butter-session-start]').filter({ hasText: "Jira Coding Agent" });
+	await session.getByRole("button", { name: "Redesign onboarding flow for new users", exact: true }).click();
+	await expect(chat).toBeVisible();
+	await expect(chat).toContainText("Jira Coding Agent");
+	await expect(chat).toContainText("VITA-1: Redesign onboarding flow for new users");
+	await expect(page.getByRole("textbox", { name: "Reply to Jira Coding Agent" })).toHaveCount(0);
 });
 
 test("Work item gallery displays the Project Butter screen with floating Rovo", async ({ page }) => {

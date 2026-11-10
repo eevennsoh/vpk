@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type Ref } from "react";
-import { useInstantTransition } from "motion/react";
+import { useInstantLayoutTransition, useInstantTransition } from "motion/react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { DEFAULT_SKILLS } from "@/app/data/directory";
@@ -12,7 +12,6 @@ import { MountOnFirstUse, RetainedView } from "@/components/projects/shared/comp
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { Gallery } from "@/components/blocks/gallery";
 import { JiraLocalAgentMenu } from "@/components/blocks/jira-local-agent";
-import { DEVELOPMENT_PANEL_PULL_REQUESTS } from "@/components/blocks/pull-request/data/demo-pull-requests";
 import { useRovoChat } from "@/app/contexts/context-rovo-chat";
 import { getMessageText } from "@/lib/rovo-ui-messages";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -26,8 +25,10 @@ import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/pr
 import { PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
+import { nextProjectButterDevelopmentPhase } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
 import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
 import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
+import { getAgentAvatarAccent } from "@/lib/agent-avatars";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { ProjectButterRelatedSearchItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { butterRelatedCatalog } from "@/components/projects/butter-v1/data/related-scope";
@@ -104,7 +105,7 @@ import {
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 const SkillDirectoryDialog = dynamic(() => import("@/components/blocks/skill-directory").then((module) => module.SkillDirectoryDialog));
 const ButterGalleryPullRequest = dynamic(() => import("./components/butter-gallery-pull-request"));
-const DevelopmentPanel = dynamic(() => import("@/components/blocks/development-panel").then((module) => module.DevelopmentPanel));
+const ProjectButterDevelopmentGallery = dynamic(() => import("@/components/blocks/jira-work-item/project-butter/project-butter-development-journey").then((module) => module.ProjectButterDevelopmentGallery));
 
 const BUTTER_DEFAULT_REPORTER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
@@ -220,13 +221,14 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 
 export default function ButterPage(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState("agent-selector");
-	const startGalleryTransition = useInstantTransition();
-	const selectGalleryItem = (id: string) => startGalleryTransition(() => setSelectedId(id));
+	const startGalleryLayoutTransition = useInstantLayoutTransition();
+	const selectGalleryItem = (id: string) => startGalleryLayoutTransition(() => setSelectedId(id));
 	const [journeyResetKey, setJourneyResetKey] = useState(0);
 	const [collapsedBoardColumns, setCollapsedBoardColumns] = useState<ReadonlySet<string>>(() => new Set());
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
 	const [duplicativeSessionsResetKey, setDuplicativeSessionsResetKey] = useState(0);
 	const [pullRequestResetKey, setPullRequestResetKey] = useState(0);
+	const [developmentResetKey, setDevelopmentResetKey] = useState(0);
 	const [workItemResetKey, setWorkItemResetKey] = useState(0);
 	const [pullRequestStatus, setPullRequestStatus] = useState<ButterPullRequestStatus>("open");
 	const journeyActive = selectedId === "e2e-journey";
@@ -241,7 +243,7 @@ export default function ButterPage(): React.ReactElement {
 	const [autoMergeEnabled, setAutoMergeEnabled] = useState(true);
 	useEffect(() => {
 		if (!journeyActive) return;
-		const next = phase === "failed" && autoFixEnabled ? "fixing" : phase === "fixing" ? "passed" : phase === "passed" && autoMergeEnabled ? "merged" : null;
+		const next = phase === "invoke" || phase === "working" ? null : nextProjectButterDevelopmentPhase(phase, autoFixEnabled, autoMergeEnabled);
 		if (!next) return;
 		const timeout = window.setTimeout(() => setPhase(next), 5000);
 		return () => window.clearTimeout(timeout);
@@ -286,12 +288,12 @@ export default function ButterPage(): React.ReactElement {
 				title="Project Butter v1"
 				showTopBarBorder
 				stagePosition="center"
-				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } }}
+				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } else if (item.id === "development-panel") { setDevelopmentResetKey((current) => current + 1); } }}
 				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
 				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
 				renderSelectedItem={(item) => item.id === "development-panel" ? (
 					<div className="pointer-events-auto w-full max-w-sm">
-						<DevelopmentPanel pullRequests={DEVELOPMENT_PANEL_PULL_REQUESTS} workItem={{ code: "PAY-999", summary: "Improve merchant onboarding for Payments SDK v2", description: "" }} />
+						<ProjectButterDevelopmentGallery author={{ ...BUTTER_DEFAULT_REPORTER, assistedBy: { name: "Claude", brandName: "claude" } }} key={developmentResetKey} />
 					</div>
 				) : item.id === "e2e-journey" || item.id === "board" || item.id === "list" || item.id === "agent-selector" || item.id === "duplicative-sessions" || item.id === "work-item" || item.id === "pull-request" ? null : (
 					<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">{item.title}</h2>
@@ -343,14 +345,21 @@ export default function ButterPage(): React.ReactElement {
 function ButterGalleryWorkItem({ open, onClose }: Readonly<{ open: boolean; onClose: () => void }>) {
 	const router = useRouter();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
+	const { chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat } = useJgpAgentChatDemo();
+	const prefillKey = useRef(0);
+	const [composerPrefillRequest, setComposerPrefillRequest] = useState<ComponentProps<typeof JgpRovoOverlay>["composerPrefillRequest"]>();
 	return (
 		<>
 			<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex items-start justify-center overflow-hidden">
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem cloudAgentSelector currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} open={open} shell="gallery" />
+					<ProjectButterJiraWorkItem cloudAgentSelector currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} onOpenCloudSession={async (session, draft, workItem) => {
+						const opened = await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt });
+						if (opened && draft) setComposerPrefillRequest({ text: draft, append: true, requestKey: ++prefillKey.current });
+						return opened;
+					}} open={open} shell="gallery" />
 				</div>
 			</div>
-			{open ? <JgpRovoOverlay /> : null}
+			{open ? <JgpRovoOverlay chatContextBar={chatContextBar} composerPrefillRequest={composerPrefillRequest} externalThinkingMessageId={externalThinkingMessageId} isSwitchingSession={isSwitchingSession} onComposerPrefillConsumed={(requestKey) => setComposerPrefillRequest((current) => current?.requestKey === requestKey ? undefined : current)} /> : null}
 			<MountOnFirstUse active={agentsDirectoryOpen}>
 				<Suspense fallback={null}>
 					<AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} variant="standard-v2" onCreateAgent={() => router.push("/studio")} onOpenChange={setAgentsDirectoryOpen} onSelectAgent={() => setAgentsDirectoryOpen(false)} open={agentsDirectoryOpen} />
@@ -607,8 +616,9 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	const handleListAgentAssigned = useCallback((issueKey: string, agent: AgentSelectorAgent) => {
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-		const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(agent.brandName, agent.vpkLogo, agent.name, agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
-		flashListRow(issueKey, `color-mix(in srgb, ${tint} 28%, transparent)`);
+		const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(agent.brandName, agent.vpkLogo, agent.logoName, agent.name, agent.id))
+			?? (agent.avatarSrc?.startsWith("/avatar-agent") ? getAgentAvatarAccent(agent.avatarSrc) : AGENT_BRAND_TINT_FALLBACK);
+		flashListRow(issueKey, tint, "sweep");
 	}, [flashListRow]);
 	const handleWorkItemSessionStart = useCallback((issueKey: string, session: ProjectButterSessionItem) => {
 		const card = boardColumns.flatMap((column) => column.cards).find((candidate) => candidate.code === issueKey);

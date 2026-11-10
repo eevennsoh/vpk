@@ -1,10 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { DevelopmentPanel, type DevelopmentPanelProps } from "@/components/blocks/development-panel/development-panel";
 import type { PullRequestAuthor } from "@/components/blocks/pull-request/components/pull-request-types";
 import { Button } from "@/components/ui/button";
-import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, projectButterDevelopmentChecks, projectButterDevelopmentPresentation, type ProjectButterDevelopmentPhase } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
+import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, nextProjectButterDevelopmentPhase, projectButterDevelopmentChecks, projectButterDevelopmentPresentation, type ProjectButterDevelopmentPhase } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
 
 export interface ProjectButterDevelopmentJourneyProps {
 	phase?: ProjectButterDevelopmentPhase;
@@ -38,4 +38,17 @@ export function ProjectButterDevelopmentJourney({ agentName = "Rovo", author, au
 			/>
 		</section>
 	);
+}
+
+export function ProjectButterDevelopmentGallery({ author }: Readonly<{ author: PullRequestAuthor }>) {
+	const [phase, setPhase] = useState<ProjectButterDevelopmentPhase>("failed");
+	const [autoFixEnabled, setAutoFixEnabled] = useState(true);
+	const [autoMergeEnabled, setAutoMergeEnabled] = useState(true);
+	useEffect(() => {
+		const next = nextProjectButterDevelopmentPhase(phase, autoFixEnabled, autoMergeEnabled);
+		if (!next) return;
+		const timer = window.setTimeout(() => setPhase(next), 5000);
+		return () => window.clearTimeout(timer);
+	}, [autoFixEnabled, autoMergeEnabled, phase]);
+	return <ProjectButterDevelopmentJourney author={author} autoFixEnabled={autoFixEnabled} autoMergeEnabled={autoMergeEnabled} onAutoFixChange={setAutoFixEnabled} onAutoMergeChange={setAutoMergeEnabled} onFixCheck={() => setPhase("fixing")} onMergePullRequest={() => setPhase("merged")} phase={phase} />;
 }

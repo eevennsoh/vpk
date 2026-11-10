@@ -841,7 +841,7 @@ test("JiraList acknowledges a session drop with a row flash instead of a checkma
 	assert.match(TYPES_SOURCE, /export interface JiraListRowFlash \{/u);
 	assert.match(TYPES_SOURCE, /rowFlash\?: JiraListRowFlash;/u);
 	assert.match(SOURCE, /const flashingIssueKeys = useJiraListRowFlashKeys\(rowFlash\);/u);
-	assert.match(SOURCE, /const isFlashing = flashingIssueKeys\.has\(row\.issueKey\);/u);
+	assert.match(SOURCE, /const isFlashing = rowFlash\?\.variant !== "sweep" && flashingIssueKeys\.has\(row\.issueKey\);/u);
 	assert.match(SOURCE, /getRowFlashCellClassName\(isFlashing, "sticky"\)/u);
 	assert.match(SOURCE, /getRowFlashCellClassName\(isFlashing\)/u);
 	// The utility, its keyframes, and the reduced-motion fallback have to exist

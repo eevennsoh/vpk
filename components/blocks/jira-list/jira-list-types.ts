@@ -49,6 +49,7 @@ export interface JiraListGoal {
 export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "host" | "invokedBy" | "role"> {
 	id: string;
 	sessionTitle?: string;
+	timeLabel?: string;
 	name: string;
 	byline?: string;
 	avatarSrc?: string;
@@ -112,6 +113,7 @@ export type JiraListAgentSessionDropIntent =
 export interface JiraListRowFlash {
 	readonly issueKeys: readonly string[];
 	readonly color?: string;
+	readonly variant?: "sweep";
 	/** Bumped once per drop, so a repeat drop replays the acknowledgement. */
 	readonly token: number;
 }

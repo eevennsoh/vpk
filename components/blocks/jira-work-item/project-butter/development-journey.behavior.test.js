@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { act } = require("react");
 const { renderComponent } = require("../../../../scripts/lib/render-component.js");
 const { projectButterDevelopmentChecks } = require("./development-journey-model.ts");
 
@@ -129,5 +130,28 @@ test("automation settings remain editable after the PR is merged", async () => {
 	await view.rerender({ ...props, autoFixEnabled: false, autoMergeEnabled: false });
 	assert.equal(fix.getAttribute("aria-checked"), "false");
 	assert.equal(merge.getAttribute("aria-checked"), "false");
+	await view.unmount();
+});
+
+test("the standalone gallery runs the failed check through auto-fix and merge", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/project-butter-development-journey.tsx",
+		exportName: "ProjectButterDevelopmentGallery",
+		props: { author: { name: "Venn", avatarUrl: "/avatar-user/venn/venn.png", assistedBy: { name: "Claude", brandName: "claude" } } },
+	});
+	const phase = () => view.container.querySelector("[data-project-butter-development]")?.getAttribute("data-project-butter-development");
+	const advance = async () => { await act(async () => { await new Promise((resolve) => setTimeout(resolve, 5100)); }); };
+	assert.equal(phase(), "failed");
+	assert.equal(view.queryByRole("button", { name: /2\/3 builds passed · 1 failed/u }) !== null, true);
+	await view.click(view.getByRole("button", { name: /#284 Add merchant onboarding quickstart/u }));
+	assert.equal(view.queryByRole("group", { name: "Claude, used by Venn" }) !== null, true);
+	await view.press(null, "Escape");
+	await advance();
+	assert.equal(phase(), "fixing");
+	await advance();
+	assert.equal(phase(), "passed");
+	await advance();
+	assert.equal(phase(), "merged");
+	assert.equal(view.queryByRole("button", { name: /#284 Add merchant onboarding quickstart Merged/u }) !== null, true);
 	await view.unmount();
 });

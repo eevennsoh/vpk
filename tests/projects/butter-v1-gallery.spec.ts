@@ -3,6 +3,74 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("selecting a gallery item animates its highlight", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	const button = page.getByRole("button", { name: "Select Work item" });
+	await expect(button).toBeVisible();
+	const sizes = await button.evaluate(async (element) => {
+		const samples: number[] = [];
+		const start = performance.now();
+		(element as HTMLButtonElement).click();
+		await new Promise<void>((resolve) => {
+			const sample = () => {
+				const surface = element.querySelector<HTMLElement>("[style*='mask-image']");
+				if (surface) samples.push(Number.parseFloat(getComputedStyle(surface).maskSize));
+				if (performance.now() - start < 1000) requestAnimationFrame(sample);
+				else resolve();
+			};
+			requestAnimationFrame(sample);
+		});
+		return samples;
+	});
+	expect(new Set(sizes).size).toBeGreaterThan(2);
+});
+
+test("attachment piles stay settled when entering Work item and remain interactive", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.evaluate(() => document.fonts.ready.then(() => undefined));
+	const button = page.getByRole("button", { name: "Select Work item" });
+	const samples = await button.evaluate(async (element) => {
+		const frames: Record<string, number>[] = [];
+		(element as HTMLButtonElement).click();
+		const start = performance.now();
+		await new Promise<void>((resolve) => {
+			const sample = () => {
+				const workItem = document.querySelector('[aria-label="Work item full screen view"]');
+				if (workItem) {
+					const origin = workItem.getBoundingClientRect();
+					const positions: Record<string, number> = {};
+					for (const type of ["documents", "videos"]) {
+						const stack = workItem.querySelector(`[data-attachment-stack="${type}"]`);
+						if (stack) positions[type] = stack.getBoundingClientRect().top - origin.top;
+					}
+					if (Object.keys(positions).length === 2) frames.push(positions);
+				}
+				if (performance.now() - start < 1000) requestAnimationFrame(sample);
+				else resolve();
+			};
+			requestAnimationFrame(sample);
+		});
+		return frames;
+	});
+	expect(samples.length).toBeGreaterThan(2);
+	for (const type of ["documents", "videos"]) {
+		const positions = samples.map((sample) => sample[type] ?? Infinity);
+		expect(Math.max(...positions) - Math.min(...positions), `${type} moved on entry`).toBeLessThanOrEqual(1);
+	}
+	const documents = page.getByRole("button", { name: "Documents, 4 attachments" });
+	const front = page.locator('[data-attachment-stack="documents"] [data-attachment-card]').first().locator(":scope > div").first();
+	await documents.hover();
+	await expect.poll(() => front.evaluate((node) => {
+		const matrix = new DOMMatrixReadOnly(getComputedStyle(node).transform);
+		return Math.atan2(matrix.b, matrix.a) * 180 / Math.PI;
+	})).toBeLessThan(-1);
+	await documents.click();
+	await expect(page.getByRole("button", { name: "Close documents" })).toHaveAttribute("aria-expanded", "true");
+});
+
 test("the e2e journey starts and resets with a complete ticket ready to invoke", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

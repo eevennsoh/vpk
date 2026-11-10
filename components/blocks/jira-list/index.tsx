@@ -760,11 +760,13 @@ export function JiraList({
 									agentSessionDropIntent,
 									row.issueKey,
 								);
-								const isFlashing = flashingIssueKeys.has(row.issueKey);
+								const isFlashing = rowFlash?.variant !== "sweep" && flashingIssueKeys.has(row.issueKey);
+								const sweep = rowFlash?.variant === "sweep" && flashingIssueKeys.has(row.issueKey) && rowFlash.issueKeys.includes(row.issueKey) ? rowFlash : undefined;
 								return (
 									<Fragment key={row.issueKey}>
 										{renderDraftWorkItemRow(rowIndex)}
 										<JiraListSortableRow
+											glow={sweep}
 											agentSessionDropEnabled={agentSessionDropIntent !== undefined}
 											aria-selected={isHighlighted || undefined}
 											className="group/row border-0 hover:bg-transparent focus-within:bg-transparent data-[state=selected]:bg-transparent"

@@ -1,4 +1,7 @@
 import {
+	useCallback,
+	useLayoutEffect,
+	useRef,
 	useState,
 	type ComponentProps,
 	type KeyboardEvent as ReactKeyboardEvent,
@@ -15,6 +18,7 @@ import { Icon } from "@/components/ui/icon";
 import { TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card-glow";
 
 import {
 	getRowAnchorName,
@@ -26,6 +30,7 @@ import type {
 	JiraListInsertion,
 	JiraListInsertionPosition,
 	JiraListRowData,
+	JiraListRowFlash,
 } from "@/components/blocks/jira-list/jira-list-types";
 
 export function RowBoundaryCreateControls({
@@ -115,6 +120,7 @@ export function RowBoundaryCreateControls({
 
 export function JiraListSortableRow({
 	children,
+	glow,
 	handleOverlayElement,
 	instanceId,
 	isDropTarget,
@@ -128,6 +134,7 @@ export function JiraListSortableRow({
 }: Readonly<{
 	agentSessionDropEnabled?: boolean;
 	children: ReactNode;
+	glow?: JiraListRowFlash;
 	handleOverlayElement: HTMLDivElement | null;
 	instanceId: string;
 	isDropTarget: boolean;
@@ -139,6 +146,7 @@ export function JiraListSortableRow({
 }> & Omit<ComponentProps<typeof TableRow>, "children">) {
 	const [isHandleFocused, setIsHandleFocused] = useState(false);
 	const [isHandleHovered, setIsHandleHovered] = useState(false);
+	const rowRef = useRef<HTMLTableRowElement | null>(null);
 	const {
 		attributes,
 		isDragging,
@@ -148,6 +156,20 @@ export function JiraListSortableRow({
 		transform,
 		transition,
 	} = useSortable({ disabled: !onMoveRow, id: row.issueKey });
+	const setRowRef = useCallback((node: HTMLTableRowElement | null) => {
+		rowRef.current = node;
+		setNodeRef(node);
+	}, [setNodeRef]);
+	useLayoutEffect(() => {
+		const tableRow = rowRef.current;
+		const cell = tableRow?.cells.item(0);
+		if (!glow || !tableRow || !cell || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+		const effects = createJiraLinkingCardGlow({ haloRoot: cell, backdropRoot: cell, color: glow.color ?? "var(--ds-border-focused)", contained: true, direction: "left-to-right" });
+		const backdrop = cell.querySelector<HTMLElement>("[data-jira-linking-glow-backdrop]:last-child");
+		if (backdrop) { backdrop.style.width = `${tableRow.getBoundingClientRect().width}px`; backdrop.style.zIndex = "20"; }
+		for (const effect of effects) effect.animation.onfinish = effect.restore;
+		return () => { for (const effect of effects) { effect.animation.cancel(); effect.restore(); } };
+	}, [glow]);
 	const showHandle = isHandleVisible || isHandleFocused || isHandleHovered || isDragging;
 
 	const handleKeyboardMove = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
@@ -212,7 +234,7 @@ export function JiraListSortableRow({
 				data-list-row-index={agentSessionDropEnabled ? rowIndex : undefined}
 				data-dragging={isDragging || undefined}
 				data-drop-target={isDropTarget || undefined}
-				ref={setNodeRef}
+				ref={setRowRef}
 				style={{
 					...rowProps.style,
 					transform: CSS.Transform.toString(transform),

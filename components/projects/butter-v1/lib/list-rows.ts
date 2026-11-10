@@ -145,6 +145,7 @@ function toAssignedAgent(
 		sessionTitle?: string;
 		role?: JiraListAssignedAgent["role"];
 		state?: string;
+		timeLabel?: string;
 	}>,
 ): JiraListAssignedAgent {
 	const id = resolveCatalogAgentId(input.name, input.idHint, input.catalog);
@@ -155,6 +156,7 @@ function toAssignedAgent(
 		id,
 		name: catalogAgent?.name ?? input.name,
 		...(input.sessionTitle ? { sessionTitle: input.sessionTitle } : {}),
+		...(input.timeLabel ? { timeLabel: input.timeLabel } : {}),
 		...(catalogAgent?.byline ? { byline: catalogAgent.byline } : {}),
 		...((catalogAgent?.avatarSrc ?? input.avatarSrc)
 			? { avatarSrc: catalogAgent?.avatarSrc ?? input.avatarSrc }
@@ -196,6 +198,7 @@ export function assignedAgentsFromCard(
 			sessionTitle: activity.sessionTitle,
 			role: activity.role,
 			state: activity.state,
+			timeLabel: activity.timeLabel,
 		});
 		const catalogId = agent.id;
 		if ((activityCounts.get(catalogId) ?? 0) > 1) {
