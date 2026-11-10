@@ -54,6 +54,9 @@ test("the Agents field loader matches the selector's artwork and brand canvases"
 		assert.deepEqual(stackVisual, visual(option.querySelector('[data-slot="avatar"]')), name);
 		await view.click(field.querySelector("button"));
 	}
+	await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
+	await view.press(view.getByRole("textbox", { name: "Search agents" }), "Escape");
+	assert.equal(view.queryByRole("dialog", { name: "Add agent" }), null);
 });
 
 test("one catalog demo opens each presentation directly and keeps its Empty setting", async () => {

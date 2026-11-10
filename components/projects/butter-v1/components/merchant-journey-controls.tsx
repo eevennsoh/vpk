@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { FOCUS_RING_CLIP_GUTTER } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/utils";
 
-const STEPS = ["Prepare & invoke", "In progress", "Pull request", "Fix checks", "Done"] as const;
+const STEPS = ["Invoke", "In progress", "Pull request", "Fix checks", "Done"] as const;
 
 type Props = Readonly<{ activeStep: number; onSelectStep: (step: number) => void }>;
 

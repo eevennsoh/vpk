@@ -1,6 +1,32 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("PAY-999 activity uses the same distinct avatars as the board", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey" }).click();
+	const people = [
+		{ name: "Maya Ferreira", card: "PAY-125", entry: "pay-999-production" },
+		{ name: "Jordan Okafor", card: "PAY-105", entry: "pay-999-challenge-flow" },
+		{ name: "Priya Raman", card: "PAY-124", entry: "pay-999-pilot-scope" },
+	] as const;
+	const boardAvatars = await Promise.all(people.map(({ name, card }) =>
+		page.locator(`[data-issue-key="${card}"][data-board-column-title]`).getByRole("img", { name }).locator("img").getAttribute("src"),
+	));
+	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	for (const [index, person] of people.entries()) {
+		const entry = item.locator(`[data-jira-activity-entry-id="${person.entry}"]`);
+		await expect(entry).toContainText(person.name);
+		await expect(entry.locator("img").first()).toHaveAttribute("src", boardAvatars[index] ?? "");
+	}
+	expect(new Set(boardAvatars).size).toBe(people.length);
+	for (const [index, color] of ["teamwork-blue", "product-purple", "strategy-orange"].entries()) {
+		expect(boardAvatars[index]).toContain(color);
+	}
+	await expect(item.locator('[data-jira-activity-entry-id="pay-999-challenge-flow"] img').nth(1)).toHaveAttribute("src", boardAvatars[0] ?? "");
+});
+
 async function expectSingleSelectorSurface(popup: Locator) {
 	const selector = popup.locator("[data-overlay-surface]");
 	await expect(selector).toBeVisible();

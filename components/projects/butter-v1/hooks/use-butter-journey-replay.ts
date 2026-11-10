@@ -7,7 +7,7 @@ import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-ite
 import { applyMerchantJourneyToBoard, type MerchantJourneyPhase } from "@/components/projects/butter-v1/data/merchant-journey";
 import { BUTTER_SUGGESTION_DEMO_KEY, toButterAgentActivityFromSession } from "@/components/projects/butter-v1/data/presentation-board";
 
-type Replay = Readonly<{ id: number; source: "prepare" | "passed"; target: "working" | "merged" }>;
+type Replay = Readonly<{ id: number; source: "invoke" | "passed"; target: "working" | "merged" }>;
 type BoardUpdate = (columns: readonly JiraKanbanColumnData[]) => JiraKanbanColumnData[];
 
 export function useButterJourneyReplay({ boardColumns, journeySession, phase, queueUpdate, setBoardColumns, wacContent }: Readonly<{
@@ -26,7 +26,7 @@ export function useButterJourneyReplay({ boardColumns, journeySession, phase, qu
 			setReplay(null);
 			return;
 		}
-		const next: Replay = { id: ++sequence.current, source: step === 1 ? "prepare" : "passed", target: step === 1 ? "working" : "merged" };
+		const next: Replay = { id: ++sequence.current, source: step === 1 ? "invoke" : "passed", target: step === 1 ? "working" : "merged" };
 		const session = journeySession ? toButterAgentActivityFromSession(journeySession) : "PAY-999:merchant-journey";
 		setReplay(next);
 		setBoardColumns((columns) => applyMerchantJourneyToBoard(columns, next.source, session));
@@ -34,7 +34,7 @@ export function useButterJourneyReplay({ boardColumns, journeySession, phase, qu
 	const cancel = useCallback(() => setReplay(null), []);
 	useEffect(() => {
 		if (!replay || phase !== replay.target || started.current === replay.id) return;
-		const sourceColumn = replay.source === "prepare" ? "To do" : "In progress";
+		const sourceColumn = replay.source === "invoke" ? "To do" : "In progress";
 		if (!boardColumns.some((column) => column.title === sourceColumn && column.cards.some((card) => card.code === BUTTER_SUGGESTION_DEMO_KEY))) return;
 		started.current = replay.id;
 		document.querySelector<HTMLElement>(`[data-butter-board-surface] [data-issue-key="${BUTTER_SUGGESTION_DEMO_KEY}"][data-board-column-title="${sourceColumn}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });

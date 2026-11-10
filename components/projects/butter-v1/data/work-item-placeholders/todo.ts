@@ -8,6 +8,52 @@ const PAY_PARENT = {
 	title: "Payments SDK v2 migration",
 } as const;
 
+const PAY_999: ButterWorkItemPlaceholder = {
+	description: [
+		"Help merchants adopt Payments SDK v2 with a clear onboarding path, from initial setup to their first test payment. Document the prerequisites, account configuration, and credentials needed before an integration begins.",
+		"",
+		"Provide a guided quickstart that shows how to install the SDK, initialize the client, and create a payment in the sandbox. Explain how to handle authentication challenges, declined payments, and common integration errors, with examples that developers can adapt.",
+		"",
+		"Include a checklist for moving from sandbox to production, links to the relevant documentation, and a way for merchants to find support when they get stuck. Validate the journey with a small group of merchants and use their feedback to clarify confusing steps.",
+		"",
+		"- Keep the first release aligned with the English-only one-percent rollout.",
+		"- Cover the 3-D Secure challenge and recovery from declined payments.",
+		"- Verify every command and example against the v2 sandbox before publishing.",
+	].join("\n"),
+	reporter: "Priya Raman",
+	parent: PAY_PARENT,
+	labels: ["onboarding"],
+	components: ["Payments SDK", "Documentation"],
+	fixVersion: "v2.0",
+	acceptanceCriteria: [
+		"A merchant can follow the quickstart from SDK installation to a successful sandbox payment.",
+		"Examples cover authentication challenges, declined payments, and common integration errors.",
+		"The production checklist identifies credentials, rollout eligibility, and support contacts.",
+		"The journey is reviewed with merchants and all examples are verified against the v2 sandbox.",
+	].join("\n"),
+	costCenter: "RD-100-ENGINEERING",
+	children: [
+		{ key: "PAY-265", summary: "Write the Payments SDK v2 sandbox quickstart", status: "To do", priority: "High", assignee: "Maya Ferreira", estimate: "3", dueDate: "2026-08-25" },
+		{ key: "PAY-266", summary: "Document 3-D Secure and declined-payment recovery", status: "To do", priority: "High", assignee: "Jordan Okafor", estimate: "2", dueDate: "2026-08-27" },
+		{ key: "PAY-267", summary: "Validate the onboarding path with pilot merchants", status: "To do", priority: "Medium", assignee: "Priya Raman", estimate: "2", dueDate: "2026-08-31" },
+	],
+	linked: [
+		{ key: "PAY-105", summary: "Port confirmPaymentIntent and the 3-D Secure challenge flow", status: "In progress", priority: "High", assignee: "Jordan Okafor", relationship: "Relates to" },
+		{ key: "PAY-124", summary: "Confirm the English-only account allow-list", status: "To do", priority: "High", assignee: "Priya Raman", relationship: "Relates to" },
+	],
+	attachments: [
+		{ id: "pay-999-onboarding-brief", kind: "confluence", name: "Merchant onboarding brief", addedBy: "Priya Raman", dateAdded: "12 Aug 2026", previewSrc: "/ambient/atlassian/abstract/shape-1/primary/purple.svg" },
+		{ id: "pay-999-sandbox-examples", kind: "file", name: "payments-v2-sandbox-examples.md", addedBy: "Maya Ferreira", dateAdded: "13 Aug 2026", previewSrc: "/ambient/atlassian/pictorial/automation-repeat/primary/neutral.svg" },
+		{ id: "pay-999-journey-map", kind: "confluence", name: "Sandbox to production checklist", addedBy: "Jordan Okafor", dateAdded: "14 Aug 2026", previewSrc: "/ambient/atlassian/pictorial/network/primary/lime.svg" },
+		{ id: "pay-999-merchant-walkthrough", kind: "loom", name: "Merchant onboarding walkthrough", addedBy: "Priya Raman", dateAdded: "15 Aug 2026", previewSrc: "/ambient/atlassian/pictorial/security/primary/blue.svg" },
+	],
+	comments: [
+		{ id: "pay-999-pilot-scope", author: "Priya Raman", markdown: "Start with the English-only pilot. Merchants should be able to complete a sandbox payment before we ask them to prepare for production.", timestamp: "12 Aug 2026 at 09:20", ageMs: 432_000_000 },
+		{ id: "pay-999-challenge-flow", author: "Jordan Okafor", markdown: "Please include the 3-D Secure challenge and a declined-payment example. PAY-105 tracks the client flow the quickstart should use.", timestamp: "15 Aug 2026 at 11:05", ageMs: 172_800_000, replies: [{ id: "pay-999-challenge-reply", author: "Maya Ferreira", markdown: "I'll verify both examples against the v2 sandbox and call out the recovery steps." }] },
+		{ id: "pay-999-production", author: "Maya Ferreira", markdown: "I'll keep the production checklist separate from the sandbox steps and link the account allow-list before we publish.", timestamp: "17 Aug 2026 at 04:10", ageMs: 14_400_000 },
+	],
+};
+
 const PAY_118: ButterWorkItemPlaceholder = {
 	description: [
 		"Checkout still paints saved cards from v1 artwork fields. PAY-118 carries the issuer artwork id, the network mark, and the saved-card display name onto the next wallet epic so the one-percent slice keeps the same card face after LegacyGatewayAdapter is gone.",
@@ -557,6 +603,7 @@ const PAY_127: ButterWorkItemPlaceholder = {
 };
 
 export const BUTTER_TODO_PLACEHOLDERS = {
+	"PAY-999": PAY_999,
 	"PAY-118": PAY_118,
 	"PAY-124": PAY_124,
 	"PAY-125": PAY_125,

@@ -67,6 +67,7 @@ type ProjectButterCrewProps = Readonly<{
 	cloudAgentSelector?: boolean;
 	currentUser?: WorkItemPerson;
 	field?: boolean;
+	showFieldLabel?: boolean;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onOpenSession: (session: AgentSessionItem) => void;
@@ -80,7 +81,7 @@ export function ProjectButterCrew(props: ProjectButterCrewProps) {
 	return props.field ? <ProjectButterInvocationProvider enabled><ProjectButterCrewContent {...props} /></ProjectButterInvocationProvider> : <ProjectButterCrewContent {...props} />;
 }
 
-function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, currentUser, field = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: ProjectButterCrewProps) {
+function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, currentUser, field = false, showFieldLabel = true, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: ProjectButterCrewProps) {
 	const [open, setOpen] = useState(false);
 	const reduceMotion = useReducedMotion();
 	const invocation = useProjectButterInvocationActions();
@@ -136,7 +137,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 	return (
 		<Popover onOpenChange={changeOpen} open={open}>
 			{field ? <div aria-label="Agents field" className="min-w-0" role="group">
-				{sessions.length > 0 ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">Agents</div> : null}
+				{showFieldLabel && sessions.length > 0 ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">Agents</div> : null}
 				<div className="relative min-w-0">
 					<PopoverTrigger render={<button aria-label={fieldLabel} className="absolute inset-0 -inset-x-2 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!onStartAgent && sessions.length === 0} type="button" />} />
 					<div aria-hidden className="pointer-events-none relative z-10 flex min-h-8 items-center gap-2" onAnimationEnd={(event) => { if (event.animationName === "agent-loading-intro-front") setSelectedAgent((current) => current ? { ...current, intro: false } : current); }}>
@@ -149,7 +150,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 					<Avatar animate={false} borderTone={open ? "selected" : "default"} className="size-7.5" label="Add agent" shape="hexagon" size="default"><AvatarFallback className="bg-transparent text-icon-subtle group-hover/crew:bg-bg-neutral-subtle-hovered"><AddIcon label="" size="small" /></AvatarFallback></Avatar>
 				</AvatarGroup>
 			</PopoverTrigger>}
-			<PopoverContent align={field ? "start" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={cn(field ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0 shadow-2xl" : "w-[280px] gap-0 overflow-hidden p-0")} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); if (field) changeOpen(false); } }} positionerClassName="z-[650]" sideOffset={field ? 8 : undefined}>
+			<PopoverContent align={field ? "start" : "end"} aria-label={picking ? "Add agent" : "Agent sessions"} className={cn(field ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0 shadow-2xl" : "w-[280px] gap-0 overflow-hidden p-0")} onKeyDownCapture={(event) => { if (field && event.key === "Escape" && event.target instanceof HTMLInputElement) { event.stopPropagation(); changeOpen(false); } }} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); if (field) changeOpen(false); } }} positionerClassName="z-[650]" sideOffset={field ? 8 : undefined}>
 				{field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker onAssign={(agent) => { startFieldAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} /> : field && onStartAgent ? <ProjectButterAgentPreviewBoundary agents={fieldPickerAgents}><InlineAgentSelector
 					agents={fieldPickerAgents}
 					softwareAgentIds={["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"]}

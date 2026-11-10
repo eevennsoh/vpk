@@ -143,7 +143,7 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 function getMerchantWorkItemProps(issueKey: string, journey: Pick<ComponentProps<typeof ProjectButterJiraWorkItem>, "journeyPhase" | "journeySession" | "journeyControls" | "developmentJourney">) {
 	const isMerchant = issueKey === BUTTER_SUGGESTION_DEMO_KEY;
 	return {
-		initialSuggestion: isMerchant,
+		initialSuggestion: isMerchant && !journey.journeyPhase,
 		suggestionProfile: isMerchant ? "payments" as const : "default" as const,
 		showAuditInActivity: isMerchant,
 		autoAssignClaudeToCurrentUser: isMerchant,
@@ -231,7 +231,7 @@ export default function ButterPage(): React.ReactElement {
 	const [pullRequestStatus, setPullRequestStatus] = useState<ButterPullRequestStatus>("open");
 	const journeyActive = selectedId === "e2e-journey";
 	const standaloneView = selectedId === "board" || selectedId === "list" ? selectedId : undefined;
-	const [phase, setPhase] = useState<MerchantJourneyPhase>("prepare");
+	const [phase, setPhase] = useState<MerchantJourneyPhase>("invoke");
 	const [activeStep, setActiveStep] = useState(0);
 	const [journeySession, setJourneySession] = useState<ProjectButterSessionItem>();
 	const [jumpRevision, setJumpRevision] = useState(0);
@@ -253,7 +253,7 @@ export default function ButterPage(): React.ReactElement {
 		return () => window.clearTimeout(timer);
 	}, [journeyActive, jumpRevision, phase]);
 	const selectStep = useCallback((step: number) => {
-		const phases = ["prepare", "working", "pr", "failed", "merged"] as const;
+		const phases = ["invoke", "working", "pr", "failed", "merged"] as const;
 		const next = phases[step];
 		if (!next) return;
 		journeyRef.current?.selectStep(step);
@@ -267,7 +267,7 @@ export default function ButterPage(): React.ReactElement {
 		});
 		setJumpRevision((current) => current + 1);
 	}, []);
-	const reset = useCallback(() => { journeyRef.current?.cancelReplay(); setPhase("prepare"); setActiveStep(0); setJourneySession(undefined); setJumpRevision(0); setAutoFixEnabled(true); setAutoMergeEnabled(true); setPullRequestVisible(false); setJourneyResetKey((current) => current + 1); }, []);
+	const reset = useCallback(() => { journeyRef.current?.cancelReplay(); setPhase("invoke"); setActiveStep(0); setJourneySession(undefined); setJumpRevision(0); setAutoFixEnabled(true); setAutoMergeEnabled(true); setPullRequestVisible(false); setJourneyResetKey((current) => current + 1); }, []);
 	const controls = { onSelectStep: selectStep, activeStep };
 	const galleryControls = selectedId === "pull-request"
 		? <ToggleGroup aria-label="Pull request status" onValueChange={(values) => { if (values[0] === "open" || values[0] === "merged") setPullRequestStatus(values[0]); }} size="sm" value={[pullRequestStatus]} variant="outline">
@@ -423,7 +423,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 	});
 	const { active: replayActive, cancel: cancelReplay, start: startReplay } = useButterJourneyReplay({ boardColumns, journeySession, phase, queueUpdate, setBoardColumns, wacContent });
 	useEffect(() => {
-		if (!replayActive && !wacContent && (phase !== "prepare" || journeySession)) {
+		if (!replayActive && !wacContent && (phase !== "invoke" || journeySession)) {
 			const boardPhase = phase === "pr" && !pullRequestVisible ? "working" : phase;
 			setBoardColumns((columns) => applyMerchantJourneyToBoard(columns, boardPhase, journeySession ? toButterAgentActivityFromSession(journeySession) : undefined));
 		}
@@ -614,7 +614,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 		const card = boardColumns.flatMap((column) => column.cards).find((candidate) => candidate.code === issueKey);
 		if (!card || card.agentActivities?.some((activity) => activity.id === session.id)) return;
 		pendingWorkItemAssignment.current = { issueKey, session };
-		if (issueKey === BUTTER_SUGGESTION_DEMO_KEY && session.agent.name === "Claude" && (phase === "prepare" || phase === "invoke")) { setJourneySession(session); setPhase("working"); }
+		if (issueKey === BUTTER_SUGGESTION_DEMO_KEY && session.agent.name === "Claude" && phase === "invoke") { setJourneySession(session); setPhase("working"); }
 		startAgentSession(issueKey, toButterAgentActivityFromSession(session));
 	}, [boardColumns, phase, setJourneySession, setPhase, startAgentSession]);
 	const handleWorkItemClose = useCallback(() => {
@@ -932,11 +932,11 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 				ref={workItemRef}
 				hideLauncherWhenClosed={boardOnly}
 				defaultReporter={wacContent ? WAC_DEFAULT_REPORTER : BUTTER_DEFAULT_REPORTER}
-				journeyPhase={!wacContent && phase !== "prepare" ? phase : undefined}
+				journeyPhase={!wacContent && (!boardOnly || phase !== "invoke") ? phase : undefined}
 				journeySession={!wacContent ? journeySession : undefined}
 				journeyControls={!wacContent ? journeyControls : undefined}
 				developmentJourney={!wacContent ? {
-					phase: phase !== "prepare" && phase !== "invoke" && phase !== "working" ? phase : undefined,
+					phase: phase !== "invoke" && phase !== "working" ? phase : undefined,
 					agentName: "Claude",
 					author: { ...BUTTER_DEFAULT_REPORTER, assistedBy: { name: "Claude", brandName: "claude" } },
 					autoFixEnabled,

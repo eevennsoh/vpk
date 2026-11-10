@@ -2,8 +2,9 @@
 
 import { ProjectButterAddAgent } from "@/components/blocks/jira-issue/project-butter-add-agent";
 import { ProjectButterInvocationChin } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
-import { ProjectButterInvocationProvider, useProjectButterInvocationActions } from "@/components/blocks/jira-issue/project-butter-invocation";
-import { JiraListAgentSessionsCell } from "@/components/blocks/jira-list/jira-list-cells";
+import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraListProps, JiraListRowData } from "@/components/blocks/jira-list";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 
@@ -25,7 +26,15 @@ export function ButterListAgentCell({ agentCatalog, onAgentAssigned, onAssignedA
 
 function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedAgentIdsChange, onAssignedAgentSelect, onBrowseAgents, onCreateAgent, row }: Parameters<typeof ButterListAgentCell>[0]) {
 	const sessions = row.agentSessions ?? [];
-	const invocation = useProjectButterInvocationActions();
+	const crewSessions: AgentSessionItem[] = sessions.map((session) => ({
+		id: session.id,
+		title: session.sessionTitle ?? row.summary,
+		state: session.statusKind === "needs-input" ? "needs-input" : session.statusKind === "finished" ? "complete" : "running",
+		agent: { id: agentCatalog.find((agent) => agent.name === session.name)?.id ?? session.id, kind: "agent", name: session.name, avatarSrc: session.avatarSrc, brandName: session.brandName },
+		host: session.host,
+		invokedBy: session.invokedBy,
+		role: session.role,
+	}));
 	return (
 			<div className="group/jira-issue flex min-w-0 items-center gap-1" data-butter-agent-surface>
 				<ProjectButterAddAgent alwaysVisible issueKey={row.issueKey} assignment={{
@@ -39,14 +48,15 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 				{sessions.length === 0 ? <span className="pointer-events-none shrink-0 text-sm text-text-subtlest">Add agent</span> : null}
 				<div className="min-w-0 flex-1">
 					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0}>
-						{sessions.length > 0 ? <JiraListAgentSessionsCell
-							agentCatalog={agentCatalog}
-							agentSessions={sessions}
-							onAssignedAgentIdsChange={(ids) => onAssignedAgentIdsChange(row.issueKey, ids)}
-							onAssignedAgentSelect={onAssignedAgentSelect ? (agent) => onAssignedAgentSelect(row.issueKey, agent) : undefined}
+						{sessions.length > 0 ? <ProjectButterCrew
+							field
+							cloudAgentSelector
+							showFieldLabel={false}
+							sessions={crewSessions}
+							onOpenSession={(session) => { const selected = sessions.find((candidate) => candidate.id === session.id); if (selected) onAssignedAgentSelect?.(row.issueKey, selected); }}
+							onStartAgent={(agent) => { const selected = agentCatalog.find((candidate) => candidate.id === agent.id); if (selected) { onAgentAssigned?.(row.issueKey, selected); onAssignedAgentIdsChange(row.issueKey, [...sessions.map((session) => session.id), selected.id]); } }}
 							onBrowseAgents={onBrowseAgents}
 							onCreateAgent={onCreateAgent}
-							onRequestAddAgent={() => invocation?.open("footer")}
 						/> : null}
 					</ProjectButterInvocationChin>
 				</div>

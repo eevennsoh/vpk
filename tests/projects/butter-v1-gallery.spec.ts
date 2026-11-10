@@ -3,6 +3,45 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("the e2e journey starts and resets with a complete ticket ready to invoke", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey" }).click();
+	const steps = page.getByRole("group", { name: "Merchant onboarding journey steps" });
+	const invoke = steps.getByRole("button", { name: "Invoke", exact: true });
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	await expect(invoke).toHaveAttribute("aria-pressed", "true");
+	await expect(card.getByText("onboarding", { exact: true })).toBeVisible();
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
+	await expect(item.getByRole("button", { name: /suggestions$/ })).toHaveCount(0);
+	await expect(item.getByText("Merchant onboarding brief", { exact: true })).toBeVisible();
+	await expect(item.getByText("Write the Payments SDK v2 sandbox quickstart", { exact: true })).toBeVisible();
+	await expect(item.getByText("Confirm the English-only account allow-list", { exact: true })).toBeVisible();
+	await expect(item.getByRole("region", { name: "Activity" })).toContainText("Start with the English-only pilot");
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
+	await expect(item.getByRole("region", { name: "Activity" })).toContainText("Venn added Claude");
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(card.getByText("onboarding", { exact: true })).toBeVisible();
+	await invoke.click();
+	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
+	await expect(item.getByRole("region", { name: "Activity" })).not.toContainText("Venn added Claude");
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(card).toHaveAttribute("data-board-column-title", "To do");
+	await expect(card.getByText("onboarding", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
+	await expect(invoke).toHaveAttribute("aria-pressed", "true");
+	await expect(card).toHaveAttribute("data-board-column-title", "To do");
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
+	await expect(item.getByRole("button", { name: /suggestions$/ })).toHaveCount(0);
+	await expect(item.getByText("Write the Payments SDK v2 sandbox quickstart", { exact: true })).toBeVisible();
+});
+
 test("the work item shows automation rules and recent runs in the card", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1200 });
 	await page.goto(appUrl("/butter-v1"));
@@ -596,9 +635,17 @@ test("session titles describe their work in grouped, review, and List views", as
 	await page.getByRole("button", { name: "Select e2e Journey" }).click();
 	await page.getByRole("tab", { name: "List", exact: true }).click();
 	const row = page.getByRole("region", { name: "Payments SDK v2 migration work items list" }).locator("tr").filter({ hasText: "PAY-105" });
-	await row.getByRole("button", { name: "Edit agents" }).click();
-	await expect(page.getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
-	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Assign agent", exact: true })).toBeVisible();
+	await row.getByRole("button", { name: "Cursor: Working" }).click();
+	const picker = page.getByRole("dialog", { name: "Add agent" });
+	await expect(picker.getByRole("button", { name: "Claude", exact: true })).toBeVisible();
+	await picker.getByRole("button", { name: "Claude", exact: true }).click();
+	await expect(row.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	await row.getByRole("button", { name: "2 agents: Working" }).focus();
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Claude", exact: true })).toBeVisible();
+	await expect(picker.getByRole("textbox", { name: "Search agents" })).toBeFocused();
+	await page.keyboard.press("Escape");
+	await expect(picker).toBeHidden();
 });
 
 test("a new board session uses the work-item summary as its title", async ({ page }) => {

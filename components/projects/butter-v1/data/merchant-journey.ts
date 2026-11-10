@@ -3,7 +3,7 @@ import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/bloc
 import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, projectButterDevelopmentChecks } from "../../../blocks/jira-work-item/project-butter/development-journey-model.ts";
 import { BUTTER_PAY_CURRENT_USER } from "./current-user.ts";
 
-export type MerchantJourneyPhase = "prepare" | "invoke" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";
+export type MerchantJourneyPhase = "invoke" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";
 
 type JourneyActivity = JiraIssueAgentActivity & {
 	merchantJourneyCreated?: true;
@@ -45,7 +45,7 @@ export function createMerchantJourneyAgentActivity(sessionId: string): JourneyAc
 }
 
 export function projectMerchantJourneyActivities(activities: readonly JourneyActivity[] | undefined, phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity): readonly JourneyActivity[] | undefined {
-	const beforeWork = phase === "prepare" || phase === "invoke";
+	const beforeWork = phase === "invoke";
 	const sessionId = typeof session === "string" ? session : session?.id;
 	if (beforeWork) return activities?.filter((activity) => !activity.merchantJourneyCreated && activity.id !== sessionId);
 	if (!sessionId) return activities;
@@ -76,7 +76,7 @@ export function merchantJourneyAuthoredCard(card: JiraKanbanCardData): JiraKanba
 }
 
 function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity): JourneyCard {
-	const beforeWork = phase === "prepare" || phase === "invoke";
+	const beforeWork = phase === "invoke";
 	const { merchantJourneyBaseline, ...authored } = card;
 	const assignCurrentUser = !beforeWork && !merchantJourneyBaseline && !card.assignee;
 	const baseline = merchantJourneyBaseline ?? {
@@ -110,7 +110,7 @@ export function applyMerchantJourneyToBoard(columns: readonly JiraKanbanColumnDa
 	const source = columns.find((column) => column.cards.some((card) => card.code === "PAY-999"));
 	const card = source?.cards.find((item) => item.code === "PAY-999");
 	if (!source || !card) return [...columns];
-	const destination = phase === "merged" ? "Done" : phase === "prepare" || phase === "invoke" ? "To do" : "In progress";
+	const destination = phase === "merged" ? "Done" : phase === "invoke" ? "To do" : "In progress";
 	if (!columns.some((column) => column.title === destination)) return [...columns];
 	const updated = projectCard(card, phase, session);
 	return columns.map((column) => {

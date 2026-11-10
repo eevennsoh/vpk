@@ -367,7 +367,7 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				tags: [{ text: "wallet", color: "purple" }],
 				title: "Carry card-artwork metadata into the next wallet epic",
 			}),
-			{ code: BUTTER_SUGGESTION_DEMO_KEY, title: "Improve merchant onboarding for Payments SDK v2", tags: [], priority: "medium" },
+			{ code: BUTTER_SUGGESTION_DEMO_KEY, title: "Improve merchant onboarding for Payments SDK v2", tags: [{ text: "onboarding", color: "blue" }], priority: "medium" },
 			createCard({
 				assignee: PAY_STORY_PEOPLE.priya,
 				code: "PAY-124",
