@@ -293,7 +293,8 @@ export function ProjectButterJiraWorkItem({
 	}, [detailsHost, layoutElement, sidePanel, workItem?.code]);
 	const details = (
 		<ProjectButterDetails
-			agentField={<ProjectButterCrew field cloudAgentSelector={cloudAgentSelector} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={(session) => openSession(session.id)} onPreviewSession={previewSession} onStartAgent={startAgent} sessions={sessions} />}
+			agentField={<ProjectButterCrew field showFieldLabel={false} cloudAgentSelector={cloudAgentSelector} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onOpenSession={(session) => openSession(session.id)} onPreviewSession={previewSession} onStartAgent={startAgent} sessions={sessions} />}
+			agentFieldHasSessions={sessions.length > 0}
 			key={workItem?.code ?? "reference"}
 			code={workItem?.code ?? "VITA-1"}
 			content={content}
