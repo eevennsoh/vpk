@@ -202,6 +202,23 @@ async function withCard(props, verify, Component) {
 
 const LOCAL_ITEM = { id: "local-readiness", title: "Final readiness", host: "local", state: "complete", agent: { id: "claude", name: "Claude", kind: "agent" } };
 
+test("session cards show the correct hover and selection surfaces", async () => {
+	const item = { ...LOCAL_ITEM, host: "cloud" };
+	await withCard({ item, onView() {} }, async ({ document, render }) => {
+		const article = () => document.querySelector("article");
+		assert.equal(article().classList.contains("hover:bg-surface-hovered"), true);
+		await render({ item, onView() {}, isHighlighted: true });
+		assert.equal(article().classList.contains("bg-surface-hovered"), true);
+		await render({ item, onView() {}, isHighlighted: true, isSelected: true });
+		assert.equal(article().classList.contains("bg-bg-selected"), true);
+		assert.equal(article().classList.contains("bg-surface-hovered"), false);
+		await render({ item, onView() {}, hoverTone: "menu", isHighlighted: true });
+		assert.equal(article().classList.contains("bg-bg-neutral-subtle-hovered"), true);
+		await render({ item, onView() {}, hoverTone: "menu" });
+		assert.equal(article().classList.contains("hover:bg-bg-neutral-subtle-hovered"), true);
+	});
+});
+
 test("local cards retain their hover preview and open Continue in on click", async () => {
 	await withCard({
 		item: LOCAL_ITEM, sessionDrag: {}, flyoutHandle: {},

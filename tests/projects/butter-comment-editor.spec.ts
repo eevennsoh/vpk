@@ -27,9 +27,10 @@ test("gallery Claude mentions offer the existing completed session", async ({ pa
 	await expect(choices.getByRole("option")).toHaveText(["Continue in existing session", "Start a new session"]);
 	await editor.pressSequentially(" Review the remaining action items");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
-	const session = page.getByRole("region", { name: "Rewrite the incident postmortem session" });
-	await expect(session).toBeVisible();
-	await expect(session.getByRole("textbox", { name: "Reply to Claude" })).toHaveValue("Review the remaining action items");
+	const sessions = page.getByRole("list", { name: "Choose a session" });
+	await expect(sessions.getByRole("button", { name: /Summarize onboarding feedback/ })).toBeVisible();
+	await sessions.getByRole("button", { name: /Rewrite the incident postmortem/ }).click();
+	await expect(page.getByRole("textbox", { name: "Reply to Claude" })).toHaveValue("Review the remaining action items");
 });
 
 test("gallery Claude session choices support multiple sessions and Back", async ({ page }) => {
@@ -42,10 +43,23 @@ test("gallery Claude session choices support multiple sessions and Back", async 
 	await page.keyboard.press("m");
 	await mentionGalleryClaude(page);
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
-	const sessions = page.getByRole("listbox", { name: "Choose a session" });
-	await expect(sessions.getByRole("option")).toHaveCount(2);
-	await expect(sessions.getByRole("option", { name: /Rewrite the incident postmortem/ })).toContainText("Completed");
+	const sessions = page.getByRole("list", { name: "Choose a session" });
+	await expect(sessions.locator("article")).toHaveCount(3);
+	await expect(sessions.locator("article").filter({ hasText: "Rewrite the incident postmortem" })).toContainText("Finished");
 	const targetMenu = page.locator("[data-project-butter-session-target-menu]");
+	const back = targetMenu.getByRole("button", { name: "Back", exact: true });
+	await sessions.locator("article").first().hover();
+	await expect(sessions.locator("article").first()).toHaveAttribute("data-selected", "true");
+	await editor.focus();
+	await editor.press("ArrowUp");
+	await expect(back).toBeFocused();
+	await page.keyboard.press("ArrowDown");
+	await expect(editor).toBeFocused();
+	await expect(sessions.locator("article").first()).toHaveAttribute("data-selected", "true");
+	await editor.press("ArrowUp");
+	await page.keyboard.press("Enter");
+	await expect(choices).toBeVisible();
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
 	await targetMenu.getByRole("button", { name: "Back", exact: true }).click();
 	await expect(choices).toBeVisible();
 	await expect(editor).toContainText("Claude");
@@ -61,8 +75,32 @@ test("gallery Claude session choices support multiple sessions and Back", async 
 	await expect(choices).toBeVisible();
 	await expect(editor).toContainText("Claude");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
-	await sessions.getByRole("option", { name: /A second Claude review/ }).click();
+	await sessions.getByRole("button", { name: /A second Claude review/ }).click();
 	await expect(page.getByRole("textbox", { name: "Reply to Claude" })).toBeVisible();
+});
+
+test("keyboard navigation scrolls the selected session into view", async ({ page }) => {
+	const editor = await openGalleryCommentEditor(page);
+	for (let index = 0; index < 5; index++) {
+		await mentionGalleryClaude(page);
+		await page.getByRole("option", { name: "Start a new session" }).click();
+		await editor.pressSequentially(` Review item ${index}`);
+		await editor.press("Enter");
+		await page.keyboard.press("m");
+	}
+	await mentionGalleryClaude(page);
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const sessions = page.getByRole("list", { name: "Choose a session" });
+	await expect(sessions.locator("article")).toHaveCount(7);
+	for (let index = 0; index < 6; index++) await editor.press("ArrowDown");
+	const selected = sessions.locator('article[data-selected="true"]');
+	await expect(selected).toHaveCount(1);
+	const visible = await selected.evaluate((card) => {
+		const viewport = card.closest("ul")!.getBoundingClientRect();
+		const bounds = card.getBoundingClientRect();
+		return bounds.top >= viewport.top && bounds.bottom <= viewport.bottom;
+	});
+	expect(visible).toBe(true);
 });
 
 test("the comment shadow fades without moving the scrollbar over details", async ({ page }) => {
@@ -270,6 +308,7 @@ test("agent mentions open an existing session or create a separate session", asy
 	await expect(editor).toBeFocused();
 	await editor.pressSequentially(" What should I check next?");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button").first().click();
 	const chat = workItem.locator('[data-rovo-chat-placement="floating"]');
 	await expect(chat.getByText("@Claude Check the timeout path")).toBeVisible();
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toHaveText("What should I check next?");
@@ -280,6 +319,7 @@ test("agent mentions open an existing session or create a separate session", asy
 	await page.getByRole("option", { name: /^Claude / }).click();
 	await editor.pressSequentially(" More context");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button").first().click();
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("More context");
 	await expect(chat.getByRole("log").getByText("More context", { exact: true })).toHaveCount(0);
@@ -287,6 +327,7 @@ test("agent mentions open an existing session or create a separate session", asy
 	await editor.pressSequentially("@Claude");
 	await page.getByRole("option", { name: /^Claude / }).click();
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button").first().click();
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("More context");
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
@@ -302,13 +343,12 @@ test("agent mentions open an existing session or create a separate session", asy
 	await mentionClaude();
 	await editor.pressSequentially(" Please revisit this");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
-	const sessions = workItem.getByRole("listbox", { name: "Choose a session" });
-	await expect(sessions.getByRole("option")).toHaveCount(2);
-	const earlier = sessions.getByRole("option", { name: /Check the timeout path/ });
-	const later = sessions.getByRole("option", { name: /Inspect retry behavior/ });
+	const sessions = workItem.getByRole("list", { name: "Choose a session" });
+	await expect(sessions.locator("article")).toHaveCount(2);
+	const earlier = sessions.locator("article").filter({ hasText: "Check the timeout path" });
+	const later = sessions.locator("article").filter({ hasText: "Inspect retry behavior" });
 	await expect(earlier).toContainText("Working");
-	await expect(earlier).toContainText("Venn");
-	await expect(earlier).toContainText(/\w{3} \d{1,2}, \d{4}/);
+	await expect(earlier.getByRole("group", { name: "Claude, used by Venn" })).toBeVisible();
 	await earlier.hover();
 	await expect(workItem.locator("[data-jira-activity-entry-id][data-active]")).toContainText("Check the timeout path");
 	await expect.poll(() => workItem.evaluate((root) => {
@@ -389,6 +429,7 @@ test("Enter sends the prefilled chat draft only after the user presses it", asyn
 	await mentionClaude();
 	await editor.pressSequentially(" Please check status");
 	await workItem.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button").first().click();
 	const chatInput = workItem.locator('[data-rovo-chat-placement="floating"]').getByRole("textbox", { name: "Chat message input" });
 	await expect(chatInput).toContainText("Please check status");
 	expect(sentBody).toBe("");
@@ -426,6 +467,7 @@ test("continuing a mention-only session opens chat without starting a turn", asy
 	const continueOption = choices.getByRole("option", { name: "Continue in existing session" });
 	await expect(continueOption).toBeVisible();
 	if (await continueOption.getAttribute("aria-selected") !== "true") await editor.press("ArrowUp");
+	await editor.press("Enter");
 	await editor.press("Enter");
 	const chat = workItem.locator('[data-rovo-chat-placement="floating"]');
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
@@ -469,6 +511,7 @@ test("a resumed session keeps its conversation after the user sends and reopens 
 	await editor.press("Enter");
 	await mentionCursor();
 	await workItem.getByRole("option", { name: "Continue in existing session" }).click();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button").first().click();
 	const chat = workItem.locator('[data-rovo-chat-placement="floating"]');
 	const chatInput = chat.getByRole("textbox", { name: "Chat message input" });
 	await expect(chatInput).toBeVisible();
@@ -486,7 +529,7 @@ test("a resumed session keeps its conversation after the user sends and reopens 
 	await editor.press("Enter");
 	await mentionCursor();
 	await workItem.getByRole("option", { name: "Continue in existing session" }).click();
-	await workItem.getByRole("listbox", { name: "Choose a session" }).getByRole("option", { name: /Second session task/ }).click();
+	await workItem.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Second session task/ }).click();
 	await expect(chat.getByRole("log").getByText("Please investigate the timeout")).toHaveCount(0);
 	await chatInput.fill("Second session message");
 	const secondSaved = page.waitForResponse((response) => response.request().method() === "PUT" && /\/api\/rovo\/threads\//u.test(response.url()) && (response.request().postData() ?? "").includes("Second session message") && response.ok());
@@ -501,7 +544,7 @@ test("a resumed session keeps its conversation after the user sends and reopens 
 	await editor.pressSequentially(" Follow up later");
 	await workItem.getByRole("option", { name: "Continue in existing session" }).click();
 	delayThread(firstThreadId);
-	await workItem.getByRole("listbox", { name: "Choose a session" }).getByRole("option", { name: /Work on Port confirmPaymentIntent/ }).click();
+	await workItem.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Port confirmPaymentIntent/ }).click();
 	await expect.poll(() => openedThreads.at(-1)).toBe(firstThreadId);
 	await expect(chat).toHaveAttribute("inert", "");
 	await expect(page.getByRole("status").filter({ hasText: "Opening session" })).toBeVisible();
@@ -560,6 +603,7 @@ test("PAY-999 keeps Claude follow-ups in Venn's existing cloud session", async (
 		await page.getByRole("option", { name: /^Claude / }).first().click();
 		await editor.pressSequentially(` ${followUp}`);
 		await workItem.getByRole("option", { name: "Continue in existing session" }).click();
+		await page.getByRole("list", { name: "Choose a session" }).getByRole("button").first().click();
 		await expect(chatInput).toHaveText(followUp);
 		await expect(chat.getByRole("log").getByText(followUp, { exact: true })).toHaveCount(0);
 		expect(chatRequests).toHaveLength(index);

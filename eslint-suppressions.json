@@ -517,7 +517,7 @@
   },
   "components/blocks/agent-session/agent-session.test.js": {
     "no-restricted-syntax": {
-      "count": 524
+      "count": 523
     }
   },
   "components/blocks/agent-session/page.tsx": {
@@ -903,7 +903,7 @@
   },
   "components/blocks/jira-kanban/experimental/board-untracked-proximity.test.js": {
     "no-restricted-syntax": {
-      "count": 170
+      "count": 169
     }
   },
   "components/blocks/jira-kanban/experimental/components/board-column-agent-assignment.tsx": {
