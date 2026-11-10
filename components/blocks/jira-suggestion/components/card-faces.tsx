@@ -84,7 +84,7 @@ export function TopWhy({ suggestion, whyOpen, onWhyOpenChange, whyAnchor, whyCon
 /** Every face shares one padding, so a card changing face (row, sheet, top) never shifts its label or value. */
 const FACE_PADDING = "px-4 pt-2.5 pb-3";
 
-const ROUND = "flex size-7 items-center justify-center rounded-full outline-none transition-colors duration-xxshort ease-out-practical focus-visible:ring-2 focus-visible:ring-ring";
+const ROUND = "flex size-7 pointer-coarse:size-8 items-center justify-center rounded-full outline-none transition-colors duration-xxshort ease-out-practical focus-visible:ring-2 focus-visible:ring-ring";
 
 function RoundAction({ label, hint, className, onClick, children }: Readonly<{ label: string; hint: string; className: string; onClick: () => void; children: ReactNode }>) {
 	return (
