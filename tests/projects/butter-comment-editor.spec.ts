@@ -79,6 +79,30 @@ test("gallery Claude session choices support multiple sessions and Back", async 
 	await expect(page.getByRole("textbox", { name: "Reply to Claude" })).toBeVisible();
 });
 
+test("keyboard navigation scrolls the selected session into view", async ({ page }) => {
+	const editor = await openGalleryCommentEditor(page);
+	for (let index = 0; index < 5; index++) {
+		await mentionGalleryClaude(page);
+		await page.getByRole("option", { name: "Start a new session" }).click();
+		await editor.pressSequentially(` Review item ${index}`);
+		await editor.press("Enter");
+		await page.keyboard.press("m");
+	}
+	await mentionGalleryClaude(page);
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const sessions = page.getByRole("list", { name: "Choose a session" });
+	await expect(sessions.locator("article")).toHaveCount(7);
+	for (let index = 0; index < 6; index++) await editor.press("ArrowDown");
+	const selected = sessions.locator('article[data-selected="true"]');
+	await expect(selected).toHaveCount(1);
+	const visible = await selected.evaluate((card) => {
+		const viewport = card.closest("ul")!.getBoundingClientRect();
+		const bounds = card.getBoundingClientRect();
+		return bounds.top >= viewport.top && bounds.bottom <= viewport.bottom;
+	});
+	expect(visible).toBe(true);
+});
+
 test("the comment shadow fades without moving the scrollbar over details", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/jira-work-item"));
 	await page.getByRole("button", { name: "Full screen", exact: true }).click();
