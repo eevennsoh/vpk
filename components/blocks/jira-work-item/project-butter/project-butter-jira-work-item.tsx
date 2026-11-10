@@ -181,6 +181,8 @@ export function ProjectButterJiraWorkItem({
 		setJourneyEdits((items) => new Map(items).set(itemKey, new Set([...(items.get(itemKey) ?? []), field])));
 	}
 	const [previewSessionId, setPreviewSessionId] = useState<string | null>(null);
+	const [startedSessionId, setStartedSessionId] = useState<string | null>(null);
+	const clearStartedSession = useCallback(() => setStartedSessionId(null), []);
 	const { setActivityView } = currentContent;
 	const previewSession = useCallback((id: string | null) => {
 		setPreviewSessionId(id);
@@ -261,6 +263,8 @@ export function ProjectButterJiraWorkItem({
 		const started = model.startAgent(agent, content.summary);
 		const session = agent.name === "Claude" && autoAssignTo ? { ...started, selfAssignedOnStart: currentContent.assignee.name === "Unassigned" || currentContent.assignee.name === "Automatic" } : started;
 		addInvocation(session);
+		content.setActivityFilters((filters) => ({ ...filters, agents: true }));
+		setStartedSessionId(session.id);
 		onAgentSessionStart?.(session);
 		setActiveSessionId(null);
 	}
@@ -378,8 +382,10 @@ export function ProjectButterJiraWorkItem({
 						onOpenSession={openSession}
 						onPreviewSession={previewSession}
 						onStartAgent={startAgentFromComment}
+						onStartedSessionRevealed={clearStartedSession}
 						openRelatedItem={openRelatedItem}
 						previewSessionId={previewSessionId}
+						startedSessionId={startedSessionId}
 						relatedScope={relatedScope}
 						sessions={sessions}
 						workItemKey={workItem?.code}

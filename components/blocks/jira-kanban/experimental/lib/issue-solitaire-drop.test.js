@@ -4,10 +4,22 @@ const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
 const ts = require("typescript");
+const esbuild = require("esbuild");
+const { loadCjsModuleFromText } = require("../../../../../scripts/lib/esbuild-cjs-loader.js");
+
+const sharedGlow = loadCjsModuleFromText(esbuild.buildSync({
+	entryPoints: [path.join(__dirname, "../../../jira-linking/card-glow.ts")],
+	bundle: true,
+	format: "cjs",
+	platform: "node",
+	write: false,
+	external: ["react", "react/jsx-runtime"],
+	alias: { "@": process.cwd() },
+}).outputFiles[0].text);
 
 function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104, step = 112, clipTop = 0, clipBottom = 10000, viewportHeight = 10000 } = {}) {
 	const animations = [], nodes = [], reads = [], frames = new Map(), frameEvents = [], styleReads = [];
-	let frameId = 0, inFrame = false, sharedGlow;
+	let frameId = 0, inFrame = false;
 	class Node {
 		constructor(name) { this.name = name; this.style = {}; this.attributes = {}; this.children = []; this.dataset = {}; this.inert = false; }
 		setAttribute(key, value) { this.attributes[key] = value; if (inFrame) frameEvents.push("write"); }
@@ -44,13 +56,7 @@ function fixture(count, column = "Done", { surfaceHeight = 96, slotHeight = 104,
 		module: loaded, exports: loaded.exports, getComputedStyle: (node) => { styleReads.push({ node, animations: animations.length, appended: doc.body.children.length }); return { borderTopLeftRadius: "8px", backgroundColor: "rgb(248, 248, 248)" }; },
 		require(name) {
 			if (name.includes("card-motion")) return { JIRA_KANBAN_CARD_REFLOW: { duration: 0.15, ease: [0.4, 0, 0, 1] } };
-			if (name.includes("card-glow")) {
-				const glow = { exports: {} };
-				vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../../../jira-linking/card-glow.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
-					module: glow, exports: glow.exports, require: () => require("../../../jira-linking/glow-motion.ts"),
-				});
-				sharedGlow = glow.exports; return sharedGlow;
-			}
+			if (name.includes("card-glow")) return sharedGlow;
 			if (name.includes("glow-motion")) return require("../../../jira-linking/glow-motion.ts");
 			return { token: (name) => `token:${name}` };
 		},
