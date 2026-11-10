@@ -30,11 +30,17 @@ export function GlimmSweep({ children, className, options, renderer = "sweep", f
 			cancel,
 			play(change) {
 				cancel();
+				const playInstantly = () => {
+					change?.();
+					void Promise.resolve()
+						.then(() => options?.onMidpoint?.())
+						.catch((error: unknown) => console.error("[glimm] midpoint callback failed:", error))
+						.then(() => options?.onComplete?.())
+						.catch((error: unknown) => console.error("[glimm] completion callback failed:", error));
+				};
 				const root = rootRef.current;
 				if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-					change?.();
-					options?.onMidpoint?.();
-					options?.onComplete?.();
+					playInstantly();
 					return;
 				}
 				const canvas = document.createElement("canvas");
@@ -45,9 +51,7 @@ export function GlimmSweep({ children, className, options, renderer = "sweep", f
 				const controller = renderer === "mesh" ? createMeshShader({ ...common, feather }) : renderer === "namedrop" ? createNamedropShader({ ...common, travelMode: 1 }) : createShader({ ...common, feather });
 				if (!controller) {
 					canvas.remove();
-					change?.();
-					options?.onMidpoint?.();
-					options?.onComplete?.();
+					playInstantly();
 					return;
 				}
 				const handle = playSweep(controller, { ...options, onMidpoint: async () => { change?.(); await options?.onMidpoint?.(); } });
