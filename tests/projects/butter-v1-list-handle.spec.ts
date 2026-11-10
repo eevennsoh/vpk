@@ -1,0 +1,33 @@
+import { expect, test } from "@playwright/test";
+import { appUrl } from "@/tests/helpers/origin";
+
+test("the standalone drag handle sits outside the list and reorders rows", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List" }).click();
+	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	const first = list.getByRole("button", { name: "PAY-118", exact: true }).locator("xpath=ancestor::tr");
+	const second = list.getByRole("button", { name: "PAY-999", exact: true }).locator("xpath=ancestor::tr");
+	const handle = list.getByTestId("jira-list-drag-handle-PAY-118");
+	await first.hover({ position: { x: 120, y: 20 } });
+	await expect(handle).toHaveCSS("opacity", "1");
+	const firstBounds = await first.boundingBox();
+	const secondBounds = await second.boundingBox();
+	const handleBounds = await handle.boundingBox();
+	if (!firstBounds || !secondBounds || !handleBounds) throw new Error("List drag geometry is unavailable");
+	expect(handleBounds.x + handleBounds.width).toBeLessThanOrEqual(firstBounds.x);
+	await expect(handle).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(handle).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
+	await page.mouse.move(handleBounds.x + handleBounds.width / 2, handleBounds.y + handleBounds.height / 2, { steps: 5 });
+	await expect(handle).toHaveCSS("opacity", "1");
+	await page.mouse.down();
+	await page.mouse.move(firstBounds.x + 100, secondBounds.y + secondBounds.height / 2, { steps: 10 });
+	await page.mouse.up();
+	await expect(second).toHaveJSProperty("rowIndex", 1);
+	await page.keyboard.press("Tab");
+	await handle.focus();
+	await expect(handle).toBeFocused();
+	expect(await handle.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none");
+	await handle.press("ArrowUp");
+	await expect(first).toHaveJSProperty("rowIndex", 1);
+});

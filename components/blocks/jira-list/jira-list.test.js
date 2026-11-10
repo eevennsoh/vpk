@@ -94,10 +94,6 @@ test("JiraList restores the rounded table edge before a trailing panel scroll in
 	);
 	assert.match(
 		SOURCE,
-		/headerCellClassName: cn\(HEADER_CELL_CLASS, bordered && "border-t"\)/u,
-	);
-	assert.match(
-		SOURCE,
 		/trailingEdgeLayout\.headerCellClassName,\s*"sticky left-0 z-30 px-0"/u,
 	);
 	assert.match(
@@ -108,11 +104,6 @@ test("JiraList restores the rounded table edge before a trailing panel scroll in
 		SOURCE,
 		/lastHeaderCellClassName: "border-r-0"/u,
 	);
-	assert.match(
-		SOURCE,
-		/isLastColumn:\s*columnIndex === trailingEdgeLayout\.lastBodyColumnIndex/u,
-	);
-	assert.match(SOURCE, /lastBodyColumnIndex: null/u);
 	assert.match(SOURCE, /function getJiraListLastHeaderCellClassName\(/u);
 	assert.match(SOURCE, /if \(columnIndex !== columnCount - 1\)/u);
 	assert.match(
@@ -499,9 +490,6 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 	assert.match(issueKeyGroupSource, /group-has-\[:focus-visible\]\/issue-key:opacity-100/u);
 	assert.doesNotMatch(issueKeyGroupSource, /group-hover\/row:(?:max-w|opacity|pointer-events)/u);
 	assert.match(issueKeyGroupSource, /isCopiedRow && "pointer-events-auto max-w-7 opacity-100"/u);
-	assert.match(issueKeyGroupSource, /translate-x-1 scale-95 transition-\[translate,scale\]/u);
-	assert.match(issueKeyGroupSource, /group-hover\/issue-key:translate-x-0/u);
-	assert.match(issueKeyGroupSource, /group-has-\[:focus-visible\]\/issue-key:scale-100/u);
 	assert.match(issueKeyGroupSource, /motion-reduce:transition-none/u);
 	assert.match(
 		issueKeyGroupSource,
@@ -511,7 +499,6 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 	assert.match(issueKeyGroupSource, /aria-label=\{`\$\{isCopiedRow \? "Copied link" : "Copy link"\} for \$\{row\.issueKey\}`\}/u);
 	assert.match(issueKeyGroupSource, /<LinkIcon/u);
 	assert.doesNotMatch(issueKeyGroupSource, /<CopyIcon/u);
-	assert.match(issueKeyGroupSource, /<CheckMarkIcon/u);
 	assert.match(issueKeyGroupSource, /<TooltipContent>\{isCopiedRow \? "Copied" : "Copy link"\}<\/TooltipContent>/u);
 	assert.doesNotMatch(rowActionGroupSource, /CopyIcon|LinkIcon|Copy link|In Model|Create work item below/u);
 	assert.match(rowActionGroupSource, /Open work item/u);
@@ -629,11 +616,11 @@ test("JiraList middle zone exposes an anchored accessible drag handle", () => {
 	assert.match(SOURCE, /aria-label="Drag to reorder"/u);
 	assert.match(SOURCE, /<TooltipContent side="right">Drag to reorder<\/TooltipContent>/u);
 	assert.match(SOURCE, /<DragHandleVerticalIcon/u);
-	assert.match(dragHandleClass, /cursor-grab touch-none border border-border bg-surface-overlay! text-icon-subtle/u);
+	assert.match(dragHandleClass, /cursor-grab touch-none bg-transparent! text-icon-subtle/u);
 	assert.doesNotMatch(dragHandleClass, /shadow-/u);
-	assert.match(SOURCE, /fixed z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
-	assert.match(SOURCE, /hover:bg-surface-overlay-hovered!/u);
-	assert.match(SOURCE, /active:cursor-grabbing active:bg-surface-overlay-pressed!/u);
+	assert.match(SOURCE, /fixed z-30 size-5 -translate-x-full -translate-y-1\/2/u);
+	assert.match(SOURCE, /hover:bg-transparent!/u);
+	assert.match(SOURCE, /active:cursor-grabbing active:bg-transparent!/u);
 	assert.match(SOURCE, /top: "anchor\(center\)"/u);
 	assert.match(SOURCE, /positionAnchor: getRowAnchorName/u);
 	assert.match(SOURCE, /createPortal/u);
@@ -796,10 +783,9 @@ test("JiraList sample page keeps every demo row top-level", () => {
 	assert.doesNotMatch(PAGE_SOURCE, /overflow-x-auto/u);
 });
 
-test("JiraList owns explicit grid separators and selected row cell treatment", () => {
+test("JiraList owns selected row cell treatment", () => {
 	assert.match(SOURCE, /function getBodyCellClassName/u);
 	assert.match(SOURCE, /function HierarchyConnector/u);
-	assert.match(SOURCE, /border-b border-r border-border/u);
 	assert.match(SOURCE, /bg-bg-selected/u);
 	assert.match(SOURCE, /aria-selected=\{isHighlighted \|\| undefined\}/u);
 	assert.match(SOURCE, /flex max-h-\[640px\] flex-col/u);

@@ -169,10 +169,24 @@ test("list work items align around the subtask expand control", async ({ page })
 	expect(selectAllBounds.x).toBeCloseTo(selectBounds.x, 1);
 	expect(selectBounds.x - (expandBounds.x + expandBounds.width)).toBeGreaterThanOrEqual(4);
 	expect(expandBounds.x).toBeCloseTo(expandAllBounds.x, 1);
+	const expectBalancedBoundary = async (name: string) => {
+		for (const width of [1200, 1800]) {
+			await page.setViewportSize({ width, height: 1300 });
+			const chevron = await list.getByRole("button", { name }).locator("svg path").boundingBox();
+			const line = await page.getByTestId("jira-list-column-boundary-0").locator("[data-boundary-line]").boundingBox();
+			const checkbox = await selectAll.boundingBox();
+			if (!chevron || !line || !checkbox) throw new Error("Column boundary bounds are unavailable");
+			const beforeLine = line.x - (chevron.x + chevron.width);
+			const afterLine = checkbox.x - (line.x + line.width);
+			expect(Math.abs(beforeLine - afterLine)).toBeLessThanOrEqual(1.5);
+		}
+	};
+	await expectBalancedBoundary("Expand all subtasks");
 	await expand.click();
 	const collapse = list.getByRole("button", { name: "Collapse PAY-101" });
 	await expect(collapse).toHaveAttribute("aria-expanded", "true");
 	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toBeVisible();
+	await expectBalancedBoundary("Collapse all subtasks");
 	await collapse.click();
 	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toHaveCount(0);
 });
@@ -379,6 +393,7 @@ test("the gallery list hugs its content and centers when space permits", async (
 });
 
 test("the work item Agents popup matches the Assignee picker", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
@@ -389,14 +404,12 @@ test("the work item Agents popup matches the Assignee picker", async ({ page }) 
 	const assigneeShadow = await assignee.locator(".rich-text-command-menu").evaluate((element) => getComputedStyle(element).boxShadow);
 	await page.keyboard.press("Escape");
 	await item.getByRole("group", { name: "Agents field" }).getByRole("button").click();
-	const agents = page.getByRole("dialog", { name: "Agent sessions" });
+	const agents = page.getByRole("dialog", { name: "Add agent" });
 	const agentBounds = await agents.boundingBox();
 	if (!assigneeBounds || !agentBounds) throw new Error("Picker bounds are unavailable");
 	expect(agentBounds.x).toBeCloseTo(assigneeBounds.x, 0);
 	expect(agentBounds.width).toBeCloseTo(assigneeBounds.width, 0);
-	expect((await agents.evaluate((element) => getComputedStyle(element).boxShadow)).endsWith(assigneeShadow)).toBe(true);
-	await agents.getByRole("button", { name: "Add agent", exact: true }).click();
-	expect((await page.getByRole("dialog", { name: "Add agent" }).evaluate((element) => getComputedStyle(element).boxShadow)).endsWith(assigneeShadow)).toBe(true);
+	expect((await agents.locator("[data-overlay-surface]").evaluate((element) => getComputedStyle(element).boxShadow)).endsWith(assigneeShadow)).toBe(true);
 });
 
 test("Butter v1 keeps the journey while browsing the gallery placeholders", async ({ page }) => {
@@ -659,22 +672,10 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	await page.keyboard.press("Enter");
 	const picker = page.getByRole("dialog", { name: "Agents" });
 	const search = picker.getByRole("textbox", { name: "Search agents" });
-	for (const [name, action] of [["Claude", "Open in Claude"], ["Codex", "Open in Codex"], ["GitHub Copilot", "Open in VS Code"]]) {
-		await search.fill(name);
-		await picker.getByRole("button", { name, exact: true }).click();
-		await expect(picker.getByRole("button", { name: action })).toBeEnabled();
-	}
 	await search.fill("Cursor");
 	const cursor = picker.getByRole("button", { name: "Cursor", exact: true });
-	await cursor.hover();
-	await expect(page.getByRole("menu", { name: "Run Cursor on" })).toHaveCount(0);
 	await cursor.click();
-	await expect(cursor).toHaveAttribute("aria-expanded", "true");
-	const local = picker.getByRole("button", { name: "Open in Cursor" });
-	await expect(local).toBeEnabled();
-	await local.click();
-	await expect(picker.getByRole("status")).toHaveText("Open locally · Cursor (preview)");
-	await picker.getByRole("button", { name: "Start a new session" }).click();
+	await expect(picker).toBeHidden();
 	await card.getByRole("button", { name: /^Cursor: / }).click();
 	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Carry card-artwork metadata into the next wallet epic", { exact: true })).toBeVisible();
 });

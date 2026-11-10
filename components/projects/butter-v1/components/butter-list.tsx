@@ -46,6 +46,7 @@ export function ButterList({
 				{...layout}
 				addAgentLabel={addAgentLabel}
 				bordered={false}
+				footerCountAlignment="end"
 				className={cn(listProps.className, "max-h-full", centered && "my-auto")}
 				scrollEndInset={scrollEndInset > 0 ? scrollEndInset + PANEL_END_GAP_PX : 0}
 			/>

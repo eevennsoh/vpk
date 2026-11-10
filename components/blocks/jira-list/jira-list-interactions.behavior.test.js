@@ -7,6 +7,24 @@ const rows = [
 	{ issueKey: "PAY-2", summary: "Second item", issueType: "task", status: "To do", priority: "medium" },
 ];
 
+test("copying a work item link shows and clears feedback for that row", async () => {
+	const copied = [];
+	const props = { rows, onCopyLink: (row) => copied.push(row.issueKey) };
+	const view = await renderComponent({
+		entry: "components/blocks/jira-list/index.tsx",
+		exportName: "JiraList",
+		props,
+	});
+	await view.click(view.getByRole("button", { name: "Copy link for PAY-1" }));
+	assert.deepEqual(copied, ["PAY-1"]);
+	await view.rerender({ ...props, copiedIssueKey: "PAY-1" });
+	assert.equal(Boolean(view.getByRole("button", { name: "Copied link for PAY-1" })), true);
+	assert.equal(Boolean(view.getByRole("button", { name: "Copy link for PAY-2" })), true);
+	await view.rerender({ ...props, copiedIssueKey: null });
+	assert.equal(Boolean(view.getByRole("button", { name: "Copy link for PAY-1" })), true);
+	await view.unmount();
+});
+
 test("an active work item does not select its checkbox", async () => {
 	const view = await renderComponent({
 		entry: "components/blocks/jira-list/index.tsx",
