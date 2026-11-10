@@ -114,6 +114,7 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	ink: dynamic(() => import("../demos/visual/ink-demo"), {
 		ssr: false,
 	}),
+	glimm: dynamic(() => import("../demos/visual/glimm-demo"), { ssr: false }),
 	"ink-wash": dynamic(() => import("../demos/visual/ink-wash-demo"), {
 		ssr: false,
 	}),
@@ -322,6 +323,11 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 };
 
 export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"glimm-palettes": dynamic(() => import("../demos/visual/glimm-demo").then((mod) => mod.GlimmPalettesDemo), { ssr: false }),
+	"glimm-directions": dynamic(() => import("../demos/visual/glimm-demo").then((mod) => mod.GlimmDirectionsDemo), { ssr: false }),
+	"glimm-renderers": dynamic(() => import("../demos/visual/glimm-demo").then((mod) => mod.GlimmRenderersDemo), { ssr: false }),
+	"glimm-scope": dynamic(() => import("../demos/visual/glimm-demo").then((mod) => mod.GlimmScopeDemo), { ssr: false }),
+	"glimm-custom": dynamic(() => import("../demos/visual/glimm-demo").then((mod) => mod.GlimmCustomDemo), { ssr: false }),
 	"voice-glow-pill": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowPillExample })), { ssr: false }),
 	"voice-glow-mobile": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowMobileExample })), { ssr: false }),
 	"voice-glow-processing": dynamic(() => import("../demos/visual/voice-glow-demo").then((mod) => ({ default: mod.VoiceGlowProcessingExample })), { ssr: false }),

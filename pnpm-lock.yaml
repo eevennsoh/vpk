@@ -377,6 +377,9 @@ importers:
       frimousse:
         specifier: ^0.3.0
         version: 0.3.0(@typescript/typescript6@6.0.2)(react@19.3.1)
+      glimm:
+        specifier: ^0.4.1
+        version: 0.4.1(next@16.4.2(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.0)(@playwright/test@1.64.1)(@types/node@26.6.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.51.0))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       html-to-image:
         specifier: ^1.11.13
         version: 1.11.13
@@ -5608,6 +5611,21 @@ packages:
 
   gifenc@1.0.3:
     resolution: {integrity: sha512-xdr6AdrfGBcfzncONUOlXMBuc5wJDtOueE3c5rdG0oNgtINLD+f2iFZltrBRZYzACRbKr+mSVU/x98zv2u3jmw==}
+
+  glimm@0.4.1:
+    resolution: {integrity: sha512-Mi6fIrGR5/sVX0C6aasgjRDZ+/hhZdGMYo4iPV7tMKuQ+dxBm4YbWZVomkyAZoCBBqMxf6KOthP9fyVUgql4aA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      next: '>=14'
+      react: '>=18'
+      react-dom: '>=18'
+    peerDependenciesMeta:
+      next:
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
 
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
@@ -14096,6 +14114,12 @@ snapshots:
       resolve-pkg-maps: 1.0.0
 
   gifenc@1.0.3: {}
+
+  glimm@0.4.1(next@16.4.2(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.0)(@playwright/test@1.64.1)(@types/node@26.6.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.51.0))(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+    optionalDependencies:
+      next: 16.4.2(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.0)(@playwright/test@1.64.1)(@types/node@26.6.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.51.0)
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
 
   glob-parent@5.1.2:
     dependencies:

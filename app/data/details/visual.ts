@@ -56,6 +56,7 @@ import { BORDER_BEAM_DETAIL } from "./visual/border-beam";
 import { VOICE_GLOW_DETAIL } from "./visual/voice-glow";
 import { DROPZONE_EFFECT_DETAIL } from "./visual/dropzone-effect";
 import { HEATMAP_DETAIL } from "./visual/heatmap";
+import { GLIMM_DETAIL } from "./visual/glimm";
 import { INK_WASH_DETAIL } from "./visual/ink-wash";
 import { LIQUID_METAL_DETAIL } from "./visual/liquid-metal";
 import { PEEL_DETAIL } from "./visual/peel";
@@ -250,6 +251,7 @@ export const VISUAL_DETAILS: Record<string, ComponentDetail> = {
 	"voice-glow": VOICE_GLOW_DETAIL,
 	heatmap: HEATMAP_DETAIL,
 	"ink-wash": INK_WASH_DETAIL,
+	glimm: GLIMM_DETAIL,
 	"liquid-metal": LIQUID_METAL_DETAIL,
 	peel: PEEL_DETAIL,
 	noise: NOISE_DETAIL,

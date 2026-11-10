@@ -4559,10 +4559,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 446,
+			"manifestEntryCount": 447,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 440,
+				"live": 441,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -6986,7 +6986,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 109,
+				"entryCount": 110,
 				"entries": [
 					{
 						"category": "visual",
@@ -7147,6 +7147,13 @@
 						"slug": "glass-tabs",
 						"name": "Glass Tabs",
 						"importPath": "@/components/visual/glass-tabs",
+						"status": "live"
+					},
+					{
+						"category": "visual",
+						"slug": "glimm",
+						"name": "Glimm",
+						"importPath": "@/components/visual/glimm",
 						"status": "live"
 					},
 					{
