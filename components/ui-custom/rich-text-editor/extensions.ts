@@ -442,6 +442,7 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 					showAskRovoPrompt,
 					this.options.onOpenDirectory,
 					(editor) => exitSuggestion(editor.view, slashCommandPluginKey),
+					this.options.suggestionRowVariant,
 				),
 			}),
 		];
@@ -514,6 +515,7 @@ export function createRichTextMentionExtension(
 				options.anchorToInput,
 				resolveMentionVariant(options.suggestionVariant),
 				options.mentionSectionLabels,
+				options.suggestionRowVariant,
 			),
 		},
 	});

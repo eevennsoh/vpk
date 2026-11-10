@@ -784,6 +784,7 @@ test("configure repository opens the development dropdown in a work item", async
 	const item = page.getByRole("dialog", { name: "Project butter" });
 	await item.getByRole("button", { name: "Configure repository" }).click();
 	const menu = page.getByRole("menu", { name: "Configure repository" });
+	await expect(menu).toHaveCSS("border-radius", "12px");
 	for (const name of ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"]) {
 		await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
 	}
@@ -807,6 +808,7 @@ test("Escape closes the local-agent picker without closing the work item", async
 	await trigger.click();
 	const picker = page.getByRole("dialog", { name: "Local software agents" });
 	await expect(picker).toBeVisible();
+	await expect(picker).toHaveCSS("border-radius", "12px");
 	await picker.getByRole("button", { name: "Copy prompt" }).focus();
 	await page.keyboard.press("Escape");
 	await expect(picker).toBeHidden();

@@ -93,6 +93,7 @@ import type {
 	RichTextMentionSources,
 	RichTextMentionVisual,
 	RichTextSlashCategory,
+	RichTextSuggestionRowVariant,
 } from "./types";
 import { motionEase } from "@/lib/motion";
 
@@ -230,6 +231,7 @@ function getSuggestionMenuIconTileVariant(
 
 interface RichTextSuggestionMenuProps {
 	className?: string;
+	rowVariant?: RichTextSuggestionRowVariant;
 	emptyLabel: string;
 	emptyState?: ReactNode;
 	header?: ReactNode;
@@ -692,6 +694,7 @@ export function RichTextSuggestionEmptyState({
 
 export function RichTextSuggestionMenu({
 	className,
+	rowVariant = "compact",
 	emptyLabel,
 	emptyState,
 	header,
@@ -743,6 +746,7 @@ export function RichTextSuggestionMenu({
 		<div
 			className={cn("rich-text-command-menu", className)}
 			data-nested={isNested ? "true" : undefined}
+			data-row-variant={rowVariant}
 			data-has-header={header ? "true" : undefined}
 			data-hide-return-shortcut={showReturnShortcut ? undefined : "true"}
 			data-pointer-selects={onHover ? "true" : undefined}
@@ -788,6 +792,7 @@ export function RichTextSuggestionMenu({
 										isChosen={selectedItemIds?.has(item.id)}
 										isSelected={index === selectedIndex}
 										item={item}
+										rowVariant={rowVariant}
 										listMode={hasHoverActions}
 										onHover={onHover ? () => onHover(index) : undefined}
 										onHoverEnd={onHoverEnd}
@@ -936,6 +941,7 @@ export function RichTextCommandMenuSearchField({
 }
 
 interface RichTextSuggestionMenuOptionProps {
+	rowVariant: RichTextSuggestionRowVariant;
 	isChosen?: boolean;
 	isSelected: boolean;
 	item: RichTextSuggestionMenuItem;
@@ -954,6 +960,7 @@ function isFocusLeavingElement(
 }
 
 function RichTextSuggestionMenuOption({
+	rowVariant,
 	isChosen,
 	isSelected,
 	item,
@@ -971,9 +978,9 @@ function RichTextSuggestionMenuOption({
 	// user lands on it. Rows that opt into `persistentDescription` (nested parent
 	// rows with a count byline) instead keep their description visible at all
 	// times.
-	const hasDescription = Boolean(item.description);
+	const hasDescription = rowVariant === "with-byline" && Boolean(item.description);
 	const showsPersistentDescription = hasDescription && Boolean(item.persistentDescription);
-	const revealedMetadata = item.inlineMetadata ?? (showsPersistentDescription ? undefined : item.description);
+	const revealedMetadata = rowVariant === "with-byline" ? item.inlineMetadata ?? (showsPersistentDescription ? undefined : item.description) : undefined;
 	const canRevealMetadata = revealedMetadata !== undefined && revealedMetadata !== "";
 	const hasHoverActions = item.hoverActions !== undefined;
 	const hasTrailing = item.trailing != null;
@@ -1614,6 +1621,7 @@ export function createSlashSuggestionRenderer(
 	// "format") invoke it; omit it to keep the plain empty title with no button.
 	onOpenDirectory?: (category: RichTextSlashCategory) => void,
 	onExitSuggestion?: (editor: Editor) => void,
+	rowVariant?: RichTextSuggestionRowVariant,
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
@@ -1905,6 +1913,7 @@ export function createSlashSuggestionRenderer(
 			popupState.component = new ReactRenderer(RichTextSuggestionMenu, {
 				editor: props.editor,
 				props: {
+					rowVariant,
 					className: "rich-text-command-menu-borderless",
 					emptyLabel: "No commands found",
 					items: getVisibleItems(props.query),
@@ -2231,6 +2240,7 @@ export function createMentionSuggestionRenderer(
 	anchorToInput = false,
 	variant: SuggestionVariant = "nested",
 	labelOverrides?: RichTextMentionSectionLabels,
+	rowVariant?: RichTextSuggestionRowVariant,
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
@@ -2418,6 +2428,7 @@ export function createMentionSuggestionRenderer(
 			popupState.component = new ReactRenderer(RichTextSuggestionMenu, {
 				editor: props.editor,
 				props: {
+					rowVariant,
 					className: "rich-text-command-menu-borderless",
 					emptyLabel: "No people or agents found",
 					items: getVisibleItems(props),

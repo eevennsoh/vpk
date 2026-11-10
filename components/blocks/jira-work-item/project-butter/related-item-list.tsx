@@ -88,6 +88,7 @@ export function ProjectButterRelatedItemList({ asSectionHeader, editor, emptySta
 		>
 			{emptyState && items.length === 0 && !editor.composerOpen ? <RelatedEmptyState kind={kind} onAdd={onAddRequest} onDismiss={onDismissGroup} /> : (
 				<RelatedListCard
+					className="border-border-disabled"
 					composer={editor.composerOpen ? <ProjectButterRelatedCreateRow dimmed={editingId !== null} editor={editor} items={items} linked={linked} onAdd={(request) => { onAdd(request); addTrigger.current?.focus(); }} onChange={onEditorChange} onDismiss={(reason) => { if (reason === "escape") addTrigger.current?.focus(); }} catalog={scope?.catalog} ownKey={ownKey} parentType={scope?.parentType} /> : null}
 					empty={<li className="px-4 py-3 text-sm text-text-subtle">{items.length ? "No matching work items." : `No ${label.toLowerCase()}.`}</li>}
 					expanded={editor.expanded}

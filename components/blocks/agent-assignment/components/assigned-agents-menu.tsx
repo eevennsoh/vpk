@@ -287,6 +287,7 @@ export function AssignedAgentsMenu({
 		>
 			<>
 				<RichTextSuggestionMenu
+					rowVariant="with-byline"
 					className="rich-text-command-menu-embedded w-full! [&_.rich-text-command-menu-list]:p-0"
 					emptyLabel="No agents assigned"
 					items={items}

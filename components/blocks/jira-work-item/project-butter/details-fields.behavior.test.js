@@ -54,6 +54,20 @@ test("assignee defaults to Unassigned with its avatar and can be reassigned", as
 	assert.notEqual(assignee.querySelector('[data-unassigned="person"]'), null);
 });
 
+test("assignee picker includes the editor palette people and selects them by click", async () => {
+	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing" } });
+	await view.click(view.getByRole("button", { name: "Change assignee" }));
+	const unassigned = view.getByRole("option", { name: "Unassigned" });
+	assert.notEqual(unassigned.querySelector('[data-unassigned="person"]'), null);
+	await view.fill(view.getByRole("textbox", { name: "Search people" }), "Andrea Wilson");
+	const person = view.getByRole("option", { name: "Andrea Wilson" });
+	await view.click(person);
+	assert.equal(view.getByRole("button", { name: "Change assignee" }).textContent.includes("Andrea Wilson"), true);
+	await view.click(view.getByRole("button", { name: "Change assignee" }));
+	await view.click(view.getByRole("option", { name: "Unassigned" }));
+	assert.equal(view.getByRole("button", { name: "Change assignee" }).textContent, "Unassigned");
+});
+
 test("an existing Automatic assignee is shown as Unassigned with the VPK avatar", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";

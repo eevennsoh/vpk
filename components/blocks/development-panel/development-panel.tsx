@@ -57,7 +57,7 @@ function StartCodingMenu({ trigger }: Readonly<{ trigger?: ReactElement }>) {
 	return (
 		<DropdownMenu>
 			{trigger ? <DropdownMenuTrigger render={trigger} /> : <DropdownMenuTrigger render={<Button aria-label="Configure repository" size="icon-compact" type="button" variant="ghost" />}><BranchIcon label="" size="small" /></DropdownMenuTrigger>}
-			<DropdownMenuContent align="start" className="w-72 rounded-lg [&_[role=menuitem]>span:first-child]:size-4">
+			<DropdownMenuContent align="start" className="w-72 [&_[role=menuitem]>span:first-child]:size-4">
 				<DropdownMenuGroup><DropdownMenuLabel>Create branch in...</DropdownMenuLabel>
 				<DropdownMenuItem elemBefore={<AtlassianLogoMark frame="chip" label="" name="bitbucket" />}>Bitbucket Cloud</DropdownMenuItem>
 				<DropdownMenuItem elemBefore={<LogoThirdParty label="" name="github" size="xxsmall" tileBackground="surface" />}>GitHub</DropdownMenuItem></DropdownMenuGroup>

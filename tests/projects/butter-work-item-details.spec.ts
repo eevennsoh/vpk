@@ -5,6 +5,22 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("assignee options use compact palette sizing and highlight on hover while searching", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Change assignee" }).click();
+	const picker = page.getByRole("dialog", { name: "Change assignee" });
+	const search = picker.getByRole("textbox", { name: "Search people" });
+	const option = picker.getByRole("option", { name: "Annie Cook" });
+	await expect(search).toBeFocused();
+	await expect(option).toHaveCSS("height", "36px");
+	await option.hover();
+	await expect(search).toBeFocused();
+	await expect.poll(() => option.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+	await option.click();
+	await expect(page.getByRole("button", { name: "Change assignee" })).toContainText("Annie Cook");
+});
+
 test("Agents hover highlights the value below its label, like Priority", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));

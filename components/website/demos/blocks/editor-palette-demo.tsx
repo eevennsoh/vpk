@@ -13,7 +13,7 @@ export default function EditorPaletteDemo() {
 export function EditorPaletteNested() {
 	return (
 		<div className="flex w-full justify-center p-6">
-			<EditorPalette variant="nested" />
+			<EditorPalette rowVariant="with-byline" variant="nested" />
 		</div>
 	);
 }

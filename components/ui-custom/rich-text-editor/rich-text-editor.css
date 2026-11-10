@@ -620,8 +620,7 @@
 	border: 0;
 	border-radius: 8px;
 	background: transparent;
-	/* Shared sizing model for every variant (nested, flat, live "@"/"/" menus):
-	   a fixed 44px row. The 24px front-slot avatar plus the clamped copy box
+	/* The byline variant uses a fixed 44px row. The 24px front-slot avatar plus the clamped copy box
 	   (label, with any description revealing in place on hover/selection) fit
 	   inside 44px, and `align-items: center` centers them. No vertical padding —
 	   the fixed height owns the row rhythm so reveal animations never reflow it. */
@@ -631,6 +630,10 @@
 	color: var(--ds-text, #172b4d);
 	text-align: left;
 	cursor: pointer;
+}
+
+.rich-text-command-menu[data-row-variant="compact"] .rich-text-command-menu-item {
+	height: 36px;
 }
 
 /* The row highlight has a single source of truth: the selected row. In
@@ -701,8 +704,8 @@
 /*
  * When the menu's own search field is focused (the user is typing into it), the
  * Return key submits THAT field — e.g. "Ask Rovo" or a category search — not a
- * menu row. Suppress row highlight sources (the keyboard-selected row and any
- * hover), the copy reflow, and the Return (↵) affordance so the menu never
+ * menu row. Suppress the keyboard-selected row, copy reflow, and the Return
+ * (↵) affordance so the menu never
  * implies Return will activate a row while you are typing. The sticky search
  * bar keeps its own hover (see `.rich-text-command-menu-search:hover` above) so
  * it stays interactive like Assign agents / editor-palette search — exclude it
@@ -711,9 +714,7 @@
  * menus — where focus stays in the editor and Return DOES pick the highlighted
  * row — are unaffected.
  */
-.rich-text-command-menu:focus-within .rich-text-command-menu-item:hover,
 .rich-text-command-menu:focus-within .rich-text-command-menu-item-selected,
-.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:not(.rich-text-command-menu-search):hover,
 .rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:not(.rich-text-command-menu-search).rich-text-command-menu-item-selected {
 	background-color: transparent;
 }

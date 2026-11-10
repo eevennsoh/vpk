@@ -139,6 +139,7 @@ function WorkingSessionsList({
 			tabIndex={-1}
 		>
 			<RichTextSuggestionMenu
+				rowVariant="with-byline"
 				className="rich-text-command-menu-borderless w-full!"
 				emptyLabel="No agents working"
 				items={items}
