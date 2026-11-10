@@ -6,6 +6,37 @@ const { renderComponent } = require("../../../../scripts/lib/render-component.js
 const { JIRA_WORK_ITEM_DETAIL } = require("../../../../app/data/details/blocks/jira-work-item.ts");
 const { reorderProjectButterPanels, PROJECT_BUTTER_PANEL_ORDER } = require("./panel-order.ts");
 
+test("continuing an agent shows long session cards before opening the chosen session", async () => {
+	const opened = [];
+	const sessions = ["First session", "Second session"].map((title, index) => ({ id: `session-${index}`, title, agent: { id: "claude", name: "Claude" }, host: "cloud", state: "complete", timeLabel: "2h" }));
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/project-butter-comment-bar.tsx",
+		exportName: "ProjectButterCommentBar",
+		props: { active: true, activityRows: "feed", content: { commentDraft: "@Claude follow up", setCommentDraft() {} }, empty: true, onOpenSession: (id, draft) => opened.push([id, draft]), onPreviewSession() {}, onStartAgent() {}, sessions: sessions.slice(0, 1), sidePanel: false },
+		mocks: {
+			"@/components/blocks/jira-work-item/project-butter/project-butter-comment-editor": `import React, { useImperativeHandle } from "react";
+				export function ProjectButterCommentEditor({ ref, onMentionChange }) {
+					useImperativeHandle(ref, () => ({ getDraftWithoutAgentMention: () => "follow up" }));
+					return <button type="button" onClick={() => onMentionChange(["Claude"], true)}>Mention Claude</button>;
+				}`,
+			"@/components/blocks/jira-work-item/project-butter/use-comment-bar-visibility": `import { useRef } from "react"; export function useCommentBarVisibility() { return { barRef: useRef(null), elevated: false, inActivity: true, revealActivity() {} }; }`,
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Mention Claude" }));
+	await view.click(view.getByRole("option", { name: /Continue in existing session/u }));
+	assert.deepEqual(opened, []);
+	assert.equal(view.queryByText("First session") !== null, true);
+	assert.equal(view.container.querySelector('[data-testid="agent-session-row-session-0"]') !== null, true);
+	await view.click(view.getByRole("button", { name: /First session/u }));
+	assert.deepEqual(opened, [["session-0", "follow up"]]);
+
+	await view.rerender({ active: true, activityRows: "feed", content: { commentDraft: "@Claude follow up", setCommentDraft() {} }, empty: true, onOpenSession: (id, draft) => opened.push([id, draft]), onPreviewSession() {}, onStartAgent() {}, sessions, sidePanel: false });
+	await view.click(view.getByRole("button", { name: "Mention Claude" }));
+	await view.click(view.getByRole("option", { name: /Continue in existing session/u }));
+	await view.click(view.getByRole("button", { name: /Second session/u }));
+	assert.deepEqual(opened[1], ["session-1", "follow up"]);
+});
+
 test("Butter chat keeps the selected session's agent identity", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";

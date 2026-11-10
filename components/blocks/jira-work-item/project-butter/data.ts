@@ -79,6 +79,17 @@ export const PROJECT_BUTTER_SESSIONS: readonly ProjectButterSessionItem[] = [
 		],
 	},
 	{
+		id: "butter-claude-onboarding-feedback",
+		invokedAtMs: PROJECT_BUTTER_SESSION_EPOCH - 60 * 60 * 1000,
+		title: "Summarize onboarding feedback",
+		agent: { id: "claude", name: "Claude", brandName: "claude" },
+		invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
+		host: "cloud",
+		state: "complete",
+		timeLabel: "1h ago",
+		message: "I grouped the onboarding feedback into setup, navigation, and sign-in themes for the next review.",
+	},
+	{
 		id: "butter-claude-postmortem",
 		invokedAtMs: PROJECT_BUTTER_SESSION_EPOCH - 2 * 60 * 60 * 1000,
 		title: "Rewrite the incident postmortem",

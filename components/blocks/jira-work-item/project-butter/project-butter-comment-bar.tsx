@@ -5,8 +5,10 @@ import { motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
+import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
-import { matchingAgentSessions, sessionChoiceItems } from "@/components/blocks/agent-assignment/components/session-choice-items";
+import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
+import { matchingAgentSessions } from "@/components/blocks/agent-assignment/components/session-choice-items";
 import { createCommentEntry } from "@/components/blocks/jira-activity/lib/jira-activity-reducer";
 import { ProjectButterCommentEditor, type ProjectButterCommentEditorHandle } from "@/components/blocks/jira-work-item/project-butter/project-butter-comment-editor";
 import { useProjectButterMentionAgents } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-mention-agents";
@@ -22,6 +24,10 @@ const SESSION_TARGET_MENU_ITEMS = [
 	{ id: "new", label: "Start a new session", icon: <AddIcon label="" size="small" /> },
 ] satisfies readonly RichTextSuggestionMenuItem[];
 
+function createTimedComment(args: Parameters<typeof createCommentEntry>[0]) {
+	return { ...createCommentEntry(args), createdAtMs: Date.now() };
+}
+
 export function ProjectButterCommentBar({ active, activityRows, content, empty, onOpenSession, onPreviewSession, onStartAgent, sessions, sidePanel }: Readonly<{ active: boolean; activityRows: "none" | "origin" | "feed"; content: ProjectButterContent; empty: boolean; onOpenSession: (id: string, draft?: string) => boolean | void | Promise<boolean | void>; onPreviewSession: (id: string | null) => void; onStartAgent: (agent: AgentSessionItem["agent"], prompt: string) => void; sessions: readonly ProjectButterSessionItem[]; sidePanel: boolean }>) {
 	const [expanded, setExpanded] = useState(false);
 	const [mentions, setMentions] = useState<string[]>([]);
@@ -31,6 +37,7 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 	const [selectedTargetIndex, setSelectedTargetIndex] = useState(0);
 	const [choosingSession, setChoosingSession] = useState(false);
 	const editorRef = useRef<ProjectButterCommentEditorHandle>(null);
+	const backRef = useRef<HTMLButtonElement>(null);
 	const openingSession = useRef(false);
 	const currentDraft = useRef(content.commentDraft);
 	const agents = useProjectButterMentionAgents(sessions);
@@ -38,9 +45,8 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 	const matchingSessions = mentionedAgent ? matchingAgentSessions(mentionedAgent, sessions, { includeCompleted: true }) : [];
 	const existingSession = matchingSessions[0];
 	const showTargetMenu = Boolean(existingSession && newSessionAgentName !== mentionedAgent?.name);
-	const sessionItems = sessionChoiceItems(matchingSessions);
-	const menuItems = choosingSession ? sessionItems : SESSION_TARGET_MENU_ITEMS;
-	const selectedIndex = Math.min(selectedTargetIndex, Math.max(0, menuItems.length - 1));
+	const menuLength = choosingSession ? matchingSessions.length : SESSION_TARGET_MENU_ITEMS.length;
+	const selectedIndex = Math.max(choosingSession ? -1 : 0, Math.min(selectedTargetIndex, menuLength - 1));
 	const reducedMotion = useReducedMotion();
 	const { barRef, elevated, inActivity, revealActivity } = useCommentBarVisibility(active, empty, sidePanel);
 	const visible = active && (empty || expanded || inActivity);
@@ -76,14 +82,13 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 			cancel();
 			return;
 		}
-		const entry = { ...createCommentEntry({ id: crypto.randomUUID(), actor: content.currentUser, body: hasMentions ? plainText : body, timestamp: "Just now" }), createdAtMs: Date.now() };
+		const entry = createTimedComment({ id: crypto.randomUUID(), actor: content.currentUser, body: hasMentions ? plainText : body, timestamp: "Just now" });
 		content.setActivityEntries((entries) => [...entries, entry]); content.setActivityView("Activity"); content.setActivityFocusId(entry.id); cancel();
 	}
 	function chooseTarget(choice: "continue" | "new") {
 		if (!existingSession) return;
 		if (choice === "continue") {
-			if (matchingSessions.length > 1) { setChoosingSession(true); setSelectedTargetIndex(0); }
-			else openSelectedSession(existingSession);
+			setChoosingSession(true); setSelectedTargetIndex(0);
 		} else {
 			setNewSessionAgentName(mentionedAgent?.name ?? null);
 			setFocusRequest((value) => value + 1);
@@ -115,9 +120,16 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 			case "ArrowUp":
 				event.preventDefault(); event.stopPropagation();
 				{
-					const next = (selectedIndex + (event.key === "ArrowDown" ? 1 : -1) + menuItems.length) % menuItems.length;
+					const direction = event.key === "ArrowDown" ? 1 : -1;
+					const next = choosingSession
+						? (selectedIndex + 1 + direction + menuLength + 1) % (menuLength + 1) - 1
+						: (selectedIndex + direction + menuLength) % menuLength;
 					setSelectedTargetIndex(next);
-					if (choosingSession && menuItems[next]) onPreviewSession(menuItems[next].id);
+					if (choosingSession) {
+						onPreviewSession(matchingSessions[next]?.id ?? null);
+						if (next === -1) backRef.current?.focus({ preventScroll: true });
+						else if (event.target === backRef.current) setFocusRequest((value) => value + 1);
+					}
 				}
 				break;
 			case "Enter":
@@ -125,9 +137,10 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 				if (event.key === "Tab" && event.shiftKey) return;
 				event.preventDefault(); event.stopPropagation();
 				if (choosingSession) {
-					const session = matchingSessions.find((item) => item.id === menuItems[selectedIndex]?.id);
+					if (selectedIndex === -1) { backToTargets(); break; }
+					const session = matchingSessions[selectedIndex];
 					if (session) openSelectedSession(session);
-				} else chooseTarget(menuItems[selectedIndex]?.id === "new" ? "new" : "continue");
+				} else chooseTarget(SESSION_TARGET_MENU_ITEMS[selectedIndex]?.id === "new" ? "new" : "continue");
 				break;
 			case "ArrowLeft":
 				if (!choosingSession) return;
@@ -147,7 +160,14 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 		<motion.div animate={{ opacity: visible ? 1 : 0, transform: visible || sidePanel || empty ? "translateY(0%)" : "translateY(100%)" }} aria-hidden={!visible} aria-label="Comment editor" className={cn("sticky bottom-6 z-30 rounded-xl bg-surface [&_[data-project-butter-comment-editor]]:relative [&_[data-project-butter-comment-editor]]:z-10 [&_[data-project-butter-comment-editor]]:shadow-none", !sidePanel && "@[860px]/butter:bottom-0", activityRows === "none" ? "-mt-4" : activityRows === "origin" ? "mt-0" : "mt-4")} data-elevated={elevated} data-project-butter-comment-bar data-visible={visible} inert={!visible} initial={false} onKeyDownCapture={handleTargetKeyDown} ref={barRef} role="group" style={{ pointerEvents: visible ? "auto" : "none" }} transition={{ duration: reducedMotion ? 0 : motionDuration.fast, ease: referenceEase.workItemCommentReveal }}>
 			{visible && elevated ? <span aria-hidden="true" className="pointer-events-none absolute -inset-x-6 -bottom-6 -top-20 -z-10 bg-linear-to-b from-transparent via-surface to-surface" data-project-butter-comment-backdrop /> : null}
 			<span aria-hidden="true" className="pointer-events-none absolute inset-x-6 inset-y-0 rounded-xl shadow-[0px_-2px_50px_8px_rgba(30,31,33,0.08)]" data-project-butter-comment-shadow />
-			{showTargetMenu && existingSession ? <div className="absolute inset-x-0 bottom-full z-20 mb-2" data-project-butter-session-target-menu><RichTextSuggestionMenu className="rich-text-command-menu-borderless w-full!" emptyLabel="" items={menuItems} onBack={choosingSession ? backToTargets : undefined} onHover={(index) => { setSelectedTargetIndex(index); if (choosingSession && menuItems[index]) onPreviewSession(menuItems[index].id); }} onHoverEnd={() => { if (choosingSession) onPreviewSession(null); }} onSelect={(item) => { if (choosingSession) { const session = matchingSessions.find((candidate) => candidate.id === item.id); if (session) openSelectedSession(session); } else chooseTarget(item.id === "new" ? "new" : "continue"); }} selectedIndex={selectedIndex} title={choosingSession ? "Choose a session" : "Choose agent session"} /></div> : null}
+			{showTargetMenu && existingSession ? <div className="absolute inset-x-0 bottom-full z-20 mb-2" data-project-butter-session-target-menu>
+				{choosingSession ? <div className="rich-text-command-menu rich-text-command-menu-borderless w-full!" data-nested="true">
+					<button className={cn("rich-text-command-menu-item rich-text-command-menu-back", selectedIndex === -1 && "rich-text-command-menu-item-selected")} onClick={backToTargets} onFocus={() => { setSelectedTargetIndex(-1); onPreviewSession(null); }} onMouseDown={(event) => event.preventDefault()} onMouseEnter={() => { setSelectedTargetIndex(-1); onPreviewSession(null); }} ref={backRef} type="button"><span className="inline-flex size-6 items-center justify-center"><ArrowLeftIcon label="" size="small" /></span><span className="menu-row-title">Back</span></button>
+					<ul aria-label="Choose a session" className="rich-text-command-menu-list p-1">
+						{matchingSessions.map((session, index) => <AgentSessionCard animateLayout={false} density="long" hoverTone="menu" isSelected={index === selectedIndex} item={{ ...session, title: session.prompt?.replace(`@${session.agent.name}`, "").trim() || session.title }} key={session.id} onItemHover={(item) => { if (item) setSelectedTargetIndex(index); onPreviewSession(item?.id ?? null); }} onView={() => openSelectedSession(session)} padding="compact" showMoreMenu={false} />)}
+					</ul>
+				</div> : <RichTextSuggestionMenu className="rich-text-command-menu-borderless w-full!" emptyLabel="" items={SESSION_TARGET_MENU_ITEMS} onHover={setSelectedTargetIndex} onSelect={(item) => chooseTarget(item.id === "new" ? "new" : "continue")} selectedIndex={selectedIndex} title="Choose agent session" />}
+			</div> : null}
 			<div className="contents" onFocusCapture={() => setExpanded(true)}>
 				<ProjectButterCommentEditor agents={agents} focusRequest={focusRequest} onCancel={cancel} onMentionChange={(names, hasAny) => { setMentions(names); setHasMentions(hasAny); if (!names.includes(mentionedAgent?.name ?? "")) { setNewSessionAgentName(null); setSelectedTargetIndex(0); setChoosingSession(false); onPreviewSession(null); } }} onSave={submit} onValueChange={(value) => { currentDraft.current = value; content.setCommentDraft(value); }} ref={editorRef} value={content.commentDraft} />
 			</div>
