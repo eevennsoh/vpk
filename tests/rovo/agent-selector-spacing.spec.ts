@@ -119,10 +119,35 @@ for (const presentation of ["submenu", "inline"] as const) {
 		await menu.getByRole("textbox", { name: "Choose your directory" }).click();
 		const selected = workspaces.getByRole("button", { name: "/example/project", exact: true });
 		await expect(selected).toHaveAttribute("aria-current", "true");
-		await expect(selected.locator("svg").nth(1)).toHaveCSS("width", "12px");
-		await expect(selected.locator("svg").nth(1)).toHaveCSS("height", "12px");
+		await expect(selected.locator("..").locator(":scope > span svg")).toHaveCSS("width", "12px");
+		await expect(selected.locator("..").locator(":scope > span svg")).toHaveCSS("height", "12px");
 	});
 }
+
+test("selected workspace delete control and checkmark do not overlap", async ({ page }) => {
+	const path = "/Users/example/a-very-long-workspace-name-for-checking-the-layout";
+	await page.addInitScript((workspace) => window.localStorage.setItem("butter-local-agent-workspaces", JSON.stringify(JSON.stringify({ paths: [workspace], selected: workspace }))), path);
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	await page.getByRole("button", { name: "Configure Rovo CLI" }).click();
+	await page.getByRole("textbox", { name: "Choose your directory" }).click();
+	const menu = page.getByRole("dialog", { name: "Codebase workspaces" });
+	const selected = menu.getByRole("button", { name: path, exact: true });
+	await selected.hover();
+	const remove = menu.getByRole("button", { name: `Remove ${path}` });
+	const check = selected.locator("..").locator(":scope > span svg");
+	await expect(selected).toHaveAttribute("aria-current", "true");
+	await expect(selected).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(selected.locator("..")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(remove).toBeVisible();
+	await expect(check).toBeVisible();
+	const [removeBounds, checkBounds] = await Promise.all([remove.boundingBox(), check.boundingBox()]);
+	if (!removeBounds || !checkBounds) throw new Error("Selected workspace controls are not rendered");
+	expect(checkBounds.x).toBeGreaterThanOrEqual(removeBounds.x + removeBounds.width);
+	await remove.focus();
+	await page.keyboard.press("Enter");
+	await expect(selected).toHaveCount(0);
+});
 
 test("inline Rovo CLI aligns its action and directory label to the agent avatar", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/jira-local-agent"));

@@ -614,6 +614,32 @@ test("Butter session menus name the work instead of the agent", async ({ page })
 	await expect(journeyAssignment.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 });
 
+test("board session flyout reveals more actions when hovering the status", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	const issue = page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-105"][data-board-column-title]');
+	await issue.getByRole("button", { name: "Cursor: Working" }).click();
+	const flyout = page.getByRole("dialog", { name: "Agent assignment" });
+	const row = flyout.locator("article").filter({ hasText: "Replaying 3-D Secure fixtures" });
+	await expect(row).toBeVisible();
+	await page.mouse.move(0, 0);
+	const status = row.getByRole("button", { name: "Working" });
+	await expect(status).toBeVisible();
+	const statusBounds = await status.boundingBox();
+	if (!statusBounds) throw new Error("Session status is not rendered");
+	await page.mouse.move(statusBounds.x + statusBounds.width / 2, statusBounds.y + statusBounds.height / 2);
+	const more = row.getByRole("button", { name: "More actions for Replaying 3-D Secure fixtures" });
+	await expect(more).toBeVisible();
+	await expect(status).toBeHidden();
+	await expect(more.locator("[data-slot=icon]")).toBeVisible();
+	await more.click();
+	await expect(page.getByRole("menu")).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(more).toBeFocused();
+});
+
 test("the original Butter session menu still offers Add agent", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

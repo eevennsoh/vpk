@@ -59,6 +59,12 @@ export function ButterAgentSelectorGallery({ variant = "default", presentation =
 		setSelectedAgentIds(session.agent.id ? [session.agent.id] : []);
 		setPickerKey((current) => current + 1);
 	};
+	const removeSession = (session: AgentSessionItem) => {
+		setSessions((current) => current.filter((item) => item.id !== session.id));
+	};
+	const renameSession = (session: AgentSessionItem) => {
+		setSessions((current) => current.map((item) => item.id === session.id ? { ...item, title: `${item.title} (renamed)` } : item));
+	};
 	const useSubmenu = presentation === "submenu" || variant === "duplicative-sessions";
 
 	return (
@@ -75,6 +81,7 @@ export function ButterAgentSelectorGallery({ variant = "default", presentation =
 							onBrowseAgents={() => setDirectoryOpen(true)}
 							onContinueSession={variant === "duplicative-sessions" ? continueSession : undefined}
 							onCreateAgent={showCreateAgent ? createAgent : undefined}
+							sessionActions={variant === "duplicative-sessions" ? { onDelete: removeSession, onDismiss: removeSession, onRename: renameSession } : undefined}
 							sessions={variant === "duplicative-sessions" ? sessions : undefined}
 							sessionChoicesOnly={variant === "duplicative-sessions"}
 							selectedAgentIds={selectedAgentIds}

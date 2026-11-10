@@ -56,7 +56,7 @@ export function ProjectButterAgentPicker({
 	);
 }
 
-export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAgentIds, onFavoriteAgentIdsChange, onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onLocalUse, onPreviewSession, recentAgentId, sessions = [], sessionChoicesOnly = false, selectedAgentIds, showSubmenuChevron = true, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
+export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAgentIds, onFavoriteAgentIdsChange, onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onLocalUse, onPreviewSession, recentAgentId, sessionActions, sessions = [], sessionChoicesOnly = false, selectedAgentIds, showSubmenuChevron = true, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
 	localOnly?: boolean;
 	favoriteAgentIds?: readonly string[];
 	onFavoriteAgentIdsChange?: (ids: readonly string[]) => void;
@@ -67,6 +67,11 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 	onContinueSession?: (session: AgentSessionItem) => void;
 	onCreateAgent?: () => void;
 	onPreviewSession?: (sessionId: string | null) => void;
+	sessionActions?: Readonly<{
+		onDelete: (session: AgentSessionItem) => void;
+		onDismiss: (session: AgentSessionItem) => void;
+		onRename: (session: AgentSessionItem) => void;
+	}>;
 	sessions?: readonly AgentSessionItem[];
 	sessionChoicesOnly?: boolean;
 	selectedAgentIds?: readonly string[];
@@ -83,6 +88,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 	const syncHighlight = useRef(false);
 	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const selectingFolder = useRef(false);
+	const sessionMenuOpen = useRef(false);
 	const cloudButton = useRef<HTMLButtonElement | null>(null);
 	const submenuContent = useRef<HTMLDivElement | null>(null);
 	const submenuId = useId();
@@ -107,7 +113,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 	const closeSubmenuLater = () => {
 		cancelClose();
 		closeTimer.current = setTimeout(() => {
-			if (selectingFolder.current) return;
+			if (selectingFolder.current || sessionMenuOpen.current) return;
 			if ((choosingSession || sessionChoicesOnly) && submenuContent.current?.contains(document.activeElement)) return;
 			if (document.activeElement?.closest("[data-butter-local-menu], [aria-label='Codebase workspaces']")) return;
 			setSubmenu(null);
@@ -167,7 +173,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 			<div role="group" aria-labelledby={`${submenuId}-existing`}>
 				<div id={`${submenuId}-existing`} className="rich-text-command-menu-heading">Continue with existing sessions</div>
 				<ul aria-labelledby={`${submenuId}-existing`} className="flex min-w-0 flex-col">
-					{matchingSessions.map((session) => <AgentSessionCard animateLayout={false} item={session} key={session.id} localSessionAction="view" onView={onContinueSession} padding="menu" showMoreMenu={false} showWorkingSpinner />)}
+					{matchingSessions.map((session) => <AgentSessionCard animateLayout={false} hoverTone="menu" item={session} key={session.id} localSessionAction="view" moreMenuPositionerClassName="z-[800]" onDeleteSession={sessionActions?.onDelete} onMoreMenuOpenChange={(open) => { sessionMenuOpen.current = open; if (open) cancelClose(); }} onRenameSession={sessionActions?.onRename} onToggleVisibility={sessionActions?.onDismiss} onView={onContinueSession} padding="compact" showMoreMenu={sessionActions !== undefined} showWorkingSpinner />)}
 				</ul>
 			</div>
 		</>
@@ -305,7 +311,7 @@ export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAge
 					side="right"
 					align="start"
 					sideOffset={0}
-					className={cn("w-70 max-w-[calc(100vw-24px)] gap-0 p-1", sessionChoicesOnly && "max-h-[min(26rem,var(--available-height,26rem))] overflow-y-auto")}
+					className={cn("w-70 max-w-[calc(100vw-24px)] gap-0 p-1", sessionChoicesOnly && "max-h-[min(26rem,var(--available-height,26rem))] overflow-y-auto shadow-2xl")}
 					positionerClassName={submenuPositionerClassName}
 					onPointerEnter={cancelClose}
 					onPointerLeave={closeSubmenuLater}

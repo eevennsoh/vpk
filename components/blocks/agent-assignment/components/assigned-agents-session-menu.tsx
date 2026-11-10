@@ -95,6 +95,7 @@ export function AgentSessionsMenu({
 					{items.map((item) => (
 						<AgentSessionCard
 							density="long"
+							hoverTone="menu"
 							item={item}
 							key={item.id}
 							localSessionAction={localSessionAction}

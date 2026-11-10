@@ -4,6 +4,21 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("assignment session rows match the menu action hover color", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/components/blocks/agent-assignment"));
+	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
+	const menu = page.locator('[aria-label="Agent assignment"]');
+	const action = menu.getByRole("button", { name: "Assign agent" });
+	await action.hover();
+	await expect.poll(() => action.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+	const color = await action.evaluate((element) => getComputedStyle(element).backgroundColor);
+	for (const row of await menu.locator("article").all()) {
+		await row.hover();
+		await expect(row).toHaveCSS("background-color", color);
+	}
+});
+
 test("compact session and assignment status glyphs are 12px", async ({ page }) => {
 	await page.goto(AGENT_SESSION_URL, { waitUntil: "domcontentloaded" });
 	for (const section of ["Local — short", "Cloud — short"]) {

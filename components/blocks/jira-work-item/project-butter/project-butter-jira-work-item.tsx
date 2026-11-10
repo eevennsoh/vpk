@@ -22,6 +22,8 @@ import { ProjectButterBody } from "@/components/blocks/jira-work-item/project-bu
 import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
 import { ProjectButterDetailsRail } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
 import { ProjectButterSession } from "@/components/blocks/jira-work-item/project-butter/project-butter-session";
 import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-item/project-butter/placeholder-fill";
@@ -102,6 +104,16 @@ export function ProjectButterJiraWorkItem({
 	/** The scrolling left column: the whole of it (gutters included) accepts file drops. */
 	const columnRef = useRef<HTMLDivElement>(null);
 	const [layoutElement, setLayoutElement] = useState<HTMLDivElement | null>(null);
+	const { ref: layoutScrollRef, showTopScrollMask: showLayoutFade } = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: columnScrollRef, showTopScrollMask: showColumnFade } = useHasVerticalOverflow<HTMLDivElement>();
+	const setLayoutRef = useCallback((element: HTMLDivElement | null) => {
+		setLayoutElement(element);
+		layoutScrollRef(element);
+	}, [layoutScrollRef]);
+	const setColumnRef = useCallback((element: HTMLDivElement | null) => {
+		columnRef.current = element;
+		columnScrollRef(element);
+	}, [columnScrollRef]);
 	const inlineDetailsRef = useRef<HTMLDivElement>(null);
 	const railDetailsRef = useRef<HTMLDivElement>(null);
 	const detailsHostRef = useRef<HTMLDivElement | null>(null);
@@ -342,15 +354,16 @@ export function ProjectButterJiraWorkItem({
 				)}
 				data-project-butter-state={suggestion ? "suggestion" : empty ? "empty" : "filled"}
 				data-project-butter-work-item
-				ref={setLayoutElement}
+				ref={setLayoutRef}
 			>
 				<div
 					className={cn(
 						"min-w-0 px-6 pb-6",
 						!sidePanel && "@[860px]/butter:overflow-y-auto",
 					)}
-					ref={columnRef}
+					ref={setColumnRef}
 				>
+					{showLayoutFade || showColumnFade ? <div className="pointer-events-none sticky top-0 z-10 -mx-6 h-0"><ScrollMaskEdgeOverlay data-project-butter-scroll-fade="body" edge="top" /></div> : null}
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
 						key={workItem?.code ?? "reference"}

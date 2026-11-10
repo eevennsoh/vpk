@@ -250,6 +250,7 @@ export function AgentSessionCard({
 	getResumeCommand,
 	glowBloom = false,
 	glowStroke = false,
+	hoverTone = "surface",
 	isArriving = false,
 	isDeparting = false,
 	isStateChanged = false,
@@ -312,6 +313,8 @@ export function AgentSessionCard({
 	 * treatment turns it on, so picker menus and attached rows stay flat.
 	 */
 	glowStroke?: boolean;
+	/** Match neutral menu rows when the card is used as a menu choice. */
+	hoverTone?: "surface" | "menu";
 	/** Play the one-shot arrival beat. A remounted card must not re-arm it. */
 	isArriving?: boolean;
 	/** Fade the old lifecycle at its previous slot before the row moves to the top. */
@@ -348,10 +351,9 @@ export function AgentSessionCard({
 	onView?: (item: AgentSessionItem) => void;
 	/**
 	 * Article inset. Assignment pickers use `compact` (`px-3 py-2` / 8px
-	 * vertical) so stacked menu rows sit tighter than catalog cards. `menu`
-	 * aligns row content with an 8px menu heading inset.
+	 * vertical) so stacked menu rows sit tighter than catalog cards.
 	 */
-	padding?: "default" | "compact" | "menu";
+	padding?: "default" | "compact";
 	renderAgentAvatar?: AgentSessionAvatarPreview;
 	/** Keep status and replacement actions centered beside the shared title/metadata column. */
 	trailingAlign?: "center" | "metadata";
@@ -686,7 +688,7 @@ export function AgentSessionCard({
 						// The glow layers sit at `-z-[1]`; without a stacking context
 						// here they would escape behind the list surface.
 						glow && "isolate",
-						padding === "menu" ? "p-2" : padding === "compact" ? "px-3 py-2" : "p-3",
+						padding === "compact" ? "px-3 py-2" : "p-3",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
 						// Hover and the retained flyout highlight must paint immediately;
@@ -694,8 +696,8 @@ export function AgentSessionCard({
 						"transition-[border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
 						showSelectedFill && "bg-bg-selected",
-						!showSelectedFill && (isHighlighted || isHoverStateActive) && "bg-surface-hovered",
-						!showSelectedFill && !isHighlighted && !isHoverStateActive && "bg-transparent hover:bg-surface-hovered",
+						!showSelectedFill && (isHighlighted || isHoverStateActive) && (hoverTone === "menu" ? "bg-bg-neutral-subtle-hovered" : "bg-surface-hovered"),
+						!showSelectedFill && !isHighlighted && !isHoverStateActive && (hoverTone === "menu" ? "bg-transparent hover:bg-bg-neutral-subtle-hovered" : "bg-transparent hover:bg-surface-hovered"),
 						activateCard === undefined
 							? null
 							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
