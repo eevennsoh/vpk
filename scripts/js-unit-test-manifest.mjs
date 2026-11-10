@@ -399,6 +399,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/ui-charts/stat-card-trend-badge.behavior.test.js",
 		"components/ui-charts/sunburst.behavior.test.js",
 		"components/ui-charts/tooltip/tooltip-indicator.behavior.test.js",
+		"components/visual/glimm/glimm.behavior.test.js",
 		"components/visual/ink-wash/data.test.js",
 		"components/visual/liquid-metal/data.test.js",
 		"components/visual/border-beam/data.test.js",

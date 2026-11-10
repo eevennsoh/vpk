@@ -3,6 +3,8 @@ packages:
   - backend
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
+  # Glimm's current release supplies the scoped transitions requested for the Visual catalog.
+  - "glimm@0.4.1"
   # Explicitly requested Voice Glow visual; first published 2026-09-17.
   # Scope the exception to the inspected release, preserving future age checks.
   - "voice-glow@0.2.0"

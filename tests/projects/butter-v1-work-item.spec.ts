@@ -1,6 +1,89 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("a dragged details field settles without jumping back on release", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Show more details" }).click();
+	const fields = page.locator("[data-project-butter-detail-fields]");
+	await fields.evaluate(async (node) => { await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => undefined))); });
+	const dueDate = fields.getByRole("group", { name: "Due Date field" });
+	const priority = fields.getByRole("group", { name: "Priority field" });
+	const label = dueDate.getByText("Due Date", { exact: true });
+	await expect(label).toHaveCSS("cursor", "grab");
+	const [source, target] = await Promise.all([dueDate.boundingBox(), priority.boundingBox()]);
+	if (!source || !target) throw new Error("Missing field geometry");
+	await page.mouse.move(source.x + 12, source.y + 8);
+	await page.mouse.down();
+	await page.mouse.move(target.x + 12, target.y + 28, { steps: 10 });
+	await expect(dueDate).toHaveAttribute("data-field-dragging", "true");
+	await expect(label).toHaveCSS("cursor", "grabbing");
+	await dueDate.evaluate((node) => {
+		const panel = node.closest('[data-panel-id="details"]');
+		if (!panel) throw new Error("Missing details panel");
+		const top = () => node.getBoundingClientRect().top - panel.getBoundingClientRect().top;
+		const positions = [top()];
+		document.addEventListener("pointerup", () => {
+			let frames = 0;
+			const sample = () => {
+				positions.push(top());
+				if (++frames < 20) requestAnimationFrame(sample);
+				else node.setAttribute("data-drop-positions", JSON.stringify(positions));
+			};
+			requestAnimationFrame(sample);
+		}, { once: true });
+	});
+	await page.mouse.up();
+	await expect(dueDate).toHaveAttribute("data-drop-positions", /\[/);
+	const positions: number[] = JSON.parse((await dueDate.getAttribute("data-drop-positions")) ?? "[]");
+	const largestJump = Math.max(...positions.slice(1).map((position, index) => Math.abs(position - positions[index])));
+	expect(largestJump, `Release positions: ${positions.join(", ")}`).toBeLessThan(source.height / 2);
+	expect(new Set(positions.map((position) => Math.round(position))).size, `Release positions: ${positions.join(", ")}`).toBeGreaterThan(3);
+	const order = await fields.locator("[data-field-id]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-field-id")));
+	expect(order.indexOf("dueDate")).toBeLessThan(order.indexOf("priority"));
+});
+
+test("a field released within its current slot eases back into place", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Show more details" }).click();
+	await page.locator("[data-project-butter-detail-fields]").evaluate(async (node) => { await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => undefined))); });
+	const field = page.getByRole("group", { name: "Due Date field" });
+	const box = await field.boundingBox();
+	if (!box) throw new Error("Missing field geometry");
+	await page.mouse.move(box.x + 12, box.y + 8);
+	await page.mouse.down();
+	await page.mouse.move(box.x + 12, box.y + 25, { steps: 5 });
+	await expect(field).toHaveAttribute("data-field-dragging", "true");
+	await page.mouse.up();
+	await expect.poll(() => field.evaluate((node) => node.getAnimations().some((animation) => animation.playState === "running"))).toBe(true);
+	await expect.poll(() => field.evaluate((node) => node.getBoundingClientRect().top)).toBeCloseTo(box.y, 0);
+});
+
+test("reordering a field with reduced motion reaches the same order without a drop animation", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Show more details" }).click();
+	const fields = page.locator("[data-project-butter-detail-fields]");
+	const field = fields.getByRole("group", { name: "Due Date field" });
+	const [source, target] = await Promise.all([field.boundingBox(), fields.getByRole("group", { name: "Priority field" }).boundingBox()]);
+	if (!source || !target) throw new Error("Missing field geometry");
+	await page.mouse.move(source.x + 12, source.y + 8);
+	await page.mouse.down();
+	await page.mouse.move(target.x + 12, target.y + 28, { steps: 10 });
+	await expect(field).toHaveAttribute("data-field-dragging", "true");
+	await page.mouse.up();
+	await expect.poll(() => fields.locator("[data-field-id]").evaluateAll((nodes) => {
+		const order = nodes.map((node) => node.getAttribute("data-field-id"));
+		return order.indexOf("dueDate") < order.indexOf("priority");
+	})).toBe(true);
+	expect(await field.evaluate((node) => node.getAnimations().some((animation) => animation.playState === "running" && Number(animation.effect?.getTiming().duration) > 20))).toBe(false);
+});
+
 test("PAY-999 activity uses the same distinct avatars as the board", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.goto(appUrl("/butter-v1"));

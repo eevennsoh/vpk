@@ -23,8 +23,9 @@ export const PROJECT_BUTTER_DETAIL_FIELDS = {
 } as const;
 
 export type ProjectButterDetailFieldId = keyof typeof PROJECT_BUTTER_DETAIL_FIELDS;
+export type ProjectButterDetailOrderId = ProjectButterDetailFieldId | "agents";
 export type ProjectButterDetailFields = {
-	order: ProjectButterDetailFieldId[];
+	order: ProjectButterDetailOrderId[];
 	hidden: ProjectButterDetailFieldId[];
 	parent: string;
 	labels: string[];
@@ -41,8 +42,8 @@ export type ProjectButterDetailFields = {
 	assetObject: string;
 };
 
-const PROJECT_BUTTER_DEFAULT_DETAIL_ORDER: readonly ProjectButterDetailFieldId[] = [
-	"status", "assignee", "priority", "dueDate", "parent", "labels", "storyPoints", "reporter",
+const PROJECT_BUTTER_DEFAULT_DETAIL_ORDER: readonly ProjectButterDetailOrderId[] = [
+	"status", "assignee", "agents", "priority", "dueDate", "parent", "labels", "storyPoints", "reporter",
 ];
 
 export const PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS: readonly ProjectButterDetailFieldId[] = ["status", "assignee", "priority"];
@@ -68,9 +69,9 @@ export function createProjectButterDetailFields(empty: boolean, workItem?: WorkI
 	};
 }
 
-export function reorderProjectButterDetailFields(order: readonly ProjectButterDetailFieldId[], activeId: string | number, overId: string | number | null): ProjectButterDetailFieldId[] {
-	const from = order.indexOf(activeId as ProjectButterDetailFieldId);
-	const to = overId === null ? -1 : order.indexOf(overId as ProjectButterDetailFieldId);
+export function reorderProjectButterDetailFields(order: readonly ProjectButterDetailOrderId[], activeId: string | number, overId: string | number | null): ProjectButterDetailOrderId[] {
+	const from = order.findIndex((field) => field === activeId);
+	const to = order.findIndex((field) => field === overId);
 	if (from < 0 || to < 0 || from === to) return [...order];
 	const next = [...order];
 	const [field] = next.splice(from, 1);
