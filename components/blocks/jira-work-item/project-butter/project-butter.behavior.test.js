@@ -163,6 +163,53 @@ function renderWorkItem(props = {}) {
 	});
 }
 
+test("starting an agent from the details field reveals its activity card with a horizontal glow", async () => {
+	const view = await renderWorkItem({ cloudAgentSelector: true, shell: "gallery" });
+	const feed = document.querySelector("[data-project-butter-activity-feed]");
+	const scrollport = feed.parentElement;
+	scrollport.style.overflowY = "auto";
+	scrollport.scrollTop = 500;
+	scrollport.getBoundingClientRect = () => ({ top: 0, bottom: 700, height: 700 });
+	const scrolls = [];
+	scrollport.scrollTo = (options) => scrolls.push(options);
+	const originalAnimate = window.Element.prototype.animate;
+	const originalSetTimeout = window.setTimeout.bind(window);
+	window.setTimeout = (callback, delay, ...args) => originalSetTimeout(callback, delay === 150 ? 10000 : delay, ...args);
+	const animations = [];
+	window.Element.prototype.animate = function (frames, options) {
+		if (this.parentElement?.hasAttribute("data-jira-linking-glow-backdrop")) animations.push({ frames, options, direction: this.parentElement.dataset.jiraLinkingGlowDirection });
+		return { cancel() {}, onfinish: null };
+	};
+	try {
+		await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
+		await view.click(view.getByRole("button", { name: "Claude" }));
+		const card = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:"));
+		assert.equal(Boolean(card?.querySelector("[data-variant='uncaptured-work']")), true);
+		assert.equal(scrolls.at(-1)?.behavior, "smooth");
+		assert.equal(animations.length, 0, "the glow waits for scrolling");
+		card.querySelector("article").getBoundingClientRect = () => ({ top: 900, bottom: 960 });
+		await act(async () => scrollport.dispatchEvent(new window.Event("scrollend")));
+		assert.equal(animations.length, 0, "an interrupted scroll does not glow off-screen");
+		assert.equal(card.querySelector("[data-jira-linking-glow-trace]"), null);
+		await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
+		await view.click(view.getByRole("button", { name: "Cursor" }));
+		const nextCard = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:") && node.textContent.includes("Cursor"));
+		nextCard.querySelector("article").getBoundingClientRect = () => ({ top: 100, bottom: 160 });
+		assert.equal(animations.length, 0);
+		assert.equal(scrolls.length, 2, "the second session also scrolls");
+		await act(async () => scrollport.dispatchEvent(new window.Event("scrollend")));
+		assert.notEqual(nextCard.querySelector("[data-jira-linking-glow-trace]"), null, "the border trace starts with the flash");
+		assert.equal(nextCard.querySelector("[data-jira-linking-glow-halo]"), null, "the glow stays inside the card");
+		assert.equal(nextCard.querySelector("[data-jira-linking-glow-backdrop]").parentElement === nextCard, true, "the sweep follows the outer card's corners");
+		assert.equal(animations.at(-1)?.direction, "left-to-right");
+		assert.equal(animations.at(-1)?.frames.at(-1).transform, "translateX(200%)");
+	} finally {
+		await view.unmount();
+		window.Element.prototype.animate = originalAnimate;
+		window.setTimeout = originalSetTimeout;
+	}
+});
+
 test("a host chat shows Ask Rovo and receives agent session links instead of the floating session card", async () => {
 	const opened = [];
 	globalThis.__butterOpened = opened;
