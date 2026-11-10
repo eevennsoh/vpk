@@ -19,7 +19,7 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 import { cn } from "@/lib/utils";
-import { PROJECT_BUTTER_DETAIL_FIELDS, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
+import { PROJECT_BUTTER_DETAIL_FIELDS, type ProjectButterDetailFieldId, type ProjectButterDetailOrderId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { DETAILS_RAIL_GLIDE } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 import { motionDuration, motionEase } from "@/lib/motion";
 
@@ -33,7 +33,7 @@ const FIELD_ICONS: Partial<Record<ProjectButterDetailFieldId, typeof DataNumberI
 export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove, onRevealInteract, first, last, reflow = false, shimmerText }: Readonly<{
 	children: ReactNode;
 	filled: boolean;
-	id: ProjectButterDetailFieldId;
+	id: ProjectButterDetailOrderId;
 	onClear?: () => void;
 	onHide?: () => void;
 	onMove: (direction: -1 | 1) => void;
@@ -45,22 +45,22 @@ export function DetailsFieldRow({ children, filled, id, onClear, onHide, onMove,
 	shimmerText?: string;
 }>) {
 	const [actionsOpen, setActionsOpen] = useState(false);
-	const { listeners, isDragging, setNodeRef, transform } = useSortable({ id });
-	const label = PROJECT_BUTTER_DETAIL_FIELDS[id];
-	const FieldIcon = id === "reporter" && !filled ? PersonIcon : FIELD_ICONS[id];
+	const { listeners, isDragging, setNodeRef, transform, transition } = useSortable({ id, transition: { duration: motionDuration.medium * 1000, easing: "var(--ease-out-practical)" } });
+	const label = id === "agents" ? "Agents" : PROJECT_BUTTER_DETAIL_FIELDS[id];
+	const FieldIcon = id === "agents" ? undefined : id === "reporter" && !filled ? PersonIcon : FIELD_ICONS[id];
 	return (
 		<div
-			aria-label={`${label} field`}
-			className={cn("group/butter-field relative min-w-0 rounded-md touch-pan-x", isDragging ? "z-30" : undefined)}
-			data-field-filled={filled}
+			aria-label={id === "agents" ? undefined : `${label} field`}
+			className={cn("group/butter-field relative min-w-0 cursor-grab rounded-md touch-pan-x", isDragging ? "z-30 cursor-grabbing" : undefined)}
+			data-field-filled={filled || id === "agents"}
 			data-field-id={id}
 			data-field-label={label}
 			data-field-dragging={isDragging ? "true" : undefined}
-			onFocusCapture={() => { if (shimmerText) onRevealInteract?.(id); }}
+			onFocusCapture={() => { if (shimmerText && id !== "agents") onRevealInteract?.(id); }}
 			{...listeners}
 			ref={setNodeRef}
-			role="group"
-			style={{ transform: CSS.Transform.toString(transform), transition: isDragging ? undefined : "transform var(--duration-medium) var(--ease-out-practical)" }}
+			role={id === "agents" ? undefined : "group"}
+			style={{ transform: CSS.Transform.toString(transform), transition }}
 		>
 			<motion.div className="min-w-0" layout="position" layoutDependency={reflow ? undefined : "settled"} transition={DETAILS_RAIL_GLIDE}>
 				{filled ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">{label}</div> : null}

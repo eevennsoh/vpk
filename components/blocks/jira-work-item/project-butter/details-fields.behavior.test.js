@@ -10,11 +10,11 @@ function renderDetails(props = {}) {
 			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
 			import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
 			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
-			export default function DetailsTest({ empty = false, workItem, sidePanel = false }) {
+			export default function DetailsTest({ empty = false, workItem, sidePanel = false, showAgents = false }) {
 				const filledContent = useProjectButterContent("filled", workItem);
 				const emptyContent = useProjectButterContent("empty", workItem);
 				const [order, setOrder] = useState(["details", "development", "automation", "apps"]);
-				return <ThemeWrapper><ProjectButterDetails code={workItem?.code} content={empty ? emptyContent : filledContent} empty={empty} key={sidePanel ? "side-panel" : "wide"} onPanelOrderChange={setOrder} panelOrder={order} sidePanel={sidePanel} /></ThemeWrapper>;
+				return <ThemeWrapper><ProjectButterDetails agentField={showAgents ? <div aria-label="Agents field" role="group"><button>Agent sessions</button></div> : undefined} code={workItem?.code} content={empty ? emptyContent : filledContent} empty={empty} key={sidePanel ? "side-panel" : "wide"} onPanelOrderChange={setOrder} panelOrder={order} sidePanel={sidePanel} /></ThemeWrapper>;
 			}`,
 		props,
 	});
@@ -77,10 +77,10 @@ async function fieldAction(view, field, action) {
 
 test("Details initializes each item independently and calculates cost per reach", () => {
 	const fields = createProjectButterDetailFields(false);
-	assert.deepEqual(fields.order, ["status", "assignee", "priority", "dueDate", "parent", "labels", "storyPoints", "reporter"]);
+	assert.deepEqual(fields.order, ["status", "assignee", "agents", "priority", "dueDate", "parent", "labels", "storyPoints", "reporter"]);
 	assert.equal(fields.parent, "VITA-22 User Experience Overhaul");
 	assert.deepEqual(fields.labels, ["social-media", "website-traffic"]);
-	assert.deepEqual(reorderProjectButterDetailFields(fields.order, "dueDate", "assignee").slice(0, 4), ["status", "dueDate", "assignee", "priority"]);
+	assert.deepEqual(reorderProjectButterDetailFields(fields.order, "dueDate", "assignee").slice(0, 5), ["status", "dueDate", "assignee", "agents", "priority"]);
 	assert.deepEqual(reorderProjectButterDetailFields(fields.order, "unknown", "assignee"), fields.order);
 	assert.equal(projectButterCostPerReach({ campaignBudget: "$1,200", estimatedReach: "24,000" }), "$0.05");
 	assert.equal(projectButterCostPerReach({ campaignBudget: "20", estimatedReach: "100,000" }), "$0.0002");
@@ -258,4 +258,17 @@ test("field actions support keyboard reordering without a drag handle", async ()
 	await view.press(moveUp, "Enter");
 	assert.deepEqual(fieldLabels(), ["Priority", "Assignee"]);
 	assert.equal(view.queryByRole("button", { name: "Drag to reorder Priority field" }), null);
+});
+
+test("Agents can be reordered independently and keeps its position when the panel remounts", async () => {
+	const view = await renderDetails({ showAgents: true });
+	assert.deepEqual(fieldLabels(), ["Assignee", "Agents", "Priority"]);
+	await fieldAction(view, "Agents", "Move down");
+	assert.deepEqual(fieldLabels(), ["Assignee", "Priority", "Agents"]);
+	await fieldAction(view, "Agents", "Move up");
+	await fieldAction(view, "Agents", "Move up");
+	assert.deepEqual(fieldLabels(), ["Agents", "Assignee", "Priority"]);
+	assert.notEqual(view.queryByRole("button", { name: "Agent sessions" }), null);
+	await view.rerender({ showAgents: true, sidePanel: true });
+	assert.deepEqual(fieldLabels(), ["Agents", "Assignee", "Priority"]);
 });
