@@ -99,7 +99,7 @@
 		"@json-render/react-three-fiber": "catalog:",
 		"@json-render/remotion": "catalog:",
 		"@json-render/yaml": "catalog:",
-		"@modelcontextprotocol/sdk": "1.32.1",
+		"@modelcontextprotocol/sdk": "1.32.2",
 		"@number-flow/react": "^0.6.2",
 		"@paper-design/shaders-react": "^0.0.81",
 		"@pierre/diffs": "^1.5.2",
