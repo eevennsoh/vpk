@@ -9,13 +9,11 @@ for (const width of [700, 1600]) {
 		const layout = page.locator("[data-project-butter-work-item]");
 		const column = layout.locator(":scope > div").first();
 		const scroller = width < 860 ? layout : column;
-		const fade = page.locator('[data-project-butter-scroll-fade="body"]');
-		await expect(fade).toHaveCount(0);
+		await expect(scroller).toHaveCSS("mask-image", "none");
 		await scroller.evaluate((element) => { element.scrollTop = 200; });
-		await expect(fade).toBeVisible();
-		await expect(fade).toHaveCSS("pointer-events", "none");
+		await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
 		await scroller.evaluate((element) => { element.scrollTop = 0; });
-		await expect(fade).toHaveCount(0);
+		await expect(scroller).toHaveCSS("mask-image", "none");
 	});
 }
 
@@ -26,13 +24,11 @@ test("the details rail fades independently when it scrolls", async ({ page }) =>
 	await page.getByRole("button", { name: "Show more details" }).click();
 	const rail = page.locator("[data-project-butter-details-rail]");
 	const scroller = rail.locator(":scope > div.overflow-y-auto");
-	const fade = rail.locator('[data-project-butter-scroll-fade="details"]');
-	await expect(fade).toHaveCount(0);
+	await expect(scroller).toHaveCSS("mask-image", "none");
 	await scroller.evaluate((element) => { element.scrollTop = 200; });
-	await expect(fade).toBeVisible();
-	await expect(fade).toHaveCSS("pointer-events", "none");
+	await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
 	await scroller.evaluate((element) => { element.scrollTop = 0; });
-	await expect(fade).toHaveCount(0);
+	await expect(scroller).toHaveCSS("mask-image", "none");
 });
 
 test("a dragged details field settles without jumping back on release", async ({ page }) => {

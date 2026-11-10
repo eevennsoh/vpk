@@ -2,7 +2,7 @@
 
 import { useCallback, useLayoutEffect, useRef, useState, type Ref } from "react";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { WorkItemSidePanelResizeHandle } from "@/components/blocks/jira-work-item/team-eu26/components/work-item-side-panel-resize-handle";
 import { DETAILS_DEFAULT_WIDTH_PX, DETAILS_MAX_WIDTH_PX, DETAILS_MIN_WIDTH_PX, projectButterDetailsMaxWidth } from "@/components/blocks/jira-work-item/project-butter/details-rail-model";
@@ -45,8 +45,7 @@ export function ProjectButterDetailsRail({ ref }: Readonly<{ ref: Ref<HTMLDivEle
 			ref={railRef}
 			style={{ width: resize.sidebarWidth }}
 		>
-			{showTopScrollMask ? <ScrollMaskEdgeOverlay className="z-10" data-project-butter-scroll-fade="details" edge="top" /> : null}
-			<div className="h-full min-w-0 overflow-y-auto px-6 pb-8" ref={setScrollRef} />
+			<div className="h-full min-w-0 overflow-y-auto px-6 pb-8" ref={setScrollRef} style={buildScrollMaskStyle({ fadeTop: showTopScrollMask, fadeBottom: false })} />
 			<WorkItemSidePanelResizeHandle
 				ariaLabel="Resize details panel"
 				className="bg-transparent! hover:bg-transparent! data-[active]:bg-transparent! group-hover/butter-details:[&>div]:opacity-100"

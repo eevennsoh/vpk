@@ -23,7 +23,7 @@ import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project
 import { ProjectButterDetailsRail } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { ProjectButterCrew } from "@/components/blocks/jira-work-item/project-butter/project-butter-crew";
 import { ProjectButterSession } from "@/components/blocks/jira-work-item/project-butter/project-butter-session";
 import type { ProjectButterPlaceholderMap } from "@/components/blocks/jira-work-item/project-butter/placeholder-fill";
@@ -355,6 +355,7 @@ export function ProjectButterJiraWorkItem({
 				data-project-butter-state={suggestion ? "suggestion" : empty ? "empty" : "filled"}
 				data-project-butter-work-item
 				ref={setLayoutRef}
+				style={buildScrollMaskStyle({ fadeTop: showLayoutFade, fadeBottom: false })}
 			>
 				<div
 					className={cn(
@@ -362,8 +363,8 @@ export function ProjectButterJiraWorkItem({
 						!sidePanel && "@[860px]/butter:overflow-y-auto",
 					)}
 					ref={setColumnRef}
+					style={buildScrollMaskStyle({ fadeTop: showColumnFade, fadeBottom: false })}
 				>
-					{showLayoutFade || showColumnFade ? <div className="pointer-events-none sticky top-0 z-10 -mx-6 h-0"><ScrollMaskEdgeOverlay data-project-butter-scroll-fade="body" edge="top" /></div> : null}
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
 						key={workItem?.code ?? "reference"}
