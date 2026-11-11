@@ -61,6 +61,8 @@ export interface AgentLoadingProps {
 	className?: string;
 	/** `default` is the authored 24×24 canvas; `small` scales it to 16×16. */
 	size?: AgentLoadingSize;
+	/** Choose the stacked Ferris or vertically cycling avatar visual. */
+	variant?: "stack" | "vertical";
 	/** Present a newly added front agent at its original size before it joins the group. */
 	intro?: { agentId: string; avatarSize: 20 | 24 };
 }
@@ -161,6 +163,7 @@ export function AgentLoading({
 	announce = true,
 	className,
 	size = "default",
+	variant = "stack",
 	intro,
 }: Readonly<AgentLoadingProps>) {
 	const [frontAgentId, setFrontAgentId] = useState<string | null>(
@@ -240,7 +243,25 @@ export function AgentLoading({
 				announcement={announcement}
 				customLabel={ariaLabel}
 			/>
-			<span
+			{variant === "vertical" ? (
+				<span aria-hidden="true" className="agent-loading-vertical" data-size={size} data-reduced-motion={shouldReduceMotion ? "true" : undefined}>
+					<span className="agent-loading-vertical-mask">
+						<AnimatePresence initial={false}>
+							<motion.span
+								animate={{ opacity: 1, y: 0 }}
+								className="absolute inset-0 grid place-items-center"
+								data-agent-id={slots.front.id}
+								exit={shouldReduceMotion ? { opacity: 0, transition: AGENT_LOADING_MOTION_REDUCED } : { opacity: 0, y: -24 }}
+								initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
+								key={slots.front.id}
+								transition={shouldReduceMotion ? AGENT_LOADING_MOTION_REDUCED : AGENT_LOADING_MOTION_SWAP}
+							>
+								<AgentAvatarVisual {...slots.front.avatar} animate={false} label={undefined} loading={slots.front.avatar.loading ?? "eager"} sizePx={size === "small" ? 16 : 24} />
+							</motion.span>
+						</AnimatePresence>
+					</span>
+				</span>
+			) : <span
 				aria-hidden="true"
 				className="agent-loading"
 				data-cycling={agents.length > 2 ? "true" : undefined}
@@ -255,7 +276,7 @@ export function AgentLoading({
 						))}
 					</AnimatePresence>
 				</span>
-			</span>
+			</span>}
 			{label ? (
 				<span className="min-w-0 self-center whitespace-nowrap text-sm text-text">
 					{label}

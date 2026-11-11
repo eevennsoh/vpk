@@ -4,6 +4,26 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_LOADING_URL = appUrl("/components/ui-custom/agent-loading");
 
+test("vertical variation cycles through agents and respects reduced motion", async ({ page }) => {
+	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });
+	const vertical = page.locator(".agent-loading-vertical");
+	await expect(vertical).toBeVisible();
+	const seen = new Set<string>();
+	await expect.poll(async () => {
+		const ids = await vertical.locator("[data-agent-id]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-agent-id")));
+		for (const id of ids) if (id) seen.add(id);
+		return seen.size;
+	}, { timeout: 9_000, intervals: [200] }).toBe(3);
+	await expect(vertical.locator(".agent-loading-vertical-mask")).toHaveCSS("mask-image", /linear-gradient/);
+
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await expect(vertical).toHaveAttribute("data-reduced-motion", "true");
+	await expect(vertical.locator("[data-agent-id]")).toHaveCount(1);
+	const agent = await vertical.locator("[data-agent-id]").getAttribute("data-agent-id");
+	await page.waitForTimeout(2_700);
+	await expect(vertical.locator("[data-agent-id]")).toHaveAttribute("data-agent-id", agent ?? "");
+});
+
 test("Claude avatars use the brand background and a white starburst", async ({ page }) => {
 	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });
 	await page.getByRole("button", { name: "4 agents", exact: true }).click();
