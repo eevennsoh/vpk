@@ -741,6 +741,30 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 	},
 ];
 
+const PAY_WORK_ITEM_SCHEDULE: Readonly<Record<string, { storyPoints: number; dueDate: string }>> = {
+	"PAY-118": { storyPoints: 3, dueDate: "2026-11-23" },
+	"PAY-999": { storyPoints: 8, dueDate: "2026-11-30" },
+	"PAY-124": { storyPoints: 2, dueDate: "2026-11-17" },
+	"PAY-125": { storyPoints: 5, dueDate: "2026-11-20" },
+	"PAY-127": { storyPoints: 2, dueDate: "2026-11-27" },
+	"PAY-105": { storyPoints: 8, dueDate: "2026-11-20" },
+	"PAY-107": { storyPoints: 5, dueDate: "2026-11-19" },
+	"PAY-123": { storyPoints: 3, dueDate: "2026-11-16" },
+	"PAY-130": { storyPoints: 5, dueDate: "2026-11-20" },
+	"PAY-112": { storyPoints: 3, dueDate: "2026-11-13" },
+	"PAY-115": { storyPoints: 2, dueDate: "2026-11-16" },
+	"PAY-119": { storyPoints: 3, dueDate: "2026-11-16" },
+	"PAY-132": { storyPoints: 1, dueDate: "2026-11-13" },
+	"PAY-104": { storyPoints: 5, dueDate: "2026-11-17" },
+	"PAY-109": { storyPoints: 3, dueDate: "2026-11-16" },
+	"PAY-121": { storyPoints: 8, dueDate: "2026-11-17" },
+	"PAY-128": { storyPoints: 5, dueDate: "2026-11-17" },
+	"PAY-101": { storyPoints: 5, dueDate: "2026-11-06" },
+	"PAY-102": { storyPoints: 3, dueDate: "2026-11-09" },
+	"PAY-113": { storyPoints: 8, dueDate: "2026-11-10" },
+	"PAY-126": { storyPoints: 3, dueDate: "2026-11-11" },
+};
+
 function cloneBoardCard(card: JiraKanbanCardData): JiraKanbanCardData {
 	return {
 		...card,
@@ -803,6 +827,7 @@ export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
 	return PAY_BOARD_COLUMNS.map((column) => {
 		const cards = [...column.cards, ...subtasks.filter((item) => item.status === column.title).map((item) => item.card)].map((card) => ({
 			...cloneBoardCard(card),
+			...PAY_WORK_ITEM_SCHEDULE[card.code],
 			parentIssueKey: PAY_101_SUBTASK_KEYS.some((key) => key === card.code) ? "PAY-101" : card.parentIssueKey,
 		}));
 		return { ...column, cards, count: cards.length };

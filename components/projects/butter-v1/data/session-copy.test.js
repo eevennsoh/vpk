@@ -93,3 +93,16 @@ test("additional work items include their existing subtasks", async () => {
 	assert.equal(quickstart.assignee.name, "Maya Ferreira");
 	assert.equal(columns.find((column) => column.cards.includes(quickstart)).title, "To do");
 });
+
+test("every Payments SDK work item has an estimate and due date by default", async () => {
+	const data = await loadData();
+	const cards = data.createButterPayBoardColumns().flatMap((column) => column.cards);
+	assert.equal(cards.length, 30);
+	for (const card of cards) {
+		assert.equal(typeof card.storyPoints, "number", card.code);
+		assert.match(card.dueDate ?? "", /^\d{4}-\d{2}-\d{2}$/u, card.code);
+	}
+	const first = cards.find((card) => card.code === "PAY-118");
+	assert.equal(first.storyPoints, 3);
+	assert.equal(first.dueDate, "2026-11-23");
+});
