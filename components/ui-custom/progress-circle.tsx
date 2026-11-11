@@ -508,7 +508,7 @@ function ProgressCircle({ completeOnAllPassed = false, ...props }: Readonly<Prog
 	return (
 		<Root {...rootProps} data-slot="progress-circle" role="progressbar" aria-label={label} aria-valuenow={passed} aria-valuemin={0} aria-valuemax={total || 1} className={cn(progressCircleVariants({ size, variant }), "grid place-items-center", className)}>
 			<motion.span
-				className="col-start-1 row-start-1"
+				className="col-start-1 row-start-1 grid place-items-center"
 				initial={false}
 				animate={{ opacity: allPassed ? 0 : 1 }}
 				transition={allPassed ? completionTransition : { duration: immediate ? 0 : motionDuration.fast }}
@@ -519,7 +519,7 @@ function ProgressCircle({ completeOnAllPassed = false, ...props }: Readonly<Prog
 				{allPassed ? (
 					<motion.span
 						key="success"
-						className="col-start-1 row-start-1"
+						className="col-start-1 row-start-1 grid place-items-center"
 						initial={immediate ? false : { opacity: 0, scale: 0.5 }}
 						animate={{ opacity: 1, scale: 1 }}
 						exit={{ opacity: 0, transition: { duration: immediate ? 0 : motionDuration.fast } }}

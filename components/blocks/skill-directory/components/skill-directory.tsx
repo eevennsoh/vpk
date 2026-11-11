@@ -721,6 +721,7 @@ function SkillDirectoryView({
 						<SearchIcon label="" />
 					</InputGroupAddon>
 					<InputGroupInput
+						type="search"
 						aria-label="Search skills"
 						placeholder="Search for a skill by name, or describe it"
 						value={query}

@@ -538,6 +538,7 @@ function ToolDirectoryView({
 						<SearchIcon label="" />
 					</InputGroupAddon>
 					<InputGroupInput
+						type="search"
 						aria-label="Search tools"
 						placeholder="Search for a tool by name, or describe it"
 						value={query}

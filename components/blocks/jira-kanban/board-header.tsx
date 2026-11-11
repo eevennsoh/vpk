@@ -127,7 +127,7 @@ export function JiraKanbanBoardHeader({
 					<InputGroupAddon>
 						<Icon render={<SearchIcon label="" size="small" />} />
 					</InputGroupAddon>
-					<InputGroupInput aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
+					<InputGroupInput type="search" aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
 				</InputGroup>
 
 				<AvatarGroup

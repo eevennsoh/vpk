@@ -161,7 +161,11 @@ Optional:
 DEBUG=true                              # Verbose logging
 PORT=8080                               # Backend port
 BACKEND_URL=http://localhost:8080       # Backend URL for dev proxy
+NEXT_PUBLIC_PLATFORM_DST_TOKENS_FINESSE=false  # Use the pre-finesse ADS theme
 ```
+
+The finesse flag defaults to enabled. Restart the dev server after changing it;
+production bundles must be rebuilt because `NEXT_PUBLIC_` values are baked in.
 
 LLM routing behavior:
 

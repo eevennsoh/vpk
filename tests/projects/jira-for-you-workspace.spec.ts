@@ -580,7 +580,7 @@ test("row actions follow hover, focus, and open-menu state instead of selection"
 	await expect(viewButton).toBeFocused();
 	await expect(crmRow.locator('[data-slot="jira-for-you-actions"]')).toBeVisible();
 
-	await page.getByRole("textbox", { name: "Search work items" }).focus();
+	await page.getByRole("searchbox", { name: "Search work items" }).focus();
 	await crmRow.hover();
 	const statusMenuTrigger = crmRow.getByRole("button", {
 		name: "Change status. Current status: In progress",
@@ -591,7 +591,7 @@ test("row actions follow hover, focus, and open-menu state instead of selection"
 	await page.mouse.move(0, 0);
 	await expect(crmRow.locator('[data-slot="jira-for-you-actions"]')).toBeVisible();
 	await page.keyboard.press("Escape");
-	await page.getByRole("textbox", { name: "Search work items" }).focus();
+	await page.getByRole("searchbox", { name: "Search work items" }).focus();
 	await expect(crmRow.locator('[data-slot="jira-for-you-actions"]')).toBeHidden();
 });
 

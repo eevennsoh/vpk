@@ -51,4 +51,11 @@ test("short metadata starts with the PR when created and keeps the agent before 
 		assert.equal(markup.replace(/<[^>]*>/gu, ""), "Claude·7m");
 		assert.match(markup, /title="Claude"/u);
 	}
+
+	const viewerMarkup = renderToStaticMarkup(createElement(AgentSessionShortMetadata, {
+		item: { ...item, role: "viewer" },
+	}));
+	assert.equal(viewerMarkup.replace(/<[^>]*>/gu, ""), "Claude·7m·");
+	assert.match(viewerMarkup, /aria-hidden="true" class="inline-flex size-4[^>]*><span[^>]*><svg/u);
+	assert.doesNotMatch(viewerMarkup, /<button/u);
 });

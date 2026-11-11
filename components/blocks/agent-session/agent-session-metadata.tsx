@@ -24,7 +24,7 @@ import {
 	toAgentSessionMetadataSegments,
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
-import type { AgentSessionItem } from "./agent-session-types";
+import { getAgentSessionRole, type AgentSessionItem } from "./agent-session-types";
 import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
 
 const TOOL_CALL_CYCLE_MS = 2_200;
@@ -34,6 +34,14 @@ function MetadataDot() {
 	return (
 		<span aria-hidden="true" className="shrink-0 text-text-subtlest">
 			·
+		</span>
+	);
+}
+
+function ViewerLock() {
+	return (
+		<span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtlest [&_svg]:size-3!">
+			<LockLockedIcon color="currentColor" label="" size="small" />
 		</span>
 	);
 }
@@ -270,7 +278,7 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 				</span>
 			))}
-			{item.privateTo ? <><MetadataDot /><SessionPrivacy person={item.privateTo} /></> : null}
+			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><ViewerLock /></> : item.privateTo ? <><MetadataDot /><SessionPrivacy person={item.privateTo} /></> : null}
 		</span>
 	);
 }
@@ -323,6 +331,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					<AgentListTime item={item} />
 				</span>
 			</span>
+			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><ViewerLock /></> : null}
 		</span>
 	);
 }
