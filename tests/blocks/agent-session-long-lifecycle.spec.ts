@@ -4,6 +4,31 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("long session lifecycle glyphs match the short row's 24px slot", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(`${AGENT_SESSION_URL}#local-—-long`);
+	for (const [section, states] of [
+		["Local — long", ["Finished"]],
+		["Cloud — long", ["Working", "Needs input", "Finished"]],
+	] as const) {
+		const example = page.getByRole("heading", { name: section }).locator("xpath=../../..");
+		for (const state of states) {
+			const indicator = example.getByRole("button", { name: state, exact: true }).first();
+			const glyph = state === "Working" ? indicator.locator('[data-slot="spinner"]') : indicator.locator('[data-slot="icon-tile"]');
+			const slot = state === "Working" ? glyph.locator("..") : glyph;
+			await expect(slot).toHaveCSS("width", "24px");
+			await expect(slot).toHaveCSS("height", "24px");
+			if (state === "Working") {
+				await expect(glyph).toHaveCSS("width", "16.75px");
+				await expect(glyph).toHaveCSS("height", "16.75px");
+			} else {
+				await expect(glyph.locator("svg")).toHaveCSS("width", "12px");
+				await expect(glyph.locator("svg")).toHaveCSS("height", "12px");
+			}
+		}
+	}
+});
+
 test("viewer and owner working indicators stay centered in the assignment menu", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));

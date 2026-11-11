@@ -268,6 +268,7 @@ test("Fix PR appears for failed checks and passes only failures to the handler",
 	const withoutHandler = await renderFlyout({ checks, status: "Open" });
 	assert.equal(withoutHandler.fix, true);
 	assert.equal(withoutHandler.fixDisabled, true);
+	assert.equal((await renderFlyout({ checks, status: "Open", showFix: false })).fix, false);
 	assert.equal((await renderFlyout({ checks, status: "Merged" })).fix, false);
 	const view = await renderComponent({
 		entry: "components/blocks/pull-request/components/pull-request.tsx",

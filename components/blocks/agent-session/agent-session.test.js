@@ -747,12 +747,12 @@ test("a working long row breathes with the Avatar spinner", () => {
 	assert.match(LIST_CARD_SOURCE, /PixelLoader/u);
 	// Complete earns a success check, which Agent List has no slot for.
 	assert.match(LIFECYCLE_SOURCE, /StatusSuccessIcon[\s\S]*text-icon-success|text-icon-success[\s\S]*StatusSuccessIcon/u);
-	// Short-row marks share a 24px slot: icons are 12px, and the 16.75px
+	// Lifecycle marks share a 24px slot: icons are 12px, and the 16.75px
 	// spinner SVG keeps the peak animated orb within that same footprint.
 	assert.match(LIFECYCLE_SOURCE, /className="relative grid size-6 shrink-0 place-items-center"/u);
 	assert.match(LIFECYCLE_SOURCE, /<IndicatorGlyph compact state=\{state\} \/>/u);
 	assert.equal((LIFECYCLE_SOURCE.match(/iconSize=\{compact \? "small" : "medium"\}/gu) ?? []).length, 3);
-	assert.match(LIFECYCLE_SOURCE, /\[&_svg:not\(\[class\*='size-'\]\)\]:size-4!/u);
+	assert.match(LIFECYCLE_SOURCE, /\[&_svg:not\(\[class\*='size-'\]\)\]:size-3!/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /iconSize="small"/u);
 	assert.match(LIFECYCLE_SOURCE, /size="small"/u);
 	assert.match(LIFECYCLE_SOURCE, /variant="transparent"/u);
