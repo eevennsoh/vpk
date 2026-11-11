@@ -470,6 +470,7 @@ export function AgentAssignment({
 						align="start"
 						alignOffset={0}
 						anchor={hoverAnchor}
+						collisionAvoidance={{ align: "shift" }}
 						aria-label="Agent assignment"
 						role="group"
 						className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-visible rounded-xl p-0 shadow-none"
@@ -547,6 +548,7 @@ export function AgentAssignment({
 				<PopoverContent
 					align="start"
 					anchor={hoverAnchor}
+					collisionAvoidance={{ align: "shift" }}
 					onAnchorHidden={dismissWhenAnchorHidden ? () => handleOpenChange(false) : undefined}
 					aria-label="Agent assignment"
 					className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-hidden rounded-xl p-0"

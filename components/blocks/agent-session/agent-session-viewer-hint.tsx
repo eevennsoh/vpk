@@ -16,7 +16,7 @@ export function AgentSessionViewerTooltip({ children, person, positionerClassNam
 	return (
 		<Tooltip>
 			<TooltipTrigger render={children} />
-			<TooltipContent className="w-60 whitespace-normal" positionerClassName={positionerClassName}>
+			<TooltipContent className="w-60 whitespace-normal" collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "none" }} positionerClassName={positionerClassName} side="right">
 				{agentSessionPrivacyHint(person)}
 			</TooltipContent>
 		</Tooltip>

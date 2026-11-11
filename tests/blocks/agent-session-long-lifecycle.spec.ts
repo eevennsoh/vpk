@@ -4,6 +4,27 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+for (const [width, side] of [[1280, "right"], [1000, "left"]] as const) {
+	test(`teammate session tooltip opens on the ${side} at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 720 });
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.goto(appUrl("/components/blocks/agent-assignment"));
+		await page.getByRole("button", { name: "Edit agents", exact: true }).first().click();
+		await page.getByRole("button", { name: /Sessions from your teammates/u }).click();
+		const card = page.getByTestId("agent-session-row-readiness-checker").locator("article");
+		await page.mouse.move(0, 0);
+		await card.hover({ position: { x: 8, y: 8 } });
+		const tooltip = page.locator('[data-slot="tooltip-content"]').filter({ hasText: "only Priya Raman can act on it" });
+		await expect(tooltip).toBeVisible();
+		await expect(tooltip).toHaveAttribute("data-side", side);
+		const cardBox = await card.boundingBox();
+		const tooltipBox = await tooltip.boundingBox();
+		if (cardBox === null || tooltipBox === null) throw new Error("Session card and tooltip must be visible");
+		if (side === "right") expect(tooltipBox.x).toBeGreaterThanOrEqual(cardBox.x + cardBox.width);
+		else expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(cardBox.x);
+	});
+}
+
 test("long session lifecycle glyphs match the short row's 24px slot", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(`${AGENT_SESSION_URL}#local-—-long`);
