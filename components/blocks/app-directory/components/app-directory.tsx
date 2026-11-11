@@ -767,6 +767,7 @@ function AppDirectoryView({
 						<SearchIcon label="" />
 					</InputGroupAddon>
 					<InputGroupInput
+						type="search"
 						aria-label="Search apps"
 						placeholder="Search for an app by name, or describe it"
 						value={query}

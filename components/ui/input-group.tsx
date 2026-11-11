@@ -6,6 +6,7 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
+import { isFinesseEnabled } from "@/lib/platform-feature-flags"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -17,6 +18,7 @@ function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
 			role="group"
 			className={cn(
 				"group/input-group border-input relative flex w-full min-w-0 items-center rounded-lg border transition-colors outline-none",
+				isFinesseEnabled() && "has-[:where(input[type=search])]:border-border-input-search",
 				"h-8 has-[>textarea]:h-auto has-[>[data-slot=input-group-control-container]]:h-auto",
 				// Alignment variants.
 				"has-[>[data-align=inline-start]]:[&>input]:pl-2 has-[>[data-align=inline-end]]:[&>input]:pr-2",

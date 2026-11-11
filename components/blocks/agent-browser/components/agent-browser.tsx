@@ -575,6 +575,7 @@ function DefaultAgentBrowser({
 							<SearchIcon label="" />
 						</InputGroupAddon>
 						<InputGroupInput
+							type="search"
 							aria-label="Search agents"
 							placeholder="Search agents"
 							value={query}

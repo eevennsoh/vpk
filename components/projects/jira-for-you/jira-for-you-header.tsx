@@ -69,6 +69,7 @@ export function JiraForYouHeader({
 					<SearchIcon label="" />
 				</InputGroupAddon>
 				<InputGroupInput
+					type="search"
 					aria-label="Search work items"
 					onChange={(event) => onQueryChange(event.currentTarget.value)}
 					placeholder="Search"
