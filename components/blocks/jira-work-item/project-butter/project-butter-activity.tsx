@@ -208,7 +208,7 @@ export function ProjectButterActivity({
 	return (
 		<section aria-label="Activity" className="group/activity min-w-0" data-project-butter-activity ref={activityRef}>
 			{header}
-			<div className={cn(FEED_ROWS, "[&_[data-jira-activity-entry-id]]:scroll-mt-28", previewEntryId && "[&_[data-active]]:after:bg-bg-selected!")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={feedRef}>
+			<div className={cn(FEED_ROWS, "[&_[data-jira-activity-entry-id]]:scroll-mt-28", previewEntryId && "[&_[data-active]]:after:bg-bg-neutral-subtle-hovered! [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={feedRef}>
 				<JiraActivity
 					activeEntryId={previewEntryId ?? visibleId ?? undefined}
 					commentActionsPlacement="hover"
