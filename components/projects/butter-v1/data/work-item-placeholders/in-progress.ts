@@ -345,7 +345,7 @@ export const BUTTER_IN_PROGRESS_PLACEHOLDERS = {
 		description: [
 			"Jordan is recording the three decline-code fixtures the v2 client still cannot replay: `issuer_unavailable`, `authentication_required`, and `try_again_later`. The other eight decline keys already have fixtures. These three have to keep the same identifiers Diego is localising on PAY-130.",
 			"",
-			"Two agents are on the card. Cursor, invoked by Jordan, is a viewer session in the cloud, about 36 seconds into recording the decline-code fixtures, comparing the missing cases, and running fixture coverage. Claude is the owner session on the local host, invoked by Venn, about three hours in, wiring the recorded fixtures into the v2 client and adapting the client assertions.",
+			"Six agent sessions are on the card. Venn's Claude session is wiring the fixtures into the v2 client, and Venn's Codex session is checking coverage. Jordan, Maya, Diego, and Priya have sessions reviewing the fixtures, decline responses, localisation keys, and replay results.",
 			"",
 			"- Record fixtures for issuer_unavailable, authentication_required, and try_again_later.",
 			"- Keep those identifiers identical to the string keys on PAY-130.",

@@ -67,3 +67,11 @@ test("board activities and detached sessions retain work titles and agent names"
 		}
 	}
 });
+
+test("PAY-123 includes Venn's sessions and four teammate sessions", async () => {
+	const data = await loadData();
+	const card = data.createButterPayBoardColumns().flatMap((column) => column.cards).find((item) => item.code === "PAY-123");
+	const sessions = card.agentActivities;
+	assert.deepEqual(sessions.filter((session) => session.role === "owner").map((session) => session.invokedBy.name), ["Venn", "Venn"]);
+	assert.deepEqual(sessions.filter((session) => session.role === "viewer").map((session) => session.invokedBy.name).sort(), ["Diego Santos", "Jordan Okafor", "Maya Ferreira", "Priya Raman"]);
+});
