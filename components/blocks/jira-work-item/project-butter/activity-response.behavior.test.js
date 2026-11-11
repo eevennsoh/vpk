@@ -28,8 +28,7 @@ test("a session start presents the long-form agent session card in its thread", 
 	const thread = start.closest("[data-jira-activity-entry-id]");
 	assert.equal(thread.dataset.jiraActivityEntryId, "invocation-butter-scoping");
 	assert.equal(thread.querySelector('[data-slot="jira-activity-comment-header"]').textContent.includes("Annie Cook added Jira Scoping agent"), true);
-	assert.equal(start.querySelector('[aria-label="Private to Annie Cook"]') !== null, true);
-	assert.equal(thread.querySelector('[data-slot="jira-activity-comment-header"] [aria-label="Private to Annie Cook"]') === null, true);
+	assert.equal(start.querySelector('[data-slot="tooltip-trigger"]') !== null, true);
 	const identity = thread.firstElementChild.querySelector('[data-slot="human-agent-avatar"]');
 	assert.equal(identity?.getAttribute("aria-label"), "Jira Scoping agent, used by Annie Cook");
 	assert.equal(identity?.querySelector('[data-avatar-role="human"]') !== null, true);
@@ -42,6 +41,7 @@ test("a running session card opens chat with the keyboard", async () => {
 	const opened = [];
 	const view = await renderActivity({ onOpen: (id) => opened.push(id) });
 	const card = view.getByRole("button", { name: /^Troubleshoot 403 API errors/u });
+	assert.equal(document.getElementById(card.getAttribute("aria-describedby"))?.textContent, "You can see this session, but only Annie Cook can act on it.");
 	assert.equal(card.closest("[data-project-butter-session-start]") !== null, true);
 	assert.equal(card.textContent.includes("Troubleshoot 403 API errors"), true);
 	const thread = document.querySelector('[data-jira-activity-entry-id="invocation-butter-scoping"]');
