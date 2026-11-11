@@ -3,6 +3,128 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 10000, ignoreHTTPSErrors: true, viewport: { width: 1600, height: 1000 } });
 
+test("PR detail uses the editor palette Back row", async ({ page }) => {
+	const styles = async (selector: ReturnType<typeof page.getByRole>) => selector.evaluate((button) => {
+		const row = getComputedStyle(button);
+		const label = getComputedStyle(button.querySelector(".menu-row-title")!);
+		const icon = button.querySelector("svg")!.getBoundingClientRect();
+		return { height: row.height, padding: row.padding, gap: row.columnGap, color: label.color, fontSize: label.fontSize, lineHeight: label.lineHeight, iconWidth: icon.width, iconHeight: icon.height };
+	});
+	await page.goto(appUrl("/components/blocks/editor-palette"));
+	const palette = page.locator('.rich-text-command-menu[data-nested="true"]').filter({ has: page.getByRole("listbox", { name: "People and team", exact: true }) }).first();
+	const paletteStyle = await styles(palette.getByRole("button", { name: "Back", exact: true }));
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Pull request" }).click();
+	await page.getByRole("button", { name: "Multiple PRs" }).click();
+	await page.getByRole("button", { name: "Pull requests for PAY-999" }).click();
+	await page.getByRole("list", { name: "Pull requests" }).getByRole("button", { name: /#284/ }).click();
+	const back = page.getByRole("button", { name: "Back", exact: true });
+	await expect(back).toBeFocused();
+	expect(await styles(back)).toEqual(paletteStyle);
+	await back.click();
+	await expect(page.getByRole("list", { name: "Pull requests" })).toBeVisible();
+});
+
+test("hovering a Jira card reveals the PR status color", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Pull request" }).click();
+	const stage = page.locator("[data-butter-gallery-pull-request]");
+	const card = stage.locator('[data-slot="jira-issue-card"]');
+	const expectedColor = async (className: string) => page.evaluate((name) => {
+		const probe = document.createElement("span");
+		probe.className = name;
+		document.body.append(probe);
+		const color = getComputedStyle(probe).color;
+		probe.remove();
+		return color;
+	}, className);
+	for (const [state, name, tokenClass, tooltip] of [
+		["Open PR", /Pull request #284/, "text-icon-accent-lime", "#284 Add merchant onboarding quickstart"],
+		["Merged PR", /Pull request merged #284/, "text-icon-accent-purple", "#284 Add merchant onboarding quickstart"],
+		["Multiple PRs", /Pull requests for PAY-999/, "text-icon-subtle", "4 pull requests"],
+	] as const) {
+		await page.getByRole("group", { name: "Pull request status" }).getByRole("button", { name: state }).click();
+		await card.hover({ position: { x: 30, y: 30 } });
+		const trigger = stage.getByRole("button", { name });
+		const color = await expectedColor(tokenClass);
+		await expect(trigger.locator("svg")).toHaveCSS("color", color);
+		await trigger.hover();
+		await expect(trigger.locator("svg")).toHaveCSS("color", color);
+		await expect(page.getByRole("tooltip", { name: tooltip })).toBeVisible();
+		await trigger.click();
+		await expect(page.getByRole("tooltip", { name: tooltip })).toBeHidden();
+		await expect(page.getByRole("dialog", { name: state === "Multiple PRs" ? "Pull requests for PAY-999" : "Pull request #284 details" })).toBeVisible();
+		await page.keyboard.press("Escape");
+	}
+	await page.getByRole("button", { name: "Select Board" }).click();
+	const failedCard = page.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]');
+	await failedCard.hover({ position: { x: 30, y: 30 } });
+	const failedTrigger = failedCard.getByRole("button", { name: /Pull request failed #1851/ });
+	await expect(failedTrigger.locator("svg")).toHaveCSS("color", await expectedColor("text-icon-danger"));
+	await failedTrigger.focus();
+	await page.keyboard.press("Tab");
+	await page.keyboard.press("Shift+Tab");
+	await expect(failedTrigger).toBeFocused();
+	await expect(page.getByRole("tooltip", { name: /#1851 / })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("tooltip", { name: /#1851 / })).toBeHidden();
+});
+
+test("multiple pull requests open the selected preview and return to the list", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Pull request" }).click();
+	await page.getByRole("group", { name: "Pull request status" }).getByRole("button", { name: "Multiple PRs" }).click();
+	const stage = page.locator("[data-butter-gallery-pull-request]");
+	await expect(stage.locator('[data-slot="jira-issue-card"]')).toContainText("PAY-999");
+	const trigger = stage.getByRole("button", { name: "Pull requests for PAY-999" });
+	await trigger.click();
+	const list = page.getByRole("list", { name: "Pull requests" });
+	await expect(list.getByRole("listitem")).toHaveCount(4);
+	await expect(list.getByRole("button")).toHaveText([/#284.*Open/, /#282.*Failed/, /#281.*Draft/, /#283.*Merged/]);
+	await expect(list).not.toContainText("PAY-999");
+	const rows = await list.getByRole("button").evaluateAll((buttons) => buttons.map((button) => {
+		const { top, bottom } = button.getBoundingClientRect();
+		return { top, bottom };
+	}));
+	expect(rows[0].bottom).toBe(rows[1].top);
+	expect(rows[1].bottom).toBe(rows[2].top);
+	expect(rows[2].bottom).toBe(rows[3].top);
+	const first = list.getByRole("button", { name: /#284.*Add merchant onboarding quickstart.*Open/ });
+	const textStyle = async (locator: ReturnType<typeof page.getByText>) => locator.evaluate((element) => {
+		const style = getComputedStyle(element);
+		return { color: style.color, fontFamily: style.fontFamily, fontSize: style.fontSize, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
+	});
+	const numberStyle = await textStyle(first.getByText("#284", { exact: true }));
+	const titleStyle = await textStyle(first.getByText("Add merchant onboarding quickstart", { exact: true }));
+	await first.focus();
+	await page.keyboard.press("Enter");
+	const back = page.getByRole("button", { name: "Back", exact: true });
+	await expect(back).toBeFocused();
+	await expect(page.getByText("#284 Add merchant onboarding quickstart")).toBeVisible();
+	const preview = page.getByRole("dialog", { name: "Pull request #284 details" });
+	expect(await textStyle(preview.getByText("#284", { exact: true }))).toEqual(numberStyle);
+	expect(await textStyle(preview.getByText("Add merchant onboarding quickstart", { exact: true }))).toEqual(titleStyle);
+	await back.click();
+	await expect(first).toBeFocused();
+	await list.getByRole("button", { name: /#282.*Failed/ }).click();
+	await expect(page.getByRole("dialog", { name: "Pull request #282 details" })).toContainText("Failed");
+	await back.click();
+	await list.getByRole("button", { name: /#281.*Draft/ }).click();
+	await expect(page.getByRole("dialog", { name: "Pull request #281 details" })).toContainText("Draft");
+	await back.click();
+	await list.getByRole("button", { name: /#283.*Merged/ }).click();
+	await expect(page.getByText("#283 Add Payments SDK migration guide")).toBeVisible();
+	await expect(page.getByRole("dialog", { name: "Pull request #283 details" })).toContainText("Merged");
+	await back.click();
+	await page.keyboard.press("Escape");
+	await expect(trigger).toBeFocused();
+	await trigger.click();
+	await expect(list.getByRole("listitem")).toHaveCount(4);
+	await page.keyboard.press("Escape");
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
+	await expect(page.getByRole("group", { name: "Pull request status" }).getByRole("button", { name: "Open PR" })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("kanban pull request previews show only the summary in both PR states", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Pull request" }).click();
@@ -111,5 +233,9 @@ test("pull request controls and card fit a narrow viewport", async ({ page }) =>
 	await expect(statuses.getByRole("button", { name: "Open PR" })).toBeVisible();
 	await statuses.getByRole("button", { name: "Merged PR" }).click();
 	await expect(page.locator('[data-butter-gallery-pull-request] [data-slot="jira-issue-card"]')).toBeVisible();
+	await statuses.getByRole("button", { name: "Multiple PRs" }).click();
+	await page.getByRole("button", { name: "Pull requests for PAY-999" }).click();
+	await page.getByRole("list", { name: "Pull requests" }).getByRole("button", { name: /#284/ }).click();
+	await expect(page.getByRole("button", { name: "Back", exact: true })).toBeVisible();
 	await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

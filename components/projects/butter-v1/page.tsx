@@ -272,8 +272,9 @@ export default function ButterPage(): React.ReactElement {
 	const reset = useCallback(() => { journeyRef.current?.cancelReplay(); setPhase("invoke"); setActiveStep(0); setJourneySession(undefined); setJumpRevision(0); setAutoFixEnabled(true); setAutoMergeEnabled(true); setPullRequestVisible(false); setJourneyResetKey((current) => current + 1); }, []);
 	const controls = { onSelectStep: selectStep, activeStep };
 	const galleryControls = selectedId === "pull-request"
-		? <ToggleGroup aria-label="Pull request status" onValueChange={(values) => { if (values[0] === "open" || values[0] === "merged") setPullRequestStatus(values[0]); }} size="sm" value={[pullRequestStatus]} variant="outline">
+		? <ToggleGroup aria-label="Pull request status" onValueChange={(values) => { if (values[0] === "open" || values[0] === "merged" || values[0] === "multiple") setPullRequestStatus(values[0]); }} size="sm" value={[pullRequestStatus]} variant="outline">
 			<ToggleGroupItem value="open">Open PR</ToggleGroupItem>
+			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 			<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
 		</ToggleGroup>
 		: null;

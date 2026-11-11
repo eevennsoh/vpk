@@ -66,9 +66,10 @@ import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
-import { ArrowLeftIcon, ReturnIcon } from "@/components/ui/vpk-icons";
+import { ReturnIcon } from "@/components/ui/vpk-icons";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { MenuBackButton } from "@/components/ui-custom/menu-back-button";
 import { cn } from "@/lib/utils";
 
 import { RichTextMentionVisualMark } from "./mention-visual";
@@ -753,17 +754,10 @@ export function RichTextSuggestionMenu({
 			{...menuProps}
 		>
 			{onBack ? (
-				<button
-					type="button"
-					className="rich-text-command-menu-item rich-text-command-menu-back"
+				<MenuBackButton
 					onMouseDown={(event) => event.preventDefault()}
 					onClick={onBack}
-				>
-					<span className="inline-flex size-6 items-center justify-center">
-						<ArrowLeftIcon className="size-4" />
-					</span>
-					<span className="menu-row-title">Back</span>
-				</button>
+				/>
 			) : null}
 			{header}
 			<div

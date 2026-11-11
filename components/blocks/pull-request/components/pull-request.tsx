@@ -117,7 +117,7 @@ function PullRequestDiffStats({
 }
 
 /** Status lozenge. The spacious card trails the title with it, so it also carries a glyph. */
-function PullRequestStatusLozenge({
+export function PullRequestStatusLozenge({
 	status,
 	withIcon = false,
 }: Readonly<{ status: PullRequestStatus; withIcon?: boolean }>) {
@@ -150,14 +150,14 @@ function PullRequestProviderMark({ provider }: Readonly<{ provider: PullRequestP
 }
 
 /** `#N` + title as one wrapping text run so line 2 starts under the number. */
-function PullRequestInlineTitle({
+export function PullRequestInlineTitle({
 	number,
 	title,
 	href,
 	className,
 }: Readonly<{ number: number; title: string; href?: string; className?: string }>) {
 	return (
-		<span className={cn("min-w-0 whitespace-normal text-sm leading-5", className)}>
+		<span className={cn("min-w-0 whitespace-normal text-sm leading-5 font-normal", className)}>
 			<span className="text-text-subtlest">#{number} </span>
 			{href ? <a className="rounded-sm text-text outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" href={href} rel="noopener noreferrer" target="_blank">{title}</a> : <span className="text-text">{title}</span>}
 		</span>
