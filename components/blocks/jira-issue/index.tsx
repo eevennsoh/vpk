@@ -64,6 +64,7 @@ import type {
 	JiraIssueIconScale,
 	JiraIssueParticipant,
 	JiraIssuePriority,
+	JiraIssuePullRequestItem,
 	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
 	JiraIssueSubtask,
@@ -172,6 +173,7 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	/** Jira issue key, e.g. RFP-101. */
 	issueKey: string;
 	pullRequestNumber?: number;
+	pullRequests?: readonly JiraIssuePullRequestItem[];
 	animatePullRequestOnMount?: boolean;
 	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
@@ -299,6 +301,7 @@ function JiraIssueDefault({
 	priority = "major",
 	animatePullRequestOnMount,
 	pullRequestNumber,
+	pullRequests,
 	pullRequestPreview,
 	pullRequestStatus,
 	pullRequestTitle,
@@ -674,6 +677,7 @@ function JiraIssueDefault({
 			priority={priority}
 			animatePullRequestOnMount={animatePullRequestOnMount}
 			pullRequestNumber={resolvedPullRequestNumber}
+			pullRequests={pullRequests}
 			pullRequestPreview={pullRequestPreview}
 			pullRequestStatus={pullRequestStatus}
 			pullRequestTitle={pullRequestTitle}
