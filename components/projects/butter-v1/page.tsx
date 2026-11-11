@@ -23,7 +23,7 @@ import type {
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
 import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
 import { PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
-import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
+import { PROJECT_BUTTER_SESSIONS, type ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
 import { nextProjectButterDevelopmentPhase } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
 import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
@@ -72,6 +72,7 @@ import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-r
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MerchantJourneyCompactControls, MerchantJourneyControls } from "./components/merchant-journey-controls";
 import { applyMerchantJourneyToBoard, merchantJourneyAuthoredCard, type MerchantJourneyPhase } from "./data/merchant-journey";
+import { MERCHANT_PROGRESS_DELAY_MS } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
 import { BUTTER_GALLERY_ITEMS } from "./data/gallery-items";
 
 import { renderButterAgentActivityIndicator } from "./data/agent-activity-indicators";
@@ -108,6 +109,11 @@ const ButterGalleryPullRequest = dynamic(() => import("./components/butter-galle
 const ProjectButterDevelopmentGallery = dynamic(() => import("@/components/blocks/jira-work-item/project-butter/project-butter-development-journey").then((module) => module.ProjectButterDevelopmentGallery));
 
 const BUTTER_DEFAULT_REPORTER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
+const BUTTER_GALLERY_SESSIONS: readonly ProjectButterSessionItem[] = PROJECT_BUTTER_SESSIONS.map((session) => ({
+	...session,
+	invokedBy: { name: BUTTER_DEFAULT_REPORTER.name, avatarSrc: BUTTER_DEFAULT_REPORTER.avatarUrl },
+	role: "owner",
+}));
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
 const BUTTER_TABS = getJiraTabs(false);
 const BUTTER_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(BUTTER_TABS);
@@ -138,7 +144,7 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 		const frame = window.requestAnimationFrame(() => setMounted(true));
 		return () => window.cancelAnimationFrame(frame);
 	}, []);
-	return <ProjectButterJiraWorkItem {...props} open={mounted && props.open} />;
+	return <ProjectButterJiraWorkItem {...props} inlineSessionReplies open={mounted && props.open} />;
 }
 
 function getMerchantWorkItemProps(issueKey: string, journey: Pick<ComponentProps<typeof ProjectButterJiraWorkItem>, "journeyPhase" | "journeySession" | "journeyControls" | "developmentJourney">) {
@@ -244,8 +250,14 @@ export default function ButterPage(): React.ReactElement {
 	const [autoFixEnabled, setAutoFixEnabled] = useState(true);
 	const [autoMergeEnabled, setAutoMergeEnabled] = useState(true);
 	useEffect(() => {
+		if (phase !== "starting" || journeySession?.invokedAtMs == null) return;
+		const remaining = Math.max(0, journeySession.invokedAtMs + MERCHANT_PROGRESS_DELAY_MS - Date.now());
+		const timer = window.setTimeout(() => setPhase("working"), remaining);
+		return () => window.clearTimeout(timer);
+	}, [journeySession?.invokedAtMs, phase]);
+	useEffect(() => {
 		if (!journeyActive) return;
-		const next = phase === "invoke" || phase === "working" ? null : nextProjectButterDevelopmentPhase(phase, autoFixEnabled, autoMergeEnabled);
+		const next = phase === "invoke" || phase === "starting" || phase === "working" ? null : nextProjectButterDevelopmentPhase(phase, autoFixEnabled, autoMergeEnabled);
 		if (!next) return;
 		const timeout = window.setTimeout(() => setPhase(next), 5000);
 		return () => window.clearTimeout(timeout);
@@ -364,7 +376,7 @@ function ButterGalleryWorkItem({ compact, galleryOpen, initialRelatedSectionOpen
 		<>
 			<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex items-start justify-center overflow-hidden", galleryOpen ? "bottom-56" : "bottom-0")}>
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" initialRelatedSectionOpen={initialRelatedSectionOpen} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} onOpenCloudSession={async (session, draft, workItem) => {
+					<ProjectButterJiraWorkItem inlineSessionReplies cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" initialSessions={BUTTER_GALLERY_SESSIONS} initialRelatedSectionOpen={initialRelatedSectionOpen} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} onOpenCloudSession={async (session, draft, workItem) => {
 						const opened = await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt });
 						if (opened && draft) setComposerPrefillRequest({ text: draft, append: true, requestKey: ++prefillKey.current });
 						return opened;
@@ -636,9 +648,9 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 		const card = boardColumns.flatMap((column) => column.cards).find((candidate) => candidate.code === issueKey);
 		if (!card || card.agentActivities?.some((activity) => activity.id === session.id)) return;
 		pendingWorkItemAssignment.current = { issueKey, session };
-		if (issueKey === BUTTER_SUGGESTION_DEMO_KEY && session.agent.name === "Claude" && phase === "invoke") { setJourneySession(session); setPhase("working"); }
-		startAgentSession(issueKey, toButterAgentActivityFromSession(session));
-	}, [boardColumns, phase, setJourneySession, setPhase, startAgentSession]);
+		if (!wacContent && !boardOnly && issueKey === BUTTER_SUGGESTION_DEMO_KEY && session.agent.name === "Claude" && phase === "invoke") { setJourneySession(session); setPhase("starting"); }
+		else startAgentSession(issueKey, toButterAgentActivityFromSession(session));
+	}, [boardColumns, boardOnly, phase, setJourneySession, setPhase, startAgentSession, wacContent]);
 	const handleWorkItemClose = useCallback(() => {
 		const pending = pendingWorkItemAssignment.current;
 		pendingWorkItemAssignment.current = null;
@@ -957,7 +969,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 				journeySession={!wacContent ? journeySession : undefined}
 				journeyControls={!wacContent ? journeyControls : undefined}
 				developmentJourney={!wacContent ? {
-					phase: phase !== "invoke" && phase !== "working" ? phase : undefined,
+					phase: phase !== "invoke" && phase !== "starting" && phase !== "working" ? phase : undefined,
 					agentName: "Claude",
 					author: { ...BUTTER_DEFAULT_REPORTER, assistedBy: { name: "Claude", brandName: "claude" } },
 					autoFixEnabled,

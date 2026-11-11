@@ -313,6 +313,54 @@ test("work item agent avatars show lanyards beside Details without moving betwee
 	await expect(page.getByRole("article", { name: "Cursor agent" })).toBeVisible();
 });
 
+for (const input of ["pointer", "keyboard"] as const) {
+	test(`the first selected agent stays still and the field loses focus (${input})`, async ({ page }) => {
+		await page.setViewportSize({ width: 1800, height: 1100 });
+		await page.emulateMedia({ reducedMotion: "no-preference" });
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Select e2e Journey" }).click();
+		await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+		const field = page.getByRole("group", { name: "Agents field" });
+		const trigger = field.getByRole("button", { name: "Add agent" });
+		await trigger.click();
+		await page.getByRole("dialog", { name: "Add agent" }).getByRole("textbox", { name: "Search agents" }).press("Escape");
+		await expect(trigger).toBeFocused();
+		await trigger.click();
+		const choice = page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "The Council", exact: true });
+		if (input === "pointer") await choice.hover();
+		else await choice.focus();
+		await page.evaluate(() => {
+			const samples: { opacity: number; scale: number; x: number }[] = [];
+			Object.assign(window, { firstAgentSamples: samples });
+			const observer = new MutationObserver(() => {
+				const avatar = document.querySelector<HTMLElement>('[data-agent-name="the council"]');
+				if (!avatar) return;
+				observer.disconnect();
+				const sample = () => {
+					const style = getComputedStyle(avatar);
+					const matrix = new DOMMatrixReadOnly(style.transform);
+					samples.push({ opacity: Number(style.opacity), scale: matrix.a, x: matrix.e });
+					if (samples.length < 30) requestAnimationFrame(sample);
+				};
+				sample();
+				requestAnimationFrame(sample);
+			});
+			observer.observe(document.body, { childList: true, subtree: true });
+		});
+		if (input === "pointer") await choice.click();
+		else await choice.press("Enter");
+		await expect(field.getByRole("button", { name: "1 agent" })).toBeVisible();
+		await expect.poll(() => field.evaluate((element) => element.contains(document.activeElement))).toBe(false);
+		await expect.poll(() => page.evaluate(() => (window as unknown as { firstAgentSamples: unknown[] }).firstAgentSamples.length)).toBeGreaterThanOrEqual(30);
+		const samples = await page.evaluate(() => (window as unknown as { firstAgentSamples: { opacity: number; scale: number; x: number }[] }).firstAgentSamples);
+		for (const sample of samples) {
+			expect(sample.opacity).toBe(1);
+			expect(sample.scale).toBeCloseTo(1, 3);
+			expect(sample.x).toBeCloseTo(0, 3);
+		}
+	});
+}
+
 test("selecting an agent already in the stack visibly scales its avatar in", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));

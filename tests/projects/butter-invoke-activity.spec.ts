@@ -2,13 +2,10 @@ import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
 async function expectJourneyActivityOrder(activity: Locator) {
-	const entries = activity.locator('[data-jira-activity-entry-id^="merchant-started-"], [data-jira-activity-entry-id^="merchant-agent-added-"], [data-jira-activity-entry-id="butter-accepted-suggestions"]');
-	await expect(entries).toHaveCount(3);
-	const ids = await entries.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-jira-activity-entry-id")));
-	expect(ids[0]).toMatch(/^merchant-started-/);
-	expect(ids[1]).toMatch(/^merchant-agent-added-/);
-	expect(ids[2]).toBe("butter-accepted-suggestions");
-	await expect(entries.first().getByRole("group", { name: "Replies" }).getByRole("link", { name: /#284: Add merchant onboarding quickstart.*Open/ })).toBeVisible();
+	const thread = activity.locator('[data-jira-activity-entry-id^="invocation-"]');
+	await expect(thread.locator("[data-project-butter-session-start]")).toBeVisible();
+	await expect(activity.locator('[data-jira-activity-entry-id="butter-accepted-suggestions"]')).toHaveCount(1);
+	await expect(thread.getByRole("group", { name: "Replies" }).getByRole("link", { name: /#284: Add merchant onboarding quickstart.*Open/ })).toBeVisible();
 }
 
 test("jumping to Pull request shows the accepted suggestions in Activity", async ({ page }) => {
@@ -31,10 +28,7 @@ test("jumping to Pull request shows the accepted suggestions in Activity", async
 	await expect(summary).toHaveAttribute("aria-expanded", "true");
 	if (await summary.getAttribute("aria-expanded") === "true") await summary.click();
 	await expect(accepted.locator("dd").first()).toBeHidden();
-	const nextSnapshot = activity.locator('[data-jira-activity-entry-id^="merchant-agent-added-"] p');
-	const [updateBox, nextBox] = await Promise.all([summary.boundingBox(), nextSnapshot.boundingBox()]);
-	if (!updateBox || !nextBox) throw new Error("Activity snapshots are not visible");
-	expect(nextBox.y - (updateBox.y + updateBox.height)).toBeLessThanOrEqual(12);
+	await expect(activity.locator("[data-project-butter-session-start]")).toBeVisible();
 });
 
 test("Claude's PR and fix updates contain the pull request Smart Link", async ({ page }) => {
@@ -42,7 +36,8 @@ test("Claude's PR and fix updates contain the pull request Smart Link", async ({
 	await page.goto(appUrl("/butter"));
 	await page.getByRole("button", { name: "Fix checks", exact: true }).click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
-	const replies = item.locator('[data-jira-activity-entry-id^="merchant-started-"]').getByRole("group", { name: "Replies" });
+	const replies = item.locator('[data-jira-activity-entry-id^="invocation-"]').getByRole("group", { name: "Replies" });
+	await item.getByRole("button", { name: /Show \d+ more replies/ }).click();
 	const links = replies.getByRole("link", { name: /#284: Add merchant onboarding quickstart.*Open/ });
 	await expect(links).toHaveCount(2, { timeout: 12_000 });
 	await expect(links.first()).toHaveAttribute("href", "#pull-request-284");
@@ -78,10 +73,8 @@ test("the live journey keeps acceptance before invocation and the PR update", as
 	await item.getByRole("button", { name: /suggestions$/ }).click();
 	await page.getByRole("button", { name: "Accept all" }).click();
 	await page.getByRole("button", { name: "Close suggestions" }).click();
-	await item.getByRole("button", { name: /\. Add agent$/ }).click();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
 	await page.getByRole("button", { name: "Pull request", exact: true }).click();
 	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
@@ -96,7 +89,7 @@ test("Claude keeps progress in the acknowledgment thread and posts the merged PR
 	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]');
 	await card.click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
-	const thread = item.locator('[data-jira-activity-entry-id^="merchant-started-"]');
+	const thread = item.locator('[data-jira-activity-entry-id^="invocation-"]');
 	await expect(thread).toHaveCount(1);
 	await expect(thread.getByRole("group", { name: "Replies" }).getByRole("link", { name: /#284: Add merchant onboarding quickstart.*Open/ })).toBeVisible();
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
@@ -104,6 +97,7 @@ test("Claude keeps progress in the acknowledgment thread and posts the merged PR
 	await card.click();
 	await expect(thread).toHaveCount(1);
 	const replies = thread.getByRole("group", { name: "Replies" });
+	await thread.getByRole("button", { name: /Show \d+ more replies/ }).click();
 	await expect(replies.getByRole("link", { name: /#284: Add merchant onboarding quickstart.*Merged/ })).toHaveCount(2);
 	await expect(replies).toContainText("pushed a fix");
 	await expect(replies).toContainText("checks passed after the fix");

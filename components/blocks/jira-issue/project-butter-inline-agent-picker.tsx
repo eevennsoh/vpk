@@ -56,7 +56,7 @@ export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status
 }>) {
 	return <ProjectButterAgentPreviewBoundary agents={CLOUD_AGENTS}><InlineAgentSelector
 		agents={CLOUD_AGENTS}
-		recommendedAgentId="the-council"
+		recommendedAgentId="claude-code"
 		softwareAgentIds={SOFTWARE_IDS}
 		initialSoftwareLimit={3}
 		getActions={(agent) => [{ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => onAssign(agent) }]}

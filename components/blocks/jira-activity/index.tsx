@@ -62,6 +62,8 @@ export interface JiraActivityProps {
 	/** Optional persisted reply drafts keyed by the parent comment entry id. */
 	replyDrafts?: Readonly<Record<string, string>>;
 	onReplyDraftChange?: (entryId: string, value: string) => void;
+	/** Opens a comment's reply composer in response to an external user action. */
+	replyRequest?: Readonly<{ entryId: string; id: number }> | null;
 	/** Rich domain-owned comment content, retaining the shared card and reply/reaction controls. */
 	renderCommentBody?: (entry: JiraActivityCommentEntry) => ReactNode | undefined;
 	/** Optional replacement for an entry's built-in body. Return undefined to use the default renderer. */
@@ -81,7 +83,7 @@ export interface JiraActivityProps {
 	/** Opens in-app pull-request detail for compact Activity PR rows. */
 	onOpenPullRequest?: (entry: JiraActivityEventEntry) => void;
 	/** Handles an inline reply externally instead of appending it to local timeline state. */
-	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
+	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string, mentionedAgentIds?: readonly string[]) => void;
 	/**
 	 * Handles Resolve / Unresolve for review discussion threads. When omitted,
 	 * toggles are applied through the local reducer when `allowResolve` is set.
@@ -156,6 +158,7 @@ export function JiraActivity({
 	renderReply,
 	replyDrafts,
 	onReplyDraftChange,
+	replyRequest,
 	renderCommentBody,
 	renderEntry,
 	activeEntryId,
@@ -250,9 +253,9 @@ export function JiraActivity({
 		});
 	}
 
-	function handleAddReply(entry: JiraActivityCommentEntry, body: string) {
+	function handleAddReply(entry: JiraActivityCommentEntry, body: string, mentionedAgentIds?: readonly string[]) {
 		if (onSubmitReply) {
-			onSubmitReply(entry, body);
+			onSubmitReply(entry, body, mentionedAgentIds);
 			return;
 		}
 		applyAction({
@@ -352,6 +355,7 @@ export function JiraActivity({
 							/>
 						) : entry.kind === "comment" ? (
 							<JiraActivityComment
+									replyRequestId={replyRequest?.entryId === entry.id ? replyRequest.id : undefined}
 								headerLayout={commentHeaderLayout}
 								threaded={connectorStyle === "thread"}
 								bodyContent={renderCommentBody?.(entry)}
@@ -384,7 +388,7 @@ export function JiraActivity({
 										? () => handleResolveComment(entry)
 										: undefined
 								}
-								onSubmitReply={(body) => handleAddReply(entry, body)}
+								onSubmitReply={(body, mentionedAgentIds) => handleAddReply(entry, body, mentionedAgentIds)}
 								onToggleReaction={(emoji) => handleToggleReaction(entry, emoji)}
 								action={renderCommentAction?.(entry)}
 							/>

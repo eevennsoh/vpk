@@ -239,8 +239,8 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await item.getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
 	await expect(activity).toContainText("Venn added Claude and self-assigned the issue");
-	await expect(activity.locator('[data-jira-activity-entry-id^="merchant-agent-added-"]')).toHaveCount(1);
-	const acknowledgment = activity.locator('[data-jira-activity-entry-id^="merchant-started-"]');
+	const acknowledgment = activity.locator('[data-jira-activity-entry-id^="invocation-"]');
+	await expect(acknowledgment.locator("[data-project-butter-session-start]")).toBeVisible();
 	await expect(acknowledgment).toHaveCount(1);
 	await expect(acknowledgment).toContainText("Claude");
 	await expect(acknowledgment).toContainText("I'm looking into this issue now. I'll report back here with updates as I make progress.");

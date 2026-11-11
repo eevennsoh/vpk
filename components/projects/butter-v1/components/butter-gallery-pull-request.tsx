@@ -117,6 +117,7 @@ export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{
 			{directoryOpen ? <AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} onCreateAgent={() => router.push("/studio")} onOpenChange={setDirectoryOpen} onSelectAgent={() => setDirectoryOpen(false)} open={directoryOpen} variant="standard-v2" /> : null}
 			{workItem.selection ? (
 				<ProjectButterJiraWorkItem
+					inlineSessionReplies
 					autoAssignClaudeToCurrentUser
 					currentUser={CURRENT_USER}
 					defaultReporter={CURRENT_USER}

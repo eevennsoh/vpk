@@ -9,6 +9,24 @@ const subtasks = [
 	{ issueKey: "PD-43", summary: "Test date-range edge cases", status: "To Do", priority: "minor" },
 ];
 
+test("Butter cloud picker recommends Claude and keeps The Council selectable", async () => {
+	const assigned = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-inline-agent-picker.tsx",
+		exportName: "ProjectButterCloudAgentPicker",
+		mocks: { "@/components/ui-custom/agent-avatar-visual": "export function AgentAvatarVisual() { return null; }" },
+		props: { onAssign: (agent) => assigned.push(agent.id) },
+	});
+	assert.equal(view.container.querySelector("[data-agent-id]")?.getAttribute("data-agent-id"), "claude-code");
+	assert.equal(view.container.querySelectorAll('[data-agent-id="claude-code"]').length, 1);
+	await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
+	assert.deepEqual(assigned, ["claude-code"]);
+	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "The Council");
+	await view.click(view.getByRole("button", { name: "The Council" }));
+	assert.deepEqual(assigned, ["claude-code", "the-council"]);
+	await view.unmount();
+});
+
 test("PR icon identifies draft and failed pull requests", async () => {
 	const view = await renderComponent({
 		entry: "components/blocks/jira-issue/project-butter-summary.tsx",

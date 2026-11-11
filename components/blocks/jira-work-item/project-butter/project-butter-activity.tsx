@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { JiraActivity, jiraActivitySegmentsToPlainText, type JiraActivityEntry, type JiraActivityEventEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
 import { JiraActivityEvent } from "@/components/blocks/jira-activity/jira-activity-event";
+import { mapAgentToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
 import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card-glow";
 import { resolveJiraLinkingGlowColor } from "@/components/blocks/jira-linking/glow-motion";
 import { resolveJiraLinkingIdentityTint } from "@/components/blocks/jira-linking/use-jira-linking-atlas";
@@ -84,6 +85,7 @@ export function ProjectButterActivity({
 	sessions,
 	onOpenSession,
 	previewSessionId,
+	replyRequest,
 	startedSessionId,
 	onStartedSessionRevealed,
 	singleView = false,
@@ -94,6 +96,7 @@ export function ProjectButterActivity({
 	sessions: readonly ProjectButterSessionItem[];
 	onOpenSession: (id: string) => void;
 	previewSessionId?: string | null;
+	replyRequest?: Readonly<{ entryId: string; id: number }> | null;
 	startedSessionId?: string | null;
 	onStartedSessionRevealed?: () => void;
 	singleView?: boolean;
@@ -104,6 +107,8 @@ export function ProjectButterActivity({
 	const filters = singleView ? PROJECT_BUTTER_ACTIVITY_FILTERS_ALL : content.activityFilters;
 	const sort = singleView ? "newest" : content.activitySort;
 	const mentionAgents = useProjectButterMentionAgents(sessions);
+	const activityMentionAgents = useMemo(() => [...sessions.map((session) => ({ ...session.agent, id: session.agent.id ?? session.id, byline: "Agent on this work item" })), ...mentionAgents], [sessions, mentionAgents]);
+	const mentionAgentsById = useMemo(() => new Map(activityMentionAgents.map((agent) => [mapAgentToMentionItem(agent).id, agent])), [activityMentionAgents]);
 	const ordered = useMemo(() => pinProjectButterComments(selectProjectButterActivity(content.activityEntries, filters, sort), content.pinnedCommentIds), [content.activityEntries, content.pinnedCommentIds, filters, sort]);
 	const previewEntryId = previewSessionId ? ordered.find((entry) => entry.id === `invocation-${previewSessionId}`)?.id : undefined;
 	const pullRequestStatus = content.activityEntries.some((entry) => entry.id === "merchant-merged") ? "Merged" : "Open";
@@ -222,6 +227,8 @@ export function ProjectButterActivity({
 			{header}
 			<div className={cn(FEED_ROWS, "[&_[data-jira-activity-entry-id]]:scroll-mt-28", previewEntryId && "[&_[data-active]]:after:bg-bg-neutral-subtle-hovered! [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={feedRef}>
 				<JiraActivity
+					actors={activityMentionAgents.map((agent) => ({ id: agent.id, name: agent.name, kind: "agent" as const, avatarSrc: agent.avatarSrc, brandName: agent.brandName }))}
+					replyRequest={replyRequest}
 					activeEntryId={previewEntryId ?? visibleId ?? undefined}
 					commentActionsPlacement="hover"
 					commentHeaderLayout="inline"
@@ -242,16 +249,23 @@ export function ProjectButterActivity({
 						content.setActivityEntries((current) => [...current.filter((entry) => !ids.has(entry.id)), ...normalized, ...groupedEvents].sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0)));
 					}}
 					onReplyDraftChange={(entryId, value) => content.setReplyDrafts((current) => ({ ...current, [entryId]: value }))}
+					onSubmitReply={(entry, body, mentionedAgentIds = []) => {
+						const actorIds = [...new Set(mentionedAgentIds.flatMap((id) => {
+							const agent = mentionAgentsById.get(id);
+							return agent ? [agent.id] : [];
+						}))];
+						content.submitActivityReply(entry.id, body, actorIds);
+					}}
 					onViewSession={(session) => onOpenSession(session.id)}
 					renderCommentAction={(entry) => <><ProjectButterPinComment onToggle={() => content.toggleCommentPin(entry.id)} pinned={content.pinnedCommentIds.includes(entry.id)} /><ProjectButterCopyCommentLink id={entry.id} /></>}
 					renderCommentBody={(entry) => {
 						const session = sessionFor(entry.id);
 						if (session) return <ProjectButterSessionStart onOpen={onOpenSession} session={session} />;
-						return entry.body.every((segment) => segment.type === "text") ? <ProjectButterReferenceCommentBody markdown={jiraActivitySegmentsToPlainText(entry.body)} pullRequestStatus={entry.id === "merchant-merged" ? pullRequestStatus : undefined} /> : undefined;
+						return entry.body.every((segment) => segment.type === "text") ? <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={jiraActivitySegmentsToPlainText(entry.body)} pullRequestStatus={entry.id === "merchant-merged" ? pullRequestStatus : undefined} /> : undefined;
 					}}
 					renderCommentTools={(entry, reply) => <ProjectButterCommentTools content={content} entry={entry} reply={reply} />}
 					renderEarlierRepliesLabel={earlierRepliesLabel}
-					renderReplyComposer={(composer) => <ProjectButterCommentEditor agents={mentionAgents} ariaLabel="Reply editor" elevation="flat" focusRequest={composer.autoFocus ? 1 : 0} onSave={(body) => composer.onSubmit(body)} onValueChange={composer.onValueChange} placeholder={composer.placeholder} prefillMention={composer.prefillMention} textboxLabel={composer.placeholder} value={composer.value} />}
+					renderReplyComposer={(composer) => <ProjectButterCommentEditor agents={mentionAgents} ariaLabel="Reply editor" elevation="flat" focusRequest={composer.autoFocus ? 1 : 0} onSave={(body, _plainText, mentionedAgentIds) => composer.onSubmit(body, mentionedAgentIds)} onValueChange={composer.onValueChange} placeholder={composer.placeholder} prefillMention={composer.prefillMention} textboxLabel={composer.placeholder} value={composer.value} />}
 					renderEntry={(entry) => {
 						if (entry.kind !== "event") return undefined;
 						const group = groups.get(entry.id);
@@ -259,7 +273,7 @@ export function ProjectButterActivity({
 							<ProjectButterUpdateGroup defaultOpen={expandedAudit} events={group} key={`${entry.id}-${expandedAudit}`} renderEvent={(event) => renderEvent(event) ?? <JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={event} />} summary={jiraActivitySegmentsToPlainText(entry.segments)} timestamp={entry.timestamp} />
 						) : renderEvent(entry);
 					}}
-					renderReplyBody={(reply) => <ProjectButterReferenceCommentBody markdown={reply.body} pullRequestStatus={reply.id === "merchant-pr" || reply.id === "merchant-fix" ? pullRequestStatus : undefined} />}
+					renderReplyBody={(reply) => <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={reply.body} pullRequestStatus={reply.id === "merchant-pr" || reply.id === "merchant-fix" ? pullRequestStatus : undefined} />}
 					renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
 					replyDrafts={content.replyDrafts}
 					sortOrder="ascending"

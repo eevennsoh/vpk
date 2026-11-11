@@ -15,6 +15,21 @@ function renderStatus() {
 	});
 }
 
+test("automatic progress updates the status label and icon together", async () => {
+	const person = { name: "Venn" };
+	const content = { status: "To do", statusOptions: ["To do", "In progress", "Done"], assignee: person, currentUser: person };
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/project-butter-status.tsx",
+		exportName: "ProjectButterStatus",
+		props: { content, appearance: "lozenge" },
+	});
+	await view.rerender({ content: { ...content, status: "In progress" }, appearance: "lozenge" });
+	const button = view.getByRole("button", { name: "Change status, In progress" });
+	assert.equal(button.getAttribute("data-variant"), "information");
+	assert.equal(button.querySelector('[data-slot="progress-circle"]')?.getAttribute("aria-valuenow"), "50");
+	assert.equal(button.querySelector('[data-slot="progress-circle-dashes"]')?.classList.contains("text-icon-information"), true);
+});
+
 test("status changes reuse the controlled circle and synchronize the header and Details", async () => {
 	const view = await renderStatus();
 	const initialCircle = view.getByRole("button", { name: "Change status, In progress" }).querySelector('[data-slot="progress-circle"]');

@@ -3,6 +3,62 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("Claude starts before moving the work item to In progress", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	await page.clock.install();
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude (Recommended)", exact: true }).click();
+	const thread = item.locator('[data-jira-activity-entry-id^="invocation-"]');
+	const statusChange = item.locator('[data-jira-activity-entry-id^="merchant-status-"]');
+	await expect(thread.locator("[data-project-butter-session-start]")).toBeVisible();
+	await expect(item.getByRole("button", { name: "Change status, To do" })).toBeVisible();
+	await expect(card).toHaveAttribute("data-board-column-title", "To do");
+	await expect(statusChange).toHaveCount(0);
+	await page.clock.fastForward(3_000);
+	await expect(thread.getByText(/I.m looking into this issue now/)).toBeVisible({ timeout: 6_000 });
+	await expect(statusChange).toHaveCount(0);
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(card).toHaveAttribute("data-board-column-title", "To do");
+	await page.clock.fastForward(2_000);
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	await expect(statusChange).toContainText("changed status from To do to In progress", { timeout: 6_000 });
+	await expect(item.getByRole("button", { name: "Change status, In progress" })).toBeVisible();
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude (Recommended)", exact: true }).click();
+	await expect(thread.locator("[data-project-butter-session-start]")).toBeVisible();
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
+	await page.clock.fastForward(5_000);
+	await expect(card).toHaveAttribute("data-board-column-title", "To do");
+});
+
+test("the journey keeps its embedded session card across stages and rewind", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]');
+	for (const step of ["In progress", "Pull request", "Fix checks", "Done", "In progress"]) {
+		if (await item.isVisible()) await item.getByRole("button", { name: "Close Project butter work item" }).click();
+		await page.getByRole("button", { name: step, exact: true }).click();
+		if (!await item.isVisible()) await card.click();
+		const thread = item.locator('[data-jira-activity-entry-id^="invocation-"]');
+		await expect(thread.locator("[data-project-butter-session-start]")).toContainText("Improve merchant onboarding");
+		await expect(thread.locator("[data-project-butter-session-start]")).toContainText(step === "Done" ? "Finished" : "Working");
+	}
+});
+
 test("teammate sessions keep their popover alignment while expanding near the viewport edge", async ({ page }) => {
 	await page.setViewportSize({ width: 1398, height: 1236 });
 	await page.goto(appUrl("/butter-v1"));
@@ -223,6 +279,36 @@ test("attachment piles stay settled when entering Work item and remain interacti
 	await expect(page.getByRole("button", { name: "Close documents" })).toHaveAttribute("aria-expanded", "true");
 });
 
+test("the empty agent field stays in place when its picker opens", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey" }).click();
+	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+	const field = page.getByRole("group", { name: "Agents field" });
+	const position = () => field.evaluate((element) => {
+		const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+		let label: Node | null = null;
+		while (walker.nextNode()) { if (walker.currentNode.textContent?.startsWith("Add")) { label = walker.currentNode; break; } }
+		const icon = element.querySelector("svg");
+		if (!label || !icon) throw new Error("Missing empty agent field content");
+		const range = document.createRange();
+		range.setStart(label, 0);
+		range.setEnd(label, 3);
+		const bounds = (rect: DOMRect) => { const { x, y, width, height } = rect; return { x, y, width, height }; };
+		return { label: bounds(range.getBoundingClientRect()), icon: bounds(icon.getBoundingClientRect()) };
+	});
+	const before = await position();
+	await field.getByRole("button", { name: "Add agent" }).click();
+	await expect(page.getByRole("dialog", { name: "Add agent" })).toBeVisible();
+	const after = await position();
+	for (const part of ["label", "icon"] as const) {
+		for (const dimension of ["x", "y", "width", "height"] as const) {
+			expect(after[part][dimension], `${part} ${dimension}`).toBeCloseTo(before[part][dimension], 0);
+		}
+	}
+});
+
 test("the e2e journey starts and resets with a complete ticket ready to invoke", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
@@ -242,10 +328,10 @@ test("the e2e journey starts and resets with a complete ticket ready to invoke",
 	await expect(item.getByText("Confirm the English-only account allow-list", { exact: true })).toBeVisible();
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("Start with the English-only pilot");
 	await item.getByRole("button", { name: "Add agent", exact: true }).click();
-	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude (Recommended)", exact: true }).click();
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("Venn added Claude");
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
-	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress", { timeout: 10_000 });
 	await expect(card.getByText("onboarding", { exact: true })).toBeVisible();
 	await invoke.click();
 	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");

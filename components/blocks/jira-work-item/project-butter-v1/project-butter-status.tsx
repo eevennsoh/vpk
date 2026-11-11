@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useReducedMotion } from "motion/react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -25,6 +24,7 @@ export function ProjectButterStatusGlyph({ status, animated = true }: Readonly<{
 		aria-hidden
 		colorByProgress
 		dashed
+		deferFillAnimation={animated}
 		inline
 		label={status}
 		size="sm"
@@ -40,17 +40,6 @@ export function ProjectButterStatus({
 	const [editor, setEditor] = useState<"create" | "edit" | null>(null);
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [name, setName] = useState("");
-	const [paintedStatus, setPaintedStatus] = useState(content.status);
-	const reducedMotion = useReducedMotion();
-	const stageAutoProgress = appearance !== "field" && !reducedMotion && paintedStatus === "To do" && content.status === "In progress" && content.assignee.name === content.currentUser.name;
-	const glyphStatus = stageAutoProgress ? paintedStatus : content.status;
-	useEffect(() => {
-		let secondFrame = 0;
-		const firstFrame = window.requestAnimationFrame(() => {
-			secondFrame = window.requestAnimationFrame(() => setPaintedStatus(content.status));
-		});
-		return () => { window.cancelAnimationFrame(firstFrame); window.cancelAnimationFrame(secondFrame); };
-	}, [content.status]);
 	const value = name.trim();
 	const duplicate = content.statusOptions.some(
 		(option) =>
@@ -80,8 +69,8 @@ export function ProjectButterStatus({
 						<LozengeDropdownTrigger
 							appearance={appearance === "field" ? "text" : appearance}
 							aria-label={`Change status${appearance === "field" ? " in details" : ""}, ${content.status}`}
-							className={appearance === "field" ? "-mx-2 w-[calc(100%+1rem)] max-w-none justify-start bg-transparent px-2 pr-14 hover:bg-transparent active:bg-transparent data-[selected=true]:bg-transparent" : undefined}
-							icon={appearance === "field" ? <IconTile aria-hidden as="span" icon={<ProjectButterStatusGlyph status={content.status} />} label="" size="xxsmall" variant="transparent" /> : <ProjectButterStatusGlyph status={glyphStatus} />}
+							className={appearance === "field" ? "-mx-2 w-[calc(100%+1rem)] max-w-none justify-start bg-transparent px-2 pr-14 hover:bg-transparent active:bg-transparent data-[selected=true]:bg-transparent" : "transition-none"}
+							icon={appearance === "field" ? <IconTile aria-hidden as="span" icon={<ProjectButterStatusGlyph status={content.status} />} label="" size="xxsmall" variant="transparent" /> : <ProjectButterStatusGlyph status={content.status} />}
 							size="spacious"
 							variant={projectButterStatusVariant(content.status)}
 						/>

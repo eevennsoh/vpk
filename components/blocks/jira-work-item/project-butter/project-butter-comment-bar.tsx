@@ -28,7 +28,7 @@ function createTimedComment(args: Parameters<typeof createCommentEntry>[0]) {
 	return { ...createCommentEntry(args), createdAtMs: Date.now() };
 }
 
-export function ProjectButterCommentBar({ active, activityRows, content, empty, onOpenSession, onPreviewSession, onStartAgent, sessions, sidePanel }: Readonly<{ active: boolean; activityRows: "none" | "origin" | "feed"; content: ProjectButterContent; empty: boolean; onOpenSession: (id: string, draft?: string) => boolean | void | Promise<boolean | void>; onPreviewSession: (id: string | null) => void; onStartAgent: (agent: AgentSessionItem["agent"], prompt: string) => void; sessions: readonly ProjectButterSessionItem[]; sidePanel: boolean }>) {
+export function ProjectButterCommentBar({ active, activityRows, content, empty, onOpenSession, onReplyToSession, onPreviewSession, onStartAgent, sessions, sidePanel }: Readonly<{ active: boolean; activityRows: "none" | "origin" | "feed"; content: ProjectButterContent; empty: boolean; onOpenSession?: (id: string, draft?: string) => boolean | void | Promise<boolean | void>; onReplyToSession?: (session: ProjectButterSessionItem, draft: string) => boolean; onPreviewSession: (id: string | null) => void; onStartAgent: (agent: AgentSessionItem["agent"], prompt: string) => void; sessions: readonly ProjectButterSessionItem[]; sidePanel: boolean }>) {
 	const [expanded, setExpanded] = useState(false);
 	const [mentions, setMentions] = useState<string[]>([]);
 	const [hasMentions, setHasMentions] = useState(false);
@@ -96,10 +96,11 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 		}
 	}
 	async function openSelectedSession(session: ProjectButterSessionItem) {
-		if (openingSession.current) return;
+		const draft = mentionedAgent ? editorRef.current?.getDraftWithoutAgentMention(mentionedAgent.name) ?? "" : "";
+		if (onReplyToSession) { if (onReplyToSession(session, draft)) cancel(); return; }
+		if (!onOpenSession || openingSession.current) return;
 		openingSession.current = true;
 		const previousDraft = currentDraft.current;
-		const draft = mentionedAgent ? editorRef.current?.getDraftWithoutAgentMention(mentionedAgent.name) : undefined;
 		try {
 			const opened = await onOpenSession(session.id, draft || undefined);
 			if (opened === false) toast.error("Could not open the session. Your comment is still here.");

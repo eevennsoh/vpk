@@ -1,6 +1,43 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("work item session cards show Venn as their owner", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("group", { name: "Duplicative sessions view" }).getByRole("button", { name: "Work item" }).click();
+	const workItem = page.getByRole("region", { name: "Work item full screen view" });
+	for (const [id, agent] of [["butter-claude", "Claude"], ["butter-cursor-forecast", "Cursor"], ["butter-claude-onboarding-feedback", "Claude"]]) {
+		const thread = workItem.locator(`[data-jira-activity-entry-id="invocation-${id}"]`);
+		await expect(thread).toContainText(`Venn added ${agent}`);
+		await expect(thread.getByRole("group", { name: `${agent}, used by Venn` }).first()).toBeVisible();
+		await expect(thread.getByText(/only Annie Cook can act on it/)).toHaveCount(0);
+	}
+});
+
+test("selecting a session opens its inline reply with the draft", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("group", { name: "Duplicative sessions view" }).getByRole("button", { name: "Work item" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await editor.pressSequentially(" Please check this");
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await editor.press("Enter");
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
+	const reply = thread.getByRole("textbox", { name: "Leave a reply..." });
+	await expect(reply).toBeFocused();
+	await expect(reply).toContainText("Claude");
+	await expect(reply).toContainText("Please check this");
+	await expect(page.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
+	await reply.press("Enter");
+	await expect(thread).toContainText("Please check this");
+	await expect(reply).toHaveCount(0);
+});
+
 test("Backspace returns to session choices at the agent mention", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1170, height: 1000 });

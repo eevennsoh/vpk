@@ -5,7 +5,7 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
-test("session bylines show the private-session tooltip", async ({ page }) => {
+test("Annie's session cards remain visible and cannot be continued", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
@@ -18,27 +18,10 @@ test("session bylines show the private-session tooltip", async ({ page }) => {
 	await expect(page.locator('[data-jira-activity-entry-id="agent-added-butter-claude"]')).toHaveCount(0);
 	await expect(header.getByRole("button", { name: "Private to Annie Cook" })).toHaveCount(0);
 	const session = thread.getByTestId("agent-session-row-butter-claude");
-	const privacy = session.getByRole("button", { name: "Private to Annie Cook" });
-	await expect(privacy).toBeVisible();
-	const hostIcon = session.getByRole("img", { name: "Local session" });
-	await expect(privacy).toHaveCSS("color", await hostIcon.evaluate((element) => getComputedStyle(element).color));
-	await privacy.scrollIntoViewIfNeeded();
-	await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-	await privacy.hover();
-	const tooltip = page.getByRole("tooltip").filter({ hasText: "Private to Annie Cook" });
-	await expect(tooltip).toBeVisible();
-	const [privacyBox, tooltipBox] = await Promise.all([privacy.boundingBox(), tooltip.boundingBox()]);
-	if (!privacyBox || !tooltipBox) throw new Error("The privacy icon and tooltip must be visible");
-	expect(tooltipBox.y + tooltipBox.height).toBeLessThanOrEqual(privacyBox.y);
-	await expect(privacy).toHaveAttribute("aria-describedby", await tooltip.getAttribute("id") ?? "");
-	await page.keyboard.press("Escape");
-	await expect(tooltip).toHaveCount(0);
-	await page.mouse.move(0, 0);
-	await session.getByRole("button", { name: /^Review Teamwork onboarding guide/ }).focus();
-	await page.keyboard.press("Tab");
-	await expect(privacy).toBeFocused();
-	await expect(tooltip).toBeVisible();
-	await privacy.click();
+	await expect(session.getByRole("button", { name: /^Review Teamwork onboarding guide/ })).toHaveCount(0);
+	const viewerCard = session.locator("article");
+	await expect(viewerCard).toHaveAttribute("data-slot", "tooltip-trigger");
+	await viewerCard.click();
 	await expect(page.getByRole("textbox", { name: "Reply to Claude" })).toHaveCount(0);
 	await expect(avatar).toHaveAttribute("aria-label", "Claude, used by Annie Cook");
 	await expect(avatar.locator('[data-avatar-role="human"]')).toBeVisible();
@@ -52,7 +35,7 @@ test("session bylines show the private-session tooltip", async ({ page }) => {
 	const cursorHeader = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"] [data-slot="jira-activity-comment-header"]').first();
 	await expect(cursorHeader).toContainText("Annie Cook added Cursor");
 	await expect(page.locator('[data-jira-activity-entry-id="agent-added-butter-cursor-forecast"]')).toHaveCount(0);
-	await expect(page.getByTestId("agent-session-row-butter-cursor-forecast").getByRole("button", { name: "Private to Annie Cook" })).toBeAttached();
+	await expect(page.getByTestId("agent-session-row-butter-cursor-forecast").getByRole("button", { name: /^Compare the Q3 revenue forecast/ })).toHaveCount(0);
 	await expect(page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"] [data-slot="human-agent-avatar"]').first()).toHaveAttribute("aria-label", "Cursor, used by Annie Cook");
 });
 
@@ -68,7 +51,7 @@ test("starting an agent adds a long-form session card to its activity thread", a
 	const sessionHeader = session.locator('xpath=ancestor::*[@data-jira-activity-entry-id][1]').locator('[data-slot="jira-activity-comment-header"]').first();
 	await expect(sessionHeader).toContainText("Venn added Figma");
 	await expect(activity.locator('[data-jira-activity-entry-id^="agent-added-"]')).toHaveCount(0);
-	await expect(session.getByRole("button", { name: "Private to Venn" })).toBeAttached();
+	await expect(session.getByRole("button", { name: "Private to Venn" })).toHaveCount(0);
 	await expect(session.locator('xpath=ancestor::*[@data-jira-activity-entry-id][1]').locator('[data-slot="human-agent-avatar"]').first()).toHaveAttribute("aria-label", "Figma, used by Venn");
 	await expect(session).toContainText("Redesign onboarding flow for new users");
 	await expect(session).toContainText("Figma");

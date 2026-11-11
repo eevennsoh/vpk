@@ -42,7 +42,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	textboxLabel?: string;
 	/** Leads a fresh draft with a mention chip, e.g. the author being replied to. */
 	prefillMention?: Readonly<{ mention: RichTextMentionItem; textAfter: string }>;
-	onSave: (body: string, plainText: string) => void;
+	onSave: (body: string, plainText: string, mentionedAgentIds: readonly string[]) => void;
 	onValueChange: (body: string) => void;
 	ref?: Ref<ProjectButterCommentEditorHandle>;
 	value: string;
@@ -130,7 +130,14 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	}, [editor]);
 	const placeholderStyle = useMemo<CSSProperties & { "--rich-text-placeholder": string }>(() => ({ "--rich-text-placeholder": JSON.stringify(placeholder) }), [placeholder]);
 	const showInstructionPlaceholder = Boolean(editor && instructionPlaceholderForAgent && !editor.getText({ textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === instructionPlaceholderForAgent ? "" : `@${node.attrs.label ?? node.attrs.id}` } }).trim());
-	function save() { if (editor?.getText().trim()) onSave(editor.getMarkdown(), editor.getText()); }
+	function save() {
+		if (!editor?.getText().trim()) return;
+		const mentionedAgentIds: string[] = [];
+		editor.state.doc.descendants((node) => {
+			if (node.type.name === "mention" && node.attrs.category === "subagent" && typeof node.attrs.id === "string") mentionedAgentIds.push(node.attrs.id);
+		});
+		onSave(editor.getMarkdown(), editor.getText(), mentionedAgentIds);
+	}
 	return (
 		<FloatingComposer
 			actions={<RovoComposerActionButton canSubmit={Boolean(editor?.getText().trim())} composerStatus="ready" dictationState={voice.dictationState} dictationTranscriptPreview={voice.dictationTranscriptPreview} micStream={voice.micStream} onStartDictation={voice.onStartDictation} onStop={voice.onStopDictation} onStopDictation={voice.onStopDictation} showSubmitWhenEmpty size="icon-sm" />}

@@ -657,7 +657,7 @@ test("PAY-999 keeps Claude follow-ups in Venn's existing cloud session", async (
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
-	const invocation = workItem.locator('[data-jira-activity-entry-id^="merchant-agent-added-PAY-999:"]');
+	const invocation = workItem.locator('[data-jira-activity-entry-id^="invocation-PAY-999:"]');
 	await expect(invocation).toHaveCount(1);
 	await expect(invocation).toContainText("Venn added Claude and self-assigned the issue");
 	const invocationId = await invocation.getAttribute("data-jira-activity-entry-id");

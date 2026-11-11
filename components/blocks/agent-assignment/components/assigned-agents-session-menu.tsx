@@ -107,9 +107,16 @@ export function AgentSessionsMenu({
 			{teammateItems.length ? (
 				<div>
 					{hasActionableSession ? <hr className="my-1 border-border" /> : null}
-					<TeammateSessionsDisclosure items={teammateItems}>
-						<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
-					</TeammateSessionsDisclosure>
+					{personalItems.length ? (
+						<TeammateSessionsDisclosure items={teammateItems}>
+							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
+						</TeammateSessionsDisclosure>
+					) : (
+						<>
+							<p className="px-3 py-1 text-xs font-medium text-text-subtle">Sessions from your teammates</p>
+							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
+						</>
+					)}
 				</div>
 			) : null}
 		</div>

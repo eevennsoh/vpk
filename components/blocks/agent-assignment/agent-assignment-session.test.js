@@ -51,7 +51,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 });
 
 test("rapidly toggling the teammate disclosure leaves one settled avatar stack", async () => {
-	const view = await renderMenu(menuProps([session("teammate", "viewer", { invokedBy: { name: "Sample Alpha" } })]));
+	const view = await renderMenu(menuProps([session("mine", "owner"), session("teammate", "viewer", { invokedBy: { name: "Sample Alpha" } })]));
 	try {
 		const trigger = view.getByRole("button", disclosure);
 		for (let index = 0; index < 4; index++) await view.click(trigger);
@@ -69,21 +69,25 @@ test("owner-only, viewer-only, expired and empty menus retain their separate sem
 		assert.equal(view.queryByRole("separator"), null);
 		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }), null);
 		await view.rerender(menuProps([session("teammate", "viewer")]));
-		assert.equal(view.queryByRole("list"), null);
-		assert.equal(view.queryByRole("separator"), null);
-		await view.click(view.getByRole("button", disclosure));
+		assert.equal(view.queryByRole("button", disclosure), null);
+		assert.equal(view.getByText("Sessions from your teammates").tagName, "P");
+		assert.equal(view.getByText("teammate work").closest("article").tabIndex, 0);
 		assert.equal(view.getAllByRole("listitem").length, 1);
+		assert.equal(view.queryByRole("separator"), null);
 		await view.rerender(menuProps([session("expired", "expired"), session("teammate", "viewer")]));
 		assert.equal(view.getByText("expired work").closest("article").querySelector("button")?.getAttribute("aria-label"), "More actions for expired work");
 		assert.equal(view.queryByRole("separator"), null);
 		assert.equal(view.queryByRole("button", { name: /^expired work/u }), null);
+		assert.equal(view.getByRole("button", disclosure).getAttribute("aria-expanded"), "false");
+		assert.equal(view.queryByText("teammate work"), null);
 		await view.rerender(menuProps([]));
 		assert.equal(view.getByText("No agents assigned").textContent, "No agents assigned");
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.queryByRole("list"), null);
 		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }), null);
 		await view.rerender(menuProps([session("teammate", "viewer")]));
-		assert.equal(view.getByRole("button", disclosure).getAttribute("aria-expanded"), "false");
+		assert.equal(view.queryByRole("button", disclosure), null);
+		assert.equal(view.getByText("teammate work").textContent.includes("teammate work"), true);
 	} finally { await view.unmount(); }
 });
 
@@ -121,7 +125,7 @@ test("folding preserves cloud actions, local continuation, expired Delete and po
 
 test("viewer keyboard activation stays read-only; Escape dismisses its tooltip before folding and returns focus", async () => {
 	let selected = 0;
-	const view = await renderMenu(menuProps([session("team", "viewer", { invokedBy: { name: "Sample Alpha" } })], { onSelectSession: () => { selected++; } }));
+	const view = await renderMenu(menuProps([session("mine", "owner"), session("team", "viewer", { invokedBy: { name: "Sample Alpha" } })], { onSelectSession: () => { selected++; } }));
 	try {
 		const trigger = view.getByRole("button", disclosure);
 		await view.press(trigger, "Enter");
@@ -156,18 +160,18 @@ test("header avatars deduplicate supplied identities, preserve distinct faces, a
 		{ name: "Sample Alpha", avatarSrc: "/different-alpha.svg" },
 		{ name: "Sample Beta" }, undefined, { name: " " },
 	];
-	const view = await renderMenu(menuProps(people.map((invokedBy, index) => session(`s${index}`, "viewer", { invokedBy }))));
+	const view = await renderMenu(menuProps([session("mine", "owner"), ...people.map((invokedBy, index) => session(`s${index}`, "viewer", { invokedBy }))]));
 	try {
 		const trigger = view.getByRole("button", disclosure);
 		assert.deepEqual([...trigger.querySelectorAll('[data-slot="avatar"]')].map((avatar) => avatar.getAttribute("title")), ["Sample Alpha", "Sample Alpha", "Sample Beta", "Teammate"]);
 		assert.deepEqual(sources, ["/sample-alpha.svg", "/different-alpha.svg"]);
-		await view.rerender(menuProps(Array.from({ length: 30 }, (_, index) => session(`s${index}`, "viewer", { invokedBy: { name: `Sample ${index}` } }))));
+		await view.rerender(menuProps([session("mine", "owner"), ...Array.from({ length: 30 }, (_, index) => session(`s${index}`, "viewer", { invokedBy: { name: `Sample ${index}` } }))]));
 		const nextTrigger = view.getByRole("button", disclosure);
 		assert.equal(nextTrigger.querySelectorAll('[data-slot="avatar"]').length, 6);
 		assert.equal(nextTrigger.textContent.includes("30"), false);
 		assert.equal(nextTrigger.textContent.includes("…"), true);
 		await view.click(nextTrigger);
-		assert.equal(view.getAllByRole("listitem").length, 30, "avatar overflow must not drop sessions");
+		assert.equal(view.getAllByRole("listitem").length, 31, "avatar overflow must not drop sessions");
 	} finally { await view.unmount(); window.Image = previousImage; }
 });
 

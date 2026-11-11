@@ -3,7 +3,7 @@ import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/bloc
 import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, projectButterDevelopmentChecks } from "../../../blocks/jira-work-item/project-butter/development-journey-model.ts";
 import { BUTTER_PAY_CURRENT_USER } from "./current-user.ts";
 
-export type MerchantJourneyPhase = "invoke" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";
+export type MerchantJourneyPhase = "invoke" | "starting" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";
 
 type JourneyActivity = JiraIssueAgentActivity & {
 	merchantJourneyCreated?: true;
@@ -94,7 +94,7 @@ function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: s
 	return {
 		...authored,
 		...(!beforeWork ? { merchantJourneyBaseline: baseline } : {}),
-		status: phase === "merged" ? "Done" : beforeWork ? "To do" : "In progress",
+		status: phase === "merged" ? "Done" : beforeWork || phase === "starting" ? "To do" : "In progress",
 		assignee: beforeWork ? authoredCard.assignee : assignCurrentUser ? BUTTER_PAY_CURRENT_USER : card.assignee,
 		avatarSrc: beforeWork ? authoredCard.avatarSrc : assignCurrentUser ? BUTTER_PAY_CURRENT_USER.avatarSrc : card.avatarSrc,
 		animatePullRequestOnMount: phase === "pr",
@@ -110,7 +110,7 @@ export function applyMerchantJourneyToBoard(columns: readonly JiraKanbanColumnDa
 	const source = columns.find((column) => column.cards.some((card) => card.code === "PAY-999"));
 	const card = source?.cards.find((item) => item.code === "PAY-999");
 	if (!source || !card) return [...columns];
-	const destination = phase === "merged" ? "Done" : phase === "invoke" ? "To do" : "In progress";
+	const destination = phase === "merged" ? "Done" : phase === "invoke" || phase === "starting" ? "To do" : "In progress";
 	if (!columns.some((column) => column.title === destination)) return [...columns];
 	const updated = projectCard(card, phase, session);
 	return columns.map((column) => {

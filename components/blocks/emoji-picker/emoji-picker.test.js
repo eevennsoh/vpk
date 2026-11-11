@@ -148,7 +148,7 @@ test("reaction pills disclose the reacting people on hover and keyboard focus", 
 	);
 	assert.match(REACTION_PILL_SOURCE, /<h1 aria-hidden="true" className="p-3 text-4xl leading-none">/u);
 	assert.match(REACTION_PILL_SOURCE, /\{formatReactionActorNames\(reactorNames\)\}\{" "\}/u);
-	assert.match(REACTION_PILL_SOURCE, /<span className="text-text-subtlest">/u);
+	assert.doesNotMatch(REACTION_PILL_SOURCE, /<span className="text-text-subtlest">/u);
 	assert.doesNotMatch(TOOLTIP_SOURCE, /\bshadow-(?:sm|md|lg|xl|2xl)\b/u);
 	assert.match(PAGE_SOURCE, /reactorNames: \["Code Planner", "GitHub Copilot", "Unit Test Creator"\]/u);
 });

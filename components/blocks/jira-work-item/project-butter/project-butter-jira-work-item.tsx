@@ -58,6 +58,7 @@ export interface ProjectButterJiraWorkItemProps {
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
 	onOpenCloudSession?: (session: ProjectButterSessionItem, draft: string | undefined, workItem: { code: string; summary: string }) => boolean | void | Promise<boolean | void>;
+	inlineSessionReplies?: boolean;
 	/** Standalone only: the host's sidebar chat, mounted beside the work item. Pair with `onOpenCloudSession`. */
 	chatPanel?: ReactNode;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
@@ -96,6 +97,7 @@ export function ProjectButterJiraWorkItem({
 	onCreateAgent,
 	onAgentSessionStart,
 	onOpenCloudSession,
+	inlineSessionReplies = false,
 	chatPanel,
 	overlayContainerRef,
 	onStoryPointsChange,
@@ -171,9 +173,9 @@ export function ProjectButterJiraWorkItem({
 	const autoAssignTo = autoAssignClaudeToCurrentUser ? currentUser : undefined;
 	const [acknowledgmentTime, setAcknowledgmentTime] = useState(() => Date.now());
 	const invokedAtMs = journeySession?.invokedAtMs;
-	const showAcknowledgment = journeyPhase !== "working" || invokedAtMs == null || acknowledgmentTime >= invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS;
+	const showAcknowledgment = (journeyPhase !== "working" && journeyPhase !== "starting") || invokedAtMs == null || acknowledgmentTime >= invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS;
 	useEffect(() => {
-		if (journeyPhase !== "working" || invokedAtMs == null) return;
+		if ((journeyPhase !== "working" && journeyPhase !== "starting") || invokedAtMs == null) return;
 		const remaining = Math.max(0, invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS - Date.now());
 		const timer = window.setTimeout(() => setAcknowledgmentTime(Date.now()), remaining);
 		return () => window.clearTimeout(timer);
@@ -375,6 +377,7 @@ export function ProjectButterJiraWorkItem({
 				>
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
+						inlineSessionReplies={inlineSessionReplies}
 						compact={compact}
 						key={workItem?.code ?? "reference"}
 						active={open}

@@ -18,7 +18,8 @@ import {
 	useProjectButterInvocationPreview,
 } from "./project-butter-invocation";
 
-function InvocationPreviewAvatar({ agent }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"] }>) {
+function InvocationPreviewAvatar({ agent, defaultIcon }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"]; defaultIcon?: ReactNode }>) {
+	if (!agent && defaultIcon) return defaultIcon;
 	return (
 		<span className="flex size-6 shrink-0 items-center justify-center">
 			{agent ? agent.visual ?? (
@@ -28,7 +29,7 @@ function InvocationPreviewAvatar({ agent }: Readonly<{ agent: ReturnType<typeof 
 	);
 }
 
-export function ProjectButterInvocationPreview({ className, flush = false, iconScale }: Readonly<{ className?: string; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
+export function ProjectButterInvocationPreview({ className, defaultIcon, flush = false, iconScale }: Readonly<{ className?: string; defaultIcon?: ReactNode; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
 	const { agent, previousAgent, direction, sequence } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const animate = !reduce && sequence > 0 && agent?.id !== previousAgent?.id;
@@ -41,7 +42,7 @@ export function ProjectButterInvocationPreview({ className, flush = false, iconS
 			data-direction={direction === 1 ? "forward" : "backward"}
 			className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", !flush && (iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale))), className)}
 		>
-			<InvocationPreviewAvatar agent={agent} />
+			<InvocationPreviewAvatar agent={agent} defaultIcon={defaultIcon} />
 			<span className={cn("flex h-5 min-w-0 flex-1 items-center text-sm leading-5 text-text", iconScale === undefined && !flush && "-ml-0.5 pr-2")}>
 				Add&nbsp;
 				<span className="relative h-5 min-w-0 flex-1 overflow-hidden text-left">
