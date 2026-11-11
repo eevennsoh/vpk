@@ -17,6 +17,7 @@ const COMMENT_PLACEHOLDER = "Give an instruction, leave a comment or ask for an 
 
 export interface ProjectButterCommentEditorHandle {
 	getDraftWithoutAgentMention: (name: string) => string;
+	isAtAgentMentionBoundary: (name: string) => boolean;
 	revertAgentMention: (name: string) => void;
 }
 
@@ -26,12 +27,13 @@ export interface ProjectButterCommentEditorHandle {
  * mentions, dictation, and Enter-to-send keep working in one compact row.
  * Thread replies reuse it unchanged apart from their placeholder and label.
  */
-export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, onCancel, onMentionChange, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, textboxLabel = ariaLabel, value }: Readonly<{
+export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor", elevation = "floating", focusRequest, instructionPlaceholderForAgent, onCancel, onMentionChange, onSave, onValueChange, placeholder = COMMENT_PLACEHOLDER, prefillMention, ref, textboxLabel = ariaLabel, value }: Readonly<{
 	agents: readonly AgentBrowserAgent[];
 	ariaLabel?: string;
 	/** `flat` drops the floating shadow for boxes that sit inline in the feed, such as thread replies. */
 	elevation?: "floating" | "flat";
 	focusRequest: number;
+	instructionPlaceholderForAgent?: string;
 	/** Escape closes the box when the host supports it. */
 	onCancel?: () => void;
 	onMentionChange?: (agentNames: string[], hasMentions: boolean) => void;
@@ -81,6 +83,15 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		getDraftWithoutAgentMention(name) {
 			return editor?.getText({ textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === name ? "" : `@${node.attrs.label ?? node.attrs.id}` } }).trim() ?? "";
 		},
+		isAtAgentMentionBoundary(name) {
+			if (!editor || !editor.state.selection.empty) return false;
+			const { $from } = editor.state.selection;
+			const before = $from.nodeBefore;
+			const mention = before?.isText && !before.text?.trim()
+				? editor.state.doc.resolve($from.pos - before.nodeSize).nodeBefore
+				: before;
+			return mention?.type.name === "mention" && mention.attrs.category === "subagent" && mention.attrs.label === name;
+		},
 		revertAgentMention(name) {
 			if (!editor) return;
 			let position: number | null = null;
@@ -118,6 +129,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 		return () => cancelAnimationFrame(frame);
 	}, [editor]);
 	const placeholderStyle = useMemo<CSSProperties & { "--rich-text-placeholder": string }>(() => ({ "--rich-text-placeholder": JSON.stringify(placeholder) }), [placeholder]);
+	const showInstructionPlaceholder = Boolean(editor && instructionPlaceholderForAgent && !editor.getText({ textSerializers: { mention: ({ node }) => node.attrs.category === "subagent" && node.attrs.label === instructionPlaceholderForAgent ? "" : `@${node.attrs.label ?? node.attrs.id}` } }).trim());
 	function save() { if (editor?.getText().trim()) onSave(editor.getMarkdown(), editor.getText()); }
 	return (
 		<FloatingComposer
@@ -132,7 +144,7 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 			data-project-butter-comment-editor
 			onSubmit={() => save()}
 		>
-			<EditorContent className="rich-text-editor-content max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.react-renderer.node-mention]:inline-flex [&_.react-renderer.node-mention]:h-lh [&_.react-renderer.node-mention]:items-center [&_.react-renderer.node-mention]:align-middle [&_.rich-text-mention-node]:h-lh [&_.rich-text-mention-node]:items-center [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={editor?.isEmpty ? "true" : undefined} editor={editor} style={placeholderStyle} />
+			<EditorContent className="rich-text-editor-content max-h-48 min-h-6 w-full min-w-0 overflow-y-auto [&_.react-renderer.node-mention]:inline-flex [&_.react-renderer.node-mention]:h-lh [&_.react-renderer.node-mention]:items-center [&_.react-renderer.node-mention]:align-middle [&_.rich-text-mention-node]:h-lh [&_.rich-text-mention-node]:items-center [&_.rich-text-mention-chip]:text-[length:inherit]" data-empty={editor?.isEmpty ? "true" : undefined} data-instruction-placeholder={showInstructionPlaceholder || undefined} editor={editor} style={placeholderStyle} />
 		</FloatingComposer>
 	);
 }

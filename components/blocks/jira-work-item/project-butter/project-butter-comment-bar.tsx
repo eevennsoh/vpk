@@ -5,7 +5,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
-import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
 import { matchingAgentSessions } from "@/components/blocks/agent-assignment/components/session-choice-items";
@@ -16,6 +15,7 @@ import { useCommentBarVisibility } from "@/components/blocks/jira-work-item/proj
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { RichTextSuggestionMenu, type RichTextSuggestionMenuItem } from "@/components/ui-custom/rich-text-editor";
+import { MenuBackButton } from "@/components/ui-custom/menu-back-button";
 import { motionDuration, referenceEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -111,9 +111,12 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 		}
 	}
 	function backToTargets() {
-		setChoosingSession(false); setSelectedTargetIndex(0); onPreviewSession(null); setFocusRequest((value) => value + 1);
+		setChoosingSession(false); setNewSessionAgentName(null); setSelectedTargetIndex(0); onPreviewSession(null); setFocusRequest((value) => value + 1);
 	}
 	function handleTargetKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+		if (event.key === "Backspace" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.nativeEvent.isComposing && mentionedAgent && (choosingSession || newSessionAgentName === mentionedAgent.name) && (event.target === backRef.current || (event.target instanceof HTMLElement && event.target.isContentEditable && editorRef.current?.isAtAgentMentionBoundary(mentionedAgent.name)))) {
+			event.preventDefault(); event.stopPropagation(); backToTargets(); return;
+		}
 		if (!showTargetMenu || event.nativeEvent.isComposing) return;
 		if ((event.key === "Enter" || event.key === "Tab") && event.target instanceof HTMLButtonElement && !event.target.hasAttribute("data-suggestion-option")) return;
 		switch (event.key) {
@@ -166,14 +169,14 @@ export function ProjectButterCommentBar({ active, activityRows, content, empty, 
 			<span aria-hidden="true" className="pointer-events-none absolute inset-x-6 inset-y-0 rounded-xl shadow-[0px_-2px_50px_8px_rgba(30,31,33,0.08)]" data-project-butter-comment-shadow />
 			{showTargetMenu && existingSession ? <div className="absolute inset-x-0 bottom-full z-20 mb-2" data-project-butter-session-target-menu>
 				{choosingSession ? <div className="rich-text-command-menu rich-text-command-menu-borderless w-full!" data-nested="true">
-					<button className={cn("rich-text-command-menu-item rich-text-command-menu-back rounded-b-none!", selectedIndex === -1 && "rich-text-command-menu-item-selected")} onClick={backToTargets} onFocus={() => { setSelectedTargetIndex(-1); onPreviewSession(null); }} onMouseDown={(event) => event.preventDefault()} onMouseEnter={() => { setSelectedTargetIndex(-1); onPreviewSession(null); }} ref={backRef} type="button"><span className="inline-flex size-6 items-center justify-center"><ArrowLeftIcon label="" size="small" /></span><span className="menu-row-title">Back</span></button>
-					<ul aria-label="Choose a session" className="rich-text-command-menu-list p-1" ref={sessionListRef}>
+					<MenuBackButton className={cn("h-9 pl-4 focus-visible:outline-hidden focus-visible:ring-0", selectedIndex === -1 && "bg-bg-neutral-subtle-hovered")} iconSize="compact" onClick={backToTargets} onFocus={() => { setSelectedTargetIndex(-1); onPreviewSession(null); }} onMouseDown={(event) => event.preventDefault()} onMouseEnter={() => { setSelectedTargetIndex(-1); onPreviewSession(null); }} ref={backRef} />
+					<ul aria-label="Choose a session" className="rich-text-command-menu-list p-1 pt-0!" ref={sessionListRef}>
 						{matchingSessions.map((session, index) => <AgentSessionCard animateLayout={false} density="long" hoverTone="menu" isSelected={index === selectedIndex} item={{ ...session, title: session.prompt?.replace(`@${session.agent.name}`, "").trim() || session.title }} key={session.id} onItemHover={(item) => { if (item) setSelectedTargetIndex(index); onPreviewSession(item?.id ?? null); }} onView={() => openSelectedSession(session)} padding="compact" showMoreMenu={false} />)}
 					</ul>
 				</div> : <RichTextSuggestionMenu className="rich-text-command-menu-borderless w-full!" emptyLabel="" items={SESSION_TARGET_MENU_ITEMS} onHover={setSelectedTargetIndex} onSelect={(item) => chooseTarget(item.id === "new" ? "new" : "continue")} selectedIndex={selectedIndex} title="Choose agent session" />}
 			</div> : null}
 			<div className="contents" onFocusCapture={() => setExpanded(true)}>
-				<ProjectButterCommentEditor agents={agents} focusRequest={focusRequest} onCancel={cancel} onMentionChange={(names, hasAny) => { setMentions(names); setHasMentions(hasAny); if (!names.includes(mentionedAgent?.name ?? "")) { setNewSessionAgentName(null); setSelectedTargetIndex(0); setChoosingSession(false); onPreviewSession(null); } }} onSave={submit} onValueChange={(value) => { currentDraft.current = value; content.setCommentDraft(value); }} ref={editorRef} value={content.commentDraft} />
+				<ProjectButterCommentEditor agents={agents} focusRequest={focusRequest} instructionPlaceholderForAgent={mentionedAgent && ((!choosingSession && showTargetMenu && selectedIndex === 1) || newSessionAgentName === mentionedAgent.name) ? mentionedAgent.name : undefined} onCancel={cancel} onMentionChange={(names, hasAny) => { setMentions(names); setHasMentions(hasAny); if (!names.includes(mentionedAgent?.name ?? "")) { setNewSessionAgentName(null); setSelectedTargetIndex(0); setChoosingSession(false); onPreviewSession(null); } }} onSave={submit} onValueChange={(value) => { currentDraft.current = value; content.setCommentDraft(value); }} ref={editorRef} value={content.commentDraft} />
 			</div>
 		</motion.div>
 	);

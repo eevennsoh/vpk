@@ -10,8 +10,9 @@ import { ProjectButterRelatedWork } from "@/components/blocks/jira-work-item/pro
 import type { ProjectButterRelatedScope, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 
-export function ProjectButterBody({ active, sidePanel, content, descriptionReveal, detailsSlotRef, empty, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, onStartedSessionRevealed, openRelatedItem, previewSessionId, startedSessionId, relatedScope, sessions, singleActivityView = false, workItemKey }: Readonly<{
+export function ProjectButterBody({ active, compact, sidePanel, content, descriptionReveal, detailsSlotRef, empty, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, onStartedSessionRevealed, openRelatedItem, previewSessionId, startedSessionId, relatedScope, sessions, singleActivityView = false, workItemKey }: Readonly<{
 	active: boolean;
+	compact?: boolean;
 	sidePanel: boolean;
 	content: ProjectButterContent;
 	descriptionReveal?: { id: number; text: string } | null;
@@ -33,7 +34,7 @@ export function ProjectButterBody({ active, sidePanel, content, descriptionRevea
 	// The bar keeps 24px below the Activity header with no rows, and 24px below the lone "created" row of a new item.
 	const activityRows = content.activityEntries.length === 0 ? "none" : content.activityEntries.every((entry) => entry.kind === "event" && entry.icon === "created") ? "origin" : "feed";
 	return (
-		<div className="flex min-w-0 flex-col gap-6">
+		<div className={compact ? "flex min-w-0 flex-col gap-4" : "flex min-w-0 flex-col gap-6"}>
 			<ProjectButterDescription content={content} empty={empty} onRevealComplete={onDescriptionRevealComplete} reveal={descriptionReveal} />
 			<div className={sidePanel ? undefined : "@[860px]/butter:hidden"} ref={detailsSlotRef} />
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
