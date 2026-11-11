@@ -8,6 +8,7 @@ import { BUTTER_PICKER_AGENTS } from "./project-butter-agent-catalog";
 import { useProjectButterInvocationActions } from "./project-butter-invocation";
 
 const SOFTWARE_IDS = ["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent", "rovo-cli"];
+const CLOUD_AGENTS = BUTTER_PICKER_AGENTS.filter((agent) => agent.id !== "github-copilot" && agent.id !== "rovo-cli");
 
 export function ProjectButterAgentPreviewBoundary({ agents, children }: Readonly<{ agents: readonly AgentSelectorAgent[]; children: ReactNode }>) {
 	const invocation = useProjectButterInvocationActions();
@@ -53,8 +54,9 @@ export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status
 	onBrowseAgents?: () => void;
 	status?: string;
 }>) {
-	return <ProjectButterAgentPreviewBoundary agents={BUTTER_PICKER_AGENTS}><InlineAgentSelector
-		agents={BUTTER_PICKER_AGENTS.filter((agent) => agent.id !== "github-copilot" && agent.id !== "rovo-cli")}
+	return <ProjectButterAgentPreviewBoundary agents={CLOUD_AGENTS}><InlineAgentSelector
+		agents={CLOUD_AGENTS}
+		recommendedAgentId="the-council"
 		softwareAgentIds={SOFTWARE_IDS}
 		initialSoftwareLimit={3}
 		getActions={(agent) => [{ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => onAssign(agent) }]}
