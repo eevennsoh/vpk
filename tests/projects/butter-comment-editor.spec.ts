@@ -33,6 +33,34 @@ test("gallery Claude mentions offer the existing completed session", async ({ pa
 	await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveText("Review the remaining action items");
 });
 
+test("session previews match comment hover and mask the timeline behind reply controls", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	await page.getByRole("textbox", { name: "Comment editor" }).pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const session = page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Rewrite the incident postmortem/ });
+	await session.hover();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]');
+	await expect(thread).toHaveAttribute("data-active", "");
+	const previewColors = await thread.evaluate((row) => ({
+		plate: getComputedStyle(row, "::after").backgroundColor,
+		mask: getComputedStyle(row.querySelector("[data-jira-activity-reply-toggle-icon]")!).backgroundImage,
+	}));
+	const hoveredThread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]');
+	await hoveredThread.locator("[data-jira-activity-reply-toggle-icon]").hover();
+	await expect.poll(() => hoveredThread.evaluate((row) => getComputedStyle(row, "::after").backgroundColor)).toBe(previewColors.plate);
+	const hoverColors = await hoveredThread.evaluate((row) => ({
+		plate: getComputedStyle(row, "::after").backgroundColor,
+		mask: getComputedStyle(row.querySelector("[data-jira-activity-reply-toggle-icon]")!).backgroundImage,
+	}));
+	expect(hoverColors.mask).not.toBe("none");
+	expect(previewColors).toEqual(hoverColors);
+});
+
 test("gallery Claude session choices support multiple sessions and Back", async ({ page }) => {
 	const editor = await openGalleryCommentEditor(page);
 	await mentionGalleryClaude(page);
