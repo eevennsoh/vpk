@@ -47,7 +47,7 @@ export function ProjectButterDevelopmentGallery({ author }: Readonly<{ author: P
 	useEffect(() => {
 		const next = nextProjectButterDevelopmentPhase(phase, autoFixEnabled, autoMergeEnabled);
 		if (!next) return;
-		const timer = window.setTimeout(() => setPhase(next), 5000);
+		const timer = window.setTimeout(() => setPhase(next), next === "merged" ? 2000 : 5000);
 		return () => window.clearTimeout(timer);
 	}, [autoFixEnabled, autoMergeEnabled, phase]);
 	return <ProjectButterDevelopmentJourney author={author} autoFixEnabled={autoFixEnabled} autoMergeEnabled={autoMergeEnabled} onAutoFixChange={setAutoFixEnabled} onAutoMergeChange={setAutoMergeEnabled} onFixCheck={() => setPhase("fixing")} onMergePullRequest={() => setPhase("merged")} phase={phase} />;

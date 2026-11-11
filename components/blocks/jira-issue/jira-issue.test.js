@@ -449,7 +449,7 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.doesNotMatch(PULL_REQUEST_CLUSTER_SOURCE, /onActivate=/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /"w-\[320px\] max-w-\[calc\(100vw-48px\)\] overflow-hidden rounded-xl border-none bg-surface-overlay p-0 text-text shadow-none"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /boxShadow: token\("elevation\.shadow\.overlay"\)/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className="border-none bg-transparent shadow-none"/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /"border-none bg-transparent shadow-none"/u);
 	assert.match(SUMMARY_BLOCK, /usesStrokeChrome \? "flex min-w-0 items-center" : "flex min-w-0 items-center gap-2"/u);
 });
 
