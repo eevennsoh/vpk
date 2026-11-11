@@ -2,8 +2,6 @@
 
 import { use, useEffect, useRef } from "react";
 
-import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
-
 import {
 	type AgentAssignmentAgent,
 } from "@/components/blocks/agent-assignment/components/agent-assignment";
@@ -12,12 +10,8 @@ import { TeammateSessionsDisclosure } from "@/components/blocks/agent-assignment
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
 import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 
 export function AssignedAgentsSessionMenu({
-	addAgentLabel,
-	onAddAgent,
 	onContinueInAgent,
 	onDeleteSession,
 	onMoreMenuOpenChange,
@@ -26,8 +20,6 @@ export function AssignedAgentsSessionMenu({
 	onToggleVisibility,
 	rows,
 }: Readonly<{
-	addAgentLabel: string;
-	onAddAgent?: () => void;
 	onContinueInAgent?: (item: AgentSessionItem) => void;
 	onDeleteSession?: (item: AgentSessionItem) => void;
 	onMoreMenuOpenChange?: (open: boolean) => void;
@@ -37,9 +29,7 @@ export function AssignedAgentsSessionMenu({
 	rows: readonly AgentAssignmentAgent[];
 }>) {
 	return <AgentSessionsMenu
-		addAgentLabel={addAgentLabel}
 		items={rows.map(toAssignmentSessionItem)}
-		onAddAgent={onAddAgent}
 		onContinueInAgent={onContinueInAgent}
 		onDeleteSession={onDeleteSession}
 		onMoreMenuOpenChange={onMoreMenuOpenChange}
@@ -53,11 +43,9 @@ export function AssignedAgentsSessionMenu({
 }
 
 export function AgentSessionsMenu({
-	addAgentLabel,
 	items,
 	localSessionAction = "continue",
 	overlayPositionerClassName = "z-[600]",
-	onAddAgent,
 	onContinueInAgent,
 	onDeleteSession,
 	onMoreMenuOpenChange,
@@ -65,11 +53,9 @@ export function AgentSessionsMenu({
 	onSelectSession,
 	onToggleVisibility,
 }: Readonly<{
-	addAgentLabel: string;
 	items: readonly AgentSessionItem[];
 	localSessionAction?: "continue" | "view";
 	overlayPositionerClassName?: string;
-	onAddAgent?: () => void;
 	onContinueInAgent?: (item: AgentSessionItem) => void;
 	onDeleteSession?: (item: AgentSessionItem) => void;
 	onMoreMenuOpenChange?: (open: boolean) => void;
@@ -124,21 +110,6 @@ export function AgentSessionsMenu({
 					<TeammateSessionsDisclosure items={teammateItems}>
 						<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 					</TeammateSessionsDisclosure>
-				</div>
-			) : null}
-			{onAddAgent ? (
-				<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">
-					<Button
-						className="h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal"
-						onClick={onAddAgent}
-						type="button"
-						variant="ghost"
-					>
-						<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">
-							<Icon className="size-4" render={<AiAgentAddIcon label="" />} />
-						</span>
-						<span className="min-w-0 truncate text-text-subtle">{addAgentLabel}</span>
-					</Button>
 				</div>
 			) : null}
 		</div>

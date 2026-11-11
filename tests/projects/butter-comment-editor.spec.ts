@@ -673,7 +673,6 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	await editor.press("Enter");
 	const crew = workItem.getByRole("button", { name: /^Working on this work item\./ });
 	await crew.click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	const actions = page.getByRole("menu", { name: "Run Claude on" });
@@ -694,13 +693,11 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	await expect(chat.getByRole("log").getByText("@Claude Review retry behavior")).toHaveCount(0);
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 	await crew.click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
 	await expect(chat).toBeHidden();
 	await crew.click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();

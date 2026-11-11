@@ -811,7 +811,6 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 				>
 					<ButterInlineAgentPickerContext value={boardOnly}>
 					<ExperimentalJiraKanbanPage
-						showSessionAddAgent={false}
 						boardOnly={boardOnly}
 						collapsedColumns={collapsedColumns}
 						onCollapsedColumnsChange={onCollapsedColumnsChange}

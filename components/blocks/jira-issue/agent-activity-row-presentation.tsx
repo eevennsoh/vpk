@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, type ReactElement } from "react";
+import { useCallback, useRef, type ReactElement } from "react";
 import { useReducedMotion } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
@@ -16,9 +16,8 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { JiraIssueAgentLinkFlashOverlay, type JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
-import { useProjectButterInvocationActions, useProjectButterInvocationEnabled, useProjectButterInvocationPhase, useProjectButterInvocationPreview, useProjectButterInvocationSource } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { useProjectButterInvocationPhase, useProjectButterInvocationPreview } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { matchesInvocationAgent } from "@/components/blocks/jira-issue/project-butter-invocation-model";
-import { ProjectButterMenuAgentPicker } from "@/components/blocks/jira-issue/project-butter-add-agent";
 import { JiraIssueAgentHandoffLabel } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
 import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issue/agent-session-unlink-button";
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
@@ -54,7 +53,6 @@ export type JiraIssueAgentAssignment = Partial<
 		| "onRenameAssignedAgent"
 		| "onStartNewSession"
 		| "pinnedItemsLabel"
-		| "showSessionAddAgent"
 		| "usedAgentIds"
 	>
 > & {
@@ -400,12 +398,6 @@ export function JiraIssueAgentAssignmentHandle({
 	showAssignmentFlyout: boolean;
 }>): ReactElement {
 	const assignmentHandleRef = useRef<HTMLDivElement>(null);
-	const pickerId = useId();
-	const invocation = useProjectButterInvocationActions();
-	const invocationEnabled = useProjectButterInvocationEnabled();
-	const phase = useProjectButterInvocationPhase();
-	const source = useProjectButterInvocationSource();
-	const pickerOpen = phase === "choosing" && source === "session";
 	const resolveAssignmentAnchor = useCallback(() => (
 		assignmentHandleRef.current?.closest<HTMLElement>('[data-slot="jira-issue-agent-row"]')
 			?? assignmentHandleRef.current
@@ -417,10 +409,9 @@ export function JiraIssueAgentAssignmentHandle({
 	}
 
 	return (
-		<div aria-controls={invocationEnabled && assignment?.onAssignedAgentIdsChange && pickerOpen ? pickerId : undefined} className="flex h-full min-w-0 flex-1 items-center" ref={assignmentHandleRef}>
+		<div className="flex h-full min-w-0 flex-1 items-center" ref={assignmentHandleRef}>
 			<AgentAssignment
 				addAgentLabel={assignment?.addAgentLabel ?? (activities.every((activity) => activity.role === "viewer") ? "New session" : undefined)}
-				showSessionAddAgent={assignment?.showSessionAddAgent}
 				agents={agents}
 				assignedAgents={assignedAgents}
 				defaultPinnedAgentIds={assignment?.defaultPinnedAgentIds}
@@ -442,7 +433,6 @@ export function JiraIssueAgentAssignmentHandle({
 				onDeleteAssignedAgent={assignment?.onDeleteAssignedAgent}
 				onRenameAssignedAgent={assignment?.onRenameAssignedAgent}
 				onOpenChange={onOpenChange}
-				onRequestAddAgent={invocationEnabled && invocation && assignment?.onAssignedAgentIdsChange ? () => invocation.open("session") : undefined}
 				onStartNewSession={assignment?.onStartNewSession}
 				openMode="click"
 				pinnedItemsLabel={assignment?.pinnedItemsLabel}
@@ -451,7 +441,6 @@ export function JiraIssueAgentAssignmentHandle({
 				trigger={rowHandle}
 				usedAgentIds={assignment?.usedAgentIds}
 			/>
-			{invocationEnabled && assignment?.onAssignedAgentIdsChange && assignment.showSessionAddAgent !== false ? <ProjectButterMenuAgentPicker assignment={assignment} id={pickerId} source="session" triggerRef={assignmentHandleRef} /> : null}
 		</div>
 	);
 }

@@ -82,10 +82,8 @@ export interface AgentAssignmentProps {
 	allowArchive?: boolean;
 	/** Comfortable scale uses the Avatar working spinner; compact keeps the shared default. */
 	activityIconScale?: JiraIssueIconScale;
-	/** Copy for the empty field and the action in the assigned-agents menu. */
+	/** Copy for the empty field and the Simple menu add action. */
 	addAgentLabel?: string;
-	/** Show the add action in the attached-session menu. */
-	showSessionAddAgent?: boolean;
 	/** Let attached activity identities begin at the empty Assign agent label's edge. */
 	activityRowFlush?: boolean;
 	/** Override the flyout's anchor when its trigger is inset within a row. */
@@ -149,7 +147,6 @@ export function AgentAssignment({
 	allowArchive = true,
 	activityIconScale,
 	addAgentLabel = "Assign agent",
-	showSessionAddAgent = true,
 	activityRowFlush,
 	hoverAnchor,
 	className,
@@ -392,8 +389,6 @@ export function AgentAssignment({
 		/>
 	) : (
 		<AssignedAgentsSessionMenu
-			addAgentLabel={addAgentLabel}
-			onAddAgent={showSessionAddAgent && onAssignedAgentIdsChange ? handleShowSelector : undefined}
 			onContinueInAgent={onContinueExistingSession
 				? (item) => runAssignedSessionAction(assignedAgents, item.id, onContinueExistingSession)
 				: undefined}

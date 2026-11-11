@@ -16,7 +16,7 @@ const menuSource = `
 const themeMock = { "@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });" };
 const disclosure = { name: "Sessions from your teammates" };
 const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { name: "Sample agent" }, state: "complete", host: "cloud", role, ...extras });
-const menuProps = (items, extras = {}) => ({ addAgentLabel: "Add agent", items, onSelectSession() {}, ...extras });
+const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
 
 test("session menu folds teammate sessions into one flat list after own sessions without headings or counts", async () => {
@@ -45,16 +45,13 @@ test("session menu folds teammate sessions into one flat list after own sessions
 	} finally { await view.unmount(); }
 });
 
-test("owner-only, viewer-only, expired and empty menus retain their separate semantics and add action", async () => {
-	let added = 0;
-	const onAddAgent = () => { added++; };
-	const view = await renderMenu(menuProps([session("mine", "owner")], { onAddAgent }));
+test("owner-only, viewer-only, expired and empty menus retain their separate semantics without an assignment footer", async () => {
+	const view = await renderMenu(menuProps([session("mine", "owner")]));
 	try {
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.queryByRole("separator"), null);
-		await view.click(view.getByRole("button", { name: "Add agent" }));
-		assert.equal(added, 1);
-		await view.rerender(menuProps([session("teammate", "viewer")], { onAddAgent }));
+		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }), null);
+		await view.rerender(menuProps([session("teammate", "viewer")]));
 		assert.equal(view.queryByRole("list"), null);
 		assert.equal(view.queryByRole("separator"), null);
 		await view.click(view.getByRole("button", disclosure));
@@ -63,12 +60,11 @@ test("owner-only, viewer-only, expired and empty menus retain their separate sem
 		assert.equal(view.getByText("expired work").closest("article").querySelector("button")?.getAttribute("aria-label"), "More actions for expired work");
 		assert.equal(view.queryByRole("separator"), null);
 		assert.equal(view.queryByRole("button", { name: /^expired work/u }), null);
-		await view.rerender(menuProps([], { onAddAgent }));
+		await view.rerender(menuProps([]));
 		assert.equal(view.getByText("No agents assigned").textContent, "No agents assigned");
 		assert.equal(view.queryByRole("button", disclosure), null);
 		assert.equal(view.queryByRole("list"), null);
-		await view.click(view.getByRole("button", { name: "Add agent" }));
-		assert.equal(added, 2);
+		assert.equal(view.queryByRole("button", { name: /^(Add|Assign) agent$/u }), null);
 		await view.rerender(menuProps([session("teammate", "viewer")]));
 		assert.equal(view.getByRole("button", disclosure).getAttribute("aria-expanded"), "false");
 	} finally { await view.unmount(); }
@@ -168,6 +164,7 @@ test("assignment stays open when its disclosure folds and when an owner menu por
 				{ id: "owner", name: "Sample owner", host: "cloud", role: "owner", statusKind: "finished" },
 				{ id: "viewer", name: "Sample viewer", host: "cloud", role: "viewer", statusKind: "finished" },
 			],
+			onAssignedAgentIdsChange() {},
 			onAssignedAgentSelect: (item) => calls.push(["select", item.id]),
 			onRenameAssignedAgent: (item) => calls.push(["rename", item.id]),
 		},
@@ -175,6 +172,7 @@ test("assignment stays open when its disclosure folds and when an owner menu por
 	try {
 		const assignment = view.getByRole("button", { name: "Edit agents" });
 		await view.click(assignment);
+		assert.equal(view.queryByRole("button", { name: "Assign agent" }), null);
 		const trigger = view.getByRole("button", disclosure);
 		await view.press(trigger, "Enter");
 		await view.click(view.getByRole("button", { name: /More actions for/u }));
@@ -278,11 +276,6 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 	);
 	assert.match(sessionMenu, /rows\.map\(toAssignmentSessionItem\)/u);
 	assert.doesNotMatch(sessionMenu, /density="short"/u);
-	assert.match(sessionMenu, /\{addAgentLabel\}/u);
-	assert.match(
-		sessionMenu,
-		/className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1"/u,
-	);
 	assert.doesNotMatch(sessionMenu, /mx-1/u);
 	assert.doesNotMatch(mapper, /timeLabel: agent\.statusLabel/u);
 	assert.match(mapper, /\.\.\.\(agent\.timeLabel \? \{ timeLabel: agent\.timeLabel \} : \{\}\)/u);
@@ -306,4 +299,59 @@ test("needs-input preserves explicit viewer ownership", () => {
 	assert.equal(assignmentSessionRole("working", "viewer"), "viewer");
 	assert.equal(assignmentSessionRole("idle", "owner"), "owner");
 	assert.equal(assignmentSessionRole("finished"), undefined);
+});
+
+test("Simple add action and empty assignment trigger still open the selector", async () => {
+	const props = {
+		agents: [{ id: "available", name: "Available agent", byline: "Sample capability" }],
+		assignedAgents: [{ id: "owner", name: "Sample owner", byline: "Sample capability", statusLabel: "Finished", host: "cloud", role: "owner", statusKind: "finished" }],
+		onAssignedAgentIdsChange() {},
+		variant: "simple",
+	};
+	const view = await renderComponent({
+		entry: "components/blocks/agent-assignment/components/agent-assignment.tsx",
+		exportName: "AgentAssignment", mocks: themeMock, props,
+	});
+	try {
+		await view.click(view.getByRole("button", { name: "Edit agents" }));
+		await view.click(view.getByRole("button", { name: "Assign agent" }));
+		assert.equal(view.queryByRole("combobox", { name: "Search agents" }) !== null, true);
+	} finally { await view.unmount(); }
+	for (const variant of ["default", "simple"]) {
+		const empty = await renderComponent({
+			entry: "components/blocks/agent-assignment/components/agent-assignment.tsx",
+			exportName: "AgentAssignment", mocks: themeMock, props: { ...props, assignedAgents: [], variant },
+		});
+		try {
+			await empty.click(empty.getByRole("button", { name: "Assign agent" }));
+			assert.equal(empty.queryByRole("combobox", { name: "Search agents" }) !== null, true, variant);
+		} finally { await empty.unmount(); }
+	}
+});
+
+test("Simple keeps its external add callback while Default has no assignment footer", async () => {
+	let requested = 0;
+	const props = {
+		agents: [],
+		assignedAgents: [{ id: "owner", name: "Sample owner", byline: "Sample capability", statusLabel: "Finished", host: "cloud", role: "owner", statusKind: "finished" }],
+		onAssignedAgentIdsChange() {},
+		onRequestAddAgent() { requested++; },
+	};
+	for (const variant of ["simple", "default"]) {
+		const view = await renderComponent({
+			entry: "components/blocks/agent-assignment/components/agent-assignment.tsx",
+			exportName: "AgentAssignment", mocks: themeMock, props: { ...props, variant },
+		});
+		try {
+			await view.click(view.getByRole("button", { name: "Edit agents" }));
+			if (variant === "simple") {
+				await view.click(view.getByRole("button", { name: "Assign agent" }));
+				assert.equal(requested, 1);
+				assert.equal(view.queryByRole("dialog", { name: "Agent assignment" }), null);
+			} else {
+				assert.equal(view.queryByRole("button", { name: "Assign agent" }), null);
+				assert.equal(requested, 1);
+			}
+		} finally { await view.unmount(); }
+	}
 });

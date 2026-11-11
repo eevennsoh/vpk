@@ -171,7 +171,6 @@ export default function ExperimentalJiraKanbanPage({
 
 function ExperimentalJiraKanbanPageContent({
 	activeView = "board", addAgentLabel,
-	showSessionAddAgent,
 	boardOnly = false,
 	collapsedColumns: controlledCollapsedColumns,
 	onCollapsedColumnsChange,
@@ -959,7 +958,6 @@ function ExperimentalJiraKanbanPageContent({
 						</RetainedView>
 						<RetainedView active={!isListContent} retain={retainWorkItemViews}>
 							<ExperimentalJiraKanban addAgentLabel={addAgentLabel}
-								showSessionAddAgent={showSessionAddAgent}
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
 								boardAgentSessionDrag={boardSessionDrag}
