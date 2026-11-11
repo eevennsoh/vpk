@@ -3,6 +3,28 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("teammate sessions keep their popover alignment while expanding near the viewport edge", async ({ page }) => {
+	await page.setViewportSize({ width: 1398, height: 1236 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "6 agents: Working" }).click();
+	const popup = page.getByRole("dialog", { name: "Agent assignment" });
+	const disclosure = popup.getByRole("button", { name: "Sessions from your teammates" });
+	await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+	await page.setViewportSize({ width: 1398, height: 900 });
+	await expect(popup).toHaveAttribute("data-align", "start");
+	await disclosure.click();
+	await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+	const panel = popup.locator('[data-slot="collapsible-content"]');
+	await expect.poll(() => panel.evaluate((element) => Math.abs(element.getBoundingClientRect().height - element.scrollHeight))).toBeLessThan(1);
+	await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+	await expect(popup).toHaveAttribute("data-align", "start");
+	await expect(popup.getByText("Recording decline-code fixtures")).toBeVisible();
+	await disclosure.press("Escape");
+	await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+	await expect(disclosure).toBeFocused();
+});
+
 test("board chin avatars fit a 24px slot without shrinking list avatars", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

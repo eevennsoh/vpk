@@ -31,6 +31,7 @@ function PopoverAnchorVisibility({
 
 function PopoverContent({
 	anchor,
+	collisionAvoidance,
 	onAnchorHidden,
   className,
   positionerClassName,
@@ -42,7 +43,7 @@ function PopoverContent({
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
-		"anchor" | "align" | "alignOffset" | "side" | "sideOffset"
+		"anchor" | "align" | "alignOffset" | "collisionAvoidance" | "side" | "sideOffset"
   > & {
 		/** Called when the anchor is fully clipped by its scroll ancestors or viewport. */
 		onAnchorHidden?: () => void
@@ -52,6 +53,7 @@ function PopoverContent({
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
 				anchor={anchor}
+				collisionAvoidance={collisionAvoidance}
         align={align}
         alignOffset={alignOffset}
         side={side}
