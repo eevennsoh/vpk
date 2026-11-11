@@ -125,7 +125,7 @@ test("multiple pull requests open the selected preview and return to the list", 
 	await expect(page.getByRole("group", { name: "Pull request status" }).getByRole("button", { name: "Open PR" })).toHaveAttribute("aria-pressed", "true");
 });
 
-test("kanban pull request previews show only the summary in both PR states", async ({ page }) => {
+test("kanban pull request previews show read-only details in both PR states", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Pull request" }).click();
 	const stage = page.locator("[data-butter-gallery-pull-request]");
@@ -136,11 +136,11 @@ test("kanban pull request previews show only the summary in both PR states", asy
 		await expect(preview).toContainText("#284 Add merchant onboarding quickstart");
 		await expect(preview).toContainText("Venn");
 		await expect(preview).toContainText(state === "Open PR" ? "Open" : "Merged");
-		await expect(preview).not.toContainText("payments-platform/payments");
-		await expect(preview).not.toContainText("rovo/pay-999-merchant-onboarding");
-		await expect(preview).not.toContainText("6 files");
+		await expect(preview).toContainText("payments-platform/payments");
+		await expect(preview).toContainText("rovo/pay-999-merchant-onboarding");
+		await expect(preview).toContainText("6 files");
 		await expect(preview.getByRole("button", { name: /builds? passed/ })).toHaveCount(0);
-		await expect(preview.getByRole("group", { name: /additions, .* deletions/ })).toHaveCount(0);
+		await expect(preview.getByRole("group", { name: /additions, .* deletions/ })).toBeVisible();
 		await page.keyboard.press("Escape");
 	}
 });

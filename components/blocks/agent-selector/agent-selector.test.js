@@ -24,6 +24,32 @@ const AGENT_SELECTOR_DROPDOWN_CALLSITE_SOURCES = [
 	sourcePath,
 }));
 
+test("inline recommendations stay first, selectable, and searchable without duplication", async () => {
+	const selected = [];
+	const view = await renderComponent({
+		entry: "components/blocks/agent-selector/components/inline-agent-selector.tsx",
+		exportName: "InlineAgentSelector",
+		props: {
+			agents: [{ id: "council", name: "The Council", byline: "" }, { id: "coding", name: "Coding agent", byline: "" }],
+			softwareAgentIds: ["coding"],
+			recommendedAgentId: "council",
+			favoriteAgentIds: ["council"],
+			onFavoriteAgentIdsChange: () => {},
+			getActions: (agent) => [{ id: "start", label: "Start", icon: null, onSelect: () => selected.push(agent.id) }],
+		},
+	});
+	const recommendation = view.getByRole("button", { name: "The Council (Recommended)" });
+	assert.equal(view.container.querySelector("[data-agent-id]")?.getAttribute("data-agent-id"), "council");
+	assert.equal(view.container.querySelectorAll('[data-agent-id="council"]').length, 1);
+	await view.click(recommendation);
+	assert.deepEqual(selected, ["council"]);
+	const search = view.getByRole("textbox", { name: "Search agents" });
+	await view.fill(search, "coding");
+	assert.equal(view.container.querySelector('[data-agent-id="council"]'), null);
+	await view.fill(search, "council");
+	assert.equal(view.getByRole("button", { name: "The Council (Recommended)" }) !== null, true);
+});
+
 test("AgentSelector keyboard navigation skips disabled agents", async () => {
 	const selected = [];
 	const view = await renderComponent({

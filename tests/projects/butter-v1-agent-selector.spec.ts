@@ -17,6 +17,17 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
 	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
+	const recommendation = picker.getByRole("button", { name: "The Council (Recommended)", exact: true });
+	const recommendationLabel = recommendation.getByText("(Recommended)", { exact: true });
+	const subtlestColor = await recommendationLabel.evaluate((element) => {
+		const probe = document.createElement("span");
+		probe.style.color = "var(--ds-text-subtlest)";
+		element.appendChild(probe);
+		const color = getComputedStyle(probe).color;
+		probe.remove();
+		return color;
+	});
+	await expect(recommendationLabel).toHaveCSS("color", subtlestColor);
 	await expect(picker.getByRole("region", { name: "Software agents" })).toBeVisible();
 	await expect(picker.getByRole("region", { name: "Other agents" })).toBeVisible();
 	await expect(picker.getByText("Jira Coding Agent", { exact: true })).toBeVisible();

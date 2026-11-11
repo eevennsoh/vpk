@@ -26,6 +26,12 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-loading-demo-vertical": dynamic(
+		() => import("../../demos/ui-custom/agent-loading-demo").then((mod) => ({
+			default: mod.AgentLoadingDemoVertical,
+		})),
+		{ ssr: false },
+	),
 	"prompt-input-demo-chat-composer": dynamic(
 		() =>
 			import("../../demos/ui-custom/prompt-input-demo").then((mod) => ({

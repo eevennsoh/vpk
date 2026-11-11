@@ -235,6 +235,7 @@ test("non-merged pull requests show a compact CI summary without check details",
 });
 
 test("CI checks follow the automation settings and allow manual repair and merge", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.clock.install();
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	await page.getByRole("button", { name: "Configure", exact: true }).click();
@@ -253,6 +254,12 @@ test("CI checks follow the automation settings and allow manual repair and merge
 	await expect(request).toContainText("checks running");
 	await page.clock.fastForward(5000);
 	await expect(request).toContainText("3/3 builds passed");
+	const completed = request.locator('[data-slot="progress-circle"]');
+	const completedSlot = await completed.boundingBox();
+	const completedIcon = await completed.locator("svg").filter({ has: page.locator("path.text-icon-success") }).boundingBox();
+	if (completedSlot === null || completedIcon === null) throw new Error("Completed checks icon must be visible");
+	expect(completedIcon.x + completedIcon.width / 2).toBeCloseTo(completedSlot.x + completedSlot.width / 2, 1);
+	expect(completedIcon.y + completedIcon.height / 2).toBeCloseTo(completedSlot.y + completedSlot.height / 2, 1);
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Merge pull request" }).click();
 	await expect(request).toContainText("Merged");

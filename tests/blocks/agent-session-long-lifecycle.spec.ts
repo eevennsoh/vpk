@@ -4,6 +4,26 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("viewer and owner working indicators stay centered in the assignment menu", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	const trigger = page.getByRole("button", { name: "2 agents: Working" });
+	await trigger.focus();
+	await page.keyboard.press("Enter");
+	const menu = page.locator('[aria-label="Agent assignment"]');
+	await expect(menu).toBeVisible();
+	const indicators = menu.locator('[aria-label="Working"]');
+	await expect(indicators).toHaveCount(2);
+	for (const indicator of await indicators.all()) {
+		const slot = await indicator.boundingBox();
+		const spinner = await indicator.locator('[data-slot="spinner"]').boundingBox();
+		if (slot === null || spinner === null) throw new Error("Working indicator must be visible");
+		expect(spinner.x + spinner.width / 2).toBeCloseTo(slot.x + slot.width / 2, 1);
+		expect(spinner.y + spinner.height / 2).toBeCloseTo(slot.y + slot.height / 2, 1);
+	}
+});
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Jira agent chin swaps its status for a chevron on hover and keyboard focus (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });

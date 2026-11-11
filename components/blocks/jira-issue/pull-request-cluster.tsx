@@ -217,6 +217,7 @@ export function JiraIssuePullRequestCluster({
 					author={preview?.author}
 					branch={preview?.branch}
 					checks={preview?.checks}
+					checksExpandable={false}
 					className="border-none bg-transparent shadow-none"
 					deletions={preview?.deletions ?? 0}
 					filesChanged={preview?.filesChanged}
@@ -225,7 +226,6 @@ export function JiraIssuePullRequestCluster({
 					relativeTime={preview?.relativeTime}
 					repository={preview?.repository}
 					status={toPullRequestCardStatus(status)}
-					showDetails={false}
 					targetBranch={preview?.targetBranch}
 					title={overlayTitle}
 					variant="flyout"

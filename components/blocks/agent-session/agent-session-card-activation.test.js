@@ -6,6 +6,7 @@ const React = require("react");
 const { createRoot } = require("react-dom/client");
 const { parseHTML } = require("linkedom");
 const { loadCjsModuleFromText } = require("../../../scripts/lib/esbuild-cjs-loader.js");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 let harnessPromise;
 function loadHarness() {
@@ -202,6 +203,19 @@ async function withCard(props, verify, Component) {
 
 const LOCAL_ITEM = { id: "local-readiness", title: "Final readiness", host: "local", state: "complete", agent: { id: "claude", name: "Claude", kind: "agent" } };
 
+test("viewer lifecycle shows every state without an actionable status control", async () => {
+	for (const [state, label] of [["running", "Working"], ["needs-input", "Needs input"], ["attention", "Needs attention"], ["complete", "Finished"]]) {
+		for (const [exportName, props] of [
+			["AgentSessionShortLifecycleIcon", { state, showAllStates: true }],
+			["AgentSessionLifecycle", { state, readOnly: true }],
+		]) {
+			const view = await renderComponent({ entry: "components/blocks/agent-session/agent-session-lifecycle.tsx", exportName, props });
+			assert.ok(view.getAllByRole("img", { name: label }).length > 0);
+			assert.equal(view.queryByRole("button", { name: label }), null);
+		}
+	}
+});
+
 test("session cards show the correct hover and selection surfaces", async () => {
 	const item = { ...LOCAL_ITEM, host: "cloud" };
 	await withCard({ item, onView() {} }, async ({ document, render }) => {
@@ -244,6 +258,13 @@ test("owner cards retain their hover session preview while viewer cards keep it 
 			assert.equal(document.querySelector("[data-session-preview-trigger]") !== null, props.item.role !== "viewer");
 		});
 	}
+});
+
+test("viewer cards expose their explanation from the keyboard without an extra action", async () => {
+	await withCard({ item: { ...LOCAL_ITEM, role: "viewer" } }, async ({ document }) => {
+		assert.equal(document.querySelector("article").getAttribute("tabindex"), "0");
+		assert.equal(document.querySelector("button"), null);
+	});
 });
 
 test("a draggable local card opens Continue in instead of invoking View or copying directly", async () => {

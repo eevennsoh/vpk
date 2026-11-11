@@ -26,6 +26,8 @@ export function ContentSearchField({
 					<SearchIcon label="" size="small" color={token("color.icon.subtle")} />
 				</span>
 				<Input
+					type="search"
+					aria-label={placeholder}
 					placeholder={placeholder}
 					value={value}
 					onChange={(e) => onChange((e.target as HTMLInputElement).value)}

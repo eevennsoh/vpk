@@ -30,7 +30,8 @@ const COMPACT_CODEX_VISUAL: CodingAgentVisual = {
 
 /** Coding brand treatments are opt-in; other avatar consumers keep their defaults. */
 export function getCodingAgentVisual(brandName: ThirdPartyLogoName | undefined, sizePx?: number) {
-	// Compact chins use the glyph's authored bounds, without the tile's empty padding.
+	// Compact avatars use the glyph's authored bounds, without the tile's empty padding.
+	if (brandName === "openai-codex" && sizePx === 16) return { ...COMPACT_CODEX_VISUAL, logoFrameSizePx: 16 };
 	if (brandName === "openai-codex" && sizePx === 20) return COMPACT_CODEX_VISUAL;
 	return brandName ? CODING_AGENT_VISUALS[brandName] : undefined;
 }
