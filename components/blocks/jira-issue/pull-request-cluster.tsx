@@ -203,7 +203,7 @@ export function JiraIssuePullRequestCluster({
 						{pullRequests?.toSorted((a, b) => PULL_REQUEST_STATUS_ORDER[a.status] - PULL_REQUEST_STATUS_ORDER[b.status]).map((item) => (
 							<li key={item.number}>
 								<Button className="flex h-auto w-full items-start justify-start gap-3 rounded-md px-2 py-2 text-left whitespace-normal" data-pr-number={item.number} onClick={() => setSelected(item)} variant="ghost">
-									<PullRequestInlineTitle className="flex-1" number={item.number} title={item.preview.title} />
+									<PullRequestInlineTitle className="flex-1 truncate whitespace-nowrap" number={item.number} title={item.preview.title} />
 									<PullRequestStatusLozenge status={toPullRequestCardStatus(item.status)} />
 								</Button>
 							</li>
@@ -211,14 +211,14 @@ export function JiraIssuePullRequestCluster({
 					</ul>
 				) : (
 					<>
-					{selected ? <MenuBackButton autoFocus onClick={() => { returnFocusNumber.current = selected.number; setSelected(null); }} /> : null}
+					{selected ? <MenuBackButton autoFocus className="h-9" iconSize="compact" onClick={() => { returnFocusNumber.current = selected.number; setSelected(null); }} /> : null}
 				<PullRequest
 					additions={preview?.additions ?? 0}
 					author={preview?.author}
 					branch={preview?.branch}
 					checks={preview?.checks}
 					checksExpandable={false}
-					className="border-none bg-transparent shadow-none"
+					className={cn("border-none bg-transparent shadow-none", selected && "pt-1")}
 					deletions={preview?.deletions ?? 0}
 					filesChanged={preview?.filesChanged}
 					href={preview?.href}
@@ -226,6 +226,7 @@ export function JiraIssuePullRequestCluster({
 					relativeTime={preview?.relativeTime}
 					repository={preview?.repository}
 					status={toPullRequestCardStatus(status)}
+					showFix={false}
 					targetBranch={preview?.targetBranch}
 					title={overlayTitle}
 					variant="flyout"

@@ -639,13 +639,14 @@ test("the Development panel gallery item shows the populated interactive panel",
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.clock.install();
+	await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 100));
 	await page.getByRole("button", { name: "Select Development panel" }).click();
 	const panel = page.getByRole("region", { name: "Pull request development" });
 	await expect(panel).toHaveAttribute("data-project-butter-development", "failed");
 	await expect(panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ })).toBeVisible();
 	const initial = await panel.boundingBox();
 	if (!initial) throw new Error("Development panel has no bounds");
-	for (const phase of ["fixing", "passed", "merged"]) {
+	for (const phase of ["fixing", "passed"]) {
 		await page.clock.fastForward(5000);
 		await expect(panel).toHaveAttribute("data-project-butter-development", phase);
 		const current = await panel.boundingBox();
@@ -653,8 +654,37 @@ test("the Development panel gallery item shows the populated interactive panel",
 		expect(Math.abs(current.x - initial.x)).toBeLessThanOrEqual(1);
 		expect(Math.abs(current.y - initial.y)).toBeLessThanOrEqual(1);
 	}
+	await page.clock.fastForward(1999);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
+	await page.clock.fastForward(1);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "merged");
+	const merged = await panel.boundingBox();
+	if (!merged) throw new Error("Development panel has no bounds in merged");
+	expect(Math.abs(merged.x - initial.x)).toBeLessThanOrEqual(1);
+	expect(Math.abs(merged.y - initial.y)).toBeLessThanOrEqual(1);
 	await panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).click();
 	await expect(page.getByText("payments-platform/payments").first()).toBeVisible();
+});
+
+test("the Development panel waits for manual merge when automation is disabled", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1600, height: 1200 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.clock.install();
+	await page.getByRole("button", { name: "Select Development panel" }).click();
+	const panel = page.getByRole("region", { name: "Pull request development" });
+	await panel.getByRole("button", { name: "Configure", exact: true }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Merge when ready" }).click();
+	await page.keyboard.press("Escape");
+	await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 100));
+	await page.clock.fastForward(5000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "fixing");
+	await page.clock.fastForward(5000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
+	await page.clock.fastForward(5000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
+	await panel.getByRole("button", { name: "Merge pull request" }).click();
+	await expect(panel).toHaveAttribute("data-project-butter-development", "merged");
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {

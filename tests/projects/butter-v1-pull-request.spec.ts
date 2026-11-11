@@ -7,8 +7,7 @@ test("PR detail uses the editor palette Back row", async ({ page }) => {
 	const styles = async (selector: ReturnType<typeof page.getByRole>) => selector.evaluate((button) => {
 		const row = getComputedStyle(button);
 		const label = getComputedStyle(button.querySelector(".menu-row-title")!);
-		const icon = button.querySelector("svg")!.getBoundingClientRect();
-		return { height: row.height, padding: row.padding, gap: row.columnGap, color: label.color, fontSize: label.fontSize, lineHeight: label.lineHeight, iconWidth: icon.width, iconHeight: icon.height };
+		return { height: row.height, padding: row.padding, gap: row.columnGap, color: label.color, fontSize: label.fontSize, lineHeight: label.lineHeight };
 	});
 	await page.goto(appUrl("/components/blocks/editor-palette"));
 	const palette = page.locator('.rich-text-command-menu[data-nested="true"]').filter({ has: page.getByRole("listbox", { name: "People and team", exact: true }) }).first();
@@ -20,7 +19,13 @@ test("PR detail uses the editor palette Back row", async ({ page }) => {
 	await page.getByRole("list", { name: "Pull requests" }).getByRole("button", { name: /#284/ }).click();
 	const back = page.getByRole("button", { name: "Back", exact: true });
 	await expect(back).toBeFocused();
-	expect(await styles(back)).toEqual(paletteStyle);
+	expect(await styles(back)).toEqual({ ...paletteStyle, height: "36px" });
+	const icon = back.locator(':scope > [data-slot="icon"]');
+	await expect(icon).toHaveCSS("width", "12px");
+	await expect(icon).toHaveCSS("height", "12px");
+	await expect(icon.locator("svg")).toHaveCSS("width", "12px");
+	await expect(icon.locator("svg")).toHaveCSS("height", "12px");
+	await expect(page.getByRole("dialog", { name: "Pull request #284 details" }).locator('[data-pull-request="284"]')).toHaveCSS("padding-top", "4px");
 	await back.click();
 	await expect(page.getByRole("list", { name: "Pull requests" })).toBeVisible();
 });
@@ -90,6 +95,10 @@ test("multiple pull requests open the selected preview and return to the list", 
 	expect(rows[1].bottom).toBe(rows[2].top);
 	expect(rows[2].bottom).toBe(rows[3].top);
 	const first = list.getByRole("button", { name: /#284.*Add merchant onboarding quickstart.*Open/ });
+	const listTitle = first.getByText("Add merchant onboarding quickstart", { exact: true }).locator("..");
+	await expect(listTitle).toHaveCSS("white-space", "nowrap");
+	await expect(listTitle).toHaveCSS("text-overflow", "ellipsis");
+	await expect.poll(() => listTitle.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
 	const textStyle = async (locator: ReturnType<typeof page.getByText>) => locator.evaluate((element) => {
 		const style = getComputedStyle(element);
 		return { color: style.color, fontFamily: style.fontFamily, fontSize: style.fontSize, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
@@ -102,19 +111,27 @@ test("multiple pull requests open the selected preview and return to the list", 
 	await expect(back).toBeFocused();
 	await expect(page.getByText("#284 Add merchant onboarding quickstart")).toBeVisible();
 	const preview = page.getByRole("dialog", { name: "Pull request #284 details" });
+	await expect(preview.getByRole("group", { name: "Claude, used by Venn" })).toBeVisible();
 	expect(await textStyle(preview.getByText("#284", { exact: true }))).toEqual(numberStyle);
 	expect(await textStyle(preview.getByText("Add merchant onboarding quickstart", { exact: true }))).toEqual(titleStyle);
 	await back.click();
 	await expect(first).toBeFocused();
 	await list.getByRole("button", { name: /#282.*Failed/ }).click();
-	await expect(page.getByRole("dialog", { name: "Pull request #282 details" })).toContainText("Failed");
+	const failed = page.getByRole("dialog", { name: "Pull request #282 details" });
+	await expect(failed.getByRole("group", { name: "Claude, used by Venn" })).toBeVisible();
+	for (const text of ["Failed", "payments-platform/payments", "rovo/pay-999-payment-errors", "5 files", "+96", "-23", "2/3 builds passed · 1 failed"]) await expect(failed).toContainText(text);
+	await expect(failed.getByRole("button", { name: "Fix PR" })).toHaveCount(0);
 	await back.click();
 	await list.getByRole("button", { name: /#281.*Draft/ }).click();
-	await expect(page.getByRole("dialog", { name: "Pull request #281 details" })).toContainText("Draft");
+	const draft = page.getByRole("dialog", { name: "Pull request #281 details" });
+	await expect(draft.getByRole("group", { name: "Claude, used by Venn" })).toBeVisible();
+	for (const text of ["Draft", "payments-platform/payments", "rovo/pay-999-onboarding-tests", "3 files", "+78", "-6", "0/3 builds passed"]) await expect(draft).toContainText(text);
 	await back.click();
 	await list.getByRole("button", { name: /#283.*Merged/ }).click();
 	await expect(page.getByText("#283 Add Payments SDK migration guide")).toBeVisible();
-	await expect(page.getByRole("dialog", { name: "Pull request #283 details" })).toContainText("Merged");
+	const merged = page.getByRole("dialog", { name: "Pull request #283 details" });
+	await expect(merged.getByRole("group", { name: "Claude, used by Venn" })).toBeVisible();
+	for (const text of ["Merged", "payments-platform/payments", "rovo/pay-999-migration-guide", "4 files", "+142", "-18", "3/3 builds passed"]) await expect(merged).toContainText(text);
 	await back.click();
 	await page.keyboard.press("Escape");
 	await expect(trigger).toBeFocused();
@@ -195,6 +212,7 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	expect(cardBounds.height).toBe(boardCardBounds.height);
 	expect(Math.abs((stageBounds.x + stageBounds.width / 2) - (cardBounds.x + cardBounds.width / 2))).toBeLessThan(2);
 	await expect(card).toContainText("Improve merchant onboarding for Payments SDK v2");
+	await expect(card.getByText("Improve merchant onboarding for Payments SDK v2", { exact: true })).toHaveCSS("-webkit-line-clamp", "2");
 	const pullRequest = card.getByRole("button", { name: /Pull request.*#284/ });
 	await expect(pullRequest).toBeVisible();
 	await pullRequest.click();

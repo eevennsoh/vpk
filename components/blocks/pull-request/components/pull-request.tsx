@@ -367,6 +367,7 @@ function PullRequestFlyoutBody({
 	checksExpandable,
 	reviewHref,
 	showReview,
+	showFix,
 	href,
 	onFix,
 }: Readonly<
@@ -390,6 +391,7 @@ function PullRequestFlyoutBody({
 		| "checksExpandable"
 		| "reviewHref"
 		| "showReview"
+		| "showFix"
 		| "href"
 		| "onFix"
 	>
@@ -424,8 +426,8 @@ function PullRequestFlyoutBody({
 	) : null;
 	const hasBranchPath = Boolean(branch || targetBranch);
 	const failedChecks = checks?.filter((check) => check.status === "failed") ?? [];
-	const hasFailedChecks = status !== "Merged" && failedChecks.length > 0;
-	const hasActions = Boolean(reviewHref || showReview || hasFailedChecks);
+	const showFixAction = showFix && status !== "Merged" && failedChecks.length > 0;
+	const hasActions = Boolean(reviewHref || showReview || showFixAction);
 
 	return (
 		<>
@@ -475,7 +477,7 @@ function PullRequestFlyoutBody({
 								Review
 							</a>
 						) : showReview ? <Button className="min-w-0 flex-1" type="button" variant="outline">Review</Button> : null}
-						{hasFailedChecks ? (
+						{showFixAction ? (
 							<Button className="min-w-0 flex-1" disabled={!onFix} onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
 								Fix PR
 							</Button>
@@ -520,6 +522,7 @@ export function PullRequest({
 	checksExpandable = true,
 	reviewHref,
 	showReview,
+	showFix = true,
 	href,
 	onFix,
 	selected = false,
@@ -549,6 +552,7 @@ export function PullRequest({
 			repository={repository}
 			reviewHref={reviewHref}
 			showReview={showReview}
+			showFix={showFix}
 			showDetails={showDetails}
 			reviewers={reviewers}
 			status={status}
