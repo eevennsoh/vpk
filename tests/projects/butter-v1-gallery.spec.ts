@@ -614,6 +614,7 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await expect.poll(() => gallery.getByRole("button").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")))).toEqual([
+		"Select e2e Journey",
 		"Select Agent selector",
 		"Select Duplicative sessions",
 		"Select Board",
@@ -621,11 +622,13 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 		"Select List",
 		"Select Pull request",
 		"Select Development panel",
-		"Select e2e Journey",
 	]);
 	for (const name of ["Board", "Agent selector", "Work item", "List", "Pull request", "e2e Journey"]) {
 		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
 	}
+	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toHaveAttribute("aria-pressed", "true");
+	await expect(page.getByRole("group", { name: "Merchant onboarding journey steps" })).toBeVisible();
+	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
 	await expect(gallery.getByRole("button", { name: "Select Agent selector" })).toHaveAttribute("aria-pressed", "true");
 	await expect(page.getByRole("region", { name: "Project Butter agent selector" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
