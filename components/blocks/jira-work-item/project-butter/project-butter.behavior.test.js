@@ -347,7 +347,7 @@ test("modal header centers the issue key with collapse and close", async () => {
 	assert.equal(document.querySelector("[data-project-butter-presentation]")?.getAttribute("data-project-butter-presentation"), "side-panel");
 });
 
-test("full screen keeps the issue key row without collapse or close and still closes on Escape", async () => {
+test("project full screen keeps the issue key and closes without offering collapse", async () => {
 	let closed = 0;
 	const view = await renderWorkItem({
 		initialPresentation: "full-screen",
@@ -358,7 +358,7 @@ test("full screen keeps the issue key row without collapse or close and still cl
 	assert.equal(view.queryByRole("button", { name: "Copy work item key" }) !== null, true);
 	assert.equal(view.queryByText("PAY-118") !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Collapse work item" }) === null, true);
-	assert.equal(view.queryByRole("button", { name: "Close Project butter work item" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Close Project butter work item" }) !== null, true);
 	await view.press(document.body, "Escape");
 	assert.equal(closed, 1);
 });

@@ -512,6 +512,29 @@ test("Work item gallery displays the Project Butter screen with floating Rovo", 
 	await expect(summary).toHaveText("Redesign onboarding flow for new users");
 });
 
+test("board and list work items open full screen and return to their source", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	for (const view of ["Board", "List"] as const) {
+		await page.getByRole("button", { name: `Select ${view}` }).click();
+		if (view === "Board") {
+			await page.locator('[data-issue-key="PAY-118"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+		} else {
+			await page.getByRole("region", { name: "Payments SDK v2 migration work items list" }).getByRole("button", { name: "PAY-118", exact: true }).click();
+		}
+		const item = page.getByRole("dialog", { name: "Project butter" });
+		await expect(item.getByRole("region", { name: "Work item full screen view" })).toBeVisible();
+		await expect(item.getByRole("button", { name: "Collapse work item" })).toHaveCount(0);
+		const bounds = await item.boundingBox();
+		if (!bounds) throw new Error("Work item bounds are unavailable");
+		expect(bounds).toMatchObject({ x: 0, y: 0, width: 1600, height: 1000 });
+		await item.getByRole("button", { name: "Close Project butter work item" }).click();
+		await expect(item).toBeHidden();
+		await expect(page.getByRole("button", { name: `Select ${view}` })).toBeVisible();
+	}
+});
+
 for (const viewport of [{ width: 1600, height: 1200 }, { width: 1600, height: 1000 }, { width: 900, height: 700 }]) {
 	test(`Work item gallery aligns with the board at ${viewport.width}x${viewport.height}`, async ({ page }) => {
 		await page.setViewportSize(viewport);
@@ -521,19 +544,17 @@ for (const viewport of [{ width: 1600, height: 1200 }, { width: 1600, height: 10
 		const boardColumn = page.locator('[data-jira-kanban-column="To do"]');
 		const boardBounds = await boardColumn.boundingBox();
 		await page.getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true }).click();
-		const modal = page.getByRole("dialog", { name: "Project butter" });
-		await expect(modal).toBeVisible();
-		await expect(modal.getByText("Agents", { exact: true })).toBeVisible();
-		const modalBounds = await modal.boundingBox();
-		await modal.getByRole("button", { name: "Close Project butter work item" }).click();
+		const item = page.getByRole("dialog", { name: "Project butter" });
+		await expect(item.getByRole("region", { name: "Work item full screen view" })).toBeVisible();
+		await expect(item.getByText("Agents", { exact: true })).toBeVisible();
+		const itemBounds = await item.boundingBox();
+		await item.getByRole("button", { name: "Close Project butter work item" }).click();
 		await page.getByRole("button", { name: "Select Work item" }).click();
 		const screen = page.getByRole("region", { name: "Work item full screen view" });
 		await expect(screen).toBeVisible();
 		const screenBounds = await screen.boundingBox();
-		if (!boardBounds || !modalBounds || !screenBounds) throw new Error("Work item bounds are unavailable");
-		for (const dimension of ["x", "width"] as const) {
-			expect(Math.abs(screenBounds[dimension] - modalBounds[dimension])).toBeLessThanOrEqual(2);
-		}
+		if (!boardBounds || !itemBounds || !screenBounds) throw new Error("Work item bounds are unavailable");
+		expect(itemBounds).toMatchObject({ x: 0, y: 0, width: viewport.width, height: viewport.height });
 		expect(Math.abs(screenBounds.y + screenBounds.height - viewport.height)).toBeLessThanOrEqual(2);
 		const keyRow = await screen.locator("[data-project-butter-header-key-row]").boundingBox();
 		if (!keyRow) throw new Error("Work item header bounds are unavailable");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { animate } from "motion/react";
 import { JiraActivity, jiraActivitySegmentsToPlainText, type JiraActivityEntry, type JiraActivityEventEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
 import { JiraActivityEvent } from "@/components/blocks/jira-activity/jira-activity-event";
 import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card-glow";
@@ -14,6 +15,7 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ProjectButterCommentEditor } from "@/components/blocks/jira-work-item/project-butter/project-butter-comment-editor";
 import { useProjectButterMentionAgents } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-mention-agents";
 import { cn } from "@/lib/utils";
+import { motionDuration, motionEase } from "@/lib/motion";
 import {
 	groupProjectButterUpdates,
 	PROJECT_BUTTER_ACTIVITY_FILTERS_ALL,
@@ -166,7 +168,17 @@ export function ProjectButterActivity({
 		const entry = [...(activity?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [])].find((node) => node.dataset.jiraActivityEntryId === previewEntryId);
 		if (!root || !entry) return;
 		const offset = (headerRef.current?.getBoundingClientRect().height ?? 0) + 12;
-		root.scrollTo({ top: root.scrollTop + entry.getBoundingClientRect().top - root.getBoundingClientRect().top - offset, behavior: "auto" });
+		const target = root.scrollTop + entry.getBoundingClientRect().top - root.getBoundingClientRect().top - offset;
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			root.scrollTo({ top: target, behavior: "auto" });
+			return;
+		}
+		const animation = animate(root.scrollTop, target, { duration: motionDuration.slow, ease: motionEase.outPractical, onUpdate: (value) => { root.scrollTop = value; } });
+		const stop = () => animation.stop();
+		root.addEventListener("wheel", stop, { passive: true });
+		root.addEventListener("touchstart", stop, { passive: true });
+		root.addEventListener("pointerdown", stop, { passive: true });
+		return () => { stop(); root.removeEventListener("wheel", stop); root.removeEventListener("touchstart", stop); root.removeEventListener("pointerdown", stop); };
 	}, [headerRef, previewEntryId, rows.length]);
 	const sessionFor = (entryId: string) => {
 		const id = projectButterSessionIdFromEntry(entryId);

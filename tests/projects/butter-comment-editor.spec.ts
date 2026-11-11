@@ -61,6 +61,47 @@ test("session previews match comment hover and mask the timeline behind reply co
 	expect(previewColors).toEqual(hoverColors);
 });
 
+test("session preview scroll moves smoothly to the selected activity", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	await page.getByRole("textbox", { name: "Comment editor" }).pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const session = page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Rewrite the incident postmortem/ });
+	const samples = page.evaluate(() => new Promise<number[]>((resolve) => {
+		const feed = document.querySelector<HTMLElement>("[data-project-butter-activity-feed]");
+		let root = feed?.parentElement;
+		while (root && !/(auto|scroll)/u.test(getComputedStyle(root).overflowY)) root = root.parentElement;
+		if (!root) throw new Error("Activity scrollport is unavailable");
+		const values: number[] = [];
+		const start = performance.now();
+		const sample = () => {
+			values.push(root.scrollTop);
+			if (performance.now() - start < 700) requestAnimationFrame(sample);
+			else resolve(values);
+		};
+		requestAnimationFrame(sample);
+	}));
+	await session.hover();
+	const positions = await samples;
+	await expect(page.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]')).toHaveAttribute("data-active", "");
+	expect(new Set(positions).size).toBeGreaterThan(3);
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ }).hover();
+	const stopped = await page.evaluate(() => new Promise<{ before: number; after: number }>((resolve) => {
+		let root = document.querySelector<HTMLElement>("[data-project-butter-activity-feed]")?.parentElement;
+		while (root && !/(auto|scroll)/u.test(getComputedStyle(root).overflowY)) root = root.parentElement;
+		if (!root) throw new Error("Activity scrollport is unavailable");
+		root.dispatchEvent(new WheelEvent("wheel", { deltaY: 20 }));
+		root.scrollTop += 20;
+		const before = root.scrollTop;
+		window.setTimeout(() => resolve({ before, after: root.scrollTop }), 400);
+	}));
+	expect(stopped.after).toBe(stopped.before);
+});
+
 test("gallery Claude session choices support multiple sessions and Back", async ({ page }) => {
 	const editor = await openGalleryCommentEditor(page);
 	await mentionGalleryClaude(page);

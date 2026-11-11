@@ -1,9 +1,39 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("Backspace returns to session choices at the agent mention", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1170, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("group", { name: "Duplicative sessions view" }).getByRole("button", { name: "Work item" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	const choices = page.getByRole("listbox", { name: "Choose agent session" });
+	await choices.getByRole("option", { name: "Start a new session" }).click();
+	await editor.pressSequentially("abc");
+	await editor.press("Backspace");
+	await expect(editor).toContainText("ab");
+	await expect(choices).toBeHidden();
+	await editor.press("Backspace");
+	await editor.press("Backspace");
+	await editor.press("Backspace");
+	await expect(choices).toBeVisible();
+	await expect(editor).toContainText("Claude");
+	await expect(editor).toBeFocused();
+	await choices.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(page.getByRole("list", { name: "Choose a session" })).toBeVisible();
+	await editor.press("Backspace");
+	await expect(choices).toBeVisible();
+	await expect(editor).toContainText("Claude");
+});
+
 test("duplicative sessions switches between the agent selector and work item", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.setViewportSize({ width: 1170, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	const views = page.getByRole("group", { name: "Duplicative sessions view" });
@@ -13,20 +43,49 @@ test("duplicative sessions switches between the agent selector and work item", a
 	const workItem = page.getByRole("region", { name: "Work item full screen view" });
 	await expect(workItem).toBeVisible();
 	await expect(picker).toBeHidden();
+	const commentBar = workItem.getByRole("group", { name: "Comment editor" });
+	await expect(commentBar).toBeVisible();
+	const barBounds = await commentBar.boundingBox();
+	if (!barBounds) throw new Error("Comment editor is unavailable");
+	expect(barBounds.y + barBounds.height).toBeLessThanOrEqual(1000);
+	const galleryBounds = await page.getByRole("button", { name: "Select Agent selector" }).boundingBox();
+	if (!galleryBounds) throw new Error("Gallery navigation is unavailable");
+	expect(barBounds.y + barBounds.height).toBeLessThanOrEqual(galleryBounds.y);
+	await expect(workItem.locator("[data-jira-activity-entry-id]")).toHaveCount(2);
+	const expandRelated = workItem.getByRole("button", { name: "Expand Related work" });
+	await expect(expandRelated).toHaveAttribute("aria-expanded", "false");
+	await expandRelated.click();
+	await expect(workItem.getByRole("button", { name: "Collapse Related work" })).toHaveAttribute("aria-expanded", "true");
+	await workItem.getByRole("button", { name: "Collapse Related work" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
+	const scrollTop = await commentBar.evaluate((bar) => {
+		let parent = bar.parentElement;
+		while (parent && !/(auto|scroll)/u.test(getComputedStyle(parent).overflowY)) parent = parent.parentElement;
+		return parent?.scrollTop;
+	});
 	await page.keyboard.press("m");
+	await expect.poll(() => commentBar.evaluate((bar) => {
+		let parent = bar.parentElement;
+		while (parent && !/(auto|scroll)/u.test(getComputedStyle(parent).overflowY)) parent = parent.parentElement;
+		return parent?.scrollTop;
+	})).toBe(scrollTop);
 	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
 	await editor.pressSequentially("@Claude");
 	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	await page.getByRole("option", { name: "Continue in existing session" }).click();
 	await expect(page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ })).toBeVisible();
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Rewrite the incident postmortem/ }).hover();
+	await expect(workItem.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]')).toHaveAttribute("data-active", "");
 	const back = workItem.getByRole("button", { name: "Back", exact: true });
+	await expect(back).toHaveCSS("height", "36px");
 	await expect(back).toHaveCSS("border-bottom-left-radius", "0px");
 	await expect(back).toHaveCSS("border-bottom-right-radius", "0px");
 	await page.getByRole("button", { name: "Open gallery" }).click();
 	await views.getByRole("button", { name: "Agent selector" }).click();
 	await expect(picker).toBeVisible();
 	await expect(workItem).toBeHidden();
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await expect(page.getByRole("region", { name: "Work item full screen view" }).getByRole("button", { name: "Collapse Related work" })).toHaveAttribute("aria-expanded", "true");
 });
 
 test("session chooser keeps compact padding and fits its session cards", async ({ page }) => {

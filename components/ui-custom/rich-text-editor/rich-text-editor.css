@@ -359,6 +359,12 @@
 	pointer-events: none;
 }
 
+.rich-text-editor-content[data-instruction-placeholder="true"] .tiptap-editor > p:last-child::after {
+	content: "write your instructions";
+	color: var(--ds-text-subtlest, #626f86);
+	pointer-events: none;
+}
+
 .tiptap-editor ::selection {
 	background-color: var(--ds-background-selected, #deebff);
 }

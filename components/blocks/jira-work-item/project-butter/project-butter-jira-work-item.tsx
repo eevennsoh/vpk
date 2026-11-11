@@ -35,6 +35,8 @@ export interface ProjectButterJiraWorkItemProps {
 	open: boolean;
 	onClose: () => void;
 	initialPreset: JiraWorkItemPreset;
+	initialRelatedSectionOpen?: boolean;
+	initialActivitySessionIds?: readonly string[];
 	initialSuggestion?: boolean;
 	defaultReporter?: WorkItemPerson;
 	defaultAssignee?: WorkItemPerson;
@@ -71,6 +73,8 @@ export function ProjectButterJiraWorkItem({
 	open,
 	onClose,
 	initialPreset,
+	initialRelatedSectionOpen,
+	initialActivitySessionIds,
 	initialSuggestion = false,
 	defaultReporter,
 	defaultAssignee,
@@ -147,7 +151,7 @@ export function ProjectButterJiraWorkItem({
 		initialSessions,
 		placeholders,
 		defaultReporter,
-		{ currentUser, showAuditInActivity, defaultAssignee },
+		{ currentUser, showAuditInActivity, defaultAssignee, initialRelatedSectionOpen, initialActivitySessionIds },
 	);
 	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
 	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
@@ -342,6 +346,7 @@ export function ProjectButterJiraWorkItem({
 				content={content}
 				onClose={onClose}
 				onPresentationChange={setPresentation}
+				showFullScreenClose={shell === "project"}
 				secondaryActions={
 					sparse && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null
 				}
@@ -370,6 +375,7 @@ export function ProjectButterJiraWorkItem({
 				>
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
+						compact={Boolean(initialActivitySessionIds)}
 						key={workItem?.code ?? "reference"}
 						active={open}
 						singleActivityView={shell !== "standalone"}
