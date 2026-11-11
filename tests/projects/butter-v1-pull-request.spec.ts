@@ -86,6 +86,11 @@ test("multiple pull requests open the selected preview and return to the list", 
 	const list = page.getByRole("list", { name: "Pull requests" });
 	await expect(list.getByRole("listitem")).toHaveCount(4);
 	await expect(list.getByRole("button")).toHaveText([/#284.*Open/, /#282.*Failed/, /#281.*Draft/, /#283.*Merged/]);
+	for (const title of ["Add merchant onboarding quickstart", "Improve payment error messages", "Add onboarding integration tests", "Add Payments SDK migration guide"]) {
+		const name = list.getByText(title, { exact: true });
+		await name.hover();
+		await expect(name).toHaveCSS("text-decoration-line", "underline");
+	}
 	await expect(list).not.toContainText("PAY-999");
 	const rows = await list.getByRole("button").evaluateAll((buttons) => buttons.map((button) => {
 		const { top, bottom } = button.getBoundingClientRect();
@@ -118,6 +123,9 @@ test("multiple pull requests open the selected preview and return to the list", 
 	await expect(first).toBeFocused();
 	await list.getByRole("button", { name: /#282.*Failed/ }).click();
 	const failed = page.getByRole("dialog", { name: "Pull request #282 details" });
+	const failedTitle = failed.getByText("Improve payment error messages", { exact: true });
+	await failedTitle.hover();
+	await expect(failedTitle).toHaveCSS("text-decoration-line", "underline");
 	await expect(failed.getByRole("group", { name: "Claude, used by Venn" })).toBeVisible();
 	for (const text of ["Failed", "payments-platform/payments", "rovo/pay-999-payment-errors", "5 files", "+96", "-23", "2/3 builds passed · 1 failed"]) await expect(failed).toContainText(text);
 	await expect(failed.getByRole("button", { name: "Fix PR" })).toHaveCount(0);

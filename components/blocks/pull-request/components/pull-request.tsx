@@ -160,7 +160,7 @@ export function PullRequestInlineTitle({
 	return (
 		<span className={cn("min-w-0 whitespace-normal text-sm leading-5 font-normal", className)}>
 			<span className="text-text-subtlest">#{number} </span>
-			{href ? <a className="rounded-sm text-text outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" href={href} rel="noopener noreferrer" target="_blank">{title}</a> : <span className="text-text">{title}</span>}
+			{href ? <a className="rounded-sm text-text outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" href={href} rel="noopener noreferrer" target="_blank">{title}</a> : <span className="text-text hover:underline">{title}</span>}
 		</span>
 	);
 }
