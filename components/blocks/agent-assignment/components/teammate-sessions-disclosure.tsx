@@ -35,16 +35,15 @@ export function TeammateSessionsDisclosure({ children, items }: Readonly<{
 			<CollapsibleTrigger
 				ref={trigger}
 				aria-describedby={hintId}
-				className="flex w-full flex-col gap-1 rounded-lg px-3 py-2 text-left text-text-subtle hover:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-text-subtle hover:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
-				<span className="flex w-full min-w-0 items-center gap-2">
-					<span className="min-w-0 flex-1 text-xs font-medium">Sessions from your teammates</span>
-					{/* Match AgentListRow's 24px state slot and the card's 12px inset. */}
-					<span aria-hidden="true" className="grid size-6 shrink-0 place-items-center" data-teammate-disclosure-chevron="">
-						<Icon className={cn("size-3 text-icon-subtle motion-safe:transition-transform motion-safe:duration-fast motion-safe:ease-out-practical", open ? "rotate-90" : null)} render={<ChevronRightIcon label="" size="small" />} />
-					</span>
+				<span className="flex min-w-0 flex-1 flex-col gap-0.5">
+					<span className="text-xs font-medium">Sessions from your teammates</span>
+					<TeammateSessionAvatars items={items} />
 				</span>
-				<TeammateSessionAvatars items={items} />
+				<span aria-hidden="true" className="grid size-6 shrink-0 place-items-center" data-teammate-disclosure-chevron="">
+					<Icon className={cn("size-3 text-icon-subtle motion-safe:transition-transform motion-safe:duration-fast motion-safe:ease-out-practical", open ? "rotate-90" : null)} render={<ChevronRightIcon label="" size="small" />} />
+				</span>
 			</CollapsibleTrigger>
 			<p id={hintId} className="sr-only">{AGENT_SESSION_VIEWER_HINT}</p>
 			<CollapsibleContent

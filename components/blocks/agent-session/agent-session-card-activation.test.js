@@ -440,7 +440,6 @@ test("assignment adapters offer View only to cloud sessions", async () => {
 	const { AssignedAgentsSessionMenu } = await loadHarness();
 	const selected = [];
 	await withCard({
-		addAgentLabel: "Add agent",
 		rows: ["local", "cloud"].map((host) => ({ id: host, name: host, host, byline: "", statusLabel: "Working", role: "owner" })),
 		onSelectAgent: (agent) => selected.push(agent.host),
 	}, async ({ document, click }) => {
