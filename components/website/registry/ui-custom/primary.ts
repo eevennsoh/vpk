@@ -113,6 +113,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 		ssr: false,
 	}),
 	node: dynamic(() => import("../../demos/ui-custom/node-demo"), { ssr: false }),
+	"open-in": dynamic(() => import("../../demos/ui-custom/open-in-demo"), { ssr: false }),
 	"open-in-chat": dynamic(() => import("../../demos/ui-custom/open-in-chat-demo"), {
 		ssr: false,
 	}),

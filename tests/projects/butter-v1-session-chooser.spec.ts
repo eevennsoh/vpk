@@ -48,10 +48,10 @@ test("duplicative sessions switches between the agent selector and work item", a
 	const barBounds = await commentBar.boundingBox();
 	if (!barBounds) throw new Error("Comment editor is unavailable");
 	expect(barBounds.y + barBounds.height).toBeLessThanOrEqual(1000);
-	const galleryBounds = await page.getByRole("button", { name: "Select Agent selector" }).boundingBox();
+	const galleryBounds = await page.getByRole("button", { name: "Select Agent & app selector" }).boundingBox();
 	if (!galleryBounds) throw new Error("Gallery navigation is unavailable");
 	expect(barBounds.y + barBounds.height).toBeLessThanOrEqual(galleryBounds.y);
-	await expect(workItem.locator("[data-jira-activity-entry-id]")).toHaveCount(2);
+	expect(await workItem.locator("[data-jira-activity-entry-id]").count()).toBeGreaterThan(2);
 	const expandRelated = workItem.getByRole("button", { name: "Expand Related work" });
 	await expect(expandRelated).toHaveAttribute("aria-expanded", "false");
 	await expandRelated.click();
@@ -76,6 +76,18 @@ test("duplicative sessions switches between the agent selector and work item", a
 	await expect(page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ })).toBeVisible();
 	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Rewrite the incident postmortem/ }).hover();
 	await expect(workItem.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]')).toHaveAttribute("data-active", "");
+	const olderPosition = await commentBar.evaluate((bar) => {
+		let parent = bar.parentElement;
+		while (parent && !/(auto|scroll)/u.test(getComputedStyle(parent).overflowY)) parent = parent.parentElement;
+		return parent?.scrollTop ?? 0;
+	});
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ }).hover();
+	await expect(workItem.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]')).toHaveAttribute("data-active", "");
+	await expect.poll(() => commentBar.evaluate((bar) => {
+		let parent = bar.parentElement;
+		while (parent && !/(auto|scroll)/u.test(getComputedStyle(parent).overflowY)) parent = parent.parentElement;
+		return parent?.scrollTop ?? 0;
+	})).toBeLessThan(olderPosition);
 	const back = workItem.getByRole("button", { name: "Back", exact: true });
 	await expect(back).toHaveCSS("height", "36px");
 	await expect(back).toHaveCSS("border-bottom-left-radius", "0px");
@@ -86,6 +98,45 @@ test("duplicative sessions switches between the agent selector and work item", a
 	await expect(workItem).toBeHidden();
 	await page.getByRole("button", { name: "Select Work item" }).click();
 	await expect(page.getByRole("region", { name: "Work item full screen view" }).getByRole("button", { name: "Collapse Related work" })).toHaveAttribute("aria-expanded", "true");
+});
+
+test("hovering sessions animates the activity scroll in the duplicative sessions work item", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.setViewportSize({ width: 1170, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	await page.getByRole("group", { name: "Duplicative sessions view" }).getByRole("button", { name: "Work item" }).click();
+	await page.keyboard.press("m");
+	const editor = page.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const chooser = page.getByRole("list", { name: "Choose a session" });
+	const sampleScroll = () => page.evaluate(() => new Promise<number[]>((resolve) => {
+		let root = document.querySelector<HTMLElement>("[data-project-butter-activity-feed]")?.parentElement;
+		while (root && !/(auto|scroll)/u.test(getComputedStyle(root).overflowY)) root = root.parentElement;
+		if (!root) throw new Error("Activity scrollport is unavailable");
+		const positions: number[] = [];
+		const start = performance.now();
+		function sample() {
+			positions.push(root!.scrollTop);
+			if (performance.now() - start < 700) requestAnimationFrame(sample);
+			else resolve(positions);
+		}
+		requestAnimationFrame(sample);
+	}));
+	const samples = sampleScroll();
+	await chooser.getByRole("button", { name: /Rewrite the incident postmortem/ }).hover();
+	const positions = await samples;
+	await expect(page.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]')).toHaveAttribute("data-active", "");
+	expect(new Set(positions).size).toBeGreaterThan(3);
+	const returnSamples = sampleScroll();
+	await chooser.getByRole("button", { name: /Summarize onboarding feedback/ }).hover();
+	await expect(page.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]')).toHaveAttribute("data-active", "");
+	const returnPositions = await returnSamples;
+	expect(new Set(returnPositions).size).toBeGreaterThan(3);
+	const largestStep = Math.max(...returnPositions.slice(1).map((value, index) => Math.abs(value - returnPositions[index])));
+	expect(largestStep).toBeLessThan(Math.abs(returnPositions.at(-1)! - returnPositions[0]) * 0.6);
 });
 
 test("session chooser keeps compact padding and fits its session cards", async ({ page }) => {

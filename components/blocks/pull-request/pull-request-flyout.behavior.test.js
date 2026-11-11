@@ -278,8 +278,15 @@ test("Fix PR appears for failed checks and passes only failures to the handler",
 	});
 	await view.click(view.getByRole("button", { name: "Fix PR" }));
 	assert.deepEqual(fixed, [[checks[0]]]);
-	await view.rerender({ ...PROPS, checks: [{ ...checks[0], status: "running" }] });
+	await view.rerender({ ...PROPS, status: "Open", checks: [{ ...checks[0], status: "running" }], isFixing: true, onFix: (failed) => fixed.push(failed) });
+	const fixingButton = view.getByRole("button", { name: "Fix PR" });
+	assert.equal(fixingButton.disabled, true);
+	assert.equal(fixingButton.getAttribute("aria-busy"), "true");
+	assert.equal(fixingButton.querySelector('[data-slot="spinner"]') !== null, true);
+	await view.rerender({ ...PROPS, status: "Open", checks: [{ ...checks[0], status: "passed" }] });
 	assert.equal(view.queryByRole("button", { name: "Fix PR" }) === null, true);
+	await view.rerender({ ...PROPS, status: "Merged", checks: [{ ...checks[0], status: "passed" }], onFix: (failed) => fixed.push(failed) });
+	assert.equal(view.queryByRole("button", { name: "Fix PR" }), null);
 	await view.unmount();
 });
 

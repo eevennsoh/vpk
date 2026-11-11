@@ -54,7 +54,6 @@ function createContent(
 	defaultReporter?: WorkItemPerson,
 	defaultAssignee?: WorkItemPerson,
 	initialRelatedSectionOpen = true,
-	initialActivitySessionIds?: readonly string[],
 ) {
 	const empty = preset === "empty" || preset === "blank";
 	const placeholder = empty || !placeholders || !workItem?.code ? undefined : placeholders[workItem.code];
@@ -133,15 +132,12 @@ function createContent(
 				actor: { id: `butter-person-${reporter.name}`, name: reporter.name, kind: "person" as const, avatarSrc: reporter.avatarUrl },
 				createdAtMs: PROJECT_BUTTER_ACTIVITY_EPOCH - 60_000,
 			})) : []),
-			...(initialActivitySessionIds ? [] : placeholder
+			...(placeholder
 				? projectButterPlaceholderComments(placeholder)
 				: workItem
 					? []
 					: createProjectButterActivity(empty)),
-			...sessions.filter((session) => !initialActivitySessionIds || initialActivitySessionIds.includes(session.id)).map((session) => {
-				const entry = projectButterSessionInvocation(session);
-				return initialActivitySessionIds ? { ...entry, replies: [] } : entry;
-			}),
+			...sessions.map(projectButterSessionInvocation),
 		].sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0)),
 		activityFocusId,
 		dueDate,
@@ -175,13 +171,13 @@ export function useProjectButterContent(
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
 	defaultReporter?: WorkItemPerson,
-	activityContext?: Readonly<{ currentUser?: WorkItemPerson; showAuditInActivity?: boolean; defaultAssignee?: WorkItemPerson; initialRelatedSectionOpen?: boolean; initialActivitySessionIds?: readonly string[] }>,
+	activityContext?: Readonly<{ currentUser?: WorkItemPerson; showAuditInActivity?: boolean; defaultAssignee?: WorkItemPerson; initialRelatedSectionOpen?: boolean }>,
 ) {
 	const person = activityContext?.currentUser;
 	const currentUser = useMemo<JiraActivityActor>(() => person ? { id: `butter-person-${person.name}`, name: person.name, kind: "person", avatarSrc: person.avatarUrl } : PROJECT_BUTTER_CURRENT_USER, [person]);
 	const initialState = useMemo<ProjectButterContentState>(
-		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter, activityContext?.defaultAssignee, activityContext?.initialRelatedSectionOpen, activityContext?.initialActivitySessionIds),
-		[activityContext?.defaultAssignee, activityContext?.initialActivitySessionIds, activityContext?.initialRelatedSectionOpen, defaultReporter, initialSessions, placeholders, preset, workItem],
+		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter, activityContext?.defaultAssignee, activityContext?.initialRelatedSectionOpen),
+		[activityContext?.defaultAssignee, activityContext?.initialRelatedSectionOpen, defaultReporter, initialSessions, placeholders, preset, workItem],
 	);
 	const { state, fieldSetter, updateState } = useProjectButterItemState(
 		workItem?.code ?? "reference",

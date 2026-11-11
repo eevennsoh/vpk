@@ -368,6 +368,7 @@ function PullRequestFlyoutBody({
 	reviewHref,
 	showReview,
 	showFix,
+	isFixing,
 	href,
 	onFix,
 }: Readonly<
@@ -392,6 +393,7 @@ function PullRequestFlyoutBody({
 		| "reviewHref"
 		| "showReview"
 		| "showFix"
+		| "isFixing"
 		| "href"
 		| "onFix"
 	>
@@ -426,7 +428,7 @@ function PullRequestFlyoutBody({
 	) : null;
 	const hasBranchPath = Boolean(branch || targetBranch);
 	const failedChecks = checks?.filter((check) => check.status === "failed") ?? [];
-	const showFixAction = showFix && status !== "Merged" && failedChecks.length > 0;
+	const showFixAction = showFix && status !== "Merged" && (failedChecks.length > 0 || isFixing);
 	const hasActions = Boolean(reviewHref || showReview || showFixAction);
 
 	return (
@@ -478,7 +480,7 @@ function PullRequestFlyoutBody({
 							</a>
 						) : showReview ? <Button className="min-w-0 flex-1" type="button" variant="outline">Review</Button> : null}
 						{showFixAction ? (
-							<Button className="min-w-0 flex-1" disabled={!onFix} onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
+							<Button aria-label="Fix PR" className="min-w-0 flex-1" disabled={!onFix || isFixing || failedChecks.length === 0} isLoading={isFixing} onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
 								Fix PR
 							</Button>
 						) : null}
@@ -523,6 +525,7 @@ export function PullRequest({
 	reviewHref,
 	showReview,
 	showFix = true,
+	isFixing = false,
 	href,
 	onFix,
 	selected = false,
@@ -553,6 +556,7 @@ export function PullRequest({
 			reviewHref={reviewHref}
 			showReview={showReview}
 			showFix={showFix}
+			isFixing={isFixing}
 			showDetails={showDetails}
 			reviewers={reviewers}
 			status={status}

@@ -15,6 +15,7 @@ import {
 	darkModeGlyphContrastClassNameForSrc,
 	isBackgroundlessAtlassianLogo,
 	resolveAtlassianLogoBorder,
+	resolveBrandLogoInsetScale,
 	resolveBrandLogoPresentation,
 } from "@/components/ui/data/logo-usage";
 import { cn } from "@/lib/utils";
@@ -296,7 +297,7 @@ export function BrandLogoMark({
 			label={label}
 			size={size}
 			variant="transparent"
-			isInset={presentation.hasBorder}
+			isInset={presentation.hasBorder && resolveBrandLogoInsetScale(assetSrc) === 1}
 			hasBorder={bordered}
 			className={cn(
 				bordered && "bg-surface",

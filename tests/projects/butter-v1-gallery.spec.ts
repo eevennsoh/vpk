@@ -285,7 +285,7 @@ test("the work item shows automation rules and recent runs in the card", async (
 	const labelBounds = await recentButton.locator("span").first().boundingBox();
 	const recurBounds = await automation.getByRole("button", { name: "Set to recur" }).boundingBox();
 	const automationBounds = await automation.boundingBox();
-	const repositoryBounds = await details.getByRole("button", { name: "Configure repository" }).boundingBox();
+	const repositoryBounds = await details.getByRole("button", { name: "Start coding" }).boundingBox();
 	if (!buttonBounds || !labelBounds || !recurBounds || !automationBounds || !repositoryBounds) throw new Error("Action button bounds are unavailable");
 	expect(automationBounds.y + automationBounds.height - (recurBounds.y + recurBounds.height)).toBeCloseTo(recurBounds.x - automationBounds.x, 0);
 	expect(automationBounds.x + automationBounds.width - (recurBounds.x + recurBounds.width)).toBeCloseTo(recurBounds.x - automationBounds.x, 0);
@@ -637,7 +637,7 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await expect.poll(() => gallery.getByRole("button").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")))).toEqual([
 		"Select e2e Journey",
-		"Select Agent selector",
+		"Select Agent & app selector",
 		"Select Duplicative sessions",
 		"Select Board",
 		"Select Work item",
@@ -645,17 +645,17 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 		"Select Pull request",
 		"Select Development panel",
 	]);
-	for (const name of ["Board", "Agent selector", "Work item", "List", "Pull request", "e2e Journey"]) {
+	for (const name of ["Board", "Agent & app selector", "Work item", "List", "Pull request", "e2e Journey"]) {
 		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
 	}
 	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toHaveAttribute("aria-pressed", "true");
 	await expect(page.getByRole("group", { name: "Merchant onboarding journey steps" })).toBeVisible();
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
-	await expect(gallery.getByRole("button", { name: "Select Agent selector" })).toHaveAttribute("aria-pressed", "true");
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
+	await expect(gallery.getByRole("button", { name: "Select Agent & app selector" })).toHaveAttribute("aria-pressed", "true");
 	await expect(page.getByRole("region", { name: "Project Butter agent selector" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
 	const boardTile = await gallery.getByRole("button", { name: "Select Board" }).boundingBox();
-	const agentTile = await gallery.getByRole("button", { name: "Select Agent selector" }).boundingBox();
+	const agentTile = await gallery.getByRole("button", { name: "Select Agent & app selector" }).boundingBox();
 	if (!boardTile || !agentTile) throw new Error("Gallery tiles have no bounds");
 	expect(agentTile.height).toBeGreaterThan(boardTile.height);
 	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toHaveAttribute("aria-pressed", "true");
@@ -719,11 +719,23 @@ test("the Development panel gallery item shows the populated interactive panel",
 	const panel = page.getByRole("region", { name: "Pull request development" });
 	await expect(panel).toHaveAttribute("data-project-butter-development", "failed");
 	await expect(panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ })).toBeVisible();
+	await panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).click();
+	const fix = page.getByRole("button", { name: "Fix PR" });
+	await expect(fix).toBeEnabled();
 	const initial = await panel.boundingBox();
 	if (!initial) throw new Error("Development panel has no bounds");
+	await page.clock.fastForward(4000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "failed");
 	for (const phase of ["fixing", "passed"]) {
-		await page.clock.fastForward(5000);
+		await page.clock.fastForward(phase === "fixing" ? 1000 : 5000);
 		await expect(panel).toHaveAttribute("data-project-butter-development", phase);
+		if (phase === "fixing") {
+			await expect(fix).toBeDisabled();
+			await expect(fix).toHaveAttribute("aria-busy", "true");
+			await expect(fix.locator('[data-slot="spinner"]')).toBeVisible();
+		} else {
+			await expect(fix).toHaveCount(0);
+		}
 		const current = await panel.boundingBox();
 		if (!current) throw new Error(`Development panel has no bounds in ${phase}`);
 		expect(Math.abs(current.x - initial.x)).toBeLessThanOrEqual(1);
@@ -733,11 +745,11 @@ test("the Development panel gallery item shows the populated interactive panel",
 	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
 	await page.clock.fastForward(1);
 	await expect(panel).toHaveAttribute("data-project-butter-development", "merged");
+	await expect(fix).toHaveCount(0);
 	const merged = await panel.boundingBox();
 	if (!merged) throw new Error("Development panel has no bounds in merged");
 	expect(Math.abs(merged.x - initial.x)).toBeLessThanOrEqual(1);
 	expect(Math.abs(merged.y - initial.y)).toBeLessThanOrEqual(1);
-	await panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).click();
 	await expect(page.getByText("payments-platform/payments").first()).toBeVisible();
 });
 
@@ -1049,7 +1061,7 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Carry card-artwork metadata into the next wallet epic", { exact: true })).toBeVisible();
 });
 
-test("configure repository opens the development dropdown in a work item", async ({ page }) => {
+test("start coding opens the development dropdown in a work item", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -1058,8 +1070,8 @@ test("configure repository opens the development dropdown in a work item", async
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	await board.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
-	await item.getByRole("button", { name: "Configure repository" }).click();
-	const menu = page.getByRole("menu", { name: "Configure repository" });
+	await item.getByRole("button", { name: "Start coding" }).click();
+	const menu = page.getByRole("menu", { name: "Start coding" });
 	await expect(menu).toHaveCSS("border-radius", "12px");
 	for (const name of ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"]) {
 		await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
@@ -1067,7 +1079,7 @@ test("configure repository opens the development dropdown in a work item", async
 	await expect(menu.getByRole("menuitem", { name: "Branch name settings" })).toBeVisible();
 	await expect(item.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
 	await page.keyboard.press("Escape");
-	await expect(item.getByRole("button", { name: "Configure repository" })).toBeFocused();
+	await expect(item.getByRole("button", { name: "Start coding" })).toBeFocused();
 });
 
 
@@ -1090,4 +1102,28 @@ test("Escape closes the local-agent picker without closing the work item", async
 	await expect(picker).toBeHidden();
 	await expect(item).toBeVisible();
 	await expect(trigger).toBeFocused();
+});
+
+test("the last-used app action shows a borderless, 16px mark", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const item = page.getByRole("region", { name: "Work item full screen view" });
+	await item.getByRole("button", { name: "Open in", exact: true }).click();
+	await page.getByRole("dialog", { name: "Local software agents" }).getByRole("button", { name: "Claude", exact: true }).click();
+	const claude = item.getByRole("button", { name: "Open in Claude" });
+	await expect(claude.locator('[data-slot="avatar"]')).toHaveCount(0);
+	const ink = await claude.locator("svg").evaluate((element) => {
+		if (!(element instanceof SVGSVGElement)) throw new Error("Claude mark is not an SVG");
+		const bounds = element.getBoundingClientRect();
+		const artwork = element.getBBox();
+		return { width: bounds.width * artwork.width / element.viewBox.baseVal.width, height: bounds.height * artwork.height / element.viewBox.baseVal.height };
+	});
+	expect(ink.width).toBeCloseTo(16, 0);
+	expect(ink.height).toBeCloseTo(16, 0);
+	await item.getByRole("button", { name: "Open in", exact: true }).click();
+	await page.getByRole("dialog", { name: "Local software agents" }).getByRole("button", { name: "VS Code", exact: true }).click();
+	const vsCode = item.getByRole("button", { name: "Open in VS Code" });
+	await expect(vsCode.locator("svg")).toHaveCSS("width", "16px");
+	await expect(vsCode.locator("svg")).toHaveCSS("height", "16px");
+	await expect(vsCode.locator('[data-slot="tile"]')).toHaveCount(0);
 });

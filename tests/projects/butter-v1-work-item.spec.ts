@@ -1,5 +1,32 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
+import { activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
+
+test("timeline labels normalize minute and hour variants", () => {
+	for (const label of ["1m ago", "1min ago", "1 min ago", "1 minute ago", "1 minutes ago"]) {
+		expect(activityHeaderTimeLabel(label)).toBe("1 min ago");
+	}
+	expect(activityHeaderTimeLabel("2 mins ago")).toBe("2 min ago");
+	for (const label of ["2h ago", "2hr ago", "2 hrs ago", "2 hour ago", "2 hours ago"]) {
+		expect(activityHeaderTimeLabel(label)).toBe("2 hr ago");
+	}
+	for (const label of ["Just now", "Yesterday", "2 days ago", "19 May"]) {
+		expect(activityHeaderTimeLabel(label)).toBe(label);
+	}
+});
+
+test("the sticky activity timeline uses min and hr for relative times", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1600, height: 800 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const timeline = page.getByRole("listbox", { name: "Navigate activity" });
+	const headerTime = page.locator("[data-project-butter-activity-header-time]");
+	await timeline.getByRole("option", { name: /Review Teamwork onboarding guide/ }).click();
+	await expect(headerTime).toHaveText("2 min ago");
+	await timeline.getByRole("option", { name: /Summarize onboarding feedback/ }).click();
+	await expect(headerTime).toHaveText("1 hr ago");
+});
 
 for (const width of [700, 1600]) {
 	test(`work item content fades beneath the header after scrolling at ${width}px`, async ({ page }) => {
@@ -236,9 +263,38 @@ test("work item agent avatars show lanyards beside Details without moving betwee
 		return card && panel ? card.x + card.width - panel.x : null;
 	}).toBeCloseTo(-8, 0);
 	const codingBounds = await coding.boundingBox();
+	const codingAvatar = coding.locator('[data-slot="agent-lanyard-avatar"]');
+	const codingAvatarBounds = await codingAvatar.boundingBox();
+	const codingShape = await codingAvatar.evaluate((element) => getComputedStyle(element).maskImage);
 	const detailsBounds = await details.boundingBox();
-	if (!codingBounds || !detailsBounds) throw new Error("Lanyard or Details panel is not visible");
+	const fieldBounds = await field.boundingBox();
+	if (!codingBounds || !codingAvatarBounds || !detailsBounds || !fieldBounds) throw new Error("Lanyard, avatar, field, or Details panel is not visible");
 	expect(codingBounds.x + codingBounds.width).toBeCloseTo(detailsBounds.x - 8, 0);
+	expect(codingBounds.y).toBeCloseTo(fieldBounds.y, 0);
+	await field.getByRole("button", { name: "Jira Scoping agent, add agent" }).hover();
+	const scoping = page.getByRole("article", { name: "Jira Scoping agent agent" });
+	await expect(scoping).toBeVisible();
+	const scopingAvatar = scoping.locator('[data-slot="agent-lanyard-avatar"]');
+	const scopingAvatarBounds = await scopingAvatar.boundingBox();
+	if (!scopingAvatarBounds) throw new Error("Scoping agent avatar is not visible");
+	expect(scopingAvatarBounds.height).toBeCloseTo(codingAvatarBounds.height, 0);
+	expect(scopingAvatarBounds.x + scopingAvatarBounds.width / 2).toBeCloseTo(codingAvatarBounds.x + codingAvatarBounds.width / 2, 0);
+	expect(scopingAvatarBounds.y).toBeCloseTo(codingAvatarBounds.y, 0);
+	expect(codingShape).toContain("/avatar-agent-new/blue/backlog-buddy.svg");
+	await expect(scopingAvatar).toHaveCSS("mask-image", codingShape);
+	await expect(scoping.locator('[data-slot="avatar-hexagon-border"]')).toHaveCount(0);
+	await field.getByRole("button", { name: "Claude, add agent" }).hover();
+	const claudeAvatar = page.getByRole("article", { name: "Claude agent" }).locator('[data-slot="agent-lanyard-avatar"]');
+	const claudeAvatarBounds = await claudeAvatar.boundingBox();
+	if (!claudeAvatarBounds) throw new Error("Claude avatar is not visible");
+	expect(scopingAvatarBounds.x).toBeCloseTo(claudeAvatarBounds.x, 0);
+	expect(scopingAvatarBounds.y).toBeCloseTo(claudeAvatarBounds.y, 0);
+	expect(scopingAvatarBounds.width).toBeCloseTo(claudeAvatarBounds.width, 0);
+	await expect(claudeAvatar).toHaveCSS("mask-image", codingShape);
+	for (const name of ["Claude", "Cursor", "Jira Coding Agent", "Claude"]) {
+		await field.getByRole("button", { name: `${name}, add agent` }).hover();
+		await expect(page.locator('[data-slot="hover-card-content"] [data-slot="agent-lanyard-surface"]')).toHaveCount(1);
+	}
 	await field.getByRole("button", { name: "Claude, add agent" }).hover();
 	const claude = page.getByRole("article", { name: "Claude agent" });
 	await expect(claude).toBeVisible();

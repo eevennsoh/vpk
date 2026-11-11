@@ -36,7 +36,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 		await view.press(trigger, "Enter");
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
 		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
-		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group"]')), false);
+		assert.equal(trigger.querySelector('[data-slot="avatar-group"]').getAttribute("aria-hidden"), "true");
 		const lists = view.getAllByRole("list");
 		assert.equal(lists.length, 2);
 		assert.deepEqual([...lists[1].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-team-first", "agent-session-row-team-second"]);

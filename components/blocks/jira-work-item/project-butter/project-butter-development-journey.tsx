@@ -32,7 +32,7 @@ export function ProjectButterDevelopmentJourney({ agentName = "Rovo", author, au
 			<DevelopmentPanel
 				footerExtra={footerExtra}
 				headerExtra={headerExtra}
-				pullRequests={pullRequests ?? (presentation ? [{ ...PROJECT_BUTTER_JOURNEY_PULL_REQUEST, author: author ?? { name: agentName }, checks, onFix: onFixCheck ? () => onFixCheck() : undefined, showReview: true, relativeTime: "Just now", repository: "payments-platform/payments", status: presentation.status }] : [])}
+				pullRequests={pullRequests ?? (presentation ? [{ ...PROJECT_BUTTER_JOURNEY_PULL_REQUEST, author: author ?? { name: agentName }, checks, isFixing: phase === "fixing", onFix: onFixCheck ? () => onFixCheck() : undefined, showReview: true, relativeTime: "Just now", repository: "payments-platform/payments", status: presentation.status }] : [])}
 				pullRequestSettings={pullRequestSettings}
 				surface={surface}
 				workItem={workItem}

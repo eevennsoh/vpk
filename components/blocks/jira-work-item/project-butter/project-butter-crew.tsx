@@ -31,7 +31,7 @@ import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/pr
 import { cn } from "@/lib/utils";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { AgentAvatarLanyard } from "@/components/blocks/jira-work-item/project-butter/agent-avatar-lanyard";
+import { AgentAvatarLanyard, AgentAvatarLanyards } from "@/components/blocks/jira-work-item/project-butter/agent-avatar-lanyard";
 
 type CrewMember = { name: string; kind: "person"; state: "Working" | "Currently viewing"; avatarSrc?: string } | { id?: string; name: string; kind: "agent"; state: "Working" | "Needs input" | "Completed"; visual: Pick<AgentAvatarVisualProps, "avatarSrc" | "brandName" | "vpkLogo"> };
 type AgentCrewMember = Extract<CrewMember, { kind: "agent" }>;
@@ -93,6 +93,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 	const [enteringAgent, setEnteringAgent] = useState<{ name: string; isNew: boolean } | null>(null);
 	const [scrollEdges, setScrollEdges] = useState({ start: false, end: false });
 	const fieldScrollRef = useRef<HTMLDivElement>(null);
+	const fieldRef = useRef<HTMLDivElement>(null);
 	const pickerTriggerRef = useRef<HTMLButtonElement>(null);
 	const pendingScrollAgent = useRef<string | null>(null);
 	const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
@@ -202,9 +203,11 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 	);
 	return (
 		<Popover onOpenChange={changeOpen} open={open}>
-			{field ? <div aria-label="Agents field" className="min-w-0" role="group">
+			{field ? <div aria-label="Agents field" className="min-w-0" ref={fieldRef} role="group">
+				<AgentAvatarLanyards anchorRef={fieldRef}>
 				{showFieldLabel && sessions.length > 0 ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">Agents</div> : null}
 				{fieldSessionMenu ? fieldControl : <div className="scrollbar-none -mx-1 -my-1 min-w-0 overflow-x-auto px-1 py-1" data-slot="scroll-fade" ref={fieldScrollRef} style={scrollEdges.start || scrollEdges.end ? buildHorizontalScrollMaskStyle({ edge: scrollEdges.start && scrollEdges.end ? "both" : scrollEdges.start ? "start" : "end", fadeSize: "3rem" }) : undefined}>{fieldControl}</div>}
+				</AgentAvatarLanyards>
 			</div> : <PopoverTrigger render={<button aria-label={label} className="group/crew inline-flex shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!onStartAgent && sessions.length === 0} type="button" />}>
 				<AvatarGroup className="-space-x-1.5" label="People and agents working on this item">
 					{crew.map((member, index) => member.kind === "person" ? <Avatar className="size-7.5" key={`${member.name}-${index}`} label={`${member.name}, ${member.state}`} size="default" title={`${member.name}, ${member.state}`}><AvatarImage src={member.avatarSrc ?? projectButterPersonAvatar(member.name)} /><AvatarFallback>{member.name.slice(0, 1)}</AvatarFallback></Avatar> : <span className="relative shrink-0" key={`${member.name}-${index}`} title={`${member.name}, ${member.state}`}><AgentAvatarVisual {...member.visual} appearance="coding" label={`${member.name}, ${member.state}`} sizePx={30} status={member.state === "Completed" ? "finished" : member.state === "Needs input" ? "needs-input" : undefined} />{member.state === "Working" ? <span className="absolute -right-0.5 -top-0.5 z-10 grid size-3.5 place-items-center rounded-full bg-surface"><Spinner className="size-2.5" label="Working" size="xs" variant="bloom" /></span> : null}</span>)}

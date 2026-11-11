@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { animate } from "motion/react";
 import { JiraActivity, jiraActivitySegmentsToPlainText, type JiraActivityEntry, type JiraActivityEventEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
 import { JiraActivityEvent } from "@/components/blocks/jira-activity/jira-activity-event";
 import { createJiraLinkingCardGlow } from "@/components/blocks/jira-linking/card-glow";
@@ -15,7 +14,6 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ProjectButterCommentEditor } from "@/components/blocks/jira-work-item/project-butter/project-butter-comment-editor";
 import { useProjectButterMentionAgents } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-mention-agents";
 import { cn } from "@/lib/utils";
-import { motionDuration, motionEase } from "@/lib/motion";
 import {
 	groupProjectButterUpdates,
 	PROJECT_BUTTER_ACTIVITY_FILTERS_ALL,
@@ -34,7 +32,7 @@ import {
 import { ProjectButterActivityFilterMenu } from "@/components/blocks/jira-work-item/project-butter/activity-filter-menu";
 import { ProjectButterSessionStart } from "@/components/blocks/jira-work-item/project-butter/activity-session-start";
 import { ProjectButterActivityTimeline } from "@/components/blocks/jira-work-item/project-butter/activity-timeline";
-import { activityDayLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
+import { activityDayLabel, activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 import { ProjectButterUpdateGroup } from "@/components/blocks/jira-work-item/project-butter/activity-update-group";
 import { activityScrollport, useProjectButterActivityNavigation } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
 import type { ProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
@@ -117,7 +115,9 @@ export function ProjectButterActivity({
 	// The page limit counts rendered rows, so an update group is one row however many changes it holds.
 	const rowIndex = (id: string | null | undefined) => id ? allRows.findIndex((row) => row.id === id || groups.get(row.id)?.some((entry) => entry.id === id)) : -1;
 	const startedEntryId = startedSessionId ? `invocation-${startedSessionId}` : null;
-	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(previewEntryId) + 1, rowIndex(startedEntryId) + 1));
+	const previewLimit = rowIndex(previewEntryId) + 1;
+	if (previewLimit > limit) setLimit(previewLimit);
+	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, previewLimit, rowIndex(startedEntryId) + 1));
 	const visible = rows.flatMap<JiraActivityEntry>((row) => groups.get(row.id) ?? [row]);
 	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useProjectButterActivityNavigation(rows, sidePanel, content.activityFocusId);
 	const visibleRow = rows.find((row) => row.id === visibleId) ?? rows[0];
@@ -173,8 +173,8 @@ export function ProjectButterActivity({
 			root.scrollTo({ top: target, behavior: "auto" });
 			return;
 		}
-		const animation = animate(root.scrollTop, target, { duration: motionDuration.slow, ease: motionEase.outPractical, onUpdate: (value) => { root.scrollTop = value; } });
-		const stop = () => animation.stop();
+		root.scrollTo({ top: target, behavior: "smooth" });
+		const stop = () => root.scrollTo({ top: root.scrollTop, behavior: "instant" });
 		root.addEventListener("wheel", stop, { passive: true });
 		root.addEventListener("touchstart", stop, { passive: true });
 		root.addEventListener("pointerdown", stop, { passive: true });
@@ -195,7 +195,7 @@ export function ProjectButterActivity({
 		);
 		return entry.icon === "created" || entry.icon === "status" ? <JiraActivityEvent className={ACTIVITY_EVENT_TEXT} entry={entry} /> : undefined;
 	};
-	const headerTime = visibleRow ? visibleRow.timestamp || activityDayLabel(visibleRow) : "";
+	const headerTime = visibleRow ? activityHeaderTimeLabel(visibleRow.timestamp || activityDayLabel(visibleRow)) : "";
 	const header = (
 		<div className="sticky top-0 z-20 -mx-1 mb-3 flex shrink-0 items-center gap-4 bg-surface px-1 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-linear-to-b after:from-surface after:to-transparent" data-project-butter-activity-header data-stuck={stuck || undefined} ref={headerRef}>
 			{/* Once the header sticks, the visible row's relative time stands in for the title; the h2 keeps its name for assistive tech. */}

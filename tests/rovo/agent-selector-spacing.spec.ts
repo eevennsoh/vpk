@@ -25,7 +25,7 @@ test("Rovo CLI configures its directory separately from selecting the agent", as
 		window.localStorage.removeItem("butter-local-agent-workspaces");
 	});
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const local = page.getByRole("region", { name: "Jira Local Agent" });
 	const row = local.getByRole("button", { name: "Rovo CLI", exact: true });
 	await row.hover();
@@ -71,7 +71,7 @@ test("Rovo CLI configures its directory separately from selecting the agent", as
 test("Rovo CLI copy feedback reaches its full size with reduced motion", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const local = page.getByRole("region", { name: "Jira Local Agent" });
 	await local.getByRole("button", { name: "Rovo CLI", exact: true }).click();
 	const success = local.getByRole("button", { name: "Command copied", exact: true }).locator(".text-icon-success svg");
@@ -128,7 +128,7 @@ test("selected workspace delete control and checkmark do not overlap", async ({ 
 	const path = "/Users/example/a-very-long-workspace-name-for-checking-the-layout";
 	await page.addInitScript((workspace) => window.localStorage.setItem("butter-local-agent-workspaces", JSON.stringify(JSON.stringify({ paths: [workspace], selected: workspace }))), path);
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	await page.getByRole("button", { name: "Configure Rovo CLI" }).click();
 	await page.getByRole("textbox", { name: "Choose your directory" }).click();
 	const menu = page.getByRole("dialog", { name: "Codebase workspaces" });
@@ -173,7 +173,7 @@ for (const recentAgent of [false, true]) {
 			else window.localStorage.removeItem("jira-local-agent-last-used");
 		}, recentAgent);
 		await page.goto(appUrl("/butter-v1"));
-		await page.getByRole("button", { name: "Select Agent selector" }).click();
+		await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 		const cloud = page.getByRole("region", { name: "Project Butter agent selector" });
 		const local = page.getByRole("region", { name: "Jira Local Agent" });
 		const style = (element: Element) => {

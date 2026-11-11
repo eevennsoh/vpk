@@ -44,20 +44,18 @@ function CopyPromptAction({ code, description, presentation, summary }: Readonly
 		<span className="sr-only" role="status">{feedback === "idle" ? "" : label}</span></>;
 }
 
-export function ProjectButterDevelopmentActions({ code, description, openIn, presentation = "default", renderStartCoding, showCopyPrompt = true, showStartCoding = true, summary }: Readonly<{
+export function ProjectButterDevelopmentActions({ code, description, presentation = "default", renderStartCoding, showCopyPrompt = true, showStartCoding = true, summary }: Readonly<{
 	code: string;
 	description: string;
-	openIn?: ReactNode;
 	presentation?: "default" | "menu";
 	renderStartCoding?: (trigger: ReactElement) => ReactNode;
 	showCopyPrompt?: boolean;
 	showStartCoding?: boolean;
 	summary: string;
 }>) {
-	const startCoding = <Button className={ACTION_ROW_CLASS} type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<BranchIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Configure repository</Button>;
+	const startCoding = <Button className={ACTION_ROW_CLASS} type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<BranchIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Start coding</Button>;
 	return <div className="-mx-2 flex flex-col">
 		{showStartCoding ? renderStartCoding ? renderStartCoding(startCoding) : startCoding : null}
-		{openIn}
 		{showCopyPrompt ? <CopyPromptAction code={code} description={description} presentation={presentation} summary={summary} /> : null}
 	</div>;
 }

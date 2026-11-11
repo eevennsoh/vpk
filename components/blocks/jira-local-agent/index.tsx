@@ -3,28 +3,50 @@
 import { useState, type ReactElement } from "react";
 import { ProjectButterDevelopmentActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-actions";
 import { Button } from "@/components/ui/button";
+import { OpenIn } from "@/components/ui-custom/open-in";
 import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RovoColorIcon } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { CodeIcon } from "@/components/ui/vpk-icons";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { cn } from "@/lib/utils";
-import { InlineLocalAgentPicker } from "./inline-local-agent-picker";
+import { InlineLocalAgentPicker, LOCAL_APPS } from "./inline-local-agent-picker";
 
-type JiraLocalAgentMenuProps = Readonly<{ presentation?: "submenu" | "inline"; workItem: { code: string; summary: string; description: string } }>;
+type JiraLocalAgentMenuProps = Readonly<{ presentation?: "submenu" | "inline"; workItem: { code: string; summary: string; description: string }; onLocalUse?: (agentId: string) => void }>;
 
 type JiraLocalAgentProps = JiraLocalAgentMenuProps & Readonly<{ trigger?: ReactElement }>;
 
-export function JiraLocalAgentMenu({ presentation = "submenu", workItem }: JiraLocalAgentMenuProps) {
+function LocalAppSplitIcon({ agent }: Readonly<{ agent: (typeof LOCAL_APPS)[number] }>) {
+	if (agent.id === "rovo-cli") return <RovoColorIcon size="xxsmall" />;
+	if (agent.id === "vscode" || agent.id === "test-agent") {
+		const isVsCode = agent.id === "vscode";
+		return <svg width="16" height="16" viewBox={isVsCode ? "4 4 16 16" : "4 3 16 18.3"}><image href={isVsCode ? "/3p/vs-code/24.svg" : "/3p/cursor/24.svg"} width="24" height="24" /></svg>;
+	}
+	return agent.brandName ? <LogoThirdParty artwork={agent.id === "review-agent" ? "glyph" : "package"} borderless className={cn("[&_svg]:size-4!", agent.id === "claude-code" && "[&_svg]:scale-150")} label="" name={agent.brandName} size="xxsmall" sizePx={16} /> : null;
+}
+
+export function JiraLocalAgentMenu({ presentation = "submenu", workItem, onLocalUse }: JiraLocalAgentMenuProps) {
 	const [lastUsedAgentId, setLastUsedAgentId] = usePersistentState<string | null>("jira-local-agent-last-used", null);
 	return (
 		<>
-			<InlineLocalAgentPicker onLocalUse={setLastUsedAgentId} presentation={presentation} recentAgentId={lastUsedAgentId} />
+			<InlineLocalAgentPicker onLocalUse={(id) => { setLastUsedAgentId(id); onLocalUse?.(id); }} presentation={presentation} recentAgentId={lastUsedAgentId} />
 			<div className="px-1 pb-1">
 				<hr className={cn(dropdownStyles.separator, "mt-0 border-0")} />
 				<div className="px-2"><ProjectButterDevelopmentActions {...workItem} presentation="menu" showStartCoding={false} /></div>
 			</div>
 		</>
 	);
+}
+
+export function JiraLocalAgentSplitButton({ workItem }: Pick<JiraLocalAgentMenuProps, "workItem">) {
+	const [open, setOpen] = useState(false);
+	const [feedback, setFeedback] = useState("");
+	const [lastUsedAgentId, setLastUsedAgentId] = usePersistentState<string | null>("jira-local-agent-last-used", null);
+	const recentAgent = LOCAL_APPS.find((agent) => agent.id === lastUsedAgentId && agent.id !== "release-agent") ?? LOCAL_APPS.find((agent) => agent.id === "claude-code");
+	return <OpenIn app={recentAgent ? { name: recentAgent.name, icon: <LocalAppSplitIcon agent={recentAgent} /> } : null} contentLabel="Local software agents" onAppClick={() => { if (recentAgent) { setLastUsedAgentId(recentAgent.id); setFeedback(recentAgent.id === "rovo-cli" ? "Command copied" : ""); } }} onOpenChange={setOpen} open={open} status={feedback}>
+		<JiraLocalAgentMenu workItem={workItem} onLocalUse={(id) => { if (id !== "rovo-cli") setOpen(false); }} />
+	</OpenIn>;
 }
 
 export function JiraLocalAgent({ trigger, ...props }: JiraLocalAgentProps) {

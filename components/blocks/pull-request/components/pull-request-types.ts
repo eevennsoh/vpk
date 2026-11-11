@@ -73,6 +73,8 @@ export interface PullRequestProps {
 	onFix?: (checks: readonly PullRequestCheck[]) => void;
 	/** Flyout only. Whether to show the Fix PR action for failing checks. */
 	showFix?: boolean;
+	/** Flyout only. A fix is in progress, so the Fix PR action stays visible and disabled. */
+	isFixing?: boolean;
 	/**
 	 * Absolute timestamp (ms). Reserved for callers that already track PR age;
 	 * the card renders `relativeTime` when provided.

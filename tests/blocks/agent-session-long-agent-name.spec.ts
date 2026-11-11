@@ -4,6 +4,25 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+test("teammate disclosure header does not jump when opening or closing", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/components/blocks/agent-assignment"));
+	await page.locator("#preview").getByRole("button", { name: "Edit agents", exact: true }).click();
+	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Sessions from your teammates" });
+	for (const expanded of [true, false]) {
+		const heights = await trigger.evaluate(async (button) => {
+			if (!(button instanceof HTMLButtonElement)) throw new Error("Disclosure trigger must be a button");
+			const before = button.getBoundingClientRect().height;
+			button.click();
+			await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+			return [before, button.getBoundingClientRect().height];
+		});
+		expect(Math.abs(heights[1] - heights[0]), `Header heights: ${heights}`).toBeLessThan(12);
+		await expect(trigger).toHaveAttribute("aria-expanded", String(expanded));
+		await page.waitForTimeout(250);
+	}
+});
+
 test("teammate avatars move down on expansion and up on collapse", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/components/blocks/agent-assignment"));
@@ -59,7 +78,7 @@ test("teammate avatars settle without movement when reduced motion is enabled", 
 	const trigger = page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: /Sessions from your teammates/u });
 	const avatars = trigger.locator('[data-slot="avatar-group"]');
 	await trigger.click();
-	await expect(avatars).toHaveCount(0);
+	await expect(avatars.locator("..")).toHaveCSS("opacity", "0");
 	await trigger.click();
 	await expect(avatars).toBeVisible();
 	const translation = await avatars.evaluate((element) => {

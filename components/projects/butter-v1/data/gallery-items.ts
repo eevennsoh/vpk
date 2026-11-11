@@ -9,7 +9,8 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 	},
 	{
 		id: "agent-selector",
-		title: "Agent selector",
+		title: "Agent & app selector",
+		titleLines: ["Agent", "& app", "selector"],
 		description: "Choose an agent.",
 		size: "portrait",
 	},

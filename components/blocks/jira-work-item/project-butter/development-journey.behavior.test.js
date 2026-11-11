@@ -140,7 +140,7 @@ test("the standalone gallery runs the failed check through auto-fix and merge", 
 		props: { author: { name: "Venn", avatarUrl: "/avatar-user/venn/venn.png", assistedBy: { name: "Claude", brandName: "claude" } } },
 	});
 	const phase = () => view.container.querySelector("[data-project-butter-development]")?.getAttribute("data-project-butter-development");
-	const advance = async () => { await act(async () => { await new Promise((resolve) => setTimeout(resolve, 5100)); }); };
+	const advance = async (ms = 5100) => { await act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); }); };
 	assert.equal(phase(), "failed");
 	assert.equal(view.queryByRole("button", { name: /2\/3 builds passed · 1 failed/u }) !== null, true);
 	await view.click(view.getByRole("button", { name: /#284 Add merchant onboarding quickstart/u }));
@@ -148,6 +148,9 @@ test("the standalone gallery runs the failed check through auto-fix and merge", 
 	await view.press(null, "Escape");
 	await advance();
 	assert.equal(phase(), "fixing");
+	await view.click(view.getByRole("button", { name: /#284 Add merchant onboarding quickstart/u }));
+	assert.equal(view.getByRole("button", { name: "Fix PR" }).disabled, true);
+	assert.equal(view.getByRole("button", { name: "Fix PR" }).getAttribute("aria-busy"), "true");
 	await advance();
 	assert.equal(phase(), "passed");
 	await advance();
