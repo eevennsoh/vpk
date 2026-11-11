@@ -36,7 +36,7 @@ import type {
 	JiraIssueAgentActivityAvatarLayout,
 	JiraIssueAgentActivityIndicatorRenderer,
 } from "./agent-activity";
-import { getJiraIssueAgentAvatarSize, getJiraIssueAgentRowInset } from "./agent-activity-avatar";
+import { getJiraIssueAgentRowInset } from "./agent-activity-avatar";
 
 export type JiraIssueAgentAssignment = Partial<
 	Pick<
@@ -316,7 +316,7 @@ export function JiraIssueAgentRowContent({
 					vpkLogo={featuredActivity.agentVpkLogo}
 					fallbackText={getAgentInitial(featuredActivity.name)}
 					label={featuredActivity.name}
-					sizePx={getJiraIssueAgentAvatarSize(featuredActivity.agentBrandName, featuredActivity.avatarSrc)}
+					sizePx={24}
 				/>
 			</span>
 		);
@@ -337,7 +337,7 @@ export function JiraIssueAgentRowContent({
 						fallbackText={getAgentInitial(activity.name)}
 						key={activity.id}
 						label=""
-						sizePx={getJiraIssueAgentAvatarSize(activity.agentBrandName, activity.avatarSrc)}
+						sizePx={24}
 					/>
 				))}
 			</AvatarGroup>
@@ -349,8 +349,8 @@ export function JiraIssueAgentRowContent({
 					agents={activities.map(toAgentLoadingAgent)}
 					announce={false}
 					className="shrink-0"
-					intro={puzzleHandoff && !reduce && selectedActivity ? { agentId: selectedActivity.id, avatarSize: getJiraIssueAgentAvatarSize(selectedActivity.agentBrandName, selectedActivity.avatarSrc) } : undefined}
 					key={selectedAgent?.id ?? "default"}
+					variant="vertical"
 				/>
 			</span>
 		);
