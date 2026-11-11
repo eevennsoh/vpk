@@ -142,6 +142,36 @@ test("multiple pull requests open the selected preview and return to the list", 
 	await expect(page.getByRole("group", { name: "Pull request status" }).getByRole("button", { name: "Open PR" })).toHaveAttribute("aria-pressed", "true");
 });
 
+test("multiple pull requests appear in the work item's development panel", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Pull request" }).click();
+	await page.getByRole("button", { name: "Multiple PRs" }).click();
+	await page.locator('[data-butter-gallery-pull-request] [data-slot="jira-issue-card"]').getByText("Improve merchant onboarding for Payments SDK v2", { exact: true }).click();
+	const workItem = page.getByRole("dialog", { name: "Project butter" });
+	const development = workItem.getByRole("region", { name: "Pull request development" });
+	for (const [number, title, status] of [
+		["284", "Add merchant onboarding quickstart", "Open"],
+		["282", "Improve payment error messages", "Failed"],
+		["281", "Add onboarding integration tests", "Draft"],
+		["283", "Add Payments SDK migration guide", "Merged"],
+	] as const) {
+		const row = development.getByRole("button", { name: new RegExp(`#${number} ${title} ${status}`) });
+		await expect(row).toBeVisible();
+		await row.focus();
+		await row.press("Enter");
+		const details = page.locator(`[data-pull-request="${number}"]`);
+		await expect(details).toBeVisible();
+		await expect(details).toContainText(title);
+		await page.keyboard.press("Escape");
+		await expect(row).toBeFocused();
+	}
+	await workItem.getByRole("button", { name: "Close Project butter work item" }).click();
+	await page.getByRole("button", { name: "Open PR", exact: true }).click();
+	await page.locator('[data-butter-gallery-pull-request] [data-slot="jira-issue-card"]').getByText("Improve merchant onboarding for Payments SDK v2", { exact: true }).click();
+	await expect(development.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ })).toBeVisible();
+	await expect(development.getByRole("button", { name: /#282/ })).toHaveCount(0);
+});
+
 test("kanban pull request previews show read-only details in both PR states", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Pull request" }).click();
@@ -221,6 +251,8 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	await card.getByText("Improve merchant onboarding for Payments SDK v2", { exact: true }).click();
 	const workItem = page.getByRole("dialog", { name: "Project butter" });
 	await expect(workItem).toBeVisible();
+	await expect(workItem.getByRole("region", { name: "Work item full screen view" })).toBeVisible();
+	await expect(workItem.getByRole("button", { name: "Collapse work item" })).toHaveCount(0);
 	await expect(workItem.getByRole("heading", { name: "Improve merchant onboarding for Payments SDK v2" })).toBeVisible();
 	await expect(workItem.getByText("Agents", { exact: true })).toBeVisible();
 	await expect(workItem.getByRole("region", { name: "Pull request development" })).toContainText("Add merchant onboarding quickstart");
