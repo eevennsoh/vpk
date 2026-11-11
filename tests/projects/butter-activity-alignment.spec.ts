@@ -76,7 +76,6 @@ test("agent assignment and field updates share activity text and mention styling
 	expect(styles.event).toEqual(styles.action);
 	expect(styles.mentionSizes).toEqual([styles.action[0], styles.action[0], styles.action[0]]);
 	await item.getByRole("button", { name: /\. Add agent$/ }).click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent" }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Cursor");
 	await page.getByRole("option", { name: /^Cursor/ }).first().click();
 	await page.getByRole("menu", { name: "Run Cursor on" }).getByRole("menuitem", { name: "Run on cloud" }).click();

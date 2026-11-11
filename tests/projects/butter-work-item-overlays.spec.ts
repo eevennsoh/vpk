@@ -3,11 +3,12 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1280, height: 800 }, ignoreHTTPSErrors: true });
 
-async function openSessions(page: Page) {
+async function openSessions(page: Page, picker = false) {
 	await page.goto(appUrl("/butter"));
 	await page.locator('[data-issue-key="PAY-123"][data-board-column-title] [data-slot="jira-issue-card"]').click();
 	await page.getByRole("button", { name: /Working on this work item.*Add agent/ }).click();
-	return page.getByRole("dialog", { name: "Agent sessions" });
+	if (!picker) await page.getByRole("button", { name: "View agent sessions", exact: true }).click();
+	return page.getByRole("dialog", { name: picker ? "Add agent" : "Agent sessions" });
 }
 
 async function layer(surface: Locator) {
@@ -47,8 +48,7 @@ test("session tooltip and action menu appear above the work item agent panel", a
 });
 
 test("agent and workspace submenus appear above their parent panels", async ({ page }) => {
-	const sessions = await openSessions(page);
-	await sessions.getByRole("button", { name: "Add agent", exact: true }).click();
+	await openSessions(page, true);
 	const picker = page.getByRole("dialog", { name: "Add agent", exact: true });
 	await picker.locator('[role="option"][data-value="claude-code"]').hover();
 	const claude = page.getByRole("menu", { name: "Run Claude on" });

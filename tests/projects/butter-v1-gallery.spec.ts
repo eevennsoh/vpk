@@ -962,12 +962,12 @@ test("board session flyout reveals more actions when hovering the status", async
 	await expect(more).toBeFocused();
 });
 
-test("the original Butter session menu still offers Add agent", async ({ page }) => {
+test("the original Butter session menu shows sessions without an Add agent footer", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter"));
 	await page.locator('[data-issue-key="PAY-105"][data-board-column-title]').getByRole("button", { name: "Cursor: Working" }).click();
-	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true })).toBeVisible();
+	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 });
 
 test("session titles describe their work in grouped, review, and List views", async ({ page }) => {

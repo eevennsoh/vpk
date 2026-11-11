@@ -59,7 +59,6 @@ export interface ExperimentalJiraKanbanPageProps {
 	autoArrangeEnabled?: boolean;
 	getStatusVariant?: NonNullable<JiraKanbanProps["selectionToolbar"]>["getStatusVariant"];
 	addAgentLabel?: ExperimentalJiraKanbanProps["addAgentLabel"];
-	showSessionAddAgent?: ExperimentalJiraKanbanProps["showSessionAddAgent"];
 	issueDragTransitions?: ExperimentalJiraKanbanProps["issueDragTransitions"];
 	issueMoveVisual?: ExperimentalJiraKanbanProps["issueMoveVisual"];
 	issueDropMotion?: ExperimentalJiraKanbanProps["issueDropMotion"];

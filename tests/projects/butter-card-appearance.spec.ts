@@ -75,40 +75,24 @@ test("Butter card overflow opens the agent submenu on hover and previews in the 
 	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
 });
 
-test("Butter session menu opens the same agent picker", async ({ page }) => {
+test("Butter session menu shows sessions without an assignment footer", async ({ page }) => {
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
-	const issue = card(page, "PAY-105");
-	await issue.locator('[data-jira-issue-agent-row-handle]').click();
-	await page.getByRole("button", { name: "Add agent", exact: true }).click();
-	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
-	await expect(picker).toHaveCount(1);
-	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await page.getByText("Run on cloud", { exact: true }).click();
-	await expect(issue.getByRole("button", { name: "2 agents: Needs input" })).toBeVisible();
-	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
+	await card(page, "PAY-105").locator('[data-jira-issue-agent-row-handle]').click();
+	const menu = page.getByRole("dialog", { name: "Agent assignment" });
+	await expect(menu.getByRole("listitem").first()).toBeVisible();
+	await expect(menu.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 });
 
-test("a selected Butter card keeps the shared picker available from its session", async ({ page }) => {
+test("a selected Butter card keeps its sessions available without an assignment footer", async ({ page }) => {
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
 	const issue = card(page, "PAY-105");
 	await issue.locator('[data-slot="jira-issue-project-butter"] p').first().click({ modifiers: ["Shift"] });
 	await issue.locator('[data-jira-issue-agent-row-handle]').click();
-	await page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true }).click();
-	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
-	await expect(picker.getByText("Software agents", { exact: true })).toBeVisible();
-	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
+	const menu = page.getByRole("dialog", { name: "Agent assignment" });
+	await expect(menu.getByRole("listitem").first()).toBeVisible();
+	await expect(menu.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 	await page.keyboard.press("Escape");
 	await expect(issue.locator('[data-jira-issue-agent-row-handle]')).toBeFocused();
-	await issue.locator('[data-jira-issue-agent-row-handle]').click();
-	await page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true }).click();
-	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await page.getByText("Run on cloud", { exact: true }).click();
-	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
-	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
 });
 
 test("Butter bulk assignment uses the same picker and adds the agent to each selected card", async ({ page }) => {
@@ -165,7 +149,6 @@ test("Butter work item uses the shared picker and adds its session to the board 
 	const workItem = page.locator('[data-project-butter-work-item]');
 	await expect(workItem).toBeVisible();
 	await page.getByRole("group", { name: "Work item agents" }).getByRole("button").click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent" }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await expect(page.getByText("Software agents", { exact: true })).toBeVisible();
 	await page.getByRole("option", { name: /^Claude/ }).click();
@@ -179,7 +162,6 @@ test("Butter work item picker opens the agent directory", async ({ page }) => {
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
 	await card(page, "PAY-105").getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true }).click();
 	await page.getByRole("group", { name: "Work item agents" }).getByRole("button").click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent" }).click();
 	await page.getByRole("button", { name: "Browse agents" }).click();
 	const directory = page.getByRole("dialog", { name: "Agents", exact: true }).filter({ has: page.getByRole("tab", { name: "Recommended" }) });
 	await expect(directory).toBeVisible();

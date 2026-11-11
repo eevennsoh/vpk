@@ -116,7 +116,6 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	/** Fuses selected wells, keeps issue surfaces white, and gives every issue a well. */
 	issueSelectionAppearance?: "card" | "fused-backdrop";
 	addAgentLabel?: string;
-	showSessionAddAgent?: boolean;
 	/** Issue-only previews, grouped workflow targets and ordered drops. */
 	issueDragTransitions?: boolean;
 	/** False restores the original issue move visuals without changing drop behavior. */
@@ -412,7 +411,6 @@ function ExperimentalJiraKanbanView({
 	onAutoArrange,
 	activeCardCode,
 	addAgentLabel,
-	showSessionAddAgent,
 	agentActivityLayout = "merged",
 	agentSessionColumn,
 	agents,
@@ -944,7 +942,6 @@ function ExperimentalJiraKanbanView({
 								<ExperimentalJiraKanbanCard
 									appearance={cardAppearance}
 									addAgentLabel={addAgentLabel}
-									showSessionAddAgent={showSessionAddAgent}
 												active={isActive}
 													agents={agents}
 													agentActivityLayout={agentActivityLayout}
