@@ -18,17 +18,18 @@ export function TeammateSessionAvatars({ items }: Readonly<{ items: readonly Age
 		const key = JSON.stringify([name, avatarSrc]);
 		if (!people.has(key)) people.set(key, { name, avatarSrc });
 	}
+	const visiblePeople = Array.from(people).slice(0, MAX_VISIBLE_TEAMMATES);
 
 	return (
-		<AvatarGroup aria-hidden="true" as="span" size="sm">
-			{Array.from(people).slice(0, MAX_VISIBLE_TEAMMATES).map(([key, { name, avatarSrc }]) => (
-				<Avatar key={key} size="sm" animate={false} title={name || "Teammate"}>
+		<AvatarGroup aria-hidden="true" as="span" size="xs">
+			{visiblePeople.map(([key, { name, avatarSrc }]) => (
+				<Avatar key={key} size="xs" animate={false} title={name || "Teammate"}>
 					{avatarSrc ? <AvatarImage alt="" src={avatarSrc} /> : null}
 					<AvatarFallback>{name ? actorInitials(name) : <Icon render={<PersonIcon label="" size="small" />} />}</AvatarFallback>
 				</Avatar>
 			))}
 			{people.size > MAX_VISIBLE_TEAMMATES ? (
-				<Avatar size="sm" animate={false} title="More teammates"><AvatarFallback>…</AvatarFallback></Avatar>
+				<Avatar size="xs" animate={false} title="More teammates"><AvatarFallback>…</AvatarFallback></Avatar>
 			) : null}
 		</AvatarGroup>
 	);

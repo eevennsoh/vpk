@@ -20,7 +20,12 @@ export default function AgentAssignmentPage({
 }: Readonly<{
 	variant?: "default" | "simple";
 }>) {
-	const [assignedAgentIds, setAssignedAgentIds] = useState<readonly string[]>(INITIAL_ASSIGNED_AGENT_IDS);
+	const [assignedAgentIds, setAssignedAgentIds] = useState<readonly string[]>([
+		...INITIAL_ASSIGNED_AGENT_IDS,
+		"figma",
+		"pipeline-troubleshooter",
+		"feedback-analyzer",
+	]);
 	const [codeReviewerFinished, setCodeReviewerFinished] = useState(false);
 
 	useEffect(() => {

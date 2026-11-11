@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
+const { act } = require("react");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 function readProjectFile(filePath) {
@@ -25,6 +26,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 	try {
 		const trigger = view.getByRole("button", disclosure);
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
+		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group"]')), true);
 		assert.deepEqual(view.getAllByRole("listitem").map((row) => row.getAttribute("data-testid")), ["agent-session-row-mine", "agent-session-row-legacy"]);
 		assert.equal(view.queryByText("team-first work"), null);
 		assert.equal(view.tabOrder().some((name) => name.includes("team-first")), false);
@@ -33,6 +35,8 @@ test("session menu folds teammate sessions into one flat list after own sessions
 		assert.equal(view.container.querySelectorAll("hr").length, 1);
 		await view.press(trigger, "Enter");
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
+		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
+		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group"]')), false);
 		const lists = view.getAllByRole("list");
 		assert.equal(lists.length, 2);
 		assert.deepEqual([...lists[1].children].map((row) => row.getAttribute("data-testid")), ["agent-session-row-team-first", "agent-session-row-team-second"]);
@@ -41,7 +45,20 @@ test("session menu folds teammate sessions into one flat list after own sessions
 		assert.equal(view.queryByRole("group", { name: "Sample Alpha" }), null);
 		await view.press(trigger, " ");
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
+		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group"]')), true);
 		assert.equal(view.getAllByRole("listitem").length, 2);
+	} finally { await view.unmount(); }
+});
+
+test("rapidly toggling the teammate disclosure leaves one settled avatar stack", async () => {
+	const view = await renderMenu(menuProps([session("teammate", "viewer", { invokedBy: { name: "Sample Alpha" } })]));
+	try {
+		const trigger = view.getByRole("button", disclosure);
+		for (let index = 0; index < 4; index++) await view.click(trigger);
+		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
+		assert.equal(trigger.getAttribute("aria-expanded"), "false");
+		assert.equal(trigger.querySelectorAll('[data-slot="avatar-group"]').length, 1);
+		assert.equal(trigger.querySelectorAll('[data-slot="avatar"]').length, 1);
 	} finally { await view.unmount(); }
 });
 
