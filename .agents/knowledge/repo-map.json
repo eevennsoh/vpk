@@ -4559,10 +4559,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 447,
+			"manifestEntryCount": 448,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 441,
+				"live": 442,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -6372,8 +6372,15 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 76,
+				"entryCount": 77,
 				"entries": [
+					{
+						"category": "ui-custom",
+						"slug": "agent-add",
+						"name": "Agent Add",
+						"importPath": "@/components/ui-custom/agent-add",
+						"status": "live"
+					},
 					{
 						"category": "ui-custom",
 						"slug": "agent-loading",

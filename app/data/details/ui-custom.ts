@@ -1,6 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 import { HUMAN_AGENT_AVATAR_DETAIL } from "./ui-custom/human-agent-avatar";
+import { AGENT_ADD_DETAIL } from "./ui-custom/agent-add";
 import { AGENT_LOADING_DETAIL } from "./ui-custom/agent-loading";
 import { HOVER_REVEAL_ROW_DETAIL } from "./ui-custom/hover-reveal-row";
 import { FOOTER_DETAIL } from "./ui-custom/footer";
@@ -79,6 +80,7 @@ import { WEB_PREVIEW_DETAIL } from "./ui-custom/web-preview";
 
 export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"live-waveform": LIVE_WAVEFORM_DETAIL,
+	"agent-add": AGENT_ADD_DETAIL,
 	"agent-loading": AGENT_LOADING_DETAIL,
 	"human-agent-avatar": HUMAN_AGENT_AVATAR_DETAIL,
 	"hover-reveal-row": HOVER_REVEAL_ROW_DETAIL,
