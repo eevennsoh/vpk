@@ -725,7 +725,9 @@
  * menus — where focus stays in the editor and Return DOES pick the highlighted
  * row — are unaffected.
  */
+.rich-text-command-menu:focus-within .rich-text-command-menu-item:hover,
 .rich-text-command-menu:focus-within .rich-text-command-menu-item-selected,
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:not(.rich-text-command-menu-search):hover,
 .rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:not(.rich-text-command-menu-search).rich-text-command-menu-item-selected {
 	background-color: transparent;
 }
