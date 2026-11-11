@@ -63,7 +63,7 @@ test("every scenario starts expanded so its rows are visible", async () => {
 	await view.unmount();
 });
 
-test("the summary always draws a status ring, and running checks draw spinners", async () => {
+test("the summary draws progress indicators, and running checks draw spinners", async () => {
 	const view = await renderGallery();
 	const rings = (id) => count(view, id, '[data-slot="progress-circle"]');
 	const spinners = (id) => count(view, id, '[role="status"]');

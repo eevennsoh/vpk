@@ -292,7 +292,7 @@ export default function ButterPage(): React.ReactElement {
 				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
 				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
 				renderSelectedItem={(item) => item.id === "development-panel" ? (
-					<div className="pointer-events-auto w-full max-w-sm">
+					<div className="pointer-events-auto h-64 w-full max-w-sm shrink-0">
 						<ProjectButterDevelopmentGallery author={{ ...BUTTER_DEFAULT_REPORTER, assistedBy: { name: "Claude", brandName: "claude" } }} key={developmentResetKey} />
 					</div>
 				) : item.id === "e2e-journey" || item.id === "board" || item.id === "list" || item.id === "agent-selector" || item.id === "duplicative-sessions" || item.id === "work-item" || item.id === "pull-request" ? null : (

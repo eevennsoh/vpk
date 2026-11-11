@@ -37,7 +37,7 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 					onBrowseAgents,
 					onCreateAgent,
 				}} />
-				{sessions.length === 0 && phase !== "choosing" && phase !== "handoff" ? <span className="pointer-events-none shrink-0 text-sm text-text-subtlest">Add agent</span> : null}
+				{sessions.length === 0 && phase !== "choosing" && phase !== "handoff" ? <span className="pointer-events-none shrink-0 text-sm text-text-subtlest [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 [@media(hover:hover)]:group-focus-within/row:opacity-100">Add</span> : null}
 				<div className="min-w-0 flex-1 pt-1">
 					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0} flushPreview>
 						{sessions.length > 0 ? <JiraListAgentSessionsCell

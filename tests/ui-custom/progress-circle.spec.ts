@@ -6,13 +6,63 @@ const URL = appUrl("/components/ui-custom/progress-circle#filled-controlled");
 
 test.use({ ignoreHTTPSErrors: true });
 
+test("the segmented example plays and replays the checks completion sequence", async ({ page }) => {
+	await page.goto(appUrl("/components/ui-custom/progress-circle#segmented"));
+	const states = page.getByRole("group", { name: "Check states" });
+	const demo = page.locator("#segmented");
+	const progress = demo.getByRole("progressbar", { name: "CI checks", exact: true });
+	await expect(progress).toHaveAttribute("aria-valuenow", "2");
+	await expect(progress).toHaveAttribute("aria-valuemax", "3");
+	await demo.getByRole("button", { name: "Play checks sequence" }).click();
+	await expect(demo.getByText("Rechecking the failed check")).toBeVisible();
+	await expect(demo.getByText("All 3 checks passed")).toBeVisible();
+	await expect(progress).toHaveAttribute("aria-valuenow", "3");
+	await expect(progress.locator("path.text-icon-success")).toBeVisible();
+	await demo.getByRole("button", { name: "Replay checks sequence" }).click();
+	await expect(demo.getByText("2 of 3 checks passed · 1 failed")).toBeVisible();
+	await states.getByRole("button", { name: "Passed", exact: true }).click();
+	await expect(progress).toHaveAttribute("aria-valuenow", "3");
+	await states.getByRole("button", { name: "Failed", exact: true }).click();
+	await expect(progress).toHaveAttribute("aria-valuenow", "2");
+	await demo.getByRole("switch", { name: "Segmented mode" }).click();
+	await expect(demo.getByRole("progressbar", { name: "Progress", exact: true })).toHaveAttribute("aria-valuenow", "75");
+});
+
+test("the segmented completion check scales in after the ring closes", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/components/ui-custom/progress-circle#segmented"));
+	const demo = page.locator("#segmented");
+	const progress = demo.getByRole("progressbar", { name: "CI checks", exact: true });
+	await progress.scrollIntoViewIfNeeded();
+	const samples = progress.evaluate((element) => new Promise<{ opacity: number; scale: number }[]>((resolve) => {
+		const frames: { opacity: number; scale: number }[] = [];
+		let started = 0;
+		const sample = (time: number) => {
+			const icon = element.querySelector("svg:has(path.text-icon-success)");
+			const layer = icon?.parentElement?.parentElement;
+			if (layer) {
+				started ||= time;
+				const style = getComputedStyle(layer);
+				frames.push({ opacity: Number.parseFloat(style.opacity), scale: new DOMMatrixReadOnly(style.transform).a });
+				if (time - started >= 1000) return resolve(frames);
+			}
+			requestAnimationFrame(sample);
+		};
+		requestAnimationFrame(sample);
+	}));
+	await demo.getByRole("button", { name: "Passed", exact: true }).click();
+	const frames = await samples;
+	expect(frames.some(({ opacity, scale }) => opacity > 0.01 && scale < 0.9)).toBe(true);
+	expect(frames.at(-1)?.scale).toBeCloseTo(1, 2);
+});
+
 test("progress colors can be toggled independently of dashed animation", async ({ page }) => {
 	await page.goto(URL);
 	const progress = page.getByRole("progressbar", { name: "Filled progress", exact: true });
 	const dashes = progress.locator('[data-slot="progress-circle-dashes"]');
 	const toggle = page.getByRole("switch", { name: "Color by progress" });
 	await expect(toggle).toBeChecked();
-	await expect(dashes).toHaveClass(/text-text-subtle/);
+	await expect(dashes).toHaveClass(/text-icon-subtle/);
 	const grey = await dashes.evaluate((el) => getComputedStyle(el).color);
 	for (const [value, color] of [[25, "information"], [50, "information"], [75, "discovery"]] as const) {
 		await page.getByRole("button", { name: `${value}%`, exact: true }).click();
@@ -42,6 +92,7 @@ test("filled progress keeps a solid completed arc and a pausable dashed remainde
 	const progress = page.getByRole("progressbar", { name: "Filled progress", exact: true });
 	const dashes = progress.locator('[data-slot="progress-circle-dashes"]');
 	const solid = progress.locator('[data-slot="progress-circle-solid"]');
+	const radius = Number(await solid.getAttribute("r"));
 	await progress.scrollIntoViewIfNeeded();
 	await expect(progress).toHaveAttribute("aria-valuenow", "0");
 	const zeroPattern = (await dashes.getAttribute("stroke-dasharray"))!.split(" ").map(Number);
@@ -51,7 +102,7 @@ test("filled progress keeps a solid completed arc and a pausable dashed remainde
 		await page.getByRole("button", { name: `${value}%`, exact: true }).click();
 		await expect(progress).toHaveAttribute("aria-valuenow", String(value));
 		await expect.poll(async () => Number.parseFloat(await solid.evaluate((el) => getComputedStyle(el).strokeDashoffset)))
-			.toBeCloseTo(2 * Math.PI * 10.5 * (1 - value / 100), 2);
+			.toBeCloseTo(2 * Math.PI * radius * (1 - value / 100), 2);
 		const pattern = (await dashes.getAttribute("stroke-dasharray"))!.split(" ").map(Number);
 		expect(pattern[0]).toBeCloseTo(zeroPattern[1]);
 		expect(pattern[1]).toBeCloseTo(zeroPattern[1]);

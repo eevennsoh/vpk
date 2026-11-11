@@ -1,8 +1,9 @@
 "use client";
 
-import type { Dispatch, MouseEvent as ReactMouseEvent, SetStateAction } from "react";
+import { useState, type Dispatch, type MouseEvent as ReactMouseEvent, type SetStateAction } from "react";
+import CalendarIcon from "@atlaskit/icon/core/calendar";
+import EditIcon from "@atlaskit/icon/core/edit";
 import LinkIcon from "@atlaskit/icon/core/link";
-import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { PRIORITY_LABELS } from "@/components/blocks/jira-list/jira-list-cell-data";
@@ -22,7 +23,9 @@ import type {
 } from "@/components/blocks/jira-list/jira-list-types";
 import { JiraListPointsCell } from "@/components/blocks/jira-list/jira-list-points-cell";
 import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
+import { AvatarUnassigned } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -31,8 +34,48 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
+function JiraListDueDateCell({ dueDate, issueKey, onChange }: Readonly<{
+	dueDate?: string;
+	issueKey: string;
+	onChange: (dueDate: string | undefined) => void;
+}>) {
+	const [open, setOpen] = useState(false);
+	const parsed = dueDate ? new Date(/^\d{4}-\d{2}-\d{2}$/u.test(dueDate) ? `${dueDate}T00:00:00` : dueDate) : undefined;
+	const selected = parsed && !Number.isNaN(parsed.getTime()) ? parsed : undefined;
+	return (
+		<Popover open={open} onOpenChange={setOpen}>
+			<PopoverTrigger render={
+				<button
+					aria-label={dueDate ? `Edit due date for ${issueKey}: ${dueDate}` : `Add due date for ${issueKey}`}
+					className="flex min-w-0 items-center gap-2 rounded-sm text-left text-sm focus-visible:outline-2 focus-visible:outline-border-focused"
+					type="button"
+				/>
+			}>
+				<span className={cn("inline-flex", !dueDate && "text-icon-subtlest")}><CalendarIcon label="" size="small" /></span>
+				{dueDate ? (
+					<span className="truncate">{selected ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(selected) : dueDate}</span>
+				) : (
+					<span className="whitespace-nowrap text-sm text-text-subtlest [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 [@media(hover:hover)]:group-focus-within/row:opacity-100">Add</span>
+				)}
+			</PopoverTrigger>
+			<PopoverContent align="end" className="w-auto p-2">
+				<Calendar
+					defaultMonth={selected}
+					mode="single"
+					onSelect={(date) => {
+						onChange(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` : undefined);
+						setOpen(false);
+					}}
+					selected={selected}
+				/>
+			</PopoverContent>
+		</Popover>
+	);
+}
 
 export function createJiraListBaseColumns({
 	agentCatalog,
@@ -43,6 +86,7 @@ export function createJiraListBaseColumns({
 	onAssignedAgentIdsChange,
 	onAssignedAgentSelect,
 	onCopyLink,
+	onDueDateChange,
 	onIssueClick,
 	onIssueKeyClick,
 	onSummaryEditStart,
@@ -61,6 +105,7 @@ export function createJiraListBaseColumns({
 	onAssignedAgentIdsChange?: JiraListProps["onAssignedAgentIdsChange"];
 	onAssignedAgentSelect?: JiraListProps["onAssignedAgentSelect"];
 	onCopyLink?: (row: JiraListRowData) => void;
+	onDueDateChange?: JiraListProps["onDueDateChange"];
 	onIssueClick?: (row: JiraListRowData) => void;
 	onIssueKeyClick?: (row: JiraListRowData) => void;
 	onSummaryEditStart?: (row: JiraListRowData, event: ReactMouseEvent<HTMLButtonElement>) => void;
@@ -71,8 +116,6 @@ export function createJiraListBaseColumns({
 	setOpenCopyTooltipIssueKey: Dispatch<SetStateAction<string | null>>;
 	statusOptions: readonly JiraListStatusOption[];
 }>): readonly JiraListColumnDefinition[] {
-	const hasHoverRowActions = Boolean(onIssueClick);
-
 	return [
 		{
 			id: "work",
@@ -149,26 +192,24 @@ export function createJiraListBaseColumns({
 								</span>
 							)}
 						</div>
-						{hasHoverRowActions && !isEditing ? (
+						{onSummaryEditStart && !isEditing ? (
 							<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100">
-								{onIssueClick ? (
 									<Tooltip>
 										<TooltipTrigger
 											render={
 												<Button
-													aria-label="Open work item"
+													aria-label={`Edit work item name for ${row.issueKey}`}
 													className="text-text-subtle hover:text-text"
-													onClick={() => onIssueClick(row)}
+													onClick={(event) => onSummaryEditStart(row, event)}
 													size="icon-compact"
 													variant="ghost"
 												/>
 											}
 										>
-											<Icon render={<PanelRightIcon label="" size="small" />} />
+											<Icon render={<EditIcon label="" size="small" />} />
 										</TooltipTrigger>
-										<TooltipContent>Open work item</TooltipContent>
+										<TooltipContent>Edit</TooltipContent>
 									</Tooltip>
-								) : null}
 							</div>
 						) : null}
 					</div>
@@ -219,7 +260,10 @@ export function createJiraListBaseColumns({
 					<span className="truncate text-sm text-text">{row.assignee.name}</span>
 				</div>
 			) : (
-				<span className="text-text-subtle text-sm">Unassigned</span>
+				<div className="flex min-w-0 items-center gap-2">
+					<AvatarUnassigned aria-hidden="true" size="sm" />
+					<span className="text-text-subtle text-sm">Unassigned</span>
+				</div>
 			),
 		},
 		{
@@ -265,7 +309,7 @@ export function createJiraListBaseColumns({
 		...(onStoryPointsChange ? [{
 			id: "storyPoints",
 			label: "Points",
-			widthClassName: "w-[96px]",
+			widthClassName: "w-[156px]",
 			renderCell: (row: JiraListRowData) => (
 				<JiraListPointsCell issueKey={row.issueKey} onChange={(points) => onStoryPointsChange(row.issueKey, points)} points={row.storyPoints} />
 			),
@@ -279,10 +323,10 @@ export function createJiraListBaseColumns({
 		{
 			id: "dueDate",
 			label: "Due date",
-			widthClassName: "w-[114px]",
-			renderCell: (row) => (
-				<span className="text-sm text-text">{row.dueDate ?? "No due date"}</span>
-			),
+			widthClassName: "w-[146px]",
+			renderCell: (row) => onDueDateChange ? (
+				<JiraListDueDateCell dueDate={row.dueDate} issueKey={row.issueKey} onChange={(dueDate) => onDueDateChange(row.issueKey, dueDate)} />
+			) : <span className="text-sm text-text">{row.dueDate ?? "No due date"}</span>,
 		},
 	];
 }

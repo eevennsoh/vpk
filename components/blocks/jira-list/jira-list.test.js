@@ -428,20 +428,6 @@ test("JiraList gives every data column an accessible ellipsis action", () => {
 	assert.match(COLUMN_CONTROLS_SOURCE, /<TooltipContent>\{actionLabel\}<\/TooltipContent>/u);
 });
 
-test("JiraList places an accessible open action last in each Work cell action group", () => {
-	const workCellSource = SOURCE.match(
-		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
-	)?.[1] ?? "";
-
-	assert.match(workCellSource, /group-hover\/row:opacity-100 group-focus-within\/row:opacity-100/u);
-	assert.match(workCellSource, /aria-label="Open work item"/u);
-	assert.match(workCellSource, /onClick=\{\(\) => onIssueClick\(row\)\}/u);
-	assert.match(workCellSource, /size="icon-compact"/u);
-	assert.match(workCellSource, /<PanelRightIcon/u);
-	assert.match(workCellSource, /<TooltipContent>Open work item<\/TooltipContent>/u);
-	assert.ok(workCellSource.lastIndexOf("Open work item") > workCellSource.lastIndexOf("Create"));
-});
-
 test("JiraList renders summaries as plain text when no issue action is available", () => {
 	const workCellSource = SOURCE.match(
 		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
@@ -501,7 +487,6 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 	assert.doesNotMatch(issueKeyGroupSource, /<CopyIcon/u);
 	assert.match(issueKeyGroupSource, /<TooltipContent>\{isCopiedRow \? "Copied" : "Copy link"\}<\/TooltipContent>/u);
 	assert.doesNotMatch(rowActionGroupSource, /CopyIcon|LinkIcon|Copy link|In Model|Create work item below/u);
-	assert.match(rowActionGroupSource, /Open work item/u);
 });
 
 test("JiraList centers an accessible refresh button with the footer count", () => {

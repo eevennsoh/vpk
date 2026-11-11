@@ -64,16 +64,38 @@ test("selection controls precede hierarchy controls and leave the issue type vis
 	await view.unmount();
 });
 
-test("summary editing isolates other rows and saves or cancels the draft", async () => {
+test("row selection is reachable and operable by keyboard without hovering", async () => {
 	const changes = [];
 	const view = await renderComponent({
 		entry: "components/blocks/jira-list/index.tsx",
 		exportName: "JiraList",
-		props: { rows, onSummaryChange: (key, value) => changes.push([key, value]) },
+		props: { rows, onSelectRow: (key, checked) => changes.push([key, checked]) },
+	});
+	const checkbox = view.getByRole("checkbox", { name: "Select PAY-1" });
+	const order = view.tabOrder();
+	assert.equal(order.includes("Select PAY-1"), true);
+	await view.focus(view.getByRole("checkbox", { name: "Select all work items" }));
+	for (let index = 0; index < order.length && !view.isFocused(checkbox); index++) {
+		await view.press(null, "Tab");
+	}
+	assert.equal(view.isFocused(checkbox), true);
+	await view.press(null, " ");
+	assert.deepEqual(changes, [["PAY-1", true]]);
+	await view.unmount();
+});
+
+test("summary editing isolates other rows and saves or cancels the draft", async () => {
+	const changes = [];
+	const opened = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-list/index.tsx",
+		exportName: "JiraList",
+		props: { rows, onIssueClick: (row) => opened.push(row.issueKey), onSummaryChange: (key, value) => changes.push([key, value]) },
 	});
 	const tableRows = Array.from(view.container.querySelectorAll("tbody tr"));
 	const cells = Array.from(tableRows[0].cells);
-	await view.click(view.getByRole("button", { name: "Edit summary for PAY-1: First item" }));
+	await view.click(view.getByRole("button", { name: "Edit work item name for PAY-1" }));
+	assert.deepEqual(opened, []);
 	assert.equal(tableRows[0].cells.length, cells.length);
 	assert.equal(cells.every((cell) => cell.isConnected), true);
 	assert.equal(Array.from(tableRows[0].cells).slice(2).every((cell) => cell.inert), true);
@@ -99,6 +121,16 @@ test("summary editing isolates other rows and saves or cancels the draft", async
 	outside.remove();
 });
 
+test("the edit action is omitted when summaries cannot be changed", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-list/index.tsx",
+		exportName: "JiraList",
+		props: { rows, onIssueClick() {} },
+	});
+	assert.equal(view.queryByRole("button", { name: "Edit work item name for PAY-1" }), null);
+	await view.unmount();
+});
+
 test("point controls accept estimates and never step below zero", async () => {
 	const changes = [];
 	const view = await renderComponent({
@@ -112,17 +144,41 @@ test("point controls accept estimates and never step below zero", async () => {
 	await view.press(input, "Enter");
 	assert.deepEqual(changes, [3]);
 	await view.rerender({ issueKey: "PAY-1", points: 3, onChange: (value) => changes.push(value) });
+	await view.click(view.getByRole("button", { name: "Edit story points for PAY-1, 3" }));
+	await view.fill(view.container.querySelector('input[type="number"]'), "");
+	await view.press(null, "Enter");
+	assert.deepEqual(changes, [3, undefined]);
 	await view.click(view.getByRole("button", { name: "Increase story points for PAY-1" }));
-	assert.deepEqual(changes, [3, 4]);
+	assert.deepEqual(changes, [3, undefined, 4]);
 	await view.rerender({ issueKey: "PAY-1", points: 0, onChange: (value) => changes.push(value) });
 	assert.equal(view.getByRole("button", { name: "Decrease story points for PAY-1" }).disabled, true);
 });
 
+test("due dates can be added and cleared with the calendar", async () => {
+	const changes = [];
+	const props = { rows, onDueDateChange: (key, date) => changes.push([key, date]) };
+	const view = await renderComponent({
+		entry: "components/blocks/jira-list/index.tsx",
+		exportName: "JiraList",
+		props,
+	});
+	await view.click(view.getByRole("button", { name: "Add due date for PAY-1" }));
+	await view.click(view.getByRole("button", { name: /^Today,/u }));
+	const today = new Date();
+	const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+	assert.deepEqual(changes, [["PAY-1", date]]);
+	await view.rerender({ ...props, rows: [{ ...rows[0], dueDate: date }, rows[1]] });
+	await view.click(view.getByRole("button", { name: `Edit due date for PAY-1: ${date}` }));
+	await view.click(view.getByRole("button", { name: /^Today,/u }));
+	assert.deepEqual(changes, [["PAY-1", date], ["PAY-1", undefined]]);
+	await view.unmount();
+});
 
-test("Butter list uses the card agent picker to start a session", async () => {
+
+for (const project of ["butter", "butter-v1"]) test(`${project} list uses the card agent picker to start a session by keyboard`, async () => {
 	const assigned = [];
 	const view = await renderComponent({
-		entry: "components/projects/butter/components/butter-list-agent-cell.tsx",
+		entry: `components/projects/${project}/components/butter-list-agent-cell.tsx`,
 		exportName: "ButterListAgentCell",
 		props: {
 			agentCatalog: [{ id: "claude", name: "Claude", byline: "Coding agent" }],
@@ -130,7 +186,8 @@ test("Butter list uses the card agent picker to start a session", async () => {
 			row: rows[0],
 		},
 	});
-	await view.click(view.getByRole("button", { name: "Add agent to PAY-1" }));
+	await view.focus(view.getByRole("button", { name: "Add agent to PAY-1" }));
+	await view.press(null, " ");
 	await view.click(view.getByRole("option", { name: /Claude/u }));
 	assert.deepEqual(assigned, [["PAY-1", ["claude"]]]);
 });

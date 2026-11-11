@@ -43,7 +43,7 @@ function targetBrowserArguments(route, {
 		throw usageError(`Unknown target route: ${parsed.pathname}. Inspect the generated repo map before opening an object.`);
 	}
 	if (!origin) throw usageError("No worktree origin. Run `control-vpk doctor` and repair this worktree's stack.");
-	return ["open", ...(headed ? ["--headed"] : []), new URL(route, origin).href];
+	return ["open", "--enable", "react-devtools", ...(headed ? ["--headed"] : []), new URL(route, origin).href];
 }
 
 module.exports = {

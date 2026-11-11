@@ -3,6 +3,86 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("due date text and calendar icon are vertically centered", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List" }).click();
+	await page.getByRole("button", { name: "Add due date for PAY-124" }).click();
+	await page.getByRole("button", { name: /^Today,/ }).click();
+	const dueDate = page.getByRole("button", { name: /^Edit due date for PAY-124:/ });
+	await expect(dueDate).toBeVisible();
+	const centers = await dueDate.evaluate((button) => {
+		const icon = button.querySelector("svg");
+		const text = button.lastElementChild;
+		if (!icon || !text) throw new Error("Due date icon or text is missing");
+		const center = (element: Element) => {
+			const rect = element.getBoundingClientRect();
+			return rect.top + rect.height / 2;
+		};
+		return { icon: center(icon), text: center(text) };
+	});
+	expect(Math.abs(centers.icon - centers.text)).toBeLessThanOrEqual(0.5);
+});
+
+test("the whole story points cell acts as the editable field", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List" }).click();
+	const edit = page.getByRole("button", { name: "Edit story points for PAY-118, no estimate" });
+	await edit.scrollIntoViewIfNeeded();
+	const cell = edit.locator("xpath=ancestor::td");
+	const cellBounds = await cell.boundingBox();
+	if (!cellBounds) throw new Error("Story points cell is unavailable");
+	const header = page.getByRole("columnheader", { name: /Points More actions for Points/ });
+	const headerTextX = await header.evaluate((element) => {
+		const label = Array.from(element.querySelectorAll("div")).find((div) => div.textContent === "Points");
+		return label?.getBoundingClientRect().x;
+	});
+	if (headerTextX === undefined) throw new Error("Points header is unavailable");
+	const originalBackground = await edit.evaluate((element) => getComputedStyle(element, "::before").backgroundColor);
+	await page.mouse.move(cellBounds.x + cellBounds.width - 4, cellBounds.y + cellBounds.height / 2);
+	await expect.poll(() => edit.evaluate((element) => getComputedStyle(element, "::before").backgroundColor)).not.toBe(originalBackground);
+	const hoverBounds = await edit.evaluate((element) => {
+		const bounds = element.getBoundingClientRect();
+		const visual = getComputedStyle(element, "::before");
+		return { x: bounds.x + Number.parseFloat(visual.left), right: bounds.right - Number.parseFloat(visual.right) };
+	});
+	expect(hoverBounds.x).toBeCloseTo(headerTextX, 0);
+	await page.mouse.click(cellBounds.x + cellBounds.width - 4, cellBounds.y + cellBounds.height / 2);
+	const input = page.getByRole("spinbutton", { name: "Story points for PAY-118" });
+	await expect(input).toBeFocused();
+	await expect(input).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(input).toHaveCSS("border-width", "0px");
+	const inputBounds = await input.boundingBox();
+	if (!inputBounds) throw new Error("Story points editor is unavailable");
+	expect(inputBounds.x).toBeGreaterThan(cellBounds.x);
+	expect(inputBounds.x + inputBounds.width).toBeLessThan(cellBounds.x + cellBounds.width);
+	expect(inputBounds.height).toBeLessThan(cellBounds.height);
+	expect(inputBounds.y + inputBounds.height / 2).toBeCloseTo(cellBounds.y + cellBounds.height / 2, 0);
+	expect(inputBounds.x).toBeCloseTo(headerTextX, 0);
+	expect(inputBounds.x + inputBounds.width).toBeCloseTo(hoverBounds.right, 0);
+	const increase = page.getByRole("button", { name: "Increase story points for PAY-118" });
+	const decrease = page.getByRole("button", { name: "Decrease story points for PAY-118" });
+	await expect(decrease).toBeDisabled();
+	await increase.click();
+	await expect(input).toHaveValue("1");
+	await expect(input).toBeFocused();
+	await decrease.click();
+	await expect(input).toHaveValue("0");
+	await expect(decrease).toBeDisabled();
+	await input.fill("3");
+	await input.press("Enter");
+	await increase.click();
+	await expect(page.getByRole("button", { name: "Edit story points for PAY-118, 4" })).toBeVisible();
+	await page.getByRole("button", { name: "Edit story points for PAY-118, 4" }).click();
+	await input.press("Tab");
+	await expect(increase).toBeFocused();
+	await increase.press("Enter");
+	await expect(input).toHaveValue("5");
+	await decrease.press("Tab");
+	await expect(page.getByRole("button", { name: "Edit story points for PAY-118, 5" })).toBeVisible();
+});
+
 test("selecting a gallery item animates its highlight", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
@@ -558,15 +638,106 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 test("the Development panel gallery item shows the populated interactive panel", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
+	await page.clock.install();
 	await page.getByRole("button", { name: "Select Development panel" }).click();
-	const panel = page.getByRole("region", { name: "Development" });
-	await expect(panel.getByText("1/3 builds passed")).toBeVisible();
-	await expect(panel.getByRole("button", { name: /#1306 Add guest checkout/ })).toBeVisible();
-	await expect(panel.getByRole("button", { name: /#1847 Fix threaded comment/ })).toBeVisible();
-	await expect(panel.getByRole("button", { name: /#7 SHIL-25/ })).toBeVisible();
-	await panel.getByRole("button", { name: /#1306 Add guest checkout/ }).click();
-	await expect(page.getByText("acme/storefront").first()).toBeVisible();
+	const panel = page.getByRole("region", { name: "Pull request development" });
+	await expect(panel).toHaveAttribute("data-project-butter-development", "failed");
+	await expect(panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ })).toBeVisible();
+	const initial = await panel.boundingBox();
+	if (!initial) throw new Error("Development panel has no bounds");
+	for (const phase of ["fixing", "passed", "merged"]) {
+		await page.clock.fastForward(5000);
+		await expect(panel).toHaveAttribute("data-project-butter-development", phase);
+		const current = await panel.boundingBox();
+		if (!current) throw new Error(`Development panel has no bounds in ${phase}`);
+		expect(Math.abs(current.x - initial.x)).toBeLessThanOrEqual(1);
+		expect(Math.abs(current.y - initial.y)).toBeLessThanOrEqual(1);
+	}
+	await panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).click();
+	await expect(page.getByText("payments-platform/payments").first()).toBeVisible();
 });
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`CI summary resolves to a filled success check with ${reducedMotion} motion`, async ({ page }) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Select Development panel" }).click();
+		const panel = page.getByRole("region", { name: "Pull request development" });
+		await expect(panel).toHaveAttribute("data-project-butter-development", "failed");
+		await panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).click();
+		const flyout = page.getByRole("group", { name: "Pull request #284: Add merchant onboarding quickstart" });
+		const indicator = flyout.locator('[data-slot="progress-circle"]').first();
+		await expect(indicator.locator("circle")).not.toHaveCount(0);
+		await expect(indicator.locator("circle.text-icon-danger")).toHaveCount(1);
+		const completionFrames = flyout.evaluate((element) => new Promise<{ time: number; fraction: number; successOpacity: number; successScale: number }[]>((resolve) => {
+			const frames: { time: number; fraction: number; successOpacity: number; successScale: number }[] = [];
+			let started = 0;
+			const sample = (time: number) => {
+				if (document.querySelector('[data-project-butter-development="passed"]')) {
+					started ||= time;
+					const arc = element.querySelector("circle.text-icon-accent-lime");
+					const values = arc ? getComputedStyle(arc).strokeDasharray.match(/[\d.]+/gu)?.map(Number) : undefined;
+					const icon = element.querySelector("svg:has(path.text-icon-success)");
+					const iconLayer = icon?.parentElement?.parentElement;
+					const successOpacity = icon && iconLayer ? Number.parseFloat(getComputedStyle(icon).opacity) * Number.parseFloat(getComputedStyle(iconLayer).opacity) : 0;
+					const successScale = iconLayer ? new DOMMatrixReadOnly(getComputedStyle(iconLayer).transform).a : 1;
+					frames.push({ time, fraction: values && values.length >= 2 ? values[0] / (values[0] + values[1]) : 0, successOpacity, successScale });
+					if (time - started >= 1000) return resolve(frames);
+				}
+				requestAnimationFrame(sample);
+			};
+			requestAnimationFrame(sample);
+		}));
+		const failureOpacities = indicator.evaluate((element) => new Promise<number[]>((resolve) => {
+			const samples: number[] = [];
+			const sample = () => {
+				const failed = element.querySelector("circle.text-icon-danger");
+				if (!failed) return resolve(samples);
+				samples.push(Number.parseFloat(getComputedStyle(failed).opacity));
+				requestAnimationFrame(sample);
+			};
+			requestAnimationFrame(sample);
+		}));
+		const completionOpacities = flyout.evaluate((element) => new Promise<number[]>((resolve) => {
+			const samples: number[] = [];
+			let started = 0;
+			const sample = (time: number) => {
+				const icon = element.querySelector("svg:has(path.text-icon-success)");
+				if (icon) {
+					started ||= time;
+					const iconLayer = icon.parentElement?.parentElement;
+					samples.push(iconLayer ? Number.parseFloat(getComputedStyle(iconLayer).opacity) : 0);
+					if (time - started >= 800) return resolve(samples);
+				}
+				requestAnimationFrame(sample);
+			};
+			requestAnimationFrame(sample);
+		}));
+		await expect(panel).toHaveAttribute("data-project-butter-development", "fixing", { timeout: 10_000 });
+		const failed = await failureOpacities;
+		if (reducedMotion === "reduce") expect(failed.every((opacity) => opacity === 1)).toBe(true);
+		else expect(failed.some((opacity) => opacity < 0.99)).toBe(true);
+		await expect(panel).toHaveAttribute("data-project-butter-development", "passed", { timeout: 15_000 });
+		await expect(flyout.getByRole("button", { name: /3\/3 builds passed/ })).toBeVisible();
+		await expect(flyout.locator('[data-slot="progress-circle"] path.text-icon-success')).toBeVisible();
+		await expect(indicator.locator("circle.text-icon-accent-lime")).toHaveCount(1);
+		const opacities = await completionOpacities;
+		const frames = await completionFrames;
+		if (reducedMotion === "reduce") {
+			expect(opacities.every((opacity) => opacity === 1)).toBe(true);
+			expect(frames.every(({ successScale }) => successScale === 1)).toBe(true);
+		}
+		else {
+			expect(opacities.some((opacity) => opacity < 0.99)).toBe(true);
+			expect(frames.some(({ successOpacity, successScale }) => successOpacity > 0.01 && successScale < 0.9)).toBe(true);
+			expect(frames.some(({ fraction, successOpacity }) => fraction > 0.99 && successOpacity < 0.01)).toBe(true);
+			const ringCompleted = frames.find(({ fraction }) => fraction > 0.999);
+			const checkAppeared = frames.find(({ successOpacity }) => successOpacity > 0.01);
+			if (!ringCompleted || !checkAppeared) throw new Error("Completion sequence did not finish");
+			expect(checkAppeared.time - ringCompleted.time).toBeGreaterThanOrEqual(180);
+		}
+	});
+}
 
 test("switching between the board and journey does not produce runtime errors", async ({ page }) => {
 	const errors: string[] = [];
