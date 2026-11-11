@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import {
 	PullRequestFlyoutChecks,
+	PullRequestChecksSummary,
 	PullRequestFlyoutMetaRow,
 } from "@/components/blocks/pull-request/components/pull-request-flyout-parts";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -363,6 +364,7 @@ function PullRequestFlyoutBody({
 	repository,
 	reviewers,
 	checks,
+	checksExpandable,
 	reviewHref,
 	showReview,
 	href,
@@ -385,6 +387,7 @@ function PullRequestFlyoutBody({
 		| "repository"
 		| "reviewers"
 		| "checks"
+		| "checksExpandable"
 		| "reviewHref"
 		| "showReview"
 		| "href"
@@ -464,7 +467,7 @@ function PullRequestFlyoutBody({
 						className="font-normal"
 					/>
 				</PullRequestFlyoutMetaRow>
-				{checks ? <PullRequestFlyoutChecks checks={checks} /> : null}
+				{checks ? checksExpandable ? <PullRequestFlyoutChecks checks={checks} /> : <PullRequestChecksSummary checks={checks} /> : null}
 				{hasActions ? (
 					<div className="flex min-w-0 gap-2 pt-1">
 						{reviewHref ? (
@@ -514,6 +517,7 @@ export function PullRequest({
 	repository,
 	reviewers,
 	checks,
+	checksExpandable = true,
 	reviewHref,
 	showReview,
 	href,
@@ -534,6 +538,7 @@ export function PullRequest({
 			author={author}
 			branch={branch}
 			checks={checks}
+			checksExpandable={checksExpandable}
 			deletions={deletions}
 			filesChanged={filesChanged}
 			href={href}

@@ -61,6 +61,8 @@ export interface PullRequestProps {
 	 * the full checks list. Omitted when absent or empty.
 	 */
 	checks?: readonly PullRequestCheck[];
+	/** Flyout only. Whether the CI summary can reveal individual checks. */
+	checksExpandable?: boolean;
 	/** Flyout only. Renders the primary Review action as a link. Omitted without it. */
 	reviewHref?: string;
 	/** Flyout only. Show a Review button when no review destination is available. */

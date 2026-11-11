@@ -156,6 +156,7 @@ export function RovoAppBrand({
 					variants={identityItemVariants}
 				>
 					<AgentAvatarVisual
+						appearance={selectedAgent.brandName === "openai-codex" ? "coding" : undefined}
 						avatarSrc={selectedAgent.avatarSrc}
 						brandName={selectedAgent.brandName}
 						className="size-4 object-contain"
