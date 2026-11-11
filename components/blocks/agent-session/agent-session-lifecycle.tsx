@@ -106,6 +106,7 @@ export function AgentSessionShortLifecycleIcon({
 	animateTransition = false,
 	onTransitionComplete,
 	showWorkingSpinner = false,
+	showAllStates = false,
 	renderGlyph,
 	transitionEffect = "scale",
 }: Readonly<{
@@ -113,6 +114,7 @@ export function AgentSessionShortLifecycleIcon({
 	animateTransition?: boolean;
 	onTransitionComplete?: () => void;
 	showWorkingSpinner?: boolean;
+	showAllStates?: boolean;
 	/** Preserve a consumer's glyph sizes while sharing the exact lifecycle swap. */
 	renderGlyph?: (state: AgentSessionItem["state"]) => ReactNode;
 	/** Fade preserves a consumer's glyph footprint throughout the state change. */
@@ -122,8 +124,8 @@ export function AgentSessionShortLifecycleIcon({
 	const shouldReduceMotion = useReducedMotion();
 	const playMotion = animateTransition && shouldReduceMotion !== true;
 	const scaleGlyph = transitionEffect === "scale";
-	if (state === "attention" && !animateTransition) return null;
-	if (state === "running" && !animateTransition && !showWorkingSpinner) return null;
+	if (state === "attention" && !animateTransition && !showAllStates) return null;
+	if (state === "running" && !animateTransition && !showWorkingSpinner && !showAllStates) return null;
 
 	return (
 		<span
@@ -193,16 +195,38 @@ export function AgentSessionLifecycle({
 	state,
 	accessibleState = state,
 	onTransitionComplete,
+	readOnly = false,
 	showLabel = true,
 }: Readonly<{
 	accessibleState?: AgentSessionItem["state"];
 	onTransitionComplete?: () => void;
+	readOnly?: boolean;
 	showLabel?: boolean;
 	state: AgentSessionItem["state"];
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [pressed, setPressed] = useState(false);
 	const label = LIFECYCLE_LABELS[accessibleState];
+	const content = (
+		<AnimatePresence initial={false} mode="wait">
+			<motion.div
+				animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
+				className="grid place-items-center"
+				exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.6, transition: INDICATOR_EXIT }}
+				initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.6 }}
+				key={state}
+				onAnimationComplete={shouldReduceMotion !== true && state === accessibleState ? onTransitionComplete : undefined}
+				style={shouldReduceMotion ? undefined : { willChange: "opacity, transform" }}
+				transition={shouldReduceMotion ? { duration: 0 } : INDICATOR_ENTER}
+			>
+				<LifecycleState showLabel={showLabel} state={state} />
+			</motion.div>
+		</AnimatePresence>
+	);
+
+	if (readOnly) {
+		return <div aria-label={label} className="flex min-h-6 min-w-6 items-center justify-center" role="img">{content}</div>;
+	}
 
 	return (
 		<Button
@@ -222,22 +246,7 @@ export function AgentSessionLifecycle({
 			type="button"
 			variant="ghost"
 		>
-			<AnimatePresence initial={false} mode="wait">
-				<motion.div
-					animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
-					className="grid place-items-center"
-					exit={shouldReduceMotion
-						? undefined
-						: { opacity: 0, scale: 0.6, transition: INDICATOR_EXIT }}
-					initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.6 }}
-					key={state}
-					onAnimationComplete={shouldReduceMotion !== true && state === accessibleState ? onTransitionComplete : undefined}
-					style={shouldReduceMotion ? undefined : { willChange: "opacity, transform" }}
-					transition={shouldReduceMotion ? { duration: 0 } : INDICATOR_ENTER}
-				>
-					<LifecycleState showLabel={showLabel} state={state} />
-				</motion.div>
-			</AnimatePresence>
+			{content}
 		</Button>
 	);
 }

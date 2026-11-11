@@ -64,15 +64,22 @@ export const BUTTER_PULL_REQUEST_PREVIEWS = {
 		relativeTime: "yesterday",
 		title: "Port payment intents",
 	}),
-	"PAY-105": createPreview({
-		additions: 274,
-		author: PAY_STORY_PEOPLE.jordan,
-		branch: "pay-105-confirm-3ds-challenge",
-		deletions: 52,
-		filesChanged: 13,
-		relativeTime: "2h",
-		title: "Port 3DS flow",
-	}),
+	"PAY-105": {
+		...createPreview({
+			additions: 274,
+			author: PAY_STORY_PEOPLE.jordan,
+			branch: "pay-105-confirm-3ds-challenge",
+			deletions: 52,
+			filesChanged: 13,
+			relativeTime: "2h",
+			title: "Port 3DS flow",
+		}),
+		checks: [
+			{ id: "lint", name: "Lint and typecheck", status: "passed", details: "Passed" },
+			{ id: "unit", name: "Unit tests", status: "passed", details: "Passed" },
+			{ id: "3ds", name: "3-D Secure tests", status: "failed", details: "Failed" },
+		],
+	},
 	"PAY-107": createPreview({
 		additions: 163,
 		author: PAY_STORY_PEOPLE.maya,

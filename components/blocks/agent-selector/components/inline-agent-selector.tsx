@@ -36,6 +36,7 @@ export type InlineAgentSelectorProps = {
 	showFavorites?: boolean;
 	showHeadings?: boolean;
 	recentAgentId?: string | null;
+	recommendedAgentId?: string;
 	softwareHeading?: string;
 	disabledLabel?: string;
 	compact?: boolean;
@@ -45,12 +46,13 @@ export type InlineAgentSelectorProps = {
 	| { favoriteAgentIds?: undefined; onFavoriteAgentIdsChange?: (ids: readonly string[]) => void }
 );
 
-function groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites, recentAgentId, query, expanded, initialSoftwareLimit }: Readonly<{
+function groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites, recentAgentId, recommendedAgentId, query, expanded, initialSoftwareLimit }: Readonly<{
 	agents: readonly AgentSelectorAgent[];
 	softwareAgentIds: readonly string[];
 	favorites: readonly string[];
 	showFavorites: boolean;
 	recentAgentId?: string | null;
+	recommendedAgentId?: string;
 	query: string;
 	expanded: boolean;
 	initialSoftwareLimit: number;
@@ -58,15 +60,16 @@ function groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites,
 	const software = softwareAgentIds.flatMap((id) => agents.filter((agent) => agent.id === id));
 	const others = agents.filter((agent) => !softwareAgentIds.includes(agent.id));
 	const matches = (agent: AgentSelectorAgent) => `${agent.name} ${agent.byline}`.toLowerCase().includes(query.trim().toLowerCase());
-	const recentAgent = recentAgentId ? software.find((agent) => agent.id === recentAgentId && matches(agent)) : undefined;
-	const favoriteAgents = [...software, ...others].filter((agent) => showFavorites && favorites.includes(agent.id) && matches(agent));
-	const softwareAgents = software.filter((agent) => agent.id !== recentAgent?.id && (!showFavorites || !favorites.includes(agent.id)) && matches(agent));
-	const otherAgents = others.filter((agent) => (!showFavorites || !favorites.includes(agent.id)) && matches(agent));
+	const recommendedAgent = agents.find((agent) => agent.id === recommendedAgentId && matches(agent));
+	const recentAgent = recentAgentId ? software.find((agent) => agent.id === recentAgentId && agent.id !== recommendedAgent?.id && matches(agent)) : undefined;
+	const favoriteAgents = [...software, ...others].filter((agent) => agent.id !== recommendedAgent?.id && showFavorites && favorites.includes(agent.id) && matches(agent));
+	const softwareAgents = software.filter((agent) => agent.id !== recommendedAgent?.id && agent.id !== recentAgent?.id && (!showFavorites || !favorites.includes(agent.id)) && matches(agent));
+	const otherAgents = others.filter((agent) => agent.id !== recommendedAgent?.id && (!showFavorites || !favorites.includes(agent.id)) && matches(agent));
 	const shownSoftware = query || expanded ? softwareAgents : softwareAgents.slice(0, initialSoftwareLimit);
-	return { recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware };
+	return { recommendedAgent, recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware };
 }
 
-export function InlineAgentSelector({ agents, softwareAgentIds, getActions, renderAdditionalActions, renderAgentAction, renderAgentFeedback, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, showSearch = true, showFavorites = true, showHeadings = true, recentAgentId, softwareHeading = "Software agents", disabledLabel, compact = false, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
+export function InlineAgentSelector({ agents, softwareAgentIds, getActions, renderAdditionalActions, renderAgentAction, renderAgentFeedback, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, showSearch = true, showFavorites = true, showHeadings = true, recentAgentId, recommendedAgentId, softwareHeading = "Software agents", disabledLabel, compact = false, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
 	const [query, setQuery] = useState("");
 	const [expanded, setExpanded] = useState(false);
 	const [internalFavorites, setInternalFavorites] = useState<readonly string[]>([]);
@@ -76,7 +79,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 	const { ref: listRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const focusFrame = useRef<number | null>(null);
 	useEffect(() => () => { if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current); }, []);
-	const { recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware } = groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites, recentAgentId, query, expanded, initialSoftwareLimit });
+	const { recommendedAgent, recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware } = groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites, recentAgentId, recommendedAgentId, query, expanded, initialSoftwareLimit });
 	const row = (agent: AgentSelectorAgent) => {
 		const favorite = favorites.includes(agent.id);
 		const actions = getActions(agent);
@@ -93,7 +96,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 				}}>
 					{renderAgentFeedback?.(agent, avatar) ?? <>
 						<span aria-hidden className="grid size-6 shrink-0 place-items-center">{avatar}</span>
-						<span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}</span>
+						<span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</span>
 					</>}
 					{disabled && disabledLabel ? <span className="shrink-0 text-xs text-text-subtlest">{disabledLabel}</span> : null}
 				</button>
@@ -132,7 +135,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 	}}>Show more</button> : null}</section> : null;
 	return <div ref={root} data-overlay-surface={compact ? undefined : ""} className={cn("flex w-80 max-w-full flex-col overflow-hidden rounded-xl bg-popover p-1 text-popover-foreground", compact ? "h-auto" : "h-[26rem] max-h-[var(--available-height,26rem)] shadow-2xl")}>
 		{showSearch ? <div className="-mx-1 -mt-1 shrink-0 overflow-hidden rounded-t-xl"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div> : null}
-		<div ref={listRef} className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain", showTopScrollMask && "scroll-mask-top [--scroll-mask-fade-size:3rem]")}>{section("Favorites", favoriteAgents)}{section(softwareHeading, recentAgent ? [recentAgent, ...shownSoftware] : shownSoftware, !recentAgent, Boolean(recentAgent))}{section("Other agents", otherAgents)}{!recentAgent && !favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
+		<div ref={listRef} className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain", showTopScrollMask && "scroll-mask-top [--scroll-mask-fade-size:3rem]")}>{recommendedAgent ? row(recommendedAgent) : null}{section("Favorites", favoriteAgents)}{section(softwareHeading, recentAgent ? [recentAgent, ...shownSoftware] : shownSoftware, !recentAgent, Boolean(recentAgent))}{section("Other agents", otherAgents)}{!recommendedAgent && !recentAgent && !favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
 		{onBrowseAgents || onCreateAgent ? <div className="shrink-0 border-t border-border pt-1">{onBrowseAgents ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onBrowseAgents}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" />} />Browse agents</Button> : null}{onCreateAgent ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onCreateAgent}><Icon aria-hidden className="size-6" render={<AddIcon label="" />} />Create agent</Button> : null}</div> : null}
 		<p role="status" className="sr-only">{status}</p>
 	</div>;

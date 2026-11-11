@@ -57,6 +57,7 @@ function toPullRequestCardStatus(status: JiraIssuePullRequestStatus | undefined)
 		case "merged":
 			return "Merged";
 		case "failed":
+			return "Failed";
 		case "open":
 		case undefined:
 			return "Open";
@@ -154,6 +155,7 @@ export function JiraIssuePullRequestCluster({
 					author={pullRequestPreview?.author}
 					branch={pullRequestPreview?.branch}
 					checks={pullRequestPreview?.checks}
+					checksExpandable={false}
 					className="border-none bg-transparent shadow-none"
 					deletions={pullRequestPreview?.deletions ?? 0}
 					filesChanged={pullRequestPreview?.filesChanged}
@@ -162,7 +164,6 @@ export function JiraIssuePullRequestCluster({
 					relativeTime={pullRequestPreview?.relativeTime}
 					repository={pullRequestPreview?.repository}
 					status={toPullRequestCardStatus(pullRequestStatus)}
-					showDetails={false}
 					targetBranch={pullRequestPreview?.targetBranch}
 					title={overlayTitle}
 					variant="flyout"

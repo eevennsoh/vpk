@@ -132,3 +132,7 @@ export function AgentLoadingDemoFinished() {
 export function AgentLoadingDemoSmall() {
 	return <AgentLoading agents={demoAgents(3, false)} label="Needs input…" size="small" />;
 }
+
+export function AgentLoadingDemoVertical() {
+	return <AgentLoading agents={demoAgents(3, false)} label="Needs input…" variant="vertical" />;
+}

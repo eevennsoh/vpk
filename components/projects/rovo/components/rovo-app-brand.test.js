@@ -2,13 +2,10 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { renderComponent } = require("../../../../scripts/lib/render-component.js");
 
 const SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/rovo-core/components/rovo-app-brand.tsx"),
-	"utf8",
-);
-const AGENT_AVATAR_VISUAL_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/ui-custom/agent-avatar-visual.tsx"),
 	"utf8",
 );
 const HEADER_SOURCE = fs.readFileSync(
@@ -23,6 +20,22 @@ const BACK_BUTTON_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/rovo-core/components/rovo-agent-back-button.tsx"),
 	"utf8",
 );
+
+test("the Codex chat header uses the compact coding-agent artwork", async () => {
+	const view = await renderComponent({
+		entry: "components/projects/rovo-core/components/rovo-app-brand.tsx",
+		exportName: "RovoAppBrand",
+		props: { enableAgentSelector: false },
+		mocks: {
+			"@/app/contexts": `export function useRovoSelectedAgent() { return { selectedAgent: { id: "review-agent", name: "Codex", brandName: "openai-codex" }, selectedAgentId: "review-agent", selectableAgents: [], isCustomAgentSelected: true, selectAgent() {}, resetAgentToRovo() {} }; }`,
+			"@/components/blocks/agent-selector": `export function AgentSelector() { return null; }`,
+			"@/app/data/directory/agents": `export function isRovoAgentProfile() { return false; }`,
+		},
+	});
+	assert.equal(view.container.querySelector("img")?.getAttribute("src"), "/3p/openai-codex/glyph.svg");
+	assert.equal(view.container.querySelector('[data-slot="avatar"]')?.getAttribute("data-shape"), "hexagon");
+	assert.equal(view.container.querySelector('[data-slot="avatar"]')?.getAttribute("aria-label"), "Codex");
+});
 
 test("RovoAppBrand agent selector keeps a single selected agent", () => {
 	assert.match(SOURCE, /useRovoSelectedAgent/u);
@@ -55,18 +68,6 @@ test("RovoAppBrand can render a fixed identity without an agent selector", () =>
 	assert.match(SOURCE, /enableAgentSelector\?: boolean;/u);
 	assert.match(SOURCE, /if \(!enableAgentSelector\) \{/u);
 	assert.match(SOURCE, /<div className=\{cn\("flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text", className\)\}>[\s\S]*\{identity\}/u);
-});
-
-test("RovoAppBrand renders selected third-party identities as labeled extra-small hexagons", () => {
-	assert.match(
-		SOURCE,
-		/<AgentAvatarVisual[\s\S]*brandName=\{selectedAgent\.brandName\}[\s\S]*label=\{selectedAgent\.name\}[\s\S]*sizePx=\{16\}/u,
-	);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /16: "xs"/u);
-	assert.match(
-		AGENT_AVATAR_VISUAL_SOURCE,
-		/<Avatar className=\{avatarClassName\} label=\{label\} shape="hexagon" size=\{avatarSizeFromPx\(sizePx\)\}>/u,
-	);
 });
 
 test("fullscreen Rovo header exposes a custom-agent back button", () => {
