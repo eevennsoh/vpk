@@ -34,6 +34,31 @@ test("the live demo can cycle two, three, and four agents", async ({ page }) => 
 	);
 });
 
+test("adding and replaying an agent shows the Butter handoff before cycling", async ({ page }) => {
+	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });
+	const demo = page.getByRole("status").filter({ hasText: "Needs input" }).first();
+	await page.getByRole("button", { name: "Add Claude" }).click();
+	await expect(demo).toContainText("4 agents working. Claude");
+	const claude = demo.locator('[data-agent-id="claude"][data-agent-loading-slot="front"]');
+	await expect(claude.locator(".agent-loading-intro-front")).toHaveAttribute("data-agent-loading-intro-size", "20");
+	await expect(page.getByRole("button", { name: "Replay Claude" })).toBeFocused();
+	await page.getByRole("button", { name: "Replay Rovo" }).click();
+	await expect(demo).toContainText("4 agents working. Rovo");
+	await expect(demo.locator('[data-agent-id="rovo"][data-agent-loading-slot="front"] .agent-loading-intro-front')).toHaveAttribute("data-agent-loading-intro-size", "24");
+	await expect(demo.locator(".agent-loading-intro-front")).toHaveCount(0, { timeout: 3_000 });
+	await expect(demo.locator('[data-agent-loading-slot="front"]:not([data-agent-id="rovo"])')).toHaveCount(1, { timeout: 4_000 });
+});
+
+test("adding an agent honors reduced motion", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });
+	await page.getByRole("button", { name: "Add Claude" }).click();
+	const demo = page.getByRole("status").filter({ hasText: "Needs input" }).first();
+	await expect(demo).toContainText("4 agents working. Claude");
+	await expect(demo.locator(".agent-loading")).toHaveAttribute("data-reduced-motion", "true");
+	await expect(demo.locator(".agent-loading-intro-front")).toHaveCount(0);
+});
+
 test("two avatars stay visible while three and four agents rotate through", async ({ page }) => {
 	test.setTimeout(45_000);
 	await page.goto(AGENT_LOADING_URL, { waitUntil: "domcontentloaded" });

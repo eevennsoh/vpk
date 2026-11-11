@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type FocusEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import DataNumberIcon from "@atlaskit/icon/core/data-number";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import { Button } from "@/components/ui/button";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-function PointsStepperButton({ direction, disabled, issueKey, onClick }: Readonly<{
+function PointsStepperButton({ direction, disabled, issueKey, onBlur, onClick }: Readonly<{
 	direction: "up" | "down";
 	disabled?: boolean;
 	issueKey: string;
+	onBlur?: (event: FocusEvent<HTMLElement>) => void;
 	onClick: () => void;
 }>) {
 	const isUp = direction === "up";
@@ -20,7 +22,9 @@ function PointsStepperButton({ direction, disabled, issueKey, onClick }: Readonl
 			aria-label={`${isUp ? "Increase" : "Decrease"} story points for ${issueKey}`}
 			className="h-4 w-6 p-0 hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:ring-0"
 			disabled={disabled}
+			onBlur={onBlur}
 			onClick={onClick}
+			onMouseDown={(event) => event.preventDefault()}
 			size="icon-compact"
 			variant="ghost"
 		>
@@ -45,6 +49,7 @@ export function JiraListPointsCell({ issueKey, onChange, points }: Readonly<{
 	const [editing, setEditing] = useState(false);
 	const [draft, setDraft] = useState("");
 	const [direction, setDirection] = useState(1);
+	const cellRef = useRef<HTMLDivElement>(null);
 	const reduceMotion = useReducedMotion();
 	const commit = () => {
 		const value = draft.trim();
@@ -54,18 +59,22 @@ export function JiraListPointsCell({ issueKey, onChange, points }: Readonly<{
 	};
 	const step = (delta: number) => {
 		setDirection(delta);
-		onChange(Math.max(0, (points ?? 0) + delta));
+		if (editing) setDraft(String(Math.max(0, (Number(draft) || 0) + delta)));
+		else onChange(Math.max(0, (points ?? 0) + delta));
+	};
+	const commitOnBlur = (event: FocusEvent<HTMLElement>) => {
+		if (editing && !cellRef.current?.contains(event.relatedTarget)) commit();
 	};
 
 	return (
-		<div className="group/points flex w-full min-w-0 items-center justify-between">
+		<div ref={cellRef} className="group/points absolute inset-0 flex min-w-0 items-center">
 			{editing ? (
 				<input
 					aria-label={`Story points for ${issueKey}`}
 					autoFocus
-					className="h-8 w-12 rounded-sm border border-border-focused bg-surface px-1 text-sm text-text outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+					className="absolute inset-x-3 top-1/2 h-8 -translate-y-1/2 border-0 bg-transparent ps-3 pe-10 text-sm text-text outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 					min="0"
-					onBlur={commit}
+					onBlur={commitOnBlur}
 					onChange={(event) => setDraft(event.currentTarget.value)}
 					onKeyDown={(event) => {
 						if (event.key === "Enter") { event.preventDefault(); commit(); }
@@ -78,26 +87,29 @@ export function JiraListPointsCell({ issueKey, onChange, points }: Readonly<{
 			) : (
 				<button
 					aria-label={`Edit story points for ${issueKey}${points === undefined ? ", no estimate" : `, ${points}`}`}
-					className="relative h-8 min-w-8 overflow-hidden rounded-sm text-sm text-text hover:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-border-focused"
+					className="absolute inset-0 flex min-w-0 items-center px-3 text-sm text-text before:pointer-events-none before:absolute before:inset-x-3 before:inset-y-1 before:rounded-sm hover:before:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-border-focused"
 					onClick={() => { setDraft(points === undefined ? "" : String(points)); setEditing(true); }}
 					type="button"
 				>
-					<AnimatePresence initial={false} mode="popLayout" custom={direction}>
-						<motion.span
-							key={points ?? "empty"}
-							className={points === undefined ? "absolute inset-0 flex items-center justify-center text-text-subtlest" : "absolute inset-0 flex items-center justify-center"}
-							initial={reduceMotion ? false : { opacity: 0, transform: `translateY(${direction * 8}px)` }}
-							animate={{ opacity: 1, transform: "translateY(0px)" }}
-							exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: `translateY(${-direction * 8}px)` }}
-							transition={{ duration: reduceMotion ? 0 : motionDuration.normal, ease: motionEase.outPractical }}
-						>{points ?? "—"}</motion.span>
-					</AnimatePresence>
+					<span className="relative h-8 w-8 shrink-0 overflow-hidden">
+						<AnimatePresence initial={false} mode="popLayout" custom={direction}>
+							<motion.span
+								key={points ?? "empty"}
+								className={points === undefined ? "absolute inset-0 flex items-center justify-center text-icon-subtlest" : "absolute inset-0 flex items-center justify-center"}
+								initial={reduceMotion ? false : { opacity: 0, transform: `translateY(${direction * 8}px)` }}
+								animate={{ opacity: 1, transform: "translateY(0px)" }}
+								exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: `translateY(${-direction * 8}px)` }}
+								transition={{ duration: reduceMotion ? 0 : motionDuration.normal, ease: motionEase.outPractical }}
+							>{points ?? <DataNumberIcon label="" size="small" />}</motion.span>
+						</AnimatePresence>
+					</span>
+					{points === undefined ? <span className="relative whitespace-nowrap text-sm text-text-subtlest [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 [@media(hover:hover)]:group-focus-within/row:opacity-100">Add</span> : null}
 				</button>
 			)}
-			{points !== undefined && !editing ? (
-				<div className="ms-auto flex flex-col opacity-0 group-hover/points:opacity-100 group-focus-within/points:opacity-100">
-					<PointsStepperButton direction="up" issueKey={issueKey} onClick={() => step(1)} />
-					<PointsStepperButton direction="down" disabled={points === 0} issueKey={issueKey} onClick={() => step(-1)} />
+			{points !== undefined || editing ? (
+				<div className={cn("relative z-10 ms-auto me-4 flex flex-col", !editing && "opacity-0 group-hover/points:opacity-100 group-focus-within/points:opacity-100")}>
+					<PointsStepperButton direction="up" issueKey={issueKey} onBlur={commitOnBlur} onClick={() => step(1)} />
+					<PointsStepperButton direction="down" disabled={editing ? !draft || Number(draft) <= 0 : points === 0} issueKey={issueKey} onBlur={commitOnBlur} onClick={() => step(-1)} />
 				</div>
 			) : null}
 		</div>

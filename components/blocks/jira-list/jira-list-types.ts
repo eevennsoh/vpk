@@ -142,6 +142,8 @@ export interface JiraListProps {
 	onCreate?: (insertion?: JiraListInsertion) => void;
 	onAddColumn?: (afterColumnId: JiraListColumnAnchorId) => void;
 	onCopyLink?: (row: JiraListRowData) => void;
+	/** Updates a work item's due date as a local calendar date (YYYY-MM-DD). */
+	onDueDateChange?: (issueKey: string, dueDate: string | undefined) => void;
 	onDraftWorkItemCancel?: () => void;
 	onDraftWorkItemAssigneeChange?: (assignee: JiraListPerson | undefined) => void;
 	onDraftWorkItemDueDateChange?: (dueDate: string | undefined) => void;

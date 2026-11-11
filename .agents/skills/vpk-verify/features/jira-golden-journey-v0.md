@@ -45,7 +45,7 @@ Preconditions:
   Click that exact accessible name, repeat the IIFE, and require its local mode and control name to change. Restore by clicking the same UI control until the original name returns (at most two clicks); do not write storage or theme attributes.
 - **Cover narrow reduced motion.** Run `control-vpk browser set viewport 390 844`, `control-vpk browser set media light reduced-motion`, reselect Work item from a fresh snapshot, and `control-vpk browser wait "button[aria-label='Jump to section']"`. Snapshot again, focus the fresh `Jump to section` ref, press Enter, wait `"[role='menu']"`, then press Escape. The compact path is keyboard operable without horizontal page overflow.
 - **Proof and accessibility.** Run `control-vpk browser snapshot -i --compact --depth 8 > "$EVIDENCE/narrow.aria.txt"`, `control-vpk browser screenshot "$EVIDENCE/narrow.png"`, and `control-vpk browser a11y --selector body > "$EVIDENCE/a11y.txt"`. The route is the feature boundary, so the body scan is route-scoped.
-- **Reset and cleanup.** Run `control-vpk browser find role button click --name Reset`, then `control-vpk cleanup`. Reset remounts the current pattern; it does not rewind a Work item preset to Empty. Cleanup closes only this worktree session and keeps evidence.
+- **Reset and cleanup.** Run `control-vpk browser find role button click --name Reset`, then `control-vpk cleanup`. Reset remounts the current pattern; it does not rewind a Work item preset to Empty. Cleanup retains the browser session and evidence for later checks.
 
 ## Gotchas
 
@@ -53,4 +53,4 @@ Preconditions:
 - `Select Work item` is the gallery tile. Compact prepared-state controls are named `Jump to section`, `Previous section step`, and `Next section step`.
 - Reset remounts the selected pattern. It does not rewind Work item from Suggestions/Running/Done back to Empty.
 - The dock may be closed from a prior action. Use `Open gallery`; do not click where a tile used to be.
-- Reduced motion and viewport emulation belong to this browser session. Cleanup ends them; do not reuse the session as proof for another viewport.
+- Reduced motion and viewport emulation persist in this browser session. Set the required viewport and motion state before each proof.

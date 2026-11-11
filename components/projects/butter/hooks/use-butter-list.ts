@@ -254,7 +254,7 @@ export function useButterList({
 		});
 	}, [setExpandedKeys]);
 
-	const updateCard = useCallback((issueKey: string, update: Partial<Pick<JiraKanbanCardData, "title" | "storyPoints">>) => {
+	const updateCard = useCallback((issueKey: string, update: Partial<Pick<JiraKanbanCardData, "title" | "storyPoints" | "dueDate">>) => {
 		setBoardColumns((columns) => columns.map((column) => ({
 			...column,
 			cards: column.cards.map((card) => card.code === issueKey ? { ...card, ...update } : card),
@@ -262,6 +262,7 @@ export function useButterList({
 	}, [setBoardColumns]);
 	const handleSummaryChange = useCallback((issueKey: string, title: string) => updateCard(issueKey, { title }), [updateCard]);
 	const handleStoryPointsChange = useCallback((issueKey: string, storyPoints: number | undefined) => updateCard(issueKey, { storyPoints }), [updateCard]);
+	const handleDueDateChange = useCallback((issueKey: string, dueDate: string | undefined) => updateCard(issueKey, { dueDate }), [updateCard]);
 	const handleIssueOpen = useCallback((row: JiraListRowData) => onIssueOpen?.(row.issueKey), [onIssueOpen]);
 
 	const handleAssignedAgentIdsChange = useCallback((
@@ -396,6 +397,7 @@ export function useButterList({
 			onAssignedAgentIdsChange: handleAssignedAgentIdsChange,
 			onAssignedAgentSelect,
 			onCopyLink: handleCopyLink,
+			onDueDateChange: handleDueDateChange,
 			onCreate: handleCreateWorkItem,
 			onDraftWorkItemAssigneeChange: handleDraftWorkItemAssigneeChange,
 			onDraftWorkItemCancel: handleDraftWorkItemCancel,
@@ -429,6 +431,7 @@ export function useButterList({
 		handleIssueOpen,
 		handleSummaryChange,
 		handleStoryPointsChange,
+		handleDueDateChange,
 		handleToggleExpand,
 		onIssueOpen,
 		handleAssignedAgentIdsChange,

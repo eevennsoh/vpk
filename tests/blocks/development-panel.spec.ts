@@ -271,3 +271,28 @@ test("CI checks automatically repair and merge when enabled", async ({ page }) =
 		await expect(request).toContainText(label);
 	}
 });
+
+test("the CI progress arc animates when another check finishes", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/preview/blocks/development-panel"));
+	await page.getByRole("button", { name: "Pull requests created" }).click();
+	const request = page.getByRole("button", { name: /#1306 Add guest checkout/u });
+	await expect(request).toContainText("1/3 builds passed");
+	const passedArc = request.locator('[data-slot="progress-circle"] circle.text-icon-accent-lime');
+	const lengths = await passedArc.evaluate((circle) => new Promise<string[]>((resolve) => {
+		const samples = new Set<string>();
+		const started = performance.now();
+		let changedAt = 0;
+		const initial = getComputedStyle(circle).strokeDasharray;
+		const sample = (time: number) => {
+			const length = getComputedStyle(circle).strokeDasharray;
+			samples.add(length);
+			if (length !== initial && !changedAt) changedAt = time;
+			if ((changedAt && time - changedAt >= 500) || time - started >= 8000) return resolve([...samples]);
+			requestAnimationFrame(sample);
+		};
+		requestAnimationFrame(sample);
+	}));
+	await expect(request).toContainText("2/3 builds passed · 1 failed");
+	expect(lengths.length).toBeGreaterThan(2);
+});

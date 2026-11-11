@@ -235,6 +235,7 @@ export function JiraList({
 	onAgentAssign,
 	onCreate,
 	onCopyLink,
+	onDueDateChange,
 	onDraftWorkItemCancel,
 	onDraftWorkItemAssigneeChange,
 	onDraftWorkItemDueDateChange,
@@ -380,6 +381,7 @@ export function JiraList({
 		onAssignedAgentIdsChange,
 		onAssignedAgentSelect,
 		onCopyLink,
+		onDueDateChange,
 		onIssueClick,
 		onIssueKeyClick,
 		onSummaryEditStart: onSummaryChange ? beginSummaryEdit : undefined,
@@ -391,7 +393,7 @@ export function JiraList({
 		statusOptions,
 	}), [
 		agentCatalog, addAgentLabel, copiedIssueKey, editingSummary?.issueKey, onAgentAssign, onAssignedAgentIdsChange,
-		onAssignedAgentSelect, onCopyLink, onIssueClick, onIssueKeyClick,
+		onAssignedAgentSelect, onCopyLink, onDueDateChange, onIssueClick, onIssueKeyClick,
 		onStatusChange, onSummaryChange, beginSummaryEdit, onStoryPointsChange, renderAgentSessions, openCopyTooltipIssueKey, statusOptions,
 	]);
 	const orderedColumns = useMemo(() => getOrderedColumns(baseColumns, extraColumns), [baseColumns, extraColumns]);
@@ -814,6 +816,7 @@ export function JiraList({
 														<div inert={isEditing} className={cn("relative z-10 flex items-center ps-3", isDimmed && "opacity-20")}>
 															<Checkbox
 																aria-label={`Select ${row.issueKey}`}
+																				className={cn(!isSelected && "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100")}
 																checked={isSelected}
 																onCheckedChange={(checked) => onSelectRow?.(row.issueKey, Boolean(checked))}
 															/>

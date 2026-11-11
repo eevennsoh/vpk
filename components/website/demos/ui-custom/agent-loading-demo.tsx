@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useReducedMotion } from "motion/react";
 
 import {
 	AgentLoading,
@@ -56,14 +57,33 @@ function demoAgents(count: AgentCount, finished: boolean): readonly AgentLoading
 }
 
 export default function AgentLoadingDemo() {
-	const [agentCount, setAgentCount] = useState<AgentCount>(3);
+	const [agents, setAgents] = useState<readonly AgentLoadingAgent[]>(() => ACTIVE_AGENTS.slice(0, 3));
 	const [finished, setFinished] = useState(false);
+	const [intro, setIntro] = useState<{ agentId: string; avatarSize: 20 | 24; sequence: number; active: boolean } | null>(null);
+	const reduceMotion = useReducedMotion();
+	const agentCount = agents.length;
+
+	function showAgentIntro(agent: AgentLoadingAgent) {
+		setAgents((current) => [agent, ...current.filter((item) => item.id !== agent.id)]);
+		setFinished(false);
+		setIntro((current) => ({
+			agentId: agent.id,
+			avatarSize: agent.id === "cursor" || agent.id === "claude" || agent.id === "jira-coding-agent" ? 20 : 24,
+			sequence: (current?.sequence ?? 0) + 1,
+			active: !reduceMotion,
+		}));
+	}
 
 	return (
-		<div className="flex flex-col items-start gap-4">
+		<div className="flex flex-col items-start gap-4" onAnimationEnd={(event) => {
+			if (event.animationName === "agent-loading-intro-front") {
+				setIntro((current) => current ? { ...current, active: false } : null);
+			}
+		}}>
 			<AgentLoading
-				key={agentCount}
-				agents={demoAgents(agentCount, finished)}
+				key={intro ? `intro-${intro.sequence}` : `preset-${agentCount}`}
+				agents={withFinishedStatus(agents, finished)}
+				intro={intro?.active ? intro : undefined}
 				label={finished ? "Completed" : "Needs input…"}
 			/>
 			<div className="flex flex-wrap items-center gap-2">
@@ -72,7 +92,8 @@ export default function AgentLoadingDemo() {
 					onValueChange={(value) => {
 						const next = Number(value.at(0));
 						if (next === 2 || next === 3 || next === 4) {
-							setAgentCount(next);
+							setAgents(ACTIVE_AGENTS.slice(0, next));
+							setIntro(null);
 						}
 					}}
 					size="sm"
@@ -92,6 +113,13 @@ export default function AgentLoadingDemo() {
 				<Button onClick={() => setFinished((current) => !current)} size="compact" variant="outline">
 					{finished ? "Resume agents" : "Finish all agents"}
 				</Button>
+			</div>
+			<div aria-label="Add or replay an agent" className="flex flex-wrap items-center gap-2" role="group">
+				{ACTIVE_AGENTS.map((agent) => (
+					<Button key={agent.id} onClick={() => showAgentIntro(agent)} size="compact" variant="outline">
+						{agents.some((item) => item.id === agent.id) ? "Replay" : "Add"} {agent.name}
+					</Button>
+				))}
 			</div>
 		</div>
 	);

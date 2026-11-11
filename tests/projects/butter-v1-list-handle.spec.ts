@@ -154,7 +154,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) test(`list pla
 	await page.getByRole("button", { name: "Select List" }).click();
 	const trigger = page.getByRole("button", { name: "Add agent to PAY-118" });
 	const cell = trigger.locator("xpath=ancestor::*[@data-butter-agent-surface]");
-	const placeholder = cell.locator(":scope > span").filter({ hasText: /^Add agent$/ });
+	const placeholder = cell.locator(":scope > span").filter({ hasText: /^Add$/ });
 	const placeholderBounds = await placeholder.boundingBox();
 	if (!placeholderBounds) throw new Error("Placeholder is not visible");
 	await trigger.click();
@@ -198,7 +198,7 @@ test("agent previews replace the empty list cell placeholder", async ({ page }) 
 	await page.getByRole("button", { name: "Select List" }).click();
 	const trigger = page.getByRole("button", { name: "Add agent to PAY-118" });
 	const cell = trigger.locator("xpath=ancestor::*[@data-butter-agent-surface]");
-	const placeholder = cell.locator(":scope > span").filter({ hasText: /^Add agent$/ });
+	const placeholder = cell.locator(":scope > span").filter({ hasText: /^Add$/ });
 	await expect(placeholder).toBeVisible();
 	await trigger.click();
 	const picker = page.getByRole("dialog", { name: "Agents" });

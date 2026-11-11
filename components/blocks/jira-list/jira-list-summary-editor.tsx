@@ -36,12 +36,13 @@ export function useJiraListSummaryEdit(onSummaryChange: JiraListProps["onSummary
 		const trigger = event.currentTarget;
 		const cell = trigger.closest<HTMLTableCellElement>("td");
 		const tableRow = trigger.closest<HTMLTableRowElement>("tr");
-		if (!cell || !tableRow) return;
+		const summaryTrigger = cell?.querySelector<HTMLButtonElement>("[data-summary-trigger]");
+		if (!cell || !tableRow || !summaryTrigger) return;
 		const cellBounds = cell.getBoundingClientRect();
-		const summaryBounds = trigger.getBoundingClientRect();
+		const summaryBounds = summaryTrigger.getBoundingClientRect();
 		const rowBounds = tableRow.getBoundingClientRect();
 		setDraft({
-			caretOffset: summaryCaretOffset(trigger, event, row.summary.length),
+			caretOffset: trigger === summaryTrigger ? summaryCaretOffset(trigger, event, row.summary.length) : row.summary.length,
 			issueKey: row.issueKey,
 			left: summaryBounds.left - cellBounds.left,
 			value: row.summary,

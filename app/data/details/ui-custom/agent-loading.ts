@@ -44,6 +44,11 @@ export const AGENT_LOADING_DETAIL: ComponentDetail = {
 			description: "Optional visible status copy rendered beside the agent visual.",
 		},
 		{
+			name: "intro",
+			type: "{ agentId: string; avatarSize: 20 | 24 }",
+			description: "Animate the front agent from its original avatar size into the stack. Put the selected agent first, remount the loader to replay, and clear the intro after it finishes.",
+		},
+		{
 			name: "aria-label",
 			type: "string",
 			description: "Overrides the derived agent-count, state, and names announcement.",
