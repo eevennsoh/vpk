@@ -63,6 +63,8 @@ export interface AgentLoadingProps {
 	size?: AgentLoadingSize;
 	/** Choose the stacked Ferris or vertically cycling avatar visual. */
 	variant?: "stack" | "vertical";
+	/** Avatar size within the default vertical canvas. */
+	verticalAvatarSize?: 20 | 24;
 	/** Present a newly added front agent at its original size before it joins the group. */
 	intro?: { agentId: string; avatarSize: 20 | 24 };
 }
@@ -164,6 +166,7 @@ export function AgentLoading({
 	className,
 	size = "default",
 	variant = "stack",
+	verticalAvatarSize = 24,
 	intro,
 }: Readonly<AgentLoadingProps>) {
 	const [frontAgentId, setFrontAgentId] = useState<string | null>(
@@ -256,7 +259,7 @@ export function AgentLoading({
 								key={slots.front.id}
 								transition={shouldReduceMotion ? AGENT_LOADING_MOTION_REDUCED : AGENT_LOADING_MOTION_SWAP}
 							>
-								<AgentAvatarVisual {...slots.front.avatar} animate={false} label={undefined} loading={slots.front.avatar.loading ?? "eager"} sizePx={size === "small" ? 16 : 24} />
+								<AgentAvatarVisual {...slots.front.avatar} animate={false} label={undefined} loading={slots.front.avatar.loading ?? "eager"} sizePx={size === "small" ? 16 : verticalAvatarSize} />
 							</motion.span>
 						</AnimatePresence>
 					</span>

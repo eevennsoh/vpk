@@ -71,6 +71,8 @@ export interface PullRequestProps {
 	href?: string;
 	/** Called with failing CI checks when Fix PR is activated. */
 	onFix?: (checks: readonly PullRequestCheck[]) => void;
+	/** Flyout only. Whether to show the Fix PR action for failing checks. */
+	showFix?: boolean;
 	/**
 	 * Absolute timestamp (ms). Reserved for callers that already track PR age;
 	 * the card renders `relativeTime` when provided.

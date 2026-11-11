@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef } from "react";
+import { Fragment, use, useEffect, useRef } from "react";
 
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 
@@ -78,6 +78,12 @@ export function AgentSessionsMenu({
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const renderAgentAvatar = use(AgentSessionAvatarPreviewContext);
+	const orderedItems = [
+		...items.filter((item) => item.role !== "viewer"),
+		...items.filter((item) => item.role === "viewer"),
+	];
+	const firstTeammateId = orderedItems.find((item) => item.role === "viewer")?.id;
+	const hasActionableSession = items.some((item) => item.role === undefined || item.role === "owner");
 
 	useEffect(() => {
 		const frameId = window.requestAnimationFrame(() => {
@@ -92,27 +98,34 @@ export function AgentSessionsMenu({
 				<p className="px-3 py-2 text-sm text-text-subtle">No agents assigned</p>
 			) : (
 				<ul className="flex w-full flex-col gap-0">
-					{items.map((item) => (
-						<AgentSessionCard
-							density="long"
-							hoverTone="menu"
-							item={item}
-							key={item.id}
-							localSessionAction={localSessionAction}
-							moreMenuPortalled={true}
-							moreMenuPositionerClassName={overlayPositionerClassName}
-							tooltipPositionerClassName={overlayPositionerClassName}
-							onContinueInAgent={onContinueInAgent}
-							onDeleteSession={onDeleteSession}
-							onMoreMenuOpenChange={onMoreMenuOpenChange}
-							onRenameSession={onRenameSession}
-							onToggleVisibility={onToggleVisibility}
-							onView={item.host === "local" && localSessionAction === "continue" ? undefined : () => onSelectSession(item)}
-							padding="compact"
-							renderAgentAvatar={renderAgentAvatar ?? undefined}
-							showLifecycleLabel={false}
-							trailingAlign="center"
-						/>
+					{orderedItems.map((item) => (
+						<Fragment key={item.id}>
+							{item.id === firstTeammateId ? (
+								<li>
+									{hasActionableSession ? <hr className="my-1 border-border" /> : null}
+									<div className="px-3 pb-1 pt-3 text-xs font-medium text-text-subtle">Sessions from your teammates</div>
+								</li>
+							) : null}
+							<AgentSessionCard
+								density="long"
+								hoverTone="menu"
+								item={item}
+								localSessionAction={localSessionAction}
+								moreMenuPortalled={true}
+								moreMenuPositionerClassName={overlayPositionerClassName}
+								tooltipPositionerClassName={overlayPositionerClassName}
+								onContinueInAgent={onContinueInAgent}
+								onDeleteSession={onDeleteSession}
+								onMoreMenuOpenChange={onMoreMenuOpenChange}
+								onRenameSession={onRenameSession}
+								onToggleVisibility={onToggleVisibility}
+								onView={item.host === "local" && localSessionAction === "continue" ? undefined : () => onSelectSession(item)}
+								padding="compact"
+								renderAgentAvatar={renderAgentAvatar ?? undefined}
+								showLifecycleLabel={false}
+								trailingAlign="center"
+							/>
+						</Fragment>
 					))}
 				</ul>
 			)}

@@ -513,6 +513,7 @@ function JiraIssueAgentActivityRow({
 	activities,
 	assignment,
 	avatarLayout,
+	avatarSize,
 	flushContent = false,
 	iconScale = "compact",
 	linkFlash,
@@ -529,6 +530,7 @@ function JiraIssueAgentActivityRow({
 	activities: readonly JiraIssueAgentActivity[];
 	assignment?: JiraIssueAgentAssignment;
 	avatarLayout: JiraIssueAgentActivityAvatarLayout;
+	avatarSize?: 20 | 24;
 	flushContent?: boolean;
 	iconScale?: JiraIssueIconScale;
 	/** Rest shows the parent well; hover still paints only this row. */
@@ -685,6 +687,7 @@ function JiraIssueAgentActivityRow({
 			<JiraIssueAgentRowContent
 				activities={activities}
 				avatarLayout={avatarLayout}
+				avatarSize={avatarSize}
 				featuredActivity={isViewerRow && activities.length > 1 ? undefined : featuredActivity}
 				isAwaitingInput={isAwaitingInput}
 				isWorking={!isCompletedRow && !isAwaitingInput}
@@ -741,6 +744,7 @@ export function JiraIssueAgentActivityRows({
 	assignment,
 	attachPreviewCopy,
 	avatarLayout = "animated",
+	avatarSize,
 	flushContent = false,
 	flushBottom = false,
 	iconScale = "compact",
@@ -765,6 +769,7 @@ export function JiraIssueAgentActivityRows({
 	attachPreviewCopy?: string;
 	/** Multiple-agent identity treatment. */
 	avatarLayout?: JiraIssueAgentActivityAvatarLayout;
+	avatarSize?: 20 | 24;
 	/** Remove the horizontal gutters when a parent cell owns its left alignment. */
 	flushContent?: boolean;
 	/** A fused following card owns the bottom gutter. */
@@ -848,6 +853,7 @@ export function JiraIssueAgentActivityRows({
 							activities={rowGroup.activities}
 							assignment={assignment}
 							avatarLayout={avatarLayout}
+							avatarSize={avatarSize}
 							flushContent={flushContent}
 							iconScale={iconScale}
 							workingSpinnerVariant={workingSpinnerVariant}

@@ -220,7 +220,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 }
 
 export default function ButterPage(): React.ReactElement {
-	const [selectedId, setSelectedId] = useState("agent-selector");
+	const [selectedId, setSelectedId] = useState("e2e-journey");
 	const startGalleryLayoutTransition = useInstantLayoutTransition();
 	const selectGalleryItem = (id: string) => startGalleryLayoutTransition(() => setSelectedId(id));
 	const [journeyResetKey, setJourneyResetKey] = useState(0);

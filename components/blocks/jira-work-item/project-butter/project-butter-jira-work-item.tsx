@@ -354,7 +354,7 @@ export function ProjectButterJiraWorkItem({
 					sidePanel
 						? "grid-cols-1 overflow-y-auto"
 						: "grid-cols-1 overflow-y-auto @[860px]/butter:grid-cols-[minmax(0,1fr)_auto] @[860px]/butter:overflow-clip",
-					showLayoutFade && "scroll-mask-top [--scroll-mask-fade-size:3rem]",
+					showLayoutFade && "scroll-mask-top [--scroll-mask-fade-size:3rem] has-[[data-project-butter-activity-header][data-stuck]]:mask-none",
 				)}
 				data-project-butter-state={suggestion ? "suggestion" : empty ? "empty" : "filled"}
 				data-project-butter-work-item
@@ -364,7 +364,7 @@ export function ProjectButterJiraWorkItem({
 					className={cn(
 						"min-w-0 px-6 pb-6",
 						!sidePanel && "@[860px]/butter:overflow-y-auto",
-						showColumnFade && "scroll-mask-top [--scroll-mask-fade-size:3rem]",
+						showColumnFade && "scroll-mask-top [--scroll-mask-fade-size:3rem] has-[[data-project-butter-activity-header][data-stuck]]:mask-none",
 					)}
 					ref={setColumnRef}
 				>

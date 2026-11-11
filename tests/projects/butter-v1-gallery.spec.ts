@@ -3,6 +3,32 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("board chin avatars fit a 24px slot without shrinking list avatars", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	for (const label of ["Claude: Working", "2 agents: Working"]) {
+		const row = page.getByRole("button", { name: label, exact: true });
+		const avatar = row.locator('[data-slot="avatar"]').first();
+		await expect(avatar).toBeVisible();
+		const bounds = await avatar.boundingBox();
+		const slot = await row.locator('[data-slot="jira-issue-agent-avatar-handoff"] > span').boundingBox();
+		if (!bounds || !slot) throw new Error("Board agent avatar is unavailable");
+		expect(bounds.width).toBeCloseTo(20, 1);
+		expect(bounds.height).toBeCloseTo(20, 1);
+		expect(slot.width).toBeCloseTo(24, 1);
+		expect(slot.height).toBeCloseTo(24, 1);
+	}
+	await page.getByRole("button", { name: "Select List" }).click();
+	const avatar = page.getByRole("button", { name: "Add agent to PAY-123" }).locator("xpath=ancestor::td").locator('.agent-loading-vertical [data-slot="avatar"]').first();
+	await expect(avatar).toBeVisible();
+	const listBounds = await avatar.boundingBox();
+	if (!listBounds) throw new Error("List agent avatar is unavailable");
+	expect(listBounds.width).toBeCloseTo(24, 1);
+	expect(listBounds.height).toBeCloseTo(24, 1);
+});
+
 test("list agent add stays the same size as the agent avatar", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
@@ -588,6 +614,7 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await expect.poll(() => gallery.getByRole("button").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")))).toEqual([
+		"Select e2e Journey",
 		"Select Agent selector",
 		"Select Duplicative sessions",
 		"Select Board",
@@ -595,11 +622,13 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 		"Select List",
 		"Select Pull request",
 		"Select Development panel",
-		"Select e2e Journey",
 	]);
 	for (const name of ["Board", "Agent selector", "Work item", "List", "Pull request", "e2e Journey"]) {
 		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
 	}
+	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toHaveAttribute("aria-pressed", "true");
+	await expect(page.getByRole("group", { name: "Merchant onboarding journey steps" })).toBeVisible();
+	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
 	await expect(gallery.getByRole("button", { name: "Select Agent selector" })).toHaveAttribute("aria-pressed", "true");
 	await expect(page.getByRole("region", { name: "Project Butter agent selector" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
@@ -663,13 +692,14 @@ test("the Development panel gallery item shows the populated interactive panel",
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.clock.install();
+	await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 100));
 	await page.getByRole("button", { name: "Select Development panel" }).click();
 	const panel = page.getByRole("region", { name: "Pull request development" });
 	await expect(panel).toHaveAttribute("data-project-butter-development", "failed");
 	await expect(panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ })).toBeVisible();
 	const initial = await panel.boundingBox();
 	if (!initial) throw new Error("Development panel has no bounds");
-	for (const phase of ["fixing", "passed", "merged"]) {
+	for (const phase of ["fixing", "passed"]) {
 		await page.clock.fastForward(5000);
 		await expect(panel).toHaveAttribute("data-project-butter-development", phase);
 		const current = await panel.boundingBox();
@@ -677,8 +707,37 @@ test("the Development panel gallery item shows the populated interactive panel",
 		expect(Math.abs(current.x - initial.x)).toBeLessThanOrEqual(1);
 		expect(Math.abs(current.y - initial.y)).toBeLessThanOrEqual(1);
 	}
+	await page.clock.fastForward(1999);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
+	await page.clock.fastForward(1);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "merged");
+	const merged = await panel.boundingBox();
+	if (!merged) throw new Error("Development panel has no bounds in merged");
+	expect(Math.abs(merged.x - initial.x)).toBeLessThanOrEqual(1);
+	expect(Math.abs(merged.y - initial.y)).toBeLessThanOrEqual(1);
 	await panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).click();
 	await expect(page.getByText("payments-platform/payments").first()).toBeVisible();
+});
+
+test("the Development panel waits for manual merge when automation is disabled", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1600, height: 1200 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.clock.install();
+	await page.getByRole("button", { name: "Select Development panel" }).click();
+	const panel = page.getByRole("region", { name: "Pull request development" });
+	await panel.getByRole("button", { name: "Configure", exact: true }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Merge when ready" }).click();
+	await page.keyboard.press("Escape");
+	await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 100));
+	await page.clock.fastForward(5000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "fixing");
+	await page.clock.fastForward(5000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
+	await page.clock.fastForward(5000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
+	await panel.getByRole("button", { name: "Merge pull request" }).click();
+	await expect(panel).toHaveAttribute("data-project-butter-development", "merged");
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {

@@ -449,7 +449,7 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.doesNotMatch(PULL_REQUEST_CLUSTER_SOURCE, /onActivate=/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /"w-\[320px\] max-w-\[calc\(100vw-48px\)\] overflow-hidden rounded-xl border-none bg-surface-overlay p-0 text-text shadow-none"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /boxShadow: token\("elevation\.shadow\.overlay"\)/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className="border-none bg-transparent shadow-none"/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /"border-none bg-transparent shadow-none"/u);
 	assert.match(SUMMARY_BLOCK, /usesStrokeChrome \? "flex min-w-0 items-center" : "flex min-w-0 items-center gap-2"/u);
 });
 
@@ -657,7 +657,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(AGENT_ACTIVITY_SOURCE, /const summary = summarizeJiraIssueAgentActivities\(activities\);/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const featuredActivity = summary\.featuredActivityIndex !== null[\s\S]*\? activities\[summary\.featuredActivityIndex\][\s\S]*: undefined;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(featuredActivity !== undefined\) \{[\s\S]*<AgentAvatarVisual[\s\S]*appearance="coding"[\s\S]*animate=\{false\}[\s\S]*avatarClassName="shrink-0"[\s\S]*avatarSrc=\{featuredActivity\.avatarSrc\}[\s\S]*label=\{featuredActivity\.name\}[\s\S]*sizePx=\{24\}[\s\S]*else if \(avatarLayout === "horizontal-group"\) \{[\s\S]*<AvatarGroup[\s\S]*else \{[\s\S]*<AgentLoading[\s\S]*agents=\{activities\.map\(toAgentLoadingAgent\)\}[\s\S]*className="shrink-0"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(featuredActivity !== undefined\) \{[\s\S]*<AgentAvatarVisual[\s\S]*appearance="coding"[\s\S]*animate=\{false\}[\s\S]*avatarClassName="shrink-0"[\s\S]*avatarSrc=\{featuredActivity\.avatarSrc\}[\s\S]*label=\{featuredActivity\.name\}[\s\S]*sizePx=\{avatarSize\}[\s\S]*else if \(avatarLayout === "horizontal-group"\) \{[\s\S]*<AvatarGroup[\s\S]*else \{[\s\S]*<AgentLoading[\s\S]*agents=\{activities\.map\(toAgentLoadingAgent\)\}[\s\S]*className="shrink-0"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isAwaitingInput = !isCompletedRow && summary\.priorityState === "awaiting-input";/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /shouldCycleSingleAgentLabel|JiraIssueCyclingAgentLabel/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /status: activity\.label,[\s\S]*statusSequence: activity\.state === "working" \? getJiraIssueAgentWorkingLabels\(activity\) : undefined,[\s\S]*statusCycleIntervalMs: activity\.cycleIntervalMs[\s\S]*statusCycleJitterMs: activity\.cycleIntervalJitterMs/u);

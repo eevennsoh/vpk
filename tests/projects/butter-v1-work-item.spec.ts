@@ -14,6 +14,17 @@ for (const width of [700, 1600]) {
 		await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
 		await expect(scroller).toHaveCSS("--scroll-mask-fade-size", "3rem");
 		await expect(column.locator('[data-slot="scroll-mask-blur"]')).toHaveCount(0);
+		const activityHeader = layout.locator("[data-project-butter-activity-header]");
+		await scroller.evaluate((element) => {
+			const header = element.querySelector("[data-project-butter-activity-header]");
+			if (!header) throw new Error("Activity header is missing");
+			element.scrollTop += header.getBoundingClientRect().top - element.getBoundingClientRect().top + 100;
+		});
+		await expect(activityHeader.locator("[data-project-butter-activity-header-time]")).toBeVisible();
+		await expect(scroller).toHaveCSS("mask-image", "none");
+		await expect(activityHeader.getByRole("listbox", { name: "Navigate activity" })).toBeVisible();
+		await scroller.evaluate((element) => { element.scrollTop = 200; });
+		await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
 		await scroller.evaluate((element) => { element.scrollTop = 0; });
 		await expect(scroller).toHaveCSS("mask-image", "none");
 	});

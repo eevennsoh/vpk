@@ -2,6 +2,12 @@ import type { GalleryItem } from "@/components/blocks/gallery";
 
 export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 	{
+		id: "e2e-journey",
+		title: "e2e Journey",
+		description: "Follow PAY-999 from preparation through delivery.",
+		size: "landscape",
+	},
+	{
 		id: "agent-selector",
 		title: "Agent selector",
 		description: "Choose an agent.",
@@ -41,12 +47,6 @@ export const BUTTER_GALLERY_ITEMS: readonly GalleryItem[] = [
 		id: "development-panel",
 		title: "Development panel",
 		description: "View development activity and pull requests.",
-		size: "landscape",
-	},
-	{
-		id: "e2e-journey",
-		title: "e2e Journey",
-		description: "Follow PAY-999 from preparation through delivery.",
 		size: "landscape",
 	},
 ];

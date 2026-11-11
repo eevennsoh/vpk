@@ -210,6 +210,7 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	subtasksExpanded?: boolean;
 	onSubtasksExpandedChange?: (expanded: boolean) => void;
 	agentActivities?: readonly JiraIssueAgentActivity[];
+	agentActivityAvatarSize?: 20 | 24;
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	assignment?: JiraIssueAgentAssignment;
@@ -265,6 +266,7 @@ function JiraIssueDefault({
 	"aria-pressed": ariaPressed,
 	active = false,
 	agentActivities,
+	agentActivityAvatarSize,
 	agentActivityMode,
 	agentActivityLayout = "merged", assignment,
 	agentSessionDragControl,
@@ -849,6 +851,7 @@ function JiraIssueDefault({
 				    card height — and drop-zone geometry — stays put. */}
 				<ProjectButterInvocationChin activities={activeAgentActivities} allowPuzzle={agentActivityLayout === "merged" && summarizeJiraIssueAgentActivities(activeAgentActivities.filter((activity) => activity.state !== "completed")).featuredActivityIndex === null} hasChin={hasAgentActivityChin} iconScale={iconScale} retainCompletedContent={resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0}><JiraIssueAgentActivityRows
 					activities={activeAgentActivities} assignment={assignment}
+					avatarSize={agentActivityAvatarSize}
 					attachPreviewCopy={replaceDetachedTransfer ? undefined : attachChinCopy}
 					iconScale={iconScale}
 					inheritChinSurface
