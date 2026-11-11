@@ -75,3 +75,21 @@ test("PAY-123 includes Venn's sessions and four teammate sessions", async () => 
 	assert.deepEqual(sessions.filter((session) => session.role === "owner").map((session) => session.invokedBy.name), ["Venn", "Venn"]);
 	assert.deepEqual(sessions.filter((session) => session.role === "viewer").map((session) => session.invokedBy.name).sort(), ["Diego Santos", "Jordan Okafor", "Maya Ferreira", "Priya Raman"]);
 });
+
+test("additional work items include their existing subtasks", async () => {
+	const data = await loadData();
+	const columns = data.createButterPayBoardColumns();
+	const cards = columns.flatMap((column) => column.cards);
+	for (const [parent, children] of Object.entries({
+		"PAY-118": ["PAY-201", "PAY-202", "PAY-203"],
+		"PAY-999": ["PAY-265", "PAY-266", "PAY-267"],
+		"PAY-127": ["PAY-210", "PAY-211", "PAY-212"],
+	})) {
+		assert.deepEqual(cards.filter((card) => card.parentIssueKey === parent).map((card) => card.code).sort(), children);
+	}
+	const quickstart = cards.find((card) => card.code === "PAY-265");
+	assert.equal(quickstart.storyPoints, 3);
+	assert.equal(quickstart.dueDate, "2026-08-25");
+	assert.equal(quickstart.assignee.name, "Maya Ferreira");
+	assert.equal(columns.find((column) => column.cards.includes(quickstart)).title, "To do");
+});

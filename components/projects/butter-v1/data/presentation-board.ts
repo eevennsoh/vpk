@@ -24,6 +24,7 @@ import {
 } from "./presentation-build";
 import { PAY_STORY_PEOPLE } from "./presentation-people";
 import { getButterPullRequestPreview } from "./presentation-pull-requests";
+import { BUTTER_TODO_PLACEHOLDERS } from "./work-item-placeholders/todo";
 
 export { BUTTER_PAY_CURRENT_USER };
 export { BUTTER_BOARD_AGENTS, BUTTER_PRIMARY_BOARD_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
@@ -774,11 +775,36 @@ function cloneBoardCard(card: JiraKanbanCardData): JiraKanbanCardData {
 }
 
 export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
-	return PAY_BOARD_COLUMNS.map((column) => ({
-		...column,
-		cards: column.cards.map((card) => ({
-			...cloneBoardCard(card),
-			parentIssueKey: PAY_101_SUBTASK_KEYS.some((key) => key === card.code) ? "PAY-101" : undefined,
+	const peopleByName: Readonly<Record<string, JiraKanbanAssigneeData>> = Object.fromEntries(
+		Object.values(PAY_STORY_PEOPLE).map((person) => [person.name, person]),
+	);
+	const priorities = {
+		Highest: "critical",
+		High: "major",
+		Medium: "medium",
+		Low: "minor",
+		Lowest: "minor",
+	} as const satisfies Readonly<Record<string, JiraKanbanCardData["priority"]>>;
+	const subtasks = (["PAY-118", "PAY-999", "PAY-127"] as const).flatMap((parentIssueKey) =>
+		BUTTER_TODO_PLACEHOLDERS[parentIssueKey].children.map((child) => ({
+			status: child.status,
+			card: {
+				assignee: peopleByName[child.assignee],
+				code: child.key,
+				dueDate: child.dueDate,
+				parentIssueKey,
+				priority: priorities[child.priority],
+				storyPoints: child.estimate ? Number(child.estimate) : undefined,
+				tags: [],
+				title: child.summary,
+			} satisfies JiraKanbanCardData,
 		})),
-	}));
+	);
+	return PAY_BOARD_COLUMNS.map((column) => {
+		const cards = [...column.cards, ...subtasks.filter((item) => item.status === column.title).map((item) => item.card)].map((card) => ({
+			...cloneBoardCard(card),
+			parentIssueKey: PAY_101_SUBTASK_KEYS.some((key) => key === card.code) ? "PAY-101" : card.parentIssueKey,
+		}));
+		return { ...column, cards, count: cards.length };
+	});
 }
