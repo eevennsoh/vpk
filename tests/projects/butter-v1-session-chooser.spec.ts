@@ -1,6 +1,34 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("duplicative sessions switches between the agent selector and work item", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
+	const views = page.getByRole("group", { name: "Duplicative sessions view" });
+	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
+	await expect(picker).toBeVisible();
+	await views.getByRole("button", { name: "Work item" }).click();
+	const workItem = page.getByRole("region", { name: "Work item full screen view" });
+	await expect(workItem).toBeVisible();
+	await expect(picker).toBeHidden();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	await expect(page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ })).toBeVisible();
+	const back = workItem.getByRole("button", { name: "Back", exact: true });
+	await expect(back).toHaveCSS("border-bottom-left-radius", "0px");
+	await expect(back).toHaveCSS("border-bottom-right-radius", "0px");
+	await page.getByRole("button", { name: "Open gallery" }).click();
+	await views.getByRole("button", { name: "Agent selector" }).click();
+	await expect(picker).toBeVisible();
+	await expect(workItem).toBeHidden();
+});
+
 test("session chooser keeps compact padding and fits its session cards", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1600, height: 1000 });

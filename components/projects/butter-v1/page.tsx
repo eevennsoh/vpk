@@ -227,6 +227,7 @@ export default function ButterPage(): React.ReactElement {
 	const [collapsedBoardColumns, setCollapsedBoardColumns] = useState<ReadonlySet<string>>(() => new Set());
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
 	const [duplicativeSessionsResetKey, setDuplicativeSessionsResetKey] = useState(0);
+	const [duplicativeSessionsView, setDuplicativeSessionsView] = useState<"agent-selector" | "work-item">("agent-selector");
 	const [pullRequestResetKey, setPullRequestResetKey] = useState(0);
 	const [developmentResetKey, setDevelopmentResetKey] = useState(0);
 	const [workItemResetKey, setWorkItemResetKey] = useState(0);
@@ -277,11 +278,14 @@ export default function ButterPage(): React.ReactElement {
 			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 			<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
 		</ToggleGroup>
-		: null;
+		: selectedId === "duplicative-sessions" ? <ToggleGroup aria-label="Duplicative sessions view" onValueChange={(values) => { if (values[0] === "agent-selector" || values[0] === "work-item") setDuplicativeSessionsView(values[0]); }} size="sm" value={[duplicativeSessionsView]} variant="outline">
+			<ToggleGroupItem value="agent-selector">Agent selector</ToggleGroupItem>
+			<ToggleGroupItem value="work-item">Work item</ToggleGroupItem>
+		</ToggleGroup> : null;
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
-				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto", selectedId === "pull-request" || selectedId === "work-item" ? "[&_[aria-label='Gallery_items']]:pointer-events-none [&_[aria-label='Gallery_items']>div]:pointer-events-auto" : "[&_[aria-label='Gallery_items']]:pointer-events-auto", galleryControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
+				className={cn("pointer-events-none relative z-50 [&>div:first-child]:pointer-events-auto", selectedId === "pull-request" || selectedId === "work-item" || (selectedId === "duplicative-sessions" && duplicativeSessionsView === "work-item") ? "[&_[aria-label='Gallery_items']]:pointer-events-none [&_[aria-label='Gallery_items']>div]:pointer-events-auto" : "[&_[aria-label='Gallery_items']]:pointer-events-auto", galleryControls && "[&>div:first-child_h2]:min-w-0 [&>div:first-child_h2]:max-w-full")}
 				items={BUTTER_GALLERY_ITEMS}
 				selectedColor={token("color.text")}
 				selectedId={selectedId}
@@ -317,10 +321,15 @@ export default function ButterPage(): React.ReactElement {
 					</div>
 				</div>
 			</RetainedView>
-			<RetainedView active={selectedId === "duplicative-sessions"} retain>
+			<RetainedView active={selectedId === "duplicative-sessions" && duplicativeSessionsView === "agent-selector"} retain>
 				<div className="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex justify-center overflow-y-auto px-4 pt-4 pb-56">
 					<ButterAgentSelectorGallery key={duplicativeSessionsResetKey} variant="duplicative-sessions" showCreateAgent={false} />
 				</div>
+			</RetainedView>
+			<RetainedView active={selectedId === "duplicative-sessions" && duplicativeSessionsView === "work-item"} retain>
+				<RovoChatProvider key={duplicativeSessionsResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
+					<ButterGalleryWorkItem open={selectedId === "duplicative-sessions" && duplicativeSessionsView === "work-item"} onClose={() => setDuplicativeSessionsView("agent-selector")} />
+				</RovoChatProvider>
 			</RetainedView>
 			<RetainedView active={selectedId === "work-item"} retain>
 				<RovoChatProvider key={workItemResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>

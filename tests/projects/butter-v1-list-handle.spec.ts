@@ -1,6 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("two additional list rows cycle between their agents", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List" }).click();
+	const rows = ["PAY-130", "PAY-128"].map((key) => page.getByRole("row").filter({ hasText: key }));
+	for (const row of rows) await expect(row.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
+	const avatars = rows.map((row) => row.locator(".agent-loading-vertical [data-agent-id]").first());
+	const initial = await Promise.all(avatars.map((avatar) => avatar.getAttribute("data-agent-id")));
+	await Promise.all(avatars.map((avatar, index) => expect.poll(() => avatar.getAttribute("data-agent-id"), { timeout: 8_000 }).not.toBe(initial[index])));
+});
+
 for (const key of ["PAY-118", "PAY-105"]) test(`selected agent animates into list sessions for ${key}`, async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.setViewportSize({ width: 1800, height: 1300 });
