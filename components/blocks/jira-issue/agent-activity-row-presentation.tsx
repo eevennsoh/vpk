@@ -276,6 +276,7 @@ export function JiraIssueAgentRowLabel({
 export function JiraIssueAgentRowContent({
 	activities: incomingActivities,
 	avatarLayout,
+	avatarSize = 24,
 	featuredActivity,
 	isAwaitingInput,
 	isWorking,
@@ -287,6 +288,7 @@ export function JiraIssueAgentRowContent({
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	avatarLayout: JiraIssueAgentActivityAvatarLayout;
+	avatarSize?: 20 | 24;
 	featuredActivity: JiraIssueAgentActivity | undefined;
 	isAwaitingInput: boolean;
 	isWorking: boolean;
@@ -316,7 +318,7 @@ export function JiraIssueAgentRowContent({
 					vpkLogo={featuredActivity.agentVpkLogo}
 					fallbackText={getAgentInitial(featuredActivity.name)}
 					label={featuredActivity.name}
-					sizePx={24}
+					sizePx={avatarSize}
 				/>
 			</span>
 		);
@@ -337,7 +339,7 @@ export function JiraIssueAgentRowContent({
 						fallbackText={getAgentInitial(activity.name)}
 						key={activity.id}
 						label=""
-						sizePx={24}
+						sizePx={avatarSize}
 					/>
 				))}
 			</AvatarGroup>
@@ -351,6 +353,7 @@ export function JiraIssueAgentRowContent({
 					className="shrink-0"
 					key={selectedAgent?.id ?? "default"}
 					variant="vertical"
+					verticalAvatarSize={avatarSize}
 				/>
 			</span>
 		);

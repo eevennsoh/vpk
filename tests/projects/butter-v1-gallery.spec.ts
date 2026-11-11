@@ -3,6 +3,32 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("board chin avatars fit a 24px slot without shrinking list avatars", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	for (const label of ["Claude: Working", "2 agents: Working"]) {
+		const row = page.getByRole("button", { name: label, exact: true });
+		const avatar = row.locator('[data-slot="avatar"]').first();
+		await expect(avatar).toBeVisible();
+		const bounds = await avatar.boundingBox();
+		const slot = await row.locator('[data-slot="jira-issue-agent-avatar-handoff"] > span').boundingBox();
+		if (!bounds || !slot) throw new Error("Board agent avatar is unavailable");
+		expect(bounds.width).toBeCloseTo(20, 1);
+		expect(bounds.height).toBeCloseTo(20, 1);
+		expect(slot.width).toBeCloseTo(24, 1);
+		expect(slot.height).toBeCloseTo(24, 1);
+	}
+	await page.getByRole("button", { name: "Select List" }).click();
+	const avatar = page.getByRole("button", { name: "Add agent to PAY-123" }).locator("xpath=ancestor::td").locator('.agent-loading-vertical [data-slot="avatar"]').first();
+	await expect(avatar).toBeVisible();
+	const listBounds = await avatar.boundingBox();
+	if (!listBounds) throw new Error("List agent avatar is unavailable");
+	expect(listBounds.width).toBeCloseTo(24, 1);
+	expect(listBounds.height).toBeCloseTo(24, 1);
+});
+
 test("list agent add stays the same size as the agent avatar", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
