@@ -48,7 +48,7 @@ import {
 import { AgentSessionMoreMenu } from "./agent-session-more-menu";
 import { AgentSessionContinueMenu } from "./agent-session-continue-menu";
 import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
-import { AgentSessionViewerTooltip } from "./agent-session-viewer-hint";
+import { AgentSessionViewerTooltip, agentSessionPrivacyHint } from "./agent-session-viewer-hint";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
 import { selectionGestureFromModifierKeys } from "./agent-session-selection-gesture";
 import { agentSessionAccentColor } from "./agent-session-transfer-member";
@@ -755,6 +755,7 @@ export function AgentSessionCard({
 								metadataOutsideViewTrigger={isTitleLed && (renderAgentAvatar !== undefined || item.privateTo !== undefined)}
 								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
+								viewDescription={item.privateTo ? agentSessionPrivacyHint(item.privateTo) : undefined}
 								renderIdentity={() => {
 									const sessionIdentity = (
 										<AgentListIdentity
@@ -798,8 +799,8 @@ export function AgentSessionCard({
 					if (role === "expired") {
 						return <AgentSessionExpiredHint disabled={menu.isOpen} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionExpiredHint>;
 					}
-					if (role === "viewer") {
-						return <AgentSessionViewerTooltip positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
+					if (role === "viewer" || item.privateTo) {
+						return <AgentSessionViewerTooltip person={item.privateTo ?? item.invokedBy?.name} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
 					}
 
 					if (isLongDensity || flyoutHandle === undefined || flyoutSession === undefined) {

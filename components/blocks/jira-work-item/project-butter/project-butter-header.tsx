@@ -18,12 +18,13 @@ import type { ProjectButterContent } from "@/components/blocks/jira-work-item/pr
 import type { ProjectButterPresentation } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { cn } from "@/lib/utils";
 
-export function ProjectButterHeader({ content, onClose, onPresentationChange, presentation, secondaryActions, workItem }: Readonly<{
+export function ProjectButterHeader({ content, onClose, onPresentationChange, presentation, secondaryActions, showFullScreenClose = false, workItem }: Readonly<{
 	content: ProjectButterContent;
 	onClose: () => void;
 	onPresentationChange: (presentation: ProjectButterPresentation) => void;
 	presentation: ProjectButterPresentation;
 	secondaryActions?: ReactNode;
+	showFullScreenClose?: boolean;
 	workItem?: WorkItemData;
 }>) {
 	const sidePanel = presentation === "side-panel";
@@ -33,11 +34,11 @@ export function ProjectButterHeader({ content, onClose, onPresentationChange, pr
 			{sidePanel ? null : (
 				<div className="flex min-h-8 items-center justify-between gap-2 px-6 pt-6" data-project-butter-header-key-row>
 					<ProjectButterBreadcrumb aligned code={code} parent={content.detailFields.parent} summary={content.summary} />
-					{presentation === "full-screen" ? null : (
+					{presentation === "full-screen" && !showFullScreenClose ? null : (
 						<div className="flex shrink-0 items-center gap-1">
-							<Button aria-label="Collapse work item" onClick={() => onPresentationChange("side-panel")} size="icon" type="button" variant="ghost">
+							{presentation === "full-screen" ? null : <Button aria-label="Collapse work item" onClick={() => onPresentationChange("side-panel")} size="icon" type="button" variant="ghost">
 								<ShrinkDiagonalIcon label="" />
-							</Button>
+							</Button>}
 							<Button aria-label="Close Project butter work item" onClick={onClose} size="icon" type="button" variant="ghost"><CloseIcon label="" /></Button>
 						</div>
 					)}

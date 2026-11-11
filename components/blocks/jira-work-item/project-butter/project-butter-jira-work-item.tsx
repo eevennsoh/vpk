@@ -346,6 +346,7 @@ export function ProjectButterJiraWorkItem({
 				content={content}
 				onClose={onClose}
 				onPresentationChange={setPresentation}
+				showFullScreenClose={shell === "project"}
 				secondaryActions={
 					sparse && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null
 				}

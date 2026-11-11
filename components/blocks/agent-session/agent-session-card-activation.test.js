@@ -15,6 +15,7 @@ function loadHarness() {
 			"agent-session-card.tsx", "use-agent-session-menu.ts", "agent-session-types.ts",
 			"agent-session-selection-gesture.ts", "agent-session-drag-interactive.ts", "agent-list-session.ts",
 			"agent-session-more-menu.tsx",
+			"agent-session-viewer-hint.tsx",
 			"assigned-agents-session-menu.tsx",
 			"agent-session-continue-menu.tsx",
 			"jira-session-flyout.tsx",
@@ -77,7 +78,7 @@ function loadHarness() {
 			["tooltip", `
 				import React from "react";
 				export function Tooltip({ children }) { return children; }
-				export function TooltipTrigger({ children, render }) { return render ? React.cloneElement(render, null, children) : children; }
+				export function TooltipTrigger({ children, render }) { return render ? (children === undefined ? render : React.cloneElement(render, null, children)) : children; }
 				export function TooltipContent({ children }) { return React.createElement("div", { role: "tooltip" }, children); }
 			`],
 			["agent-avatar-visual", `export function AgentAvatarVisual() { return null; }`],
@@ -139,7 +140,6 @@ function loadHarness() {
 			["icon", `export function Icon() { return null; }`],
 			["agent-session-select-mark", `export function AgentSessionSelectMark() { return null; }`],
 			["agent-session-expired-hint", `export function AgentSessionExpiredHint({ children }) { return children; }`],
-			["agent-session-viewer-hint", `export function AgentSessionViewerHint() { return null; } export function AgentSessionViewerTooltip({ children }) { return children; }`],
 			["agent-session-metadata", `export function AgentSessionLongMetadata() { return null; } export function AgentSessionShortMetadata() { return null; }`],
 			["agent-session-lifecycle", `export function AgentSessionLifecycle() { return null; } export function AgentSessionShortLifecycleIcon() { return null; }`],
 		]);
@@ -264,6 +264,29 @@ test("viewer cards expose their explanation from the keyboard without an extra a
 	await withCard({ item: { ...LOCAL_ITEM, role: "viewer" } }, async ({ document }) => {
 		assert.equal(document.querySelector("article").getAttribute("tabindex"), "0");
 		assert.equal(document.querySelector("button"), null);
+	});
+});
+
+test("viewer cards explain who can act on the session", async () => {
+	await withCard({ item: { ...LOCAL_ITEM, role: "viewer", invokedBy: { name: "Jordan Okafor" } } }, async ({ document, render }) => {
+		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only Jordan Okafor can act on it.");
+		await render({ item: { ...LOCAL_ITEM, role: "viewer", privateTo: "Annie Cook", invokedBy: { name: "Jordan Okafor" } } });
+		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only Annie Cook can act on it.");
+		await render({ item: { ...LOCAL_ITEM, role: "viewer" } });
+		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only its owner can act on it.");
+	});
+});
+
+test("private owner cards show the same explanation and still open their session", async () => {
+	const opened = [];
+	const item = { ...LOCAL_ITEM, host: "cloud", privateTo: "Annie Cook" };
+	await withCard({ item, onView: (session) => opened.push(session.id) }, async ({ document, click, render }) => {
+		assert.equal(document.querySelectorAll('[role="tooltip"]').length, 1);
+		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only Annie Cook can act on it.");
+		await click(document.querySelector("article"));
+		assert.deepEqual(opened, [item.id]);
+		await render({ item: LOCAL_ITEM, onView() {} });
+		assert.equal(document.querySelector('[role="tooltip"]'), null);
 	});
 });
 

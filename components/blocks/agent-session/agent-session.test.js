@@ -725,7 +725,7 @@ test("expired rows explain retention across the row and keep their Delete menu v
 
 test("viewer rows expose one privacy explanation on the row", () => {
 	assert.match(VIEWER_HINT_SOURCE, /<Tooltip>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
-	assert.match(CARD_SOURCE, /if \(role === "viewer"\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
+	assert.match(CARD_SOURCE, /if \(role === "viewer" \|\| item\.privateTo\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
 	assert.match(
 		VIEWER_HINT_SOURCE,
 		/You can see this session, but only its owner can act on it\./u,

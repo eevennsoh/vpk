@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useReducedMotion } from "motion/react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/u
 import { IconTile } from "@/components/ui/icon-tile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
+import { buildHorizontalScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/project-butter-agent-picker";
 import { JiraIssueAgentRowLabel } from "@/components/blocks/jira-issue/agent-activity-row-presentation";
 import { ProjectButterAgentPreviewBoundary, ProjectButterCloudAgentPicker } from "@/components/blocks/jira-issue/project-butter-inline-agent-picker";
@@ -27,6 +28,9 @@ import { matchesInvocationAgent } from "@/components/blocks/jira-issue/project-b
 import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
 import { cn } from "@/lib/utils";
+import { motionDuration, motionEase } from "@/lib/motion";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { AgentAvatarLanyard } from "@/components/blocks/jira-work-item/project-butter/agent-avatar-lanyard";
 
 type CrewMember = { name: string; kind: "person"; state: "Working" | "Currently viewing"; avatarSrc?: string } | { id?: string; name: string; kind: "agent"; state: "Working" | "Needs input" | "Completed"; visual: Pick<AgentAvatarVisualProps, "avatarSrc" | "brandName" | "vpkLogo"> };
 type AgentCrewMember = Extract<CrewMember, { kind: "agent" }>;
@@ -85,7 +89,12 @@ export function ProjectButterCrew(props: ProjectButterCrewProps) {
 
 function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, currentUser, field = false, fieldSessionMenu = false, showFieldLabel = true, showSessionStatus = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: ProjectButterCrewProps) {
 	const [open, setOpen] = useState(false);
-	const reduceMotion = useReducedMotion();
+	const [enteringAgent, setEnteringAgent] = useState<{ name: string; isNew: boolean } | null>(null);
+	const [scrollEdges, setScrollEdges] = useState({ start: false, end: false });
+	const fieldScrollRef = useRef<HTMLDivElement>(null);
+	const pickerTriggerRef = useRef<HTMLButtonElement>(null);
+	const pendingScrollAgent = useRef<string | null>(null);
+	const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
 	const invocation = useProjectButterInvocationActions();
 	const phase = useProjectButterInvocationPhase();
 	const preview = useProjectButterInvocationPreview();
@@ -124,11 +133,44 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 		return {
 			id,
 			name: agent.name,
+			identity: { id: catalogAgent?.id ?? agent.id ?? agent.name, name: agent.name, byline: catalogAgent?.byline ?? "", avatarSrc: visual.avatarSrc, brandName: visual.brandName, vpkLogo: visual.vpkLogo, logoName: catalogAgent?.logoName },
 			status: state === "complete" ? "finished" as const : "working" as const,
 			avatar: { animate: false, appearance: "coding" as const, avatarSrc: visual.avatarSrc, brandName: visual.brandName, vpkLogo: visual.vpkLogo, logoName: catalogAgent?.logoName, fallbackText: agent.name.slice(0, 2).toUpperCase() },
 		};
 	});
+	useLayoutEffect(() => {
+		if (!open && pendingScrollAgent.current && sessions.some(({ agent }) => agent.name.toLowerCase() === pendingScrollAgent.current)) {
+			const scroller = fieldScrollRef.current;
+			const avatar = [...(scroller?.querySelectorAll<HTMLElement>("[data-agent-name]") ?? [])].find((element) => element.dataset.agentName === pendingScrollAgent.current);
+			if (scroller && avatar) {
+				const bounds = avatar.getBoundingClientRect();
+				const viewport = scroller.getBoundingClientRect();
+				if (bounds.left < viewport.left) scroller.scrollLeft += bounds.left - viewport.left;
+				else if (bounds.right + 16 > viewport.right) scroller.scrollLeft += bounds.right + 16 - viewport.right;
+			}
+			pendingScrollAgent.current = null;
+		}
+	}, [open, sessions]);
+	useEffect(() => {
+		const scroller = fieldScrollRef.current;
+		if (!scroller) return;
+		function updateEdges() {
+			if (!scroller) return;
+			const start = scroller.scrollLeft > 1;
+			const end = scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 1;
+			setScrollEdges((current) => current.start === start && current.end === end ? current : { start, end });
+		}
+		const observer = new ResizeObserver(updateEdges);
+		observer.observe(scroller);
+		if (scroller.firstElementChild) observer.observe(scroller.firstElementChild);
+		scroller.addEventListener("scroll", updateEdges, { passive: true });
+		updateEdges();
+		return () => { observer.disconnect(); scroller.removeEventListener("scroll", updateEdges); };
+	}, [field, fieldSessionMenu, open]);
 	function startFieldAgent(agent: AgentSessionItem["agent"]) {
+		const name = agent.name.toLowerCase();
+		pendingScrollAgent.current = name;
+		setEnteringAgent(reduceMotion ? null : { name, isNew: !agentNames.has(name) });
 		onStartAgent?.(agent);
 	}
 	function changeOpen(next: boolean) {
@@ -136,16 +178,31 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 		if (field && !fieldSessionMenu) { if (next) invocation?.open("footer"); else invocation?.close(); }
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
 	}
+	const fieldControl = (
+				<div className={cn("relative", fieldSessionMenu ? "min-w-0" : "min-w-full w-max", enteringAgent?.isNew && !fieldSessionMenu && "pr-4")}>
+					<PopoverTrigger render={<button aria-label={fieldLabel} ref={pickerTriggerRef} className={cn("absolute inset-0 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring", fieldSessionMenu ? "-inset-x-2" : "focus-visible:ring-inset")} onKeyDown={(event) => { if (!fieldSessionMenu && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); fieldScrollRef.current?.scrollBy({ left: event.key === "ArrowRight" ? 48 : -48 }); } }} disabled={!onStartAgent && sessions.length === 0} type="button" />} />
+					<div aria-hidden={fieldSessionMenu || showSessionStatus ? true : undefined} className="pointer-events-none relative z-10 flex min-h-8 items-center gap-2">
+						{open && !fieldSessionMenu ? <ProjectButterInvocationPreview className="px-0" /> : firstSession && showSessionStatus ? <><span className={cn("flex shrink-0", phase === "handoff" && !puzzleHandoff && !reduceMotion ? "opacity-0" : null)} data-slot="jira-issue-agent-avatar-handoff">{agentAvatars.length > 1 ? <AgentLoading agents={agentAvatars satisfies AgentLoadingAgent[]} announce={false} key={selectedAgent?.id ?? "default"} variant="vertical" /> : <span className="grid size-6 shrink-0 place-items-center"><AgentAvatarVisual {...agentAvatars[0].avatar} label="" sizePx={24} /></span>}</span>{phase === "handoff" && selectedAgent && fieldState === "Working" && !reduceMotion ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking rowLabel={fieldState} /></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={fieldState === "Needs input"} isWorking={fieldState === "Working"} rowLabel={fieldState} />}</> : agentAvatars.length ? <AvatarGroup className="shrink-0 -space-x-1.5">{agentAvatars.map(({ id, name, avatar, identity }) => {
+							const entering = enteringAgent?.name === name.toLowerCase() ? enteringAgent : null;
+							return <motion.span
+								animate={entering ? entering.isNew ? { opacity: [0, 1, 1, 1], transform: ["translateX(12px) scale(0.6)", "translateX(12px) scale(1.15)", "translateX(12px) scale(1.15)", "translateX(0px) scale(1)"] } : { opacity: 1, transform: ["scale(0.8)", "scale(1.12)", "scale(1)"] } : { opacity: 1, transform: "scale(1)" }}
+								className={cn("flex shrink-0", entering && "relative z-20")}
+								data-agent-id={id}
+								data-agent-name={name.toLowerCase()}
+								initial={entering ? entering.isNew ? { opacity: 0, transform: "translateX(12px) scale(0.6)" } : { opacity: 1, transform: "scale(0.8)" } : false}
+								key={id}
+								onAnimationComplete={() => { if (entering) setEnteringAgent(null); }}
+								transition={entering?.isNew ? { duration: motionDuration.slowest, ease: motionEase.outPractical, times: [0, 0.4, 0.55, 1] } : { duration: motionDuration.slowest * 2, ease: motionEase.inOut }}
+							><AgentAvatarLanyard agent={identity} onOpenPicker={() => pickerTriggerRef.current?.click()}><AgentAvatarVisual {...avatar} label="" sizePx={24} /></AgentAvatarLanyard></motion.span>;
+						})}</AvatarGroup> : <><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AiAgentIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /><span className="text-sm text-text-subtle">Add agent</span></>}
+					</div>
+				</div>
+	);
 	return (
 		<Popover onOpenChange={changeOpen} open={open}>
 			{field ? <div aria-label="Agents field" className="min-w-0" role="group">
 				{showFieldLabel && sessions.length > 0 ? <div className="mb-0.5 min-w-0 text-xs leading-4 text-text-subtle">Agents</div> : null}
-				<div className="relative min-w-0">
-					<PopoverTrigger render={<button aria-label={fieldLabel} className="absolute inset-0 -inset-x-2 z-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!onStartAgent && sessions.length === 0} type="button" />} />
-					<div aria-hidden className="pointer-events-none relative z-10 flex min-h-8 items-center gap-2">
-						{open && !fieldSessionMenu ? <ProjectButterInvocationPreview className="px-0" /> : firstSession && showSessionStatus ? <><span className={cn("flex shrink-0", phase === "handoff" && !puzzleHandoff && !reduceMotion ? "opacity-0" : null)} data-slot="jira-issue-agent-avatar-handoff">{agentAvatars.length > 1 ? <AgentLoading agents={agentAvatars satisfies AgentLoadingAgent[]} announce={false} key={selectedAgent?.id ?? "default"} variant="vertical" /> : <span className="grid size-6 shrink-0 place-items-center"><AgentAvatarVisual {...agentAvatars[0].avatar} label="" sizePx={24} /></span>}</span>{phase === "handoff" && selectedAgent && fieldState === "Working" && !reduceMotion ? <JiraIssueAgentHandoffLabel name={selectedAgent.name}><JiraIssueAgentRowLabel isAwaitingInput={false} isWorking rowLabel={fieldState} /></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={fieldState === "Needs input"} isWorking={fieldState === "Working"} rowLabel={fieldState} />}</> : agentAvatars.length ? <AvatarGroup className="shrink-0 -space-x-1.5">{agentAvatars.map(({ id, name, avatar }) => <span data-agent-id={id} key={id}><AgentAvatarVisual {...avatar} label={name} sizePx={24} /></span>)}</AvatarGroup> : <><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AiAgentIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /><span className="text-sm text-text-subtle">Add agent</span></>}
-					</div>
-				</div>
+				{fieldSessionMenu ? fieldControl : <div className="scrollbar-none -mx-1 -my-1 min-w-0 overflow-x-auto px-1 py-1" data-slot="scroll-fade" ref={fieldScrollRef} style={scrollEdges.start || scrollEdges.end ? buildHorizontalScrollMaskStyle({ edge: scrollEdges.start && scrollEdges.end ? "both" : scrollEdges.start ? "start" : "end", fadeSize: "3rem" }) : undefined}>{fieldControl}</div>}
 			</div> : <PopoverTrigger render={<button aria-label={label} className="group/crew inline-flex shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!onStartAgent && sessions.length === 0} type="button" />}>
 				<AvatarGroup className="-space-x-1.5" label="People and agents working on this item">
 					{crew.map((member, index) => member.kind === "person" ? <Avatar className="size-7.5" key={`${member.name}-${index}`} label={`${member.name}, ${member.state}`} size="default" title={`${member.name}, ${member.state}`}><AvatarImage src={member.avatarSrc ?? projectButterPersonAvatar(member.name)} /><AvatarFallback>{member.name.slice(0, 1)}</AvatarFallback></Avatar> : <span className="relative shrink-0" key={`${member.name}-${index}`} title={`${member.name}, ${member.state}`}><AgentAvatarVisual {...member.visual} appearance="coding" label={`${member.name}, ${member.state}`} sizePx={30} status={member.state === "Completed" ? "finished" : member.state === "Needs input" ? "needs-input" : undefined} />{member.state === "Working" ? <span className="absolute -right-0.5 -top-0.5 z-10 grid size-3.5 place-items-center rounded-full bg-surface"><Spinner className="size-2.5" label="Working" size="xs" variant="bloom" /></span> : null}</span>)}

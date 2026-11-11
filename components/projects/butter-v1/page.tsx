@@ -193,7 +193,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 			{workItem.selection ? (
 				<ButterWorkItemDialog
 					cloudAgentSelector
-					initialPresentation="modal"
+					initialPresentation="full-screen"
 					shell="project"
 					initialPreset="filled"
 					{...getMerchantWorkItemProps(workItem.selection.workItem.code, { journeyPhase, journeySession, journeyControls, developmentJourney })}

@@ -553,6 +553,7 @@ export function AgentListRow({
 	showHoverActionsWhenSelected = false,
 	stateAwareTitle = true,
 	trailingAlign = "center",
+	viewDescription,
 }: Readonly<{
 	/**
 	 * Drop the leading identity column entirely. A title-led row puts the agent
@@ -578,6 +579,7 @@ export function AgentListRow({
 	onView?: (item: AgentListItem) => void;
 	/** Let the owner turn the existing row button into an anchored menu trigger. */
 	renderViewTrigger?: (trigger: ReactElement) => ReactNode;
+	viewDescription?: string;
 	/**
 	 * Wrap the row's leading identity. Agent List never passes it.
 	 */
@@ -713,6 +715,7 @@ export function AgentListRow({
 						isSelected={isSelected}
 						onView={viewItem}
 						renderViewTrigger={renderViewTrigger}
+						viewDescription={viewDescription}
 					>
 						<span
 							className={cn(
