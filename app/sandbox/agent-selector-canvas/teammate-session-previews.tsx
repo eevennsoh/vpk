@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { isSessionSample, sessionSamples, type SessionSample } from "@/app/sandbox/agent-selector-canvas/teammate-session-data";
 import { TeammateSessionDisclosure, type TeammateApproach } from "@/app/sandbox/agent-selector-canvas/teammate-session-disclosure";
-import { groupTeammateSessions } from "@/app/sandbox/agent-selector-canvas/teammate-session-model";
 
 const cannotResume = () => false;
 
@@ -52,12 +51,7 @@ function SessionMenu({ approach, items }: Readonly<{ approach: TeammateApproach;
 					<>
 						{personal.length ? <hr className="my-1 border-border" /> : null}
 						<TeammateSessionDisclosure approach={approach} items={teammates}>
-							{approach === "people" ? groupTeammateSessions(teammates).map(({ name, sessions }) => (
-								<div key={name} role="group" aria-label={name}>
-									<p className="px-3 pb-1 pt-3 text-xs font-medium text-text-subtle">{name}</p>
-									{cards(sessions)}
-								</div>
-							)) : cards(teammates)}
+							{cards(teammates)}
 						</TeammateSessionDisclosure>
 					</>
 				) : null}

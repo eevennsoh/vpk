@@ -7,10 +7,12 @@ const mocks = {
 };
 const disclosure = { name: /Sessions from your teammates/u };
 
-test("People fold announces both counts and groups real read-only cards only after expansion", async () => {
+test("People fold reveals a single list of read-only sessions without teammate headings or counts", async () => {
 	const view = await renderComponent({ entry: "app/sandbox/agent-selector-canvas/teammate-session-previews.tsx", exportName: "PeopleFoldPreview", mocks });
 	try {
-		const trigger = view.getByRole("button", { name: /4 sessions, 3 teammates/u });
+		const trigger = view.getByRole("button", { name: "Sessions from your teammates" });
+		assert.equal(trigger.textContent.includes("4 sessions"), false);
+		assert.equal(trigger.textContent.includes("3 teammates"), false);
 		for (const name of ["Teammate A", "Teammate B", "Teammate C"]) {
 			assert.equal(view.queryByRole("group", { name }), null);
 		}
@@ -18,15 +20,15 @@ test("People fold announces both counts and groups real read-only cards only aft
 			assert.equal(view.queryByText(title), null);
 		}
 		await view.press(trigger, "Enter");
-		const groups = ["Teammate A", "Teammate B", "Teammate C"].map((name) => view.getByRole("group", { name }));
-		assert.deepEqual(view.getAllByRole("group", { name: /^Teammate [ABC]$/u }).map((group) => group.getAttribute("aria-label")), ["Teammate A", "Teammate B", "Teammate C"]);
-		assert.deepEqual(groups.map((group) => [...group.querySelectorAll("li")].map((row) => row.getAttribute("data-testid"))), [
-			["agent-session-row-canvas-team-navigation", "agent-session-row-canvas-team-copy"],
-			["agent-session-row-canvas-team-empty"],
-			["agent-session-row-canvas-team-focus"],
+		assert.equal(view.getAllByRole("list").length, 2);
+		const teammateList = view.getAllByRole("list")[1];
+		assert.deepEqual([...teammateList.querySelectorAll("li")].map((row) => row.getAttribute("data-testid")), [
+			"agent-session-row-canvas-team-navigation", "agent-session-row-canvas-team-empty",
+			"agent-session-row-canvas-team-focus", "agent-session-row-canvas-team-copy",
 		]);
-		assert.equal(groups.every((group) => group.querySelector("button") === null), true);
-		assert.equal(groups.every((group) => [...group.querySelectorAll("article")].every((card) => card.tabIndex === 0)), true);
+		assert.equal(view.queryByRole("group", { name: "Teammate A" }), null);
+		assert.equal(teammateList.querySelector("button"), null);
+		assert.equal([...teammateList.querySelectorAll("article")].every((card) => card.tabIndex === 0), true);
 		await view.press(trigger, " ");
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
 		assert.equal(view.queryByRole("group", { name: "Teammate A" }), null);
@@ -37,12 +39,12 @@ test("People fold announces both counts and groups real read-only cards only aft
 const disclosureEntry = "app/sandbox/agent-selector-canvas/teammate-session-disclosure.tsx";
 const sample = (id, name, state) => ({ id, title: `Sample ${id}`, agent: { name: "Sample agent" }, invokedBy: { name }, role: "viewer", state });
 
-test("People fold derives avatar initials from names and counts distinct normalized teammates", async () => {
+test("People fold derives avatar initials from distinct normalized teammate names", async () => {
 	const view = await renderComponent({ entry: disclosureEntry, exportName: "TeammateSessionDisclosure", mocks, props: {
 		approach: "people", items: [sample("b", "Demo Beta", "running"), sample("a", "Sample Alpha", "complete"), sample("a2", " Sample Alpha ", "complete")],
 	} });
 	try {
-		assert.equal(view.getByRole("button", { name: /3 sessions, 2 teammates/u }).getAttribute("aria-expanded"), "false");
+		assert.equal(view.getByRole("button", { name: "Sessions from your teammates" }).getAttribute("aria-expanded"), "false");
 		assert.deepEqual([...view.container.querySelectorAll('[data-slot="avatar-fallback"]')].map((avatar) => avatar.textContent), ["DB", "SA"]);
 	} finally { await view.unmount(); }
 });
@@ -65,7 +67,7 @@ test("Activity digest includes every lifecycle state and leaves zero-count state
 	} finally { await view.unmount(); }
 });
 
-test("grouped People fold reaches the same accessible open and closed states with reduced motion", async () => {
+test("People fold reaches the same accessible open and closed states with reduced motion", async () => {
 	const previous = window.happyDOM.settings.device.prefersReducedMotion;
 	window.happyDOM.settings.device.prefersReducedMotion = "reduce";
 	const view = await renderComponent({ entry: "app/sandbox/agent-selector-canvas/teammate-session-previews.tsx", exportName: "PeopleFoldPreview", mocks });

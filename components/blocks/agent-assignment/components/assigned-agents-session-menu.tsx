@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, use, useEffect, useRef } from "react";
+import { use, useEffect, useRef } from "react";
 
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 
@@ -8,6 +8,7 @@ import {
 	type AgentAssignmentAgent,
 } from "@/components/blocks/agent-assignment/components/agent-assignment";
 import { toAssignmentSessionItem } from "@/components/blocks/agent-assignment/components/assignment-session";
+import { TeammateSessionsDisclosure } from "@/components/blocks/agent-assignment/components/teammate-sessions-disclosure";
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
 import { AgentSessionAvatarPreviewContext } from "@/components/blocks/agent-session/agent-session-avatar-preview";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
@@ -78,11 +79,8 @@ export function AgentSessionsMenu({
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const renderAgentAvatar = use(AgentSessionAvatarPreviewContext);
-	const orderedItems = [
-		...items.filter((item) => item.role !== "viewer"),
-		...items.filter((item) => item.role === "viewer"),
-	];
-	const firstTeammateId = orderedItems.find((item) => item.role === "viewer")?.id;
+	const personalItems = items.filter((item) => item.role !== "viewer");
+	const teammateItems = items.filter((item) => item.role === "viewer");
 	const hasActionableSession = items.some((item) => item.role === undefined || item.role === "owner");
 
 	useEffect(() => {
@@ -92,43 +90,42 @@ export function AgentSessionsMenu({
 		return () => window.cancelAnimationFrame(frameId);
 	}, []);
 
+	const renderSession = (item: AgentSessionItem) => (
+		<AgentSessionCard
+			key={item.id}
+			density="long"
+			hoverTone="menu"
+			item={item}
+			localSessionAction={localSessionAction}
+			moreMenuPortalled={true}
+			moreMenuPositionerClassName={overlayPositionerClassName}
+			tooltipPositionerClassName={overlayPositionerClassName}
+			onContinueInAgent={onContinueInAgent}
+			onDeleteSession={onDeleteSession}
+			onMoreMenuOpenChange={onMoreMenuOpenChange}
+			onRenameSession={onRenameSession}
+			onToggleVisibility={onToggleVisibility}
+			onView={item.host === "local" && localSessionAction === "continue" ? undefined : () => onSelectSession(item)}
+			padding="compact"
+			renderAgentAvatar={renderAgentAvatar ?? undefined}
+			showLifecycleLabel={false}
+			trailingAlign="center"
+		/>
+	);
+
 	return (
 		<div className="flex w-full flex-col gap-1 p-1 outline-none" ref={containerRef} tabIndex={-1}>
 			{items.length === 0 ? (
 				<p className="px-3 py-2 text-sm text-text-subtle">No agents assigned</p>
-			) : (
-				<ul className="flex w-full flex-col gap-0">
-					{orderedItems.map((item) => (
-						<Fragment key={item.id}>
-							{item.id === firstTeammateId ? (
-								<li>
-									{hasActionableSession ? <hr className="my-1 border-border" /> : null}
-									<div className="px-3 pb-1 pt-3 text-xs font-medium text-text-subtle">Sessions from your teammates</div>
-								</li>
-							) : null}
-							<AgentSessionCard
-								density="long"
-								hoverTone="menu"
-								item={item}
-								localSessionAction={localSessionAction}
-								moreMenuPortalled={true}
-								moreMenuPositionerClassName={overlayPositionerClassName}
-								tooltipPositionerClassName={overlayPositionerClassName}
-								onContinueInAgent={onContinueInAgent}
-								onDeleteSession={onDeleteSession}
-								onMoreMenuOpenChange={onMoreMenuOpenChange}
-								onRenameSession={onRenameSession}
-								onToggleVisibility={onToggleVisibility}
-								onView={item.host === "local" && localSessionAction === "continue" ? undefined : () => onSelectSession(item)}
-								padding="compact"
-								renderAgentAvatar={renderAgentAvatar ?? undefined}
-								showLifecycleLabel={false}
-								trailingAlign="center"
-							/>
-						</Fragment>
-					))}
-				</ul>
-			)}
+			) : personalItems.length ? <ul className="flex w-full flex-col gap-0">{personalItems.map(renderSession)}</ul> : null}
+			{teammateItems.length ? (
+				<div>
+					{hasActionableSession ? <hr className="my-1 border-border" /> : null}
+					<TeammateSessionsDisclosure items={teammateItems}>
+						<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
+					</TeammateSessionsDisclosure>
+				</div>
+			) : null}
 			{onAddAgent ? (
 				<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">
 					<Button

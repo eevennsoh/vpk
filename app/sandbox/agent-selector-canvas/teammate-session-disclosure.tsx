@@ -2,14 +2,12 @@
 
 import { useId, useRef, useState, type ReactNode } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import { actorInitials } from "@/components/blocks/agent-list/agent-list-actor";
+import { TeammateSessionsDisclosure } from "@/components/blocks/agent-assignment/components/teammate-sessions-disclosure";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
-import { Avatar, AvatarFallback, AvatarGroup } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
-import { groupTeammateSessions } from "@/app/sandbox/agent-selector-canvas/teammate-session-model";
 import { activitySummaryLabel, TeammateActivitySummary } from "@/app/sandbox/agent-selector-canvas/teammate-activity-summary";
 
 export type TeammateApproach = "quiet" | "people" | "activity";
@@ -19,11 +17,20 @@ export function TeammateSessionDisclosure({ approach, children, items }: Readonl
 	children: ReactNode;
 	items: readonly AgentSessionItem[];
 }>) {
+	return approach === "people"
+		? <TeammateSessionsDisclosure items={items}>{children}</TeammateSessionsDisclosure>
+		: <SummarySessionDisclosure approach={approach} items={items}>{children}</SummarySessionDisclosure>;
+}
+
+function SummarySessionDisclosure({ approach, children, items }: Readonly<{
+	approach: "quiet" | "activity";
+	children: ReactNode;
+	items: readonly AgentSessionItem[];
+}>) {
 	const [open, setOpen] = useState(false);
 	const trigger = useRef<HTMLButtonElement>(null);
 	const hintId = useId();
-	const teammates = groupTeammateSessions(items);
-	const countsLabel = `${items.length} sessions${approach === "people" ? `, ${teammates.length} teammates` : approach === "activity" ? `, ${activitySummaryLabel(items)}` : ""}`;
+	const countsLabel = `${items.length} sessions${approach === "activity" ? `, ${activitySummaryLabel(items)}` : ""}`;
 
 	return (
 		<Collapsible open={open} onOpenChange={setOpen} onKeyDown={(event) => {
@@ -40,21 +47,9 @@ export function TeammateSessionDisclosure({ approach, children, items }: Readonl
 			>
 				<span className="flex w-full min-w-0 items-center gap-2">
 					<span className="min-w-0 flex-1 text-xs font-medium">Sessions from your teammates</span>
-					{approach !== "people" ? <Badge aria-hidden="true">{items.length}</Badge> : null}
+					<Badge aria-hidden="true">{items.length}</Badge>
 					<Icon aria-hidden className={cn("size-3 shrink-0 text-icon-subtle motion-safe:transition-transform motion-safe:duration-fast motion-safe:ease-out-practical", open ? "rotate-90" : null)} render={<ChevronRightIcon label="" size="small" />} />
 				</span>
-				{approach === "people" ? (
-					<span aria-hidden="true" className="flex w-full items-center gap-3">
-						<AvatarGroup as="span" size="sm">
-							{teammates.map(({ name }) => (
-								<Avatar key={name} size="sm" animate={false}>
-									<AvatarFallback>{actorInitials(name)}</AvatarFallback>
-								</Avatar>
-							))}
-						</AvatarGroup>
-						<span className="min-w-0 text-xs">{items.length} sessions · {teammates.length} teammates</span>
-					</span>
-				) : null}
 				{approach === "activity" ? <TeammateActivitySummary items={items} /> : null}
 				<span className="sr-only">{countsLabel}</span>
 			</CollapsibleTrigger>
