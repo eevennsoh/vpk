@@ -2,10 +2,36 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 function readProjectFile(filePath) {
 	return fs.readFileSync(path.join(process.cwd(), filePath), "utf8");
 }
+
+test("session menu groups teammate sessions after the viewer's own sessions", async () => {
+	const items = [
+		{ id: "teammate", title: "Teammate work", role: "viewer" },
+		{ id: "mine", title: "My work", role: "owner" },
+	];
+	const view = await renderComponent({
+		entry: "components/blocks/agent-assignment/components/assigned-agents-session-menu.tsx",
+		exportName: "AgentSessionsMenu",
+		props: { addAgentLabel: "Add agent", items, onSelectSession() {} },
+		mocks: {
+			"@/components/blocks/agent-session/agent-session-card": "export function AgentSessionCard({ item }) { return <li>{item.title}</li>; }",
+		},
+	});
+	assert.deepEqual(Array.from(view.container.querySelectorAll("li"), (item) => item.textContent), ["My work", "Sessions from your teammates", "Teammate work"]);
+	assert.equal(view.container.querySelectorAll("hr").length, 1);
+	await view.rerender({ addAgentLabel: "Add agent", items: [items[1]], onSelectSession() {} });
+	assert.equal(view.container.textContent.trim(), "My work");
+	assert.equal(view.container.querySelectorAll("hr").length, 0);
+	await view.rerender({ addAgentLabel: "Add agent", items: [items[0]], onSelectSession() {} });
+	assert.equal(view.container.querySelectorAll("hr").length, 0);
+	await view.rerender({ addAgentLabel: "Add agent", items: [items[0], { id: "expired", title: "Expired work", role: "expired" }], onSelectSession() {} });
+	assert.equal(view.container.querySelectorAll("hr").length, 0);
+	await view.unmount();
+});
 
 test("Default uses the activity row and long session cards; Simple keeps the facepile", () => {
 	const source = readProjectFile("components/blocks/agent-assignment/components/agent-assignment.tsx");
