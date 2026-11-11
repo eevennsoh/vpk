@@ -184,7 +184,7 @@ export function ProjectButterActivity({
 	};
 	const headerTime = visibleRow ? visibleRow.timestamp || activityDayLabel(visibleRow) : "";
 	const header = (
-		<div className="sticky top-0 z-20 -mx-1 mb-3 flex shrink-0 items-center gap-4 bg-surface px-1 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-linear-to-b after:from-surface after:to-transparent" data-project-butter-activity-header ref={headerRef}>
+		<div className="sticky top-0 z-20 -mx-1 mb-3 flex shrink-0 items-center gap-4 bg-surface px-1 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-linear-to-b after:from-surface after:to-transparent" data-project-butter-activity-header data-stuck={stuck || undefined} ref={headerRef}>
 			{/* Once the header sticks, the visible row's relative time stands in for the title; the h2 keeps its name for assistive tech. */}
 			<div className="shrink-0 text-sm font-medium text-text">
 				{/* Classes sit on the h2 itself: the base h2 heading font would otherwise win over the wrapper's inherited text-sm. */}

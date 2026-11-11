@@ -3,6 +3,56 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("board chin avatars fit a 24px slot without shrinking list avatars", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	for (const label of ["Claude: Working", "2 agents: Working"]) {
+		const row = page.getByRole("button", { name: label, exact: true });
+		const avatar = row.locator('[data-slot="avatar"]').first();
+		await expect(avatar).toBeVisible();
+		const bounds = await avatar.boundingBox();
+		const slot = await row.locator('[data-slot="jira-issue-agent-avatar-handoff"] > span').boundingBox();
+		if (!bounds || !slot) throw new Error("Board agent avatar is unavailable");
+		expect(bounds.width).toBeCloseTo(20, 1);
+		expect(bounds.height).toBeCloseTo(20, 1);
+		expect(slot.width).toBeCloseTo(24, 1);
+		expect(slot.height).toBeCloseTo(24, 1);
+	}
+	await page.getByRole("button", { name: "Select List" }).click();
+	const avatar = page.getByRole("button", { name: "Add agent to PAY-123" }).locator("xpath=ancestor::td").locator('.agent-loading-vertical [data-slot="avatar"]').first();
+	await expect(avatar).toBeVisible();
+	const listBounds = await avatar.boundingBox();
+	if (!listBounds) throw new Error("List agent avatar is unavailable");
+	expect(listBounds.width).toBeCloseTo(24, 1);
+	expect(listBounds.height).toBeCloseTo(24, 1);
+});
+
+test("list agent add stays the same size as the agent avatar", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List" }).click();
+	const add = page.getByRole("button", { name: "Add agent to PAY-123" });
+	const cell = add.locator("xpath=ancestor::td");
+	const visual = add.locator('[data-slot="jira-issue-add-agent-visual"]');
+	const avatar = cell.locator('.agent-loading-vertical [data-slot="avatar"]').first();
+	await page.mouse.move(0, 0);
+	await expect(avatar).toBeVisible();
+	for (const state of ["rest", "focus"] as const) {
+		if (state === "focus") await add.focus();
+		const addBounds = await visual.boundingBox();
+		const avatarBounds = await avatar.boundingBox();
+		if (!addBounds || !avatarBounds) throw new Error("Agent controls are unavailable");
+		expect(addBounds.width, state).toBeCloseTo(24, 1);
+		expect(addBounds.height, state).toBeCloseTo(24, 1);
+		expect(addBounds.width, state).toBeCloseTo(avatarBounds.width, 1);
+		expect(addBounds.height, state).toBeCloseTo(avatarBounds.height, 1);
+	}
+	await add.press("Enter");
+	await expect(page.getByRole("dialog", { name: "Agents" })).toBeVisible();
+});
+
 test("due date text and calendar icon are vertically centered", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));

@@ -45,6 +45,12 @@ export const AGENT_LOADING_DETAIL: ComponentDetail = {
 			description: "Choose the overlapping avatar stack or a single avatar that rolls vertically through a gradient fade.",
 		},
 		{
+			name: "verticalAvatarSize",
+			type: "20 | 24",
+			default: "24",
+			description: "Avatar size in the default vertical canvas. The small canvas keeps its 16×16 avatar.",
+		},
+		{
 			name: "label",
 			type: "ReactNode",
 			description: "Optional visible status copy rendered beside the agent visual.",

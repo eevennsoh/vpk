@@ -262,6 +262,7 @@ test("the list session field shows the most urgent agent status and opens sessio
 	const props = { field: true, fieldSessionMenu: true, showSessionStatus: true, sessions };
 	const view = await renderCrew(props);
 	assert.equal(view.queryByRole("button", { name: "2 agents: Working" }) !== null, true);
+	assert.equal(Boolean(view.getByRole("group", { name: "Agents field" }).querySelector(".agent-loading-vertical")), true);
 	await view.rerender({ ...props, sessions: [sessions[0], { ...sessions[1], state: "needs-input" }] });
 	const trigger = view.getByRole("button", { name: "2 agents: Needs input" });
 	assert.equal(view.getByRole("group", { name: "Agents field" }).textContent.includes("Needs input"), true);

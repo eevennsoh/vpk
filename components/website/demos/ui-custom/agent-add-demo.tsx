@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { ProjectButterAgentPicker } from "@/components/blocks/jira-issue/project-butter-agent-picker";
-import { getJiraIssueAgentAvatarSize } from "@/components/blocks/jira-issue/agent-activity-avatar";
 import { ProjectButterInvocationPreview } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
 import { ProjectButterInvocationProvider, useProjectButterInvocationActions, useProjectButterInvocationPhase } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { AgentAdd } from "@/components/ui-custom/agent-add";
@@ -27,7 +26,7 @@ function AgentAddExample() {
 			</div>
 			{open ? <ProjectButterInvocationPreview flush /> : selected ? (
 				<div className="flex h-8 items-center">
-					<span className="flex size-6 items-center justify-center"><AgentAvatarVisual appearance="coding" avatarSrc={selected.avatarSrc} brandName={selected.brandName} logoName={selected.logoName} vpkLogo={selected.vpkLogo} label={`${selected.name} selected`} sizePx={getJiraIssueAgentAvatarSize(selected.brandName, selected.avatarSrc)} animate={false} /></span>
+					<span className="flex size-6 items-center justify-center"><AgentAvatarVisual appearance="coding" avatarSrc={selected.avatarSrc} brandName={selected.brandName} logoName={selected.logoName} vpkLogo={selected.vpkLogo} label={`${selected.name} selected`} sizePx={24} animate={false} /></span>
 				</div>
 			) : null}
 		</div>
