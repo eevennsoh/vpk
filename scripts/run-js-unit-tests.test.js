@@ -540,6 +540,31 @@ test("runTestFiles invokes node:test once per batch", async () => {
 	]);
 });
 
+test("a failing batch stops the run unless --keep-going, which still reports failure", async () => {
+	const { parseTestSelectionArgs, runTestFiles } = await import("./run-js-unit-tests.mjs");
+	const sourceByFile = new Map([
+		["backend/a.test.js", 'const test = require("node:test");'],
+		["scripts/b.test.js", 'const test = require("node:test");'],
+	]);
+	const run = (keepGoing) => {
+		const calls = [];
+		const result = runTestFiles([...sourceByFile.keys()], {
+			keepGoing,
+			log: () => {},
+			readFile: (filePath) => sourceByFile.get(filePath),
+			spawn: (command, args) => {
+				calls.push(args.at(-1));
+				return { status: calls.length === 1 ? 1 : 0 };
+			},
+		});
+		return { calls, status: result.status };
+	};
+	assert.deepEqual(run(false), { calls: ["backend/a.test.js"], status: 1 });
+	assert.deepEqual(run(true), { calls: ["backend/a.test.js", "scripts/b.test.js"], status: 1 });
+	assert.equal(parseTestSelectionArgs(["--keep-going", "--file", "a.test.js"]).keepGoing, true);
+	assert.equal(parseTestSelectionArgs(["--file", "a.test.js"]).keepGoing, undefined);
+});
+
 test("four shards cover the inventory and ordinary Butter growth exactly once within an indivisible-batch bound", async () => {
 	const { readFileSync } = require("node:fs");
 	const { buildTestFileBatches, listCandidateTestFiles, partitionTestBatches, selectRunnableTestFiles } = await import("./run-js-unit-tests.mjs");

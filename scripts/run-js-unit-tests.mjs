@@ -153,6 +153,7 @@ export function parseTestSelectionArgs(argv) {
 	const prefixes = [];
 	const files = [];
 	let shard;
+	let keepGoing = false;
 
 	for (let index = 0; index < argv.length; index += 1) {
 		const arg = argv[index];
@@ -162,6 +163,11 @@ export function parseTestSelectionArgs(argv) {
 				throw new Error("--shard requires a single value from 1/4 to 4/4");
 			}
 			shard = Number(value[0]);
+			continue;
+		}
+		// Run every batch even after one fails, so a caller sees all failing suites at once.
+		if (arg === "--keep-going") {
+			keepGoing = true;
 			continue;
 		}
 		if (arg === "--prefix") {
@@ -200,6 +206,7 @@ export function parseTestSelectionArgs(argv) {
 	return {
 		files,
 		prefixes,
+		...(keepGoing ? { keepGoing } : {}),
 		...(shard ? { shard } : {}),
 	};
 }
@@ -475,6 +482,7 @@ export function runTestFiles(testFiles, {
 	readFile = readFileSync,
 	spawn = spawnSync,
 	shard,
+	keepGoing = false,
 	log = console.log,
 	now = () => performance.now(),
 } = {}) {
@@ -490,11 +498,12 @@ export function runTestFiles(testFiles, {
 		const result = spawn(process.execPath, [...batch.nodeArgs, "--test", ...batch.files], {
 			stdio: "inherit",
 		});
-		status = result.status ?? 1;
-		const timing = { id, files: batch.files.length, seconds: Number(((now() - started) / 1000).toFixed(3)), status, signal: result.signal ?? null };
+		const batchStatus = result.status ?? 1;
+		if (status === 0) status = batchStatus;
+		const timing = { id, files: batch.files.length, seconds: Number(((now() - started) / 1000).toFixed(3)), status: batchStatus, signal: result.signal ?? null };
 		timings.push(timing);
 		log(`JS_UNIT_BATCH ${JSON.stringify(timing)}`);
-		if (status !== 0) break;
+		if (batchStatus !== 0 && !keepGoing) break;
 	}
 	log(`js-unit-tests: slowest batches (completed ${timings.length}/${batches.length}):`);
 	for (const timing of [...timings].sort((a, b) => b.seconds - a.seconds).slice(0, 10)) {
@@ -558,7 +567,7 @@ function main() {
 		process.exit(0);
 	}
 
-	process.exitCode = runTestFiles(testFiles, { shard: selection.shard }).status;
+	process.exitCode = runTestFiles(testFiles, { keepGoing: selection.keepGoing, shard: selection.shard }).status;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
