@@ -5,13 +5,7 @@ import { ButterAgentSelectorGallery } from "@/components/projects/butter-v1/comp
 import type { ReactElement } from "react";
 
 export default function AgentSelectorDemo(): ReactElement {
-	return (
-		<div className="flex items-center justify-center p-6">
-			<div className="w-full max-w-80">
-				<AgentSelectorPage />
-			</div>
-		</div>
-	);
+	return <div className="flex items-center justify-center p-6"><ButterAgentSelectorGallery cloudOnly showCreateAgent={false} /></div>;
 }
 
 export function AgentSelectorDemoIncludeByline(): ReactElement {
@@ -22,7 +16,7 @@ export function AgentSelectorDemoSelectedAgentActions(): ReactElement {
 	return (
 		<div className="flex min-h-[32rem] items-start justify-center p-6 pt-8">
 			<div className="w-full max-w-80">
-				<AgentSelectorPage variant="selected-agent-actions" />
+				<AgentSelectorPage initialOpen={false} variant="selected-agent-actions" />
 			</div>
 		</div>
 	);
@@ -32,7 +26,7 @@ export function AgentSelectorDemoJira(): ReactElement {
 	return (
 		<div className="flex min-h-[32rem] items-start justify-center p-6 pt-8">
 			<div className="w-full max-w-80">
-				<AgentSelectorPage variant="jira" />
+				<AgentSelectorPage initialOpen={false} variant="jira" />
 			</div>
 		</div>
 	);
@@ -40,10 +34,6 @@ export function AgentSelectorDemoJira(): ReactElement {
 
 export function AgentSelectorDemoInlineExpansion(): ReactElement {
 	return <div className="flex min-h-[32rem] items-start justify-center p-6 pt-8"><ButterAgentSelectorGallery label="Inline expansion agent selector" presentation="inline" /></div>;
-}
-
-export function AgentSelectorDemoProjectButter(): ReactElement {
-	return <div className="flex min-h-[32rem] items-start justify-center p-6 pt-8"><ButterAgentSelectorGallery label="Submenu agent selector" presentation="submenu" /></div>;
 }
 
 export function AgentSelectorDemoStandalone(): ReactElement {

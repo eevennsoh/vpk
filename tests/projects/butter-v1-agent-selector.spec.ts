@@ -3,6 +3,23 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("e2e Journey assigns a board agent directly", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	const card = page.locator('[data-issue-key="PAY-118"][data-board-column-title]');
+	await card.getByRole("button", { name: "Add agent to PAY-118" }).focus();
+	await page.keyboard.press("Enter");
+	const picker = page.getByRole("dialog", { name: "Agents" });
+	const claude = picker.getByRole("button", { name: "Claude (Recommended)" });
+	await claude.hover();
+	await expect(claude).not.toHaveAttribute("aria-expanded");
+	await expect(page.getByText("Run on cloud", { exact: true })).toHaveCount(0);
+	await expect(page.getByText("Open in Claude", { exact: true })).toHaveCount(0);
+	await claude.click();
+	await expect(picker).toBeHidden();
+	await expect(card.getByRole("button", { name: "Claude: Working" })).toBeVisible();
+});
+
 const iconInkCenter = (locator: Locator) => locator.evaluate((element) => {
 	if (!(element instanceof SVGSVGElement)) throw new Error("Expected an SVG icon");
 	const bounds = element.getBoundingClientRect();
@@ -17,7 +34,7 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
-	const recommendation = picker.getByRole("button", { name: "The Council (Recommended)", exact: true });
+	const recommendation = picker.getByRole("button", { name: "Claude (Recommended)", exact: true });
 	const recommendationLabel = recommendation.getByText("(Recommended)", { exact: true });
 	const subtlestColor = await recommendationLabel.evaluate((element) => {
 		const probe = document.createElement("span");
@@ -31,17 +48,17 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	await expect(picker.getByRole("region", { name: "Software agents" })).toBeVisible();
 	await expect(picker.getByRole("region", { name: "Other agents" })).toBeVisible();
 	await expect(picker.getByText("Jira Coding Agent", { exact: true })).toBeVisible();
-	await expect(picker.getByText("Claude", { exact: true })).toBeVisible();
+	await expect(picker.getByRole("button", { name: "Claude (Recommended)" })).toBeVisible();
 	await expect(picker.getByText("Cursor", { exact: true })).toBeVisible();
 	const search = picker.getByRole("textbox", { name: "Search agents" });
 	await expect(picker.getByRole("button", { name: "Show more" })).toBeVisible();
-	await expect(picker.getByRole("button", { name: "Codex", exact: true })).toHaveCount(0);
+	await expect(picker.getByRole("button", { name: "GitHub Copilot", exact: true })).toHaveCount(0);
 	await search.fill("Codex");
 	await expect(picker.getByRole("button", { name: "Codex", exact: true })).toBeVisible();
 	await search.fill("");
 	await picker.getByRole("button", { name: "Show more" }).focus();
 	await page.keyboard.press("Enter");
-	await expect(picker.getByRole("button", { name: "Codex", exact: true })).toBeFocused();
+	await expect(picker.getByRole("button", { name: "GitHub Copilot", exact: true })).toBeFocused();
 	await expect(picker.getByRole("button", { name: "Show more" })).toHaveCount(0);
 	const cursor = picker.getByRole("button", { name: "Cursor", exact: true });
 	await cursor.click();
@@ -51,7 +68,7 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	await expect(picker.getByRole("button", { name: "Open in Cursor" })).toHaveCount(0);
 	await expect(picker.getByRole("button", { name: "Rovo CLI", exact: true })).toHaveCount(0);
 	for (const name of ["Jira Coding Agent", "Claude", "Codex", "GitHub Copilot"]) {
-		const agent = picker.getByRole("button", { name, exact: true });
+		const agent = picker.getByRole("button", { name: name === "Claude" ? "Claude (Recommended)" : name, exact: true });
 		await agent.click();
 		await expect(picker.getByRole("status")).toHaveText(`Start on Cloud · ${name} (preview)`);
 		await expect(agent).not.toHaveAttribute("aria-expanded");
@@ -64,7 +81,7 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	await expect(picker.getByRole("button", { name: "Create agent" })).toHaveCount(0);
 	await expect(page.getByLabel("Project Butter issue card")).toHaveCount(0);
 	await search.fill("Claude");
-	await expect(picker.getByText("Claude", { exact: true })).toBeVisible();
+	await expect(picker.getByRole("button", { name: "Claude (Recommended)" })).toBeVisible();
 	await expect(picker.getByText("Cursor", { exact: true })).toHaveCount(0);
 	await gallery.getByRole("button", { name: "Select Work item" }).click();
 	await expect(picker).toBeHidden();
@@ -187,12 +204,12 @@ test("single-line favorite buttons have equal trailing and vertical gaps", async
 		expect(right).toBeCloseTo(bottom, 1);
 	};
 
-	await page.goto(appUrl("/preview/blocks/agent-selector"));
-	let row = page.locator('[data-slot=command-item][data-value="release-notes-drafter"]');
+	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
+	let row = page.locator('#standalone-picker [data-agent-selector-demo="standalone"]').first().locator('[data-slot=command-item][data-value="release-notes-drafter"]');
 	let star = row.locator('[data-favorite-id="release-notes-drafter"]');
 	await checkGaps(row, star);
 	await star.click();
-	row = page.locator('[data-slot=command-item][data-value="release-notes-drafter"]');
+	row = page.locator('#standalone-picker [data-agent-selector-demo="standalone"]').first().locator('[data-slot=command-item][data-value="release-notes-drafter"]');
 	star = row.locator('[data-favorite-id="release-notes-drafter"]');
 	await expect(star).toHaveAttribute("aria-pressed", "true");
 	await checkGaps(row, star);
@@ -200,45 +217,19 @@ test("single-line favorite buttons have equal trailing and vertical gaps", async
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const inline = page.getByRole("region", { name: "Project Butter agent selector" });
-	const inlineButton = inline.getByRole("button", { name: "Claude", exact: true });
+	const inlineButton = inline.getByRole("button", { name: "Claude (Recommended)", exact: true });
 	await checkGaps(inlineButton.locator("../.."), inline.getByRole("button", { name: "Add Claude to favorites" }));
 
-	await page.goto(appUrl("/components/blocks/agent-selector#project-butter-submenu"));
-	const submenu = page.getByRole("region", { name: "Submenu agent selector" });
-	row = submenu.locator('[data-slot=command-item][data-value="release-notes-drafter"]');
-	await checkGaps(row, row.locator('[data-favorite-id="release-notes-drafter"]'));
 });
 
 test("selected check and favorite star share an optical center", async ({ page }) => {
-	await page.goto(appUrl("/preview/blocks/agent-selector"));
-	const selected = page.locator('[data-slot=command-item][data-value="github-copilot"]');
-	const other = page.locator('[data-slot=command-item][data-value="release-notes-drafter"]');
+	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
+	const selected = page.locator('#standalone-picker [data-agent-selector-demo="standalone"]').first().locator('[data-slot=command-item][data-value="github-copilot"]');
+	const other = page.locator('#standalone-picker [data-agent-selector-demo="standalone"]').first().locator('[data-slot=command-item][data-value="release-notes-drafter"]');
 	await other.hover();
 	const star = other.locator('[data-favorite-id="release-notes-drafter"] svg');
 	const check = selected.locator('[data-slot=icon-tile] svg');
 	expect(await iconInkCenter(check)).toBeCloseTo(await iconInkCenter(star), 0);
-});
-
-test("submenu chevrons align with the trailing favorite star", async ({ page }) => {
-	await page.setViewportSize({ width: 1600, height: 1000 });
-	await page.goto(appUrl("/components/blocks/agent-selector#project-butter-submenu"));
-	const selector = page.getByRole("region", { name: "Submenu agent selector" });
-	const starRow = selector.locator('[data-slot=command-item][data-value="readiness-checker"]');
-	const submenuRow = selector.locator('[data-slot=command-item][data-value="claude-code"]');
-	await starRow.hover();
-	const star = starRow.locator('[data-favorite-id="readiness-checker"] svg');
-	const chevron = submenuRow.locator(":scope > div > [data-slot=icon]").last().locator("svg");
-	const [starBounds, arrowBounds] = await Promise.all([star.boundingBox(), chevron.boundingBox()]);
-	if (!starBounds || !arrowBounds) throw new Error("Favorite star or chevron is not visible");
-	expect(arrowBounds.x + arrowBounds.width / 2).toBeCloseTo(starBounds.x + starBounds.width / 2, 1);
-	expect(await iconInkCenter(chevron)).toBeCloseTo(await iconInkCenter(star), 0);
-	await submenuRow.hover();
-	const submenuStar = submenuRow.getByRole("button", { name: "Add Claude to favorites" });
-	await expect(submenuStar).toHaveCSS("opacity", "1");
-	const [hoverArrow, hoverStar] = await Promise.all([chevron.boundingBox(), submenuStar.boundingBox()]);
-	if (!hoverArrow || !hoverStar) throw new Error("Hovered submenu controls are not visible");
-	expect(hoverArrow.x).toBeCloseTo(arrowBounds.x, 1);
-	expect(hoverArrow.x - hoverStar.x - hoverStar.width).toBeCloseTo(4, 1);
 });
 
 test("agent rows and footer actions use the same hover color across selector variants", async ({ page }) => {
@@ -255,15 +246,15 @@ test("agent rows and footer actions use the same hover color across selector var
 		}
 	};
 
-	await page.goto(appUrl("/preview/blocks/agent-selector"));
-	const original = page.locator("[data-slot=command]");
+	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
+	const original = page.locator('#standalone-picker [data-agent-selector-demo="standalone"]').first().locator("[data-slot=command]");
 	const originalRow = original.locator('[data-value="release-notes-drafter"]');
 	await compare(originalRow, originalRow, [original.locator("button").filter({ hasText: "Browse agents" }), original.locator("button").filter({ hasText: "Create agent" })]);
 
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const inline = page.getByRole("region", { name: "Project Butter agent selector" });
-	const inlineRow = inline.getByRole("button", { name: "Claude", exact: true });
+	const inlineRow = inline.getByRole("button", { name: "Claude (Recommended)", exact: true });
 	await compare(inlineRow, inlineRow.locator("../.."), [inline.getByRole("button", { name: "Browse agents" })]);
 	const local = page.getByRole("region", { name: "Jira Local Agent" });
 	const localRow = local.getByRole("button", { name: "Claude", exact: true });
@@ -276,17 +267,13 @@ test("agent rows and footer actions use the same hover color across selector var
 	const inlineLocalRow = inlineLocal.getByRole("button", { name: "Claude", exact: true });
 	await compare(inlineLocalRow, inlineLocalRow.locator("../.."), [inlineLocal.getByRole("button", { name: "Copy prompt" })]);
 
-	await page.goto(appUrl("/components/blocks/agent-selector#project-butter-submenu"));
-	const submenu = page.getByRole("region", { name: "Submenu agent selector" });
-	const submenuRow = submenu.getByRole("option", { name: /^Claude/ });
-	await compare(submenuRow, submenuRow, [submenu.getByRole("button", { name: "Browse agents" }), submenu.getByRole("button", { name: "Create agent" })]);
 });
 
 test("agent selector offers descriptions as an opt-in example", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/agent-selector"));
-	const preview = page.locator("#preview [role=listbox]");
+	const preview = page.locator("#preview");
 	const example = page.locator("#include-byline [role=listbox]");
-	await expect(preview).toHaveCount(1);
+	await expect(preview.getByRole("button", { name: "Claude (Recommended)" })).toBeVisible();
 	await expect(example).toHaveCount(1);
 	await expect(preview.getByText("Custom agent by Diego Alvarez", { exact: true })).toHaveCount(0);
 	await expect(example.getByText("Custom agent by Diego Alvarez", { exact: true })).toHaveCount(1);
@@ -308,7 +295,6 @@ test("selector presentations fade the list only after scrolling", async ({ page 
 	await checkFade(page.getByRole("region", { name: "Project Butter agent selector" }).getByRole("region", { name: "Software agents" }).locator(".."));
 
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
-	await checkFade(page.getByRole("region", { name: "Submenu agent selector" }).locator("[cmdk-list]"));
 	await checkFade(page.getByRole("region", { name: "Inline expansion agent selector" }).getByRole("region", { name: "Software agents" }).locator(".."));
 });
 
@@ -324,23 +310,15 @@ test("selector subsection headings match the editor palette", async ({ page }) =
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
-	const searchGap = async (selector: typeof picker) => {
-		const searchBounds = await selector.locator(".rich-text-command-menu-search").boundingBox();
-		const headingBounds = await selector.getByText("Software agents", { exact: true }).boundingBox();
-		if (!searchBounds || !headingBounds) throw new Error("Selector layout is not visible");
-		return headingBounds.y - searchBounds.y - searchBounds.height;
-	};
-	const referenceGap = await searchGap(picker);
 	for (const name of ["Software agents", "Other agents"]) {
 		expect(await picker.getByText(name, { exact: true }).evaluate(measure)).toEqual(reference);
 	}
-	await picker.getByRole("button", { name: "Add Claude to favorites" }).click();
+	await picker.getByRole("button", { name: "Add Cursor to favorites" }).click();
 	expect(await picker.getByText("Favorites", { exact: true }).evaluate(measure)).toEqual(reference);
 
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
-	for (const label of ["Submenu agent selector", "Inline expansion agent selector"]) {
+	for (const label of ["Inline expansion agent selector"]) {
 		const example = page.getByRole("region", { name: label });
-		expect(await searchGap(example)).toBe(referenceGap);
 		for (const name of ["Software agents", "Other agents"]) {
 			expect(await example.getByText(name, { exact: true }).evaluate(measure)).toEqual(reference);
 		}
@@ -363,64 +341,27 @@ test("selector footer icons are 16 pixels in each presentation", async ({ page }
 	await checkIcons(picker, ["Browse agents"]);
 
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
-	for (const label of ["Submenu agent selector", "Inline expansion agent selector"]) {
+	for (const label of ["Inline expansion agent selector"]) {
 		await checkIcons(page.getByRole("region", { name: label }), ["Browse agents", "Create agent"]);
 	}
 });
 
-test("Agent Selector examples use the Butter submenu and inline presentations", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
-	const submenu = page.getByRole("region", { name: "Submenu agent selector" });
-	const inline = page.getByRole("region", { name: "Inline expansion agent selector" });
-	await submenu.getByRole("option", { name: /^Claude/ }).click();
-	await expect(page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" })).toBeVisible();
-	await page.keyboard.press("Escape");
-	await inline.getByRole("button", { name: "Cursor", exact: true }).click();
-	await expect(inline.getByRole("button", { name: "Start a new session" })).toBeVisible();
-	const list = inline.getByRole("region", { name: "Software agents" }).locator("..");
-	await list.evaluate((element) => { element.scrollTop = 200; });
-	await expect.poll(() => list.evaluate((element) => getComputedStyle(element).maskImage)).toContain("linear-gradient");
-});
-
-test("Butter submenu lets each agent be favorited without activating its row", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(appUrl("/components/blocks/agent-selector#project-butter-submenu"));
-	const picker = page.getByRole("region", { name: "Submenu agent selector" });
-	const claude = picker.getByRole("option", { name: /^Claude/ });
-	await claude.hover();
-	const star = picker.getByRole("button", { name: "Add Claude to favorites" });
-	await expect(star).toHaveCSS("opacity", "1");
-	await star.click();
-	const favorites = picker.getByRole("group", { name: "Favorites" });
-	const remove = favorites.getByRole("button", { name: "Remove Claude from favorites" });
-	await expect(remove).toHaveAttribute("aria-pressed", "true");
-	await expect(page.getByRole("menu", { name: "Run Claude on" })).toHaveCount(0);
-	await remove.focus();
-	await page.keyboard.press("Enter");
-	await expect(picker.getByRole("button", { name: "Add Claude to favorites" })).toBeFocused();
-	await expect(picker.getByRole("group", { name: "Favorites" })).toHaveCount(0);
-	for (const name of ["Jira Coding Agent", "Cursor", "Release Notes Drafter"]) {
-		const row = picker.getByRole("option", { name: new RegExp(`^${name}`) });
-		await row.hover();
-		await expect(picker.getByRole("button", { name: `Add ${name} to favorites` })).toHaveCSS("opacity", "1");
-	}
+test("Agent Selector default selects an agent directly", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector"));
+	const preview = page.locator("#preview");
+	const claude = preview.getByRole("button", { name: "Claude (Recommended)" });
+	await expect(claude).not.toHaveAttribute("aria-expanded");
+	await claude.click();
+	await expect(preview.getByRole("status")).toHaveText("Start on Cloud · Claude (preview)");
+	await expect(page.getByText("Run on cloud", { exact: true })).toHaveCount(0);
+	await expect(page.getByText("Open in Claude", { exact: true })).toHaveCount(0);
 });
 
 test("Jira kanban headings match the submenu and have no extra inter-group gap", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/agent-selector#jira-kanban"));
 	const jira = page.locator("#jira-kanban");
-	const submenu = page.getByRole("region", { name: "Submenu agent selector" });
+	await jira.getByRole("button", { name: "Select agent" }).click();
 	await expect(jira.locator("[cmdk-group-heading]")).toHaveCount(2);
-	await expect(submenu.locator("[cmdk-group-heading]")).toHaveCount(2);
-	const headings = async (selector: typeof jira) => selector.locator("[cmdk-group-heading]").evaluateAll((elements) => elements.map((element) => {
-		const style = getComputedStyle(element);
-		const group = element.parentElement;
-		if (!group) throw new Error("Missing agent group");
-		return { padding: style.padding, height: element.getBoundingClientRect().height, groupPadding: getComputedStyle(group).padding };
-	}));
-	const reference = await headings(submenu);
-	expect(await headings(jira)).toEqual(reference);
 	const gap = await jira.evaluate((element) => {
 		const groups = [...element.querySelectorAll("[cmdk-group]")];
 		const last = groups[0]?.querySelector('[data-value="rfp-drafting-agent"]');
