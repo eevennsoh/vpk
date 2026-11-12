@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 // Filled/empty content and shared Open-in/agent menus for Team EU26.
-// Split from jira-work-item-team-eu26.test.js to stay under the 1000-line budget.
+// Split from jira-work-item-team-eu26.source.test.js to stay under the 1000-line budget.
 
 const BLOCK_DIR = __dirname;
 

@@ -15,123 +15,80 @@ test("discovery covers every node:test file extension tracked in the repo", asyn
 	assert.deepEqual(missed, []);
 });
 
-test("component test report separates classified, legacy-drift, and unclassified node:test files", async () => {
+test("component test report lists every component suite as included unless it is skipped or legacy-drift", async () => {
 	const { buildComponentTestReport } = await import("./run-js-unit-tests.mjs");
 	const report = buildComponentTestReport([
-		{
-			filePath: "components/allowed.test.js",
-			source: NODE_TEST_SOURCE,
-		},
-		{
-			filePath: "components/unlisted.test.js",
-			source: NODE_TEST_SOURCE,
-		},
-		{
-			filePath: "components/frozen.test.js",
-			source: NODE_TEST_SOURCE,
-		},
-		{
-			filePath: "components/not-node-test.test.js",
-			source: "module.exports = {};",
-		},
-		{
-			filePath: "lib/included-by-prefix.test.js",
-			source: NODE_TEST_SOURCE,
-		},
+		{ filePath: "components/allowed.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "components/new.source.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "components/frozen.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "components/type.contract.test.ts", source: NODE_TEST_SOURCE },
+		{ filePath: "components/not-node-test.test.js", source: "module.exports = {};" },
+		{ filePath: "lib/outside.test.js", source: NODE_TEST_SOURCE },
 	], {
-		classificationByFile: new Map([
-			["components/allowed.test.js", "stable"],
-			["components/frozen.test.js", "legacy-drift"],
-		]),
-		includedTestFiles: new Set(["components/allowed.test.js"]),
-		includedTestPrefixes: ["lib/"],
-		excludedTestFiles: new Set(["components/frozen.test.js"]),
+		legacyDriftTestFiles: new Set(["components/frozen.test.js"]),
+		skippedTestFiles: new Set(["components/type.contract.test.ts"]),
 	});
 
 	assert.deepEqual(report, {
 		version: 1,
 		componentRoot: "components/",
-		includedCount: 1,
+		includedCount: 2,
 		excludedCount: 2,
-		includedFiles: ["components/allowed.test.js"],
+		includedFiles: ["components/allowed.test.js", "components/new.source.test.js"],
 		excludedFiles: [
-			{
-				classification: "legacy-drift",
-				filePath: "components/frozen.test.js",
-				reason: "excluded-file",
-			},
-			{
-				classification: "unclassified",
-				filePath: "components/unlisted.test.js",
-				reason: "unclassified",
-			},
+			{ classification: "legacy-drift", filePath: "components/frozen.test.js", reason: "legacy-drift" },
+			{ classification: "skipped", filePath: "components/type.contract.test.ts", reason: "skipped" },
 		],
 	});
 });
 
-test("unlisted component suites are unclassified instead of silently defaulting to legacy-drift", async () => {
-	const { getTestFileClassification, getTestFileInclusion } = await import("./run-js-unit-tests.mjs");
-	const classificationByFile = new Map([["components/frozen.test.js", "legacy-drift"]]);
-
-	assert.equal(getTestFileClassification("components/new.test.js", { classificationByFile }), "unclassified");
-	assert.equal(getTestFileClassification("components/frozen.test.js", { classificationByFile }), "legacy-drift");
-	assert.deepEqual(getTestFileInclusion("components/new.test.js", {
-		classificationByFile,
-		excludedTestFiles: new Set(),
-		includedTestFiles: new Set(),
-		includedTestPrefixes: [],
-	}), {
-		classification: "unclassified",
-		included: false,
-		reason: "unclassified",
-	});
+test("classification comes from the file name, and a new suite needs no registration to run", async () => {
+	const { classifyTestFile, getTestFileInclusion } = await import("./run-js-unit-tests.mjs");
+	assert.equal(classifyTestFile("components/a/foo.source.test.js"), "source-contract");
+	assert.equal(classifyTestFile("components/a/foo.browser.source.test.mjs"), "source-contract");
+	assert.equal(classifyTestFile("components/a/foo.behavior.test.js"), "behavior");
+	assert.equal(classifyTestFile("components/a/foo.test.ts"), "unit");
+	assert.equal(classifyTestFile("components/a.source/foo.test.js"), "unit");
+	for (const filePath of ["components/new.test.js", "hooks/new-hook.test.js", "tools/new-root.test.mjs", "twg-install.test.js"]) {
+		assert.equal(getTestFileInclusion(filePath, { legacyDriftTestFiles: new Set(), skippedTestFiles: new Set() }).included, true, filePath);
+	}
 });
 
-test("unfiltered runs fail when any test file in any root is neither run nor listed as skipped", async () => {
+test("unfiltered runs fail when a selected test file in any root has no node:test import", async () => {
 	const {
 		assertEveryTestFileSelected,
 		findUnselectedTestFiles,
 	} = await import("./run-js-unit-tests.mjs");
 	const selectedEntries = [
 		{ filePath: "components/stable.test.js", source: NODE_TEST_SOURCE },
-		{ filePath: "components/frozen.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "components/frozen.test.js", source: "describe('frozen', () => {});" },
 		{ filePath: "components/type.contract.test.ts", source: "export type Contract = true;" },
-		{ filePath: "lib/prefix-included.test.js", source: NODE_TEST_SOURCE },
-		{ filePath: "artifacts/deliverable.test.mjs", source: NODE_TEST_SOURCE },
+		{ filePath: "hooks/new-hook.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "artifacts/deliverable.test.mjs", source: "module.exports = {};" },
 	];
 	const testEntries = [
-		{ filePath: "components/z-new.test.ts", source: 'import test from "node:test";' },
-		...selectedEntries,
-		{ filePath: "components/a-new.test.js", source: NODE_TEST_SOURCE },
-		{ filePath: "hooks/outside-prefixes.test.js", source: NODE_TEST_SOURCE },
 		{ filePath: "lib/jest-style.test.js", source: "describe('x', () => {});" },
+		...selectedEntries,
+		{ filePath: "components/a-new.test.js", source: "module.exports = {};" },
 	];
 	const options = {
-		classificationByFile: new Map([
-			["components/stable.test.js", "stable"],
-			["components/frozen.test.js", "legacy-drift"],
-			["components/type.contract.test.ts", "skipped"],
-			["artifacts/deliverable.test.mjs", "skipped"],
-		]),
-		includedTestPrefixes: ["lib/"],
+		legacyDriftTestFiles: new Set(["components/frozen.test.js"]),
+		skippedTestFiles: new Set(["components/type.contract.test.ts"]),
+		skippedTestPrefixes: ["artifacts/"],
 	};
 
 	assert.deepEqual(findUnselectedTestFiles(testEntries, options), [
-		{ filePath: "components/a-new.test.js", reason: "unclassified" },
-		{ filePath: "components/z-new.test.ts", reason: "unclassified" },
-		{ filePath: "hooks/outside-prefixes.test.js", reason: "unclassified" },
+		{ filePath: "components/a-new.test.js", reason: "no node:test import" },
 		{ filePath: "lib/jest-style.test.js", reason: "no node:test import" },
 	]);
 	assert.throws(
 		() => assertEveryTestFileSelected(testEntries, options),
 		new Error([
-			"js-unit-tests: 4 test file(s) are neither run nor listed as skipped, so the CI unit gate silently drops them:",
-			"- components/a-new.test.js (unclassified)",
-			"- components/z-new.test.ts (unclassified)",
-			"- hooks/outside-prefixes.test.js (unclassified)",
+			"js-unit-tests: 2 test file(s) would run without reporting, so the CI unit gate silently drops them:",
+			"- components/a-new.test.js (no node:test import)",
 			"- lib/jest-style.test.js (no node:test import)",
-			"Classify each path in scripts/js-unit-test-manifest.mjs under `stable` (behavioral tests) or `source-contract` (tests that assert on source text), import node:test where it is missing, or add it to SKIPPED_TEST_FILES (or its root to SKIPPED_TEST_PREFIXES) with the reason it does not run.",
-			"Do not add them to `legacy-drift`: it is a frozen baseline of skipped suites that must only shrink.",
+			"Import node:test where it is missing, or add the file to SKIPPED_TEST_FILES (or its root to SKIPPED_TEST_PREFIXES) in scripts/js-unit-test-skipped.mjs with the reason it does not run.",
+			"Do not add it to scripts/js-unit-test-legacy-drift.mjs: that is a frozen baseline of failing suites that must only shrink.",
 		].join("\n")),
 	);
 	assert.doesNotThrow(() => assertEveryTestFileSelected(selectedEntries, options));
@@ -145,38 +102,37 @@ test("the real repository has no test file that the unit gate silently drops", a
 });
 
 test("every skipped test file and root states why it does not run", async () => {
-	const { SKIPPED_TEST_FILES, SKIPPED_TEST_PREFIXES } = await import("./js-unit-test-manifest.mjs");
+	const { SKIPPED_TEST_FILES, SKIPPED_TEST_PREFIXES } = await import("./js-unit-test-skipped.mjs");
 	const missingReason = Object.entries({ ...SKIPPED_TEST_FILES, ...SKIPPED_TEST_PREFIXES })
 		.filter(([, reason]) => typeof reason !== "string" || reason.trim().length < 20);
 	assert.deepEqual(missingReason, []);
 	assert.deepEqual(Object.keys(SKIPPED_TEST_FILES).filter((filePath) => filePath.startsWith("artifacts/")), [], "artifacts/ is skipped by prefix, not file by file");
 });
 
-test("a new suite under a skipped root is not reported, while one under any other unlisted root still is", async () => {
-	const { findUnselectedTestFiles } = await import("./run-js-unit-tests.mjs");
+test("a suite under a skipped root never runs, while one under any other root runs without registration", async () => {
+	const { selectRunnableTestFiles } = await import("./run-js-unit-tests.mjs");
 	const testEntries = [
 		{ filePath: "artifacts/vpk-html/new-explainer/_figures/brand-new.behavior.test.mjs", source: 'import test from "node:test";' },
-		{ filePath: "artifacts/notes.test.js", source: "module.exports = {};" },
 		{ filePath: "tools/new-root.test.mjs", source: 'import test from "node:test";' },
 		{ filePath: "hooks/new-hook.test.js", source: NODE_TEST_SOURCE },
 	];
-	assert.deepEqual(findUnselectedTestFiles(testEntries, { classificationByFile: new Map() }), [
-		{ filePath: "hooks/new-hook.test.js", reason: "unclassified" },
-		{ filePath: "tools/new-root.test.mjs", reason: "unclassified" },
+	assert.deepEqual(selectRunnableTestFiles(testEntries, { skippedTestPrefixes: ["artifacts/"] }), [
+		"tools/new-root.test.mjs",
+		"hooks/new-hook.test.js",
 	]);
 });
 
 test("legacy-drift entries are excluded from unfiltered and prefix runs but an explicit --file force-runs them", async () => {
-	const { TEST_FILE_CLASSIFICATIONS } = await import("./js-unit-test-manifest.mjs");
+	const { LEGACY_DRIFT_TEST_FILES } = await import("./js-unit-test-legacy-drift.mjs");
 	const { buildSelectionOptions, selectRunnableTestFiles } = await import("./run-js-unit-tests.mjs");
-	const frozenFile = TEST_FILE_CLASSIFICATIONS["legacy-drift"].find((filePath) => filePath.startsWith("components/"));
-	const stableFile = TEST_FILE_CLASSIFICATIONS.stable.find((filePath) => filePath.startsWith("components/"));
-	const testEntries = [frozenFile, stableFile].map((filePath) => ({ filePath, source: NODE_TEST_SOURCE }));
+	const frozenFile = LEGACY_DRIFT_TEST_FILES.find((filePath) => filePath.startsWith("components/"));
+	const runningFile = "components/ui/button.test.js";
+	const testEntries = [frozenFile, runningFile].map((filePath) => ({ filePath, source: NODE_TEST_SOURCE }));
 
-	assert.deepEqual(selectRunnableTestFiles(testEntries, buildSelectionOptions()), [stableFile]);
+	assert.deepEqual(selectRunnableTestFiles(testEntries, buildSelectionOptions()), [runningFile]);
 	assert.deepEqual(
 		selectRunnableTestFiles(testEntries, buildSelectionOptions({ prefixes: ["components/"] })),
-		[stableFile],
+		[runningFile],
 	);
 	assert.deepEqual(
 		selectRunnableTestFiles(testEntries, buildSelectionOptions({ files: [frozenFile] })),
@@ -184,70 +140,30 @@ test("legacy-drift entries are excluded from unfiltered and prefix runs but an e
 	);
 });
 
-// Frozen membership of the skipped baseline, not just its size: a count cap would let a new
-// suite take a graduated suite's slot and be skipped silently. Delete entries as they
-// graduate; never add one.
-const LEGACY_DRIFT_BASELINE = new Set([
-	"components/arts/awake/city-popover.test.js",
-	"components/arts/awake/index.test.js",
-	"components/arts/personal-graph/personal-graph-glass-panel.test.js",
-	"components/blocks/agent-directory/agent-directory.test.js",
-	"components/blocks/artifact-panel.test.js",
-	"components/blocks/conversation-starter/conversation-starter.test.js",
-	"components/blocks/editor-toolbar/editor-toolbar.test.js",
-	"components/blocks/jira-kanban/jira-kanban.test.js",
-	"components/blocks/knowledge-directory/knowledge-directory.test.js",
-	"components/blocks/prompt-gallery/prompt-gallery.test.js",
-	"components/blocks/pull-request-fix/pull-request-fix.test.js",
-	"components/blocks/pull-request-header/pull-request-header.test.js",
-	"components/blocks/pull-request-review/pull-request-review.test.js",
-	"components/blocks/subagent/subagent.test.js",
-	"components/blocks/tool-directory/tool-directory.test.js",
-	"components/blocks/twg-agent-card/twg-agent-card.test.js",
-	"components/projects/jira-for-you/jira-for-you-work-item-integration.test.js",
-	"components/projects/jira-for-you/jira-for-you-workspace.test.js",
-	"components/projects/jira-golden-journey-v0/lib/kanban-lifecycle.test.js",
-	"components/projects/jira-golden-journey-v1/lib/kanban-lifecycle.test.js",
-	"components/projects/jira-golden-journey-v1/queue-stage.test.js",
-	"components/projects/jira-golden-journey-v1/session-gallery.test.js",
-	"components/projects/jira-queue/queue-conversation-workspace.test.js",
-	"components/projects/jira/components/rfp-agent-chat-details.test.js",
-	"components/projects/jira/components/work-item-modal/accordion-accessibility.test.js",
-	"components/projects/jira/rfp-context.test.js",
-	"components/projects/page.test.js",
-	"components/projects/rovo/components/rovo-app-brand.test.js",
-	"components/projects/shared/components/rovo-app-composer.test.js",
-	"components/projects/shared/lib/plan-approval.test.js",
-	"components/projects/shared/lib/plan-identity.test.js",
-	"components/projects/shared/lib/rovo-app-composer-submit-state.test.js",
-	"components/projects/shared/lib/rovo-app-plan-execution-tracker.test.js",
-	"components/projects/shared/lib/rovo-app-plan-task-labels.test.js",
-	"components/projects/shared/thread-message/lib/plan-description-fallback.test.js",
-	"components/projects/sidebar-chat/components/chat-composer.test.js",
-	"components/projects/sidebar-chat/components/chat-greeting.test.js",
-	"components/projects/sidebar-chat/components/chat-history-drawer.test.js",
-	"components/projects/studio/components/rovo-app-agent-creation-flow.test.js",
-	"components/ui-custom/context-bar/context-bar-prompt-flyout.test.js",
-	"components/ui-custom/rich-text-editor/mention-visual.test.js",
-	"components/ui/panel.test.js",
-	"components/ui/vpk-icons.test.js",
-	"components/website/demos/utils/lib/browser-preview-frame-queue.test.js",
-	"components/website/demos/visual/card-glow-demo.test.js",
-	"components/website/demos/visual/dithering-demo.test.js",
-	"components/website/demos/visual/graph-demo.test.js",
-	"components/website/demos/visual/scribbles-demo.test.js",
-	"components/website/demos/visual/shaders/liquid-glass.test.js",
-]);
+test("the legacy-drift ratchet fails on an added suite, allows removals, and needs a base in CI", async () => {
+	const { assertLegacyDriftDidNotGrow, findLegacyDriftGrowth, parseLegacyDriftSource } = await import("./run-js-unit-tests.mjs");
+	const { LEGACY_DRIFT_TEST_FILES } = await import("./js-unit-test-legacy-drift.mjs");
+	const source = (files) => `export const LEGACY_DRIFT_TEST_FILES = [\n${files.map((file) => `\t"${file}",`).join("\n")}\n];\n`;
+	assert.deepEqual(parseLegacyDriftSource(source(["a/x.test.js", "b/y.test.ts"])), ["a/x.test.js", "b/y.test.ts"]);
+	assert.deepEqual(findLegacyDriftGrowth(["a.test.js", "b.test.js"], ["b.test.js"]), []);
+	// Membership, not size: swapping a graduated suite for a new one still fails.
+	assert.deepEqual(findLegacyDriftGrowth(["a.test.js", "b.test.js"], ["b.test.js", "c.test.js"]), ["c.test.js"]);
 
-test("the legacy-drift baseline only shrinks", async () => {
-	const { TEST_FILE_CLASSIFICATIONS } = await import("./js-unit-test-manifest.mjs");
-	const added = TEST_FILE_CLASSIFICATIONS["legacy-drift"].filter((filePath) => !LEGACY_DRIFT_BASELINE.has(filePath));
-
-	assert.deepEqual(
-		added,
-		[],
-		"legacy-drift only shrinks; classify new suites as stable or source-contract instead",
+	const git = (baseFiles) => (args) => {
+		if (args[0] === "merge-base") return "base1234567\n";
+		if (args[0] === "rev-parse") return "base1234567\n";
+		if (args[0] === "show") return source(baseFiles);
+		return null;
+	};
+	assert.doesNotThrow(() => assertLegacyDriftDidNotGrow({ env: {}, git: git([...LEGACY_DRIFT_TEST_FILES, "graduated.test.js"]) }));
+	assert.throws(
+		() => assertLegacyDriftDidNotGrow({ env: {}, git: git(LEGACY_DRIFT_TEST_FILES.slice(1)) }),
+		new RegExp(`may only shrink, but these suites were added since base12345:\n- ${LEGACY_DRIFT_TEST_FILES[0].replaceAll(".", "\\.")}`, "u"),
 	);
+	const warnings = [];
+	assertLegacyDriftDidNotGrow({ env: {}, git: () => null, log: (line) => warnings.push(line) });
+	assert.match(warnings[0], /ratchet base unavailable/u);
+	assert.throws(() => assertLegacyDriftDidNotGrow({ env: { GITHUB_BASE_REF: "main" }, git: () => null }), /ratchet base unavailable/u);
 });
 
 test("component test report output chunks only payloads that exceed the line limit", async () => {
@@ -272,66 +188,20 @@ test("component test report output chunks only payloads that exceed the line lim
 	assert.deepEqual(JSON.parse(reconstructed), largeReport);
 });
 
-test("runnable test selection includes manifest classifications in the CI gate", async () => {
+test("runnable test selection runs unit, behavior and source-contract suites alike", async () => {
 	const { selectRunnableTestFiles } = await import("./run-js-unit-tests.mjs");
 	const runnableFiles = selectRunnableTestFiles([
-		{
-			filePath: "components/stable.test.js",
-			source: 'const test = require("node:test");',
-		},
-		{
-			filePath: "components/source-contract.test.js",
-			source: 'const test = require("node:test");',
-		},
-		{
-			filePath: "components/legacy-drift.test.js",
-			source: 'const test = require("node:test");',
-		},
-	], {
-		classificationByFile: new Map([
-			["components/stable.test.js", "stable"],
-			["components/source-contract.test.js", "source-contract"],
-			["components/legacy-drift.test.js", "legacy-drift"],
-		]),
-		excludedTestFiles: new Set(),
-		includedTestFiles: new Set(),
-		includedTestPrefixes: [],
-	});
+		{ filePath: "components/unit.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "components/contract.source.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "components/render.behavior.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "components/legacy-drift.test.js", source: NODE_TEST_SOURCE },
+		{ filePath: "scripts/not-node-test.test.js", source: "module.exports = {};" },
+	], { legacyDriftTestFiles: new Set(["components/legacy-drift.test.js"]) });
 
 	assert.deepEqual(runnableFiles, [
-		"components/stable.test.js",
-		"components/source-contract.test.js",
-	]);
-});
-
-test("runnable test selection preserves the existing prefix and explicit-file gates", async () => {
-	const { selectRunnableTestFiles } = await import("./run-js-unit-tests.mjs");
-	const runnableFiles = selectRunnableTestFiles([
-		{
-			filePath: "backend/included-by-prefix.test.js",
-			source: 'const test = require("node:test");',
-		},
-		{
-			filePath: "components/allowed.test.js",
-			source: 'const test = require("node:test");',
-		},
-		{
-			filePath: "components/skipped.test.js",
-			source: 'const test = require("node:test");',
-		},
-		{
-			filePath: "scripts/not-node-test.test.js",
-			source: "module.exports = {};",
-		},
-	], {
-		includedTestFiles: new Set(["components/allowed.test.js"]),
-		includedTestPrefixes: ["backend/", "scripts/"],
-		excludedTestFiles: new Set(),
-	});
-
-	assert.deepEqual(runnableFiles, [
-		"backend/included-by-prefix.test.js",
-		"components/allowed.test.js",
+		"components/unit.test.js",
+		"components/contract.source.test.js",
+		"components/render.behavior.test.js",
 	]);
 });
 
@@ -342,12 +212,7 @@ test("CLI selection options can narrow tests to named slices", async () => {
 		"backend/,app/api/",
 		"--file=components/allowed.test.js",
 	]);
-	const options = {
-		...buildSelectionOptions(selection),
-		classificationByFile: new Map([
-			["components/stable-outside-selection.test.js", "stable"],
-		]),
-	};
+	const options = buildSelectionOptions(selection);
 	const runnableFiles = selectRunnableTestFiles([
 		{
 			filePath: "backend/included.test.js",
@@ -410,68 +275,49 @@ test("test discovery skips files deleted or moved before staging", async () => {
 	);
 });
 
-test("classified test paths fail validation with a deterministic diagnostic", async () => {
-	const { assertClassifiedTestFilesExist } = await import("./run-js-unit-tests.mjs");
+test("not-run lists fail validation for missing paths and for a path in both lists", async () => {
+	const { assertListedTestFilesExist } = await import("./run-js-unit-tests.mjs");
 
 	assert.throws(
-		() => assertClassifiedTestFilesExist({
-			stable: ["components/present.test.js", "components/missing.test.js"],
-			"source-contract": ["app/data/moved.test.js"],
-			"legacy-drift": ["components/deleted-legacy.test.js"],
-		}, (filePath) => filePath === "components/present.test.js"),
-		new Error([
-			"js-unit-tests: classified test paths do not exist:",
-			"- legacy-drift: components/deleted-legacy.test.js",
-			"- source-contract: app/data/moved.test.js",
-			"- stable: components/missing.test.js",
-		].join("\n")),
-	);
-});
-
-test("test paths listed under more than one classification fail validation", async () => {
-	const { assertUniqueTestFileClassifications } = await import("./run-js-unit-tests.mjs");
-
-	assert.throws(
-		() => assertUniqueTestFileClassifications({
-			stable: ["components/graduated.test.js", "components/twice.test.js", "components/twice.test.js"],
-			"legacy-drift": ["components/graduated.test.js", "components/frozen.test.js"],
+		() => assertListedTestFilesExist({
+			fileExists: (filePath) => filePath === "components/present.test.js" || filePath === "components/both.test.js",
+			legacyDriftTestFiles: ["components/present.test.js", "components/deleted-legacy.test.js", "components/both.test.js"],
+			skippedTestFiles: ["app/data/moved.contract.test.ts", "components/both.test.js"],
 		}),
 		new Error([
-			"js-unit-tests: test paths are listed more than once in scripts/js-unit-test-manifest.mjs; keep exactly one classification per path:",
-			"- components/graduated.test.js: stable, legacy-drift",
-			"- components/twice.test.js: stable, stable",
+			"js-unit-tests: the not-run lists name paths that do not exist or appear in both lists; remove them:",
+			"- scripts/js-unit-test-legacy-drift.mjs: components/deleted-legacy.test.js",
+			"- scripts/js-unit-test-skipped.mjs: app/data/moved.contract.test.ts",
+			"- listed twice: components/both.test.js",
 		].join("\n")),
 	);
 });
 
-test("Jira and ASX tests renamed to v0, v1, and v2 remain classified", async () => {
-	const {
-		TEST_FILE_CLASSIFICATIONS,
-	} = await import("./js-unit-test-manifest.mjs");
-	const sourceContractFiles = new Set(TEST_FILE_CLASSIFICATIONS["source-contract"]);
+test("Jira and ASX tests renamed to v0, v1, and v2 remain source-contract suites", async () => {
+	const { existsSync } = require("node:fs");
+	const { classifyTestFile } = await import("./run-js-unit-tests.mjs");
 
 	for (const filePath of [
-		"components/projects/jira-golden-journey-v0/kanban-stage.test.js",
-		"components/projects/jira-golden-journey-v0/queue-stage.test.js",
-		"components/projects/jira-golden-journey-v1/agent-chat-demo.test.js",
-		"components/projects/jira-golden-journey-v1/kanban-stage.test.js",
-		"components/projects/jira-golden-journey-v2/jira-golden-journey-v2.test.js",
-		"app/data/jira-golden-journey-v1-contract.test.js",
+		"components/projects/jira-golden-journey-v0/kanban-stage.source.test.js",
+		"components/projects/jira-golden-journey-v0/queue-stage.source.test.js",
+		"components/projects/jira-golden-journey-v1/agent-chat-demo.source.test.js",
+		"components/projects/jira-golden-journey-v1/kanban-stage.source.test.js",
+		"components/projects/jira-golden-journey-v2/jira-golden-journey-v2.source.test.js",
+		"app/data/jira-golden-journey-v1-contract.source.test.js",
 	]) {
-		assert.equal(sourceContractFiles.has(filePath), true, `${filePath} should remain source-contract`);
+		assert.equal(existsSync(filePath), true, `${filePath} should exist`);
+		assert.equal(classifyTestFile(filePath), "source-contract", `${filePath} should remain source-contract`);
 	}
 });
 
-test("every checked-in classified test path exists and is listed once", async () => {
-	const { TEST_FILE_CLASSIFICATIONS } = await import("./js-unit-test-manifest.mjs");
-	const { assertClassifiedTestFilesExist, assertUniqueTestFileClassifications } = await import("./run-js-unit-tests.mjs");
-
-	assert.doesNotThrow(() => assertClassifiedTestFilesExist(TEST_FILE_CLASSIFICATIONS));
-	assert.doesNotThrow(() => assertUniqueTestFileClassifications(TEST_FILE_CLASSIFICATIONS));
+test("every checked-in not-run path exists and is listed once", async () => {
+	const { assertListedTestFilesExist } = await import("./run-js-unit-tests.mjs");
+	assert.doesNotThrow(() => assertListedTestFilesExist());
 });
 
 test("test batching groups ordinary node tests by directory and isolates vm-module tests", async () => {
-	const { buildTestFileBatches } = await import("./run-js-unit-tests.mjs");
+	const { ALIAS_HOOK_PATH, buildTestFileBatches } = await import("./run-js-unit-tests.mjs");
+	const alias = ["--import", ALIAS_HOOK_PATH];
 	const sourceByFile = new Map([
 		["backend/a.test.js", 'const test = require("node:test");'],
 		["backend/b.test.js", 'const test = require("node:test");'],
@@ -487,22 +333,22 @@ test("test batching groups ordinary node tests by directory and isolates vm-modu
 		[
 			{
 				files: ["backend/a.test.js", "backend/b.test.js"],
-				nodeArgs: [],
+				nodeArgs: alias,
 				reason: "directory",
 			},
 			{
 				files: ["backend/lib/c.test.js"],
-				nodeArgs: [],
+				nodeArgs: alias,
 				reason: "directory",
 			},
 			{
 				files: ["scripts/vm.test.js"],
-				nodeArgs: ["--experimental-vm-modules"],
+				nodeArgs: ["--experimental-vm-modules", ...alias],
 				reason: "vm-modules",
 			},
 			{
 				files: ["scripts/ordinary.test.js"],
-				nodeArgs: [],
+				nodeArgs: alias,
 				reason: "directory",
 			},
 		],
@@ -510,7 +356,7 @@ test("test batching groups ordinary node tests by directory and isolates vm-modu
 });
 
 test("runTestFiles invokes node:test once per batch", async () => {
-	const { runTestFiles } = await import("./run-js-unit-tests.mjs");
+	const { ALIAS_HOOK_PATH, runTestFiles } = await import("./run-js-unit-tests.mjs");
 	const calls = [];
 	const sourceByFile = new Map([
 		["backend/a.test.js", 'const test = require("node:test");'],
@@ -529,12 +375,12 @@ test("runTestFiles invokes node:test once per batch", async () => {
 	assert.deepEqual(calls, [
 		{
 			command: process.execPath,
-			args: ["--test", "backend/a.test.js", "backend/b.test.js"],
+			args: ["--import", ALIAS_HOOK_PATH, "--test", "backend/a.test.js", "backend/b.test.js"],
 			options: { stdio: "inherit" },
 		},
 		{
 			command: process.execPath,
-			args: ["--experimental-vm-modules", "--test", "scripts/vm.test.js"],
+			args: ["--experimental-vm-modules", "--import", ALIAS_HOOK_PATH, "--test", "scripts/vm.test.js"],
 			options: { stdio: "inherit" },
 		},
 	]);
@@ -588,13 +434,13 @@ test("four shards cover the inventory and ordinary Butter growth exactly once wi
 });
 
 test("new batches use deterministic file weights and VM batches retain their flags", async () => {
-	const { buildTestFileBatches, partitionTestBatches } = await import("./run-js-unit-tests.mjs");
+	const { ALIAS_HOOK_PATH, buildTestFileBatches, partitionTestBatches } = await import("./run-js-unit-tests.mjs");
 	const files = ["z/vm.test.js", "a/a.test.js", "a/b.test.js", "b/a.test.js", "c/a.test.js", "d/a.test.js"];
 	const batches = buildTestFileBatches(files, { readFile: (file) => file.includes("vm") ? "vm.SourceTextModule" : NODE_TEST_SOURCE });
 	const shards = partitionTestBatches(batches, {});
 	assert.deepEqual(shards.map((shard) => shard.seconds), [2, 2, 1, 1]);
 	const vm = shards.flatMap((shard) => shard.batches).find((batch) => batch.reason === "vm-modules");
-	assert.deepEqual(vm.nodeArgs, ["--experimental-vm-modules"]);
+	assert.deepEqual(vm.nodeArgs, ["--experimental-vm-modules", "--import", ALIAS_HOOK_PATH]);
 	assert.deepEqual(partitionTestBatches([...batches].reverse(), {}), shards);
 });
 
@@ -626,7 +472,7 @@ test("batch failures print identity, duration and summary, and preserve a nonzer
 	assert.ok(lines.some((line) => line.includes('"signal":"SIGTERM"')));
 });
 
-test("every shard CLI rejects unclassified, missing and duplicate manifest entries before running tests", () => {
+test("every shard CLI rejects a silent suite or a stale not-run list before running tests", () => {
 	const { spawnSync } = require("node:child_process");
 	const { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } = require("node:fs");
 	const { tmpdir } = require("node:os");
@@ -634,20 +480,29 @@ test("every shard CLI rejects unclassified, missing and duplicate manifest entri
 	const root = mkdtempSync(path.join(tmpdir(), "vpk-unit-shard-"));
 	try {
 		mkdirSync(path.join(root, "components"));
-		copyFileSync(path.join(__dirname, "run-js-unit-tests.mjs"), path.join(root, "runner.mjs"));
-		copyFileSync(path.join(__dirname, "js-unit-test-timings.json"), path.join(root, "js-unit-test-timings.json"));
+		mkdirSync(path.join(root, "lib"));
+		for (const file of ["run-js-unit-tests.mjs", "js-unit-test-timings.json", "verify-eslint-suppressions.js", "lib/register-alias-hook.mjs"]) {
+			copyFileSync(path.join(__dirname, file), path.join(root, file === "run-js-unit-tests.mjs" ? "runner.mjs" : file));
+		}
+		writeFileSync(path.join(root, "js-unit-test-skipped.mjs"), "export const SKIPPED_TEST_FILES = {};\nexport const SKIPPED_TEST_PREFIXES = {};\n");
 		writeFileSync(path.join(root, "components/new.test.js"), `${NODE_TEST_SOURCE}\nthrow new Error('SHOULD_NOT_RUN');`);
 		assert.equal(spawnSync("git", ["init", "--quiet", root]).status, 0);
-		for (const classifications of [{}, { stable: ["missing.test.js"] }, { stable: ["components/new.test.js"], "source-contract": ["components/new.test.js"] }]) {
-			writeFileSync(path.join(root, "js-unit-test-manifest.mjs"), `export const INCLUDED_TEST_PREFIXES = ['components/'];\nexport const CI_INCLUDED_TEST_CLASSIFICATIONS = ['stable','source-contract'];\nexport const SKIPPED_TEST_PREFIXES = {};\nexport const TEST_FILE_CLASSIFICATIONS = ${JSON.stringify(classifications)};`);
+		const cases = [
+			{ legacy: ["components/missing.test.js"], expected: /do not exist/u },
+			{ legacy: [], silent: true, expected: /would run without reporting/u },
+		];
+		for (const { legacy, silent, expected } of cases) {
+			writeFileSync(path.join(root, "js-unit-test-legacy-drift.mjs"), `export const LEGACY_DRIFT_TEST_FILES = ${JSON.stringify(legacy)};\n`);
+			if (silent) writeFileSync(path.join(root, "components/silent.test.js"), "module.exports = {};\n");
 			for (let shard = 1; shard <= 4; shard += 1) {
-				const result = spawnSync(process.execPath, ["runner.mjs", "--shard", `${shard}/4`], { cwd: root, encoding: "utf8" });
+				const result = spawnSync(process.execPath, ["runner.mjs", "--shard", `${shard}/4`], { cwd: root, encoding: "utf8", env: { ...process.env, GITHUB_BASE_REF: "" } });
 				assert.equal(result.status, 1);
-				assert.match(result.stderr, /neither run nor listed as skipped|do not exist|more than once/u);
-				assert.doesNotMatch(result.stderr, /SHOULD_NOT_RUN/u);
+				assert.match(result.stderr, expected);
+				assert.doesNotMatch(`${result.stdout}${result.stderr}`, /SHOULD_NOT_RUN/u);
 			}
 		}
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
 });
+

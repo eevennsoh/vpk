@@ -15,7 +15,7 @@
  * last unlinkable row takes the transfer host with it. Neither has anything to
  * do with the card itself, which is why the shape must not follow them.
  *
- * These assertions live in their own file because `jira-issue.test.js` is at
+ * These assertions live in their own file because `jira-issue.source.test.js` is at
  * the 1000-line architecture budget.
  */
 

@@ -9,7 +9,7 @@
  * bundle weight — and it would break the moment a shared model needs a type
  * from those barrels, which is exactly what `invokedBy: AgentListInvoker` does.
  *
- * Split out of `jira-issue.test.js`, which sits at the 1000-line file budget.
+ * Split out of `jira-issue.source.test.js`, which sits at the 1000-line file budget.
  */
 
 const assert = require("node:assert/strict");
