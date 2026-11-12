@@ -12,9 +12,11 @@ const {
 	collectBillingState,
 	collectMainHealth,
 	formatHealth,
+	hasSkipInstruction,
 	isInertPath,
 	main,
 	originRepository,
+	pendingSkipCommits,
 	runUrl,
 } = require("./main-health");
 const { runGhJson } = require("./review-gate-status");
@@ -50,18 +52,20 @@ function fakeGh({ runs = [run(1)], jobs = {}, annotations = {}, fail } = {}) {
 	return { calls, runGh };
 }
 
-function fakeGit(paths, remote = "git@github.com:o/r.git") {
+// `commits` are [shortSha, message] pairs, rendered the way `git log --format=%h%x00%B%x1e` prints them.
+function fakeGit(paths, remote = "git@github.com:o/r.git", commits = []) {
 	return (args) => {
 		if (args[0] === "merge-base") return "base\n";
 		if (args[0] === "diff") return `${paths.join("\n")}\n`;
 		if (args[0] === "remote") return `${remote}\n`;
+		if (args[0] === "log") return commits.map(([sha, message]) => `${sha}\x00${message}\n\x1e`).join("\n");
 		throw new Error(`Unexpected git call: ${args.join(" ")}`);
 	};
 }
 
-async function cli(argv, { gh = fakeGh(), paths = [] } = {}) {
+async function cli(argv, { gh = fakeGh(), paths = [], commits = [] } = {}) {
 	let output = "";
-	await main(argv, { runGh: gh.runGh, runGit: fakeGit(paths), write: (text) => { output += text; } });
+	await main(argv, { runGh: gh.runGh, runGit: fakeGit(paths, undefined, commits), write: (text) => { output += text; } });
 	return output;
 }
 
@@ -83,6 +87,29 @@ test("the fast-ship marker is added only for inert diffs or a current billing bl
 	assert.equal(ciMarkerDecision({ billing: { blocked: true, url: "u" }, paths: ["app/page.tsx"] }).skipCi, true);
 });
 
+test("an unpushed commit that already skips CI makes a code push start CI explicitly", async () => {
+	for (const message of ["Fix x [skip ci]", "Fix x [CI SKIP]", "[no ci] Fix", "Fix [skip actions]", "Fix [actions skip]", "Fix x\n\nskip-checks: true"]) {
+		assert.equal(hasSkipInstruction(message), true, message);
+	}
+	for (const message of ["Fix the skip ci helper", "Mention skip-checks in docs", "skip-checks: false"]) {
+		assert.equal(hasSkipInstruction(message), false, message);
+	}
+	const commits = [["aaa1111", "Retry fast ship [skip ci]\n\nbody"], ["bbb2222", "Plain commit"]];
+	assert.deepEqual(pendingSkipCommits({ runGit: fakeGit([], undefined, commits) }), ["aaa1111"]);
+
+	const output = JSON.parse(await cli(["--ci-marker", "--json"], { commits, paths: ["app/page.tsx"] }));
+	assert.equal(output.skipCi, false);
+	assert.equal(output.dispatchAfterPush, true);
+	assert.deepEqual(output.markedCommits, ["aaa1111"]);
+	assert.match(output.reason, /gh workflow run ci\.yml --ref main/u);
+
+	// When the push should skip CI anyway, an existing marker changes nothing.
+	const docs = JSON.parse(await cli(["--ci-marker", "--json"], { commits, paths: ["README.md"] }));
+	assert.equal(docs.skipCi, true);
+	assert.equal(docs.dispatchAfterPush, false);
+	assert.equal(JSON.parse(await cli(["--ci-marker", "--json"], { paths: ["app/page.tsx"] })).dispatchAfterPush, false);
+});
+
 test("a failed run is billing-blocked only when every non-aggregate failure carries the billing annotation", () => {
 	const failed = run(5, { conclusion: "failure" });
 	const jobs = [job(51, "Static validation", "failure"), job(52, "Unit shard 1/4", "failure"), job(53, "PR checks", "failure")];
@@ -101,7 +128,7 @@ test("a failed run is billing-blocked only when every non-aggregate failure carr
 	assert.equal(classifyRun({ annotations: new Map(), jobs: [job(53, "PR checks", "failure")], run: failed }).state, "red");
 });
 
-test("main health reports the newest settled push run, skipping superseded cancellations", async () => {
+test("main health reports the newest settled run on main, skipping superseded cancellations", async () => {
 	const gh = fakeGh({
 		annotations: { 71: [EXIT_ANNOTATION] },
 		jobs: { 7: [job(70, "Static validation", "success"), job(71, "Unit shard 2/4", "failure"), job(72, "PR checks", "failure")] },
@@ -116,7 +143,9 @@ test("main health reports the newest settled push run, skipping superseded cance
 	assert.match(line, /^main health: RED at 700000000; failed: Unit shard 2\/4, PR checks/u);
 	assert.match(line, /newer run in progress/u);
 	const list = gh.calls.find((args) => args[1] === "list");
-	assert.deepEqual(list.slice(list.indexOf("--branch"), list.indexOf("--branch") + 4), ["--branch", "main", "--event", "push"]);
+	// Runs on main only (push and the explicit dispatch fast ship may start), never PR runs.
+	assert.deepEqual(list.slice(list.indexOf("--branch"), list.indexOf("--branch") + 2), ["--branch", "main"]);
+	assert.equal(list.includes("--event"), false);
 	// Annotations are read only for failed jobs, never for the passing one.
 	assert.deepEqual(gh.calls.filter((args) => args[0] === "api").map((args) => args[1]).sort(),
 		["repos/o/r/check-runs/71/annotations", "repos/o/r/check-runs/72/annotations"]);

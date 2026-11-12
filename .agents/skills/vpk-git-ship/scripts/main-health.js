@@ -28,13 +28,33 @@ function isInertPath(filePath) {
 	return /\.mdx?$/u.test(filePath);
 }
 
-function ciMarkerDecision({ paths, billing }) {
+// Every spelling GitHub honours for skipping push-triggered workflows.
+const SKIP_INSTRUCTION = /\[(?:skip ci|ci skip|no ci|skip actions|actions skip)\]|^skip-checks:\s*true$/imu;
+
+function hasSkipInstruction(message) {
+	return SKIP_INSTRUCTION.test(message);
+}
+
+function baseDecision({ paths, billing }) {
 	if (billing?.blocked) {
 		return { skipCi: true, reason: `GitHub Actions is billing-blocked (${billing.url}); CI would be refused` };
 	}
 	if (paths.length === 0) return { skipCi: false, reason: "no changed paths; CI runs after the push" };
 	if (paths.every(isInertPath)) return { skipCi: true, reason: "docs- or artifacts-only change" };
 	return { skipCi: false, reason: "code change; CI runs after the push" };
+}
+
+// A commit already waiting to be pushed may carry a skip instruction (a retried fast ship,
+// or work committed elsewhere). History is never rewritten, so CI is started explicitly.
+function ciMarkerDecision({ paths, billing, markedCommits = [] }) {
+	const decision = { ...baseDecision({ billing, paths }), dispatchAfterPush: false, markedCommits };
+	if (decision.skipCi || markedCommits.length === 0) return decision;
+	return {
+		...decision,
+		dispatchAfterPush: true,
+		reason: `${decision.reason}, but ${markedCommits.length} commit(s) to push already skip CI (${markedCommits.join(", ")}): ` +
+			"after the push, start CI with `gh workflow run ci.yml --ref main`",
+	};
 }
 
 // The origin remote names the repository without a network round trip; gh is the fallback.
@@ -102,11 +122,11 @@ async function collectMainHealth({ repository, runGh = runGhJson } = {}) {
 		const resolved = await resolveRepository(runGh, repository);
 		splitRepository(resolved);
 		const runs = validateRuns(await runGh(["run", "list", "--repo", resolved, "--workflow", WORKFLOW, "--branch", "main",
-			"--event", "push", "--limit", "20", "--json", RUN_FIELDS]));
+			"--limit", "20", "--json", RUN_FIELDS]));
 		const running = runs.find((run) => run.status !== "completed") ?? null;
 		const verdict = await settledVerdict({ repository: resolved, runGh, runs });
 		const inProgress = running ? { headSha: running.headSha ?? null, url: running.url ?? null } : null;
-		if (!verdict) return { failedJobs: [], inProgress, reason: "no completed push run on main", repository: resolved, state: "unknown" };
+		if (!verdict) return { failedJobs: [], inProgress, reason: "no completed CI run on main", repository: resolved, state: "unknown" };
 		return { ...verdict, inProgress, repository: resolved };
 	} catch (error) {
 		return { failedJobs: [], inProgress: null, reason: error.message, repository: repository ?? null, state: "unknown" };
@@ -153,6 +173,15 @@ function changedPaths({ base = "origin/main", runGit = git } = {}) {
 	return runGit(["diff", "--cached", "--name-only", "--no-renames", mergeBase]).split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
+// Unpushed commits whose message already carries a skip instruction.
+function pendingSkipCommits({ base = "origin/main", runGit = git } = {}) {
+	const mergeBase = runGit(["merge-base", base, "HEAD"]).trim();
+	return runGit(["log", "--format=%h%x00%B%x1e", `${mergeBase}..HEAD`]).split("\x1e")
+		.map((record) => record.replace(/^\n/u, "").split("\x00"))
+		.filter(([sha, message]) => sha && hasSkipInstruction(message ?? ""))
+		.map(([sha]) => sha);
+}
+
 async function runUrl({ sha, repository, runGh = runGhJson }) {
 	if (!/^[a-f0-9]{40}$/u.test(sha ?? "")) throw new Error("--run-url needs a full commit SHA");
 	const resolved = await resolveRepository(runGh, repository);
@@ -193,10 +222,11 @@ const HELP = [
 	"       main-health --ci-marker [--base origin/main] [--json]",
 	"       main-health --run-url <sha> [--repo owner/name]",
 	"",
-	"Default: one line saying whether the latest push run of CI on main is green, red (with the",
+	"Default: one line saying whether the latest CI run on main (push or dispatch) is green, red (with the",
 	"failed jobs), billing-blocked, or unknown. Always exits 0; it never blocks work.",
 	`--ci-marker: whether a fast-ship commit adds ${SKIP_CI_MARKER}. Only docs/artifacts-only changes`,
-	"or a current billing block add it; code changes let CI run after the push.",
+	"or a current billing block add it; code changes let CI run after the push. If an unpushed",
+	"commit already skips CI, it says to start CI with `gh workflow run ci.yml --ref main` after the push.",
 	"--run-url: the CI run URL for a pushed commit, or its checks page if no run is queued yet.",
 ].join("\n");
 
@@ -210,7 +240,8 @@ async function main(argv = process.argv.slice(2), { runGh = runGhJson, runGit = 
 		// A docs-only change skips CI anyway, so it needs no GitHub round trip.
 		const docsOnly = paths.length > 0 && paths.every(isInertPath);
 		const billing = docsOnly ? null : await collectBillingState({ repository: options.repository, runGh });
-		const decision = { ...ciMarkerDecision({ billing, paths }), marker: SKIP_CI_MARKER, pathCount: paths.length };
+		const markedCommits = pendingSkipCommits({ base: options.base, runGit });
+		const decision = { ...ciMarkerDecision({ billing, markedCommits, paths }), marker: SKIP_CI_MARKER, pathCount: paths.length };
 		return write(options.json ? `${JSON.stringify(decision)}\n`
 			: `CI marker: ${decision.skipCi ? `add ${SKIP_CI_MARKER}` : "none"} (${decision.reason})\n`);
 	}
@@ -234,8 +265,10 @@ module.exports = {
 	collectBillingState,
 	collectMainHealth,
 	formatHealth,
+	hasSkipInstruction,
 	isInertPath,
 	main,
 	originRepository,
+	pendingSkipCommits,
 	runUrl,
 };

@@ -64,7 +64,7 @@ node .agents/skills/vpk-git-ship/scripts/main-health.js
 ```
 
 Report the `main health:` line first. `RED` names the failed jobs of the latest
-push run on `main`: that breakage is not this change's, so do not debug it as
+CI run on `main`: that breakage is not this change's, so do not debug it as
 your own. If this PR's CI later fails in the same job with the same error,
 say so and compare with the `main` run before changing code. `billing-blocked`
 means the local `ci:pr` fallback below will apply. `unknown` never blocks.

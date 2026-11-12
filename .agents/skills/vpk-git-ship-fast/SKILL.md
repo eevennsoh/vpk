@@ -83,13 +83,16 @@ cleanup.
    billing in the last 24 hours. Otherwise it prints `CI marker: none` and CI
    runs after the push. It makes at most a couple of read-only GitHub calls and
    never blocks; when GitHub is unreachable it answers `none`. Follow it without
-   asking.
+   asking. If it says a commit to push already skips CI (for example a retried
+   fast ship), do not rewrite that commit; start CI explicitly after the push
+   (step 10).
 
 5. Generate an imperative subject of about 50 characters from the actual diff.
    Include `[skip ci]` in the commit message only when step 4 said `add`.
    Never mention the marker in a message that should run CI, even when quoting
-   another commit: GitHub skips CI if the literal marker appears anywhere in the
-   pushed head commit's message. Add a short body only for distinct concerns,
+   another commit: GitHub skips push-triggered CI if the literal marker (or
+   `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]`, or a
+   `skip-checks: true` trailer) appears in a pushed commit's message. Add a short body only for distinct concerns,
    follow repository log style, and omit co-author footers unless requested.
    Commit once. If the tree is clean but commits are ahead, create an empty
    commit only when the marker is needed; otherwise push the existing commits
@@ -149,7 +152,13 @@ cleanup.
     ```
 
     If GitHub has not queued the run yet, it prints the commit's checks page,
-    which shows the run when it starts.
+    which shows the run when it starts. When step 4 reported a commit that
+    already skips CI, the push starts no run, so start one on `main` first
+    (a single dispatch, not a wait), then print the URL:
+
+    ```bash
+    gh workflow run ci.yml --repo <owner/name> --ref main
+    ```
 
 ## Stop rules
 
