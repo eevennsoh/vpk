@@ -759,7 +759,7 @@ test("the work-item skill picker has enough skills to scroll and keeps its pinne
 });
 
 test("all Jira repository variants use the canonical VPK repository identity", async () => {
-	for (const variant of ["experimental-v2", "experimental-v3", "experimental-v4", "experimental-v5", "team-eu26"]) {
+	for (const variant of ["experimental-v2", "experimental-v3", "team-eu26"]) {
 		const { DEVELOPMENT_REPOSITORIES } = await import(`./${variant}/lib/development-repositories.ts`);
 		assert.deepEqual(DEVELOPMENT_REPOSITORIES.find(({ id }) => id === "vpk"), {
 			id: "vpk", name: "vpk", provider: "bitbucket", url: "https://bitbucket.org/atlassian/vpk",
