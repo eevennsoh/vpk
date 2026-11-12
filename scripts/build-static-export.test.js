@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const { spawn, spawnSync } = require("node:child_process");
-const { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
+const { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
@@ -56,6 +56,8 @@ function createProject(t) {
 	].join("\n"));
 	chmodSync(path.join(bin, "pnpm"), 0o755);
 	const env = { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}` };
+	// One line per fake build that started.
+	const buildCount = () => (existsSync(path.join(root, "builds")) ? readFileSync(path.join(root, "builds"), "utf8").split("\n").filter(Boolean).length : 0);
 	return {
 		env,
 		root,
@@ -69,6 +71,16 @@ function createProject(t) {
 			return child;
 		},
 		release: () => writeFileSync(path.join(root, "release"), ""),
+		buildCount,
+		// Resolves once every export but one has exited (refused), or a second build has started.
+		waitForRefusals: async (runs) => {
+			let exited = 0;
+			for (const child of runs) {
+				if (child.exitCode !== null || child.signalCode !== null) exited += 1;
+				else child.once("exit", () => { exited += 1; });
+			}
+			await waitFor(() => buildCount() > 1 || (exited >= runs.length - 1 && buildCount() === 1));
+		},
 	};
 }
 
@@ -171,10 +183,8 @@ test("exports started together: exactly one builds, the rest are refused", async
 	const project = createProject(t);
 	const runs = Array.from({ length: 8 }, () => project.start());
 	const exits = runs.map((child) => new Promise((resolve) => child.once("exit", resolve)));
-	await waitFor(() => project.exists("build-started"));
-	// Give every run time to reach (or skip) its build before releasing the one that won.
-	await new Promise((resolve) => setTimeout(resolve, 1500));
-	assert.equal(project.read("builds").split("\n").length, 1, "only one export may move the routes and build");
+	await project.waitForRefusals(runs);
+	assert.equal(project.buildCount(), 1, "only one export may move the routes and build");
 	assert.equal(project.exists("app/api"), false);
 
 	project.release();
@@ -183,4 +193,30 @@ test("exports started together: exactly one builds, the rest are refused", async
 	assert.equal(project.exists("app/api/health/route.ts"), true);
 	assert.equal(project.exists(".api-routes-backup"), false);
 	assert.equal(project.exists(".static-export-journal.json"), false);
+});
+
+test("exports started together over a killed run's leftovers: one owner restores the routes and builds", async (t) => {
+	const project = createProject(t);
+	const killed = project.start();
+	await waitFor(() => project.exists("build-started"));
+	const killedExit = new Promise((resolve) => killed.once("exit", resolve));
+	process.kill(-killed.pid, "SIGKILL");
+	await killedExit;
+	await waitFor(() => fakeBuildsStillRunning(project.root).length === 0);
+	assert.equal(project.exists("app/api"), false, "the killed run left its routes aside");
+	for (const leftover of ["build-started", "build-saw-api", "builds"]) rmSync(path.join(project.root, leftover), { force: true });
+
+	const runs = Array.from({ length: 8 }, () => project.start());
+	const exits = runs.map((child) => new Promise((resolve) => child.once("exit", resolve)));
+	await project.waitForRefusals(runs);
+	assert.equal(project.buildCount(), 1, "only one export may take over the killed run and build");
+	assert.equal(project.read("build-saw-api"), "hidden");
+	assert.equal(project.exists("app/api"), false, "a refused run must not restore the owner's routes mid-build");
+
+	project.release();
+	const codes = await Promise.all(exits);
+	assert.equal(codes.filter((code) => code === 0).length, 1);
+	assert.equal(project.exists("app/api/health/route.ts"), true);
+	assert.equal(project.exists(".api-routes-backup"), false);
+	assert.deepEqual(readdirSync(project.root).filter((name) => name.startsWith(".static-export-journal")), [], "no journal, draft or claim file is left behind");
 });
