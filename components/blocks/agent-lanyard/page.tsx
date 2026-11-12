@@ -66,6 +66,11 @@ export default function AgentLanyardPage() {
 						</div>
 					))}
 				</div>
+				<section aria-label="Recommended variant" className="flex flex-col items-start gap-3">
+					<h2 className="text-base font-medium text-text">Recommended</h2>
+					<p className="text-sm text-text-subtle">Illustrative demo reason based on the catalog description. No personalized evidence, measured performance or ranking is represented.</p>
+					<AgentLanyard variant="recommended" agent={AGENT_LANYARD_AGENTS[0]} recommendationReason="Claude can help with code suggestions and reviews." perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} />
+				</section>
 				<p role="status" className="min-h-5 text-sm text-text-subtle">{feedback}</p>
 			</div>
 			<Dialog open={profileAgent !== null} onOpenChange={(open) => { if (!open) setProfileAgent(null); }}>

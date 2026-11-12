@@ -28,6 +28,7 @@ export type InlineAgentSelectorProps = {
 	renderAdditionalActions?: (agent: AgentSelectorAgent) => ReactNode;
 	renderAgentAction?: (agent: AgentSelectorAgent) => ReactNode;
 	renderAgentFeedback?: (agent: AgentSelectorAgent, avatar: ReactElement) => ReactNode;
+	renderAgentTrigger?: (agent: AgentSelectorAgent, trigger: ReactElement) => ReactNode;
 	onActiveAgentChange?: (agent: AgentSelectorAgent | null) => void;
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
@@ -69,7 +70,7 @@ function groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites,
 	return { recommendedAgent, recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware };
 }
 
-export function InlineAgentSelector({ agents, softwareAgentIds, getActions, renderAdditionalActions, renderAgentAction, renderAgentFeedback, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, showSearch = true, showFavorites = true, showHeadings = true, recentAgentId, recommendedAgentId, softwareHeading = "Software agents", disabledLabel, compact = false, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
+export function InlineAgentSelector({ agents, softwareAgentIds, getActions, renderAdditionalActions, renderAgentAction, renderAgentFeedback, renderAgentTrigger, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, showSearch = true, showFavorites = true, showHeadings = true, recentAgentId, recommendedAgentId, softwareHeading = "Software agents", disabledLabel, compact = false, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
 	const [query, setQuery] = useState("");
 	const [expanded, setExpanded] = useState(false);
 	const [internalFavorites, setInternalFavorites] = useState<readonly string[]>([]);
@@ -88,9 +89,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 		const showInline = hasChoices && activeId === agent.id;
 		const disabled = actions.length === 0 && !additionalActions;
 		const avatar = <AgentAvatarVisual appearance={agent.brandName === "openai-codex" || agent.brandName === "cursor" || agent.brandName === "github-copilot" ? "coding" : undefined} avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} logoName={agent.logoName} fallbackText={agent.name.slice(0, 2).toUpperCase()} label={agent.name} sizePx={24} />;
-		return <div key={agent.id} className="group/agent rounded-md hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
-			<div className="flex min-h-9 items-center gap-1 pl-2 pr-1.5">
-				<button data-agent-id={agent.id} type="button" disabled={disabled} className={cn("flex min-h-9 min-w-0 flex-1 items-center gap-3 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring", !disabledLabel && "disabled:opacity-50")} aria-expanded={hasChoices ? showInline : undefined} onClick={() => {
+		const trigger = <button data-agent-id={agent.id} type="button" disabled={disabled} className={cn("flex min-h-9 min-w-0 flex-1 items-center gap-3 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring", !disabledLabel && "disabled:opacity-50")} aria-expanded={hasChoices ? showInline : undefined} onClick={() => {
 					if (hasChoices) { setActiveId(showInline ? null : agent.id); onActiveAgentChange?.(showInline ? null : agent); }
 					else { setActiveId(null); onActiveAgentChange?.(null); actions[0]?.onSelect(); }
 				}}>
@@ -99,7 +98,10 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 						<span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</span>
 					</>}
 					{disabled && disabledLabel ? <span className="shrink-0 text-xs text-text-subtlest">{disabledLabel}</span> : null}
-				</button>
+				</button>;
+		return <div key={agent.id} className="group/agent rounded-md hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
+			<div className="flex min-h-9 items-center gap-1 pl-2 pr-1.5">
+				{renderAgentTrigger?.(agent, trigger) ?? trigger}
 				{renderAgentAction?.(agent)}
 				{showFavorites ? <FavoriteButton id={agent.id} name={agent.name} favorite={favorite} onToggle={(restoreFocus) => {
 					const nextFavorites = favorite ? favorites.filter((id) => id !== agent.id) : [...favorites, agent.id];

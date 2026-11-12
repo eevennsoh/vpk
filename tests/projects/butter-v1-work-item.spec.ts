@@ -264,9 +264,14 @@ test("work item agent avatars show lanyards beside Details without moving betwee
 	await field.getByRole("button", { name: "Jira Coding Agent, add agent" }).hover();
 	const coding = page.getByRole("article", { name: "Jira Coding Agent agent" });
 	await expect(coding).toBeVisible();
-	await expect(coding.getByRole("button", { name: "Chat with Jira Coding Agent" })).toBeEnabled();
-	await expect(coding.getByRole("button", { name: "More actions for Jira Coding Agent" })).toBeEnabled();
+	await expect(coding.locator('[data-slot="agent-lanyard-grid"]')).toHaveAttribute("data-animated", "false");
+	await expect(coding.getByRole("button")).toHaveCount(0);
 	await expect(coding.locator('[data-slot="agent-lanyard-surface"]')).toHaveCSS("border-left-width", "0px");
+	await expect.poll(async () => {
+		const surface = await coding.locator('[data-slot="agent-lanyard-surface"]').boundingBox();
+		const description = await coding.locator("p").last().boundingBox();
+		return surface && description ? Math.round(surface.y + surface.height - description.y - description.height) : null;
+	}).toBe(16);
 	await expect.poll(async () => {
 		const card = await coding.boundingBox();
 		const panel = await details.boundingBox();
@@ -284,6 +289,8 @@ test("work item agent avatars show lanyards beside Details without moving betwee
 	await field.getByRole("button", { name: "Jira Scoping agent, add agent" }).hover();
 	const scoping = page.getByRole("article", { name: "Jira Scoping agent agent" });
 	await expect(scoping).toBeVisible();
+	await expect(scoping.getByText("Breaks large projects into smaller, actionable, well-scoped tasks.")).toBeVisible();
+	await expect(scoping.getByText("Atlassian", { exact: true })).toBeVisible();
 	const scopingAvatar = scoping.locator('[data-slot="agent-lanyard-avatar"]');
 	const scopingAvatarBounds = await scopingAvatar.boundingBox();
 	if (!scopingAvatarBounds) throw new Error("Scoping agent avatar is not visible");
@@ -313,14 +320,52 @@ test("work item agent avatars show lanyards beside Details without moving betwee
 	if (!claudeBounds) throw new Error("Claude lanyard is not visible");
 	expect(claudeBounds.x).toBeCloseTo(codingBounds.x, 0);
 	expect(claudeBounds.y).toBeCloseTo(codingBounds.y, 0);
-	await claude.getByRole("button", { name: "More actions for Claude" }).click();
-	await expect(page.getByRole("menu", { name: "Actions for Claude" })).toBeVisible();
-	await page.keyboard.press("Escape");
+	await expect(claude.getByRole("button")).toHaveCount(0);
 	await field.getByRole("button", { name: "Claude, add agent" }).click();
 	await expect(page.getByRole("dialog", { name: "Add agent" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await field.getByRole("button", { name: "Cursor, add agent" }).focus();
 	await expect(page.getByRole("article", { name: "Cursor agent" })).toBeVisible();
+});
+
+test("work item agent picker previews lanyards without an extra border", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey" }).click();
+	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+	await page.getByRole("group", { name: "Agents field" }).getByRole("button", { name: "Add agent" }).click();
+	const picker = page.getByRole("dialog", { name: "Add agent" });
+	await picker.getByRole("button", { name: "Claude (Recommended)" }).hover();
+	const popup = page.locator('[data-slot="hover-card-content"]');
+	await expect(popup.getByRole("article", { name: "Claude recommended" })).toBeVisible();
+	await expect(popup.getByText("Collaborate on code with an AI that gives smart suggestions and reviews.", { exact: true })).toBeVisible();
+	await expect(popup.getByRole("heading", { name: "Why recommended" })).toBeVisible();
+	await expect(popup.getByText("Claude can help with code suggestions and reviews.", { exact: true })).toBeVisible();
+	await expect(popup.getByText("Claude can help with code suggestions and reviews.", { exact: true })).toHaveCSS("line-height", "16px");
+	await expect(popup.getByRole("button")).toHaveCount(0);
+	const expectContentHugged = async (content: Locator, bottomPadding = 16) => {
+		await expect.poll(async () => {
+			const surface = await popup.locator('[data-slot="agent-lanyard-surface"]').boundingBox();
+			const lastContent = await content.boundingBox();
+			return surface && lastContent ? Math.round(surface.y + surface.height - lastContent.y - lastContent.height) : null;
+		}).toBe(bottomPadding);
+	};
+	await expectContentHugged(popup.getByText("Claude can help with code suggestions and reviews."), 12);
+	await expect(popup).toHaveCSS("box-shadow", "none");
+	await expect(popup).toHaveCSS("border-top-width", "0px");
+	await expect(popup.locator('[data-slot="agent-lanyard-surface"]')).toHaveCSS("border-top-width", "0px");
+	await picker.getByRole("button", { name: "Jira Coding Agent", exact: true }).hover();
+	await expect(popup.getByRole("article", { name: "Jira Coding Agent agent" })).toBeVisible();
+	await expect(popup.getByRole("heading", { name: "Why recommended" })).toHaveCount(0);
+	await expect(popup.getByRole("button")).toHaveCount(0);
+	await expectContentHugged(popup.getByRole("img", { name: "Connected apps: Jira, Bitbucket" }));
+	for (const name of ["Cursor", "Codex", "Release Notes Drafter"]) {
+		await picker.getByRole("button", { name, exact: true }).hover();
+		await expect(popup.getByRole("heading", { name, exact: true })).toBeVisible();
+		await expect(popup.getByRole("button")).toHaveCount(0);
+	}
+	await picker.getByRole("button", { name: "Claude (Recommended)" }).click();
+	await expect(picker).toBeHidden();
 });
 
 for (const input of ["pointer", "keyboard"] as const) {
