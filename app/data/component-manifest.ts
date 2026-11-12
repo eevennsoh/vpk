@@ -45,7 +45,7 @@ type CatalogKey = `${ComponentCategory}/${string}`;
  */
 export const CATALOG_LIFECYCLE: Readonly<Partial<Record<CatalogKey, ComponentLifecycle>>> = {
 	"blocks/jira-work-item": {
-		note: "Variant dirs are independent forks with separate consumers; experimental-v4 and experimental-v5 are reachable only from this block's own demos.",
+		note: "Variant dirs are independent forks with separate consumers, except experimental-v4 and experimental-v5: they render the experimental-v3 implementation and are reachable only from this block's own demos.",
 	},
 	"projects/jira-golden-journey-v0": {
 		status: "frozen",

@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_LANYARD_DETAIL: ComponentDetail = {
-	description: "An agent badge card with a dotted grid backdrop, verified identity, chat or connect actions, and independently configurable hover tilt and grid waves.",
+	description: "An agent badge card with a dotted grid backdrop, verified identity, optional actions, and independently configurable hover tilt and grid waves. The recommended variant adds a caller-supplied explanation below a perforated seam.",
 	importStatement: `import { AgentLanyard, AGENT_LANYARD_AGENTS, AGENT_LANYARD_TEMPLATES } from "@/components/blocks/agent-lanyard";`,
 	usage: `import { AgentLanyard, AGENT_LANYARD_AGENTS, AGENT_LANYARD_TEMPLATES } from "@/components/blocks/agent-lanyard";
 
@@ -22,6 +22,13 @@ export const AGENT_LANYARD_DETAIL: ComponentDetail = {
 <AgentLanyard
 	variant="template"
 	template={AGENT_LANYARD_TEMPLATES[0]}
+/>
+{/* Illustrative demo copy based on the catalog role, not a ranking or personalized evidence. */}
+<AgentLanyard
+	variant="recommended"
+	agent={AGENT_LANYARD_AGENTS[0]}
+	recommendationReason="Claude can help with code suggestions and reviews."
+	perspectiveTilt={false}
 />`,
 	demoLayout: { previewContentWidth: "full", examplesContentWidth: "full", previewHeight: "fit" },
 	examples: [
@@ -37,16 +44,23 @@ export const AGENT_LANYARD_DETAIL: ComponentDetail = {
 			{ name: "perspectiveTilt", type: "boolean", default: "true", description: "Enables the shared hover tilt, respecting reduced motion." },
 			{ name: "animateGrid", type: "boolean", default: "false", description: "Enables the hover wave. The static grid backdrop remains visible when animation is off or reduced motion is enabled." },
 		],
+	}, {
+		name: "AgentLanyardHoverContent",
+		description: "A transparent, 252px hover popup for the lanyard. Import alongside the shared HoverCard and HoverCardTrigger. Match variant=\"recommended\" to the recommended card so its transparent notches and single shaped shadow remain visible; leave the default for existing agent and 1P cards.",
+		props: [
+			{ name: "variant", type: '"agent" | "recommended"', default: '"agent"', description: "Recommended cards own their shaped shadow; this mode removes the rectangular popup shadow. Other positioning and hover-card props pass through." },
+		],
 	}],
 	adsLinks: [{ label: "Source prototype", url: "https://bitbucket.org/atlassian/prototyping/branch/studio/main/agent-lifecycle" }],
 	props: [
-		{ name: "variant", type: '"agent" | "template"', default: '"agent"', description: "Agent cards show chat/connect actions; template cards show an outlined avatar and TWG Appstack." },
-		{ name: "agent", type: "AgentLanyardAgent", description: "Required for the agent variant. Identity, complete badge artwork, description, verification, action kind, and decorative accent color." },
+		{ name: "variant", type: '"agent" | "template" | "recommended"', default: '"agent"', description: "Agent cards show chat/connect actions; template cards show an outlined avatar and TWG Appstack. Recommended cards retain the description and add a borderless perforated explanation with no action/menu controls." },
+		{ name: "agent", type: "AgentLanyardAgent", description: "Required for agent and recommended variants. Identity, complete badge artwork, description, verification, action kind, and decorative accent color." },
+		{ name: "recommendationReason", type: "string", description: "Required and non-empty with variant=\"recommended\". Caller-supplied plain text under Why recommended; the component does not infer evidence or rank agents. Action/menu callbacks, custom footers, hiding the description and overriding the avatar are excluded from AgentLanyardRecommendedProps." },
 		{ name: "template", type: "AgentLanyardTemplate", description: "Required with variant=\"template\". Name, description, template icon artwork, and connected app sources." },
 		{ name: "perspectiveTilt", type: "boolean", default: "true", description: "Enables the reference perspective tilt on hover. Disabled under reduced motion." },
-		{ name: "animateGrid", type: "boolean", default: "true", description: "Agent variant only: enables one colored, distorted grid wave on hover. The static grid remains when disabled; reduced motion also disables the wave." },
-		{ name: "showGrid", type: "boolean", default: "true", description: "Agent variant only: controls the decorative backdrop independently of tilt and grid animation. The 1P wrapper keeps the backdrop visible." },
-		{ name: "footer", type: "ReactNode", description: "Agent variant only: replaces the action row with a consumer-owned footer. AgentLanyardFirstParty supplies the shared connected-app stack." },
+		{ name: "animateGrid", type: "boolean", default: "true", description: "Agent and recommended variants: enables one colored, distorted grid wave on hover. The static grid remains when disabled; reduced motion also disables the wave." },
+		{ name: "showGrid", type: "boolean", default: "true", description: "Agent and recommended variants: controls the decorative backdrop independently of tilt and grid animation. The 1P wrapper keeps the backdrop visible." },
+		{ name: "footer", type: "ReactNode", description: "Agent variant only: replaces the action row with a consumer-owned footer. Pass null to hide it. AgentLanyardFirstParty supplies the shared connected-app stack." },
 		{ name: "avatar", type: "ReactNode", description: "Agent variant only: overrides the avatar presentation. The 1P wrapper composes the original transparent Figma SVG layers." },
 		{ name: "onAction", type: "(agent: AgentLanyardAgent) => void", description: "Handles the chat or connect action. The button is disabled when absent. The catalog demo reports the selected action." },
 		{ name: "menuActions", type: "AgentLanyardMenuActions", description: "Callbacks for View profile, Star/Unstar, Copy link, and Duplicate. Missing callbacks disable the matching menu items. An empty object disables the menu trigger." },

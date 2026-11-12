@@ -109,7 +109,7 @@ function loadHarness() {
 			["agent-state", `export function AgentState() { return null; }`],
 			["agent-profile-card", `export function AgentProfileCard() { return null; }`],
 			["smart-link", `export function SmartLink() { return null; } export const SMART_LINK_MODAL_ACTIONS = [];`],
-			["avatar", `export function Avatar() { return null; } export function AvatarFallback() { return null; } export function AvatarImage() { return null; } export function AvatarGroup() { return null; }`],
+			["avatar", `export function Avatar() { return null; } export function AvatarFallback() { return null; } export function AvatarImage() { return null; } export function AvatarGroup() { return null; } export function AvatarGroupCount() { return null; }`],
 			["lozenge", `export function Lozenge() { return null; }`],
 			["metadata-path-link", `export function MetadataPathLink() { return null; } export function MetadataPathValue() { return null; }`],
 			["tag", `export function Tag() { return null; }`],

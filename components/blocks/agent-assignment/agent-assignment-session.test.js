@@ -15,7 +15,7 @@ const menuSource = `
 	export default function Menu(props) { return <TooltipProvider><AgentSessionsMenu {...props} /></TooltipProvider>; }
 `;
 const themeMock = { "@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });" };
-const disclosure = { name: "Sessions from your teammates" };
+const disclosure = { name: /(?:\d+ )?other sessions?/iu };
 const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { name: "Sample agent" }, state: "complete", host: "cloud", role, ...extras });
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
@@ -25,6 +25,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 	const view = await renderMenu(menuProps(items));
 	try {
 		const trigger = view.getByRole("button", disclosure);
+		assert.equal(trigger.getAttribute("aria-label"), "Other sessions");
 		assert.equal(trigger.getAttribute("aria-expanded"), "false");
 		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group"]')), true);
 		assert.deepEqual(view.getAllByRole("listitem").map((row) => row.getAttribute("data-testid")), ["agent-session-row-mine", "agent-session-row-legacy"]);
@@ -35,6 +36,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 		assert.equal(view.container.querySelectorAll("hr").length, 1);
 		await view.press(trigger, "Enter");
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
+		assert.equal(trigger.getAttribute("aria-label"), "2 other sessions");
 		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
 		assert.equal(trigger.querySelector('[data-slot="avatar-group"]').getAttribute("aria-hidden"), "true");
 		const lists = view.getAllByRole("list");
@@ -147,7 +149,7 @@ test("viewer keyboard activation stays read-only; Escape dismisses its tooltip b
 	} finally { await view.unmount(); }
 });
 
-test("header avatars deduplicate supplied identities, preserve distinct faces, and bound missing or large data without counts", async () => {
+test("header avatars deduplicate identities and count people beyond the first four", async () => {
 	const previousImage = window.Image;
 	const sources = [];
 	window.Image = class extends previousImage {
@@ -165,11 +167,13 @@ test("header avatars deduplicate supplied identities, preserve distinct faces, a
 		const trigger = view.getByRole("button", disclosure);
 		assert.deepEqual([...trigger.querySelectorAll('[data-slot="avatar"]')].map((avatar) => avatar.getAttribute("title")), ["Sample Alpha", "Sample Alpha", "Sample Beta", "Teammate"]);
 		assert.deepEqual(sources, ["/sample-alpha.svg", "/different-alpha.svg"]);
+		assert.equal(Boolean(trigger.querySelector('[data-slot="avatar-group-count"]')), false);
+		await view.rerender(menuProps([session("mine", "owner"), ...Array.from({ length: 5 }, (_, index) => session(`s${index}`, "viewer", { invokedBy: { name: `Sample ${index}` } }))]));
+		assert.equal(trigger.querySelector('[data-slot="avatar-group-count"]').textContent, "+1");
 		await view.rerender(menuProps([session("mine", "owner"), ...Array.from({ length: 30 }, (_, index) => session(`s${index}`, "viewer", { invokedBy: { name: `Sample ${index}` } }))]));
 		const nextTrigger = view.getByRole("button", disclosure);
-		assert.equal(nextTrigger.querySelectorAll('[data-slot="avatar"]').length, 6);
-		assert.equal(nextTrigger.textContent.includes("30"), false);
-		assert.equal(nextTrigger.textContent.includes("…"), true);
+		assert.equal(nextTrigger.querySelectorAll('[data-slot="avatar"]').length, 4);
+		assert.equal(nextTrigger.querySelector('[data-slot="avatar-group-count"]').textContent, "+26");
 		await view.click(nextTrigger);
 		assert.equal(view.getAllByRole("listitem").length, 31, "avatar overflow must not drop sessions");
 	} finally { await view.unmount(); window.Image = previousImage; }

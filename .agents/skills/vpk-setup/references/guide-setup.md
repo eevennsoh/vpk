@@ -126,9 +126,24 @@ pnpm run dev:tmux:start
 
 ### Install Dependencies
 
+`pnpm install` needs two private-registry tokens in your **user-level** npm
+config (never in tracked files: the repository is public):
+
+| Variable | Needed for |
+| --- | --- |
+| `ATLASSIAN_NPM_TOKEN` | `@atlassian/logo-third-party` from `packages.atlassian.com` (otherwise a 404) |
+| `MOTION_TOKEN` | Motion+ (`motion-plus`, an alias of `@motionplus/core` on `api.motion.dev/npm`) (otherwise a 401) |
+
+Write both once per machine, then install:
+
 ```bash
+ATLASSIAN_NPM_TOKEN=<token> MOTION_TOKEN=<token> node scripts/write-npmrc.mjs
 pnpm install
 ```
+
+`scripts/write-npmrc.mjs` upserts the registry routing and both auth lines into
+`~/.npmrc` and is safe to rerun. CI does the same with the `ATLASSIAN_NPM_TOKEN`
+and `MOTION_TOKEN` Actions secrets.
 
 ### Generate ASAP Credentials for AI Gateway
 

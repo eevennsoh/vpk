@@ -108,8 +108,6 @@ test("Jira Work Item comment composers keep their height stable when focused", (
 		"experimental",
 		"experimental-v2",
 		"experimental-v3",
-		"experimental-v4",
-		"experimental-v5",
 		"team-eu26",
 	]) {
 		const composerSource = readBlockFile(`${variant}/components/activity-composer.tsx`);

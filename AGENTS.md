@@ -187,7 +187,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
   Last validated: 2026-10-06
   Commands: `pnpm run validate:preflight`, `pnpm run verify:fast` (bundles the
   following checks), `pnpm run verify:root-artifacts`,
-  `pnpm run verify:route-manifest`, `pnpm run verify:api-surfaces`,
+  `pnpm run verify:url-credentials`, `pnpm run verify:route-manifest`, `pnpm run verify:api-surfaces`,
   `pnpm run verify:repo-map`, `pnpm run verify:vpk-feature-map`, `pnpm run verify:file-size`,
   `pnpm run verify:catalog`, `pnpm run verify:lazy-load`, `pnpm run verify:source-guardrails`,
   `pnpm run verify:eslint-suppressions`, `pnpm run verify:cursor-rules`,
