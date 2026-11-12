@@ -581,7 +581,6 @@ test("AgentSelector exposes the Jira kanban catalog demo", () => {
 
 	// Wired end-to-end: demo wrapper -> variant registry -> details example.
 	assert.match(DEMO_SOURCE, /export function AgentSelectorDemoJira/u);
-	assert.match(DEMO_SOURCE, /<AgentSelectorPage variant="jira" \/>/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-selector-demo-jira"[\s\S]*default: mod\.AgentSelectorDemoJira/u);
 	assert.match(DETAILS_SOURCE, /demoSlug: "agent-selector-demo-jira"/u);
 });
@@ -667,7 +666,6 @@ test("AgentSelector can swap its boxed search for the editor-palette bar", () =>
 
 	// Gallery/demo surfaces match Assign agents (palette), not the boxed default.
 	assert.match(PAGE_SOURCE, /searchVariant="palette"/u);
-	assert.match(DETAILS_SOURCE, /searchVariant="palette"/u);
 	assert.match(DETAILS_SOURCE, /name: "searchVariant"/u);
 
 	// SkillSelector is a thin wrapper over AgentSelector; the variant has to

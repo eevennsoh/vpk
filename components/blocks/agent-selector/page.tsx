@@ -19,6 +19,7 @@ import { RovoColorIcon } from "@/components/ui/logo";
 interface AgentSelectorPageProps {
 	presentation?: "dropdown" | "standalone";
 	includeByline?: boolean;
+	initialOpen?: boolean;
 	variant?: "default" | "selected-agent-actions" | "jira";
 }
 
@@ -28,9 +29,10 @@ const AGENT_SELECTOR_STANDALONE_SURFACE_CLASS =
 export default function AgentSelectorPage({
 	presentation = "dropdown",
 	includeByline,
+	initialOpen = true,
 	variant = "default",
 }: Readonly<AgentSelectorPageProps> = {}): ReactElement {
-	const [open, setOpen] = useState(true);
+	const [open, setOpen] = useState(initialOpen);
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>(
 		variant === "selected-agent-actions"
 			? ["ai-insights-agent"]

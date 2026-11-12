@@ -606,13 +606,6 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"agent-selector-demo-project-butter": dynamic(
-		() =>
-			import("../demos/blocks/agent-selector-demo").then((mod) => ({
-				default: mod.AgentSelectorDemoProjectButter,
-			})),
-		{ ssr: false },
-	),
 	"agent-selector-demo-inline-expansion": dynamic(
 		() => import("../demos/blocks/agent-selector-demo").then((mod) => ({ default: mod.AgentSelectorDemoInlineExpansion })),
 		{ ssr: false },

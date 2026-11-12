@@ -848,7 +848,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 					data-butter-content={wacContent ? "wac" : "default"}
 					data-agent-session-sync={agentSessionsSettled ? "settled" : "pending"}
 				>
-					<ButterInlineAgentPickerContext value={boardOnly}>
+					<ButterInlineAgentPickerContext value>
 					<ExperimentalJiraKanbanPage
 						boardOnly={boardOnly}
 						collapsedColumns={collapsedColumns}
