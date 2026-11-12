@@ -1,14 +1,31 @@
 "use client";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ROVO_AGENT_PROFILES } from "@/app/data/directory/agents";
+import { AgentLanyard, AgentLanyardFirstParty, AgentLanyardHoverContent, AGENT_LANYARD_AGENTS, AGENT_LANYARD_FIRST_PARTY_AGENTS, type AgentLanyardAgent } from "@/components/blocks/agent-lanyard";
 import { InlineAgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { HoverCard, HoverCardTrigger, createHoverCardHandle } from "@/components/ui/hover-card";
 import { Icon } from "@/components/ui/icon";
 import { BUTTER_PICKER_AGENTS } from "./project-butter-agent-catalog";
 import { useProjectButterInvocationActions } from "./project-butter-invocation";
 
-const SOFTWARE_IDS = ["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent", "rovo-cli"];
+const RECOMMENDED_AGENT_ID = "claude-code";
+const DEFAULT_RECOMMENDATION_REASON = "Claude can help with code suggestions and reviews.";
+const SOFTWARE_IDS = ["jira-coding", RECOMMENDED_AGENT_ID, "test-agent", "review-agent", "release-agent", "rovo-cli"];
 const CLOUD_AGENTS = BUTTER_PICKER_AGENTS.filter((agent) => agent.id !== "github-copilot" && agent.id !== "rovo-cli");
+const LANYARD_IDS: Readonly<Record<string, string>> = { [RECOMMENDED_AGENT_ID]: "claude", "test-agent": "cursor", "review-agent": "codex", "release-agent": "copilot" };
+
+function pickerLanyard(agent: AgentSelectorAgent): AgentLanyardAgent {
+	const known = AGENT_LANYARD_AGENTS.find((item) => item.id === (LANYARD_IDS[agent.id] ?? agent.id));
+	if (known) return known;
+	const profile = ROVO_AGENT_PROFILES.find((item) => item.id === agent.id);
+	return {
+		id: agent.id, name: agent.name, publisher: agent.byline, description: profile?.description ?? agent.byline,
+		avatarSrc: agent.avatarSrc ?? "/1p/agent-lanyard/glyph-custom-black.svg", action: "chat", verified: profile?.verified,
+	};
+}
 
 export function ProjectButterAgentPreviewBoundary({ agents, children }: Readonly<{ agents: readonly AgentSelectorAgent[]; children: ReactNode }>) {
 	const invocation = useProjectButterInvocationActions();
@@ -49,18 +66,31 @@ export function ProjectButterAgentPreviewBoundary({ agents, children }: Readonly
 	}}>{children}</div>;
 }
 
-export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status }: Readonly<{
+export function ProjectButterCloudAgentPicker({ onAssign, onBrowseAgents, status, recommendationReason }: Readonly<{
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
 	status?: string;
+	/** Prototype explanation of Claude's catalog role; callers may supply their own reason. */
+	recommendationReason?: string;
 }>) {
+	const [handle] = useState(() => createHoverCardHandle<AgentSelectorAgent>());
+	const reason = recommendationReason?.trim() || DEFAULT_RECOMMENDATION_REASON;
 	return <ProjectButterAgentPreviewBoundary agents={CLOUD_AGENTS}><InlineAgentSelector
 		agents={CLOUD_AGENTS}
-		recommendedAgentId="claude-code"
+		recommendedAgentId={RECOMMENDED_AGENT_ID}
 		softwareAgentIds={SOFTWARE_IDS}
 		initialSoftwareLimit={3}
 		getActions={(agent) => [{ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => onAssign(agent) }]}
 		onBrowseAgents={onBrowseAgents}
+		renderAgentTrigger={(agent, trigger) => <HoverCardTrigger handle={handle} payload={agent} delay={150} closeDelay={150} render={trigger} />}
 		status={status}
-	/></ProjectButterAgentPreviewBoundary>;
+	/><HoverCard handle={handle}>{({ payload: agent }) => <AgentLanyardHoverContent variant={agent?.id === RECOMMENDED_AGENT_ID ? "recommended" : "agent"} side="left" align="start" sideOffset={8} positionerClassName="z-[700]" className="[&_[data-slot=agent-lanyard-surface]]:min-h-0 [&_[data-slot=agent-lanyard-surface]_p]:min-h-0">
+		{agent ? (() => {
+			const firstParty = AGENT_LANYARD_FIRST_PARTY_AGENTS.find((item) => item.id === agent.id);
+			if (firstParty) return <AgentLanyardFirstParty agent={firstParty} perspectiveTilt={false} />;
+			const lanyard = pickerLanyard(agent);
+			if (agent.id === RECOMMENDED_AGENT_ID) return <AgentLanyard variant="recommended" agent={lanyard} recommendationReason={reason} perspectiveTilt={false} />;
+			return <AgentLanyard agent={lanyard} perspectiveTilt={false} footer={null} avatar={LANYARD_IDS[agent.id] ? undefined : <AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={48} />} />;
+		})() : null}
+	</AgentLanyardHoverContent>}</HoverCard></ProjectButterAgentPreviewBoundary>;
 }

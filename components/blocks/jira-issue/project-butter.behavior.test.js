@@ -27,6 +27,52 @@ test("Butter cloud picker recommends Claude and keeps The Council selectable", a
 	await view.unmount();
 });
 
+test("Butter cloud picker previews the supplied reason only for recommended Claude and keeps keyboard selection", async () => {
+	const assigned = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-inline-agent-picker.tsx", exportName: "ProjectButterCloudAgentPicker",
+		mocks: { "@/components/ui-custom/agent-avatar-visual": "export function AgentAvatarVisual() { return null; }" },
+		props: { onAssign: (agent) => assigned.push(agent.id), recommendationReason: "Illustrative caller-supplied reason for Claude." },
+	});
+	try {
+		const claude = view.getByRole("button", { name: "Claude (Recommended)" });
+		await view.focus(claude);
+		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
+		const card = document.querySelector('article[data-variant="recommended"]');
+		assert.equal(card?.dataset.agentId, "claude");
+		assert.equal(card.textContent.includes("Collaborate on code with an AI that gives smart suggestions and reviews."), true);
+		assert.equal(view.getByRole("heading", { name: "Why recommended" }).nextElementSibling.textContent, "Illustrative caller-supplied reason for Claude.");
+		assert.equal(card.querySelectorAll("button, a, input").length, 0);
+		await view.focus(view.getByRole("button", { name: "Cursor", exact: true }));
+		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
+		assert.equal(document.querySelector('article[data-agent-id="cursor"]')?.dataset.variant, "agent");
+		assert.equal(document.querySelector('[data-slot="agent-lanyard-recommendation"]') === null, true);
+		await view.focus(claude);
+		await view.press(claude, "Enter");
+		assert.deepEqual(assigned, ["claude-code"]);
+	} finally { await view.unmount(); }
+});
+
+test("Butter cloud picker falls back to the safe demo reason for missing, empty or whitespace reasons", async () => {
+	for (const recommendationReason of [undefined, "", " \t\n "]) {
+		const assigned = [];
+		const view = await renderComponent({
+			entry: "components/blocks/jira-issue/project-butter-inline-agent-picker.tsx", exportName: "ProjectButterCloudAgentPicker",
+			mocks: { "@/components/ui-custom/agent-avatar-visual": "export function AgentAvatarVisual() { return null; }" },
+			props: { recommendationReason, onAssign: (agent) => assigned.push(agent.id) },
+		});
+		try {
+			const claude = view.getByRole("button", { name: "Claude (Recommended)" });
+			await view.focus(claude);
+			await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
+			assert.equal(view.getByRole("heading", { name: "Why recommended" }).nextElementSibling.textContent, "Claude can help with code suggestions and reviews.");
+			assert.equal(document.querySelector('article[data-variant="recommended"]')?.dataset.agentId, "claude");
+			await view.press(claude, "Enter");
+			assert.deepEqual(assigned, ["claude-code"]);
+		} finally { await view.unmount(); }
+	}
+});
+
 test("PR icon identifies draft and failed pull requests", async () => {
 	const view = await renderComponent({
 		entry: "components/blocks/jira-issue/project-butter-summary.tsx",

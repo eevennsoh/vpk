@@ -2,12 +2,11 @@
 
 import { createContext, use, useRef, useState, type ReactNode } from "react";
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
-import { AgentLanyard, type AgentLanyardAgent, type AgentLanyardFirstPartyAgent } from "@/components/blocks/agent-lanyard";
+import { AgentLanyard, AgentLanyardHoverContent, type AgentLanyardAgent, type AgentLanyardFirstPartyAgent } from "@/components/blocks/agent-lanyard";
 import { AgentLanyardFirstPartyAvatar } from "@/components/blocks/agent-lanyard/agent-lanyard-first-party-avatar";
-import { HoverCard, HoverCardContent, createHoverCardHandle, type HoverCardHandle } from "@/components/ui/hover-card";
+import { HoverCard, createHoverCardHandle, type HoverCardHandle } from "@/components/ui/hover-card";
 import { TOOLTIP_POPUP_ANIMATION_CLASSES } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { token } from "@/lib/tokens";
 
 type HeaderAgent = AgentLanyardAgent | AgentLanyardFirstPartyAgent;
 const HeaderLanyardContext = createContext<HoverCardHandle<HeaderAgent> | null>(null);
@@ -46,13 +45,11 @@ export function HeaderLanyards({ children, positionerClassName, menuPositionerCl
 				}
 			}}>
 				{({ payload: agent }) => (
-					<HoverCardContent
+					<AgentLanyardHoverContent
 						ref={popupRef}
 						positionerClassName={positionerClassName}
 						align="center" alignOffset={0} sideOffset={8}
-						style={{ boxShadow: token("elevation.shadow.overlay") }}
 						className={cn(
-							"w-[252px] rounded-xl border-0 bg-transparent p-0 shadow-none [&_[data-slot=agent-lanyard-surface]]:border-0 [&_[data-slot=agent-lanyard-surface]]:shadow-none",
 							TOOLTIP_POPUP_ANIMATION_CLASSES,
 							"data-starting-style:scale-100 data-ending-style:scale-100",
 						)}
@@ -75,7 +72,7 @@ export function HeaderLanyards({ children, positionerClassName, menuPositionerCl
 								}}
 							/>
 						) : null}
-					</HoverCardContent>
+					</AgentLanyardHoverContent>
 				)}
 			</HoverCard>
 			<span role="status" className="sr-only">{menuAnnouncement}</span>
