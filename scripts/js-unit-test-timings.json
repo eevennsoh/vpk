@@ -122,8 +122,6 @@
 		"components/blocks/jira-work-item/data": [1, 0.1],
 		"components/blocks/jira-work-item/experimental-v2/lib": [12, 1.56],
 		"components/blocks/jira-work-item/experimental-v3/lib": [16, 1.77],
-		"components/blocks/jira-work-item/experimental-v4/lib": [16, 1.72],
-		"components/blocks/jira-work-item/experimental-v5/lib": [16, 1.73],
 		"components/blocks/jira-work-item/experimental/lib": [1, 0.45],
 		"components/blocks/jira-work-item/lib": [1, 0.11],
 		"components/blocks/jira-work-item/project-butter": [18, 175.48],
