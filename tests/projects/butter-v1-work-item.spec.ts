@@ -473,8 +473,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const workItem = page.getByRole("region", { name: "Work item full screen view" });
 		const details = workItem.locator('[data-panel-id="details"]');
 		const views = [
-			{ name: "Agent selector", content: page.getByRole("region", { name: "Project Butter agent selector" }) },
-			{ name: "Duplicative sessions", content: page.getByRole("region", { name: "Duplicative sessions agent selector" }) },
+			{ name: "Agent & app selector", content: page.getByRole("region", { name: "Project Butter agent selector" }) },
+			{ name: "Duplicative sessions", content: page.getByRole("region", { name: "Work item full screen view" }) },
 			{ name: "Board", content: page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-jira-kanban-column="To do"]') },
 			{ name: "List", content: page.getByTestId("jira-list") },
 			{ name: "Pull request", content: page.locator('[data-butter-gallery-pull-request] [data-slot="jira-issue-card"]') },
