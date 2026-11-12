@@ -9,4 +9,5 @@ backend/data
 .env
 .env.*
 .api-routes-backup
+.static-export-journal.json
 .rovo-skills-detail-route-backup

@@ -23,7 +23,10 @@ The production image is `backend/Dockerfile`:
 
 Do not remove App Router routes by hand for an export. The checked-in
 `scripts/build-static-export.mjs` wrapper temporarily moves runtime-only
-routes and restores them even when the build fails or is interrupted.
+routes and restores them even when the build fails or is interrupted. A run
+killed outright (for example `SIGKILL` or a crash) leaves a journal; the next
+export restores the routes first. `node scripts/build-static-export.mjs --status`
+reports the state and `--restore` puts the routes back without building.
 
 ## Preconditions
 
