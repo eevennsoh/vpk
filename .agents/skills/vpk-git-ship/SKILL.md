@@ -95,10 +95,13 @@ unavailable.
    path. Generate a concise imperative commit subject from the diff, with no
    co-author footer unless requested.
 6. Batch review fixes and reconcile conflicts before final validation. Regenerate
-   derived files, then fold any changes into the candidate commit: `node scripts/generate-repo-map.js`,
-   `node scripts/generate-api-surfaces.js`,
-   `node scripts/generate-cursor-rules.js`, and
-   `node scripts/validate-skills.js --update-index`. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
+   derived files with `pnpm run fix:generated`, then fold any changes into the
+   candidate commit. It regenerates only what its checker reports stale (route
+   manifest, API surfaces, Cursor rules, skills index, repo map, lockfile; add
+   `--all` to also prune ESLint suppressions), and `pnpm run generated:status`
+   lists the registry in `scripts/generated-artifacts.mjs`. **On a merge
+   conflict in one of those files, take either side and run `pnpm run
+   fix:generated`;** never hand-merge them. Run `pnpm run verify:fast` (~10s: generated-file drift, file-size budget,
    guardrails, ESLint suppression ratchet — about half of first-run CI
    failures). Before pushing the **final reconciled candidate**, run the focused
    tests and ALL colocated exact-file contracts guarding affected source, plus

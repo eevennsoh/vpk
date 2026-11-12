@@ -97,6 +97,10 @@ Prefer merge commits unless the user explicitly asks for squash or rebase.
   candidate before pushing: focused checks, ALL colocated contracts and affected
   browser checks. Then push the conflict fix and require hosted CI and a fresh
   current-head review gate.
+- Generated files listed by `pnpm run generated:status` (repo map, route
+  manifest, API surfaces, Cursor rules, skills index, lockfile) are never
+  hand-merged: take either side, run `pnpm run fix:generated`, and commit the
+  result.
 - If a required check fails, report its name and URL. Fix it only when the user
   asked to finish the PR; otherwise leave the branch and PR intact.
 - If review is re-requested or approval is dismissed after a push, wait for the
