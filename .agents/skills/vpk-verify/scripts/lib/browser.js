@@ -3,6 +3,7 @@
 // Worktree-scoped agent-browser resolution, session handling and failure reporting.
 
 const { spawnSync } = require("node:child_process");
+const { createHash } = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -232,8 +233,8 @@ function writeCapturedOutput(result) {
 	if (result.stderr) process.stderr.write(result.stderr);
 }
 
-function browserSessionId({ timeoutMs = parseBrowserTimeoutMs() } = {}) {
-	const result = runAgentBrowser(
+function browserSessionId({ timeoutMs = parseBrowserTimeoutMs(), env = process.env, runCommand = runAgentBrowser } = {}) {
+	const result = runCommand(
 		["session", "id", "--scope", "worktree", "--prefix", SESSION_PREFIX],
 		{ encoding: "utf8", timeoutMs },
 	);
@@ -245,7 +246,11 @@ function browserSessionId({ timeoutMs = parseBrowserTimeoutMs() } = {}) {
 				|| "Run `pnpm install` from the repo root, then retry."}`,
 		), { classification });
 	}
-	return result.stdout.trim();
+	const worktreeSession = result.stdout.trim();
+	const owner = env.CODEX_THREAD_ID || env.CLAUDE_CODE_SESSION_ID;
+	if (!owner) return worktreeSession;
+	const suffix = createHash("sha256").update(owner).digest("hex").slice(0, 12);
+	return `${worktreeSession}-${suffix}`;
 }
 
 function closeBrowserSessionBestEffort() {

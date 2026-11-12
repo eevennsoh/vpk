@@ -10,13 +10,22 @@ function renderDetails(props = {}) {
 			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
 			import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
 			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
-			export default function DetailsTest({ empty = false, workItem, sidePanel = false }) {
+			export default function DetailsTest({ empty = false, workItem, sidePanel = false, showAgents = false }) {
 				const filledContent = useProjectButterContent("filled", workItem);
 				const emptyContent = useProjectButterContent("empty", workItem);
 				const [order, setOrder] = useState(["details", "development", "automation", "apps"]);
-				const [coding, setCoding] = useState(false);
-				return <ThemeWrapper><ProjectButterDetails code={workItem?.code} content={empty ? emptyContent : filledContent} empty={empty} key={sidePanel ? "side-panel" : "wide"} onPanelOrderChange={setOrder} onStartCoding={() => setCoding(true)} panelOrder={order} sidePanel={sidePanel} />{coding ? <p>Coding started</p> : null}</ThemeWrapper>;
+				return <ThemeWrapper><ProjectButterDetails agentField={showAgents ? <div aria-label="Agents field" role="group"><button>Agent sessions</button></div> : undefined} code={workItem?.code} content={empty ? emptyContent : filledContent} empty={empty} key={sidePanel ? "side-panel" : "wide"} onPanelOrderChange={setOrder} panelOrder={order} sidePanel={sidePanel} /></ThemeWrapper>;
 			}`,
+		props,
+	});
+}
+
+function renderLocalAgent(exportName, props) {
+	return renderComponent({
+		source: `import React from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ${exportName} as LocalAgent } from "@/components/blocks/jira-local-agent";
+			export default function LocalAgentTest(props) { return <ThemeWrapper><LocalAgent {...props} /></ThemeWrapper>; }`,
 		props,
 	});
 }
@@ -55,6 +64,20 @@ test("assignee defaults to Unassigned with its avatar and can be reassigned", as
 	assert.notEqual(assignee.querySelector('[data-unassigned="person"]'), null);
 });
 
+test("assignee picker includes the editor palette people and selects them by click", async () => {
+	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing" } });
+	await view.click(view.getByRole("button", { name: "Change assignee" }));
+	const unassigned = view.getByRole("option", { name: "Unassigned" });
+	assert.notEqual(unassigned.querySelector('[data-unassigned="person"]'), null);
+	await view.fill(view.getByRole("textbox", { name: "Search people" }), "Andrea Wilson");
+	const person = view.getByRole("option", { name: "Andrea Wilson" });
+	await view.click(person);
+	assert.equal(view.getByRole("button", { name: "Change assignee" }).textContent.includes("Andrea Wilson"), true);
+	await view.click(view.getByRole("button", { name: "Change assignee" }));
+	await view.click(view.getByRole("option", { name: "Unassigned" }));
+	assert.equal(view.getByRole("button", { name: "Change assignee" }).textContent, "Unassigned");
+});
+
 test("an existing Automatic assignee is shown as Unassigned with the VPK avatar", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";
@@ -78,10 +101,10 @@ async function fieldAction(view, field, action) {
 
 test("Details initializes each item independently and calculates cost per reach", () => {
 	const fields = createProjectButterDetailFields(false);
-	assert.deepEqual(fields.order, ["status", "assignee", "priority", "dueDate", "parent", "labels", "storyPoints", "reporter"]);
+	assert.deepEqual(fields.order, ["status", "assignee", "agents", "priority", "dueDate", "parent", "labels", "storyPoints", "reporter"]);
 	assert.equal(fields.parent, "VITA-22 User Experience Overhaul");
 	assert.deepEqual(fields.labels, ["social-media", "website-traffic"]);
-	assert.deepEqual(reorderProjectButterDetailFields(fields.order, "dueDate", "assignee").slice(0, 4), ["status", "dueDate", "assignee", "priority"]);
+	assert.deepEqual(reorderProjectButterDetailFields(fields.order, "dueDate", "assignee").slice(0, 5), ["status", "dueDate", "assignee", "agents", "priority"]);
 	assert.deepEqual(reorderProjectButterDetailFields(fields.order, "unknown", "assignee"), fields.order);
 	assert.equal(projectButterCostPerReach({ campaignBudget: "$1,200", estimatedReach: "24,000" }), "$0.05");
 	assert.equal(projectButterCostPerReach({ campaignBudget: "20", estimatedReach: "100,000" }), "$0.0002");
@@ -93,26 +116,77 @@ test("Details initializes each item independently and calculates cost per reach"
 	assert.equal(boardItem.fixVersion, "");
 });
 
-test("Development copies the current work item prompt", async (t) => {
+test("work item Development keeps repository setup without the moved Open in action", async () => {
+	const view = await renderDetails();
+	assert.equal(view.queryByRole("button", { name: "Copy prompt" }) === null, true);
+	assert.equal(view.getByRole("button", { name: "Start coding" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Open in", exact: true }), null);
+});
+
+test("Open in remembers the last used app", async () => {
+	localStorage.removeItem("jira-local-agent-last-used");
+	const props = { workItem: { code: "PAY-118", summary: "Billing", description: "" } };
+	const view = await renderLocalAgent("JiraLocalAgentSplitButton", props);
+	assert.notEqual(view.queryByRole("button", { name: "Open in Claude" }), null);
+	assert.equal(view.getByRole("button", { name: "Open in Claude" }).querySelector('[data-slot="avatar"]'), null);
+	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
+	assert.notEqual(view.getByRole("button", { name: "Codex", exact: true }).querySelector('[data-slot="avatar"][data-shape="square"]'), null);
+	await view.click(view.getByRole("button", { name: "Cursor", exact: true }));
+	assert.notEqual(view.queryByRole("button", { name: "Open in Cursor" }), null);
+	await view.rerender(props);
+	assert.notEqual(view.queryByRole("button", { name: "Open in Cursor" }), null);
+	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
+	await view.click(view.getByRole("button", { name: "VS Code", exact: true }));
+	assert.notEqual(view.queryByRole("button", { name: "Open in VS Code" }), null);
+	assert.equal(view.getByRole("button", { name: "Open in VS Code" }).querySelector("svg")?.getAttribute("viewBox"), "4 4 16 16");
+	await view.rerender(props);
+	assert.notEqual(view.queryByRole("button", { name: "Open in VS Code" }), null);
+	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
+	assert.notEqual(view.getByRole("button", { name: "Rovo CLI", exact: true }).querySelector('[data-slot="avatar"][data-shape="square"]'), null);
+	await view.click(view.getByRole("button", { name: "Rovo CLI", exact: true }));
+	assert.equal(view.getByRole("button", { name: "Open in Rovo CLI" }).querySelector('[data-slot="avatar"]'), null);
+	await view.click(view.getByRole("button", { name: "Open in Rovo CLI" }));
+	assert.equal(view.getAllByRole("status").some((status) => status.textContent === "Command copied"), true);
+	localStorage.removeItem("jira-local-agent-last-used");
+});
+
+test("Open in lets a caller choose an app and repeat its action", async () => {
+	const view = await renderComponent({
+		source: `import React, { useState } from "react";
+			import { OpenIn } from "@/components/ui-custom/open-in";
+			export default function OpenInTest() {
+				const [open, setOpen] = useState(false);
+				const [app, setApp] = useState("Editor");
+				const [status, setStatus] = useState("");
+				return <OpenIn app={{ name: app, icon: <span>icon</span> }} contentLabel="Choose app" onAppClick={() => setStatus("Opened " + app)} onOpenChange={setOpen} open={open} status={status}><button onClick={() => { setApp("Terminal"); setOpen(false); }}>Terminal</button></OpenIn>;
+			}`,
+	});
+	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
+	await view.click(view.getByRole("button", { name: "Terminal" }));
+	await view.click(view.getByRole("button", { name: "Open in Terminal" }));
+	assert.equal(view.getByRole("status").textContent, "Opened Terminal");
+});
+
+test("the local agent menu copies the current work item prompt", async (t) => {
 	const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 	const copied = [];
 	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value) => copied.push(value) } });
 	t.after(() => { if (original) Object.defineProperty(navigator, "clipboard", original); else delete navigator.clipboard; });
-	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing", description: "Carry the artwork" } });
+	const view = await renderLocalAgent("JiraLocalAgentMenu", { workItem: { code: "PAY-118", summary: "Billing", description: "Carry the artwork" } });
 	await view.click(view.getByRole("button", { name: "Copy prompt" }));
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork"]);
 	assert.equal(view.getByRole("button", { name: "Prompt copied" }) !== null, true);
 	assert.equal(view.getAllByRole("status").some((status) => status.textContent === "Prompt copied"), true);
-	await view.rerender({ workItem: { code: "PAY-119", title: "Runbook", description: "Write it" } });
+	await view.rerender({ workItem: { code: "PAY-119", summary: "Runbook", description: "Write it" } });
 	await view.click(view.getByRole("button", { name: "Prompt copied" }));
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork", "PAY-119: Runbook\n\nWrite it"]);
 });
 
-test("Development does not claim a rejected clipboard write succeeded", async (t) => {
+test("the local agent menu does not claim a rejected clipboard write succeeded", async (t) => {
 	const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { throw new Error("Denied"); } } });
 	t.after(() => { if (original) Object.defineProperty(navigator, "clipboard", original); else delete navigator.clipboard; });
-	const view = await renderDetails();
+	const view = await renderLocalAgent("JiraLocalAgentMenu", { workItem: { code: "PAY-118", summary: "Billing", description: "" } });
 	await view.click(view.getByRole("button", { name: "Copy prompt" }));
 	assert.equal(view.getByRole("button", { name: "Could not copy prompt" }) !== null, true);
 });
@@ -252,4 +326,17 @@ test("field actions support keyboard reordering without a drag handle", async ()
 	await view.press(moveUp, "Enter");
 	assert.deepEqual(fieldLabels(), ["Priority", "Assignee"]);
 	assert.equal(view.queryByRole("button", { name: "Drag to reorder Priority field" }), null);
+});
+
+test("Agents can be reordered independently and keeps its position when the panel remounts", async () => {
+	const view = await renderDetails({ showAgents: true });
+	assert.deepEqual(fieldLabels(), ["Assignee", "Agents", "Priority"]);
+	await fieldAction(view, "Agents", "Move down");
+	assert.deepEqual(fieldLabels(), ["Assignee", "Priority", "Agents"]);
+	await fieldAction(view, "Agents", "Move up");
+	await fieldAction(view, "Agents", "Move up");
+	assert.deepEqual(fieldLabels(), ["Agents", "Assignee", "Priority"]);
+	assert.notEqual(view.queryByRole("button", { name: "Agent sessions" }), null);
+	await view.rerender({ showAgents: true, sidePanel: true });
+	assert.deepEqual(fieldLabels(), ["Agents", "Assignee", "Priority"]);
 });

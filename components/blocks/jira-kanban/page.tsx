@@ -226,7 +226,7 @@ export default function JiraKanbanPage({
 				viewTabs={viewTabs}
 			/>
 			<div className="flex min-h-0 min-w-0 flex-1">
-				<JiraKanban
+				<JiraKanban variant="standard"
 					activeCardCode={activeCardCode}
 					agents={agents}
 					ariaLabel={ariaLabel}

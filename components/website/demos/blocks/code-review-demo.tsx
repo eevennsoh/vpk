@@ -11,7 +11,7 @@ import {
 	CodeReview,
 	type CodeReviewAgentVariant,
 } from "@/components/blocks/code-review";
-import { JGP_CLAUDE_CODE_AGENT_PROFILE } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
+import { JGP_CLAUDE_CODE_AGENT_PROFILE } from "@/components/projects/jira-golden-journey-v1/data/agent-chat-data";
 import { Button } from "@/components/ui/button";
 
 interface CodeReviewDemoVariant {

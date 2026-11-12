@@ -36,6 +36,7 @@ test("attaching a complete detached session produces a working chin activity", (
 
 	assert.equal(activity.id, CLAUDE.id);
 	assert.equal(activity.name, "Claude");
+	assert.equal(activity.sessionTitle, CLAUDE.title);
 	assert.equal(activity.state, "working");
 	assert.equal(activity.agentBrandName, "claude");
 });

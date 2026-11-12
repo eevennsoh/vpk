@@ -9,16 +9,16 @@ import {
 	SkillProfileCover,
 	SkillProfileMeta,
 	useSkillMdDraft,
-} from "@/components/blocks/skills-directory/components/skill-md-editor";
-import { DEFAULT_SKILLS, type SkillsDirectorySkill } from "@/app/data/directory/skills";
+} from "@/components/blocks/skill-directory/components/skill-md-editor";
+import { DEFAULT_SKILLS, type SkillDirectorySkill } from "@/app/data/directory/skills";
 import { cn } from "@/lib/utils";
 
 const SURFACE_CLASSNAME = "min-h-[760px] w-full";
 
-const SAMPLE_SKILL: SkillsDirectorySkill =
+const SAMPLE_SKILL: SkillDirectorySkill =
 	DEFAULT_SKILLS.find((skill) => skill.id === "design-landing-page") ?? DEFAULT_SKILLS[0];
 
-const EMPTY_SKILL: SkillsDirectorySkill = {
+const EMPTY_SKILL: SkillDirectorySkill = {
 	id: "untitled-skill",
 	name: "Untitled skill",
 	description: "Describe when this skill should be used and what it does.",
@@ -34,12 +34,12 @@ const EMPTY_SKILL: SkillsDirectorySkill = {
 
 /**
  * Skill-config showcase: the same SKILL.md-standard editing experience as the
- * skills-directory detail view — a globe cover, an editable name + human
+ * skill-directory detail view — a globe cover, an editable name + human
  * description, the in-editor frontmatter card, and a markdown body. No bottom
  * apps panel (apps are referenced via the editor's `/` command). State is the
  * shared {@link useSkillMdDraft} hook; the detail view adds the Save/Cancel layer.
  */
-function SkillConfigDemoScreen({ skill, idPrefix }: Readonly<{ skill: SkillsDirectorySkill; idPrefix: string }>) {
+function SkillConfigDemoScreen({ skill, idPrefix }: Readonly<{ skill: SkillDirectorySkill; idPrefix: string }>) {
 	const { config, handleTextChange } = useSkillMdDraft(skill);
 
 	return (

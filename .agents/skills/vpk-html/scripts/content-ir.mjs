@@ -183,9 +183,7 @@ export function briefContractIssues(brief, { type = "document", skillRoot = SKIL
 	const excluded = { "iso-kit": "anatomy-hero", "anatomy-hero": "iso-kit" }[engine];
 	if (excluded && engines.has(excluded)) error("brief.figure_engine", `B5: figure_engine ${engine} excludes ${excluded} figures`);
 	if (engine === "both" && !(engines.has("iso-kit") && engines.has("anatomy-hero"))) error("brief.figure_engine", "B5: figure_engine both needs at least one iso-kit and one anatomy-hero figure");
-	const heroes = figures.filter(figure => figure.engine === "anatomy-hero").length;
-	const deviates = (Array.isArray(brief.explicit_deviations) ? brief.explicit_deviations : []).some(entry => /anatomy/i.test(String(entry)));
-	if (heroes > 1 && !deviates) error("brief.figures", `B6: ${heroes} anatomy-hero figures; one per document unless explicit_deviations names the anatomy exception`);
+	// B6 is retired: a document may carry several anatomy heroes.
 	if (brief.figure_engine_source === "default" && !(Array.isArray(brief.assumptions) && brief.assumptions.length > 0)) {
 		issues.push(finding("content.brief", "warning", "brief.assumptions", "B7: a defaulted figure engine must be listed in assumptions"));
 	}

@@ -4,7 +4,7 @@ import {
 	createAgentAutomationRule,
 	type AgentAutomationRule,
 	type AgentTriggerProviderId,
-} from "@/components/blocks/triggers/data/trigger-catalog";
+} from "@/components/blocks/trigger/data/trigger-catalog";
 import {
 	createAutomationRuleFromEvent,
 	getAgentAutomationRules,

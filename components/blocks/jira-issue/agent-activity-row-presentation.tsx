@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, type ReactElement } from "react";
+import { useCallback, useRef, type ReactElement } from "react";
 import { useReducedMotion } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
@@ -16,15 +16,14 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { JiraIssueAgentLinkFlashOverlay, type JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
-import { useProjectButterInvocationActions, useProjectButterInvocationEnabled, useProjectButterInvocationPhase, useProjectButterInvocationPreview, useProjectButterInvocationSource } from "@/components/blocks/jira-issue/project-butter-invocation";
+import { useProjectButterInvocationPhase, useProjectButterInvocationPreview } from "@/components/blocks/jira-issue/project-butter-invocation";
 import { matchesInvocationAgent } from "@/components/blocks/jira-issue/project-butter-invocation-model";
-import { ProjectButterMenuAgentPicker } from "@/components/blocks/jira-issue/project-butter-add-agent";
 import { JiraIssueAgentHandoffLabel } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
 import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issue/agent-session-unlink-button";
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
@@ -36,7 +35,7 @@ import type {
 	JiraIssueAgentActivityAvatarLayout,
 	JiraIssueAgentActivityIndicatorRenderer,
 } from "./agent-activity";
-import { getJiraIssueAgentAvatarSize, getJiraIssueAgentRowInset } from "./agent-activity-avatar";
+import { getJiraIssueAgentRowInset } from "./agent-activity-avatar";
 
 export type JiraIssueAgentAssignment = Partial<
 	Pick<
@@ -234,7 +233,7 @@ export function JiraIssueAgentStatusAffordance({
 	);
 }
 
-function JiraIssueAgentRowLabel({
+export function JiraIssueAgentRowLabel({
 	isAwaitingInput,
 	isWorking,
 	rowLabel,
@@ -247,7 +246,7 @@ function JiraIssueAgentRowLabel({
 		return (
 			<span className="flex min-w-0 flex-1 items-baseline overflow-hidden text-sm leading-5 text-text">
 				<span className="block min-w-0 truncate text-sm leading-5">{rowLabel}</span>
-				<AnimatedDots />
+				<AnimatedDot />
 			</span>
 		);
 	}
@@ -275,6 +274,7 @@ function JiraIssueAgentRowLabel({
 export function JiraIssueAgentRowContent({
 	activities: incomingActivities,
 	avatarLayout,
+	avatarSize = 24,
 	featuredActivity,
 	isAwaitingInput,
 	isWorking,
@@ -286,6 +286,7 @@ export function JiraIssueAgentRowContent({
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	avatarLayout: JiraIssueAgentActivityAvatarLayout;
+	avatarSize?: 20 | 24;
 	featuredActivity: JiraIssueAgentActivity | undefined;
 	isAwaitingInput: boolean;
 	isWorking: boolean;
@@ -315,7 +316,7 @@ export function JiraIssueAgentRowContent({
 					vpkLogo={featuredActivity.agentVpkLogo}
 					fallbackText={getAgentInitial(featuredActivity.name)}
 					label={featuredActivity.name}
-					sizePx={getJiraIssueAgentAvatarSize(featuredActivity.agentBrandName, featuredActivity.avatarSrc)}
+					sizePx={avatarSize}
 				/>
 			</span>
 		);
@@ -336,7 +337,7 @@ export function JiraIssueAgentRowContent({
 						fallbackText={getAgentInitial(activity.name)}
 						key={activity.id}
 						label=""
-						sizePx={getJiraIssueAgentAvatarSize(activity.agentBrandName, activity.avatarSrc)}
+						sizePx={avatarSize}
 					/>
 				))}
 			</AvatarGroup>
@@ -348,8 +349,9 @@ export function JiraIssueAgentRowContent({
 					agents={activities.map(toAgentLoadingAgent)}
 					announce={false}
 					className="shrink-0"
-					intro={puzzleHandoff && !reduce && selectedActivity ? { agentId: selectedActivity.id, avatarSize: getJiraIssueAgentAvatarSize(selectedActivity.agentBrandName, selectedActivity.avatarSrc) } : undefined}
 					key={selectedAgent?.id ?? "default"}
+					variant="vertical"
+					verticalAvatarSize={avatarSize}
 				/>
 			</span>
 		);
@@ -396,12 +398,6 @@ export function JiraIssueAgentAssignmentHandle({
 	showAssignmentFlyout: boolean;
 }>): ReactElement {
 	const assignmentHandleRef = useRef<HTMLDivElement>(null);
-	const pickerId = useId();
-	const invocation = useProjectButterInvocationActions();
-	const invocationEnabled = useProjectButterInvocationEnabled();
-	const phase = useProjectButterInvocationPhase();
-	const source = useProjectButterInvocationSource();
-	const pickerOpen = phase === "choosing" && source === "session";
 	const resolveAssignmentAnchor = useCallback(() => (
 		assignmentHandleRef.current?.closest<HTMLElement>('[data-slot="jira-issue-agent-row"]')
 			?? assignmentHandleRef.current
@@ -413,7 +409,7 @@ export function JiraIssueAgentAssignmentHandle({
 	}
 
 	return (
-		<div aria-controls={invocationEnabled && assignment?.onAssignedAgentIdsChange && pickerOpen ? pickerId : undefined} className="flex h-full min-w-0 flex-1 items-center" ref={assignmentHandleRef}>
+		<div className="flex h-full min-w-0 flex-1 items-center" ref={assignmentHandleRef}>
 			<AgentAssignment
 				addAgentLabel={assignment?.addAgentLabel ?? (activities.every((activity) => activity.role === "viewer") ? "New session" : undefined)}
 				agents={agents}
@@ -437,7 +433,6 @@ export function JiraIssueAgentAssignmentHandle({
 				onDeleteAssignedAgent={assignment?.onDeleteAssignedAgent}
 				onRenameAssignedAgent={assignment?.onRenameAssignedAgent}
 				onOpenChange={onOpenChange}
-				onRequestAddAgent={invocationEnabled && invocation && assignment?.onAssignedAgentIdsChange ? () => invocation.open("session") : undefined}
 				onStartNewSession={assignment?.onStartNewSession}
 				openMode="click"
 				pinnedItemsLabel={assignment?.pinnedItemsLabel}
@@ -446,7 +441,6 @@ export function JiraIssueAgentAssignmentHandle({
 				trigger={rowHandle}
 				usedAgentIds={assignment?.usedAgentIds}
 			/>
-			{invocationEnabled && assignment?.onAssignedAgentIdsChange ? <ProjectButterMenuAgentPicker assignment={assignment} id={pickerId} source="session" triggerRef={assignmentHandleRef} /> : null}
 		</div>
 	);
 }

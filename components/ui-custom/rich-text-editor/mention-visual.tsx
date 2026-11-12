@@ -206,6 +206,7 @@ export function RichTextMentionVisualMark({
 		// inline tag/pill chips strip it so the border doesn't clutter mid-sentence.
 		return (
 			<Avatar
+				animate={!isCompactMenu}
 				aria-hidden={true}
 				className={cn(!isMenu && "after:border-0", className)}
 				shape={visual.shape ?? (category === "subagent" ? "hexagon" : "circle")}

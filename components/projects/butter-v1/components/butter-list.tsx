@@ -1,0 +1,55 @@
+"use client";
+
+import { useLayoutEffect, useMemo } from "react";
+import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import { JiraList, type JiraListProps, type JiraListRowData } from "@/components/blocks/jira-list";
+import { cn } from "@/lib/utils";
+
+interface ButterListProps {
+	addAgentLabel: string;
+	columns: readonly JiraKanbanColumnData[];
+	centered?: boolean;
+	getProps: (columns: readonly JiraKanbanColumnData[]) => JiraListProps;
+	onVisibleRowsChange: (rows: readonly JiraListRowData[]) => void;
+	rowFlash: JiraListProps["rowFlash"];
+	agentSessionDropIntent?: JiraListProps["agentSessionDropIntent"];
+	onTrailingContentUnderlapChange: JiraListProps["onTrailingContentUnderlapChange"];
+	scrollEndInset: number;
+	trailingOverlayRef: JiraListProps["trailingOverlayRef"];
+}
+
+const PANEL_END_GAP_PX = 24;
+
+export function ButterList({
+	addAgentLabel,
+	columns,
+	centered = false,
+	getProps,
+	onVisibleRowsChange,
+	scrollEndInset,
+	...layout
+}: Readonly<ButterListProps>) {
+	const listProps = useMemo(() => getProps(columns), [columns, getProps]);
+	useLayoutEffect(() => {
+		onVisibleRowsChange(listProps.rows);
+	}, [listProps.rows, onVisibleRowsChange]);
+
+	return (
+		<div className={cn(
+			// Add the board's transparent 2px drop border to match its painted gutter.
+			"min-h-0 flex-1 overflow-hidden ps-6.5",
+			centered ? "flex flex-col py-6" : "pb-6 pt-0.5",
+			scrollEndInset > 0 ? "pe-0" : "pe-4 md:pe-5",
+		)}>
+			<JiraList
+				{...listProps}
+				{...layout}
+				addAgentLabel={addAgentLabel}
+				bordered={false}
+				footerCountAlignment="end"
+				className={cn(listProps.className, "max-h-full", centered && "my-auto")}
+				scrollEndInset={scrollEndInset > 0 ? scrollEndInset + PANEL_END_GAP_PX : 0}
+			/>
+		</div>
+	);
+}

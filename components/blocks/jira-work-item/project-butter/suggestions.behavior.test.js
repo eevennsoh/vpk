@@ -109,8 +109,12 @@ test("the shared stack accepts and dismisses Butter fields and supports undo", a
 	await view.click(view.getByRole("button", { name: "Show as list" }));
 	await view.click(view.getByRole("button", { name: "Accept due date" }));
 	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "true");
+	await view.click(view.getByRole("button", { name: /suggestions/iu }));
+	await view.click(view.getByRole("button", { name: "Show as list" }));
 	await view.click(view.getByRole("button", { name: "Dismiss parent" }));
 	assert.equal(document.querySelector('[data-field-id="parent"]')?.getAttribute("data-field-filled"), "false");
+	await view.click(view.getByRole("button", { name: /suggestions/iu }));
+	await view.click(view.getByRole("button", { name: "Show as list" }));
 	await view.click(view.getByRole("button", { name: "Undo due date" }));
 	assert.equal(document.querySelector('[data-field-id="dueDate"]')?.getAttribute("data-field-filled"), "false");
 	await view.unmount();

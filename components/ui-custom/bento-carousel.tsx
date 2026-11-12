@@ -74,7 +74,7 @@ export interface CarouselArrowProps {
 
 /**
  * Floating prev/next control for the small-screen carousel. Mirrors the
- * agent-templates directory carousel control. Render inside an `AnimatePresence`
+ * agent-template directory carousel control. Render inside an `AnimatePresence`
  * and only when that side can scroll, so the spring runs on mount/unmount. Hidden
  * at `sm:`+ (the desktop grid has no horizontal scroll).
  */

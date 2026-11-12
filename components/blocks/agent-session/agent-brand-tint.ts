@@ -26,12 +26,18 @@ import { SOFTWARE_AGENT_COLOR } from "../../../lib/agent-avatar-visuals.ts";
 
 const BRAND_TINT_HEX: Readonly<Record<string, string>> = {
 	claude: "#d97757",
+	canva: "#00c4cc",
 	cursor: "#26251e",
+	figma: "#a259ff",
 	github: "#292a2e",
+	"google-drive": "#00ac47",
 	"openai-codex": "#3941ff",
 	"jira coding agent": SOFTWARE_AGENT_COLOR,
 	"jira-coding": SOFTWARE_AGENT_COLOR,
+	atlassian: "#1868db",
 	rovo: "#1868db",
+	"rovo dev": "#1868db",
+	slack: "#36c5f0",
 };
 
 /**
@@ -44,10 +50,11 @@ const THEMEABLE_BRAND_TINT_VARIABLES: Readonly<Record<string, string>> = {
 	github: "--color-icon",
 	"github copilot": "--color-icon",
 	"github-copilot": "--color-icon",
+	notion: "--color-icon",
 };
 
 /** Neutral stand-in when a brand has no mapped mark colour. */
-export const AGENT_BRAND_TINT_FALLBACK = "var(--color-bg-accent-gray-bolder)";
+export const AGENT_BRAND_TINT_FALLBACK = "var(--ds-background-accent-gray-bolder)";
 
 /** The brand's mark colour as a CSS string, or `undefined` when unmapped. */
 export function resolveAgentBrandTintHex(tintSeed: string | undefined): string | undefined {

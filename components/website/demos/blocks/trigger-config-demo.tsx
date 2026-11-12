@@ -13,18 +13,18 @@ import {
 } from "@/components/blocks/trigger-config";
 import {
 	type AgentAutomationRule,
-} from "@/components/blocks/triggers/page";
-import { DEFAULT_CONFIGURED_AUTOMATION_RULES } from "@/components/blocks/triggers/data/trigger-catalog";
+} from "@/components/blocks/trigger/page";
+import { DEFAULT_CONFIGURED_AUTOMATION_RULES } from "@/components/blocks/trigger/data/trigger-catalog";
 import {
-	ConversationStartersDialog,
+	ConversationStarterDialog,
 	DEFAULT_STARTER_ICON,
 	type ConversationStarter,
 	type StarterIconKey,
-} from "@/components/blocks/conversation-starters";
+} from "@/components/blocks/conversation-starter";
 import { cn } from "@/lib/utils";
 
 const AGENT_DEMO_SURFACE_CLASSNAME = "min-h-[852px] w-full";
-const TRIGGER_MANAGE_DOCS_PATH = "/components/blocks/triggers#manage";
+const TRIGGER_MANAGE_DOCS_PATH = "/components/blocks/trigger#manage";
 
 const initialAgentConfig: AgentConfigFormValue = {
 	name: "",
@@ -210,7 +210,7 @@ export function TriggerConfigDemoFull() {
 					/>
 				</AgentContent>
 			</Agent>
-			<ConversationStartersDialog
+			<ConversationStarterDialog
 				open={activeDirectory === "conversationStarters"}
 				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
 				starters={conversationStarterDialogValue}
@@ -261,7 +261,7 @@ export function TriggerConfigDemoEmpty() {
 					/>
 				</AgentContent>
 			</Agent>
-			<ConversationStartersDialog
+			<ConversationStarterDialog
 				open={activeDirectory === "conversationStarters"}
 				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
 				starters={conversationStarterDialogValue}

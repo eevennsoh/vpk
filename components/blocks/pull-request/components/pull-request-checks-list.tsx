@@ -236,8 +236,7 @@ function checkRowLinkProps(checkUrl: string | undefined) {
  * `text-xs` title line, and a content-sized height instead of the menu's fixed
  * 44px. The byline stays in the DOM as screen-reader text, since it carries the
  * failure reason and elapsed time. Rows are read-only status lines (no Fix
- * action, no link glyph), and hover matches the flyout's summary row (the host
- * sets the row radius).
+ * action or link glyph). Linked rows retain their hover and focus treatment.
  */
 const COMPACT_ROW_CLASS_NAME =
 	"h-auto! min-h-6 grid-cols-[16px_minmax(0,1fr)]! gap-x-1! px-1! py-1! [&_.rich-text-command-menu-avatar]:size-4! [&_.menu-row-title]:text-xs! [&_.menu-row-title]:leading-4! [&_.menu-row-byline]:sr-only";
@@ -259,7 +258,8 @@ function CheckRow({
 	return (
 		<li
 			className={cn(
-				"group/check-row rich-text-command-menu-item hover:bg-bg-neutral-subtle-hovered! focus-visible:bg-bg-neutral-subtle-hovered! focus-visible:outline-none",
+				"group/check-row rich-text-command-menu-item",
+				(!compact || check.url) && "hover:bg-bg-neutral-subtle-hovered! focus-visible:bg-bg-neutral-subtle-hovered! focus-visible:outline-none",
 				compact ? COMPACT_ROW_CLASS_NAME : undefined,
 				isFailed && !compact ? "grid-cols-[24px_minmax(0,1fr)_auto]!" : undefined,
 				bleed ? "-mx-2 w-[calc(100%+1rem)]!" : undefined,

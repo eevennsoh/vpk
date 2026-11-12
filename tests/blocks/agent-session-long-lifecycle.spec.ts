@@ -4,6 +4,72 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const AGENT_SESSION_URL = appUrl("/components/blocks/agent-session");
 
+for (const [width, side] of [[1280, "right"], [1000, "left"]] as const) {
+	test(`teammate session tooltip opens on the ${side} at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 720 });
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.goto(appUrl("/components/blocks/agent-assignment"));
+		await page.getByRole("button", { name: "Edit agents", exact: true }).first().click();
+		await page.getByRole("button", { name: /Sessions from your teammates/u }).click();
+		const card = page.getByTestId("agent-session-row-readiness-checker").locator("article");
+		await page.mouse.move(0, 0);
+		await card.hover({ position: { x: 8, y: 8 } });
+		const tooltip = page.locator('[data-slot="tooltip-content"]').filter({ hasText: "only Priya Raman can act on it" });
+		await expect(tooltip).toBeVisible();
+		await expect(tooltip).toHaveAttribute("data-side", side);
+		const cardBox = await card.boundingBox();
+		const tooltipBox = await tooltip.boundingBox();
+		if (cardBox === null || tooltipBox === null) throw new Error("Session card and tooltip must be visible");
+		if (side === "right") expect(tooltipBox.x).toBeGreaterThanOrEqual(cardBox.x + cardBox.width);
+		else expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(cardBox.x);
+	});
+}
+
+test("long session lifecycle glyphs match the short row's 24px slot", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(`${AGENT_SESSION_URL}#local-—-long`);
+	for (const [section, states] of [
+		["Local — long", ["Finished"]],
+		["Cloud — long", ["Working", "Needs input", "Finished"]],
+	] as const) {
+		const example = page.getByRole("heading", { name: section }).locator("xpath=../../..");
+		for (const state of states) {
+			const indicator = example.getByRole("button", { name: state, exact: true }).first();
+			const glyph = state === "Working" ? indicator.locator('[data-slot="spinner"]') : indicator.locator('[data-slot="icon-tile"]');
+			const slot = state === "Working" ? glyph.locator("..") : glyph;
+			await expect(slot).toHaveCSS("width", "24px");
+			await expect(slot).toHaveCSS("height", "24px");
+			if (state === "Working") {
+				await expect(glyph).toHaveCSS("width", "16.75px");
+				await expect(glyph).toHaveCSS("height", "16.75px");
+			} else {
+				await expect(glyph.locator("svg")).toHaveCSS("width", "12px");
+				await expect(glyph.locator("svg")).toHaveCSS("height", "12px");
+			}
+		}
+	}
+});
+
+test("viewer and owner working indicators stay centered in the assignment menu", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	const trigger = page.getByRole("button", { name: "2 agents: Working" });
+	await trigger.focus();
+	await page.keyboard.press("Enter");
+	const menu = page.locator('[aria-label="Agent assignment"]');
+	await expect(menu).toBeVisible();
+	const indicators = menu.locator('[aria-label="Working"]');
+	await expect(indicators).toHaveCount(2);
+	for (const indicator of await indicators.all()) {
+		const slot = await indicator.boundingBox();
+		const spinner = await indicator.locator('[data-slot="spinner"]').boundingBox();
+		if (slot === null || spinner === null) throw new Error("Working indicator must be visible");
+		expect(spinner.x + spinner.width / 2).toBeCloseTo(slot.x + slot.width / 2, 1);
+		expect(spinner.y + spinner.height / 2).toBeCloseTo(slot.y + slot.height / 2, 1);
+	}
+});
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`Jira agent chin swaps its status for a chevron on hover and keyboard focus (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });

@@ -48,6 +48,8 @@ export interface JiraListGoal {
 
 export interface JiraListAssignedAgent extends Pick<AgentAssignmentAgent, "host" | "invokedBy" | "role"> {
 	id: string;
+	sessionTitle?: string;
+	timeLabel?: string;
 	name: string;
 	byline?: string;
 	avatarSrc?: string;
@@ -111,6 +113,7 @@ export type JiraListAgentSessionDropIntent =
 export interface JiraListRowFlash {
 	readonly issueKeys: readonly string[];
 	readonly color?: string;
+	readonly variant?: "sweep";
 	/** Bumped once per drop, so a repeat drop replays the acknowledgement. */
 	readonly token: number;
 }
@@ -120,8 +123,10 @@ export interface JiraListProps {
 	addAgentLabel?: string;
 	activeIssueKey?: string;
 	ariaLabel?: string;
+	bordered?: boolean;
 	className?: string;
 	createLabel?: string;
+	footerCountAlignment?: "center" | "end";
 	totalCountLabel?: string;
 	visibleCount?: number;
 	selectedIssueKeys?: ReadonlySet<string>;
@@ -137,6 +142,8 @@ export interface JiraListProps {
 	onCreate?: (insertion?: JiraListInsertion) => void;
 	onAddColumn?: (afterColumnId: JiraListColumnAnchorId) => void;
 	onCopyLink?: (row: JiraListRowData) => void;
+	/** Updates a work item's due date as a local calendar date (YYYY-MM-DD). */
+	onDueDateChange?: (issueKey: string, dueDate: string | undefined) => void;
 	onDraftWorkItemCancel?: () => void;
 	onDraftWorkItemAssigneeChange?: (assignee: JiraListPerson | undefined) => void;
 	onDraftWorkItemDueDateChange?: (dueDate: string | undefined) => void;
@@ -156,6 +163,11 @@ export interface JiraListProps {
 	onStoryPointsChange?: (issueKey: string, points: number | undefined) => void;
 	renderAgentSessions?: (row: JiraListRowData) => ReactNode;
 	onToggleExpand?: (issueKey: string) => void;
+	hierarchyExpansion?: {
+		allExpanded: boolean;
+		disabled: boolean;
+		onToggleAll: () => void;
+	};
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
 	/** One-shot acknowledgement for rows a dropped session created or joined. */
 	rowFlash?: JiraListRowFlash;

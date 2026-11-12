@@ -107,9 +107,9 @@ export function EmojiReactionPill({
 					</h1>
 					<p>
 						{formatReactionActorNames(reactorNames)}{" "}
-						<span className="text-text-subtlest">
+						<span>
 							reacted with <span aria-hidden="true">{emoji}</span>
-						<span className="sr-only">{emojiLabel(emoji)}</span>
+							<span className="sr-only">{emojiLabel(emoji)}</span>
 						</span>
 					</p>
 				</TooltipContent>

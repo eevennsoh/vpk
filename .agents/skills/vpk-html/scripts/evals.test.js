@@ -17,7 +17,7 @@ test("committed vpk-html evaluation corpus is complete and catalog claims are cu
 	const result = checkEvaluationSystem();
 
 	assert.equal(result.ok, true, result.issues.join("\n"));
-	assert.equal(result.evalCount, 11);
+	assert.equal(result.evalCount, 14);
 	assert.equal(result.playbookCount, 4);
 	assert.deepEqual(result.catalogCounts, {
 		demos: 133,
@@ -67,6 +67,26 @@ test("evaluation corpus rejects duplicate ids and incomplete reader jobs", async
 	const issues = validateEvalCorpus(fixture, { minimumEvalCount: 2, skillRoot: SKILL_ROOT });
 	assert.match(issues.join("\n"), /duplicate id 1/);
 	assert.match(issues.join("\n"), /reader_job\.deep_audit/);
+});
+
+test("the story-kit template is valid only for a story-explainer scenario", async () => {
+	const { validateEvalCorpus, STORY_KIT } = await loadEvals();
+	const scenario = (id, category) => ({
+		id,
+		name: `s${id}`,
+		category,
+		template: STORY_KIT,
+		prompt: "/vpk-html Build a two-column story explainer from the supplied notes.",
+		expected_output: "A single offline HTML story explainer.",
+		files: [],
+		viewport: { width: 1440, height: 900 },
+		reader_job: { quick_read: "Follow the story.", deep_audit: "Check the figure." },
+		expectations: ["The output is a single HTML file."],
+		human_rubric: ["The figure matches the reference."],
+	});
+	const issues = validateEvalCorpus({ version: 1, skill_name: "vpk-html", evals: [scenario(1, "story-explainer"), scenario(2, "brief")] }, { minimumEvalCount: 2, skillRoot: SKILL_ROOT }).join("\n");
+	assert.doesNotMatch(issues, /evals\[0\]\.template/);
+	assert.match(issues, /template "story-kit" is only for category "story-explainer"/);
 });
 
 test("catalog documentation check reports stale generated counts", async () => {
@@ -137,9 +157,30 @@ test("build command exposes the vpk-html evaluation health check", () => {
 
 	assert.match(buildSource, /--check-evals/);
 	assert.match(skillSource, /references\/evaluation\.md/);
-	assert.match(skillSource, /reader's job/i);
+	assert.match(skillSource, /reader[’']s job/i);
 	assert.match(evaluationSource, /If no compatible viewer is installed/);
 	assert.match(evaluationSource, /review\.md/);
+});
+
+test("evaluation.md's run-every-suite glob reaches every test file under scripts/", () => {
+	const evaluation = fs.readFileSync(path.join(SKILL_ROOT, "references", "evaluation.md"), "utf8");
+	const command = evaluation.match(/^node --test "(\.agents\/skills\/vpk-html\/scripts\/[^"]+)"$/m);
+	assert.ok(command, "evaluation.md gives a quoted node --test glob");
+	const repoRoot = path.join(SKILL_ROOT, "..", "..", "..");
+	const matched = new Set(fs.globSync(command[1], { cwd: repoRoot }).map(file => path.resolve(repoRoot, file)));
+	const onDisk = [];
+	const walk = dir => {
+		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+			if (entry.name === "node_modules") continue;
+			const full = path.join(dir, entry.name);
+			if (entry.isDirectory()) walk(full);
+			else if (/\.test\.m?js$/.test(entry.name)) onDisk.push(full);
+		}
+	};
+	walk(path.join(SKILL_ROOT, "scripts"));
+	assert.ok(onDisk.length > 20, `found the nested suites (${onDisk.length})`);
+	const missed = onDisk.filter(file => !matched.has(file)).map(file => path.relative(SKILL_ROOT, file));
+	assert.deepEqual(missed, [], `the glob misses ${missed.length} suites`);
 });
 
 test("design-system demo derives catalog metrics instead of hard-coding them", () => {

@@ -17,6 +17,8 @@ const VM_MODULE_TEST_MARKERS = [
 	"vm.SyntheticModule",
 	"vm.SourceTextModule",
 ];
+const BATCH_TIMINGS = JSON.parse(readFileSync(new URL("./js-unit-test-timings.json", import.meta.url), "utf8")).batches;
+export const UNIT_SHARD_COUNT = 4;
 
 const TEST_FILE_CLASSIFICATION_BY_PATH = buildTestFileClassificationMap(TEST_FILE_CLASSIFICATIONS);
 const CI_INCLUDED_TEST_CLASSIFICATION_SET = new Set(CI_INCLUDED_TEST_CLASSIFICATIONS);
@@ -147,9 +149,18 @@ function parseListOptionValue(value) {
 export function parseTestSelectionArgs(argv) {
 	const prefixes = [];
 	const files = [];
+	let shard;
 
 	for (let index = 0; index < argv.length; index += 1) {
 		const arg = argv[index];
+		if (arg === "--shard" || arg.startsWith("--shard=")) {
+			const value = arg === "--shard" ? argv[++index] : arg.slice("--shard=".length);
+			if (shard || !/^[1-4]\/4$/u.test(value ?? "")) {
+				throw new Error("--shard requires a single value from 1/4 to 4/4");
+			}
+			shard = Number(value[0]);
+			continue;
+		}
 		if (arg === "--prefix") {
 			const value = argv[index + 1];
 			if (!value) {
@@ -180,9 +191,13 @@ export function parseTestSelectionArgs(argv) {
 		throw new Error(`Unknown argument: ${arg}`);
 	}
 
+	if (shard && (files.length || prefixes.length)) {
+		throw new Error("--shard cannot be combined with --file or --prefix; shards validate the full manifest");
+	}
 	return {
 		files,
 		prefixes,
+		...(shard ? { shard } : {}),
 	};
 }
 
@@ -295,7 +310,7 @@ export function assertComponentTestFilesClassified(testEntries, options) {
 // Every node:test file extension in the repo; a missing one silently drops those suites from CI.
 export const TEST_FILE_GLOBS = ["*.test.js", "*.test.mjs", "*.test.ts"];
 
-function listCandidateTestFiles() {
+export function listCandidateTestFiles() {
 	const gitResult = spawnSync("git", [
 		"ls-files",
 		"--cached",
@@ -414,23 +429,58 @@ export function buildTestFileBatches(testFiles, {
 	return batches;
 }
 
+export function batchIdentity(batch) {
+	return batch.reason === "vm-modules" ? batch.files[0] : dirname(batch.files[0]);
+}
+
+// Longest measured batches first; deterministic ties go to the lowest numbered shard.
+// Keep directory batches and their VM flags intact. New batches cost one second/file
+// until measured; changed batch sizes scale the historical median proportionally.
+export function partitionTestBatches(batches, timings = BATCH_TIMINGS) {
+	const shards = Array.from({ length: UNIT_SHARD_COUNT }, () => ({ batches: [], seconds: 0 }));
+	const weighted = batches.map((batch) => {
+		const measured = timings[batchIdentity(batch)];
+		const seconds = measured ? measured[1] * batch.files.length / measured[0] : batch.files.length;
+		return { batch, seconds };
+	}).sort((a, b) => b.seconds - a.seconds || (batchIdentity(a.batch) < batchIdentity(b.batch) ? -1 : 1));
+	for (const { batch, seconds } of weighted) {
+		const target = shards.reduce((best, shard) => shard.seconds < best.seconds ? shard : best);
+		target.batches.push(batch);
+		target.seconds += seconds;
+	}
+	return shards;
+}
+
 export function runTestFiles(testFiles, {
 	readFile = readFileSync,
 	spawn = spawnSync,
+	shard,
+	log = console.log,
+	now = () => performance.now(),
 } = {}) {
-	for (const batch of buildTestFileBatches(testFiles, { readFile })) {
+	const allBatches = buildTestFileBatches(testFiles, { readFile });
+	const batches = shard ? partitionTestBatches(allBatches)[shard - 1].batches : allBatches;
+	log(`js-unit-tests: ${shard ? `shard ${shard}/${UNIT_SHARD_COUNT}` : "unsharded"}: ${batches.length}/${allBatches.length} batches, ${batches.reduce((sum, batch) => sum + batch.files.length, 0)}/${testFiles.length} files`);
+	const timings = [];
+	let status = 0;
+	for (const batch of batches) {
+		const id = batchIdentity(batch);
+		log(`js-unit-tests: batch ${id} (${batch.files.length} files, ${batch.reason})`);
+		const started = now();
 		const result = spawn(process.execPath, [...batch.nodeArgs, "--test", ...batch.files], {
 			stdio: "inherit",
 		});
-
-		if (result.status !== 0) {
-			process.exit(result.status ?? 1);
-		}
-
-		if (result.signal) {
-			process.kill(process.pid, result.signal);
-		}
+		status = result.status ?? 1;
+		const timing = { id, files: batch.files.length, seconds: Number(((now() - started) / 1000).toFixed(3)), status, signal: result.signal ?? null };
+		timings.push(timing);
+		log(`JS_UNIT_BATCH ${JSON.stringify(timing)}`);
+		if (status !== 0) break;
 	}
+	log(`js-unit-tests: slowest batches (completed ${timings.length}/${batches.length}):`);
+	for (const timing of [...timings].sort((a, b) => b.seconds - a.seconds).slice(0, 10)) {
+		log(`  ${timing.seconds.toFixed(3)}s ${timing.id} (${timing.files} files, exit ${timing.status})`);
+	}
+	return { status, timings };
 }
 
 function exitOnManifestError(check) {
@@ -488,7 +538,7 @@ function main() {
 		process.exit(0);
 	}
 
-	runTestFiles(testFiles);
+	process.exitCode = runTestFiles(testFiles, { shard: selection.shard }).status;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

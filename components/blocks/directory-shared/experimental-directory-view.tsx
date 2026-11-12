@@ -94,6 +94,7 @@ export function ExperimentalDirectoryView<TOption extends ExperimentalDirectoryF
 						<SearchIcon label="" />
 					</InputGroupAddon>
 					<InputGroupInput
+						type="search"
 						aria-label={searchLabel}
 						placeholder={searchPlaceholder}
 						value={query}

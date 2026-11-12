@@ -58,7 +58,7 @@ test("local turns await stop and ensure thread, preserve agent/history, and appl
 		promptText: "Prompt", assistantParts: text("Pending"),
 		assistantPartStages: [
 			{ delayMs: 0, getAssistantParts: () => text("First"), onApply: () => view.calls.push("first apply") },
-			{ delayMs: 0, startsNewAssistantMessage: true, getAssistantParts: () => text("Second") },
+			{ delayMs: 0, startsNewAssistantMessage: true, assistantMessageId: "working-trace", getAssistantParts: () => text("Second") },
 		],
 		onApplyAfterResponse: () => view.calls.push("after response"),
 	});
@@ -71,6 +71,7 @@ test("local turns await stop and ensure thread, preserve agent/history, and appl
 	assert.equal(messages[1].role, "user");
 	assert.equal(messages[2].parts[0].text, "First");
 	assert.equal(messages[3].parts[0].text, "Second");
+	assert.equal(messages[3].id, "working-trace");
 	assert.notEqual(messages[2].id, messages[3].id);
 	assert.equal(selectedAgent, "kept-agent");
 });

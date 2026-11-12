@@ -69,4 +69,5 @@ export type {
 	RichTextSlashCategory,
 	RichTextSuggestionVariant,
 	RichTextSuggestionVariantConfig,
+	RichTextSuggestionRowVariant,
 } from "./types";

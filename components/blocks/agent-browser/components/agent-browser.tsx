@@ -17,11 +17,11 @@ import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import {
-	AGENT_TEMPLATES_CATEGORIES,
-	type AgentTemplatesAgent,
-	type AgentTemplatesCategory,
-	type AgentTemplatesCategoryId,
-} from "@/components/blocks/agent-templates";
+	AGENT_TEMPLATE_CATEGORIES,
+	type AgentTemplateAgent,
+	type AgentTemplateCategory,
+	type AgentTemplateCategoryId,
+} from "@/components/blocks/agent-template";
 import { AgentCard as ExperimentalDirectoryCard } from "@/components/blocks/agent-card";
 import { TemplateBuildFlow } from "@/components/blocks/agent-browser/components/template-build-flow";
 import { TWGAgentCard, DEFAULT_TWG_AGENT_CARD_SUGGESTIONS } from "@/components/blocks/twg-agent-card";
@@ -109,15 +109,15 @@ export interface AgentBrowserTemplateBuildResult {
 export interface AgentBrowserProps {
 	agents: readonly AgentBrowserAgent[];
 	categories?: readonly AgentBrowserCategory[];
-	templateCategories?: readonly AgentTemplatesCategory[];
-	templateAgents?: readonly AgentTemplatesAgent[];
+	templateCategories?: readonly AgentTemplateCategory[];
+	templateAgents?: readonly AgentTemplateAgent[];
 	sidebarGroups?: readonly AgentBrowserSidebarGroup[];
 	/** Template category selected when the browser first mounts (e.g. open straight onto "Planning"). */
-	initialTemplateCategory?: AgentTemplatesCategoryId | null;
+	initialTemplateCategory?: AgentTemplateCategoryId | null;
 	onSelectAgent?: (agent: AgentBrowserAgent) => void;
-	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
+	onSelectTemplateAgent?: (agent: AgentTemplateAgent) => void;
 	onBuildTemplateAgent?: (
-		agent: AgentTemplatesAgent,
+		agent: AgentTemplateAgent,
 		options: AgentBrowserTemplateBuildOptions
 	) => AgentBrowserTemplateBuildResult | null;
 	onOpenBuiltTemplateAgentConfig?: (profileId: string) => void;
@@ -137,8 +137,8 @@ const DEFAULT_CATEGORIES: readonly AgentBrowserCategory[] = [
 	{ id: "favorite-agents", label: "Favourite agents" },
 	{ id: "my-agents", label: "My agents" },
 ] as const;
-const DEFAULT_TEMPLATE_CATEGORIES = AGENT_TEMPLATES_CATEGORIES;
-const EMPTY_TEMPLATE_AGENTS: readonly AgentTemplatesAgent[] = [];
+const DEFAULT_TEMPLATE_CATEGORIES = AGENT_TEMPLATE_CATEGORIES;
+const EMPTY_TEMPLATE_AGENTS: readonly AgentTemplateAgent[] = [];
 const EMPTY_TEMPLATE_CAPABILITIES: readonly EntityCardCapability[] = [];
 const AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS = 8;
 const AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION = {
@@ -249,10 +249,10 @@ function filterAgents(
 }
 
 function filterTemplateAgents(
-	agents: readonly AgentTemplatesAgent[],
+	agents: readonly AgentTemplateAgent[],
 	query: string,
-	activeCategory: AgentTemplatesCategoryId | null,
-): readonly AgentTemplatesAgent[] {
+	activeCategory: AgentTemplateCategoryId | null,
+): readonly AgentTemplateAgent[] {
 	const normalized = query.trim().toLowerCase();
 	const categoryAgents = activeCategory
 		? agents.filter((agent) => agent.categoryId === activeCategory)
@@ -398,14 +398,14 @@ function toggleSelectedValue(values: readonly string[], value: string): readonly
 }
 
 function getTemplateCategoryIndex(
-	categories: readonly AgentTemplatesCategory[],
-	categoryId: AgentTemplatesCategoryId,
+	categories: readonly AgentTemplateCategory[],
+	categoryId: AgentTemplateCategoryId,
 ): number {
 	const categoryIndex = categories.findIndex((category) => category.id === categoryId);
 	return categoryIndex >= 0 ? categoryIndex : 0;
 }
 
-function deriveTemplatePublisher(agent: AgentTemplatesAgent): string {
+function deriveTemplatePublisher(agent: AgentTemplateAgent): string {
 	return agent.publisher ?? derivePublisher(agent.byline);
 }
 
@@ -507,7 +507,7 @@ function DefaultAgentBrowser({
 }: Readonly<AgentBrowserProps>) {
 	const initialCategory = categories[0]?.id ?? "all";
 	const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
-	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplatesCategoryId | null>(initialTemplateCategory);
+	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplateCategoryId | null>(initialTemplateCategory);
 	const [templateMotionDirection, setTemplateMotionDirection] = useState<AgentBrowserTemplateMotionDirection>(1);
 	const [query, setQuery] = useState("");
 	const shouldReduceMotion = useReducedMotion() ?? false;
@@ -532,7 +532,7 @@ function DefaultAgentBrowser({
 		setActiveCategory(category);
 	};
 
-	const handleSelectTemplateCategory = (categoryId: AgentTemplatesCategoryId) => {
+	const handleSelectTemplateCategory = (categoryId: AgentTemplateCategoryId) => {
 		if (categoryId === activeTemplateCategory) return;
 
 		setTemplateMotionDirection(
@@ -575,6 +575,7 @@ function DefaultAgentBrowser({
 							<SearchIcon label="" />
 						</InputGroupAddon>
 						<InputGroupInput
+							type="search"
 							aria-label="Search agents"
 							placeholder="Search agents"
 							value={query}
@@ -676,7 +677,7 @@ function ExperimentalAgentBrowser({
 	const [selectedCompanies, setSelectedCompanies] = useState<readonly string[]>([]);
 	const [selectedCategories, setSelectedCategories] = useState<readonly string[]>([]);
 	const [templateModeActive, setTemplateModeActive] = useState(Boolean(initialTemplateCategory));
-	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplatesCategoryId | null>(initialTemplateCategory);
+	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplateCategoryId | null>(initialTemplateCategory);
 	const [templateMotionDirection, setTemplateMotionDirection] = useState<AgentBrowserTemplateMotionDirection>(1);
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
@@ -814,7 +815,7 @@ function ExperimentalAgentBrowser({
 		}
 	}
 
-	function handleSelectTemplateCategory(categoryId: AgentTemplatesCategoryId) {
+	function handleSelectTemplateCategory(categoryId: AgentTemplateCategoryId) {
 		if (!activeTemplateCategoryOption || categoryId === activeTemplateCategoryOption.id) return;
 
 		setTemplateMotionDirection(
@@ -1146,15 +1147,15 @@ function ExperimentalTemplateMode({
 	onSelectAgent,
 	templates,
 }: Readonly<{
-	activeCategory: AgentTemplatesCategory;
+	activeCategory: AgentTemplateCategory;
 	motionCustom: AgentBrowserTemplateMotionCustom;
 	onBuildAgent?: (
-		agent: AgentTemplatesAgent,
+		agent: AgentTemplateAgent,
 		options: AgentBrowserTemplateBuildOptions
 	) => AgentBrowserTemplateBuildResult | null;
 	onOpenBuiltAgentConfig?: (profileId: string) => void;
-	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
-	templates: readonly AgentTemplatesAgent[];
+	onSelectAgent?: (agent: AgentTemplateAgent) => void;
+	templates: readonly AgentTemplateAgent[];
 }>) {
 	const scrollRef = useRef<HTMLDivElement | null>(null);
 	const [scrollControls, setScrollControls] = useState({ canScrollLeft: false, canScrollRight: false });
@@ -1247,7 +1248,7 @@ function ExperimentalTemplateMode({
 		}, 150);
 	}
 
-	function handleOpenBuiltAgent(agent: AgentTemplatesAgent, profileId: string) {
+	function handleOpenBuiltAgent(agent: AgentTemplateAgent, profileId: string) {
 		if (onOpenBuiltAgentConfig) {
 			onOpenBuiltAgentConfig(profileId);
 			return;
@@ -1380,7 +1381,7 @@ function ExperimentalTemplateCategoryButton({
 	onClick,
 }: Readonly<{
 	active: boolean;
-	category: AgentTemplatesCategory;
+	category: AgentTemplateCategory;
 	onClick: () => void;
 }>) {
 	return (
@@ -1451,8 +1452,8 @@ function ExperimentalTemplateCard({
 	agent,
 	onSelectAgent,
 }: Readonly<{
-	agent: AgentTemplatesAgent;
-	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
+	agent: AgentTemplateAgent;
+	onSelectAgent?: (agent: AgentTemplateAgent) => void;
 }>) {
 	return (
 		<ExperimentalDirectoryCard
@@ -1480,9 +1481,9 @@ interface DirectorySidebarProps {
 	categories: readonly AgentBrowserCategory[];
 	activeCategory: string;
 	onSelectCategory: (category: string) => void;
-	activeTemplateCategory: AgentTemplatesCategoryId | null;
-	onSelectTemplateCategory: (category: AgentTemplatesCategoryId) => void;
-	templateCategories: readonly AgentTemplatesCategory[];
+	activeTemplateCategory: AgentTemplateCategoryId | null;
+	onSelectTemplateCategory: (category: AgentTemplateCategoryId) => void;
+	templateCategories: readonly AgentTemplateCategory[];
 	sidebarGroups: readonly AgentBrowserSidebarGroup[];
 	agents: readonly AgentBrowserAgent[];
 	onSelectAgent?: (agent: AgentBrowserAgent) => void;
@@ -1544,9 +1545,9 @@ function SidebarTemplateGroup({
 	categories,
 	onSelectCategory,
 }: Readonly<{
-	activeCategory: AgentTemplatesCategoryId | null;
-	categories: readonly AgentTemplatesCategory[];
-	onSelectCategory: (category: AgentTemplatesCategoryId) => void;
+	activeCategory: AgentTemplateCategoryId | null;
+	categories: readonly AgentTemplateCategory[];
+	onSelectCategory: (category: AgentTemplateCategoryId) => void;
 }>) {
 	if (categories.length === 0) return null;
 
@@ -1662,7 +1663,7 @@ function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 	);
 }
 
-function SidebarTemplateIcon({ category }: Readonly<{ category: AgentTemplatesCategory }>) {
+function SidebarTemplateIcon({ category }: Readonly<{ category: AgentTemplateCategory }>) {
 	return (
 		<span aria-hidden className="flex size-6 shrink-0 items-center justify-center">
 			<Image
@@ -1676,7 +1677,7 @@ function SidebarTemplateIcon({ category }: Readonly<{ category: AgentTemplatesCa
 	);
 }
 
-function TemplateCategoryTitle({ category }: Readonly<{ category: AgentTemplatesCategory }>) {
+function TemplateCategoryTitle({ category }: Readonly<{ category: AgentTemplateCategory }>) {
 	return (
 		<>
 			<span className="block">{category.titleLines[0]}</span>
@@ -1712,9 +1713,9 @@ function AgentSection({ agents, onSelectAgent }: Readonly<AgentSectionProps>) {
 }
 
 interface AgentTemplateSectionProps {
-	agents: readonly AgentTemplatesAgent[];
+	agents: readonly AgentTemplateAgent[];
 	motionCustom: AgentBrowserTemplateMotionCustom;
-	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
+	onSelectAgent?: (agent: AgentTemplateAgent) => void;
 }
 
 function AgentTemplateSection({
@@ -1752,8 +1753,8 @@ function AgentTemplateCard({
 	agent,
 	onSelectAgent,
 }: Readonly<{
-	agent: AgentTemplatesAgent;
-	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
+	agent: AgentTemplateAgent;
+	onSelectAgent?: (agent: AgentTemplateAgent) => void;
 }>) {
 	return (
 		<EntityCardAgentExpandedCard

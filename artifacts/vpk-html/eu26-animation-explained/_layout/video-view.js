@@ -5,22 +5,26 @@
 		const explorer = window.__eu26Explorer;
 		const island = document.querySelector('[data-eu26-explorer-model]');
 		if (!root || !panel || !explorer || !island || root.dataset.videoMounted) return;
-		const { states, duration } = JSON.parse(island.textContent);
+		let model = null;
+		try { model = JSON.parse(island.textContent || ''); } catch { return; }
+		const duration = Number(model?.duration);
+		if (!(duration > 0)) return;
 		const active = () => root.dataset.storyMode === 'video';
 		const generateButton = panel.querySelector('[data-video-action="generate"]');
 		const status = panel.querySelector('[data-video-status]');
 		const download = panel.querySelector('[data-video-download]');
 		let exportStatus = 'idle', pollTimer = null;
-		const sync = () => {
-			if (!active()) return;
-			const state = explorer.getState();
-			const chapter = states[state.previewIndex ?? state.selectedIndex];
-			panel.querySelector('[data-video-chapter]').textContent = chapter.title;
-		};
+		// The timeline's own aria-valuetext names the chapter, so Video shows no separate chapter line.
+		const sync = () => {};
+		// Export messages are announced through the screen-reader status and shown on Generate itself (label while busy,
+		// tooltip otherwise), so the player keeps no status line under the timeline.
 		const renderState = (message, busy = false) => {
 			status.textContent = message;
 			generateButton.disabled = busy;
 			generateButton.setAttribute('aria-busy', String(busy));
+			generateButton.textContent = busy ? 'Generating…' : 'Generate video';
+			if (message && !busy) generateButton.dataset.tip = message;
+			else delete generateButton.dataset.tip;
 		};
 		const readConfig = () => JSON.parse(document.querySelector('[data-vpk-video-export]')?.textContent || '{}');
 		const generate = async () => {
@@ -61,6 +65,9 @@
 			else stage.requestFullscreen?.();
 		});
 		generateButton.addEventListener('click', generate);
+		// Generate lives in the timeline's action row, after Fullscreen, so the player has no separate title bar.
+		const fullscreenButton = root.querySelector('[data-video-action="fullscreen"]');
+		if (fullscreenButton) fullscreenButton.after(generateButton, download);
 		root.addEventListener('eu26:state', sync);
 		root.addEventListener('vpk:story-mode', event => {
 			if (event.detail.mode !== 'video') return;

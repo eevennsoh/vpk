@@ -11,7 +11,7 @@
       "html"
     ],
     "audience": "Designers and engineers explaining the Team ’26 EU finale",
-    "length_target": "Single-column Page, Slides, X Threads and Video views with a right chapter navigator and twelve states.",
+    "length_target": "Two-column Page (stacked below 1024px), Slides, X Threads and Video; twelve states and a chapter rail.",
     "viewport": {
       "width": 1440,
       "height": 900
@@ -60,7 +60,7 @@
       "Supplied timeline.mp4: 13.056 seconds, 1280x720 at 60fps. Its graduated ruler and large filmstrip inform the vertical adaptation. https://www.pengzhe.ng/#timeline"
     ],
     "explicit_deviations": [
-      "The user requested one column: a wide anchored diagram above short text in every view. Native scrolling and state jumps use heading anchors below the diagram so the text stays clear.",
+      "User asked for two columns: text left, the figure right on a paper card with a live readout; stacked on narrow screens. Paper is the only style. Each step quotes real source.",
       "The user requested orange accents, border light and a directional gradient. These override fixed-camera and grayscale anatomy defaults; all cover artwork and diagram labels are omitted.",
       "Authored camera shots coordinate focus, zoom and angles. Navigation blends poses directly; scrolling and scrubbing seek exact time. Reduced motion selects still states.",
       "Play runs a 20-second sequence, then one irregular masonry field continues until paused. A bounded pool recycles individual cards without cloning neighboring layouts.",

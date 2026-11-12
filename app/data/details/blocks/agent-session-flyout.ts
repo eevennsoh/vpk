@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_FLYOUT_DETAIL: ComponentDetail = {
 	description:
-		"The `/jira-golden-journeys-v0` queue session flyout, presented as one compact chat-history list. Every row feeds one shared, anchored flyout viewport, so hovering vertically between sessions moves and resizes the popup while its content crossfades. The default demo is the session-details hover card. Separate catalog examples cover the Agent States composer, an untracked-work suggestion, and a coding-lifecycle walkthrough. By default the block renders the four `/jira-golden-journeys-v0` sessions — awaiting user response, in progress, PR open, and PR merged.",
+		"The `/jira-golden-journey-v0` queue session flyout, presented as one compact chat-history list. Every row feeds one shared, anchored flyout viewport, so hovering vertically between sessions moves and resizes the popup while its content crossfades. The default demo is the session-details hover card. Separate catalog examples cover the Agent State composer, an untracked-work suggestion, and a coding-lifecycle walkthrough. By default the block renders the four `/jira-golden-journey-v0` sessions — awaiting user response, in progress, PR open, and PR merged.",
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { AgentSessionFlyout } from "@/components/blocks/agent-session-flyout";`,
 	usage: `import { AgentSessionFlyout } from "@/components/blocks/agent-session-flyout";
@@ -18,7 +18,7 @@ export const AGENT_SESSION_FLYOUT_DETAIL: ComponentDetail = {
 		{
 			title: "Composer flyout",
 			description:
-				'The `content="composer"` variant replaces session details with the Agent States card so the viewer can reply without leaving the list.',
+				'The `content="composer"` variant replaces session details with the Agent State card so the viewer can reply without leaving the list.',
 			demoSlug: "agent-session-flyout-demo-composer",
 		},
 		{
@@ -38,16 +38,16 @@ export const AGENT_SESSION_FLYOUT_DETAIL: ComponentDetail = {
 		{
 			name: "sessions",
 			type: "readonly JiraSidebarSessionItem[]",
-			default: "the four /jira-golden-journeys-v0 queue sessions",
+			default: "the four /jira-golden-journey-v0 queue sessions",
 			description:
-				"Sessions to render, one trigger per item feeding the shared flyout. Each item's `status` (\"awaiting-input\" | \"running\" | \"pr-open\" | \"merged\" | \"stopped\") drives the work-item status and Agent States lifecycle.",
+				"Sessions to render, one trigger per item feeding the shared flyout. Each item's `status` (\"awaiting-input\" | \"running\" | \"pr-open\" | \"merged\" | \"stopped\") drives the work-item status and Agent State lifecycle.",
 		},
 		{
 			name: "content",
 			type: '"details" | "composer" | "untracked-work"',
 			default: '"details"',
 			description:
-				"Hover flyout body. `details` is the session property card; `composer` is the Agent States card; `untracked-work` embeds the PR summary and suggests a Jira relationship.",
+				"Hover flyout body. `details` is the session property card; `composer` is the Agent State card; `untracked-work` embeds the PR summary and suggests a Jira relationship.",
 		},
 		{
 			name: "className",

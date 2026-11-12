@@ -1,42 +1,32 @@
 # Landing / product-site track
 
-The document path produces one offline single file. The **landing track** is for
-screen-first product pages and docs sites, which have different needs: they live
-on the web, may load remote assets (analytics, OG images), and ship **companion
-files** (sitemap, robots, llms.txt, vercel.json).
+Owner of the landing track for [SKILL.md](../SKILL.md). Load when you derive a landing site.
 
-This mode is opt-in and tightly scoped. A landing page is marked
-`data-vpk-landing="true"` on `<html>` — exactly parallel to the
-`data-vpk-upstream-demo` opt-in. That attribute loosens **only** the remote-asset
-and external-stylesheet checks in `check-html.mjs`. Every other offline invariant
-still applies: embedded fonts, the dark-mode token block, a `<main>` landmark,
-accessibility markers, and no unresolved `{{...}}`. The default document path is
-completely unaffected — without the attribute, the strict single-file rules hold.
+The document path produces one offline single file. The **landing track** is for screen-first product pages and docs sites, which have different needs: they live on the web, may load remote assets (analytics, OG images), and ship **companion files** (sitemap, robots, llms.txt, vercel.json).
 
-## Shells
+A landing page is marked `data-vpk-landing="true"` on `<html>`, exactly parallel to the `data-vpk-upstream-demo` opt-in. That attribute loosens **only** the remote-asset and external-stylesheet checks in `check-html.mjs`. Every other offline invariant still applies: embedded fonts, the dark-mode token block, a `<main>` landmark, accessibility markers, and no unresolved `{{...}}`. The default document path is unaffected: without the attribute, the strict single-file rules hold.
 
-`assets/landing/` ships two generated shells (regenerate with
-`node scripts/landing.mjs`):
+## Start from one of two generated shells
 
-- `landing-page.html` — hero + features + grayscale pill CTA + footer.
-- `docs-site.html` — sticky two-column nav + content.
+`assets/landing/` ships two generated shells (regenerate with `node scripts/landing.mjs`):
 
-Both use the shared vpk-html identity (Geist + Geist Mono, ADS paper/ink
-tokens, grayscale ink chrome), inline their fonts, and are responsive at
-**1280 / 880 / 480** with `prefers-reduced-motion` honored. The page eyebrow
-uses the single breadcrumb-style uppercase role; CTA chrome uses the 34px
-grayscale pill-button tokens. They are starting points — replace the copy with
-real content.
+| Shell | Layout |
+| --- | --- |
+| `landing-page.html` | Hero + features + grayscale pill CTA + footer |
+| `docs-site.html` | Sticky two-column nav + content |
 
-## Companion files
+Both use the shared vpk-html identity (Geist + Geist Mono, ADS paper/ink tokens, grayscale ink chrome), inline their fonts, and are responsive at **1280 / 880 / 480** with `prefers-reduced-motion` honored. The page eyebrow uses the single breadcrumb-style uppercase role; CTA chrome uses the 34px grayscale pill-button tokens. They are starting points; replace the copy with real content.
 
-`assets/landing/companion/` holds `.example` templates with `{{SITE_ORIGIN}}` /
-`{{CANONICAL_URL}}` placeholders:
+## Companions ship as filled examples
 
-- `sitemap.xml.example`
-- `robots.txt.example`
-- `llms.txt.example`
-- `vercel.json.example`
+`assets/landing/companion/` holds `.example` templates with `{{SITE_ORIGIN}}` / `{{CANONICAL_URL}}` placeholders; `--landing` strips `.example` and fills them:
+
+| Template | Emitted as |
+| --- | --- |
+| `sitemap.xml.example` | `sitemap.xml` |
+| `robots.txt.example` | `robots.txt` |
+| `llms.txt.example` | `llms.txt` |
+| `vercel.json.example` | `vercel.json` |
 
 ## Export
 
@@ -47,15 +37,13 @@ node scripts/build.mjs --landing artifacts/vpk-html/acme-site/acme-site.html \
 
 This:
 
-1. **Emits filled companions** into `--out` (defaults to the file's directory):
-   strips `.example`, substitutes `{{SITE_ORIGIN}}` / `{{CANONICAL_URL}}`.
-2. **Responsive-verifies** the page at 1280 / 880 / 480 — fails on horizontal
-   overflow, font load failure, console errors, or failed requests.
+1. **Emits filled companions** into `--out` (defaults to the file’s directory): strips `.example`, substitutes `{{SITE_ORIGIN}}` / `{{CANONICAL_URL}}`.
+2. **Responsive-verifies** the page at 1280 / 880 / 480 and fails on horizontal overflow, font load failure, console errors, or failed requests.
 
-## Authoring notes
+## The landing attribute relaxes one file, not the rules
 
-- Keep the `data-vpk-landing="true"` attribute — it is the only thing that
-  relaxes the offline rules, and only for this file.
-- Even with the relaxation, prefer inlined/local assets where you can; the
-  exemption exists for genuine product-site needs, not as an escape hatch for
-  ordinary documents.
+| Wrong | → Right |
+| --- | --- |
+| Dropping `data-vpk-landing="true"` while editing | → keep it: it is the only thing that relaxes the offline rules, and only for this file |
+| Remote images because the check now allows them | → inlined or local assets where you can; the exemption is for genuine product-site needs |
+| `data-vpk-landing` on an ordinary document to silence a remote-asset failure | → inline the asset |

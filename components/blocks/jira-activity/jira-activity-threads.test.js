@@ -66,10 +66,24 @@ function renderDefaultThread(overrides) {
 	});
 }
 
-test("controlled timelines can route inline agent replies to their owning session", () => {
-	assert.match(INDEX_SOURCE, /onSubmitReply\?: \(entry: JiraActivityCommentEntry, body: string\) => void/u);
-	assert.match(INDEX_SOURCE, /onSubmitReply\(entry, body\);/u);
-	assert.match(INDEX_SOURCE, /onSubmitReply=\{\(body\) => handleAddReply\(entry, body\)\}/u);
+test("controlled timelines route an inline reply and its agent mentions to the owning thread", async () => {
+	const submitted = [];
+	const view = await renderDefaultThread({
+		onSubmitReply: (entry, body, mentions) => submitted.push({ id: entry.id, body, mentions }),
+		renderReplyComposer: (composer) => React.createElement("button", { onClick: () => composer.onSubmit("Hello", ["subagent:claude"]) }, "Send reply"),
+	});
+	await view.click(view.getAllByRole("button", { name: "Reply" })[0]);
+	await view.click(view.getByRole("button", { name: "Send reply" }));
+	assert.deepEqual(submitted, [{ id: "discussion", body: "Hello", mentions: ["subagent:claude"] }]);
+});
+
+test("new reply reactions preserve the viewer's existing reaction", async () => {
+	const entry = { ...THREAD_ENTRY, replies: [{ ...THREAD_ENTRY.replies[0], reactions: [{ emoji: "👍", actorIds: ["reply-author"] }] }] };
+	const view = await renderDefaultThread({ entries: [entry] });
+	await view.click(view.getByRole("button", { name: /1 reacted with thumbs up/u }));
+	await view.rerender(threadProps({ entries: [{ ...entry, replies: [{ ...entry.replies[0], reactions: [...entry.replies[0].reactions, { emoji: "👀", actorIds: ["agent"] }] }] }] }));
+	assert.equal(view.getByRole("button", { name: /2 reacted with thumbs up/u }).getAttribute("aria-pressed"), "true");
+	assert.equal(view.getByRole("button", { name: /1 reacted with eyes/u }).getAttribute("aria-pressed"), "false");
 });
 
 test("inline review comments keep one reply level and continue the parent timeline spine", async () => {
@@ -276,13 +290,13 @@ test("comments with nested replies expose one shared header control to collapse 
 	);
 	assert.match(COMMENT_SOURCE, /const hasReplies = replies\.length > 0/u);
 	assert.match(COMMENT_SOURCE, /repliesExpanded \? "Hide all replies" : "Show all replies"/u);
-	assert.match(COMMENT_SOURCE, /aria-controls=\{repliesId\}[\s\S]*aria-expanded=\{repliesExpanded\}[\s\S]*size="icon-compact"[\s\S]*variant="outline"[\s\S]*<GrowVerticalIcon label="" \/>/u);
+	assert.match(COMMENT_SOURCE, /aria-controls=\{repliesId\}[\s\S]*aria-expanded=\{repliesExpanded\}[\s\S]*size="icon-compact"[\s\S]*variant="outline"/u);
 	assert.match(COMMENT_SOURCE, /className="aria-expanded:border-border aria-expanded:bg-bg-neutral-subtle/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /aria-expanded:border-transparent|aria-expanded:bg-transparent/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /opacity-0[\s\S]*group-hover\/activity-card:opacity-100/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/const headerAction = action \|\| repliesToggle \|\| addToChatAction \? \(\s*<div className="flex shrink-0 items-center gap-1">[\s\S]*\{action\}[\s\S]*\{addToChatAction\}[\s\S]*\{repliesToggle\}/u,
+		/const headerAction = action \|\| repliesToggle \|\| addToChatAction(?: \|\| hoverActions)? \? \(\s*<div className="flex shrink-0 items-center gap-1">[\s\S]*\{action\}[\s\S]*\{addToChatAction\}[\s\S]*\{repliesToggle\}/u,
 	);
 	// The shared control rides the card's hover scope, but stays in the tab order:
 	// a `display: none` wrapper could never satisfy its own focus-visible reveal.
@@ -702,13 +716,14 @@ test("opening a controlled reply preserves a saved draft and prefills a mention 
 	assert.equal(emptyEditor.querySelector('[data-mention-category="human"]') !== null, true);
 });
 
-function renderThreadConnectors(connectorStyle) {
+function renderThreadConnectors(connectorStyle, fadeAfterLast = false) {
 	const actor = { id: "thread-author", name: "Annie Cook", kind: "person" };
 	return renderComponent({
 		entry: "components/blocks/jira-activity/index.tsx",
 		exportName: "JiraActivity",
 		props: {
 			connectorStyle,
+			fadeAfterLast,
 			composer: null,
 			hideHeader: true,
 			currentUser: actor,
@@ -723,21 +738,29 @@ function renderThreadConnectors(connectorStyle) {
 	});
 }
 
-test("thread connectors branch only inside discussions and stop at the last visible reply", async () => {
+test("thread connectors branch only inside discussions while the spine continues to the next row", async () => {
 	const view = await renderThreadConnectors("thread");
 	const thread = document.querySelector('[data-jira-activity-entry-id="thread"]');
 	const standalone = document.querySelector('[data-jira-activity-entry-id="standalone"]');
 	const visibleBranches = () => [...thread.querySelectorAll("[data-jira-activity-thread-branch]")].filter((node) => !node.closest("[hidden]"));
 	assert.equal(thread.querySelector("[data-jira-activity-thread-stem]") !== null, true);
 	assert.equal(standalone.querySelector("[data-jira-activity-thread-stem]") === null, true);
-	assert.equal(document.querySelector("[data-jira-activity-timeline-stem]") === null, true);
-	assert.equal(visibleBranches().length, 2, "collapsed toggle and latest reply each get one branch");
+	// One continuous spine: every row but the last runs a thread-toned stem on to the next row, past its reply branches.
+	const stems = [...document.querySelectorAll("[data-jira-activity-timeline-stem]")];
+	assert.equal(stems.length, 1);
+	assert.equal(thread.contains(stems[0]), true);
+	assert.equal(stems[0].classList.contains("bg-bg-accent-gray-subtler"), true);
+	assert.equal(visibleBranches().length, 1, "only the latest reply branches from the timeline");
 	assert.equal(visibleBranches().at(-1).parentElement.querySelector("[data-jira-activity-thread-continuation]") === null, true);
 	assert.equal(visibleBranches().every((branch) => branch.getAttribute("aria-hidden") === "true"), true);
-	await view.click(view.getByRole("button", { name: "Show more replies" }));
-	assert.equal(visibleBranches().length, 3);
-	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
+	const replyToggleIcon = thread.querySelector("[data-jira-activity-reply-toggle-icon]");
+	assert.equal(replyToggleIcon.getAttribute("aria-hidden"), "true");
+	assert.equal(replyToggleIcon.classList.contains("bg-surface"), true);
+	assert.equal(replyToggleIcon.closest("button") === view.getByRole("button", { name: "Show more replies" }), true);
+	await view.click(replyToggleIcon);
 	assert.equal(visibleBranches().length, 2);
+	await view.click(view.getByRole("button", { name: "Hide earlier replies" }));
+	assert.equal(visibleBranches().length, 1);
 	assert.equal(view.isFocused(view.getByRole("button", { name: "Show more replies" })), true);
 	await view.click(view.getAllByRole("button", { name: "Reply" }).at(-1));
 	assert.equal(standalone.querySelector("[data-jira-activity-thread-stem]") !== null, true);
@@ -749,6 +772,16 @@ test("the default activity connector remains a continuous timeline", async () =>
 	assert.equal(document.querySelectorAll("[data-jira-activity-timeline-stem]").length, 1);
 	assert.equal(document.querySelector("[data-jira-activity-thread-branch]") === null, true);
 	assert.equal(document.querySelector("[data-jira-activity-thread-stem]") === null, true);
+});
+
+test("the final timeline entry continues into a decorative fade when requested", async () => {
+	await renderThreadConnectors("thread", true);
+	const lastEntry = document.querySelector('[data-jira-activity-entry-id="standalone"]');
+	const stem = lastEntry.querySelector("[data-jira-activity-timeline-stem]");
+	const fade = document.querySelector("[data-jira-activity-end-fade]");
+	assert.equal(stem !== null, true);
+	assert.equal(fade.getAttribute("aria-hidden"), "true");
+	assert.equal(lastEntry.contains(fade), true);
 });
 
 

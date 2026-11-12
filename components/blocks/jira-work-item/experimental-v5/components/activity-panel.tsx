@@ -21,10 +21,10 @@ import type {
 } from "@/components/blocks/jira-activity";
 import { jiraActivitySegmentsToPlainText } from "@/components/blocks/jira-activity/lib/jira-activity-comment-text";
 import { toggleReaction } from "@/components/blocks/jira-activity/lib/jira-activity-reducer";
-import { JiraInsightsCheckpoint } from "@/components/blocks/jira-insights/components/jira-insights-checkpoint";
-import { useJiraInsights } from "@/components/blocks/jira-insights/context-jira-insights";
-import type { JiraInsightSource } from "@/components/blocks/jira-insights/jira-insights-types";
-import { mergeJiraActivityEntriesWithInsights } from "@/components/blocks/jira-insights/lib/jira-insights-activity";
+import { JiraInsightCheckpoint } from "@/components/blocks/jira-insight/components/jira-insight-checkpoint";
+import { useJiraInsight } from "@/components/blocks/jira-insight/context-jira-insight";
+import type { JiraInsightSource } from "@/components/blocks/jira-insight/jira-insight-types";
+import { mergeJiraActivityEntriesWithInsights } from "@/components/blocks/jira-insight/lib/jira-insight-activity";
 import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
 import { useActivityChatComments } from "@/components/blocks/jira-work-item/experimental-v5/context-activity-chat-comments";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v5/context-jira-work-item";
@@ -83,7 +83,7 @@ export function ActivityPanel({
 		activeCheckpointId,
 		checkpoints,
 		selectCheckpointFromScroll,
-	} = useJiraInsights();
+	} = useJiraInsight();
 	const { insightsSelected, selectSection } = useSectionNavigation();
 	const { addComment: addActivityChatComment } = useActivityChatComments();
 	const {
@@ -179,7 +179,7 @@ export function ActivityPanel({
 		if (entry.category !== "insight") return undefined;
 		const checkpoint = checkpointById.get(entry.id);
 		return checkpoint ? (
-			<JiraInsightsCheckpoint
+			<JiraInsightCheckpoint
 				checkpoint={checkpoint}
 				isActive={checkpoint.id === activeCheckpointId}
 				onSourceSelect={onInsightSourceSelect}
@@ -278,7 +278,7 @@ export function ActivityPanel({
 		const visible = new Map<string, IntersectionObserverEntry>();
 		const observer = new IntersectionObserver((changes) => {
 			for (const change of changes) {
-				const id = (change.target as HTMLElement).dataset.jiraInsightsCheckpointId;
+				const id = (change.target as HTMLElement).dataset.jiraInsightCheckpointId;
 				if (!id) continue;
 				if (change.isIntersecting) visible.set(id, change);
 				else visible.delete(id);
@@ -289,7 +289,7 @@ export function ActivityPanel({
 			))[0];
 			if (closest) selectCheckpointFromScroll(closest[0]);
 		}, { threshold: [0.25, 0.5, 0.75, 1] });
-		const nodes = root.querySelectorAll<HTMLElement>("[data-jira-insights-checkpoint-id]");
+		const nodes = root.querySelectorAll<HTMLElement>("[data-jira-insight-checkpoint-id]");
 		for (const node of nodes) observer.observe(node);
 		return () => observer.disconnect();
 	}, [checkpoints, effectiveFilter, selectCheckpointFromScroll]);
@@ -403,7 +403,7 @@ export function ActivityPanel({
 			headingAction={(
 				<JiraActivityViewControl
 					filter={effectiveFilter}
-					filterMode="jira-insights"
+					filterMode="jira-insight"
 					menuAlign="end"
 					onFilterChange={handleFilterChange}
 					onSortOrderChange={setSortOrder}

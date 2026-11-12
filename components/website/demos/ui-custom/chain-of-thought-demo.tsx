@@ -35,7 +35,7 @@ import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import {
 	getAwaitingUserResponseLabel,
 	getQuestionsAnsweredLabel,
@@ -928,7 +928,7 @@ function StudioReplayGeneratingResponseStep(): ReactNode {
 					<Shimmer as="span" duration={1.4} spread={2} className="min-w-0 truncate text-left">
 						Generating a response
 					</Shimmer>
-					<AnimatedDots />
+					<AnimatedDot />
 				</span>
 			}
 			status="active"

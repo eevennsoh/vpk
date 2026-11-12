@@ -8,6 +8,8 @@ figure_engines: [none, iso-kit, anatomy-hero, both]
 
 # motion-case-study playbook
 
+Load before you draft `motion-case-study.html`. Back to [SKILL.md](../../SKILL.md).
+
 Format and checker: [contract](../contract.md#playbooks). Kit, markup and labs: [lab kit](../lab-kit.md). Capture,
 encode, embed and the lite copy: [media pipeline](../media-pipeline.md).
 
@@ -30,9 +32,9 @@ encode, embed and the lite copy: [media pipeline](../media-pipeline.md).
 - Opening: eyebrow, a headline that names the moment, a dek, a byline that says when and from which sources it was
   written, and a fact strip of at most four numbers the reader can find again in the film.
 - Film (00 · Watch it first): the film panel, a lede on how it was captured, chapters for the acts.
-- Brief: the problem in the asker's words and a ledger of the questions, each pointing at the section that answers.
+- Brief: the problem in the asker’s words and a ledger of the questions, each pointing at the section that answers.
 - Process: the timeline region, filterable by theme; one row per day, one event per decision.
-- Run of show: the Gantt of the clock, then the cue sheet. Every cue is a time on the film's clock.
+- Run of show: the Gantt of the clock, then the cue sheet. Every cue is a time on the film’s clock.
 - Labs: one section per lab, each with its `[data-vpk-lab-source]` line and a note on what to try.
 - Engineering: decisions as ledger rows, the layer stack, then the figure slot.
 - Discards: the ideas that lost, each with why and where that came from.
@@ -51,7 +53,7 @@ encode, embed and the lite copy: [media pipeline](../media-pipeline.md).
 - Budget: full only, or full plus the automatic lite copy (default). Record which in the contract.
 - Labs: id, kind (`time` or `simulation`), title, and the source file:lines of the maths each one ports.
 - Record cues with `t_s` on the clock segment, not hand-converted film times, so a re-capture cannot shift them.
-  The captured segment's id must equal `film.clock_id` (default `clock`). `capture.mjs --url` names its segment
+  The captured segment’s id must equal `film.clock_id` (default `clock`). `capture.mjs --url` names its segment
   `clock` unless you pass `--segment-id`, and `embed.mjs` refuses a film whose data lacks the cues' clock.
 - Content IR: `<slug>.content.json` with `type: "motion-case-study"`; render the regions from it.
 
@@ -63,7 +65,7 @@ encode, embed and the lite copy: [media pipeline](../media-pipeline.md).
 - `autoplay`, or a film without `muted` and `playsinline`.
 - Cue times off the film clock: a cue that lands a frame early names the wrong beat. Check every cue by clicking it
   and looking at the picture, not only the beat panel. A renderer can hold the outgoing scene on the frame at the
-  cut: if the frame at a cut's time still shows the previous scene, put the cue on the new scene's first frame
+  cut: if the frame at a cut’s time still shows the previous scene, put the cue on the new scene’s first frame
   (t + 1/fps).
 - Labs with invented maths. Each lab ports real code and says where from; if it cannot, it is an illustration.
 - Hue on lab canvases. Product colour needs the declared swatch exception and an `explicit_deviations` entry.

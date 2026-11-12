@@ -798,7 +798,7 @@ export function ExperimentalV2JiraKanban({
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
-											<JiraIssue
+											<JiraIssue appearance="default"
 												active={isActive}
 												chrome={chrome.cardChrome}
 												summary={card.title}

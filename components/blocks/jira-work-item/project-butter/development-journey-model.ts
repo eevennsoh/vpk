@@ -30,6 +30,10 @@ export function projectButterDevelopmentPresentation(phase: ProjectButterDevelop
 	return PHASE_PRESENTATION[phase];
 }
 
+export function nextProjectButterDevelopmentPhase(phase: ProjectButterDevelopmentPhase, autoFix: boolean, autoMerge: boolean): ProjectButterDevelopmentPhase | null {
+	return phase === "failed" && autoFix ? "fixing" : phase === "fixing" ? "passed" : phase === "passed" && autoMerge ? "merged" : null;
+}
+
 export function projectButterDevelopmentChecks(phase: ProjectButterDevelopmentPhase): readonly PullRequestCheck[] {
 	return [
 		{ id: "build", name: "Build", status: phase === "pr" ? "running" : "passed", details: phase === "pr" ? "Building merchant onboarding quickstart" : "Production build passed" },

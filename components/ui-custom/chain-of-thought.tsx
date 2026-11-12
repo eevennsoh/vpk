@@ -15,7 +15,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { MorphingRovo } from "@/components/ui-custom/morphing-rovo";
 import RovoIconGlyph from "@atlaskit/icon-lab/core/rovo";
 import { Icon } from "@/components/ui/icon";
@@ -198,10 +198,10 @@ export const ChainOfThoughtHeader = memo(
 			typeof text === "string" &&
 			resolvedState !== "completed" &&
 			(shimmer || resolvedState === "preload" || resolvedState === "thinking");
-		const shouldShowAnimatedDots =
+		const shouldShowAnimatedDot =
 			resolvedState === "preload" || resolvedState === "thinking";
 		const renderedText =
-			shouldShowAnimatedDots && typeof text === "string"
+			shouldShowAnimatedDot && typeof text === "string"
 				? stripTrailingDots(text)
 				: text;
 
@@ -241,7 +241,7 @@ export const ChainOfThoughtHeader = memo(
 							) : (
 								<span className="min-w-0 truncate text-left">{renderedText}</span>
 							)}
-							{shouldShowAnimatedDots ? <AnimatedDots /> : null}
+							{shouldShowAnimatedDot ? <AnimatedDot /> : null}
 						</span>
 						{showChevron ? (
 							<Icon

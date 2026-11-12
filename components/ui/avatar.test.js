@@ -27,6 +27,8 @@ test("coding agent appearance preserves local artwork and the requested brand ca
 	assert.deepEqual(getCodingAgentVisual("claude"), { backgroundColor: "#d97757", whiteGlyph: true });
 	assert.deepEqual(getCodingAgentVisual("openai-codex"), { artwork: "local", logoClassName: "scale-125" });
 	assert.deepEqual(getCodingAgentVisual("openai-codex", 20), { artwork: "glyph", logoFrameSizePx: 12 });
+	assert.deepEqual(getCodingAgentVisual("openai-codex", 16, "square"), { artwork: "glyph", logoFrameSizePx: 12 });
+	assert.deepEqual(getCodingAgentVisual("openai-codex", 16, "hexagon"), { artwork: "glyph", logoFrameSizePx: 16 });
 	assert.deepEqual(getCodingAgentVisual("cursor"), { artwork: "local", backgroundColor: "#14120B" });
 	assert.deepEqual(getCodingAgentVisual("github-copilot"), { backgroundColor: "#000000", whiteGlyph: true });
 	assert.equal(getCodingAgentVisual("slack"), undefined);

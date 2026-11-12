@@ -89,6 +89,8 @@ export interface AgentAvatarVisualProps {
 	label?: string;
 	/** Square pixel size for both the image and the logo. */
 	sizePx: number;
+	/** Frame shape; coding app tiles can reuse the same artwork in a square. */
+	shape?: "hexagon" | "square";
 	/** Inset an image mark instead of rendering it full-bleed. `/2p/` assets are inset automatically. */
 	inset?: boolean;
 	/** Initials shown when no visual source is available. */
@@ -124,6 +126,7 @@ export function AgentAvatarVisual({
 	appearance = "default",
 	label,
 	sizePx,
+	shape = "hexagon",
 	inset = false,
 	fallbackText,
 	status,
@@ -145,7 +148,7 @@ export function AgentAvatarVisual({
 	// Keep partner marks at the previous 50% ratio when the avatar is 32px.
 	const insetImageClassName = isSecondPartyAgent && sizePx === 32 ? "size-4" : PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
 	const insetLogoSize = PX_TO_INSET_LOGO_SIZE[sizePx] ?? PX_TO_LOGO_SIZE[sizePx] ?? "xxsmall";
-	const codingVisual = appearance === "coding" ? getCodingAgentVisual(brandName, sizePx) : undefined;
+	const codingVisual = appearance === "coding" ? getCodingAgentVisual(brandName, sizePx, shape) : undefined;
 	const codingLogoFrame = codingVisual ? getCodingAgentLogoFrame(sizePx) : undefined;
 	const externalLogoSize = codingLogoFrame?.size ?? PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
 	// Both explicit and data-backed Rovo identities keep the gem inset so the
@@ -177,7 +180,7 @@ export function AgentAvatarVisual({
 			animate={animate}
 			className={cn(PX_TO_AVATAR_FRAME_CLASS_NAME[sizePx], avatarClassName)}
 			label={label}
-			shape="hexagon"
+			shape={shape}
 			size={avatarSizeFromPx(sizePx)}
 			status={status}
 			separator={separator}
@@ -188,7 +191,7 @@ export function AgentAvatarVisual({
 					// ADS color-scheme inherits from the nearest global or subtree theme.
 					// Inline light-dark avoids the CSS compiler's global-theme fallback.
 					style={{ backgroundColor: isRovoAvatar ? "light-dark(var(--ds-surface), #292A2E)" : isJiraCodingAgent ? SOFTWARE_AGENT_COLOR : codingVisual?.backgroundColor ?? (brandName === "claude" ? "#d97757" : undefined) }}
-					className={cn("flex size-full items-center justify-center bg-surface",
+					className={cn("flex size-full items-center justify-center bg-surface", shape === "square" && "overflow-hidden rounded-[inherit]",
 						brandName === "claude" || codingVisual?.whiteGlyph ? "[&_svg]:brightness-0 [&_svg]:invert [&_img]:brightness-0 [&_img]:invert" : undefined)}>{visual}</span>
 			) : (
 				visual

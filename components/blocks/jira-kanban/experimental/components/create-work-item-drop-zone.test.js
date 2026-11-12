@@ -1,7 +1,7 @@
 /**
  * Create-well chrome source contracts.
  *
- * Split out of `jira-golden-journeys-v4.test.js` so that suite stays under the
+ * Split out of `jira-golden-journey-v4.test.js` so that suite stays under the
  * 1000-line file-size budget. These assertions belong with the drop-zone owner,
  * not the v4 page harness.
  */

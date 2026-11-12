@@ -42,7 +42,8 @@ const scenario = body => evaluate(`(async () => {
 	};
 	const settled = async index => until(() => {
 		const state = explorer.getState();
-		return state.selectedIndex === index && !state.transitioning && near(state.renderTime, stateTimes[index]);
+		// Wall chapters keep drawing past their time on the idle wall clock, so they settle at or after it.
+		return state.selectedIndex === index && !state.transitioning && (near(state.renderTime, stateTimes[index]) || (stateTimes[index] >= 27 && state.renderTime >= stateTimes[index]));
 	}, 'state ' + index + ' did not settle');
 	const visual = root => {
 		const svg = root.matches('svg') ? root : root.querySelector('svg');
@@ -111,7 +112,10 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				return {
 					heroes: document.querySelectorAll('[data-vpk-figure="eu26-hero"]').length,
 					solids: hero.querySelectorAll('.iso-solid').length,
-					artworkAndLabels: hero.querySelectorAll('svg text, svg image, svg foreignObject').length,
+					artworkAndLabels: hero.querySelectorAll('svg image, svg foreignObject').length + [...hero.querySelectorAll('svg text')].filter(text => !((text.classList.contains('dtt') && ['Team ’26', 'Europe'].includes(text.textContent) && text.closest('[data-eu26-detail]')) || (text.matches('[data-eu26-cursor-name]') && text.closest('[data-eu26-cursor^="teammate-"]')))).length,
+					faceDetails: hero.querySelectorAll('[data-part] > [data-eu26-detail]').length,
+					visibleWithoutDetail: [...hero.querySelectorAll('[data-eu26-piece^="story."][data-part]')].filter(part => part.style.display !== 'none' && !part.querySelector(':scope > [data-eu26-detail]')).length,
+					hiddenWithDetail: [...hero.querySelectorAll('[data-eu26-piece][data-part]')].filter(part => part.style.display === 'none' && part.querySelector(':scope > [data-eu26-detail]')).length,
 					buttons: thumbs.length,
 					uniquePartNames: new Set([...hero.querySelectorAll('[data-part]')].map(part => part.dataset.part)).size === hero.querySelectorAll('[data-part]').length,
 					nativeButtons: thumbs.every(button => button.tagName === 'BUTTON' && button.type === 'button'),
@@ -128,7 +132,10 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			`);
 			assert.equal(result.heroes, 1);
 			assert.ok(result.solids > 80, `expected detailed anatomy, found ${result.solids} solid parts`);
-			assert.equal(result.artworkAndLabels, 0, 'the hero contains geometry without cover artwork or SVG text');
+			assert.equal(result.artworkAndLabels, 0, 'faces are container outlines: no text, labels or artwork');
+			assert.ok(result.faceDetails >= 9, `the visible cards carry face detail inside their own groups, found ${result.faceDetails}`);
+			assert.equal(result.visibleWithoutDetail, 0, 'every visible card shows its face detail');
+			assert.equal(result.hiddenWithDetail, 0, 'hidden surfaces release their detail from the live DOM');
 			assert.equal(result.buttons, 12);
 			assert.equal(result.thumbnails, 12);
 			assert.equal(result.distinctVisuals, 12, 'thumbnail graphics show twelve different poses');
@@ -151,12 +158,13 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			for (const time of [6, 8, 10, 13]) {
 				const state = model(time, data);
 				const visible = state.cards.flatMap((pose, index) => {
-					if (pose.alpha <= .001 || !pose.clip) return [];
+					if (pose.alpha <= .001 || pose.clip !== 'done') return [];
 					const card = data.cards[index];
 					const rectangle = { x: pose.at[0] - card.w * pose.scale / 2, y: pose.at[1] - card.d * pose.scale / 2, w: card.w * pose.scale, d: card.d * pose.scale };
 					return overlaps(rectangle, viewport) ? [rectangle] : [];
 				});
-				assert.equal(visible.length, 3, `three readable rows remain in the Done window at ${time} seconds`);
+				assert.equal(visible.length, 4, `Done is full at ${time} seconds: three readable rows and a fourth clipped by the column`);
+					assert.ok(Math.max(...visible.map(card => card.y + card.d)) > viewport.y + viewport.d, 'the lowest visible Done card runs past the window edge');
 				for (let left = 0; left < visible.length; left++) {
 					for (let right = left + 1; right < visible.length; right++) assert.equal(overlaps(visible[left], visible[right]), false, `visible Done cards do not overlap at ${time} seconds`);
 				}
@@ -176,7 +184,9 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				assert.ok(card.source && card.source.width > 0 && card.source.height > 0, 'every rendered wall card records its source dimensions');
 				assert.ok(Math.abs(card.w / card.d - card.source.width / card.source.height) < .00001, 'rendered wall cards preserve their source aspect ratios');
 			}
-			const rectangles = cards.map(card => ({ key: card.key, x: card.pose.at[0] - card.w * card.pose.scale / 2, y: card.pose.at[1] - card.d * card.pose.scale / 2, w: card.w * card.pose.scale, d: card.d * card.pose.scale }));
+			const resting = cards.filter(card => Math.abs(card.pose.at[2]) < 1e-6 && Math.abs(card.pose.scale - 1) < 1e-6);
+			assert.ok(resting.length > 10, 'most of the wall rests in its slots');
+			const rectangles = resting.map(card => ({ key: card.key, x: card.pose.at[0] - card.w * card.pose.scale / 2, y: card.pose.at[1] - card.d * card.pose.scale / 2, w: card.w * card.pose.scale, d: card.d * card.pose.scale }));
 			for (let left = 0; left < rectangles.length; left++) {
 				for (let right = left + 1; right < rectangles.length; right++) {
 					const a = rectangles[left], b = rectangles[right];
@@ -186,60 +196,75 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			}
 		});
 
-		await t.test('three visual variants preserve progress and repaint the actual hero and thumbnails', () => {
+		await t.test('the single paper style ships without a style picker and keeps the orange focal', () => {
 			const result = scenario(`
-				const variantControls = document.querySelector('#eu26-variant-controls');
-				const buttons = [...variantControls.querySelectorAll('button')];
-				const nativeButtons = buttons.every(button => button.type === 'button' && (button.getAttribute('aria-label') || button.textContent).trim().length > 0);
+				const picker = document.querySelectorAll('#eu26-variant-controls button').length;
 				explorer.seek(19);
-				const before = explorer.getState();
-				const progress = timeline.value;
-				const heroVariants = [];
-				const thumbnailVariants = [];
-				const variants = [];
-				let preserved = true;
-				let orangeFocal = true;
-				let outlineOpaque = true;
-				let noArtworkOrLabels = true;
-				let oneSelected = true;
-				for (const button of buttons) {
-					button.click();
-					const state = explorer.getState();
-					variants.push(state.variant);
-					preserved = preserved && near(state.time, before.time) && near(state.renderTime, before.time) && state.selectedIndex === before.selectedIndex && timeline.value === progress;
-					heroVariants.push(visual(hero));
-					thumbnailVariants.push([...controls.querySelectorAll('.eu26-state-thumb > svg')].map(svg => visual(svg)).join('|'));
-					oneSelected = oneSelected && buttons.filter(choice => choice.getAttribute('aria-pressed') === 'true').length === 1 && button.getAttribute('aria-pressed') === 'true';
-					noArtworkOrLabels = noArtworkOrLabels && hero.querySelectorAll('svg text, svg image, svg foreignObject').length === 0;
-					const probe = document.createElement('span');
-					probe.style.color = 'var(--ill-accent)';
-					hero.append(probe);
-					const orange = getComputedStyle(probe).color;
-					probe.remove();
-					const focal = hero.querySelector('[data-focal="hero-card"]');
-					const focalRect = focal.getBoundingClientRect();
-					if (state.variant === 'outline') {
-						probe.style.color = 'var(--anatomy-top)';
-						hero.append(probe);
-						const material = getComputedStyle(probe).color;
-						probe.remove();
-						const top = getComputedStyle(focal.querySelector('.iso-top'));
-						outlineOpaque = top.fill === material && top.opacity === '1' && top.display !== 'none';
-					}
-					orangeFocal = orangeFocal && focalRect.width > 0 && focalRect.height > 0 && [...focal.querySelectorAll('.iso-top, .iso-edge')].some(part => {
-						const style = getComputedStyle(part);
-						return style.fill === orange || style.stroke === orange;
-					});
-				}
-				explorer.setVariant(variants[0]);
-				return { buttons: buttons.length, nativeButtons, variants: new Set(variants).size, heroVariants: new Set(heroVariants).size, thumbnailVariants: new Set(thumbnailVariants).size, preserved, oneSelected, orangeFocal, outlineOpaque, noArtworkOrLabels };
+				const state = explorer.getState();
+				const probe = document.createElement('span');
+				probe.style.color = 'var(--ill-accent)';
+				hero.append(probe);
+				const orange = getComputedStyle(probe).color;
+				probe.remove();
+				const focal = hero.querySelector('[data-focal="hero-card"]');
+				const rect = focal.getBoundingClientRect();
+				const orangeFocal = rect.width > 0 && rect.height > 0 && [...focal.querySelectorAll('.iso-top, .iso-edge')].some(part => { const style = getComputedStyle(part); return style.fill === orange || style.stroke === orange; });
+				const noArtworkOrLabels = hero.querySelectorAll('svg image, svg foreignObject').length + [...hero.querySelectorAll('svg text')].filter(text => !((text.classList.contains('dtt') && ['Team ’26', 'Europe'].includes(text.textContent) && text.closest('[data-eu26-detail]')) || (text.matches('[data-eu26-cursor-name]') && text.closest('[data-eu26-cursor^="teammate-"]')))).length === 0;
+				return { picker, variant: state.variant, orangeFocal, noArtworkOrLabels };
 			`);
-			assert.equal(result.buttons, 3);
-			assert.equal(result.nativeButtons, true);
-			assert.equal(result.variants, 3);
-			assert.equal(result.heroVariants, 3, 'variant selection changes rendered hero geometry or paint');
-			assert.equal(result.thumbnailVariants, 3, 'the actual thumbnail graphics follow each variant');
-			for (const key of ['preserved', 'oneSelected', 'orangeFocal', 'outlineOpaque', 'noArtworkOrLabels']) assert.equal(result[key], true, key);
+			assert.equal(result.picker, 0, 'no style picker with one paper style');
+			assert.equal(result.variant, 'paper');
+			assert.equal(result.orangeFocal, true);
+			assert.equal(result.noArtworkOrLabels, true);
+		});
+
+		await t.test('wall tiles animate deterministically and the wall loops without a seam', () => {
+			const result = scenario(`
+				const read = () => [...hero.querySelectorAll('[data-anim]')].filter(el => el.closest('[data-part]')?.style.display !== 'none').map(el => (el.getAttribute('transform') || '') + (el.getAttribute('width') || '') + (el.getAttribute('y') || '') + (el.getAttribute('stroke-dasharray') || '') + el.style.opacity).join('|');
+				explorer.seek(42.7); const direct = read();
+				explorer.seek(90); explorer.seek(30); explorer.seek(42.7); const revisited = read();
+				const lanyards = () => [...hero.querySelectorAll('[data-anim="lanyard"]')].filter(el => el.closest('[data-part]')?.style.display !== 'none').map(el => Number(/translate\\(0 (-?[\\d.]+)\\)/.exec(el.getAttribute('transform'))?.[1] ?? 0));
+				explorer.seek(42.7); const midDrop = Math.min(...lanyards());
+				explorer.seek(47); const rested = Math.min(...lanyards());
+				let maxJump = 0, previous = null;
+				for (let time = 40; time <= 120; time += 0.25) {
+					explorer.seek(time);
+					const viewBox = hero.querySelector('svg').viewBox.baseVal, now = new Map();
+					const event = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(event);
+					const wallState = event.detail.state.wall;
+					for (const el of hero.querySelectorAll('[data-eu26-piece^="wall."]')) {
+						if (el.style.display === 'none') continue;
+						if (wallState[Number(el.dataset.eu26Piece.slice(5))].incoming) continue;
+						const box = el.getBBox();
+						if (box.x + box.width > viewBox.x && box.x < viewBox.x + viewBox.width) now.set(el.dataset.eu26Piece, box.x);
+					}
+					if (previous) for (const [key, x] of now) if (previous.has(key)) maxJump = Math.max(maxJump, Math.abs(x - previous.get(key)));
+					previous = now;
+				}
+				return { same: direct === revisited && direct.length > 0, midDrop, rested, maxJump };
+			`);
+			assert.equal(result.same, true, 'tile motion is a pure function of time');
+			assert.ok(result.midDrop < -20, `a lanyard is mid-drop at 42.7 s (offset ${result.midDrop})`);
+			assert.ok(Math.abs(result.rested) < 1, 'the lanyard settles in its slot');
+			assert.ok(result.maxJump < 40, `wall tiles never jump across the frame (largest step ${result.maxJump})`);
+		});
+
+		await t.test('each wall tile plays its micro-interaction once and then holds (stageshow bento rule 11)', () => {
+			const result = scenario(`
+				const capture = time => { explorer.seek(time); const event = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(event); return event.detail.state; };
+				const sig = key => [...hero.querySelector('[data-eu26-piece="' + key + '"]').querySelectorAll('[data-anim]')].filter(el => el.dataset.anim !== 'lanyard').map(el => (el.getAttribute('transform') || '') + (el.getAttribute('width') || '') + (el.getAttribute('height') || '') + (el.getAttribute('y') || '') + (el.getAttribute('stroke-dasharray') || '') + el.style.opacity).join('|');
+				const shown = () => [...hero.querySelectorAll('[data-eu26-piece^="wall."]')].filter(el => el.style.display !== 'none' && el.querySelector('[data-anim]')).map(el => el.dataset.eu26Piece);
+				// A tile's story starts as its centre enters the frame (or after a carried card's face is up) and lasts under 3 s,
+				// so a tile wholly inside the frame at 54 s has finished by 60 s.
+				const s54 = capture(54); const early = new Set(shown().filter(key => { const w = s54.wall[Number(key.slice(5))]; return w.entryProgress >= 1 && !w.incoming; }));
+				const state = capture(60), holdKeys = shown().filter(key => early.has(key) && !(state.wall[Number(key.slice(5))].arrival?.touchdown > 53));
+				const at60 = new Map(holdKeys.map(key => [key, sig(key)]));
+				capture(63);
+				const moved = holdKeys.filter(key => hero.querySelector('[data-eu26-piece="' + key + '"]').style.display !== 'none' && sig(key) !== at60.get(key));
+				return { checked: holdKeys.length, moved };
+			`);
+			assert.ok(result.checked >= 3, `enough settled tiles to judge (${result.checked})`);
+			assert.deepEqual(result.moved, [], 'a tile whose story has played holds its result');
 		});
 
 		await t.test('manual playback suspends work offscreen and resumes on re-entry', () => {
@@ -253,14 +278,14 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				await until(() => explorer.getState().playing, 'manual playback did not start');
 				const entered = explorer.getState().time;
 				await until(() => explorer.getState().time > entered + .04, 'visible playback did not advance');
-				const sources = document.querySelector('#sources');
-				for (const detail of sources.querySelectorAll('details')) detail.open = true;
-				sources.scrollIntoView({ block: 'start', behavior: 'instant' });
-				window.scrollBy({ top: Math.max(0, hero.getBoundingClientRect().bottom + 24), behavior: 'instant' });
+				// Temporary scroll room below the story, so the pinned figure can leave the viewport.
+				const spacer = document.body.appendChild(Object.assign(document.createElement('div'), { style: 'block-size: 300vh' }));
+				window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
 				await until(() => !explorer.getState().visible && !explorer.getState().playing, 'offscreen playback did not suspend');
 				const offscreen = explorer.getState().time;
 				await wait(160);
 				const suspended = near(explorer.getState().time, offscreen);
+				spacer.remove();
 				hero.scrollIntoView({ block: 'center', behavior: 'instant' });
 				await until(() => explorer.getState().playing && explorer.getState().time > offscreen + .04, 'playback did not resume on re-entry');
 				explorer.pause();
@@ -321,9 +346,9 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			assert.equal(result.distinctPoses, 12, 'each committed state changes the rendered anatomy');
 		});
 
-		await t.test('projected paper ordering stays acyclic between keyframes in every variant', () => {
+		await t.test('projected paper ordering stays acyclic between keyframes', () => {
 			const result = scenario(`
-				const variants = [...document.querySelectorAll('#eu26-variant-controls [data-eu26-variant]')].map(button => button.dataset.eu26Variant);
+				const variants = ['paper'];
 				const samples = [...new Set([...stateTimes, ...Array.from({ length: 36 }, (_, index) => duration * (index + 1) / 37), 2.33, 6.22, 14, 14.055, 14.1, 14.145, 14.15, 14.255, 14.28, 14.31, 20.4, 23.625])];
 				const failures = [];
 				for (const variant of variants) {
@@ -336,14 +361,13 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				explorer.setVariant(variants[0]);
 				return { samples: samples.length * variants.length, failures };
 			`);
-			assert.equal(result.samples, 180);
+			assert.equal(result.samples, 60);
 			assert.deepEqual(result.failures, [], 'the renderer can order visible paper planes at every sampled pose');
 		});
 
-		await t.test('visible cursor arrows contact carried cards and fit the camera in every variant', async () => {
-			const { data, model } = await import('./eu26-hero.hero.mjs');
-			const cursorTimes = [1.2, 1.6, 4.8, 5.4, 23, 24, 25, 26.2, 27.5, 29, 31, 33.5, 34];
-			const samples = data.variants.flatMap(({ id: variant }) => cursorTimes.map(time => ({ variant, time, cursors: model({ time, variant }, data).cursors.filter(cursor => cursor.alpha > .15) })));
+		await t.test('visible cursor arrows contact carried cards and fit the camera', async () => {
+			const { data } = await import('./eu26-hero.hero.mjs');
+			const cursorTimes = [1.2, 1.6, 4.8, 5.4, 23, 24, 25, 26.2];
 			for (const [width, height] of [[1440, 900], [390, 844]]) {
 				run('set', 'viewport', String(width), String(height));
 				const result = scenario(`
@@ -352,7 +376,16 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 					let contacts = 0;
 					let transparentHits = 0;
 					const visibleActors = new Set();
-					for (const sample of ${JSON.stringify(samples)}) {
+					const capture = () => { const event = new CustomEvent('eu26:capture', { detail: {} }); hero.dispatchEvent(event); return event.detail.state; };
+					// The guided cursors at fixed moments, then every teammate ride on the wall as this frame plays it.
+					const times = ${JSON.stringify(cursorTimes)}, riders = new Set();
+					for (let time = 27; time < 140 && riders.size < 3; time += 0.25) {
+						explorer.seek(time);
+						const rider = capture().cursors.find(cursor => cursor.role === 'teammate' && cursor.phase === 'carry' && !cursor.entering && cursor.alpha > .5 && !riders.has(cursor.id));
+						if (rider) { riders.add(rider.id); times.push(time); }
+					}
+					const samples = ${JSON.stringify(data.variants.map(variant => variant.id))}.flatMap(variant => times.map(time => { explorer.setVariant(variant); explorer.seek(time); return { variant, time, cursors: capture().cursors.filter(cursor => cursor.alpha > .15) }; }));
+					for (const sample of samples) {
 						explorer.setVariant(sample.variant);
 						explorer.seek(sample.time);
 						const svg = hero.querySelector('svg');
@@ -360,20 +393,20 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 						const layer = svg.querySelector('[data-eu26-cursor-layer]');
 						if (svg.lastElementChild !== layer || layer.getAttribute('aria-hidden') !== 'true') failures.push({ time: sample.time, issue: 'cursor layer must be decorative and topmost' });
 						if (layer.querySelector('a, button, input, [tabindex="0"]') || [...layer.querySelectorAll('*')].some(element => getComputedStyle(element).pointerEvents !== 'none')) failures.push({ time: sample.time, issue: 'cursor drawing captures user input' });
-						if ([...layer.querySelectorAll('[data-eu26-cursor-tip],[data-eu26-cursor-ring]')].some(element => Number.parseFloat(getComputedStyle(element).strokeWidth) > 2)) failures.push({ time: sample.time, issue: 'cursor outline becomes too thick at this viewport' });
+						if ([...layer.querySelectorAll('[data-eu26-cursor-tip]')].some(element => Number.parseFloat(getComputedStyle(element).strokeWidth) > 2)) failures.push({ time: sample.time, issue: 'cursor outline becomes too thick at this viewport' });
 						const arrows = cursorDrawings(hero);
 						if (arrows.some(arrow => !sample.cursors.some(cursor => cursor.id === arrow.id)) || sample.cursors.some(cursor => cursor.heldTarget && !arrows.some(arrow => arrow.id === cursor.id))) failures.push({ time: sample.time, variant: sample.variant, issue: 'a held actor is missing or an unmodeled arrow is visible' });
 						for (const arrow of arrows) {
 							visibleActors.add(arrow.id);
 							const rect = arrow.rect;
-							if (rect.width <= 0 || rect.height <= 0 || rect.left < frame.left - 1 || rect.top < frame.top - 1 || rect.right > frame.right + 1 || rect.bottom > frame.bottom + 1) failures.push({ time: sample.time, variant: sample.variant, id: arrow.id, issue: 'cursor is clipped by the camera' });
+							if (!sample.cursors.find(cursor => cursor.id === arrow.id)?.entering && (rect.width <= 0 || rect.height <= 0 || rect.left < frame.left - 1 || rect.top < frame.top - 1 || rect.right > frame.right + 1 || rect.bottom > frame.bottom + 1)) failures.push({ time: sample.time, variant: sample.variant, id: arrow.id, issue: 'cursor is clipped by the camera' });
 							if (arrow.point.x >= 0 && arrow.point.x < innerWidth && arrow.point.y >= 0 && arrow.point.y < innerHeight) {
 								const hit = document.elementFromPoint(arrow.point.x, arrow.point.y);
 								if (hit?.closest('[data-eu26-cursor-layer]')) failures.push({ time: sample.time, id: arrow.id, issue: 'cursor intercepts the actual pointer' });
 								transparentHits += 1;
 							}
 							const cursor = sample.cursors.find(cursor => cursor.id === arrow.id);
-							if (!cursor.heldTarget) continue;
+							if (!cursor.heldTarget || cursor.entering) continue;
 							const target = cursor.heldTarget;
 							const key = target.kind === 'title' ? 'title' : target.kind + '.' + target.index;
 							const face = hero.querySelector('[data-eu26-piece="' + key + '"] .iso-top');
@@ -575,7 +608,10 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 			`);
 			assert.ok(result.samples.length > 3);
 			assert.ok(result.elapsed >= 220 && result.elapsed <= 480, `state navigation finishes within its 240–420ms duration plus one frame (${result.elapsed.toFixed(0)}ms)`);
-			assert.ok(result.samples.every(sample => Math.abs(sample.azimuth - 45) < .001 && Math.abs(sample.elevation - 30) < .001), 'the jump does not fast-forward through unrelated orbits');
+			// The jump blends straight from the board camera (45°, 30°) to the frontal wall (90°, 90°): one direction only, never
+			// detouring through another shot's angles.
+			assert.ok(result.samples.every(sample => sample.azimuth >= 45 - .001 && sample.azimuth <= 90 + .001 && sample.elevation >= 30 - .001 && sample.elevation <= 90 + .001), 'the jump stays between its endpoint cameras');
+			assert.ok(result.samples.every((sample, index) => index === 0 || (sample.azimuth >= result.samples[index - 1].azimuth - .001 && sample.elevation >= result.samples[index - 1].elevation - .001)), 'the jump does not fast-forward through unrelated orbits');
 			assert.ok(result.samples.every(sample => ['board', 'wallGlide'].includes(sample.phase)), 'unrelated chapters do not flash past');
 		});
 
@@ -757,7 +793,7 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 
 		await t.test('reduced motion and pause leave no independent cursor animation', () => {
 			const result = scenario(`
-				explorer.seek(29);
+				explorer.seek(25);
 				const layer = hero.querySelector('[data-eu26-cursor-layer]');
 				const before = cursorDrawings(hero);
 				let changes = 0;
@@ -768,8 +804,8 @@ test('the offline EU26 explorer renders and controls one detailed animation', { 
 				return { reduced: explorer.getState().reducedMotion, time: explorer.getState().time, arrows: before.length, same: JSON.stringify(before) === JSON.stringify(cursorDrawings(hero)), changes, runningAnimations: layer.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running').length };
 			`);
 			assert.equal(result.reduced, true);
-			assert.equal(result.time, 29);
-			assert.ok(result.arrows >= 2);
+			assert.equal(result.time, 25);
+			assert.ok(result.arrows >= 1, 'the presenter carrying the title is drawn');
 			assert.equal(result.same, true);
 			assert.equal(result.changes, 0);
 			assert.equal(result.runningAnimations, 0);

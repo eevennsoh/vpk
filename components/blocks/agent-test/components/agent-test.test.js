@@ -51,7 +51,7 @@ test("AgentTestPanel surfaces automations in the greeting and runs them inline i
 	assert.match(AGENT_TEST_PANEL_SOURCE, /if \(automationRules\.length === 0\) \{[\s\S]*return null;/u);
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /illustration-spot\/general\/automation-2/u);
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, />\s*Flows\s*</u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /import \{ AgentAutomationFlowCover \} from "@\/components\/blocks\/triggers\/components\/agent-automation-flow-cover";/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /import \{ AgentAutomationFlowCover \} from "@\/components\/blocks\/trigger\/components\/agent-automation-flow-cover";/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /function AgentTestAutomationFlow[\s\S]*<AgentAutomationFlowCover[\s\S]*rootElement="span"[\s\S]*triggers=\{rule\.triggers\}/u);
 	// Clicking a row plays a scripted user + assistant turn that streams in via
 	// staged replaceMessages calls (not an instant single dump).

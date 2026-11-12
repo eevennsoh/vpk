@@ -34,8 +34,14 @@ export function useCommentBarVisibility(active: boolean, empty: boolean, sidePan
 		return () => { intersection.disconnect(); resize.disconnect(); mutation.disconnect(); scrollport.removeEventListener("scroll", schedule); if (frame) cancelAnimationFrame(frame); };
 	}, [active, empty, sidePanel]);
 	const revealActivity = useCallback(() => {
-		const activity = barRef.current?.parentElement?.querySelector<HTMLElement>("[data-project-butter-activity]");
-		const scrollport = activityScrollport(barRef.current);
+		const bar = barRef.current;
+		const activity = bar?.parentElement?.querySelector<HTMLElement>("[data-project-butter-activity]");
+		const scrollport = activityScrollport(bar);
+		if (bar && scrollport) {
+			const bounds = bar.getBoundingClientRect();
+			const viewport = scrollport.getBoundingClientRect();
+			if (bounds.top >= viewport.top && bounds.bottom <= Math.min(viewport.bottom, window.innerHeight)) return;
+		}
 		if (activity && scrollport) scrollport.scrollTo({ top: scrollport.scrollTop + activity.getBoundingClientRect().top - scrollport.getBoundingClientRect().top, behavior: "auto" });
 	}, []);
 	return { barRef, elevated, inActivity, revealActivity };

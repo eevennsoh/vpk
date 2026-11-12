@@ -2,6 +2,21 @@ const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const { renderComponent } = require("../../../../scripts/lib/render-component.js");
 
+test("JiraKanban defaults to Project butter and keeps the standard variant available", async () => {
+	const view = await renderComponent({
+		source: `
+			import { JiraKanban } from "@/components/blocks/jira-kanban";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			export function Fixture(props) { return <ThemeWrapper><JiraKanban {...props} /></ThemeWrapper>; }
+		`,
+		exportName: "Fixture",
+		props: { boardColumns: [{ title: "To do", count: 1, cards: [{ code: "PD-40", title: "Default card", priority: "major", tags: [] }] }] },
+	});
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-project-butter"]') !== null, true);
+	await view.rerender({ boardColumns: [{ title: "To do", count: 1, cards: [{ code: "PD-40", title: "Standard card", priority: "major", tags: [] }] }], variant: "standard" });
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-project-butter"]'), null);
+});
+
 function renderCard(props) {
 	return renderComponent({
 		source: `

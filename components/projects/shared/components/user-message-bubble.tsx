@@ -7,10 +7,10 @@ import {
 	MessageResponse,
 } from "@/components/ui-custom/message";
 import {
-	Attachment,
+	AttachmentItem,
 	AttachmentPreview,
-	Attachments,
-} from "@/components/ui-custom/attachments";
+	Attachment,
+} from "@/components/ui-custom/attachment";
 import { AnswerCard } from "@/components/blocks/answer-card/components/answer-card";
 import { Button } from "@/components/ui/button";
 import { InlineEdit } from "@/components/ui/inline-edit";
@@ -103,9 +103,9 @@ export function UserMessageBubble({
 				contain={!showClarificationSummary}
 			>
 				{attachments.length > 0 ? (
-					<Attachments className="justify-end" variant="grid">
+					<Attachment className="justify-end" variant="grid">
 						{attachments.map((attachment) => (
-							<Attachment
+							<AttachmentItem
 								key={`${attachment.url}-${attachment.filename ?? "attachment"}`}
 								data={{
 									...attachment,
@@ -113,9 +113,9 @@ export function UserMessageBubble({
 								}}
 							>
 								<AttachmentPreview />
-							</Attachment>
+							</AttachmentItem>
 						))}
-					</Attachments>
+					</Attachment>
 				) : null}
 				{isEditing && onEdit ? (
 					<InlineEdit

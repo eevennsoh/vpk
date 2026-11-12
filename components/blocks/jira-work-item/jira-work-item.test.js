@@ -157,7 +157,7 @@ test("the experimental surface reuses the Jira Issue floating Rovo chat", () => 
 	const dialogSource = readBlockFile("experimental/components/experimental-work-item-dialog.tsx");
 	const floatingSurfaceSource = readBlockFile("experimental/components/floating-session-surface.tsx");
 	const sessionScriptsSource = readBlockFile("data/session-scripts.ts");
-	const sharedOverlaySource = readProjectFile("components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay.tsx");
+	const sharedOverlaySource = readProjectFile("components/projects/jira-golden-journey-v0/components/jira-golden-journey-v0-rovo-overlay.tsx");
 	assert.match(compositionSource, /<JiraWorkItemProvider/u);
 	assert.match(
 		compositionSource,
@@ -167,7 +167,7 @@ test("the experimental surface reuses the Jira Issue floating Rovo chat", () => 
 		dialogSource,
 		/<\/Dialog\.Popup>\s*\{open \? blanketContent : null\}\s*<\/Dialog\.Portal>/u,
 	);
-	assert.match(floatingSurfaceSource, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/jira-golden-journeys-v0\/components\/jira-golden-journeys-v0-rovo-overlay";/u);
+	assert.match(floatingSurfaceSource, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/jira-golden-journey-v0\/components\/jira-golden-journey-v0-rovo-overlay";/u);
 	assert.match(floatingSurfaceSource, /useAsxAgentChatDemo\(\)/u);
 	assert.match(floatingSurfaceSource, /question: getSessionQuestion\(activeSession\)/u);
 	assert.match(floatingSurfaceSource, /intro: getSessionQuestionIntro\(activeSession\)/u);
@@ -536,7 +536,7 @@ test("the activity skill picker uses work-item skills and space-managed defaults
 	assert.match(skillPickerSource, /skills=\{WORK_ITEM_SKILLS\}/u);
 });
 
-test("work-item skills use varied Skills Directory collection colors", () => {
+test("work-item skills use varied Skill Directory collection colors", () => {
 	const pickerOptionsSource = readBlockFile("lib/work-item-picker-options.ts");
 	const collectionIds = [...pickerOptionsSource.matchAll(/collectionId: "([^"]+)"/gu)]
 		.map((match) => match[1]);
@@ -691,7 +691,8 @@ test("JiraWorkItem keeps the standard + experimental registry, detail, demo, and
 	assert.match(demoSource, /<JiraWorkItem variant="default" \/>/u);
 	// The hero demo remains the variant chooser page; version examples group their preset states.
 	assert.match(demoSource, /import JiraWorkItemPage from "@\/components\/blocks\/jira-work-item\/page";/u);
-	assert.match(demoSource, /return <JiraWorkItemPage \/>;/u);
+	// The catalog page hosts Project butter with its Rovo chat (the website layer owns that host).
+	assert.match(demoSource, /return <JiraWorkItemPage projectButterWorkItem=\{ProjectButterChatWorkItem\} \/>;/u);
 	assert.match(demoSource, /const PRESET_OPTIONS[\s\S]*label: "With content"[\s\S]*label: "Empty state"[\s\S]*label: "Agents running"/u);
 	assert.match(demoSource, /function JiraWorkItemPresetDemo\(/u);
 	assert.match(demoSource, /const \[activePreset, setActivePreset\] = useState<JiraWorkItemExperimentalPreset \| null>\(null\);/u);

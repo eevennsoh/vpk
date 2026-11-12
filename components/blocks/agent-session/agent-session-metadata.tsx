@@ -5,6 +5,7 @@ import { useInView } from "motion/react";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import BranchIcon from "@atlaskit/icon/core/branch";
+import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 
 import {
@@ -22,7 +23,7 @@ import {
 	toAgentSessionMetadataSegments,
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
-import type { AgentSessionItem } from "./agent-session-types";
+import { getAgentSessionRole, type AgentSessionItem } from "./agent-session-types";
 import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
 
 const TOOL_CALL_CYCLE_MS = 2_200;
@@ -32,6 +33,14 @@ function MetadataDot() {
 	return (
 		<span aria-hidden="true" className="shrink-0 text-text-subtlest">
 			·
+		</span>
+	);
+}
+
+function ViewerLock() {
+	return (
+		<span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtlest [&_svg]:size-3!">
+			<LockLockedIcon color="currentColor" label="" size="small" />
 		</span>
 	);
 }
@@ -254,6 +263,7 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 				</span>
 			))}
+			{getAgentSessionRole(item) === "viewer" || item.privateTo ? <><MetadataDot /><ViewerLock /></> : null}
 		</span>
 	);
 }
@@ -306,6 +316,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					<AgentListTime item={item} />
 				</span>
 			</span>
+			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><ViewerLock /></> : null}
 		</span>
 	);
 }

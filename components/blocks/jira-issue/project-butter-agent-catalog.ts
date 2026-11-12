@@ -13,6 +13,7 @@ export const BUTTER_PRIMARY_BOARD_AGENTS = [
 const customIds = ["code-reviewer", "release-notes-drafter", "bug-report-assistant"];
 export const BUTTER_BOARD_AGENTS: readonly AgentSelectorAgent[] = [
 	...BUTTER_PRIMARY_BOARD_AGENTS,
+	{ id: "the-council", name: "The Council", byline: "", avatarSrc: "/avatar-agent-new/yellow/feature-flag.svg" },
 	{ id: "jira-coding", name: "Jira Coding Agent", byline: "", avatarSrc: JIRA_CODING_AGENT_GLYPH },
 	{ id: "rovo-cli", name: "Rovo CLI", byline: "", avatarSrc: "/illustration/project-butter-agents/agent-rovo.svg" },
 	...customIds.flatMap((id) => {

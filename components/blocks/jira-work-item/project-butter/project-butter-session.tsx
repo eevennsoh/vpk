@@ -3,7 +3,7 @@
 import CloseIcon from "@atlaskit/icon/core/close";
 
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
-import { AgentStates } from "@/components/blocks/agent-states";
+import { AgentState } from "@/components/blocks/agent-state";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -28,7 +28,7 @@ export function ProjectButterSession({
 				<h3 className="text-sm font-semibold text-text">{session.title}</h3>
 				<Button aria-label="Close session" onClick={onClose} size="icon-compact" type="button" variant="ghost"><CloseIcon label="" size="small" /></Button>
 			</div>
-			<AgentStates
+			<AgentState
 				agent={{ ...session.agent, id: session.agent.id ?? session.id }}
 				composer="hidden"
 				message={session.message}

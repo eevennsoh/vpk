@@ -57,11 +57,12 @@ After changing this index or a feature file, run `pnpm run verify:vpk-feature-ma
 - [Switch theme](./switch-theme.md) covers cycling light, dark, and system from the header.
 - [Search the sidebar](./sidebar-search.md) covers filtering the component browser and clearing the query.
 - [Open Studio](./studio-shell.md) covers loading the Studio shell without sending a chat message.
-- [Jira Golden Journeys v0](./jira-golden-journeys-v0.md) covers the original pattern gallery, keyboard selection, local terminal theme, and narrow layout.
-- [Jira Golden Journeys v1](./jira-golden-journeys-v1.md) covers local/global session walkthroughs, screen navigation, keyboard selection, and narrow layout.
-- [Jira Golden Journeys v2](./jira-golden-journeys-v2.md) covers story chapters, Details/Activity, guided pull-request detail, keyboard focus, and narrow layout.
-- [Jira Golden Journeys v3](./jira-golden-journeys-v3.md) covers Track/Learn/Build/Terminal, PAY-101 sections, PR #1839, and narrow `Jump to chapter`.
-- [Jira Golden Journeys v4](./jira-golden-journeys-v4.md) covers the Payments SDK board/list in Jira chrome, Unlink sessions, and view controls.
+- [Jira Golden Journey v0](./jira-golden-journey-v0.md) covers the original pattern gallery, keyboard selection, local terminal theme, and narrow layout.
+- [Jira Golden Journey v1](./jira-golden-journey-v1.md) covers local/global session walkthroughs, screen navigation, keyboard selection, and narrow layout.
+- [Jira Golden Journey v2](./jira-golden-journey-v2.md) covers story chapters, Details/Activity, guided pull-request detail, keyboard focus, and narrow layout.
+- [Jira Golden Journey v3](./jira-golden-journey-v3.md) covers Track/Learn/Build/Terminal, PAY-101 sections, PR #1839, and narrow `Jump to chapter`.
+- [Jira Golden Journey v4](./jira-golden-journey-v4.md) covers the Payments SDK board/list in Jira chrome, Unlink sessions, and view controls.
+- [Project Butter v1](./butter-v1.md) covers direct project entry and Board/List switching.
 - [Jira Team EU26](./jira-team-eu26.md) covers direct project entry, Board/List, current settings, session filters and column states, drag/drop/cancel, and narrow motion-off proof.
 - [Jira Team EU26 End](./jira-team-eu26-end.md) covers the keynote board, drags into Done, `Play closing`, the recap finale, and `?finale` cue links.
 

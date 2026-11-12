@@ -177,15 +177,15 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"sources-demo-custom-rendering": dynamic(
+	"source-demo-custom-rendering": dynamic(
 		() =>
-			import("../../demos/ui-custom/sources-demo").then((mod) => ({
-				default: mod.SourcesDemoCustomRendering,
+			import("../../demos/ui-custom/source-demo").then((mod) => ({
+				default: mod.SourceDemoCustomRendering,
 			})),
 		{ ssr: false },
 	),
-	"sources-demo-preview-menu": dynamic(
-		() => import("../../demos/ui-custom/sources-demo-preview-menu"),
+	"source-demo-preview-menu": dynamic(
+		() => import("../../demos/ui-custom/source-demo-preview-menu"),
 		{ ssr: false },
 	),
 	"speech-input-demo-with-transcript": dynamic(
@@ -237,24 +237,24 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"test-results-demo-with-progress": dynamic(
+	"test-result-demo-with-progress": dynamic(
 		() =>
-			import("../../demos/ui-custom/test-results-demo").then((mod) => ({
-				default: mod.TestResultsDemoWithProgress,
+			import("../../demos/ui-custom/test-result-demo").then((mod) => ({
+				default: mod.TestResultDemoWithProgress,
 			})),
 		{ ssr: false },
 	),
-	"test-results-demo-with-errors": dynamic(
+	"test-result-demo-with-errors": dynamic(
 		() =>
-			import("../../demos/ui-custom/test-results-demo").then((mod) => ({
-				default: mod.TestResultsDemoWithErrors,
+			import("../../demos/ui-custom/test-result-demo").then((mod) => ({
+				default: mod.TestResultDemoWithErrors,
 			})),
 		{ ssr: false },
 	),
-	"test-results-demo-running": dynamic(
+	"test-result-demo-running": dynamic(
 		() =>
-			import("../../demos/ui-custom/test-results-demo").then((mod) => ({
-				default: mod.TestResultsDemoRunning,
+			import("../../demos/ui-custom/test-result-demo").then((mod) => ({
+				default: mod.TestResultDemoRunning,
 			})),
 		{ ssr: false },
 	),

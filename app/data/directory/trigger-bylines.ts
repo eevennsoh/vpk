@@ -7,7 +7,7 @@ import triggerBylinesData from "./trigger-bylines.json";
  * matching the loader pattern used by `teams.ts` / `people.ts`.
  *
  * Keyed by `AgentTriggerProviderId` (see
- * `components/blocks/triggers/data/trigger-catalog.ts`). Kept as a plain
+ * `components/blocks/trigger/data/trigger-catalog.ts`). Kept as a plain
  * `Record<string, string>` here so this data module stays free of a component
  * import; callers pass the provider id they already hold.
  */

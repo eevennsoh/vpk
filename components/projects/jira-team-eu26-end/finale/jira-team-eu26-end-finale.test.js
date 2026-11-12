@@ -59,7 +59,7 @@ export function FinaleCard(props) {
 		onArrivalComplete={() => {}}
 		shouldAnimateCardMoves={false}
 	>
-		<JiraIssue {...props} />
+		<JiraIssue appearance="default" {...props} />
 	</CreatedCardArrivalMotion>;
 }
 `,

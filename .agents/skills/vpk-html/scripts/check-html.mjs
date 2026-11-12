@@ -8,6 +8,7 @@ import { collectFaviconIssues, cssVarName, loadTokens } from "./shared.mjs";
 import { isDeck } from "./presentation.mjs";
 import { collectFigureEngineIssues } from "./figures/check-figures.mjs";
 import { collectFontFaceIssues } from "./font-faces.mjs";
+import { collectStoryExplainerIssues } from "./check-html-story.mjs";
 import { collectSmilMotionIssues, listSmilElements, readSmilAttribute } from "./runtime/smil-starter.mjs";
 
 // Timing and gating rules live with the starter; build.mjs and callers import them from here.
@@ -612,6 +613,8 @@ export function validateHtmlString(html, label = "document") {
 	failures.push(...collectPresentationIssues(html));
 	failures.push(...collectSmilMotionIssues(html));
 	failures.push(...collectSvgGrammarIssues(html));
+	// Story explainers only (body data-vpk-layout="story"): rail-title, duplicate-id, straight-apostrophe, inline-script-syntax.
+	failures.push(...collectStoryExplainerIssues(html));
 	const reviewIssues = collectReviewIssues(html);
 	failures.push(...reviewIssues.failures);
 	// Figure engines (ws4b, K6 row 5): engine record E1–E3 and anatomy hero H1–H8; inert without their markup.

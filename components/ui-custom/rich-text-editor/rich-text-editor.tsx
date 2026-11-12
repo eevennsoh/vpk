@@ -84,6 +84,7 @@ interface RichTextEditorProps
 	 * trigger independently, e.g. `{ mention: "flat", command: "nested" }`.
 	 */
 	suggestionVariant?: RichTextSuggestionVariantConfig;
+	suggestionRowVariant?: RichTextEditorExtensionOptions["suggestionRowVariant"];
 	mentionRemovalRequest?: RichTextMentionRemovalRequest | null;
 	onMarkdownChange?: (value: string) => void;
 	onPlainTextChange?: (value: string) => void;
@@ -368,6 +369,7 @@ export function RichTextEditor({
 	mentionSources,
 	enableDirectoryAutocomplete = false,
 	suggestionVariant = "nested",
+	suggestionRowVariant,
 	mentionRemovalRequest,
 	onMarkdownChange,
 	onPlainTextChange,
@@ -546,6 +548,7 @@ export function RichTextEditor({
 					? (category) => onOpenDirectoryRef.current?.(category)
 					: undefined,
 				suggestionVariant,
+				suggestionRowVariant,
 				frontmatter: frontmatterEnabled ? { enabled: true } : undefined,
 			});
 			if (enableDirectoryAutocomplete) {
@@ -553,7 +556,7 @@ export function RichTextEditor({
 			}
 			return richTextExtensions;
 		},
-		[directoryAutocompleteController, enableDirectoryAutocomplete, frontmatterEnabled, hasOpenDirectory, suggestionVariant, trailingNode],
+		[directoryAutocompleteController, enableDirectoryAutocomplete, frontmatterEnabled, hasOpenDirectory, suggestionRowVariant, suggestionVariant, trailingNode],
 	);
 	const editor = useEditor({
 		extensions,

@@ -143,7 +143,7 @@ export function JiraActivityCard({
 					hasExpandedLayout ? "gap-3" : "gap-2",
 				)}
 			>
-				{threadConnector ? <span aria-hidden className="pointer-events-none absolute -left-6 bottom-0 top-10 w-px -translate-x-1/2 bg-bg-accent-gray-subtler" data-jira-activity-thread-stem /> : null}
+				{threadConnector ? <span aria-hidden className="pointer-events-none absolute -left-6 bottom-0 top-9 w-px -translate-x-1/2 bg-bg-accent-gray-subtler" data-jira-activity-thread-stem /> : null}
 				{item ? (
 					<>
 						<div className="relative min-w-0">
@@ -166,12 +166,10 @@ export function JiraActivityCard({
 						<div
 							className={cn(
 								"relative flex min-w-0 items-center gap-2",
-								// Match the timeline node's h-10 card track so the
-								// name/timestamp block optically centers with the
-								// out-of-card size-8 avatar (same as items-center
-								// when the avatar lived in this row).
-								hideLeadAvatar ? "min-h-10" : null,
+								// Match the 32px timeline avatar track.
+								hideLeadAvatar ? "min-h-8" : null,
 							)}
+							data-slot="jira-activity-comment-header"
 						>
 							{headerConnector}
 							{hideLeadAvatar ? null : headerAvatar}

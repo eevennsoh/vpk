@@ -109,6 +109,8 @@ import {
  * shared so both variants remain interchangeable inside an owning surface.
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
+	/** Center columns when they fit, while retaining horizontal scrolling when they do not. */
+	contentAlignment?: "start" | "center";
 	/** Enables AI destination preview and Return during pointer-driven issue dragging. */
 	onAutoArrange?: (codes: ReadonlySet<string>) => void;
 	/** Fuses selected wells, keeps issue surfaces white, and gives every issue a well. */
@@ -434,6 +436,7 @@ function ExperimentalJiraKanbanView({
 	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
 	columnSizing = "fill",
 	columnWidth = "fixed",
+	contentAlignment = "start",
 	createdCardArrival,
 	createWorkItemDropZoneLabel,
 	detachedAgentSessionsByCard,
@@ -810,7 +813,7 @@ function ExperimentalJiraKanbanView({
 				>
 				<LayoutGroup id={cardLayoutGroupId}>
 						<div
-							className={cn("flex w-max items-stretch", columnSizing === "fill" ? "min-h-full min-w-full" : "h-full")}
+							className={cn("flex w-max items-stretch", columnSizing === "fill" ? "min-h-full min-w-full" : "h-full", contentAlignment === "center" ? "mx-auto" : null)}
 							style={{ paddingInlineStart: resolvedColumnRowPaddingInlineStart, width: columnWidth === "fluid" ? "100%" : undefined }}
 						>
 						<ExclusiveCreateWellProximityProvider>

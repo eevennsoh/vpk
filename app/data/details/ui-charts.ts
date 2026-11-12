@@ -41,7 +41,7 @@ function chartDetail(input: {
 }
 
 export const UI_CHART_DETAILS: Record<string, ComponentDetail> = {
-	"chart-utilities": chartDetail({
+	"chart-utility": chartDetail({
 		description: "Composable chart overlays for ranges, forecasts, trends, dates, markers, and backgrounds.",
 		importStatement: 'import { LineChart, Line, ReferenceArea, TrendLine } from "@/components/ui-charts";',
 		usage: `<LineChart data={data} xDataKey="date">
@@ -58,16 +58,16 @@ export const UI_CHART_DETAILS: Record<string, ComponentDetail> = {
 			{ name: "BarDepth", description: "Add a dimensional treatment to bars." },
 		],
 		examples: [
-			{ title: "Background", demoSlug: "chart-utilities-demo-background" },
-			{ title: "Reference area", demoSlug: "chart-utilities-demo-reference-area" },
-			{ title: "Projection", demoSlug: "chart-utilities-demo-projection-line" },
-			{ title: "Band", demoSlug: "chart-utilities-demo-band" },
-			{ title: "Brush", demoSlug: "chart-utilities-demo-brush" },
-			{ title: "Weekends", demoSlug: "chart-utilities-demo-weekends" },
-			{ title: "Deadline", demoSlug: "chart-utilities-demo-deadline" },
-			{ title: "Trend line", demoSlug: "chart-utilities-demo-trend-line" },
-			{ title: "Markers", demoSlug: "chart-utilities-demo-markers" },
-			{ title: "Bar depth", demoSlug: "chart-utilities-demo-bar-depth" },
+			{ title: "Background", demoSlug: "chart-utility-demo-background" },
+			{ title: "Reference area", demoSlug: "chart-utility-demo-reference-area" },
+			{ title: "Projection", demoSlug: "chart-utility-demo-projection-line" },
+			{ title: "Band", demoSlug: "chart-utility-demo-band" },
+			{ title: "Brush", demoSlug: "chart-utility-demo-brush" },
+			{ title: "Weekends", demoSlug: "chart-utility-demo-weekends" },
+			{ title: "Deadline", demoSlug: "chart-utility-demo-deadline" },
+			{ title: "Trend line", demoSlug: "chart-utility-demo-trend-line" },
+			{ title: "Markers", demoSlug: "chart-utility-demo-markers" },
+			{ title: "Bar depth", demoSlug: "chart-utility-demo-bar-depth" },
 		],
 	}),
 	"radial-chart": chartDetail({

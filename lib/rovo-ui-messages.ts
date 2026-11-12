@@ -9,7 +9,7 @@ import {
 	type ToolUIPart,
 	type UIMessage,
 } from "ai";
-import type { AgentAutomationRule } from "@/components/blocks/triggers/data/trigger-catalog";
+import type { AgentAutomationRule } from "@/components/blocks/trigger/data/trigger-catalog";
 import type { RovoAppCreationMode, RovoAppPromptMode } from "@/lib/rovo-app-types";
 
 // ---------------------------------------------------------------------------

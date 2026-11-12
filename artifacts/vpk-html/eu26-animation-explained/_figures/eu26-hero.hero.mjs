@@ -1,5 +1,8 @@
-import { createWallField, model, motionConfig } from './eu26-motion-model.mjs';
+import { createWallField, lockCameraKeys, model, motionConfig } from './eu26-motion-model.mjs';
 import { live } from './eu26-scene-live.mjs';
+import { cardDetail, chromeDetail, tileDetail, titleDetail, wrapDetail } from './eu26-face-detail.mjs';
+import { lanyardDetail, pieceInset, PIECES, stackCardDetail } from './eu26-face-wall.mjs';
+import { pen } from './eu26-face-pen.mjs';
 
 export { model, live };
 
@@ -8,7 +11,7 @@ export const hero = {
 	tier: "hero",
 	width: 1200,
 	height: 760,
-	label: "A quiet model of a board becomes a paper-card field, assembles six tiles, then opens into a continuous wall. Compare paper, outline and sculpted treatments.",
+	label: "A quiet model of a board becomes a paper-card field, assembles six tiles, then opens into a continuous wall.",
 	plate: {
 		fig: "Fig 1",
 		title: "From one Done card to a world of work",
@@ -193,8 +196,25 @@ function sourceWall() {
 		return { ...slot, home, at: [(slot.source.x - 960) * worldScale, (slot.source.y - 540) * worldScale, 0], w, d, r: 20 * worldScale, seed: 211 + index * 37 };
 	});
 }
+// The confetti's variety (finale-confetti.ts VARIETY, less the satin ribbons): a third are discs (sequins and round
+// paper), the rest paper rectangles 9-14 long at 0.45-0.65 of their length wide. Parked off stage until thrown.
+function confettiPieces(count = 140) {
+	const hash = (i, channel) => { const v = Math.sin((i + 1) * 91.7 + channel * 47.3) * 24634.6345; return v - Math.floor(v); };
+	let parkX = -700;
+	return Array.from({ length: count }, (_, i) => {
+		const disc = hash(i, 1) < 0.33, length = disc ? 6 + 3 * hash(i, 2) : 9 + 5 * hash(i, 2), width = disc ? length : length * (0.45 + 0.2 * hash(i, 3));
+		const plan = { x: parkX, y: 4000, w: +width.toFixed(2), d: +length.toFixed(2), r: disc ? +(width / 2).toFixed(2) : 0.7 };
+		parkX += 24;
+		return { shape: disc ? "disc" : "rect", plan, home: [plan.x + plan.w / 2, plan.y + plan.d / 2, 0] };
+	});
+}
+// Camera anchors: the Done column, the hero card's place in the field, and the Team ’26 title in the bento.
+const CAMERA_ANCHORS = { done: [317.5, 55, 0], hero: [-15, -28, 96], title: [10, -16, 6] };
 const doneOrder = [15, ...Array.from({ length: 23 }, (_, i) => i).filter(i => i !== 15)];
-const doneViewport = { x: 225, y: -158, w: 185, d: 374, r: 6 };
+// Each column's list window reaches the column's inner bottom edge, so every list looks full and its last visible card
+// (row 3) is clipped. Columns 0-2 hold the stories; column 3 is Done.
+const listViewport = column => ({ x: -390 + column * 205, y: -158, w: 185, d: 448, r: 6 });
+const doneViewport = listViewport(3);
 
 export const data = {
 	motion: motionConfig,
@@ -202,14 +222,12 @@ export const data = {
 	playbackRate: 1.7,
 	variants: [
 		{ id: "paper", title: "Paper model", description: "Thin, opaque paper; orange marks completion before the field returns to quiet white." },
-		{ id: "outline", title: "Outline model", description: "Open structural linework with an orange edge marking the same subject." },
-		{ id: "sculpted", title: "Sculpted model", description: "Thicker rounded pieces, fewer board controls, and orange moving parts." },
 	],
 	states: [
 		{ id: "board", title: "The keynote board", phase: "board", time: 0, description: "Three chapters of work sit beside an empty Done column." },
 		{ id: "drop", title: "One card lands", phase: "drop", time: 2, description: "A human cursor carries Agent Session Tracking into Done, then releases it." },
 		{ id: "puff", title: "A local reward", phase: "puff", time: 4, description: "A small puff opens around the landed card, then clears." },
-		{ id: "all-done", title: "The whole deck completes", phase: "allDone", time: 6, description: "The main cursor brings the next work into Done. All 23 stories are complete; three spaced rows stay visible." },
+		{ id: "all-done", title: "The whole deck completes", phase: "allDone", time: 6, description: "The cursor drags the rest of the selected work into Done as one stack. All 23 stories are complete and Done fills to its edge." },
 		{ id: "big-burst", title: "The celebration grows", phase: "bigBurst", time: 8, description: "A broad confetti burst changes the scale of the reward." },
 		{ id: "vortex", title: "Particles find an orbit", phase: "vortex", time: 10, description: "The burst gathers into a rotating funnel above Done." },
 		{ id: "column-flash", title: "Completion light", phase: "columnFlash", time: 13, description: "A light traces the three card borders, then a directional gradient passes across their faces." },
@@ -222,7 +240,7 @@ export const data = {
 	cards: stories.map(([code, title], index) => {
 		const column = index < 8 ? 0 : index < 14 ? 1 : 2;
 		const row = index - [0, 8, 14][column];
-		return { code, title, row, home: [-387.5 + column * 205, -154 + row * 126, 4], w: 180, d: 114 };
+		return { code, title, column, row, home: [-387.5 + column * 205, -154 + row * 126, 4], w: 180, d: 114 };
 	}),
 	features: [
 		{ card: 15, title: "Agent Sessions", kind: "sessions", at: [-345, -208, 6], w: 220, d: 180 },
@@ -232,41 +250,73 @@ export const data = {
 		{ card: 16, title: "Agent Effectiveness", kind: "chart", at: [145, -4, 6], w: 220, d: 180 },
 		{ card: 10, title: "Record for Agent", kind: "record", at: [-100, 55, 6], w: 220, d: 121 },
 	],
+	confetti: confettiPieces(),
 	wall: sourceWall(),
 	wallSource: { commit: "8588b00ff81cb5e8341a462158c747c6d990667c", viewport: { width: 1920, height: 1080 }, zoom: 0.25, density: "dense", padding: { x: 40, y: 40 }, pieceScale: 0.792, gutter: 23.76, worldScale: 0.72 },
+	// The board chassis plan; the finale confetti stays over it.
+	board: { x: -430, y: -286, w: 860, d: 596, r: 10 },
+	columnViewports: [0, 1, 2].map(listViewport),
 	doneList: { viewport: doneViewport, padding: { x: 2.5, y: 4 }, gap: 12, order: doneOrder, cards: doneOrder.map((card, rank) => ({ card, rank, x: doneViewport.x + 2.5, y: doneViewport.y + 4 + rank * 126, w: 180, d: 114 })) },
-	materialDepths: { paper: { story: 1.2, tile: 1.5, wall: 1.1, title: 1.2 }, outline: { story: 0.6, tile: 0.6, wall: 0.6, title: 0.6 }, sculpted: { story: 3.3, tile: 15, wall: 7, title: 10 } },
-	title: { w: 220, d: 104, at: [10, -37, 6], home: [10, 2002, 4], grip: { u: 0.88, v: 0.76 } },
+	materialDepths: { story: 1.2, tile: 1.5, wall: 1.1, title: 1.2 },
+	title: { w: 220, d: 96, at: [10, -16, 6], home: [10, 2002, 4], grip: { u: 0.88, v: 0.76 } },
 	boardDrags: [
 		{ card: 15, reach: 0, grab: 0, land: 2, leave: 2.65, grip: { u: 0.82, v: 0.24 }, entry: [350, -350, 0] },
 		{ card: 0, reach: 4, grab: 4.3, land: 6, leave: 6.65, grip: { u: 0.82, v: 0.24 }, entry: [350, -350, 0] },
 	],
 	titleCarry: { reach: 22.5, grab: 23.1, land: 26.4, leave: 27, entry: [400, -360, 30] },
 	actors: [
-		{ id: "teammate-1", slotKey: "library-picker", reach: 26.5, grab: 27.15, land: 28.9, leave: 29.55, incoming: [220, -140, 170], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
-		{ id: "teammate-2", slotKey: "library-loomRecordBar", reach: 28, grab: 28.65, land: 30.5, leave: 31.15, incoming: [260, -180, 180], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
-		{ id: "teammate-3", slotKey: "library-glyphChat", reach: 31, grab: 31.65, land: 34, leave: 34.65, incoming: [200, -130, 145], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
+		{ id: "teammate-1", slotKey: "library-quizArtifact", reach: 26.5, grab: 27.15, land: 28.9, leave: 29.55, incoming: [170, -30, 170], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
+		{ id: "teammate-2", slotKey: "library-hold", reach: 28, grab: 28.65, land: 30.5, leave: 31.15, incoming: [180, 40, 180], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
+		{ id: "teammate-3", slotKey: "library-loomRecordBar", reach: 31, grab: 31.65, land: 34, leave: 34.65, incoming: [130, -20, 145], entry: [900, -900, 0], grip: { u: 0.5, v: 0.5 } },
 	],
-	cameraKeys: [
+	// Held poses joined by snaps (figure-motion.md, "Snap between camera poses"): each move takes 0.6 model seconds, 0.35 s
+	// at playbackRate 1.7, eased in and out by cameraEase, then holds. A move that zooms or turns is locked on its anchor
+	// (`lock`, solved by lockCameraKeys), so the subject keeps its place on screen; recentring is its own pan snap.
+	cameraKeys: lockCameraKeys([
 		{ time: 0, at: [0, 0, 0], width: 1220, azimuth: 45, elevation: 30 },
-		{ time: .25, at: [0, 0, 0], width: 1220, azimuth: 45, elevation: 30 },
-		{ time: 1.8, at: [248, -40, 40], width: 1000, azimuth: 55, elevation: 38 },
-		{ time: 4, at: [248, -40, 40], width: 1000, azimuth: 55, elevation: 38 },
-		{ time: 5.8, at: [250, -20, 130], width: 1240, azimuth: 67, elevation: 43 },
-		{ time: 10.6, at: [250, -20, 130], width: 1240, azimuth: 67, elevation: 43 },
-		{ time: 11.8, at: [288, -40, 15], width: 800, azimuth: 74, elevation: 50 },
-		{ time: 13, at: [288, -40, 15], width: 800, azimuth: 74, elevation: 50 },
-		{ time: 15.8, at: [-15, -28, 96], width: 2050, azimuth: 84, elevation: 42 },
-		{ time: 16.2, at: [-15, -28, 96], width: 2050, azimuth: 84, elevation: 42 },
-		{ time: 18.8, at: [-15, -28, 96], width: 540, azimuth: 125, elevation: 48 },
-		{ time: 19.2, at: [-15, -28, 96], width: 540, azimuth: 125, elevation: 48 },
-		{ time: 21.6, at: [10, -4, 5], width: 1040, azimuth: 90, elevation: 90 },
-		{ time: 22.4, at: [10, -4, 5], width: 1040, azimuth: 90, elevation: 90 },
-		{ time: 26.8, at: [-90, -15, 8], width: 2152.8, azimuth: 45, elevation: 30 },
-		{ time: 34, at: [-90, -15, 8], width: 2152.8, azimuth: 45, elevation: 30 },
-	],
+		{ time: .5, hold: true },
+		{ time: 1.1, lock: CAMERA_ANCHORS.done, width: 1000, azimuth: 55, elevation: 38 },
+		{ time: 1.35, hold: true },
+		{ time: 1.95, at: [248, -40, 40], width: 1000, azimuth: 55, elevation: 38 },
+		{ time: 4, hold: true },
+		{ time: 4.6, lock: CAMERA_ANCHORS.done, width: 1240, azimuth: 67, elevation: 43 },
+		{ time: 11.2, hold: true },
+		{ time: 11.8, lock: CAMERA_ANCHORS.done, width: 800, azimuth: 74, elevation: 50 },
+		{ time: 13.1, hold: true },
+		{ time: 13.7, lock: CAMERA_ANCHORS.done, width: 2050, azimuth: 84, elevation: 42, lens: 0.3 },
+		{ time: 14.4, hold: true },
+		{ time: 15, at: CAMERA_ANCHORS.hero, width: 2050, azimuth: 84, elevation: 42, lens: 0.3 },
+		{ time: 15.6, hold: true },
+		// The one held perspective pose, at the story's turn: once the field has formed, only the focal length opens, about
+		// the hero card at the frame centre.
+		{ time: 16.2, at: CAMERA_ANCHORS.hero, width: 2050, azimuth: 84, elevation: 42, persp: 0.65 },
+		{ time: 17.4, hold: true },
+		{ time: 18, lock: CAMERA_ANCHORS.hero, width: 540, azimuth: 125, elevation: 48 },
+		{ time: 19.3, hold: true },
+		{ time: 20, lock: CAMERA_ANCHORS.hero, width: 1040, azimuth: 90, elevation: 90 },
+		{ time: 20.6, hold: true },
+		{ time: 21.2, at: [10, -4, 5], width: 1040, azimuth: 90, elevation: 90 },
+		{ time: 23, hold: true },
+		// The wall is shown flat and frontal, like the source's screen: one band of the packed masonry, centred and filling the frame.
+		{ time: 23.6, lock: CAMERA_ANCHORS.title, width: 1300, azimuth: 90, elevation: 90, cover: 1 },
+		{ time: 34, hold: true },
+	]),
 };
 data.wallField = createWallField(data);
+// Stack slots hold cards of their own (the source's print slots): three rows inside the tile's card, each its own
+// surface, which wait on the slot's stack in the air and peel off it top first as the slot comes down. The rows sit
+// one row margin inside the card (the same margin the rows layout uses), so no row outline lands on the card's edge.
+data.wallCards = data.wall.flatMap((slot, index) => {
+	if (!['library-searchDrop', 'library-agentSessionStack', 'library-riskStack'].includes(slot.key)) return [];
+	const [, pw, ph, scale, px, py] = WALL_PIECES.find(piece => 'library-' + piece[0] === slot.key);
+	const unit = slot.w / (pw * scale + px * 2), margin = pieceInset(pw, ph) * scale * unit;
+	const padX = px * unit + margin, padY = py * unit + margin, gap = 6, rows = 3;
+	const w = slot.w - padX * 2, d = (slot.d - padY * 2 - gap * (rows - 1)) / rows;
+	return Array.from({ length: rows }, (_, row) => ({ slot: index, index: row, w, d, dx: 0, dy: -slot.d / 2 + padY + d / 2 + row * (d + gap) }));
+});
+// Each dealt card parks on its own spot until the wall needs it, so no two overlap at rest.
+let parkX = -900;
+for (const child of data.wallCards) { child.home = [parkX, 3300, 0]; parkX += child.w + 32; }
 
 export function present(state, data) {
 	const frame = data.states[state.index];
@@ -277,42 +327,86 @@ export function present(state, data) {
 
 export function build(kit, { data }) {
 	const { k, A, S, camera } = kit;
-	const board = { x: -430, y: -286, w: 860, d: 596, r: 10 };
+	const { board } = data;
 	const P = camera.fit(k.boxCorners(board, -12, 35), hero.width, hero.height, { pad: 34 });
 	const R = A.recorder(P);
-	const put = (name, plan, z, h, piece = name, hidden = false, focal = false) => {
-		const kind = piece === "chrome" ? name.split(".")[1].replace(/\d/g, "") : piece.split(".")[0];
-		const attrs = `data-eu26-piece="${piece}" data-part="${name}" data-eu26-kind="${kind}" data-eu26-plan='${JSON.stringify({ plan, z, h })}'${hidden ? ' style="display:none"' : ""}${focal ? ' data-focal="hero-card"' : ""}`;
+	// Face details are drawn in plan units, so they stay out of the audited part markup; live() adopts each one into
+	// its surface's own group at start-up and places it with that face's projection every frame.
+	const details = [];
+	const put = (name, plan, z, h, piece = name, hidden = false, focal = false, detail = "", clip = "") => {
+		if (detail) details.push(detail.replace("<g data-eu26-detail", `<g data-eu26-detail="${name}"`));
+		const kind = piece === "chrome" ? (name.split(".")[1] ?? "").replace(/\d/g, "") : piece.split(".")[0];
+		const attrs = `data-eu26-piece="${piece}" data-part="${name}" data-eu26-kind="${kind}" data-eu26-plan='${JSON.stringify({ plan, z, h })}'${hidden ? ' style="display:none"' : ""}${clip ? ` clip-path="url(#eu26-${clip}-window)"` : ""}${focal ? ' data-focal="hero-card"' : ""}`;
 		R.put({ name, at: [plan.x + plan.w / 2, plan.y + plan.d / 2, z + h / 2], svg: `<g ${attrs}>${S(k.slabOf(plan, z, h, P, 4, Math.min(h * 0.16, 0.25)), { tone: focal ? "hi" : "mid", crease: "none", lit: focal })}</g>`, shapes: [R.solid(A.slab(plan, z, h, { name, ground: true }, 4))] });
 	};
-	put("board.chassis", board, -12, 10, "chrome");
-	put("board.navigation", { x: -430, y: -286, w: 860, d: 42, r: 8 }, -2, 2, "chrome");
-	put("board.title", { x: -430, y: -242, w: 860, d: 53, r: 2 }, -2, 2, "chrome");
+	put("board.chassis", board, -12, 10, "chrome", false, false, chromeDetail("board.chassis"));
+	put("board.navigation", { x: -430, y: -286, w: 860, d: 42, r: 8 }, -2, 2, "chrome", false, false, chromeDetail("board.navigation"));
+	put("board.title", { x: -430, y: -242, w: 860, d: 53, r: 2 }, -2, 2, "chrome", false, false, chromeDetail("board.title"));
 	for (let i = 0; i < 4; i += 1) {
 		const x = -394 + i * 205;
-		put(`board.column${i}`, { x, y: -184, w: 193, d: 478, r: 6 }, -2, 1, "chrome");
-		put(`board.scroll${i}`, { x: x + 187, y: -148, w: 2, d: 420, r: 1 }, -0.9, 0.4, "chrome");
+		put(`board.column${i}`, { x, y: -184, w: 193, d: 478, r: 6 }, -2, 1, "chrome", false, false, chromeDetail(`board.column${i}`));
 	}
 	data.cards.forEach((card, i) => {
 		const plan = { x: card.home[0], y: card.home[1], w: card.w, d: card.d, r: 4.5 };
-		put(`story.${i}`, plan, card.home[2], 1.2, `story.${i}`, card.row > 2, i === 15);
+		put(`story.${i}`, plan, card.home[2], 1.2, `story.${i}`, card.row > 3, i === 15, cardDetail(card, stories[i]), card.row === 3 ? `column${card.column}` : "");
 	});
 	data.features.forEach((feature, i) => {
 		const plan = { x: -700 + i * 260, y: 1600, w: feature.w, d: feature.d, r: 9 };
-		put(`tile.${i}`, plan, 4, 1.5, `tile.${i}`, true);
+		put(`tile.${i}`, plan, 4, 1.5, `tile.${i}`, true, false, wrapDetail(tileDetail(feature)));
 	});
-	put("bento.title", { x: -100, y: 1950, w: 220, d: 104, r: 9 }, 4, 1.2, "title", true);
+	put("bento.title", { x: -100, y: 1954, w: 220, d: 96, r: 9 }, 4, 1.2, "title", true, false, wrapDetail(titleDetail()));
 	data.wall.forEach((wall, i) => {
 		const plan = { x: wall.home[0], y: wall.home[1], w: wall.w, d: wall.d, r: wall.r };
-		put(`wall.${i}`, plan, 0, 1.1, `wall.${i}`, true);
+		put(`wall.${i}`, plan, 0, 1.1, `wall.${i}`, true, false, wrapDetail(wallDetail(wall, data)));
 	});
-	for (let i = 0; i < 56; i += 1) {
-		const plan = { x: -700 + i * 24, y: 4000, w: 4 + i % 3, d: 9 + i % 4, r: 0.7 };
-		put(`confetti.${i}`, plan, 0, 0.3, `confetti.${i}`, true);
+	data.wallCards.forEach((child, j) => {
+		const plan = { x: child.home[0], y: child.home[1], w: child.w, d: child.d, r: 8 };
+		put(`wallcard.${j}`, plan, 0, 1.1, `wallcard.${j}`, true, false, wrapDetail(stackCardDetail(child)));
+	});
+	data.confetti.forEach((piece, i) => put(`confetti.${i}`, piece.plan, 0, 0.3, `confetti.${i}`, true));
+	const windows = [...data.columnViewports.map((viewport, i) => [`column${i}`, viewport, `data-eu26-column-window="${i}"`]), ["done", data.doneList.viewport, "data-eu26-done-window"]]
+		.map(([key, viewport, marker]) => `<clipPath id="eu26-${key}-window" clipPathUnits="userSpaceOnUse"><path ${marker} d="${k.planOutline(viewport, 5.2, P, 4)}"/></clipPath>`).join("");
+	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><path data-eu26-cursor-halo d="M0 0Z" fill="none" stroke-linejoin="round"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/>${id === "main" ? "" : `<rect data-eu26-cursor-pill x="0" y="0" width="0" height="0" style="display:none"/><text data-eu26-cursor-name x="0" y="0" style="display:none"></text>`}</g>`).join("")}</g>`;
+	return { P, R, before: [`<defs>${windows}</defs>`], after: [`<g data-eu26-details aria-hidden="true" style="display:none">${details.join("")}</g>`, cursorLayer] };
+}
+
+// Wall faces: bento holes repeat their tile's face at the slot's size, lanyards hang a badge, and every library piece
+// draws its product UI in the source's natural pixels, scaled and inset exactly as wallPiecesLayout places it.
+function wallDetail(slot, data) {
+	if (slot.reserved !== undefined) {
+		if (slot.reserved === 6) return titleDetail({ w: data.title.w, d: data.title.d, sx: slot.w / data.title.w, sy: slot.d / data.title.d });
+		const feature = data.features[slot.reserved];
+		return tileDetail(feature, { sx: slot.w / feature.w, sy: slot.d / feature.d });
 	}
-	const window = k.planOutline(data.doneList.viewport, 5.2, P, 4);
-	const cursorLayer = `<g data-eu26-cursor-layer aria-hidden="true" pointer-events="none">${["main", ...data.actors.map(actor => actor.id)].map(id => `<g data-eu26-cursor="${id}" style="display:none"><circle data-eu26-cursor-ring cx="0" cy="0" r="0" fill="none"/><path data-eu26-cursor-tip d="M0 0Z" stroke-linejoin="round"/></g>`).join("")}</g>`;
-	return { P, R, before: [`<defs><clipPath id="eu26-done-window" clipPathUnits="userSpaceOnUse"><path data-eu26-done-window d="${window}"/></clipPath></defs>`], after: [cursorLayer] };
+	if (slot.key.startsWith('lanyard-')) {
+		const p = pen(0, 0, slot.w / 360, slot.d / 480);
+		pen().rect(0, 0, slot.w, slot.d, slot.r, 'dp').out.forEach(item => p.out.push(item));
+		lanyardDetail(p, 360, 480);
+		return p.markup();
+	}
+	const [id, w, h, scale, px, py] = WALL_PIECES.find(piece => 'library-' + piece[0] === slot.key);
+	const unit = slot.w / (w * scale + px * 2);
+	const p = pen(px * unit, py * unit, scale * unit);
+	p.out.push(...pen().rect(0, 0, slot.w, slot.d, slot.r, 'dp').out);
+	PIECES[id](p, w, h);
+	return p.markup();
+}
+
+// Every paper face's detail in its own plan units, for the overlap check: story cards, bento tiles, wall slots
+// (a stack slot with its dealt rows laid in at rest) and the face outline each detail sits on.
+export function surfaceDetails(source = data) {
+	const faces = [];
+	source.cards.forEach((card, i) => faces.push({ name: `story.${i}`, w: card.w, d: card.d, r: 4.5, markup: cardDetail(card, stories[i]) }));
+	source.features.forEach((feature, i) => faces.push({ name: `tile.${i}`, w: feature.w, d: feature.d, r: 9, markup: tileDetail(feature) }));
+	source.wall.forEach((slot, i) => {
+		let markup = wallDetail(slot, source);
+		for (const child of source.wallCards.filter(each => each.slot === i)) {
+			const x = slot.w / 2 + child.dx - child.w / 2, y = slot.d / 2 + child.dy - child.d / 2;
+			markup += pen().rect(x, y, child.w, child.d, 8, 'dw').markup() + stackCardDetail(child).replace(/(x|cx)="([\d.-]+)"/g, (m, k, v) => `${k}="${Number(v) + x}"`).replace(/(y|cy)="([\d.-]+)"/g, (m, k, v) => `${k}="${Number(v) + y}"`);
+		}
+		faces.push({ name: `wall.${i}:${slot.key}`, w: slot.w, d: slot.d, r: slot.r, markup });
+	});
+	return faces;
 }
 
 // Each paper surface is an intentionally suspended choreography prop; its slab is its true footprint.

@@ -48,11 +48,6 @@ const MEDIUM_CARD_SOURCE = readFileSync(
 	join(EXPERIMENTAL_DIR, "..", "..", "agent-session", "agent-session-medium-card.tsx"),
 	"utf8",
 );
-const LARGE_CARD_SOURCE = readFileSync(
-	join(EXPERIMENTAL_DIR, "..", "..", "agent-session", "agent-session-card.tsx"),
-	"utf8",
-);
-
 function withoutComments(source) {
 	return source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/\/\/[^\n]*/gu, "");
 }
@@ -362,10 +357,6 @@ test("a hovered detached board session lights its column twin", () => {
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerEnter=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(item\);\s*\}\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerLeave=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(null\);\s*\}\}/u);
 	assert.match(SESSION_INDEX_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
-	assert.match(
-		LARGE_CARD_SOURCE,
-		/!showSelectedFill && \(isHighlighted \|\| isHoverStateActive\) && "bg-surface-hovered"/u,
-	);
 });
 
 test("Jira cards animate surrounding reflow when a session attach chin opens", () => {

@@ -5,6 +5,7 @@ import WarningIcon from "@atlaskit/icon/core/warning";
 import DataFormulaIcon from "@atlaskit/icon-lab/core/data-formula";
 import { DateRowField, PersonLabel, PersonRowField, PriorityLabel, PriorityRowField } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editors";
 import { TEAM_EU26_PEOPLE } from "@/components/blocks/jira-work-item/team-eu26/data/team-eu26-vita-one";
+import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
 import { DetailsOptionField } from "@/components/blocks/jira-work-item/project-butter/details-option-field";
 import { PROJECT_BUTTER_CAMPAIGN_MARKETS, PROJECT_BUTTER_DETAIL_FIELDS, PROJECT_BUTTER_DETAIL_OPTIONS, projectButterCostPerReach, type ProjectButterDetailFieldId, type ProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { ProjectButterStatus } from "@/components/blocks/jira-work-item/project-butter/project-butter-status";
@@ -17,7 +18,8 @@ import { ArtifactParentField } from "@/components/blocks/artifact-pane/artifact-
 import { AvatarUnassigned } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 
-const PEOPLE = Object.values(TEAM_EU26_PEOPLE).filter((person) => person.name !== "Automatic").map((person) => ({ ...person, avatarUrl: projectButterPersonAvatar(person.name) }));
+const BUTTER_PEOPLE = Object.values(TEAM_EU26_PEOPLE).filter((person) => person.name !== "Automatic").map((person) => ({ ...person, avatarUrl: projectButterPersonAvatar(person.name) }));
+const PEOPLE = [...BUTTER_PEOPLE, ...METADATA_PEOPLE.filter((person) => !BUTTER_PEOPLE.some((existing) => existing.name === person.name))];
 
 export function ProjectButterDetailFieldValue({ content, id }: Readonly<{ content: ProjectButterContent; id: ProjectButterDetailFieldId }>) {
 	const fields = content.detailFields;
@@ -25,13 +27,13 @@ export function ProjectButterDetailFieldValue({ content, id }: Readonly<{ conten
 		content.setDetailFields((current) => ({ ...current, [key]: value }));
 	}
 	if (id === "status") return <ProjectButterStatus appearance="field" content={content} />;
-	if (id === "assignee") return <PersonRowField ariaLabel="Change assignee" onChange={content.setAssignee} people={[PROJECT_BUTTER_UNASSIGNED, ...PEOPLE]} placeholder="Unassigned" renderValue={(person) => person.name === "Unassigned" ? <span className="flex items-center gap-2"><AvatarUnassigned label="" size="xs" /><span>Unassigned</span></span> : <PersonLabel avatarSize="xs" person={person} />} value={content.assignee} />;
+	if (id === "assignee") return <PersonRowField ariaLabel="Change assignee" compact onChange={content.setAssignee} people={[PROJECT_BUTTER_UNASSIGNED, ...PEOPLE, ...(content.defaultAssignee && !PEOPLE.some((person) => person.name === content.defaultAssignee?.name) ? [content.defaultAssignee] : [])]} placeholder="Unassigned" renderValue={(person) => person.name === "Unassigned" ? <span className="flex items-center gap-2"><AvatarUnassigned label="" size="sm" /><span>Unassigned</span></span> : <PersonLabel avatarSize="sm" person={person} />} value={content.assignee} />;
 	if (id === "priority") return <PriorityRowField onChange={content.setPriority} renderValue={(value) => <span className="[&_[data-slot=icon-tile]]:size-4"><PriorityLabel iconSize="small" value={value} /></span>} value={content.priority} />;
 	if (id === "dueDate") {
 		const overdue = Boolean(content.dueDate && content.dueDate.getTime() < Date.UTC(2026, 9, 28));
 		return <DateRowField ariaLabel={overdue ? "Change due date, overdue" : "Change due date"} CalendarComponent={Calendar} dateValueMode="utc-date" leadingVisual={<IconTile aria-hidden as="span" className="text-icon-subtle" icon={<CalendarIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />} onChange={content.setDueDate} placeholder="Add due date" trailingVisual={overdue ? <IconTile aria-hidden as="span" className="text-icon-danger" icon={<WarningIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /> : null} value={content.dueDate} />;
 	}
-	if (id === "reporter") return <PersonRowField ariaLabel="Change reporter" onChange={content.setReporter} people={PEOPLE} placeholder="Add reporter" renderValue={(person) => <PersonLabel avatarSize="xs" person={person} />} value={content.reporter} />;
+	if (id === "reporter") return <PersonRowField ariaLabel="Change reporter" onChange={content.setReporter} people={PEOPLE} placeholder="Add reporter" renderValue={(person) => <PersonLabel avatarSize="sm" person={person} />} value={content.reporter} />;
 	if (id === "costPerReach") return <span className="flex min-h-8 items-center gap-2 text-sm text-text-subtle"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<DataFormulaIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" /><span>{projectButterCostPerReach(fields) || "Calculated from budget and reach"}</span></span>;
 	if (id === "campaignRegion") return <div className="flex min-w-0 gap-2"><DetailsOptionField label="region" onChange={([region]) => setField("campaignRegion", { region, market: "" })} options={Object.keys(PROJECT_BUTTER_CAMPAIGN_MARKETS)} values={fields.campaignRegion.region ? [fields.campaignRegion.region] : []} />{fields.campaignRegion.region ? <DetailsOptionField label="market" onChange={([market]) => setField("campaignRegion", { ...fields.campaignRegion, market })} options={PROJECT_BUTTER_CAMPAIGN_MARKETS[fields.campaignRegion.region] ?? []} values={fields.campaignRegion.market ? [fields.campaignRegion.market] : []} /> : null}</div>;
 	if (id === "parent") {

@@ -61,7 +61,7 @@ const FILTER_MENU_LABELS: Record<Exclude<JiraActivityFilter, "all">, string> = {
 	"insights-only": "Insights",
 };
 
-export type JiraActivityViewFilterMode = "jira" | "jira-insights" | "pull-request" | "sort-only";
+export type JiraActivityViewFilterMode = "jira" | "jira-insight" | "pull-request" | "sort-only";
 
 function filterValuesForMode(
 	mode: JiraActivityViewFilterMode,
@@ -69,7 +69,7 @@ function filterValuesForMode(
 	switch (mode) {
 		case "jira":
 			return JIRA_ACTIVITY_FILTER_VALUES;
-		case "jira-insights":
+		case "jira-insight":
 			return JIRA_ACTIVITY_INSIGHTS_FILTER_VALUES;
 		case "pull-request":
 			return PULL_REQUEST_ACTIVITY_FILTER_VALUES;
@@ -117,7 +117,7 @@ function stopTriggerPropagation(event: { stopPropagation(): void }): void {
  *
  * Prefer `filterMode`:
  * - `jira` — Latest / Oldest + Agents / Needs input / Comments
- * - `jira-insights` — Jira filters + Insights for consumers that supply insight rows
+ * - `jira-insight` — Jira filters + Insights for consumers that supply insight rows
  * - `pull-request` — Latest / Oldest + Comments (SCM Activity)
  * - `sort-only` — Latest / Oldest only
  *

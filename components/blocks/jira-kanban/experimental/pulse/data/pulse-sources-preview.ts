@@ -1,4 +1,4 @@
-import type { SourcesPreviewPage } from "@/components/ui-custom/sources-preview-menu-data";
+import type { SourcePreviewPage } from "@/components/ui-custom/source-preview-menu-data";
 import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
 
 /**
@@ -27,7 +27,7 @@ export const PULSE_SOURCES = [
 
 type PulseSourceId = (typeof PULSE_SOURCES)[number]["id"];
 
-type PulseSourcePreviewCopy = Omit<SourcesPreviewPage, "id" | "source">;
+type PulseSourcePreviewCopy = Omit<SourcePreviewPage, "id" | "source">;
 
 /**
  * One preview card per connected source so the menu matches the trigger count.
@@ -164,7 +164,7 @@ function getPulseSourcePreviewCopy(id: string): PulseSourcePreviewCopy {
  * One card per connected source, in stack order, so the open list matches the
  * "14 Sources" trigger rather than only the four visible logos.
  */
-export const PULSE_SOURCE_PREVIEW_PAGES: readonly SourcesPreviewPage[] = PULSE_SOURCES.map((source) => ({
+export const PULSE_SOURCE_PREVIEW_PAGES: readonly SourcePreviewPage[] = PULSE_SOURCES.map((source) => ({
 	id: source.id,
 	source,
 	...getPulseSourcePreviewCopy(source.id),

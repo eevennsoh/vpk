@@ -5,7 +5,6 @@ const { test } = require("node:test");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
-const EVENT_SOURCE = readFileSync(join(__dirname, "jira-activity-event.tsx"), "utf8");
 const NODE_SOURCE = readFileSync(join(__dirname, "jira-activity-node.tsx"), "utf8");
 const CARD_SOURCE = readFileSync(join(__dirname, "jira-activity-card.tsx"), "utf8");
 const COMMENT_SOURCE = readFileSync(join(__dirname, "jira-activity-comment.tsx"), "utf8");
@@ -34,13 +33,9 @@ function renderNestedComments() {
 }
 
 test("compact activity labels share the timeline node's 24px alignment track", () => {
-	// Card avatars use h-10 (4px clearance around size-8); event glyphs stay on
+	// Card avatars use h-8 with a separate 4px stem gap; event glyphs stay on
 	// h-6. Event copy uses min-h-6 + leading-5 + py-0.5 so h-5 mention chips are not clipped.
-	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center py-0\.5 text-xs leading-5 text-text-subtlest"/u);
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center gap-2 py-0\.5 text-xs leading-5"/u);
-	assert.match(EVENT_SOURCE, /<p className="flex min-h-6 min-w-0 items-center[^>]*>\s*<span className="min-w-0">/u);
-	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
+	assert.match(NODE_SOURCE, /isCard \? "h-8" : "h-6"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" && "pt-0\.5"/u);
 });
 
@@ -50,7 +45,7 @@ test("spine nodes and comment avatars share one vertical center axis via the nod
 	assert.match(NODE_SOURCE, /size\?: "event" \| "card"/u);
 	assert.match(NODE_SOURCE, /sizePx=\{32\}/u);
 	assert.match(NODE_SOURCE, /sizePx=\{16\}/u);
-	assert.match(NODE_SOURCE, /className="min-h-4 w-px flex-1 bg-border"/u);
+	assert.match(NODE_SOURCE, /className=\{cn\("min-h-4 w-px flex-1", isCard \? "mt-1" : null, tone === "thread" \? "bg-bg-accent-gray-subtler" : "bg-border"\)\}/u);
 
 	// Cards opt into the card-sized node; content is never pull-left offset.
 	assert.match(INDEX_SOURCE, /size=\{isCardEntry \? "card" : "event"\}/u);
@@ -77,12 +72,12 @@ test("spine nodes and comment avatars share one vertical center axis via the nod
 	assert.match(CARD_SOURCE, /hideLeadAvatar\?: boolean/u);
 	assert.match(CARD_SOURCE, /hideAvatar=\{hideLeadAvatar\}/u);
 
-	// Out-of-card avatar (h-10) and either name/timestamp layout share one first-row height.
+	// Out-of-card avatar (h-8) and either name/timestamp layout share one first-row height.
 	assert.match(
 		CARD_SOURCE,
-		/hideLeadAvatar \? "min-h-10" : null/u,
+		/hideLeadAvatar \? "min-h-8" : null/u,
 	);
-	assert.match(AGENT_LIST_CARD_SOURCE, /hideAvatar \? "min-h-10" : null/u);
+	assert.match(AGENT_LIST_CARD_SOURCE, /hideAvatar \? "min-h-8" : null/u);
 });
 
 test("snapshot events and comment copy share the content column left edge", async () => {
@@ -108,12 +103,12 @@ test("snapshot events and comment copy share the content column left edge", asyn
 });
 
 test("rich activity cards leave a 4px gap in the connector above and below", () => {
-	// Structural interruption only: card avatars sit in h-10 (32px → 4px above/below);
-	// the spine is a sibling that starts after the track. No opaque spine covers —
+	// The card track is 32px; the spine starts after a separate 4px gap.
+	// No opaque spine covers —
 	// those stacked with the track clearance and left an 8px orphan gap above icons.
 	assert.match(INDEX_SOURCE, /li[\s\S]*className="group\/activity-event flex min-w-0 gap-2"/u);
-	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
-	assert.match(NODE_SOURCE, /className="min-h-4 w-px flex-1 bg-border"/u);
+	assert.match(NODE_SOURCE, /isCard \? "h-8" : "h-6"/u);
+	assert.match(NODE_SOURCE, /className=\{cn\("min-h-4 w-px flex-1", isCard \? "mt-1" : null, tone === "thread" \? "bg-bg-accent-gray-subtler" : "bg-border"\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /absolute -top-1 left-3\.5 h-1 w-1/u);
 	assert.doesNotMatch(INDEX_SOURCE, /h-1 w-1 bg-surface/u);
 	assert.doesNotMatch(INDEX_SOURCE, /bottom-5|bottom-4/u);

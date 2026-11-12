@@ -59,31 +59,31 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"animated-dots-demo-variants": dynamic(
+	"animated-dot-demo-variants": dynamic(
 		() =>
-			import("../../demos/ui-custom/animated-dots-demo").then((mod) => ({
-				default: mod.AnimatedDotsDemoVariants,
+			import("../../demos/ui-custom/animated-dot-demo").then((mod) => ({
+				default: mod.AnimatedDotDemoVariants,
 			})),
 		{ ssr: false },
 	),
-	"animated-dots-demo-custom-colors": dynamic(
+	"animated-dot-demo-custom-colors": dynamic(
 		() =>
-			import("../../demos/ui-custom/animated-dots-demo").then((mod) => ({
-				default: mod.AnimatedDotsDemoCustomColors,
+			import("../../demos/ui-custom/animated-dot-demo").then((mod) => ({
+				default: mod.AnimatedDotDemoCustomColors,
 			})),
 		{ ssr: false },
 	),
-	"animated-dots-demo-timing": dynamic(
+	"animated-dot-demo-timing": dynamic(
 		() =>
-			import("../../demos/ui-custom/animated-dots-demo").then((mod) => ({
-				default: mod.AnimatedDotsDemoTiming,
+			import("../../demos/ui-custom/animated-dot-demo").then((mod) => ({
+				default: mod.AnimatedDotDemoTiming,
 			})),
 		{ ssr: false },
 	),
-	"animated-dots-demo-sizes": dynamic(
+	"animated-dot-demo-sizes": dynamic(
 		() =>
-			import("../../demos/ui-custom/animated-dots-demo").then((mod) => ({
-				default: mod.AnimatedDotsDemoSizes,
+			import("../../demos/ui-custom/animated-dot-demo").then((mod) => ({
+				default: mod.AnimatedDotDemoSizes,
 			})),
 		{ ssr: false },
 	),
@@ -144,45 +144,45 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"attachments-demo-grid": dynamic(
+	"attachment-demo-grid": dynamic(
 		() =>
-			import("../../demos/ui-custom/attachments-demo").then((mod) => ({
-				default: mod.AttachmentsDemoGrid,
+			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
+				default: mod.AttachmentDemoGrid,
 			})),
 		{ ssr: false },
 	),
-	"attachments-demo-inline": dynamic(
+	"attachment-demo-inline": dynamic(
 		() =>
-			import("../../demos/ui-custom/attachments-demo").then((mod) => ({
-				default: mod.AttachmentsDemoInline,
+			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
+				default: mod.AttachmentDemoInline,
 			})),
 		{ ssr: false },
 	),
-	"attachments-demo-list": dynamic(
+	"attachment-demo-list": dynamic(
 		() =>
-			import("../../demos/ui-custom/attachments-demo").then((mod) => ({
-				default: mod.AttachmentsDemoList,
+			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
+				default: mod.AttachmentDemoList,
 			})),
 		{ ssr: false },
 	),
-	"attachments-demo-hover-card": dynamic(
+	"attachment-demo-hover-card": dynamic(
 		() =>
-			import("../../demos/ui-custom/attachments-demo").then((mod) => ({
-				default: mod.AttachmentsDemoHoverCard,
+			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
+				default: mod.AttachmentDemoHoverCard,
 			})),
 		{ ssr: false },
 	),
-	"attachments-demo-read-only": dynamic(
+	"attachment-demo-read-only": dynamic(
 		() =>
-			import("../../demos/ui-custom/attachments-demo").then((mod) => ({
-				default: mod.AttachmentsDemoReadOnly,
+			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
+				default: mod.AttachmentDemoReadOnly,
 			})),
 		{ ssr: false },
 	),
-	"attachments-demo-empty": dynamic(
+	"attachment-demo-empty": dynamic(
 		() =>
-			import("../../demos/ui-custom/attachments-demo").then((mod) => ({
-				default: mod.AttachmentsDemoEmpty,
+			import("../../demos/ui-custom/attachment-demo").then((mod) => ({
+				default: mod.AttachmentDemoEmpty,
 			})),
 		{ ssr: false },
 	),
@@ -361,59 +361,59 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"environment-variables-demo-with-copy": dynamic(
+	"environment-variable-demo-with-copy": dynamic(
 		() =>
-			import("../../demos/ui-custom/environment-variables-demo").then((mod) => ({
-				default: mod.EnvironmentVariablesDemoWithCopy,
+			import("../../demos/ui-custom/environment-variable-demo").then((mod) => ({
+				default: mod.EnvironmentVariableDemoWithCopy,
 			})),
 		{ ssr: false },
 	),
-	"environment-variables-demo-with-required": dynamic(
+	"environment-variable-demo-with-required": dynamic(
 		() =>
-			import("../../demos/ui-custom/environment-variables-demo").then((mod) => ({
-				default: mod.EnvironmentVariablesDemoWithRequired,
+			import("../../demos/ui-custom/environment-variable-demo").then((mod) => ({
+				default: mod.EnvironmentVariableDemoWithRequired,
 			})),
 		{ ssr: false },
 	),
-	"environment-variables-demo-revealed": dynamic(
+	"environment-variable-demo-revealed": dynamic(
 		() =>
-			import("../../demos/ui-custom/environment-variables-demo").then((mod) => ({
-				default: mod.EnvironmentVariablesDemoRevealed,
+			import("../../demos/ui-custom/environment-variable-demo").then((mod) => ({
+				default: mod.EnvironmentVariableDemoRevealed,
 			})),
 		{ ssr: false },
 	),
-	"environment-variables-demo-minimal": dynamic(
+	"environment-variable-demo-minimal": dynamic(
 		() =>
-			import("../../demos/ui-custom/environment-variables-demo").then((mod) => ({
-				default: mod.EnvironmentVariablesDemoMinimal,
+			import("../../demos/ui-custom/environment-variable-demo").then((mod) => ({
+				default: mod.EnvironmentVariableDemoMinimal,
 			})),
 		{ ssr: false },
 	),
-	"controls-demo-default": dynamic(
+	"control-demo-default": dynamic(
 		() =>
-			import("../../demos/ui-custom/controls-demo").then((mod) => ({
-				default: mod.ControlsDemoDefault,
+			import("../../demos/ui-custom/control-demo").then((mod) => ({
+				default: mod.ControlDemoDefault,
 			})),
 		{ ssr: false },
 	),
-	"controls-demo-position": dynamic(
+	"control-demo-position": dynamic(
 		() =>
-			import("../../demos/ui-custom/controls-demo").then((mod) => ({
-				default: mod.ControlsDemoPosition,
+			import("../../demos/ui-custom/control-demo").then((mod) => ({
+				default: mod.ControlDemoPosition,
 			})),
 		{ ssr: false },
 	),
-	"controls-demo-zoom-only": dynamic(
+	"control-demo-zoom-only": dynamic(
 		() =>
-			import("../../demos/ui-custom/controls-demo").then((mod) => ({
-				default: mod.ControlsDemoZoomOnly,
+			import("../../demos/ui-custom/control-demo").then((mod) => ({
+				default: mod.ControlDemoZoomOnly,
 			})),
 		{ ssr: false },
 	),
-	"controls-demo-fit-only": dynamic(
+	"control-demo-fit-only": dynamic(
 		() =>
-			import("../../demos/ui-custom/controls-demo").then((mod) => ({
-				default: mod.ControlsDemoFitOnly,
+			import("../../demos/ui-custom/control-demo").then((mod) => ({
+				default: mod.ControlDemoFitOnly,
 			})),
 		{ ssr: false },
 	),

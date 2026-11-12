@@ -84,7 +84,7 @@ export function toAssignmentSessionItem(agent: AgentAssignmentAgent): AgentSessi
 		state: assignmentSessionState(statusKind),
 		title: role === "expired"
 			? `${agent.name} session expired`
-			: role === "viewer" ? agentIdentityLabel(agent, invokedBy) : agent.name,
+			: agent.sessionTitle?.trim() || (role === "viewer" ? agentIdentityLabel(agent, invokedBy) : agent.name),
 		...(agent.host !== undefined ? { host: agent.host } : {}),
 		...(role !== undefined ? { role } : {}),
 		...(agent.timeLabel ? { timeLabel: agent.timeLabel } : {}),
@@ -100,6 +100,7 @@ export function toAssignmentActivity(agent: AgentAssignmentAgent): JiraIssueAgen
 	return {
 		id: agent.id,
 		name: agent.name,
+		...(agent.sessionTitle ? { sessionTitle: agent.sessionTitle } : {}),
 		label: assignmentActivityLabel(statusKind, agent),
 		state: assignmentActivityState(statusKind),
 		...(agent.avatarSrc ? { avatarSrc: agent.avatarSrc } : {}),

@@ -35,7 +35,7 @@ export function PullRequestFlyoutMetaRow({
 }
 
 /**
- * Per-check glyphs are the ones the golden journeys' CI list always used: the
+ * Per-check glyphs are the ones the golden journey' CI list always used: the
  * green check-circle for passed, the red error diamond for failed, the dashed
  * circle for yet to run, and a bare spinner while running. All sit at 12px in
  * the 16px icon column. Decorative — the row spells the status out for
@@ -76,7 +76,7 @@ export function PullRequestChecksSummary({ checks }: Readonly<{ checks: readonly
 	return (
 		<span className="flex min-w-0 items-center gap-1 text-xs leading-5 text-text-subtle">
 			<span aria-hidden="true" className="grid size-4 shrink-0 place-items-center text-icon-subtlest">
-				<ProgressCircle animated={false} inline label="CI checks" segmented segments={summary.segments} size="xs" />
+				<ProgressCircle completeOnAllPassed inline label="CI checks" segmented segments={summary.segments} size="xs" />
 			</span>
 			<span className="min-w-0 truncate tabular-nums">{summary.label}</span>
 			{summary.inProgress ? <span className="sr-only">{summary.running ? ", checks running" : ", checks queued"}</span> : null}

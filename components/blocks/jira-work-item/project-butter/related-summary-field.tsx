@@ -141,8 +141,8 @@ export function RelatedSummaryField({ draft, editing, faded, itemKey, onDraftCha
 			/>
 			{editing ? (
 				<div className="flex shrink-0 items-center gap-1">
-					<Button aria-label={`Save summary for ${itemKey}`} onClick={() => finish(true)} onKeyDown={cancelOnEscape} onMouseDown={(event) => event.preventDefault()} size="icon-compact" type="button" variant="secondary"><CheckMarkIcon label="" size="small" /></Button>
-					<Button aria-label={`Cancel summary for ${itemKey}`} onClick={() => finish(false)} onKeyDown={cancelOnEscape} onMouseDown={(event) => event.preventDefault()} size="icon-compact" type="button" variant="secondary"><CrossIcon label="" size="small" /></Button>
+					<Button aria-label={`Save summary for ${itemKey}`} onClick={() => finish(true)} onKeyDown={cancelOnEscape} onMouseDown={(event) => event.preventDefault()} size="icon-compact" type="button" variant="outline"><CheckMarkIcon label="" size="small" /></Button>
+					<Button aria-label={`Cancel summary for ${itemKey}`} onClick={() => finish(false)} onKeyDown={cancelOnEscape} onMouseDown={(event) => event.preventDefault()} size="icon-compact" type="button" variant="outline"><CrossIcon label="" size="small" /></Button>
 				</div>
 			) : null}
 		</>

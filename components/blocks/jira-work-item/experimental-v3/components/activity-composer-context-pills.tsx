@@ -3,7 +3,7 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
-import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { SkillDirectorySkill } from "@/app/data/directory";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental-v3/components/activity-composer-agent-context-pill";
@@ -46,7 +46,7 @@ interface ActivityComposerContextPillsProps {
 	/** Host-owned context bar (e.g. PR chips). */
 	contextBar?: ReactNode;
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
-	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
+	onInvokeSkill: (skill: SkillDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string, sessionId: string) => void;
 	workingSessions: readonly AgentSession[];
 }
@@ -139,6 +139,7 @@ function WorkingSessionsList({
 			tabIndex={-1}
 		>
 			<RichTextSuggestionMenu
+				rowVariant="with-byline"
 				className="rich-text-command-menu-borderless w-full!"
 				emptyLabel="No agents working"
 				items={items}

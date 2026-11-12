@@ -1,7 +1,7 @@
 import { ROVO_DIRECTORY_AGENT_PROFILES, type RovoAgentProfile } from "@/app/data/directory/agents";
 import { AGENT_LANYARD_AGENTS } from "@/components/blocks/agent-lanyard/data";
 import { AGENT_LANYARD_FIRST_PARTY_AGENTS } from "@/components/blocks/agent-lanyard/first-party-data";
-import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
+import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journey-v1/data/agent-chat-data";
 
 const jiraCodingAgent = AGENT_LANYARD_FIRST_PARTY_AGENTS.find((agent) => agent.id === "jira-coding")!;
 const workItemPlanner = JGP_CHAT_AGENT_PROFILES.find((agent) => agent.id === "work-item-planner")!;

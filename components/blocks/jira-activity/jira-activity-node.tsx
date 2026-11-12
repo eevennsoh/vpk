@@ -13,6 +13,7 @@ import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
 import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -51,20 +52,23 @@ function initialsOf(name: string): string {
 
 function ActorGlyph({
 	actor,
+	animate,
 	sizePx,
 }: Readonly<{
 	actor: JiraActivityActor;
+	/** `false` skips the avatar's enter scale/fade for high-frequency surfaces such as a scrubber. */
+	animate?: boolean;
 	sizePx: 16 | 32;
 }>) {
 	if (actor.kind === "person") {
 		// Card leads are named in the adjacent header copy; event glyphs keep an accessible label.
 		return sizePx === 32 ? (
-			<Avatar aria-hidden size="default">
+			<Avatar animate={animate} aria-hidden size="default">
 				{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
 			</Avatar>
 		) : (
-			<Avatar label={actor.name} size="xs">
+			<Avatar animate={animate} label={actor.name} size="xs">
 				{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
 			</Avatar>
@@ -74,6 +78,8 @@ function ActorGlyph({
 	// Agents render as hexagon art; apps render their third-party brand mark.
 	return (
 		<AgentAvatarVisual
+			animate={animate}
+			appearance={actor.appearance}
 			avatarSrc={actor.avatarSrc}
 			brandName={actor.brandName}
 			fallbackText={initialsOf(actor.name)}
@@ -95,11 +101,15 @@ function EventGlyph({ icon }: Readonly<{ icon: JiraActivityEventIcon }>) {
 	);
 }
 
+/** The 16px glyph an event row leads with: its semantic icon when set, else the actor avatar. */
+export function JiraActivityEntryGlyph({ actor, animate, icon }: Readonly<{ actor: JiraActivityActor; animate?: boolean; icon?: JiraActivityEventIcon }>) {
+	return icon !== undefined ? <EventGlyph icon={icon} /> : <ActorGlyph actor={actor} animate={animate} sizePx={16} />;
+}
+
 /**
  * Leading timeline cell: event glyph or card-sized actor avatar above a `w-px`
- * connector. Card entries place their size-8 identity in an `h-10` track (4px
- * clearance above/below, matching event glyphs in `h-6`) so the spine — a
- * sibling that only starts after the track — never sits flush on the icon.
+ * connector. Card entries use a 32px track for their size-8 identity; the
+ * spine starts 4px below it, matching the clearance around event glyphs.
  * That structural break is the timeline gap; opaque spine covers must not
  * stack on top of it. Event copy beside this track uses `min-h-6` so mention
  * chips can grow past 24px without changing this icon track. The avatar
@@ -110,14 +120,19 @@ function EventGlyph({ icon }: Readonly<{ icon: JiraActivityEventIcon }>) {
  */
 export function JiraActivityNode({
 	actor,
+	attributedBy,
 	icon,
 	isLast,
 	size = "event",
+	tone = "timeline",
 }: Readonly<{
 	actor: JiraActivityActor;
+	attributedBy?: { name: string; avatarSrc?: string };
 	icon?: JiraActivityEventIcon;
 	isLast: boolean;
-	/** `card` centers a size-8 avatar in h-10; `event` centers a 16px glyph in h-6. */
+	/** `thread` paints the stem in the opaque thread-line color, so it reads as one line where it meets a thread's own connector. */
+	tone?: "timeline" | "thread";
+	/** `card` uses a 32px avatar track; `event` centers a 16px glyph in h-6. */
 	size?: "event" | "card";
 }>) {
 	const isCard = size === "card";
@@ -127,8 +142,7 @@ export function JiraActivityNode({
 			<div
 				className={cn(
 					"flex shrink-0 items-center justify-center",
-					// Card: 32px avatar in 40px → 4px spine gap. Event: 16px in 24px → 4px.
-					isCard ? "h-10" : "h-6",
+					isCard ? "h-8" : "h-6",
 				)}
 			>
 				{/*
@@ -138,14 +152,12 @@ export function JiraActivityNode({
 				 * Card rows always use the actor avatar in the larger track.
 				 */}
 				{isCard ? (
-					<ActorGlyph actor={actor} sizePx={32} />
-				) : icon !== undefined ? (
-					<EventGlyph icon={icon} />
+					actor.kind === "agent" && attributedBy ? <HumanAgentAvatar agent={{ name: actor.name, appearance: actor.appearance, avatarSrc: actor.avatarSrc, brandName: actor.brandName, vpkLogo: activityActorVpkLogo(actor), fallbackText: initialsOf(actor.name) }} human={attributedBy} sizePx={32} /> : <ActorGlyph actor={actor} sizePx={32} />
 				) : (
-					<ActorGlyph actor={actor} sizePx={16} />
+					<JiraActivityEntryGlyph actor={actor} icon={icon} />
 				)}
 			</div>
-			{isLast ? null : <div className="min-h-4 w-px flex-1 bg-border" data-jira-activity-timeline-stem />}
+			{isLast ? null : <div className={cn("min-h-4 w-px flex-1", isCard ? "mt-1" : null, tone === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} data-jira-activity-timeline-stem />}
 		</div>
 	);
 }

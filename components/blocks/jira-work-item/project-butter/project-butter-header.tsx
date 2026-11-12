@@ -10,6 +10,7 @@ import ShrinkDiagonalIcon from "@atlaskit/icon/core/shrink-diagonal";
 import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import { ProjectButterBreadcrumb } from "@/components/blocks/jira-work-item/project-butter/project-butter-breadcrumb";
+import { JiraLocalAgentSplitButton } from "@/components/blocks/jira-local-agent";
 import { ProjectButterSummary } from "@/components/blocks/jira-work-item/project-butter/project-butter-summary";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -18,12 +19,13 @@ import type { ProjectButterContent } from "@/components/blocks/jira-work-item/pr
 import type { ProjectButterPresentation } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { cn } from "@/lib/utils";
 
-export function ProjectButterHeader({ content, onClose, onPresentationChange, presentation, secondaryActions, workItem }: Readonly<{
+export function ProjectButterHeader({ content, onClose, onPresentationChange, presentation, secondaryActions, showFullScreenClose = false, workItem }: Readonly<{
 	content: ProjectButterContent;
 	onClose: () => void;
 	onPresentationChange: (presentation: ProjectButterPresentation) => void;
 	presentation: ProjectButterPresentation;
 	secondaryActions?: ReactNode;
+	showFullScreenClose?: boolean;
 	workItem?: WorkItemData;
 }>) {
 	const sidePanel = presentation === "side-panel";
@@ -33,11 +35,11 @@ export function ProjectButterHeader({ content, onClose, onPresentationChange, pr
 			{sidePanel ? null : (
 				<div className="flex min-h-8 items-center justify-between gap-2 px-6 pt-6" data-project-butter-header-key-row>
 					<ProjectButterBreadcrumb aligned code={code} parent={content.detailFields.parent} summary={content.summary} />
-					{presentation === "full-screen" ? null : (
+					{presentation === "full-screen" && !showFullScreenClose ? null : (
 						<div className="flex shrink-0 items-center gap-1">
-							<Button aria-label="Collapse work item" onClick={() => onPresentationChange("side-panel")} size="icon" type="button" variant="ghost">
+							{presentation === "full-screen" ? null : <Button aria-label="Collapse work item" onClick={() => onPresentationChange("side-panel")} size="icon" type="button" variant="ghost">
 								<ShrinkDiagonalIcon label="" />
-							</Button>
+							</Button>}
 							<Button aria-label="Close Project butter work item" onClick={onClose} size="icon" type="button" variant="ghost"><CloseIcon label="" /></Button>
 						</div>
 					)}
@@ -55,6 +57,7 @@ export function ProjectButterHeader({ content, onClose, onPresentationChange, pr
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
 						<ProjectButterStatus appearance="lozenge" content={content} />
+						<JiraLocalAgentSplitButton workItem={{ code, summary: content.summary, description: content.description }} />
 						<DropdownMenu>
 							<DropdownMenuTrigger render={<Button aria-label="More work item actions" className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle" size="icon" type="button" variant="outline" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="max-h-[var(--available-height)] w-72" positionerClassName="z-[650]">

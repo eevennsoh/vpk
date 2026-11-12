@@ -38,7 +38,7 @@ import {
 	inferTriggerDefinitions,
 	type AgentAutomationRule,
 	type AgentTriggerValue,
-} from "@/components/blocks/triggers/data/trigger-catalog";
+} from "@/components/blocks/trigger/data/trigger-catalog";
 import type { RovoDataParts, RovoUIMessage } from "@/lib/rovo-ui-messages";
 
 type AgentResult = RovoDataParts["agent-result"];

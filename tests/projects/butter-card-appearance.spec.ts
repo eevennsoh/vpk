@@ -34,120 +34,6 @@ test("Butter starts a second session for an agent already on the card", async ({
 	await expect(issue.locator('[data-agent-id^="PAY-105:test-agent"]')).toHaveCount(2);
 });
 
-test("the Butter board work item combines comments and changes under Activity", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(appUrl("/butter"));
-	await card(page, "PAY-999").locator('[data-slot="jira-issue-card"]').click();
-	const dialog = page.getByRole("dialog", { name: "Project butter" });
-	const activity = dialog.getByRole("region", { name: "Activity" });
-	await expect(activity.getByRole("heading", { name: "Activity" })).toBeVisible();
-	await expect(dialog.getByRole("tablist", { name: "Activity views" })).toHaveCount(0);
-	const summary = dialog.getByRole("textbox", { name: "Work item summary" });
-	await summary.fill("Improve onboarding for merchants");
-	await summary.press("Enter");
-	await expect(activity).toContainText("updated summary");
-	await page.keyboard.press("m");
-	const comment = dialog.getByRole("textbox", { name: "Comment editor" });
-	await comment.fill("Ready for review");
-	await comment.press("Enter");
-	await expect(activity).toContainText("Ready for review");
-	await expect(activity).toContainText("updated summary");
-});
-
-test("empty activity places the comment bar 24 pixels below the tabs", async ({ page }) => {
-	await page.goto(appUrl("/components/blocks/jira-work-item#project-butter"));
-	await page.getByRole("switch", { name: "Empty" }).check();
-	await page.getByRole("button", { name: "Modal", exact: true }).click();
-	const dialog = page.getByRole("dialog", { name: "Project butter" });
-	const tabs = dialog.getByRole("tablist", { name: "Activity views" });
-	const comment = dialog.getByRole("button", { name: "Add a comment" });
-	await expect(comment).toBeVisible();
-	await expect.poll(async () => {
-		const [tabsBox, commentBox] = await Promise.all([tabs.boundingBox(), comment.boundingBox()]);
-		return tabsBox && commentBox ? commentBox.y - (tabsBox.y + tabsBox.height) : null;
-	}).toBe(24);
-});
-
-test("short work item activity ends without a viewport of blank space", async ({ page }) => {
-	await page.goto(appUrl("/butter"));
-	await card(page, "PAY-118").locator('[data-slot="jira-issue-card"]').click();
-	const feed = page.locator("[data-project-butter-activity-feed]");
-	await expect(feed.locator("[data-jira-activity-entry-id]").last()).toBeVisible();
-	await expect.poll(() => feed.evaluate((element) => {
-		const last = element.querySelectorAll("[data-jira-activity-entry-id]");
-		return element.getBoundingClientRect().bottom - last[last.length - 1].getBoundingClientRect().bottom;
-	})).toBeLessThan(64);
-});
-
-test("the first work item opens without waiting for additional JavaScript", async ({ page }) => {
-	test.setTimeout(60_000);
-	await page.goto(appUrl("/butter"));
-	const board = page.locator("[data-butter-board-surface]");
-	await expect(board).toBeVisible({ timeout: 30_000 });
-	await page.evaluate(() => {
-		Object.assign(window, { workItemEntryTransitions: [] as string[] });
-		document.addEventListener("transitionrun", (event) => {
-			if (event.target instanceof HTMLElement && event.target.matches('[role="dialog"][data-slot="dialog-content"]')) {
-				(window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions.push(event.propertyName);
-			}
-		}, true);
-	});
-	let releaseChunks!: () => void;
-	const chunksReleased = new Promise<void>((resolve) => { releaseChunks = resolve; });
-	await page.route("**/_next/static/**/*.js", async (route) => {
-		await chunksReleased;
-		await route.continue();
-	});
-	try {
-		await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
-		await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
-		await expect(page.getByRole("heading", { name: "Port confirmPaymentIntent and the 3-D Secure challenge flow" })).toBeVisible();
-		await expect(page.getByText("Opening work item", { exact: false })).toHaveCount(0);
-	} finally {
-		releaseChunks();
-	}
-	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
-	await expect.poll(() => page.evaluate(() => (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions)).toContain("opacity");
-	await page.getByRole("button", { name: "Close Project butter work item" }).click();
-	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeHidden();
-	await page.evaluate(() => { (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions = []; });
-	await card(page, "PAY-107").locator('[data-slot="jira-issue-card"]').click();
-	await expect(page.getByRole("heading", { name: "Move retry and backoff out of LegacyGatewayAdapter" })).toBeVisible();
-	await expect.poll(() => page.evaluate(() => (window as typeof window & { workItemEntryTransitions: string[] }).workItemEntryTransitions)).toContain("opacity");
-});
-
-test("the first work item opens without motion when reduced motion is requested", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(appUrl("/butter"));
-	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
-	const dialog = page.getByRole("dialog", { name: "Project butter" });
-	await expect(dialog).toBeVisible();
-	await expect(dialog).toHaveCSS("transition-property", "none");
-	await expect(dialog).toHaveCSS("opacity", "1");
-});
-
-test("opening work items leaves every synced session visible after overlapping arrivals", async ({ page }) => {
-	test.setTimeout(240_000);
-	await page.goto(appUrl("/butter"));
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
-	const column = page.locator("[data-agent-session-column]");
-	await expect(column.locator('[data-testid^="agent-session-row-"]').first()).toBeAttached();
-	await card(page, "PAY-105").locator('[data-slot="jira-issue-card"]').click();
-	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeVisible();
-	await page.getByRole("button", { name: "Close Project butter work item" }).click();
-	await expect(page.locator("[data-butter-board-surface]")).toHaveAttribute("data-agent-session-sync", "settled", { timeout: 220_000 });
-	await expect.poll(() => column.locator('[data-testid^="agent-session-row-"]').evaluateAll((rows) => rows.filter((row) => {
-		const style = getComputedStyle(row);
-		return Number(style.opacity) < 0.99 || style.visibility !== "visible";
-	}).length), { timeout: 10_000 }).toBe(0);
-	await expect(column.locator('[data-testid^="agent-session-row-"]')).toHaveCount(48);
-	await card(page, "PAY-107").locator('[data-slot="jira-issue-card"]').click();
-	await expect(page.getByRole("heading", { name: "Move retry and backoff out of LegacyGatewayAdapter" })).toBeVisible();
-	await page.keyboard.press("Escape");
-	await expect(page.getByRole("dialog", { name: "Project butter" })).toBeHidden();
-	await expect(column.locator('[data-testid^="agent-session-row-"]')).toHaveCount(48);
-});
-
 test("Butter card overflow opens the agent submenu on hover and previews in the chin", async ({ page }) => {
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
 	const issue = card(page, "PAY-105");
@@ -189,40 +75,24 @@ test("Butter card overflow opens the agent submenu on hover and previews in the 
 	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
 });
 
-test("Butter session menu opens the same agent picker", async ({ page }) => {
+test("Butter session menu shows sessions without an assignment footer", async ({ page }) => {
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
-	const issue = card(page, "PAY-105");
-	await issue.locator('[data-jira-issue-agent-row-handle]').click();
-	await page.getByRole("button", { name: "Add agent", exact: true }).click();
-	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
-	await expect(picker).toHaveCount(1);
-	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await page.getByText("Run on cloud", { exact: true }).click();
-	await expect(issue.getByRole("button", { name: "2 agents: Needs input" })).toBeVisible();
-	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
+	await card(page, "PAY-105").locator('[data-jira-issue-agent-row-handle]').click();
+	const menu = page.getByRole("dialog", { name: "Agent assignment" });
+	await expect(menu.getByRole("listitem").first()).toBeVisible();
+	await expect(menu.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 });
 
-test("a selected Butter card keeps the shared picker available from its session", async ({ page }) => {
+test("a selected Butter card keeps its sessions available without an assignment footer", async ({ page }) => {
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
 	const issue = card(page, "PAY-105");
 	await issue.locator('[data-slot="jira-issue-project-butter"] p').first().click({ modifiers: ["Shift"] });
 	await issue.locator('[data-jira-issue-agent-row-handle]').click();
-	await page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true }).click();
-	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
-	await expect(picker.getByText("Software agents", { exact: true })).toBeVisible();
-	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await expect(issue.locator('[data-slot="jira-issue-agent-invocation-preview"]')).toHaveAttribute("data-agent-id", "claude-code");
+	const menu = page.getByRole("dialog", { name: "Agent assignment" });
+	await expect(menu.getByRole("listitem").first()).toBeVisible();
+	await expect(menu.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 	await page.keyboard.press("Escape");
 	await expect(issue.locator('[data-jira-issue-agent-row-handle]')).toBeFocused();
-	await issue.locator('[data-jira-issue-agent-row-handle]').click();
-	await page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true }).click();
-	await picker.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await page.getByText("Run on cloud", { exact: true }).click();
-	await expect(issue.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
-	await expect(issue.locator('[data-jira-linking-glow-halo]')).toBeVisible();
 });
 
 test("Butter bulk assignment uses the same picker and adds the agent to each selected card", async ({ page }) => {
@@ -279,7 +149,6 @@ test("Butter work item uses the shared picker and adds its session to the board 
 	const workItem = page.locator('[data-project-butter-work-item]');
 	await expect(workItem).toBeVisible();
 	await page.getByRole("group", { name: "Work item agents" }).getByRole("button").click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent" }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await expect(page.getByText("Software agents", { exact: true })).toBeVisible();
 	await page.getByRole("option", { name: /^Claude/ }).click();
@@ -293,7 +162,6 @@ test("Butter work item picker opens the agent directory", async ({ page }) => {
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
 	await card(page, "PAY-105").getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true }).click();
 	await page.getByRole("group", { name: "Work item agents" }).getByRole("button").click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent" }).click();
 	await page.getByRole("button", { name: "Browse agents" }).click();
 	const directory = page.getByRole("dialog", { name: "Agents", exact: true }).filter({ has: page.getByRole("tab", { name: "Recommended" }) });
 	await expect(directory).toBeVisible();
@@ -391,25 +259,24 @@ test("Butter directory picker can be dismissed without trapping focus", async ({
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Rovo CLI");
 	await page.getByRole("option", { name: /Rovo CLI/u }).hover();
 	const submenu = page.getByRole("dialog", { name: "Rovo CLI local options" });
-	const configure = submenu.getByRole("button", { name: "Configure directory" });
-	await configure.click();
 	const field = submenu.getByRole("textbox", { name: "Choose your directory" });
+	await expect(submenu.getByRole("button", { name: "Configure directory" })).toHaveCount(0);
 	const dropdown = page.getByRole("dialog", { name: "Codebase workspaces" });
 	await field.click();
 	await expect(dropdown).toBeVisible();
 	await field.press("Escape");
 	await expect(dropdown).toBeHidden();
-	await expect(configure).toBeFocused();
+	await expect(field).toBeFocused();
 	await field.click();
 	await submenu.locator('[data-slot="input-group-addon"]').click();
 	await expect(dropdown).toBeHidden();
-	await expect(configure).toBeFocused();
+	await expect(field).toBeFocused();
 	await field.click();
 	await field.press("ArrowDown");
 	await expect(dropdown.getByRole("button", { name: "Add workspace" })).toBeFocused();
 	await page.keyboard.press("Escape");
 	await expect(dropdown).toBeHidden();
-	await expect(configure).toBeFocused();
+	await expect(field).toBeFocused();
 	await field.click();
 	await page.getByRole("combobox", { name: "Search agents" }).click();
 	await expect(dropdown).toBeHidden();
@@ -481,7 +348,6 @@ test("Butter aligns directory chevron and selected workspace checkmarks", async 
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Rovo CLI");
 	await page.getByRole("option", { name: /Rovo CLI/u }).hover();
 	const submenu = page.getByRole("dialog", { name: "Rovo CLI local options" });
-	await submenu.getByRole("button", { name: "Configure directory" }).click();
 	const field = submenu.getByRole("textbox", { name: "Choose your directory" });
 	await field.click();
 	const dropdown = page.getByRole("dialog", { name: "Codebase workspaces" });

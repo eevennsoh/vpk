@@ -128,9 +128,9 @@ test("flags catalog-root shares separately from project routes", () => {
 		isCatalogRoot: true,
 		pathname: "/",
 	});
-	assert.deepEqual(describeShareTarget("https://example-project.localhost/jira-golden-journeys-v4"), {
+	assert.deepEqual(describeShareTarget("https://example-project.localhost/jira-golden-journey-v4"), {
 		isCatalogRoot: false,
-		pathname: "/jira-golden-journeys-v4",
+		pathname: "/jira-golden-journey-v4",
 	});
 });
 

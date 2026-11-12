@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
-const JIRA_GOLDEN_JOURNEYS_V4_URL = appUrl("/jira-golden-journeys-v4");
+const JIRA_GOLDEN_JOURNEY_V4_URL = appUrl("/jira-golden-journey-v4");
 
 interface ListFooterGeometry {
 	gapTableToFooter: number;
@@ -34,7 +34,7 @@ async function readListFooterGeometry(page: Page): Promise<ListFooterGeometry> {
 
 async function openWorkItemsList(page: Page) {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(JIRA_GOLDEN_JOURNEYS_V4_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(JIRA_GOLDEN_JOURNEY_V4_URL, { waitUntil: "domcontentloaded" });
 	// Team EU without Simple views splits work items into Board and List tabs.
 	await page.getByRole("tab", { name: "List", exact: true }).click();
 	await expect(page.getByTestId("jira-list")).toBeVisible();

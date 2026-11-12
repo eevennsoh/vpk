@@ -59,6 +59,8 @@ export const GALLERY_DETAIL: ComponentDetail = {
 		{ name: "topBarCenter", type: "ReactNode", description: "Optional default content centered in the 48px top bar. Use a connected group to expose each manually selectable section when space allows." },
 		{ name: "topBarCenterCompact", type: "ReactNode", description: "Optional compact alternative to topBarCenter, shown below the large viewport breakpoint." },
 		{ name: "stagePosition", type: '"top" | "center"', default: '"top"', description: "Positions selected content below the 48px top bar. Center mode uses both-axis centering while the bottom dock remains an overlay; content keeps a top transform origin so it grows downward." },
+		{ name: "palette", type: "GalleryPalette", description: "Four colors for the selected tile's liquid gradient." },
+		{ name: "selectedColor", type: "string", description: "Solid selected-tile color in place of the liquid gradient; choose a color that contrasts with inverse text." },
 		{ name: "onReset", type: "(item: GalleryItem) => void", description: "Called after Reset remounts the selected prototype in its initial state." },
 		{ name: "className", type: "string", description: "Extra classes merged onto the block root." },
 	],

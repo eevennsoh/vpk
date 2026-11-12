@@ -31,10 +31,13 @@ function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: 
 	}
 }
 
-export function ProjectButterDetailsFields({ agentField, content, expanded, fillingBarAfter = null, fillingFinishing = false, onRevealInteract, reflow = false, shimmerText }: Readonly<{ agentField?: ReactNode; content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | "top" | null; fillingFinishing?: boolean; onRevealInteract?: (field: ProjectButterDetailFieldId) => void; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
+export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions = false, content, expanded, fillingBarAfter = null, fillingFinishing = false, onRevealInteract, reflow = false, shimmerText }: Readonly<{ agentField?: ReactNode; agentFieldHasSessions?: boolean; content: ProjectButterContent; empty: boolean; expanded: boolean; fillingBarAfter?: ProjectButterDetailFieldId | "top" | null; fillingFinishing?: boolean; onRevealInteract?: (field: ProjectButterDetailFieldId) => void; reflow?: boolean; shimmerText?: Readonly<Partial<Record<ProjectButterDetailFieldId, string>>> }>) {
 	const id = useId();
 	const rootRef = useRef<HTMLDivElement>(null);
 	const heightRef = useRef<number | null>(null);
+	const dropRef = useRef<{ id: string | number; top: number } | null>(null);
+	const dropAnimationRef = useRef<Animation | null>(null);
+	const previousExpandedRef = useRef(expanded);
 	const animatingRef = useRef(false);
 	const reduced = useReducedMotion();
 	const [dragging, setDragging] = useState(false);
@@ -51,9 +54,11 @@ export function ProjectButterDetailsFields({ agentField, content, expanded, fill
 		const root = rootRef.current;
 		if (!root) return;
 		const from = heightRef.current;
-		const to = root.scrollHeight;
+		const to = root.getBoundingClientRect().height;
+		const expansionChanged = previousExpandedRef.current !== expanded;
+		previousExpandedRef.current = expanded;
 		heightRef.current = to;
-		if (reduced || from === null || Math.abs(from - to) < 1) return;
+		if (!expansionChanged || reduced || from === null || Math.abs(from - to) < 1) return;
 		let active = true;
 		animatingRef.current = true;
 		root.style.height = `${from}px`;
@@ -80,8 +85,30 @@ export function ProjectButterDetailsFields({ agentField, content, expanded, fill
 	}, [expanded, reduced]);
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 	const fields = content.detailFields;
-	const order = fields.order.filter((field) => field !== "status" && !fields.hidden.includes(field));
-	const visible = expanded ? order : order.slice(0, 2);
+	const order = fields.order.filter((field) => field !== "status" && (field === "agents" ? Boolean(agentField) : !fields.hidden.includes(field)));
+	const collapsed = new Set(order.filter((field) => field !== "agents").slice(0, 2));
+	const visible = expanded ? order : order.filter((field) => field === "agents" || collapsed.has(field));
+	useLayoutEffect(() => {
+		const drop = dropRef.current;
+		const root = rootRef.current;
+		if (dragging || !drop || !root) return;
+		dropRef.current = null;
+		if (reduced) return;
+		const row = Array.from(root.querySelectorAll<HTMLElement>("[data-field-id]"))
+			.find((candidate) => candidate.dataset.fieldId === String(drop.id));
+		if (!row) return;
+		const style = getComputedStyle(row);
+		const transform = new DOMMatrixReadOnly(style.transform);
+		const targetTop = row.getBoundingClientRect().top - root.getBoundingClientRect().top - transform.m42;
+		const offset = drop.top - targetTop;
+		if (Math.abs(offset) < 1) return;
+		const animation = row.animate(
+			[{ transform: `translateY(${offset}px)` }, { transform: "translateY(0)" }],
+			{ duration: motionDuration.normal * 1000, easing: style.getPropertyValue("--ease-out-practical").trim() },
+		);
+		dropAnimationRef.current = animation;
+		return () => { animation.cancel(); };
+	}, [dragging, fields.order, reduced]);
 	return (
 		<div className="relative" data-project-butter-detail-fields data-project-butter-field-dragging={dragging ? "true" : undefined} ref={rootRef}>
 			<div className="pointer-events-none absolute -inset-x-2 top-0 -bottom-4 z-20 overflow-clip" data-project-butter-suggestion-clip>
@@ -89,20 +116,22 @@ export function ProjectButterDetailsFields({ agentField, content, expanded, fill
 					{fillingBarAfter ? <ProjectButterSuggestionCursor after={fillingBarAfter} finishing={fillingFinishing} key="filling-cursor" rootRef={rootRef} /> : null}
 				</AnimatePresence>
 			</div>
-			<DndContext collisionDetection={closestCenter} id={id} modifiers={[restrictToVerticalAxis]} onDragCancel={() => setDragging(false)} onDragStart={() => setDragging(true)} onDragEnd={({ active, over }) => {
+			<DndContext collisionDetection={closestCenter} id={id} modifiers={[restrictToVerticalAxis]} onDragCancel={() => setDragging(false)} onDragStart={() => { dropAnimationRef.current?.cancel(); setDragging(true); }} onDragEnd={({ active, over }) => {
+				const root = rootRef.current;
+				const row = root && Array.from(root.querySelectorAll<HTMLElement>("[data-field-id]")).find((candidate) => candidate.dataset.fieldId === String(active.id));
+				if (root && row) dropRef.current = { id: active.id, top: row.getBoundingClientRect().top - root.getBoundingClientRect().top };
 				setDragging(false);
 				content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, active.id, over?.id ?? null) }));
 			}} sensors={sensors}>
 				<SortableContext items={visible} strategy={verticalListSortingStrategy}>
 					<div className="flex min-w-0 flex-col gap-4 [&>[data-field-filled=false]+[data-field-filled=true]]:mt-1 [&>*+[data-field-filled=false]]:-mt-1">
 						{visible.map((field, index) => {
-							const filled = isProjectButterDetailFieldFilled(field, content);
-							const required = PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS.includes(field);
-							const row = <DetailsFieldRow filled={filled} first={index === 0} id={field} key={field} last={index === visible.length - 1} onClear={filled && !required && field !== "costPerReach" ? () => clearProjectButterDetailField(field, content) : undefined} onHide={required ? undefined : () => content.setDetailFields((current) => ({ ...current, hidden: [...current.hidden, field] }))} onRevealInteract={onRevealInteract} reflow={reflow && !dragging} shimmerText={shimmerText?.[field]} onMove={(direction) => {
+							const filled = field === "agents" ? agentFieldHasSessions : isProjectButterDetailFieldFilled(field, content);
+							const required = field === "agents" || PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS.includes(field);
+							return <DetailsFieldRow filled={filled} first={index === 0} id={field} key={field} last={index === visible.length - 1} onClear={field !== "agents" && filled && !required && field !== "costPerReach" ? () => clearProjectButterDetailField(field, content) : undefined} onHide={field === "agents" || required ? undefined : () => content.setDetailFields((current) => ({ ...current, hidden: [...current.hidden, field] }))} onRevealInteract={onRevealInteract} reflow={reflow && !dragging} shimmerText={field === "agents" ? undefined : shimmerText?.[field]} onMove={(direction) => {
 								const target = visible[index + direction];
 								if (target) content.setDetailFields((current) => ({ ...current, order: reorderProjectButterDetailFields(current.order, field, target) }));
-							}}><ProjectButterDetailFieldValue content={content} id={field} /></DetailsFieldRow>;
-							return field === "assignee" ? <div className="flex flex-col gap-3" key={field}>{row}{agentField}</div> : row;
+							}}>{field === "agents" ? agentField : <ProjectButterDetailFieldValue content={content} id={field} />}</DetailsFieldRow>;
 						})}
 					</div>
 				</SortableContext>

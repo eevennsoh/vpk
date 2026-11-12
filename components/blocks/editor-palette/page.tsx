@@ -23,6 +23,7 @@ import {
 	type RichTextMentionMenuCategory,
 	type RichTextMentionSources,
 	type RichTextSuggestionMenuItem,
+	type RichTextSuggestionRowVariant,
 } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,8 @@ export interface EditorPaletteProps {
 	 * `"search"` shows one category-specific inline search picker.
 	 */
 	variant?: EditorPaletteVariant;
+	/** Compact 36px rows by default, or the original rows with bylines. */
+	rowVariant?: RichTextSuggestionRowVariant;
 	searchCategory?: EditorPaletteSearchCategory;
 	/** Render a live editor where typing "@" or "/" opens the real menus. */
 	showLiveEditor?: boolean;
@@ -108,6 +111,7 @@ export default function EditorPalette({
 	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
 	searchCategory = "tool",
 	variant = "nested",
+	rowVariant = "compact",
 	showLiveEditor = true,
 	className,
 }: Readonly<EditorPaletteProps>) {
@@ -117,11 +121,11 @@ export default function EditorPalette({
 			style={{ gap: token("space.400") }}
 		>
 			{variant === "search" ? (
-				<SearchPalette category={searchCategory} mentionSources={mentionSources} />
+				<SearchPalette category={searchCategory} mentionSources={mentionSources} rowVariant={rowVariant} />
 			) : variant === "flat" ? (
-				<FlatPalette mentionSources={mentionSources} />
+				<FlatPalette mentionSources={mentionSources} rowVariant={rowVariant} />
 			) : (
-				<NestedPalette mentionSources={mentionSources} />
+				<NestedPalette mentionSources={mentionSources} rowVariant={rowVariant} />
 			)}
 
 			{showLiveEditor ? (
@@ -132,6 +136,7 @@ export default function EditorPalette({
 					<RichTextEditor
 						mentionSources={mentionSources}
 						suggestionVariant={variant === "search" ? "flat" : variant}
+						suggestionRowVariant={rowVariant}
 						placeholder="Type @ to mention people and agents, or / for commands…"
 						showToolbar={false}
 						showBubbleMenu={false}
@@ -186,6 +191,7 @@ export function EditorPaletteAssigneePicker({
 
 interface PaletteVariantProps {
 	mentionSources: RichTextMentionSources;
+	rowVariant: RichTextSuggestionRowVariant;
 }
 
 const SEARCH_CATEGORY_LABELS: Record<EditorPaletteSearchCategory, string> = {
@@ -272,6 +278,7 @@ export interface EditorPaletteSearchPickerProps {
 	 */
 	leadingItems?: readonly RichTextSuggestionMenuItem[];
 	mentionSources?: RichTextMentionSources;
+	rowVariant?: RichTextSuggestionRowVariant;
 	onBrowseAll?: () => void;
 	onSelectItem?: (item: RichTextSuggestionMenuItem) => void;
 	/**
@@ -293,6 +300,7 @@ export function EditorPaletteSearchPicker({
 	items: itemsProp,
 	leadingItems = [],
 	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
+	rowVariant = "compact",
 	onBrowseAll,
 	onSelectItem,
 	keepOpenOnSelect = false,
@@ -342,6 +350,7 @@ export function EditorPaletteSearchPicker({
 	return (
 		<div ref={pickerRef} className="contents">
 			<RichTextSuggestionMenu
+				rowVariant={rowVariant}
 				className={className}
 				title={getSearchPlaceholder(category)}
 				emptyLabel={emptyLabel}
@@ -374,7 +383,7 @@ interface SearchPaletteProps extends PaletteVariantProps {
 	category: EditorPaletteSearchCategory;
 }
 
-function SearchPalette({ category, mentionSources }: Readonly<SearchPaletteProps>) {
+function SearchPalette({ category, mentionSources, rowVariant }: Readonly<SearchPaletteProps>) {
 	return (
 		<div
 			className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] items-start justify-items-center"
@@ -385,13 +394,14 @@ function SearchPalette({ category, mentionSources }: Readonly<SearchPaletteProps
 					category={category}
 					className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 					mentionSources={mentionSources}
+					rowVariant={rowVariant}
 				/>
 			</PalettePanel>
 		</div>
 	);
 }
 
-function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
+function NestedPalette({ mentionSources, rowVariant }: Readonly<PaletteVariantProps>) {
 	const [commandPrompt, setCommandPrompt] = useState("");
 	const mentionItems = getMentionTargetItems(mentionSources);
 	const commandItems = getSlashCommandCategoryItems(mentionSources);
@@ -404,6 +414,7 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 		>
 			<PalettePanel trigger="@" caption="Mention">
 				<RichTextSuggestionMenu
+					rowVariant={rowVariant}
 					className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 					title="Mention"
 					emptyLabel="No people or agents found"
@@ -415,6 +426,7 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 
 			<PalettePanel trigger="/" caption="Commands">
 				<RichTextSuggestionMenu
+					rowVariant={rowVariant}
 					className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 					title="Commands"
 					emptyLabel="No commands found"
@@ -438,6 +450,7 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 			{NESTED_MENTION_SHOWCASES.map(({ category, caption, title, trigger }) => (
 				<PalettePanel key={category} trigger={trigger} caption={caption}>
 					<RichTextSuggestionMenu
+						rowVariant={rowVariant}
 						className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 						title={title}
 						emptyLabel="No matching items"
@@ -451,6 +464,7 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 
 			<PalettePanel trigger="/" caption="Format nested">
 				<RichTextSuggestionMenu
+					rowVariant={rowVariant}
 					className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 					title="Format"
 					emptyLabel="No matching items"
@@ -536,7 +550,7 @@ const ASK_ROVO_LEAD_ITEM: RichTextSuggestionMenuItem = {
 	isSticky: true,
 };
 
-function FlatPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
+function FlatPalette({ mentionSources, rowVariant }: Readonly<PaletteVariantProps>) {
 	return (
 		<div
 			className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] items-start justify-items-center"
@@ -547,6 +561,7 @@ function FlatPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 				caption="Mention"
 				sections={FLAT_MENTION_SECTIONS}
 				mentionSources={mentionSources}
+				rowVariant={rowVariant}
 			/>
 
 			<FlatMergedPanel
@@ -554,6 +569,7 @@ function FlatPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 				caption="Commands"
 				sections={FLAT_COMMAND_SECTIONS}
 				mentionSources={mentionSources}
+				rowVariant={rowVariant}
 				leadItem={ASK_ROVO_LEAD_ITEM}
 			/>
 		</div>
@@ -581,6 +597,7 @@ function FlatMergedPanel({
 	caption,
 	sections,
 	mentionSources,
+	rowVariant,
 	leadItem,
 }: Readonly<FlatMergedPanelProps>) {
 	const [expandedSections, setExpandedSections] = useState<Readonly<Record<string, boolean>>>({});
@@ -612,6 +629,7 @@ function FlatMergedPanel({
 	return (
 		<PalettePanel trigger={trigger} caption={caption}>
 			<RichTextSuggestionMenu
+				rowVariant={rowVariant}
 				className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 				title={caption}
 				emptyLabel="No matching items"

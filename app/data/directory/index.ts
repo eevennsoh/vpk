@@ -45,9 +45,9 @@ export type {
 	SkillCollectionMetadata,
 	SkillCategory,
 	SkillSource,
-	SkillsDirectoryFileTreeItem,
-	SkillsDirectorySkill,
-	SkillsDirectoryToolTag,
+	SkillDirectoryFileTreeItem,
+	SkillDirectorySkill,
+	SkillDirectoryToolTag,
 } from "./skills";
 
 // --- Tools ---
@@ -59,8 +59,8 @@ export {
 } from "./tools";
 export type {
 	ToolCategory,
-	ToolsDirectoryPermission,
-	ToolsDirectoryTool,
+	ToolDirectoryPermission,
+	ToolDirectoryTool,
 } from "./tools";
 
 // --- Knowledge ---

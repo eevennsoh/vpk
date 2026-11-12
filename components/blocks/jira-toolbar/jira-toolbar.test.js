@@ -96,6 +96,7 @@ async function selectionToolbar() {
 	const view = await renderComponent({
 		source: SHORTCUT_FIXTURE, exportName: "SelectionBoard", props,
 		mocks: {
+			"@/components/blocks/jira-issue/project-butter-agent-picker": "export function ProjectButterAgentPickerContent() { return null; }",
 			"@/components/blocks/agent-selector": "export function AgentSelector() { return null; }",
 			"@/app/contexts/context-rovo-chat-controls": "export function useOptionalRovoChatControls() { return null; }",
 		},
@@ -148,6 +149,7 @@ test("agent picker exposes directory actions only when the toolbar owner supplie
 	const view = await renderComponent({
 		source: SHORTCUT_FIXTURE, exportName: "SelectionBoard", props,
 		mocks: {
+			"@/components/blocks/jira-issue/project-butter-agent-picker": "export function ProjectButterAgentPickerContent() { return null; }",
 			"@/app/contexts/context-rovo-chat-controls": "export function useOptionalRovoChatControls() { return null; }",
 			"@/components/blocks/agent-selector": `export function AgentSelector({ onBrowseAgents, onCreateAgent }) {
 				return <output data-agent-selector-actions>{String(Boolean(onBrowseAgents))}:{String(Boolean(onCreateAgent))}</output>;

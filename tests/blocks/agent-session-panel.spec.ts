@@ -3,11 +3,34 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { withDesignVariants } from "@/tests/helpers/design-variants";
 import { appUrl } from "@/tests/helpers/origin";
 
-const JIRA_GOLDEN_JOURNEYS_V4_ROUTE = "/jira-golden-journeys-v4";
+const JIRA_GOLDEN_JOURNEY_V4_ROUTE = "/jira-golden-journey-v4";
 
 const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
 const AGENT_SESSION_PANEL_WIDTH_PX = 360;
 const AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32;
+
+test("Project Butter empty columns follow the Team EU26 session controls", async ({ page }) => {
+	const route = withDesignVariants("/components/blocks/jira-kanban#empty-columns", {
+		advancedTimeline: false,
+		agentSessionColumnResizing: true,
+		manualLink: false,
+	});
+	await page.goto(appUrl(route));
+	const example = page.locator("#empty-columns");
+	const column = example.locator("[data-agent-session-column]");
+	await expect(column).toBeVisible();
+	await expect(example.getByRole("separator", { name: "Resize Unlink sessions column" })).toBeVisible();
+	await expect(column.getByRole("button", { name: /filter sessions/i })).toHaveCount(0);
+	await column.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+	await expect(column.getByRole("button", { name: "Expand Unlink sessions column" })).toBeVisible();
+	await column.getByRole("button", { name: "Expand Unlink sessions column" }).click();
+	await expect(column.getByRole("button", { name: "Collapse Unlink sessions column" })).toBeVisible();
+
+	await page.goto(appUrl(withDesignVariants("/components/blocks/jira-kanban#empty-columns", {
+		agentSessionColumnResizing: false,
+	})));
+	await expect(example.getByRole("separator", { name: "Resize Unlink sessions column" })).toHaveCount(0);
+});
 
 function getPanel(page: Page): Locator {
 	// The panel is a <section> with an accessible name, so it exposes role
@@ -30,8 +53,8 @@ async function openBoard(page: Page, options?: { panelVariant?: boolean }): Prom
 	// independent of the settings dropdown; one test below opens the board
 	// without it and drives the real menu to prove the toggle is wired.
 	const route = options?.panelVariant === undefined
-		? JIRA_GOLDEN_JOURNEYS_V4_ROUTE
-		: withDesignVariants(JIRA_GOLDEN_JOURNEYS_V4_ROUTE, { panel: options.panelVariant });
+		? JIRA_GOLDEN_JOURNEY_V4_ROUTE
+		: withDesignVariants(JIRA_GOLDEN_JOURNEY_V4_ROUTE, { panel: options.panelVariant });
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto(appUrl(route), { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({

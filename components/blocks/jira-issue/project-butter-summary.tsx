@@ -29,6 +29,7 @@ type ProjectButterSummaryProps = Pick<
 	| "subtasks"
 	| "onSubtaskOpen"
 	| "pullRequestNumber"
+	| "pullRequests"
 	| "animatePullRequestOnMount"
 	| "pullRequestPreview"
 	| "pullRequestStatus"
@@ -60,6 +61,7 @@ export function ProjectButterSummary({
 	moreAction,
 	animatePullRequestOnMount,
 	pullRequestNumber,
+	pullRequests,
 	pullRequestPreview,
 	pullRequestStatus,
 	pullRequestTitle,
@@ -116,6 +118,7 @@ export function ProjectButterSummary({
 					assignee={assignee}
 					animatePullRequestOnMount={animatePullRequestOnMount}
 					pullRequestNumber={pullRequestNumber}
+					pullRequests={pullRequests}
 					pullRequestPreview={pullRequestPreview}
 					pullRequestStatus={pullRequestStatus}
 					pullRequestTitle={pullRequestTitle ?? summary}
@@ -135,6 +138,7 @@ function ProjectButterFooter({
 	assignee,
 	animatePullRequestOnMount,
 	pullRequestNumber,
+	pullRequests,
 	pullRequestPreview,
 	pullRequestStatus,
 	pullRequestTitle,
@@ -146,6 +150,7 @@ function ProjectButterFooter({
 		| "priority"
 		| "assignee"
 		| "pullRequestNumber"
+		| "pullRequests"
 		| "animatePullRequestOnMount"
 		| "pullRequestPreview"
 		| "pullRequestStatus"
@@ -174,6 +179,8 @@ function ProjectButterFooter({
 					<JiraIssuePullRequestCluster
 						animateIcon={!reducedMotion && (!initiallyHasPullRequest || Boolean(animatePullRequestOnMount))}
 						pullRequestNumber={pullRequestNumber}
+						pullRequests={pullRequests}
+						issueKey={issueKey}
 						pullRequestPreview={pullRequestPreview}
 						pullRequestStatus={pullRequestStatus}
 						pullRequestTitle={pullRequestTitle}

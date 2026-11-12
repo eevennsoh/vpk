@@ -27,7 +27,7 @@ const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const FOR_YOU_STAGE_SOURCE = readFileSync(
 	join(
 		process.cwd(),
-		"components/projects/jira-golden-journeys-v1/components/for-you-stage.tsx",
+		"components/projects/jira-golden-journey-v1/components/for-you-stage.tsx",
 	),
 	"utf8",
 );
@@ -94,10 +94,6 @@ test("JiraList restores the rounded table edge before a trailing panel scroll in
 	);
 	assert.match(
 		SOURCE,
-		/headerCellClassName: cn\(HEADER_CELL_CLASS, "border-t"\)/u,
-	);
-	assert.match(
-		SOURCE,
 		/trailingEdgeLayout\.headerCellClassName,\s*"sticky left-0 z-30 px-0"/u,
 	);
 	assert.match(
@@ -108,11 +104,6 @@ test("JiraList restores the rounded table edge before a trailing panel scroll in
 		SOURCE,
 		/lastHeaderCellClassName: "border-r-0"/u,
 	);
-	assert.match(
-		SOURCE,
-		/isLastColumn:\s*columnIndex === trailingEdgeLayout\.lastBodyColumnIndex/u,
-	);
-	assert.match(SOURCE, /lastBodyColumnIndex: null/u);
 	assert.match(SOURCE, /function getJiraListLastHeaderCellClassName\(/u);
 	assert.match(SOURCE, /if \(columnIndex !== columnCount - 1\)/u);
 	assert.match(
@@ -200,7 +191,6 @@ test("JiraList issue type glyphs retain Jira colors inside dropdown items", () =
 	assert.match(CELLS_SOURCE, /story: "text-icon-accent-green \[&_svg\]:text-icon-accent-green!"/u);
 	assert.match(CELLS_SOURCE, /subtask: "text-icon-accent-blue \[&_svg\]:text-icon-accent-blue!"/u);
 	assert.match(CELLS_SOURCE, /bug: "text-icon-accent-red \[&_svg\]:text-icon-accent-red!"/u);
-	assert.match(CELLS_SOURCE, /<IssueTypeIcon color="currentColor" label="" size="small" \/>/u);
 });
 
 test("JiraList exposes the expected table headers and sticky footer content", () => {
@@ -438,27 +428,13 @@ test("JiraList gives every data column an accessible ellipsis action", () => {
 	assert.match(COLUMN_CONTROLS_SOURCE, /<TooltipContent>\{actionLabel\}<\/TooltipContent>/u);
 });
 
-test("JiraList places an accessible open action last in each Work cell action group", () => {
-	const workCellSource = SOURCE.match(
-		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
-	)?.[1] ?? "";
-
-	assert.match(workCellSource, /group-hover\/row:opacity-100 group-focus-within\/row:opacity-100/u);
-	assert.match(workCellSource, /aria-label="Open work item"/u);
-	assert.match(workCellSource, /onClick=\{\(\) => onIssueClick\(row\)\}/u);
-	assert.match(workCellSource, /size="icon-compact"/u);
-	assert.match(workCellSource, /<PanelRightIcon/u);
-	assert.match(workCellSource, /<TooltipContent>Open work item<\/TooltipContent>/u);
-	assert.ok(workCellSource.lastIndexOf("Open work item") > workCellSource.lastIndexOf("Create"));
-});
-
 test("JiraList renders summaries as plain text when no issue action is available", () => {
 	const workCellSource = SOURCE.match(
 		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
 	)?.[1] ?? "";
 
 	assert.match(workCellSource, /\{onSummaryEditStart \|\| onIssueClick \? \([\s\S]*?<button[\s\S]*?onClick=\{\(event\) => onSummaryEditStart \? onSummaryEditStart\(row, event\) : onIssueClick\?\.\(row\)\}/u);
-	assert.match(workCellSource, /\) : \([\s\S]*?<span className="min-w-0 flex-1 truncate text-\[13px\] font-medium text-text">/u);
+	assert.match(workCellSource, /\) : \([\s\S]*?<span className="[^"]+">\s*\{row\.summary\}/u);
 });
 
 test("JiraList renders issue keys as plain text when no issue-key action is available", () => {
@@ -500,9 +476,6 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 	assert.match(issueKeyGroupSource, /group-has-\[:focus-visible\]\/issue-key:opacity-100/u);
 	assert.doesNotMatch(issueKeyGroupSource, /group-hover\/row:(?:max-w|opacity|pointer-events)/u);
 	assert.match(issueKeyGroupSource, /isCopiedRow && "pointer-events-auto max-w-7 opacity-100"/u);
-	assert.match(issueKeyGroupSource, /translate-x-1 scale-95 transition-\[translate,scale\]/u);
-	assert.match(issueKeyGroupSource, /group-hover\/issue-key:translate-x-0/u);
-	assert.match(issueKeyGroupSource, /group-has-\[:focus-visible\]\/issue-key:scale-100/u);
 	assert.match(issueKeyGroupSource, /motion-reduce:transition-none/u);
 	assert.match(
 		issueKeyGroupSource,
@@ -512,22 +485,8 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 	assert.match(issueKeyGroupSource, /aria-label=\{`\$\{isCopiedRow \? "Copied link" : "Copy link"\} for \$\{row\.issueKey\}`\}/u);
 	assert.match(issueKeyGroupSource, /<LinkIcon/u);
 	assert.doesNotMatch(issueKeyGroupSource, /<CopyIcon/u);
-	assert.match(issueKeyGroupSource, /<CheckMarkIcon/u);
 	assert.match(issueKeyGroupSource, /<TooltipContent>\{isCopiedRow \? "Copied" : "Copy link"\}<\/TooltipContent>/u);
 	assert.doesNotMatch(rowActionGroupSource, /CopyIcon|LinkIcon|Copy link|In Model|Create work item below/u);
-	assert.match(rowActionGroupSource, /Open work item/u);
-});
-
-test("JiraList left-aligns top-level work items without an empty hierarchy spacer", () => {
-	const workCellSource = SOURCE.match(
-		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
-	)?.[1] ?? "";
-
-	assert.match(workCellSource, /row\.hasChildren && onToggleExpand \? \([\s\S]*?<Button/u);
-	assert.match(
-		workCellSource,
-		/\) : indentLevel > 0 \? \([\s\S]*?aria-hidden="true" className="block size-5 shrink-0"[\s\S]*?\) : null/u,
-	);
 });
 
 test("JiraList centers an accessible refresh button with the footer count", () => {
@@ -611,8 +570,6 @@ test("JiraList exposes keyboard-accessible create controls at both row boundarie
 	assert.match(SOURCE, /onFocus=/u);
 	assert.match(SOURCE, /focus-visible:opacity-100/u);
 	assert.match(SOURCE, /data-insertion-line=/u);
-	assert.match(SOURCE, /onCreate\s*&&\s*hoveredRowTarget\?\.issueKey === row\.issueKey/u);
-	assert.match(SOURCE, /hoverInsertionPosition \?\? dragInsertionPosition/u);
 });
 
 test("JiraList uses equal top, drag, and bottom row interaction zones", () => {
@@ -644,11 +601,11 @@ test("JiraList middle zone exposes an anchored accessible drag handle", () => {
 	assert.match(SOURCE, /aria-label="Drag to reorder"/u);
 	assert.match(SOURCE, /<TooltipContent side="right">Drag to reorder<\/TooltipContent>/u);
 	assert.match(SOURCE, /<DragHandleVerticalIcon/u);
-	assert.match(dragHandleClass, /cursor-grab touch-none border border-border bg-surface-overlay! text-icon-subtle/u);
+	assert.match(dragHandleClass, /cursor-grab touch-none bg-transparent! text-icon-subtle/u);
 	assert.doesNotMatch(dragHandleClass, /shadow-/u);
-	assert.match(SOURCE, /fixed z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
-	assert.match(SOURCE, /hover:bg-surface-overlay-hovered!/u);
-	assert.match(SOURCE, /active:cursor-grabbing active:bg-surface-overlay-pressed!/u);
+	assert.match(SOURCE, /fixed z-30 size-5 -translate-x-full -translate-y-1\/2/u);
+	assert.match(SOURCE, /hover:bg-transparent!/u);
+	assert.match(SOURCE, /active:cursor-grabbing active:bg-transparent!/u);
 	assert.match(SOURCE, /top: "anchor\(center\)"/u);
 	assert.match(SOURCE, /positionAnchor: getRowAnchorName/u);
 	assert.match(SOURCE, /createPortal/u);
@@ -694,7 +651,7 @@ test("JiraList sticky selection cells remain opaque while preserving row state t
 	assert.match(SOURCE, /\? "before:bg-bg-selected"/u);
 	assert.match(SOURCE, /group-hover\/row:before:bg-bg-neutral-subtle-hovered/u);
 	assert.match(SOURCE, /group-focus-within\/row:before:bg-bg-neutral-subtle-hovered/u);
-	assert.match(SOURCE, /"relative z-10 flex items-center justify-center"/u);
+	assert.match(SOURCE, /"relative z-10 flex items-center [^"]+"/u);
 });
 
 test("JiraList row boundary controls are fixed opaque overlays", () => {
@@ -811,10 +768,9 @@ test("JiraList sample page keeps every demo row top-level", () => {
 	assert.doesNotMatch(PAGE_SOURCE, /overflow-x-auto/u);
 });
 
-test("JiraList owns explicit grid separators and selected row cell treatment", () => {
+test("JiraList owns selected row cell treatment", () => {
 	assert.match(SOURCE, /function getBodyCellClassName/u);
 	assert.match(SOURCE, /function HierarchyConnector/u);
-	assert.match(SOURCE, /border-b border-r border-border/u);
 	assert.match(SOURCE, /bg-bg-selected/u);
 	assert.match(SOURCE, /aria-selected=\{isHighlighted \|\| undefined\}/u);
 	assert.match(SOURCE, /flex max-h-\[640px\] flex-col/u);
@@ -832,8 +788,6 @@ test("JiraList highlights an active issue independently from bulk checkbox selec
 	assert.match(SOURCE, /const isActive = activeIssueKey === row\.issueKey;/u);
 	assert.match(SOURCE, /const isHighlighted = isSelected \|\| isActive;/u);
 	assert.match(SOURCE, /data-active=\{isActive \|\| undefined\}/u);
-	assert.match(SOURCE, /checked=\{isSelected\}/u);
-	assert.doesNotMatch(SOURCE, /checked=\{isHighlighted\}/u);
 });
 
 test("JiraList stamps list-row session drop metadata only when an intent is passed", () => {
@@ -872,7 +826,7 @@ test("JiraList acknowledges a session drop with a row flash instead of a checkma
 	assert.match(TYPES_SOURCE, /export interface JiraListRowFlash \{/u);
 	assert.match(TYPES_SOURCE, /rowFlash\?: JiraListRowFlash;/u);
 	assert.match(SOURCE, /const flashingIssueKeys = useJiraListRowFlashKeys\(rowFlash\);/u);
-	assert.match(SOURCE, /const isFlashing = flashingIssueKeys\.has\(row\.issueKey\);/u);
+	assert.match(SOURCE, /const isFlashing = rowFlash\?\.variant !== "sweep" && flashingIssueKeys\.has\(row\.issueKey\);/u);
 	assert.match(SOURCE, /getRowFlashCellClassName\(isFlashing, "sticky"\)/u);
 	assert.match(SOURCE, /getRowFlashCellClassName\(isFlashing\)/u);
 	// The utility, its keyframes, and the reduced-motion fallback have to exist

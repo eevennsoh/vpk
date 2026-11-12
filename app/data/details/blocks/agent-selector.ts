@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SELECTOR_DETAIL: ComponentDetail = {
-		description: "Searchable command-list selector for assigning AI agents, with selected agents pinned first, optional selected-agent actions, and optional browse/create actions. Gallery demos use the borderless editor-palette search bar (`searchVariant=\"palette\"`), matching Assign agents on work items.",
+			description: "Searchable command-list selector for assigning AI agents, with selected agents pinned first, optional selected-agent actions, and optional browse/create actions. The same package exports `InlineAgentSelector` for per-agent actions and favorites. Gallery demos use the borderless editor-palette search bar (`searchVariant=\"palette\"`), matching Assign agents on work items.",
 		importStatement: `import { AgentSelector } from "@/components/blocks/agent-selector";`,
 		usage: `import { AgentSelector } from "@/components/blocks/agent-selector";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -18,6 +18,7 @@ const agents: AgentSelectorAgent[] = [
 <AgentSelector
   agents={agents}
   searchVariant="palette"
+  showByline={false}
   selectedAgentIds={["github-copilot"]}
   onAgentToggle={(agentId) => console.log(agentId)}
   onBrowseAgents={() => console.log("browse agents")}
@@ -25,9 +26,12 @@ const agents: AgentSelectorAgent[] = [
 />`,
 		demoLayout: { previewHeight: "fixed", examplesContentWidth: "full" },
 		examples: [
+			{ title: "Include byline", description: "Show agent descriptions on hover or focus.", demoSlug: "agent-selector-demo-include-byline" },
 			{ title: "Standalone picker", description: "Persistent standalone surfaces for the default and selected-agent action states.", demoSlug: "agent-selector-demo-standalone" },
 			{ title: "Selected agent actions", description: "Top actions for a selected custom agent before switching to another agent.", demoSlug: "agent-selector-demo-selected-agent-actions" },
-			{ title: "Jira kanban", description: "Same palette as Assign agent: Pinned by space / More agents grouping, filled pins only on space-pinned agents, hover reveals an outline pin on unpinned rows, and the footer offers Browse agents and Create agent.", demoSlug: "agent-selector-demo-jira" },
+			{ title: "Jira kanban", description: "A Jira agent picker with Pinned by space and More agents groups. Pin an agent to keep it in the pinned group, or use the footer to browse or create agents.", demoSlug: "agent-selector-demo-jira" },
+			{ id: "project-butter-submenu", title: "Project Butter submenu", description: "Choose cloud and local agent options from one picker using submenus.", demoSlug: "agent-selector-demo-project-butter" },
+			{ id: "inline-expansion", title: "Inline expansion", description: "Choose cloud and local agent options from one picker using inline expansion. Import `InlineAgentSelector` from the Agent Selector package and supply each agent's actions with `getActions`; one action runs directly and multiple actions expand inline. Rovo CLI includes local workspace options. Favorites can be controlled with `favoriteAgentIds` and `onFavoriteAgentIdsChange`.", demoSlug: "agent-selector-demo-inline-expansion" },
 		],
 		props: [
 			{
@@ -39,6 +43,12 @@ const agents: AgentSelectorAgent[] = [
 				name: "pinnedAgentIds",
 				type: "readonly string[]",
 				description: "Controlled pinned agent ids. Pinned agents move into a separate Pinned section.",
+			},
+			{
+				name: "pinningAppearance",
+				type: '"pin" | "favorite"',
+				default: '"pin"',
+				description: "Choose pin or favorite-star labels and icons for saved agents.",
 			},
 			{
 				name: "onPinnedAgentIdsChange",
@@ -80,6 +90,18 @@ const agents: AgentSelectorAgent[] = [
 				type: '"boxed" | "palette"',
 				default: '"boxed"',
 				description: "Search field treatment. \"boxed\" is the bordered CommandInput used on directory/toolbar surfaces; \"palette\" is the borderless 32px editor-palette bar (RichTextCommandMenuSearchField) shared with Assign agents and \"/\" / \"@\" command menus.",
+			},
+			{
+				name: "paletteHeadings",
+				type: "boolean",
+				default: "false",
+				description: "Use editor-palette spacing for agent group headings.",
+			},
+			{
+				name: "showByline",
+				type: "boolean",
+				default: "true",
+				description: "Show agent descriptions when a row is hovered or focused.",
 			},
 			{
 				name: "selectionMode",

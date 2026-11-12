@@ -1,5 +1,5 @@
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
-import { DEFAULT_CONFIGURED_AUTOMATION_RULES } from "@/components/blocks/triggers/data/trigger-catalog";
+import { DEFAULT_CONFIGURED_AUTOMATION_RULES } from "@/components/blocks/trigger/data/trigger-catalog";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 
 // Sample agent draft used to drive the standalone Agent Test demos and docs

@@ -9,6 +9,11 @@ const { BUTTER_IN_PROGRESS_PLACEHOLDERS } = require("../../../../components/proj
 const { BUTTER_IN_REVIEW_PLACEHOLDERS } = require("../../../../components/projects/butter/data/work-item-placeholders/in-review.ts");
 const { BUTTER_TODO_PLACEHOLDERS } = require("../../../../components/projects/butter/data/work-item-placeholders/todo.ts");
 
+/** Opens every collapsed "N updates" row so individual changes are reachable. */
+async function expandUpdates(view) {
+	for (const button of [...document.querySelectorAll('[data-project-butter-update-group] button[aria-expanded="false"]')]) await view.click(button);
+}
+
 const COLUMN_MAPS = [
 	["To do", BUTTER_TODO_PLACEHOLDERS, ["PAY-118", "PAY-124", "PAY-125", "PAY-127"]],
 	["In progress", BUTTER_IN_PROGRESS_PLACEHOLDERS, ["PAY-105", "PAY-107", "PAY-123", "PAY-130"]],
@@ -114,7 +119,7 @@ test("each column map authors description, children, attachments, and comments",
 	}
 });
 
-test("every attachment previews a distinct primary ambient illustration, varied within each work item", () => {
+test("every board attachment previews a distinct primary ambient illustration, varied within each work item", () => {
 	const seen = new Set();
 	for (const [, source, codes] of COLUMN_MAPS) {
 		for (const code of codes) {
@@ -133,6 +138,18 @@ test("every attachment previews a distinct primary ambient illustration, varied 
 			assert.equal(colors.size, source[code].attachments.length, `${code} mixes colors`);
 		}
 	}
+});
+
+test("default Gallery attachments all have distinct primary ambient previews", async () => {
+	const view = await renderHarness({});
+	const previews = field("attachment-preview", view.container).split("|");
+	assert.equal(previews.length, 8);
+	for (const preview of previews) {
+		assert.match(preview, /^\/ambient\/.+\/primary\/\w+\.(?:svg|png)$/u);
+		assert.equal(existsSync(join(__dirname, "../../../../public", preview)), true, preview);
+	}
+	assert.equal(new Set(previews).size, previews.length);
+	await view.unmount();
 });
 
 test("opening a card from each column fills that map's sections", async () => {
@@ -195,7 +212,8 @@ test("placeholder fill keeps the card due date, reporter, labels, and descriptio
 
 test("placeholder fill keeps a complete agent session in the activity feed", async () => {
 	await renderHarness({ code: "PAY-118", withSession: true });
-	assert.equal(field("session"), "invocation-pay-118-agent");
+	// Needs-input sessions join the feed too; the separate Needs input block is gone.
+	assert.equal(field("session"), "invocation-pay-118-agent,invocation-pay-118-waiting");
 	assert.equal(field("comment").includes("issuer artwork id"), true);
 });
 
@@ -284,7 +302,7 @@ const JOURNEY_HARNESS = `import React from "react";
 			<button onClick={undoLabels}>Undo labels</button>
 			<button onClick={() => content.setSummary("An edited summary")}>Edit summary</button>
 			<button onClick={start}>Start Claude</button>
-			<button onClick={() => content.recordSessionInvocation(model.startCoding())}>Start coding</button>
+			<button onClick={() => content.recordSessionInvocation(model.startCoding(content.summary))}>Start coding</button>
 			<p data-field="assignee">{content.assignee.name}</p>
 			<p data-field="invoker">{model.sessions.at(-1)?.invokedBy?.name}</p>
 			<ProjectButterActivity content={content} empty sidePanel={false} sessions={model.sessions} onOpenSession={() => undefined} />
@@ -305,8 +323,9 @@ test("Butter combines accepted suggestions into one expanding Activity entry", a
 	await view.click(view.getByRole("button", { name: "Undo labels" }));
 	assert.notEqual(view.queryByRole("button", { name: /Venn\s*updated description and parent\s*Just now/u }), null);
 	await view.click(view.getByRole("button", { name: "Edit summary" }));
+	assert.equal(document.querySelector("[data-project-butter-update-group] button").textContent, "2 updates: changed summary, description and parent.");
+	await expandUpdates(view);
 	assert.notEqual(view.queryByRole("button", { name: /Venn\s*updated summary\s*Just now/u }), null);
-	await view.click(view.getByRole("tab", { name: "Audit" }));
 	assert.equal(view.getAllByRole("button", { name: /Venn\s*updated .*Just now/u }).length, 2);
 });
 
@@ -330,6 +349,7 @@ test("the Butter project shows changes and agent activity in one feed", async ()
 	assert.notEqual(view.queryByRole("heading", { name: "Activity" }), null);
 	await view.click(view.getByRole("button", { name: "Accept suggestions" }));
 	await view.click(view.getByRole("button", { name: "Start Claude" }));
+	await expandUpdates(view);
 	assert.notEqual(view.queryByRole("button", { name: /Venn\s*updated description, due date, parent, and labels\s*Just now/u }), null);
 	assert.notEqual(view.queryByRole("button", { name: /Venn\s*automatically assigned this work item to Venn\s*Just now/u }), null);
 	assert.equal(document.querySelectorAll('[data-jira-activity-entry-id^="invocation-"]').length, 1);
@@ -342,10 +362,12 @@ test("starting Claude records Venn invocation and auto-assignment once in Activi
 	assert.equal(field("assignee"), "Venn");
 	assert.equal(field("invoker"), "Venn");
 	assert.equal(document.querySelectorAll('[data-jira-activity-entry-id^="invocation-"]').length, 1);
+	await expandUpdates(view);
 	assert.equal(view.getAllByRole("button", { name: /Venn\s*automatically assigned this work item to Venn\s*Just now/u }).length, 1);
-	assert.equal(document.querySelector('[data-jira-activity-entry-id^="invocation-"]').textContent.includes("Venn"), true);
+	assert.equal(document.querySelector("[data-project-butter-activity-feed]").textContent.includes("Venn added Claude"), true);
 	await view.click(view.getByRole("button", { name: "Start Claude" }));
 	assert.equal(document.querySelectorAll('[data-jira-activity-entry-id^="invocation-"]').length, 2);
+	await expandUpdates(view);
 	assert.equal(view.getAllByRole("button", { name: /Venn\s*automatically assigned this work item to Venn\s*Just now/u }).length, 1);
 });
 
@@ -364,11 +386,11 @@ test("the hosted coding action uses Venn attribution without opting into auto-as
 	assert.equal(field("assignee"), "Unassigned");
 });
 
-test("the shared work item keeps Annie attribution and separate Audit without Butter host context", async () => {
+test("the shared work item keeps Annie attribution in the one Activity feed without Butter host context", async () => {
 	const view = await renderComponent({ source: JOURNEY_HARNESS, props: { host: false } });
 	await view.click(view.getByRole("button", { name: "Accept suggestions" }));
-	assert.equal(view.queryByRole("button", { name: /updated description/u }) === null, true);
-	await view.click(view.getByRole("tab", { name: "Audit" }));
+	await expandUpdates(view);
+	assert.equal(view.queryByRole("button", { name: /Venn\s*updated description/u }) === null, true);
 	assert.equal(view.queryByRole("button", { name: /Annie Cook\s*updated description\s*Just now/u }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Start Claude" }));
 	assert.equal(field("assignee"), "Unassigned");
@@ -384,6 +406,7 @@ test("Butter audit and assignment survive switching to another item and back", a
 	assert.equal(view.queryByRole("button", { name: /Venn\s*updated description/u }) === null, true);
 	await view.rerender({ code: "PAY-999" });
 	assert.equal(field("assignee"), "Venn");
+	await expandUpdates(view);
 	assert.equal(view.queryByRole("button", { name: /Venn\s*updated description/u }) !== null, true);
 	assert.equal(document.querySelectorAll('[data-jira-activity-entry-id^="invocation-"]').length, 1);
 });

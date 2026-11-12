@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/logo-third-party";
 import { cn } from "@/lib/utils";
 
-const APPS: readonly { body: string; icon: ReactNode; title: string }[] = [
+const APPS: readonly { body: string; icon: ReactNode; logo?: boolean; title: string }[] = [
 	{
 		body: "Content here...",
 		icon: <AppIcon label="" size="small" />,
@@ -21,17 +21,20 @@ const APPS: readonly { body: string; icon: ReactNode; title: string }[] = [
 	},
 	{
 		body: "More content...",
-		icon: <TempoTimesheetsLogo borderless label="" size="xsmall" />,
+		icon: <TempoTimesheetsLogo borderless label="" size="xxsmall" />,
+		logo: true,
 		title: "Tempo",
 	},
 	{
 		body: "More content...",
-		icon: <PagerdutyLogo borderless label="" size="xsmall" />,
+		icon: <PagerdutyLogo borderless label="" size="xxsmall" />,
+		logo: true,
 		title: "PagerDuty",
 	},
 	{
 		body: "More content...",
-		icon: <SentryLogo borderless label="" size="xsmall" />,
+		icon: <SentryLogo borderless label="" size="xxsmall" />,
+		logo: true,
 		title: "Sentry",
 	},
 	{
@@ -51,17 +54,17 @@ const APPS: readonly { body: string; icon: ReactNode; title: string }[] = [
 	},
 ];
 
-function AppRow({ app }: Readonly<{ app: (typeof APPS)[number] }>) {
+function AppRow({ app, body }: Readonly<{ app: (typeof APPS)[number]; body?: string }>) {
 	const [open, setOpen] = useState(false);
 	return (
 		<li>
 			<button
 				aria-expanded={open}
-				className="flex h-12 w-full min-w-0 items-center gap-3 rounded-md px-2 text-left text-sm text-text outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+				className="flex h-8 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-sm text-text outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
 				onClick={() => setOpen((current) => !current)}
 				type="button"
 			>
-				<span aria-hidden className="grid size-5 shrink-0 place-items-center">
+				<span aria-hidden className={cn("grid size-4 shrink-0 place-items-center text-icon-subtle [&_path]:fill-current! [&_span]:filter-none!", app.logo ? "[&_svg]:size-4!" : "[&_svg]:size-3!")}>
 					{app.icon}
 				</span>
 				<span className="min-w-0 flex-1 truncate">{app.title}</span>
@@ -69,26 +72,32 @@ function AppRow({ app }: Readonly<{ app: (typeof APPS)[number] }>) {
 					aria-hidden
 					className={cn(
 						"shrink-0 text-icon-subtle transition-transform duration-normal ease-out-practical motion-reduce:transition-none",
-						open ? "rotate-180" : undefined,
+						open ? undefined : "-rotate-90",
 					)}
 					render={<ChevronDownIcon label="" size="small" />}
 				/>
 			</button>
 			{open ? (
-				<div className="px-10 pb-3 text-sm text-text-subtle">{app.body}</div>
+				<div className="px-8 pb-3 text-sm text-text-subtle">{body ?? app.body}</div>
 			) : null}
 		</li>
+	);
+}
+
+export function TeamEuAppsList({ className, renderBody }: Readonly<{ className?: string; renderBody?: (title: string) => string }>) {
+	return (
+		<ul aria-label="Connected apps" className={cn("px-2 pb-2", className)}>
+			{APPS.map((app) => (
+				<AppRow app={app} body={renderBody?.(app.title)} key={app.title} />
+			))}
+		</ul>
 	);
 }
 
 export function TeamEuAppsPanel() {
 	return (
 		<TeamEuRailPanel title="Apps">
-			<ul aria-label="Connected apps" className="px-2 pb-2">
-				{APPS.map((app) => (
-					<AppRow app={app} key={app.title} />
-				))}
-			</ul>
+			<TeamEuAppsList />
 		</TeamEuRailPanel>
 	);
 }

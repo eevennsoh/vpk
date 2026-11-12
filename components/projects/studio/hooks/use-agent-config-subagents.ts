@@ -11,8 +11,8 @@ import {
 	createDraftSubagentPrompt,
 	getBaseConfigWithSubagents,
 	getDerivedSubagentNames,
-} from "@/components/blocks/subagents/lib/subagent-prompts";
-import type { SubagentPrompt } from "@/components/blocks/subagents/data/demo-agents";
+} from "@/components/blocks/subagent/lib/subagent-prompts";
+import type { SubagentPrompt } from "@/components/blocks/subagent/data/demo-agents";
 import type { RovoAgentSubagentPrompt, RovoDataParts } from "@/lib/rovo-ui-messages";
 
 type AgentResult = RovoDataParts["agent-result"];
@@ -28,7 +28,7 @@ type AgentResult = RovoDataParts["agent-result"];
  * `activeSubagentId` is local view state (which subagent is being edited); the
  * data itself round-trips through `updateDraft`, so it survives panel close/reopen,
  * agent switching, and publish. Mirrors the standalone subagents demo
- * (components/blocks/subagents/page.tsx), reusing the same pure helpers.
+ * (components/blocks/subagent/page.tsx), reusing the same pure helpers.
  */
 export function useAgentConfigSubagents({
 	draft,
@@ -231,7 +231,7 @@ export function useAgentConfigSubagents({
 		activeConfigId,
 		activePrompt,
 		// Which subagent prompt is being edited (null = base agent). Used by the
-		// floating SubagentsNavigator to highlight the active row.
+		// floating SubagentNavigator to highlight the active row.
 		activeSubagentId,
 		baseConfig,
 		createSubagent,

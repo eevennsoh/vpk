@@ -13,7 +13,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | [message](~/.agents/skills/ai-elements/references/message.md) | `@/components/ui-custom/message` | Chat message display with role-based styling, markdown, actions, and branching | `Message`, `MessageContent`, `MessageResponse`, `MessageActions`, `MessageAction`, `MessageBranch` |
 | [conversation](~/.agents/skills/ai-elements/references/conversation.md) | `@/components/ui-custom/conversation` | Auto-scrolling message container with scroll button and empty state | `Conversation`, `ConversationContent`, `ConversationScrollButton`, `ConversationEmptyState`, `ConversationDownload` |
 | [prompt-input](~/.agents/skills/ai-elements/references/prompt-input.md) | `@/components/ui-custom/prompt-input` | Message input with textarea, submit, file attachments, model selector, and action menu | `PromptInput`, `Input`, `PromptInputTextarea`, `PromptInputSubmit`, `PromptInputBody`, `PromptInputHeader`, `PromptInputFooter`, `PromptInputTools`, `PromptInputSelect`, `PromptInputActionAddAttachments`, `PromptInputActionMenu`, `PromptInputButton` |
-| [attachments](~/.agents/skills/ai-elements/references/attachments.md) | `@/components/ui-custom/attachments` | File attachment display with previews and remove functionality | `Attachments`, `Attachment`, `AttachmentPreview`, `AttachmentRemove` |
+| [attachments](~/.agents/skills/ai-elements/references/attachments.md) | `@/components/ui-custom/attachment` | File attachment display with previews and remove functionality | `Attachment`, `AttachmentItem`, `AttachmentPreview`, `AttachmentRemove` |
 
 ## Content Display
 
@@ -42,7 +42,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | [suggestion](~/.agents/skills/ai-elements/references/suggestion.md) | `@/components/ui-custom/suggestion` | Clickable suggestion chips/pills | `Suggestions`, `Suggestion` |
 | [confirmation](~/.agents/skills/ai-elements/references/confirmation.md) | `@/components/ui-custom/confirmation` | Confirmation dialog for AI actions | `Confirmation` |
 | [inline-citation](~/.agents/skills/ai-elements/references/inline-citation.md) | `@/components/ui-custom/inline-citation` | Inline source citation markers | `InlineCitation` |
-| [sources](~/.agents/skills/ai-elements/references/sources.md) | `@/components/ui-custom/sources` | Source reference list display | `Sources` |
+| [sources](~/.agents/skills/ai-elements/references/sources.md) | `@/components/ui-custom/source` | Source reference list display | `Source` |
 
 ## Input Controls
 
@@ -62,7 +62,7 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | [checkpoint](~/.agents/skills/ai-elements/references/checkpoint.md) | `@/components/ui-custom/checkpoint` | Workflow checkpoint/milestone marker | `Checkpoint` |
 | [commit](~/.agents/skills/ai-elements/references/commit.md) | `@/components/ui-custom/commit` | Code commit display | `Commit` |
 | [stack-trace](~/.agents/skills/ai-elements/references/stack-trace.md) | `@/components/ui-custom/stack-trace` | Error stack trace display | `StackTrace` |
-| [test-results](~/.agents/skills/ai-elements/references/test-results.md) | `@/components/ui-custom/test-results` | Test execution results display | `TestResults` |
+| [test-results](~/.agents/skills/ai-elements/references/test-results.md) | `@/components/ui-custom/test-result` | Test execution results display | `TestResult` |
 | [file-tree](~/.agents/skills/ai-elements/references/file-tree.md) | `@/components/ui-custom/file-tree` | File system tree visualization | `FileTree` |
 | [task](~/.agents/skills/ai-elements/references/task.md) | `@/components/ui-custom/task` | Task/step tracking display | `Task` |
 | [plan](~/.agents/skills/ai-elements/references/plan.md) | `@/components/ui-custom/plan` | Multi-step plan visualization | `Plan` |
@@ -87,8 +87,8 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | [sandbox](~/.agents/skills/ai-elements/references/sandbox.md) | `@/components/ui-custom/sandbox` | Sandboxed code execution environment | `Sandbox` |
 | [package-info](~/.agents/skills/ai-elements/references/package-info.md) | `@/components/ui-custom/package-info` | Package/dependency information display | `PackageInfo` |
 | [context](~/.agents/skills/ai-elements/references/context.md) | `@/components/ui-custom/context` | Context/memory display | `Context` |
-| [controls](~/.agents/skills/ai-elements/references/controls.md) | `@/components/ui-custom/controls` | Interactive parameter controls | `Controls` |
-| [environment-variables](~/.agents/skills/ai-elements/references/environment-variables.md) | `@/components/ui-custom/environment-variables` | Environment variable display/editor | `EnvironmentVariables` |
+| [controls](~/.agents/skills/ai-elements/references/controls.md) | `@/components/ui-custom/control` | Interactive parameter controls | `Control` |
+| [environment-variables](~/.agents/skills/ai-elements/references/environment-variables.md) | `@/components/ui-custom/environment-variable` | Environment variable display/editor | `EnvironmentVariable` |
 | [queue](~/.agents/skills/ai-elements/references/queue.md) | `@/components/ui-custom/queue` | Task queue display | `Queue` |
 | [schema-display](~/.agents/skills/ai-elements/references/schema-display.md) | `@/components/ui-custom/schema-display` | Data schema visualization | `SchemaDisplay` |
 | [snippet](~/.agents/skills/ai-elements/references/snippet.md) | `@/components/ui-custom/snippet` | Code snippet display (lightweight) | `Snippet` |

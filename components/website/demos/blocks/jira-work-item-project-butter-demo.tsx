@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import JiraWorkItem from "@/components/blocks/jira-work-item";
 import { ProjectButterControls } from "@/components/blocks/jira-work-item/project-butter/project-butter-controls";
 import type { ProjectButterPresentation } from "@/components/blocks/jira-work-item/project-butter/presentation";
+import { ProjectButterChatWorkItem } from "@/components/website/demos/blocks/project-butter-chat-work-item";
 
 export function ProjectButterDemo() {
 	const [activePresentation, setActivePresentation] = useState<ProjectButterPresentation | null>(null);
@@ -26,7 +26,7 @@ export function ProjectButterDemo() {
 			/>
 			{activePresentation ? (
 				<div className="absolute inset-0">
-					<JiraWorkItem initialExperimentalPreset={empty ? "empty" : "filled"} initialIssueOpen onIssueClose={() => setActivePresentation(null)} projectButterPresentation={activePresentation} projectButterSuggestion={suggestion} variant="project-butter" />
+					<ProjectButterChatWorkItem initialExperimentalPreset={empty ? "empty" : "filled"} initialIssueOpen onIssueClose={() => setActivePresentation(null)} projectButterPresentation={activePresentation} projectButterSuggestion={suggestion} />
 				</div>
 			) : null}
 		</div>

@@ -19,12 +19,12 @@ import {
 	type AgentAutomationRule,
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
-} from "@/components/blocks/triggers/page";
+} from "@/components/blocks/trigger/page";
 import {
 	createAgentAutomationRule,
 	createAgentTriggerValue,
 	getAgentTriggerReadableLabel,
-} from "@/components/blocks/triggers/data/trigger-catalog";
+} from "@/components/blocks/trigger/data/trigger-catalog";
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import type { RichTextMentionRemovalRequest } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
