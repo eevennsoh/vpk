@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 
+// Root dependencies a backend-backed extraction does not copy unless the traced route
+// imports them. `motion-plus` (alias of `@motionplus/core`) installs from Motion's private
+// registry and needs a Motion+ token, so copying it by default would make every backend
+// extraction require that auth; a route that uses it still gets it through planPackages,
+// and the copied `.npmrc` routes the `@motionplus` scope.
+const BACKEND_EXCLUDED_ROOT_DEPENDENCIES = new Set(["motion-plus", "ansi-to-react"]);
+
 const HOST_PACKAGE_PEERS = [
 	{ host: "react-leaflet", peers: ["leaflet", "@types/leaflet"] },
 	{ host: "three", peers: ["@types/three"] },
@@ -114,7 +121,7 @@ export function resolveScaffoldDependencies({ repoRoot, planPackages, backendMan
 	addHostPeers(npmPackages, manifest, catalog);
 	if (backendManifest) {
 		for (const [name, version] of Object.entries({ ...manifest.dependencies, ...backendManifest.dependencies })) {
-			if (["motion-plus", "ansi-to-react"].includes(name)) continue;
+			if (BACKEND_EXCLUDED_ROOT_DEPENDENCIES.has(name)) continue;
 			const resolved = resolveCatalogSpecifier(name, version, catalog);
 			if (resolved === "catalog:") throw new Error(`Backend dependency ${name} has no catalog version`);
 			npmPackages[name] = resolved;

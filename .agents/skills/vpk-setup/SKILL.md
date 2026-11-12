@@ -22,7 +22,7 @@ Rovo App live voice mode.
 ## Quick Workflow
 
 1. **Preflight cleanup** → If `node_modules` exists, clean Next.js cache (see below)
-2. **Install dependencies** → `CI=true pnpm install --prefer-offline` in noninteractive/provider worktrees, or `pnpm install` in an interactive shell (skip if `node_modules` already exists)
+2. **Install dependencies** → `CI=true pnpm install --prefer-offline` in noninteractive/provider worktrees, or `pnpm install` in an interactive shell (skip if `node_modules` already exists). A first install on a machine needs `ATLASSIAN_NPM_TOKEN` and `MOTION_TOKEN` written to the user-level `~/.npmrc` by `node scripts/write-npmrc.mjs`; a 401 for `motion-plus` means `MOTION_TOKEN` is missing (see `references/guide-setup.md` → Install Dependencies)
 3. **Collect AI Gateway credentials** → Ask for use case ID and Atlassian email
 4. **Configure AI Gateway + Voice STT** → Generate ASAP keys and create `.env.local` with Google endpoint values and the current STT preset block
 5. **Set Rovo Session Token** → First launch of `pnpm run rovo` prints a session token; copy it to `ROVO_SESSION_TOKEN` in `.env.local` (one-time, does not expire)

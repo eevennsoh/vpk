@@ -9,13 +9,6 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "backend/lib/rovo-app-background-streams.js",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/** @type {Map<string, {existingMessages: any[], abortFn: Function, chunks: Array<Buffer|string>, status: string, startedAt: number, detached: boolean, timeoutTimer: ReturnType<typeof setTimeout>}>} */",
-			"type": "broad-any"
-		},
-		{
 			"filePath": "components/animate-ui/icons/icon.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",

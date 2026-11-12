@@ -6,6 +6,7 @@ const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
 const { parseHTML } = require("linkedom");
 const { loadCjsModuleFromText } = require("../../../scripts/lib/esbuild-cjs-loader.js");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const entry = path.join(__dirname, "index.ts");
 const { outputFiles } = buildSync({
@@ -173,4 +174,96 @@ test("built-in menu requires at least one action and retains a single accessible
 		assert.equal(triggers[0].getAttribute("aria-haspopup"), "menu");
 		assert.equal(card.querySelectorAll("button button").length, 0);
 	}
+});
+
+test("recommended variant requires a non-empty caller reason", () => {
+	for (const recommendationReason of [undefined, "", "   "]) {
+		assert.throws(() => renderCard(AGENT_LANYARD_AGENTS[0], { variant: "recommended", recommendationReason }), /non-empty recommendationReason/u);
+	}
+});
+
+test("ordinary footer null hides actions while other falsy values retain the default actions", () => {
+	const agent = AGENT_LANYARD_AGENTS[0];
+	for (const footer of [undefined, false, "", 0, NaN]) {
+		const card = renderCard(agent, { footer });
+		assert.equal(card.querySelector('[aria-label="Chat with Claude"]') !== null, true);
+		assert.equal(card.querySelector('[data-slot="agent-lanyard-appstack"]') === null, true);
+	}
+	const hidden = renderCard(agent, { footer: null });
+	assert.equal(hidden.querySelectorAll("button").length, 0);
+	assert.equal(hidden.querySelector('[data-slot="agent-lanyard-appstack"]') === null, true);
+	const custom = renderCard(agent, { footer: "Connected apps" });
+	assert.equal(custom.querySelector('[data-slot="agent-lanyard-appstack"]').textContent, "Connected apps");
+	assert.equal(custom.querySelectorAll("button").length, 0);
+});
+
+test("recommended notches start outside the surface before layout measurement", () => {
+	const card = renderCard(AGENT_LANYARD_AGENTS[0], { variant: "recommended", recommendationReason: "Caller-owned reason." });
+	const surface = card.querySelector('[data-slot="agent-lanyard-surface"]');
+	assert.equal(surface.style.maskImage.includes("var(--recommendation-seam-y, -20px)"), true);
+	assert.equal(surface.style.getPropertyValue("--recommendation-seam-y"), "");
+	assert.equal(surface.querySelectorAll('[data-slot="agent-lanyard-tear-line"]').length, 1);
+});
+
+test("public recommended variant retains identity and description, updates caller copy and omits all actions", async () => {
+	const agent = AGENT_LANYARD_AGENTS[0];
+	const props = { agent, variant: "recommended", recommendationReason: "Illustrative reason supplied by the caller.", onSelect: () => {}, onAction: () => {}, menuActions: { onViewProfile: () => {} }, footer: "Unwanted footer" };
+	const view = await renderComponent({ entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyard", props });
+	try {
+		const card = view.container.querySelector('article[data-variant="recommended"]');
+		assert.equal(card.getAttribute("aria-label"), "Claude recommended");
+		assert.equal(view.getByText(agent.description).textContent, agent.description);
+		const title = view.getByRole("heading", { name: "Why recommended", level: 4 });
+		assert.equal(title.nextElementSibling.textContent, props.recommendationReason);
+		assert.equal(title.parentElement.childElementCount, 2);
+		assert.equal(card.querySelectorAll("button, a, input, [tabindex]").length, 0);
+		assert.equal(card.textContent.includes("Unwanted footer"), false);
+		assert.equal(card.querySelector('[data-slot="agent-lanyard-appstack"]') === null, true);
+		assert.equal(card.querySelectorAll('[data-slot="agent-lanyard-surface"]').length, 1);
+		await view.rerender({ ...props, headingLevel: 2, recommendationReason: "Another caller-owned reason." });
+		assert.equal(view.getByRole("heading", { name: "Claude" }).tagName, "H2");
+		assert.equal(view.getByRole("heading", { name: "Why recommended" }).tagName, "H3");
+		assert.equal(view.getByText("Another caller-owned reason.").textContent, "Another caller-owned reason.");
+	} finally { await view.unmount(); }
+});
+
+test("recommended variant preserves the static grid and respects reduced motion and animation opt-outs", async () => {
+	for (const reducedMotion of [false, true]) {
+		const props = { variant: "recommended", agent: AGENT_LANYARD_AGENTS[0], recommendationReason: "Illustrative demo reason.", perspectiveTilt: true, animateGrid: true, gridAnimationTrigger: "reveal" };
+		const view = await renderComponent({
+			entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyard", props,
+			mocks: { "@/hooks/use-media-query": `export const useMediaQuery = () => ${reducedMotion};` },
+		});
+		try {
+			const card = view.container.querySelector('article[data-variant="recommended"]');
+			assert.equal(card.dataset.perspectiveTilt, String(!reducedMotion));
+			assert.equal(card.querySelector('[data-slot="agent-lanyard-grid"]').dataset.animated, String(!reducedMotion));
+			await view.rerender({ ...props, perspectiveTilt: false, animateGrid: false });
+			assert.equal(card.dataset.perspectiveTilt, "false");
+			assert.equal(card.querySelector('[data-slot="agent-lanyard-grid"]').dataset.animated, "false");
+			await view.rerender({ ...props, showGrid: false });
+			assert.equal(card.querySelector('[data-slot="agent-lanyard-grid"]') === null, true);
+		} finally { await view.unmount(); }
+	}
+});
+
+test("catalog pairs the illustrative recommended card with the existing actionable examples", async () => {
+	const view = await renderComponent({ entry: "components/blocks/agent-lanyard/page.tsx" });
+	try {
+		assert.equal(view.container.querySelector('article[data-variant="recommended"]').querySelectorAll("button").length, 0);
+		assert.equal(view.container.querySelector('article[data-agent-id="claude"][data-variant="agent"]').querySelectorAll("button").length > 0, true);
+		assert.equal(view.getByText(/Illustrative demo reason based on the catalog description/u).textContent.includes("No personalized evidence"), true);
+	} finally { await view.unmount(); }
+});
+
+test("recommended hover content lets the card own its shaped shadow while ordinary popups retain theirs", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyardHoverContent", props: { variant: "recommended" },
+		mocks: { "@/components/ui/hover-card": 'export function HoverCardContent({style}) { return <div data-popup style={style} />; }' },
+	});
+	try {
+		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow, "none");
+		await view.rerender({});
+		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow !== "none", true);
+	} finally { await view.unmount(); }
 });

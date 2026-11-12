@@ -75,9 +75,11 @@ test("scaffold resolver keeps the existing animation fallback and unresolved rou
 
 test("backend scaffold dependencies retain overrides and reject missing catalog versions", async (t) => {
 	const { resolveScaffoldDependencies } = await loadResolver();
-	const repoRoot = fixture(t, { dependencies: { express: "4.0.0", "motion-plus": "1.0.0", "ansi-to-react": "1.0.0" } }, "catalog:\n  '@json-render/core': 0.19.0\n");
+	const repoRoot = fixture(t, { dependencies: { express: "4.0.0", "motion-plus": "npm:@motionplus/core@2.12.0", "ansi-to-react": "1.0.0" } }, "catalog:\n  '@json-render/core': 0.19.0\n");
 	const result = resolveScaffoldDependencies({ repoRoot, planPackages: { react: "19.0.0" }, backendManifest: { dependencies: { express: "5.0.0", "@json-render/core": "catalog:" } } });
 	assert.deepEqual(result.npmPackages, { react: "19.0.0", "tw-animate-css": "^1.4.0", express: "5.0.0", "@json-render/core": "0.19.0" });
+	const motionRoute = resolveScaffoldDependencies({ repoRoot, planPackages: { "motion-plus": "npm:@motionplus/core@2.12.0" }, backendManifest: { dependencies: {} } });
+	assert.equal(motionRoute.npmPackages["motion-plus"], "npm:@motionplus/core@2.12.0", "a route that imports Motion+ keeps the private-registry alias");
 	assert.throws(() => resolveScaffoldDependencies({ repoRoot, planPackages: {}, backendManifest: { dependencies: { unresolved: "catalog:" } } }), {
 		message: "Backend dependency unresolved has no catalog version",
 	});
