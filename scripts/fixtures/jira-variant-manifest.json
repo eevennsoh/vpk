@@ -379,24 +379,6 @@
 			"target": "\"{sourceExperimentalSlug}\": {sourceExperimentalPascal}JiraWorkItem,\\s*\"{targetExperimentalSlug}\": {targetExperimentalPascal}JiraWorkItem,\\s*\\} as const;/u"
 		},
 		{
-			"file": "scripts/js-unit-test-manifest.mjs",
-			"kind": "matching-lines",
-			"sourceMarker": "{sourceSlug}",
-			"targetMarker": "{targetSlug}"
-		},
-		{
-			"file": "scripts/js-unit-test-manifest.mjs",
-			"kind": "matching-lines",
-			"sourceMarker": "/{sourceExperimentalSlug}/",
-			"targetMarker": "/{targetExperimentalSlug}/"
-		},
-		{
-			"file": "scripts/js-unit-test-manifest.mjs",
-			"kind": "matching-lines",
-			"sourceMarker": "jira-work-item-{sourceExperimentalSlug}",
-			"targetMarker": "jira-work-item-{targetExperimentalSlug}"
-		},
-		{
 			"arrayStart": "const DEFAULT_DEFERRED_MODULE_RULES = [",
 			"file": "scripts/verify-lazy-load-boundaries.js",
 			"kind": "array-object-all",

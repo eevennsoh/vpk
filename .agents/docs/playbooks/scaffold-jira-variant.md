@@ -15,7 +15,7 @@ corepack pnpm run scaffold:jira-variant -- --source v3 --target v4 --json
 Dry run is the default. Review the proposed copied paths, rewrites,
 registrations, generated files, validation commands, and `planFingerprint`.
 The copied paths include the version-owned experimental Jira Work Item tree
-and its classified unit tests. Registrations also cover the Work Item chooser
+and its unit tests, which run by file name. Registrations also cover the Work Item chooser
 API/map, chooser page, demo exports, block registries, detail metadata, preview
 allowlist, and their source-contract tests; these are part of the reviewed plan,
 not manual follow-up. Stop if the target
@@ -53,7 +53,7 @@ owned by the run. Pre-existing target paths are never overwritten.
 - Search the copied paths for unintended source slug/Pascal/camel/upper names.
 - Verify instance IDs and ARIA relationships are unique when two variants can
   render together.
-- Inspect catalog, detail metadata, unit-test classification, lazy-load rules,
+- Inspect catalog, detail metadata, lazy-load rules,
   and generated repo-map changes.
 - Run `corepack pnpm run ci:pr` and follow `vpk-verify` on the target route.
 

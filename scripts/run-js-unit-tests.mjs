@@ -1,16 +1,25 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname } from "node:path";
-import { pathToFileURL } from "node:url";
-import {
-	CI_INCLUDED_TEST_CLASSIFICATIONS,
-	INCLUDED_TEST_PREFIXES,
-	SKIPPED_TEST_PREFIXES,
-	TEST_FILE_CLASSIFICATIONS,
-} from "./js-unit-test-manifest.mjs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { LEGACY_DRIFT_TEST_FILES } from "./js-unit-test-legacy-drift.mjs";
+import { SKIPPED_TEST_FILES, SKIPPED_TEST_PREFIXES } from "./js-unit-test-skipped.mjs";
+
+// Every node:test file runs by default; nothing has to be registered. Classification
+// comes from the file name and only describes the suite:
+//   *.source.test.*   source-contract (asserts on source text)
+//   *.behavior.test.* behavior (renders or drives the real thing)
+//   anything else     unit
+// The only lists are what does NOT run: SKIPPED_TEST_FILES / SKIPPED_TEST_PREFIXES, each
+// with a reason, and LEGACY_DRIFT_PATH, a frozen baseline that may only shrink.
 
 const COMPONENT_TEST_PREFIX = "components/";
-const MANIFEST_PATH = "scripts/js-unit-test-manifest.mjs";
+const LEGACY_DRIFT_PATH = "scripts/js-unit-test-legacy-drift.mjs";
+const SKIPPED_PATH = "scripts/js-unit-test-skipped.mjs";
+// Lets a module a suite loads directly use the app's `@/` alias and extensionless imports.
+export const ALIAS_HOOK_PATH = fileURLToPath(new URL("./lib/register-alias-hook.mjs", import.meta.url));
+const ALIAS_HOOK_ARGS = ["--import", ALIAS_HOOK_PATH];
 const COMPONENT_TEST_REPORT_PREFIX = "JS_UNIT_COMPONENT_TEST_REPORT";
 const COMPONENT_TEST_REPORT_MAX_LINE_BYTES = 60 * 1024;
 const COMPONENT_TEST_REPORT_CHUNK_PREFIX_RESERVE_BYTES = 32;
@@ -21,81 +30,41 @@ const VM_MODULE_TEST_MARKERS = [
 const BATCH_TIMINGS = JSON.parse(readFileSync(new URL("./js-unit-test-timings.json", import.meta.url), "utf8")).batches;
 export const UNIT_SHARD_COUNT = 4;
 
-const TEST_FILE_CLASSIFICATION_BY_PATH = buildTestFileClassificationMap(TEST_FILE_CLASSIFICATIONS);
-const CI_INCLUDED_TEST_CLASSIFICATION_SET = new Set(CI_INCLUDED_TEST_CLASSIFICATIONS);
-// Explicitly not run: the frozen legacy-drift baseline and SKIPPED_TEST_FILES (each with a reason).
-const LISTED_NOT_RUN_CLASSIFICATIONS = new Set(["legacy-drift", "skipped"]);
-const EXCLUDED_TEST_FILES = new Set([...LISTED_NOT_RUN_CLASSIFICATIONS].flatMap((classification) => TEST_FILE_CLASSIFICATIONS[classification] ?? []));
-const INCLUDED_TEST_FILES = new Set([...TEST_FILE_CLASSIFICATION_BY_PATH]
-	.filter(([, classification]) => CI_INCLUDED_TEST_CLASSIFICATION_SET.has(classification))
-	.map(([filePath]) => filePath));
+const LEGACY_DRIFT_TEST_FILE_SET = new Set(LEGACY_DRIFT_TEST_FILES);
+const SKIPPED_TEST_FILE_SET = new Set(Object.keys(SKIPPED_TEST_FILES));
+const SKIPPED_TEST_PREFIX_LIST = Object.keys(SKIPPED_TEST_PREFIXES);
 
-export function buildTestFileClassificationMap(classifications = TEST_FILE_CLASSIFICATIONS) {
-	const classificationByFile = new Map();
-	for (const [classification, filePaths] of Object.entries(classifications)) {
-		for (const filePath of filePaths) {
-			classificationByFile.set(filePath, classification);
-		}
-	}
-	return classificationByFile;
-}
-
-export function getTestFileClassification(filePath, {
-	classificationByFile = TEST_FILE_CLASSIFICATION_BY_PATH,
-} = {}) {
-	return classificationByFile.get(filePath) ?? "unclassified";
+export function classifyTestFile(filePath) {
+	if (/\.source\.test\.[^./]+$/u.test(filePath)) return "source-contract";
+	if (/\.behavior\.test\.[^./]+$/u.test(filePath)) return "behavior";
+	return "unit";
 }
 
 function isComponentNodeTestEntry(entry) {
 	return entry.filePath.startsWith(COMPONENT_TEST_PREFIX) && (entry.source ?? "").includes("node:test");
 }
 
+// `forcedTestFiles` are paths named with --file: they run even when listed as not run, so
+// a legacy-drift suite can be checked before it graduates. `includedTestPrefixes: null`
+// means the unfiltered run, which selects every file.
 export function getTestFileInclusion(filePath, {
-	ciIncludedClassifications = CI_INCLUDED_TEST_CLASSIFICATION_SET,
-	classificationByFile = TEST_FILE_CLASSIFICATION_BY_PATH,
-	excludedTestFiles = EXCLUDED_TEST_FILES,
-	includedTestFiles = INCLUDED_TEST_FILES,
-	includedTestPrefixes = INCLUDED_TEST_PREFIXES,
+	forcedTestFiles = new Set(),
+	includedTestPrefixes = null,
+	legacyDriftTestFiles = LEGACY_DRIFT_TEST_FILE_SET,
+	skippedTestFiles = SKIPPED_TEST_FILE_SET,
+	skippedTestPrefixes = SKIPPED_TEST_PREFIX_LIST,
 } = {}) {
-	const classification = getTestFileClassification(filePath, { classificationByFile });
-	// An explicitly named `--file` still force-runs a legacy-drift suite so it can be checked before graduating.
-	if (!filePath || (excludedTestFiles.has(filePath) && !includedTestFiles.has(filePath))) {
-		return {
-			classification,
-			included: false,
-			reason: "excluded-file",
-		};
+	const classification = classifyTestFile(filePath ?? "");
+	if (!filePath) return { classification, included: false, reason: "excluded-file" };
+	const forced = forcedTestFiles.has(filePath);
+	if (forced) return { classification, included: true, reason: "included-file" };
+	if (skippedTestPrefixes.some((prefix) => filePath.startsWith(prefix))) return { classification: "skipped", included: false, reason: "skipped-prefix" };
+	if (skippedTestFiles.has(filePath)) return { classification: "skipped", included: false, reason: "skipped" };
+	if (legacyDriftTestFiles.has(filePath)) return { classification: "legacy-drift", included: false, reason: "legacy-drift" };
+	if (includedTestPrefixes && !includedTestPrefixes.some((prefix) => filePath.startsWith(prefix))) {
+		return { classification, included: false, reason: "not-selected" };
 	}
-
-	if (ciIncludedClassifications.has(classification)) {
-		return {
-			classification,
-			included: true,
-			reason: classification,
-		};
-	}
-
-	if (includedTestFiles.has(filePath)) {
-		return {
-			classification,
-			included: true,
-			reason: "included-file",
-		};
-	}
-
-	if (includedTestPrefixes.some((prefix) => filePath.startsWith(prefix))) {
-		return {
-			classification,
-			included: true,
-			reason: "included-prefix",
-		};
-	}
-
-	return {
-		classification,
-		included: false,
-		reason: classification === "legacy-drift" || classification === "unclassified" ? classification : "not-included",
-	};
+	return { classification, included: true, reason: classification };
 }
 
 export function buildComponentTestReport(testEntries, options) {
@@ -220,9 +189,7 @@ export function buildSelectionOptions({
 	}
 
 	return {
-		ciIncludedClassifications: new Set(),
-		excludedTestFiles: EXCLUDED_TEST_FILES,
-		includedTestFiles: new Set(files),
+		forcedTestFiles: new Set(files),
 		includedTestPrefixes: prefixes,
 	};
 }
@@ -245,51 +212,21 @@ export function filterExistingTestFiles(filePaths, fileExists = existsSync) {
 	return filePaths.filter((filePath) => fileExists(filePath));
 }
 
-export function assertClassifiedTestFilesExist(
-	classifications = TEST_FILE_CLASSIFICATIONS,
+export function assertListedTestFilesExist({
+	legacyDriftTestFiles = LEGACY_DRIFT_TEST_FILES,
+	skippedTestFiles = Object.keys(SKIPPED_TEST_FILES),
 	fileExists = existsSync,
-) {
-	const missingEntries = Object.entries(classifications)
-		.flatMap(([classification, filePaths]) => filePaths
-			.filter((filePath) => !fileExists(filePath))
-			.map((filePath) => ({ classification, filePath })))
-		.sort((left, right) => {
-			return left.classification.localeCompare(right.classification) ||
-				left.filePath.localeCompare(right.filePath);
-		});
-
-	if (missingEntries.length === 0) {
-		return;
-	}
-
+} = {}) {
+	const missing = [
+		...legacyDriftTestFiles.filter((filePath) => !fileExists(filePath)).map((filePath) => `- ${LEGACY_DRIFT_PATH}: ${filePath}`),
+		...skippedTestFiles.filter((filePath) => !fileExists(filePath)).map((filePath) => `- ${SKIPPED_PATH}: ${filePath}`),
+	];
+	const both = legacyDriftTestFiles.filter((filePath) => skippedTestFiles.includes(filePath)).map((filePath) => `- listed twice: ${filePath}`);
+	if (missing.length + both.length === 0) return;
 	throw new Error([
-		"js-unit-tests: classified test paths do not exist:",
-		...missingEntries.map(({ classification, filePath }) => {
-			return `- ${classification}: ${filePath}`;
-		}),
-	].join("\n"));
-}
-
-export function assertUniqueTestFileClassifications(classifications = TEST_FILE_CLASSIFICATIONS) {
-	const classificationsByFile = new Map();
-	for (const [classification, filePaths] of Object.entries(classifications)) {
-		for (const filePath of filePaths) {
-			classificationsByFile.set(filePath, [...(classificationsByFile.get(filePath) ?? []), classification]);
-		}
-	}
-	const duplicateEntries = [...classificationsByFile]
-		.filter(([, fileClassifications]) => fileClassifications.length > 1)
-		.sort(([left], [right]) => left.localeCompare(right));
-
-	if (duplicateEntries.length === 0) {
-		return;
-	}
-
-	throw new Error([
-		`js-unit-tests: test paths are listed more than once in ${MANIFEST_PATH}; keep exactly one classification per path:`,
-		...duplicateEntries.map(([filePath, fileClassifications]) => {
-			return `- ${filePath}: ${fileClassifications.join(", ")}`;
-		}),
+		"js-unit-tests: the not-run lists name paths that do not exist or appear in both lists; remove them:",
+		...missing,
+		...both,
 	].join("\n"));
 }
 
@@ -298,25 +235,13 @@ function hasNodeTestImport(entry) {
 }
 
 /**
- * Test files the unfiltered gate would silently skip: neither run (a CI-included
- * classification or an included prefix, with a node:test import) nor listed as not run
- * (legacy-drift, SKIPPED_TEST_FILES or a SKIPPED_TEST_PREFIXES root). Covers every root, not only components/.
+ * Test files the unfiltered gate would silently skip: selected to run but without a
+ * node:test import, so `node --test` would load them and report nothing.
  */
-export function findUnselectedTestFiles(testEntries, {
-	classificationByFile = TEST_FILE_CLASSIFICATION_BY_PATH,
-	includedTestPrefixes = INCLUDED_TEST_PREFIXES,
-	skippedTestPrefixes = Object.keys(SKIPPED_TEST_PREFIXES),
-} = {}) {
+export function findUnselectedTestFiles(testEntries, options = {}) {
 	return testEntries
-		.flatMap((entry) => {
-			const inclusion = getTestFileInclusion(entry.filePath, { classificationByFile, includedTestPrefixes });
-			if (LISTED_NOT_RUN_CLASSIFICATIONS.has(inclusion.classification)) return [];
-			if (inclusion.classification === "unclassified" && skippedTestPrefixes.some((prefix) => entry.filePath.startsWith(prefix))) return [];
-			// components/** suites always need an explicit classification, even under an included prefix.
-			const needsClassification = entry.filePath.startsWith(COMPONENT_TEST_PREFIX) && inclusion.classification === "unclassified";
-			if (!inclusion.included || needsClassification) return [{ filePath: entry.filePath, reason: "unclassified" }];
-			return hasNodeTestImport(entry) ? [] : [{ filePath: entry.filePath, reason: "no node:test import" }];
-		})
+		.filter((entry) => getTestFileInclusion(entry.filePath, options).included && !hasNodeTestImport(entry))
+		.map((entry) => ({ filePath: entry.filePath, reason: "no node:test import" }))
 		.sort((left, right) => left.filePath.localeCompare(right.filePath));
 }
 
@@ -327,10 +252,47 @@ export function assertEveryTestFileSelected(testEntries, options) {
 	}
 
 	throw new Error([
-		`js-unit-tests: ${unselected.length} test file(s) are neither run nor listed as skipped, so the CI unit gate silently drops them:`,
+		`js-unit-tests: ${unselected.length} test file(s) would run without reporting, so the CI unit gate silently drops them:`,
 		...unselected.map(({ filePath, reason }) => `- ${filePath} (${reason})`),
-		`Classify each path in ${MANIFEST_PATH} under \`stable\` (behavioral tests) or \`source-contract\` (tests that assert on source text), import node:test where it is missing, or add it to SKIPPED_TEST_FILES (or its root to SKIPPED_TEST_PREFIXES) with the reason it does not run.`,
-		"Do not add them to `legacy-drift`: it is a frozen baseline of skipped suites that must only shrink.",
+		`Import node:test where it is missing, or add the file to SKIPPED_TEST_FILES (or its root to SKIPPED_TEST_PREFIXES) in ${SKIPPED_PATH} with the reason it does not run.`,
+		`Do not add it to ${LEGACY_DRIFT_PATH}: that is a frozen baseline of failing suites that must only shrink.`,
+	].join("\n"));
+}
+
+// Entries in the current legacy-drift list that the base did not have.
+export function findLegacyDriftGrowth(baseFiles, currentFiles = LEGACY_DRIFT_TEST_FILES) {
+	const base = new Set(baseFiles);
+	return currentFiles.filter((filePath) => !base.has(filePath)).sort();
+}
+
+export function parseLegacyDriftSource(source) {
+	return [...source.matchAll(/"([^"\n]+\.test\.[^"\n]+)"/gu)].map((match) => match[1]);
+}
+
+function gitOutput(args) {
+	const result = spawnSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+	return result.status === 0 ? result.stdout : null;
+}
+
+// Same base as the ESLint suppression ratchet: the PR base in CI, the pre-push tip on a
+// push to main, the merge base with origin/main locally.
+export function assertLegacyDriftDidNotGrow({ env = process.env, git = gitOutput, log = console.warn } = {}) {
+	const { isBaseRequired, resolveBaseRef } = createRequire(import.meta.url)("./verify-eslint-suppressions.js");
+	const baseRef = resolveBaseRef({ env, git: (args) => git(args)?.trim() ?? null });
+	if (!baseRef) {
+		const message = "js-unit-tests: legacy-drift ratchet base unavailable (fetch origin/main or set VPK_SUPPRESSIONS_BASE).";
+		if (isBaseRequired(env)) throw new Error(message);
+		log(`${message} Skipping.`);
+		return;
+	}
+	const baseSource = git(["show", `${baseRef}:${LEGACY_DRIFT_PATH}`]);
+	if (baseSource === null) return;
+	const added = findLegacyDriftGrowth(parseLegacyDriftSource(baseSource));
+	if (added.length === 0) return;
+	throw new Error([
+		`js-unit-tests: ${LEGACY_DRIFT_PATH} may only shrink, but these suites were added since ${baseRef.slice(0, 9)}:`,
+		...added.map((filePath) => `- ${filePath}`),
+		"Fix the suite so it passes instead of parking it as legacy drift.",
 	].join("\n"));
 }
 
@@ -371,7 +333,7 @@ function reportComponentTestCoverage(report) {
 		.filter((entry) => entry.classification === "legacy-drift")
 		.length;
 	console.log(
-		`js-unit-tests: component node:test coverage ${report.includedCount} included, ${legacyDriftCount} frozen legacy-drift. Graduate legacy-drift tests to stable or source-contract in ${MANIFEST_PATH}.`
+		`js-unit-tests: component node:test coverage ${report.includedCount} included, ${legacyDriftCount} frozen legacy-drift. Graduate a legacy-drift suite by fixing it and removing it from ${LEGACY_DRIFT_PATH}.`
 	);
 	console.log(formatComponentTestReport(report));
 }
@@ -431,7 +393,7 @@ export function buildTestFileBatches(testFiles, {
 		if (requiresVmModuleFlag(source)) {
 			batches.push({
 				files: [testFile],
-				nodeArgs: ["--experimental-vm-modules"],
+				nodeArgs: ["--experimental-vm-modules", ...ALIAS_HOOK_ARGS],
 				reason: "vm-modules",
 			});
 			continue;
@@ -446,7 +408,7 @@ export function buildTestFileBatches(testFiles, {
 
 		const batch = {
 			files: [testFile],
-			nodeArgs: [],
+			nodeArgs: [...ALIAS_HOOK_ARGS],
 			reason: "directory",
 		};
 		directoryBatches.set(group, batch);
@@ -521,36 +483,31 @@ function exitOnManifestError(check) {
 	}
 }
 
-function warnUnclassifiedSelectedTests(testEntries, testFiles) {
+function warnSilentSelectedTests(testEntries, testFiles) {
 	const selectedFiles = new Set(testFiles);
-	const unclassifiedFiles = findUnselectedTestFiles(
-		testEntries.filter((entry) => selectedFiles.has(entry.filePath)),
-	);
-	if (unclassifiedFiles.length === 0) {
-		return;
-	}
-
+	const silent = findUnselectedTestFiles(testEntries.filter((entry) => selectedFiles.has(entry.filePath)));
+	if (silent.length === 0) return;
 	console.warn([
-		`js-unit-tests: warning: selected suites are unclassified; the unfiltered CI run fails until they are classified in ${MANIFEST_PATH}:`,
-		...unclassifiedFiles.map(({ filePath }) => `- ${filePath}`),
+		"js-unit-tests: warning: selected suites have no node:test import; the unfiltered CI run fails until they import it or are skipped:",
+		...silent.map(({ filePath }) => `- ${filePath}`),
 	].join("\n"));
 }
 
 function main() {
-	exitOnManifestError(() => {
-		assertClassifiedTestFilesExist();
-		assertUniqueTestFileClassifications();
-	});
+	exitOnManifestError(() => assertListedTestFilesExist());
 	const selection = parseTestSelectionArgs(process.argv.slice(2));
 	const selectionOptions = buildSelectionOptions(selection);
 	const testEntries = readTestEntries(listCandidateTestFiles());
 	const hasSelection = selection.files.length > 0 || selection.prefixes.length > 0;
 	if (!hasSelection) {
-		exitOnManifestError(() => assertEveryTestFileSelected(testEntries));
+		exitOnManifestError(() => {
+			assertEveryTestFileSelected(testEntries);
+			assertLegacyDriftDidNotGrow();
+		});
 	}
 	const testFiles = selectRunnableTestFiles(testEntries, selectionOptions);
 	if (hasSelection) {
-		warnUnclassifiedSelectedTests(testEntries, testFiles);
+		warnSilentSelectedTests(testEntries, testFiles);
 	}
 	if (
 		shouldReportComponentCoverage(selection) &&

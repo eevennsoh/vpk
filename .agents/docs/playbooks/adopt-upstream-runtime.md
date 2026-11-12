@@ -43,7 +43,7 @@ Capture rendered output for the capabilities at risk: colors/materials, alpha, s
 
 Check accessible names, focus visibility/order, decorative surfaces and hit targets, and motion-off behavior. Fetch relevant ADS accessibility guidance with `atlas ads docs a11y <topic>` and use the configured accessibility analysis capability for the rendered route; report unavailable analysis rather than claiming it passed. Store disposable screenshots/recordings under `output/agent-browser/`.
 
-Run relevant behavioral tests, `pnpm run lint`, `pnpm run typecheck`, and affected catalog/source/file-size guards. Classify new `components/**` node:test suites in `scripts/js-unit-test-manifest.mjs` and verify their discovery with unfiltered `node scripts/run-js-unit-tests.mjs`. Use the actual `pnpm run ci:pr` gate before delivery; a subset does not establish that deleted files have no generated references.
+Run relevant behavioral tests, `pnpm run lint`, `pnpm run typecheck`, and affected catalog/source/file-size guards. New node:test suites run by file name (`*.source.test.*` for source contracts); confirm the unfiltered `node scripts/run-js-unit-tests.mjs` runs them. Use the actual `pnpm run ci:pr` gate before delivery; a subset does not establish that deleted files have no generated references.
 
 ## Retire only replaced responsibilities
 
