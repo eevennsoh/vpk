@@ -117,7 +117,7 @@ test("Configure combines automation with the complete Connections submenu", asyn
 	await configure.click();
 	const settings = page.getByRole("menu", { name: "Configure", exact: true });
 	await expect(settings).toHaveCSS("padding", inset);
-	await expect(settings.getByRole("menuitemcheckbox")).toHaveText(["Auto-fix", "Merge when ready", "Auto-archive on merge or close"]);
+	await expect(settings.getByRole("menuitemcheckbox")).toHaveText(["Auto-fix PR", "Merge when ready", "Auto-archive on merge or close"]);
 	await expect(settings.getByRole("separator")).toHaveCount(1);
 	const connections = settings.getByRole("menuitem", { name: "Connections", exact: true });
 	await expect(connections.locator("svg")).toBeVisible();
@@ -159,7 +159,7 @@ test("automation defaults are enabled and choices persist across development pan
 	const settingsButton = panel.getByRole("button", { name: "Configure", exact: true });
 	await settingsButton.click();
 	const settings = page.getByRole("menu", { name: "Configure", exact: true });
-	for (const name of ["Auto-fix", "Merge when ready", "Auto-archive on merge or close"]) {
+	for (const name of ["Auto-fix PR", "Merge when ready", "Auto-archive on merge or close"]) {
 		const defaultChecked = name !== "Auto-archive on merge or close";
 		const option = settings.getByRole("menuitemcheckbox", { name });
 		const row = option;
@@ -179,12 +179,12 @@ test("automation defaults are enabled and choices persist across development pan
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Pull requests created" }).click();
 	await settingsButton.press("Enter");
-	for (const name of ["Auto-fix", "Merge when ready", "Auto-archive on merge or close"]) {
+	for (const name of ["Auto-fix PR", "Merge when ready", "Auto-archive on merge or close"]) {
 		await expect(settings.getByRole("menuitemcheckbox", { name })).toHaveAttribute("aria-checked", String(name === "Auto-archive on merge or close"));
 	}
-	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix" })).toBeFocused();
+	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix PR" })).toBeFocused();
 	await page.keyboard.press("Space");
-	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix" })).toBeChecked();
+	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix PR" })).toBeChecked();
 	await expect(settings.getByRole("menuitemcheckbox", { name: "Merge when ready" })).not.toBeChecked();
 });
 
@@ -225,7 +225,7 @@ test("CI checks follow the automation settings and allow manual repair and merge
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	await page.getByRole("button", { name: "Configure", exact: true }).click();
 	const settings = page.getByRole("menu", { name: "Configure", exact: true });
-	await settings.getByRole("menuitemcheckbox", { name: "Auto-fix" }).click();
+	await settings.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }).click();
 	await settings.getByRole("menuitemcheckbox", { name: "Merge when ready" }).click();
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Pull requests created" }).click();

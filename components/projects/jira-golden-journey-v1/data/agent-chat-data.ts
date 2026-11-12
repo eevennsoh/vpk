@@ -20,6 +20,7 @@ export interface JgpAgentChatScenario {
 	request?: string;
 	result?: string;
 	skillInvocation?: RovoMessageMetadata["skillInvocation"];
+	recordedSession?: { messages: RovoUIMessage[]; thinkingMessageId: string | null };
 }
 
 export interface JgpAgentChatPlaybackFrame {

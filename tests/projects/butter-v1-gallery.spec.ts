@@ -3,6 +3,123 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+for (const [answer, reply] of [
+	["Assume a 7-day sandbox window", "I’ll use a seven-day retention window for the sandbox replay"],
+	["Do not replay keys against live accounts", "I’ll keep replay away from live accounts"],
+	["Jordan signs off the retention window", "I’ll prepare the sandbox replay plan and ask Jordan"],
+] as const) {
+	test(`PAY-112 resumes after choosing ${answer}`, async ({ page }) => {
+		await page.setViewportSize({ width: 1800, height: 1100 });
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Close gallery" }).click();
+		const card = page.locator('[data-issue-key="PAY-112"][data-board-column-title]');
+		await expect(card).toHaveAttribute("data-board-column-title", "In review");
+		await card.getByRole("button", { name: "Codex: Needs input" }).click();
+		await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+		await page.getByRole("button", { name: new RegExp(answer) }).click();
+		await expect(page.getByText(reply, { exact: false })).toBeVisible();
+		await expect(page.getByText("That clarification card expired", { exact: false })).toHaveCount(0);
+		await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+		await expect(card.getByRole("button", { name: "Codex: Working" })).toBeVisible();
+		await expect(page.getByRole("log").getByRole("button", { name: "Working", exact: true })).toBeVisible();
+		await expect(page.getByRole("button", { name: /Preparing sandbox replay checks/ })).toBeVisible();
+		await page.waitForTimeout(4_000);
+		await expect(page.getByRole("log").getByRole("button", { name: "Working", exact: true })).toBeVisible();
+		await expect(page.getByText(/Thought for 0s/)).toHaveCount(0);
+		await page.getByRole("button", { name: "Close", exact: true }).click();
+		await card.getByRole("button", { name: "Codex: Working" }).click();
+		await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+		await expect(page.getByText(reply, { exact: false })).toBeVisible();
+		await expect(page.getByRole("log").getByRole("button", { name: "Working", exact: true })).toBeVisible();
+		await page.waitForTimeout(4_000);
+		await expect(page.getByRole("log").getByRole("button", { name: "Working", exact: true })).toBeVisible();
+	});
+}
+
+test("PAY-112 uses the journey card move and trace when resumed on the board", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const card = page.locator('[data-issue-key="PAY-112"][data-board-column-title]');
+	await card.getByRole("button", { name: "Codex: Needs input" }).click();
+	await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+	await page.getByRole("button", { name: /Assume a 7-day sandbox window/ }).click();
+	await expect(page.locator('[data-issue-drop-flight="PAY-112"]')).toBeAttached();
+	await expect(page.locator('[data-issue-drop-trace]')).toBeAttached();
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(card.getByRole("button", { name: "Codex: Working" })).toBeVisible();
+});
+
+test("PAY-112 keeps working after switching between agent sessions", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const card = page.locator('[data-issue-key="PAY-112"][data-board-column-title]');
+	await card.getByRole("button", { name: "Codex: Needs input" }).click();
+	await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+	await page.getByRole("button", { name: /Assume a 7-day sandbox window/ }).click();
+	await expect(card.getByRole("button", { name: "Codex: Working" })).toBeVisible();
+	await page.waitForTimeout(4_000);
+	await expect(page.getByRole("log").getByRole("button", { name: /^(Working|Thinking)$/ })).toBeVisible();
+	await expect(page.getByText(/Thought for 0s/)).toHaveCount(0);
+	await page.getByRole("button", { name: "Close", exact: true }).click();
+	await page.getByRole("button", { name: "In progress", exact: true }).click();
+	const merchant = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
+	await merchant.getByRole("button", { name: "Claude: Working" }).click();
+	await page.getByRole("button", { name: "Improve merchant onboarding", exact: true }).click();
+	await expect(page.getByText("Checking the sandbox quickstart", { exact: false }).first()).toBeVisible();
+	await page.getByRole("button", { name: "Close", exact: true }).click();
+	await card.getByRole("button", { name: "Codex: Working" }).click();
+	await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+	await page.waitForTimeout(4_000);
+	await expect(page.getByRole("log").getByRole("button", { name: /^(Working|Thinking)$/ })).toBeVisible();
+	await expect(page.getByText(/Thought for 0s/)).toHaveCount(0);
+});
+
+test("PAY-112 resumes from List without waiting for a hidden board animation", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	const row = page.getByRole("row").filter({ hasText: "PAY-112" });
+	await row.getByRole("button", { name: "Codex: Needs input" }).click();
+	await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+	await page.getByRole("button", { name: /Assume a 7-day sandbox window/ }).click();
+	await expect(row.getByRole("button", { name: "Codex: Working" })).toBeVisible();
+	await expect(row.getByRole("button", { name: "Change status for PAY-112. Current status: In progress" })).toBeVisible();
+});
+
+test("closing the journey work item does not replay the board glow", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude (Recommended)", exact: true }).click();
+	await expect(item.getByRole("button", { name: "Change status, In progress" })).toBeVisible({ timeout: 10_000 });
+	await page.evaluate(() => {
+		const board = document.querySelector("[data-butter-board-surface]");
+		if (!board) throw new Error("Board not found");
+		const observer = new MutationObserver(() => {
+			if (board.querySelector('[data-jira-linking-glow-halo], [data-jira-linking-glow-backdrop]')) {
+				document.documentElement.setAttribute("data-journey-board-glow-observed", "true");
+			}
+		});
+		observer.observe(board, { childList: true, subtree: true });
+	});
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(card.getByRole("button", { name: "Claude: Working" })).toBeVisible();
+	await page.waitForTimeout(2_000);
+	await expect(page.locator("html")).not.toHaveAttribute("data-journey-board-glow-observed", "true");
+});
+
 test("Claude starts before moving the work item to In progress", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
@@ -57,6 +174,36 @@ test("the journey keeps its embedded session card across stages and rewind", asy
 		await expect(thread.locator("[data-project-butter-session-start]")).toContainText("Improve merchant onboarding");
 		await expect(thread.locator("[data-project-butter-session-start]")).toContainText(step === "Done" ? "Finished" : "Working");
 	}
+});
+
+test("journey checks wait for the PR card before progressing and fixing", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.clock.install();
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("button", { name: "Pull request", exact: true }).click();
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]');
+	await card.click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	const development = item.getByRole("region", { name: "Pull request development" });
+	await expect(development).toHaveAttribute("data-project-butter-development", "pr");
+	await page.clock.fastForward(20_000);
+	await expect(development).toHaveAttribute("data-project-butter-development", "pr");
+	await development.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).press("Enter");
+	const flyout = page.getByRole("group", { name: "Pull request #284: Add merchant onboarding quickstart" });
+	await expect(flyout).toBeVisible();
+	for (const phase of ["failed", "fixing", "passed", "merged"]) {
+		await page.clock.fastForward(5_000);
+		await expect(development).toHaveAttribute("data-project-butter-development", phase);
+		await expect(flyout).toBeVisible();
+	}
+	await expect(flyout).toContainText("Merged");
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await page.getByRole("button", { name: "Fix checks", exact: true }).click();
+	await expect(development).toHaveAttribute("data-project-butter-development", "failed");
+	await page.clock.fastForward(20_000);
+	await expect(development).toHaveAttribute("data-project-butter-development", "failed");
 });
 
 test("teammate sessions keep their popover alignment while expanding near the viewport edge", async ({ page }) => {

@@ -64,7 +64,7 @@ export function ProjectButterReferenceCommentBody({ markdown, pullRequestStatus,
 		return { ...streamdownComponents, a: ({ href, ...props }: ComponentProps<"a"> & { node?: unknown }) => {
 			const agent = href?.startsWith(MENTION_LINK) ? byId.get(href.slice(MENTION_LINK.length)) : undefined;
 			if (agent) return <JiraActivitySegments segments={[mentionSegmentForActor({ id: agent.id, name: agent.name, kind: "agent", avatarSrc: agent.avatarSrc, brandName: agent.brandName })]} />;
-			return href === "#pull-request-284" && item ? <SmartLink className="text-[length:inherit] leading-[inherit] [&_[data-smart-link-text]]:[text-box:trim-both_cap_alphabetic]" item={item} positionerClassName="z-[700]" showStatus /> : <DefaultAnchor href={href} {...props} />;
+			return href === "#pull-request-284" && item ? <SmartLink className="text-[length:inherit] leading-[inherit]" item={item} positionerClassName="z-[700]" showStatus size="large" /> : <DefaultAnchor href={href} {...props} />;
 		} };
 	}, [agents, pullRequestStatus]);
 	const body = pullRequestStatus ? markdown.replace(/\bPR #284\b/gu, "[PR #284](#pull-request-284)") : markdown;

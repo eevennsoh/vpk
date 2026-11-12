@@ -243,6 +243,25 @@ test("the details agent field opens the searchable selector and continues sessio
 	await view.unmount();
 });
 
+test("the details field names a single distinct agent and switches to a stack for multiple agents", async () => {
+	const claude = crewSession("claude-first", "running", "Claude");
+	const props = { field: true, sessions: [claude], onStartAgent() {} };
+	const view = await renderCrew(props);
+	const field = view.getByRole("group", { name: "Agents field" });
+	assert.equal(field.textContent.trim(), "AgentsClaude");
+	assert.equal(view.queryByRole("button", { name: "Claude" }) !== null, true);
+	await view.rerender({ ...props, sessions: [claude, crewSession("claude-second", "complete", "Claude")] });
+	assert.equal(field.textContent.trim(), "AgentsClaude");
+	assert.equal(field.querySelectorAll('[data-agent-id]').length, 1);
+	await view.rerender({ ...props, sessions: [claude, crewSession("cursor", "running", "Cursor")] });
+	assert.equal(field.textContent.trim(), "Agents");
+	assert.equal(view.queryByRole("button", { name: "2 agents" }) !== null, true);
+	assert.equal(field.querySelectorAll('[data-agent-id]').length, 2);
+	await view.rerender(props);
+	assert.equal(field.textContent.trim(), "AgentsClaude");
+	await view.unmount();
+});
+
 test("the details agent stack stays unchanged as session states change", async () => {
 	const sessions = [crewSession("claude", "running", "Claude"), crewSession("cursor", "complete", "Cursor")];
 	const props = { field: true, sessions, onStartAgent() {} };

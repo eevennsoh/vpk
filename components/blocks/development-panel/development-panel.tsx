@@ -34,6 +34,7 @@ export interface DevelopmentPanelProps {
 	pullRequests?: readonly PullRequestProps[];
 	workItem: { code: string; summary: string; description: string };
 	pullRequestSettings?: DevelopmentSettingsOptions;
+	onPullRequestOpen?: (number: number) => void;
 	headerExtra?: ReactNode;
 	footerExtra?: ReactNode;
 	surface?: "card" | "inline";
@@ -110,7 +111,7 @@ function DevelopmentConnections() {
 	);
 }
 
-export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
+export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, onPullRequestOpen, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
 	const hasPullRequests = pullRequests.length > 0;
 	return (
 		<TeamEuRailPanel
@@ -126,12 +127,12 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 					const StatusIcon = STATUS_ICONS[getPullRequestStatusPresentation(request.status).iconKind];
 					const showChecks = request.status !== "Merged" && Boolean(request.checks?.length);
 					return (
-					<Popover key={request.number}>
+					<Popover key={request.number} onOpenChange={(open) => { if (open) onPullRequestOpen?.(request.number); }}>
 						<PopoverTrigger render={<button className={`${DEVELOPMENT_ROW_CLASS} min-h-10 ${showChecks ? "py-2" : ""}`} type="button" />}>
 							<Icon aria-hidden className={`size-4 shrink-0 ${STATUS_COLORS[request.status]}`} render={<StatusIcon label="" size="small" />} />
 							<span className="min-w-0 flex-1"><span className="block truncate"><span className="text-text-subtlest">#{request.number} </span><span className="text-text">{request.title}</span><span className="sr-only"> {request.status}</span></span>{showChecks && request.checks ? <PullRequestChecksSummary checks={request.checks} /> : null}</span>
 						</PopoverTrigger>
-						<PopoverContent align="start" className="w-[344px] max-w-[calc(100vw-2rem)] p-0 shadow-none" side="left">
+						<PopoverContent align="start" aria-label={`Pull request #${request.number}: ${request.title}`} className="w-[344px] max-w-[calc(100vw-2rem)] p-0 shadow-none" side="left">
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>

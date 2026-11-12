@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { SwitchIndicator } from "@/components/ui/switch";
 
 const OPTIONS = [
-	{ key: "autoFix", label: "Auto-fix" },
+	{ key: "autoFix", label: "Auto-fix PR" },
 	{ key: "mergeWhenReady", label: "Merge when ready" },
 	{ key: "autoArchive", label: "Auto-archive on merge or close" },
 ] as const;

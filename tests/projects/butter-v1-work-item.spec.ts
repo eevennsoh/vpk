@@ -349,7 +349,8 @@ for (const input of ["pointer", "keyboard"] as const) {
 		});
 		if (input === "pointer") await choice.click();
 		else await choice.press("Enter");
-		await expect(field.getByRole("button", { name: "1 agent" })).toBeVisible();
+		await expect(field.getByRole("button", { name: "The Council", exact: true })).toBeVisible();
+		await expect(field.getByText("The Council", { exact: true })).toBeVisible();
 		await expect.poll(() => field.evaluate((element) => element.contains(document.activeElement))).toBe(false);
 		await expect.poll(() => page.evaluate(() => (window as unknown as { firstAgentSamples: unknown[] }).firstAgentSamples.length)).toBeGreaterThanOrEqual(30);
 		const samples = await page.evaluate(() => (window as unknown as { firstAgentSamples: { opacity: number; scale: number; x: number }[] }).firstAgentSamples);

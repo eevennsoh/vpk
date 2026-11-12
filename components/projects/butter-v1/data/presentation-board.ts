@@ -12,6 +12,7 @@ import type {
 	JiraKanbanColumnData,
 } from "@/components/blocks/jira-kanban";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
+import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 
 import { BUTTER_PAY_CURRENT_USER } from "./current-user";
 import { BUTTER_HEADER_AGENT_ASSIGNEES } from "./header-agent-assignees";
@@ -61,6 +62,32 @@ export const BUTTER_PAY_112_RETENTION_QUESTION = {
 
 export const BUTTER_PAY_112_RETENTION_MESSAGE =
 	"I confirmed the sandbox can 401 when a replayed key is still retained, but I need a human call before I keep going. Replaying against live accounts without a signed retention window would change the blast radius of PAY-112.";
+
+export const BUTTER_PAY_112_THINKING_MESSAGE_ID = "PAY-112:review-agent:working";
+
+export function butterPay112WorkingParts(startedAt: Date): RovoUIMessage["parts"] {
+	const timestamp = startedAt.toISOString();
+	return [
+		{ type: "data-thinking-status", data: { label: "Working", content: "Preparing sandbox-only replay checks and documenting the retention decision.", toolCallId: "pay-112-replay", activity: "data", source: "fallback", timestamp } },
+		{ type: "data-thinking-event", id: "pay-112-context-start", data: { eventId: "pay-112-context-start", phase: "start", toolName: "jira.read_work_item_context", label: "Reviewing the retention decision", toolCallId: "pay-112-context", timestamp } },
+		{ type: "data-thinking-event", id: "pay-112-context-result", data: { eventId: "pay-112-context-result", phase: "result", toolName: "jira.read_work_item_context", label: "Reviewing the retention decision", toolCallId: "pay-112-context", outputPreview: "Captured the selected direction and sandbox scope.", timestamp } },
+		{ type: "data-thinking-event", id: "pay-112-replay-start", data: { eventId: "pay-112-replay-start", phase: "start", toolName: "workspace.review_files", label: "Preparing sandbox replay checks", toolCallId: "pay-112-replay", timestamp } },
+	];
+}
+
+export function getButterPay112ClarificationReply(prompt: string): string | undefined {
+	if (!prompt.includes(BUTTER_PAY_112_RETENTION_QUESTION.label)) return undefined;
+	if (prompt.includes("Assume a 7-day sandbox window")) {
+		return "I’ll use a seven-day retention window for the sandbox replay, keep the test away from live accounts, and document the assumption so it can be checked with payments platform.";
+	}
+	if (prompt.includes("Do not replay keys against live accounts")) {
+		return "I’ll keep replay away from live accounts and continue preparing the sandbox checks while we wait for payments platform to confirm the retention window in writing.";
+	}
+	if (prompt.includes("Jordan signs off the retention window")) {
+		return "I’ll prepare the sandbox replay plan and ask Jordan to confirm the retention window before running it. I’ll keep live accounts out of scope.";
+	}
+	return "I’ll use your direction to prepare the sandbox replay plan, document the retention decision, and keep live accounts out of scope until the window is confirmed.";
+}
 
 export const BUTTER_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID = {
 	"diego-santos": "diego",
@@ -442,6 +469,26 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					role: "viewer",
 					state: "working",
 					timeLabel: "Yesterday",
+				}), createActivity({
+					id: "PAY-107:jordan-cursor",
+					agentName: "Cursor",
+					agentBrandName: "cursor",
+					host: "local",
+					invokedBy: PAY_STORY_PEOPLE.jordan,
+					label: "Checking webhook retry edge cases",
+					role: "viewer",
+					state: "working",
+					timeLabel: "2h",
+				}), createActivity({
+					id: "PAY-107:priya-codex",
+					agentName: "Codex",
+					agentBrandName: "openai-codex",
+					host: "cloud",
+					invokedBy: PAY_STORY_PEOPLE.priya,
+					label: "Reviewing backoff and replay safety",
+					role: "viewer",
+					state: "working",
+					timeLabel: "1h",
 				})],
 			}),
 			createCard({

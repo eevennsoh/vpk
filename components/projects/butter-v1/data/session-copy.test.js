@@ -12,6 +12,7 @@ function loadData() {
 				export * from "./components/projects/butter-v1/data/agent-session-sync";
 				export * from "./components/projects/butter-v1/data/presentation-board";
 				export * from "./components/projects/butter-v1/data/wac-content";
+				export * from "./components/projects/butter-v1/data/merchant-journey";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -26,6 +27,18 @@ function loadData() {
 	}).then((result) => loadCjsModuleFromText(result.outputFiles[0].text, "butter-v1-session-copy-harness.cjs"));
 	return dataPromise;
 }
+
+test("merchant session snapshot preserves the request and shows ongoing work", async () => {
+	const { merchantJourneyChatSnapshot } = await loadData();
+	const activity = { id: "PAY-999:session", name: "Claude", label: "Working", state: "working", prompt: "Check the sandbox setup" };
+	const snapshot = merchantJourneyChatSnapshot(activity);
+	assert.equal(snapshot.messages[0].parts[0].text, "Check the sandbox setup");
+	assert.match(snapshot.messages[1].parts[0].text, /first test payment/u);
+	const thinking = snapshot.messages.at(-1);
+	assert.equal(thinking.id, snapshot.thinkingMessageId);
+	assert.equal(thinking.parts.at(-1).data.phase, "start");
+	assert.match(merchantJourneyChatSnapshot({ ...activity, prompt: "@Claude" }).messages[0].parts[0].text, /merchant onboarding/u);
+});
 
 test("seeded and arriving sessions use stable, work-specific titles", async () => {
 	const data = await loadData();

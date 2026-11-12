@@ -125,7 +125,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 	const label = `${members.length ? "Working on this work item. " : ""}${crew.map((member) => `${member.name}, ${member.state}`).join(". ")}. ${onStartAgent ? "Add agent" : "View agent sessions"}`;
 	const firstSession = agentSessions[0];
 	const fieldState = firstSession ? SESSION_STATE[firstSession.state] === "Completed" ? "Finished" : SESSION_STATE[firstSession.state] : "";
-	const fieldLabel = firstSession ? showSessionStatus ? `${agentSessions.length === 1 ? firstSession.agent.name : `${agentSessions.length} agents`}: ${fieldState}` : `${agentSessions.length} ${agentSessions.length === 1 ? "agent" : "agents"}` : onStartAgent ? "Add agent" : "No agent sessions";
+	const fieldLabel = firstSession ? showSessionStatus ? `${agentSessions.length === 1 ? firstSession.agent.name : `${agentSessions.length} agents`}: ${fieldState}` : agentSessions.length === 1 ? firstSession.agent.name : `${agentSessions.length} agents` : onStartAgent ? "Add agent" : "No agent sessions";
 	const selectedAgent = phase === "handoff" || phase === "attached" ? preview.agent : null;
 	const selectedSession = selectedAgent ? agentSessions.find(({ id, agent }) => matchesInvocationAgent({ id, name: agent.name }, selectedAgent)) : undefined;
 	const loadingSessions = selectedSession ? [selectedSession, ...agentSessions.filter((session) => session !== selectedSession)] : agentSessions;
@@ -203,6 +203,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 								transition={entering?.isNew ? { duration: motionDuration.slowest, ease: motionEase.outPractical, times: [0, 0.4, 0.55, 1] } : { duration: motionDuration.slowest * 2, ease: motionEase.inOut }}
 							><AgentAvatarLanyard agent={identity} onOpenPicker={() => pickerTriggerRef.current?.click()}><AgentAvatarVisual {...avatar} label="" sizePx={24} /></AgentAvatarLanyard></motion.span>;
 						})}</AvatarGroup> : <>{emptyFieldIcon}<span className="text-sm text-text-subtle">{onStartAgent ? "Add agent" : "No agent sessions"}</span></>}
+						{!open && !showSessionStatus && agentAvatars.length === 1 ? <span aria-hidden="true" className="text-sm text-text">{agentAvatars[0].name}</span> : null}
 					</div>
 				</div>
 	);
