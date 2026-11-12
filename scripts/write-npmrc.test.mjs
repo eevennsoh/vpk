@@ -28,6 +28,16 @@ test("writes every managed key once into an empty file", () => {
 	assert.ok(out.includes("//packages.atlassian.com/api/npm/atlassian-npm/:_authToken=tok"));
 });
 
+test("adds the Motion+ registry token only when one is given", () => {
+	const withoutMotion = upsertNpmrc("", managedEntries("tok"));
+	assert.ok(!withoutMotion.includes("api.motion.dev"));
+
+	const withMotion = upsertNpmrc("", managedEntries("tok", "motion-tok"));
+	assert.equal(withMotion.split("\n").filter(Boolean).length, 6);
+	assert.ok(withMotion.includes("//api.motion.dev/npm/:_authToken=motion-tok"));
+	assert.equal(upsertNpmrc(withMotion, managedEntries("tok", "motion-tok")), withMotion);
+});
+
 test("rerunning does not stack duplicate entries", () => {
 	const once = upsertNpmrc("", managedEntries("tok"));
 	const twice = upsertNpmrc(once, managedEntries("tok"));
@@ -60,7 +70,7 @@ test("CLI fails clearly without a token and leaves the file untouched", () => {
 	fs.writeFileSync(target, "keep=me\n");
 	assert.throws(() =>
 		execFileSync(process.execPath, [SCRIPT], {
-			env: { ...process.env, ATLASSIAN_NPM_TOKEN: "  ", NPMRC_PATH: target },
+			env: { ...process.env, ATLASSIAN_NPM_TOKEN: "  ", MOTION_TOKEN: "motion-tok", NPMRC_PATH: target },
 			stdio: "pipe",
 		}),
 	);
@@ -68,10 +78,28 @@ test("CLI fails clearly without a token and leaves the file untouched", () => {
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
+test("CLI fails clearly without a Motion+ token and leaves the file untouched", () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "write-npmrc-"));
+	const target = path.join(dir, ".npmrc");
+	fs.writeFileSync(target, "keep=me\n");
+	let stderr = "";
+	try {
+		execFileSync(process.execPath, [SCRIPT], {
+			env: { ...process.env, ATLASSIAN_NPM_TOKEN: "tok", MOTION_TOKEN: "", NPMRC_PATH: target },
+			stdio: "pipe",
+		});
+	} catch (error) {
+		stderr = String(error.stderr);
+	}
+	assert.ok(stderr.includes("MOTION_TOKEN is empty"), stderr);
+	assert.equal(fs.readFileSync(target, "utf8"), "keep=me\n");
+	fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test("CLI is idempotent on disk", () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "write-npmrc-"));
 	const target = path.join(dir, ".npmrc");
-	const env = { ...process.env, ATLASSIAN_NPM_TOKEN: "tok", NPMRC_PATH: target };
+	const env = { ...process.env, ATLASSIAN_NPM_TOKEN: "tok", MOTION_TOKEN: "motion-tok", NPMRC_PATH: target };
 	execFileSync(process.execPath, [SCRIPT], { env, stdio: "pipe" });
 	const first = fs.readFileSync(target, "utf8");
 	execFileSync(process.execPath, [SCRIPT], { env, stdio: "pipe" });
