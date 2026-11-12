@@ -213,7 +213,7 @@ test("Butter list forwards agent directory actions to the picker", async () => {
 	assert.deepEqual(actions, ["browse", "create"]);
 });
 
-test("Butter list session menu hands Add agent to the shared picker", async () => {
+test("Butter list adds an agent through its dedicated picker beside existing sessions", async () => {
 	const assigned = [];
 	const view = await renderComponent({
 		entry: "components/projects/butter/components/butter-list-agent-cell.tsx",
@@ -225,14 +225,15 @@ test("Butter list session menu hands Add agent to the shared picker", async () =
 		},
 	});
 	await view.click(view.getByRole("button", { name: "Edit agents" }));
-	await view.click(view.getByRole("button", { name: "Assign agent" }));
+	assert.equal(view.queryByRole("button", { name: "Assign agent" }), null);
+	await view.click(view.getByRole("button", { name: "Edit agents" }));
+	await view.click(view.getByRole("button", { name: "Add agent to PAY-1" }));
 	assert.equal(view.getByRole("dialog", { name: "Agents" }) !== null, true);
 	await view.click(view.getByRole("option", { name: /Figma/u }));
 	assert.deepEqual(assigned, [["PAY-1", ["claude", "figma"]]]);
 });
 
-test("assigned list sessions forward agent directory actions", async () => {
-	const actions = [];
+test("assigned list sessions show the session without an assignment footer", async () => {
 	const view = await renderComponent({
 		entry: "components/blocks/jira-list/jira-list-cells.tsx",
 		exportName: "JiraListAgentSessionsCell",
@@ -240,14 +241,11 @@ test("assigned list sessions forward agent directory actions", async () => {
 			agentCatalog: [{ id: "claude", name: "Claude", byline: "Coding agent" }],
 			agentSessions: [{ id: "claude", name: "Claude", statusKind: "working", statusLabel: "Working" }],
 			onAssignedAgentIdsChange() {},
-			onBrowseAgents: () => actions.push("browse"),
-			onCreateAgent: () => actions.push("create"),
 		},
 	});
 	await view.click(view.getByRole("button", { name: "Edit agents" }));
-	await view.click(view.getByRole("button", { name: "Assign agent" }));
-	await view.click(view.getByRole("button", { name: "Browse agents" }));
-	assert.deepEqual(actions, ["browse"]);
+	assert.equal(view.queryByRole("button", { name: "Assign agent" }), null);
+	assert.notEqual(view.queryByRole("button", { name: /ClaudeClaude/u }), null);
 });
 
 test("starting a list session moves focus to its activity", async () => {

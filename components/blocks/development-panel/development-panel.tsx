@@ -13,6 +13,7 @@ import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import SettingsIcon from "@atlaskit/icon/core/settings";
 
 import { TeamEuRailPanel } from "@/components/blocks/jira-work-item/team-eu26/components/team-eu-rail-panel";
+import { JiraLocalAgent } from "@/components/blocks/jira-local-agent";
 import { getPullRequestStatusPresentation, type PullRequestStatusIconKind } from "@/components/blocks/jira-work-item/team-eu26/lib/pull-request-status-presentation";
 import { ProjectButterDevelopmentActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-actions";
 import { BranchNameSettings } from "@/components/blocks/development-panel/branch-name-settings";
@@ -113,6 +114,7 @@ function DevelopmentConnections() {
 
 export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, onPullRequestOpen, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
 	const hasPullRequests = pullRequests.length > 0;
+	const openIn = <JiraLocalAgent workItem={workItem} trigger={<Button className="h-8 w-full justify-start gap-2 border-0 px-2 font-normal" type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AngleBracketsIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Open in</Button>} />;
 	return (
 		<TeamEuRailPanel
 			alwaysShowHeaderActions={Boolean(headerExtra)}
@@ -120,7 +122,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 			headerActions={<div className="flex items-center gap-1 opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{hasPullRequests ? <StartCodingMenu /> : null}<DevelopmentSettings {...pullRequestSettings} connections={<DevelopmentConnections />} />{headerExtra}</div>}
 			surface={surface}
 			title="Development"
-			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button>{footerExtra}</div> : null}
+			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button>{openIn}{footerExtra}</div> : null}
 		>
 			<div className={hasPullRequests ? "px-2 pb-2" : "px-4 pb-4"}>
 				{hasPullRequests ? pullRequests.map((request) => {
@@ -136,7 +138,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>
-				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} showCopyPrompt={false} /></div>}
+				); }) : <div className="-mb-2"><ProjectButterDevelopmentActions {...workItem} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} showCopyPrompt={false} /><div className="-mx-2">{openIn}</div></div>}
 			</div>
 		</TeamEuRailPanel>
 	);

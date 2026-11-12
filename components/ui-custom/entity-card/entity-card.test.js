@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const read = (name) => readFileSync(join(__dirname, name), "utf8");
 
@@ -21,7 +22,6 @@ const AGENT_BROWSER_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "blocks", "agent-browser", "components", "agent-browser.tsx"),
 	"utf8",
 );
-const AGENT_AVATAR_VISUAL_SOURCE = read(join("..", "agent-avatar-visual.tsx"));
 
 test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.match(SHELL_SOURCE, /group\/card/u);
@@ -194,9 +194,11 @@ test("capabilities part renders a borderless icon-tile feature list (no inner sc
 	assert.doesNotMatch(PARTS_SOURCE, /max-h-44/u);
 });
 
-test("agent variant renders a hexagon avatar with rating and chat stats", () => {
+test("agent variant renders a hexagon avatar with rating and chat stats", async () => {
 	assert.match(AGENT_SOURCE, /<AgentAvatarVisual/u);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /shape="hexagon"/u);
+	const view = await renderComponent({ entry: "components/ui-custom/entity-card/agent.tsx", exportName: "EntityCardAgent", props: { name: "Example agent", publisher: "Example" } });
+	assert.notEqual(view.container.querySelector('[data-slot="avatar"][data-shape="hexagon"]'), null);
+	await view.unmount();
 	assert.match(AGENT_SOURCE, /StarUnstarredIcon/u);
 	assert.match(AGENT_SOURCE, /AiChatIcon/u);
 	assert.match(AGENT_SOURCE, /<EntityCardByline/u);
