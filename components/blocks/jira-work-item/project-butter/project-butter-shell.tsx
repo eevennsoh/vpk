@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import TaskIcon from "@atlaskit/icon/core/task";
 import ProductSidebar from "@/components/blocks/product-sidebar/page";
 import TopNavigation from "@/components/blocks/top-navigation/page";
@@ -30,6 +31,7 @@ export function ProjectButterShell({
 	shell = "standalone",
 	suggestion = false,
 	overlayContainerRef,
+	toastSlot,
 }: Readonly<{
 	/** Host-owned sidebar chat beside the standalone work item; also shows the Ask Rovo pill that opens it. */
 	chatPanel?: ReactNode;
@@ -44,6 +46,7 @@ export function ProjectButterShell({
 	shell?: ProjectButterShellContext;
 	suggestion?: boolean;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
+	toastSlot?: ReactNode;
 }>) {
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const titleRef = useRef<HTMLHeadingElement>(null);
@@ -109,7 +112,7 @@ export function ProjectButterShell({
 			)}
 		</div>
 	);
-	if (shell === "gallery") return surface;
+	if (shell === "gallery") return <>{surface}{typeof document !== "undefined" ? createPortal(toastSlot, document.body) : null}</>;
 	return (
 		<Dialog
 			onOpenChange={(nextOpen, details) => {
@@ -202,6 +205,7 @@ export function ProjectButterShell({
 				) : (
 					surface
 				)}
+				{toastSlot}
 				{standalone ? (
 					<ProjectButterSettings
 						empty={empty}

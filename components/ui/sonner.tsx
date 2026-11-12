@@ -58,15 +58,15 @@ const SONNER_TOAST_ICON_STYLES: Record<SonnerToastAppearance, string> = {
 function getSonnerIcon(appearance: SonnerToastAppearance) {
 	switch (appearance) {
 		case "success":
-			return <StatusSuccessIcon label="" size="small" spacing="none" color="currentColor" />;
+			return <StatusSuccessIcon label="" size="medium" spacing="none" color="currentColor" />;
 		case "warning":
-			return <StatusWarningIcon label="" size="small" spacing="none" color="currentColor" />;
+			return <StatusWarningIcon label="" size="medium" spacing="none" color="currentColor" />;
 		case "error":
-			return <StatusErrorIcon label="" size="small" spacing="none" color="currentColor" />;
+			return <StatusErrorIcon label="" size="medium" spacing="none" color="currentColor" />;
 		case "neutral":
 		case "info":
 		default:
-			return <StatusInformationIcon label="" size="small" spacing="none" color="currentColor" />;
+			return <StatusInformationIcon label="" size="medium" spacing="none" color="currentColor" />;
 	}
 }
 
@@ -84,21 +84,19 @@ function SonnerToast({
 	style,
 	...props
 }: Readonly<SonnerToastProps>) {
-	const hasStackedContent = Boolean(description || action || secondaryAction);
-
 	return (
 		<div
 			data-slot="sonner-toast"
 			className={cn(
-				"w-[min(420px,calc(100vw-2rem))] rounded-sm p-3 text-left text-[14px]/[20px] text-text shadow-2xl",
+				"w-[min(420px,calc(100vw-2rem))] rounded-lg p-3 pl-4 text-left text-[14px]/[20px] text-text shadow-2xl",
 				SONNER_TOAST_APPEARANCE_STYLES[appearance],
 				className
 			)}
 			style={style}
 			{...props}
 		>
-			<div className={cn("flex gap-3", hasStackedContent ? "items-start" : "items-center")}>
-				<div className={cn("flex h-5 shrink-0 items-center justify-center", hasStackedContent ? "mt-0.5" : "self-center", SONNER_TOAST_ICON_STYLES[appearance])}>
+			<div className="flex items-start gap-3">
+				<div className={cn("flex h-5 shrink-0 items-center justify-center", SONNER_TOAST_ICON_STYLES[appearance])}>
 					{icon ?? (
 						<Icon
 							label={iconLabel ?? SONNER_TOAST_ICON_LABELS[appearance]}
@@ -114,21 +112,22 @@ function SonnerToast({
 						</div>
 					) : null}
 					{action || secondaryAction ? (
-						<div className="mt-2 flex flex-wrap items-center gap-3">
+						<div className="mt-2 flex flex-wrap items-center gap-2">
 							{action ? (
 								<button
 									type="button"
 									onClick={action.onClick}
-									className="focus-visible:ring-ring rounded-xs px-0.5 text-link underline-offset-3 outline-none hover:underline focus-visible:ring-2"
+									className="focus-visible:ring-ring rounded-xs text-link underline-offset-3 outline-none hover:underline focus-visible:ring-2"
 								>
 									{action.label}
 								</button>
 							) : null}
+							{action && secondaryAction ? <span aria-hidden="true">·</span> : null}
 							{secondaryAction ? (
 								<button
 									type="button"
 									onClick={secondaryAction.onClick}
-									className="focus-visible:ring-ring rounded-xs px-0.5 text-link underline-offset-3 outline-none hover:underline focus-visible:ring-2"
+									className="focus-visible:ring-ring rounded-xs text-link underline-offset-3 outline-none hover:underline focus-visible:ring-2"
 								>
 									{secondaryAction.label}
 								</button>

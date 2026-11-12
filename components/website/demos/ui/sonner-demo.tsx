@@ -169,6 +169,12 @@ export function SonnerDemoWithAction() {
 									console.log("Undo");
 								},
 							},
+							secondaryAction: {
+								label: "View event",
+								onClick: () => {
+									console.log("View event");
+								},
+							},
 						}, toasterId)
 					}
 				>

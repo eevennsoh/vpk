@@ -1,7 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
+import { SonnerToast, Toaster } from "@/components/ui/sonner";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { isLocalAgentListItem } from "@/components/blocks/agent-list";
 import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
@@ -19,6 +22,7 @@ import type { ProjectButterPresentation, ProjectButterShellContext } from "@/com
 import { useProjectButterSessions } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-sessions";
 import { cn } from "@/lib/utils";
 import { ProjectButterBody } from "@/components/blocks/jira-work-item/project-butter/project-butter-body";
+import { activityScrollport } from "@/components/blocks/jira-work-item/project-butter/use-activity-navigation";
 import { ProjectButterDetails } from "@/components/blocks/jira-work-item/project-butter/project-butter-details";
 import { ProjectButterDetailsRail } from "@/components/blocks/jira-work-item/project-butter/project-butter-details-rail";
 import { ProjectButterHeader } from "@/components/blocks/jira-work-item/project-butter/project-butter-header";
@@ -105,6 +109,7 @@ export function ProjectButterJiraWorkItem({
 	openRelatedItem,
 	relatedScope,
 }: Readonly<ProjectButterJiraWorkItemProps>) {
+	const toasterId = useId();
 	const [presentation, setPresentation] = useState(initialPresentation);
 	/** The scrolling left column: the whole of it (gutters included) accepts file drops. */
 	const columnRef = useRef<HTMLDivElement>(null);
@@ -270,6 +275,29 @@ export function ProjectButterJiraWorkItem({
 		addInvocation(session);
 		content.setActivityFilters((filters) => ({ ...filters, agents: true }));
 		setStartedSessionId(session.id);
+		toast.custom((id) => (
+			<SonnerToast
+				icon={<span aria-hidden="true"><AgentAvatarVisual animate={false} appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={20} /></span>}
+				dismissible
+				onDismiss={() => toast.dismiss(id)}
+				title={`${agent.name} started`}
+				description="A new session was added to activity."
+				action={{
+					label: "View activity",
+					onClick: () => {
+						const activity = columnRef.current?.querySelector<HTMLElement>("[data-project-butter-activity]");
+						const scrollport = activityScrollport(activity ?? null);
+						if (activity && scrollport) {
+							scrollport.scrollTo({
+								top: scrollport.scrollTop + activity.getBoundingClientRect().top - scrollport.getBoundingClientRect().top,
+								behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+							});
+						}
+						toast.dismiss(id);
+					},
+				}}
+			/>
+		), { toasterId });
 		onAgentSessionStart?.(session);
 		setActiveSessionId(null);
 	}
@@ -331,6 +359,7 @@ export function ProjectButterJiraWorkItem({
 	);
 	return (
 		<ProjectButterShell
+			toastSlot={<Toaster id={toasterId} position="bottom-left" />}
 			overlayContainerRef={overlayContainerRef}
 			empty={empty}
 			onClose={onClose}

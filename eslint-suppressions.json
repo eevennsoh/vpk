@@ -3349,11 +3349,6 @@
       "count": 3
     }
   },
-  "components/ui/sonner.test.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
   "components/ui/tabs.test.js": {
     "no-restricted-syntax": {
       "count": 46

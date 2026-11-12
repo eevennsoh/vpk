@@ -246,7 +246,7 @@ test("an agent reacts after the reply appears, even if the activity view remount
 	assert.equal(reply.textContent.includes("👀"), true);
 });
 
-test("starting an agent from the details field reveals its activity card with a horizontal glow", async () => {
+test("starting an agent from the details field immediately highlights its activity card without scrolling", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";
 			import { SidebarProvider } from "@/app/contexts/context-sidebar";
@@ -260,15 +260,13 @@ test("starting an agent from the details field reveals its activity card with a 
 		props: { initialPreset: "filled", onClose() {}, open: true, cloudAgentSelector: true, shell: "gallery" },
 	});
 	const feed = document.querySelector("[data-project-butter-activity-feed]");
-	const scrollport = feed.parentElement;
+	const scrollport = feed.parentElement.parentElement;
 	scrollport.style.overflowY = "auto";
 	scrollport.scrollTop = 500;
 	scrollport.getBoundingClientRect = () => ({ top: 0, bottom: 700, height: 700 });
 	const scrolls = [];
 	scrollport.scrollTo = (options) => scrolls.push(options);
 	const originalAnimate = window.Element.prototype.animate;
-	const originalSetTimeout = window.setTimeout.bind(window);
-	window.setTimeout = (callback, delay, ...args) => originalSetTimeout(callback, delay === 150 ? 10000 : delay, ...args);
 	const animations = [];
 	window.Element.prototype.animate = function (frames, options) {
 		if (this.parentElement?.hasAttribute("data-jira-linking-glow-backdrop")) animations.push({ frames, options, direction: this.parentElement.dataset.jiraLinkingGlowDirection });
@@ -279,32 +277,26 @@ test("starting an agent from the details field reveals its activity card with a 
 		await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
 		const card = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:"));
 		assert.equal(Boolean(card?.querySelector("[data-variant='uncaptured-work']")), true);
-		assert.equal(scrolls.at(-1)?.behavior, "smooth");
-		assert.equal(animations.length, 0, "the glow waits for scrolling");
-		card.querySelector("article").getBoundingClientRect = () => ({ top: 900, bottom: 960 });
-		await act(async () => scrollport.dispatchEvent(new window.Event("scrollend")));
-		assert.equal(animations.length, 0, "an interrupted scroll does not glow off-screen");
-		assert.equal(card.querySelector("[data-jira-linking-glow-trace]"), null);
-		await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
-		await view.click(view.getByRole("button", { name: "Cursor" }));
-		const nextCard = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:") && node.textContent.includes("Cursor"));
-		nextCard.querySelector("article").getBoundingClientRect = () => ({ top: 100, bottom: 160 });
-		assert.equal(animations.length, 0);
-		assert.equal(scrolls.length, 2, "the second session also scrolls");
-		await act(async () => scrollport.dispatchEvent(new window.Event("scrollend")));
-		assert.notEqual(nextCard.querySelector("[data-jira-linking-glow-trace]"), null, "the border trace starts with the flash");
-		assert.equal(nextCard.querySelector("[data-jira-linking-glow-halo]"), null, "the glow stays inside the card");
-		assert.equal(nextCard.querySelector("[data-jira-linking-glow-backdrop]").parentElement === nextCard, true, "the sweep follows the outer card's corners");
+		assert.equal(scrolls.length, 0, "starting a session does not scroll");
+		assert.notEqual(card.querySelector("[data-jira-linking-glow-trace]"), null);
+		assert.equal(card.querySelector("[data-jira-linking-glow-halo]"), null);
+		assert.equal(card.querySelector("[data-jira-linking-glow-backdrop]").parentElement === card, true);
 		assert.equal(animations.at(-1)?.direction, "left-to-right");
 		assert.equal(animations.at(-1)?.frames.at(-1).transform, "translateX(200%)");
+		assert.equal(document.body.textContent.includes("Claude started"), true);
+		const toast = document.querySelector('[data-slot="sonner-toast"]');
+		assert.notEqual(toast.querySelector('[data-slot="avatar"][data-shape="hexagon"]'), null, "the selected agent's avatar appears in the toast");
+		assert.equal(document.body.textContent.includes("A new session was added to activity."), true);
+		feed.parentElement.getBoundingClientRect = () => ({ top: 900, bottom: 1200, height: 300 });
+		await view.click(view.getByRole("button", { name: "View activity" }));
+		assert.deepEqual(scrolls.at(-1), { top: 1400, behavior: "smooth" });
 	} finally {
 		await view.unmount();
 		window.Element.prototype.animate = originalAnimate;
-		window.setTimeout = originalSetTimeout;
 	}
 });
 
-test("starting an agent with reduced motion scrolls directly to its activity card without a glow", async () => {
+test("starting an agent with reduced motion does not scroll or animate", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";
 			import { SidebarProvider } from "@/app/contexts/context-sidebar";
@@ -320,7 +312,7 @@ test("starting an agent with reduced motion scrolls directly to its activity car
 	const originalMatchMedia = window.matchMedia;
 	window.matchMedia = () => ({ matches: true, addEventListener() {}, removeEventListener() {} });
 	const feed = document.querySelector("[data-project-butter-activity-feed]");
-	const scrollport = feed.parentElement;
+	const scrollport = feed.parentElement.parentElement;
 	scrollport.style.overflowY = "auto";
 	scrollport.scrollTop = 500;
 	scrollport.getBoundingClientRect = () => ({ top: 0, bottom: 700, height: 700 });
@@ -331,8 +323,10 @@ test("starting an agent with reduced motion scrolls directly to its activity car
 		await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
 		const card = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:"));
 		assert.equal(Boolean(card), true);
-		assert.equal(scrolls.at(-1)?.behavior, "auto");
+		assert.equal(scrolls.length, 0);
 		assert.equal(card.querySelector("[data-jira-linking-glow-trace], [data-jira-linking-glow-backdrop]"), null);
+		await view.click(view.getByRole("button", { name: "View activity" }));
+		assert.equal(scrolls.at(-1)?.behavior, "auto");
 	} finally {
 		await view.unmount();
 		window.matchMedia = originalMatchMedia;

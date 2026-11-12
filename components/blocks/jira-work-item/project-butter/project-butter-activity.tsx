@@ -135,37 +135,17 @@ export function ProjectButterActivity({
 		const entry = [...(feed?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [])].find((node) => node.dataset.jiraActivityEntryId === startedEntryId);
 		const card = entry?.querySelector<HTMLElement>("[data-variant='uncaptured-work']");
 		const cardContainer = card?.closest<HTMLElement>("[data-project-butter-session-start]");
-		const root = activityScrollport(feed);
-		if (!entry || !card || !cardContainer || !root) return;
-		const offset = (headerRef.current?.getBoundingClientRect().height ?? 0) + 12;
-		const target = root.scrollTop + entry.getBoundingClientRect().top - root.getBoundingClientRect().top - offset;
-		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-		let cancelled = false;
-		let timer = 0;
-		let effects: ReturnType<typeof createJiraLinkingCardGlow> = [];
-		const removeScrollListeners = () => { window.clearTimeout(timer); root.removeEventListener("scroll", onScroll); root.removeEventListener("scrollend", finish); };
-		const finish = () => {
-			removeScrollListeners();
-			if (cancelled) return;
-			const viewport = root.getBoundingClientRect();
-			const bounds = card.getBoundingClientRect();
-			if (reducedMotion || bounds.bottom <= Math.max(viewport.top + offset, 0) || bounds.top >= Math.min(viewport.bottom, window.innerHeight)) { onStartedSessionRevealed?.(); return; }
-			const tintVariable = resolveAgentBrandTintVariable(tintSeed);
-			const color = resolveJiraLinkingGlowColor(resolveJiraLinkingIdentityTint({ id: startedSessionId, tintSeed, tintVariable, tint: tintVariable ? undefined : resolveAgentBrandTint(tintSeed) }));
-			effects = createJiraLinkingCardGlow({ haloRoot: cardContainer, backdropRoot: cardContainer, color, contained: true, direction: "left-to-right", trace: true });
-			for (const effect of effects) effect.animation.onfinish = () => { effect.restore(); if (effect === effects.at(-1)) onStartedSessionRevealed?.(); };
-		};
-		const onScroll = () => { window.clearTimeout(timer); timer = window.setTimeout(finish, 150); };
-		if (!reducedMotion && Math.abs(target - root.scrollTop) >= 1) {
-			root.addEventListener("scroll", onScroll, { passive: true });
-			root.addEventListener("scrollend", finish, { once: true });
-			onScroll();
+		if (!entry || !card || !cardContainer) return;
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			onStartedSessionRevealed?.();
+			return;
 		}
-		const result: unknown = root.scrollTo({ top: target, behavior: reducedMotion ? "auto" : "smooth" });
-		if (reducedMotion || Math.abs(target - root.scrollTop) < 1) finish();
-		else if (result instanceof Promise) { removeScrollListeners(); void result.then(finish); }
-		return () => { cancelled = true; removeScrollListeners(); for (const effect of effects) { effect.animation.cancel(); effect.restore(); } };
-	}, [feedRef, headerRef, onStartedSessionRevealed, startedEntryId, startedSessionId, startedVisible, tintSeed]);
+		const tintVariable = resolveAgentBrandTintVariable(tintSeed);
+		const color = resolveJiraLinkingGlowColor(resolveJiraLinkingIdentityTint({ id: startedSessionId, tintSeed, tintVariable, tint: tintVariable ? undefined : resolveAgentBrandTint(tintSeed) }));
+		const effects = createJiraLinkingCardGlow({ haloRoot: cardContainer, backdropRoot: cardContainer, color, contained: true, direction: "left-to-right", trace: true });
+		for (const effect of effects) effect.animation.onfinish = () => { effect.restore(); if (effect === effects.at(-1)) onStartedSessionRevealed?.(); };
+		return () => { for (const effect of effects) { effect.animation.cancel(); effect.restore(); } };
+	}, [feedRef, onStartedSessionRevealed, startedEntryId, startedSessionId, startedVisible, tintSeed]);
 	useEffect(() => {
 		if (!previewEntryId) return;
 		const activity = activityRef.current;
