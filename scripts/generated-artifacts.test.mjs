@@ -64,7 +64,7 @@ test("fix regenerates stale entries in dependency order, then a second fix is a 
 	const stale = await collectStatus({ cwd: fake.root, registry: fake.registry });
 	assert.equal(stale.ok, false);
 	assert.deepEqual(stale.results.map((result) => result.state), ["stale", "current"]);
-	assert.match(formatStatus(stale), /stale derived {2}derived\.txt {2}fix: pnpm run fix:generated -- --only derived/u);
+	assert.match(formatStatus(stale), /stale derived {2}derived\.txt {2}fix: pnpm run fix:generated --only derived/u);
 	assert.match(formatStatus(stale), /derived\.txt is out of date/u);
 
 	const fixed = await fixGenerated({ cwd: fake.root, registry: fake.registry });
@@ -128,6 +128,7 @@ test("slow entries run only with --all or --only, and unknown ids are rejected",
 	assert.deepEqual(calls, ["slow-check"]);
 	await assert.rejects(collectStatus({ only: ["nope"], registry, run }), /Unknown generated artifact: nope/u);
 	assert.deepEqual(parseArgs(["fix", "--only", "repo-map", "--json"]), { all: false, json: true, mode: "fix", only: ["repo-map"] });
+	assert.deepEqual(parseArgs(["status", "--", "--all"]), { all: true, json: false, mode: "status", only: [] });
 	assert.throws(() => parseArgs(["regenerate"]), /Usage/u);
 });
 
@@ -158,7 +159,7 @@ test("baselines that may only shrink by fixing code are never regenerated", () =
 	assert.equal(paths.includes("scripts/file-size-allowlist.json"), false);
 	assert.equal(paths.includes("scripts/js-unit-test-legacy-drift.mjs"), false);
 	const suppressions = GENERATED_ARTIFACTS.find((entry) => entry.id === "eslint-suppressions");
-	assert.deepEqual(suppressions.generate.slice(-2), ["--", "--prune-suppressions"]);
+	assert.deepEqual(suppressions.generate, ["pnpm", "run", "lint", "--prune-suppressions"]);
 	assert.equal(suppressions.generate.includes("--suppress-all"), false);
 	assert.equal(suppressions.slow, true);
 });

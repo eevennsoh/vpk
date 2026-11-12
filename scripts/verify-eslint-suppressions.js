@@ -89,7 +89,7 @@ function main() {
 		for (const { after, before, ruleId } of growth) {
 			console.error(`- ${ruleId}: ${before} → ${after}`);
 		}
-		console.error("Fix the new violations instead of suppressing them. After fixing old debt, run `pnpm run lint -- --prune-suppressions`.");
+		console.error("Fix the new violations instead of suppressing them. After fixing old debt, run `pnpm run fix:generated --only eslint-suppressions`.");
 		process.exitCode = 1;
 		return;
 	}

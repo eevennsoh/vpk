@@ -61,7 +61,8 @@ export const GENERATED_ARTIFACTS = [
 		paths: ["eslint-suppressions.json"],
 		slow: true,
 		// Prune only removes entries whose violations are gone, so the baseline can only shrink.
-		generate: ["pnpm", "run", "lint", "--", "--prune-suppressions"],
+		// No `--`: pnpm forwards it to ESLint, which would read the flag as a file name.
+		generate: ["pnpm", "run", "lint", "--prune-suppressions"],
 		check: ["pnpm", "run", "lint"],
 	},
 ];
@@ -164,7 +165,7 @@ export function formatStatus(status) {
 	const lines = [`generated: ${status.results.length - stale.length} current, ${stale.length} stale` +
 		(status.skipped.length > 0 ? ` (skipped slow: ${status.skipped.join(", ")}; add --all)` : "")];
 	for (const result of stale) {
-		lines.push(`  stale ${result.id}  ${result.paths.join(", ")}  fix: pnpm run fix:generated -- --only ${result.id}`);
+		lines.push(`  stale ${result.id}  ${result.paths.join(", ")}  fix: pnpm run fix:generated --only ${result.id}`);
 		if (result.output) lines.push(result.output.split("\n").map((line) => `    ${line}`).join("\n"));
 	}
 	return `${lines.join("\n")}\n`;
@@ -186,6 +187,8 @@ export function parseArgs(argv) {
 	const options = { all: false, json: false, mode, only: [] };
 	for (let index = 0; index < rest.length; index += 1) {
 		const argument = rest[index];
+		// pnpm forwards a literal `--` from `pnpm run fix:generated -- --all`.
+		if (argument === "--") continue;
 		if (argument === "--all") options.all = true;
 		else if (argument === "--json") options.json = true;
 		else if (argument === "--only") {
