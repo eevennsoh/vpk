@@ -3225,7 +3225,7 @@
   },
   "components/ui/avatar.test.js": {
     "no-restricted-syntax": {
-      "count": 210
+      "count": 208
     }
   },
   "components/ui/badge.test.js": {

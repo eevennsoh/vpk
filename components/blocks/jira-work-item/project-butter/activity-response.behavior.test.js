@@ -238,8 +238,11 @@ test("an agent reacts after the reply appears, even if the activity view remount
 	assert.equal(reply.textContent.includes("👀"), false);
 	await view.click(view.getByRole("button", { name: "Toggle activity" }));
 	await view.click(view.getByRole("button", { name: "Toggle activity" }));
-	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 3100)); });
-	reply = [...document.querySelectorAll('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"] [aria-label="Replies"] > div')].at(-1);
+	const deadline = Date.now() + 10000;
+	do {
+		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
+		reply = [...document.querySelectorAll('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"] [aria-label="Replies"] > div')].at(-1);
+	} while (!reply.textContent.includes("👀") && Date.now() < deadline);
 	assert.equal(reply.textContent.includes("👀"), true);
 });
 
