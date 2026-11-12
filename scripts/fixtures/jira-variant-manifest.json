@@ -258,122 +258,122 @@
 			"target": "\t\"jira-work-item-demo-{targetExperimentalSlug}\","
 		},
 		{
-			"file": "components/blocks/jira-work-item/activity-composer-context-bar.test.js",
+			"file": "components/blocks/jira-work-item/activity-composer-context-bar.source.test.js",
 			"kind": "replace",
 			"source": ", \"{sourceExperimentalSlug}\"];",
 			"target": ", \"{sourceExperimentalSlug}\", \"{targetExperimentalSlug}\"];"
 		},
 		{
-			"file": "components/blocks/jira-work-item/activity-composer-context-bar.test.js",
+			"file": "components/blocks/jira-work-item/activity-composer-context-bar.source.test.js",
 			"kind": "replace",
 			"source": "tree === \"{sourceExperimentalSlug}\"",
 			"target": "tree === \"{sourceExperimentalSlug}\" || tree === \"{targetExperimentalSlug}\""
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "replace",
 			"source": "\"{sourceExperimentalSlug}\";/u",
 			"target": "\"{sourceExperimentalSlug}\" \\| \"{targetExperimentalSlug}\";/u"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "replace",
 			"source": "\"{sourceExperimentalSlug}\": {sourceExperimentalPascal}JiraWorkItem,\\s*\\} as const;/u",
 			"target": "\"{sourceExperimentalSlug}\": {sourceExperimentalPascal}JiraWorkItem,\\s*\"{targetExperimentalSlug}\": {targetExperimentalPascal}JiraWorkItem,\\s*\\} as const;/u"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "import \\{ {sourceExperimentalPascal}JiraWorkItem",
 			"targetMarker": "import \\{ {targetExperimentalPascal}JiraWorkItem"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "Open experimental {sourceVersion} session",
 			"targetMarker": "Open experimental {targetVersion} session"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "assert.match(pageSource, /onClick=\\{\\(\\) => setActiveVariant\\(\"{sourceExperimentalSlug}\"",
 			"targetMarker": "assert.match(pageSource, /onClick=\\{\\(\\) => setActiveVariant\\(\"{targetExperimentalSlug}\""
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "replace",
 			"source": "assert.equal((pageSource.match(/variant=\"outline\"/gu) ?? []).length, {sourceNumber});",
 			"target": "assert.equal((pageSource.match(/variant=\"outline\"/gu) ?? []).length, {targetNumber});"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"replaceSource": true,
 			"sourceMarker": "<Button type=\"button\" onClick=\\{\\(\\) => setActiveVariant\\(\"{sourceExperimentalSlug}\"",
 			"targetMarker": "<Button type=\"button\" onClick=\\{\\(\\) => setActiveVariant\\(\"{targetExperimentalSlug}\""
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "export function JiraWorkItem{sourceExperimentalPascal}Page",
 			"targetMarker": "export function JiraWorkItem{targetExperimentalPascal}Page"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "title: \"Experimental {sourceVersion}",
 			"targetMarker": "title: \"Experimental {targetVersion}"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "replace",
 			"source": "\\\\\"{sourceExperimentalSlug}\\\\\"/u",
 			"target": "\\\\\"{sourceExperimentalSlug}\\\\\" \\| \\\\\"{targetExperimentalSlug}\\\\\"/u"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "\"jira-work-item-demo-{sourceExperimentalSlug}\": dynamic",
 			"targetMarker": "\"jira-work-item-demo-{targetExperimentalSlug}\": dynamic"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "\"jira-work-item-demo-{sourceExperimentalSlug}-empty\": dynamic",
 			"targetMarker": "\"jira-work-item-demo-{targetExperimentalSlug}-empty\": dynamic"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "\"jira-work-item-demo-{sourceExperimentalSlug}-running\": dynamic",
 			"targetMarker": "\"jira-work-item-demo-{targetExperimentalSlug}-running\": dynamic"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "export function JiraWorkItemDemo{sourceExperimentalPascal}",
 			"targetMarker": "export function JiraWorkItemDemo{targetExperimentalPascal}"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "<JiraWorkItem variant=\"{sourceExperimentalSlug}\"",
 			"targetMarker": "<JiraWorkItem variant=\"{targetExperimentalSlug}\""
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"kind": "matching-lines",
 			"sourceMarker": "assert.match(previewLayoutSource, /\"jira-work-item-demo-{sourceExperimentalSlug}\"/u);",
 			"targetMarker": "assert.match(previewLayoutSource, /\"jira-work-item-demo-{targetExperimentalSlug}\"/u);"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item-experimental-v2.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
 			"kind": "replace",
 			"source": "\"{sourceExperimentalSlug}\";/u",
 			"target": "\"{sourceExperimentalSlug}\" \\| \"{targetExperimentalSlug}\";/u"
 		},
 		{
-			"file": "components/blocks/jira-work-item/jira-work-item-experimental-v2.test.js",
+			"file": "components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
 			"kind": "replace",
 			"source": "\"{sourceExperimentalSlug}\": {sourceExperimentalPascal}JiraWorkItem,\\s*\\} as const;/u",
 			"target": "\"{sourceExperimentalSlug}\": {sourceExperimentalPascal}JiraWorkItem,\\s*\"{targetExperimentalSlug}\": {targetExperimentalPascal}JiraWorkItem,\\s*\\} as const;/u"

@@ -120,7 +120,7 @@ for a proven local-fallback brand:
    exposes a borderless mark and the VPK tile contract needs it.
 4. Update `THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES` and the existing logo demo only
    when the local-fallback set changes.
-5. Run `components/ui/logo-third-party.test.js` and produce a precise
+5. Run `components/ui/logo-third-party.source.test.js` and produce a precise
    added/changed/removed file diff. Stop rather than creating `public/1p` or a
    flat `public/3p/<brand>.svg` convention.
 

@@ -854,7 +854,7 @@ test("the Team EU26 lib test suite is registered so it actually runs in CI", asy
 		"expected the assigned-agent-rows row-model test to be classified for CI",
 	);
 	assert.ok(
-		ciTestFiles.has("components/blocks/jira-work-item/jira-work-item-team-eu26-content.test.js"),
+		ciTestFiles.has("components/blocks/jira-work-item/jira-work-item-team-eu26-content.source.test.js"),
 		"expected the Team EU26 content test to be classified for CI",
 	);
 });

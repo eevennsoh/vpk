@@ -119,7 +119,7 @@ function writeStableWorkItemOwnerFixtures(root, identity) {
 		"]);",
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item.test.js", [
+	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item.source.test.js", [
 		`assert.match(SOURCE, /export type JiraWorkItemVariant = "default" \\| "experimental" \\| "${experimentalSlug}";/u);`,
 		`assert.match(SOURCE, /"${experimentalSlug}": ${experimentalPascal}JiraWorkItem,\\s*\\} as const;/u);`,
 		`assert.match(SOURCE, /import \\{ ${experimentalPascal}JiraWorkItem \\} from "@\\/components\\/blocks\\/jira-work-item\\/${experimentalSlug}\\/${experimentalSlug}-jira-work-item";/u);`,
@@ -143,12 +143,12 @@ function writeStableWorkItemOwnerFixtures(root, identity) {
 		`assert.match(previewLayoutSource, /"jira-work-item-demo-${experimentalSlug}"/u);`,
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item-experimental-v2.test.js", [
+	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js", [
 		`assert.match(indexSource, /export type JiraWorkItemVariant = "default" \\| "experimental" \\| "${experimentalSlug}";/u);`,
 		`assert.match(indexSource, /"${experimentalSlug}": ${experimentalPascal}JiraWorkItem,\\s*\\} as const;/u);`,
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/blocks/jira-work-item/activity-composer-context-bar.test.js", [
+	writeFixtureFile(root, "components/blocks/jira-work-item/activity-composer-context-bar.source.test.js", [
 		`const TREES = ["experimental-v2", "${experimentalSlug}"];`,
 		`if (tree === "${experimentalSlug}") {}`,
 		"",
@@ -428,10 +428,10 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 		const expectedOwners = [
 			"app/data/details/blocks/jira-work-item.ts",
 			"app/preview/blocks/[slug]/layout.tsx",
-			"components/blocks/jira-work-item/activity-composer-context-bar.test.js",
+			"components/blocks/jira-work-item/activity-composer-context-bar.source.test.js",
 			"components/blocks/jira-work-item/index.tsx",
-			"components/blocks/jira-work-item/jira-work-item-experimental-v2.test.js",
-			"components/blocks/jira-work-item/jira-work-item.test.js",
+			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
+			"components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"components/blocks/jira-work-item/page.tsx",
 			"components/website/demos/blocks/jira-work-item-demo.tsx",
 			"components/website/registry/blocks-variants.ts",
@@ -487,12 +487,12 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 			/"jira-work-item-demo-experimental-v4"/u,
 		);
 		assert.match(
-			prepared("components/blocks/jira-work-item/activity-composer-context-bar.test.js"),
+			prepared("components/blocks/jira-work-item/activity-composer-context-bar.source.test.js"),
 			/TREES = \["experimental-v2", "experimental-v3", "experimental-v4"\]/u,
 		);
 		for (const contractOwner of [
-			"components/blocks/jira-work-item/jira-work-item.test.js",
-			"components/blocks/jira-work-item/jira-work-item-experimental-v2.test.js",
+			"components/blocks/jira-work-item/jira-work-item.source.test.js",
+			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
 		]) {
 			assert.match(prepared(contractOwner), /"experimental-v4": ExperimentalV4JiraWorkItem/u);
 		}

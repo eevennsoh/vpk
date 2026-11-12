@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-// Display/source-contract checks split from assistant-thinking-trace-state.test.js
+// Display/source-contract checks split from assistant-thinking-trace-state.source.test.js
 // so the parent file stays inside the default file-size budget.
 
 test("assistant thinking trace suppresses auto-open for question-card tool states", () => {

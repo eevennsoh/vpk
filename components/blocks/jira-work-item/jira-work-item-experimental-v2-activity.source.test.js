@@ -6,7 +6,7 @@ const test = require("node:test");
 // Activity + guided-PR-review contract tests for the `experimental-v2` Jira
 // Work Item surface.
 //
-// These live apart from `jira-work-item-experimental-v2.test.js` (which owns the
+// These live apart from `jira-work-item-experimental-v2.source.test.js` (which owns the
 // fork-isolation and shared-model contracts) because the activity composer is
 // where v2 wires the most cross-component behavior: agent mentions, the
 // comment/broadcast delivery split, composer context chips, and the guided PR

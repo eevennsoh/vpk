@@ -6,7 +6,7 @@
  * and every avatar path has to exist on disk. A 404 avatar or a work-item key
  * with nothing behind it renders as a gap in the page, which no type can catch.
  *
- * Split out of `pulse.test.js` when the continuous-article reshape pushed that
+ * Split out of `pulse.source.test.js` when the continuous-article reshape pushed that
  * file past the repo's 1000-line budget. It reads only the fixture, so it was
  * the one block with no coupling to the rest of the suite.
  */

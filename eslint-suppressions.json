@@ -112,7 +112,7 @@
       "count": 2
     }
   },
-  "components/arts/awake/glass-slider.test.js": {
+  "components/arts/awake/glass-slider.source.test.js": {
     "no-restricted-syntax": {
       "count": 34
     }
@@ -135,7 +135,7 @@
       "count": 3
     }
   },
-  "components/arts/awake/selected-weather-clock.test.js": {
+  "components/arts/awake/selected-weather-clock.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
@@ -150,7 +150,7 @@
       "count": 1
     }
   },
-  "components/arts/awake/use-location-clock.test.js": {
+  "components/arts/awake/use-location-clock.source.test.js": {
     "no-restricted-syntax": {
       "count": 10
     }
@@ -165,7 +165,7 @@
       "count": 1
     }
   },
-  "components/arts/awake/wake-lock-hotkey.test.js": {
+  "components/arts/awake/wake-lock-hotkey.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
@@ -190,7 +190,7 @@
       "count": 1
     }
   },
-  "components/arts/personal-graph/hooks/use-personal-graph-summary.test.js": {
+  "components/arts/personal-graph/hooks/use-personal-graph-summary.source.test.js": {
     "no-restricted-syntax": {
       "count": 19
     }
@@ -205,7 +205,7 @@
       "count": 1
     }
   },
-  "components/arts/personal-graph/personal-graph-control-flyout.test.js": {
+  "components/arts/personal-graph/personal-graph-control-flyout.source.test.js": {
     "no-restricted-syntax": {
       "count": 111
     }
@@ -241,12 +241,12 @@
       "count": 3
     }
   },
-  "components/arts/personal-graph/personal-graph-summary-panel.test.js": {
+  "components/arts/personal-graph/personal-graph-summary-panel.source.test.js": {
     "no-restricted-syntax": {
       "count": 29
     }
   },
-  "components/arts/personal-graph/personal-graph-surface.test.js": {
+  "components/arts/personal-graph/personal-graph-surface.source.test.js": {
     "no-restricted-syntax": {
       "count": 66
     }
@@ -256,12 +256,12 @@
       "count": 4
     }
   },
-  "components/arts/rovo-p5/index.test.js": {
+  "components/arts/rovo-p5/index.source.test.js": {
     "no-restricted-syntax": {
       "count": 129
     }
   },
-  "components/blocks/agent-access/agent-access.test.js": {
+  "components/blocks/agent-access/agent-access.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -335,17 +335,17 @@
       "count": 7
     }
   },
-  "components/blocks/agent-evaluation/agent-evaluation.test.js": {
+  "components/blocks/agent-evaluation/agent-evaluation.source.test.js": {
     "no-restricted-syntax": {
       "count": 42
     }
   },
-  "components/blocks/agent-insight/agent-insight.test.js": {
+  "components/blocks/agent-insight/agent-insight.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/blocks/agent-list/agent-list.test.js": {
+  "components/blocks/agent-list/agent-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 326
     }
@@ -366,7 +366,7 @@
       "count": 1
     }
   },
-  "components/blocks/agent-selector/agent-selector.test.js": {
+  "components/blocks/agent-selector/agent-selector.source.test.js": {
     "no-restricted-syntax": {
       "count": 147
     }
@@ -381,37 +381,37 @@
       "count": 1
     }
   },
-  "components/blocks/agent-session-column/agent-session-column-arrival.test.js": {
+  "components/blocks/agent-session-column/agent-session-column-arrival.source.test.js": {
     "no-restricted-syntax": {
       "count": 97
     }
   },
-  "components/blocks/agent-session-column/agent-session-column-capabilities.test.js": {
+  "components/blocks/agent-session-column/agent-session-column-capabilities.source.test.js": {
     "no-restricted-syntax": {
       "count": 96
     }
   },
-  "components/blocks/agent-session-column/agent-session-column-frame.test.js": {
+  "components/blocks/agent-session-column/agent-session-column-frame.source.test.js": {
     "no-restricted-syntax": {
       "count": 9
     }
   },
-  "components/blocks/agent-session-column/agent-session-column-gutter.test.js": {
+  "components/blocks/agent-session-column/agent-session-column-gutter.source.test.js": {
     "no-restricted-syntax": {
       "count": 212
     }
   },
-  "components/blocks/agent-session-column/agent-session-column-header.test.js": {
+  "components/blocks/agent-session-column/agent-session-column-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 54
     }
   },
-  "components/blocks/agent-session-column/agent-session-column-markers.test.js": {
+  "components/blocks/agent-session-column/agent-session-column-markers.source.test.js": {
     "no-restricted-syntax": {
       "count": 25
     }
   },
-  "components/blocks/agent-session-column/agent-session-column-overflow.test.js": {
+  "components/blocks/agent-session-column/agent-session-column-overflow.source.test.js": {
     "no-restricted-syntax": {
       "count": 20
     }
@@ -426,12 +426,12 @@
       "count": 21
     }
   },
-  "components/blocks/agent-session-column/agent-session-column-well.test.js": {
+  "components/blocks/agent-session-column/agent-session-column-well.source.test.js": {
     "no-restricted-syntax": {
       "count": 40
     }
   },
-  "components/blocks/agent-session-column/agent-session-column.test.js": {
+  "components/blocks/agent-session-column/agent-session-column.source.test.js": {
     "no-restricted-syntax": {
       "count": 479
     }
@@ -459,7 +459,7 @@
       "count": 1
     }
   },
-  "components/blocks/agent-session/agent-session-attached.test.js": {
+  "components/blocks/agent-session/agent-session-attached.source.test.js": {
     "no-restricted-syntax": {
       "count": 61
     }
@@ -480,7 +480,7 @@
       "count": 1
     }
   },
-  "components/blocks/agent-session/agent-session-drag-host.test.js": {
+  "components/blocks/agent-session/agent-session-drag-host.source.test.js": {
     "no-restricted-syntax": {
       "count": 59
     }
@@ -490,22 +490,22 @@
       "count": 20
     }
   },
-  "components/blocks/agent-session/agent-session-flyout-hover.test.js": {
+  "components/blocks/agent-session/agent-session-flyout-hover.source.test.js": {
     "no-restricted-syntax": {
       "count": 13
     }
   },
-  "components/blocks/agent-session/agent-session-glow.test.js": {
+  "components/blocks/agent-session/agent-session-glow.source.test.js": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "components/blocks/agent-session/agent-session-link-work-item.test.js": {
+  "components/blocks/agent-session/agent-session-link-work-item.source.test.js": {
     "no-restricted-syntax": {
       "count": 66
     }
   },
-  "components/blocks/agent-session/agent-session-linking.test.js": {
+  "components/blocks/agent-session/agent-session-linking.source.test.js": {
     "no-restricted-syntax": {
       "count": 33
     }
@@ -515,7 +515,7 @@
       "count": 2
     }
   },
-  "components/blocks/agent-session/agent-session.test.js": {
+  "components/blocks/agent-session/agent-session.source.test.js": {
     "no-restricted-syntax": {
       "count": 513
     }
@@ -530,17 +530,17 @@
       "count": 39
     }
   },
-  "components/blocks/agent-surface/agent-surface.test.js": {
+  "components/blocks/agent-surface/agent-surface.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/blocks/agent-template/agent-template.test.js": {
+  "components/blocks/agent-template/agent-template.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "components/blocks/agent-test/components/agent-test.test.js": {
+  "components/blocks/agent-test/components/agent-test.source.test.js": {
     "no-restricted-syntax": {
       "count": 65
     }
@@ -553,12 +553,12 @@
       "count": 1
     }
   },
-  "components/blocks/agent-user/agent-user.test.js": {
+  "components/blocks/agent-user/agent-user.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/blocks/agent/agent.test.js": {
+  "components/blocks/agent/agent.source.test.js": {
     "no-restricted-syntax": {
       "count": 18
     }
@@ -578,7 +578,7 @@
       "count": 1
     }
   },
-  "components/blocks/app-directory/app-directory.test.js": {
+  "components/blocks/app-directory/app-directory.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
@@ -604,7 +604,7 @@
       "count": 1
     }
   },
-  "components/blocks/artifact-pane/artifact-pane.test.js": {
+  "components/blocks/artifact-pane/artifact-pane.source.test.js": {
     "no-restricted-syntax": {
       "count": 200
     }
@@ -627,12 +627,12 @@
       "count": 2
     }
   },
-  "components/blocks/chatgpt/create-project-form.test.js": {
+  "components/blocks/chatgpt/create-project-form.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/blocks/code-review/code-review.test.js": {
+  "components/blocks/code-review/code-review.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
@@ -662,7 +662,7 @@
       "count": 1
     }
   },
-  "components/blocks/data-table/data-table.test.js": {
+  "components/blocks/data-table/data-table.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
@@ -677,7 +677,7 @@
       "count": 3
     }
   },
-  "components/blocks/emoji-picker/emoji-picker.test.js": {
+  "components/blocks/emoji-picker/emoji-picker.source.test.js": {
     "no-restricted-syntax": {
       "count": 99
     }
@@ -687,7 +687,7 @@
       "count": 2
     }
   },
-  "components/blocks/gallery/gallery.test.js": {
+  "components/blocks/gallery/gallery.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
@@ -717,27 +717,27 @@
       "count": 1
     }
   },
-  "components/blocks/html-selector/html-selector.test.js": {
+  "components/blocks/html-selector/html-selector.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "components/blocks/jira-activity/jira-activity-alignment.test.js": {
+  "components/blocks/jira-activity/jira-activity-alignment.source.test.js": {
     "no-restricted-syntax": {
       "count": 36
     }
   },
-  "components/blocks/jira-activity/jira-activity-event-row.test.js": {
+  "components/blocks/jira-activity/jira-activity-event-row.source.test.js": {
     "no-restricted-syntax": {
       "count": 16
     }
   },
-  "components/blocks/jira-activity/jira-activity-threads.test.js": {
+  "components/blocks/jira-activity/jira-activity-threads.source.test.js": {
     "no-restricted-syntax": {
       "count": 166
     }
   },
-  "components/blocks/jira-activity/jira-activity.test.js": {
+  "components/blocks/jira-activity/jira-activity.source.test.js": {
     "no-restricted-syntax": {
       "count": 311
     }
@@ -772,7 +772,7 @@
       "count": 1
     }
   },
-  "components/blocks/jira-epic/jira-epic.test.js": {
+  "components/blocks/jira-epic/jira-epic.source.test.js": {
     "no-restricted-syntax": {
       "count": 8
     }
@@ -785,12 +785,12 @@
       "count": 1
     }
   },
-  "components/blocks/jira-issue/agent-activity-imports.test.js": {
+  "components/blocks/jira-issue/agent-activity-imports.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
   },
-  "components/blocks/jira-issue/agent-activity.test.js": {
+  "components/blocks/jira-issue/agent-activity.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
@@ -800,22 +800,22 @@
       "count": 1
     }
   },
-  "components/blocks/jira-issue/agent-link-flash.test.js": {
+  "components/blocks/jira-issue/agent-link-flash.source.test.js": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "components/blocks/jira-issue/agent-session-transfer.test.js": {
+  "components/blocks/jira-issue/agent-session-transfer.source.test.js": {
     "no-restricted-syntax": {
       "count": 265
     }
   },
-  "components/blocks/jira-issue/agent-shell-stability.test.js": {
+  "components/blocks/jira-issue/agent-shell-stability.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/blocks/jira-issue/attach-trace.test.js": {
+  "components/blocks/jira-issue/attach-trace.source.test.js": {
     "no-restricted-syntax": {
       "count": 16
     }
@@ -825,12 +825,12 @@
       "count": 3
     }
   },
-  "components/blocks/jira-issue/compact-chrome.test.js": {
+  "components/blocks/jira-issue/compact-chrome.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
   },
-  "components/blocks/jira-issue/cover-image.test.js": {
+  "components/blocks/jira-issue/cover-image.source.test.js": {
     "no-restricted-syntax": {
       "count": 9
     }
@@ -848,17 +848,17 @@
       "count": 2
     }
   },
-  "components/blocks/jira-issue/jira-issue-assignee.test.js": {
+  "components/blocks/jira-issue/jira-issue-assignee.source.test.js": {
     "no-restricted-syntax": {
       "count": 9
     }
   },
-  "components/blocks/jira-issue/jira-issue-experimental-v2.test.js": {
+  "components/blocks/jira-issue/jira-issue-experimental-v2.source.test.js": {
     "no-restricted-syntax": {
       "count": 86
     }
   },
-  "components/blocks/jira-issue/jira-issue.test.js": {
+  "components/blocks/jira-issue/jira-issue.source.test.js": {
     "no-restricted-syntax": {
       "count": 624
     }
@@ -868,12 +868,12 @@
       "count": 3
     }
   },
-  "components/blocks/jira-issue/uncaptured-work-chin.test.js": {
+  "components/blocks/jira-issue/uncaptured-work-chin.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
     }
   },
-  "components/blocks/jira-kanban/board-header-avatar-stroke.test.js": {
+  "components/blocks/jira-kanban/board-header-avatar-stroke.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
@@ -896,12 +896,12 @@
       "count": 2
     }
   },
-  "components/blocks/jira-kanban/experimental/board-agent-filter-selection.test.js": {
+  "components/blocks/jira-kanban/experimental/board-agent-filter-selection.source.test.js": {
     "no-restricted-syntax": {
       "count": 13
     }
   },
-  "components/blocks/jira-kanban/experimental/board-untracked-proximity.test.js": {
+  "components/blocks/jira-kanban/experimental/board-untracked-proximity.source.test.js": {
     "no-restricted-syntax": {
       "count": 169
     }
@@ -926,7 +926,7 @@
       "count": 1
     }
   },
-  "components/blocks/jira-kanban/experimental/components/board-view-menu.test.js": {
+  "components/blocks/jira-kanban/experimental/components/board-view-menu.source.test.js": {
     "no-restricted-syntax": {
       "count": 49
     }
@@ -1035,17 +1035,17 @@
       "count": 1
     }
   },
-  "components/blocks/jira-kanban/experimental/pulse/pulse-sessions.test.js": {
+  "components/blocks/jira-kanban/experimental/pulse/pulse-sessions.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/blocks/jira-kanban/experimental/pulse/pulse-source-attribution.test.js": {
+  "components/blocks/jira-kanban/experimental/pulse/pulse-source-attribution.source.test.js": {
     "no-restricted-syntax": {
       "count": 30
     }
   },
-  "components/blocks/jira-kanban/experimental/pulse/pulse-source-contracts.test.js": {
+  "components/blocks/jira-kanban/experimental/pulse/pulse-source-contracts.source.test.js": {
     "no-restricted-syntax": {
       "count": 74
     }
@@ -1060,12 +1060,12 @@
       "count": 1
     }
   },
-  "components/blocks/jira-kanban/jira-kanban-contract.test.js": {
+  "components/blocks/jira-kanban/jira-kanban-contract.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/blocks/jira-kanban/jira-kanban-docs.test.js": {
+  "components/blocks/jira-kanban/jira-kanban-docs.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
@@ -1095,12 +1095,12 @@
       "count": 1
     }
   },
-  "components/blocks/jira-list/jira-list.test.js": {
+  "components/blocks/jira-list/jira-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 325
     }
   },
-  "components/blocks/jira-toolbar/jira-toolbar.test.js": {
+  "components/blocks/jira-toolbar/jira-toolbar.source.test.js": {
     "no-restricted-syntax": {
       "count": 33
     }
@@ -1290,7 +1290,7 @@
       "count": 2
     }
   },
-  "components/blocks/jira-work-item/jira-work-item.test.js": {
+  "components/blocks/jira-work-item/jira-work-item.source.test.js": {
     "no-restricted-syntax": {
       "count": 26
     }
@@ -1361,7 +1361,7 @@
       "count": 2
     }
   },
-  "components/blocks/next-best-action/next-best-action.test.js": {
+  "components/blocks/next-best-action/next-best-action.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -1396,7 +1396,7 @@
       "count": 4
     }
   },
-  "components/blocks/product-sidebar/variants/jira.test.js": {
+  "components/blocks/product-sidebar/variants/jira.source.test.js": {
     "no-restricted-syntax": {
       "count": 97
     }
@@ -1426,12 +1426,12 @@
       "count": 79
     }
   },
-  "components/blocks/pull-request/pull-request.test.js": {
+  "components/blocks/pull-request/pull-request.source.test.js": {
     "no-restricted-syntax": {
       "count": 112
     }
   },
-  "components/blocks/question-card/components/question-card.test.js": {
+  "components/blocks/question-card/components/question-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 21
     }
@@ -1446,7 +1446,7 @@
       "count": 2
     }
   },
-  "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.test.js": {
+  "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -1456,12 +1456,12 @@
       "count": 1
     }
   },
-  "components/blocks/rovo-canvas/components/rovo-canvas-view-content.test.js": {
+  "components/blocks/rovo-canvas/components/rovo-canvas-view-content.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
     }
   },
-  "components/blocks/rovo-canvas/components/rovo-canvas-view-switcher.test.js": {
+  "components/blocks/rovo-canvas/components/rovo-canvas-view-switcher.source.test.js": {
     "no-restricted-syntax": {
       "count": 4
     }
@@ -1491,7 +1491,7 @@
       "count": 1
     }
   },
-  "components/blocks/skill-config/skill-config.test.js": {
+  "components/blocks/skill-config/skill-config.source.test.js": {
     "no-restricted-syntax": {
       "count": 22
     }
@@ -1506,17 +1506,17 @@
       "count": 3
     }
   },
-  "components/blocks/skill-directory/skill-directory.test.js": {
+  "components/blocks/skill-directory/skill-directory.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "components/blocks/skill-selector/skill-selector.test.js": {
+  "components/blocks/skill-selector/skill-selector.source.test.js": {
     "no-restricted-syntax": {
       "count": 22
     }
   },
-  "components/blocks/smart-link/smart-link.test.js": {
+  "components/blocks/smart-link/smart-link.source.test.js": {
     "no-restricted-syntax": {
       "count": 161
     }
@@ -1581,12 +1581,12 @@
       "count": 2
     }
   },
-  "components/blocks/top-navigation/top-navigation-chat-state.test.js": {
+  "components/blocks/top-navigation/top-navigation-chat-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 108
     }
   },
-  "components/blocks/trigger-config/trigger-config.test.js": {
+  "components/blocks/trigger-config/trigger-config.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
@@ -1596,7 +1596,7 @@
       "count": 41
     }
   },
-  "components/blocks/trigger/manage-triggers-dialog.test.js": {
+  "components/blocks/trigger/manage-triggers-dialog.source.test.js": {
     "no-restricted-syntax": {
       "count": 51
     }
@@ -1606,7 +1606,7 @@
       "count": 1
     }
   },
-  "components/blocks/trigger/trigger.test.js": {
+  "components/blocks/trigger/trigger.source.test.js": {
     "no-restricted-syntax": {
       "count": 71
     }
@@ -1621,12 +1621,12 @@
       "count": 128
     }
   },
-  "components/blocks/video/video.test.js": {
+  "components/blocks/video/video.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/blocks/visual-waveform/page.test.js": {
+  "components/blocks/visual-waveform/page.source.test.js": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -1686,7 +1686,7 @@
       "count": 1
     }
   },
-  "components/projects/admin/components/admin-expandable-controls.test.js": {
+  "components/projects/admin/components/admin-expandable-controls.source.test.js": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -1701,7 +1701,7 @@
       "count": 1
     }
   },
-  "components/projects/jira-for-you/jira-for-you-details.test.js": {
+  "components/projects/jira-for-you/jira-for-you-details.source.test.js": {
     "no-restricted-syntax": {
       "count": 35
     }
@@ -1716,17 +1716,17 @@
       "count": 235
     }
   },
-  "components/projects/jira-for-you/jira-for-you.test.js": {
+  "components/projects/jira-for-you/jira-for-you.source.test.js": {
     "no-restricted-syntax": {
       "count": 44
     }
   },
-  "components/projects/jira-golden-journey-v0/agent-chat-demo.test.js": {
+  "components/projects/jira-golden-journey-v0/agent-chat-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/projects/jira-golden-journey-v0/card-kanban-stage.test.js": {
+  "components/projects/jira-golden-journey-v0/card-kanban-stage.source.test.js": {
     "no-restricted-syntax": {
       "count": 30
     }
@@ -1751,32 +1751,32 @@
       "count": 1
     }
   },
-  "components/projects/jira-golden-journey-v0/kanban-stage.test.js": {
+  "components/projects/jira-golden-journey-v0/kanban-stage.source.test.js": {
     "no-restricted-syntax": {
       "count": 50
     }
   },
-  "components/projects/jira-golden-journey-v0/lib/terminal-demo-state.test.js": {
+  "components/projects/jira-golden-journey-v0/lib/terminal-demo-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 21
     }
   },
-  "components/projects/jira-golden-journey-v0/queue-stage.test.js": {
+  "components/projects/jira-golden-journey-v0/queue-stage.source.test.js": {
     "no-restricted-syntax": {
       "count": 187
     }
   },
-  "components/projects/jira-golden-journey-v0/work-item-stage.test.js": {
+  "components/projects/jira-golden-journey-v0/work-item-stage.source.test.js": {
     "no-restricted-syntax": {
       "count": 27
     }
   },
-  "components/projects/jira-golden-journey-v1/agent-chat-demo.test.js": {
+  "components/projects/jira-golden-journey-v1/agent-chat-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/projects/jira-golden-journey-v1/card-kanban-stage.test.js": {
+  "components/projects/jira-golden-journey-v1/card-kanban-stage.source.test.js": {
     "no-restricted-syntax": {
       "count": 26
     }
@@ -1801,12 +1801,12 @@
       "count": 1
     }
   },
-  "components/projects/jira-golden-journey-v1/kanban-stage.test.js": {
+  "components/projects/jira-golden-journey-v1/kanban-stage.source.test.js": {
     "no-restricted-syntax": {
       "count": 100
     }
   },
-  "components/projects/jira-golden-journey-v1/lib/terminal-demo-state.test.js": {
+  "components/projects/jira-golden-journey-v1/lib/terminal-demo-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
@@ -1826,7 +1826,7 @@
       "count": 2
     }
   },
-  "components/projects/jira-golden-journey-v3/jira-golden-journey-v3.test.js": {
+  "components/projects/jira-golden-journey-v3/jira-golden-journey-v3.source.test.js": {
     "no-restricted-syntax": {
       "count": 65
     }
@@ -1846,27 +1846,27 @@
       "count": 5
     }
   },
-  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-board-gap.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-board-gap.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
   },
-  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-create-session.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-create-session.source.test.js": {
     "no-restricted-syntax": {
       "count": 26
     }
   },
-  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-generative-actions.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-generative-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
   },
-  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-untracked-chrome.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4-untracked-chrome.source.test.js": {
     "no-restricted-syntax": {
       "count": 107
     }
   },
-  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4.test.js": {
+  "components/projects/jira-golden-journey-v4/jira-golden-journey-v4.source.test.js": {
     "no-restricted-syntax": {
       "count": 247
     }
@@ -1909,32 +1909,32 @@
       "count": 1
     }
   },
-  "components/projects/jira-team-eu26-end/jira-team-eu26-end-board-gap.test.js": {
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-board-gap.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
   },
-  "components/projects/jira-team-eu26-end/jira-team-eu26-end-controls.test.js": {
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-controls.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
   },
-  "components/projects/jira-team-eu26-end/jira-team-eu26-end-create-session.test.js": {
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-create-session.source.test.js": {
     "no-restricted-syntax": {
       "count": 24
     }
   },
-  "components/projects/jira-team-eu26-end/jira-team-eu26-end-generative-actions.test.js": {
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-generative-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
   },
-  "components/projects/jira-team-eu26-end/jira-team-eu26-end-untracked-chrome.test.js": {
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end-untracked-chrome.source.test.js": {
     "no-restricted-syntax": {
       "count": 163
     }
   },
-  "components/projects/jira-team-eu26-end/jira-team-eu26-end.test.js": {
+  "components/projects/jira-team-eu26-end/jira-team-eu26-end.source.test.js": {
     "no-restricted-syntax": {
       "count": 331
     }
@@ -1949,27 +1949,27 @@
       "count": 10
     }
   },
-  "components/projects/jira-team-eu26/jira-team-eu26-board-gap.test.js": {
+  "components/projects/jira-team-eu26/jira-team-eu26-board-gap.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
   },
-  "components/projects/jira-team-eu26/jira-team-eu26-create-session.test.js": {
+  "components/projects/jira-team-eu26/jira-team-eu26-create-session.source.test.js": {
     "no-restricted-syntax": {
       "count": 26
     }
   },
-  "components/projects/jira-team-eu26/jira-team-eu26-generative-actions.test.js": {
+  "components/projects/jira-team-eu26/jira-team-eu26-generative-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
   },
-  "components/projects/jira-team-eu26/jira-team-eu26-untracked-chrome.test.js": {
+  "components/projects/jira-team-eu26/jira-team-eu26-untracked-chrome.source.test.js": {
     "no-restricted-syntax": {
       "count": 163
     }
   },
-  "components/projects/jira-team-eu26/jira-team-eu26.test.js": {
+  "components/projects/jira-team-eu26/jira-team-eu26.source.test.js": {
     "no-restricted-syntax": {
       "count": 329
     }
@@ -1999,7 +1999,7 @@
       "count": 1
     }
   },
-  "components/projects/jira/components/work-item-modal/comment-thread.test.js": {
+  "components/projects/jira/components/work-item-modal/comment-thread.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
@@ -2017,17 +2017,17 @@
       "count": 1
     }
   },
-  "components/projects/jira/data/board-agents.test.js": {
+  "components/projects/jira/data/board-agents.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "components/projects/jira/hooks/use-agents-rfp-demo-state.test.js": {
+  "components/projects/jira/hooks/use-agents-rfp-demo-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 19
     }
   },
-  "components/projects/jira/page.test.js": {
+  "components/projects/jira/page.source.test.js": {
     "no-restricted-syntax": {
       "count": 135
     }
@@ -2047,12 +2047,12 @@
       "count": 1
     }
   },
-  "components/projects/rovo-button/page.test.js": {
+  "components/projects/rovo-button/page.source.test.js": {
     "no-restricted-syntax": {
       "count": 52
     }
   },
-  "components/projects/rovo-core/components/clicky/clicky-core.test.js": {
+  "components/projects/rovo-core/components/clicky/clicky-core.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
@@ -2072,32 +2072,32 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/components/rovo-app-header.test.js": {
+  "components/projects/rovo-core/components/rovo-app-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 16
     }
   },
-  "components/projects/rovo-core/components/rovo-app-surface-shell.test.js": {
+  "components/projects/rovo-core/components/rovo-app-surface-shell.source.test.js": {
     "no-restricted-syntax": {
       "count": 38
     }
   },
-  "components/projects/rovo-core/hooks/use-clicky-voice.test.js": {
+  "components/projects/rovo-core/hooks/use-clicky-voice.source.test.js": {
     "no-restricted-syntax": {
       "count": 23
     }
   },
-  "components/projects/rovo-core/hooks/use-realtime-voice.test.js": {
+  "components/projects/rovo-core/hooks/use-realtime-voice.source.test.js": {
     "no-restricted-syntax": {
       "count": 23
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-active-document-sync.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-active-document-sync.source.test.js": {
     "no-restricted-syntax": {
       "count": 9
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-active-turn-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-active-turn-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
@@ -2107,22 +2107,22 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-controller.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-controller.source.test.js": {
     "no-restricted-syntax": {
       "count": 18
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-effects.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-effects.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-artifact-reset-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-artifact-reset-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 15
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-background-refresh.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-background-refresh.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
@@ -2137,12 +2137,12 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-clarification-plan-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-clarification-plan-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 17
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-completed-run-hydration.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-completed-run-hydration.source.test.js": {
     "no-restricted-syntax": {
       "count": 8
     }
@@ -2152,12 +2152,12 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-data-part-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-data-part-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 9
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-delegation-queue-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-delegation-queue-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 17
     }
@@ -2167,17 +2167,17 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-derived-state.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-derived-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 18
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-prep-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-prep-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-runtime.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-dispatch-runtime.source.test.js": {
     "no-restricted-syntax": {
       "count": 18
     }
@@ -2187,12 +2187,12 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-local-run-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-local-run-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-message-edit-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-message-edit-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 10
     }
@@ -2202,42 +2202,42 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-mode-state-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-mode-state-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-plan-retry.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-plan-retry.source.test.js": {
     "no-restricted-syntax": {
       "count": 10
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-plan-widget-metadata-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-plan-widget-metadata-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-prompt-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-prompt-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-realtime-state-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-realtime-state-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 10
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-route-replacement-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-route-replacement-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-run-side-effect-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-run-side-effect-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-runtime-refs.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-runtime-refs.source.test.js": {
     "no-restricted-syntax": {
       "count": 16
     }
@@ -2247,57 +2247,57 @@
       "count": 2
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-suggested-questions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-suggested-questions.source.test.js": {
     "no-restricted-syntax": {
       "count": 9
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-lifecycle-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-lifecycle-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 21
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-list.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 4
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-mutation-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-mutation-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-navigation-effects.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-navigation-effects.source.test.js": {
     "no-restricted-syntax": {
       "count": 10
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-persistence.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-persistence.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-thread-refresh-effects.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-thread-refresh-effects.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-title-generation.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-title-generation.source.test.js": {
     "no-restricted-syntax": {
       "count": 15
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-turn-lifecycle-state.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-turn-lifecycle-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 10
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-use-chat-lifecycle-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-use-chat-lifecycle-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
   },
-  "components/projects/rovo-core/hooks/use-rovo-app-user-message-actions.test.js": {
+  "components/projects/rovo-core/hooks/use-rovo-app-user-message-actions.source.test.js": {
     "no-restricted-syntax": {
       "count": 9
     }
@@ -2307,12 +2307,12 @@
       "count": 1
     }
   },
-  "components/projects/rovo-core/lib/api-backend-unavailable.test.js": {
+  "components/projects/rovo-core/lib/api-backend-unavailable.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
     }
   },
-  "components/projects/rovo-floating-chat/components/rovo-floating-chat.test.js": {
+  "components/projects/rovo-floating-chat/components/rovo-floating-chat.source.test.js": {
     "no-restricted-syntax": {
       "count": 106
     }
@@ -2322,17 +2322,17 @@
       "count": 40
     }
   },
-  "components/projects/rovo/components/rovo-app-composer.test.js": {
+  "components/projects/rovo/components/rovo-app-composer.source.test.js": {
     "no-restricted-syntax": {
       "count": 133
     }
   },
-  "components/projects/rovo/components/rovo-app-messages-empty-state.test.js": {
+  "components/projects/rovo/components/rovo-app-messages-empty-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 91
     }
   },
-  "components/projects/rovo/components/rovo-app-shell-approval-card.test.js": {
+  "components/projects/rovo/components/rovo-app-shell-approval-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 4
     }
@@ -2355,7 +2355,7 @@
       "count": 1
     }
   },
-  "components/projects/shared/components/agent-edit-summary-card.test.js": {
+  "components/projects/shared/components/agent-edit-summary-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
     }
@@ -2373,7 +2373,7 @@
       "count": 3
     }
   },
-  "components/projects/shared/components/chat-context-bar.test.js": {
+  "components/projects/shared/components/chat-context-bar.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
     }
@@ -2418,7 +2418,7 @@
       "count": 1
     }
   },
-  "components/projects/shared/components/user-message-bubble.test.js": {
+  "components/projects/shared/components/user-message-bubble.source.test.js": {
     "no-restricted-syntax": {
       "count": 35
     }
@@ -2431,17 +2431,17 @@
       "count": 6
     }
   },
-  "components/projects/shared/lib/rovo-app-composer-response-gradient-state.test.js": {
+  "components/projects/shared/lib/rovo-app-composer-response-gradient-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "components/projects/sidebar-chat/components/agent-result-card.test.js": {
+  "components/projects/sidebar-chat/components/agent-result-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 38
     }
   },
-  "components/projects/sidebar-chat/components/artifact-result-card.test.js": {
+  "components/projects/sidebar-chat/components/artifact-result-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 35
     }
@@ -2461,17 +2461,17 @@
       "count": 68
     }
   },
-  "components/projects/sidebar-chat/components/message-bubble-plan-widget.test.js": {
+  "components/projects/sidebar-chat/components/message-bubble-plan-widget.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
   },
-  "components/projects/sidebar-chat/hooks/use-scroll-anchor.test.js": {
+  "components/projects/sidebar-chat/hooks/use-scroll-anchor.source.test.js": {
     "no-restricted-syntax": {
       "count": 13
     }
   },
-  "components/projects/sidebar-chat/page-plan-approval.test.js": {
+  "components/projects/sidebar-chat/page-plan-approval.source.test.js": {
     "no-restricted-syntax": {
       "count": 15
     }
@@ -2484,12 +2484,12 @@
       "count": 1
     }
   },
-  "components/projects/sidebar-chat/sidebar-chat-thinking-indicator-contract.test.js": {
+  "components/projects/sidebar-chat/sidebar-chat-thinking-indicator-contract.source.test.js": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "components/projects/skills/components/skill-creation-result-card.test.js": {
+  "components/projects/skills/components/skill-creation-result-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 17
     }
@@ -2499,7 +2499,7 @@
       "count": 2
     }
   },
-  "components/projects/skills/page.test.js": {
+  "components/projects/skills/page.source.test.js": {
     "no-restricted-syntax": {
       "count": 40
     }
@@ -2517,7 +2517,7 @@
       "count": 854
     }
   },
-  "components/projects/studio/components/rovo-app-automation-discovery-widget.test.js": {
+  "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {
     "no-restricted-syntax": {
       "count": 117
     }
@@ -2546,7 +2546,7 @@
       "count": 16
     }
   },
-  "components/projects/studio/components/rovo-app-sidebar.test.js": {
+  "components/projects/studio/components/rovo-app-sidebar.source.test.js": {
     "no-restricted-syntax": {
       "count": 34
     }
@@ -2561,12 +2561,12 @@
       "count": 1
     }
   },
-  "components/projects/studio/hooks/use-clicky-voice.test.js": {
+  "components/projects/studio/hooks/use-clicky-voice.source.test.js": {
     "no-restricted-syntax": {
       "count": 20
     }
   },
-  "components/projects/studio/hooks/use-rovo-app.test.js": {
+  "components/projects/studio/hooks/use-rovo-app.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
@@ -2657,7 +2657,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/agent-triggers-dialog.test.js": {
+  "components/ui-custom/agent-triggers-dialog.source.test.js": {
     "no-restricted-syntax": {
       "count": 39
     }
@@ -2667,7 +2667,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/animated-dot.test.js": {
+  "components/ui-custom/animated-dot.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
@@ -2677,12 +2677,12 @@
       "count": 3
     }
   },
-  "components/ui-custom/artifact-list/artifact-list.test.js": {
+  "components/ui-custom/artifact-list/artifact-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "components/ui-custom/chain-of-thought.test.js": {
+  "components/ui-custom/chain-of-thought.source.test.js": {
     "no-restricted-syntax": {
       "count": 72
     }
@@ -2698,7 +2698,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/code-block.test.js": {
+  "components/ui-custom/code-block.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
@@ -2708,7 +2708,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/code-list/code-list.test.js": {
+  "components/ui-custom/code-list/code-list.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -2746,17 +2746,17 @@
       "count": 1
     }
   },
-  "components/ui-custom/context-bar/context-bar.test.js": {
+  "components/ui-custom/context-bar/context-bar.source.test.js": {
     "no-restricted-syntax": {
       "count": 71
     }
   },
-  "components/ui-custom/context.test.js": {
+  "components/ui-custom/context.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
   },
-  "components/ui-custom/conversation.test.js": {
+  "components/ui-custom/conversation.source.test.js": {
     "no-restricted-syntax": {
       "count": 37
     }
@@ -2774,17 +2774,17 @@
       "count": 3
     }
   },
-  "components/ui-custom/entity-card/entity-card-catalog.test.js": {
+  "components/ui-custom/entity-card/entity-card-catalog.source.test.js": {
     "no-restricted-syntax": {
       "count": 21
     }
   },
-  "components/ui-custom/entity-card/entity-card.test.js": {
+  "components/ui-custom/entity-card/entity-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 224
     }
   },
-  "components/ui-custom/failing-checks-composer-chip.test.js": {
+  "components/ui-custom/failing-checks-composer-chip.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -2809,7 +2809,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/hover-reveal-row.test.js": {
+  "components/ui-custom/hover-reveal-row.source.test.js": {
     "no-restricted-syntax": {
       "count": 18
     }
@@ -2849,7 +2849,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/list.test.js": {
+  "components/ui-custom/list.source.test.js": {
     "no-restricted-syntax": {
       "count": 19
     }
@@ -2859,7 +2859,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/message.test.js": {
+  "components/ui-custom/message.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
     }
@@ -2872,7 +2872,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/plan.test.js": {
+  "components/ui-custom/plan.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
@@ -2882,12 +2882,12 @@
       "count": 4
     }
   },
-  "components/ui-custom/progress-circle.test.js": {
+  "components/ui-custom/progress-circle.source.test.js": {
     "no-restricted-syntax": {
       "count": 17
     }
   },
-  "components/ui-custom/prompt-input-dictation.test.js": {
+  "components/ui-custom/prompt-input-dictation.source.test.js": {
     "no-restricted-syntax": {
       "count": 30
     }
@@ -2963,7 +2963,7 @@
       "count": 3
     }
   },
-  "components/ui-custom/rich-text-editor/suggestion-menu-empty-popup.test.js": {
+  "components/ui-custom/rich-text-editor/suggestion-menu-empty-popup.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
@@ -3003,12 +3003,12 @@
       "count": 1
     }
   },
-  "components/ui-custom/rovo-generation.test.js": {
+  "components/ui-custom/rovo-generation.source.test.js": {
     "no-restricted-syntax": {
       "count": 18
     }
   },
-  "components/ui-custom/rovo-illustration.test.js": {
+  "components/ui-custom/rovo-illustration.source.test.js": {
     "no-restricted-syntax": {
       "count": 55
     }
@@ -3023,7 +3023,7 @@
       "count": 2
     }
   },
-  "components/ui-custom/rovo-sparkle/rovo-sparkle.test.js": {
+  "components/ui-custom/rovo-sparkle/rovo-sparkle.source.test.js": {
     "no-restricted-syntax": {
       "count": 70
     }
@@ -3044,7 +3044,7 @@
       "count": 1
     }
   },
-  "components/ui-custom/source-preview-menu.test.js": {
+  "components/ui-custom/source-preview-menu.source.test.js": {
     "no-restricted-syntax": {
       "count": 31
     }
@@ -3062,12 +3062,12 @@
       "count": 1
     }
   },
-  "components/ui-custom/tool-output.test.js": {
+  "components/ui-custom/tool-output.source.test.js": {
     "no-restricted-syntax": {
       "count": 4
     }
   },
-  "components/ui-custom/twg-appstack.test.js": {
+  "components/ui-custom/twg-appstack.source.test.js": {
     "no-restricted-syntax": {
       "count": 88
     }
@@ -3077,7 +3077,7 @@
       "count": 5
     }
   },
-  "components/ui-custom/twg-loader/twg-loader.test.js": {
+  "components/ui-custom/twg-loader/twg-loader.source.test.js": {
     "no-restricted-syntax": {
       "count": 13
     }
@@ -3095,22 +3095,22 @@
       "count": 2
     }
   },
-  "components/ui/avatar.test.js": {
+  "components/ui/avatar.source.test.js": {
     "no-restricted-syntax": {
       "count": 208
     }
   },
-  "components/ui/badge.test.js": {
+  "components/ui/badge.source.test.js": {
     "no-restricted-syntax": {
       "count": 8
     }
   },
-  "components/ui/breadcrumb.test.js": {
+  "components/ui/breadcrumb.source.test.js": {
     "no-restricted-syntax": {
       "count": 20
     }
   },
-  "components/ui/button-group.test.js": {
+  "components/ui/button-group.source.test.js": {
     "no-restricted-syntax": {
       "count": 8
     }
@@ -3125,12 +3125,12 @@
       "count": 1
     }
   },
-  "components/ui/checkbox.test.js": {
+  "components/ui/checkbox.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/ui/date-label.test.js": {
+  "components/ui/date-label.source.test.js": {
     "no-restricted-syntax": {
       "count": 8
     }
@@ -3140,12 +3140,12 @@
       "count": 2
     }
   },
-  "components/ui/field.test.js": {
+  "components/ui/field.source.test.js": {
     "no-restricted-syntax": {
       "count": 4
     }
   },
-  "components/ui/icon-tile.test.js": {
+  "components/ui/icon-tile.source.test.js": {
     "no-restricted-syntax": {
       "count": 26
     }
@@ -3166,7 +3166,7 @@
       "count": 1
     }
   },
-  "components/ui/logo-mark.test.js": {
+  "components/ui/logo-mark.source.test.js": {
     "no-restricted-syntax": {
       "count": 15
     }
@@ -3176,12 +3176,12 @@
       "count": 2
     }
   },
-  "components/ui/logo-third-party.test.js": {
+  "components/ui/logo-third-party.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
   },
-  "components/ui/lozenge.test.js": {
+  "components/ui/lozenge.source.test.js": {
     "no-restricted-syntax": {
       "count": 21
     }
@@ -3191,7 +3191,7 @@
       "count": 2
     }
   },
-  "components/ui/page-header.test.js": {
+  "components/ui/page-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
@@ -3201,32 +3201,32 @@
       "count": 23
     }
   },
-  "components/ui/progress-tracker.test.js": {
+  "components/ui/progress-tracker.source.test.js": {
     "no-restricted-syntax": {
       "count": 70
     }
   },
-  "components/ui/radio-group.test.js": {
+  "components/ui/radio-group.source.test.js": {
     "no-restricted-syntax": {
       "count": 14
     }
   },
-  "components/ui/select.test.js": {
+  "components/ui/select.source.test.js": {
     "no-restricted-syntax": {
       "count": 43
     }
   },
-  "components/ui/slider.test.js": {
+  "components/ui/slider.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "components/ui/tabs.test.js": {
+  "components/ui/tabs.source.test.js": {
     "no-restricted-syntax": {
       "count": 46
     }
   },
-  "components/ui/tag.test.js": {
+  "components/ui/tag.source.test.js": {
     "no-restricted-syntax": {
       "count": 25
     }
@@ -3239,7 +3239,7 @@
       "count": 1
     }
   },
-  "components/ui/tile.test.js": {
+  "components/ui/tile.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
@@ -3272,17 +3272,17 @@
       "count": 1
     }
   },
-  "components/visual/border-beam/source.test.js": {
+  "components/visual/border-beam/source.source.test.js": {
     "no-restricted-syntax": {
       "count": 17
     }
   },
-  "components/visual/card-glow/card-glow.test.js": {
+  "components/visual/card-glow/card-glow.source.test.js": {
     "no-restricted-syntax": {
       "count": 50
     }
   },
-  "components/visual/dropzone-effect/registry.test.js": {
+  "components/visual/dropzone-effect/registry.source.test.js": {
     "no-restricted-syntax": {
       "count": 4
     }
@@ -3295,7 +3295,7 @@
       "count": 2
     }
   },
-  "components/visual/glass-tabs.test.js": {
+  "components/visual/glass-tabs.source.test.js": {
     "no-restricted-syntax": {
       "count": 24
     }
@@ -3305,7 +3305,7 @@
       "count": 1
     }
   },
-  "components/visual/heatmap/registry.test.js": {
+  "components/visual/heatmap/registry.source.test.js": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -3340,17 +3340,17 @@
       "count": 7
     }
   },
-  "components/visual/peel/registry.test.js": {
+  "components/visual/peel/registry.source.test.js": {
     "no-restricted-syntax": {
       "count": 4
     }
   },
-  "components/visual/scroll-mask/lib.test.ts": {
+  "components/visual/scroll-mask/lib.source.test.ts": {
     "no-restricted-syntax": {
       "count": 19
     }
   },
-  "components/visual/scrolling/registry.test.js": {
+  "components/visual/scrolling/registry.source.test.js": {
     "no-restricted-syntax": {
       "count": 11
     }
@@ -3433,7 +3433,7 @@
       "count": 1
     }
   },
-  "components/website/component-doc/components/doc-hero.test.js": {
+  "components/website/component-doc/components/doc-hero.source.test.js": {
     "no-restricted-syntax": {
       "count": 4
     }
@@ -3486,7 +3486,7 @@
       "count": 1
     }
   },
-  "components/website/demos/projects/jira-demo.test.js": {
+  "components/website/demos/projects/jira-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 52
     }
@@ -3506,7 +3506,7 @@
       "count": 1
     }
   },
-  "components/website/demos/projects/use-project-demo-embedded.test.js": {
+  "components/website/demos/projects/use-project-demo-embedded.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
@@ -3531,7 +3531,7 @@
       "count": 3
     }
   },
-  "components/website/demos/ui-custom/skill-tag-demo.test.js": {
+  "components/website/demos/ui-custom/skill-tag-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
     }
@@ -3541,7 +3541,7 @@
       "count": 2
     }
   },
-  "components/website/demos/ui-custom/source-demo-preview-menu.test.js": {
+  "components/website/demos/ui-custom/source-demo-preview-menu.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
     }
@@ -3551,7 +3551,7 @@
       "count": 1
     }
   },
-  "components/website/demos/ui/checkbox-demo.test.js": {
+  "components/website/demos/ui/checkbox-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 12
     }
@@ -3571,7 +3571,7 @@
       "count": 1
     }
   },
-  "components/website/demos/ui/table-demo.test.js": {
+  "components/website/demos/ui/table-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -3581,7 +3581,7 @@
       "count": 14
     }
   },
-  "components/website/demos/ui/toggle-group-demo.test.js": {
+  "components/website/demos/ui/toggle-group-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 9
     }
@@ -3618,7 +3618,7 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/ascii-demo.test.js": {
+  "components/website/demos/visual/ascii-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 250
     }
@@ -3666,12 +3666,12 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/melt-demo.test.js": {
+  "components/website/demos/visual/melt-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 20
     }
   },
-  "components/website/demos/visual/ripple-demo.test.js": {
+  "components/website/demos/visual/ripple-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 35
     }
@@ -3686,12 +3686,12 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/shader-lab-effect-demo.test.js": {
+  "components/website/demos/visual/shader-lab-effect-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 39
     }
   },
-  "components/website/demos/visual/shaders-paper-demo.test.js": {
+  "components/website/demos/visual/shaders-paper-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 35
     }
@@ -3721,17 +3721,17 @@
       "count": 1
     }
   },
-  "components/website/demos/visual/text-continuity-demo.test.js": {
+  "components/website/demos/visual/text-continuity-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 8
     }
   },
-  "components/website/registry/blocks-variants.test.js": {
+  "components/website/registry/blocks-variants.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/website/website-header.test.js": {
+  "components/website/website-header.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
     }
@@ -3741,7 +3741,7 @@
       "count": 2
     }
   },
-  "hooks/use-agent-url-sync.test.js": {
+  "hooks/use-agent-url-sync.source.test.js": {
     "no-restricted-syntax": {
       "count": 13
     }

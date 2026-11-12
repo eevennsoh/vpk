@@ -451,12 +451,12 @@ test("Jira and ASX tests renamed to v0, v1, and v2 remain classified", async () 
 	const sourceContractFiles = new Set(TEST_FILE_CLASSIFICATIONS["source-contract"]);
 
 	for (const filePath of [
-		"components/projects/jira-golden-journey-v0/kanban-stage.test.js",
-		"components/projects/jira-golden-journey-v0/queue-stage.test.js",
-		"components/projects/jira-golden-journey-v1/agent-chat-demo.test.js",
-		"components/projects/jira-golden-journey-v1/kanban-stage.test.js",
-		"components/projects/jira-golden-journey-v2/jira-golden-journey-v2.test.js",
-		"app/data/jira-golden-journey-v1-contract.test.js",
+		"components/projects/jira-golden-journey-v0/kanban-stage.source.test.js",
+		"components/projects/jira-golden-journey-v0/queue-stage.source.test.js",
+		"components/projects/jira-golden-journey-v1/agent-chat-demo.source.test.js",
+		"components/projects/jira-golden-journey-v1/kanban-stage.source.test.js",
+		"components/projects/jira-golden-journey-v2/jira-golden-journey-v2.source.test.js",
+		"app/data/jira-golden-journey-v1-contract.source.test.js",
 	]) {
 		assert.equal(sourceContractFiles.has(filePath), true, `${filePath} should remain source-contract`);
 	}

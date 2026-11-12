@@ -26,7 +26,7 @@
 		"components/arts/personal-graph/personal-graph-surface.tsx": 1219,
 		"components/blocks/agent-browser/components/agent-browser.tsx": 1908,
 		"components/blocks/jira-issue/index.tsx": 1007,
-		"components/blocks/jira-work-item/jira-work-item.test.js": 1198,
+		"components/blocks/jira-work-item/jira-work-item.source.test.js": 1198,
 		"components/blocks/jira-work-item/project-butter/project-butter.behavior.test.js": 1002,
 		"components/blocks/jira-work-item/data/session-state.ts": 1154,
 		"components/blocks/app-directory/components/app-directory.tsx": 1799,

@@ -9,8 +9,8 @@ const { loadCjsModuleFromText } = require(join(process.cwd(), "scripts/lib/esbui
  *
  * Every suite executes the real code rather than grepping it, which needs the
  * same esbuild bundling and the same stub React dispatcher. That machinery
- * lives here so `pulse.test.js`, `pulse-scrubber.test.js` and
- * `pulse-outline.test.js` can each stay well under the repo's file-size budget
+ * lives here so `pulse.source.test.js`, `pulse-scrubber.source.test.js` and
+ * `pulse-outline.source.test.js` can each stay well under the repo's file-size budget
  * without duplicating it.
  */
 

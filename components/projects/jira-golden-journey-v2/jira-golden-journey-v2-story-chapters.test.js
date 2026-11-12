@@ -4,7 +4,7 @@ const { test } = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
 
-// Story-chapter progression and Activity chronology split from jira-golden-journey-v2.test.js
+// Story-chapter progression and Activity chronology split from jira-golden-journey-v2.source.test.js
 // so the parent file stays inside the default file-size budget.
 
 let storyModulePromise;
