@@ -734,7 +734,7 @@
   },
   "components/blocks/jira-activity/jira-activity-threads.test.js": {
     "no-restricted-syntax": {
-      "count": 169
+      "count": 166
     }
   },
   "components/blocks/jira-activity/jira-activity.test.js": {
@@ -2447,7 +2447,7 @@
   },
   "components/projects/rovo/components/rovo-app-brand.test.js": {
     "no-restricted-syntax": {
-      "count": 43
+      "count": 40
     }
   },
   "components/projects/rovo/components/rovo-app-composer.test.js": {
@@ -2909,7 +2909,7 @@
   },
   "components/ui-custom/entity-card/entity-card.test.js": {
     "no-restricted-syntax": {
-      "count": 225
+      "count": 224
     }
   },
   "components/ui-custom/failing-checks-composer-chip.test.js": {
@@ -3225,7 +3225,7 @@
   },
   "components/ui/avatar.test.js": {
     "no-restricted-syntax": {
-      "count": 210
+      "count": 208
     }
   },
   "components/ui/badge.test.js": {
