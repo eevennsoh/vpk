@@ -202,10 +202,6 @@ test("single-line favorite buttons have equal trailing and vertical gaps", async
 	const inline = page.getByRole("region", { name: "Project Butter agent selector" });
 	const inlineButton = inline.getByRole("button", { name: "Claude", exact: true });
 	await checkGaps(inlineButton.locator("../.."), inline.getByRole("button", { name: "Add Claude to favorites" }));
-	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	const duplicates = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	const duplicateRow = duplicates.getByRole("option", { name: /^Jira Coding Agent/ });
-	await checkGaps(duplicateRow, duplicates.getByRole("button", { name: "Add Jira Coding Agent to favorites" }));
 
 	await page.goto(appUrl("/components/blocks/agent-selector#project-butter-submenu"));
 	const submenu = page.getByRole("region", { name: "Submenu agent selector" });
@@ -272,11 +268,6 @@ test("agent rows and footer actions use the same hover color across selector var
 	const local = page.getByRole("region", { name: "Jira Local Agent" });
 	const localRow = local.getByRole("button", { name: "Claude", exact: true });
 	await compare(localRow, localRow.locator("../.."), [local.getByRole("button", { name: "Copy prompt" })]);
-	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	const duplicates = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	const duplicateRow = duplicates.getByRole("option", { name: /^Jira Coding Agent/ });
-	await compare(duplicateRow, duplicateRow, [duplicates.getByRole("button", { name: "Browse agents" })]);
-	await expect(duplicates.getByRole("button", { name: "Create agent" })).toHaveCount(0);
 
 	await page.goto(appUrl("/components/blocks/jira-local-agent"));
 	await page.getByRole("button", { name: "Inline expand" }).click();
@@ -315,8 +306,7 @@ test("selector presentations fade the list only after scrolling", async ({ page 
 	};
 	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	await checkFade(page.getByRole("region", { name: "Project Butter agent selector" }).getByRole("region", { name: "Software agents" }).locator(".."));
-	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await checkFade(page.getByRole("region", { name: "Duplicative sessions agent selector" }).locator("[cmdk-list]"));
+
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
 	await checkFade(page.getByRole("region", { name: "Submenu agent selector" }).locator("[cmdk-list]"));
 	await checkFade(page.getByRole("region", { name: "Inline expansion agent selector" }).getByRole("region", { name: "Software agents" }).locator(".."));
@@ -346,17 +336,7 @@ test("selector subsection headings match the editor palette", async ({ page }) =
 	}
 	await picker.getByRole("button", { name: "Add Claude to favorites" }).click();
 	expect(await picker.getByText("Favorites", { exact: true }).evaluate(measure)).toEqual(reference);
-	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	const duplicatePicker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	expect(await searchGap(duplicatePicker)).toBe(referenceGap);
-	for (const name of ["Software agents", "Other agents"]) {
-		expect(await duplicatePicker.getByText(name, { exact: true }).evaluate(measure)).toEqual(reference);
-	}
-	const search = duplicatePicker.getByRole("combobox", { name: "Search agents" });
-	await search.fill("Claude");
-	await expect(duplicatePicker.getByRole("option", { name: /^Claude/ })).toBeVisible();
-	await duplicatePicker.getByRole("button", { name: "Clear search" }).click();
-	await expect(search).toHaveValue("");
+
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
 	for (const label of ["Submenu agent selector", "Inline expansion agent selector"]) {
 		const example = page.getByRole("region", { name: label });
@@ -381,9 +361,7 @@ test("selector footer icons are 16 pixels in each presentation", async ({ page }
 		}
 	};
 	await checkIcons(picker, ["Browse agents"]);
-	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	const duplicatePicker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	await checkIcons(duplicatePicker, ["Browse agents"]);
+
 	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
 	for (const label of ["Submenu agent selector", "Inline expansion agent selector"]) {
 		await checkIcons(page.getByRole("region", { name: label }), ["Browse agents", "Create agent"]);
@@ -428,145 +406,6 @@ test("Butter submenu lets each agent be favorited without activating its row", a
 		await expect(picker.getByRole("button", { name: `Add ${name} to favorites` })).toHaveCSS("opacity", "1");
 	}
 });
-
-test("existing session choices use the compact agent session spacing", async ({ page }) => {
-	await page.setViewportSize({ width: 1600, height: 1000 });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await page.getByRole("region", { name: "Duplicative sessions agent selector" }).getByRole("option", { name: /^Claude/ }).click();
-	const card = page.getByTestId("agent-session-row-demo-onboarding-guide").locator("article");
-	await expect(card).toHaveCSS("padding", "8px 12px");
-});
-
-for (const colorScheme of ["light", "dark"] as const) {
-	test(`existing session hover matches menu actions in ${colorScheme} mode`, async ({ page }) => {
-		await page.setViewportSize({ width: 1600, height: 1000 });
-		await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
-		await page.addInitScript((theme) => localStorage.setItem("ui-theme", theme), colorScheme);
-		await page.goto(appUrl("/butter-v1"));
-		await expect(page.locator("html")).toHaveAttribute("data-color-mode", colorScheme);
-		await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-		await page.getByRole("region", { name: "Duplicative sessions agent selector" }).getByRole("option", { name: /^Claude/ }).click();
-		const action = page.getByRole("button", { name: "Start a new session" });
-		await action.hover();
-		await expect.poll(() => action.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
-		const actionColor = await action.evaluate((element) => getComputedStyle(element).backgroundColor);
-		for (const id of ["demo-onboarding-guide", "demo-onboarding-tests", "demo-onboarding-flow"]) {
-			const row = page.getByTestId(`agent-session-row-${id}`).locator("article");
-			await row.hover();
-			await expect(row).toHaveCSS("background-color", actionColor);
-		}
-	});
-}
-
-test("existing sessions reveal working more actions on hover and keyboard focus", async ({ page }) => {
-	await page.setViewportSize({ width: 1600, height: 1000 });
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await page.getByRole("region", { name: "Duplicative sessions agent selector" }).getByRole("option", { name: /^Claude/ }).click();
-	const session = page.getByTestId("agent-session-row-demo-onboarding-guide");
-	await session.locator("article").hover();
-	const more = session.getByRole("button", { name: "More actions for Review the onboarding quickstart" });
-	await expect(more).toBeVisible();
-	await more.click();
-	await expect(page.getByRole("menuitem", { name: "Rename" })).toBeVisible();
-	await page.getByRole("menuitem", { name: "Rename" }).click();
-	await expect(session).toContainText("Review the onboarding quickstart (renamed)");
-	await session.getByRole("button", { name: /^Review the onboarding quickstart \(renamed\)/ }).focus();
-	await page.mouse.move(0, 0);
-	await page.keyboard.press("Tab");
-	await expect(session.getByRole("button", { name: "More actions for Review the onboarding quickstart (renamed)" })).toBeFocused();
-	await page.keyboard.press("Enter");
-	await page.getByRole("menuitem", { name: "Delete" }).click();
-	await expect(session).toHaveCount(0);
-});
-
-test("Duplicative sessions starts directly or chooses from existing sessions", async ({ page }) => {
-	await page.setViewportSize({ width: 1600, height: 1000 });
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(appUrl("/butter-v1"));
-	const gallery = page.getByRole("group", { name: "Gallery items" });
-	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	const claude = picker.getByRole("option", { name: /^Claude/ });
-	const cursor = picker.getByRole("option", { name: /^Cursor/ });
-	await expect(claude).toHaveAttribute("aria-haspopup", "dialog");
-	await expect(claude.locator(":scope > div > [data-slot=icon]")).toHaveCount(0);
-	await expect(cursor).not.toHaveAttribute("aria-haspopup", "menu");
-	await claude.hover();
-	await expect(page.getByRole("dialog", { name: "Claude sessions" })).toBeVisible();
-	await claude.click();
-	let menu = page.getByRole("dialog", { name: "Claude sessions" });
-	await expect(menu.getByRole("button", { name: "Start a new session" })).toBeVisible();
-	await expect(menu.locator('article[data-variant="uncaptured-work"]')).toHaveCount(3);
-	await expect(menu.locator('article[data-variant="uncaptured-work"]')).toContainText(["Review the onboarding quickstart", "Check the onboarding tests", "Inspect the onboarding flow"]);
-	await expect(menu.getByTestId("agent-session-row-demo-onboarding-guide")).toContainText("Claude");
-	await expect(menu.getByTestId("agent-session-row-demo-onboarding-guide")).toContainText("2m");
-	await expect(menu.locator("hr")).toHaveCount(1);
-	await expect(menu.getByText(/Open in|Continue to existing session|Run on cloud/)).toHaveCount(0);
-	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
-	await expect(menu).toBeHidden();
-	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	menu = page.getByRole("dialog", { name: "Claude sessions" });
-	await menu.getByRole("button", { name: /^Check the onboarding tests/ }).click();
-	await expect(picker.getByRole("status")).toHaveText("Selected session: Check the onboarding tests");
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await page.getByRole("dialog", { name: "Claude sessions" }).getByRole("button", { name: "Start a new session" }).click();
-	await expect(picker.getByRole("status")).toHaveText("Started a new Claude session");
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	await expect(page.getByRole("dialog", { name: "Claude sessions" }).getByRole("button", { name: /^Review onboarding changes/ })).toBeVisible();
-	await page.keyboard.press("Escape");
-	await picker.getByRole("option", { name: /^Cursor/ }).click();
-	await expect(picker.getByRole("status")).toHaveText("Started a new Cursor session");
-	await picker.getByRole("option", { name: /^Cursor/ }).click();
-	menu = page.getByRole("dialog", { name: "Cursor sessions" });
-	await expect(menu.getByRole("button", { name: /^Review onboarding changes/ })).toBeVisible();
-	await expect(menu.getByRole("button", { name: "Start a new session" })).toBeFocused();
-	await page.keyboard.press("ArrowDown");
-	await expect(menu.getByRole("button", { name: /^Review onboarding changes/ })).toBeFocused();
-	await page.keyboard.press("Escape");
-	await expect(picker.getByRole("combobox", { name: "Search agents" })).toBeFocused();
-	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
-	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await expect(picker.getByRole("status")).toHaveText("Started a new Cursor session");
-	await page.getByRole("button", { name: "Reset", exact: true }).click();
-	await expect(picker.getByRole("status")).toHaveText("");
-	await expect(picker.getByRole("option", { name: /^Cursor/ })).not.toHaveAttribute("aria-haspopup", "menu");
-	await picker.getByRole("combobox", { name: "Search agents" }).fill("Rovo CLI");
-	await picker.getByRole("option", { name: /^Rovo CLI/ }).click();
-	await expect(picker.getByRole("status")).toHaveText("Started a new Rovo CLI session");
-	await picker.getByRole("combobox", { name: "Search agents" }).fill("Rovo CLI");
-	await picker.getByRole("option", { name: /^Rovo CLI/ }).click();
-	const rovoMenu = page.getByRole("dialog", { name: "Rovo CLI sessions" });
-	await expect(rovoMenu.getByRole("button")).toContainText(["Start a new session", "Review onboarding changes"]);
-	await expect(rovoMenu.getByText(/Open in/)).toHaveCount(0);
-});
-
-
-test("Duplicative sessions submenu supports keyboard selection", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	const search = picker.getByRole("combobox", { name: "Search agents" });
-	await search.fill("Claude");
-	await expect(picker.getByRole("option", { name: /^Claude/ })).toHaveAttribute("aria-selected", "true");
-	await search.press("ArrowRight");
-	const menu = page.getByRole("dialog", { name: "Claude sessions" });
-	await expect(menu.getByRole("button", { name: "Start a new session" })).toBeFocused();
-	await page.keyboard.press("End");
-	await expect(menu.getByRole("button", { name: "Validate the onboarding checklist" })).toBeFocused();
-	await page.keyboard.press("Home");
-	await expect(menu.getByRole("button", { name: "Start a new session" })).toBeFocused();
-	await page.keyboard.press("ArrowDown");
-	await page.keyboard.press("ArrowDown");
-	await expect(menu.getByRole("button", { name: "Check the onboarding tests" })).toBeFocused();
-	await page.keyboard.press("Enter");
-	await expect(picker.getByRole("status")).toHaveText("Selected session: Check the onboarding tests");
-});
-
 
 test("Jira kanban headings match the submenu and have no extra inter-group gap", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/agent-selector#jira-kanban"));
