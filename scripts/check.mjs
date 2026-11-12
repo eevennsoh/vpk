@@ -7,6 +7,7 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,25 +17,9 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 const MAIN_HEALTH_SCRIPT = ".agents/skills/vpk-git-ship/scripts/main-health.js";
 const DETAIL_LINES = 25;
 
-// The guard stage, in the order verify:fast used to chain them. Each runs the command of the
-// package.json script with the same name, so the scripts stay individually runnable.
-export const GUARD_SCRIPTS = [
-	"verify:root-artifacts",
-	"verify:url-credentials",
-	"verify:route-manifest",
-	"verify:api-surfaces",
-	"verify:repo-map",
-	"verify:vpk-feature-map",
-	"verify:file-size",
-	"verify:catalog",
-	"verify:lazy-load",
-	"verify:source-guardrails",
-	"verify:eslint-suppressions",
-	"verify:cursor-rules",
-	"verify:doc-scripts",
-	"validate:agents",
-	"validate:skills",
-];
+// The guard list lives in scripts/lib/guard-scripts.js so scripts/lib/package-gates.js can
+// tell which gates reach a guard through check.mjs.
+export const { GUARD_SCRIPTS } = createRequire(import.meta.url)("./lib/guard-scripts.js");
 
 const GENERATED_GUARDS = new Set(["verify:route-manifest", "verify:api-surfaces", "verify:repo-map", "verify:cursor-rules", "validate:skills"]);
 

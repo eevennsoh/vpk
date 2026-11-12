@@ -148,3 +148,15 @@ test("arguments", () => {
 	assert.deepEqual(parseArgs(["--", "--guards", "--json", "--base", "HEAD~1"]), { base: "HEAD~1", guardsOnly: true, json: true });
 	assert.throws(() => parseArgs(["--fast"]), /Unknown argument: --fast/u);
 });
+
+test("package gates follow verify:fast into check.mjs, so every guard counts as run by ci:pr", async () => {
+	const { createRequire } = await import("node:module");
+	const { gateRunsScript } = createRequire(import.meta.url)("./lib/package-gates.js");
+	for (const gate of ["verify:fast", "ci:pr", "validate:local", "check"]) {
+		for (const guard of GUARD_SCRIPTS) assert.equal(gateRunsScript(scripts, gate, guard), true, `${gate} → ${guard}`);
+	}
+	// Seeded: a gate that no longer reaches check.mjs runs none of the guards.
+	const unhooked = { ...scripts, "verify:fast": "node scripts/other.mjs --guards" };
+	assert.equal(gateRunsScript(unhooked, "ci:pr", "verify:catalog"), false);
+	assert.equal(gateRunsScript({ x: "node scripts/check.mjsx" }, "x", "verify:catalog"), false);
+});
