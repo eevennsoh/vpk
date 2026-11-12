@@ -48,6 +48,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-issue/project-butter-model.test.ts",
 		"components/blocks/jira-issue/project-butter-agents.behavior.test.js",
 		"components/blocks/jira-issue/project-butter.behavior.test.js",
+		"components/blocks/jira-issue/project-butter-local-agent-menu.behavior.test.js",
+		"components/projects/jira-golden-journey-v1/terminal-stage-jira-pane.behavior.test.js",
 		"components/blocks/jira-work-item/jira-work-item-experimental-variants.behavior.test.js",
 		"components/utils/gui-timeline.behavior.test.js",
 		"components/utils/gui-motion.behavior.test.js",

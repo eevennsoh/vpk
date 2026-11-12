@@ -14,24 +14,7 @@ import { Popover, PopoverContent } from "@/components/ui/popover";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { cn } from "@/lib/utils";
 import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
-
-const WORKSPACES_KEY = "butter-local-agent-workspaces";
-const EMPTY_WORKSPACES = '{"paths":[],"selected":null}';
-type Workspaces = { paths: string[]; selected: string | null };
-
-function readWorkspaces(raw: string): Workspaces {
-	try {
-		const value: unknown = JSON.parse(raw);
-		if (typeof value === "object" && value !== null && "paths" in value && Array.isArray(value.paths)) {
-			const paths = value.paths.filter((path): path is string => typeof path === "string");
-			const selected = "selected" in value && typeof value.selected === "string" && paths.includes(value.selected) ? value.selected : null;
-			return { paths, selected };
-		}
-	} catch {
-		return { paths: [], selected: null };
-	}
-	return { paths: [], selected: null };
-}
+import { EMPTY_WORKSPACES, readWorkspaces, useRovoCliCommandCopy, WORKSPACES_KEY, type Workspaces } from "@/components/blocks/jira-issue/rovo-cli-command";
 
 export function ProjectButterLocalAgentMenu({
 	inline = false, directoryOnly = false, onPointerEnter, onPointerLeave, onSelectingFolderChange, onUse, workspacePositionerClassName,
@@ -48,13 +31,11 @@ export function ProjectButterLocalAgentMenu({
 	const { paths, selected } = readWorkspaces(stored);
 	const [draft, setDraft] = useState<string | null>(null);
 	const [open, setOpen] = useState(false);
-	const [copied, setCopied] = useState(false);
+	const { copied, copy: copyCommand } = useRovoCliCommandCopy();
 	const [selecting, setSelecting] = useState(false);
 	const [folderError, setFolderError] = useState<string | null>(null);
 	const currentWorkspaces = useRef({ paths, selected });
 	useEffect(() => { currentWorkspaces.current = { paths, selected }; }, [paths, selected]);
-	const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	useEffect(() => () => { if (copiedTimer.current !== null) clearTimeout(copiedTimer.current); }, []);
 	const anchor = useRef<HTMLDivElement | null>(null);
 	const input = useRef<HTMLInputElement | null>(null);
 	const workspacePopup = useRef<HTMLDivElement | null>(null);
@@ -136,9 +117,7 @@ export function ProjectButterLocalAgentMenu({
 			<div className="group/copy-command relative">
 				<Button aria-label={copied ? "Command copied" : "Open in Rovo CLI"} className={cn("h-8 w-full justify-start gap-3 px-2 text-sm font-normal group-hover/copy-command:bg-bg-neutral-subtle-hovered", inline && "border-0")} variant="ghost" onClick={() => {
 					onUse?.();
-					setCopied(true);
-					if (copiedTimer.current !== null) clearTimeout(copiedTimer.current);
-					copiedTimer.current = setTimeout(() => setCopied(false), 1800);
+					void copyCommand();
 				}}>
 					<CopyFeedbackIcon className={cn("[&_svg]:size-4!", inline && "size-6")} copied={copied} idleIcon={<ScreenIcon label="" size="medium" />} />
 					<span aria-hidden className="grid min-w-0 text-left">
