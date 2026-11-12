@@ -4,7 +4,6 @@ import { appUrl } from "@/tests/helpers/origin";
 test("work item session cards show Venn as their owner", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await page.getByRole("group", { name: "Duplicative sessions view" }).getByRole("button", { name: "Work item" }).click();
 	const workItem = page.getByRole("region", { name: "Work item full screen view" });
 	for (const [id, agent] of [["butter-claude", "Claude"], ["butter-cursor-forecast", "Cursor"], ["butter-claude-onboarding-feedback", "Claude"]]) {
 		const thread = workItem.locator(`[data-jira-activity-entry-id="invocation-${id}"]`);
@@ -18,7 +17,6 @@ test("selecting a session opens its inline reply with the draft", async ({ page 
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await page.getByRole("group", { name: "Duplicative sessions view" }).getByRole("button", { name: "Work item" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	await page.keyboard.press("m");
 	const editor = page.getByRole("textbox", { name: "Comment editor" });
@@ -43,7 +41,6 @@ test("Backspace returns to session choices at the agent mention", async ({ page 
 	await page.setViewportSize({ width: 1170, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await page.getByRole("group", { name: "Duplicative sessions view" }).getByRole("button", { name: "Work item" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	await page.keyboard.press("m");
 	const editor = page.getByRole("textbox", { name: "Comment editor" });
@@ -68,18 +65,15 @@ test("Backspace returns to session choices at the agent mention", async ({ page 
 	await expect(editor).toContainText("Claude");
 });
 
-test("duplicative sessions switches between the agent selector and work item", async ({ page }) => {
+test("duplicative sessions opens the work item directly", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1170, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	const views = page.getByRole("group", { name: "Duplicative sessions view" });
-	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	await expect(picker).toBeVisible();
-	await views.getByRole("button", { name: "Work item" }).click();
+	await expect(page.getByRole("group", { name: "Duplicative sessions view" })).toHaveCount(0);
+	await expect(page.getByRole("region", { name: "Duplicative sessions agent selector" })).toHaveCount(0);
 	const workItem = page.getByRole("region", { name: "Work item full screen view" });
 	await expect(workItem).toBeVisible();
-	await expect(picker).toBeHidden();
 	const commentBar = workItem.getByRole("group", { name: "Comment editor" });
 	await expect(commentBar).toBeVisible();
 	const barBounds = await commentBar.boundingBox();
@@ -130,9 +124,6 @@ test("duplicative sessions switches between the agent selector and work item", a
 	await expect(back).toHaveCSS("border-bottom-left-radius", "0px");
 	await expect(back).toHaveCSS("border-bottom-right-radius", "0px");
 	await page.getByRole("button", { name: "Open gallery" }).click();
-	await views.getByRole("button", { name: "Agent selector" }).click();
-	await expect(picker).toBeVisible();
-	await expect(workItem).toBeHidden();
 	await page.getByRole("button", { name: "Select Work item" }).click();
 	await expect(page.getByRole("region", { name: "Work item full screen view" }).getByRole("button", { name: "Collapse Related work" })).toHaveAttribute("aria-expanded", "true");
 });
@@ -142,7 +133,6 @@ test("hovering sessions animates the activity scroll in the duplicative sessions
 	await page.setViewportSize({ width: 1170, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await page.getByRole("group", { name: "Duplicative sessions view" }).getByRole("button", { name: "Work item" }).click();
 	await page.keyboard.press("m");
 	const editor = page.getByRole("textbox", { name: "Comment editor" });
 	await editor.pressSequentially("@Claude");
@@ -174,43 +164,4 @@ test("hovering sessions animates the activity scroll in the duplicative sessions
 	expect(new Set(returnPositions).size).toBeGreaterThan(3);
 	const largestStep = Math.max(...returnPositions.slice(1).map((value, index) => Math.abs(value - returnPositions[index])));
 	expect(largestStep).toBeLessThan(Math.abs(returnPositions.at(-1)! - returnPositions[0]) * 0.6);
-});
-
-test("session chooser keeps compact padding and fits its session cards", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.setViewportSize({ width: 1600, height: 1000 });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	const picker = page.getByRole("region", { name: "Duplicative sessions agent selector" });
-	await picker.getByRole("option", { name: /^Claude/ }).click();
-	const chooser = page.getByRole("dialog", { name: "Claude sessions" });
-	await expect(chooser).toHaveCSS("width", "280px");
-	await expect(chooser).toHaveCSS("padding", "4px");
-	const sessions = chooser.locator('article[data-variant="uncaptured-work"]');
-	await expect(sessions).toHaveCount(5);
-	await expect(sessions.first()).toContainText("Review the onboarding quickstart");
-	await expect(sessions.first()).toContainText("Claude");
-	const popup = await chooser.boundingBox();
-	const first = await sessions.first().boundingBox();
-	if (!popup || !first) throw new Error("Session chooser geometry is unavailable");
-	expect(first.x - popup.x).toBe(4);
-	expect(popup.x + popup.width - first.x - first.width).toBe(4);
-	await chooser.getByRole("button", { name: "Review the onboarding quickstart" }).click();
-	await expect(picker.getByRole("status")).toHaveText("Selected session: Review the onboarding quickstart");
-});
-
-test("session chooser cards stay within a narrow viewport", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "reduce" });
-	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
-	await page.getByRole("region", { name: "Duplicative sessions agent selector" }).getByRole("option", { name: /^Claude/ }).click();
-	const chooser = page.getByRole("dialog", { name: "Claude sessions" });
-	await expect(chooser).toBeVisible();
-	const bounds = await chooser.boundingBox();
-	if (!bounds) throw new Error("Session chooser is not visible");
-	expect(bounds.x).toBeGreaterThanOrEqual(0);
-	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
-	const overflow = await chooser.locator('article[data-variant="uncaptured-work"]').evaluateAll((cards) => cards.map((card) => card.scrollWidth - card.clientWidth));
-	expect(overflow.every((width) => width <= 1)).toBe(true);
 });

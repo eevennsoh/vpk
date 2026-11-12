@@ -81,7 +81,9 @@ export function AgentLanyardCard({
 							style={{ boxShadow: "inset 0 0 0 0.5px currentColor, inset 0 1px 1px 0 rgba(30, 31, 33, 0.16), inset 0 0 1px 0 rgba(30, 31, 33, 0.12)" }}
 						/>
 					</span>
-					{avatar}
+					<div className="absolute inset-x-0 top-4 bottom-0 grid place-items-center">
+						{avatar}
+					</div>
 				</div>
 				<div className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-4">
 					<div>

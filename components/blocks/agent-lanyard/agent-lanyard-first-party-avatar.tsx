@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { AgentLanyardFirstPartyBadge } from "./first-party-badges";
 
 export function AgentLanyardAvatarFrame({ children }: Readonly<{ children: ReactNode }>) {
-	return <span className="absolute top-6 left-1/2 z-10 flex h-[60px] w-[54px] -translate-x-1/2 items-center justify-center [&_[data-slot=avatar-hexagon-artwork]]:[clip-path:none] [&_[data-slot=avatar-hexagon-border]]:hidden" data-slot="agent-lanyard-avatar" style={{ maskImage: "url('/avatar-agent-new/blue/backlog-buddy.svg')", maskSize: "100% 100%", maskRepeat: "no-repeat" }}>{children}</span>;
+	return <span className="relative z-10 flex h-[60px] w-[54px] items-center justify-center [&_[data-slot=avatar-hexagon-artwork]]:[clip-path:none] [&_[data-slot=avatar-hexagon-border]]:hidden" data-slot="agent-lanyard-avatar" style={{ maskImage: "url('/avatar-agent-new/blue/backlog-buddy.svg')", maskSize: "100% 100%", maskRepeat: "no-repeat" }}>{children}</span>;
 }
 
 export function AgentLanyardFirstPartyAvatar({ badge, backgroundColor }: Readonly<{ badge: AgentLanyardFirstPartyBadge; backgroundColor?: string }>) {
