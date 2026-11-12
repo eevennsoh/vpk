@@ -826,8 +826,12 @@ process.stdout.write(JSON.stringify(result));
 			assert.equal(status.readyToMerge, false);
 			assert.deepEqual(status.reruns, []);
 			if (expected === 3) {
+				// The fallback is an instruction, never a question to the user.
 				assert.equal(status.checks.state, "billing-blocked");
-				assert.match(result.stderr, /pnpm run ci:pr/u);
+				assert.match(result.stderr, /Skip GitHub CI: run `pnpm run ci:pr` locally on PR head abc123 and merge only if it exits 0\./u);
+				assert.doesNotMatch(result.stderr, /\?/u);
+			} else {
+				assert.doesNotMatch(result.stderr, /pnpm run ci:pr/u);
 			}
 			const calls = readFileSync(path.join(root, "calls.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line));
 			assert.ok(calls.some((args) => args[1] === "repos/owner/repo/check-runs/11/annotations"));
