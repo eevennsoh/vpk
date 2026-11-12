@@ -22,7 +22,9 @@ export const UNIT_SHARD_COUNT = 4;
 
 const TEST_FILE_CLASSIFICATION_BY_PATH = buildTestFileClassificationMap(TEST_FILE_CLASSIFICATIONS);
 const CI_INCLUDED_TEST_CLASSIFICATION_SET = new Set(CI_INCLUDED_TEST_CLASSIFICATIONS);
-const EXCLUDED_TEST_FILES = new Set(TEST_FILE_CLASSIFICATIONS["legacy-drift"] ?? []);
+// Explicitly not run: the frozen legacy-drift baseline and SKIPPED_TEST_FILES (each with a reason).
+const LISTED_NOT_RUN_CLASSIFICATIONS = new Set(["legacy-drift", "skipped"]);
+const EXCLUDED_TEST_FILES = new Set([...LISTED_NOT_RUN_CLASSIFICATIONS].flatMap((classification) => TEST_FILE_CLASSIFICATIONS[classification] ?? []));
 const INCLUDED_TEST_FILES = new Set([...TEST_FILE_CLASSIFICATION_BY_PATH]
 	.filter(([, classification]) => CI_INCLUDED_TEST_CLASSIFICATION_SET.has(classification))
 	.map(([filePath]) => filePath));
@@ -283,26 +285,41 @@ export function assertUniqueTestFileClassifications(classifications = TEST_FILE_
 	].join("\n"));
 }
 
-export function findUnclassifiedComponentTestFiles(testEntries, {
-	classificationByFile = TEST_FILE_CLASSIFICATION_BY_PATH,
-} = {}) {
-	return testEntries
-		.filter(isComponentNodeTestEntry)
-		.filter((entry) => getTestFileClassification(entry.filePath, { classificationByFile }) === "unclassified")
-		.map((entry) => entry.filePath)
-		.sort((left, right) => left.localeCompare(right));
+function hasNodeTestImport(entry) {
+	return (entry.source ?? "").includes("node:test");
 }
 
-export function assertComponentTestFilesClassified(testEntries, options) {
-	const unclassifiedFiles = findUnclassifiedComponentTestFiles(testEntries, options);
-	if (unclassifiedFiles.length === 0) {
+/**
+ * Test files the unfiltered gate would silently skip: neither run (a CI-included
+ * classification or an included prefix, with a node:test import) nor listed as not run
+ * (legacy-drift or SKIPPED_TEST_FILES). Covers every root, not only components/.
+ */
+export function findUnselectedTestFiles(testEntries, {
+	classificationByFile = TEST_FILE_CLASSIFICATION_BY_PATH,
+	includedTestPrefixes = INCLUDED_TEST_PREFIXES,
+} = {}) {
+	return testEntries
+		.flatMap((entry) => {
+			const inclusion = getTestFileInclusion(entry.filePath, { classificationByFile, includedTestPrefixes });
+			if (LISTED_NOT_RUN_CLASSIFICATIONS.has(inclusion.classification)) return [];
+			// components/** suites always need an explicit classification, even under an included prefix.
+			const needsClassification = entry.filePath.startsWith(COMPONENT_TEST_PREFIX) && inclusion.classification === "unclassified";
+			if (!inclusion.included || needsClassification) return [{ filePath: entry.filePath, reason: "unclassified" }];
+			return hasNodeTestImport(entry) ? [] : [{ filePath: entry.filePath, reason: "no node:test import" }];
+		})
+		.sort((left, right) => left.filePath.localeCompare(right.filePath));
+}
+
+export function assertEveryTestFileSelected(testEntries, options) {
+	const unselected = findUnselectedTestFiles(testEntries, options);
+	if (unselected.length === 0) {
 		return;
 	}
 
 	throw new Error([
-		`js-unit-tests: ${unclassifiedFiles.length} component node:test suite(s) are not classified, so the CI unit gate cannot run them:`,
-		...unclassifiedFiles.map((filePath) => `- ${filePath}`),
-		`Add each path to ${MANIFEST_PATH} under \`stable\` (behavioral tests) or \`source-contract\` (tests that assert on source text).`,
+		`js-unit-tests: ${unselected.length} test file(s) are neither run nor listed as skipped, so the CI unit gate silently drops them:`,
+		...unselected.map(({ filePath, reason }) => `- ${filePath} (${reason})`),
+		`Classify each path in ${MANIFEST_PATH} under \`stable\` (behavioral tests) or \`source-contract\` (tests that assert on source text), import node:test where it is missing, or add it to SKIPPED_TEST_FILES with the reason it does not run.`,
 		"Do not add them to `legacy-drift`: it is a frozen baseline of skipped suites that must only shrink.",
 	].join("\n"));
 }
@@ -494,7 +511,7 @@ function exitOnManifestError(check) {
 
 function warnUnclassifiedSelectedTests(testEntries, testFiles) {
 	const selectedFiles = new Set(testFiles);
-	const unclassifiedFiles = findUnclassifiedComponentTestFiles(
+	const unclassifiedFiles = findUnselectedTestFiles(
 		testEntries.filter((entry) => selectedFiles.has(entry.filePath)),
 	);
 	if (unclassifiedFiles.length === 0) {
@@ -502,8 +519,8 @@ function warnUnclassifiedSelectedTests(testEntries, testFiles) {
 	}
 
 	console.warn([
-		`js-unit-tests: warning: selected component suites are unclassified; the unfiltered CI run fails until they are classified in ${MANIFEST_PATH}:`,
-		...unclassifiedFiles.map((filePath) => `- ${filePath}`),
+		`js-unit-tests: warning: selected suites are unclassified; the unfiltered CI run fails until they are classified in ${MANIFEST_PATH}:`,
+		...unclassifiedFiles.map(({ filePath }) => `- ${filePath}`),
 	].join("\n"));
 }
 
@@ -517,7 +534,7 @@ function main() {
 	const testEntries = readTestEntries(listCandidateTestFiles());
 	const hasSelection = selection.files.length > 0 || selection.prefixes.length > 0;
 	if (!hasSelection) {
-		exitOnManifestError(() => assertComponentTestFilesClassified(testEntries));
+		exitOnManifestError(() => assertEveryTestFileSelected(testEntries));
 	}
 	const testFiles = selectRunnableTestFiles(testEntries, selectionOptions);
 	if (hasSelection) {

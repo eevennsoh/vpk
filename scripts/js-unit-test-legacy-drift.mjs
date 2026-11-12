@@ -1,5 +1,4 @@
 export const LEGACY_DRIFT_TEST_FILES = [
-	"backend/lib/deferred-clarification-replay.test.js",
 	"components/arts/awake/city-popover.test.js",
 	"components/arts/awake/index.test.js",
 	"components/arts/personal-graph/personal-graph-glass-panel.test.js",

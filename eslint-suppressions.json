@@ -578,14 +578,6 @@
       "count": 1
     }
   },
-  "components/blocks/approval-card/page.tsx": {
-    "jsx-a11y/no-noninteractive-element-interactions": {
-      "count": 1
-    },
-    "jsx-a11y/no-noninteractive-element-to-interactive-role": {
-      "count": 1
-    }
-  },
   "components/blocks/app-directory/app-directory.test.js": {
     "no-restricted-syntax": {
       "count": 6
@@ -596,6 +588,14 @@
       "count": 9
     },
     "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "components/blocks/approval-card/page.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "jsx-a11y/no-noninteractive-element-to-interactive-role": {
       "count": 1
     }
   },
@@ -1624,11 +1624,6 @@
       "count": 22
     }
   },
-  "components/blocks/skill-selector/skill-selector.test.js": {
-    "no-restricted-syntax": {
-      "count": 22
-    }
-  },
   "components/blocks/skill-directory/components/skill-directory-sidebar.tsx": {
     "react-hooks/refs": {
       "count": 3
@@ -1642,6 +1637,11 @@
   "components/blocks/skill-directory/skill-directory.test.js": {
     "no-restricted-syntax": {
       "count": 3
+    }
+  },
+  "components/blocks/skill-selector/skill-selector.test.js": {
+    "no-restricted-syntax": {
+      "count": 22
     }
   },
   "components/blocks/smart-link/smart-link.test.js": {
@@ -3871,7 +3871,7 @@
   },
   "hooks/use-agent-url-sync.test.js": {
     "no-restricted-syntax": {
-      "count": 14
+      "count": 13
     }
   },
   "hooks/use-mobile.ts": {
