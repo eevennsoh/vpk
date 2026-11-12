@@ -140,7 +140,7 @@ test("Open in remembers the last used app", async () => {
 	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
 	await view.click(view.getByRole("button", { name: "VS Code", exact: true }));
 	assert.notEqual(view.queryByRole("button", { name: "Open in VS Code" }), null);
-	assert.equal(view.getByRole("button", { name: "Open in VS Code" }).querySelector("svg")?.getAttribute("viewBox"), "4 4 16 16");
+	assert.notEqual(view.getByRole("button", { name: "Open in VS Code" }).querySelector('[data-slot="logo-third-party-local"]'), null);
 	await view.rerender(props);
 	assert.notEqual(view.queryByRole("button", { name: "Open in VS Code" }), null);
 	await view.click(view.getByRole("button", { name: "Open in", exact: true }));

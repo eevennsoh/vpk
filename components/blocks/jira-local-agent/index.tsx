@@ -19,10 +19,7 @@ type JiraLocalAgentProps = JiraLocalAgentMenuProps & Readonly<{ trigger?: ReactE
 
 function LocalAppSplitIcon({ agent }: Readonly<{ agent: (typeof LOCAL_APPS)[number] }>) {
 	if (agent.id === "rovo-cli") return <RovoColorIcon size="xxsmall" />;
-	if (agent.id === "vscode" || agent.id === "test-agent") {
-		const isVsCode = agent.id === "vscode";
-		return <svg width="16" height="16" viewBox={isVsCode ? "4 4 16 16" : "4 3 16 18.3"}><image href={isVsCode ? "/3p/vs-code/24.svg" : "/3p/cursor/24.svg"} width="24" height="24" /></svg>;
-	}
+	if (agent.id === "vscode" || agent.id === "test-agent") return <LogoThirdParty artwork="local" label="" name={agent.id === "vscode" ? "vs-code" : "cursor"} sizePx={16} />;
 	return agent.brandName ? <LogoThirdParty artwork={agent.id === "review-agent" ? "glyph" : "package"} borderless className={cn("[&_svg]:size-4!", agent.id === "claude-code" && "[&_svg]:scale-150")} label="" name={agent.brandName} size="xxsmall" sizePx={16} /> : null;
 }
 

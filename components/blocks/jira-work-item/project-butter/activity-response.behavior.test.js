@@ -273,7 +273,7 @@ test("starting an agent from the details field reveals its activity card with a 
 	};
 	try {
 		await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
-		await view.click(view.getByRole("button", { name: "Claude" }));
+		await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
 		const card = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:"));
 		assert.equal(Boolean(card?.querySelector("[data-variant='uncaptured-work']")), true);
 		assert.equal(scrolls.at(-1)?.behavior, "smooth");
@@ -325,7 +325,7 @@ test("starting an agent with reduced motion scrolls directly to its activity car
 	scrollport.scrollTo = (options) => scrolls.push(options);
 	try {
 		await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
-		await view.click(view.getByRole("button", { name: "Claude" }));
+		await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
 		const card = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:"));
 		assert.equal(Boolean(card), true);
 		assert.equal(scrolls.at(-1)?.behavior, "auto");
