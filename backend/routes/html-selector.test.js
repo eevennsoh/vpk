@@ -36,6 +36,42 @@ async function withServer(dependencies, run) {
 	}
 }
 
+function postWithHeaders(baseUrl, routePath, headers, { body = "{}", method = "POST" } = {}) {
+	const url = new URL(routePath, baseUrl);
+	return new Promise((resolve, reject) => {
+		const req = http.request({
+			headers: { "Content-Type": "application/json", ...headers },
+			host: url.hostname,
+			method,
+			path: url.pathname,
+			port: url.port,
+		}, (res) => {
+			let text = "";
+			res.setEncoding("utf8");
+			res.on("data", (chunk) => { text += chunk; });
+			res.on("end", () => resolve({ status: res.statusCode, text }));
+		});
+		req.on("error", reject);
+		req.end(body);
+	});
+}
+
+test("html-selector dispatch refuses non-local requests before launching an agent", async () => {
+	const execCalls = [];
+	const dependencies = {
+		env: { NODE_ENV: "development" },
+		execFileImpl: (...args) => { execCalls.push(args); args.at(-1)(null, "", ""); },
+	};
+	await withServer(dependencies, async (baseUrl) => {
+		const body = JSON.stringify({ agent: "rovo", prompt: "hello" });
+		const rebound = await postWithHeaders(baseUrl, "/api/html-selector/dispatch", { Host: "rebound.example" }, { body });
+		const crossSite = await postWithHeaders(baseUrl, "/api/html-selector/dispatch", { Origin: "https://evil.example" }, { body });
+		assert.equal(rebound.status, 403);
+		assert.equal(crossSite.status, 403);
+	});
+	assert.equal(execCalls.length, 0);
+});
+
 test("html-selector dispatch is not available in production", async () => {
 	await withServer({ env: { NODE_ENV: "production" } }, async (baseUrl) => {
 		const response = await fetch(`${baseUrl}/api/html-selector/dispatch`, {

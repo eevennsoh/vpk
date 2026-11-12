@@ -8,6 +8,7 @@ const path = require("node:path");
 const {
 	resolveDevTmuxSessionName,
 } = require("../../scripts/lib/dev-tmux-session");
+const { createRequireLocalDevRequest } = require("../middleware/local-only");
 
 const MAX_PROMPT_BYTES = 64 * 1024;
 const DEFAULT_REPO_ROOT = path.resolve(__dirname, "..", "..");
@@ -95,12 +96,9 @@ function createHtmlSelectorRouter({
 	resolveSessionNameImpl = resolveDevTmuxSessionName,
 } = {}) {
 	const router = express.Router();
+	const requireLocalDevRequest = createRequireLocalDevRequest({ env });
 
-	router.post("/dispatch", async (req, res) => {
-		if (isProduction(env)) {
-			return res.status(404).json({ error: "Not available" });
-		}
-
+	router.post("/dispatch", requireLocalDevRequest, async (req, res) => {
 		const validation = validateDispatchBody(req.body);
 		if (validation.error) {
 			return res.status(400).json({ error: validation.error });

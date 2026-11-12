@@ -417,13 +417,13 @@
 					{
 						"method": "POST",
 						"path": "/api/html-selector/dispatch",
-						"source": "backend/routes/html-selector.js:99",
+						"source": "backend/routes/html-selector.js:101",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/html-selector/tokens",
-						"source": "backend/routes/html-selector.js:168",
+						"source": "backend/routes/html-selector.js:166",
 						"runtimeAdmin": false
 					}
 				]
@@ -436,7 +436,7 @@
 					{
 						"method": "POST",
 						"path": "/api/local-folder",
-						"source": "backend/routes/local-folder.js:33",
+						"source": "backend/routes/local-folder.js:25",
 						"runtimeAdmin": false
 					}
 				]
@@ -499,109 +499,109 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/capture",
-						"source": "backend/routes/personal-graph.js:608",
+						"source": "backend/routes/personal-graph.js:609",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/explorer",
-						"source": "backend/routes/personal-graph.js:424",
+						"source": "backend/routes/personal-graph.js:425",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/ingest",
-						"source": "backend/routes/personal-graph.js:657",
+						"source": "backend/routes/personal-graph.js:658",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/log",
-						"source": "backend/routes/personal-graph.js:641",
+						"source": "backend/routes/personal-graph.js:642",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "backend/routes/personal-graph.js:547",
+						"source": "backend/routes/personal-graph.js:548",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "backend/routes/personal-graph.js:560",
+						"source": "backend/routes/personal-graph.js:561",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/raw",
-						"source": "backend/routes/personal-graph.js:574",
+						"source": "backend/routes/personal-graph.js:575",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/search",
-						"source": "backend/routes/personal-graph.js:624",
+						"source": "backend/routes/personal-graph.js:625",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/source",
-						"source": "backend/routes/personal-graph.js:449",
+						"source": "backend/routes/personal-graph.js:450",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/source",
-						"source": "backend/routes/personal-graph.js:463",
+						"source": "backend/routes/personal-graph.js:464",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/summarize",
-						"source": "backend/routes/personal-graph.js:653",
+						"source": "backend/routes/personal-graph.js:654",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/chat",
-						"source": "backend/routes/personal-graph.js:478",
+						"source": "backend/routes/personal-graph.js:479",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/expand",
-						"source": "backend/routes/personal-graph.js:514",
+						"source": "backend/routes/personal-graph.js:515",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/refresh",
-						"source": "backend/routes/personal-graph.js:492",
+						"source": "backend/routes/personal-graph.js:493",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/unprocessed-count",
-						"source": "backend/routes/personal-graph.js:596",
+						"source": "backend/routes/personal-graph.js:597",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/vault",
-						"source": "backend/routes/personal-graph.js:140",
+						"source": "backend/routes/personal-graph.js:141",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/reset",
-						"source": "backend/routes/personal-graph.js:166",
+						"source": "backend/routes/personal-graph.js:167",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/select",
-						"source": "backend/routes/personal-graph.js:152",
+						"source": "backend/routes/personal-graph.js:153",
 						"runtimeAdmin": false
 					}
 				]
@@ -852,37 +852,37 @@
 					{
 						"method": "GET",
 						"path": "/api/vpk-html",
-						"source": "backend/routes/vpk-html.js:486",
+						"source": "backend/routes/vpk-html.js:476",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/*assetPath",
-						"source": "backend/routes/vpk-html.js:487",
+						"source": "backend/routes/vpk-html.js:477",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/apply-tokens",
-						"source": "backend/routes/vpk-html.js:379",
+						"source": "backend/routes/vpk-html.js:381",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/notes",
-						"source": "backend/routes/vpk-html.js:404",
+						"source": "backend/routes/vpk-html.js:402",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/vpk-html/notes",
-						"source": "backend/routes/vpk-html.js:425",
+						"source": "backend/routes/vpk-html.js:423",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/publish-gist",
-						"source": "backend/routes/vpk-html.js:452",
+						"source": "backend/routes/vpk-html.js:446",
 						"runtimeAdmin": false
 					}
 				]
@@ -1561,12 +1561,12 @@
 					{
 						"method": "POST",
 						"path": "/api/html-selector/dispatch",
-						"source": "app/api/html-selector/dispatch/route.ts:5",
+						"source": "app/api/html-selector/dispatch/route.ts:6",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/html-selector/dispatch",
-								"source": "app/api/html-selector/dispatch/route.ts:11"
+								"source": "app/api/html-selector/dispatch/route.ts:17"
 							}
 						]
 					}
@@ -1649,12 +1649,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/capture",
-						"source": "app/api/personal-graph/capture/route.ts:5",
+						"source": "app/api/personal-graph/capture/route.ts:6",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/capture",
-								"source": "app/api/personal-graph/capture/route.ts:10"
+								"source": "app/api/personal-graph/capture/route.ts:16"
 							}
 						]
 					}
@@ -1687,12 +1687,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/ingest",
-						"source": "app/api/personal-graph/ingest/route.ts:5",
+						"source": "app/api/personal-graph/ingest/route.ts:6",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/ingest",
-								"source": "app/api/personal-graph/ingest/route.ts:12"
+								"source": "app/api/personal-graph/ingest/route.ts:18"
 							}
 						]
 					}
@@ -1725,24 +1725,24 @@
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "app/api/personal-graph/page/[...slug]/route.ts:9",
+						"source": "app/api/personal-graph/page/[...slug]/route.ts:10",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/personal-graph/page/*slug",
-								"source": "app/api/personal-graph/page/[...slug]/route.ts:12"
+								"source": "app/api/personal-graph/page/[...slug]/route.ts:13"
 							}
 						]
 					},
 					{
 						"method": "PUT",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "app/api/personal-graph/page/[...slug]/route.ts:18",
+						"source": "app/api/personal-graph/page/[...slug]/route.ts:19",
 						"targets": [
 							{
 								"method": "PUT",
 								"path": "/api/personal-graph/page/*slug",
-								"source": "app/api/personal-graph/page/[...slug]/route.ts:25"
+								"source": "app/api/personal-graph/page/[...slug]/route.ts:31"
 							}
 						]
 					}
@@ -1756,12 +1756,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/raw",
-						"source": "app/api/personal-graph/raw/route.ts:6",
+						"source": "app/api/personal-graph/raw/route.ts:7",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/raw",
-								"source": "app/api/personal-graph/raw/route.ts:10"
+								"source": "app/api/personal-graph/raw/route.ts:16"
 							}
 						]
 					}
@@ -1794,24 +1794,24 @@
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/source",
-						"source": "app/api/personal-graph/source/route.ts:4",
+						"source": "app/api/personal-graph/source/route.ts:5",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/personal-graph/source",
-								"source": "app/api/personal-graph/source/route.ts:5"
+								"source": "app/api/personal-graph/source/route.ts:6"
 							}
 						]
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/source",
-						"source": "app/api/personal-graph/source/route.ts:11",
+						"source": "app/api/personal-graph/source/route.ts:12",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/source",
-								"source": "app/api/personal-graph/source/route.ts:20"
+								"source": "app/api/personal-graph/source/route.ts:26"
 							}
 						]
 					}
@@ -1825,12 +1825,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/summarize",
-						"source": "app/api/personal-graph/summarize/route.ts:5",
+						"source": "app/api/personal-graph/summarize/route.ts:6",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/summarize",
-								"source": "app/api/personal-graph/summarize/route.ts:10"
+								"source": "app/api/personal-graph/summarize/route.ts:16"
 							}
 						]
 					}
@@ -1844,12 +1844,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/chat",
-						"source": "app/api/personal-graph/twg/chat/route.ts:4",
+						"source": "app/api/personal-graph/twg/chat/route.ts:5",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/twg/chat",
-								"source": "app/api/personal-graph/twg/chat/route.ts:8"
+								"source": "app/api/personal-graph/twg/chat/route.ts:14"
 							}
 						]
 					}
@@ -1863,12 +1863,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/expand",
-						"source": "app/api/personal-graph/twg/expand/route.ts:5",
+						"source": "app/api/personal-graph/twg/expand/route.ts:6",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/twg/expand",
-								"source": "app/api/personal-graph/twg/expand/route.ts:14"
+								"source": "app/api/personal-graph/twg/expand/route.ts:20"
 							}
 						]
 					}
@@ -1882,12 +1882,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/refresh",
-						"source": "app/api/personal-graph/twg/refresh/route.ts:3",
+						"source": "app/api/personal-graph/twg/refresh/route.ts:4",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/twg/refresh",
-								"source": "app/api/personal-graph/twg/refresh/route.ts:5"
+								"source": "app/api/personal-graph/twg/refresh/route.ts:11"
 							}
 						]
 					}
@@ -1920,12 +1920,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/reset",
-						"source": "app/api/personal-graph/vault/reset/route.ts:3",
+						"source": "app/api/personal-graph/vault/reset/route.ts:4",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/vault/reset",
-								"source": "app/api/personal-graph/vault/reset/route.ts:4"
+								"source": "app/api/personal-graph/vault/reset/route.ts:10"
 							}
 						]
 					}
@@ -1958,12 +1958,12 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/select",
-						"source": "app/api/personal-graph/vault/select/route.ts:3",
+						"source": "app/api/personal-graph/vault/select/route.ts:4",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/personal-graph/vault/select",
-								"source": "app/api/personal-graph/vault/select/route.ts:4"
+								"source": "app/api/personal-graph/vault/select/route.ts:10"
 							}
 						]
 					}
@@ -2612,12 +2612,12 @@
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/apply-tokens",
-						"source": "app/api/vpk-html/apply-tokens/route.ts:5",
+						"source": "app/api/vpk-html/apply-tokens/route.ts:6",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/vpk-html/apply-tokens",
-								"source": "app/api/vpk-html/apply-tokens/route.ts:11"
+								"source": "app/api/vpk-html/apply-tokens/route.ts:17"
 							}
 						]
 					}
@@ -2631,24 +2631,24 @@
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/notes",
-						"source": "app/api/vpk-html/notes/route.ts:5",
+						"source": "app/api/vpk-html/notes/route.ts:6",
 						"targets": [
 							{
 								"method": "GET",
 								"path": "/api/vpk-html/notes",
-								"source": "app/api/vpk-html/notes/route.ts:8"
+								"source": "app/api/vpk-html/notes/route.ts:9"
 							}
 						]
 					},
 					{
 						"method": "PUT",
 						"path": "/api/vpk-html/notes",
-						"source": "app/api/vpk-html/notes/route.ts:14",
+						"source": "app/api/vpk-html/notes/route.ts:15",
 						"targets": [
 							{
 								"method": "PUT",
 								"path": "/api/vpk-html/notes",
-								"source": "app/api/vpk-html/notes/route.ts:22"
+								"source": "app/api/vpk-html/notes/route.ts:28"
 							}
 						]
 					}
@@ -2662,12 +2662,12 @@
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/publish-gist",
-						"source": "app/api/vpk-html/publish-gist/route.ts:5",
+						"source": "app/api/vpk-html/publish-gist/route.ts:6",
 						"targets": [
 							{
 								"method": "POST",
 								"path": "/api/vpk-html/publish-gist",
-								"source": "app/api/vpk-html/publish-gist/route.ts:11"
+								"source": "app/api/vpk-html/publish-gist/route.ts:17"
 							}
 						]
 					}

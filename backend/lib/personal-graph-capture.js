@@ -1,6 +1,8 @@
 "use strict";
 
+const dns = require("node:dns");
 const fs = require("node:fs");
+const { BlockList } = require("node:net");
 const path = require("node:path");
 const { execFile } = require("node:child_process");
 
@@ -56,25 +58,68 @@ function formatDatePrefix(date = new Date()) {
 	}).format(date);
 }
 
-function assertPublicHttpUrl(url) {
+const NON_PUBLIC_ADDRESSES = new BlockList();
+for (const [address, prefix] of [
+	["0.0.0.0", 8],
+	["10.0.0.0", 8],
+	["100.64.0.0", 10],
+	["127.0.0.0", 8],
+	["169.254.0.0", 16],
+	["172.16.0.0", 12],
+	["192.0.0.0", 24],
+	["192.168.0.0", 16],
+	["198.18.0.0", 15],
+	["224.0.0.0", 4],
+	["240.0.0.0", 4],
+]) {
+	NON_PUBLIC_ADDRESSES.addSubnet(address, prefix, "ipv4");
+}
+for (const [address, prefix] of [
+	["::", 128],
+	["::1", 128],
+	["64:ff9b::", 96],
+	["fc00::", 7],
+	["fe80::", 10],
+	["ff00::", 8],
+]) {
+	NON_PUBLIC_ADDRESSES.addSubnet(address, prefix, "ipv6");
+}
+
+function isNonPublicAddress(address, family) {
+	return NON_PUBLIC_ADDRESSES.check(address, family === 6 ? "ipv6" : "ipv4");
+}
+
+function createInvalidUrlError(message) {
+	const error = new Error(message);
+	error.code = "INVALID_URL";
+	return error;
+}
+
+async function assertPublicHttpUrl(url, { lookup = dns.promises.lookup } = {}) {
 	let parsed;
 	try {
 		parsed = new URL(url);
 	} catch {
-		const error = new Error("A valid URL is required.");
-		error.code = "INVALID_URL";
-		throw error;
+		throw createInvalidUrlError("A valid URL is required.");
 	}
 	if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-		const error = new Error("Only http and https URLs can be captured.");
-		error.code = "INVALID_URL";
-		throw error;
+		throw createInvalidUrlError("Only http and https URLs can be captured.");
+	}
+	const hostname = parsed.hostname.replace(/^\[(.*)\]$/u, "$1");
+	let addresses;
+	try {
+		addresses = await lookup(hostname, { all: true, verbatim: true });
+	} catch {
+		throw createInvalidUrlError(`Could not resolve ${hostname}.`);
+	}
+	if (addresses.length === 0 || addresses.some(({ address, family }) => isNonPublicAddress(address, family))) {
+		throw createInvalidUrlError("Only public internet addresses can be captured.");
 	}
 	return parsed.toString();
 }
 
-async function captureUrl(url, { BrowserClass = CliAgentBrowser, date = new Date() } = {}) {
-	const resolvedUrl = assertPublicHttpUrl(url);
+async function captureUrl(url, { BrowserClass = CliAgentBrowser, date = new Date(), lookup } = {}) {
+	const resolvedUrl = await assertPublicHttpUrl(url, { lookup });
 	const browser = new BrowserClass();
 	let title = "";
 	let snapshot = "";
@@ -116,6 +161,7 @@ async function captureUrl(url, { BrowserClass = CliAgentBrowser, date = new Date
 
 module.exports = {
 	CliAgentBrowser,
+	assertPublicHttpUrl,
 	captureUrl,
 	sanitizeSlug,
 };

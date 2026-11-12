@@ -38,6 +38,26 @@ async function withServer(rootDir, run, dependencies = {}) {
 	}
 }
 
+function postWithHeaders(baseUrl, routePath, headers, { body = "{}", method = "POST" } = {}) {
+	const url = new URL(routePath, baseUrl);
+	return new Promise((resolve, reject) => {
+		const req = http.request({
+			headers: { "Content-Type": "application/json", ...headers },
+			host: url.hostname,
+			method,
+			path: url.pathname,
+			port: url.port,
+		}, (res) => {
+			let text = "";
+			res.setEncoding("utf8");
+			res.on("data", (chunk) => { text += chunk; });
+			res.on("end", () => resolve({ status: res.statusCode, text }));
+		});
+		req.on("error", reject);
+		req.end(body);
+	});
+}
+
 function createFixtureRoot(t) {
 	const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-html-route-"));
 	t.after(() => {
@@ -496,4 +516,30 @@ test("T-BE5 publish-gist refuses local pages", async (t) => {
 		assert.match((await response.json()).error, /build\.mjs --publish/);
 	}, { env: { NODE_ENV: "development" }, execFileImpl: () => { called = true; }, repoRoot });
 	assert.equal(called, false, "gh never runs for local pages");
+});
+
+test("vpk-html write routes refuse non-local requests", async (t) => {
+	const rootDir = createFixtureRoot(t);
+	const before = fs.readFileSync(path.join(rootDir, "assets", "demos", "demo.html"), "utf8");
+	const execCalls = [];
+	await withServer(rootDir, async (baseUrl) => {
+		const routes = [
+			["POST", "/api/vpk-html/apply-tokens", { tokens: { "--accent": "green" } }],
+			["PUT", "/api/vpk-html/notes?page=assets/demos/demo.html", { notes: "x" }],
+			["POST", "/api/vpk-html/publish-gist", { page: "assets/demos/demo.html" }],
+		];
+		for (const [method, routePath, body] of routes) {
+			for (const headers of [{ Host: "rebound.example" }, { Origin: "https://evil.example" }]) {
+				const response = await postWithHeaders(baseUrl, routePath, headers, { body: JSON.stringify(body), method });
+				assert.equal(response.status, 403, `${method} ${routePath} ${JSON.stringify(headers)}`);
+			}
+		}
+	}, {
+		env: { NODE_ENV: "development" },
+		execFileImpl: (...args) => { execCalls.push(args); args.at(-1)(null, "https://gist.github.com/x", ""); },
+		notesPath: path.join(rootDir, "notes.json"),
+	});
+	assert.equal(fs.readFileSync(path.join(rootDir, "assets", "demos", "demo.html"), "utf8"), before);
+	assert.equal(fs.existsSync(path.join(rootDir, "notes.json")), false);
+	assert.equal(execCalls.length, 0);
 });

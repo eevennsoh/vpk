@@ -36,6 +36,7 @@ const {
 	registerBackendWebSocketRelays,
 } = require("./realtime/ws-relay");
 const { loadAiSdk } = require("./lib/ai-sdk-runtime");
+const { resolveBackendListenHost } = require("./middleware/local-only");
 
 console.log("[STARTUP] Dependencies loaded");
 
@@ -55,7 +56,7 @@ async function startServer() {
 
 	console.log("[STARTUP] All routes registered, starting HTTP server...");
 
-	const server = runtime.app.listen(runtime.port, "0.0.0.0", async () => {
+	const server = runtime.app.listen(runtime.port, resolveBackendListenHost(), async () => {
 		await logBackendServerReady(runtime.serverReadyDependencies);
 	});
 

@@ -2,19 +2,11 @@
 
 const express = require("express");
 const { selectLocalFolder } = require("../lib/personal-graph-vault");
+const { isLoopbackRequest } = require("../middleware/local-only");
 
 function isLocalRequest(req, { env = process.env, platform = process.platform } = {}) {
 	if (env.NODE_ENV === "production" || platform !== "darwin") return false;
-	if (!["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress)) return false;
-	if (!["localhost", "127.0.0.1", "::1"].includes(req.hostname)) return false;
-	try {
-		const origin = new URL(req.get("origin"));
-		return ["http:", "https:"].includes(origin.protocol)
-			&& (origin.hostname === "localhost" || origin.hostname.endsWith(".localhost"))
-			&& origin.origin === req.get("origin");
-	} catch {
-		return false;
-	}
+	return isLoopbackRequest(req, { requireOrigin: true });
 }
 
 function createLocalFolderRouter({ choose = selectLocalFolder, env, platform } = {}) {
