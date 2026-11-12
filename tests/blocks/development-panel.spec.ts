@@ -2,12 +2,16 @@ import { expect, test } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
-test("the development panel omits Open in in both states", async ({ page }) => {
+test("the development panel opens local agents in both states", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
 	for (const state of ["Before setup", "Pull requests created"]) {
 		await page.getByRole("button", { name: state }).click();
-		await expect(panel.getByRole("button", { name: "Open in", exact: true })).toHaveCount(0);
+		await panel.getByRole("button", { name: "Open in", exact: true }).click();
+		const picker = page.getByRole("dialog", { name: "Local software agents" });
+		await expect(picker.getByRole("button", { name: "Claude", exact: true })).toBeVisible();
+		await expect(picker.getByRole("button", { name: "Copy prompt" })).toBeVisible();
+		await page.keyboard.press("Escape");
 		await expect(panel.getByRole("button", { name: "Start coding" })).toBeAttached();
 	}
 });
@@ -35,6 +39,11 @@ test("development rows align their icons and labels with the heading", async ({ 
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
 	const startCoding = panel.getByRole("button", { name: "Start coding" });
+	const openIn = panel.getByRole("button", { name: "Open in", exact: true });
+	const startBounds = await startCoding.boundingBox();
+	const openBounds = await openIn.boundingBox();
+	if (!startBounds || !openBounds) throw new Error("Development actions did not render");
+	expect(openBounds.y - (startBounds.y + startBounds.height)).toBeCloseTo(0, 0);
 	await expect(panel.getByRole("button", { name: "Copy prompt" })).toHaveCount(0);
 	const emptyPositions = await startCoding.evaluate((element) => {
 		const icon = element.querySelector("svg");

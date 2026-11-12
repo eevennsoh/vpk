@@ -116,11 +116,13 @@ test("Details initializes each item independently and calculates cost per reach"
 	assert.equal(boardItem.fixVersion, "");
 });
 
-test("work item Development keeps repository setup without the moved Open in action", async () => {
+test("work item Development offers repository setup and the local agent menu", async () => {
 	const view = await renderDetails();
 	assert.equal(view.queryByRole("button", { name: "Copy prompt" }) === null, true);
 	assert.equal(view.getByRole("button", { name: "Start coding" }) !== null, true);
-	assert.equal(view.queryByRole("button", { name: "Open in", exact: true }), null);
+	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
+	assert.notEqual(view.queryByRole("button", { name: "Claude", exact: true }), null);
+	assert.notEqual(view.queryByRole("button", { name: "Copy prompt" }), null);
 });
 
 test("Open in remembers the last used app", async () => {

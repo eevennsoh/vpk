@@ -2,6 +2,16 @@ import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 import { activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
 
+test("work item opens local agents from Development instead of the header", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const workItem = page.getByRole("region", { name: "Work item full screen view" });
+	await expect(workItem.getByRole("group", { name: "Open in an app" })).toHaveCount(0);
+	await workItem.getByRole("region", { name: "Development" }).getByRole("button", { name: "Open in", exact: true }).click();
+	await expect(page.getByRole("dialog", { name: "Local software agents" }).getByRole("button", { name: "Copy prompt" })).toBeVisible();
+});
+
 test("timeline labels normalize minute and hour variants", () => {
 	for (const label of ["1m ago", "1min ago", "1 min ago", "1 minute ago", "1 minutes ago"]) {
 		expect(activityHeaderTimeLabel(label)).toBe("1 min ago");
