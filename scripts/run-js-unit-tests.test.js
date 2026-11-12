@@ -506,3 +506,65 @@ test("every shard CLI rejects a silent suite or a stale not-run list before runn
 	}
 });
 
+
+test("--parallel runs the longest batches first on N workers and prints each batch as one block", async () => {
+	const { runTestFilesParallel, weighTestBatches, buildTestFileBatches } = await import("./run-js-unit-tests.mjs");
+	const files = ["a/1.test.js", "a/2.test.js", "a/3.test.js", "b/1.test.js", "c/1.test.js", "d/1.test.js"];
+	const timings = { a: [3, 30], b: [1, 1], c: [1, 20], d: [1, 5] };
+	const batches = buildTestFileBatches(files, { readFile: () => NODE_TEST_SOURCE });
+	assert.deepEqual(weighTestBatches(batches, timings).map(({ batch }) => batch.files[0].split("/")[0]), ["a", "c", "d", "b"]);
+
+	let active = 0;
+	let peak = 0;
+	const started = [];
+	const spawn = async (command, args) => {
+		started.push(args.at(-1).split("/")[0]);
+		active += 1;
+		peak = Math.max(peak, active);
+		await new Promise((resolve) => setTimeout(resolve, 5));
+		active -= 1;
+		return { output: `ran ${args.filter((arg) => arg.endsWith(".test.js")).join(" ")}\n`, signal: null, status: 0 };
+	};
+	let text = "";
+	const result = await runTestFilesParallel(files, {
+		cpus: 8, log: () => {}, parallel: 2, readFile: () => NODE_TEST_SOURCE, spawn, write: (chunk) => { text += chunk; },
+	});
+	assert.equal(result.status, 0);
+	assert.equal(peak, 2);
+	assert.equal(result.timings.length, 4);
+	// Without measured timings for these ids, the three-file batch weighs most.
+	assert.equal(started[0], "a");
+	assert.match(text, /js-unit-tests: batch a \(3 files, directory\)\nran a\/1\.test\.js a\/2\.test\.js a\/3\.test\.js\n/u);
+});
+
+test("--parallel splits the CPUs between workers and stops starting batches after a failure unless --keep-going", async () => {
+	const { parseTestSelectionArgs, resolveParallel, runTestFilesParallel, testConcurrencyFor } = await import("./run-js-unit-tests.mjs");
+	assert.equal(testConcurrencyFor(4, 14), 3);
+	assert.equal(testConcurrencyFor(16, 8), 1);
+	assert.equal(resolveParallel("auto", 14), 7);
+	assert.equal(resolveParallel("auto", 32), 8);
+	assert.equal(resolveParallel("auto", 1), 1);
+	assert.equal(resolveParallel("3"), 3);
+	assert.throws(() => resolveParallel("0"), /positive integer or auto/u);
+	assert.equal(parseTestSelectionArgs(["--parallel", "2"]).parallel, 2);
+	assert.equal(parseTestSelectionArgs(["--parallel=auto"]).parallel > 0, true);
+	assert.throws(() => parseTestSelectionArgs(["--parallel"]), /--parallel requires/u);
+
+	const files = ["a/1.test.js", "b/1.test.js", "c/1.test.js", "d/1.test.js"];
+	const run = async (keepGoing) => {
+		const calls = [];
+		const spawn = async (command, args) => {
+			calls.push(args);
+			return { output: "", signal: null, status: args.at(-1).startsWith("a/") ? 1 : 0 };
+		};
+		const result = await runTestFilesParallel(files, { cpus: 4, keepGoing, log: () => {}, parallel: 1, readFile: () => NODE_TEST_SOURCE, spawn, write: () => {} });
+		return { calls, status: result.status };
+	};
+	const stopped = await run(false);
+	assert.equal(stopped.status, 1);
+	assert.equal(stopped.calls.length, 1);
+	assert.ok(stopped.calls[0].includes("--test-concurrency=4"));
+	const all = await run(true);
+	assert.equal(all.status, 1);
+	assert.equal(all.calls.length, 4);
+});

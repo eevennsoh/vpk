@@ -27,7 +27,7 @@ const { scripts } = JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json")
 test("verify:fast is the guard stage of check, and every guard is still its own script", () => {
 	assert.equal(scripts["verify:fast"], "node scripts/check.mjs --guards");
 	assert.equal(scripts.check, "node scripts/check.mjs");
-	assert.match(scripts["ci:pr"], /^pnpm run verify:fast && /u);
+	assert.match(scripts["ci:pr"], /'pnpm run verify:fast'/u);
 	// The fifteen guards the old `&&` chain ran, in the same order; none may be dropped.
 	assert.deepEqual(GUARD_SCRIPTS, [
 		"verify:root-artifacts", "verify:url-credentials", "verify:route-manifest", "verify:api-surfaces", "verify:repo-map",
