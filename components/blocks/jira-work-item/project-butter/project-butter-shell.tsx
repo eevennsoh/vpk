@@ -12,7 +12,7 @@ import type {
 	ProjectButterPresentation,
 	ProjectButterShellContext,
 } from "@/components/blocks/jira-work-item/project-butter/presentation";
-import { PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
+import { PROJECT_BUTTER_CONTENT_WIDTH, PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
@@ -57,6 +57,7 @@ export function ProjectButterShell({
 			: presentation === "modal"
 				? "m-auto h-[calc(100%-4rem)] max-h-[960px] w-[calc(100%-4rem)] max-w-[1280px] rounded-xl"
 				: "ml-auto h-full max-w-full",
+		shell === "project" && presentation === "full-screen" && cn("mx-auto", PROJECT_BUTTER_CONTENT_WIDTH),
 	);
 	const frameStyle =
 		!standalone || presentation === "full-screen"
