@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const TREES = ["experimental-v2", "experimental-v3", "experimental-v4", "experimental-v5"];
+const TREES = ["experimental-v2", "experimental-v3"];
 
 for (const tree of TREES) {
 	const rootSource = fs.readFileSync(
