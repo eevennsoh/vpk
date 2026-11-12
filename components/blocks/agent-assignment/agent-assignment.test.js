@@ -203,10 +203,7 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(suggestionMenuCss, /\.rich-text-command-menu:not\(:has\(\[data-suggestion-actions\] :focus-visible\)\)[\s\S]*\[data-suggestion-actions\]:hover/u);
 	assert.match(suggestionMenuCss, /\[data-suggestion-actions\]:has\(:focus-visible\) > \[data-suggestion-action-buttons\]/u);
 	assert.match(suggestionMenu, /className="group\/suggestion-option grid min-w-0 grid-cols-\[minmax\(0,1fr\)_auto\] items-center rounded-lg"/u);
-	assert.match(
-		suggestionMenu,
-		/const revealedMetadata = item\.inlineMetadata \?\? \(showsPersistentDescription \? undefined : item\.description\);[\s\S]*canRevealMetadata \? \([\s\S]*className="menu-row-byline min-w-0"[\s\S]*\{revealedMetadata\}/u,
-	);
+	assert.match(menu, /<RichTextSuggestionMenu\s+rowVariant="with-byline"/u);
 	assert.doesNotMatch(suggestionMenu, /rich-text-command-menu-copy-inline/u);
 	assert.doesNotMatch(
 		suggestionMenu,
