@@ -249,6 +249,14 @@
 		& .dialkit-timeline-scroll-row { position: sticky; bottom: 0; min-height: 14px; padding-top: 4px; background: var(--dial-glass-bg); }
 		& .dialkit-timeline-horizontal-scroll { height: 12px; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--dial-text-tertiary) transparent; }
 		& .dialkit-timeline-horizontal-scroll > div { height: 1px; }
+
+		/* DESIGN.md touch targets: compact 24–28px controls grow to 32px for coarse pointers. */
+		@media (any-pointer: coarse) {
+			& :where(.dialkit-toolbar-add, .dialkit-timeline-chevron, .dialkit-timeline-popover-close, .dialkit-preset-delete, .dialkit-timeline-group-toggle) {
+				min-width: 32px;
+				min-height: 32px;
+			}
+		}
 	}
 
 	@container vpk-gui-timeline (width < 540px) {

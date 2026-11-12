@@ -48,8 +48,9 @@ function setEnvValueForTest(t, key, value) {
 
 async function dispatch(app, { method = "GET", requestSignalGetter, url }) {
 	const req = createInProcessRequest({
-		headers: { Accept: "application/json" },
+		headers: { Accept: "application/json", Host: "localhost" },
 	});
+	req.socket = { remoteAddress: "127.0.0.1" };
 	req.method = method;
 	req.url = url;
 	req.originalUrl = url;

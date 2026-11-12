@@ -109,6 +109,7 @@ tmux-*.log
 # Rovo-created git worktrees
 .rovo/worktrees/
 .api-routes-backup
+.static-export-journal.json
 .rovo/config.generated.yml
 .rovo/config.generated.yml.lock
 .rovo/mcp.generated.json

@@ -2,10 +2,11 @@
 
 import ScreenIcon from "@atlaskit/icon/core/screen";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { InlineAgentSelector, type AgentSelectorAgent, type InlineAgentAction } from "@/components/blocks/agent-selector";
 import { BUTTER_BOARD_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { ProjectButterLocalAgentMenu } from "@/components/blocks/jira-issue/project-butter-local-agent-menu";
+import { useRovoCliCommandCopy } from "@/components/blocks/jira-issue/rovo-cli-command";
 import { CopyFeedbackIcon } from "@/components/ui-custom/copy-feedback-icon";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Icon } from "@/components/ui/icon";
@@ -31,19 +32,14 @@ export function InlineLocalAgentPicker({ recentAgentId, onLocalUse, presentation
 	presentation?: "inline" | "submenu";
 }>) {
 	const [displayedRecentAgentId] = useState(recentAgentId);
-	const [commandCopied, setCommandCopied] = useState(false);
-	const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	useEffect(() => () => { if (copiedTimer.current !== null) clearTimeout(copiedTimer.current); }, []);
+	const { copied: commandCopied, copy: copyCommand } = useRovoCliCommandCopy();
 	const getActions = (agent: AgentSelectorAgent): InlineAgentAction[] => agent.id === "release-agent" || (agent.id === "rovo-cli" && presentation === "inline") ? [] : [{
 		id: "local",
 		label: `Open in ${agent.name}`,
 		icon: <Icon render={<ScreenIcon label="" size="small" />} />,
 		onSelect: () => {
 			onLocalUse(agent.id);
-			if (agent.id !== "rovo-cli") return;
-			setCommandCopied(true);
-			if (copiedTimer.current !== null) clearTimeout(copiedTimer.current);
-			copiedTimer.current = setTimeout(() => setCommandCopied(false), 1800);
+			if (agent.id === "rovo-cli") void copyCommand();
 		},
 	}];
 	return <InlineAgentSelector

@@ -2,8 +2,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { fetchBackend, getBackendUrlCandidates, BackendConnectionError } from "@/app/api/_utils/backend-url";
 import { proxyToBackend } from "@/app/api/_utils/proxy";
 import { readJsonBody } from "@/app/api/_utils/read-json-body";
+import { refuseNonLocalRequest } from "@/app/api/_utils/local-request";
 
 export async function POST(request: NextRequest) {
+	const refused = refuseNonLocalRequest(request);
+	if (refused) {
+		return refused;
+	}
+
 	const contentType = request.headers.get("content-type") ?? "";
 	if (contentType.includes("multipart/form-data")) {
 		try {
