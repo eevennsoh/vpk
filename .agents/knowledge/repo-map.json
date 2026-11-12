@@ -5032,7 +5032,7 @@
 						"name": "Jira Work Item",
 						"importPath": "@/components/blocks/jira-work-item",
 						"status": "live",
-						"note": "Variant dirs are independent forks with separate consumers; experimental-v4 and experimental-v5 are reachable only from this block's own demos."
+						"note": "Variant dirs are independent forks with separate consumers, except experimental-v4 and experimental-v5: they render the experimental-v3 implementation and are reachable only from this block's own demos."
 					},
 					{
 						"category": "blocks",
