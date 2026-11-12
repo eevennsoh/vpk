@@ -10,7 +10,7 @@ for (const [width, side] of [[1280, "right"], [1000, "left"]] as const) {
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.goto(appUrl("/components/blocks/agent-assignment"));
 		await page.getByRole("button", { name: "Edit agents", exact: true }).first().click();
-		await page.getByRole("button", { name: /Sessions from your teammates/u }).click();
+		await page.getByRole("button", { name: /(?:\d+ )?other sessions?/iu }).click();
 		const card = page.getByTestId("agent-session-row-readiness-checker").locator("article");
 		await page.mouse.move(0, 0);
 		await card.hover({ position: { x: 8, y: 8 } });
