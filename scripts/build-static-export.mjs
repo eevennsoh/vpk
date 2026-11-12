@@ -37,13 +37,13 @@ function readJournal() {
 	return { schema: JOURNAL_SCHEMA, moves: temporaryMoves, pid: null, startedAt: null };
 }
 
-function writeJournal(moves) {
-	writeFileSync(journalPath, `${JSON.stringify({
+function journalText() {
+	return `${JSON.stringify({
 		schema: JOURNAL_SCHEMA,
-		moves,
+		moves: temporaryMoves,
 		pid: process.pid,
 		startedAt: new Date().toISOString(),
-	}, null, "\t")}\n`);
+	}, null, "\t")}\n`;
 }
 
 // Move every backup that is still aside back to its source, newest first. Safe to repeat.
@@ -60,11 +60,6 @@ function restoreMoves(moves) {
 	return restored;
 }
 
-function finishRun(moves) {
-	restoreMoves(moves);
-	rmSync(journalPath, { force: true });
-}
-
 function describeState() {
 	const journal = readJournal();
 	const leftovers = temporaryMoves.filter((move) => existsSync(move.backup)).map((move) => move.backup);
@@ -77,28 +72,68 @@ function describeState() {
 	return { state: "clean", leftovers };
 }
 
-// A run that died (SIGKILL, crash, closed terminal) leaves its routes aside. Put them back
-// before starting, unless the run that moved them is still alive.
-function recoverInterruptedRun() {
-	const status = describeState();
-	if (status.state === "running") {
-		throw new Error(`Another static export (pid ${status.pid}) is running; wait for it or stop it first`);
+function runningError(pid) {
+	return new Error(`Another static export (pid ${pid}) is running; wait for it or stop it first`);
+}
+
+/**
+ * Takes ownership of the export by creating the journal exclusively, so two exports
+ * started together cannot both move the routes. A journal left by a dead run is claimed
+ * by renaming it (only one claimant can win), its routes are put back, and creation is
+ * retried. Returns the routes restored from an interrupted run.
+ */
+function acquireOwnership() {
+	const restored = [];
+	for (let attempt = 0; attempt < 5; attempt += 1) {
+		try {
+			writeFileSync(journalPath, journalText(), { flag: "wx" });
+			// A backup with no journal (left by an older wrapper) is also ours to restore now.
+			restored.push(...restoreMoves(temporaryMoves));
+			return restored;
+		} catch (error) {
+			if (error?.code !== "EEXIST") throw error;
+		}
+		const journal = readJournal();
+		if (journal && isProcessAlive(journal.pid) && journal.pid !== process.pid) {
+			throw runningError(journal.pid);
+		}
+		const claimPath = `${journalPath}.claim-${process.pid}`;
+		try {
+			renameSync(journalPath, claimPath);
+		} catch (error) {
+			if (error?.code === "ENOENT") continue;
+			throw error;
+		}
+		let claimed = {};
+		try {
+			claimed = JSON.parse(readFileSync(claimPath, "utf8"));
+		} catch {
+			// An unreadable journal is treated like one from a dead run.
+		}
+		if (isProcessAlive(claimed.pid) && claimed.pid !== process.pid) {
+			// A live run re-created the journal between the read and the claim: hand it back.
+			renameSync(claimPath, journalPath);
+			throw runningError(claimed.pid);
+		}
+		restored.push(...restoreMoves(Array.isArray(claimed.moves) ? claimed.moves : temporaryMoves));
+		rmSync(claimPath, { force: true });
 	}
-	if (status.state === "clean") return [];
-	const journal = readJournal();
-	const restored = restoreMoves(journal?.moves ?? temporaryMoves);
+	throw new Error(`Could not take ownership of ${journalPath}; another export keeps re-creating it`);
+}
+
+function releaseOwnership() {
+	restoreMoves(temporaryMoves);
 	rmSync(journalPath, { force: true });
-	return restored;
 }
 
 function handleTermination(signal) {
 	buildProcess?.kill(signal);
-	finishRun(temporaryMoves);
+	releaseOwnership();
 	process.exit(TERMINATION_EXIT_CODES[signal] ?? 1);
 }
 
 async function runExport() {
-	const restored = recoverInterruptedRun();
+	const restored = acquireOwnership();
 	for (const source of restored) {
 		console.log(`[build:export] Restored ${source} left aside by an interrupted export.`);
 	}
@@ -107,11 +142,9 @@ async function runExport() {
 		process.once(signal, handleTermination);
 	}
 
-	const moves = temporaryMoves.filter((move) => existsSync(move.source));
-	writeJournal(moves);
 	try {
-		for (const move of moves) {
-			renameSync(move.source, move.backup);
+		for (const move of temporaryMoves) {
+			if (existsSync(move.source)) renameSync(move.source, move.backup);
 		}
 
 		const result = await new Promise((resolve) => {
@@ -142,7 +175,7 @@ async function runExport() {
 			process.exitCode = result.status ?? 1;
 		}
 	} finally {
-		finishRun(moves);
+		releaseOwnership();
 	}
 }
 
@@ -150,7 +183,8 @@ const args = new Set(process.argv.slice(2));
 if (args.has("--status")) {
 	console.log(JSON.stringify(describeState(), null, "\t"));
 } else if (args.has("--restore")) {
-	const restored = recoverInterruptedRun();
+	const restored = acquireOwnership();
+	rmSync(journalPath, { force: true });
 	console.log(restored.length > 0 ? `Restored: ${restored.join(", ")}` : "Nothing to restore.");
 } else {
 	await runExport();
