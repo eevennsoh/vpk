@@ -4,6 +4,10 @@ const express = require("express");
 const { execFile } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+const {
+	createRequireLocalDevRequest,
+	passThrough,
+} = require("../middleware/local-only");
 
 const DEFAULT_REPO_ROOT = path.resolve(__dirname, "..", "..");
 const DEFAULT_VPK_HTML_ROOT = path.resolve(__dirname, "..", "..", ".agents", "skills", "vpk-html");
@@ -322,9 +326,11 @@ function createVpkHtmlRouter({
 	notesPath = DEFAULT_NOTES_PATH,
 	pathModule = path,
 	repoRoot = DEFAULT_REPO_ROOT,
+	requireRuntimeAdmin = passThrough,
 	rootDir = DEFAULT_VPK_HTML_ROOT,
 } = {}) {
 	const router = express.Router();
+	const requireLocalDevRequest = createRequireLocalDevRequest({ env });
 
 	function sendVpkHtmlAsset(req, res) {
 		const assetPath = getWildcardRouteValue(req.params.assetPath) ?? "index.html";
@@ -376,11 +382,7 @@ function createVpkHtmlRouter({
 		return reference;
 	}
 
-	router.post("/apply-tokens", (req, res) => {
-		if (isProduction(env)) {
-			return res.status(404).json({ error: "Not available" });
-		}
-
+	router.post("/apply-tokens", requireLocalDevRequest, requireRuntimeAdmin, (req, res) => {
 		const validation = validateTokenPayload(req.body);
 		if (validation.error) {
 			return res.status(400).json({ error: validation.error });
@@ -422,11 +424,7 @@ function createVpkHtmlRouter({
 		}
 	});
 
-	router.put("/notes", (req, res) => {
-		if (isProduction(env)) {
-			return res.status(404).json({ error: "Not available" });
-		}
-
+	router.put("/notes", requireLocalDevRequest, requireRuntimeAdmin, (req, res) => {
 		const reference = resolvePageRequest(req, res);
 		if (!reference) {
 			return undefined;
@@ -449,11 +447,7 @@ function createVpkHtmlRouter({
 		}
 	});
 
-	router.post("/publish-gist", async (req, res) => {
-		if (isProduction(env)) {
-			return res.status(404).json({ error: "Not available" });
-		}
-
+	router.post("/publish-gist", requireLocalDevRequest, requireRuntimeAdmin, async (req, res) => {
 		const page = req.body && typeof req.body.page === "string" ? req.body.page : "";
 		const reference = getVpkHtmlPageReference(page, { allowLocal: false, fsModule, pathModule, repoRoot, rootDir });
 		if (!reference) {

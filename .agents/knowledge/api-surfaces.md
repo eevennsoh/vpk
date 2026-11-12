@@ -11,7 +11,7 @@ Rules section of `AGENTS.md`). Source of truth is `backend/routes/route-manifest
 <!-- generated:begin -->
 <!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->
 
-Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 18; Next API routes: 103.
+Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 22; Next API routes: 103.
 
 ### Backend Routes
 
@@ -71,31 +71,31 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `POST` | `/api/genui-description-summary` | no | `backend/routes/ai-utilities.js:246` |
 | `POST` | `/api/genui-export` | no | `backend/routes/genui.js:39` |
 | `GET` | `/api/health` | no | `backend/routes/status.js:168` |
-| `POST` | `/api/html-selector/dispatch` | no | `backend/routes/html-selector.js:99` |
-| `GET` | `/api/html-selector/tokens` | no | `backend/routes/html-selector.js:168` |
+| `POST` | `/api/html-selector/dispatch` | yes | `backend/routes/html-selector.js:105` |
+| `GET` | `/api/html-selector/tokens` | no | `backend/routes/html-selector.js:170` |
 | `GET` | `/api/image-proxy` | no | `backend/routes/media.js:184` |
-| `POST` | `/api/local-folder` | no | `backend/routes/local-folder.js:33` |
+| `POST` | `/api/local-folder` | no | `backend/routes/local-folder.js:25` |
 | `DELETE` | `/api/orchestrator/log` | yes | `backend/routes/orchestrator.js:72` |
 | `GET` | `/api/orchestrator/log` | no | `backend/routes/orchestrator.js:46` |
 | `GET` | `/api/orchestrator/timeline` | no | `backend/routes/orchestrator.js:59` |
-| `POST` | `/api/personal-graph/capture` | no | `backend/routes/personal-graph.js:608` |
-| `GET` | `/api/personal-graph/explorer` | no | `backend/routes/personal-graph.js:424` |
-| `POST` | `/api/personal-graph/ingest` | no | `backend/routes/personal-graph.js:657` |
-| `GET` | `/api/personal-graph/log` | no | `backend/routes/personal-graph.js:641` |
-| `GET` | `/api/personal-graph/page/*slug` | no | `backend/routes/personal-graph.js:547` |
-| `PUT` | `/api/personal-graph/page/*slug` | no | `backend/routes/personal-graph.js:560` |
-| `POST` | `/api/personal-graph/raw` | no | `backend/routes/personal-graph.js:574` |
-| `GET` | `/api/personal-graph/search` | no | `backend/routes/personal-graph.js:624` |
-| `GET` | `/api/personal-graph/source` | no | `backend/routes/personal-graph.js:449` |
-| `POST` | `/api/personal-graph/source` | no | `backend/routes/personal-graph.js:463` |
-| `POST` | `/api/personal-graph/summarize` | no | `backend/routes/personal-graph.js:653` |
-| `POST` | `/api/personal-graph/twg/chat` | no | `backend/routes/personal-graph.js:478` |
-| `POST` | `/api/personal-graph/twg/expand` | no | `backend/routes/personal-graph.js:514` |
-| `POST` | `/api/personal-graph/twg/refresh` | no | `backend/routes/personal-graph.js:492` |
-| `GET` | `/api/personal-graph/unprocessed-count` | no | `backend/routes/personal-graph.js:596` |
-| `GET` | `/api/personal-graph/vault` | no | `backend/routes/personal-graph.js:140` |
-| `POST` | `/api/personal-graph/vault/reset` | no | `backend/routes/personal-graph.js:166` |
-| `POST` | `/api/personal-graph/vault/select` | no | `backend/routes/personal-graph.js:152` |
+| `POST` | `/api/personal-graph/capture` | no | `backend/routes/personal-graph.js:612` |
+| `GET` | `/api/personal-graph/explorer` | no | `backend/routes/personal-graph.js:428` |
+| `POST` | `/api/personal-graph/ingest` | no | `backend/routes/personal-graph.js:661` |
+| `GET` | `/api/personal-graph/log` | no | `backend/routes/personal-graph.js:645` |
+| `GET` | `/api/personal-graph/page/*slug` | no | `backend/routes/personal-graph.js:551` |
+| `PUT` | `/api/personal-graph/page/*slug` | no | `backend/routes/personal-graph.js:564` |
+| `POST` | `/api/personal-graph/raw` | no | `backend/routes/personal-graph.js:578` |
+| `GET` | `/api/personal-graph/search` | no | `backend/routes/personal-graph.js:628` |
+| `GET` | `/api/personal-graph/source` | no | `backend/routes/personal-graph.js:453` |
+| `POST` | `/api/personal-graph/source` | no | `backend/routes/personal-graph.js:467` |
+| `POST` | `/api/personal-graph/summarize` | no | `backend/routes/personal-graph.js:657` |
+| `POST` | `/api/personal-graph/twg/chat` | no | `backend/routes/personal-graph.js:482` |
+| `POST` | `/api/personal-graph/twg/expand` | no | `backend/routes/personal-graph.js:518` |
+| `POST` | `/api/personal-graph/twg/refresh` | no | `backend/routes/personal-graph.js:496` |
+| `GET` | `/api/personal-graph/unprocessed-count` | no | `backend/routes/personal-graph.js:600` |
+| `GET` | `/api/personal-graph/vault` | no | `backend/routes/personal-graph.js:144` |
+| `POST` | `/api/personal-graph/vault/reset` | no | `backend/routes/personal-graph.js:170` |
+| `POST` | `/api/personal-graph/vault/select` | no | `backend/routes/personal-graph.js:156` |
 | `POST` | `/api/plan-title` | no | `backend/routes/ai-utilities.js:213` |
 | `GET` | `/api/realtime/audio-conversation-token` | no | `backend/routes/realtime.js:26` |
 | `GET` | `/api/rovo/background-streams` | no | `backend/routes/rovo-app.js:472` |
@@ -133,12 +133,12 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `GET` | `/api/status/rovo` | no | `backend/routes/status.js:50` |
 | `POST` | `/api/studio/agent-data-flow` | no | `backend/routes/ai-utilities.js:144` |
 | `POST` | `/api/ticket-classify` | no | `backend/routes/demos.js:69` |
-| `GET` | `/api/vpk-html` | no | `backend/routes/vpk-html.js:486` |
-| `GET` | `/api/vpk-html/*assetPath` | no | `backend/routes/vpk-html.js:487` |
-| `POST` | `/api/vpk-html/apply-tokens` | no | `backend/routes/vpk-html.js:379` |
-| `GET` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:404` |
-| `PUT` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:425` |
-| `POST` | `/api/vpk-html/publish-gist` | no | `backend/routes/vpk-html.js:452` |
+| `GET` | `/api/vpk-html` | no | `backend/routes/vpk-html.js:480` |
+| `GET` | `/api/vpk-html/*assetPath` | no | `backend/routes/vpk-html.js:481` |
+| `POST` | `/api/vpk-html/apply-tokens` | yes | `backend/routes/vpk-html.js:385` |
+| `GET` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:406` |
+| `PUT` | `/api/vpk-html/notes` | yes | `backend/routes/vpk-html.js:427` |
+| `POST` | `/api/vpk-html/publish-gist` | yes | `backend/routes/vpk-html.js:450` |
 | `GET` | `/healthcheck` | no | `backend/routes/status.js:167` |
 
 ### Next API Proxy Routes
