@@ -1,9 +1,9 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SELECTOR_DETAIL: ComponentDetail = {
-			description: "Searchable command-list selector for assigning AI agents, with selected agents pinned first, optional selected-agent actions, and optional browse/create actions. The same package exports `InlineAgentSelector` for per-agent actions and favorites. Gallery demos use the borderless editor-palette search bar (`searchVariant=\"palette\"`), matching Assign agents on work items.",
-		importStatement: `import { AgentSelector } from "@/components/blocks/agent-selector";`,
-		usage: `import { AgentSelector } from "@/components/blocks/agent-selector";
+			description: "Searchable agent selectors for assigning agents. The default preview uses `InlineAgentSelector` to select a cloud agent directly; `AgentSelector` supports selected agents, optional actions, and browse/create actions.",
+		importStatement: `import { InlineAgentSelector } from "@/components/blocks/agent-selector";`,
+		usage: `import { InlineAgentSelector } from "@/components/blocks/agent-selector";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 
 const agents: AgentSelectorAgent[] = [
@@ -15,14 +15,16 @@ const agents: AgentSelectorAgent[] = [
   },
 ];
 
-<AgentSelector
+<InlineAgentSelector
   agents={agents}
-  searchVariant="palette"
-  showByline={false}
-  selectedAgentIds={["github-copilot"]}
-  onAgentToggle={(agentId) => console.log(agentId)}
+  softwareAgentIds={["github-copilot"]}
+  getActions={(agent) => [{
+    id: "start",
+    label: "Start a new session",
+    icon: null,
+    onSelect: () => console.log(agent.id),
+  }]}
   onBrowseAgents={() => console.log("browse agents")}
-  onCreateAgent={() => console.log("create agent")}
 />`,
 		demoLayout: { previewHeight: "fixed", examplesContentWidth: "full" },
 		examples: [
@@ -30,9 +32,20 @@ const agents: AgentSelectorAgent[] = [
 			{ title: "Standalone picker", description: "Persistent standalone surfaces for the default and selected-agent action states.", demoSlug: "agent-selector-demo-standalone" },
 			{ title: "Selected agent actions", description: "Top actions for a selected custom agent before switching to another agent.", demoSlug: "agent-selector-demo-selected-agent-actions" },
 			{ title: "Jira kanban", description: "A Jira agent picker with Pinned by space and More agents groups. Pin an agent to keep it in the pinned group, or use the footer to browse or create agents.", demoSlug: "agent-selector-demo-jira" },
-			{ id: "project-butter-submenu", title: "Project Butter submenu", description: "Choose cloud and local agent options from one picker using submenus.", demoSlug: "agent-selector-demo-project-butter" },
 			{ id: "inline-expansion", title: "Inline expansion", description: "Choose cloud and local agent options from one picker using inline expansion. Import `InlineAgentSelector` from the Agent Selector package and supply each agent's actions with `getActions`; one action runs directly and multiple actions expand inline. Rovo CLI includes local workspace options. Favorites can be controlled with `favoriteAgentIds` and `onFavoriteAgentIdsChange`.", demoSlug: "agent-selector-demo-inline-expansion" },
 		],
+		subComponents: [{
+			name: "InlineAgentSelector",
+			description: "Select an agent directly when it has one action, or expand its actions inline when it has multiple choices.",
+			props: [
+				{ name: "agents", type: "readonly AgentSelectorAgent[]", required: true, description: "Agents to display." },
+				{ name: "softwareAgentIds", type: "readonly string[]", required: true, description: "Agent IDs shown in the software agents group." },
+				{ name: "getActions", type: "(agent: AgentSelectorAgent) => readonly InlineAgentAction[]", required: true, description: "Actions available for each agent." },
+				{ name: "recommendedAgentId", type: "string", description: "Agent shown first with a Recommended label." },
+				{ name: "onBrowseAgents", type: "() => void", description: "Shows the Browse agents action." },
+				{ name: "onCreateAgent", type: "() => void", description: "Shows the Create agent action." },
+			],
+		}],
 		props: [
 			{
 				name: "agents",

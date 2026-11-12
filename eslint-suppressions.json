@@ -368,7 +368,7 @@
   },
   "components/blocks/agent-selector/agent-selector.test.js": {
     "no-restricted-syntax": {
-      "count": 149
+      "count": 147
     }
   },
   "components/blocks/agent-selector/components/agent-selector.tsx": {
