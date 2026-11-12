@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import {
 	CI_INCLUDED_TEST_CLASSIFICATIONS,
 	INCLUDED_TEST_PREFIXES,
+	SKIPPED_TEST_PREFIXES,
 	TEST_FILE_CLASSIFICATIONS,
 } from "./js-unit-test-manifest.mjs";
 
@@ -292,16 +293,18 @@ function hasNodeTestImport(entry) {
 /**
  * Test files the unfiltered gate would silently skip: neither run (a CI-included
  * classification or an included prefix, with a node:test import) nor listed as not run
- * (legacy-drift or SKIPPED_TEST_FILES). Covers every root, not only components/.
+ * (legacy-drift, SKIPPED_TEST_FILES or a SKIPPED_TEST_PREFIXES root). Covers every root, not only components/.
  */
 export function findUnselectedTestFiles(testEntries, {
 	classificationByFile = TEST_FILE_CLASSIFICATION_BY_PATH,
 	includedTestPrefixes = INCLUDED_TEST_PREFIXES,
+	skippedTestPrefixes = Object.keys(SKIPPED_TEST_PREFIXES),
 } = {}) {
 	return testEntries
 		.flatMap((entry) => {
 			const inclusion = getTestFileInclusion(entry.filePath, { classificationByFile, includedTestPrefixes });
 			if (LISTED_NOT_RUN_CLASSIFICATIONS.has(inclusion.classification)) return [];
+			if (inclusion.classification === "unclassified" && skippedTestPrefixes.some((prefix) => entry.filePath.startsWith(prefix))) return [];
 			// components/** suites always need an explicit classification, even under an included prefix.
 			const needsClassification = entry.filePath.startsWith(COMPONENT_TEST_PREFIX) && inclusion.classification === "unclassified";
 			if (!inclusion.included || needsClassification) return [{ filePath: entry.filePath, reason: "unclassified" }];
@@ -319,7 +322,7 @@ export function assertEveryTestFileSelected(testEntries, options) {
 	throw new Error([
 		`js-unit-tests: ${unselected.length} test file(s) are neither run nor listed as skipped, so the CI unit gate silently drops them:`,
 		...unselected.map(({ filePath, reason }) => `- ${filePath} (${reason})`),
-		`Classify each path in ${MANIFEST_PATH} under \`stable\` (behavioral tests) or \`source-contract\` (tests that assert on source text), import node:test where it is missing, or add it to SKIPPED_TEST_FILES with the reason it does not run.`,
+		`Classify each path in ${MANIFEST_PATH} under \`stable\` (behavioral tests) or \`source-contract\` (tests that assert on source text), import node:test where it is missing, or add it to SKIPPED_TEST_FILES (or its root to SKIPPED_TEST_PREFIXES) with the reason it does not run.`,
 		"Do not add them to `legacy-drift`: it is a frozen baseline of skipped suites that must only shrink.",
 	].join("\n"));
 }

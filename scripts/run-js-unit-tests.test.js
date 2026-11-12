@@ -130,7 +130,7 @@ test("unfiltered runs fail when any test file in any root is neither run nor lis
 			"- components/z-new.test.ts (unclassified)",
 			"- hooks/outside-prefixes.test.js (unclassified)",
 			"- lib/jest-style.test.js (no node:test import)",
-			"Classify each path in scripts/js-unit-test-manifest.mjs under `stable` (behavioral tests) or `source-contract` (tests that assert on source text), import node:test where it is missing, or add it to SKIPPED_TEST_FILES with the reason it does not run.",
+			"Classify each path in scripts/js-unit-test-manifest.mjs under `stable` (behavioral tests) or `source-contract` (tests that assert on source text), import node:test where it is missing, or add it to SKIPPED_TEST_FILES (or its root to SKIPPED_TEST_PREFIXES) with the reason it does not run.",
 			"Do not add them to `legacy-drift`: it is a frozen baseline of skipped suites that must only shrink.",
 		].join("\n")),
 	);
@@ -144,10 +144,26 @@ test("the real repository has no test file that the unit gate silently drops", a
 	assert.deepEqual(findUnselectedTestFiles(testEntries), []);
 });
 
-test("every skipped test file states why it does not run", async () => {
-	const { SKIPPED_TEST_FILES } = await import("./js-unit-test-manifest.mjs");
-	const missingReason = Object.entries(SKIPPED_TEST_FILES).filter(([, reason]) => typeof reason !== "string" || reason.trim().length < 20);
+test("every skipped test file and root states why it does not run", async () => {
+	const { SKIPPED_TEST_FILES, SKIPPED_TEST_PREFIXES } = await import("./js-unit-test-manifest.mjs");
+	const missingReason = Object.entries({ ...SKIPPED_TEST_FILES, ...SKIPPED_TEST_PREFIXES })
+		.filter(([, reason]) => typeof reason !== "string" || reason.trim().length < 20);
 	assert.deepEqual(missingReason, []);
+	assert.deepEqual(Object.keys(SKIPPED_TEST_FILES).filter((filePath) => filePath.startsWith("artifacts/")), [], "artifacts/ is skipped by prefix, not file by file");
+});
+
+test("a new suite under a skipped root is not reported, while one under any other unlisted root still is", async () => {
+	const { findUnselectedTestFiles } = await import("./run-js-unit-tests.mjs");
+	const testEntries = [
+		{ filePath: "artifacts/vpk-html/new-explainer/_figures/brand-new.behavior.test.mjs", source: 'import test from "node:test";' },
+		{ filePath: "artifacts/notes.test.js", source: "module.exports = {};" },
+		{ filePath: "tools/new-root.test.mjs", source: 'import test from "node:test";' },
+		{ filePath: "hooks/new-hook.test.js", source: NODE_TEST_SOURCE },
+	];
+	assert.deepEqual(findUnselectedTestFiles(testEntries, { classificationByFile: new Map() }), [
+		{ filePath: "hooks/new-hook.test.js", reason: "unclassified" },
+		{ filePath: "tools/new-root.test.mjs", reason: "unclassified" },
+	]);
 });
 
 test("legacy-drift entries are excluded from unfiltered and prefix runs but an explicit --file force-runs them", async () => {
@@ -598,7 +614,7 @@ test("every shard CLI rejects unclassified, missing and duplicate manifest entri
 		writeFileSync(path.join(root, "components/new.test.js"), `${NODE_TEST_SOURCE}\nthrow new Error('SHOULD_NOT_RUN');`);
 		assert.equal(spawnSync("git", ["init", "--quiet", root]).status, 0);
 		for (const classifications of [{}, { stable: ["missing.test.js"] }, { stable: ["components/new.test.js"], "source-contract": ["components/new.test.js"] }]) {
-			writeFileSync(path.join(root, "js-unit-test-manifest.mjs"), `export const INCLUDED_TEST_PREFIXES = ['components/'];\nexport const CI_INCLUDED_TEST_CLASSIFICATIONS = ['stable','source-contract'];\nexport const TEST_FILE_CLASSIFICATIONS = ${JSON.stringify(classifications)};`);
+			writeFileSync(path.join(root, "js-unit-test-manifest.mjs"), `export const INCLUDED_TEST_PREFIXES = ['components/'];\nexport const CI_INCLUDED_TEST_CLASSIFICATIONS = ['stable','source-contract'];\nexport const SKIPPED_TEST_PREFIXES = {};\nexport const TEST_FILE_CLASSIFICATIONS = ${JSON.stringify(classifications)};`);
 			for (let shard = 1; shard <= 4; shard += 1) {
 				const result = spawnSync(process.execPath, ["runner.mjs", "--shard", `${shard}/4`], { cwd: root, encoding: "utf8" });
 				assert.equal(result.status, 1);

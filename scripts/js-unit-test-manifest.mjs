@@ -1,7 +1,7 @@
 import { LEGACY_DRIFT_TEST_FILES } from "./js-unit-test-legacy-drift.mjs";
-import { SKIPPED_TEST_FILES } from "./js-unit-test-skipped.mjs";
+import { SKIPPED_TEST_FILES, SKIPPED_TEST_PREFIXES } from "./js-unit-test-skipped.mjs";
 
-export { SKIPPED_TEST_FILES };
+export { SKIPPED_TEST_FILES, SKIPPED_TEST_PREFIXES };
 
 export const INCLUDED_TEST_PREFIXES = [
 	"app/",
