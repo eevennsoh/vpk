@@ -27,6 +27,11 @@ import { motionEase } from "@/lib/motion";
 const DASHBOARD_FADE_TRANSITION: Transition = { duration: 0.2, ease: motionEase.out }; // duration-medium + ease-out (bold)
 const ROW_TRANSITION: Transition = { duration: 0.15, ease: motionEase.outPractical }; // duration-normal + ease-out-practical
 
+// Both pane states scroll, so keyboard users need to reach them (axe
+// scrollable-region-focusable). The inset ring survives the pane's overflow clip.
+const JIRA_PANE_LABEL = "Jira terminal";
+const SCROLL_REGION_FOCUS_CLASS = "outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
+
 const COUNT_TONE_CLASS = {
 	awaiting: "text-yellow-300",
 	working: "text-amber-400",
@@ -100,7 +105,12 @@ function JiraShellView({
 	const inFlightLines = getVisibleOutputLines(activeStep, "left", revealCount);
 
 	return (
-		<div className="flex h-full flex-col overflow-y-auto px-4 py-3 text-text-subtle">
+		<div
+			tabIndex={0}
+			role="region"
+			aria-label={JIRA_PANE_LABEL}
+			className={cn("flex h-full flex-col overflow-y-auto px-4 py-3 text-text-subtle", SCROLL_REGION_FOCUS_CLASS)}
+		>
 			<div className="flex flex-col gap-0.5">
 				{pane.transcript.map((line, index) => (
 					<TerminalLineView key={index} line={line} />
@@ -162,7 +172,13 @@ export function TerminalStageJiraPane({
 			style={shouldReduceMotion ? undefined : { willChange: "opacity" }}
 			className="flex h-full flex-col overflow-hidden"
 		>
-			<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+			<div
+				ref={scrollRef}
+				tabIndex={0}
+				role="region"
+				aria-label={JIRA_PANE_LABEL}
+				className={cn("min-h-0 flex-1 overflow-y-auto px-4 py-3", SCROLL_REGION_FOCUS_CLASS)}
+			>
 				<p className="font-semibold text-blue-400">{story.dashboard.title}</p>
 				<p className="mb-1 text-text-subtlest">{story.dashboard.workspace}</p>
 				<p className="mb-3 text-text-subtle">
