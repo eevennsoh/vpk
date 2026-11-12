@@ -10,7 +10,6 @@ import ShrinkDiagonalIcon from "@atlaskit/icon/core/shrink-diagonal";
 import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import { ProjectButterBreadcrumb } from "@/components/blocks/jira-work-item/project-butter/project-butter-breadcrumb";
-import { JiraLocalAgentSplitButton } from "@/components/blocks/jira-local-agent";
 import { ProjectButterSummary } from "@/components/blocks/jira-work-item/project-butter/project-butter-summary";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -57,7 +56,6 @@ export function ProjectButterHeader({ content, onClose, onPresentationChange, pr
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
 						<ProjectButterStatus appearance="lozenge" content={content} />
-						<JiraLocalAgentSplitButton workItem={{ code, summary: content.summary, description: content.description }} />
 						<DropdownMenu>
 							<DropdownMenuTrigger render={<Button aria-label="More work item actions" className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-subtle" size="icon" type="button" variant="outline" />}><ShowMoreHorizontalIcon label="" size="small" /></DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="max-h-[var(--available-height)] w-72" positionerClassName="z-[650]">
