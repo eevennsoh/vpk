@@ -1,3 +1,9 @@
+/* Ground grid tokens, mixed from page ink and paper so dark mode inverts without a second palette. */
+:root {
+	--eu26-ground: color-mix(in srgb, var(--ink) 8%, var(--paper));
+	--eu26-ground-major: color-mix(in srgb, var(--ink) 15%, var(--paper));
+}
+
 #animation-explorer [data-vpk-figure="eu26-hero"] {
 	position: relative;
 	isolation: isolate;
@@ -117,3 +123,68 @@
 	#eu26-variant-controls .eu26-variant-choice { transition: none; }
 }
 @media print { #eu26-variant-controls { display: none !important; } }
+
+/* Paper shading after the reference video: near-white tops, side faces one pale step darker, soft grey hairlines.
+   The anatomy kit paints every face and edge through these tokens; this re-tunes them for this figure only. */
+:is(#animation-explorer [data-vpk-figure="eu26-hero"] svg, svg.eu26-thumb-svg) {
+	--anatomy-top: var(--paper);
+	--anatomy-paper: var(--paper);
+	--anatomy-shade-3: color-mix(in srgb, var(--ink) 4%, var(--paper));
+	--anatomy-shade-2: color-mix(in srgb, var(--ink) 6%, var(--paper));
+	--anatomy-shade-1: color-mix(in srgb, var(--ink) 7%, var(--paper));
+	--anatomy-shade-0: color-mix(in srgb, var(--ink) 8%, var(--paper));
+	--anatomy-hi: color-mix(in srgb, var(--ink) 42%, var(--paper));
+	--anatomy-mid: color-mix(in srgb, var(--ink) 30%, var(--paper));
+	--anatomy-lo: color-mix(in srgb, var(--ink) 20%, var(--paper));
+}
+[data-theme="dark"] :is(#animation-explorer [data-vpk-figure="eu26-hero"] svg, svg.eu26-thumb-svg) {
+	--anatomy-top: color-mix(in srgb, var(--ink) 10%, var(--paper));
+	--anatomy-paper: color-mix(in srgb, var(--ink) 10%, var(--paper));
+	--anatomy-shade-3: color-mix(in srgb, var(--ink) 7%, var(--paper));
+	--anatomy-shade-2: color-mix(in srgb, var(--ink) 6%, var(--paper));
+	--anatomy-shade-1: color-mix(in srgb, var(--ink) 5%, var(--paper));
+	--anatomy-shade-0: color-mix(in srgb, var(--ink) 4%, var(--paper));
+	--anatomy-hi: color-mix(in srgb, var(--ink) 44%, var(--paper));
+	--anatomy-mid: color-mix(in srgb, var(--ink) 32%, var(--paper));
+	--anatomy-lo: color-mix(in srgb, var(--ink) 22%, var(--paper));
+}
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-shadows] > path { fill: var(--ink); fill-opacity: .06; stroke: none; }
+[data-theme="dark"] :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-shadows] > path { fill: var(--surface-sunken); fill-opacity: .55; }
+
+/* Face detail: a wireframe of containers on each paper face. On the orange subject the live renderer sets
+   --eu26-hl (0-100%) and the outlines and panels mix towards deeper and paler orange. */
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-detail] { pointer-events: none; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] {
+	--d-line: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 55%, var(--ill-accent-ink)) var(--eu26-hl, 0%), var(--anatomy-mid));
+	--d-faint: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 75%, var(--ill-accent-ink)) var(--eu26-hl, 0%), var(--anatomy-lo));
+	--d-panel: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 82%, var(--paper)) var(--eu26-hl, 0%), var(--anatomy-shade-3));
+	--d-paper: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 62%, var(--paper)) var(--eu26-hl, 0%), var(--anatomy-top));
+}
+[data-theme="dark"] :is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] {
+	--d-panel: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 78%, var(--ink)) var(--eu26-hl, 0%), var(--anatomy-shade-3));
+	--d-paper: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 62%, var(--ink)) var(--eu26-hl, 0%), var(--anatomy-top));
+}
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] :is(.dl, .df, .dp, .dw) {
+	stroke-width: 0.5px;
+	vector-effect: non-scaling-stroke;
+	stroke-linejoin: round;
+}
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .dl { fill: none; stroke: var(--d-line); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .df { fill: none; stroke: var(--d-faint); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .dp { fill: var(--d-panel); stroke: var(--d-faint); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .dw { fill: var(--d-paper); stroke: var(--d-line); }
+/* A landing ring: pale, swelling off the card's edge and fading as the sheet settles. */
+#animation-explorer [data-eu26-detail] > .dring { fill: none; stroke: color-mix(in srgb, var(--ink) 24%, var(--paper)); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .ds { fill: none; stroke: var(--d-line); stroke-width: 1.4px; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+/* The Team ’26 lockup is the one lettered face: bold, left-aligned, ink on the orange title and soft ink in its wall slot. */
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-face] .dtt { fill: color-mix(in oklab, color-mix(in oklab, var(--ill-accent) 50%, var(--ill-accent-ink)) var(--eu26-hl, 0%), var(--anatomy-hi)); stroke: none; font-family: var(--font-display) !important; font-weight: 700; letter-spacing: -0.03em; text-rendering: geometricPrecision; font-kerning: normal; }
+
+/* Cursors (after stageshow kit/cursor.css and examples/presence): one solid rounded arrowhead, a paper halo, and for a
+   teammate one tone everywhere, arrow and name flag alike. The name is the only lettering besides the Team ’26 lockup. A press
+   dips the arrow; no ring marks a click. */
+/* Every cursor wears the orange-yellow accent; its name uses the Team ’26 lockup's dark orange instead of black or white. */
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor] { --who: var(--ill-accent); --who-text: color-mix(in oklab, var(--ill-accent) 50%, var(--ill-accent-ink)); }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-tip] { fill: var(--who); stroke: var(--who); stroke-width: 1.8px; vector-effect: non-scaling-stroke; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-halo] { stroke: var(--paper); stroke-width: 4px; vector-effect: non-scaling-stroke; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-pill] { fill: var(--who); stroke: none; }
+:is(#animation-explorer, .eu26-thumb-svg) [data-eu26-cursor-name] { fill: var(--who-text); font-family: var(--font-body) !important; font-weight: 600; letter-spacing: 0.01em; }

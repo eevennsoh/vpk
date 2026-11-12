@@ -182,7 +182,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
 	const sessionSurfaceSource = readBlockFile("experimental-v2/components/floating-session-surface.tsx");
 	const sharedOverlaySource = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay.tsx"),
+		path.join(BLOCK_DIR, "../../projects/jira-golden-journey-v0/components/jira-golden-journey-v0-rovo-overlay.tsx"),
 		"utf8",
 	);
 
@@ -461,11 +461,11 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 	assert.match(contextPillsSource, /brandName=\{session\.agentBrandName\}/u);
 	assert.match(contextPillsSource, /vpkLogo=\{session\.agentName === "Rovo" \? "rovo" : undefined\}/u);
 	assert.match(contextPillsSource, /<CyclingByline className="menu-row-byline">/u);
-	assert.match(contextPillsSource, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/u);
+	assert.match(contextPillsSource, /import \{ AnimatedDot \} from "@\/components\/ui-custom\/animated-dot";/u);
 	assert.match(contextPillsSource, /const NEEDS_INPUT_STATUS_LABEL = "Needs input";/u);
 	assert.match(
 		contextPillsSource,
-		/needsUserInput \? \(\s*<span className="inline-flex min-w-0 items-baseline">\s*<Shimmer as="span">\{activity\}<\/Shimmer>\s*<AnimatedDots \/>\s*<\/span>\s*\) : activity/u,
+		/needsUserInput \? \(\s*<span className="inline-flex min-w-0 items-baseline">\s*<Shimmer as="span">\{activity\}<\/Shimmer>\s*<AnimatedDot \/>\s*<\/span>\s*\) : activity/u,
 	);
 	assert.match(contextPillsSource, /className="mb-2 flex flex-wrap gap-2"/u);
 	assert.match(contextPillsSource, /WORKING_SESSION_ACTIVITY_STAGGER_MS \* \(sessionIndex \+ 1\)/u);

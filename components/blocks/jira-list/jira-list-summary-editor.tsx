@@ -36,12 +36,13 @@ export function useJiraListSummaryEdit(onSummaryChange: JiraListProps["onSummary
 		const trigger = event.currentTarget;
 		const cell = trigger.closest<HTMLTableCellElement>("td");
 		const tableRow = trigger.closest<HTMLTableRowElement>("tr");
-		if (!cell || !tableRow) return;
+		const summaryTrigger = cell?.querySelector<HTMLButtonElement>("[data-summary-trigger]");
+		if (!cell || !tableRow || !summaryTrigger) return;
 		const cellBounds = cell.getBoundingClientRect();
-		const summaryBounds = trigger.getBoundingClientRect();
+		const summaryBounds = summaryTrigger.getBoundingClientRect();
 		const rowBounds = tableRow.getBoundingClientRect();
 		setDraft({
-			caretOffset: summaryCaretOffset(trigger, event, row.summary.length),
+			caretOffset: trigger === summaryTrigger ? summaryCaretOffset(trigger, event, row.summary.length) : row.summary.length,
 			issueKey: row.issueKey,
 			left: summaryBounds.left - cellBounds.left,
 			value: row.summary,
@@ -114,7 +115,7 @@ export function JiraListSummaryEditor({ draft, editorRef, finish }: Readonly<{
 				aria-label={`Summary for ${draft.issueKey}`}
 				ref={inputRef}
 				variant="none"
-				className="h-6 min-w-0 flex-1 rounded-none px-0 py-0 text-[13px] font-medium leading-5 text-text focus-visible:ring-0"
+				className="h-6 min-w-0 flex-1 rounded-none px-0 py-0 text-sm font-normal leading-5 text-text focus-visible:ring-0"
 				value={value}
 				onChange={(event) => setValue(event.currentTarget.value)}
 				onKeyDown={(event) => {

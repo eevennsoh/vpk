@@ -75,7 +75,7 @@ function JiraIssueSubtaskCard({
 							</div>
 						</div>
 						<div className="flex shrink-0 items-center gap-1">
-							<Tag>{subtask.status ?? "To Do"}</Tag>
+							<Tag className="self-center">{subtask.status ?? "To Do"}</Tag>
 							<span
 								className="flex size-6 shrink-0 items-center justify-center"
 								data-slot="jira-issue-assignee-slot"

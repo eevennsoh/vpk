@@ -7,6 +7,8 @@ figure_engines: [none, iso-kit]
 
 # status-report playbook
 
+Load before you draft `status-report.html`. Back to [SKILL.md](../../SKILL.md).
+
 Format and checker: [contract](../contract.md#playbooks). Routing for every template:
 [authoring detail](../authoring-detail.md). Honesty rules:
 [anti-patterns](../anti-patterns.md).
@@ -20,7 +22,7 @@ Format and checker: [contract](../contract.md#playbooks). Routing for every temp
 ## Choose
 
 - `one-pager.html` when the page argues for one decision rather than reporting a period.
-- `incident-report.html` for a single incident's timeline, impact and follow-ups.
+- `incident-report.html` for a single incident’s timeline, impact and follow-ups.
 - `implementation-plan.html` when the content is a forward plan with phases and owners, not progress.
 - `changelog.html` for release notes aimed at users.
 - `research-feature-explainer.html` for a benchmark or capability study with methodology.

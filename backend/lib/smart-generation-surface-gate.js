@@ -1,5 +1,5 @@
 const SMART_ROUTE_TARGET_SURFACES = new Set([
-	"multiports",
+	"multiport",
 	"sidebar",
 	"fullscreen",
 	"rovo",

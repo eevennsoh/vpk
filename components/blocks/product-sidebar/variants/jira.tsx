@@ -21,7 +21,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { SidebarNavItem, SidebarNavItemAction } from "@/components/ui-custom/sidebar-nav-item";
-import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { IconTile } from "@/components/ui/icon-tile";
 import {
@@ -191,7 +191,7 @@ export function JiraSessionLabel({ session }: Readonly<{ session: JiraSidebarSes
 			<Shimmer as="span" className="min-w-0 truncate" duration={1.4} spread={2}>
 				Needs input
 			</Shimmer>
-			<AnimatedDots />
+			<AnimatedDot />
 		</span>
 	) : session.title;
 }

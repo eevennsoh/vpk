@@ -10,7 +10,6 @@ test("creation and status events match the other activity event text", async ({ 
 	const selectors = [
 		'[data-jira-activity-entry-id="butter-empty-created"] p',
 		'[data-jira-activity-entry-id^="merchant-status-"] p',
-		'[data-jira-activity-entry-id^="merchant-agent-added-"] p',
 	];
 	for (const selector of selectors) await expect(activity.locator(selector)).toHaveCount(1);
 	const styles = await activity.evaluate((root, targets) => targets.map((selector) => {
@@ -19,6 +18,5 @@ test("creation and status events match the other activity event text", async ({ 
 		const style = getComputedStyle(element);
 		return { color: style.color, fontSize: style.fontSize, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
 	}), selectors);
-	expect(styles[0]).toEqual(styles[2]);
-	expect(styles[1]).toEqual(styles[2]);
+	expect(styles[0]).toEqual(styles[1]);
 });

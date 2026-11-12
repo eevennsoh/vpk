@@ -21,12 +21,12 @@ import { useLazyRef } from "@/lib/use-lazy-ref";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions } from "@/components/blocks/agent-directory";
-import { inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
-import { AGENT_TEMPLATES_CATEGORIES, AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
+import { inferAutomationRules } from "@/components/blocks/trigger/data/trigger-catalog";
+import { AGENT_TEMPLATE_CATEGORIES, AgentTemplateDialog, type AgentTemplateAgent } from "@/components/blocks/agent-template";
 import {
 	DEMO_AGENT_TEMPLATES,
 	DEMO_AGENT_TEMPLATES_SESSION,
-} from "@/components/blocks/agent-templates/data/demo-template-agents";
+} from "@/components/blocks/agent-template/data/demo-template-agents";
 import { RovoAppBrowserArtifact } from "@/components/projects/rovo-core/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/studio/components/rovo-app-composer";
 import type { RovoAppEmptyStateHeadingAs } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
@@ -1142,8 +1142,8 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	}, []);
 	const [cursorMode, setCursorMode] = useState(false);
 	const [galleryExpanded, setGalleryExpanded] = useState(false);
-	const [agentTemplatesDialogOpen, setAgentTemplatesDialogOpen] = useState(false);
-	const [agentTemplatesInitialCategory, setAgentTemplatesInitialCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
+	const [agentTemplateDialogOpen, setAgentTemplateDialogOpen] = useState(false);
+	const [agentTemplateInitialCategory, setAgentTemplateInitialCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
 	const [composerFocusRequestKey, setComposerFocusRequestKey] = useState(0);
 	const [previewPrompt, setPreviewPrompt] = useState<string | null>(null);
 	const [prefillText, setPrefillText] = useState<string | null>(null);
@@ -1186,8 +1186,8 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		setOptimisticUserMessage(null);
 		setCursorMode(false);
 		setGalleryExpanded(false);
-		setAgentTemplatesDialogOpen(false);
-		setAgentTemplatesInitialCategory(HOME_STARTER_DEFAULT_CATEGORY);
+		setAgentTemplateDialogOpen(false);
+		setAgentTemplateInitialCategory(HOME_STARTER_DEFAULT_CATEGORY);
 		setIsSidebarAgentBrowserOpen(false);
 		setSidebarAgentBrowserInitialCategory(HOME_STARTER_DEFAULT_CATEGORY);
 		setComposerFocusRequestKey(0);
@@ -1291,9 +1291,9 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 	}, []);
 
-	const handleBrowseAgentTemplates = useCallback((category: HomeStarterCategory = HOME_STARTER_DEFAULT_CATEGORY) => {
-		setAgentTemplatesInitialCategory(category);
-		setAgentTemplatesDialogOpen(true);
+	const handleBrowseAgentTemplate = useCallback((category: HomeStarterCategory = HOME_STARTER_DEFAULT_CATEGORY) => {
+		setAgentTemplateInitialCategory(category);
+		setAgentTemplateDialogOpen(true);
 	}, []);
 
 	// The home bento's "Browse all" pill opens the full Agent Directory instead
@@ -1301,7 +1301,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	// always land the directory on the first template tab ("Planning") for a
 	// predictable entry point, so the cycling tab is intentionally ignored.
 	const handleBrowseAgentsDirectory = useCallback(() => {
-		setSidebarAgentBrowserInitialCategory(AGENT_TEMPLATES_CATEGORIES[0].id);
+		setSidebarAgentBrowserInitialCategory(AGENT_TEMPLATE_CATEGORIES[0].id);
 		setIsSidebarAgentBrowserOpen(true);
 	}, []);
 
@@ -1309,16 +1309,16 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	// directory as "Browse all", landing on the first template tab.
 	const handleStartAgentWithTemplate = handleBrowseAgentsDirectory;
 
-	const handleTemplateAgentSelect = useCallback((agent: AgentTemplatesAgent) => {
+	const handleTemplateAgentSelect = useCallback((agent: AgentTemplateAgent) => {
 		handleGallerySelect(
 			agent.templatePrompt ?? buildFallbackTemplatePrompt(agent),
 			buildCreationTemplateContextFromAgent(agent),
 		);
-		setAgentTemplatesDialogOpen(false);
+		setAgentTemplateDialogOpen(false);
 		setIsSidebarAgentBrowserOpen(false);
 	}, [handleGallerySelect]);
 
-	const handleBuildTemplateAgent = useCallback((agent: AgentTemplatesAgent, options: AgentsDirectoryTemplateBuildOptions) => {
+	const handleBuildTemplateAgent = useCallback((agent: AgentTemplateAgent, options: AgentsDirectoryTemplateBuildOptions) => {
 		if (typeof studioAgentRegistry.registerCreatedAgentFromResult !== "function") {
 			return null;
 		}
@@ -3258,7 +3258,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				onPreviewStart={handleGalleryPreviewStart}
 				onSelect={handleGallerySelect}
 				reduceMotion={shouldReduceStudioLandingMotion}
-				templatesDialogOpen={agentTemplatesDialogOpen || isSidebarAgentBrowserOpen}
+				templatesDialogOpen={agentTemplateDialogOpen || isSidebarAgentBrowserOpen}
 			/>
 
 			{shouldShowComposerDock ? (
@@ -3433,7 +3433,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 					<StudioAgentsSection
 						directoryAgents={ROVO_DIRECTORY_AGENT_PROFILES}
 						entries={studioAgentRegistry.sessionAgentEntries}
-						onBrowseTemplates={() => handleBrowseAgentTemplates()}
+						onBrowseTemplates={() => handleBrowseAgentTemplate()}
 						onCreateAgent={handleFocusStudioComposer}
 						onDeleteAgent={handleDeleteStudioAgent}
 						onEditAgent={handleStudioSidebarAgentSelect}
@@ -3504,12 +3504,12 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 				threadsLoaded={chat.threadsLoaded}
 				topOffset={!embedded}
 			/>
-			<AgentTemplatesDialog
-				key={agentTemplatesInitialCategory}
-				open={agentTemplatesDialogOpen}
-				onOpenChange={setAgentTemplatesDialogOpen}
+			<AgentTemplateDialog
+				key={agentTemplateInitialCategory}
+				open={agentTemplateDialogOpen}
+				onOpenChange={setAgentTemplateDialogOpen}
 				agents={DEMO_AGENT_TEMPLATES}
-				initialCategoryId={agentTemplatesInitialCategory}
+				initialCategoryId={agentTemplateInitialCategory}
 				onSelectAgent={handleTemplateAgentSelect}
 				sessionAgents={DEMO_AGENT_TEMPLATES_SESSION}
 			/>

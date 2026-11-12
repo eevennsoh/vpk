@@ -101,6 +101,9 @@ export type RichTextMentionSectionLabels = Partial<
  */
 export type RichTextSuggestionVariant = "nested" | "flat";
 
+/** Row presentation independent of the menu's nested or flat layout. */
+export type RichTextSuggestionRowVariant = "compact" | "with-byline";
+
 /**
  * Suggestion layout, set either uniformly or per trigger.
  *
@@ -155,6 +158,7 @@ export interface RichTextEditorExtensionOptions {
 	 * (applied to both triggers) or a per-trigger object. Defaults to `"nested"`.
 	 */
 	suggestionVariant?: RichTextSuggestionVariantConfig;
+	suggestionRowVariant?: RichTextSuggestionRowVariant;
 	/**
 	 * Whether the "/" command menu includes the "Format" parent category (and its
 	 * block/mark formatting commands). Defaults to `true` for the full document

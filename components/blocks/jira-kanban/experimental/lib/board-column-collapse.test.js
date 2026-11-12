@@ -146,7 +146,7 @@ test("collapse survives a switch to the list or Pulse view", () => {
 	// A controlled host stays the single source of truth.
 	assert.match(BOARD_SOURCE, /if \(controlledCollapsedColumns === undefined\) \{/u);
 	// The page that owns the view switch owns the state.
-	assert.match(PAGE_SOURCE, /const \[collapsedColumns, setCollapsedColumns\] = useState\(\s*EMPTY_COLLAPSED_BOARD_COLUMNS,?\s*\)/u);
+	assert.match(PAGE_SOURCE, /const \[localCollapsedColumns, setLocalCollapsedColumns\] = useState\(\s*EMPTY_COLLAPSED_BOARD_COLUMNS,?\s*\);\s*const collapsedColumns = controlledCollapsedColumns \?\? localCollapsedColumns;/u);
 	assert.match(PAGE_SOURCE, /collapsedColumns=\{displayedCollapsedColumns\}/u);
 	assert.match(PAGE_SOURCE, /onCollapsedColumnsChange=\{handleCollapsedColumnsChange\}/u);
 	assert.match(PAGE_SOURCE, /useAgentFilterDisplay\(/u);
@@ -164,7 +164,7 @@ test("collapse survives a switch to the list or Pulse view", () => {
 	assert.match(PAGE_SOURCE, /setFocusedCollapsedColumns\(null\);[\s\S]*?setAgentFilterId\(nextAgentFilterId\)/u);
 	assert.match(
 		PAGE_SOURCE,
-		/const handleCollapsedColumnsChange = \(nextCollapsedColumns: CollapsedBoardColumns\) => \{[\s\S]*?agentFilterId === null[\s\S]*?setCollapsedColumns\(nextCollapsedColumns\)[\s\S]*?setFocusedCollapsedColumns\(nextCollapsedColumns\)/u,
+		/const handleCollapsedColumnsChange = \(nextCollapsedColumns: CollapsedBoardColumns\) => \{[\s\S]*?agentFilterId === null[\s\S]*?setLocalCollapsedColumns\(nextCollapsedColumns\)[\s\S]*?setFocusedCollapsedColumns\(nextCollapsedColumns\)/u,
 	);
 });
 
@@ -284,7 +284,7 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	// inset keeps visible simple-column content on the 24px header line.
 	assert.match(
 		BOARD_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
+		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full", contentAlignment === "center" \? "mx-auto" : null\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
 	);
 
 	// The expand control's focus ring extends 3px past a 24px button, which is

@@ -1,12 +1,12 @@
 "use client";
 
 import {
-	Attachment,
+	AttachmentItem,
 	AttachmentInfo,
 	AttachmentPreview,
 	AttachmentRemove,
-	Attachments,
-} from "@/components/ui-custom/attachments";
+	Attachment,
+} from "@/components/ui-custom/attachment";
 import { usePromptInputAttachments } from "@/components/ui-custom/prompt-input";
 
 export function PendingAttachments() {
@@ -17,9 +17,9 @@ export function PendingAttachments() {
 	}
 
 	return (
-		<Attachments variant="inline" className="mb-3 justify-start">
+		<Attachment variant="inline" className="mb-3 justify-start">
 			{attachments.files.map((file) => (
-				<Attachment
+				<AttachmentItem
 					key={file.id}
 					data={file}
 					onRemove={() => attachments.remove(file.id)}
@@ -27,8 +27,8 @@ export function PendingAttachments() {
 					<AttachmentPreview />
 					<AttachmentInfo />
 					<AttachmentRemove className="opacity-100" />
-				</Attachment>
+				</AttachmentItem>
 			))}
-		</Attachments>
+		</Attachment>
 	);
 }

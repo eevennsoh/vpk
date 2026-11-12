@@ -31,7 +31,7 @@ import {
 	DEFAULT_PINNED_SPACE_AGENT_IDS,
 	WORK_ITEM_PINNED_ITEMS_LABEL,
 } from "@/components/blocks/jira-work-item/team-eu26/lib/work-item-picker-options";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage, AvatarUnassigned } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -94,12 +94,14 @@ export const METADATA_PICKER_POSITIONER_CLASS = "z-[700]";
 export const METADATA_PICKER_SIDE_OFFSET = 8;
 
 export function MetadataSearchPicker({
+	className,
 	emptyLabel,
 	items,
 	onEscape,
 	onSelect,
 	placeholder,
 }: Readonly<{
+	className?: string;
 	emptyLabel: string;
 	items: readonly RichTextSuggestionMenuItem[];
 	onEscape: () => void;
@@ -111,7 +113,7 @@ export function MetadataSearchPicker({
 
 	return (
 		<RichTextSuggestionMenu
-			className="rich-text-command-menu-borderless"
+			className={cn("rich-text-command-menu-borderless", className)}
 			emptyLabel={emptyLabel}
 			emptyState={<RichTextSuggestionEmptyState label={emptyLabel} />}
 			header={(
@@ -268,6 +270,7 @@ export function PriorityRowField({ value, onChange, renderValue }: Readonly<{ va
 
 export function PersonRowField({
 	ariaLabel,
+	compact = false,
 	people,
 	placeholder,
 	renderValue,
@@ -275,6 +278,7 @@ export function PersonRowField({
 	onChange,
 }: Readonly<{
 	ariaLabel: string;
+	compact?: boolean;
 	people: readonly WorkItemPerson[];
 	placeholder: string;
 	renderValue?: (person: AgentPlannerAssignee) => ReactNode;
@@ -287,10 +291,11 @@ export function PersonRowField({
 		setOpen(next);
 	};
 	const items = people.map((person): RichTextSuggestionMenuItem => ({
-		description: person.role,
+		description: compact ? undefined : person.role,
 		icon: <PersonIcon label="" size="small" />,
 		id: person.name,
 		label: person.name,
+		leadingVisual: person.name === "Unassigned" ? <AvatarUnassigned label="" size="sm" /> : undefined,
 		visual: person.avatarUrl ? { kind: "avatar", shape: "circle", src: person.avatarUrl } : undefined,
 	}));
 
@@ -303,6 +308,7 @@ export function PersonRowField({
 			</PopoverTrigger>
 			<PopoverContent
 				align="start"
+				aria-label={ariaLabel}
 				className={METADATA_PICKER_POPOVER_CLASS}
 				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
 				sideOffset={METADATA_PICKER_SIDE_OFFSET}

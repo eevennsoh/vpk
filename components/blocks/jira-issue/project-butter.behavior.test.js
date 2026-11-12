@@ -9,6 +9,256 @@ const subtasks = [
 	{ issueKey: "PD-43", summary: "Test date-range edge cases", status: "To Do", priority: "minor" },
 ];
 
+test("Butter cloud picker recommends Claude and keeps The Council selectable", async () => {
+	const assigned = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-inline-agent-picker.tsx",
+		exportName: "ProjectButterCloudAgentPicker",
+		mocks: { "@/components/ui-custom/agent-avatar-visual": "export function AgentAvatarVisual() { return null; }" },
+		props: { onAssign: (agent) => assigned.push(agent.id) },
+	});
+	assert.equal(view.container.querySelector("[data-agent-id]")?.getAttribute("data-agent-id"), "claude-code");
+	assert.equal(view.container.querySelectorAll('[data-agent-id="claude-code"]').length, 1);
+	await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
+	assert.deepEqual(assigned, ["claude-code"]);
+	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "The Council");
+	await view.click(view.getByRole("button", { name: "The Council" }));
+	assert.deepEqual(assigned, ["claude-code", "the-council"]);
+	await view.unmount();
+});
+
+test("PR icon identifies draft and failed pull requests", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
+		exportName: "ProjectButterSummary",
+		props: { issueKey: "PAY-1", summary: "Payments", pullRequestNumber: 42, pullRequestStatus: "draft" },
+	});
+	const draft = view.getByRole("button", { name: "Draft pull request #42: Payments" });
+	assert.equal(draft.classList.contains("group-hover/jira-issue:text-icon-subtle"), true);
+	await view.click(draft);
+	assert.equal(view.getByRole("dialog", { name: "Pull request #42 details" }).textContent.includes("Draft"), true);
+	await view.unmount();
+	const failedView = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
+		exportName: "ProjectButterSummary",
+		props: { issueKey: "PAY-1", summary: "Payments", pullRequestNumber: 42, pullRequestStatus: "failed" },
+	});
+	const failed = failedView.getByRole("button", { name: "Pull request failed #42: Payments" });
+	assert.equal(failed.classList.contains("group-hover/jira-issue:text-icon-danger"), true);
+	await failedView.click(failed);
+	assert.equal(failedView.getByRole("dialog", { name: "Pull request #42 details" }).textContent.includes("Failed"), true);
+});
+
+test("multiple PRs show open, failed, draft, then merged, retaining order within a status", async () => {
+	const item = (number, status) => ({ number, status, preview: { title: `PR ${number}`, additions: 0, deletions: 0 } });
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
+		exportName: "ProjectButterSummary",
+		props: { issueKey: "PAY-1", summary: "Payments", pullRequestNumber: 1, pullRequests: [item(1, "merged"), item(2, "draft"), item(3, "open"), item(4, "failed"), item(5, "open")] },
+	});
+	await view.click(view.getByRole("button", { name: "Pull requests for PAY-1" }));
+	const list = view.getByRole("list", { name: "Pull requests" });
+	assert.deepEqual(Array.from(list.querySelectorAll("button"), (button) => button.textContent), ["#3 PR 3Open", "#5 PR 5Open", "#4 PR 4Failed", "#2 PR 2Draft", "#1 PR 1Merged"]);
+});
+
+test("Jira Local Agent remembers the last used agent and copies the work item prompt", async (t) => {
+	window.localStorage.removeItem("jira-local-agent-last-used");
+	const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+	const copied = [];
+	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value) => copied.push(value) } });
+	t.after(() => { window.localStorage.removeItem("jira-local-agent-last-used"); if (originalClipboard) Object.defineProperty(navigator, "clipboard", originalClipboard); else delete navigator.clipboard; });
+	const view = await renderComponent({ entry: "components/blocks/jira-local-agent/index.tsx", exportName: "JiraLocalAgent", props: { workItem: { code: "PAY-118", summary: "Billing", description: "Carry the artwork" } } });
+	assert.equal(view.queryByRole("button", { name: "Claude" }), null);
+	await view.click(view.getByRole("button", { name: "Open local agent" }));
+	assert.equal(view.queryByRole("combobox", { name: "Search agents" }), null);
+	assert.equal(view.queryByRole("heading", { name: "Open in" }) === null, true);
+	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot", "Rovo CLI", "VS Code"]) {
+		assert.equal(view.getByRole("button", { name: name === "Rovo CLI" ? /^Rovo CLI$/u : new RegExp(name, "u") }) !== null, true);
+	}
+	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot"]) {
+		assert.equal(view.getByRole("button", { name: new RegExp(name, "u") }).hasAttribute("aria-haspopup"), false);
+	}
+	assert.equal(view.getByRole("button", { name: "Rovo CLI" }).hasAttribute("aria-haspopup"), false);
+	assert.equal(view.getByRole("button", { name: "Configure Rovo CLI" }).getAttribute("aria-haspopup"), "dialog");
+	assert.equal(view.queryByRole("button", { name: /Jira Coding Agent/u }), null);
+	assert.equal(view.queryByRole("button", { name: /Figma/u }), null);
+	await view.click(view.getByRole("button", { name: "Codex" }));
+	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Codex"), true);
+	assert.equal(view.container.ownerDocument.querySelectorAll("hr").length, 2);
+	assert.equal(view.getByRole("button", { name: "Codex" }).closest(".group\\/agent").nextElementSibling?.tagName, "HR");
+	assert.equal(view.queryByRole("menuitem", { name: "Open in Codex" }), null);
+	assert.equal(view.queryByRole("menuitem", { name: "Run on cloud" }), null);
+	const copilot = view.getByRole("button", { name: /GitHub Copilot/u });
+	assert.equal(copilot.disabled, true);
+	assert.equal(copilot.textContent.includes("Not installed"), true);
+	await view.click(view.getByRole("button", { name: "Open local agent" }));
+	await view.click(view.getByRole("button", { name: "Open local agent" }));
+	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Codex"), true);
+	assert.notEqual(view.queryByRole("button", { name: "VS Code" }), null);
+	assert.equal(view.container.ownerDocument.querySelectorAll("hr").length, 2);
+	await view.click(view.getByRole("button", { name: "Copy prompt" }));
+	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork"]);
+	assert.equal(view.getByRole("button", { name: "Prompt copied" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Rovo CLI" }));
+	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].getAttribute("data-agent-id"), "rovo-cli");
+	assert.equal([...document.querySelectorAll('[role="status"]')].some((status) => status.textContent === "Command copied"), true);
+	assert.equal(view.getByRole("button", { name: "Command copied" }).querySelector(".text-icon-success") !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Rovo CLI" }), null);
+	assert.equal(view.queryByRole("textbox", { name: "Choose your directory" }), null);
+	await view.click(view.getByRole("button", { name: "Configure Rovo CLI" }));
+	assert.equal(view.queryByRole("button", { name: "Open in Rovo CLI" }), null);
+	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }) !== null, true);
+	await view.unmount();
+});
+
+test("Jira Local Agent can expand Rovo CLI inline with workspace options", async (t) => {
+	window.localStorage.removeItem("jira-local-agent-last-used");
+	t.after(() => window.localStorage.removeItem("jira-local-agent-last-used"));
+	const view = await renderComponent({ entry: "components/blocks/jira-local-agent/index.tsx", exportName: "JiraLocalAgent", props: { presentation: "inline", workItem: { code: "PAY-118", summary: "Billing", description: "" } } });
+	await view.click(view.getByRole("button", { name: "Open local agent" }));
+	assert.equal(view.queryByRole("textbox", { name: "Search agents" }), null);
+	assert.equal(view.getByRole("button", { name: "Copy prompt" }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Rovo CLI" }));
+	assert.equal(view.getByRole("button", { name: "Rovo CLI" }).getAttribute("aria-expanded"), "true");
+	assert.equal(view.getByRole("button", { name: "Open in Rovo CLI" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Configure directory" }), null);
+	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }) !== null, true);
+	await view.unmount();
+});
+
+test("finished runs dismiss independently without removing failures or interrupting an open flyout", async () => {
+	const originalSet = window.setTimeout;
+	const originalClear = window.clearTimeout;
+	const pending = new Map();
+	let nextTimer = 0;
+	window.setTimeout = (callback, delay) => {
+		assert.equal(delay, 5000);
+		pending.set(++nextTimer, callback);
+		return nextTimer;
+	};
+	window.clearTimeout = (id) => pending.delete(id);
+	const runs = [{ id: "one", state: "done" }, { id: "failed", state: "failed" }];
+	const source = `
+		import { useVisibleCompletedRuns } from "@/components/blocks/jira-issue/use-visible-completed-runs";
+		export function Fixture({ runs, enabled = true, paused = false }) {
+			return <output>{useVisibleCompletedRuns(runs, enabled, paused).map((run) => run.id).join(",")}</output>;
+		}
+	`;
+	try {
+		const view = await renderComponent({ source, exportName: "Fixture", props: { runs } });
+		assert.equal(view.container.textContent, "one,failed");
+		const firstTimer = [...pending.keys()][0];
+		await view.rerender({ runs: [...runs] });
+		assert.deepEqual([...pending.keys()], [firstTimer]);
+		const addedRuns = [...runs, { id: "two", state: "done" }];
+		await view.rerender({ runs: addedRuns });
+		assert.equal(pending.size, 2);
+		await act(async () => { const callback = pending.get(firstTimer); pending.delete(firstTimer); callback(); });
+		assert.equal(view.container.textContent, "failed,two");
+		await view.rerender({ runs: addedRuns, paused: true });
+		assert.equal(pending.size, 0);
+		assert.equal(view.container.textContent, "failed,two");
+		await view.rerender({ runs: addedRuns, paused: false });
+		const secondTimer = [...pending.keys()][0];
+		await act(async () => { const callback = pending.get(secondTimer); pending.delete(secondTimer); callback(); });
+		assert.equal(view.container.textContent, "failed");
+		await view.rerender({ runs: [{ id: "failed", state: "failed" }] });
+		await view.rerender({ runs: addedRuns, enabled: false });
+		assert.equal(view.container.textContent, "one,failed,two");
+		assert.equal(pending.size, 0);
+		await view.rerender({ runs: addedRuns, enabled: true });
+		assert.equal(pending.size, 2);
+		await view.unmount();
+		assert.equal(pending.size, 0);
+	} finally {
+		window.setTimeout = originalSet;
+		window.clearTimeout = originalClear;
+	}
+});
+
+test("an open split completed-run flyout pauses dismissal until it closes", async () => {
+	const originalSet = window.setTimeout;
+	const originalClear = window.clearTimeout;
+	const pending = new Map();
+	let nextTimer = 0;
+	window.setTimeout = (callback, delay, ...args) => {
+		if (delay !== 5000) return originalSet(callback, delay, ...args);
+		pending.set(--nextTimer, callback);
+		return nextTimer;
+	};
+	window.clearTimeout = (id) => {
+		if (pending.has(id)) pending.delete(id);
+		else originalClear(id);
+	};
+	const runs = ["one", "two"].map((id) => ({ id, state: "done", agentName: id, summary: id, issueKey: "PD-40", issueSummary: "Issue" }));
+	try {
+		const view = await renderComponent({
+			source: `
+				import { useState } from "react";
+				import { JiraIssueAgentDone } from "@/components/blocks/jira-issue/completed-agent-runs";
+				import { useVisibleCompletedRuns } from "@/components/blocks/jira-issue/use-visible-completed-runs";
+				export function Fixture({ runs }) {
+					const [open, setOpen] = useState(false);
+					const visible = useVisibleCompletedRuns(runs, true, open);
+					return <JiraIssueAgentDone layout="split" runs={visible} onOpenChange={setOpen} usesStrokeChrome />;
+				}
+			`,
+			exportName: "Fixture",
+			mocks: {
+				"@/components/blocks/product-sidebar/variants/jira-session-flyout": `
+					export const createJiraSessionFlyoutHandle = () => ({});
+					export function JiraSessionFlyoutTrigger({ render }) { return render; }
+					export function JiraSessionFlyoutSurface({ onOpenChange }) {
+						return <><button onClick={() => onOpenChange?.(true)}>Open preview</button><button onClick={() => onOpenChange?.(false)}>Close preview</button></>;
+					}
+				`,
+			},
+			props: { runs },
+		});
+		assert.equal(pending.size, 2);
+		await view.click(view.getAllByRole("button", { name: "Open preview" })[0]);
+		assert.equal(pending.size, 0);
+		assert.equal(view.getAllByRole("button", { name: /finished:/u }).length, 2);
+		await view.click(view.getAllByRole("button", { name: "Open preview" })[1]);
+		await view.click(view.getAllByRole("button", { name: "Close preview" })[0]);
+		assert.equal(pending.size, 0);
+		await view.click(view.getAllByRole("button", { name: "Close preview" })[1]);
+		assert.equal(pending.size, 2);
+		await view.click(view.getAllByRole("button", { name: "Open preview" })[1]);
+		assert.equal(pending.size, 0);
+		await view.rerender({ runs: [runs[0]] });
+		assert.equal(pending.size, 1);
+		await view.rerender({ runs });
+		assert.equal(pending.size, 2);
+		await act(async () => {
+			for (const [id, callback] of pending) {
+				pending.delete(id);
+				callback();
+			}
+		});
+		assert.equal(view.container.textContent.includes("Open preview"), false);
+		await view.unmount();
+	} finally {
+		window.setTimeout = originalSet;
+		window.clearTimeout = originalClear;
+	}
+});
+
+test("JiraIssue defaults to Project butter and keeps the earlier appearance available", async () => {
+	const view = await renderComponent({
+		source: `
+			import { JiraIssue } from "@/components/blocks/jira-issue";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			export function Fixture(props) { return <ThemeWrapper><JiraIssue {...props} /></ThemeWrapper>; }
+		`,
+		exportName: "Fixture",
+		props: { issueKey: "PD-40", summary: "Default card" },
+	});
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-project-butter"]') !== null, true);
+	await view.rerender({ issueKey: "PD-40", summary: "Earlier card", appearance: "default" });
+	assert.equal(view.container.querySelector('[data-slot="jira-issue-project-butter"]'), null);
+});
+
 test("Project butter renders explicit card metadata and a subtask progress popover", async () => {
 	const opened = [];
 	const view = await renderComponent({
@@ -276,22 +526,15 @@ test("Rovo CLI retains editable codebase workspaces", async () => {
 	assert.equal(avatar.classList.contains("size-6"), true);
 	assert.equal(avatar.parentElement.classList.contains("size-6"), true);
 	assert.equal(dialog.textContent.includes("Run on cloud"), false);
-	const configure = view.getByRole("button", { name: "Configure directory" });
-	assert.equal(configure.getAttribute("aria-expanded"), "false");
-	assert.equal(view.queryByRole("textbox", { name: "Choose your directory" }), null);
-	await view.click(configure);
-	assert.equal(configure.getAttribute("aria-expanded"), "true");
+	assert.equal(view.queryByRole("button", { name: "Configure directory" }), null);
+	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }) !== null, true);
 	assert.equal(view.getByRole("status").textContent, "");
-	await view.click(configure);
-	assert.equal(configure.getAttribute("aria-expanded"), "false");
-	assert.equal(view.queryByRole("textbox", { name: "Choose your directory" }), null);
 	await view.click(view.getByRole("button", { name: "Open in Rovo CLI" }));
 	assert.equal(view.getByRole("button", { name: "Command copied" }) !== null, true);
 	assert.equal(view.getByRole("status").textContent, "Command copied");
 	await act(() => new Promise((resolve) => setTimeout(resolve, 1850)));
 	assert.equal(view.getByRole("button", { name: "Open in Rovo CLI" }) !== null, true);
 	assert.deepEqual(assigned, []);
-	await view.click(configure);
 	const field = view.getByRole("textbox", { name: "Choose your directory" });
 	assert.equal(field.getAttribute("placeholder"), "No workspace");
 	await view.click(field);
@@ -313,7 +556,6 @@ test("Rovo CLI retains editable codebase workspaces", async () => {
 	assert.equal(view.queryByRole("button", { name: "Command copied" }), null);
 	assert.deepEqual(assigned, []);
 	await view.click(view.getByRole("option", { name: /Rovo CLI/u }));
-	await view.click(view.getByRole("button", { name: "Configure directory" }));
 	assert.equal(view.getByRole("textbox", { name: "Choose your directory" }).value, "~/dev/project");
 	assert.equal(view.queryByRole("button", { name: "Choose workspace" }), null);
 	await view.click(view.getByRole("textbox", { name: "Choose your directory" }));
@@ -366,7 +608,6 @@ test("creating a workspace with Enter keeps the new selected entry visible", asy
 	});
 	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
 	await view.click(view.getByRole("option", { name: /Rovo CLI/u }));
-	await view.press(view.getByRole("button", { name: "Configure directory" }), "Enter");
 	const field = view.getByRole("textbox", { name: "Choose your directory" });
 	await view.fill(field, "~/dev/enter-workspace");
 	await view.press(field, "Enter");
@@ -377,13 +618,11 @@ test("creating a workspace with Enter keeps the new selected entry visible", asy
 	assert.equal(view.getByRole("button", { name: "~/dev/enter-workspace" }).getAttribute("aria-current"), "true");
 	await view.press(view.getByRole("button", { name: "~/dev/enter-workspace" }), "Enter");
 	assert.equal(view.queryByRole("dialog", { name: "Codebase workspaces" }), null);
-	assert.equal(view.isFocused(field), false);
-	assert.equal(view.isFocused(view.getByRole("button", { name: "Configure directory" })), true);
+	assert.equal(view.isFocused(field), true);
 	await view.click(field);
 	await view.click(view.getByRole("button", { name: "No workspace" }));
 	assert.equal(field.value, "");
-	assert.equal(view.isFocused(field), false);
-	assert.equal(view.isFocused(view.getByRole("button", { name: "Configure directory" })), true);
+	assert.equal(view.isFocused(field), true);
 });
 
 test("directory label spacing dismisses the workspace menu without focusing its input", async () => {
@@ -392,7 +631,6 @@ test("directory label spacing dismisses the workspace menu without focusing its 
 		exportName: "ProjectButterLocalAgentMenu",
 		props: { onPointerEnter: () => {}, onPointerLeave: () => {}, onSelectingFolderChange: () => {} },
 	});
-	await view.click(view.getByRole("button", { name: "Configure directory" }));
 	const field = view.getByRole("textbox", { name: "Choose your directory" });
 	const label = view.container.querySelector("label");
 	assert.equal(label.control === field, true);
@@ -416,7 +654,6 @@ test("adding a workspace selects the chosen path, avoids duplicates, and handles
 		exportName: "ProjectButterLocalAgentMenu",
 		props: { onPointerEnter: () => {}, onPointerLeave: () => {}, onSelectingFolderChange: () => {} },
 	});
-	await view.click(view.getByRole("button", { name: "Configure directory" }));
 	await view.click(view.getByRole("textbox", { name: "Choose your directory" }));
 	assert.equal(view.getByRole("dialog", { name: "Codebase workspaces" }).querySelector("button")?.textContent, "Add workspace");
 	await view.click(view.getByRole("button", { name: "Add workspace" }));
@@ -511,6 +748,50 @@ test("Butter software agents offer run locations before cloud assignment", async
 	}
 	await view.click(view.getByRole("menuitem", { name: "Run on cloud" }));
 	assert.deepEqual(assigned, ["review-agent"]);
+});
+
+test("Butter labels the single resumable session and continues it", async () => {
+	const opened = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			appearance: "project-butter", issueKey: "PD-40", summary: "Test",
+			assignment: {
+				agents: [{ id: "test-agent", name: "Cursor", byline: "" }],
+				onAgentAssign: () => undefined,
+				sessions: [{ id: "session-1", title: "Sample session", state: "running", host: "cloud", agent: { id: "test-agent", name: "Cursor" } }],
+				onOpenSession: (session) => opened.push(session.id),
+			},
+		},
+	});
+	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
+	await view.click(view.getByRole("option", { name: /Cursor/u }));
+	await view.click(view.getByRole("menuitem", { name: "Continue with last session" }));
+	assert.deepEqual(opened, ["session-1"]);
+});
+
+test("Butter session choices show the state of every session", async () => {
+	const view = await renderComponent({ source: `
+		import { ProjectButterAgentPickerContent } from "@/components/blocks/jira-issue/project-butter-agent-picker";
+		import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/project-butter-invocation";
+		const agent = { id: "claude-code", name: "Claude", byline: "" };
+		const sessions = ["running", "needs-input"].map((state) => ({
+			id: state, title: state, state, host: "cloud", agent,
+		}));
+		export default function Fixture() {
+			return <ProjectButterInvocationProvider agents={[agent]} enabled>
+				<ProjectButterAgentPickerContent onAssign={() => {}} onContinueSession={() => {}} sessionChoicesOnly sessions={sessions} />
+			</ProjectButterInvocationProvider>;
+		}
+	` });
+	await view.click(view.getByRole("option", { name: /Claude/u }));
+	const dialog = view.getByRole("dialog", { name: "Claude sessions" });
+	for (const [title, state] of [["running", "Working"], ["needs-input", "Needs input"]]) {
+		const row = [...dialog.querySelectorAll("li")].find((item) => item.textContent.includes(title));
+		assert.equal(Boolean(row?.querySelector(`[role="img"][aria-label="${state}"]`)), true, title);
+	}
+	await view.unmount();
 });
 
 test("Butter restores the add-agent control when assignment does not create a row", async () => {

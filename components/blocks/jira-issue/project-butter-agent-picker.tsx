@@ -6,7 +6,7 @@ import ScreenIcon from "@atlaskit/icon/core/screen";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import AddIcon from "@atlaskit/icon/core/add";
 import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { AgentSessionCard, type AgentSessionItem } from "@/components/blocks/agent-session";
 import { matchingAgentSessions, sessionChoiceItems } from "@/components/blocks/agent-assignment/components/session-choice-items";
 import { RichTextSuggestionMenu } from "@/components/ui-custom/rich-text-editor";
 import { Popover, PopoverContent } from "@/components/ui/popover";
@@ -38,6 +38,7 @@ export function ProjectButterAgentPicker({
 	onCreateAgent,
 	onContinueSession,
 	sessions,
+	side = "right",
 }: Readonly<{
 	anchor?: ComponentProps<typeof PopoverContent>["anchor"];
 	id?: string;
@@ -46,44 +47,59 @@ export function ProjectButterAgentPicker({
 	onCreateAgent?: () => void;
 	onContinueSession?: (session: AgentSessionItem) => void;
 	sessions?: readonly AgentSessionItem[];
+	side?: ComponentProps<typeof PopoverContent>["side"];
 }>) {
 	return (
-		<PopoverContent id={id} anchor={anchor} aria-label="Agents" side="right" align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
+		<PopoverContent id={id} anchor={anchor} aria-label="Agents" side={side} align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
 			<ProjectButterAgentPickerContent onAssign={onAssign} onBrowseAgents={onBrowseAgents} onCreateAgent={onCreateAgent} onContinueSession={onContinueSession} sessions={sessions} />
 		</PopoverContent>
 	);
 }
 
-export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onPreviewSession, sessions = [], selectedAgentIds, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
-	onAssign: (agent: AgentSelectorAgent) => void;
+export function ProjectButterAgentPickerContent({ localOnly = false, favoriteAgentIds, onFavoriteAgentIdsChange, onAssign, onBrowseAgents, onContinueSession, onCreateAgent, onLocalUse, onPreviewSession, recentAgentId, sessionActions, sessions = [], sessionChoicesOnly = false, selectedAgentIds, showSubmenuChevron = true, submenuPositionerClassName = "z-[600]", workspacePositionerClassName = "z-[650]" }: Readonly<{
+	localOnly?: boolean;
+	favoriteAgentIds?: readonly string[];
+	onFavoriteAgentIdsChange?: (ids: readonly string[]) => void;
+	recentAgentId?: string | null;
+	onLocalUse?: (agentId: string) => void;
+	onAssign?: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
 	onContinueSession?: (session: AgentSessionItem) => void;
 	onCreateAgent?: () => void;
 	onPreviewSession?: (sessionId: string | null) => void;
+	sessionActions?: Readonly<{
+		onDelete: (session: AgentSessionItem) => void;
+		onDismiss: (session: AgentSessionItem) => void;
+		onRename: (session: AgentSessionItem) => void;
+	}>;
 	sessions?: readonly AgentSessionItem[];
+	sessionChoicesOnly?: boolean;
 	selectedAgentIds?: readonly string[];
+	showSubmenuChevron?: boolean;
 	submenuPositionerClassName?: string;
 	workspacePositionerClassName?: string;
 }>) {
 	const agents = useProjectButterInvocationAgents();
 	const actions = useProjectButterInvocationActions();
-	const pickerAgents = agents.filter((agent) => agent.id !== "github-copilot" || !agents.some((candidate) => candidate.id === "release-agent"));
+	const pickerAgents = agents.filter((agent) => (!localOnly || RUN_ON_AGENT_IDS.includes(agent.id)) && (agent.id !== "github-copilot" || !agents.some((candidate) => candidate.id === "release-agent")));
 	const pointer = useRef<{ x: number; y: number } | null>(null);
 	const popup = useRef<HTMLDivElement | null>(null);
 	const frame = useRef<number | null>(null);
 	const syncHighlight = useRef(false);
 	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const selectingFolder = useRef(false);
+	const sessionMenuOpen = useRef(false);
 	const cloudButton = useRef<HTMLButtonElement | null>(null);
 	const submenuContent = useRef<HTMLDivElement | null>(null);
 	const submenuId = useId();
 	const [submenu, setSubmenu] = useState<{ agent: AgentSelectorAgent; anchor: HTMLElement } | null>(null);
 	const [choosingSession, setChoosingSession] = useState(false);
+	const [query, setQuery] = useState("");
 	const [selectedSessionIndex, setSelectedSessionIndex] = useState(0);
 	const sessionsFor = (agent: AgentSelectorAgent) => onContinueSession ? matchingAgentSessions(agent, sessions) : [];
-	const hasSubmenu = (agent: AgentSelectorAgent) => RUN_ON_AGENT_IDS.includes(agent.id) || sessionsFor(agent).length > 0;
+	const hasSubmenu = (agent: AgentSelectorAgent) => sessionChoicesOnly ? sessionsFor(agent).length > 0 : localOnly ? hasWorkspaceOptions(agent.id) : RUN_ON_AGENT_IDS.includes(agent.id) || sessionsFor(agent).length > 0;
 	const matchingSessions = submenu ? sessionsFor(submenu.agent) : [];
-	const sessionItems = sessionChoiceItems(matchingSessions);
+	const sessionItems = sessionChoiceItems(matchingSessions).map(({ id, label, icon }) => ({ id, label, icon, leadingVisual: icon }));
 	const selectedIndex = Math.min(selectedSessionIndex, Math.max(0, sessionItems.length - 1));
 	useEffect(() => {
 		if (!submenu) return;
@@ -97,8 +113,8 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 	const closeSubmenuLater = () => {
 		cancelClose();
 		closeTimer.current = setTimeout(() => {
-			if (selectingFolder.current) return;
-			if (choosingSession && submenuContent.current?.contains(document.activeElement)) return;
+			if (selectingFolder.current || sessionMenuOpen.current) return;
+			if ((choosingSession || sessionChoicesOnly) && submenuContent.current?.contains(document.activeElement)) return;
 			if (document.activeElement?.closest("[data-butter-local-menu], [aria-label='Codebase workspaces']")) return;
 			setSubmenu(null);
 			setChoosingSession(false);
@@ -110,7 +126,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 		cancelClose();
 		if (submenu?.agent.id !== agent.id || submenu.anchor !== anchor) { setChoosingSession(false); onPreviewSession?.(null); }
 		setSubmenu((current) => current?.agent.id === agent.id && current.anchor === anchor ? current : { agent, anchor });
-		if (focus) requestAnimationFrame(() => (agent.id === "rovo-cli" ? submenuContent.current?.querySelector<HTMLButtonElement>("button") : cloudButton.current)?.focus());
+		if (focus) requestAnimationFrame(() => (localOnly || (!sessionChoicesOnly && agent.id === "rovo-cli") ? submenuContent.current?.querySelector<HTMLButtonElement>("button") : cloudButton.current)?.focus());
 	};
 	useEffect(
 		() => () => {
@@ -149,6 +165,46 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 			actions.preview(agents[index], index);
 		});
 	};
+
+	const submenuActions = submenu && sessionChoicesOnly ? (
+		<>
+			<Button ref={cloudButton} className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" />} />Start a new session</Button>
+			<hr className="my-1 border-0 border-t border-border" />
+			<div role="group" aria-labelledby={`${submenuId}-existing`}>
+				<div id={`${submenuId}-existing`} className="rich-text-command-menu-heading">Continue with existing sessions</div>
+				<ul aria-labelledby={`${submenuId}-existing`} className="flex min-w-0 flex-col">
+					{matchingSessions.map((session) => <AgentSessionCard animateLayout={false} hoverTone="menu" item={session} key={session.id} localSessionAction="view" moreMenuPositionerClassName="z-[800]" onDeleteSession={sessionActions?.onDelete} onMoreMenuOpenChange={(open) => { sessionMenuOpen.current = open; if (open) cancelClose(); }} onRenameSession={sessionActions?.onRename} onToggleVisibility={sessionActions?.onDismiss} onView={onContinueSession} padding="compact" showMoreMenu={sessionActions !== undefined} showWorkingSpinner />)}
+				</ul>
+			</div>
+		</>
+	) : submenu ? (
+		<>
+					{choosingSession ? <RichTextSuggestionMenu className="rich-text-command-menu-embedded [&_.rich-text-command-menu-list]:p-0! [&_.rich-text-command-menu-item]:h-8!" emptyLabel="No active sessions" items={sessionItems} onHover={(index) => { setSelectedSessionIndex(index); if (sessionItems[index]) onPreviewSession?.(sessionItems[index].id); }} onHoverEnd={() => onPreviewSession?.(null)} onSelect={(item) => { const session = matchingSessions.find((candidate) => candidate.id === item.id); if (session) { onPreviewSession?.(null); onContinueSession?.(session); } }} selectedIndex={selectedIndex} showReturnShortcut={false} title={`Choose a ${submenu.agent.name} session`} /> : <>
+					{!localOnly && matchingSessions.length > 0 ? <div role="group" aria-label="Run on cloud">
+						<div className="px-2 pt-2 pb-1 text-xs font-medium text-text-subtle">Run on cloud</div>
+						<Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => { if (matchingSessions.length === 1) onContinueSession?.(matchingSessions[0]); else { cancelClose(); setChoosingSession(true); setSelectedSessionIndex(0); requestAnimationFrame(() => submenuContent.current?.querySelector<HTMLButtonElement>('[role="option"]')?.focus()); } }}><Icon aria-hidden className="size-4 shrink-0" render={<AiChatIcon label="" />} />{matchingSessions.length > 1 ? "Continue to existing session" : "Continue with last session"}</Button>
+						{submenu.agent.id !== "rovo-cli" ? <Button role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" />} />Start a new session</Button> : null}
+					</div> : !localOnly && submenu.agent.id !== "rovo-cli" ? <Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign?.(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<CloudIcon label="" />} />Run on cloud</Button> : null}
+					{!localOnly && matchingSessions.length > 0 && RUN_ON_AGENT_IDS.includes(submenu.agent.id) ? <hr className="my-1 border-0 border-t border-border" /> : null}
+					{hasWorkspaceOptions(submenu.agent.id) ? <ProjectButterLocalAgentMenu key={submenu.agent.id} onPointerEnter={cancelClose} onPointerLeave={closeSubmenuLater} onSelectingFolderChange={(selecting) => { selectingFolder.current = selecting; if (selecting) cancelClose(); }} onUse={onLocalUse ? () => onLocalUse(submenu.agent.id) : undefined} workspacePositionerClassName={workspacePositionerClassName} /> : RUN_ON_AGENT_IDS.includes(submenu.agent.id) ? <>
+					<Button
+						role="menuitem"
+						aria-disabled={VS_CODE_AGENT_IDS.has(submenu.agent.id) ? true : undefined}
+						onClick={(event) => { if (VS_CODE_AGENT_IDS.has(submenu.agent.id)) event.preventDefault(); else onLocalUse?.(submenu.agent.id); }}
+						className={cn("w-full justify-start gap-3 px-2 text-sm font-normal aria-disabled:opacity-(--opacity-disabled) aria-disabled:hover:bg-transparent", VS_CODE_AGENT_IDS.has(submenu.agent.id) ? "h-11" : "h-8")}
+						variant="ghost"
+					>
+						<Icon aria-hidden className="size-4 shrink-0" render={<ScreenIcon label="" />} />
+						<span className="flex min-w-0 flex-col text-left">
+							<span className="menu-row-title">{RUN_ON_LABELS[submenu.agent.id]}</span>
+							{VS_CODE_AGENT_IDS.has(submenu.agent.id) ? <span className="menu-row-byline">Not installed</span> : null}
+						</span>
+					</Button>
+					</> : null}
+					</>}
+		</>
+	) : null;
+
 
 	return (
 		<>
@@ -197,30 +253,49 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 		>
 			<AgentSelector
 				agents={pickerAgents}
-				className="min-w-0 w-full"
+				className={cn("min-w-0 w-full", localOnly && "h-auto [&_[data-slot=command-item][data-disabled=true]]:opacity-100")}
+				heading={localOnly ? "Open in" : undefined}
 				onAgentToggle={(agentId) => {
 					const agent = agents.find((candidate) => candidate.id === agentId);
 					if (!agent) return;
 					if (hasSubmenu(agent)) {
-						const option = popup.current?.querySelector<HTMLElement>(`[data-slot="command-item"][data-value="${agent.id}"]`);
-						if (option) openSubmenu(agent, option, true);
-					} else onAssign(agent);
+						const openOption = () => {
+							const option = popup.current?.querySelector<HTMLElement>(`[data-slot="command-item"][data-value="${agent.id}"]`);
+							if (option) openSubmenu(agent, option, true);
+						};
+						if (localOnly) { onLocalUse?.(agent.id); requestAnimationFrame(openOption); }
+						else openOption();
+					} else if (localOnly) onLocalUse?.(agent.id);
+					else onAssign?.(agent);
 				}}
 				onBrowseAgents={onBrowseAgents ? () => { actions.close(); onBrowseAgents(); } : undefined}
 				onCreateAgent={onCreateAgent ? () => { actions.close(); onCreateAgent(); } : undefined}
-				onQueryChange={() => {
+				onQueryChange={(value) => {
+					setQuery(value);
 					cancelClose();
 					setSubmenu(null);
 					pointer.current = null;
 					if (popup.current) schedulePreview(popup.current);
 				}}
-				pinningEnabled={false}
+				pinningEnabled={!localOnly && Boolean(onFavoriteAgentIdsChange)}
+				pinningAppearance="favorite"
+				onPinnedAgentIdsChange={onFavoriteAgentIdsChange ? (ids) => { cancelClose(); setSubmenu(null); onFavoriteAgentIdsChange(ids); } : undefined}
+				disabledAgentIds={localOnly ? [...VS_CODE_AGENT_IDS] : undefined}
+				disabledAgentLabel={localOnly ? "Not installed" : undefined}
+				pinnedAgentIds={localOnly && recentAgentId ? [recentAgentId] : favoriteAgentIds}
+				pinnedItemsLabel={localOnly ? "Open in" : "Favorites"}
+				moreItemsLabel={localOnly ? "" : undefined}
+				query={query}
 				searchVariant="palette"
-				sections={{ heading: "Software agents", agentIds: ["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent", "github-copilot", "rovo-cli"], initialLimit: 3, otherHeading: "Other agents" }}
+				sections={localOnly ? undefined : { heading: "Software agents", agentIds: ["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent", "github-copilot", "rovo-cli"], initialLimit: 3, otherHeading: "Other agents" }}
+				separatePinned={localOnly}
+				showSearch={!localOnly}
 				showByline={false}
 				selectedAgentIds={selectedAgentIds}
 				showSelectedTickInSingleSelect
 				submenuAgentIds={pickerAgents.filter(hasSubmenu).map((agent) => agent.id)}
+				submenuRole={sessionChoicesOnly ? "dialog" : "menu"}
+				showSubmenuChevron={showSubmenuChevron}
 				selectionMode="single"
 			/>
 		<Popover open={submenu !== null} onOpenChange={(open) => { if (!open) { setChoosingSession(false); onPreviewSession?.(null); setSubmenu((current) => current?.agent.id === submenu?.agent.id ? null : current); } }}>
@@ -229,14 +304,14 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 					id={submenuId}
 					ref={submenuContent}
 					anchor={submenu.anchor}
-					aria-label={choosingSession ? `Choose a ${submenu.agent.name} session` : submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
-					role={choosingSession || hasWorkspaceOptions(submenu.agent.id) ? "dialog" : "menu"}
+					aria-label={sessionChoicesOnly ? `${submenu.agent.name} sessions` : choosingSession ? `Choose a ${submenu.agent.name} session` : submenu.agent.id === "rovo-cli" ? `${submenu.agent.name} local options` : `Run ${submenu.agent.name} on`}
+					role={sessionChoicesOnly || choosingSession || hasWorkspaceOptions(submenu.agent.id) ? "dialog" : "menu"}
 					initialFocus={false}
 					finalFocus={false}
 					side="right"
 					align="start"
 					sideOffset={0}
-					className={cn("gap-0 p-1", choosingSession ? "w-96 max-w-[calc(100vw-24px)]" : "w-70")}
+					className={cn("w-70 max-w-[calc(100vw-24px)] gap-0 p-1", sessionChoicesOnly && "max-h-[min(26rem,var(--available-height,26rem))] overflow-y-auto shadow-2xl")}
 					positionerClassName={submenuPositionerClassName}
 					onPointerEnter={cancelClose}
 					onPointerLeave={closeSubmenuLater}
@@ -249,7 +324,7 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 						if (index >= 0 && sessionItems[index]) { setSelectedSessionIndex(index); onPreviewSession?.(sessionItems[index].id); }
 					}}
 					onKeyDown={(event) => {
-						if (submenu.agent.id === "rovo-cli" && !choosingSession) return;
+						if (!sessionChoicesOnly && submenu.agent.id === "rovo-cli" && !choosingSession) return;
 						if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target) || event.target instanceof HTMLInputElement) return;
 						if (choosingSession && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
 							event.preventDefault();
@@ -258,11 +333,12 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 							options[(current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length]?.focus();
 							return;
 						}
-						if (!hasWorkspaceOptions(submenu.agent.id) && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+						if ((sessionChoicesOnly || !hasWorkspaceOptions(submenu.agent.id)) && (event.key === "ArrowDown" || event.key === "ArrowUp" || (sessionChoicesOnly && (event.key === "Home" || event.key === "End")))) {
 							event.preventDefault();
-							const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+							const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>(sessionChoicesOnly ? 'button:not(:disabled)' : '[role="menuitem"]'));
 							const current = items.indexOf(document.activeElement instanceof HTMLButtonElement ? document.activeElement : items[0]);
-							items[(current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
+							const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+							items[next]?.focus();
 						}
 						if (event.key === "ArrowLeft" || event.key === "Escape") {
 							event.preventDefault();
@@ -270,33 +346,11 @@ export function ProjectButterAgentPickerContent({ onAssign, onBrowseAgents, onCo
 							setSubmenu(null);
 							setChoosingSession(false);
 							onPreviewSession?.(null);
-							popup.current?.querySelector<HTMLInputElement>('input[aria-label="Search agents"]')?.focus();
+							popup.current?.querySelector<HTMLElement>(localOnly ? '[data-slot="command-list"]' : 'input[aria-label="Search agents"]')?.focus();
 						}
 					}}
 				>
-					{choosingSession ? <RichTextSuggestionMenu className="rich-text-command-menu-embedded [&_.rich-text-command-menu-item]:h-auto! [&_.rich-text-command-menu-item]:min-h-11 [&_.rich-text-command-menu-item]:py-2! [&_.menu-row-title]:line-clamp-2 [&_.menu-row-title]:whitespace-normal [&_.menu-row-byline]:whitespace-normal" emptyLabel="No active sessions" items={sessionItems} onHover={(index) => { setSelectedSessionIndex(index); if (sessionItems[index]) onPreviewSession?.(sessionItems[index].id); }} onHoverEnd={() => onPreviewSession?.(null)} onSelect={(item) => { const session = matchingSessions.find((candidate) => candidate.id === item.id); if (session) { onPreviewSession?.(null); onContinueSession?.(session); } }} selectedIndex={selectedIndex} showReturnShortcut={false} title={`Choose a ${submenu.agent.name} session`} /> : <>
-					{matchingSessions.length > 0 ? <div role="group" aria-label="Run on cloud">
-						<div className="px-2 pt-2 pb-1 text-xs font-medium text-text-subtle">Run on cloud</div>
-						<Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => { if (matchingSessions.length === 1) onContinueSession?.(matchingSessions[0]); else { cancelClose(); setChoosingSession(true); setSelectedSessionIndex(0); requestAnimationFrame(() => submenuContent.current?.querySelector<HTMLButtonElement>('[role="option"]')?.focus()); } }}><Icon aria-hidden className="size-4 shrink-0" render={<AiChatIcon label="" size="small" />} />Continue to existing session{matchingSessions.length > 1 ? ` (${matchingSessions.length})` : ""}</Button>
-						{submenu.agent.id !== "rovo-cli" ? <Button role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<AddIcon label="" size="small" />} />Start a new session</Button> : null}
-					</div> : submenu.agent.id !== "rovo-cli" ? <Button ref={cloudButton} role="menuitem" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal" variant="ghost" onClick={() => onAssign(submenu.agent)}><Icon aria-hidden className="size-4 shrink-0" render={<CloudIcon label="" size="small" />} />Run on cloud</Button> : null}
-					{matchingSessions.length > 0 && RUN_ON_AGENT_IDS.includes(submenu.agent.id) ? <hr className="my-1 border-0 border-t border-border" /> : null}
-					{hasWorkspaceOptions(submenu.agent.id) ? <ProjectButterLocalAgentMenu key={submenu.agent.id} onPointerEnter={cancelClose} onPointerLeave={closeSubmenuLater} onSelectingFolderChange={(selecting) => { selectingFolder.current = selecting; if (selecting) cancelClose(); }} workspacePositionerClassName={workspacePositionerClassName} /> : RUN_ON_AGENT_IDS.includes(submenu.agent.id) ? <>
-					<Button
-						role="menuitem"
-						aria-disabled={VS_CODE_AGENT_IDS.has(submenu.agent.id) ? true : undefined}
-						onClick={(event) => { if (VS_CODE_AGENT_IDS.has(submenu.agent.id)) event.preventDefault(); }}
-						className={cn("w-full justify-start gap-3 px-2 text-sm font-normal aria-disabled:opacity-(--opacity-disabled) aria-disabled:hover:bg-transparent", VS_CODE_AGENT_IDS.has(submenu.agent.id) ? "h-11" : "h-8")}
-						variant="ghost"
-					>
-						<Icon aria-hidden className="size-4 shrink-0" render={<ScreenIcon label="" size="small" />} />
-						<span className="flex min-w-0 flex-col text-left">
-							<span className="menu-row-title">{RUN_ON_LABELS[submenu.agent.id]}</span>
-							{VS_CODE_AGENT_IDS.has(submenu.agent.id) ? <span className="menu-row-byline">Not installed</span> : null}
-						</span>
-					</Button>
-					</> : null}
-					</>}
+					{submenuActions}
 				</PopoverContent>
 			) : null}
 		</Popover>

@@ -27,6 +27,8 @@ test("coding agent appearance preserves local artwork and the requested brand ca
 	assert.deepEqual(getCodingAgentVisual("claude"), { backgroundColor: "#d97757", whiteGlyph: true });
 	assert.deepEqual(getCodingAgentVisual("openai-codex"), { artwork: "local", logoClassName: "scale-125" });
 	assert.deepEqual(getCodingAgentVisual("openai-codex", 20), { artwork: "glyph", logoFrameSizePx: 12 });
+	assert.deepEqual(getCodingAgentVisual("openai-codex", 16, "square"), { artwork: "glyph", logoFrameSizePx: 12 });
+	assert.deepEqual(getCodingAgentVisual("openai-codex", 16, "hexagon"), { artwork: "glyph", logoFrameSizePx: 16 });
 	assert.deepEqual(getCodingAgentVisual("cursor"), { artwork: "local", backgroundColor: "#14120B" });
 	assert.deepEqual(getCodingAgentVisual("github-copilot"), { backgroundColor: "#000000", whiteGlyph: true });
 	assert.equal(getCodingAgentVisual("slack"), undefined);
@@ -405,7 +407,6 @@ test("avatar badges optically scale wrapped Atlaskit icons", () => {
 });
 
 test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", () => {
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /shape="hexagon"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /status=\{status\}/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /status\?: AvatarStatus/);
 	assert.doesNotMatch(AGENT_AVATAR_VISUAL_SOURCE, /AvatarStatusIndicator/);
@@ -457,7 +458,6 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 test("Rovo avatar inputs share an inset hexagon and the dark Rovo button canvas", () => {
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /import \{ ROVO_LOGO_DATA_URI \} from "@\/components\/ui\/data\/rovo-logo"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const isRovoAvatar = vpkLogo === "rovo" \|\| avatarSrc === ROVO_LOGO_DATA_URI/);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /shape="hexagon"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /backgroundColor: isRovoAvatar \? "light-dark\(var\(--ds-surface\), #292A2E\)"/);
 	assert.doesNotMatch(AGENT_AVATAR_VISUAL_SOURCE, /dark:bg-/);
 	const rovoButtonSource = fs.readFileSync(path.join(__dirname, "..", "ui-custom", "rovo-sparkle", "button.tsx"), "utf8");

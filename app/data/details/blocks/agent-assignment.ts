@@ -7,7 +7,7 @@ export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
 		{
 			title: "Default",
 			description:
-				"The closed field is the medium-attached Jira agent activity row. Opening it shows assigned agents as Agent Session long cards covering owner/viewer × local/cloud — same hover actions as Agent Session — and Assign agent in the footer.",
+				"The closed field is the medium-attached Jira agent activity row. Opening it shows assigned agents as Agent Session long cards covering owner/viewer × local/cloud — same hover actions as Agent Session. Teammate sessions expand inline from a collapsed disclosure.",
 			demoSlug: "agent-assignment-demo-default",
 		},
 		{
@@ -43,7 +43,7 @@ export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
 			name: "assignedAgents",
 			type: "readonly AgentAssignmentAgent[]",
 			required: true,
-			description: "Controlled assigned agents. Set statusKind to working, needs-input, finished, or idle. Working rows can supply a statusSequence that cycles on hover; other kinds use a static byline and a rest-state trailing icon.",
+			description: "Controlled assigned agents. Set sessionTitle to name the work separately from the agent and status. Set statusKind to working, needs-input, finished, or idle. Working rows can supply a statusSequence that cycles on hover; other kinds use a static byline and a rest-state trailing icon.",
 		},
 		{
 			name: "onAgentAssign",

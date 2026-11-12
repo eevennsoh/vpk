@@ -16,6 +16,7 @@ export interface RovoLocalAssistantStage {
 	getAssistantParts: (context: { startedAt: Date }) => RovoUIMessage["parts"];
 	onApply?: () => Promise<void> | void;
 	startsNewAssistantMessage?: boolean;
+	assistantMessageId?: string;
 }
 
 export interface RovoLocalTurn {
@@ -133,7 +134,7 @@ export function createRovoChatTranscript(initialOwner: RovoChatTranscriptOwner) 
 						if (!active()) return false;
 						const parts = stage.getAssistantParts({ startedAt });
 						if (stage.startsNewAssistantMessage) {
-							assistantId = createId("rovo-chat-assistant");
+							assistantId = stage.assistantMessageId ?? createId("rovo-chat-assistant");
 							turn.onThinkingMessageChange?.(assistantId);
 							replies = [...replies, assistant(assistantId, parts)];
 						} else replies = [...replies.slice(0, -1), assistant(assistantId, parts)];

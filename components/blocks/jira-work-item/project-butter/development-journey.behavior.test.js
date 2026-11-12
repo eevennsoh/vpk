@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { act } = require("react");
 const { renderComponent } = require("../../../../scripts/lib/render-component.js");
 const { projectButterDevelopmentChecks } = require("./development-journey-model.ts");
 
@@ -33,29 +34,29 @@ test("automation changes are controlled and both settings remain available in th
 	const changes = [];
 	const props = { autoFixEnabled: true, autoMergeEnabled: true, onAutoFixChange: (enabled) => changes.push(["fix", enabled]), onAutoMergeChange: (enabled) => changes.push(["merge", enabled]), phase: "pr" };
 	const view = await renderJourney(props);
-	await view.click(view.getByRole("button", { name: "Pull request settings" }));
-	await view.click(view.getByRole("switch", { name: "Auto-fix" }));
-	await view.click(view.getByRole("switch", { name: "Merge when ready" }));
+	await view.click(view.getByRole("button", { name: "Configure", exact: true }));
+	await view.click(view.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }));
+	await view.click(view.getByRole("menuitemcheckbox", { name: "Merge when ready" }));
 	assert.deepEqual(changes, [["fix", false], ["merge", false]]);
-	assert.equal(view.getByRole("switch", { name: "Auto-fix" }).getAttribute("aria-checked"), "true");
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }).getAttribute("aria-checked"), "true");
 	await view.rerender({ ...props, autoFixEnabled: false, autoMergeEnabled: false });
-	assert.equal(view.getByRole("switch", { name: "Auto-fix" }).getAttribute("aria-checked"), "false");
-	assert.equal(view.getByRole("switch", { name: "Merge when ready" }).getAttribute("aria-checked"), "false");
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }).getAttribute("aria-checked"), "false");
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "Merge when ready" }).getAttribute("aria-checked"), "false");
 	await view.press(null, "Escape");
-	assert.equal(view.queryByRole("button", { name: "Pull request settings" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Configure", exact: true }) !== null, true);
 	await view.unmount();
 });
 
 test("PR settings remain available when the first pull request appears", async () => {
 	const props = { autoFixEnabled: true, autoMergeEnabled: true, phase: undefined, onAutoFixChange() {}, onAutoMergeChange() {} };
 	const view = await renderJourney(props);
-	await view.click(view.getByRole("button", { name: "Pull request settings" }));
-	assert.equal(view.getByRole("switch", { name: "Auto-fix" }).getAttribute("aria-checked"), "true");
-	await view.click(view.getByRole("switch", { name: "Auto-archive on merge or close" }));
+	await view.click(view.getByRole("button", { name: "Configure", exact: true }));
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }).getAttribute("aria-checked"), "true");
+	await view.click(view.getByRole("menuitemcheckbox", { name: "Auto-archive on merge or close" }));
 	await view.press(null, "Escape");
 	await view.rerender({ ...props, phase: "pr" });
-	await view.click(view.getByRole("button", { name: "Pull request settings" }));
-	assert.equal(view.getByRole("switch", { name: "Auto-archive on merge or close" }).getAttribute("aria-checked"), "true");
+	await view.click(view.getByRole("button", { name: "Configure", exact: true }));
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-archive on merge or close" }).getAttribute("aria-checked"), "true");
 	await view.unmount();
 });
 
@@ -65,9 +66,9 @@ test("read-only settings and absent action capabilities are disabled", async () 
 	await view.click(view.getByRole("button", { name: /#284 Add merchant onboarding quickstart/u }));
 	assert.equal(view.getByRole("button", { name: "Fix PR" }).disabled, true);
 	await view.press(null, "Escape");
-	await view.click(view.getByRole("button", { name: "Pull request settings" }));
-	assert.equal(view.getByRole("switch", { name: "Auto-fix" }).disabled, true);
-	assert.equal(view.getByRole("switch", { name: "Merge when ready" }).disabled, true);
+	await view.click(view.getByRole("button", { name: "Configure", exact: true }));
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }).getAttribute("aria-disabled"), "true");
+	assert.equal(view.getByRole("menuitemcheckbox", { name: "Merge when ready" }).getAttribute("aria-disabled"), "true");
 	assert.equal(view.queryByRole("button", { name: "Fix Accessibility" }), null);
 	await view.press(null, "Escape");
 	await view.rerender({ autoFixEnabled: false, autoMergeEnabled: false, phase: "passed" });
@@ -100,11 +101,11 @@ test("running checks are shown without a manual completion action", async () => 
 
 test("keyboard users can enter automation and Escape returns focus to its trigger", async () => {
 	const view = await renderJourney({ onAutoFixChange() {}, onAutoMergeChange() {} });
-	const trigger = view.getByRole("button", { name: "Pull request settings" });
+	const trigger = view.getByRole("button", { name: "Configure", exact: true });
 	await view.focus(trigger);
 	await view.press(trigger, "Enter");
-	await view.focus(view.getByRole("switch", { name: "Auto-fix" }));
-	assert.equal(view.isFocused(view.getByRole("switch", { name: "Auto-fix" })), true);
+	await view.focus(view.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }));
+	assert.equal(view.isFocused(view.getByRole("menuitemcheckbox", { name: "Auto-fix PR" })), true);
 	await view.press(null, "Escape");
 	assert.equal(view.isFocused(trigger), true);
 	await view.unmount();
@@ -114,10 +115,10 @@ test("automation settings remain editable after the PR is merged", async () => {
 	const changes = [];
 	const props = { phase: "merged", autoFixEnabled: true, autoMergeEnabled: true, onAutoFixChange: (enabled) => changes.push(["fix", enabled]), onAutoMergeChange: (enabled) => changes.push(["merge", enabled]) };
 	const view = await renderJourney(props);
-	await view.click(view.getByRole("button", { name: "Pull request settings" }));
-	const fix = view.getByRole("switch", { name: "Auto-fix" });
-	const merge = view.getByRole("switch", { name: "Merge when ready" });
-	const archive = view.getByRole("switch", { name: "Auto-archive on merge or close" });
+	await view.click(view.getByRole("button", { name: "Configure", exact: true }));
+	const fix = view.getByRole("menuitemcheckbox", { name: "Auto-fix PR" });
+	const merge = view.getByRole("menuitemcheckbox", { name: "Merge when ready" });
+	const archive = view.getByRole("menuitemcheckbox", { name: "Auto-archive on merge or close" });
 	assert.equal(fix.disabled, false);
 	assert.equal(merge.disabled, false);
 	assert.equal(archive.disabled, false);
@@ -129,5 +130,31 @@ test("automation settings remain editable after the PR is merged", async () => {
 	await view.rerender({ ...props, autoFixEnabled: false, autoMergeEnabled: false });
 	assert.equal(fix.getAttribute("aria-checked"), "false");
 	assert.equal(merge.getAttribute("aria-checked"), "false");
+	await view.unmount();
+});
+
+test("the standalone gallery runs the failed check through auto-fix and merge", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/project-butter-development-journey.tsx",
+		exportName: "ProjectButterDevelopmentGallery",
+		props: { author: { name: "Venn", avatarUrl: "/avatar-user/venn/venn.png", assistedBy: { name: "Claude", brandName: "claude" } } },
+	});
+	const phase = () => view.container.querySelector("[data-project-butter-development]")?.getAttribute("data-project-butter-development");
+	const advance = async (ms = 5100) => { await act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); }); };
+	assert.equal(phase(), "failed");
+	assert.equal(view.queryByRole("button", { name: /2\/3 builds passed · 1 failed/u }) !== null, true);
+	await view.click(view.getByRole("button", { name: /#284 Add merchant onboarding quickstart/u }));
+	assert.equal(view.queryByRole("group", { name: "Claude, used by Venn" }) !== null, true);
+	await view.press(null, "Escape");
+	await advance();
+	assert.equal(phase(), "fixing");
+	await view.click(view.getByRole("button", { name: /#284 Add merchant onboarding quickstart/u }));
+	assert.equal(view.getByRole("button", { name: "Fix PR" }).disabled, true);
+	assert.equal(view.getByRole("button", { name: "Fix PR" }).getAttribute("aria-busy"), "true");
+	await advance();
+	assert.equal(phase(), "passed");
+	await advance();
+	assert.equal(phase(), "merged");
+	assert.equal(view.queryByRole("button", { name: /#284 Add merchant onboarding quickstart Merged/u }) !== null, true);
 	await view.unmount();
 });

@@ -31,7 +31,7 @@ test("discovers vpk-html metadata from the repo-local skills root", async () => 
 	const skill = await harness.loadSkillMetadata("vpk-html");
 
 	assert.equal(skill.name, "vpk-html");
-	assert.match(skill.description, /offline, single-file HTML/u);
+	assert.match(skill.description, /one offline file/u);
 	assert.equal(
 		path.relative(process.cwd(), skill.skillRoot).split(path.sep).join("/"),
 		".agents/skills/vpk-html",

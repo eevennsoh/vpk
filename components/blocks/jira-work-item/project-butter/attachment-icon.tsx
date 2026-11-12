@@ -8,9 +8,9 @@ import { GoogleDriveLogo } from "@/components/ui/logo-third-party";
 import type { ProjectButterAttachment } from "@/components/blocks/jira-work-item/project-butter/attachment-data";
 
 export function ProjectButterAttachmentIcon({ kind }: Readonly<Pick<ProjectButterAttachment, "kind">>) {
-	if (kind === "confluence") return <span className="text-icon-information"><PageIcon color="currentColor" label="" size="small" /></span>;
+	if (kind === "confluence") return <span className="flex text-icon-information"><PageIcon color="currentColor" label="" size="small" /></span>;
 	if (kind === "google-drive") return <GoogleDriveLogo aria-hidden borderless size="xxsmall" />;
-	if (kind === "loom") return <span className="text-icon-accent-blue"><LoomIcon color="currentColor" label="" size="small" /></span>;
+	if (kind === "loom") return <span className="flex text-icon-accent-blue"><LoomIcon color="currentColor" label="" size="small" /></span>;
 	const Icon = kind === "image" ? ImageIcon : kind === "video" ? VideoIcon : kind === "link" ? LinkIcon : FileIcon;
 	return <Icon label="" size="small" />;
 }

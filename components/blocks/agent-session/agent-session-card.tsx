@@ -48,7 +48,7 @@ import {
 import { AgentSessionMoreMenu } from "./agent-session-more-menu";
 import { AgentSessionContinueMenu } from "./agent-session-continue-menu";
 import { AgentSessionExpiredHint } from "./agent-session-expired-hint";
-import { AgentSessionViewerHint, AgentSessionViewerTooltip } from "./agent-session-viewer-hint";
+import { AgentSessionViewerTooltip, agentSessionPrivacyHint } from "./agent-session-viewer-hint";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
 import { selectionGestureFromModifierKeys } from "./agent-session-selection-gesture";
 import { agentSessionAccentColor } from "./agent-session-transfer-member";
@@ -250,6 +250,7 @@ export function AgentSessionCard({
 	getResumeCommand,
 	glowBloom = false,
 	glowStroke = false,
+	hoverTone = "surface",
 	isArriving = false,
 	isDeparting = false,
 	isStateChanged = false,
@@ -312,6 +313,8 @@ export function AgentSessionCard({
 	 * treatment turns it on, so picker menus and attached rows stay flat.
 	 */
 	glowStroke?: boolean;
+	/** Match neutral menu rows when the card is used as a menu choice. */
+	hoverTone?: "surface" | "menu";
 	/** Play the one-shot arrival beat. A remounted card must not re-arm it. */
 	isArriving?: boolean;
 	/** Fade the old lifecycle at its previous slot before the row moves to the top. */
@@ -548,7 +551,7 @@ export function AgentSessionCard({
 
 		switch (role) {
 			case "viewer":
-				return <AgentSessionViewerHint compact={!isLongDensity || !showLifecycleLabel} />;
+				return undefined;
 			case "expired":
 			case "owner":
 				return (
@@ -575,12 +578,13 @@ export function AgentSessionCard({
 	})();
 	// `null`, not `undefined`: the shared row treats `undefined` as "no opinion"
 	// and falls back to its own `STATE_META` indicator.
-	const lifecycleIndicator = role === "expired" || role === "viewer"
+	const lifecycleIndicator = role === "expired"
 		? null
 		: isLongDensity
 			? <AgentSessionLifecycle
 				accessibleState={item.state}
 				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
+				readOnly={role === "viewer"}
 				showLabel={showLifecycleLabel}
 				state={shownLifecycleState}
 			/>
@@ -588,13 +592,14 @@ export function AgentSessionCard({
 				accessibleState={item.state}
 				animateTransition={isStateChanged}
 				onTransitionComplete={isStateChanged ? onStateChangeComplete : undefined}
+				showAllStates={role === "viewer"}
 				showWorkingSpinner={showWorkingSpinner}
 				state={shownLifecycleState}
 			/>;
 	const hoverActions: AgentListRowHoverActions = {
 		// The reveal must outlive the pointer: a portalled popup and a post-click
 		// confirmation both take the cursor off the row.
-		pinned: role !== "owner" || isHoverStateActive || (showMoreMenu && role === "owner" && menu.copied),
+		pinned: role === "expired" || isHoverStateActive || (showMoreMenu && role === "owner" && menu.copied),
 		primary: approve && role !== "viewer"
 			? {
 				disabled: approve.target.kind === "unavailable",
@@ -693,9 +698,9 @@ export function AgentSessionCard({
 						"transition-[border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
 						showSelectedFill && "bg-bg-selected",
-						!showSelectedFill && (isHighlighted || isHoverStateActive) && "bg-surface-hovered",
-						!showSelectedFill && !isHighlighted && !isHoverStateActive && "bg-transparent hover:bg-surface-hovered",
-						activateCard === undefined
+						!showSelectedFill && (isHighlighted || isHoverStateActive) && (hoverTone === "menu" ? "bg-bg-neutral-subtle-hovered" : "bg-surface-hovered"),
+						!showSelectedFill && !isHighlighted && !isHoverStateActive && (hoverTone === "menu" ? "bg-transparent hover:bg-bg-neutral-subtle-hovered" : "bg-transparent hover:bg-surface-hovered"),
+						activateCard === undefined && role !== "viewer"
 							? null
 							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
 							)}
@@ -709,7 +714,7 @@ export function AgentSessionCard({
 							onClick={handleArticleClick}
 							onKeyDown={handleArticleKeyDown}
 							role={articleRole}
-							tabIndex={articleTabIndex ?? (bind !== undefined && activateCard !== undefined ? 0 : undefined)}
+							tabIndex={articleTabIndex ?? (role === "viewer" || (bind !== undefined && activateCard !== undefined) ? 0 : undefined)}
 						>
 							{/*
 								No resting ring: the session list is a flush stack of
@@ -747,9 +752,10 @@ export function AgentSessionCard({
 										? <AgentSessionLongMetadata item={item} renderAgentAvatar={renderAgentAvatar} showBranch={showBranch} />
 										: <AgentSessionShortMetadata item={item} />
 								}
-								metadataOutsideViewTrigger={isTitleLed && renderAgentAvatar !== undefined}
+								metadataOutsideViewTrigger={isTitleLed && (renderAgentAvatar !== undefined || item.privateTo !== undefined)}
 								onView={mark == null && bind === undefined ? viewSession : undefined}
 								renderViewTrigger={canOpenLocalMenu ? renderLocalContinuation : undefined}
+								viewDescription={item.privateTo ? agentSessionPrivacyHint(item.privateTo) : undefined}
 								renderIdentity={() => {
 									const sessionIdentity = (
 										<AgentListIdentity
@@ -793,8 +799,8 @@ export function AgentSessionCard({
 					if (role === "expired") {
 						return <AgentSessionExpiredHint disabled={menu.isOpen} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionExpiredHint>;
 					}
-					if (role === "viewer") {
-						return <AgentSessionViewerTooltip positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
+					if (role === "viewer" || item.privateTo) {
+						return <AgentSessionViewerTooltip person={item.privateTo ?? item.invokedBy?.name} positionerClassName={tooltipPositionerClassName}>{card}</AgentSessionViewerTooltip>;
 					}
 
 					if (isLongDensity || flyoutHandle === undefined || flyoutSession === undefined) {

@@ -31,6 +31,7 @@ function PopoverAnchorVisibility({
 
 function PopoverContent({
 	anchor,
+	collisionAvoidance,
 	onAnchorHidden,
   className,
   positionerClassName,
@@ -42,7 +43,7 @@ function PopoverContent({
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
-		"anchor" | "align" | "alignOffset" | "side" | "sideOffset"
+		"anchor" | "align" | "alignOffset" | "collisionAvoidance" | "side" | "sideOffset"
   > & {
 		/** Called when the anchor is fully clipped by its scroll ancestors or viewport. */
 		onAnchorHidden?: () => void
@@ -52,6 +53,7 @@ function PopoverContent({
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
 				anchor={anchor}
+				collisionAvoidance={collisionAvoidance}
         align={align}
         alignOffset={alignOffset}
         side={side}
@@ -72,6 +74,7 @@ function PopoverContent({
           data-slot="popover-content"
           className={cn(
             "bg-popover text-popover-foreground flex flex-col gap-2.5 rounded-lg p-2.5 text-sm shadow-xl z-[200] w-72 origin-(--transform-origin) outline-hidden transition-[opacity,translate] duration-normal ease-out-practical motion-reduce:transition-none data-ending-style:duration-fast data-ending-style:ease-in data-starting-style:opacity-0 data-ending-style:opacity-0 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=top]:data-starting-style:translate-y-2 data-[side=left]:data-starting-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=inline-start]:data-starting-style:translate-x-2 data-[side=inline-end]:data-starting-style:-translate-x-2 data-[side=bottom]:data-ending-style:-translate-y-2 data-[side=top]:data-ending-style:translate-y-2 data-[side=left]:data-ending-style:translate-x-2 data-[side=right]:data-ending-style:-translate-x-2 data-[side=inline-start]:data-ending-style:translate-x-2 data-[side=inline-end]:data-ending-style:-translate-x-2",
+            "child-overlay-surface",
             className
           )}
           {...props}

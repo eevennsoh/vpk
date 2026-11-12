@@ -43,6 +43,8 @@ import { cn } from "@/lib/utils";
 export type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
 
 export interface AgentAssignmentAgent extends AgentSelectorAgent {
+	/** Display-safe work title for this session, distinct from agent identity and status. */
+	sessionTitle?: string;
 	status?: ReactNode;
 	/** Minimum time a status remains visible before advancing. */
 	statusCycleIntervalMs?: number;
@@ -80,7 +82,7 @@ export interface AgentAssignmentProps {
 	allowArchive?: boolean;
 	/** Comfortable scale uses the Avatar working spinner; compact keeps the shared default. */
 	activityIconScale?: JiraIssueIconScale;
-	/** Copy for the empty field and the action in the assigned-agents menu. */
+	/** Copy for the empty field and the Simple menu add action. */
 	addAgentLabel?: string;
 	/** Let attached activity identities begin at the empty Assign agent label's edge. */
 	activityRowFlush?: boolean;
@@ -387,8 +389,6 @@ export function AgentAssignment({
 		/>
 	) : (
 		<AssignedAgentsSessionMenu
-			addAgentLabel={addAgentLabel}
-			onAddAgent={onAssignedAgentIdsChange ? handleShowSelector : undefined}
 			onContinueInAgent={onContinueExistingSession
 				? (item) => runAssignedSessionAction(assignedAgents, item.id, onContinueExistingSession)
 				: undefined}
@@ -470,6 +470,7 @@ export function AgentAssignment({
 						align="start"
 						alignOffset={0}
 						anchor={hoverAnchor}
+						collisionAvoidance={{ align: "shift" }}
 						aria-label="Agent assignment"
 						role="group"
 						className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-visible rounded-xl p-0 shadow-none"
@@ -547,6 +548,7 @@ export function AgentAssignment({
 				<PopoverContent
 					align="start"
 					anchor={hoverAnchor}
+					collisionAvoidance={{ align: "shift" }}
 					onAnchorHidden={dismissWhenAnchorHidden ? () => handleOpenChange(false) : undefined}
 					aria-label="Agent assignment"
 					className="max-h-none w-[280px] max-w-[280px] gap-0 overflow-hidden rounded-xl p-0"

@@ -25,7 +25,7 @@ test("Agent loading cycles multiple agents until every agent is finished", () =>
 	assert.equal(areAllAgentLoadingAgentsFinished([]), false);
 });
 
-test("Agent loading assigns front, back, and hidden slots and wraps safely", () => {
+test("Agent loading shows two agents and rotates through every agent", () => {
 	const twoAgents = ["Cursor", "Jira Coding agent"];
 	const agents = ["Cursor", "Jira Coding agent", "Rovo"];
 	const fourAgents = ["Cursor", "Jira Coding agent", "Rovo", "Claude"];
@@ -97,6 +97,16 @@ test("Agent loading assigns front, back, and hidden slots and wraps safely", () 
 		opacity: 0,
 		zIndex: 1,
 	});
+	const fiveAgents = [...fourAgents, "Figma"];
+	assert.deepEqual(fiveAgents.map((_, index) => getAgentLoadingSlots(fiveAgents, index).front), fiveAgents);
+	for (const group of [twoAgents, agents, fourAgents, fiveAgents]) {
+		for (let index = 0; index < group.length; index++) {
+			const current = getAgentLoadingSlots(group, index);
+			const next = getAgentLoadingSlots(group, (index + 1) % group.length);
+			assert.equal(next.front, current.back);
+			if (group.length > 2) assert.equal(next.back, current.hidden);
+		}
+	}
 });
 
 test("Agent loading exposes visible status copy, size variants, and uses VPK motion tokens", () => {

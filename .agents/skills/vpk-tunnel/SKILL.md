@@ -41,7 +41,7 @@ empty on a tunnel even when the real project works. Do not hand reviewers
 the catalog unless they explicitly asked for it.
 
 - If the user named a project or path, share that route
-  (for example `/jira-golden-journeys-v4`), not `/` or `/preview/projects/...`.
+  (for example `/jira-golden-journey-v4`), not `/` or `/preview/projects/...`.
 - If `vpk-tunnel` is invoked with no path, resolve the hostname, then ask which
   route people should open before starting. Do not infer the catalog.
 - After resolve, `isCatalogRoot: true` means you still need a share path.
@@ -207,7 +207,7 @@ start the tunnel again.
   again. Check `.next/dev/logs/next-development.log` for
   `Blocked cross-origin request` if the page is still empty.
 - **Shared the homepage and it looks empty:** share the project route
-  (for example `/jira-golden-journeys-v4`), not the catalog iframe.
+  (for example `/jira-golden-journey-v4`), not the catalog iframe.
 - **Public page still shows the react-grab control:** Atlas Tunnel hosts skip
   `DevReactGrabMount`. Hard-refresh the public URL. If the floating
   cursor/chevron pill remains, the frontend may be serving a stale bundle —

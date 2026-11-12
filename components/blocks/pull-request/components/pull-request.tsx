@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/agent-list-identity";
 import {
 	PullRequestFlyoutChecks,
+	PullRequestChecksSummary,
 	PullRequestFlyoutMetaRow,
 } from "@/components/blocks/pull-request/components/pull-request-flyout-parts";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -117,7 +118,7 @@ function PullRequestDiffStats({
 }
 
 /** Status lozenge. The spacious card trails the title with it, so it also carries a glyph. */
-function PullRequestStatusLozenge({
+export function PullRequestStatusLozenge({
 	status,
 	withIcon = false,
 }: Readonly<{ status: PullRequestStatus; withIcon?: boolean }>) {
@@ -150,16 +151,16 @@ function PullRequestProviderMark({ provider }: Readonly<{ provider: PullRequestP
 }
 
 /** `#N` + title as one wrapping text run so line 2 starts under the number. */
-function PullRequestInlineTitle({
+export function PullRequestInlineTitle({
 	number,
 	title,
 	href,
 	className,
 }: Readonly<{ number: number; title: string; href?: string; className?: string }>) {
 	return (
-		<span className={cn("min-w-0 whitespace-normal text-sm leading-5", className)}>
+		<span className={cn("min-w-0 whitespace-normal text-sm leading-5 font-normal", className)}>
 			<span className="text-text-subtlest">#{number} </span>
-			{href ? <a className="rounded-sm text-text outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" href={href} rel="noopener noreferrer" target="_blank">{title}</a> : <span className="text-text">{title}</span>}
+			{href ? <a className="rounded-sm text-text outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" href={href} rel="noopener noreferrer" target="_blank">{title}</a> : <span className="text-text hover:underline">{title}</span>}
 		</span>
 	);
 }
@@ -351,6 +352,7 @@ function PullRequestFlyoutBody({
 	number,
 	title,
 	status,
+	showDetails,
 	author,
 	branch,
 	targetBranch,
@@ -362,8 +364,11 @@ function PullRequestFlyoutBody({
 	repository,
 	reviewers,
 	checks,
+	checksExpandable,
 	reviewHref,
 	showReview,
+	showFix,
+	isFixing,
 	href,
 	onFix,
 }: Readonly<
@@ -372,6 +377,7 @@ function PullRequestFlyoutBody({
 		| "number"
 		| "title"
 		| "status"
+		| "showDetails"
 		| "author"
 		| "branch"
 		| "targetBranch"
@@ -383,8 +389,11 @@ function PullRequestFlyoutBody({
 		| "repository"
 		| "reviewers"
 		| "checks"
+		| "checksExpandable"
 		| "reviewHref"
 		| "showReview"
+		| "showFix"
+		| "isFixing"
 		| "href"
 		| "onFix"
 	>
@@ -419,8 +428,8 @@ function PullRequestFlyoutBody({
 	) : null;
 	const hasBranchPath = Boolean(branch || targetBranch);
 	const failedChecks = checks?.filter((check) => check.status === "failed") ?? [];
-	const hasFailedChecks = status !== "Merged" && failedChecks.length > 0;
-	const hasActions = Boolean(reviewHref || showReview || hasFailedChecks);
+	const showFixAction = showFix && status !== "Merged" && (failedChecks.length > 0 || isFixing);
+	const hasActions = Boolean(reviewHref || showReview || showFixAction);
 
 	return (
 		<>
@@ -431,7 +440,7 @@ function PullRequestFlyoutBody({
 				</div>
 				<PullRequestStatusLozenge status={status} />
 			</div>
-			<div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-disabled p-3">
+			{showDetails ? <div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-disabled p-3">
 				{repository ? (
 					<PullRequestFlyoutMetaRow leading={<PullRequestProviderMark provider={provider} />}>
 						<span className="min-w-0 truncate text-xs leading-4 text-text">{repository}</span>
@@ -462,7 +471,7 @@ function PullRequestFlyoutBody({
 						className="font-normal"
 					/>
 				</PullRequestFlyoutMetaRow>
-				{checks ? <PullRequestFlyoutChecks checks={checks} /> : null}
+				{checks ? checksExpandable ? <PullRequestFlyoutChecks checks={checks} /> : <PullRequestChecksSummary checks={checks} /> : null}
 				{hasActions ? (
 					<div className="flex min-w-0 gap-2 pt-1">
 						{reviewHref ? (
@@ -470,14 +479,14 @@ function PullRequestFlyoutBody({
 								Review
 							</a>
 						) : showReview ? <Button className="min-w-0 flex-1" type="button" variant="outline">Review</Button> : null}
-						{hasFailedChecks ? (
-							<Button className="min-w-0 flex-1" disabled={!onFix} onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
+						{showFixAction ? (
+							<Button aria-label="Fix PR" className="min-w-0 flex-1" disabled={!onFix || isFixing || failedChecks.length === 0} isLoading={isFixing} onClick={onFix ? () => onFix(failedChecks) : undefined} type="button" variant="outline">
 								Fix PR
 							</Button>
 						) : null}
 					</div>
 				) : null}
-			</div>
+			</div> : null}
 		</>
 	);
 }
@@ -497,6 +506,7 @@ function PullRequestFlyoutBody({
  */
 export function PullRequest({
 	variant = "dropdown",
+	showDetails = true,
 	number,
 	title,
 	status,
@@ -511,8 +521,11 @@ export function PullRequest({
 	repository,
 	reviewers,
 	checks,
+	checksExpandable = true,
 	reviewHref,
 	showReview,
+	showFix = true,
+	isFixing = false,
 	href,
 	onFix,
 	selected = false,
@@ -531,6 +544,7 @@ export function PullRequest({
 			author={author}
 			branch={branch}
 			checks={checks}
+			checksExpandable={checksExpandable}
 			deletions={deletions}
 			filesChanged={filesChanged}
 			href={href}
@@ -541,6 +555,9 @@ export function PullRequest({
 			repository={repository}
 			reviewHref={reviewHref}
 			showReview={showReview}
+			showFix={showFix}
+			isFixing={isFixing}
+			showDetails={showDetails}
 			reviewers={reviewers}
 			status={status}
 			targetBranch={targetBranch}
@@ -574,6 +591,7 @@ export function PullRequest({
 
 	const surfaceClassName = cn(
 		"flex w-full min-w-0 text-text",
+		isFlyout && !showDetails ? "pb-3" : null,
 		isFlyout
 			? "flex-col items-stretch gap-3 rounded-lg bg-surface-raised pt-3 shadow-2xl"
 			: isSpacious

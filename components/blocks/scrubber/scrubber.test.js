@@ -452,7 +452,8 @@ test("continuous dot rails preview hover, seek pointer positions, and keep keybo
 	}
 	await pointer("pointermove", 0);
 	assert.equal(rail.querySelector('[data-slot="scrubber-hover"]').style.opacity, "1");
-	assert.equal(rail.querySelector('[data-slot="scrubber-hover"]').style.left, "70%");
+	// The hover plate snaps to the dot it would select (b at 50%); seeking and the playhead stay continuous.
+	assert.equal(rail.querySelector('[data-slot="scrubber-hover"]').style.left, "50%");
 	assert.equal(view.getByRole("status", {name:"Selected item"}).textContent, "a");
 	await pointer("pointerdown", 1);
 	assert.equal(view.getByRole("status", {name:"Seek offset"}).textContent, "0.70");

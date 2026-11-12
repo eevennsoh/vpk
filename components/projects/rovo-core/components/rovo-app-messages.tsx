@@ -1,7 +1,7 @@
 "use client";
 
 import type { ErrorInfo, ReactNode } from "react";
-import { Attachment, AttachmentPreview, Attachments } from "@/components/ui-custom/attachments";
+import { AttachmentItem, AttachmentPreview, Attachment } from "@/components/ui-custom/attachment";
 import { Conversation, ConversationContent, ConversationScrollButton, type ConversationFollowMode } from "@/components/ui-custom/conversation";
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
 import { ArtifactCard, type ArtifactKind } from "@/components/blocks/artifact";
@@ -220,9 +220,9 @@ function UserMessage({
 			from="user"
 		>
 			{attachments.length > 0 ? (
-				<Attachments className="justify-end" variant="grid">
+				<Attachment className="justify-end" variant="grid">
 					{attachments.map((attachment) => (
-						<Attachment
+						<AttachmentItem
 							key={`${message.id}-${attachment.url}-${attachment.filename ?? "attachment"}`}
 							data={{
 								...attachment,
@@ -230,9 +230,9 @@ function UserMessage({
 							}}
 						>
 							<AttachmentPreview />
-						</Attachment>
+						</AttachmentItem>
 					))}
-				</Attachments>
+				</Attachment>
 			) : null}
 
 			{isEditing ? (

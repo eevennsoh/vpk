@@ -135,7 +135,7 @@ test("an unmapped brand still flashes, on a neutral accent", () => {
 		targetCardCode: "PAY-121",
 		token: 9,
 	});
-	assert.equal(flash.flash.tint, "var(--color-bg-accent-gray-bolder)");
+	assert.equal(flash.flash.tint, "var(--ds-background-accent-gray-bolder)");
 });
 
 test("an attach drop arms staggered flights into the chin row, not the shell centre", () => {

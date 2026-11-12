@@ -391,8 +391,8 @@ test("EU26 frame-batched resize preserves keyboard bounds, release, and cancella
 });
 
 
-test("shared shell keeps eager chat lifetime and draft on Golden Journeys v4", async ({ page }) => {
-	await page.goto(appUrl("/jira-golden-journeys-v4"), { waitUntil: "domcontentloaded" });
+test("shared shell keeps eager chat lifetime and draft on Golden Journey v4", async ({ page }) => {
+	await page.goto(appUrl("/jira-golden-journey-v4"), { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 30_000 });
 	await expect(page.locator("[contenteditable=true]")).toHaveCount(1);
 	const composer = page.getByRole("textbox", { name: "Chat message input" });

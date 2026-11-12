@@ -6,6 +6,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"human-agent-avatar": dynamic(() => import("../../demos/ui-custom/human-agent-avatar-demo"), {
 		ssr: false,
 	}),
+	"agent-add": dynamic(() => import("../../demos/ui-custom/agent-add-demo"), { ssr: false }),
 	"agent-loading": dynamic(() => import("../../demos/ui-custom/agent-loading-demo"), {
 		ssr: false,
 	}),
@@ -38,7 +39,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	knowledge: dynamic(() => import("../../demos/ui-custom/knowledge-demo"), {
 		ssr: false,
 	}),
-	"animated-dots": dynamic(() => import("../../demos/ui-custom/animated-dots-demo"), {
+	"animated-dot": dynamic(() => import("../../demos/ui-custom/animated-dot-demo"), {
 		ssr: false,
 	}),
 	"animated-icon": dynamic(() => import("../../demos/ui-custom/animated-icon-demo"), {
@@ -47,7 +48,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"artifact-list": dynamic(() => import("../../demos/ui-custom/artifact-list-demo"), {
 		ssr: false,
 	}),
-	attachments: dynamic(() => import("../../demos/ui-custom/attachments-demo"), {
+	attachment: dynamic(() => import("../../demos/ui-custom/attachment-demo"), {
 		ssr: false,
 	}),
 	"audio-player": dynamic(() => import("../../demos/ui-custom/audio-player-demo"), {
@@ -78,15 +79,15 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"context-bar": dynamic(() => import("../../demos/ui-custom/context-bar-demo"), {
 		ssr: false,
 	}),
-	controls: dynamic(() => import("../../demos/ui-custom/controls-demo"), {
+	control: dynamic(() => import("../../demos/ui-custom/control-demo"), {
 		ssr: false,
 	}),
 	conversation: dynamic(() => import("../../demos/ui-custom/conversation-demo"), {
 		ssr: false,
 	}),
 	edge: dynamic(() => import("../../demos/ui-custom/edge-demo"), { ssr: false }),
-	"environment-variables": dynamic(
-		() => import("../../demos/ui-custom/environment-variables-demo"),
+	"environment-variable": dynamic(
+		() => import("../../demos/ui-custom/environment-variable-demo"),
 		{ ssr: false },
 	),
 	"file-tree": dynamic(() => import("../../demos/ui-custom/file-tree-demo"), {
@@ -112,6 +113,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 		ssr: false,
 	}),
 	node: dynamic(() => import("../../demos/ui-custom/node-demo"), { ssr: false }),
+	"open-in": dynamic(() => import("../../demos/ui-custom/open-in-demo"), { ssr: false }),
 	"open-in-chat": dynamic(() => import("../../demos/ui-custom/open-in-chat-demo"), {
 		ssr: false,
 	}),
@@ -137,7 +139,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 		ssr: false,
 	}),
 	snippet: dynamic(() => import("../../demos/ui-custom/snippet-demo"), { ssr: false }),
-	sources: dynamic(() => import("../../demos/ui-custom/sources-demo"), { ssr: false }),
+	source: dynamic(() => import("../../demos/ui-custom/source-demo"), { ssr: false }),
 	"speech-input": dynamic(() => import("../../demos/ui-custom/speech-input-demo"), {
 		ssr: false,
 	}),
@@ -151,7 +153,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	terminal: dynamic(() => import("../../demos/ui-custom/terminal-demo"), {
 		ssr: false,
 	}),
-	"test-results": dynamic(() => import("../../demos/ui-custom/test-results-demo"), {
+	"test-result": dynamic(() => import("../../demos/ui-custom/test-result-demo"), {
 		ssr: false,
 	}),
 	tool: dynamic(() => import("../../demos/ui-custom/tool-demo"), { ssr: false }),

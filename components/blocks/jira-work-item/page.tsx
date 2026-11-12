@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 
 import { Button } from "@/components/ui/button";
-import JiraWorkItem, { type JiraWorkItemVariant } from "./index";
+import JiraWorkItem, { type JiraWorkItemProps, type JiraWorkItemVariant } from "./index";
 
 export {
 	JiraWorkItem,
@@ -12,12 +12,18 @@ export {
 	type JiraWorkItemExperimentalPreset,
 } from "./index";
 
-export default function JiraWorkItemPage() {
+interface JiraWorkItemPageProps {
+	/** Renders the Project butter session; hosts pass one that owns its Rovo chat (Ask Rovo plus the docked sidebar). */
+	projectButterWorkItem?: ComponentType<JiraWorkItemProps>;
+}
+
+export default function JiraWorkItemPage({ projectButterWorkItem }: Readonly<JiraWorkItemPageProps>) {
 	const [activeVariant, setActiveVariant] = useState<JiraWorkItemVariant | null>(null);
 
 	if (activeVariant) {
+		const WorkItem = activeVariant === "project-butter" && projectButterWorkItem ? projectButterWorkItem : JiraWorkItem;
 		return (
-			<JiraWorkItem
+			<WorkItem
 				key={activeVariant}
 				initialIssueOpen
 				variant={activeVariant}

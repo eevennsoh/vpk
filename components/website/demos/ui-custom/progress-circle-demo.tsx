@@ -102,7 +102,7 @@ export function ProgressCircleDemoControlled() {
 	return (
 		<div className="flex w-full max-w-xs items-center gap-4">
 			<ProgressCircle value={value} size="lg" />
-			<Slider value={value} onValueChange={(v) => setValue(v as number)} min={0} max={100} step={1} />
+			<Slider aria-label="Progress percentage" value={value} onValueChange={(v) => setValue(v as number)} min={0} max={100} step={1} />
 		</div>
 	);
 }
@@ -196,39 +196,64 @@ export function ProgressCircleDemoStatus() {
 
 export function ProgressCircleDemoSegmented() {
 	const [segmented, setSegmented] = useState(true);
+	const [phase, setPhase] = useState<"failed" | "rechecking" | "passed">("failed");
+	const [playing, setPlaying] = useState(false);
+	const switchId = useId();
+	const containerRef = useRef<HTMLDivElement>(null);
+	const isVisible = useInView(containerRef);
+	const segments: readonly ProgressCircleSegment[] = phase === "passed"
+		? [{ status: "passed", weight: 3 }]
+		: [{ status: "passed", weight: 2 }, { status: phase === "failed" ? "failed" : "pending", weight: 1 }];
+
+	useEffect(() => {
+		if (!playing || !segmented || !isVisible || phase === "passed") return;
+		const timer = window.setTimeout(() => setPhase((current) => current === "failed" ? "rechecking" : "passed"), 1500);
+		return () => window.clearTimeout(timer);
+	}, [isVisible, phase, playing, segmented]);
 
 	return (
-		<div className="flex w-full max-w-xs flex-col gap-4">
+		<div ref={containerRef} className="flex w-full max-w-xs flex-col gap-4">
 			<div className="flex items-center gap-2">
 				<Switch
 					checked={segmented}
-					id="progress-circle-segmented"
+					id={switchId}
 					label="Segmented mode"
 					onCheckedChange={setSegmented}
 				/>
-				<Label htmlFor="progress-circle-segmented">
+				<Label htmlFor={switchId}>
 					{segmented ? "Segmented" : "Continuous"}
 				</Label>
 			</div>
 			<div className="flex items-center gap-6">
 				<ProgressCircle
-					animated={false}
+					completeOnAllPassed
 					label={segmented ? "CI checks" : "Progress"}
 					segmented={segmented}
-					segments={CHECK_SEGMENTS}
+					segments={segments}
 					size="lg"
 					value={segmented ? undefined : 75}
 				/>
 				<ProgressCircle
-					animated={false}
+					completeOnAllPassed
 					label={segmented ? "CI checks filled" : "Progress filled"}
 					segmented={segmented}
-					segments={CHECK_SEGMENTS}
+					segments={segments}
 					size="lg"
 					value={segmented ? undefined : 75}
 					variant="filled"
 				/>
 			</div>
+			{segmented ? (
+				<div className="flex flex-col gap-3">
+					<p aria-live="polite" className="text-sm text-text-subtle">{phase === "failed" ? "2 of 3 checks passed · 1 failed" : phase === "rechecking" ? "Rechecking the failed check" : "All 3 checks passed"}</p>
+					<div aria-label="Check states" className="flex flex-wrap gap-1" role="group">
+						{([ ["failed", "Failed"], ["rechecking", "Rechecking"], ["passed", "Passed"] ] as const).map(([value, label]) => (
+							<Button key={value} aria-pressed={phase === value} onClick={() => { setPlaying(false); setPhase(value); }} size="compact" type="button" variant={phase === value ? "secondary" : "ghost"}>{label}</Button>
+						))}
+					</div>
+					<Button disabled={playing && phase !== "passed"} onClick={() => { setPhase("failed"); setPlaying(true); }} type="button" variant="outline">{playing && phase !== "passed" ? "Playing checks sequence" : phase === "passed" ? "Replay checks sequence" : "Play checks sequence"}</Button>
+				</div>
+			) : null}
 		</div>
 	);
 }

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
 import { JiraActivityChangedFiles } from "./jira-activity-changed-files";
-import { JiraActivityComment } from "./jira-activity-comment";
+import { JiraActivityComment, type JiraActivityReplyComposerProps } from "./jira-activity-comment";
 import type { JiraActivityCardProps } from "./jira-activity-card";
 import { JiraActivityComposer } from "./jira-activity-composer";
 import { JiraActivityEvent } from "./jira-activity-event";
@@ -45,6 +45,8 @@ export interface JiraActivityProps {
 	composer?: ReactNode | null;
 	/** Connect every timeline entry, or draw branches only within comment threads. */
 	connectorStyle?: "timeline" | "thread";
+	/** Continue the last timeline stem into a decorative fade. */
+	fadeAfterLast?: boolean;
 	/** Plain comment and reply header layout. */
 	commentHeaderLayout?: JiraActivityCardProps["headerLayout"];
 	/** Optional trailing action for each comment card. */
@@ -60,6 +62,8 @@ export interface JiraActivityProps {
 	/** Optional persisted reply drafts keyed by the parent comment entry id. */
 	replyDrafts?: Readonly<Record<string, string>>;
 	onReplyDraftChange?: (entryId: string, value: string) => void;
+	/** Opens a comment's reply composer in response to an external user action. */
+	replyRequest?: Readonly<{ entryId: string; id: number }> | null;
 	/** Rich domain-owned comment content, retaining the shared card and reply/reaction controls. */
 	renderCommentBody?: (entry: JiraActivityCommentEntry) => ReactNode | undefined;
 	/** Optional replacement for an entry's built-in body. Return undefined to use the default renderer. */
@@ -79,7 +83,7 @@ export interface JiraActivityProps {
 	/** Opens in-app pull-request detail for compact Activity PR rows. */
 	onOpenPullRequest?: (entry: JiraActivityEventEntry) => void;
 	/** Handles an inline reply externally instead of appending it to local timeline state. */
-	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
+	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string, mentionedAgentIds?: readonly string[]) => void;
 	/**
 	 * Handles Resolve / Unresolve for review discussion threads. When omitted,
 	 * toggles are applied through the local reducer when `allowResolve` is set.
@@ -92,6 +96,17 @@ export interface JiraActivityProps {
 	 * - "reply-and-reactions": Reply plus reactions; the composer is hidden until Reply.
 	 */
 	commentActions?: "none" | "reactions" | "reply-and-reactions";
+	/**
+	 * Where Reply / Add reaction / comment tools sit. `footer` keeps the
+	 * always-visible row under the body; `hover` moves them into the header's
+	 * hover- and focus-revealed action slot and leaves only existing reaction
+	 * pills under the body.
+	 */
+	commentActionsPlacement?: "footer" | "hover";
+	/** Replaces the threaded "Show more replies" label, e.g. with a count and participant faces. */
+	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean) => ReactNode;
+	/** Replaces every thread's default reply composer, e.g. with the surface's own comment box. */
+	renderReplyComposer?: (composer: JiraActivityReplyComposerProps) => ReactNode;
 	/** Handles a reaction toggle externally instead of applying it to local state. */
 	onToggleReaction?: (entry: JiraActivityCommentEntry, emoji: string) => void;
 	className?: string;
@@ -134,6 +149,7 @@ export function JiraActivity({
 	actors = [],
 	composer,
 	connectorStyle = "timeline",
+	fadeAfterLast = false,
 	commentHeaderLayout,
 	renderCommentAction,
 	renderCommentTools,
@@ -142,6 +158,7 @@ export function JiraActivity({
 	renderReply,
 	replyDrafts,
 	onReplyDraftChange,
+	replyRequest,
 	renderCommentBody,
 	renderEntry,
 	activeEntryId,
@@ -152,6 +169,9 @@ export function JiraActivity({
 	onSubmitReply,
 	onResolveComment,
 	commentActions = "reply-and-reactions",
+	commentActionsPlacement = "footer",
+	renderEarlierRepliesLabel,
+	renderReplyComposer,
 	onToggleReaction,
 	className,
 	headerClassName,
@@ -233,9 +253,9 @@ export function JiraActivity({
 		});
 	}
 
-	function handleAddReply(entry: JiraActivityCommentEntry, body: string) {
+	function handleAddReply(entry: JiraActivityCommentEntry, body: string, mentionedAgentIds?: readonly string[]) {
 		if (onSubmitReply) {
-			onSubmitReply(entry, body);
+			onSubmitReply(entry, body, mentionedAgentIds);
 			return;
 		}
 		applyAction({
@@ -298,7 +318,7 @@ export function JiraActivity({
 					aria-label="Activity timeline"
 					// Rail mode omits the sticky header; a little top pad keeps the
 					// first mention chip clear of the metadata scrollport clip edge.
-					className={cn("flex flex-col", hideHeader ? "pt-1" : null)}
+					className={cn("flex flex-col", hideHeader ? "pt-1" : null, fadeAfterLast && orderedEntries.length > 0 ? "pb-4" : null)}
 				>
 					{orderedEntries.map((entry, index) => {
 						const customEntry = renderEntry?.(entry);
@@ -335,6 +355,7 @@ export function JiraActivity({
 							/>
 						) : entry.kind === "comment" ? (
 							<JiraActivityComment
+									replyRequestId={replyRequest?.entryId === entry.id ? replyRequest.id : undefined}
 								headerLayout={commentHeaderLayout}
 								threaded={connectorStyle === "thread"}
 								bodyContent={renderCommentBody?.(entry)}
@@ -346,6 +367,9 @@ export function JiraActivity({
 								onReplyDraftChange={onReplyDraftChange ? (value) => onReplyDraftChange(entry.id, value) : undefined}
 								actorsById={actorsById}
 								commentActions={commentActions}
+								commentActionsPlacement={commentActionsPlacement}
+								renderEarlierRepliesLabel={renderEarlierRepliesLabel}
+								renderReplyComposer={renderReplyComposer}
 								currentUser={currentUser}
 								entry={entry}
 								onAddReplyToChat={
@@ -364,7 +388,7 @@ export function JiraActivity({
 										? () => handleResolveComment(entry)
 										: undefined
 								}
-								onSubmitReply={(body) => handleAddReply(entry, body)}
+								onSubmitReply={(body, mentionedAgentIds) => handleAddReply(entry, body, mentionedAgentIds)}
 								onToggleReaction={(emoji) => handleToggleReaction(entry, emoji)}
 								action={renderCommentAction?.(entry)}
 							/>
@@ -382,15 +406,14 @@ export function JiraActivity({
 								className="group/activity-event flex min-w-0 gap-2"
 								data-active={entry.id === activeEntryId ? "" : undefined}
 								data-jira-activity-entry-id={entry.id}
+								data-jira-activity-entry-kind={entry.kind}
 								data-jira-activity-parent-id={
 									entry.kind === "comment" ? entry.parentId : undefined
 								}
 								key={entry.id}
 							>
 								{/*
-								 * Spine gaps come from JiraActivityNode's icon track (h-10 / h-6):
-								 * the connector only starts below that track, so each node gets a
-								 * clean 4px break without opaque color-matching covers.
+								 * The node gives its connector a 4px break below each icon.
 								 */}
 								{isNestedComment ? (
 									<div
@@ -403,13 +426,16 @@ export function JiraActivity({
 								) : (
 									<JiraActivityNode
 										actor={entry.actor}
+										attributedBy={entry.kind === "comment" ? entry.attributedBy : undefined}
 										icon={
 											entry.kind === "event"
 												? (entry.pullRequest ? "pull-request" : entry.icon)
 												: undefined
 										}
-											isLast={isLast || connectorStyle === "thread"}
+										// Threads keep one continuous spine: each stem runs on past its replies' branches to the next row.
+										isLast={isLast && !fadeAfterLast}
 										size={isCardEntry ? "card" : "event"}
+										tone={connectorStyle === "thread" ? "thread" : "timeline"}
 									/>
 								)}
 								<div
@@ -417,9 +443,13 @@ export function JiraActivity({
 										"min-w-0 flex-1",
 										spacingClassName,
 										isNestedComment ? "pt-3 pl-6" : null,
+										isLast && fadeAfterLast ? "relative" : null,
 									)}
 								>
 									{customEntry !== undefined ? customEntry : defaultEntry}
+									{isLast && fadeAfterLast ? (
+										<span aria-hidden className={cn("absolute -left-6 top-full h-4 w-px -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black,transparent)]", connectorStyle === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} data-jira-activity-end-fade />
+									) : null}
 								</div>
 							</li>
 						);
@@ -444,6 +474,7 @@ export function JiraActivity({
 export { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
 export { JiraActivityCard, type JiraActivityCardProps } from "./jira-activity-card";
 export { JiraActivityComposer, type JiraActivityComposerProps } from "./jira-activity-composer";
+export { JiraActivityEntryGlyph } from "./jira-activity-node";
 export {
 	JiraActivityHeader,
 	JiraActivityViewControl,
@@ -469,3 +500,4 @@ export {
 	serializeActivityCommentsContext,
 	type ActivityChatCommentContext,
 } from "./lib/jira-activity-comment-text";
+export type { JiraActivityReplyComposerProps } from "./jira-activity-comment";

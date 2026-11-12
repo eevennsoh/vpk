@@ -359,6 +359,12 @@
 	pointer-events: none;
 }
 
+.rich-text-editor-content[data-instruction-placeholder="true"] .tiptap-editor > p:last-child::after {
+	content: "write your instructions";
+	color: var(--ds-text-subtlest, #626f86);
+	pointer-events: none;
+}
+
 .tiptap-editor ::selection {
 	background-color: var(--ds-background-selected, #deebff);
 }
@@ -604,6 +610,17 @@
 	overflow-y: auto;
 }
 
+/* The capped drill-in panels reserve 44px for Back and 292px for the list.
+   Keep their layout while skipping offscreen paint and compositor layers. */
+.rich-text-command-menu-showcase[data-nested="true"] {
+	content-visibility: auto;
+	contain-intrinsic-block-size: auto 336px;
+}
+
+.rich-text-command-menu-showcase .rich-text-command-menu-list {
+	contain: layout style paint;
+}
+
 .rich-text-command-menu-item {
 	display: grid;
 	width: 100%;
@@ -620,8 +637,7 @@
 	border: 0;
 	border-radius: 8px;
 	background: transparent;
-	/* Shared sizing model for every variant (nested, flat, live "@"/"/" menus):
-	   a fixed 44px row. The 24px front-slot avatar plus the clamped copy box
+	/* The byline variant uses a fixed 44px row. The 24px front-slot avatar plus the clamped copy box
 	   (label, with any description revealing in place on hover/selection) fit
 	   inside 44px, and `align-items: center` centers them. No vertical padding —
 	   the fixed height owns the row rhythm so reveal animations never reflow it. */
@@ -633,6 +649,10 @@
 	cursor: pointer;
 }
 
+.rich-text-command-menu[data-row-variant="compact"] .rich-text-command-menu-item {
+	height: 36px;
+}
+
 /* The row highlight has a single source of truth: the selected row. In
    selection-driven menus (the live editor's "/" and "@" surfaces) pointer hover
    moves `selectedIndex` onto the hovered row — see `onHover` in
@@ -642,8 +662,7 @@
    so they keep a plain `:hover` highlight. The Back button is never a selectable
    row, so it always keeps its own hover feedback. */
 .rich-text-command-menu-item-selected,
-.rich-text-command-menu:not([data-pointer-selects="true"]) .rich-text-command-menu-item:hover,
-.rich-text-command-menu-back:hover {
+.rich-text-command-menu:not([data-pointer-selects="true"]) .rich-text-command-menu-item:hover {
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
 }
 
@@ -693,7 +712,7 @@
    hover highlight in EVERY menu — including the live "/" surface that sets
    `data-pointer-selects="true"` to avoid double-highlighting selectable rows —
    so hovering the Ask Rovo bar reads as interactive just like in the static
-   showcases. Like `.rich-text-command-menu-back`, it owns its own hover. */
+   showcases. Like the Back button, it owns its own hover. */
 .rich-text-command-menu-search:hover {
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
 }
@@ -701,8 +720,8 @@
 /*
  * When the menu's own search field is focused (the user is typing into it), the
  * Return key submits THAT field — e.g. "Ask Rovo" or a category search — not a
- * menu row. Suppress row highlight sources (the keyboard-selected row and any
- * hover), the copy reflow, and the Return (↵) affordance so the menu never
+ * menu row. Suppress the keyboard-selected row, copy reflow, and the Return
+ * (↵) affordance so the menu never
  * implies Return will activate a row while you are typing. The sticky search
  * bar keeps its own hover (see `.rich-text-command-menu-search:hover` above) so
  * it stays interactive like Assign agents / editor-palette search — exclude it
@@ -711,9 +730,7 @@
  * menus — where focus stays in the editor and Return DOES pick the highlighted
  * row — are unaffected.
  */
-.rich-text-command-menu:focus-within .rich-text-command-menu-item:hover,
 .rich-text-command-menu:focus-within .rich-text-command-menu-item-selected,
-.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:not(.rich-text-command-menu-search):hover,
 .rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:not(.rich-text-command-menu-search).rich-text-command-menu-item-selected {
 	background-color: transparent;
 }
@@ -858,28 +875,6 @@
 .rich-text-command-menu-avatar {
 	width: 24px;
 	height: 24px;
-}
-
-.rich-text-command-menu-back {
-	display: flex;
-	grid-template-columns: none;
-	align-items: center;
-	border-radius: 0;
-	/* Fixed 44px row with no vertical padding, matching the latest dropdown menu
-	   item pattern (and `.rich-text-command-menu-item`): the height owns the row
-	   rhythm so the bar never reflows. 12px left padding matches the
-	   "Ask Rovo"/search input sticky header and the 24px front slots in the list
-	   rows, so the back arrow lines up exactly with every other leading glyph
-	   across nested, flat, and search variants; 6px right matches the sticky
-	   search header. */
-	/* The Back button is a direct flex child of the height-capped `.rich-text-
-	   command-menu` column, so without an explicit shrink guard a tall nested
-	   list squeezes it below 44px (the default `flex-shrink: 1`). `flex: 0 0 44px`
-	   pins its cozy height so it always aligns with the list rows. */
-	flex: 0 0 44px;
-	height: 44px;
-	padding: 0 6px 0 12px;
-	color: var(--ds-text-subtle, #44546f);
 }
 
 /* Every option row reserves the same copy height (matching the revealed

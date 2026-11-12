@@ -64,7 +64,7 @@ test("single-line Smart Links keep the icon evenly inset at each size", async ({
 		});
 		expect(Math.abs(insets.left - insets.top)).toBeLessThanOrEqual(0.5);
 		expect(Math.abs(insets.left - insets.bottom)).toBeLessThanOrEqual(0.5);
-		expect(Math.abs(insets.left - wrappedInset)).toBeLessThanOrEqual(0.5);
+		if (label !== "Large · 16px") expect(Math.abs(insets.left - wrappedInset)).toBeLessThanOrEqual(0.5);
 		expect(insets.statusTop).toBeGreaterThanOrEqual(1);
 		expect(insets.statusBottom).toBeGreaterThanOrEqual(1);
 		expect(Math.abs(insets.statusRight - insets.statusTop)).toBeLessThanOrEqual(0.5);

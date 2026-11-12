@@ -7,6 +7,8 @@ import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import PinIcon from "@atlaskit/icon/core/pin";
+import StarFilledIcon from "@atlaskit/icon/core/star-starred";
+import StarIcon from "@atlaskit/icon/core/star-unstarred";
 import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useMemo, useState, type ReactElement, type ReactNode } from "react";
@@ -26,6 +28,7 @@ import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text
 import { cn } from "@/lib/utils";
 import { motionEase } from "@/lib/motion";
 import { useActiveAgentOption } from "@/components/blocks/agent-selector/components/use-active-agent-option";
+import { FavoriteButton } from "@/components/blocks/agent-selector/components/favorite-button";
 
 export interface AgentSelectorAgent {
 	id: string;
@@ -80,9 +83,14 @@ export interface AgentSelectorProps {
 	 *   selector opened from those surfaces reads as one family.
 	 */
 	searchVariant?: "boxed" | "palette";
+	/** Use the editor-palette spacing for grouped headings. */
+	paletteHeadings?: boolean;
+	showSearch?: boolean;
+	separatePinned?: boolean;
 	pinnedAgentIds?: readonly string[];
 	pinnedItemsLabel?: string;
 	pinningEnabled?: boolean;
+	pinningAppearance?: "pin" | "favorite";
 	selectionMode?: "multiple" | "single";
 	sections?: { heading: string; agentIds: readonly string[]; initialLimit?: number; otherHeading: string };
 	showByline?: boolean;
@@ -94,12 +102,15 @@ export interface AgentSelectorProps {
 	 * Submenu rows use action semantics and never expose a checkbox state.
 	 */
 	submenuAgentIds?: readonly string[];
+	submenuRole?: "menu" | "dialog";
+	showSubmenuChevron?: boolean;
 	/**
 	 * Agents that are already committed elsewhere and must not be re-selected.
 	 * Disabled rows get `aria-disabled`, a subtle trailing marker, and their
 	 * toggle is a no-op. Generic + domain-neutral; absent = no disabled rows.
 	 */
 	disabledAgentIds?: readonly string[];
+	disabledAgentLabel?: string;
 	/**
 	 * Opt-in (Jira kanban) treatment: agents currently running on the item.
 	 * These render in a dedicated section pinned to the top of the list (above
@@ -160,7 +171,7 @@ const EMPTY_IN_PROGRESS_AGENT_IDS: readonly string[] = [];
 const EMPTY_DISABLED_AGENT_IDS: readonly string[] = [];
 const EMPTY_SUBMENU_AGENT_IDS: readonly string[] = [];
 const EMPTY_SELECTED_AGENT_ACTIONS: readonly AgentSelectorAction[] = [];
-const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal";
+const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 border-0 pl-2 pr-3 py-0 text-left text-sm font-normal";
 const ACTION_ICON_CLASS = "grid size-6 shrink-0 place-items-center text-icon-subtle";
 const ACTION_LABEL_CLASS = "text-text-subtle";
 // The trailing `auto` column reserves a lane for CommandItem's check icon,
@@ -241,6 +252,7 @@ function AgentSelectorLogo({ agent, size }: Readonly<{ agent: AgentSelectorAgent
 function AgentSelectorItem({
 	agent,
 	avatarSize,
+	disabledAgentLabel,
 	isChecked,
 	isDisabled,
 	isInProgress,
@@ -250,12 +262,16 @@ function AgentSelectorItem({
 	onTogglePinned,
 	onToggle,
 	pinningEnabled,
+	pinningAppearance,
 	showSelectedTickInSingleSelect,
+	showSubmenuChevron,
+	submenuRole = "menu",
 	showByline,
 	supportsMultipleSelection,
 }: Readonly<{
 	agent: AgentSelectorAgent;
 	avatarSize: 20 | 24;
+	disabledAgentLabel: string;
 	isChecked: boolean;
 	isDisabled: boolean;
 	/** In-progress rows swap the pin/check affordance for a stop-on-hover control. */
@@ -267,8 +283,11 @@ function AgentSelectorItem({
 	onTogglePinned: (agentId: string) => void;
 	onToggle?: (agentId: string) => void;
 	pinningEnabled: boolean;
+	pinningAppearance: "pin" | "favorite";
 	/** Opt-in single-select tick on the selected row. */
 	showSelectedTickInSingleSelect: boolean;
+	showSubmenuChevron: boolean;
+	submenuRole?: "menu" | "dialog";
 	showByline: boolean;
 	supportsMultipleSelection: boolean;
 }>): ReactElement {
@@ -313,9 +332,11 @@ function AgentSelectorItem({
 	return (
 		<CommandItem
 			aria-checked={showCheckIcon ? isChecked : undefined}
-			aria-haspopup={isSubmenuTrigger ? "menu" : undefined}
+			aria-haspopup={isSubmenuTrigger ? submenuRole : undefined}
 			className={cn(
 				AGENT_ROW_BASE_CLASS,
+				pinningAppearance === "favorite" && "group/agent",
+				"data-selected:bg-bg-neutral-subtle-hovered",
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
 				!showByline && "h-9",
 			)}
@@ -373,7 +394,7 @@ function AgentSelectorItem({
 					</motion.span>
 				</motion.span> : <span className={cn(AGENT_LABEL_CLASS, "flex-1")}>{agent.name}</span>}
 				{isDisabled ? (
-					<span className="ml-2 shrink-0 text-xs font-medium text-text-subtlest">Working</span>
+					<span className="ml-2 shrink-0 text-xs font-medium text-text-subtlest">{disabledAgentLabel}</span>
 				) : null}
 				{isInProgress ? (
 					// The rainbow spinner marks a running agent at rest; hovering/focusing
@@ -408,6 +429,14 @@ function AgentSelectorItem({
 							<Icon aria-hidden render={<VideoStopOverlayIcon label="" size="small" />} />
 						</Button>
 					</span>
+				) : pinningEnabled && pinningAppearance === "favorite" ? (
+					<span className={cn("ml-2 shrink-0", !showSingleSelectTick && !isSubmenuTrigger && (showByline || showCheckIcon) && "mr-1")}>
+						<FavoriteButton id={agent.id} name={agent.name} favorite={isPinned} onToggle={(restoreFocus) => {
+							const root = document.activeElement?.closest("[cmdk-root]");
+							onTogglePinned(agent.id);
+							if (restoreFocus) requestAnimationFrame(() => [...(root?.querySelectorAll<HTMLButtonElement>("[data-favorite-id]") ?? [])].find((button) => button.dataset.favoriteId === agent.id)?.focus());
+						}} />
+					</span>
 				) : pinningEnabled ? (
 					<span
 						className="shrink-0 overflow-hidden"
@@ -426,9 +455,9 @@ function AgentSelectorItem({
 					>
 						<Button
 							aria-hidden={!showPinButton}
-							aria-label={`${isPinned ? "Unpin" : "Pin"} ${agent.name}`}
+							aria-label={pinningAppearance === "favorite" ? `${isPinned ? "Remove" : "Add"} ${agent.name} ${isPinned ? "from" : "to"} favorites` : `${isPinned ? "Unpin" : "Pin"} ${agent.name}`}
 							aria-pressed={isPinned}
-							className="size-6 text-icon-subtle aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-icon-subtle! aria-pressed:[&_svg]:text-icon-subtle!"
+							className={cn("size-6 text-icon-subtle aria-pressed:border-transparent! aria-pressed:bg-transparent!", pinningAppearance === "favorite" ? "aria-pressed:[&_[data-slot=icon]]:text-icon-accent-orange! aria-pressed:[&_svg]:text-icon-accent-orange!" : "aria-pressed:text-icon-subtle! aria-pressed:[&_svg]:text-icon-subtle!")}
 							onClick={(event) => {
 								event.preventDefault();
 								event.stopPropagation();
@@ -442,23 +471,17 @@ function AgentSelectorItem({
 						>
 							<Icon
 								aria-hidden
-								render={pinFilled ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />}
+								render={pinningAppearance === "favorite" ? (pinFilled ? <StarFilledIcon label="" size="small" /> : <StarIcon label="" size="small" />) : (pinFilled ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />)}
 							/>
 						</Button>
 					</span>
 				) : null}
-				{isSubmenuTrigger ? <Icon aria-hidden className="ml-1 shrink-0 text-icon-subtle" render={<ChevronRightIcon label="" size="small" />} /> : null}
+				{isSubmenuTrigger && showSubmenuChevron ? <Icon aria-hidden className="ml-1 mr-1.5 size-3 shrink-0 text-icon-subtle" render={<ChevronRightIcon label="" size="small" />} /> : null}
 				{showSingleSelectTick ? (
-					// Single-select selected marker: the VPK check glyph in the subtle icon
-					// color, in a 24px transparent icon tile so it aligns with
-					// the pin/stop slot. `mr-1` mirrors the in-progress spinner's trailing
-					// margin so the 24px chip sits 10px from the row's right edge (6px row
-					// padding + 4px), matching its 10px top/bottom inset. `ml-1` keeps the
-					// pin↔check gap at 4px (the pin drops its own right margin to 0 when
-					// this tick follows).
+					// Align the check with the favorite star while keeping a 4px gap when both appear.
 					<IconTile
 						aria-hidden
-						className="ml-1 mr-1 text-icon-subtle"
+						className={cn("ml-1 text-icon-subtle", (showByline || pinningAppearance !== "favorite") && "mr-1")}
 						icon={<CheckIcon size="small" />}
 						iconSize="small"
 						label=""
@@ -475,6 +498,7 @@ interface AgentSelectorGroupProps {
 	agents: readonly AgentSelectorAgent[];
 	avatarSize: 20 | 24;
 	disabledAgentIdSet: ReadonlySet<string>;
+	disabledAgentLabel?: string;
 	heading?: string;
 	/** Renders every row in this group with the in-progress stop-on-hover treatment. */
 	isInProgressGroup?: boolean;
@@ -483,8 +507,11 @@ interface AgentSelectorGroupProps {
 	onTogglePinned: (agentId: string) => void;
 	pinnedAgentIdSet: ReadonlySet<string>;
 	pinningEnabled: boolean;
+	pinningAppearance: "pin" | "favorite";
 	selectedAgentIdSet: ReadonlySet<string>;
 	showSelectedTickInSingleSelect: boolean;
+	showSubmenuChevron: boolean;
+	submenuRole?: "menu" | "dialog";
 	showByline: boolean;
 	children?: ReactNode;
 	paletteHeading?: boolean;
@@ -496,6 +523,7 @@ function AgentSelectorGroup({
 	agents,
 	avatarSize,
 	disabledAgentIdSet,
+	disabledAgentLabel = "Working",
 	heading,
 	isInProgressGroup = false,
 	onAgentToggle,
@@ -503,8 +531,11 @@ function AgentSelectorGroup({
 	onTogglePinned,
 	pinnedAgentIdSet,
 	pinningEnabled,
+	pinningAppearance,
 	selectedAgentIdSet,
 	showSelectedTickInSingleSelect,
+	showSubmenuChevron,
+	submenuRole = "menu",
 	showByline,
 	children,
 	paletteHeading = false,
@@ -513,13 +544,14 @@ function AgentSelectorGroup({
 }: Readonly<AgentSelectorGroupProps>): ReactElement | null {
 	return agents.length > 0 ? (
 		<CommandGroup
-			className={cn("!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold", paletteHeading && "!py-0 **:[[cmdk-group-heading]]:!px-2 **:[[cmdk-group-heading]]:!pt-3 **:[[cmdk-group-heading]]:!pb-1 **:[[cmdk-group-heading]]:!text-text-subtlest")}
+			className={cn("!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold", paletteHeading && "!py-0 **:[[cmdk-group-heading]]:!px-2 **:[[cmdk-group-heading]]:!pt-3 **:[[cmdk-group-heading]]:!pb-1 **:[[cmdk-group-heading]]:!leading-4 **:[[cmdk-group-heading]]:!text-text-subtlest")}
 			heading={heading}
 		>
 			{agents.map((agent) => (
 				<AgentSelectorItem
 					agent={agent}
 					avatarSize={avatarSize}
+					disabledAgentLabel={disabledAgentLabel}
 					isChecked={selectedAgentIdSet.has(agent.id)}
 					isDisabled={disabledAgentIdSet.has(agent.id)}
 					isInProgress={isInProgressGroup}
@@ -530,7 +562,10 @@ function AgentSelectorGroup({
 					onToggle={onAgentToggle}
 					onTogglePinned={onTogglePinned}
 					pinningEnabled={pinningEnabled}
+					pinningAppearance={pinningAppearance}
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
+					showSubmenuChevron={showSubmenuChevron}
+					submenuRole={submenuRole}
 					showByline={showByline}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
@@ -562,9 +597,13 @@ export function AgentSelector({
 	query,
 	searchPlaceholder = "Search agents",
 	searchVariant = "boxed",
+	paletteHeadings = false,
+	showSearch = true,
+	separatePinned = false,
 	pinnedAgentIds,
 	pinnedItemsLabel = "Pinned",
 	pinningEnabled = true,
+	pinningAppearance = "pin",
 	selectionMode = "multiple",
 	sections,
 	showByline = true,
@@ -572,7 +611,10 @@ export function AgentSelector({
 	selectedActionsLabel = "Selected agent actions",
 	selectedAgentIds,
 	submenuAgentIds,
+	showSubmenuChevron = true,
+	submenuRole = "menu",
 	disabledAgentIds,
+	disabledAgentLabel,
 	inProgressAgentIds,
 	inProgressLabel = "In progress",
 	onStopAgent,
@@ -595,7 +637,7 @@ export function AgentSelector({
 	const pinnedAgentIdSet = useMemo(() => new Set(resolvedPinnedAgentIds), [resolvedPinnedAgentIds]);
 	const inProgressAgentIdSet = useMemo(() => new Set(inProgressIds), [inProgressIds]);
 	const listOverflow = useHasVerticalOverflow<HTMLDivElement>();
-	const activeOption = useActiveAgentOption(listOverflow.ref);
+	const { activeOptionId, ref: activeOptionRef } = useActiveAgentOption(listOverflow.ref, !showSearch);
 	const visibleAgents = useMemo(() => {
 		const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 		const selectedAgents = selectedIds
@@ -644,7 +686,8 @@ export function AgentSelector({
 	const hasPinnedAgents = agents.some(
 		(agent) => pinnedAgentIdSet.has(agent.id) && !inProgressAgentIdSet.has(agent.id),
 	);
-	const sectionLayout = resolveAgentSections({ sections, agents: visibleAgents, query: normalizedQuery, expanded: sectionsExpanded });
+	const sectionFavorites = sections && pinningAppearance === "favorite" ? pinnedAgents : [];
+	const sectionLayout = resolveAgentSections({ sections, agents: sectionFavorites.length ? visibleAgents.filter((agent) => !pinnedAgentIdSet.has(agent.id)) : visibleAgents, query: normalizedQuery, expanded: sectionsExpanded });
 
 	function handleQueryChange(nextQuery: string) {
 		if (query === undefined) {
@@ -654,6 +697,7 @@ export function AgentSelector({
 	}
 
 	function handleTogglePinned(agentId: string) {
+		if (sections && pinningAppearance === "favorite" && pinnedAgentIdSet.has(agentId)) setSectionsExpanded(true);
 		const nextPinnedAgentIds = pinnedAgentIdSet.has(agentId)
 			? resolvedPinnedAgentIds.filter((id) => id !== agentId)
 			: [...resolvedPinnedAgentIds, agentId];
@@ -687,18 +731,18 @@ export function AgentSelector({
 					))}
 				</div>
 			) : null}
-			<div className={cn("shrink-0", hasSelectedAgentActions && "pt-4")}>
+			{showSearch ? <div className={cn("shrink-0", hasSelectedAgentActions && !heading && "pt-4")}>
 				{heading ? (
-					<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">{heading}</p>
+					<p className="rich-text-command-menu-heading">{heading}</p>
 				) : null}
 				{searchVariant === "palette" ? (
 					// Let the shared search field own its inset, like the "/" menu
 					// and metadata pickers.
 					// `hostOwnsKeyNavigation` hands Arrow/Enter back to the cmdk root,
 					// which owns row highlighting and activation for this list.
-					<div className="-mx-1 -mt-1 mb-1 overflow-hidden rounded-t-xl">
+					<div className={cn("-mx-1 -mt-1 overflow-hidden rounded-t-xl", !sections && "mb-1")}>
 						<RichTextCommandMenuSearchField
-							activeDescendantId={activeOption.activeOptionId ?? null}
+							activeDescendantId={activeOptionId ?? null}
 							autoFocus
 							hostOwnsKeyNavigation
 							icon={<SearchIcon className="size-4 text-icon-subtle" />}
@@ -719,12 +763,14 @@ export function AgentSelector({
 						wrapperClassName="p-0"
 					/>
 				)}
-			</div>
+			</div> : null}
 			<CommandList
 				aria-label={listLabel}
+				showScrollbar
 				className={cn(
 					"min-h-0 max-h-none flex-1 p-0",
 					searchVariant === "palette" && "[&_[cmdk-group]:first-child]:!pt-0",
+					separatePinned && "[&_[cmdk-group]]:!py-0",
 					// Fade the list under the sticky search header once it has scrolled,
 					// matching the editor-palette command menus. `scroll-mask-top` keeps
 					// the scrollbar gutter opaque so only the content column fades; the
@@ -733,14 +779,15 @@ export function AgentSelector({
 					listOverflow.showTopScrollMask
 						&& "scroll-mask-top overscroll-contain [--scroll-mask-fade-size:3rem]",
 				)}
-				ref={activeOption.ref}
+				ref={activeOptionRef}
 			>
 				{visibleAgents.length === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
 				{sectionLayout ? (<>
-					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.agents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.heading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading>
+					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionFavorites} disabledAgentIdSet={disabledAgentIdSet} heading={pinnedItemsLabel} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} pinningAppearance={pinningAppearance} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} showSubmenuChevron={showSubmenuChevron} submenuRole={submenuRole} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
+					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.agents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.heading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} pinningAppearance={pinningAppearance} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} showSubmenuChevron={showSubmenuChevron} submenuRole={submenuRole} supportsMultipleSelection={supportsMultipleSelection} paletteHeading>
 						{sectionLayout.showMore ? <CommandItem className="h-8 px-2 text-xs text-text-subtlest hover:underline data-selected:bg-transparent data-selected:text-text-subtlest data-selected:underline" onSelect={() => setSectionsExpanded(true)} showCheckIcon={false} value="__show_more_agents__">Show more</CommandItem> : null}
 					</AgentSelectorGroup>
-					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.otherAgents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.otherHeading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
+					<AgentSelectorGroup avatarSize={avatarSize} agents={sectionLayout.otherAgents} disabledAgentIdSet={disabledAgentIdSet} heading={sectionLayout.otherHeading} onAgentToggle={onAgentToggle} onTogglePinned={handleTogglePinned} pinnedAgentIdSet={pinnedAgentIdSet} pinningEnabled={pinningEnabled} pinningAppearance={pinningAppearance} selectedAgentIdSet={selectedAgentIdSet} showSelectedTickInSingleSelect={showSelectedTickInSingleSelect} showByline={showByline} submenuAgentIdSet={submenuAgentIdSet} showSubmenuChevron={showSubmenuChevron} submenuRole={submenuRole} supportsMultipleSelection={supportsMultipleSelection} paletteHeading />
 				</>) : (<>
 				<AgentSelectorGroup
 					avatarSize={avatarSize}
@@ -753,40 +800,54 @@ export function AgentSelector({
 					onTogglePinned={handleTogglePinned}
 					pinnedAgentIdSet={pinnedAgentIdSet}
 					pinningEnabled={pinningEnabled}
+					pinningAppearance={pinningAppearance}
 					selectedAgentIdSet={selectedAgentIdSet}
 					showSelectedTickInSingleSelect={false}
 					showByline={showByline}
 					submenuAgentIdSet={submenuAgentIdSet}
+					showSubmenuChevron={showSubmenuChevron}
+					submenuRole={submenuRole}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				<AgentSelectorGroup
 					avatarSize={avatarSize}
 					agents={pinnedAgents}
 					disabledAgentIdSet={disabledAgentIdSet}
+					disabledAgentLabel={disabledAgentLabel}
 					heading={pinnedItemsLabel}
+					paletteHeading={paletteHeadings || (!showSearch && searchVariant === "palette")}
 					onAgentToggle={onAgentToggle}
 					onTogglePinned={handleTogglePinned}
 					pinnedAgentIdSet={pinnedAgentIdSet}
 					pinningEnabled={pinningEnabled}
+					pinningAppearance={pinningAppearance}
 					selectedAgentIdSet={selectedAgentIdSet}
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
 					showByline={showByline}
 					submenuAgentIdSet={submenuAgentIdSet}
+					showSubmenuChevron={showSubmenuChevron}
+					submenuRole={submenuRole}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
+				{separatePinned && pinnedAgents.length > 0 && moreAgents.length > 0 ? <hr className="my-1 border-0 border-t border-border" /> : null}
 				<AgentSelectorGroup
 					avatarSize={avatarSize}
 					agents={moreAgents}
 					disabledAgentIdSet={disabledAgentIdSet}
-					heading={hasPinnedAgents || inProgressAgents.length > 0 ? moreItemsLabel : undefined}
+					disabledAgentLabel={disabledAgentLabel}
+					heading={hasPinnedAgents || inProgressAgents.length > 0 ? moreItemsLabel : !showSearch ? heading : undefined}
+					paletteHeading={paletteHeadings || (!showSearch && searchVariant === "palette")}
 					onAgentToggle={onAgentToggle}
 					onTogglePinned={handleTogglePinned}
 					pinnedAgentIdSet={pinnedAgentIdSet}
 					pinningEnabled={pinningEnabled}
+					pinningAppearance={pinningAppearance}
 					selectedAgentIdSet={selectedAgentIdSet}
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
 					showByline={showByline}
 					submenuAgentIdSet={submenuAgentIdSet}
+					showSubmenuChevron={showSubmenuChevron}
+					submenuRole={submenuRole}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				</>)}

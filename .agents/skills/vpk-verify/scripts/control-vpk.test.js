@@ -33,6 +33,7 @@ const {
 	targetBrowserArguments,
 	waitForDoctorReady,
 } = require(CONTROL_VPK);
+const { browserSessionId } = require("./lib/browser.js");
 const { readDesignVariantIds, routeWithDesignVariants } = require("./lib/capture.js");
 const { withTempDir } = require("./lib/test-fixtures.js");
 
@@ -63,7 +64,7 @@ test("object proof first opens the exact mapped project or component on this wor
 		});
 		assert.equal(outcome.classification, null);
 		assert.deepEqual(calls, [[
-			"--session", "vpk-verify-target", "open", "--headed", `https://fixture.localhost${route}`,
+			"--session", "vpk-verify-target", "open", "--enable", "react-devtools", "--headed", `https://fixture.localhost${route}`,
 		]]);
 	}
 });
@@ -172,6 +173,15 @@ test("session does not invoke a PATH agent-browser when the worktree package exi
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
+});
+
+test("browser sessions are stable per chat and isolated between chats in a worktree", () => {
+	const runCommand = () => ({ status: 0, stdout: "vpk-verify-worktree\n" });
+	const resolve = (env) => browserSessionId({ env, runCommand });
+	assert.equal(resolve({ CODEX_THREAD_ID: "chat-a" }), resolve({ CODEX_THREAD_ID: "chat-a" }));
+	assert.notEqual(resolve({ CODEX_THREAD_ID: "chat-a" }), resolve({ CODEX_THREAD_ID: "chat-b" }));
+	assert.notEqual(resolve({ CLAUDE_CODE_SESSION_ID: "chat-a" }), resolve({ CLAUDE_CODE_SESSION_ID: "chat-b" }));
+	assert.equal(resolve({}), "vpk-verify-worktree");
 });
 
 test("browser subprocess timeout is configurable and classified distinctly", () => {
@@ -526,7 +536,7 @@ test("capture opens the route with ?variants= and records the variants in the ma
 			resolveSession: () => "vpk-verify-capture",
 			runCommand,
 		});
-		assert.deepEqual(calls[0], ["open", "https://fixture.localhost/jira-team-eu26?embedded=1&variants=autoArrange,-sessionPeel"]);
+		assert.deepEqual(calls[0], ["open", "--enable", "react-devtools", "https://fixture.localhost/jira-team-eu26?embedded=1&variants=autoArrange,-sessionPeel"]);
 		assert.equal(manifest.id, "jira-team-eu26");
 		assert.equal(manifest.route, "/jira-team-eu26?embedded=1");
 		assert.equal(manifest.requestedUrl, "https://fixture.localhost/jira-team-eu26?embedded=1&variants=autoArrange,-sessionPeel");
@@ -670,7 +680,7 @@ test("capture drives the exact scoped route and writes proof plus manifest to th
 
 		const screenshot = path.join(root, "evidence/jira-team-eu26/capture.png");
 		assert.deepEqual(calls, [
-			["open", "--headed", "https://fixture.localhost/jira-team-eu26"],
+			["open", "--enable", "react-devtools", "--headed", "https://fixture.localhost/jira-team-eu26"],
 			["set", "viewport", "1280", "720"],
 			["set", "media", "light"],
 			["console", "--clear"],
@@ -737,7 +747,7 @@ test("capture stops after a failed open and records a failing manifest", () => {
 			resolveSession: () => "vpk-verify-capture",
 			runCommand,
 		});
-		assert.deepEqual(calls, [["open", "https://fixture.localhost/jira-team-eu26"]]);
+		assert.deepEqual(calls, [["open", "--enable", "react-devtools", "https://fixture.localhost/jira-team-eu26"]]);
 		assert.equal(manifest.ok, false);
 		assert.equal(manifest.failures[0].step, "open");
 		assert.match(manifest.failures[0].detail, /ERR_CONNECTION_REFUSED/u);

@@ -32,9 +32,9 @@ import {
 	type SmartLinkItem,
 } from "@/components/blocks/smart-link";
 import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
-import { ASX_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v0/data/agent-chat-data";
-import { AsxRovoOverlay } from "@/components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay";
-import { useAsxAgentChatDemo } from "@/components/projects/jira-golden-journeys-v0/hooks/use-jira-golden-journeys-v0-agent-chat-demo";
+import { ASX_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journey-v0/data/agent-chat-data";
+import { AsxRovoOverlay } from "@/components/projects/jira-golden-journey-v0/components/jira-golden-journey-v0-rovo-overlay";
+import { useAsxAgentChatDemo } from "@/components/projects/jira-golden-journey-v0/hooks/use-jira-golden-journey-v0-agent-chat-demo";
 import { Button } from "@/components/ui/button";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import { token } from "@/lib/tokens";
@@ -594,6 +594,7 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 	return (
 		<div className="flex h-full min-h-[360px] w-full items-center justify-center bg-surface p-6">
 			<JiraIssue
+				appearance="default"
 				assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
 				assigneeUnassignedKind={hasCompactIssueContext ? "person" : undefined}
 				chrome={isExperimentalVariant ? "stroke" : undefined}
@@ -885,6 +886,7 @@ function JiraIssueAgentActivityStatesDemo({
 				<div className="flex w-[276px] flex-col gap-2">
 					<JiraIssue
 						key={isTransferPhase ? agentActivityState : "base"}
+						appearance="default"
 						agentActivities={agentActivities}
 						assignment={demoSessionRole ? {
 							assignedAgents: agentActivityState === "agent-session-expired" ? agentActivities?.map(toAgentAssignmentAgent) : undefined,

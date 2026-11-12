@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { AgentAutomationRule, AgentTriggerValue } from "@/components/blocks/triggers/page";
+import type { AgentAutomationRule, AgentTriggerValue } from "@/components/blocks/trigger/page";
 import { AgentCompactEmptyConfigNav } from "@/components/blocks/agent/components/agent-compact-config-nav";
 import { AgentFilledConfigSummary } from "@/components/blocks/agent/components/agent-filled-config-summary";
 import type { KnowledgeModeValue, MemoryModeValue, ReasoningModeValue } from "@/components/blocks/agent/components/agent-reasoning-memory-selectors";

@@ -70,6 +70,7 @@ test("the chin-row activity carries the human who invoked the session", async ()
 		id: "lw-a",
 		invokedBy: ANNIE,
 		label: "Investigate webhook retries",
+		sessionTitle: "Investigate webhook retries",
 		name: "Claude",
 		state: "completed",
 	});

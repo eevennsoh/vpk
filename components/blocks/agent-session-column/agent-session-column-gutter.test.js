@@ -33,7 +33,7 @@ const EXPERIMENTAL_HEADER_SOURCE = readFileSync(
 	"utf8",
 );
 const JIRA_PROJECT_SOURCE = readFileSync(
-	join(__dirname, "../../projects/jira-golden-journeys-v4/page.tsx"),
+	join(__dirname, "../../projects/jira-golden-journey-v4/page.tsx"),
 	"utf8",
 );
 const BOARD_SOURCE = readFileSync(
@@ -438,7 +438,7 @@ test("Board visible cards and List share the header's 24px leading alignment", (
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/className=\{cn\("flex w-max items-stretch", columnSizing === "fill" \? "min-h-full min-w-full" : "h-full"\)\}\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
+		/style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart(?:, width: columnWidth === "fluid" \? "100%" : undefined)? \}\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_BOARD_SOURCE,

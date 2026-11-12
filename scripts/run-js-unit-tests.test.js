@@ -155,7 +155,7 @@ const LEGACY_DRIFT_BASELINE = new Set([
 	"components/arts/personal-graph/personal-graph-glass-panel.test.js",
 	"components/blocks/agent-directory/agent-directory.test.js",
 	"components/blocks/artifact-panel.test.js",
-	"components/blocks/conversation-starters/conversation-starters.test.js",
+	"components/blocks/conversation-starter/conversation-starter.test.js",
 	"components/blocks/editor-toolbar/editor-toolbar.test.js",
 	"components/blocks/jira-kanban/jira-kanban.test.js",
 	"components/blocks/knowledge-directory/knowledge-directory.test.js",
@@ -163,15 +163,15 @@ const LEGACY_DRIFT_BASELINE = new Set([
 	"components/blocks/pull-request-fix/pull-request-fix.test.js",
 	"components/blocks/pull-request-header/pull-request-header.test.js",
 	"components/blocks/pull-request-review/pull-request-review.test.js",
-	"components/blocks/subagents/subagents.test.js",
-	"components/blocks/tools-directory/tools-directory.test.js",
+	"components/blocks/subagent/subagent.test.js",
+	"components/blocks/tool-directory/tool-directory.test.js",
 	"components/blocks/twg-agent-card/twg-agent-card.test.js",
 	"components/projects/jira-for-you/jira-for-you-work-item-integration.test.js",
 	"components/projects/jira-for-you/jira-for-you-workspace.test.js",
-	"components/projects/jira-golden-journeys-v0/lib/kanban-lifecycle.test.js",
-	"components/projects/jira-golden-journeys-v1/lib/kanban-lifecycle.test.js",
-	"components/projects/jira-golden-journeys-v1/queue-stage.test.js",
-	"components/projects/jira-golden-journeys-v1/session-gallery.test.js",
+	"components/projects/jira-golden-journey-v0/lib/kanban-lifecycle.test.js",
+	"components/projects/jira-golden-journey-v1/lib/kanban-lifecycle.test.js",
+	"components/projects/jira-golden-journey-v1/queue-stage.test.js",
+	"components/projects/jira-golden-journey-v1/session-gallery.test.js",
 	"components/projects/jira-queue/queue-conversation-workspace.test.js",
 	"components/projects/jira/components/rfp-agent-chat-details.test.js",
 	"components/projects/jira/components/work-item-modal/accordion-accessibility.test.js",
@@ -413,12 +413,12 @@ test("Jira and ASX tests renamed to v0, v1, and v2 remain classified", async () 
 	const sourceContractFiles = new Set(TEST_FILE_CLASSIFICATIONS["source-contract"]);
 
 	for (const filePath of [
-		"components/projects/jira-golden-journeys-v0/kanban-stage.test.js",
-		"components/projects/jira-golden-journeys-v0/queue-stage.test.js",
-		"components/projects/jira-golden-journeys-v1/agent-chat-demo.test.js",
-		"components/projects/jira-golden-journeys-v1/kanban-stage.test.js",
-		"components/projects/jira-golden-journeys-v2/jira-golden-journeys-v2.test.js",
-		"app/data/jira-golden-journeys-v1-contract.test.js",
+		"components/projects/jira-golden-journey-v0/kanban-stage.test.js",
+		"components/projects/jira-golden-journey-v0/queue-stage.test.js",
+		"components/projects/jira-golden-journey-v1/agent-chat-demo.test.js",
+		"components/projects/jira-golden-journey-v1/kanban-stage.test.js",
+		"components/projects/jira-golden-journey-v2/jira-golden-journey-v2.test.js",
+		"app/data/jira-golden-journey-v1-contract.test.js",
 	]) {
 		assert.equal(sourceContractFiles.has(filePath), true, `${filePath} should remain source-contract`);
 	}
@@ -500,4 +500,91 @@ test("runTestFiles invokes node:test once per batch", async () => {
 			options: { stdio: "inherit" },
 		},
 	]);
+});
+
+test("four shards cover the inventory and ordinary Butter growth exactly once within an indivisible-batch bound", async () => {
+	const { readFileSync } = require("node:fs");
+	const { buildTestFileBatches, listCandidateTestFiles, partitionTestBatches, selectRunnableTestFiles } = await import("./run-js-unit-tests.mjs");
+	const entries = listCandidateTestFiles().map((filePath) => ({ filePath, source: readFileSync(filePath, "utf8") }));
+	const selected = selectRunnableTestFiles(entries);
+	const growth = ["council-growth-one", "council-growth-two"].map((name) => `components/blocks/jira-work-item/project-butter/${name}.test.js`);
+	assert.ok(selected.length > 0);
+	assert.ok(growth.every((file) => !selected.includes(file)));
+	for (const files of [selected, [...selected, ...growth]]) {
+		const batches = buildTestFileBatches(files, { readFile: (file) => growth.includes(file) ? NODE_TEST_SOURCE : readFileSync(file, "utf8") });
+		const shards = partitionTestBatches(batches);
+		const union = shards.flatMap((shard) => shard.batches.flatMap((batch) => batch.files));
+		assert.equal(shards.length, 4);
+		assert.equal(new Set(union).size, union.length);
+		assert.deepEqual([...union].sort(), [...files].sort());
+		assert.deepEqual(partitionTestBatches([...batches].reverse()), shards);
+		const largestBatch = Math.max(...batches.map((batch) => partitionTestBatches([batch])[0].seconds));
+		const spread = Math.max(...shards.map((shard) => shard.seconds)) - Math.min(...shards.map((shard) => shard.seconds));
+		assert.ok(spread <= largestBatch, `Spread ${spread} exceeds largest indivisible batch ${largestBatch}`);
+	}
+});
+
+test("new batches use deterministic file weights and VM batches retain their flags", async () => {
+	const { buildTestFileBatches, partitionTestBatches } = await import("./run-js-unit-tests.mjs");
+	const files = ["z/vm.test.js", "a/a.test.js", "a/b.test.js", "b/a.test.js", "c/a.test.js", "d/a.test.js"];
+	const batches = buildTestFileBatches(files, { readFile: (file) => file.includes("vm") ? "vm.SourceTextModule" : NODE_TEST_SOURCE });
+	const shards = partitionTestBatches(batches, {});
+	assert.deepEqual(shards.map((shard) => shard.seconds), [2, 2, 1, 1]);
+	const vm = shards.flatMap((shard) => shard.batches).find((batch) => batch.reason === "vm-modules");
+	assert.deepEqual(vm.nodeArgs, ["--experimental-vm-modules"]);
+	assert.deepEqual(partitionTestBatches([...batches].reverse(), {}), shards);
+});
+
+test("shard arguments fail closed and cannot bypass full manifest validation through selection", async () => {
+	const { parseTestSelectionArgs } = await import("./run-js-unit-tests.mjs");
+	for (const value of ["0/4", "5/4", "1/3", "1/5", "1", "01/4", "1.5/4", "1/4/4", "", "--file"]) {
+		assert.throws(() => parseTestSelectionArgs(["--shard", value]), /--shard/);
+	}
+	assert.throws(() => parseTestSelectionArgs(["--shard=1/4", "--shard=2/4"]), /--shard/);
+	assert.throws(() => parseTestSelectionArgs(["--shard=1/4", "--prefix=backend/"]), /cannot be combined/);
+	assert.throws(() => parseTestSelectionArgs(["--file=x.test.js", "--shard=1/4"]), /cannot be combined/);
+	assert.deepEqual(parseTestSelectionArgs(["--shard", "4/4"]), { files: [], prefixes: [], shard: 4 });
+});
+
+test("batch failures print identity, duration and summary, and preserve a nonzero exit", async () => {
+	const { runTestFiles } = await import("./run-js-unit-tests.mjs");
+	const lines = [];
+	let clock = 0;
+	const result = runTestFiles(["a/a.test.js", "b/b.test.js"], {
+		readFile: () => NODE_TEST_SOURCE,
+		log: (line) => lines.push(line),
+		now: () => { clock += 250; return clock; },
+		spawn: () => ({ status: null, signal: "SIGTERM" }),
+	});
+	assert.equal(result.status, 1);
+	assert.equal(result.timings.length, 1);
+	assert.equal(result.timings[0].seconds, 0.25);
+	assert.ok(lines.some((line) => line.includes("completed 1/2")));
+	assert.ok(lines.some((line) => line.includes('"signal":"SIGTERM"')));
+});
+
+test("every shard CLI rejects unclassified, missing and duplicate manifest entries before running tests", () => {
+	const { spawnSync } = require("node:child_process");
+	const { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } = require("node:fs");
+	const { tmpdir } = require("node:os");
+	const path = require("node:path");
+	const root = mkdtempSync(path.join(tmpdir(), "vpk-unit-shard-"));
+	try {
+		mkdirSync(path.join(root, "components"));
+		copyFileSync(path.join(__dirname, "run-js-unit-tests.mjs"), path.join(root, "runner.mjs"));
+		copyFileSync(path.join(__dirname, "js-unit-test-timings.json"), path.join(root, "js-unit-test-timings.json"));
+		writeFileSync(path.join(root, "components/new.test.js"), `${NODE_TEST_SOURCE}\nthrow new Error('SHOULD_NOT_RUN');`);
+		assert.equal(spawnSync("git", ["init", "--quiet", root]).status, 0);
+		for (const classifications of [{}, { stable: ["missing.test.js"] }, { stable: ["components/new.test.js"], "source-contract": ["components/new.test.js"] }]) {
+			writeFileSync(path.join(root, "js-unit-test-manifest.mjs"), `export const INCLUDED_TEST_PREFIXES = ['components/'];\nexport const CI_INCLUDED_TEST_CLASSIFICATIONS = ['stable','source-contract'];\nexport const TEST_FILE_CLASSIFICATIONS = ${JSON.stringify(classifications)};`);
+			for (let shard = 1; shard <= 4; shard += 1) {
+				const result = spawnSync(process.execPath, ["runner.mjs", "--shard", `${shard}/4`], { cwd: root, encoding: "utf8" });
+				assert.equal(result.status, 1);
+				assert.match(result.stderr, /not classified|do not exist|more than once/u);
+				assert.doesNotMatch(result.stderr, /SHOULD_NOT_RUN/u);
+			}
+		}
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
 });

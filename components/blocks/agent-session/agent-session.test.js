@@ -143,7 +143,8 @@ test("short rows keep the owner byline and move settled status to the hover-acti
 		METADATA_SOURCE,
 		/<span\s+aria-label=\{label\}\s+className=\{cn\([\s\S]*?\)\}\s+role="img"/u,
 	);
-	assert.doesNotMatch(METADATA_SOURCE, /Tooltip|tabIndex|handleTooltipWheel/u);
+	const hostSegment = METADATA_SOURCE.slice(METADATA_SOURCE.indexOf("export function AgentSessionHostSegment"), METADATA_SOURCE.indexOf("function toArtifactLabel"));
+	assert.doesNotMatch(hostSegment, /Tooltip|tabIndex|handleTooltipWheel/u);
 	assert.doesNotMatch(METADATA_SOURCE, /\{isLocal \? "Local" : "Cloud"\}/u);
 	assert.doesNotMatch(METADATA_SOURCE, /case "host"/u);
 	assert.match(METADATA_SOURCE, /function toPullRequestNumberLabel[\s\S]*`#\$\{number\}`[\s\S]*export function AgentSessionShortMetadata[\s\S]*toPullRequestNumberLabel\(item\)[\s\S]*underline-offset-2 hover:underline[\s\S]*\{pullRequestLabel\}/u);
@@ -586,7 +587,7 @@ test("copying the prompt confirms with a green check the reveal cannot swallow",
 	// hover that produced it; both would collapse the reveal without a pin.
 	assert.match(
 		CARD_SOURCE,
-		/pinned: role !== "owner" \|\| isHoverStateActive \|\| \(showMoreMenu && role === "owner" && menu\.copied\),/u,
+		/pinned: role === "expired" \|\| isHoverStateActive \|\| \(showMoreMenu && role === "owner" && menu\.copied\),/u,
 	);
 	assert.match(LIST_CARD_SOURCE, /pinned\?: boolean;/u);
 	assert.match(LIST_CARD_ACTIONS_SOURCE, /pinned && "grid-cols-\[1fr\]"/u);
@@ -685,9 +686,9 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(TYPES_SOURCE, /export type AgentSessionRole = "owner" \| "viewer" \| "expired"/u);
 	assert.match(CARD_SOURCE, /const canOpenLocalMenu = role === "owner" && !isCloudSession/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
-	assert.match(CARD_SOURCE, /case "viewer":\s*return <AgentSessionViewerHint compact=\{!isLongDensity \|\| !showLifecycleLabel\} \/>;/u);
+	assert.match(CARD_SOURCE, /case "viewer":\s*return undefined;/u);
 	assert.match(CARD_SOURCE, /case "expired":\s*case "owner":\s*return \(\s*<AgentSessionMoreMenu/u);
-	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired" \|\| role === "viewer"\s*\? null/u);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired"\s*\? null/u);
 	assert.match(INDEX_SOURCE, /const isLongDensity = variant === "large" && density === "long";/u);
 	assert.match(INDEX_SOURCE, /const showUntrackedWorkFlyout = !isAttached && !isLongDensity;/u);
 	assert.match(
@@ -711,7 +712,7 @@ test("expired rows explain retention across the row and keep their Delete menu v
 		/Agent sessions are only kept for 28 days\. This session can't be resumed\./u,
 	);
 	assert.match(expiredSource, /<Tooltip disabled=\{disabled\}>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
-	assert.match(CARD_SOURCE, /pinned: role !== "owner" \|\|/u);
+	assert.match(CARD_SOURCE, /pinned: role === "expired" \|\|/u);
 	assert.match(CARD_SOURCE, /if \(role === "expired"\) \{\s*return <AgentSessionExpiredHint disabled=\{menu\.isOpen\}[^>]*>\{card\}<\/AgentSessionExpiredHint>;/u);
 	assert.doesNotMatch(expiredSource, /CrossIcon|IconTile|Spinner/u);
 	assert.match(PAGE_SOURCE, /withSessionRole\(items\.slice\(-1\), "expired"\)/u);
@@ -722,27 +723,12 @@ test("expired rows explain retention across the row and keep their Delete menu v
 	);
 });
 
-test("viewer rows use the outline information circle, not the filled status icon", () => {
-	assert.match(
-		VIEWER_HINT_SOURCE,
-		/import InformationCircleIcon from "@atlaskit\/icon\/core\/information-circle";/u,
-	);
-	assert.doesNotMatch(VIEWER_HINT_SOURCE, /status-information|StatusInformationIcon/u);
-	assert.match(VIEWER_HINT_SOURCE, /\[&_svg\]:text-icon-subtlest[\s\S]*className="text-icon-subtlest"/u);
-	assert.match(VIEWER_HINT_SOURCE, /variant="ghost"/u);
+test("viewer rows expose one privacy explanation on the row", () => {
 	assert.match(VIEWER_HINT_SOURCE, /<Tooltip>[\s\S]*<TooltipTrigger render=\{children\} \/>/u);
-	assert.match(CARD_SOURCE, /if \(role === "viewer"\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
-	assert.doesNotMatch(VIEWER_HINT_SOURCE, /aria-expanded/u);
+	assert.match(CARD_SOURCE, /if \(role === "viewer" \|\| item\.privateTo\) \{\s*return <AgentSessionViewerTooltip[^>]*>\{card\}<\/AgentSessionViewerTooltip>;/u);
 	assert.match(
 		VIEWER_HINT_SOURCE,
-		/icon=\{<InformationCircleIcon color="currentColor" label="" size="medium" \/>\}/u,
-	);
-	assert.match(VIEWER_HINT_SOURCE, /iconSize=\{compact \? "small" : "medium"\}/u);
-	assert.match(VIEWER_HINT_SOURCE, /size="small"/u);
-	assert.match(VIEWER_HINT_SOURCE, /variant="transparent"/u);
-	assert.match(
-		VIEWER_HINT_SOURCE,
-		/Someone is using an agent\. Only they can see the work\./u,
+		/You can see this session, but only its owner can act on it\./u,
 	);
 });
 
@@ -761,12 +747,12 @@ test("a working long row breathes with the Avatar spinner", () => {
 	assert.match(LIST_CARD_SOURCE, /PixelLoader/u);
 	// Complete earns a success check, which Agent List has no slot for.
 	assert.match(LIFECYCLE_SOURCE, /StatusSuccessIcon[\s\S]*text-icon-success|text-icon-success[\s\S]*StatusSuccessIcon/u);
-	// Short-row marks share a 24px slot: icons are 12px, and the 16.75px
+	// Lifecycle marks share a 24px slot: icons are 12px, and the 16.75px
 	// spinner SVG keeps the peak animated orb within that same footprint.
 	assert.match(LIFECYCLE_SOURCE, /className="relative grid size-6 shrink-0 place-items-center"/u);
 	assert.match(LIFECYCLE_SOURCE, /<IndicatorGlyph compact state=\{state\} \/>/u);
 	assert.equal((LIFECYCLE_SOURCE.match(/iconSize=\{compact \? "small" : "medium"\}/gu) ?? []).length, 3);
-	assert.match(LIFECYCLE_SOURCE, /\[&_svg:not\(\[class\*='size-'\]\)\]:size-4!/u);
+	assert.match(LIFECYCLE_SOURCE, /\[&_svg:not\(\[class\*='size-'\]\)\]:size-3!/u);
 	assert.doesNotMatch(LIFECYCLE_SOURCE, /iconSize="small"/u);
 	assert.match(LIFECYCLE_SOURCE, /size="small"/u);
 	assert.match(LIFECYCLE_SOURCE, /variant="transparent"/u);
@@ -850,10 +836,6 @@ test("a card body click toggles a single selected session on the selected token"
 		CARD_SOURCE,
 		/const showSelectedFill = isMarked \|\| \(isSelected && mark == null\);/u,
 	);
-	assert.match(
-		CARD_SOURCE,
-		/!showSelectedFill && !isHighlighted && !isHoverStateActive && "bg-transparent hover:bg-surface-hovered"/u,
-	);
 	assert.match(CARD_SOURCE, /data-selected=\{isSelected \|\| undefined\}/u);
 	assert.match(CARD_SOURCE, /aria-current=\{isSelected \? "true" : undefined\}/u);
 	assert.match(CARD_SOURCE, /isSelected=\{showSelectedFill\}/u);
@@ -873,10 +855,6 @@ test("a card body click toggles a single selected session on the selected token"
 	assert.match(CARD_SOURCE, /selectionGestureFromModifierKeys\(event\)/u);
 	assert.match(CARD_SOURCE, /const articleRole = mark == null \? undefined : "gridcell";/u);
 	assert.match(CARD_SOURCE, /role=\{articleRole\}/u);
-	assert.match(
-		CARD_SOURCE,
-		/tabIndex=\{articleTabIndex \?\? \(bind !== undefined && activateCard !== undefined \? 0 : undefined\)\}/u,
-	);
 	assert.doesNotMatch(CARD_SOURCE, /articleRole === "button"|\? "button"/u);
 	assert.match(CARD_SOURCE, /aria-selected=\{mark == null \? undefined : isMarked\}/u);
 	assert.match(CARD_SOURCE, /role=\{mark == null \? undefined : "row"\}/u);

@@ -182,7 +182,7 @@ const VIEW_SETS: Record<RovoCanvasArtefactKind, ReadonlyArray<RovoCanvasView>> =
 	agent: [
 		{ id: "agent-details", label: "Details", toolbar: "none" },
 		{ id: "agent-preview", label: "Preview", toolbar: "preview" },
-		{ id: "agent-surfaces", label: "Surfaces", toolbar: "none" },
+		{ id: "agent-surface", label: "Surfaces", toolbar: "none" },
 	],
 	automation: [
 		{ id: "automation-setup", label: "Setup", toolbar: "none" },

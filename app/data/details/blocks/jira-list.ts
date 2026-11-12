@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_LIST_DETAIL: ComponentDetail = {
 	description:
-		"Compact Jira list view with hierarchical work rows, checkbox selection, status lozenges, assignees, labels, priorities, contributors, and capability-backed sticky footer actions.",
+		"Compact Jira list view with hierarchical work rows, agent sessions, editable summaries and points, status, assignees, labels, and sticky footer actions.",
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { JiraList } from "@/components/blocks/jira-list";`,
 	usage: `import { JiraList } from "@/components/blocks/jira-list";
@@ -10,12 +10,12 @@ export const JIRA_LIST_DETAIL: ComponentDetail = {
 <JiraList
   rows={[
     {
-      issueKey: "PD-001",
-      summary: "Review and access threaded-ideas survey",
-      issueType: "epic",
+      issueKey: "PAY-118",
+      summary: "Carry card-artwork metadata into the next wallet epic",
+      issueType: "task",
       priority: "medium",
-      status: "In progress",
-      statusVariant: "information",
+      status: "To do",
+      statusVariant: "neutral",
     },
   ]}
 />`,

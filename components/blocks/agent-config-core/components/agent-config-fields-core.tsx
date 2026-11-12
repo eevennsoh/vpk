@@ -4,9 +4,9 @@ import type { ComponentProps, ReactNode } from "react";
 import { memo, useCallback, useMemo, useState } from "react";
 
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
-import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
-import type { AgentAutomationRule, AgentTriggerValue } from "@/components/blocks/triggers/page";
-import { createAgentAutomationRule, createAgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
+import { ManageTriggersDialog } from "@/components/blocks/trigger/components/manage-triggers-dialog";
+import type { AgentAutomationRule, AgentTriggerValue } from "@/components/blocks/trigger/page";
+import { createAgentAutomationRule, createAgentTriggerValue } from "@/components/blocks/trigger/data/trigger-catalog";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import type { RichTextMentionRemovalRequest } from "@/components/ui-custom/rich-text-editor";

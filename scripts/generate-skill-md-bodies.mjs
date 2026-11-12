@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Regenerate every skills-directory catalog entry to the Anthropic "Agent Skills"
+ * Regenerate every skill-directory catalog entry to the Anthropic "Agent Skills"
  * SKILL.md standard: a full `skillMd` string (YAML frontmatter `---` block +
  * markdown body) plus provenance fields (createdBy / addedBy / lastUpdatedAt).
  *

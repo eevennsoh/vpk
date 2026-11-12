@@ -38,6 +38,7 @@ export function toJiraIssueDemoAttachedActivity(
 		id: session.id,
 		name: session.agent.name,
 		label: session.title,
+		sessionTitle: session.title,
 		state: session.state === "needs-input" || session.state === "attention"
 			? "awaiting-input"
 			: "working",

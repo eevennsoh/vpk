@@ -6,9 +6,9 @@ import { Fragment } from "react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 
-import { DEFAULT_STARTER_ICON, getStarterIcon } from "@/components/blocks/conversation-starters";
-import { TriggerPicker, type AgentAutomationRule, type AgentTriggerValue } from "@/components/blocks/triggers/page";
-import { createAgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
+import { DEFAULT_STARTER_ICON, getStarterIcon } from "@/components/blocks/conversation-starter";
+import { TriggerPicker, type AgentAutomationRule, type AgentTriggerValue } from "@/components/blocks/trigger/page";
+import { createAgentTriggerValue } from "@/components/blocks/trigger/data/trigger-catalog";
 import { AgentCompactAppsNavButton, AgentCompactDirectoryNavButton, type AgentCompactConfigNavItem, AgentCompactSubagentsNavButton, AgentCompactTriggersNavButton, type AgentInlineSearchField, MAX_AGENT_CONVERSATION_STARTERS, getAgentCompactEmptyConfigNavItems, getAgentFilledSummaryAddLabel, getConversationStarterSummaryItems, openAgentDirectoryOrAppendListItem } from "@/components/blocks/agent/components/agent-compact-config-nav";
 import { getAgentCollectionIconClassName, getSkillForConfigLabel, getSkillTagPropsForLabel, getTagColorForAgentAvatar } from "@/components/blocks/agent/components/agent-config-visuals";
 import { AgentMemoryRow, AgentReasoningRow, type KnowledgeModeValue, type MemoryModeValue, type ReasoningModeValue } from "@/components/blocks/agent/components/agent-reasoning-memory-selectors";

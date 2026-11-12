@@ -14,7 +14,7 @@ export interface AgentInvocationPreview {
 
 export interface AgentInvocationState {
 	phase: "idle" | "choosing" | "handoff" | "attached";
-	source: "footer" | "menu" | "session";
+	source: "footer" | "menu";
 	preview: AgentInvocationPreview;
 }
 

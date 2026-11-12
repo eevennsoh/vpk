@@ -3,7 +3,7 @@
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import { useState } from "react";
 
-import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { SkillDirectorySkill } from "@/app/data/directory";
 import { SkillSelector } from "@/components/blocks/skill-selector";
 import {
 	DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
@@ -19,7 +19,7 @@ import { Icon } from "@/components/ui/icon";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
 
 interface ActivityComposerSkillContextPillProps {
-	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
+	onInvokeSkill: (skill: SkillDirectorySkill) => void;
 }
 
 /** Opens the directory-backed Skill Selector and immediately invokes the chosen skill. */

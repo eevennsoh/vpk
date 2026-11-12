@@ -14,6 +14,7 @@ export const PROGRESS_CIRCLE_DETAIL: ComponentDetail = {
 <ProgressCircle variant="filled" value={75} dashed animateDashes={false} /> {/* static dashed remainder */}
 <ProgressCircle
   segmented
+  completeOnAllPassed
   segments={[
     { status: "passed", weight: 5 },
     { status: "failed", weight: 1 },
@@ -51,6 +52,12 @@ export const PROGRESS_CIRCLE_DETAIL: ComponentDetail = {
 			default: "false",
 			description:
 				"Toggle segmented ring mode. When true and segments is non-empty, renders status-group arcs (lime / danger / pending) with gaps instead of continuous progress.",
+		},
+		{
+			name: "completeOnAllPassed",
+			type: "boolean",
+			default: "false",
+			description: "In segmented mode, animate a fully passed ring to completion, pause, then show the success check. Reduced motion shows the check immediately.",
 		},
 		{
 			name: "segments",
@@ -132,7 +139,7 @@ export const PROGRESS_CIRCLE_DETAIL: ComponentDetail = {
 		{
 			title: "Segmented",
 			description:
-				"Checks-style status-group arcs (passed / failed / pending). Toggle segmented mode on and off.",
+				"Play through failed, rechecking, and passed checks, or select a state. The completed ring pauses before becoming a success check.",
 			demoSlug: "progress-circle-demo-segmented",
 		},
 	],

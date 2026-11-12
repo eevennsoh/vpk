@@ -8,7 +8,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { useEffect, useId, useState } from "react";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { cn } from "@/lib/utils";
-import { motionEase } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 
 const VIEWBOX_SIZE = 24;
 const CENTER = VIEWBOX_SIZE / 2;
@@ -91,6 +91,8 @@ export interface ProgressCircleProps
 	 * (`variant` still controls outline vs filled chrome; this is an independent mode toggle.)
 	 */
 	segmented?: boolean;
+	/** When every nonzero segment has passed, complete the ring before showing the success icon. */
+	completeOnAllPassed?: boolean;
 	/**
 	 * Status-group data for `segmented` mode. Prefer one weighted entry per status (not one per check).
 	 * Ignored unless `segmented` is `true`. Continuous `value` / complete-check behavior is skipped
@@ -106,6 +108,8 @@ export interface ProgressCircleProps
 	label?: string;
 	/** Whether to animate the completion check. Set to `false` to render the check statically (e.g. on remount after expand/collapse). Defaults to `true`. */
 	animated?: boolean;
+	/** Start the filled sweep after the updated UI has painted. */
+	deferFillAnimation?: boolean;
 	/** When `false`, renders the full ring at value>=100 instead of the checkmark icon. Useful for animated fill→check transitions. Defaults to `true`. */
 	showCompleteIcon?: boolean;
 	/** Class for the outline track ring behind the progress arc. Defaults to `text-border`. */
@@ -141,23 +145,26 @@ function SegmentArcs({
 	weights,
 	totalWeight,
 	segmentGap,
+	shouldReduceMotion,
 }: Readonly<{
 	segments: readonly ProgressCircleSegment[];
 	weights: readonly number[];
 	totalWeight: number;
 	segmentGap: "default" | "none";
+	shouldReduceMotion: boolean;
 }>) {
 	const gapCount = segmentGap !== "none" && segments.length > 1 ? segments.length : 0;
 	const gapLength = gapCount > 0 ? CIRCUMFERENCE * SEGMENT_GAP_RATIO : 0;
 	const drawableLength = Math.max(0, CIRCUMFERENCE - gapCount * gapLength);
-	let offset = 0;
-
-	return segments.map((segment, index) => {
+	const circles = segments.map((segment, index) => {
 		const weight = weights[index] ?? 0;
 		const arcLength = totalWeight > 0 ? drawableLength * (weight / totalWeight) : 0;
+		const previousWeight = weights.slice(0, index).reduce((sum, value) => sum + value, 0);
+		const arcOffset = (totalWeight > 0 ? drawableLength * previousWeight / totalWeight : 0) + (gapCount > 0 ? index * gapLength : 0);
+		const occurrence = segments.slice(0, index).filter((previous) => previous.status === segment.status).length;
 		const circle = (
-			<circle
-				key={`${segment.status}-${index}`}
+			<motion.circle
+				key={`${segment.status}-${occurrence}`}
 				cx={CENTER}
 				cy={CENTER}
 				r={RADIUS}
@@ -166,17 +173,21 @@ function SegmentArcs({
 				stroke="currentColor"
 				strokeLinecap="butt"
 				strokeDasharray={`${arcLength} ${CIRCUMFERENCE - arcLength}`}
-				strokeDashoffset={-offset}
+				strokeDashoffset={-arcOffset}
 				transform={`rotate(-90 ${CENTER} ${CENTER})`}
 				className={segmentStrokeClassName(segment.status)}
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1, strokeDasharray: `${arcLength} ${CIRCUMFERENCE - arcLength}`, strokeDashoffset: -arcOffset }}
+				exit={{ opacity: 0 }}
+				transition={shouldReduceMotion ? { duration: 0 } : { duration: motionDuration.medium, ease: motionEase.inOut }}
 			/>
 		);
-		offset += arcLength + (gapCount > 0 ? gapLength : 0);
 		return circle;
 	});
+	return <AnimatePresence initial={false}>{circles}</AnimatePresence>;
 }
 
-function ProgressCircle({
+function ProgressCircleVisual({
 	value,
 	segmented = false,
 	segments,
@@ -187,6 +198,7 @@ function ProgressCircle({
 	status,
 	label = "Progress",
 	animated = true,
+	deferFillAnimation = false,
 	showCompleteIcon = true,
 	trackClassName,
 	dashed = false,
@@ -226,13 +238,23 @@ function ProgressCircle({
 
 	useEffect(() => {
 		if (!hasDashedRing) return;
-		const playback = animate(filledProgress, clampedValue, {
-			...FILL_TRANSITION,
-			duration: shouldReduceMotion ? 0 : FILL_TRANSITION.duration,
-			onComplete: () => setSettledFilledValue(clampedValue),
-		});
-		return () => playback.stop();
-	}, [clampedValue, filledProgress, hasDashedRing, shouldReduceMotion]);
+		let firstFrame = 0;
+		let secondFrame = 0;
+		let playback: ReturnType<typeof animate> | undefined;
+		const start = () => {
+			playback = animate(filledProgress, clampedValue, {
+				...FILL_TRANSITION,
+				duration: shouldReduceMotion ? 0 : FILL_TRANSITION.duration,
+				onComplete: () => setSettledFilledValue(clampedValue),
+			});
+		};
+		if (deferFillAnimation && !shouldReduceMotion) {
+			firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(start); });
+		} else {
+			start();
+		}
+		return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); playback?.stop(); };
+	}, [clampedValue, deferFillAnimation, filledProgress, hasDashedRing, shouldReduceMotion]);
 
 	const isComplete =
 		!hasSegments
@@ -369,6 +391,7 @@ function ProgressCircle({
 						<SegmentArcs
 							segments={segmentList}
 							segmentGap={segmentGap}
+							shouldReduceMotion={shouldReduceMotion}
 							totalWeight={totalSegmentWeight}
 							weights={segmentWeights}
 						/>
@@ -472,6 +495,56 @@ function ProgressCircle({
 						/>
 					</motion.svg>
 				)}
+			</AnimatePresence>
+		</Root>
+	);
+}
+
+function ProgressCircle({ completeOnAllPassed = false, ...props }: Readonly<ProgressCircleProps>) {
+	const reduceMotion = useReducedMotion() ?? false;
+	const segments = props.segments ?? [];
+	if (!completeOnAllPassed || !props.segmented || segments.length === 0 || props.status) {
+		return <ProgressCircleVisual {...props} />;
+	}
+
+	const { animated = true, animateDashes: _animateDashes, className, colorByProgress: _colorByProgress, dashed: _dashed, deferFillAnimation: _deferFillAnimation, inline = false, label = "Progress", segmentGap, segments: _segments, segmented: _segmented, showCompleteIcon: _showCompleteIcon, size = "default", status: _status, trackClassName: _trackClassName, value: _value, variant = "outline", ...rootProps } = props;
+	const activeSegments = segments.filter((segment) => (segment.weight ?? 1) > 0);
+	const total = segments.reduce((sum, segment) => sum + Math.max(0, segment.weight ?? 1), 0);
+	const passed = segments.reduce((sum, segment) => sum + (segment.status === "passed" ? Math.max(0, segment.weight ?? 1) : 0), 0);
+	const allPassed = total > 0 && passed === total;
+	const immediate = reduceMotion || !animated;
+	const completionTransition = immediate
+		? { duration: 0 }
+		: { delay: motionDuration.medium + motionDuration.slow, duration: motionDuration.normal, ease: motionEase.outPractical };
+	const Root = inline ? "span" : "div";
+
+	return (
+		<Root {...rootProps} data-slot="progress-circle" role="progressbar" aria-label={label} aria-valuenow={passed} aria-valuemin={0} aria-valuemax={total || 1} className={cn(progressCircleVariants({ size, variant }), "grid place-items-center", className)}>
+			<motion.span
+				className="col-start-1 row-start-1 grid place-items-center"
+				initial={false}
+				animate={{ opacity: allPassed ? 0 : 1 }}
+				transition={allPassed ? completionTransition : { duration: immediate ? 0 : motionDuration.fast }}
+			>
+				<ProgressCircleVisual aria-hidden="true" data-slot={undefined} inline role="presentation" segmented segmentGap={segmentGap} segments={activeSegments.length > 0 ? activeSegments : segments} size={size} variant={variant} />
+			</motion.span>
+			<AnimatePresence initial={false}>
+				{allPassed ? (
+					<motion.span
+						key="success"
+						className="col-start-1 row-start-1 grid place-items-center"
+						initial={immediate ? false : { opacity: 0, scale: 0.5 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, transition: { duration: immediate ? 0 : motionDuration.fast } }}
+						transition={{
+							opacity: completionTransition,
+							scale: immediate ? { duration: 0 } : { type: "spring", duration: motionDuration.slower, bounce: 0.3, delay: motionDuration.medium + motionDuration.slow },
+						}}
+						style={{ willChange: "transform, opacity" }}
+					>
+						<ProgressCircleVisual animated={false} aria-hidden="true" data-slot={undefined} inline role="presentation" size={size} value={100} />
+					</motion.span>
+				) : null}
 			</AnimatePresence>
 		</Root>
 	);

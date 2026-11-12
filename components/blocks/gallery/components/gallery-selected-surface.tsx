@@ -128,6 +128,7 @@ export interface GallerySelectedSurfaceProps {
 	height: number;
 	visual: GallerySelectionVisual;
 	palette?: GalleryPalette;
+	selectedColor?: string;
 	highlightTextRef: RefObject<HTMLSpanElement | null>;
 }
 
@@ -139,6 +140,7 @@ export function GallerySelectedSurface({
 	height,
 	visual,
 	palette = DEFAULT_GALLERY_PALETTE,
+	selectedColor,
 	highlightTextRef,
 }: Readonly<GallerySelectedSurfaceProps>): JSX.Element {
 	const shouldReduceMotion = useReducedMotion() ?? false;
@@ -206,13 +208,14 @@ export function GallerySelectedSurface({
 			<div
 				className="absolute inset-0"
 				style={{
-					backgroundImage: [
+					backgroundColor: selectedColor,
+					backgroundImage: selectedColor ? undefined : [
 						`radial-gradient(circle at ${visual.origin.xPercent}% ${visual.origin.yPercent}%, ${palette[3]} 0%, transparent 52%)`,
 						`linear-gradient(140deg, ${palette[0]} 0%, ${palette[1]} 52%, ${palette[2]} 100%)`,
 					].join(", "),
 				}}
 			/>
-			<LiquidGradient
+			{selectedColor ? null : <LiquidGradient
 				className="absolute inset-0 h-full w-full"
 				colors={palette}
 				seed={shaderParameters.seed}
@@ -230,7 +233,7 @@ export function GallerySelectedSurface({
 				exposure={1.08}
 				contrast={1.12}
 				saturation={1.04}
-			/>
+			/>}
 			<div className="absolute inset-0 p-6">
 				<div className="flex h-full w-full flex-col justify-end">
 					<GalleryTitleLines

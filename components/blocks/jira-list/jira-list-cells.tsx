@@ -84,7 +84,6 @@ export function HierarchyConnector({
 			style={{ width: `${indentLevel * 18}px` }}
 		>
 			<span className="absolute inset-y-0 left-2 w-px bg-border" />
-			<span className="absolute top-1/2 left-2 h-px w-3 -translate-y-1/2 bg-border" />
 		</div>
 	);
 }
@@ -115,13 +114,13 @@ export function JiraListAvatar({ person }: Readonly<{ person: JiraListPerson }>)
 	);
 }
 
-export function IssueTypeGlyph({ issueType }: Readonly<{ issueType: JiraListIssueType }>) {
+export function IssueTypeGlyph({ issueType, large = false }: Readonly<{ issueType: JiraListIssueType; large?: boolean }>) {
 	const IssueTypeIcon = ISSUE_TYPE_ICONS[issueType];
 	return (
 		<Icon
-			className={ISSUE_TYPE_ICON_CLASS_NAMES[issueType]}
+			className={cn(ISSUE_TYPE_ICON_CLASS_NAMES[issueType], large && "[&_svg]:size-4!")}
 			label={issueType}
-			render={<IssueTypeIcon color="currentColor" label="" size="small" />}
+			render={<IssueTypeIcon color="currentColor" label="" size={large ? "medium" : "small"} />}
 		/>
 	);
 }
@@ -192,6 +191,7 @@ function toAssignmentAgent(assigned: JiraListAssignedAgent): AgentAssignmentAgen
 	return {
 		id: assigned.id,
 		name: assigned.name,
+		...(assigned.sessionTitle ? { sessionTitle: assigned.sessionTitle } : {}),
 		byline: assigned.byline ?? "",
 		...(assigned.avatarSrc ? { avatarSrc: assigned.avatarSrc } : {}),
 		...(assigned.brandName ? { brandName: assigned.brandName } : {}),
@@ -217,6 +217,7 @@ function toListAssignedAgent(agent: AgentAssignmentAgent): JiraListAssignedAgent
 	return {
 		id: agent.id,
 		name: agent.name,
+		...(agent.sessionTitle ? { sessionTitle: agent.sessionTitle } : {}),
 		byline: agent.byline,
 		...(agent.avatarSrc ? { avatarSrc: agent.avatarSrc } : {}),
 		...(agent.brandName ? { brandName: agent.brandName } : {}),

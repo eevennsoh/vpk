@@ -43,11 +43,10 @@ test("1P variants retain a static grid by default and the shared card and app st
 		const card = parseHTML(html).document;
 		assert.equal(card.querySelector("h3").textContent, agent.name);
 		assert.equal(card.querySelector("article").getAttribute("aria-label"), `${agent.name} agent`);
-		const badgeImages = card.querySelectorAll('[data-slot="agent-lanyard-first-party-avatar"] img');
-		assert.equal(badgeImages.length, 1, "The shared Avatar owns the hexagon, so only the logo glyph is an image");
+		const badgeImages = card.querySelectorAll('[data-slot="agent-lanyard-avatar"] img');
+		assert.equal(badgeImages.length, 1);
 		assert.equal(badgeImages[0].getAttribute("src"), agent.badge.glyphSrc);
-		assert.ok(card.querySelector('[data-slot="agent-lanyard-first-party-avatar"] [data-slot="avatar"][data-shape="hexagon"]'));
-		assert.equal(card.querySelector('[data-slot="agent-lanyard-first-party-avatar"] [data-slot="avatar-hexagon-artwork"] > span').style.backgroundColor, agent.accentColor);
+		assert.equal(card.querySelector('[data-slot="agent-lanyard-avatar"] > span').style.backgroundColor, agent.accentColor);
 		assert.ok(card.querySelector('[data-slot="agent-lanyard-grid"]'));
 		assert.equal(card.querySelector('[data-slot="agent-lanyard-grid"]').getAttribute("data-animated"), "false");
 		assert.equal(card.querySelectorAll("button").length, 0);

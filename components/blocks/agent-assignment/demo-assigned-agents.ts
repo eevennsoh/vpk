@@ -16,6 +16,18 @@ const DEMO_INVOKERS: Readonly<Record<string, AgentListInvoker>> = {
 		avatarSrc: "/avatar-user/ting-chen/color/asow-teamwork-blue.png",
 		name: "Priya Raman",
 	},
+	figma: {
+		avatarSrc: "/avatar-user/luna-delacour/color/asow-product-purple.png",
+		name: "Luna Delacour",
+	},
+	"pipeline-troubleshooter": {
+		avatarSrc: "/avatar-user/imani/color/asow-dev-lime.png",
+		name: "Imani Brooks",
+	},
+	"feedback-analyzer": {
+		avatarSrc: "/avatar-user/victoria-styles/color/asow-strategy-orange.png",
+		name: "Victoria Styles",
+	},
 };
 
 export const INITIAL_ASSIGNED_AGENT_IDS = [
@@ -78,6 +90,27 @@ const DEMO_AGENT_STATES: Readonly<Record<string, DemoAgentState>> = {
 		statusKind: "idle",
 		statusLabel: "Idle",
 		timeLabel: "Last week",
+	},
+	figma: {
+		host: "cloud",
+		role: "viewer",
+		statusKind: "idle",
+		statusLabel: "Idle",
+		timeLabel: "2h",
+	},
+	"pipeline-troubleshooter": {
+		host: "cloud",
+		role: "viewer",
+		statusKind: "idle",
+		statusLabel: "Idle",
+		timeLabel: "3h",
+	},
+	"feedback-analyzer": {
+		host: "local",
+		role: "viewer",
+		statusKind: "idle",
+		statusLabel: "Idle",
+		timeLabel: "Yesterday",
 	},
 };
 

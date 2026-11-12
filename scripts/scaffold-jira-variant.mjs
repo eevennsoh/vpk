@@ -61,17 +61,17 @@ function normalizeVersion(value, label) {
 export function createVersionIdentity(value, label = "version") {
 	const number = normalizeVersion(value, label);
 	return {
-		camel: `jiraGoldenJourneysV${number}`,
+		camel: `jiraGoldenJourneyV${number}`,
 		experimentalCamel: `experimentalV${number}`,
 		experimentalPascal: `ExperimentalV${number}`,
 		experimentalSlug: `experimental-v${number}`,
 		experimentalUpper: `EXPERIMENTAL_V${number}`,
 		number,
-		pascal: `JiraGoldenJourneysV${number}`,
+		pascal: `JiraGoldenJourneyV${number}`,
 		previousVersion: `v${number - 1}`,
-		slug: `jira-golden-journeys-v${number}`,
-		title: `Jira Golden Journeys v${number}`,
-		upper: `JIRA_GOLDEN_JOURNEYS_V${number}`,
+		slug: `jira-golden-journey-v${number}`,
+		title: `Jira Golden Journey v${number}`,
+		upper: `JIRA_GOLDEN_JOURNEY_V${number}`,
 		version: `v${number}`,
 	};
 }
@@ -549,7 +549,7 @@ function prepareRegistrationOperations({ manifest, rewriteRules, root, source, v
 
 export function loadVariantManifest(manifestPath = DEFAULT_MANIFEST_PATH) {
 	const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-	if (manifest.schemaVersion !== 1 || manifest.family !== "jira-golden-journeys") {
+	if (manifest.schemaVersion !== 1 || manifest.family !== "jira-golden-journey") {
 		throw new Error(`unsupported Jira variant manifest: ${manifestPath}`);
 	}
 	return manifest;

@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { usePageIssueSelection } from "@/components/blocks/jira-kanban/experimental/hooks/use-page-issue-selection";
 import { useAgentSessionReview } from "@/components/blocks/jira-kanban/experimental/hooks/use-agent-session-review";
 import { RetainedView } from "@/components/projects/shared/components/mount-on-first-use";
+import { token } from "@/lib/tokens";
 import {
 	useCallback,
 	useEffect,
@@ -170,6 +171,9 @@ export default function ExperimentalJiraKanbanPage({
 
 function ExperimentalJiraKanbanPageContent({
 	activeView = "board", addAgentLabel,
+	boardOnly = false,
+	collapsedColumns: controlledCollapsedColumns,
+	onCollapsedColumnsChange,
 	autoArrangeEnabled = true,
 	activeCardCode,
 	additionalAgentSessions,
@@ -315,7 +319,8 @@ function ExperimentalJiraKanbanPageContent({
 	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
 	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
 	const [boardContentUnderlapsSessionColumn, setBoardContentUnderlapsSessionColumn] = useState(false);
-	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
+	const [localCollapsedColumns, setLocalCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
+	const collapsedColumns = controlledCollapsedColumns ?? localCollapsedColumns;
 	const [focusedCollapsedColumns, setFocusedCollapsedColumns] = useState<CollapsedBoardColumns | null>(
 		null,
 	);
@@ -747,7 +752,8 @@ function ExperimentalJiraKanbanPageContent({
 
 	const handleCollapsedColumnsChange = (nextCollapsedColumns: CollapsedBoardColumns) => {
 		if (agentFilterId === null) {
-			setCollapsedColumns(nextCollapsedColumns);
+			if (controlledCollapsedColumns === undefined) setLocalCollapsedColumns(nextCollapsedColumns);
+			onCollapsedColumnsChange?.(nextCollapsedColumns);
 			return;
 		}
 		setFocusedCollapsedColumns(nextCollapsedColumns);
@@ -841,7 +847,7 @@ function ExperimentalJiraKanbanPageContent({
 			ref={boardSessionDrag.boardRootRef}
 			style={{ [UNTRACKED_PANEL_WIDTH_CSS_VAR]: `${untrackedPanelFabInsetPx}px` } as CSSProperties}
 		>
-			<ExperimentalJiraKanbanBoardHeader avatar={boardAvatar} title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
+			{boardOnly ? null : <ExperimentalJiraKanbanBoardHeader avatar={boardAvatar} title={boardTitle} showUnassignedAvatar={showUnassignedHeaderAvatar}
 				activeView={activeView} renderHeaderAssignee={renderHeaderAssignee}
 				assignees={assignees}
 				avatarLimit={headerAvatarLimit}
@@ -895,7 +901,7 @@ function ExperimentalJiraKanbanPageContent({
 				showMoreControls={showMoreControls}
 				showCustomizeControl={showCustomizeControl}
 				simpleViews={simpleViews}
-			/>
+			/>}
 			{showBoardContent ? (showPulseContent ? (
 				<ExperimentalPulse
 					answers={answers}
@@ -987,6 +993,7 @@ function ExperimentalJiraKanbanPageContent({
 								showFooterMetadata={showFooterMetadata}
 								collapsedColumns={displayedCollapsedColumns}
 								columnChrome={columnChrome} columnSizing={columnSizing} columnWidth={columnWidth}
+								contentAlignment={boardOnly ? "center" : "start"}
 								createdCardArrival={createdCardArrival ?? undefined}
 								createWorkItemDropZoneLabel={onBoardAgentSessionCreate
 									? createWorkItemDropZoneLabel
@@ -1028,7 +1035,7 @@ function ExperimentalJiraKanbanPageContent({
 								onScrollUnderlapChange={setBoardContentUnderlapsSessionColumn}
 								onToggleColumnAgent={handleToggleColumnAgent}
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
-								paddingTop={0} paddingBottom={KANBAN_WORK_ITEM_BOTTOM_PADDING}
+								paddingTop={boardOnly ? token("space.300") : 0} paddingBottom={KANBAN_WORK_ITEM_BOTTOM_PADDING}
 								selectionToolbar={{
 									getStatusVariant,
 									onSelectAll,

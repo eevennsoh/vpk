@@ -12,7 +12,7 @@ import type { SessionCohort } from "./session-cohort";
  * Who this session card is for.
  *
  * `owner` is the person who started the session and can act on it. `viewer` is
- * a teammate who can see that the work exists but cannot open its controls.
+ * a teammate who can see the session and its state but cannot act on it.
  * `expired` is a cloud session past the 28-day history window: it can no
  * longer be resumed, so the row offers only a Delete menu and an expiry tooltip.
  */
@@ -29,6 +29,8 @@ export type AgentSessionRole = "owner" | "viewer" | "expired";
  */
 export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
+	/** Person with exclusive access to this session, when explicitly private. */
+	privateTo?: string;
 	/** Human-readable tool calls cycled in the long-form metadata line. */
 	toolCalls?: readonly string[];
 };

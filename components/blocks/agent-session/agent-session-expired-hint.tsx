@@ -16,7 +16,7 @@ export function AgentSessionExpiredHint({
 	return (
 		<Tooltip disabled={disabled}>
 			<TooltipTrigger render={children} />
-			<TooltipContent className="w-60 whitespace-normal" positionerClassName={positionerClassName} side="right">
+			<TooltipContent className="w-60 whitespace-normal" collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "none" }} positionerClassName={positionerClassName} side="right">
 				{AGENT_SESSION_EXPIRED_HINT}
 			</TooltipContent>
 		</Tooltip>

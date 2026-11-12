@@ -9,7 +9,7 @@ async function loadTerminalStoryHarness() {
 	const result = await esbuild.build({
 		stdin: {
 			contents: `
-				export { foldBeats } from "./components/projects/jira-golden-journeys-v1/lib/terminal-demo-state";
+				export { foldBeats } from "./components/projects/jira-golden-journey-v1/lib/terminal-demo-state";
 					export {
 					getJiraTeamEu26IssueUrl,
 					JIRA_TEAM_EU26_RESUME_PROMPT,

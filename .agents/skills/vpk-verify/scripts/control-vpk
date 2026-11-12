@@ -76,7 +76,9 @@ Commands:
   doctor --require-backend
                       Also require GET /api/health JSON status=OK.
   launch              Reuse a healthy stack, or start pnpm run dev:tmux:start.
-  cleanup             Close the vpk-verify browser session. Stop tmux only if launch started it.
+  cleanup [--browser] [--stack]
+                      Leave shared services running by default; explicitly close this chat’s
+                      browser or stop a stack started by verify when requested.
   session             Print the worktree-scoped agent-browser session id.
   evidence-dir        Print the proof artifact directory.
   browser [--] <args> Run agent-browser with the vpk-verify session injected.
@@ -161,13 +163,15 @@ async function main() {
 
 	if (command === "cleanup") {
 		const state = readState();
-		closeBrowserSessionBestEffort();
-		if (state.launchedByVerify) {
+		const unknownOptions = argv.slice(1).filter((arg) => !["--browser", "--stack"].includes(arg));
+		if (unknownOptions.length) throw new Error(`Unknown cleanup option: ${unknownOptions.join(", ")}`);
+		if (argv.includes("--browser")) closeBrowserSessionBestEffort();
+		if (argv.includes("--stack") && state.launchedByVerify) {
 			runPnpm(["run", "dev:tmux:stop"]);
 		} else {
-			process.stderr.write("Did not start this worktree's stack; leaving it running.\n");
+			process.stderr.write("Leaving this worktree's stack running.\n");
 		}
-		fs.rmSync(RUN_DIR, { recursive: true, force: true });
+		if (argv.includes("--stack") && state.launchedByVerify) fs.rmSync(RUN_DIR, { recursive: true, force: true });
 		process.stdout.write(`Evidence kept at ${EVIDENCE_DIR}\n`);
 		return;
 	}

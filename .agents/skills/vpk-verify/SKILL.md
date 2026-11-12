@@ -42,7 +42,7 @@ Refuse to drive:
 - a frontend port that is not this checkout's `.dev-frontend-port`
 - a shared instance you cannot health-check
 
-Two worktrees can run side by side (deterministic ports, unique Portless origins, `vpk-dev-<worktree>` tmux sessions). Two browsers against the **same** origin share `localStorage` (`ui-theme`) — do not double-drive one instance.
+Two worktrees can run side by side (deterministic ports, unique Portless origins, `vpk-dev-<worktree>` tmux sessions). Chats get separate browser sessions even in the same worktree. Without a chat ID, the worktree session is shared; do not drive that session concurrently.
 
 ## What to re-check, then prove it
 
@@ -59,7 +59,7 @@ Capture one screenshot of the exact route in the light theme by default. Capture
 
 ## Drive
 
-Harness: `agent-browser` via `control-vpk open-target` for the first object navigation, then `control-vpk browser` for interactions. Both inject a worktree-scoped session (`agent-browser session id --scope worktree --prefix vpk-verify`). Load `agent-browser skills get core` once per session if you are unsure of flags. After a Next.js code edit, also follow `next-dev-loop` (`/_next/mcp` plus this same browser).
+Harness: `agent-browser` via `control-vpk open-target` for the first object navigation, then `control-vpk browser` for interactions. Both inject a worktree-and-chat-scoped session (`control-vpk session`). Load `agent-browser skills get core` once per session if you are unsure of flags. After a Next.js code edit, also follow `next-dev-loop` (`/_next/mcp` plus this same browser).
 
 Every browser subprocess is bounded to 35 seconds by default. Set
 `VPK_VERIFY_BROWSER_TIMEOUT_MS` to an integer from 1000 through 300000 only
@@ -140,9 +140,9 @@ Proof standards:
 .agents/skills/vpk-verify/scripts/control-vpk cleanup
 ```
 
-This closes only the `vpk-verify` agent-browser session. It runs `pnpm run dev:tmux:stop` **only** when `launch` started the stack for this run. It never uses `tmux kill-server`, `portless prune`, or `killall node`. It deletes `output/vpk-verify/.run/` scratch state. Proof files under `output/agent-browser/vpk-verify/` stay.
+Cleanup leaves the browser and dev stack running for later checks. To close this chat’s browser, use `control-vpk cleanup --browser`. To stop a stack started by verify, use `control-vpk cleanup --stack` only when no other work needs it. Proof files under `output/agent-browser/vpk-verify/` stay.
 
-After a failed iteration, run the same cleanup so stranded browsers do not accumulate. If a feature recipe changed theme, restore the original accessible theme-control name by cycling that same user-facing control before cleanup. Do not restore theme by mutating storage, attributes, classes, or ADS variables.
+Close the chat’s browser with `cleanup --browser` when it is no longer needed; it is reused between checks in the same chat. If a feature recipe changed theme, restore the original accessible theme-control name by cycling that same user-facing control before cleanup. Do not restore theme by mutating storage, attributes, classes, or ADS variables.
 
 ## Helpers
 

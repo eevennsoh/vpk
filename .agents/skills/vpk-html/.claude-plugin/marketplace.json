@@ -1,6 +1,6 @@
 {
 	"name": "vpk-html",
-	"description": "Static HTML document design skill for Claude Code / Cursor.",
+	"description": "Renders supplied material into offline, single-file HTML: reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes and engineering pages. Two-column story explainers are repo-only: their kit lives in the VPK repository under artifacts/vpk-html/eu26-animation-explained/ and imports VPK app code, so an installed copy outside that repository renders the templates only.",
 	"owner": {
 		"name": "Ee Venn Soh",
 		"email": "esoh@atlassian.com"
@@ -8,7 +8,7 @@
 	"plugins": [
 		{
 			"name": "vpk-html",
-			"description": "Render supplied material into offline, single-file HTML artifacts with the Algebrica editorial identity (Geist + Geist Mono, warm paper, grayscale figures). HTML-first, Node-only, with an optional derived PDF export and a landing/product-site track. Built for documents and engineering work: one-pagers, reports, decks, changelogs, portfolios, resumes, PR writeups, code reviews, status reports, incident reports, and more.",
+			"description": "Renders supplied material into offline, single-file HTML: reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes and engineering pages. Two-column story explainers are repo-only: their kit lives in the VPK repository under artifacts/vpk-html/eu26-animation-explained/ and imports VPK app code, so an installed copy outside that repository renders the templates only.",
 			"category": "documents",
 			"source": "./",
 			"homepage": "https://github.com/eevennsoh/vpk",

@@ -29,6 +29,8 @@ figure_engines: [none, iso-kit]
 
 # alpha playbook
 
+Load before you draft \`alpha.html\`. Back to [SKILL.md](../../SKILL.md).
+
 ## Use when
 - one decision
 
@@ -98,6 +100,8 @@ test("validatePlaybook reports every rule", async t => {
 	assert.match(check(GOOD.replace("figure_engines:", "owner: ws6\nfigure_engines:")), /unknown frontmatter key "owner"/);
 	assert.match(check(GOOD.replace("demo: demo-alpha.html   # the catalog demo\n", "")), /frontmatter needs demo:/);
 	assert.match(check(`${GOOD}${"- filler\n".repeat(140)}`), /has \d+ lines; the limit is 150/);
+	assert.match(check(GOOD.replace("Load before you draft `alpha.html`. Back to [SKILL.md](../../SKILL.md).\n\n", "")), /first line under the H1 must be "Load before you draft `alpha\.html`\. Back to \[SKILL\.md\]/);
+	assert.match(check(GOOD.replace("`alpha.html`. Back", "`beta.html`. Back")), /first line under the H1 must be/);
 });
 
 test("baselines: uncovered templates are reported, and stale baseline entries may only shrink", async t => {
@@ -125,6 +129,18 @@ test("routing accepts backticked and bare template names and reports gaps", asyn
 	assert.match(gaps, /authoring-detail\.md has no template-map row for gamma\.html/);
 });
 
+test("routing reports every diagram the cheatsheet does not name", async t => {
+	const { collectRoutingIssues } = await load();
+	const root = fixture(t, { cheatsheet: "| A | `assets/templates/alpha.html` |\n| B | assets/templates/beta.html |\n| C | `assets/templates/gamma.html` |\n| Gantt | `assets/diagrams/gantt.html` |\n" });
+	for (const name of ["gantt", "force-network"]) write(path.join(root, "assets", "diagrams", `${name}.html`), "<!doctype html>");
+	assert.deepEqual(collectRoutingIssues(root), ["CHEATSHEET.md does not route assets/diagrams/force-network.html"]);
+});
+
+test("the committed cheatsheet routes every template and diagram", async () => {
+	const { collectRoutingIssues } = await load();
+	assert.deepEqual(collectRoutingIssues(), []);
+});
+
 test("legacy baselines hold unique .html names and the figure-engine vocabulary is R3's", async () => {
 	const { LEGACY_TEMPLATES_WITHOUT_PLAYBOOK, LEGACY_TEMPLATES_WITHOUT_EVAL, FIGURE_ENGINES, REQUIRED_SECTIONS } = await load();
 	for (const list of [LEGACY_TEMPLATES_WITHOUT_PLAYBOOK, LEGACY_TEMPLATES_WITHOUT_EVAL]) {
@@ -142,6 +158,11 @@ test("committed playbooks are valid", async () => {
 	assert.ok(playbooks.some(playbook => playbook.stem === "one-pager"));
 	assert.ok(playbooks.some(playbook => playbook.stem === "status-report"));
 	for (const playbook of playbooks) assert.deepEqual(validatePlaybook(playbook, { skillRoot: SKILL_ROOT }), [], playbook.stem);
+	for (const playbook of playbooks) {
+		const source = fs.readFileSync(playbook.file, "utf8");
+		const line = `Load before you draft \`${playbook.frontmatter.template}\`. Back to [SKILL.md](../../SKILL.md).`;
+		assert.match(source, new RegExp(`^# ${playbook.stem} playbook\n\n${line.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\n`, "m"), `${playbook.stem}: load line under the H1`);
+	}
 });
 
 test("relative links in contract.md, publish.md and the playbooks resolve", { skip: !fs.existsSync(VALIDATE_SKILLS) && "scripts/validate-skills.js not present (standalone skill)" }, () => {
@@ -186,4 +207,23 @@ test("runPlaybook lists templates, prints one playbook, and exits 1 for a templa
 	run = capture();
 	assert.equal(runPlaybook("gamma", {}, run.io), 1);
 	assert.equal(run.out.error[0], "no playbook for gamma; route via CHEATSHEET.md and references/authoring-detail.md");
+});
+
+test("every plain-text Look up entry in verification § 10 names a Failure row in anti-patterns § 7", () => {
+	const read = name => fs.readFileSync(path.join(SKILL_ROOT, "references", name), "utf8");
+	const section = (text, start) => text.slice(text.indexOf(start)).split(/\n## /)[0];
+	const rows = text => text.split("\n").filter(line => /^\| (?!-)/.test(line)).slice(1).map(line => line.split("|").slice(1, -1).map(cell => cell.trim()));
+	const failures = new Set(rows(section(read("anti-patterns.md"), "## 7.")).map(([failure]) => failure));
+	const symptoms = rows(section(read("verification.md"), "10. Map each user complaint"));
+	assert.ok(failures.size > 0 && symptoms.length > 0, "both tables parse");
+	for (const [said, , lookUp] of symptoms) {
+		for (const name of lookUp.split(";").map(part => part.trim()).filter(part => part && !part.startsWith("["))) {
+			assert.ok(failures.has(name), `verification § 10 "${said}" looks up "${name}", which anti-patterns § 7 has no row for`);
+		}
+		// Linked fixes go straight to their owner (one hop); each anchor must name a heading there.
+		for (const [, file, anchor] of lookUp.matchAll(/\]\(([\w-]+\.md)#([\w-]+)\)/g)) {
+			const slugs = read(file).split("\n").filter(line => /^#{1,6} /.test(line)).map(line => line.replace(/^#+ /, "").trim().toLowerCase().replace(/[`*]/g, "").replace(/[^\p{L}\p{N} _-]/gu, "").replace(/ /g, "-"));
+			assert.ok(slugs.includes(anchor), `verification § 10 "${said}" links ${file}#${anchor}, which is not a heading there`);
+		}
+	}
 });

@@ -5,6 +5,75 @@ test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
 
 const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"][data-board-column-title]`);
 
+test("assignee options use compact palette sizing and highlight on hover while searching", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Change assignee" }).click();
+	const picker = page.getByRole("dialog", { name: "Change assignee" });
+	const search = picker.getByRole("textbox", { name: "Search people" });
+	const option = picker.getByRole("option", { name: "Annie Cook" });
+	await expect(search).toBeFocused();
+	await expect(option).toHaveCSS("height", "36px");
+	await option.hover();
+	await expect(search).toBeFocused();
+	await expect.poll(() => option.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+	await option.click();
+	await expect(page.getByRole("button", { name: "Change assignee" })).toContainText("Annie Cook");
+});
+
+test("Agents hover highlights the value below its label, like Priority", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Show more details" }).click();
+	const fields = page.locator("[data-project-butter-detail-fields]");
+	const agents = fields.locator('[data-field-id="agents"]');
+	const priority = fields.locator('[data-field-id="priority"]');
+	const agentLabel = agents.getByText("Agents", { exact: true });
+	const priorityLabel = priority.getByText("Priority", { exact: true });
+	const hoverSurface = (label: typeof agentLabel) => label.locator("xpath=following-sibling::*[1]");
+	await agentLabel.hover();
+	await expect(hoverSurface(agentLabel)).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await agents.getByRole("group", { name: "Agents field" }).hover();
+	await expect.poll(() => hoverSurface(agentLabel).evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+	await priority.getByRole("button", { name: /Change priority/ }).hover();
+	const priorityBackground = await hoverSurface(priorityLabel).evaluate((node) => getComputedStyle(node).backgroundColor);
+	await agents.getByRole("group", { name: "Agents field" }).hover();
+	await expect(hoverSurface(agentLabel)).toHaveCSS("background-color", priorityBackground);
+	await expect(agentLabel).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+});
+
+test("Agents can be dragged and moved independently in the Work item Details", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Show more details" }).click();
+	const fields = page.locator("[data-project-butter-detail-fields]");
+	const agents = fields.locator('[data-field-id="agents"]');
+	const parent = fields.locator('[data-field-id="parent"]');
+	const [source, target] = await Promise.all([agents.boundingBox(), parent.boundingBox()]);
+	if (!source || !target) throw new Error("Missing field geometry");
+	await page.mouse.move(source.x + 5, source.y + 8);
+	await page.mouse.down();
+	await page.mouse.move(target.x + 5, target.y + target.height / 2, { steps: 10 });
+	await expect(agents).toHaveAttribute("data-field-dragging", "true");
+	await page.mouse.up();
+	const order = () => fields.locator("[data-field-id]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-field-id")));
+	await expect.poll(async () => (await order()).indexOf("agents")).toBeGreaterThan((await order()).indexOf("parent"));
+	await fields.getByRole("group", { name: "Agents field" }).getByRole("button").click();
+	await expect(page.getByRole("dialog", { name: "Add agent" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	const actions = agents.getByRole("button", { name: "More agents field actions" });
+	await actions.focus();
+	await page.keyboard.press("Enter");
+	await page.getByRole("menuitem", { name: "Move up" }).focus();
+	await page.keyboard.press("Enter");
+	expect((await order()).indexOf("agents")).toBeLessThan((await order()).indexOf("parent"));
+	await page.getByRole("button", { name: "Show less details" }).click();
+	await expect(fields.getByRole("group", { name: "Agents field" })).toBeVisible();
+	await page.getByRole("button", { name: "Show more details" }).click();
+	expect((await order()).indexOf("agents")).toBeLessThan((await order()).indexOf("parent"));
+});
+
 test("the agent row aligns with the other Details field icons and values", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter"));
@@ -13,7 +82,7 @@ test("the agent row aligns with the other Details field icons and values", async
 	test.skip(await fields.locator('[data-field-id="status"]').count() > 0, "The older work-item layout does not contain the agent field.");
 	const agent = fields.getByRole("button", { name: "Cursor: Working", exact: true });
 	await expect(agent).toBeVisible();
-	await expect(fields.getByText("Agent", { exact: true })).toBeVisible();
+	await expect(fields.getByText("Agents", { exact: true })).toBeVisible();
 	const agentField = agent.locator("..");
 	await expect(agentField.getByText("Working", { exact: true })).toBeVisible();
 	await expect(agentField.locator('[data-slot="spinner"]')).toHaveCount(0);

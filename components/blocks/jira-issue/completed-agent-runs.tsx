@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
@@ -97,6 +97,7 @@ function getCompletedRunInitial(name: string): string {
  */
 function JiraIssueCompletedRunRow({
 	label,
+	onOpenChange,
 	onView,
 	renderAgentActivityIndicator,
 	run,
@@ -104,6 +105,7 @@ function JiraIssueCompletedRunRow({
 }: Readonly<{
 	/** Overrides the run summary, e.g. a single merged chin that just says Finished. */
 	label?: string;
+	onOpenChange?: (open: boolean) => void;
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	run: JiraIssueCompletedAgentRun;
@@ -167,7 +169,7 @@ function JiraIssueCompletedRunRow({
 				render={trigger}
 				session={{ ...session, status: run.state === "failed" ? "stopped" : session.status }}
 			/>
-			<JiraSessionFlyoutSurface handle={flyoutHandle} />
+			<JiraSessionFlyoutSurface handle={flyoutHandle} onOpenChange={onOpenChange} />
 		</>
 	);
 }
@@ -185,12 +187,43 @@ export function JiraIssueAgentDone({
 	runs: readonly JiraIssueCompletedAgentRun[];
 	usesStrokeChrome: boolean;
 }>) {
+	const { onOpenChange, runs } = props;
+	const openSplitRuns = useRef(new Set<string>());
+	const onOpenChangeRef = useRef(onOpenChange);
+	useEffect(() => {
+		onOpenChangeRef.current = onOpenChange;
+	}, [onOpenChange]);
+	useEffect(() => {
+		const currentIds = new Set(layout === "split" ? runs.map((run) => run.id) : []);
+		let changed = false;
+		for (const id of openSplitRuns.current) {
+			if (!currentIds.has(id)) {
+				openSplitRuns.current.delete(id);
+				changed = true;
+			}
+		}
+		if (changed) onOpenChange?.(openSplitRuns.current.size > 0);
+	}, [layout, runs, onOpenChange]);
+	useEffect(() => {
+		const openRuns = openSplitRuns.current;
+		return () => {
+			if (openRuns.size > 0) onOpenChangeRef.current?.(false);
+			openRuns.clear();
+		};
+	}, []);
+	function handleSplitOpenChange(id: string, open: boolean) {
+		if (open) openSplitRuns.current.add(id);
+		else openSplitRuns.current.delete(id);
+		onOpenChange?.(openSplitRuns.current.size > 0);
+	}
+
 	if (layout === "split") {
 		return (
 			<section aria-label="Agent review" className="flex w-full min-w-0 flex-col overflow-hidden px-1 py-1">
 				{props.runs.map((run) => (
 					<JiraIssueCompletedRunRow
 						key={run.id}
+						onOpenChange={(open) => handleSplitOpenChange(run.id, open)}
 						onView={props.onView}
 						renderAgentActivityIndicator={props.renderAgentActivityIndicator}
 						run={run}

@@ -3,14 +3,14 @@
 import { isKnowledgeMode, isMemoryMode, isReasoningMode } from "@/app/data/directory/agent-modes";
 import { resolveCatalogNames } from "@/app/data/directory/resolve-ids";
 import { AGENT_AVATAR_OPTION_SRCS } from "@/components/blocks/agent/data/agent-avatar-options";
-import { getDerivedSubagentNames } from "@/components/blocks/subagents/lib/subagent-prompts";
+import { getDerivedSubagentNames } from "@/components/blocks/subagent/lib/subagent-prompts";
 import {
 	createAgentAutomationRule,
 	createAgentTriggerValue,
 	type AgentAutomationRule,
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
-} from "@/components/blocks/triggers/data/trigger-catalog";
+} from "@/components/blocks/trigger/data/trigger-catalog";
 import { mergeTriggerPhrasesIntoDraft } from "@/components/projects/studio/lib/demo-agent-builder";
 import type { RovoAgentSubagentPrompt, RovoDataParts } from "@/lib/rovo-ui-messages";
 

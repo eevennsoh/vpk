@@ -32,6 +32,8 @@ export interface PullRequestReviewers {
 export interface PullRequestProps {
 	/** Layout. Defaults to the compact dropdown list card. */
 	variant?: PullRequestVariant;
+	/** Flyout only. Omit the lower metadata and actions section when false. */
+	showDetails?: boolean;
 	/** Pull request number (shown as `#1306` in subtle text). */
 	number: number;
 	/** Pull request title (shown after the number). */
@@ -59,6 +61,8 @@ export interface PullRequestProps {
 	 * the full checks list. Omitted when absent or empty.
 	 */
 	checks?: readonly PullRequestCheck[];
+	/** Flyout only. Whether the CI summary can reveal individual checks. */
+	checksExpandable?: boolean;
 	/** Flyout only. Renders the primary Review action as a link. Omitted without it. */
 	reviewHref?: string;
 	/** Flyout only. Show a Review button when no review destination is available. */
@@ -67,6 +71,10 @@ export interface PullRequestProps {
 	href?: string;
 	/** Called with failing CI checks when Fix PR is activated. */
 	onFix?: (checks: readonly PullRequestCheck[]) => void;
+	/** Flyout only. Whether to show the Fix PR action for failing checks. */
+	showFix?: boolean;
+	/** Flyout only. A fix is in progress, so the Fix PR action stays visible and disabled. */
+	isFixing?: boolean;
 	/**
 	 * Absolute timestamp (ms). Reserved for callers that already track PR age;
 	 * the card renders `relativeTime` when provided.

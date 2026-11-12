@@ -4,12 +4,31 @@ const path = require("node:path");
 const test = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
+const { renderComponent } = require(process.cwd() + "/scripts/lib/render-component.js");
 
 function readProjectFile(filePath) {
 	return fs.readFileSync(path.join(process.cwd(), filePath), "utf8");
 }
 
 const SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+
+test("suggestion rows default to compact and can show bylines", async () => {
+	const view = await renderComponent({
+		source: `import React, { useState } from "react";
+			import { RichTextSuggestionMenu } from "@/components/ui-custom/rich-text-editor/suggestion-menu";
+			export default function Menu() {
+				const [withByline, setWithByline] = useState(false);
+				const [choice, setChoice] = useState("");
+				return <><button onClick={() => setWithByline(true)}>Show bylines</button><output>{choice}</output><RichTextSuggestionMenu emptyLabel="Empty" items={[{ id: "one", label: "First", description: "Helpful description", icon: null }]} onSelect={(item) => setChoice(item.label)} rowVariant={withByline ? "with-byline" : undefined} selectedIndex={0} title="Choices" /></>;
+			}`,
+	});
+	assert.equal(view.getByRole("option", { name: "First" }).textContent, "First");
+	await view.click(view.getByRole("option", { name: "First" }));
+	assert.equal(document.querySelector("output")?.textContent, "First");
+	await view.click(view.getByRole("button", { name: "Show bylines" }));
+	assert.equal(view.getByRole("option", { name: /First/ }).textContent.includes("Helpful description"), true);
+	await view.unmount();
+});
 
 let rankingModulePromise;
 function loadRankingModule() {

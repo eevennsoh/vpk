@@ -12,7 +12,7 @@ const JIRA_WORK_ITEM_V2_URL = appUrl("/preview/blocks/jira-work-item-demo-experi
 
 const JIRA_WORK_ITEM_V3_URL = appUrl("/preview/blocks/jira-work-item-demo-experimental-v3");
 
-const JIRA_GOLDEN_JOURNEYS_V3_URL = appUrl("/jira-golden-journeys-v3");
+const JIRA_GOLDEN_JOURNEY_V3_URL = appUrl("/jira-golden-journey-v3");
 
 test("rapid metadata toggles settle with visible title actions", async ({ page }) => {
 	await page.goto(JIRA_WORK_ITEM_URL, { waitUntil: "domcontentloaded" });
@@ -401,7 +401,7 @@ test("v3 work item title uses medium weight before and after compaction", async 
 	await expect(title).toHaveCSS("font-weight", "500");
 });
 
-test("golden journeys v3 title compaction does not mix font shorthand and fontWeight", async ({ page }) => {
+test("golden journey v3 title compaction does not mix font shorthand and fontWeight", async ({ page }) => {
 	const fontStyleWarnings: string[] = [];
 	page.on("console", (message) => {
 		if (message.text().includes("Removing a style property during rerender (fontWeight)")) {
@@ -409,7 +409,7 @@ test("golden journeys v3 title compaction does not mix font shorthand and fontWe
 		}
 	});
 
-	await page.goto(JIRA_GOLDEN_JOURNEYS_V3_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(JIRA_GOLDEN_JOURNEY_V3_URL, { waitUntil: "domcontentloaded" });
 	await page.getByRole("button", { name: "Start Claude working on SHOP-4821" }).click();
 	await page.getByRole("button", { name: "Build" }).click();
 
@@ -424,8 +424,8 @@ test("golden journeys v3 title compaction does not mix font shorthand and fontWe
 	expect(fontStyleWarnings).toEqual([]);
 });
 
-test("golden journeys v3 header collapse control stays static", async ({ page }) => {
-	await page.goto(JIRA_GOLDEN_JOURNEYS_V3_URL, { waitUntil: "domcontentloaded" });
+test("golden journey v3 header collapse control stays static", async ({ page }) => {
+	await page.goto(JIRA_GOLDEN_JOURNEY_V3_URL, { waitUntil: "domcontentloaded" });
 	await page.getByRole("button", { name: "Start Claude working on SHOP-4821" }).click();
 	await page.getByRole("button", { name: "Build" }).click();
 	await page.waitForTimeout(700);
@@ -530,9 +530,9 @@ test("v3 compact header removes layout motion when reduced motion is requested",
 	await expect(titleBlock).toHaveCSS("transform", "none");
 });
 
-test("golden journeys v3 Insights keeps the work item visible and resizes beside it", async ({ page }) => {
+test("golden journey v3 Insights keeps the work item visible and resizes beside it", async ({ page }) => {
 	await page.setViewportSize({ width: 1424, height: 900 });
-	await page.goto(JIRA_GOLDEN_JOURNEYS_V3_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(JIRA_GOLDEN_JOURNEY_V3_URL, { waitUntil: "domcontentloaded" });
 
 	const sectionNav = page.getByRole("navigation", { name: "Work item sections" });
 	await sectionNav.getByRole("link", { name: /^Insights/u }).click();

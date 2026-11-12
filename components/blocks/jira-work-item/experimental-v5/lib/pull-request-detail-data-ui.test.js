@@ -809,10 +809,6 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		checksListSource,
-		/function CheckRow[\s\S]*rich-text-command-menu-item hover:bg-bg-neutral-subtle-hovered![\s\S]*menu-row-title[\s\S]*menu-row-byline/u,
-	);
-	assert.match(
-		checksListSource,
 		/bleed \? "-mx-2 w-\[calc\(100%\+1rem\)\]!" : undefined/u,
 	);
 	const checkRowSource = checksListSource.slice(

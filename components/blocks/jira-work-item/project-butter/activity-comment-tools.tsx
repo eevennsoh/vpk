@@ -3,6 +3,8 @@
 import { useId, useState } from "react";
 import EditIcon from "@atlaskit/icon/core/edit";
 import LinkIcon from "@atlaskit/icon/core/link";
+import PinIcon from "@atlaskit/icon/core/pin";
+import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import type {
 	JiraActivityCommentEntry,
@@ -58,21 +60,23 @@ export function ProjectButterTimestamp({
 	const showTooltip = tooltipOpen && !full && Number.isFinite(parsed);
 	if (!item.timestamp) return null;
 	return (
-		<Tooltip disabled={full || !Number.isFinite(parsed)} onOpenChange={setTooltipOpen} open={showTooltip}>
-			<TooltipTrigger
-				render={<button
-					aria-describedby={showTooltip ? tooltipId : undefined}
-					aria-label={`${visibleTimestamp}. Show ${full ? "relative" : "full"} timestamp`}
-					aria-pressed={full}
-					className="whitespace-nowrap rounded-sm text-xs font-normal text-text-subtle outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
-					onClick={() => setFull((value) => !value)}
-					type="button"
-				/>}
-			>
-				<time dateTime={Number.isFinite(parsed) ? new Date(parsed).toISOString() : undefined}>{visibleTimestamp}</time>
-			</TooltipTrigger>
-			<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="bottom">{detailed}</TooltipContent>
-		</Tooltip>
+		<span className="inline-flex items-center gap-1">
+			<Tooltip disabled={full || !Number.isFinite(parsed)} onOpenChange={setTooltipOpen} open={showTooltip}>
+				<TooltipTrigger
+					render={<button
+						aria-describedby={showTooltip ? tooltipId : undefined}
+						aria-label={`${visibleTimestamp}. Show ${full ? "relative" : "full"} timestamp`}
+						aria-pressed={full}
+						className="whitespace-nowrap rounded-sm text-xs font-normal text-text-subtle outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
+						onClick={() => setFull((value) => !value)}
+						type="button"
+					/>}
+				>
+					<time dateTime={Number.isFinite(parsed) ? new Date(parsed).toISOString() : undefined}>{visibleTimestamp}</time>
+				</TooltipTrigger>
+				<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="bottom">{detailed}</TooltipContent>
+			</Tooltip>
+		</span>
 	);
 
 }
@@ -91,6 +95,19 @@ export function ProjectButterCopyCommentLink({ id }: Readonly<{ id: string }>) {
 		>
 			<LinkIcon label="" size="small" />
 		</Button>
+	);
+}
+
+/** Pins a top-level comment to the head of the feed; pressed while pinned. */
+export function ProjectButterPinComment({ pinned, onToggle }: Readonly<{ pinned: boolean; onToggle: () => void }>) {
+	const label = pinned ? "Unpin comment" : "Pin comment";
+	return (
+		<Tooltip>
+			<TooltipTrigger render={<Button aria-label={label} aria-pressed={pinned} onClick={onToggle} size="icon-compact" type="button" variant="ghost" />}>
+				{pinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />}
+			</TooltipTrigger>
+			<TooltipContent positionerClassName="z-[650]">{label}</TooltipContent>
+		</Tooltip>
 	);
 }
 

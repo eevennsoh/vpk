@@ -5,8 +5,8 @@ import type { CSSProperties, ReactNode } from "react";
 import { useCallback, useState } from "react";
 import Image from "next/image";
 
-import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
-import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
+import { AgentTemplateDialog } from "@/components/blocks/agent-template";
+import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-template/data/demo-template-agents";
 import { BENTO_CAROUSEL_TILE_CLASS, BentoCarousel } from "@/components/ui-custom/bento-carousel";
 import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -100,7 +100,7 @@ export interface AgentCompactOperationsBentoProps {
 	// When provided (e.g. the Studio shell), browsing or selecting a template
 	// defers to the host — which opens the Agents Directory and actually applies
 	// the chosen prompt to the agent — instead of the bento's built-in demo
-	// `AgentTemplatesDialog` (whose select handler only closes the dialog). Mirrors
+	// `AgentTemplateDialog` (whose select handler only closes the dialog). Mirrors
 	// the "start with a template" link wiring in `AgentInstructionsComposer`.
 	onStartWithTemplate?: () => void;
 }
@@ -109,7 +109,7 @@ export interface AgentCompactOperationsBentoProps {
  * The minimal "Start with these agent templates" bento, copied from the
  * agent-config compact view (`AgentCompactOperationsBento`). Five prompt-starter
  * tiles in a `grid-cols-5` desktop grid that collapses to a horizontal carousel
- * below `lg`. Tiles open the full agent-templates dialog.
+ * below `lg`. Tiles open the full agent-template dialog.
  */
 export function AgentCompactOperationsBento({ onDismiss, onStartWithTemplate }: Readonly<AgentCompactOperationsBentoProps>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -195,7 +195,7 @@ export function AgentCompactOperationsBento({ onDismiss, onStartWithTemplate }: 
 					))}
 				</BentoCarousel>
 			</div>
-			<AgentTemplatesDialog
+			<AgentTemplateDialog
 				agents={DEMO_AGENT_TEMPLATES}
 				open={browseOpen}
 				onOpenChange={setBrowseOpen}

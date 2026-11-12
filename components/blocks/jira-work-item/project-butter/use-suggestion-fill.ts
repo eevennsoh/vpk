@@ -279,7 +279,7 @@ export function useProjectButterSuggestionFill(
 			applied.push(description);
 		}
 		const detailSuggestions = batch.filter((suggestion) => suggestion.field !== "description");
-		const rail = target.detailFields.order.filter((field) => !target.detailFields.hidden.includes(field));
+		const rail = target.detailFields.order.filter((field): field is ProjectButterDetailFieldId => field !== "agents" && !target.detailFields.hidden.includes(field));
 		if (detailSuggestions.length && rail.length) {
 			setBarAfter("top");
 			await settleLayout();

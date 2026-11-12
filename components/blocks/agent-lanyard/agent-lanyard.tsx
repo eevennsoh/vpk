@@ -8,6 +8,7 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AgentLanyardCard } from "./components/agent-lanyard-card";
 import { AgentLanyardActions } from "./components/agent-lanyard-actions";
 import { AgentLanyardTemplateAvatar } from "./agent-lanyard-template-avatar";
+import { AgentLanyardAvatarFrame } from "./agent-lanyard-first-party-avatar";
 import type { AgentLanyardMenuActions } from "./agent-lanyard-menu";
 import type { AgentLanyardAgent } from "./data";
 import type { AgentLanyardTemplate } from "./template-data";
@@ -69,10 +70,8 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 			variant="agent" verified={agent.verified} accentColor={agent.accentColor}
 			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={showDescription} onSelect={onSelect} className={className}
 			avatar={avatar ?? (agent.brandName ? (
-				<span className="absolute top-6 left-1/2 z-10 -translate-x-1/2">
-					<AgentAvatarVisual animate={false} brandName={agent.brandName} label="" sizePx={48} />
-				</span>
-			) : <Image alt="" className="absolute top-6 left-1/2 z-10 -translate-x-1/2" src={agent.avatarSrc} width={54} height={60} />)}
+				<AgentLanyardAvatarFrame><AgentAvatarVisual animate={false} avatarClassName="size-15" brandName={agent.brandName} label="" sizePx={48} /></AgentLanyardAvatarFrame>
+			) : <AgentLanyardAvatarFrame><Image alt="" className={agent.avatarSrc.startsWith("/avatar-agent-new/") ? "h-full w-full" : "h-full w-full scale-110"} src={agent.avatarSrc} width={54} height={60} /></AgentLanyardAvatarFrame>)}
 			footer={footer
 				? <div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack">{footer}</div>
 				: <AgentLanyardActions agent={agent} {...actions} />}

@@ -2,13 +2,20 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_KANBAN_DETAIL: ComponentDetail = {
 	description:
-		"Enterprise RFP Jira kanban board with drag-and-drop work-item cards, agent assignment controls, tags, priority signals, avatar ownership, multi-select drag support, and optional Jira Toolbar actions. Ships a standard variant plus independently owned experimental variants.",
+		"Jira kanban board with Project Butter work-item cards, agent sessions, selection, and drag-and-drop. Includes the earlier standard and experimental variants.",
 	demoLayout: { previewHeight: "fit", examplesContentWidth: "bleed" },
 	importStatement: `import { JiraKanban } from "@/components/blocks/jira-kanban";`,
-	usage: `import JiraKanbanPage from "@/components/blocks/jira-kanban/page";
-import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
-import ExperimentalV2JiraKanbanPage from "@/components/blocks/jira-kanban/experimental-v2/page";`,
+	usage: `import { JiraKanban } from "@/components/blocks/jira-kanban";
+
+<JiraKanban boardColumns={columns} />
+<JiraKanban variant="standard" boardColumns={columns} />`,
 	examples: [
+		{
+			id: "project-butter",
+			title: "Project butter",
+			description: "The current Project Butter board, sharing the Jira Team EU26 kanban with Project Butter cards and agent sessions.",
+			demoSlug: "jira-kanban-demo-project-butter",
+		},
 		{
 			title: "Standard",
 			description: "Current Jira kanban board: drag-and-drop columns, per-column agent assignment, assignee filtering, and the multi-select Jira Toolbar.",
@@ -16,7 +23,7 @@ import ExperimentalV2JiraKanbanPage from "@/components/blocks/jira-kanban/experi
 		},
 		{
 			title: "Experimental",
-			description: "Standalone fork of the standard board that starts identical to it. Owns its own board, header, and page tree so experimental changes never touch the default variant; shares the board state helpers and data contracts.",
+			description: "The shared experimental board with its earlier issue-card appearance and simple column chrome.",
 			demoSlug: "jira-kanban-demo-experimental",
 		},
 		{
@@ -31,12 +38,13 @@ import ExperimentalV2JiraKanbanPage from "@/components/blocks/jira-kanban/experi
 		},
 		{
 			title: "Empty columns",
-			description: "Experimental v2 with To do, In progress, and Done empty beside a populated In review column, for checking zero-item column layout and resize controls.",
+			description: "Project Butter with To do, In progress, and Done empty beside a populated In review column, for checking zero-item column layout and resize controls.",
 			demoSlug: "jira-kanban-demo-empty-columns",
 		},
 	],
 	props: [
-		{ name: "cardAppearance", type: '"default" | "project-butter"', default: '"default"', description: "Experimental board/page only. Forward the selected JiraIssue presentation to every card while preserving board data, selection, dragging and agent sessions. Butter opts into project-butter." },
+		{ name: "variant", type: '"standard" | "project-butter"', default: '"project-butter"', description: "Select the Project Butter board or the earlier standard board." },
+		{ name: "cardAppearance", type: '"default" | "project-butter"', default: '"project-butter"', description: "Issue card presentation on the Project Butter board." },
 		{ name: "columnChrome", type: '"default" | "simple"', description: "Expanded column backdrop. \"default\" is the sunken well. \"simple\" is no well. Omit for \"default\"." },
 		{ name: "selectionToolbar", type: "JiraKanbanSelectionToolbarConfig", description: "Optional Jira Toolbar actions shown while controlled card selection is non-empty." },
 	],

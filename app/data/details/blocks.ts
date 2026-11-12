@@ -9,30 +9,31 @@ import { EDITOR_TOOLBAR_DETAIL } from "./blocks/editor-toolbar";
 import { AGENT_CARD_DETAIL } from "./blocks/agent-card";
 import { TWG_AGENT_CARD_DETAIL } from "./blocks/twg-agent-card";
 import { AGENT_PROFILE_CARD_DETAIL } from "./blocks/agent-profile-card";
-import { AGENT_STATES_DETAIL } from "./blocks/agent-states";
+import { AGENT_STATE_DETAIL } from "./blocks/agent-state";
 import { AGENT_DIRECTORY_DETAIL } from "./blocks/agent-directory";
-import { AGENT_TEMPLATES_DETAIL } from "./blocks/agent-templates";
+import { AGENT_TEMPLATE_DETAIL } from "./blocks/agent-template";
 import { ARTIFACT_DETAIL } from "./blocks/artifact";
 import { ARTIFACT_PANE_DETAIL } from "./blocks/artifact-pane";
-import { APPS_DIRECTORY_DETAIL } from "./blocks/apps-directory";
-import { TOOLS_DIRECTORY_DETAIL } from "./blocks/tools-directory";
-import { SKILLS_DIRECTORY_DETAIL } from "./blocks/skills-directory";
+import { APP_DIRECTORY_DETAIL } from "./blocks/app-directory";
+import { TOOL_DIRECTORY_DETAIL } from "./blocks/tool-directory";
+import { SKILL_DIRECTORY_DETAIL } from "./blocks/skill-directory";
 import { KNOWLEDGE_DIRECTORY_DETAIL } from "./blocks/knowledge-directory";
-import { AGENT_USERS_DETAIL } from "./blocks/agent-users";
-import { CONVERSATION_STARTERS_DETAIL } from "./blocks/conversation-starters";
+import { AGENT_USER_DETAIL } from "./blocks/agent-user";
+import { CONVERSATION_STARTER_DETAIL } from "./blocks/conversation-starter";
 import { AGENT_ACCESS_DETAIL } from "./blocks/agent-access";
 import { AGENT_EVALUATION_DETAIL } from "./blocks/agent-evaluation";
-import { AGENT_INSIGHTS_DETAIL } from "./blocks/agent-insights";
+import { AGENT_INSIGHT_DETAIL } from "./blocks/agent-insight";
 import { AGENT_LANYARD_DETAIL } from "./blocks/agent-lanyard";
 import { LANYARD_3D_DETAIL } from "./blocks/3d-lanyard";
 import { AGENT_TEST_DETAIL } from "./blocks/agent-test";
-import { AGENT_SURFACES_DETAIL } from "./blocks/agent-surfaces";
+import { AGENT_SURFACE_DETAIL } from "./blocks/agent-surface";
 import { MERMAID_DIAGRAM_DETAIL } from "./blocks/mermaid-diagram";
 import { VIDEO_DETAIL } from "./blocks/video";
 import { CURSOR_DETAIL } from "./blocks/cursor";
 import { AGENT_PROGRESS_DETAIL } from "./blocks/agent-progress";
 import { AGENT_ASSIGNMENT_DETAIL } from "./blocks/agent-assignment";
 import { AGENT_SELECTOR_DETAIL } from "./blocks/agent-selector";
+import { JIRA_LOCAL_AGENT_DETAIL } from "./blocks/jira-local-agent";
 import { SKILL_SELECTOR_DETAIL } from "./blocks/skill-selector";
 import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
 import { AGENT_SESSION_DETAIL } from "./blocks/agent-session";
@@ -41,7 +42,7 @@ import { AGENT_SESSION_FLYOUT_DETAIL } from "./blocks/agent-session-flyout";
 import { OMNIBAR_DETAIL } from "./blocks/omnibar";
 import { SCRUBBER_DETAIL } from "./blocks/scrubber";
 import { TASK_PROGRESS_DETAIL } from "./blocks/task-progress";
-import { TRIGGERS_DETAIL } from "./blocks/triggers";
+import { TRIGGER_DETAIL } from "./blocks/trigger";
 import { APP_SIDEBAR_DETAIL } from "./blocks/app-sidebar";
 import { ANSWER_CARD_DETAIL } from "./blocks/answer-card";
 import { SPOTLIGHT_DETAIL } from "./blocks/spotlight";
@@ -78,7 +79,7 @@ import { LOGIN_05_DETAIL } from "./blocks/login-05";
 import { CHATGPT_DETAIL } from "./blocks/chatgpt";
 import { CHAT_CONFIGURATION_DETAIL } from "./blocks/chat-configuration";
 import { CHAT_TIMELINE_DETAIL } from "./blocks/chat-timeline";
-import { SUBAGENTS_DETAIL } from "./blocks/subagents";
+import { SUBAGENT_DETAIL } from "./blocks/subagent";
 import { TERMINAL_SWITCH_DETAIL } from "./blocks/terminal-switch";
 import { DATA_TABLE_DETAIL } from "./blocks/data-table";
 import { GENERATIVE_CARD_DETAIL } from "./blocks/generative-card";
@@ -86,7 +87,7 @@ import { TOP_NAVIGATION_DETAIL } from "./blocks/top-navigation";
 import { CHAT_GALLERY_DETAIL } from "./blocks/chat-gallery";
 import { CODE_REVIEW_DETAIL } from "./blocks/code-review";
 import { PROMPT_GALLERY_DETAIL } from "./blocks/prompt-gallery";
-import { SETTINGS_DIALOG_DETAIL } from "./blocks/settings-dialog";
+import { SETTING_DIALOG_DETAIL } from "./blocks/setting-dialog";
 import { MEMORY_DETAIL } from "./blocks/memory";
 import { PRODUCT_SIDEBAR_DETAIL } from "./blocks/product-sidebar";
 import { SIDEBAR_RAIL_DETAIL } from "./blocks/sidebar-rail";
@@ -104,7 +105,7 @@ import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { JIRA_EPIC_DETAIL } from "./blocks/jira-epic";
 import { AGENT_LIST_DETAIL } from "./blocks/agent-list";
 import { JIRA_ACTIVITY_DETAIL } from "./blocks/jira-activity";
-import { JIRA_INSIGHTS_DETAIL } from "./blocks/jira-insights";
+import { JIRA_INSIGHT_DETAIL } from "./blocks/jira-insight";
 import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
 import { JIRA_LINKING_DETAIL } from "./blocks/jira-linking";
 import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
@@ -129,30 +130,31 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-card": AGENT_CARD_DETAIL,
 	"twg-agent-card": TWG_AGENT_CARD_DETAIL,
 	"agent-profile-card": AGENT_PROFILE_CARD_DETAIL,
-	"agent-states": AGENT_STATES_DETAIL,
+	"agent-state": AGENT_STATE_DETAIL,
 	"agent-directory": AGENT_DIRECTORY_DETAIL,
-	"agent-templates": AGENT_TEMPLATES_DETAIL,
+	"agent-template": AGENT_TEMPLATE_DETAIL,
 	artifact: ARTIFACT_DETAIL,
 	"artifact-pane": ARTIFACT_PANE_DETAIL,
-	"apps-directory": APPS_DIRECTORY_DETAIL,
-	"tools-directory": TOOLS_DIRECTORY_DETAIL,
-	"skills-directory": SKILLS_DIRECTORY_DETAIL,
+	"app-directory": APP_DIRECTORY_DETAIL,
+	"tool-directory": TOOL_DIRECTORY_DETAIL,
+	"skill-directory": SKILL_DIRECTORY_DETAIL,
 	"knowledge-directory": KNOWLEDGE_DIRECTORY_DETAIL,
-	"agent-users": AGENT_USERS_DETAIL,
-	"conversation-starters": CONVERSATION_STARTERS_DETAIL,
+	"agent-user": AGENT_USER_DETAIL,
+	"conversation-starter": CONVERSATION_STARTER_DETAIL,
 	"agent-access": AGENT_ACCESS_DETAIL,
 	"agent-evaluation": AGENT_EVALUATION_DETAIL,
-	"agent-insights": AGENT_INSIGHTS_DETAIL,
+	"agent-insight": AGENT_INSIGHT_DETAIL,
 	"agent-lanyard": AGENT_LANYARD_DETAIL,
 	"3d-lanyard": LANYARD_3D_DETAIL,
 	"agent-test": AGENT_TEST_DETAIL,
-	"agent-surfaces": AGENT_SURFACES_DETAIL,
+	"agent-surface": AGENT_SURFACE_DETAIL,
 	"mermaid-diagram": MERMAID_DIAGRAM_DETAIL,
 	video: VIDEO_DETAIL,
 	cursor: CURSOR_DETAIL,
 	"agent-progress": AGENT_PROGRESS_DETAIL,
 	"agent-assignment": AGENT_ASSIGNMENT_DETAIL,
 	"agent-selector": AGENT_SELECTOR_DETAIL,
+	"jira-local-agent": JIRA_LOCAL_AGENT_DETAIL,
 	"skill-selector": SKILL_SELECTOR_DETAIL,
 	"jira-work-item": JIRA_WORK_ITEM_DETAIL,
 	"agent-session": AGENT_SESSION_DETAIL,
@@ -161,7 +163,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	omnibar: OMNIBAR_DETAIL,
 	scrubber: SCRUBBER_DETAIL,
 	"task-progress": TASK_PROGRESS_DETAIL,
-	triggers: TRIGGERS_DETAIL,
+	trigger: TRIGGER_DETAIL,
 	"app-sidebar": APP_SIDEBAR_DETAIL,
 	"answer-card": ANSWER_CARD_DETAIL,
 	spotlight: SPOTLIGHT_DETAIL,
@@ -198,7 +200,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	chatgpt: CHATGPT_DETAIL,
 	"chat-configuration": CHAT_CONFIGURATION_DETAIL,
 	"chat-timeline": CHAT_TIMELINE_DETAIL,
-	subagents: SUBAGENTS_DETAIL,
+	subagent: SUBAGENT_DETAIL,
 	"terminal-switch": TERMINAL_SWITCH_DETAIL,
 	"data-table": DATA_TABLE_DETAIL,
 	"generative-card": GENERATIVE_CARD_DETAIL,
@@ -206,7 +208,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"chat-gallery": CHAT_GALLERY_DETAIL,
 	"code-review": CODE_REVIEW_DETAIL,
 	"prompt-gallery": PROMPT_GALLERY_DETAIL,
-	"settings-dialog": SETTINGS_DIALOG_DETAIL,
+	"setting-dialog": SETTING_DIALOG_DETAIL,
 	memory: MEMORY_DETAIL,
 	"product-sidebar": PRODUCT_SIDEBAR_DETAIL,
 	"sidebar-rail": SIDEBAR_RAIL_DETAIL,
@@ -224,7 +226,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-epic": JIRA_EPIC_DETAIL,
 	"agent-list": AGENT_LIST_DETAIL,
 	"jira-activity": JIRA_ACTIVITY_DETAIL,
-	"jira-insights": JIRA_INSIGHTS_DETAIL,
+	"jira-insight": JIRA_INSIGHT_DETAIL,
 	"jira-issue": JIRA_ISSUE_DETAIL,
 	"jira-linking": JIRA_LINKING_DETAIL,
 	"jira-list": JIRA_LIST_DETAIL,

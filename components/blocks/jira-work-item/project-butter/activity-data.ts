@@ -32,8 +32,13 @@ export function createProjectButterActivity(empty: boolean): readonly JiraActivi
 	return entries.sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0));
 }
 
+const TIMELINE_DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "Asia/Kuala_Lumpur" });
+const TIMELINE_TIME = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Kuala_Lumpur" });
+
+/** Timeline hover label, e.g. "Nov 7 · 4:25 PM". */
 export function activityDateLabel(entry: JiraActivityEntry): string {
-	return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kuala_Lumpur" }).format(new Date(entry.createdAtMs ?? PROJECT_BUTTER_ACTIVITY_EPOCH));
+	const date = new Date(entry.createdAtMs ?? PROJECT_BUTTER_ACTIVITY_EPOCH);
+	return `${TIMELINE_DAY.format(date)} · ${TIMELINE_TIME.format(date)}`;
 }
 
 export function activityDayLabel(entry: JiraActivityEntry): string {
@@ -42,4 +47,10 @@ export function activityDayLabel(entry: JiraActivityEntry): string {
 	const date = Date.parse(format.format(new Date(entry.createdAtMs ?? PROJECT_BUTTER_ACTIVITY_EPOCH)));
 	const days = Math.max(0, Math.round((reference - date) / 86_400_000));
 	return days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`;
+}
+
+export function activityHeaderTimeLabel(label: string): string {
+	return label
+		.replace(/^(\d+)\s*(?:minutes?|mins?|m)(?=\s|$)/iu, "$1 min")
+		.replace(/^(\d+)\s*(?:hours?|hrs?|h)(?=\s|$)/iu, "$1 hr");
 }

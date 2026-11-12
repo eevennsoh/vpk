@@ -2,7 +2,7 @@ import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
 	type StarterIconKey,
-} from "@/components/blocks/conversation-starters";
+} from "@/components/blocks/conversation-starter";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { getRandomAgentAvatarSrc } from "@/lib/agent-avatars";

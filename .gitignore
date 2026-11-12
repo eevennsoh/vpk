@@ -201,3 +201,6 @@ coverage/
 .cache/
 tmp/
 .tmp/
+
+# vpk-html vendors sugar-high (MIT) for build-time highlighting
+!.agents/skills/vpk-html/scripts/code/vendor/

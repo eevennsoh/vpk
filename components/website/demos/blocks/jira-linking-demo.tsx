@@ -49,7 +49,7 @@ import {
 /**
  * The travelling drag pill `AgentSessionMediumDrag` portals to the body.
  *
- * The same selector `jira-golden-journeys-v4` measures. Only one drag can be in
+ * The same selector `jira-golden-journey-v4` measures. Only one drag can be in
  * flight at a time, so a document-wide selector is correct here even with
  * several stages on the page — the chip exists only while a gesture is running.
  */
@@ -334,7 +334,7 @@ interface JiraLinkingStageProps {
 /**
  * Real untracked-work sessions dragged onto a real experimental Jira issue.
  *
- * Same wiring as `jira-golden-journeys-v4`: `AgentSessionMediumDrag` leaves the
+ * Same wiring as `jira-golden-journey-v4`: `AgentSessionMediumDrag` leaves the
  * cards in place and travels an at-mention chip (a cohort pill when several
  * are marked), and the card supplies its grey shell, attach chin and chin
  * row. Drag one session, or Command-click to mark several and drag them
@@ -566,7 +566,7 @@ function JiraLinkingStage({ label, sessions, variant }: Readonly<JiraLinkingStag
 							<div key={card.id} className="min-w-0" data-jira-linking-card-state={card.id}>
 								<p className="mb-2 text-xs font-medium text-text-subtle">{card.caption}</p>
 								<div ref={card.id === "active" ? activeIssueRef : emptyIssueRef}>
-									<JiraIssue
+									<JiraIssue appearance="default"
 										agentActivities={linkedActivities.length > 0 ? linkedActivities : undefined}
 										agentActivityLayout="merged"
 										agentLinkFlash={linkFlashes[card.id] ?? undefined}

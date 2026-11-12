@@ -383,7 +383,7 @@ test("the RFP More control is display-only until a menu capability exists", () =
 	assert.ok(customizeIndex > 0 && customizeIndex < moreIndex);
 });
 
-test("JiraHeader reuses the golden-journeys experimental board header", () => {
+test("JiraHeader reuses the golden-journey experimental board header", () => {
 	assert.match(
 		JIRA_HEADER_SOURCE,
 		/import \{ ExperimentalJiraKanbanBoardHeader \} from "@\/components\/blocks\/jira-kanban\/experimental\/experimental-board-header";/u,

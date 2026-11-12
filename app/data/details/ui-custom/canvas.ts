@@ -2,10 +2,10 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const CANVAS_DETAIL: ComponentDetail = {
 	description:
-		"A pre-configured React Flow canvas optimized for AI workflow visualization. Provides sensible defaults (fitView, panOnScroll, selectionOnDrag) and renders a themed Background. Use with Node, Edge, Connection, Controls, Panel, and Toolbar companion components.",
+		"A pre-configured React Flow canvas optimized for AI workflow visualization. Provides sensible defaults (fitView, panOnScroll, selectionOnDrag) and renders a themed Background. Use with Node, Edge, Connection, Control, Panel, and Toolbar companion components.",
 	usage: `import { Canvas } from "@/components/ui-custom/canvas";
 import { Connection } from "@/components/ui-custom/connection";
-import { Controls } from "@/components/ui-custom/controls";
+import { Control } from "@/components/ui-custom/control";
 import { Edge } from "@/components/ui-custom/edge";
 import {
   Node, NodeHeader, NodeTitle, NodeDescription,
@@ -19,7 +19,7 @@ import {
   nodes={nodes}
   nodeTypes={nodeTypes}
 >
-  <Controls />
+  <Control />
 </Canvas>`,
 	demoLayout: {
 		previewContentWidth: "full",
@@ -29,7 +29,7 @@ import {
 		{
 			name: "children",
 			type: "ReactNode",
-			description: "Child components rendered inside the canvas (Controls, Panel, MiniMap, etc.).",
+			description: "Child components rendered inside the canvas (Control, Panel, MiniMap, etc.).",
 		},
 		{
 			name: "nodes",

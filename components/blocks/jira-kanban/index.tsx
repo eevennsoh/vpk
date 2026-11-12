@@ -29,7 +29,7 @@ import { AgentSelector } from "@/components/blocks/agent-selector";
 import type { JiraKanbanCardDropTarget } from "./card-drop";
 import { hasJiraSelectionToggleModifier } from "./selection-modifiers";
 import { JiraToolbar, type JiraToolbarProps } from "@/components/blocks/jira-toolbar";
-import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { SkillDirectorySkill } from "@/app/data/directory";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import {
@@ -64,6 +64,7 @@ import {
 import { motionEase } from "@/lib/motion";
 
 export type { KanbanColumnChrome };
+export { JiraKanban } from "./project-butter-jira-kanban";
 
 export type JiraKanbanPriority = JiraIssuePriority;
 
@@ -167,7 +168,7 @@ export interface JiraKanbanSelectionToolbarConfig {
 	onWatchOptions?: () => void;
 	pinnedItemsLabel?: string;
 	selectedAgentIds?: readonly string[];
-	skills?: readonly SkillsDirectorySkill[];
+	skills?: readonly SkillDirectorySkill[];
 }
 
 export interface JiraKanbanProps {
@@ -510,7 +511,7 @@ function getCommonSelectedCardStatus(
 	return foundSelectedCard ? commonStatus : null;
 }
 
-export function JiraKanban({
+export function StandardJiraKanban({
 	activeCardCode,
 	agents,
 	animateCardMoves = false,
@@ -740,7 +741,7 @@ export function JiraKanban({
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
-											<JiraIssue
+											<JiraIssue appearance="default"
 												coverImage={card.coverImage}
 												active={isActive}
 												chrome={chrome.cardChrome}

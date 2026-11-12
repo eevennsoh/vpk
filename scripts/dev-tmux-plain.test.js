@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { execFileSync } = require("node:child_process");
+const { execFileSync, spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -186,27 +186,33 @@ test("dev-tmux plain start restarts an existing session with no listening fronte
 	}
 });
 
-test("dev-tmux plain start tolerates the first discovered other stack root", () => {
+test("dev-tmux plain start does not warn about other running stacks", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
-		const output = withPortFiles("49127", "49128", () =>
-			runLauncher({
-				PATH: `${fake.tempDir}:${process.env.PATH}`,
-				VPK_TMUX_BIN: fake.tmuxPath,
-				VPK_DEV_TMUX_SESSION: "vpk-dev-plain-test",
-				VPK_DEV_TMUX_WAIT: "1",
-				VPK_DEV_STACK_WARN: "2",
-				FAKE_TMUX_HAS_SESSION: "1",
-				FAKE_LISTEN_PORT: "49127",
-				FAKE_PGREP_PIDS: "12345",
-				FAKE_CWD_PID: "12345",
-				FAKE_CWD_ROOT: "/tmp/other-project",
-				FAKE_TMUX_LOG: fake.tmuxLogPath,
-				NODE_CLEANUP_LOG: fake.cleanupLogPath,
+		const result = withPortFiles("49127", "49128", () =>
+			spawnSync(scriptPath, ["start"], {
+				cwd: repoRoot,
+				encoding: "utf8",
+				env: {
+					...process.env,
+					PATH: `${fake.tempDir}:${process.env.PATH}`,
+					VPK_TMUX_BIN: fake.tmuxPath,
+					VPK_DEV_TMUX_SESSION: "vpk-dev-plain-test",
+					VPK_DEV_TMUX_WAIT: "0",
+					VPK_DEV_STACK_WARN: "1",
+					FAKE_TMUX_HAS_SESSION: "0",
+					FAKE_PGREP_PIDS: "12345",
+					FAKE_CWD_PID: "12345",
+					FAKE_CWD_ROOT: "/tmp/other-project",
+					FAKE_TMUX_LOG: fake.tmuxLogPath,
+					NODE_CLEANUP_LOG: fake.cleanupLogPath,
+				},
 			})
 		);
 
-		assert.match(output, /Session 'vpk-dev-plain-test' already running/);
+		assert.equal(result.status, 0, result.stderr);
+		assert.match(result.stdout, /Started tmux session 'vpk-dev-plain-test'/);
+		assert.doesNotMatch(result.stderr, /other VPK dev stack/);
 	} finally {
 		fake.cleanup();
 	}

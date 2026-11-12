@@ -53,7 +53,7 @@ async function expectJourneyStage(page: Page, name: JourneyStep) {
 	}
 	if (name === "Done") {
 		await expect(entries.getByText(/merged\. PAY-999 is ready for the Done column/)).toBeVisible();
-		await expect(item.getByRole("button", { name: /Claude, Completed/ })).toBeVisible();
+		await expect(item.getByRole("button", { name: /^Claude: Finished/ })).toBeVisible();
 	} else {
 		await expect(entries.getByText(/merged\. PAY-999 is ready for the Done column/)).toHaveCount(0);
 		if (name !== "Fix checks") {
@@ -64,6 +64,33 @@ async function expectJourneyStage(page: Page, name: JourneyStep) {
 	if (early) await expect(item.locator('[data-jira-activity-entry-id^="invocation-"]')).toHaveCount(0);
 	else await expect(activity).toContainText("Venn");
 }
+
+test("merged activity smart link fits its text and status", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openMerchantJourney(page);
+	await jumpToWideStep(page, "Done");
+	await journeyCard(page).locator('[data-slot="jira-issue-card"]').click();
+	const link = journeyItem(page).getByRole("region", { name: "Activity" }).getByRole("link", { name: /#284: Add merchant onboarding quickstart Merged/ });
+	await expect(link).toBeVisible();
+	const geometry = await link.evaluate((element) => {
+		const bounds = element.getBoundingClientRect();
+		const children = Array.from(element.children, (child) => {
+			const childBounds = child.getBoundingClientRect();
+			return { top: childBounds.top, bottom: childBounds.bottom, left: childBounds.left, right: childBounds.right };
+		});
+		return { top: bounds.top, bottom: bounds.bottom, left: bounds.left, right: bounds.right, children };
+	});
+	expect(geometry.children).toHaveLength(3);
+	for (const child of geometry.children) {
+		expect(child.top).toBeGreaterThanOrEqual(geometry.top);
+		expect(child.bottom).toBeLessThanOrEqual(geometry.bottom);
+		expect(Math.abs((child.top + child.bottom - geometry.top - geometry.bottom) / 2)).toBeLessThan(1);
+	}
+	expect(geometry.children[0].left - geometry.left).toBeGreaterThanOrEqual(4);
+	const status = geometry.children[2];
+	expect(Math.abs((geometry.right - status.right) - (status.top - geometry.top))).toBeLessThan(1);
+	expect(Math.abs((geometry.right - status.right) - (geometry.bottom - status.bottom))).toBeLessThan(1);
+});
 
 test("Pull request begins on the board and reveals the PR before opening the work item", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -224,9 +251,9 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	const item = page.getByRole("dialog", { name: "Project butter" });
 	const activity = item.getByRole("region", { name: "Activity" });
 	const initialDevelopment = item.getByRole("region", { name: "Development" });
-	await initialDevelopment.getByRole("button", { name: "Pull request settings" }).click();
-	await expect(page.getByRole("switch", { name: "Auto-fix" })).toHaveAttribute("aria-checked", "true");
-	await expect(page.getByRole("switch", { name: "Merge when ready" })).toHaveAttribute("aria-checked", "true");
+	await initialDevelopment.getByRole("button", { name: "Configure", exact: true }).click();
+	await expect(page.getByRole("menuitemcheckbox", { name: "Auto-fix PR" })).toHaveAttribute("aria-checked", "true");
+	await expect(page.getByRole("menuitemcheckbox", { name: "Merge when ready" })).toHaveAttribute("aria-checked", "true");
 	await page.keyboard.press("Escape");
 	await expect(activity.getByRole("heading", { name: "Activity" })).toBeVisible();
 	await expect(item.getByRole("tablist", { name: "Activity views" })).toHaveCount(0);
@@ -236,13 +263,11 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await expect(step("Prepare & invoke")).toHaveAttribute("aria-pressed", "true");
 	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
 	await expect(activity).toContainText("updated description");
-	await item.getByRole("button", { name: /\. Add agent$/ }).click();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
 	await expect(activity).toContainText("Venn added Claude and self-assigned the issue");
-	await expect(activity.locator('[data-jira-activity-entry-id^="merchant-agent-added-"]')).toHaveCount(1);
-	const acknowledgment = activity.locator('[data-jira-activity-entry-id^="merchant-started-"]');
+	const acknowledgment = activity.locator('[data-jira-activity-entry-id^="invocation-"]');
+	await expect(acknowledgment.locator("[data-project-butter-session-start]")).toBeVisible();
 	await expect(acknowledgment).toHaveCount(1);
 	await expect(acknowledgment).toContainText("Claude");
 	await expect(acknowledgment).toContainText("I'm looking into this issue now. I'll report back here with updates as I make progress.");
@@ -266,9 +291,9 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await expect(prFlyout.getByRole("button", { name: /0\/3 builds passed/ })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("opened #284: Add merchant onboarding quickstart");
-	await development.getByRole("button", { name: "Pull request settings" }).click();
-	await expect(page.getByRole("switch", { name: "Auto-fix" })).toHaveAttribute("aria-checked", "true");
-	await expect(page.getByRole("switch", { name: "Merge when ready" })).toHaveAttribute("aria-checked", "true");
+	await development.getByRole("button", { name: "Configure", exact: true }).click();
+	await expect(page.getByRole("menuitemcheckbox", { name: "Auto-fix PR" })).toHaveAttribute("aria-checked", "true");
+	await expect(page.getByRole("menuitemcheckbox", { name: "Merge when ready" })).toHaveAttribute("aria-checked", "true");
 	await page.keyboard.press("Escape");
 	await expect(development.getByRole("button", { name: "Complete checks" })).toHaveCount(0);
 	await jumpToWideStep(page, "Fix checks");
@@ -278,7 +303,7 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("pushed a fix");
 	await expect(development).toHaveAttribute("data-project-butter-development", "merged", { timeout: 15_000 });
 	await expect(step("Fix checks")).toHaveAttribute("aria-pressed", "true");
-	await expect(item.getByRole("button", { name: /Claude, Completed/ })).toBeVisible();
+	await expect(item.getByRole("button", { name: /^Claude: Finished/ })).toBeVisible();
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
 	await expect(card).toHaveAttribute("data-board-column-title", "Done");
 	await expect(card.getByRole("button", { name: /Pull request merged #284/ })).toBeVisible();
@@ -294,19 +319,17 @@ test("disabled automations leave the failed and passed checks for manual action"
 	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
 	await card.locator('[data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
-	await item.getByRole("button", { name: /\. Add agent$/ }).click();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
 	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
 	await page.getByRole("button", { name: "Pull request", exact: true }).click();
 	await expect(card.getByRole("button", { name: /Pull request #284/ })).toBeVisible();
 	await card.locator('[data-slot="jira-issue-card"]').click();
 	const development = item.getByRole("region", { name: "Pull request development" });
-	await development.getByRole("button", { name: "Pull request settings" }).click();
-	await page.getByRole("switch", { name: "Auto-fix" }).click();
-	await page.getByRole("switch", { name: "Merge when ready" }).click();
+	await development.getByRole("button", { name: "Configure", exact: true }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Merge when ready" }).click();
 	await page.keyboard.press("Escape");
 	await expect(development.getByRole("button", { name: "Complete checks" })).toHaveCount(0);
 	await jumpToWideStep(page, "Fix checks");

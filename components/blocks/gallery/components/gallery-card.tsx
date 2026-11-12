@@ -91,6 +91,7 @@ export interface GalleryCardProps {
 	isSelected: boolean;
 	selectionVisual: GallerySelectionVisual | null;
 	palette?: GalleryPalette;
+	selectedColor?: string;
 	onSelect: (id: string, origin: GallerySelectionOrigin) => void;
 }
 
@@ -103,6 +104,7 @@ export function GalleryCard({
 	isSelected,
 	selectionVisual,
 	palette,
+	selectedColor,
 	onSelect,
 }: Readonly<GalleryCardProps>) {
 	const { width, height } = SIZE_DIMS[item.size];
@@ -202,6 +204,7 @@ export function GalleryCard({
 								height={height}
 								visual={selectionVisual}
 								palette={palette}
+								selectedColor={selectedColor}
 								highlightTextRef={highlightTextRef}
 							/>
 						) : null}

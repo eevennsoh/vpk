@@ -2,11 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { data, model } from './eu26-hero.hero.mjs';
 
-const variants = ['paper', 'outline', 'sculpted'];
-const times = [...Array.from({ length: 137 }, (_, index) => index / 4), 35.8, 39.8, 43.8, 99.8, 103.8, 107.8, 500, 1000];
+const variants = ['paper'];
+// The guided sequence every quarter second, then the looping wall densely enough to meet every teammate's hold.
+const times = [...Array.from({ length: 137 }, (_, index) => index / 4), ...Array.from({ length: 412 }, (_, index) => 34.25 + index / 4), 500, 1000];
 const distance = (left, right) => Math.hypot(...left.map((value, index) => value - right[index]));
-const poseFor = (state, target) => target.kind === 'title' ? state.titlePose : state[{ story: 'cards', tile: 'tiles', wall: 'wall' }[target.kind]][target.index];
-const sizeFor = target => target.kind === 'title' ? data.title : data[{ story: 'cards', tile: 'features', wall: 'wall' }[target.kind]][target.index];
+// A teammate carrying a stack slot holds the stack's top card (target.piece), so the grip is on that card.
+const heldCard = target => target.piece?.startsWith('wallcard.') ? Number(target.piece.split('.')[1]) : null;
+const poseFor = (state, target) => heldCard(target) !== null ? state.wallCards[heldCard(target)] : target.kind === 'title' ? state.titlePose : state[{ story: 'cards', tile: 'tiles', wall: 'wall' }[target.kind]][target.index];
+const sizeFor = target => heldCard(target) !== null ? data.wallCards[heldCard(target)] : target.kind === 'title' ? data.title : data[{ story: 'cards', tile: 'features', wall: 'wall' }[target.kind]][target.index];
 
 function unturn(vector, [rx, ry, rz]) {
 	const [x, y, z] = vector;
@@ -39,7 +42,7 @@ test('cursor grips contact the posed paper surfaces while dragging', () => {
 				const size = sizeFor(cursor.heldTarget);
 				assert.ok(pose.alpha > .15, 'the carried object is visible');
 				const local = unturn(cursor.at.map((value, index) => value - pose.at[index]), pose.rot);
-				const expected = [(cursor.grip.u - .5) * size.w * pose.scale, (cursor.grip.v - .5) * size.d * (pose.scaleY ?? pose.scale), data.materialDepths[variant][cursor.heldTarget.kind] * pose.scale];
+				const expected = [(cursor.grip.u - .5) * size.w * pose.scale, (cursor.grip.v - .5) * size.d * (pose.scaleY ?? pose.scale), data.materialDepths[cursor.heldTarget.kind] * pose.scale];
 				assert.ok(distance(local, expected) < .05, `${variant} ${cursor.id} contacts its actual grip at ${time} seconds`);
 				if (cursor.heldTarget.kind === 'story') heldStories.add(cursor.heldTarget.index);
 				contacts += 1;
@@ -68,26 +71,32 @@ test('the title is carried into its reserved wall gap', () => {
 	}
 });
 
-test('teammates lift and translate the wall cards they hold', () => {
+test('named teammates bring each new card in from off the frame and set it down in its slot', () => {
+	const names = data.motion.names;
 	for (const variant of variants) {
-		const edits = new Map();
-		for (const time of times.filter(time => time >= 26.5 && time <= 34)) {
+		const rides = new Map();
+		for (let time = 27; time <= 130; time += 0.05) {
 			const state = model({ time, variant }, data);
-			const drift = Math.max(0, time - 24) * 20;
-			for (const cursor of state.cursors.filter(cursor => cursor.role === 'teammate' && cursor.phase === 'carry' && cursor.heldTarget?.kind === 'wall' && cursor.alpha > .5)) {
-				const card = data.wall[cursor.heldTarget.index];
-				const pose = state.wall[cursor.heldTarget.index];
-				const baseline = [card.at[0] + card.w / 2 - drift, card.at[1] + card.d / 2 + drift * .28, card.at[2]];
-				const previous = edits.get(cursor.id) || { lift: 0, travel: 0, target: cursor.heldTarget.key };
-				assert.equal(cursor.heldTarget.key, previous.target, 'each teammate retains ownership of the same wall card');
-				edits.set(cursor.id, { target: previous.target, lift: Math.max(previous.lift, pose.at[2] - baseline[2]), travel: Math.max(previous.travel, Math.hypot(pose.at[0] - baseline[0], pose.at[1] - baseline[1])) });
+			for (const cursor of state.cursors.filter(cursor => cursor.role === 'teammate' && cursor.heldTarget?.kind === 'wall' && cursor.alpha > .5)) {
+				const key = `${cursor.id}:${cursor.heldTarget.key}`;
+				const ride = rides.get(key) || { id: cursor.id, name: cursor.name, above: cursor.pillAbove, target: cursor.heldTarget.key, index: cursor.heldTarget.index, first: time, heights: [] };
+				ride.heights.push(state.wall[cursor.heldTarget.index].at[2]);
+				ride.last = time;
+				rides.set(key, ride);
 			}
 		}
-		assert.ok(edits.size >= 2, 'at least two teammates perform real edits');
-		assert.equal(new Set([...edits.values()].map(edit => edit.target)).size, edits.size, 'teammates hold different cards');
-		for (const [id, edit] of edits) {
-			assert.ok(edit.lift > 10, `${variant} ${id} lifts its card above the baseline glide`);
-			assert.ok(edit.travel > 12, `${variant} ${id} translates its card beyond the baseline glide`);
+		assert.ok(rides.size >= 12, `teammates bring cards in through the loop (${rides.size})`);
+		assert.equal(new Set([...rides.values()].map(ride => ride.id)).size, 3, 'all three teammates take part');
+		assert.ok([...rides.values()].every(ride => names.includes(ride.name)), 'every cursor wears a roster name');
+		assert.ok(new Set([...rides.values()].map(ride => ride.name)).size >= 5, 'names follow the repeating roster');
+		assert.ok([...rides.values()].every(ride => !ride.above), 'a name flag always rides below and right of the tip; no cursor is turned over');
+		for (const ride of rides.values()) {
+			if (ride.last > 129) continue;
+			const before = model({ time: ride.first - 0.1, variant }, data).wall[ride.index];
+			assert.ok(before.alpha < .02, `${ride.target} is not seen before ${ride.id} brings it in`);
+			for (let i = 1; i < ride.heights.length; i++) assert.ok(ride.heights[i] <= ride.heights[i - 1] + 1e-6, `${ride.target} is only lowered while held`);
+			const landed = model({ time: ride.last + 0.2, variant }, data).wall[ride.index];
+			assert.ok(Math.abs(landed.at[2]) < 1e-6 && landed.rot.every(angle => Math.abs(angle) < 1e-6) && Math.abs(landed.scale - 1) < 1e-6, `${ride.target} rests flat in its slot after it is set down`);
 		}
 	}
 });

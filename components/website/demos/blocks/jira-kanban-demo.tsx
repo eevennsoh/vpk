@@ -8,17 +8,18 @@ import Page from "@/components/blocks/jira-kanban/page";
 import ExperimentalPage from "@/components/blocks/jira-kanban/experimental/page";
 import ExperimentalV2Page from "@/components/blocks/jira-kanban/experimental-v2/page";
 import { JiraList } from "@/components/blocks/jira-list";
+import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
-	createJiraGoldenJourneysV4PayBoardColumns,
-	JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS,
-	JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES,
-	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
-} from "@/components/projects/jira-golden-journeys-v4/data/presentation-story";
+	createJiraGoldenJourneyV4PayBoardColumns,
+	JIRA_GOLDEN_JOURNEY_V4_PAY_BOARD_AGENTS,
+	JIRA_GOLDEN_JOURNEY_V4_PAY_HEADER_ASSIGNEES,
+	JIRA_GOLDEN_JOURNEY_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
+} from "@/components/projects/jira-golden-journey-v4/data/presentation-story";
 import {
 	applyAssignedAgentIdsToColumns,
 	createListRows,
-} from "@/components/projects/jira-golden-journeys-v4/lib/list-rows";
+} from "@/components/projects/jira-golden-journey-v4/lib/list-rows";
 
 function readKanbanColumnChrome(
 	values: readonly string[],
@@ -31,7 +32,7 @@ function readKanbanColumnChrome(
 }
 
 function createEmptyColumnExample(): JiraKanbanColumnData[] {
-	return createJiraGoldenJourneysV4PayBoardColumns().map((column) => (
+	return createJiraGoldenJourneyV4PayBoardColumns().map((column) => (
 		column.title === "In review"
 			? column
 			: { ...column, cards: [], count: 0 }
@@ -39,7 +40,56 @@ function createEmptyColumnExample(): JiraKanbanColumnData[] {
 }
 
 export default function JiraKanbanDemo() {
-	return <Page />;
+	return <JiraKanbanDemoProjectButter />;
+}
+
+export function JiraKanbanDemoProjectButter({ emptyColumns = false }: Readonly<{ emptyColumns?: boolean }> = {}) {
+	const { designVariants } = useDesignVariants();
+	const [boardColumns, setBoardColumns] = useState(
+		emptyColumns ? createEmptyColumnExample : createJiraGoldenJourneyV4PayBoardColumns,
+	);
+	return (
+		<ExperimentalPage
+			advancedAgentSessionTimeline={designVariants.advancedTimeline}
+			agentActivityLayout="merged"
+			agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEY_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
+			agentSessionColumnGlow={{
+				glowBloom: designVariants.sessionBloom,
+				glowReach: designVariants.sessionProximity,
+				glowStroke: designVariants.sessionStroke,
+			}}
+			agentSessionColumnResizable={designVariants.agentSessionColumnResizing}
+			agentSessionLinkingVariant="glow"
+			agentSessionMultiSelect={false}
+			agentSessionPresentation="column"
+			agentSessionPreviewEffect={designVariants.sessionPeel ? "peel" : undefined}
+			agents={JIRA_GOLDEN_JOURNEY_V4_PAY_BOARD_AGENTS}
+			ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
+			boardColumns={boardColumns}
+			cardAppearance="project-butter"
+			cardGenerativeActionPresentation="more-actions"
+			columnChrome="default"
+			columnSizing="content"
+			createWellBounce="off"
+			createWorkItemDropZoneLabel="Drop to create work item"
+			defaultShowUntracked={false}
+			headerAssignees={JIRA_GOLDEN_JOURNEY_V4_PAY_HEADER_ASSIGNEES}
+			iconScale="comfortable"
+			insightsEnabled={false}
+			issueDragTransitions
+			issueDropMotion="solitaire"
+			issueSelectionAppearance="fused-backdrop"
+			onBoardColumnsChange={(columns) => setBoardColumns([...columns])}
+			showAgentSessionColumn
+			showAgentSessionFilter={false}
+			showAgentSessionFlyoutFooter={false}
+			showAgentSessionLinkAction={false}
+			showAgentSessionLinkWorkItemMenuItem={designVariants.manualLink}
+			showAgentSessionOverflow={false}
+			showAgentSessionUnlinkWell={false}
+			suggestSessionBoardLinkOnHover={false}
+		/>
+	);
 }
 
 export function JiraKanbanDemoStandard() {
@@ -52,15 +102,11 @@ export function JiraKanbanDemoExperimental() {
 
 function JiraKanbanDemoExperimentalV2Body({
 	columnChrome: columnChromeProp,
-	emptyColumns = false,
 }: Readonly<{
 	columnChrome: KanbanColumnChrome;
-	emptyColumns?: boolean;
 }>) {
 	const [activeView, setActiveView] = useState<"board" | "list">("board");
-	const [boardColumns, setBoardColumns] = useState(
-		emptyColumns ? createEmptyColumnExample : createJiraGoldenJourneysV4PayBoardColumns,
-	);
+	const [boardColumns, setBoardColumns] = useState(createJiraGoldenJourneyV4PayBoardColumns);
 	const [columnChrome, setColumnChrome] = useState(columnChromeProp);
 
 	return (
@@ -85,21 +131,21 @@ function JiraKanbanDemoExperimentalV2Body({
 			<ExperimentalV2Page
 				activeView={activeView}
 				agentActivityLayout="split"
-				agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
-				agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
+				agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEY_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
+				agents={JIRA_GOLDEN_JOURNEY_V4_PAY_BOARD_AGENTS}
 				ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 				boardColumns={boardColumns}
 				columnChrome={columnChrome}
-				headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
+				headerAssignees={JIRA_GOLDEN_JOURNEY_V4_PAY_HEADER_ASSIGNEES}
 				insightsEnabled={false}
 				onBoardColumnsChange={(columns) => setBoardColumns([...columns])}
 				onViewChange={setActiveView}
 				renderListContent={(columns) => {
-					const listRows = createListRows(columns, JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS);
+					const listRows = createListRows(columns, JIRA_GOLDEN_JOURNEY_V4_PAY_BOARD_AGENTS);
 					return (
 						<div className="min-h-0 flex-1 overflow-auto p-4 md:p-5">
 							<JiraList
-								agentCatalog={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
+								agentCatalog={JIRA_GOLDEN_JOURNEY_V4_PAY_BOARD_AGENTS}
 								ariaLabel="Payments SDK v2 migration work items list"
 								className="max-h-full"
 								onAssignedAgentIdsChange={(issueKey, agentIds) => {
@@ -107,7 +153,7 @@ function JiraKanbanDemoExperimentalV2Body({
 										columns,
 										issueKey,
 										agentIds,
-										JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS,
+										JIRA_GOLDEN_JOURNEY_V4_PAY_BOARD_AGENTS,
 									));
 								}}
 								rows={listRows}
@@ -132,5 +178,5 @@ export function JiraKanbanDemoExperimentalV2Simple() {
 }
 
 export function JiraKanbanDemoEmptyColumns() {
-	return <JiraKanbanDemoExperimentalV2Body columnChrome="default" emptyColumns />;
+	return <JiraKanbanDemoProjectButter emptyColumns />;
 }

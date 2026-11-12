@@ -6,10 +6,7 @@ import { useState, type ReactElement } from "react";
 
 import { AgentSelector, type AgentSelectorAction } from "@/components/blocks/agent-selector";
 import { AGENT_SELECTOR_CUSTOM_AGENT_DEMO_AGENTS, AGENT_SELECTOR_DEMO_AGENTS } from "@/components/blocks/agent-selector/data/demo-agents";
-import {
-	DEFAULT_PINNED_SPACE_AGENT_IDS,
-	WORK_ITEM_PINNED_ITEMS_LABEL,
-} from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+import { DEFAULT_PINNED_SPACE_AGENT_IDS, WORK_ITEM_PINNED_ITEMS_LABEL } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -21,6 +18,7 @@ import { RovoColorIcon } from "@/components/ui/logo";
 
 interface AgentSelectorPageProps {
 	presentation?: "dropdown" | "standalone";
+	includeByline?: boolean;
 	variant?: "default" | "selected-agent-actions" | "jira";
 }
 
@@ -29,6 +27,7 @@ const AGENT_SELECTOR_STANDALONE_SURFACE_CLASS =
 
 export default function AgentSelectorPage({
 	presentation = "dropdown",
+	includeByline,
 	variant = "default",
 }: Readonly<AgentSelectorPageProps> = {}): ReactElement {
 	const [open, setOpen] = useState(true);
@@ -78,11 +77,14 @@ export default function AgentSelectorPage({
 			onCreateAgent={() => undefined}
 			selectionMode="single"
 			searchVariant="palette"
+			paletteHeadings={variant === "jira"}
 			moreItemsLabel={variant === "jira" ? "More agents" : undefined}
 			onPinnedAgentIdsChange={setPinnedAgentIds}
 			pinnedAgentIds={pinnedAgentIds}
-			pinnedItemsLabel={variant === "jira" ? WORK_ITEM_PINNED_ITEMS_LABEL : undefined}
+			pinnedItemsLabel={variant === "jira" ? WORK_ITEM_PINNED_ITEMS_LABEL : "Favorites"}
 			pinningEnabled
+			pinningAppearance={variant === "jira" ? "pin" : "favorite"}
+			showByline={includeByline ?? variant !== "default"}
 			showSelectedTickInSingleSelect={variant === "default" || variant === "selected-agent-actions"}
 			selectedAgentActions={selectedAgentActions}
 			selectedAgentIds={selectedAgentIds}

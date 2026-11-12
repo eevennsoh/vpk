@@ -4,22 +4,11 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 const React = require("react");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
-const { getJiraIssueAgentAvatarSize, getJiraIssueAgentRowInset } = require("./agent-activity-avatar.ts");
+const { getJiraIssueAgentRowInset } = require("./agent-activity-avatar.ts");
 
 test("agent rows use the inset for their icon scale", () => {
 	assert.equal(getJiraIssueAgentRowInset("comfortable"), "pr-2 pl-1");
 	assert.equal(getJiraIssueAgentRowInset("compact"), "px-2");
-});
-
-test("coding-agent chins retain Claude's compact size without resizing other brands", () => {
-	for (const brand of ["claude", "cursor", "openai-codex", "github-copilot"]) {
-		assert.equal(getJiraIssueAgentAvatarSize(brand), 20);
-	}
-	for (const brand of ["slack", "github", undefined]) {
-		assert.equal(getJiraIssueAgentAvatarSize(brand), 24);
-	}
-	assert.equal(getJiraIssueAgentAvatarSize(undefined, "/1p/agent-lanyard/glyph-jira-coding.svg"), 20);
-	assert.equal(getJiraIssueAgentAvatarSize(undefined, "/1p/agent-lanyard/glyph-jira-delivery.svg"), 24);
 });
 
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
@@ -50,7 +39,7 @@ test("assignment flyout access is independent of the session lifecycle", () => {
 test("chin rows keep lifecycle copy stable while flyout rows retain detailed status sequences", () => {
 	assert.match(
 		AGENT_ACTIVITY_PRESENTATION_SOURCE,
-		/if \(isAwaitingInput\) \{[\s\S]*<span[\s\S]*\{rowLabel\}[\s\S]*<AnimatedDots/u,
+		/if \(isAwaitingInput\) \{[\s\S]*<span[\s\S]*\{rowLabel\}[\s\S]*<AnimatedDot/u,
 	);
 	assert.doesNotMatch(
 		AGENT_ACTIVITY_PRESENTATION_SOURCE,
@@ -81,6 +70,7 @@ test("new Jira agent sessions show Working immediately", async () => {
 		},
 	});
 	assert.ok(Boolean(view.getByText("Working")));
+	assert.equal(view.getByRole("button", { name: "Claude: Working" }).querySelector('[data-slot="avatar"]')?.classList.contains("size-6"), true);
 	assert.equal(Boolean(view.queryByText("Let's get started")), false);
 	assert.equal(Boolean(view.queryByText("Gathering context")), false);
 });
@@ -113,10 +103,11 @@ test("the compact assignment field shows session state and cycles multiple agent
 		props: { addAgentLabel: "Add agent", assignedAgents: [working, other], compactStatus: true },
 	});
 	assert.equal(Boolean(view.getByText("Working")), true);
-	const frontId = () => view.container.querySelector('[data-agent-loading-slot="front"]')?.getAttribute("data-agent-id");
-	assert.equal(frontId(), "claude");
+	assert.equal(view.container.querySelector('.agent-loading-vertical [data-slot="avatar"]')?.classList.contains("size-6"), true);
+	const visibleAgentIds = () => [...view.container.querySelectorAll('.agent-loading-vertical [data-agent-id]')].map((agent) => agent.getAttribute("data-agent-id"));
+	assert.deepEqual(visibleAgentIds(), ["claude"]);
 	await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
-	assert.equal(frontId(), "cursor");
+	assert.equal(visibleAgentIds().includes("cursor"), true);
 	await view.rerender({ addAgentLabel: "Add agent", assignedAgents: [{ ...working, statusKind: "needs-input", statusLabel: "Needs input" }], compactStatus: true });
 	assert.equal(Boolean(view.getByText("Needs input")), true);
 	assert.equal(view.container.textContent.includes("Claude"), false);
