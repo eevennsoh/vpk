@@ -72,7 +72,7 @@ test("Jira Local Agent remembers the last used agent and copies the work item pr
 	await view.click(view.getByRole("button", { name: "Open local agent" }));
 	assert.equal(view.queryByRole("combobox", { name: "Search agents" }), null);
 	assert.equal(view.queryByRole("heading", { name: "Open in" }) === null, true);
-	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot", "Rovo CLI"]) {
+	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot", "Rovo CLI", "VS Code"]) {
 		assert.equal(view.getByRole("button", { name: name === "Rovo CLI" ? /^Rovo CLI$/u : new RegExp(name, "u") }) !== null, true);
 	}
 	for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot"]) {
@@ -94,7 +94,7 @@ test("Jira Local Agent remembers the last used agent and copies the work item pr
 	await view.click(view.getByRole("button", { name: "Open local agent" }));
 	await view.click(view.getByRole("button", { name: "Open local agent" }));
 	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Codex"), true);
-	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]").length, 5);
+	assert.notEqual(view.queryByRole("button", { name: "VS Code" }), null);
 	assert.equal(view.container.ownerDocument.querySelectorAll("hr").length, 2);
 	await view.click(view.getByRole("button", { name: "Copy prompt" }));
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork"]);

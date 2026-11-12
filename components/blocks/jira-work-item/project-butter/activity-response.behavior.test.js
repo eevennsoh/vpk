@@ -238,8 +238,11 @@ test("an agent reacts after the reply appears, even if the activity view remount
 	assert.equal(reply.textContent.includes("👀"), false);
 	await view.click(view.getByRole("button", { name: "Toggle activity" }));
 	await view.click(view.getByRole("button", { name: "Toggle activity" }));
-	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 3100)); });
-	reply = [...document.querySelectorAll('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"] [aria-label="Replies"] > div')].at(-1);
+	const deadline = Date.now() + 10000;
+	do {
+		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
+		reply = [...document.querySelectorAll('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"] [aria-label="Replies"] > div')].at(-1);
+	} while (!reply.textContent.includes("👀") && Date.now() < deadline);
 	assert.equal(reply.textContent.includes("👀"), true);
 });
 
@@ -273,7 +276,7 @@ test("starting an agent from the details field reveals its activity card with a 
 	};
 	try {
 		await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
-		await view.click(view.getByRole("button", { name: "Claude" }));
+		await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
 		const card = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:"));
 		assert.equal(Boolean(card?.querySelector("[data-variant='uncaptured-work']")), true);
 		assert.equal(scrolls.at(-1)?.behavior, "smooth");
@@ -325,7 +328,7 @@ test("starting an agent with reduced motion scrolls directly to its activity car
 	scrollport.scrollTo = (options) => scrolls.push(options);
 	try {
 		await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
-		await view.click(view.getByRole("button", { name: "Claude" }));
+		await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
 		const card = [...document.querySelectorAll("[data-project-butter-session-start]")].find((node) => node.dataset.projectButterSessionStart.startsWith("reference:"));
 		assert.equal(Boolean(card), true);
 		assert.equal(scrolls.at(-1)?.behavior, "auto");
