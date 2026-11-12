@@ -78,12 +78,13 @@ cleanup.
    ```
 
    It prints `CI marker: add [skip ci]` only when every landing path is
-   markdown outside `AGENTS.md` and `.agents/**` (which repo guards check) or
-   under `artifacts/`, or when the latest CI run was refused for account
-   billing in the last 24 hours. Otherwise it prints `CI marker: none` and CI
-   runs after the push. It makes at most a couple of read-only GitHub calls and
-   never blocks; when GitHub is unreachable it answers `none`. Follow it without
-   asking. If it says a commit to push already skips CI (for example a retried
+   markdown that no guard or test reads (not `AGENTS.md`, `.agents/**`,
+   `WORKFLOW.md`, `DESIGN.md` or the vendor notes a test reads) and is under the
+   file-size threshold, or is under `artifacts/`, or when the latest CI run was
+   refused for account billing in the last 24 hours. Otherwise it prints
+   `CI marker: none` and CI runs after the push. Its read-only GitHub calls share
+   a 4-second deadline with no retries; past it, or when GitHub is unreachable,
+   it answers `none`. Follow it without asking. If it says a commit to push already skips CI (for example a retried
    fast ship), do not rewrite that commit; start CI explicitly after the push
    (step 10).
 

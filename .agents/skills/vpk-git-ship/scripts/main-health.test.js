@@ -1,20 +1,23 @@
 const assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
-const { chmodSync, mkdtempSync, rmSync, writeFileSync } = require("node:fs");
+const { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
 const {
 	BILLING_STALE_MS,
+	GUARDED_MARKDOWN,
 	ciMarkerDecision,
 	classifyRun,
 	collectBillingState,
 	collectMainHealth,
+	deadlineGh,
 	formatHealth,
 	hasSkipInstruction,
 	isInertPath,
 	main,
+	oversizedMarkdown,
 	originRepository,
 	pendingSkipCommits,
 	runUrl,
@@ -70,13 +73,39 @@ async function cli(argv, { gh = fakeGh(), paths = [], commits = [] } = {}) {
 }
 
 test("only markdown outside guarded agent docs, and artifacts, count as inert", () => {
-	for (const inert of ["README.md", "DESIGN.md", "docs/notes.mdx", "artifacts/vpk-html/x/index.html", "components/blocks/foo/README.md"]) {
+	for (const inert of ["README.md", "docs/notes.mdx", "artifacts/vpk-html/x/index.html", "components/blocks/foo/README.md"]) {
 		assert.equal(isInertPath(inert), true, inert);
 	}
 	for (const code of ["AGENTS.md", ".agents/rules/token-priority.md", ".agents/skills/vpk-git-ship/SKILL.md", "package.json",
-		"scripts/check.mjs", "app/page.tsx", "markdown.md.ts"]) {
+		"scripts/check.mjs", "app/page.tsx", "markdown.md.ts", "WORKFLOW.md", "DESIGN.md",
+		"components/projects/jira-team-eu26-end/finale/VENDOR.md", "public/1p/rovo-stage-kit/README.md"]) {
 		assert.equal(isInertPath(code), false, code);
 	}
+});
+
+test("markdown that code reads is guarded, and the list names real tracked files", () => {
+	const repoRoot = path.resolve(__dirname, "../../../..");
+	for (const file of GUARDED_MARKDOWN) {
+		assert.equal(isInertPath(file), false, file);
+		assert.ok(existsSync(path.join(repoRoot, file)), `${file} no longer exists; drop it from GUARDED_MARKDOWN`);
+	}
+	// The readers that justify each entry still read it.
+	assert.match(readFileSync(path.join(repoRoot, "scripts/symphony.sh"), "utf8"), /WORKFLOW\.md/u);
+	const finale = readFileSync(path.join(repoRoot, "components/projects/jira-team-eu26-end/finale/lib/finale-wall-pieces.test.js"), "utf8");
+	assert.match(finale, /"\.\.\/VENDOR\.md"/u);
+	assert.match(finale, /path\.join\(kit, "README\.md"\)/u);
+});
+
+test("a docs-only change past the file-size threshold runs CI, because verify:file-size budgets markdown", (t) => {
+	const root = mkdtempSync(path.join(tmpdir(), "vpk-main-health-md-"));
+	t.after(() => rmSync(root, { force: true, recursive: true }));
+	writeFileSync(path.join(root, "small.md"), "# ok\n");
+	writeFileSync(path.join(root, "big.md"), "line\n".repeat(1001));
+	assert.deepEqual(oversizedMarkdown(["small.md", "big.md", "gone.md", "app.ts"], { root, threshold: 1000 }), ["big.md"]);
+	const decision = ciMarkerDecision({ billing: null, oversized: ["big.md"], paths: ["small.md", "big.md"] });
+	assert.equal(decision.skipCi, false);
+	assert.match(decision.reason, /file-size threshold \(big\.md\)/u);
+	assert.equal(ciMarkerDecision({ billing: null, paths: ["small.md"] }).skipCi, true);
 });
 
 test("the fast-ship marker is added only for inert diffs or a current billing block", () => {
@@ -237,4 +266,52 @@ test("CLI exits 0 and reports unknown when gh is unavailable", () => {
 		assert.equal(result.status, 0, result.stderr);
 		assert.match(result.stdout, /^main health: unknown \(gh run list failed: HTTP 401/u);
 	} finally { rmSync(root, { force: true, recursive: true }); }
+});
+
+// A gh that never answers: every mode must still answer, with its safe default, at its deadline.
+const hangingGh = () => new Promise(() => {});
+
+test("every mode answers with its safe default when GitHub never responds", async () => {
+	const elapsed = async (work) => {
+		const started = Date.now();
+		const value = await work();
+		return { ms: Date.now() - started, value };
+	};
+	const health = await elapsed(() => collectMainHealth({ deadlineMs: 50, repository: "o/r", runGh: hangingGh }));
+	assert.equal(health.value.state, "unknown");
+	assert.match(health.value.reason, /did not answer within 0\.05s/u);
+	assert.ok(health.ms < 1000, `health took ${health.ms}ms`);
+
+	const billing = await elapsed(() => collectBillingState({ deadlineMs: 50, repository: "o/r", runGh: hangingGh }));
+	assert.equal(billing.value.blocked, false);
+	assert.ok(billing.ms < 1000);
+
+	const url = await elapsed(() => runUrl({ deadlineMs: 50, repository: "o/r", runGh: hangingGh, sha: SHA }));
+	assert.equal(url.value, `https://github.com/o/r/commit/${SHA}/checks`);
+	assert.ok(url.ms < 1000);
+
+	let output = "";
+	const marker = await elapsed(() => main(["--ci-marker"], {
+		deadlines: { ciMarker: 50, health: 50, runUrl: 50 }, runGh: hangingGh, runGit: fakeGit(["app/page.tsx"]), write: (text) => { output += text; },
+	}));
+	assert.equal(output, "CI marker: none (code change; CI runs after the push)\n");
+	assert.ok(marker.ms < 1000);
+});
+
+test("the deadline gh runner kills a gh that never exits instead of waiting for it", async (t) => {
+	const root = mkdtempSync(path.join(tmpdir(), "vpk-main-health-hang-"));
+	t.after(() => rmSync(root, { force: true, recursive: true }));
+	const pidFile = path.join(root, "pid");
+	const fake = path.join(root, "gh");
+	writeFileSync(fake, `#!${process.execPath}\nrequire("node:fs").writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));\nsetInterval(() => {}, 1000);\n`);
+	chmodSync(fake, 0o755);
+	const previousPath = process.env.PATH;
+	process.env.PATH = `${root}${path.delimiter}${previousPath}`;
+	t.after(() => { process.env.PATH = previousPath; });
+	// Long enough for the fake to start and record its pid even on a loaded machine.
+	const started = Date.now();
+	await assert.rejects(deadlineGh(2000)(["run", "list", "--json", "url"]), /gh run list failed/u);
+	assert.ok(Date.now() - started < 6000, "the child was killed at the deadline");
+	const pid = Number(readFileSync(pidFile, "utf8"));
+	assert.throws(() => process.kill(pid, 0), /ESRCH/u, "no gh process is left behind");
 });

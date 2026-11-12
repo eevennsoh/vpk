@@ -6,7 +6,9 @@
 // commit carries the CI skip marker. Read-only and non-blocking: a GitHub failure is
 // reported as "unknown", never as a reason to stop shipping.
 
-const { execFileSync } = require("node:child_process");
+const { execFile, execFileSync } = require("node:child_process");
+const { existsSync, readFileSync } = require("node:fs");
+const path = require("node:path");
 const { flattenPages, isBillingAnnotation, resolveRepository, runGhJson, splitRepository } = require("./review-gate-status");
 
 const SKIP_CI_MARKER = "[skip ci]";
@@ -18,14 +20,66 @@ const SUCCESS_CONCLUSIONS = new Set(["success", "skipped", "neutral"]);
 // marker would otherwise hide CI forever once billing is fixed.
 const BILLING_STALE_MS = 24 * 60 * 60 * 1000;
 const RUN_FIELDS = "databaseId,status,conclusion,headSha,url,updatedAt";
+// Total time each mode may spend on GitHub. Past it the answer is the safe default (no
+// marker, the commit's checks page, health unknown), so a slow GitHub never stalls a ship.
+const DEADLINE_MS = Object.freeze({ ciMarker: 4000, health: 5000, runUrl: 4000 });
+const REPO_ROOT = path.resolve(__dirname, "../../../..");
 
-// Markdown that no repository guard reads. AGENTS.md and `.agents/**` are checked by
-// validate:agents, validate:skills, verify:cursor-rules and verify:doc-scripts, so a
-// change there is code for CI purposes.
+// Markdown that code reads: a change to it can fail a test or a guard, so it runs CI.
+// scripts/symphony.sh renders WORKFLOW.md; finale-wall-pieces.test.js reads the two vendor
+// notes; DESIGN.md is the shared visual contract the lint config points at.
+const GUARDED_MARKDOWN = new Set([
+	"DESIGN.md",
+	"WORKFLOW.md",
+	"components/projects/jira-team-eu26-end/finale/VENDOR.md",
+	"public/1p/rovo-stage-kit/README.md",
+]);
+
+// Markdown that no repository guard or test reads. AGENTS.md and `.agents/**` are checked
+// by validate:agents, validate:skills, verify:cursor-rules and verify:doc-scripts, so a
+// change there is code for CI purposes; so is GUARDED_MARKDOWN.
 function isInertPath(filePath) {
 	if (filePath.startsWith("artifacts/")) return true;
-	if (filePath === "AGENTS.md" || filePath.startsWith(".agents/")) return false;
+	if (filePath === "AGENTS.md" || filePath.startsWith(".agents/") || GUARDED_MARKDOWN.has(filePath)) return false;
 	return /\.mdx?$/u.test(filePath);
+}
+
+// verify:file-size budgets markdown too, so a docs-only change past the line threshold
+// would fail CI; it runs CI instead of skipping it.
+function fileSizeThreshold(root = REPO_ROOT) {
+	try {
+		return JSON.parse(readFileSync(path.join(root, "scripts/file-size-allowlist.json"), "utf8")).threshold ?? 1000;
+	} catch {
+		return 1000;
+	}
+}
+
+function oversizedMarkdown(paths, { root = REPO_ROOT, threshold = fileSizeThreshold(root) } = {}) {
+	return paths.filter((filePath) => {
+		if (filePath.startsWith("artifacts/") || !/\.mdx?$/u.test(filePath)) return false;
+		const absolute = path.join(root, filePath);
+		return existsSync(absolute) && readFileSync(absolute, "utf8").split("\n").length > threshold;
+	});
+}
+
+function withDeadline(promise, ms, onTimeout) {
+	let timer;
+	const expired = new Promise((resolve) => {
+		timer = setTimeout(() => resolve(onTimeout()), ms);
+	});
+	return Promise.race([promise, expired]).finally(() => clearTimeout(timer));
+}
+
+// A gh runner for one deadline: no retries, and each child is killed when the time is up,
+// so the process can exit as soon as the answer is written.
+function deadlineGh(ms, { now = Date.now } = {}) {
+	const end = now() + ms;
+	const spawn = (command, args, options) => new Promise((resolve) => {
+		execFile(command, args, { ...options, killSignal: "SIGKILL", timeout: Math.max(1, end - now()) }, (error, stdout, stderr) => {
+			resolve({ status: error ? (Number.isInteger(error.code) ? error.code : 1) : 0, stdout, stderr: stderr || error?.message || "" });
+		});
+	});
+	return (args) => runGhJson(args, { retries: 0, spawn });
 }
 
 // Every spelling GitHub honours for skipping push-triggered workflows.
@@ -46,8 +100,10 @@ function baseDecision({ paths, billing }) {
 
 // A commit already waiting to be pushed may carry a skip instruction (a retried fast ship,
 // or work committed elsewhere). History is never rewritten, so CI is started explicitly.
-function ciMarkerDecision({ paths, billing, markedCommits = [] }) {
-	const decision = { ...baseDecision({ billing, paths }), dispatchAfterPush: false, markedCommits };
+function ciMarkerDecision({ paths, billing, markedCommits = [], oversized = [] }) {
+	const decision = oversized.length > 0
+		? { dispatchAfterPush: false, markedCommits, reason: `markdown over the file-size threshold (${oversized.join(", ")}); CI runs after the push`, skipCi: false }
+		: { ...baseDecision({ billing, paths }), dispatchAfterPush: false, markedCommits };
 	if (decision.skipCi || markedCommits.length === 0) return decision;
 	return {
 		...decision,
@@ -117,7 +173,14 @@ async function settledVerdict({ runs, repository, runGh }) {
 	return classifyRun({ annotations, jobs: view.jobs, run });
 }
 
-async function collectMainHealth({ repository, runGh = runGhJson } = {}) {
+async function collectMainHealth({ repository, runGh, deadlineMs = DEADLINE_MS.health } = {}) {
+	const gh = runGh ?? deadlineGh(deadlineMs);
+	return withDeadline(readMainHealth({ repository, runGh: gh }), deadlineMs, () => ({
+		failedJobs: [], inProgress: null, reason: `GitHub did not answer within ${deadlineMs / 1000}s`, repository: repository ?? null, state: "unknown",
+	}));
+}
+
+async function readMainHealth({ repository, runGh }) {
 	try {
 		const resolved = await resolveRepository(runGh, repository);
 		splitRepository(resolved);
@@ -134,7 +197,15 @@ async function collectMainHealth({ repository, runGh = runGhJson } = {}) {
 }
 
 // Billing applies to the whole account, so any event's latest settled CI run shows it.
-async function collectBillingState({ repository, runGh = runGhJson, now = () => Date.now() } = {}) {
+async function collectBillingState({ repository, runGh, now = () => Date.now(), deadlineMs = DEADLINE_MS.ciMarker } = {}) {
+	const gh = runGh ?? deadlineGh(deadlineMs);
+	// Unknown billing means CI is attempted; a refused run is harmless.
+	return withDeadline(readBillingState({ now, repository, runGh: gh }), deadlineMs, () => ({
+		blocked: false, reason: `GitHub did not answer within ${deadlineMs / 1000}s`, url: null,
+	}));
+}
+
+async function readBillingState({ repository, runGh, now }) {
 	try {
 		const resolved = await resolveRepository(runGh, repository);
 		const runs = validateRuns(await runGh(["run", "list", "--repo", resolved, "--workflow", WORKFLOW, "--status", "completed",
@@ -182,17 +253,23 @@ function pendingSkipCommits({ base = "origin/main", runGit = git } = {}) {
 		.map(([sha]) => sha);
 }
 
-async function runUrl({ sha, repository, runGh = runGhJson }) {
+async function runUrl({ sha, repository, runGh, deadlineMs = DEADLINE_MS.runUrl }) {
 	if (!/^[a-f0-9]{40}$/u.test(sha ?? "")) throw new Error("--run-url needs a full commit SHA");
-	const resolved = await resolveRepository(runGh, repository);
-	try {
-		const runs = validateRuns(await runGh(["run", "list", "--repo", resolved, "--workflow", WORKFLOW, "--commit", sha,
-			"--limit", "1", "--json", RUN_FIELDS]));
-		if (runs[0]?.url) return runs[0].url;
-	} catch {
-		// The run may not be queued yet; the commit's checks page always resolves.
-	}
-	return `https://github.com/${resolved}/commit/${sha}/checks`;
+	const gh = runGh ?? deadlineGh(deadlineMs);
+	const resolved = await withDeadline(resolveRepository(gh, repository).catch(() => null), deadlineMs, () => null);
+	if (!resolved) throw new Error("--run-url could not name the repository; pass --repo owner/name");
+	const checksPage = `https://github.com/${resolved}/commit/${sha}/checks`;
+	const lookup = (async () => {
+		try {
+			const runs = validateRuns(await gh(["run", "list", "--repo", resolved, "--workflow", WORKFLOW, "--commit", sha,
+				"--limit", "1", "--json", RUN_FIELDS]));
+			return runs[0]?.url ?? checksPage;
+		} catch {
+			// The run may not be queued yet; the commit's checks page always resolves.
+			return checksPage;
+		}
+	})();
+	return withDeadline(lookup, deadlineMs, () => checksPage);
 }
 
 function parseArgs(argv) {
@@ -224,28 +301,30 @@ const HELP = [
 	"",
 	"Default: one line saying whether the latest CI run on main (push or dispatch) is green, red (with the",
 	"failed jobs), billing-blocked, or unknown. Always exits 0; it never blocks work.",
+	`Every mode answers within a few seconds: past ${DEADLINE_MS.health / 1000}s health is unknown, past ${DEADLINE_MS.ciMarker / 1000}s the marker is none, past ${DEADLINE_MS.runUrl / 1000}s the URL is the checks page.`,
 	`--ci-marker: whether a fast-ship commit adds ${SKIP_CI_MARKER}. Only docs/artifacts-only changes`,
 	"or a current billing block add it; code changes let CI run after the push. If an unpushed",
 	"commit already skips CI, it says to start CI with `gh workflow run ci.yml --ref main` after the push.",
 	"--run-url: the CI run URL for a pushed commit, or its checks page if no run is queued yet.",
 ].join("\n");
 
-async function main(argv = process.argv.slice(2), { runGh = runGhJson, runGit = git, write = (text) => process.stdout.write(text) } = {}) {
+async function main(argv = process.argv.slice(2), { runGh, runGit = git, write = (text) => process.stdout.write(text), deadlines = DEADLINE_MS, root = REPO_ROOT } = {}) {
 	const options = parseArgs(argv);
 	if (options.mode === "help") return write(`${HELP}\n`);
 	options.repository ??= originRepository(runGit);
-	if (options.mode === "run-url") return write(`${await runUrl({ repository: options.repository, runGh, sha: options.sha })}\n`);
+	if (options.mode === "run-url") return write(`${await runUrl({ deadlineMs: deadlines.runUrl, repository: options.repository, runGh, sha: options.sha })}\n`);
 	if (options.mode === "ci-marker") {
 		const paths = changedPaths({ base: options.base, runGit });
 		// A docs-only change skips CI anyway, so it needs no GitHub round trip.
 		const docsOnly = paths.length > 0 && paths.every(isInertPath);
-		const billing = docsOnly ? null : await collectBillingState({ repository: options.repository, runGh });
+		const billing = docsOnly ? null : await collectBillingState({ deadlineMs: deadlines.ciMarker, repository: options.repository, runGh });
 		const markedCommits = pendingSkipCommits({ base: options.base, runGit });
-		const decision = { ...ciMarkerDecision({ billing, markedCommits, paths }), marker: SKIP_CI_MARKER, pathCount: paths.length };
+		const oversized = oversizedMarkdown(paths, { root });
+		const decision = { ...ciMarkerDecision({ billing, markedCommits, oversized, paths }), marker: SKIP_CI_MARKER, pathCount: paths.length };
 		return write(options.json ? `${JSON.stringify(decision)}\n`
 			: `CI marker: ${decision.skipCi ? `add ${SKIP_CI_MARKER}` : "none"} (${decision.reason})\n`);
 	}
-	const health = await collectMainHealth({ repository: options.repository, runGh });
+	const health = await collectMainHealth({ deadlineMs: deadlines.health, repository: options.repository, runGh });
 	return write(options.json ? `${JSON.stringify(health)}\n` : `${formatHealth(health)}\n`);
 }
 
@@ -258,16 +337,20 @@ if (require.main === module) {
 
 module.exports = {
 	BILLING_STALE_MS,
+	DEADLINE_MS,
+	GUARDED_MARKDOWN,
 	SKIP_CI_MARKER,
 	changedPaths,
 	ciMarkerDecision,
 	classifyRun,
 	collectBillingState,
 	collectMainHealth,
+	deadlineGh,
 	formatHealth,
 	hasSkipInstruction,
 	isInertPath,
 	main,
+	oversizedMarkdown,
 	originRepository,
 	pendingSkipCommits,
 	runUrl,
