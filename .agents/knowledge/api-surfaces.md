@@ -183,29 +183,29 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `POST` | `/api/genui-description-summary` | `POST /api/genui-description-summary` | `app/api/genui-description-summary/route.ts:5` |
 | `POST` | `/api/genui-export` | `POST /api/genui-export` | `app/api/genui-export/route.ts:13` |
 | `GET` | `/api/health` | `GET /api/health` | `app/api/health/route.ts:3` |
-| `POST` | `/api/html-selector/dispatch` | `POST /api/html-selector/dispatch` | `app/api/html-selector/dispatch/route.ts:5` |
+| `POST` | `/api/html-selector/dispatch` | `POST /api/html-selector/dispatch` | `app/api/html-selector/dispatch/route.ts:6` |
 | `GET` | `/api/html-selector/tokens` | `GET /api/html-selector/tokens` | `app/api/html-selector/tokens/route.ts:3` |
 | `DELETE` | `/api/orchestrator/log` | `DELETE /api/orchestrator/log` | `app/api/orchestrator/log/route.ts:21` |
 | `GET` | `/api/orchestrator/log` | `GET /api/orchestrator/log` | `app/api/orchestrator/log/route.ts:4` |
 | `GET` | `/api/orchestrator/timeline` | `GET /api/orchestrator/timeline` | `app/api/orchestrator/timeline/route.ts:4` |
-| `POST` | `/api/personal-graph/capture` | `POST /api/personal-graph/capture` | `app/api/personal-graph/capture/route.ts:5` |
+| `POST` | `/api/personal-graph/capture` | `POST /api/personal-graph/capture` | `app/api/personal-graph/capture/route.ts:6` |
 | `GET` | `/api/personal-graph/explorer` | `GET /api/personal-graph/explorer` | `app/api/personal-graph/explorer/route.ts:3` |
-| `POST` | `/api/personal-graph/ingest` | `POST /api/personal-graph/ingest` | `app/api/personal-graph/ingest/route.ts:5` |
+| `POST` | `/api/personal-graph/ingest` | `POST /api/personal-graph/ingest` | `app/api/personal-graph/ingest/route.ts:6` |
 | `GET` | `/api/personal-graph/log` | `GET /api/personal-graph/log` | `app/api/personal-graph/log/route.ts:3` |
-| `GET` | `/api/personal-graph/page/*slug` | `GET /api/personal-graph/page/*slug` | `app/api/personal-graph/page/[...slug]/route.ts:9` |
-| `PUT` | `/api/personal-graph/page/*slug` | `PUT /api/personal-graph/page/*slug` | `app/api/personal-graph/page/[...slug]/route.ts:18` |
-| `POST` | `/api/personal-graph/raw` | `POST /api/personal-graph/raw` | `app/api/personal-graph/raw/route.ts:6` |
+| `GET` | `/api/personal-graph/page/*slug` | `GET /api/personal-graph/page/*slug` | `app/api/personal-graph/page/[...slug]/route.ts:10` |
+| `PUT` | `/api/personal-graph/page/*slug` | `PUT /api/personal-graph/page/*slug` | `app/api/personal-graph/page/[...slug]/route.ts:19` |
+| `POST` | `/api/personal-graph/raw` | `POST /api/personal-graph/raw` | `app/api/personal-graph/raw/route.ts:7` |
 | `GET` | `/api/personal-graph/search` | `GET /api/personal-graph/search` | `app/api/personal-graph/search/route.ts:4` |
-| `GET` | `/api/personal-graph/source` | `GET /api/personal-graph/source` | `app/api/personal-graph/source/route.ts:4` |
-| `POST` | `/api/personal-graph/source` | `POST /api/personal-graph/source` | `app/api/personal-graph/source/route.ts:11` |
-| `POST` | `/api/personal-graph/summarize` | `POST /api/personal-graph/summarize` | `app/api/personal-graph/summarize/route.ts:5` |
-| `POST` | `/api/personal-graph/twg/chat` | `POST /api/personal-graph/twg/chat` | `app/api/personal-graph/twg/chat/route.ts:4` |
-| `POST` | `/api/personal-graph/twg/expand` | `POST /api/personal-graph/twg/expand` | `app/api/personal-graph/twg/expand/route.ts:5` |
-| `POST` | `/api/personal-graph/twg/refresh` | `POST /api/personal-graph/twg/refresh` | `app/api/personal-graph/twg/refresh/route.ts:3` |
+| `GET` | `/api/personal-graph/source` | `GET /api/personal-graph/source` | `app/api/personal-graph/source/route.ts:5` |
+| `POST` | `/api/personal-graph/source` | `POST /api/personal-graph/source` | `app/api/personal-graph/source/route.ts:12` |
+| `POST` | `/api/personal-graph/summarize` | `POST /api/personal-graph/summarize` | `app/api/personal-graph/summarize/route.ts:6` |
+| `POST` | `/api/personal-graph/twg/chat` | `POST /api/personal-graph/twg/chat` | `app/api/personal-graph/twg/chat/route.ts:5` |
+| `POST` | `/api/personal-graph/twg/expand` | `POST /api/personal-graph/twg/expand` | `app/api/personal-graph/twg/expand/route.ts:6` |
+| `POST` | `/api/personal-graph/twg/refresh` | `POST /api/personal-graph/twg/refresh` | `app/api/personal-graph/twg/refresh/route.ts:4` |
 | `GET` | `/api/personal-graph/unprocessed-count` | `GET /api/personal-graph/unprocessed-count` | `app/api/personal-graph/unprocessed-count/route.ts:3` |
 | `GET` | `/api/personal-graph/vault` | `GET /api/personal-graph/vault` | `app/api/personal-graph/vault/route.ts:3` |
-| `POST` | `/api/personal-graph/vault/reset` | `POST /api/personal-graph/vault/reset` | `app/api/personal-graph/vault/reset/route.ts:3` |
-| `POST` | `/api/personal-graph/vault/select` | `POST /api/personal-graph/vault/select` | `app/api/personal-graph/vault/select/route.ts:3` |
+| `POST` | `/api/personal-graph/vault/reset` | `POST /api/personal-graph/vault/reset` | `app/api/personal-graph/vault/reset/route.ts:4` |
+| `POST` | `/api/personal-graph/vault/select` | `POST /api/personal-graph/vault/select` | `app/api/personal-graph/vault/select/route.ts:4` |
 | `POST` | `/api/plan-title` | `POST /api/plan-title` | `app/api/plan-title/route.ts:5` |
 | `GET` | `/api/realtime/audio-conversation-token` | `GET /api/realtime/audio-conversation-token` | `app/api/realtime/audio-conversation-token/route.ts:3` |
 | `GET` | `/api/realtime/ws-url` |  | `app/api/realtime/ws-url/route.ts:12` |
@@ -244,9 +244,9 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `POST` | `/api/ticket-classify` | `POST /api/ticket-classify` | `app/api/ticket-classify/route.ts:5` |
 | `GET` | `/api/vpk-html` | `GET /api/vpk-html` | `app/api/vpk-html/route.ts:4` |
 | `GET` | `/api/vpk-html/*assetPath` | `GET /api/vpk-html/*assetPath` | `app/api/vpk-html/[...assetPath]/route.ts:10` |
-| `POST` | `/api/vpk-html/apply-tokens` | `POST /api/vpk-html/apply-tokens` | `app/api/vpk-html/apply-tokens/route.ts:5` |
-| `GET` | `/api/vpk-html/notes` | `GET /api/vpk-html/notes` | `app/api/vpk-html/notes/route.ts:5` |
-| `PUT` | `/api/vpk-html/notes` | `PUT /api/vpk-html/notes` | `app/api/vpk-html/notes/route.ts:14` |
-| `POST` | `/api/vpk-html/publish-gist` | `POST /api/vpk-html/publish-gist` | `app/api/vpk-html/publish-gist/route.ts:5` |
+| `POST` | `/api/vpk-html/apply-tokens` | `POST /api/vpk-html/apply-tokens` | `app/api/vpk-html/apply-tokens/route.ts:6` |
+| `GET` | `/api/vpk-html/notes` | `GET /api/vpk-html/notes` | `app/api/vpk-html/notes/route.ts:6` |
+| `PUT` | `/api/vpk-html/notes` | `PUT /api/vpk-html/notes` | `app/api/vpk-html/notes/route.ts:15` |
+| `POST` | `/api/vpk-html/publish-gist` | `POST /api/vpk-html/publish-gist` | `app/api/vpk-html/publish-gist/route.ts:6` |
 
 <!-- generated:end -->

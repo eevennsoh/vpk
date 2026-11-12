@@ -1,5 +1,6 @@
 import { proxyToBackend } from "@/app/api/_utils/proxy";
 import { readJsonBody } from "@/app/api/_utils/read-json-body";
+import { refuseNonLocalRequest } from "@/app/api/_utils/local-request";
 
 export async function GET() {
 	return proxyToBackend({
@@ -9,6 +10,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+	const refused = refuseNonLocalRequest(request);
+	if (refused) {
+		return refused;
+	}
+
 	const { body, errorResponse } = await readJsonBody(request, {
 		defaultBody: {},
 		required: false,
