@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, linkSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
 
@@ -26,10 +26,14 @@ function isProcessAlive(pid) {
 	}
 }
 
-function readJournal() {
-	if (!existsSync(journalPath)) return null;
+function isOtherLiveProcess(pid) {
+	return pid !== process.pid && isProcessAlive(pid);
+}
+
+function readJournal(filePath = journalPath) {
+	if (!existsSync(filePath)) return null;
 	try {
-		const journal = JSON.parse(readFileSync(journalPath, "utf8"));
+		const journal = JSON.parse(readFileSync(filePath, "utf8"));
 		if (journal?.schema === JOURNAL_SCHEMA && Array.isArray(journal.moves)) return journal;
 	} catch {
 		// Fall through: an unreadable journal is treated like a journal from a dead run.
@@ -63,7 +67,7 @@ function restoreMoves(moves) {
 function describeState() {
 	const journal = readJournal();
 	const leftovers = temporaryMoves.filter((move) => existsSync(move.backup)).map((move) => move.backup);
-	if (journal && isProcessAlive(journal.pid) && journal.pid !== process.pid) {
+	if (isOtherLiveProcess(journal?.pid)) {
 		return { state: "running", pid: journal.pid, startedAt: journal.startedAt, leftovers };
 	}
 	if (journal || leftovers.length > 0) {
@@ -77,46 +81,74 @@ function runningError(pid) {
 }
 
 /**
- * Takes ownership of the export by creating the journal exclusively, so two exports
- * started together cannot both move the routes. A journal left by a dead run is claimed
- * by renaming it (only one claimant can win), its routes are put back, and creation is
- * retried. Returns the routes restored from an interrupted run.
+ * Publishes this run's journal under its final name, only if no journal exists. The
+ * journal is written in full to a private draft and then hard-linked into place, so a
+ * competing export can never read a half-written journal and take a live run for a dead one.
  */
-function acquireOwnership() {
-	const restored = [];
-	for (let attempt = 0; attempt < 5; attempt += 1) {
-		try {
-			writeFileSync(journalPath, journalText(), { flag: "wx" });
-			// A backup with no journal (left by an older wrapper) is also ours to restore now.
-			restored.push(...restoreMoves(temporaryMoves));
-			return restored;
-		} catch (error) {
-			if (error?.code !== "EEXIST") throw error;
-		}
-		const journal = readJournal();
-		if (journal && isProcessAlive(journal.pid) && journal.pid !== process.pid) {
-			throw runningError(journal.pid);
-		}
-		const claimPath = `${journalPath}.claim-${process.pid}`;
-		try {
-			renameSync(journalPath, claimPath);
-		} catch (error) {
-			if (error?.code === "ENOENT") continue;
-			throw error;
-		}
-		let claimed = {};
-		try {
-			claimed = JSON.parse(readFileSync(claimPath, "utf8"));
-		} catch {
-			// An unreadable journal is treated like one from a dead run.
-		}
-		if (isProcessAlive(claimed.pid) && claimed.pid !== process.pid) {
-			// A live run re-created the journal between the read and the claim: hand it back.
-			renameSync(claimPath, journalPath);
+function publishJournal() {
+	const draftPath = `${journalPath}.draft-${process.pid}`;
+	writeFileSync(draftPath, journalText());
+	try {
+		linkSync(draftPath, journalPath);
+		return true;
+	} catch (error) {
+		if (error?.code === "EEXIST") return false;
+		throw error;
+	} finally {
+		rmSync(draftPath, { force: true });
+	}
+}
+
+/**
+ * Retires a dead run's journal so the name is free again. Renaming it aside lets exactly
+ * one competitor win. It restores nothing: only the next owner puts routes back. If a live
+ * run took the name between the liveness check and the rename, its journal is handed back.
+ */
+function retireDeadJournal() {
+	const claimPath = `${journalPath}.claim-${process.pid}`;
+	try {
+		renameSync(journalPath, claimPath);
+	} catch (error) {
+		if (error?.code === "ENOENT") return;
+		throw error;
+	}
+	const claimed = readJournal(claimPath);
+	try {
+		if (isOtherLiveProcess(claimed?.pid)) {
+			try {
+				linkSync(claimPath, journalPath);
+			} catch (error) {
+				if (error?.code !== "EEXIST") throw error;
+				throw new Error(`Two static exports hold ${journalPath} (pid ${claimed.pid} and another); stop them, then run with --restore`);
+			}
 			throw runningError(claimed.pid);
 		}
-		restored.push(...restoreMoves(Array.isArray(claimed.moves) ? claimed.moves : temporaryMoves));
+	} finally {
 		rmSync(claimPath, { force: true });
+	}
+}
+
+/**
+ * Takes ownership of the export, so exports started together cannot both move the routes.
+ * Only the owner restores routes left aside by an interrupted run (or by an older wrapper
+ * that kept no journal); a run that is still competing never touches them. Returns the
+ * routes restored.
+ */
+function acquireOwnership() {
+	for (let attempt = 0; attempt < 5; attempt += 1) {
+		if (publishJournal()) {
+			try {
+				return restoreMoves(temporaryMoves);
+			} catch (error) {
+				rmSync(journalPath, { force: true });
+				throw error;
+			}
+		}
+		const journal = readJournal();
+		if (isOtherLiveProcess(journal?.pid)) {
+			throw runningError(journal.pid);
+		}
+		if (journal) retireDeadJournal();
 	}
 	throw new Error(`Could not take ownership of ${journalPath}; another export keeps re-creating it`);
 }
