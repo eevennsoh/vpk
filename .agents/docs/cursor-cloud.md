@@ -19,7 +19,7 @@ Provider-specific setup for running this repo in Cursor Cloud VMs. Everything he
 ```
 node scripts/write-npmrc.mjs
 test -f .env.local || cp .env.local.example .env.local
-pnpm install
+CI=true pnpm install --frozen-lockfile
 ```
 
 `scripts/write-npmrc.mjs` upserts the registry routing and both atlassian-npm auth lines into `~/.npmrc`: each managed key appears exactly once, other lines are preserved, and reruns are no-ops. It exits non-zero with a clear message when `ATLASSIAN_NPM_TOKEN` is empty, instead of letting `pnpm install` 404. Do not hand-write `~/.npmrc` with `>>`; repeated runs stack duplicate entries.
@@ -32,7 +32,15 @@ pnpm install
 | Express Backend | `pnpm run dev:backend` | 8080 | Yes |
 | Rovo Serve | `pnpm run dev:rovo` | 8000 | Only for Rovo-selected chat/tool flows |
 
-Start frontend + backend together: `pnpm run dev`. Start all three (including Rovo): `pnpm run rovo` (requires the `rovo` CLI on PATH).
+Start frontend + backend together: `pnpm run dev`. Without a Portless route, the frontend defaults to `localhost`, which can bind only to IPv6 on Linux. Export `HOST=127.0.0.1` when tools need the IPv4 loopback address, such as `control-vpk`'s fallback URL. A registered Portless route already makes the launcher bind to IPv4. Start all three (including Rovo): `pnpm run rovo` (requires the `rovo` CLI on PATH).
+
+Cloud agent `start`:
+
+```
+test -f .env.local || cp .env.local.example .env.local
+export HOST=127.0.0.1
+exec pnpm run dev
+```
 
 ## Running checks
 
