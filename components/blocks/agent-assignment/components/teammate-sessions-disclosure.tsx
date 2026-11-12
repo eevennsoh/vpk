@@ -21,6 +21,7 @@ export function TeammateSessionsDisclosure({ children, items }: Readonly<{
 	const trigger = useRef<HTMLButtonElement>(null);
 	const panel = useRef<HTMLDivElement>(null);
 	const hintId = useId();
+	const labelBlur = reducedMotion ? "blur(0px)" : ["blur(0px)", "blur(2px)", "blur(0px)"];
 
 	return (
 		<Collapsible open={open} onOpenChange={(nextOpen) => {
@@ -38,24 +39,22 @@ export function TeammateSessionsDisclosure({ children, items }: Readonly<{
 			<CollapsibleTrigger
 				ref={trigger}
 				aria-describedby={hintId}
-				className="relative flex w-full flex-col rounded-lg px-3 py-1 text-left text-text-subtle hover:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				aria-label={open ? `${items.length} ${items.length === 1 ? "other session" : "other sessions"}` : "Other sessions"}
+				className="relative flex w-full items-center rounded-lg px-3 py-1 text-left text-text-subtle hover:bg-bg-neutral-subtle-hovered focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
-				<span className="flex w-full min-w-0 items-center gap-2">
-					<span className="min-w-0 flex-1 text-xs font-medium">Sessions from your teammates</span>
-					<span aria-hidden="true" className="grid size-6 shrink-0 place-items-center" data-teammate-disclosure-chevron="">
-						<Icon className={cn("size-3 text-icon-subtle motion-safe:transition-transform motion-safe:duration-fast motion-safe:ease-out-practical", open ? "rotate-90" : null)} render={<ChevronRightIcon label="" size="small" />} />
-					</span>
-				</span>
-				<span className={cn("grid motion-safe:transition-[grid-template-rows]", open ? "grid-rows-[0fr] motion-safe:duration-normal motion-safe:ease-out-practical" : "grid-rows-[1fr] motion-safe:duration-fast motion-safe:ease-in")}>
-					<span className="min-h-0 overflow-hidden">
-						<motion.span
-							className="inline-flex pt-1 pb-1"
-							initial={false}
-							animate={{ opacity: open ? 0 : 1, transform: open && !reducedMotion ? "translateY(8px)" : "translateY(0px)", transition: { ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : (open ? motionRecipe.popup.enter.duration : motionDuration.slow) } }}
-						>
-							<TeammateSessionAvatars items={items} />
-						</motion.span>
-					</span>
+				<motion.span
+					className="inline-flex shrink-0"
+					style={{ width: open ? 0 : undefined, marginRight: open ? 0 : 8 }}
+					initial={false}
+					animate={{ opacity: open ? 0 : 1, transform: open && !reducedMotion ? "translateY(8px)" : "translateY(0px)", transition: { ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : (open ? motionRecipe.popup.enter.duration : motionDuration.slow), opacity: { duration: reducedMotion ? 0 : motionDuration.xxshort, delay: reducedMotion || open ? 0 : motionDuration.medium } } }}
+				>
+					<TeammateSessionAvatars items={items} />
+				</motion.span>
+				<motion.span className="inline-flex min-w-0 text-xs font-medium" data-teammate-disclosure-label="" layout={reducedMotion ? false : "position"} initial={false} animate={open ? "open" : "closed"} variants={{ open: { filter: labelBlur }, closed: { filter: labelBlur } }} transition={{ ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : (open ? motionRecipe.popup.enter.duration : motionDuration.slow) }}>
+					{open ? `${items.length} ${items.length === 1 ? "other session" : "other sessions"}` : "Other sessions"}
+				</motion.span>
+				<span aria-hidden="true" className="ml-auto grid size-6 shrink-0 place-items-center" data-teammate-disclosure-chevron="">
+					<Icon className={cn("size-3 text-icon-subtle motion-safe:transition-transform motion-safe:duration-fast motion-safe:ease-out-practical", open ? "rotate-90" : null)} render={<ChevronRightIcon label="" size="small" />} />
 				</span>
 			</CollapsibleTrigger>
 			<p id={hintId} className="sr-only">{AGENT_SESSION_VIEWER_HINT}</p>

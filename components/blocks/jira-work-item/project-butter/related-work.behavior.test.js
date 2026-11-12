@@ -354,9 +354,9 @@ for (const variant of ["project-butter", "project-butter-v1"]) {
 			assert.equal(view.queryByText("Local work") !== null, true);
 			assert.equal(view.queryByText("Finished work") !== null, true);
 			assert.equal(view.queryByText("Teammate work"), null);
-			await view.click(view.getByRole("button", { name: "Sessions from your teammates" }));
+			await view.click(view.getByRole("button", { name: /(?:\d+ )?other sessions?/iu }));
 			assert.equal(view.queryByText("Teammate work") !== null, true);
-			await view.click(view.getByRole("button", { name: "Sessions from your teammates" }));
+			await view.click(view.getByRole("button", { name: /(?:\d+ )?other sessions?/iu }));
 			await view.press(view.getByRole("button", { name: /^Claude work/u }), "Escape");
 			assert.equal(view.queryByRole("dialog", { name: "Add agent" }), null);
 			assert.equal(view.isFocused(trigger), true);

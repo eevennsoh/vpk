@@ -210,9 +210,9 @@ test("teammate sessions keep their popover alignment while expanding near the vi
 	await page.setViewportSize({ width: 1398, height: 1236 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Board" }).click();
-	await page.getByRole("button", { name: "6 agents: Working" }).click();
+	await page.getByRole("button", { name: "3 agents: Working" }).click();
 	const popup = page.getByRole("dialog", { name: "Agent assignment" });
-	const disclosure = popup.getByRole("button", { name: "Sessions from your teammates" });
+	const disclosure = popup.getByRole("button", { name: /(?:\d+ )?other sessions?/iu });
 	await expect(disclosure).toHaveAttribute("aria-expanded", "false");
 	await page.setViewportSize({ width: 1398, height: 900 });
 	await expect(popup).toHaveAttribute("data-align", "start");

@@ -746,9 +746,12 @@ function AvatarGroup({ as: Group = "div", children, className, label, size, ...p
 	)
 }
 
-type AvatarGroupCountProps = React.ComponentProps<"div">
+interface AvatarGroupCountProps extends React.ComponentProps<"div"> {
+	as?: "div" | "span"
+}
 
 function AvatarGroupCount({
+	as: Count = "div",
 	children,
 	className,
 	...props
@@ -763,13 +766,13 @@ function AvatarGroupCount({
 	})
 
 	return (
-		<div
+		<Count
 			data-slot="avatar-group-count"
 			className={cn("bg-muted text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=lg]/avatar-group:text-sm group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xs]/avatar-group:size-4 group-has-data-[size=xs]/avatar-group:text-[8px] [&_[data-slot=icon]]:size-4 [&_svg]:size-4 group-has-data-[size=sm]/avatar-group:[&_[data-slot=icon]]:size-3 group-has-data-[size=sm]/avatar-group:[&_svg]:size-3 group-has-data-[size=xs]/avatar-group:[&_[data-slot=icon]]:size-2 group-has-data-[size=xs]/avatar-group:[&_svg]:size-2 ring-background relative flex shrink-0 items-center justify-center ring-2", className)}
 			{...props}
 		>
 			{content}
-		</div>
+		</Count>
 	)
 }
 

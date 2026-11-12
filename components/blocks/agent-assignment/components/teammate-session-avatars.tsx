@@ -2,11 +2,10 @@ import PersonIcon from "@atlaskit/icon/core/person";
 
 import { actorInitials } from "@/components/blocks/agent-list/agent-list-actor";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
-import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 
-// Five faces plus an overflow mark fit the compact menu without count text.
-const MAX_VISIBLE_TEAMMATES = 5;
+const MAX_VISIBLE_TEAMMATES = 4;
 
 export function TeammateSessionAvatars({ items }: Readonly<{ items: readonly AgentSessionItem[] }>) {
 	const people = new Map<string, { name: string; avatarSrc: string | undefined }>();
@@ -29,7 +28,7 @@ export function TeammateSessionAvatars({ items }: Readonly<{ items: readonly Age
 				</Avatar>
 			))}
 			{people.size > MAX_VISIBLE_TEAMMATES ? (
-				<Avatar size="xs" animate={false} title="More teammates"><AvatarFallback>…</AvatarFallback></Avatar>
+				<AvatarGroupCount as="span">+{people.size - MAX_VISIBLE_TEAMMATES}</AvatarGroupCount>
 			) : null}
 		</AvatarGroup>
 	);
