@@ -14,6 +14,11 @@ const BLOCKED_REGISTRY_PATTERNS = [
 			"Use registry.npmjs.org tarball URLs for public npm packages; npm-remote URLs fail pnpm tarball policy when the repo registry is npmjs.",
 		pattern: /packages\.atlassian\.com\/(?:artifactory\/)?api\/npm\/npm-remote\//u,
 	},
+	{
+		explanation:
+			"Never lock a URL that embeds a credential; this repo is public. Motion+ resolves as `npm:@motionplus/core` from api.motion.dev/npm with the token in user-level npmrc (see .npmrc).",
+		pattern: /[?&]token=|api\.motion\.dev\/registry/u,
+	},
 ];
 
 // Packages that legitimately resolve from the internal atlassian-npm registry

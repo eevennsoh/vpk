@@ -53,6 +53,7 @@ test("CI retains event coverage, cancellation, ratchets and authenticated frozen
 		}
 		assert.match(job, /node-version: 24/u);
 		assert.match(job, /ATLASSIAN_NPM_TOKEN: \$\{\{ secrets.ATLASSIAN_NPM_TOKEN \}\}/u);
+		assert.match(job, /MOTION_TOKEN: \$\{\{ secrets.MOTION_TOKEN \}\}/u);
 	}
 	assert.doesNotMatch(workflow, /actions\/cache@|\.cache\/eslint|--cache/u);
 });

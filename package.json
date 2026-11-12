@@ -171,7 +171,7 @@
 		"media-chrome": "^4.19.3",
 		"metal-fx": "1.0.2",
 		"motion": "^13.5.1",
-		"motion-plus": "https://api.motion.dev/registry?package=motion-plus&version=2.11.2&token=fc0a8c2295343956b76bd070a01a9863c7a11d012c3983c9a7bf9720642e239f",
+		"motion-plus": "npm:@motionplus/core@2.12.0",
 		"nanoid": "^6.0.2",
 		"next": "16.4.2",
 		"next-themes": "^0.4.6",

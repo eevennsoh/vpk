@@ -70,3 +70,25 @@ packages:
 	assert.equal(findings[0].line, 4);
 	assert.match(findings[0].text, /atlassian-npm/u);
 });
+
+test("rejects tarball URLs that embed a credential", () => {
+	const findings = findBlockedLockfileRegistryUrls(`
+packages:
+  motion-plus@https://api.motion.dev/registry?package=motion-plus&version=2.11.2&token=example:
+    resolution: {tarball: https://api.motion.dev/registry?package=motion-plus&version=2.11.2&token=example}
+`);
+
+	assert.equal(findings.length, 2);
+	assert.equal(findings[0].line, 3);
+	assert.match(findings[0].explanation, /embeds a credential/u);
+});
+
+test("accepts Motion+ tarballs from the private registry", () => {
+	const findings = findBlockedLockfileRegistryUrls(`
+packages:
+  '@motionplus/core@2.12.0':
+    resolution: {tarball: https://api.motion.dev/npm/@motionplus/core/-/core-2.12.0.tgz}
+`);
+
+	assert.deepEqual(findings, []);
+});

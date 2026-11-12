@@ -216,7 +216,7 @@ Inside herdr (`HERDR_ENV=1`), use the `herdr` skill and `herdr pane read <pane> 
 - Dev API calls traverse Next.js proxy then Express; debug both layers.
 - TypeScript checks authored project directories. Generated `output/` evidence and `public/1p/rovo-stage-kit` browser assets are excluded from file discovery; explicitly imported files remain type-checked.
 - Never import transitive pnpm dependencies directly — pnpm's strict isolation only allows imports from `package.json` direct dependencies. Use internal mechanisms (e.g., `globalThis.__PLATFORM_FEATURE_FLAGS__`) or add the package explicitly.
-- Tracked `.npmrc` contains token-free routing: public `@atlaskit/*` uses npmjs and `@atlassian/logo-third-party` uses `atlassian-npm`. Keep tokens in user `~/.npmrc` (as CI does) or ignored `.npmrc.local`.
+- Tracked `.npmrc` contains token-free routing: public `@atlaskit/*` uses npmjs, `@atlassian/logo-third-party` uses `atlassian-npm`, and `motion-plus` (alias of `@motionplus/core`) uses `api.motion.dev/npm`. The repo is public: keep tokens in user `~/.npmrc` (as CI does) or ignored `.npmrc.local`, never in `package.json` or the lockfile.
 - Keep `@layer theme, base, components, utilities;` atop `app/globals.css`; it fixes cascade order so component layers do not lose to preflight.
 - Theme switching uses `setGlobalTheme()` from `@atlaskit/tokens`; toggling only the HTML `dark` class does not update ADS tokens.
 - Fresh worktrees need their own `node_modules`. Managed worktrees copy ignored `.env*` and clone matching dependencies or run `CI=true pnpm install --prefer-offline`; manual worktrees must do this themselves. Do not run parallel pnpm validations until warmup completes.

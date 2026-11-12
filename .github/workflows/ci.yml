@@ -53,9 +53,12 @@ jobs:
         # token is only for the internal package tarball, mirroring local `~/.npmrc`.
         # `scripts/write-npmrc.mjs` upserts both registry path variants (metadata uses
         # `/artifactory/api/npm/`, lockfile tarballs use `/api/npm/`) without duplicates.
+        # It also writes the Motion+ registry token: `motion-plus` is an alias of
+        # `@motionplus/core` on api.motion.dev/npm, and no token lives in the repo.
         run: node scripts/write-npmrc.mjs
         env:
           ATLASSIAN_NPM_TOKEN: ${{ secrets.ATLASSIAN_NPM_TOKEN }}
+          MOTION_TOKEN: ${{ secrets.MOTION_TOKEN }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -118,9 +121,12 @@ jobs:
         # token is only for the internal package tarball, mirroring local `~/.npmrc`.
         # `scripts/write-npmrc.mjs` upserts both registry path variants (metadata uses
         # `/artifactory/api/npm/`, lockfile tarballs use `/api/npm/`) without duplicates.
+        # It also writes the Motion+ registry token: `motion-plus` is an alias of
+        # `@motionplus/core` on api.motion.dev/npm, and no token lives in the repo.
         run: node scripts/write-npmrc.mjs
         env:
           ATLASSIAN_NPM_TOKEN: ${{ secrets.ATLASSIAN_NPM_TOKEN }}
+          MOTION_TOKEN: ${{ secrets.MOTION_TOKEN }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
