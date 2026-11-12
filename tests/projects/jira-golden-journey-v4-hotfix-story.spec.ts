@@ -1,12 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
+import { openJiraBoard } from "@/tests/helpers/board";
 
 const JIRA_GOLDEN_JOURNEY_V4_URL = appUrl("/jira-golden-journey-v4");
 
 async function openBoard(page: Page): Promise<void> {
-	await page.goto(JIRA_GOLDEN_JOURNEY_V4_URL, { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	await openJiraBoard(page, JIRA_GOLDEN_JOURNEY_V4_URL, { timeout: 5_000 });
 }
 
 test("the Payments board is the only Golden Journey content inside Jira chrome", async ({ page }) => {
