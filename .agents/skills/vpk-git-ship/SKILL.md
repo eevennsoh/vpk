@@ -60,7 +60,15 @@ git update-index --refresh
 git status --short --branch
 git worktree list --porcelain
 gh repo view --json nameWithOwner,defaultBranchRef
+node .agents/skills/vpk-git-ship/scripts/main-health.js
 ```
+
+Report the `main health:` line first. `RED` names the failed jobs of the latest
+CI run on `main`: that breakage is not this change's, so do not debug it as
+your own. If this PR's CI later fails in the same job with the same error,
+say so and compare with the `main` run before changing code. `billing-blocked`
+means the local `ci:pr` fallback below will apply. The line answers within a
+5-second deadline; `unknown` (GitHub slow or unreachable) never blocks.
 
 If an injected `GITHUB_TOKEN` is invalid but keyring auth exists, retry read-only
 `gh` commands with `/usr/bin/env -u GITHUB_TOKEN gh ...` before declaring GitHub
