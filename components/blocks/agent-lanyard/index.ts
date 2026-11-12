@@ -1,4 +1,4 @@
-export { AgentLanyard, type AgentLanyardProps } from "./agent-lanyard";
+export { AgentLanyard, AgentLanyardHoverContent, type AgentLanyardProps, type AgentLanyardRecommendedProps, type AgentLanyardHoverContentProps } from "./agent-lanyard";
 export { AGENT_LANYARD_AGENTS, type AgentLanyardAgent } from "./data";
 export { AGENT_LANYARD_TEMPLATES, type AgentLanyardTemplate } from "./template-data";
 export type { AgentLanyardMenuActions } from "./agent-lanyard-menu";

@@ -1,9 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { TWGAppstack } from "@/components/ui-custom/twg-appstack";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { HoverCardContent } from "@/components/ui/hover-card";
+import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 
 import { AgentLanyardCard } from "./components/agent-lanyard-card";
 import { AgentLanyardActions } from "./components/agent-lanyard-actions";
@@ -15,13 +18,14 @@ import type { AgentLanyardTemplate } from "./template-data";
 
 interface AgentLanyardAgentProps {
 	variant?: "agent";
+	recommendationReason?: never;
 	agent: AgentLanyardAgent;
 	perspectiveTilt?: boolean;
 	animateGrid?: boolean;
 	/** Play the finite grid wave when mounted by a preview instead of on card hover. */
 	gridAnimationTrigger?: "hover" | "reveal";
 	headingLevel?: 2 | 3;
-	/** Replaces the action row with a consumer-owned footer, such as connected apps. */
+	/** Replaces the action row; null hides it entirely. */
 	footer?: ReactNode;
 	/** Optional complete avatar presentation; the default uses agent.avatarSrc. */
 	avatar?: ReactNode;
@@ -37,14 +41,36 @@ interface AgentLanyardAgentProps {
 	className?: string;
 }
 
-export type AgentLanyardProps = AgentLanyardAgentProps | {
+export interface AgentLanyardRecommendedProps extends Pick<AgentLanyardAgentProps, "agent" | "perspectiveTilt" | "animateGrid" | "gridAnimationTrigger" | "headingLevel" | "showGrid" | "className"> {
+	variant: "recommended";
+	/** Caller-owned, non-empty explanation. This component does not rank agents. */
+	recommendationReason: string;
+	footer?: never;
+	avatar?: never;
+	showDescription?: never;
+	onSelect?: never;
+	onAction?: never;
+	onMoreActions?: never;
+	menuActions?: never;
+	menuPositionerClassName?: never;
+	starred?: never;
+}
+
+export type AgentLanyardProps = AgentLanyardAgentProps | AgentLanyardRecommendedProps | {
 	variant: "template";
+	recommendationReason?: never;
 	template: AgentLanyardTemplate;
 	templateIcon?: ReactNode;
 	perspectiveTilt?: boolean;
 	onSelect?: () => void;
 	className?: string;
 };
+
+export type AgentLanyardHoverContentProps = ComponentProps<typeof HoverCardContent> & { variant?: "agent" | "recommended" };
+
+export function AgentLanyardHoverContent({ className, style, variant = "agent", ...props }: Readonly<AgentLanyardHoverContentProps>) {
+	return <HoverCardContent {...props} className={cn("w-[252px] rounded-xl border-0 bg-transparent p-0 shadow-none [&_[data-slot=agent-lanyard-surface]]:border-0 [&_[data-slot=agent-lanyard-surface]]:shadow-none", className)} style={{ ...style, boxShadow: variant === "recommended" ? "none" : token("elevation.shadow.overlay") }} />;
+}
 
 export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 	if (props.variant === "template") {
@@ -64,15 +90,17 @@ export function AgentLanyard(props: Readonly<AgentLanyardProps>) {
 	}
 
 	const { agent, perspectiveTilt, animateGrid, gridAnimationTrigger, headingLevel, showGrid, showDescription, avatar, footer, onSelect, className, ...actions } = props;
+	const recommended = props.variant === "recommended";
+	if (recommended && !props.recommendationReason?.trim()) throw new Error("AgentLanyard recommended variant requires a non-empty recommendationReason.");
 	return (
 		<AgentLanyardCard
 			id={agent.id} name={agent.name} byline={agent.publisher} description={agent.description}
-			variant="agent" verified={agent.verified} accentColor={agent.accentColor}
-			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={showDescription} onSelect={onSelect} className={className}
+			variant={recommended ? "recommended" : "agent"} recommendationReason={recommended ? props.recommendationReason : undefined} verified={agent.verified} accentColor={agent.accentColor}
+			perspectiveTilt={perspectiveTilt} animateGrid={animateGrid} gridAnimationTrigger={gridAnimationTrigger} headingLevel={headingLevel} showGrid={showGrid} showDescription={recommended ? true : showDescription} onSelect={recommended ? undefined : onSelect} className={className}
 			avatar={avatar ?? (agent.brandName ? (
 				<AgentLanyardAvatarFrame><AgentAvatarVisual animate={false} avatarClassName="size-15" brandName={agent.brandName} label="" sizePx={48} /></AgentLanyardAvatarFrame>
 			) : <AgentLanyardAvatarFrame><Image alt="" className={agent.avatarSrc.startsWith("/avatar-agent-new/") ? "h-full w-full" : "h-full w-full scale-110"} src={agent.avatarSrc} width={54} height={60} /></AgentLanyardAvatarFrame>)}
-			footer={footer
+			footer={recommended || footer === null ? null : footer
 				? <div className="mt-auto flex h-6 items-end" data-slot="agent-lanyard-appstack">{footer}</div>
 				: <AgentLanyardActions agent={agent} {...actions} />}
 		/>

@@ -8,6 +8,8 @@ import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { FavoritesPreview } from "./favorites-preview";
 import { DestinationAfterSelectPreview, GlobalDestinationPreview, InlineActionsPreview, RememberDestinationPreview, RowActionsPreview } from "./destination-previews";
 import { ActivityDigestPreview, PeopleFoldPreview, QuietDisclosurePreview } from "@/app/sandbox/agent-selector-canvas/teammate-session-previews";
+import { EvidenceLedgerPreview, MarginNotePreview, ScopeMapPreview, WorkPlanPreview } from "@/app/sandbox/agent-selector-canvas/recommendation-previews";
+import { FullWidthFooterLayoutPreview, InsetDividerLayoutPreview, InsetPanelLayoutPreview, PerforatedSeamLayoutPreview } from "@/app/sandbox/agent-selector-canvas/recommendation-layout-previews";
 
 const safeAgents = BUTTER_PICKER_AGENTS.filter((agent) => agent.id !== "rovo-cli");
 const cursorSession: readonly AgentSessionItem[] = [{
@@ -103,4 +105,52 @@ export const previews = [{
 	component: ActivityDigestPreview,
 	position: { x: 2920, y: 680 },
 	width: 280,
+}, {
+	id: "recommendation-margin-note",
+	name: "Recommendation lanyard · Margin note",
+	component: MarginNotePreview,
+	position: { x: 0, y: 1400 },
+	width: 588,
+}, {
+	id: "recommendation-evidence-ledger",
+	name: "Recommendation lanyard · Evidence ledger",
+	component: EvidenceLedgerPreview,
+	position: { x: 680, y: 1400 },
+	width: 588,
+}, {
+	id: "recommendation-scope-map",
+	name: "Recommendation lanyard · Scope map",
+	component: ScopeMapPreview,
+	position: { x: 1360, y: 1400 },
+	width: 588,
+}, {
+	id: "recommendation-work-plan",
+	name: "Recommendation lanyard · Work plan",
+	component: WorkPlanPreview,
+	position: { x: 2040, y: 1400 },
+	width: 588,
+}, {
+	id: "recommendation-layout-stack",
+	name: "Recommendation layout · Inset divider",
+	component: InsetDividerLayoutPreview,
+	position: { x: 0, y: 2100 },
+	width: 588,
+}, {
+	id: "recommendation-layout-inset",
+	name: "Recommendation layout · Inset panel",
+	component: InsetPanelLayoutPreview,
+	position: { x: 680, y: 2100 },
+	width: 588,
+}, {
+	id: "recommendation-layout-footer",
+	name: "Recommendation layout · Full-width footer",
+	component: FullWidthFooterLayoutPreview,
+	position: { x: 1360, y: 2100 },
+	width: 588,
+}, {
+	id: "recommendation-layout-perforated",
+	name: "Recommendation layout · Perforated seam",
+	component: PerforatedSeamLayoutPreview,
+	position: { x: 2040, y: 2100 },
+	width: 588,
 }] as const;
