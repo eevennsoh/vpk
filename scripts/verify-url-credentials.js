@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-// Fails when a tracked file embeds a credential in a URL query (`?token=…`, `&key=…`,
-// `?auth=…`, `?secret=…`). The repository is public: a credential that reaches a
+// Fails when a tracked file embeds a credential in a URL query (`?token=<value>`,
+// `&key=<value>`, `?auth=<value>`, `?secret=<value>`). The repository is public: a credential that reaches a
 // tracked file is published, so registry and API auth belong in user-level config.
 
 const { spawnSync } = require("node:child_process");
