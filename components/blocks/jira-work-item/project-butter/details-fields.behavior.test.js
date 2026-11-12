@@ -20,6 +20,16 @@ function renderDetails(props = {}) {
 	});
 }
 
+function renderLocalAgent(exportName, props) {
+	return renderComponent({
+		source: `import React from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ${exportName} as LocalAgent } from "@/components/blocks/jira-local-agent";
+			export default function LocalAgentTest(props) { return <ThemeWrapper><LocalAgent {...props} /></ThemeWrapper>; }`,
+		props,
+	});
+}
+
 function fieldLabels() {
 	return [...document.querySelectorAll("[data-project-butter-detail-fields] [data-field-id]")].map((node) => node.getAttribute("data-field-label"));
 }
@@ -106,11 +116,55 @@ test("Details initializes each item independently and calculates cost per reach"
 	assert.equal(boardItem.fixVersion, "");
 });
 
-test("Development keeps repository setup and local agents without a Copy prompt row", async () => {
+test("work item Development keeps repository setup without the moved Open in action", async () => {
 	const view = await renderDetails();
 	assert.equal(view.queryByRole("button", { name: "Copy prompt" }) === null, true);
-	assert.equal(view.getByRole("button", { name: "Configure repository" }) !== null, true);
-	assert.equal(view.getByRole("button", { name: "Open in", exact: true }) !== null, true);
+	assert.equal(view.getByRole("button", { name: "Start coding" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Open in", exact: true }), null);
+});
+
+test("Open in remembers the last used app", async () => {
+	localStorage.removeItem("jira-local-agent-last-used");
+	const props = { workItem: { code: "PAY-118", summary: "Billing", description: "" } };
+	const view = await renderLocalAgent("JiraLocalAgentSplitButton", props);
+	assert.notEqual(view.queryByRole("button", { name: "Open in Claude" }), null);
+	assert.equal(view.getByRole("button", { name: "Open in Claude" }).querySelector('[data-slot="avatar"]'), null);
+	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
+	assert.notEqual(view.getByRole("button", { name: "Codex", exact: true }).querySelector('[data-slot="avatar"][data-shape="square"]'), null);
+	await view.click(view.getByRole("button", { name: "Cursor", exact: true }));
+	assert.notEqual(view.queryByRole("button", { name: "Open in Cursor" }), null);
+	await view.rerender(props);
+	assert.notEqual(view.queryByRole("button", { name: "Open in Cursor" }), null);
+	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
+	await view.click(view.getByRole("button", { name: "VS Code", exact: true }));
+	assert.notEqual(view.queryByRole("button", { name: "Open in VS Code" }), null);
+	assert.equal(view.getByRole("button", { name: "Open in VS Code" }).querySelector("svg")?.getAttribute("viewBox"), "4 4 16 16");
+	await view.rerender(props);
+	assert.notEqual(view.queryByRole("button", { name: "Open in VS Code" }), null);
+	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
+	assert.notEqual(view.getByRole("button", { name: "Rovo CLI", exact: true }).querySelector('[data-slot="avatar"][data-shape="square"]'), null);
+	await view.click(view.getByRole("button", { name: "Rovo CLI", exact: true }));
+	assert.equal(view.getByRole("button", { name: "Open in Rovo CLI" }).querySelector('[data-slot="avatar"]'), null);
+	await view.click(view.getByRole("button", { name: "Open in Rovo CLI" }));
+	assert.equal(view.getAllByRole("status").some((status) => status.textContent === "Command copied"), true);
+	localStorage.removeItem("jira-local-agent-last-used");
+});
+
+test("Open in lets a caller choose an app and repeat its action", async () => {
+	const view = await renderComponent({
+		source: `import React, { useState } from "react";
+			import { OpenIn } from "@/components/ui-custom/open-in";
+			export default function OpenInTest() {
+				const [open, setOpen] = useState(false);
+				const [app, setApp] = useState("Editor");
+				const [status, setStatus] = useState("");
+				return <OpenIn app={{ name: app, icon: <span>icon</span> }} contentLabel="Choose app" onAppClick={() => setStatus("Opened " + app)} onOpenChange={setOpen} open={open} status={status}><button onClick={() => { setApp("Terminal"); setOpen(false); }}>Terminal</button></OpenIn>;
+			}`,
+	});
+	await view.click(view.getByRole("button", { name: "Open in", exact: true }));
+	await view.click(view.getByRole("button", { name: "Terminal" }));
+	await view.click(view.getByRole("button", { name: "Open in Terminal" }));
+	assert.equal(view.getByRole("status").textContent, "Opened Terminal");
 });
 
 test("the local agent menu copies the current work item prompt", async (t) => {
@@ -118,7 +172,7 @@ test("the local agent menu copies the current work item prompt", async (t) => {
 	const copied = [];
 	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value) => copied.push(value) } });
 	t.after(() => { if (original) Object.defineProperty(navigator, "clipboard", original); else delete navigator.clipboard; });
-	const view = await renderComponent({ entry: "components/blocks/jira-local-agent/index.tsx", exportName: "JiraLocalAgentMenu", props: { workItem: { code: "PAY-118", summary: "Billing", description: "Carry the artwork" } } });
+	const view = await renderLocalAgent("JiraLocalAgentMenu", { workItem: { code: "PAY-118", summary: "Billing", description: "Carry the artwork" } });
 	await view.click(view.getByRole("button", { name: "Copy prompt" }));
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork"]);
 	assert.equal(view.getByRole("button", { name: "Prompt copied" }) !== null, true);
@@ -132,7 +186,7 @@ test("the local agent menu does not claim a rejected clipboard write succeeded",
 	const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 	Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { throw new Error("Denied"); } } });
 	t.after(() => { if (original) Object.defineProperty(navigator, "clipboard", original); else delete navigator.clipboard; });
-	const view = await renderComponent({ entry: "components/blocks/jira-local-agent/index.tsx", exportName: "JiraLocalAgentMenu", props: { workItem: { code: "PAY-118", summary: "Billing", description: "" } } });
+	const view = await renderLocalAgent("JiraLocalAgentMenu", { workItem: { code: "PAY-118", summary: "Billing", description: "" } });
 	await view.click(view.getByRole("button", { name: "Copy prompt" }));
 	assert.equal(view.getByRole("button", { name: "Could not copy prompt" }) !== null, true);
 });

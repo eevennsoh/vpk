@@ -66,10 +66,24 @@ function renderDefaultThread(overrides) {
 	});
 }
 
-test("controlled timelines can route inline agent replies to their owning session", () => {
-	assert.match(INDEX_SOURCE, /onSubmitReply\?: \(entry: JiraActivityCommentEntry, body: string\) => void/u);
-	assert.match(INDEX_SOURCE, /onSubmitReply\(entry, body\);/u);
-	assert.match(INDEX_SOURCE, /onSubmitReply=\{\(body\) => handleAddReply\(entry, body\)\}/u);
+test("controlled timelines route an inline reply and its agent mentions to the owning thread", async () => {
+	const submitted = [];
+	const view = await renderDefaultThread({
+		onSubmitReply: (entry, body, mentions) => submitted.push({ id: entry.id, body, mentions }),
+		renderReplyComposer: (composer) => React.createElement("button", { onClick: () => composer.onSubmit("Hello", ["subagent:claude"]) }, "Send reply"),
+	});
+	await view.click(view.getAllByRole("button", { name: "Reply" })[0]);
+	await view.click(view.getByRole("button", { name: "Send reply" }));
+	assert.deepEqual(submitted, [{ id: "discussion", body: "Hello", mentions: ["subagent:claude"] }]);
+});
+
+test("new reply reactions preserve the viewer's existing reaction", async () => {
+	const entry = { ...THREAD_ENTRY, replies: [{ ...THREAD_ENTRY.replies[0], reactions: [{ emoji: "👍", actorIds: ["reply-author"] }] }] };
+	const view = await renderDefaultThread({ entries: [entry] });
+	await view.click(view.getByRole("button", { name: /1 reacted with thumbs up/u }));
+	await view.rerender(threadProps({ entries: [{ ...entry, replies: [{ ...entry.replies[0], reactions: [...entry.replies[0].reactions, { emoji: "👀", actorIds: ["agent"] }] }] }] }));
+	assert.equal(view.getByRole("button", { name: /2 reacted with thumbs up/u }).getAttribute("aria-pressed"), "true");
+	assert.equal(view.getByRole("button", { name: /1 reacted with eyes/u }).getAttribute("aria-pressed"), "false");
 });
 
 test("inline review comments keep one reply level and continue the parent timeline spine", async () => {

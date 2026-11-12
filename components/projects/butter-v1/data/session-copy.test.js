@@ -12,6 +12,7 @@ function loadData() {
 				export * from "./components/projects/butter-v1/data/agent-session-sync";
 				export * from "./components/projects/butter-v1/data/presentation-board";
 				export * from "./components/projects/butter-v1/data/wac-content";
+				export * from "./components/projects/butter-v1/data/merchant-journey";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -26,6 +27,18 @@ function loadData() {
 	}).then((result) => loadCjsModuleFromText(result.outputFiles[0].text, "butter-v1-session-copy-harness.cjs"));
 	return dataPromise;
 }
+
+test("merchant session snapshot preserves the request and shows ongoing work", async () => {
+	const { merchantJourneyChatSnapshot } = await loadData();
+	const activity = { id: "PAY-999:session", name: "Claude", label: "Working", state: "working", prompt: "Check the sandbox setup" };
+	const snapshot = merchantJourneyChatSnapshot(activity);
+	assert.equal(snapshot.messages[0].parts[0].text, "Check the sandbox setup");
+	assert.match(snapshot.messages[1].parts[0].text, /first test payment/u);
+	const thinking = snapshot.messages.at(-1);
+	assert.equal(thinking.id, snapshot.thinkingMessageId);
+	assert.equal(thinking.parts.at(-1).data.phase, "start");
+	assert.match(merchantJourneyChatSnapshot({ ...activity, prompt: "@Claude" }).messages[0].parts[0].text, /merchant onboarding/u);
+});
 
 test("seeded and arriving sessions use stable, work-specific titles", async () => {
 	const data = await loadData();
@@ -66,4 +79,43 @@ test("board activities and detached sessions retain work titles and agent names"
 			}
 		}
 	}
+});
+
+test("PAY-123 includes Venn's sessions and four teammate sessions", async () => {
+	const data = await loadData();
+	const card = data.createButterPayBoardColumns().flatMap((column) => column.cards).find((item) => item.code === "PAY-123");
+	const sessions = card.agentActivities;
+	assert.deepEqual(sessions.filter((session) => session.role === "owner").map((session) => session.invokedBy.name), ["Venn", "Venn"]);
+	assert.deepEqual(sessions.filter((session) => session.role === "viewer").map((session) => session.invokedBy.name).sort(), ["Diego Santos", "Jordan Okafor", "Maya Ferreira", "Priya Raman"]);
+});
+
+test("additional work items include their existing subtasks", async () => {
+	const data = await loadData();
+	const columns = data.createButterPayBoardColumns();
+	const cards = columns.flatMap((column) => column.cards);
+	for (const [parent, children] of Object.entries({
+		"PAY-118": ["PAY-201", "PAY-202", "PAY-203"],
+		"PAY-999": ["PAY-265", "PAY-266", "PAY-267"],
+		"PAY-127": ["PAY-210", "PAY-211", "PAY-212"],
+	})) {
+		assert.deepEqual(cards.filter((card) => card.parentIssueKey === parent).map((card) => card.code).sort(), children);
+	}
+	const quickstart = cards.find((card) => card.code === "PAY-265");
+	assert.equal(quickstart.storyPoints, 3);
+	assert.equal(quickstart.dueDate, "2026-08-25");
+	assert.equal(quickstart.assignee.name, "Maya Ferreira");
+	assert.equal(columns.find((column) => column.cards.includes(quickstart)).title, "To do");
+});
+
+test("every Payments SDK work item has an estimate and due date by default", async () => {
+	const data = await loadData();
+	const cards = data.createButterPayBoardColumns().flatMap((column) => column.cards);
+	assert.equal(cards.length, 30);
+	for (const card of cards) {
+		assert.equal(typeof card.storyPoints, "number", card.code);
+		assert.match(card.dueDate ?? "", /^\d{4}-\d{2}-\d{2}$/u, card.code);
+	}
+	const first = cards.find((card) => card.code === "PAY-118");
+	assert.equal(first.storyPoints, 3);
+	assert.equal(first.dueDate, "2026-11-23");
 });

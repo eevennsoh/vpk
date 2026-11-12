@@ -4559,10 +4559,10 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 448,
+			"manifestEntryCount": 449,
 			"categoryCount": 8,
 			"statusCounts": {
-				"live": 442,
+				"live": 443,
 				"frozen": 5,
 				"superseded": 1
 			}
@@ -6372,7 +6372,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 77,
+				"entryCount": 78,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6659,6 +6659,13 @@
 						"slug": "object-tile",
 						"name": "Object Tile",
 						"importPath": "@/components/ui-custom/object-tile",
+						"status": "live"
+					},
+					{
+						"category": "ui-custom",
+						"slug": "open-in",
+						"name": "Open in",
+						"importPath": "@/components/ui-custom/open-in",
 						"status": "live"
 					},
 					{

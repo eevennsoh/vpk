@@ -2,7 +2,7 @@
 
 import { use, useEffect, useRef, type RefObject } from "react";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import { Popover, PopoverContent } from "@/components/ui/popover";
+import { PopoverContent } from "@/components/ui/popover";
 import { AgentAdd } from "@/components/ui-custom/agent-add";
 import { DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -61,24 +61,6 @@ export function ProjectButterMenuAgentSubmenu({ assignment, onRequestClose, trig
 				/>}
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
-	);
-}
-
-export function ProjectButterMenuAgentPicker({ assignment, id, source: pickerSource = "menu", triggerRef }: Readonly<{
-	assignment: JiraIssueAgentAssignment;
-	id: string;
-	source?: "menu" | "session";
-	triggerRef: RefObject<HTMLElement | null>;
-}>) {
-	const phase = useProjectButterInvocationPhase();
-	const source = useProjectButterInvocationSource();
-	const actions = useProjectButterInvocationActions();
-	const cloudPicker = use(ButterInlineAgentPickerContext);
-	const assignAgent = useButterAgentAssignment(assignment, triggerRef);
-	return (
-		<Popover open={phase === "choosing" && source === pickerSource} onOpenChange={(open) => open ? actions?.open(pickerSource) : actions?.close()}>
-			{cloudPicker ? <PopoverContent id={id} anchor={triggerRef} aria-label="Agents" side="right" align="start" alignOffset={-6} sideOffset={8} className="w-80 max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}><ProjectButterCloudAgentPicker onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents ? () => { actions?.close(); assignment.onBrowseAgents?.(); } : undefined} /></PopoverContent> : <ProjectButterAgentPicker id={id} anchor={triggerRef} onAssign={assignAgent} onBrowseAgents={assignment.onBrowseAgents} onCreateAgent={assignment.onCreateAgent} sessions={assignment.sessions} onContinueSession={assignment.onOpenSession ? (session) => { actions?.close(); assignment.onOpenSession?.(session); } : undefined} />}
-		</Popover>
 	);
 }
 

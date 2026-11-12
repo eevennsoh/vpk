@@ -1,4 +1,5 @@
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { moveJiraKanbanCardsToStatus } from "@/components/blocks/jira-kanban/card-drop";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type {
 	JiraKanbanAgentData,
@@ -43,6 +44,21 @@ const STATUS_VARIANTS: Readonly<Record<string, JiraListRowData["statusVariant"]>
 
 const JIRA_AGENT_AUTO_PROGRESS_SOURCES = new Set(["To do", "Done"]);
 const JIRA_AGENT_ACTIVE_COLUMN = "In progress";
+
+export function resumeButterPay112(columns: readonly JiraKanbanColumnData[]): JiraKanbanColumnData[] {
+	const updated = columns.map((column) => ({
+		...column,
+		cards: column.cards.map((card) => card.code !== "PAY-112" ? card : {
+			...card,
+			agentActivities: card.agentActivities?.map((activity) => activity.id !== "PAY-112:review-agent" ? activity : {
+				...activity,
+				state: "working" as const,
+				question: undefined,
+			}),
+		}),
+	}));
+	return moveJiraKanbanCardsToStatus(updated, ["PAY-112"], JIRA_AGENT_ACTIVE_COLUMN);
+}
 
 export function progressButterWorkItemOnStart(
 	columns: readonly JiraKanbanColumnData[],

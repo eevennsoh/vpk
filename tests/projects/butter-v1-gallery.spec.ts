@@ -3,6 +3,281 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+for (const [answer, reply] of [
+	["Assume a 7-day sandbox window", "I’ll use a seven-day retention window for the sandbox replay"],
+	["Do not replay keys against live accounts", "I’ll keep replay away from live accounts"],
+	["Jordan signs off the retention window", "I’ll prepare the sandbox replay plan and ask Jordan"],
+] as const) {
+	test(`PAY-112 resumes after choosing ${answer}`, async ({ page }) => {
+		await page.setViewportSize({ width: 1800, height: 1100 });
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Close gallery" }).click();
+		const card = page.locator('[data-issue-key="PAY-112"][data-board-column-title]');
+		await expect(card).toHaveAttribute("data-board-column-title", "In review");
+		await card.getByRole("button", { name: "Codex: Needs input" }).click();
+		await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+		await page.getByRole("button", { name: new RegExp(answer) }).click();
+		await expect(page.getByText(reply, { exact: false })).toBeVisible();
+		await expect(page.getByText("That clarification card expired", { exact: false })).toHaveCount(0);
+		await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+		await expect(card.getByRole("button", { name: "Codex: Working" })).toBeVisible();
+		await expect(page.getByRole("log").getByRole("button", { name: "Working", exact: true })).toBeVisible();
+		await expect(page.getByRole("button", { name: /Preparing sandbox replay checks/ })).toBeVisible();
+		await page.waitForTimeout(4_000);
+		await expect(page.getByRole("log").getByRole("button", { name: "Working", exact: true })).toBeVisible();
+		await expect(page.getByText(/Thought for 0s/)).toHaveCount(0);
+		await page.getByRole("button", { name: "Close", exact: true }).click();
+		await card.getByRole("button", { name: "Codex: Working" }).click();
+		await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+		await expect(page.getByText(reply, { exact: false })).toBeVisible();
+		await expect(page.getByRole("log").getByRole("button", { name: "Working", exact: true })).toBeVisible();
+		await page.waitForTimeout(4_000);
+		await expect(page.getByRole("log").getByRole("button", { name: "Working", exact: true })).toBeVisible();
+	});
+}
+
+test("PAY-112 uses the journey card move and trace when resumed on the board", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const card = page.locator('[data-issue-key="PAY-112"][data-board-column-title]');
+	await card.getByRole("button", { name: "Codex: Needs input" }).click();
+	await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+	await page.getByRole("button", { name: /Assume a 7-day sandbox window/ }).click();
+	await expect(page.locator('[data-issue-drop-flight="PAY-112"]')).toBeAttached();
+	await expect(page.locator('[data-issue-drop-trace]')).toBeAttached();
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(card.getByRole("button", { name: "Codex: Working" })).toBeVisible();
+});
+
+test("PAY-112 keeps working after switching between agent sessions", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const card = page.locator('[data-issue-key="PAY-112"][data-board-column-title]');
+	await card.getByRole("button", { name: "Codex: Needs input" }).click();
+	await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+	await page.getByRole("button", { name: /Assume a 7-day sandbox window/ }).click();
+	await expect(card.getByRole("button", { name: "Codex: Working" })).toBeVisible();
+	await page.waitForTimeout(4_000);
+	await expect(page.getByRole("log").getByRole("button", { name: /^(Working|Thinking)$/ })).toBeVisible();
+	await expect(page.getByText(/Thought for 0s/)).toHaveCount(0);
+	await page.getByRole("button", { name: "Close", exact: true }).click();
+	await page.getByRole("button", { name: "In progress", exact: true }).click();
+	const merchant = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
+	await merchant.getByRole("button", { name: "Claude: Working" }).click();
+	await page.getByRole("button", { name: "Improve merchant onboarding", exact: true }).click();
+	await expect(page.getByText("Checking the sandbox quickstart", { exact: false }).first()).toBeVisible();
+	await page.getByRole("button", { name: "Close", exact: true }).click();
+	await card.getByRole("button", { name: "Codex: Working" }).click();
+	await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+	await page.waitForTimeout(4_000);
+	await expect(page.getByRole("log").getByRole("button", { name: /^(Working|Thinking)$/ })).toBeVisible();
+	await expect(page.getByText(/Thought for 0s/)).toHaveCount(0);
+});
+
+test("PAY-112 resumes from List without waiting for a hidden board animation", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	const row = page.getByRole("row").filter({ hasText: "PAY-112" });
+	await row.getByRole("button", { name: "Codex: Needs input" }).click();
+	await page.getByRole("button", { name: "Review sandbox key retention", exact: true }).click();
+	await page.getByRole("button", { name: /Assume a 7-day sandbox window/ }).click();
+	await expect(row.getByRole("button", { name: "Codex: Working" })).toBeVisible();
+	await expect(row.getByRole("button", { name: "Change status for PAY-112. Current status: In progress" })).toBeVisible();
+});
+
+test("closing the journey work item does not replay the board glow", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude (Recommended)", exact: true }).click();
+	await expect(item.getByRole("button", { name: "Change status, In progress" })).toBeVisible({ timeout: 10_000 });
+	await page.evaluate(() => {
+		const board = document.querySelector("[data-butter-board-surface]");
+		if (!board) throw new Error("Board not found");
+		const observer = new MutationObserver(() => {
+			if (board.querySelector('[data-jira-linking-glow-halo], [data-jira-linking-glow-backdrop]')) {
+				document.documentElement.setAttribute("data-journey-board-glow-observed", "true");
+			}
+		});
+		observer.observe(board, { childList: true, subtree: true });
+	});
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(card.getByRole("button", { name: "Claude: Working" })).toBeVisible();
+	await page.waitForTimeout(2_000);
+	await expect(page.locator("html")).not.toHaveAttribute("data-journey-board-glow-observed", "true");
+});
+
+test("Claude starts before moving the work item to In progress", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	await page.clock.install();
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude (Recommended)", exact: true }).click();
+	const thread = item.locator('[data-jira-activity-entry-id^="invocation-"]');
+	const statusChange = item.locator('[data-jira-activity-entry-id^="merchant-status-"]');
+	await expect(thread.locator("[data-project-butter-session-start]")).toBeVisible();
+	await expect(item.getByRole("button", { name: "Change status, To do" })).toBeVisible();
+	await expect(card).toHaveAttribute("data-board-column-title", "To do");
+	await expect(statusChange).toHaveCount(0);
+	await page.clock.fastForward(3_000);
+	await expect(thread.getByText(/I.m looking into this issue now/)).toBeVisible({ timeout: 6_000 });
+	await expect(statusChange).toHaveCount(0);
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await expect(card).toHaveAttribute("data-board-column-title", "To do");
+	await page.clock.fastForward(2_000);
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	await expect(statusChange).toContainText("changed status from To do to In progress", { timeout: 6_000 });
+	await expect(item.getByRole("button", { name: "Change status, In progress" })).toBeVisible();
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
+	await card.locator('[data-slot="jira-issue-card"]').click();
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude (Recommended)", exact: true }).click();
+	await expect(thread.locator("[data-project-butter-session-start]")).toBeVisible();
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await page.getByRole("button", { name: "Reset", exact: true }).click();
+	await page.clock.fastForward(5_000);
+	await expect(card).toHaveAttribute("data-board-column-title", "To do");
+});
+
+test("the journey keeps its embedded session card across stages and rewind", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]');
+	for (const step of ["In progress", "Pull request", "Fix checks", "Done", "In progress"]) {
+		if (await item.isVisible()) await item.getByRole("button", { name: "Close Project butter work item" }).click();
+		await page.getByRole("button", { name: step, exact: true }).click();
+		if (!await item.isVisible()) await card.click();
+		const thread = item.locator('[data-jira-activity-entry-id^="invocation-"]');
+		await expect(thread.locator("[data-project-butter-session-start]")).toContainText("Improve merchant onboarding");
+		await expect(thread.locator("[data-project-butter-session-start]")).toContainText(step === "Done" ? "Finished" : "Working");
+	}
+});
+
+test("journey checks wait for the PR card before progressing and fixing", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.clock.install();
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("button", { name: "Pull request", exact: true }).click();
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]');
+	await card.click();
+	const item = page.getByRole("dialog", { name: "Project butter" });
+	const development = item.getByRole("region", { name: "Pull request development" });
+	await expect(development).toHaveAttribute("data-project-butter-development", "pr");
+	await page.clock.fastForward(20_000);
+	await expect(development).toHaveAttribute("data-project-butter-development", "pr");
+	await development.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).press("Enter");
+	const flyout = page.getByRole("group", { name: "Pull request #284: Add merchant onboarding quickstart" });
+	await expect(flyout).toBeVisible();
+	for (const phase of ["failed", "fixing", "passed", "merged"]) {
+		await page.clock.fastForward(5_000);
+		await expect(development).toHaveAttribute("data-project-butter-development", phase);
+		await expect(flyout).toBeVisible();
+	}
+	await expect(flyout).toContainText("Merged");
+	await item.getByRole("button", { name: "Close Project butter work item" }).click();
+	await page.getByRole("button", { name: "Fix checks", exact: true }).click();
+	await expect(development).toHaveAttribute("data-project-butter-development", "failed");
+	await page.clock.fastForward(20_000);
+	await expect(development).toHaveAttribute("data-project-butter-development", "failed");
+});
+
+test("teammate sessions keep their popover alignment while expanding near the viewport edge", async ({ page }) => {
+	await page.setViewportSize({ width: 1398, height: 1236 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	await page.getByRole("button", { name: "6 agents: Working" }).click();
+	const popup = page.getByRole("dialog", { name: "Agent assignment" });
+	const disclosure = popup.getByRole("button", { name: "Sessions from your teammates" });
+	await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+	await page.setViewportSize({ width: 1398, height: 900 });
+	await expect(popup).toHaveAttribute("data-align", "start");
+	await disclosure.click();
+	await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+	const panel = popup.locator('[data-slot="collapsible-content"]');
+	await expect.poll(() => panel.evaluate((element) => Math.abs(element.getBoundingClientRect().height - element.scrollHeight))).toBeLessThan(1);
+	await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+	await expect(popup).toHaveAttribute("data-align", "start");
+	await expect(popup.getByText("Recording decline-code fixtures")).toBeVisible();
+	await disclosure.press("Escape");
+	await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+	await expect(disclosure).toBeFocused();
+});
+
+test("board chin avatars fit a 24px slot without shrinking list avatars", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Board" }).click();
+	for (const label of ["Claude: Working", "2 agents: Working"]) {
+		const row = page.getByRole("button", { name: label, exact: true });
+		const avatar = row.locator('[data-slot="avatar"]').first();
+		await expect(avatar).toBeVisible();
+		const bounds = await avatar.boundingBox();
+		const slot = await row.locator('[data-slot="jira-issue-agent-avatar-handoff"] > span').boundingBox();
+		if (!bounds || !slot) throw new Error("Board agent avatar is unavailable");
+		expect(bounds.width).toBeCloseTo(20, 1);
+		expect(bounds.height).toBeCloseTo(20, 1);
+		expect(slot.width).toBeCloseTo(24, 1);
+		expect(slot.height).toBeCloseTo(24, 1);
+	}
+	await page.getByRole("button", { name: "Select List" }).click();
+	const avatar = page.getByRole("button", { name: "Add agent to PAY-123" }).locator("xpath=ancestor::td").locator('.agent-loading-vertical [data-slot="avatar"]').first();
+	await expect(avatar).toBeVisible();
+	const listBounds = await avatar.boundingBox();
+	if (!listBounds) throw new Error("List agent avatar is unavailable");
+	expect(listBounds.width).toBeCloseTo(24, 1);
+	expect(listBounds.height).toBeCloseTo(24, 1);
+});
+
+test("list agent add stays the same size as the agent avatar", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List" }).click();
+	const add = page.getByRole("button", { name: "Add agent to PAY-123" });
+	const cell = add.locator("xpath=ancestor::td");
+	const visual = add.locator('[data-slot="jira-issue-add-agent-visual"]');
+	const avatar = cell.locator('.agent-loading-vertical [data-slot="avatar"]').first();
+	await page.mouse.move(0, 0);
+	await expect(avatar).toBeVisible();
+	for (const state of ["rest", "focus"] as const) {
+		if (state === "focus") await add.focus();
+		const addBounds = await visual.boundingBox();
+		const avatarBounds = await avatar.boundingBox();
+		if (!addBounds || !avatarBounds) throw new Error("Agent controls are unavailable");
+		expect(addBounds.width, state).toBeCloseTo(24, 1);
+		expect(addBounds.height, state).toBeCloseTo(24, 1);
+		expect(addBounds.width, state).toBeCloseTo(avatarBounds.width, 1);
+		expect(addBounds.height, state).toBeCloseTo(avatarBounds.height, 1);
+	}
+	await add.press("Enter");
+	await expect(page.getByRole("dialog", { name: "Agents" })).toBeVisible();
+});
+
 test("due date text and calendar icon are vertically centered", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
@@ -151,6 +426,36 @@ test("attachment piles stay settled when entering Work item and remain interacti
 	await expect(page.getByRole("button", { name: "Close documents" })).toHaveAttribute("aria-expanded", "true");
 });
 
+test("the empty agent field stays in place when its picker opens", async ({ page }) => {
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select e2e Journey" }).click();
+	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+	const field = page.getByRole("group", { name: "Agents field" });
+	const position = () => field.evaluate((element) => {
+		const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+		let label: Node | null = null;
+		while (walker.nextNode()) { if (walker.currentNode.textContent?.startsWith("Add")) { label = walker.currentNode; break; } }
+		const icon = element.querySelector("svg");
+		if (!label || !icon) throw new Error("Missing empty agent field content");
+		const range = document.createRange();
+		range.setStart(label, 0);
+		range.setEnd(label, 3);
+		const bounds = (rect: DOMRect) => { const { x, y, width, height } = rect; return { x, y, width, height }; };
+		return { label: bounds(range.getBoundingClientRect()), icon: bounds(icon.getBoundingClientRect()) };
+	});
+	const before = await position();
+	await field.getByRole("button", { name: "Add agent" }).click();
+	await expect(page.getByRole("dialog", { name: "Add agent" })).toBeVisible();
+	const after = await position();
+	for (const part of ["label", "icon"] as const) {
+		for (const dimension of ["x", "y", "width", "height"] as const) {
+			expect(after[part][dimension], `${part} ${dimension}`).toBeCloseTo(before[part][dimension], 0);
+		}
+	}
+});
+
 test("the e2e journey starts and resets with a complete ticket ready to invoke", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
@@ -170,10 +475,10 @@ test("the e2e journey starts and resets with a complete ticket ready to invoke",
 	await expect(item.getByText("Confirm the English-only account allow-list", { exact: true })).toBeVisible();
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("Start with the English-only pilot");
 	await item.getByRole("button", { name: "Add agent", exact: true }).click();
-	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude (Recommended)", exact: true }).click();
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("Venn added Claude");
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
-	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress", { timeout: 10_000 });
 	await expect(card.getByText("onboarding", { exact: true })).toBeVisible();
 	await invoke.click();
 	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
@@ -213,7 +518,7 @@ test("the work item shows automation rules and recent runs in the card", async (
 	const labelBounds = await recentButton.locator("span").first().boundingBox();
 	const recurBounds = await automation.getByRole("button", { name: "Set to recur" }).boundingBox();
 	const automationBounds = await automation.boundingBox();
-	const repositoryBounds = await details.getByRole("button", { name: "Configure repository" }).boundingBox();
+	const repositoryBounds = await details.getByRole("button", { name: "Start coding" }).boundingBox();
 	if (!buttonBounds || !labelBounds || !recurBounds || !automationBounds || !repositoryBounds) throw new Error("Action button bounds are unavailable");
 	expect(automationBounds.y + automationBounds.height - (recurBounds.y + recurBounds.height)).toBeCloseTo(recurBounds.x - automationBounds.x, 0);
 	expect(automationBounds.x + automationBounds.width - (recurBounds.x + recurBounds.width)).toBeCloseTo(recurBounds.x - automationBounds.x, 0);
@@ -564,23 +869,26 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await expect.poll(() => gallery.getByRole("button").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")))).toEqual([
-		"Select Agent selector",
+		"Select e2e Journey",
+		"Select Agent & app selector",
 		"Select Duplicative sessions",
 		"Select Board",
 		"Select Work item",
 		"Select List",
 		"Select Pull request",
 		"Select Development panel",
-		"Select e2e Journey",
 	]);
-	for (const name of ["Board", "Agent selector", "Work item", "List", "Pull request", "e2e Journey"]) {
+	for (const name of ["Board", "Agent & app selector", "Work item", "List", "Pull request", "e2e Journey"]) {
 		await expect(gallery.getByRole("button", { name: `Select ${name}` })).toBeVisible();
 	}
-	await expect(gallery.getByRole("button", { name: "Select Agent selector" })).toHaveAttribute("aria-pressed", "true");
+	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toHaveAttribute("aria-pressed", "true");
+	await expect(page.getByRole("group", { name: "Merchant onboarding journey steps" })).toBeVisible();
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
+	await expect(gallery.getByRole("button", { name: "Select Agent & app selector" })).toHaveAttribute("aria-pressed", "true");
 	await expect(page.getByRole("region", { name: "Project Butter agent selector" })).toBeVisible();
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();
 	const boardTile = await gallery.getByRole("button", { name: "Select Board" }).boundingBox();
-	const agentTile = await gallery.getByRole("button", { name: "Select Agent selector" }).boundingBox();
+	const agentTile = await gallery.getByRole("button", { name: "Select Agent & app selector" }).boundingBox();
 	if (!boardTile || !agentTile) throw new Error("Gallery tiles have no bounds");
 	expect(agentTile.height).toBeGreaterThan(boardTile.height);
 	await expect(gallery.getByRole("button", { name: "Select e2e Journey" })).toHaveAttribute("aria-pressed", "true");
@@ -639,22 +947,64 @@ test("the Development panel gallery item shows the populated interactive panel",
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.clock.install();
+	await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 100));
 	await page.getByRole("button", { name: "Select Development panel" }).click();
 	const panel = page.getByRole("region", { name: "Pull request development" });
 	await expect(panel).toHaveAttribute("data-project-butter-development", "failed");
 	await expect(panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ })).toBeVisible();
+	await panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).click();
+	const fix = page.getByRole("button", { name: "Fix PR" });
+	await expect(fix).toBeEnabled();
 	const initial = await panel.boundingBox();
 	if (!initial) throw new Error("Development panel has no bounds");
-	for (const phase of ["fixing", "passed", "merged"]) {
-		await page.clock.fastForward(5000);
+	await page.clock.fastForward(4000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "failed");
+	for (const phase of ["fixing", "passed"]) {
+		await page.clock.fastForward(phase === "fixing" ? 1000 : 5000);
 		await expect(panel).toHaveAttribute("data-project-butter-development", phase);
+		if (phase === "fixing") {
+			await expect(fix).toBeDisabled();
+			await expect(fix).toHaveAttribute("aria-busy", "true");
+			await expect(fix.locator('[data-slot="spinner"]')).toBeVisible();
+		} else {
+			await expect(fix).toHaveCount(0);
+		}
 		const current = await panel.boundingBox();
 		if (!current) throw new Error(`Development panel has no bounds in ${phase}`);
 		expect(Math.abs(current.x - initial.x)).toBeLessThanOrEqual(1);
 		expect(Math.abs(current.y - initial.y)).toBeLessThanOrEqual(1);
 	}
-	await panel.getByRole("button", { name: /#284 Add merchant onboarding quickstart/ }).click();
+	await page.clock.fastForward(1999);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
+	await page.clock.fastForward(1);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "merged");
+	await expect(fix).toHaveCount(0);
+	const merged = await panel.boundingBox();
+	if (!merged) throw new Error("Development panel has no bounds in merged");
+	expect(Math.abs(merged.x - initial.x)).toBeLessThanOrEqual(1);
+	expect(Math.abs(merged.y - initial.y)).toBeLessThanOrEqual(1);
 	await expect(page.getByText("payments-platform/payments").first()).toBeVisible();
+});
+
+test("the Development panel waits for manual merge when automation is disabled", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1600, height: 1200 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.clock.install();
+	await page.getByRole("button", { name: "Select Development panel" }).click();
+	const panel = page.getByRole("region", { name: "Pull request development" });
+	await panel.getByRole("button", { name: "Configure", exact: true }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Merge when ready" }).click();
+	await page.keyboard.press("Escape");
+	await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 100));
+	await page.clock.fastForward(5000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "fixing");
+	await page.clock.fastForward(5000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
+	await page.clock.fastForward(5000);
+	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
+	await panel.getByRole("button", { name: "Merge pull request" }).click();
+	await expect(panel).toHaveAttribute("data-project-butter-development", "merged");
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
@@ -879,12 +1229,12 @@ test("board session flyout reveals more actions when hovering the status", async
 	await expect(more).toBeFocused();
 });
 
-test("the original Butter session menu still offers Add agent", async ({ page }) => {
+test("the original Butter session menu shows sessions without an Add agent footer", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter"));
 	await page.locator('[data-issue-key="PAY-105"][data-board-column-title]').getByRole("button", { name: "Cursor: Working" }).click();
-	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true })).toBeVisible();
+	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
 });
 
 test("session titles describe their work in grouped, review, and List views", async ({ page }) => {
@@ -944,7 +1294,7 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Carry card-artwork metadata into the next wallet epic", { exact: true })).toBeVisible();
 });
 
-test("configure repository opens the development dropdown in a work item", async ({ page }) => {
+test("start coding opens the development dropdown in a work item", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -953,8 +1303,8 @@ test("configure repository opens the development dropdown in a work item", async
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	await board.locator('[data-issue-key="PAY-105"] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
-	await item.getByRole("button", { name: "Configure repository" }).click();
-	const menu = page.getByRole("menu", { name: "Configure repository" });
+	await item.getByRole("button", { name: "Start coding" }).click();
+	const menu = page.getByRole("menu", { name: "Start coding" });
 	await expect(menu).toHaveCSS("border-radius", "12px");
 	for (const name of ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"]) {
 		await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
@@ -962,7 +1312,7 @@ test("configure repository opens the development dropdown in a work item", async
 	await expect(menu.getByRole("menuitem", { name: "Branch name settings" })).toBeVisible();
 	await expect(item.locator('[data-rovo-chat-placement="floating"]')).toHaveCount(0);
 	await page.keyboard.press("Escape");
-	await expect(item.getByRole("button", { name: "Configure repository" })).toBeFocused();
+	await expect(item.getByRole("button", { name: "Start coding" })).toBeFocused();
 });
 
 
@@ -985,4 +1335,28 @@ test("Escape closes the local-agent picker without closing the work item", async
 	await expect(picker).toBeHidden();
 	await expect(item).toBeVisible();
 	await expect(trigger).toBeFocused();
+});
+
+test("the last-used app action shows a borderless, 16px mark", async ({ page }) => {
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const item = page.getByRole("region", { name: "Work item full screen view" });
+	await item.getByRole("button", { name: "Open in", exact: true }).click();
+	await page.getByRole("dialog", { name: "Local software agents" }).getByRole("button", { name: "Claude", exact: true }).click();
+	const claude = item.getByRole("button", { name: "Open in Claude" });
+	await expect(claude.locator('[data-slot="avatar"]')).toHaveCount(0);
+	const ink = await claude.locator("svg").evaluate((element) => {
+		if (!(element instanceof SVGSVGElement)) throw new Error("Claude mark is not an SVG");
+		const bounds = element.getBoundingClientRect();
+		const artwork = element.getBBox();
+		return { width: bounds.width * artwork.width / element.viewBox.baseVal.width, height: bounds.height * artwork.height / element.viewBox.baseVal.height };
+	});
+	expect(ink.width).toBeCloseTo(16, 0);
+	expect(ink.height).toBeCloseTo(16, 0);
+	await item.getByRole("button", { name: "Open in", exact: true }).click();
+	await page.getByRole("dialog", { name: "Local software agents" }).getByRole("button", { name: "VS Code", exact: true }).click();
+	const vsCode = item.getByRole("button", { name: "Open in VS Code" });
+	await expect(vsCode.locator("svg")).toHaveCSS("width", "16px");
+	await expect(vsCode.locator("svg")).toHaveCSS("height", "16px");
+	await expect(vsCode.locator('[data-slot="tile"]')).toHaveCount(0);
 });

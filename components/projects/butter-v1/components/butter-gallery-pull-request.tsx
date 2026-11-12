@@ -10,6 +10,9 @@ import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-but
 import { ButterInlineAgentPickerContext } from "@/components/blocks/jira-issue/project-butter-inline-picker-context";
 import { BOARD_COLUMN_WIDTH_PX } from "@/components/blocks/jira-kanban/experimental/lib/board-column-collapse";
 import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
+import { projectButterDevelopmentChecks } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
+import type { JiraIssuePullRequestItem } from "@/components/blocks/jira-issue/types";
+import type { PullRequestStatus } from "@/components/blocks/pull-request";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { renderButterAgentActivityIndicator } from "@/components/projects/butter-v1/data/agent-activity-indicators";
 import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES } from "@/components/projects/butter-v1/data/chat-agent-profiles";
@@ -23,7 +26,7 @@ import { token } from "@/lib/tokens";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 
-export type ButterPullRequestStatus = "open" | "merged";
+export type ButterPullRequestStatus = "open" | "merged" | "multiple";
 
 const CURRENT_USER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
 const JOURNEY_SESSION: ProjectButterSessionItem = {
@@ -48,13 +51,28 @@ function pullRequestCard(phase: "pr" | "merged") {
 
 const PULL_REQUEST_CARDS = { open: pullRequestCard("pr"), merged: pullRequestCard("merged") };
 
+const merchantPreview = PULL_REQUEST_CARDS.open.pullRequestPreview;
+if (!merchantPreview) throw new Error("Missing Project Butter pull request preview");
+const MULTIPLE_PULL_REQUESTS: readonly JiraIssuePullRequestItem[] = [
+	{ number: 284, status: "open", preview: merchantPreview },
+	{ number: 282, status: "failed", preview: { title: "Improve payment error messages", author: merchantPreview.author, relativeTime: "2 hours ago", repository: "payments-platform/payments", branch: "rovo/pay-999-payment-errors", targetBranch: "main", filesChanged: 5, additions: 96, deletions: 23, checks: projectButterDevelopmentChecks("failed") } },
+	{ number: 281, status: "draft", preview: { title: "Add onboarding integration tests", author: merchantPreview.author, relativeTime: "1 day ago", repository: "payments-platform/payments", branch: "rovo/pay-999-onboarding-tests", targetBranch: "main", filesChanged: 3, additions: 78, deletions: 6, checks: [
+		{ id: "build", name: "Build", status: "queued", details: "Waiting to build integration tests" },
+		{ id: "tests", name: "Unit tests", status: "queued", details: "Waiting to run onboarding tests" },
+		{ id: "accessibility", name: "Accessibility", status: "queued", details: "Waiting to run accessibility checks" },
+	] } },
+	{ number: 283, status: "merged", preview: { title: "Add Payments SDK migration guide", author: merchantPreview.author, relativeTime: "2 days ago", repository: "payments-platform/payments", branch: "rovo/pay-999-migration-guide", targetBranch: "main", filesChanged: 4, additions: 142, deletions: 18, checks: projectButterDevelopmentChecks("merged") } },
+];
+const PULL_REQUEST_STATUSES = { open: "Open", failed: "Failed", draft: "Draft", merged: "Merged" } satisfies Record<JiraIssuePullRequestItem["status"], PullRequestStatus>;
+const MULTIPLE_DEVELOPMENT_PULL_REQUESTS = MULTIPLE_PULL_REQUESTS.map(({ number, preview, status }) => ({ ...preview, number, status: PULL_REQUEST_STATUSES[status] }));
+
 export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{ status?: ButterPullRequestStatus }>) {
 	const router = useRouter();
 	const workItem = useButterWorkItem();
 	const [directoryOpen, setDirectoryOpen] = useState(false);
 	const [addedActivities, setAddedActivities] = useState<readonly JiraIssueAgentActivity[]>([]);
 	const phase = status === "merged" ? "merged" : "pr";
-	const baseCard = PULL_REQUEST_CARDS[status];
+	const baseCard = PULL_REQUEST_CARDS[status === "merged" ? "merged" : "open"];
 	const card = { ...baseCard, agentActivities: [...(baseCard.agentActivities ?? []), ...addedActivities] };
 	const addAgent = (agent: AgentSelectorAgent) => {
 		const activity = toButterAgentActivityFromSession({ id: `${card.code}:${crypto.randomUUID()}`, agent: { id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }, title: card.title, state: "needs-input", host: "cloud", timeLabel: "Just now", invokedBy: { name: CURRENT_USER.name, avatarSrc: CURRENT_USER.avatarUrl } });
@@ -86,6 +104,7 @@ export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{
 						onClick={() => workItem.openWorkItem(merchantJourneyAuthoredCard(card), status === "merged" ? "Done" : "In progress")}
 						priority={card.priority}
 						pullRequestNumber={card.pullRequestNumber}
+						pullRequests={status === "multiple" ? MULTIPLE_PULL_REQUESTS : undefined}
 						pullRequestPreview={card.pullRequestPreview}
 						pullRequestStatus={card.pullRequestStatus}
 						renderAgentActivityIndicator={renderButterAgentActivityIndicator}
@@ -98,12 +117,13 @@ export default function ButterGalleryPullRequest({ status = "open" }: Readonly<{
 			{directoryOpen ? <AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} onCreateAgent={() => router.push("/studio")} onOpenChange={setDirectoryOpen} onSelectAgent={() => setDirectoryOpen(false)} open={directoryOpen} variant="standard-v2" /> : null}
 			{workItem.selection ? (
 				<ProjectButterJiraWorkItem
+					inlineSessionReplies
 					autoAssignClaudeToCurrentUser
 					currentUser={CURRENT_USER}
 					defaultReporter={CURRENT_USER}
-					developmentJourney={{ phase, agentName: "Claude", author: { ...CURRENT_USER, assistedBy: { name: "Claude", brandName: "claude" } }, autoFixEnabled: true, autoMergeEnabled: true }}
+					developmentJourney={{ phase, agentName: "Claude", author: { ...CURRENT_USER, assistedBy: { name: "Claude", brandName: "claude" } }, autoFixEnabled: true, autoMergeEnabled: true, pullRequests: status === "multiple" ? MULTIPLE_DEVELOPMENT_PULL_REQUESTS : undefined }}
 					initialPreset="filled"
-					initialPresentation="modal"
+					initialPresentation="full-screen"
 					initialSessions={workItem.selection.initialSessions}
 					journeyPhase={phase}
 					journeySession={JOURNEY_SESSION}

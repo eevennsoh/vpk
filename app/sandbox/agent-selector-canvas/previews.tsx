@@ -7,6 +7,7 @@ import { ProjectButterInvocationProvider } from "@/components/blocks/jira-issue/
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { FavoritesPreview } from "./favorites-preview";
 import { DestinationAfterSelectPreview, GlobalDestinationPreview, InlineActionsPreview, RememberDestinationPreview, RowActionsPreview } from "./destination-previews";
+import { ActivityDigestPreview, PeopleFoldPreview, QuietDisclosurePreview } from "@/app/sandbox/agent-selector-canvas/teammate-session-previews";
 
 const safeAgents = BUTTER_PICKER_AGENTS.filter((agent) => agent.id !== "rovo-cli");
 const cursorSession: readonly AgentSessionItem[] = [{
@@ -84,4 +85,22 @@ export const previews = [{
 	component: DestinationAfterSelectPreview,
 	position: { x: 3800, y: 0 },
 	width: 320,
+}, {
+	id: "teammate-sessions-quiet",
+	name: "Teammate sessions · Quiet disclosure",
+	component: QuietDisclosurePreview,
+	position: { x: 2040, y: 680 },
+	width: 280,
+}, {
+	id: "teammate-sessions-people",
+	name: "Teammate sessions · People fold",
+	component: PeopleFoldPreview,
+	position: { x: 2480, y: 680 },
+	width: 280,
+}, {
+	id: "teammate-sessions-activity",
+	name: "Teammate sessions · Activity digest",
+	component: ActivityDigestPreview,
+	position: { x: 2920, y: 680 },
+	width: 280,
 }] as const;

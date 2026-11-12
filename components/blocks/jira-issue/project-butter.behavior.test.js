@@ -9,6 +9,58 @@ const subtasks = [
 	{ issueKey: "PD-43", summary: "Test date-range edge cases", status: "To Do", priority: "minor" },
 ];
 
+test("Butter cloud picker recommends Claude and keeps The Council selectable", async () => {
+	const assigned = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-inline-agent-picker.tsx",
+		exportName: "ProjectButterCloudAgentPicker",
+		mocks: { "@/components/ui-custom/agent-avatar-visual": "export function AgentAvatarVisual() { return null; }" },
+		props: { onAssign: (agent) => assigned.push(agent.id) },
+	});
+	assert.equal(view.container.querySelector("[data-agent-id]")?.getAttribute("data-agent-id"), "claude-code");
+	assert.equal(view.container.querySelectorAll('[data-agent-id="claude-code"]').length, 1);
+	await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
+	assert.deepEqual(assigned, ["claude-code"]);
+	await view.fill(view.getByRole("textbox", { name: "Search agents" }), "The Council");
+	await view.click(view.getByRole("button", { name: "The Council" }));
+	assert.deepEqual(assigned, ["claude-code", "the-council"]);
+	await view.unmount();
+});
+
+test("PR icon identifies draft and failed pull requests", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
+		exportName: "ProjectButterSummary",
+		props: { issueKey: "PAY-1", summary: "Payments", pullRequestNumber: 42, pullRequestStatus: "draft" },
+	});
+	const draft = view.getByRole("button", { name: "Draft pull request #42: Payments" });
+	assert.equal(draft.classList.contains("group-hover/jira-issue:text-icon-subtle"), true);
+	await view.click(draft);
+	assert.equal(view.getByRole("dialog", { name: "Pull request #42 details" }).textContent.includes("Draft"), true);
+	await view.unmount();
+	const failedView = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
+		exportName: "ProjectButterSummary",
+		props: { issueKey: "PAY-1", summary: "Payments", pullRequestNumber: 42, pullRequestStatus: "failed" },
+	});
+	const failed = failedView.getByRole("button", { name: "Pull request failed #42: Payments" });
+	assert.equal(failed.classList.contains("group-hover/jira-issue:text-icon-danger"), true);
+	await failedView.click(failed);
+	assert.equal(failedView.getByRole("dialog", { name: "Pull request #42 details" }).textContent.includes("Failed"), true);
+});
+
+test("multiple PRs show open, failed, draft, then merged, retaining order within a status", async () => {
+	const item = (number, status) => ({ number, status, preview: { title: `PR ${number}`, additions: 0, deletions: 0 } });
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
+		exportName: "ProjectButterSummary",
+		props: { issueKey: "PAY-1", summary: "Payments", pullRequestNumber: 1, pullRequests: [item(1, "merged"), item(2, "draft"), item(3, "open"), item(4, "failed"), item(5, "open")] },
+	});
+	await view.click(view.getByRole("button", { name: "Pull requests for PAY-1" }));
+	const list = view.getByRole("list", { name: "Pull requests" });
+	assert.deepEqual(Array.from(list.querySelectorAll("button"), (button) => button.textContent), ["#3 PR 3Open", "#5 PR 5Open", "#4 PR 4Failed", "#2 PR 2Draft", "#1 PR 1Merged"]);
+});
+
 test("Jira Local Agent remembers the last used agent and copies the work item prompt", async (t) => {
 	window.localStorage.removeItem("jira-local-agent-last-used");
 	const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");

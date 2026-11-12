@@ -138,6 +138,7 @@ export function JgpRovoOverlay({
 						externalThinkingMessageId={externalThinkingMessageId}
 						hideComposerSourceAndModelControls
 						interceptClarificationAnswers={Boolean(onInterceptSubmit || onQuestionAnswer)}
+						markAnsweredQuestionTraces={Boolean(onInterceptSubmit || onQuestionAnswer)}
 						onInterceptSubmit={onInterceptSubmit ?? (onQuestionAnswer ? handleQuestionAnswer : undefined)}
 						showAgentBackButton={false}
 						showAgentSelector={false}

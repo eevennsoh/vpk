@@ -36,7 +36,7 @@ export interface JiraIssueCardMetadata {
 	storyPoints?: number;
 	flagged?: boolean;
 }
-export type JiraIssuePullRequestStatus = "open" | "failed" | "merged";
+export type JiraIssuePullRequestStatus = "open" | "draft" | "failed" | "merged";
 export type JiraIssueVariant = "default" | "uncaptured-work";
 
 /** Optional image, decorative solid color, or typographic cover with a host-owned height cap. */
@@ -65,6 +65,12 @@ export interface JiraIssuePullRequestPreview {
 	filesChanged?: number;
 	/** Static relative label shown on the flyout as `Name · relativeTime`. */
 	relativeTime?: string;
+}
+
+export interface JiraIssuePullRequestItem {
+	number: number;
+	status: JiraIssuePullRequestStatus;
+	preview: JiraIssuePullRequestPreview;
 }
 
 export interface JiraIssueTag {

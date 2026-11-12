@@ -33,6 +33,75 @@ test("gallery Claude mentions offer the existing completed session", async ({ pa
 	await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveText("Review the remaining action items");
 });
 
+test("session previews match comment hover and mask the timeline behind reply controls", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	await page.getByRole("textbox", { name: "Comment editor" }).pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const session = page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Rewrite the incident postmortem/ });
+	await session.hover();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]');
+	await expect(thread).toHaveAttribute("data-active", "");
+	const previewColors = await thread.evaluate((row) => ({
+		plate: getComputedStyle(row, "::after").backgroundColor,
+		mask: getComputedStyle(row.querySelector("[data-jira-activity-reply-toggle-icon]")!).backgroundImage,
+	}));
+	const hoveredThread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]');
+	await hoveredThread.locator("[data-jira-activity-reply-toggle-icon]").hover();
+	await expect.poll(() => hoveredThread.evaluate((row) => getComputedStyle(row, "::after").backgroundColor)).toBe(previewColors.plate);
+	const hoverColors = await hoveredThread.evaluate((row) => ({
+		plate: getComputedStyle(row, "::after").backgroundColor,
+		mask: getComputedStyle(row.querySelector("[data-jira-activity-reply-toggle-icon]")!).backgroundImage,
+	}));
+	expect(hoverColors.mask).not.toBe("none");
+	expect(previewColors).toEqual(hoverColors);
+});
+
+test("session preview scroll moves smoothly to the selected activity", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.keyboard.press("m");
+	await page.getByRole("textbox", { name: "Comment editor" }).pressSequentially("@Claude");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await page.getByRole("option", { name: "Continue in existing session" }).click();
+	const session = page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Rewrite the incident postmortem/ });
+	const samples = page.evaluate(() => new Promise<number[]>((resolve) => {
+		const feed = document.querySelector<HTMLElement>("[data-project-butter-activity-feed]");
+		let root = feed?.parentElement;
+		while (root && !/(auto|scroll)/u.test(getComputedStyle(root).overflowY)) root = root.parentElement;
+		if (!root) throw new Error("Activity scrollport is unavailable");
+		const values: number[] = [];
+		const start = performance.now();
+		const sample = () => {
+			values.push(root.scrollTop);
+			if (performance.now() - start < 700) requestAnimationFrame(sample);
+			else resolve(values);
+		};
+		requestAnimationFrame(sample);
+	}));
+	await session.hover();
+	const positions = await samples;
+	await expect(page.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]')).toHaveAttribute("data-active", "");
+	expect(new Set(positions).size).toBeGreaterThan(3);
+	await page.getByRole("list", { name: "Choose a session" }).getByRole("button", { name: /Summarize onboarding feedback/ }).hover();
+	const stopped = await page.evaluate(() => new Promise<{ before: number; after: number }>((resolve) => {
+		let root = document.querySelector<HTMLElement>("[data-project-butter-activity-feed]")?.parentElement;
+		while (root && !/(auto|scroll)/u.test(getComputedStyle(root).overflowY)) root = root.parentElement;
+		if (!root) throw new Error("Activity scrollport is unavailable");
+		root.dispatchEvent(new WheelEvent("wheel", { deltaY: 20 }));
+		root.scrollTop += 20;
+		const before = root.scrollTop;
+		window.setTimeout(() => resolve({ before, after: root.scrollTop }), 400);
+	}));
+	expect(stopped.after).toBe(stopped.before);
+});
+
 test("gallery Claude session choices support multiple sessions and Back", async ({ page }) => {
 	const editor = await openGalleryCommentEditor(page);
 	await mentionGalleryClaude(page);
@@ -588,7 +657,7 @@ test("PAY-999 keeps Claude follow-ups in Venn's existing cloud session", async (
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
-	const invocation = workItem.locator('[data-jira-activity-entry-id^="merchant-agent-added-PAY-999:"]');
+	const invocation = workItem.locator('[data-jira-activity-entry-id^="invocation-PAY-999:"]');
 	await expect(invocation).toHaveCount(1);
 	await expect(invocation).toContainText("Venn added Claude and self-assigned the issue");
 	const invocationId = await invocation.getAttribute("data-jira-activity-entry-id");
@@ -645,7 +714,6 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	await editor.press("Enter");
 	const crew = workItem.getByRole("button", { name: /^Working on this work item\./ });
 	await crew.click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	const actions = page.getByRole("menu", { name: "Run Claude on" });
@@ -666,13 +734,11 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	await expect(chat.getByRole("log").getByText("@Claude Review retry behavior")).toHaveCount(0);
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 	await crew.click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
 	await expect(chat).toBeHidden();
 	await crew.click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
 	await page.getByRole("option", { name: /^Claude/ }).first().click();
 	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();

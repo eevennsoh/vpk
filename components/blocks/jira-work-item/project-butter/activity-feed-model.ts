@@ -1,4 +1,4 @@
-import type { JiraActivityActor, JiraActivityCommentEntry, JiraActivityEntry, JiraActivityEventEntry, JiraActivityReply, JiraActivitySegment } from "@/components/blocks/jira-activity";
+import type { JiraActivityActor, JiraActivityCommentEntry, JiraActivityEntry, JiraActivityEventEntry, JiraActivityReply } from "@/components/blocks/jira-activity";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
@@ -14,10 +14,6 @@ const UPDATE_GROUP_PREFIX = "updates-";
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 
-export function agentMention(agent: ProjectButterSessionItem["agent"]): JiraActivitySegment {
-	return { type: "agent-mention", text: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo };
-}
-
 export function projectButterSessionIdFromEntry(id: string): string | null {
 	return id.startsWith(INVOCATION_PREFIX) ? id.slice(INVOCATION_PREFIX.length) : null;
 }
@@ -31,7 +27,7 @@ function relativeLabel(atMs: number, fallback: string): string {
 }
 
 function agentActor(session: ProjectButterSessionItem): JiraActivityActor {
-	return { id: `butter-agent-${session.agent.id ?? session.id}`, name: session.agent.name, kind: "agent", appearance: "coding", avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo };
+	return { id: session.agent.id ?? session.id, name: session.agent.name, kind: "agent", appearance: "coding", avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo };
 }
 
 function personActor(name: string, avatarSrc?: string): JiraActivityActor {

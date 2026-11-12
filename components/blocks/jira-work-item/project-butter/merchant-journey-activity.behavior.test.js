@@ -19,9 +19,9 @@ const mocks = {
 		<button onClick={() => { content.beginSuggestionAudit("Description", "accept"); content.setDescription("My accepted description"); content.endSuggestionAudit(); }}>Accept real description</button>
 		<button onClick={() => content.setActivityEntries((entries) => [...entries, { id: "authored-comment", kind: "comment", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: [{ type: "text", text: "Keep my comment" }] }])}>Add comment</button>
 		<button onClick={() => content.setActivityEntries((entries) => entries.map((entry) => entry.id === "authored-comment" ? { ...entry, replies: [...(entry.replies ?? []), { id: "authored-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my reply" }] } : entry))}>Reply to journey</button>
-		<button onClick={() => content.setActivityEntries((entries) => entries.map((entry) => entry.id === "merchant-started-journey-session" ? { ...entry, replies: [...(entry.replies ?? []), { id: "claude-thread-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my thread reply" }] } : entry))}>Reply to Claude</button>
+		<button onClick={() => content.setActivityEntries((entries) => entries.map((entry) => entry.id === "invocation-journey-session" ? { ...entry, replies: [...(entry.replies ?? []), { id: "claude-thread-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my thread reply" }] } : entry))}>Reply to Claude</button>
 		<button onClick={() => content.setActivityEntries((entries) => [...entries, { id: "merchant-pr", kind: "comment", actor: { id: "claude", name: "Claude", kind: "agent" }, timestamp: "Just now", body: [{ type: "text", text: "Earlier PR update" }], replies: [{ id: "legacy-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my old PR reply" }] }])}>Add old PR reply</button>
-		<p data-field="activity">{content.activityEntries.map((entry) => entry.id + ":" + (entry.kind === "comment" ? entry.body.map((part) => part.text).join("") + (entry.replies ?? []).map((reply) => reply.body).join("") : "audit " + entry.actor.name + " " + entry.segments.map((part) => part.text).join(""))).join("|")}</p>
+		<p data-field="activity">{content.activityEntries.map((entry) => entry.id + ":" + (entry.kind === "comment" ? (entry.headerLabel ?? "") + entry.body.map((part) => part.text).join("") + (entry.replies ?? []).map((reply) => reply.body).join("") : "audit " + entry.actor.name + " " + entry.segments.map((part) => part.text).join(""))).join("|")}</p>
 		<p data-field="suggestion-details">{(content.auditChanges["butter-accepted-suggestions"]?.changes ?? []).map((change) => change.label + ":" + change.after).join("|")}</p>
 		{sessions.map((session) => <button key={session.id} onClick={() => onOpenSession(session.id)}>Open {session.id}</button>)}
 		<div ref={detailsSlotRef} />
@@ -39,7 +39,7 @@ function renderJourney(extra = {}) {
 	return renderComponent({ entry: "components/blocks/jira-work-item/project-butter/project-butter-jira-work-item.tsx", exportName: "ProjectButterJiraWorkItem", props: { ...props, ...extra }, mocks });
 }
 
-test("Claude selection renders one activity snapshot with an agent mention", async () => {
+test("Claude's journey uses the embedded session card and shows its acknowledgment as a reply", async () => {
 	const view = await renderComponent({ source: `import React from "react";
 		import { ThemeWrapper } from "@/components/utils/theme-wrapper";
 		import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
@@ -52,29 +52,25 @@ test("Claude selection renders one activity snapshot with an agent mention", asy
 			const projected = projectMerchantJourney({ content, sessions: [], phase: "working", session, autoAssignTo: venn });
 			return <ThemeWrapper><ProjectButterActivity content={{ ...projected.content, activitySort: "oldest" }} sessions={projected.sessions} empty sidePanel={false} singleView onOpenSession={() => undefined} /></ThemeWrapper>;
 		}` });
-	const entries = document.querySelectorAll('[data-jira-activity-entry-id="merchant-agent-added-journey-session"]');
+	const entries = document.querySelectorAll('[data-jira-activity-entry-id="invocation-journey-session"]');
 	assert.equal(entries.length, 1);
 	assert.equal(entries[0].textContent.includes("Venn added Claude and self-assigned the issue"), true);
-	assert.equal(entries[0].querySelector('[data-jira-activity-agent-mention]')?.textContent, "Claude");
-	assert.equal(entries[0].textContent.includes("Just now"), true);
-	assert.equal(entries[0].querySelector('[aria-expanded]'), null);
+	assert.equal(entries[0].querySelector('[data-project-butter-session-start="journey-session"]') !== null, true);
+	assert.equal(entries[0].textContent.includes("Merchant onboarding"), true);
 	assert.equal(document.querySelector('[data-jira-activity-entry-id="merchant-assignment"]'), null);
-	const acknowledgment = document.querySelectorAll('[data-jira-activity-entry-id="merchant-started-journey-session"]');
-	assert.equal(acknowledgment.length, 1);
-	assert.equal(acknowledgment[0].textContent.includes("Claude"), true);
-	assert.equal(acknowledgment[0].textContent.includes("I'm looking into this issue now. I'll report back here with updates as I make progress."), true);
+	assert.equal(entries[0].querySelector('[aria-label="Replies"]')?.textContent.includes("I'm looking into this issue now. I'll report back here with updates as I make progress."), true);
 	const statusChange = document.querySelectorAll('[data-jira-activity-entry-id="merchant-status-journey-session"]');
 	assert.equal(statusChange.length, 1);
 	assert.match(statusChange[0].textContent, /Claude\s+changed status from To do to In progress/u);
-	assert.deepEqual([...document.querySelectorAll("[data-jira-activity-entry-id]")].map((entry) => entry.getAttribute("data-jira-activity-entry-id")).filter((id) => id !== "butter-empty-created"), ["merchant-started-journey-session", "merchant-status-journey-session", "merchant-agent-added-journey-session", "butter-accepted-suggestions"]);
+	assert.deepEqual([...document.querySelectorAll("[data-jira-activity-entry-id]")].map((entry) => entry.getAttribute("data-jira-activity-entry-id")).filter((id) => id !== "butter-empty-created"), ["merchant-status-journey-session", "invocation-journey-session", "butter-accepted-suggestions"]);
 	await view.unmount();
 });
 
 test("direct jumps synthesize a session and rewind removes future progress without storing it", async () => {
 	const view = await renderJourney({ journeyPhase: "merged" });
 	assert.equal(field("sessions").includes("journey-session:Merchant onboarding:complete"), true);
-	assert.equal(field("activity").includes("merchant-agent-added-journey-session"), true);
-	assert.equal(field("activity").includes("merchant-started-journey-session"), true);
+	assert.equal(field("activity").includes("invocation-journey-session"), true);
+	assert.equal(field("activity").includes("I'm looking into this issue now"), true);
 	assert.equal(field("activity").includes("PR #284 merged"), true);
 	assert.equal(field("activity").includes("merchant-merged:PR #284 merged"), true);
 	assert.equal(field("status"), "Done");
@@ -107,10 +103,24 @@ test("Claude's status snapshot is shown once from working onward and disappears 
 	await view.unmount();
 });
 
+test("a started session appears before the status changes to in progress", async () => {
+	const workItem = { ...props.workItem, status: "To do", assignee: undefined };
+	const view = await renderJourney({ workItem, journeyPhase: "starting" });
+	assert.equal(field("sessions").includes("journey-session:Merchant onboarding:running"), true);
+	assert.equal(field("activity").includes("invocation-journey-session"), true);
+	assert.equal(field("activity").includes("merchant-status-journey-session"), false);
+	assert.equal(field("status"), "To do");
+	assert.equal(field("assignee"), "Venn");
+	await view.rerender({ ...props, workItem, journeyPhase: "working" });
+	assert.equal(field("status"), "In progress");
+	assert.equal(field("activity").includes("merchant-status-journey-session"), true);
+	await view.unmount();
+});
+
 test("Claude's updates share the first comment and preserve human replies across journey steps", async () => {
 	const journeyProps = { ...props, journeySession: { ...journeySession, invokedAtMs: Date.now() - 10_000 } };
 	const view = await renderJourney({ ...journeyProps, journeyPhase: "pr" });
-	assert.equal(field("activity").includes("merchant-started-journey-session"), true);
+	assert.equal(field("activity").includes("invocation-journey-session"), true);
 	assert.equal(field("activity").includes("opened PR #284"), true);
 	assert.equal(field("activity").includes("merchant-pr:"), false);
 	await view.click(view.getByRole("button", { name: "Add old PR reply" }));
@@ -246,7 +256,7 @@ test("direct working assigns Venn visibly and rewind restores unassigned without
 	const view = await renderJourney({ workItem, journeyPhase: "working" });
 	assert.equal(field("assignee"), "Venn");
 	assert.equal(field("activity").includes("Venn added Claude and self-assigned the issue"), true);
-	assert.equal(field("activity").includes("invocation-journey-session"), false);
+	assert.equal(field("activity").includes("invocation-journey-session"), true);
 	await view.rerender({ ...props, workItem, journeyPhase: "invoke" });
 	assert.equal(field("assignee"), "Unassigned");
 	assert.equal(field("activity").includes("merchant-assignment"), false);
@@ -294,7 +304,7 @@ test("a real gallery invocation keeps automatic assignment in the reversible pro
 	await view.rerender({ ...galleryProps, journeySession: started[0], journeyPhase: "working" });
 	assert.equal(field("assignee"), "Venn");
 	assert.equal(field("activity").includes("Venn added Claude and self-assigned the issue"), true);
-	assert.equal(field("activity").includes("invocation-"), false);
+	assert.equal(field("activity").includes("invocation-"), true);
 	await view.rerender({ ...galleryProps, journeySession: started[0], journeyPhase: "invoke" });
 	assert.equal(field("assignee"), "Unassigned");
 	assert.equal(field("activity").includes("merchant-assignment"), false);

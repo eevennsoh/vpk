@@ -108,6 +108,8 @@ export interface ProgressCircleProps
 	label?: string;
 	/** Whether to animate the completion check. Set to `false` to render the check statically (e.g. on remount after expand/collapse). Defaults to `true`. */
 	animated?: boolean;
+	/** Start the filled sweep after the updated UI has painted. */
+	deferFillAnimation?: boolean;
 	/** When `false`, renders the full ring at value>=100 instead of the checkmark icon. Useful for animated fill→check transitions. Defaults to `true`. */
 	showCompleteIcon?: boolean;
 	/** Class for the outline track ring behind the progress arc. Defaults to `text-border`. */
@@ -196,6 +198,7 @@ function ProgressCircleVisual({
 	status,
 	label = "Progress",
 	animated = true,
+	deferFillAnimation = false,
 	showCompleteIcon = true,
 	trackClassName,
 	dashed = false,
@@ -235,13 +238,23 @@ function ProgressCircleVisual({
 
 	useEffect(() => {
 		if (!hasDashedRing) return;
-		const playback = animate(filledProgress, clampedValue, {
-			...FILL_TRANSITION,
-			duration: shouldReduceMotion ? 0 : FILL_TRANSITION.duration,
-			onComplete: () => setSettledFilledValue(clampedValue),
-		});
-		return () => playback.stop();
-	}, [clampedValue, filledProgress, hasDashedRing, shouldReduceMotion]);
+		let firstFrame = 0;
+		let secondFrame = 0;
+		let playback: ReturnType<typeof animate> | undefined;
+		const start = () => {
+			playback = animate(filledProgress, clampedValue, {
+				...FILL_TRANSITION,
+				duration: shouldReduceMotion ? 0 : FILL_TRANSITION.duration,
+				onComplete: () => setSettledFilledValue(clampedValue),
+			});
+		};
+		if (deferFillAnimation && !shouldReduceMotion) {
+			firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(start); });
+		} else {
+			start();
+		}
+		return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); playback?.stop(); };
+	}, [clampedValue, deferFillAnimation, filledProgress, hasDashedRing, shouldReduceMotion]);
 
 	const isComplete =
 		!hasSegments
@@ -494,7 +507,7 @@ function ProgressCircle({ completeOnAllPassed = false, ...props }: Readonly<Prog
 		return <ProgressCircleVisual {...props} />;
 	}
 
-	const { animated = true, animateDashes: _animateDashes, className, colorByProgress: _colorByProgress, dashed: _dashed, inline = false, label = "Progress", segmentGap, segments: _segments, segmented: _segmented, showCompleteIcon: _showCompleteIcon, size = "default", status: _status, trackClassName: _trackClassName, value: _value, variant = "outline", ...rootProps } = props;
+	const { animated = true, animateDashes: _animateDashes, className, colorByProgress: _colorByProgress, dashed: _dashed, deferFillAnimation: _deferFillAnimation, inline = false, label = "Progress", segmentGap, segments: _segments, segmented: _segmented, showCompleteIcon: _showCompleteIcon, size = "default", status: _status, trackClassName: _trackClassName, value: _value, variant = "outline", ...rootProps } = props;
 	const activeSegments = segments.filter((segment) => (segment.weight ?? 1) > 0);
 	const total = segments.reduce((sum, segment) => sum + Math.max(0, segment.weight ?? 1), 0);
 	const passed = segments.reduce((sum, segment) => sum + (segment.status === "passed" ? Math.max(0, segment.weight ?? 1) : 0), 0);
@@ -508,7 +521,7 @@ function ProgressCircle({ completeOnAllPassed = false, ...props }: Readonly<Prog
 	return (
 		<Root {...rootProps} data-slot="progress-circle" role="progressbar" aria-label={label} aria-valuenow={passed} aria-valuemin={0} aria-valuemax={total || 1} className={cn(progressCircleVariants({ size, variant }), "grid place-items-center", className)}>
 			<motion.span
-				className="col-start-1 row-start-1"
+				className="col-start-1 row-start-1 grid place-items-center"
 				initial={false}
 				animate={{ opacity: allPassed ? 0 : 1 }}
 				transition={allPassed ? completionTransition : { duration: immediate ? 0 : motionDuration.fast }}
@@ -519,7 +532,7 @@ function ProgressCircle({ completeOnAllPassed = false, ...props }: Readonly<Prog
 				{allPassed ? (
 					<motion.span
 						key="success"
-						className="col-start-1 row-start-1"
+						className="col-start-1 row-start-1 grid place-items-center"
 						initial={immediate ? false : { opacity: 0, scale: 0.5 }}
 						animate={{ opacity: 1, scale: 1 }}
 						exit={{ opacity: 0, transition: { duration: immediate ? 0 : motionDuration.fast } }}

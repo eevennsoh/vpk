@@ -37,6 +37,25 @@
 	}
 }
 
+@utility agent-loading-vertical {
+	display: inline-block;
+	position: relative;
+	width: 24px;
+	height: 24px;
+	flex-shrink: 0;
+
+	&[data-size="small"] {
+		width: 16px;
+		height: 16px;
+	}
+}
+
+@utility agent-loading-vertical-mask {
+	position: absolute;
+	inset: -8px 0;
+	mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+}
+
 @keyframes agent-loading-intro-front {
 	0%, 62.5% { transform: translate(4px, 4px) scale(var(--agent-intro-scale)); }
 	100% { transform: translate(0, 0) scale(1); }

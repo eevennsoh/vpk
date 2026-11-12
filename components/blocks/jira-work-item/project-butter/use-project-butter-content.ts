@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, type SetStateAction } from "react";
+import { useEffect, useMemo, type SetStateAction } from "react";
 
 import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { JiraActivityActor } from "@/components/blocks/jira-activity";
+import type { JiraActivityReaction } from "@/components/blocks/jira-activity/jira-activity-types";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import type { PriorityValue } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
 import { TEAM_EU26_DESCRIPTION } from "@/components/blocks/jira-work-item/team-eu26/data/high-confidence-work-item";
@@ -53,6 +54,7 @@ function createContent(
 	placeholders?: ProjectButterPlaceholderMap,
 	defaultReporter?: WorkItemPerson,
 	defaultAssignee?: WorkItemPerson,
+	initialRelatedSectionOpen = true,
 ) {
 	const empty = preset === "empty" || preset === "blank";
 	const placeholder = empty || !placeholders || !workItem?.code ? undefined : placeholders[workItem.code];
@@ -103,21 +105,39 @@ function createContent(
 	const activitySort: ProjectButterActivitySort = "newest";
 	const activityFilters: ProjectButterActivityFilters = PROJECT_BUTTER_ACTIVITY_FILTERS_ALL;
 	const replyDrafts: Readonly<Record<string, string>> = {};
+	const pendingAgentReactions: readonly { entryId: string; replyId: string; actorIds: readonly string[]; dueAtMs: number }[] = [];
 	/** Top-level comments pinned to the head of the feed, most recently pinned first. */
 	const pinnedCommentIds: readonly string[] = [];
 	const auditChanges: Readonly<Record<string, ProjectButterReferenceChange>> = {};
 	const relatedDismissed: readonly ProjectButterRelatedKind[] = [];
+	const activityEntries = [
+		...(placeholder
+			? projectButterPlaceholderComments(placeholder)
+			: workItem
+				? []
+				: createProjectButterActivity(empty)),
+		...sessions.map(projectButterSessionInvocation),
+	];
+	if (workItem?.code === "PAY-999") {
+		const createdAtMs = Math.min(PROJECT_BUTTER_ACTIVITY_EPOCH, ...activityEntries.map((entry) => entry.createdAtMs ?? PROJECT_BUTTER_ACTIVITY_EPOCH)) - 60_000;
+		activityEntries.push(...createProjectButterActivity(true).map((entry) => ({
+			...entry,
+			actor: { id: `butter-person-${reporter.name}`, name: reporter.name, kind: "person" as const, avatarSrc: reporter.avatarUrl },
+			createdAtMs,
+		})));
+	}
 	return {
 		suggestionAudit: null as { label: string; mode: "accept" | "undo" } | null,
 		attachmentEditor: createProjectButterAttachmentEditor(),
 		/** Related work heading open state. Add requests force it open. */
-		relatedSectionOpen: true,
+		relatedSectionOpen: initialRelatedSectionOpen,
 		/** Groups hidden for the session through their empty-state Dismiss button. */
 		relatedDismissed,
 		activityView,
 		activitySort,
 		activityFilters,
 		replyDrafts,
+		pendingAgentReactions,
 		pinnedCommentIds,
 		auditChanges,
 		summary: workItem?.title ?? "Redesign onboarding flow for new users",
@@ -125,19 +145,7 @@ function createContent(
 		detailFields: placeholder ? projectButterPlaceholderDetails(detailFields, placeholder) : detailFields,
 		relatedEditor: createProjectButterRelatedEditorState(),
 		relatedWork,
-		activityEntries: [
-			...(workItem?.code === "PAY-999" ? createProjectButterActivity(true).map((entry) => ({
-				...entry,
-				actor: { id: `butter-person-${reporter.name}`, name: reporter.name, kind: "person" as const, avatarSrc: reporter.avatarUrl },
-				createdAtMs: PROJECT_BUTTER_ACTIVITY_EPOCH - 60_000,
-			})) : []),
-			...(placeholder
-				? projectButterPlaceholderComments(placeholder)
-				: workItem
-					? []
-					: createProjectButterActivity(empty)),
-			...sessions.map(projectButterSessionInvocation),
-		].sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0)),
+		activityEntries: activityEntries.sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0)),
 		activityFocusId,
 		dueDate,
 		reporter,
@@ -170,18 +178,44 @@ export function useProjectButterContent(
 	initialSessions?: readonly ProjectButterSessionItem[],
 	placeholders?: ProjectButterPlaceholderMap,
 	defaultReporter?: WorkItemPerson,
-	activityContext?: Readonly<{ currentUser?: WorkItemPerson; showAuditInActivity?: boolean; defaultAssignee?: WorkItemPerson }>,
+	activityContext?: Readonly<{ currentUser?: WorkItemPerson; showAuditInActivity?: boolean; defaultAssignee?: WorkItemPerson; initialRelatedSectionOpen?: boolean }>,
 ) {
 	const person = activityContext?.currentUser;
 	const currentUser = useMemo<JiraActivityActor>(() => person ? { id: `butter-person-${person.name}`, name: person.name, kind: "person", avatarSrc: person.avatarUrl } : PROJECT_BUTTER_CURRENT_USER, [person]);
 	const initialState = useMemo<ProjectButterContentState>(
-		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter, activityContext?.defaultAssignee),
-		[activityContext?.defaultAssignee, defaultReporter, initialSessions, placeholders, preset, workItem],
+		() => createContent(preset, workItem, initialSessions, placeholders, defaultReporter, activityContext?.defaultAssignee, activityContext?.initialRelatedSectionOpen),
+		[activityContext?.defaultAssignee, activityContext?.initialRelatedSectionOpen, defaultReporter, initialSessions, placeholders, preset, workItem],
 	);
 	const { state, fieldSetter, updateState } = useProjectButterItemState(
 		workItem?.code ?? "reference",
 		initialState,
 	);
+	useEffect(() => {
+		if (!state.pendingAgentReactions.length) return;
+		const nextDue = Math.min(...state.pendingAgentReactions.map((pending) => pending.dueAtMs));
+		const timer = window.setTimeout(() => {
+			const now = Date.now();
+			updateState((previous) => {
+				const due = previous.pendingAgentReactions.filter((pending) => pending.dueAtMs <= now);
+				return {
+					...previous,
+					pendingAgentReactions: previous.pendingAgentReactions.filter((pending) => pending.dueAtMs > now),
+					activityEntries: previous.activityEntries.map((entry) => entry.kind !== "comment" ? entry : {
+						...entry,
+						replies: entry.replies?.map((reply) => {
+							const pending = due.find((item) => item.entryId === entry.id && item.replyId === reply.id);
+							if (!pending) return reply;
+							const reactions = reply.reactions ?? [];
+							const eyes = reactions.find((reaction) => reaction.emoji === "👀");
+							const reaction: JiraActivityReaction = { emoji: "👀", actorIds: [...new Set([...(eyes?.actorIds ?? []), ...pending.actorIds])] };
+							return { ...reply, reactions: eyes ? reactions.map((item) => item === eyes ? reaction : item) : [...reactions, reaction] };
+						}),
+					}),
+				};
+			});
+		}, Math.max(0, nextDue - Date.now()));
+		return () => window.clearTimeout(timer);
+	}, [state.pendingAgentReactions, updateState]);
 	const actions = useMemo(() => {
 		function audited<K extends keyof ProjectButterContentState>(
 			field: K,
@@ -210,6 +244,15 @@ export function useProjectButterContent(
 			};
 		}
 		return {
+			submitActivityReply: (entryId: string, body: string, actorIds: readonly string[]) => {
+				const createdAtMs = Date.now();
+				const reply = { id: crypto.randomUUID(), actor: currentUser, timestamp: "Just now", createdAtMs, body };
+				updateState((previous) => ({
+					...previous,
+					activityEntries: previous.activityEntries.map((entry) => entry.id === entryId && entry.kind === "comment" ? { ...entry, replies: [...(entry.replies ?? []), reply] } : entry),
+					pendingAgentReactions: actorIds.length ? [...previous.pendingAgentReactions, { entryId, replyId: reply.id, actorIds, dueAtMs: createdAtMs + 3000 }] : previous.pendingAgentReactions,
+				}));
+			},
 			beginSuggestionAudit: (label: string, mode: "accept" | "undo") => {
 				if (activityContext?.showAuditInActivity) updateState((current) => ({ ...current, suggestionAudit: { label, mode } }));
 			},

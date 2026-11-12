@@ -1,9 +1,32 @@
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import type { JgpAgentChatScenario } from "@/components/projects/jira-golden-journey-v1/data/agent-chat-data";
 import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, projectButterDevelopmentChecks } from "../../../blocks/jira-work-item/project-butter/development-journey-model.ts";
 import { BUTTER_PAY_CURRENT_USER } from "./current-user.ts";
 
-export type MerchantJourneyPhase = "invoke" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";
+export type MerchantJourneyPhase = "invoke" | "starting" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";
+
+export function merchantJourneyChatSnapshot(activity: JiraIssueAgentActivity): NonNullable<JgpAgentChatScenario["recordedSession"]> {
+	const thinkingMessageId = `${activity.id}-thinking`;
+	const request = activity.prompt?.trim();
+	const prompt = request && request.toLowerCase() !== `@${activity.name}`.toLowerCase()
+		? request
+		: "Improve the Payments SDK v2 merchant onboarding journey, from setup to a first sandbox payment.";
+	const timestamp = "2026-11-12T00:00:00.000Z";
+	return {
+		thinkingMessageId,
+		messages: [
+			{ id: `${activity.id}-user`, role: "user", parts: [{ type: "text", text: prompt, state: "done" }] },
+			{ id: `${activity.id}-update`, role: "assistant", parts: [{ type: "text", text: "I’m mapping the onboarding path against the v2 sandbox. I’ll cover credentials, the first test payment, and the steps merchants need before moving to production.", state: "done" }] },
+			{ id: thinkingMessageId, role: "assistant", parts: [
+				{ type: "data-thinking-status", data: { label: "Working", content: "Checking the sandbox quickstart and payment flow for gaps.", toolCallId: `${activity.id}-check`, activity: "data", source: "fallback", timestamp } },
+				{ type: "data-thinking-event", id: `${activity.id}-read-start`, data: { eventId: `${activity.id}-read-start`, phase: "start", toolName: "jira.read_work_item_context", label: "Reading the work item and linked context", toolCallId: `${activity.id}-read`, timestamp } },
+				{ type: "data-thinking-event", id: `${activity.id}-read-result`, data: { eventId: `${activity.id}-read-result`, phase: "result", toolName: "jira.read_work_item_context", label: "Reading the work item and linked context", toolCallId: `${activity.id}-read`, outputPreview: "Reviewed the onboarding requirements and sandbox acceptance criteria.", timestamp } },
+				{ type: "data-thinking-event", id: `${activity.id}-check-start`, data: { eventId: `${activity.id}-check-start`, phase: "start", toolName: "workspace.review_files", label: "Checking the sandbox quickstart", toolCallId: `${activity.id}-check`, timestamp } },
+			] },
+		],
+	};
+}
 
 type JourneyActivity = JiraIssueAgentActivity & {
 	merchantJourneyCreated?: true;
@@ -94,7 +117,7 @@ function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: s
 	return {
 		...authored,
 		...(!beforeWork ? { merchantJourneyBaseline: baseline } : {}),
-		status: phase === "merged" ? "Done" : beforeWork ? "To do" : "In progress",
+		status: phase === "merged" ? "Done" : beforeWork || phase === "starting" ? "To do" : "In progress",
 		assignee: beforeWork ? authoredCard.assignee : assignCurrentUser ? BUTTER_PAY_CURRENT_USER : card.assignee,
 		avatarSrc: beforeWork ? authoredCard.avatarSrc : assignCurrentUser ? BUTTER_PAY_CURRENT_USER.avatarSrc : card.avatarSrc,
 		animatePullRequestOnMount: phase === "pr",
@@ -110,7 +133,7 @@ export function applyMerchantJourneyToBoard(columns: readonly JiraKanbanColumnDa
 	const source = columns.find((column) => column.cards.some((card) => card.code === "PAY-999"));
 	const card = source?.cards.find((item) => item.code === "PAY-999");
 	if (!source || !card) return [...columns];
-	const destination = phase === "merged" ? "Done" : phase === "invoke" ? "To do" : "In progress";
+	const destination = phase === "merged" ? "Done" : phase === "invoke" || phase === "starting" ? "To do" : "In progress";
 	if (!columns.some((column) => column.title === destination)) return [...columns];
 	const updated = projectCard(card, phase, session);
 	return columns.map((column) => {

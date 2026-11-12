@@ -48,3 +48,9 @@ export function activityDayLabel(entry: JiraActivityEntry): string {
 	const days = Math.max(0, Math.round((reference - date) / 86_400_000));
 	return days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`;
 }
+
+export function activityHeaderTimeLabel(label: string): string {
+	return label
+		.replace(/^(\d+)\s*(?:minutes?|mins?|m)(?=\s|$)/iu, "$1 min")
+		.replace(/^(\d+)\s*(?:hours?|hrs?|h)(?=\s|$)/iu, "$1 hr");
+}

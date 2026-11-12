@@ -56,6 +56,7 @@ import { INLINE_CITATION_DETAIL } from "./ui-custom/inline-citation";
 import { MODEL_SELECTOR_DETAIL } from "./ui-custom/model-selector";
 import { PACKAGE_INFO_DETAIL } from "./ui-custom/package-info";
 import { OPEN_IN_CHAT_DETAIL } from "./ui-custom/open-in-chat";
+import { OPEN_IN_DETAIL } from "./ui-custom/open-in";
 import { NODE_DETAIL } from "./ui-custom/node";
 import { SCHEMA_DISPLAY_DETAIL } from "./ui-custom/schema-display";
 import { SHIMMER_DETAIL } from "./ui-custom/shimmer";
@@ -134,6 +135,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"inline-citation": INLINE_CITATION_DETAIL,
 	"model-selector": MODEL_SELECTOR_DETAIL,
 	"package-info": PACKAGE_INFO_DETAIL,
+	"open-in": OPEN_IN_DETAIL,
 	"open-in-chat": OPEN_IN_CHAT_DETAIL,
 	node: NODE_DETAIL,
 	"schema-display": SCHEMA_DISPLAY_DETAIL,

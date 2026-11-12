@@ -35,6 +35,8 @@ export interface ProjectButterJiraWorkItemProps {
 	open: boolean;
 	onClose: () => void;
 	initialPreset: JiraWorkItemPreset;
+	initialRelatedSectionOpen?: boolean;
+	compact?: boolean;
 	initialSuggestion?: boolean;
 	defaultReporter?: WorkItemPerson;
 	defaultAssignee?: WorkItemPerson;
@@ -56,6 +58,7 @@ export interface ProjectButterJiraWorkItemProps {
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
 	onOpenCloudSession?: (session: ProjectButterSessionItem, draft: string | undefined, workItem: { code: string; summary: string }) => boolean | void | Promise<boolean | void>;
+	inlineSessionReplies?: boolean;
 	/** Standalone only: the host's sidebar chat, mounted beside the work item. Pair with `onOpenCloudSession`. */
 	chatPanel?: ReactNode;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
@@ -71,6 +74,8 @@ export function ProjectButterJiraWorkItem({
 	open,
 	onClose,
 	initialPreset,
+	initialRelatedSectionOpen,
+	compact,
 	initialSuggestion = false,
 	defaultReporter,
 	defaultAssignee,
@@ -92,6 +97,7 @@ export function ProjectButterJiraWorkItem({
 	onCreateAgent,
 	onAgentSessionStart,
 	onOpenCloudSession,
+	inlineSessionReplies = false,
 	chatPanel,
 	overlayContainerRef,
 	onStoryPointsChange,
@@ -147,7 +153,7 @@ export function ProjectButterJiraWorkItem({
 		initialSessions,
 		placeholders,
 		defaultReporter,
-		{ currentUser, showAuditInActivity, defaultAssignee },
+		{ currentUser, showAuditInActivity, defaultAssignee, initialRelatedSectionOpen },
 	);
 	const emptyContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
 	const suggestionContent = useProjectButterContent("empty", workItem, undefined, placeholders, defaultReporter, { currentUser, showAuditInActivity });
@@ -167,9 +173,9 @@ export function ProjectButterJiraWorkItem({
 	const autoAssignTo = autoAssignClaudeToCurrentUser ? currentUser : undefined;
 	const [acknowledgmentTime, setAcknowledgmentTime] = useState(() => Date.now());
 	const invokedAtMs = journeySession?.invokedAtMs;
-	const showAcknowledgment = journeyPhase !== "working" || invokedAtMs == null || acknowledgmentTime >= invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS;
+	const showAcknowledgment = (journeyPhase !== "working" && journeyPhase !== "starting") || invokedAtMs == null || acknowledgmentTime >= invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS;
 	useEffect(() => {
-		if (journeyPhase !== "working" || invokedAtMs == null) return;
+		if ((journeyPhase !== "working" && journeyPhase !== "starting") || invokedAtMs == null) return;
 		const remaining = Math.max(0, invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS - Date.now());
 		const timer = window.setTimeout(() => setAcknowledgmentTime(Date.now()), remaining);
 		return () => window.clearTimeout(timer);
@@ -342,6 +348,7 @@ export function ProjectButterJiraWorkItem({
 				content={content}
 				onClose={onClose}
 				onPresentationChange={setPresentation}
+				showFullScreenClose={shell === "project"}
 				secondaryActions={
 					sparse && !sidePanel ? <ProjectButterEmptyActions content={content} /> : null
 				}
@@ -354,7 +361,7 @@ export function ProjectButterJiraWorkItem({
 					sidePanel
 						? "grid-cols-1 overflow-y-auto"
 						: "grid-cols-1 overflow-y-auto @[860px]/butter:grid-cols-[minmax(0,1fr)_auto] @[860px]/butter:overflow-clip",
-					showLayoutFade && "scroll-mask-top [--scroll-mask-fade-size:3rem]",
+					showLayoutFade && "scroll-mask-top [--scroll-mask-fade-size:3rem] has-[[data-project-butter-activity-header][data-stuck]]:mask-none",
 				)}
 				data-project-butter-state={suggestion ? "suggestion" : empty ? "empty" : "filled"}
 				data-project-butter-work-item
@@ -364,12 +371,14 @@ export function ProjectButterJiraWorkItem({
 					className={cn(
 						"min-w-0 px-6 pb-6",
 						!sidePanel && "@[860px]/butter:overflow-y-auto",
-						showColumnFade && "scroll-mask-top [--scroll-mask-fade-size:3rem]",
+						showColumnFade && "scroll-mask-top [--scroll-mask-fade-size:3rem] has-[[data-project-butter-activity-header][data-stuck]]:mask-none",
 					)}
 					ref={setColumnRef}
 				>
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
+						inlineSessionReplies={inlineSessionReplies}
+						compact={compact}
 						key={workItem?.code ?? "reference"}
 						active={open}
 						singleActivityView={shell !== "standalone"}

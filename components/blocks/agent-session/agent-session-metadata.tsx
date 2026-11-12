@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInView } from "motion/react";
 
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
@@ -16,7 +16,6 @@ import { AgentListAttributionAvatarGroup } from "@/components/blocks/agent-list/
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +23,7 @@ import {
 	toAgentSessionMetadataSegments,
 	type AgentSessionMetadataSegment,
 } from "./agent-session-long-metadata";
-import type { AgentSessionItem } from "./agent-session-types";
+import { getAgentSessionRole, type AgentSessionItem } from "./agent-session-types";
 import type { AgentSessionAvatarPreview } from "./agent-session-avatar-preview";
 
 const TOOL_CALL_CYCLE_MS = 2_200;
@@ -38,17 +37,11 @@ function MetadataDot() {
 	);
 }
 
-function SessionPrivacy({ person }: Readonly<{ person: string }>) {
-	const label = `Private to ${person}`;
-	const [open, setOpen] = useState(false);
-	const tooltipId = useId();
+function ViewerLock() {
 	return (
-		<Tooltip onOpenChange={setOpen} open={open}>
-			<TooltipTrigger render={<button aria-describedby={open ? tooltipId : undefined} aria-label={label} className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-icon-subtlest outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3!" type="button" />}>
-				<LockLockedIcon color="currentColor" label="" size="small" />
-			</TooltipTrigger>
-			<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="top">{label}</TooltipContent>
-		</Tooltip>
+		<span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center text-icon-subtlest [&_svg]:size-3!">
+			<LockLockedIcon color="currentColor" label="" size="small" />
+		</span>
 	);
 }
 
@@ -270,7 +263,7 @@ export function AgentSessionLongMetadata({ item, renderAgentAvatar, showBranch =
 					<LongMetadataSegment item={item} renderAgentAvatar={renderAgentAvatar} segment={segment} />
 				</span>
 			))}
-			{item.privateTo ? <><MetadataDot /><SessionPrivacy person={item.privateTo} /></> : null}
+			{getAgentSessionRole(item) === "viewer" || item.privateTo ? <><MetadataDot /><ViewerLock /></> : null}
 		</span>
 	);
 }
@@ -323,6 +316,7 @@ export function AgentSessionShortMetadata({ item }: Readonly<{ item: AgentSessio
 					<AgentListTime item={item} />
 				</span>
 			</span>
+			{getAgentSessionRole(item) === "viewer" ? <><MetadataDot /><ViewerLock /></> : null}
 		</span>
 	);
 }

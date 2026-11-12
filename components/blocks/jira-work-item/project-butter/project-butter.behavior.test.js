@@ -6,13 +6,13 @@ const { renderComponent } = require("../../../../scripts/lib/render-component.js
 const { JIRA_WORK_ITEM_DETAIL } = require("../../../../app/data/details/blocks/jira-work-item.ts");
 const { reorderProjectButterPanels, PROJECT_BUTTER_PANEL_ORDER } = require("./panel-order.ts");
 
-test("continuing an agent shows long session cards before opening the chosen session", async () => {
+test("continuing an agent sends the selected session and draft to its reply", async () => {
 	const opened = [];
 	const sessions = ["First session", "Second session"].map((title, index) => ({ id: `session-${index}`, title, agent: { id: "claude", name: "Claude" }, host: "cloud", state: "complete", timeLabel: "2h" }));
 	const view = await renderComponent({
 		entry: "components/blocks/jira-work-item/project-butter/project-butter-comment-bar.tsx",
 		exportName: "ProjectButterCommentBar",
-		props: { active: true, activityRows: "feed", content: { commentDraft: "@Claude follow up", setCommentDraft() {} }, empty: true, onOpenSession: (id, draft) => opened.push([id, draft]), onPreviewSession() {}, onStartAgent() {}, sessions: sessions.slice(0, 1), sidePanel: false },
+		props: { active: true, activityRows: "feed", content: { commentDraft: "@Claude follow up", setCommentDraft() {} }, empty: true, onReplyToSession: (session, draft) => { opened.push([session.id, draft]); return true; }, onPreviewSession() {}, onStartAgent() {}, sessions: sessions.slice(0, 1), sidePanel: false },
 		mocks: {
 			"@/components/blocks/jira-work-item/project-butter/project-butter-comment-editor": `import React, { useImperativeHandle } from "react";
 				export function ProjectButterCommentEditor({ ref, onMentionChange }) {
@@ -30,7 +30,7 @@ test("continuing an agent shows long session cards before opening the chosen ses
 	await view.click(view.getByRole("button", { name: /First session/u }));
 	assert.deepEqual(opened, [["session-0", "follow up"]]);
 
-	await view.rerender({ active: true, activityRows: "feed", content: { commentDraft: "@Claude follow up", setCommentDraft() {} }, empty: true, onOpenSession: (id, draft) => opened.push([id, draft]), onPreviewSession() {}, onStartAgent() {}, sessions, sidePanel: false });
+	await view.rerender({ active: true, activityRows: "feed", content: { commentDraft: "@Claude follow up", setCommentDraft() {} }, empty: true, onReplyToSession: (session, draft) => { opened.push([session.id, draft]); return true; }, onPreviewSession() {}, onStartAgent() {}, sessions, sidePanel: false });
 	await view.click(view.getByRole("button", { name: "Mention Claude" }));
 	await view.click(view.getByRole("option", { name: /Continue in existing session/u }));
 	await view.click(view.getByRole("button", { name: /Second session/u }));
@@ -214,18 +214,20 @@ test("a host chat shows Ask Rovo and receives agent session links instead of the
 	});
 	assert.equal(view.queryByRole("button", { name: "Ask Rovo" }) !== null, true, "a host chat exposes the global Ask Rovo pill");
 	assert.equal(document.querySelector('aside[aria-label="Host chat"]') !== null, true, "the host chat mounts beside the work item");
-	await view.click(view.getByRole("button", { name: /^Compare the Q3 revenue forecast/u }));
-	assert.deepEqual(opened, ["butter-cursor-forecast"]);
-	assert.equal(view.queryByRole("textbox", { name: "Reply to Cursor" }), null, "the floating session card must not open when a host owns the chat");
+	await view.click(view.getByRole("button", { name: /^Summarize onboarding feedback/u }));
+	assert.deepEqual(opened, ["butter-claude-onboarding-feedback"]);
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }), null, "the floating session card must not open when a host owns the chat");
 	await view.rerender({ hosted: false });
 	assert.equal(view.queryByRole("button", { name: "Ask Rovo" }), null, "without a host chat there is nothing for Ask Rovo to open");
-	await view.click(view.getByRole("button", { name: /^Compare the Q3 revenue forecast/u }));
-	assert.equal(view.queryByRole("textbox", { name: "Reply to Cursor" }) !== null, true, "without a host the floating card stays the fallback");
+	await view.click(view.getByRole("button", { name: /^Summarize onboarding feedback/u }));
+	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }) !== null, true, "without a host the floating card stays the fallback");
 	delete globalThis.__butterOpened;
 });
 
 test("Project butter shows the reference sessions and keeps replies scoped to each session", async () => {
-	const view = await renderWorkItem();
+	const { PROJECT_BUTTER_SESSIONS } = require("./data.ts");
+	const sessions = PROJECT_BUTTER_SESSIONS.map((session) => session.id === "butter-coding" || session.id === "butter-scoping" ? { ...session, role: "owner", invokedBy: { name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" } } : session);
+	const view = await renderWorkItem({ initialSessions: sessions });
 	assert.equal(view.queryByRole("complementary", { name: "Product navigation" }) !== null, true);
 	assert.equal(document.querySelector('div[aria-label="Product navigation"]:not([role])') === null, true);
 	await showAllActivity(view);
@@ -313,7 +315,7 @@ test("Butter board activation opens the selected item and preserves edits separa
 	await view.press(document.body, "Escape");
 	assert.equal(view.queryByRole("dialog") === null, true);
 	await view.click(view.getByRole("button", { name: "Open third card" }));
-	await view.click(view.getByRole("button", { name: "Configure repository" }));
+	await view.click(view.getByRole("button", { name: "Start coding" }));
 	assert.equal(view.queryByRole("menuitem", { name: "Bitbucket Cloud" }) !== null, true);
 	assert.equal(view.queryByText("Ready to work on PAY-120."), null);
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
@@ -347,7 +349,7 @@ test("modal header centers the issue key with collapse and close", async () => {
 	assert.equal(document.querySelector("[data-project-butter-presentation]")?.getAttribute("data-project-butter-presentation"), "side-panel");
 });
 
-test("full screen keeps the issue key row without collapse or close and still closes on Escape", async () => {
+test("project full screen keeps the issue key and closes without offering collapse", async () => {
 	let closed = 0;
 	const view = await renderWorkItem({
 		initialPresentation: "full-screen",
@@ -358,7 +360,7 @@ test("full screen keeps the issue key row without collapse or close and still cl
 	assert.equal(view.queryByRole("button", { name: "Copy work item key" }) !== null, true);
 	assert.equal(view.queryByText("PAY-118") !== null, true);
 	assert.equal(view.queryByRole("button", { name: "Collapse work item" }) === null, true);
-	assert.equal(view.queryByRole("button", { name: "Close Project butter work item" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Close Project butter work item" }) !== null, true);
 	await view.press(document.body, "Escape");
 	assert.equal(closed, 1);
 });
@@ -411,10 +413,10 @@ test("board work item actions omit unsupported deep links and keep key copying a
 	}
 });
 
-test("empty Project butter opens the configure repository menu", async () => {
+test("empty Project butter opens the start coding menu", async () => {
 	const view = await renderWorkItem({ initialPreset: "empty" });
 	assert.equal(view.queryByText("Draft billing flow PRD") === null, true);
-	await view.click(view.getByRole("button", { name: "Configure repository" }));
+	await view.click(view.getByRole("button", { name: "Start coding" }));
 	assert.equal(view.queryByRole("menuitem", { name: "Bitbucket Cloud" }) !== null, true);
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Jira Coding agent" }), null);
 });
@@ -848,7 +850,9 @@ test("own comments can be edited and deleted with both actions recorded in Activ
 });
 
 test("pinned local sessions open the continuation menu in place", async () => {
-	const view = await renderWorkItem();
+	const { PROJECT_BUTTER_SESSIONS } = require("./data.ts");
+	const sessions = PROJECT_BUTTER_SESSIONS.map((session) => session.id === "butter-claude" ? { ...session, role: "owner", invokedBy: { name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" } } : session);
+	const view = await renderWorkItem({ initialSessions: sessions });
 	await view.click(view.getByRole("button", { name: /^Review Teamwork onboarding guide/u }));
 	assert.equal(view.queryByRole("textbox", { name: "Reply to Claude" }), null);
 	assert.equal(view.queryByRole("menuitem", { name: /Terminal/u }) !== null, true);

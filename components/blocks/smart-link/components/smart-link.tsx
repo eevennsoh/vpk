@@ -82,7 +82,7 @@ export type {
 const triggerSizeClasses: Record<SmartLinkSize, string> = {
 	small: "h-[16.5px] gap-1 pe-[3px] text-xs leading-4",
 	medium: "h-[19px] gap-1 pe-0.5 text-sm leading-5",
-	large: "h-[21.5px] gap-1.5 pe-1 text-base leading-6",
+	large: "h-auto min-h-6 gap-1 pe-1 text-base leading-6",
 };
 
 const wrappingTriggerSizeClasses: Record<SmartLinkSize, string> = {
@@ -114,7 +114,7 @@ const triggerStatusClasses: Record<SmartLinkSize, string> = {
 const triggerStatusPaddingClasses: Record<SmartLinkSize, string> = {
 	small: "pe-[0.25px]",
 	medium: "pe-[0.5px]",
-	large: "pe-[0.75px]",
+	large: "pe-0.5",
 };
 
 type SmartLinkTriggerBaseProps = {
@@ -163,6 +163,7 @@ function SmartLinkTrigger({
 			? cn("box-decoration-clone whitespace-normal [overflow-wrap:anywhere]", onActivate ? "inline-block max-w-full text-start" : "inline", wrappingTriggerSizeClasses[size])
 			: cn("inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden", triggerSizeClasses[size]),
 		triggerIconInsetClasses[size],
+		!wrap && size === "large" ? "ps-[3px]" : null,
 		// Match the gap beside a trailing status lozenge to the chip's
 		// top/bottom gap (see triggerStatusPaddingClasses).
 		status ? triggerStatusPaddingClasses[size] : null,
@@ -190,6 +191,7 @@ function SmartLinkTrigger({
 			<span
 				className={cn(
 					wrap ? null : "min-w-0 truncate whitespace-nowrap",
+					!wrap && size === "large" ? "[text-box:trim-both_cap_alphabetic]" : null,
 					status || wrap ? null : "grow",
 					removable &&
 						!status &&

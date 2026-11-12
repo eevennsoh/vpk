@@ -6,6 +6,7 @@ const React = require("react");
 const { createRoot } = require("react-dom/client");
 const { parseHTML } = require("linkedom");
 const { loadCjsModuleFromText } = require("../../../scripts/lib/esbuild-cjs-loader.js");
+const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 let harnessPromise;
 function loadHarness() {
@@ -14,6 +15,7 @@ function loadHarness() {
 			"agent-session-card.tsx", "use-agent-session-menu.ts", "agent-session-types.ts",
 			"agent-session-selection-gesture.ts", "agent-session-drag-interactive.ts", "agent-list-session.ts",
 			"agent-session-more-menu.tsx",
+			"agent-session-viewer-hint.tsx",
 			"assigned-agents-session-menu.tsx",
 			"agent-session-continue-menu.tsx",
 			"jira-session-flyout.tsx",
@@ -76,7 +78,7 @@ function loadHarness() {
 			["tooltip", `
 				import React from "react";
 				export function Tooltip({ children }) { return children; }
-				export function TooltipTrigger({ children, render }) { return render ? React.cloneElement(render, null, children) : children; }
+				export function TooltipTrigger({ children, render }) { return render ? (children === undefined ? render : React.cloneElement(render, null, children)) : children; }
 				export function TooltipContent({ children }) { return React.createElement("div", { role: "tooltip" }, children); }
 			`],
 			["agent-avatar-visual", `export function AgentAvatarVisual() { return null; }`],
@@ -107,7 +109,7 @@ function loadHarness() {
 			["agent-state", `export function AgentState() { return null; }`],
 			["agent-profile-card", `export function AgentProfileCard() { return null; }`],
 			["smart-link", `export function SmartLink() { return null; } export const SMART_LINK_MODAL_ACTIONS = [];`],
-			["avatar", `export function Avatar() { return null; } export function AvatarFallback() { return null; } export function AvatarImage() { return null; }`],
+			["avatar", `export function Avatar() { return null; } export function AvatarFallback() { return null; } export function AvatarImage() { return null; } export function AvatarGroup() { return null; }`],
 			["lozenge", `export function Lozenge() { return null; }`],
 			["metadata-path-link", `export function MetadataPathLink() { return null; } export function MetadataPathValue() { return null; }`],
 			["tag", `export function Tag() { return null; }`],
@@ -138,7 +140,6 @@ function loadHarness() {
 			["icon", `export function Icon() { return null; }`],
 			["agent-session-select-mark", `export function AgentSessionSelectMark() { return null; }`],
 			["agent-session-expired-hint", `export function AgentSessionExpiredHint({ children }) { return children; }`],
-			["agent-session-viewer-hint", `export function AgentSessionViewerHint() { return null; } export function AgentSessionViewerTooltip({ children }) { return children; }`],
 			["agent-session-metadata", `export function AgentSessionLongMetadata() { return null; } export function AgentSessionShortMetadata() { return null; }`],
 			["agent-session-lifecycle", `export function AgentSessionLifecycle() { return null; } export function AgentSessionShortLifecycleIcon() { return null; }`],
 		]);
@@ -202,6 +203,19 @@ async function withCard(props, verify, Component) {
 
 const LOCAL_ITEM = { id: "local-readiness", title: "Final readiness", host: "local", state: "complete", agent: { id: "claude", name: "Claude", kind: "agent" } };
 
+test("viewer lifecycle shows every state without an actionable status control", async () => {
+	for (const [state, label] of [["running", "Working"], ["needs-input", "Needs input"], ["attention", "Needs attention"], ["complete", "Finished"]]) {
+		for (const [exportName, props] of [
+			["AgentSessionShortLifecycleIcon", { state, showAllStates: true }],
+			["AgentSessionLifecycle", { state, readOnly: true }],
+		]) {
+			const view = await renderComponent({ entry: "components/blocks/agent-session/agent-session-lifecycle.tsx", exportName, props });
+			assert.ok(view.getAllByRole("img", { name: label }).length > 0);
+			assert.equal(view.queryByRole("button", { name: label }), null);
+		}
+	}
+});
+
 test("session cards show the correct hover and selection surfaces", async () => {
 	const item = { ...LOCAL_ITEM, host: "cloud" };
 	await withCard({ item, onView() {} }, async ({ document, render }) => {
@@ -244,6 +258,36 @@ test("owner cards retain their hover session preview while viewer cards keep it 
 			assert.equal(document.querySelector("[data-session-preview-trigger]") !== null, props.item.role !== "viewer");
 		});
 	}
+});
+
+test("viewer cards expose their explanation from the keyboard without an extra action", async () => {
+	await withCard({ item: { ...LOCAL_ITEM, role: "viewer" } }, async ({ document }) => {
+		assert.equal(document.querySelector("article").getAttribute("tabindex"), "0");
+		assert.equal(document.querySelector("button"), null);
+	});
+});
+
+test("viewer cards explain who can act on the session", async () => {
+	await withCard({ item: { ...LOCAL_ITEM, role: "viewer", invokedBy: { name: "Jordan Okafor" } } }, async ({ document, render }) => {
+		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only Jordan Okafor can act on it.");
+		await render({ item: { ...LOCAL_ITEM, role: "viewer", privateTo: "Annie Cook", invokedBy: { name: "Jordan Okafor" } } });
+		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only Annie Cook can act on it.");
+		await render({ item: { ...LOCAL_ITEM, role: "viewer" } });
+		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only its owner can act on it.");
+	});
+});
+
+test("private owner cards show the same explanation and still open their session", async () => {
+	const opened = [];
+	const item = { ...LOCAL_ITEM, host: "cloud", privateTo: "Annie Cook" };
+	await withCard({ item, onView: (session) => opened.push(session.id) }, async ({ document, click, render }) => {
+		assert.equal(document.querySelectorAll('[role="tooltip"]').length, 1);
+		assert.equal(document.querySelector('[role="tooltip"]').textContent, "You can see this session, but only Annie Cook can act on it.");
+		await click(document.querySelector("article"));
+		assert.deepEqual(opened, [item.id]);
+		await render({ item: LOCAL_ITEM, onView() {} });
+		assert.equal(document.querySelector('[role="tooltip"]'), null);
+	});
 });
 
 test("a draggable local card opens Continue in instead of invoking View or copying directly", async () => {
@@ -396,7 +440,6 @@ test("assignment adapters offer View only to cloud sessions", async () => {
 	const { AssignedAgentsSessionMenu } = await loadHarness();
 	const selected = [];
 	await withCard({
-		addAgentLabel: "Add agent",
 		rows: ["local", "cloud"].map((host) => ({ id: host, name: host, host, byline: "", statusLabel: "Working", role: "owner" })),
 		onSelectAgent: (agent) => selected.push(agent.host),
 	}, async ({ document, click }) => {

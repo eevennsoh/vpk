@@ -25,6 +25,7 @@ import { JiraActivityCommentActions } from "./jira-activity-comment-actions";
 import { JiraActivityComposer } from "./jira-activity-composer";
 import { JiraActivityImagePreviewDialog } from "./jira-activity-image-preview-dialog";
 import { JiraActivitySegments } from "./jira-activity-segments";
+import { toggleReaction as toggleActivityReaction } from "./lib/jira-activity-reducer";
 import type {
 	JiraActivityActor,
 	JiraActivityCommentEntry,
@@ -100,7 +101,7 @@ function getReplyMention(actor: JiraActivityActor): RichTextMentionItem {
 export type JiraActivityReplyComposerProps = Readonly<{
 	/** True when the composer mounted from a Reply click and should take focus. */
 	autoFocus: boolean;
-	onSubmit: (body: string) => void;
+	onSubmit: (body: string, mentionedAgentIds?: readonly string[]) => void;
 	onValueChange: (value: string) => void;
 	placeholder: string;
 	/** Replying to a specific reply leads the draft with a mention of its author. */
@@ -284,26 +285,14 @@ function ThreadReplyCard({
 	continued?: boolean;
 	actionsPlacement?: "footer" | "hover";
 }>) {
-	const [reactions, setReactions] = useState<readonly JiraActivityReaction[]>(reply.reactions ?? []);
+	const [toggledReactions, setToggledReactions] = useState<readonly string[]>([]);
 	const replyButtonRef = useRef<HTMLButtonElement>(null);
 
 	function toggleReaction(emoji: string) {
-		setReactions((currentReactions) => {
-			const existing = currentReactions.find((reaction) => reaction.emoji === emoji);
-			if (!existing) return [...currentReactions, { emoji, actorIds: [currentUser.id] }];
-
-			const actorIds = existing.actorIds.includes(currentUser.id)
-				? existing.actorIds.filter((actorId) => actorId !== currentUser.id)
-				: [...existing.actorIds, currentUser.id];
-			if (actorIds.length === 0) {
-				return currentReactions.filter((reaction) => reaction.emoji !== emoji);
-			}
-			return currentReactions.map((reaction) => (
-				reaction.emoji === emoji ? { ...reaction, actorIds } : reaction
-			));
-		});
+		setToggledReactions((current) => current.includes(emoji) ? current.filter((item) => item !== emoji) : [...current, emoji]);
 	}
 
+	const reactions = toggledReactions.reduce((current, emoji) => toggleActivityReaction(current, emoji, currentUser.id), reply.reactions ?? []);
 	const reactionSummaries = reactions.map((reaction) => ({
 		emoji: reaction.emoji,
 		count: reaction.actorIds.length,
@@ -388,6 +377,7 @@ export function JiraActivityComment({
 	renderReply,
 	replyDraft: controlledReplyDraft,
 	onReplyDraftChange,
+	replyRequestId,
 	commentActions = "reply-and-reactions",
 	commentActionsPlacement = "footer",
 	renderEarlierRepliesLabel,
@@ -400,7 +390,7 @@ export function JiraActivityComment({
 	headerLayout?: JiraActivityCardProps["headerLayout"];
 	currentUser: JiraActivityActor;
 	actorsById: ReadonlyMap<string, JiraActivityActor>;
-	onSubmitReply: (body: string) => void;
+	onSubmitReply: (body: string, mentionedAgentIds?: readonly string[]) => void;
 	onToggleReaction: (emoji: string) => void;
 	/** Toggle resolve on review discussion threads (`allowResolve`). */
 	onResolve?: () => void;
@@ -414,6 +404,7 @@ export function JiraActivityComment({
 	renderReply?: (reply: JiraActivityReply) => ReactNode | undefined;
 	replyDraft?: string;
 	onReplyDraftChange?: (value: string) => void;
+	replyRequestId?: number;
 	commentActions?: "none" | "reactions" | "reply-and-reactions";
 	commentActionsPlacement?: "footer" | "hover";
 	renderEarlierRepliesLabel?: (hiddenReplies: readonly JiraActivityReply[], expanded: boolean) => ReactNode;
@@ -437,6 +428,11 @@ export function JiraActivityComment({
 	} | null>(null);
 	const [localReplyDraft, setLocalReplyDraft] = useState("");
 	const replyDraft = controlledReplyDraft ?? localReplyDraft;
+	const [handledReplyRequestId, setHandledReplyRequestId] = useState<number | undefined>();
+	if (replyRequestId !== undefined && replyRequestId !== handledReplyRequestId) {
+		setHandledReplyRequestId(replyRequestId);
+		setReplyTarget({ key: entry.id, actor: entry.actor, initialDraft: replyDraft });
+	}
 	function setReplyDraft(value: string) {
 		if (controlledReplyDraft === undefined) setLocalReplyDraft(value);
 		onReplyDraftChange?.(value);
@@ -583,8 +579,8 @@ export function JiraActivityComment({
 		return { mention, requestKey: 1, textAfter: draft.slice(prefix.length) || " " };
 	}, [replyTarget]);
 	const replyPlaceholder = entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply...";
-	function submitReply(body: string) {
-		onSubmitReply(body);
+	function submitReply(body: string, mentionedAgentIds?: readonly string[]) {
+		onSubmitReply(body, mentionedAgentIds);
 		if (collapsible) {
 			setReplyTarget(null);
 			setReplyDraft("");
@@ -653,7 +649,7 @@ export function JiraActivityComment({
 						{/* Centered: the branch meets the composer at its vertical middle, whatever the composer's height. */}
 						{threaded ? <ThreadConnector centered continued={false} /> : null}
 						{renderReplyComposer ? (
-							<Fragment key={replyTarget?.key ?? "thread-reply"}>
+							<Fragment key={`${replyTarget?.key ?? "thread-reply"}-${handledReplyRequestId ?? 0}`}>
 								{renderReplyComposer({
 									autoFocus: collapsible,
 									onSubmit: submitReply,

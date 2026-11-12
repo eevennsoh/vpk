@@ -31,6 +31,7 @@ import type {
 	JiraIssueCoverImage,
 	JiraIssueIconScale,
 	JiraIssuePriority,
+	JiraIssuePullRequestItem,
 	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
 	JiraIssueTag,
@@ -109,6 +110,7 @@ export function JiraIssueSummary({
 	priority,
 	animatePullRequestOnMount,
 	pullRequestNumber,
+	pullRequests,
 	pullRequestPreview,
 	pullRequestStatus,
 	pullRequestTitle,
@@ -141,6 +143,7 @@ export function JiraIssueSummary({
 	priority: JiraIssuePriority;
 	animatePullRequestOnMount?: boolean;
 	pullRequestNumber?: number;
+	pullRequests?: readonly JiraIssuePullRequestItem[];
 	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
 	pullRequestTitle?: string;
@@ -161,7 +164,7 @@ export function JiraIssueSummary({
 			assignment={assignment} allowAddAgent={allowAddAgent}
 			issueKey={issueKey} summary={summary} metadata={metadata} priority={priority} tags={tags}
 			parentEpicControl={parentEpicControl} subtasks={subtasks} onSubtaskOpen={onSubtaskOpen} moreAction={moreAction}
-			animatePullRequestOnMount={animatePullRequestOnMount} pullRequestNumber={pullRequestNumber} pullRequestPreview={pullRequestPreview} pullRequestStatus={pullRequestStatus}
+			animatePullRequestOnMount={animatePullRequestOnMount} pullRequestNumber={pullRequestNumber} pullRequests={pullRequests} pullRequestPreview={pullRequestPreview} pullRequestStatus={pullRequestStatus}
 			pullRequestTitle={pullRequestTitle} showPriorityIndicator={showPriorityIndicator} showFooterMetadata={showFooterMetadata}
 			assignee={assigneeControl ?? (isMounted ? <JiraIssueAssignee assigneeAvatarLabel={assigneeAvatarLabel} assigneeAvatarShape={assigneeAvatarShape} assigneeAvatarSrc={assigneeAvatarSrc} assigneePulse={assigneePulse} assigneeUnassignedKind={assigneeUnassignedKind} issueKey={issueKey} size="sm" /> : null)}
 		/>;
@@ -169,7 +172,9 @@ export function JiraIssueSummary({
 	const pullRequestCluster = pullRequestNumber ? (
 		<JiraIssuePullRequestCluster
 			iconScale={iconScale}
+			issueKey={issueKey}
 			pullRequestNumber={pullRequestNumber}
+			pullRequests={pullRequests}
 			pullRequestPreview={pullRequestPreview}
 			pullRequestStatus={pullRequestStatus}
 			pullRequestTitle={pullRequestTitle ?? summary}

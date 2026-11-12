@@ -117,7 +117,8 @@ export function useProjectButterActivityNavigation(entries: readonly JiraActivit
 			frame = 0;
 			const viewport = root.getBoundingClientRect();
 			if (viewport.height === 0 || feed.getBoundingClientRect().height === 0) return;
-			sticky.current = (headerRef.current?.getBoundingClientRect().top ?? Infinity) <= viewport.top + 1;
+			const headerTop = headerRef.current?.getBoundingClientRect().top ?? Infinity;
+			sticky.current = Math.abs(headerTop - viewport.top) <= 1;
 			setStuck(sticky.current);
 			if (pinned.current && Math.abs(root.scrollTop - pinned.current.scroll) < 1) return;
 			pinned.current = null;

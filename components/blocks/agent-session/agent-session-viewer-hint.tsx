@@ -2,58 +2,22 @@
 
 import type { ReactElement } from "react";
 
-import InformationCircleIcon from "@atlaskit/icon/core/information-circle";
-
-import { Button } from "@/components/ui/button";
-import { IconTile } from "@/components/ui/icon-tile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 export const AGENT_SESSION_VIEWER_HINT =
-	"Someone is using an agent. Only they can see the work.";
+	"You can see this session, but only its owner can act on it.";
 
-/**
- * Trailing control for a session the viewer does not own.
- *
- * Replaces the owner more-menu. The information icon is decorative; the button
- * name and row tooltip carry the same copy so hover and keyboard both get it.
- */
-export function AgentSessionViewerHint({ compact = false }: Readonly<{ compact?: boolean }>) {
-	return (
-		<TooltipTrigger
-			render={
-				<Button
-					aria-label={AGENT_SESSION_VIEWER_HINT}
-					className={cn("[&_svg]:text-icon-subtlest", compact ? "[&_svg:not([class*='size-'])]:size-3!" : "[&_svg:not([class*='size-'])]:size-4!")}
-					onClick={(event) => event.stopPropagation()}
-					onPointerDown={(event) => event.stopPropagation()}
-					size="icon-compact"
-					type="button"
-					variant="ghost"
-				/>
-			}
-		>
-			<IconTile
-				aria-hidden
-				as="span"
-				className="text-icon-subtlest"
-				icon={<InformationCircleIcon color="currentColor" label="" size="medium" />}
-				iconSize={compact ? "small" : "medium"}
-				label=""
-				size="small"
-				variant="transparent"
-			/>
-		</TooltipTrigger>
-	);
+export function agentSessionPrivacyHint(person?: string) {
+	return person ? `You can see this session, but only ${person} can act on it.` : AGENT_SESSION_VIEWER_HINT;
 }
 
 /** Attach the privacy explanation to the whole viewer row. */
-export function AgentSessionViewerTooltip({ children, positionerClassName = "z-[600]" }: Readonly<{ children: ReactElement; positionerClassName?: string }>) {
+export function AgentSessionViewerTooltip({ children, person, positionerClassName = "z-[600]" }: Readonly<{ children: ReactElement; person?: string; positionerClassName?: string }>) {
 	return (
 		<Tooltip>
 			<TooltipTrigger render={children} />
-			<TooltipContent className="w-60 whitespace-normal" positionerClassName={positionerClassName}>
-				{AGENT_SESSION_VIEWER_HINT}
+			<TooltipContent className="w-60 whitespace-normal" collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "none" }} positionerClassName={positionerClassName} side="right">
+				{agentSessionPrivacyHint(person)}
 			</TooltipContent>
 		</Tooltip>
 	);

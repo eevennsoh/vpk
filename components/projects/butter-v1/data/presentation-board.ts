@@ -12,6 +12,7 @@ import type {
 	JiraKanbanColumnData,
 } from "@/components/blocks/jira-kanban";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
+import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 
 import { BUTTER_PAY_CURRENT_USER } from "./current-user";
 import { BUTTER_HEADER_AGENT_ASSIGNEES } from "./header-agent-assignees";
@@ -24,6 +25,7 @@ import {
 } from "./presentation-build";
 import { PAY_STORY_PEOPLE } from "./presentation-people";
 import { getButterPullRequestPreview } from "./presentation-pull-requests";
+import { BUTTER_TODO_PLACEHOLDERS } from "./work-item-placeholders/todo";
 
 export { BUTTER_PAY_CURRENT_USER };
 export { BUTTER_BOARD_AGENTS, BUTTER_PRIMARY_BOARD_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
@@ -60,6 +62,32 @@ export const BUTTER_PAY_112_RETENTION_QUESTION = {
 
 export const BUTTER_PAY_112_RETENTION_MESSAGE =
 	"I confirmed the sandbox can 401 when a replayed key is still retained, but I need a human call before I keep going. Replaying against live accounts without a signed retention window would change the blast radius of PAY-112.";
+
+export const BUTTER_PAY_112_THINKING_MESSAGE_ID = "PAY-112:review-agent:working";
+
+export function butterPay112WorkingParts(startedAt: Date): RovoUIMessage["parts"] {
+	const timestamp = startedAt.toISOString();
+	return [
+		{ type: "data-thinking-status", data: { label: "Working", content: "Preparing sandbox-only replay checks and documenting the retention decision.", toolCallId: "pay-112-replay", activity: "data", source: "fallback", timestamp } },
+		{ type: "data-thinking-event", id: "pay-112-context-start", data: { eventId: "pay-112-context-start", phase: "start", toolName: "jira.read_work_item_context", label: "Reviewing the retention decision", toolCallId: "pay-112-context", timestamp } },
+		{ type: "data-thinking-event", id: "pay-112-context-result", data: { eventId: "pay-112-context-result", phase: "result", toolName: "jira.read_work_item_context", label: "Reviewing the retention decision", toolCallId: "pay-112-context", outputPreview: "Captured the selected direction and sandbox scope.", timestamp } },
+		{ type: "data-thinking-event", id: "pay-112-replay-start", data: { eventId: "pay-112-replay-start", phase: "start", toolName: "workspace.review_files", label: "Preparing sandbox replay checks", toolCallId: "pay-112-replay", timestamp } },
+	];
+}
+
+export function getButterPay112ClarificationReply(prompt: string): string | undefined {
+	if (!prompt.includes(BUTTER_PAY_112_RETENTION_QUESTION.label)) return undefined;
+	if (prompt.includes("Assume a 7-day sandbox window")) {
+		return "I’ll use a seven-day retention window for the sandbox replay, keep the test away from live accounts, and document the assumption so it can be checked with payments platform.";
+	}
+	if (prompt.includes("Do not replay keys against live accounts")) {
+		return "I’ll keep replay away from live accounts and continue preparing the sandbox checks while we wait for payments platform to confirm the retention window in writing.";
+	}
+	if (prompt.includes("Jordan signs off the retention window")) {
+		return "I’ll prepare the sandbox replay plan and ask Jordan to confirm the retention window before running it. I’ll keep live accounts out of scope.";
+	}
+	return "I’ll use your direction to prepare the sandbox replay plan, document the retention decision, and keep live accounts out of scope until the window is confirmed.";
+}
 
 export const BUTTER_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID = {
 	"diego-santos": "diego",
@@ -441,6 +469,26 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					role: "viewer",
 					state: "working",
 					timeLabel: "Yesterday",
+				}), createActivity({
+					id: "PAY-107:jordan-cursor",
+					agentName: "Cursor",
+					agentBrandName: "cursor",
+					host: "local",
+					invokedBy: PAY_STORY_PEOPLE.jordan,
+					label: "Checking webhook retry edge cases",
+					role: "viewer",
+					state: "working",
+					timeLabel: "2h",
+				}), createActivity({
+					id: "PAY-107:priya-codex",
+					agentName: "Codex",
+					agentBrandName: "openai-codex",
+					host: "cloud",
+					invokedBy: PAY_STORY_PEOPLE.priya,
+					label: "Reviewing backoff and replay safety",
+					role: "viewer",
+					state: "working",
+					timeLabel: "1h",
 				})],
 			}),
 			createCard({
@@ -450,6 +498,19 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				tags: [{ text: "fixtures", color: "purple" }],
 				title: "Record the three missing decline-code fixtures",
 				agentActivities: [
+					createActivity({
+						id: "PAY-123:codex-coverage",
+						agentName: "Codex",
+						agentBrandName: "openai-codex",
+						cycleIntervalJitterMs: 1900,
+						cycleIntervalMs: 2700,
+						host: "cloud",
+						label: "Checking decline fixture coverage",
+						labels: ["Checking decline fixture coverage", "Reviewing missing test cases"],
+						role: "owner",
+						state: "working",
+						timeLabel: "12m",
+					}),
 					createActivity({
 						id: "PAY-123:test-agent",
 						agentName: "Cursor",
@@ -480,6 +541,39 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 						state: "working",
 						timeLabel: "3h",
 					}),
+					createActivity({
+						id: "PAY-123:maya-claude",
+						agentName: "Claude",
+						agentBrandName: "claude",
+						host: "cloud",
+						invokedBy: PAY_STORY_PEOPLE.maya,
+						label: "Reviewing decline response examples",
+						role: "viewer",
+						state: "working",
+						timeLabel: "24m",
+					}),
+					createActivity({
+						id: "PAY-123:diego-copilot",
+						agentName: "GitHub Copilot",
+						agentBrandName: "github-copilot",
+						host: "cloud",
+						invokedBy: PAY_STORY_PEOPLE.diego,
+						label: "Checking localised decline keys",
+						role: "viewer",
+						state: "working",
+						timeLabel: "42m",
+					}),
+					createActivity({
+						id: "PAY-123:priya-codex",
+						agentName: "Codex",
+						agentBrandName: "openai-codex",
+						host: "local",
+						invokedBy: PAY_STORY_PEOPLE.priya,
+						label: "Validating fixture replay results",
+						role: "viewer",
+						state: "working",
+						timeLabel: "1h",
+					}),
 				],
 			}),
 			createCard({
@@ -488,6 +582,30 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				priority: "major",
 				tags: [{ text: "localisation", color: "purple" }],
 				title: "Localise eleven v2 decline strings into nine languages",
+				agentActivities: [
+					createActivity({
+						id: "PAY-130:claude-code",
+						agentName: "Claude",
+						agentBrandName: "claude",
+						host: "cloud",
+						label: "Localising decline messages",
+						labels: ["Localising decline messages", "Checking language coverage", "Reviewing translated copy"],
+						role: "owner",
+						state: "working",
+						timeLabel: "8m",
+					}),
+					createActivity({
+						id: "PAY-130:test-agent",
+						agentName: "Cursor",
+						agentBrandName: "cursor",
+						host: "local",
+						label: "Checking localisation fixtures",
+						labels: ["Checking localisation fixtures", "Comparing decline identifiers", "Running locale tests"],
+						role: "owner",
+						state: "working",
+						timeLabel: "5m",
+					}),
+				],
 			}),
 		],
 	},
@@ -585,6 +703,30 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "open",
 				tags: [{ text: "ledger-sync", color: "teal" }],
 				title: "Stamp SDK version at settlement for finance exports",
+				agentActivities: [
+					createActivity({
+						id: "PAY-128:review-agent",
+						agentName: "Codex",
+						agentBrandName: "openai-codex",
+						host: "cloud",
+						label: "Reviewing settlement exports",
+						labels: ["Reviewing settlement exports", "Checking SDK version fields", "Comparing finance records"],
+						role: "owner",
+						state: "working",
+						timeLabel: "14m",
+					}),
+					createActivity({
+						id: "PAY-128:claude-code",
+						agentName: "Claude",
+						agentBrandName: "claude",
+						host: "local",
+						label: "Verifying settlement version stamps",
+						labels: ["Verifying settlement version stamps", "Checking export mappings", "Running settlement tests"],
+						role: "owner",
+						state: "working",
+						timeLabel: "6m",
+					}),
+				],
 			}),
 		],
 	},
@@ -646,6 +788,30 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 	},
 ];
 
+const PAY_WORK_ITEM_SCHEDULE: Readonly<Record<string, { storyPoints: number; dueDate: string }>> = {
+	"PAY-118": { storyPoints: 3, dueDate: "2026-11-23" },
+	"PAY-999": { storyPoints: 8, dueDate: "2026-11-30" },
+	"PAY-124": { storyPoints: 2, dueDate: "2026-11-17" },
+	"PAY-125": { storyPoints: 5, dueDate: "2026-11-20" },
+	"PAY-127": { storyPoints: 2, dueDate: "2026-11-27" },
+	"PAY-105": { storyPoints: 8, dueDate: "2026-11-20" },
+	"PAY-107": { storyPoints: 5, dueDate: "2026-11-19" },
+	"PAY-123": { storyPoints: 3, dueDate: "2026-11-16" },
+	"PAY-130": { storyPoints: 5, dueDate: "2026-11-20" },
+	"PAY-112": { storyPoints: 3, dueDate: "2026-11-13" },
+	"PAY-115": { storyPoints: 2, dueDate: "2026-11-16" },
+	"PAY-119": { storyPoints: 3, dueDate: "2026-11-16" },
+	"PAY-132": { storyPoints: 1, dueDate: "2026-11-13" },
+	"PAY-104": { storyPoints: 5, dueDate: "2026-11-17" },
+	"PAY-109": { storyPoints: 3, dueDate: "2026-11-16" },
+	"PAY-121": { storyPoints: 8, dueDate: "2026-11-17" },
+	"PAY-128": { storyPoints: 5, dueDate: "2026-11-17" },
+	"PAY-101": { storyPoints: 5, dueDate: "2026-11-06" },
+	"PAY-102": { storyPoints: 3, dueDate: "2026-11-09" },
+	"PAY-113": { storyPoints: 8, dueDate: "2026-11-10" },
+	"PAY-126": { storyPoints: 3, dueDate: "2026-11-11" },
+};
+
 function cloneBoardCard(card: JiraKanbanCardData): JiraKanbanCardData {
 	return {
 		...card,
@@ -680,11 +846,37 @@ function cloneBoardCard(card: JiraKanbanCardData): JiraKanbanCardData {
 }
 
 export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
-	return PAY_BOARD_COLUMNS.map((column) => ({
-		...column,
-		cards: column.cards.map((card) => ({
-			...cloneBoardCard(card),
-			parentIssueKey: PAY_101_SUBTASK_KEYS.some((key) => key === card.code) ? "PAY-101" : undefined,
+	const peopleByName: Readonly<Record<string, JiraKanbanAssigneeData>> = Object.fromEntries(
+		Object.values(PAY_STORY_PEOPLE).map((person) => [person.name, person]),
+	);
+	const priorities = {
+		Highest: "critical",
+		High: "major",
+		Medium: "medium",
+		Low: "minor",
+		Lowest: "minor",
+	} as const satisfies Readonly<Record<string, JiraKanbanCardData["priority"]>>;
+	const subtasks = (["PAY-118", "PAY-999", "PAY-127"] as const).flatMap((parentIssueKey) =>
+		BUTTER_TODO_PLACEHOLDERS[parentIssueKey].children.map((child) => ({
+			status: child.status,
+			card: {
+				assignee: peopleByName[child.assignee],
+				code: child.key,
+				dueDate: child.dueDate,
+				parentIssueKey,
+				priority: priorities[child.priority],
+				storyPoints: child.estimate ? Number(child.estimate) : undefined,
+				tags: [],
+				title: child.summary,
+			} satisfies JiraKanbanCardData,
 		})),
-	}));
+	);
+	return PAY_BOARD_COLUMNS.map((column) => {
+		const cards = [...column.cards, ...subtasks.filter((item) => item.status === column.title).map((item) => item.card)].map((card) => ({
+			...cloneBoardCard(card),
+			...PAY_WORK_ITEM_SCHEDULE[card.code],
+			parentIssueKey: PAY_101_SUBTASK_KEYS.some((key) => key === card.code) ? "PAY-101" : card.parentIssueKey,
+		}));
+		return { ...column, cards, count: cards.length };
+	});
 }

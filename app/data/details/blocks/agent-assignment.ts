@@ -7,7 +7,7 @@ export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
 		{
 			title: "Default",
 			description:
-				"The closed field is the medium-attached Jira agent activity row. Opening it shows assigned agents as Agent Session long cards covering owner/viewer × local/cloud — same hover actions as Agent Session — and Assign agent in the footer.",
+				"The closed field is the medium-attached Jira agent activity row. Opening it shows assigned agents as Agent Session long cards covering owner/viewer × local/cloud — same hover actions as Agent Session. Teammate sessions expand inline from a collapsed disclosure.",
 			demoSlug: "agent-assignment-demo-default",
 		},
 		{
@@ -49,12 +49,6 @@ export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
 			name: "onAgentAssign",
 			type: "(agent: AgentSelectorAgent) => void",
 			description: "Called when an unassigned agent is chosen, before the controlled id change. Use it to invoke the agent and create its running session.",
-		},
-		{
-			name: "showSessionAddAgent",
-			type: "boolean",
-			default: "true",
-			description: "Show the Add agent action in the Default session menu.",
 		},
 		{
 			name: "onAssignedAgentIdsChange",

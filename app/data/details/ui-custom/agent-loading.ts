@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_LOADING_DETAIL: ComponentDetail = {
 	description:
-		"A compact multi-agent status indicator that shows two hexagonal agent avatars and cycles through all agents until every agent is finished.",
+		"A compact multi-agent status indicator with a cycling avatar stack or a vertically rolling avatar.",
 	usage: `import { AgentLoading } from "@/components/ui-custom/agent-loading";
 
 <AgentLoading
@@ -39,6 +39,18 @@ export const AGENT_LOADING_DETAIL: ComponentDetail = {
 			description: "Canvas size. Default is the authored 24×24 Ferris; small scales the same geometry to 16×16.",
 		},
 		{
+			name: "variant",
+			type: '"stack" | "vertical"',
+			default: '"stack"',
+			description: "Choose the overlapping avatar stack or a single avatar that rolls vertically through a gradient fade.",
+		},
+		{
+			name: "verticalAvatarSize",
+			type: "20 | 24",
+			default: "24",
+			description: "Avatar size in the default vertical canvas. The small canvas keeps its 16×16 avatar.",
+		},
+		{
 			name: "label",
 			type: "ReactNode",
 			description: "Optional visible status copy rendered beside the agent visual.",
@@ -66,6 +78,11 @@ export const AGENT_LOADING_DETAIL: ComponentDetail = {
 		},
 	],
 	examples: [
+		{
+			title: "Vertical",
+			description: "Agents roll upward one at a time through a soft gradient fade.",
+			demoSlug: "agent-loading-demo-vertical",
+		},
 		{
 			title: "Finished",
 			description: "All agents are finished, so the avatar stack remains still.",

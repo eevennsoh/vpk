@@ -188,6 +188,7 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("model-selector", "Model Selector"),
 	customComponent("morphing-rovo", "Morphing Rovo"),
 	customComponent("node"),
+	customComponent("open-in", "Open in"),
 	customComponent("open-in-chat", "Open in Chat"),
 	customComponent("package-info", "Package Info"),
 	customComponent("flow-panel", "Flow Panel"),

@@ -15,8 +15,19 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
+	const recommendation = picker.getByRole("button", { name: "The Council (Recommended)", exact: true });
+	const recommendationLabel = recommendation.getByText("(Recommended)", { exact: true });
+	const subtlestColor = await recommendationLabel.evaluate((element) => {
+		const probe = document.createElement("span");
+		probe.style.color = "var(--ds-text-subtlest)";
+		element.appendChild(probe);
+		const color = getComputedStyle(probe).color;
+		probe.remove();
+		return color;
+	});
+	await expect(recommendationLabel).toHaveCSS("color", subtlestColor);
 	await expect(picker.getByRole("region", { name: "Software agents" })).toBeVisible();
 	await expect(picker.getByRole("region", { name: "Other agents" })).toBeVisible();
 	await expect(picker.getByText("Jira Coding Agent", { exact: true })).toBeVisible();
@@ -57,7 +68,7 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 	await expect(picker.getByText("Cursor", { exact: true })).toHaveCount(0);
 	await gallery.getByRole("button", { name: "Select Work item" }).click();
 	await expect(picker).toBeHidden();
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	await expect(search).toHaveValue("Claude");
 	await page.getByRole("button", { name: "Reset", exact: true }).click();
 	await expect(search).toHaveValue("");
@@ -68,7 +79,7 @@ test("Butter v1 gallery shows the Project Butter agent selector", async ({ page 
 test("Agent selector shows the local menu beside the selector without a separate gallery tile", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	await expect(gallery.getByRole("button", { name: "Select Jira Local Agent" })).toHaveCount(0);
 	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
 	const menu = page.getByRole("region", { name: "Jira Local Agent" });
@@ -88,7 +99,7 @@ test("Agent selector shows the local menu beside the selector without a separate
 test("workspace trash icon is 12px with a visible 4px gap before the checkmark", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	await page.getByRole("region", { name: "Jira Local Agent" }).getByRole("button", { name: "Configure Rovo CLI" }).click();
 	const directory = page.getByRole("textbox", { name: "Choose your directory" });
 	await directory.fill("dadf");
@@ -119,7 +130,7 @@ test("workspace trash icon is 12px with a visible 4px gap before the checkmark",
 
 test("local Copy prompt aligns its icon and label with agent rows and cloud actions", async ({ page }) => {
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const local = page.getByRole("region", { name: "Jira Local Agent" });
 	const cloud = page.getByRole("region", { name: "Project Butter agent selector" });
 	const agent = local.getByRole("button", { name: "Claude", exact: true });
@@ -147,7 +158,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 			Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => undefined } });
 		});
 		await page.goto(appUrl("/butter-v1"));
-		await page.getByRole("button", { name: "Select Agent selector" }).click();
+		await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 		const local = page.getByRole("region", { name: "Jira Local Agent" });
 		await local.getByRole("button", { name: "Copy prompt" }).click();
 		const copied = local.getByRole("button", { name: "Prompt copied" });
@@ -187,7 +198,7 @@ test("single-line favorite buttons have equal trailing and vertical gaps", async
 	await checkGaps(row, star);
 
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const inline = page.getByRole("region", { name: "Project Butter agent selector" });
 	const inlineButton = inline.getByRole("button", { name: "Claude", exact: true });
 	await checkGaps(inlineButton.locator("../.."), inline.getByRole("button", { name: "Add Claude to favorites" }));
@@ -254,7 +265,7 @@ test("agent rows and footer actions use the same hover color across selector var
 	await compare(originalRow, originalRow, [original.locator("button").filter({ hasText: "Browse agents" }), original.locator("button").filter({ hasText: "Create agent" })]);
 
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Agent selector" }).click();
+	await page.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const inline = page.getByRole("region", { name: "Project Butter agent selector" });
 	const inlineRow = inline.getByRole("button", { name: "Claude", exact: true });
 	await compare(inlineRow, inlineRow.locator("../.."), [inline.getByRole("button", { name: "Browse agents" })]);
@@ -302,7 +313,7 @@ test("selector presentations fade the list only after scrolling", async ({ page 
 		await list.evaluate((element) => { element.scrollTop = 0; });
 		await expect(list).toHaveCSS("mask-image", "none");
 	};
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	await checkFade(page.getByRole("region", { name: "Project Butter agent selector" }).getByRole("region", { name: "Software agents" }).locator(".."));
 	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	await checkFade(page.getByRole("region", { name: "Duplicative sessions agent selector" }).locator("[cmdk-list]"));
@@ -321,7 +332,7 @@ test("selector subsection headings match the editor palette", async ({ page }) =
 	const reference = await page.locator(".rich-text-command-menu-heading").filter({ hasText: /^Tools$/ }).first().evaluate(measure);
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
 	const searchGap = async (selector: typeof picker) => {
 		const searchBounds = await selector.locator(".rich-text-command-menu-search").boundingBox();
@@ -360,7 +371,7 @@ test("selector footer icons are 16 pixels in each presentation", async ({ page }
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	const picker = page.getByRole("region", { name: "Project Butter agent selector" });
 	const checkIcons = async (selector: typeof picker, names: string[]) => {
 		for (const name of names) {
@@ -494,7 +505,7 @@ test("Duplicative sessions starts directly or chooses from existing sessions", a
 	await expect(menu.getByTestId("agent-session-row-demo-onboarding-guide")).toContainText("2m");
 	await expect(menu.locator("hr")).toHaveCount(1);
 	await expect(menu.getByText(/Open in|Continue to existing session|Run on cloud/)).toHaveCount(0);
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	await expect(menu).toBeHidden();
 	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	await picker.getByRole("option", { name: /^Claude/ }).click();
@@ -517,7 +528,7 @@ test("Duplicative sessions starts directly or chooses from existing sessions", a
 	await expect(menu.getByRole("button", { name: /^Review onboarding changes/ })).toBeFocused();
 	await page.keyboard.press("Escape");
 	await expect(picker.getByRole("combobox", { name: "Search agents" })).toBeFocused();
-	await gallery.getByRole("button", { name: "Select Agent selector" }).click();
+	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	await gallery.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	await expect(picker.getByRole("status")).toHaveText("Started a new Cursor session");
 	await page.getByRole("button", { name: "Reset", exact: true }).click();

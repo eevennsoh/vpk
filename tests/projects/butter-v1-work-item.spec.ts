@@ -1,5 +1,32 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
+import { activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
+
+test("timeline labels normalize minute and hour variants", () => {
+	for (const label of ["1m ago", "1min ago", "1 min ago", "1 minute ago", "1 minutes ago"]) {
+		expect(activityHeaderTimeLabel(label)).toBe("1 min ago");
+	}
+	expect(activityHeaderTimeLabel("2 mins ago")).toBe("2 min ago");
+	for (const label of ["2h ago", "2hr ago", "2 hrs ago", "2 hour ago", "2 hours ago"]) {
+		expect(activityHeaderTimeLabel(label)).toBe("2 hr ago");
+	}
+	for (const label of ["Just now", "Yesterday", "2 days ago", "19 May"]) {
+		expect(activityHeaderTimeLabel(label)).toBe(label);
+	}
+});
+
+test("the sticky activity timeline uses min and hr for relative times", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1600, height: 800 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const timeline = page.getByRole("listbox", { name: "Navigate activity" });
+	const headerTime = page.locator("[data-project-butter-activity-header-time]");
+	await timeline.getByRole("option", { name: /Review Teamwork onboarding guide/ }).click();
+	await expect(headerTime).toHaveText("2 min ago");
+	await timeline.getByRole("option", { name: /Summarize onboarding feedback/ }).click();
+	await expect(headerTime).toHaveText("1 hr ago");
+});
 
 for (const width of [700, 1600]) {
 	test(`work item content fades beneath the header after scrolling at ${width}px`, async ({ page }) => {
@@ -14,6 +41,17 @@ for (const width of [700, 1600]) {
 		await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
 		await expect(scroller).toHaveCSS("--scroll-mask-fade-size", "3rem");
 		await expect(column.locator('[data-slot="scroll-mask-blur"]')).toHaveCount(0);
+		const activityHeader = layout.locator("[data-project-butter-activity-header]");
+		await scroller.evaluate((element) => {
+			const header = element.querySelector("[data-project-butter-activity-header]");
+			if (!header) throw new Error("Activity header is missing");
+			element.scrollTop += header.getBoundingClientRect().top - element.getBoundingClientRect().top + 100;
+		});
+		await expect(activityHeader.locator("[data-project-butter-activity-header-time]")).toBeVisible();
+		await expect(scroller).toHaveCSS("mask-image", "none");
+		await expect(activityHeader.getByRole("listbox", { name: "Navigate activity" })).toBeVisible();
+		await scroller.evaluate((element) => { element.scrollTop = 200; });
+		await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
 		await scroller.evaluate((element) => { element.scrollTop = 0; });
 		await expect(scroller).toHaveCSS("mask-image", "none");
 	});
@@ -198,10 +236,208 @@ test("the agent field shows an avatar stack without session state", async ({ pag
 	const field = page.getByRole("group", { name: "Agents field" });
 	await expect(field.getByRole("button", { name: "4 agents" })).toBeVisible();
 	await expect(field.locator('[data-slot="avatar"]')).toHaveCount(4);
+	const triggerBounds = await field.getByRole("button", { name: "4 agents" }).boundingBox();
+	const avatarBounds = await field.locator('[data-agent-name] button').first().boundingBox();
+	if (!triggerBounds || !avatarBounds) throw new Error("Agent field geometry is unavailable");
+	expect(avatarBounds.y + avatarBounds.height / 2).toBeCloseTo(triggerBounds.y + triggerBounds.height / 2, 0);
 	await expect(field).not.toContainText(/Needs input|Working|Finished/);
 	await field.getByRole("button", { name: "4 agents" }).click();
 	await expect(page.getByRole("dialog", { name: "Add agent" })).toBeVisible();
 });
+
+test("work item agent avatars show lanyards beside Details without moving between agents", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const field = page.getByRole("group", { name: "Agents field" });
+	const details = page.locator('[data-panel-id="details"]');
+	await field.getByRole("button", { name: "Jira Coding Agent, add agent" }).hover();
+	const coding = page.getByRole("article", { name: "Jira Coding Agent agent" });
+	await expect(coding).toBeVisible();
+	await expect(coding.getByRole("button", { name: "Chat with Jira Coding Agent" })).toBeEnabled();
+	await expect(coding.getByRole("button", { name: "More actions for Jira Coding Agent" })).toBeEnabled();
+	await expect(coding.locator('[data-slot="agent-lanyard-surface"]')).toHaveCSS("border-left-width", "0px");
+	await expect.poll(async () => {
+		const card = await coding.boundingBox();
+		const panel = await details.boundingBox();
+		return card && panel ? card.x + card.width - panel.x : null;
+	}).toBeCloseTo(-8, 0);
+	const codingBounds = await coding.boundingBox();
+	const codingAvatar = coding.locator('[data-slot="agent-lanyard-avatar"]');
+	const codingAvatarBounds = await codingAvatar.boundingBox();
+	const codingShape = await codingAvatar.evaluate((element) => getComputedStyle(element).maskImage);
+	const detailsBounds = await details.boundingBox();
+	const fieldBounds = await field.boundingBox();
+	if (!codingBounds || !codingAvatarBounds || !detailsBounds || !fieldBounds) throw new Error("Lanyard, avatar, field, or Details panel is not visible");
+	expect(codingBounds.x + codingBounds.width).toBeCloseTo(detailsBounds.x - 8, 0);
+	expect(codingBounds.y).toBeCloseTo(fieldBounds.y, 0);
+	await field.getByRole("button", { name: "Jira Scoping agent, add agent" }).hover();
+	const scoping = page.getByRole("article", { name: "Jira Scoping agent agent" });
+	await expect(scoping).toBeVisible();
+	const scopingAvatar = scoping.locator('[data-slot="agent-lanyard-avatar"]');
+	const scopingAvatarBounds = await scopingAvatar.boundingBox();
+	if (!scopingAvatarBounds) throw new Error("Scoping agent avatar is not visible");
+	expect(scopingAvatarBounds.height).toBeCloseTo(codingAvatarBounds.height, 0);
+	expect(scopingAvatarBounds.x + scopingAvatarBounds.width / 2).toBeCloseTo(codingAvatarBounds.x + codingAvatarBounds.width / 2, 0);
+	expect(scopingAvatarBounds.y).toBeCloseTo(codingAvatarBounds.y, 0);
+	expect(codingShape).toContain("/avatar-agent-new/blue/backlog-buddy.svg");
+	await expect(scopingAvatar).toHaveCSS("mask-image", codingShape);
+	await expect(scoping.locator('[data-slot="avatar-hexagon-border"]')).toHaveCount(0);
+	await field.getByRole("button", { name: "Claude, add agent" }).hover();
+	const claudeAvatar = page.getByRole("article", { name: "Claude agent" }).locator('[data-slot="agent-lanyard-avatar"]');
+	const claudeAvatarBounds = await claudeAvatar.boundingBox();
+	if (!claudeAvatarBounds) throw new Error("Claude avatar is not visible");
+	expect(scopingAvatarBounds.x).toBeCloseTo(claudeAvatarBounds.x, 0);
+	expect(scopingAvatarBounds.y).toBeCloseTo(claudeAvatarBounds.y, 0);
+	expect(scopingAvatarBounds.width).toBeCloseTo(claudeAvatarBounds.width, 0);
+	await expect(claudeAvatar).toHaveCSS("mask-image", codingShape);
+	for (const name of ["Claude", "Cursor", "Jira Coding Agent", "Claude"]) {
+		await field.getByRole("button", { name: `${name}, add agent` }).hover();
+		await expect(page.locator('[data-slot="hover-card-content"] [data-slot="agent-lanyard-surface"]')).toHaveCount(1);
+	}
+	await field.getByRole("button", { name: "Claude, add agent" }).hover();
+	const claude = page.getByRole("article", { name: "Claude agent" });
+	await expect(claude).toBeVisible();
+	await expect.poll(async () => (await claude.boundingBox())?.x).toBeCloseTo(codingBounds.x, 0);
+	const claudeBounds = await claude.boundingBox();
+	if (!claudeBounds) throw new Error("Claude lanyard is not visible");
+	expect(claudeBounds.x).toBeCloseTo(codingBounds.x, 0);
+	expect(claudeBounds.y).toBeCloseTo(codingBounds.y, 0);
+	await claude.getByRole("button", { name: "More actions for Claude" }).click();
+	await expect(page.getByRole("menu", { name: "Actions for Claude" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await field.getByRole("button", { name: "Claude, add agent" }).click();
+	await expect(page.getByRole("dialog", { name: "Add agent" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await field.getByRole("button", { name: "Cursor, add agent" }).focus();
+	await expect(page.getByRole("article", { name: "Cursor agent" })).toBeVisible();
+});
+
+for (const input of ["pointer", "keyboard"] as const) {
+	test(`the first selected agent stays still and the field loses focus (${input})`, async ({ page }) => {
+		await page.setViewportSize({ width: 1800, height: 1100 });
+		await page.emulateMedia({ reducedMotion: "no-preference" });
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Select e2e Journey" }).click();
+		await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+		const field = page.getByRole("group", { name: "Agents field" });
+		const trigger = field.getByRole("button", { name: "Add agent" });
+		await trigger.click();
+		await page.getByRole("dialog", { name: "Add agent" }).getByRole("textbox", { name: "Search agents" }).press("Escape");
+		await expect(trigger).toBeFocused();
+		await trigger.click();
+		const choice = page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "The Council", exact: true });
+		if (input === "pointer") await choice.hover();
+		else await choice.focus();
+		await page.evaluate(() => {
+			const samples: { opacity: number; scale: number; x: number }[] = [];
+			Object.assign(window, { firstAgentSamples: samples });
+			const observer = new MutationObserver(() => {
+				const avatar = document.querySelector<HTMLElement>('[data-agent-name="the council"]');
+				if (!avatar) return;
+				observer.disconnect();
+				const sample = () => {
+					const style = getComputedStyle(avatar);
+					const matrix = new DOMMatrixReadOnly(style.transform);
+					samples.push({ opacity: Number(style.opacity), scale: matrix.a, x: matrix.e });
+					if (samples.length < 30) requestAnimationFrame(sample);
+				};
+				sample();
+				requestAnimationFrame(sample);
+			});
+			observer.observe(document.body, { childList: true, subtree: true });
+		});
+		if (input === "pointer") await choice.click();
+		else await choice.press("Enter");
+		await expect(field.getByRole("button", { name: "The Council", exact: true })).toBeVisible();
+		await expect(field.getByText("The Council", { exact: true })).toBeVisible();
+		await expect.poll(() => field.evaluate((element) => element.contains(document.activeElement))).toBe(false);
+		await expect.poll(() => page.evaluate(() => (window as unknown as { firstAgentSamples: unknown[] }).firstAgentSamples.length)).toBeGreaterThanOrEqual(30);
+		const samples = await page.evaluate(() => (window as unknown as { firstAgentSamples: { opacity: number; scale: number; x: number }[] }).firstAgentSamples);
+		for (const sample of samples) {
+			expect(sample.opacity).toBe(1);
+			expect(sample.scale).toBeCloseTo(1, 3);
+			expect(sample.x).toBeCloseTo(0, 3);
+		}
+	});
+}
+
+test("selecting an agent already in the stack visibly scales its avatar in", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	const field = page.getByRole("group", { name: "Agents field" });
+	await field.getByRole("button", { name: "4 agents" }).click();
+	await page.evaluate(() => {
+		const samples: { scale: number; opacity: number; visible: boolean; x: number }[] = [];
+		Object.assign(window, { agentEntranceSamples: samples });
+		const observer = new MutationObserver(() => {
+			const avatar = document.querySelector<HTMLElement>('[data-agent-id="butter-coding"]');
+			const scroller = avatar?.closest<HTMLElement>('[data-slot="scroll-fade"]');
+			if (!avatar || !scroller) return;
+			observer.disconnect();
+			const sample = () => {
+				const style = getComputedStyle(avatar);
+				const bounds = avatar.getBoundingClientRect();
+				const viewport = scroller.getBoundingClientRect();
+				const transform = new DOMMatrixReadOnly(style.transform);
+				samples.push({ scale: transform.a, opacity: Number(style.opacity), visible: bounds.left >= viewport.left && bounds.right <= viewport.right, x: transform.e });
+				if (samples.length < 50) requestAnimationFrame(sample);
+			};
+			requestAnimationFrame(sample);
+		});
+		observer.observe(document.body, { childList: true, subtree: true });
+	});
+	await page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Jira Coding Agent", exact: true }).click();
+	await expect.poll(() => page.evaluate(() => (window as unknown as { agentEntranceSamples: { scale: number; opacity: number; visible: boolean }[] }).agentEntranceSamples.some((sample) => sample.visible && sample.opacity > 0.15 && sample.scale < 0.9))).toBe(true);
+	await expect.poll(() => page.evaluate(() => (window as unknown as { agentEntranceSamples: { scale: number; opacity: number; visible: boolean }[] }).agentEntranceSamples.some((sample) => sample.visible && sample.scale > 1.05))).toBe(true);
+	const samples = await page.evaluate(() => (window as unknown as { agentEntranceSamples: { x: number; opacity: number }[] }).agentEntranceSamples);
+	expect(samples.every((sample) => Math.abs(sample.x) < 0.01 && sample.opacity === 1)).toBe(true);
+	await expect(field.getByRole("button", { name: "4 agents" })).toBeVisible();
+});
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`the work item agent stack scrolls without a scrollbar when it overflows (${reducedMotion})`, async ({ page }) => {
+		test.setTimeout(120_000);
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await page.emulateMedia({ reducedMotion });
+		await page.goto(appUrl("/butter-v1"));
+		await page.getByRole("button", { name: "Select Work item" }).click();
+		const field = page.getByRole("group", { name: "Agents field" });
+		const scroller = field.locator('[data-slot="scroll-fade"]');
+		await expect(scroller).toHaveCSS("mask-image", "none");
+		const agents = ["Figma", "Canva", "Release Notes Drafter", "Readiness Checker", "Code Reviewer", "Pipeline Troubleshooter", "Meeting Insights Reporter", "Product Requirements Guide", "Feedback Analyzer", "Notion", "Slack", "Google Drive", "Atlassian", "AI Insights Agent", "RFP Drafter", "Research Companion", "ChatGPT Wrapper App", "Social Media Writer", "Progress Tracker", "Decision Director"];
+		for (const name of agents) {
+			await field.getByRole("button", { name: "Jira Coding Agent, add agent" }).click();
+			const picker = page.getByRole("dialog", { name: "Add agent" });
+			await picker.getByRole("textbox", { name: "Search agents" }).fill(name);
+			await picker.getByRole("button", { name, exact: true }).click();
+		}
+		await expect.poll(() => scroller.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+		await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+		await expect(scroller).toHaveCSS("mask-image", /linear-gradient/);
+		await expect(scroller).toHaveCSS("--scroll-mask-fade-size", "3rem");
+		await expect(scroller).toHaveCSS("scrollbar-width", "none");
+		const trigger = field.getByRole("button", { name: /^\d+ agents?$/u });
+		await trigger.focus();
+		await trigger.press("ArrowLeft");
+		const afterLeft = await scroller.evaluate((element) => element.scrollLeft);
+		await trigger.press("ArrowLeft");
+		await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeLessThan(afterLeft);
+		await trigger.press("ArrowRight");
+		await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+		const beforeWheel = await scroller.evaluate((element) => element.scrollLeft);
+		await scroller.hover();
+		await page.mouse.wheel(100, 0);
+		await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(beforeWheel);
+		await page.mouse.wheel(-5000, 0);
+		await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBe(0);
+		await expect.poll(() => scroller.evaluate((element) => element.style.maskImage)).toContain("black 0,");
+		await page.mouse.wheel(5000, 0);
+		await expect.poll(() => scroller.evaluate((element) => element.scrollLeft + element.clientWidth >= element.scrollWidth - 1)).toBe(true);
+		await expect.poll(() => scroller.evaluate((element) => element.style.maskImage)).toContain("black 100%");
+	});
+}
 
 async function sampleLayoutSize(locator: Locator) {
 	return locator.evaluate((element) => new Promise<{
@@ -293,7 +529,7 @@ test("Butter v1 board and work item use the direct cloud agent selector", async 
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	await gallery.getByRole("button", { name: "Select Work item" }).click();
 	const workItem = page.getByRole("region", { name: "Work item full screen view" });
-	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button").click();
+	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button", { name: /^\d+ agents?$/u }).click();
 	const workItemPicker = page.getByRole("dialog", { name: "Add agent" });
 	await expectSingleSelectorSurface(workItemPicker);
 	await expect(workItemPicker.getByRole("button", { name: "Browse agents" })).toBeVisible();
@@ -331,7 +567,7 @@ test("gallery session cards open the selected agent in floating Rovo chat", asyn
 	await expect(page.getByRole("textbox", { name: "Reply to Cursor" })).toHaveCount(0);
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 
-	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button").click();
+	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button", { name: /^\d+ agents?$/u }).click();
 	await page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Jira Coding Agent", exact: true }).click();
 	const session = workItem.locator('[data-project-butter-session-start]').filter({ hasText: "Jira Coding Agent" });
 	await session.getByRole("button", { name: "Redesign onboarding flow for new users", exact: true }).click();
@@ -381,6 +617,29 @@ test("Work item gallery displays the Project Butter screen with floating Rovo", 
 	await expect(summary).toHaveText("Redesign onboarding flow for new users");
 });
 
+test("board and list work items open full screen and return to their source", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	for (const view of ["Board", "List"] as const) {
+		await page.getByRole("button", { name: `Select ${view}` }).click();
+		if (view === "Board") {
+			await page.locator('[data-issue-key="PAY-118"][data-board-column-title] [data-slot="jira-issue-card"]').click();
+		} else {
+			await page.getByRole("region", { name: "Payments SDK v2 migration work items list" }).getByRole("button", { name: "PAY-118", exact: true }).click();
+		}
+		const item = page.getByRole("dialog", { name: "Project butter" });
+		await expect(item.getByRole("region", { name: "Work item full screen view" })).toBeVisible();
+		await expect(item.getByRole("button", { name: "Collapse work item" })).toHaveCount(0);
+		const bounds = await item.boundingBox();
+		if (!bounds) throw new Error("Work item bounds are unavailable");
+		expect(bounds).toMatchObject({ x: 0, y: 0, width: 1600, height: 1000 });
+		await item.getByRole("button", { name: "Close Project butter work item" }).click();
+		await expect(item).toBeHidden();
+		await expect(page.getByRole("button", { name: `Select ${view}` })).toBeVisible();
+	}
+});
+
 for (const viewport of [{ width: 1600, height: 1200 }, { width: 1600, height: 1000 }, { width: 900, height: 700 }]) {
 	test(`Work item gallery aligns with the board at ${viewport.width}x${viewport.height}`, async ({ page }) => {
 		await page.setViewportSize(viewport);
@@ -390,19 +649,17 @@ for (const viewport of [{ width: 1600, height: 1200 }, { width: 1600, height: 10
 		const boardColumn = page.locator('[data-jira-kanban-column="To do"]');
 		const boardBounds = await boardColumn.boundingBox();
 		await page.getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true }).click();
-		const modal = page.getByRole("dialog", { name: "Project butter" });
-		await expect(modal).toBeVisible();
-		await expect(modal.getByText("Agents", { exact: true })).toBeVisible();
-		const modalBounds = await modal.boundingBox();
-		await modal.getByRole("button", { name: "Close Project butter work item" }).click();
+		const item = page.getByRole("dialog", { name: "Project butter" });
+		await expect(item.getByRole("region", { name: "Work item full screen view" })).toBeVisible();
+		await expect(item.getByText("Agents", { exact: true })).toBeVisible();
+		const itemBounds = await item.boundingBox();
+		await item.getByRole("button", { name: "Close Project butter work item" }).click();
 		await page.getByRole("button", { name: "Select Work item" }).click();
 		const screen = page.getByRole("region", { name: "Work item full screen view" });
 		await expect(screen).toBeVisible();
 		const screenBounds = await screen.boundingBox();
-		if (!boardBounds || !modalBounds || !screenBounds) throw new Error("Work item bounds are unavailable");
-		for (const dimension of ["x", "width"] as const) {
-			expect(Math.abs(screenBounds[dimension] - modalBounds[dimension])).toBeLessThanOrEqual(2);
-		}
+		if (!boardBounds || !itemBounds || !screenBounds) throw new Error("Work item bounds are unavailable");
+		expect(itemBounds).toMatchObject({ x: 0, y: 0, width: viewport.width, height: viewport.height });
 		expect(Math.abs(screenBounds.y + screenBounds.height - viewport.height)).toBeLessThanOrEqual(2);
 		const keyRow = await screen.locator("[data-project-butter-header-key-row]").boundingBox();
 		if (!keyRow) throw new Error("Work item header bounds are unavailable");

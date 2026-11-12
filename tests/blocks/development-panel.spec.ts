@@ -2,40 +2,25 @@ import { expect, test } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
-test("Open in shows local agents in both development panel states", async ({ page }) => {
+test("the development panel omits Open in in both states", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
 	for (const state of ["Before setup", "Pull requests created"]) {
 		await page.getByRole("button", { name: state }).click();
-		const trigger = panel.getByRole("button", { name: "Open in", exact: true });
-		await trigger.click();
-		const picker = page.getByRole("dialog", { name: "Local software agents" });
-		for (const name of ["Claude", "Cursor", "Codex", "GitHub Copilot", "Rovo CLI"]) {
-			await expect(picker.getByRole("button", { name: new RegExp(`^${name}`, "u") })).toBeVisible();
-			await expect(picker.getByRole("button", { name: new RegExp(`^${name}`, "u") })).not.toBeFocused();
-		}
-		await expect(trigger).toBeFocused();
-		const firstAgent = picker.locator('[data-agent-id="claude-code"]');
-		await page.keyboard.press("Tab");
-		await expect(firstAgent).toBeFocused();
-		await page.keyboard.press("Escape");
-		await expect(trigger).toBeFocused();
-		await trigger.press("Enter");
-		await expect(firstAgent).toBeFocused();
-		await page.keyboard.press("Escape");
-		await expect(trigger).toBeFocused();
+		await expect(panel.getByRole("button", { name: "Open in", exact: true })).toHaveCount(0);
+		await expect(panel.getByRole("button", { name: "Start coding" })).toBeAttached();
 	}
 });
 
-test("configure repository opens the same menu before and after pull requests are created", async ({ page }) => {
+test("start coding opens the same menu before and after pull requests are created", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
 	const items = ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"];
 	for (const state of ["Before setup", "Pull requests created"]) {
 		await page.getByRole("button", { name: state }).click();
-		const trigger = panel.getByRole("button", { name: "Configure repository" });
+		const trigger = panel.getByRole("button", { name: "Start coding" });
 		await trigger.click();
-		const menu = page.getByRole("menu", { name: "Configure repository" });
+		const menu = page.getByRole("menu", { name: "Start coding" });
 		await expect(menu).toBeVisible();
 		await expect(menu).toHaveCSS("border-radius", "8px");
 		for (const name of items) await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
@@ -49,7 +34,7 @@ test("configure repository opens the same menu before and after pull requests ar
 test("development rows align their icons and labels with the heading", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	const panel = page.getByRole("region", { name: "Development" });
-	const startCoding = panel.getByRole("button", { name: "Configure repository" });
+	const startCoding = panel.getByRole("button", { name: "Start coding" });
 	await expect(panel.getByRole("button", { name: "Copy prompt" })).toHaveCount(0);
 	const emptyPositions = await startCoding.evaluate((element) => {
 		const icon = element.querySelector("svg");
@@ -82,11 +67,11 @@ test("development rows align their icons and labels with the heading", async ({ 
 	await expect(panel.getByRole("button", { name: "Copy prompt" })).toHaveCount(0);
 });
 
-test("configure repository menu uses compact icons and a GitHub app tile", async ({ page }) => {
+test("start coding menu uses compact icons and a GitHub app tile", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	await page.getByRole("button", { name: "Pull requests created" }).click();
-	await page.getByRole("button", { name: "Configure repository" }).click();
-	const menu = page.getByRole("menu", { name: "Configure repository" });
+	await page.getByRole("button", { name: "Start coding" }).click();
+	const menu = page.getByRole("menu", { name: "Start coding" });
 	for (const name of ["Copy create branch command", "Copy create commit command", "Copy work item key", "Branch name settings"]) {
 		const item = menu.getByRole("menuitem", { name });
 		const slot = await item.locator(":scope > span:first-child").boundingBox();
@@ -121,8 +106,8 @@ test("configure repository menu uses compact icons and a GitHub app tile", async
 test("Configure combines automation with the complete Connections submenu", async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	await page.getByRole("button", { name: "Pull requests created" }).click();
-	await page.getByRole("button", { name: "Configure repository" }).click();
-	const menu = page.getByRole("menu", { name: "Configure repository" });
+	await page.getByRole("button", { name: "Start coding" }).click();
+	const menu = page.getByRole("menu", { name: "Start coding" });
 	const inset = await menu.evaluate((element) => getComputedStyle(element).padding);
 	await page.keyboard.press("Escape");
 	await expect(page.getByRole("button", { name: "Pull request settings", exact: true })).toHaveCount(0);
@@ -132,7 +117,7 @@ test("Configure combines automation with the complete Connections submenu", asyn
 	await configure.click();
 	const settings = page.getByRole("menu", { name: "Configure", exact: true });
 	await expect(settings).toHaveCSS("padding", inset);
-	await expect(settings.getByRole("menuitemcheckbox")).toHaveText(["Auto-fix", "Merge when ready", "Auto-archive on merge or close"]);
+	await expect(settings.getByRole("menuitemcheckbox")).toHaveText(["Auto-fix PR", "Merge when ready", "Auto-archive on merge or close"]);
 	await expect(settings.getByRole("separator")).toHaveCount(1);
 	const connections = settings.getByRole("menuitem", { name: "Connections", exact: true });
 	await expect(connections.locator("svg")).toBeVisible();
@@ -174,7 +159,7 @@ test("automation defaults are enabled and choices persist across development pan
 	const settingsButton = panel.getByRole("button", { name: "Configure", exact: true });
 	await settingsButton.click();
 	const settings = page.getByRole("menu", { name: "Configure", exact: true });
-	for (const name of ["Auto-fix", "Merge when ready", "Auto-archive on merge or close"]) {
+	for (const name of ["Auto-fix PR", "Merge when ready", "Auto-archive on merge or close"]) {
 		const defaultChecked = name !== "Auto-archive on merge or close";
 		const option = settings.getByRole("menuitemcheckbox", { name });
 		const row = option;
@@ -194,12 +179,12 @@ test("automation defaults are enabled and choices persist across development pan
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Pull requests created" }).click();
 	await settingsButton.press("Enter");
-	for (const name of ["Auto-fix", "Merge when ready", "Auto-archive on merge or close"]) {
+	for (const name of ["Auto-fix PR", "Merge when ready", "Auto-archive on merge or close"]) {
 		await expect(settings.getByRole("menuitemcheckbox", { name })).toHaveAttribute("aria-checked", String(name === "Auto-archive on merge or close"));
 	}
-	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix" })).toBeFocused();
+	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix PR" })).toBeFocused();
 	await page.keyboard.press("Space");
-	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix" })).toBeChecked();
+	await expect(settings.getByRole("menuitemcheckbox", { name: "Auto-fix PR" })).toBeChecked();
 	await expect(settings.getByRole("menuitemcheckbox", { name: "Merge when ready" })).not.toBeChecked();
 });
 
@@ -235,11 +220,12 @@ test("non-merged pull requests show a compact CI summary without check details",
 });
 
 test("CI checks follow the automation settings and allow manual repair and merge", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.clock.install();
 	await page.goto(appUrl("/preview/blocks/development-panel"));
 	await page.getByRole("button", { name: "Configure", exact: true }).click();
 	const settings = page.getByRole("menu", { name: "Configure", exact: true });
-	await settings.getByRole("menuitemcheckbox", { name: "Auto-fix" }).click();
+	await settings.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }).click();
 	await settings.getByRole("menuitemcheckbox", { name: "Merge when ready" }).click();
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Pull requests created" }).click();
@@ -253,6 +239,12 @@ test("CI checks follow the automation settings and allow manual repair and merge
 	await expect(request).toContainText("checks running");
 	await page.clock.fastForward(5000);
 	await expect(request).toContainText("3/3 builds passed");
+	const completed = request.locator('[data-slot="progress-circle"]');
+	const completedSlot = await completed.boundingBox();
+	const completedIcon = await completed.locator("svg").filter({ has: page.locator("path.text-icon-success") }).boundingBox();
+	if (completedSlot === null || completedIcon === null) throw new Error("Completed checks icon must be visible");
+	expect(completedIcon.x + completedIcon.width / 2).toBeCloseTo(completedSlot.x + completedSlot.width / 2, 1);
+	expect(completedIcon.y + completedIcon.height / 2).toBeCloseTo(completedSlot.y + completedSlot.height / 2, 1);
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Merge pull request" }).click();
 	await expect(request).toContainText("Merged");

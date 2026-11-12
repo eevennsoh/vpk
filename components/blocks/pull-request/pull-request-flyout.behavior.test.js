@@ -160,6 +160,26 @@ test("flyout displays every pull request status", async () => {
 	}
 });
 
+test("Jira pull request icons and flyouts agree on each status", async () => {
+	for (const [status, triggerLabel, cardStatus] of [
+		["failed", "Pull request failed", "Failed"],
+		["open", "Pull request", "Open"],
+		["merged", "Pull request merged", "Merged"],
+		[undefined, "Pull request", "Open"],
+	]) {
+		const view = await renderComponent({
+			entry: "components/blocks/jira-issue/pull-request-cluster.tsx",
+			exportName: "JiraIssuePullRequestCluster",
+			mocks: THEME_MOCK,
+			props: { pullRequestNumber: 7, pullRequestTitle: "Example", pullRequestStatus: status, usesStrokeChrome: true },
+		});
+		await view.click(view.getByRole("button", { name: `${triggerLabel} #7: Example` }));
+		const card = view.getByRole("group", { name: "Pull request #7: Example" });
+		assert.equal(card.textContent.includes(cardStatus), true);
+		await view.unmount();
+	}
+});
+
 function trigger(view) {
 	return view.getByRole("button", { name: /builds? passed/u });
 }
@@ -180,6 +200,22 @@ test("the CI summary row expands inline into the full checks list", async () => 
 	assert.deepEqual([expandedBefore, expandedAfter], ["false", "true"]);
 	assert.match(text, /Guest checkout browser tests/u);
 	assert.match(text, /5 scenarios in 1m 32s/u);
+});
+
+test("a non-expandable CI summary keeps full pull request details without a disclosure", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/pull-request/components/pull-request.tsx",
+		exportName: "PullRequest",
+		mocks: THEME_MOCK,
+		props: { ...PROPS, checksExpandable: false },
+	});
+	assert.match(view.container.textContent, /atlassian\/shilpas-test-repo/u);
+	assert.match(view.container.textContent, /SHIL-25-dev-panel/u);
+	assert.match(view.container.textContent, /9 files/u);
+	assert.match(view.container.textContent, /3\/3 builds passed/u);
+	assert.equal(view.queryByRole("button", { name: /builds? passed/u }) === null, true);
+	assert.doesNotMatch(view.container.textContent, /Guest checkout browser tests/u);
+	await view.unmount();
 });
 
 test("the summary reflects failures and in-progress runs", async () => {
@@ -232,6 +268,7 @@ test("Fix PR appears for failed checks and passes only failures to the handler",
 	const withoutHandler = await renderFlyout({ checks, status: "Open" });
 	assert.equal(withoutHandler.fix, true);
 	assert.equal(withoutHandler.fixDisabled, true);
+	assert.equal((await renderFlyout({ checks, status: "Open", showFix: false })).fix, false);
 	assert.equal((await renderFlyout({ checks, status: "Merged" })).fix, false);
 	const view = await renderComponent({
 		entry: "components/blocks/pull-request/components/pull-request.tsx",
@@ -241,8 +278,15 @@ test("Fix PR appears for failed checks and passes only failures to the handler",
 	});
 	await view.click(view.getByRole("button", { name: "Fix PR" }));
 	assert.deepEqual(fixed, [[checks[0]]]);
-	await view.rerender({ ...PROPS, checks: [{ ...checks[0], status: "running" }] });
+	await view.rerender({ ...PROPS, status: "Open", checks: [{ ...checks[0], status: "running" }], isFixing: true, onFix: (failed) => fixed.push(failed) });
+	const fixingButton = view.getByRole("button", { name: "Fix PR" });
+	assert.equal(fixingButton.disabled, true);
+	assert.equal(fixingButton.getAttribute("aria-busy"), "true");
+	assert.equal(fixingButton.querySelector('[data-slot="spinner"]') !== null, true);
+	await view.rerender({ ...PROPS, status: "Open", checks: [{ ...checks[0], status: "passed" }] });
 	assert.equal(view.queryByRole("button", { name: "Fix PR" }) === null, true);
+	await view.rerender({ ...PROPS, status: "Merged", checks: [{ ...checks[0], status: "passed" }], onFix: (failed) => fixed.push(failed) });
+	assert.equal(view.queryByRole("button", { name: "Fix PR" }), null);
 	await view.unmount();
 });
 

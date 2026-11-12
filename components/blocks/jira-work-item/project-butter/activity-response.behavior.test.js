@@ -11,13 +11,33 @@ async function renderActivity(props = {}) {
 			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
 			import { PROJECT_BUTTER_SESSIONS } from "@/components/blocks/jira-work-item/project-butter/data";
 			const initialSessions = [PROJECT_BUTTER_SESSIONS[1]];
-			export default function ActivityProbe({ state = "running", onOpen }) {
+			export default function ActivityProbe({ state = "running", onOpen, owner = false }) {
 				const content = useProjectButterContent("filled", undefined, initialSessions);
-				return <ThemeWrapper><ProjectButterActivity content={content} onOpenSession={onOpen} sessions={[{ ...initialSessions[0], state }]} sidePanel={false} /></ThemeWrapper>;
+				return <ThemeWrapper><ProjectButterActivity content={content} onOpenSession={onOpen} sessions={[{ ...initialSessions[0], state, role: owner ? "owner" : "viewer" }]} sidePanel={false} /></ThemeWrapper>;
 			}`,
 		props: { onOpen() {}, ...props },
 	});
 }
+
+test("session choices belong to Venn while Annie's sessions stay private", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { matchingAgentSessions } from "@/components/blocks/agent-assignment/components/session-choice-items";
+			import { ProjectButterSessionStart } from "@/components/blocks/jira-work-item/project-butter/activity-session-start";
+			import { PROJECT_BUTTER_SESSIONS } from "@/components/blocks/jira-work-item/project-butter/data";
+			const sessions = matchingAgentSessions({ id: "claude", name: "Claude" }, PROJECT_BUTTER_SESSIONS, { includeCompleted: true });
+			export default function OwnershipProbe() {
+				return <ThemeWrapper><output>{sessions.map((session) => session.invokedBy.name + ": " + session.title).join(" | ")}</output>{PROJECT_BUTTER_SESSIONS.filter((session) => session.id === "butter-cursor-forecast" || session.id === "butter-claude-onboarding-feedback").map((session) => <ProjectButterSessionStart key={session.id} session={session} onOpen={() => {}} />)}</ThemeWrapper>;
+			}`,
+	});
+	assert.equal(view.getByText(/Venn: Summarize onboarding feedback/u).textContent, "Venn: Summarize onboarding feedback | Venn: Rewrite the incident postmortem");
+	const annie = view.getByRole("listitem", { name: /^Compare the Q3 revenue forecast/u });
+	assert.equal(annie.querySelector('button[aria-label^="Compare the Q3 revenue forecast"]'), null);
+	assert.equal(annie.querySelector('[data-slot="tooltip-trigger"]') !== null, true);
+	const venn = view.getByRole("button", { name: /^Summarize onboarding feedback/u });
+	assert.equal(venn.getAttribute("aria-describedby"), null);
+});
 
 test("a session start presents the long-form agent session card in its thread", async () => {
 	await renderActivity();
@@ -28,8 +48,7 @@ test("a session start presents the long-form agent session card in its thread", 
 	const thread = start.closest("[data-jira-activity-entry-id]");
 	assert.equal(thread.dataset.jiraActivityEntryId, "invocation-butter-scoping");
 	assert.equal(thread.querySelector('[data-slot="jira-activity-comment-header"]').textContent.includes("Annie Cook added Jira Scoping agent"), true);
-	assert.equal(start.querySelector('[aria-label="Private to Annie Cook"]') !== null, true);
-	assert.equal(thread.querySelector('[data-slot="jira-activity-comment-header"] [aria-label="Private to Annie Cook"]') === null, true);
+	assert.equal(start.querySelector('[data-slot="tooltip-trigger"]') !== null, true);
 	const identity = thread.firstElementChild.querySelector('[data-slot="human-agent-avatar"]');
 	assert.equal(identity?.getAttribute("aria-label"), "Jira Scoping agent, used by Annie Cook");
 	assert.equal(identity?.querySelector('[data-avatar-role="human"]') !== null, true);
@@ -40,8 +59,9 @@ test("a session start presents the long-form agent session card in its thread", 
 
 test("a running session card opens chat with the keyboard", async () => {
 	const opened = [];
-	const view = await renderActivity({ onOpen: (id) => opened.push(id) });
+	const view = await renderActivity({ onOpen: (id) => opened.push(id), owner: true });
 	const card = view.getByRole("button", { name: /^Troubleshoot 403 API errors/u });
+	assert.equal(card.getAttribute("aria-describedby"), null);
 	assert.equal(card.closest("[data-project-butter-session-start]") !== null, true);
 	assert.equal(card.textContent.includes("Troubleshoot 403 API errors"), true);
 	const thread = document.querySelector('[data-jira-activity-entry-id="invocation-butter-scoping"]');
@@ -53,11 +73,11 @@ test("a running session card opens chat with the keyboard", async () => {
 test("the session card follows live session state", async () => {
 	const opened = [];
 	const onOpen = (id) => opened.push(id);
-	const view = await renderActivity({ onOpen });
-	await view.rerender({ state: "needs-input", onOpen });
+	const view = await renderActivity({ onOpen, owner: true });
+	await view.rerender({ state: "needs-input", onOpen, owner: true });
 	assert.equal(document.querySelector('[data-project-butter-session-start="butter-scoping"] button[aria-label="Needs input"]') !== null, true);
 	await view.click(view.getByRole("button", { name: /^Troubleshoot 403 API errors/u }));
-	await view.rerender({ state: "complete", onOpen });
+	await view.rerender({ state: "complete", onOpen, owner: true });
 	assert.equal(document.querySelector('[data-project-butter-session-start="butter-scoping"] button[aria-label="Finished"]') !== null, true);
 	await view.click(view.getByRole("button", { name: /^Troubleshoot 403 API errors/u }));
 	assert.deepEqual(opened, ["butter-scoping", "butter-scoping"]);
@@ -169,6 +189,7 @@ test("pinning a comment from its header lifts it to the top of the feed until it
 	await view.fill(view.getByRole("textbox", { name: "Leave a reply..." }), "Reply while pinned");
 	await view.click(lead.querySelector('form[aria-label="Reply editor"] button[aria-label="Submit"]'));
 	assert.equal(rows()[0].textContent.includes("Reply while pinned"), true);
+	assert.equal(rows()[0].textContent.includes("👀"), false);
 	await view.click(rows()[0].querySelector('button[aria-label="Unpin comment"]'));
 	assert.notEqual(rows()[0].dataset.jiraActivityEntryId, id);
 	assert.equal(comments().some((node) => node.dataset.jiraActivityEntryId === id && !node.textContent.includes("Pinned")), true);
@@ -191,6 +212,35 @@ test("Reply opens the work item's own comment box with the reply placeholder", a
 	assert.equal(reply?.hasAttribute("data-project-butter-comment-editor"), true, "replies reuse the comment box");
 	assert.equal(reply.querySelector(".rich-text-editor-content").style.getPropertyValue("--rich-text-placeholder"), '"Leave a reply..."');
 	assert.deepEqual([...reply.querySelectorAll("button")].map((button) => button.getAttribute("aria-label")), ["Mention an agent or person", "Start dictation", "Submit"]);
+});
+
+test("an agent reacts after the reply appears, even if the activity view remounts", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
+			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+			import { PROJECT_BUTTER_SESSIONS } from "@/components/blocks/jira-work-item/project-butter/data";
+			const sessions = PROJECT_BUTTER_SESSIONS.filter((session) => session.id === "butter-claude-onboarding-feedback");
+			export default function ReplyProbe() {
+				const content = useProjectButterContent("filled", undefined, sessions);
+				const [visible, setVisible] = React.useState(true);
+				return <ThemeWrapper><button onClick={() => setVisible((current) => !current)}>Toggle activity</button>{visible ? <ProjectButterActivity content={content} onOpenSession={() => {}} sessions={sessions} sidePanel={false} /> : null}</ThemeWrapper>;
+			}`,
+	});
+	const thread = document.querySelector('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
+	await view.click([...thread.querySelectorAll('[aria-label="Replies"] button[aria-label="Reply"]')].at(-1));
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+	await view.click(thread.querySelector('form[aria-label="Reply editor"] button[aria-label="Submit"]'));
+	let reply = [...thread.querySelectorAll('[aria-label="Replies"] > div')].at(-1);
+	assert.equal(reply.textContent.includes("@[subagent:claude]"), false);
+	assert.equal(reply.querySelector('[data-jira-activity-agent-mention]')?.textContent.includes("Claude"), true);
+	assert.equal(reply.textContent.includes("👀"), false);
+	await view.click(view.getByRole("button", { name: "Toggle activity" }));
+	await view.click(view.getByRole("button", { name: "Toggle activity" }));
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 3100)); });
+	reply = [...document.querySelectorAll('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"] [aria-label="Replies"] > div')].at(-1);
+	assert.equal(reply.textContent.includes("👀"), true);
 });
 
 test("starting an agent from the details field reveals its activity card with a horizontal glow", async () => {

@@ -428,7 +428,7 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.match(SUMMARY_BLOCK, /\{usesStrokeChrome && pullRequestCluster \? \([\s\S]*<div className="flex shrink-0 items-center gap-0">[\s\S]*\{pullRequestCluster\}[\s\S]*\{metadataCluster\}/u);
 	assert.match(SUMMARY_SOURCE, /usesStrokeChrome \? \(comfortableIcons \? "gap-1" : "gap-0"\) : "gap-1\.5"/u);
 	assert.doesNotMatch(SUMMARY_SOURCE, /comfortableIcons && "size-4!"/u);
-	assert.match(TYPES_SOURCE, /export type JiraIssuePullRequestStatus = "open" \| "failed" \| "merged";/u);
+	assert.match(TYPES_SOURCE, /export type JiraIssuePullRequestStatus = "open" \| "draft" \| "failed" \| "merged";/u);
 	assert.match(TYPES_SOURCE, /export interface JiraIssuePullRequestPreview \{[\s\S]*additions: number;[\s\S]*deletions: number;[\s\S]*filesChanged\?: number;[\s\S]*relativeTime\?: string;/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /function getJiraIssuePullRequestPresentation\(/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /case "failed":[\s\S]*MergeFailureIcon[\s\S]*text-icon-danger[\s\S]*case "merged":[\s\S]*MergeSuccessIcon[\s\S]*text-icon-accent-purple[\s\S]*case "open":[\s\S]*PullRequestIcon[\s\S]*text-icon-accent-lime/u);
@@ -443,13 +443,13 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /iconScale = "compact",/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /const iconMetrics = resolveJiraIssueIconMetrics\(iconScale\);/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className=\{cn\(tone === "subtle" \? "text-icon-subtle" : colorClass,[\s\S]*iconMetrics\.compactIconClassName\)\}/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<Popover>[\s\S]*render=\{\(\s*<Button[\s\S]*aria-label=\{accessibleName\}[\s\S]*onClick=\{stopNestedActivation\}[\s\S]*onPointerDown=\{stopNestedActivation\}[\s\S]*size="icon-compact"[\s\S]*type="button"[\s\S]*variant="ghost"/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<Popover[\s\S]*render=\{\(\s*<Button[\s\S]*aria-label=\{accessibleName\}[\s\S]*onClick=\{stopNestedActivation\}[\s\S]*onPointerDown=\{stopNestedActivation\}[\s\S]*size="icon-compact"[\s\S]*type="button"[\s\S]*variant="ghost"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<Button[\s\S]*size="icon-compact"[\s\S]*variant="ghost"/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<PullRequest[\s\S]*relativeTime=\{pullRequestPreview\?\.relativeTime\}[\s\S]*variant="flyout"/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<PullRequest[\s\S]*relativeTime=\{preview\?\.relativeTime\}[\s\S]*variant="flyout"/u);
 	assert.doesNotMatch(PULL_REQUEST_CLUSTER_SOURCE, /onActivate=/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className="w-\[320px\] max-w-\[calc\(100vw-48px\)\] overflow-hidden rounded-xl border-none bg-surface-overlay p-0 text-text shadow-none"/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /"w-\[320px\] max-w-\[calc\(100vw-48px\)\] overflow-hidden rounded-xl border-none bg-surface-overlay p-0 text-text shadow-none"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /boxShadow: token\("elevation\.shadow\.overlay"\)/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className="border-none bg-transparent shadow-none"/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /"border-none bg-transparent shadow-none"/u);
 	assert.match(SUMMARY_BLOCK, /usesStrokeChrome \? "flex min-w-0 items-center" : "flex min-w-0 items-center gap-2"/u);
 });
 
@@ -657,7 +657,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(AGENT_ACTIVITY_SOURCE, /const summary = summarizeJiraIssueAgentActivities\(activities\);/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const featuredActivity = summary\.featuredActivityIndex !== null[\s\S]*\? activities\[summary\.featuredActivityIndex\][\s\S]*: undefined;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(featuredActivity !== undefined\) \{[\s\S]*<AgentAvatarVisual[\s\S]*appearance="coding"[\s\S]*animate=\{false\}[\s\S]*avatarClassName="shrink-0"[\s\S]*avatarSrc=\{featuredActivity\.avatarSrc\}[\s\S]*label=\{featuredActivity\.name\}[\s\S]*sizePx=\{getJiraIssueAgentAvatarSize\(featuredActivity\.agentBrandName, featuredActivity\.avatarSrc\)\}[\s\S]*else if \(avatarLayout === "horizontal-group"\) \{[\s\S]*<AvatarGroup[\s\S]*else \{[\s\S]*<AgentLoading[\s\S]*agents=\{activities\.map\(toAgentLoadingAgent\)\}[\s\S]*className="shrink-0"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(featuredActivity !== undefined\) \{[\s\S]*<AgentAvatarVisual[\s\S]*appearance="coding"[\s\S]*animate=\{false\}[\s\S]*avatarClassName="shrink-0"[\s\S]*avatarSrc=\{featuredActivity\.avatarSrc\}[\s\S]*label=\{featuredActivity\.name\}[\s\S]*sizePx=\{avatarSize\}[\s\S]*else if \(avatarLayout === "horizontal-group"\) \{[\s\S]*<AvatarGroup[\s\S]*else \{[\s\S]*<AgentLoading[\s\S]*agents=\{activities\.map\(toAgentLoadingAgent\)\}[\s\S]*className="shrink-0"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isAwaitingInput = !isCompletedRow && summary\.priorityState === "awaiting-input";/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /shouldCycleSingleAgentLabel|JiraIssueCyclingAgentLabel/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /status: activity\.label,[\s\S]*statusSequence: activity\.state === "working" \? getJiraIssueAgentWorkingLabels\(activity\) : undefined,[\s\S]*statusCycleIntervalMs: activity\.cycleIntervalMs[\s\S]*statusCycleJitterMs: activity\.cycleIntervalJitterMs/u);

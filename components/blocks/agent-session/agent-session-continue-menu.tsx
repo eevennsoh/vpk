@@ -176,7 +176,7 @@ export function AgentSessionContinueMenu({
 						>
 							Terminal
 						</DropdownMenuItem>
-						<TooltipContent id={copiedTooltipId} positionerClassName={positionerClassName} role="tooltip" side="right" sideOffset={8}>Copied prompt</TooltipContent>
+						<TooltipContent collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "none" }} id={copiedTooltipId} positionerClassName={positionerClassName} role="tooltip" side="right" sideOffset={8}>Copied prompt</TooltipContent>
 					</Tooltip>
 				</DropdownMenuGroup>
 			</DropdownMenuContent>

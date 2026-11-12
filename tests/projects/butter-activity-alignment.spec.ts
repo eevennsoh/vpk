@@ -34,58 +34,14 @@ test("work item activity text aligns with its icon and timestamp", async ({ page
 	}
 });
 
-test("agent assignment and field updates share activity text and mention styling", async ({ page }) => {
+test("agent invocation uses the shared session card", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter"));
 	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
-	await item.getByRole("button", { name: /\d+ suggestions$/ }).click();
-	await page.getByRole("button", { name: "Accept description" }).click();
-	const update = item.getByRole("button", { name: /Venn updated description/ });
-	await expect(update).toBeVisible();
-	await item.getByRole("button", { name: /\. Add agent$/ }).click();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
-	const invocation = item.locator('[data-jira-activity-entry-id^="merchant-agent-added-"]');
+	await item.getByRole("button", { name: "Add agent", exact: true }).click();
+	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
+	const invocation = item.locator('[data-jira-activity-entry-id^="invocation-"]');
 	await expect(invocation).toContainText("Venn added Claude and self-assigned the issue");
-	const actorMention = '[data-jira-activity-user-mention]';
-	await expect(update.locator(actorMention)).toHaveText("Venn");
-	await expect(invocation.locator(actorMention)).toHaveText("Venn");
-	await expect(invocation.locator('[data-jira-activity-agent-mention]')).toHaveText("Claude");
-	await expect(invocation.getByText("Just now", { exact: true })).toBeVisible();
-	const invocationOffsets = await invocation.evaluate((row) => {
-		const track = row.firstElementChild?.firstElementChild;
-		const mentions = [...row.querySelectorAll("[data-jira-activity-user-mention], [data-jira-activity-agent-mention]")];
-		const shapes = [...row.querySelectorAll("[data-jira-activity-user-mention] [data-slot=tag-before], [data-jira-activity-agent-mention] [data-slot=tag-before]")];
-		if (!track || mentions.length !== 2 || shapes.length !== 2) throw new Error("Activity avatars or mentions are missing");
-		const center = (element: Element) => { const box = element.getBoundingClientRect(); return box.top + box.height / 2; };
-		return [...mentions, ...shapes].map((element) => Math.abs(center(element) - center(track)));
-	});
-	for (const offset of invocationOffsets) expect(offset).toBeLessThanOrEqual(1);
-	const styles = await item.evaluate((root) => {
-		const event = root.querySelector<HTMLElement>('[data-jira-activity-entry-id^="merchant-agent-added-"] p');
-		const change = root.querySelector<HTMLElement>('[data-jira-activity-entry-id="butter-accepted-suggestions"] button');
-		const action = change?.querySelector<HTMLElement>("span:nth-child(2)");
-		const mentions = [event, change].map((node) => node?.querySelector<HTMLElement>("[data-jira-activity-user-mention] [data-tag-text]"));
-		mentions.push(event?.querySelector<HTMLElement>("[data-jira-activity-agent-mention] [data-tag-text]"));
-		if (!event || !action || mentions.some((node) => !node)) throw new Error("Activity text or mention is missing");
-		const style = (element: Element) => { const computed = getComputedStyle(element); return [computed.fontSize, computed.fontWeight, computed.color]; };
-		return { event: style(event), action: style(action), mentionSizes: mentions.map((node) => node ? getComputedStyle(node).fontSize : "") };
-	});
-	expect(styles.event).toEqual(styles.action);
-	expect(styles.mentionSizes).toEqual([styles.action[0], styles.action[0], styles.action[0]]);
-	await item.getByRole("button", { name: /\. Add agent$/ }).click();
-	await page.getByRole("dialog", { name: "Agent sessions" }).getByRole("button", { name: "Add agent" }).click();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Cursor");
-	await page.getByRole("option", { name: /^Cursor/ }).first().click();
-	await page.getByRole("menu", { name: "Run Cursor on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
-	const cursorMention = item.locator('[data-jira-activity-agent-mention]').filter({ hasText: "Cursor" }).first();
-	await expect(cursorMention).toBeVisible();
-	const cursorSizes = await cursorMention.evaluate((mention) => {
-		const text = mention.querySelector("[data-tag-text]");
-		if (!text || !mention.parentElement) throw new Error("Cursor mention or activity text is missing");
-		return [getComputedStyle(text).fontSize, getComputedStyle(mention.parentElement).fontSize];
-	});
-	expect(cursorSizes[0]).toBe(cursorSizes[1]);
+	await expect(invocation.locator("[data-project-butter-session-start]")).toBeVisible();
 });

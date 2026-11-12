@@ -65,6 +65,33 @@ async function expectJourneyStage(page: Page, name: JourneyStep) {
 	else await expect(activity).toContainText("Venn");
 }
 
+test("merged activity smart link fits its text and status", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openMerchantJourney(page);
+	await jumpToWideStep(page, "Done");
+	await journeyCard(page).locator('[data-slot="jira-issue-card"]').click();
+	const link = journeyItem(page).getByRole("region", { name: "Activity" }).getByRole("link", { name: /#284: Add merchant onboarding quickstart Merged/ });
+	await expect(link).toBeVisible();
+	const geometry = await link.evaluate((element) => {
+		const bounds = element.getBoundingClientRect();
+		const children = Array.from(element.children, (child) => {
+			const childBounds = child.getBoundingClientRect();
+			return { top: childBounds.top, bottom: childBounds.bottom, left: childBounds.left, right: childBounds.right };
+		});
+		return { top: bounds.top, bottom: bounds.bottom, left: bounds.left, right: bounds.right, children };
+	});
+	expect(geometry.children).toHaveLength(3);
+	for (const child of geometry.children) {
+		expect(child.top).toBeGreaterThanOrEqual(geometry.top);
+		expect(child.bottom).toBeLessThanOrEqual(geometry.bottom);
+		expect(Math.abs((child.top + child.bottom - geometry.top - geometry.bottom) / 2)).toBeLessThan(1);
+	}
+	expect(geometry.children[0].left - geometry.left).toBeGreaterThanOrEqual(4);
+	const status = geometry.children[2];
+	expect(Math.abs((geometry.right - status.right) - (status.top - geometry.top))).toBeLessThan(1);
+	expect(Math.abs((geometry.right - status.right) - (geometry.bottom - status.bottom))).toBeLessThan(1);
+});
+
 test("Pull request begins on the board and reveals the PR before opening the work item", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await openMerchantJourney(page);
@@ -225,7 +252,7 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	const activity = item.getByRole("region", { name: "Activity" });
 	const initialDevelopment = item.getByRole("region", { name: "Development" });
 	await initialDevelopment.getByRole("button", { name: "Configure", exact: true }).click();
-	await expect(page.getByRole("menuitemcheckbox", { name: "Auto-fix" })).toHaveAttribute("aria-checked", "true");
+	await expect(page.getByRole("menuitemcheckbox", { name: "Auto-fix PR" })).toHaveAttribute("aria-checked", "true");
 	await expect(page.getByRole("menuitemcheckbox", { name: "Merge when ready" })).toHaveAttribute("aria-checked", "true");
 	await page.keyboard.press("Escape");
 	await expect(activity.getByRole("heading", { name: "Activity" })).toBeVisible();
@@ -239,8 +266,8 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await item.getByRole("button", { name: "Add agent", exact: true }).click();
 	await page.getByRole("dialog", { name: "Add agent", exact: true }).getByRole("button", { name: "Claude", exact: true }).click();
 	await expect(activity).toContainText("Venn added Claude and self-assigned the issue");
-	await expect(activity.locator('[data-jira-activity-entry-id^="merchant-agent-added-"]')).toHaveCount(1);
-	const acknowledgment = activity.locator('[data-jira-activity-entry-id^="merchant-started-"]');
+	const acknowledgment = activity.locator('[data-jira-activity-entry-id^="invocation-"]');
+	await expect(acknowledgment.locator("[data-project-butter-session-start]")).toBeVisible();
 	await expect(acknowledgment).toHaveCount(1);
 	await expect(acknowledgment).toContainText("Claude");
 	await expect(acknowledgment).toContainText("I'm looking into this issue now. I'll report back here with updates as I make progress.");
@@ -265,7 +292,7 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await page.keyboard.press("Escape");
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("opened #284: Add merchant onboarding quickstart");
 	await development.getByRole("button", { name: "Configure", exact: true }).click();
-	await expect(page.getByRole("menuitemcheckbox", { name: "Auto-fix" })).toHaveAttribute("aria-checked", "true");
+	await expect(page.getByRole("menuitemcheckbox", { name: "Auto-fix PR" })).toHaveAttribute("aria-checked", "true");
 	await expect(page.getByRole("menuitemcheckbox", { name: "Merge when ready" })).toHaveAttribute("aria-checked", "true");
 	await page.keyboard.press("Escape");
 	await expect(development.getByRole("button", { name: "Complete checks" })).toHaveCount(0);
@@ -301,7 +328,7 @@ test("disabled automations leave the failed and passed checks for manual action"
 	await card.locator('[data-slot="jira-issue-card"]').click();
 	const development = item.getByRole("region", { name: "Pull request development" });
 	await development.getByRole("button", { name: "Configure", exact: true }).click();
-	await page.getByRole("menuitemcheckbox", { name: "Auto-fix" }).click();
+	await page.getByRole("menuitemcheckbox", { name: "Auto-fix PR" }).click();
 	await page.getByRole("menuitemcheckbox", { name: "Merge when ready" }).click();
 	await page.keyboard.press("Escape");
 	await expect(development.getByRole("button", { name: "Complete checks" })).toHaveCount(0);

@@ -8,7 +8,7 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { cn } from "@/lib/utils";
 import { motionDuration } from "@/lib/motion";
-import { getJiraIssueAgentAvatarSize, getJiraIssueAgentRowInset } from "./agent-activity-avatar";
+import { getJiraIssueAgentRowInset } from "./agent-activity-avatar";
 import type { JiraIssueIconScale } from "./types";
 import { BUTTER_INVOCATION_CYCLE, BUTTER_INVOCATION_HANDOFF, BUTTER_INVOCATION_PUZZLE_DURATION, BUTTER_INVOCATION_REVEAL } from "./project-butter-invocation-motion";
 import { matchesInvocationAgent } from "./project-butter-invocation-model";
@@ -18,19 +18,18 @@ import {
 	useProjectButterInvocationPreview,
 } from "./project-butter-invocation";
 
-function InvocationPreviewAvatar({ agent, compact }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"]; compact: boolean }>) {
+function InvocationPreviewAvatar({ agent, defaultIcon }: Readonly<{ agent: ReturnType<typeof useProjectButterInvocationPreview>["agent"]; defaultIcon?: ReactNode }>) {
+	if (!agent && defaultIcon) return defaultIcon;
 	return (
-		<span className={cn("flex size-6 shrink-0 items-center justify-center", agent && compact ? "items-start justify-start" : undefined)}>
+		<span className="flex size-6 shrink-0 items-center justify-center">
 			{agent ? agent.visual ?? (
-				<span className="block size-4" style={{ transform: `scale(${compact ? 1 : getJiraIssueAgentAvatarSize(agent.brandName, agent.avatarSrc) / 16})` }}>
-					<AgentAvatarVisual appearance="coding" avatarClassName="size-4" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={16} animate={false} />
-				</span>
+				<AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={24} animate={false} />
 			) : <AiAgentIcon label="" size="small" color="currentColor" />}
 		</span>
 	);
 }
 
-export function ProjectButterInvocationPreview({ className, compactWhenReduced = false, flush = false, iconScale }: Readonly<{ className?: string; compactWhenReduced?: boolean; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
+export function ProjectButterInvocationPreview({ className, defaultIcon, flush = false, iconScale }: Readonly<{ className?: string; defaultIcon?: ReactNode; flush?: boolean; iconScale?: JiraIssueIconScale }>) {
 	const { agent, previousAgent, direction, sequence } = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
 	const animate = !reduce && sequence > 0 && agent?.id !== previousAgent?.id;
@@ -43,7 +42,7 @@ export function ProjectButterInvocationPreview({ className, compactWhenReduced =
 			data-direction={direction === 1 ? "forward" : "backward"}
 			className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", !flush && (iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale))), className)}
 		>
-			<InvocationPreviewAvatar agent={agent} compact={compactWhenReduced && Boolean(reduce)} />
+			<InvocationPreviewAvatar agent={agent} defaultIcon={defaultIcon} />
 			<span className={cn("flex h-5 min-w-0 flex-1 items-center text-sm leading-5 text-text", iconScale === undefined && !flush && "-ml-0.5 pr-2")}>
 				Add&nbsp;
 				<span className="relative h-5 min-w-0 flex-1 overflow-hidden text-left">
@@ -90,7 +89,7 @@ function InvocationHandoff({ className, iconScale, showStatus }: Readonly<{ clas
 	return (
 		<div aria-hidden="true" className={cn("pointer-events-none flex h-8 w-full min-w-0 items-center gap-2 py-1", iconScale === undefined ? "pl-2 pr-3" : cn("border border-transparent", getJiraIssueAgentRowInset(iconScale)), className)} data-agent-id={agent.id} data-slot="jira-issue-agent-invocation-handoff">
 			<motion.span className="flex size-6 shrink-0 items-center justify-center" initial={reduce ? false : { transform: "scale(0.85)" }} animate={{ transform: "scale(1)" }} transition={reduce ? { duration: 0 } : { ...BUTTER_INVOCATION_HANDOFF, delay: BUTTER_INVOCATION_CYCLE.duration }} style={{ willChange: "transform" }}>
-				{agent.visual ?? <AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={getJiraIssueAgentAvatarSize(agent.brandName, agent.avatarSrc)} animate={false} />}
+				{agent.visual ?? <AgentAvatarVisual appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} vpkLogo={agent.vpkLogo} label="" sizePx={24} animate={false} />}
 			</motion.span>
 			{showStatus ? <JiraIssueAgentHandoffLabel name={agent.name}>Working</JiraIssueAgentHandoffLabel> : null}
 		</div>

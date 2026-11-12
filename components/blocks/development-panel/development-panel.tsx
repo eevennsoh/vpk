@@ -12,7 +12,6 @@ import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import SettingsIcon from "@atlaskit/icon/core/settings";
 
-import { JiraLocalAgent } from "@/components/blocks/jira-local-agent";
 import { TeamEuRailPanel } from "@/components/blocks/jira-work-item/team-eu26/components/team-eu-rail-panel";
 import { getPullRequestStatusPresentation, type PullRequestStatusIconKind } from "@/components/blocks/jira-work-item/team-eu26/lib/pull-request-status-presentation";
 import { ProjectButterDevelopmentActions } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-actions";
@@ -35,6 +34,7 @@ export interface DevelopmentPanelProps {
 	pullRequests?: readonly PullRequestProps[];
 	workItem: { code: string; summary: string; description: string };
 	pullRequestSettings?: DevelopmentSettingsOptions;
+	onPullRequestOpen?: (number: number) => void;
 	headerExtra?: ReactNode;
 	footerExtra?: ReactNode;
 	surface?: "card" | "inline";
@@ -56,7 +56,7 @@ const STATUS_COLORS: Record<PullRequestStatus, string> = {
 function StartCodingMenu({ trigger }: Readonly<{ trigger?: ReactElement }>) {
 	return (
 		<DropdownMenu>
-			{trigger ? <DropdownMenuTrigger render={trigger} /> : <DropdownMenuTrigger render={<Button aria-label="Configure repository" size="icon-compact" type="button" variant="ghost" />}><BranchIcon label="" size="small" /></DropdownMenuTrigger>}
+			{trigger ? <DropdownMenuTrigger render={trigger} /> : <DropdownMenuTrigger render={<Button aria-label="Start coding" size="icon-compact" type="button" variant="ghost" />}><BranchIcon label="" size="small" /></DropdownMenuTrigger>}
 			<DropdownMenuContent align="start" className="w-72 [&_[role=menuitem]>span:first-child]:size-4">
 				<DropdownMenuGroup><DropdownMenuLabel>Create branch in...</DropdownMenuLabel>
 				<DropdownMenuItem elemBefore={<AtlassianLogoMark frame="chip" label="" name="bitbucket" />}>Bitbucket Cloud</DropdownMenuItem>
@@ -111,9 +111,8 @@ function DevelopmentConnections() {
 	);
 }
 
-export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
+export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, onPullRequestOpen, headerExtra, footerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
 	const hasPullRequests = pullRequests.length > 0;
-	const openIn = <JiraLocalAgent workItem={workItem} trigger={<Button className="h-8 w-full justify-start gap-2 border-0 px-2 font-normal" type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AngleBracketsIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Open in</Button>} />;
 	return (
 		<TeamEuRailPanel
 			alwaysShowHeaderActions={Boolean(headerExtra)}
@@ -121,23 +120,23 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 			headerActions={<div className="flex items-center gap-1 opacity-0 group-hover/rail-panel:opacity-100 group-focus-within/rail-panel:opacity-100 has-[[aria-expanded=true]]:opacity-100">{hasPullRequests ? <StartCodingMenu /> : null}<DevelopmentSettings {...pullRequestSettings} connections={<DevelopmentConnections />} />{headerExtra}</div>}
 			surface={surface}
 			title="Development"
-			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button><div className="px-2"><ProjectButterDevelopmentActions {...workItem} openIn={openIn} showCopyPrompt={false} showStartCoding={false} /></div>{footerExtra}</div> : null}
+			footer={hasPullRequests ? <div className="border-t border-border-disabled px-2 py-2"><button className={`${DEVELOPMENT_ROW_CLASS} h-8`} type="button"><Icon aria-hidden className="size-4 shrink-0" render={<ListBulletedIcon label="" size="small" />} /><span>View development activity</span></button>{footerExtra}</div> : null}
 		>
 			<div className={hasPullRequests ? "px-2 pb-2" : "px-4 pb-4"}>
 				{hasPullRequests ? pullRequests.map((request) => {
 					const StatusIcon = STATUS_ICONS[getPullRequestStatusPresentation(request.status).iconKind];
 					const showChecks = request.status !== "Merged" && Boolean(request.checks?.length);
 					return (
-					<Popover key={request.number}>
+					<Popover key={request.number} onOpenChange={(open) => { if (open) onPullRequestOpen?.(request.number); }}>
 						<PopoverTrigger render={<button className={`${DEVELOPMENT_ROW_CLASS} min-h-10 ${showChecks ? "py-2" : ""}`} type="button" />}>
 							<Icon aria-hidden className={`size-4 shrink-0 ${STATUS_COLORS[request.status]}`} render={<StatusIcon label="" size="small" />} />
 							<span className="min-w-0 flex-1"><span className="block truncate"><span className="text-text-subtlest">#{request.number} </span><span className="text-text">{request.title}</span><span className="sr-only"> {request.status}</span></span>{showChecks && request.checks ? <PullRequestChecksSummary checks={request.checks} /> : null}</span>
 						</PopoverTrigger>
-						<PopoverContent align="start" className="w-[344px] max-w-[calc(100vw-2rem)] p-0 shadow-none" side="left">
+						<PopoverContent align="start" aria-label={`Pull request #${request.number}: ${request.title}`} className="w-[344px] max-w-[calc(100vw-2rem)] p-0 shadow-none" side="left">
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>
-				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} openIn={openIn} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} showCopyPrompt={false} /></div>}
+				); }) : <div className="-mb-2 space-y-3"><ProjectButterDevelopmentActions {...workItem} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} showCopyPrompt={false} /></div>}
 			</div>
 		</TeamEuRailPanel>
 	);
