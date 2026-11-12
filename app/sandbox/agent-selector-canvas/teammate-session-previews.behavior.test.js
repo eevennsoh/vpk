@@ -3,7 +3,7 @@ const test = require("node:test");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
 const entry = "app/sandbox/agent-selector-canvas/teammate-session-previews.tsx";
-const disclosure = { name: /Sessions from your teammates/u };
+const disclosure = { name: /(?:Sessions from your teammates|(?:\d+ )?other sessions?)/iu };
 const selection = { name: "Preview selection" };
 const mocks = {
 	"@/components/utils/theme-wrapper": "export const useTheme = () => ({ theme: 'light', actualTheme: 'light', setTheme: () => {} });",

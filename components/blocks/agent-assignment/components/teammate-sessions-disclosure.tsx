@@ -44,14 +44,14 @@ export function TeammateSessionsDisclosure({ children, items }: Readonly<{
 			>
 				<motion.span
 					className="inline-flex shrink-0"
+					style={{ width: open ? 0 : undefined, marginRight: open ? 0 : 8 }}
 					initial={false}
-					animate={{ width: open ? 0 : "auto", marginRight: open ? 0 : 8, opacity: open ? 0 : 1, transform: open && !reducedMotion ? "translateY(8px)" : "translateY(0px)", transition: { ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : (open ? motionRecipe.popup.enter.duration : motionDuration.slow), opacity: { duration: reducedMotion ? 0 : motionDuration.xxshort, delay: reducedMotion || open ? 0 : motionDuration.medium } } }}
+					animate={{ opacity: open ? 0 : 1, transform: open && !reducedMotion ? "translateY(8px)" : "translateY(0px)", transition: { ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : (open ? motionRecipe.popup.enter.duration : motionDuration.slow), opacity: { duration: reducedMotion ? 0 : motionDuration.xxshort, delay: reducedMotion || open ? 0 : motionDuration.medium } } }}
 				>
 					<TeammateSessionAvatars items={items} />
 				</motion.span>
-				<motion.span className="inline-flex min-w-0 text-xs font-medium" data-teammate-disclosure-label="" initial={false} animate={open ? "open" : "closed"} variants={{ open: { filter: labelBlur }, closed: { filter: labelBlur } }} transition={{ ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : (open ? motionRecipe.popup.enter.duration : motionDuration.slow) }}>
-					<motion.span className="overflow-hidden whitespace-nowrap" initial={false} animate={{ width: open ? "auto" : 0, opacity: open ? 1 : 0, transition: { ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : motionRecipe.popup.enter.duration } }} aria-hidden={!open}>{items.length}&nbsp;</motion.span>
-					<span>{open ? "other" : "Other"} {items.length === 1 && open ? "session" : "sessions"}</span>
+				<motion.span className="inline-flex min-w-0 text-xs font-medium" data-teammate-disclosure-label="" layout={reducedMotion ? false : "position"} initial={false} animate={open ? "open" : "closed"} variants={{ open: { filter: labelBlur }, closed: { filter: labelBlur } }} transition={{ ...motionRecipe.popup.enter, duration: reducedMotion ? 0 : (open ? motionRecipe.popup.enter.duration : motionDuration.slow) }}>
+					{open ? `${items.length} ${items.length === 1 ? "other session" : "other sessions"}` : "Other sessions"}
 				</motion.span>
 				<span aria-hidden="true" className="ml-auto grid size-6 shrink-0 place-items-center" data-teammate-disclosure-chevron="">
 					<Icon className={cn("size-3 text-icon-subtle motion-safe:transition-transform motion-safe:duration-fast motion-safe:ease-out-practical", open ? "rotate-90" : null)} render={<ChevronRightIcon label="" size="small" />} />

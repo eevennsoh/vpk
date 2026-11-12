@@ -13,7 +13,7 @@ for (const approach of ["quiet", "people"]) {
 			props: { approach, items: [] },
 		});
 		try {
-			const trigger = view.getByRole("button", { name: /Sessions from your teammates/u });
+			const trigger = view.getByRole("button", { name: /(?:Sessions from your teammates|(?:\d+ )?other sessions?)/iu });
 			await view.click(trigger);
 			const panel = view.container.querySelector('[data-slot="collapsible-content"]');
 			const chevron = trigger.querySelector('[data-slot="icon"]');
