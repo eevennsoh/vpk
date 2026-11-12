@@ -421,7 +421,7 @@ function createContractFixture() {
 						leaflet: "^1.9.4",
 						three: "^0.185.1",
 						"tw-animate-css": "^1.4.0",
-						"motion-plus": "2.11.2",
+						"motion-plus": "npm:@motionplus/core@2.12.0",
 						"ansi-to-react": "^6.2.6",
 					},
 					devDependencies: {
