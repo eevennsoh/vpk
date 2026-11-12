@@ -89,7 +89,7 @@ function DirectoryCardAvatar({ agent }: Readonly<{ agent: AgentBrowserAgent }>) 
 	if (known) return <AgentLanyardFirstPartyAvatar badge={known.badge} backgroundColor={known.accentColor} />;
 	if (agent.avatarSrc || agent.brandName || agent.logoName) {
 		return (
-			<span className="absolute top-6.5 left-1/2 z-10 -translate-x-1/2">
+			<span className="relative z-10">
 				<AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} sizePx={48} animate={false} label="" />
 			</span>
 		);
