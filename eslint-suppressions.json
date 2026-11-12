@@ -3743,7 +3743,7 @@
   },
   "hooks/use-agent-url-sync.test.js": {
     "no-restricted-syntax": {
-      "count": 14
+      "count": 13
     }
   },
   "hooks/use-mobile.ts": {

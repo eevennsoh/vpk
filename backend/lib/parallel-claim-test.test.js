@@ -2,6 +2,9 @@
  * Tests for Parallel Claim Test Framework
  */
 
+const assert = require("node:assert/strict");
+const { afterEach, beforeEach, describe, test } = require("node:test");
+
 const { ClaimTestRunner } = require("./parallel-claim-test");
 
 describe("ClaimTestRunner", () => {
@@ -24,17 +27,17 @@ describe("ClaimTestRunner", () => {
 			const validatorFn = async () => ({ validated: true });
 			runner.registerClaim("claim-1", { description: "Test claim" }, validatorFn);
 
-			expect(runner.claims.has("claim-1")).toBe(true);
-			expect(runner.claims.get("claim-1").status).toBe("pending");
+			assert.equal(runner.claims.has("claim-1"), true);
+			assert.equal(runner.claims.get("claim-1").status, "pending");
 		});
 
 		test("throws on duplicate claim registration", () => {
 			const validatorFn = async () => ({ validated: true });
 			runner.registerClaim("claim-1", { description: "Test" }, validatorFn);
 
-			expect(() => {
+			assert.throws(() => {
 				runner.registerClaim("claim-1", { description: "Test" }, validatorFn);
-			}).toThrow("Claim claim-1 already registered");
+			}, /Claim claim-1 already registered/u);
 		});
 	});
 
@@ -45,9 +48,9 @@ describe("ClaimTestRunner", () => {
 
 			const results = await runner.executeAll();
 
-			expect(results.size).toBe(2);
-			expect(results.get("claim-1").status).toBe("passed");
-			expect(results.get("claim-2").status).toBe("passed");
+			assert.equal(results.size, 2);
+			assert.equal(results.get("claim-1").status, "passed");
+			assert.equal(results.get("claim-2").status, "passed");
 		});
 
 		test("respects maxConcurrency limit", async () => {
@@ -81,7 +84,7 @@ describe("ClaimTestRunner", () => {
 			await runner.executeAll();
 
 			// With maxConcurrency=2, should not exceed 2 concurrent executions
-			expect(maxConcurrent).toBeLessThanOrEqual(2);
+			assert.ok(maxConcurrent <= 2);
 		});
 
 		test("handles claim failures", async () => {
@@ -92,9 +95,9 @@ describe("ClaimTestRunner", () => {
 
 			const results = await runner.executeAll();
 
-			expect(results.get("claim-pass").status).toBe("passed");
-			expect(results.get("claim-fail").status).toBe("failed");
-			expect(results.get("claim-fail").error).toContain("Validation failed");
+			assert.equal(results.get("claim-pass").status, "passed");
+			assert.equal(results.get("claim-fail").status, "failed");
+			assert.ok(results.get("claim-fail").error.includes("Validation failed"));
 		});
 
 		test("implements retry logic", async () => {
@@ -109,8 +112,8 @@ describe("ClaimTestRunner", () => {
 
 			const results = await runner.executeAll();
 
-			expect(results.get("claim-retry").status).toBe("passed");
-			expect(results.get("claim-retry").attempt).toBe(1);
+			assert.equal(results.get("claim-retry").status, "passed");
+			assert.equal(results.get("claim-retry").attempt, 1);
 		});
 
 		test("enforces timeout", async () => {
@@ -126,8 +129,8 @@ describe("ClaimTestRunner", () => {
 
 			const results = await runner.executeAll();
 
-			expect(results.get("claim-slow").status).toBe("failed");
-			expect(results.get("claim-slow").error).toContain("timeout");
+			assert.equal(results.get("claim-slow").status, "failed");
+			assert.ok(results.get("claim-slow").error.includes("timeout"));
 		});
 	});
 
@@ -143,11 +146,11 @@ describe("ClaimTestRunner", () => {
 
 			const summary = runner.getSummary();
 
-			expect(summary.total).toBe(3);
-			expect(summary.passed).toBe(2);
-			expect(summary.failed).toBe(1);
-			expect(summary.pending).toBe(0);
-			expect(summary.passRate).toContain("66");
+			assert.equal(summary.total, 3);
+			assert.equal(summary.passed, 2);
+			assert.equal(summary.failed, 1);
+			assert.equal(summary.pending, 0);
+			assert.ok(summary.passRate.includes("66"));
 		});
 	});
 
@@ -161,8 +164,8 @@ describe("ClaimTestRunner", () => {
 			runner.registerClaim("claim-1", {}, async () => ({ result: "pass" }));
 			await runner.executeAll();
 
-			expect(passedEvents).toHaveLength(1);
-			expect(passedEvents[0].claimId).toBe("claim-1");
+			assert.equal(passedEvents.length, 1);
+			assert.equal(passedEvents[0].claimId, "claim-1");
 		});
 
 		test("emits claim:failed event", async () => {
@@ -176,8 +179,8 @@ describe("ClaimTestRunner", () => {
 			});
 			await runner.executeAll();
 
-			expect(failedEvents).toHaveLength(1);
-			expect(failedEvents[0].claimId).toBe("claim-fail");
+			assert.equal(failedEvents.length, 1);
+			assert.equal(failedEvents[0].claimId, "claim-fail");
 		});
 
 		test("emits claim:retry event", async () => {
@@ -196,7 +199,7 @@ describe("ClaimTestRunner", () => {
 			});
 			await runner.executeAll();
 
-			expect(retryEvents).toHaveLength(1);
+			assert.equal(retryEvents.length, 1);
 		});
 	});
 
@@ -205,14 +208,14 @@ describe("ClaimTestRunner", () => {
 			runner.registerClaim("claim-1", {}, async () => ({ result: "pass" }));
 			await runner.executeAll();
 
-			expect(runner.claims.size).toBe(1);
-			expect(runner.results.size).toBe(1);
+			assert.equal(runner.claims.size, 1);
+			assert.equal(runner.results.size, 1);
 
 			runner.reset();
 
-			expect(runner.claims.size).toBe(0);
-			expect(runner.results.size).toBe(0);
-			expect(runner.activeExecutions.size).toBe(0);
+			assert.equal(runner.claims.size, 0);
+			assert.equal(runner.results.size, 0);
+			assert.equal(runner.activeExecutions.size, 0);
 		});
 	});
 });

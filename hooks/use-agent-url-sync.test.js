@@ -15,8 +15,7 @@ const SHELL_SOURCE = fs.readFileSync(
 // through to a full-screen chat surface with no config pane / AgentHeader.
 test("useAgentUrlSync accepts and forwards an onAgentRestored callback", () => {
 	assert.match(HOOK_SOURCE, /onAgentRestored\?:\s*\(agentId:\s*string\s*\|\s*null\)\s*=>\s*void/u);
-	assert.match(HOOK_SOURCE, /const onAgentRestoredRef = useRef\(onAgentRestored\);/u);
-	assert.match(HOOK_SOURCE, /onAgentRestoredRef\.current = onAgentRestored;/u);
+	assert.match(HOOK_SOURCE, /const onAgentRestoredRef = useLatestRef\(onAgentRestored\);/u);
 });
 
 // Regression: the URL must track the agent being EDITED (the config pane), not

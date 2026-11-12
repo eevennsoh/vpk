@@ -1,4 +1,7 @@
 import { LEGACY_DRIFT_TEST_FILES } from "./js-unit-test-legacy-drift.mjs";
+import { SKIPPED_TEST_FILES, SKIPPED_TEST_PREFIXES } from "./js-unit-test-skipped.mjs";
+
+export { SKIPPED_TEST_FILES, SKIPPED_TEST_PREFIXES };
 
 export const INCLUDED_TEST_PREFIXES = [
 	"app/",
@@ -16,6 +19,31 @@ export const CI_INCLUDED_TEST_CLASSIFICATIONS = [
 
 export const TEST_FILE_CLASSIFICATIONS = {
 	stable: [
+		".agents/hooks/worktree-create.test.js",
+		".agents/skills/vpk-build/scripts/audit-public-assets.test.js",
+		".agents/skills/vpk-build/scripts/scaffold-motion.test.js",
+		".agents/skills/vpk-build/scripts/trace-imports.test.js",
+		".agents/skills/vpk-deploy/scripts/verify-wss.test.js",
+		".agents/skills/vpk-html/scripts/anatomy-gl/anatomy-gl.test.mjs",
+		".agents/skills/vpk-html/scripts/anatomy/lines.browser.test.mjs",
+		".agents/skills/vpk-html/scripts/figures/figures.browser.test.mjs",
+		".agents/skills/vpk-html/scripts/gates.browser.test.mjs",
+		".agents/skills/vpk-html/scripts/hairline/faces.test.mjs",
+		".agents/skills/vpk-html/scripts/hairline/hairline.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/detail.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/iso.browser.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/kinds.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/painter.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/phase4.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/prism.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/states.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/thresholds.test.mjs",
+		".agents/skills/vpk-html/scripts/iso/tour.test.mjs",
+		".agents/skills/vpk-html/scripts/lab/kit.browser.test.mjs",
+		".agents/skills/vpk-html/scripts/lab/mixed.browser.test.mjs",
+		".agents/skills/vpk-html/scripts/landing-links.test.js",
+		".agents/skills/vpk-html/scripts/media/pipeline.browser.test.mjs",
+		".agents/skills/vpk-html/scripts/selector-icons.test.mjs",
 		"components/website/demos/ui-custom/agent-add-demo.behavior.test.js",
 		"components/projects/butter-v1/hooks/use-butter-list-hierarchy.behavior.test.js",
 		"components/projects/butter-v1/data/session-copy.test.js",
@@ -608,6 +636,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-issue/uncaptured-work-chin.behavior.test.js",
 	],
 	"source-contract": [
+		"hooks/use-agent-url-sync.test.js",
 		"components/blocks/jira-toolbar/jira-toolbar.test.js",
 		"components/projects/jira-team-eu26-end/jira-team-eu26-end-controls.test.js",
 		"components/blocks/jira-issue/cover-image.test.js",
@@ -926,4 +955,5 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/website/website-header.test.js",
 	],
 	"legacy-drift": LEGACY_DRIFT_TEST_FILES,
+	skipped: Object.keys(SKIPPED_TEST_FILES),
 };
