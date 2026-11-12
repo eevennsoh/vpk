@@ -37,13 +37,8 @@ function createRequireLocalDevRequest({ env = process.env } = {}) {
 	};
 }
 
-function passThrough(_req, _res, next) {
-	next();
-}
-
 module.exports = {
 	createRequireLocalDevRequest,
 	isLoopbackRequest,
-	passThrough,
 	resolveBackendListenHost,
 };

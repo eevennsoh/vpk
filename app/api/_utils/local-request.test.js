@@ -106,3 +106,45 @@ test("local requests by plain localhost, 127.0.0.1 and no-Origin tooling still p
 	assert.equal(isLocalFrontendRequest(request("http://localhost:4333/api/x", { Origin: "http://localhost.evil.example" })), false);
 	assert.equal(isLocalFrontendRequest(request("http://192.168.0.10:4333/api/x", {})), false, "a LAN client of next dev");
 });
+
+// Dev with VPK_RUNTIME_ADMIN_TOKEN set: the Next proxy forwards no admin token, so the
+// local-only write routes must not require one, or every UI write through the proxy 403s.
+test("with a runtime admin token configured, local writes still reach the backend through the adapters", async (t) => {
+	const express = require("express");
+	const { registerBackendAppRoutes } = require("../../../backend/app.js");
+	const { createRuntimeAdminControls } = require("../../../backend/middleware/runtime-admin.js");
+	const { createRuntimeRouteStackTestDependencies } = require("../../../backend/routes/route-stack-test-dependencies.js");
+	await require("../../../backend/lib/ai-sdk-runtime.js").loadAiSdk();
+	const { requireRuntimeAdmin } = createRuntimeAdminControls({ env: { VPK_RUNTIME_ADMIN_TOKEN: "configured-admin-token" }, allowedOrigins: [] });
+
+	const app = express();
+	app.use(express.json());
+	registerBackendAppRoutes(app, { ...createRuntimeRouteStackTestDependencies(), requireRuntimeAdmin });
+	const server = app.listen(0, "127.0.0.1");
+	await new Promise((resolve) => server.once("listening", resolve));
+	t.after(() => new Promise((resolve) => server.close(resolve)));
+	const backendUrl = `http://localhost:${server.address().port}`;
+	const originalBackendUrl = process.env.BACKEND_URL;
+	process.env.BACKEND_URL = backendUrl;
+	t.after(() => {
+		if (originalBackendUrl === undefined) delete process.env.BACKEND_URL;
+		else process.env.BACKEND_URL = originalBackendUrl;
+	});
+
+	const post = async (adapter, body) => {
+		const route = await loadRoute(adapter);
+		return route.POST(new Request(`https://feature.vpk.localhost/api/${adapter}`, {
+			body: JSON.stringify(body),
+			headers: { "Content-Type": "application/json", Origin: "https://feature.vpk.localhost" },
+			method: "POST",
+		}));
+	};
+	// Each reaches the backend handler's own validation (400), not a runtime-admin 403.
+	assert.equal((await post("html-selector/dispatch", { agent: "unknown", prompt: "hello" })).status, 400);
+	assert.equal((await post("vpk-html/apply-tokens", { tokens: "not-an-object" })).status, 400);
+	assert.equal((await post("personal-graph/source", { source: "not-a-source" })).status, 400);
+
+	// The token is in force: a route that already required runtime admin still refuses.
+	const adminOnly = await fetch(`${backendUrl}/api/orchestrator/log`, { method: "DELETE" });
+	assert.equal(adminOnly.status, 403);
+});

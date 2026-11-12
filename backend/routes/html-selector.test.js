@@ -56,7 +56,7 @@ function postWithHeaders(baseUrl, routePath, headers, { body = "{}", method = "P
 	});
 }
 
-test("html-selector dispatch refuses non-local and unauthorized requests before launching an agent", async () => {
+test("html-selector dispatch refuses non-local requests before launching an agent", async () => {
 	const execCalls = [];
 	const dependencies = {
 		env: { NODE_ENV: "development" },
@@ -68,13 +68,6 @@ test("html-selector dispatch refuses non-local and unauthorized requests before 
 		const crossSite = await postWithHeaders(baseUrl, "/api/html-selector/dispatch", { Origin: "https://evil.example" }, { body });
 		assert.equal(rebound.status, 403);
 		assert.equal(crossSite.status, 403);
-	});
-	await withServer({
-		...dependencies,
-		requireRuntimeAdmin: (_req, res) => res.status(403).json({ error: "Runtime admin authorization required" }),
-	}, async (baseUrl) => {
-		const response = await postWithHeaders(baseUrl, "/api/html-selector/dispatch", {}, { body: JSON.stringify({ agent: "rovo", prompt: "hello" }) });
-		assert.equal(response.status, 403);
 	});
 	assert.equal(execCalls.length, 0);
 });

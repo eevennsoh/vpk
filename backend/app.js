@@ -182,8 +182,8 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		sendGatewayErrorResponse,
 	});
 
-	registerVpkHtmlRoutes(app, { requireRuntimeAdmin });
-	registerHtmlSelectorRoutes(app, { requireRuntimeAdmin });
+	registerVpkHtmlRoutes(app);
+	registerHtmlSelectorRoutes(app);
 
 	registerDemosRoutes(app, {
 		advanceAgentsRfpDemoProcessing,
@@ -295,7 +295,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 
 
 
-	registerPersonalGraphRoutes(app, { requireRuntimeAdmin });
+	registerPersonalGraphRoutes(app);
 
 
 	registerRealtimeRoutes(app, {

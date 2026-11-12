@@ -13,7 +13,7 @@
 			"backendRouteCount": 123,
 			"nextApiRouteCount": 103,
 			"ownerCount": 102,
-			"runtimeAdminRouteCount": 22
+			"runtimeAdminRouteCount": 18
 		},
 		"owners": [
 			{
@@ -417,13 +417,13 @@
 					{
 						"method": "POST",
 						"path": "/api/html-selector/dispatch",
-						"source": "backend/routes/html-selector.js:105",
-						"runtimeAdmin": true
+						"source": "backend/routes/html-selector.js:101",
+						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/html-selector/tokens",
-						"source": "backend/routes/html-selector.js:170",
+						"source": "backend/routes/html-selector.js:166",
 						"runtimeAdmin": false
 					}
 				]
@@ -499,109 +499,109 @@
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/capture",
-						"source": "backend/routes/personal-graph.js:612",
+						"source": "backend/routes/personal-graph.js:609",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/explorer",
-						"source": "backend/routes/personal-graph.js:428",
+						"source": "backend/routes/personal-graph.js:425",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/ingest",
-						"source": "backend/routes/personal-graph.js:661",
+						"source": "backend/routes/personal-graph.js:658",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/log",
-						"source": "backend/routes/personal-graph.js:645",
+						"source": "backend/routes/personal-graph.js:642",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "backend/routes/personal-graph.js:551",
+						"source": "backend/routes/personal-graph.js:548",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/personal-graph/page/*slug",
-						"source": "backend/routes/personal-graph.js:564",
+						"source": "backend/routes/personal-graph.js:561",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/raw",
-						"source": "backend/routes/personal-graph.js:578",
+						"source": "backend/routes/personal-graph.js:575",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/search",
-						"source": "backend/routes/personal-graph.js:628",
+						"source": "backend/routes/personal-graph.js:625",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/source",
-						"source": "backend/routes/personal-graph.js:453",
+						"source": "backend/routes/personal-graph.js:450",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/source",
-						"source": "backend/routes/personal-graph.js:467",
+						"source": "backend/routes/personal-graph.js:464",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/summarize",
-						"source": "backend/routes/personal-graph.js:657",
+						"source": "backend/routes/personal-graph.js:654",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/chat",
-						"source": "backend/routes/personal-graph.js:482",
+						"source": "backend/routes/personal-graph.js:479",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/expand",
-						"source": "backend/routes/personal-graph.js:518",
+						"source": "backend/routes/personal-graph.js:515",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/twg/refresh",
-						"source": "backend/routes/personal-graph.js:496",
+						"source": "backend/routes/personal-graph.js:493",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/unprocessed-count",
-						"source": "backend/routes/personal-graph.js:600",
+						"source": "backend/routes/personal-graph.js:597",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/personal-graph/vault",
-						"source": "backend/routes/personal-graph.js:144",
+						"source": "backend/routes/personal-graph.js:141",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/reset",
-						"source": "backend/routes/personal-graph.js:170",
+						"source": "backend/routes/personal-graph.js:167",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/personal-graph/vault/select",
-						"source": "backend/routes/personal-graph.js:156",
+						"source": "backend/routes/personal-graph.js:153",
 						"runtimeAdmin": false
 					}
 				]
@@ -852,38 +852,38 @@
 					{
 						"method": "GET",
 						"path": "/api/vpk-html",
-						"source": "backend/routes/vpk-html.js:480",
+						"source": "backend/routes/vpk-html.js:476",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/*assetPath",
-						"source": "backend/routes/vpk-html.js:481",
+						"source": "backend/routes/vpk-html.js:477",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/apply-tokens",
-						"source": "backend/routes/vpk-html.js:385",
-						"runtimeAdmin": true
+						"source": "backend/routes/vpk-html.js:381",
+						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/notes",
-						"source": "backend/routes/vpk-html.js:406",
+						"source": "backend/routes/vpk-html.js:402",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/vpk-html/notes",
-						"source": "backend/routes/vpk-html.js:427",
-						"runtimeAdmin": true
+						"source": "backend/routes/vpk-html.js:423",
+						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/vpk-html/publish-gist",
-						"source": "backend/routes/vpk-html.js:450",
-						"runtimeAdmin": true
+						"source": "backend/routes/vpk-html.js:446",
+						"runtimeAdmin": false
 					}
 				]
 			},

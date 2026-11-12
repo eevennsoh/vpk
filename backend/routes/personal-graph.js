@@ -12,10 +12,7 @@ const { readCache, writeCache } = require("../lib/personal-graph-twg-cache");
 const { handleTwgChat } = require("../lib/personal-graph-twg-chat");
 const twgSource = require("../lib/personal-graph-twg-source");
 const { getPositiveInteger } = require("../lib/shared-utils");
-const {
-	createRequireLocalDevRequest,
-	passThrough,
-} = require("../middleware/local-only");
+const { createRequireLocalDevRequest } = require("../middleware/local-only");
 const {
 	clearVaultConfig,
 	parseLogEntries,
@@ -686,14 +683,14 @@ const READ_ONLY_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 // Writes touch the local vault, run the TWG CLI with the owner's credentials,
 // or open a browser on a supplied URL, so they only accept local requests.
-function createPersonalGraphRouter({ env = process.env, requireRuntimeAdmin = passThrough } = {}) {
+function createPersonalGraphRouter({ env = process.env } = {}) {
 	const requireLocalDevRequest = createRequireLocalDevRequest({ env });
 	const guardedRouter = express.Router();
 	guardedRouter.use((req, res, next) => {
 		if (READ_ONLY_METHODS.has(req.method)) {
 			return next();
 		}
-		return requireLocalDevRequest(req, res, () => requireRuntimeAdmin(req, res, next));
+		return requireLocalDevRequest(req, res, next);
 	});
 	guardedRouter.use(router);
 	return guardedRouter;
