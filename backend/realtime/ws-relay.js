@@ -82,6 +82,7 @@ function registerBackendWebSocketRelays(server, {
 	debugMode = false,
 	getMirrorBrowser,
 	isAllowedRuntimeSocketOrigin,
+	isDraining = () => false,
 	isRuntimeSocketTokenValid,
 	realtimeSessionImpl = RealtimeSession,
 	runtimeAdminRequired,
@@ -112,6 +113,9 @@ function registerBackendWebSocketRelays(server, {
 	if (typeof isRuntimeSocketTokenValid !== "function") {
 		throw new Error("registerBackendWebSocketRelays requires isRuntimeSocketTokenValid");
 	}
+	if (typeof isDraining !== "function") {
+		throw new Error("registerBackendWebSocketRelays requires isDraining to be a function");
+	}
 	if (typeof realtimeSessionImpl !== "function") {
 		throw new Error("registerBackendWebSocketRelays requires realtimeSessionImpl");
 	}
@@ -132,6 +136,13 @@ function registerBackendWebSocketRelays(server, {
 	};
 
 	server.on("upgrade", (request, socket, head) => {
+		// Once shutdown has begun, an upgrade can still arrive on a keep-alive connection
+		// that stayed open; it would start a preview or realtime session after the runs
+		// were aborted. Like refuseRequestsWhileDraining for HTTP, it gets 503.
+		if (isDraining()) {
+			rejectUpgrade(socket, 503, "Service Unavailable");
+			return;
+		}
 		// Anything thrown in this listener exits the backend, so every input is parsed
 		// without throwing: the path and query against a fixed base (the Host header is
 		// not needed and may not be a valid host), and the workspace id as a storage id.
