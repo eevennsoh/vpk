@@ -408,3 +408,29 @@ test("resolveBrowserWorkspaceTabIndex accepts only non-negative integers", () =>
 	assert.equal(resolveBrowserWorkspaceTabIndex({ params: { tabIndex: "-1" } }), null);
 	assert.equal(resolveBrowserWorkspaceTabIndex({ params: { tabIndex: "abc" } }), null);
 });
+
+test("browser workspace navigation rejects every scheme but http(s) before the manager runs", async () => {
+	const dependencies = createDependencies();
+	const { calls } = dependencies.browserWorkspaceManager;
+	await withServer(dependencies, async (baseUrl) => {
+		const post = (route, body) => fetch(`${baseUrl}${route}`, {
+			body: JSON.stringify(body),
+			headers: { "content-type": "application/json", "x-runtime-admin": "ok" },
+			method: "POST",
+		});
+		for (const url of ["file:///etc/passwd", "javascript:alert(1)", "chrome://settings", "data:text/html,x", `https://e.test/${"x".repeat(9000)}`]) {
+			for (const [route, body] of [
+				["/api/browser-workspaces", { defaultUrl: url }],
+				["/api/browser-workspaces/workspace-1/tabs", { url }],
+				["/api/browser-workspaces/workspace-1/navigate", { url }],
+			]) {
+				const response = await post(route, body);
+				assert.equal(response.status, 400, `${route} ${url.slice(0, 40)}`);
+				assert.equal((await response.json()).code, "INVALID_INPUT");
+			}
+		}
+		const allowed = await post("/api/browser-workspaces/workspace-1/navigate", { url: "http://localhost:3000/rovo" });
+		assert.equal(allowed.status, 200);
+	});
+	assert.deepEqual(calls.filter((call) => call.method !== "navigateWorkspace"), []);
+});

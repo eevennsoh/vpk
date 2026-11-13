@@ -3,6 +3,8 @@
 const express = require("express");
 
 const { getNonEmptyString } = require("../lib/shared-utils");
+const { INVALID_INPUT_CODE, parseNavigationUrl } = require("../lib/input-schemas");
+const { sendError } = require("../middleware/error-response");
 
 const REQUIRED_MANAGER_METHODS = [
 	"click",
@@ -87,6 +89,10 @@ function createChromiumPreviewRouter({
 				return res.status(400).json({
 					error: "A non-empty url field is required.",
 				});
+			}
+			const navigation = parseNavigationUrl(url);
+			if (!navigation.ok) {
+				return sendError(res, 400, INVALID_INPUT_CODE, navigation.message);
 			}
 
 			const state = await chromiumPreviewManager.navigate(url);

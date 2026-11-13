@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { cjk } from "@streamdown/cjk";
 import { code as baseCodePlugin } from "@streamdown/code";
-import { math } from "@streamdown/math";
+import { math } from "@/components/ui-custom/streamdown-math";
 import { mermaid } from "@streamdown/mermaid";
 import { Streamdown } from "streamdown";
 import { streamdownComponents } from "@/components/ui-custom/message-markdown";
