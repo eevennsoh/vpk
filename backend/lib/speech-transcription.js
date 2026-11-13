@@ -258,6 +258,60 @@ function resolveConfiguredTranscriptionModel({
 	);
 }
 
+/**
+ * The providers and models this server is configured for: each STT preset's provider and
+ * model, plus a provider whose own model or base URL is set.
+ * @returns {Map<string, Set<string>>} provider -> models
+ */
+function collectConfiguredTranscriptionChoices(envVars, sttEnvVars) {
+	/** @type {Map<string, Set<string>>} */
+	const choices = new Map();
+	const add = (provider, model) => {
+		if (!provider) return;
+		if (!choices.has(provider)) choices.set(provider, new Set());
+		if (model) choices.get(provider)?.add(model);
+	};
+	for (const presetKey of Object.keys(STT_PRESET_ENV_MAP)) {
+		const preset = readPresetConfig(sttEnvVars, presetKey);
+		if (preset?.provider) add(preset.provider, preset.model);
+	}
+	const googleModel = getNonEmptyString(envVars.GOOGLE_STT_MODEL);
+	if (googleModel) add("google", googleModel);
+	const whisperModel = getNonEmptyString(sttEnvVars.LOCAL_WHISPER_MODEL);
+	if (whisperModel) add(LOCAL_WHISPER_PROVIDER, whisperModel);
+	// The OpenAI-compatible provider works with its model alone: the base URL defaults to
+	// DEFAULT_OPENAI_COMPATIBLE_STT_BASE_URL.
+	const openAiCompatibleModel = getNonEmptyString(sttEnvVars.OPENAI_COMPATIBLE_STT_MODEL);
+	if (openAiCompatibleModel || hasConfiguredOpenAiCompatibleBaseUrl(sttEnvVars)) {
+		add(OPENAI_COMPATIBLE_PROVIDER, openAiCompatibleModel);
+	}
+	return choices;
+}
+
+/**
+ * A client may pick a provider or model only among what the server is configured for, so
+ * it cannot start a local whisper process or load a model the server never chose.
+ * @returns {{ action: "allow" } | { action: "reject", message: string }}
+ */
+function decideClientTranscriptionChoice({ envVars, rawModel, rawProvider, sttEnvVars }) {
+	const provider = getNonEmptyString(rawProvider);
+	const model = getNonEmptyString(rawModel);
+	if (!provider && !model) return { action: "allow" };
+	const choices = collectConfiguredTranscriptionChoices(envVars, sttEnvVars);
+	if (provider && !choices.has(provider)) {
+		return { action: "reject", message: "That transcription provider is not configured on this server." };
+	}
+	if (model) {
+		const models = provider
+			? choices.get(provider)
+			: new Set([...choices.values()].flatMap((set) => [...set]));
+		if (!models?.has(model)) {
+			return { action: "reject", message: "That transcription model is not configured on this server." };
+		}
+	}
+	return { action: "allow" };
+}
+
 function resolveLocalWhisperBin(rawBin) {
 	return getNonEmptyString(rawBin) || DEFAULT_LOCAL_WHISPER_BIN;
 }
@@ -791,6 +845,10 @@ async function transcribeAudio({
 
 	const envVars = getEnvVars();
 	const sttEnvVars = getSpeechTranscriptionEnvVars();
+	const choice = decideClientTranscriptionChoice({ envVars, rawModel, rawProvider, sttEnvVars });
+	if (choice.action === "reject") {
+		throw createHttpError(400, choice.message);
+	}
 	const provider = resolveConfiguredTranscriptionProvider(
 		rawProvider,
 		envVars,
@@ -877,6 +935,7 @@ module.exports = {
 	transcribeAudio,
 	__test__: {
 		buildGenerateContentUrl,
+		decideClientTranscriptionChoice,
 		buildLocalWhisperArgs,
 		buildOpenAiCompatibleTranscriptionUrl,
 		getTranscriptionErrorDetails,

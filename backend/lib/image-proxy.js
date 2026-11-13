@@ -1,4 +1,6 @@
 // @ts-check
+const { isAllowedAtlassianSite } = require("./jira-query-inputs");
+
 const FIGMA_MCP_ASSET_PATH_PREFIX = "/api/mcp/asset/";
 const IMAGE_PROXY_ALLOWED_HOSTS = new Set(["figma.com", "www.figma.com"]);
 const IMAGE_PROXY_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
@@ -127,8 +129,10 @@ function isAtlassianHost(hostname) {
 	return ATLASSIAN_HOST_PATTERN.test(String(hostname || "").toLowerCase());
 }
 
+// Every Atlassian image (the requested one, and candidates found in a page or derived
+// from it) is fetched over https only.
 function isAllowedAtlassianImageUrl(parsedUrl) {
-	if (!isAtlassianHost(parsedUrl.hostname)) {
+	if (parsedUrl.protocol !== "https:" || !isAtlassianHost(parsedUrl.hostname)) {
 		return false;
 	}
 
@@ -295,12 +299,6 @@ function parseImageProxyTarget(value) {
 			error: "Image URL is not allowed",
 		};
 	}
-	// An Atlassian image is fetched with the server's API token, so never over plain http.
-	if (isAtlassianImage && protocol !== "https:") {
-		return {
-			error: "Atlassian image URLs must use https",
-		};
-	}
 
 	return {
 		targetUrl: parsedUrl,
@@ -314,8 +312,10 @@ function buildImageProxyRequestHeaders(targetUrl, env = process.env) {
 		"User-Agent": "VPK-ImageProxy/1.0",
 	};
 
+	// The token goes only to a configured site over https; other Atlassian hosts are
+	// fetched without it.
 	const atlassianApiToken = getNonEmptyString(env.ATLASSIAN_API_TOKEN);
-	if (isAtlassianHost(targetUrl.hostname) && atlassianApiToken) {
+	if (targetUrl.protocol === "https:" && isAllowedAtlassianSite(targetUrl.hostname, env) && atlassianApiToken) {
 		headers.Authorization = `Bearer ${atlassianApiToken}`;
 	}
 
