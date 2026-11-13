@@ -17,6 +17,7 @@ const UNIT_BATCH_MARKER_ENV = "VPK_UNIT_BATCH";
 const GROUP_EXIT_TIMEOUT_MS = 5_000;
 
 const liveGroups = new Set();
+const endedGroups = new Set();
 let exitHookInstalled = false;
 
 function groupSignalable(pgid) {
@@ -82,24 +83,39 @@ function installExitHook() {
 	});
 }
 
-// Kills the child's process group and resolves once no member is left (bounded).
-async function killGroup(child, { signal = "SIGKILL", timeoutMs = GROUP_EXIT_TIMEOUT_MS } = {}) {
+// Kills the child's process group and resolves once no member is left (bounded). A group that
+// already ended is never signalled: its id may by now belong to an unrelated process group.
+async function killGroup(child, { kill = signalGroup, signal = "SIGKILL", timeoutMs = GROUP_EXIT_TIMEOUT_MS } = {}) {
 	const pgid = child.pid;
-	if (!pgid) return;
-	signalGroup(pgid, signal);
+	if (!pgid || endedGroups.has(pgid) || !liveGroups.has(pgid)) return;
+	kill(pgid, signal);
 	const deadline = Date.now() + timeoutMs;
 	while (groupAlive(pgid)) {
 		if (Date.now() > deadline) throw new Error(`process group ${pgid} still alive ${timeoutMs}ms after ${signal}`);
 		await new Promise((resolve) => setTimeout(resolve, 10));
 	}
-	liveGroups.delete(pgid);
+	markEnded(pgid);
 }
 
+function markEnded(pgid) {
+	liveGroups.delete(pgid);
+	endedGroups.add(pgid);
+}
+
+// `detached: true` makes the child the leader of a new process group and, on POSIX, of a new
+// session (setsid), so it has no controlling terminal.
 function spawnInGroup(command, args = [], options = {}, { t } = {}) {
 	const child = spawn(command, args, { ...options, detached: true });
-	if (child.pid) {
-		liveGroups.add(child.pid);
+	const pgid = child.pid;
+	if (pgid) {
+		liveGroups.add(pgid);
 		installExitHook();
+		// A group id cannot be reused while any member lives. When the leader exits and no
+		// member is left, the group has ended: forget it so nothing signals that id again. If
+		// members remain, the id is still held and cleanup still kills them.
+		child.once("exit", () => {
+			if (!groupAlive(pgid)) markEnded(pgid);
+		});
 	}
 	if (t) t.after(() => killGroup(child));
 	return child;
@@ -162,6 +178,7 @@ module.exports = {
 	findMarkedProcesses,
 	groupAlive,
 	groupMemberStates,
+	isGroupTracked: (pgid) => liveGroups.has(pgid),
 	killGroup,
 	spawnInGroup,
 };
