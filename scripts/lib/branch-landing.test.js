@@ -109,6 +109,7 @@ test("failed reads are unknown, never a status that permits cleanup", () => {
 		facts({ prs: null }),
 		facts({ patchEquivalent: null }),
 		facts({ prs: [mergedPr], commitsPastPrHead: { 7: null } }),
+		facts({ prs: [{ ...mergedPr, baseRefName: undefined }], commitsPastPrHead: { 7: 0 } }),
 		facts({ inOriginDefault: true, landingInLocalDefault: null }),
 		facts({ inOriginDefault: true, landingInLocalDefault: true, localBranchExists: null }),
 		facts({ pushed: null }),
@@ -141,6 +142,10 @@ test("mergedPrLanding needs a merged PR into the default branch and no commits p
 	assert.deepEqual(mergedPrLanding(mergedPr, options), { landed: true });
 	assert.deepEqual(mergedPrLanding(openPr, options), { landed: false });
 	assert.deepEqual(mergedPrLanding(mergedPr, { ...options, commitsPastHead: 1 }), { landed: false });
-	assert.deepEqual(mergedPrLanding(mergedPr, { ...options, commitsPastHead: null }), { landed: null });
+	assert.deepEqual(mergedPrLanding(mergedPr, { ...options, commitsPastHead: null }), { landed: null, missing: "commits past #7" });
+	// A PR record without its base branch proves nothing.
+	const { baseRefName: _base, ...noBase } = mergedPr;
+	assert.deepEqual(mergedPrLanding(noBase, options), { landed: null, missing: "base branch of #7" });
+	assert.deepEqual(mergedPrLanding(noBase, { ...options, commitsPastHead: 2 }), { landed: false });
 	assert.deepEqual(mergedPrLanding({ ...mergedPr, baseRefName: "release" }, options), { landed: false });
 });

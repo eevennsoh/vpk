@@ -42,12 +42,16 @@ function pickPr(prs) {
 // A merged PR proves a branch landed when it merged into the default branch and the
 // branch has no commit its head did not carry (commitsPastHead 0). That covers merge,
 // squash and rebase merges alike. A tip behind the PR's head (the PR got more commits
-// pushed from elsewhere) is still landed. `commitsPastHead` is null when unobserved,
-// which proves nothing.
+// pushed from elsewhere) is still landed. A fact that is missing (no `baseRefName`
+// on the PR record) or unobserved (`commitsPastHead` null) proves nothing: landed null,
+// with what is missing.
 function mergedPrLanding(pr, { defaultBranch, commitsPastHead }) {
 	if (pr?.state !== "MERGED") return { landed: false };
-	if (pr.baseRefName && pr.baseRefName !== defaultBranch) return { landed: false };
-	if (commitsPastHead === null || commitsPastHead === undefined) return { landed: null };
+	// A commit the PR's head did not carry disproves landing whatever the base.
+	if (commitsPastHead > 0) return { landed: false };
+	if (typeof pr.baseRefName !== "string" || !pr.baseRefName) return { landed: null, missing: `base branch of #${pr.number}` };
+	if (pr.baseRefName !== defaultBranch) return { landed: false };
+	if (commitsPastHead === null || commitsPastHead === undefined) return { landed: null, missing: `commits past #${pr.number}` };
 	return { landed: commitsPastHead === 0 };
 }
 
@@ -79,7 +83,7 @@ function provenLanded(facts) {
 		if (result.landed === true) {
 			return { landed: true, proof: "merged-pr", pr: pr.number, exactHead: pr.headRefOid === facts.head, missing: [] };
 		}
-		if (result.landed === null) missing.push(`commits past #${pr.number}`);
+		if (result.landed === null) missing.push(result.missing);
 	}
 
 	if (facts.patchEquivalent === true) return { landed: true, proof: "patch-equivalent", pr: null, exactHead: null, missing: [] };
