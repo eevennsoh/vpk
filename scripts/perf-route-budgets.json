@@ -1,12 +1,12 @@
 {
 	"routes": {
-		"home": { "assetCount": 34, "cssBytes": 717000, "firstLoadJsBytes": 727000, "routeJsBytes": 62000, "fetchedJsBytes": 1480000, "fetchedCssBytes": 729000 },
+		"home": { "assetCount": 34, "cssBytes": 717000, "firstLoadJsBytes": 727000, "routeJsBytes": 62000, "fetchedJsBytes": 1252000, "fetchedCssBytes": 717000 },
 		"rovo": { "assetCount": 110, "cssBytes": 778000, "firstLoadJsBytes": 7125000, "routeJsBytes": 105000, "fetchedJsBytes": 7586000, "fetchedCssBytes": 778000 },
 		"studio": { "assetCount": 116, "cssBytes": 778000, "firstLoadJsBytes": 7616000, "routeJsBytes": 105000, "fetchedJsBytes": 8076000, "fetchedCssBytes": 778000 },
-		"components": { "assetCount": 55, "cssBytes": 729000, "firstLoadJsBytes": 2504000, "routeJsBytes": 125000, "fetchedJsBytes": 3170000, "fetchedCssBytes": 729000 },
+		"components": { "assetCount": 55, "cssBytes": 729000, "firstLoadJsBytes": 2504000, "routeJsBytes": 125000, "fetchedJsBytes": 3160000, "fetchedCssBytes": 729000 },
 		"butter": { "assetCount": 35, "cssBytes": 717000, "firstLoadJsBytes": 728000, "routeJsBytes": 63000, "fetchedJsBytes": 10194000, "fetchedCssBytes": 778000 },
 		"eu26": { "assetCount": 35, "cssBytes": 717000, "firstLoadJsBytes": 728000, "routeJsBytes": 63000, "fetchedJsBytes": 9495000, "fetchedCssBytes": 778000 },
-		"heavy-visual": { "assetCount": 37, "cssBytes": 717000, "firstLoadJsBytes": 934000, "routeJsBytes": 91000, "fetchedJsBytes": 3376000, "fetchedCssBytes": 738000 }
+		"heavy-visual": { "assetCount": 37, "cssBytes": 717000, "firstLoadJsBytes": 934000, "routeJsBytes": 91000, "fetchedJsBytes": 3348000, "fetchedCssBytes": 738000 }
 	},
 	"targets": {
 		"note": "Where the bundle should return to. The route budgets above are a ceiling that stops further growth (re-baselined 2026-11-14 at about 3% over a production build of main after C-8a and C-8d), not a goal. Met and removed: Rovo first-load JS 7,100,000 (6,917,433 after C-8d). The CSS target is met on home, butter, eu26 and heavy-visual (696,019); rovo, studio (754,612) and components (707,178) are still above it.",

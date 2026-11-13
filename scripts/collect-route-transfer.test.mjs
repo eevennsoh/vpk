@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { TRANSFER_ROUTES, assertAssetsLoaded, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
+import { TRANSFER_ROUTES, assertAssetsLoaded, isRouterPrefetch, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
 
 test("parseArgs requires a base URL and defaults to merging into the perf baseline", () => {
 	assert.deepEqual(parseArgs(["--base-url", "http://127.0.0.1:3100"]), { baseUrl: "http://127.0.0.1:3100", input: "output/perf-baseline.json", output: "output/perf-baseline.json", runs: 3 });
@@ -90,4 +90,10 @@ test("a failed, error or unreadable script or stylesheet invalidates the sample"
 test("the browser that measured is recorded with the baseline", () => {
 	const merged = mergeIntoBaseline({ routes: [], source: { kind: "build" } }, {}, { executablePath: "/x/chrome", headless: true, version: "150.0.0.0" });
 	assert.deepEqual(merged.source, { fetchedBrowser: { executablePath: "/x/chrome", headless: true, version: "150.0.0.0" }, kind: "build" });
+});
+
+test("Next router prefetches are recognised by their header", () => {
+	assert.equal(isRouterPrefetch({ "next-router-prefetch": "1", rsc: "1" }), true);
+	assert.equal(isRouterPrefetch({ rsc: "1" }), false);
+	assert.equal(isRouterPrefetch({}), false);
 });

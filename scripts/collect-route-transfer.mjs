@@ -8,7 +8,9 @@
 // script or stylesheet has been in flight for a quiet period (other requests, such as /api
 // polling with no backend, never hold it open; a hard cap fails with what is still in flight),
 // and sums the decoded bodies of the top document's same-origin .js and .css responses.
-// Embedded documents (iframes) are blocked and not counted. Usage:
+// Embedded documents (iframes) and Next link prefetches are blocked and not counted, so the
+// number is what the route itself loads, not what it speculatively fetches for other routes.
+// Usage:
 //   node scripts/collect-route-transfer.mjs --base-url http://127.0.0.1:3100 [--runs 3]
 //     [--input output/perf-baseline.json] [--output output/perf-baseline.json]
 import { readFileSync, writeFileSync } from "node:fs";
@@ -88,6 +90,11 @@ export function assertAssetsLoaded(failures, url) {
 	}
 }
 
+// Next's App Router marks a link prefetch with `Next-Router-Prefetch: 1` (headers arrive lowercased).
+export function isRouterPrefetch(headers) {
+	return headers["next-router-prefetch"] === "1";
+}
+
 export function classifyAsset(url, origin) {
 	if (!url.startsWith(origin)) return null;
 	const { pathname } = new URL(url);
@@ -139,9 +146,19 @@ async function measureOnce(browser, origin, routePath) {
 	// Only the top document's own fetches count. Embedded documents are blocked: how many lazy
 	// iframes Chrome loads depends on its lazy-load distance (and the effective connection type),
 	// which differs between machines; today only the home catalog embeds project previews.
+	// Link prefetches are blocked too: the Next router requests a linked route's payload with a
+	// `Next-Router-Prefetch: 1` header and then loads that route's chunks through the webpack
+	// runtime, so which links sit in the viewport (layout, hence fonts) would decide part of the
+	// number. Blocking the payload request stops the speculative chunks; their count is kept as
+	// an observation (prefetchesBlocked), not part of the budget.
+	let prefetchesBlocked = 0;
 	await page.route("**/*", (route) => {
 		const request = route.request();
 		if (request.isNavigationRequest() && request.frame() !== page.mainFrame()) return route.abort("blockedbyclient");
+		if (isRouterPrefetch(request.headers())) {
+			prefetchesBlocked += 1;
+			return route.abort("blockedbyclient");
+		}
 		return route.continue();
 	});
 	const tracker = createAssetActivityTracker();
@@ -191,7 +208,7 @@ async function measureOnce(browser, origin, routePath) {
 	await context.close();
 	assertAssetsLoaded(assetFailures, `${origin}${routePath}`);
 	assets.sort((left, right) => left.path.localeCompare(right.path));
-	return { assets, blockedFrames, cssBytes, jsBytes, scripts, stylesheets };
+	return { assets, blockedFrames, cssBytes, jsBytes, prefetchesBlocked, scripts, stylesheets };
 }
 
 export async function collectRouteTransfer({ baseUrl, routes = TRANSFER_ROUTES, runs = 3 }) {
