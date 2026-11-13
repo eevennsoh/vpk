@@ -176,6 +176,12 @@ async function collectCleanCandidates({
 				processes: processesUnder(processCwds, target.worktree.path, { exclude: [process.pid] })?.map(({ pid, command }) => ({ pid, command })) ?? null,
 				blockers,
 			});
+			// A worktree is a candidate only when its staleness check says safe: one
+			// created a minute ago, or with any process in it, stays whatever its landing.
+			if (entry.cleanable && !entry.staleness.safe) {
+				entry.cleanable = false;
+				entry.blockers = entry.staleness.reasons;
+			}
 		}
 		return entry;
 	});
@@ -185,8 +191,9 @@ async function collectCleanCandidates({
 		gitDir: entry.gitDir,
 		protectedCheckout: entry.worktree === mainCheckoutPath,
 	}));
-	const indexLocks = await inspectIndexLocks(lockEntries, { now, minAgeMs: lockMinAgeMinutes * MINUTE_MS });
-	const lockRemovals = removeStaleLocks ? await removeStaleIndexLocks(indexLocks) : null;
+	const indexLocks = await inspectIndexLocks(lockEntries, { now, minAgeMs: lockMinAgeMinutes * MINUTE_MS, readProcessCwds: async () => processCwds });
+	// The recheck before each unlink reads the process table again.
+	const lockRemovals = removeStaleLocks ? await removeStaleIndexLocks(indexLocks, { readProcessCwds }) : null;
 	return {
 		defaultBranch,
 		prsRead: prsByBranch !== null,
@@ -196,11 +203,12 @@ async function collectCleanCandidates({
 		staleDays,
 		processCheck: processCwds === null ? "unavailable" : "ok",
 		stale: results.filter((entry) => entry.staleness?.stale === true).map(({ branch, worktree, staleness }) => ({ branch, worktree, ...staleness })),
-		indexLocks: indexLocks.map(({ worktree, lock, ageMs, holders, decision }) => ({
+		indexLocks: indexLocks.map(({ worktree, lock, ageMs, holders, worktreeProcesses, decision }) => ({
 			worktree,
 			lock,
 			ageMinutes: Math.floor(ageMs / MINUTE_MS),
 			holders,
+			worktreeProcesses,
 			decision: decision.action,
 			reason: decision.reason,
 		})),

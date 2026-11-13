@@ -44,14 +44,31 @@ function deriveWorktreeStaleness({ lastActivityMs, now, staleDays, processes, bl
 	return { idleDays, stale, safe, reasons };
 }
 
+// git and its helpers (git-remote-https, git-upload-pack …); lsof truncates names.
+function isGitProcess({ command }) {
+	return command === "git" || /^git-/u.test(command ?? "");
+}
+
 /**
- * Whether a stale index.lock may be removed.
- * @param {{ ageMs: number | null, holders: Array<{ pid, command }> | null, minAgeMs: number, protectedCheckout: boolean }} facts
+ * Whether a stale index.lock may be removed. Git closes the lock's descriptor after
+ * writing the new index and keeps the lock until the command ends (a commit waiting
+ * on its editor or a hook, a rebase between steps), so a git process working in the
+ * worktree owns the lock even when nothing holds the file open.
+ * @param {{
+ *   ageMs: number | null,
+ *   holders: Array<{ pid, command }> | null,           // processes with the file open
+ *   worktreeProcesses: Array<{ pid, command }> | null, // processes whose cwd is in the worktree
+ *   minAgeMs: number,
+ *   protectedCheckout: boolean,
+ * }} facts
  * @returns {{ action: "remove" | "keep", reason: string }}
  */
-function decideIndexLock({ ageMs, holders, minAgeMs, protectedCheckout }) {
+function decideIndexLock({ ageMs, holders, worktreeProcesses, minAgeMs, protectedCheckout }) {
 	if (holders === null) return { action: "keep", reason: "lock holders unknown (process check unavailable)" };
 	if (holders.length > 0) return { action: "keep", reason: `held by ${holders.map(describeProcess).join(", ")}` };
+	if (worktreeProcesses === null || worktreeProcesses === undefined) return { action: "keep", reason: "processes in the worktree unknown (process check unavailable)" };
+	const git = worktreeProcesses.filter(isGitProcess);
+	if (git.length > 0) return { action: "keep", reason: `git is running in the worktree: ${git.map(describeProcess).join(", ")}` };
 	if (ageMs === null) return { action: "keep", reason: "age unknown" };
 	if (ageMs < minAgeMs) return { action: "keep", reason: `${Math.floor(ageMs / MINUTE_MS)} min old; younger than ${Math.floor(minAgeMs / MINUTE_MS)} min` };
 	if (protectedCheckout) return { action: "keep", reason: "in the persistent main checkout; remove it there by hand" };
@@ -65,4 +82,5 @@ module.exports = {
 	MINUTE_MS,
 	decideIndexLock,
 	deriveWorktreeStaleness,
+	isGitProcess,
 };

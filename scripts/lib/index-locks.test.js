@@ -67,10 +67,10 @@ test("when the holder check cannot run, nothing is removed", async (t) => {
 	const stale = makeGitDir(root, "stale", 60);
 	const unreadable = async () => null;
 
-	const inspected = await inspectIndexLocks([stale], { minAgeMs: 30 * MINUTE_MS, findHolders: unreadable });
+	const inspected = await inspectIndexLocks([stale], { minAgeMs: 30 * MINUTE_MS, findHolders: unreadable, readProcessCwds: unreadable });
 	assert.equal(inspected[0].holders, null);
 	assert.equal(inspected[0].decision.action, "keep");
-	assert.deepEqual(await removeStaleIndexLocks(inspected, { findHolders: unreadable }), [
+	assert.deepEqual(await removeStaleIndexLocks(inspected, { findHolders: unreadable, readProcessCwds: unreadable }), [
 		{ lock: stale.lock, removed: false, reason: "lock holders unknown (process check unavailable)" },
 	]);
 	assert.equal(fs.existsSync(stale.lock), true);
@@ -81,14 +81,50 @@ test("a lock that changed or became held after inspection is kept on the recheck
 	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
 	const changed = makeGitDir(root, "changed", 60);
 	const nowHeld = makeGitDir(root, "now-held", 60);
-	const inspected = await inspectIndexLocks([changed, nowHeld], { minAgeMs: 30 * MINUTE_MS, findHolders: async (paths) => new Map(paths.map((file) => [file, []])) });
+	const inspected = await inspectIndexLocks([changed, nowHeld], { minAgeMs: 30 * MINUTE_MS, findHolders: async (paths) => new Map(paths.map((file) => [file, []])), readProcessCwds: async () => [] });
 	fs.utimesSync(changed.lock, new Date(), new Date());
 	const results = await removeStaleIndexLocks(inspected, {
 		findHolders: async (paths) => new Map(paths.map((file) => [file, [{ pid: 9, command: "git" }]])),
+		readProcessCwds: async () => [],
 	});
 	assert.deepEqual(results.map(({ removed, reason }) => ({ removed, reason })), [
 		{ removed: false, reason: "changed since it was inspected" },
 		{ removed: false, reason: "held on recheck" },
 	]);
 	assert.equal(fs.existsSync(changed.lock) && fs.existsSync(nowHeld.lock), true);
+});
+
+test("a git process working in the worktree keeps an unheld old lock; only a non-git one does not", async (t) => {
+	const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "index-locks-")));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const committing = makeGitDir(root, "committing", 60);
+	const agentOnly = makeGitDir(root, "agent-only", 60);
+	const unknown = makeGitDir(root, "unknown", 60);
+	const nobody = async (paths) => new Map(paths.map((file) => [file, []]));
+	const cwds = [
+		{ pid: 101, command: "git", cwd: committing.worktree },
+		{ pid: 102, command: "claude", cwd: path.join(agentOnly.worktree, "backend") },
+	];
+
+	const inspected = await inspectIndexLocks([committing, agentOnly], { minAgeMs: 30 * MINUTE_MS, findHolders: nobody, readProcessCwds: async () => cwds });
+	assert.deepEqual(inspected.map((entry) => entry.decision.action), ["keep", "remove"]);
+	assert.equal(inspected[0].decision.reason, "git is running in the worktree: pid 101 (git)");
+	const [unknownEntry] = await inspectIndexLocks([unknown], { minAgeMs: 30 * MINUTE_MS, findHolders: nobody, readProcessCwds: async () => null });
+	assert.equal(unknownEntry.decision.action, "keep");
+
+	// A git command that starts between inspection and removal keeps the lock.
+	const results = await removeStaleIndexLocks(inspected, {
+		findHolders: nobody,
+		readProcessCwds: async () => [...cwds, { pid: 103, command: "git", cwd: agentOnly.worktree }],
+	});
+	assert.deepEqual(results.map(({ removed, reason }) => ({ removed, reason })), [
+		{ removed: false, reason: "git is running in the worktree: pid 101 (git)" },
+		{ removed: false, reason: "on recheck: git is running in the worktree: pid 103 (git)" },
+	]);
+	assert.equal(fs.existsSync(committing.lock) && fs.existsSync(agentOnly.lock), true);
+
+	// With the git command gone, the agent-only lock is removed.
+	const removed = await removeStaleIndexLocks(inspected, { findHolders: nobody, readProcessCwds: async () => cwds });
+	assert.deepEqual(removed.map(({ removed: done }) => done), [false, true]);
+	assert.equal(fs.existsSync(agentOnly.lock), false);
 });
