@@ -2696,14 +2696,14 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 75,
-			"pageCount": 60,
+			"ownerImportCount": 74,
+			"pageCount": 59,
 			"primaryOwnerKinds": {
 				"catalog": 20,
 				"dynamic": 8,
 				"inline": 2,
 				"redirect": 2,
-				"shell": 28
+				"shell": 27
 			}
 		},
 		"pages": [
@@ -4236,36 +4236,6 @@
 				"ownerCount": 1,
 				"owners": [
 					{
-						"importPath": "@/components/projects/rovo-button/page",
-						"source": "components/projects/rovo-button/page",
-						"symbols": [
-							"RovoButtonProjectPage"
-						]
-					}
-				],
-				"primaryOwner": {
-					"kind": "shell",
-					"sources": [
-						"components/projects/rovo-button/page"
-					]
-				},
-				"routePath": "/rovo-button",
-				"shellOwnerCount": 1,
-				"shellOwners": [
-					{
-						"importPath": "@/components/projects/rovo-button/page",
-						"source": "components/projects/rovo-button/page",
-						"symbols": [
-							"RovoButtonProjectPage"
-						]
-					}
-				],
-				"source": "app/rovo-button/page.tsx"
-			},
-			{
-				"ownerCount": 1,
-				"owners": [
-					{
 						"importPath": "@/components/website/demo-registry-loader",
 						"source": "components/website/demo-registry-loader",
 						"symbols": [
@@ -4611,7 +4581,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 119,
+				"entryCount": 120,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5155,6 +5125,13 @@
 					},
 					{
 						"category": "blocks",
+						"slug": "rovo-button",
+						"name": "Rovo Button",
+						"importPath": "@/components/blocks/rovo-button",
+						"status": "live"
+					},
+					{
+						"category": "blocks",
 						"slug": "rovo-canvas",
 						"name": "Rovo Canvas",
 						"importPath": "@/components/blocks/rovo-canvas",
@@ -5451,7 +5428,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 21,
+				"entryCount": 20,
 				"entries": [
 					{
 						"category": "projects",
@@ -5577,13 +5554,6 @@
 						"slug": "rovo",
 						"name": "Rovo",
 						"importPath": "@/components/projects/rovo",
-						"status": "live"
-					},
-					{
-						"category": "projects",
-						"slug": "rovo-button",
-						"name": "Rovo Button",
-						"importPath": "@/components/projects/rovo-button",
 						"status": "live"
 					},
 					{

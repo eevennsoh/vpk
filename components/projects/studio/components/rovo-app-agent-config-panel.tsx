@@ -45,6 +45,7 @@ import {
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
 } from "@/components/blocks/trigger/data/trigger-catalog";
+import { useProviderConnection } from "@/components/blocks/trigger/hooks/use-provider-connection";
 import { AgentTriggerProviderTileIcon } from "@/components/blocks/trigger/page";
 
 import {
@@ -85,7 +86,7 @@ import { getAgentConfigListLookupValue, getSkillConfigLabel } from "@/components
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import FloatingRovoButton, {
 	type FloatingRovoButtonPersistentBar,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatPanelGreetingProps, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
@@ -704,7 +705,7 @@ export function RovoAppAgentConfigPanel({
 	// suppress the floating button by default (the shell owns chat), so we render
 	// it with product="home" — product only gates visibility, it has no visual
 	// effect — and pair it with the RovoFloatingChat surface the button opens,
-	// mirroring the components/projects/rovo-button demo.
+	// mirroring the components/blocks/rovo-button demo.
 	const {
 		chatSurface,
 		openChat,
@@ -883,58 +884,38 @@ export function RovoAppAgentConfigPanel({
 	);
 	// Fake provider connection flow: connecting a provider marks ALL its triggers
 	// connected after a short "Authorizing…" delay, and persists for the session.
-	const [connectingProvider, setConnectingProvider] = useState<{
-		providerId: AgentTriggerProviderId;
-		trigger: AgentTriggerValue;
-	} | null>(null);
-	const connectTimerRef = useRef<number | null>(null);
-	// oxlint-disable react-doctor/exhaustive-deps -- Unmount cleanup intentionally clears whichever fake provider connection timer is still active.
-	useEffect(() => {
-		return () => {
-			if (connectTimerRef.current !== null) {
-				window.clearTimeout(connectTimerRef.current);
-			}
-		};
-	}, []);
-	// oxlint-enable react-doctor/exhaustive-deps
-	const handleConnectTrigger = useCallback(
-		(targetTrigger: AgentTriggerValue) => {
-			const { providerId } = targetTrigger;
-			// Mark every trigger sharing this provider as connecting (provider-level).
+	const markProviderTriggers = useCallback(
+		(providerId: AgentTriggerProviderId, connectionState: "connecting" | "connected") => {
 			updateActiveConfig((config) => {
 				const automationRules = (config.automationRules ?? []).map((rule) => ({
 					...rule,
 					triggers: rule.triggers.map((trigger) =>
 						trigger.providerId === providerId
-							? { ...trigger, connectionState: "connecting" as const }
+							? { ...trigger, connectionState }
 							: trigger,
 					),
 				}));
 				return { ...config, automationRules };
 			});
-			setConnectingProvider({ providerId, trigger: targetTrigger });
-
-			if (connectTimerRef.current !== null) {
-				window.clearTimeout(connectTimerRef.current);
-			}
-			connectTimerRef.current = window.setTimeout(() => {
-				markSessionProviderConnected(providerId);
-				updateActiveConfig((config) => {
-					const automationRules = (config.automationRules ?? []).map((rule) => ({
-						...rule,
-						triggers: rule.triggers.map((trigger) =>
-							trigger.providerId === providerId
-								? { ...trigger, connectionState: "connected" as const }
-								: trigger,
-						),
-					}));
-					return { ...config, automationRules };
-				});
-				setConnectingProvider(null);
-				connectTimerRef.current = null;
-			}, 1200);
 		},
 		[updateActiveConfig],
+	);
+	const providerConnection = useProviderConnection<AgentTriggerValue>();
+	const connectingProvider = providerConnection.pending;
+	const connectProvider = providerConnection.connect;
+	const handleConnectTrigger = useCallback(
+		(targetTrigger: AgentTriggerValue) => {
+			const { providerId } = targetTrigger;
+			// Mark every trigger sharing this provider as connecting (provider-level). The
+			// completion is bound now, so it lands on this config even if the user switches
+			// to a subagent before the delay ends.
+			markProviderTriggers(providerId, "connecting");
+			connectProvider(targetTrigger, () => {
+				markSessionProviderConnected(providerId);
+				markProviderTriggers(providerId, "connected");
+			});
+		},
+		[connectProvider, markProviderTriggers],
 	);
 	// A chip passes the item to focus (tool id or name, app id or name, skill id or
 	// configured label); a plain "Add" or "Browse" passes nothing and opens the list.
@@ -1760,7 +1741,7 @@ export function RovoAppAgentConfigPanel({
 				open={connectingProvider !== null}
 				onOpenChange={(open) => {
 					if (!open) {
-						setConnectingProvider(null);
+						providerConnection.dismiss();
 					}
 				}}
 			>
@@ -1771,7 +1752,7 @@ export function RovoAppAgentConfigPanel({
 					{connectingProvider ? (
 						<div className="flex flex-col items-center gap-4 py-2">
 							<div className="flex size-12 items-center justify-center">
-								<AgentTriggerProviderTileIcon trigger={connectingProvider.trigger} />
+								<AgentTriggerProviderTileIcon trigger={connectingProvider} />
 							</div>
 							<div className="flex items-center gap-2 text-text">
 								<Spinner />

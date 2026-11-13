@@ -1,4 +1,4 @@
-import type { FloatingRovoButtonPlacement } from "@/components/projects/shared/components/floating-rovo-button";
+import type { FloatingRovoButtonPlacement } from "@/components/blocks/rovo-button";
 
 /**
  * The showcase parks every variant on one evenly spaced row along the bottom

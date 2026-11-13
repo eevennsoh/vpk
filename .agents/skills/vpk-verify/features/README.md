@@ -78,7 +78,6 @@ Every directory under `components/projects/` needs a recipe whose `How to get to
 - `jira-for-you`: No app route; reachable only at `/preview/projects/jira-for-you`; no recipe yet.
 - `jira-queue`: Agent-session queue at `/jira-queue`; no recipe yet.
 - `rovo`: Chat workspace at `/rovo`; meaningful proof sends a message, which needs `pnpm control-vpk doctor --require-backend`.
-- `rovo-button`: Floating Rovo button demo at `/rovo-button`; no recipe yet.
 - `search`: Search results page at `/search`; no recipe yet.
 - `sidebar-chat`: Chat panel at `/sidebar-chat`; send proof is backend-gated like Studio.
 - `skills`: Skills workspace at `/skills` built on Sidebar Chat; no recipe yet.

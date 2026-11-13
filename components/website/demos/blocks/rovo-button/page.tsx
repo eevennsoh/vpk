@@ -5,10 +5,10 @@ import { AnimatePresence } from "motion/react";
 import AppLayout from "@/components/projects/page";
 import FloatingRovoButton, {
 	type FloatingRovoButtonPositioning,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import { useRovoChatControls } from "@/app/contexts";
-import RovoButtonDemoCaption from "./components/rovo-button-demo-caption";
+import RovoButtonDemoCaption from "./components/caption";
 import {
 	CHAT_BUTTON_PLACEMENT,
 	INSIGHTS_BUTTON_PLACEMENT,
@@ -20,17 +20,19 @@ import { useRovoButtonDemoInsights } from "./hooks/use-rovo-button-demo-insights
 import { useRovoButtonDemoLiveChat } from "./hooks/use-rovo-button-demo-live-chat";
 import { useRovoButtonDemoOnboarding } from "./hooks/use-rovo-button-demo-onboarding";
 import { useRovoButtonDemoSuggestion } from "./hooks/use-rovo-button-demo-suggestion";
-import type { RovoButtonDemoVariant } from "./types";
+import type { RovoButtonDemoVariant, RovoButtonDemoVariantId } from "./demo-types";
 
-interface RovoButtonProjectPageProps {
+interface RovoButtonPageProps {
 	embedded?: boolean;
 	embeddedHeight?: "parent" | "viewport";
+	variant?: RovoButtonDemoVariantId;
 }
 
-export default function RovoButtonProjectPage({
+export default function RovoButtonPage({
 	embedded = false,
 	embeddedHeight = "viewport",
-}: Readonly<RovoButtonProjectPageProps>) {
+	variant: selectedVariant,
+}: Readonly<RovoButtonPageProps>) {
 	const { chatSurface } = useRovoChatControls();
 	const liveChat = useRovoButtonDemoLiveChat();
 	const insights = useRovoButtonDemoInsights();
@@ -126,16 +128,16 @@ export default function RovoButtonProjectPage({
 	return (
 		<AppLayout product="home" embedded={embedded} embeddedHeight={embeddedHeight} hideFloatingRovo>
 			<div className="relative h-full w-full">
-				{variants.map((variant) => (
+				{variants.filter((variant) => !selectedVariant || variant.id === selectedVariant).map((variant) => (
 					<Fragment key={variant.id}>
-						<RovoButtonDemoCaption
+						{!selectedVariant ? <RovoButtonDemoCaption
 							detail={variant.detail}
 							liftPx={variant.captionLiftPx}
 							placement={variant.placement}
 							positioning={positioning}
 							title={variant.title}
-						/>
-						{variant.render({ placement: variant.placement, positioning })}
+						/> : null}
+						{variant.render({ placement: selectedVariant ? ONBOARDING_BUTTON_PLACEMENT : variant.placement, positioning })}
 					</Fragment>
 				))}
 				<AnimatePresence>

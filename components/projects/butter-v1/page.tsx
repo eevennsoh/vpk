@@ -54,7 +54,7 @@ import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/comp
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
-import type { FloatingRovoButtonSuggestion } from "@/components/projects/shared/components/floating-rovo-button";
+import type { FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES, resolveButterChatAgentId } from "@/components/projects/butter-v1/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";

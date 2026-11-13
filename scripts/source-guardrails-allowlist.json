@@ -275,7 +275,7 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/projects/shared/components/floating-rovo-button/surface.tsx",
+			"filePath": "components/blocks/rovo-button/surface.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",
 			"text": "/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */",

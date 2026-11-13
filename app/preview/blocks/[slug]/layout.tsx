@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import { PreviewCategoryLayout, getCategoryPreviewMetadata, type PreviewLayoutProps } from "@/app/preview/_shared/preview-metadata";
 
 const CHAT_CAPABLE_BLOCK_PREVIEWS = new Set([
+	"rovo-button",
+	"rovo-button-demo-chat",
+	"rovo-button-demo-toolbar",
+	"rovo-button-demo-proactive",
+	"rovo-button-demo-insights",
+	"rovo-button-demo-onboarding",
 	"jira-work-item",
 	"jira-work-item-demo-standard",
 	"jira-work-item-demo-experimental",

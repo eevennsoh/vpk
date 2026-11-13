@@ -12,6 +12,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
 import Image from "next/image";
 import { useLatestRef } from "@/lib/use-latest-ref";
+import { useProviderConnection } from "@/components/blocks/trigger/hooks/use-provider-connection";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AutomationIcon from "@atlaskit/icon/core/automation";
@@ -958,7 +959,6 @@ export function TriggerAutomationDialog({
 }: Readonly<TriggerAutomationDialogProps>): ReactElement {
 	const seedRef = useLatestRef<AgentAutomationRule>(automationRule);
 	const wasOpen = useRef(open);
-	const connectTimerRef = useRef<number | null>(null);
 	const [draftTriggers, setDraftTriggers] = useState<readonly AgentTriggerValue[]>(automationRule.triggers);
 	const [automationName, setAutomationName] = useState(() => getAutomationName(automationRule));
 	const [sharedPrompt, setSharedPrompt] = useState(() => getAutomationPrompt(automationRule));
@@ -974,15 +974,6 @@ export function TriggerAutomationDialog({
 		}
 		wasOpen.current = open;
 	}, [open, seedRef]);
-
-	// oxlint-disable-next-line react-doctor/exhaustive-deps -- Unmount-only cleanup for the fake provider connection timer.
-	useEffect(() => {
-		return () => {
-			if (connectTimerRef.current !== null) {
-				window.clearTimeout(connectTimerRef.current);
-			}
-		};
-	}, []);
 
 	const handleAddTrigger = useCallback(
 		(providerId: AgentTriggerProviderId, eventId: string) => {
@@ -1017,36 +1008,27 @@ export function TriggerAutomationDialog({
 		);
 	}, []);
 
+	// Fake connection: mark every trigger sharing this provider as connecting, then flip
+	// them to connected after a short "Connecting…" spin. The dialog owns the visible draft
+	// state, so the transition must happen here.
+	const markProviderTriggers = useCallback((providerId: AgentTriggerProviderId, state: "connecting" | "connected") => {
+		setDraftTriggers((current) =>
+			current.map((draftTrigger) =>
+				draftTrigger.providerId === providerId
+					? { ...draftTrigger, connectionState: state }
+					: draftTrigger,
+			),
+		);
+	}, []);
+	const { connect: connectProvider } = useProviderConnection<AgentTriggerValue>();
+
 	const handleConnect = useCallback(
 		(trigger: AgentTriggerValue) => {
 			onConnectTrigger?.(trigger);
-			const { providerId } = trigger;
-			// Fake connection: mark every trigger sharing this provider as connecting,
-			// then flip them to connected after a short "Connecting…" spin. The dialog
-			// owns the visible draft state, so the transition must happen here.
-			setDraftTriggers((current) =>
-				current.map((draftTrigger) =>
-					draftTrigger.providerId === providerId
-						? { ...draftTrigger, connectionState: "connecting" as const }
-						: draftTrigger,
-				),
-			);
-
-			if (connectTimerRef.current !== null) {
-				window.clearTimeout(connectTimerRef.current);
-			}
-			connectTimerRef.current = window.setTimeout(() => {
-				setDraftTriggers((current) =>
-					current.map((draftTrigger) =>
-						draftTrigger.providerId === providerId
-							? { ...draftTrigger, connectionState: "connected" as const }
-							: draftTrigger,
-					),
-				);
-				connectTimerRef.current = null;
-			}, 1200);
+			markProviderTriggers(trigger.providerId, "connecting");
+			connectProvider(trigger, () => markProviderTriggers(trigger.providerId, "connected"));
 		},
-		[onConnectTrigger],
+		[connectProvider, markProviderTriggers, onConnectTrigger],
 	);
 
 	const handleRemoveTrigger = useCallback((triggerId: string) => {
@@ -1154,7 +1136,6 @@ export function TriggerConfigAutomationDialog({
 }: Readonly<TriggerAutomationDialogProps>): ReactElement {
 	const seedRef = useLatestRef<AgentAutomationRule>(automationRule);
 	const wasOpen = useRef(open);
-	const connectTimerRef = useRef<number | null>(null);
 	const [draftRule, setDraftRule] = useState<AgentAutomationRule>(automationRule);
 	const [active, setActive] = useState(() => isAutomationRuleEnabled(automationRule));
 
@@ -1166,15 +1147,6 @@ export function TriggerConfigAutomationDialog({
 		}
 		wasOpen.current = open;
 	}, [open, seedRef]);
-
-	// oxlint-disable-next-line react-doctor/exhaustive-deps -- Unmount-only cleanup for the fake provider connection timer.
-	useEffect(() => {
-		return () => {
-			if (connectTimerRef.current !== null) {
-				window.clearTimeout(connectTimerRef.current);
-			}
-		};
-	}, []);
 
 	// The shared profile header reads `config.name`/`config.description`, so mirror
 	// the editing rule's name + description onto the throwaway config. Without this
@@ -1216,31 +1188,25 @@ export function TriggerConfigAutomationDialog({
 	// Fake provider connection: flip every trigger sharing the provider to
 	// "connecting", then "connected" after a short spin. Mirrors the transition
 	// `TriggerAutomationDialog` owned, but on the draft rule's triggers.
+	const markProviderTriggers = useCallback((providerId: AgentTriggerProviderId, state: "connecting" | "connected") => {
+		setDraftRule((current) => ({
+			...current,
+			triggers: current.triggers.map((draftTrigger) =>
+				draftTrigger.providerId === providerId
+					? { ...draftTrigger, connectionState: state }
+					: draftTrigger,
+			),
+		}));
+	}, []);
+	const { connect: connectProvider } = useProviderConnection<AgentTriggerValue>();
+
 	const handleConnect = useCallback(
 		(trigger: AgentTriggerValue) => {
 			onConnectTrigger?.(trigger);
-			const { providerId } = trigger;
-			const markProviderTriggers = (state: "connecting" | "connected") => {
-				setDraftRule((current) => ({
-					...current,
-					triggers: current.triggers.map((draftTrigger) =>
-						draftTrigger.providerId === providerId
-							? { ...draftTrigger, connectionState: state }
-							: draftTrigger,
-					),
-				}));
-			};
-
-			markProviderTriggers("connecting");
-			if (connectTimerRef.current !== null) {
-				window.clearTimeout(connectTimerRef.current);
-			}
-			connectTimerRef.current = window.setTimeout(() => {
-				markProviderTriggers("connected");
-				connectTimerRef.current = null;
-			}, 1200);
+			markProviderTriggers(trigger.providerId, "connecting");
+			connectProvider(trigger, () => markProviderTriggers(trigger.providerId, "connected"));
 		},
-		[onConnectTrigger],
+		[connectProvider, markProviderTriggers, onConnectTrigger],
 	);
 
 	const handleSave = useCallback(() => {
