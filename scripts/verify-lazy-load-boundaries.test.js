@@ -475,3 +475,20 @@ test("a ui demo resolves through the ui registry's primary table", () => {
 		});
 	});
 });
+
+test("a package's stylesheet does not count as reaching its runtime", () => {
+	const reachTrackedRules = [{ match: "package", reason: "markdown streaming runtime", source: "streamdown" }];
+	withWorkspace({
+		"app/layout.tsx": 'import "streamdown/styles.css";\nexport default function Layout({ children }) { return children; }\n',
+	}, (cwd) => {
+		let measured = null;
+		const options = { cwd, deferredModuleRules: [], heavyImportRules: [], ...NO_TREE_RULES, onHeavyReachMeasured: (value) => { measured = value; }, reachTrackedRules, routeShellFiles: ["app/layout.tsx"] };
+		assert.deepEqual(verifyLazyLoadBoundaries({ ...options, heavyReachBaseline: {} }), []);
+		assert.deepEqual(measured, { "app/layout.tsx": [] }, "stylesheet only: nothing to baseline");
+
+		writeFileSync(path.join(cwd, "app/layout.tsx"), 'import "streamdown/styles.css";\nexport { Streamdown } from "streamdown";\nexport default function Layout({ children }) { return children; }\n');
+		const failures = verifyLazyLoadBoundaries({ ...options, heavyReachBaseline: {} });
+		assert.deepEqual(failures.map((failure) => [failure.type, failure.filePath, failure.source]), [["heavy-reach-new", "app/layout.tsx", "streamdown"]]);
+		assert.deepEqual(failures[0].dependencyPath, ["app/layout.tsx", "streamdown"]);
+	});
+});

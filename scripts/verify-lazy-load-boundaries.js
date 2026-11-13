@@ -479,6 +479,10 @@ function resolveDemoEntryFiles({ cwd, entryFiles }) {
 }
 
 
+function isStylesheetSpecifier(moduleSpecifier) {
+	return /\.css$/u.test(moduleSpecifier.split(/[?#]/u)[0]);
+}
+
 // Every heavy runtime an entry reaches through static imports, with the shortest chain to it.
 // A visited set guards against cycles; more than maxModules local modules is a failure, never a
 // silent truncation.
@@ -494,7 +498,9 @@ function collectReachableHeavyImports({ cwd, entryFile, heavyImportRules, maxMod
 			return { exceeded: true, reached, visited };
 		}
 		for (const moduleSpecifier of readSpecifiers(filePath)) {
-			const rule = getRuleForImport(moduleSpecifier, heavyImportRules);
+			// A stylesheet is not the runtime: `import "streamdown/styles.css"` must not count as
+			// reaching Streamdown, or it would hide a later import of the runtime from that entry.
+			const rule = isStylesheetSpecifier(moduleSpecifier) ? null : getRuleForImport(moduleSpecifier, heavyImportRules);
 			if (rule && !reached.has(rule.source)) {
 				const chain = [moduleSpecifier];
 				for (let cursor = filePath; cursor !== null; cursor = previous.get(cursor)) {

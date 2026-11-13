@@ -10,7 +10,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -26,7 +25,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -36,7 +34,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -46,7 +43,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -59,7 +55,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -73,7 +68,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -83,7 +77,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -93,7 +86,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -103,7 +95,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -113,7 +104,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -123,7 +113,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -133,7 +122,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown",
@@ -144,7 +132,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -154,12 +141,8 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
-			"streamdown"
-		],
-		"app/layout.tsx": [
 			"streamdown"
 		],
 		"app/personal-graph/page.tsx": [
@@ -170,7 +153,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"shiki",
 			"streamdown"
 		],
@@ -183,7 +165,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"shiki",
 			"streamdown"
 		],
@@ -192,7 +173,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -202,7 +182,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -212,7 +191,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -222,7 +200,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"shiki",
 			"streamdown"
 		],
@@ -231,7 +208,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"shiki",
 			"streamdown"
 		],
@@ -240,7 +216,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"shiki",
 			"streamdown"
 		],
@@ -249,7 +224,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -259,7 +233,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -273,7 +246,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -290,7 +262,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -308,7 +279,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -322,7 +292,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -336,7 +305,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -346,7 +314,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -363,7 +330,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -373,7 +339,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -383,7 +348,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -397,7 +361,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -407,7 +370,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -417,7 +379,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -427,7 +388,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -437,7 +397,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -447,7 +406,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -457,7 +415,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -467,7 +424,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown",
@@ -478,7 +434,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -488,7 +443,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -498,7 +452,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -512,7 +465,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -522,7 +474,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
@@ -532,7 +483,6 @@
 			"@atlassian/logo-third-party",
 			"@streamdown/",
 			"@tiptap/",
-			"katex",
 			"recharts",
 			"shiki",
 			"streamdown"
