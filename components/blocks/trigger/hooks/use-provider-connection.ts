@@ -12,8 +12,11 @@ import {
 } from "./provider-connection-machine";
 
 export interface ProviderConnectionControls<T> {
-	/** Starts the fake connect; the caller marks its triggers "connecting" itself. */
-	readonly connect: (target: T) => void;
+	/**
+	 * Starts the fake connect; the caller marks its triggers "connecting" itself. `onConnected`
+	 * runs once after the delay, as captured now.
+	 */
+	readonly connect: (target: T, onConnected: () => void) => void;
 	/** Hides the progress UI; the connect still completes. */
 	readonly dismiss: () => void;
 	/** The connect in progress while its progress UI is showing. */
@@ -22,9 +25,9 @@ export interface ProviderConnectionControls<T> {
 
 /**
  * The fake provider connection shared by the trigger dialogs and the Studio config panel:
- * after the delay `onConnected` runs once for the latest target. Unmounting cancels it.
+ * after the delay the latest connect's `onConnected` runs once. Unmounting cancels it.
  */
-export function useProviderConnection<T>(onConnected: (target: T) => void): ProviderConnectionControls<T> {
+export function useProviderConnection<T>(): ProviderConnectionControls<T> {
 	const [state, dispatch] = useReducer(
 		providerConnectionReducer<T>,
 		PROVIDER_CONNECTION_INITIAL_STATE as ProviderConnectionState<T>,
@@ -35,7 +38,7 @@ export function useProviderConnection<T>(onConnected: (target: T) => void): Prov
 			if (state.phase !== "connecting") {
 				return;
 			}
-			onConnected(state.target);
+			state.onConnected();
 			dispatch({ type: "connected", attempt: state.attempt });
 		},
 		// A simulated authorization wait, not motion: it keeps its delay under reduced motion.
@@ -43,7 +46,9 @@ export function useProviderConnection<T>(onConnected: (target: T) => void): Prov
 		restartKey: state.attempt,
 	});
 
-	const connect = useCallback((target: T) => dispatch({ type: "connect", target }), []);
+	const connect = useCallback((target: T, onConnected: () => void) => {
+		dispatch({ type: "connect", target, onConnected });
+	}, []);
 	const dismiss = useCallback(() => dispatch({ type: "dismiss" }), []);
 
 	return {

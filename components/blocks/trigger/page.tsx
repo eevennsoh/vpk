@@ -1020,16 +1020,13 @@ export function TriggerAutomationDialog({
 			),
 		);
 	}, []);
-	const providerConnection = useProviderConnection<AgentTriggerValue>((trigger) => {
-		markProviderTriggers(trigger.providerId, "connected");
-	});
-	const connectProvider = providerConnection.connect;
+	const { connect: connectProvider } = useProviderConnection<AgentTriggerValue>();
 
 	const handleConnect = useCallback(
 		(trigger: AgentTriggerValue) => {
 			onConnectTrigger?.(trigger);
 			markProviderTriggers(trigger.providerId, "connecting");
-			connectProvider(trigger);
+			connectProvider(trigger, () => markProviderTriggers(trigger.providerId, "connected"));
 		},
 		[connectProvider, markProviderTriggers, onConnectTrigger],
 	);
@@ -1201,16 +1198,13 @@ export function TriggerConfigAutomationDialog({
 			),
 		}));
 	}, []);
-	const providerConnection = useProviderConnection<AgentTriggerValue>((trigger) => {
-		markProviderTriggers(trigger.providerId, "connected");
-	});
-	const connectProvider = providerConnection.connect;
+	const { connect: connectProvider } = useProviderConnection<AgentTriggerValue>();
 
 	const handleConnect = useCallback(
 		(trigger: AgentTriggerValue) => {
 			onConnectTrigger?.(trigger);
 			markProviderTriggers(trigger.providerId, "connecting");
-			connectProvider(trigger);
+			connectProvider(trigger, () => markProviderTriggers(trigger.providerId, "connected"));
 		},
 		[connectProvider, markProviderTriggers, onConnectTrigger],
 	);

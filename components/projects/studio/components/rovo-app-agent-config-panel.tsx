@@ -896,17 +896,20 @@ export function RovoAppAgentConfigPanel({
 		},
 		[updateActiveConfig],
 	);
-	const providerConnection = useProviderConnection<AgentTriggerValue>((trigger) => {
-		markSessionProviderConnected(trigger.providerId);
-		markProviderTriggers(trigger.providerId, "connected");
-	});
+	const providerConnection = useProviderConnection<AgentTriggerValue>();
 	const connectingProvider = providerConnection.pending;
 	const connectProvider = providerConnection.connect;
 	const handleConnectTrigger = useCallback(
 		(targetTrigger: AgentTriggerValue) => {
-			// Mark every trigger sharing this provider as connecting (provider-level).
-			markProviderTriggers(targetTrigger.providerId, "connecting");
-			connectProvider(targetTrigger);
+			const { providerId } = targetTrigger;
+			// Mark every trigger sharing this provider as connecting (provider-level). The
+			// completion is bound now, so it lands on this config even if the user switches
+			// to a subagent before the delay ends.
+			markProviderTriggers(providerId, "connecting");
+			connectProvider(targetTrigger, () => {
+				markSessionProviderConnected(providerId);
+				markProviderTriggers(providerId, "connected");
+			});
 		},
 		[connectProvider, markProviderTriggers],
 	);

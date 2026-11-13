@@ -12,6 +12,11 @@ export type ProviderConnectionState<T> =
 	| {
 		readonly phase: "connecting";
 		readonly target: T;
+		/**
+		 * Completes this attempt. Captured when the connect starts, so it writes to the state
+		 * the connect began in even if the host has since switched what it shows.
+		 */
+		readonly onConnected: () => void;
 		/** Restarts the timer when a new connect replaces one still in progress. */
 		readonly attempt: number;
 		/** Whether the host's progress UI is showing; dismissing it does not cancel the connect. */
@@ -19,7 +24,7 @@ export type ProviderConnectionState<T> =
 	};
 
 export type ProviderConnectionEvent<T> =
-	| { readonly type: "connect"; readonly target: T }
+	| { readonly type: "connect"; readonly target: T; readonly onConnected: () => void }
 	| { readonly type: "connected"; readonly attempt: number }
 	| { readonly type: "dismiss" };
 
@@ -36,7 +41,7 @@ export function providerConnectionReducer<T>(
 	switch (event.type) {
 		case "connect":
 			// One connection at a time: a new provider takes over the timer.
-			return { phase: "connecting", target: event.target, attempt: state.attempt + 1, shown: true };
+			return { phase: "connecting", target: event.target, onConnected: event.onConnected, attempt: state.attempt + 1, shown: true };
 		case "connected":
 			if (state.phase !== "connecting" || state.attempt !== event.attempt) {
 				return state;
