@@ -79,6 +79,15 @@ export function assertNavigationOk(status, url) {
 	}
 }
 
+// A script or stylesheet that failed, answered an error or could not be read makes the sample
+// invalid: an error body would be counted, and a failed chunk stops later imports, so the total
+// would be too small.
+export function assertAssetsLoaded(failures, url) {
+	if (failures.length > 0) {
+		throw new Error(`${url}: ${failures.length} script or stylesheet request(s) failed; refusing to record the sample: ${failures.join(", ")}`);
+	}
+}
+
 export function classifyAsset(url, origin) {
 	if (!url.startsWith(origin)) return null;
 	const { pathname } = new URL(url);
@@ -151,21 +160,34 @@ async function measureOnce(browser, origin, routePath) {
 		ids.set(request, (nextId += 1));
 		tracker.started(ids.get(request), request.url().replace(origin, ""));
 	});
-	page.on("requestfailed", (request) => tracker.finished(ids.get(request)));
+	const assetFailures = [];
+	page.on("requestfailed", (request) => {
+		tracker.finished(ids.get(request));
+		if (classifyAsset(request.url(), origin) && request.frame() === page.mainFrame()) {
+			assetFailures.push(`${request.url().replace(origin, "")} (${request.failure()?.errorText ?? "failed"})`);
+		}
+	});
 	page.on("requestfinished", (request) => tracker.finished(ids.get(request)));
 	page.on("response", (response) => {
 		const kind = classifyAsset(response.url(), origin);
 		if (!kind || seen.has(response.url()) || response.frame() !== page.mainFrame()) return;
 		seen.add(response.url());
+		if (response.status() >= 400) {
+			assetFailures.push(`${response.url().replace(origin, "")} (HTTP ${response.status()})`);
+			return;
+		}
 		pending.push(response.body().then((body) => {
 			if (kind === "js") { jsBytes += body.length; scripts += 1; } else { cssBytes += body.length; stylesheets += 1; }
-		}, () => {}));
+		}, (error) => {
+			assetFailures.push(`${response.url().replace(origin, "")} (body unreadable: ${error.message.split("\n")[0]})`);
+		}));
 	});
 	const response = await page.goto(`${origin}${routePath}`, { timeout: NAVIGATION_TIMEOUT_MS, waitUntil: "load" });
 	assertNavigationOk(response?.status(), `${origin}${routePath}`);
 	await waitForAssetQuiet({ capMs: SETTLE_CAP_MS, quietMs: QUIET_MS, tracker });
 	await Promise.all(pending);
 	await context.close();
+	assertAssetsLoaded(assetFailures, `${origin}${routePath}`);
 	return { blockedFrames, cssBytes, jsBytes, scripts, stylesheets };
 }
 

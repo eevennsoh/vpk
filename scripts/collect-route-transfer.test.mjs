@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { TRANSFER_ROUTES, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
+import { TRANSFER_ROUTES, assertAssetsLoaded, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
 
 test("parseArgs requires a base URL and defaults to merging into the perf baseline", () => {
 	assert.deepEqual(parseArgs(["--base-url", "http://127.0.0.1:3100"]), { baseUrl: "http://127.0.0.1:3100", input: "output/perf-baseline.json", output: "output/perf-baseline.json", runs: 3 });
@@ -77,4 +77,12 @@ test("requests that are not tracked never hold the measurement open", async () =
 	tracker.finished(undefined);
 	await waitForAssetQuiet({ capMs: 60_000, now: clock.now, quietMs: 2000, sleep: clock.sleep, tracker });
 	assert.equal(clock.now(), 2000);
+});
+
+test("a failed, error or unreadable script or stylesheet invalidates the sample", () => {
+	assert.doesNotThrow(() => assertAssetsLoaded([], "http://x/"));
+	assert.throws(
+		() => assertAssetsLoaded(["/_next/static/chunks/a.js (HTTP 404)", "/_next/static/css/b.css (net::ERR_FAILED)"], "http://x/"),
+		/2 script or stylesheet request\(s\) failed; refusing to record the sample: \/_next\/static\/chunks\/a\.js \(HTTP 404\)/u,
+	);
 });
