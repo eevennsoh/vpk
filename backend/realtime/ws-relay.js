@@ -3,6 +3,7 @@
 const WebSocket = require("ws");
 
 const { RealtimeSession } = require("../lib/openai-realtime");
+const { isStorageId } = require("../lib/input-schemas");
 const { getNonEmptyString } = require("../lib/shared-utils");
 
 function getRuntimeSocketTokenFromUpgrade(requestUrl, paramName) {
@@ -46,6 +47,33 @@ function verifyRuntimeSocketUpgrade(requestUrl, request, {
 		statusCode: runtimeAdminToken ? 403 : 503,
 		message: runtimeAdminToken ? "Forbidden" : "Service Unavailable",
 	};
+}
+
+const BROWSER_PREVIEW_PATH = /^\/api\/browser-workspaces\/(?<workspaceId>[^/]+)\/live$/u;
+
+/**
+ * The upgrade's URL and, for a browser preview, its workspace id. Never throws.
+ * @param {string | undefined} rawUrl
+ * @returns {{ ok: true, requestUrl: URL, workspaceId: string | null } | { ok: false }}
+ */
+function parseUpgradeTarget(rawUrl) {
+	let requestUrl;
+	try {
+		requestUrl = new URL(rawUrl || "/", "http://127.0.0.1");
+	} catch {
+		return { ok: false };
+	}
+	const encodedWorkspaceId = requestUrl.pathname.match(BROWSER_PREVIEW_PATH)?.groups?.workspaceId;
+	if (!encodedWorkspaceId) {
+		return { ok: true, requestUrl, workspaceId: null };
+	}
+	let workspaceId;
+	try {
+		workspaceId = decodeURIComponent(encodedWorkspaceId);
+	} catch {
+		return { ok: false };
+	}
+	return isStorageId(workspaceId) ? { ok: true, requestUrl, workspaceId } : { ok: false };
 }
 
 function registerBackendWebSocketRelays(server, {
@@ -104,15 +132,16 @@ function registerBackendWebSocketRelays(server, {
 	};
 
 	server.on("upgrade", (request, socket, head) => {
-		const requestUrl = new URL(
-			request.url || "/",
-			`http://${request.headers.host || "127.0.0.1"}`,
-		);
-		const browserPreviewMatch = requestUrl.pathname.match(
-			/^\/api\/browser-workspaces\/(?<workspaceId>[^/]+)\/live$/u,
-		);
-		if (browserPreviewMatch?.groups?.workspaceId) {
-			const workspaceId = decodeURIComponent(browserPreviewMatch.groups.workspaceId);
+		// Anything thrown in this listener exits the backend, so every input is parsed
+		// without throwing: the path and query against a fixed base (the Host header is
+		// not needed and may not be a valid host), and the workspace id as a storage id.
+		const target = parseUpgradeTarget(request.url);
+		if (!target.ok) {
+			rejectUpgrade(socket, 400, "Bad Request");
+			return;
+		}
+		const { requestUrl, workspaceId } = target;
+		if (workspaceId !== null) {
 			const verification = verifyUpgrade(requestUrl, request, {
 				scope: `browser-preview:${workspaceId}`,
 				paramName: "previewToken",
@@ -238,6 +267,7 @@ function registerBackendWebSocketRelays(server, {
 }
 
 module.exports = {
+	parseUpgradeTarget,
 	getRuntimeSocketTokenFromUpgrade,
 	registerBackendWebSocketRelays,
 	rejectUpgrade,

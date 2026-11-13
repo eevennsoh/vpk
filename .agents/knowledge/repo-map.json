@@ -80,73 +80,73 @@
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces",
-						"source": "backend/routes/browser-workspaces.js:131",
+						"source": "backend/routes/browser-workspaces.js:138",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces",
-						"source": "backend/routes/browser-workspaces.js:147",
+						"source": "backend/routes/browser-workspaces.js:154",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId",
-						"source": "backend/routes/browser-workspaces.js:187",
+						"source": "backend/routes/browser-workspaces.js:198",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId",
-						"source": "backend/routes/browser-workspaces.js:165",
+						"source": "backend/routes/browser-workspaces.js:176",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId/:action",
-						"source": "backend/routes/browser-workspaces.js:396",
+						"source": "backend/routes/browser-workspaces.js:411",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/:action",
-						"source": "backend/routes/browser-workspaces.js:484",
+						"source": "backend/routes/browser-workspaces.js:499",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/preview-session",
-						"source": "backend/routes/browser-workspaces.js:321",
+						"source": "backend/routes/browser-workspaces.js:336",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId/preview-session/:sessionId",
-						"source": "backend/routes/browser-workspaces.js:360",
+						"source": "backend/routes/browser-workspaces.js:375",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId/tabs",
-						"source": "backend/routes/browser-workspaces.js:209",
+						"source": "backend/routes/browser-workspaces.js:220",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/tabs",
-						"source": "backend/routes/browser-workspaces.js:231",
+						"source": "backend/routes/browser-workspaces.js:242",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex",
-						"source": "backend/routes/browser-workspaces.js:289",
+						"source": "backend/routes/browser-workspaces.js:304",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex/activate",
-						"source": "backend/routes/browser-workspaces.js:257",
+						"source": "backend/routes/browser-workspaces.js:272",
 						"runtimeAdmin": true
 					}
 				]
@@ -204,115 +204,115 @@
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview",
-						"source": "backend/routes/chromium-preview.js:57",
+						"source": "backend/routes/chromium-preview.js:59",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview",
-						"source": "backend/routes/chromium-preview.js:83",
+						"source": "backend/routes/chromium-preview.js:85",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/back",
-						"source": "backend/routes/chromium-preview.js:116",
+						"source": "backend/routes/chromium-preview.js:122",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/click",
-						"source": "backend/routes/chromium-preview.js:152",
+						"source": "backend/routes/chromium-preview.js:158",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/click-ref",
-						"source": "backend/routes/chromium-preview.js:164",
+						"source": "backend/routes/chromium-preview.js:170",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/fill-ref",
-						"source": "backend/routes/chromium-preview.js:202",
+						"source": "backend/routes/chromium-preview.js:208",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/forward",
-						"source": "backend/routes/chromium-preview.js:128",
+						"source": "backend/routes/chromium-preview.js:134",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/hover-ref",
-						"source": "backend/routes/chromium-preview.js:183",
+						"source": "backend/routes/chromium-preview.js:189",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/press",
-						"source": "backend/routes/chromium-preview.js:317",
+						"source": "backend/routes/chromium-preview.js:323",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/reload",
-						"source": "backend/routes/chromium-preview.js:140",
+						"source": "backend/routes/chromium-preview.js:146",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview/screenshot",
-						"source": "backend/routes/chromium-preview.js:368",
+						"source": "backend/routes/chromium-preview.js:374",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/scroll",
-						"source": "backend/routes/chromium-preview.js:280",
+						"source": "backend/routes/chromium-preview.js:286",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/select-ref",
-						"source": "backend/routes/chromium-preview.js:252",
+						"source": "backend/routes/chromium-preview.js:258",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview/snapshot",
-						"source": "backend/routes/chromium-preview.js:355",
+						"source": "backend/routes/chromium-preview.js:361",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/chromium-preview/stream",
-						"source": "backend/routes/chromium-preview.js:69",
+						"source": "backend/routes/chromium-preview.js:71",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/type",
-						"source": "backend/routes/chromium-preview.js:336",
+						"source": "backend/routes/chromium-preview.js:342",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/type-ref",
-						"source": "backend/routes/chromium-preview.js:227",
+						"source": "backend/routes/chromium-preview.js:233",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/viewport",
-						"source": "backend/routes/chromium-preview.js:102",
+						"source": "backend/routes/chromium-preview.js:108",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/chromium-preview/wheel",
-						"source": "backend/routes/chromium-preview.js:302",
+						"source": "backend/routes/chromium-preview.js:308",
 						"runtimeAdmin": false
 					}
 				]
@@ -325,67 +325,67 @@
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/agent/apply",
-						"source": "backend/routes/demos.js:186",
+						"source": "backend/routes/demos.js:205",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/events/ticket-entered-column",
-						"source": "backend/routes/demos.js:200",
+						"source": "backend/routes/demos.js:219",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/reset",
-						"source": "backend/routes/demos.js:174",
+						"source": "backend/routes/demos.js:193",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "backend/routes/demos.js:146",
+						"source": "backend/routes/demos.js:165",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "backend/routes/demos.js:158",
+						"source": "backend/routes/demos.js:177",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/vpk-html-report",
-						"source": "backend/routes/demos.js:57",
+						"source": "backend/routes/demos.js:68",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:114",
+						"source": "backend/routes/demos.js:129",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:88",
+						"source": "backend/routes/demos.js:103",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:101",
+						"source": "backend/routes/demos.js:116",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/standup",
-						"source": "backend/routes/demos.js:127",
+						"source": "backend/routes/demos.js:142",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/ticket-classify",
-						"source": "backend/routes/demos.js:69",
+						"source": "backend/routes/demos.js:80",
 						"runtimeAdmin": false
 					}
 				]
@@ -449,19 +449,19 @@
 					{
 						"method": "GET",
 						"path": "/api/image-proxy",
-						"source": "backend/routes/media.js:184",
+						"source": "backend/routes/media.js:197",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/sound-generation",
-						"source": "backend/routes/media.js:91",
+						"source": "backend/routes/media.js:92",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/speech-transcription",
-						"source": "backend/routes/media.js:133",
+						"source": "backend/routes/media.js:134",
 						"runtimeAdmin": false
 					}
 				]
@@ -627,175 +627,175 @@
 					{
 						"method": "GET",
 						"path": "/api/checkpoints",
-						"source": "backend/routes/rovo-app.js:264",
+						"source": "backend/routes/rovo-app.js:301",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/checkpoints",
-						"source": "backend/routes/rovo-app.js:277",
+						"source": "backend/routes/rovo-app.js:314",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/checkpoints/:id",
-						"source": "backend/routes/rovo-app.js:310",
+						"source": "backend/routes/rovo-app.js:347",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/checkpoints/:id/rollback",
-						"source": "backend/routes/rovo-app.js:296",
+						"source": "backend/routes/rovo-app.js:333",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/background-streams",
-						"source": "backend/routes/rovo-app.js:472",
+						"source": "backend/routes/rovo-app.js:509",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/detach",
-						"source": "backend/routes/rovo-app.js:450",
+						"source": "backend/routes/rovo-app.js:487",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/documents",
-						"source": "backend/routes/rovo-app.js:765",
+						"source": "backend/routes/rovo-app.js:802",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/documents",
-						"source": "backend/routes/rovo-app.js:689",
+						"source": "backend/routes/rovo-app.js:726",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/documents",
-						"source": "backend/routes/rovo-app.js:712",
+						"source": "backend/routes/rovo-app.js:749",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/files/:fileId",
-						"source": "backend/routes/rovo-app.js:810",
+						"source": "backend/routes/rovo-app.js:847",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/files/upload",
-						"source": "backend/routes/rovo-app.js:781",
+						"source": "backend/routes/rovo-app.js:818",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/generated-media",
-						"source": "backend/routes/rovo-app.js:830",
+						"source": "backend/routes/rovo-app.js:867",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/messages",
-						"source": "backend/routes/rovo-app.js:169",
+						"source": "backend/routes/rovo-app.js:206",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/messages",
-						"source": "backend/routes/rovo-app.js:187",
+						"source": "backend/routes/rovo-app.js:224",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/cancel",
-						"source": "backend/routes/rovo-app.js:532",
+						"source": "backend/routes/rovo-app.js:569",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/detach",
-						"source": "backend/routes/rovo-app.js:508",
+						"source": "backend/routes/rovo-app.js:545",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/runs/:threadId/stream",
-						"source": "backend/routes/rovo-app.js:482",
+						"source": "backend/routes/rovo-app.js:519",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:365",
+						"source": "backend/routes/rovo-app.js:402",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:223",
+						"source": "backend/routes/rovo-app.js:260",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/threads",
-						"source": "backend/routes/rovo-app.js:325",
+						"source": "backend/routes/rovo-app.js:362",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:619",
+						"source": "backend/routes/rovo-app.js:656",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:391",
+						"source": "backend/routes/rovo-app.js:428",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:409",
+						"source": "backend/routes/rovo-app.js:446",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:604",
+						"source": "backend/routes/rovo-app.js:641",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:558",
+						"source": "backend/routes/rovo-app.js:595",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:577",
+						"source": "backend/routes/rovo-app.js:614",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/votes",
-						"source": "backend/routes/rovo-app.js:652",
+						"source": "backend/routes/rovo-app.js:689",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PATCH",
 						"path": "/api/rovo/votes",
-						"source": "backend/routes/rovo-app.js:668",
+						"source": "backend/routes/rovo-app.js:705",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/sessions/search",
-						"source": "backend/routes/rovo-app.js:243",
+						"source": "backend/routes/rovo-app.js:280",
 						"runtimeAdmin": false
 					}
 				]
@@ -808,7 +808,7 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/chat",
-						"source": "backend/routes/rovo-chat-proxy.js:21",
+						"source": "backend/routes/rovo-chat-proxy.js:24",
 						"runtimeAdmin": false
 					}
 				]

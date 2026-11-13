@@ -85,7 +85,7 @@ test("CORS origin gate allows same-origin and explicit allowlist only", () => {
 		results.push({ allowed, error: error?.message });
 	});
 	options.origin("https://blocked.test", (error, allowed) => {
-		results.push({ allowed, error: error?.message });
+		results.push({ allowed, error: error?.message, status: error?.status, code: error?.code });
 	});
 
 	assert.deepEqual(results, [
@@ -94,6 +94,8 @@ test("CORS origin gate allows same-origin and explicit allowlist only", () => {
 		{
 			allowed: undefined,
 			error: "CORS: origin https://blocked.test not allowed",
+			status: 403,
+			code: "ORIGIN_NOT_ALLOWED",
 		},
 	]);
 	assert.equal(isAllowedOrigin("", []), true);

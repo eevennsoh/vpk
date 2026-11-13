@@ -6,6 +6,12 @@ const express = require("express");
 
 const { getNonEmptyString } = require("../lib/shared-utils");
 const {
+	INVALID_INPUT_CODE,
+	isStorageId,
+	validateStorageIdParam,
+} = require("../lib/input-schemas");
+const { sendError } = require("../middleware/error-response");
+const {
 	inferGeneratedMediaContentType,
 	resolveGeneratedMediaAbsolutePath,
 } = require("../lib/generated-media");
@@ -69,6 +75,34 @@ const REQUIRED_CHECKPOINT_MANAGER_METHODS = [
 	"list",
 	"rollback",
 ];
+
+// A thread or upload id becomes one directory name under backend/data/rovo-app, so the
+// routes reject any other shape with a 400 before a manager joins it into a path.
+// Missing values pass: each route answers those with its own "is required".
+const ROVO_APP_ID_FIELDS = Object.freeze([
+	["body", "threadId"],
+	["query", "threadId"],
+]);
+
+function readIdCandidate(value) {
+	const first = Array.isArray(value) ? value[0] : value;
+	if (first === undefined || first === null) return null;
+	return typeof first === "string" ? first.trim() || null : first;
+}
+
+function rejectInvalidRovoAppIds(req, res, next) {
+	const checks = [...ROVO_APP_ID_FIELDS];
+	if (req.method === "POST" && req.path === "/threads") {
+		checks.push(["body", "id"]);
+	}
+	for (const [source, field] of checks) {
+		const candidate = readIdCandidate(req[source]?.[field]);
+		if (candidate !== null && !isStorageId(candidate)) {
+			return sendError(res, 400, INVALID_INPUT_CODE, `Invalid ${field}.`);
+		}
+	}
+	return next();
+}
 
 function createRovoAppThreadId() {
 	return `rovo-app-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -165,6 +199,9 @@ function createRovoAppRouter({
 	requireFunction("toThreadId", toThreadId);
 
 	const router = express.Router();
+	router.param("threadId", validateStorageIdParam("threadId"));
+	router.param("fileId", validateStorageIdParam("fileId"));
+	router.use("/rovo", rejectInvalidRovoAppIds);
 
 	router.get("/rovo/messages", async (req, res) => {
 		try {

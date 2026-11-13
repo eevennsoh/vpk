@@ -44,7 +44,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`session row backgrounds follow rapid hover without fading (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
-		await page.getByRole("button", { name: "Expand Unlink sessions column", exact: true }).click();
+		// 5c96e6a9f opens the Unlink sessions column expanded, so there is no Expand step.
 		const rows = page.locator("[data-agent-session-column] article");
 		await expect(rows.first()).toBeVisible();
 		await rows.first().hover();

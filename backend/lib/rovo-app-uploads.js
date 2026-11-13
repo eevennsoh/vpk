@@ -7,6 +7,7 @@ const {
 	getRovoAppThreadsRootDir,
 	normalizeThreadId,
 } = require("./rovo-app-storage-paths");
+const { isStorageId, requireStorageId } = require("./input-schemas");
 const { getNonEmptyString } = require("./shared-utils");
 
 const ORPHAN_UPLOAD_THREAD_ID = "_orphaned";
@@ -109,23 +110,24 @@ function createRovoAppUploadManager({ baseDir }) {
 	const resolveThreadId = (threadId) =>
 		normalizeThreadId(threadId) || ORPHAN_UPLOAD_THREAD_ID;
 
+	// The upload id is one directory name under the thread's uploads/.
 	const getMetadataPath = (threadId, uploadId) =>
 		path.join(
 			buildRovoAppThreadPaths(baseDir, resolveThreadId(threadId)).uploadsDir,
-			uploadId,
+			requireStorageId(uploadId, "uploadId"),
 			"metadata.json",
 		);
 
 	const getBlobPath = (threadId, uploadId) =>
 		path.join(
 			buildRovoAppThreadPaths(baseDir, resolveThreadId(threadId)).uploadsDir,
-			uploadId,
+			requireStorageId(uploadId, "uploadId"),
 			"blob",
 		);
 
 	const findUploadRecord = async (uploadId) => {
 		const normalizedUploadId = getNonEmptyString(uploadId);
-		if (!normalizedUploadId) {
+		if (!normalizedUploadId || !isStorageId(normalizedUploadId)) {
 			return null;
 		}
 
@@ -140,7 +142,7 @@ function createRovoAppUploadManager({ baseDir }) {
 		}
 
 		for (const entry of threadEntries) {
-			if (!entry.isDirectory()) {
+			if (!entry.isDirectory() || !isStorageId(entry.name)) {
 				continue;
 			}
 
@@ -180,7 +182,7 @@ function createRovoAppUploadManager({ baseDir }) {
 		}
 
 		for (const entry of threadEntries) {
-			if (!entry.isDirectory()) {
+			if (!entry.isDirectory() || !isStorageId(entry.name)) {
 				continue;
 			}
 
@@ -225,7 +227,7 @@ function createRovoAppUploadManager({ baseDir }) {
 				const metadataPath = path.join(legacyMetadataRootDir, entry.name);
 				const rawUpload = await fs.readFile(metadataPath, "utf8");
 				const upload = normalizeUpload(safeJsonParse(rawUpload));
-				if (!upload) {
+				if (!upload || !isStorageId(upload.id)) {
 					continue;
 				}
 
@@ -341,7 +343,7 @@ function createRovoAppUploadManager({ baseDir }) {
 
 		await Promise.all(
 			threadEntries
-				.filter((entry) => entry.isDirectory())
+				.filter((entry) => entry.isDirectory() && isStorageId(entry.name))
 				.map((entry) =>
 					fs.rm(buildRovoAppThreadPaths(baseDir, entry.name).uploadsDir, {
 						recursive: true,

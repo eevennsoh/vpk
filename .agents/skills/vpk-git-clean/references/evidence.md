@@ -26,9 +26,8 @@ trails the remote head, fetch the remote commit and use the refreshed remote ref
 as the landing baseline. Do not move a checked-out local branch ref or switch
 an active checkout merely to make the local default ref current.
 
-Use `git branch -vv` to spot missing upstreams, then use ancestry and PR
-evidence to decide landing. A missing upstream does not prove the local head
-landed. `git worktree list --porcelain` tells you which branches cannot be
+Use `git branch -vv` to spot missing upstreams, and `clean-candidates` to decide
+landing. A missing upstream does not prove the local head landed. `git worktree list --porcelain` tells you which branches cannot be
 deleted until their owning worktree is removed.
 
 ## Prove the working tree is empty
@@ -46,41 +45,38 @@ only committed work; it says nothing about these local files.
 
 ## Prove committed work landed
 
-Try ancestry first:
+Run the report and read the target's entry; do not re-derive landing
+by hand:
 
 ```bash
-git merge-base --is-ancestor <candidate-head> <default>
+pnpm run clean-candidates -- --fetch --json
 ```
 
-Exit zero proves the candidate commit is in the default branch's history. When
-ancestry fails because the PR was squash-merged or commits were recreated, use
-GitHub merged-PR evidence: match the candidate branch or head SHA to a closed
-PR, confirm its `state`, `mergedAt`, and base branch, and verify no open PR uses
-the same branch or head. Query the candidate branch directly rather than
-assuming the latest repository-wide PR page includes it:
+`ship-status` shows where one branch is on its way to main; it does not apply
+the cleanup blockers, so its `main-synced` is not "removable". Only
+`clean-candidates` decides cleanup.
 
-```bash
-gh pr list --state merged --head <candidate-branch> --limit 100 \
-  --json number,headRefName,headRefOid,baseRefName,state,mergedAt
-```
+"Proven landed" is defined once, in `scripts/lib/branch-landing.js`
+(`provenLanded`): the head is an ancestor of `origin/<default>` (`ancestry`); or
+a PR merged into `<default>` carried every local commit (`merged-pr`; squash and
+rebase merges); or merging the head into `origin/<default>` changes nothing
+(`content`: `git merge-tree --write-tree` gives `origin/<default>`'s own tree).
+The content proof is git's three-way text merge with attributes read from the
+empty tree (not the checkout or a commit), the global and system attribute
+files off, `merge.default=text` and no renormalization. What cannot be switched
+off for one command makes it unknown: an `$GIT_COMMON_DIR/info/attributes` that
+sets anything, or a `merge.<name>.driver` defined in any config scope (git looks
+drivers up by name before its built-in ones). Unlike
+`git cherry` it sees whitespace and merge commits, but it is a merge, not an
+identity check: when the target already holds the head's changes together with
+later edits near them, the merge is clean and the head counts as landed. Commits past a merged PR's head are not landed. A read that failed makes the answer `unknown`, which is
+never removable. `evidence.proof` names the proof and, for a merged PR,
+`evidence.landedBy` its number and `evidence.exactHead` whether the local tip
+equals the PR's recorded head.
 
-Require the candidate's current tip to equal that merged PR's `headRefOid`.
-A branch-name match alone does not cover commits added locally after the merge.
-
-For local `git branch -D`, require an exact match between the current local tip
-and a merged PR's `headRefOid`, plus no registered worktree or open PR owner.
-Record the PR and tip before deleting the ref. PR branch-name match alone and
-patch-equivalence are not enough for force deletion.
-
-When ancestry and PR metadata are unavailable or insufficient, use
-patch-equivalence only as a final fallback:
-
-```bash
-git cherry -v <default> <candidate-head>
-```
-
-Every candidate patch must be shown as equivalent on the default branch. Review
-the actual diff when the result is unclear. Do not create no-op merges or fake
+The report's `main-synced` status also requires the local `<default>` to hold
+the landing commit; `merged` means "sync main first". `exactHead: true` is
+still required to delete a `merged-pr` branch (below). Do not create no-op merges or fake
 ancestry to turn an uncertain target into an eligible one.
 
 ## Reconcile PR and remote branch state
@@ -103,14 +99,13 @@ For a merged PR whose source branch remains:
    git update-ref -d refs/remotes/origin/<branch>
    ```
 
-For an ancestor head, delete the local branch with `git branch -d` only when it
-is unused by every registered worktree. If it is still checked out, first
-remove its clean, landed, process-safe owning worktree with plain
-`git worktree remove`; then recheck branch ownership and delete the ref. For a
-non-ancestor head, use the exact merged-PR `-D` exception above or retain it.
-If `-d` refuses because the invoking checkout is behind the verified default,
-retry from a checkout at the default commit. A stale invoking HEAD is not a
-reason to force-delete an ancestor branch.
+Delete a local branch only when it is unused by every registered worktree, and
+only with the head the report saw as the expected value
+(`git update-ref -d refs/heads/<branch> <evidence.head>`), so a commit added
+since the report fails the delete instead of being lost. If it is still checked
+out, first remove its clean, landed, process-safe owning worktree with plain
+`git worktree remove`; then recheck branch ownership and delete the ref. A
+non-ancestor head needs the exact merged-PR proof above, or it stays.
 
 For an unmerged PR, do nothing from an ambiguous cleanup request. Confirm the
 user wants abandonment, then inspect unpushed commits, dependent PRs, active
@@ -162,10 +157,10 @@ path: <absolute worktree path>
 head: <branch-or-detached> <sha>
 clean: yes
 current/default: no/no
-landed proof: ancestry | merged PR #N | patch-equivalent
+landed proof: ancestry | merged PR #N | content
 open PR by branch/head: none
 process proof: cwd and port checks clear | exact-path dev PIDs stopped
-action: git worktree remove <path>, then git branch -d <branch>
+action: git worktree remove <path>, then git update-ref -d refs/heads/<branch> <sha>
 ```
 
 After removal, re-run the worktree inventory and dry-run prune. Report stale

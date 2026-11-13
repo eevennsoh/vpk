@@ -21,7 +21,6 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "../node_modules/@excalidraw/excalidraw/dist/prod/index.css";
 @source "../app/**/*.{ts,tsx}";
 @source "../components/**/*.{ts,tsx}";
 @source "../lib/**/*.{ts,tsx}";

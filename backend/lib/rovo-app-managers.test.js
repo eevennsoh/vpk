@@ -497,3 +497,45 @@ test("rovo app upload manager writes and reads data-url files", async () => {
 		),
 	);
 });
+
+test("rovo app managers never resolve a hostile thread or upload id outside their directories", async (t) => {
+	const root = await createTempBaseDir();
+	t.after(() => fs.rm(root, { recursive: true, force: true }));
+	const baseDir = path.join(root, "data");
+	// A file beside the data directory that `../` ids would reach.
+	const outside = path.join(root, "outside");
+	await fs.mkdir(outside, { recursive: true });
+	await fs.writeFile(path.join(outside, "keep.txt"), "keep");
+	const threads = createRovoAppThreadManager({ baseDir, logger: console });
+	const votes = createRovoAppVoteManager({ baseDir });
+	const documents = createRovoAppDocumentManager({ baseDir });
+	const uploads = createRovoAppUploadManager({ baseDir });
+	const isInvalidInput = (error) => error?.status === 400 && error?.code === "INVALID_INPUT";
+
+	for (const id of ["../../../outside", "../../..", "/tmp", "a/b", ".hidden"]) {
+		await assert.rejects(threads.deleteThread(id), isInvalidInput, `deleteThread ${id}`);
+		await assert.rejects(threads.createThread({ id, title: "x" }), isInvalidInput, `createThread ${id}`);
+		await assert.rejects(votes.setVote({ threadId: id, messageId: "m1", value: "up" }), isInvalidInput, `setVote ${id}`);
+		await assert.rejects(documents.deleteDocumentsByThread(id), isInvalidInput, `deleteDocumentsByThread ${id}`);
+		await assert.rejects(
+			uploads.createUploadFromBuffer({ threadId: id, filename: "a.txt", mediaType: "text/plain", buffer: Buffer.from("x") }),
+			isInvalidInput,
+			`createUpload ${id}`,
+		);
+		assert.equal(await uploads.getUpload(id), null, `getUpload ${id}`);
+	}
+	assert.equal(await fs.readFile(path.join(outside, "keep.txt"), "utf8"), "keep");
+});
+
+test("rovo app thread listing skips directory entries that are not thread ids", async (t) => {
+	const baseDir = await createTempBaseDir();
+	t.after(() => fs.rm(baseDir, { recursive: true, force: true }));
+	const threads = createRovoAppThreadManager({ baseDir, logger: console });
+	await threads.createThread({ id: "thread-1", title: "Kept" });
+	const threadsRoot = path.join(baseDir, "rovo-app", "threads");
+	await fs.writeFile(path.join(threadsRoot, ".DS_Store"), "");
+	await fs.mkdir(path.join(threadsRoot, ".tmp"), { recursive: true });
+	assert.deepEqual((await threads.listThreads()).map((thread) => thread.id), ["thread-1"]);
+	await threads.deleteAllThreads();
+	assert.deepEqual(await threads.listThreads(), []);
+});

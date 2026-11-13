@@ -4,6 +4,8 @@ const express = require("express");
 
 const { isBrowserWorkspaceLimitError } = require("../lib/browser-workspace-lifecycle");
 const { getNonEmptyString } = require("../lib/shared-utils");
+const { INVALID_INPUT_CODE, parseNavigationUrl } = require("../lib/input-schemas");
+const { sendError } = require("../middleware/error-response");
 
 const REQUIRED_MANAGER_METHODS = [
 	"activateWorkspaceTab",
@@ -54,14 +56,19 @@ function sendBrowserWorkspaceError(response, error, fallbackMessage, {
 			: fallbackMessage;
 	// Gone (missing, closing, closed, crashed) is 404, which the client answers by
 	// creating a new workspace; the live-workspace cap is 503.
-	const statusCode =
+	// A rejected input (an invalid navigation URL) is 400.
+	const isNotFound =
 		isBrowserWorkspaceNotFoundError(error) ||
 		(typeof message === "string" &&
-			message.startsWith("Browser workspace not found:"))
-			? 404
-			: isBrowserWorkspaceLimitError(error)
-				? 503
-				: 500;
+			message.startsWith("Browser workspace not found:"));
+	const statusCode =
+		error?.status === 400
+			? 400
+			: isNotFound
+				? 404
+				: isBrowserWorkspaceLimitError(error)
+					? 503
+					: 500;
 
 	return response.status(statusCode).json({
 		error: message,
@@ -147,6 +154,10 @@ function createBrowserWorkspacesRouter({
 	router.post("/", async (req, res) => {
 		try {
 			const defaultUrl = getString(req.body?.defaultUrl);
+			const navigation = defaultUrl ? parseNavigationUrl(defaultUrl) : null;
+			if (navigation && !navigation.ok) {
+				return sendError(res, 400, INVALID_INPUT_CODE, navigation.message);
+			}
 			const state = await browserWorkspaceManager.createWorkspace({
 				defaultUrl: defaultUrl || undefined,
 			});
@@ -238,6 +249,10 @@ function createBrowserWorkspacesRouter({
 			}
 
 			const url = getString(req.body?.url);
+			const navigation = url ? parseNavigationUrl(url) : null;
+			if (navigation && !navigation.ok) {
+				return sendError(res, 400, INVALID_INPUT_CODE, navigation.message);
+			}
 			const state = await browserWorkspaceManager.createWorkspaceTab(
 				workspaceId,
 				url || undefined,
@@ -504,6 +519,10 @@ function createBrowserWorkspacesRouter({
 						return res.status(400).json({
 							error: "A non-empty url field is required.",
 						});
+					}
+					const navigation = parseNavigationUrl(url);
+					if (!navigation.ok) {
+						return sendError(res, 400, INVALID_INPUT_CODE, navigation.message);
 					}
 
 					const state = await browserWorkspaceManager.navigateWorkspace(
