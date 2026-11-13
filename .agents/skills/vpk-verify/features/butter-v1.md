@@ -16,13 +16,13 @@ Project Butter v1 presents a Jira Design board with agent sessions and a list vi
 
 Preconditions:
 
-- `control-vpk doctor` reports `"ok": true` for this worktree.
+- `pnpm control-vpk doctor` reports `"ok": true` for this worktree.
 
-- **Open the board.** Run `control-vpk open-target /butter-v1`. Confirm headings `Project Butter v1` and `Jira Design`, the selected `Board` tab, and the `Unlink sessions` region.
-- **Switch to the list.** Run `control-vpk browser find role tab click --name List`, then `control-vpk browser snapshot -i --compact`. Confirm `List` is selected and the `Search list` textbox is present.
-- **Return to the board.** Run `control-vpk browser find role tab click --name Board`, then `control-vpk browser snapshot -i --compact`. Confirm `Board` is selected and the `Search board` textbox is present.
-- **Capture proof.** Run `control-vpk capture /butter-v1 --wait-text "Jira Design"` for the light-theme screenshot, accessibility snapshot, console, and accessibility results.
-- **Cleanup.** Run `control-vpk cleanup` after verification.
+- **Open the board.** Run `pnpm control-vpk open-target /butter-v1`. Confirm headings `Project Butter v1` and `Jira Design`, the selected `Board` tab, and the `Unlink sessions` region.
+- **Switch to the list.** Run `pnpm control-vpk browser find role tab click --name List`, then `pnpm control-vpk browser snapshot -i --compact`. Confirm `List` is selected and the `Search list` textbox is present.
+- **Return to the board.** Run `pnpm control-vpk browser find role tab click --name Board`, then `pnpm control-vpk browser snapshot -i --compact`. Confirm `Board` is selected and the `Search board` textbox is present.
+- **Capture proof.** Run `pnpm control-vpk capture /butter-v1 --wait-text "Jira Design"` for the light-theme screenshot, accessibility snapshot, console, and accessibility results.
+- **Cleanup.** Run `pnpm control-vpk cleanup` after verification.
 
 ## Gotchas
 

@@ -17,15 +17,15 @@ Open Studio lets a user reach the Studio agent-builder shell, see the home start
 
 Preconditions:
 
-- `control-vpk doctor` reports `"ok": true` for this worktree.
+- `pnpm control-vpk doctor` reports `"ok": true` for this worktree.
 - Do **not** require backend unless you intend to send a message (out of scope here).
 - Evidence directory `output/agent-browser/vpk-verify/studio-shell/` exists.
 
-- **Open Studio.** Open the product route. Run `control-vpk browser open "$ORIGIN/studio"`. The URL contains `/studio`.
-- **Composer.** The Message textbox is present. Run `control-vpk browser find role textbox text --name Message`. Overlay placeholder copy is `Describe the agent you want to build` (not a native `placeholder` attribute).
-- **Starters.** A control named `Browse all agents` is present. Run `control-vpk browser find role button text --name "Browse all agents"`. Default home starters are Planning tiles (for example `Use prompt starter: Decision Director`). `Use prompt starter: Customer Insights` appears only after the Insights category is selected or the home cycle reaches it — not because the viewport is wide.
+- **Open Studio.** Open the product route. Run `pnpm control-vpk browser open "$ORIGIN/studio"`. The URL contains `/studio`.
+- **Composer.** The Message textbox is present. Run `pnpm control-vpk browser find role textbox text --name Message`. Overlay placeholder copy is `Describe the agent you want to build` (not a native `placeholder` attribute).
+- **Starters.** A control named `Browse all agents` is present. Run `pnpm control-vpk browser find role button text --name "Browse all agents"`. Default home starters are Planning tiles (for example `Use prompt starter: Decision Director`). `Use prompt starter: Customer Insights` appears only after the Insights category is selected or the home cycle reaches it — not because the viewport is wide.
 - **Do not send.** Do not press `Submit` / Enter in the composer. A send is not this feature.
-- **Proof.** Run `control-vpk browser snapshot -i --compact --depth 8 > output/agent-browser/vpk-verify/studio-shell/home.aria.txt` and `control-vpk browser screenshot output/agent-browser/vpk-verify/studio-shell/home.png`. Artifacts show `/studio`, the Message field, and `Browse all agents`.
+- **Proof.** Run `pnpm control-vpk browser snapshot -i --compact --depth 8 > output/agent-browser/vpk-verify/studio-shell/home.aria.txt` and `pnpm control-vpk browser screenshot output/agent-browser/vpk-verify/studio-shell/home.png`. Artifacts show `/studio`, the Message field, and `Browse all agents`.
 
 ## Gotchas
 
