@@ -48,6 +48,7 @@ function formatRaisedBudget({ baseLimit, limit, metricName, routeId }) {
 function parseArgs(argv) {
 	const options = {
 		inputPath: DEFAULT_INPUT_PATH,
+		requireFetched: false,
 		warnOnly: false,
 	};
 
@@ -74,6 +75,10 @@ function parseArgs(argv) {
 			options.warnOnly = true;
 			continue;
 		}
+		if (arg === "--require-fetched") {
+			options.requireFetched = true;
+			continue;
+		}
 		throw new Error(`Unknown argument: ${arg}`);
 	}
 
@@ -87,7 +92,18 @@ function readJsonFile(inputPath, cwd = process.cwd()) {
 	return JSON.parse(readFileSync(absolutePath, "utf8"));
 }
 
+// Bytes the browser fetched on first load (scripts/collect-route-transfer.mjs). Only the Actions
+// job collects them, so a local baseline without them skips these budgets unless
+// --require-fetched is passed; the job passes it, so CI cannot skip them silently.
+const FETCHED_METRICS = new Set(["fetchedCssBytes", "fetchedJsBytes"]);
+
 function getMetricValue(route, metricName) {
+	if (metricName === "fetchedJsBytes") {
+		return route.fetchedJs?.bytes;
+	}
+	if (metricName === "fetchedCssBytes") {
+		return route.fetchedCss?.bytes;
+	}
 	if (metricName === "assetCount") {
 		return route.assetCount;
 	}
@@ -109,6 +125,8 @@ function formatMetricName(metricName) {
 	if (metricName === "cssBytes") return "CSS bytes";
 	if (metricName === "firstLoadJsBytes") return "first-load JS bytes";
 	if (metricName === "routeJsBytes") return "route JS bytes";
+	if (metricName === "fetchedJsBytes") return "fetched JS bytes";
+	if (metricName === "fetchedCssBytes") return "fetched CSS bytes";
 	return metricName;
 }
 
@@ -166,6 +184,7 @@ function evaluatePerfBaselineBudget(
 	baseline,
 	routeBudgets = DEFAULT_ROUTE_BUDGETS,
 	buildDurationBudget = DEFAULT_BUILD_DURATION_BUDGET,
+	{ requireFetched = false } = {},
 ) {
 	const routesById = new Map((baseline.routes ?? []).map((route) => [route.id, route]));
 	const failures = [];
@@ -190,6 +209,9 @@ function evaluatePerfBaselineBudget(
 
 		for (const [metricName, limit] of Object.entries(budget)) {
 			const value = getMetricValue(route, metricName);
+			if (typeof value !== "number" && FETCHED_METRICS.has(metricName) && !requireFetched) {
+				continue;
+			}
 			if (typeof value !== "number") {
 				failures.push({
 					metricName,
@@ -224,6 +246,25 @@ function evaluatePerfBaselineBudget(
 		...evaluateRouteLoadTimingFailures(baseline),
 		...evaluateBuildDurationBudget(baseline, buildDurationBudget).failures,
 	];
+}
+
+// One row per route and budgeted metric: measured value, budget and headroom, printed on every
+// run so the numbers are readable in the job log.
+function formatBudgetTable(baseline, routeBudgets = DEFAULT_ROUTE_BUDGETS) {
+	const routesById = new Map((baseline.routes ?? []).map((route) => [route.id, route]));
+	const rows = [["route", "metric", "measured", "budget", "headroom"]];
+	for (const [routeId, budget] of Object.entries(routeBudgets)) {
+		for (const [metricName, limit] of Object.entries(budget)) {
+			const route = routesById.get(routeId);
+			const value = route ? getMetricValue(route, metricName) : undefined;
+			const headroom = typeof value === "number"
+				? `${limit - value} (${(((limit - value) / limit) * 100).toFixed(1)}%)`
+				: "not measured";
+			rows.push([routeId, metricName, typeof value === "number" ? String(value) : "-", String(limit), headroom]);
+		}
+	}
+	const widths = rows[0].map((_, column) => Math.max(...rows.map((row) => row[column].length)));
+	return rows.map((row) => row.map((cell, column) => (column >= 2 ? cell.padStart(widths[column]) : cell.padEnd(widths[column]))).join("  ")).join("\n");
 }
 
 function evaluateRouteLoadTimingFailures(baseline) {
@@ -306,9 +347,11 @@ function formatFailure(failure) {
 
 function printHelp() {
 	console.log([
-		"Usage: node scripts/verify-perf-baseline-budget.js [--input output/perf-baseline.json] [--warn-only]",
+		"Usage: node scripts/verify-perf-baseline-budget.js [--input output/perf-baseline.json] [--warn-only] [--require-fetched]",
 		"",
-		"Verifies measured perf baseline routes stay within current route budgets.",
+		"Verifies measured perf baseline routes stay within current route budgets and prints the",
+		"measured value, budget and headroom for each. --require-fetched fails when the browser-fetched",
+		"metrics (scripts/collect-route-transfer.mjs) are missing instead of skipping them.",
 	].join("\n"));
 }
 
@@ -320,7 +363,8 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
 	}
 
 	const baseline = readJsonFile(options.inputPath, cwd);
-	const failures = evaluatePerfBaselineBudget(baseline);
+	console.log(formatBudgetTable(baseline));
+	const failures = evaluatePerfBaselineBudget(baseline, DEFAULT_ROUTE_BUDGETS, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: options.requireFetched });
 	const warnings = evaluatePerfBaselineWarnings(baseline);
 	const findings = options.warnOnly ? [...failures, ...warnings] : failures;
 	if (findings.length > 0) {
@@ -362,6 +406,7 @@ module.exports = {
 	ROUTE_BUDGET_TARGETS,
 	ROUTE_BUDGETS_PATH,
 	findRaisedBudgets,
+	formatBudgetTable,
 	formatRaisedBudget,
 	evaluateBuildDurationBudget,
 	evaluatePerfBaselineBudget,
