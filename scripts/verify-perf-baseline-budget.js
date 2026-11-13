@@ -17,10 +17,10 @@ const DEFAULT_BUILD_DURATION_BUDGET = {
 const FIXED_ROUTE_IDS = [...FIXED_BASELINE_ROUTES.map((route) => route.id), "heavy-visual"];
 
 // Route budgets live in perf-route-budgets.json, a shrink-only baseline: a unit test fails when a
-// value rises above the merge base. They were re-baselined on 2026-11-13 to about 3% over a
+// value rises above the merge base. They were last lowered on 2026-11-14 (C-8e) to about 3% over a
 // production build of main, as a ceiling that stops further growth. The file's "targets" are the
-// earlier limits the bundle should return to: CSS 700,000 bytes per route (set in b565d0f57,
-// July 2026) and Rovo first-load JS 7,100,000 bytes.
+// limits the bundle should return to: CSS 700,000 bytes per route (set in b565d0f57, July 2026).
+// The Rovo first-load target of 7,100,000 bytes was met by C-8d and removed.
 const ROUTE_BUDGETS_PATH = path.join(__dirname, "perf-route-budgets.json");
 const { routes: DEFAULT_ROUTE_BUDGETS, targets: ROUTE_BUDGET_TARGETS } = JSON.parse(readFileSync(ROUTE_BUDGETS_PATH, "utf8"));
 
@@ -48,6 +48,7 @@ function formatRaisedBudget({ baseLimit, limit, metricName, routeId }) {
 function parseArgs(argv) {
 	const options = {
 		inputPath: DEFAULT_INPUT_PATH,
+		requireFetched: false,
 		warnOnly: false,
 	};
 
@@ -74,6 +75,10 @@ function parseArgs(argv) {
 			options.warnOnly = true;
 			continue;
 		}
+		if (arg === "--require-fetched") {
+			options.requireFetched = true;
+			continue;
+		}
 		throw new Error(`Unknown argument: ${arg}`);
 	}
 
@@ -87,7 +92,18 @@ function readJsonFile(inputPath, cwd = process.cwd()) {
 	return JSON.parse(readFileSync(absolutePath, "utf8"));
 }
 
+// Bytes the browser fetched on first load (scripts/collect-route-transfer.mjs). Only the Actions
+// job collects them, so a local baseline without them skips these budgets unless
+// --require-fetched is passed; the job passes it, so CI cannot skip them silently.
+const FETCHED_METRICS = new Set(["fetchedCssBytes", "fetchedJsBytes"]);
+
 function getMetricValue(route, metricName) {
+	if (metricName === "fetchedJsBytes") {
+		return route.fetchedJs?.bytes;
+	}
+	if (metricName === "fetchedCssBytes") {
+		return route.fetchedCss?.bytes;
+	}
 	if (metricName === "assetCount") {
 		return route.assetCount;
 	}
@@ -109,6 +125,8 @@ function formatMetricName(metricName) {
 	if (metricName === "cssBytes") return "CSS bytes";
 	if (metricName === "firstLoadJsBytes") return "first-load JS bytes";
 	if (metricName === "routeJsBytes") return "route JS bytes";
+	if (metricName === "fetchedJsBytes") return "fetched JS bytes";
+	if (metricName === "fetchedCssBytes") return "fetched CSS bytes";
 	return metricName;
 }
 
@@ -166,6 +184,7 @@ function evaluatePerfBaselineBudget(
 	baseline,
 	routeBudgets = DEFAULT_ROUTE_BUDGETS,
 	buildDurationBudget = DEFAULT_BUILD_DURATION_BUDGET,
+	{ requireFetched = false } = {},
 ) {
 	const routesById = new Map((baseline.routes ?? []).map((route) => [route.id, route]));
 	const failures = [];
@@ -190,6 +209,9 @@ function evaluatePerfBaselineBudget(
 
 		for (const [metricName, limit] of Object.entries(budget)) {
 			const value = getMetricValue(route, metricName);
+			if (typeof value !== "number" && FETCHED_METRICS.has(metricName) && !requireFetched) {
+				continue;
+			}
 			if (typeof value !== "number") {
 				failures.push({
 					metricName,
@@ -224,6 +246,39 @@ function evaluatePerfBaselineBudget(
 		...evaluateRouteLoadTimingFailures(baseline),
 		...evaluateBuildDurationBudget(baseline, buildDurationBudget).failures,
 	];
+}
+
+// One row per route and budgeted metric: measured value, budget and headroom, printed on every
+// run so the numbers are readable in the job log.
+function formatBudgetTable(baseline, routeBudgets = DEFAULT_ROUTE_BUDGETS) {
+	const routesById = new Map((baseline.routes ?? []).map((route) => [route.id, route]));
+	const rows = [["route", "metric", "measured", "budget", "headroom"]];
+	for (const [routeId, budget] of Object.entries(routeBudgets)) {
+		for (const [metricName, limit] of Object.entries(budget)) {
+			const route = routesById.get(routeId);
+			const value = route ? getMetricValue(route, metricName) : undefined;
+			const headroom = typeof value === "number"
+				? `${limit - value} (${(((limit - value) / limit) * 100).toFixed(1)}%)`
+				: "not measured";
+			rows.push([routeId, metricName, typeof value === "number" ? String(value) : "-", String(limit), headroom]);
+		}
+	}
+	const widths = rows[0].map((_, column) => Math.max(...rows.map((row) => row[column].length)));
+	return rows.map((row) => row.map((cell, column) => (column >= 2 ? cell.padStart(widths[column]) : cell.padEnd(widths[column]))).join("  ")).join("\n");
+}
+
+// For a route over a fetched budget, the scripts and stylesheets its first run fetched, so the
+// job log shows what to diff against a local run.
+function formatFetchedAssetsForFailures(baseline, failures) {
+	const routeIds = [...new Set(failures.filter((failure) => failure.type === "over-budget" && FETCHED_METRICS.has(failure.metricName)).map((failure) => failure.routeId))];
+	const sections = [];
+	for (const routeId of routeIds) {
+		const route = (baseline.routes ?? []).find((candidate) => candidate.id === routeId);
+		const assets = route?.fetchedRuns?.[0]?.assets;
+		if (!assets) continue;
+		sections.push(`Fetched by ${routeId} (${route.fetchedPath}), first run:\n${assets.map((asset) => `  ${String(asset.bytes).padStart(9)}  ${asset.path}`).join("\n")}`);
+	}
+	return sections.join("\n");
 }
 
 function evaluateRouteLoadTimingFailures(baseline) {
@@ -306,9 +361,11 @@ function formatFailure(failure) {
 
 function printHelp() {
 	console.log([
-		"Usage: node scripts/verify-perf-baseline-budget.js [--input output/perf-baseline.json] [--warn-only]",
+		"Usage: node scripts/verify-perf-baseline-budget.js [--input output/perf-baseline.json] [--warn-only] [--require-fetched]",
 		"",
-		"Verifies measured perf baseline routes stay within current route budgets.",
+		"Verifies measured perf baseline routes stay within current route budgets and prints the",
+		"measured value, budget and headroom for each. --require-fetched fails when the browser-fetched",
+		"metrics (scripts/collect-route-transfer.mjs) are missing instead of skipping them.",
 	].join("\n"));
 }
 
@@ -320,7 +377,8 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
 	}
 
 	const baseline = readJsonFile(options.inputPath, cwd);
-	const failures = evaluatePerfBaselineBudget(baseline);
+	console.log(formatBudgetTable(baseline));
+	const failures = evaluatePerfBaselineBudget(baseline, DEFAULT_ROUTE_BUDGETS, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: options.requireFetched });
 	const warnings = evaluatePerfBaselineWarnings(baseline);
 	const findings = options.warnOnly ? [...failures, ...warnings] : failures;
 	if (findings.length > 0) {
@@ -328,6 +386,10 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
 		log(options.warnOnly ? "Performance baseline budget warnings:" : "Performance baseline budget failed:");
 		for (const failure of findings) {
 			log(`- ${formatFailure(failure)}`);
+		}
+		const fetchedListing = formatFetchedAssetsForFailures(baseline, findings);
+		if (fetchedListing) {
+			log(fetchedListing);
 		}
 		if (options.warnOnly) {
 			return;
@@ -362,6 +424,8 @@ module.exports = {
 	ROUTE_BUDGET_TARGETS,
 	ROUTE_BUDGETS_PATH,
 	findRaisedBudgets,
+	formatBudgetTable,
+	formatFetchedAssetsForFailures,
 	formatRaisedBudget,
 	evaluateBuildDurationBudget,
 	evaluatePerfBaselineBudget,
