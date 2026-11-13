@@ -229,6 +229,8 @@ test("the perf job checks route byte budgets on pushes to main, never on PRs", (
 	assert.match(jobs.perf, /if: \$\{\{ github.event_name != 'pull_request' \}\}/u);
 	assert.doesNotMatch(jobs.aggregate, /needs: \[[^\]]*perf/u, "PRs must not wait for the perf job");
 	assert.match(jobs.perf, /set -o pipefail\n\s+time pnpm run build 2>&1 \| tee output\/perf-build\.log/u);
-	assert.match(jobs.perf, /node scripts\/collect-perf-baseline\.js --input output\/perf-build\.log\n\s+node scripts\/verify-perf-baseline-budget\.js/u);
+	assert.match(jobs.perf, /node scripts\/collect-perf-baseline\.js --input output\/perf-build\.log\n\s+node scripts\/collect-route-transfer\.mjs --base-url http:\/\/127\.0\.0\.1:3100 --runs 3\n\s+node scripts\/verify-perf-baseline-budget\.js --require-fetched/u);
+	assert.match(jobs.perf, /nohup pnpm exec next start -p 3100 -H 127\.0\.0\.1/u, "the fetched metric loads the build that was just measured");
+	assert.match(jobs.perf, /pnpm exec playwright install --with-deps chromium/u);
 	assert.doesNotMatch(jobs.perf, /--warn-only/u);
 });
