@@ -1,6 +1,7 @@
 import { existsSync, linkSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
+import { STATIC_EXPORT_WRAPPER_ENV } from "./lib/static-export-guard.js";
 
 const JOURNAL_SCHEMA = 1;
 const rootDir = process.cwd();
@@ -184,6 +185,7 @@ async function runExport() {
 				env: {
 					...process.env,
 					NEXT_OUTPUT: "export",
+					[STATIC_EXPORT_WRAPPER_ENV]: "1",
 				},
 				stdio: "inherit",
 			});

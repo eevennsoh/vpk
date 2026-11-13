@@ -141,6 +141,38 @@ export const tokenClasses = "transition-opacity duration-normal ease-out-practic
 	assert.match(findings[3].message, /duration token utility/u);
 });
 
+test("token-priority common mistakes are lint errors under their own rule ids", async () => {
+	const tokenRules = ["vpk-tokens/no-raw-white-black", "vpk-tokens/no-tailwind-heading-type", "vpk-tokens/no-arbitrary-tile-radius"];
+	const source = `
+import { cn } from "@/lib/utils";
+export const surface = <div className="rounded-lg bg-white p-4" />;
+export const scrim = <div className={cn("absolute inset-0", "dark:bg-black")} />;
+export const heading = <h2 className="text-2xl font-semibold text-text">Title</h2>;
+export const tile = <span className={\`size-8 rounded-[25%] \${"bg-blue-400"}\`} />;
+export const glass = <div className="bg-white/10 bg-surface bg-bg-neutral-bold text-white" />;
+export const body = <p className="text-sm font-semibold text-text-subtle">Label</p>;
+export const tileToken = <span className="rounded-tile text-2xl" />;
+`;
+	const findings = await ruleFindings(source, "components/projects/demo/lint-contract-fixture.tsx", tokenRules);
+	assert.deepEqual(
+		findings.map(({ line, ruleId, severity }) => [line, ruleId, severity]),
+		[
+			[3, "vpk-tokens/no-raw-white-black", 2],
+			[4, "vpk-tokens/no-raw-white-black", 2],
+			[5, "vpk-tokens/no-tailwind-heading-type", 2],
+			[6, "vpk-tokens/no-arbitrary-tile-radius", 2],
+		],
+	);
+	assert.match(findings[0].message, /bg-surface or bg-bg-neutral-bold/u);
+	assert.match(findings[2].message, /font\.heading/u);
+	assert.match(findings[3].message, /rounded-tile/u);
+	// Same scope as the other app rules: app, components, hooks and lib, not their node:test suites.
+	for (const filePath of ["app/demo/lint-contract-fixture.tsx", "hooks/lint-contract-fixture.ts", "lib/lint-contract-fixture.tsx"]) {
+		assert.equal((await ruleFindings('export const c = "bg-black";\n', filePath, tokenRules)).length, 1, filePath);
+	}
+	assert.deepEqual(await ruleFindings('export const c = "bg-black";\n', "components/demo/x.test.ts", tokenRules), []);
+});
+
 test("date formatting names a locale so SSR and hydration agree", async () => {
 	const findings = await syntaxFindings(`
 export const risky = new Intl.DateTimeFormat().format(0) + new Date(0).toLocaleDateString();
