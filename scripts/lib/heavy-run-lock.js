@@ -22,6 +22,9 @@ const LOCK_FILE_NAME = "vpk-heavy-run.lock";
 const HOLDER_ENV = "VPK_HEAVY_RUN_LOCK_HOLDER";
 const LOCK_PATH_ENV = "VPK_HEAVY_RUN_LOCK_PATH";
 const POLL_MS = 250;
+// A heavy run takes minutes. A lock this old belongs to a holder whose pid has been reused by an
+// unrelated process, so it is stale even though that pid is alive.
+const STALE_AFTER_MS = 2 * 60 * 60 * 1000;
 
 function defaultLockPath({ cwd = process.cwd(), env = process.env } = {}) {
 	if (env[LOCK_PATH_ENV]) return env[LOCK_PATH_ENV];
@@ -95,7 +98,9 @@ async function acquireHeavyRunLock({
 	label,
 	lockPath = defaultLockPath({ env }),
 	log = (line) => process.stderr.write(`${line}\n`),
+	now = () => Date.now(),
 	pollMs = POLL_MS,
+	staleAfterMs = STALE_AFTER_MS,
 } = {}) {
 	if (env.CI || !lockPath) return NO_LOCK;
 	if (env[HOLDER_ENV]) {
@@ -109,7 +114,9 @@ async function acquireHeavyRunLock({
 		const holder = readHolder(lockPath);
 		if (holder === null) continue;
 		if (holder.pid === process.pid) break;
-		if (holder.pid && alive(holder.pid)) {
+		const age = now() - Date.parse(holder.startedAt ?? "");
+		const tooOld = Number.isFinite(age) && age > staleAfterMs;
+		if (holder.pid && alive(holder.pid) && !tooOld) {
 			if (announced !== holder.pid) {
 				log(`heavy-run lock: waiting for pid ${holder.pid} (${holder.label ?? "a heavy run"} in ${holder.cwd ?? "?"}, since ${holder.startedAt ?? "?"}) to finish its heavy stage`);
 				announced = holder.pid;
@@ -117,8 +124,9 @@ async function acquireHeavyRunLock({
 			await new Promise((resolve) => setTimeout(resolve, pollMs));
 			continue;
 		}
-		log(`heavy-run lock: ${holder.pid ? `pid ${holder.pid} is gone` : "the lock is unreadable"}; taking over its stale lock`);
-		retireStale(lockPath, { alive });
+		const why = !holder.pid ? "the lock is unreadable" : tooOld ? `pid ${holder.pid}'s lock is ${Math.round(age / 60_000)} minutes old` : `pid ${holder.pid} is gone`;
+		log(`heavy-run lock: ${why}; taking over its stale lock`);
+		retireStale(lockPath, { alive: tooOld ? () => false : alive });
 	}
 	env[HOLDER_ENV] = String(process.pid);
 	let released = false;

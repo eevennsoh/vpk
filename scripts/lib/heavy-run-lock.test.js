@@ -128,3 +128,18 @@ test("the unit runner and run-parallel wait for the holder before their heavy st
 	assert.match(gate.output(), /gate ran/u);
 	assert.equal(existsSync(ws.lockPath), false);
 });
+
+test("a lock far older than any heavy run is stale even if its pid now belongs to a live process", async (t) => {
+	const ws = workspace(t);
+	// A live process that is not a lock holder stands in for a reused pid.
+	const bystander = spawn(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)"], { stdio: "ignore" });
+	t.after(() => bystander.kill("SIGKILL"));
+	writeFileSync(ws.lockPath, JSON.stringify({ pid: bystander.pid, label: "old run", cwd: "/elsewhere", startedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString() }));
+	const lines = [];
+	const lock = await acquireHeavyRunLock({ env: { ...ws.env }, lockPath: ws.lockPath, log: (line) => lines.push(line) });
+	assert.equal(lock.held, true);
+	assert.match(lines.join("\n"), new RegExp(`pid ${bystander.pid}'s lock is 180 minutes old; taking over its stale lock`, "u"));
+	assert.equal(JSON.parse(readFileSync(ws.lockPath, "utf8")).pid, process.pid);
+	lock.release();
+	assert.equal(existsSync(ws.lockPath), false);
+});
