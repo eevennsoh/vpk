@@ -95,21 +95,23 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const name = page.getByRole("textbox", { name: "Name this work item", exact: true });
 		await name.fill("New keynote item");
 		await name.press("Enter");
-		await expect(page.locator('[data-jira-kanban-scrollport] [data-issue-key]')).toHaveCount(14);
+		// fb9217d2f, c35b35ad0 and faeb15d81 settled the keynote board on 23 stories (+1 created).
+		await expect(page.locator('[data-jira-kanban-scrollport] [data-issue-key]')).toHaveCount(24);
 		await page.locator('[data-issue-key="TEU-1"] [draggable]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		// Opposite outer corners span all columns before the scoped toolbar expansion.
 		await page.locator('[data-issue-key="TEU-13"] [draggable]').first().click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await page.getByRole("button", { name: "Select all", exact: true }).click();
 		const arrange = page.getByRole("button", { name: "Auto arrange", exact: true });
 		await expect(arrange).toBeEnabled();
-		await expect(page.locator('[data-jira-kanban-column="Done"] [data-auto-arrange-count]')).toHaveAttribute("data-auto-arrange-count", "14");
+		await expect(page.locator('[data-jira-kanban-column="Done"] [data-auto-arrange-count]')).toHaveAttribute("data-auto-arrange-count", "24");
 		await arrange.click();
 		const done = page.locator('[data-jira-kanban-column="Done"]');
-		await expect(done.locator("[data-issue-key]")).toHaveCount(14);
+		await expect(done.locator("[data-issue-key]")).toHaveCount(24);
 		for (const title of ["Context", "Collaboration", "Confidence"]) {
 			await expect(page.locator(`[data-jira-kanban-column="${title}"] [data-issue-key]`)).toHaveCount(0);
 		}
-		await expect(done.getByText("New keynote item", { exact: true })).toBeVisible();
+		// 8661caeab gave keynote cards an sr-only activation control that repeats the summary.
+		await expect(done.locator('[data-board-agent-session-drop-zone="issue"]').filter({ hasText: "New keynote item" })).toBeVisible();
 		await expect(page.locator("[data-issue-drop-flight]")).toHaveCount(0);
 		await expect(arrange).toHaveCount(0);
 		await page.screenshot({ path: `output/agent-browser/keynote-auto-arrange/done-${reducedMotion}.png` });
@@ -176,7 +178,8 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 		await card("TEU-1").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await card("TEU-13").click({ position: { x: 70, y: 30 }, modifiers: ["Shift"] });
 		await page.getByRole("button", { name: "Select all", exact: true }).click();
-		await expect(page.locator('[data-jira-issue-activation-control][aria-pressed="true"]')).toHaveCount(13);
+		// fb9217d2f, c35b35ad0 and faeb15d81 settled the keynote board on 23 stories.
+		await expect(page.locator('[data-jira-issue-activation-control][aria-pressed="true"]')).toHaveCount(23);
 		await expect(page.getByRole("button", { name: "Auto arrange", exact: true })).toHaveCount(0);
 		await page.keyboard.press("a");
 		await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(0);
@@ -192,7 +195,7 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 		await page.mouse.move(grabX + 8, grabY + 10, { steps: 5 });
 		await page.mouse.move(done.x + done.width / 2, done.y + 60, { steps: 5 });
 		await page.mouse.up();
-		await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(13);
+		await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(23);
 		await testInfo.attach("drop-start", { body: JSON.stringify(await page.evaluate(() => (window as typeof window & { keynoteDropProbe: unknown }).keynoteDropProbe)), contentType: "application/json" });
 		if (reducedMotion === "no-preference") {
 			await expect(page.locator("[data-issue-drop-trace]")).toBeVisible();
@@ -208,8 +211,9 @@ for (const { reducedMotion, width, height } of [1800, 1024].flatMap(width => (["
 		if (reducedMotion === "no-preference") {
 			expect(probe.outlines).toBe(probe.visibleCards);
 			expect(probe.outlines).toBeGreaterThan(0);
-			expect(probe.outlines).toBeLessThan(13);
-			expect(probe.duration).toBe(650);
+			expect(probe.outlines).toBeLessThan(23);
+			// f97ecd7ca lengthened card drop traces to one-second sweeps.
+			expect(probe.duration).toBe(1000);
 			expect(probe.traceFinishedAt).toBeGreaterThan(probe.traceAt);
 			expect(probe.confettiBursts).toBe(1);
 			// One inert, top-layer GL canvas (a worker draws it), so it can stay above the finale's dialog.
@@ -257,7 +261,8 @@ test("confetti launches while the shader column image is still preparing", async
 	await page.goto(appUrl(AUTO_ARRANGE_BOARD_ROUTE), { waitUntil: "networkidle" });
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await page.getByRole("menuitem", { name: "Play closing", exact: true }).click();
-	await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(13);
+	// fb9217d2f, c35b35ad0 and faeb15d81 settled the keynote board on 23 stories.
+	await expect(page.locator('[data-jira-kanban-column="Done"] [data-issue-key]')).toHaveCount(23);
 	await expect.poll(() => page.evaluate(() => (window as typeof window & { confettiPrintProbe: { pendingColumnImages: number } }).confettiPrintProbe.pendingColumnImages)).toBeGreaterThan(0);
 	await expect(page.locator('[data-finale-confetti="playing"]')).toBeVisible();
 	await expect(page.locator("[data-jira-team-eu26-end-finale]")).toHaveCount(0);

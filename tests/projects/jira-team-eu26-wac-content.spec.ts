@@ -162,11 +162,14 @@ for (const scenario of [
 		await expect(page.getByRole("heading", { name: "Checkout roadmap", exact: true })).toBeVisible();
 		await page.screenshot({ path: `output/agent-browser/wac-content/wac-${scenario.width}-${scenario.reducedMotion}.png` });
 		if (scenario.width === 1720 && scenario.reducedMotion === "no-preference") {
-			const themeControl = page.getByRole("button", { name: /^(Light|Dark|System) theme$/ });
+			// 8661caeab moved the theme toggle into the Profile menu; afba2425a made it a
+			// menu item named "Theme: <current theme>" that stays open while cycling.
+			await page.getByRole("button", { name: "Profile menu", exact: true }).click();
+			const themeControl = page.getByRole("menuitem", { name: /^Theme: (Light|Dark|System) theme$/ });
 			const originalTheme = await themeControl.getAttribute("aria-label");
-			while (await themeControl.getAttribute("aria-label") !== "Light theme") await themeControl.click();
+			while (await themeControl.getAttribute("aria-label") !== "Theme: Light theme") await themeControl.click();
 			await themeControl.click();
-			await expect(themeControl).toHaveAttribute("aria-label", "Dark theme");
+			await expect(themeControl).toHaveAttribute("aria-label", "Theme: Dark theme");
 			expect(await themeControl.evaluate((element) => {
 				const owner = element.closest("[data-color-mode]")!;
 				const styles = getComputedStyle(owner);
@@ -178,8 +181,10 @@ for (const scenario of [
 			})).toEqual({ mode: "dark", surface: expect.any(String), text: expect.any(String) });
 			await page.screenshot({ path: "output/agent-browser/wac-content/wac-dark.png" });
 			while (await themeControl.getAttribute("aria-label") !== originalTheme) await themeControl.click();
+			await page.keyboard.press("Escape");
 			await page.getByRole("button", { name: "Create in In review", exact: true }).click();
-			const form = page.getByRole("dialog", { name: "Create in In review", exact: true });
+			// The create popup carries its authored name, "Create work item in <status>" (cfc9fe2e8).
+			const form = page.getByRole("dialog", { name: "Create work item in In review", exact: true });
 			await form.getByRole("textbox", { name: "Name this work item" }).fill("WAC content follow-up");
 			await form.getByRole("button", { name: "Create work item", exact: true }).click();
 			const created = page.getByRole("region", { name: "In review work items", exact: true }).locator("[data-issue-key]").filter({ hasText: "WAC content follow-up" });
