@@ -2,13 +2,19 @@ import { expect, test } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
+// The removed footer was "Add agent" here and "Assign agent" by default in the shared component
+// (50d9535a0's own unit test checks both), so an absence check catches either name.
+const FOOTER_AGENT_BUTTON_NAME = /^(Add|Assign) agent$/u;
+
 test.use({ viewport: { width: 1800, height: 1100 } });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	test(`assignment metadata keeps Claude in front of Maya (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(appUrl("/jira-team-eu26"));
-		await page.getByRole("button", { name: "Claude with Maya Ferreira", exact: true }).click();
+		// d988d325d gave viewer chins the same "Agent: state" label as owner chins.
+		await page.locator('[data-issue-key="PAY-107"] [data-slot="jira-issue-agent-row"]')
+			.getByRole("button", { name: "Claude: Working", exact: true }).click();
 		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 		const identity = flyout.getByRole("group", { name: "Claude, used by Maya Ferreira", exact: true });
 		const faces = identity.locator('[data-slot="avatar"]');
@@ -76,12 +82,13 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(appUrl("/jira-team-eu26"));
 		const row = page.locator('[data-issue-key="PAY-107"] [data-slot="jira-issue-agent-row"]');
-		const trigger = row.getByRole("button", { name: "Claude with Maya Ferreira", exact: true });
+		// d988d325d gave viewer chins the owner "Agent: state" label and status indicator.
+		const trigger = row.getByRole("button", { name: "Claude: Working", exact: true });
 		const chevron = row.locator('[data-slot="jira-issue-agent-chevron"]');
-		await expect(trigger).toHaveText("Claude with Maya Ferreira");
+		await expect(trigger).toHaveText("Working");
 		await page.mouse.move(0, 0);
 		await expect(chevron).toBeHidden();
-		await expect(row.locator('[data-slot="spinner"]')).toHaveCount(0);
+		await expect(row.locator('[data-slot="spinner"]')).toHaveCount(1);
 		await row.hover();
 		await expect(chevron).toBeVisible();
 		await expect(chevron.locator("svg")).toHaveCSS("width", "12px");
@@ -95,7 +102,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.keyboard.press("Enter");
 		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 		await expect(flyout).toBeVisible();
-		await expect.soft(flyout.getByRole("button", { name: "Add agent", exact: true }).locator("svg")).toHaveCount(1, { timeout: 1000 });
+		// 50d9535a0 removed the Add agent footer from the session flyout.
+		await expect.soft(flyout.getByRole("button", { name: FOOTER_AGENT_BUTTON_NAME })).toHaveCount(0, { timeout: 1000 });
 		const session = flyout.locator("article");
 		await page.mouse.move(0, 0);
 		await expect.soft(session).toHaveCSS("background-color", "rgba(0, 0, 0, 0)", { timeout: 1000 });
@@ -154,15 +162,16 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 	});
 }
 
-test("List assigned menu uses Add agent and opens the selector", async ({ page }) => {
+// 50d9535a0 removed the Add agent footer from the assigned-session menu.
+test("List assigned menu shows its sessions without an Add agent footer", async ({ page }) => {
 	await page.goto(appUrl("/jira-team-eu26"));
 	await page.getByRole("tab", { name: "List" }).click();
 	const assignedCell = page.locator('[data-issue-key="PAY-105"] td').nth(4);
 	await assignedCell.getByRole("button", { name: "Edit agents", exact: true }).click();
 	const menu = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 	await expect(menu).toBeVisible();
-	await menu.getByRole("button", { name: "Add agent", exact: true }).click();
-	await expect(menu.getByRole("combobox", { name: "Search agents" })).toBeVisible();
+	await expect(menu.getByRole("listitem").first()).toBeVisible();
+	await expect(menu.getByRole("button", { name: FOOTER_AGENT_BUTTON_NAME })).toHaveCount(0);
 });
 
 test("compact assignment flyout centers status and more actions in each row", async ({ page }) => {
@@ -175,6 +184,8 @@ test("compact assignment flyout centers status and more actions in each row", as
 
 	const cursor = flyout.getByTestId("agent-session-row-test-agent");
 	const claude = flyout.getByTestId("agent-session-row-claude-code");
+	// 5a94282ce folded teammate sessions into an Other sessions disclosure.
+	await flyout.getByRole("button", { name: "Other sessions", exact: true }).click();
 	for (const { row, label } of [
 		{ row: cursor, label: "Cursor, used by Jordan Okafor" },
 		{ row: claude, label: "Claude, used by Venn" },
@@ -189,19 +200,20 @@ test("compact assignment flyout centers status and more actions in each row", as
 		if (agent === null || human === null) throw new Error("Session avatars are not laid out");
 		expect(agent.x).toBeLessThan(human.x);
 	}
-	const viewerHint = cursor.getByRole("button", {
-		name: "Someone is using an agent. Only they can see the work.",
-	});
-	await expect(viewerHint).toBeVisible();
-	await cursor.hover();
-	await viewerHint.hover();
+	// 05d862e63 replaced the viewer info button with the status indicator and moved
+	// the privacy explanation onto the whole viewer row; dd8711fc9 names the owner.
+	const viewerStatus = cursor.getByRole("img", { name: "Working", exact: true });
+	await expect(viewerStatus).toBeVisible();
+	await cursor.locator("article").hover();
 	const tooltip = page.locator('[data-slot="tooltip-content"]');
+	const viewerHint = "You can see this session, but only Jordan Okafor can act on it.";
 	await expect(tooltip).toBeVisible();
-	await expect(tooltip).toHaveText("Someone is using an agent. Only they can see the work.");
+	await expect(tooltip).toHaveText(viewerHint);
 	await expect(tooltip).toHaveCSS("width", "240px");
 	await expect(tooltip).toHaveCSS("white-space", "normal");
-	await expect(tooltip).toHaveJSProperty("textContent", "Someone is using an agent. Only they can see the work.");
-	const loader = page.locator('[data-issue-key="PAY-123"] .agent-loading');
+	await expect(tooltip).toHaveJSProperty("textContent", viewerHint);
+	// 846b69a2b switched the multi-agent chin to the vertical Agent Loading variant.
+	const loader = page.locator('[data-issue-key="PAY-123"] .agent-loading-vertical');
 	await expect(loader).toBeVisible();
 	await expect(loader.locator('[data-slot="human-agent-avatar"]')).toHaveCount(0);
 	for (const issueKey of ["PAY-105", "PAY-107", "PAY-112", "PAY-101"]) {
@@ -211,7 +223,7 @@ test("compact assignment flyout centers status and more actions in each row", as
 	}
 	await claude.hover();
 	const controls = [
-		{ row: cursor, control: viewerHint },
+		{ row: cursor, control: viewerStatus },
 		{ row: claude, control: claude.getByRole("button", { name: "More actions for Claude" }) },
 	];
 	for (const { row, control } of controls) {
@@ -342,7 +354,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(menu).not.toContainText("Continue in");
 		await page.screenshot({ path: `output/agent-browser/local-assignment-dismiss-${reducedMotion}.png` });
 		await menu.getByRole("menuitem", { name: "Dismiss", exact: true }).click();
-		await expect(page.locator('[data-issue-key="PAY-123"]').getByRole("button", { name: "Cursor with Jordan Okafor", exact: true })).toBeVisible();
+		await expect(page.locator('[data-issue-key="PAY-123"]').getByRole("button", { name: "Cursor: Working", exact: true })).toBeVisible();
 		await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveCount(0);
 	});
 }
@@ -492,11 +504,9 @@ for (const { issueKey, state, agent } of [
 		await expect(trigger).toBeFocused();
 		await page.keyboard.press("Enter");
 		await expect(flyout).toBeVisible();
-		const assign = flyout.getByRole("button", { name: "Add agent", exact: true });
-		await assign.hover();
-		await expect(flyout).toBeVisible();
-		await assign.click();
-		await expect(page.getByRole("option").filter({ hasText: "Readiness Checker" })).toBeVisible();
+		// 50d9535a0 removed the Add agent footer from the session flyout.
+		await expect(flyout.getByRole("listitem").first()).toBeVisible();
+		await expect(flyout.getByRole("button", { name: FOOTER_AGENT_BUTTON_NAME })).toHaveCount(0);
 	});
 }
 
@@ -505,18 +515,19 @@ test("Jira issue playground opens owner and viewer session lists on click", asyn
 	const demo = page.locator('#agent-activity-states-experimental-v2 [data-slot="jira-issue-agent-row"]');
 	const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 	for (const label of ["1 agent as owner", "1 agent, not owner"]) {
-		await page.getByRole("button", { name: label, exact: true }).click();
+		// 0ea7daece added the Project butter demo with the same state toggles on this page.
+		await page.locator("#agent-activity-states-experimental-v2").getByRole("button", { name: label, exact: true }).click();
 		const trigger = demo.locator('[data-slot="popover-trigger"]');
 		await trigger.hover();
 		await page.waitForTimeout(300);
 		await expect(flyout).toBeHidden();
 		await trigger.click();
 		await expect(flyout).toBeVisible();
-		await expect(flyout.getByRole("button", {
-			name: label === "1 agent as owner"
-				? "More actions for Claude"
-				: "Someone is using an agent. Only they can see the work.",
-		})).toBeVisible();
+		// 05d862e63 replaced the viewer info button with the read-only status indicator.
+		await expect(label === "1 agent as owner"
+			? flyout.getByRole("button", { name: "More actions for Claude" })
+			: flyout.getByRole("img", { name: "Working", exact: true })).toBeVisible();
+		await expect(flyout.getByRole("button", { name: "More actions for Claude" })).toHaveCount(label === "1 agent as owner" ? 1 : 0);
 		await page.keyboard.press("Escape");
 		await expect(flyout).toBeHidden();
 	}
@@ -555,6 +566,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(appUrl("/jira-team-eu26"));
 		await page.getByRole("button", { name: "More actions for PAY-101", exact: true }).focus();
+		// 0ea7daece's key-first card places the pull request chip between More actions and the chin.
+		await page.keyboard.press("Tab");
+		await expect(page.locator('[data-issue-key="PAY-101"]').getByRole("button", { name: /^Pull request merged #1839/u })).toBeFocused();
 		await page.keyboard.press("Tab");
 		const trigger = page.getByRole("button", { name: "Claude: Finished", exact: true });
 		await expect(trigger).toBeFocused();
@@ -575,7 +589,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await page.locator('[data-board-agent-session-drop-zone="issue"][data-issue-key="PAY-118"]').hover();
 		await page.getByRole("button", { name: "More actions for PAY-118", exact: true }).click();
 		await page.getByRole("menuitem", { name: "Add agent Open submenu", exact: true }).click();
-		const agent = page.getByRole("option").filter({ hasText: "Readiness Checker" });
+		// 6c4c7749f trimmed the EU26 catalog; Code Reviewer is its remaining custom agent.
+		const agent = page.getByRole("option").filter({ hasText: "Code Reviewer" });
 		await expect(agent).toBeVisible();
 
 		// Arm before the click so the first painted frame after assignment is covered.

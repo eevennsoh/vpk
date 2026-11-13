@@ -297,6 +297,7 @@ for (const grab of [0.3, 0.8]) {
 		await page.mouse.move(x + 20, y);
 		await expect.poll(() => page.evaluate(() => (window as typeof window & { pickupFrames: { time: number }[] }).pickupFrames.at(-1)?.time ?? 0)).toBeGreaterThanOrEqual(1300);
 		const frames = await page.evaluate(() => (window as typeof window & { pickupFrames: { time: number; x: number; y: number; width: number; height: number; lightWidth: number; lightHeight: number; transform: string; parentTransform: string; animations: { kind: string }[] }[] }).pickupFrames);
+		await mkdir("output/agent-browser/compact-drag", { recursive: true });
 		await writeFile(`output/agent-browser/compact-drag/pickup-${grab}.json`, JSON.stringify({ source, pointer: { x: x + 20, y }, frames }, null, 2));
 		await page.screenshot({ path: `output/agent-browser/compact-drag/pickup-${grab}.png` });
 		await page.mouse.move(700, 150);
