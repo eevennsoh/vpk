@@ -60,7 +60,8 @@ function mergedPrLanding(pr, { defaultBranch, commitsPastHead }) {
  * origin/<default>. Proofs, strongest first:
  *   ancestry          the head is an ancestor of origin/<default> (merge commits, fast-forwards)
  *   merged-pr         a PR merged into <default> carried every commit (squash, rebase)
- *   patch-equivalent  `git cherry` finds every commit's patch on origin/<default>
+ *   content           merging the head into origin/<default> changes nothing
+ *                     (`git merge-tree --write-tree` gives origin/<default>'s own tree)
  * Returns { landed: true | false | null, proof, pr, exactHead, missing }.
  * `exactHead` (merged-pr only) says the local tip equals the PR's recorded head, which
  * vpk-git-clean requires before a `git branch -D`. Uncommitted files are not committed
@@ -86,8 +87,8 @@ function provenLanded(facts) {
 		if (result.landed === null) missing.push(result.missing);
 	}
 
-	if (facts.patchEquivalent === true) return { landed: true, proof: "patch-equivalent", pr: null, exactHead: null, missing: [] };
-	if (facts.patchEquivalent !== false) missing.push("patch equivalence");
+	if (facts.contentLanded === true) return { landed: true, proof: "content", pr: null, exactHead: null, missing: [] };
+	if (facts.contentLanded !== false) missing.push("content");
 	return missing.length > 0
 		? { landed: null, proof: null, pr: null, exactHead: null, missing }
 		: { landed: false, proof: null, pr: null, exactHead: null, missing: [] };
@@ -121,7 +122,8 @@ function openPrAction(pr, gate) {
  *   pushed: boolean | null,           // a remote branch exists
  *   unpushed: number | null,          // commits not on the remote branch
  *   inOriginDefault: boolean | null,  // head is an ancestor of origin/<default>
- *   patchEquivalent: boolean | null,  // git cherry origin/<default> head shows no '+' and no merge commit is ahead
+ *   contentLanded: boolean | null,    // merging head into origin/<default> changes nothing
+ *   prsTruncated?: boolean,           // the branch has more PRs than were returned
  *   prs: Array<{ number, state, headRefOid, baseRefName, createdAt, mergedAt, mergeCommit? }> | null,
  *   commitsPastPrHead?: Record<number, number | null>,
  *   gate?: { isDraft: boolean, checks: string, failingChecks?: string[], reviewGateClear: boolean } | null,
@@ -140,14 +142,23 @@ function deriveBranchLanding(facts) {
 		proof: landing.proof,
 		pr: pr ? { number: pr.number, state: pr.state, url: pr.url ?? null } : null,
 		// Every open PR on the branch, not only the latest; null when PRs could not be read.
-		openPrs: facts.prs === null ? null : facts.prs.filter((candidate) => candidate.state === "OPEN").map((candidate) => candidate.number),
+		// Unknown when PRs could not be read or more exist than were returned.
+		openPrs: facts.prs === null || facts.prsTruncated ? null : facts.prs.filter((candidate) => candidate.state === "OPEN").map((candidate) => candidate.number),
 		...(landing.pr ? { landedBy: landing.pr, exactHead: landing.exactHead } : {}),
 		...(landing.missing.length ? { missing: landing.missing } : {}),
 	};
 
 	if (facts.worktree) {
-		if (facts.worktree.dirty === true) return result("dirty", `commit or stash the changes in ${facts.worktree.path}`, evidence);
-		if (facts.worktree.dirty !== false) return result("unknown", "re-run: the worktree status could not be read", { ...evidence, missing: [...(evidence.missing ?? []), "worktree status"] });
+		// Edits hidden from status by skip-worktree or assume-unchanged are uncommitted work too.
+		const hidden = facts.worktree.hiddenEdits;
+		if (facts.worktree.dirty === true || hidden > 0) {
+			return result("dirty", hidden > 0 && facts.worktree.dirty !== true
+				? `${hidden} file(s) in ${facts.worktree.path} are marked skip-worktree or assume-unchanged: check them (git ls-files -v), then clear the flag and commit or discard`
+				: `commit or stash the changes in ${facts.worktree.path}`, evidence);
+		}
+		if (facts.worktree.dirty !== false || (hidden !== 0 && hidden !== undefined)) {
+			return result("unknown", "re-run: the worktree status could not be read", { ...evidence, missing: [...(evidence.missing ?? []), "worktree status"] });
+		}
 	}
 
 	if (landing.landed === true) {

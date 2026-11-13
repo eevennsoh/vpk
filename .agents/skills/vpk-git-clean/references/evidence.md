@@ -54,9 +54,11 @@ pnpm run ship-status -- --branch <candidate-branch> --json   # one branch
 ```
 
 "Proven landed" is defined once, in `scripts/lib/branch-landing.js`
-(`provenLanded`): the head is an ancestor of `origin/<default>`; or a PR merged
-into `<default>` carried every local commit (squash and rebase merges); or
-`git cherry` finds every patch on `origin/<default>`. Commits past a merged PR's
+(`provenLanded`): the head is an ancestor of `origin/<default>` (`ancestry`); or
+a PR merged into `<default>` carried every local commit (`merged-pr`; squash and
+rebase merges); or merging the head into `origin/<default>` changes nothing
+(`content`: `git merge-tree --write-tree` gives `origin/<default>`'s own tree;
+exact, unlike `git cherry`, which ignores whitespace and merge commits). Commits past a merged PR's
 head are not landed. A read that failed makes the answer `unknown`, which is
 never removable. `evidence.proof` names the proof and, for a merged PR,
 `evidence.landedBy` its number and `evidence.exactHead` whether the local tip
@@ -146,7 +148,7 @@ path: <absolute worktree path>
 head: <branch-or-detached> <sha>
 clean: yes
 current/default: no/no
-landed proof: ancestry | merged PR #N | patch-equivalent
+landed proof: ancestry | merged PR #N | content
 open PR by branch/head: none
 process proof: cwd and port checks clear | exact-path dev PIDs stopped
 action: git worktree remove <path>, then git branch -d <branch>

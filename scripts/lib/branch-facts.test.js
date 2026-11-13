@@ -114,7 +114,7 @@ test("a merge-commit landing is proven by ancestry; a deleted branch with a sync
 	assert.equal(deriveBranchLanding(gone).status, "cleaned");
 });
 
-test("a merge commit's own changes are not proven by patch equivalence (git cherry skips merges)", async (t) => {
+test("a merge commit's own changes are not proven landed by content (git cherry would skip merges)", async (t) => {
 	const { clone, commit, git, sh } = setup(t);
 	commit("shared.txt", "base");
 	sh(clone, "push", "--quiet", "origin", "main");
@@ -148,7 +148,7 @@ test("a merge commit's own changes are not proven by patch equivalence (git cher
 	assert.equal(sh(clone, "cherry", "origin/main", "feature"), "", "git cherry sees nothing to land");
 
 	const result = await facts(git, { branch: "feature", worktree: { path: clone, branch: "feature" } });
-	assert.equal(result.patchEquivalent, false);
+	assert.equal(result.contentLanded, false);
 	const derived = deriveBranchLanding(result);
 	assert.equal(derived.evidence.landed, false);
 	assert.equal(derived.status, "pushed");
@@ -176,8 +176,8 @@ test("a branch that merged main into itself and adds nothing more is landed by c
 
 	const result = await facts(git, { branch: "feature", worktree: { path: clone, branch: "feature" } });
 	assert.equal(result.inOriginDefault, false);
-	assert.equal(result.patchEquivalent, true);
+	assert.equal(result.contentLanded, true);
 	const derived = deriveBranchLanding(result);
-	assert.equal(derived.evidence.proof, "patch-equivalent");
+	assert.equal(derived.evidence.proof, "content");
 	assert.equal(derived.status, "main-synced");
 });

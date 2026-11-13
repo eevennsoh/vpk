@@ -38,12 +38,16 @@ work, or clean Symphony issue state managed by `vpk-symphony`.
 - Never remove or switch the current/default worktree, an open-PR head, an
   ambiguous path, or a worktree with an unresolved interactive process owner.
 - Remove eligible worktrees with plain `git worktree remove`, then delete their
-  source branches. Use `git branch -d` for ancestor heads. For a non-ancestor
+  source branches. Use `git branch -d` only for a target whose report says
+  `proof: "ancestry"` (with an upstream set, `-d` also deletes a branch that is
+  merged only into its upstream, so it is no proof on its own). A target proven
+  only by `proof: "content"` needs the owner's go-ahead before any branch
+  deletion. For a non-ancestor
   head, `git branch -D` is allowed only when the local tip exactly matches the
   head SHA of a merged PR into the default branch (`clean-candidates` reports
   `proof: "merged-pr"` with `exactHead: true`), no open PR owns its name or
   SHA, and no worktree owns the branch. Record the SHA and PR before deletion;
-  a branch-name match or patch-equivalence alone does not authorize `-D`.
+  a branch-name match or a `content` proof alone does not authorize `-D`.
   Never force-remove a worktree or detach one to clear a dirty branch.
 - Stop only exact-path repository dev processes after the Git and PR checks
   pass. Preserve interactive shells, editors, other agents, and any process
@@ -88,11 +92,17 @@ exists, retry read-only GitHub commands with
    owning worktree. Classify `upstream gone` separately from landed work.
 2. First delete landed, unused branches; for a landed branch still checked out
    in a worktree, evaluate and remove that worktree before deleting the branch.
-   `clean-candidates` proves clean porcelain status, non-current/non-default
-   ownership, committed landing and no open PR by branch; prove registration,
-   open PRs by head SHA and process state as in
-   [evidence.md](references/evidence.md). A checked-out marker alone is
-   not a reason to leave a clean, unused, landed worktree behind.
+   Use only targets with `cleanable: true`. The report checks committed
+   landing, tracked/untracked/skip-worktree/assume-unchanged changes, ignored
+   content outside its regenerable list, half-done operations, reflog-only
+   commits, the remote branch tip, every PR on the branch (by name; forks
+   excluded), and current/default/locked/shared worktrees (the full list is in
+   the header of `scripts/clean-candidates.js`). It does not check processes or
+   open PRs by head SHA: prove those as in [evidence.md](references/evidence.md).
+   A detached worktree is a target of its own: it is cleanable only by
+   ancestry or content (it has no PR) and only with no reflog-only commits.
+   A checked-out marker alone is not a reason to leave a clean, unused,
+   landed worktree behind.
 3. For an eligible worktree with an exact-path dev stack, stop that stack before
    removal. From the surviving checkout, prefer the tested
    cwd-scoped helper:
@@ -122,7 +132,9 @@ exists, retry read-only GitHub commands with
    detached cleanup worktree there; do not switch an active checkout or use
    `-D` to bypass that refusal. Remove a temporary checkout afterward. If
    proof changes or Git still refuses, retain the branch and report why.
-7. Delete a merged remote source branch only when no open PR uses its name or
+7. Delete a merged remote source branch only when the report says
+   `remoteSafeToDelete: true` for it (`origin/<branch>` has nothing the landed
+   local branch lacks; run with `--fetch` first) and no open PR uses its name or
    head commit. After remote deletion, prove `git ls-remote --heads` is empty
    before removing a stale local tracking ref with `git update-ref -d`.
 

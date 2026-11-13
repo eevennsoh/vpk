@@ -15,7 +15,7 @@ test("a landed branch is retained while any open PR owns it, not only the latest
 });
 
 test("a landed branch is retained when its pull requests could not be read", () => {
-	assert.deepEqual(cleanBlockers({ derived: synced({ openPrs: null }), target, ...where }), ["pull requests could not be read"]);
+	assert.deepEqual(cleanBlockers({ derived: synced({ openPrs: null }), target, ...where }), ["pull requests could not be read in full"]);
 	// A detached worktree has no branch for a PR to own.
 	assert.deepEqual(cleanBlockers({ derived: synced({ openPrs: null }), target: { branch: null, worktree: { path: "/w/detached" } }, ...where }), []);
 });
