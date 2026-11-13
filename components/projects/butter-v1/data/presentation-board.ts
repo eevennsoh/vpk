@@ -809,7 +809,7 @@ export function createButterPayBoardColumns(): JiraKanbanColumnData[] {
 		High: "major",
 		Medium: "medium",
 		Low: "minor",
-		Lowest: "minor",
+		Lowest: "trivial",
 	} as const satisfies Readonly<Record<string, JiraKanbanCardData["priority"]>>;
 	const subtasks = (["PAY-118", "PAY-999", "PAY-127"] as const).flatMap((parentIssueKey) =>
 		BUTTER_TODO_PLACEHOLDERS[parentIssueKey].children.map((child) => ({

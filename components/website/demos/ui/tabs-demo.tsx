@@ -145,7 +145,7 @@ export function TabsDemoLineWithContent() {
 export function TabsDemoLine() {
 	return (
 		<Tabs defaultValue="overview">
-			<TabsList variant="line">
+			<TabsList animateIndicator variant="line">
 				<TabsTrigger value="overview">Overview</TabsTrigger>
 				<TabsTrigger value="analytics">Analytics</TabsTrigger>
 				<TabsTrigger value="reports">Reports</TabsTrigger>

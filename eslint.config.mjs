@@ -170,10 +170,6 @@ const hydrationSafeSyntax = [
 ];
 const capabilitySyntax = [
 	{
-		selector: "JSXAttribute[name.name=/^on[A-Z]/] > JSXExpressionContainer > ArrowFunctionExpression[body.type='BlockStatement'][body.body.length=0]",
-		message: "Don't wire a control to a no-op handler. Omit the prop so the control renders display-only or disabled until a real capability exists (component-architecture.md).",
-	},
-	{
 		selector: "JSXOpeningElement[name.name='Toaster']:not(:has(JSXAttribute[name.name='id']))",
 		message: "Give each <Toaster /> a unique id and pass the matching toasterId to toast.* (gotchas-ui.md).",
 	},

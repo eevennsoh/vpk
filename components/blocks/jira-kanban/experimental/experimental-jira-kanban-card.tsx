@@ -22,6 +22,7 @@ import {
 	type JiraIssueGenerativeActionPresentation,
 	type JiraIssueIconScale,
 	type JiraIssueMoreMenuActions,
+	type JiraIssueSubtask,
 } from "@/components/blocks/jira-issue";
 import { resolveRelatedJiraIssueAgentActivityMode } from "@/components/blocks/jira-issue/agent-activity-model";
 import type { JiraIssueSelectionBackdrop } from "@/components/blocks/jira-issue/selection-backdrop";
@@ -276,6 +277,8 @@ interface ExperimentalJiraKanbanCardProps {
 	moreMenuActions?: JiraIssueMoreMenuActions;
 	selectionBackdrop?: JiraIssueSelectionBackdrop;
 	subtaskChrome?: JiraIssueChrome;
+	subtasks?: readonly JiraIssueSubtask[];
+	onSubtaskOpen?: (subtask: JiraIssueSubtask) => void;
 }
 
 function getCardAssigneeAvatarSrc(card: JiraKanbanCardData) {
@@ -339,6 +342,8 @@ export function ExperimentalJiraKanbanCard({
 	showUnlinkWell = true,
 	showUntrackedWorkFooter,
 	subtaskChrome,
+	subtasks,
+	onSubtaskOpen,
 }: Readonly<ExperimentalJiraKanbanCardProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const proximityMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
@@ -450,6 +455,7 @@ export function ExperimentalJiraKanbanCard({
 			selected={selected}
 			onSelectionToggle={onSelectionToggle}
 			moreMenuActions={moreMenuActions}
+			moreMenuVariant={appearance === "project-butter" ? "project-butter" : "default"}
 			renderAgentActivityIndicator={renderAgentActivityIndicator}
 			sessionTransferAfter={detachedAgentSessions.length > 0
 				? (localSessionDrag) => (
@@ -485,6 +491,8 @@ export function ExperimentalJiraKanbanCard({
 				)
 				: undefined}
 			subtaskChrome={subtaskChrome}
+			subtasks={subtasks}
+			onSubtaskOpen={onSubtaskOpen}
 			summary={card.title}
 			tags={card.tags}
 		/>

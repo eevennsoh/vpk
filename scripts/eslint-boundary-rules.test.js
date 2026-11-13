@@ -150,7 +150,7 @@ export const safe = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).fo
 	assert.ok(findings.every(({ line, message }) => line === 2 && /explicit locale/u.test(message)));
 });
 
-test("controls need a real capability and toasters need an id", async () => {
+test("prototype placeholder controls are allowed and toasters need an id", async () => {
 	const findings = await syntaxFindings(`
 import { Toaster } from "@/components/ui/sonner";
 declare function save(): void;
@@ -164,9 +164,8 @@ export const Controls = () => (
 	</>
 );
 `);
-	assert.deepEqual(findings.map(({ line }) => line), [6, 9]);
-	assert.match(findings[0].message, /no-op handler/u);
-	assert.match(findings[1].message, /unique id/u);
+	assert.deepEqual(findings.map(({ line }) => line), [9]);
+	assert.match(findings[0].message, /unique id/u);
 });
 
 test("app/api routes parse JSON through readJsonBody", async () => {

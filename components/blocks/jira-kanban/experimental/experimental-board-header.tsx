@@ -4,13 +4,10 @@ import type { ReactNode } from "react";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import BoardIcon from "@atlaskit/icon/core/board";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
-import FeedbackIcon from "@atlaskit/icon/core/feedback";
-import GrowDiagonalIcon from "@atlaskit/icon/core/grow-diagonal";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TableIcon from "@atlaskit/icon/core/table";
-import TeamsIcon from "@atlaskit/icon/core/teams";
 import {
 	Avatar,
 	AvatarFallback,
@@ -74,6 +71,7 @@ function toggleSelectedAssigneeId(
  * Starts identical to the default board header and diverges independently.
  */
 interface ExperimentalJiraKanbanBoardHeaderProps {
+	muted?: boolean;
 	activeView?: ExperimentalJiraKanbanView;
 	assignees?: readonly JiraKanbanAssigneeData[];
 	/** Total visible avatars, including the Unassigned placeholder. Defaults to seven. */
@@ -212,6 +210,7 @@ function AssigneeAvatar({
 }
 
 export function ExperimentalJiraKanbanBoardHeader({
+	muted = false,
 	activeView = "board",
 	assignees = [],
 	avatarLimit,
@@ -247,9 +246,10 @@ export function ExperimentalJiraKanbanBoardHeader({
 	return (
 		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-6" : "pb-0")}>
 			<BoardHeaderTitleCluster avatar={avatar} surfaceLabel={surfaceLabel} title={title} />
-			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
+			{viewTabs ? <div inert={muted || undefined} className={cn("mt-2", muted ? "opacity-20" : null)}>{viewTabs}</div> : null}
 			{showBoardControls ? (
 				<BoardHeaderControlsRow
+					muted={muted}
 					activeView={activeView}
 					assignees={assignees}
 					avatarLimit={avatarLimit}
@@ -297,9 +297,6 @@ function BoardHeaderTitleCluster({
 					{avatar ?? <JiraProjectAvatar label={title} src={JIRA_DESIGN_PROJECT.imageSrc} />}
 					<Heading as="h1" className="min-w-0 truncate" size="medium">{title}</Heading>
 					<div className="flex shrink-0 items-center gap-1">
-						<Button aria-disabled aria-label="Teams" size="icon" variant="outline">
-							<Icon render={<TeamsIcon label="" />} />
-						</Button>
 						<Button aria-disabled aria-label={`More ${surfaceLabel} actions`} size="icon" variant="ghost">
 							<Icon render={<ShowMoreHorizontalIcon label="" />} />
 						</Button>
@@ -310,12 +307,6 @@ function BoardHeaderTitleCluster({
 						</Button>
 						<Button aria-disabled aria-label="Automation" size="icon" variant="outline">
 							<Icon render={<AutomationIcon label="" />} />
-						</Button>
-						<Button aria-disabled aria-label="Feedback" size="icon" variant="outline">
-							<Icon render={<FeedbackIcon label="" />} />
-						</Button>
-						<Button aria-disabled aria-label="Expand" size="icon" variant="outline">
-							<Icon render={<GrowDiagonalIcon label="" />} />
 						</Button>
 					</div>
 				</div>
@@ -427,6 +418,7 @@ function BoardHeaderAssigneeFacepileItem({
 }
 
 function BoardHeaderControlsRow({
+	muted,
 	activeView,
 	agentFilterId,
 	assignees,
@@ -455,6 +447,7 @@ function BoardHeaderControlsRow({
 	simpleViews,
 	surfaceLabel,
 }: Readonly<{
+	muted?: boolean;
 	activeView: ExperimentalJiraKanbanView;
 	agentFilterId?: BoardAgentFilterId | null;
 	assignees: readonly JiraKanbanAssigneeData[];
@@ -496,7 +489,8 @@ function BoardHeaderControlsRow({
 
 	return (
 		<div
-			className="mt-6 flex flex-wrap items-center gap-2 px-6"
+			inert={muted || undefined}
+			className={cn("mt-6 flex flex-wrap items-center gap-2 px-6", muted ? "opacity-20" : null)}
 			// Board columns are meant to slide under the panel, but the row's
 			// trailing cluster (view switcher) must stay clickable. `px-6` is
 			// overridden by this inline padding, so add the same 24px gutter

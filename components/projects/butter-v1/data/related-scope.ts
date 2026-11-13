@@ -15,6 +15,7 @@ const PRIORITIES: Readonly<Record<JiraKanbanCardData["priority"], ProjectButterR
 	major: "High",
 	medium: "Medium",
 	minor: "Low",
+	trivial: "Lowest",
 };
 
 /** A board card's work type; cards without one are Tasks. */

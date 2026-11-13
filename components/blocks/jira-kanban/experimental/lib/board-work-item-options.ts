@@ -3,6 +3,41 @@ import type {
 	AgentSessionWorkItemOption,
 } from "@/components/blocks/agent-session";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import type { JiraIssueSubtask } from "@/components/blocks/jira-issue";
+
+export interface BoardWorkItemDraft extends AgentSessionWorkItemDraft {
+	readonly parentIssueKey?: string;
+	readonly tags?: readonly string[];
+	readonly subtaskKeys?: readonly string[];
+	readonly dueDate?: string;
+	readonly priority?: JiraKanbanCardData["priority"];
+	readonly assignee?: JiraKanbanCardData["assignee"];
+}
+
+export function indexBoardSubtasks(columns: readonly JiraKanbanColumnData[]) {
+	const byParent = new Map<string, { card: JiraKanbanCardData; columnTitle: string; subtask: JiraIssueSubtask }[]>();
+	for (const column of columns) {
+		for (const card of column.cards) {
+			if (!card.parentIssueKey) continue;
+			const items = byParent.get(card.parentIssueKey) ?? [];
+			items.push({
+				card,
+				columnTitle: column.title,
+				subtask: {
+					issueKey: card.code,
+					summary: card.title,
+					status: card.status ?? column.title,
+					priority: card.priority,
+					assigneeAvatarSrc: card.avatarSrc ?? card.assignee?.avatarSrc,
+					assigneeAvatarLabel: card.assignee?.name,
+					assigneeUnassignedKind: card.avatarUnassignedKind,
+				},
+			});
+			byParent.set(card.parentIssueKey, items);
+		}
+	}
+	return byParent;
+}
 
 /**
  * Pure board/work-item model behind the session menu's Link work item submenu.
@@ -81,7 +116,7 @@ export function boardHasWorkItem(
  */
 export function appendBoardCardFromDraft(
 	columns: readonly JiraKanbanColumnData[],
-	draft: AgentSessionWorkItemDraft,
+	draft: BoardWorkItemDraft,
 	columnTitle?: string,
 ): Readonly<{ columns: readonly JiraKanbanColumnData[]; issueKey: string | undefined }> {
 	const targetColumn = columnTitle === undefined ? columns[0] : columns.find((column) => column.title === columnTitle);
@@ -91,20 +126,28 @@ export function appendBoardCardFromDraft(
 
 	const issueKey = nextBoardIssueKey(columns);
 	const card: JiraKanbanCardData = {
-		avatarUnassignedKind: "person",
+		avatarUnassignedKind: draft.assignee ? undefined : "person",
 		code: issueKey,
 		issueType: draft.issueType,
-		priority: "medium",
-		tags: [],
+		priority: draft.priority ?? "medium",
+		tags: (draft.tags ?? []).map((text) => ({ text, color: "standard" })),
 		title: draft.summary,
+		parentIssueKey: draft.parentIssueKey,
+		dueDate: draft.dueDate,
+		assignee: draft.assignee,
+		avatarSrc: draft.assignee?.avatarSrc,
 	};
 
 	return {
-		columns: columns.map((column) => (
-			column === targetColumn
-				? { ...column, cards: [...column.cards, card], count: column.count + 1 }
-				: column
-		)),
+		columns: columns.map((column) => {
+			const hasSelectedSubtask = column.cards.some((existing) => draft.subtaskKeys?.includes(existing.code));
+			const cards = hasSelectedSubtask ? column.cards.map((existing) => draft.subtaskKeys?.includes(existing.code)
+				? { ...existing, parentIssueKey: issueKey }
+				: existing) : column.cards;
+			return column === targetColumn
+				? { ...column, cards: [...cards, card], count: column.count + 1 }
+				: hasSelectedSubtask ? { ...column, cards } : column;
+		}),
 		issueKey,
 	};
 }

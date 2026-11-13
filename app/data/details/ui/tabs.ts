@@ -45,7 +45,7 @@ export const TABS_DETAIL: ComponentDetail = {
       },
       {
         title: "Line variant",
-        description: "Tabs with underline-style indicator.",
+        description: "Line tabs with a sliding indicator enabled by the animateIndicator prop on TabsList.",
         demoSlug: "tabs-demo-line",
       },
       {
