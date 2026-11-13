@@ -658,7 +658,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /className="text-sm text-text-subtlest">Spaces</u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /<Heading as="h1" className="min-w-0 truncate" size="medium">\{title\}<\/Heading>/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Share"/u);
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Expand"/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Automation"/u);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
 		/className=\{cn\("flex items-center gap-2", compact \? undefined : "ml-auto"\)\}/u,
