@@ -105,6 +105,7 @@ function createRuntimeRouteStackTestDependencies() {
 		getAgentMode: () => null,
 		getEnvVars: () => ({}),
 		getMirrorBrowser: () => null,
+		getRovoAvailability: () => "unavailable",
 		getThreadBrowserWorkspace: noop,
 		handleChatSdkRequest: noop,
 		hasGatewayUrlConfigured: () => false,
