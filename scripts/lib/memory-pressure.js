@@ -1,15 +1,36 @@
 "use strict";
 
 // One reading of how much memory this machine has to spare, shared by the dev-stack budget
-// (scripts/lib/dev-stack-budget.js) and the unit runner's `--parallel auto`. The limits match
-// the vpk-system-clean sweep's pressure mode. Every reading is null when it cannot be taken
-// (another OS, a sandbox), and a null reading never counts as pressure.
+// (scripts/lib/dev-stack-budget.js), the unit runner's `--parallel auto`, check and ci:pr. Every
+// reading is null when it cannot be taken (another OS, a sandbox), and a null reading never counts
+// as pressure.
 
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
+const path = require("node:path");
 
-const PRESSURE_SWAP_USED_GB = 16; // swap in use that counts as memory pressure
-const PRESSURE_LEVEL_MIN = 4; // kern.memorystatus_vm_pressure_level: 1 normal, 2 warn, 4 critical
+// The pressure limits have one owner: the vpk-system-clean sweep, which also runs on its own
+// from ~/.local/bin. They are read from its `NAME=<number>` lines; the fallbacks apply only if
+// that file cannot be read.
+const SWEEP_SCRIPT = path.resolve(__dirname, "../../.agents/skills/vpk-system-clean/scripts/vpk-system-clean.sh");
+
+function readSweepLimits(file = SWEEP_SCRIPT) {
+	let text = "";
+	try {
+		text = fs.readFileSync(file, "utf8");
+	} catch {
+		// Fallbacks below.
+	}
+	const value = (name, fallback) => {
+		const match = new RegExp(`^${name}=(\\d+)\\b`, "mu").exec(text);
+		return match ? Number(match[1]) : fallback;
+	};
+	return { levelMin: value("PRESSURE_LEVEL_MIN", 4), swapGb: value("PRESSURE_SWAP_USED_GB", 16) };
+}
+
+const SWEEP_LIMITS = readSweepLimits();
+const PRESSURE_SWAP_USED_GB = SWEEP_LIMITS.swapGb; // swap in use that counts as memory pressure
+const PRESSURE_LEVEL_MIN = SWEEP_LIMITS.levelMin; // kern.memorystatus_vm_pressure_level: 1 normal, 2 warn, 4 critical
 
 function run(command, args) {
 	const result = spawnSync(command, args, { encoding: "utf8" });
@@ -75,4 +96,5 @@ module.exports = {
 	parseVmStatAvailableGb,
 	pressureReasons,
 	readMemoryState,
+	readSweepLimits,
 };
