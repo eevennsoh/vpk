@@ -294,3 +294,31 @@ test("preset env map exposes the documented easy-switch presets", () => {
 		"whisper-tiny",
 	]);
 });
+
+test("a client may choose a transcription provider or model only among those the server is configured for", () => {
+	const { decideClientTranscriptionChoice } = require("./speech-transcription").__test__;
+	const sttEnvVars = {
+		STT_PRESET: "whisper-tiny",
+		STT_PRESET_WHISPER_TINY_PROVIDER: "local-whisper",
+		STT_PRESET_WHISPER_TINY_MODEL: "tiny",
+		STT_PRESET_GOOGLE_PROVIDER: "google",
+	};
+	const envVars = { GOOGLE_STT_MODEL: "gemini-2.5-flash" };
+	const decide = (rawProvider, rawModel, overrides = {}) =>
+		decideClientTranscriptionChoice({ envVars: overrides.envVars ?? envVars, rawModel, rawProvider, sttEnvVars: overrides.sttEnvVars ?? sttEnvVars }).action;
+	const cases = [
+		["nothing chosen: the preset decides", undefined, undefined, "allow"],
+		["a configured provider", "google", undefined, "allow"],
+		["a configured provider and model", "local-whisper", "tiny", "allow"],
+		["a configured model alone", undefined, "gemini-2.5-flash", "allow"],
+		["an unconfigured provider", "openai-compatible", undefined, "reject"],
+		["a model the server never chose", "local-whisper", "large-v3", "reject"],
+		["a configured model under the wrong provider", "google", "tiny", "reject"],
+		["an unknown model alone", undefined, "some-model", "reject"],
+	];
+	for (const [name, provider, model, expected] of cases) {
+		assert.equal(decide(provider, model), expected, name);
+	}
+	// local-whisper cannot be chosen when nothing configures it.
+	assert.equal(decide("local-whisper", undefined, { sttEnvVars: {}, envVars }), "reject");
+});

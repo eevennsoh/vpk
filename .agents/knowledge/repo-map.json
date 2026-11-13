@@ -325,67 +325,67 @@
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/agent/apply",
-						"source": "backend/routes/demos.js:205",
+						"source": "backend/routes/demos.js:226",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/events/ticket-entered-column",
-						"source": "backend/routes/demos.js:219",
+						"source": "backend/routes/demos.js:240",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/reset",
-						"source": "backend/routes/demos.js:193",
+						"source": "backend/routes/demos.js:214",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "backend/routes/demos.js:165",
+						"source": "backend/routes/demos.js:186",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/state",
-						"source": "backend/routes/demos.js:177",
+						"source": "backend/routes/demos.js:198",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/agents/rfp-demo/vpk-html-report",
-						"source": "backend/routes/demos.js:68",
+						"source": "backend/routes/demos.js:81",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:129",
+						"source": "backend/routes/demos.js:146",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:103",
+						"source": "backend/routes/demos.js:120",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/claim-test",
-						"source": "backend/routes/demos.js:116",
+						"source": "backend/routes/demos.js:133",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/standup",
-						"source": "backend/routes/demos.js:142",
+						"source": "backend/routes/demos.js:159",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/ticket-classify",
-						"source": "backend/routes/demos.js:80",
+						"source": "backend/routes/demos.js:93",
 						"runtimeAdmin": false
 					}
 				]
