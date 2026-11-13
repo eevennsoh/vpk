@@ -110,8 +110,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		for (const title of ["Context", "Collaboration", "Confidence"]) {
 			await expect(page.locator(`[data-jira-kanban-column="${title}"] [data-issue-key]`)).toHaveCount(0);
 		}
-		// 8661caeab gave keynote cards an sr-only activation control that repeats the summary.
-		await expect(done.locator('[data-board-agent-session-drop-zone="issue"]').filter({ hasText: "New keynote item" })).toBeVisible();
+		// 8661caeab gave keynote cards an sr-only activation control that repeats the summary;
+		// leave it out so the check stays on the visible summary.
+		await expect(done.getByText("New keynote item", { exact: true }).and(page.locator(":not(.sr-only)"))).toBeVisible();
 		await expect(page.locator("[data-issue-drop-flight]")).toHaveCount(0);
 		await expect(arrange).toHaveCount(0);
 		await page.screenshot({ path: `output/agent-browser/keynote-auto-arrange/done-${reducedMotion}.png` });

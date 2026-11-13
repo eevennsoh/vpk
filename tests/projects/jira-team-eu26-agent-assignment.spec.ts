@@ -2,6 +2,10 @@ import { expect, test } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
+// The removed footer was "Add agent" here and "Assign agent" by default in the shared component
+// (50d9535a0's own unit test checks both), so an absence check catches either name.
+const FOOTER_AGENT_BUTTON_NAME = /^(Add|Assign) agent$/u;
+
 test.use({ viewport: { width: 1800, height: 1100 } });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
@@ -99,7 +103,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const flyout = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 		await expect(flyout).toBeVisible();
 		// 50d9535a0 removed the Add agent footer from the session flyout.
-		await expect.soft(flyout.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0, { timeout: 1000 });
+		await expect.soft(flyout.getByRole("button", { name: FOOTER_AGENT_BUTTON_NAME })).toHaveCount(0, { timeout: 1000 });
 		const session = flyout.locator("article");
 		await page.mouse.move(0, 0);
 		await expect.soft(session).toHaveCSS("background-color", "rgba(0, 0, 0, 0)", { timeout: 1000 });
@@ -167,7 +171,7 @@ test("List assigned menu shows its sessions without an Add agent footer", async 
 	const menu = page.locator('[data-slot="popover-content"][aria-label="Agent assignment"]');
 	await expect(menu).toBeVisible();
 	await expect(menu.getByRole("listitem").first()).toBeVisible();
-	await expect(menu.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
+	await expect(menu.getByRole("button", { name: FOOTER_AGENT_BUTTON_NAME })).toHaveCount(0);
 });
 
 test("compact assignment flyout centers status and more actions in each row", async ({ page }) => {
@@ -502,7 +506,7 @@ for (const { issueKey, state, agent } of [
 		await expect(flyout).toBeVisible();
 		// 50d9535a0 removed the Add agent footer from the session flyout.
 		await expect(flyout.getByRole("listitem").first()).toBeVisible();
-		await expect(flyout.getByRole("button", { name: "Add agent", exact: true })).toHaveCount(0);
+		await expect(flyout.getByRole("button", { name: FOOTER_AGENT_BUTTON_NAME })).toHaveCount(0);
 	});
 }
 

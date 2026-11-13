@@ -58,6 +58,35 @@ test("the Jira tabs switch away from and back to the board", async ({ page }) =>
 	await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(4);
 });
 
+// 0bce30118 removed the per-session Unlink button from EU26's comfortable cards, so a
+// session is unlinked by dropping its chin on the Unlink sessions column.
+test("an unlinked session stays in the Unlink sessions column across Board to List to Board", async ({ page }) => {
+	await openBoard(page);
+	const card = page.locator("article", { has: page.getByText("PAY-112", { exact: true }) });
+	const chin = card.getByRole("button", { name: /^Codex: /u });
+	const column = page.locator('[data-board-agent-session-drop-zone="untracked"]');
+	const from = (await chin.boundingBox())!;
+	const to = (await column.boundingBox())!;
+	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(from.x + from.width / 2 + 6, from.y + from.height / 2 + 6, { steps: 3 });
+	await page.mouse.move(to.x + to.width / 2, to.y + 120, { steps: 12 });
+	await expect(column).toHaveAttribute("data-board-agent-session-target", "untracked");
+	await page.mouse.up();
+
+	const detachedSession = page.locator("[data-agent-session-column]").getByTestId("agent-session-row-PAY-112:review-agent");
+	await expect(detachedSession).toBeVisible();
+	await expect(chin).toHaveCount(0);
+
+	const jiraTabs = page.getByRole("tablist").first();
+	await jiraTabs.getByRole("tab", { name: "List" }).click();
+	await expect(jiraTabs.getByRole("tab", { name: "List" })).toHaveAttribute("aria-selected", "true");
+	await jiraTabs.getByRole("tab", { name: "Board" }).click();
+	await expect(jiraTabs.getByRole("tab", { name: "Board" })).toHaveAttribute("aria-selected", "true");
+	await expect(detachedSession).toBeVisible();
+	await expect(chin).toHaveCount(0);
+});
+
 test("Insights controls and content are absent from v5", async ({ page }) => {
 	await openBoard(page);
 

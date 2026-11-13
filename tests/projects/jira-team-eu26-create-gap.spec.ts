@@ -259,7 +259,9 @@ for (const width of [1720, 1440]) {
 			await expect(collapse).toHaveCSS("opacity", "1");
 			await create.focus();
 			await page.keyboard.press("Enter");
-			// The create popup carries its authored name, "Create work item in <status>" (cfc9fe2e8).
+			// The popup's authored aria-label, "Create work item in <status>" (cfc9fe2e8), took effect
+			// only with Base UI 1.9 (72eae9e48); before that the popup was named after its trigger.
+			// No commit chose this name; the owner is to confirm it.
 			await expect(page.getByRole("dialog", { name: "Create work item in Done", exact: true })).toBeVisible();
 			await page.keyboard.press("Escape");
 			await expect(create).toBeFocused();
@@ -293,7 +295,9 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(create).toHaveCSS("background-color", restingBackground);
 		await create.focus();
 		await page.keyboard.press("Enter");
-		// The create popup carries its authored name, "Create work item in <status>" (cfc9fe2e8).
+		// The popup's authored aria-label, "Create work item in <status>" (cfc9fe2e8), took effect
+		// only with Base UI 1.9 (72eae9e48); before that the popup was named after its trigger.
+		// No commit chose this name; the owner is to confirm it.
 		await expect(page.getByRole("dialog", { name: "Create work item in Confidence", exact: true })).toBeVisible();
 		await page.keyboard.press("Escape");
 		await expect(create).toBeFocused();

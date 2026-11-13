@@ -344,7 +344,9 @@ test("compact create adds a named issue in its own column without capturing sess
 	const sessionCount = await sessions.locator('[data-testid^="agent-session-row-"]').count();
 	await column.hover();
 	await column.getByRole("button", { name: "Create in In review" }).click();
-	// The create popup carries its authored name, "Create work item in <status>" (cfc9fe2e8).
+	// The popup's authored aria-label, "Create work item in <status>" (cfc9fe2e8), took effect
+	// only with Base UI 1.9 (72eae9e48); before that the popup was named after its trigger.
+	// No commit chose this name; the owner is to confirm it.
 	const form = page.getByRole("dialog", { name: "Create work item in In review", exact: true });
 	await form.getByRole("textbox", { name: "Name this work item" }).fill("Manual review follow-up");
 	await form.getByRole("button", { name: "Create work item", exact: true }).click();
