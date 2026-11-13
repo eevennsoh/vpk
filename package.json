@@ -66,6 +66,8 @@
 		"dev:tmux:status": "./scripts/dev-tmux-plain.sh status",
 		"rovo": "node scripts/run-rovo-stack.js",
 		"ports": "node scripts/show-worktree-ports.js",
+		"ship-status": "node scripts/ship-status.js",
+		"clean-candidates": "node scripts/clean-candidates.js",
 		"control-vpk": "node .agents/skills/vpk-verify/scripts/control-vpk",
 		"doctor": "node scripts/doctor.js",
 		"image-tools": "node scripts/image-tools.mjs",

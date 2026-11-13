@@ -28,10 +28,11 @@ work, or clean Symphony issue state managed by `vpk-symphony`.
 
 ## Hard invariants
 
-- Prove landing before deletion using ancestry, merged-PR evidence, or the
-  patch-equivalence fallback in [evidence.md](references/evidence.md). An
-  `upstream gone` marker proves only remote branch deletion. A merged PR proves
-  the candidate tip only when its recorded head SHA matches that tip.
+- Prove landing before deletion with `pnpm run clean-candidates -- --json`
+  (read-only). "Proven landed" is defined once, in
+  `scripts/lib/branch-landing.js`; do not re-derive it by hand. Only a target
+  with status `main-synced` and no blockers is a candidate; `unknown` never is.
+  An `upstream gone` marker proves only remote branch deletion.
 - Any uncommitted or untracked file makes a worktree ineligible. Treat it as
   user work, regardless of whether the branch itself merged.
 - Never remove or switch the current/default worktree, an open-PR head, an
@@ -39,7 +40,8 @@ work, or clean Symphony issue state managed by `vpk-symphony`.
 - Remove eligible worktrees with plain `git worktree remove`, then delete their
   source branches. Use `git branch -d` for ancestor heads. For a non-ancestor
   head, `git branch -D` is allowed only when the local tip exactly matches the
-  head SHA of a merged PR into the default branch, no open PR owns its name or
+  head SHA of a merged PR into the default branch (`clean-candidates` reports
+  `proof: "merged-pr"` with `exactHead: true`), no open PR owns its name or
   SHA, and no worktree owns the branch. Record the SHA and PR before deletion;
   a branch-name match or patch-equivalence alone does not authorize `-D`.
   Never force-remove a worktree or detach one to clear a dirty branch.
@@ -57,6 +59,7 @@ merged source branch and local worktree/refs. Close an unmerged PR with
 ## Inventory
 
 ```bash
+pnpm run clean-candidates -- --fetch --json
 git status --short --branch
 git branch -vv
 git worktree list --porcelain
@@ -85,9 +88,10 @@ exists, retry read-only GitHub commands with
    owning worktree. Classify `upstream gone` separately from landed work.
 2. First delete landed, unused branches; for a landed branch still checked out
    in a worktree, evaluate and remove that worktree before deleting the branch.
-   Prove clean porcelain status, non-current/non-default ownership, committed
-   landing, no open PR by branch or head SHA, registration, and process state.
-   Follow [evidence.md](references/evidence.md). A checked-out marker alone is
+   `clean-candidates` proves clean porcelain status, non-current/non-default
+   ownership, committed landing and no open PR by branch; prove registration,
+   open PRs by head SHA and process state as in
+   [evidence.md](references/evidence.md). A checked-out marker alone is
    not a reason to leave a clean, unused, landed worktree behind.
 3. For an eligible worktree with an exact-path dev stack, stop that stack before
    removal. From the surviving checkout, prefer the tested

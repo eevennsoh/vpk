@@ -26,9 +26,8 @@ trails the remote head, fetch the remote commit and use the refreshed remote ref
 as the landing baseline. Do not move a checked-out local branch ref or switch
 an active checkout merely to make the local default ref current.
 
-Use `git branch -vv` to spot missing upstreams, then use ancestry and PR
-evidence to decide landing. A missing upstream does not prove the local head
-landed. `git worktree list --porcelain` tells you which branches cannot be
+Use `git branch -vv` to spot missing upstreams, and `clean-candidates` to decide
+landing. A missing upstream does not prove the local head landed. `git worktree list --porcelain` tells you which branches cannot be
 deleted until their owning worktree is removed.
 
 ## Prove the working tree is empty
@@ -46,41 +45,26 @@ only committed work; it says nothing about these local files.
 
 ## Prove committed work landed
 
-Try ancestry first:
+Run the read-only report and read the target's entry; do not re-derive landing
+by hand:
 
 ```bash
-git merge-base --is-ancestor <candidate-head> <default>
+pnpm run clean-candidates -- --fetch --json
+pnpm run ship-status -- --branch <candidate-branch> --json   # one branch
 ```
 
-Exit zero proves the candidate commit is in the default branch's history. When
-ancestry fails because the PR was squash-merged or commits were recreated, use
-GitHub merged-PR evidence: match the candidate branch or head SHA to a closed
-PR, confirm its `state`, `mergedAt`, and base branch, and verify no open PR uses
-the same branch or head. Query the candidate branch directly rather than
-assuming the latest repository-wide PR page includes it:
+"Proven landed" is defined once, in `scripts/lib/branch-landing.js`
+(`provenLanded`): the head is an ancestor of `origin/<default>`; or a PR merged
+into `<default>` carried every local commit (squash and rebase merges); or
+`git cherry` finds every patch on `origin/<default>`. Commits past a merged PR's
+head are not landed. A read that failed makes the answer `unknown`, which is
+never removable. `evidence.proof` names the proof and, for a merged PR,
+`evidence.landedBy` its number and `evidence.exactHead` whether the local tip
+equals the PR's recorded head.
 
-```bash
-gh pr list --state merged --head <candidate-branch> --limit 100 \
-  --json number,headRefName,headRefOid,baseRefName,state,mergedAt
-```
-
-Require the candidate's current tip to equal that merged PR's `headRefOid`.
-A branch-name match alone does not cover commits added locally after the merge.
-
-For local `git branch -D`, require an exact match between the current local tip
-and a merged PR's `headRefOid`, plus no registered worktree or open PR owner.
-Record the PR and tip before deleting the ref. PR branch-name match alone and
-patch-equivalence are not enough for force deletion.
-
-When ancestry and PR metadata are unavailable or insufficient, use
-patch-equivalence only as a final fallback:
-
-```bash
-git cherry -v <default> <candidate-head>
-```
-
-Every candidate patch must be shown as equivalent on the default branch. Review
-the actual diff when the result is unclear. Do not create no-op merges or fake
+The report's `main-synced` status also requires the local `<default>` to hold
+the landing commit; `merged` means "sync main first". `exactHead: true` is
+still required for `git branch -D` (below). Do not create no-op merges or fake
 ancestry to turn an uncertain target into an eligible one.
 
 ## Reconcile PR and remote branch state
