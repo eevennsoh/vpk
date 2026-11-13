@@ -4,6 +4,9 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+const { PRESSURE_SWAP_USED_GB: SWAP } = require("./lib/memory-pressure.js");
+// Pressure fixtures follow the sweep's limits, so changing them there breaks no test.
+const OVER = SWAP + 13;
 
 const repoRoot = path.resolve(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts/dev-tmux-plain.sh");
@@ -360,15 +363,15 @@ test("over the stack budget a start refuses, lists the live stacks, and --force 
 test("under memory pressure a start refuses within the stack budget while another stack runs, and warns when none does", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
-		const crowded = fake.writeInventory({ swapUsedGb: 29, servers: [{ pid: 905, cwd: "/tmp/wt-other", cpu: 1 }] });
+		const crowded = fake.writeInventory({ swapUsedGb: OVER, servers: [{ pid: 905, cwd: "/tmp/wt-other", cpu: 1 }] });
 		const refused = withPortFiles(null, null, () => startAs(fake, "vpk-dev-new", { VPK_DEV_STACK_INVENTORY: crowded }));
 		assert.equal(refused.status, 3);
-		assert.match(refused.stderr, /swap in use is 29 GB >= 16 GB/);
+		assert.match(refused.stderr, new RegExp(`swap in use is ${OVER} GB >= ${SWAP} GB`));
 		assert.deepEqual(fake.sessions(), []);
 
-		const alone = withPortFiles(null, null, () => startAs(fake, "vpk-dev-new", { VPK_DEV_STACK_INVENTORY: fake.writeInventory({ swapUsedGb: 29 }) }));
+		const alone = withPortFiles(null, null, () => startAs(fake, "vpk-dev-new", { VPK_DEV_STACK_INVENTORY: fake.writeInventory({ swapUsedGb: OVER }) }));
 		assert.equal(alone.status, 0, alone.stderr);
-		assert.match(alone.stderr, /Warning: memory pressure \(swap in use is 29 GB >= 16 GB\), but no other dev stack runs; starting/);
+		assert.match(alone.stderr, new RegExp(`Warning: memory pressure \\(swap in use is ${OVER} GB >= ${SWAP} GB\\), but no other dev stack runs; starting`));
 		assert.deepEqual(fake.sessions(), [`vpk-dev-new|${repoRoot}`]);
 	} finally {
 		fake.cleanup();
@@ -393,11 +396,11 @@ test("restarting a session whose frontend died still checks the budget", () => {
 	const fake = createFakeLauncherEnvironment();
 	try {
 		fs.writeFileSync(fake.statePath, `vpk-dev-stale|${repoRoot}\n`);
-		const inventory = fake.writeInventory({ swapUsedGb: 30, servers: [{ pid: 906, cwd: "/tmp/wt-other", cpu: 1 }] });
+		const inventory = fake.writeInventory({ swapUsedGb: OVER, servers: [{ pid: 906, cwd: "/tmp/wt-other", cpu: 1 }] });
 		const result = withPortFiles(null, null, () => startAs(fake, "vpk-dev-stale", { VPK_DEV_STACK_INVENTORY: inventory }));
 		assert.equal(result.status, 3);
 		assert.match(result.stdout, /exists but has no listening frontend port\. Restarting it/);
-		assert.match(result.stderr, /Not starting: swap in use is 30 GB >= 16 GB/);
+		assert.match(result.stderr, new RegExp(`Not starting: swap in use is ${OVER} GB >= ${SWAP} GB`));
 		assert.deepEqual(fake.sessions(), [], "the dead session was stopped and nothing replaced it");
 		assert.deepEqual(fake.serversLaunched(), []);
 	} finally {

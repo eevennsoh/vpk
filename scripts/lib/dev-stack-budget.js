@@ -18,14 +18,13 @@ const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
+const { pressureReasons, readMemoryState } = require("./memory-pressure.js");
 const { findCurrentWorktree } = require("./worktree-kill.js");
 
 // Defaults from the 2026-11-13 incident on a 48 GB Mac: ten next-servers held about 39 GB
 // (about 4 GB each), and six stacks plus one validation run exhausted it again. Four stacks
 // (about 16 GB) leave room for agents and one heavy validation run.
 const DEV_STACK_BUDGET = 4; // live stacks, counting the one about to start
-const PRESSURE_SWAP_USED_GB = 16; // same limits as the vpk-system-clean pressure mode
-const PRESSURE_LEVEL_MIN = 4; // kern.memorystatus_vm_pressure_level: 4 is critical
 const IDLE_CPU_MAX = 20; // %CPU below which a stack is listed as idle
 
 const EXIT_OVER_BUDGET = 3;
@@ -34,28 +33,6 @@ const EXIT_DUPLICATE_SERVER = 4;
 function run(command, args) {
 	const result = spawnSync(command, args, { encoding: "utf8" });
 	return result.status === 0 ? result.stdout : "";
-}
-
-function parseSwapUsedGb(text) {
-	const match = /used = ([\d.]+)([KMG])/u.exec(text);
-	if (!match) return null;
-	const value = Number(match[1]);
-	return Math.floor(match[2] === "G" ? value : match[2] === "M" ? value / 1024 : 0);
-}
-
-function readMemoryState() {
-	const level = Number(run("sysctl", ["-n", "kern.memorystatus_vm_pressure_level"]).trim());
-	return {
-		pressureLevel: Number.isInteger(level) && level > 0 ? level : null,
-		swapUsedGb: parseSwapUsedGb(run("sysctl", ["-n", "vm.swapusage"])),
-	};
-}
-
-function pressureReasons(state) {
-	const reasons = [];
-	if (state.swapUsedGb !== null && state.swapUsedGb !== undefined && state.swapUsedGb >= PRESSURE_SWAP_USED_GB) reasons.push(`swap in use is ${state.swapUsedGb} GB >= ${PRESSURE_SWAP_USED_GB} GB`);
-	if (state.pressureLevel !== null && state.pressureLevel !== undefined && state.pressureLevel >= PRESSURE_LEVEL_MIN) reasons.push(`memory-pressure level is ${state.pressureLevel} >= ${PRESSURE_LEVEL_MIN}`);
-	return reasons;
 }
 
 // Agent and tool processes whose cwd marks a worktree as in use (the same guard the
@@ -224,5 +201,4 @@ module.exports = {
 	EXIT_OVER_BUDGET,
 	evaluateBudget,
 	formatVerdict,
-	parseSwapUsedGb,
 };
