@@ -59,9 +59,9 @@ const VERDICTS = ["ship with nits", "request changes", "ship"];
 const APPROVALS = new Set(["ship", "ship with nits"]);
 
 function createRunner({ timeoutMs = COMMAND_TIMEOUT_MS, env = process.env } = {}) {
-	return function runCommand(command, args, { cwd, timeoutMs: callTimeoutMs = timeoutMs } = {}) {
+	return function runCommand(command, args, { cwd, timeoutMs: callTimeoutMs = timeoutMs, env: extraEnv = null } = {}) {
 		return new Promise((resolve) => {
-			execFile(command, args, { cwd, env, timeout: callTimeoutMs, maxBuffer: 16 * 1024 * 1024, encoding: "utf8" }, (error, stdout, stderr) => {
+			execFile(command, args, { cwd, env: extraEnv ? { ...env, ...extraEnv } : env, timeout: callTimeoutMs, maxBuffer: 16 * 1024 * 1024, encoding: "utf8" }, (error, stdout, stderr) => {
 				// code: the exit status (0 on success), or null when the command never ran or timed out.
 				resolve({ ok: !error, code: error ? (Number.isInteger(error.code) ? error.code : null) : 0, stdout: stdout ?? "", stderr: stderr ?? "" });
 			});

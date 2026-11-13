@@ -12,9 +12,9 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { collectCleanCandidates } = require("./clean-candidates");
-const { collectShipStatus } = require("./ship-status");
-const { createRunner } = require("./lib/branch-facts");
+const { collectCleanCandidates, formatCleanCandidates } = require("./clean-candidates");
+const { collectShipStatus, formatShipStatus } = require("./ship-status");
+const { REFLOG_LIMIT, createRunner } = require("./lib/branch-facts");
 const { fetchPullRequests } = require("./vpk-remote-status");
 
 function setup(t) {
@@ -66,9 +66,9 @@ function setup(t) {
 		return dir;
 	};
 	const runCommand = createRunner({ timeoutMs: 20_000, env });
-	const report = (prs = new Map()) => collectCleanCandidates({ cwd: repo, runCommand, readPrs: async () => prs });
+	const report = (prs = new Map(), options = {}) => collectCleanCandidates({ cwd: repo, runCommand, readPrs: async () => prs, ...options });
 	const entry = (result, predicate) => [...result.candidates, ...result.retained].find(predicate);
-	return { root, repo, env, sh, write, commit, landed, report, entry, runCommand };
+	return { root, origin, repo, env, sh, write, commit, landed, report, entry, runCommand };
 }
 
 const byWorktree = (dir) => (candidate) => candidate.worktree === dir;
@@ -76,7 +76,7 @@ const byWorktree = (dir) => (candidate) => candidate.worktree === dir;
 test("baseline: a landed, clean worktree and its branch are cleanable", async (t) => {
 	const { landed, report, entry } = setup(t);
 	const dir = landed("feat");
-	const result = await report();
+	const result = await report(new Map(), { fetch: true });
 	const found = entry(result, byWorktree(dir));
 	assert.deepEqual([found.status, found.cleanable, found.blockers], ["main-synced", true, []]);
 	assert.equal(found.evidence.remoteSafeToDelete, true);
@@ -123,7 +123,7 @@ test("3: commits only a reflog reaches retain the worktree or branch", async (t)
 	sh(detached, "checkout", "--quiet", "--detach", "origin/main");
 	let found = entry(await report(), byWorktree(detached));
 	assert.equal(found.cleanable, false);
-	assert.ok(found.blockers.includes("1 commit(s) only the worktree's HEAD reflog reaches"), found.blockers.join("; "));
+	assert.ok(found.blockers.includes("1 commit(s) only the worktree's HEAD reflog or its own refs reach"), found.blockers.join("; "));
 
 	// A branch reset after committing.
 	const reset = landed("reset-me");
@@ -159,7 +159,7 @@ test("5: commits someone pushed to origin/<branch> retain it and make the remote
 	sh(other, "push", "--quiet", "origin", "feat");
 	sh(dir, "fetch", "--quiet", "origin");
 
-	const found = entry(await report(), byWorktree(dir));
+	const found = entry(await report(new Map(), { fetch: true }), byWorktree(dir));
 	assert.equal(found.cleanable, false);
 	assert.ok(found.blockers.includes("origin/feat has 1 commit(s) this branch lacks"), found.blockers.join("; "));
 	assert.equal(found.evidence.remoteSafeToDelete, false);
@@ -294,4 +294,192 @@ test("13: ship-status reads a failed branch lookup as unknown, never as deleted"
 	};
 	const status = await collectShipStatus({ cwd: repo, branch: "feat", runCommand: flaky, gateReader: async () => null });
 	assert.equal(status.status, "unknown");
+});
+
+// Second adversarial review of #2154 (items A to F, and the suspected gaps).
+
+const failing = (runCommand, matches) => async (command, args, options) => (matches(command, args)
+	? { ok: false, code: null, stderr: "timed out", stdout: "" }
+	: runCommand(command, args, options));
+
+test("A: remoteSafeToDelete is true only after a fetch in this run, and the skill's lease refuses a newer push", async (t) => {
+	const { repo, landed, report, entry, sh, commit, root, env } = setup(t);
+	const dir = landed("feat");
+	let found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, true, found.blockers.join("; "));
+	assert.equal(found.evidence.remoteSafeToDelete, null, "never true without --fetch");
+	assert.match(found.evidence.remoteUnknown, /run with --fetch/u);
+
+	const fetched = await report(new Map(), { fetch: true });
+	assert.equal(fetched.fetch, "ok");
+	found = entry(fetched, byWorktree(dir));
+	const seenTip = sh(repo, "rev-parse", "origin/feat");
+	assert.deepEqual([found.evidence.remoteSafeToDelete, found.evidence.remoteTip], [true, seenTip]);
+	assert.match(formatCleanCandidates(fetched), new RegExp(`origin/feat: safe to delete at ${seenTip}`, "u"));
+
+	// Someone pushes to origin/feat, then origin becomes unreachable: the local origin/feat
+	// is stale and still equals the branch.
+	const other = path.join(root, "other-clone");
+	execFileSync("git", ["clone", "--quiet", "--branch", "feat", path.join(root, "origin.git"), other], { env });
+	commit(other, "theirs.txt", "pushed after the report");
+	sh(other, "push", "--quiet", "origin", "feat");
+	const originUrl = sh(repo, "remote", "get-url", "origin");
+	sh(repo, "remote", "set-url", "origin", path.join(root, "unreachable.git"));
+	const failed = await report(new Map(), { fetch: true });
+	assert.equal(failed.fetch, "failed");
+	found = entry(failed, byWorktree(dir));
+	assert.equal(found.evidence.remoteSafeToDelete, null);
+	assert.match(found.evidence.remoteUnknown, /fetch .*failed/u);
+	assert.match(formatCleanCandidates(failed), /fetch failed: origin\/\* refs are from an earlier fetch; no remote branch is safe to delete/u);
+
+	// The skill's delete leases the tip the report saw, so it refuses the newer push.
+	sh(repo, "remote", "set-url", "origin", originUrl);
+	assert.throws(() => sh(repo, "push", `--force-with-lease=refs/heads/feat:${seenTip}`, "origin", ":refs/heads/feat"), /stale info/u);
+	assert.match(sh(repo, "ls-remote", "--heads", "origin", "feat"), /refs\/heads\/feat$/u);
+});
+
+test("B: ship-status reads a failed worktree list as unknown, and says it does not decide cleanup", async (t) => {
+	const { repo, landed, runCommand, write } = setup(t);
+	const dir = landed("feat");
+	write(dir, "uncommitted.txt", "work in progress");
+	const flaky = failing(runCommand, (command, args) => command === "git" && args.includes("worktree") && args.includes("list"));
+	const prsAndGit = async (command, args, options) => (command === "gh"
+		? { ok: true, code: 0, stderr: "", stdout: JSON.stringify({ data: { repository: { b0: { totalCount: 0, nodes: [] } } } }) }
+		: flaky(command, args, options));
+	const status = await collectShipStatus({ cwd: repo, branch: "feat", runCommand: prsAndGit, gateReader: async () => null });
+	assert.equal(status.status, "unknown", status.nextAction);
+	assert.match(status.cleanup, /^not decided here: pnpm run clean-candidates/u);
+	assert.match(formatShipStatus(status), /cleanup: not decided here/u);
+
+	const readable = await collectShipStatus({ cwd: repo, branch: "feat", runCommand: async (command, args, options) => (command === "gh" ? prsAndGit(command, args, options) : runCommand(command, args, options)), gateReader: async () => null });
+	assert.equal(readable.status, "dirty");
+});
+
+test("C: a HEAD reflog longer than the scan limit is unknown, not 'none found'", async (t) => {
+	const { landed, report, entry, sh, commit } = setup(t);
+	const dir = landed("feat");
+	sh(dir, "checkout", "--quiet", "--detach", "origin/main");
+	commit(dir, "scratch.txt", "only in the reflog");
+	sh(dir, "checkout", "--quiet", "--detach", "origin/main");
+	// REFLOG_LIMIT + 1 later HEAD moves, written as git writes them.
+	const tip = sh(dir, "rev-parse", "HEAD");
+	const log = path.join(sh(dir, "rev-parse", "--absolute-git-dir"), "logs", "HEAD");
+	fs.appendFileSync(log, `${tip} ${tip} Test <test@example.com> 1763000000 +0000\tcheckout: moving from ${tip} to ${tip}\n`.repeat(REFLOG_LIMIT + 1));
+	const found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	assert.ok(found.blockers.includes(`the worktree's HEAD reflog or its own refs has more than ${REFLOG_LIMIT} entries, so it was not scanned in full`), found.blockers.join("; "));
+});
+
+test("D: no merge driver, attribute or merge.default setting makes an unmerged branch content-landed", async (t) => {
+	const { repo, root, report, entry, sh, commit, write } = setup(t);
+	commit(repo, "conf.txt", "base\n");
+	sh(repo, "push", "--quiet", "origin", "main");
+	sh(repo, "fetch", "--quiet", "origin");
+	const dir = path.join(root, "wt-conf");
+	sh(repo, "worktree", "add", "--quiet", "-b", "conf", dir, "origin/main");
+	commit(dir, "conf.txt", "the branch's change\n");
+	sh(dir, "push", "--quiet", "-u", "origin", "conf");
+	commit(repo, "conf.txt", "main's change\n");
+	sh(repo, "push", "--quiet", "origin", "main");
+	sh(repo, "fetch", "--quiet", "origin");
+	const conf = async () => entry(await report(), (candidate) => candidate.branch === "conf").evidence;
+
+	assert.deepEqual([(await conf()).landed, (await conf()).proof], [false, null], "plain merge conflicts");
+	sh(repo, "config", "merge.ours.driver", "true");
+	write(repo, ".gitattributes", "conf.txt merge=ours\n");
+	assert.deepEqual([(await conf()).landed, (await conf()).proof], [false, null], "this checkout's .gitattributes");
+	fs.rmSync(path.join(repo, ".gitattributes"));
+	write(root, "global-attributes", "conf.txt merge=ours\n");
+	sh(repo, "config", "--global", "core.attributesFile", path.join(root, "global-attributes"));
+	assert.equal((await conf()).landed, false, "core.attributesFile");
+	sh(repo, "config", "--global", "--unset", "core.attributesFile");
+	sh(repo, "config", "merge.default", "ours");
+	assert.equal((await conf()).landed, false, "merge.default");
+	sh(repo, "config", "--unset", "merge.default");
+	commit(repo, ".gitattributes", "conf.txt merge=ours\n");
+	sh(repo, "push", "--quiet", "origin", "main");
+	sh(repo, "fetch", "--quiet", "origin");
+	assert.equal((await conf()).landed, false, ".gitattributes committed on main");
+	// info/attributes cannot be switched off for one command, so the proof is unknown.
+	write(sh(repo, "rev-parse", "--absolute-git-dir"), "info/attributes", "conf.txt merge=ours\n");
+	const evidence = await conf();
+	assert.equal(evidence.landed, null);
+	assert.ok(evidence.missing.includes("content"));
+});
+
+test("E: only regular env files the bootstrap seeds are exempt; .env* directories and links block", async (t) => {
+	const { landed, report, entry, write } = setup(t);
+	const dir = landed("feat");
+	write(dir, ".env.local", "FIXTURE=1\n");
+	write(dir, ".envs/prod/keys.txt", "x");
+	write(dir, ".environment-notes/plan.md", "x");
+	write(dir, ".env.d/extra", "x");
+	fs.symlinkSync(path.join(dir, ".env.local"), path.join(dir, ".env.linked"));
+	let found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	assert.deepEqual(found.blockers, ["ignored content that is not regenerable: .env.d/, .env.linked, .environment-notes/, .envs/"]);
+	assert.deepEqual(found.evidence.ignoredEnvFiles, [".env.local"]);
+
+	for (const name of [".envs", ".environment-notes", ".env.d", ".env.linked"]) fs.rmSync(path.join(dir, name), { recursive: true });
+	const result = await report();
+	found = entry(result, byWorktree(dir));
+	assert.equal(found.cleanable, true, found.blockers.join("; "));
+	assert.match(formatCleanCandidates(result), /env files removal deletes \(show the owner; not opened\): \.env\.local/u);
+});
+
+test("F: a failed read of the current worktree aborts the report", async (t) => {
+	const { landed, runCommand } = setup(t);
+	const dir = landed("feat");
+	const flaky = failing(runCommand, (command, args) => command === "git" && args.includes("--show-toplevel"));
+	await assert.rejects(collectCleanCandidates({ cwd: dir, runCommand: flaky, readPrs: async () => new Map() }), /could not tell which worktree this is/u);
+});
+
+test("suspected 1: a stale origin/<other> does not keep a reflog-only commit; a live one does, after a fetch", async (t) => {
+	const { origin, landed, report, entry, sh, commit } = setup(t);
+	const dir = landed("feat");
+	sh(dir, "checkout", "--quiet", "--detach", "origin/main");
+	commit(dir, "scratch.txt", "pushed as another branch");
+	sh(dir, "push", "--quiet", "origin", "HEAD:refs/heads/other");
+	sh(dir, "fetch", "--quiet", "origin");
+	sh(dir, "checkout", "--quiet", "--detach", "origin/main");
+	const reached = "1 commit(s) only the worktree's HEAD reflog or its own refs reach";
+
+	assert.equal(entry(await report(new Map(), { fetch: true }), byWorktree(dir)).cleanable, true, "origin/other is live");
+	assert.ok(entry(await report(), byWorktree(dir)).blockers.includes(reached), "without --fetch remote refs do not count");
+	// origin deletes the branch; the local origin/other stays until a prune.
+	sh(origin, "update-ref", "-d", "refs/heads/other");
+	const found = entry(await report(new Map(), { fetch: true }), byWorktree(dir));
+	assert.ok(sh(dir, "rev-parse", "--verify", "refs/remotes/origin/other"), "still there locally");
+	assert.equal(found.cleanable, false);
+	assert.ok(found.blockers.includes(reached), found.blockers.join("; "));
+});
+
+test("suspected 2: a cherry-pick sequence paused after a manual commit retains the worktree", async (t) => {
+	const { landed, report, entry, sh, commit, write } = setup(t);
+	const dir = landed("feat");
+	const base = sh(dir, "rev-parse", "HEAD");
+	sh(dir, "checkout", "--quiet", "-b", "picks");
+	commit(dir, "feat.txt", "first pick");
+	commit(dir, "second.txt", "second pick");
+	sh(dir, "checkout", "--quiet", "feat");
+	commit(dir, "feat.txt", "conflicting");
+	assert.throws(() => sh(dir, "cherry-pick", `${base}..picks`));
+	write(dir, "feat.txt", "first pick");
+	sh(dir, "add", "feat.txt");
+	sh(dir, "commit", "--quiet", "-m", "resolved by hand");
+	const gitDir = sh(dir, "rev-parse", "--absolute-git-dir");
+	assert.deepEqual([fs.existsSync(path.join(gitDir, "CHERRY_PICK_HEAD")), fs.existsSync(path.join(gitDir, "sequencer"))], [false, true]);
+	const found = entry(await report(), byWorktree(dir));
+	assert.ok(found.blockers.includes("a cherry-pick or revert sequence is in progress"), found.blockers.join("; "));
+});
+
+test("suspected 3: a commit only refs/worktree/* reaches retains the worktree", async (t) => {
+	const { landed, report, entry, sh } = setup(t);
+	const dir = landed("feat");
+	const kept = sh(dir, "commit-tree", sh(dir, "write-tree"), "-p", "HEAD", "-m", "kept by a per-worktree ref");
+	sh(dir, "update-ref", "refs/worktree/keep", kept);
+	assert.equal(sh(dir, "log", "-g", "--format=%H", "HEAD").includes(kept), false, "not in the HEAD reflog");
+	const found = entry(await report(), byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	assert.ok(found.blockers.includes("1 commit(s) only the worktree's HEAD reflog or its own refs reach"), found.blockers.join("; "));
 });

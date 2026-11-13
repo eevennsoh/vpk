@@ -2,30 +2,37 @@
 "use strict";
 
 // Every local branch and worktree with its landing status, and which ones vpk-git-clean
-// may remove. Read-only: it removes nothing (see scripts/lib/branch-facts.js). Removal,
-// and its process-ownership proof, stay with the vpk-git-clean skill.
+// may remove. It removes nothing and writes no ref, worktree, index or config; what it
+// does write (merge-tree's unreferenced objects, and with --fetch the remote-tracking refs)
+// is listed in scripts/lib/branch-facts.js. Removal, and its process-ownership proof, stay
+// with the vpk-git-clean skill.
 //
 //   node scripts/clean-candidates.js [--fetch] [--json]
 //
 // "cleanable" covers: the branch's committed work is proven landed on origin/<default>
 // and in the local <default>; no tracked, untracked, skip-worktree or assume-unchanged
 // change; no ignored content outside the regenerable list (REGENERABLE_IGNORED in
-// branch-facts.js; .env* is listed, not judged); no rebase, merge, cherry-pick, revert or
-// bisect in progress; no commit that only a reflog reaches; nothing on origin/<branch>
-// the branch lacks; no open PR (and PRs were readable); not the default branch, the
-// persistent main checkout, the current worktree, a locked or shared worktree. It does
-// not cover running processes.
+// branch-facts.js; the env files the bootstrap seeds are listed, not judged); no rebase,
+// merge, cherry-pick, revert or bisect in progress; no commit that only a reflog or a
+// per-worktree ref reaches (remote-tracking refs count as keeping a commit only after a
+// successful --fetch, and only while their branch still exists on origin); nothing on
+// origin/<branch> the branch lacks; no open PR (and PRs were readable); not the default
+// branch, the persistent main checkout, the current worktree, a locked or shared worktree.
+// It does not cover running processes. remoteSafeToDelete is decided only after a
+// successful --fetch in the same run.
 
 const fs = require("node:fs");
 
 const { deriveBranchLanding } = require("./lib/branch-landing");
 const {
+	DEFAULT_KEEP_REFS,
 	collectBranchFacts,
 	createGit,
 	createRunner,
 	fetchOrigin,
 	listLocalBranches,
 	listWorktrees,
+	readLiveKeepRefs,
 	readPullRequests,
 	resolveDefaultBranch,
 } = require("./lib/branch-facts");
@@ -94,17 +101,35 @@ function cleanBlockers({ derived, facts = {}, target, defaultBranch, currentPath
 		else if (worktree.ignored.blocking.length > 0) blockers.push(`ignored content that is not regenerable: ${listPaths(worktree.ignored.blocking)}`);
 		if (worktree.operation === null) blockers.push("could not tell whether an operation is in progress");
 		else if (worktree.operation) blockers.push(`a ${worktree.operation.name} is in progress`);
-		if (worktree.reflogOnlyCommits === null) blockers.push("the worktree's HEAD reflog could not be read");
-		else if (worktree.reflogOnlyCommits > 0) blockers.push(`${worktree.reflogOnlyCommits} commit(s) only the worktree's HEAD reflog reaches`);
+		const localOnly = worktree.localOnlyCommits;
+		if (localOnly.unknown) blockers.push(`the worktree's HEAD reflog or its own refs ${localOnly.unknown}`);
+		else if (localOnly.count > 0) blockers.push(`${localOnly.count} commit(s) only the worktree's HEAD reflog or its own refs reach`);
 	}
-	if (facts.branchReflogOnlyCommits === null) blockers.push("the branch reflog could not be read");
-	else if (facts.branchReflogOnlyCommits > 0) blockers.push(`${facts.branchReflogOnlyCommits} commit(s) only the branch reflog reaches`);
+	const branchReflog = facts.branchReflogOnlyCommits;
+	if (branchReflog?.unknown) blockers.push(`the branch reflog ${branchReflog.unknown}`);
+	else if (branchReflog?.count > 0) blockers.push(`${branchReflog.count} commit(s) only the branch reflog reaches`);
 	if (facts.pushed && facts.remoteAhead !== 0) {
 		blockers.push(facts.remoteAhead === null
 			? `origin/${target.branch} could not be compared`
 			: `origin/${target.branch} has ${facts.remoteAhead} commit(s) this branch lacks`);
 	}
 	return blockers;
+}
+
+const REMOTE_UNKNOWN = {
+	skipped: "not judged: run with --fetch",
+	failed: "unknown: the fetch (or listing origin's branches) failed, so origin/<branch> may be stale",
+};
+
+// Whether vpk-git-clean may delete origin/<branch>, and the tip it saw (the lease for the
+// delete). true only when this run fetched, the remote branch has nothing the landed local
+// branch lacks, and the target is cleanable. null when there is no remote branch, or when
+// it was not fetched in this run (`remoteUnknown` says why).
+function remoteVerdict({ facts, blockers, fetchState }) {
+	if (!facts.pushed) return { remoteTip: null, remoteSafeToDelete: null, remoteUnknown: facts.pushed === null ? "the remote branch could not be read" : null };
+	if (fetchState !== "ok") return { remoteTip: facts.remoteTip, remoteSafeToDelete: null, remoteUnknown: REMOTE_UNKNOWN[fetchState] };
+	if (facts.remoteTip === null) return { remoteTip: null, remoteSafeToDelete: null, remoteUnknown: "the remote branch could not be read" };
+	return { remoteTip: facts.remoteTip, remoteSafeToDelete: facts.remoteAhead === 0 && blockers.length === 0, remoteUnknown: null };
 }
 
 async function collectCleanCandidates({
@@ -115,13 +140,24 @@ async function collectCleanCandidates({
 } = {}) {
 	const git = createGit(runCommand, cwd);
 	const defaultBranch = await resolveDefaultBranch(git);
-	if (fetch) await fetchOrigin(runCommand, cwd);
-	const [worktrees, branches, top] = await Promise.all([
+	// "ok" only when this run fetched origin and listed its branches: then the remote-tracking
+	// refs are current, the live ones keep commits, and a remote branch can be judged.
+	let fetchState = "skipped";
+	let keepRefs = DEFAULT_KEEP_REFS;
+	if (fetch) {
+		const liveKeepRefs = (await fetchOrigin(runCommand, cwd)) ? await readLiveKeepRefs(git) : null;
+		fetchState = liveKeepRefs ? "ok" : "failed";
+		keepRefs = liveKeepRefs ?? DEFAULT_KEEP_REFS;
+	}
+	const [worktrees, branches, topResult] = await Promise.all([
 		listWorktrees(git),
 		listLocalBranches(git),
-		git(["rev-parse", "--show-toplevel"]).then((result) => result.stdout.trim()),
+		git(["rev-parse", "--show-toplevel"]),
 	]);
 	if (worktrees === null || branches === null) throw new Error("git could not list worktrees or branches");
+	// Without the current worktree's path it could not be kept out of the candidates.
+	const top = topResult.ok ? topResult.stdout.trim() : "";
+	if (!top) throw new Error("git could not tell which worktree this is");
 
 	// A registered worktree that cannot be inspected (directory gone, or git no longer
 	// recognises it) is never removable here; `git worktree prune` (after `git worktree
@@ -150,6 +186,7 @@ async function collectCleanCandidates({
 			defaultBranch,
 			prs,
 			localBranchExists: target.branch !== null,
+			keepRefs,
 		});
 		return { target, facts };
 	});
@@ -170,9 +207,7 @@ async function collectCleanCandidates({
 			evidence: {
 				...derived.evidence,
 				ignoredEnvFiles: facts.worktree?.ignored?.env ?? [],
-				// Whether vpk-git-clean may delete origin/<branch>: only when it has nothing the
-				// landed local branch lacks. null when there is no remote branch or it is unknown.
-				remoteSafeToDelete: facts.pushed ? facts.remoteAhead === 0 && blockers.length === 0 : null,
+				...remoteVerdict({ facts, blockers, fetchState }),
 			},
 			cleanable: blockers.length === 0,
 			blockers,
@@ -180,6 +215,7 @@ async function collectCleanCandidates({
 	});
 	return {
 		defaultBranch,
+		fetch: fetchState,
 		prsRead: prsByBranch !== null,
 		candidates: results.filter((entry) => entry.cleanable),
 		retained: results.filter((entry) => !entry.cleanable),
@@ -195,9 +231,15 @@ async function collectCleanCandidates({
 
 function formatCleanCandidates(report) {
 	const lines = [`clean candidates: ${report.candidates.length} landed and clean, ${report.retained.length} retained${report.prsRead ? "" : " (gh unreachable: PR-based proof unknown)"}`];
+	if (report.fetch === "failed") lines.push("  fetch failed: origin/* refs are from an earlier fetch; no remote branch is safe to delete, and remote-tracking refs do not count as keeping commits");
+	if (report.fetch === "skipped") lines.push("  no --fetch: remote branches are not judged, and remote-tracking refs do not count as keeping commits");
 	for (const entry of report.candidates) {
-		const proof = entry.evidence.landedBy ? `${entry.evidence.proof} #${entry.evidence.landedBy}${entry.evidence.exactHead ? "" : ", tip differs from PR head"}` : entry.evidence.proof;
+		const { evidence } = entry;
+		const proof = evidence.landedBy ? `${evidence.proof} #${evidence.landedBy}${evidence.exactHead ? "" : ", tip differs from PR head"}` : evidence.proof;
 		lines.push(`  clean   ${entry.branch ?? "(detached)"}${entry.worktree ? `  ${entry.worktree}` : ""}  [${proof}]`);
+		if (evidence.remoteSafeToDelete === true) lines.push(`          origin/${entry.branch}: safe to delete at ${evidence.remoteTip}`);
+		else if (evidence.remoteTip || evidence.remoteUnknown) lines.push(`          origin/${entry.branch}: ${evidence.remoteUnknown ?? "not safe to delete"}`);
+		if (evidence.ignoredEnvFiles.length > 0) lines.push(`          env files removal deletes (show the owner; not opened): ${evidence.ignoredEnvFiles.join(", ")}`);
 	}
 	for (const entry of report.retained) {
 		lines.push(`  keep    ${entry.branch ?? "(detached)"}${entry.worktree ? `  ${entry.worktree}` : ""}  ${entry.blockers.join("; ")}`);
@@ -230,4 +272,4 @@ if (require.main === module) {
 	});
 }
 
-module.exports = { cleanBlockers, collectCleanCandidates, formatCleanCandidates, missingWorktreeLabel, parseArgs };
+module.exports = { cleanBlockers, collectCleanCandidates, formatCleanCandidates, missingWorktreeLabel, parseArgs, remoteVerdict };
