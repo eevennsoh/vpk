@@ -10,6 +10,17 @@ const {
 const { getNonEmptyString } = require("../lib/shared-utils");
 const { classifyTickets } = require("../lib/ticket-classifier");
 const { generateStandupSummary } = require("../lib/standup-summary");
+const { atlassianSiteHostSchema, parseOrReject } = require("../lib/input-schemas");
+
+// The Jira host gets the server's Atlassian API token, so only a *.atlassian.net host is
+// accepted; absent means the default site.
+function parseSiteUrlOrReject(res, siteUrl) {
+	if (siteUrl === undefined) {
+		return { ok: true, siteUrl: undefined };
+	}
+	const parsed = parseOrReject(res, atlassianSiteHostSchema, siteUrl, "siteUrl");
+	return parsed === null ? { ok: false } : { ok: true, siteUrl: parsed };
+}
 
 function requireFunction(name, value) {
 	if (typeof value !== "function") {
@@ -68,9 +79,13 @@ function createDemosRouter({
 
 	router.post("/ticket-classify", async (req, res) => {
 		try {
-			const { siteUrl, project, excludeStatuses, limit } = req.body || {};
+			const { siteUrl: rawSiteUrl, project, excludeStatuses, limit } = req.body || {};
+			const site = parseSiteUrlOrReject(res, rawSiteUrl);
+			if (!site.ok) {
+				return undefined;
+			}
 			const result = await classifyTicketsFn({
-				siteUrl,
+				siteUrl: site.siteUrl,
 				project,
 				excludeStatuses,
 				limit,
@@ -126,9 +141,13 @@ function createDemosRouter({
 
 	router.post("/standup", async (req, res) => {
 		try {
-			const { siteUrl, hoursAgo, projects, limit } = req.body || {};
+			const { siteUrl: rawSiteUrl, hoursAgo, projects, limit } = req.body || {};
+			const site = parseSiteUrlOrReject(res, rawSiteUrl);
+			if (!site.ok) {
+				return undefined;
+			}
 			const summary = await generateStandupSummaryFn({
-				siteUrl,
+				siteUrl: site.siteUrl,
 				hoursAgo,
 				projects,
 				limit,

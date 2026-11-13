@@ -6,6 +6,7 @@ const {
 	buildRovoAppThreadPaths,
 	getRovoAppThreadsRootDir,
 } = require("./rovo-app-storage-paths");
+const { isStorageId } = require("./input-schemas");
 
 const RETENTION_LIMIT = 40;
 
@@ -284,8 +285,10 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 			throw error;
 		}
 
+		// A directory name that is not a thread id (a stray file, a hidden folder) is
+		// not a thread.
 		const threadResults = await Promise.all(
-			entries.map((entry) => readThread(entry)),
+			entries.filter(isStorageId).map((entry) => readThread(entry)),
 		);
 		const threads = threadResults.filter(Boolean);
 
@@ -463,7 +466,12 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 			throw error;
 		}
 
-		await Promise.all(entries.map((entry) => deleteThread(entry)));
+		// A directory name that is not a thread id is removed as it is: it came from readdir.
+		await Promise.all(entries.map((entry) => (
+			isStorageId(entry)
+				? deleteThread(entry)
+				: fs.rm(path.join(threadsRootDir, entry), { recursive: true, force: true })
+		)));
 		await fs.rmdir(threadsRootDir).catch((error) => {
 			if (error && (error.code === "ENOENT" || error.code === "ENOTEMPTY")) {
 				return;
