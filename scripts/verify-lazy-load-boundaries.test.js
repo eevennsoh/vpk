@@ -246,18 +246,22 @@ test("package scripts expose and run the lazy-load verifier", () => {
 	}
 });
 
-test("route entries are every app page and every project entry page", () => {
+test("route entries are every app page, layout and template and every project entry page", () => {
 	withWorkspace({
 		"app/page.tsx": "export default function Home() { return null; }\n",
 		"app/rovo/[[...id]]/page.tsx": "export default function Rovo() { return null; }\n",
 		"app/api/health/page.tsx": "export default function NotARoute() { return null; }\n",
 		"app/rovo/layout.tsx": "export default function Layout() { return null; }\n",
+		"app/rovo/template.tsx": "export default function Template() { return null; }\n",
+		"app/rovo/rovo-shell.tsx": "export default function NotAnEntry() { return null; }\n",
 		"components/projects/butter/page.tsx": "export default function Butter() { return null; }\n",
 		"components/projects/butter/components/page.tsx": "export default function Nested() { return null; }\n",
 	}, (cwd) => {
 		assert.deepEqual(discoverRouteEntryFiles(cwd), [
 			"app/page.tsx",
 			"app/rovo/[[...id]]/page.tsx",
+			"app/rovo/layout.tsx",
+			"app/rovo/template.tsx",
 			"components/projects/butter/page.tsx",
 		]);
 	});
@@ -328,12 +332,11 @@ test("default tree rules cover the C-8a stylesheets and the C-8d icon registry",
 		"components/projects/shared/components/excalidraw-runtime.ts",
 		"lib/json-render/map-widget-canvas.tsx",
 	]);
-	assert.deepEqual(DEFAULT_SINGLE_OWNER_IMPORTS.map((rule) => [rule.source, rule.ownerFile]), [
-		["katex/dist/katex.min.css", "components/ui-custom/streamdown-math.ts"],
-		["@streamdown/math", "components/ui-custom/streamdown-math.ts"],
-		["leaflet/dist/leaflet.css", "lib/json-render/map-widget-canvas.tsx"],
-		["@excalidraw/excalidraw/dist/prod/index.css", "components/projects/shared/components/excalidraw-runtime.css"],
-		["@excalidraw/excalidraw/index.css", "components/projects/shared/components/excalidraw-runtime.css"],
+	assert.deepEqual(DEFAULT_SINGLE_OWNER_IMPORTS.map((rule) => [rule.match, rule.source, rule.ownerFile]), [
+		["stylesheet", "katex", "components/ui-custom/streamdown-math.ts"],
+		["exact", "@streamdown/math", "components/ui-custom/streamdown-math.ts"],
+		["stylesheet", "leaflet", "lib/json-render/map-widget-canvas.tsx"],
+		["stylesheet", "@excalidraw/excalidraw", "components/projects/shared/components/excalidraw-runtime.css"],
 	]);
 	assert.deepEqual(DEFAULT_FILE_IMPORT_RULES.map((rule) => [rule.filePath, rule.rules.map((entry) => entry.source)]), [
 		["components/projects/shared/components/icon-registry.tsx", ["@atlaskit/icon/", "@atlaskit/icon-lab/"]],
@@ -402,6 +405,22 @@ test("a page that renders a demo through loadDemoComponent is checked through th
 		assert.deepEqual(failures.map((failure) => [failure.type, failure.filePath]), [
 			["unresolved-demo-entry", "app/missing/page.tsx"],
 			["heavy-reach-new", "app/butter/page.tsx -> components/website/demos/projects/butter-demo.tsx"],
+		]);
+	});
+});
+
+test("a package's stylesheet rule covers every .css path it ships, from TS and from CSS", () => {
+	const singleOwnerImports = [{ match: "stylesheet", ownerFile: "components/math.ts", reason: "KaTeX CSS loads with the math plugin", source: "katex" }];
+	withWorkspace({
+		"app/layout.tsx": 'import "katex/dist/katex.css";\nimport katex from "katex";\nexport default function Layout() { return katex; }\n',
+		"app/globals.css": '@import "../node_modules/katex/dist/contrib/copy-tex.css";\n',
+		"components/math.ts": 'import "katex/dist/katex.min.css";\n',
+		"components/not-katex.ts": 'import "katex-extra/style.css";\n',
+	}, (cwd) => {
+		const failures = verifyLazyLoadBoundaries({ cwd, deferredModuleRules: [], fileImportRules: [], heavyImportRules: [], lazyOnlyModules: [], routeShellFiles: [], singleOwnerImports });
+		assert.deepEqual(failures.map((failure) => [failure.filePath, failure.importPath]), [
+			["app/globals.css", "../node_modules/katex/dist/contrib/copy-tex.css"],
+			["app/layout.tsx", "katex/dist/katex.css"],
 		]);
 	});
 });

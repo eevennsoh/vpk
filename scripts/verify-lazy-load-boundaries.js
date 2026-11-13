@@ -68,31 +68,32 @@ const DEFAULT_LAZY_ONLY_MODULES = [
 
 // Imports with one owner (C-8a): a third-party stylesheet travels with the module that renders
 // it, so it reaches only the routes that can render it. Applies to TS/JS imports and CSS @import.
+// `match: "stylesheet"` covers every .css file the package ships (any path under the package
+// name), so another stylesheet path such as katex/dist/katex.css cannot slip past.
 const DEFAULT_SINGLE_OWNER_IMPORTS = [
 	{
+		match: "stylesheet",
 		ownerFile: "components/ui-custom/streamdown-math.ts",
 		reason: "KaTeX CSS loads with the Streamdown math plugin",
-		source: "katex/dist/katex.min.css",
+		source: "katex",
 	},
 	{
+		match: "exact",
 		ownerFile: "components/ui-custom/streamdown-math.ts",
 		reason: "importing the math plugin from components/ui-custom/streamdown-math brings KaTeX CSS with it",
 		source: "@streamdown/math",
 	},
 	{
+		match: "stylesheet",
 		ownerFile: "lib/json-render/map-widget-canvas.tsx",
 		reason: "Leaflet CSS loads with the map widget",
-		source: "leaflet/dist/leaflet.css",
+		source: "leaflet",
 	},
 	{
+		match: "stylesheet",
 		ownerFile: "components/projects/shared/components/excalidraw-runtime.css",
 		reason: "Excalidraw CSS loads with the Excalidraw runtime",
-		source: "@excalidraw/excalidraw/dist/prod/index.css",
-	},
-	{
-		ownerFile: "components/projects/shared/components/excalidraw-runtime.css",
-		reason: "Excalidraw CSS loads with the Excalidraw runtime",
-		source: "@excalidraw/excalidraw/index.css",
+		source: "@excalidraw/excalidraw",
 	},
 ];
 
@@ -523,10 +524,11 @@ function walkSourceTree(cwd, roots, include) {
 	return files.sort();
 }
 
-// Every App Router page plus every project's entry page, so a new route or project is guarded
-// without editing a list.
+// Every App Router page, layout and template (layouts compose implicitly, so the import walk
+// would not reach them from a page) plus every project's entry page, so a new route, layout or
+// project is guarded without editing a list.
 function discoverRouteEntryFiles(cwd = process.cwd()) {
-	const appPages = walkSourceTree(cwd, ["app"], (filePath) => /(^|\/)page\.(tsx|ts|jsx|js)$/u.test(filePath) && !filePath.startsWith(`app${path.sep}api${path.sep}`));
+	const appPages = walkSourceTree(cwd, ["app"], (filePath) => /(^|\/)(page|layout|template)\.(tsx|ts|jsx|js)$/u.test(filePath) && !filePath.startsWith(`app${path.sep}api${path.sep}`));
 	const projectEntries = walkSourceTree(cwd, ["components/projects"], (filePath) => /^components\/projects\/[^/]+\/page\.tsx$/u.test(filePath.split(path.sep).join("/")));
 	return [...new Set([...appPages, ...projectEntries])].sort();
 }
@@ -574,8 +576,19 @@ function collectCssImports(source) {
 	return [...source.matchAll(/@import\s+(?:url\(\s*)?["']([^"']+)["']/gu)].map((match) => match[1]);
 }
 
-function cssImportMatches(importPath, source) {
-	return importPath === source || importPath.endsWith(`node_modules/${source}`);
+// The package-relative part of an import: "katex/dist/katex.css" for both the bare specifier and
+// a "../node_modules/katex/dist/katex.css" CSS @import path.
+function packageRelativeImport(importPath) {
+	const index = importPath.lastIndexOf("node_modules/");
+	return index === -1 ? importPath : importPath.slice(index + "node_modules/".length);
+}
+
+function singleOwnerImportMatches(importPath, rule) {
+	const specifier = packageRelativeImport(importPath.split(/[?#]/u)[0]);
+	if (rule.match === "stylesheet") {
+		return specifier.startsWith(`${rule.source}/`) && specifier.endsWith(".css");
+	}
+	return specifier === rule.source;
 }
 
 function verifySingleOwnerImports({ cwd, rules }) {
@@ -594,7 +607,7 @@ function verifySingleOwnerImports({ cwd, rules }) {
 			if (filePath === rule.ownerFile) {
 				continue;
 			}
-			const importPath = importPaths.find((candidate) => (filePath.endsWith(".css") ? cssImportMatches(candidate, rule.source) : candidate === rule.source));
+			const importPath = importPaths.find((candidate) => singleOwnerImportMatches(candidate, rule));
 			if (importPath) {
 				failures.push({ filePath, importPath, ownerFile: rule.ownerFile, reason: rule.reason, type: "single-owner-import" });
 			}
