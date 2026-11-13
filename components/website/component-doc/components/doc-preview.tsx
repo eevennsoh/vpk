@@ -19,9 +19,29 @@ interface DocPreviewProps {
 	demoLayout?: DemoLayout;
 }
 
+// Demos render on the client only (`ssr: false`) and can arrive well after the page paints. Until the
+// preview shows its demo, the sections after it (Import, Usage, Examples, API) stay in the page,
+// focusable and in the accessibility tree, but transparent, so they appear with the demo instead of
+// jumping down under it (Chrome counts no layout shift for transparent content). Pending means the
+// skeleton is showing, or nothing but React's client-render marker precedes the sentinel placed
+// after the demo. The hold lifts after 3s in case a demo never renders.
+const HOLD_SECTIONS_AFTER_PREVIEW_CSS = `article:is(
+	:has([data-doc-preview-pending]),
+	:has(#preview [data-doc-preview-sentinel]:nth-child(1 of :not(template, [data-doc-preview-pending])))
+) > :has(#preview, [data-doc-preview-pending]) ~ * {
+	opacity: 0;
+	animation: doc-preview-hold-release 0s linear 3s forwards;
+}
+@keyframes doc-preview-hold-release { to { opacity: 1; } }`;
+
+function HoldSectionsAfterPreview() {
+	return <style>{HOLD_SECTIONS_AFTER_PREVIEW_CSS}</style>;
+}
+
 function PreviewSkeleton() {
 	return (
 		<div
+			data-doc-preview-pending=""
 			style={{
 				display: "flex",
 				width: "100%",
@@ -74,6 +94,7 @@ function ResolvedDocPreview({
 				<Suspense fallback={<PreviewSkeleton />}>
 					{createElement(Demo)}
 				</Suspense>
+				<span data-doc-preview-sentinel="" hidden />
 			</DemoPreviewShell>
 		</DocSection>
 	);
@@ -81,8 +102,11 @@ function ResolvedDocPreview({
 
 export function DocPreview(props: Readonly<DocPreviewProps>) {
 	return (
-		<Suspense fallback={<PreviewSkeleton />}>
-			<ResolvedDocPreview {...props} />
-		</Suspense>
+		<>
+			<HoldSectionsAfterPreview />
+			<Suspense fallback={<PreviewSkeleton />}>
+				<ResolvedDocPreview {...props} />
+			</Suspense>
+		</>
 	);
 }
