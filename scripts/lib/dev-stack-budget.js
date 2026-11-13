@@ -6,8 +6,9 @@
 //
 //   node scripts/lib/dev-stack-budget.js check --worktree <path> [--force]
 //
-// Exit 0: start. Exit 3: over budget or under memory pressure (lists the live stacks, which look
-// idle, and how to stop each; --force starts anyway). Exit 4: a next-server already serves this
+// Exit 0: start. Exit 3: over budget, or under memory pressure while another stack runs (lists
+// the live stacks, which show a live task, and how to stop the ones that do not; --force starts
+// anyway). Exit 4: a next-server already serves this
 // worktree outside its tmux session (never overridden: a second server for one worktree is the
 // duplicate this guard exists to stop).
 //
@@ -42,23 +43,57 @@ function parseSwapUsedGb(text) {
 	return Math.floor(match[2] === "G" ? value : match[2] === "M" ? value / 1024 : 0);
 }
 
-function collectInventory() {
-	const pids = run("pgrep", ["-f", "next-server"]).split("\n").map(Number).filter((pid) => pid > 0 && pid !== process.pid);
-	const servers = pids.map((pid) => {
-		const cwd = run("lsof", ["-a", "-d", "cwd", "-p", String(pid), "-Fn"]).split("\n").find((line) => line.startsWith("n"))?.slice(1) ?? null;
-		const cpu = Number(run("ps", ["-o", "%cpu=", "-p", String(pid)]).trim());
-		return { pid, cwd, cpu: Number.isFinite(cpu) ? cpu : null };
-	}).filter((server) => server.cwd);
+function readMemoryState() {
 	const level = Number(run("sysctl", ["-n", "kern.memorystatus_vm_pressure_level"]).trim());
 	return {
-		servers,
-		swapUsedGb: parseSwapUsedGb(run("sysctl", ["-n", "vm.swapusage"])),
 		pressureLevel: Number.isInteger(level) && level > 0 ? level : null,
+		swapUsedGb: parseSwapUsedGb(run("sysctl", ["-n", "vm.swapusage"])),
 	};
 }
 
-// Every worktree root of this repository. Linked worktrees can sit inside the main checkout
-// (.claude/worktrees/<name>), so a server belongs to the deepest root that contains its cwd.
+function pressureReasons(state) {
+	const reasons = [];
+	if (state.swapUsedGb !== null && state.swapUsedGb !== undefined && state.swapUsedGb >= PRESSURE_SWAP_USED_GB) reasons.push(`swap in use is ${state.swapUsedGb} GB >= ${PRESSURE_SWAP_USED_GB} GB`);
+	if (state.pressureLevel !== null && state.pressureLevel !== undefined && state.pressureLevel >= PRESSURE_LEVEL_MIN) reasons.push(`memory-pressure level is ${state.pressureLevel} >= ${PRESSURE_LEVEL_MIN}`);
+	return reasons;
+}
+
+// Agent and tool processes whose cwd marks a worktree as in use (the same guard the
+// vpk-system-clean sweep uses before stopping a stack).
+const OPERATOR_NAMES = ["claude", "codex", "cursor-agent", "lazygit", "caffeinate"];
+
+function cwdOf(pid) {
+	return run("lsof", ["-a", "-d", "cwd", "-p", String(pid), "-Fn"]).split("\n").find((line) => line.startsWith("n"))?.slice(1) ?? null;
+}
+
+function listTmuxSessions(env) {
+	const tmux = env.VPK_TMUX_BIN || "tmux";
+	const sessions = [];
+	for (const socket of ["vpk-dev", "default"]) {
+		const args = socket === "default" ? [] : ["-L", socket];
+		for (const line of run(tmux, [...args, "list-sessions", "-F", "#{session_name}|#{session_path}|#{session_attached}"]).split("\n")) {
+			const [name, sessionPath, attached] = line.split("|");
+			if (name && sessionPath) sessions.push({ name, path: sessionPath, attached: Number(attached) > 0 });
+		}
+	}
+	return sessions;
+}
+
+function collectInventory({ env = process.env } = {}) {
+	const pids = run("pgrep", ["-f", "next-server"]).split("\n").map(Number).filter((pid) => pid > 0 && pid !== process.pid);
+	const servers = pids.map((pid) => {
+		const cpu = Number(run("ps", ["-o", "%cpu=", "-p", String(pid)]).trim());
+		return { pid, cwd: cwdOf(pid), cpu: Number.isFinite(cpu) ? cpu : null };
+	}).filter((server) => server.cwd);
+	const operators = OPERATOR_NAMES.flatMap((name) => run("pgrep", ["-x", name]).split("\n").map(Number).filter((pid) => pid > 0)
+		.map((pid) => ({ name, pid, cwd: cwdOf(pid) })).filter((operator) => operator.cwd));
+	const { pressureLevel, swapUsedGb } = readMemoryState();
+	return { operators, pressureLevel, servers, sessions: listTmuxSessions(env), swapUsedGb };
+}
+
+// Every worktree root of this repository; the first is the primary checkout. Linked worktrees can
+// sit inside the main checkout (.claude/worktrees/<name>), so a stack is named after the deepest
+// root that contains its server's cwd.
 function listWorktreeRoots(cwd) {
 	const result = spawnSync("git", ["worktree", "list", "--porcelain"], { cwd, encoding: "utf8" });
 	if (result.status !== 0) return [];
@@ -73,22 +108,42 @@ function realPath(value) {
 	}
 }
 
+function within(child, root) {
+	return child === root || child.startsWith(`${root}${path.sep}`);
+}
+
+function isCodexWorktree(worktree, env = process.env) {
+	const homes = [env.CODEX_HOME, env.HOME && path.join(env.HOME, ".codex")].filter(Boolean).map(realPath);
+	return homes.some((home) => within(worktree, path.join(home, "worktrees")));
+}
+
+// Evidence that a live task uses this stack, or null. CPU is not evidence: a dev server in use
+// reads under 20% between requests.
+function inUseEvidence(stack, inventory, { primaryRoot }) {
+	if (primaryRoot && stack.worktree === realPath(primaryRoot)) return "the primary checkout";
+	const attached = (inventory.sessions ?? []).find((session) => session.attached && realPath(session.path) === stack.worktree);
+	if (attached) return `a tmux client is attached to ${attached.name}`;
+	const operator = (inventory.operators ?? []).find((candidate) => within(realPath(candidate.cwd), stack.worktree));
+	if (operator) return `${operator.name} pid ${operator.pid} has its cwd here`;
+	return null;
+}
+
 function evaluateBudget(inventory, {
 	budget = DEV_STACK_BUDGET,
+	env = process.env,
 	force = false,
 	idleCpuMax = IDLE_CPU_MAX,
-	pressureLevelMin = PRESSURE_LEVEL_MIN,
-	swapLimitGb = PRESSURE_SWAP_USED_GB,
 	worktree,
 	worktreeRoots = [],
 }) {
 	const ownRoot = realPath(worktree);
-	const roots = [...new Set([ownRoot, ...worktreeRoots.map(realPath)])].map((root) => ({ path: root }));
-	// The worktree a server serves: the deepest known root containing its cwd, else its cwd.
-	const rootOf = (server) => findCurrentWorktree(realPath(server.cwd), roots)?.path ?? server.cwd;
-	const ownServers = inventory.servers.filter((server) => rootOf(server) === ownRoot);
-	if (ownServers.length > 0) return { exitCode: EXIT_DUPLICATE_SERVER, ownServers, otherStacks: [], reasons: [] };
+	// A next-server's cwd is its project root, so only a server whose cwd is exactly this
+	// worktree is a duplicate; one in a worktree nested inside it is another stack.
+	const ownServers = inventory.servers.filter((server) => realPath(server.cwd) === ownRoot);
+	if (ownServers.length > 0) return { exitCode: EXIT_DUPLICATE_SERVER, ownServers, otherStacks: [], reasons: [], warnings: [] };
 
+	const roots = [...new Set([ownRoot, ...worktreeRoots.map(realPath)])].map((root) => ({ path: root }));
+	const rootOf = (server) => findCurrentWorktree(realPath(server.cwd), roots)?.path ?? realPath(server.cwd);
 	const byRoot = new Map();
 	for (const server of inventory.servers) {
 		const root = rootOf(server);
@@ -96,16 +151,22 @@ function evaluateBudget(inventory, {
 		stack.servers.push(server);
 		byRoot.set(root, stack);
 	}
+	const primaryRoot = worktreeRoots[0] ?? null;
 	const otherStacks = [...byRoot.values()].map((stack) => ({
 		...stack,
-		idle: stack.servers.every((server) => server.cpu !== null && server.cpu < idleCpuMax),
+		codex: isCodexWorktree(stack.worktree, env),
+		inUse: inUseEvidence(stack, inventory, { primaryRoot }),
+		quiet: stack.servers.every((server) => server.cpu !== null && server.cpu < idleCpuMax),
 	}));
 	const reasons = [];
+	const warnings = [];
 	if (otherStacks.length + 1 > budget) reasons.push(`${otherStacks.length} dev stacks already run; starting this one would make ${otherStacks.length + 1} > budget ${budget}`);
-	if (inventory.swapUsedGb !== null && inventory.swapUsedGb >= swapLimitGb) reasons.push(`swap in use is ${inventory.swapUsedGb} GB >= ${swapLimitGb} GB`);
-	if (inventory.pressureLevel !== null && inventory.pressureLevel >= pressureLevelMin) reasons.push(`memory-pressure level is ${inventory.pressureLevel} >= ${pressureLevelMin}`);
+	// Memory pressure refuses only when there is another stack to stop; with none, it warns.
+	const pressure = pressureReasons(inventory);
+	if (pressure.length > 0 && otherStacks.length > 0) reasons.push(...pressure);
+	else if (pressure.length > 0) warnings.push(`memory pressure (${pressure.join("; ")}), but no other dev stack runs; starting`);
 	const exitCode = reasons.length > 0 && !force ? EXIT_OVER_BUDGET : 0;
-	return { exitCode, forced: reasons.length > 0 && force, ownServers, otherStacks, reasons };
+	return { exitCode, forced: reasons.length > 0 && force, ownServers, otherStacks, reasons, warnings };
 }
 
 function shellQuote(value) {
@@ -119,25 +180,26 @@ function formatVerdict(verdict, { worktree }) {
 			"[dev:tmux] Not starting a second one. Stop it first: pnpm run dev:tmux:stop (stops every listener in this worktree), then start again.",
 		].join("\n");
 	}
-	if (verdict.reasons.length === 0) return "";
-	const lines = [
-		`[dev:tmux] ${verdict.forced ? "Starting anyway (--force): " : "Not starting: "}${verdict.reasons.join("; ")}.`,
-	];
+	const lines = (verdict.warnings ?? []).map((warning) => `[dev:tmux] Warning: ${warning}.`);
+	if (verdict.reasons.length === 0) return lines.join("\n");
+	lines.push(`[dev:tmux] ${verdict.forced ? "Starting anyway (--force): " : "Not starting: "}${verdict.reasons.join("; ")}.`);
 	if (verdict.otherStacks.length > 0) {
-		lines.push("[dev:tmux] Live dev stacks (idle = every next-server under 20% CPU):");
+		lines.push("[dev:tmux] Live dev stacks (quiet = every next-server under 20% CPU right now; that is not proof it is unused):");
 		for (const stack of verdict.otherStacks) {
 			const cpu = stack.servers.map((server) => `pid ${server.pid} ${server.cpu ?? "?"}%`).join(", ");
-			lines.push(`  ${stack.idle ? "idle" : "busy"}  ${stack.worktree}  (${cpu})`);
-			lines.push(`        stop: (cd ${shellQuote(stack.worktree)} && pnpm run dev:tmux:stop)`);
+			lines.push(`  ${stack.quiet ? "quiet" : "busy "}  ${stack.worktree}  (${cpu})`);
+			if (stack.inUse) lines.push(`        in use: ${stack.inUse}; leave it running`);
+			else if (stack.codex) lines.push("        Codex worktree: check its thread before stopping");
+			else lines.push(`        no live task seen; stop: (cd ${shellQuote(stack.worktree)} && pnpm run dev:tmux:stop)`);
 		}
 	}
-	if (!verdict.forced) lines.push(`[dev:tmux] Stop an idle stack above, or start anyway: pnpm run dev:tmux:start -- --force   (in ${worktree})`);
+	if (!verdict.forced) lines.push(`[dev:tmux] Stop a stack with no live task above, or start anyway: pnpm run dev:tmux:start -- --force   (in ${worktree})`);
 	return lines.join("\n");
 }
 
 function readInventory(env = process.env) {
 	if (env.VPK_DEV_STACK_INVENTORY) return JSON.parse(fs.readFileSync(env.VPK_DEV_STACK_INVENTORY, "utf8"));
-	return collectInventory();
+	return collectInventory({ env });
 }
 
 function main(argv) {
