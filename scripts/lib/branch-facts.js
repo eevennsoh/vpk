@@ -6,7 +6,7 @@
 // runs with --no-optional-locks (no index refresh, no index.lock in another worktree). The
 // content proof (`git merge-tree --write-tree`) adds the merged result's blobs and trees to
 // the object store, unreferenced, for gc to remove. `fetchOrigin`, only when asked, runs
-// `git fetch origin`, which moves remote-tracking refs. A read that fails, or warns on
+// `git fetch origin`, which moves remote-tracking refs (no prune, no tags, no FETCH_HEAD). A read that fails, or warns on
 // stderr, yields null, which the derivation reads as unknown.
 
 const fs = require("node:fs");
@@ -83,9 +83,14 @@ function countOrNull(result) {
 	return Number.isInteger(value) ? value : null;
 }
 
+// origin's default branch from origin/HEAD. A failed or missing read throws: every landing
+// proof is judged against it, so a guess would judge against the wrong branch.
 async function resolveDefaultBranch(git) {
 	const ref = trimmed(await git(["symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"]));
-	return ref ? ref.replace(/^refs\/remotes\/origin\//u, "") : "main";
+	if (!ref?.startsWith("refs/remotes/origin/")) {
+		throw new Error("could not read origin's default branch from origin/HEAD (if it is unset: git remote set-head origin --auto)");
+	}
+	return ref.replace(/^refs\/remotes\/origin\//u, "");
 }
 
 async function listWorktrees(git) {
@@ -120,16 +125,20 @@ async function objectExists(git, oid) {
 }
 
 // What every content proof needs once per repository: the empty tree (its id depends on the
-// hash) and whether $GIT_COMMON_DIR/info/attributes sets anything, since no option turns
-// that file off.
+// hash), whether $GIT_COMMON_DIR/info/attributes sets anything (no option turns that file
+// off), and whether any config scope defines a merge driver (git looks a driver up by name
+// before its built-in ones, so `merge.text.driver` would replace even the text merge).
 const mergeSettingsByGit = new WeakMap();
 function readMergeSettings(git) {
 	if (!mergeSettingsByGit.has(git)) {
 		mergeSettingsByGit.set(git, Promise.all([
 			git(["hash-object", "-t", "tree", "/dev/null"]),
 			git(["rev-parse", "--path-format=absolute", "--git-common-dir"]),
-		]).then(([emptyTree, commonDir]) => {
+			git(["config", "--get-regexp", "^merge\\..*\\.driver$"]),
+		]).then(([emptyTree, commonDir, drivers]) => {
 			if (!emptyTree.ok || !commonDir.ok) return null;
+			// Exit 1 is "none defined"; anything else that is not a match is unknown.
+			if (drivers.code !== 0 && drivers.code !== 1) return null;
 			let infoAttributes = "";
 			try {
 				infoAttributes = fs.readFileSync(path.join(commonDir.stdout.trim(), "info", "attributes"), "utf8");
@@ -137,7 +146,7 @@ function readMergeSettings(git) {
 				if (error.code !== "ENOENT") return null;
 			}
 			const setsAttributes = infoAttributes.split("\n").some((line) => line.trim() && !line.trim().startsWith("#"));
-			return { emptyTree: emptyTree.stdout.trim(), setsAttributes };
+			return { emptyTree: emptyTree.stdout.trim(), setsAttributes, definesDriver: drivers.code === 0 };
 		}));
 	}
 	return mergeSettingsByGit.get(git);
@@ -146,15 +155,16 @@ function readMergeSettings(git) {
 // The head's work is already on `target`, judged by content: merge the head into the target
 // in memory (`git merge-tree --write-tree`); a clean result whose tree is the target's own
 // tree means the head adds nothing. A conflict means it adds something. Unlike git cherry's
-// patch-ids it sees whitespace and merge commits. The merge is git's plain text merge: no
-// merge driver, attribute or renormalization from the repository, its config or this
-// checkout can pick a side (`merge=ours` with `merge.ours.driver=true` would make any
-// conflicting branch look landed). Attributes come from the empty tree, the global and
-// system attribute files are off, and `merge.default` is the text driver; an
-// info/attributes file that sets anything makes the proof unknown. A failed read is null.
+// patch-ids it sees whitespace and merge commits. A merge driver or attribute could pick a
+// side (`merge=ours` with `merge.ours.driver=true` makes any conflicting branch look
+// landed), so: attributes are read from the empty tree, not the checkout or a commit;
+// the global (core.attributesFile) and system attribute files are off; merge.default is
+// `text` and merge.renormalize is off. What cannot be switched off for one command makes
+// the proof unknown (null): an info/attributes file that sets anything, or a merge driver
+// defined in any config scope. A failed read is null too.
 async function contentLanded(git, target, head) {
 	const settings = await readMergeSettings(git);
-	if (settings === null || settings.setsAttributes) return null;
+	if (settings === null || settings.setsAttributes || settings.definesDriver) return null;
 	const [merged, targetTree] = await Promise.all([
 		git([
 			`--attr-source=${settings.emptyTree}`,
@@ -299,6 +309,88 @@ async function collectWorktreeFacts(git, worktreePath, { keepRefs = DEFAULT_KEEP
 	};
 }
 
+const OID = /^[0-9a-f]{40}([0-9a-f]{24})?$/u;
+
+// A registered worktree whose directory is gone, or that git no longer recognises: what
+// `git worktree remove` (or prune) of its admin directory would drop. Its HEAD, its HEAD
+// reflog and its own refs (refs/worktree, refs/bisect, refs/rewritten) live in
+// $GIT_COMMON_DIR/worktrees/<id>/ and go with it. Returns { removeSafe, unreachableCommits,
+// rescue }: removeSafe is true when every commit those name is reachable from `keepRefs`;
+// rescue lists the fewest commits to put on a branch first. null fields when unknown.
+async function missingWorktreeFacts(git, entry, { keepRefs = DEFAULT_KEEP_REFS } = {}) {
+	const unknown = { removeSafe: null, unreachableCommits: null, rescue: null };
+	const commonDir = trimmed(await git(["rev-parse", "--path-format=absolute", "--git-common-dir"]));
+	const adminDir = commonDir ? findAdminDir(path.join(commonDir, "worktrees"), entry.path) : null;
+	const tips = adminDir ? readAdminTips(adminDir) : null;
+	if (tips === null) return unknown;
+	if (entry.head && OID.test(entry.head)) tips.add(entry.head);
+	if (tips.size > REFLOG_LIMIT * 2) return unknown;
+	if (tips.size === 0) return { removeSafe: true, unreachableCommits: 0, rescue: [] };
+	const listed = cleanOutput(await git(["rev-list", "--ignore-missing", ...tips, "--not", ...keepRefs]));
+	if (listed === null) return unknown;
+	const unreachable = new Set(listed.split("\n").map((line) => line.trim()).filter(Boolean));
+	if (unreachable.size === 0) return { removeSafe: true, unreachableCommits: 0, rescue: [] };
+	const lost = [...tips].filter((oid) => unreachable.has(oid));
+	const independent = lost.length > 1 ? cleanOutput(await git(["merge-base", "--independent", ...lost])) : lost.join("\n");
+	if (independent === null) return unknown;
+	return {
+		removeSafe: false,
+		unreachableCommits: unreachable.size,
+		rescue: independent.split("\n").map((line) => line.trim()).filter(Boolean),
+	};
+}
+
+
+// The admin directory whose gitdir file points at `<worktreePath>/.git`, or null.
+function findAdminDir(worktreesDir, worktreePath) {
+	let names;
+	try {
+		names = fs.readdirSync(worktreesDir);
+	} catch {
+		return null;
+	}
+	for (const name of names) {
+		const dir = path.join(worktreesDir, name);
+		try {
+			if (path.dirname(fs.readFileSync(path.join(dir, "gitdir"), "utf8").trim()) === worktreePath) return dir;
+		} catch {
+			// No gitdir file: not this one.
+		}
+	}
+	return null;
+}
+
+// Every commit id the admin directory names: its HEAD, both sides of each logs/HEAD entry,
+// and its loose per-worktree refs. null when any of it cannot be read, or the refs are not
+// loose files (reftable).
+function readAdminTips(adminDir) {
+	const tips = new Set();
+	try {
+		if (fs.existsSync(path.join(adminDir, "reftable"))) return null;
+		const head = fs.readFileSync(path.join(adminDir, "HEAD"), "utf8").trim();
+		if (OID.test(head)) tips.add(head);
+		const logPath = path.join(adminDir, "logs", "HEAD");
+		if (fs.existsSync(logPath)) {
+			for (const line of fs.readFileSync(logPath, "utf8").split("\n")) {
+				for (const oid of line.split(" ").slice(0, 2)) if (OID.test(oid) && !/^0+$/u.test(oid)) tips.add(oid);
+			}
+		}
+		for (const prefix of PER_WORKTREE_REFS) {
+			const dir = path.join(adminDir, prefix);
+			if (!fs.existsSync(dir)) continue;
+			for (const file of fs.readdirSync(dir, { recursive: true })) {
+				const full = path.join(dir, file);
+				if (!fs.statSync(full).isFile()) continue;
+				const value = fs.readFileSync(full, "utf8").trim();
+				if (OID.test(value)) tips.add(value);
+			}
+		}
+	} catch {
+		return null;
+	}
+	return tips;
+}
+
 // A worktree that is registered but whose facts could not be read at all: every fact unknown.
 function unreadableWorktreeFacts(worktreePath = null) {
 	return {
@@ -350,8 +442,10 @@ async function collectBranchFacts({ git, branch, worktree = null, defaultBranch,
 		: pushed === false ? [0, 0, null] : [null, null, null];
 
 	const commitsPastPrHead = {};
+	// Also for a deleted branch, judged by its latest PR's head: a newer PR's head is not
+	// carried by an older merged one. Unknown when the objects to compare are missing.
 	await Promise.all(prList.filter((pr) => pr.state === "MERGED").map(async (pr) => {
-		if (localBranchExists === false && !worktree) {
+		if (head && head === pr.headRefOid) {
 			commitsPastPrHead[pr.number] = 0;
 			return;
 		}
@@ -391,10 +485,11 @@ function createGit(runCommand, cwd) {
 	return (args, options = {}) => runCommand("git", ["--no-optional-locks", ...args], { cwd, ...options });
 }
 
-// Remote-tracking refs only (no tags, no prune): the default branch and every branch tip.
+// Remote-tracking refs only (no tags, no prune even with fetch.prune set, no FETCH_HEAD):
+// the default branch and every branch tip.
 // true when the fetch succeeded.
 async function fetchOrigin(runCommand, cwd) {
-	const result = await runCommand("git", ["fetch", "--quiet", "--no-tags", "origin"], { cwd, timeoutMs: 120_000 });
+	const result = await runCommand("git", ["fetch", "--quiet", "--no-tags", "--no-prune", "--no-write-fetch-head", "origin"], { cwd, timeoutMs: 120_000 });
 	return result.ok;
 }
 
@@ -437,6 +532,7 @@ module.exports = {
 	fetchOrigin,
 	listLocalBranches,
 	listWorktrees,
+	missingWorktreeFacts,
 	readOperation,
 	readLiveKeepRefs,
 	readPullRequests,

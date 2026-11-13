@@ -383,23 +383,29 @@ test("D: no merge driver, attribute or merge.default setting makes an unmerged b
 	sh(repo, "push", "--quiet", "origin", "main");
 	sh(repo, "fetch", "--quiet", "origin");
 	const conf = async () => entry(await report(), (candidate) => candidate.branch === "conf").evidence;
+	// Never content-landed; with a merge driver defined anywhere the proof is unknown (null).
+	const notLanded = async (label) => {
+		const evidence = await conf();
+		assert.notEqual(evidence.landed, true, label);
+		assert.notEqual(evidence.proof, "content", label);
+	};
 
 	assert.deepEqual([(await conf()).landed, (await conf()).proof], [false, null], "plain merge conflicts");
 	sh(repo, "config", "merge.ours.driver", "true");
 	write(repo, ".gitattributes", "conf.txt merge=ours\n");
-	assert.deepEqual([(await conf()).landed, (await conf()).proof], [false, null], "this checkout's .gitattributes");
+	await notLanded("this checkout's .gitattributes");
 	fs.rmSync(path.join(repo, ".gitattributes"));
 	write(root, "global-attributes", "conf.txt merge=ours\n");
 	sh(repo, "config", "--global", "core.attributesFile", path.join(root, "global-attributes"));
-	assert.equal((await conf()).landed, false, "core.attributesFile");
+	await notLanded("core.attributesFile");
 	sh(repo, "config", "--global", "--unset", "core.attributesFile");
 	sh(repo, "config", "merge.default", "ours");
-	assert.equal((await conf()).landed, false, "merge.default");
+	await notLanded("merge.default");
 	sh(repo, "config", "--unset", "merge.default");
 	commit(repo, ".gitattributes", "conf.txt merge=ours\n");
 	sh(repo, "push", "--quiet", "origin", "main");
 	sh(repo, "fetch", "--quiet", "origin");
-	assert.equal((await conf()).landed, false, ".gitattributes committed on main");
+	await notLanded(".gitattributes committed on main");
 	// info/attributes cannot be switched off for one command, so the proof is unknown.
 	write(sh(repo, "rev-parse", "--absolute-git-dir"), "info/attributes", "conf.txt merge=ours\n");
 	const evidence = await conf();
@@ -446,10 +452,15 @@ test("suspected 1: a stale origin/<other> does not keep a reflog-only commit; a 
 
 	assert.equal(entry(await report(new Map(), { fetch: true }), byWorktree(dir)).cleanable, true, "origin/other is live");
 	assert.ok(entry(await report(), byWorktree(dir)).blockers.includes(reached), "without --fetch remote refs do not count");
-	// origin deletes the branch; the local origin/other stays until a prune.
+	// origin deletes the branch; the local origin/other stays until a prune, and the report's
+	// fetch never prunes (even with fetch.prune set) or writes FETCH_HEAD.
 	sh(origin, "update-ref", "-d", "refs/heads/other");
+	sh(dir, "config", "fetch.prune", "true");
+	const fetchHead = path.join(sh(dir, "rev-parse", "--git-common-dir"), "FETCH_HEAD");
+	fs.rmSync(path.resolve(dir, fetchHead), { force: true });
 	const found = entry(await report(new Map(), { fetch: true }), byWorktree(dir));
 	assert.ok(sh(dir, "rev-parse", "--verify", "refs/remotes/origin/other"), "still there locally");
+	assert.equal(fs.existsSync(path.resolve(dir, fetchHead)), false, "no FETCH_HEAD");
 	assert.equal(found.cleanable, false);
 	assert.ok(found.blockers.includes(reached), found.blockers.join("; "));
 });
@@ -503,4 +514,100 @@ test("suspected 3: a commit only refs/worktree/* reaches retains the worktree", 
 	const found = entry(await report(), byWorktree(dir));
 	assert.equal(found.cleanable, false);
 	assert.ok(found.blockers.includes("1 commit(s) only the worktree's HEAD reflog or its own refs reach"), found.blockers.join("; "));
+});
+
+// Third adversarial review of #2154.
+
+test("third review 1: a merge.text.driver in local or global config makes the content proof unknown", async (t) => {
+	const { repo, root, report, entry, sh, commit } = setup(t);
+	commit(repo, "conf.txt", "base\n");
+	sh(repo, "push", "--quiet", "origin", "main");
+	sh(repo, "fetch", "--quiet", "origin");
+	const dir = path.join(root, "wt-conf");
+	sh(repo, "worktree", "add", "--quiet", "-b", "conf", dir, "origin/main");
+	commit(dir, "conf.txt", "the branch's change\n");
+	sh(dir, "push", "--quiet", "-u", "origin", "conf");
+	commit(repo, "conf.txt", "main's change\n");
+	sh(repo, "push", "--quiet", "origin", "main");
+	sh(repo, "fetch", "--quiet", "origin");
+	const conf = async () => entry(await report(), (candidate) => candidate.branch === "conf");
+
+	sh(repo, "config", "merge.text.driver", "true");
+	let found = await conf();
+	assert.deepEqual([found.evidence.landed, found.cleanable], [null, false], "local merge.text.driver");
+	assert.ok(found.evidence.missing.includes("content"));
+	sh(repo, "config", "--unset", "merge.text.driver");
+	// HOME points at the test's root, so --global is a config file the test's env names.
+	sh(repo, "config", "--global", "merge.text.driver", "true");
+	found = await conf();
+	assert.deepEqual([found.evidence.landed, found.cleanable], [null, false], "global merge.text.driver");
+	sh(repo, "config", "--global", "--unset", "merge.text.driver");
+	assert.equal((await conf()).evidence.landed, false, "no driver: the plain merge conflicts");
+});
+
+test("third review 2: a missing worktree is removable only when nothing it names is lost; otherwise the rescue is given", async (t) => {
+	const { repo, root, landed, report, sh, commit } = setup(t);
+	const safe = landed("feat");
+	fs.rmSync(safe, { recursive: true, force: true });
+	// A detached worktree with a commit only it has, and one with a commit only refs/worktree has.
+	const detached = path.join(root, "wt-scratch");
+	sh(repo, "worktree", "add", "--quiet", "--detach", detached, "origin/main");
+	const scratch = commit(detached, "scratch.txt", "only here");
+	fs.rmSync(detached, { recursive: true, force: true });
+	const keeper = path.join(root, "wt-keeper");
+	sh(repo, "worktree", "add", "--quiet", "--detach", keeper, "origin/main");
+	const kept = sh(keeper, "commit-tree", sh(keeper, "write-tree"), "-p", "HEAD", "-m", "kept by a per-worktree ref");
+	sh(keeper, "update-ref", "refs/worktree/keep", kept);
+	fs.rmSync(keeper, { recursive: true, force: true });
+
+	const missing = async () => Object.fromEntries((await report()).missingWorktrees.map((entry) => [entry.worktree, entry]));
+	let byPath = await missing();
+	assert.deepEqual([byPath[safe].removeSafe, byPath[safe].rescue], [true, []]);
+	assert.deepEqual([byPath[detached].removeSafe, byPath[detached].unreachableCommits], [false, 1]);
+	assert.deepEqual(byPath[detached].rescue, [{ sha: scratch, command: `git branch rescue/wt-scratch ${scratch}` }]);
+	assert.deepEqual([byPath[keeper].removeSafe, byPath[keeper].rescue.map((item) => item.sha)], [false, [kept]]);
+
+	// The skill removes only the safe entry, one at a time; the others stay registered.
+	sh(repo, "worktree", "remove", safe);
+	sh(repo, ...byPath[detached].rescue[0].command.split(" ").slice(1));
+	byPath = await missing();
+	assert.equal(byPath[safe], undefined);
+	assert.equal(byPath[detached].removeSafe, true, "rescued onto a branch");
+	assert.equal(byPath[keeper].removeSafe, false);
+	assert.match(sh(repo, "cat-file", "-t", kept), /^commit$/u);
+});
+
+test("third review 3: an origin/<branch> that cannot be read blocks", async (t) => {
+	const { repo, landed, runCommand } = setup(t);
+	const dir = landed("feat");
+	const flaky = failing(runCommand, (command, args) => command === "git" && args.includes("show-ref") && args.includes("refs/remotes/origin/feat"));
+	const result = await collectCleanCandidates({ cwd: repo, runCommand: flaky, readPrs: async () => new Map() });
+	const found = [...result.candidates, ...result.retained].find(byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	assert.ok(found.blockers.includes("origin/feat could not be read"), found.blockers.join("; "));
+});
+
+test("third review: an unset origin/HEAD aborts the report instead of assuming main", async (t) => {
+	const { repo, landed, report, sh } = setup(t);
+	landed("feat");
+	sh(repo, "remote", "set-head", "origin", "--delete");
+	await assert.rejects(report(), /could not read origin's default branch/u);
+});
+
+test("Codex: a deleted branch whose newer PR is open is not landed by an older merged PR", async (t) => {
+	const { repo, landed, runCommand, sh, commit } = setup(t);
+	landed("feat", { worktree: false });
+	const mergedHead = sh(repo, "rev-parse", "feat");
+	sh(repo, "checkout", "--quiet", "-b", "later", "feat");
+	const newerHead = commit(repo, "later.txt", "after the merge");
+	sh(repo, "checkout", "--quiet", "main");
+	sh(repo, "branch", "--quiet", "-D", "later", "feat");
+	const pr = (number, state, headRefOid, createdAt) => ({ number, state, headRefOid, baseRefName: "main", createdAt, isCrossRepository: false, mergeCommit: state === "MERGED" ? { oid: sh(repo, "rev-parse", "main") } : null });
+	const nodes = [pr(8, "OPEN", newerHead, "2026-11-14T00:00:00Z"), pr(7, "MERGED", mergedHead, "2026-11-13T00:00:00Z")];
+	const withPrs = async (command, args, options) => (command === "gh"
+		? { ok: true, code: 0, stderr: "", stdout: JSON.stringify({ data: { repository: { b0: { totalCount: 2, nodes } } } }) }
+		: runCommand(command, args, options));
+	const status = await collectShipStatus({ cwd: repo, branch: "feat", runCommand: withPrs, gateReader: async () => null });
+	assert.notEqual(status.status, "cleaned", status.nextAction);
+	assert.notEqual(status.evidence.landed, true);
 });
