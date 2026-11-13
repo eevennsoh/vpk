@@ -184,8 +184,7 @@ function createRuntimeShutdownSteps({ activeRequests, browserWorkspaceManager, s
 	if (!(activeRequests instanceof Map)) {
 		throw new Error("createRuntimeShutdownSteps requires activeRequests");
 	}
-	requireFunction("browserWorkspaceManager.listWorkspaces", browserWorkspaceManager?.listWorkspaces);
-	requireFunction("browserWorkspaceManager.deleteWorkspace", browserWorkspaceManager?.deleteWorkspace);
+	requireFunction("browserWorkspaceManager.closeAllWorkspaces", browserWorkspaceManager?.closeAllWorkspaces);
 	requireFunction("shutdownRovoPool", shutdownRovoPool);
 
 	return [
@@ -204,13 +203,9 @@ function createRuntimeShutdownSteps({ activeRequests, browserWorkspaceManager, s
 		},
 		{
 			name: "close-browser-workspaces",
-			run: async () => {
-				const workspaces = browserWorkspaceManager.listWorkspaces();
-				for (const { workspaceId } of workspaces) {
-					await browserWorkspaceManager.deleteWorkspace(workspaceId);
-				}
-				return `${workspaces.length} closed`;
-			},
+			// Includes workspaces another caller is already closing, so the
+			// process does not exit while their browsers are still open.
+			run: async () => `${await browserWorkspaceManager.closeAllWorkspaces()} closed`,
 		},
 		{
 			name: "shutdown-rovo-pool",

@@ -181,8 +181,10 @@ test("runtime steps abort in-flight runs, close every browser workspace, then sh
 	const steps = createRuntimeShutdownSteps({
 		activeRequests,
 		browserWorkspaceManager: {
-			deleteWorkspace: async (workspaceId) => calls.push(["deleteWorkspace", workspaceId]),
-			listWorkspaces: () => [{ workspaceId: "ws-1" }, { workspaceId: "ws-2" }],
+			closeAllWorkspaces: async () => {
+				calls.push(["closeAllWorkspaces"]);
+				return 2;
+			},
 		},
 		shutdownRovoPool: () => calls.push(["shutdownRovoPool"]),
 	});
@@ -193,7 +195,7 @@ test("runtime steps abort in-flight runs, close every browser workspace, then sh
 	assert.equal(await steps[0].run(), "0 aborted", "aborting twice is a no-op");
 	assert.equal(await steps[1].run(), "2 closed");
 	await steps[2].run();
-	assert.deepEqual(calls, [["deleteWorkspace", "ws-1"], ["deleteWorkspace", "ws-2"], ["shutdownRovoPool"]]);
+	assert.deepEqual(calls, [["closeAllWorkspaces"], ["shutdownRovoPool"]]);
 	assert.throws(() => createRuntimeShutdownSteps({}), /activeRequests/u);
 });
 
