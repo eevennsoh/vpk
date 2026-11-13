@@ -112,7 +112,7 @@ to Playwright or curl. Report the classification and evidence boundary.
 
 ## Evidence
 
-Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump. `control-vpk capture` does this for a route's loaded state. Use the commands below for states reached mid-interaction.
+Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump. `control-vpk capture` does this for a route's loaded state. Use the commands below for states reached mid-interaction. To crop, resize, tile or compare screenshots, use `pnpm image-tools crop|resize|contact-sheet|diff` (see `scripts/image-tools.mjs`); it needs no Python, and Python's PIL is not installed here.
 
 ```bash
 EVIDENCE="$(.agents/skills/vpk-verify/scripts/control-vpk evidence-dir)/jira-team-eu26"
