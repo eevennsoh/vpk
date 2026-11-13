@@ -1,6 +1,7 @@
 // Test files that are deliberately not run by this gate, each with its reason. Every
-// *.test.* file is either run (a CI-included classification or an included prefix) or
-// listed here or in legacy-drift; `node scripts/run-js-unit-tests.mjs` fails on the rest.
+// *.test.* file with a node:test import runs by default (classification is by file name, see
+// scripts/run-js-unit-tests.mjs); only the files and roots listed here, and the frozen
+// legacy-drift baseline, do not run.
 
 // Whole roots the gate never runs. Interactive vpk-html sessions add suites under
 // artifacts/ routinely; listing them file by file would turn the gate red for work it

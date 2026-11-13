@@ -12,7 +12,7 @@
  * (see `../experimental/use-jira-work-item-controller.ts`) is only a metronome.
  * Seed content lives in `./session-fixtures` and the scripted timelines in
  * `./session-scripts`; behavioral tests load this module via the esbuild CJS
- * loader (see `../jira-work-item.test.js`), which bundles those deps.
+ * loader (see `../jira-work-item.source.test.js`), which bundles those deps.
  *
  * This prototype model is intentionally SEPARATE from the persisted Jira RFP
  * backend lifecycle (`components/projects/jira/lib/rfp-demo-state.ts`); it follows

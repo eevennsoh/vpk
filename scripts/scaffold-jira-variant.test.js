@@ -119,7 +119,7 @@ function writeStableWorkItemOwnerFixtures(root, identity) {
 		"]);",
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item.test.js", [
+	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item.source.test.js", [
 		`assert.match(SOURCE, /export type JiraWorkItemVariant = "default" \\| "experimental" \\| "${experimentalSlug}";/u);`,
 		`assert.match(SOURCE, /"${experimentalSlug}": ${experimentalPascal}JiraWorkItem,\\s*\\} as const;/u);`,
 		`assert.match(SOURCE, /import \\{ ${experimentalPascal}JiraWorkItem \\} from "@\\/components\\/blocks\\/jira-work-item\\/${experimentalSlug}\\/${experimentalSlug}-jira-work-item";/u);`,
@@ -143,12 +143,12 @@ function writeStableWorkItemOwnerFixtures(root, identity) {
 		`assert.match(previewLayoutSource, /"jira-work-item-demo-${experimentalSlug}"/u);`,
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item-experimental-v2.test.js", [
+	writeFixtureFile(root, "components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js", [
 		`assert.match(indexSource, /export type JiraWorkItemVariant = "default" \\| "experimental" \\| "${experimentalSlug}";/u);`,
 		`assert.match(indexSource, /"${experimentalSlug}": ${experimentalPascal}JiraWorkItem,\\s*\\} as const;/u);`,
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "components/blocks/jira-work-item/activity-composer-context-bar.test.js", [
+	writeFixtureFile(root, "components/blocks/jira-work-item/activity-composer-context-bar.source.test.js", [
 		`const TREES = ["experimental-v2", "${experimentalSlug}"];`,
 		`if (tree === "${experimentalSlug}") {}`,
 		"",
@@ -251,15 +251,6 @@ function createFixtureWorkspace({
 		"};",
 		"",
 	].join("\n"));
-	writeFixtureFile(root, "scripts/js-unit-test-manifest.mjs", [
-		"export const TESTS = [",
-		`\t\t"components/projects/${identity.slug}/${identity.slug}.test.js",`,
-		`\t\t"app/data/${identity.slug}-contract.test.js",`,
-		`\t\t"components/blocks/jira-work-item/${experimental}/lib/${experimental}-helper.test.js",`,
-		`\t\t"components/blocks/jira-work-item/jira-work-item-${experimental}-chrome.test.js",`,
-		"];",
-		"",
-	].join("\n"));
 
 	const deferredObject = [
 		"\t{",
@@ -300,7 +291,7 @@ function addFixtureValidationCommands(root, { failValidation = false } = {}) {
 		'\tif (repoMap.state !== "generated") process.exit(2);',
 		'}',
 		'if (kind === "catalog") {',
-		'\tfor (const file of ["app/data/components.ts", "app/data/component-manifest.ts", "app/data/details/projects.ts", "components/website/registry/projects.ts", "scripts/js-unit-test-manifest.mjs"]) {',
+		'\tfor (const file of ["app/data/components.ts", "app/data/component-manifest.ts", "app/data/details/projects.ts", "components/website/registry/projects.ts"]) {',
 		'\t\tconst source = fs.readFileSync(file, "utf8");',
 		'\t\tif (!source.includes(target)) process.exit(3);',
 		'\t}',
@@ -358,7 +349,8 @@ test("dry-run planning is deterministic for the v1 to v2 fixture shape", async (
 		assert.equal(first.target.slug, "jira-golden-journey-v2");
 		assert.ok(first.copies.some((entry) => entry.target === "app/jira-golden-journey-v2/page.tsx"));
 		assert.ok(first.copies.some((entry) => entry.target === "app/data/jira-golden-journey-v2-contract.test.js"));
-		assert.ok(first.registrations.some((entry) => entry.file === "scripts/js-unit-test-manifest.mjs"));
+		// New suites run by file name; scaffolding never registers them anywhere.
+		assert.ok(first.registrations.every((entry) => entry.file !== "scripts/js-unit-test-manifest.mjs"));
 	} finally {
 		rmSync(root, { force: true, recursive: true });
 	}
@@ -428,10 +420,10 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 		const expectedOwners = [
 			"app/data/details/blocks/jira-work-item.ts",
 			"app/preview/blocks/[slug]/layout.tsx",
-			"components/blocks/jira-work-item/activity-composer-context-bar.test.js",
+			"components/blocks/jira-work-item/activity-composer-context-bar.source.test.js",
 			"components/blocks/jira-work-item/index.tsx",
-			"components/blocks/jira-work-item/jira-work-item-experimental-v2.test.js",
-			"components/blocks/jira-work-item/jira-work-item.test.js",
+			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
+			"components/blocks/jira-work-item/jira-work-item.source.test.js",
 			"components/blocks/jira-work-item/page.tsx",
 			"components/website/demos/blocks/jira-work-item-demo.tsx",
 			"components/website/registry/blocks-variants.ts",
@@ -487,12 +479,12 @@ test("v3 to v4 planning includes every stable Work Item registration owner", asy
 			/"jira-work-item-demo-experimental-v4"/u,
 		);
 		assert.match(
-			prepared("components/blocks/jira-work-item/activity-composer-context-bar.test.js"),
+			prepared("components/blocks/jira-work-item/activity-composer-context-bar.source.test.js"),
 			/TREES = \["experimental-v2", "experimental-v3", "experimental-v4"\]/u,
 		);
 		for (const contractOwner of [
-			"components/blocks/jira-work-item/jira-work-item.test.js",
-			"components/blocks/jira-work-item/jira-work-item-experimental-v2.test.js",
+			"components/blocks/jira-work-item/jira-work-item.source.test.js",
+			"components/blocks/jira-work-item/jira-work-item-experimental-v2.source.test.js",
 		]) {
 			assert.match(prepared(contractOwner), /"experimental-v4": ExperimentalV4JiraWorkItem/u);
 		}

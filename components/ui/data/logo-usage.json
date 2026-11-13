@@ -1,5 +1,5 @@
 {
-	"$comment": "SINGLE SOURCE OF TRUTH for 1P/2P/3P logo usage. Documents how each logo tier is rendered (bare vs. bordered tile vs. borderless-in-tile). Human-readable rationale lives in logo-usage.ts. The threeP.borderlessIds list MUST mirror /public/3p folders that ship a 16-borderless.svg (enforced by logo-usage.test.js).",
+	"$comment": "SINGLE SOURCE OF TRUTH for 1P/2P/3P logo usage. Documents how each logo tier is rendered (bare vs. bordered tile vs. borderless-in-tile). Human-readable rationale lives in logo-usage.ts. The threeP.borderlessIds list MUST mirror /public/3p folders that ship a 16-borderless.svg (enforced by logo-usage.source.test.js).",
 	"tiers": {
 		"oneP": {
 			"description": "Atlassian product marks from @atlaskit/logo. Most ship a solid superellipse background, so they render bare. The Atlassian master logo has no solid background and needs a bordered tile.",
@@ -20,7 +20,7 @@
 			"insetScaleById": {
 				"vs-code": 0.8333333333333334
 			},
-			"$darkGlyphIdsComment": "Marks whose glyph is monochrome near-black, so they vanish on a dark backdrop (e.g. GitHub #1d2022 scores 1.0:1 against --ds-surface #1F1F21; WCAG non-text wants 3:1). Consumers that place a bare glyph on a themed surface invert these in dark mode. DERIVED, not hand-written: an id belongs here when every fill in its package entrypoint (or /public/3p/<id>/24.svg) scores below 1.5:1 against the dark surface. logo-usage.test.js recomputes this from the shipped markup, so a package upgrade that recolors a mark fails the build instead of silently regressing contrast. Genuinely colored dark marks (Datadog purple, Box blue) are excluded on purpose — inverting them would corrupt the brand hue.",
+			"$darkGlyphIdsComment": "Marks whose glyph is monochrome near-black, so they vanish on a dark backdrop (e.g. GitHub #1d2022 scores 1.0:1 against --ds-surface #1F1F21; WCAG non-text wants 3:1). Consumers that place a bare glyph on a themed surface invert these in dark mode. DERIVED, not hand-written: an id belongs here when every fill in its package entrypoint (or /public/3p/<id>/24.svg) scores below 1.5:1 against the dark surface. logo-usage.source.test.js recomputes this from the shipped markup, so a package upgrade that recolors a mark fails the build instead of silently regressing contrast. Genuinely colored dark marks (Datadog purple, Box blue) are excluded on purpose — inverting them would corrupt the brand hue.",
 			"darkGlyphIds": [
 				"cursor",
 				"daloopa",

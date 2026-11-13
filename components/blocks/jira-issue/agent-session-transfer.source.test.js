@@ -5,7 +5,7 @@ const { test } = require("node:test");
 
 // Source contracts for the agent-session transfer surface: the Unlink/Link
 // demo phases, the drop well, the pull-out, and the split review chin.
-// Split out of jira-issue.test.js to keep both files under the 1000-line budget.
+// Split out of jira-issue.source.test.js to keep both files under the 1000-line budget.
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const ATTACH_CHIN_SOURCE = readFileSync(join(__dirname, "attach-chin.tsx"), "utf8");
 const AGENT_ACTIVITY_SOURCE = [

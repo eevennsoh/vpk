@@ -1,13 +1,13 @@
 /**
  * Pulse source contracts — what Node cannot execute.
  *
- * The behavioural half of this suite lives in `pulse.test.js` and runs the real
+ * The behavioural half of this suite lives in `pulse.source.test.js` and runs the real
  * hooks against the real fixture. What is left here is everything a Node
  * harness cannot reach: that the default board variant stays free of Pulse,
  * that every animating file carries explicit reduced-motion handling, that the
  * article composes the same pure helpers rather than a second definition of
  * "scoped", and the layout, token and focus contracts that only exist as
- * markup. Split from `pulse.test.js` because one file cannot hold both and
+ * markup. Split from `pulse.source.test.js` because one file cannot hold both and
  * stay inside the repo file-size budget.
  */
 

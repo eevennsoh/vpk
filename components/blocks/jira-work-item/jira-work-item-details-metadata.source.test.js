@@ -5,7 +5,7 @@ const test = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
 
-// Details-metadata draft/picker contracts split from jira-work-item.test.js
+// Details-metadata draft/picker contracts split from jira-work-item.source.test.js
 // so the parent file stays inside its recorded file-size growth budget.
 
 const BLOCK_DIR = __dirname;

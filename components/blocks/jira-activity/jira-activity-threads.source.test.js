@@ -5,7 +5,7 @@ const test = require("node:test");
 const React = require("react");
 const { renderComponent } = require("../../../scripts/lib/render-component.js");
 
-// Thread replies, reactions, and composer contracts split from jira-activity.test.js
+// Thread replies, reactions, and composer contracts split from jira-activity.source.test.js
 // so the parent file stays inside the default file-size budget.
 
 const {

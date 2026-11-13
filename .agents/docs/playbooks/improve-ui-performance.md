@@ -60,7 +60,7 @@ A shared-default change needs evidence across its affected consumers, including 
 
 ## Validation and evidence
 
-- Run the repository's targeted behavioral tests, lint and typecheck. Register new component node:test suites in `scripts/js-unit-test-manifest.mjs` and verify discovery with the unfiltered JS unit runner.
+- Run the repository's targeted behavioral tests, lint and typecheck. New node:test suites need no registration; confirm the unfiltered JS unit runner picks them up.
 - Verify the changed route and representative shared consumers in a real browser: first/repeat open, typing, view changes, drag/drop/cancel, hidden focusability, state persistence and reduced motion as applicable.
 - Measure memory/DOM growth when retaining views and first-use latency when deferring them. Keep cache growth bounded. Preserve visual geometry and accessible names.
 - Use existing source, file-size and lazy-load guards. Compare accessibility findings with the original route so existing issues are neither hidden nor incorrectly attributed to the optimization.
