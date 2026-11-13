@@ -6,7 +6,8 @@ test("suggestion shortcuts work from the panel and after the last decision", asy
 	await page.goto(appUrl("/butter"));
 	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
-	await item.getByRole("button", { name: /suggestions$/ }).click();
+	await expect(item.getByRole("button", { name: /^\d+ suggestions$/ })).toHaveAttribute("aria-expanded", "true");
+	await page.getByRole("group", { name: /Right arrow accepts/ }).focus();
 	const description = item.getByRole("textbox", { name: "Work item description" });
 	await page.keyboard.press("ArrowRight");
 	await expect(description).toContainText("guided quickstart");

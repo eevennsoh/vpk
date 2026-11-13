@@ -18,13 +18,14 @@ test("filling keeps the rail stable and a revealing field usable", async ({ page
 	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
 	const item = page.getByRole("dialog", { name: "Project butter" });
 	await item.getByRole("button", { name: /suggestions$/ }).click();
-	const status = item.locator('[data-field-id="status"]');
-	const before = await status.boundingBox();
-	if (!before) throw new Error("Status field is not visible");
+	const firstField = item.locator("[data-project-butter-detail-fields] [data-field-id]").first();
+	await expect(firstField).toHaveAttribute("data-field-id", "assignee");
+	const before = await firstField.boundingBox();
+	if (!before) throw new Error("The first Details field is not visible");
 	await page.getByRole("button", { name: "Accept all" }).click();
 	await expect(item.locator("[data-project-butter-suggestion-cursor]")).toBeVisible();
-	const during = await status.boundingBox();
-	if (!during) throw new Error("Status field disappeared during filling");
+	const during = await firstField.boundingBox();
+	if (!during) throw new Error("The first Details field disappeared during filling");
 	expect(Math.abs(during.y - before.y)).toBeLessThan(2);
 	const dueDateRow = item.locator('[data-field-id="dueDate"]');
 	await expect(dueDateRow.locator("[data-suggestion-text-reveal]")).toBeVisible();
@@ -85,7 +86,8 @@ test("the filling indicator begins its exit before the last field without oversh
 		let visibleOvershoot = 0;
 		let exitStartBeforeLast = false;
 		let exitDistanceToEnd: number | null = null;
-		let exitScaleBeforeFade = false;
+		let exitFadeStart: number | null = null;
+		let exitScaleStart: number | null = null;
 		let entryScaleVisible = false;
 		let entryScaleBeforeFade = false;
 		let firstScale: number | null = null;
@@ -118,10 +120,11 @@ test("the filling indicator begins its exit before the last field without oversh
 					if (scale > firstScale + 0.001 && opacity <= firstOpacity + 0.005) entryScaleBeforeFade = true;
 				}
 				else {
-					if (scale < 0.998 && opacity > 0.99) {
-						exitScaleBeforeFade = true;
-						if (exitStart === null) exitStartBeforeLast = cursor.getBoundingClientRect().top < last.getBoundingClientRect().top;
-						exitStart ??= now;
+					if (opacity < 0.99) exitFadeStart ??= now;
+					if (scale < 0.998) exitScaleStart ??= now;
+					if (exitStart === null && (opacity < 0.99 || scale < 0.998)) {
+						exitStartBeforeLast = cursor.getBoundingClientRect().top < last.getBoundingClientRect().top;
+						exitStart = now;
 					}
 					if (opacity < 0.95) exitedScale = Math.min(exitedScale, scale);
 					if (opacity < 0.02 && scale < 0.81) exitEnd ??= now;
@@ -137,7 +140,7 @@ test("the filling indicator begins its exit before the last field without oversh
 				if (settled && opacity < 0.95 && exitDistanceToEnd === null) exitDistanceToEnd = lastBox.bottom - cursorBox.top;
 				if (opacity > 0.02) visibleOvershoot = Math.max(visibleOvershoot, surface.getBoundingClientRect().bottom - lastBox.bottom);
 			} else if (seen) {
-				document.documentElement.dataset.fillingMotion = JSON.stringify({ enteredScale, exitedScale, visibleOvershoot, exitStartBeforeLast, exitDistanceToEnd, entryScaleVisible, entryScaleBeforeFade, exitScaleBeforeFade, centered, clippedDuringExit, entryDuration: entryStart !== null && entryEnd !== null ? entryEnd - entryStart : null, exitDuration: exitStart !== null && exitEnd !== null ? exitEnd - exitStart : null });
+				document.documentElement.dataset.fillingMotion = JSON.stringify({ enteredScale, exitedScale, visibleOvershoot, exitStartBeforeLast, exitDistanceToEnd, entryScaleVisible, entryScaleBeforeFade, exitFadeBeforeScale: exitFadeStart !== null && exitScaleStart !== null && exitFadeStart < exitScaleStart, centered, clippedDuringExit, entryDuration: entryStart !== null && entryEnd !== null ? entryEnd - entryStart : null, exitDuration: exitStart !== null && exitEnd !== null ? exitEnd - exitStart : null });
 				return;
 			}
 			if (now - started < 10000) requestAnimationFrame(sample);
@@ -153,8 +156,8 @@ test("the filling indicator begins its exit before the last field without oversh
 	expect(result.enteredScale).toBeLessThan(0.92);
 	expect(result.exitedScale).toBeLessThan(0.92);
 	expect(result.entryScaleVisible, JSON.stringify(result)).toBe(true);
-	expect(result.entryScaleBeforeFade).toBe(true);
-	expect(result.exitScaleBeforeFade).toBe(true);
+	expect(result.entryScaleBeforeFade, JSON.stringify(result)).toBe(true);
+	expect(result.exitFadeBeforeScale, JSON.stringify(result)).toBe(true);
 	expect(result.centered).toBe(true);
 	expect(result.entryDuration).not.toBeNull();
 	expect(result.exitDuration).not.toBeNull();

@@ -195,7 +195,9 @@ jobs:
 
       - name: Smoke specs
         env:
-          PLAYWRIGHT_BASE_URL: http://127.0.0.1:8080
+          # The backend allows http://localhost:8080 by default (backend/middleware/security.js); browsing at
+          # 127.0.0.1 would get every same-origin API POST rejected for its Origin.
+          PLAYWRIGHT_BASE_URL: http://localhost:8080
         run: time pnpm run test:e2e:smoke
 
       - name: Keep the report

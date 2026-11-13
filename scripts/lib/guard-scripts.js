@@ -11,6 +11,7 @@ const GUARD_SCRIPTS = Object.freeze([
 	"verify:repo-map",
 	"verify:vpk-feature-map",
 	"verify:file-size",
+	"verify:asset-size",
 	"verify:catalog",
 	"verify:lazy-load",
 	"verify:source-guardrails",

@@ -25,7 +25,7 @@ test("starting an agent adds a long-form session card to its activity thread", a
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
 	const workItem = page.getByRole("region", { name: "Work item full screen view" });
-	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button").click();
+	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button", { name: "2 agents" }).click();
 	await page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Figma", exact: true }).click();
 	const activity = workItem.getByRole("region", { name: "Activity" });
 	const session = activity.locator("[data-project-butter-session-start]").first();
@@ -38,12 +38,15 @@ test("starting an agent adds a long-form session card to its activity thread", a
 	await expect(session).toContainText("Figma");
 	await expect(session.getByRole("button", { name: "Working", exact: true })).toBeAttached();
 	await expect(session.locator("[data-agent-list-title]")).toHaveText("Redesign onboarding flow for new users");
+	const chat = page.locator('[data-rovo-chat-placement="floating"]');
+	const reply = chat.getByRole("textbox", { name: "Chat message input" });
 	await session.getByRole("button", { name: /^Redesign onboarding flow for new users/ }).click();
-	await expect(page.getByRole("textbox", { name: "Reply to Figma" })).toBeVisible();
-	await page.getByRole("button", { name: "Close session" }).click();
-	await expect(page.getByRole("textbox", { name: "Reply to Figma" })).toHaveCount(0);
+	await expect(reply).toBeVisible();
+	await expect(chat.getByRole("log")).toContainText("Redesign onboarding flow for new users");
+	await chat.getByRole("button", { name: "Close", exact: true }).click();
+	await expect(reply).toHaveCount(0);
 	await session.getByRole("button", { name: /^Redesign onboarding flow for new users/ }).click();
-	await expect(page.getByRole("textbox", { name: "Reply to Figma" })).toBeVisible();
+	await expect(reply).toBeVisible();
 });
 
 test("reply disclosure icon has no background on the hovered activity row", async ({ page }) => {
@@ -53,10 +56,15 @@ test("reply disclosure icon has no background on the hovered activity row", asyn
 	const toggle = thread.getByRole("button", { name: /Show 4 more replies/ });
 	await toggle.hover();
 	const icon = thread.locator('button[aria-controls] > span[aria-hidden]');
-	await expect(icon).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	// The icon keeps a surface fill that masks the timeline; on the hovered row it is painted with the row's hover color so no separate box shows.
+	const matchesHoveredRow = () => icon.evaluate((element) => {
+		const rowHover = getComputedStyle(element.closest("li")!, "::after").backgroundColor;
+		return rowHover !== "rgba(0, 0, 0, 0)" && getComputedStyle(element).backgroundImage === `linear-gradient(in oklab, ${rowHover} 0px, ${rowHover} 100%)`;
+	});
+	await expect.poll(matchesHoveredRow).toBe(true);
 	await toggle.click();
 	await expect(page.getByRole("button", { name: "Hide replies" })).toHaveAttribute("aria-expanded", "true");
-	await expect(icon).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect.poll(matchesHoveredRow).toBe(true);
 });
 
 test("activity timeline dots are centered on the dashed line", async ({ page }) => {

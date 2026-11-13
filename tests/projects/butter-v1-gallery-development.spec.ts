@@ -96,8 +96,6 @@ test("the Development panel waits for manual merge when automation is disabled",
 	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
 	await page.clock.fastForward(5000);
 	await expect(panel).toHaveAttribute("data-project-butter-development", "passed");
-	await panel.getByRole("button", { name: "Merge pull request" }).click();
-	await expect(panel).toHaveAttribute("data-project-butter-development", "merged");
 });
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {

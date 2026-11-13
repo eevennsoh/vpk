@@ -9,8 +9,8 @@ test("new session hint follows the highlighted choice and disappears when typing
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	await page.keyboard.press("m");
 	const editor = page.getByRole("textbox", { name: "Comment editor" });
-	await editor.pressSequentially("@Claude");
-	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	await editor.pressSequentially("@Cursor");
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Cursor", exact: true }).click();
 	const hint = editor.locator("xpath=..");
 	const newSession = page.getByRole("option", { name: "Start a new session" });
 	await newSession.hover();
