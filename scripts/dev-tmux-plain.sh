@@ -17,6 +17,10 @@ REPO_ROOT="$(pwd)"
 FRONTEND_PORT_FILE=".dev-frontend-port"
 BACKEND_PORT_FILE=".dev-backend-port"
 SOCKET="${VPK_TMUX_SOCKET:-vpk-dev}"
+# The session's pane output is copied here, so a dev-server error can be read
+# without attaching. One previous run is kept as dev.previous.log.
+DEV_LOG_DIR="${VPK_DEV_LOG_DIR:-$REPO_ROOT/output/logs/$(basename "$REPO_ROOT")}"
+DEV_LOG_FILE="$DEV_LOG_DIR/dev.log"
 
 # Resolve a tmux binary: an explicit override first, then common install
 # locations, then a PATH lookup.
@@ -241,7 +245,8 @@ print_endpoints() {
 }
 
 print_controls() {
-	echo "  Attach/logs: $TMUX_BIN -L $SOCKET attach -t $SESSION_NAME   (detach: Ctrl-b then d)"
+	echo "  Logs:        $DEV_LOG_FILE"
+	echo "  Attach:      $TMUX_BIN -L $SOCKET attach -t $SESSION_NAME   (detach: Ctrl-b then d)"
 	echo "               pnpm run dev:tmux:attach"
 	echo "  Stop:        pnpm run dev:tmux:stop"
 }
@@ -255,6 +260,10 @@ launch_session() {
 	local portless_args
 	portless_args="$(resolve_portless_args)"
 	tm new-session -d -s "$SESSION_NAME" -c "$REPO_ROOT"
+	mkdir -p "$DEV_LOG_DIR"
+	[[ -f "$DEV_LOG_FILE" ]] && mv -f "$DEV_LOG_FILE" "$DEV_LOG_DIR/dev.previous.log"
+	# pipe-pane copies what the pane prints without changing the command it runs.
+	tm pipe-pane -t "$SESSION_NAME" -o "cat >> '$DEV_LOG_FILE'"
 	# Launch the dev stack THROUGH portless so this worktree gets a stable
 	# .localhost URL. `portless run` with no command runs the package.json
 	# "dev" script (frontend + backend); ${portless_args} adds `--name <dir>`

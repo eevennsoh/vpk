@@ -172,6 +172,7 @@ module.exports = {
 	parseLaunchReadyTimeoutMs,
 	printDoctor,
 	readState,
+	requestWorktreeOrigin,
 	runPnpm,
 	waitForDoctorReady,
 	writeState,
