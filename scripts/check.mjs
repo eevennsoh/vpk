@@ -28,6 +28,7 @@ const GENERATED_GUARDS = new Set(["verify:route-manifest", "verify:api-surfaces"
 export function guardFixCommand(name) {
 	if (GENERATED_GUARDS.has(name)) return "pnpm run fix:generated (then rerun: pnpm run " + name + ")";
 	if (name === "verify:file-size") return "split the file; budgets only shrink";
+	if (name === "verify:asset-size") return "resize or re-encode the asset; the baseline only shrinks";
 	if (name === "verify:eslint-suppressions") return "fix the new violations; never suppress them";
 	return `pnpm run ${name}`;
 }

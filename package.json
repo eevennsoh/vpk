@@ -38,6 +38,7 @@
 		"verify:vpk-feature-map": "node .agents/skills/vpk-verify/scripts/verify-feature-map.js",
 		"test:rovo-core": "node scripts/run-js-unit-tests.mjs --prefix components/projects/rovo-core/",
 		"verify:file-size": "node scripts/verify-file-size-budget.js",
+		"verify:asset-size": "node scripts/verify-asset-size.js",
 		"verify:lazy-load": "node scripts/verify-lazy-load-boundaries.js",
 		"verify:source-guardrails": "node scripts/verify-source-guardrails.js",
 		"verify:eslint-suppressions": "node scripts/verify-eslint-suppressions.js",
