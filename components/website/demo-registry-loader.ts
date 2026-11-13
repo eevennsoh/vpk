@@ -43,7 +43,10 @@ function loadCategoryRegistry(category: DemoCategory): Promise<CategoryRegistry 
 	return loadCachedResult(categoryRegistryCache, category, () => (load ? load() : Promise.resolve(null)));
 }
 
-function loadCachedResult<K, T>(
+// Shares one in-flight or settled load per key. A rejected load is dropped from the cache, so a
+// failed chunk request (a network blip, a deploy that swapped chunks) is retried by the next
+// call instead of failing every later demo of that category until reload.
+export function loadCachedResult<K, T>(
 	cache: Map<K, Promise<T>>,
 	cacheKey: K,
 	load: () => Promise<T>,
@@ -55,6 +58,11 @@ function loadCachedResult<K, T>(
 
 	const result = load();
 	cache.set(cacheKey, result);
+	result.catch(() => {
+		if (cache.get(cacheKey) === result) {
+			cache.delete(cacheKey);
+		}
+	});
 	return result;
 }
 
