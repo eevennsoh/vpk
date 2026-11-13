@@ -3,7 +3,7 @@ const { spawnSync } = require("node:child_process");
 const { randomUUID } = require("node:crypto");
 const test = require("node:test");
 
-const { UNIT_BATCH_MARKER_ENV, findMarkedProcesses, groupAlive, killGroup, spawnInGroup } = require("./test-process.js");
+const { UNIT_BATCH_MARKER_ENV, findMarkedProcesses, groupAlive, groupMemberStates, killGroup, spawnInGroup } = require("./test-process.js");
 
 const processTableReadable = findMarkedProcesses("probe") !== null;
 
@@ -41,4 +41,23 @@ test("findMarkedProcesses finds a process by the batch marker in its environment
 	assert.deepEqual(findMarkedProcesses(randomUUID()), []);
 	await killGroup(child);
 	assert.deepEqual(findMarkedProcesses(marker), []);
+});
+
+test("a group whose only members are zombies counts as gone", () => {
+	// Under a PID 1 that does not reap orphans, a killed grandchild stays a zombie in the group
+	// forever and kill(-pgid, 0) keeps succeeding.
+	const signalable = () => true;
+	assert.equal(groupAlive(42, { signalable, states: () => ["Z"] }), false);
+	assert.equal(groupAlive(42, { signalable, states: () => ["Z+", "Z"] }), false);
+	assert.equal(groupAlive(42, { signalable, states: () => ["S", "Z"] }), true);
+	assert.equal(groupAlive(42, { signalable, states: () => [] }), false);
+	assert.equal(groupAlive(42, { signalable, states: () => null }), true, "an unreadable table falls back to the signal");
+	assert.equal(groupAlive(42, { signalable: () => false, states: () => ["S"] }), false);
+});
+
+test("groupMemberStates reads this process's own group", { skip: processTableReadable ? false : "needs a readable process table" }, () => {
+	const pgid = Number(spawnSync("ps", ["-o", "pgid=", "-p", String(process.pid)], { encoding: "utf8" }).stdout.trim());
+	const states = groupMemberStates(pgid);
+	assert.ok(states.length >= 1);
+	assert.ok(states.some((state) => !state.startsWith("Z")));
 });

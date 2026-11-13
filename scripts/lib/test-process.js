@@ -19,13 +19,51 @@ const GROUP_EXIT_TIMEOUT_MS = 5_000;
 const liveGroups = new Set();
 let exitHookInstalled = false;
 
-function groupAlive(pgid) {
+function groupSignalable(pgid) {
 	try {
 		process.kill(-pgid, 0);
 		return true;
 	} catch (error) {
 		return error.code === "EPERM";
 	}
+}
+
+// Process states of every member of `pgid` (single letters: R, S, Z, …), or null when the
+// process table cannot be read.
+function groupMemberStates(pgid, { platform = process.platform } = {}) {
+	if (platform === "linux") {
+		const states = [];
+		for (const name of fs.readdirSync("/proc")) {
+			if (!/^\d+$/u.test(name)) continue;
+			let stat;
+			try {
+				stat = fs.readFileSync(`/proc/${name}/stat`, "utf8");
+			} catch {
+				continue;
+			}
+			// `pid (comm) state ppid pgrp …`; comm may hold spaces and parentheses.
+			const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
+			if (Number(fields[2]) === pgid) states.push(fields[0]);
+		}
+		return states;
+	}
+	const result = spawnSync("ps", ["-A", "-o", "pgid=,stat="], { encoding: "utf8" });
+	if (result.status !== 0) return null;
+	return result.stdout.split("\n").map((line) => line.trim().split(/\s+/u)).filter(([group]) => Number(group) === pgid).map(([, state]) => state);
+}
+
+// True while any member of the group can still run. A zombie (killed but not yet reaped, which
+// lasts forever under a PID 1 that does not reap orphans) does not count.
+function groupAlive(pgid, { signalable = groupSignalable, states = groupMemberStates } = {}) {
+	if (!signalable(pgid)) return false;
+	let members = null;
+	try {
+		members = states(pgid);
+	} catch {
+		members = null;
+	}
+	if (members === null) return true;
+	return members.some((state) => !state.startsWith("Z"));
 }
 
 function signalGroup(pgid, signal) {
@@ -123,6 +161,7 @@ module.exports = {
 	UNIT_BATCH_MARKER_ENV,
 	findMarkedProcesses,
 	groupAlive,
+	groupMemberStates,
 	killGroup,
 	spawnInGroup,
 };
