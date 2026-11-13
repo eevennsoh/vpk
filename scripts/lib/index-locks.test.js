@@ -160,3 +160,27 @@ test("a lock replaced while its holders were being read is kept", async (t) => {
 	assert.deepEqual({ removed: result.removed, reason: result.reason }, { removed: false, reason: "replaced during the recheck" });
 	assert.equal(fs.existsSync(stale.lock), true);
 });
+
+test("a lock released right after it was found does not abort the inspection", async (t) => {
+	const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "index-locks-")));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const released = makeGitDir(root, "released", 60);
+	const kept = makeGitDir(root, "kept", 60);
+	// git finishes between the stat that found the lock and anything after it.
+	const statSync = fs.statSync;
+	fs.statSync = (file, ...rest) => {
+		const stat = statSync(file, ...rest);
+		if (file === released.lock) fs.rmSync(file, { force: true });
+		return stat;
+	};
+	t.after(() => {
+		fs.statSync = statSync;
+	});
+	const inspected = await inspectIndexLocks([released, kept], { minAgeMs: 30 * MINUTE_MS, findHolders: async () => new Map(), readProcessCwds: async () => [] });
+	fs.statSync = statSync;
+	assert.deepEqual(inspected.map((entry) => entry.lock).sort(), [kept.lock, released.lock].sort());
+	const removals = await removeStaleIndexLocks(inspected, { findHolders: async () => new Map(), readProcessCwds: async () => [] });
+	const byLock = Object.fromEntries(removals.map((entry) => [entry.lock, entry]));
+	assert.deepEqual([byLock[released.lock].removed, byLock[released.lock].reason], [false, "changed since it was inspected"]);
+	assert.equal(byLock[kept.lock].removed, true);
+});

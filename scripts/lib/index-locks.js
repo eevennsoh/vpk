@@ -18,6 +18,16 @@ function statOrNull(file) {
 	}
 }
 
+// The git directory's real path, so a lock's path matches what lsof reports; null when the
+// directory is gone (a worktree removed meanwhile).
+function realDirOrNull(dir) {
+	try {
+		return fs.realpathSync(dir);
+	} catch {
+		return null;
+	}
+}
+
 // Processes whose cwd is inside the worktree, without this process; null when unreadable.
 function worktreeProcessesFrom(processCwds, worktree) {
 	return processesUnder(processCwds, worktree, { exclude: [process.pid] })?.map(({ pid, command }) => ({ pid, command })) ?? null;
@@ -30,10 +40,15 @@ function worktreeProcessesFrom(processCwds, worktree) {
 async function inspectIndexLocks(entries, { now = Date.now(), minAgeMs, findHolders = findFileHolders, readProcessCwds = listProcessCwds } = {}) {
 	const found = [];
 	for (const entry of entries) {
-		const lock = path.join(entry.gitDir, "index.lock");
+		// Resolve the directory, not the lock: a lock git releases right after the stat would
+		// make realpath throw and abort the whole report. One that goes after the stat is
+		// caught by the same-file recheck before any unlink.
+		const gitDir = realDirOrNull(entry.gitDir);
+		if (!gitDir) continue;
+		const lock = path.join(gitDir, "index.lock");
 		const stat = statOrNull(lock);
 		if (!stat) continue;
-		found.push({ ...entry, lock: fs.realpathSync(lock), ino: stat.ino, mtimeMs: stat.mtimeMs, ageMs: Math.max(0, now - stat.mtimeMs) });
+		found.push({ ...entry, lock, ino: stat.ino, mtimeMs: stat.mtimeMs, ageMs: Math.max(0, now - stat.mtimeMs) });
 	}
 	if (found.length === 0) return [];
 	const [holders, processCwds] = await Promise.all([findHolders(found.map((entry) => entry.lock)), readProcessCwds()]);
