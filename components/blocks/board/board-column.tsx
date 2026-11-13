@@ -56,7 +56,7 @@ export function BoardColumn({
 			<div
 				ref={setNodeRef}
 				className={cn(
-					"flex-1 space-y-2 overflow-y-auto p-3 transition-colors duration-200",
+					"flex-1 space-y-2 overflow-y-auto p-3 transition-colors duration-medium",
 					isOver && "rounded-b-lg bg-surface-selected",
 				)}
 			>
