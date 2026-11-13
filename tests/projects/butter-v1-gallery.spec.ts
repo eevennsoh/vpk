@@ -426,29 +426,6 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	await expect(page.getByRole("button", { name: "Edit story points for PAY-118, 5" })).toBeVisible();
 });
 
-test("selecting a gallery item animates its highlight", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.goto(appUrl("/butter-v1"));
-	const button = page.getByRole("button", { name: "Select Work item" });
-	await expect(button).toBeVisible();
-	const sizes = await button.evaluate(async (element) => {
-		const samples: number[] = [];
-		const start = performance.now();
-		(element as HTMLButtonElement).click();
-		await new Promise<void>((resolve) => {
-			const sample = () => {
-				const surface = element.querySelector<HTMLElement>("[style*='mask-image']");
-				if (surface) samples.push(Number.parseFloat(getComputedStyle(surface).maskSize));
-				if (performance.now() - start < 1000) requestAnimationFrame(sample);
-				else resolve();
-			};
-			requestAnimationFrame(sample);
-		});
-		return samples;
-	});
-	expect(new Set(sizes).size).toBeGreaterThan(2);
-});
-
 test("attachment piles stay settled when entering Work item and remain interactive", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });

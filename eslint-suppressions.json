@@ -406,7 +406,7 @@
   },
   "components/blocks/agent-session-column/agent-session-column-arrival.source.test.js": {
     "no-restricted-syntax": {
-      "count": 97
+      "count": 95
     }
   },
   "components/blocks/agent-session-column/agent-session-column-capabilities.source.test.js": {
