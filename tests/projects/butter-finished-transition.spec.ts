@@ -34,7 +34,13 @@ test("the arriving agent row stays mounted while its status finishes", async ({ 
 		requestAnimationFrame(sample);
 	});
 	await expect(card.getByRole("button", { name: "Claude: Finished" })).toBeVisible();
-	await page.waitForTimeout(350);
+	// Sample for 350ms of frames after the status flips to Finished.
+	await page.waitForFunction(() => {
+		const samples = window.__finishedTransitionSamples;
+		const finished = samples.find((sample) => sample.label === "Claude: Finished");
+		const last = samples.at(-1);
+		return Boolean(finished && last && last.time - finished.time >= 350);
+	});
 	const continuity = await row.evaluate((element) => {
 		const state = window;
 		const finished = state.__finishedTransitionSamples.find((sample) => sample.label === "Claude: Finished");

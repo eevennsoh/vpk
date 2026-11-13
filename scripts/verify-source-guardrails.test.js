@@ -468,3 +468,22 @@ test("recognizes configured source extensions", () => {
 	assert.equal(isSourceFile("scripts/example.mjs"), true);
 	assert.equal(isSourceFile("AGENTS.md"), false);
 });
+
+test("a fixed waitForTimeout in a browser spec is a new violation; other paths and condition waits are not", () => {
+	const source = [
+		"await page.waitForTimeout(500);",
+		"await page.waitForTimeout (250);",
+		"await expect(page.getByRole(\"dialog\")).toBeVisible();",
+		"await page.waitForResponse((response) => response.url().endsWith(\"/api/health\"));",
+	].join("\n");
+	const specViolations = collectSourceGuardrailViolationsFromSource(source, "tests/projects/example.spec.ts")
+		.filter((violation) => violation.type === "playwright-fixed-wait");
+	assert.deepEqual(specViolations.map((violation) => violation.line), [1, 2]);
+	assert.deepEqual(
+		collectSourceGuardrailViolationsFromSource(source, "components/blocks/demo/demo.tsx").filter((violation) => violation.type === "playwright-fixed-wait"),
+		[],
+	);
+	const failures = evaluateSourceGuardrails(specViolations, { items: [] });
+	assert.deepEqual(failures.map((failure) => failure.type), ["new-source-guardrail-violation", "new-source-guardrail-violation"]);
+	assert.match(formatFailure(failures[0]), /tests\/projects\/example\.spec\.ts:1: new playwright-fixed-wait/u);
+});

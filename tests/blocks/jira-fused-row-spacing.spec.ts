@@ -6,7 +6,7 @@ test.use({ ignoreHTTPSErrors: true });
 
 for (const width of [1440, 2048]) {
 	for (const reducedMotion of ["no-preference", "reduce"] as const) {
-		test(`fused agent rows have equal upper and lower gutters (${width}, ${reducedMotion})`, async ({ page }) => {
+		test(`fused agent rows have equal upper and lower gutters (${width}, ${reducedMotion})`, { tag: "@smoke" }, async ({ page }) => {
 			await page.setViewportSize({ width, height: 1152 });
 			await page.emulateMedia({ reducedMotion });
 			await page.goto(appUrl("/components/blocks/jira-dragging"));

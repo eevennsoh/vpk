@@ -245,6 +245,7 @@ module.exports = {
 	printDoctor,
 	readState,
 	requestCompiling,
+	requestWorktreeOrigin,
 	runPnpm,
 	waitForDoctorReady,
 	warmRoute,

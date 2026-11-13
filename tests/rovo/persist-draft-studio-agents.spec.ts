@@ -65,7 +65,7 @@ for (const project of ["studio", "rovo"]) {
 	});
 }
 
-test.describe("Studio draft agent persistence", () => {
+test.describe("Studio draft agent persistence", { tag: "@smoke" }, () => {
 	test("seeded draft agent appears in the left-hand Agents nav on first load", async ({ page }) => {
 		await seedSessionAgent(page);
 
