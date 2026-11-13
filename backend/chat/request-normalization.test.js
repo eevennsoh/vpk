@@ -308,3 +308,21 @@ test("resolveChatSdkRequestState: a plain visible message keeps an execution ses
 	assert.deepEqual(clearedPlanSessions, []);
 	assert.equal(state.currentPlanSession.phase, "execution");
 });
+
+// What the 6 h TTL does to a plan approved late: Build sends a deferred tool response
+// outside plan mode; the expired session reads as none, so execution does not start.
+test("resolveChatSdkRequestState: Build on a plan older than the TTL does not start execution", () => {
+	const clock = { now: 0 };
+	const store = createPlanSessionStore({ now: () => clock.now, ttlMs: 1000 });
+	store.dispatchPlanSessionEvent("thread-1", { type: "PLAN_EMITTED", deferredToolCallId: "deferred-1" });
+	clock.now = 1001;
+	const { state, logs } = resolveStateFor({
+		messages: [{ role: "user", content: "Build" }],
+		deferredToolResponse: { tool_call_id: "deferred-1" },
+		threadId: "thread-1",
+	}, { store });
+	assert.equal(store.getPlanSession("thread-1").phase, "none");
+	assert.equal(state.currentPlanSession.phase, "none");
+	assert.equal(state.deferredToolResponseToolCallId, "deferred-1", "the deferred tool response still reaches Rovo");
+	assert.equal(logs.some(([message]) => String(message).includes("Transitioned to execution phase")), false);
+});
