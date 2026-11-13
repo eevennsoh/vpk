@@ -1,13 +1,7 @@
 "use client";
 
-import {
-	animate,
-	motion,
-	useMotionValue,
-	useReducedMotion,
-	useTransform,
-} from "motion/react";
-import { useEffect, useMemo, useState, type JSX, type RefObject } from "react";
+import { cubicBezier, useReducedMotion } from "motion/react";
+import { useLayoutEffect, useMemo, useRef, useState, type JSX, type RefObject } from "react";
 
 import LiquidGradient from "@/components/visual/liquid-gradient";
 
@@ -154,96 +148,105 @@ export function GallerySelectedSurface({
 	const phaseEase = isExitPhase ? EXIT_EASE : ENTER_EASE;
 	const originX = (width * visual.origin.xPercent) / 100;
 	const originY = (height * visual.origin.yPercent) / 100;
-	const radius = useMotionValue(
-		shouldReduceMotion || visual.phase !== "enter" ? revealRadius : 0,
-	);
-	const maskSize = useTransform(() => {
-		const currentRadius = radius.get();
-		const diameter = Math.max(1, currentRadius * MASK_DIAMETER_SCALE);
-		return `${diameter}px ${diameter}px`;
-	});
-	const maskPosition = useTransform(() => {
-		const currentRadius = radius.get();
-		const offset = Math.max(0.5, (currentRadius * MASK_DIAMETER_SCALE) / 2);
-		return `${originX - offset}px ${originY - offset}px`;
-	});
+	const diameter = revealRadius * MASK_DIAMETER_SCALE;
+	const surfaceRef = useRef<HTMLDivElement>(null);
+	const contentRef = useRef<HTMLDivElement>(null);
+	const [initialScale] = useState(shouldReduceMotion || visual.phase !== "enter" ? 1 : 0.1);
 
-	useEffect(() => {
-		const targetRadius = isExitPhase ? 0 : revealRadius;
+	useLayoutEffect(() => {
+		const surface = surfaceRef.current;
+		const content = contentRef.current;
+		if (!surface || !content) return;
+		const targetScale = isExitPhase ? 0.001 : 1;
 		if (shouldReduceMotion) {
-			radius.set(targetRadius);
+			surface.style.transform = `scale(${targetScale})`;
+			content.style.transform = `scale(${1 / targetScale})`;
 			return;
 		}
-		const animation = animate(radius, targetRadius, {
-			duration: phaseDuration,
-			ease: phaseEase,
+		const from = new DOMMatrixReadOnly(getComputedStyle(surface).transform).a;
+		const ease = cubicBezier(phaseEase[0], phaseEase[1], phaseEase[2], phaseEase[3]);
+		const scales = Array.from({ length: 121 }, (_, index) => {
+			const progress = ease(index / 120);
+			return from + (targetScale - from) * progress;
 		});
-		return () => animation.stop();
-	}, [
-		isExitPhase,
-		phaseDuration,
-		phaseEase,
-		radius,
-		revealRadius,
-		shouldReduceMotion,
-		visual.key,
-	]);
+		const timing: KeyframeAnimationOptions = { duration: phaseDuration * 1000, fill: "forwards" };
+		// Both transforms run on the compositor; the reciprocal keeps the title and gradient stationary.
+		const reveal = surface.animate(scales.map((scale) => ({ transform: `scale(${scale})` })), timing);
+		const counterScale = content.animate(scales.map((scale) => ({ transform: `scale(${1 / scale})` })), timing);
+		return () => {
+			if (surface.checkVisibility()) {
+				reveal.commitStyles();
+				counterScale.commitStyles();
+			}
+			reveal.cancel();
+			counterScale.cancel();
+		};
+	}, [isExitPhase, phaseDuration, phaseEase, shouldReduceMotion, visual.key]);
 
 	return (
-		<motion.div
+		<div
+			ref={surfaceRef}
 			aria-hidden="true"
-			className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
+			className="pointer-events-none absolute z-10"
 			style={{
+				width: diameter,
+				height: diameter,
+				left: originX - diameter / 2,
+				top: originY - diameter / 2,
+				transform: `scale(${initialScale})`,
+				willChange: "transform",
 				maskImage: inkMaskImage,
 				WebkitMaskImage: inkMaskImage,
 				maskMode: "alpha",
-				maskPosition,
-				WebkitMaskPosition: maskPosition,
 				maskRepeat: "no-repeat",
 				WebkitMaskRepeat: "no-repeat",
-				maskSize,
-				WebkitMaskSize: maskSize,
+				maskSize: "100% 100%",
+				WebkitMaskSize: "100% 100%",
 			}}
 		>
-			<div
-				className="absolute inset-0"
-				style={{
-					backgroundColor: selectedColor,
-					backgroundImage: selectedColor ? undefined : [
-						`radial-gradient(circle at ${visual.origin.xPercent}% ${visual.origin.yPercent}%, ${palette[3]} 0%, transparent 52%)`,
-						`linear-gradient(140deg, ${palette[0]} 0%, ${palette[1]} 52%, ${palette[2]} 100%)`,
-					].join(", "),
-				}}
-			/>
-			{selectedColor ? null : <LiquidGradient
-				className="absolute inset-0 h-full w-full"
-				colors={palette}
-				seed={shaderParameters.seed}
-				speed={shaderParameters.speed}
-				loop={0}
-				scale={shaderParameters.scale}
-				turbAmp={shaderParameters.turbAmp}
-				turbFreq={shaderParameters.turbFreq}
-				turbIter={shaderParameters.turbIter}
-				waveFreq={shaderParameters.waveFreq}
-				distBias={shaderParameters.distBias}
-				jellify
-				ditherMode={1}
-				dither={0.03}
-				exposure={1.08}
-				contrast={1.12}
-				saturation={1.04}
-			/>}
-			<div className="absolute inset-0 p-6">
-				<div className="flex h-full w-full flex-col justify-end">
-					<GalleryTitleLines
-						title={title}
-						lines={titleLines}
-						textRef={highlightTextRef}
-						className="text-text-inverse"
+			<div ref={contentRef} className="absolute inset-0" style={{ transform: `scale(${1 / initialScale})`, willChange: "transform" }}>
+				<div className="absolute" style={{ width, height, left: diameter / 2 - originX, top: diameter / 2 - originY }}>
+					<div
+						className="absolute inset-0"
+						style={{
+							backgroundColor: selectedColor,
+							backgroundImage: selectedColor ? undefined : [
+								`radial-gradient(circle at ${visual.origin.xPercent}% ${visual.origin.yPercent}%, ${palette[3]} 0%, transparent 52%)`,
+								`linear-gradient(140deg, ${palette[0]} 0%, ${palette[1]} 52%, ${palette[2]} 100%)`,
+							].join(", "),
+						}}
 					/>
+					{selectedColor ? null : <LiquidGradient
+						className="absolute inset-0 h-full w-full"
+						colors={palette}
+						seed={shaderParameters.seed}
+						speed={shaderParameters.speed}
+						loop={0}
+						scale={shaderParameters.scale}
+						turbAmp={shaderParameters.turbAmp}
+						turbFreq={shaderParameters.turbFreq}
+						turbIter={shaderParameters.turbIter}
+						waveFreq={shaderParameters.waveFreq}
+						distBias={shaderParameters.distBias}
+						jellify
+						ditherMode={1}
+						dither={0.03}
+						exposure={1.08}
+						contrast={1.12}
+						saturation={1.04}
+					/>}
+					<div className="absolute inset-0 p-6">
+						<div className="flex h-full w-full flex-col justify-end">
+							<GalleryTitleLines
+								title={title}
+								lines={titleLines}
+								textRef={highlightTextRef}
+								className="text-text-inverse"
+							/>
+						</div>
+					</div>
 				</div>
 			</div>
-		</motion.div>
+		</div>
 	);
 }

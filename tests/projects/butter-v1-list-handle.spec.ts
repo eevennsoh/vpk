@@ -204,6 +204,27 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) test(`list pla
 	expect(sessionLabelBounds.x).toBeCloseTo(previewBounds.x, 0);
 });
 
+test("adding an agent in List shows a dismissible nudge", async ({ page }) => {
+	page.setDefaultTimeout(7000);
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List" }).click();
+	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	await expect(list).toBeVisible();
+	await list.getByRole("button", { name: "Add agent to PAY-118" }).click();
+	await page.getByRole("dialog", { name: "Agents" }).getByRole("button", { name: "Claude (Recommended)" }).click();
+	const nudge = page.getByRole("button", { name: "Claude added", exact: true });
+	await expect(nudge).toBeVisible();
+	await expect(nudge.locator('[data-slot="avatar"][data-shape="hexagon"]')).toBeVisible();
+	await page.getByRole("button", { name: "Dismiss Claude added" }).click();
+	await expect(nudge).toBeHidden();
+	await expect(list.getByRole("button", { name: "Claude: Working" })).toBeVisible();
+	await list.getByRole("button", { name: "Add agent to PAY-118" }).click();
+	await page.getByRole("dialog", { name: "Agents" }).getByRole("button", { name: "Cursor", exact: true }).click();
+	await page.getByRole("button", { name: "Cursor added", exact: true }).click();
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+});
+
 test("agent previews replace the empty list cell placeholder", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));

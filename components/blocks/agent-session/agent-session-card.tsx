@@ -123,32 +123,32 @@ function resolveAgentSessionCardMotion({
 	arrivalDelaySeconds,
 	arrivalStartTransform,
 	isDeparting,
-	isStateChanged,
 	isTransferSource,
 	shouldPlayArrival,
 	shouldPlayDeparture,
 	shouldPlayStatusReentry,
 	shouldReduceMotion,
+	waitingForArrival,
 }: Readonly<{
 	animateLayout: boolean;
 	arrivalDelaySeconds?: number;
 	arrivalStartTransform: string;
 	isDeparting: boolean;
-	isStateChanged: boolean;
 	isTransferSource: boolean;
 	shouldPlayArrival: boolean;
 	shouldPlayDeparture: boolean;
 	shouldPlayStatusReentry: boolean;
 	shouldReduceMotion: boolean | null;
+	waitingForArrival: boolean;
 }>) {
 	return {
-		animate: shouldPlayDeparture ? { opacity: 0 }
+		animate: waitingForArrival ? { opacity: 0, transform: arrivalStartTransform }
+			: shouldPlayDeparture ? { opacity: 0 }
 			: shouldPlayStatusReentry
 				? { opacity: [0, 1], transform: [arrivalStartTransform, "translateY(0%)"] }
 				: { opacity: 1, transform: "translateY(0%)" },
 		ariaHidden: isTransferSource || isDeparting || undefined,
 		departing: isDeparting || undefined,
-		initial: shouldPlayArrival && !isStateChanged ? { opacity: 0, transform: arrivalStartTransform } : false,
 		// Keep measuring settled rows even when filtering places them immediately.
 		layout: shouldReduceMotion || isDeparting || shouldPlayStatusReentry ? false : "position" as const,
 		transition: shouldReduceMotion ? { duration: 0 } : shouldPlayDeparture
@@ -189,7 +189,9 @@ function useAgentSessionCardTransition({
 	shouldReduceMotion: boolean | null;
 }>) {
 	const [lifecycleState, setLifecycleState] = useState<AgentSessionItem["state"]>(item.state);
-	const [phase, setPhase] = useState<"arrival" | "avatar" | "status">("arrival");
+	const [phase, setPhase] = useState<"pending-arrival" | "arrival" | "avatar" | "status">(
+		isArriving && !isStateChanged && !shouldReduceMotion ? "pending-arrival" : "arrival",
+	);
 	useEffect(() => {
 		if (!isStateChanged || isDeparting || shouldReduceMotion) {
 			setLifecycleState(item.state);
@@ -229,12 +231,12 @@ function useAgentSessionCardTransition({
 			arrivalDelaySeconds,
 			arrivalStartTransform,
 			isDeparting,
-			isStateChanged,
 			isTransferSource,
 			shouldPlayArrival,
 			shouldPlayDeparture,
 			shouldPlayStatusReentry,
 			shouldReduceMotion,
+			waitingForArrival: phase === "pending-arrival",
 		}),
 	};
 }
@@ -656,9 +658,8 @@ export function AgentSessionCard({
 			}}
 			onPointerMove={tracksOwnPointer ? cardGlow.onPointerMove : undefined}
 			ref={departureFocus.setRowNode}
-			// `false` for a settled card, so nothing replays when the list re-renders
-			// or the watermark clears the mark. Only an arrival animates.
-			initial={rowMotion.initial}
+			// The one-shot arrival is state-owned; Motion initial values replay after Activity resumes.
+			initial={false}
 			// Track positions continuously; the layout transition decides whether
 			// this update makes room for an arrival or places filtered rows instantly.
 			layout={rowMotion.layout}

@@ -3,7 +3,8 @@
 import { motion, useReducedMotion, useTransform, type MotionValue } from "motion/react";
 import {
 	useCallback,
-	useEffect,
+	useLayoutEffect,
+	useMemo,
 	useRef,
 	type KeyboardEvent,
 	type PointerEvent,
@@ -116,11 +117,12 @@ export function GalleryCard({
 	const prefersReducedMotion = useReducedMotion();
 	const itemVariants = prefersReducedMotion ? CARD_ITEM_REDUCED : CARD_ITEM;
 	const titleLayoutText = item.titleLines?.join("\n") ?? item.title;
+	const syncTextRefs = useMemo(() => [highlightTextRef], []);
 	const { containerRef, textRef } = useFitText<HTMLDivElement, HTMLSpanElement>(titleLayoutText, {
-		syncTextRefs: [highlightTextRef],
+		syncTextRefs,
 	});
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (!selectionVisual || !textRef.current || !highlightTextRef.current) return;
 		highlightTextRef.current.style.fontSize = textRef.current.style.fontSize;
 	}, [selectionVisual, textRef]);

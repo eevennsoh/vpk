@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useRef, useState, type JSX, type ReactNode } from "react";
+import { startTransition, useCallback, useEffect, useOptimistic, useRef, useState, type JSX, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 import { useLatestRef } from "@/lib/use-latest-ref";
@@ -142,7 +142,8 @@ export function Gallery({
 	const isOpen = open ?? internalOpen;
 	// A single card has nothing to browse — keep the stage, collapse the bottom picker.
 	const showCarouselPicker = items.length >= 2;
-	const resolvedSelectedId = resolveSelectedId(items, selectedId ?? internalSelectedId);
+	const [optimisticSelectedId, setOptimisticSelectedId] = useOptimistic(selectedId ?? internalSelectedId);
+	const resolvedSelectedId = resolveSelectedId(items, optimisticSelectedId);
 	const selectedItem =
 		resolvedSelectedId ? (items.find((item) => item.id === resolvedSelectedId) ?? null) : null;
 
@@ -165,10 +166,18 @@ export function Gallery({
 		(id: string, origin: GallerySelectionOrigin) => {
 			if (id === resolvedSelectedId) return;
 			selectionOriginsRef.current.set(id, origin);
-			if (selectedId === undefined) setInternalSelectedId(id);
-			onSelectedChange?.(id);
+			const key = visualKeyRef.current++;
+			setVisualState((current) => ({
+				active: { id, key, origin, phase: current.active ? "enter" : "settled" },
+				exiting: current.active ? { ...current.active, phase: "exit" } : null,
+			}));
+			startTransition(() => {
+				setOptimisticSelectedId(id);
+				if (selectedId === undefined) setInternalSelectedId(id);
+				onSelectedChange?.(id);
+			});
 		},
-		[onSelectedChange, resolvedSelectedId, selectedId],
+		[onSelectedChange, resolvedSelectedId, selectedId, setOptimisticSelectedId],
 	);
 
 	const handleReset = useCallback(() => {

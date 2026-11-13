@@ -55,7 +55,8 @@ test("the shader-to-DOM handoff keeps an unchanged pixel at the same brightness"
 
 const captureScript = buildSync({
 	stdin: { contents: 'export { printFinaleElement } from "./components/projects/jira-team-eu26-end/finale/hooks/use-finale-prints";', resolveDir: process.cwd(), loader: "ts" },
-	bundle: true, format: "iife", globalName: "finaleHandoffCapture", platform: "browser",
+	// Atlaskit components import their compiled CSS; the capture script needs none of it.
+	bundle: true, loader: { ".css": "empty" }, format: "iife", globalName: "finaleHandoffCapture", platform: "browser",
 	define: { "process.env.NODE_ENV": '"production"' }, write: false,
 }).outputFiles[0].text;
 
