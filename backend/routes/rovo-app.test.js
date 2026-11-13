@@ -630,3 +630,66 @@ test("session search, votes, documents, files, and generated media preserve resp
 		rmSync(projectRoot, { recursive: true, force: true });
 	}
 });
+
+test("thread and upload ids that could leave their directory are rejected with 400 before any manager runs", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	const hostileIds = ["..%2F..%2F..%2F..", "..%2Fx", ".git", "a%5Cb", "%2Fetc", "x".repeat(200)];
+	const expected = (field) => ({ error: `Invalid ${field}.`, code: "INVALID_INPUT" });
+
+	await withServer(dependencies, async (baseUrl) => {
+		const json = (method, body) => ({ method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+		for (const id of hostileIds) {
+			for (const [route, init] of [
+				[`/api/rovo/threads/${id}`, { method: "DELETE" }],
+				[`/api/rovo/threads/${id}`, { method: "GET" }],
+				[`/api/rovo/threads/${id}`, json("PUT", { title: "x" })],
+				[`/api/rovo/runs/${id}/cancel`, { method: "POST" }],
+				[`/api/rovo/threads/${id}/browser-workspace`, { method: "GET" }],
+			]) {
+				const response = await fetch(`${baseUrl}${route}`, init);
+				assert.equal(response.status, 400, `${init.method} ${route}`);
+				assert.deepEqual(await response.json(), expected("threadId"), `${init.method} ${route}`);
+			}
+			const fileResponse = await fetch(`${baseUrl}/api/rovo/files/${id}`);
+			assert.equal(fileResponse.status, 400, `file ${id}`);
+			assert.deepEqual(await fileResponse.json(), expected("fileId"));
+		}
+
+		const decoded = ["../../../..", "/etc", "a\\b", 42, { id: "x" }];
+		for (const threadId of decoded) {
+			for (const [route, init] of [
+				["/api/rovo/votes", json("PATCH", { threadId, messageId: "m1", value: "up" })],
+				["/api/rovo/documents", json("POST", { threadId, title: "t", content: "c", kind: "text" })],
+				["/api/rovo/files/upload", json("POST", { threadId, name: "a.png", mediaType: "image/png", dataUrl: "data:image/png;base64,AA==" })],
+				["/api/rovo/messages", json("POST", { threadId, message: { id: "m1" } })],
+				["/api/rovo/detach", json("POST", { threadId })],
+				[`/api/rovo/votes?threadId=${encodeURIComponent(String(threadId))}`, { method: "GET" }],
+			]) {
+				if (typeof threadId !== "string" && init.method === "GET") continue;
+				const response = await fetch(`${baseUrl}${route}`, init);
+				assert.equal(response.status, 400, `${init.method} ${route} ${JSON.stringify(threadId)}`);
+				assert.deepEqual(await response.json(), expected("threadId"));
+			}
+			const createResponse = await fetch(`${baseUrl}/api/rovo/threads`, json("POST", { id: threadId, title: "t" }));
+			assert.equal(createResponse.status, 400, `create ${JSON.stringify(threadId)}`);
+			assert.deepEqual(await createResponse.json(), expected("id"));
+		}
+	});
+
+	assert.deepEqual(state.calls, []);
+	assert.equal(state.threads.size, 0);
+	assert.equal(state.uploads.size, 0);
+	assert.equal(state.documents.size, 0);
+});
+
+test("an ordinary UUID or prefixed thread id still reaches the route", async () => {
+	const dependencies = createDependencies();
+	await withServer(dependencies, async (baseUrl) => {
+		for (const id of ["059d607c-a1aa-48f5-880b-5d824fc5b99f", "rovo-app-1763100000000-k3j9xz"]) {
+			const response = await fetch(`${baseUrl}/api/rovo/threads/${id}`);
+			assert.equal(response.status, 404, id);
+			assert.deepEqual(await response.json(), { error: "Thread not found" });
+		}
+	});
+});

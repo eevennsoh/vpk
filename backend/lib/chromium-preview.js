@@ -4,6 +4,8 @@ const path = require("node:path");
 const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
 
+const { createInvalidInputError, parseNavigationUrl } = require("./input-schemas");
+
 const execFileAsync = promisify(execFile);
 
 const BINARY_PATH = path.resolve(
@@ -49,21 +51,14 @@ function clampViewportDimension(value, fallback) {
 	return Math.min(Math.max(parsed, 320), 3840);
 }
 
+// The one normalizer for browser-workspace and Chromium-preview navigation; the routes
+// check the same rule first so a rejected URL is a 400.
 function normalizeUrl(url) {
-	if (typeof url !== "string" || !url.trim()) {
-		throw new Error("A non-empty URL is required.");
+	const navigation = parseNavigationUrl(url);
+	if (!navigation.ok) {
+		throw createInvalidInputError(navigation.message);
 	}
-
-	const trimmed = url.trim();
-	if (/^https?:\/\//i.test(trimmed) || trimmed === "about:blank") {
-		return trimmed;
-	}
-
-	if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) {
-		return trimmed;
-	}
-
-	return `https://${trimmed}`;
+	return navigation.url;
 }
 
 function requireNonEmptyString(value, message) {

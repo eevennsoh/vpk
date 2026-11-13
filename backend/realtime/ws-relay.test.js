@@ -271,14 +271,15 @@ test("registerBackendWebSocketRelays dispatches browser preview and realtime upg
 
 	const browserSocket = createSocket();
 	upgradeHandler(
-		createRequest("/api/browser-workspaces/workspace%201/live?previewToken=browser-preview%3Aworkspace%201"),
+		// The id is decoded once (`%2D` is "-"); ids are UUIDs, never spaces or slashes.
+		createRequest("/api/browser-workspaces/workspace%2D1/live?previewToken=browser-preview%3Aworkspace-1"),
 		browserSocket,
 		Buffer.from("browser-head"),
 	);
 	assert.equal(browserSocket.destroyed, false);
 	assert.equal(browserPreviewWss.handledUpgrades.length, 1);
 	assert.equal(browserPreviewWss.emitted[0].eventName, "connection");
-	assert.equal(browserPreviewWss.emitted[0].args[2], "workspace 1");
+	assert.equal(browserPreviewWss.emitted[0].args[2], "workspace-1");
 
 	const realtimeSocket = createSocket();
 	upgradeHandler(

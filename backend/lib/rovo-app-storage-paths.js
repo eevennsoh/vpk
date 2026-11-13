@@ -1,5 +1,7 @@
 const path = require("node:path");
 
+const { requireStorageId } = require("./input-schemas");
+
 function getRovoAppRootDir(baseDir) {
 	return path.join(baseDir, "rovo-app");
 }
@@ -61,6 +63,8 @@ function buildRovoAppThreadPaths(baseDir, threadId) {
 	if (!normalizedThreadId) {
 		throw new Error("A non-empty Rovo threadId is required.");
 	}
+	// The id is one directory name under threads/; a 400 for anything else.
+	requireStorageId(normalizedThreadId, "threadId");
 
 	const threadsRootDir = getRovoAppThreadsRootDir(baseDir);
 	const threadDir = path.join(threadsRootDir, normalizedThreadId);

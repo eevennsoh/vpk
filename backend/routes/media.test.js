@@ -136,7 +136,7 @@ test("speech transcription validates audio, passes abort signal, and cleans up",
 				language: "en",
 				mimeType: "audio/wav",
 				model: "stt-model",
-				provider: "gateway",
+				provider: "google",
 			}),
 			headers: { "content-type": "application/json" },
 			method: "POST",
@@ -157,7 +157,7 @@ test("speech transcription validates audio, passes abort signal, and cleans up",
 			language: "en",
 			mimeType: "audio/wav",
 			model: "stt-model",
-			provider: "gateway",
+			provider: "google",
 		});
 		assert.equal(calls.transcribe[0].signal, abortController.signal);
 	});
@@ -192,6 +192,42 @@ test("speech transcription returns validation errors before transcribing and sti
 		assert.equal(calls.cleanup, 1);
 		assert.equal(calls.transcribe, 0);
 	});
+});
+
+test("speech transcription rejects a provider outside the list or a model path before transcribing", async () => {
+	const calls = { cleanup: 0, transcribe: 0 };
+	await withServer({
+		abortControllerFromRequest: () => ({
+			abortController: new AbortController(),
+			cleanup: () => {
+				calls.cleanup += 1;
+			},
+		}),
+		transcribeAudioFn: async () => {
+			calls.transcribe += 1;
+			return "should not run";
+		},
+	}, async (baseUrl) => {
+		for (const [field, value] of [
+			["provider", "sh"],
+			["model", "/tmp/evil.pt"],
+			["model", "../../models/evil.pt"],
+			["model", "--help"],
+			["model", "m".repeat(500)],
+			["language", "en --task translate"],
+			["provider", ["google"]],
+		]) {
+			const response = await fetch(`${baseUrl}/api/speech-transcription`, {
+				body: JSON.stringify({ audio: "base64-audio", provider: "local-whisper", [field]: value }),
+				headers: { "content-type": "application/json" },
+				method: "POST",
+			});
+			assert.equal(response.status, 400, `${field} ${value}`);
+			assert.deepEqual(await response.json(), { error: `Invalid body.${field}.`, code: "INVALID_INPUT" });
+		}
+	});
+	assert.equal(calls.transcribe, 0);
+	assert.equal(calls.cleanup, 7);
 });
 
 test("image proxy returns image responses with upstream cache metadata", async () => {

@@ -294,6 +294,12 @@ function parseImageProxyTarget(value) {
 			error: "Image URL is not allowed",
 		};
 	}
+	// An Atlassian image is fetched with the server's API token, so never over plain http.
+	if (isAtlassianImage && protocol !== "https:") {
+		return {
+			error: "Atlassian image URLs must use https",
+		};
+	}
 
 	return {
 		targetUrl: parsedUrl,

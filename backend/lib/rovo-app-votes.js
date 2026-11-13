@@ -6,6 +6,7 @@ const {
 	getRovoAppThreadsRootDir,
 	normalizeThreadId,
 } = require("./rovo-app-storage-paths");
+const { isStorageId } = require("./input-schemas");
 
 function safeJsonParse(rawValue) {
 	try {
@@ -184,7 +185,7 @@ function createRovoAppVoteManager({ baseDir }) {
 
 		await Promise.all(
 			threadEntries
-				.filter((entry) => entry.isDirectory())
+				.filter((entry) => entry.isDirectory() && isStorageId(entry.name))
 				.map((entry) => fs.rm(getThreadVotePath(entry.name), { force: true })),
 		);
 		await fs.rm(legacyVotesRootDir, { recursive: true, force: true });

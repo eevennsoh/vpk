@@ -106,7 +106,7 @@ test("ticket classification, claim-test, and standup routes preserve request map
 				excludeStatuses: ["Done"],
 				limit: 5,
 				project: "RFP",
-				siteUrl: "https://example.atlassian.net",
+				siteUrl: "example.atlassian.net",
 			}),
 			headers: { "content-type": "application/json" },
 			method: "POST",
@@ -117,7 +117,7 @@ test("ticket classification, claim-test, and standup routes preserve request map
 			excludeStatuses: ["Done"],
 			limit: 5,
 			project: "RFP",
-			siteUrl: "https://example.atlassian.net",
+			siteUrl: "example.atlassian.net",
 		}]);
 
 		const claimGetResponse = await fetch(`${baseUrl}/api/claim-test?runId=run-1`);
@@ -146,7 +146,7 @@ test("ticket classification, claim-test, and standup routes preserve request map
 				hoursAgo: 12,
 				limit: 10,
 				projects: ["RFP"],
-				siteUrl: "https://example.atlassian.net",
+				siteUrl: "example.atlassian.net",
 			}),
 			headers: { "content-type": "application/json" },
 			method: "POST",
@@ -157,8 +157,26 @@ test("ticket classification, claim-test, and standup routes preserve request map
 			hoursAgo: 12,
 			limit: 10,
 			projects: ["RFP"],
-			siteUrl: "https://example.atlassian.net",
+			siteUrl: "example.atlassian.net",
 		}]);
+	});
+});
+
+test("ticket classification and standup reject a siteUrl that is not an Atlassian host", async () => {
+	await withServer({}, async (baseUrl, calls) => {
+		for (const route of ["/api/ticket-classify", "/api/standup"]) {
+			for (const siteUrl of ["evil.example", "evil.example#.atlassian.net", "127.0.0.1", "https://example.atlassian.net", 42, ""]) {
+				const response = await fetch(`${baseUrl}${route}`, {
+					body: JSON.stringify({ siteUrl }),
+					headers: { "content-type": "application/json" },
+					method: "POST",
+				});
+				assert.equal(response.status, 400, `${route} ${siteUrl}`);
+				assert.deepEqual(await response.json(), { error: "Invalid siteUrl.", code: "INVALID_INPUT" });
+			}
+		}
+		assert.deepEqual(calls.classify, []);
+		assert.deepEqual(calls.standup, []);
 	});
 });
 
