@@ -1,9 +1,11 @@
 const assert = require("node:assert/strict");
-const { spawn, spawnSync } = require("node:child_process");
+const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+
+const { spawnInGroup } = require("./lib/test-process.js");
 
 const {
 	SURFACE_NAME_PATTERN,
@@ -285,7 +287,7 @@ const liveRunFiles = (script) => {
 // The planner's launch: `agent-surface.js run --worktree … --no-wait` in a child process.
 function launch(ws, tree, script) {
 	return new Promise((resolve) => {
-		const child = spawn(process.execPath, [SURFACE, "run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree, "--no-wait"], { env: ws.env });
+		const child = spawnInGroup(process.execPath, [SURFACE, "run", "--script", script, "--label", "vpk-fix-x", "--worktree", tree, "--no-wait"], { env: ws.env });
 		let stderr = "";
 		child.stderr.on("data", (chunk) => { stderr += chunk; });
 		child.on("close", (code) => resolve({ code, stderr }));
@@ -375,7 +377,7 @@ test("review 5.1: a crashed run's registry entry never holds the workspace at wo
 	assert.deepEqual(liveRunFiles(crashed), [], "the dead run's entry was pruned");
 });
 
-test("review 5.1: the registry lock admits one process at a time and breaks a dead or stale holder's", async () => {
+test("review 5.1: the registry lock admits one process at a time and breaks a dead or stale holder's", async (t) => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-surface-lock-"));
 	const lock = path.join(dir, "live-runs.lock");
 	const log = path.join(dir, "log");
@@ -386,7 +388,7 @@ for (let i = 0; i < 5; i += 1) withLock(${JSON.stringify(lock)}, () => {
 	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 30);
 	fs.appendFileSync(${JSON.stringify(log)}, "out\\n");
 });`;
-	const exits = await Promise.all(Array.from({ length: 4 }, () => new Promise((resolve) => spawn(process.execPath, ["-e", holder], { stdio: "inherit" }).on("exit", resolve))));
+	const exits = await Promise.all(Array.from({ length: 4 }, () => new Promise((resolve) => spawnInGroup(process.execPath, ["-e", holder], { stdio: "inherit" }, { t }).on("exit", resolve))));
 	assert.deepEqual(exits, [0, 0, 0, 0]);
 	const lines = fs.readFileSync(log, "utf8").trim().split("\n");
 	assert.equal(lines.length, 40);
@@ -423,11 +425,11 @@ test("review 5.2: a hung herdr at launch still starts the worker; a hung placeme
 	assert.ok(Date.now() - before < 6000);
 });
 
-test("review 5.3: the exit file lands before a slow workspace report", async () => {
+test("review 5.3: the exit file lands before a slow workspace report", async (t) => {
 	const ws = taskWorkspace({ delayMs: { "w7:p4 pane get": 1500 } });
 	const script = tempScript(`"${process.execPath}" -e 'process.stdout.write(String(Date.now()))' > "$0.done"`);
 	fs.writeFileSync(`${script}.pane.sh`, `${buildPaneCommand({ script, exitFile: `${script}.exit`, label: "vpk-fix-x", task: TASK })}\n`);
-	const child = spawn("bash", [`${script}.pane.sh`], { env: { ...ws.env, HERDR_PANE_ID: "w7:p4" }, stdio: "ignore" });
+	const child = spawnInGroup("bash", [`${script}.pane.sh`], { env: { ...ws.env, HERDR_PANE_ID: "w7:p4" }, stdio: "ignore" }, { t });
 	await waitFor(() => fs.existsSync(`${script}.exit`) && fs.readFileSync(`${script}.exit`, "utf8").trim() !== "", { what: "the exit file" });
 	const exitAt = Date.now();
 	assert.ok(exitAt - Number(fs.readFileSync(`${script}.done`, "utf8")) < 1000, "the exit file waited on the report");
@@ -438,12 +440,12 @@ test("review 5.3: the exit file lands before a slow workspace report", async () 
 
 const PYTHON = spawnSync("python3", ["-I", "-c", "import pty"]).status === 0;
 
-test("task workspace: in a real terminal the root pane holds at Press Enter, its report kept, until Enter", { skip: !PYTHON && "needs python3 for a pseudo-terminal" }, async () => {
+test("task workspace: in a real terminal the root pane holds at Press Enter, its report kept, until Enter", { skip: !PYTHON && "needs python3 for a pseudo-terminal" }, async (t) => {
 	const ws = taskWorkspace();
 	const script = tempScript("exit 0");
 	fs.writeFileSync(`${script}.pane.sh`, `${buildPaneCommand({ script, exitFile: `${script}.exit`, label: "vpk-fix-x", closeOnExit: false, task: TASK })}\n`);
 	// pty.spawn gives bash a real terminal on stdin, as a herdr pane does, so read blocks.
-	const child = spawn("python3", ["-I", "-c", "import pty, sys; sys.exit(pty.spawn(sys.argv[1:]) >> 8)", "bash", `${script}.pane.sh`], { env: { ...ws.env, HERDR_PANE_ID: "w7:p1" } });
+	const child = spawnInGroup("python3", ["-I", "-c", "import pty, sys; sys.exit(pty.spawn(sys.argv[1:]) >> 8)", "bash", `${script}.pane.sh`], { env: { ...ws.env, HERDR_PANE_ID: "w7:p1" } }, { t });
 	let output = "";
 	let exit = null;
 	child.stdout.on("data", (chunk) => { output += chunk; });
