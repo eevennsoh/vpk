@@ -443,7 +443,7 @@ export default function TerminalSwitchPanel({
 	return (
 		<div
 			className={cn(
-				"flex h-full w-full max-w-[400px] flex-col overflow-hidden rounded-[12px] border border-border bg-surface transition-colors duration-200",
+				"flex h-full w-full max-w-[400px] flex-col overflow-hidden rounded-[12px] border border-border bg-surface transition-colors duration-medium",
 				className,
 			)}
 			{...(isTerminal ? {
@@ -453,7 +453,7 @@ export default function TerminalSwitchPanel({
 			} : {})}
 		>
 			{/* Mode switcher unified header */}
-			<div className="border-b border-border px-3 py-3 transition-colors duration-200">
+			<div className="border-b border-border px-3 py-3 transition-colors duration-medium">
 				<div className="flex items-center justify-between">
 					<Tabs
 						value={mode}
@@ -482,7 +482,7 @@ export default function TerminalSwitchPanel({
 
 			{/* Content area */}
 			<div className="relative min-h-0 flex-1">
-				<div className={cn("absolute inset-0 transition-opacity duration-200", mode === "chat" ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>
+				<div className={cn("absolute inset-0 transition-opacity duration-medium", mode === "chat" ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>
 					<ChatPanel
 						onClose={onClose ?? (() => {})}
 						hideHeader
@@ -496,7 +496,7 @@ export default function TerminalSwitchPanel({
 						}}
 					/>
 				</div>
-				<div className={cn("absolute inset-0 transition-opacity duration-200", mode === "terminal" ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>
+				<div className={cn("absolute inset-0 transition-opacity duration-medium", mode === "terminal" ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>
 					<TerminalView />
 				</div>
 			</div>

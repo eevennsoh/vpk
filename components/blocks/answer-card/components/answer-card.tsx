@@ -69,7 +69,7 @@ function AnswerCard({
 						onClick={() => setCollapsed((prev) => !prev)}
 					>
 						<span
-							className="transition-transform duration-200 ease-in-out"
+							className="transition-transform duration-medium ease-in-out"
 							style={{ transform: collapsed ? "rotate(0deg)" : "rotate(90deg)" }}
 						>
 							<ChevronRightIcon label="" size="small" />
