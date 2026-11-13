@@ -1,9 +1,11 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { mkdtempSync, rmSync, writeFileSync } = require("node:fs");
+const { mkdtempSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const { join } = require("node:path");
+
+const SWEEP_SCRIPT = join(__dirname, "../../.agents/skills/vpk-system-clean/scripts/vpk-system-clean.sh");
 
 const { PRESSURE_LEVEL_MIN, PRESSURE_SWAP_USED_GB, parseMeminfoAvailableGb, parseSwapUsedGb, parseVmStatAvailableGb, pressureReasons, readSweepLimits } = require("./memory-pressure.js");
 
@@ -29,14 +31,18 @@ Pages purgeable:                                2557.`;
 });
 
 test("pressure comes from swap in use or a critical pressure level; unknown readings are not pressure", () => {
-	assert.deepEqual(pressureReasons({ swapUsedGb: 4, pressureLevel: 2 }), []);
-	assert.deepEqual(pressureReasons({ swapUsedGb: 16, pressureLevel: 1 }), ["swap in use is 16 GB >= 16 GB"]);
-	assert.deepEqual(pressureReasons({ swapUsedGb: null, pressureLevel: 4 }), ["memory-pressure level is 4 >= 4"]);
+	assert.deepEqual(pressureReasons({ swapUsedGb: PRESSURE_SWAP_USED_GB - 1, pressureLevel: PRESSURE_LEVEL_MIN - 1 }), []);
+	assert.deepEqual(pressureReasons({ swapUsedGb: PRESSURE_SWAP_USED_GB, pressureLevel: 1 }), [`swap in use is ${PRESSURE_SWAP_USED_GB} GB >= ${PRESSURE_SWAP_USED_GB} GB`]);
+	assert.deepEqual(pressureReasons({ swapUsedGb: null, pressureLevel: PRESSURE_LEVEL_MIN }), [`memory-pressure level is ${PRESSURE_LEVEL_MIN} >= ${PRESSURE_LEVEL_MIN}`]);
 	assert.deepEqual(pressureReasons({ swapUsedGb: null, pressureLevel: null }), []);
 });
 
 test("the pressure limits are read from the vpk-system-clean sweep, their one owner", () => {
-	assert.deepEqual({ swap: PRESSURE_SWAP_USED_GB, level: PRESSURE_LEVEL_MIN }, { swap: 16, level: 4 });
+	// The exported limits are the sweep's own lines, not the fallbacks: both lines exist there.
+	const sweepSource = readFileSync(SWEEP_SCRIPT, "utf8");
+	assert.match(sweepSource, /^PRESSURE_SWAP_USED_GB=\d+\b/mu);
+	assert.match(sweepSource, /^PRESSURE_LEVEL_MIN=\d+\b/mu);
+	assert.deepEqual({ levelMin: PRESSURE_LEVEL_MIN, swapGb: PRESSURE_SWAP_USED_GB }, readSweepLimits(SWEEP_SCRIPT));
 	const dir = mkdtempSync(join(tmpdir(), "sweep-limits-"));
 	try {
 		const sweep = join(dir, "vpk-system-clean.sh");

@@ -1,5 +1,8 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { PRESSURE_LEVEL_MIN: LEVEL, PRESSURE_SWAP_USED_GB: SWAP } = require("./lib/memory-pressure.js");
+// Pressure fixtures follow the sweep's limits, so changing them there breaks no test.
+const OVER = SWAP + 13;
 
 const NODE_TEST_SOURCE = 'const test = require("node:test");';
 
@@ -582,9 +585,9 @@ test("--parallel auto sizes itself from cores and available memory, and runs ser
 	assert.equal(tight.parallel, 3);
 	assert.match(tight.note, /3 worker\(s\) for 6\.4 GB available memory/u);
 	assert.equal(autoParallel({ cpus: 14, memory: { availableGb: 0.5, pressureLevel: 1, swapUsedGb: 2 } }).parallel, 1);
-	const swapping = autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: 2, swapUsedGb: 29 } });
+	const swapping = autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: LEVEL - 1, swapUsedGb: OVER } });
 	assert.equal(swapping.parallel, 1);
-	assert.match(swapping.note, /memory pressure \(swap in use is 29 GB >= 16 GB\): running batches one at a time/u);
-	assert.equal(autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: 4, swapUsedGb: 1 } }).parallel, 1);
+	assert.match(swapping.note, new RegExp(`memory pressure \\(swap in use is ${OVER} GB >= ${SWAP} GB\\): running batches one at a time`, "u"));
+	assert.equal(autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: LEVEL, swapUsedGb: 1 } }).parallel, 1);
 	assert.deepEqual(autoParallel({ cpus: 14, memory: { availableGb: null, pressureLevel: null, swapUsedGb: null } }), { parallel: 7, note: null });
 });
