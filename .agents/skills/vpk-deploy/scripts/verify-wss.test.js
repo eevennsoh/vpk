@@ -1,9 +1,10 @@
 const assert = require("node:assert/strict");
-const { spawn } = require("node:child_process");
 const http = require("node:http");
 const path = require("node:path");
 const test = require("node:test");
 const WebSocket = require("ws");
+
+const { spawnInGroup } = require("../../../../scripts/lib/test-process.js");
 
 async function verify(t, { token = "secret-fixture-token", rejectUpgrade = false } = {}, args = []) {
 	const requests = [];
@@ -40,7 +41,7 @@ async function verify(t, { token = "secret-fixture-token", rejectUpgrade = false
 		server.closeAllConnections();
 		return new Promise((resolve) => server.close(resolve));
 	});
-	const child = spawn(process.execPath, [path.join(__dirname, "verify-wss.mjs"), baseUrl, ...args]);
+	const child = spawnInGroup(process.execPath, [path.join(__dirname, "verify-wss.mjs"), baseUrl, ...args], {}, { t });
 	const deadline = setTimeout(() => child.kill(), 8000);
 	t.after(() => clearTimeout(deadline));
 	let output = "";
