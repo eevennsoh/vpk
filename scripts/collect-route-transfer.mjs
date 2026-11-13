@@ -4,9 +4,11 @@
 //
 // The manifest numbers from collect-perf-baseline.js cannot see project code loaded after
 // hydration (loadDemoComponent, next/dynamic); this metric can. Each run uses a fresh browser
-// context at a fixed viewport, loads the route, waits for network idle and then for a quiet
-// period, and sums the decoded bodies of every same-origin .js and .css response (frames
-// included). Usage:
+// context at a fixed viewport, loads the route (the load event), then waits until no same-origin
+// script or stylesheet has been in flight for a quiet period (other requests, such as /api
+// polling with no backend, never hold it open; a hard cap fails with what is still in flight),
+// and sums the decoded bodies of the top document's same-origin .js and .css responses.
+// Embedded documents (iframes) are blocked and not counted. Usage:
 //   node scripts/collect-route-transfer.mjs --base-url http://127.0.0.1:3100 [--runs 3]
 //     [--input output/perf-baseline.json] [--output output/perf-baseline.json]
 import { readFileSync, writeFileSync } from "node:fs";
@@ -28,6 +30,7 @@ export const TRANSFER_ROUTES = {
 const VIEWPORT = { width: 1440, height: 900 };
 const QUIET_MS = 2000;
 const NAVIGATION_TIMEOUT_MS = 90_000;
+const SETTLE_CAP_MS = 60_000;
 
 export function parseArgs(argv) {
 	const options = { baseUrl: null, input: "output/perf-baseline.json", output: null, runs: 3 };
@@ -84,30 +87,86 @@ export function classifyAsset(url, origin) {
 	return null;
 }
 
+// Tracks same-origin script and stylesheet requests only, so polling or failed /api calls
+// cannot hold a measurement open.
+export function createAssetActivityTracker(now = () => Date.now()) {
+	const inFlight = new Map();
+	let lastActivityAt = now();
+	return {
+		finished(requestId) {
+			if (inFlight.delete(requestId)) lastActivityAt = now();
+		},
+		get inFlight() {
+			return [...inFlight.values()];
+		},
+		get lastActivityAt() {
+			return lastActivityAt;
+		},
+		started(requestId, url) {
+			inFlight.set(requestId, url);
+			lastActivityAt = now();
+		},
+	};
+}
+
+// Resolves once no script or stylesheet is in flight and none has started or finished for
+// quietMs; throws with the requests still in flight when capMs passes first.
+export async function waitForAssetQuiet({ capMs, now = () => Date.now(), pollMs = 100, quietMs, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), tracker }) {
+	const startedAt = now();
+	for (;;) {
+		const quietFor = now() - tracker.lastActivityAt;
+		if (tracker.inFlight.length === 0 && quietFor >= quietMs) return;
+		if (now() - startedAt >= capMs) {
+			const pending = tracker.inFlight;
+			throw new Error(`scripts and stylesheets did not settle within ${capMs} ms; ${pending.length} still in flight${pending.length ? `: ${pending.join(", ")}` : ` (last activity ${quietFor} ms ago)`}`);
+		}
+		await sleep(pollMs);
+	}
+}
+
 async function measureOnce(browser, origin, routePath) {
 	const context = await browser.newContext({ viewport: VIEWPORT });
 	const page = await context.newPage();
+	// Only the top document's own fetches count. Embedded documents are blocked: how many lazy
+	// iframes Chrome loads depends on its lazy-load distance (and the effective connection type),
+	// which differs between machines; today only the home catalog embeds project previews.
+	await page.route("**/*", (route) => {
+		const request = route.request();
+		if (request.isNavigationRequest() && request.frame() !== page.mainFrame()) return route.abort("blockedbyclient");
+		return route.continue();
+	});
+	const tracker = createAssetActivityTracker();
+	const ids = new WeakMap();
+	let nextId = 0;
 	const pending = [];
 	const seen = new Set();
+	let blockedFrames = 0;
 	let jsBytes = 0;
 	let cssBytes = 0;
 	let scripts = 0;
 	let stylesheets = 0;
+	page.on("request", (request) => {
+		if (request.isNavigationRequest() && request.frame() !== page.mainFrame()) blockedFrames += 1;
+		if (!classifyAsset(request.url(), origin)) return;
+		ids.set(request, (nextId += 1));
+		tracker.started(ids.get(request), request.url().replace(origin, ""));
+	});
+	page.on("requestfailed", (request) => tracker.finished(ids.get(request)));
+	page.on("requestfinished", (request) => tracker.finished(ids.get(request)));
 	page.on("response", (response) => {
 		const kind = classifyAsset(response.url(), origin);
-		if (!kind || seen.has(response.url())) return;
+		if (!kind || seen.has(response.url()) || response.frame() !== page.mainFrame()) return;
 		seen.add(response.url());
 		pending.push(response.body().then((body) => {
 			if (kind === "js") { jsBytes += body.length; scripts += 1; } else { cssBytes += body.length; stylesheets += 1; }
 		}, () => {}));
 	});
-	const response = await page.goto(`${origin}${routePath}`, { timeout: NAVIGATION_TIMEOUT_MS, waitUntil: "networkidle" });
+	const response = await page.goto(`${origin}${routePath}`, { timeout: NAVIGATION_TIMEOUT_MS, waitUntil: "load" });
 	assertNavigationOk(response?.status(), `${origin}${routePath}`);
-	await page.waitForTimeout(QUIET_MS);
-	await page.waitForLoadState("networkidle", { timeout: NAVIGATION_TIMEOUT_MS });
+	await waitForAssetQuiet({ capMs: SETTLE_CAP_MS, quietMs: QUIET_MS, tracker });
 	await Promise.all(pending);
 	await context.close();
-	return { cssBytes, jsBytes, scripts, stylesheets };
+	return { blockedFrames, cssBytes, jsBytes, scripts, stylesheets };
 }
 
 export async function collectRouteTransfer({ baseUrl, routes = TRANSFER_ROUTES, runs = 3 }) {

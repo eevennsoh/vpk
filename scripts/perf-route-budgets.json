@@ -1,6 +1,6 @@
 {
 	"routes": {
-		"home": { "assetCount": 34, "cssBytes": 717000, "firstLoadJsBytes": 727000, "routeJsBytes": 62000, "fetchedJsBytes": 11772000, "fetchedCssBytes": 778000 },
+		"home": { "assetCount": 34, "cssBytes": 717000, "firstLoadJsBytes": 727000, "routeJsBytes": 62000, "fetchedJsBytes": 1480000, "fetchedCssBytes": 729000 },
 		"rovo": { "assetCount": 110, "cssBytes": 778000, "firstLoadJsBytes": 7125000, "routeJsBytes": 105000, "fetchedJsBytes": 7586000, "fetchedCssBytes": 778000 },
 		"studio": { "assetCount": 116, "cssBytes": 778000, "firstLoadJsBytes": 7616000, "routeJsBytes": 105000, "fetchedJsBytes": 8076000, "fetchedCssBytes": 778000 },
 		"components": { "assetCount": 55, "cssBytes": 729000, "firstLoadJsBytes": 2504000, "routeJsBytes": 125000, "fetchedJsBytes": 3170000, "fetchedCssBytes": 729000 },

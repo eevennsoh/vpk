@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { TRANSFER_ROUTES, assertNavigationOk, classifyAsset, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
+import { TRANSFER_ROUTES, assertNavigationOk, classifyAsset, createAssetActivityTracker, waitForAssetQuiet, median, mergeIntoBaseline, parseArgs, summarizeRuns } from "./collect-route-transfer.mjs";
 
 test("parseArgs requires a base URL and defaults to merging into the perf baseline", () => {
 	assert.deepEqual(parseArgs(["--base-url", "http://127.0.0.1:3100"]), { baseUrl: "http://127.0.0.1:3100", input: "output/perf-baseline.json", output: "output/perf-baseline.json", runs: 3 });
@@ -40,4 +40,41 @@ test("an error page or a missing response fails the collection instead of being 
 	assert.throws(() => assertNavigationOk(404, "http://x/missing"), /answered 404/u);
 	assert.throws(() => assertNavigationOk(500, "http://x/"), /answered 500/u);
 	assert.throws(() => assertNavigationOk(undefined, "http://x/"), /no response/u);
+});
+
+function fakeClock() {
+	let t = 0;
+	return { now: () => t, sleep: async (ms) => { t += ms; } };
+}
+
+test("the measurement settles once no script or stylesheet is in flight for the quiet period", async () => {
+	const clock = fakeClock();
+	const tracker = createAssetActivityTracker(clock.now);
+	tracker.started(1, "/_next/static/chunks/a.js");
+	let settled = false;
+	const waiting = waitForAssetQuiet({ capMs: 10_000, now: clock.now, quietMs: 2000, sleep: async (ms) => {
+		await clock.sleep(ms);
+		if (clock.now() === 500) tracker.finished(1);
+	}, tracker }).then(() => { settled = true; });
+	await waiting;
+	assert.equal(settled, true);
+	assert.equal(clock.now(), 2500, "quiet is measured from the last script finishing");
+});
+
+test("unsettled scripts fail with the requests still in flight once the cap passes", async () => {
+	const clock = fakeClock();
+	const tracker = createAssetActivityTracker(clock.now);
+	tracker.started(1, "/_next/static/chunks/stuck.js");
+	await assert.rejects(
+		waitForAssetQuiet({ capMs: 3000, now: clock.now, quietMs: 2000, sleep: clock.sleep, tracker }),
+		/did not settle within 3000 ms; 1 still in flight: \/_next\/static\/chunks\/stuck\.js/u,
+	);
+});
+
+test("requests that are not tracked never hold the measurement open", async () => {
+	const clock = fakeClock();
+	const tracker = createAssetActivityTracker(clock.now);
+	tracker.finished(undefined);
+	await waitForAssetQuiet({ capMs: 60_000, now: clock.now, quietMs: 2000, sleep: clock.sleep, tracker });
+	assert.equal(clock.now(), 2000);
 });
