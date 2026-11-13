@@ -97,9 +97,6 @@
     }
   },
   "components/animate-ui/icons/icon.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    },
     "react-hooks/refs": {
       "count": 4
     },
@@ -1533,6 +1530,26 @@
       "count": 2
     }
   },
+  "components/blocks/rovo-button/index.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/blocks/rovo-button/motion.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/blocks/rovo-button/nudge.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/rovo-button/surface.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
   "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -1763,57 +1780,36 @@
     }
   },
   "components/charts/bar/chart-bar-interactive.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/line/chart-line-interactive.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/pie/chart-pie-donut-with-text.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/pie/chart-pie-interactive.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/radial/chart-radial-shape.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/radial/chart-radial-stacked.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
   },
   "components/charts/radial/chart-radial-text.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
@@ -2194,16 +2190,6 @@
       "count": 148
     }
   },
-  "components/website/demos/blocks/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/website/demos/blocks/rovo-button/page.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 52
-    }
-  },
   "components/projects/rovo-core/components/clicky/clicky-core.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
@@ -2525,26 +2511,6 @@
       "count": 2
     }
   },
-  "components/blocks/rovo-button/index.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
-  "components/blocks/rovo-button/motion.test.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
-  "components/blocks/rovo-button/nudge.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/blocks/rovo-button/surface.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/projects/shared/components/greeting-prompt-row.tsx": {
     "no-restricted-syntax": {
       "count": 1
@@ -2766,9 +2732,6 @@
     }
   },
   "components/ui-charts/stat-card-choropleth-01/lib/use-world-data.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 2
     }
@@ -2830,9 +2793,6 @@
   },
   "components/ui-custom/chain-of-thought.tsx": {
     "no-restricted-imports": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
       "count": 1
     },
     "react-hooks/set-state-in-effect": {
@@ -3074,9 +3034,6 @@
     }
   },
   "components/ui-custom/rich-text-editor/markdown-source-editor.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -3264,11 +3221,6 @@
       "count": 1
     }
   },
-  "components/ui/chart.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/ui/checkbox.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
@@ -3377,9 +3329,6 @@
   },
   "components/ui/tag.tsx": {
     "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -3616,6 +3565,16 @@
       "count": 1
     }
   },
+  "components/website/demos/blocks/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/blocks/rovo-button/page.source.test.js": {
+    "no-restricted-syntax": {
+      "count": 52
+    }
+  },
   "components/website/demos/blocks/task-progress-demo.tsx": {
     "react-hooks/purity": {
       "count": 1
@@ -3670,9 +3629,6 @@
     }
   },
   "components/website/demos/ui/chart-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
     }
