@@ -1,9 +1,11 @@
 const assert = require("node:assert/strict");
-const { spawn, spawnSync } = require("node:child_process");
+const { spawnSync } = require("node:child_process");
 const { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+
+const { killGroup, spawnInGroup } = require("./lib/test-process.js");
 
 const SCRIPT = path.resolve(__dirname, "build-static-export.mjs");
 
@@ -29,13 +31,7 @@ function createProject(t) {
 	const children = [];
 	t.after(async () => {
 		writeFileSync(path.join(root, "release"), "");
-		for (const child of children) {
-			try {
-				process.kill(-child.pid, "SIGKILL");
-			} catch {
-				// The group already exited.
-			}
-		}
+		await Promise.all(children.map((child) => killGroup(child)));
 		await waitFor(() => fakeBuildsStillRunning(root).length === 0);
 		assert.deepEqual(fakeBuildsStillRunning(root), [], "no fake build may outlive the test");
 		rmSync(root, { force: true, recursive: true });
@@ -66,7 +62,7 @@ function createProject(t) {
 		run: (args = [], extraEnv = {}) => spawnSync(process.execPath, [SCRIPT, ...args], { cwd: root, encoding: "utf8", env: { ...env, ...extraEnv } }),
 		// Starts an export that holds its fake build until `release`, in its own process group.
 		start: () => {
-			const child = spawn(process.execPath, [SCRIPT], { cwd: root, detached: true, env: { ...env, FAKE_BUILD_WAIT: "1" }, stdio: "ignore" });
+			const child = spawnInGroup(process.execPath, [SCRIPT], { cwd: root, env: { ...env, FAKE_BUILD_WAIT: "1" }, stdio: "ignore" });
 			children.push(child);
 			return child;
 		},

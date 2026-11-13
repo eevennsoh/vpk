@@ -372,18 +372,23 @@ test("runTestFiles invokes node:test once per batch", async () => {
 		},
 	});
 
-	assert.deepEqual(calls, [
+	assert.deepEqual(calls.map(({ args, command, options }) => ({ args, command, stdio: options.stdio })), [
 		{
 			command: process.execPath,
 			args: ["--import", ALIAS_HOOK_PATH, "--test", "backend/a.test.js", "backend/b.test.js"],
-			options: { stdio: "inherit" },
+			stdio: "inherit",
 		},
 		{
 			command: process.execPath,
 			args: ["--experimental-vm-modules", "--import", ALIAS_HOOK_PATH, "--test", "scripts/vm.test.js"],
-			options: { stdio: "inherit" },
+			stdio: "inherit",
 		},
 	]);
+	// Each batch carries its own leak-check marker on top of the runner's environment.
+	const markers = calls.map(({ options }) => options.env.VPK_UNIT_BATCH);
+	assert.ok(markers.every((marker) => /^[0-9a-f-]{36}$/u.test(marker)), "every batch has a marker");
+	assert.notEqual(markers[0], markers[1]);
+	assert.equal(calls[0].options.env.PATH, process.env.PATH);
 });
 
 test("a failing batch stops the run unless --keep-going, which still reports failure", async () => {
@@ -481,7 +486,7 @@ test("every shard CLI rejects a silent suite or a stale not-run list before runn
 	try {
 		mkdirSync(path.join(root, "components"));
 		mkdirSync(path.join(root, "lib"));
-		for (const file of ["run-js-unit-tests.mjs", "js-unit-test-timings.json", "verify-eslint-suppressions.js", "lib/register-alias-hook.mjs", "lib/heavy-run-lock.js", "lib/memory-pressure.js"]) {
+		for (const file of ["run-js-unit-tests.mjs", "js-unit-test-timings.json", "verify-eslint-suppressions.js", "lib/register-alias-hook.mjs", "lib/heavy-run-lock.js", "lib/memory-pressure.js", "lib/test-process.js"]) {
 			copyFileSync(path.join(__dirname, file), path.join(root, file === "run-js-unit-tests.mjs" ? "runner.mjs" : file));
 		}
 		writeFileSync(path.join(root, "js-unit-test-skipped.mjs"), "export const SKIPPED_TEST_FILES = {};\nexport const SKIPPED_TEST_PREFIXES = {};\n");

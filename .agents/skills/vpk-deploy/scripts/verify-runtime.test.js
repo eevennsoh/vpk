@@ -1,11 +1,12 @@
 const assert = require("node:assert/strict");
-const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const http = require("node:http");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 const zlib = require("node:zlib");
+
+const { spawnInGroup } = require("../../../../scripts/lib/test-process.js");
 
 async function verify(t, handler, args = []) {
 	const requests = [];
@@ -26,13 +27,12 @@ async function verify(t, handler, args = []) {
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 	t.after(() => { server.closeAllConnections(); return new Promise((resolve) => server.close(resolve)); });
 	const baseUrl = `http://127.0.0.1:${server.address().port}`;
-	const child = spawn(process.execPath, [path.join(__dirname, "verify-runtime.mjs"), baseUrl, ...args]);
+	const child = spawnInGroup(process.execPath, [path.join(__dirname, "verify-runtime.mjs"), baseUrl, ...args], {}, { t });
 	const deadline = setTimeout(() => child.kill(), 5000);
 	t.after(() => clearTimeout(deadline));
 	let output = "";
 	child.stdout.on("data", (data) => { output += data; });
 	child.stderr.on("data", (data) => { output += data; });
-	t.after(() => { if (child.exitCode === null) child.kill(); });
 	const status = await new Promise((resolve, reject) => {
 		child.on("error", reject);
 		child.on("close", resolve);

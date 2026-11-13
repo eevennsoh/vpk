@@ -2,13 +2,13 @@
 // block, a real heavy run. Waits are on conditions (a log line, a file, an exit), never a sleep.
 
 const assert = require("node:assert/strict");
-const { spawn } = require("node:child_process");
 const { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
 const { HOLDER_ENV, LOCK_PATH_ENV, acquireHeavyRunLock, reclaimStale } = require("./heavy-run-lock.js");
+const { spawnInGroup } = require("./test-process.js");
 
 const REPO_ROOT = path.resolve(__dirname, "../..");
 const LOCK_MODULE = path.join(__dirname, "heavy-run-lock.js");
@@ -23,11 +23,7 @@ async function waitFor(condition, what, timeoutMs = 30_000) {
 
 function workspace(t) {
 	const dir = mkdtempSync(path.join(tmpdir(), "heavy-run-lock-"));
-	const children = [];
-	t.after(() => {
-		for (const child of children) if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
-		rmSync(dir, { recursive: true, force: true });
-	});
+	t.after(() => rmSync(dir, { recursive: true, force: true }));
 	const lockPath = path.join(dir, "vpk-heavy-run.lock");
 	const logPath = path.join(dir, "log");
 	const env = { ...process.env, [LOCK_PATH_ENV]: lockPath };
@@ -46,16 +42,14 @@ const { acquireHeavyRunLock } = require(${JSON.stringify(LOCK_MODULE)});
 	fs.appendFileSync(${JSON.stringify(logPath)}, "end ${id}\\n");
 	lock.release();
 })();`;
-		const child = spawn(process.execPath, ["-e", script], { env, stdio: ["ignore", "ignore", "pipe"] });
-		children.push(child);
+		const child = spawnInGroup(process.execPath, ["-e", script], { env, stdio: ["ignore", "ignore", "pipe"] }, { t });
 		let stderr = "";
 		child.stderr.on("data", (chunk) => { stderr += chunk; });
 		const exited = new Promise((resolve) => child.once("exit", (code, signal) => resolve(code ?? signal)));
 		return { child, exited, stderr: () => stderr };
 	};
 	const spawnTracked = (command, args) => {
-		const child = spawn(command, args, { cwd: REPO_ROOT, env, stdio: ["ignore", "pipe", "pipe"] });
-		children.push(child);
+		const child = spawnInGroup(command, args, { cwd: REPO_ROOT, env, stdio: ["ignore", "pipe", "pipe"] }, { t });
 		let output = "";
 		child.stdout.on("data", (chunk) => { output += chunk; });
 		child.stderr.on("data", (chunk) => { output += chunk; });
@@ -132,8 +126,7 @@ test("the unit runner and run-parallel wait for the holder before their heavy st
 test("a lock far older than any heavy run is stale even if its pid now belongs to a live process", async (t) => {
 	const ws = workspace(t);
 	// A live process that is not a lock holder stands in for a reused pid.
-	const bystander = spawn(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)"], { stdio: "ignore" });
-	t.after(() => bystander.kill("SIGKILL"));
+	const bystander = spawnInGroup(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)"], { stdio: "ignore" }, { t });
 	writeFileSync(ws.lockPath, JSON.stringify({ pid: bystander.pid, label: "old run", cwd: "/elsewhere", startedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString() }));
 	const lines = [];
 	const lock = await acquireHeavyRunLock({ env: { ...ws.env }, lockPath: ws.lockPath, log: (line) => lines.push(line) });
@@ -149,8 +142,7 @@ test("a waiter that saw a stale lock never moves a live successor's lock", async
 	// A's lock exactly as it is (moving it, even briefly, lets a third run publish beside A).
 	const ws = workspace(t);
 	const stale = { pid: 999_999, label: "X", cwd: "/elsewhere", startedAt: "2026-11-13T00:00:00.000Z" };
-	const successor = spawn(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)"], { stdio: "ignore" });
-	t.after(() => successor.kill("SIGKILL"));
+	const successor = spawnInGroup(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)"], { stdio: "ignore" }, { t });
 	const live = JSON.stringify({ pid: successor.pid, label: "A", cwd: "/here", startedAt: new Date().toISOString() });
 	writeFileSync(ws.lockPath, live);
 	const before = statSync(ws.lockPath);
