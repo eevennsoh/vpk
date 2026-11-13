@@ -35,10 +35,10 @@ test("a visible change during a silent write makes the write visible", () => {
 	assert.equal(shown(reduce(visible, { type: "persisted", ok: true, at: 7 })), "saved@7");
 });
 
-test("as before this machine: a silent change during a visible write leaves Saving up after the write", () => {
-	const silent = reduce(SAVING, { type: "changed", silent: true });
-	assert.equal(shown(silent), "saving@null");
-	assert.equal(shown(reduce(silent, { type: "persisted", ok: true, at: 5 })), "saving@null");
+test("a silent change during a visible write keeps it visible, so its result shows", () => {
+	assert.equal(reduce(SAVING, { type: "changed", silent: true }), SAVING);
+	assert.equal(shown(reduce(reduce(SAVING, { type: "changed", silent: true }), { type: "persisted", ok: true, at: 5 })), "saved@5");
+	assert.equal(shown(reduce(reduce(SAVING, { type: "changed", silent: true }), { type: "persisted", ok: false, at: 5 })), "error@null");
 });
 
 test("cannot happen: repeats and a write with nothing pending return the same state", () => {

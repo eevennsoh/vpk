@@ -49,6 +49,7 @@ import {
 	type SessionAgentEntryMutationResult,
 	type StudioSessionAgentSaveStatus,
 } from "@/components/projects/rovo-core/lib/agent-records/session-agent-registry";
+import { createDebouncedWriter } from "@/components/projects/rovo-core/lib/agent-records/debounced-writer";
 import {
 	SESSION_AGENT_SAVE_INITIAL_STATE,
 	selectSessionAgentSavedAt,
@@ -348,8 +349,13 @@ export function RovoChatProvider({
 	const isMediaGeneratingRef = useRef(false);
 	const mediaGenerationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const suggestionsAbortControllerRef = useRef<AbortController | null>(null);
-	const sessionAgentSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const sessionAgentEntriesRef = useRef<SessionAgentEntry[]>([]);
+	// The one owner of the debounced session-agent write and its flush. A silent write still
+	// lands in storage; the save machine leaves the indicator alone for it.
+	const sessionAgentWriter = useLazyRef(() => createDebouncedWriter(() => {
+		const didPersist = persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
+		dispatchSessionAgentSave({ type: "persisted", ok: didPersist, at: Date.now() });
+	}, STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS));
 	const {
 		beginTransition: beginProviderTransition,
 		finishTransition,
@@ -459,37 +465,20 @@ export function RovoChatProvider({
 			return;
 		}
 
-		if (sessionAgentSaveTimerRef.current) {
-			clearTimeout(sessionAgentSaveTimerRef.current);
-		}
+		sessionAgentWriter.current.schedule();
+	}, [normalizedSessionAgentEntries, sessionAgentWriter]);
 
-		const saveTimer = setTimeout(() => {
-			sessionAgentSaveTimerRef.current = null;
-			const didPersist = persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
-			// A silent write still lands in storage; the machine leaves the indicator alone.
-			dispatchSessionAgentSave({ type: "persisted", ok: didPersist, at: Date.now() });
-		}, STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS);
-		sessionAgentSaveTimerRef.current = saveTimer;
-
-		return () => {
-			if (sessionAgentSaveTimerRef.current === saveTimer) {
-				clearTimeout(saveTimer);
-				sessionAgentSaveTimerRef.current = null;
-			}
-		};
-	}, [normalizedSessionAgentEntries]);
-
-	// oxlint-disable react-doctor/exhaustive-deps -- Unmount cleanup intentionally flushes whichever debounced session-agent save is still active.
+	// A write still waiting when the provider unmounts (a route change) or the page goes
+	// away (reload, tab close, navigation) lands at once instead of being dropped.
 	useEffect(() => {
+		const writer = sessionAgentWriter.current;
+		const flush = () => writer.flush();
+		window.addEventListener("pagehide", flush);
 		return () => {
-			if (sessionAgentSaveTimerRef.current) {
-				clearTimeout(sessionAgentSaveTimerRef.current);
-				sessionAgentSaveTimerRef.current = null;
-				persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
-			}
+			window.removeEventListener("pagehide", flush);
+			writer.flush();
 		};
-	}, []);
-	// oxlint-enable react-doctor/exhaustive-deps
+	}, [sessionAgentWriter]);
 
 	// oxlint-disable react-doctor/no-initialize-state -- Session agents are rehydrated from browser storage after mount because localStorage is unavailable during server render.
 	useEffect(() => {

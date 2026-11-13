@@ -135,6 +135,33 @@ function createBackendProcess({
 	};
 }
 
+const DRAINING_RESPONSE_BODY = JSON.stringify({ error: "The backend is shutting down." });
+
+/**
+ * Wraps the server's request handler. Once shutdown has begun, `server.close()` stops new
+ * connections, but a keep-alive connection that was busy stays open and can carry another
+ * request after runs were aborted. Such a request gets 503 and `Connection: close`, so it
+ * starts no work and the connection ends with its response.
+ * @param {(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) => void} handler
+ * @param {{ isDraining: () => boolean }} options
+ */
+function refuseRequestsWhileDraining(handler, { isDraining } = {}) {
+	requireFunction("handler", handler);
+	requireFunction("isDraining", isDraining);
+	return (req, res) => {
+		if (!isDraining()) {
+			handler(req, res);
+			return;
+		}
+		res.writeHead(503, {
+			Connection: "close",
+			"Content-Length": Buffer.byteLength(DRAINING_RESPONSE_BODY),
+			"Content-Type": "application/json; charset=utf-8",
+		});
+		res.end(DRAINING_RESPONSE_BODY);
+	};
+}
+
 /**
  * The HTTP server's two steps: stop accepting first, close what is left last.
  * @param {{ getServer: () => import("node:http").Server | null, getWebSocketServers?: () => Array<{ clients: Set<{ terminate(): void }> }> }} options
@@ -178,13 +205,22 @@ function createHttpServerShutdownSteps({ getServer, getWebSocketServers = () => 
 
 /**
  * The runtime's steps, between the server's two: abort in-flight runs, close browser
- * workspaces, shut the Rovo pool.
+ * workspaces, mirror browsers and the Chromium preview, shut the Rovo pool. Each step
+ * is idempotent: run again, it finds nothing left to close.
  */
-function createRuntimeShutdownSteps({ activeRequests, browserWorkspaceManager, shutdownRovoPool } = {}) {
+function createRuntimeShutdownSteps({
+	activeRequests,
+	browserWorkspaceManager,
+	chromiumPreviewManager,
+	closeAllMirrorBrowsers,
+	shutdownRovoPool,
+} = {}) {
 	if (!(activeRequests instanceof Map)) {
 		throw new Error("createRuntimeShutdownSteps requires activeRequests");
 	}
 	requireFunction("browserWorkspaceManager.closeAllWorkspaces", browserWorkspaceManager?.closeAllWorkspaces);
+	requireFunction("closeAllMirrorBrowsers", closeAllMirrorBrowsers);
+	requireFunction("chromiumPreviewManager.close", chromiumPreviewManager?.close);
 	requireFunction("shutdownRovoPool", shutdownRovoPool);
 
 	return [
@@ -208,6 +244,14 @@ function createRuntimeShutdownSteps({ activeRequests, browserWorkspaceManager, s
 			run: async () => `${await browserWorkspaceManager.closeAllWorkspaces()} closed`,
 		},
 		{
+			name: "close-mirror-browsers",
+			run: async () => `${await closeAllMirrorBrowsers()} closed`,
+		},
+		{
+			name: "close-chromium-preview",
+			run: async () => ((await chromiumPreviewManager.close()) ? "closed" : "none open"),
+		},
+		{
 			name: "shutdown-rovo-pool",
 			run: () => {
 				shutdownRovoPool();
@@ -221,4 +265,5 @@ module.exports = {
 	createBackendProcess,
 	createHttpServerShutdownSteps,
 	createRuntimeShutdownSteps,
+	refuseRequestsWhileDraining,
 };

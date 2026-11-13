@@ -38,9 +38,12 @@ export function sessionAgentSaveReducer(
 			if (!event.silent) {
 				return VISIBLE_PENDING;
 			}
-			// A silent write keeps whatever is showing, including a visible write still
-			// pending, whose "Saving…" then stays up until the next visible write lands.
-			return { phase: "pending", silent: true, showing: state.phase === "pending" && state.silent ? state.showing : state };
+			// A silent change never hides a visible write that is still pending: that write's
+			// result (Saved or the error) still shows when it lands.
+			if (state.phase === "pending") {
+				return state;
+			}
+			return { phase: "pending", silent: true, showing: state };
 		case "persisted":
 			if (state.phase !== "pending") {
 				return state;
