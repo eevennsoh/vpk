@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
-import type { FloatingRovoButtonPersistentBar } from "@/components/projects/shared/components/floating-rovo-button";
+import type { FloatingRovoButtonPersistentBar } from "@/components/blocks/rovo-button";
 import { useRovoChatControls } from "@/app/contexts";
 
 export interface RovoButtonDemoLiveChat {

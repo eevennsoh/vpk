@@ -78,7 +78,7 @@ test("JiraDemo opens Rovo agent onboarding after returning to the attached repor
 	);
 	assert.match(
 		JIRA_DEMO_SOURCE,
-		/import type \{ FloatingRovoButtonOnboardingConfig \} from "@\/components\/projects\/shared\/components\/floating-rovo-button";/u,
+		/import type \{ FloatingRovoButtonOnboardingConfig \} from "@\/components\/blocks\/rovo-button";/u,
 	);
 	assert.match(
 		JIRA_DEMO_SOURCE,

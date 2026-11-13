@@ -29,7 +29,7 @@ import {
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import type { ChatPanelCustomAgentTabs } from "@/components/projects/sidebar-chat/page";
-import type { FloatingRovoButtonOnboardingConfig } from "@/components/projects/shared/components/floating-rovo-button";
+import type { FloatingRovoButtonOnboardingConfig } from "@/components/blocks/rovo-button";
 import { ROVO_AGENT_RESULT_SELECT_EVENT } from "@/components/projects/sidebar-chat/components/agent-result-card";
 import { useAgentsWorkItemPresentation, type AgentsWorkItemPresentationController } from "@/components/projects/jira/hooks/use-agents-work-item-presentation";
 import { getMessageAgentResult } from "@/lib/rovo-ui-messages";

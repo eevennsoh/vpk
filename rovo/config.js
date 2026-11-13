@@ -221,7 +221,7 @@ const SHELL_CHROME_AVOIDANCE_INSTRUCTION = [
 	"Do NOT import these host-shell components:",
 	"- @/components/blocks/top-navigation/page (TopNavigation)",
 	"- @/components/blocks/product-sidebar/page (product sidebar)",
-	"- @/components/projects/shared/components/floating-rovo-button (FloatingRovoButton)",
+	"- @/components/blocks/rovo-button (FloatingRovoButton)",
 	"- @/components/projects/fullscreen-chat (global Rovo chat panel)",
 	"Do NOT add equivalents of global product chrome such as app switchers, global search headers, notifications, help/settings/profile menus, theme toggles, or floating chat launchers unless the user explicitly requested shell UI.",
 	"Build only the feature content area. The surrounding host shell already exists.",

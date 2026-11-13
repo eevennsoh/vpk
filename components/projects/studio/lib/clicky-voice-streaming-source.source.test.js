@@ -54,7 +54,7 @@ test("assistant panel streaming activates Clicky before speaking text", () => {
 		const streamHelperSource = sourceBetween(
 			route.shellSource,
 			"const streamClickyAssistantText = useCallback",
-			"const [screenAssistantRegion",
+			"} = useScreenAssistantRegion(isClickyActive);",
 		);
 		const activateIndex = streamHelperSource.indexOf("activateClicky();");
 		const speakIndex = streamHelperSource.indexOf("clickyStartSpeaking(text);");

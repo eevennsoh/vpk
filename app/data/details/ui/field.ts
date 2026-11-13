@@ -77,43 +77,36 @@ import { Textarea } from "@/components/ui/textarea";
         title: "Text field",
         description: "Basic text input field.",
         demoSlug: "field-demo-text-field",
-        badge: { label: "ADS", variant: "discovery" },
       },
       {
         title: "Text field disabled",
         description: "Disabled text input field.",
         demoSlug: "field-demo-text-field-disabled",
-        badge: { label: "ADS", variant: "discovery" },
       },
       {
         title: "Text field invalid",
         description: "Text input with error state.",
         demoSlug: "field-demo-text-field-invalid",
-        badge: { label: "ADS", variant: "discovery" },
       },
       {
         title: "Text field variants",
         description: "Default and subtle input variants.",
         demoSlug: "field-demo-text-field-variants",
-        badge: { label: "ADS", variant: "discovery" },
       },
       {
         title: "Textarea",
         description: "Basic textarea field.",
         demoSlug: "field-demo-textarea",
-        badge: { label: "ADS", variant: "discovery" },
       },
       {
         title: "Textarea disabled",
         description: "Disabled textarea field.",
         demoSlug: "field-demo-textarea-disabled",
-        badge: { label: "ADS", variant: "discovery" },
       },
       {
         title: "Textarea invalid",
         description: "Textarea with error state.",
         demoSlug: "field-demo-textarea-invalid",
-        badge: { label: "ADS", variant: "discovery" },
       },
       {
         title: "Form",

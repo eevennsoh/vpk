@@ -98,6 +98,7 @@ const {
 	getRovoAppThreadBrowserWorkspace: defaultGetRovoAppThreadBrowserWorkspace,
 } = require("./lib/rovo-app-browser-workspace");
 const {
+	closeAllMirrorBrowsers: defaultCloseAllMirrorBrowsers,
 	getMirrorBrowser: defaultGetMirrorBrowser,
 	destroyMirrorBrowser: defaultDestroyMirrorBrowser,
 } = require("./lib/rovo-app-browser-mirror");
@@ -153,6 +154,7 @@ function createBackendRuntimeComposition({
 		createRovoUnavailableError = defaultCreateRovoUnavailableError,
 		createStageTrace = defaultCreateStageTrace,
 		createStageTraceFromRequestResolver = defaultCreateStageTraceFromRequestResolver,
+		closeAllMirrorBrowsers = defaultCloseAllMirrorBrowsers,
 		deleteRovoAppThreadBrowserWorkspace = defaultDeleteRovoAppThreadBrowserWorkspace,
 		describeChatBackend = defaultDescribeChatBackend,
 		destroyMirrorBrowser = defaultDestroyMirrorBrowser,
@@ -411,6 +413,8 @@ function createBackendRuntimeComposition({
 		shutdownSteps: createRuntimeShutdownSteps({
 			activeRequests,
 			browserWorkspaceManager,
+			chromiumPreviewManager,
+			closeAllMirrorBrowsers,
 			shutdownRovoPool,
 		}),
 		webSocketRelayDependencies: {

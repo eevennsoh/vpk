@@ -18,7 +18,6 @@ test("retired shared surfaces have explicit visible catalog demos", () => {
 	const utilityDetailsSource = readProjectFile("app/data/details/utility.ts");
 	const blockDetailsSource = readDetailCategorySource("blocks");
 	const registrySource = readWebsiteRegistrySource();
-	const navAdsSource = readProjectFile("app/data/nav-ads.ts");
 
 	assert.match(manifestSource, /uiComponent\("heading", "Heading"\)/u);
 	assert.match(componentSource, /uiComponent\("heading", "Heading"\)/u);
@@ -74,7 +73,6 @@ test("retired shared surfaces have explicit visible catalog demos", () => {
 	// chat-configuration documents the shared CustomizeMenu surface; it must not gain a fake blocks source dir/path.
 	assert.doesNotMatch(manifestSource, /importPath: "@\/components\/blocks\/chat-configuration"/u);
 	assert.doesNotMatch(registrySource, /demos\/blocks\/shared-ui-demo/u);
-	assert.doesNotMatch(navAdsSource, /"chat-configuration"/u);
 
 	assert.equal(existsSync(path.join(ROOT, "components/blocks/shared")), false);
 	assert.equal(existsSync(path.join(ROOT, "components/blocks/chat-configuration")), false);

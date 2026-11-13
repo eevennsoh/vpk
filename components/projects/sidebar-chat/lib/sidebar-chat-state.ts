@@ -57,10 +57,13 @@ export function reduceDictationPresentation(
 ): DictationPresentationState {
 	switch (action.type) {
 		case "preview":
+			if (state.transcriptPreview === action.transcript) return state;
 			return { ...state, transcriptPreview: action.transcript };
 		case "start":
+			if (state.isActive && state.transcriptPreview === null) return state;
 			return { isActive: true, transcriptPreview: null };
 		case "stop":
+			if (!state.isActive && state.transcriptPreview === null) return state;
 			return { isActive: false, transcriptPreview: null };
 		default:
 			return state;

@@ -121,13 +121,6 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
-	"rovo-button": {
-		description: "A floating action button that summons the Rovo chat panel from any product surface. Demonstrates hover scale, theme-aware surface color, and auto-hide behavior on the Rovo route.",
-		importStatement: `import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";`,
-		demoLayout: {
-			previewHeight: "fixed",
-		},
-	},
 	"search": {
 		description: "A search results page with AI-powered summary panel, source cards carousel, and filterable result cards.",
 		demoLayout: {

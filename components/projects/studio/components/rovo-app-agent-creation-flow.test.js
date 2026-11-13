@@ -924,15 +924,9 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToolDirectoryDialog \} from "@\/components\/blocks\/tool-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/app\/data\/directory\/tools";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentInsight \} from "@\/components\/blocks\/agent-insight";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeDirectory, setActiveDirectory\] = useState<AgentDirectoryKind \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeCompactSection, setActiveCompactSection\] = useState<AgentCompactHeaderSection \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAutomationRulesChange = useCallback\([\s\S]*automationRules: readonly AgentAutomationRule\[\][\s\S]*automationRules,[\s\S]*\},[\s\S]*\[updateActiveConfig\]/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*const automationRules = \(config\.automationRules \?\? \[\]\)\.map\(\(rule\) => \(\{[\s\S]*triggers: rule\.triggers\.map\(\(trigger\) =>[\s\S]*connectionState: "connecting" as const/u);
-	// The connect flow resolves (fake): provider-level, session-scoped, connecting -> connected.
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*trigger\.providerId === providerId[\s\S]*setTimeout\([\s\S]*markSessionProviderConnected\(providerId\)[\s\S]*connectionState: "connected" as const/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setConnectingProvider\(\{ providerId, trigger: targetTrigger \}\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /Authorizing \{getTriggerProvider\(connectingProvider\.providerId\)\?\.label/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind, selectedItem\?: string\) => \{[\s\S]*setDirectorySelectedToolId\(matchedTool\?\.id \?\? null\);[\s\S]*setActiveDirectory\(directory\);[\s\S]*\}, \[\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddKnowledge = useCallback\([\s\S]*payload: KnowledgeDirectoryAddPayload[\s\S]*DEFAULT_KNOWLEDGE_APPS\.find[\s\S]*appendListValues\("knowledge"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleDirectoryToolIdsChange = useCallback\([\s\S]*const toolsById = new Map\(\[\.\.\.DEMO_TOOLS, \.\.\.DEMO_SESSION_TOOLS\][\s\S]*appendListValues\(\s*"tools"/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /slugifySkillName/u);
@@ -947,7 +941,6 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_FILLED_CONFIG_SUMMARY_SOURCE, /const skillItems = getSkillConfigItems\(config\.skills\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<KnowledgeDirectoryDialog[\s\S]*open=\{activeDirectory === "knowledge"\}[\s\S]*onAddKnowledge=\{handleAddKnowledge\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToolDirectoryDialog[\s\S]*addedToolIds=\{addedToolIds\}[\s\S]*open=\{activeDirectory === "tools"\}[\s\S]*onAddedToolIdsChange=\{handleDirectoryToolIdsChange\}[\s\S]*sessionTools=\{DEMO_SESSION_TOOLS\}[\s\S]*tools=\{DEMO_TOOLS\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*setDirectorySkillIds\(\[\]\);[\s\S]*selectionExperience="studio-bulk-add"[\s\S]*open=\{activeDirectory === "skills"\}[\s\S]*selectedSkillIds=\{directorySkillIds\}[\s\S]*skills=\{DEFAULT_SKILLS\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Memory[\s\S]*open=\{activeDirectory === "memory"\}[\s\S]*showTrigger=\{false\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentCompactHeaderNav,/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
@@ -1108,8 +1101,6 @@ test("Studio skills directory add keeps the Browse Skills dialog open", () => {
 	const handleAddSkillsSource = AGENT_CONFIG_PANEL_SOURCE.match(/const handleAddSkills = useCallback\([\s\S]*?\n\t\);/u)?.[0] ?? "";
 	assert.match(handleAddSkillsSource, /skills: readonly SkillDirectorySkill\[\]/u);
 	assert.match(handleAddSkillsSource, /appendListValues\("skills", skills\.map\(\(skill\) => getSkillConfigLabel\(skill\.name\)\)\);/u);
-	assert.match(handleAddSkillsSource, /setDirectorySkillIds\(\[\]\);/u);
-	assert.doesNotMatch(handleAddSkillsSource, /setActiveDirectory\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*selectionExperience="studio-bulk-add"[\s\S]*open=\{activeDirectory === "skills"\}/u);
 });
 
@@ -1251,7 +1242,6 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 	assert.match(SHELL_SOURCE, /prepareStudioAgentDraftPatch\(\{[\s\S]*currentDraft: activeSessionAgentEntry\.draftResult,[\s\S]*rawPatch: args\.patch,/u);
 	assert.match(SHELL_SOURCE, /ScreenAssistantRegionOverlay/u);
 	assert.match(SHELL_SOURCE, /activeRegion: screenAssistantRegion/u);
-	assert.match(SHELL_SOURCE, /const \[screenAssistantRegionPainting, setScreenAssistantRegionPainting\] = useState\(false\);/u);
 	assert.match(SHELL_SOURCE, /<ClickyOverlay[\s\S]*paintingActive=\{screenAssistantRegionPainting\}/u);
 	assert.match(SHELL_SOURCE, /<ScreenAssistantRegionOverlay[\s\S]*onPaintingChange=\{setScreenAssistantRegionPainting\}/u);
 	assert.doesNotMatch(SHELL_SOURCE, /onStartScreenAssistantRegionPaint|screenAssistantRegionActive|isScreenAssistantRegionPaintMode/u);

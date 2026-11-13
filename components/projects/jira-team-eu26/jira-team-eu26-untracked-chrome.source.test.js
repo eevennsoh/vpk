@@ -48,7 +48,7 @@ const PANEL_RESIZE_HOOK_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/hooks/use-agent-session-panel-resize.ts",
 );
 const FAB_GEOMETRY_SOURCE = readProjectFile(
-	"components/projects/shared/components/floating-rovo-button/geometry.ts",
+	"components/blocks/rovo-button/geometry.ts",
 );
 
 test("the route pins the shared Agent Session column beside Jira statuses", () => {

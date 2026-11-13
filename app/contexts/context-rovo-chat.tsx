@@ -11,6 +11,7 @@ import {
 	useEffect,
 	useLayoutEffect,
 	useMemo,
+	useReducer,
 	useRef,
 	useState,
 	type ReactNode,
@@ -48,6 +49,13 @@ import {
 	type SessionAgentEntryMutationResult,
 	type StudioSessionAgentSaveStatus,
 } from "@/components/projects/rovo-core/lib/agent-records/session-agent-registry";
+import { createDebouncedWriter } from "@/components/projects/rovo-core/lib/agent-records/debounced-writer";
+import {
+	SESSION_AGENT_SAVE_INITIAL_STATE,
+	selectSessionAgentSavedAt,
+	selectSessionAgentSaveStatus,
+	sessionAgentSaveReducer,
+} from "@/components/projects/rovo-core/lib/agent-records/session-agent-save-machine";
 import type { StudioSessionAgentEntry } from "@/components/projects/rovo-core/lib/agent-records/types";
 import {
 	getRovoAgentProfile,
@@ -301,8 +309,12 @@ export function RovoChatProvider({
 	const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
 	const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 	const [sessionAgentEntries, setSessionAgentEntries] = useState<SessionAgentEntry[]>([]);
-	const [sessionAgentSaveStatus, setSessionAgentSaveStatus] = useState<StudioSessionAgentSaveStatus>("idle");
-	const [sessionAgentSavedAt, setSessionAgentSavedAt] = useState<number | null>(null);
+	const [sessionAgentSaveState, dispatchSessionAgentSave] = useReducer(
+		sessionAgentSaveReducer,
+		SESSION_AGENT_SAVE_INITIAL_STATE,
+	);
+	const sessionAgentSaveStatus = selectSessionAgentSaveStatus(sessionAgentSaveState);
+	const sessionAgentSavedAt = selectSessionAgentSavedAt(sessionAgentSaveState);
 	const hasRehydratedPublishedAgentsRef = useRef(false);
 	const lastSeenSessionAgentEntriesRef = useRef<SessionAgentEntry[] | null>(null);
 
@@ -337,12 +349,13 @@ export function RovoChatProvider({
 	const isMediaGeneratingRef = useRef(false);
 	const mediaGenerationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const suggestionsAbortControllerRef = useRef<AbortController | null>(null);
-	const sessionAgentSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	// When set, the next session-agent persist runs silently (no "Saving…/Saved"
-	// indicator). Used for creating a brand-new blank agent, where there is no
-	// meaningful content to save yet, so the save progression would be noise.
-	const suppressNextSessionAgentSaveStatusRef = useRef(false);
 	const sessionAgentEntriesRef = useRef<SessionAgentEntry[]>([]);
+	// The one owner of the debounced session-agent write and its flush. A silent write still
+	// lands in storage; the save machine leaves the indicator alone for it.
+	const sessionAgentWriter = useLazyRef(() => createDebouncedWriter(() => {
+		const didPersist = persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
+		dispatchSessionAgentSave({ type: "persisted", ok: didPersist, at: Date.now() });
+	}, STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS));
 	const {
 		beginTransition: beginProviderTransition,
 		finishTransition,
@@ -362,6 +375,15 @@ export function RovoChatProvider({
 		const token = beginProviderTransition("destroy");
 		finishTransition(token);
 	}, [beginProviderTransition, finishTransition]);
+	// The one writer of the session-agent working copy: the ref that mutations read
+	// synchronously and the state that renders move together, normalized once here.
+	// Nothing copies state back into the ref, so a mutation made by a child's mount
+	// effect is never overwritten by the provider's first (still empty) state.
+	const commitSessionAgentEntries = useCallback((entries: readonly SessionAgentEntry[]) => {
+		const normalizedEntries = entries.map(normalizeSessionAgentEntry);
+		sessionAgentEntriesRef.current = normalizedEntries;
+		setSessionAgentEntries(normalizedEntries);
+	}, []);
 	const applySessionAgentMutation = useCallback((
 		result: SessionAgentEntryMutationResult,
 		options?: { silentSave?: boolean }
@@ -370,15 +392,12 @@ export function RovoChatProvider({
 			return result.entry;
 		}
 
-		sessionAgentEntriesRef.current = result.entries;
-		if (options?.silentSave) {
-			suppressNextSessionAgentSaveStatusRef.current = true;
-		} else {
-			setSessionAgentSaveStatus("saving");
-		}
-		setSessionAgentEntries(result.entries);
+		// A silent save (a brand-new blank agent, with nothing worth saving yet) writes
+		// without the "Saving…/Saved" progression.
+		dispatchSessionAgentSave({ type: "changed", silent: options?.silentSave === true });
+		commitSessionAgentEntries(result.entries);
 		return result.entry;
-	}, []);
+	}, [commitSessionAgentEntries]);
 	// oxlint-disable react-doctor/no-event-handler -- Agent profile props and session-agent storage are external inputs that reconcile selected-agent state after render.
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Removed or auto-selected agent profiles must fall back after the owning profile set changes.
 	// oxlint-disable react-doctor/no-chain-state-updates -- Selection reconciliation intentionally updates the selected-agent state/ref pair together.
@@ -434,8 +453,6 @@ export function RovoChatProvider({
 	const sendChatMessageRef = useRef<(promptItem: QueuedPromptItem) => Promise<void>>(async () => {});
 
 	useEffect(() => {
-		sessionAgentEntriesRef.current = normalizedSessionAgentEntries;
-
 		// Skip the initial rehydration and React 19 StrictMode's dev-only mount
 		// double-invoke, which re-runs this effect with the *same* entries
 		// reference. Persisting on either would fire a spurious debounced save
@@ -454,49 +471,20 @@ export function RovoChatProvider({
 			return;
 		}
 
-		if (sessionAgentSaveTimerRef.current) {
-			clearTimeout(sessionAgentSaveTimerRef.current);
-		}
+		sessionAgentWriter.current.schedule();
+	}, [normalizedSessionAgentEntries, sessionAgentWriter]);
 
-		// A silent persist (e.g. creating a blank agent with nothing to save yet)
-		// still writes to storage but skips the "Saving…/Saved" indicator.
-		const silentPersist = suppressNextSessionAgentSaveStatusRef.current;
-		suppressNextSessionAgentSaveStatusRef.current = false;
-
-		const saveTimer = setTimeout(() => {
-			sessionAgentSaveTimerRef.current = null;
-			const didPersist = persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
-			if (silentPersist) {
-				return;
-			}
-			if (didPersist) {
-				setSessionAgentSaveStatus("saved");
-				setSessionAgentSavedAt(Date.now());
-			} else {
-				setSessionAgentSaveStatus("error");
-			}
-		}, STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS);
-		sessionAgentSaveTimerRef.current = saveTimer;
-
-		return () => {
-			if (sessionAgentSaveTimerRef.current === saveTimer) {
-				clearTimeout(saveTimer);
-				sessionAgentSaveTimerRef.current = null;
-			}
-		};
-	}, [normalizedSessionAgentEntries]);
-
-	// oxlint-disable react-doctor/exhaustive-deps -- Unmount cleanup intentionally flushes whichever debounced session-agent save is still active.
+	// A write still waiting when the provider unmounts (a route change) or the page goes
+	// away (reload, tab close, navigation) lands at once instead of being dropped.
 	useEffect(() => {
+		const writer = sessionAgentWriter.current;
+		const flush = () => writer.flush();
+		window.addEventListener("pagehide", flush);
 		return () => {
-			if (sessionAgentSaveTimerRef.current) {
-				clearTimeout(sessionAgentSaveTimerRef.current);
-				sessionAgentSaveTimerRef.current = null;
-				persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
-			}
+			window.removeEventListener("pagehide", flush);
+			writer.flush();
 		};
-	}, []);
-	// oxlint-enable react-doctor/exhaustive-deps
+	}, [sessionAgentWriter]);
 
 	// oxlint-disable react-doctor/no-initialize-state -- Session agents are rehydrated from browser storage after mount because localStorage is unavailable during server render.
 	useEffect(() => {
@@ -514,17 +502,16 @@ export function RovoChatProvider({
 			rehydrated,
 		);
 		if (mergeResult.changed) {
-			sessionAgentEntriesRef.current = mergeResult.entries;
 			// Rehydration writes the persisted agents back to storage unchanged;
 			// run that persist silently so a plain reload (no user edits) never
 			// flashes the "Saving…/Saved just now" indicator. Only set here, in
 			// the branch that actually changes the entries and re-triggers the
 			// debounced save effect, so the flag can't linger and swallow the
 			// user's next real save.
-			suppressNextSessionAgentSaveStatusRef.current = true;
-			setSessionAgentEntries(mergeResult.entries);
+			dispatchSessionAgentSave({ type: "changed", silent: true });
+			commitSessionAgentEntries(mergeResult.entries);
 		}
-	}, []);
+	}, [commitSessionAgentEntries]);
 	// oxlint-enable react-doctor/no-initialize-state
 
 	// oxlint-disable react-doctor/no-derived-state -- The selected agent also changes from explicit user actions, so it cannot be purely derived from the auto-select prop.
@@ -2170,9 +2157,8 @@ export function RovoChatProvider({
 			return;
 		}
 
-		sessionAgentEntriesRef.current = result.entries;
-		setSessionAgentSaveStatus("saving");
-		setSessionAgentEntries(result.entries);
+		dispatchSessionAgentSave({ type: "changed", silent: false });
+		commitSessionAgentEntries(result.entries);
 
 		// Deleting the agent that is currently driving the chat would otherwise
 		// leave the surface pointed at a profile that no longer exists, so fall
@@ -2181,7 +2167,7 @@ export function RovoChatProvider({
 			setSelectedAgentIdState(ROVO_AGENT_ID);
 			resetChat();
 		}
-	}, [resetChat, setSelectedAgentIdState]);
+	}, [commitSessionAgentEntries, resetChat, setSelectedAgentIdState]);
 
 	const rawUiMessagesRef = useLatestRef(rawUiMessages);
 	const transcriptOwner = useMemo<RovoChatTranscriptOwner>(() => ({

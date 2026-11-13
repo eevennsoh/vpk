@@ -238,12 +238,33 @@ function getMirrorBrowser(mirrorId) {
 	return mirrorBrowsers.get(mirrorId) ?? null
 }
 
+// Closes started by destroyMirrorBrowser, so shutdown can wait for them too.
+const closingMirrors = new Set()
+
 async function destroyMirrorBrowser(mirrorId) {
 	const mirror = mirrorBrowsers.get(mirrorId)
 	if (!mirror) return
 
 	mirrorBrowsers.delete(mirrorId)
-	await mirror.close()
+	const closing = mirror.close()
+	closingMirrors.add(closing)
+	try {
+		await closing
+	} finally {
+		closingMirrors.delete(closing)
+	}
+}
+
+// Shutdown: closes every registered mirror and waits for closes already started.
+// Returns how many it closed; a second call finds none.
+async function closeAllMirrorBrowsers({ registry = mirrorBrowsers, closing = closingMirrors } = {}) {
+	const mirrors = Array.from(registry.values())
+	registry.clear()
+	await Promise.all([
+		...mirrors.map((mirror) => mirror.close().catch(() => {})),
+		...Array.from(closing, (promise) => promise.catch(() => {})),
+	])
+	return mirrors.length
 }
 
 module.exports = {
@@ -252,4 +273,5 @@ module.exports = {
 	getOrCreateMirrorBrowser,
 	getMirrorBrowser,
 	destroyMirrorBrowser,
+	closeAllMirrorBrowsers,
 }
