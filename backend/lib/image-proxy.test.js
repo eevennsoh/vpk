@@ -155,10 +155,28 @@ test("readImageProxyResponsePayload rejects streamed responses that exceed the l
 test("parseImageProxyTarget never sends the Atlassian token over plain http", () => {
 	assert.deepEqual(
 		parseImageProxyTarget("http://hello.atlassian.net/wiki/download/attachments/1/photo.png"),
-		{ error: "Atlassian image URLs must use https" },
+		{ error: "Image URL is not allowed" },
 	);
 	assert.equal(parseImageProxyTarget("https://hello.atlassian.net/wiki/download/attachments/1/photo.png").source, "atlassian");
 	for (const src of ["file:///etc/passwd", "http://127.0.0.1/x.png", "https://evil.example/x.png"]) {
 		assert.ok(parseImageProxyTarget(src).error, src);
 	}
+});
+
+test("image candidates found in a page are fetched over https only, and the token goes only to configured sites", () => {
+	const page = new URL("https://hello.atlassian.net/wiki/spaces/X/pages/1");
+	const html = [
+		"<img src=\"http://hello.atlassian.net/wiki/download/attachments/1/plain.png\">",
+		"<img src=\"https://hello.atlassian.net/wiki/download/attachments/1/secure.png\">",
+	].join("");
+	assert.deepEqual(extractAtlassianImageCandidatesFromHtml(html, page).map(String), [
+		"https://hello.atlassian.net/wiki/download/attachments/1/secure.png",
+	]);
+	assert.equal(isAllowedAtlassianImageUrl(new URL("http://hello.atlassian.net/wiki/download/attachments/1/x.png")), false);
+
+	const env = { ATLASSIAN_API_TOKEN: "made-up-token" };
+	const otherTenant = buildImageProxyRequestHeaders(new URL("https://other-tenant.atlassian.net/wiki/download/attachments/1/x.png"), env);
+	assert.equal(otherTenant.Authorization, undefined);
+	const configured = buildImageProxyRequestHeaders(new URL("https://team.atlassian.net/wiki/download/attachments/1/x.png"), { ...env, ATLASSIAN_SITE_HOSTS: "team.atlassian.net" });
+	assert.equal(configured.Authorization, "Bearer made-up-token");
 });
