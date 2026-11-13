@@ -51,6 +51,7 @@ function runSweep({
 	memory = { swapUsed: "1024.00M", level: "1" },
 	nextServer = null,
 	args = [],
+	oldNode = false,
 } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "vpk-system-clean-test-"));
 	const home = join(root, "home");
@@ -183,6 +184,17 @@ exit 0
 `,
 	);
 	writeExecutable(join(fakeBin, "sleep"), "#!/bin/sh\nexit 0\n");
+	if (oldNode) {
+		// A node too old for node:sqlite, first on PATH.
+		writeExecutable(
+			join(fakeBin, "node"),
+			`#!/bin/sh
+[ "$1" = "--version" ] && { echo v20.11.0; exit 0; }
+echo "Error [ERR_UNKNOWN_BUILTIN_MODULE]: No such built-in module: node:sqlite" >&2
+exit 1
+`,
+		);
+	}
 	if (resolvedSessions === null) {
 		writeExecutable(join(fakeBin, "tmux"), "#!/bin/sh\nexit 1\n");
 	} else {
@@ -406,11 +418,11 @@ test("keeps a Codex Desktop worktree when the Codex state database is missing", 
 	assert.match(cleanupLog, /kept tmux session vpk-dev-codex on vpk-dev socket \(Codex threads unknown: Codex state database not found\)/);
 });
 
-test("keeps a Codex Desktop worktree with no thread for its exact cwd", ZSH_TEST_OPTIONS, () => {
+test("keeps a Codex Desktop worktree with no thread in it (a sibling path does not count)", ZSH_TEST_OPTIONS, () => {
 	const { cleanupLog, stopLog, result } = runSweep({
 		almd: false,
 		sessions: codexSession,
-		codexThreads: (home) => [{ cwd: join(home, ".codex/worktrees/89b2/project/app"), ageHours: 48 }],
+		codexThreads: (home) => [{ cwd: join(home, ".codex/worktrees/89b2/project-2"), ageHours: 48 }],
 	});
 
 	assert.equal(result.status, 0, result.stderr);
@@ -587,4 +599,17 @@ test("--print-mode reports the mode without running the sweep", ZSH_TEST_OPTIONS
 
 	const pressured = runSweep({ almd: false, memory: { swapUsed: "20.5G", level: "4" }, args: ["--print-mode"] });
 	assert.equal(pressured.result.stdout.trim(), "pressure|swap 20GB in use >= 16GB, memory-pressure level 4 >= 4");
+});
+
+test("a node too old for node:sqlite keeps the Codex stack and logs why", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: codexSession,
+		codexThreads: (home) => [{ cwd: join(home, ".codex/worktrees/89b2/project"), ageHours: 48 }],
+		oldNode: true,
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.match(cleanupLog, /kept tmux session vpk-dev-codex on vpk-dev socket \(Codex threads unknown: probe failed under .*\/node \(v20\.11\.0\): Error \[ERR_UNKNOWN_BUILTIN_MODULE\]: No such built-in module: node:sqlite\)/);
 });

@@ -25,7 +25,7 @@
 #     is that worktree — worktree directory names are ignored. Uses the
 #     worktree's own `dev-tmux-plain.sh stop` (SIGINT so Portless drops THIS
 #     route). A Codex Desktop worktree is stopped only when the read-only
-#     thread-recency probe finds every Codex thread for that exact cwd idle
+#     thread-recency probe finds every Codex thread in that worktree idle
 #     past its threshold; no thread, no database, or an unknown schema keeps
 #     it. Never
 #     `portless prune`. Legacy sessions on tmux's default socket get SIGINT
@@ -229,17 +229,27 @@ is_codex_desktop_worktree() {
 }
 
 # Prints `verdict|newest_age_secs|thread_count|reason` for the Codex threads
-# whose cwd is exactly this worktree. Anything but `idle` means keep the stack.
+# working in this worktree. Anything but `idle` means keep the stack.
 codex_thread_recency() {
-	local root="$1" line=""
+	local root="$1" line="" err="" node_bin
 	local -a pressure_flag=()
 	(( PRESSURE )) && pressure_flag=( --pressure )
-	if [[ -f "$CODEX_RECENCY_PROBE" ]]; then
-		line=$(node "$CODEX_RECENCY_PROBE" --cwd "$root" $pressure_flag 2>/dev/null | head -1)
+	if [[ ! -f "$CODEX_RECENCY_PROBE" ]]; then
+		print -r -- "unknown|-|-|thread-recency probe not installed at $CODEX_RECENCY_PROBE"
+		return
 	fi
+	node_bin=$(command -v node 2>/dev/null)
+	if [[ -z "$node_bin" ]]; then
+		print -r -- "unknown|-|-|node not found on PATH ($PATH)"
+		return
+	fi
+	err=$(mktemp -t vpk-codex-probe) || err=/dev/null
+	line=$("$node_bin" "$CODEX_RECENCY_PROBE" --cwd "$root" $pressure_flag 2>"$err" | head -1)
 	if [[ "$line" != *"|"*"|"*"|"* ]]; then
-		line="unknown|-|-|thread-recency probe unavailable at $CODEX_RECENCY_PROBE"
+		# node:sqlite needs Node 22.5+; an older node fails here with its own error.
+		line="unknown|-|-|probe failed under $node_bin ($("$node_bin" --version 2>/dev/null)): $(head -1 "$err" 2>/dev/null | tr '|' '/')"
 	fi
+	[[ "$err" != /dev/null ]] && rm -f "$err"
 	print -r -- "$line"
 }
 
