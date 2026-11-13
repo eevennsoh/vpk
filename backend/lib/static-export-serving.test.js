@@ -264,3 +264,104 @@ test("retired control-plane paths return 404 before stale static pages or app fa
 		fs.rmSync(publicPath, { force: true, recursive: true });
 	}
 });
+
+// The Next.js static export writes `a/b.html` beside an `a/b/` directory of RSC segment files,
+// and links address the page as `/a/b`. express.static alone redirects `/a/b` to the directory.
+function writeExportFixture(publicPath) {
+	writeFile(path.join(publicPath, "index.html"), "<main>Home</main>");
+	writeFile(path.join(publicPath, "a/b.html"), "<main>Page B</main>".repeat(100));
+	writeFile(path.join(publicPath, "a/b/__next._full.txt"), "segment");
+	writeFile(path.join(publicPath, "a/b/__next._tree.txt"), "segment");
+	writeFile(path.join(publicPath, "secret.txt"), "outside a page");
+}
+
+test("an extensionless export path serves its .html page without a redirect", async () => {
+	const publicPath = createTempPublicDir();
+	try {
+		writeExportFixture(publicPath);
+		await withStaticServer(publicPath, async (baseUrl) => {
+			for (const pagePath of ["/a/b", "/a/b/", "/a/b?tab=1"]) {
+				const response = await fetch(`${baseUrl}${pagePath}`, { redirect: "manual" });
+				assert.equal(response.status, 200, pagePath);
+				assert.match(await response.text(), /Page B/u, pagePath);
+				assert.match(response.headers.get("content-type"), /text\/html/u, pagePath);
+			}
+			const home = await fetch(`${baseUrl}/`, { redirect: "manual" });
+			assert.equal(home.status, 200);
+			assert.equal(await home.text(), "<main>Home</main>");
+			const segment = await fetch(`${baseUrl}/a/b/__next._full.txt`);
+			assert.equal(await segment.text(), "segment", "segment files stay reachable");
+		});
+	} finally {
+		fs.rmSync(publicPath, { force: true, recursive: true });
+	}
+});
+
+test("clean URLs keep the fallback, API 404s, retired routes and path containment", async () => {
+	const publicPath = createTempPublicDir();
+	try {
+		writeExportFixture(publicPath);
+		writeFile(path.join(publicPath, "rovo/jobs.html"), "<main>Stale jobs</main>");
+		await withStaticServer(publicPath, async (baseUrl) => {
+			const unknown = await fetch(`${baseUrl}/no/such/page`, { redirect: "manual" });
+			assert.equal(unknown.status, 200);
+			assert.equal(await unknown.text(), "<main>Home</main>", "unknown paths still get the app fallback");
+			const api = await fetch(`${baseUrl}/api/unknown`);
+			assert.equal(api.status, 404);
+			assert.deepEqual(await api.json(), { error: "API route not found: /api/unknown" });
+			assert.equal((await fetch(`${baseUrl}/rovo/jobs`)).status, 404, "retired control-plane paths still 404");
+			for (const escape of ["/a/..%2F..%2Fetc%2Fpasswd", "/a%2Fb", "/..%2Fsecret", "/%2e%2e/secret"]) {
+				const response = await fetch(`${baseUrl}${escape}`, { redirect: "manual" });
+				assert.doesNotMatch(await response.text(), /Page B|outside a page|root:/u, escape);
+			}
+		});
+	} finally {
+		fs.rmSync(publicPath, { force: true, recursive: true });
+	}
+});
+
+test("clean URLs still use the page's precompressed variants", async () => {
+	const publicPath = createTempPublicDir();
+	try {
+		writeExportFixture(publicPath);
+		const page = path.join(publicPath, "a/b.html");
+		writeFile(`${page}.br`, zlib.brotliCompressSync(fs.readFileSync(page)));
+		writeFile(`${page}.gz`, zlib.gzipSync(fs.readFileSync(page)));
+		await withStaticServer(publicPath, async (baseUrl) => {
+			for (const [encoding, decode] of [["br", zlib.brotliDecompressSync], ["gzip", zlib.gunzipSync]]) {
+				const response = await rawRequest(`${baseUrl}/a/b`, { "Accept-Encoding": encoding });
+				assert.equal(response.status, 200, encoding);
+				assert.equal(response.headers["content-encoding"], encoding);
+				assert.match(response.headers["content-type"], /text\/html/u);
+				assert.match(decode(response.body).toString(), /Page B/u);
+			}
+		});
+	} finally {
+		fs.rmSync(publicPath, { force: true, recursive: true });
+	}
+});
+
+// Agent worktrees live under `.claude/worktrees/`; send() refuses an absolute path with a dot
+// segment unless the file is sent relative to a root.
+test("a public directory under a dot-named parent still serves the fallback and compressed pages", async () => {
+	const parent = fs.mkdtempSync(path.join(os.tmpdir(), ".vpk-dot-parent-"));
+	const publicPath = path.join(parent, "public");
+	try {
+		writeExportFixture(publicPath);
+		const index = path.join(publicPath, "index.html");
+		writeFile(index, "<main>Home</main>".repeat(100));
+		writeFile(`${index}.gz`, zlib.gzipSync(fs.readFileSync(index)));
+		await withStaticServer(publicPath, async (baseUrl) => {
+			const fallback = await fetch(`${baseUrl}/no/such/page`, { headers: { "Accept-Encoding": "identity" } });
+			assert.equal(fallback.status, 200);
+			assert.match(await fallback.text(), /Home/u);
+			assert.doesNotMatch(await (await fetch(`${baseUrl}/projects/rovo`)).text(), /VPK Service/u);
+			const compressed = await rawRequest(`${baseUrl}/no/such/page`, { "Accept-Encoding": "gzip" });
+			assert.equal(compressed.status, 200);
+			assert.equal(compressed.headers["content-encoding"], "gzip");
+			assert.match(zlib.gunzipSync(compressed.body).toString(), /Home/u);
+		});
+	} finally {
+		fs.rmSync(parent, { force: true, recursive: true });
+	}
+});

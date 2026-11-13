@@ -132,6 +132,40 @@ function rejectRetiredControlPlaneRoute(req, res, next) {
 	return next();
 }
 
+// Next.js export writes `a/b.html` beside an `a/b/` directory of RSC segment files, while links
+// address the page as `/a/b`. express.static would redirect that to the directory, so point an
+// extensionless page path (with or without a trailing slash) at its `.html` file first. Only a
+// file inside the public directory is used; anything else falls through unchanged.
+function createCleanUrlMiddleware(publicPath, { fsModule = fs, pathModule = path } = {}) {
+	const root = pathModule.resolve(requirePublicPath(publicPath));
+	return function cleanUrlMiddleware(req, res, next) {
+		if (!["GET", "HEAD"].includes(req.method) || req.path === "/" || req.path.startsWith("/api/")) return next();
+		// An encoded separator is not a path separator.
+		if (/%(?:2f|5c)/iu.test(req.path)) return next();
+		let decoded;
+		try {
+			decoded = decodeURIComponent(req.path);
+		} catch {
+			return next();
+		}
+		const pagePath = decoded.replace(/\/$/u, "");
+		const segments = pagePath.split("/");
+		if (segments.some((segment) => segment.startsWith(".")) || pathModule.extname(segments.at(-1)) !== "") return next();
+		const file = pathModule.resolve(root, `.${pagePath}.html`);
+		if (!file.startsWith(`${root}${pathModule.sep}`)) return next();
+		let isFile = false;
+		try {
+			isFile = fsModule.statSync(file).isFile();
+		} catch {
+			return next();
+		}
+		if (!isFile) return next();
+		const query = req.url.slice(req.url.indexOf("?") >>> 0);
+		req.url = `${encodeURI(pagePath)}.html${req.url.includes("?") ? query : ""}`;
+		return next();
+	};
+}
+
 function createStaticExportFallbackHandler({
 	logger = console,
 	pathModule = path,
@@ -163,7 +197,9 @@ function createStaticExportFallbackHandler({
 		} catch (error) {
 			return next(error);
 		}
-		res.sendFile(indexPath, (err) => {
+		// Relative to the public root, so a dot-named parent directory (an agent worktree under
+		// `.claude/`) is not mistaken for a dotfile.
+		res.sendFile("index.html", { root: pathModule.resolve(publicPath) }, (err) => {
 			if (err) {
 				logger.log?.(`[STATIC] index.html not found at ${indexPath}`);
 				res.status(200).send(FALLBACK_HTML);
@@ -196,6 +232,7 @@ function registerStaticExportServing(app, {
 	}
 
 	app.use(rejectRetiredControlPlaneRoute);
+	app.use(createCleanUrlMiddleware(publicPath, { fsModule, pathModule }));
 	app.use(createPrecompressedMiddleware(publicPath));
 	app.use(expressImpl.static(publicPath, {
 		setHeaders: (res, filePath) => setStaticCacheHeaders(res, filePath, pathModule.resolve(publicPath)),
@@ -212,6 +249,7 @@ function registerStaticExportServing(app, {
 
 module.exports = {
 	FALLBACK_HTML,
+	createCleanUrlMiddleware,
 	isRetiredControlPlanePath,
 	rejectRetiredControlPlaneRoute,
 	buildPreloadLinkHeader,
