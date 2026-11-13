@@ -14,11 +14,36 @@ function fixture(width, height, seed = 13) {
 	return { pixels, png: encodePng(width, height, pixels) };
 }
 
-test("a PNG round-trips through decode bit for bit", () => {
+test("an opaque PNG round-trips through decode bit for bit", () => {
 	const { pixels, png } = fixture(37, 23);
 	assert.deepEqual(readPngSize(png), { width: 37, height: 23 });
 	assert.ok(decodePixels(png).pixels.equals(pixels));
 	assert.throws(() => readPngSize(Buffer.from("GIF89a")), /Not a PNG/u);
+});
+
+test("transparency: opaque pixels are exact, partly transparent ones come back premultiplied, and diff treats both inputs alike", () => {
+	const alphas = [0, 1, 127, 254, 255];
+	const colours = [[255, 0, 0], [0, 255, 0], [17, 99, 201], [255, 255, 255], [1, 2, 3]];
+	const width = alphas.length;
+	const pixels = Buffer.alloc(width * colours.length * 4);
+	colours.forEach((colour, row) => alphas.forEach((alpha, column) => pixels.set([...colour, alpha], (row * width + column) * 4)));
+	const png = encodePng(width, colours.length, pixels);
+	const decoded = decodePixels(png).pixels;
+	colours.forEach((colour, row) => alphas.forEach((alpha, column) => {
+		const at = (row * width + column) * 4;
+		const got = [...decoded.subarray(at, at + 4)];
+		if (alpha === 255) assert.deepEqual(got, [...colour, 255], "opaque is exact");
+		else if (alpha === 0) assert.deepEqual(got, [0, 0, 0, 0], "fully transparent loses its colour");
+		else {
+			assert.equal(got[3], alpha, "alpha itself is exact");
+			colour.forEach((channel, index) => assert.ok(Math.abs(got[index] - Math.round((channel * alpha) / 255)) <= 1, `${channel}@${alpha} → ${got[index]}`));
+		}
+	}));
+	assert.equal(pixelDiff(png, Buffer.from(png)).differentPixels, 0, "identical files never differ");
+	// Two images that differ only in the colour of fully transparent pixels look the same.
+	const recoloured = Buffer.from(pixels);
+	colours.forEach((_, row) => recoloured.set([9, 9, 9, 0], (row * width) * 4));
+	assert.equal(pixelDiff(png, encodePng(width, colours.length, recoloured)).differentPixels, 0);
 });
 
 test("crop keeps the source's exact pixels and rejects a box outside the image", () => {

@@ -114,7 +114,7 @@ to Playwright or curl. Report the classification and evidence boundary.
 
 ## Evidence
 
-Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump. `pnpm control-vpk capture` does this for a route's loaded state. Use the commands below for states reached mid-interaction. To crop, resize, tile or compare screenshots, use `pnpm image-tools crop|resize|contact-sheet|diff` (see `scripts/image-tools.mjs`); it needs no Python, and Python's PIL is not installed here.
+Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump. `pnpm control-vpk capture` does this for a route's loaded state. Use the commands below for states reached mid-interaction. To crop, resize, tile or compare screenshots, use `pnpm image-tools crop|resize|contact-sheet|diff` (see `scripts/image-tools.mjs`); it needs no Python, and Python's PIL is not installed here. `pnpm image-tools …` and `node scripts/image-tools.mjs …` run the same tool; use the path form wherever pnpm cannot run the script. Crop and diff are exact for opaque images such as screenshots; partly transparent pixels come back with their colour premultiplied by alpha.
 
 ```bash
 EVIDENCE="$(.agents/skills/vpk-verify/scripts/control-vpk evidence-dir)/jira-team-eu26"

@@ -3,15 +3,21 @@
 // PNG crop, resize, contact sheet and pixel diff without Python, for screenshots and
 // evidence frames. Agents reached for `from PIL import Image` (mostly to crop) and hit
 // "No module named 'PIL'"; this does the same with @resvg/resvg-js, which the repo already
-// depends on. resvg decodes an embedded PNG and renders it at 1:1 pixel for pixel, so a
-// crop or a diff reads the source's exact pixels.
+// depends on. resvg decodes an embedded PNG and renders it at 1:1, so for opaque images (every
+// screenshot) a crop or a diff reads the source's exact pixels. resvg works in premultiplied
+// alpha: a partly transparent pixel comes back with its colour scaled by its alpha (and a fully
+// transparent one as 0,0,0,0), so those colours are not exact. diff decodes both inputs the same
+// way, so identical files never differ, and pixels that differ only in colour where they are
+// fully transparent count as equal.
 //
 //   pnpm image-tools crop <in.png> <x> <y> <width> <height> --out <file>
 //   pnpm image-tools resize <in.png> (--width <px> | --height <px> | --scale <f>) --out <file>
 //   pnpm image-tools contact-sheet <in.png>... --out <file> [--columns <n>] [--cell-width <px>] [--labels]
 //   pnpm image-tools diff <a.png> <b.png> [--out <diff.png>] [--threshold <0-255>] [--json]
 //
-// diff exits 1 when any pixel differs (or the sizes differ), like cmp.
+// diff exits 1 when any pixel differs (or the sizes differ), like cmp. Where pnpm cannot run
+// the script (the Claude Code sandbox, a stale install), `node scripts/image-tools.mjs …` runs
+// the same tool.
 
 import { Resvg } from "@resvg/resvg-js";
 import fs from "node:fs";
@@ -38,7 +44,8 @@ function render(svg, { fonts = false } = {}) {
 	return new Resvg(svg, { font: { loadSystemFonts: fonts } }).render();
 }
 
-// RGBA bytes of a PNG, exactly as stored (opaque screenshots round-trip bit for bit).
+// RGBA bytes of a PNG as resvg renders it: exact for opaque pixels, premultiplied by alpha
+// for transparent ones.
 export function decodePixels(png) {
 	const { width, height } = readPngSize(png);
 	const image = render(`<svg xmlns="${SVG_NS}" width="${width}" height="${height}">${imageElement(png, { width, height })}</svg>`);
@@ -195,6 +202,10 @@ const USAGE = `Usage:
   image-tools resize <in.png> (--width <px> | --height <px> | --scale <f>) --out <file>
   image-tools contact-sheet <in.png>... --out <file> [--columns <n>] [--cell-width <px>] [--labels]
   image-tools diff <a.png> <b.png> [--out <diff.png>] [--threshold <0-255>] [--json]
+
+Exact for opaque images such as screenshots. Partly transparent pixels come back with their
+colour premultiplied by alpha, so their colour is approximate; diff treats both inputs alike.
+Where pnpm cannot run the script, use: node scripts/image-tools.mjs <command> …
 `;
 
 export function runCli(argv, { stdout = process.stdout } = {}) {
