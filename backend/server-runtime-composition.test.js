@@ -30,7 +30,7 @@ test("createDebugLogger only logs when debug mode is enabled", () => {
 	]);
 });
 
-test("createBackendRuntimeComposition wires runtime owners into app, startup, ws, and shutdown bundles", () => {
+test("createBackendRuntimeComposition wires runtime owners into app, startup, ws, and shutdown bundles", async () => {
 	const calls = [];
 	const backendDir = path.join("/tmp", "vpk-backend");
 	const projectRoot = path.join("/tmp", "vpk");
@@ -102,7 +102,11 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 		logger,
 		projectRoot,
 	}, {
-		browserWorkspaceManager: { owner: "browser-workspaces" },
+		browserWorkspaceManager: {
+			deleteWorkspace: createNamedFunction("deleteWorkspace", calls),
+			listWorkspaces: () => [],
+			owner: "browser-workspaces",
+		},
 		buildBackendAppDependencies: (input) => {
 			appDependencyInput = input;
 			return { dependencyToken: true };
@@ -211,7 +215,14 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 	assert.equal(appDependencyInput.runtime.logger, logger);
 
 	appDependencyInput.runtime.debugLog("runtime", "composed", { ok: true });
-	result.shutdownRuntime();
+	assert.deepEqual(result.shutdownSteps.map(({ name }) => name), [
+		"abort-runs",
+		"close-browser-workspaces",
+		"shutdown-rovo-pool",
+	]);
+	for (const shutdownStep of result.shutdownSteps) {
+		await shutdownStep.run();
+	}
 
 	assert.ok(calls.some((call) => call[0] === "shutdownRovoPool"));
 	assert.ok(calls.some((call) => {
