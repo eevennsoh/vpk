@@ -739,7 +739,7 @@ test("thread create rejects a hostile id on every path spelling Express routes t
 		}
 	});
 	assert.equal(dependencies.state.threads.size, 0);
-||||||| 5ab0d9105
+});
 
 test("an uploaded HTML or SVG file is served as a sandboxed download, an image inline", async () => {
 	const dependencies = createDependencies();
