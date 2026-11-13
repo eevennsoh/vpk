@@ -156,7 +156,7 @@ unattached `vpk-dev-*` tmux sessions on their discovered socket, old
 sustained-hot exact `/usr/local/bin/almd`, over-threshold `fseventsd` with
 the sudoers guard, and agent browsers that `control-vpk` recorded whose owner
 session is gone or that sat unused for 2 hours (through
-`control-vpk cleanup --orphaned-browsers`; unrecorded browsers are never
+`pnpm control-vpk cleanup --orphaned-browsers`; unrecorded browsers are never
 touched).
 
 It never targets `artifacts/**`, active build caches, attached tmux sessions,

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
+import { openBoardWithSessions, revealCollapsedAgentSessionColumn } from "@/tests/helpers/board";
 
 const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");
 const JIRA_TEAM_EU26_EMBEDDED_URL = appUrl("/preview/projects/jira-team-eu26?embedded=1");
@@ -62,32 +63,7 @@ for (const width of [1440, 1024]) {
 }
 
 async function openBoard(page: Page): Promise<void> {
-	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "networkidle" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
-		timeout: 15_000,
-	});
-	const session = page.locator("[data-agent-session-column]")
-		.getByTestId("agent-session-row-lw-scope-thread");
-	const options = page.getByRole("button", { name: "Unlink sessions column options" });
-	if (!await session.isVisible()) {
-		const directExpand = page.getByRole("button", { name: "Expand Unlink sessions column" });
-		if (await directExpand.isVisible()) {
-			await directExpand.click();
-			await expect(session).toBeVisible();
-			return;
-		}
-		if (await page.locator("[data-agent-session-column-hit-area]").count() > 0) {
-			await revealCollapsedAgentSessionColumn(page);
-		}
-		await options.click();
-		const pin = page.getByRole("menuitem", { name: "Pin", exact: true });
-		if (await pin.isVisible()) {
-			await pin.click();
-			await page.getByRole("button", { name: "Unlink sessions column options" }).click();
-		}
-		await page.getByRole("menuitem", { name: "Expand" }).click();
-	}
-	await expect(session).toBeVisible();
+	await openBoardWithSessions(page, JIRA_TEAM_EU26_URL, { waitUntil: "networkidle" });
 }
 
 test("untracked card hover keeps its border inset and aligns its trailing slot with the header", async ({ page }) => {
@@ -152,19 +128,6 @@ test("collapsed status glyphs cover the resting dot before returning to it", asy
 		await expect(notch).toHaveAccessibleName(new RegExp(accessibleState, "u"));
 	}
 });
-
-async function revealCollapsedAgentSessionColumn(page: Page): Promise<void> {
-	const hitArea = page.locator("[data-agent-session-column-hit-area]");
-	const hitAreaBox = await hitArea.boundingBox();
-	expect(hitAreaBox).not.toBeNull();
-	if (!hitAreaBox) return;
-
-	await page.mouse.move(
-		hitAreaBox.x + hitAreaBox.width / 2,
-		hitAreaBox.y + hitAreaBox.height / 2,
-	);
-	await expect(hitArea).toHaveCount(0);
-}
 
 async function openHeightComparisonBoard(page: Page): Promise<void> {
 	await openBoard(page);

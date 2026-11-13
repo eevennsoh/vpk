@@ -576,6 +576,10 @@ function collectForbiddenImportViolationsFromSource(source, filePath) {
 	return violations;
 }
 
+function isPlaywrightSource(filePath) {
+	return /^tests\//u.test(filePath.replaceAll("\\", "/"));
+}
+
 function collectSourceGuardrailViolationsFromSource(source, filePath) {
 	const violations = [];
 	const occurrenceCounts = new Map();
@@ -618,6 +622,15 @@ function collectSourceGuardrailViolationsFromSource(source, filePath) {
 			addViolation(violations, occurrenceCounts, {
 				...baseViolation,
 				type: "legacy-react-context",
+			});
+		}
+
+		// A fixed sleep in a browser spec passes or fails with machine speed; wait on the
+		// observable condition instead (expect(...).toBeVisible(), toHaveAttribute, waitForResponse).
+		if (isPlaywrightSource(filePath) && /\.waitForTimeout\s*\(/u.test(line)) {
+			addViolation(violations, occurrenceCounts, {
+				...baseViolation,
+				type: "playwright-fixed-wait",
 			});
 		}
 

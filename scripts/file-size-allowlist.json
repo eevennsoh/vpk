@@ -71,8 +71,7 @@
 		"components/website/demos/visual/shaders/ascii.tsx": 1697,
 		"lib/json-render/catalog.ts": 1172,
 		"lib/json-render/registry.tsx": 2412,
-		"lib/rovo-ui-messages.ts": 1112,
-		"tests/projects/butter-v1-gallery.spec.ts": 1362
+		"lib/rovo-ui-messages.ts": 1112
 	},
 	"maxLines": {
 		"backend/server.js": 500

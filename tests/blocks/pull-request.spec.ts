@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
-test("the failed PR flyout offers Fix PR beside Review", async ({ page }) => {
+test("the failed PR flyout offers Fix PR beside Review", { tag: "@smoke" }, async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/pull-request"));
 	await page.getByRole("button", { name: "Flyout", exact: true }).click();
 	await page.getByRole("button", { name: "Failed", exact: true }).click();

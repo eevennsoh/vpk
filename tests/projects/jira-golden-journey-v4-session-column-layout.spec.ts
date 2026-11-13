@@ -1,26 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
+import { openBoardWithSessions, revealCollapsedAgentSessionColumn } from "@/tests/helpers/board";
 
 const JIRA_GOLDEN_JOURNEY_V4_URL = appUrl("/jira-golden-journey-v4");
 const JIRA_GOLDEN_JOURNEY_V4_EMBEDDED_URL = appUrl("/preview/projects/jira-golden-journey-v4?embedded=1");
 
 async function openBoard(page: Page): Promise<void> {
-	await page.goto(JIRA_GOLDEN_JOURNEY_V4_URL, { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
-		timeout: 15_000,
-	});
-	const expandUntracked = page.getByRole("button", { name: "Unlink sessions column options" });
-	if (await expandUntracked.isVisible()) {
-		await revealCollapsedAgentSessionColumn(page);
-		await expandUntracked.click();
-		await page.getByRole("menuitem", { name: "Pin" }).click();
-		await page.getByRole("button", { name: "Unlink sessions column options" }).click();
-		await page.getByRole("menuitem", { name: "Expand" }).click();
-	}
-	await expect(
-		page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread"),
-	).toBeVisible();
+	await openBoardWithSessions(page, JIRA_GOLDEN_JOURNEY_V4_URL);
 }
 
 async function openCollapsedBoard(page: Page): Promise<void> {
@@ -29,19 +16,6 @@ async function openCollapsedBoard(page: Page): Promise<void> {
 		timeout: 15_000,
 	});
 	await expect(page.getByRole("button", { name: "Unlink sessions column options" })).toBeVisible();
-}
-
-async function revealCollapsedAgentSessionColumn(page: Page): Promise<void> {
-	const hitArea = page.locator("[data-agent-session-column-hit-area]");
-	const hitAreaBox = await hitArea.boundingBox();
-	expect(hitAreaBox).not.toBeNull();
-	if (!hitAreaBox) return;
-
-	await page.mouse.move(
-		hitAreaBox.x + hitAreaBox.width / 2,
-		hitAreaBox.y + hitAreaBox.height / 2,
-	);
-	await expect(hitArea).toHaveCount(0);
 }
 
 test("compact timeline stays aligned during inner and board scrolling", async ({ page }) => {

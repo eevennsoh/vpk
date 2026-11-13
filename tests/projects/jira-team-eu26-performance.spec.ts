@@ -13,6 +13,7 @@ import {
 } from "@/tests/helpers/interaction-performance";
 import { appUrl } from "@/tests/helpers/origin";
 import { withDesignVariants } from "@/tests/helpers/design-variants";
+import { openJiraBoard } from "@/tests/helpers/board";
 
 const eventTimingDeliveryTimeoutMs = 1_000;
 const journeyDeliveryTimeoutMs = 30_000;
@@ -43,8 +44,7 @@ function localCheckout() {
 }
 
 async function openBoard(page: Page, route = "/jira-team-eu26") {
-	await page.goto(appUrl(route), { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 30_000 });
+	await openJiraBoard(page, appUrl(route), { timeout: 30_000 });
 	await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(4);
 }
 

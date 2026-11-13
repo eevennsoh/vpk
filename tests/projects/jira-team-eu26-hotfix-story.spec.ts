@@ -1,12 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
+import { openJiraBoard } from "@/tests/helpers/board";
 
 const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");
 
 async function openBoard(page: Page): Promise<void> {
-	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	await openJiraBoard(page, JIRA_TEAM_EU26_URL, { timeout: 5_000 });
 }
 
 test("finished agent sessions show their Cloud metadata in the assignment flyout", async ({ page }) => {
