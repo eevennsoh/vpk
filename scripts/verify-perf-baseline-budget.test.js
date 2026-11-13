@@ -7,6 +7,7 @@ const test = require("node:test");
 const {
 	DEFAULT_BUILD_DURATION_BUDGET,
 	DEFAULT_ROUTE_BUDGETS,
+	FIXED_ROUTE_IDS,
 	evaluateBuildDurationBudget,
 	evaluatePerfBaselineBudget,
 	evaluatePerfBaselineWarnings,
@@ -111,6 +112,19 @@ test("evaluatePerfBaselineBudget requires every budgeted route to be measured", 
 			type: "missing-route",
 		},
 	]);
+});
+
+test("every route measured by default has a budget", () => {
+	assert.deepEqual(FIXED_ROUTE_IDS.filter((routeId) => !Object.hasOwn(DEFAULT_ROUTE_BUDGETS, routeId)), []);
+});
+
+test("evaluatePerfBaselineBudget fails a measured default route that has no budget", () => {
+	const { eu26: _eu26, ...budgetsWithoutEu26 } = DEFAULT_ROUTE_BUDGETS;
+	const failures = evaluatePerfBaselineBudget(createPassingBaseline(), budgetsWithoutEu26);
+	assert.deepEqual(failures, [{ routeId: "eu26", type: "unbudgeted-route" }]);
+	assert.equal(formatFailure(failures[0]), "eu26: route is measured by default but has no budget in DEFAULT_ROUTE_BUDGETS.");
+	const custom = { routes: [...createPassingBaseline().routes, createRoute("one-off")] };
+	assert.deepEqual(evaluatePerfBaselineBudget(custom), [], "a --route measured on demand needs no budget");
 });
 
 test("evaluatePerfBaselineBudget reports missing metrics", () => {
