@@ -37,6 +37,18 @@ const { browserSessionId } = require("./lib/browser.js");
 const { readDesignVariantIds, routeWithDesignVariants } = require("./lib/capture.js");
 const { withTempDir } = require("./lib/test-fixtures.js");
 
+test("the control-vpk package script runs this CLI, so `pnpm control-vpk` works without it on PATH", () => {
+	const repoRoot = path.resolve(__dirname, "../../../..");
+	const script = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")).scripts["control-vpk"];
+	const [command, entry] = script.split(" ");
+	assert.equal(command, "node");
+	assert.equal(path.resolve(repoRoot, entry), CONTROL_VPK);
+	// `session` is read-only and needs no stack, so it proves the script resolves and runs.
+	const result = spawnSync(process.execPath, [path.resolve(repoRoot, entry), "session"], { cwd: repoRoot, encoding: "utf8" });
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stdout.trim(), /^vpk-verify-[0-9a-f]+-[0-9a-f]+$/u);
+});
+
 const TARGET_REPO_MAP = {
 	appPages: { pages: [{ routePath: "/jira-team-eu26" }] },
 	components: {

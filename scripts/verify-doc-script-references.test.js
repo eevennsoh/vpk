@@ -308,3 +308,43 @@ test("verifyDocumentedScripts fails on a backticked repo path that no longer exi
 		rmSync(cwd, { recursive: true, force: true });
 	}
 });
+
+test("verifyDocumentedScripts flags a repo CLI named bare in command position", () => {
+	const { spawnSync } = require("node:child_process");
+	const { chmodSync } = require("node:fs");
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-doc-cli-"));
+	try {
+		writeFileSync(path.join(cwd, "package.json"), JSON.stringify({ scripts: { "control-vpk": "node tools/control-vpk" } }));
+		mkdirSync(path.join(cwd, "tools"), { recursive: true });
+		writeFileSync(path.join(cwd, "tools", "control-vpk"), "#!/usr/bin/env node\n");
+		chmodSync(path.join(cwd, "tools", "control-vpk"), 0o755);
+		writeFileSync(path.join(cwd, "tools", "other-cli"), "#!/bin/sh\n");
+		chmodSync(path.join(cwd, "tools", "other-cli"), 0o755);
+		writeFileSync(path.join(cwd, "docs.md"), [
+			"Run `control-vpk doctor` first.",
+			"Then `pnpm control-vpk url`, `pnpm -s control-vpk session`, or `tools/control-vpk launch`.",
+			"Set `ORIGIN=\"$(control-vpk url)\"`; the tool is called `control-vpk`.",
+			"```bash",
+			"pnpm control-vpk open-target /x",
+			"control-vpk browser snapshot -i",
+			"```",
+			"Also `other-cli run`.",
+		].join("\n"));
+		for (const args of [["init", "-q"], ["add", "-A"]]) {
+			assert.equal(spawnSync("git", args, { cwd }).status, 0);
+		}
+
+		const result = verifyDocumentedScripts({ cwd, files: ["docs.md"] });
+		assert.deepEqual(
+			result.failures.map(({ line, message }) => `${line} ${message}`),
+			[
+				"1 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`.",
+				"3 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`.",
+				"6 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`.",
+				"8 Documented command `other-cli …` is not on PATH; call it by its repo path or add a package script.",
+			],
+		);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});

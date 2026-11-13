@@ -19,16 +19,16 @@ Jira Golden Journey v2 lets a user move a guest-checkout work item through Intak
 
 Preconditions:
 
-- `control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `control-vpk url`.
-- Set `EVIDENCE="$(control-vpk evidence-dir)/jira-golden-journey-v2"` and create it before capture.
+- `pnpm control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `pnpm control-vpk url`.
+- Set `EVIDENCE="$(pnpm control-vpk evidence-dir)/jira-golden-journey-v2"` and create it before capture.
 
-- **Open and identify.** Start directly with `control-vpk open-target /jira-golden-journey-v2 --headed` and wait for text `Jira Golden Journey v2` before taking an interactive snapshot. Find the chapter control and region `Add guest checkout to the storefront` by role and name.
+- **Open and identify.** Start directly with `pnpm control-vpk open-target /jira-golden-journey-v2 --headed` and wait for text `Jira Golden Journey v2` before taking an interactive snapshot. Find the chapter control and region `Add guest checkout to the storefront` by role and name.
 - **Prove keyboard chapters.** Focus `Intake`, press Tab, and confirm focus reaches `Plan`; press Enter and confirm Plan is pressed. This proves chapter focus order and activation without pointer coordinates.
-- **Prove Details and Activity.** Run `control-vpk browser find role button click --name Activity`, then snapshot and confirm activity actions are present. Click `Details`, snapshot again, and confirm the `Work item details` region. Reopen Activity for the next step. Do not use a text wait as the proof; browser text waits can miss content that the accessibility snapshot exposes.
+- **Prove Details and Activity.** Run `pnpm control-vpk browser find role button click --name Activity`, then snapshot and confirm activity actions are present. Click `Details`, snapshot again, and confirm the `Work item details` region. Reopen Activity for the next step. Do not use a text wait as the proof; browser text waits can miss content that the accessibility snapshot exposes.
 - **Prove guided PR detail.** Choose `Review`. The in-app region `Pull request #1847: Implement guest checkout without account creation` becomes visible. Capture it; do not follow an external GitHub link as substitute proof.
-- **Cover narrow reduced motion and theme.** Run `control-vpk browser set viewport 390 844` and `control-vpk browser set media light reduced-motion`. The same `Open a software delivery story chapter` group stays visible (v2 has no compact replacement). Cycle the current theme once through the named gallery theme button, capture the resulting button name and `data-color-mode`, then restore the original button name through that same UI control. Do not write storage or theme attributes.
-- **Proof and accessibility.** Run `control-vpk browser snapshot -i --compact --depth 9 > "$EVIDENCE/review-narrow.aria.txt"`, `control-vpk browser screenshot "$EVIDENCE/review-narrow.png"`, and `control-vpk browser a11y --selector body > "$EVIDENCE/a11y.txt"`.
-- **Reset and cleanup.** Run `control-vpk browser find role button click --name Reset`. Reset re-runs the *current* chapter (Review stays Review). Run `control-vpk cleanup` and keep all proof files.
+- **Cover narrow reduced motion and theme.** Run `pnpm control-vpk browser set viewport 390 844` and `pnpm control-vpk browser set media light reduced-motion`. The same `Open a software delivery story chapter` group stays visible (v2 has no compact replacement). Cycle the current theme once through the named gallery theme button, capture the resulting button name and `data-color-mode`, then restore the original button name through that same UI control. Do not write storage or theme attributes.
+- **Proof and accessibility.** Run `pnpm control-vpk browser snapshot -i --compact --depth 9 > "$EVIDENCE/review-narrow.aria.txt"`, `pnpm control-vpk browser screenshot "$EVIDENCE/review-narrow.png"`, and `pnpm control-vpk browser a11y --selector body > "$EVIDENCE/a11y.txt"`.
+- **Reset and cleanup.** Run `pnpm control-vpk browser find role button click --name Reset`. Reset re-runs the *current* chapter (Review stays Review). Run `pnpm control-vpk cleanup` and keep all proof files.
 
 ## Gotchas
 
