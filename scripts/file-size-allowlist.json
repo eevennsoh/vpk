@@ -11,7 +11,7 @@
 		"app/tailwind-theme.css": 1011,
 		"backend/chat/rovo-stream.test.js": 1511,
 		"backend/lib/agents-rfp-demo-state.js": 1589,
-		"backend/lib/browser-workspace-manager.js": 1664,
+		"backend/lib/browser-workspace-manager.js": 1541,
 		"backend/lib/genui-google-tool-handler.js": 1199,
 		"backend/lib/genui-tool-observation-structured-fallback.js": 1376,
 		"backend/lib/openai-realtime.js": 1325,

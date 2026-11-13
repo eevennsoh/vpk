@@ -220,6 +220,32 @@ test("browser workspaces router maps missing workspaces to 404", async () => {
 	});
 });
 
+test("browser workspaces router answers a crashed workspace with 404 and the cap with 503", async () => {
+	const lifecycle = require("../lib/browser-workspace-lifecycle");
+	await withServer(createDependencies({
+		browserWorkspaceManager: createManager({
+			createWorkspace: async () => {
+				throw new lifecycle.BrowserWorkspaceLimitError(4);
+			},
+			getWorkspaceState: async (workspaceId) => {
+				throw new lifecycle.BrowserWorkspaceUnavailableError(workspaceId, lifecycle.BROWSER_WORKSPACE_ERROR_CODES.CRASHED, "exited");
+			},
+		}),
+		isBrowserWorkspaceNotFoundError: lifecycle.isBrowserWorkspaceNotFoundError,
+	}), async (baseUrl) => {
+		const headers = { "x-runtime-admin": "ok", "content-type": "application/json" };
+		const crashed = await fetch(`${baseUrl}/api/browser-workspaces/w1`, { headers });
+		assert.equal(crashed.status, 404);
+		assert.deepEqual(await crashed.json(), { error: "Browser workspace crashed: w1 (exited)" });
+
+		const capped = await fetch(`${baseUrl}/api/browser-workspaces`, { method: "POST", headers, body: "{}" });
+		assert.equal(capped.status, 503);
+		assert.deepEqual(await capped.json(), {
+			error: "Browser workspace limit reached: 4 workspaces are open; close one before creating another.",
+		});
+	});
+});
+
 test("browser workspaces router validates tab and preview-session inputs", async () => {
 	await withServer(createDependencies(), async (baseUrl) => {
 		const invalidTabResponse = await fetch(`${baseUrl}/api/browser-workspaces/workspace-1/tabs/not-a-number/activate`, {
