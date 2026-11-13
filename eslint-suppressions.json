@@ -2013,11 +2013,6 @@
       "count": 1
     }
   },
-  "components/projects/jira-team-eu26-end/finale/components/finale-overlay.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/projects/jira-team-eu26-end/finale/jira-team-eu26-end-finale.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -3069,9 +3064,6 @@
     }
   },
   "components/ui-custom/rovo-generation-components.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }

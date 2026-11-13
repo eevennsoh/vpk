@@ -153,3 +153,31 @@ test("a merge commit's own changes are not proven by patch equivalence (git cher
 	assert.equal(derived.evidence.landed, false);
 	assert.equal(derived.status, "pushed");
 });
+
+test("a branch that merged main into itself and adds nothing more is landed by content", async (t) => {
+	const { clone, commit, git, sh } = setup(t);
+	sh(clone, "checkout", "--quiet", "-b", "feature");
+	commit("feature.txt", "work");
+	sh(clone, "push", "--quiet", "-u", "origin", "feature");
+	// main moves on, the feature branch merges it in, then main takes the feature's change.
+	sh(clone, "checkout", "--quiet", "main");
+	commit("main.txt", "other work");
+	sh(clone, "push", "--quiet", "origin", "main");
+	sh(clone, "checkout", "--quiet", "feature");
+	sh(clone, "merge", "--quiet", "--no-ff", "-m", "merge main", "main");
+	sh(clone, "push", "--quiet", "origin", "feature");
+	sh(clone, "checkout", "--quiet", "main");
+	fs.writeFileSync(path.join(clone, "feature.txt"), "work");
+	sh(clone, "add", "feature.txt");
+	sh(clone, "commit", "--quiet", "-m", "land the feature by hand");
+	sh(clone, "push", "--quiet", "origin", "main");
+	sh(clone, "fetch", "--quiet", "origin");
+	sh(clone, "checkout", "--quiet", "feature");
+
+	const result = await facts(git, { branch: "feature", worktree: { path: clone, branch: "feature" } });
+	assert.equal(result.inOriginDefault, false);
+	assert.equal(result.patchEquivalent, true);
+	const derived = deriveBranchLanding(result);
+	assert.equal(derived.evidence.proof, "patch-equivalent");
+	assert.equal(derived.status, "main-synced");
+});
