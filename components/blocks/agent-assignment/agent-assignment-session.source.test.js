@@ -48,7 +48,7 @@ test("session menu folds teammate sessions into one flat list after own sessions
 		assert.equal(view.tabOrder().some((name) => name.includes("team-first")), false);
 		assert.equal(trigger.textContent.includes("sessions ·"), false);
 		assert.equal(trigger.textContent.includes("2 sessions"), false);
-		assert.equal(view.container.querySelectorAll("hr").length, 1);
+		assert.equal(view.container.querySelectorAll('[data-slot="dropdown-menu-separator"]').length, 1);
 		await view.press(trigger, "Enter");
 		assert.equal(trigger.getAttribute("aria-expanded"), "true");
 		assert.equal(trigger.getAttribute("aria-label"), "2 other sessions");
@@ -291,7 +291,7 @@ test("Default uses the activity row and long session cards; Simple keeps the fac
 		/moreMenuOpenRef\.current[\s\S]*reason === "outside-press"[\s\S]*reason === "trigger-hover"/u,
 	);
 	assert.match(source, /onMoreMenuOpenChange=\{\(open\) => \{\s*moreMenuOpenRef\.current = open;/u);
-	assert.match(sessionMenu, /className=\{cn\("flex w-full flex-col gap-1 outline-none", dropdownStyles\.padding\.compact\)\}/u);
+	assert.match(sessionMenu, /className=\{cn\("flex w-full flex-col gap-1 outline-none", dropdownStyles\.padding\)\}/u);
 	assert.match(sessionMenu, /className="flex w-full flex-col gap-0"/u);
 	assert.match(mapper, /const invokedBy = agent\.invokedBy;/u);
 	assert.match(mapper, /\.\.\.\(invokedBy \? \{ invokedBy \} : \{\}\)/u);

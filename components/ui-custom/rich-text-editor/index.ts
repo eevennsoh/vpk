@@ -20,7 +20,6 @@ export {
 } from "./composer-extensions";
 export { getMentionNodeAttrs, getDismissedAutoTagRanges, clearDismissedAutoTags, RICH_TEXT_OBJECT_REPLACEMENT } from "./extensions";
 export {
-	RichTextCommandMenuSearchField,
 	RichTextSuggestionEmptyState,
 	RichTextSuggestionMenu,
 	SLASH_COMMANDS,
@@ -31,7 +30,6 @@ export {
 	getSuggestionOverflowFooterItem,
 	type RichTextCommandItem,
 	type SuggestionOverflowFooterKind,
-	type RichTextCommandMenuSearchFieldProps,
 	type RichTextMentionMenuCategory,
 	type RichTextSlashAction,
 	type RichTextSuggestionMenuItem,
@@ -71,3 +69,5 @@ export type {
 	RichTextSuggestionVariantConfig,
 	RichTextSuggestionRowVariant,
 } from "./types";
+
+export { DropdownMenuSearchField as RichTextCommandMenuSearchField, type DropdownMenuSearchFieldProps as RichTextCommandMenuSearchFieldProps } from "@/components/ui/dropdown-menu";

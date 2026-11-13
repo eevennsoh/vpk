@@ -24,7 +24,7 @@ function ButterPicker({ sessions = [] }: Readonly<{ sessions?: readonly AgentSes
 	const [selected, setSelected] = useState<readonly string[]>([]);
 	return (
 		<ProjectButterInvocationProvider agents={safeAgents} enabled>
-			<div className="w-80 max-w-full overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-2xl">
+			<div className="w-80 max-w-full overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-2xl">
 				<ProjectButterAgentPickerContent selectedAgentIds={selected} sessions={sessions} onContinueSession={() => undefined} onAssign={(agent) => setSelected([agent.id])} onBrowseAgents={() => undefined} onCreateAgent={() => undefined} />
 			</div>
 		</ProjectButterInvocationProvider>

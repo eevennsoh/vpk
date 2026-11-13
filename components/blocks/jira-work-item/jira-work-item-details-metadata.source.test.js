@@ -110,7 +110,7 @@ test("details metadata searchable pickers reuse the editor palette shell and kee
 	);
 	assert.match(editorsSource, /<RichTextCommandMenuSearchField/u);
 	assert.match(editorsSource, /<RichTextSuggestionMenu/u);
-	assert.match(editorsSource, /className="rich-text-command-menu-borderless"/u);
+	assert.match(editorsSource, /className=\{cn\("rich-text-command-menu-borderless", className\)\}/u);
 	assert.match(editorsSource, /METADATA_PICKER_POPOVER_CLASS[\s\S]*bg-transparent[\s\S]*shadow-none/u);
 	assert.match(editorsSource, /METADATA_PICKER_POSITIONER_CLASS = "z-\[700\]"/u);
 	assert.match(editorsSource, /METADATA_PICKER_SIDE_OFFSET = 8/u);

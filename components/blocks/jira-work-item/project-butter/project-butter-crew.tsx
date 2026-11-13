@@ -17,7 +17,7 @@ import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/age
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { dropdownStyles } from "@/components/ui/dropdown-menu";
+import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { buildHorizontalScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
@@ -232,7 +232,7 @@ function ProjectButterCrewContent({ assignee, cloudAgentSelector = false, curren
 					]}
 					onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined}
 					onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined}
-				/></ProjectButterAgentPreviewBoundary> : picking && onStartAgent ? <ProjectButterInvocationProvider agents={pickerAgents} enabled><ProjectButterAgentPickerContent sessions={sessions} onContinueSession={(session) => { onOpenSession(session); changeOpen(false); }} onPreviewSession={onPreviewSession} submenuPositionerClassName="z-[700]" workspacePositionerClassName="z-[701]" onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} />{sessions.length > 0 ? <div className={cn("border-t border-border", dropdownStyles.padding.compact)}><Button className="w-full justify-start" onClick={() => setView("sessions")} type="button" variant="ghost">View agent sessions</Button></div> : null}</ProjectButterInvocationProvider> : <AgentSessionsMenu items={orderedSessions} overlayPositionerClassName="z-[700]" onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} />}
+				/></ProjectButterAgentPreviewBoundary> : picking && onStartAgent ? <ProjectButterInvocationProvider agents={pickerAgents} enabled><ProjectButterAgentPickerContent sessions={sessions} onContinueSession={(session) => { onOpenSession(session); changeOpen(false); }} onPreviewSession={onPreviewSession} submenuPositionerClassName="z-[700]" workspacePositionerClassName="z-[701]" onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} onAssign={(agent) => { onStartAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} />{sessions.length > 0 ? <div className={dropdownStyles.padding}><DropdownMenuSeparator /><Button className="w-full justify-start" onClick={() => setView("sessions")} type="button" variant="ghost">View agent sessions</Button></div> : null}</ProjectButterInvocationProvider> : <AgentSessionsMenu items={orderedSessions} overlayPositionerClassName="z-[700]" onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} />}
 			</PopoverContent>
 		</Popover>
 	);
