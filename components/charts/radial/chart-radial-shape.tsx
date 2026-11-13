@@ -39,7 +39,7 @@ export function ChartRadialShape() {
 										return (
 											<text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
 												<tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-4xl font-bold">
-													{chartData[0].visitors.toLocaleString()}
+													{chartData[0].visitors.toLocaleString("en-US")}
 												</tspan>
 												<tspan x={viewBox.cx} y={(viewBox.cy || 0) + 24} className="fill-muted-foreground">
 													Visitors
