@@ -33,7 +33,7 @@ const {
 const { looksLikeInabilityResponse } = require("../lib/inability-response-detector");
 const {
 	getPlanSession,
-	updatePlanSession,
+	dispatchPlanSessionEvent,
 	recordPlanWidgetEmission,
 	clearPlanSession,
 	shouldRestorePlanModeOnResume,
@@ -613,7 +613,7 @@ function buildChatSdkHandlerCompositionDependencies(dependencies = {}) {
 		takePausedRovoToolCall,
 		toImageWidgetErrorMessage,
 		toPreview,
-		updatePlanSession,
+		dispatchPlanSessionEvent,
 		withCanonicalPreviewBody,
 		withStudioAgentGatewayFallbackTimeout,
 		writeAIGatewayFinalOutputStream,

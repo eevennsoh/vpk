@@ -137,8 +137,8 @@ function resolveChatSdkRequestState({
 	logger = console,
 	mapUiMessagesToConversation,
 	pausedRovoToolCallStore,
+	dispatchPlanSessionEvent,
 	shouldRestorePlanModeOnResume,
-	updatePlanSession,
 } = {}) {
 	const rawDeferredToolResponse = envelope.rawDeferredToolResponse;
 	const deferredToolResponseToolCallId =
@@ -200,16 +200,13 @@ function resolveChatSdkRequestState({
 	}
 
 	if (resolvedPlanModeActive && envelope.threadId) {
-		const planSession = getPlanSession(envelope.threadId);
-		if (!planSession.isActive) {
-			updatePlanSession(envelope.threadId, { isActive: true, phase: "qa" });
-		}
+		const planSession = dispatchPlanSessionEvent(envelope.threadId, { type: "ENTER_PLAN_MODE" });
 		if (
 			envelope.approvalSubmission &&
 			shouldStartPlanExecutionFromApproval(envelope.approvalSubmission) &&
 			planSession.phase !== "execution"
 		) {
-			updatePlanSession(envelope.threadId, { phase: "execution" });
+			dispatchPlanSessionEvent(envelope.threadId, { type: "START_EXECUTION" });
 			logger.info?.("[PLAN-SESSION] Transitioned to execution phase on approval", {
 				threadId: envelope.threadId,
 				decision: envelope.approvalSubmission.decision,
@@ -222,8 +219,8 @@ function resolveChatSdkRequestState({
 		envelope.threadId
 	) {
 		const planSession = getPlanSession(envelope.threadId);
-		if (planSession.isActive) {
-			updatePlanSession(envelope.threadId, { phase: "execution" });
+		dispatchPlanSessionEvent(envelope.threadId, { type: "START_EXECUTION" });
+		if (planSession.phase !== "none") {
 			logger.info?.(
 				"[PLAN-SESSION] Transitioned to execution phase on auto-accept approval",
 				{
@@ -233,10 +230,6 @@ function resolveChatSdkRequestState({
 				}
 			);
 		} else {
-			updatePlanSession(envelope.threadId, {
-				isActive: true,
-				phase: "execution",
-			});
 			logger.info?.(
 				"[PLAN-SESSION] Created execution-phase session for auto-accept approval",
 				{
@@ -254,10 +247,9 @@ function resolveChatSdkRequestState({
 		const planSession = getPlanSession(envelope.threadId);
 		if (
 			deferredToolResponseToolCallId &&
-			planSession.isActive &&
-			planSession.phase !== "execution"
+			(planSession.phase === "qa" || planSession.phase === "plan")
 		) {
-			updatePlanSession(envelope.threadId, { phase: "execution" });
+			dispatchPlanSessionEvent(envelope.threadId, { type: "START_EXECUTION" });
 			logger.info?.(
 				"[PLAN-SESSION] Transitioned to execution phase on deferred tool acceptance",
 				{
@@ -266,12 +258,11 @@ function resolveChatSdkRequestState({
 					previousPhase: planSession.phase,
 				}
 			);
-		} else {
-			const shouldKeepExecutionSession =
-				planSession.isActive && planSession.phase === "execution";
-			if (!shouldKeepExecutionSession && envelope.latestVisibleUserMessage) {
-				clearPlanSession(envelope.threadId);
-			}
+		} else if (planSession.phase !== "execution" && envelope.latestVisibleUserMessage) {
+			// A new visible prompt outside plan mode ends a qa or plan session. An
+			// execution session is kept (a "continue" prompt resumes the build); the
+			// plan-session TTL bounds one that is never finished.
+			clearPlanSession(envelope.threadId);
 		}
 	}
 
@@ -282,8 +273,7 @@ function resolveChatSdkRequestState({
 		rawDeferredToolResponse &&
 			resolvedPlanModeActive &&
 			deferredToolResponseToolCallId &&
-			currentPlanSession?.isActive &&
-			currentPlanSession.phase === "plan" &&
+			currentPlanSession?.phase === "plan" &&
 			currentPlanSession.deferredToolCallId === deferredToolResponseToolCallId
 	);
 	const {
