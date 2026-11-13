@@ -3,6 +3,7 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const { getNonEmptyString } = require("./shared-utils");
+const { redactLogText, redactUrlForLog } = require("./log-redaction");
 
 const {
 	getEnvVars,
@@ -630,7 +631,7 @@ async function transcribeViaOpenAiCompatible({
 		console.info("[SPEECH-TRANSCRIPTION] Sending to OpenAI-compatible STT endpoint", {
 			language: getNonEmptyString(language),
 			model,
-			transcriptionUrl,
+			transcriptionUrl: redactUrlForLog(transcriptionUrl),
 		});
 
 		const response = await fetch(transcriptionUrl, {
@@ -644,7 +645,7 @@ async function transcribeViaOpenAiCompatible({
 			const errorText = await response.text();
 			throw createHttpError(
 				response.status,
-				getNonEmptyString(errorText) ||
+				redactLogText(getNonEmptyString(errorText) ?? "") ||
 					`OpenAI-compatible transcription failed: ${response.status}`,
 			);
 		}
@@ -712,7 +713,7 @@ async function transcribeViaGoogleGenerateContent({ audio, mimeType, model, sign
 		},
 	};
 
-	console.info(`[SPEECH-TRANSCRIPTION] Sending to ${model} via:`, generateContentUrl);
+	console.info(`[SPEECH-TRANSCRIPTION] Sending to ${model} via:`, redactUrlForLog(generateContentUrl));
 
 	const { signal: requestSignal, cleanup } = combineAbortSignals(
 		signal,
@@ -729,7 +730,7 @@ async function transcribeViaGoogleGenerateContent({ audio, mimeType, model, sign
 
 		if (!response.ok) {
 			const errorText = await response.text();
-			console.error("[SPEECH-TRANSCRIPTION] Gateway error:", response.status, errorText);
+			console.error("[SPEECH-TRANSCRIPTION] Gateway error:", response.status, redactLogText(errorText));
 			throw createHttpError(
 				response.status,
 				`Transcription failed: ${response.status}`,
@@ -839,9 +840,9 @@ async function transcribeAudio({
 					error:
 						error instanceof Error ? error.message : String(error ?? "Unknown error"),
 					fallbackModel: googleModel,
-					transcriptionUrl: buildOpenAiCompatibleTranscriptionUrl(
+					transcriptionUrl: redactUrlForLog(buildOpenAiCompatibleTranscriptionUrl(
 						sttEnvVars.OPENAI_COMPATIBLE_STT_BASE_URL,
-					),
+					)),
 				},
 			);
 

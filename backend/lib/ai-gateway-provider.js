@@ -10,6 +10,7 @@ const {
 	streamGoogleGatewayManualSse,
 } = require("./ai-gateway-helpers");
 const { getNonEmptyString } = require("./shared-utils");
+const { redactLogText } = require("./log-redaction");
 
 function normalizeMessages(messages) {
 	if (!Array.isArray(messages)) {
@@ -210,7 +211,7 @@ async function fetchOpenAiCompatibleCompletion({
 	if (!response.ok) {
 		const errorText = await response.text();
 		throw new Error(
-			`AI Gateway OpenAI-compatible request failed (${response.status}): ${describeGatewayCloudIdError(errorText).slice(0, 500)}`
+			`AI Gateway OpenAI-compatible request failed (${response.status}): ${redactLogText(describeGatewayCloudIdError(errorText)).slice(0, 500)}`
 		);
 	}
 
