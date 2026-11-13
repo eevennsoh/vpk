@@ -15,10 +15,25 @@ const fakeAgentBrowser = {
 	calls: [],
 	hang: new Set(),
 	kills: [],
+	waiters: [],
+	// Resolves once a command starting with `prefix` has been sent.
+	sent(prefix) {
+		if (this.calls.some((call) => call.startsWith(prefix))) return Promise.resolve();
+		return new Promise((resolve) => this.waiters.push({ prefix, resolve }));
+	},
+	reset() {
+		this.calls.length = 0;
+		this.kills.length = 0;
+		this.hang.clear();
+	},
 };
 childProcess.execFile = (file, args, options, callback) => {
 	const command = args.filter((arg, index) => !arg.startsWith("--") && args[index - 1] !== "--session").join(" ");
 	fakeAgentBrowser.calls.push(command);
+	for (const waiter of fakeAgentBrowser.waiters.filter(({ prefix }) => command.startsWith(prefix))) {
+		fakeAgentBrowser.waiters.splice(fakeAgentBrowser.waiters.indexOf(waiter), 1);
+		waiter.resolve();
+	}
 	const child = {
 		kill: (signal) => {
 			fakeAgentBrowser.kills.push({ command, signal });
@@ -73,26 +88,16 @@ function createFakeTimers() {
 	};
 }
 
+// Waits on a condition, turn by turn; the test's own timeout ends a wait that never comes
+// true (on main a hung command never settles), so the test fails instead of hanging.
 const flush = () => new Promise((resolve) => setImmediate(resolve));
-async function until(predicate, label) {
-	for (let attempt = 0; attempt < 200; attempt += 1) {
-		if (predicate()) return;
-		await flush();
-	}
-	assert.fail(`never happened: ${label}`);
+async function until(predicate) {
+	while (!predicate()) await flush();
 }
 
-// The outcome of a promise once pending work has run, without waiting on it forever (on
-// main a hung command never settles, and the test must fail, not hang).
-async function outcomeOf(promise) {
-	const outcome = { settled: false, error: null, value: undefined };
-	promise.then(
-		(value) => Object.assign(outcome, { settled: true, value }),
-		(error) => Object.assign(outcome, { settled: true, error }),
-	);
-	await until(() => outcome.settled, "the call settles").catch(() => {});
-	return outcome;
-}
+const outcomeOf = (promise) =>
+	promise.then((value) => ({ settled: true, error: null, value }), (error) => ({ settled: true, error, value: undefined }));
+const TEST_TIMEOUT = { timeout: 10_000 };
 
 function createManager(timers) {
 	return new BrowserWorkspaceManager({
@@ -125,9 +130,8 @@ test("each agent-browser command class has its own bound, longest for open", () 
 	assert.ok(AGENT_BROWSER_CALL_TIMEOUT_MS.open > AGENT_BROWSER_CALL_TIMEOUT_MS.default);
 });
 
-test("a close queued behind a command that never answers completes once the command's bound passes", async () => {
-	fakeAgentBrowser.hang.clear();
-	fakeAgentBrowser.calls.length = 0;
+test("a close queued behind a command that never answers completes once the command's bound passes", TEST_TIMEOUT, async () => {
+	fakeAgentBrowser.reset();
 	const timers = createFakeTimers();
 	const manager = createManager(timers);
 	const { workspaceId } = await manager.createWorkspace({ defaultUrl: "https://example.com" });
@@ -135,7 +139,7 @@ test("a close queued behind a command that never answers completes once the comm
 
 	fakeAgentBrowser.hang.add("click");
 	const click = manager.clickWorkspaceRef(workspaceId, "@e1");
-	await until(() => fakeAgentBrowser.calls.includes("click @e1"), "click sent");
+	await fakeAgentBrowser.sent("click @e1");
 	const closing = manager.deleteWorkspace(workspaceId);
 	assert.equal(workspace.getLifecycle().status, "closing");
 
@@ -154,10 +158,8 @@ test("a close queued behind a command that never answers completes once the comm
 	assert.equal(manager._workspaces.has(workspaceId), false);
 });
 
-test("a ready workspace whose command never answers crashes and releases its slot", async () => {
-	fakeAgentBrowser.hang.clear();
-	fakeAgentBrowser.calls.length = 0;
-	fakeAgentBrowser.kills.length = 0;
+test("a ready workspace whose command never answers crashes and releases its slot", TEST_TIMEOUT, async () => {
+	fakeAgentBrowser.reset();
 	const timers = createFakeTimers();
 	const manager = createManager(timers);
 	const { workspaceId } = await manager.createWorkspace({ defaultUrl: "https://example.com" });
@@ -166,7 +168,7 @@ test("a ready workspace whose command never answers crashes and releases its slo
 	fakeAgentBrowser.hang.add("click");
 	fakeAgentBrowser.hang.add("close");
 	const click = manager.clickWorkspaceRef(workspaceId, "@e1");
-	await until(() => fakeAgentBrowser.calls.includes("click @e1"), "click sent");
+	await fakeAgentBrowser.sent("click @e1");
 	timers.fire(AGENT_BROWSER_CALL_TIMEOUT_MS.default);
 	const clickOutcome = await outcomeOf(click);
 	assert.equal(isAgentBrowserCallTimeoutError(clickOutcome.error), true);
@@ -174,9 +176,9 @@ test("a ready workspace whose command never answers crashes and releases its slo
 	assert.equal(workspace.getUsage().status, "crashed", "a crashed workspace holds no slot");
 
 	// The release sends close, which hangs too, and is bounded as well.
-	await until(() => fakeAgentBrowser.calls.includes("close"), "release sends close");
+	await fakeAgentBrowser.sent("close");
 	timers.fire(AGENT_BROWSER_CALL_TIMEOUT_MS.close);
-	await until(() => timers.pending.size === 0, "no timer left");
+	await until(() => timers.pending.size === 0);
 
 	const later = await outcomeOf(manager.clickWorkspaceRef(workspaceId, "@e2"));
 	assert.equal(later.error?.code, "BROWSER_WORKSPACE_CRASHED");
@@ -184,22 +186,20 @@ test("a ready workspace whose command never answers crashes and releases its slo
 	assert.deepEqual(manager.listWorkspaces(), []);
 });
 
-test("a workspace whose first open never answers still sends close when it is released", async () => {
-	fakeAgentBrowser.hang.clear();
-	fakeAgentBrowser.calls.length = 0;
-	fakeAgentBrowser.kills.length = 0;
+test("a workspace whose first open never answers still sends close when it is released", TEST_TIMEOUT, async () => {
+	fakeAgentBrowser.reset();
 	const timers = createFakeTimers();
 	const manager = createManager(timers);
 
 	fakeAgentBrowser.hang.add("open");
 	const create = manager.createWorkspace({ defaultUrl: "https://example.com" });
-	await until(() => fakeAgentBrowser.calls.includes("open https://example.com"), "open sent");
+	await fakeAgentBrowser.sent("open https://example.com");
 	timers.fire(AGENT_BROWSER_CALL_TIMEOUT_MS.open);
 
 	const outcome = await outcomeOf(create);
 	assert.equal(isAgentBrowserCallTimeoutError(outcome.error), true);
 	assert.deepEqual(fakeAgentBrowser.kills, [{ command: "open https://example.com", signal: "SIGKILL" }]);
 	// open started a browser in the daemon before it stopped answering; the release closes it.
-	await until(() => fakeAgentBrowser.calls.includes("close"), "release sends close");
+	await fakeAgentBrowser.sent("close");
 	assert.deepEqual(manager.listWorkspaces(), []);
 });
