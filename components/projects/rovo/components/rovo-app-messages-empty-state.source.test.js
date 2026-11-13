@@ -113,7 +113,7 @@ const projectHeadingSource = `
 		const Page = surface === "studio" ? StudioPage : RovoPage;
 		const Demo = surface === "studio" ? StudioDemo : RovoDemo;
 		return <>
-			{host === "docs" ? <DocHero category="projects" importPath={surface} name={surface + " documentation"} /> : null}
+			{host === "docs" ? <DocHero category="projects" importReferences={[]} name={surface + " documentation"} /> : null}
 			{host === "standalone" ? <Page /> : <Demo />}
 		</>;
 	}

@@ -1495,12 +1495,12 @@
   },
   "components/blocks/pull-request-fix/pull-request-fix.test.js": {
     "no-restricted-syntax": {
-      "count": 110
+      "count": 109
     }
   },
   "components/blocks/pull-request-header/pull-request-header.test.js": {
     "no-restricted-syntax": {
-      "count": 218
+      "count": 217
     }
   },
   "components/blocks/pull-request-review/components/pull-request-review-verdict.tsx": {
@@ -1510,12 +1510,12 @@
   },
   "components/blocks/pull-request-review/pull-request-review.test.js": {
     "no-restricted-syntax": {
-      "count": 79
+      "count": 78
     }
   },
   "components/blocks/pull-request/pull-request.source.test.js": {
     "no-restricted-syntax": {
-      "count": 112
+      "count": 111
     }
   },
   "components/blocks/question-card/components/question-card.source.test.js": {
@@ -1628,7 +1628,7 @@
   },
   "components/blocks/smart-link/smart-link.source.test.js": {
     "no-restricted-syntax": {
-      "count": 161
+      "count": 160
     }
   },
   "components/blocks/sprint-board/column.tsx": {

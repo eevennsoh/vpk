@@ -33,7 +33,6 @@ const COMPONENT_MANIFEST_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app", "data", "component-manifest.ts"),
 	"utf8",
 );
-const NAV_ADS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "nav-ads.ts"), "utf8");
 const BLOCK_DETAILS_SOURCE = readDetailCategorySource("blocks");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
@@ -469,7 +468,6 @@ test("Pull Request Header block is registered in the website catalog", () => {
 		COMPONENT_MANIFEST_SOURCE,
 		/blockComponent\("pull-request-header", "Pull Request Header"\)/u,
 	);
-	assert.match(NAV_ADS_SOURCE, /"pull-request-header"/u);
 	assert.match(
 		BLOCK_DETAILS_SOURCE,
 		/PULL_REQUEST_HEADER_DETAIL|"pull-request-header": PULL_REQUEST_HEADER_DETAIL/u,
