@@ -68,6 +68,7 @@
 		"ports": "node scripts/show-worktree-ports.js",
 		"control-vpk": "node .agents/skills/vpk-verify/scripts/control-vpk",
 		"doctor": "node scripts/doctor.js",
+		"image-tools": "node scripts/image-tools.mjs",
 		"mem": "zsh .agents/skills/vpk-system-clean/scripts/doctor.sh",
 		"verify:lockfile": "node scripts/verify-pnpm-lockfile.js",
 		"verify:root-artifacts": "node scripts/verify-root-artifacts.js",
