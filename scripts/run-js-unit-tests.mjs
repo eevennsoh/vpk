@@ -1,4 +1,5 @@
 import { spawn as spawnChild, spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { availableParallelism } from "node:os";
@@ -30,6 +31,17 @@ const VM_MODULE_TEST_MARKERS = [
 ];
 const BATCH_TIMINGS = JSON.parse(readFileSync(new URL("./js-unit-test-timings.json", import.meta.url), "utf8")).batches;
 export const UNIT_SHARD_COUNT = 4;
+
+const requireCjs = createRequire(import.meta.url);
+const { UNIT_BATCH_MARKER_ENV, findMarkedProcesses } = requireCjs("./lib/test-process.js");
+// How long a batch's leftover processes get to finish exiting before they count as leaked.
+const LEAK_GRACE_MS = 2_000;
+const { acquireHeavyRunLock } = requireCjs("./lib/heavy-run-lock.js");
+const { pressureReasons, readMemoryState } = requireCjs("./lib/memory-pressure.js");
+// `--parallel auto`: at most this many workers, and one per this many GB of available memory
+// (a worker's batch runs node --test over a directory; 2 GB covers the largest measured).
+const AUTO_PARALLEL_CAP = 8;
+const AUTO_PARALLEL_GB_PER_WORKER = 2;
 
 const LEGACY_DRIFT_TEST_FILE_SET = new Set(LEGACY_DRIFT_TEST_FILES);
 const SKIPPED_TEST_FILE_SET = new Set(Object.keys(SKIPPED_TEST_FILES));
@@ -139,7 +151,7 @@ export function parseTestSelectionArgs(argv) {
 		if (arg === "--parallel" || arg.startsWith("--parallel=")) {
 			const value = arg === "--parallel" ? argv[++index] : arg.slice("--parallel=".length);
 			if (parallel !== undefined || !value) throw new Error("--parallel requires a single value: a positive integer or auto");
-			parallel = resolveParallel(value);
+			parallel = value === "auto" ? "auto" : resolveParallel(value);
 			continue;
 		}
 		// Run every batch even after one fails, so a caller sees all failing suites at once.
@@ -453,6 +465,47 @@ export function partitionTestBatches(batches, timings = BATCH_TIMINGS, count = U
 	return shards;
 }
 
+export function batchEnvironment(marker, env = process.env) {
+	return { ...env, [UNIT_BATCH_MARKER_ENV]: marker };
+}
+
+let leakCheckUnavailableReported = false;
+
+// Processes a finished batch left running: every descendant carries the batch's marker, even
+// one that detached or was orphaned. Waits up to LEAK_GRACE_MS for exiting ones, then kills (by
+// pid) and returns what is still alive. Returns [] when the process table is unreadable.
+export function collectLeakedProcesses(marker, {
+	find = findMarkedProcesses,
+	graceMs = LEAK_GRACE_MS,
+	kill = (pid) => process.kill(pid, "SIGKILL"),
+	now = () => Date.now(),
+	pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms),
+	warn = console.warn,
+} = {}) {
+	const deadline = now() + graceMs;
+	let leaked = find(marker);
+	while (leaked !== null && leaked.length > 0 && now() < deadline) {
+		pause(50);
+		leaked = find(marker);
+	}
+	if (leaked === null) {
+		if (!leakCheckUnavailableReported) warn("js-unit-tests: process-leak check unavailable here (cannot read the process table); CI runs it.");
+		leakCheckUnavailableReported = true;
+		return [];
+	}
+	for (const { pid } of leaked) {
+		try { kill(pid); } catch { /* exited meanwhile */ }
+	}
+	return leaked;
+}
+
+export function formatLeakedProcesses(id, leaked) {
+	return [
+		`js-unit-tests: batch ${id} left ${leaked.length} process(es) running after it exited (now killed). Clean up what a test starts, e.g. spawnInGroup from scripts/lib/test-process.js:`,
+		...leaked.map(({ pid, command }) => `  pid ${pid}: ${command}`),
+	].join("\n");
+}
+
 export function runTestFiles(testFiles, {
 	readFile = readFileSync,
 	spawn = spawnSync,
@@ -460,6 +513,7 @@ export function runTestFiles(testFiles, {
 	keepGoing = false,
 	log = console.log,
 	now = () => performance.now(),
+	leakCheck = collectLeakedProcesses,
 } = {}) {
 	const allBatches = buildTestFileBatches(testFiles, { readFile });
 	const batches = shard ? partitionTestBatches(allBatches)[shard - 1].batches : allBatches;
@@ -470,10 +524,14 @@ export function runTestFiles(testFiles, {
 		const id = batchIdentity(batch);
 		log(`js-unit-tests: batch ${id} (${batch.files.length} files, ${batch.reason})`);
 		const started = now();
+		const marker = randomUUID();
 		const result = spawn(process.execPath, [...batch.nodeArgs, "--test", ...batch.files], {
+			env: batchEnvironment(marker),
 			stdio: "inherit",
 		});
-		const batchStatus = result.status ?? 1;
+		const leaked = leakCheck(marker);
+		if (leaked.length > 0) log(formatLeakedProcesses(id, leaked));
+		const batchStatus = leaked.length > 0 ? (result.status || 1) : (result.status ?? 1);
 		if (status === 0) status = batchStatus;
 		const timing = { id, files: batch.files.length, seconds: Number(((now() - started) / 1000).toFixed(3)), status: batchStatus, signal: result.signal ?? null };
 		timings.push(timing);
@@ -491,9 +549,9 @@ const runningChildren = new Set();
 
 // One batch, output captured so concurrent batches print as whole blocks. Each batch runs
 // in its own process group so an interrupted run can stop everything it started.
-export function spawnCaptured(command, args) {
+export function spawnCaptured(command, args, { env = process.env } = {}) {
 	return new Promise((resolve) => {
-		const child = spawnChild(command, args, { detached: true, stdio: ["ignore", "pipe", "pipe"] });
+		const child = spawnChild(command, args, { detached: true, env, stdio: ["ignore", "pipe", "pipe"] });
 		runningChildren.add(child);
 		let output = "";
 		child.stdout.on("data", (chunk) => { output += chunk; });
@@ -518,8 +576,21 @@ export function testConcurrencyFor(parallel, cpus = availableParallelism()) {
 	return Math.max(1, Math.floor(cpus / parallel));
 }
 
-export function resolveParallel(value, cpus = availableParallelism()) {
-	if (value === "auto") return Math.max(1, Math.min(8, Math.floor(cpus / 2)));
+// `--parallel auto` from cores, available memory and memory pressure: half the cores, at most
+// one worker per AUTO_PARALLEL_GB_PER_WORKER of available memory, capped; one worker (serial)
+// under memory pressure. `note` says why when memory decided.
+export function autoParallel({ cpus = availableParallelism(), memory = readMemoryState() } = {}) {
+	const pressure = pressureReasons(memory);
+	if (pressure.length > 0) return { parallel: 1, note: `js-unit-tests: memory pressure (${pressure.join("; ")}): running batches one at a time` };
+	const byCpu = Math.max(1, Math.min(AUTO_PARALLEL_CAP, Math.floor(cpus / 2)));
+	if (memory.availableGb === null || memory.availableGb === undefined) return { parallel: byCpu, note: null };
+	const byMemory = Math.max(1, Math.floor(memory.availableGb / AUTO_PARALLEL_GB_PER_WORKER));
+	if (byMemory >= byCpu) return { parallel: byCpu, note: null };
+	return { parallel: byMemory, note: `js-unit-tests: --parallel auto: ${byMemory} worker(s) for ${memory.availableGb.toFixed(1)} GB available memory (${AUTO_PARALLEL_GB_PER_WORKER} GB per worker)` };
+}
+
+export function resolveParallel(value, cpus = availableParallelism(), memory = undefined) {
+	if (value === "auto") return autoParallel({ cpus, memory }).parallel;
 	const parsed = Number(value);
 	if (!Number.isInteger(parsed) || parsed < 1) throw new Error("--parallel requires a positive integer or auto");
 	return parsed;
@@ -537,6 +608,7 @@ export async function runTestFilesParallel(testFiles, {
 	log = console.log,
 	write = (text) => process.stdout.write(text),
 	now = () => performance.now(),
+	leakCheck = collectLeakedProcesses,
 } = {}) {
 	const allBatches = buildTestFileBatches(testFiles, { readFile });
 	const batches = shard ? partitionTestBatches(allBatches)[shard - 1].batches : allBatches;
@@ -551,8 +623,11 @@ export async function runTestFilesParallel(testFiles, {
 			const batch = queue.shift();
 			const id = batchIdentity(batch);
 			const started = now();
-			const result = await spawn(process.execPath, [...batch.nodeArgs, `--test-concurrency=${concurrency}`, "--test", ...batch.files]);
-			const batchStatus = result.status ?? 1;
+			const marker = randomUUID();
+			const result = await spawn(process.execPath, [...batch.nodeArgs, `--test-concurrency=${concurrency}`, "--test", ...batch.files], { env: batchEnvironment(marker) });
+			const leaked = leakCheck(marker);
+			if (leaked.length > 0) result.output = `${result.output ?? ""}${formatLeakedProcesses(id, leaked)}\n`;
+			const batchStatus = leaked.length > 0 ? (result.status || 1) : (result.status ?? 1);
 			if (status === 0) status = batchStatus;
 			const timing = { id, files: batch.files.length, seconds: Number(((now() - started) / 1000).toFixed(3)), status: batchStatus, signal: result.signal ?? null };
 			timings.push(timing);
@@ -626,9 +701,21 @@ async function main() {
 	}
 
 	const options = { keepGoing: selection.keepGoing, shard: selection.shard };
-	process.exitCode = selection.parallel
-		? (await runTestFilesParallel(testFiles, { ...options, parallel: selection.parallel })).status
-		: runTestFiles(testFiles, options).status;
+	let parallel = selection.parallel;
+	if (parallel === "auto") {
+		const auto = autoParallel();
+		if (auto.note) console.log(auto.note);
+		parallel = auto.parallel;
+	}
+	// Machine-wide turn for the heavy stage; a no-op in CI and inside check / ci:pr's own turn.
+	const lock = await acquireHeavyRunLock({ label: "unit tests" });
+	try {
+		process.exitCode = parallel
+			? (await runTestFilesParallel(testFiles, { ...options, parallel })).status
+			: runTestFiles(testFiles, options).status;
+	} finally {
+		lock.release();
+	}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

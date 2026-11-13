@@ -3,7 +3,7 @@
 // browser it touches lives in a namespace this test creates, and the registry is a temp dir.
 
 const assert = require("node:assert/strict");
-const { spawn, spawnSync } = require("node:child_process");
+const { spawnSync } = require("node:child_process");
 const { randomUUID } = require("node:crypto");
 const { mkdtempSync, readdirSync, rmSync } = require("node:fs");
 const { homedir, tmpdir } = require("node:os");
@@ -12,6 +12,7 @@ const test = require("node:test");
 
 const { resolveAgentBrowserBin } = require("./lib/browser.js");
 const { listBrowserRecords } = require("./lib/browser-registry.js");
+const { spawnInGroup } = require("../../../../scripts/lib/test-process.js");
 
 const CONTROL_VPK = join(__dirname, "control-vpk");
 const WAIT_LIMIT_MS = 20_000;
@@ -75,7 +76,7 @@ function startRecordedBrowser(t) {
 	// Short: the daemon socket path under the namespace must stay within 103 bytes.
 	const namespace = `vt-${randomUUID().slice(0, 6)}`;
 	const registry = mkdtempSync(join(tmpdir(), "control-vpk-registry-"));
-	const owner = spawn(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)"], { stdio: "ignore" });
+	const owner = spawnInGroup(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)"], { stdio: "ignore" }, { t });
 	const ownerExited = new Promise((resolve) => owner.once("exit", resolve));
 	const env = {
 		...process.env,
@@ -90,7 +91,6 @@ function startRecordedBrowser(t) {
 		for (const pid of state.browserPids) if (alive(pid)) process.kill(pid, "SIGCONT");
 		if (state.session) spawnSync(bin, ["--session", state.session, "close"], { env, stdio: "ignore", timeout: 15_000 });
 		for (const pid of state.browserPids) if (alive(pid)) process.kill(pid, "SIGKILL");
-		if (owner.exitCode === null && owner.signalCode === null) owner.kill("SIGKILL");
 		rmSync(registry, { recursive: true, force: true });
 		rmSync(join(homedir(), ".agent-browser/namespaces", namespace), { recursive: true, force: true });
 	});

@@ -1,5 +1,8 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { PRESSURE_LEVEL_MIN: LEVEL, PRESSURE_SWAP_USED_GB: SWAP } = require("./lib/memory-pressure.js");
+// Pressure fixtures follow the sweep's limits, so changing them there breaks no test.
+const OVER = SWAP + 13;
 
 const NODE_TEST_SOURCE = 'const test = require("node:test");';
 
@@ -372,18 +375,23 @@ test("runTestFiles invokes node:test once per batch", async () => {
 		},
 	});
 
-	assert.deepEqual(calls, [
+	assert.deepEqual(calls.map(({ args, command, options }) => ({ args, command, stdio: options.stdio })), [
 		{
 			command: process.execPath,
 			args: ["--import", ALIAS_HOOK_PATH, "--test", "backend/a.test.js", "backend/b.test.js"],
-			options: { stdio: "inherit" },
+			stdio: "inherit",
 		},
 		{
 			command: process.execPath,
 			args: ["--experimental-vm-modules", "--import", ALIAS_HOOK_PATH, "--test", "scripts/vm.test.js"],
-			options: { stdio: "inherit" },
+			stdio: "inherit",
 		},
 	]);
+	// Each batch carries its own leak-check marker on top of the runner's environment.
+	const markers = calls.map(({ options }) => options.env.VPK_UNIT_BATCH);
+	assert.ok(markers.every((marker) => /^[0-9a-f-]{36}$/u.test(marker)), "every batch has a marker");
+	assert.notEqual(markers[0], markers[1]);
+	assert.equal(calls[0].options.env.PATH, process.env.PATH);
 });
 
 test("a failing batch stops the run unless --keep-going, which still reports failure", async () => {
@@ -481,7 +489,7 @@ test("every shard CLI rejects a silent suite or a stale not-run list before runn
 	try {
 		mkdirSync(path.join(root, "components"));
 		mkdirSync(path.join(root, "lib"));
-		for (const file of ["run-js-unit-tests.mjs", "js-unit-test-timings.json", "verify-eslint-suppressions.js", "lib/register-alias-hook.mjs"]) {
+		for (const file of ["run-js-unit-tests.mjs", "js-unit-test-timings.json", "verify-eslint-suppressions.js", "lib/register-alias-hook.mjs", "lib/heavy-run-lock.js", "lib/memory-pressure.js", "lib/test-process.js"]) {
 			copyFileSync(path.join(__dirname, file), path.join(root, file === "run-js-unit-tests.mjs" ? "runner.mjs" : file));
 		}
 		writeFileSync(path.join(root, "js-unit-test-skipped.mjs"), "export const SKIPPED_TEST_FILES = {};\nexport const SKIPPED_TEST_PREFIXES = {};\n");
@@ -541,13 +549,14 @@ test("--parallel splits the CPUs between workers and stops starting batches afte
 	const { parseTestSelectionArgs, resolveParallel, runTestFilesParallel, testConcurrencyFor } = await import("./run-js-unit-tests.mjs");
 	assert.equal(testConcurrencyFor(4, 14), 3);
 	assert.equal(testConcurrencyFor(16, 8), 1);
-	assert.equal(resolveParallel("auto", 14), 7);
-	assert.equal(resolveParallel("auto", 32), 8);
-	assert.equal(resolveParallel("auto", 1), 1);
+	const roomy = { availableGb: 40, pressureLevel: 1, swapUsedGb: 2 };
+	assert.equal(resolveParallel("auto", 14, roomy), 7);
+	assert.equal(resolveParallel("auto", 32, roomy), 8);
+	assert.equal(resolveParallel("auto", 1, roomy), 1);
 	assert.equal(resolveParallel("3"), 3);
 	assert.throws(() => resolveParallel("0"), /positive integer or auto/u);
 	assert.equal(parseTestSelectionArgs(["--parallel", "2"]).parallel, 2);
-	assert.equal(parseTestSelectionArgs(["--parallel=auto"]).parallel > 0, true);
+	assert.equal(parseTestSelectionArgs(["--parallel=auto"]).parallel, "auto", "auto is sized when the run starts");
 	assert.throws(() => parseTestSelectionArgs(["--parallel"]), /--parallel requires/u);
 
 	const files = ["a/1.test.js", "b/1.test.js", "c/1.test.js", "d/1.test.js"];
@@ -567,4 +576,18 @@ test("--parallel splits the CPUs between workers and stops starting batches afte
 	const all = await run(true);
 	assert.equal(all.status, 1);
 	assert.equal(all.calls.length, 4);
+});
+
+test("--parallel auto sizes itself from cores and available memory, and runs serially under pressure", async () => {
+	const { autoParallel } = await import("./run-js-unit-tests.mjs");
+	assert.deepEqual(autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: 1, swapUsedGb: 2 } }), { parallel: 7, note: null });
+	const tight = autoParallel({ cpus: 14, memory: { availableGb: 6.4, pressureLevel: 1, swapUsedGb: 2 } });
+	assert.equal(tight.parallel, 3);
+	assert.match(tight.note, /3 worker\(s\) for 6\.4 GB available memory/u);
+	assert.equal(autoParallel({ cpus: 14, memory: { availableGb: 0.5, pressureLevel: 1, swapUsedGb: 2 } }).parallel, 1);
+	const swapping = autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: LEVEL - 1, swapUsedGb: OVER } });
+	assert.equal(swapping.parallel, 1);
+	assert.match(swapping.note, new RegExp(`memory pressure \\(swap in use is ${OVER} GB >= ${SWAP} GB\\): running batches one at a time`, "u"));
+	assert.equal(autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: LEVEL, swapUsedGb: 1 } }).parallel, 1);
+	assert.deepEqual(autoParallel({ cpus: 14, memory: { availableGb: null, pressureLevel: null, swapUsedGb: null } }), { parallel: 7, note: null });
 });
