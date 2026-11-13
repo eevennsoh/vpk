@@ -27,25 +27,19 @@ function floatingRovoButtonSurface(page: Page): Locator {
 	});
 }
 
+// Polls until the button has settled (the snap spring runs after a resize) and sits in the corner.
 async function expectAnchoredBottomRight(page: Page, surface: Locator) {
-	const box = await surface.boundingBox();
-	const viewport = page.viewportSize();
-
-	expect(box, "floating Rovo button should be rendered").not.toBeNull();
-	expect(viewport, "viewport size should be available").not.toBeNull();
-
-	if (!box || !viewport) {
-		return;
-	}
-
-	const distRight = viewport.width - (box.x + box.width);
-	const distBottom = viewport.height - (box.y + box.height);
-
-	expect(Math.abs(distRight - EDGE_GAP)).toBeLessThanOrEqual(TOLERANCE);
-	expect(Math.abs(distBottom - EDGE_GAP)).toBeLessThanOrEqual(TOLERANCE);
+	await expect.poll(async () => {
+		const box = await surface.boundingBox();
+		const viewport = page.viewportSize();
+		if (!box || !viewport) return Infinity;
+		const distRight = viewport.width - (box.x + box.width);
+		const distBottom = viewport.height - (box.y + box.height);
+		return Math.max(Math.abs(distRight - EDGE_GAP), Math.abs(distBottom - EDGE_GAP));
+	}, { message: "floating Rovo button anchored to the bottom-right corner" }).toBeLessThanOrEqual(TOLERANCE);
 }
 
-test.describe("Floating Rovo button default position", () => {
+test.describe("Floating Rovo button default position", { tag: "@smoke" }, () => {
 	test("anchors to the bottom-right corner on load", async ({ page }) => {
 		await openAgentConfig(page);
 
@@ -71,7 +65,6 @@ test.describe("Floating Rovo button default position", () => {
 			{ width: 1200, height: 800 },
 		]) {
 			await page.setViewportSize(size);
-			await page.waitForTimeout(400);
 			await expectAnchoredBottomRight(page, surface);
 		}
 	});
