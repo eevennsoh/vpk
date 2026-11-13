@@ -92,7 +92,8 @@ async function collectBranchFacts({ git, branch, worktree = null, defaultBranch,
 	const remoteRef = branch ? `refs/remotes/origin/${branch}` : null;
 
 	const [status, pushed, inOriginDefault, cherry] = await Promise.all([
-		worktree ? git(["-C", worktree.path, "status", "--porcelain=v1", "--untracked-files=all"]) : null,
+		// --no-optional-locks: status must not refresh (write) the worktree's index.
+		worktree ? git(["--no-optional-locks", "-C", worktree.path, "status", "--porcelain=v1", "--untracked-files=all"]) : null,
 		remoteRef ? git(["show-ref", "--verify", "--quiet", remoteRef]).then(exitAnswer) : false,
 		head ? git(["merge-base", "--is-ancestor", head, originDefault]).then(exitAnswer) : null,
 		head ? git(["cherry", originDefault, head]) : null,

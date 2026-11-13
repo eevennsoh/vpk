@@ -1,15 +1,28 @@
 #!/usr/bin/env node
 "use strict";
 
-// Every local branch and worktree with its landing status, and which ones vpk-git-clean
-// may remove. Read-only: it removes nothing (see scripts/lib/branch-facts.js). Removal,
-// and its process-ownership proof, stay with the vpk-git-clean skill.
+// Every local branch and worktree with its landing status, which worktrees are stale
+// (no branch activity and no process for --stale-days), and every index.lock with
+// whether a process holds it. A report: it removes nothing, with one exception behind
+// an explicit flag, --remove-stale-locks, which deletes an index.lock that no process
+// holds and that is older than --lock-min-age-minutes (never in the persistent main
+// checkout). Worktree and branch removal stay with the vpk-git-clean skill.
 //
-//   node scripts/clean-candidates.js [--fetch] [--json]
+//   node scripts/clean-candidates.js [--fetch] [--json] [--stale-days N]
+//     [--remove-stale-locks] [--lock-min-age-minutes N]
 
 const fs = require("node:fs");
+const path = require("node:path");
 
 const { deriveBranchLanding } = require("./lib/branch-landing");
+const { inspectIndexLocks, removeStaleIndexLocks } = require("./lib/index-locks");
+const { listProcessCwds, processesUnder } = require("./lib/process-holders");
+const {
+	DEFAULT_LOCK_MIN_AGE_MINUTES,
+	DEFAULT_STALE_DAYS,
+	MINUTE_MS,
+	deriveWorktreeStaleness,
+} = require("./lib/worktree-staleness");
 const {
 	collectBranchFacts,
 	createGit,
@@ -23,15 +36,55 @@ const {
 
 const CONCURRENCY = 8;
 
+function positiveNumber(value, flag) {
+	const number = Number(value);
+	if (!Number.isFinite(number) || number <= 0) throw new Error(`${flag} needs a positive number`);
+	return number;
+}
+
 function parseArgs(argv) {
-	const options = { fetch: false, json: false };
-	for (const arg of argv) {
+	const options = {
+		fetch: false,
+		json: false,
+		lockMinAgeMinutes: DEFAULT_LOCK_MIN_AGE_MINUTES,
+		removeStaleLocks: false,
+		staleDays: DEFAULT_STALE_DAYS,
+	};
+	for (let index = 0; index < argv.length; index += 1) {
+		const arg = argv[index];
 		if (arg === "--json") options.json = true;
 		else if (arg === "--fetch") options.fetch = true;
+		else if (arg === "--remove-stale-locks") options.removeStaleLocks = true;
+		else if (arg === "--stale-days") options.staleDays = positiveNumber(argv[++index], arg);
+		else if (arg === "--lock-min-age-minutes") options.lockMinAgeMinutes = positiveNumber(argv[++index], arg);
 		else if (arg === "--help" || arg === "-h") options.help = true;
 		else throw new Error(`unknown argument: ${arg}`);
 	}
 	return options;
+}
+
+function mtimeOrNull(file) {
+	try {
+		return fs.statSync(file).mtimeMs;
+	} catch {
+		return null;
+	}
+}
+
+// The newest of: the head commit, the worktree's HEAD reflog (commits, checkouts,
+// resets) and its index (staging, status refreshes by other tools). null when none reads.
+async function readWorktreeActivity(git, worktreePath) {
+	const [gitDirResult, commitTime] = await Promise.all([
+		git(["-C", worktreePath, "rev-parse", "--absolute-git-dir"]),
+		git(["-C", worktreePath, "log", "-1", "--format=%ct", "HEAD"]),
+	]);
+	const gitDir = gitDirResult.ok ? gitDirResult.stdout.trim() : null;
+	const times = [
+		commitTime.ok && commitTime.stdout.trim() ? Number(commitTime.stdout.trim()) * 1000 : null,
+		gitDir ? mtimeOrNull(path.join(gitDir, "logs", "HEAD")) : null,
+		gitDir ? mtimeOrNull(path.join(gitDir, "index")) : null,
+	].filter((time) => Number.isFinite(time));
+	return { gitDir, lastActivityMs: times.length ? Math.max(...times) : null };
 }
 
 async function mapLimit(items, limit, fn) {
@@ -60,7 +113,16 @@ function cleanBlockers({ derived, target, defaultBranch, currentPath, mainChecko
 	return blockers;
 }
 
-async function collectCleanCandidates({ cwd = process.cwd(), fetch = false, runCommand = createRunner({ timeoutMs: 15_000 }) } = {}) {
+async function collectCleanCandidates({
+	cwd = process.cwd(),
+	fetch = false,
+	lockMinAgeMinutes = DEFAULT_LOCK_MIN_AGE_MINUTES,
+	now = Date.now(),
+	processCwds: readProcessCwds = listProcessCwds,
+	removeStaleLocks = false,
+	runCommand = createRunner({ timeoutMs: 15_000 }),
+	staleDays = DEFAULT_STALE_DAYS,
+} = {}) {
 	const git = createGit(runCommand, cwd);
 	const defaultBranch = await resolveDefaultBranch(git);
 	if (fetch) await fetchDefault(runCommand, cwd, defaultBranch);
@@ -81,7 +143,8 @@ async function collectCleanCandidates({ cwd = process.cwd(), fetch = false, runC
 		...branches.map((branch) => ({ branch, worktree: live.find((entry) => entry.branch === branch) ?? null })),
 		...live.filter((entry) => !entry.branch).map((worktree) => ({ branch: null, worktree })),
 	];
-	const prsByBranch = await readPullRequests(runCommand, cwd, branches);
+	const [prsByBranch, processCwds] = await Promise.all([readPullRequests(runCommand, cwd, branches), readProcessCwds()]);
+	const mainCheckoutPath = worktrees[0]?.path;
 	const results = await mapLimit(targets, CONCURRENCY, async (target) => {
 		const prs = target.branch === null ? [] : prsByBranch === null ? null : prsByBranch.get(target.branch) ?? [];
 		const facts = await collectBranchFacts({
@@ -93,8 +156,8 @@ async function collectCleanCandidates({ cwd = process.cwd(), fetch = false, runC
 			localBranchExists: target.branch !== null,
 		});
 		const derived = deriveBranchLanding(facts);
-		const blockers = cleanBlockers({ derived, target, defaultBranch, currentPath: top, mainCheckoutPath: worktrees[0]?.path });
-		return {
+		const blockers = cleanBlockers({ derived, target, defaultBranch, currentPath: top, mainCheckoutPath });
+		const entry = {
 			branch: target.branch,
 			worktree: target.worktree?.path ?? null,
 			status: derived.status,
@@ -103,13 +166,45 @@ async function collectCleanCandidates({ cwd = process.cwd(), fetch = false, runC
 			cleanable: blockers.length === 0,
 			blockers,
 		};
+		if (target.worktree) {
+			const activity = await readWorktreeActivity(git, target.worktree.path);
+			entry.gitDir = activity.gitDir;
+			entry.staleness = deriveWorktreeStaleness({
+				lastActivityMs: activity.lastActivityMs,
+				now,
+				staleDays,
+				processes: processesUnder(processCwds, target.worktree.path, { exclude: [process.pid] })?.map(({ pid, command }) => ({ pid, command })) ?? null,
+				blockers,
+			});
+		}
+		return entry;
 	});
+
+	const lockEntries = results.filter((entry) => entry.gitDir).map((entry) => ({
+		worktree: entry.worktree,
+		gitDir: entry.gitDir,
+		protectedCheckout: entry.worktree === mainCheckoutPath,
+	}));
+	const indexLocks = await inspectIndexLocks(lockEntries, { now, minAgeMs: lockMinAgeMinutes * MINUTE_MS });
+	const lockRemovals = removeStaleLocks ? await removeStaleIndexLocks(indexLocks) : null;
 	return {
 		defaultBranch,
 		prsRead: prsByBranch !== null,
 		candidates: results.filter((entry) => entry.cleanable),
 		retained: results.filter((entry) => !entry.cleanable),
 		missingWorktrees: missing.map((entry) => ({ worktree: entry.path, branch: entry.branch ?? null, head: entry.head ?? null, locked: entry.locked === true })),
+		staleDays,
+		processCheck: processCwds === null ? "unavailable" : "ok",
+		stale: results.filter((entry) => entry.staleness?.stale === true).map(({ branch, worktree, staleness }) => ({ branch, worktree, ...staleness })),
+		indexLocks: indexLocks.map(({ worktree, lock, ageMs, holders, decision }) => ({
+			worktree,
+			lock,
+			ageMinutes: Math.floor(ageMs / MINUTE_MS),
+			holders,
+			decision: decision.action,
+			reason: decision.reason,
+		})),
+		lockRemovals,
 	};
 }
 
@@ -126,7 +221,17 @@ function formatCleanCandidates(report) {
 		const locked = report.missingWorktrees.filter((entry) => entry.locked).length;
 		lines.push(`  ${report.missingWorktrees.length} registered worktree(s) whose directory is gone (${locked} locked); see git worktree prune --dry-run --verbose`);
 	}
-	lines.push("Process ownership is not checked here; vpk-git-clean proves it before removing anything.");
+	lines.push(`stale worktrees (no activity for ${report.staleDays} days${report.processCheck === "ok" ? "" : "; process check unavailable, so none is safe"}): ${report.stale.length}`);
+	for (const entry of report.stale) {
+		lines.push(`  ${entry.safe ? "safe   " : "unsafe "} ${entry.worktree}  idle ${entry.idleDays}d  ${entry.reasons.join("; ")}`);
+	}
+	lines.push(`index.lock files: ${report.indexLocks.length}`);
+	for (const lock of report.indexLocks) {
+		const removal = report.lockRemovals?.find((entry) => entry.lock === lock.lock);
+		const outcome = removal ? (removal.removed ? "removed" : `kept (${removal.reason})`) : lock.decision === "remove" ? "stale (pass --remove-stale-locks to remove)" : "kept";
+		lines.push(`  ${lock.lock}  ${lock.ageMinutes} min  ${outcome}${lock.decision === "keep" && !removal ? `: ${lock.reason}` : ""}`);
+	}
+	lines.push("Worktrees and branches are never removed here; vpk-git-clean proves process ownership and removes them.");
 	return lines.join("\n");
 }
 
