@@ -52,7 +52,8 @@ async function sendPrecompressedFile(req, res, file, publicPath) {
 	setStaticCacheHeaders(res, file, publicPath);
 	try {
 		await new Promise((resolve, reject) => {
-			res.sendFile(selected.sibling, { cacheControl: false }, (error) => error ? reject(error) : resolve());
+			// Relative to the public root, so a dot-named parent directory is not treated as a dotfile.
+			res.sendFile(path.relative(publicPath, selected.sibling), { cacheControl: false, root: publicPath }, (error) => error ? reject(error) : resolve());
 		});
 	} catch (error) {
 		if (!res.headersSent) {
