@@ -140,7 +140,7 @@ export function ChatTimelineNavigator({
 						<div
 							className={cn(
 								"shrink-0 rounded-full transition-colors",
-								isInverseAppearance ? "duration-150" : "duration-normal",
+								"duration-normal",
 								isActive
 									? (isInverseAppearance ? "bg-white/80" : "bg-icon-subtle")
 									: (isInverseAppearance ? "bg-white/20" : "bg-icon-disabled"),
@@ -199,7 +199,7 @@ export function ChatTimelineNavigator({
 									<button
 										className={cn(
 											"flex w-full items-center p-2 text-left transition-colors ease-out",
-											isInverseAppearance ? "duration-150" : "duration-normal",
+											"duration-normal",
 											isActive
 												? (
 													isInverseAppearance

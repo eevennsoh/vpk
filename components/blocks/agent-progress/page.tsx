@@ -393,7 +393,7 @@ export default function AgentsProgress({
 	return (
 		<div
 			className={cn(
-				"group/card w-full max-w-sm overflow-hidden rounded-2xl bg-surface-raised shadow-sm transition-shadow duration-200 hover:shadow-xl",
+				"group/card w-full max-w-sm overflow-hidden rounded-2xl bg-surface-raised shadow-sm transition-shadow duration-medium hover:shadow-xl",
 				!isInteractive && "cursor-default",
 				className
 			)}

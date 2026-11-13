@@ -243,7 +243,7 @@ export const GenerativeCardHeader = memo(function GenerativeCardHeader({
 								onClick={() => setExpanded(!isExpanded)}
 							>
 								<span
-									className="transition-transform duration-200 ease-in-out"
+									className="transition-transform duration-medium ease-in-out"
 									style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
 								>
 									<ChevronRightIcon label="" size="small" />
@@ -267,7 +267,7 @@ export const GenerativeCardBody = memo(function GenerativeCardBody({
 
 	return (
 		<div
-			className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+			className="grid transition-[grid-template-rows] duration-medium ease-in-out"
 			style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
 		>
 			<div className="overflow-hidden">

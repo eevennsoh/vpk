@@ -443,7 +443,7 @@ export function GUIPanel({ title, values, defaultOpen = true, onPlay, playLabel 
 							>
 								<span
 									className={cn(
-										"text-icon-subtle transition-transform duration-150",
+										"text-icon-subtle transition-transform duration-normal",
 										open ? "rotate-0" : "-rotate-90",
 									)}
 								>
@@ -1558,7 +1558,7 @@ export function GUISection({ title, defaultOpen = true, borderTop = true, childr
 				</span>
 				<span
 					className={cn(
-						"text-icon-subtle transition-transform duration-150",
+						"text-icon-subtle transition-transform duration-normal",
 						open ? "rotate-0" : "-rotate-90",
 					)}
 				>
