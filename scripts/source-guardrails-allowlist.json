@@ -1171,13 +1171,6 @@
 			"type": "playwright-fixed-wait"
 		},
 		{
-			"filePath": "tests/projects/jira-team-eu26-untracked-board.spec.ts",
-			"occurrence": 1,
-			"reason": "existing fixed wait; replace with a wait on an observable condition",
-			"text": "await page.waitForTimeout(250);",
-			"type": "playwright-fixed-wait"
-		},
-		{
 			"filePath": "tests/ui-custom/agent-loading.spec.ts",
 			"occurrence": 1,
 			"reason": "existing fixed wait; replace with a wait on an observable condition",
