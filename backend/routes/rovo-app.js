@@ -65,7 +65,6 @@ const REQUIRED_UPLOAD_MANAGER_METHODS = [
 ];
 
 const REQUIRED_GENERATED_FILES_MANAGER_METHODS = [
-	"backfillFromThread",
 	"deleteLegacyRootFiles",
 ];
 
@@ -92,7 +91,8 @@ function readIdCandidate(value) {
 
 function rejectInvalidRovoAppIds(req, res, next) {
 	const checks = [...ROVO_APP_ID_FIELDS];
-	if (req.method === "POST" && req.path === "/threads") {
+	// Express matches routes case-insensitively and with a trailing slash, so this does too.
+	if (req.method === "POST" && /^\/threads\/?$/iu.test(req.path)) {
 		checks.push(["body", "id"]);
 	}
 	for (const [source, field] of checks) {
@@ -408,9 +408,8 @@ function createRovoAppRouter({
 
 			const threads = await rovoAppThreadManager.listThreads({ limit: Number.MAX_SAFE_INTEGER });
 			await Promise.all(
-				threads.map(async (thread) => {
-					await generatedFilesManager.deleteLegacyRootFiles(thread.id);
-				}),
+				// One thread's cleanup never fails delete-all.
+				threads.map((thread) => generatedFilesManager.deleteLegacyRootFiles(thread.id).catch(() => 0)),
 			);
 
 			await rovoAppThreadManager.deleteAllThreads();
@@ -666,8 +665,9 @@ function createRovoAppRouter({
 			const thread = await rovoAppThreadManager.getThread(threadId);
 			const uploadIds = collectUploadIdsFromMessages(thread?.messages);
 			if (thread) {
-				await generatedFilesManager.backfillFromThread(thread);
-				await generatedFilesManager.deleteLegacyRootFiles(threadId);
+				// Only what this thread's runs recorded; never paths read from its stored
+				// messages. Cleanup never stops the thread's own delete.
+				await generatedFilesManager.deleteLegacyRootFiles(threadId).catch(() => 0);
 				await deleteThreadBrowserWorkspace(threadId).catch(() => ({}));
 				await destroyMirrorBrowser(`mirror-${threadId}`);
 			}

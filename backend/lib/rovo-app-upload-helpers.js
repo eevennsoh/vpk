@@ -213,7 +213,7 @@ function createRovoAppMessageFilePersistence({
 			});
 
 	requireFunction("persistBrowserScreenshotBuffer", persistRovoAppBrowserScreenshotBuffer);
-	requireFunction("rovoAppGeneratedFilesManager.backfillFromThread", rovoAppGeneratedFilesManager?.backfillFromThread);
+	requireFunction("rovoAppGeneratedFilesManager.recordRunGeneratedFiles", rovoAppGeneratedFilesManager?.recordRunGeneratedFiles);
 	requireFunction("rovoAppGeneratedFilesManager.captureRootFilesToWorkspace", rovoAppGeneratedFilesManager?.captureRootFilesToWorkspace);
 	requireFunction("rovoAppThreadManager.updateThread", rovoAppThreadManager?.updateThread);
 	requireFunction("rovoAppUploadManager.createUploadFromDataUrl", rovoAppUploadManager?.createUploadFromDataUrl);
@@ -353,12 +353,14 @@ function createRovoAppMessageFilePersistence({
 		};
 	}
 
-	async function synchronizeThreadGeneratedFiles(thread) {
+	// `producedMessages` are the parts the finished run produced (selectRunProducedMessages),
+	// not the stored thread, whose messages a client can write.
+	async function synchronizeThreadGeneratedFiles(thread, { producedMessages = [] } = {}) {
 		if (!thread?.id) {
 			return thread;
 		}
 
-		await rovoAppGeneratedFilesManager.backfillFromThread(thread);
+		await rovoAppGeneratedFilesManager.recordRunGeneratedFiles(thread.id, producedMessages);
 		await rovoAppGeneratedFilesManager.captureRootFilesToWorkspace(thread.id);
 		return thread;
 	}

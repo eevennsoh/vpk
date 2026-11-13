@@ -28,6 +28,11 @@ const PATH_KEYS = [
 	"target_path",
 ];
 
+// The project directories generated files are written to (the same prefixes the text
+// scan below accepts). A manifest entry outside them is never moved, copied or deleted.
+const GENERATED_FILE_ROOTS = Object.freeze(["app", "components", "lib", "hooks", "types", "public", "styles"]);
+const EXCLUDED_SEGMENTS = new Set(["node_modules"]);
+
 const FILE_PATH_PATTERN =
 	/(?:app|components|lib|hooks|types|public|styles)\/[^\s"'`]+?\.(?:tsx|ts|jsx|js|css|md|json|svg|png|jpg|jpeg|webp|txt|yaml|yml)/gu;
 
@@ -157,8 +162,16 @@ function extractGeneratedFilesFromThread(thread) {
 		return [];
 	}
 
+	return extractGeneratedFilesFromMessages(thread.messages);
+}
+
+function extractGeneratedFilesFromMessages(messages) {
+	if (!Array.isArray(messages)) {
+		return [];
+	}
+
 	const entries = [];
-	for (const message of thread.messages) {
+	for (const message of messages) {
 		if (!message || typeof message !== "object" || !Array.isArray(message.parts)) {
 			continue;
 		}
@@ -175,10 +188,51 @@ function extractGeneratedFilesFromThread(thread) {
 	return entries;
 }
 
+/**
+ * The message parts this run produced: every part of a message the request did not carry,
+ * and the parts appended to a message it did (a continued assistant message). History a
+ * client sent with the request is never a source of generated-file records.
+ * @param {unknown} initialMessages what the request carried
+ * @param {unknown} finalMessages what the run ended with
+ * @returns {Array<{ parts: unknown[] }>}
+ */
+function selectRunProducedMessages(initialMessages, finalMessages) {
+	if (!Array.isArray(finalMessages)) {
+		return [];
+	}
+	/** @type {Map<string, number>} */
+	const initialPartCounts = new Map();
+	for (const message of Array.isArray(initialMessages) ? initialMessages : []) {
+		const id = getNonEmptyString(message?.id);
+		if (id) {
+			initialPartCounts.set(id, Array.isArray(message.parts) ? message.parts.length : 0);
+		}
+	}
+	const produced = [];
+	for (const message of finalMessages) {
+		if (!message || typeof message !== "object" || !Array.isArray(message.parts)) {
+			continue;
+		}
+		const id = getNonEmptyString(message.id);
+		if (id && initialPartCounts.has(id)) {
+			const parts = message.parts.slice(initialPartCounts.get(id));
+			if (parts.length > 0) produced.push({ parts });
+			continue;
+		}
+		if (!id && initialPartCounts.size > 0) {
+			// Without an id the message cannot be told apart from the request's history.
+			continue;
+		}
+		produced.push({ parts: message.parts });
+	}
+	return produced;
+}
+
 function createRovoAppGeneratedFilesManager({
 	baseDir,
 	projectRoot,
 	logger = console,
+	execFileImpl = execFile,
 } = {}) {
 	const resolvedProjectRoot = path.resolve(projectRoot);
 
@@ -250,13 +304,16 @@ function createRovoAppGeneratedFilesManager({
 		return mergedEntries;
 	};
 
-	const backfillFromThread = async (thread) => {
-		const threadId = getNonEmptyString(thread?.id);
-		if (!threadId) {
+	// Records the files a run's own tool results name. `producedMessages` must come from
+	// the run's stream (selectRunProducedMessages), never from a stored thread, whose
+	// messages a client can write.
+	const recordRunGeneratedFiles = async (threadId, producedMessages) => {
+		const normalizedThreadId = getNonEmptyString(threadId);
+		if (!normalizedThreadId) {
 			return [];
 		}
 
-		return upsertGeneratedFiles(threadId, extractGeneratedFilesFromThread(thread));
+		return upsertGeneratedFiles(normalizedThreadId, extractGeneratedFilesFromMessages(producedMessages));
 	};
 
 	const seedGeneratedFiles = async (
@@ -277,32 +334,77 @@ function createRovoAppGeneratedFilesManager({
 		return upsertGeneratedFiles(threadId, seededEntries);
 	};
 
+	// Only git's own "not tracked" answer (exit 1) counts as untracked. Any other result
+	// (not a repository, git missing, a failure) is unknown and treated as tracked, so the
+	// file is left alone.
 	const isGitTracked = async (requestedPath) =>
-		new Promise((resolve, reject) => {
-			execFile(
+		new Promise((resolve) => {
+			execFileImpl(
 				"git",
 				["ls-files", "--error-unmatch", "--", requestedPath],
 				{ cwd: resolvedProjectRoot, maxBuffer: 1024 * 1024 },
 				(error) => {
-					if (!error) {
-						resolve(true);
-						return;
-					}
-
-					if (error.code === 1) {
-						resolve(false);
-						return;
-					}
-
-					if (error.code === 128) {
-						resolve(false);
-						return;
-					}
-
-					reject(error);
+					resolve(!(error && error.code === 1));
 				},
 			);
 		});
+
+	/**
+	 * Where a manifest entry may be touched: a regular file under one of
+	 * GENERATED_FILE_ROOTS, reached through real directories only (no symlink in any
+	 * segment), with every segment matching the directory entry's exact case, and whose
+	 * real path is that path. Anything else is skipped with its reason.
+	 * @param {unknown} requestedPath
+	 * @returns {Promise<{ ok: true, normalizedPath: string, absolutePath: string } | { ok: false, reason: string }>}
+	 */
+	const resolveGeneratedFile = async (requestedPath) => {
+		const normalizedPath = normalizeRepoRelativePath(requestedPath);
+		if (!normalizedPath) {
+			return { ok: false, reason: "not a repo-relative path" };
+		}
+		const segments = normalizedPath.split("/");
+		if (!GENERATED_FILE_ROOTS.includes(segments[0]) || segments.length < 2) {
+			return { ok: false, reason: "outside the generated-file directories" };
+		}
+		if (segments.some((segment) => EXCLUDED_SEGMENTS.has(segment) || segment.startsWith("."))) {
+			return { ok: false, reason: "in an excluded directory" };
+		}
+		let currentPath = resolvedProjectRoot;
+		for (const [index, segment] of segments.entries()) {
+			let entries;
+			try {
+				entries = await fs.readdir(currentPath);
+			} catch {
+				return { ok: false, reason: "a parent directory cannot be read" };
+			}
+			if (!entries.includes(segment)) {
+				return { ok: false, reason: "no entry with this exact name" };
+			}
+			currentPath = path.join(currentPath, segment);
+			const stat = await fs.lstat(currentPath).catch(() => null);
+			if (!stat || stat.isSymbolicLink()) {
+				return { ok: false, reason: "a symbolic link or a missing entry in the path" };
+			}
+			const isLast = index === segments.length - 1;
+			if (isLast ? !stat.isFile() : !stat.isDirectory()) {
+				return { ok: false, reason: isLast ? "not a regular file" : "a parent is not a directory" };
+			}
+		}
+		const [realRoot, realFile] = await Promise.all([
+			fs.realpath(resolvedProjectRoot).catch(() => null),
+			fs.realpath(currentPath).catch(() => null),
+		]);
+		if (!realRoot || realFile !== path.join(realRoot, ...segments)) {
+			return { ok: false, reason: "the real path leaves the project" };
+		}
+		return { ok: true, normalizedPath, absolutePath: currentPath };
+	};
+
+	const logSkipped = (action, threadId, requestedPath, reason) => {
+		logger.warn?.(`[FUTURE-CHAT] Skipping generated file ${action} for thread ${threadId}: ${reason}`, {
+			requestedPath: typeof requestedPath === "string" ? requestedPath.slice(0, 300) : null,
+		});
+	};
 
 	const removeEmptyParentDirectories = async (startingDir) => {
 		let currentDir = startingDir;
@@ -325,28 +427,15 @@ function createRovoAppGeneratedFilesManager({
 	};
 
 	const moveRootFileToWorkspace = async (threadId, requestedPath) => {
-		const normalizedPath = normalizeRepoRelativePath(requestedPath);
-		if (!normalizedPath) {
+		const target = await resolveGeneratedFile(requestedPath);
+		if (!target.ok) {
+			logSkipped("move", threadId, requestedPath, target.reason);
 			return false;
 		}
-
-		const sourcePath = path.join(resolvedProjectRoot, normalizedPath);
+		const { normalizedPath, absolutePath: sourcePath } = target;
 		const destinationPath = buildRovoAppWorkspacePath(baseDir, threadId, normalizedPath);
 		if (!destinationPath) {
 			return false;
-		}
-
-		try {
-			const sourceStat = await fs.stat(sourcePath);
-			if (!sourceStat.isFile()) {
-				return false;
-			}
-		} catch (error) {
-			if (error && error.code === "ENOENT") {
-				return false;
-			}
-
-			throw error;
 		}
 
 		if (await isGitTracked(normalizedPath)) {
@@ -373,28 +462,15 @@ function createRovoAppGeneratedFilesManager({
 	};
 
 	const copyRootFileToWorkspace = async (threadId, requestedPath) => {
-		const normalizedPath = normalizeRepoRelativePath(requestedPath);
-		if (!normalizedPath) {
+		const target = await resolveGeneratedFile(requestedPath);
+		if (!target.ok) {
+			logSkipped("copy", threadId, requestedPath, target.reason);
 			return false;
 		}
-
-		const sourcePath = path.join(resolvedProjectRoot, normalizedPath);
+		const { normalizedPath, absolutePath: sourcePath } = target;
 		const destinationPath = buildRovoAppWorkspacePath(baseDir, threadId, normalizedPath);
 		if (!destinationPath) {
 			return false;
-		}
-
-		try {
-			const sourceStat = await fs.stat(sourcePath);
-			if (!sourceStat.isFile()) {
-				return false;
-			}
-		} catch (error) {
-			if (error && error.code === "ENOENT") {
-				return false;
-			}
-
-			throw error;
 		}
 
 		await fs.mkdir(path.dirname(destinationPath), { recursive: true });
@@ -402,60 +478,59 @@ function createRovoAppGeneratedFilesManager({
 		return true;
 	};
 
-	const syncThreadWorkspace = async (threadId) => {
-		const manifestEntries = await readManifest(threadId);
-		let movedCount = 0;
-		for (const entry of manifestEntries) {
-			if (await moveRootFileToWorkspace(threadId, entry.requestedPath)) {
-				movedCount += 1;
+	// A manifest that cannot be read is treated as empty for cleanup, so one thread's
+	// broken or planted manifest never makes its delete (or delete-all) fail.
+	const readManifestForCleanup = async (threadId, action) => {
+		try {
+			return await readManifest(threadId);
+		} catch (error) {
+			logSkipped(action, threadId, null, `manifest unreadable (${error instanceof Error ? error.message : String(error)})`);
+			return [];
+		}
+	};
+
+	const forEachEntry = async (threadId, action, run) => {
+		let count = 0;
+		for (const entry of await readManifestForCleanup(threadId, action)) {
+			try {
+				if (await run(entry)) count += 1;
+			} catch (error) {
+				logSkipped(action, threadId, entry.requestedPath, error instanceof Error ? error.message : String(error));
 			}
 		}
+		return count;
+	};
 
-		return { movedCount, entries: manifestEntries };
+	const syncThreadWorkspace = async (threadId) => {
+		const movedCount = await forEachEntry(threadId, "move", (entry) => moveRootFileToWorkspace(threadId, entry.requestedPath));
+		return { movedCount, entries: await readManifestForCleanup(threadId, "move") };
 	};
 
 	const captureRootFilesToWorkspace = async (threadId) => {
-		const manifestEntries = await readManifest(threadId);
-		let copiedCount = 0;
-		for (const entry of manifestEntries) {
-			if (await copyRootFileToWorkspace(threadId, entry.requestedPath)) {
-				copiedCount += 1;
-			}
-		}
-
-		return { copiedCount, entries: manifestEntries };
+		const copiedCount = await forEachEntry(threadId, "copy", (entry) => copyRootFileToWorkspace(threadId, entry.requestedPath));
+		return { copiedCount, entries: await readManifestForCleanup(threadId, "copy") };
 	};
 
-	const deleteLegacyRootFiles = async (threadId) => {
-		const manifestEntries = await readManifest(threadId);
-		let deletedCount = 0;
-		for (const entry of manifestEntries) {
-			const normalizedPath = normalizeRepoRelativePath(entry.requestedPath);
-			if (!normalizedPath) {
-				continue;
+	// Removes the untracked root files this thread's runs recorded. Never throws.
+	const deleteLegacyRootFiles = async (threadId) =>
+		forEachEntry(threadId, "delete", async (entry) => {
+			const target = await resolveGeneratedFile(entry.requestedPath);
+			if (!target.ok) {
+				logSkipped("delete", threadId, entry.requestedPath, target.reason);
+				return false;
 			}
-
-			if (await isGitTracked(normalizedPath)) {
-				continue;
+			if (await isGitTracked(target.normalizedPath)) {
+				return false;
 			}
-
-			const absolutePath = path.join(resolvedProjectRoot, normalizedPath);
-			try {
-				await fs.rm(absolutePath, { force: true });
-				await removeEmptyParentDirectories(path.dirname(absolutePath));
-				deletedCount += 1;
-			} catch {
-				// Best effort cleanup.
-			}
-		}
-
-		return deletedCount;
-	};
+			await fs.rm(target.absolutePath, { force: true });
+			await removeEmptyParentDirectories(path.dirname(target.absolutePath));
+			return true;
+		});
 
 	return {
 		readManifest,
 		upsertGeneratedFiles,
-		backfillFromThread,
+		recordRunGeneratedFiles,
 		seedGeneratedFiles,
 		captureRootFilesToWorkspace,
 		syncThreadWorkspace,
@@ -464,8 +539,11 @@ function createRovoAppGeneratedFilesManager({
 }
 
 module.exports = {
+	GENERATED_FILE_ROOTS,
 	WRITE_TOOL_NAMES,
 	createRovoAppGeneratedFilesManager,
 	extractGeneratedFilesFromObservation,
+	extractGeneratedFilesFromMessages,
 	extractGeneratedFilesFromThread,
+	selectRunProducedMessages,
 };

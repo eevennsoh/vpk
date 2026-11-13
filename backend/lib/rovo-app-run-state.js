@@ -1,6 +1,7 @@
 "use strict";
 
 const { getNonEmptyString } = require("./shared-utils");
+const { selectRunProducedMessages } = require("./rovo-app-generated-files");
 
 function requireFunction(name, value) {
 	if (typeof value !== "function") {
@@ -96,13 +97,15 @@ function createRovoAppRunStateService({
 		});
 	}
 
-	async function finalizeRovoAppRun(threadId, run, messages) {
+	async function finalizeRovoAppRun(threadId, run, messages, { initialMessages = [] } = {}) {
 		if (threadId && Array.isArray(messages)) {
 			const updatedThread = await rovoAppThreadManager.updateThread(threadId, {
 				activeRun: null,
 				messages,
 			});
-			await synchronizeRovoAppThreadGeneratedFiles(updatedThread);
+			await synchronizeRovoAppThreadGeneratedFiles(updatedThread, {
+				producedMessages: selectRunProducedMessages(initialMessages, messages),
+			});
 		} else {
 			await clearRovoAppRunState(threadId);
 		}

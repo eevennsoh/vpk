@@ -188,7 +188,7 @@ function createRovoAppManagedResponseConsumer({
 			});
 		}
 
-		await finalizeRovoAppRun(threadId, run, messages);
+		await finalizeRovoAppRun(threadId, run, messages, { initialMessages });
 	}
 
 	return {

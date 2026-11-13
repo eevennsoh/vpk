@@ -57,7 +57,6 @@ function createAgentsRfpDemoJobOwner({
 		destroyMirrorBrowser,
 		generateWorkItemVpkHtmlReport,
 		"rovoAppDocumentManager.deleteDocumentsByThread": rovoAppDocumentManager?.deleteDocumentsByThread,
-		"rovoAppGeneratedFilesManager.backfillFromThread": rovoAppGeneratedFilesManager?.backfillFromThread,
 		"rovoAppGeneratedFilesManager.deleteLegacyRootFiles": rovoAppGeneratedFilesManager?.deleteLegacyRootFiles,
 		"rovoAppThreadManager.createThread": rovoAppThreadManager?.createThread,
 		"rovoAppThreadManager.deleteThread": rovoAppThreadManager?.deleteThread,
@@ -175,7 +174,7 @@ function createAgentsRfpDemoJobOwner({
 		const thread = await rovoAppThreadManager.getThread(threadId);
 		const uploadIds = collectRovoAppUploadIdsFromMessages(thread?.messages);
 		if (thread) {
-			await rovoAppGeneratedFilesManager.backfillFromThread(thread);
+			// Only what this thread's runs recorded; never paths read from its stored messages.
 			await rovoAppGeneratedFilesManager.deleteLegacyRootFiles(threadId);
 			await deleteRovoAppThreadBrowserWorkspace(threadId).catch(() => ({}));
 			await destroyMirrorBrowser(`mirror-${threadId}`);

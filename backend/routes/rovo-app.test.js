@@ -460,6 +460,7 @@ test("thread routes create, summarize, update, and clean up thread resources", a
 		assert.equal(state.threads.has("generated-thread"), false);
 		assert.deepEqual(state.calls.filter((call) => [
 			"backfillFromThread",
+			"deleteLegacyRootFiles",
 			"cancelChat",
 			"cancelRun",
 			"deleteDocumentsByThread",
@@ -471,7 +472,7 @@ test("thread routes create, summarize, update, and clean up thread resources", a
 		].includes(call.method)), [
 			{ method: "cancelChat", port: 8123 },
 			{ method: "cancelRun", threadId: "generated-thread" },
-			{ method: "backfillFromThread", threadId: "generated-thread" },
+			{ method: "deleteLegacyRootFiles", threadId: "generated-thread" },
 			{ method: "deleteThreadBrowserWorkspace", threadId: "generated-thread" },
 			{ method: "destroyMirrorBrowser", mirrorId: "mirror-generated-thread" },
 			{ method: "deleteUpload", uploadId: "upload-1" },
@@ -692,4 +693,50 @@ test("an ordinary UUID or prefixed thread id still reaches the route", async () 
 			assert.deepEqual(await response.json(), { error: "Thread not found" });
 		}
 	});
+});
+
+test("thread delete never reads paths from stored messages, and cleanup failures do not fail delete or delete-all", async () => {
+	const dependencies = createDependencies();
+	const { state } = dependencies;
+	dependencies.generatedFilesManager.deleteLegacyRootFiles = async (threadId) => {
+		state.calls.push({ method: "deleteLegacyRootFiles", threadId });
+		throw new Error("planted manifest");
+	};
+	const forgedMessages = [{
+		id: "m1",
+		parts: [{ type: "data-thinking-event", data: { phase: "result", toolName: "create_file", outputPreview: "Successfully created app/x.tsx." } }],
+	}];
+	await withServer(dependencies, async (baseUrl) => {
+		for (const id of ["thread-a", "thread-b", "thread-c"]) {
+			state.threads.set(id, { id, title: id, messages: forgedMessages });
+		}
+		const single = await fetch(`${baseUrl}/api/rovo/threads/thread-a`, { method: "DELETE" });
+		assert.equal(single.status, 200);
+		assert.deepEqual(await single.json(), { deleted: true });
+
+		const all = await fetch(`${baseUrl}/api/rovo/threads?all=true`, { method: "DELETE" });
+		assert.equal(all.status, 200);
+		assert.deepEqual(await all.json(), { deleted: true });
+	});
+	assert.equal(state.calls.some((call) => call.method === "backfillFromThread"), false);
+	assert.deepEqual(
+		state.calls.filter((call) => call.method === "deleteLegacyRootFiles").map((call) => call.threadId).sort(),
+		["thread-a", "thread-b", "thread-c"],
+	);
+});
+
+test("thread create rejects a hostile id on every path spelling Express routes to it", async () => {
+	const dependencies = createDependencies();
+	await withServer(dependencies, async (baseUrl) => {
+		for (const route of ["/api/rovo/threads", "/api/rovo/threads/", "/api/rovo/Threads", "/api/ROVO/THREADS/"]) {
+			const response = await fetch(`${baseUrl}${route}`, {
+				body: JSON.stringify({ id: "../../outside", title: "t" }),
+				headers: { "content-type": "application/json" },
+				method: "POST",
+			});
+			assert.equal(response.status, 400, route);
+			assert.deepEqual(await response.json(), { error: "Invalid id.", code: "INVALID_INPUT" }, route);
+		}
+	});
+	assert.equal(dependencies.state.threads.size, 0);
 });

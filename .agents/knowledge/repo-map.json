@@ -651,13 +651,13 @@
 					{
 						"method": "GET",
 						"path": "/api/rovo/background-streams",
-						"source": "backend/routes/rovo-app.js:509",
+						"source": "backend/routes/rovo-app.js:508",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/detach",
-						"source": "backend/routes/rovo-app.js:487",
+						"source": "backend/routes/rovo-app.js:486",
 						"runtimeAdmin": false
 					},
 					{
@@ -711,19 +711,19 @@
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/cancel",
-						"source": "backend/routes/rovo-app.js:569",
+						"source": "backend/routes/rovo-app.js:568",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/runs/:threadId/detach",
-						"source": "backend/routes/rovo-app.js:545",
+						"source": "backend/routes/rovo-app.js:544",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/runs/:threadId/stream",
-						"source": "backend/routes/rovo-app.js:519",
+						"source": "backend/routes/rovo-app.js:518",
 						"runtimeAdmin": false
 					},
 					{
@@ -747,37 +747,37 @@
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:656",
+						"source": "backend/routes/rovo-app.js:655",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:428",
+						"source": "backend/routes/rovo-app.js:427",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "PUT",
 						"path": "/api/rovo/threads/:threadId",
-						"source": "backend/routes/rovo-app.js:446",
+						"source": "backend/routes/rovo-app.js:445",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:641",
+						"source": "backend/routes/rovo-app.js:640",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:595",
+						"source": "backend/routes/rovo-app.js:594",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "POST",
 						"path": "/api/rovo/threads/:threadId/browser-workspace",
-						"source": "backend/routes/rovo-app.js:614",
+						"source": "backend/routes/rovo-app.js:613",
 						"runtimeAdmin": true
 					},
 					{
