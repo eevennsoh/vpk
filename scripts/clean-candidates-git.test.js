@@ -454,6 +454,27 @@ test("suspected 1: a stale origin/<other> does not keep a reflog-only commit; a 
 	assert.ok(found.blockers.includes(reached), found.blockers.join("; "));
 });
 
+test("Codex: an origin/<other> whose tip differs from origin's (narrowed fetch refspec) does not keep a reflog-only commit", async (t) => {
+	const { origin, landed, report, entry, sh, commit } = setup(t);
+	const dir = landed("feat");
+	sh(dir, "checkout", "--quiet", "--detach", "origin/main");
+	const scratch = commit(dir, "scratch.txt", "pushed as another branch");
+	sh(dir, "push", "--quiet", "origin", "HEAD:refs/heads/other");
+	sh(dir, "fetch", "--quiet", "origin");
+	sh(dir, "checkout", "--quiet", "--detach", "origin/main");
+	assert.equal(entry(await report(new Map(), { fetch: true }), byWorktree(dir)).cleanable, true, "origin/other is live");
+
+	// origin resets `other`; fetches now update only main, so origin/other keeps the old tip.
+	sh(origin, "update-ref", "refs/heads/other", sh(dir, "rev-parse", "origin/main"));
+	sh(dir, "config", "remote.origin.fetch", "+refs/heads/main:refs/remotes/origin/main");
+	const result = await report(new Map(), { fetch: true });
+	assert.equal(result.fetch, "ok");
+	assert.equal(sh(dir, "rev-parse", "refs/remotes/origin/other"), scratch, "origin/other is stale");
+	const found = entry(result, byWorktree(dir));
+	assert.equal(found.cleanable, false);
+	assert.ok(found.blockers.includes("1 commit(s) only the worktree's HEAD reflog or its own refs reach"), found.blockers.join("; "));
+});
+
 test("suspected 2: a cherry-pick sequence paused after a manual commit retains the worktree", async (t) => {
 	const { landed, report, entry, sh, commit, write } = setup(t);
 	const dir = landed("feat");
