@@ -267,7 +267,7 @@ Report both outcomes clearly:
 
 Use `vpk-verify` (`control-vpk`) for all browser-driven validation — navigation, snapshots, screenshots, interaction, worktree ownership, and cleanup. It delegates to the worktree-installed agent-browser binary with a scoped session.
 
-1. Standard: `control-vpk doctor` + snapshot/screenshot flow plus `ads_analyze_localhost_a11y` scoped to the component root.
+1. Standard: `pnpm control-vpk doctor` + snapshot/screenshot flow plus `ads_analyze_localhost_a11y` scoped to the component root.
 2. Theme: follow `vpk-verify/features/switch-theme.md`; use the user-facing control and capture the accessible name plus the nearest `[data-color-mode]` owner's local mode and resolved ADS token values.
 3. For a stale non-navigation command, reopen and revalidate the exact feature entrypoint first. If browser-starting `open`/`connect` stays stale after its bounded retry, or agent-browser is otherwise unavailable/blocked, fall back to:
    - server-render sanity checks for expected text/structure at the route

@@ -13,7 +13,7 @@ Use `next-dev-loop` and [Browser Verify Worktree](browser-verify-worktree.md) fo
 
 ## Reuse the opt-in interaction sampler
 
-`tests/projects/jira-team-eu26-performance.spec.ts` records Board/List interactions on `/jira-team-eu26`. Use its existing sampler and `tests/helpers/interaction-performance.ts` when extending a measured journey, rather than inventing a second timing collector. It opens the project directly, uses `PLAYWRIGHT_BASE_URL` or the current worktree's `control-vpk url`, and waits for the authored arrival and state-transition queue to settle before sampling, and records the observed session count. A hardcoded intermediate count is not fixture completion.
+`tests/projects/jira-team-eu26-performance.spec.ts` records Board/List interactions on `/jira-team-eu26`. Use its existing sampler and `tests/helpers/interaction-performance.ts` when extending a measured journey, rather than inventing a second timing collector. It opens the project directly, uses `PLAYWRIGHT_BASE_URL` or the current worktree's `pnpm control-vpk url`, and waits for the authored arrival and state-transition queue to settle before sampling, and records the observed session count. A hardcoded intermediate count is not fixture completion.
 
 For a known development stack:
 

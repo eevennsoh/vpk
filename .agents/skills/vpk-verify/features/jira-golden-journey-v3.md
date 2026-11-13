@@ -19,17 +19,17 @@ Jira Golden Journey v3 lets a user walk Track, Learn, Build, and Terminal: a Pay
 
 Preconditions:
 
-- `control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `control-vpk url`.
-- Set `EVIDENCE="$(control-vpk evidence-dir)/jira-golden-journey-v3"` and create it before capture.
+- `pnpm control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `pnpm control-vpk url`.
+- Set `EVIDENCE="$(pnpm control-vpk evidence-dir)/jira-golden-journey-v3"` and create it before capture.
 
-- **Open and identify.** Start directly with `control-vpk open-target /jira-golden-journey-v3 --headed` and wait for text `Jira Golden Journey v3` before taking an interactive snapshot. Group `Open a software delivery story chapter` is visible and `Track` is pressed.
+- **Open and identify.** Start directly with `pnpm control-vpk open-target /jira-golden-journey-v3 --headed` and wait for text `Jira Golden Journey v3` before taking an interactive snapshot. Group `Open a software delivery story chapter` is visible and `Track` is pressed.
 - **Prove local theme through the UI.** Choose Terminal first. Use the nearest-`[data-color-mode]` IIFE from the v0 recipe to record the gallery theme control name, route-local mode, and resolved ADS tokens. Click that exact accessible name, rerun the IIFE, and require its local mode and name to change. Restore the original name through the same UI control in at most two clicks; do not inspect or write global storage as substitute proof.
 - **Open Build and navigate sections.** Choose Build and wait for PAY-101. Focus link `Activity` (the accessible name may include a count such as `Activity 7`), press Enter, and wait for its `aria-current` state; the nearest scroll owner moves while the document does not gain horizontal overflow. Activate `Description`, then Activity again.
 - **Prove Insights.** Activate link `Insights` (name may be `Insights 2`). Take a fresh interactive snapshot and confirm region `Insights` plus heading `Insights`. Do not require `Decision timeline` or `Sources` on this route — Build does not mount that briefing. Return to Activity through its link; do not reload the route or rely on a text wait as substitute proof.
 - **Prove PR identity and combobox focus.** Confirm button or link `#1839: Call-site inventory across four services`. Focus combobox `Pull requests. 1`, press Enter, and confirm listbox option `Pull request #1839: Call-site inventory across four services`. Press Escape. The listbox closes and focus returns to the combobox.
-- **Cover narrow reduced motion.** Run `control-vpk browser set viewport 390 844` and `control-vpk browser set media light reduced-motion`. Desktop chapter buttons are replaced by `Jump to chapter`. Description, Activity, Insights, and Pull requests remain keyboard operable without horizontal page overflow.
-- **Proof and accessibility.** Run `control-vpk browser snapshot -i --compact --depth 9 > "$EVIDENCE/build-narrow.aria.txt"`, `control-vpk browser screenshot "$EVIDENCE/build-narrow.png"`, and `control-vpk browser a11y --selector body > "$EVIDENCE/a11y.txt"`.
-- **Reset and cleanup.** Run `control-vpk browser find role button click --name Reset`; Track is pressed again. Run `control-vpk cleanup`; retained files are the only accepted proof from this run.
+- **Cover narrow reduced motion.** Run `pnpm control-vpk browser set viewport 390 844` and `pnpm control-vpk browser set media light reduced-motion`. Desktop chapter buttons are replaced by `Jump to chapter`. Description, Activity, Insights, and Pull requests remain keyboard operable without horizontal page overflow.
+- **Proof and accessibility.** Run `pnpm control-vpk browser snapshot -i --compact --depth 9 > "$EVIDENCE/build-narrow.aria.txt"`, `pnpm control-vpk browser screenshot "$EVIDENCE/build-narrow.png"`, and `pnpm control-vpk browser a11y --selector body > "$EVIDENCE/a11y.txt"`.
+- **Reset and cleanup.** Run `pnpm control-vpk browser find role button click --name Reset`; Track is pressed again. Run `pnpm control-vpk cleanup`; retained files are the only accepted proof from this run.
 
 ## Gotchas
 

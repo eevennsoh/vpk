@@ -27,20 +27,20 @@ This agent is spawned by the orchestrator as Agent 3 in the Figma-to-code pipeli
 
 ### Browser Automation
 
-Use `vpk-verify` and its `control-vpk` wrapper for browser interactions. Load the agent-browser skill before using the wrapper so command patterns match the installed version. This keeps the browser session and cleanup scoped to the current worktree.
+Use `vpk-verify` and its `control-vpk` wrapper for browser interactions. Load the agent-browser skill before using the wrapper so command patterns match the installed version. This keeps the browser session and cleanup scoped to the current worktree. Run `CONTROL_VPK=.agents/skills/vpk-verify/scripts/control-vpk` first: the table and commands below call it by that path, because `pnpm control-vpk` fails inside the agent sandbox (`spawn EPERM`).
 
 | Action | Command |
 | --- | --- |
-| Launch or reuse worktree | `control-vpk launch` |
-| Check worktree ownership | `control-vpk doctor` |
-| Open URL | `control-vpk browser open [url]` |
-| Interactive snapshot | `control-vpk browser snapshot -i` |
-| Screenshot viewport | `control-vpk browser screenshot [filename]` |
-| Evaluate proof | `control-vpk browser eval --stdin` |
-| Click named element | `control-vpk browser find role button click --name [name]` |
-| Scoped cleanup | `control-vpk cleanup` |
+| Launch or reuse worktree | `$CONTROL_VPK launch` |
+| Check worktree ownership | `$CONTROL_VPK doctor` |
+| Open URL | `$CONTROL_VPK browser open [url]` |
+| Interactive snapshot | `$CONTROL_VPK browser snapshot -i` |
+| Screenshot viewport | `$CONTROL_VPK browser screenshot [filename]` |
+| Evaluate proof | `$CONTROL_VPK browser eval --stdin` |
+| Click named element | `$CONTROL_VPK browser find role button click --name [name]` |
+| Scoped cleanup | `$CONTROL_VPK cleanup` |
 
-In commands below, `control-vpk` means `.agents/skills/vpk-verify/scripts/control-vpk`. Workflow pattern: doctor, snapshot, act through an accessible name, snapshot again.
+Workflow pattern: doctor, snapshot, act through an accessible name, snapshot again.
 
 ### Pipeline Role
 
@@ -63,12 +63,12 @@ You receive:
 
 #### Step 0: Resolve Target URL Reliably
 
-Run `control-vpk launch`, require `control-vpk doctor` to report `"ok": true`, and set `ORIGIN="$(control-vpk url)"`. The harness selects this worktree's Portless URL and falls back to its `.dev-frontend-port`; do not choose a URL by sight from `pnpm ports`.
+Run `$CONTROL_VPK launch`, require `$CONTROL_VPK doctor` to report `"ok": true`, and set `ORIGIN="$($CONTROL_VPK url)"`. The harness selects this worktree's Portless URL and falls back to its `.dev-frontend-port`; do not choose a URL by sight from `pnpm ports`.
 
 #### Step 1: Navigate to Component
 
 ```bash
-control-vpk browser open "$ORIGIN/[route]"
+$CONTROL_VPK browser open "$ORIGIN/[route]"
 ```
 
 #### Step 2: Capture Implementation Screenshots
@@ -78,18 +78,18 @@ Read and save the current user-facing theme button name before changing anything
 Light mode (click the currently named control until its accessible name reports Light):
 
 ```bash
-control-vpk browser snapshot -i
-control-vpk browser screenshot output/agent-browser/vpk-verify/figma-validation/implementation-light.png
+$CONTROL_VPK browser snapshot -i
+$CONTROL_VPK browser screenshot output/agent-browser/vpk-verify/figma-validation/implementation-light.png
 ```
 
 Dark mode (from Light, click that same control once and confirm its accessible name reports Dark):
 
 ```bash
-control-vpk browser snapshot -i
-control-vpk browser screenshot output/agent-browser/vpk-verify/figma-validation/implementation-dark.png
+$CONTROL_VPK browser snapshot -i
+$CONTROL_VPK browser screenshot output/agent-browser/vpk-verify/figma-validation/implementation-dark.png
 ```
 
-For each screenshot, record this proof with `control-vpk browser eval --stdin`:
+For each screenshot, record this proof with `$CONTROL_VPK browser eval --stdin`:
 
 ```js
 (() => {
@@ -112,7 +112,7 @@ For each screenshot, record this proof with `control-vpk browser eval --stdin`:
 })()
 ```
 
-The accessible theme name, nearest-owner `data-color-mode`, and non-empty ADS token values must agree. Restore the original theme by cycling the same user-facing control until the saved button name returns, then run `control-vpk cleanup` after all validation artifacts are captured.
+The accessible theme name, nearest-owner `data-color-mode`, and non-empty ADS token values must agree. Restore the original theme by cycling the same user-facing control until the saved button name returns, then run `$CONTROL_VPK cleanup` after all validation artifacts are captured.
 
 #### Step 3: Run Scoped Accessibility Scan
 

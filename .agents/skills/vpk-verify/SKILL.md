@@ -7,9 +7,11 @@ description: Drive the VPK web app (catalog, docs, theme, Studio shell) in a rea
 
 VPK (Venn Prototype Kit) is a Next.js 16 catalog and prototype host with an Express `/api/*` backend. A user browses component and project surfaces in the browser. This skill is the scripted way to launch this worktree's app, drive it as a user would, and keep evidence.
 
-Read [features/README.md](features/README.md) before a run. For component, block or project debugging, resolve the exact object route before opening the browser and start directly there on this worktree's origin. Use the supplied path/query/hash or current route/catalog metadata, not a guessed slug or a homepage detour. Drive from the matching feature file; a missing recipe does not require browsing home. Other surfaces exist (Express APIs, Rovo Serve chat, Playwright specs under `tests/**/*.spec.ts`); they are not the primary user path. Do not send a Studio/Rovo chat message unless the feature file says to and `control-vpk doctor --require-backend` passes.
+Read [features/README.md](features/README.md) before a run. For component, block or project debugging, resolve the exact object route before opening the browser and start directly there on this worktree's origin. Use the supplied path/query/hash or current route/catalog metadata, not a guessed slug or a homepage detour. Drive from the matching feature file; a missing recipe does not require browsing home. Other surfaces exist (Express APIs, Rovo Serve chat, Playwright specs under `tests/**/*.spec.ts`); they are not the primary user path. Do not send a Studio/Rovo chat message unless the feature file says to and `pnpm control-vpk doctor --require-backend` passes.
 
 ## Launch
+
+`pnpm control-vpk <command>` and `.agents/skills/vpk-verify/scripts/control-vpk <command>` run the same CLI. Use the path form wherever pnpm cannot run the script: inside the Claude Code sandbox pnpm fails with `spawn EPERM`, and after a lockfile change it may reinstall first (printing to stdout, which breaks `$(…)` capture) or stop with `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`.
 
 From the worktree root:
 
@@ -20,7 +22,7 @@ ORIGIN="$(.agents/skills/vpk-verify/scripts/control-vpk url)"
 
 `launch` reuses this worktree's already-healthy frontend (the common case while `pnpm run dev:tmux:start` is up). If nothing is serving, it starts the detached worktree stack (`pnpm run dev:tmux:start` through Portless) and records that this run created it.
 
-Ready when `control-vpk doctor` prints `"ok": true`: this worktree's `.dev-frontend-port` is listening and `GET $ORIGIN/` returns 2xx. The origin is the Portless `https://…localhost` URL when one is routed to that port; otherwise `http://127.0.0.1:<frontend-port>`. Never hardcode `:3000` or another worktree's hostname.
+Ready when `pnpm control-vpk doctor` prints `"ok": true`: this worktree's `.dev-frontend-port` is listening and `GET $ORIGIN/` returns 2xx. The origin is the Portless `https://…localhost` URL when one is routed to that port; otherwise `http://127.0.0.1:<frontend-port>`. Never hardcode `:3000` or another worktree's hostname.
 
 `.env.local` is seeded by the tmux launcher. Catalog, docs, and theme do not need Rovo or ASAP. Studio *send* does.
 
@@ -46,8 +48,8 @@ Two worktrees can run side by side (deterministic ports, unique Portless origins
 
 ## What to re-check, then prove it
 
-1. **What must I re-check?** `control-vpk where <path|slug|/route> [--json]` walks a changed file or directory up to its owner (catalog entry such as `components/projects/<x>`, or the nearest `components/<group>/<x>`) and prints the app routes that render it, one level of `@/` importers with their routes, and the feature recipes and `tests/**/*.spec.ts` specs that mention those routes or paths. It reads `.agents/knowledge/repo-map.json` only; it does not start anything. The owner line shows the catalog `status` (`live`, `frozen`, `superseded`) and `basedOn`; a frozen or superseded owner prints a warning — confirm the user means that variant before editing it.
-2. **Prove this change (default step).** `control-vpk capture <route>` validates the route like `open-target`, opens it on this worktree's origin in the scoped session, sets the viewport (default `1280x720`) and **light** media, reloads, then writes `capture.png`, `capture.aria.txt`, console, page-error and a11y JSON, and `manifest.json` (`route`, `url`, `viewport`, `media`, `variants`, `colorMode`, `counts`, `files`, `ok`) to `output/agent-browser/vpk-verify/<id>/`. It exits non-zero on console errors, page errors, a failed step, or a route that paints only the app shell (no text or media) — a blank screenshot is not proof. A11y violations are reported but non-fatal unless `--strict-a11y`.
+1. **What must I re-check?** `pnpm control-vpk where <path|slug|/route> [--json]` walks a changed file or directory up to its owner (catalog entry such as `components/projects/<x>`, or the nearest `components/<group>/<x>`) and prints the app routes that render it, one level of `@/` importers with their routes, and the feature recipes and `tests/**/*.spec.ts` specs that mention those routes or paths. It reads `.agents/knowledge/repo-map.json` only; it does not start anything. The owner line shows the catalog `status` (`live`, `frozen`, `superseded`) and `basedOn`; a frozen or superseded owner prints a warning — confirm the user means that variant before editing it.
+2. **Prove this change (default step).** `pnpm control-vpk capture <route>` validates the route like `open-target`, opens it on this worktree's origin in the scoped session, sets the viewport (default `1280x720`) and **light** media, reloads, then writes `capture.png`, `capture.aria.txt`, console, page-error and a11y JSON, and `manifest.json` (`route`, `url`, `viewport`, `media`, `variants`, `colorMode`, `counts`, `files`, `ok`) to `output/agent-browser/vpk-verify/<id>/`. It exits non-zero on console errors, page errors, a failed step, or a route that paints only the app shell (no text or media) — a blank screenshot is not proof. A11y violations are reported but non-fatal unless `--strict-a11y`.
 
 ```bash
 .agents/skills/vpk-verify/scripts/control-vpk where components/projects/jira-team-eu26-end
@@ -55,11 +57,11 @@ Two worktrees can run side by side (deterministic ports, unique Portless origins
 .agents/skills/vpk-verify/scripts/control-vpk capture /jira-team-eu26 --variant autoArrange --variant sessionPeel=off --id eu26-auto-arrange
 ```
 
-Capture one screenshot of the exact route in the light theme by default. Capture more states (`--media dark`, `--viewport 390x844`, `--variant <id>[=on|off]`, each with its own `--id`) only when the user asks or the change is state-specific. `--variant` is repeatable and forces a Settings **Properties** design variant for that load by merging `?variants=<id>,-<id>` into the route's query (see `State entry` in [features/README.md](features/README.md)); it writes no storage, so it does not change the user's settings. An unknown id fails before the browser opens and lists the valid ids. If the summary warns that `data-color-mode` differs from the requested media, a stored theme preference won. Switch it with the header theme control, then capture again. When `VPK_VERIFY=manual` is set, the user has opted into manual verification. `capture` then opens no browser and exits 0. Hand the route to the user instead. Interactions (drag, menus, Settings) still follow the feature recipe through `control-vpk browser`.
+Capture one screenshot of the exact route in the light theme by default. Capture more states (`--media dark`, `--viewport 390x844`, `--variant <id>[=on|off]`, each with its own `--id`) only when the user asks or the change is state-specific. `--variant` is repeatable and forces a Settings **Properties** design variant for that load by merging `?variants=<id>,-<id>` into the route's query (see `State entry` in [features/README.md](features/README.md)); it writes no storage, so it does not change the user's settings. An unknown id fails before the browser opens and lists the valid ids. If the summary warns that `data-color-mode` differs from the requested media, a stored theme preference won. Switch it with the header theme control, then capture again. When `VPK_VERIFY=manual` is set, the user has opted into manual verification. `capture` then opens no browser and exits 0. Hand the route to the user instead. Interactions (drag, menus, Settings) still follow the feature recipe through `pnpm control-vpk browser`.
 
 ## Drive
 
-Harness: `agent-browser` via `control-vpk open-target` for the first object navigation, then `control-vpk browser` for interactions. Both inject a worktree-and-chat-scoped session (`control-vpk session`). Load `agent-browser skills get core` once per session if you are unsure of flags. After a Next.js code edit, also follow `next-dev-loop` (`/_next/mcp` plus this same browser).
+Harness: `agent-browser` via `pnpm control-vpk open-target` for the first object navigation, then `pnpm control-vpk browser` for interactions. Both inject a worktree-and-chat-scoped session (`pnpm control-vpk session`). Load `agent-browser skills get core` once per session if you are unsure of flags. After a Next.js code edit, also follow `next-dev-loop` (`/_next/mcp` plus this same browser).
 
 Every browser subprocess is bounded to 35 seconds by default. Set
 `VPK_VERIFY_BROWSER_TIMEOUT_MS` to an integer from 1000 through 300000 only
@@ -76,7 +78,7 @@ export AGENT_BROWSER_RESTORE="$SESSION"
 .agents/skills/vpk-verify/scripts/control-vpk open-target /jira-team-eu26 --headed
 ```
 
-Replace the example route with the requested object route. `open-target` validates an explicit mapped repository path, preserves query/hash, and derives this worktree's origin. It rejects root/category landing pages and unmapped paths before browser launch. Confirm the resulting URL and route marker before debugging. When a runtime check requires other browser launch flags, use `control-vpk browser open` with the full target URL and those flags. Raw home/category opens are for explicitly requested catalog or entry-path verification; a direct URL does not prove a catalog title link works.
+Replace the example route with the requested object route. `open-target` validates an explicit mapped repository path, preserves query/hash, and derives this worktree's origin. It rejects root/category landing pages and unmapped paths before browser launch. Confirm the resulting URL and route marker before debugging. When a runtime check requires other browser launch flags, use `pnpm control-vpk browser open` with the full target URL and those flags. Raw home/category opens are for explicitly requested catalog or entry-path verification; a direct URL does not prove a catalog title link works.
 
 Prefer ARIA roles, accessible names, and `id` / `href` handles from the feature map. Do not use click coordinates. `find` requires an action (`click`, `fill`, `check`, `hover`, `text`). Presence checks use `find role … text --name`. A bare `find role … --name` fails as `assertion_failure`. Stable handles:
 
@@ -98,7 +100,7 @@ Prefer ARIA roles, accessible names, and `id` / `href` handles from the feature 
 
 ### Failure handoff
 
-`control-vpk browser` classifies failures as `timeout`, `stale_session`,
+`pnpm control-vpk browser` classifies failures as `timeout`, `stale_session`,
 `missing_binary`, or `assertion_failure`. The diagnostic includes the exact
 forwarded command and says that existing files under
 `output/agent-browser/vpk-verify/` are retained while the failed command is not
@@ -112,7 +114,7 @@ to Playwright or curl. Report the classification and evidence boundary.
 
 ## Evidence
 
-Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump. `control-vpk capture` does this for a route's loaded state. Use the commands below for states reached mid-interaction. To crop, resize, tile or compare screenshots, use `pnpm image-tools crop|resize|contact-sheet|diff` (see `scripts/image-tools.mjs`); it needs no Python, and Python's PIL is not installed here.
+Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump. `pnpm control-vpk capture` does this for a route's loaded state. Use the commands below for states reached mid-interaction. To crop, resize, tile or compare screenshots, use `pnpm image-tools crop|resize|contact-sheet|diff` (see `scripts/image-tools.mjs`); it needs no Python, and Python's PIL is not installed here.
 
 ```bash
 EVIDENCE="$(.agents/skills/vpk-verify/scripts/control-vpk evidence-dir)/jira-team-eu26"
@@ -140,9 +142,9 @@ Proof standards:
 .agents/skills/vpk-verify/scripts/control-vpk cleanup
 ```
 
-Cleanup leaves the browser and dev stack running for later checks. To close this chat’s browser, use `control-vpk cleanup --browser`. To stop a stack started by verify, use `control-vpk cleanup --stack` only when no other work needs it. Proof files under `output/agent-browser/vpk-verify/` stay.
+Cleanup leaves the browser and dev stack running for later checks. To close this chat’s browser, use `pnpm control-vpk cleanup --browser`. To stop a stack started by verify, use `pnpm control-vpk cleanup --stack` only when no other work needs it. Proof files under `output/agent-browser/vpk-verify/` stay.
 
-Close the chat’s browser with `cleanup --browser` when it is no longer needed; it is reused between checks in the same chat. Between checks, run `control-vpk park` so an animated route stops using CPU (it loads a static page; the next `open-target`, `capture` or `browser open` resumes). `control-vpk` records every browser it starts with the agent session that owns it; `control-vpk cleanup --orphaned-browsers` (run by the SessionStart hook and the `vpk-system-clean` sweep) closes recorded browsers whose owner has ended or that sat unused for 2 hours. If a feature recipe changed theme, restore the original accessible theme-control name by cycling that same user-facing control before cleanup. Do not restore theme by mutating storage, attributes, classes, or ADS variables.
+Close the chat’s browser with `cleanup --browser` when it is no longer needed; it is reused between checks in the same chat. Between checks, run `pnpm control-vpk park` so an animated route stops using CPU (it loads a static page; the next `open-target`, `capture` or `browser open` resumes). `control-vpk` records every browser it starts with the agent session that owns it; `pnpm control-vpk cleanup --orphaned-browsers` (run by the SessionStart hook and the `vpk-system-clean` sweep) closes recorded browsers whose owner has ended or that sat unused for 2 hours. If a feature recipe changed theme, restore the original accessible theme-control name by cycling that same user-facing control before cleanup. Do not restore theme by mutating storage, attributes, classes, or ADS variables.
 
 ## Helpers
 

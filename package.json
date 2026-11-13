@@ -65,6 +65,7 @@
 		"dev:tmux:status": "./scripts/dev-tmux-plain.sh status",
 		"rovo": "node scripts/run-rovo-stack.js",
 		"ports": "node scripts/show-worktree-ports.js",
+		"control-vpk": "node .agents/skills/vpk-verify/scripts/control-vpk",
 		"image-tools": "node scripts/image-tools.mjs",
 		"mem": "zsh .agents/skills/vpk-system-clean/scripts/doctor.sh",
 		"verify:lockfile": "node scripts/verify-pnpm-lockfile.js",

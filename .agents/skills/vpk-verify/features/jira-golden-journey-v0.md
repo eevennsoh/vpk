@@ -19,12 +19,12 @@ Jira Golden Journey v0 lets a user browse the original Jira pattern gallery, sel
 
 Preconditions:
 
-- `control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `control-vpk url`.
-- Set `EVIDENCE="$(control-vpk evidence-dir)/jira-golden-journey-v0"` and create it before capture.
+- `pnpm control-vpk doctor` reports `"ok": true` for this worktree and `ORIGIN` came from `pnpm control-vpk url`.
+- Set `EVIDENCE="$(pnpm control-vpk evidence-dir)/jira-golden-journey-v0"` and create it before capture.
 
-- **Open and identify.** Run `control-vpk browser open --headed "$ORIGIN/jira-golden-journey-v0"`, then `control-vpk browser wait --text "Jira Golden Journey v0"` and `control-vpk browser snapshot -i --compact --depth 8`. The heading and `Select Terminal` tile are present; keep the fresh `@eN` ref for `Select Work item`.
-- **Prove keyboard selection.** Run `control-vpk browser focus @eN` with that fresh Work item ref, `control-vpk browser press Enter`, `control-vpk browser wait --fn "document.querySelector('[aria-label=\"Select Work item\"]')?.getAttribute('aria-pressed') === 'true'"`, then take a new snapshot. Do not reuse the pre-activation ref.
-- **Cover terminal theme through the UI.** Reselect Terminal, wait for the current `Cycle theme, current theme: …` button, then capture this route-local proof with `control-vpk browser eval --stdin`:
+- **Open and identify.** Run `pnpm control-vpk browser open --headed "$ORIGIN/jira-golden-journey-v0"`, then `pnpm control-vpk browser wait --text "Jira Golden Journey v0"` and `pnpm control-vpk browser snapshot -i --compact --depth 8`. The heading and `Select Terminal` tile are present; keep the fresh `@eN` ref for `Select Work item`.
+- **Prove keyboard selection.** Run `pnpm control-vpk browser focus @eN` with that fresh Work item ref, `pnpm control-vpk browser press Enter`, `pnpm control-vpk browser wait --fn "document.querySelector('[aria-label=\"Select Work item\"]')?.getAttribute('aria-pressed') === 'true'"`, then take a new snapshot. Do not reuse the pre-activation ref.
+- **Cover terminal theme through the UI.** Reselect Terminal, wait for the current `Cycle theme, current theme: …` button, then capture this route-local proof with `pnpm control-vpk browser eval --stdin`:
 
   ```js
   (() => {
@@ -43,9 +43,9 @@ Preconditions:
   ```
 
   Click that exact accessible name, repeat the IIFE, and require its local mode and control name to change. Restore by clicking the same UI control until the original name returns (at most two clicks); do not write storage or theme attributes.
-- **Cover narrow reduced motion.** Run `control-vpk browser set viewport 390 844`, `control-vpk browser set media light reduced-motion`, reselect Work item from a fresh snapshot, and `control-vpk browser wait "button[aria-label='Jump to section']"`. Snapshot again, focus the fresh `Jump to section` ref, press Enter, wait `"[role='menu']"`, then press Escape. The compact path is keyboard operable without horizontal page overflow.
-- **Proof and accessibility.** Run `control-vpk browser snapshot -i --compact --depth 8 > "$EVIDENCE/narrow.aria.txt"`, `control-vpk browser screenshot "$EVIDENCE/narrow.png"`, and `control-vpk browser a11y --selector body > "$EVIDENCE/a11y.txt"`. The route is the feature boundary, so the body scan is route-scoped.
-- **Reset and cleanup.** Run `control-vpk browser find role button click --name Reset`, then `control-vpk cleanup`. Reset remounts the current pattern; it does not rewind a Work item preset to Empty. Cleanup retains the browser session and evidence for later checks.
+- **Cover narrow reduced motion.** Run `pnpm control-vpk browser set viewport 390 844`, `pnpm control-vpk browser set media light reduced-motion`, reselect Work item from a fresh snapshot, and `pnpm control-vpk browser wait "button[aria-label='Jump to section']"`. Snapshot again, focus the fresh `Jump to section` ref, press Enter, wait `"[role='menu']"`, then press Escape. The compact path is keyboard operable without horizontal page overflow.
+- **Proof and accessibility.** Run `pnpm control-vpk browser snapshot -i --compact --depth 8 > "$EVIDENCE/narrow.aria.txt"`, `pnpm control-vpk browser screenshot "$EVIDENCE/narrow.png"`, and `pnpm control-vpk browser a11y --selector body > "$EVIDENCE/a11y.txt"`. The route is the feature boundary, so the body scan is route-scoped.
+- **Reset and cleanup.** Run `pnpm control-vpk browser find role button click --name Reset`, then `pnpm control-vpk cleanup`. Reset remounts the current pattern; it does not rewind a Work item preset to Empty. Cleanup retains the browser session and evidence for later checks.
 
 ## Gotchas
 

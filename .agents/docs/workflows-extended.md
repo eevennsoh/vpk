@@ -76,7 +76,7 @@ Run additionally for UI changes:
    - `ads_analyze_localhost_a11y` for live page
    - For the ADS guidance behind a finding, use the CLI instead: `atlas ads docs a11y <buttons|forms|images|colors|focus|keyboard|screenReaders|aria|wcag|general>` (add `--json` when parsing). Fall back to `ads_get_a11y_guidelines` only when the CLI is unavailable.
 
-UI verification coverage: the default proof is one light-theme capture of the exact route (`control-vpk capture <route>`). Add the items below only when the change depends on them or the user asks:
+UI verification coverage: the default proof is one light-theme capture of the exact route (`pnpm control-vpk capture <route>`). Add the items below only when the change depends on them or the user asks:
 
 - Dark theme
 - Default, hover, active, disabled, empty, and error states

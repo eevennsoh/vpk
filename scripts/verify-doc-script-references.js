@@ -24,6 +24,7 @@ const DEFAULT_DOC_TARGETS = [
 	"README.md",
 	"DESIGN.md",
 	"WORKFLOW.md",
+	".agents/agents",
 	".agents/docs",
 	".agents/rules",
 	".agents/skills",
@@ -160,6 +161,49 @@ function extractRepoPathReferences(content, filePath = "unknown") {
 	return references;
 }
 
+// Commands in docs: every fenced block, plus inline spans outside the fences.
+function extractCommandSnippets(content) {
+	const snippets = [];
+	const fence = /^([ \t]*)```[^\n]*\n([\s\S]*?)^\1```/gmu;
+	let match = fence.exec(content);
+	while (match) {
+		snippets.push({ index: match.index + match[0].indexOf(match[2]), text: match[2] });
+		match = fence.exec(content);
+	}
+	const outsideFences = content.replace(fence, (block) => block.replace(/[^\n]/gu, " "));
+	const span = /`([^`\n]+)`/gu;
+	match = span.exec(outsideFences);
+	while (match) {
+		snippets.push({ index: match.index + 1, text: match[1] });
+		match = span.exec(outsideFences);
+	}
+	return snippets;
+}
+
+// A repo CLI named bare in command position (`control-vpk doctor`, `$(control-vpk url)`)
+// is "command not found" in every shell, because nothing puts it on PATH.
+function extractBareCliReferences(content, filePath, cliNames) {
+	if (cliNames.size === 0) return [];
+	const names = [...cliNames.keys()].map((name) => name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("|");
+	const command = new RegExp(`(^|[\\s;|&(]|\\$\\()(${names})(?=\\s+[a-z-])`, "gmu");
+	const references = [];
+	for (const snippet of extractCommandSnippets(content)) {
+		let match = command.exec(snippet.text);
+		while (match) {
+			const before = snippet.text.slice(0, match.index + match[1].length);
+			if (!/\bpnpm(?:\s+-s)?\s+$/u.test(before)) {
+				references.push({
+					cliName: match[2],
+					filePath,
+					line: getLineNumber(content, snippet.index + match.index + match[1].length),
+				});
+			}
+			match = command.exec(snippet.text);
+		}
+	}
+	return references.sort((left, right) => left.line - right.line);
+}
+
 const PATH_SUFFIXES = ["", ".ts", ".tsx", ".js", ".mjs", "/index.ts", "/index.tsx", "/index.js"];
 
 // Docs that describe a layout outside this checkout: an extracted app, a generic project,
@@ -194,10 +238,13 @@ function readTrackedTree(cwd) {
 	];
 	const paths = new Set();
 	const symlinks = new Map();
+	const executables = new Map();
 	for (const entry of entries) {
 		const [meta, file] = entry.split("\t");
 		const parts = file.split("/");
 		for (let index = 1; index <= parts.length; index += 1) paths.add(parts.slice(0, index).join("/"));
+		// An extensionless executable is a repo CLI that no shell has on PATH.
+		if (meta.startsWith("100755") && !path.posix.basename(file).includes(".")) executables.set(path.posix.basename(file), file);
 		if (meta.startsWith("120000")) {
 			try {
 				symlinks.set(file, path.posix.normalize(path.posix.join(path.posix.dirname(file), fs.readlinkSync(path.join(cwd, file)))));
@@ -206,7 +253,7 @@ function readTrackedTree(cwd) {
 			}
 		}
 	}
-	return { paths, symlinks };
+	return { executables, paths, symlinks };
 }
 
 // The shortest ignored ancestor decides, so a path below an ignored directory (or below
@@ -231,7 +278,7 @@ function createPathChecks(cwd) {
 	const tree = readTrackedTree(cwd);
 	if (!tree) {
 		const onDisk = (relative) => fs.existsSync(path.join(cwd, relative));
-		return { hasEntry: onDisk, isIgnored: () => false, isTracked: onDisk };
+		return { cliNames: new Map(), hasEntry: onDisk, isIgnored: () => false, isTracked: onDisk };
 	}
 	const resolve = (relative) => {
 		for (const [link, target] of tree.symlinks) {
@@ -242,6 +289,7 @@ function createPathChecks(cwd) {
 	const isIgnoredPath = createIgnoredPathCheck(cwd);
 	const isTracked = (relative) => tree.paths.has(relative) || tree.paths.has(resolve(relative));
 	return {
+		cliNames: tree.executables,
 		hasEntry: (relative) => isTracked(relative) || fs.existsSync(path.join(cwd, relative)),
 		isIgnored: isIgnoredPath,
 		isTracked,
@@ -546,15 +594,27 @@ function verifyDocumentedScripts({
 			message: `Documented local skill \`${reference.referencePath}\` does not exist.`,
 		}));
 	const pathReferences = documents.flatMap(({ content, filePath }) => extractRepoPathReferences(content, filePath));
-	const pathFailures = findDeadRepoPathReferences(pathReferences, pathChecks ?? createPathChecks(cwd)).map((reference) => ({
+	const checks = pathChecks ?? createPathChecks(cwd);
+	const pathFailures = findDeadRepoPathReferences(pathReferences, checks).map((reference) => ({
 		...reference,
 		message: `Documented path \`${reference.text}\` does not exist.`,
 	}));
+	const cliNames = checks.cliNames ?? new Map();
+	const cliReferences = documents.flatMap(({ content, filePath }) => extractBareCliReferences(content, filePath, cliNames));
+	const cliFailures = cliReferences.map((reference) => {
+		const repoPath = cliNames.get(reference.cliName);
+		return {
+			...reference,
+			message: scriptNames.has(reference.cliName)
+				? `Documented command \`${reference.cliName} …\` is not on PATH; write \`pnpm ${reference.cliName} …\`, or \`${repoPath} …\` where pnpm cannot run (the agent sandbox, a stale install).`
+				: `Documented command \`${reference.cliName} …\` is not on PATH; write \`${repoPath} …\` or add a package script.`,
+		};
+	});
 	const providerComposition = verifyProviderCompositionDocs({ cwd, files });
 	const agentsFreshness = verifyAgentsFreshnessSection({ cwd, files });
 
 	return {
-		failures: [...scriptFailures, ...skillFailures, ...pathFailures, ...providerComposition.failures, ...agentsFreshness.failures],
+		failures: [...scriptFailures, ...skillFailures, ...pathFailures, ...cliFailures, ...providerComposition.failures, ...agentsFreshness.failures],
 		fileCount: files.length,
 		providerComposition: {
 			actualStack: providerComposition.actualStack,
@@ -663,6 +723,7 @@ module.exports = {
 	extractProviderCompositionFromSource,
 	extractLocalSkillEntrypointReferences,
 	extractPnpmRunScriptReferences,
+	extractBareCliReferences,
 	extractRepoPathReferences,
 	findDeadRepoPathReferences,
 	formatFailure,

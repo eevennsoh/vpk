@@ -98,6 +98,9 @@ function escapeXml(text) {
 // A grid of images scaled to one cell width, in the order given, on a white background.
 export function contactSheet(entries, { columns = Math.min(entries.length, 4), cellWidth = 480, gap = 16, labels = false } = {}) {
 	if (entries.length === 0) throw new Error("contact-sheet needs at least one image.");
+	// A zero or fractional column count would never advance the row loop below.
+	if (!Number.isInteger(columns) || columns < 1) throw new Error("contact-sheet --columns must be a positive integer.");
+	if (!Number.isInteger(cellWidth) || cellWidth < 1) throw new Error("contact-sheet --cell-width must be a positive integer.");
 	const labelHeight = labels ? 28 : 0;
 	const cells = entries.map(({ png, label }) => {
 		const size = readPngSize(png);
@@ -213,11 +216,10 @@ export function runCli(argv, { stdout = process.stdout } = {}) {
 	}
 	if (command === "contact-sheet" && positional.length > 0) {
 		const out = requireOut(flags);
-		const sheet = contactSheet(positional.map((file) => ({ png: read(file), label: path.basename(file) })), {
-			columns: number(flags.columns, "--columns"),
-			cellWidth: number(flags["cell-width"], "--cell-width"),
-			labels: Boolean(flags.labels),
-		});
+		const layout = { labels: Boolean(flags.labels) };
+		if (flags.columns !== undefined) layout.columns = number(flags.columns, "--columns");
+		if (flags["cell-width"] !== undefined) layout.cellWidth = number(flags["cell-width"], "--cell-width");
+		const sheet = contactSheet(positional.map((file) => ({ png: read(file), label: path.basename(file) })), layout);
 		fs.writeFileSync(out, sheet.png);
 		stdout.write(`${out}\n`);
 		return 0;

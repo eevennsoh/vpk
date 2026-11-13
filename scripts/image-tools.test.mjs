@@ -49,6 +49,10 @@ test("a contact sheet lays images out in a grid scaled to one cell width", () =>
 	// Row 1 is as tall as the tall image (200), row 2 as the wide one (50).
 	assert.deepEqual({ width: sheet.width, height: sheet.height }, { width: 230, height: 280 });
 	assert.deepEqual(readPngSize(sheet.png), { width: 230, height: 280 });
+	for (const columns of [0, -1, 1.5, Number.NaN]) {
+		assert.throws(() => contactSheet([{ png: wide, label: "a" }], { columns }), /--columns must be a positive integer/u, String(columns));
+	}
+	assert.throws(() => contactSheet([{ png: wide, label: "a" }], { cellWidth: 0 }), /--cell-width must be a positive integer/u);
 });
 
 test("pixel diff counts pixels over the threshold and marks them red", () => {
