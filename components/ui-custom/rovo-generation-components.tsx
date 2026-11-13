@@ -6,6 +6,7 @@ import { animate, motion, useMotionValue, useReducedMotion, type Transition } fr
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode, RefObject } from "react";
 
+import { motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { useLatestRef } from "@/lib/use-latest-ref";
 import { useLazyRef } from "@/lib/use-lazy-ref";
@@ -19,7 +20,6 @@ const ROVO_GENERATION_GRADIENT_TOKENS = {
 	"--rovo-generation-stop-purple": "var(--color-purple-500)",
 } as CSSProperties;
 
-const LINEAR_EASE: [number, number, number, number] = [0, 0, 1, 1];
 const ACTIVE_ROTATION_DURATION = 1.6;
 const ACTIVE_STATE_TRANSITION_DURATION = 0.24;
 const INACTIVE_STATE_TRANSITION_DURATION = 0.28;
@@ -136,7 +136,7 @@ function RovoGenerationGradientLayer({
 	const opacityTransition: Transition = {
 		opacity: {
 			duration: active ? ACTIVE_STATE_TRANSITION_DURATION : INACTIVE_STATE_TRANSITION_DURATION,
-			ease: LINEAR_EASE,
+			ease: motionEase.linear,
 		},
 	};
 
@@ -151,7 +151,7 @@ function RovoGenerationGradientLayer({
 			while (!cancelled) {
 				await animate(rotate, rotate.get() + 360, {
 					duration: ACTIVE_ROTATION_DURATION,
-					ease: LINEAR_EASE,
+					ease: motionEase.linear,
 				});
 
 				if (!cancelled) {
@@ -171,7 +171,7 @@ function RovoGenerationGradientLayer({
 				rotate.get() + 360 * (INACTIVE_STATE_TRANSITION_DURATION / ACTIVE_ROTATION_DURATION),
 				{
 					duration: INACTIVE_STATE_TRANSITION_DURATION,
-					ease: LINEAR_EASE,
+					ease: motionEase.linear,
 				},
 			);
 		};

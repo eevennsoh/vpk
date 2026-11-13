@@ -1533,6 +1533,26 @@
       "count": 2
     }
   },
+  "components/blocks/rovo-button/index.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/blocks/rovo-button/motion.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/blocks/rovo-button/nudge.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/rovo-button/surface.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
   "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -2046,11 +2066,6 @@
       "count": 1
     }
   },
-  "components/projects/jira-team-eu26-end/finale/components/finale-overlay.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/projects/jira-team-eu26-end/finale/jira-team-eu26-end-finale.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2192,16 +2207,6 @@
   "components/projects/page.test.js": {
     "no-restricted-syntax": {
       "count": 148
-    }
-  },
-  "components/website/demos/blocks/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/website/demos/blocks/rovo-button/page.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 52
     }
   },
   "components/projects/rovo-core/components/clicky/clicky-core.source.test.js": {
@@ -2523,26 +2528,6 @@
   "components/projects/shared/components/composer-floating-body.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 2
-    }
-  },
-  "components/blocks/rovo-button/index.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
-  "components/blocks/rovo-button/motion.test.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
-  "components/blocks/rovo-button/nudge.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/blocks/rovo-button/surface.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
     }
   },
   "components/projects/shared/components/greeting-prompt-row.tsx": {
@@ -3140,9 +3125,6 @@
     }
   },
   "components/ui-custom/rovo-generation-components.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -3614,6 +3596,16 @@
   "components/website/demos/blocks/agent-progress-demo.tsx": {
     "react-hooks/purity": {
       "count": 1
+    }
+  },
+  "components/website/demos/blocks/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/blocks/rovo-button/page.source.test.js": {
+    "no-restricted-syntax": {
+      "count": 52
     }
   },
   "components/website/demos/blocks/task-progress-demo.tsx": {
