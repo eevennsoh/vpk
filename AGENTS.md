@@ -160,7 +160,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 
 ### Debugging
 
-Inside herdr (`HERDR_ENV=1`), use the `herdr` skill and `herdr pane read <pane> --source recent-unwrapped` to inspect the failing pane before guessing. Outside herdr, inspect `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, and `.dev-backend-port`. Details: `.agents/docs/herdr.md`.
+Inside herdr (`HERDR_ENV=1`), use the `herdr` skill and `herdr pane read <pane> --source recent-unwrapped` to inspect the failing pane before guessing. Outside herdr, run `pnpm run doctor` (preflight, ports, stack, env settings as SET/MISSING, `/api/health`; `--json`) and read the stack's output in `output/logs/<worktree>/dev.log`. Details: `.agents/docs/herdr.md`.
 
 ## Gotchas
 

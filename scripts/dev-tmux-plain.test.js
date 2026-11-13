@@ -407,3 +407,35 @@ test("restarting a session whose frontend died still checks the budget", () => {
 		fake.cleanup();
 	}
 });
+
+test("a launched session copies its pane output to the worktree's dev log and keeps one previous run", () => {
+	const fake = createFakeLauncherEnvironment();
+	const logDir = path.join(fake.tempDir, "logs");
+	fs.mkdirSync(logDir, { recursive: true });
+	fs.writeFileSync(path.join(logDir, "dev.log"), "last run\n");
+	try {
+		const output = withPortFiles(null, null, () =>
+			runLauncher({
+				PATH: `${fake.tempDir}:${process.env.PATH}`,
+				VPK_TMUX_BIN: fake.tmuxPath,
+				VPK_DEV_TMUX_SESSION: "vpk-dev-plain-log-test",
+				VPK_DEV_TMUX_WAIT: "0",
+				VPK_DEV_LOG_DIR: logDir,
+				FAKE_TMUX_STATE: fake.statePath,
+				FAKE_SERVER_LOG: fake.serverLogPath,
+				FAKE_TMUX_LOG: fake.tmuxLogPath,
+				NODE_CLEANUP_LOG: fake.cleanupLogPath,
+			})
+		);
+
+		const tmuxLog = fs.readFileSync(fake.tmuxLogPath, "utf8");
+		const pipe = tmuxLog.split("\n").find((line) => line.startsWith("-L vpk-dev pipe-pane -t vpk-dev-plain-log-test -o ")) ?? "";
+		assert.ok(pipe.includes(`'${path.join(repoRoot, "scripts/lib/dev-log-filter.js")}' --out '${path.join(logDir, "dev.log")}' --max-bytes '20971520'`), tmuxLog);
+		assert.equal(fs.readFileSync(path.join(logDir, "dev.previous.log"), "utf8"), "last run\n");
+		assert.equal(fs.existsSync(path.join(logDir, "dev.log")), false, "the fake pane wrote nothing yet");
+		assert.ok(output.includes(`Logs:        ${path.join(logDir, "dev.log")}`), output);
+		assert.deepEqual(fake.serversLaunched(), ["vpk-dev-plain-log-test"]);
+	} finally {
+		fake.cleanup();
+	}
+});
