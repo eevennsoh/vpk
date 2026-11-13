@@ -13,7 +13,7 @@
 
 import type { FileUIPart } from "ai";
 import { motion, useReducedMotion } from "motion/react";
-import { type CSSProperties, startTransition, useCallback, useEffect, useMemo, useRef, useState, ViewTransition } from "react";
+import { type CSSProperties, startTransition, useCallback, useEffect, useMemo, useReducer, useRef, useState, ViewTransition } from "react";
 import { ArtifactPanel } from "@/components/blocks/artifact";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
@@ -82,9 +82,10 @@ import {
 	createStudioScreenAssistantSnapshot,
 	getStudioScreenAssistantVisibleTargets,
 	groundStudioScreenAssistantTarget,
-	type StudioScreenAssistantRegion,
 	type StudioScreenAssistantTarget,
 } from "@/components/projects/rovo-core/lib/screen-assistant";
+import { useScreenAssistantRegion } from "@/components/projects/sidebar-chat/hooks/use-screen-assistant-region";
+import { reduceDictationPresentation } from "@/components/projects/sidebar-chat/lib/sidebar-chat-state";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { cn, createId } from "@/lib/utils";
 import { token } from "@/lib/tokens";
@@ -551,8 +552,10 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	const [previewPrompt, setPreviewPrompt] = useState<string | null>(null);
 	const [prefillText, setPrefillText] = useState<string | null>(null);
 	const [voiceTranscript, setVoiceTranscript] = useState<string | null>(null);
-	const [isDictationActive, setIsDictationActive] = useState(false);
-	const [dictationTranscriptPreview, setDictationTranscriptPreview] = useState<string | null>(null);
+	const [{ isActive: isDictationActive, transcriptPreview: dictationTranscriptPreview }, dispatchDictation] = useReducer(
+		reduceDictationPresentation,
+		{ isActive: false, transcriptPreview: null },
+	);
 	const [composerFocusRequestKey, setComposerFocusRequestKey] = useState(0);
 	const [scrollActiveTimelineSelection, setScrollActiveTimelineSelection] = useState<ScrollActiveTimelineSelection | null>(null);
 	const [scrollAnchorMessageId, setScrollAnchorMessageId] = useState<string | null>(null);
@@ -781,15 +784,12 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		clickyStartSpeaking(text);
 		return true;
 	}, [activateClicky, clickyStartSpeaking, isClickyActive]);
-	const [screenAssistantRegion, setScreenAssistantRegion] = useState<StudioScreenAssistantRegion | null>(null);
-	const [screenAssistantRegionPainting, setScreenAssistantRegionPainting] = useState(false);
-
-	useEffect(() => {
-		if (!isClickyActive) {
-			setScreenAssistantRegion(null);
-			setScreenAssistantRegionPainting(false);
-		}
-	}, [isClickyActive]);
+	const {
+		painting: screenAssistantRegionPainting,
+		region: screenAssistantRegion,
+		setPainting: setScreenAssistantRegionPainting,
+		setRegion: setScreenAssistantRegion,
+	} = useScreenAssistantRegion(isClickyActive);
 
 	const getScreenAssistantVisibleTargets = useCallback(
 		() => getStudioScreenAssistantVisibleTargets(),
@@ -950,7 +950,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			),
 			onSpeechStarted: useCallback(() => {
 				if (realtimeConversation.isDictating()) {
-					setDictationTranscriptPreview(null);
+					dispatchDictation({ type: "preview", transcript: null });
 					return;
 				}
 
@@ -976,7 +976,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 		onSpeechTranscriptDelta: useCallback((payload: RealtimeSpeechTranscriptPayload) => {
 			const draft = realtimeConversation.transcriptDelta(payload);
 			if (draft) {
-				setDictationTranscriptPreview(draft.preview);
+				dispatchDictation({ type: "preview", transcript: draft.preview });
 				composerTextRef.current = draft.text;
 				setVoiceTranscript(draft.text);
 				setComposerFocusRequestKey((currentKey) => currentKey + 1);
@@ -991,7 +991,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 			});
 			if (draft) {
 				composerTextRef.current = draft.text;
-				setDictationTranscriptPreview(draft.preview);
+				dispatchDictation({ type: "preview", transcript: draft.preview });
 				setVoiceTranscript(draft.text);
 				setComposerFocusRequestKey((currentKey) => currentKey + 1);
 			} else if (!realtimeConversation.isDictating()) {
@@ -1116,8 +1116,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 
 	const startRealtimeVoice = useCallback(() => {
 		if (realtimeConversation.isDictating()) {
-			setIsDictationActive(false);
-			setDictationTranscriptPreview(null);
+			dispatchDictation({ type: "stop" });
 		}
 		realtimeConversation.startLive(realtime, activateClicky);
 	}, [activateClicky, realtime, realtimeConversation]);
@@ -1166,8 +1165,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 
 	const handleStartDictation = useCallback(() => {
 		const baselineText = composerTextRef.current;
-		setIsDictationActive(true);
-		setDictationTranscriptPreview(null);
+		dispatchDictation({ type: "start" });
 		setPrefillText(null);
 		setVoiceTranscript(baselineText);
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
@@ -1175,8 +1173,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	}, [realtime, realtimeConversation]);
 
 	const handleStopDictation = useCallback(() => {
-		setIsDictationActive(false);
-		setDictationTranscriptPreview(null);
+		dispatchDictation({ type: "stop" });
 		setPrefillText(null);
 		setVoiceTranscript(composerTextRef.current);
 		realtimeConversation.stopDictation(realtime);

@@ -1242,7 +1242,6 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 	assert.match(SHELL_SOURCE, /prepareStudioAgentDraftPatch\(\{[\s\S]*currentDraft: activeSessionAgentEntry\.draftResult,[\s\S]*rawPatch: args\.patch,/u);
 	assert.match(SHELL_SOURCE, /ScreenAssistantRegionOverlay/u);
 	assert.match(SHELL_SOURCE, /activeRegion: screenAssistantRegion/u);
-	assert.match(SHELL_SOURCE, /const \[screenAssistantRegionPainting, setScreenAssistantRegionPainting\] = useState\(false\);/u);
 	assert.match(SHELL_SOURCE, /<ClickyOverlay[\s\S]*paintingActive=\{screenAssistantRegionPainting\}/u);
 	assert.match(SHELL_SOURCE, /<ScreenAssistantRegionOverlay[\s\S]*onPaintingChange=\{setScreenAssistantRegionPainting\}/u);
 	assert.doesNotMatch(SHELL_SOURCE, /onStartScreenAssistantRegionPaint|screenAssistantRegionActive|isScreenAssistantRegionPaintMode/u);
