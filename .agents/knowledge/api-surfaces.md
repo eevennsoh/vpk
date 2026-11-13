@@ -12,7 +12,7 @@ ride along each time (see the Contextual Rules section of `AGENTS.md`). Source o
 <!-- generated:begin -->
 <!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->
 
-Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 18; Next API routes: 103.
+Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtime-admin routes: 37; Next API routes: 103.
 
 ### Backend Routes
 
@@ -46,25 +46,25 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `POST` | `/api/checkpoints` | yes | `backend/routes/rovo-app.js:314` |
 | `DELETE` | `/api/checkpoints/:id` | yes | `backend/routes/rovo-app.js:347` |
 | `POST` | `/api/checkpoints/:id/rollback` | yes | `backend/routes/rovo-app.js:333` |
-| `GET` | `/api/chromium-preview` | no | `backend/routes/chromium-preview.js:59` |
-| `POST` | `/api/chromium-preview` | no | `backend/routes/chromium-preview.js:85` |
-| `POST` | `/api/chromium-preview/back` | no | `backend/routes/chromium-preview.js:122` |
-| `POST` | `/api/chromium-preview/click` | no | `backend/routes/chromium-preview.js:158` |
-| `POST` | `/api/chromium-preview/click-ref` | no | `backend/routes/chromium-preview.js:170` |
-| `POST` | `/api/chromium-preview/fill-ref` | no | `backend/routes/chromium-preview.js:208` |
-| `POST` | `/api/chromium-preview/forward` | no | `backend/routes/chromium-preview.js:134` |
-| `POST` | `/api/chromium-preview/hover-ref` | no | `backend/routes/chromium-preview.js:189` |
-| `POST` | `/api/chromium-preview/press` | no | `backend/routes/chromium-preview.js:323` |
-| `POST` | `/api/chromium-preview/reload` | no | `backend/routes/chromium-preview.js:146` |
-| `GET` | `/api/chromium-preview/screenshot` | no | `backend/routes/chromium-preview.js:374` |
-| `POST` | `/api/chromium-preview/scroll` | no | `backend/routes/chromium-preview.js:286` |
-| `POST` | `/api/chromium-preview/select-ref` | no | `backend/routes/chromium-preview.js:258` |
-| `GET` | `/api/chromium-preview/snapshot` | no | `backend/routes/chromium-preview.js:361` |
-| `GET` | `/api/chromium-preview/stream` | no | `backend/routes/chromium-preview.js:71` |
-| `POST` | `/api/chromium-preview/type` | no | `backend/routes/chromium-preview.js:342` |
-| `POST` | `/api/chromium-preview/type-ref` | no | `backend/routes/chromium-preview.js:233` |
-| `POST` | `/api/chromium-preview/viewport` | no | `backend/routes/chromium-preview.js:108` |
-| `POST` | `/api/chromium-preview/wheel` | no | `backend/routes/chromium-preview.js:308` |
+| `GET` | `/api/chromium-preview` | yes | `backend/routes/chromium-preview.js:64` |
+| `POST` | `/api/chromium-preview` | yes | `backend/routes/chromium-preview.js:90` |
+| `POST` | `/api/chromium-preview/back` | yes | `backend/routes/chromium-preview.js:127` |
+| `POST` | `/api/chromium-preview/click` | yes | `backend/routes/chromium-preview.js:163` |
+| `POST` | `/api/chromium-preview/click-ref` | yes | `backend/routes/chromium-preview.js:175` |
+| `POST` | `/api/chromium-preview/fill-ref` | yes | `backend/routes/chromium-preview.js:213` |
+| `POST` | `/api/chromium-preview/forward` | yes | `backend/routes/chromium-preview.js:139` |
+| `POST` | `/api/chromium-preview/hover-ref` | yes | `backend/routes/chromium-preview.js:194` |
+| `POST` | `/api/chromium-preview/press` | yes | `backend/routes/chromium-preview.js:328` |
+| `POST` | `/api/chromium-preview/reload` | yes | `backend/routes/chromium-preview.js:151` |
+| `GET` | `/api/chromium-preview/screenshot` | yes | `backend/routes/chromium-preview.js:379` |
+| `POST` | `/api/chromium-preview/scroll` | yes | `backend/routes/chromium-preview.js:291` |
+| `POST` | `/api/chromium-preview/select-ref` | yes | `backend/routes/chromium-preview.js:263` |
+| `GET` | `/api/chromium-preview/snapshot` | yes | `backend/routes/chromium-preview.js:366` |
+| `GET` | `/api/chromium-preview/stream` | yes | `backend/routes/chromium-preview.js:76` |
+| `POST` | `/api/chromium-preview/type` | yes | `backend/routes/chromium-preview.js:347` |
+| `POST` | `/api/chromium-preview/type-ref` | yes | `backend/routes/chromium-preview.js:238` |
+| `POST` | `/api/chromium-preview/viewport` | yes | `backend/routes/chromium-preview.js:113` |
+| `POST` | `/api/chromium-preview/wheel` | yes | `backend/routes/chromium-preview.js:313` |
 | `DELETE` | `/api/claim-test` | no | `backend/routes/demos.js:129` |
 | `GET` | `/api/claim-test` | no | `backend/routes/demos.js:103` |
 | `POST` | `/api/claim-test` | no | `backend/routes/demos.js:116` |

@@ -79,6 +79,53 @@ function parseNavigationUrl(value) {
 	return { ok: true, url };
 }
 
+// agent-browser reads an option anywhere in its arguments and has no `--` end-of-options
+// marker (checked with the installed CLI: `fill @e1 -- --help` prints help), so a request
+// value that starts like an option would be read as one. "-", "-5" and "- item" are text.
+const OPTION_LIKE_ARGUMENT = /^-[A-Za-z-]/u;
+// A ref from an agent-browser snapshot: `e12` or `@e12`.
+const AGENT_BROWSER_REF_PATTERN = /^@?e\d{1,6}$/u;
+// A key the Chromium preview sends: a named key or one character, with modifiers.
+const PREVIEW_KEY_PATTERN = /^(?:(?:Control|Meta|Alt|Shift)\+)*(?:[A-Za-z][A-Za-z0-9]{0,15}|[0-9])$/u;
+
+function isOptionLikeArgument(value) {
+	return typeof value === "string" && OPTION_LIKE_ARGUMENT.test(value);
+}
+
+/**
+ * A request value that goes into agent-browser's arguments, or a 400.
+ * @param {unknown} value
+ * @param {string} label
+ * @returns {string}
+ */
+function requireBrowserArgument(value, label) {
+	if (typeof value !== "string") {
+		throw createInvalidInputError(`${label} must be a string.`);
+	}
+	if (isOptionLikeArgument(value)) {
+		throw createInvalidInputError(`${label} cannot start like a command-line option.`);
+	}
+	return value;
+}
+
+/** @param {unknown} ref */
+function requireAgentBrowserRef(ref) {
+	const value = typeof ref === "string" ? ref.trim() : ref;
+	if (typeof value !== "string" || !AGENT_BROWSER_REF_PATTERN.test(value)) {
+		throw createInvalidInputError("An accessibility ref like @e12 is required.");
+	}
+	return value;
+}
+
+/** @param {unknown} key */
+function requirePreviewKey(key) {
+	const value = typeof key === "string" ? key.trim() : key;
+	if (typeof value !== "string" || !PREVIEW_KEY_PATTERN.test(value)) {
+		throw createInvalidInputError("A keyboard key like Enter or Control+a is required.");
+	}
+	return value;
+}
+
 function isStorageId(value) {
 	return typeof value === "string" && STORAGE_ID_PATTERN.test(value);
 }
@@ -141,8 +188,12 @@ module.exports = {
 	TRANSCRIPTION_PROVIDERS,
 	atlassianSiteHostSchema,
 	createInvalidInputError,
+	isOptionLikeArgument,
 	isStorageId,
 	parseNavigationUrl,
+	requireAgentBrowserRef,
+	requireBrowserArgument,
+	requirePreviewKey,
 	parseOrReject,
 	requireStorageId,
 	speechTranscriptionOptionsSchema,

@@ -5,8 +5,12 @@ const test = require("node:test");
 
 const {
 	atlassianSiteHostSchema,
+	isOptionLikeArgument,
 	isStorageId,
 	parseNavigationUrl,
+	requireAgentBrowserRef,
+	requireBrowserArgument,
+	requirePreviewKey,
 	parseOrReject,
 	requireStorageId,
 	speechTranscriptionOptionsSchema,
@@ -152,4 +156,31 @@ test("validateStorageIdParam rejects a hostile route parameter before the route 
 	}, "../../../..");
 	assert.equal(nextCalls, 1);
 	assert.deepEqual(res.sent, [{ status: 400, body: { error: "Invalid threadId.", code: "INVALID_INPUT" } }]);
+});
+
+test("browser arguments: text that agent-browser would read as an option is rejected", () => {
+	const optionLike = ["--help", "--executable-path=/bin/sh", "-h", "--", "-x value", "--session other"];
+	const text = ["hello", "-", "-5", "-120", "- item", "a --flag", "", " --leading-space"];
+	for (const value of optionLike) {
+		assert.equal(isOptionLikeArgument(value), true, value);
+		assert.throws(() => requireBrowserArgument(value, "Text"), (error) => error.status === 400 && error.code === "INVALID_INPUT", value);
+	}
+	for (const value of text) {
+		assert.equal(isOptionLikeArgument(value), false, value);
+		assert.equal(requireBrowserArgument(value, "Text"), value);
+	}
+	assert.throws(() => requireBrowserArgument(7, "Text"), /must be a string/u);
+});
+
+test("refs and preview keys match what the UI sends and nothing else", () => {
+	for (const ref of ["e1", "@e12", " @e3 "]) assert.equal(typeof requireAgentBrowserRef(ref), "string", ref);
+	for (const ref of ["--help", "#email", "e", "@e1 --x", "e1234567", 3, null]) {
+		assert.throws(() => requireAgentBrowserRef(ref), (error) => error.status === 400, String(ref));
+	}
+	for (const key of ["Enter", "Space", "ArrowUp", "PageDown", "Control+a", "Meta+Shift+Tab", "a", "7"]) {
+		assert.equal(requirePreviewKey(key), key, key);
+	}
+	for (const key of ["--help", "-", "Control+", "Enter --x", "Super+a", "", "x".repeat(40), {}]) {
+		assert.throws(() => requirePreviewKey(key), (error) => error.status === 400, String(key));
+	}
 });

@@ -5,6 +5,7 @@ const path = require("node:path")
 const { execFile } = require("node:child_process")
 const { promisify } = require("node:util")
 const WebSocket = require("ws")
+const { requireAgentBrowserRef, requireBrowserArgument } = require("./input-schemas")
 const {
 	DEFAULT_BROWSER_MODE,
 } = require("./browser-runtime-config")
@@ -774,27 +775,27 @@ class AgentBrowserRuntime {
 
 	async clickRef(ref) {
 		await this._ensureBrowser()
-		await this._runCommand(["click", ref])
+		await this._runCommand(["click", requireAgentBrowserRef(ref)])
 	}
 
 	async hoverRef(ref) {
 		await this._ensureBrowser()
-		await this._runCommand(["hover", ref])
+		await this._runCommand(["hover", requireAgentBrowserRef(ref)])
 	}
 
 	async fillRef(ref, text) {
 		await this._ensureBrowser()
-		await this._runCommand(["fill", ref, text])
+		await this._runCommand(["fill", requireAgentBrowserRef(ref), requireBrowserArgument(text, "Text")])
 	}
 
 	async typeRef(ref, text) {
 		await this._ensureBrowser()
-		await this._runCommand(["type", ref, text])
+		await this._runCommand(["type", requireAgentBrowserRef(ref), requireBrowserArgument(text, "Text")])
 	}
 
 	async selectRef(ref, values) {
 		await this._ensureBrowser()
-		await this._runCommand(["select", ref, ...values])
+		await this._runCommand(["select", requireAgentBrowserRef(ref), ...values.map((value) => requireBrowserArgument(value, "A select value"))])
 	}
 
 	async wheel(x, y, deltaX, deltaY) {
@@ -810,7 +811,7 @@ class AgentBrowserRuntime {
 
 	async press(key) {
 		await this._ensureBrowser()
-		await this._runCommand(["press", key])
+		await this._runCommand(["press", requireBrowserArgument(key, "A key")])
 	}
 
 	async keyEvent(eventType, key, code, text) {
@@ -827,12 +828,12 @@ class AgentBrowserRuntime {
 			return
 		}
 
-		await this._runCommand([eventType === "keyUp" ? "keyup" : "keydown", value])
+		await this._runCommand([eventType === "keyUp" ? "keyup" : "keydown", requireBrowserArgument(value, "A key")])
 	}
 
 	async insertText(text) {
 		await this._ensureBrowser()
-		await this._runCommand(["keyboard", "inserttext", text])
+		await this._runCommand(["keyboard", "inserttext", requireBrowserArgument(text, "Text")])
 	}
 
 	async createTab(url) {

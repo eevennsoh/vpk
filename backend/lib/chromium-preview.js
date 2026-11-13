@@ -4,7 +4,13 @@ const path = require("node:path");
 const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
 
-const { createInvalidInputError, parseNavigationUrl } = require("./input-schemas");
+const {
+	createInvalidInputError,
+	parseNavigationUrl,
+	requireAgentBrowserRef,
+	requireBrowserArgument,
+	requirePreviewKey,
+} = require("./input-schemas");
 
 const execFileAsync = promisify(execFile);
 
@@ -306,10 +312,7 @@ class ChromiumPreviewManager {
 
 	clickRef(ref) {
 		return this._enqueue(async () => {
-			const resolvedRef = requireNonEmptyString(
-				ref,
-				"A non-empty accessibility ref is required."
-			);
+			const resolvedRef = requireAgentBrowserRef(ref);
 			await this._ensureBrowser();
 			await this._run(["click", resolvedRef]);
 			await this._delay(250);
@@ -320,10 +323,7 @@ class ChromiumPreviewManager {
 
 	hoverRef(ref) {
 		return this._enqueue(async () => {
-			const resolvedRef = requireNonEmptyString(
-				ref,
-				"A non-empty accessibility ref is required."
-			);
+			const resolvedRef = requireAgentBrowserRef(ref);
 			await this._ensureBrowser();
 			await this._run(["hover", resolvedRef]);
 			await this._delay(150);
@@ -334,15 +334,12 @@ class ChromiumPreviewManager {
 
 	fillRef(ref, text) {
 		return this._enqueue(async () => {
-			const resolvedRef = requireNonEmptyString(
-				ref,
-				"A non-empty accessibility ref is required."
-			);
+			const resolvedRef = requireAgentBrowserRef(ref);
 			if (typeof text !== "string") {
 				throw new Error("A text string is required.");
 			}
 			await this._ensureBrowser();
-			await this._run(["fill", resolvedRef, text]);
+			await this._run(["fill", resolvedRef, requireBrowserArgument(text, "Text")]);
 			await this._delay(150);
 			this._markScreenshotDirty();
 			return this._refreshState();
@@ -351,15 +348,12 @@ class ChromiumPreviewManager {
 
 	typeRef(ref, text) {
 		return this._enqueue(async () => {
-			const resolvedRef = requireNonEmptyString(
-				ref,
-				"A non-empty accessibility ref is required."
-			);
+			const resolvedRef = requireAgentBrowserRef(ref);
 			if (typeof text !== "string") {
 				throw new Error("A text string is required.");
 			}
 			await this._ensureBrowser();
-			await this._run(["type", resolvedRef, text]);
+			await this._run(["type", resolvedRef, requireBrowserArgument(text, "Text")]);
 			await this._delay(150);
 			this._markScreenshotDirty();
 			return this._refreshState();
@@ -368,10 +362,7 @@ class ChromiumPreviewManager {
 
 	selectRef(ref, values) {
 		return this._enqueue(async () => {
-			const resolvedRef = requireNonEmptyString(
-				ref,
-				"A non-empty accessibility ref is required."
-			);
+			const resolvedRef = requireAgentBrowserRef(ref);
 			const resolvedValues = Array.isArray(values)
 				? values
 						.map((value) =>
@@ -383,7 +374,7 @@ class ChromiumPreviewManager {
 				throw new Error("At least one select value is required.");
 			}
 			await this._ensureBrowser();
-			await this._run(["select", resolvedRef, ...resolvedValues]);
+			await this._run(["select", resolvedRef, ...resolvedValues.map((value) => requireBrowserArgument(value, "A select value"))]);
 			await this._delay(150);
 			this._markScreenshotDirty();
 			return this._refreshState();
@@ -426,10 +417,7 @@ class ChromiumPreviewManager {
 	press(key) {
 		return this._enqueue(async () => {
 			await this._ensureBrowser();
-			await this._run([
-				"press",
-				requireNonEmptyString(key, "A keyboard key is required."),
-			]);
+			await this._run(["press", requirePreviewKey(key)]);
 			await this._delay(125);
 			this._markScreenshotDirty();
 			return this._refreshState();
@@ -442,7 +430,7 @@ class ChromiumPreviewManager {
 			if (typeof text !== "string" || !text) {
 				throw new Error("Text input is required.");
 			}
-			await this._run(["keyboard", "inserttext", text]);
+			await this._run(["keyboard", "inserttext", requireBrowserArgument(text, "Text")]);
 			await this._delay(100);
 			this._markScreenshotDirty();
 			return this._refreshState();
