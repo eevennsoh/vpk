@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require("express");
+const { ERROR_CODES, sendError } = require("./error-response");
 
 const ROUTE_JSON_BODY_LIMITS = [
 	{
@@ -22,17 +23,14 @@ const FALLBACK_BODY_LIMIT = "50mb";
 function createPayloadTooLargeHandler() {
 	return (error, _req, res, next) => {
 		if (error?.type === "entity.too.large" || error?.status === 413) {
-			return res.status(413).json({
-				error: "Request payload is too large.",
+			return sendError(res, 413, ERROR_CODES.PAYLOAD_TOO_LARGE, "Request payload is too large.", {
 				reason: "payload_too_large",
 				details:
 					"The request included more data than this endpoint can process, often from inline image/file data in chat history. You can continue chatting after starting a new thread or trimming history.",
 			});
 		}
 		if (error?.type === "entity.parse.failed" || (error instanceof SyntaxError && error?.status === 400)) {
-			return res.status(400).json({
-				error: "Invalid JSON request body.",
-			});
+			return sendError(res, 400, ERROR_CODES.INVALID_JSON, "Invalid JSON request body.");
 		}
 
 		return next(error);
