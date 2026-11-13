@@ -1,4 +1,29 @@
 {
-	"description": "Backend JS files that start with `// @ts-check` and are type-checked by tsconfig.backend.json (pnpm run typecheck). The count only goes up: add `// @ts-check` to a file you touch, fix what the check finds, and raise minimum to the new count.",
-	"minimum": 24
+	"description": "Backend JS files (relative to backend/) that start with `// @ts-check` and are type-checked by tsconfig.backend.json (pnpm run typecheck). Add a file here when you add `// @ts-check` to it; removing one is a reviewed, explicit edit. Kept sorted, one path per line, so two PRs that opt in different files merge cleanly or conflict visibly.",
+	"files": [
+		"__fixtures__/start-backend.js",
+		"lib/backend-process-machine.js",
+		"lib/browser-workspace-lifecycle.js",
+		"lib/chromium-preview.js",
+		"lib/image-proxy.js",
+		"lib/input-schemas.js",
+		"lib/local-model-provider.js",
+		"lib/log-redaction.js",
+		"lib/openai-realtime.js",
+		"lib/plan-session-machine.js",
+		"lib/plan-session.js",
+		"lib/rovo-app-documents.js",
+		"lib/rovo-app-storage-paths.js",
+		"lib/rovo-app-threads.js",
+		"lib/rovo-app-uploads.js",
+		"lib/rovo-app-votes.js",
+		"lib/rovo-availability-machine.js",
+		"lib/secret-redaction.js",
+		"lib/speech-transcription.js",
+		"middleware/body-limits.js",
+		"middleware/error-response.js",
+		"middleware/rate-limit.js",
+		"routes/media.js",
+		"server.js"
+	]
 }

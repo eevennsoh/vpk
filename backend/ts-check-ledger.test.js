@@ -25,17 +25,16 @@ function listCheckedFiles(directory = __dirname, prefix = "") {
 	return checked.sort();
 }
 
-test("the count of type-checked backend files only goes up", () => {
-	const { minimum } = JSON.parse(fs.readFileSync(LEDGER_PATH, "utf8"));
+test("the files that opt into type checking are exactly the ledger's list", () => {
+	const { files } = JSON.parse(fs.readFileSync(LEDGER_PATH, "utf8"));
+	assert.deepEqual(files, [...files].sort(), "Keep backend/ts-check-ledger.json sorted.");
 	const checked = listCheckedFiles();
-	assert.ok(
-		checked.length >= minimum,
-		`${checked.length} backend files start with // @ts-check; backend/ts-check-ledger.json requires at least ${minimum}. Keep // @ts-check on the files that have it.`,
-	);
-	assert.equal(
-		checked.length,
-		minimum,
-		`${checked.length} backend files start with // @ts-check; raise "minimum" in backend/ts-check-ledger.json to ${checked.length} so the count cannot drop back.`,
+	const toAdd = checked.filter((file) => !files.includes(file));
+	const toRemove = files.filter((file) => !checked.includes(file));
+	assert.deepEqual(
+		{ toAdd, toRemove },
+		{ toAdd: [], toRemove: [] },
+		"backend/ts-check-ledger.json lists the backend files that start with // @ts-check: add the files in toAdd; for toRemove, put // @ts-check back, or remove the entry as a reviewed change.",
 	);
 });
 
