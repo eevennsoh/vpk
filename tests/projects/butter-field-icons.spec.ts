@@ -44,14 +44,14 @@ test("work item field and development icons fit 12-pixel glyphs in 16-pixel slot
 		await expect(slot, action).toHaveCSS("width", "16px");
 		await expect(slot, action).toHaveCSS("height", "16px");
 	}
-	// Copy prompt lives in the Open in menu, at menu icon size; its copied feedback keeps the idle glyph's size.
+	// Copy prompt lives in the Open in menu at the menu's 16px icon size, idle and copied alike.
 	await page.getByRole("button", { name: "Open in", exact: true }).click();
 	const localAgents = page.getByRole("dialog", { name: "Local software agents" });
 	const idle = localAgents.getByRole("button", { name: "Copy prompt", exact: true }).locator("svg").last();
-	await expect(idle).toBeVisible();
-	const idleSize = await idle.evaluate((icon) => ({ width: getComputedStyle(icon).width, height: getComputedStyle(icon).height }));
+	await expect(idle).toHaveCSS("width", "16px");
+	await expect(idle).toHaveCSS("height", "16px");
 	await localAgents.getByRole("button", { name: "Copy prompt", exact: true }).click();
 	const copied = localAgents.getByRole("button", { name: "Prompt copied" }).locator("svg").last();
-	await expect(copied).toHaveCSS("width", idleSize.width);
-	await expect(copied).toHaveCSS("height", idleSize.height);
+	await expect(copied).toHaveCSS("width", "16px");
+	await expect(copied).toHaveCSS("height", "16px");
 });

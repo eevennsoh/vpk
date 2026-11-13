@@ -129,7 +129,7 @@ async function selectCodingAgent(page: Page, key: string) {
 	const option = picker.getByRole("option", { name: /^Jira Coding Agent/ });
 	await option.hover();
 	const observations = page.evaluate(async (issueKey) => {
-		const results = { glow: false, handoff: false, overlap: false, status: "", shadow: "" };
+		const results = { glow: false, handoff: false, overlap: false, scaled: false, status: "", shadow: "" };
 		const start = performance.now();
 		await new Promise<void>((resolve) => {
 			const target = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((element) => element.textContent?.includes("Jira Coding Agent"));
@@ -141,6 +141,9 @@ async function selectCodingAgent(page: Page, key: string) {
 			const handoff = card?.querySelector('[data-slot="jira-issue-agent-invocation-handoff"][data-agent-id="jira-coding"]');
 			const preview = card?.querySelector('[data-slot="jira-issue-agent-invocation-preview"]');
 			results.handoff ||= Boolean(handoff);
+			// The handoff avatar still scales in from 0.85 (project-butter-invocation-chin.tsx).
+			const avatar = handoff?.querySelector<HTMLElement>("span");
+			if (avatar) results.scaled ||= new DOMMatrixReadOnly(getComputedStyle(avatar).transform).a < 0.99;
 			results.overlap ||= Boolean(handoff && preview);
 			const halo = card?.querySelector<HTMLElement>('[data-jira-linking-glow-halo]');
 			results.glow ||= Boolean(halo);
@@ -162,7 +165,7 @@ test("new and repeated selections replace the preview and each show the avatar-c
 	await page.goto(appUrl("/preview/projects/butter?embedded=1"));
 	for (let iteration = 0; iteration < 2; iteration++) {
 		const { card, result } = await selectCodingAgent(page, "PAY-105");
-		expect(result).toMatchObject({ glow: true, handoff: true, overlap: false });
+		expect(result).toMatchObject({ glow: true, handoff: true, overlap: false, scaled: true });
 		expect(result.status).toContain("Needs input");
 		expect(result.shadow).toContain("rgb(148, 199, 72)");
 		await expect(card.getByRole("button", { name: "2 agents: Needs input" }).getByRole("img", { name: "Jira Coding Agent" })).toBeVisible();

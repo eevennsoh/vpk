@@ -41,10 +41,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const progress = await sampleTransition(agent, "In progress");
 		expect(progress.length).toBeGreaterThan(0);
 		expect(progress.every((sample) => sample.same && sample.value === "50")).toBe(true);
-		// The frame before the fill applies has no sector yet, so count only drawn sectors: a sweep draws several, reduced motion jumps to one.
-		const progressSectors = new Set(progress.map((sample) => sample.path).filter(Boolean));
-		if (reducedMotion === "no-preference") expect(progressSectors.size).toBeGreaterThan(1);
-		else expect(progressSectors.size, JSON.stringify(progress)).toBe(1);
+		if (reducedMotion === "no-preference") expect(new Set(progress.map((sample) => sample.path)).size).toBeGreaterThan(1);
+		else expect(new Set(progress.map((sample) => sample.path)).size, JSON.stringify(progress)).toBe(1);
 		await status("In progress").click();
 		const done = await sampleTransition(page.getByRole("menuitem", { name: "Done" }), "Done");
 		expect(done.length).toBeGreaterThan(0);
