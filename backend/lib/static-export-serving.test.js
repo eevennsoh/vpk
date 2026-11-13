@@ -365,3 +365,90 @@ test("a public directory under a dot-named parent still serves the fallback and 
 		fs.rmSync(parent, { force: true, recursive: true });
 	}
 });
+
+// An optional catch-all (`app/rovo/[[...id]]`) exports only its root page, `rovo.html`, and marks
+// the route with a `rovo/__next.rovo.$oc$id.__PAGE__.txt` segment file. A deep link with an id has
+// no file of its own.
+function writeCatchAllFixture(publicPath) {
+	writeExportFixture(publicPath);
+	writeFile(path.join(publicPath, "rovo.html"), "<main>Rovo shell</main>".repeat(100));
+	writeFile(path.join(publicPath, "rovo/__next.rovo.$oc$id.__PAGE__.txt"), "segment");
+	writeFile(path.join(publicPath, "rovo/__next._full.txt"), "rovo segment");
+	writeFile(path.join(publicPath, "studio.html"), "<main>Studio shell</main>");
+	writeFile(path.join(publicPath, "studio/__next.studio.$oc$id.__PAGE__.txt"), "segment");
+}
+
+test("a deep link under an exported catch-all serves the catch-all's page without a redirect", async () => {
+	const publicPath = createTempPublicDir();
+	try {
+		writeCatchAllFixture(publicPath);
+		await withStaticServer(publicPath, async (baseUrl) => {
+			const threadId = "26c0364e-cad5-4c86-9ad3-eff35a5ec394";
+			for (const [deepLink, expected] of [
+				[`/rovo/${threadId}`, /Rovo shell/u],
+				[`/rovo/${threadId}/`, /Rovo shell/u],
+				[`/rovo/${threadId}/deeper/path?tab=1`, /Rovo shell/u],
+				[`/rovo/${encodeURIComponent("thread/with slash")}`, /Rovo shell/u],
+				[`/studio/${threadId}`, /Studio shell/u],
+			]) {
+				const response = await fetch(`${baseUrl}${deepLink}`, { redirect: "manual" });
+				assert.equal(response.status, 200, deepLink);
+				assert.match(response.headers.get("content-type"), /text\/html/u, deepLink);
+				assert.match(await response.text(), expected, deepLink);
+			}
+			assert.equal(await (await fetch(`${baseUrl}/rovo/__next._full.txt`)).text(), "rovo segment", "files under a catch-all stay reachable");
+			assert.match(await (await fetch(`${baseUrl}/rovo`)).text(), /Rovo shell/u);
+		});
+	} finally {
+		fs.rmSync(publicPath, { force: true, recursive: true });
+	}
+});
+
+test("catch-all deep links leave other routes, retired paths, the API and the root alone", async () => {
+	const publicPath = createTempPublicDir();
+	try {
+		writeCatchAllFixture(publicPath);
+		await withStaticServer(publicPath, async (baseUrl) => {
+			for (const notCatchAll of ["/a/b/c", "/no/such/page", "/rovo-not-a-child/x"]) {
+				const response = await fetch(`${baseUrl}${notCatchAll}`, { redirect: "manual" });
+				assert.equal(response.status, 200, notCatchAll);
+				assert.equal(await response.text(), "<main>Home</main>", `${notCatchAll} keeps the app fallback`);
+			}
+			for (const retired of ["/rovo/jobs", "/rovo/jobs/123", "/studio/skills/local/test", "/rovo/%6aobs"]) {
+				assert.equal((await fetch(`${baseUrl}${retired}`)).status, 404, retired);
+			}
+			const api = await fetch(`${baseUrl}/api/rovo/thread-1`);
+			assert.equal(api.status, 404);
+			assert.deepEqual(await api.json(), { error: "API route not found: /api/rovo/thread-1" });
+			const outside = `${path.basename(publicPath)}-outside.txt`;
+			writeFile(path.join(path.dirname(publicPath), outside), "outside the public root");
+			try {
+				for (const escape of [`/rovo/..%2F..%2F${outside}`, `/rovo/%2e%2e/%2e%2e/${outside}`, `/rovo/%2e%2e%2F%2e%2e%2F${outside}`, "/rovo/%2e%2e/x", "/rovo/.hidden"]) {
+					const response = await fetch(`${baseUrl}${escape}`, { redirect: "manual" });
+					assert.doesNotMatch(await response.text(), /outside the public root|Rovo shell/u, escape);
+				}
+			} finally {
+				fs.rmSync(path.join(path.dirname(publicPath), outside), { force: true });
+			}
+		});
+	} finally {
+		fs.rmSync(publicPath, { force: true, recursive: true });
+	}
+});
+
+test("catch-all deep links still use the page's precompressed variants", async () => {
+	const publicPath = createTempPublicDir();
+	try {
+		writeCatchAllFixture(publicPath);
+		const page = path.join(publicPath, "rovo.html");
+		writeFile(`${page}.br`, zlib.brotliCompressSync(fs.readFileSync(page)));
+		await withStaticServer(publicPath, async (baseUrl) => {
+			const response = await rawRequest(`${baseUrl}/rovo/26c0364e-cad5-4c86-9ad3-eff35a5ec394`, { "Accept-Encoding": "br" });
+			assert.equal(response.status, 200);
+			assert.equal(response.headers["content-encoding"], "br");
+			assert.match(zlib.brotliDecompressSync(response.body).toString(), /Rovo shell/u);
+		});
+	} finally {
+		fs.rmSync(publicPath, { force: true, recursive: true });
+	}
+});
