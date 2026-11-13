@@ -20,7 +20,9 @@ async function openCollapsedBoard(page: Page): Promise<void> {
 	// 5c96e6a9f opens the column expanded and a1b70b260 rests a collapsed rail pinned;
 	// collapse it and Unpin to return to the hover gutter these tests start from.
 	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
-	await page.getByRole("heading", { name: "Jira Design" }).hover();
+	// Leave the column's focus and pointer, as the layout spec does. Opening the options
+	// menu still leaves the session sync paused (listed in the PR).
+	await page.getByRole("heading", { name: "Jira Design" }).click();
 	const options = page.getByRole("button", { name: "Unlink sessions column options" });
 	await expect(options).toBeVisible();
 	await options.click();

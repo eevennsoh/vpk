@@ -122,6 +122,30 @@ test("untracked card hover keeps its border inset and aligns its trailing slot w
 	expect(Math.abs(geometry.slotOffset)).toBeLessThanOrEqual(1);
 });
 
+type Box = Readonly<{ x: number; y: number; width: number; height: number }>;
+
+// Resolves once the rail and its first notch keep the same box across two animation frames.
+async function settledRailBoxes(page: Page): Promise<{ railBox: Box; notchBox: Box }> {
+	return page.locator("[data-agent-session-column-rail]").evaluate((rail) => new Promise((resolve) => {
+		const notch = rail.querySelector("[data-agent-session-notch]")!;
+		const read = (element: Element) => {
+			const { x, y, width, height } = element.getBoundingClientRect();
+			return { x, y, width, height };
+		};
+		let previous = "";
+		const frame = () => {
+			const boxes = { railBox: read(rail), notchBox: read(notch) };
+			const key = JSON.stringify(boxes);
+			if (key === previous) resolve(boxes);
+			else {
+				previous = key;
+				requestAnimationFrame(frame);
+			}
+		};
+		requestAnimationFrame(frame);
+	}));
+}
+
 async function openCollapsedBoard(page: Page): Promise<void> {
 	await page.goto(JIRA_TEAM_EU26_ADVANCED_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
@@ -133,7 +157,9 @@ async function openCollapsedBoard(page: Page): Promise<void> {
 
 test("collapsed status glyphs cover the resting dot before returning to it", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await openCollapsedBoard(page);
+	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
+	await collapseUnlinkSessionsColumn(page);
 	await expect(page.locator("[data-agent-session-column-rail]")).toBeAttached();
 	const notch = page.getByTestId("agent-session-notch-lw-sync-webhook-gap");
 	await expect(notch).toBeAttached({ timeout: 20_000 });
@@ -405,7 +431,7 @@ test("the expanded session plane follows overlay elevation as board columns unde
 	await expect(fade).toHaveCSS("color", surfaceColor);
 	expect(await fade.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain(surfaceColor);
 
-	await cycleThemeTo(page, "System theme");
+	await cycleThemeTo(page, "Light theme");
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
 	await board.evaluate((element) => { element.scrollLeft = 120; });
 	await expect(plane).toHaveCSS("background-color", "rgb(255, 255, 255)");
@@ -445,7 +471,7 @@ test("the elevated session well keeps depth without a perimeter shadow", async (
 	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
 		.toMatch(/^rgba\(1, 4, 4, 0\.36\) 0px 8px 12px 0px$/u);
 
-	await cycleThemeTo(page, "System theme");
+	await cycleThemeTo(page, "Light theme");
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
 	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
 		.toMatch(/^rgba\(30, 31, 33, 0\.15\) 0px 8px 12px 0px$/u);
@@ -637,18 +663,12 @@ for (const [surface, url] of [
 		for (const edge of ["left", "right"] as const) {
 			await heading.hover();
 			await expect(flyout).toBeHidden();
-			// The rail is measured after the collapse settles, since the column now starts expanded.
-			let point = { x: 0, y: 0 };
-			await expect.poll(async () => {
-				const railBox = await rail.boundingBox();
-				const notchBox = await notch.boundingBox();
-				if (!railBox || !notchBox) return null;
-				point = { x: edge === "left" ? railBox.x + 2 : railBox.x + railBox.width - 2, y: notchBox.y + notchBox.height / 2 };
-				return page.evaluate(({ x, y }) =>
-					document.elementFromPoint(x, y)?.closest("[data-agent-session-notch]")?.getAttribute("data-testid") ?? null,
-					point,
-				);
-			}).toBe(notchId);
+			// The column now starts expanded, so measure the rail once the collapse has settled.
+			const { railBox, notchBox } = await settledRailBoxes(page);
+			const point = { x: edge === "left" ? railBox.x + 2 : railBox.x + railBox.width - 2, y: notchBox.y + notchBox.height / 2 };
+			expect(await page.evaluate(({ x, y }) =>
+				document.elementFromPoint(x, y)?.closest("[data-agent-session-notch]")?.getAttribute("data-testid") ?? null,
+			point)).toBe(notchId);
 			await page.mouse.move(point.x, point.y);
 			await expect(flyout).toBeVisible();
 		}
@@ -729,7 +749,8 @@ test("dragging a session notch never starts a column drag", async ({ page }) => 
 });
 
 test("compact session header drags without expanding and keeps its wider target", async ({ page }) => {
-	await openCollapsedBoard(page);
+	await openGutterBoard(page);
+	await revealCollapsedAgentSessionColumn(page);
 	const expand = page.getByRole("button", { name: "Unlink sessions column options" });
 	const start = await expand.boundingBox();
 	const todo = await page.locator('[data-jira-kanban-column="To do"]').boundingBox();
