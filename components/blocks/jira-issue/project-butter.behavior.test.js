@@ -96,7 +96,7 @@ test("PR icon identifies draft and failed pull requests", async () => {
 });
 
 test("multiple PRs show open, failed, draft, then merged, retaining order within a status", async () => {
-	const item = (number, status) => ({ number, status, preview: { title: `PR ${number}`, additions: 0, deletions: 0 } });
+	const item = (number, status) => ({ number, status, preview: { title: `PR ${number}`, repository: `repo-${number}`, additions: 0, deletions: 0 } });
 	const view = await renderComponent({
 		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
 		exportName: "ProjectButterSummary",
@@ -105,6 +105,22 @@ test("multiple PRs show open, failed, draft, then merged, retaining order within
 	await view.click(view.getByRole("button", { name: "Pull requests for PAY-1" }));
 	const list = view.getByRole("list", { name: "Pull requests" });
 	assert.deepEqual(Array.from(list.querySelectorAll("button"), (button) => button.textContent), ["#3 PR 3Open", "#5 PR 5Open", "#4 PR 4Failed", "#2 PR 2Draft", "#1 PR 1Merged"]);
+	const first = view.getByRole("button", { name: /#3 PR 3.*Open/u });
+	const second = view.getByRole("button", { name: /#1 PR 1.*Merged/u });
+	await view.focus(first);
+	await view.press(first, "Enter");
+	assert.equal(first.getAttribute("aria-expanded"), "true");
+	assert.equal(view.isFocused(first), true);
+	assert.equal(first.closest("[data-pull-request]").textContent.includes("repo-3"), true);
+	await view.click(second);
+	assert.equal(first.getAttribute("aria-expanded"), "false");
+	assert.equal(second.getAttribute("aria-expanded"), "true");
+	assert.equal(first.closest("[data-pull-request]").textContent.includes("repo-3"), false);
+	assert.equal(second.closest("[data-pull-request]").textContent.includes("repo-1"), true);
+	assert.equal(list.querySelectorAll("a").length, 0);
+	await view.click(second);
+	assert.equal(second.getAttribute("aria-expanded"), "false");
+	await view.unmount();
 });
 
 test("Jira Local Agent remembers the last used agent and copies the work item prompt", async (t) => {
