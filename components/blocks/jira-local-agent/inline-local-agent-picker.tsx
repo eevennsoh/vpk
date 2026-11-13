@@ -45,6 +45,7 @@ export function InlineLocalAgentPicker({ recentAgentId, onLocalUse, presentation
 	}];
 	return <InlineAgentSelector
 		agents={LOCAL_APPS}
+		className="pb-0"
 		compact
 		disabledLabel="Not installed"
 		getActions={getActions}
@@ -60,7 +61,7 @@ export function InlineLocalAgentPicker({ recentAgentId, onLocalUse, presentation
 		</>}
 		renderAgentAction={presentation === "submenu" ? (agent) => agent.id === "rovo-cli" ? <Popover>
 			<PopoverTrigger render={<Button aria-label="Configure Rovo CLI" className="size-6 shrink-0" size="icon" type="button" variant="ghost" />}><Icon aria-hidden render={<CustomizeIcon label="" size="small" />} /></PopoverTrigger>
-			<PopoverContent aria-label="Rovo CLI local options" role="dialog" side="right" align="start" alignOffset={-6} sideOffset={6} initialFocus={false} className={cn("w-70 max-w-[calc(100vw-24px)] gap-0", dropdownStyles.surface, dropdownStyles.padding.compact)}>
+			<PopoverContent aria-label="Rovo CLI local options" role="dialog" side="right" align="start" alignOffset={-6} sideOffset={6} initialFocus={false} className={cn("w-70 max-w-[calc(100vw-24px)] gap-0", dropdownStyles.surface, dropdownStyles.padding)}>
 				<ProjectButterLocalAgentMenu directoryOnly />
 			</PopoverContent>
 		</Popover> : null : undefined}

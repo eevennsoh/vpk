@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { IssueTypeGlyph } from "@/components/blocks/jira-list/jira-list-cells";
+import { ProjectButterIssueKey } from "@/components/blocks/jira-issue/project-butter-summary";
 import type { JiraListIssueType } from "@/components/blocks/jira-list/jira-list-types";
 import type { JiraKanbanAssigneeData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import { Button } from "@/components/ui/button";
@@ -67,17 +68,16 @@ export function BoardCreateCard({ assignees, columns, issueKey, onCancel, onSave
 			ref={cardRef}
 			aria-label={`Create work item in ${issueKey}`}
 			data-board-create-card=""
-			className="flex min-w-0 flex-col gap-2 rounded-lg border border-border bg-surface-raised p-3 shadow-sm"
+			className="group/jira-issue flex min-w-0 flex-col gap-2 rounded-lg bg-surface-raised p-3 shadow-sm"
 			onSubmit={(event) => {
 				event.preventDefault();
 				if (summary.trim()) onSave({ ...metadata, issueType, summary: summary.trim() });
 			}}
 		>
-			<DropdownMenu onOpenChange={(open) => { if (!open) setPreviewType(undefined); }}>
-				<DropdownMenuTrigger render={<Button aria-label={`Work item type: ${issueType}`} className="w-fit gap-1 px-0" size="compact" type="button" variant="ghost" />}>
-					<IssueTypeGlyph issueType={previewType ?? issueType} />
-					<span>{issueKey}</span>
-					<Icon render={<ChevronDownIcon label="" size="small" />} />
+			<DropdownMenu modal={false} onOpenChange={(open) => { if (!open) setPreviewType(undefined); }}>
+				<DropdownMenuTrigger render={<button aria-label={`Work item type: ${issueType}`} className="flex min-h-6 w-fit min-w-0 items-center rounded-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" type="button" />}>
+					<ProjectButterIssueKey issueKey={issueKey} issueType={previewType ?? issueType} />
+					<Icon className="ml-1 text-icon-subtle" render={<ChevronDownIcon label="" size="small" />} />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start">
 					{ISSUE_TYPES.map((type) => <DropdownMenuItem key={type} elemBefore={<IssueTypeGlyph issueType={type} />} onMouseEnter={() => setPreviewType(type)} onFocus={() => setPreviewType(type)} onSelect={() => setIssueType(type)} selected={type === issueType}>{type.charAt(0).toUpperCase() + type.slice(1)}</DropdownMenuItem>)}

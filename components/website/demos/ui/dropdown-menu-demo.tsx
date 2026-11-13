@@ -18,8 +18,10 @@ import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  dropdownStyles,
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -31,6 +33,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
+  DropdownMenuSubheading,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -44,6 +47,7 @@ import {
 } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 
 type DemoIconProps = Readonly<{
   render: ReactElement;
@@ -113,7 +117,7 @@ function DemoActionsContent() {
 }
 
 export default function DropdownMenuDemo() {
-  return <DropdownMenuDemoDensity />;
+  return <DropdownMenuDemoItemSizing />;
 }
 
 export function DropdownMenuDemoDefault() {
@@ -125,6 +129,25 @@ export function DropdownMenuDemoDefault() {
         Actions
       </DropdownMenuTrigger>
       <DemoActionsContent />
+    </DropdownMenu>
+  );
+}
+
+export function DropdownMenuDemoSubheading() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="outline" size="default" />}>
+        View settings
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuSubheading className="px-2 py-1.5">Layout</DropdownMenuSubheading>
+        <DropdownMenuItem>List</DropdownMenuItem>
+        <DropdownMenuItem>Board</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuSubheading className="px-2 py-1.5">Display</DropdownMenuSubheading>
+        <DropdownMenuItem>Show sidebar</DropdownMenuItem>
+        <DropdownMenuItem>Show activity</DropdownMenuItem>
+      </DropdownMenuContent>
     </DropdownMenu>
   );
 }
@@ -169,16 +192,16 @@ export function DropdownMenuDemoAppearance() {
   );
 }
 
-export function DropdownMenuDemoDensity() {
+export function DropdownMenuDemoItemSizing() {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="outline" size="default" className="w-fit" />}
         >
-          Spacious
+          Menu items
         </DropdownMenuTrigger>
-        <DropdownMenuContent spacing="spacious">
+        <DropdownMenuContent>
           <DropdownMenuGroup>
             <DropdownMenuItem>Dashboard</DropdownMenuItem>
             <DropdownMenuItem>Projects</DropdownMenuItem>
@@ -188,18 +211,15 @@ export function DropdownMenuDemoDensity() {
         </DropdownMenuContent>
       </DropdownMenu>
       <DropdownMenu>
-        <DropdownMenuTrigger
-          render={<Button variant="outline" size="default" className="w-fit" />}
-        >
-          Compact
+        <DropdownMenuTrigger render={<Button variant="outline" size="default" className="w-fit" />}>
+          24px avatars
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuGroup>
-            <DropdownMenuItem>Dashboard</DropdownMenuItem>
-            <DropdownMenuItem>Projects</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-          </DropdownMenuGroup>
+          {[{ name: "Venn", src: "/avatar-user/venn/venn.png" }, { name: "Olivia", src: "/avatar-user/olivia-yang/color/asow-service-yellow.png" }].map((person) => (
+            <DropdownMenuItem key={person.name} elemBefore={<Avatar size="sm"><AvatarImage src={person.src} alt="" /><AvatarFallback>{person.name.slice(0, 1)}</AvatarFallback></Avatar>}>
+              {person.name}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
@@ -942,6 +962,10 @@ export function DropdownMenuDemoRadioSelected() {
   );
 }
 
+function DemoChoiceRow({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <label data-menu-row="" className={cn(dropdownStyles.itemBase, "gap-3 px-2 hover:bg-bg-neutral-subtle-hovered")}>{children}</label>;
+}
+
 export function DropdownMenuDemoWithCheckbox() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showActivity, setShowActivity] = useState(false);
@@ -954,28 +978,28 @@ export function DropdownMenuDemoWithCheckbox() {
       >
         View options
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-48 gap-0 p-1">
-        <div className="px-2 py-1.5 text-xs font-semibold text-text-subtle">
+      <PopoverContent align="start" className={cn("w-56 gap-0", dropdownStyles.surface, dropdownStyles.padding)}>
+        <DropdownMenuSubheading className="px-2 py-1.5">
           Display
-        </div>
-        <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+        </DropdownMenuSubheading>
+        <DemoChoiceRow>
           <span className="inline-flex size-6 shrink-0 items-center justify-center">
             <Checkbox checked={showSidebar} onCheckedChange={setShowSidebar} />
           </span>
           Show sidebar
-        </label>
-        <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+        </DemoChoiceRow>
+        <DemoChoiceRow>
           <span className="inline-flex size-6 shrink-0 items-center justify-center">
             <Checkbox checked={showActivity} onCheckedChange={setShowActivity} />
           </span>
           Show activity panel
-        </label>
-        <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+        </DemoChoiceRow>
+        <DemoChoiceRow>
           <span className="inline-flex size-6 shrink-0 items-center justify-center">
             <Checkbox checked={showPreview} onCheckedChange={setShowPreview} />
           </span>
           Show preview
-        </label>
+        </DemoChoiceRow>
       </PopoverContent>
     </Popover>
   );
@@ -991,29 +1015,29 @@ export function DropdownMenuDemoWithRadioGroup() {
       >
         View: {view}
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-48 gap-0 p-1">
-        <div className="px-2 py-1.5 text-xs font-semibold text-text-subtle">
+      <PopoverContent align="start" className={cn("w-56 gap-0", dropdownStyles.surface, dropdownStyles.padding)}>
+        <DropdownMenuSubheading className="px-2 py-1.5">
           Layout
-        </div>
+        </DropdownMenuSubheading>
         <RadioGroup value={view} onValueChange={setView} className="gap-0">
-          <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+          <DemoChoiceRow>
             <span className="inline-flex size-6 shrink-0 items-center justify-center">
               <RadioGroupItem value="list" />
             </span>
             List
-          </label>
-          <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+          </DemoChoiceRow>
+          <DemoChoiceRow>
             <span className="inline-flex size-6 shrink-0 items-center justify-center">
               <RadioGroupItem value="board" />
             </span>
             Board
-          </label>
-          <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+          </DemoChoiceRow>
+          <DemoChoiceRow>
             <span className="inline-flex size-6 shrink-0 items-center justify-center">
               <RadioGroupItem value="calendar" />
             </span>
             Calendar
-          </label>
+          </DemoChoiceRow>
         </RadioGroup>
       </PopoverContent>
     </Popover>

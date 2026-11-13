@@ -4,6 +4,103 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ ignoreHTTPSErrors: true });
 
+test("inline agent subheadings follow dropdown group spacing", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector"));
+	const selector = page.getByRole("region", { name: "Project Butter agent selector" });
+	const software = selector.getByRole("heading", { name: "Software agents" });
+	const other = selector.getByRole("heading", { name: "Other agents" });
+	await expect(software).toHaveCSS("margin-top", "6px");
+	await expect(other).toHaveCSS("margin-top", "6px");
+	await selector.getByRole("textbox", { name: "Search agents" }).fill("Cursor");
+	await expect(software).toHaveCSS("margin-top", "0px");
+});
+
+test("agent rows use menu padding and grow with their content", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector"));
+	const rows = [
+		{ row: page.locator("#include-byline [data-slot=command-item]").first(), avatar: ":scope > span" },
+		{ row: page.locator("#inline-expansion button[data-agent-id]").first().locator(".."), avatar: "button[data-agent-id] > span" },
+	];
+	for (const { row, avatar } of rows) {
+		await expect(row).toBeVisible();
+		await expect(row).toHaveCSS("padding-top", "6px");
+		await expect(row).toHaveCSS("padding-bottom", "6px");
+		const heights = await row.evaluate((element, selector) => {
+			const before = element.getBoundingClientRect().height;
+			const avatarElement = element.querySelector(selector);
+			if (!(avatarElement instanceof HTMLElement)) throw new Error("Missing agent avatar");
+			avatarElement.style.height = "60px";
+			return { before, after: element.getBoundingClientRect().height };
+		}, avatar);
+		expect(heights.after).toBeGreaterThan(heights.before);
+		expect(heights.after).toBe(72);
+	}
+});
+
+test("inline agent button covers the padded row beside the favorite", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector#inline-expansion"));
+	const button = page.locator('#inline-expansion button[data-agent-id="claude-code"]');
+	const row = button.locator("..");
+	await expect(button).toHaveCSS("border-radius", "8px");
+	await expect(row.locator("..")).toHaveCSS("border-radius", "8px");
+	await expect(row).toHaveCSS("padding-top", "6px");
+	await expect(row).toHaveCSS("padding-bottom", "6px");
+	await button.scrollIntoViewIfNeeded();
+	const [rowBox, buttonBox] = await Promise.all([row.boundingBox(), button.boundingBox()]);
+	if (!rowBox || !buttonBox) throw new Error("Missing inline agent row");
+	await page.mouse.click(buttonBox.x + 12, rowBox.y + 1);
+	await expect(button).toHaveAttribute("aria-expanded", "true");
+});
+
+test("standalone agent selectors use the shared menu surface and inset", async ({ page }) => {
+	await page.goto(appUrl("/preview/ui/dropdown-menu"));
+	await page.getByRole("button", { name: "Menu items", exact: true }).click();
+	const menu = page.getByRole("menu", { name: "Menu items" });
+	const shadow = await menu.evaluate((element) => getComputedStyle(element).boxShadow);
+	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
+	const examples = page.locator("#standalone-picker [data-agent-selector-demo=standalone]");
+	await expect(examples).toHaveCount(2);
+	for (const picker of await examples.all()) {
+		const content = picker.locator('[data-slot="command"]');
+		await expect(content).toHaveCSS("padding", "6px");
+		await expect(picker).toHaveCSS("border-radius", "8px");
+		await expect(picker).toHaveCSS("border-top-width", "0px");
+		await expect(picker).toHaveCSS("box-shadow", shadow);
+	}
+});
+
+test("standalone search keeps its 2px gap and fades only the top edge", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
+	const pickers = page.locator("#standalone-picker [data-agent-selector-demo=standalone]");
+	await expect(pickers).toHaveCount(2);
+	for (const picker of await pickers.all()) {
+		const search = picker.locator(".rich-text-command-menu-search");
+		const list = picker.locator('[data-slot="command-list"]');
+		const firstRow = list.locator("[cmdk-item]").first();
+		await expect(firstRow).toBeVisible();
+		await list.evaluate((element) => { element.scrollTop = 0; });
+		const [searchBox, rowBox] = await Promise.all([search.boundingBox(), firstRow.boundingBox()]);
+		if (!searchBox || !rowBox) throw new Error("Missing search or first agent row");
+		expect(rowBox.y - (searchBox.y + searchBox.height)).toBe(2);
+		await expect(list).toHaveCSS("mask-image", "none");
+		await list.evaluate((element) => { element.scrollTop = 120; });
+		await expect.poll(() => list.evaluate((element) => element.style.maskImage)).toContain("transparent 0,");
+		await expect.poll(() => list.evaluate((element) => element.style.maskImage)).not.toContain("transparent 100%");
+		await expect(list).toHaveCSS("--scroll-mask-fade-size", "3rem");
+		await list.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+		await expect.poll(() => list.evaluate((element) => element.style.maskImage)).not.toContain("transparent 100%");
+		await expect.poll(() => list.evaluate((element) => element.style.maskImage)).toContain("transparent 0,");
+		const separator = picker.locator('[data-slot="dropdown-menu-separator"]').last();
+		const [listBox, separatorBox] = await Promise.all([list.boundingBox(), separator.boundingBox()]);
+		if (!listBox || !separatorBox) throw new Error("Missing list or footer separator");
+		expect(Math.abs(separatorBox.y - (listBox.y + listBox.height))).toBeLessThan(1);
+		await search.locator("input").fill("GitHub Copilot");
+		await expect(list.locator("[cmdk-item]")).toHaveCount(1);
+		await expect(list).toHaveCSS("mask-image", "none");
+	}
+});
+
 test("standalone selected agents keep a 4px gap between favorite and check", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
 	const examples = page.locator("#standalone-picker [data-agent-selector-demo=standalone]");
@@ -15,6 +112,102 @@ test("standalone selected agents keep a 4px gap between favorite and check", asy
 		const [starBounds, checkBounds] = await Promise.all([favorite.boundingBox(), check.boundingBox()]);
 		if (!starBounds || !checkBounds) throw new Error("Selected agent controls are not rendered");
 		expect(checkBounds.x - starBounds.x - starBounds.width).toBe(4);
+	}
+});
+
+test("selected agent actions use the shared full-width separator", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
+	const examples = page.locator("#standalone-picker [data-agent-selector-demo=standalone]");
+	await expect(examples).toHaveCount(2);
+	const picker = examples.nth(1);
+	const group = picker.getByRole("group", { name: "Selected agent actions" });
+	const separator = group.locator('+ [data-slot="dropdown-menu-separator"]');
+	await expect(separator).toBeVisible();
+	await expect(separator).toHaveCSS("height", "1px");
+	await expect(separator).toHaveCSS("margin-top", "6px");
+	await expect(separator).toHaveCSS("margin-bottom", "6px");
+	const [surface, line] = await Promise.all([picker.boundingBox(), separator.boundingBox()]);
+	if (!surface || !line) throw new Error("Missing selector or separator");
+	expect(Math.abs(line.x - surface.x)).toBeLessThan(1);
+	expect(Math.abs(line.width - surface.width)).toBeLessThan(1);
+	await expect(group.getByRole("button", { name: "Chat with Rovo" })).toBeVisible();
+	await expect(picker.getByText("Switch to another agent")).toBeVisible();
+});
+
+test("standalone selector footer separator meets the last agent row", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
+	const examples = page.locator("#standalone-picker [data-agent-selector-demo=standalone]");
+	await expect(examples).toHaveCount(2);
+	for (const picker of await examples.all()) {
+		const list = picker.locator('[data-slot="command-list"]');
+		await list.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+		const row = list.locator("[cmdk-item]").last();
+		const separator = picker.locator('[data-slot="dropdown-menu-separator"]').last();
+		await expect(row).toBeAttached();
+		await expect(separator).toHaveCSS("margin-bottom", "6px");
+		const [rowBox, separatorBox] = await Promise.all([row.boundingBox(), separator.boundingBox()]);
+		if (!rowBox || !separatorBox) throw new Error("Missing agent row or footer separator");
+		expect(Math.abs(separatorBox.y - (rowBox.y + rowBox.height))).toBeLessThan(1);
+	}
+});
+
+test("standalone selector rows are separated by 2px", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/agent-selector#standalone-picker"));
+	const examples = page.locator("#standalone-picker [data-agent-selector-demo=standalone]");
+	await expect(examples).toHaveCount(2);
+	for (const picker of await examples.all()) {
+		const listRows = picker.locator('[data-slot="command-list"] [cmdk-group-items] > [cmdk-item]');
+		await expect.poll(() => listRows.count()).toBeGreaterThan(1);
+		const footerRows = picker.locator('.sticky.bottom-0 [data-menu-row]');
+		await expect(footerRows).toHaveCount(2);
+		for (const rows of [listRows, footerRows]) {
+			await expect(rows.nth(0)).toHaveCSS("border-radius", "8px");
+			await expect(rows.nth(1)).toHaveCSS("border-radius", "8px");
+			const [first, second] = await Promise.all([rows.nth(0).boundingBox(), rows.nth(1).boundingBox()]);
+			if (!first || !second) throw new Error("Missing selector rows");
+			expect(second.y - (first.y + first.height)).toBe(2);
+		}
+	}
+	const actions = examples.nth(1).getByRole("group", { name: "Selected agent actions" }).locator('[data-menu-row]');
+	await expect(actions).toHaveCount(2);
+	await expect(actions.nth(0)).toHaveCSS("border-radius", "8px");
+	await expect(actions.nth(1)).toHaveCSS("border-radius", "8px");
+	const [first, second] = await Promise.all([actions.nth(0).boundingBox(), actions.nth(1).boundingBox()]);
+	if (!first || !second) throw new Error("Missing selected agent actions");
+	expect(second.y - (first.y + first.height)).toBe(2);
+});
+
+test("embedded assigned-agent menu clips cleanly at its footer", async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 320 });
+	await page.goto(appUrl("/components/blocks/agent-assignment#simple"));
+	const trigger = page.locator("#simple").getByRole("button", { name: "Edit agents", exact: true });
+	await trigger.focus();
+	await page.keyboard.press("Enter");
+	const menu = page.locator('[aria-label="Agent assignment"]');
+	const list = menu.getByRole("list", { name: "Assigned agents" });
+	await expect(list).toBeVisible();
+	await expect.poll(() => list.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeGreaterThan(1);
+	await expect(list).toHaveCSS("mask-image", "none");
+	const separator = menu.locator('[data-slot="dropdown-menu-separator"]').last();
+	const [listBox, separatorBox] = await Promise.all([list.boundingBox(), separator.boundingBox()]);
+	if (!listBox || !separatorBox) throw new Error("Missing assignment list or footer separator");
+	expect(Math.abs(separatorBox.y - (listBox.y + listBox.height))).toBeLessThan(1);
+	await list.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+	await expect.poll(() => list.evaluate((element) => element.style.maskImage)).not.toContain("transparent 100%");
+});
+
+test("canvas selector variants keep their list flush with the footer", async ({ page }) => {
+	await page.goto(appUrl("/sandbox/agent-selector-canvas"));
+	for (const id of ["project-butter-favorites", "destination-remember", "destination-global", "destination-row-actions", "destination-after-select"]) {
+		const node = page.locator(`[data-id="${id}"]`);
+		const list = node.locator(".overflow-y-auto").first();
+		const separator = node.locator('[data-slot="dropdown-menu-separator"]').last();
+		await expect(list).toBeAttached();
+		await expect(separator).toBeAttached();
+		const [listBox, separatorBox] = await Promise.all([list.boundingBox(), separator.boundingBox()]);
+		if (!listBox || !separatorBox) throw new Error(`Missing list or footer for ${id}`);
+		expect(Math.abs(separatorBox.y - (listBox.y + listBox.height))).toBeLessThan(1);
+		await expect(list).toHaveCSS("mask-image", "none");
 	}
 });
 
@@ -194,11 +387,11 @@ test("Jira Local Agent keeps the recent agent close to its separator", async ({ 
 	const popup = page.getByRole("dialog", { name: "Local software agents" });
 	const gaps = await popup.evaluate((menu) => {
 		const options = menu.querySelectorAll('[data-agent-id]');
-		const separator = menu.querySelector("hr");
+		const separator = menu.querySelector('[data-slot="dropdown-menu-separator"]');
 		if (!options[0] || !options[1] || !separator) throw new Error("Missing recent agent or separator");
 		return [separator.getBoundingClientRect().top - options[0].getBoundingClientRect().bottom, options[1].getBoundingClientRect().top - separator.getBoundingClientRect().bottom];
 	});
-	expect(gaps).toEqual([4, 4]);
+	expect(gaps).toEqual([6, 6]);
 });
 
 test("Jira Local Agent footer has equal spacing around its separator", async ({ page }) => {
@@ -207,12 +400,12 @@ test("Jira Local Agent footer has equal spacing around its separator", async ({ 
 	const popup = page.getByRole("dialog", { name: "Local software agents" });
 	const gaps = await popup.evaluate((menu) => {
 		const lastAgent = Array.from(menu.querySelectorAll('[data-agent-id]')).at(-1);
-		const separator = Array.from(menu.querySelectorAll("hr")).at(-1);
+		const separator = Array.from(menu.querySelectorAll('[data-slot="dropdown-menu-separator"]')).at(-1);
 		const copy = menu.querySelector('[aria-label="Copy prompt"]');
 		if (!lastAgent || !separator || !copy) throw new Error("Missing local agent menu content");
 		return [separator.getBoundingClientRect().top - lastAgent.getBoundingClientRect().bottom, copy.getBoundingClientRect().top - separator.getBoundingClientRect().bottom];
 	});
-	expect(gaps).toEqual([4, 4]);
+	expect(gaps).toEqual([6, 6]);
 	const copyIcon = popup.getByRole("button", { name: "Copy prompt" }).locator("svg").first();
 	const size = await copyIcon.evaluate((icon) => {
 		const { width, height } = icon.getBoundingClientRect();
@@ -251,7 +444,7 @@ test("editor palette search uses a compact input with equal insets", async ({ pa
 			gaps: [item.top - field.bottom, field.left - bounds.left, bounds.right - field.right],
 		};
 	});
-	expect(geometry).toEqual({ height: 32, gaps: [4, 4, 4] });
+	expect(geometry).toEqual({ height: 32, gaps: [4, 6, 6] });
 	await search.fill("Sentry");
 	await expect(page.getByRole("listbox", { name: "Search tools" })).toContainText("Sentry");
 });
@@ -274,7 +467,7 @@ for (const route of ["/components/projects/sidebar-chat", "/components/blocks/ag
 			const bounds = menu.getBoundingClientRect();
 			return [row.top - header.bottom, row.left - bounds.left, bounds.right - row.right];
 		});
-		expect(gaps).toEqual([4, 4, 4]);
+		expect(gaps).toEqual([2, 6, 6]);
 		const input = search.getByPlaceholder("Search agents");
 		await input.fill("Code Reviewer");
 		await expect(selector.locator("[cmdk-item]")).toHaveCount(1);

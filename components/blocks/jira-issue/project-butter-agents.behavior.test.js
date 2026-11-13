@@ -49,7 +49,6 @@ test("Jira Coding Agent uses its green avatar in the Butter picker", async () =>
 	const option = view.getByRole("option", { name: /Jira Coding Agent/u });
 	const avatar = option.querySelector('[data-slot="avatar"]');
 	assert.equal(avatar.classList.contains("size-6"), true);
-	assert.equal(option.classList.contains("h-9"), true);
 	assert.equal(avatar.parentElement.classList.contains("size-6"), true);
 	assert.equal(option.querySelector('[data-slot="avatar-hexagon-artwork"] > span').style.backgroundColor, "#94C748");
 });

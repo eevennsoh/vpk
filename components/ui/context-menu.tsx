@@ -4,7 +4,7 @@ import * as React from "react";
 import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
 
 import { cn } from "@/lib/utils";
-import { dropdownStyles, type MenuSpacing } from "@/components/ui/dropdown-menu";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
@@ -37,13 +37,12 @@ function ContextMenuContent({
   alignOffset = 4,
   side = "right",
   sideOffset = 0,
-  spacing = "compact",
   ...props
 }: ContextMenuPrimitive.Popup.Props &
   Pick<
     ContextMenuPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
-  > & { spacing?: MenuSpacing }) {
+  >) {
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Positioner
@@ -55,11 +54,10 @@ function ContextMenuContent({
       >
         <ContextMenuPrimitive.Popup
 	          data-slot="context-menu-content"
-              data-menu-spacing={spacing}
 	          className={cn(
 	            dropdownStyles.popup,
 	            dropdownStyles.surface,
-              dropdownStyles.padding[spacing],
+              dropdownStyles.padding,
 	            className,
 	          )}
           {...props}
@@ -111,7 +109,7 @@ function ContextMenuItem({
       data-variant={variant}
       className={cn(
         dropdownStyles.itemBase,
-        "group/context-menu-item data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered h-8 gap-3 px-2 data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+        "group/context-menu-item data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered gap-3 px-2 data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
         className,
       )}
       {...props}
@@ -138,7 +136,7 @@ function ContextMenuSubTrigger({
       data-slot="context-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "data-[highlighted]:bg-bg-neutral-subtle-hovered data-popup-open:bg-bg-neutral-subtle-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled flex h-8 w-full cursor-pointer items-center gap-2 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "data-[highlighted]:bg-bg-neutral-subtle-hovered data-popup-open:bg-bg-neutral-subtle-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
