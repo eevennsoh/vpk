@@ -141,6 +141,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		getAgentMode,
 		getEnvVars,
 		getMirrorBrowser,
+		getRovoAvailability,
 		getThreadBrowserWorkspace,
 		handleChatSdkRequest,
 		hasGatewayUrlConfigured,
@@ -289,6 +290,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		debugMode,
 		getAiGatewayConfigReport,
 		getEnvVars,
+		getRovoAvailability,
 		hasGatewayUrlConfigured,
 		isRovoAvailable,
 	});

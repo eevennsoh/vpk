@@ -41,6 +41,7 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 	const activeRuntime = {
 		clearActiveDeferredToolCall: createNamedFunction("clearActiveDeferredToolCall", calls),
 		detachPausedRovoToolCall: createNamedFunction("detachPausedRovoToolCall", calls),
+		getRovoAvailability: createNamedFunction("getRovoAvailability", calls),
 		getRovoPool: createNamedFunction("getRovoPool", calls),
 		isRovoAvailable: createNamedFunction("isRovoAvailable", calls, true),
 		pausedRovoToolCallStore: { owner: "paused-rovo-tool-calls" },
@@ -209,6 +210,7 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 	assert.equal(appDependencyInput.runtime.debugMode, true);
 	assert.equal(appDependencyInput.runtime.runtimePort, "9191");
 	assert.equal(appDependencyInput.runtime.logger, logger);
+	assert.equal(appDependencyInput.runtime.getRovoAvailability, activeRuntime.getRovoAvailability);
 
 	appDependencyInput.runtime.debugLog("runtime", "composed", { ok: true });
 	result.shutdownRuntime();

@@ -118,6 +118,7 @@ test("refreshRovoAvailability creates a pool for healthy recorded ports", async 
 		"createRovoPool",
 		"initPool",
 		"logger.log",
+		"now",
 	]);
 	assert.equal(calls[6][1].length, 2);
 });
@@ -226,4 +227,83 @@ test("resolveRovoAppPortAvailability reports whether a pool has available ports"
 	const availableHarness = createHarness();
 	assert.equal(await availableHarness.service.refreshRovoAvailability(), true);
 	assert.deepEqual(availableHarness.service.resolveRovoAppPortAvailability(), { available: true });
+});
+
+function createDeferred() {
+	let resolve;
+	let reject;
+	const promise = new Promise((resolvePromise, rejectPromise) => {
+		resolve = resolvePromise;
+		reject = rejectPromise;
+	});
+	return { promise, reject, resolve };
+}
+
+test("concurrent availability reads share one in-flight check", async () => {
+	const pending = createDeferred();
+	let resolveCount = 0;
+	const { service } = createHarness({
+		existingPaths: ["/tmp/rovo-port"],
+		dependencies: {
+			resolveRovoPorts: async () => {
+				resolveCount += 1;
+				return pending.promise;
+			},
+		},
+	});
+
+	const reads = [service.isRovoAvailable(), service.isRovoAvailable(), service.refreshRovoAvailability()];
+	await Promise.resolve();
+	assert.equal(service.getRovoAvailability(), "checking");
+	pending.resolve({ ports: [9000], source: "recorded" });
+
+	assert.deepEqual(await Promise.all(reads), [true, true, true]);
+	assert.equal(resolveCount, 1);
+	assert.equal(service.getRovoAvailability(), "available");
+});
+
+test("a rejected check ends unavailable, and the next read retries", async () => {
+	let resolveCount = 0;
+	const { service } = createHarness({
+		existingPaths: ["/tmp/rovo-port"],
+		dependencies: {
+			resolveRovoPorts: async () => {
+				resolveCount += 1;
+				if (resolveCount === 1) {
+					throw new Error("serve not reachable");
+				}
+				return { ports: [9000], source: "recorded" };
+			},
+		},
+	});
+
+	assert.equal(service.getRovoAvailability(), "unknown");
+	assert.equal(await service.isRovoAvailable(), false);
+	assert.equal(service.getRovoAvailability(), "unavailable");
+	assert.equal(await service.isRovoAvailable(), true);
+	assert.equal(resolveCount, 2);
+	assert.equal(service.getRovoAvailability(), "available");
+});
+
+test("a stale available result is refreshed, measured from when the check finished", async () => {
+	let tick = 1000;
+	let resolveCount = 0;
+	const { service } = createHarness({
+		existingPaths: ["/tmp/rovo-port"],
+		dependencies: {
+			now: () => tick,
+			resolveRovoPorts: async () => {
+				resolveCount += 1;
+				return { ports: [9000], source: "recorded" };
+			},
+		},
+	});
+
+	assert.equal(await service.isRovoAvailable(), true);
+	tick = 61_000;
+	assert.equal(await service.isRovoAvailable(), true);
+	assert.equal(resolveCount, 1, "still fresh at exactly the refresh interval");
+	tick = 61_001;
+	assert.equal(await service.isRovoAvailable(), true);
+	assert.equal(resolveCount, 2, "stale after the refresh interval");
 });

@@ -189,6 +189,7 @@ function createBackendRuntimeComposition({
 	const {
 		clearActiveDeferredToolCall,
 		detachPausedRovoToolCall,
+		getRovoAvailability,
 		getRovoPool,
 		isRovoAvailable,
 		pausedRovoToolCallStore: _pausedRovoToolCallStore,
@@ -377,6 +378,7 @@ function createBackendRuntimeComposition({
 			debugMode,
 			getAiGatewayConfigReport,
 			getEnvVars,
+			getRovoAvailability,
 			hasGatewayUrlConfigured,
 			isRovoAvailable,
 			logger,

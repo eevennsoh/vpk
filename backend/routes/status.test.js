@@ -47,6 +47,7 @@ async function withServer(dependencies, run) {
 
 function createStatusDependencies(overrides = {}) {
 	return {
+		getRovoAvailability: () => "available",
 		isRovoAvailable: async () => true,
 		...overrides,
 	};
@@ -106,6 +107,7 @@ test("status router owns the legacy API health payload", async () => {
 		assert.equal(payload.timestamp, "2026-07-04T00:00:00.000Z");
 		assert.equal(payload.authMethod, "ASAP");
 		assert.equal(payload.rovoMode, true);
+		assert.equal(payload.rovoAvailability, "available");
 		assert.equal(payload.llmRouting.chatSdk.backend, "ai-gateway");
 		assert.equal(payload.llmRouting.aiGatewayConfig.AI_GATEWAY_URL, "SET");
 		assert.deepEqual(payload.envCheck, {
@@ -137,6 +139,7 @@ test("status router validates required dependencies", () => {
 	}), /isRovoAvailable/u);
 	assert.equal(typeof createHealthcheckHandler(), "function");
 	assert.throws(() => createApiHealthHandler(), /isRovoAvailable/u);
+	assert.throws(() => createApiHealthHandler({ isRovoAvailable: async () => true }), /getRovoAvailability/u);
 });
 
 test("parseOptionalInteger preserves the existing status route port parsing", () => {

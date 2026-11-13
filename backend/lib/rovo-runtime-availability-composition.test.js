@@ -22,6 +22,7 @@ function createHarness(overrides = {}) {
 		takePausedRovoToolCall: () => "take-paused",
 	};
 	const availabilityService = {
+		getRovoAvailability: () => "available",
 		getRovoPool: () => "pool",
 		isRovoAvailable: async () => true,
 		refreshRovoAvailability: async () => true,
@@ -113,6 +114,7 @@ test("createRovoRuntimeAvailabilityComposition wires Rovo availability and defer
 	assert.equal(result.registerActiveDeferredToolCall, deferredToolCallState.registerActiveDeferredToolCall);
 	assert.equal(result.registerPausedRovoToolCall, deferredToolCallState.registerPausedRovoToolCall);
 	assert.equal(result.takePausedRovoToolCall, deferredToolCallState.takePausedRovoToolCall);
+	assert.equal(result.getRovoAvailability, availabilityService.getRovoAvailability);
 	assert.equal(result.getRovoPool, availabilityService.getRovoPool);
 	assert.equal(result.isRovoAvailable, availabilityService.isRovoAvailable);
 	assert.equal(result.refreshRovoAvailability, availabilityService.refreshRovoAvailability);

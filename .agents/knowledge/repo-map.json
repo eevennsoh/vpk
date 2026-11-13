@@ -821,7 +821,7 @@
 					{
 						"method": "GET",
 						"path": "/api/health",
-						"source": "backend/routes/status.js:168",
+						"source": "backend/routes/status.js:174",
 						"runtimeAdmin": false
 					},
 					{
@@ -839,7 +839,7 @@
 					{
 						"method": "GET",
 						"path": "/healthcheck",
-						"source": "backend/routes/status.js:167",
+						"source": "backend/routes/status.js:173",
 						"runtimeAdmin": false
 					}
 				]
