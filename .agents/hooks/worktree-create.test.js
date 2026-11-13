@@ -6,6 +6,13 @@ const path = require("node:path");
 const test = require("node:test");
 
 const WORKTREE_CREATE_HOOK = path.join(__dirname, "worktree-create.sh");
+const REPO_ROOT = path.resolve(__dirname, "..", "..");
+// The SessionStart hook runs the checkout's own copies of these.
+const SESSION_START_FILES = [
+	".agents/hooks/setup-worktree.sh",
+	"scripts/write-claude-launch-config.js",
+	"scripts/lib/worktree-ports.js",
+];
 
 function run(command, args, options = {}) {
 	const result = spawnSync(command, args, {
@@ -62,6 +69,10 @@ function createTempGitRepo(t) {
 		path.join(__dirname, "lib", "worktree-bootstrap.sh"),
 		path.join(repoRoot, ".agents", "hooks", "lib", "worktree-bootstrap.sh"),
 	);
+	for (const rel of SESSION_START_FILES) {
+		fs.mkdirSync(path.dirname(path.join(repoRoot, rel)), { recursive: true });
+		fs.copyFileSync(path.join(REPO_ROOT, rel), path.join(repoRoot, rel));
+	}
 	run(
 		"git",
 		[
@@ -74,6 +85,7 @@ function createTempGitRepo(t) {
 			".env.local.example",
 			"backend/package.json",
 			".agents/hooks/lib/worktree-bootstrap.sh",
+			...SESSION_START_FILES,
 		],
 		{ cwd: repoRoot },
 	);
@@ -91,7 +103,7 @@ function createTempGitRepo(t) {
 	return { repoRoot, tempRoot };
 }
 
-function createPnpmStub(tempRoot, exitCode = 0) {
+function createPnpmStub(tempRoot, exitCode = 0, { createsNodeModules = false } = {}) {
 	const binDir = path.join(tempRoot, "bin");
 	const recordPath = path.join(tempRoot, "pnpm-args.log");
 	const pnpmPath = path.join(binDir, "pnpm");
@@ -101,6 +113,7 @@ function createPnpmStub(tempRoot, exitCode = 0) {
 		[
 			"#!/usr/bin/env bash",
 			"printf 'CI=%s %s\\n' \"${CI:-}\" \"$*\" >> \"$PNPM_RECORD\"",
+			createsNodeModules ? "mkdir -p node_modules/.stub-install" : "",
 			`exit ${exitCode}`,
 			"",
 		].join("\n"),
@@ -146,6 +159,32 @@ function runWorktreeCreateHook(repoRoot, payload, env = {}) {
 	});
 }
 
+// Mirrors .claude/settings.json: the command cds to CLAUDE_PROJECT_DIR and the
+// session's cwd arrives in the JSON payload on stdin.
+function runSessionStartHook({ claudeProjectDir, sessionCwd, env = {} }) {
+	return spawnSync("bash", [path.join(sessionCwd, ".agents", "hooks", "setup-worktree.sh")], {
+		cwd: claudeProjectDir,
+		encoding: "utf8",
+		input: JSON.stringify({ hook_event_name: "SessionStart", source: "startup", cwd: sessionCwd }),
+		env: {
+			...process.env,
+			CLAUDE_PROJECT_DIR: claudeProjectDir,
+			...env,
+		},
+	});
+}
+
+function bootstrapSentinel(checkout) {
+	const gitDir = run("git", ["rev-parse", "--absolute-git-dir"], { cwd: checkout }).stdout.trim();
+	return path.join(gitDir, "vpk-bootstrap-complete");
+}
+
+function readLaunchPorts(checkout) {
+	const launchPath = path.join(checkout, ".claude", "launch.json");
+	if (!fs.existsSync(launchPath)) return null;
+	return JSON.parse(fs.readFileSync(launchPath, "utf8")).configurations.map((entry) => entry.port);
+}
+
 test("WorktreeCreate creates the requested worktree while keeping stdout path-only", (t) => {
 	const { repoRoot, tempRoot } = createTempGitRepo(t);
 	const { binDir, recordPath } = createPnpmStub(tempRoot);
@@ -156,6 +195,7 @@ test("WorktreeCreate creates the requested worktree while keeping stdout path-on
 	fs.writeFileSync(path.join(repoRoot, "nested", ".env.local"), "NESTED=true\n");
 	fs.mkdirSync(path.join(repoRoot, ".cache"), { recursive: true });
 	fs.writeFileSync(path.join(repoRoot, ".cache", "not-env"), "cache artifact\n");
+	fs.writeFileSync(path.join(repoRoot, ".cache", ".env.local"), "INSIDE_IGNORED_DIR=true\n");
 	for (const providerRoot of [".claude", ".rovo", ".codex", ".cursor"]) {
 		fs.mkdirSync(path.join(repoRoot, providerRoot, "worktrees", "stale"), { recursive: true });
 		fs.writeFileSync(
@@ -194,6 +234,7 @@ test("WorktreeCreate creates the requested worktree while keeping stdout path-on
 		"NESTED=true\n",
 	);
 	assert.equal(fs.existsSync(path.join(worktreeDir, ".cache", "not-env")), false);
+	assert.equal(fs.existsSync(path.join(worktreeDir, ".cache", ".env.local")), false);
 	for (const providerRoot of [".claude", ".rovo", ".codex", ".cursor"]) {
 		assert.equal(
 			fs.existsSync(path.join(worktreeDir, providerRoot, "worktrees", "stale", ".env.local")),
@@ -311,4 +352,74 @@ test("WorktreeCreate creates a named branch when worktree_ref is omitted", (t) =
 
 	const branch = run("git", ["branch", "--show-current"], { cwd: worktreeDir });
 	assert.equal(branch.stdout.trim(), "claude/install-fails-worktree");
+});
+
+test("SessionStart bootstraps the session's worktree when CLAUDE_PROJECT_DIR is the main checkout", (t) => {
+	const { repoRoot, tempRoot } = createTempGitRepo(t);
+	const pnpm = createPnpmStub(tempRoot);
+	const worktreeDir = path.join(tempRoot, "session-worktree");
+	run("git", ["worktree", "add", "-b", "claude/session-worktree", worktreeDir, "HEAD"], { cwd: repoRoot });
+	fs.writeFileSync(path.join(repoRoot, ".env.local"), "FIXTURE=true\n");
+
+	const result = runSessionStartHook({
+		claudeProjectDir: repoRoot,
+		sessionCwd: worktreeDir,
+		env: { PATH: `${pnpm.binDir}${path.delimiter}${process.env.PATH}`, PNPM_RECORD: pnpm.recordPath },
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	// Slot 1 is the first linked worktree: frontend 3020, backend 8100, Rovo 8020.
+	assert.deepEqual(readLaunchPorts(worktreeDir), [3020, 8100, 8020, 3020, 3020]);
+	assert.equal(readLaunchPorts(repoRoot), null);
+	assert.equal(fs.readFileSync(path.join(worktreeDir, ".env.local"), "utf8"), "FIXTURE=true\n");
+	assert.ok(fs.existsSync(bootstrapSentinel(worktreeDir)));
+	assert.equal(fs.existsSync(bootstrapSentinel(repoRoot)), false);
+});
+
+test("SessionStart returns before any lookup once env files and the bootstrap sentinel exist", (t) => {
+	const { repoRoot, tempRoot } = createTempGitRepo(t);
+	const pnpm = createPnpmStub(tempRoot, 0, { createsNodeModules: true });
+	const env = { PATH: `${pnpm.binDir}${path.delimiter}${process.env.PATH}`, PNPM_RECORD: pnpm.recordPath };
+	const worktreeDir = path.join(tempRoot, "ready-worktree");
+	fs.writeFileSync(path.join(repoRoot, ".env.local"), "FIXTURE=true\n");
+	const created = runWorktreeCreateHook(repoRoot, { name: "ready-worktree", base_ref: "HEAD", worktree_path: worktreeDir }, env);
+	assert.equal(created.status, 0, created.stderr);
+	assert.ok(fs.existsSync(bootstrapSentinel(worktreeDir)));
+	fs.writeFileSync(path.join(repoRoot, ".env.development"), "ADDED_LATER=true\n");
+
+	const result = runSessionStartHook({ claudeProjectDir: repoRoot, sessionCwd: worktreeDir, env });
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stderr, /Worktree already bootstrapped/u);
+	assert.equal(fs.existsSync(path.join(worktreeDir, ".env.development")), false);
+	assert.equal(fs.readFileSync(pnpm.recordPath, "utf8"), "CI=true install --prefer-offline\n");
+});
+
+test("node_modules left by a failed install is reinstalled, and only a finished install writes the sentinel", (t) => {
+	const { repoRoot, tempRoot } = createTempGitRepo(t);
+	const failing = createPnpmStub(path.join(tempRoot, "failing"), 23, { createsNodeModules: true });
+	const worktreeDir = path.join(tempRoot, "interrupted-worktree");
+	fs.writeFileSync(path.join(repoRoot, ".env.local"), "FIXTURE=true\n");
+
+	const created = runWorktreeCreateHook(
+		repoRoot,
+		{ name: "interrupted-worktree", base_ref: "HEAD", worktree_path: worktreeDir },
+		{ PATH: `${failing.binDir}${path.delimiter}${process.env.PATH}`, PNPM_RECORD: failing.recordPath },
+	);
+	assert.equal(created.status, 0, created.stderr);
+	assert.ok(fs.existsSync(path.join(worktreeDir, "node_modules", ".stub-install")));
+	assert.equal(fs.existsSync(bootstrapSentinel(worktreeDir)), false);
+
+	const passing = createPnpmStub(path.join(tempRoot, "passing"));
+	const env = { PATH: `${passing.binDir}${path.delimiter}${process.env.PATH}`, PNPM_RECORD: passing.recordPath };
+	const resumed = runSessionStartHook({ claudeProjectDir: worktreeDir, sessionCwd: worktreeDir, env });
+	assert.equal(resumed.status, 0, resumed.stderr);
+	assert.match(resumed.stderr, /did not finish/u);
+	assert.equal(fs.readFileSync(passing.recordPath, "utf8"), "CI=true install --prefer-offline\n");
+	assert.ok(fs.existsSync(bootstrapSentinel(worktreeDir)));
+
+	const settled = runSessionStartHook({ claudeProjectDir: worktreeDir, sessionCwd: worktreeDir, env });
+	assert.equal(settled.status, 0, settled.stderr);
+	assert.match(settled.stderr, /Worktree already bootstrapped/u);
+	assert.equal(fs.readFileSync(passing.recordPath, "utf8"), "CI=true install --prefer-offline\n");
 });
