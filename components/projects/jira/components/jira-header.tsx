@@ -13,6 +13,7 @@ import { useJiraTabs } from "../hooks/use-jira-tabs";
 import { resolveJiraTab } from "../lib/jira-tab-model";
 
 interface JiraViewTabsProps {
+	animateIndicator?: boolean;
 	/**
 	 * Selection is tracked by label, not index: the Simple views property
 	 * decides whether work items is one tab or two, so an index would silently
@@ -40,6 +41,7 @@ type JiraViewTabsContentProps = Omit<JiraViewTabsProps, "supportedWorkItemViews"
 };
 
 function JiraViewTabsContent({
+	animateIndicator,
 	selectedTabLabel,
 	onTabChange,
 	workItemView = DEFAULT_JIRA_WORK_ITEM_VIEW,
@@ -49,7 +51,7 @@ function JiraViewTabsContent({
 
 	return (
 		<Tabs value={activeTab?.label} onValueChange={onTabChange}>
-			<TabsList variant="line" className="w-full justify-start">
+			<TabsList animateIndicator={animateIndicator} variant="line" className="w-full justify-start">
 				{tabs.map((tab, index) => {
 					const IconComponent = tab.icon;
 					const isFirst = index === 0;
@@ -81,7 +83,7 @@ function JiraViewTabsContent({
 					) : (
 						<div style={{ padding: token("space.400") }}>
 							<span className="text-sm font-medium text-text-subtlest">
-								No RFP content here yet
+								{tab.placeholder ?? "No RFP content here yet"}
 							</span>
 						</div>
 					)}

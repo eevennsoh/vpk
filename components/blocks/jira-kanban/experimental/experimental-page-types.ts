@@ -194,6 +194,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onAgentSessionColumnInteractionChange?: (interacting: boolean) => void;
 	onAgentSessionsReviewed?: (sessionIds?: readonly string[]) => void;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
+	onBoardCreateActiveChange?: (active: boolean) => void;
 	onBoardAgentSessionCreate?: (
 		session: AgentSessionItem,
 		columnTitle: string,

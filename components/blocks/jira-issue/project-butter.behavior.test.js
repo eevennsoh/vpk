@@ -423,6 +423,52 @@ test("Butter overflow capabilities disable board actions and preserve real card 
 	assert.deepEqual(actions, ["copy-key"]);
 });
 
+test("Butter board overflow matches the compact menu and dispatches supported actions", async () => {
+	const actions = [];
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: {
+			appearance: "project-butter", moreMenuVariant: "project-butter", issueKey: "PD-40", summary: "Test",
+			availableMoreActions: ["copy-key", "add-flag"], onMoreActionSelect: (action) => actions.push(action),
+			moreMenuActions: { onDelete: () => actions.push("delete") },
+		},
+	});
+	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	for (const name of ["Edit summary", "Link", "Edit labels", "Add flag", "Move work item", "Change status", "Copy link", "Copy key", "Delete"]) {
+		assert.equal(view.queryByRole("menuitem", { name }) !== null, true, name);
+	}
+	for (const name of ["Add agent", "Change parent", "Select cover", "Archive", "Select"]) {
+		assert.equal(view.queryByRole("menuitem", { name }), null, name);
+	}
+	assert.notEqual(view.getByRole("menuitem", { name: "Edit summary" }).getAttribute("aria-disabled"), "true");
+	await view.click(view.getByRole("menuitem", { name: "Copy key" }));
+	assert.deepEqual(actions, ["copy-key"]);
+	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	await view.click(view.getByRole("menuitem", { name: "Add flag" }));
+	assert.deepEqual(actions, ["copy-key", "add-flag"]);
+	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	await view.click(view.getByRole("menuitem", { name: "Delete" }));
+	assert.deepEqual(actions, ["copy-key", "add-flag", "delete"]);
+});
+
+test("Butter board prototype leaves unfinished actions enabled", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-issue/index.tsx",
+		exportName: "JiraIssue",
+		props: { appearance: "project-butter", moreMenuVariant: "project-butter", issueKey: "PD-40", summary: "Test" },
+	});
+	await view.click(view.getByRole("button", { name: "More actions for PD-40" }));
+	for (const name of ["Edit summary", "Link", "Edit labels", "Add flag", "Move work item", "Change status", "Copy link", "Copy key", "Delete"]) {
+		assert.notEqual(view.getByRole("menuitem", { name }).getAttribute("aria-disabled"), "true", name);
+	}
+	await view.focus(view.getByRole("menuitem", { name: "Link" }));
+	await view.press(null, "ArrowRight");
+	for (const name of ["Work item", "Confluence item"]) {
+		assert.notEqual(view.getByRole("menuitem", { name }).getAttribute("aria-disabled"), "true", name);
+	}
+});
+
 test("Butter keeps overflow options enabled while unavailable actions remain no-ops", async () => {
 	const actions = [];
 	const view = await renderComponent({

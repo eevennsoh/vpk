@@ -315,11 +315,6 @@
       "count": 2
     }
   },
-  "components/blocks/agent-card/page.tsx": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
   "components/blocks/agent-config-core/components/agent-compact-config-nav.tsx": {
     "react-hooks/refs": {
       "count": 5
@@ -548,9 +543,6 @@
   "components/blocks/agent-test/components/agent-test.tsx": {
     "no-restricted-imports": {
       "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "components/blocks/agent-user/agent-user.source.test.js": {
@@ -695,11 +687,6 @@
   "components/blocks/generative-card/index.tsx": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "components/blocks/generative/page.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "components/blocks/html-selector/components/html-selector.tsx": {
@@ -1366,11 +1353,6 @@
       "count": 2
     }
   },
-  "components/blocks/product-sidebar/components/content-tree-section.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/blocks/product-sidebar/components/navigation-item-with-hover-chevron.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
@@ -1389,11 +1371,6 @@
   "components/blocks/product-sidebar/variants/admin.tsx": {
     "no-restricted-imports": {
       "count": 3
-    }
-  },
-  "components/blocks/product-sidebar/variants/confluence.tsx": {
-    "no-restricted-syntax": {
-      "count": 4
     }
   },
   "components/blocks/product-sidebar/variants/jira.source.test.js": {
@@ -1611,11 +1588,6 @@
       "count": 71
     }
   },
-  "components/blocks/twg-agent-card/page.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/blocks/twg-agent-card/twg-agent-card.test.js": {
     "no-restricted-syntax": {
       "count": 128
@@ -1637,11 +1609,6 @@
     }
   },
   "components/blocks/visual-waveform/smooth-gradient-waveform.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/blocks/workflow/page.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -1736,11 +1703,6 @@
       "count": 1
     }
   },
-  "components/projects/jira-golden-journey-v0/components/rovo-stage.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/projects/jira-golden-journey-v0/components/terminal-stage.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
@@ -1783,11 +1745,6 @@
   },
   "components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay.tsx": {
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/projects/jira-golden-journey-v1/components/rovo-stage.tsx": {
-    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -2350,19 +2307,9 @@
       "count": 1
     }
   },
-  "components/projects/search/page.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/projects/shared/components/agent-edit-summary-card.source.test.js": {
     "no-restricted-syntax": {
       "count": 7
-    }
-  },
-  "components/projects/shared/components/assistant-feedback-actions.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "components/projects/shared/components/assistant-thinking-trace.tsx": {
@@ -2523,9 +2470,6 @@
     }
   },
   "components/projects/studio/components/rovo-app-custom-agents-table.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -3438,19 +3382,9 @@
       "count": 4
     }
   },
-  "components/website/demos/blocks/agent-card-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
   "components/website/demos/blocks/agent-demo.tsx": {
     "@next/next/no-location-assign-relative-destination": {
       "count": 1
-    }
-  },
-  "components/website/demos/blocks/agent-profile-card-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 3
     }
   },
   "components/website/demos/blocks/agent-progress-demo.tsx": {
@@ -3458,31 +3392,13 @@
       "count": 1
     }
   },
-  "components/website/demos/blocks/chat-configuration-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/website/demos/blocks/jira-activity-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/website/demos/blocks/task-progress-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 7
-    },
     "react-hooks/purity": {
       "count": 1
     }
   },
   "components/website/demos/blocks/trigger-config-demo.tsx": {
     "@next/next/no-location-assign-relative-destination": {
-      "count": 1
-    }
-  },
-  "components/website/demos/blocks/twg-agent-card-demo.tsx": {
-    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -3496,34 +3412,14 @@
       "count": 3
     }
   },
-  "components/website/demos/projects/sidebar-chat-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/website/demos/projects/skills-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/website/demos/projects/use-project-demo-embedded.source.test.js": {
     "no-restricted-syntax": {
       "count": 5
     }
   },
-  "components/website/demos/ui-custom/attachment-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
   "components/website/demos/ui-custom/chain-of-thought-demo.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 2
-    }
-  },
-  "components/website/demos/ui-custom/entity-card-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 26
     }
   },
   "components/website/demos/ui-custom/shimmer-demo.tsx": {
@@ -3534,11 +3430,6 @@
   "components/website/demos/ui-custom/skill-tag-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
-    }
-  },
-  "components/website/demos/ui-custom/skill-tag-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "components/website/demos/ui-custom/source-demo-preview-menu.source.test.js": {
@@ -3556,29 +3447,9 @@
       "count": 12
     }
   },
-  "components/website/demos/ui/command-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/website/demos/ui/date-label-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
-  "components/website/demos/ui/inline-edit-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/website/demos/ui/table-demo.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "components/website/demos/ui/tag-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 14
     }
   },
   "components/website/demos/ui/toggle-group-demo.source.test.js": {
@@ -3612,9 +3483,6 @@
   },
   "components/website/demos/utils/multiport-demo.tsx": {
     "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    },
-    "no-restricted-syntax": {
       "count": 1
     }
   },

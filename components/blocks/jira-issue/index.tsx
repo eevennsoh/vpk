@@ -166,6 +166,7 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	assigneeControl?: ReactNode;
 	onSubtaskOpen?: (subtask: JiraIssueSubtask) => void;
 	availableMoreActions?: readonly JiraIssueMoreAction[];
+	moreMenuVariant?: "default" | "project-butter";
 	variant?: "default";
 	coverImage?: JiraIssueCoverImage;
 	/** Issue summary shown as the primary card text. */
@@ -262,7 +263,7 @@ export function JiraIssue(props: Readonly<JiraIssueProps>) {
 }
 
 function JiraIssueDefault({
-	appearance = "project-butter", metadata, assigneeControl, onSubtaskOpen, availableMoreActions,
+	appearance = "project-butter", metadata, assigneeControl, onSubtaskOpen, availableMoreActions, moreMenuVariant = "default",
 	"aria-pressed": ariaPressed,
 	active = false,
 	agentActivities,
@@ -622,6 +623,7 @@ function JiraIssueDefault({
 	// instead would grow the shell by 4px the moment a hovered agent session
 	// highlighted the card and shove every card below it down.
 	const insetsAgentActivitySurfaceBottom = hasActiveAgentActivityShell && (!hasAgentActivityChin || appearance === "project-butter");
+	const butterCardBottomPadding = insetsAgentActivitySurfaceBottom ? "pb-3" : "pb-2";
 	const agentActivitySurfaceAnimation = {
 		...getJiraIssueAgentSurfaceOffsets(agentActivitySurfacePosition, insetsAgentActivitySurfaceBottom),
 		// The preceding chin supplies the gutter at a fused join.
@@ -647,6 +649,7 @@ function JiraIssueDefault({
 
 	const moreActionMenu = showMoreAction ? (
 		<JiraIssueMoreMenu
+			appearance={moreMenuVariant}
 			butterAssignment={appearance === "project-butter" && !selected && !dragging && (assignment?.onAgentAssign || assignment?.onAssignedAgentIdsChange) ? assignment : undefined}
 			availableActions={availableMoreActions ?? (appearance === "project-butter" && !onMoreActionSelect ? [] : undefined)}
 			flagged={metadata?.flagged}
@@ -698,7 +701,7 @@ function JiraIssueDefault({
 		<div className="relative z-10 flex flex-col">
 			{shouldRenderIssueClickButton ? (
 				usesCompactVisual ? (
-					<div className="relative w-full px-3 pt-3 pb-3 text-left outline-none transition-colors duration-normal ease-out">
+					<div className={cn("relative w-full px-3 pt-3 text-left outline-none transition-colors duration-normal ease-out", appearance === "project-butter" ? butterCardBottomPadding : "pb-3")}>
 						<button
 							aria-pressed={ariaPressed ?? selected}
 							className="sr-only"
@@ -735,7 +738,7 @@ function JiraIssueDefault({
 					</button>
 				)
 			) : (
-				<div className={appearance === "project-butter" ? "p-3" : usesCompactVisual ? "px-3 pt-3 pb-2" : "p-3"}>{summaryContent}</div>
+				<div className={appearance === "project-butter" ? cn("px-3 pt-3", butterCardBottomPadding) : usesCompactVisual ? "px-3 pt-3 pb-2" : "p-3"}>{summaryContent}</div>
 			)}
 			{positionedMoreActionMenu}
 			<AnimatePresence initial={false} mode="popLayout">

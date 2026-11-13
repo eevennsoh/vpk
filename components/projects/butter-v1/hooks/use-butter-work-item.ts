@@ -13,6 +13,7 @@ const PRIORITIES: Readonly<Record<JiraKanbanCardData["priority"], NonNullable<Wo
 	major: "High",
 	medium: "Medium",
 	minor: "Low",
+	trivial: "Lowest",
 };
 
 export function useButterWorkItem() {

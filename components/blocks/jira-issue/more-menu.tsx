@@ -2,6 +2,11 @@
 
 import { useRef, useState } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
+import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
+import DeleteIcon from "@atlaskit/icon/core/delete";
+import EditIcon from "@atlaskit/icon/core/edit";
+import FlagIcon from "@atlaskit/icon/core/flag";
+import LinkIcon from "@atlaskit/icon/core/link";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +18,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuShortcut,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
@@ -26,6 +34,7 @@ import { useProjectButterInvocationActions } from "./project-butter-invocation";
 import type { JiraIssueAgentAssignment } from "./index";
 
 export type JiraIssueMoreAction =
+	| "edit-summary"
 	| "move-work-item"
 	| "change-status"
 	| "copy-link"
@@ -45,6 +54,7 @@ export interface JiraIssueMoreMenuActions {
 }
 
 interface JiraIssueMoreMenuProps {
+	appearance?: "default" | "project-butter";
 	availableActions?: readonly JiraIssueMoreAction[];
 	flagged?: boolean;
 	issueKey: string;
@@ -83,7 +93,7 @@ function JiraIssueMoreMenu(props: Readonly<JiraIssueMoreMenuProps>) {
 	) : <JiraIssueMoreDropdown {...props} />;
 }
 
-function JiraIssueMoreDropdown({ availableActions, butterAssignment, flagged, generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange, showUnavailableAsEnabled = false }: Readonly<JiraIssueMoreMenuProps>) {
+function JiraIssueMoreDropdown({ appearance = "default", availableActions, butterAssignment, flagged, generativeAction, generativeActionIssue, issueKey, moreMenuActions, onActionSelect, onOpenChange, showUnavailableAsEnabled = false }: Readonly<JiraIssueMoreMenuProps>) {
 	const [open, setOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement | null>(null);
 	const invocation = useProjectButterInvocationActions();
@@ -105,6 +115,9 @@ function JiraIssueMoreDropdown({ availableActions, butterAssignment, flagged, ge
 	function handlerDisabled(handler: (() => void) | undefined) {
 		return !showUnavailableAsEnabled && !handler;
 	}
+	function butterActionDisabled(action: JiraIssueMoreAction) {
+		return !onActionSelect || (availableActions !== undefined && !availableActions.includes(action));
+	}
 
 	function selectCard() {
 		if (!moreMenuActions?.onSelect) return;
@@ -112,6 +125,14 @@ function JiraIssueMoreDropdown({ availableActions, butterAssignment, flagged, ge
 		handleOpenChange(false);
 		moreMenuActions.onSelect();
 		queueMicrotask(() => { if (cardControl?.isConnected) cardControl.focus({ preventScroll: true }); });
+	}
+
+	function copy(value: string, action: "copy-link" | "copy-key") {
+		if (onActionSelect && !butterActionDisabled(action)) {
+			onActionSelect(action);
+		} else {
+			void navigator.clipboard?.writeText(value);
+		}
 	}
 
 	return (
@@ -132,6 +153,32 @@ function JiraIssueMoreDropdown({ availableActions, butterAssignment, flagged, ge
 				<Icon render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="max-h-none w-[280px]" side="right" sideOffset={8}>
+				{appearance === "project-butter" ? <>
+					<DropdownMenuGroup>
+						<DropdownMenuItem elemBefore={<AlignTextLeftIcon label="" size="small" />} onSelect={select("edit-summary")}>Edit summary</DropdownMenuItem>
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger elemBefore={<LinkIcon label="" size="small" />}>Link</DropdownMenuSubTrigger>
+							<DropdownMenuSubContent>
+								<DropdownMenuItem onSelect={select("link-work-item")}>Work item</DropdownMenuItem>
+								<DropdownMenuItem onSelect={select("link-confluence-item")}>Confluence item</DropdownMenuItem>
+							</DropdownMenuSubContent>
+						</DropdownMenuSub>
+						<DropdownMenuItem elemBefore={<EditIcon label="" size="small" />} elemAfter={CHEVRON} onSelect={select("edit-labels")}>Edit labels</DropdownMenuItem>
+						{flagged ? null : <DropdownMenuItem elemBefore={<FlagIcon label="" size="small" />} onSelect={select("add-flag")}>Add flag</DropdownMenuItem>}
+					</DropdownMenuGroup>
+					<DropdownMenuSeparator />
+					<DropdownMenuGroup>
+						<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
+						<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("change-status")}>Change status</DropdownMenuItem>
+					</DropdownMenuGroup>
+					<DropdownMenuSeparator />
+					<DropdownMenuGroup>
+						<DropdownMenuItem onSelect={() => copy(window.location.href, "copy-link")}>Copy link</DropdownMenuItem>
+						<DropdownMenuItem onSelect={() => copy(issueKey, "copy-key")}>Copy key</DropdownMenuItem>
+					</DropdownMenuGroup>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem elemBefore={<DeleteIcon label="" size="small" />} onSelect={moreMenuActions?.onDelete}>Delete</DropdownMenuItem>
+				</> : <>
 				{butterAssignment && invocation ? <ProjectButterMenuAgentSubmenu assignment={butterAssignment} triggerRef={triggerRef} onRequestClose={() => handleOpenChange(false)} /> : null}
 				{generativeAction && generativeActionIssue ? (
 					<>
@@ -173,6 +220,7 @@ function JiraIssueMoreDropdown({ availableActions, butterAssignment, flagged, ge
 						</DropdownMenuGroup>
 					</>
 				) : null}
+				</>}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

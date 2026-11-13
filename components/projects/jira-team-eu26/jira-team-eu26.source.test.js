@@ -846,7 +846,7 @@ test("the board keeps matching 24px gaps above and below the filter controls", (
 	// `mt-6` after the tabs must match the header's `pb-6` below the row.
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*className="mt-6 flex flex-wrap items-center gap-2 px-6"/u,
+		/\{viewTabs \? <div[^>]*"mt-2"[^>]*>\{viewTabs\}<\/div> : null\}[\s\S]*"mt-6 flex flex-wrap items-center gap-2 px-6"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,

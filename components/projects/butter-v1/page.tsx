@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import BacklogIcon from "@atlaskit/icon/core/backlog";
 import { useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type Ref } from "react";
 import { useInstantLayoutTransition, useInstantTransition } from "motion/react";
@@ -112,7 +113,10 @@ const ProjectButterDevelopmentGallery = dynamic(() => import("@/components/block
 
 const BUTTER_DEFAULT_REPORTER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
-const BUTTER_TABS = getJiraTabs(false);
+const BUTTER_TABS = [
+	{ label: "Backlog", icon: BacklogIcon, hasContent: false, placeholder: "No backlog content here yet" },
+	...getJiraTabs(false).filter((tab) => tab.view === "board" || tab.view === "list"),
+];
 const BUTTER_DEFAULT_TAB_LABEL = getJiraWorkItemsTabLabel(BUTTER_TABS);
 const BUTTER_ADD_AGENT_LABEL = "Add agent";
 const BUTTER_PINNED_CODING_AGENT_IDS = BUTTER_PAY_BOARD_AGENTS.map((agent) => agent.id);
@@ -231,6 +235,18 @@ export default function ButterPage(): React.ReactElement {
 	const [agentSelectorResetKey, setAgentSelectorResetKey] = useState(0);
 	const [duplicativeSessionsResetKey, setDuplicativeSessionsResetKey] = useState(0);
 	const [galleryOpen, setGalleryOpen] = useState(true);
+	const galleryOpenRef = useRef(galleryOpen);
+	const galleryBeforeCreateRef = useRef<boolean | null>(null);
+	useEffect(() => { galleryOpenRef.current = galleryOpen; }, [galleryOpen]);
+	const handleBoardCreateActiveChange = useCallback((active: boolean) => {
+		if (active) {
+			galleryBeforeCreateRef.current = galleryOpenRef.current;
+			setGalleryOpen(false);
+		} else if (galleryBeforeCreateRef.current !== null) {
+			setGalleryOpen(galleryBeforeCreateRef.current);
+			galleryBeforeCreateRef.current = null;
+		}
+	}, []);
 	const [pullRequestResetKey, setPullRequestResetKey] = useState(0);
 	const [developmentResetKey, setDevelopmentResetKey] = useState(0);
 	const [workItemResetKey, setWorkItemResetKey] = useState(0);
@@ -297,6 +313,7 @@ export default function ButterPage(): React.ReactElement {
 				items={BUTTER_GALLERY_ITEMS}
 				selectedColor={token("color.text")}
 				selectedId={selectedId}
+				open={galleryOpen}
 				onOpenChange={setGalleryOpen}
 				onSelectedChange={selectGalleryItem}
 				title="Project Butter v1"
@@ -348,7 +365,7 @@ export default function ButterPage(): React.ReactElement {
 			<RetainedView active={journeyActive || Boolean(standaloneView)} retain>
 				<div key={journeyResetKey} className="absolute inset-x-0 top-12 bottom-0 transform-gpu overflow-hidden">
 						<RovoChatProvider agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
-					<ButterApp ref={journeyRef} standaloneView={standaloneView} collapsedColumns={collapsedBoardColumns} onCollapsedColumnsChange={setCollapsedBoardColumns} phase={phase} pullRequestVisible={pullRequestVisible} setPhase={setPhase} onStartChecks={() => setChecksStarted(true)} journeySession={journeySession} setJourneySession={setJourneySession} journeyControls={<div data-merchant-journey-controls><div className="hidden lg:block"><MerchantJourneyControls {...controls} /></div><div className="lg:hidden"><MerchantJourneyCompactControls {...controls} /></div></div>} autoFixEnabled={autoFixEnabled} setAutoFixEnabled={setAutoFixEnabled} autoMergeEnabled={autoMergeEnabled} setAutoMergeEnabled={setAutoMergeEnabled} />
+					<ButterApp ref={journeyRef} onBoardCreateActiveChange={handleBoardCreateActiveChange} standaloneView={standaloneView} collapsedColumns={collapsedBoardColumns} onCollapsedColumnsChange={setCollapsedBoardColumns} phase={phase} pullRequestVisible={pullRequestVisible} setPhase={setPhase} onStartChecks={() => setChecksStarted(true)} journeySession={journeySession} setJourneySession={setJourneySession} journeyControls={<div data-merchant-journey-controls><div className="hidden lg:block"><MerchantJourneyControls {...controls} /></div><div className="lg:hidden"><MerchantJourneyCompactControls {...controls} /></div></div>} autoFixEnabled={autoFixEnabled} setAutoFixEnabled={setAutoFixEnabled} autoMergeEnabled={autoMergeEnabled} setAutoMergeEnabled={setAutoMergeEnabled} />
 						</RovoChatProvider>
 				</div>
 			</RetainedView>
@@ -397,7 +414,8 @@ function ButterSessionPromptObserver({ activeSessionId, isSwitchingSession, onPr
 	return null;
 }
 
-function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsChange, phase, pullRequestVisible, setPhase, onStartChecks, journeySession, setJourneySession, journeyControls, autoFixEnabled, setAutoFixEnabled, autoMergeEnabled, setAutoMergeEnabled }: Readonly<{
+function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedColumns, onCollapsedColumnsChange, phase, pullRequestVisible, setPhase, onStartChecks, journeySession, setJourneySession, journeyControls, autoFixEnabled, setAutoFixEnabled, autoMergeEnabled, setAutoMergeEnabled }: Readonly<{
+	onBoardCreateActiveChange: (active: boolean) => void;
 	ref: Ref<{ selectStep: (step: number) => void; cancelReplay: () => void }>;
 	standaloneView?: "board" | "list";
 	collapsedColumns: ReadonlySet<string>;
@@ -837,6 +855,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 				>
 					<ButterInlineAgentPickerContext value>
 					<ExperimentalJiraKanbanPage
+						onBoardCreateActiveChange={onBoardCreateActiveChange}
 						boardOnly={boardOnly}
 						collapsedColumns={collapsedColumns}
 						onCollapsedColumnsChange={onCollapsedColumnsChange}
@@ -937,6 +956,7 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 						needsInputCount={needsInputCount}
 						viewTabs={(
 							<JiraViewTabs
+								animateIndicator
 								selectedTabLabel={selectedTabLabel}
 								onTabChange={handleTabChange}
 								tabs={tabs}

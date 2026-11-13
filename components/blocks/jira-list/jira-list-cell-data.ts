@@ -3,4 +3,5 @@ export const PRIORITY_LABELS = {
 	medium: "Medium",
 	minor: "Minor",
 	critical: "Critical",
+	trivial: "Lowest",
 } as const;
