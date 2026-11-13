@@ -87,6 +87,7 @@ const {
 	getRealtimeConfig: defaultGetRealtimeConfig,
 } = require("./lib/ai-gateway-helpers");
 const { chromiumPreviewManager: defaultChromiumPreviewManager } = require("./lib/chromium-preview");
+const { createRuntimeShutdownSteps } = require("./lib/backend-shutdown");
 const {
 	browserWorkspaceManager: defaultBrowserWorkspaceManager,
 	isBrowserWorkspaceNotFoundError: defaultIsBrowserWorkspaceNotFoundError,
@@ -405,9 +406,11 @@ function createBackendRuntimeComposition({
 			port,
 			refreshRovoAvailability,
 		},
-		shutdownRuntime: () => {
-			shutdownRovoPool();
-		},
+		shutdownSteps: createRuntimeShutdownSteps({
+			activeRequests,
+			browserWorkspaceManager,
+			shutdownRovoPool,
+		}),
 		webSocketRelayDependencies: {
 			browserWorkspaceManager,
 			debugMode,
