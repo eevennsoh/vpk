@@ -165,21 +165,25 @@ function createRuntimeAdminControls({
 		});
 	}
 
-	function isAllowedRuntimeSocketOrigin(origin, request) {
+	function isAllowedRuntimeSocketOrigin(origin, request, options) {
 		return isRuntimeSocketOriginAllowed(
 			origin,
 			request.headers.host,
 			resolvedAllowedOrigins,
+			options,
 		);
 	}
 
 	function requireRuntimeSocketTokenRequester(req, res, next) {
 		const origin = getNonEmptyString(req.get?.("origin"));
+		const production = env.NODE_ENV === "production";
 		const decision = decideRuntimeSocketTokenRequest({
 			adminTokenValid: isRuntimeAdminTokenValid(getRuntimeAdminTokenFromRequest(req), runtimeAdminToken),
 			origin,
-			originAllowed: Boolean(origin) && isAllowedRuntimeSocketOrigin(origin, req),
-			production: env.NODE_ENV === "production",
+			// In production a page on another local dev server (any loopback or `*.localhost`
+			// origin) is not this app: only the request's own host and configured origins count.
+			originAllowed: Boolean(origin) && isAllowedRuntimeSocketOrigin(origin, req, { allowLocalOrigins: !production }),
+			production,
 			remoteAddress: getNonEmptyString(req.socket?.remoteAddress),
 			runtimeAdminRequired,
 			runtimeAdminToken,

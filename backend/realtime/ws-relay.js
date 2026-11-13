@@ -49,6 +49,11 @@ function verifyRuntimeSocketUpgrade(requestUrl, request, {
 	};
 }
 
+// The largest legitimate frames are a pasted clipboard text on the preview socket and an
+// injected thread context on the realtime socket; audio chunks are a few KiB. ws closes a
+// socket that sends more with 1009 instead of buffering it (its default is 100 MiB).
+const WS_MAX_PAYLOAD_BYTES = 2 * 1024 * 1024;
+
 const BROWSER_PREVIEW_PATH = /^\/api\/browser-workspaces\/(?<workspaceId>[^/]+)\/live$/u;
 
 /**
@@ -164,8 +169,8 @@ function registerBackendWebSocketRelays(server, {
 		throw new Error("registerBackendWebSocketRelays requires webSocketImpl.Server");
 	}
 
-	const realtimeWss = new webSocketImpl.Server({ noServer: true });
-	const browserPreviewWss = new webSocketImpl.Server({ noServer: true });
+	const realtimeWss = new webSocketImpl.Server({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
+	const browserPreviewWss = new webSocketImpl.Server({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
 	const verifyUpgrade = (requestUrl, request, options) => {
 		return verifyRuntimeSocketUpgrade(requestUrl, request, {
 			isAllowedRuntimeSocketOrigin,
@@ -274,21 +279,18 @@ function registerBackendWebSocketRelays(server, {
 			return;
 		}
 
-		void browserWorkspaceManager.attachWorkspacePreviewClient(workspaceId, ws).catch(
-			(error) => {
-				const message =
-					error instanceof Error
-						? error.message
-						: "Failed to attach browser preview client.";
-				ws.send(
-					JSON.stringify({
-						type: "preview-error",
-						message,
-					}),
-				);
-				ws.close();
-			},
-		);
+		// The error reply goes through the guarded send and close: a throw here (a socket
+		// that already closed) would be an unhandled rejection, which exits the backend.
+		void Promise.resolve()
+			.then(() => browserWorkspaceManager.attachWorkspacePreviewClient(workspaceId, ws))
+			.catch((error) => {
+				sendPreviewError(ws, error, "Failed to attach browser preview client.");
+				try {
+					ws.close();
+				} catch {
+					ws.terminate?.();
+				}
+			});
 
 		ws.on("message", guardListener("preview message", (data) => {
 			let payload;
@@ -323,6 +325,7 @@ function registerBackendWebSocketRelays(server, {
 }
 
 module.exports = {
+	WS_MAX_PAYLOAD_BYTES,
 	guardListener,
 	parseUpgradeTarget,
 	getRuntimeSocketTokenFromUpgrade,

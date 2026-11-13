@@ -50,3 +50,20 @@ test("hostile realtime frames and preview frames leave the real backend running"
 	assert.deepEqual(await health.json(), { status: "ok" });
 	assert.equal(backend.lines.some((line) => /Uncaught exception|Unhandled rejection/u.test(line)), false, backend.lines.join("\n"));
 });
+
+test("a frame over the size cap closes that socket with 1009 and leaves the backend running", { timeout: 60_000 }, async (t) => {
+	const backend = startBackend(t, { env: OFFLINE_REALTIME_ENV });
+	const { host, port } = await backend.listening;
+	const base = `ws://${host}:${port}`;
+	// The realtime socket stays open without credentials; a preview socket for a missing
+	// workspace closes on its own, so its cap is covered by the server options test.
+	const { socket } = await openSocket(`${base}/api/realtime/audio-conversation`);
+	t.after(() => socket.terminate());
+	const closed = once(socket, "close");
+	socket.on("error", () => {});
+	socket.send("x".repeat(3 * 1024 * 1024));
+	const [code] = await closed;
+	assert.equal(code, 1009);
+	const health = await fetch(`http://${host}:${port}/healthcheck`);
+	assert.deepEqual(await health.json(), { status: "ok" });
+});

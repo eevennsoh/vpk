@@ -18,7 +18,14 @@ function isSameRuntimeSocketHost(originUrl, requestHost) {
 	return Boolean(normalizedRequestHost && originUrl.host === normalizedRequestHost);
 }
 
-function isAllowedRuntimeSocketOrigin(origin, requestHost, allowedOrigins = []) {
+/**
+ * @param {string | null | undefined} origin
+ * @param {string | null | undefined} requestHost
+ * @param {string[]} [allowedOrigins]
+ * @param {{ allowLocalOrigins?: boolean }} [options] - false: a loopback or `*.localhost`
+ *   Origin counts only when it is the request's own host or a configured origin
+ */
+function isAllowedRuntimeSocketOrigin(origin, requestHost, allowedOrigins = [], { allowLocalOrigins = true } = {}) {
 	const normalizedOrigin = getNonEmptyString(origin);
 	if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
 		return true;
@@ -28,7 +35,7 @@ function isAllowedRuntimeSocketOrigin(origin, requestHost, allowedOrigins = []) 
 		const originUrl = new URL(normalizedOrigin);
 		return (
 			isSameRuntimeSocketHost(originUrl, requestHost) ||
-			isLocalRuntimeSocketOrigin(originUrl)
+			(allowLocalOrigins && isLocalRuntimeSocketOrigin(originUrl))
 		);
 	} catch {
 		return false;

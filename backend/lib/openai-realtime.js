@@ -546,6 +546,11 @@ class RealtimeSession {
 
 		if (useGateway) {
 			const token = await getAuthToken();
+			// The client may have gone while the token was fetched; close() already ran
+			// and would never see an upstream socket opened after it.
+			if (this._state === SESSION_STATE.CLOSED) {
+				return;
+			}
 			headers = {
 				Authorization: `bearer ${token}`,
 				"OpenAI-Beta": "realtime=v1",

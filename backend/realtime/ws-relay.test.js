@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+	WS_MAX_PAYLOAD_BYTES,
 	getRuntimeSocketTokenFromUpgrade,
 	guardListener,
 	registerBackendWebSocketRelays,
@@ -566,4 +567,48 @@ test("preview control messages that are not objects, or whose action rejects, ar
 	for (const payload of ws.sent) {
 		assert.equal(JSON.parse(payload).type, "preview-error");
 	}
+});
+
+test("both WebSocket servers cap a frame at WS_MAX_PAYLOAD_BYTES", () => {
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(createFakeServer(), { ...createRegistrationDependencies(), webSocketImpl });
+	assert.equal(instances.length, 2);
+	for (const instance of instances) {
+		assert.deepEqual(instance.options, { noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
+	}
+	assert.equal(WS_MAX_PAYLOAD_BYTES, 2 * 1024 * 1024);
+});
+
+test("a failed preview attach on a socket whose send and close throw never becomes an unhandled rejection", async (t) => {
+	const unhandled = [];
+	const onUnhandled = (reason) => unhandled.push(reason);
+	process.on("unhandledRejection", onUnhandled);
+	t.after(() => process.off("unhandledRejection", onUnhandled));
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(createFakeServer(), {
+		...createRegistrationDependencies({
+			browserWorkspaceManager: createBrowserWorkspaceManager({
+				attachWorkspacePreviewClient: async () => {
+					throw new Error("attach failed");
+				},
+			}),
+		}),
+		webSocketImpl,
+	});
+	const ws = createFakeWs();
+	let terminated = false;
+	ws.send = () => {
+		throw new Error("WebSocket is not open");
+	};
+	ws.close = () => {
+		throw new Error("WebSocket is not open");
+	};
+	ws.terminate = () => {
+		terminated = true;
+	};
+	instances[1].listeners.get("connection")(ws, {}, "workspace-1");
+	await new Promise(setImmediate);
+	await new Promise(setImmediate);
+	assert.deepEqual(unhandled, []);
+	assert.equal(terminated, true);
 });

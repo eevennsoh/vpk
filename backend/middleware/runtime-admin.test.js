@@ -265,3 +265,24 @@ test("the token route keeps working through the Next dev proxy when development 
 	assert.equal(nextCalls, 1);
 	assert.deepEqual(response.payloads, []);
 });
+
+test("in production a loopback or *.localhost Origin gets no socket token unless it is the app's own host", () => {
+	const issue = (env, host, origin) => {
+		const controls = createRuntimeAdminControls({ allowedOrigins: ["https://allowed.test"], env });
+		let nextCalls = 0;
+		const response = createResponse();
+		controls.requireRuntimeSocketTokenRequester(createRequest({ headers: { host, origin } }), response, () => {
+			nextCalls += 1;
+		});
+		return nextCalls === 1;
+	};
+	const production = { NODE_ENV: "production", VPK_RUNTIME_ADMIN_TOKEN: "secret" };
+	assert.equal(issue(production, "app.test", "http://other-app.localhost:1355"), false);
+	assert.equal(issue(production, "app.test", "http://localhost:3000"), false);
+	assert.equal(issue(production, "app.test", "http://127.0.0.1:5173"), false);
+	assert.equal(issue(production, "app.test", "https://app.test"), true, "the app's own host");
+	assert.equal(issue(production, "localhost:8080", "http://localhost:8080"), true, "a production build served on this machine");
+	assert.equal(issue(production, "app.test", "https://allowed.test"), true, "a configured origin");
+	const development = { NODE_ENV: "development", VPK_RUNTIME_ADMIN_TOKEN: "secret" };
+	assert.equal(issue(development, "127.0.0.1:8080", "http://vpk.localhost:1355"), true, "development keeps local origins");
+});
