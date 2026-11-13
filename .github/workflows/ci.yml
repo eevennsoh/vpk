@@ -173,9 +173,15 @@ jobs:
           rm -rf backend/public
           cp -R out backend/public
           mkdir -p output/playwright
-          NODE_ENV=production PORT=8080 nohup node backend/server.js > output/playwright/server.log 2>&1 &
+          # Production mode refuses to start without an admin token: give it a throwaway one for this run.
+          VPK_RUNTIME_ADMIN_TOKEN="$(openssl rand -hex 32)" NODE_ENV=production PORT=8080 nohup node backend/server.js > output/playwright/server.log 2>&1 &
+          server_pid=$!
           for attempt in $(seq 1 60); do
             curl -fsS http://127.0.0.1:8080/api/health > /dev/null && exit 0
+            if ! kill -0 "$server_pid" 2> /dev/null; then
+              echo "The server exited before /api/health answered."
+              break
+            fi
             sleep 2
           done
           cat output/playwright/server.log

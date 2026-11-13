@@ -146,7 +146,10 @@ test("the browser smoke job serves a production build and runs only the @smoke s
 	assert.deepEqual(steps.map((step) => step.name).filter((name) => order.includes(name)), order);
 	assert.match(jobs.smoke, /run: time pnpm run build:export/u);
 	assert.match(jobs.smoke, /cp -R out backend\/public/u);
-	assert.match(jobs.smoke, /NODE_ENV=production PORT=8080 nohup node backend\/server.js/u);
+	assert.match(jobs.smoke, /VPK_RUNTIME_ADMIN_TOKEN="\$\(openssl rand -hex 32\)" NODE_ENV=production PORT=8080 nohup node backend\/server.js/u, "a throwaway admin token, generated in the step");
+	assert.doesNotMatch(jobs.smoke, /secrets\.VPK_RUNTIME_ADMIN_TOKEN/u);
+	assert.match(jobs.smoke, /server_pid=\$!/u);
+	assert.match(jobs.smoke, /kill -0 "\$server_pid"/u, "stops waiting once the server has exited");
 	assert.match(jobs.smoke, /curl -fsS http:\/\/127\.0\.0\.1:8080\/api\/health/u);
 	const smoke = steps.find((step) => step.name === "Smoke specs");
 	assert.equal(smoke.run, "time pnpm run test:e2e:smoke");
