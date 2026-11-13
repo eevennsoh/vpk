@@ -481,7 +481,7 @@ test("every shard CLI rejects a silent suite or a stale not-run list before runn
 	try {
 		mkdirSync(path.join(root, "components"));
 		mkdirSync(path.join(root, "lib"));
-		for (const file of ["run-js-unit-tests.mjs", "js-unit-test-timings.json", "verify-eslint-suppressions.js", "lib/register-alias-hook.mjs"]) {
+		for (const file of ["run-js-unit-tests.mjs", "js-unit-test-timings.json", "verify-eslint-suppressions.js", "lib/register-alias-hook.mjs", "lib/heavy-run-lock.js", "lib/memory-pressure.js"]) {
 			copyFileSync(path.join(__dirname, file), path.join(root, file === "run-js-unit-tests.mjs" ? "runner.mjs" : file));
 		}
 		writeFileSync(path.join(root, "js-unit-test-skipped.mjs"), "export const SKIPPED_TEST_FILES = {};\nexport const SKIPPED_TEST_PREFIXES = {};\n");
@@ -541,13 +541,14 @@ test("--parallel splits the CPUs between workers and stops starting batches afte
 	const { parseTestSelectionArgs, resolveParallel, runTestFilesParallel, testConcurrencyFor } = await import("./run-js-unit-tests.mjs");
 	assert.equal(testConcurrencyFor(4, 14), 3);
 	assert.equal(testConcurrencyFor(16, 8), 1);
-	assert.equal(resolveParallel("auto", 14), 7);
-	assert.equal(resolveParallel("auto", 32), 8);
-	assert.equal(resolveParallel("auto", 1), 1);
+	const roomy = { availableGb: 40, pressureLevel: 1, swapUsedGb: 2 };
+	assert.equal(resolveParallel("auto", 14, roomy), 7);
+	assert.equal(resolveParallel("auto", 32, roomy), 8);
+	assert.equal(resolveParallel("auto", 1, roomy), 1);
 	assert.equal(resolveParallel("3"), 3);
 	assert.throws(() => resolveParallel("0"), /positive integer or auto/u);
 	assert.equal(parseTestSelectionArgs(["--parallel", "2"]).parallel, 2);
-	assert.equal(parseTestSelectionArgs(["--parallel=auto"]).parallel > 0, true);
+	assert.equal(parseTestSelectionArgs(["--parallel=auto"]).parallel, "auto", "auto is sized when the run starts");
 	assert.throws(() => parseTestSelectionArgs(["--parallel"]), /--parallel requires/u);
 
 	const files = ["a/1.test.js", "b/1.test.js", "c/1.test.js", "d/1.test.js"];
@@ -567,4 +568,18 @@ test("--parallel splits the CPUs between workers and stops starting batches afte
 	const all = await run(true);
 	assert.equal(all.status, 1);
 	assert.equal(all.calls.length, 4);
+});
+
+test("--parallel auto sizes itself from cores and available memory, and runs serially under pressure", async () => {
+	const { autoParallel } = await import("./run-js-unit-tests.mjs");
+	assert.deepEqual(autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: 1, swapUsedGb: 2 } }), { parallel: 7, note: null });
+	const tight = autoParallel({ cpus: 14, memory: { availableGb: 6.4, pressureLevel: 1, swapUsedGb: 2 } });
+	assert.equal(tight.parallel, 3);
+	assert.match(tight.note, /3 worker\(s\) for 6\.4 GB available memory/u);
+	assert.equal(autoParallel({ cpus: 14, memory: { availableGb: 0.5, pressureLevel: 1, swapUsedGb: 2 } }).parallel, 1);
+	const swapping = autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: 2, swapUsedGb: 29 } });
+	assert.equal(swapping.parallel, 1);
+	assert.match(swapping.note, /memory pressure \(swap in use is 29 GB >= 16 GB\): running batches one at a time/u);
+	assert.equal(autoParallel({ cpus: 14, memory: { availableGb: 40, pressureLevel: 4, swapUsedGb: 1 } }).parallel, 1);
+	assert.deepEqual(autoParallel({ cpus: 14, memory: { availableGb: null, pressureLevel: null, swapUsedGb: null } }), { parallel: 7, note: null });
 });

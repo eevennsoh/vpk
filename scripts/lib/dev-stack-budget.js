@@ -17,12 +17,12 @@ const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
+const { pressureReasons, readMemoryState } = require("./memory-pressure.js");
+
 // Defaults from the 2026-11-13 incident on a 48 GB Mac: ten next-servers held about 39 GB
 // (about 4 GB each), and six stacks plus one validation run exhausted it again. Four stacks
 // (about 16 GB) leave room for agents and one heavy validation run.
 const DEV_STACK_BUDGET = 4; // live stacks, counting the one about to start
-const PRESSURE_SWAP_USED_GB = 16; // same limits as the vpk-system-clean pressure mode
-const PRESSURE_LEVEL_MIN = 4; // kern.memorystatus_vm_pressure_level: 4 is critical
 const IDLE_CPU_MAX = 20; // %CPU below which a stack is listed as idle
 
 const EXIT_OVER_BUDGET = 3;
@@ -33,13 +33,6 @@ function run(command, args) {
 	return result.status === 0 ? result.stdout : "";
 }
 
-function parseSwapUsedGb(text) {
-	const match = /used = ([\d.]+)([KMG])/u.exec(text);
-	if (!match) return null;
-	const value = Number(match[1]);
-	return Math.floor(match[2] === "G" ? value : match[2] === "M" ? value / 1024 : 0);
-}
-
 function collectInventory() {
 	const pids = run("pgrep", ["-f", "next-server"]).split("\n").map(Number).filter((pid) => pid > 0 && pid !== process.pid);
 	const servers = pids.map((pid) => {
@@ -47,12 +40,8 @@ function collectInventory() {
 		const cpu = Number(run("ps", ["-o", "%cpu=", "-p", String(pid)]).trim());
 		return { pid, cwd, cpu: Number.isFinite(cpu) ? cpu : null };
 	}).filter((server) => server.cwd);
-	const level = Number(run("sysctl", ["-n", "kern.memorystatus_vm_pressure_level"]).trim());
-	return {
-		servers,
-		swapUsedGb: parseSwapUsedGb(run("sysctl", ["-n", "vm.swapusage"])),
-		pressureLevel: Number.isInteger(level) && level > 0 ? level : null,
-	};
+	const { pressureLevel, swapUsedGb } = readMemoryState();
+	return { servers, swapUsedGb, pressureLevel };
 }
 
 function within(child, root) {
@@ -64,8 +53,6 @@ function evaluateBudget(inventory, {
 	budget = DEV_STACK_BUDGET,
 	force = false,
 	idleCpuMax = IDLE_CPU_MAX,
-	pressureLevelMin = PRESSURE_LEVEL_MIN,
-	swapLimitGb = PRESSURE_SWAP_USED_GB,
 	worktree,
 }) {
 	const roots = [path.resolve(worktree)];
@@ -89,8 +76,7 @@ function evaluateBudget(inventory, {
 	}));
 	const reasons = [];
 	if (otherStacks.length + 1 > budget) reasons.push(`${otherStacks.length} dev stacks already run; starting this one would make ${otherStacks.length + 1} > budget ${budget}`);
-	if (inventory.swapUsedGb !== null && inventory.swapUsedGb >= swapLimitGb) reasons.push(`swap in use is ${inventory.swapUsedGb} GB >= ${swapLimitGb} GB`);
-	if (inventory.pressureLevel !== null && inventory.pressureLevel >= pressureLevelMin) reasons.push(`memory-pressure level is ${inventory.pressureLevel} >= ${pressureLevelMin}`);
+	reasons.push(...pressureReasons(inventory));
 	const exitCode = reasons.length > 0 && !force ? EXIT_OVER_BUDGET : 0;
 	return { exitCode, forced: reasons.length > 0 && force, ownServers, otherStacks, reasons };
 }
@@ -149,5 +135,4 @@ module.exports = {
 	EXIT_OVER_BUDGET,
 	evaluateBudget,
 	formatVerdict,
-	parseSwapUsedGb,
 };

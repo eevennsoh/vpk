@@ -1,0 +1,143 @@
+"use strict";
+
+// One machine-wide lock for the heavy stage of `pnpm run check`, `pnpm run ci:pr` and the unit
+// runner, so concurrent agent sessions take turns instead of running full lint, typecheck and
+// unit suites all at once. It lives under the shared git directory, so every worktree of this
+// repository sees it.
+//
+// - Acquired atomically: the record is written in full to a private draft and hard-linked into
+//   place; the link fails when the lock exists, so two runs can never both win (a read-then-write
+//   check can: that race broke main once in scripts/build-static-export.mjs).
+// - A holder that died leaves a stale lock; the next run retires it by renaming it aside (only
+//   one competitor wins the rename) and hands it back if its holder turns out to be alive.
+// - Re-entrant: the holder exports VPK_HEAVY_RUN_LOCK_HOLDER, so the unit runner that `check`
+//   or `ci:pr` starts runs inside its parent's turn instead of waiting for it.
+// - Never blocks CI: with CI set it is a no-op.
+
+const { spawnSync } = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const LOCK_FILE_NAME = "vpk-heavy-run.lock";
+const HOLDER_ENV = "VPK_HEAVY_RUN_LOCK_HOLDER";
+const LOCK_PATH_ENV = "VPK_HEAVY_RUN_LOCK_PATH";
+const POLL_MS = 250;
+
+function defaultLockPath({ cwd = process.cwd(), env = process.env } = {}) {
+	if (env[LOCK_PATH_ENV]) return env[LOCK_PATH_ENV];
+	const result = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd, encoding: "utf8" });
+	const commonDir = result.status === 0 ? result.stdout.trim() : "";
+	return commonDir ? path.join(commonDir, LOCK_FILE_NAME) : null;
+}
+
+function isProcessAlive(pid) {
+	if (!Number.isInteger(pid) || pid <= 0) return false;
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		// EPERM: the pid exists but is not ours to signal; never treat it as dead.
+		return error.code !== "ESRCH";
+	}
+}
+
+function readHolder(file) {
+	try {
+		return JSON.parse(fs.readFileSync(file, "utf8"));
+	} catch (error) {
+		return error.code === "ENOENT" ? null : { pid: null, unreadable: true };
+	}
+}
+
+function publish(lockPath, record) {
+	const draft = `${lockPath}.draft-${process.pid}`;
+	fs.writeFileSync(draft, `${JSON.stringify(record)}\n`);
+	try {
+		fs.linkSync(draft, lockPath);
+		return true;
+	} catch (error) {
+		if (error.code === "EEXIST") return false;
+		throw error;
+	} finally {
+		fs.rmSync(draft, { force: true });
+	}
+}
+
+// Renames a dead holder's lock aside so the name is free; hands it back if the holder that
+// owns it now is alive (it took the name between our check and the rename).
+function retireStale(lockPath, { alive }) {
+	const claim = `${lockPath}.claim-${process.pid}`;
+	try {
+		fs.renameSync(lockPath, claim);
+	} catch (error) {
+		if (error.code === "ENOENT") return;
+		throw error;
+	}
+	try {
+		const claimed = readHolder(claim);
+		if (claimed?.pid && claimed.pid !== process.pid && alive(claimed.pid)) {
+			try {
+				fs.linkSync(claim, lockPath);
+			} catch (error) {
+				if (error.code !== "EEXIST") throw error;
+			}
+		}
+	} finally {
+		fs.rmSync(claim, { force: true });
+	}
+}
+
+const NO_LOCK = Object.freeze({ held: false, release() {} });
+
+async function acquireHeavyRunLock({
+	alive = isProcessAlive,
+	env = process.env,
+	label,
+	lockPath = defaultLockPath({ env }),
+	log = (line) => process.stderr.write(`${line}\n`),
+	pollMs = POLL_MS,
+} = {}) {
+	if (env.CI || !lockPath) return NO_LOCK;
+	if (env[HOLDER_ENV]) {
+		const holder = readHolder(lockPath);
+		if (holder?.pid && String(holder.pid) === env[HOLDER_ENV] && alive(holder.pid)) return NO_LOCK;
+	}
+	const record = { pid: process.pid, label, cwd: process.cwd(), startedAt: new Date().toISOString() };
+	let announced = null;
+	for (;;) {
+		if (publish(lockPath, record)) break;
+		const holder = readHolder(lockPath);
+		if (holder === null) continue;
+		if (holder.pid === process.pid) break;
+		if (holder.pid && alive(holder.pid)) {
+			if (announced !== holder.pid) {
+				log(`heavy-run lock: waiting for pid ${holder.pid} (${holder.label ?? "a heavy run"} in ${holder.cwd ?? "?"}, since ${holder.startedAt ?? "?"}) to finish its heavy stage`);
+				announced = holder.pid;
+			}
+			await new Promise((resolve) => setTimeout(resolve, pollMs));
+			continue;
+		}
+		log(`heavy-run lock: ${holder.pid ? `pid ${holder.pid} is gone` : "the lock is unreadable"}; taking over its stale lock`);
+		retireStale(lockPath, { alive });
+	}
+	env[HOLDER_ENV] = String(process.pid);
+	let released = false;
+	const release = () => {
+		if (released) return;
+		released = true;
+		process.removeListener("exit", release);
+		if (readHolder(lockPath)?.pid === process.pid) fs.rmSync(lockPath, { force: true });
+		if (env[HOLDER_ENV] === String(process.pid)) delete env[HOLDER_ENV];
+	};
+	process.on("exit", release);
+	return { held: true, lockPath, release };
+}
+
+module.exports = {
+	HOLDER_ENV,
+	LOCK_FILE_NAME,
+	LOCK_PATH_ENV,
+	acquireHeavyRunLock,
+	defaultLockPath,
+	isProcessAlive,
+};

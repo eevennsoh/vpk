@@ -1,16 +1,10 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { DEV_STACK_BUDGET, EXIT_DUPLICATE_SERVER, EXIT_OVER_BUDGET, evaluateBudget, formatVerdict, parseSwapUsedGb } = require("./dev-stack-budget.js");
+const { DEV_STACK_BUDGET, EXIT_DUPLICATE_SERVER, EXIT_OVER_BUDGET, evaluateBudget, formatVerdict } = require("./dev-stack-budget.js");
 
 const calm = { servers: [], swapUsedGb: 2, pressureLevel: 1 };
 const stacks = (count) => Array.from({ length: count }, (_, index) => ({ pid: 100 + index, cwd: `/wt/${index}`, cpu: 1 }));
-
-test("parses swap in use from sysctl vm.swapusage", () => {
-	assert.equal(parseSwapUsedGb("total = 38912.00M  used = 37580.80M  free = 1331.20M  (encrypted)"), 36);
-	assert.equal(parseSwapUsedGb("total = 6144.00M  used = 0.00M  free = 6144.00M"), 0);
-	assert.equal(parseSwapUsedGb("vm.swapusage: unknown"), null);
-});
 
 test("starting is allowed up to the budget and refused one past it", () => {
 	assert.equal(DEV_STACK_BUDGET, 4);

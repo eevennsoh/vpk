@@ -20,6 +20,8 @@ const DETAIL_LINES = 25;
 // The guard list lives in scripts/lib/guard-scripts.js so scripts/lib/package-gates.js can
 // tell which gates reach a guard through check.mjs.
 export const { GUARD_SCRIPTS } = createRequire(import.meta.url)("./lib/guard-scripts.js");
+const { acquireHeavyRunLock } = createRequire(import.meta.url)("./lib/heavy-run-lock.js");
+const { pressureReasons, readMemoryState } = createRequire(import.meta.url)("./lib/memory-pressure.js");
 
 const GENERATED_GUARDS = new Set(["verify:route-manifest", "verify:api-surfaces", "verify:repo-map", "verify:cursor-rules", "validate:skills"]);
 
@@ -37,8 +39,45 @@ export function killChildren(signal) {
 	}
 }
 
+// How many runShell commands may run at once. Unlimited by default; one under memory pressure.
+let shellSlots = Number.POSITIVE_INFINITY;
+let shellsRunning = 0;
+const shellQueue = [];
+
+export function setShellConcurrency(limit) {
+	shellSlots = limit;
+}
+
+async function takeShellSlot() {
+	while (shellsRunning >= shellSlots) await new Promise((resolve) => shellQueue.push(resolve));
+	shellsRunning += 1;
+}
+
+function freeShellSlot() {
+	shellsRunning -= 1;
+	shellQueue.shift()?.();
+}
+
+// Under memory pressure check and ci:pr run their commands one at a time and say so; returns
+// the line that says so, or null.
+export function serializeUnderPressure({ memory = readMemoryState(), name }) {
+	const reasons = pressureReasons(memory);
+	if (reasons.length === 0) return null;
+	setShellConcurrency(1);
+	return `${name}: memory pressure (${reasons.join("; ")}): running its commands one at a time`;
+}
+
 // Each command runs in its own process group so an interrupted check leaves nothing behind.
-export function runShell(command, { cwd = REPO_ROOT, env = process.env } = {}) {
+export async function runShell(command, { cwd = REPO_ROOT, env = process.env } = {}) {
+	await takeShellSlot();
+	try {
+		return await spawnShell(command, { cwd, env });
+	} finally {
+		freeShellSlot();
+	}
+}
+
+function spawnShell(command, { cwd, env }) {
 	const started = performance.now();
 	return new Promise((resolve) => {
 		// Absolute path: a PATH lookup of `sh` fails with EPERM inside the agent sandbox.
@@ -320,7 +359,20 @@ async function main() {
 		});
 	}
 	const options = parseArgs(process.argv.slice(2));
-	const report = await runCheck(options);
+	// The full check is a heavy run: take the machine-wide turn (a no-op in CI) and, under memory
+	// pressure, run its commands one at a time. Guards alone are light and run as before.
+	let lock = null;
+	if (!options.guardsOnly) {
+		const serial = serializeUnderPressure({ name: "check" });
+		if (serial) process.stderr.write(`${serial}\n`);
+		lock = await acquireHeavyRunLock({ label: "pnpm run check" });
+	}
+	let report;
+	try {
+		report = await runCheck(options);
+	} finally {
+		lock?.release();
+	}
 	// CI logs show a failing guard's whole output; interactive runs keep the summary short.
 	process.stdout.write(options.json ? `${JSON.stringify(report, null, "\t")}\n`
 		: formatReport(report, { detailLines: options.guardsOnly ? Infinity : DETAIL_LINES }));
