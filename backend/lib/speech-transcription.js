@@ -1,3 +1,4 @@
+// @ts-check
 const { spawn } = require("node:child_process");
 const fs = require("node:fs/promises");
 const os = require("node:os");
@@ -50,13 +51,13 @@ const STRICT_TRANSCRIPTION_PROMPT = [
 ].join(" ");
 
 function createHttpError(status, message) {
-	const error = new Error(message);
+	const error = /** @type {Error & { statusCode?: number }} */ (new Error(message));
 	error.statusCode = status;
 	return error;
 }
 
 function createAbortError(message = "Speech transcription aborted") {
-	const error = new Error(message);
+	const error = /** @type {Error & { code?: string }} */ (new Error(message));
 	error.name = "AbortError";
 	error.code = "ABORT_ERR";
 	return error;
@@ -71,7 +72,7 @@ function getSpeechTranscriptionEnvVars() {
 		OPENAI_COMPATIBLE_STT_API_KEY: process.env.OPENAI_COMPATIBLE_STT_API_KEY,
 		OPENAI_COMPATIBLE_STT_MODEL: process.env.OPENAI_COMPATIBLE_STT_MODEL,
 		...Object.fromEntries(
-			Object.values(STT_PRESET_ENV_MAP).flatMap(({ providerEnv, modelEnv }) => {
+			Object.values(/** @type {Record<string, { providerEnv: string, modelEnv?: string }>} */ (STT_PRESET_ENV_MAP)).flatMap(({ providerEnv, modelEnv }) => {
 				return [
 					[providerEnv, process.env[providerEnv]],
 					...(typeof modelEnv === "string"
@@ -154,7 +155,7 @@ function getTranscriptionErrorDetails(error) {
 		return "";
 	}
 
-	const cause = error.cause;
+	const cause = /** @type {{ message?: unknown, code?: unknown } | undefined} */ (error.cause);
 	const parts = [
 		error.message,
 		typeof cause?.message === "string" ? cause.message : "",
@@ -231,7 +232,8 @@ function resolveConfiguredTranscriptionModel({
 		sttEnvVars,
 		resolvePresetKey(sttEnvVars.STT_PRESET),
 	);
-	if (presetConfig?.provider === provider && presetConfig.model) {
+	// provider is always a string here, so a missing preset never matches.
+	if (presetConfig !== null && presetConfig.provider === provider && presetConfig.model) {
 		return presetConfig.model;
 	}
 
@@ -386,6 +388,7 @@ function buildGenerateContentUrl(gatewayUrl, model) {
 
 function combineAbortSignals(signal, timeoutMs) {
 	const controller = new AbortController();
+	/** @type {ReturnType<typeof setTimeout> | null} */
 	let timeoutHandle = null;
 
 	const abortWithReason = (reason) => {
@@ -425,7 +428,7 @@ function combineAbortSignals(signal, timeoutMs) {
 }
 
 async function runLocalWhisper({ args, signal, whisperBin }) {
-	await new Promise((resolve, reject) => {
+	await new Promise(/** @param {(value?: unknown) => void} resolve */ (resolve, reject) => {
 		let stderr = "";
 		let settled = false;
 		const child = spawn(whisperBin, args, {
@@ -478,7 +481,7 @@ async function runLocalWhisper({ args, signal, whisperBin }) {
 			stderr = appendLogChunk(stderr, chunk);
 		});
 
-		child.on("error", (error) => {
+		child.on("error", (/** @type {NodeJS.ErrnoException} */ error) => {
 			if (error?.code === "ENOENT") {
 				rejectOnce(
 					createHttpError(
@@ -649,7 +652,7 @@ async function transcribeViaOpenAiCompatible({
 			);
 		}
 
-		const result = await response.json();
+		const result = /** @type {{ text?: unknown } | null} */ (await response.json());
 		return getNonEmptyString(result?.text) || "";
 	} catch (error) {
 		if (error instanceof Error && error.name === "AbortError") {
@@ -736,7 +739,7 @@ async function transcribeViaGoogleGenerateContent({ audio, mimeType, model, sign
 			);
 		}
 
-		const result = await response.json();
+		const result = /** @type {{ candidates?: Array<{ content?: { parts?: Array<{ text?: unknown }> } }> } | null} */ (await response.json());
 		return (
 			result?.candidates?.[0]?.content?.parts
 				?.filter((part) => typeof part.text === "string")
@@ -764,8 +767,8 @@ async function transcribeViaGoogleGenerateContent({ audio, mimeType, model, sign
 /**
  * Transcribe audio using the requested speech-to-text provider.
  *
- * @param {object} options
- * @param {string} options.audio - Base64-encoded audio data
+ * @param {object} [options]
+ * @param {string} [options.audio] - Base64-encoded audio data (required)
  * @param {string} [options.language] - Optional BCP-47 / Whisper language code
  * @param {string} [options.mimeType] - MIME type of the audio (default: "audio/webm")
  * @param {string} [options.model] - Optional provider-specific model identifier

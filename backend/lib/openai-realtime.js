@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * OpenAI Realtime WebSocket relay module.
  *
@@ -480,8 +481,8 @@ class RealtimeSession {
 	/**
 	 * @param {WebSocket} clientWs — browser-side WebSocket
 	 * @param {object} [options]
-	 * @param {string} [options.instructions] — system prompt override
-	 * @param {Function} [options.onLog] — log callback
+	 * @param {string} [options.instructions] - system prompt override
+	 * @param {Function} [options.onLog] - log callback
 	 */
 	constructor(clientWs, options = {}) {
 		this._clientWs = clientWs;

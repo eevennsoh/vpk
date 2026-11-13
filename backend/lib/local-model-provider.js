@@ -1,3 +1,4 @@
+// @ts-check
 const { createRouteDecisionPart } = require("./route-decision");
 
 const LOCAL_MODEL_PORT = parseInt(process.env.LOCAL_MODEL_PORT || "8800", 10);

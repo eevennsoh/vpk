@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 // One thread's plan session as one state value, owned by plan-session.js.

@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 const {
@@ -44,6 +45,10 @@ function createPlanSessionStore({ now = () => Date.now(), ttlMs = DEFAULT_PLAN_S
 		return next;
 	}
 
+	/**
+	 * @param {string} threadId
+	 * @param {{ deferredToolCallId?: string, planCardId?: string }} [emission]
+	 */
 	function recordPlanWidgetEmission(threadId, { deferredToolCallId, planCardId } = {}) {
 		return dispatchPlanSessionEvent(threadId, { type: "PLAN_EMITTED", deferredToolCallId, planCardId });
 	}

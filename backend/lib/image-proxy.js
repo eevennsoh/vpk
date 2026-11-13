@@ -1,3 +1,4 @@
+// @ts-check
 const FIGMA_MCP_ASSET_PATH_PREFIX = "/api/mcp/asset/";
 const IMAGE_PROXY_ALLOWED_HOSTS = new Set(["figma.com", "www.figma.com"]);
 const IMAGE_PROXY_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;

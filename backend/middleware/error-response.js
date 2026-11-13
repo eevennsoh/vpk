@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 const { STATUS_CODES } = require("node:http");
