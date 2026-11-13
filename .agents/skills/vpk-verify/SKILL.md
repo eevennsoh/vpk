@@ -36,6 +36,8 @@ Run this first, and again after any failed drive:
 .agents/skills/vpk-verify/scripts/control-vpk doctor
 ```
 
+A fresh stack compiles each route on its first request (17.7 s for `/` on a new stack). When the frontend is listening but misses the 4 s probe, doctor waits for the compile, up to `VPK_VERIFY_COMPILE_TIMEOUT_MS` (default 90000), and reports `frontendCompiled: true`; when it still fails, `frontendError` says why. It prints one stderr line when that wait starts, and it waits at most once per run: if `/` never answers, `/api/health` gets only the 4 s probe. `open-target` and `capture` request the route the same way before the browser opens it, so a cold compile does not count against the browser's 35 s limit.
+
 Worth driving only when `"ok": true` for **this** worktree path. `"ok"` is frontend-only. `"backendOk": true` means `GET $ORIGIN/api/health` returned JSON `status: "OK"`. A 503 with `Cannot connect to backend server` is normal when the Express process is down; catalog/docs/theme still verify. Pass `--require-backend` only for features that hit `/api/*` or send chat.
 
 Refuse to drive:
@@ -58,6 +60,8 @@ Two worktrees can run side by side (deterministic ports, unique Portless origins
 ```
 
 Capture one screenshot of the exact route in the light theme by default. Capture more states (`--media dark`, `--viewport 390x844`, `--variant <id>[=on|off]`, each with its own `--id`) only when the user asks or the change is state-specific. `--variant` is repeatable and forces a Settings **Properties** design variant for that load by merging `?variants=<id>,-<id>` into the route's query (see `State entry` in [features/README.md](features/README.md)); it writes no storage, so it does not change the user's settings. An unknown id fails before the browser opens and lists the valid ids. If the summary warns that `data-color-mode` differs from the requested media, a stored theme preference won. Switch it with the header theme control, then capture again. When `VPK_VERIFY=manual` is set, the user has opted into manual verification. `capture` then opens no browser and exits 0. Hand the route to the user instead. Interactions (drag, menus, Settings) still follow the feature recipe through `pnpm control-vpk browser`.
+
+**End every UI turn with the URL.** `open-target` prints the URL it opened as its last line, and `pnpm run dev:tmux:start` ends with this worktree's Portless URL (or `http://localhost:<port>` when Portless is not routing it). Make that URL, with the route that shows the change, the last line of your reply so the user can open it directly.
 
 ## Drive
 
@@ -114,7 +118,7 @@ to Playwright or curl. Report the classification and evidence boundary.
 
 ## Evidence
 
-Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump. `pnpm control-vpk capture` does this for a route's loaded state. Use the commands below for states reached mid-interaction.
+Put every proof file under `output/agent-browser/vpk-verify/<feature-id>/` (gitignored `output/`). Always pass an explicit screenshot path — never the agent-browser default cwd dump. `pnpm control-vpk capture` does this for a route's loaded state. Use the commands below for states reached mid-interaction. To crop, resize, tile or compare screenshots, use `pnpm image-tools crop|resize|contact-sheet|diff` (see `scripts/image-tools.mjs`); it needs no Python, and Python's PIL is not installed here. `pnpm image-tools …` and `node scripts/image-tools.mjs …` run the same tool; use the path form wherever pnpm cannot run the script. Crop and diff are exact for opaque images such as screenshots; partly transparent pixels come back with their colour premultiplied by alpha.
 
 ```bash
 EVIDENCE="$(.agents/skills/vpk-verify/scripts/control-vpk evidence-dir)/jira-team-eu26"

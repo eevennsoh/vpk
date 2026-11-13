@@ -282,7 +282,7 @@ For pixel-faithful translations, validator must verify geometry explicitly:
 
 - Same theme as Figma reference first (usually light), then dark coverage.
 - Same viewport as feedback/request when provided.
-- Component crop or selector screenshot (not only full-page image).
+- Component crop or selector screenshot (not only full-page image). Crop and compare with `pnpm image-tools crop` and `pnpm image-tools diff`; PIL is not installed.
 - Container height/width and inner row height/width.
 - Per-side paddings and key offsets.
 - Icon-button hit area size and icon glyph size (for example, 20px button with 12px chevron).

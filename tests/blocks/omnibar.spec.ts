@@ -4,7 +4,7 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const OMNIBAR_URL = appUrl("/preview/blocks/omnibar");
 
-test("keyboard activation moves focus from the Omnibar pill into the revealed composer", async ({ page }) => {
+test("keyboard activation moves focus from the Omnibar pill into the revealed composer", { tag: "@smoke" }, async ({ page }) => {
 	await page.goto(OMNIBAR_URL, { waitUntil: "domcontentloaded" });
 
 	const omnibar = page.locator('[data-slot="omnibar"]');

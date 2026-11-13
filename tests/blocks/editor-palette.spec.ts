@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
-	test(`byline rows release idle layers and retain hover and keyboard behavior (${reducedMotion})`, async ({ page }) => {
+	test(`byline rows release idle layers and retain hover and keyboard behavior (${reducedMotion})`, { tag: "@smoke" }, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await page.goto(appUrl("/components/blocks/editor-palette"));
 		const menu = page.locator('.rich-text-command-menu[data-row-variant="with-byline"]').filter({

@@ -9,7 +9,7 @@ const jobs = Object.fromEntries([...workflow.split("\njobs:\n")[1].matchAll(/^  
 	.map((match) => [match[1], match[2]]));
 
 test("CI covers every local PR gate through independent static and four unit jobs", () => {
-	assert.deepEqual(Object.keys(jobs), ["static", "unit", "aggregate"]);
+	assert.deepEqual(Object.keys(jobs), ["static", "unit", "smoke", "perf", "aggregate"]);
 	assert.match(jobs.unit, /fail-fast: false/u);
 	assert.match(jobs.unit, /max-parallel: 4/u);
 	assert.match(jobs.unit, /shard: \[1, 2, 3, 4\]/u);
@@ -28,16 +28,20 @@ test("CI covers every local PR gate through independent static and four unit job
 test("PR checks always evaluates and rejects failure, cancelled, skipped and missing dependencies", () => {
 	assert.match(jobs.aggregate, /name: PR checks\n/u);
 	assert.match(jobs.aggregate, /if: \$\{\{ always\(\) \}\}/u);
-	assert.match(jobs.aggregate, /needs: \[static, unit\]/u);
+	assert.match(jobs.aggregate, /needs: \[static, unit, smoke\]/u);
 	assert.match(jobs.aggregate, /STATIC_RESULT: \$\{\{ needs.static.result \}\}/u);
 	assert.match(jobs.aggregate, /UNIT_RESULT: \$\{\{ needs.unit.result \}\}/u);
+	assert.match(jobs.aggregate, /SMOKE_RESULT: \$\{\{ needs.smoke.result \}\}/u);
 	const script = jobs.aggregate.split("        run: |\n")[1].replace(/^          /gmu, "");
-	for (const staticResult of ["success", "failure", "cancelled", "skipped", ""]) {
-		for (const unitResult of ["success", "failure", "cancelled", "skipped", ""]) {
-			const result = spawnSync("bash", ["-e", "-c", script], {
-				env: { ...process.env, STATIC_RESULT: staticResult, UNIT_RESULT: unitResult },
-			});
-			assert.equal(result.status === 0, staticResult === "success" && unitResult === "success");
+	const results = ["success", "failure", "cancelled", "skipped", ""];
+	for (const staticResult of results) {
+		for (const unitResult of results) {
+			for (const smokeResult of results) {
+				const result = spawnSync("bash", ["-e", "-c", script], {
+					env: { ...process.env, SMOKE_RESULT: smokeResult, STATIC_RESULT: staticResult, UNIT_RESULT: unitResult },
+				});
+				assert.equal(result.status === 0, staticResult === "success" && unitResult === "success" && smokeResult === "success");
+			}
 		}
 	}
 });
@@ -48,7 +52,7 @@ test("CI retains event coverage, cancellation, ratchets and authenticated frozen
 	assert.match(workflow, /workflow_dispatch:/u);
 	assert.match(workflow, /cancel-in-progress: true/u);
 	assert.match(workflow, /permissions:\n  contents: read/u);
-	for (const job of [jobs.static, jobs.unit]) {
+	for (const job of [jobs.static, jobs.unit, jobs.smoke, jobs.perf]) {
 		const steps = ["actions/checkout@", "pnpm/action-setup@", "actions/setup-node@", "node scripts/verify-pnpm-lockfile.js", "node scripts/write-npmrc.mjs", "pnpm install --frozen-lockfile"];
 		let previous = -1;
 		for (const step of steps) {
@@ -134,4 +138,30 @@ export default [{ files: ["**/*.tsx"], languageOptions, plugins, rules, settings
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
+});
+
+test("the browser smoke job serves a production build and runs only the @smoke suite", () => {
+	const steps = stepsFor(jobs.smoke);
+	const order = ["Install dependencies", "Build the static export", "Serve the production build", "Install Chromium", "Smoke specs"];
+	assert.deepEqual(steps.map((step) => step.name).filter((name) => order.includes(name)), order);
+	assert.match(jobs.smoke, /run: time pnpm run build:export/u);
+	assert.match(jobs.smoke, /cp -R out backend\/public/u);
+	assert.match(jobs.smoke, /VPK_RUNTIME_ADMIN_TOKEN="\$\(openssl rand -hex 32\)" NODE_ENV=production PORT=8080 nohup node backend\/server.js/u, "a throwaway admin token, generated in the step");
+	assert.doesNotMatch(jobs.smoke, /secrets\.VPK_RUNTIME_ADMIN_TOKEN/u);
+	assert.match(jobs.smoke, /server_pid=\$!/u);
+	assert.match(jobs.smoke, /kill -0 "\$server_pid"/u, "stops waiting once the server has exited");
+	assert.match(jobs.smoke, /curl -fsS http:\/\/127\.0\.0\.1:8080\/api\/health/u);
+	const smoke = steps.find((step) => step.name === "Smoke specs");
+	assert.equal(smoke.run, "time pnpm run test:e2e:smoke");
+	assert.equal(smoke.env.PLAYWRIGHT_BASE_URL, "http://127.0.0.1:8080");
+	assert.equal(require("../package.json").scripts["test:e2e:smoke"], "node scripts/run-playwright-smoke.mjs");
+	assert.doesNotMatch(workflow, /pull_request_target/u);
+});
+
+test("the perf job checks route byte budgets on pushes to main, never on PRs", () => {
+	assert.match(jobs.perf, /if: \$\{\{ github.event_name != 'pull_request' \}\}/u);
+	assert.doesNotMatch(jobs.aggregate, /needs: \[[^\]]*perf/u, "PRs must not wait for the perf job");
+	assert.match(jobs.perf, /set -o pipefail\n\s+time pnpm run build 2>&1 \| tee output\/perf-build\.log/u);
+	assert.match(jobs.perf, /node scripts\/collect-perf-baseline\.js --input output\/perf-build\.log\n\s+node scripts\/verify-perf-baseline-budget\.js/u);
+	assert.doesNotMatch(jobs.perf, /--warn-only/u);
 });

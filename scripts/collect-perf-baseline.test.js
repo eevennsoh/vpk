@@ -56,6 +56,8 @@ test("parseArgs supports captured input and custom route targets", () => {
 			{ id: "rovo", path: "/rovo" },
 			{ id: "studio", path: "/studio" },
 			{ id: "components", path: "/components/[category]/[slug]" },
+			{ id: "butter", path: "/butter" },
+			{ id: "eu26", path: "/jira-team-eu26" },
 			{ id: "docs", path: "/docs" },
 		],
 		routeTimingPaths: {
@@ -95,6 +97,8 @@ test("parseArgs supports adding timings to an existing baseline", () => {
 			{ id: "rovo", path: "/rovo" },
 			{ id: "studio", path: "/studio" },
 			{ id: "components", path: "/components/[category]/[slug]" },
+			{ id: "butter", path: "/butter" },
+			{ id: "eu26", path: "/jira-team-eu26" },
 		],
 		routeTimingPaths: {
 			components: "/components/ui/button",
@@ -243,6 +247,8 @@ test("createPerfBaseline selects fixed routes and the heaviest visual route", ()
 		buildRouteRow(staticMarker, "/rovo", "20 kB", "250 kB"),
 		buildRouteRow(staticMarker, "/studio", "22 kB", "260 kB"),
 		buildRouteRow(staticMarker, "/components/[category]/[slug]", "30 kB", "280 kB"),
+		buildRouteRow(staticMarker, "/butter", "32 kB", "290 kB"),
+		buildRouteRow(staticMarker, "/jira-team-eu26", "34 kB", "295 kB"),
 		buildRouteRow(ssgMarker, "/visual/ripple", "40 kB", "300 kB"),
 		buildRouteRow(ssgMarker, "/preview/visual/mesh", "50 kB", "350 kB"),
 	].join("\n");
@@ -251,7 +257,7 @@ test("createPerfBaseline selects fixed routes and the heaviest visual route", ()
 		generatedAt: "2026-07-04T00:00:00.000Z",
 	});
 
-	assert.equal(baseline.summary.parsedRouteCount, 6);
+	assert.equal(baseline.summary.parsedRouteCount, 8);
 	assert.equal(baseline.summary.missingRouteCount, 0);
 	assert.deepEqual(
 		baseline.routes.map((route) => `${route.id}:${route.path}:${route.status}`),
@@ -260,6 +266,8 @@ test("createPerfBaseline selects fixed routes and the heaviest visual route", ()
 			"rovo:/rovo:measured",
 			"studio:/studio:measured",
 			"components:/components/[category]/[slug]:measured",
+			"butter:/butter:measured",
+			"eu26:/jira-team-eu26:measured",
 			"heavy-visual:/preview/visual/mesh:measured",
 		],
 	);
@@ -268,7 +276,7 @@ test("createPerfBaseline selects fixed routes and the heaviest visual route", ()
 test("createPerfBaseline uses manifest measurements when build output has no size table", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-perf-baseline-manifest-"));
 	try {
-		for (const routePath of ["page", "rovo/[[...id]]/page", "studio/[[...id]]/page", "components/[category]/[slug]/page", "visual/[slug]/page"]) {
+		for (const routePath of ["page", "rovo/[[...id]]/page", "studio/[[...id]]/page", "components/[category]/[slug]/page", "butter/page", "jira-team-eu26/page", "visual/[slug]/page"]) {
 			const manifestDir = path.join(cwd, ".next/server/app", path.dirname(routePath));
 			const appChunkDir = path.join(cwd, ".next/static/chunks/app", path.dirname(routePath));
 			mkdirSync(manifestDir, { recursive: true });
@@ -294,6 +302,8 @@ test("createPerfBaseline uses manifest measurements when build output has no siz
 				"├ ○ /rovo",
 				"├ ○ /studio",
 				"├ ○ /components/[category]/[slug]",
+				"├ ○ /butter",
+				"├ ○ /jira-team-eu26",
 				"└ ○ /visual/[slug]",
 			].join("\n"),
 			cwd,
@@ -301,7 +311,7 @@ test("createPerfBaseline uses manifest measurements when build output has no siz
 			nextDir: ".next",
 		});
 
-		assert.equal(baseline.summary.buildRouteCount, 5);
+		assert.equal(baseline.summary.buildRouteCount, 7);
 		assert.equal(baseline.summary.missingRouteCount, 0);
 		assert.equal(baseline.routes.every((route) => route.status === "measured"), true);
 		assert.equal(baseline.routes.find((route) => route.id === "rovo").aliasOf, "/rovo/[[...id]]");

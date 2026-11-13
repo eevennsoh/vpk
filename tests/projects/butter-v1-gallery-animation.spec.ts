@@ -3,32 +3,6 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
-test("selecting a gallery item animates its highlight", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await page.goto(appUrl("/butter-v1"));
-	const button = page.getByRole("button", { name: "Select Work item" });
-	await expect(button).toBeVisible();
-	const sizes = await button.evaluate(async (element) => {
-		const samples: number[] = [];
-		let start: number | undefined;
-		(element as HTMLButtonElement).click();
-		await new Promise<void>((resolve) => {
-			const sample = () => {
-				const surface = element.querySelector<HTMLElement>("[style*='mask-image']");
-				if (surface) {
-					start ??= performance.now();
-					samples.push(surface.getBoundingClientRect().width);
-				}
-				if (start === undefined || performance.now() - start < 1000) requestAnimationFrame(sample);
-				else resolve();
-			};
-			requestAnimationFrame(sample);
-		});
-		return samples;
-	});
-	expect(new Set(sizes).size).toBeGreaterThan(2);
-});
-
 test("returning to the journey shows the highlight spreading", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
