@@ -225,3 +225,25 @@ test("where prints the owner's lifecycle status and warns before a frozen or sup
 		assert.equal(where("components/projects").status, null);
 	});
 });
+
+test("where names the rule files whose paths: scope covers the target, for agents that do not load rules", () => {
+	withWhereFixture((root, where) => {
+		const rule = (paths) => `---\ndescription: fixture\npaths:\n${paths.map((glob) => `  - "${glob}"`).join("\n")}\n---\n\n# Fixture\n`;
+		writeFixtureFile(root, ".agents/rules/ui.md", rule(["components/**/*.tsx"]));
+		writeFixtureFile(root, ".agents/rules/api.md", rule(["app/api/**", "backend/**"]));
+		writeFixtureFile(root, ".agents/rules/pages.md", rule(["app/**/*.tsx"]));
+		writeFixtureFile(root, ".agents/rules/everywhere.md", "---\ndescription: no scope\n---\n\n# Always\n");
+
+		assert.deepEqual(where("components/projects/fixture-project/finale/card.tsx").rules, [
+			".agents/rules/everywhere.md",
+			".agents/rules/ui.md",
+		]);
+		// A route covers the owner's files and the page that renders it.
+		assert.deepEqual(where("/fixture-project").rules, [
+			".agents/rules/everywhere.md",
+			".agents/rules/pages.md",
+			".agents/rules/ui.md",
+		]);
+		assert.match(formatWhere(where("components/projects/fixture-project/finale/card.tsx")), /^rules .*\n {2}\.agents\/rules\/everywhere\.md\n {2}\.agents\/rules\/ui\.md$/mu);
+	});
+});

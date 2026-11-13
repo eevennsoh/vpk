@@ -20,7 +20,6 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
 | [code-block](~/.agents/skills/ai-elements/references/code-block.md) | `@/components/ui-custom/code-block` | Syntax-highlighted code with copy button, line numbers, and filename display | `CodeBlock`, `CodeBlockHeader`, `CodeBlockTitle`, `CodeBlockFilename`, `CodeBlockActions`, `CodeBlockCopyButton` |
-| [artifact](~/.agents/skills/ai-elements/references/artifact.md) | `@/components/ui-custom/artifact` | Artifact display container for generated content | `Artifact` |
 | [image](~/.agents/skills/ai-elements/references/image.md) | `@/components/ui-custom/image` | AI-generated image display | `Image` |
 | [web-preview](~/.agents/skills/ai-elements/references/web-preview.md) | `@/components/ui-custom/web-preview` | Web page preview embed | `WebPreview` |
 | [canvas](~/.agents/skills/ai-elements/references/canvas.md) | `@/components/ui-custom/canvas` | Canvas area for visual content | `Canvas` |
@@ -31,7 +30,6 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 |---|---|---|---|
 | [reasoning](~/.agents/skills/ai-elements/references/reasoning.md) | `@/components/ui-custom/reasoning` | Expandable thinking/reasoning process display | `Reasoning` |
 | [chain-of-thought](~/.agents/skills/ai-elements/references/chain-of-thought.md) | `@/components/ui-custom/chain-of-thought` | Step-by-step reasoning chain visualization | `ChainOfThought` |
-| [agent](~/.agents/skills/ai-elements/references/agent.md) | `@/components/ui-custom/agent` | Agent status and activity display | `Agent` |
 | [tool](~/.agents/skills/ai-elements/references/tool.md) | `@/components/ui-custom/tool` | Tool invocation and result display | `Tool` |
 | [terminal](~/.agents/skills/ai-elements/references/terminal.md) | `@/components/ui-custom/terminal` | Terminal/command output display | `Terminal` |
 
@@ -72,7 +70,6 @@ Reference docs are at `~/.agents/skills/ai-elements/references/[slug].md`.
 | Component | Import | Description | Primary Sub-components |
 |---|---|---|---|
 | [shimmer](~/.agents/skills/ai-elements/references/shimmer.md) | `@/components/ui-custom/shimmer` | Loading shimmer/skeleton animation | `Shimmer` |
-| [panel](~/.agents/skills/ai-elements/references/panel.md) | `@/components/ui-custom/panel` | Side panel container | `Panel` |
 | [toolbar](~/.agents/skills/ai-elements/references/toolbar.md) | `@/components/ui-custom/toolbar` | Toolbar with action buttons | `Toolbar` |
 | [connection](~/.agents/skills/ai-elements/references/connection.md) | `@/components/ui-custom/connection` | Connection line between nodes | `Connection` |
 | [edge](~/.agents/skills/ai-elements/references/edge.md) | `@/components/ui-custom/edge` | Graph edge visualization | `Edge` |

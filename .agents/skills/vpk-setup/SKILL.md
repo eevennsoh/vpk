@@ -307,7 +307,7 @@ For full model switching details, see [references/guide-model-switch.md](referen
 | Zombie processes blocking ports | `ROVO_FORCE_CLEAN_START=true pnpm run rovo` (graceful SIGTERM then SIGKILL fallback) |
 | `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` during dependency bootstrap | Use the noninteractive install path: `CI=true pnpm install --prefer-offline`. Do not start multiple `pnpm run ...` validations in parallel until dependency warmup has finished, because pnpm bootstraps share the same `node_modules` tree. |
 | Config keeps resetting (`~/.rovo/config.yaml`) | Ensure you're using `pnpm run rovo` (not `rovo:setup`); setup is a one-off |
-| Frontend 500 (providers) | Ensure `components/providers.tsx` matches import casing |
+| Frontend 500 (providers) | Ensure `app/providers.tsx` matches import casing |
 | "ASAP_PRIVATE_KEY: MISSING" | Check .env.local format - private key must be quoted and escaped |
 | "Missing credentials" from Rovo Serve | `ROVO_SESSION_TOKEN` not set in `.env.local`. Copy the token from Serve's first-launch output (one-time setup, does not expire). Restart the dev stack after setting it. |
 | "Missing credentials" when curling port 8000 | Port 8000 is Rovo Serve (not the VPK backend). Use `curl -H "Authorization: Bearer $ROVO_SESSION_TOKEN" http://localhost:8000/...` or use the backend port from `.dev-backend-port` instead. |

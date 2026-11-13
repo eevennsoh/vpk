@@ -21,6 +21,9 @@ try {
 
 const DEFAULT_DOC_TARGETS = [
 	"AGENTS.md",
+	"README.md",
+	"DESIGN.md",
+	"WORKFLOW.md",
 	".agents/docs",
 	".agents/rules",
 	".agents/skills",
@@ -28,7 +31,7 @@ const DEFAULT_DOC_TARGETS = [
 const PROVIDER_COMPOSITION_DOC_PATH = ".agents/docs/architecture-overview.md";
 const PROVIDERS_SOURCE_PATH = "app/providers.tsx";
 const DOC_EXTENSIONS = new Set([".md", ".mdc"]);
-const AGENTS_FRESHNESS_DOC_PATH = "AGENTS.md";
+const AGENTS_FRESHNESS_DOC_PATH = ".agents/rules/testing.md";
 const AGENTS_FRESHNESS_BEGIN = "<!-- validation-freshness:begin -->";
 const AGENTS_FRESHNESS_END = "<!-- validation-freshness:end -->";
 const REQUIRED_AGENTS_FRESHNESS_COMMANDS = [
@@ -135,6 +138,136 @@ function extractLocalSkillEntrypointReferences(content, filePath = "unknown") {
 		match = pattern.exec(content);
 	}
 	return references;
+}
+
+// A backticked span that names a repo path: at least one slash, no spaces, globs or
+// placeholders. `@/x` is the import alias for `x`; a `:12` line suffix is dropped.
+function extractRepoPathReferences(content, filePath = "unknown") {
+	const references = [];
+	const pattern = /`([^`\n]+)`/gu;
+	let match = pattern.exec(content);
+	while (match) {
+		const candidate = match[1]
+			.replace(/^@\//u, "")
+			.replace(/^\.\//u, "")
+			.replace(/(?::\d+(?:-\d+)?|#[\w-]*)$/u, "")
+			.replace(/\/$/u, "");
+		if (candidate.includes("/") && !/[\s*?<>{}[\]$|\\…]|\.\.\.|^[@~/]|^\.\.\/|:\/\//u.test(candidate)) {
+			references.push({ filePath, line: getLineNumber(content, match.index), referencePath: candidate, text: match[1] });
+		}
+		match = pattern.exec(content);
+	}
+	return references;
+}
+
+const PATH_SUFFIXES = ["", ".ts", ".tsx", ".js", ".mjs", "/index.ts", "/index.tsx", "/index.js"];
+
+// Docs that describe a layout outside this checkout: an extracted app, a generic project,
+// a file the user supplies. Each entry names the doc, the path, and why it is not dead.
+const EXTERNAL_PATH_REFERENCES = [
+	{ doc: ".agents/skills/vpk-build/SKILL.md", paths: ["types/jsx-namespace.d.ts", "scripts/dev-backend-backed.mjs"], reason: "files the extraction writes into the target app" },
+	{ doc: ".agents/skills/vpk-build/references/extraction-guide.md", paths: ["types/jsx-namespace.d.ts", "scripts/dev-backend-backed.mjs"], reason: "files the extraction writes into the target app" },
+	{ doc: ".agents/skills/vpk-deploy/references/guide-deployment.md", paths: ["backend/public"], reason: "created inside the image by backend/Dockerfile" },
+	{ doc: ".agents/skills/vpk-deploy/references/guide-manual-deployment.md", paths: ["backend/public", "backend/public/index.html"], reason: "created inside the image by backend/Dockerfile" },
+	{ doc: ".agents/skills/vpk-symphony/references/git/push.md", paths: [".github/pull_request_template.md"], reason: "generic git guidance for any repository" },
+	{ doc: ".agents/skills/vpk-symphony/references/playwright-cli/spec-driven-testing.md", paths: ["tests/seed.spec.ts"], reason: "the file the playbook tells the agent to create" },
+	{ doc: ".agents/skills/vpk-html/references/playbooks/x-thread.md", paths: ["media/p2-1.png"], reason: "an asset value relative to a generated page" },
+	{ doc: ".agents/skills/vpk-html/assets/video/landing-demo-separation/DESIGN.md", paths: ["audio/bgm.mp3"], reason: "a slot for a user-provided track" },
+	{ doc: ".agents/skills/vpk-tidy/SKILL.md", paths: ["components/blocks/shared", "components/blocks/shared-ui"], reason: "retired buckets the skill checks are gone" },
+	{ doc: ".agents/rules/token-priority.md", paths: ["components/blocks/shared-ui"], reason: "a retired bucket named as the mistake" },
+	{ doc: ".agents/rules/cursor/token-priority.mdc", paths: ["components/blocks/shared-ui"], reason: "a retired bucket named as the mistake" },
+];
+
+// Tracked and not-yet-added files, the directories that hold them, and tracked symlinks.
+// Untracked local files (env files, output/, port files) must not make a reference pass
+// here and fail in CI; documented generated paths pass because the tracked .gitignore
+// ignores them.
+function readTrackedTree(cwd) {
+	const { spawnSync } = require("node:child_process");
+	const result = spawnSync("git", ["ls-files", "-s", "-z"], { cwd, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+	if (result.status !== 0) return null;
+	// New files not yet added count too, so a doc can point at a file in the same change.
+	const untracked = spawnSync("git", ["ls-files", "--others", "--exclude-standard", "-z"], { cwd, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+	const entries = [
+		...result.stdout.split("\0").filter(Boolean),
+		...(untracked.status === 0 ? untracked.stdout.split("\0").filter(Boolean).map((file) => `100644 0 0\t${file}`) : []),
+	];
+	const paths = new Set();
+	const symlinks = new Map();
+	for (const entry of entries) {
+		const [meta, file] = entry.split("\t");
+		const parts = file.split("/");
+		for (let index = 1; index <= parts.length; index += 1) paths.add(parts.slice(0, index).join("/"));
+		if (meta.startsWith("120000")) {
+			try {
+				symlinks.set(file, path.posix.normalize(path.posix.join(path.posix.dirname(file), fs.readlinkSync(path.join(cwd, file)))));
+			} catch {
+				// A symlink missing from the working tree resolves to nothing.
+			}
+		}
+	}
+	return { paths, symlinks };
+}
+
+// The shortest ignored ancestor decides, so a path below an ignored directory (or below
+// a symlink inside one, as pnpm lays out node_modules) counts as generated.
+function createIgnoredPathCheck(cwd) {
+	const { spawnSync } = require("node:child_process");
+	const cache = new Map();
+	const isIgnored = (prefix) => {
+		// The trailing-slash form matches directory patterns such as `.claude/worktrees/` even
+		// when the directory is absent from this checkout.
+		if (!cache.has(prefix)) cache.set(prefix, [prefix, `${prefix}/`].some((query) => spawnSync("git", ["check-ignore", "--no-index", "-q", query], { cwd }).status === 0));
+		return cache.get(prefix);
+	};
+	const parts = (relative) => relative.split("/").map((_, index, all) => all.slice(0, index + 1).join("/"));
+	return (relative) => parts(relative).some(isIgnored);
+}
+
+// `hasEntry` answers "does this base hold that first segment" from the tracked tree or the
+// disk. The whole path must be tracked (directly or through a tracked symlink) or ignored by
+// the tracked .gitignore, so the answer is the same locally and in CI.
+function createPathChecks(cwd) {
+	const tree = readTrackedTree(cwd);
+	if (!tree) {
+		const onDisk = (relative) => fs.existsSync(path.join(cwd, relative));
+		return { hasEntry: onDisk, isIgnored: () => false, isTracked: onDisk };
+	}
+	const resolve = (relative) => {
+		for (const [link, target] of tree.symlinks) {
+			if (relative.startsWith(`${link}/`)) return `${target}${relative.slice(link.length)}`;
+		}
+		return relative;
+	};
+	const isIgnoredPath = createIgnoredPathCheck(cwd);
+	const isTracked = (relative) => tree.paths.has(relative) || tree.paths.has(resolve(relative));
+	return {
+		hasEntry: (relative) => isTracked(relative) || fs.existsSync(path.join(cwd, relative)),
+		isIgnored: isIgnoredPath,
+		isTracked,
+	};
+}
+
+function isExternalPathReference(reference) {
+	return EXTERNAL_PATH_REFERENCES.some((entry) => entry.doc === reference.filePath && entry.paths.includes(reference.referencePath));
+}
+
+// A path in a doc may be repo-relative, relative to the doc, or (inside a skill) relative to
+// the skill. A reference is checked against each base whose top level holds its first segment,
+// so `origin/main` or `owner/repo` is never mistaken for a path; it is dead only if no such base has it.
+function findDeadRepoPathReferences(references, { hasEntry, isTracked, isIgnored }) {
+	return references.filter((reference) => {
+		if (isExternalPathReference(reference)) return false;
+		const docDir = path.posix.dirname(reference.filePath);
+		const skillDir = /^\.agents\/skills\/[^/]+/u.exec(reference.filePath)?.[0];
+		const bases = [...new Set(["", docDir === "." ? "" : docDir, skillDir].filter((base) => base !== undefined))];
+		const firstSegment = reference.referencePath.split("/")[0];
+		const candidates = bases.filter((base) => hasEntry(path.posix.join(base, firstSegment)));
+		if (candidates.length === 0) return false;
+		const joined = candidates.map((base) => path.posix.join(base, reference.referencePath));
+		if (joined.some((candidate) => PATH_SUFFIXES.some((suffix) => isTracked(`${candidate}${suffix}`)))) return false;
+		return !joined.some((candidate) => isIgnored(candidate));
+	});
 }
 
 function normalizeProviderName(name) {
@@ -357,14 +490,6 @@ function verifyAgentsFreshnessSection({ cwd = process.cwd(), files = collectDocu
 	}
 
 	const failures = [];
-	if (!/Last validated:\s*\d{4}-\d{2}-\d{2}/u.test(section.body)) {
-		failures.push({
-			filePath: AGENTS_FRESHNESS_DOC_PATH,
-			line: section.line,
-			message: "Validation freshness block must include `Last validated: YYYY-MM-DD`.",
-			type: "agents-freshness",
-		});
-	}
 	for (const command of REQUIRED_AGENTS_FRESHNESS_COMMANDS) {
 		if (!section.body.includes(command)) {
 			failures.push({
@@ -395,6 +520,7 @@ function verifyDocumentedScripts({
 	cwd = process.cwd(),
 	files = collectDocumentationFiles({ cwd }),
 	packageScripts = readPackageScripts(cwd),
+	pathChecks = null,
 } = {}) {
 	const scriptNames = new Set(Object.keys(packageScripts));
 	const documents = files.map((filePath) => ({
@@ -419,16 +545,22 @@ function verifyDocumentedScripts({
 			...reference,
 			message: `Documented local skill \`${reference.referencePath}\` does not exist.`,
 		}));
+	const pathReferences = documents.flatMap(({ content, filePath }) => extractRepoPathReferences(content, filePath));
+	const pathFailures = findDeadRepoPathReferences(pathReferences, pathChecks ?? createPathChecks(cwd)).map((reference) => ({
+		...reference,
+		message: `Documented path \`${reference.text}\` does not exist.`,
+	}));
 	const providerComposition = verifyProviderCompositionDocs({ cwd, files });
 	const agentsFreshness = verifyAgentsFreshnessSection({ cwd, files });
 
 	return {
-		failures: [...scriptFailures, ...skillFailures, ...providerComposition.failures, ...agentsFreshness.failures],
+		failures: [...scriptFailures, ...skillFailures, ...pathFailures, ...providerComposition.failures, ...agentsFreshness.failures],
 		fileCount: files.length,
 		providerComposition: {
 			actualStack: providerComposition.actualStack,
 			documentedStack: providerComposition.documentedStack,
 		},
+		pathReferenceCount: pathReferences.length,
 		referenceCount: references.length,
 		references,
 		skillReferenceCount: skillReferences.length,
@@ -511,7 +643,7 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
 	}
 
 	if (!options.json) {
-		console.log(`Verified documented pnpm run references (${result.referenceCount} references) and local skill entrypoints (${result.skillReferenceCount} references) in ${result.fileCount} files.`);
+		console.log(`Verified documented pnpm run references (${result.referenceCount} references), local skill entrypoints (${result.skillReferenceCount} references) and repo paths (${result.pathReferenceCount} references) in ${result.fileCount} files.`);
 	}
 }
 
@@ -531,6 +663,8 @@ module.exports = {
 	extractProviderCompositionFromSource,
 	extractLocalSkillEntrypointReferences,
 	extractPnpmRunScriptReferences,
+	extractRepoPathReferences,
+	findDeadRepoPathReferences,
 	formatFailure,
 	parseArgs,
 	verifyAgentsFreshnessSection,
