@@ -596,7 +596,9 @@ function createRovoAppRouter({
 		}
 	});
 
-	router.get("/rovo/threads/:threadId/browser-workspace", async (req, res) => {
+	// The state names the thread's open tabs and URLs; like creating and deleting the
+	// workspace, reading it needs runtime admin (every /api/browser-workspaces route does).
+	router.get("/rovo/threads/:threadId/browser-workspace", requireRuntimeAdmin, async (req, res) => {
 		try {
 			const threadId = getString(req.params.threadId);
 			if (!threadId) {
