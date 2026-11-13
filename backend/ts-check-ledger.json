@@ -1,4 +1,4 @@
 {
 	"description": "Backend JS files that start with `// @ts-check` and are type-checked by tsconfig.backend.json (pnpm run typecheck). The count only goes up: add `// @ts-check` to a file you touch, fix what the check finds, and raise minimum to the new count.",
-	"minimum": 23
+	"minimum": 24
 }
