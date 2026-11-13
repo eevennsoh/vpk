@@ -151,3 +151,14 @@ test("readImageProxyResponsePayload rejects streamed responses that exceed the l
 	);
 	assert.equal(wasCanceled, true);
 });
+
+test("parseImageProxyTarget never sends the Atlassian token over plain http", () => {
+	assert.deepEqual(
+		parseImageProxyTarget("http://hello.atlassian.net/wiki/download/attachments/1/photo.png"),
+		{ error: "Atlassian image URLs must use https" },
+	);
+	assert.equal(parseImageProxyTarget("https://hello.atlassian.net/wiki/download/attachments/1/photo.png").source, "atlassian");
+	for (const src of ["file:///etc/passwd", "http://127.0.0.1/x.png", "https://evil.example/x.png"]) {
+		assert.ok(parseImageProxyTarget(src).error, src);
+	}
+});

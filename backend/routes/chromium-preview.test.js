@@ -251,3 +251,26 @@ test("chromium preview router preserves manager error messages", async () => {
 		});
 	});
 });
+
+test("chromium preview rejects a file:, javascript: or chrome: URL before the manager runs", async () => {
+	let navigateCalls = 0;
+	await withServer({
+		chromiumPreviewManager: createManager({
+			navigate: async (url) => {
+				navigateCalls += 1;
+				return { url };
+			},
+		}),
+	}, async (baseUrl) => {
+		for (const url of ["file:///etc/passwd", "javascript:alert(1)", "chrome://settings", "view-source:https://e.test"]) {
+			const response = await fetch(`${baseUrl}/api/chromium-preview`, {
+				body: JSON.stringify({ url }),
+				headers: { "content-type": "application/json" },
+				method: "POST",
+			});
+			assert.equal(response.status, 400, url);
+			assert.deepEqual(await response.json(), { error: "Only http(s) URLs and about:blank can be opened.", code: "INVALID_INPUT" });
+		}
+	});
+	assert.equal(navigateCalls, 0);
+});
