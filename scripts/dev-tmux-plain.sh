@@ -303,6 +303,15 @@ start_session() {
 		echo "Frontend hasn't reported a listening port yet — check the logs:"
 	fi
 	print_controls
+	# The URL to open is the last line, so a caller (or an agent) can take it with `tail -1`.
+	local final_url=""
+	if [[ -n "${port:-}" ]]; then
+		final_url="$(resolve_portless_url)"
+		if [[ -z "$final_url" ]]; then
+			final_url="http://localhost:$port"
+		fi
+		echo "$final_url"
+	fi
 }
 
 stop_session() {

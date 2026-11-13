@@ -408,6 +408,37 @@ test("restarting a session whose frontend died still checks the budget", () => {
 	}
 });
 
+test("start ends with the URL to open: the Portless route when one exists, else localhost", () => {
+	const fake = createFakeLauncherEnvironment();
+	const env = {
+		PATH: `${fake.tempDir}:${process.env.PATH}`,
+		VPK_TMUX_BIN: fake.tmuxPath,
+		VPK_DEV_TMUX_SESSION: "vpk-dev-plain-url-test",
+		VPK_DEV_TMUX_WAIT: "1",
+		FAKE_TMUX_HAS_SESSION: "1",
+		FAKE_LISTEN_PORT: "49127",
+		FAKE_TMUX_LOG: fake.tmuxLogPath,
+		NODE_CLEANUP_LOG: fake.cleanupLogPath,
+		// Portless routes are read from ~/.portless/routes.json.
+		HOME: fake.tempDir,
+	};
+	try {
+		const lastLine = (output) => output.trimEnd().split("\n").at(-1);
+		const localhost = withPortFiles("49127", "49128", () => runLauncher(env));
+		assert.equal(lastLine(localhost), "http://localhost:49127");
+
+		fs.mkdirSync(path.join(fake.tempDir, ".portless"), { recursive: true });
+		fs.writeFileSync(
+			path.join(fake.tempDir, ".portless", "routes.json"),
+			JSON.stringify([{ hostname: "plain-url-test.vpk.localhost", port: 49127, pid: process.pid }]),
+		);
+		const routed = withPortFiles("49127", "49128", () => runLauncher(env));
+		assert.equal(lastLine(routed), "https://plain-url-test.vpk.localhost");
+	} finally {
+		fake.cleanup();
+	}
+});
+
 test("a launched session copies its pane output to the worktree's dev log and keeps one previous run", () => {
 	const fake = createFakeLauncherEnvironment();
 	const logDir = path.join(fake.tempDir, "logs");
