@@ -174,3 +174,55 @@ test("a reclaim guard left by a crashed reclaimer is cleared, one held by a live
 	assert.equal(reclaimStale(ws.lockPath, stale, { alive: () => true }), false);
 	assert.equal(existsSync(ws.lockPath), true, "a live reclaimer's turn is left alone");
 });
+
+test("a live pid with a different start time is not the holder: its lock is taken over", async (t) => {
+	const ws = workspace(t);
+	const bystander = spawnInGroup(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)"], { stdio: "ignore" }, { t });
+	writeFileSync(ws.lockPath, JSON.stringify({ pid: bystander.pid, procStart: "Mon Jan  1 00:00:00 2001", label: "killed run", cwd: "/elsewhere", startedAt: new Date().toISOString() }));
+	const lines = [];
+	const lock = await acquireHeavyRunLock({
+		env: { ...ws.env },
+		lockPath: ws.lockPath,
+		log: (line) => lines.push(line),
+		startTimeOf: (pid) => (pid === bystander.pid ? "Fri Nov 13 13:00:00 2026" : "Fri Nov 13 13:30:00 2026"),
+	});
+	assert.equal(lock.held, true);
+	assert.match(lines.join("\n"), new RegExp(`pid ${bystander.pid} now belongs to another process \\(different start time\\); taking over`, "u"));
+	lock.release();
+});
+
+test("a waiter repeats who it waits for, then runs without the turn after the limit and leaves the lock alone", async (t) => {
+	const ws = workspace(t);
+	const holder = JSON.stringify({ pid: 4242, procStart: "Fri Nov 13 13:00:00 2026", label: "pnpm run ci:pr", cwd: "/wt/other", startedAt: new Date().toISOString() });
+	writeFileSync(ws.lockPath, holder);
+	let clock = Date.now();
+	const lines = [];
+	const lock = await acquireHeavyRunLock({
+		alive: () => true,
+		env: { ...ws.env },
+		lockPath: ws.lockPath,
+		log: (line) => lines.push(line),
+		maxWaitMs: 65_000,
+		now: () => clock,
+		pollMs: 5_000,
+		sleep: async (ms) => { clock += ms; },
+		startTimeOf: () => "Fri Nov 13 13:00:00 2026",
+	});
+	assert.equal(lock.held, false);
+	assert.equal(lock.proceeded, true);
+	const waiting = lines.filter((line) => line.includes("waiting for pid 4242 (pnpm run ci:pr in /wt/other"));
+	assert.deepEqual(waiting.map((line) => /waited ([\d.]+) min/u.exec(line)[1]), ["0.0", "0.5", "1.0"], "the line repeats every 30 s");
+	assert.match(lines.at(-1), /proceeding without the turn after waiting 1\.1 min: pid 4242 \(pnpm run ci:pr\) still holds it/u);
+	lock.release();
+	assert.equal(readFileSync(ws.lockPath, "utf8"), holder, "the holder's lock is untouched");
+});
+
+test("under node --test the lock is a no-op unless a lock path is named", async (t) => {
+	const ws = workspace(t);
+	const unnamed = await acquireHeavyRunLock({ env: { NODE_TEST_CONTEXT: "child-v8" } });
+	assert.equal(unnamed.held, false);
+	const named = await acquireHeavyRunLock({ env: { NODE_TEST_CONTEXT: "child-v8", [LOCK_PATH_ENV]: ws.lockPath } });
+	assert.equal(named.held, true);
+	named.release();
+	assert.equal(existsSync(ws.lockPath), false);
+});
