@@ -15,6 +15,8 @@ setopt NULL_GLOB
 SKILL_DIR="${0:A:h:h}"                        # .../vpk-system-clean
 SRC_SH="$SKILL_DIR/scripts/vpk-system-clean.sh"
 DST_SH="$HOME/.local/bin/vpk-system-clean.sh"
+SRC_PROBE="$SKILL_DIR/scripts/codex-thread-recency.js"
+DST_PROBE="$HOME/.local/bin/codex-thread-recency.js"
 USER_ID="$(id -un)"
 LABEL="com.${USER_ID}.vpk-system-clean"
 DST_PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
@@ -29,6 +31,8 @@ fi
 mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
 
 cp "$SRC_SH" "$DST_SH" && chmod +x "$DST_SH" && echo "✓ script -> $DST_SH"
+# The sweep looks for its Codex thread-recency probe next to itself.
+cp "$SRC_PROBE" "$DST_PROBE" && chmod 644 "$DST_PROBE" && echo "✓ probe  -> $DST_PROBE"
 
 # --- resolve schedule ---------------------------------------------------------
 MODE="daily"; HOUR=4; MINUTE=17; INTERVAL=21600; TIMES=""

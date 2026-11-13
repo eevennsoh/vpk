@@ -28,11 +28,22 @@ The top of `scripts/vpk-system-clean.sh` defines:
   stopping them. The primary checkout (`vpk-dev-main`, resolved from Git),
   attached sessions, and worktrees that still have a process named exactly
   `claude`, `caffeinate`, `lazygit`, `cursor-agent`, or `codex` whose cwd is
-  that directory are always kept. The unattended idle-stack pass also keeps
-  Codex Desktop worktrees because task activity is not visible through process
-  cwd. Use the task-aware ports-only workflow in `SKILL.md` to stop one
-  deliberately.
+  that directory are always kept. A Codex Desktop worktree is stopped only
+  when `scripts/codex-thread-recency.js` returns `idle` for that worktree
+  (threads whose cwd is its root or a directory under it).
   Worktree folder names are ignored.
+- `IDLE_HOURS` (24, provisional) at the top of
+  `scripts/codex-thread-recency.js`: a Codex worktree is idle once every
+  thread whose cwd is that worktree or a directory under it was last active
+  at least this long ago. "Last active" is the newer of the thread's
+  `updated_at_ms` and its rollout file's mtime (the column can lag the
+  rollout by minutes during a turn). The probe opens Codex's newest
+  `state_N.sqlite` read-only, so rows still in the write-ahead log are read and
+  the database is never changed; SQLite may create the `-shm`/`-wal` sidecars
+  if they are absent. No matching thread, a missing database, an unrecognised
+  schema, or a `node` without `node:sqlite` (Node 22.5+) returns `unknown`,
+  which keeps the stack and logs the reason. Install copies the probe next to
+  the installed sweep.
 
 Do not replace the Next memory measure with `ps` RSS. The observed arm64
 `MAP_JIT` leak lives in JIT/native mappings: an 11.1 GB physical-footprint
@@ -131,8 +142,8 @@ resolves the primary checkout from `VPK_REPO_ROOT` or the current Git checkout,
 then enumerates registered worktrees through `git worktree list`. Superset
 worktrees remain an additional discovered cache family.
 
-The idle-stack pass additionally keeps Codex Desktop worktrees until a
-task-aware manual check confirms the port stack is unused. Other sweep guards,
+The idle-stack pass additionally keeps a Codex Desktop worktree unless the
+thread-recency probe finds every thread for its cwd idle. Other sweep guards,
 such as proven runaway or bloated `next-server`, still apply to their servers.
 
 ## Uninstall
