@@ -628,6 +628,17 @@ if (( ${#almd_pids} )); then
 	(( almd_resets > 0 )) && almd_action="reset ${almd_resets}"
 fi
 
+# --- 6b. orphaned agent browsers ----------------------------------------------
+# control-vpk records every browser it starts with its owning agent session.
+# Close only recorded browsers whose owner is gone or that sat unused past
+# control-vpk's limit; unrecorded browsers are never touched.
+CONTROL_VPK="$MAIN_WORKTREE/.agents/skills/vpk-verify/scripts/control-vpk"
+if [[ -f "$CONTROL_VPK" ]] && command -v node >/dev/null 2>&1; then
+	for line in ${(f)"$(cd "$MAIN_WORKTREE" && node "$CONTROL_VPK" cleanup --orphaned-browsers 2>&1)"}; do
+		[[ -n "$line" ]] && log "agent browser: $line"
+	done
+fi
+
 # --- 7. fseventsd reset --------------------------------------------------------
 fse_action="not-checked"
 fp=$(pgrep -x fseventsd | head -1)
