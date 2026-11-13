@@ -3,12 +3,12 @@ const { test } = require("node:test");
 const { renderComponent } = require("../../../../scripts/lib/render-component.js");
 
 test("component import references expose named Bitbucket and GitHub links", async () => {
-	const importPath = "@/components/projects/rovo-button";
+	const importPath = "@/components/blocks/rovo-button";
 	const view = await renderComponent({
 		source: `import { DocHero } from "@/components/website/component-doc/components/doc-hero";
 import { getDocImportReferences } from "@/components/website/component-doc/components/source-links.server";
 export default function Harness() {
-	return <DocHero name="Rovo Button" category="projects" importReferences={getDocImportReferences("${importPath}")} />;
+	return <DocHero name="Rovo Button" category="blocks" importReferences={getDocImportReferences("${importPath}")} />;
 }`,
 	});
 	for (const provider of ["Bitbucket", "GitHub"]) {
