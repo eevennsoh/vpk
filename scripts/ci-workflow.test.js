@@ -9,7 +9,7 @@ const jobs = Object.fromEntries([...workflow.split("\njobs:\n")[1].matchAll(/^  
 	.map((match) => [match[1], match[2]]));
 
 test("CI covers every local PR gate through independent static and four unit jobs", () => {
-	assert.deepEqual(Object.keys(jobs), ["static", "unit", "aggregate"]);
+	assert.deepEqual(Object.keys(jobs), ["static", "unit", "perf", "aggregate"]);
 	assert.match(jobs.unit, /fail-fast: false/u);
 	assert.match(jobs.unit, /max-parallel: 4/u);
 	assert.match(jobs.unit, /shard: \[1, 2, 3, 4\]/u);
@@ -44,7 +44,7 @@ test("CI retains event coverage, cancellation, ratchets and authenticated frozen
 	assert.match(workflow, /workflow_dispatch:/u);
 	assert.match(workflow, /cancel-in-progress: true/u);
 	assert.match(workflow, /permissions:\n  contents: read/u);
-	for (const job of [jobs.static, jobs.unit]) {
+	for (const job of [jobs.static, jobs.unit, jobs.perf]) {
 		const steps = ["actions/checkout@", "pnpm/action-setup@", "actions/setup-node@", "node scripts/verify-pnpm-lockfile.js", "node scripts/write-npmrc.mjs", "pnpm install --frozen-lockfile"];
 		let previous = -1;
 		for (const step of steps) {
@@ -130,4 +130,12 @@ export default [{ files: ["**/*.tsx"], languageOptions, plugins, rules, settings
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
+});
+
+test("the perf job checks route byte budgets on pushes to main, never on PRs", () => {
+	assert.match(jobs.perf, /if: \$\{\{ github.event_name != 'pull_request' \}\}/u);
+	assert.doesNotMatch(jobs.aggregate, /needs: \[[^\]]*perf/u, "PRs must not wait for the perf job");
+	assert.match(jobs.perf, /set -o pipefail\n\s+time pnpm run build 2>&1 \| tee output\/perf-build\.log/u);
+	assert.match(jobs.perf, /node scripts\/collect-perf-baseline\.js --input output\/perf-build\.log\n\s+node scripts\/verify-perf-baseline-budget\.js/u);
+	assert.doesNotMatch(jobs.perf, /--warn-only/u);
 });
