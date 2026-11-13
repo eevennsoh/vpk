@@ -15,7 +15,9 @@ const BASELINE_PATH = path.join(__dirname, "asset-size-baseline.json");
 const ASSET_ROOT = "public/";
 
 function listAssetFiles({ cwd = process.cwd() } = {}) {
-	const result = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", ASSET_ROOT], {
+	// -z: without it Git quotes and escapes paths with non-ASCII bytes or quotes, which then
+	// match no file on disk and would slip past the cap.
+	const result = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ASSET_ROOT], {
 		cwd,
 		encoding: "utf8",
 		stdio: ["ignore", "pipe", "inherit"],
@@ -25,10 +27,7 @@ function listAssetFiles({ cwd = process.cwd() } = {}) {
 		process.exit(result.status ?? 1);
 	}
 
-	return result.stdout
-		.split("\n")
-		.map((filePath) => filePath.trim())
-		.filter(Boolean);
+	return result.stdout.split("\0").filter(Boolean);
 }
 
 // Regular files only: a deleted-but-staged path or a symlink has no bytes of its own here.

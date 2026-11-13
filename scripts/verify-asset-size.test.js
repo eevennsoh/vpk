@@ -1,10 +1,11 @@
 const assert = require("node:assert/strict");
+const { spawnSync } = require("node:child_process");
 const { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { evaluateAssetSize, formatFailure, readAssetEntries, shrinkBaseline } = require("./verify-asset-size");
+const { evaluateAssetSize, formatFailure, listAssetFiles, readAssetEntries, shrinkBaseline } = require("./verify-asset-size");
 
 const CAP = 1000;
 
@@ -64,4 +65,20 @@ test("readAssetEntries reads regular files and skips missing paths and symlinks"
 	symlinkSync("a.bin", path.join(root, "public", "link.bin"));
 	const entries = readAssetEntries(["public/a.bin", "public/link.bin", "public/missing.bin"], { cwd: root });
 	assert.deepEqual(entries, [{ filePath: "public/a.bin", bytes: 42 }]);
+});
+
+test("a file whose name Git would quote (non-ASCII, quotes) is still measured", (t) => {
+	const root = mkdtempSync(path.join(os.tmpdir(), "asset-size-git-"));
+	t.after(() => rmSync(root, { recursive: true, force: true }));
+	const git = (...args) => spawnSync("git", args, { cwd: root, encoding: "utf8" });
+	assert.equal(git("init", "-q").status, 0);
+	mkdirSync(path.join(root, "public"));
+	writeFileSync(path.join(root, "public", "café.png"), Buffer.alloc(CAP + 1));
+	writeFileSync(path.join(root, "public", 'say "hi".png'), Buffer.alloc(10));
+	assert.equal(git("add", "public/café.png").status, 0);
+
+	const files = listAssetFiles({ cwd: root }).sort();
+	assert.deepEqual(files, ["public/café.png", 'public/say "hi".png']);
+	const failures = evaluateAssetSize(readAssetEntries(files, { cwd: root }), baseline());
+	assert.deepEqual(failures.map((failure) => [failure.type, failure.filePath]), [["new-oversized-asset", "public/café.png"]]);
 });
