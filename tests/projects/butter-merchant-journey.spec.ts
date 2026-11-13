@@ -37,7 +37,7 @@ async function expectJourneyStage(page: Page, name: JourneyStep) {
 		if (name === "Pull request") await expect(card.getByRole("button", { name: /Pull request #284/ })).toBeVisible();
 		await card.locator('[data-slot="jira-issue-card"]').click();
 	} else await expect(item).toBeVisible();
-	await expect(item.getByRole("button", { name: `Change status in details, ${status}`, exact: true })).toBeVisible();
+	await expect(item.getByRole("button", { name: `Change status, ${status}`, exact: true })).toBeVisible();
 	if (name !== "Prepare & invoke") await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
 	const development = item.getByRole("region", { name: "Pull request development" });
 	const activity = item.getByRole("region", { name: "Activity" });
@@ -48,12 +48,14 @@ async function expectJourneyStage(page: Page, name: JourneyStep) {
 		await expect(entries.getByText(/opened #284: Add merchant onboarding quickstart/)).toHaveCount(0);
 	} else {
 		await expect(development).toHaveAttribute("data-project-butter-development", name === "Done" ? "merged" : name === "Fix checks" ? "failed" : "pr");
+		// Journey updates are replies in Claude's thread, which previews only the latest reply.
+		if (name === "Done") await activity.getByRole("button", { name: /Show \d+ more replies/ }).click();
 		await expect(entries.getByText(/opened #284: Add merchant onboarding quickstart/)).toBeVisible();
 		await expect(card.getByRole("button", { name: name === "Done" ? /Pull request merged #284/ : /Pull request (?:failed )?#284/, includeHidden: true })).toHaveCount(1);
 	}
 	if (name === "Done") {
 		await expect(entries.getByText(/merged\. PAY-999 is ready for the Done column/)).toBeVisible();
-		await expect(item.getByRole("button", { name: /^Claude: Finished/ })).toBeVisible();
+		await expect(item.locator('[data-jira-activity-entry-id^="invocation-"] [data-project-butter-session-start]')).toContainText("Finished");
 	} else {
 		await expect(entries.getByText(/merged\. PAY-999 is ready for the Done column/)).toHaveCount(0);
 		if (name !== "Fix checks") {
@@ -303,7 +305,7 @@ test("PAY-999 travels from suggestions through Claude's repaired and merged PR",
 	await expect(item.getByRole("region", { name: "Activity" })).toContainText("pushed a fix");
 	await expect(development).toHaveAttribute("data-project-butter-development", "merged", { timeout: 15_000 });
 	await expect(step("Fix checks")).toHaveAttribute("aria-pressed", "true");
-	await expect(item.getByRole("button", { name: /^Claude: Finished/ })).toBeVisible();
+	await expect(item.locator('[data-jira-activity-entry-id^="invocation-"] [data-project-butter-session-start]')).toContainText("Finished");
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
 	await expect(card).toHaveAttribute("data-board-column-title", "Done");
 	await expect(card.getByRole("button", { name: /Pull request merged #284/ })).toBeVisible();
@@ -360,7 +362,7 @@ test("the board PR flyout shows Venn, Claude, repository and current checks", as
 	const author = page.getByRole("group", { name: "Claude, used by Venn" });
 	await expect(author).toBeVisible();
 	await expect(page.getByText("payments-platform/payments", { exact: true })).toBeVisible();
-	await expect(page.getByRole("button", { name: /0\/3 builds passed/ })).toBeVisible();
+	await expect(page.getByRole("dialog", { name: "Pull request #284 details" }).getByText(/0\/3 builds passed/)).toBeVisible();
 	const gap = await author.evaluate((element) => {
 		const label = element.nextElementSibling;
 		return label ? label.getBoundingClientRect().left - element.getBoundingClientRect().right : null;
@@ -387,7 +389,7 @@ test("backward and forward jumps remove future activity and keep the comment dra
 	const editor = item.getByRole("textbox", { name: "Comment editor" });
 	await page.keyboard.press("m");
 	await editor.pressSequentially("@Claude");
-	await page.getByRole("option", { name: /^Claude / }).first().click();
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	await editor.pressSequentially(" Keep the sandbox migration note in this draft");
 	await jumpToWideStep(page, "Done");
 	await expectJourneyStage(page, "Done");

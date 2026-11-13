@@ -15,12 +15,18 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await target.evaluate((button, nextStatus) => {
 				const original = document.querySelector('[aria-label^="Change status,"] [data-slot="progress-circle"]');
 				button.addEventListener("click", () => {
-					const start = performance.now();
+					// The journey defers the status change until the agent has started, so sample from the frame the destination status appears.
+					const clicked = performance.now();
+					let start: number | null = null;
 					const samples: { value: string | null; path: string | null; same: boolean }[] = [];
 					function sample() {
 						const circle = document.querySelector(`[aria-label="Change status, ${nextStatus}"] [data-slot="progress-circle"]`);
-						if (circle) samples.push({ value: circle.getAttribute("aria-valuenow"), path: circle.querySelector("svg > path")?.getAttribute("d") ?? null, same: circle === original });
-						if (performance.now() - start < 2500) requestAnimationFrame(sample);
+						if (circle) {
+							start ??= performance.now();
+							samples.push({ value: circle.getAttribute("aria-valuenow"), path: circle.querySelector("svg > path")?.getAttribute("d") ?? null, same: circle === original });
+						}
+						const now = performance.now();
+						if (start === null ? now - clicked < 10_000 : now - start < 2500) requestAnimationFrame(sample);
 						else document.documentElement.dataset.statusTransitionFrames = JSON.stringify(samples);
 					}
 					requestAnimationFrame(sample);
@@ -28,15 +34,15 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			}, destination);
 			await page.locator("html").evaluate((element) => { delete element.dataset.statusTransitionFrames; });
 			await target.click();
-			await expect(status(destination)).toBeVisible();
-			await expect.poll(() => page.locator("html").getAttribute("data-status-transition-frames")).not.toBeNull();
+			await expect(status(destination)).toBeVisible({ timeout: 10_000 });
+			await expect.poll(() => page.locator("html").getAttribute("data-status-transition-frames"), { timeout: 10_000 }).not.toBeNull();
 			return JSON.parse((await page.locator("html").getAttribute("data-status-transition-frames")) ?? "[]") as { value: string | null; path: string | null; same: boolean }[];
 		}
 		const progress = await sampleTransition(agent, "In progress");
 		expect(progress.length).toBeGreaterThan(0);
 		expect(progress.every((sample) => sample.same && sample.value === "50")).toBe(true);
 		if (reducedMotion === "no-preference") expect(new Set(progress.map((sample) => sample.path)).size).toBeGreaterThan(1);
-		else expect(new Set(progress.map((sample) => sample.path)).size).toBe(1);
+		else expect(new Set(progress.map((sample) => sample.path)).size, JSON.stringify(progress)).toBe(1);
 		await status("In progress").click();
 		const done = await sampleTransition(page.getByRole("menuitem", { name: "Done" }), "Done");
 		expect(done.length).toBeGreaterThan(0);

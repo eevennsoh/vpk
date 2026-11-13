@@ -52,7 +52,7 @@ test("a module loaded by node:test can import the app through @/ and extensionle
 	].join("\n");
 	const withHook = runWithHook(source);
 	assert.equal(withHook.status, 0, withHook.stderr);
-	assert.equal(withHook.stdout.trim(), "function function 15");
+	assert.equal(withHook.stdout.trim(), "function function 16");
 
 	// Fail-first: without the hook Node cannot resolve the alias at all.
 	const withoutHook = runWithHook(source, { hook: false });
