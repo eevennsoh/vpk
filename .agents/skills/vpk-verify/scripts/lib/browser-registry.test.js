@@ -9,11 +9,11 @@ const {
 	classifyBrowserRecord,
 	listBrowserRecords,
 	noteBrowserUse,
-	ownerAlive,
+	ownerState,
 	removeBrowserRecord,
 	resolveOwner,
 } = require("./browser-registry.js");
-const { closeOrphanedBrowsers } = require("./browser.js");
+const { closeBrowserSessionBestEffort, closeOrphanedBrowsers } = require("./browser.js");
 
 const HOUR = 3_600_000;
 const NOW = Date.UTC(2026, 10, 13, 12, 0, 0);
@@ -52,9 +52,34 @@ test("VPK_BROWSER_OWNER_PID names the owner directly", () => {
 });
 
 test("a reused pid with a different start time is not the owner", () => {
-	assert.equal(ownerAlive(OWNER, { read: fakeProcesses({ 4100: { ppid: 1, startedAt: OWNER.startedAt, name: "claude" } }) }), true);
-	assert.equal(ownerAlive(OWNER, { read: fakeProcesses({ 4100: { ppid: 1, startedAt: "Fri Nov 13 11:59:00 2026", name: "zsh" } }) }), false);
-	assert.equal(ownerAlive(OWNER, { read: fakeProcesses({}) }), false);
+	const exists = () => "exists";
+	assert.equal(ownerState(OWNER, { probe: exists, read: fakeProcesses({ 4100: { ppid: 1, startedAt: OWNER.startedAt, name: "claude" } }) }), "alive");
+	assert.equal(ownerState(OWNER, { probe: exists, read: fakeProcesses({ 4100: { ppid: 1, startedAt: "Fri Nov 13 11:59:00 2026", name: "zsh" } }) }), "gone");
+	assert.equal(ownerState(OWNER, { probe: () => "missing", read: fakeProcesses({}) }), "gone");
+});
+
+test("an owner that cannot be inspected is unknown, not gone", () => {
+	// A sandbox denies ps (and may deny signals) while the recorded owner is still running.
+	assert.equal(ownerState(OWNER, { probe: () => "exists", read: () => null }), "unknown");
+	assert.equal(ownerState(OWNER, { probe: () => "unknown", read: () => null }), "unknown");
+	const fresh = { session: "s", owner: OWNER, lastUsedAt: new Date(NOW - 10 * 60_000).toISOString() };
+	const unknown = classifyBrowserRecord(fresh, { stateOf: () => "unknown", now: NOW });
+	assert.equal(unknown.action, "keep");
+	assert.match(unknown.reason, /owner claude pid 4100 unknown/u);
+	const idle = { ...fresh, lastUsedAt: new Date(NOW - (BROWSER_IDLE_HOURS + 1) * HOUR).toISOString() };
+	assert.equal(classifyBrowserRecord(idle, { stateOf: () => "unknown", now: NOW }).action, "close");
+});
+
+test("cleanup --browser keeps this chat's record when the close fails", () => {
+	const forgotten = [];
+	const forget = (session) => forgotten.push(session);
+	const resolveSession = () => "vpk-verify-mine";
+	assert.equal(closeBrowserSessionBestEffort({ forget, resolveSession, runCommand: () => ({ status: 1, stderr: "daemon did not answer", stdout: "" }) }), false);
+	assert.equal(closeBrowserSessionBestEffort({ forget, resolveSession, runCommand: () => ({ status: null, error: Object.assign(new Error("spawnSync ETIMEDOUT"), { code: "ETIMEDOUT" }) }) }), false);
+	assert.deepEqual(forgotten, []);
+	assert.equal(closeBrowserSessionBestEffort({ forget, resolveSession, runCommand: () => ({ status: 0, stdout: "✓ Browser closed" }) }), true);
+	assert.equal(closeBrowserSessionBestEffort({ forget, resolveSession, runCommand: () => ({ status: 1, stderr: "No browser session found" }) }), true);
+	assert.deepEqual(forgotten, ["vpk-verify-mine", "vpk-verify-mine"]);
 });
 
 test("a starting command records the browser; other commands only refresh a record", () => {
@@ -79,17 +104,17 @@ test("a starting command records the browser; other commands only refresh a reco
 });
 
 test("records are closed when the owner is gone or the browser sat unused", () => {
-	const alive = () => true;
-	const gone = () => false;
+	const alive = () => "alive";
+	const gone = () => "gone";
 	const fresh = { session: "s", owner: OWNER, lastUsedAt: new Date(NOW - 10 * 60_000).toISOString() };
 	const stale = { ...fresh, lastUsedAt: new Date(NOW - (BROWSER_IDLE_HOURS + 1) * HOUR).toISOString() };
 	const ownerless = { session: "s", owner: null, lastUsedAt: fresh.lastUsedAt };
 
-	assert.equal(classifyBrowserRecord(fresh, { isOwnerAlive: alive, now: NOW }).action, "keep");
-	assert.match(classifyBrowserRecord(fresh, { isOwnerAlive: gone, now: NOW }).reason, /owner claude pid 4100 is gone/u);
-	assert.equal(classifyBrowserRecord(fresh, { isOwnerAlive: gone, now: NOW }).action, "close");
-	assert.equal(classifyBrowserRecord(stale, { isOwnerAlive: alive, now: NOW }).action, "close");
-	assert.equal(classifyBrowserRecord(ownerless, { isOwnerAlive: alive, now: NOW }).action, "keep");
+	assert.equal(classifyBrowserRecord(fresh, { stateOf: alive, now: NOW }).action, "keep");
+	assert.match(classifyBrowserRecord(fresh, { stateOf: gone, now: NOW }).reason, /owner claude pid 4100 is gone/u);
+	assert.equal(classifyBrowserRecord(fresh, { stateOf: gone, now: NOW }).action, "close");
+	assert.equal(classifyBrowserRecord(stale, { stateOf: alive, now: NOW }).action, "close");
+	assert.equal(classifyBrowserRecord(ownerless, { stateOf: alive, now: NOW }).action, "keep");
 	assert.equal(classifyBrowserRecord({ ...ownerless, lastUsedAt: stale.lastUsedAt }, { now: NOW }).action, "close");
 });
 

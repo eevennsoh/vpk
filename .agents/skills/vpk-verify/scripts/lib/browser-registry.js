@@ -57,9 +57,25 @@ function resolveOwner({ env = process.env, startPid = process.ppid, read = readP
 	return null;
 }
 
-function ownerAlive(owner, { read = readProcess } = {}) {
+function signalZero(pid) {
+	try {
+		process.kill(pid, 0);
+		return "exists";
+	} catch (error) {
+		return error.code === "ESRCH" ? "missing" : "unknown";
+	}
+}
+
+// "alive", "gone" (no such pid, or the pid now belongs to a process started at another time), or
+// "unknown" when the process table cannot be read here (an agent sandbox denies ps). Only "gone"
+// is proof the owner ended.
+function ownerState(owner, { probe = signalZero, read = readProcess } = {}) {
+	const presence = probe(owner.pid);
+	if (presence === "missing") return "gone";
+	if (presence !== "exists") return "unknown";
 	const info = read(owner.pid);
-	return Boolean(info && info.startedAt === owner.startedAt);
+	if (!info) return "unknown";
+	return info.startedAt === owner.startedAt ? "alive" : "gone";
 }
 
 function recordFile(dir, { namespace, session }) {
@@ -130,17 +146,15 @@ function hoursAgo(isoTime, now) {
 	return Number.isFinite(then) ? (now - then) / 3_600_000 : Number.POSITIVE_INFINITY;
 }
 
-function classifyBrowserRecord(record, { idleHours = BROWSER_IDLE_HOURS, isOwnerAlive = ownerAlive, now = Date.now() } = {}) {
+function classifyBrowserRecord(record, { idleHours = BROWSER_IDLE_HOURS, stateOf = ownerState, now = Date.now() } = {}) {
 	const unused = hoursAgo(record.lastUsedAt, now);
 	const used = Number.isFinite(unused) ? `last used ${unused.toFixed(1)}h ago` : "last use unknown";
-	if (record.owner?.pid) {
-		const label = `owner ${record.owner.name ?? "agent"} pid ${record.owner.pid}`;
-		if (!isOwnerAlive(record.owner)) return { action: "close", reason: `${label} is gone; ${used}` };
-		if (unused >= idleHours) return { action: "close", reason: `${label} is alive but the browser is idle: ${used} >= ${idleHours}h` };
-		return { action: "keep", reason: `${label} is alive; ${used}` };
-	}
-	if (unused >= idleHours) return { action: "close", reason: `owner unknown; ${used} >= ${idleHours}h` };
-	return { action: "keep", reason: `owner unknown; ${used} < ${idleHours}h` };
+	const label = record.owner?.pid ? `owner ${record.owner.name ?? "agent"} pid ${record.owner.pid}` : "owner";
+	const state = record.owner?.pid ? stateOf(record.owner) : "unknown";
+	if (state === "gone") return { action: "close", reason: `${label} is gone; ${used}` };
+	const status = state === "alive" ? `${label} is alive` : `${label} unknown (cannot inspect it here)`;
+	if (unused >= idleHours) return { action: "close", reason: `${status}, but the browser is idle: ${used} >= ${idleHours}h` };
+	return { action: "keep", reason: `${status}; ${used}` };
 }
 
 module.exports = {
@@ -149,7 +163,7 @@ module.exports = {
 	classifyBrowserRecord,
 	listBrowserRecords,
 	noteBrowserUse,
-	ownerAlive,
+	ownerState,
 	readProcess,
 	registryDir,
 	removeBrowserRecord,

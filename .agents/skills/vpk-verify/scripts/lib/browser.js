@@ -254,19 +254,38 @@ function browserSessionId({ timeoutMs = parseBrowserTimeoutMs(), env = process.e
 	return `${worktreeSession}-${suffix}`;
 }
 
-function closeBrowserSessionBestEffort() {
+const ALREADY_CLOSED = /no browser session|session (?:is )?not found|not running|no such file|failed to connect/iu;
+
+function closeSucceeded(result) {
+	return Boolean(result) && !(result instanceof Error) && (result.status === 0 || ALREADY_CLOSED.test(failureText(result)));
+}
+
+// Forgets this chat's record only once the browser is closed; after a failed or timed-out close
+// the record stays, so the SessionStart hook and the sweep retry it.
+function closeBrowserSessionBestEffort({
+	forget = (session) => removeBrowserRecord(session),
+	resolveSession = browserSessionId,
+	runCommand = runAgentBrowser,
+} = {}) {
 	let session = "";
 	try {
-		session = browserSessionId();
+		session = resolveSession();
 	} catch {
-		return;
+		return false;
 	}
-	runAgentBrowser(["--session", session, "close"], { stdio: "ignore" });
+	let result;
 	try {
-		removeBrowserRecord(session);
+		result = runCommand(["--session", session, "close"], { encoding: "utf8" });
+	} catch (error) {
+		result = error;
+	}
+	if (!closeSucceeded(result)) return false;
+	try {
+		forget(session);
 	} catch {
 		// No shared git directory: nothing was recorded either.
 	}
+	return true;
 }
 
 // Recording must never fail the browser command it follows.
@@ -286,8 +305,6 @@ function parkBrowserSession(session, options = {}) {
 	return executeBrowserCommand(["open", PARKED_URL], { session, ...options });
 }
 
-const ALREADY_CLOSED = /no browser session|session (?:is )?not found|not running|no such file|failed to connect/iu;
-
 function closeRecordedBrowser(record, { runCommand = runAgentBrowser } = {}) {
 	const env = { ...process.env };
 	delete env.AGENT_BROWSER_SESSION;
@@ -300,8 +317,7 @@ function closeRecordedBrowser(record, { runCommand = runAgentBrowser } = {}) {
 	} catch {
 		binPath = resolveAgentBrowserBin();
 	}
-	const result = runCommand(["--session", record.session, "close"], { binPath, encoding: "utf8", env, timeoutMs: 15_000 });
-	return result.status === 0 || ALREADY_CLOSED.test(failureText(result));
+	return closeSucceeded(runCommand(["--session", record.session, "close"], { binPath, encoding: "utf8", env, timeoutMs: 15_000 }));
 }
 
 // Closes every recorded browser whose owner is gone or that has sat unused past the limit, and
