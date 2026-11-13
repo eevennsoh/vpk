@@ -7,10 +7,14 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { BUTTER_PICKER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agent-catalog";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { Button } from "@/components/ui/button";
+import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 import { FavoriteButton } from "@/components/blocks/agent-selector/components/favorite-button";
+import { cn } from "@/lib/utils";
 
 type Destination = "cloud" | "local";
 type Approach = "remember" | "global" | "row-actions" | "after-select";
@@ -28,6 +32,8 @@ function DestinationPreview({ approach }: Readonly<{ approach: Approach }>) {
 	const [active, setActive] = useState<AgentSelectorAgent | null>(null);
 	const [feedback, setFeedback] = useState("");
 	const root = useRef<HTMLDivElement>(null);
+	const { ref: listRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const listMaskStyle = { ...buildScrollMaskStyle({ fadeTop: showTopScrollMask, fadeBottom: false, fadeSize: "3rem" }), "--scroll-mask-top-fade-size": "3rem" };
 	const focusFrame = useRef<number | null>(null);
 	const focusAfterRender = (selector: string) => {
 		if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current);
@@ -77,18 +83,19 @@ function DestinationPreview({ approach }: Readonly<{ approach: Approach }>) {
 		</div>;
 	};
 	const section = (name: string, agents: readonly AgentSelectorAgent[]) => agents.length ? <section aria-label={name}><h3 className="px-2 pt-2 pb-1 text-xs font-semibold text-text-subtlest">{name}</h3>{agents.map(row)}{name === "Software agents" && !query && !expanded && softwareAgents.length > 3 ? <button type="button" className="h-8 px-2 text-xs text-text-subtlest hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={() => setExpanded(true)}>Show more</button> : null}</section> : null;
-	return <div ref={root} className="flex h-[26rem] w-80 max-w-full flex-col overflow-hidden rounded-xl bg-popover p-1 text-popover-foreground shadow-2xl">
+	return <div ref={root} className={cn("flex h-[26rem] w-80 max-w-full flex-col overflow-hidden bg-popover text-popover-foreground", dropdownStyles.surface, dropdownStyles.padding)}>
 		{approach === "after-select" && active ? <>
-			<div className="flex shrink-0 items-center gap-2 border-b border-border px-2 py-2"><Button data-destination-back type="button" size="compact" variant="ghost" onClick={() => { setActive(null); focusAfterRender(`[data-agent-id="${active.id}"]`); }}>Back</Button>{avatar(active)}<span className="truncate text-sm font-medium">{active.name}</span></div>
+			<div className="flex shrink-0 items-center gap-2 px-2 py-2"><Button data-destination-back type="button" size="compact" variant="ghost" onClick={() => { setActive(null); focusAfterRender(`[data-agent-id="${active.id}"]`); }}>Back</Button>{avatar(active)}<span className="truncate text-sm font-medium">{active.name}</span></div>
+			<DropdownMenuSeparator />
 			<div className="min-h-0 flex-1 overflow-y-auto pt-2"><p className="px-3 pb-2 text-xs font-semibold text-text-subtlest">Choose where to run</p>{actionButtons(active)}</div>
 		</> : <>
-			<div className="-mx-1 -mt-1 mb-1 shrink-0 overflow-hidden rounded-t-xl"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div>
+			<div className="-mx-(--menu-inset) -mt-(--menu-inset) mb-1 shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField icon={<SearchIcon className="size-4 text-icon-subtle" />} label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div>
 			{approach === "global" ? <div className="flex shrink-0 items-center gap-1 px-2 pb-1 text-xs text-text-subtle"><span className="mr-auto">Run on</span>{(["cloud", "local"] as const).map((destination) => <Button key={destination} type="button" size="compact" variant={globalDestination === destination ? "secondary" : "ghost"} aria-pressed={globalDestination === destination} onClick={() => { setGlobalDestination(destination); setFeedback(`Default: ${destination === "cloud" ? "Cloud" : "Local"}`); }}>{destination === "cloud" ? "Cloud" : "Local"}</Button>)}</div> : null}
-			<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{section("Favorites", favoriteAgents)}{section("Software agents", shownSoftware)}{section("Other agents", otherAgents)}{!favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
-			<div className="shrink-0 border-t border-border pt-1"><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={() => setFeedback("Browse agents (preview)")}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" size="small" />} />Browse agents</Button><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={() => setFeedback("Create agent (preview)")}><Icon aria-hidden className="size-6" render={<AddIcon label="" size="small" />} />Create agent</Button></div>
+			<div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain" style={listMaskStyle}>{section("Favorites", favoriteAgents)}{section("Software agents", shownSoftware)}{section("Other agents", otherAgents)}{!favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
+			<div className="shrink-0"><DropdownMenuSeparator className="mt-0" /><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={() => setFeedback("Browse agents (preview)")}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" size="small" />} />Browse agents</Button><Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 px-2 text-sm font-normal text-text-subtle" onClick={() => setFeedback("Create agent (preview)")}><Icon aria-hidden className="size-6" render={<AddIcon label="" size="small" />} />Create agent</Button></div>
 		</>}
 		<p role="status" className="sr-only">{feedback}</p>
-		{feedback ? <div aria-hidden className="shrink-0 truncate border-t border-border px-2 py-1 text-xs text-text-subtle">{feedback}</div> : null}
+		{feedback ? <><DropdownMenuSeparator aria-hidden="true" /><div aria-hidden className="shrink-0 truncate px-2 py-1 text-xs text-text-subtle">{feedback}</div></> : null}
 	</div>;
 }
 

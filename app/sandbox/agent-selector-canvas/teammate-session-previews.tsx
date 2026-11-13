@@ -4,7 +4,9 @@ import { useId, useState } from "react";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { AgentSessionCard } from "@/components/blocks/agent-session/agent-session-card";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 import { isSessionSample, sessionSamples, type SessionSample } from "@/app/sandbox/agent-selector-canvas/teammate-session-data";
 import { TeammateSessionDisclosure, type TeammateApproach } from "@/app/sandbox/agent-selector-canvas/teammate-session-disclosure";
 
@@ -45,11 +47,11 @@ function SessionMenu({ approach, items }: Readonly<{ approach: TeammateApproach;
 
 	return (
 		<TooltipProvider>
-			<div role="group" aria-label="Project Butter sessions" className="rounded-xl bg-surface-overlay p-1 text-text" style={{ boxShadow: token("elevation.shadow.overlay") }}>
+			<div role="group" aria-label="Project Butter sessions" className={cn("rounded-lg bg-surface-overlay text-text", dropdownStyles.padding)} style={{ boxShadow: token("elevation.shadow.overlay") }}>
 				{personal.length ? cards(personal) : null}
 				{teammates.length ? (
 					<>
-						{personal.length ? <hr className="my-1 border-border" /> : null}
+						{personal.length ? <DropdownMenuSeparator /> : null}
 						<TeammateSessionDisclosure approach={approach} items={teammates}>
 							{cards(teammates)}
 						</TeammateSessionDisclosure>

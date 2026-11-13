@@ -178,7 +178,7 @@ export function RovoComposerReasoningSelector({
 					</PromptInputAutoButton>
 				)}
 			/>
-			<PopoverContent side="top" align="end" sideOffset={8} positionerClassName="z-[600]" className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto")}>
+			<PopoverContent side="top" align="end" sideOffset={8} positionerClassName="z-[600]" className={cn(dropdownStyles.surface, dropdownStyles.padding, "w-auto")}>
 				<PopoverTitle className="sr-only">Choose reasoning</PopoverTitle>
 				<CustomizeMenu
 					selectedReasoning={selectedReasoning}

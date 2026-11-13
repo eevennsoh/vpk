@@ -350,17 +350,18 @@ test("agent selector offers descriptions as an opt-in example", async ({ page })
 	await expect(example.getByText("Custom agent by Diego Alvarez", { exact: true })).toHaveCount(1);
 });
 
-test("selector presentations fade the list only after scrolling", async ({ page }) => {
+test("selector presentations fade only their top edge as they scroll", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	const gallery = page.getByRole("group", { name: "Gallery items" });
 	const checkFade = async (list: ReturnType<typeof page.locator>) => {
 		await expect(list).toHaveCSS("mask-image", "none");
 		await list.evaluate((element) => { element.scrollTop = 200; });
-		await expect.poll(() => list.evaluate((element) => getComputedStyle(element).maskImage)).toContain("linear-gradient");
+		await expect.poll(() => list.evaluate((element) => element.style.maskImage)).toContain("transparent 0,");
+		await expect.poll(() => list.evaluate((element) => element.style.maskImage)).not.toContain("transparent 100%");
 		await expect(list).toHaveCSS("--scroll-mask-fade-size", "3rem");
-		await list.evaluate((element) => { element.scrollTop = 0; });
-		await expect(list).toHaveCSS("mask-image", "none");
+		await list.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+		await expect.poll(() => list.evaluate((element) => element.style.maskImage)).not.toContain("transparent 100%");
 	};
 	await gallery.getByRole("button", { name: "Select Agent & app selector" }).click();
 	await checkFade(page.getByRole("region", { name: "Project Butter agent selector" }).getByRole("region", { name: "Software agents" }).locator(".."));

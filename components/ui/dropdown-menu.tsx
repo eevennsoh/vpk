@@ -10,13 +10,18 @@ import type {
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
+import CrossCircleIcon from "@atlaskit/icon/core/cross-circle";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import { Icon } from "@/components/ui/icon";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 
 const menuItemBaseClassName =
-  "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center rounded-lg text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg]:pointer-events-none [&_svg]:shrink-0";
+  "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center rounded-lg py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg]:pointer-events-none [&_svg]:shrink-0";
+const menuLabelTextClassName = "text-xs leading-4 font-semibold text-text-subtlest";
 
 /**
  * Shared visual style tokens used by DropdownMenu, Menubar, ContextMenu, and Select.
@@ -28,17 +33,15 @@ export const dropdownStyles = {
   surface: "rounded-lg shadow-2xl menu-row-spacing",
   popup:
     "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=bottom]:slide-out-to-top-2 data-[side=left]:slide-out-to-right-2 data-[side=right]:slide-out-to-left-2 data-[side=top]:slide-out-to-bottom-2 data-[side=inline-start]:slide-out-to-right-2 data-[side=inline-end]:slide-out-to-left-2 motion-reduce:animate-none bg-popover text-popover-foreground max-h-[min(328px,var(--available-height,328px))] min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto child-overlay-surface outline-none data-open:duration-normal data-open:ease-out-practical data-closed:duration-fast data-closed:ease-in data-closed:overflow-hidden",
-  padding: {
-    compact: "p-1.5 [--menu-inset:var(--ds-space-075,0.375rem)]",
-    spacious: "p-2 [--menu-inset:var(--ds-space-100,0.5rem)]",
-  },
+  padding: "p-1.5 [--menu-inset:var(--ds-space-075,0.375rem)]",
   group: "",
   itemBase: menuItemBaseClassName,
   selectableItem: cn(
     menuItemBaseClassName,
-    "min-h-8 py-1.5 pr-2 pl-8 [&_svg:not([class*='size-'])]:size-4",
+    "pr-2 pl-8 [&_svg:not([class*='size-'])]:size-4",
   ),
-  label: "text-text-subtlest px-2 pt-3 pb-1 text-xs leading-4 font-semibold",
+  labelText: menuLabelTextClassName,
+  label: cn(menuLabelTextClassName, "px-2 py-1.5"),
   separator: "bg-border -mx-(--menu-inset) my-(--menu-inset) h-px",
   // Deliberately empty. A checked row is styled exactly like an unchecked one —
   // no filled surface, no recoloured label, same hover and pressed treatment —
@@ -78,16 +81,144 @@ export type DropdownMenuIndicatorPlacement = "start" | "end";
 const dropdownMenuFrontSlotClassName =
   "inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:text-icon-danger [&_[data-slot=icon]]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-danger [&_svg]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_svg]:text-icon-danger";
 
-// Single-row items lock to a fixed 32px height (no vertical padding), matching
-// the Menubar standard; rows only gain `min-h-8` + `py-1.5` growth when their
-// text is allowed to wrap (explicit `allowTextWrap` or a `description`).
-const dropdownMenuRowHeightClassName = "h-8 py-0";
-const dropdownMenuWrappingRowClassName = "min-h-8 py-1.5";
 // Base UI's indicator wrapper otherwise inherits the row's 20px line box,
 // which baseline-aligns the 12px glyph one pixel high. Make the wrapper its
 // own centered flex box so every checkbox/radio indicator is optically centered.
 const dropdownMenuSelectionIndicatorClassName =
   "flex items-center justify-center leading-none";
+
+interface DropdownMenuSearchFieldProps {
+	activeDescendantId?: string | null;
+	autoFocus?: boolean;
+	className?: string;
+	/**
+	 * Set when an ancestor owns list keyboard navigation — e.g. a cmdk `Command`
+	 * root, which handles Arrow/Enter through a React `onKeyDown` on its own
+	 * container and bails when the event is already `defaultPrevented`. In that
+	 * mode the field stops swallowing keys (no `stopPropagation`, no Enter
+	 * `preventDefault`) so navigation reaches the host. Defaults to false: the
+	 * field is self-contained and swallows keys so a surrounding TipTap editor
+	 * never sees them.
+	 */
+	hostOwnsKeyNavigation?: boolean;
+	icon: ReactNode;
+	id?: string;
+	label: string;
+	onClear: () => void;
+	onEscape?: () => void;
+	onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+	onSubmit?: () => void;
+	onValueChange: (value: string) => void;
+	placeholder?: string;
+	renderInput?: (input: ReactElement) => ReactNode;
+	/**
+	 * When true, show a "Tab" key hint in the trailing slot while the field is
+	 * empty and unfocused — signalling that pressing Tab from the editor moves
+	 * focus into this field (e.g. to prompt Rovo) rather than typing into the
+	 * page. Hidden once the field is focused or has a value (where the clear
+	 * button takes the slot instead).
+	 */
+	tabHint?: boolean;
+	value: string;
+}
+
+function DropdownMenuSearchField({
+	activeDescendantId,
+	autoFocus,
+	className,
+	hostOwnsKeyNavigation,
+	icon,
+	id,
+	label,
+	onClear,
+	onEscape,
+	onKeyDown,
+	onSubmit,
+	onValueChange,
+	placeholder = label,
+	renderInput,
+	tabHint,
+	value,
+}: Readonly<DropdownMenuSearchFieldProps>) {
+	const inputRef = React.useRef<HTMLInputElement | null>(null);
+	// When this field is rendered inside a Base UI menu/popover, the
+	// `FloatingFocusManager` moves focus to the popup container on open, which
+	// beats the input's plain `autoFocus` attribute. Imperatively focus on mount
+	// (after the focus manager settles) so opening "Add automation", "Add apps",
+	// "Add skills", etc. lands the caret in the search box ready for typing.
+	// Use preventScroll because this field is often rendered in portalled
+	// popovers; native auto-focus can jump the surrounding page to the popup.
+	React.useEffect(() => {
+		if (!autoFocus) {
+			return;
+		}
+		const frame = requestAnimationFrame(() => {
+			inputRef.current?.focus({ preventScroll: true });
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [autoFocus]);
+	const input = <Input
+		ref={inputRef}
+		{...(id === undefined ? {} : { id })}
+		{...(activeDescendantId === undefined ? {} : { "aria-activedescendant": activeDescendantId ?? undefined })}
+		variant="subtle"
+		className={cn("focus-visible:ring-0 data-[variant=subtle]:focus-visible:border-transparent data-[variant=subtle]:focus-visible:bg-transparent data-[variant=subtle]:hover:bg-transparent data-[variant=subtle]:active:bg-transparent", className)}
+		value={value}
+		aria-label={label}
+		placeholder={placeholder}
+		onChange={(event) => onValueChange(event.currentTarget.value)}
+		onKeyDown={(event) => {
+			onKeyDown?.(event);
+			if (!hostOwnsKeyNavigation) {
+				event.stopPropagation();
+			}
+			if (event.defaultPrevented) {
+				return;
+			}
+			if ((event.key === "Escape" || event.key === "Esc") && onEscape) {
+				event.preventDefault();
+				onEscape();
+				return;
+			}
+			// Leave Enter alone when the host owns navigation: cmdk's root
+			// handler skips events that are already `defaultPrevented`, so
+			// preventing here would stop Enter from picking the highlighted row.
+			if (event.key === "Enter" && !hostOwnsKeyNavigation) {
+				event.preventDefault();
+				onSubmit?.();
+			}
+		}}
+	/>;
+	return (
+		<div data-slot="dropdown-menu-search" className="rich-text-command-menu-search rich-text-command-menu-item-sticky group/search mx-1.5 mt-1.5 grid h-8 min-h-8 w-[calc(100%-12px)] shrink-0 cursor-text grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-lg bg-surface-overlay py-0 pr-0.5 pl-2 hover:bg-bg-neutral-subtle-hovered [&>[data-slot=input]]:h-full [&>[data-slot=input]]:min-w-0 [&>[data-slot=input]]:border-transparent [&>[data-slot=input]]:px-0 [&>[data-slot=input]]:caret-text [&>[data-slot=input]:hover]:border-transparent [&>[data-slot=input]:hover]:bg-transparent [&>[data-slot=input]:active]:border-transparent [&>[data-slot=input]:active]:bg-transparent [&>[data-slot=input]:focus-visible]:border-transparent [&>[data-slot=input]:focus-visible]:bg-transparent [&>[data-slot=input]:focus-visible]:shadow-none">
+			<span className="inline-flex size-6 items-center justify-center [&>svg]:size-4" aria-hidden={true}>
+				{icon}
+			</span>
+			{renderInput ? renderInput(input) : input}
+			{value ? (
+				<Button
+					type="button"
+					aria-label="Clear search"
+					className="justify-self-end text-icon-subtle"
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={onClear}
+					shape="circle"
+					size="icon-compact"
+					variant="ghost"
+				>
+					<CrossCircleIcon label="" size="small" />
+				</Button>
+			) : tabHint ? (
+				<span className="inline-flex items-center justify-self-end pr-1.5 pointer-events-none group-focus-within/search:hidden" aria-hidden="true">
+					{/* Wrap the label in an element so Kbd renders the literal word
+					    "Tab" instead of mapping the string to the ⇥ glyph. */}
+					<Kbd><span>Tab</span></Kbd>
+				</span>
+			) : null}
+		</div>
+	);
+}
+
 
 type DropdownMenuProps = MenuPrimitive.Root.Props;
 
@@ -119,9 +250,6 @@ function DropdownMenuTrigger({
   );
 }
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- Shared visual spacing type for menu variants.
-export type MenuSpacing = "compact" | "spacious";
-
 interface DropdownMenuContentProps
   extends
     MenuPrimitive.Popup.Props,
@@ -129,7 +257,6 @@ interface DropdownMenuContentProps
       MenuPrimitive.Positioner.Props,
 			"align" | "alignOffset" | "anchor" | "collisionAvoidance" | "side" | "sideOffset"
     > {
-  spacing?: MenuSpacing;
   portalled?: boolean;
   portalContainer?: MenuPrimitive.Portal.Props["container"];
   /**
@@ -149,7 +276,6 @@ function DropdownMenuContent({
 	collisionAvoidance,
   side = "bottom",
   sideOffset = 4,
-  spacing = "compact",
   portalled = true,
   portalContainer,
   className,
@@ -169,11 +295,10 @@ function DropdownMenuContent({
 		>
 			<MenuPrimitive.Popup
 				data-slot="dropdown-menu-content"
-				data-menu-spacing={spacing}
 				className={cn(
 					dropdownStyles.popup,
 					dropdownStyles.surface,
-					dropdownStyles.padding[spacing],
+					dropdownStyles.padding,
 					className,
 				)}
 				{...props}
@@ -217,6 +342,12 @@ function DropdownMenuGroup({
   );
 }
 
+type DropdownMenuSubheadingProps = React.ComponentProps<"div">;
+
+function DropdownMenuSubheading({ className, ...props }: Readonly<DropdownMenuSubheadingProps>) {
+  return <div data-slot="dropdown-menu-subheading" className={cn(dropdownStyles.labelText, className)} {...props} />;
+}
+
 interface DropdownMenuLabelProps extends MenuPrimitive.GroupLabel.Props {
   inset?: boolean;
 }
@@ -242,8 +373,7 @@ interface DropdownMenuItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect
   inset?: boolean;
   variant?: "default" | "destructive";
   /**
-   * Allows the label/description to wrap onto multiple lines, growing the row
-   * past its fixed 32px single-row height. Implied whenever a `description` is
+   * Allows the label/description to wrap onto multiple lines. Implied whenever a `description` is
    * provided; defaults to a single truncated line otherwise.
    */
   allowTextWrap?: boolean;
@@ -306,11 +436,8 @@ function DropdownMenuItem({
       data-variant={variant}
       data-selected={isSelected || undefined}
       className={cn(
-        // Single row stays fixed at 32px; growth is opt-in via `shouldWrapText`
-        // (an explicit `allowTextWrap` or a `description`), matching Menubar.
         dropdownStyles.itemBase,
         "group/dropdown-menu-item data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered gap-3 px-2 data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
-        shouldWrapText ? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName,
         // No selected-state styling on purpose. `data-selected` stays on the
         // element as a hook for consumers, but the trailing check mark is the
         // only thing that marks the active row — surface and label match every
@@ -385,7 +512,7 @@ function DropdownMenuSubTrigger({
       data-inset={inset}
       className={cn(
         "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-popup-open:bg-bg-neutral-subtle-hovered data-popup-open:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-        allowTextWrap ? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName,
+				"py-1.5",
 				elemBefore ? "gap-3" : null,
         className,
       )}
@@ -613,10 +740,12 @@ function DropdownMenuShortcutKeys({ shortcut }: Readonly<{ shortcut: string }>) 
 
 export {
   DropdownMenu,
+  DropdownMenuSearchField,
   DropdownMenuPortal,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuSubheading,
   DropdownMenuLabel,
   DropdownMenuItem,
   DropdownMenuCheckboxItem,
@@ -628,10 +757,12 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
   type DropdownMenuProps,
+  type DropdownMenuSearchFieldProps,
   type DropdownMenuPortalProps,
   type DropdownMenuTriggerProps,
   type DropdownMenuContentProps,
   type DropdownMenuGroupProps,
+  type DropdownMenuSubheadingProps,
   type DropdownMenuLabelProps,
   type DropdownMenuItemProps,
   type DropdownMenuCheckboxItemProps,

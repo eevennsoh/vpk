@@ -50,6 +50,25 @@ test("inline recommendations stay first, selectable, and searchable without dupl
 	assert.equal(view.getByRole("button", { name: "The Council (Recommended)" }) !== null, true);
 });
 
+test("AgentSelector search filters and clears from the shared menu field", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/agent-selector/components/agent-selector.tsx",
+		exportName: "AgentSelector",
+		props: {
+			agents: [{ id: "first", name: "First", byline: "" }, { id: "last", name: "Last", byline: "" }],
+			pinningEnabled: false,
+			selectionMode: "single",
+		},
+	});
+	const search = view.getByRole("combobox", { name: "Search agents" });
+	await view.fill(search, "Last");
+	assert.equal(view.queryByRole("option", { name: /First/u }), null);
+	assert.equal(view.getByRole("option", { name: /Last/u }) !== null, true);
+	await view.click(view.getByRole("button", { name: "Clear search" }));
+	assert.equal(search.value, "");
+	assert.equal(view.getByRole("option", { name: /First/u }) !== null, true);
+});
+
 test("AgentSelector keyboard navigation skips disabled agents", async () => {
 	const selected = [];
 	const view = await renderComponent({
@@ -201,6 +220,7 @@ async function loadAgentSelectorHarness() {
 			`,
 		],
 		["@/components/ui/icon-tile", "export function IconTile() { return null; }"],
+		["@/components/ui/dropdown-menu", "export const dropdownStyles = { padding: 'p-1.5 [--menu-inset:var(--ds-space-075,0.375rem)]' }; export function DropdownMenuSeparator() { return null; }"],
 		["@/components/ui/spinner", "export function Spinner() { return null; }"],
 		["@/components/ui/vpk-icons", "export function CheckIcon() { return null; } export function SearchIcon() { return null; }"],
 		["@/components/ui-custom/agent-avatar-visual", "export function AgentAvatarVisual() { return null; }"],
@@ -283,14 +303,14 @@ async function loadAgentSelectorHarness() {
 test("agent rows use 8px left padding while preserving the compact trailing inset", () => {
 	assert.match(
 		COMPONENT_SOURCE,
-		/const AGENT_ROW_BASE_CLASS =\s*"grid h-11 w-full items-center gap-3 rounded-md py-0 pr-1\.5 pl-2 text-left";/u,
+		/const AGENT_ROW_BASE_CLASS =\s*"grid w-full items-center gap-3 rounded-lg py-1\.5 pr-1\.5 pl-2 text-left";/u,
 	);
 });
 
-test("AgentSelector footer uses 4px top padding", () => {
+test("AgentSelector footer uses the shared separator", () => {
 	assert.match(
 		COMPONENT_SOURCE,
-		/<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">/u,
+		/<div className="sticky bottom-0 z-10 flex shrink-0 flex-col bg-popover">\s*<DropdownMenuSeparator className="mt-0" \/>/u,
 	);
 });
 
@@ -463,7 +483,7 @@ test("AgentSelector shows a picker heading only when supplied", async () => {
 });
 
 test("AgentSelector rows use greeting prompt text rhythm and shared agent avatars", () => {
-	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_BASE_CLASS =\s*"grid h-11 w-full items-center gap-3 rounded-md py-0 pr-1\.5 pl-2 text-left";/u);
+	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_BASE_CLASS =\s*"grid w-full items-center gap-3 rounded-lg py-1\.5 pr-1\.5 pl-2 text-left";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CHECK_COLS = "grid-cols-\[24px_minmax\(0,1fr\)_auto\]";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_PLAIN_COLS = "grid-cols-\[24px_minmax\(0,1fr\)\]";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_COPY_CLASS =\s*"flex min-h-\[34px\] min-w-0 flex-col justify-start overflow-hidden";/u);
@@ -647,10 +667,10 @@ test("AgentSelector Command root uses DropdownMenuContent container radius", () 
 		commandSource,
 		/"bg-popover text-popover-foreground rounded-xl! p-1 flex size-full flex-col overflow-hidden"/u,
 	);
-	assert.match(COMPONENT_SOURCE, /flex-1 rounded-lg p-1/u);
+	assert.match(COMPONENT_SOURCE, /flex-1 rounded-lg", dropdownStyles\.padding/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /rounded-xl!/u);
 	assert.doesNotMatch(skillSource, /rounded-xl!/u);
-	assert.match(COMPONENT_SOURCE, /-mx-1 -mt-1 overflow-hidden rounded-t-lg/u);
+	assert.match(COMPONENT_SOURCE, /-mx-\(--menu-inset\) -mt-\(--menu-inset\) overflow-hidden rounded-t-lg/u);
 });
 
 test("AgentSelector can swap its boxed search for the editor-palette bar", () => {
@@ -686,6 +706,6 @@ test("AgentSelector fades its list under the search header once scrolled", () =>
 	assert.match(COMPONENT_SOURCE, /useActiveAgentOption\(listOverflow\.ref, !showSearch\)[\s\S]*ref=\{activeOptionRef\}/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/listOverflow\.showTopScrollMask\s*&& "scroll-mask-top overscroll-contain \[--scroll-mask-fade-size:3rem\]"/u,
+		/buildScrollMaskStyle\(\{ fadeTop: listOverflow\.showTopScrollMask, fadeBottom: false, fadeSize: "3rem" \}\)/u,
 	);
 });

@@ -45,7 +45,7 @@ export function ButterAgentSelectorGallery({ presentation = "inline", label, clo
 	return (
 		<>
 			<div className="pointer-events-auto my-auto flex w-80 max-w-full shrink-0 flex-col items-center gap-4">
-				<section aria-label={label ?? "Project Butter agent selector"} className={cn("w-full", useSubmenu && "overflow-hidden rounded-xl bg-popover text-popover-foreground")} style={useSubmenu ? { boxShadow: token("elevation.shadow.overlay") } : undefined}>
+				<section aria-label={label ?? "Project Butter agent selector"} className={cn("w-full", useSubmenu && "overflow-hidden rounded-lg bg-popover text-popover-foreground")} style={useSubmenu ? { boxShadow: token("elevation.shadow.overlay") } : undefined}>
 					{!useSubmenu ? cloudOnly ? <ProjectButterCloudAgentPicker key={pickerKey} onAssign={(agent) => setCloudStatus(`Start on Cloud · ${agent.name} (preview)`)} onBrowseAgents={() => setCloudStatus("Browse agents (preview)")} status={cloudStatus} /> : <InlineAgentSelectorDemo key={pickerKey} showCreateAgent={showCreateAgent} /> : <ProjectButterInvocationProvider agents={BUTTER_PICKER_AGENTS} enabled>
 						<ProjectButterAgentPickerContent
 							key={pickerKey}

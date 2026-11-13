@@ -88,12 +88,14 @@ export const METADATA_PICKER_POSITIONER_CLASS = "z-[700]";
 export const METADATA_PICKER_SIDE_OFFSET = 8;
 
 export function MetadataSearchPicker({
+	className,
 	emptyLabel,
 	items,
 	onEscape,
 	onSelect,
 	placeholder,
 }: Readonly<{
+	className?: string;
 	emptyLabel: string;
 	items: readonly RichTextSuggestionMenuItem[];
 	onEscape: () => void;
@@ -105,7 +107,7 @@ export function MetadataSearchPicker({
 
 	return (
 		<RichTextSuggestionMenu
-			className="rich-text-command-menu-borderless"
+			className={cn("rich-text-command-menu-borderless", className)}
 			emptyLabel={emptyLabel}
 			emptyState={<RichTextSuggestionEmptyState label={emptyLabel} />}
 			header={(

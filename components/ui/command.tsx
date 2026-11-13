@@ -11,11 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group"
+import { DropdownMenuSearchField } from "@/components/ui/dropdown-menu"
 import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons"
 
 type CommandPrimitiveInputProps = React.ComponentProps<typeof CommandPrimitive.Input> & {
@@ -79,27 +75,39 @@ function CommandInput({
   className,
   inputGroupClassName,
   wrapperClassName,
+  value,
+  onValueChange,
+  placeholder = "Search…",
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input> & {
   inputGroupClassName?: string
   wrapperClassName?: string
 }) {
+  const [internalValue, setInternalValue] = React.useState("")
+  const searchValue = value ?? internalValue
+  const updateValue = (nextValue: string) => {
+    if (value === undefined) setInternalValue(nextValue)
+    onValueChange?.(nextValue)
+  }
+  const label = typeof props["aria-label"] === "string" ? props["aria-label"] : placeholder
+
   return (
-    <div data-slot="command-input-wrapper" className={cn("p-1 pb-0", wrapperClassName)}>
-      <InputGroup className={cn("bg-background h-8! rounded-lg! shadow-none!", inputGroupClassName)}>
-        <CommandPrimitiveInput
-          asChild
-          {...props}
-        >
-          <InputGroupInput
-            type="search"
-            className={cn("text-sm", className)}
-          />
-        </CommandPrimitiveInput>
-        <InputGroupAddon>
-          <SearchIcon />
-        </InputGroupAddon>
-      </InputGroup>
+    <div data-slot="command-input-wrapper" className={cn("shrink-0", wrapperClassName, inputGroupClassName)}>
+      <DropdownMenuSearchField
+        className={className}
+        hostOwnsKeyNavigation
+        icon={<SearchIcon />}
+        label={label}
+        placeholder={placeholder}
+        value={searchValue}
+        onValueChange={updateValue}
+        onClear={() => updateValue("")}
+        renderInput={(input) => (
+          <CommandPrimitiveInput asChild value={searchValue} onValueChange={updateValue} {...props}>
+            {input}
+          </CommandPrimitiveInput>
+        )}
+      />
     </div>
   )
 }

@@ -533,8 +533,8 @@
 	width: 320px;
 	max-height: min(var(--rich-text-command-menu-max-height), calc(100vh - 48px));
 	overflow: hidden;
-	border: 1px solid var(--ds-border, #dfe1e6);
-	border-radius: var(--ds-radius-xlarge, 12px);
+	border: 0;
+	border-radius: var(--ds-radius-large, 8px);
 	background-color: var(--ds-surface-overlay, #ffffff);
 	box-shadow: var(--ds-shadow-overlay, 0 8px 12px rgba(9, 30, 66, 0.15), 0 0 1px rgba(9, 30, 66, 0.31));
 	color: var(--ds-text, #172b4d);
@@ -587,12 +587,13 @@
    (skills + tools + knowledge + format) can each exceed the popover height, so
    the list scrolls within the `max-height`-capped container above. */
 .rich-text-command-menu-list {
+	--menu-inset: var(--ds-space-075, 6px);
 	--rich-text-command-menu-scroll-mask-fade-size: 48px;
 	--rich-text-command-menu-scrollbar-width: 10px;
 	min-height: 0;
 	flex: 1 1 auto;
 	overflow-y: auto;
-	padding: 4px;
+	padding: var(--menu-inset);
 }
 
 .rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list {
@@ -785,10 +786,7 @@
 	padding-top: 4px;
 }
 
-/* When the first row is a section heading (e.g. the typing/narrowed slash state
-   that surfaces "Skills" up top), the heading's own 12px top padding already
-   supplies the gap below the header — so drop the list's extra 4px to avoid a
-   doubled gap. */
+/* The first heading provides its own gap below the header. */
 .rich-text-command-menu[data-has-header="true"] .rich-text-command-menu-list:has(> .rich-text-command-menu-heading:first-child) {
 	padding-top: 0;
 }
@@ -800,74 +798,6 @@
 .rich-text-command-menu-list:empty,
 .rich-text-command-menu[data-has-header="true"] .rich-text-command-menu-list:empty {
 	padding: 0;
-}
-
-.rich-text-command-menu-search {
-	display: grid;
-	flex: 0 0 32px;
-	grid-template-columns: 24px minmax(0, 1fr) auto;
-	align-items: center;
-	column-gap: 12px;
-	width: calc(100% - 8px);
-	height: 32px;
-	min-height: 32px;
-	margin: 4px 4px 0;
-	border-radius: var(--ds-radius-medium, 8px);
-	padding: 0 2px 0 8px;
-	background-color: var(--ds-surface-overlay, #ffffff);
-	cursor: text;
-}
-
-.rich-text-command-menu-search-logo {
-	display: inline-flex;
-	width: 24px;
-	height: 24px;
-	align-items: center;
-	justify-content: center;
-}
-
-.rich-text-command-menu-search-logo > svg {
-	width: 16px;
-	height: 16px;
-}
-
-.rich-text-command-menu-search > [data-slot="input"] {
-	height: 100%;
-	min-width: 0;
-	border-color: transparent;
-	padding-left: 0;
-	padding-right: 0;
-	caret-color: var(--ds-text, #172b4d);
-}
-
-/* The whole top bar carries the hover state, so the field itself stays
-   visually flat in every interaction state. */
-.rich-text-command-menu-search > [data-slot="input"]:hover,
-.rich-text-command-menu-search > [data-slot="input"]:active,
-.rich-text-command-menu-search > [data-slot="input"]:focus-visible {
-	border-color: transparent;
-	background-color: transparent;
-	box-shadow: none;
-}
-
-.rich-text-command-menu-search-clear {
-	justify-self: end;
-}
-
-/* "Tab" affordance pinned to the trailing slot of the Ask Rovo field. It hints
-   that pressing Tab from the editor moves focus here to prompt Rovo. Hidden once
-   the field is focused (you are already in it) — the empty/unfocused placeholder
-   state is the only time it shows; a typed value swaps it for the clear button. */
-.rich-text-command-menu-search-hint {
-	display: inline-flex;
-	align-items: center;
-	justify-self: end;
-	padding-right: 6px;
-	pointer-events: none;
-}
-
-.rich-text-command-menu-search:focus-within .rich-text-command-menu-search-hint {
-	display: none;
 }
 
 /* Single front-slot size for every menu (live "@"/"/" surfaces, the agent
@@ -941,21 +871,8 @@
 	font-size: 13px;
 }
 
-/* Full-bleed rule above a footer row (`separatorBefore`), matching the popup
-   footer treatment. The negative inline margin cancels the list's 4px padding
-   so it spans the menu edge to edge instead of insetting like a menu item. */
-.rich-text-command-menu-divider {
-	height: 1px;
-	margin: 4px -4px;
-	background-color: var(--ds-border, #dfe1e6);
-}
-
-/* Section heading for merged "/" lists (flat editor palette). Mirrors the
-   dropdown menu's group label (DropdownMenuLabel): subtle, small, semibold,
-   with 12px top / 4px bottom padding so each section gets breathing room above
-   and sits tight to its items below. */
 .rich-text-command-menu-heading {
-	padding: 12px 8px 4px;
+	padding: var(--ds-space-075, 6px) var(--ds-space-100, 8px);
 	color: var(--ds-text-subtlest, #626f86);
 	font-size: 12px;
 	font-weight: 600;

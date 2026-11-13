@@ -41,6 +41,7 @@ import {
 	SelectContent,
 	SelectGroup,
 	SelectItem,
+	SelectSeparator,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -630,12 +631,12 @@ export function GUISelect<T extends string>({
 						</SelectTrigger>
 						<SelectContent showScrollButtons={false} align="start" className="min-w-64">
 							{stickyOption ? (
-								<SelectItem
-									value={stickyOption.value}
-									className="sticky top-0 z-10 border-b border-border bg-popover"
-								>
-									<GUISelectOptionContent option={stickyOption} />
-								</SelectItem>
+								<div className="sticky top-0 z-10 bg-popover">
+									<SelectItem value={stickyOption.value}>
+										<GUISelectOptionContent option={stickyOption} />
+									</SelectItem>
+									<SelectSeparator />
+								</div>
 							) : null}
 							<SelectGroup>
 								{listOptions.map((option) => (

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 
+import { subscribeToVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 
 /**
@@ -10,7 +11,6 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
  */
 export function useCommandMenuScrollMask(): {
 	listProps: {
-		onScroll: () => void;
 		ref: RefObject<HTMLDivElement | null>;
 		style: CSSProperties;
 	};
@@ -24,9 +24,13 @@ export function useCommandMenuScrollMask(): {
 		const listElement = listRef.current;
 		setHasScrolledList(Boolean(listElement && listElement.scrollTop > 0));
 	}, []);
+	useEffect(() => {
+		const listElement = listRef.current;
+		if (!listElement) return;
+		return subscribeToVerticalOverflow(listElement, remeasure);
+	}, [remeasure]);
 
 	const listProps = useMemo(() => ({
-		onScroll: remeasure,
 		ref: listRef,
 		style: buildScrollMaskStyle({
 			fadeBottom: false,
@@ -34,7 +38,7 @@ export function useCommandMenuScrollMask(): {
 			fadeSize: "var(--rich-text-command-menu-scroll-mask-fade-size)",
 			scrollbarWidth: "var(--rich-text-command-menu-scrollbar-width)",
 		}),
-	}), [hasScrolledList, remeasure]);
+	}), [hasScrolledList]);
 	const menuProps = useMemo(
 		() => ({ "data-list-scrolled": hasScrolledList ? ("true" as const) : undefined }),
 		[hasScrolledList],

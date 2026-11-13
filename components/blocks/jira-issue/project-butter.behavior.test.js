@@ -149,8 +149,8 @@ test("Jira Local Agent remembers the last used agent and copies the work item pr
 	assert.equal(view.queryByRole("button", { name: /Figma/u }), null);
 	await view.click(view.getByRole("button", { name: "Codex" }));
 	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Codex"), true);
-	assert.equal(view.container.ownerDocument.querySelectorAll("hr").length, 2);
-	assert.equal(view.getByRole("button", { name: "Codex" }).closest(".group\\/agent").nextElementSibling?.tagName, "HR");
+	assert.equal(view.container.ownerDocument.querySelectorAll('[data-slot="dropdown-menu-separator"]').length, 2);
+	assert.equal(view.getByRole("button", { name: "Codex" }).closest(".group\\/agent").nextElementSibling?.getAttribute("data-slot"), "dropdown-menu-separator");
 	assert.equal(view.queryByRole("menuitem", { name: "Open in Codex" }), null);
 	assert.equal(view.queryByRole("menuitem", { name: "Run on cloud" }), null);
 	const copilot = view.getByRole("button", { name: /GitHub Copilot/u });
@@ -160,7 +160,7 @@ test("Jira Local Agent remembers the last used agent and copies the work item pr
 	await view.click(view.getByRole("button", { name: "Open local agent" }));
 	assert.equal(view.container.ownerDocument.querySelectorAll("[data-agent-id]")[0].textContent.includes("Codex"), true);
 	assert.notEqual(view.queryByRole("button", { name: "VS Code" }), null);
-	assert.equal(view.container.ownerDocument.querySelectorAll("hr").length, 2);
+	assert.equal(view.container.ownerDocument.querySelectorAll('[data-slot="dropdown-menu-separator"]').length, 2);
 	await view.click(view.getByRole("button", { name: "Copy prompt" }));
 	assert.deepEqual(copied, ["PAY-118: Billing\n\nCarry the artwork"]);
 	assert.equal(view.getByRole("button", { name: "Prompt copied" }) !== null, true);
