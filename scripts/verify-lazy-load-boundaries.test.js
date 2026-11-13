@@ -13,7 +13,9 @@ const {
 	DEFAULT_ROUTE_SHELL_FILES,
 	DEFAULT_SINGLE_OWNER_IMPORTS,
 	collectHeavyStaticImportsFromSource,
+	collectReachableHeavyImports,
 	discoverRouteEntryFiles,
+	resolveDemoEntryFiles,
 	createHeavyImportRule,
 	formatFailure,
 	getRuleForImport,
@@ -46,6 +48,7 @@ test("parseArgs supports route shell and heavy import overrides", () => {
 			source: "three",
 		}],
 		routeShellFiles: ["app/page.tsx"],
+		updateBaseline: false,
 	});
 	assert.deepEqual(parseArgs(["--file=app/studio/page.tsx", "--heavy-import=@tiptap/*"]), {
 		help: false,
@@ -55,7 +58,9 @@ test("parseArgs supports route shell and heavy import overrides", () => {
 			source: "@tiptap/",
 		}],
 		routeShellFiles: ["app/studio/page.tsx"],
+		updateBaseline: false,
 	});
+	assert.equal(parseArgs(["--update-baseline"]).updateBaseline, true);
 	assert.throws(() => parseArgs(["--file"]), /requires a value/u);
 });
 
@@ -333,4 +338,70 @@ test("default tree rules cover the C-8a stylesheets and the C-8d icon registry",
 	assert.deepEqual(DEFAULT_FILE_IMPORT_RULES.map((rule) => [rule.filePath, rule.rules.map((entry) => entry.source)]), [
 		["components/projects/shared/components/icon-registry.tsx", ["@atlaskit/icon/", "@atlaskit/icon-lab/"]],
 	]);
+});
+
+const THREE_RULE = [{ match: "exact", reason: "WebGL runtime", source: "three" }];
+
+function reachOptions(cwd, overrides) {
+	return { cwd, deferredModuleRules: [], heavyImportRules: THREE_RULE, ...NO_TREE_RULES, routeShellFiles: ["app/page.tsx"], ...overrides };
+}
+
+test("a heavy runtime reached through any depth of static imports fails unless the baseline lists it", () => {
+	withWorkspace({
+		"app/page.tsx": 'import Shell from "@/components/shell";\nexport default Shell;\n',
+		"components/shell.tsx": 'import Scene from "./scene";\nexport default function Shell() { void import("./later"); return Scene; }\n',
+		"components/scene.tsx": 'import * as THREE from "three";\nexport default THREE;\n',
+		"components/later.tsx": 'import "three";\n',
+	}, (cwd) => {
+		const failures = verifyLazyLoadBoundaries(reachOptions(cwd, { heavyReachBaseline: {} }));
+		assert.deepEqual(failures.map((failure) => [failure.type, failure.filePath, failure.source]), [["heavy-reach-new", "app/page.tsx", "three"]]);
+		assert.deepEqual(failures[0].dependencyPath, ["app/page.tsx", "components/shell.tsx", "components/scene.tsx", "three"]);
+		assert.match(formatFailure(failures[0]), /now reaches WebGL runtime/u);
+
+		assert.deepEqual(verifyLazyLoadBoundaries(reachOptions(cwd, { heavyReachBaseline: { "app/page.tsx": ["three"] } })), []);
+
+		writeFileSync(path.join(cwd, "components/shell.tsx"), 'export default function Shell() { void import("./scene"); return null; }\n');
+		const stale = verifyLazyLoadBoundaries(reachOptions(cwd, { heavyReachBaseline: { "app/page.tsx": ["three"] } }));
+		assert.deepEqual(stale.map((failure) => [failure.type, failure.source]), [["heavy-reach-stale", "three"]]);
+		assert.match(formatFailure(stale[0]), /--update-baseline/u);
+	});
+});
+
+test("the transitive walk survives import cycles and fails instead of truncating past its bound", () => {
+	withWorkspace({
+		"app/page.tsx": 'import "@/components/a";\n',
+		"components/a.ts": 'import "./b";\nexport const a = 1;\n',
+		"components/b.ts": 'import "./a";\nimport "three";\nexport const b = 1;\n',
+	}, (cwd) => {
+		const readSpecifiers = (filePath) => {
+			const source = require("node:fs").readFileSync(path.join(cwd, filePath), "utf8");
+			return [...source.matchAll(/import "([^"]+)"/gu)].map((match) => match[1]);
+		};
+		const result = collectReachableHeavyImports({ cwd, entryFile: "app/page.tsx", heavyImportRules: THREE_RULE, readSpecifiers });
+		assert.equal(result.exceeded, false);
+		assert.equal(result.visited, 3);
+		assert.deepEqual(result.reached.get("three").chain, ["app/page.tsx", "components/a.ts", "components/b.ts", "three"]);
+
+		const bounded = verifyLazyLoadBoundaries(reachOptions(cwd, { heavyReachBaseline: {}, maxReachableModules: 2 }));
+		assert.deepEqual(bounded.map((failure) => failure.type), ["heavy-reach-bound-exceeded"]);
+	});
+});
+
+test("a page that renders a demo through loadDemoComponent is checked through the demo's module", () => {
+	withWorkspace({
+		"app/butter/page.tsx": 'const Demo = use(loadDemoComponent("butter", "projects"));\n',
+		"app/missing/page.tsx": 'const Demo = use(loadDemoComponent("missing", "projects"));\n',
+		"components/website/registry/projects.ts": 'export const PROJECT_DEMOS = {\n\tbutter: dynamic(() => import("../demos/projects/butter-demo"), { ssr: false }),\n};\n',
+		"components/website/demos/projects/butter-demo.tsx": 'import "three";\nexport default function ButterDemo() { return null; }\n',
+	}, (cwd) => {
+		assert.deepEqual(resolveDemoEntryFiles({ cwd, entryFiles: ["app/butter/page.tsx", "app/missing/page.tsx"] }), {
+			resolved: [{ demoFile: "components/website/demos/projects/butter-demo.tsx", entryFile: "app/butter/page.tsx" }],
+			unresolved: [{ category: "projects", entryFile: "app/missing/page.tsx", slug: "missing" }],
+		});
+		const failures = verifyLazyLoadBoundaries(reachOptions(cwd, { heavyReachBaseline: {}, routeShellFiles: ["app/butter/page.tsx", "app/missing/page.tsx"] }));
+		assert.deepEqual(failures.map((failure) => [failure.type, failure.filePath]), [
+			["unresolved-demo-entry", "app/missing/page.tsx"],
+			["heavy-reach-new", "app/butter/page.tsx -> components/website/demos/projects/butter-demo.tsx"],
+		]);
+	});
 });

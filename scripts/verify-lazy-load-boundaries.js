@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { existsSync, readdirSync, readFileSync } = require("node:fs");
+const { existsSync, readdirSync, readFileSync, writeFileSync } = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
 
@@ -200,6 +200,7 @@ const DEFAULT_HEAVY_IMPORT_RULES = [
 function parseArgs(argv = process.argv.slice(2)) {
 	const routeShellFiles = [];
 	const heavyImports = [];
+	let updateBaseline = false;
 
 	for (let index = 0; index < argv.length; index += 1) {
 		const arg = argv[index];
@@ -229,9 +230,14 @@ function parseArgs(argv = process.argv.slice(2)) {
 			heavyImports.push(createHeavyImportRule(arg.slice("--heavy-import=".length)));
 			continue;
 		}
+		if (arg === "--update-baseline") {
+			updateBaseline = true;
+			continue;
+		}
 		if (arg === "--help" || arg === "-h") {
 			return {
 				help: true,
+				updateBaseline: false,
 				heavyImportRules: DEFAULT_HEAVY_IMPORT_RULES,
 				routeShellFiles: DEFAULT_ROUTE_SHELL_FILES,
 			};
@@ -243,6 +249,7 @@ function parseArgs(argv = process.argv.slice(2)) {
 		help: false,
 		heavyImportRules: heavyImports.length > 0 ? heavyImports : DEFAULT_HEAVY_IMPORT_RULES,
 		routeShellFiles: routeShellFiles.length > 0 ? routeShellFiles : DEFAULT_ROUTE_SHELL_FILES,
+		updateBaseline,
 	};
 }
 
@@ -596,17 +603,159 @@ function verifySingleOwnerImports({ cwd, rules }) {
 	return failures;
 }
 
+// Pages that render a catalog demo through loadDemoComponent("slug", "category") load that demo's
+// module right after hydration, so the demo module is part of the route's first load.
+const DEMO_REGISTRY_FILES = {
+	arts: "components/website/registry/arts.ts",
+	blocks: "components/website/registry/blocks.ts",
+	projects: "components/website/registry/projects.ts",
+	"ui-charts": "components/website/registry/ui-charts.ts",
+	"ui-custom": "components/website/registry/ui-custom.ts",
+	utility: "components/website/registry/utility.ts",
+	visual: "components/website/registry/visual.ts",
+};
+
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+// Returns [{ entryFile, demoFile }] for each page entry that calls loadDemoComponent with literals,
+// plus unresolved calls so the guard cannot go blind silently.
+function resolveDemoEntryFiles({ cwd, entryFiles }) {
+	const resolved = [];
+	const unresolved = [];
+	for (const entryFile of entryFiles) {
+		const absolutePath = path.join(cwd, entryFile);
+		if (!existsSync(absolutePath)) {
+			continue;
+		}
+		const source = readFileSync(absolutePath, "utf8");
+		for (const match of source.matchAll(/loadDemoComponent\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']\s*\)/gu)) {
+			const [, slug, category] = match;
+			const registryFile = DEMO_REGISTRY_FILES[category];
+			const registrySource = registryFile && existsSync(path.join(cwd, registryFile)) ? readFileSync(path.join(cwd, registryFile), "utf8") : "";
+			const key = /^[A-Za-z_$][\w$]*$/u.test(slug) ? `(?:"${escapeRegExp(slug)}"|'${escapeRegExp(slug)}'|${escapeRegExp(slug)})` : `["']${escapeRegExp(slug)}["']`;
+			const demoMatch = new RegExp(`(?:^|[\\s,{])${key}\\s*:\\s*dynamic\\(\\s*\\(\\)\\s*=>\\s*import\\(\\s*["']([^"']+)["']`, "mu").exec(registrySource);
+			const demoFile = demoMatch ? resolveLocalModule(cwd, registryFile, demoMatch[1]) : null;
+			if (demoFile) {
+				resolved.push({ demoFile, entryFile });
+			} else {
+				unresolved.push({ category, entryFile, slug });
+			}
+		}
+	}
+	return { resolved, unresolved };
+}
+
+const DEFAULT_HEAVY_REACH_BASELINE_PATH = "scripts/lazy-load-heavy-baseline.json";
+const DEFAULT_MAX_REACHABLE_MODULES = 6000;
+
+// Every heavy runtime an entry reaches through static imports, with the shortest chain to it.
+// A visited set guards against cycles; more than maxModules local modules is a failure, never a
+// silent truncation.
+function collectReachableHeavyImports({ cwd, entryFile, heavyImportRules, maxModules = DEFAULT_MAX_REACHABLE_MODULES, readSpecifiers }) {
+	const previous = new Map([[path.normalize(entryFile), null]]);
+	const queue = [path.normalize(entryFile)];
+	const reached = new Map();
+	let visited = 0;
+	while (queue.length > 0) {
+		const filePath = queue.shift();
+		visited += 1;
+		if (visited > maxModules) {
+			return { exceeded: true, reached, visited };
+		}
+		for (const moduleSpecifier of readSpecifiers(filePath)) {
+			const rule = getRuleForImport(moduleSpecifier, heavyImportRules);
+			if (rule && !reached.has(rule.source)) {
+				const chain = [moduleSpecifier];
+				for (let cursor = filePath; cursor !== null; cursor = previous.get(cursor)) {
+					chain.unshift(cursor);
+				}
+				reached.set(rule.source, { chain, reason: rule.reason });
+			}
+			const resolvedPath = resolveLocalModule(cwd, filePath, moduleSpecifier);
+			if (resolvedPath && !previous.has(path.normalize(resolvedPath))) {
+				previous.set(path.normalize(resolvedPath), filePath);
+				queue.push(path.normalize(resolvedPath));
+			}
+		}
+	}
+	return { exceeded: false, reached, visited };
+}
+
+function readHeavyReachBaseline(cwd, baselinePath) {
+	const absolutePath = path.join(cwd, baselinePath);
+	return existsSync(absolutePath) ? JSON.parse(readFileSync(absolutePath, "utf8")).entries ?? {} : {};
+}
+
+// The heavy runtimes each route entry reaches today. Lists may only shrink: a new pair fails,
+// and a pair that is no longer reached fails until the baseline is rewritten with --update-baseline.
+function verifyHeavyReach({ baseline, cwd, entries, heavyImportRules, maxModules, readSpecifiers }) {
+	const failures = [];
+	const measured = {};
+	for (const { entryFile, label } of entries) {
+		const { exceeded, reached, visited } = collectReachableHeavyImports({ cwd, entryFile, heavyImportRules, maxModules, readSpecifiers });
+		if (exceeded) {
+			failures.push({ filePath: label, maxModules, type: "heavy-reach-bound-exceeded", visited });
+			continue;
+		}
+		const sources = [...reached.keys()].sort();
+		measured[label] = sources;
+		const allowed = new Set(baseline[label] ?? []);
+		for (const source of sources) {
+			if (!allowed.has(source)) {
+				const { chain, reason } = reached.get(source);
+				failures.push({ dependencyPath: chain, filePath: label, reason, source, type: "heavy-reach-new" });
+			}
+		}
+		for (const source of allowed) {
+			if (!reached.has(source)) {
+				failures.push({ filePath: label, source, type: "heavy-reach-stale" });
+			}
+		}
+	}
+	for (const label of Object.keys(baseline)) {
+		if (!(label in measured) && !failures.some((failure) => failure.filePath === label)) {
+			failures.push({ filePath: label, source: (baseline[label] ?? []).join(", "), type: "heavy-reach-stale" });
+		}
+	}
+	return { failures, measured };
+}
+
+function buildHeavyReachEntries({ cwd, routeShellFiles }) {
+	const present = routeShellFiles.filter((filePath) => existsSync(path.join(cwd, filePath)));
+	const { resolved, unresolved } = resolveDemoEntryFiles({ cwd, entryFiles: present });
+	const entries = present.map((entryFile) => ({ entryFile, label: entryFile }));
+	for (const { demoFile, entryFile } of resolved) {
+		entries.push({ entryFile: demoFile, label: `${entryFile} -> ${demoFile}` });
+	}
+	return { entries, unresolved };
+}
+
 function verifyLazyLoadBoundaries({
 	cwd = process.cwd(),
 	deferredModuleRules = DEFAULT_DEFERRED_MODULE_RULES,
 	fileImportRules = DEFAULT_FILE_IMPORT_RULES,
 	heavyImportRules = DEFAULT_HEAVY_IMPORT_RULES,
 	lazyOnlyModules = DEFAULT_LAZY_ONLY_MODULES,
+	heavyReachBaseline = null,
+	maxReachableModules = DEFAULT_MAX_REACHABLE_MODULES,
+	onHeavyReachMeasured = null,
 	routeShellFiles = DEFAULT_ROUTE_SHELL_FILES,
 	singleOwnerImports = DEFAULT_SINGLE_OWNER_IMPORTS,
 } = {}) {
 	const failures = [];
 	const readSpecifiers = createSpecifierReader(cwd);
+
+	if (heavyReachBaseline !== null) {
+		const { entries, unresolved } = buildHeavyReachEntries({ cwd, routeShellFiles });
+		for (const { category, entryFile, slug } of unresolved) {
+			failures.push({ category, filePath: entryFile, slug, type: "unresolved-demo-entry" });
+		}
+		const heavyReach = verifyHeavyReach({ baseline: heavyReachBaseline, cwd, entries, heavyImportRules, maxModules: maxReachableModules, readSpecifiers });
+		onHeavyReachMeasured?.(heavyReach.measured);
+		failures.push(...heavyReach.failures);
+	}
 
 	for (const filePath of routeShellFiles) {
 		const absolutePath = path.join(cwd, filePath);
@@ -715,6 +864,18 @@ function formatFailure(failure) {
 	if (failure.type === "missing-deferred-target") {
 		return `${failure.filePath}: configured deferred module does not exist.`;
 	}
+	if (failure.type === "unresolved-demo-entry") {
+		return `${failure.filePath}: loadDemoComponent("${failure.slug}", "${failure.category}") does not resolve to a dynamic import in the ${failure.category} registry, so its first load cannot be checked.`;
+	}
+	if (failure.type === "heavy-reach-bound-exceeded") {
+		return `${failure.filePath}: static import graph passed ${failure.maxModules} local modules; raise the bound deliberately if this is real.`;
+	}
+	if (failure.type === "heavy-reach-new") {
+		return `${failure.filePath}: now reaches ${failure.reason} ("${failure.source}") through static imports: ${failure.dependencyPath.join(" -> ")}. Load it with a dynamic import, or move it behind the surface that needs it.`;
+	}
+	if (failure.type === "heavy-reach-stale") {
+		return `${failure.filePath}: no longer reaches "${failure.source}". Record the improvement: node scripts/verify-lazy-load-boundaries.js --update-baseline`;
+	}
 	if (failure.type === "missing-guarded-file") {
 		return `${failure.filePath}: configured guarded file does not exist.`;
 	}
@@ -732,7 +893,7 @@ function formatFailure(failure) {
 
 function printHelp() {
 	console.log([
-		"Usage: node scripts/verify-lazy-load-boundaries.js [--file app/page.tsx] [--heavy-import three] [--heavy-import @tiptap/*]",
+		"Usage: node scripts/verify-lazy-load-boundaries.js [--file app/page.tsx] [--heavy-import three] [--heavy-import @tiptap/*] [--update-baseline]",
 		"",
 		"Verifies route entries (the default shells, every app page and every project entry page) do not",
 		"statically import heavyweight optional runtimes or reach lazy-only modules, that third-party",
@@ -751,12 +912,40 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
 	const routeShellFiles = options.routeShellFiles === DEFAULT_ROUTE_SHELL_FILES
 		? [...new Set([...DEFAULT_ROUTE_SHELL_FILES, ...discoverRouteEntryFiles(cwd)])]
 		: options.routeShellFiles;
-	const failures = verifyLazyLoadBoundaries({
+	const usesDefaults = options.routeShellFiles === DEFAULT_ROUTE_SHELL_FILES && options.heavyImportRules === DEFAULT_HEAVY_IMPORT_RULES;
+	let measuredHeavyReach = null;
+	const allFailures = verifyLazyLoadBoundaries({
 		cwd,
 		deferredModuleRules: DEFAULT_DEFERRED_MODULE_RULES,
 		heavyImportRules: options.heavyImportRules,
+		heavyReachBaseline: usesDefaults ? readHeavyReachBaseline(cwd, DEFAULT_HEAVY_REACH_BASELINE_PATH) : null,
+		onHeavyReachMeasured: (measured) => { measuredHeavyReach = measured; },
 		routeShellFiles,
 	});
+	let failures = allFailures;
+	if (options.updateBaseline) {
+		if (!usesDefaults || measuredHeavyReach === null) {
+			throw new Error("--update-baseline runs only with the default route entries and heavy import rules.");
+		}
+		const previous = readHeavyReachBaseline(cwd, DEFAULT_HEAVY_REACH_BASELINE_PATH);
+		const grown = allFailures.filter((failure) => failure.type === "heavy-reach-new");
+		const hasPrevious = existsSync(path.join(cwd, DEFAULT_HEAVY_REACH_BASELINE_PATH));
+		if (hasPrevious && grown.length > 0) {
+			console.error("--update-baseline only records shrinkage; these entries reach a new heavy runtime:");
+			for (const failure of grown) {
+				console.error(`- ${formatFailure(failure)}`);
+			}
+			process.exitCode = 1;
+			return;
+		}
+		const entries = Object.fromEntries(Object.entries(measuredHeavyReach).filter(([, sources]) => sources.length > 0).sort(([a], [b]) => a.localeCompare(b)));
+		writeFileSync(path.join(cwd, DEFAULT_HEAVY_REACH_BASELINE_PATH), `${JSON.stringify({
+			note: "Heavy runtimes each route entry reaches through static imports today (verify:lazy-load). Shrink-only: a new entry/runtime pair fails; rewrite with --update-baseline after removing one.",
+			entries,
+		}, null, "\t")}\n`);
+		console.log(`Wrote ${DEFAULT_HEAVY_REACH_BASELINE_PATH} (${Object.keys(entries).length} entries; was ${Object.keys(previous).length}).`);
+		failures = allFailures.filter((failure) => !failure.type.startsWith("heavy-reach-"));
+	}
 
 	if (failures.length === 0) {
 		console.log(`Verified lazy-load boundaries (${routeShellFiles.length} route entries, ${options.heavyImportRules.length} heavy import rules, ${DEFAULT_DEFERRED_MODULE_RULES.length + DEFAULT_LAZY_ONLY_MODULES.length} deferred module rules, ${DEFAULT_SINGLE_OWNER_IMPORTS.length} single-owner imports, ${DEFAULT_FILE_IMPORT_RULES.length} file import rules)`);
@@ -781,7 +970,9 @@ module.exports = {
 	DEFAULT_LAZY_ONLY_MODULES,
 	DEFAULT_ROUTE_SHELL_FILES,
 	DEFAULT_SINGLE_OWNER_IMPORTS,
+	collectReachableHeavyImports,
 	discoverRouteEntryFiles,
+	resolveDemoEntryFiles,
 	findStaticDependencyPaths,
 	collectHeavyStaticImportsFromSource,
 	collectRuntimeStaticModuleSpecifiers,

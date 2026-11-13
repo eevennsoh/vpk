@@ -1,0 +1,211 @@
+{
+	"note": "Heavy runtimes each route entry reaches through static imports today (verify:lazy-load). Shrink-only: a new entry/runtime pair fails; rewrite with --update-baseline after removing one.",
+	"entries": {
+		"app/admin/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/arts/personal-graph/page.tsx": [
+			"@web-kits/audio"
+		],
+		"app/butter-v0/page.tsx -> components/website/demos/projects/butter-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/butter-v1/page.tsx -> components/website/demos/projects/butter-v1-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/butter/page.tsx -> components/website/demos/projects/butter-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/components/[category]/[slug]/page.tsx": [
+			"shiki"
+		],
+		"app/confluence/page.tsx -> components/website/demos/projects/confluence-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/cursors/page.tsx -> components/website/demos/arts/cursors-demo.tsx": [
+			"@react-three/fiber",
+			"three"
+		],
+		"app/jira-golden-journey-v0/page.tsx -> components/website/demos/projects/jira-golden-journey-v0-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/jira-golden-journey-v1/page.tsx -> components/website/demos/projects/jira-golden-journey-v1-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/jira-golden-journey-v2/page.tsx -> components/website/demos/projects/jira-golden-journey-v2-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/jira-golden-journey-v3/page.tsx -> components/website/demos/projects/jira-golden-journey-v3-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/jira-golden-journey-v4/page.tsx -> components/website/demos/projects/jira-golden-journey-v4-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/jira-queue/page.tsx -> components/website/demos/projects/jira-queue-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/jira-team-eu26-end/page.tsx -> components/website/demos/projects/jira-team-eu26-end-demo.tsx": [
+			"@tiptap/",
+			"shiki",
+			"three"
+		],
+		"app/jira-team-eu26/page.tsx -> components/website/demos/projects/jira-team-eu26-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/jira/page.tsx -> components/website/demos/projects/jira-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/personal-graph/page.tsx": [
+			"@web-kits/audio"
+		],
+		"app/preview/blocks/agent-bento/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/blocks/agent-profile-card/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/blocks/agent/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/blocks/code-review/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/blocks/jira-kanban-experimental-v2/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/blocks/jira-kanban-experimental/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/blocks/jira-kanban/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/blocks/jira-list/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/blocks/skill-config/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/blocks/trigger-config/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/preview/projects/jira-for-you/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/rovo/[[...id]]/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/search/page.tsx -> components/website/demos/projects/search-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/sidebar-chat/page.tsx -> components/website/demos/projects/sidebar-chat-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/skills/page.tsx -> components/website/demos/projects/skills-demo.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/studio/[[...id]]/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"app/visual/[slug]/page.tsx": [
+			"shiki"
+		],
+		"components/projects/admin/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/butter-v1/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/butter/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/jira-for-you/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/jira-golden-journey-v0/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/jira-golden-journey-v1/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/jira-golden-journey-v2/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/jira-golden-journey-v3/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/jira-golden-journey-v4/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/jira-queue/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/jira-team-eu26-end/page.tsx": [
+			"@tiptap/",
+			"shiki",
+			"three"
+		],
+		"components/projects/jira-team-eu26/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/jira/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/rovo/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/sidebar-chat/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/skills/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		],
+		"components/projects/studio/page.tsx": [
+			"@tiptap/",
+			"shiki"
+		]
+	}
+}
