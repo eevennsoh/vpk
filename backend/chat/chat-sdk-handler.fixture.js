@@ -474,7 +474,7 @@ function createContractDependencies(overrides = {}) {
 			text: typeof value === "string" ? value : JSON.stringify(value),
 			truncated: false,
 		}),
-		updatePlanSession: () => {},
+		dispatchPlanSessionEvent: () => {},
 		withCanonicalPreviewBody: (_type, payload) => payload,
 		withStudioAgentGatewayFallbackTimeout: (promise) =>
 			promise.then((value) => ({ timedOut: false, value })),

@@ -140,7 +140,7 @@ function createChatSdkHandler(dependencies = {}) {
 		stripConversationalFiller,
 		synthesizeSound,
 		toImageWidgetErrorMessage,
-		updatePlanSession,
+		dispatchPlanSessionEvent,
 		withCanonicalPreviewBody,
 		withStudioAgentGatewayFallbackTimeout,
 		writeAIGatewayFinalOutputStream,
@@ -178,7 +178,7 @@ function createChatSdkHandler(dependencies = {}) {
 				mapUiMessagesToConversation,
 				pausedRovoToolCallStore: _pausedRovoToolCallStore,
 				shouldRestorePlanModeOnResume,
-				updatePlanSession,
+				dispatchPlanSessionEvent,
 			});
 			const {
 				messages,

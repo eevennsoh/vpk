@@ -37,16 +37,40 @@ const {
 } = require("./realtime/ws-relay");
 const { loadAiSdk } = require("./lib/ai-sdk-runtime");
 const { resolveBackendListenHost } = require("./middleware/local-only");
+const {
+	createBackendProcess,
+	createHttpServerShutdownSteps,
+} = require("./lib/backend-shutdown");
 
 console.log("[STARTUP] Dependencies loaded");
 
-let shutdownRuntime = () => {};
+let runtime = null;
+let server = null;
+let webSocketServers = [];
+
+const serverShutdownSteps = createHttpServerShutdownSteps({
+	getServer: () => server,
+	getWebSocketServers: () => webSocketServers,
+});
+
+// starting -> listening -> draining -> stopped. Shutdown order: stop accepting
+// connections, abort in-flight runs, close browser workspaces, shut the Rovo pool,
+// close the remaining connections, exit.
+const backendProcess = createBackendProcess({
+	getSteps: () => [
+		serverShutdownSteps.stopAccepting,
+		...(runtime?.shutdownSteps ?? []),
+		serverShutdownSteps.closeConnections,
+	],
+});
 
 async function startServer() {
 	await loadAiSdk();
+	if (!backendProcess.isStarting()) {
+		return;
+	}
 
-	const runtime = createBackendRuntimeComposition();
-	shutdownRuntime = runtime.shutdownRuntime;
+	runtime = createBackendRuntimeComposition();
 
 	const publicPath = path.join(__dirname, "public");
 	registerStaticExportServing(runtime.app, {
@@ -56,7 +80,13 @@ async function startServer() {
 
 	console.log("[STARTUP] All routes registered, starting HTTP server...");
 
-	const server = runtime.app.listen(runtime.port, resolveBackendListenHost(), async () => {
+	server = runtime.app.listen(runtime.port, resolveBackendListenHost(), async () => {
+		if (!backendProcess.markListening()) {
+			server.close();
+			return;
+		}
+		const address = server.address();
+		console.log(`[PROCESS] listening on ${address?.address}:${address?.port}`);
 		await logBackendServerReady(runtime.serverReadyDependencies);
 	});
 
@@ -65,7 +95,8 @@ async function startServer() {
 		process.exit(1);
 	});
 
-	registerBackendWebSocketRelays(server, runtime.webSocketRelayDependencies);
+	const { browserPreviewWss, realtimeWss } = registerBackendWebSocketRelays(server, runtime.webSocketRelayDependencies);
+	webSocketServers = [browserPreviewWss, realtimeWss];
 }
 
 void startServer().catch((error) => {
@@ -85,12 +116,5 @@ process.on("unhandledRejection", (reason, promise) => {
 	process.exit(1);
 });
 
-// Graceful shutdown — clean up Rovo pool
-process.on("SIGINT", () => {
-	shutdownRuntime();
-	process.exit(0);
-});
-process.on("SIGTERM", () => {
-	shutdownRuntime();
-	process.exit(0);
-});
+process.on("SIGINT", () => backendProcess.handleSignal("SIGINT"));
+process.on("SIGTERM", () => backendProcess.handleSignal("SIGTERM"));

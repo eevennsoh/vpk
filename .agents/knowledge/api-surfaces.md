@@ -71,7 +71,7 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `POST` | `/api/genui-chat` | no | `backend/routes/genui.js:33` |
 | `POST` | `/api/genui-description-summary` | no | `backend/routes/ai-utilities.js:246` |
 | `POST` | `/api/genui-export` | no | `backend/routes/genui.js:39` |
-| `GET` | `/api/health` | no | `backend/routes/status.js:168` |
+| `GET` | `/api/health` | no | `backend/routes/status.js:174` |
 | `POST` | `/api/html-selector/dispatch` | no | `backend/routes/html-selector.js:101` |
 | `GET` | `/api/html-selector/tokens` | no | `backend/routes/html-selector.js:166` |
 | `GET` | `/api/image-proxy` | no | `backend/routes/media.js:184` |
@@ -140,7 +140,7 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 123; runtim
 | `GET` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:402` |
 | `PUT` | `/api/vpk-html/notes` | no | `backend/routes/vpk-html.js:423` |
 | `POST` | `/api/vpk-html/publish-gist` | no | `backend/routes/vpk-html.js:446` |
-| `GET` | `/healthcheck` | no | `backend/routes/status.js:167` |
+| `GET` | `/healthcheck` | no | `backend/routes/status.js:173` |
 
 ### Next API Proxy Routes
 

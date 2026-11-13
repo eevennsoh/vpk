@@ -99,6 +99,7 @@ function createApiHealthHandler({
 	getAiGatewayConfigReport = getAIGatewayConfigReport,
 	getAsapPrivateKey = () => process.env.ASAP_PRIVATE_KEY,
 	getEnvVars: getEnvVarsFn = getEnvVars,
+	getRovoAvailability,
 	getRovoPort = () => process.env.ROVO_PORT,
 	hasGatewayUrlConfigured: hasGatewayUrlConfiguredFn = hasGatewayUrlConfigured,
 	isRovoAvailable,
@@ -118,6 +119,9 @@ function createApiHealthHandler({
 	}
 	if (typeof isRovoAvailable !== "function") {
 		throw new Error("createApiHealthHandler requires isRovoAvailable");
+	}
+	if (typeof getRovoAvailability !== "function") {
+		throw new Error("createApiHealthHandler requires getRovoAvailability");
 	}
 
 	return async (_req, res) => {
@@ -148,6 +152,8 @@ function createApiHealthHandler({
 			authMethod: "ASAP",
 			debugMode,
 			rovoMode: rovoAvailable,
+			// A status label only (unknown | checking | available | unavailable).
+			rovoAvailability: getRovoAvailability(),
 			llmRouting: {
 				...llmRouting,
 				aiGatewayConfig: getAiGatewayConfigReport(envVars),

@@ -109,6 +109,7 @@ test("buildBackendAppDependencies preserves live owners without eager calls", ()
 			debugMode: true,
 			getAiGatewayConfigReport: createNamedFunction("getAiGatewayConfigReport", calls),
 			getEnvVars: createNamedFunction("getEnvVars", calls),
+			getRovoAvailability: createNamedFunction("getRovoAvailability", calls),
 			hasGatewayUrlConfigured: createNamedFunction("hasGatewayUrlConfigured", calls),
 			isRovoAvailable: createNamedFunction("isRovoAvailable", calls),
 			logger: { log: createNamedFunction("logger.log", calls) },
