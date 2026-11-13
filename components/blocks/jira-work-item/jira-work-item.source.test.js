@@ -52,7 +52,7 @@ test("JiraWorkItem preserves the standard variant behavior (regression)", () => 
 	assert.match(defaultViewSource, /<JiraWorkItemModal isOpen=\{isIssueOpen\} onClose=\{handleIssueClose\} \/>/u);
 	assert.match(defaultViewSource, /\{isIssueOpen && chatSurface === null \? \([\s\S]*<FloatingRovoButton[\s\S]*product="jira"[\s\S]*\/>[\s\S]*\) : null\}/u);
 	assert.match(defaultViewSource, /\{chatSurface === "floating" \? <RovoFloatingChat key="floating-chat" \/> : null\}/u);
-	assert.match(JIRA_WORK_ITEM_SOURCE, /import FloatingRovoButton from "@\/components\/projects\/shared\/components\/floating-rovo-button";/u);
+	assert.match(JIRA_WORK_ITEM_SOURCE, /import FloatingRovoButton from "@\/components\/blocks\/rovo-button";/u);
 	assert.match(JIRA_WORK_ITEM_SOURCE, /import RovoFloatingChat from "@\/components\/projects\/rovo-floating-chat\/components\/rovo-floating-chat";/u);
 	// Standard mock context is not inlined into the block source.
 	assert.doesNotMatch(defaultViewSource, /Acmecorp: Prepare for bid recommendation for ESM RFP/u);

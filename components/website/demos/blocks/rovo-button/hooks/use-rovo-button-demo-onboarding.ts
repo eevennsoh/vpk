@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
 	FloatingRovoButtonOnboardingConfig,
 	FloatingRovoButtonOnboardingStatus,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 
 /**
  * One asset serves the 42x48 hex avatar and the 168x192 banner art.

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type {
 	FloatingRovoButtonPlacement,
 	FloatingRovoButtonPositioning,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 
 export interface RovoButtonDemoVariantRenderContext {
 	placement: FloatingRovoButtonPlacement;
@@ -14,8 +14,10 @@ export interface RovoButtonDemoVariantRenderContext {
  * above it is drawn by the page from `title`/`detail`, so a variant never has to
  * repeat its own placement.
  */
+export type RovoButtonDemoVariantId = "toolbar" | "proactive" | "insights" | "chat" | "onboarding";
+
 export interface RovoButtonDemoVariant {
-	id: string;
+	id: RovoButtonDemoVariantId;
 	title: string;
 	detail: string;
 	placement: FloatingRovoButtonPlacement;

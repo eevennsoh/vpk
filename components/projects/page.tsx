@@ -10,11 +10,11 @@ import TopNavigation, {
 	type TopNavigationSettingsMenuItem,
 } from "@/components/blocks/top-navigation/page";
 import Sidebar from "@/components/blocks/product-sidebar/page";
-import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
+import FloatingRovoButton from "@/components/blocks/rovo-button";
 import type {
 	FloatingRovoButtonOnboardingConfig,
 	FloatingRovoButtonSuggestion,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
 import { MountOnFirstUse } from "@/components/projects/shared/components/mount-on-first-use";
 import type { ChatPanelCustomAgentTabs, ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";

@@ -76,7 +76,7 @@ import { getAgentConfigListLookupValue, getSkillConfigLabel } from "@/components
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import FloatingRovoButton, {
 	type FloatingRovoButtonPersistentBar,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatPanelGreetingProps, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
@@ -700,7 +700,7 @@ export function RovoAppAgentConfigPanel({
 	// suppress the floating button by default (the shell owns chat), so we render
 	// it with product="home" — product only gates visibility, it has no visual
 	// effect — and pair it with the RovoFloatingChat surface the button opens,
-	// mirroring the components/projects/rovo-button demo.
+	// mirroring the components/blocks/rovo-button demo.
 	const {
 		chatSurface,
 		openChat,
