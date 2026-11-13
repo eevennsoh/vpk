@@ -22,6 +22,8 @@ export interface IssueCardMove {
 	readonly feedback?: "trace" | "none";
 	/** Fade the source in place before revealing the destination. */
 	readonly animation?: "fade";
+	/** Called after the destination arrival finishes, or immediately when motion is disabled. */
+	readonly onArrival?: () => void;
 }
 
 /** A released cohort whose move commits in the task after its settled face paints. */
@@ -57,6 +59,20 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	const releasePoint = useRef<IssueDropPoint | null>(null);
 	const grabOffset = useRef<IssueDropPoint>({ x: 0, y: 0 });
 	const snapshots = useRef<{ id: number; title: string; flights: IssueCardDropFlight[]; started?: boolean; solitaire?: boolean; feedback?: "trace" | "none"; animation?: "fade"; reflowBefore?: readonly IssueCardReflowPosition[] }[]>([]);
+	const pendingArrivals = useRef(new Map<number, { onArrival: () => void; observed: boolean }>());
+	const finishSupersededArrivals = useCallback(() => {
+		const pending = pendingArrivals.current;
+		pendingArrivals.current = new Map();
+		for (const { onArrival } of pending.values()) onArrival();
+	}, []);
+	useLayoutEffect(() => {
+		for (const [id, pending] of pendingArrivals.current) {
+			if (drop.some((item) => item.id === id)) { pendingArrivals.current.set(id, { ...pending, observed: true }); continue; }
+			if (!pending.observed) continue;
+			pendingArrivals.current.delete(id);
+			pending.onArrival();
+		}
+	}, [drop]);
 	const stopFlightTrace = useRef<(() => void) | undefined>(undefined);
 	useEffect(() => () => stopFlightTrace.current?.(), []);
 	const arrivals = useMemo(() => drop.flatMap((item) => {
@@ -71,6 +87,7 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	useLayoutEffect(() => {
 		const root = boardRef.current;
 		if (!enabled) {
+			finishSupersededArrivals();
 			stopFlightTrace.current?.();
 			stopFlightTrace.current = undefined;
 			snapshots.current = [];
@@ -81,6 +98,7 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		if (!canDrop || !root) return;
 		const captureStart = (event: globalThis.DragEvent) => {
 			if (!(event.target instanceof Element) || !root.contains(event.target)) return;
+			finishSupersededArrivals();
 			stopFlightTrace.current?.();
 			stopFlightTrace.current = undefined;
 			if (snapshots.current.length) setDrop([]);
@@ -101,7 +119,7 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 			root.ownerDocument.removeEventListener("dragstart", captureStart, true);
 			root.ownerDocument.removeEventListener("drop", captureDrop, true);
 		};
-	}, [boardRef, canDrop, enabled]);
+	}, [boardRef, canDrop, enabled, finishSupersededArrivals]);
 	useLayoutEffect(() => {
 		for (const captured of snapshots.current) {
 			const arrival = arrivals.find((item) => item.id === captured.id);
@@ -178,11 +196,13 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 	// in around it. A host move has no traveller, so it lands like auto arrange:
 	// a deck of the destination's top cards flies from their own slots into the
 	// top of the column, and the cards below it cascade in once it lands.
-	const captureDrop = useCallback((codes: readonly string[], columnTitle: string, grabbed: string | null, feedback?: "trace" | "none", animation?: "fade") => {
+	const captureDrop = useCallback((codes: readonly string[], columnTitle: string, grabbed: string | null, feedback?: "trace" | "none", animation?: "fade", onArrival?: () => void) => {
+		finishSupersededArrivals();
 		stopFlightTrace.current?.();
 		stopFlightTrace.current = undefined;
 		// Created-card ids are positive; move ids occupy a separate completion namespace.
 		const next = captureIssueCardDropArrival(columns, codes, columnTitle, --version.current);
+		if (onArrival) pendingArrivals.current.set(next.id, { onArrival, observed: false });
 		if (solitaire && animation !== "fade") {
 			const reflowBefore = codes.length === 1 && !reduceMotion && boardRef.current
 				? captureIssueCardReflow(boardRef.current, codes, columnTitle) : undefined;
@@ -207,7 +227,7 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		setFlightBatchId(next.id);
 		releasePoint.current = null;
 		setDrop([leadCardCodes?.length ? { ...next, animatedCardCodes: movedCodes, pendingCardCodes: flights.map((flight) => flight.code), leadCardCodes, holdBelowLeads: !dragged } : next]);
-	}, [boardRef, columns, getPreview, nativePreviewRef, reduceMotion, solitaire]);
+	}, [boardRef, columns, finishSupersededArrivals, getPreview, nativePreviewRef, reduceMotion, solitaire]);
 	// A deferred commit plays the latest owner callbacks, not the ones held at release.
 	const settledDrop = useRef<SettledIssueDrop | null>(null);
 	const committers = useRef({ captureDrop, onDrop });
@@ -276,13 +296,15 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		return settledDrop.current !== null;
 	}, []);
 	const handleMove = useCallback((move: IssueCardMove) => {
-		if (enabled && move.cardCodes.length > 0) captureDrop(move.cardCodes, move.columnTitle, null, move.feedback, move.animation);
+		if (enabled && move.cardCodes.length > 0) captureDrop(move.cardCodes, move.columnTitle, null, move.feedback, move.animation, move.onArrival);
 		onMove?.(move);
+		if (!enabled || move.cardCodes.length === 0) move.onArrival?.();
 	}, [captureDrop, enabled, onMove]);
 	// Auto arrange lands each destination as a deck: its top cards (at most the
 	// drag deck's depth) fly into the top of the column — from the held traveller
 	// during a drag, else from their own slots — and the rest cascade in below.
 	const handleAutoArrange = useCallback((codes: ReadonlySet<string>) => {
+		finishSupersededArrivals();
 		stopFlightTrace.current?.();
 		stopFlightTrace.current = undefined;
 		const plan = getAutoArrangePlan(columns, codes);
@@ -303,7 +325,7 @@ export function useIssueCardDropArrival({ boardRef, enabled, getPreview, nativeP
 		setDrop(captured.map(({ next, flights, leadCardCodes }) => solitaire ? { ...next, animatedCardCodes: [] } : enabled && !reduceMotion
 			? { ...next, animatedCardCodes: next.before.map((card) => card.code), leadCardCodes, holdBelowLeads: true, pendingCardCodes: flights.map((flight) => flight.code) } : next));
 		onAutoArrange?.(codes);
-	}, [boardRef, columns, draggedCardCode, enabled, getPreview, nativePreviewRef, onAutoArrange, reduceMotion, solitaire]);
+	}, [boardRef, columns, draggedCardCode, enabled, finishSupersededArrivals, getPreview, nativePreviewRef, onAutoArrange, reduceMotion, solitaire]);
 	const handleComplete = useCallback((id: number) => {
 		if (id < 0) {
 			const captured = snapshots.current.find((item) => item.id === id);

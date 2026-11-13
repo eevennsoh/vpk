@@ -20,6 +20,21 @@ const session = (id, role, extras = {}) => ({ id, title: `${id} work`, agent: { 
 const menuProps = (items, extras = {}) => ({ items, onSelectSession() {}, ...extras });
 const renderMenu = (props) => renderComponent({ source: menuSource, props, mocks: themeMock });
 
+test("session menu can show a teammate count or expand a single teammate by default", async () => {
+	const team = [session("first", "viewer"), session("second", "viewer")];
+	const view = await renderMenu(menuProps(team, { teammateSessionsPresentation: "count" }));
+	try {
+		assert.equal(view.getByText("2 other sessions").textContent, "2 other sessions");
+		await view.rerender(menuProps([session("mine", "owner"), team[0]], { teammateSessionsPresentation: "expanded" }));
+		const trigger = view.getByRole("button", { name: "1 other session" });
+		assert.equal(trigger.getAttribute("aria-expanded"), "true");
+		assert.equal(view.getByText("first work").textContent.includes("first work"), true);
+		await view.click(trigger);
+		assert.equal(trigger.getAttribute("aria-expanded"), "false");
+		assert.equal(view.queryByText("first work"), null);
+	} finally { await view.unmount(); }
+});
+
 test("session menu folds teammate sessions into one flat list after own sessions without headings or counts", async () => {
 	const items = [session("team-first", "viewer", { invokedBy: { name: "Sample Alpha" } }), session("mine", "owner"), session("team-second", "viewer"), session("legacy", undefined)];
 	const view = await renderMenu(menuProps(items));

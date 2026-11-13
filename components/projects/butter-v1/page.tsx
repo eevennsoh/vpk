@@ -24,7 +24,7 @@ import type {
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
 import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
 import { PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
-import { PROJECT_BUTTER_SESSIONS, type ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
+import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
 import { nextProjectButterDevelopmentPhase, PROJECT_BUTTER_JOURNEY_PULL_REQUEST } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
 import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
@@ -75,6 +75,7 @@ import { MerchantJourneyCompactControls, MerchantJourneyControls } from "./compo
 import { applyMerchantJourneyToBoard, merchantJourneyAuthoredCard, merchantJourneyChatSnapshot, type MerchantJourneyPhase } from "./data/merchant-journey";
 import { MERCHANT_PROGRESS_DELAY_MS } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
 import { BUTTER_GALLERY_ITEMS } from "./data/gallery-items";
+import { BUTTER_GALLERY_SESSIONS, BUTTER_WORK_ITEM_SESSIONS } from "./data/gallery-work-item-sessions";
 
 import { renderButterAgentActivityIndicator } from "./data/agent-activity-indicators";
 import { BUTTER_BOARD_AGENTS, BUTTER_PAY_112_THINKING_MESSAGE_ID, BUTTER_SUGGESTION_DEMO_KEY, butterPay112WorkingParts, getButterPay112ClarificationReply, toButterAgentActivityFromSession } from "@/components/projects/butter-v1/data/presentation-board";
@@ -111,11 +112,6 @@ const ButterGalleryPullRequest = dynamic(() => import("./components/butter-galle
 const ProjectButterDevelopmentGallery = dynamic(() => import("@/components/blocks/jira-work-item/project-butter/project-butter-development-journey").then((module) => module.ProjectButterDevelopmentGallery));
 
 const BUTTER_DEFAULT_REPORTER = { name: BUTTER_PAY_CURRENT_USER.name, avatarUrl: BUTTER_PAY_CURRENT_USER.avatarSrc };
-const BUTTER_GALLERY_SESSIONS: readonly ProjectButterSessionItem[] = PROJECT_BUTTER_SESSIONS.map((session) => ({
-	...session,
-	invokedBy: { name: BUTTER_DEFAULT_REPORTER.name, avatarSrc: BUTTER_DEFAULT_REPORTER.avatarUrl },
-	role: "owner",
-}));
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
 const BUTTER_TABS = [
 	{ label: "Backlog", icon: BacklogIcon, hasContent: false, placeholder: "No backlog content here yet" },
@@ -149,7 +145,7 @@ function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWork
 		const frame = window.requestAnimationFrame(() => setMounted(true));
 		return () => window.cancelAnimationFrame(frame);
 	}, []);
-	return <ProjectButterJiraWorkItem {...props} inlineSessionReplies open={mounted && props.open} />;
+	return <ProjectButterJiraWorkItem {...props} initialRelatedSectionOpen={false} inlineSessionReplies open={mounted && props.open} />;
 }
 
 function getMerchantWorkItemProps(issueKey: string, journey: Pick<ComponentProps<typeof ProjectButterJiraWorkItem>, "journeyPhase" | "journeySession" | "journeyControls" | "developmentJourney">) {
@@ -306,8 +302,8 @@ export default function ButterPage(): React.ReactElement {
 	const galleryControls = selectedId === "pull-request"
 		? <ToggleGroup aria-label="Pull request status" onValueChange={(values) => { if (values[0] === "open" || values[0] === "merged" || values[0] === "multiple") setPullRequestStatus(values[0]); }} size="sm" value={[pullRequestStatus]} variant="outline">
 			<ToggleGroupItem value="open">Open PR</ToggleGroupItem>
-			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 			<ToggleGroupItem value="merged">Merged PR</ToggleGroupItem>
+			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 		</ToggleGroup>
 		: null;
 	return (
@@ -353,12 +349,12 @@ export default function ButterPage(): React.ReactElement {
 			</RetainedView>
 			<RetainedView active={selectedId === "duplicative-sessions"} retain>
 				<RovoChatProvider key={duplicativeSessionsResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
-					<ButterGalleryWorkItem compact galleryOpen={galleryOpen} initialRelatedSectionOpen={false} open={selectedId === "duplicative-sessions"} onClose={() => selectGalleryItem("board")} />
+					<ButterGalleryWorkItem compact galleryOpen={galleryOpen} initialSessions={BUTTER_GALLERY_SESSIONS} open={selectedId === "duplicative-sessions"} onClose={() => selectGalleryItem("board")} />
 				</RovoChatProvider>
 			</RetainedView>
 			<RetainedView active={selectedId === "work-item"} retain>
 				<RovoChatProvider key={workItemResetKey} agentProfiles={BUTTER_CHAT_AGENT_PROFILES}>
-					<ButterGalleryWorkItem open={selectedId === "work-item"} onClose={() => selectGalleryItem("board")} />
+					<ButterGalleryWorkItem initialSessions={BUTTER_WORK_ITEM_SESSIONS} open={selectedId === "work-item"} onClose={() => selectGalleryItem("board")} />
 				</RovoChatProvider>
 			</RetainedView>
 			<RetainedView active={selectedId === "pull-request"} retain>
@@ -377,7 +373,7 @@ export default function ButterPage(): React.ReactElement {
 	);
 }
 
-function ButterGalleryWorkItem({ compact, galleryOpen, initialRelatedSectionOpen, open, onClose }: Readonly<{ compact?: boolean; galleryOpen?: boolean; initialRelatedSectionOpen?: boolean; open: boolean; onClose: () => void }>) {
+function ButterGalleryWorkItem({ compact, galleryOpen, initialSessions, open, onClose }: Readonly<{ compact?: boolean; galleryOpen?: boolean; initialSessions: readonly ProjectButterSessionItem[]; open: boolean; onClose: () => void }>) {
 	const router = useRouter();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const { chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat } = useJgpAgentChatDemo();
@@ -387,7 +383,7 @@ function ButterGalleryWorkItem({ compact, galleryOpen, initialRelatedSectionOpen
 		<>
 			<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex items-start justify-center overflow-hidden", galleryOpen ? "bottom-56" : "bottom-0")}>
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem inlineSessionReplies cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" initialSessions={BUTTER_GALLERY_SESSIONS} initialRelatedSectionOpen={initialRelatedSectionOpen} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} onOpenCloudSession={async (session, draft, workItem) => {
+					<ProjectButterJiraWorkItem inlineSessionReplies cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" initialSessions={initialSessions} initialRelatedSectionOpen={false} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} onOpenCloudSession={async (session, draft, workItem) => {
 						const opened = await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt });
 						if (opened && draft) setComposerPrefillRequest({ text: draft, append: true, requestKey: ++prefillKey.current });
 						return opened;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, type ReactElement } from "react";
-import { useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
@@ -29,6 +29,7 @@ import { AvatarGroup } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { motionDuration, motionEase } from "@/lib/motion";
 
 import type {
 	JiraIssueAgentActivity,
@@ -53,6 +54,7 @@ export type JiraIssueAgentAssignment = Partial<
 		| "onRenameAssignedAgent"
 		| "onStartNewSession"
 		| "pinnedItemsLabel"
+		| "teammateSessionsPresentation"
 		| "usedAgentIds"
 	>
 > & {
@@ -271,6 +273,30 @@ export function JiraIssueAgentRowLabel({
 	);
 }
 
+function JiraIssueTransitioningAgentRowLabel({ isAwaitingInput, isWorking, rowLabel }: Readonly<{
+	isAwaitingInput: boolean;
+	isWorking: boolean;
+	rowLabel: string;
+}>) {
+	const reduce = useReducedMotion();
+	return (
+		<span className="grid min-w-0 flex-1 overflow-hidden">
+			<AnimatePresence initial={false}>
+				<motion.span
+					animate={{ opacity: 1 }}
+					className="col-start-1 row-start-1 min-w-0"
+					exit={{ opacity: 0 }}
+					initial={{ opacity: 0 }}
+					key={rowLabel}
+					transition={{ duration: reduce ? 0 : motionDuration.normal, ease: motionEase.outPractical }}
+				>
+					<JiraIssueAgentRowLabel isAwaitingInput={isAwaitingInput} isWorking={isWorking} rowLabel={rowLabel} />
+				</motion.span>
+			</AnimatePresence>
+		</span>
+	);
+}
+
 export function JiraIssueAgentRowContent({
 	activities: incomingActivities,
 	avatarLayout,
@@ -283,6 +309,7 @@ export function JiraIssueAgentRowContent({
 	isViewerRow = false,
 	statusIcon,
 	compactAvatarSlot = false,
+	animateStateTransition = false,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	avatarLayout: JiraIssueAgentActivityAvatarLayout;
@@ -295,6 +322,7 @@ export function JiraIssueAgentRowContent({
 	isViewerRow?: boolean;
 	statusIcon: ReactElement;
 	compactAvatarSlot?: boolean;
+	animateStateTransition?: boolean;
 }>): ReactElement {
 	const phase = useProjectButterInvocationPhase();
 	const preview = useProjectButterInvocationPreview();
@@ -371,7 +399,7 @@ export function JiraIssueAgentRowContent({
 					isAwaitingInput={isAwaitingInput}
 					isWorking={isWorking}
 					rowLabel={rowLabel}
-				/></JiraIssueAgentHandoffLabel> : <JiraIssueAgentRowLabel isAwaitingInput={isAwaitingInput} isWorking={isWorking} rowLabel={rowLabel} />}
+				/></JiraIssueAgentHandoffLabel> : animateStateTransition ? <JiraIssueTransitioningAgentRowLabel isAwaitingInput={isAwaitingInput} isWorking={isWorking} rowLabel={rowLabel} /> : <JiraIssueAgentRowLabel isAwaitingInput={isAwaitingInput} isWorking={isWorking} rowLabel={rowLabel} />}
 			</div>
 			{showUnlinkControl ? null : statusIcon}
 		</>
@@ -414,6 +442,7 @@ export function JiraIssueAgentAssignmentHandle({
 				addAgentLabel={assignment?.addAgentLabel ?? (activities.every((activity) => activity.role === "viewer") ? "New session" : undefined)}
 				agents={agents}
 				assignedAgents={assignedAgents}
+				teammateSessionsPresentation={assignment?.teammateSessionsPresentation}
 				defaultPinnedAgentIds={assignment?.defaultPinnedAgentIds}
 				dismissWhenAnchorHidden
 				hoverAnchor={resolveAssignmentAnchor}

@@ -113,6 +113,7 @@ export interface AgentAssignmentProps {
 	pinnedItemsLabel?: string;
 	positionerClassName?: string;
 	side?: "top" | "right" | "bottom" | "left";
+	teammateSessionsPresentation?: "expanded" | "count";
 	trigger?: ReactElement<{ "aria-expanded"?: boolean }>;
 	triggerLabel?: string;
 	/**
@@ -169,6 +170,7 @@ export function AgentAssignment({
 	pinnedItemsLabel = "Pinned by space",
 	positionerClassName = "z-[502]",
 	side,
+	teammateSessionsPresentation,
 	trigger,
 	triggerLabel = "Edit agents",
 	usedAgentIds = [],
@@ -389,6 +391,7 @@ export function AgentAssignment({
 		/>
 	) : (
 		<AssignedAgentsSessionMenu
+			teammateSessionsPresentation={teammateSessionsPresentation}
 			onContinueInAgent={onContinueExistingSession
 				? (item) => runAssignedSessionAction(assignedAgents, item.id, onContinueExistingSession)
 				: undefined}

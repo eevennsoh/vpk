@@ -31,7 +31,7 @@ export function guardFixCommand(name) {
 }
 
 const children = new Set();
-function killChildren(signal) {
+export function killChildren(signal) {
 	for (const child of children) {
 		try { process.kill(-child.pid, signal); } catch { /* already gone */ }
 	}

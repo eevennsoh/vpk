@@ -21,8 +21,14 @@ export function useButterJourneyReplay({ boardColumns, journeySession, phase, qu
 	const [replay, setReplay] = useState<Replay | null>(null);
 	const sequence = useRef(0);
 	const started = useRef(0);
+	const autoMergePending = !wacContent && phase === "merged" && replay === null
+		&& boardColumns.some((column) => column.title === "In progress" && column.cards.some((card) => card.code === BUTTER_SUGGESTION_DEMO_KEY));
+	useEffect(() => {
+		if (autoMergePending) setReplay({ id: ++sequence.current, source: "passed", target: "merged" });
+	}, [autoMergePending]);
 	const start = useCallback((step: number) => {
 		if (wacContent || (step !== 1 && step !== 4) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			sequence.current += 1;
 			setReplay(null);
 			return;
 		}
@@ -31,15 +37,19 @@ export function useButterJourneyReplay({ boardColumns, journeySession, phase, qu
 		setReplay(next);
 		setBoardColumns((columns) => applyMerchantJourneyToBoard(columns, next.source, session));
 	}, [journeySession, setBoardColumns, wacContent]);
-	const cancel = useCallback(() => setReplay(null), []);
+	const cancel = useCallback(() => { sequence.current += 1; setReplay(null); }, []);
 	useEffect(() => {
 		if (!replay || phase !== replay.target || started.current === replay.id) return;
 		const sourceColumn = replay.source === "invoke" ? "To do" : "In progress";
 		if (!boardColumns.some((column) => column.title === sourceColumn && column.cards.some((card) => card.code === BUTTER_SUGGESTION_DEMO_KEY))) return;
 		started.current = replay.id;
 		document.querySelector<HTMLElement>(`[data-butter-board-surface] [data-issue-key="${BUTTER_SUGGESTION_DEMO_KEY}"][data-board-column-title="${sourceColumn}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
-		const session = journeySession ? toButterAgentActivityFromSession(journeySession) : undefined;
-		queueUpdate(BUTTER_SUGGESTION_DEMO_KEY, (columns) => applyMerchantJourneyToBoard(columns, replay.target, session), () => setReplay((current) => current?.id === replay.id ? null : current), "fade", "trace");
-	}, [boardColumns, journeySession, phase, queueUpdate, replay]);
-	return { active: replay !== null, start, cancel };
+		const session = journeySession ? toButterAgentActivityFromSession(journeySession) : "PAY-999:merchant-journey";
+		queueUpdate(BUTTER_SUGGESTION_DEMO_KEY, (columns) => applyMerchantJourneyToBoard(columns, replay.target, session, replay.target === "merged"), () => {
+			if (sequence.current !== replay.id) return;
+			if (replay.target === "merged") setBoardColumns((columns) => applyMerchantJourneyToBoard(columns, "merged", session));
+			setReplay((current) => current?.id === replay.id ? null : current);
+		}, "fade", "trace");
+	}, [boardColumns, journeySession, phase, queueUpdate, replay, setBoardColumns]);
+	return { active: replay !== null || autoMergePending, start, cancel };
 }

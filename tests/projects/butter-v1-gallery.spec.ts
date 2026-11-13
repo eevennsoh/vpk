@@ -3,6 +3,41 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("the journey agent finishes after the card arrives in Done", async ({ page }) => {
+	test.setTimeout(90_000);
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	const steps = page.getByRole("group", { name: "Merchant onboarding journey steps" });
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
+	await steps.getByRole("button", { name: "In progress" }).click();
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await expect(card.getByRole("button", { name: "Claude: Working" })).toBeVisible();
+	await expect(page.locator('[data-issue-drop-flight="PAY-999"]')).toHaveCount(0);
+	await steps.getByRole("button", { name: "Done" }).click();
+	await expect(page.locator('[data-issue-drop-flight="PAY-999"]')).toBeAttached();
+	await expect(card).toHaveAttribute("data-board-column-title", "Done");
+	await expect(card.locator('[data-slot="jira-issue-agent-row"]')).toContainText("Working");
+	await expect(card.getByRole("button", { name: "Claude: Finished" })).toBeVisible();
+	await expect(card.getByRole("button", { name: "Claude: Finished" })).toHaveCount(0, { timeout: 10_000 });
+	await expect(card).toBeVisible();
+});
+
+test("the journey agent finishes after moving to Done with reduced motion", async ({ page }) => {
+	test.setTimeout(90_000);
+	await page.setViewportSize({ width: 1800, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const steps = page.getByRole("group", { name: "Merchant onboarding journey steps" });
+	const card = page.locator('[data-issue-key="PAY-999"][data-board-column-title]');
+	await steps.getByRole("button", { name: "In progress" }).click();
+	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
+	await steps.getByRole("button", { name: "Done" }).click();
+	await expect(card).toHaveAttribute("data-board-column-title", "Done");
+	await expect(card.getByRole("button", { name: "Claude: Finished" })).toBeVisible();
+	await expect(card.getByRole("button", { name: "Claude: Finished" })).toHaveCount(0, { timeout: 10_000 });
+});
+
 for (const [answer, reply] of [
 	["Assume a 7-day sandbox window", "I’ll use a seven-day retention window for the sandbox replay"],
 	["Do not replay keys against live accounts", "I’ll keep replay away from live accounts"],

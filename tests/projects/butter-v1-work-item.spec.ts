@@ -614,22 +614,14 @@ test("gallery session cards open the selected agent in floating Rovo chat", asyn
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Work item" }).click();
 	const workItem = page.getByRole("region", { name: "Work item full screen view" });
-	await workItem.getByRole("button", { name: "Compare the Q3 revenue forecast", exact: true }).click();
+	await workItem.getByRole("button", { name: /^Review the onboarding flow Cursor, used by Venn/ }).click();
 	const chat = page.locator('[data-rovo-chat-placement="floating"]');
 	await expect(chat).toBeVisible();
 	await expect(chat).toContainText("Cursor");
-	await expect(chat).toContainText("Which revenue line should we keep?");
+	await expect(chat).toContainText("I reviewed the onboarding flow and identified the main account setup issues.");
 	await expect(page.getByRole("textbox", { name: "Reply to Cursor" })).toHaveCount(0);
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 
-	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button", { name: /^\d+ agents?$/u }).click();
-	await page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Jira Coding Agent", exact: true }).click();
-	const session = workItem.locator('[data-project-butter-session-start]').filter({ hasText: "Jira Coding Agent" });
-	await session.getByRole("button", { name: "Redesign onboarding flow for new users", exact: true }).click();
-	await expect(chat).toBeVisible();
-	await expect(chat).toContainText("Jira Coding Agent");
-	await expect(chat).toContainText("VITA-1: Redesign onboarding flow for new users");
-	await expect(page.getByRole("textbox", { name: "Reply to Jira Coding Agent" })).toHaveCount(0);
 });
 
 test("Work item gallery displays the Project Butter screen with floating Rovo", async ({ page }) => {

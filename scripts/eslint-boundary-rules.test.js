@@ -433,6 +433,34 @@ export const Fixture = () => <Button size="compact" className="${classes}" />;`,
 	assert.equal(valid.status, 0, valid.stderr);
 });
 
+test("the full lint command applies the pilot to the same paths with the same zero-warning budget", () => {
+	// ci:pr and CI run only `pnpm run lint`; lint:design-system stays as a fast scoped run.
+	const { scripts } = require("../package.json");
+	const [pilotCommand, ...pilotArgs] = scripts["lint:design-system"].split(/\s+/u);
+	const [lintCommand, ...lintArgs] = scripts.lint.split(/\s+/u);
+	assert.equal(pilotCommand, "eslint");
+	assert.equal(lintCommand, "eslint");
+	const options = (args) => args.filter((arg, index) => arg.startsWith("-") || /^\d+$/u.test(arg) && args[index - 1]?.startsWith("-"));
+	const targets = (args) => args.filter((arg) => !options(args).includes(arg));
+	assert.deepEqual(options(lintArgs), options(pilotArgs), "both commands use the same flags (--max-warnings 0)");
+	for (const pilotPath of targets(pilotArgs)) {
+		assert.ok(targets(lintArgs).some((target) => pilotPath === target || pilotPath.startsWith(`${target}/`)), `lint covers ${pilotPath}`);
+	}
+	assert.doesNotMatch(scripts["ci:pr"], /lint:design-system/u);
+	const eslintBin = path.join(path.dirname(require.resolve("eslint/package.json")), "bin/eslint.js");
+	const run = (classes) => spawnSync(process.execPath, [
+		eslintBin, ...options(lintArgs), "--stdin", "--stdin-filename", PILOT_FILE,
+	], {
+		input: `import { Button } from "@/components/ui/button";
+export const Fixture = () => <Button size="compact" className="${classes}" />;`,
+		encoding: "utf8",
+	});
+	const invalid = run("px-2");
+	assert.equal(invalid.status, 1, invalid.stderr);
+	assert.match(invalid.stdout, /shadcn\/no-restyle/u);
+	assert.equal(run("w-full").status, 0);
+});
+
 test("the aligned class merger preserves semantic tokens and conditional class precedence", async () => {
 	const { cn } = await import("cn");
 	assert.equal(cn("h-8 px-3 bg-primary", "h-6 px-2 bg-bg-selected"), "h-6 px-2 bg-bg-selected");

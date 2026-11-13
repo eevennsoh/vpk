@@ -21,6 +21,7 @@ export function AssignedAgentsSessionMenu({
 	onSelectAgent,
 	onToggleVisibility,
 	rows,
+	teammateSessionsPresentation,
 }: Readonly<{
 	onContinueInAgent?: (item: AgentSessionItem) => void;
 	onDeleteSession?: (item: AgentSessionItem) => void;
@@ -29,9 +30,11 @@ export function AssignedAgentsSessionMenu({
 	onSelectAgent: (agent: AgentAssignmentAgent) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	rows: readonly AgentAssignmentAgent[];
+	teammateSessionsPresentation?: "expanded" | "count";
 }>) {
 	return <AgentSessionsMenu
 		items={rows.map(toAssignmentSessionItem)}
+		teammateSessionsPresentation={teammateSessionsPresentation}
 		onContinueInAgent={onContinueInAgent}
 		onDeleteSession={onDeleteSession}
 		onMoreMenuOpenChange={onMoreMenuOpenChange}
@@ -54,6 +57,7 @@ export function AgentSessionsMenu({
 	onRenameSession,
 	onSelectSession,
 	onToggleVisibility,
+	teammateSessionsPresentation,
 }: Readonly<{
 	items: readonly AgentSessionItem[];
 	localSessionAction?: "continue" | "view";
@@ -64,6 +68,7 @@ export function AgentSessionsMenu({
 	onRenameSession?: (item: AgentSessionItem) => void;
 	onSelectSession: (item: AgentSessionItem) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
+	teammateSessionsPresentation?: "expanded" | "count";
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const renderAgentAvatar = use(AgentSessionAvatarPreviewContext);
@@ -110,12 +115,12 @@ export function AgentSessionsMenu({
 				<div>
 					{hasActionableSession ? <hr className={cn(dropdownStyles.separator, "border-0")} /> : null}
 					{personalItems.length ? (
-						<TeammateSessionsDisclosure items={teammateItems}>
+						<TeammateSessionsDisclosure defaultOpen={teammateSessionsPresentation === "expanded"} items={teammateItems}>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</TeammateSessionsDisclosure>
 					) : (
 						<>
-							<p className="px-3 py-1 text-xs font-medium text-text-subtle">Sessions from your teammates</p>
+							<p className="px-2 pt-3 pb-1 text-xs font-medium text-text-subtle">{teammateSessionsPresentation === "count" ? `${teammateItems.length} ${teammateItems.length === 1 ? "other session" : "other sessions"}` : "Sessions from your teammates"}</p>
 							<ul className="flex w-full flex-col gap-0">{teammateItems.map(renderSession)}</ul>
 						</>
 					)}

@@ -1,6 +1,7 @@
-import { spawnSync } from "node:child_process";
+import { spawn as spawnChild, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { availableParallelism } from "node:os";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { LEGACY_DRIFT_TEST_FILES } from "./js-unit-test-legacy-drift.mjs";
@@ -123,6 +124,7 @@ export function parseTestSelectionArgs(argv) {
 	const files = [];
 	let shard;
 	let keepGoing = false;
+	let parallel;
 
 	for (let index = 0; index < argv.length; index += 1) {
 		const arg = argv[index];
@@ -132,6 +134,12 @@ export function parseTestSelectionArgs(argv) {
 				throw new Error("--shard requires a single value from 1/4 to 4/4");
 			}
 			shard = Number(value[0]);
+			continue;
+		}
+		if (arg === "--parallel" || arg.startsWith("--parallel=")) {
+			const value = arg === "--parallel" ? argv[++index] : arg.slice("--parallel=".length);
+			if (parallel !== undefined || !value) throw new Error("--parallel requires a single value: a positive integer or auto");
+			parallel = resolveParallel(value);
 			continue;
 		}
 		// Run every batch even after one fails, so a caller sees all failing suites at once.
@@ -176,6 +184,7 @@ export function parseTestSelectionArgs(argv) {
 		files,
 		prefixes,
 		...(keepGoing ? { keepGoing } : {}),
+		...(parallel ? { parallel } : {}),
 		...(shard ? { shard } : {}),
 	};
 }
@@ -422,17 +431,21 @@ export function batchIdentity(batch) {
 	return batch.reason === "vm-modules" ? batch.files[0] : dirname(batch.files[0]);
 }
 
-// Longest measured batches first; deterministic ties go to the lowest numbered shard.
-// Keep directory batches and their VM flags intact. New batches cost one second/file
-// until measured; changed batch sizes scale the historical median proportionally.
-export function partitionTestBatches(batches, timings = BATCH_TIMINGS) {
-	const shards = Array.from({ length: UNIT_SHARD_COUNT }, () => ({ batches: [], seconds: 0 }));
-	const weighted = batches.map((batch) => {
+// Expected seconds per batch, longest first with deterministic ties. New batches cost one
+// second/file until measured; changed batch sizes scale the historical median proportionally.
+export function weighTestBatches(batches, timings = BATCH_TIMINGS) {
+	return batches.map((batch) => {
 		const measured = timings[batchIdentity(batch)];
 		const seconds = measured ? measured[1] * batch.files.length / measured[0] : batch.files.length;
 		return { batch, seconds };
 	}).sort((a, b) => b.seconds - a.seconds || (batchIdentity(a.batch) < batchIdentity(b.batch) ? -1 : 1));
-	for (const { batch, seconds } of weighted) {
+}
+
+// Longest measured batches first; deterministic ties go to the lowest numbered shard.
+// Keep directory batches and their VM flags intact.
+export function partitionTestBatches(batches, timings = BATCH_TIMINGS, count = UNIT_SHARD_COUNT) {
+	const shards = Array.from({ length: count }, () => ({ batches: [], seconds: 0 }));
+	for (const { batch, seconds } of weighTestBatches(batches, timings)) {
 		const target = shards.reduce((best, shard) => shard.seconds < best.seconds ? shard : best);
 		target.batches.push(batch);
 		target.seconds += seconds;
@@ -474,6 +487,88 @@ export function runTestFiles(testFiles, {
 	return { status, timings };
 }
 
+const runningChildren = new Set();
+
+// One batch, output captured so concurrent batches print as whole blocks. Each batch runs
+// in its own process group so an interrupted run can stop everything it started.
+export function spawnCaptured(command, args) {
+	return new Promise((resolve) => {
+		const child = spawnChild(command, args, { detached: true, stdio: ["ignore", "pipe", "pipe"] });
+		runningChildren.add(child);
+		let output = "";
+		child.stdout.on("data", (chunk) => { output += chunk; });
+		child.stderr.on("data", (chunk) => { output += chunk; });
+		child.on("error", (error) => { output += `${error.message}\n`; });
+		child.on("close", (status, signal) => {
+			runningChildren.delete(child);
+			resolve({ output, signal: signal ?? null, status });
+		});
+	});
+}
+
+function stopRunningChildren(signal) {
+	for (const child of runningChildren) {
+		try { process.kill(-child.pid, signal); } catch { /* already exited */ }
+	}
+}
+
+// node --test already runs a batch's files concurrently (one less than the CPU count by
+// default). With several batches at once, split the CPUs between them instead.
+export function testConcurrencyFor(parallel, cpus = availableParallelism()) {
+	return Math.max(1, Math.floor(cpus / parallel));
+}
+
+export function resolveParallel(value, cpus = availableParallelism()) {
+	if (value === "auto") return Math.max(1, Math.min(8, Math.floor(cpus / 2)));
+	const parsed = Number(value);
+	if (!Number.isInteger(parsed) || parsed < 1) throw new Error("--parallel requires a positive integer or auto");
+	return parsed;
+}
+
+// Runs batches on `parallel` workers that take the longest remaining batch first (the
+// shard weights), printing each batch's output when it finishes.
+export async function runTestFilesParallel(testFiles, {
+	parallel,
+	readFile = readFileSync,
+	spawn = spawnCaptured,
+	shard,
+	keepGoing = false,
+	cpus = availableParallelism(),
+	log = console.log,
+	write = (text) => process.stdout.write(text),
+	now = () => performance.now(),
+} = {}) {
+	const allBatches = buildTestFileBatches(testFiles, { readFile });
+	const batches = shard ? partitionTestBatches(allBatches)[shard - 1].batches : allBatches;
+	const queue = weighTestBatches(batches).map(({ batch }) => batch);
+	const concurrency = testConcurrencyFor(parallel, cpus);
+	log(`js-unit-tests: ${shard ? `shard ${shard}/${UNIT_SHARD_COUNT}` : "unsharded"}, ${parallel} parallel workers x ${concurrency} test files each: ${batches.length}/${allBatches.length} batches, ${batches.reduce((sum, batch) => sum + batch.files.length, 0)}/${testFiles.length} files`);
+	const timings = [];
+	let status = 0;
+	let stopped = false;
+	const worker = async () => {
+		while (queue.length > 0 && !stopped) {
+			const batch = queue.shift();
+			const id = batchIdentity(batch);
+			const started = now();
+			const result = await spawn(process.execPath, [...batch.nodeArgs, `--test-concurrency=${concurrency}`, "--test", ...batch.files]);
+			const batchStatus = result.status ?? 1;
+			if (status === 0) status = batchStatus;
+			const timing = { id, files: batch.files.length, seconds: Number(((now() - started) / 1000).toFixed(3)), status: batchStatus, signal: result.signal ?? null };
+			timings.push(timing);
+			write(`js-unit-tests: batch ${id} (${batch.files.length} files, ${batch.reason})\n${result.output}`);
+			log(`JS_UNIT_BATCH ${JSON.stringify(timing)}`);
+			if (batchStatus !== 0 && !keepGoing) stopped = true;
+		}
+	};
+	await Promise.all(Array.from({ length: Math.min(parallel, queue.length) }, worker));
+	log(`js-unit-tests: slowest batches (completed ${timings.length}/${batches.length}):`);
+	for (const timing of [...timings].sort((a, b) => b.seconds - a.seconds).slice(0, 10)) {
+		log(`  ${timing.seconds.toFixed(3)}s ${timing.id} (${timing.files} files, exit ${timing.status})`);
+	}
+	return { status, timings };
+}
+
 function exitOnManifestError(check) {
 	try {
 		check();
@@ -493,7 +588,13 @@ function warnSilentSelectedTests(testEntries, testFiles) {
 	].join("\n"));
 }
 
-function main() {
+async function main() {
+	for (const signal of ["SIGINT", "SIGTERM"]) {
+		process.once(signal, () => {
+			stopRunningChildren(signal);
+			process.exit(130);
+		});
+	}
 	exitOnManifestError(() => assertListedTestFilesExist());
 	const selection = parseTestSelectionArgs(process.argv.slice(2));
 	const selectionOptions = buildSelectionOptions(selection);
@@ -524,9 +625,15 @@ function main() {
 		process.exit(0);
 	}
 
-	process.exitCode = runTestFiles(testFiles, { keepGoing: selection.keepGoing, shard: selection.shard }).status;
+	const options = { keepGoing: selection.keepGoing, shard: selection.shard };
+	process.exitCode = selection.parallel
+		? (await runTestFilesParallel(testFiles, { ...options, parallel: selection.parallel })).status
+		: runTestFiles(testFiles, options).status;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-	main();
+	main().catch((error) => {
+		console.error(error);
+		process.exitCode = 1;
+	});
 }

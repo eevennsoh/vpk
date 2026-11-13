@@ -7,7 +7,7 @@ const card = (page: Page, key: string) => page.locator(`[data-issue-key="${key}"
 
 async function openGalleryCommentEditor(page: Page) {
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	await page.keyboard.press("m");
 	return page.getByRole("region", { name: "Work item full screen view" }).getByRole("textbox", { name: "Comment editor" });
@@ -16,7 +16,7 @@ async function openGalleryCommentEditor(page: Page) {
 async function mentionGalleryClaude(page: Page) {
 	const editor = page.getByRole("region", { name: "Work item full screen view" }).getByRole("textbox", { name: "Comment editor" });
 	await editor.pressSequentially("@Claude");
-	await page.getByRole("option", { name: /^Claude / }).first().click();
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	return editor;
 }
 
@@ -30,13 +30,13 @@ test("gallery Claude mentions offer the existing completed session", async ({ pa
 	const sessions = page.getByRole("list", { name: "Choose a session" });
 	await expect(sessions.getByRole("button", { name: /Summarize onboarding feedback/ })).toBeVisible();
 	await sessions.getByRole("button", { name: /Rewrite the incident postmortem/ }).click();
-	await expect(page.getByRole("textbox", { name: "Chat message input" })).toHaveText("Review the remaining action items");
+	await expect(page.getByRole("textbox", { name: "Leave a reply..." })).toContainText("Review the remaining action items");
 });
 
 test("session previews match comment hover and mask the timeline behind reply controls", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	await page.keyboard.press("m");
 	await page.getByRole("textbox", { name: "Comment editor" }).pressSequentially("@Claude");
@@ -64,7 +64,7 @@ test("session previews match comment hover and mask the timeline behind reply co
 test("session preview scroll moves smoothly to the selected activity", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Work item" }).click();
+	await page.getByRole("button", { name: "Select Duplicative sessions" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	await page.keyboard.press("m");
 	await page.getByRole("textbox", { name: "Comment editor" }).pressSequentially("@Claude");
@@ -145,7 +145,7 @@ test("gallery Claude session choices support multiple sessions and Back", async 
 	await expect(editor).toContainText("Claude");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
 	await sessions.getByRole("button", { name: /A second Claude review/ }).click();
-	await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+	await expect(page.getByRole("textbox", { name: "Leave a reply..." })).toBeVisible();
 });
 
 test("keyboard navigation scrolls the selected session into view", async ({ page }) => {

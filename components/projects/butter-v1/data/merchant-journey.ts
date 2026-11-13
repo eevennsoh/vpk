@@ -77,6 +77,7 @@ export function projectMerchantJourneyActivities(activities: readonly JourneyAct
 	if (!source) return activities;
 	const projected: JourneyActivity = {
 		...source,
+		stateTransition: "agent-session",
 		state: phase === "merged" ? "completed" : "working",
 		...(source.merchantJourneyCreated ? { label: phase === "merged" ? "Finished" : "Working" } : {}),
 	};
@@ -98,7 +99,7 @@ export function merchantJourneyAuthoredCard(card: JiraKanbanCardData): JiraKanba
 	};
 }
 
-function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity): JourneyCard {
+function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity, deferCompletion = false): JourneyCard {
 	const beforeWork = phase === "invoke";
 	const { merchantJourneyBaseline, ...authored } = card;
 	const assignCurrentUser = !beforeWork && !merchantJourneyBaseline && !card.assignee;
@@ -114,6 +115,24 @@ function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: s
 	const hasPullRequest = phase === "pr" || phase === "failed" || phase === "fixing" || phase === "passed" || phase === "merged";
 	const restorePullRequest = card.pullRequestNumber === PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number;
 	const authoredCard = merchantJourneyAuthoredCard(card);
+	const journeySession = session ?? card.agentActivities?.find((item) => "merchantJourneyCreated" in item && item.merchantJourneyCreated === true)?.id ?? (phase === "merged" ? "PAY-999:merchant-journey" : undefined);
+	const sessionId = typeof journeySession === "string" ? journeySession : journeySession?.id;
+	const activities = projectMerchantJourneyActivities(card.agentActivities, phase === "merged" && deferCompletion ? "passed" : phase, journeySession);
+	const activity = activities?.find((item) => item.id === sessionId);
+	const otherRuns = (card.agentDoneRuns ?? []).filter((run) => run.id !== sessionId);
+	const completedRun = phase === "merged" && !deferCompletion && activity ? {
+		id: activity.id,
+		stateTransition: activity.stateTransition,
+		summary: activity.sessionTitle ?? activity.label,
+		agentName: activity.name,
+		agentAvatarSrc: activity.avatarSrc,
+		agentBrandName: activity.agentBrandName,
+		host: activity.host,
+		invokedBy: activity.invokedBy,
+		issueKey: card.code,
+		issueSummary: card.title,
+		state: "done" as const,
+	} : undefined;
 	return {
 		...authored,
 		...(!beforeWork ? { merchantJourneyBaseline: baseline } : {}),
@@ -124,18 +143,19 @@ function projectCard(card: JourneyCard, phase: MerchantJourneyPhase, session?: s
 		pullRequestNumber: hasPullRequest ? PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number : restorePullRequest ? baseline.pullRequestNumber : card.pullRequestNumber,
 		pullRequestPreview: hasPullRequest ? { ...PR_PREVIEW, checks: projectButterDevelopmentChecks(phase) } : restorePullRequest ? baseline.pullRequestPreview : card.pullRequestPreview,
 		pullRequestStatus: hasPullRequest ? (phase === "merged" ? "merged" : phase === "failed" ? "failed" : "open") : restorePullRequest ? baseline.pullRequestStatus : card.pullRequestStatus,
-		agentActivities: projectMerchantJourneyActivities(card.agentActivities, phase, session),
+		agentActivities: activities,
+		agentDoneRuns: completedRun ? [...otherRuns, completedRun] : otherRuns.length ? otherRuns : undefined,
 	};
 }
 
 /** Project journey-owned fields in either direction while retaining authored data. */
-export function applyMerchantJourneyToBoard(columns: readonly JiraKanbanColumnData[], phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity): JiraKanbanColumnData[] {
+export function applyMerchantJourneyToBoard(columns: readonly JiraKanbanColumnData[], phase: MerchantJourneyPhase, session?: string | JiraIssueAgentActivity, deferCompletion = false): JiraKanbanColumnData[] {
 	const source = columns.find((column) => column.cards.some((card) => card.code === "PAY-999"));
 	const card = source?.cards.find((item) => item.code === "PAY-999");
 	if (!source || !card) return [...columns];
 	const destination = phase === "merged" ? "Done" : phase === "invoke" || phase === "starting" ? "To do" : "In progress";
 	if (!columns.some((column) => column.title === destination)) return [...columns];
-	const updated = projectCard(card, phase, session);
+	const updated = projectCard(card, phase, session, deferCompletion);
 	return columns.map((column) => {
 		if (source.title === destination && column === source) return { ...column, cards: column.cards.map((item) => item.code === card.code ? updated : item) };
 		if (column === source) { const cards = column.cards.filter((item) => item.code !== card.code); return { ...column, cards, count: cards.length }; }
