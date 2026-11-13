@@ -6,6 +6,7 @@ const { spawnSync } = require("node:child_process");
 const { existsSync, readFileSync } = require("node:fs");
 
 const SUPPRESSIONS_FILE = "eslint-suppressions.json";
+const ESLINT_CONFIG_FILE = "eslint.config.mjs";
 
 function totalsByRule(suppressions) {
 	const totals = new Map();
@@ -18,16 +19,30 @@ function totalsByRule(suppressions) {
 }
 
 // Per-rule totals rather than per-file counts, so moving or renaming a file keeps its debt.
-function findSuppressionGrowth(base, current) {
+// A rule the change itself introduces may baseline its existing violations once.
+function findSuppressionGrowth(base, current, { introducedRules = new Set() } = {}) {
 	const baseTotals = totalsByRule(base);
 	const growth = [];
 	for (const [ruleId, after] of totalsByRule(current)) {
+		if (introducedRules.has(ruleId)) continue;
 		const before = baseTotals.get(ruleId) ?? 0;
 		if (after > before) {
 			growth.push({ after, before, ruleId });
 		}
 	}
 	return growth.sort((left, right) => left.ruleId.localeCompare(right.ruleId));
+}
+
+// Rules named in the current ESLint config but not in the base one. Rules that presets
+// enable are named in neither, so they stay under the ratchet.
+function findIntroducedRules(baseConfigSource, currentConfigSource, ruleIds) {
+	const introduced = new Set();
+	if (baseConfigSource === null || currentConfigSource === null) return introduced;
+	for (const ruleId of ruleIds) {
+		const quoted = `"${ruleId}"`;
+		if (currentConfigSource.includes(quoted) && !baseConfigSource.includes(quoted)) introduced.add(ruleId);
+	}
+	return introduced;
 }
 
 function runGit(args) {
@@ -83,7 +98,15 @@ function main() {
 		return;
 	}
 
-	const growth = findSuppressionGrowth(base, current);
+	const introducedRules = findIntroducedRules(
+		runGit(["show", `${baseRef}:${ESLINT_CONFIG_FILE}`]),
+		existsSync(ESLINT_CONFIG_FILE) ? readFileSync(ESLINT_CONFIG_FILE, "utf8") : null,
+		totalsByRule(current).keys(),
+	);
+	for (const ruleId of introducedRules) {
+		console.log(`ESLint suppression ratchet: ${ruleId} is new in ${ESLINT_CONFIG_FILE}; its baseline of ${totalsByRule(current).get(ruleId)} may only shrink from here.`);
+	}
+	const growth = findSuppressionGrowth(base, current, { introducedRules });
 	if (growth.length > 0) {
 		console.error(`${SUPPRESSIONS_FILE} may only shrink, but these rules gained suppressed violations:`);
 		for (const { after, before, ruleId } of growth) {
@@ -94,7 +117,7 @@ function main() {
 		return;
 	}
 
-	const total = [...totalsByRule(current).values()].reduce((sum, count) => sum + count, 0);
+	const total = [...totalsByRule(current)].reduce((sum, [ruleId, count]) => (introducedRules.has(ruleId) ? sum : sum + count), 0);
 	const baseTotal = [...totalsByRule(base).values()].reduce((sum, count) => sum + count, 0);
 	console.log(`Verified ESLint suppressions only shrink (${total} remaining, ${baseTotal - total} fixed vs ${baseRef.slice(0, 9)}).`);
 }
@@ -104,6 +127,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+	findIntroducedRules,
 	findSuppressionGrowth,
 	isBaseRequired,
 	resolveBaseRef,

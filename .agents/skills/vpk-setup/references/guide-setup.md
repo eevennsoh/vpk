@@ -97,7 +97,7 @@ rm -f .next/dev/lock
 pnpm run dev:tmux:start
 ```
 
-**Frontend 500 with "Can't resolve '@/components/providers'":** Ensure the file is named `components/providers.tsx` (lowercase) and matches the import casing.
+**Frontend 500 with "Can't resolve '@/app/providers'":** Ensure the file is named `app/providers.tsx` (lowercase) and matches the import casing.
 
 **No available port found:** Another process is using this worktree's dev port range. Check `pnpm ports`, stop stale dev servers for this worktree, and retry.
 

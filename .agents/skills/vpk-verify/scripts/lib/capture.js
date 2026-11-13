@@ -11,6 +11,7 @@ const {
 	classifyAgentBrowserFailure,
 	executeBrowserCommand,
 	failureText,
+	noteBrowserUseBestEffort,
 	parseBrowserTimeoutMs,
 	quotedCommand,
 	runAgentBrowser,
@@ -317,6 +318,7 @@ function buildCaptureManifest({
 function runCapture(options, {
 	evidenceRoot = EVIDENCE_DIR,
 	now = () => new Date(),
+	onBrowserOpened = () => {},
 	origin,
 	repoMap,
 	repoRoot = REPO_ROOT,
@@ -363,7 +365,7 @@ function runCapture(options, {
 		files[key] = relative(file);
 	};
 
-	run("open", openArgs);
+	if (run("open", openArgs)) onBrowserOpened(session);
 	run("viewport", ["set", "viewport", String(options.viewport.width), String(options.viewport.height)]);
 	run("media", ["set", "media", options.media]);
 	run("clear-console", ["console", "--clear"], { required: false });
@@ -434,7 +436,11 @@ function formatCaptureSummary(manifest, manifestPath) {
 	return `${lines.join("\n")}\n`;
 }
 
-function captureCli(args, { capture = runCapture, env = process.env, stdout = process.stdout } = {}) {
+const recordedCapture = (options) => runCapture(options, {
+	onBrowserOpened: (session) => noteBrowserUseBestEffort(session, { started: true }),
+});
+
+function captureCli(args, { capture = recordedCapture, env = process.env, stdout = process.stdout } = {}) {
 	const options = parseCaptureArgs(args);
 	if (manualVerificationRequested(env)) {
 		stdout.write(`VPK_VERIFY=manual: the user opted into manual verification, so capture opened no browser.\nAsk the user to check ${routeWithDesignVariants(options.route, options.variants ?? [])} on this worktree's origin (control-vpk url) and report back.\n`);

@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+	findIntroducedRules,
 	findSuppressionGrowth,
 	isBaseRequired,
 	resolveBaseRef,
@@ -37,6 +38,26 @@ test("a regenerated baseline that hides a new violation is reported per rule", (
 		{ after: 2, before: 0, ruleId: "no-restricted-syntax" },
 		{ after: 4, before: 3, ruleId: "react-hooks/refs" },
 	]);
+});
+
+test("a rule the change introduces may baseline its existing violations once", () => {
+	const baseConfig = '"react-hooks/refs": "error",\n';
+	const currentConfig = '"react-hooks/refs": "error",\n"vpk-tokens/no-raw-white-black": ["error", {}],\n';
+	const current = {
+		...BASE,
+		"components/c.tsx": { "vpk-tokens/no-raw-white-black": { count: 3 }, "react-hooks/refs": { count: 1 }, "no-restricted-syntax": { count: 1 } },
+	};
+	const introducedRules = findIntroducedRules(baseConfig, currentConfig, totalsByRule(current).keys());
+
+	assert.deepEqual([...introducedRules], ["vpk-tokens/no-raw-white-black"]);
+	// Rules already configured, or enabled by a preset and named in neither config, keep the ratchet.
+	assert.deepEqual(findSuppressionGrowth(BASE, current, { introducedRules }), [
+		{ after: 1, before: 0, ruleId: "no-restricted-syntax" },
+		{ after: 4, before: 3, ruleId: "react-hooks/refs" },
+	]);
+	// Once the rule is in the base config, its baseline may only shrink.
+	assert.deepEqual([...findIntroducedRules(currentConfig, currentConfig, ["vpk-tokens/no-raw-white-black"])], []);
+	assert.deepEqual([...findIntroducedRules(null, currentConfig, ["vpk-tokens/no-raw-white-black"])], []);
 });
 
 test("CI compares with the PR base tip; local runs use the merge-base", () => {

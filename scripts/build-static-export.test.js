@@ -44,6 +44,7 @@ function createProject(t) {
 		"#!/bin/sh",
 		"if [ -e app/api ]; then echo visible > build-saw-api; else echo hidden > build-saw-api; fi",
 		"echo \"$NEXT_OUTPUT\" > build-saw-output",
+		"echo \"$VPK_STATIC_EXPORT_WRAPPER\" > build-saw-wrapper",
 		"touch build-started",
 		"echo $$ >> builds",
 		"while [ -n \"$FAKE_BUILD_WAIT\" ] && [ ! -e release ]; do sleep 0.05; done",
@@ -86,6 +87,8 @@ test("static export hides the API routes during the build and restores them afte
 	assert.equal(result.status, 0, result.stderr);
 	assert.equal(project.read("build-saw-api"), "hidden");
 	assert.equal(project.read("build-saw-output"), "export");
+	// next.config.ts refuses NEXT_OUTPUT=export unless this marker says the wrapper started it.
+	assert.equal(project.read("build-saw-wrapper"), "1");
 	assert.equal(project.exists("app/api/health/route.ts"), true);
 	assert.equal(project.exists(".api-routes-backup"), false);
 	assert.equal(project.exists(".static-export-journal.json"), false);

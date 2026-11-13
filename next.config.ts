@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 import packageMetadata from "./package.json";
+import { assertStaticExportThroughWrapper } from "./scripts/lib/static-export-guard.js";
+
+assertStaticExportThroughWrapper();
 
 const projectRoot = process.cwd();
 const projectName = packageMetadata.name.replace(/^@[^/]+\//, "");

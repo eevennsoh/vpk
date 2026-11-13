@@ -181,7 +181,7 @@ See [guide-setup.md](./.cursor/skills/vpk-setup/references/guide-setup.md) for d
 VPK supports light/dark/system theme modes with localStorage persistence:
 
 - Theme state managed by `ThemeWrapper` at `components/utils/theme-wrapper.tsx`
-- Applies `.light`/`.dark` classes on `<html>` and relies on local token aliases in `app/tokens.css`
+- Applies `.light`/`.dark` classes on `<html>` and relies on the token aliases in `app/shadcn-theme.css` and `app/tailwind-theme.css`
 - Exports: `useTheme()`, `ThemeToggle`, `ThemeSelector`
 
 ## Code Style
@@ -216,9 +216,21 @@ See [AGENTS.md](./AGENTS.md) for detailed architectural guidelines.
 
 **Port already in use:**
 
+Ports are per worktree, so a busy port is usually this worktree's own stack or another worktree's. Stop this worktree's stack, or list every worktree's stack and stop one by its id:
+
 ```bash
-lsof -ti:3000,8080 | xargs kill -9
+pnpm run dev:tmux:stop
 ```
+
+```bash
+pnpm ports
+```
+
+```bash
+pnpm ports kill <id>
+```
+
+Never kill by port number (`lsof … | xargs kill`): the process on that port may be another worktree's server.
 
 **ASAP_PRIVATE_KEY missing:**
 
@@ -234,8 +246,8 @@ For more help, see the troubleshooting sections in [guide-setup.md](./.cursor/sk
 
 **Dev server not starting:**
 
-- Check ports: `lsof -ti:3000,8080`
-- Kill processes: `lsof -ti:3000,8080 | xargs kill -9`
+- Check this worktree's ports and stacks: `pnpm ports`
+- Stop this worktree's stack: `pnpm run dev:tmux:stop`; another worktree's: `pnpm ports kill <id>`
 
 **"Cannot find module" errors:**
 

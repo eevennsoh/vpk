@@ -62,17 +62,6 @@ function execGit(command, { cwd = process.cwd() } = {}) {
 	}).trim();
 }
 
-function inferWorktreeKind(worktreePath) {
-	try {
-		const gitDir = execGit("git rev-parse --git-dir", { cwd: worktreePath });
-		return path.basename(gitDir) === ".git" ? "main" : "linked";
-	} catch {
-		// Fall back to path heuristics when git metadata is unavailable.
-	}
-
-	return worktreePath.replace(/\\/g, "/").includes("/worktrees/") ? "linked" : "main";
-}
-
 function resolveWorktreeIdentifier(worktree) {
 	if (typeof worktree.branch === "string" && worktree.branch.length > 0) {
 		return worktree.branch;
@@ -85,6 +74,7 @@ function getGitWorktrees({ cwd = process.cwd() } = {}) {
 		const output = execGit("git worktree list --porcelain", { cwd });
 		const worktrees = [];
 		let current = null;
+		let entryCount = 0;
 
 		for (const rawLine of output.split("\n")) {
 			const line = rawLine.trimEnd();
@@ -92,11 +82,15 @@ function getGitWorktrees({ cwd = process.cwd() } = {}) {
 				if (current && current.path && !current.bare) {
 					worktrees.push(current);
 				}
+				// git lists the main worktree first, so its position identifies it
+				// without one `git rev-parse` per worktree (76 of them took ~3 s).
 				current = {
 					path: path.resolve(line.slice(9)),
 					branch: null,
 					bare: false,
+					isMain: entryCount === 0,
 				};
+				entryCount += 1;
 				continue;
 			}
 
@@ -120,7 +114,6 @@ function getGitWorktrees({ cwd = process.cwd() } = {}) {
 
 		return worktrees.map((worktree) => ({
 			...worktree,
-			isMain: inferWorktreeKind(worktree.path) === "main",
 			identifier: resolveWorktreeIdentifier(worktree),
 		}));
 	} catch {
@@ -417,7 +410,6 @@ function getAllWorktreePortInfo() {
 }
 
 module.exports = {
-	inferWorktreeKind,
 	hashString,
 	getGitWorktrees,
 	getWorktreeName,

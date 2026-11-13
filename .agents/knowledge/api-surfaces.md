@@ -3,8 +3,9 @@
 Generated file. Do not edit by hand — run `node scripts/generate-api-surfaces.js`.
 
 Judgment guidance lives in `.agents/rules/api-surfaces.md`; the tables live here because Claude Code
-eagerly loads every `.md` under `.agents/rules/` into its session context (see the Contextual
-Rules section of `AGENTS.md`). Source of truth is `backend/routes/route-manifest.json`.
+loads that rule into the session as soon as a file in its scope is read, and the tables would
+ride along each time (see the Contextual Rules section of `AGENTS.md`). Source of truth is
+`backend/routes/route-manifest.json`.
 
 ## Generated Endpoint Tables
 
