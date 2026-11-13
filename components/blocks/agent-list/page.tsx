@@ -5,7 +5,7 @@ import { AnimatePresence } from "motion/react";
 
 import { RovoChatProvider, useRovoChatControls } from "@/app/contexts";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
-import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
+import FloatingRovoButton from "@/components/blocks/rovo-button";
 
 import {
 	AGENT_LIST_ITEMS,

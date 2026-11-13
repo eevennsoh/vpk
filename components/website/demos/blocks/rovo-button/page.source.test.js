@@ -7,7 +7,7 @@ const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-
 
 const ROVO_BUTTON_PAGE_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
 const ROVO_BUTTON_DEMO_SOURCE = fs.readFileSync(
-	path.join(__dirname, "../../website/demos/projects/rovo-button-demo.tsx"),
+	path.join(__dirname, "../rovo-button-demo.tsx"),
 	"utf8",
 );
 const ONBOARDING_HOOK_SOURCE = fs.readFileSync(
@@ -204,7 +204,7 @@ test("Rovo button project page maps one declarative variant list", () => {
 	);
 	assert.match(
 		ROVO_BUTTON_PAGE_SOURCE,
-		/\{variants\.map\(\(variant\) => \([\s\S]*<RovoButtonDemoCaption[\s\S]*detail=\{variant\.detail\}[\s\S]*liftPx=\{variant\.captionLiftPx\}[\s\S]*placement=\{variant\.placement\}[\s\S]*title=\{variant\.title\}[\s\S]*variant\.render\(\{ placement: variant\.placement, positioning \}\)/u,
+		/\{variants\.filter\([\s\S]*<RovoButtonDemoCaption[\s\S]*detail=\{variant\.detail\}[\s\S]*liftPx=\{variant\.captionLiftPx\}[\s\S]*placement=\{variant\.placement\}[\s\S]*title=\{variant\.title\}[\s\S]*variant\.render\(\{ placement: selectedVariant \? ONBOARDING_BUTTON_PLACEMENT : variant\.placement, positioning \}\)/u,
 	);
 
 	const declaredCaptions = [
@@ -383,6 +383,6 @@ test("Rovo button catalog demo uses parent-height embedded preview positioning",
 	);
 	assert.match(
 		ROVO_BUTTON_DEMO_SOURCE,
-		/<RovoButtonProjectPage embedded=\{embedded\} embeddedHeight=\{embeddedHeight\} \/>/u,
+		/<RovoButtonPage embedded=\{embedded\} embeddedHeight=\{embeddedHeight\} \/>/u,
 	);
 });

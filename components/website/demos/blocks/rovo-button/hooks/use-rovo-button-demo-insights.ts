@@ -5,7 +5,7 @@ import type {
 	FloatingRovoButtonInsightRow,
 	FloatingRovoButtonInsightsConfig,
 	FloatingRovoButtonInsightsStage,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 import {
 	ROVO_BUTTON_DEMO_INSIGHTS_INITIAL_STATE,
 	reduceRovoButtonDemoInsights,

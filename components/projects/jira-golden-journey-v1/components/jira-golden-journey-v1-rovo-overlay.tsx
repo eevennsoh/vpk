@@ -8,8 +8,8 @@ import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatComposerPrefillRequest, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { AgentResultCreator } from "@/components/projects/sidebar-chat/components/agent-result-card";
-import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
-import type { FloatingRovoButtonInsightsConfig, FloatingRovoButtonSuggestion } from "@/components/projects/shared/components/floating-rovo-button";
+import FloatingRovoButton from "@/components/blocks/rovo-button";
+import type { FloatingRovoButtonInsightsConfig, FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 
 interface JgpRovoOverlayProps {
