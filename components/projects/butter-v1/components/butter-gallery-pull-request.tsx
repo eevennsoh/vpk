@@ -55,7 +55,7 @@ const merchantPreview = PULL_REQUEST_CARDS.open.pullRequestPreview;
 if (!merchantPreview) throw new Error("Missing Project Butter pull request preview");
 const MULTIPLE_PULL_REQUESTS: readonly JiraIssuePullRequestItem[] = [
 	{ number: 284, status: "open", preview: merchantPreview },
-	{ number: 283, status: "merged", preview: { title: "Add Payments SDK migration guide", author: merchantPreview.author, relativeTime: "2 days ago", repository: "payments-platform/payments", branch: "rovo/pay-999-migration-guide", targetBranch: "main", filesChanged: 4, additions: 142, deletions: 18, checks: projectButterDevelopmentChecks("merged") } },
+	{ number: 283, status: "merged", preview: { title: "Add Payments SDK migration guide", href: "https://github.com/payments-platform/payments/pull/283", author: merchantPreview.author, relativeTime: "2 days ago", repository: "payments-platform/payments", branch: "rovo/pay-999-migration-guide", targetBranch: "main", filesChanged: 4, additions: 142, deletions: 18, checks: projectButterDevelopmentChecks("merged") } },
 ];
 const PULL_REQUEST_STATUSES = { open: "Open", failed: "Failed", draft: "Draft", merged: "Merged" } satisfies Record<JiraIssuePullRequestItem["status"], PullRequestStatus>;
 const MULTIPLE_DEVELOPMENT_PULL_REQUESTS = MULTIPLE_PULL_REQUESTS.map(({ number, preview, status }) => ({ ...preview, number, status: PULL_REQUEST_STATUSES[status] }));

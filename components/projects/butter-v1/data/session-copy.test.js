@@ -40,6 +40,19 @@ test("merchant session snapshot preserves the request and shows ongoing work", a
 	assert.match(merchantJourneyChatSnapshot({ ...activity, prompt: "@Claude" }).messages[0].parts[0].text, /merchant onboarding/u);
 });
 
+test("new work-item sessions show their instruction and ongoing work without replacing recorded sessions", async () => {
+	const { workItemChatSnapshot } = await loadData();
+	const session = { id: "VITA-1:new", agent: { name: "Claude" }, state: "running", message: "Ready to work on Redesign onboarding.", prompt: "Check keyboard navigation" };
+	const snapshot = workItemChatSnapshot(session, "Redesign onboarding");
+	assert.equal(snapshot.messages[0].parts[0].text, "Check keyboard navigation");
+	assert.match(snapshot.messages[1].parts[0].text, /Redesign onboarding/u);
+	assert.equal(snapshot.messages.at(-1).id, snapshot.thinkingMessageId);
+	assert.equal(snapshot.messages.at(-1).parts.at(-1).data.phase, "start");
+	assert.equal(workItemChatSnapshot({ ...session, state: "complete" }, "Redesign onboarding"), undefined);
+	assert.equal(workItemChatSnapshot({ ...session, message: "Existing session history" }, "Redesign onboarding"), undefined);
+	assert.equal(workItemChatSnapshot({ ...session, prompt: "@Claude" }, "Redesign onboarding").messages[0].role, "assistant");
+});
+
 test("seeded and arriving sessions use stable, work-specific titles", async () => {
 	const data = await loadData();
 	const sessions = [

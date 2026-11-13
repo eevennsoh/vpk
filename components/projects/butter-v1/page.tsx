@@ -72,7 +72,7 @@ import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-g
 import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MerchantJourneyCompactControls, MerchantJourneyControls } from "./components/merchant-journey-controls";
-import { applyMerchantJourneyToBoard, merchantJourneyAuthoredCard, merchantJourneyChatSnapshot, type MerchantJourneyPhase } from "./data/merchant-journey";
+import { applyMerchantJourneyToBoard, merchantJourneyAuthoredCard, merchantJourneyChatSnapshot, workItemChatSnapshot, type MerchantJourneyPhase } from "./data/merchant-journey";
 import { MERCHANT_PROGRESS_DELAY_MS } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
 import { BUTTER_GALLERY_ITEMS } from "./data/gallery-items";
 import { BUTTER_GALLERY_SESSIONS, BUTTER_WORK_ITEM_SESSIONS } from "./data/gallery-work-item-sessions";
@@ -384,7 +384,7 @@ function ButterGalleryWorkItem({ compact, galleryOpen, initialSessions, open, on
 			<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex items-start justify-center overflow-hidden", galleryOpen ? "bottom-56" : "bottom-0")}>
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
 					<ProjectButterJiraWorkItem inlineSessionReplies cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" initialSessions={initialSessions} initialRelatedSectionOpen={false} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} onOpenCloudSession={async (session, draft, workItem) => {
-						const opened = await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt });
+						const opened = await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt, recordedSession: workItemChatSnapshot(session, workItem.summary) });
 						if (opened && draft) setComposerPrefillRequest({ text: draft, append: true, requestKey: ++prefillKey.current });
 						return opened;
 					}} open={open} shell="gallery" />
@@ -1022,6 +1022,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 					issueSummary,
 					intro: session.message,
 					request: session.prompt,
+					recordedSession: issueKey === "PAY-999" && session.id === journeySession?.id && (phase === "starting" || phase === "working") ? merchantJourneyChatSnapshot(toButterAgentActivityFromSession(session)) : workItemChatSnapshot(session, issueSummary),
 				}); if (opened && draft) prefillComposerText(draft); return opened; }}
 				onStoryPointsChange={(issueKey, storyPoints) => setBoardColumns((columns) => columns.map((column) => ({ ...column, cards: column.cards.map((card) => card.code === issueKey ? { ...card, storyPoints } : card) })))}
 				onAssigneeChange={(issueKey, assignee) => setBoardColumns((columns) => columns.map((column) => ({ ...column, cards: column.cards.map((card) => card.code === issueKey ? { ...card, assignee: assignee.name === "Unassigned" || assignee.name === "Automatic" ? undefined : { id: assignee.name === "Venn" ? "venn" : assignee.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name: assignee.name, avatarSrc: assignee.avatarUrl }, avatarSrc: assignee.avatarUrl } : card) })))}

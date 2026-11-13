@@ -162,10 +162,11 @@ export function JiraIssuePullRequestCluster({
 					<Button
 						aria-label={accessibleName}
 						aria-describedby={tooltipOpen && !popoverOpen ? tooltipId : undefined}
-						className={cn(tone === "subtle" ? "text-icon-subtle" : colorClass, tone === "subtle" && hoverColorClass, "[&_svg]:text-current aria-expanded:bg-bg-selected aria-expanded:text-icon-selected aria-expanded:hover:bg-bg-selected-hovered", iconMetrics.compactIconClassName)}
+						className={cn(tone === "subtle" ? "text-icon-subtle" : colorClass, tone === "subtle" && hoverColorClass, "[&_svg]:text-current", iconMetrics.compactIconClassName)}
 						onClick={stopNestedActivation}
 						onPointerDown={stopNestedActivation}
 						size="icon-compact"
+						selectedAppearance="icon-only"
 						type="button"
 						variant="ghost"
 					/>
@@ -190,16 +191,15 @@ export function JiraIssuePullRequestCluster({
 				style={{ boxShadow: token("elevation.shadow.overlay") }}
 			>
 				{hasMultiple ? (
-					<ul aria-label="Pull requests" className="divide-y divide-border-disabled py-1">
-						{pullRequests?.toSorted((a, b) => PULL_REQUEST_STATUS_ORDER[a.status] - PULL_REQUEST_STATUS_ORDER[b.status]).map((item) => (
-							<li key={item.number}>
+					<ul aria-label="Pull requests" className="pt-1">
+						{pullRequests?.toSorted((a, b) => PULL_REQUEST_STATUS_ORDER[a.status] - PULL_REQUEST_STATUS_ORDER[b.status]).map((item, index, items) => (
+							<li className={cn(selected?.number === item.number && index > 0 && "border-t border-border-disabled", selected?.number === item.number && index < items.length - 1 && "border-b border-border-disabled", index > 0 && (selected?.number === item.number || selected?.number === items[index - 1]?.number) && "pt-1", ((index === items.length - 1 && selected?.number !== item.number) || (selected && selected.number === items[index + 1]?.number)) && "pb-1")} key={item.number}>
 								<PullRequest
 									{...item.preview}
 									additions={item.preview.additions ?? 0}
 									checksExpandable={false}
 									className="gap-0 rounded-none border-none bg-transparent p-0 shadow-none"
 									deletions={item.preview.deletions ?? 0}
-									href={undefined}
 									number={item.number}
 									onToggleDetails={() => setSelected((current) => current?.number === item.number ? null : item)}
 									showDetails={selected?.number === item.number}

@@ -436,10 +436,11 @@ function PullRequestFlyoutBody({
 	return (
 		<>
 			{onToggleDetails ? <div className="min-w-0 px-1">
-				<Button aria-expanded={showDetails} className="flex h-auto w-full items-start justify-start gap-3 rounded-md px-2 py-2 text-left whitespace-normal" onClick={onToggleDetails} type="button" variant="ghost">
-					<PullRequestInlineTitle className={cn("flex-1 [&_span:last-child]:no-underline", !showDetails && "truncate whitespace-nowrap")} number={number} title={title} />
-					<PullRequestStatusLozenge status={status} />
-				</Button>
+				<div className="relative flex min-w-0 items-start gap-3 px-2 py-2">
+					<Button aria-expanded={showDetails} aria-label={`#${number} ${title} ${status}`} className="absolute inset-0 h-full w-full aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent aria-expanded:focus-visible:border-ring" onClick={onToggleDetails} type="button" variant="ghost" />
+					<PullRequestInlineTitle className={cn("pointer-events-none relative flex-1 [&_a]:pointer-events-auto [&_span:last-child]:no-underline", !showDetails && "truncate whitespace-nowrap")} href={showDetails ? href : undefined} number={number} title={title} />
+					<div className="pointer-events-none relative"><PullRequestStatusLozenge status={status} /></div>
+				</div>
 				{showDetails && authorMeta ? <div className="px-2 pb-2">{authorMeta}</div> : null}
 			</div> : <div className="flex w-full min-w-0 items-start gap-3 px-3">
 				<div className="flex min-w-0 flex-1 flex-col gap-1">

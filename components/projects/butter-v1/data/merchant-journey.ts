@@ -1,10 +1,32 @@
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import type { JgpAgentChatScenario } from "@/components/projects/jira-golden-journey-v1/data/agent-chat-data";
+import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_JOURNEY_PULL_REQUEST, projectButterDevelopmentChecks } from "../../../blocks/jira-work-item/project-butter/development-journey-model.ts";
 import { BUTTER_PAY_CURRENT_USER } from "./current-user.ts";
 
 export type MerchantJourneyPhase = "invoke" | "starting" | "working" | "pr" | "failed" | "fixing" | "passed" | "merged";
+
+export function workItemChatSnapshot(session: ProjectButterSessionItem, summary: string): JgpAgentChatScenario["recordedSession"] {
+	if (session.state !== "running" || session.message !== `Ready to work on ${summary}.`) return undefined;
+	const id = session.id;
+	const thinkingMessageId = `${id}-thinking`;
+	const timestamp = "2026-11-12T00:00:00.000Z";
+	const prompt = session.prompt?.trim();
+	return {
+		thinkingMessageId,
+		messages: [
+			...(prompt && prompt.toLowerCase() !== `@${session.agent.name}`.toLowerCase() ? [{ id: `${id}-user`, role: "user" as const, parts: [{ type: "text" as const, text: prompt, state: "done" as const }] }] : []),
+			{ id: `${id}-update`, role: "assistant", parts: [{ type: "text", text: `I’m reviewing the context for ${summary}. I’ll check the requirements and related work before getting started.`, state: "done" }] },
+			{ id: thinkingMessageId, role: "assistant", parts: [
+				{ type: "data-thinking-status", data: { label: "Working", content: "Checking the requirements and related work.", toolCallId: `${id}-check`, activity: "data", source: "fallback", timestamp } },
+				{ type: "data-thinking-event", id: `${id}-read-start`, data: { eventId: `${id}-read-start`, phase: "start", toolName: "jira.read_work_item_context", label: "Reading the work item and linked context", toolCallId: `${id}-read`, timestamp } },
+				{ type: "data-thinking-event", id: `${id}-read-result`, data: { eventId: `${id}-read-result`, phase: "result", toolName: "jira.read_work_item_context", label: "Reading the work item and linked context", toolCallId: `${id}-read`, outputPreview: "Reviewed the work item and linked context.", timestamp } },
+				{ type: "data-thinking-event", id: `${id}-check-start`, data: { eventId: `${id}-check-start`, phase: "start", toolName: "workspace.review_files", label: "Checking the requirements and related work", toolCallId: `${id}-check`, timestamp } },
+			] },
+		],
+	};
+}
 
 export function merchantJourneyChatSnapshot(activity: JiraIssueAgentActivity): NonNullable<JgpAgentChatScenario["recordedSession"]> {
 	const thinkingMessageId = `${activity.id}-thinking`;
