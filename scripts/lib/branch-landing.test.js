@@ -85,6 +85,12 @@ test("unpushed commits on top of a merged PR are not landed", () => {
 	assert.match(pushedPastMerge.nextAction, /^open a PR \(#7 merged; these commits came after it\)$/u);
 });
 
+test("evidence lists every open PR, and none known when PRs could not be read", () => {
+	const older = { ...openPr, number: 6, createdAt: "2026-11-12T01:00:00Z" };
+	assert.deepEqual(deriveBranchLanding(facts({ inOriginDefault: true, landingInLocalDefault: true, prs: [older, mergedPr] })).evidence.openPrs, [6]);
+	assert.equal(deriveBranchLanding(facts({ inOriginDefault: true, landingInLocalDefault: true, prs: null })).evidence.openPrs, null);
+});
+
 test("a dirty worktree on a landed branch is dirty, not cleanable", () => {
 	const derived = deriveBranchLanding(facts({ worktree: { path: "/w", dirty: true }, inOriginDefault: true, landingInLocalDefault: true }));
 	assert.equal(derived.status, "dirty");

@@ -56,7 +56,9 @@ function cleanBlockers({ derived, target, defaultBranch, currentPath, mainChecko
 	if (target.worktree?.path === mainCheckoutPath) blockers.push("persistent main checkout");
 	if (target.worktree?.path === currentPath) blockers.push("current worktree");
 	if (target.worktree?.locked) blockers.push("worktree is locked");
-	if (derived.evidence.pr?.state === "OPEN") blockers.push(`open PR #${derived.evidence.pr.number}`);
+	// No open PR may own it: every PR on the branch counts, and an unreadable PR list proves nothing.
+	if (target.branch !== null && derived.evidence.openPrs === null) blockers.push("pull requests could not be read");
+	for (const number of derived.evidence.openPrs ?? []) blockers.push(`open PR #${number}`);
 	return blockers;
 }
 

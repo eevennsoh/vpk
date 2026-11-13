@@ -113,3 +113,43 @@ test("a merge-commit landing is proven by ancestry; a deleted branch with a sync
 	const gone = await facts(git, { branch: "topic", localBranchExists: false, prs: [pr] });
 	assert.equal(deriveBranchLanding(gone).status, "cleaned");
 });
+
+test("a merge commit's own changes are not proven by patch equivalence (git cherry skips merges)", async (t) => {
+	const { clone, commit, git, sh } = setup(t);
+	commit("shared.txt", "base");
+	sh(clone, "push", "--quiet", "origin", "main");
+	const base = sh(clone, "rev-parse", "HEAD");
+	// Two branches change the same line.
+	sh(clone, "checkout", "--quiet", "-b", "left", base);
+	commit("shared.txt", "left");
+	sh(clone, "checkout", "--quiet", "-b", "right", base);
+	commit("shared.txt", "right");
+	const resolve = (text, message) => {
+		fs.writeFileSync(path.join(clone, "shared.txt"), text);
+		sh(clone, "add", "shared.txt");
+		sh(clone, "commit", "--quiet", "-m", message);
+	};
+	const mergeBoth = (resolution) => {
+		sh(clone, "merge", "--quiet", "--no-ff", "-m", "merge left", "left");
+		try {
+			sh(clone, "merge", "--quiet", "--no-ff", "-m", "merge right", "right");
+		} catch {
+			resolve(resolution, "merge right");
+		}
+	};
+	// main resolves the conflict one way, the feature branch another.
+	sh(clone, "checkout", "--quiet", "main");
+	mergeBoth("main's resolution");
+	sh(clone, "push", "--quiet", "origin", "main");
+	sh(clone, "checkout", "--quiet", "-b", "feature", base);
+	mergeBoth("feature's resolution");
+	sh(clone, "push", "--quiet", "-u", "origin", "feature");
+	sh(clone, "fetch", "--quiet", "origin");
+	assert.equal(sh(clone, "cherry", "origin/main", "feature"), "", "git cherry sees nothing to land");
+
+	const result = await facts(git, { branch: "feature", worktree: { path: clone, branch: "feature" } });
+	assert.equal(result.patchEquivalent, false);
+	const derived = deriveBranchLanding(result);
+	assert.equal(derived.evidence.landed, false);
+	assert.equal(derived.status, "pushed");
+});
