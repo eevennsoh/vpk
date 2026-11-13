@@ -203,6 +203,54 @@ jobs:
           path: output/playwright
           retention-days: 7
 
+  perf:
+    name: Perf budget
+    # Byte budgets on every push to main; a regression shows as a red main run with the
+    # failing route named. PRs do not wait for it. If Actions is billing-blocked again,
+    # the nightly vpk-scheduled-automation run is the fallback.
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Verify lockfile registries
+        run: node scripts/verify-pnpm-lockfile.js
+
+      - name: Authenticate to the internal Atlassian npm registry
+        # Same registry setup as the static and unit jobs; see the comment there.
+        run: node scripts/write-npmrc.mjs
+        env:
+          ATLASSIAN_NPM_TOKEN: ${{ secrets.ATLASSIAN_NPM_TOKEN }}
+          MOTION_TOKEN: ${{ secrets.MOTION_TOKEN }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Production build
+        run: |
+          mkdir -p output
+          set -o pipefail
+          time pnpm run build 2>&1 | tee output/perf-build.log
+
+      - name: Route byte budgets
+        # The build log and .next manifests give the route sizes; the build-duration limit
+        # depends on the machine, so it stays with local `pnpm run perf:budget`.
+        run: |
+          node scripts/collect-perf-baseline.js --input output/perf-build.log
+          node scripts/verify-perf-baseline-budget.js
+
   aggregate:
     name: PR checks
     if: ${{ always() }}

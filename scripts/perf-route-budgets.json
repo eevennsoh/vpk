@@ -1,0 +1,16 @@
+{
+	"routes": {
+		"home": { "assetCount": 60, "cssBytes": 935000, "firstLoadJsBytes": 2350000, "routeJsBytes": 120000 },
+		"rovo": { "assetCount": 120, "cssBytes": 935000, "firstLoadJsBytes": 7300000, "routeJsBytes": 125000 },
+		"studio": { "assetCount": 135, "cssBytes": 935000, "firstLoadJsBytes": 8100000, "routeJsBytes": 125000 },
+		"components": { "assetCount": 65, "cssBytes": 935000, "firstLoadJsBytes": 2600000, "routeJsBytes": 160000 },
+		"butter": { "assetCount": 35, "cssBytes": 935000, "firstLoadJsBytes": 735000, "routeJsBytes": 76000 },
+		"eu26": { "assetCount": 35, "cssBytes": 935000, "firstLoadJsBytes": 735000, "routeJsBytes": 76000 },
+		"heavy-visual": { "assetCount": 65, "cssBytes": 935000, "firstLoadJsBytes": 2600000, "routeJsBytes": 160000 }
+	},
+	"targets": {
+		"note": "Where the bundle should return to. The route budgets above are a ceiling that stops further growth (re-baselined 2026-11-13 at about 3% over a production build of main), not a goal.",
+		"*": { "cssBytes": 700000 },
+		"rovo": { "firstLoadJsBytes": 7100000 }
+	}
+}
