@@ -4,28 +4,29 @@ const path = require("node:path");
 const test = require("node:test");
 
 const source = fs.readFileSync(path.join(__dirname, "menubar.tsx"), "utf8");
+const dropdownSource = fs.readFileSync(path.join(__dirname, "dropdown-menu.tsx"), "utf8");
 
 test("menubar content opens with an 8px trigger gap", () => {
 	assert.match(source, /sideOffset = 8/u);
 	assert.match(source, /<DropdownMenuContent[\s\S]*sideOffset=\{sideOffset\}/u);
 });
 
-test("menubar submenu content keeps the 12px menu container radius and 4px padding", () => {
-	assert.match(source, /data-slot="menubar-sub-content"[\s\S]*\brounded-xl\b/u);
-	assert.match(source, /data-slot="menubar-sub-content"[\s\S]*\bp-1\b/u);
-	assert.doesNotMatch(source, /data-slot="menubar-sub-content"[\s\S]*\brounded-lg\b/u);
+test("menubar submenu content keeps the 8px menu container radius and compact padding", () => {
+	assert.match(dropdownSource, /surface:\s*"[^"]*\brounded-lg\b/u);
+	assert.match(dropdownSource, /compact:\s*"p-1\.5\b/u);
+	assert.doesNotMatch(dropdownSource, /surface:\s*"[^"]*\brounded-xl\b/u);
 });
 
 test("menubar items keep shortcut and icon children in the flex row", () => {
 	assert.match(source, /import \{ Menu as MenuPrimitive \} from "@base-ui\/react\/menu";/u);
 	assert.doesNotMatch(source, /DropdownMenuItem,/u);
 	assert.match(source, /<MenuPrimitive\.Item[\s\S]*data-slot="menubar-item"/u);
-	assert.match(source, /relative flex w-full cursor-pointer items-center gap-2 rounded-lg/u);
+	assert.match(dropdownSource, /const menuItemBaseClassName =\s*"[^"]*relative flex w-full cursor-pointer items-center rounded-lg/u);
 	assert.match(source, /hasStructuredSlots \? \([\s\S]*\) : \(\s*children\s*\)/u);
 });
 
 test("menubar menu rows use an 8px item radius", () => {
-	assert.match(source, /const menubarRowBaseClassName =\s*"[^"]*\brounded-lg\b/u);
+	assert.match(dropdownSource, /const menuItemBaseClassName =\s*"[^"]*\brounded-lg\b/u);
 	assert.doesNotMatch(source, /const menubarRowBaseClassName =\s*"[^"]*\brounded-sm\b/u);
 	assert.match(source, /data-slot="menubar-sub-trigger"[\s\S]*\brounded-lg\b/u);
 });

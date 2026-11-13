@@ -24,7 +24,7 @@ interface AgentSelectorPageProps {
 }
 
 const AGENT_SELECTOR_STANDALONE_SURFACE_CLASS =
-	"w-[360px] overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-2xl";
+	"w-[360px] overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-2xl";
 
 export default function AgentSelectorPage({
 	presentation = "dropdown",

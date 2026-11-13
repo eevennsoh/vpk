@@ -623,8 +623,8 @@ test("AgentSelector dropdowns do not inherit the generic menu height cap", () =>
 });
 
 test("AgentSelector Command root uses DropdownMenuContent container radius", () => {
-	// DropdownMenu popup is `rounded-xl` (12px). Command used to ship `rounded-xl!`;
-	// keep AgentSelector on the same non-important class so Assign agents / Use skills
+	// The selector uses the shared menu radius without an important override.
+	// Keep AgentSelector on the same non-important class so Assign agents / Use skills
 	// match other dropdown surfaces. SkillSelector has no separate radius override.
 	const commandSource = fs.readFileSync(
 		path.join(process.cwd(), "components/ui/command.tsx"),
@@ -638,7 +638,7 @@ test("AgentSelector Command root uses DropdownMenuContent container radius", () 
 		path.join(process.cwd(), "components/blocks/skill-selector/components/skill-selector.tsx"),
 		"utf8",
 	);
-	assert.match(dropdownSource, /popup:\s*"[^"]*\brounded-xl\b/u);
+	assert.match(dropdownSource, /surface:\s*"[^"]*\brounded-lg\b/u);
 	assert.match(
 		commandSource,
 		/"bg-popover text-popover-foreground rounded-xl p-1 flex size-full flex-col overflow-hidden"/u,
@@ -647,10 +647,10 @@ test("AgentSelector Command root uses DropdownMenuContent container radius", () 
 		commandSource,
 		/"bg-popover text-popover-foreground rounded-xl! p-1 flex size-full flex-col overflow-hidden"/u,
 	);
-	assert.match(COMPONENT_SOURCE, /flex-1 rounded-xl p-1/u);
+	assert.match(COMPONENT_SOURCE, /flex-1 rounded-lg p-1/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /rounded-xl!/u);
 	assert.doesNotMatch(skillSource, /rounded-xl!/u);
-	assert.match(COMPONENT_SOURCE, /-mx-1 -mt-1 overflow-hidden rounded-t-xl/u);
+	assert.match(COMPONENT_SOURCE, /-mx-1 -mt-1 overflow-hidden rounded-t-lg/u);
 });
 
 test("AgentSelector can swap its boxed search for the editor-palette bar", () => {

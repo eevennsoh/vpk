@@ -64,7 +64,7 @@ export function AgentLanyardCard({
 				</span>
 				<div className="absolute inset-x-0 top-4 bottom-0 grid place-items-center">{avatar}</div>
 			</div>
-			<div className={cn("flex flex-1 flex-col gap-3 px-4 pt-4", recommended ? "pb-6" : "pb-4")}>
+			<div className="flex flex-1 flex-col gap-3 p-4">
 				<div>
 					<div className="flex min-w-0 items-center gap-1.5">
 						<Title className={cn("min-w-0 text-base leading-6 font-medium text-text", recommended ? "wrap-anywhere" : "truncate")} title={name}>{name}</Title>
@@ -82,7 +82,7 @@ export function AgentLanyardCard({
 		// The outer hover target stays stationary while the inner material rotates.
 		<article
 			aria-label={`${name} ${variant}`}
-			className={cn("w-[252px] max-w-full", recommended ? "agent-card-ticket-shadow" : null, className)}
+			className={cn("w-[252px] max-w-full", recommended ? "agent-lanyard-recommendation-shadow" : null, className)}
 			data-slot="agent-lanyard" data-agent-id={id} data-variant={variant}
 			data-perspective-tilt={tiltEnabled} data-grid-animation={gridEnabled}
 			onPointerEnter={(event) => { if (event.pointerType !== "touch") setHovered(true); }}

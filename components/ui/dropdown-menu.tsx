@@ -15,20 +15,31 @@ import { Icon } from "@/components/ui/icon";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 
+const menuItemBaseClassName =
+  "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center rounded-lg text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg]:pointer-events-none [&_svg]:shrink-0";
+
 /**
- * Shared visual style tokens used by both DropdownMenu and Select components.
+ * Shared visual style tokens used by DropdownMenu, Menubar, ContextMenu, and Select.
  * Select imports these directly so popup, item, group, label, and separator
  * styling stays in sync without duplication.
  */
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const dropdownStyles = {
+  surface: "rounded-lg shadow-2xl menu-row-spacing",
   popup:
-    "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=bottom]:slide-out-to-top-2 data-[side=left]:slide-out-to-right-2 data-[side=right]:slide-out-to-left-2 data-[side=top]:slide-out-to-bottom-2 data-[side=inline-start]:slide-out-to-right-2 data-[side=inline-end]:slide-out-to-left-2 motion-reduce:animate-none bg-popover text-popover-foreground max-h-[min(328px,var(--available-height,328px))] min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl p-1 shadow-xl outline-none data-open:duration-normal data-open:ease-out-practical data-closed:duration-fast data-closed:ease-in data-closed:overflow-hidden",
+    "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=bottom]:slide-out-to-top-2 data-[side=left]:slide-out-to-right-2 data-[side=right]:slide-out-to-left-2 data-[side=top]:slide-out-to-bottom-2 data-[side=inline-start]:slide-out-to-right-2 data-[side=inline-end]:slide-out-to-left-2 motion-reduce:animate-none bg-popover text-popover-foreground max-h-[min(328px,var(--available-height,328px))] min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto child-overlay-surface outline-none data-open:duration-normal data-open:ease-out-practical data-closed:duration-fast data-closed:ease-in data-closed:overflow-hidden",
+  padding: {
+    compact: "p-1.5 [--menu-inset:var(--ds-space-075,0.375rem)]",
+    spacious: "p-2 [--menu-inset:var(--ds-space-100,0.5rem)]",
+  },
   group: "",
-  selectableItem:
-    "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center rounded-lg py-1.5 pr-2 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  itemBase: menuItemBaseClassName,
+  selectableItem: cn(
+    menuItemBaseClassName,
+    "min-h-8 py-1.5 pr-2 pl-8 [&_svg:not([class*='size-'])]:size-4",
+  ),
   label: "text-text-subtlest px-2 pt-3 pb-1 text-xs leading-4 font-semibold",
-  separator: "bg-border mx-1 my-1 h-px",
+  separator: "bg-border -mx-(--menu-inset) my-(--menu-inset) h-px",
   // Deliberately empty. A checked row is styled exactly like an unchecked one —
   // no filled surface, no recoloured label, same hover and pressed treatment —
   // because the check glyph alone is the selected affordance, and it sits on
@@ -57,7 +68,6 @@ export const dropdownStyles = {
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export type DropdownMenuIndicatorPlacement = "start" | "end";
 
-const dropdownMenuOverlayShadow = "shadow-2xl";
 // The leading-icon slot defaults to the subtle icon token, but the @atlaskit
 // icon glyph paints its SVG from `currentColor`, so this wrapper's `color` wins
 // over the item's variant rules unless we yield on the destructive state. Scope
@@ -109,6 +119,9 @@ function DropdownMenuTrigger({
   );
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- Shared visual spacing type for menu variants.
+export type MenuSpacing = "compact" | "spacious";
+
 interface DropdownMenuContentProps
   extends
     MenuPrimitive.Popup.Props,
@@ -116,6 +129,7 @@ interface DropdownMenuContentProps
       MenuPrimitive.Positioner.Props,
 			"align" | "alignOffset" | "anchor" | "collisionAvoidance" | "side" | "sideOffset"
     > {
+  spacing?: MenuSpacing;
   portalled?: boolean;
   portalContainer?: MenuPrimitive.Portal.Props["container"];
   /**
@@ -135,6 +149,7 @@ function DropdownMenuContent({
 	collisionAvoidance,
   side = "bottom",
   sideOffset = 4,
+  spacing = "compact",
   portalled = true,
   portalContainer,
   className,
@@ -154,10 +169,11 @@ function DropdownMenuContent({
 		>
 			<MenuPrimitive.Popup
 				data-slot="dropdown-menu-content"
+				data-menu-spacing={spacing}
 				className={cn(
 					dropdownStyles.popup,
-					dropdownMenuOverlayShadow,
-					"child-overlay-surface",
+					dropdownStyles.surface,
+					dropdownStyles.padding[spacing],
 					className,
 				)}
 				{...props}
@@ -292,7 +308,8 @@ function DropdownMenuItem({
       className={cn(
         // Single row stays fixed at 32px; growth is opt-in via `shouldWrapText`
         // (an explicit `allowTextWrap` or a `description`), matching Menubar.
-        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+        dropdownStyles.itemBase,
+        "group/dropdown-menu-item data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered gap-3 px-2 data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
         shouldWrapText ? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName,
         // No selected-state styling on purpose. `data-selected` stays on the
         // element as a hook for consumers, but the trailing check mark is the

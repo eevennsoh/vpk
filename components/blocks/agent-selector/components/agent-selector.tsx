@@ -712,7 +712,7 @@ export function AgentSelector({
 	const supportsMultipleSelection = selectionMode === "multiple";
 
 	return (
-		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 rounded-xl p-1", className)} label={searchPlaceholder} shouldFilter={false}>
+		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 rounded-lg p-1", className)} label={searchPlaceholder} shouldFilter={false}>
 			{hasSelectedAgentActions ? (
 				<div aria-label={selectedActionsLabel} className="flex shrink-0 flex-col border-b border-border pb-2" role="group">
 					{selectedActions.map((action) => (
@@ -740,7 +740,7 @@ export function AgentSelector({
 					// and metadata pickers.
 					// `hostOwnsKeyNavigation` hands Arrow/Enter back to the cmdk root,
 					// which owns row highlighting and activation for this list.
-					<div className={cn("-mx-1 -mt-1 overflow-hidden rounded-t-xl", !sections && "mb-1")}>
+					<div className={cn("-mx-1 -mt-1 overflow-hidden rounded-t-lg", !sections && "mb-1")}>
 						<RichTextCommandMenuSearchField
 							activeDescendantId={activeOptionId ?? null}
 							autoFocus

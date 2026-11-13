@@ -16,6 +16,7 @@ import {
 	PromptInputSubmit,
 } from "@/components/ui-custom/prompt-input";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { LiveWaveform } from "@/components/ui-custom/live-waveform";
 import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 import { resolveRovoAppComposerIdleAction } from "@/components/projects/shared/lib/rovo-app-composer-idle-action";
@@ -177,7 +178,7 @@ export function RovoComposerReasoningSelector({
 					</PromptInputAutoButton>
 				)}
 			/>
-			<PopoverContent side="top" align="end" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
+			<PopoverContent side="top" align="end" sideOffset={8} positionerClassName="z-[600]" className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto")}>
 				<PopoverTitle className="sr-only">Choose reasoning</PopoverTitle>
 				<CustomizeMenu
 					selectedReasoning={selectedReasoning}

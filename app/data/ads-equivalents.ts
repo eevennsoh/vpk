@@ -40,7 +40,6 @@ export const ADS_EQUIVALENTS: Record<string, AdsEquivalent> = {
 	link: "@atlaskit/link",
 	logo: "@atlaskit/logo",
 	lozenge: "@atlaskit/lozenge",
-	"menu-group": "@atlaskit/menu",
 	"page-header": "@atlaskit/page-header",
 	pagination: "@atlaskit/pagination",
 	popover: "@atlaskit/popup",

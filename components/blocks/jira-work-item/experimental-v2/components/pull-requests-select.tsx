@@ -170,7 +170,7 @@ export function PullRequestsSelect({
 					align="start"
 					alignItemWithTrigger={false}
 					aria-label="Pull requests"
-					className="w-[min(28rem,var(--available-width))] max-w-[var(--available-width)] rounded-xl p-1"
+					className="w-[min(28rem,var(--available-width))] max-w-[var(--available-width)] p-1"
 					data-jira-work-item-resource-pull-requests-menu
 					positionerClassName="z-[502]"
 				>

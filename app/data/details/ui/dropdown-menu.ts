@@ -21,6 +21,12 @@ export const DROPDOWN_MENU_DETAIL: ComponentDetail = {
 </DropdownMenu>`,
     props: [
       {
+        name: "spacing",
+        type: '"compact" | "spacious"',
+        default: '"compact"',
+        description: "Menu content inset: 6px compact or 8px spacious.",
+      },
+      {
         name: "variant",
         type: '"default" | "destructive"',
         default: '"default"',
@@ -102,7 +108,7 @@ export const DROPDOWN_MENU_DETAIL: ComponentDetail = {
       },
       {
         title: "Density",
-        description: "Cozy and compact row densities.",
+        description: "Spacious and compact menu insets.",
         demoSlug: "dropdown-menu-demo-density",
       },
       {
