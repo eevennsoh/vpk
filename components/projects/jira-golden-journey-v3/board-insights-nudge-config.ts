@@ -6,7 +6,7 @@ import type { PulseSnapshot } from "@/components/blocks/jira-kanban/experimental
 import type {
 	FloatingRovoButtonInsightRow,
 	FloatingRovoButtonInsightsConfig,
-} from "@/components/projects/shared/components/floating-rovo-button";
+} from "@/components/blocks/rovo-button";
 
 /**
  * The board's unread Pulse snapshots, shaped for the floating Rovo button.

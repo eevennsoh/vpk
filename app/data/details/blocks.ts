@@ -1,3 +1,4 @@
+import { ROVO_BUTTON_DETAIL } from "./blocks/rovo-button";
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 import { AGENT_DETAIL } from "./blocks/agent";
@@ -161,6 +162,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-session-column": AGENT_SESSION_COLUMN_DETAIL,
 	"agent-session-flyout": AGENT_SESSION_FLYOUT_DETAIL,
 	omnibar: OMNIBAR_DETAIL,
+	"rovo-button": ROVO_BUTTON_DETAIL,
 	scrubber: SCRUBBER_DETAIL,
 	"task-progress": TASK_PROGRESS_DETAIL,
 	trigger: TRIGGER_DETAIL,

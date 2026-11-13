@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import type { FloatingRovoButtonSuggestion } from "@/components/projects/shared/components/floating-rovo-button";
+import type { FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
 
 type DemoSuggestionState = "hidden" | "visible" | "accepted";
 

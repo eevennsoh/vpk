@@ -4,7 +4,6 @@ import { PreviewCategoryLayout, getCategoryPreviewMetadata, type PreviewLayoutPr
 const CHAT_CAPABLE_PROJECT_PREVIEWS = new Set([
 	"admin",
 	"rovo",
-	"rovo-button",
 	"sidebar-chat",
 	"skills",
 	"studio",

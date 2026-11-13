@@ -11,7 +11,7 @@ import type {
 	ChatSubmitInterceptOutcome,
 	ComposerInputContext,
 } from "@/components/projects/sidebar-chat/page";
-import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
+import FloatingRovoButton from "@/components/blocks/rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 
 interface AsxRovoOverlayProps {

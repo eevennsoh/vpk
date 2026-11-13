@@ -27,8 +27,8 @@ test("documentation source links resolve real files, directories, and multiline 
 			{ label: "GitHub", href: "https://github.com/eevennsoh/vpk/blob/main/components/ui/lozenge.tsx" },
 		],
 	}]);
-	assert.equal(getDocImportReferences("@/components/projects/rovo-button")[0].links[1].href,
-		"https://github.com/eevennsoh/vpk/tree/main/components/projects/rovo-button");
+	assert.equal(getDocImportReferences("@/components/blocks/rovo-button")[0].links[1].href,
+		"https://github.com/eevennsoh/vpk/tree/main/components/blocks/rovo-button");
 	assert.equal(getDocImportReferences("@/app/tailwind-theme.css\n@/app/shadcn-theme.css").length, 2);
 	assert.deepEqual(getDocImportReferences("motion-plus/react"), [{ path: "motion-plus/react", links: [] }]);
 	assert.deepEqual(getDocImportReferences("@/components/missing-component"), [{ path: "@/components/missing-component", links: [] }]);
