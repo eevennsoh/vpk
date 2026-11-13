@@ -208,7 +208,7 @@ test("workspace trash icon is 12px with a visible 4px gap before the checkmark",
 	await expect.poll(async () => {
 		const [trashRight, checkLeft] = await Promise.all([
 			inkEdge(remove.locator("svg"), "right"),
-			inkEdge(workspace.locator("svg").last(), "left"),
+			inkEdge(workspace.locator("xpath=..").locator(":scope > span svg"), "left"),
 		]);
 		return Math.round(checkLeft - trashRight);
 	}).toBe(4);

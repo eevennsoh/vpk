@@ -278,10 +278,15 @@ test("the comment bar reveals quickly and covers content below it while scrollin
 	await expect.poll(() => shadow.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none");
 	await expect.poll(() => bar.evaluate((element) => {
 		const root = element.closest("[data-project-butter-work-item]")!.firstElementChild!;
+		const backdrop = element.querySelector<HTMLElement>("[data-project-butter-comment-backdrop]");
+		if (!backdrop) return false;
 		const barBounds = element.getBoundingClientRect();
 		const viewport = root.getBoundingClientRect();
-		const hit = document.elementFromPoint(barBounds.left + barBounds.width / 2, Math.min(barBounds.bottom + 4, viewport.bottom - 1));
-		return hit?.hasAttribute("data-project-butter-comment-backdrop") ?? false;
+		const x = barBounds.left + barBounds.width / 2;
+		const y = Math.min(barBounds.bottom + 4, viewport.bottom - 1);
+		// The backdrop is a click-through fade (pointer-events: none), so hit testing skips it; check that it spans the content below the bar.
+		const cover = backdrop.getBoundingClientRect();
+		return cover.left <= x && cover.right >= x && cover.top <= y && cover.bottom >= y && getComputedStyle(backdrop).backgroundImage.includes("gradient");
 	})).toBe(true);
 	await scrollport.evaluate((root) => { root.scrollTop = root.scrollHeight; });
 	await expect(dialog.locator("[data-jira-activity-entry-id]").last()).toBeVisible();
@@ -365,7 +370,12 @@ test("agent mentions open an existing session or create a separate session", asy
 	async function mentionClaude() {
 		await page.keyboard.press("m");
 		await editor.pressSequentially("@Claude");
-		await page.getByRole("option", { name: /^Claude / }).click();
+		await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
+	}
+	// Opening a session tucks the composer away; scrolling back to Activity reveals it again.
+	async function revealComposer() {
+		await workItem.getByRole("heading", { name: "Activity", exact: true }).scrollIntoViewIfNeeded();
+		await editor.click();
 	}
 	await mentionClaude();
 	await editor.pressSequentially("Check the timeout path");
@@ -383,18 +393,18 @@ test("agent mentions open an existing session or create a separate session", asy
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toHaveText("What should I check next?");
 	await expect(chat.getByRole("log").getByText("What should I check next?", { exact: true })).toHaveCount(0);
 	await chat.getByRole("textbox", { name: "Chat message input" }).fill("Existing chat draft");
-	await workItem.getByRole("textbox", { name: "Comment editor" }).click();
+	await revealComposer();
 	await editor.pressSequentially("@Claude");
-	await page.getByRole("option", { name: /^Claude / }).click();
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	await editor.pressSequentially(" More context");
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
 	await page.getByRole("list", { name: "Choose a session" }).getByRole("button").first().click();
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("More context");
 	await expect(chat.getByRole("log").getByText("More context", { exact: true })).toHaveCount(0);
-	await workItem.getByRole("textbox", { name: "Comment editor" }).click();
+	await revealComposer();
 	await editor.pressSequentially("@Claude");
-	await page.getByRole("option", { name: /^Claude / }).click();
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	await choices.getByRole("option", { name: "Continue in existing session" }).click();
 	await page.getByRole("list", { name: "Choose a session" }).getByRole("button").first().click();
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toContainText("Existing chat draft");
@@ -448,13 +458,13 @@ for (const suffix of ["", " later"]) test(`Escape converts the mention to plain 
 	const editor = workItem.getByRole("textbox", { name: "Comment editor" });
 	async function insertClaude() {
 		await editor.pressSequentially("@Claude");
-		await page.getByRole("option", { name: /^Claude / }).click();
+		await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	}
 	await page.keyboard.press("m");
 	await insertClaude();
 	await editor.pressSequentially(" Original task");
 	await editor.press("Enter");
-	const agents = workItem.getByRole("button", { name: /^Working on this work item\./ });
+	const agents = workItem.getByRole("group", { name: "Agents field" }).locator('[data-slot="popover-trigger"]');
 	const before = await agents.getAttribute("aria-label");
 	await page.keyboard.press("m");
 	await editor.pressSequentially("Please ask ");
@@ -490,7 +500,7 @@ test("Enter sends the prefilled chat draft only after the user presses it", asyn
 	async function mentionClaude() {
 		await page.keyboard.press("m");
 		await editor.pressSequentially("@Claude");
-		await page.getByRole("option", { name: /^Claude / }).click();
+		await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	}
 	await mentionClaude();
 	await editor.pressSequentially(" First task");
@@ -527,7 +537,7 @@ test("continuing a mention-only session opens chat without starting a turn", asy
 	async function mentionCursor() {
 		await page.keyboard.press("m");
 		await editor.pressSequentially("@Cursor");
-		await page.getByRole("option", { name: /^Cursor / }).first().click();
+		await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Cursor", exact: true }).click();
 	}
 	await mentionCursor();
 	await editor.press("Enter");
@@ -574,7 +584,7 @@ test("a resumed session keeps its conversation after the user sends and reopens 
 	async function mentionCursor() {
 		await page.keyboard.press("m");
 		await editor.pressSequentially("@Cursor");
-		await page.getByRole("option", { name: /^Cursor / }).first().click();
+		await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Cursor", exact: true }).click();
 	}
 	await mentionCursor();
 	await editor.press("Enter");
@@ -609,7 +619,7 @@ test("a resumed session keeps its conversation after the user sends and reopens 
 	expect(JSON.stringify(threads.get(firstThreadId))).not.toContain("Second session message");
 	await workItem.getByRole("textbox", { name: "Comment editor" }).click();
 	await editor.pressSequentially("@Cursor");
-	await page.getByRole("option", { name: /^Cursor / }).first().click();
+	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Cursor", exact: true }).click();
 	await editor.pressSequentially(" Follow up later");
 	await workItem.getByRole("option", { name: "Continue in existing session" }).click();
 	delayThread(firstThreadId);
@@ -653,10 +663,10 @@ test("PAY-999 keeps Claude follow-ups in Venn's existing cloud session", async (
 	const issue = card(page, "PAY-999");
 	await issue.locator('[data-slot="jira-issue-card"]').click();
 	const workItem = page.getByRole("dialog", { name: "Project butter" });
-	await workItem.getByRole("button", { name: /\. Add agent$/ }).click();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	await page.getByRole("menu", { name: "Run Claude on" }).getByRole("menuitem", { name: "Run on cloud" }).click();
+	await workItem.getByRole("group", { name: "Agents field" }).getByRole("button", { name: "Add agent", exact: true }).click();
+	const picker = page.getByRole("dialog", { name: "Add agent" });
+	await picker.getByRole("textbox", { name: "Search agents" }).fill("Claude");
+	await picker.getByRole("button", { name: "Claude", exact: true }).click();
 	const invocation = workItem.locator('[data-jira-activity-entry-id^="invocation-PAY-999:"]');
 	await expect(invocation).toHaveCount(1);
 	await expect(invocation).toContainText("Venn added Claude and self-assigned the issue");
@@ -669,7 +679,7 @@ test("PAY-999 keeps Claude follow-ups in Venn's existing cloud session", async (
 	for (const [index, followUp] of followUps.entries()) {
 		await page.keyboard.press("m");
 		await editor.pressSequentially("@Claude");
-		await page.getByRole("option", { name: /^Claude / }).first().click();
+		await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 		await editor.pressSequentially(` ${followUp}`);
 		await workItem.getByRole("option", { name: "Continue in existing session" }).click();
 		await page.getByRole("list", { name: "Choose a session" }).getByRole("button").first().click();
@@ -703,7 +713,7 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	async function mentionClaude() {
 		await page.keyboard.press("m");
 		await editor.pressSequentially("@Claude");
-		await page.getByRole("option", { name: /^Claude / }).first().click();
+		await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	}
 	await mentionClaude();
 	await editor.pressSequentially(" Check timeout behavior");
@@ -712,36 +722,32 @@ test("the work-item agent picker offers existing sessions and starts a separate 
 	await workItem.getByRole("option", { name: "Start a new session" }).click();
 	await editor.pressSequentially(" Review retry behavior");
 	await editor.press("Enter");
-	const crew = workItem.getByRole("button", { name: /^Working on this work item\./ });
-	await crew.click();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	const actions = page.getByRole("menu", { name: "Run Claude on" });
-	await expect(actions.getByRole("group", { name: "Run on cloud" })).toBeVisible();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
-	await expect(actions.getByRole("menuitem", { name: "Start a new session" })).toBeVisible();
-	await expect(actions.getByRole("separator")).toBeVisible();
-	await actions.getByRole("menuitem", { name: "Continue to existing session" }).click();
-	const sessions = page.getByRole("listbox", { name: "Choose a Claude session" });
-	await expect(sessions.getByRole("option")).toHaveCount(2);
-	const earlier = sessions.getByRole("option", { name: /Check timeout behavior/ });
-	await earlier.hover();
-	await expect(workItem.locator("[data-jira-activity-entry-id][data-active]")).toContainText("Check timeout behavior");
-	await earlier.click();
+	// The Agents field picker expands Claude into its existing sessions, oldest first, then "Start a new session".
+	const picker = page.getByRole("dialog", { name: "Add agent" });
+	async function chooseClaude() {
+		await workItem.getByRole("group", { name: "Agents field" }).locator('[data-slot="popover-trigger"]').click();
+		await picker.getByRole("textbox", { name: "Search agents" }).fill("Claude");
+		await picker.getByRole("button", { name: "Claude", exact: true }).click();
+	}
+	const existingSessions = picker.getByRole("button", { name: "Port confirmPaymentIntent and the 3-D Secure challenge flow", exact: true });
+	const startSession = picker.getByRole("button", { name: "Start a new session", exact: true });
+	await chooseClaude();
+	await expect(existingSessions).toHaveCount(2);
+	await expect(startSession).toBeVisible();
+	await existingSessions.first().click();
+	await expect(picker).toHaveCount(0);
 	const chat = workItem.locator('[data-rovo-chat-placement="floating"]');
 	await expect(chat.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
 	await expect(chat.getByRole("log").getByText("@Claude Check timeout behavior")).toBeVisible();
 	await expect(chat.getByRole("log").getByText("@Claude Review retry behavior")).toHaveCount(0);
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
-	await crew.click();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	await actions.getByRole("menuitem", { name: "Start a new session" }).click();
+	await chooseClaude();
+	await startSession.click();
+	await expect(picker).toHaveCount(0);
 	await expect(chat).toBeHidden();
-	await crew.click();
-	await page.getByRole("combobox", { name: "Search agents" }).fill("Claude");
-	await page.getByRole("option", { name: /^Claude/ }).first().click();
-	await expect(actions.getByRole("menuitem", { name: "Continue to existing session" })).toBeVisible();
+	await chooseClaude();
+	await expect(existingSessions).toHaveCount(3);
+	await expect(startSession).toBeVisible();
 });
 
 test("a first cloud session started from the board does not open chat", async ({ page }) => {
@@ -801,7 +807,7 @@ test("the board card picker continues a chosen session or creates a separate emp
 	for (const [index, prompt] of ["Check timeouts", "Review retries"].entries()) {
 		await page.keyboard.press("m");
 		await editor.pressSequentially("@Claude");
-		await page.getByRole("option", { name: /^Claude / }).first().click();
+		await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 		if (index) await workItem.getByRole("option", { name: "Start a new session" }).click();
 		await editor.pressSequentially(` ${prompt}`);
 		await editor.press("Enter");

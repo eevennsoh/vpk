@@ -19,8 +19,9 @@ test("suggestion tooltips remain above the panel on hover and keyboard focus", a
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter"));
 	await page.locator('[data-issue-key="PAY-999"][data-board-column-title] [data-slot="jira-issue-card"]').click();
-	await page.getByRole("button", { name: /suggestions$/ }).click();
+	await expect(page.getByRole("button", { name: /^\d+ suggestions$/ })).toHaveAttribute("aria-expanded", "true");
 	const panel = page.locator('[aria-label="Work item suggestions"]');
+	await expect(panel).toBeVisible();
 	const tooltip = page.locator('[data-slot="tooltip-content"]');
 	for (const [name, label] of [["Check for new suggestions", "Check again"], ["Show as list", "Show all"], ["Close suggestions", "Close"]] as const) {
 		await page.getByRole("button", { name }).hover();

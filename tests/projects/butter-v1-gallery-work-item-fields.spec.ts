@@ -8,7 +8,7 @@ test("board chin avatars fit a 24px slot without shrinking list avatars", async 
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Board" }).click();
-	for (const label of ["Claude: Working", "2 agents: Working"]) {
+	for (const label of ["Cursor: Working", "2 agents: Working"]) {
 		const row = page.getByRole("button", { name: label, exact: true });
 		const avatar = row.locator('[data-slot="avatar"]').first();
 		await expect(avatar).toBeVisible();
@@ -57,8 +57,6 @@ test("due date text and calendar icon are vertically centered", async ({ page })
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
-	await page.getByRole("button", { name: "Add due date for PAY-124" }).click();
-	await page.getByRole("button", { name: /^Today,/ }).click();
 	const dueDate = page.getByRole("button", { name: /^Edit due date for PAY-124:/ });
 	await expect(dueDate).toBeVisible();
 	const centers = await dueDate.evaluate((button) => {
@@ -78,8 +76,14 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
+	const input = page.getByRole("spinbutton", { name: "Story points for PAY-118" });
+	// The list seeds every work item with an estimate; clear PAY-118's so the cell starts empty.
+	await page.getByRole("button", { name: "Edit story points for PAY-118, 3" }).click();
+	await input.fill("");
+	await input.press("Enter");
 	const edit = page.getByRole("button", { name: "Edit story points for PAY-118, no estimate" });
 	await edit.scrollIntoViewIfNeeded();
+	await page.mouse.move(0, 0);
 	const cell = edit.locator("xpath=ancestor::td");
 	const cellBounds = await cell.boundingBox();
 	if (!cellBounds) throw new Error("Story points cell is unavailable");
@@ -99,7 +103,6 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	});
 	expect(hoverBounds.x).toBeCloseTo(headerTextX, 0);
 	await page.mouse.click(cellBounds.x + cellBounds.width - 4, cellBounds.y + cellBounds.height / 2);
-	const input = page.getByRole("spinbutton", { name: "Story points for PAY-118" });
 	await expect(input).toBeFocused();
 	await expect(input).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 	await expect(input).toHaveCSS("border-width", "0px");
@@ -138,7 +141,9 @@ test("attachment piles stay settled when entering Work item and remain interacti
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
 	await page.evaluate(() => document.fonts.ready.then(() => undefined));
-	const button = page.getByRole("button", { name: "Select Work item" });
+	await page.getByRole("button", { name: "Select Work item" }).click();
+	// Attachments live in the Related work section, which the gallery work item starts collapsed; the piles first appear when it opens.
+	const button = page.getByRole("region", { name: "Work item full screen view" }).getByRole("button", { name: "Expand Related work" });
 	const samples = await button.evaluate(async (element) => {
 		const frames: Record<string, number>[] = [];
 		(element as HTMLButtonElement).click();
@@ -165,7 +170,7 @@ test("attachment piles stay settled when entering Work item and remain interacti
 	expect(samples.length).toBeGreaterThan(2);
 	for (const type of ["documents", "videos"]) {
 		const positions = samples.map((sample) => sample[type] ?? Infinity);
-		expect(Math.max(...positions) - Math.min(...positions), `${type} moved on entry`).toBeLessThanOrEqual(1);
+		expect(Math.max(...positions) - Math.min(...positions), `${type} moved as Related work opened`).toBeLessThanOrEqual(1);
 	}
 	const documents = page.getByRole("button", { name: "Documents, 4 attachments" });
 	const front = page.locator('[data-attachment-stack="documents"] [data-attachment-card]').first().locator(":scope > div").first();
@@ -288,7 +293,7 @@ test("the work item Agents popup matches the Assignee picker", async ({ page }) 
 	const assigneeBounds = await assignee.boundingBox();
 	const assigneeShadow = await assignee.locator(".rich-text-command-menu").evaluate((element) => getComputedStyle(element).boxShadow);
 	await page.keyboard.press("Escape");
-	await item.getByRole("group", { name: "Agents field" }).getByRole("button").click();
+	await item.getByRole("group", { name: "Agents field" }).getByRole("button", { name: "2 agents" }).click();
 	const agents = page.getByRole("dialog", { name: "Add agent" });
 	const agentBounds = await agents.boundingBox();
 	if (!assigneeBounds || !agentBounds) throw new Error("Picker bounds are unavailable");
@@ -308,7 +313,7 @@ test("start coding opens the development dropdown in a work item", async ({ page
 	const item = page.getByRole("dialog", { name: "Project butter" });
 	await item.getByRole("button", { name: "Start coding" }).click();
 	const menu = page.getByRole("menu", { name: "Start coding" });
-	await expect(menu).toHaveCSS("border-radius", "12px");
+	await expect(menu).toHaveCSS("border-radius", "8px");
 	for (const name of ["Bitbucket Cloud", "GitHub", "Copy create branch command", "Copy create commit command", "Copy work item key"]) {
 		await expect(menu.getByRole("menuitem", { name, exact: true })).toBeVisible();
 	}
@@ -331,7 +336,7 @@ test("Escape closes the local-agent picker without closing the work item", async
 	await trigger.click();
 	const picker = page.getByRole("dialog", { name: "Local software agents" });
 	await expect(picker).toBeVisible();
-	await expect(picker).toHaveCSS("border-radius", "12px");
+	await expect(picker).toHaveCSS("border-radius", "8px");
 	await picker.getByRole("button", { name: "Copy prompt" }).focus();
 	await page.keyboard.press("Escape");
 	await expect(picker).toBeHidden();

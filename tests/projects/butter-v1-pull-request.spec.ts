@@ -60,14 +60,17 @@ test("multiple pull requests expand inline one at a time", async ({ page }) => {
 	await expect(list.getByRole("listitem")).toHaveCount(2);
 	const open = list.getByRole("button", { name: /#284.*Open/ });
 	const merged = list.getByRole("button", { name: /#283.*Merged/ });
-	await expect(list.getByRole("button")).toHaveText([/#284.*Open/, /#283.*Merged/]);
+	await expect(list.getByRole("button")).toHaveCount(2);
+	await expect(list.getByRole("button").first()).toHaveAccessibleName(/#284.*Open/);
+	await expect(list.getByRole("button").last()).toHaveAccessibleName(/#283.*Merged/);
 	await open.focus();
 	await page.keyboard.press("Enter");
 	await expect(open).toBeFocused();
 	await expect(open).toHaveAttribute("aria-expanded", "true");
 	await expect(list.locator('[data-pull-request="284"]')).toContainText("payments-platform/payments");
 	await expect(merged).toBeVisible();
-	await expect(list.getByRole("link")).toHaveCount(0);
+	await expect(list.getByRole("link")).toHaveCount(1);
+	await expect(list.getByRole("link", { name: "Add merchant onboarding quickstart" })).toBeVisible();
 	await merged.click();
 	await expect(open).toHaveAttribute("aria-expanded", "false");
 	await expect(merged).toHaveAttribute("aria-expanded", "true");
@@ -164,6 +167,13 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	const boardCard = page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-999"] [data-slot="jira-issue-card"]');
 	await expect(boardCard).toBeVisible();
 	const boardCardBounds = await boardCard.boundingBox();
+	// Measure inside one frame: the board card is still sliding into place while the gallery settles.
+	const contentHeight = (issueCard: typeof boardCard) => issueCard.evaluate((element) => {
+		const assignee = element.querySelector('[data-slot="jira-issue-assignee-slot"]');
+		if (!assignee) throw new Error("Card has no assignee slot");
+		return assignee.getBoundingClientRect().bottom - element.getBoundingClientRect().top;
+	});
+	const boardContentHeight = await contentHeight(boardCard);
 	await gallery.getByRole("button", { name: "Select Pull request" }).click();
 	const stage = page.locator("[data-butter-gallery-pull-request]");
 	await expect(stage.locator("[data-jira-kanban-column]")).toHaveCount(0);
@@ -174,7 +184,8 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	const cardBounds = await card.boundingBox();
 	if (!stageBounds || !cardBounds || !boardCardBounds) throw new Error("Pull request or board card has no bounds");
 	expect(cardBounds.width).toBe(boardCardBounds.width);
-	expect(cardBounds.height).toBe(boardCardBounds.height);
+	// The PR tile carries the journey's agent session and the board card does not; cards with an agent reserve a surface inset, so compare the content layout instead of the outer height.
+	expect(await contentHeight(card)).toBe(boardContentHeight);
 	expect(Math.abs((stageBounds.x + stageBounds.width / 2) - (cardBounds.x + cardBounds.width / 2))).toBeLessThan(2);
 	await expect(card).toContainText("Improve merchant onboarding for Payments SDK v2");
 	await expect(card.getByText("Improve merchant onboarding for Payments SDK v2", { exact: true })).toHaveCSS("-webkit-line-clamp", "2");

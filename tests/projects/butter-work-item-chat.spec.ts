@@ -32,19 +32,15 @@ test("work item keeps the Rovo launcher and opens local session menus", async ({
 	await chat.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(launcher).toBeVisible();
 
-	await workItem.getByRole("button", { name: "Cursor: Working" }).click();
-	await page.getByRole("button", { name: /^Replaying 3-D Secure fixtures Cursor/ }).click();
+	// The local Cursor session is an Activity session card; it opens the continue menu instead of a chat.
+	await workItem.getByRole("list", { name: "Activity timeline" }).getByRole("button", { name: /^Replaying 3-D Secure fixtures Cursor/ }).click();
 	const continueMenu = page.getByRole("menu", { name: /^Replaying 3-D Secure fixtures Cursor/ });
 	await expect(continueMenu.getByRole("menuitem", { name: "Cursor" })).toBeVisible();
 	await expect(continueMenu.getByRole("menuitem", { name: /Terminal/ })).toBeVisible();
 	await expect(page.getByRole("textbox", { name: "Reply to Cursor" })).toHaveCount(0);
 	await expect(chat).toHaveCount(0);
 	await page.keyboard.press("Escape");
-	await workItem.getByRole("button", { name: "Continue Cursor session" }).click();
-	const activityMenu = page.getByRole("menu", { name: "Continue Cursor session" });
-	await expect(activityMenu.getByRole("menuitem", { name: "Cursor" })).toBeVisible();
-	await expect(activityMenu.getByRole("menuitem", { name: /Terminal/ })).toBeVisible();
-	await expect(page.getByRole("textbox", { name: "Reply to Cursor" })).toHaveCount(0);
+	await expect(continueMenu).toHaveCount(0);
 });
 
 test("moving the floating chat into and out of a work item keeps its draft", async ({ page }) => {

@@ -35,11 +35,11 @@ test("list work items align around the subtask expand control", async ({ page })
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select List" }).click();
 	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
-	const leaf = list.getByRole("button", { name: "PAY-118", exact: true });
+	const leaf = list.getByRole("button", { name: "PAY-124", exact: true });
 	const parent = list.getByRole("button", { name: "PAY-101", exact: true });
 	const expand = list.getByRole("button", { name: "Expand PAY-101" });
 	await expect(expand).toHaveAttribute("aria-expanded", "false");
-	await expect(list.getByRole("button", { name: "Expand PAY-118" })).toHaveCount(0);
+	await expect(list.getByRole("button", { name: "Expand PAY-124" })).toHaveCount(0);
 	const leafBounds = await leaf.boundingBox();
 	const parentBounds = await parent.boundingBox();
 	if (!leafBounds || !parentBounds) throw new Error("Work item bounds are unavailable");
@@ -72,8 +72,11 @@ test("list work items align around the subtask expand control", async ({ page })
 	const collapse = list.getByRole("button", { name: "Collapse PAY-101" });
 	await expect(collapse).toHaveAttribute("aria-expanded", "true");
 	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toBeVisible();
+	// PAY-101 is one of several parents, so the header switches to Collapse all only once every parent is expanded.
+	await list.getByRole("button", { name: "Expand all subtasks" }).click();
 	await expectCompactGap("Collapse all subtasks");
-	await collapse.click();
+	// With every parent expanded the PAY-101 row sits under the gallery strip, so use the keyboard.
+	await collapse.press("Enter");
 	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toHaveCount(0);
 });
 
@@ -200,6 +203,8 @@ test("the Work header expands and collapses all subtasks", async ({ page }) => {
 	await expect(expandAll).toHaveAttribute("aria-expanded", "false");
 	await expect(list.getByRole("button", { name: "PAY-102", exact: true })).toHaveCount(0);
 	await list.getByRole("button", { name: "Expand PAY-101" }).click();
+	await expect(expandAll).toHaveAttribute("aria-expanded", "false");
+	for (const parent of ["PAY-118", "PAY-999", "PAY-127"]) await list.getByRole("button", { name: `Expand ${parent}` }).click();
 	await expect(collapseAll).toHaveAttribute("aria-expanded", "true");
 	await collapseAll.click();
 	await expect(list.getByRole("button", { name: "PAY-104", exact: true })).toHaveCount(0);
