@@ -1,5 +1,7 @@
 "use strict";
 
+const { redactLogText } = require("../lib/log-redaction");
+
 function handleRovoToolCallStartEvent(toolCall, {
 	bashQuestionCardWorkaroundCallIds,
 	browserToolEventRouter,
@@ -103,7 +105,7 @@ function warnOnDangerousResolvedToolInput(toolCall, {
 	}
 
 	logger.warn(
-		`[SAFETY] Dangerous command detected in ${toolCall.toolName}: ${classification.label} (${classification.match})`,
+		`[SAFETY] Dangerous command detected in ${toolCall.toolName}: ${classification.label} (${redactLogText(classification.match)})`,
 	);
 	return true;
 }

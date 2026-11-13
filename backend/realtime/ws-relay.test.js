@@ -395,3 +395,62 @@ test("browser preview connection uses mirror browsers before workspace manager",
 	assert.equal(mirrorCalls.length, 1);
 	assert.deepEqual(browserWorkspaceManager.calls, []);
 });
+
+test("while the backend drains, every upgrade gets 503 before any check or handshake", () => {
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	let draining = false;
+	const tokenChecks = [];
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies({
+			isRuntimeSocketTokenValid: (token, scope) => {
+				tokenChecks.push(scope);
+				return token === scope;
+			},
+			runtimeAdminToken: "secret",
+		}),
+		isDraining: () => draining,
+		webSocketImpl,
+	});
+	const [realtimeWss, browserPreviewWss] = instances;
+	const upgradeHandler = server.handlers.get("upgrade");
+
+	draining = true;
+	const sockets = [];
+	for (const url of [
+		"/api/browser-workspaces/workspace-1/live?previewToken=browser-preview%3Aworkspace-1",
+		"/api/realtime/audio-conversation?realtimeToken=realtime%3Aaudio-conversation",
+		"/api/browser-workspaces/%E0%A4%A/live",
+	]) {
+		const socket = createSocket();
+		upgradeHandler(createRequest(url), socket, Buffer.from("head"));
+		sockets.push(socket);
+	}
+	for (const socket of sockets) {
+		assert.equal(socket.destroyed, true);
+		assert.match(socket.writes.join(""), /^HTTP\/1\.1 503 Service Unavailable\r\nConnection: close\r\n/u);
+	}
+	assert.equal(browserPreviewWss.handledUpgrades.length, 0);
+	assert.equal(realtimeWss.handledUpgrades.length, 0);
+	assert.deepEqual(tokenChecks, []);
+
+	// Before the drain the same upgrade is handled.
+	draining = false;
+	upgradeHandler(
+		createRequest("/api/browser-workspaces/workspace-1/live?previewToken=browser-preview%3Aworkspace-1"),
+		createSocket(),
+		Buffer.from("head"),
+	);
+	assert.equal(browserPreviewWss.handledUpgrades.length, 1);
+});
+
+test("registerBackendWebSocketRelays requires isDraining to be a function", () => {
+	assert.throws(
+		() => registerBackendWebSocketRelays(createFakeServer(), {
+			...createRegistrationDependencies(),
+			isDraining: true,
+			webSocketImpl: createFakeWebSocketImpl().webSocketImpl,
+		}),
+		/isDraining/u,
+	);
+});

@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { redactLogText, redactUrlForLog } = require("./log-redaction");
 
 const DEBUG = process.env.DEBUG === "true";
 
@@ -496,7 +497,7 @@ async function streamBedrockGatewayManualSse({ gatewayUrl, envVars, system, prom
 		payload.system = system;
 	}
 
-	debugLog("BEDROCK_SSE", `Streaming to: ${gatewayUrl}`);
+	debugLog("BEDROCK_SSE", `Streaming to: ${redactUrlForLog(gatewayUrl)}`);
 
 	const requestInit = {
 		method: "POST",
@@ -508,7 +509,7 @@ async function streamBedrockGatewayManualSse({ gatewayUrl, envVars, system, prom
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`AI Gateway Bedrock error ${response.status}: ${describeGatewayCloudIdError(errorText).slice(0, 400)}`);
+		throw new Error(`AI Gateway Bedrock error ${response.status}: ${redactLogText(describeGatewayCloudIdError(errorText)).slice(0, 400)}`);
 	}
 
 	const reader = response.body?.getReader();
@@ -646,7 +647,7 @@ async function streamGoogleGatewayManualSse({
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`AI Gateway Google error ${response.status}: ${describeGatewayCloudIdError(errorText).slice(0, 400)}`);
+		throw new Error(`AI Gateway Google error ${response.status}: ${redactLogText(describeGatewayCloudIdError(errorText)).slice(0, 400)}`);
 	}
 
 	const reader = response.body?.getReader();

@@ -4,6 +4,7 @@ const {
 	describeGatewayCloudIdKind,
 	resolveGatewayCloudId,
 } = require("./lib/ai-gateway-helpers");
+const { redactUrlForLog } = require("./lib/log-redaction");
 
 function requireFunction(name, value) {
 	if (typeof value !== "function") {
@@ -92,7 +93,7 @@ async function logBackendServerReady({
 	logger.log(`\n🎙️ OpenAI Realtime: ${realtimeConfigured ? "CONFIGURED" : "NOT CONFIGURED"}${realtimeViaGateway ? " (via AI Gateway)" : ""}`);
 	if (realtimeConfigured) {
 		logger.log(`  OPENAI_REALTIME_MODEL: ${realtimeConfig.model}`);
-		logger.log(`  OPENAI_REALTIME_WS_URL: ${realtimeConfig.wsUrl}`);
+		logger.log(`  OPENAI_REALTIME_WS_URL: ${redactUrlForLog(realtimeConfig.wsUrl)}`);
 		logger.log(`  OPENAI_REALTIME_VOICE: ${realtimeConfig.voice}`);
 	}
 
