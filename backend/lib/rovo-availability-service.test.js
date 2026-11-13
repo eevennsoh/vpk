@@ -307,3 +307,46 @@ test("a stale available result is refreshed, measured from when the check finish
 	assert.equal(await service.isRovoAvailable(), true);
 	assert.equal(resolveCount, 2, "stale after the refresh interval");
 });
+
+// The test timeout only stops a regression from hanging the suite; nothing waits on real time.
+test("a check that never settles is bounded: readers are released, the state ends unavailable, and the next read retries", { timeout: 10_000 }, async () => {
+	const timers = [];
+	let resolveCount = 0;
+	const { calls, service } = createHarness({
+		existingPaths: ["/tmp/rovo-port"],
+		dependencies: {
+			checkTimeoutMs: 30_000,
+			clearTimer: (handle) => {
+				if (handle) handle.cleared = true;
+			},
+			resolveRovoPorts: async () => {
+				resolveCount += 1;
+				if (resolveCount === 1) {
+					return new Promise(() => {});
+				}
+				return { ports: [9000], source: "recorded" };
+			},
+			setTimer: (callback, ms) => {
+				const handle = { callback, cleared: false, ms };
+				timers.push(handle);
+				return handle;
+			},
+		},
+	});
+
+	const readers = [service.isRovoAvailable(), service.isRovoAvailable(), service.refreshRovoAvailability()];
+	await Promise.resolve();
+	assert.equal(service.getRovoAvailability(), "checking");
+	assert.equal(timers.length, 1, "one timer bounds the shared check");
+	assert.equal(timers[0].ms, 30_000);
+
+	timers[0].callback();
+	assert.deepEqual(await Promise.all(readers), [false, false, false]);
+	assert.equal(service.getRovoAvailability(), "unavailable");
+	assert.ok(calls.some(([name, args]) => name === "logger.warn" && args[0] === "[ROVO] Availability check timed out after 30000ms"));
+
+	assert.equal(await service.isRovoAvailable(), true);
+	assert.equal(resolveCount, 2);
+	assert.equal(service.getRovoAvailability(), "available");
+	assert.equal(timers[1].cleared, true, "a check that settles clears its timer");
+});

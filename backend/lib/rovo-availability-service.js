@@ -7,6 +7,12 @@ const {
 	transitionRovoAvailability,
 } = require("./rovo-availability-machine");
 
+// Bound on one shared availability check, end to end. Every concurrent reader waits
+// on the same check, so it must not hang: rovoHealthCheck's 10 s timeout
+// (rovo-client.js request()) is a socket idle timeout, and port discovery probes up to
+// `maxTries` ports one after another.
+const ROVO_AVAILABILITY_CHECK_TIMEOUT_MS = 30_000;
+
 function requireFunction(name, value) {
 	if (typeof value !== "function") {
 		throw new Error(`createRovoAvailabilityService requires ${name}`);
@@ -14,8 +20,12 @@ function requireFunction(name, value) {
 	return value;
 }
 
+const TIMED_OUT = Symbol("rovo-availability-check-timed-out");
+
 function createRovoAvailabilityService({
+	checkTimeoutMs = ROVO_AVAILABILITY_CHECK_TIMEOUT_MS,
 	classifyRovoHealthCheck,
+	clearTimer = clearTimeout,
 	createRovoPool,
 	debugLog = () => {},
 	env = process.env,
@@ -31,6 +41,7 @@ function createRovoAvailabilityService({
 	refreshIntervalMs = 60_000,
 	resolveRovoPorts,
 	rovoHealthCheck,
+	setTimer = setTimeout,
 	waitForReady,
 } = {}) {
 	requireFunction("classifyRovoHealthCheck", classifyRovoHealthCheck);
@@ -45,6 +56,8 @@ function createRovoAvailabilityService({
 	requireFunction("onPortAvailable", onPortAvailable);
 	requireFunction("resolveRovoPorts", resolveRovoPorts);
 	requireFunction("rovoHealthCheck", rovoHealthCheck);
+	requireFunction("setTimer", setTimer);
+	requireFunction("clearTimer", clearTimer);
 	requireFunction("waitForReady", waitForReady);
 
 	let availability = INITIAL_ROVO_AVAILABILITY;
@@ -154,27 +167,40 @@ function createRovoAvailabilityService({
 
 	// Single-flight: the transition to `checking` and the in-flight handle are set in
 	// the same synchronous step, so every caller that arrives while a check runs
-	// shares it. The handle is cleared and the state leaves `checking` whether the
-	// check resolves or rejects.
+	// shares it. The shared check is bounded by checkTimeoutMs: when the timer wins,
+	// the state ends `unavailable`, every waiting reader gets false, and the next read
+	// starts a new check. A check that settles after it was timed out is ignored.
 	function refreshRovoAvailability() {
 		if (inFlightCheck) {
 			return inFlightCheck;
 		}
 		availability = transitionRovoAvailability(availability, { type: "CHECK_STARTED" });
-		inFlightCheck = (async () => {
+		let timer = null;
+		const timedOut = new Promise((resolve) => {
+			timer = setTimer(() => resolve(TIMED_OUT), checkTimeoutMs);
+			timer?.unref?.();
+		});
+		const thisCheck = (async () => {
 			try {
-				const available = await checkRovoAvailability();
-				availability = transitionRovoAvailability(availability, { type: "CHECK_FINISHED", available, at: now() });
-				return available;
+				const result = await Promise.race([checkRovoAvailability(), timedOut]);
+				if (result === TIMED_OUT) {
+					availability = transitionRovoAvailability(availability, { type: "CHECK_FAILED", at: now() });
+					logger.warn(`[ROVO] Availability check timed out after ${checkTimeoutMs}ms`);
+					return false;
+				}
+				availability = transitionRovoAvailability(availability, { type: "CHECK_FINISHED", available: result, at: now() });
+				return result;
 			} catch (err) {
 				availability = transitionRovoAvailability(availability, { type: "CHECK_FAILED", at: now() });
 				debugLog("ROVO", "Not available", { error: err.message });
 				return false;
 			} finally {
+				clearTimer(timer);
 				inFlightCheck = null;
 			}
 		})();
-		return inFlightCheck;
+		inFlightCheck = thisCheck;
+		return thisCheck;
 	}
 
 	async function isRovoAvailable() {
@@ -225,5 +251,6 @@ function createRovoAvailabilityService({
 }
 
 module.exports = {
+	ROVO_AVAILABILITY_CHECK_TIMEOUT_MS,
 	createRovoAvailabilityService,
 };
