@@ -43,6 +43,22 @@ const ROUTE_JSON_BODY_LIMITS = [
 // 1 MB. It was 50 MB.
 const FALLBACK_BODY_LIMIT = "1mb";
 
+// The limit express.json applies to `routePath`: the first ROUTE_JSON_BODY_LIMITS entry
+// whose mount path matches (Express matches mount paths case-insensitively, on whole
+// segments), else the fallback.
+function resolveJsonBodyLimit(routePath) {
+	const normalizedPath = String(routePath).toLowerCase();
+	for (const { paths, limit } of ROUTE_JSON_BODY_LIMITS) {
+		for (const mountPath of Array.isArray(paths) ? paths : [paths]) {
+			const prefix = mountPath.toLowerCase();
+			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+				return limit;
+			}
+		}
+	}
+	return FALLBACK_BODY_LIMIT;
+}
+
 function createPayloadTooLargeHandler() {
 	return (error, _req, res, next) => {
 		if (error?.type === "entity.too.large" || error?.status === 413) {
@@ -90,4 +106,5 @@ module.exports = {
 	ROUTE_JSON_BODY_LIMITS,
 	createPayloadTooLargeHandler,
 	registerBodyLimitMiddleware,
+	resolveJsonBodyLimit,
 };
