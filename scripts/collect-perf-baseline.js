@@ -22,6 +22,8 @@ const FIXED_BASELINE_ROUTES = [
 	{ id: "rovo", path: "/rovo" },
 	{ id: "studio", path: "/studio" },
 	{ id: "components", path: "/components/[category]/[slug]" },
+	{ id: "butter", path: "/butter" },
+	{ id: "eu26", path: "/jira-team-eu26" },
 ];
 const DEFAULT_ROUTE_TIMING_PATHS = {
 	components: "/components/ui/button",

@@ -4,6 +4,7 @@
 
 const { readFileSync } = require("node:fs");
 const path = require("node:path");
+const { FIXED_BASELINE_ROUTES } = require("./collect-perf-baseline");
 
 const DEFAULT_INPUT_PATH = "output/perf-baseline.json";
 const DEFAULT_BUILD_DURATION_BUDGET = {
@@ -11,38 +12,38 @@ const DEFAULT_BUILD_DURATION_BUDGET = {
 	warningMs: 120_000,
 };
 
-const DEFAULT_ROUTE_BUDGETS = {
-	home: {
-		assetCount: 60,
-		cssBytes: 700_000,
-		firstLoadJsBytes: 2_350_000,
-		routeJsBytes: 120_000,
-	},
-	rovo: {
-		assetCount: 120,
-		cssBytes: 700_000,
-		firstLoadJsBytes: 7_100_000,
-		routeJsBytes: 125_000,
-	},
-	studio: {
-		assetCount: 135,
-		cssBytes: 700_000,
-		firstLoadJsBytes: 8_100_000,
-		routeJsBytes: 125_000,
-	},
-	components: {
-		assetCount: 65,
-		cssBytes: 700_000,
-		firstLoadJsBytes: 2_600_000,
-		routeJsBytes: 160_000,
-	},
-	"heavy-visual": {
-		assetCount: 65,
-		cssBytes: 700_000,
-		firstLoadJsBytes: 2_600_000,
-		routeJsBytes: 160_000,
-	},
-};
+// Every route the collector measures by default must have a budget here; a measured fixed
+// route without one fails, so a newly collected route cannot pass unchecked.
+const FIXED_ROUTE_IDS = [...FIXED_BASELINE_ROUTES.map((route) => route.id), "heavy-visual"];
+
+// Route budgets live in perf-route-budgets.json, a shrink-only baseline: a unit test fails when a
+// value rises above the merge base. They were re-baselined on 2026-11-13 to about 3% over a
+// production build of main, as a ceiling that stops further growth. The file's "targets" are the
+// earlier limits the bundle should return to: CSS 700,000 bytes per route (set in b565d0f57,
+// July 2026) and Rovo first-load JS 7,100,000 bytes.
+const ROUTE_BUDGETS_PATH = path.join(__dirname, "perf-route-budgets.json");
+const { routes: DEFAULT_ROUTE_BUDGETS, targets: ROUTE_BUDGET_TARGETS } = JSON.parse(readFileSync(ROUTE_BUDGETS_PATH, "utf8"));
+
+// Budget values that are higher than in the base copy of perf-route-budgets.json. A route or metric
+// that the base budgets and the current file drops counts as raised (to no limit at all).
+function findRaisedBudgets(baseRoutes, currentRoutes = DEFAULT_ROUTE_BUDGETS) {
+	const raised = [];
+	for (const [routeId, baseBudget] of Object.entries(baseRoutes ?? {})) {
+		for (const [metricName, baseLimit] of Object.entries(baseBudget)) {
+			const limit = currentRoutes[routeId]?.[metricName];
+			if (typeof limit !== "number") {
+				raised.push({ baseLimit, limit: null, metricName, routeId });
+			} else if (limit > baseLimit) {
+				raised.push({ baseLimit, limit, metricName, routeId });
+			}
+		}
+	}
+	return raised;
+}
+
+function formatRaisedBudget({ baseLimit, limit, metricName, routeId }) {
+	return `${routeId}.${metricName} ${baseLimit} -> ${limit === null ? "removed" : limit}`;
+}
 
 function parseArgs(argv) {
 	const options = {
@@ -209,6 +210,15 @@ function evaluatePerfBaselineBudget(
 		}
 	}
 
+	for (const route of baseline.routes ?? []) {
+		if (route.status === "measured" && FIXED_ROUTE_IDS.includes(route.id) && !Object.hasOwn(routeBudgets, route.id)) {
+			failures.push({
+				routeId: route.id,
+				type: "unbudgeted-route",
+			});
+		}
+	}
+
 	return [
 		...failures,
 		...evaluateRouteLoadTimingFailures(baseline),
@@ -269,6 +279,9 @@ function formatFailure(failure) {
 	}
 	if (failure.type === "missing-route") {
 		return `${failure.routeId}: route is missing from the perf baseline.`;
+	}
+	if (failure.type === "unbudgeted-route") {
+		return `${failure.routeId}: route is measured by default but has no budget in scripts/perf-route-budgets.json.`;
 	}
 	if (failure.type === "unmeasured-route") {
 		return `${failure.routeId}: route status is ${failure.status}; expected measured.`;
@@ -345,6 +358,11 @@ module.exports = {
 	DEFAULT_BUILD_DURATION_BUDGET,
 	DEFAULT_INPUT_PATH,
 	DEFAULT_ROUTE_BUDGETS,
+	FIXED_ROUTE_IDS,
+	ROUTE_BUDGET_TARGETS,
+	ROUTE_BUDGETS_PATH,
+	findRaisedBudgets,
+	formatRaisedBudget,
 	evaluateBuildDurationBudget,
 	evaluatePerfBaselineBudget,
 	evaluatePerfBaselineWarnings,

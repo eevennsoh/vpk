@@ -9,7 +9,7 @@ const jobs = Object.fromEntries([...workflow.split("\njobs:\n")[1].matchAll(/^  
 	.map((match) => [match[1], match[2]]));
 
 test("CI covers every local PR gate through independent static and four unit jobs", () => {
-	assert.deepEqual(Object.keys(jobs), ["static", "unit", "smoke", "aggregate"]);
+	assert.deepEqual(Object.keys(jobs), ["static", "unit", "smoke", "perf", "aggregate"]);
 	assert.match(jobs.unit, /fail-fast: false/u);
 	assert.match(jobs.unit, /max-parallel: 4/u);
 	assert.match(jobs.unit, /shard: \[1, 2, 3, 4\]/u);
@@ -52,7 +52,7 @@ test("CI retains event coverage, cancellation, ratchets and authenticated frozen
 	assert.match(workflow, /workflow_dispatch:/u);
 	assert.match(workflow, /cancel-in-progress: true/u);
 	assert.match(workflow, /permissions:\n  contents: read/u);
-	for (const job of [jobs.static, jobs.unit, jobs.smoke]) {
+	for (const job of [jobs.static, jobs.unit, jobs.smoke, jobs.perf]) {
 		const steps = ["actions/checkout@", "pnpm/action-setup@", "actions/setup-node@", "node scripts/verify-pnpm-lockfile.js", "node scripts/write-npmrc.mjs", "pnpm install --frozen-lockfile"];
 		let previous = -1;
 		for (const step of steps) {
@@ -156,4 +156,12 @@ test("the browser smoke job serves a production build and runs only the @smoke s
 	assert.equal(smoke.env.PLAYWRIGHT_BASE_URL, "http://127.0.0.1:8080");
 	assert.equal(require("../package.json").scripts["test:e2e:smoke"], "node scripts/run-playwright-smoke.mjs");
 	assert.doesNotMatch(workflow, /pull_request_target/u);
+});
+
+test("the perf job checks route byte budgets on pushes to main, never on PRs", () => {
+	assert.match(jobs.perf, /if: \$\{\{ github.event_name != 'pull_request' \}\}/u);
+	assert.doesNotMatch(jobs.aggregate, /needs: \[[^\]]*perf/u, "PRs must not wait for the perf job");
+	assert.match(jobs.perf, /set -o pipefail\n\s+time pnpm run build 2>&1 \| tee output\/perf-build\.log/u);
+	assert.match(jobs.perf, /node scripts\/collect-perf-baseline\.js --input output\/perf-build\.log\n\s+node scripts\/verify-perf-baseline-budget\.js/u);
+	assert.doesNotMatch(jobs.perf, /--warn-only/u);
 });
