@@ -48,6 +48,18 @@ const WORK_TYPE_HOVER_CLASSES = {
 	subtask: "group-hover/jira-issue:text-icon-brand",
 };
 
+export function ProjectButterIssueKey({ issueKey, issueType }: Readonly<{ issueKey: string; issueType: keyof typeof WORK_TYPE_ICONS }>) {
+	const WorkTypeIcon = WORK_TYPE_ICONS[issueType];
+	return (
+		<span className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
+			<span className={cn("inline-flex shrink-0 items-center text-icon-subtle transition-colors duration-fast ease-out-practical motion-reduce:transition-none", WORK_TYPE_HOVER_CLASSES[issueType])}>
+				<WorkTypeIcon label={issueType} size="small" color="currentColor" />
+			</span>
+			<span className="truncate">{issueKey}</span>
+		</span>
+	);
+}
+
 export function ProjectButterSummary({
 	issueKey,
 	summary,
@@ -71,22 +83,11 @@ export function ProjectButterSummary({
 	allowAddAgent = true,
 }: Readonly<ProjectButterSummaryProps>) {
 	const issueType = metadata?.issueType ?? "task";
-	const WorkTypeIcon = WORK_TYPE_ICONS[issueType];
 	return (
 		<div className="flex min-w-0 flex-col gap-3" data-slot="jira-issue-project-butter">
 			<div className="min-w-0">
 				<div className="flex min-h-6 items-center justify-between gap-2">
-					<span className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
-						<span
-							className={cn(
-								"inline-flex shrink-0 items-center text-icon-subtle transition-colors duration-fast ease-out-practical motion-reduce:transition-none",
-								WORK_TYPE_HOVER_CLASSES[issueType],
-							)}
-						>
-							<WorkTypeIcon label={issueType} size="small" color="currentColor" />
-						</span>
-						<span className="truncate">{issueKey}</span>
-					</span>
+					<ProjectButterIssueKey issueKey={issueKey} issueType={issueType} />
 					<div className="size-6 shrink-0">{moreAction}</div>
 				</div>
 				<p className="mt-0.5 line-clamp-2 break-words text-sm leading-5 text-text">{summary}</p>

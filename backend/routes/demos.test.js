@@ -106,7 +106,7 @@ test("ticket classification, claim-test, and standup routes preserve request map
 				excludeStatuses: ["Done"],
 				limit: 5,
 				project: "RFP",
-				siteUrl: "example.atlassian.net",
+				siteUrl: "product-fabric.atlassian.net",
 			}),
 			headers: { "content-type": "application/json" },
 			method: "POST",
@@ -117,7 +117,7 @@ test("ticket classification, claim-test, and standup routes preserve request map
 			excludeStatuses: ["Done"],
 			limit: 5,
 			project: "RFP",
-			siteUrl: "example.atlassian.net",
+			siteUrl: "product-fabric.atlassian.net",
 		}]);
 
 		const claimGetResponse = await fetch(`${baseUrl}/api/claim-test?runId=run-1`);
@@ -146,7 +146,7 @@ test("ticket classification, claim-test, and standup routes preserve request map
 				hoursAgo: 12,
 				limit: 10,
 				projects: ["RFP"],
-				siteUrl: "example.atlassian.net",
+				siteUrl: "product-fabric.atlassian.net",
 			}),
 			headers: { "content-type": "application/json" },
 			method: "POST",
@@ -157,7 +157,7 @@ test("ticket classification, claim-test, and standup routes preserve request map
 			hoursAgo: 12,
 			limit: 10,
 			projects: ["RFP"],
-			siteUrl: "example.atlassian.net",
+			siteUrl: "product-fabric.atlassian.net",
 		}]);
 	});
 });
@@ -363,5 +363,30 @@ test("demo routes preserve error mapping for service failures", async () => {
 			error: "Failed to generate standup summary",
 			details: "standup failed",
 		});
+	});
+});
+
+test("ticket classification and standup reject JQL values that could change the query, and unconfigured sites", async () => {
+	await withServer({}, async (baseUrl, calls) => {
+		const post = (route, body) => fetch(`${baseUrl}${route}`, {
+			body: JSON.stringify(body),
+			headers: { "content-type": "application/json" },
+			method: "POST",
+		});
+		const cases = [
+			["/api/ticket-classify", { project: "X\" OR project = SECRET" }],
+			["/api/ticket-classify", { excludeStatuses: "Done" }],
+			["/api/ticket-classify", { siteUrl: "another-tenant.atlassian.net" }],
+			["/api/standup", { hoursAgo: "24h OR assignee is EMPTY" }],
+			["/api/standup", { projects: ["RFP\") OR (project = SECRET"] }],
+			["/api/standup", { siteUrl: "another-tenant.atlassian.net" }],
+		];
+		for (const [route, body] of cases) {
+			const response = await post(route, body);
+			assert.equal(response.status, 400, `${route} ${JSON.stringify(body)}`);
+			assert.equal((await response.json()).code, "INVALID_INPUT");
+		}
+		assert.deepEqual(calls.classify, []);
+		assert.deepEqual(calls.standup, []);
 	});
 });

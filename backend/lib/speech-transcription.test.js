@@ -294,3 +294,44 @@ test("preset env map exposes the documented easy-switch presets", () => {
 		"whisper-tiny",
 	]);
 });
+
+test("a client may choose a transcription provider or model only among those the server is configured for", () => {
+	const { decideClientTranscriptionChoice } = require("./speech-transcription").__test__;
+	const sttEnvVars = {
+		STT_PRESET: "whisper-tiny",
+		STT_PRESET_WHISPER_TINY_PROVIDER: "local-whisper",
+		STT_PRESET_WHISPER_TINY_MODEL: "tiny",
+		STT_PRESET_GOOGLE_PROVIDER: "google",
+	};
+	const envVars = { GOOGLE_STT_MODEL: "gemini-2.5-flash" };
+	const decide = (rawProvider, rawModel, overrides = {}) =>
+		decideClientTranscriptionChoice({ envVars: overrides.envVars ?? envVars, rawModel, rawProvider, sttEnvVars: overrides.sttEnvVars ?? sttEnvVars }).action;
+	const cases = [
+		["nothing chosen: the preset decides", undefined, undefined, "allow"],
+		["a configured provider", "google", undefined, "allow"],
+		["a configured provider and model", "local-whisper", "tiny", "allow"],
+		["a configured model alone", undefined, "gemini-2.5-flash", "allow"],
+		["an unconfigured provider", "openai-compatible", undefined, "reject"],
+		["a model the server never chose", "local-whisper", "large-v3", "reject"],
+		["a configured model under the wrong provider", "google", "tiny", "reject"],
+		["an unknown model alone", undefined, "some-model", "reject"],
+	];
+	for (const [name, provider, model, expected] of cases) {
+		assert.equal(decide(provider, model), expected, name);
+	}
+	// local-whisper cannot be chosen when nothing configures it.
+	assert.equal(decide("local-whisper", undefined, { sttEnvVars: {}, envVars }), "reject");
+});
+
+test("an OpenAI-compatible model configured without a base URL can be named by the client", () => {
+	const { decideClientTranscriptionChoice } = require("./speech-transcription").__test__;
+	const sttEnvVars = {
+		STT_PRESET: "qwen3-asr",
+		STT_PRESET_QWEN3_ASR_PROVIDER: "openai-compatible",
+		OPENAI_COMPATIBLE_STT_MODEL: "qwen3-asr",
+	};
+	const decide = (rawProvider, rawModel) => decideClientTranscriptionChoice({ envVars: {}, rawModel, rawProvider, sttEnvVars }).action;
+	assert.equal(decide("openai-compatible", "qwen3-asr"), "allow");
+	assert.equal(decide(undefined, "qwen3-asr"), "allow");
+	assert.equal(decide("openai-compatible", "other-model"), "reject");
+});

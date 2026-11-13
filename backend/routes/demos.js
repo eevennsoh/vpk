@@ -10,16 +10,29 @@ const {
 const { getNonEmptyString } = require("../lib/shared-utils");
 const { classifyTickets } = require("../lib/ticket-classifier");
 const { generateStandupSummary } = require("../lib/standup-summary");
-const { atlassianSiteHostSchema, parseOrReject } = require("../lib/input-schemas");
+const { INVALID_INPUT_CODE, atlassianSiteHostSchema, parseOrReject } = require("../lib/input-schemas");
+const {
+	isAllowedAtlassianSite,
+	standupRequestSchema,
+	ticketClassifyRequestSchema,
+} = require("../lib/jira-query-inputs");
+const { sendError } = require("../middleware/error-response");
 
-// The Jira host gets the server's Atlassian API token, so only a *.atlassian.net host is
-// accepted; absent means the default site.
+// The Jira host gets the server's Atlassian API token, so only a configured site is
+// accepted (ATLASSIAN_SITE_HOSTS, or the default site); absent means the default site.
 function parseSiteUrlOrReject(res, siteUrl) {
 	if (siteUrl === undefined) {
 		return { ok: true, siteUrl: undefined };
 	}
 	const parsed = parseOrReject(res, atlassianSiteHostSchema, siteUrl, "siteUrl");
-	return parsed === null ? { ok: false } : { ok: true, siteUrl: parsed };
+	if (parsed === null) {
+		return { ok: false };
+	}
+	if (!isAllowedAtlassianSite(parsed)) {
+		sendError(res, 400, INVALID_INPUT_CODE, "siteUrl is not a configured Atlassian site.");
+		return { ok: false };
+	}
+	return { ok: true, siteUrl: parsed };
 }
 
 function requireFunction(name, value) {
@@ -84,6 +97,10 @@ function createDemosRouter({
 			if (!site.ok) {
 				return undefined;
 			}
+			// These go into JQL: a project key and plain status names only.
+			if (parseOrReject(res, ticketClassifyRequestSchema, { project, excludeStatuses }, "body") === null) {
+				return undefined;
+			}
 			const result = await classifyTicketsFn({
 				siteUrl: site.siteUrl,
 				project,
@@ -144,6 +161,10 @@ function createDemosRouter({
 			const { siteUrl: rawSiteUrl, hoursAgo, projects, limit } = req.body || {};
 			const site = parseSiteUrlOrReject(res, rawSiteUrl);
 			if (!site.ok) {
+				return undefined;
+			}
+			// These go into JQL: project keys and a whole number of hours.
+			if (parseOrReject(res, standupRequestSchema, { hoursAgo, projects }, "body") === null) {
 				return undefined;
 			}
 			const summary = await generateStandupSummaryFn({

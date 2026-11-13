@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactElement, type ReactNode } from "react";
 
 import PersonIcon from "@atlaskit/icon/core/person";
 import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
@@ -51,6 +51,7 @@ import {
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
+import { METADATA_PICKER_POPOVER_CLASS, METADATA_PICKER_POSITIONER_CLASS, METADATA_PICKER_SIDE_OFFSET, PERSON_PICKER_DROPDOWN_CLASS } from "./metadata-picker-styles";
 import {
 	filterMetadataSearchItems,
 	PRIORITY_OPTIONS,
@@ -82,16 +83,6 @@ const PRIORITY_COLOR_CLASSES: Record<PriorityValue, string> = {
 	Low: "text-icon-information",
 	Lowest: "text-icon-information",
 };
-
-/**
- * Keep the positioning popup visually transparent so the shared editor-palette
- * menu remains the single owner of the picker surface, radius, and shadow.
- */
-export const METADATA_PICKER_POPOVER_CLASS =
-	"w-auto gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none dark:shadow-none [[data-color-mode=dark]_&]:shadow-none";
-export const METADATA_PICKER_POSITIONER_CLASS = "z-[700]";
-/** Clears the property-row focus ring (ring-3 + offset-1 ≈ 4px) below the trigger. */
-export const METADATA_PICKER_SIDE_OFFSET = 8;
 
 export function MetadataSearchPicker({
 	className,
@@ -251,10 +242,10 @@ export function StatusPill({
 	);
 }
 
-export function PriorityRowField({ value, onChange, renderValue }: Readonly<{ value: PriorityValue | null; onChange: (next: PriorityValue) => void; renderValue?: (value: PriorityValue) => ReactNode }>) {
+export function PriorityRowField({ value, onChange, renderValue, priorityTrigger, modal }: Readonly<{ value: PriorityValue | null; onChange: (next: PriorityValue) => void; renderValue?: (value: PriorityValue) => ReactNode; priorityTrigger?: ReactElement; modal?: boolean }>) {
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger render={<DetailValueTrigger aria-label={value ? `Change priority. Current priority: ${value}` : "Add priority"} />}>
+		<DropdownMenu modal={modal}>
+			<DropdownMenuTrigger render={priorityTrigger ?? <DetailValueTrigger aria-label={value ? `Change priority. Current priority: ${value}` : "Add priority"} />}>
 				{value ? renderValue?.(value) ?? <PriorityLabel value={value} /> : <span className="text-sm text-text-subtlest">Add priority</span>}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-56" positionerClassName={METADATA_PICKER_POSITIONER_CLASS} sideOffset={METADATA_PICKER_SIDE_OFFSET}>
@@ -314,6 +305,7 @@ export function PersonRowField({
 				sideOffset={METADATA_PICKER_SIDE_OFFSET}
 			>
 				<MetadataSearchPicker
+					className={PERSON_PICKER_DROPDOWN_CLASS}
 					emptyLabel="No people found"
 					items={items}
 					onEscape={() => handleOpenChange(false)}
@@ -350,7 +342,7 @@ export function DateRowField({
 	onChange: (next: Date | undefined) => void;
 	// Injected to keep this module free of a direct calendar import at the top;
 	// callers pass the shared Calendar.
-	CalendarComponent: React.ComponentType<{ mode: "single"; selected?: Date; onSelect: (d: Date | undefined) => void }>;
+	CalendarComponent: React.ComponentType<{ mode: "single"; selected?: Date; defaultMonth?: Date; onSelect: (d: Date | undefined) => void }>;
 }>) {
 	const [open, setOpen] = useState(false);
 	const [label, setLabel] = useState(placeholder);
@@ -376,11 +368,12 @@ export function DateRowField({
 			</PopoverTrigger>
 			<PopoverContent
 				align="start"
-				className="w-auto min-w-(--anchor-width) p-2"
+				className="w-auto p-2"
 				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
 				sideOffset={METADATA_PICKER_SIDE_OFFSET}
 			>
 				<CalendarComponent
+					defaultMonth={calendarValue}
 					mode="single"
 					onSelect={(next) => {
 						onChange(next && dateValueMode === "utc-date"

@@ -22,7 +22,7 @@ import { PullRequest, type PullRequestProps, type PullRequestStatus } from "@/co
 import { PullRequestChecksSummary } from "@/components/blocks/pull-request/components/pull-request-flyout-parts";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { dropdownStyles, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogoMark } from "@/components/ui/logo-mark";
@@ -93,13 +93,13 @@ function DevelopmentConnections() {
 	return (
 		<>
 				<section aria-labelledby={repositoriesId}>
-					<h3 className="px-2 pt-3 pb-1 text-xs leading-4 font-semibold text-text-subtlest" id={repositoriesId}>Code repositories</h3>
+					<h3 className={dropdownStyles.label} id={repositoriesId}>Code repositories</h3>
 					<ConnectionRow connected icon={<AtlassianLogoMark frame="chip" label="" name="bitbucket" />} name="Bitbucket" />
 					<ConnectionRow connected icon={<LogoThirdParty label="" name="github" size="xxsmall" tileBackground="surface" />} name="GitHub for Atlassian" />
 					<ConnectionRow icon={<LogoThirdParty label="" name="gitlab" size="xxsmall" tileBackground="surface" />} name="GitLab for Jira Cloud" />
 				</section>
 				<section aria-labelledby={agentsId} className="pb-2">
-					<h3 className="px-2 pt-3 pb-1 text-xs leading-4 font-semibold text-text-subtlest" id={agentsId}>Agents</h3>
+					<h3 className={dropdownStyles.label} id={agentsId}>Agents</h3>
 					<ConnectionRow connected icon={<AgentAvatarVisual animate={false} appearance="coding" avatarSrc={JIRA_CODING_AGENT_GLYPH} label="" sizePx={20} />} name="Jira Coding Agent" />
 					<ConnectionRow icon={<AgentAvatarVisual animate={false} appearance="coding" brandName="github-copilot" label="" sizePx={20} />} name="GitHub Copilot for Jira" />
 					<ConnectionRow connected icon={<AgentAvatarVisual animate={false} appearance="coding" brandName="cursor" label="" sizePx={20} />} name="Cursor" />

@@ -142,7 +142,7 @@ export function VoiceSelectorInput({
 	className,
 	...props
 }: Readonly<VoiceSelectorInputProps>) {
-	return <CommandInput className={cn("h-auto py-3.5", className)} {...props} />;
+	return <CommandInput className={cn(className)} {...props} />;
 }
 
 export type VoiceSelectorListProps = ComponentProps<typeof CommandList>;

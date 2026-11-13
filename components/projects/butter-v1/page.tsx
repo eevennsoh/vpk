@@ -359,7 +359,7 @@ export default function ButterPage(): React.ReactElement {
 						</div>
 						<div className="flex w-80 max-w-full shrink-0 flex-col gap-2">
 							<h2 className="text-center text-xs font-semibold text-text-subtlest">Local</h2>
-							<section aria-label="Jira Local Agent" className="pointer-events-auto w-full overflow-hidden rounded-xl bg-popover text-popover-foreground" style={{ boxShadow: token("elevation.shadow.overlay") }}>
+							<section aria-label="Jira Local Agent" className="pointer-events-auto w-full overflow-hidden rounded-lg bg-popover text-popover-foreground" style={{ boxShadow: token("elevation.shadow.overlay") }}>
 								<JiraLocalAgentMenu workItem={{ code: "PAY-999", summary: "Improve merchant onboarding for Payments SDK v2", description: "" }} />
 							</section>
 						</div>

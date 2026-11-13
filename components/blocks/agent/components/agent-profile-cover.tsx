@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
+	dropdownStyles,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuRadioGroup,
@@ -153,7 +154,7 @@ function AgentAvatarPickerMenu({
 				>
 					{AGENT_AVATAR_OPTION_GROUPS.map((group) => (
 						<Fragment key={group.id}>
-							<div className="px-1 pt-2 pb-1 text-xs leading-4 font-semibold text-text-subtlest">{group.label}</div>
+							<div className={dropdownStyles.label}>{group.label}</div>
 							<div className="grid grid-cols-7 gap-1 px-1 pb-1">
 								{group.options.map((option) => (
 									<DropdownMenuRadioItem

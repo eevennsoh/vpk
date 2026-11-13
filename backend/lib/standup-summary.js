@@ -6,7 +6,15 @@
 // and returns a structured summary for the chat UI to render.
 // ---------------------------------------------------------------------------
 
-const DEFAULT_SITE_URL = "product-fabric.atlassian.net";
+const {
+	DEFAULT_ATLASSIAN_SITE_HOST,
+	isAllowedAtlassianSite,
+	quoteJqlString,
+	requireHoursAgo,
+	requireJiraProjectKey,
+} = require("./jira-query-inputs");
+
+const DEFAULT_SITE_URL = DEFAULT_ATLASSIAN_SITE_HOST;
 const DEFAULT_HOURS_AGO = 24;
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -83,15 +91,17 @@ function classifyStatus(status) {
 
 // ── JQL builder ─────────────────────────────────────────────────────────────
 
+// Values are never interpolated raw: projects must be project keys and hoursAgo a whole
+// number in range.
 function buildStandupJql({ hoursAgo = DEFAULT_HOURS_AGO, projects = [] } = {}) {
 	const clauses = ["assignee = currentUser()"];
 
 	if (projects.length > 0) {
-		const projectList = projects.map((p) => `"${p}"`).join(", ");
+		const projectList = projects.map((p) => quoteJqlString(requireJiraProjectKey(p))).join(", ");
 		clauses.push(`project IN (${projectList})`);
 	}
 
-	clauses.push(`updated >= -${hoursAgo}h`);
+	clauses.push(`updated >= -${requireHoursAgo(hoursAgo)}h`);
 
 	return `${clauses.join(" AND ")} ORDER BY updated DESC`;
 }
@@ -114,6 +124,9 @@ function resolveLimit(rawLimit) {
 // ── Jira API fetch ──────────────────────────────────────────────────────────
 
 async function fetchJiraIssues({ siteUrl, jql, limit, signal } = {}) {
+	if (!isAllowedAtlassianSite(siteUrl)) {
+		throw createHttpError(400, "siteUrl is not a configured Atlassian site.");
+	}
 	const apiToken = process.env.ATLASSIAN_API_TOKEN;
 	if (!apiToken) {
 		throw createHttpError(

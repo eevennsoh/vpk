@@ -283,6 +283,23 @@ repo's semantic Tailwind classes whenever a class exists.
 - **Relationship by proximity:** Related controls sit closer together than
   unrelated groups. Avoid applying the same gap everywhere when hierarchy needs
   to stay scannable.
+- **Menu and picker rows:** Use a 2px gap between adjacent rows and an 8px
+  (`rounded-lg`) corner radius for each row. In agent selectors, apply that
+  radius to both the row surface and its agent button. Give the whole row the
+  dropdown item's 6px top and bottom padding; let its content determine the
+  height. Why: agent selectors follow the dropdown menu row treatment.
+  <!-- 2026-11-14: "each row item separation will need to be 2px"; "corner radius of each individual row item should be 8px not 6px" -->
+  <!-- 2026-11-14: "follow dropdown menu rows logic, it's based on top/bottom padding"; "why only part of it is done that way? But not the entire row?"; "corner radius needs to be 8px" -->
+- **Menu and picker subheadings:** Add a 6px top margin (`--ds-space-075`)
+  when content precedes a subheading without a separator. Do not add this
+  margin to the first subheading or after a separator.
+  <!-- 2026-11-14: "if there's content above the subheading and we are not using a separator, we should be adding a margin-top of 6px" -->
+- **Menu and picker separators:** Use `DropdownMenuSeparator` from
+  `components/ui/dropdown-menu.tsx` between sections instead of a border on an
+  adjacent row or container. Its shared treatment uses `bg-border`, a 1px line,
+  and `--menu-inset` for full-width alignment and equal vertical margins; set
+  `--menu-inset` to the surrounding menu's inset.
+  <!-- 2026-11-14: "for any separators, rather than a border bottom, we should be using this treatment" -->
 - **Radius by component intent:** Use the established shared primitive radius
   first. Buttons and nav items stay in the medium radius family, inputs in the
   large family, cards in the shared `rounded-xl` contract, avatars and pills in
@@ -353,6 +370,32 @@ their implementation contract. Search the existing surface and `components/ui/`,
 and `components/ui-custom/` before building. Use supported
 variants and slots; shared primitives own appearance and geometry. Preserve
 supplied reference copy and layout when reproducing a specific product state.
+
+- **Menu search fields:** Use `DropdownMenuSearchField` from
+  `components/ui/dropdown-menu.tsx` for search inside menus, including agent
+  selectors and editor palettes. Keep this popup-search pattern distinct from a
+  combobox whose input is the trigger. Why: menu searches share one consistent
+  appearance across components.
+  <!-- 2026-11-14: "the way i want my search box to appear consistently throughout EVERY component is the way we do it in agent selector" -->
+- **Searchable dropdowns:** Use `DropdownMenuContent` and `DropdownMenuItem`
+  with their shared container padding and row styling; do not substitute command
+  list rows or override the dropdown's default inset. Why: searchable and
+  ordinary dropdowns should look like the same component.
+  <!-- 2026-11-14: "it isn't even following the dropdown menu existing rows pattern"; "even the padding and all is not the same" -->
+- **Scrollable searchable dropdowns:** Keep the search field fixed above the
+  scrollable rows and use the shared scroll mask with a 3rem top fade when the
+  list has scrolled. Extend the scroll area to the menu’s bottom edge or fixed
+  footer separator, with no empty strip between them and the menu inset inside
+  the scroll area. Why: the top fade shows rows moving beneath the fixed search
+  field, and an empty bottom gap should not cut off visible row pixels.
+  <!-- 2026-11-14: "give me a longer list that will allow me to scroll. i want to make sure we apply the gradient mask fading gradient" -->
+  <!-- 2026-11-14: "we shouldn't cut away pixels with the bottom gap like that." -->
+  <!-- 2026-11-14: "we can't have this empty gap cut out UI problem." -->
+- **Menu and agent-selector scroll edges:** Do not apply a bottom gradient fade
+  to scrollable menu or agent-selector lists. Clip rows cleanly at the container
+  edge or fixed footer separator. Why: the straight container edge provides the
+  clean cutout.
+  <!-- 2026-11-14: "we don't need the gradient scroll fade at the bottom because we can rely on the straight clean cut out from the container edge"; "or any other menus we shouldn't do that too" -->
 
 ### Interaction states
 
