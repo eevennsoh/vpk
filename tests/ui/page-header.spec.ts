@@ -4,7 +4,7 @@ import { appUrl } from "@/tests/helpers/origin";
 
 const PAGE_HEADER_URL = appUrl("/components/ui/page-header");
 
-test("page headers fill flex preview containers without squashing content", async ({ page }) => {
+test("page headers fill flex preview containers without squashing content", { tag: "@smoke" }, async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await page.goto(PAGE_HEADER_URL, { waitUntil: "load" });
 

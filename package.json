@@ -24,6 +24,7 @@
 		"validate:preflight": "node scripts/validate-local-preflight.js",
 		"validate:local": "node scripts/validate-local-preflight.js && corepack pnpm run verify:lockfile && corepack pnpm run ci:pr",
 		"test:unit:js": "node scripts/run-js-unit-tests.mjs",
+		"test:e2e:smoke": "node scripts/run-playwright-smoke.mjs",
 		"test:api": "node scripts/run-js-unit-tests.mjs --prefix app/api/",
 		"test:agents": "node --test scripts/validate-agent-definitions.test.mjs && node scripts/run-js-unit-tests.mjs --prefix .agents/,scripts/validate-agents",
 		"test:skills": "node scripts/run-js-unit-tests.mjs --prefix scripts/validate-skills",

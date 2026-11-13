@@ -1,36 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { resolveAppOrigin } from "@/tests/helpers/origin";
+import { openCreateDropzoneBoard } from "@/tests/helpers/board";
 
 const origin = resolveAppOrigin();
 const project = process.env.PLAYWRIGHT_JIRA_PROJECT ?? "jira-team-eu26";
 
 async function openBoard(page: Page) {
-	await page.setViewportSize({ width: 1440, height: 1100 });
-	await page.goto(`${origin}/${project}`);
-	await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
-	await expect(page.locator("[data-agent-session-column-expansion]")).toBeVisible();
-	const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
-	if (await expand.isVisible()) {
-		await expand.click();
-	} else if (!await page.getByRole("button", { name: "Collapse Unlink sessions column" }).isVisible()) {
-		const options = page.getByRole("button", { name: "Unlink sessions column options" });
-		await options.click();
-		const pin = page.getByRole("menuitem", { name: "Pin", exact: true });
-		if (await pin.isVisible()) {
-			await pin.click();
-			await options.click();
-		}
-		await page.getByRole("menuitem", { name: "Expand", exact: true }).click();
-	}
-	await expect(page.locator("[data-agent-session-column-expansion]"))
-		.toHaveAttribute("data-agent-session-column-expansion", "expanded");
-	await expect(page.locator("[data-agent-session-column]")).toHaveCSS("width", "280px");
-	await page.getByRole("heading", { name: "Jira Design", exact: true }).hover();
-	await expect(page.locator('[data-slot="hover-card-content"]')).toHaveCount(0);
-	const source = page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread");
-	await expect(source).toBeVisible();
-	return source;
+	return openCreateDropzoneBoard(page, `${origin}/${project}`);
 }
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
