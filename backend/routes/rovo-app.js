@@ -12,6 +12,10 @@ const {
 } = require("../lib/input-schemas");
 const { sendError } = require("../middleware/error-response");
 const {
+	FILE_RESPONSE_SECURITY_HEADERS,
+	decideUploadResponseHeaders,
+} = require("../lib/upload-response-headers");
+const {
 	inferGeneratedMediaContentType,
 	resolveGeneratedMediaAbsolutePath,
 } = require("../lib/generated-media");
@@ -851,12 +855,11 @@ function createRovoAppRouter({
 				return res.status(404).json({ error: "File not found" });
 			}
 
-			res.setHeader("Content-Type", upload.mediaType || "application/octet-stream");
+			// The stored media type came from the client: only script-free types are inline.
+			for (const [name, value] of Object.entries(decideUploadResponseHeaders(upload))) {
+				res.setHeader(name, value);
+			}
 			res.setHeader("Content-Length", String(upload.sizeBytes || upload.buffer.length));
-			res.setHeader(
-				"Content-Disposition",
-				`inline; filename="${upload.filename || "attachment.bin"}"`
-			);
 			return res.status(200).send(upload.buffer);
 		} catch (error) {
 			logger.error?.("[FUTURE-CHAT] Failed to serve file:", error);
@@ -884,6 +887,9 @@ function createRovoAppRouter({
 
 			await fileAccess(absolutePath);
 			res.setHeader("Content-Type", contentType);
+			for (const [name, value] of Object.entries(FILE_RESPONSE_SECURITY_HEADERS)) {
+				res.setHeader(name, value);
+			}
 			res.setHeader(
 				"Content-Disposition",
 				`inline; filename="${path.basename(absolutePath)}"`,

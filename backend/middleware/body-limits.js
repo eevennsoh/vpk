@@ -3,6 +3,8 @@
 const express = require("express");
 const { ERROR_CODES, sendError } = require("./error-response");
 
+// Every limit here is provisional (C-9c, 14 Nov 2026), set from the largest body the
+// frontend sends to each route family. Express answers a larger body with 413.
 const ROUTE_JSON_BODY_LIMITS = [
 	{
 		paths: ["/api/chat-sdk", "/api/rovo/suggestions"],
@@ -16,9 +18,46 @@ const ROUTE_JSON_BODY_LIMITS = [
 		paths: "/api/rovo/files/upload",
 		limit: "12mb",
 	},
+	{
+		// The chat request drops data-URL file parts and trims history to 4 MB, but keeps
+		// at least 8 messages (app/contexts/rovo-chat-helpers.ts); 12 MB is the Next
+		// proxy's default limit.
+		paths: "/api/rovo/chat",
+		limit: "12mb",
+	},
+	{
+		// Dropped files and pages as text; 12 MB is the Next proxy's default limit.
+		paths: "/api/personal-graph",
+		limit: "12mb",
+	},
+	{
+		// Thread snapshots carry every attachment as a data URL, re-sent on each save,
+		// with no size cap in the frontend. Documents and GenUI exports can hold image
+		// data; their Next proxies allow 50 MB (BACKEND_FALLBACK_JSON_BODY_LIMIT_BYTES).
+		paths: ["/api/rovo/threads", "/api/rovo/documents", "/api/genui-export"],
+		limit: "50mb",
+	},
 ];
 
-const FALLBACK_BODY_LIMIT = "50mb";
+// Every other route takes small JSON (ids, prompts, settings); the largest found is under
+// 1 MB. It was 50 MB.
+const FALLBACK_BODY_LIMIT = "1mb";
+
+// The limit express.json applies to `routePath`: the first ROUTE_JSON_BODY_LIMITS entry
+// whose mount path matches (Express matches mount paths case-insensitively, on whole
+// segments), else the fallback.
+function resolveJsonBodyLimit(routePath) {
+	const normalizedPath = String(routePath).toLowerCase();
+	for (const { paths, limit } of ROUTE_JSON_BODY_LIMITS) {
+		for (const mountPath of Array.isArray(paths) ? paths : [paths]) {
+			const prefix = mountPath.toLowerCase();
+			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+				return limit;
+			}
+		}
+	}
+	return FALLBACK_BODY_LIMIT;
+}
 
 function createPayloadTooLargeHandler() {
 	return (error, _req, res, next) => {
@@ -67,4 +106,5 @@ module.exports = {
 	ROUTE_JSON_BODY_LIMITS,
 	createPayloadTooLargeHandler,
 	registerBodyLimitMiddleware,
+	resolveJsonBodyLimit,
 };

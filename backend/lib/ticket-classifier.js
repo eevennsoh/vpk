@@ -6,7 +6,14 @@
 // confidence scores, and suggests team routing.
 // ---------------------------------------------------------------------------
 
-const DEFAULT_SITE_URL = "product-fabric.atlassian.net";
+const {
+	DEFAULT_ATLASSIAN_SITE_HOST,
+	isAllowedAtlassianSite,
+	quoteJqlString,
+	requireJiraProjectKey,
+} = require("./jira-query-inputs");
+
+const DEFAULT_SITE_URL = DEFAULT_ATLASSIAN_SITE_HOST;
 const DEFAULT_PROJECT = "SUPPORT";
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -125,12 +132,14 @@ function resolveLimit(rawLimit) {
 
 // ── JQL builder ─────────────────────────────────────────────────────────────
 
+// Values are never interpolated raw: the project must be a project key and each status
+// is quoted as a JQL string literal.
 function buildClassifyJql({ project = DEFAULT_PROJECT, excludeStatuses } = {}) {
 	const statuses = excludeStatuses ?? ["Done", "Closed", "Resolved"];
-	const clauses = [`project = "${project}"`];
+	const clauses = [`project = ${quoteJqlString(requireJiraProjectKey(project))}`];
 
 	if (statuses.length > 0) {
-		const statusList = statuses.map((s) => `"${s}"`).join(", ");
+		const statusList = statuses.map((s) => quoteJqlString(s)).join(", ");
 		clauses.push(`status NOT IN (${statusList})`);
 	}
 
@@ -140,6 +149,9 @@ function buildClassifyJql({ project = DEFAULT_PROJECT, excludeStatuses } = {}) {
 // ── Jira API fetch ──────────────────────────────────────────────────────────
 
 async function fetchJiraTickets({ siteUrl, jql, limit, signal } = {}) {
+	if (!isAllowedAtlassianSite(siteUrl)) {
+		throw createHttpError(400, "siteUrl is not a configured Atlassian site.");
+	}
 	const apiToken = process.env.ATLASSIAN_API_TOKEN;
 	if (!apiToken) {
 		throw createHttpError(
