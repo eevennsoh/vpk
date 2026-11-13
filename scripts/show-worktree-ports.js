@@ -591,6 +591,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+	killCommand,
 	browserUrlForRow,
 	dashboardRowsSignature,
 	defaultBrowserCommand,

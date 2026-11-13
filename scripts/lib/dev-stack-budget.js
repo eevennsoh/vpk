@@ -105,6 +105,28 @@ function inUseEvidence(stack, inventory, { primaryRoot }) {
 	return null;
 }
 
+// The live dev stacks (next-servers grouped by the worktree that holds them), each with
+// whether a live task uses it and whether every server is quiet. Shared by the budget
+// below and the machine-state line (scripts/lib/machine-state.js).
+function describeStacks(inventory, { env = process.env, idleCpuMax = IDLE_CPU_MAX, extraRoots = [], worktreeRoots = [] } = {}) {
+	const roots = [...new Set([...extraRoots, ...worktreeRoots].map(realPath))].map((root) => ({ path: root }));
+	const rootOf = (server) => findCurrentWorktree(realPath(server.cwd), roots)?.path ?? realPath(server.cwd);
+	const byRoot = new Map();
+	for (const server of inventory.servers) {
+		const root = rootOf(server);
+		const stack = byRoot.get(root) ?? { worktree: root, servers: [] };
+		stack.servers.push(server);
+		byRoot.set(root, stack);
+	}
+	const primaryRoot = worktreeRoots[0] ?? null;
+	return [...byRoot.values()].map((stack) => ({
+		...stack,
+		codex: isCodexWorktree(stack.worktree, env),
+		inUse: inUseEvidence(stack, inventory, { primaryRoot }),
+		quiet: stack.servers.every((server) => server.cpu !== null && server.cpu < idleCpuMax),
+	}));
+}
+
 function evaluateBudget(inventory, {
 	budget = DEV_STACK_BUDGET,
 	env = process.env,
@@ -119,22 +141,7 @@ function evaluateBudget(inventory, {
 	const ownServers = inventory.servers.filter((server) => realPath(server.cwd) === ownRoot);
 	if (ownServers.length > 0) return { exitCode: EXIT_DUPLICATE_SERVER, ownServers, otherStacks: [], reasons: [], warnings: [] };
 
-	const roots = [...new Set([ownRoot, ...worktreeRoots.map(realPath)])].map((root) => ({ path: root }));
-	const rootOf = (server) => findCurrentWorktree(realPath(server.cwd), roots)?.path ?? realPath(server.cwd);
-	const byRoot = new Map();
-	for (const server of inventory.servers) {
-		const root = rootOf(server);
-		const stack = byRoot.get(root) ?? { worktree: root, servers: [] };
-		stack.servers.push(server);
-		byRoot.set(root, stack);
-	}
-	const primaryRoot = worktreeRoots[0] ?? null;
-	const otherStacks = [...byRoot.values()].map((stack) => ({
-		...stack,
-		codex: isCodexWorktree(stack.worktree, env),
-		inUse: inUseEvidence(stack, inventory, { primaryRoot }),
-		quiet: stack.servers.every((server) => server.cpu !== null && server.cpu < idleCpuMax),
-	}));
+	const otherStacks = describeStacks(inventory, { env, idleCpuMax, extraRoots: [ownRoot], worktreeRoots });
 	const reasons = [];
 	const warnings = [];
 	if (otherStacks.length + 1 > budget) reasons.push(`${otherStacks.length} dev stacks already run; starting this one would make ${otherStacks.length + 1} > budget ${budget}`);
@@ -199,6 +206,9 @@ module.exports = {
 	DEV_STACK_BUDGET,
 	EXIT_DUPLICATE_SERVER,
 	EXIT_OVER_BUDGET,
+	collectInventory,
+	describeStacks,
 	evaluateBudget,
 	formatVerdict,
+	listWorktreeRoots,
 };
