@@ -47,6 +47,13 @@ if [ "$IS_CLAUDE_HOOK" -eq 1 ] && [ -f "$PROJECT_DIR/scripts/write-claude-launch
 	(cd "$PROJECT_DIR" && node scripts/write-claude-launch-config.js) >&2 || true
 fi
 
+# Close agent browsers control-vpk recorded whose owning session has ended (there is no
+# session-end hook). Detached and best-effort, so it never delays or fails startup.
+CONTROL_VPK="$PROJECT_DIR/.agents/skills/vpk-verify/scripts/control-vpk"
+if [ -f "$CONTROL_VPK" ] && command -v node >/dev/null 2>&1; then
+	(cd "$PROJECT_DIR" && nohup node "$CONTROL_VPK" cleanup --orphaned-browsers </dev/null >/dev/null 2>&1 &) || true
+fi
+
 if [ "$IS_CLAUDE_HOOK" -eq 1 ] && [ ${#VPK_BOOTSTRAP_MESSAGES[@]} -gt 0 ]; then
 	CONTEXT="${VPK_BOOTSTRAP_MESSAGES[*]}"
 	CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr -d '\n')

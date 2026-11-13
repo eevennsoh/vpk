@@ -7,6 +7,7 @@ const { createHash } = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
+const { classifyBrowserRecord, listBrowserRecords, noteBrowserUse, removeBrowserRecord } = require("./browser-registry.js");
 const { EVIDENCE_DIR, REPO_ROOT } = require("./repo.js");
 
 const SESSION_PREFIX = "vpk-verify";
@@ -261,14 +262,86 @@ function closeBrowserSessionBestEffort() {
 		return;
 	}
 	runAgentBrowser(["--session", session, "close"], { stdio: "ignore" });
+	try {
+		removeBrowserRecord(session);
+	} catch {
+		// No shared git directory: nothing was recorded either.
+	}
+}
+
+// Recording must never fail the browser command it follows.
+function noteBrowserUseBestEffort(session, options) {
+	try {
+		noteBrowserUse(session, options);
+	} catch (error) {
+		process.stderr.write(`control-vpk: could not record browser session ${session}: ${error.message}\n`);
+	}
+}
+
+const PARKED_URL = "data:text/html,%3Ctitle%3Eparked%20by%20control-vpk%3C%2Ftitle%3E";
+
+// Navigates the scoped page to a static document so an animated route stops using CPU between
+// checks. The session stays open; the next `open-target`, `capture` or `browser open` resumes.
+function parkBrowserSession(session, options = {}) {
+	return executeBrowserCommand(["open", PARKED_URL], { session, ...options });
+}
+
+const ALREADY_CLOSED = /no browser session|session (?:is )?not found|not running|no such file|failed to connect/iu;
+
+function closeRecordedBrowser(record, { runCommand = runAgentBrowser } = {}) {
+	const env = { ...process.env };
+	delete env.AGENT_BROWSER_SESSION;
+	delete env.AGENT_BROWSER_RESTORE;
+	if (record.namespace) env.AGENT_BROWSER_NAMESPACE = record.namespace;
+	else delete env.AGENT_BROWSER_NAMESPACE;
+	let binPath;
+	try {
+		binPath = resolveAgentBrowserBin(record.worktree);
+	} catch {
+		binPath = resolveAgentBrowserBin();
+	}
+	const result = runCommand(["--session", record.session, "close"], { binPath, encoding: "utf8", env, timeoutMs: 15_000 });
+	return result.status === 0 || ALREADY_CLOSED.test(failureText(result));
+}
+
+// Closes every recorded browser whose owner is gone or that has sat unused past the limit, and
+// forgets it. Returns one line per record, kept or closed, with the reason.
+function closeOrphanedBrowsers({
+	classify = classifyBrowserRecord,
+	close = closeRecordedBrowser,
+	dryRun = false,
+	records = listBrowserRecords(),
+	remove = (entry) => fs.rmSync(entry.file, { force: true }),
+} = {}) {
+	return records.map((entry) => {
+		const { record } = entry;
+		const label = `${record.session}${record.namespace ? ` (namespace ${record.namespace})` : ""} from ${record.worktree}`;
+		const verdict = classify(record);
+		if (verdict.action === "keep") return `kept browser ${label}: ${verdict.reason}`;
+		if (dryRun) return `would close browser ${label}: ${verdict.reason}`;
+		let closed = false;
+		try {
+			closed = close(record);
+		} catch {
+			// Missing binary or a timeout: keep the record so the next cleanup retries.
+		}
+		if (!closed) return `FAILED to close browser ${label}: ${verdict.reason}`;
+		remove(entry);
+		return `closed browser ${label}: ${verdict.reason}`;
+	});
 }
 
 module.exports = {
 	browserSessionId,
 	classifyAgentBrowserFailure,
 	closeBrowserSessionBestEffort,
+	closeOrphanedBrowsers,
+	closeRecordedBrowser,
 	executeBrowserCommand,
 	failureText,
+	noteBrowserUseBestEffort,
+	PARKED_URL,
+	parkBrowserSession,
 	formatBrowserFailure,
 	isBrowserSessionStarter,
 	parseBrowserTimeoutMs,
