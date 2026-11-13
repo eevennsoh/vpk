@@ -382,7 +382,7 @@ export function ChartDemoRadialChart() {
 													y={viewBox.cy}
 													className="fill-foreground text-4xl font-bold"
 												>
-													{chartData[0].visitors.toLocaleString()}
+													{chartData[0].visitors.toLocaleString("en-US")}
 												</tspan>
 												<tspan
 													x={viewBox.cx}
