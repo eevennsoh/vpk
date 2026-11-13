@@ -265,7 +265,7 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 								className={cn(
 									"size-12 object-contain",
 									config.exclude
-										? "opacity-[calc(var(--card-glow-icon-opacity)*0.25)] transition-opacity duration-200 ease-out group-hover/card-glow:opacity-[var(--card-glow-icon-opacity)] group-focus-within/card-glow:opacity-[var(--card-glow-icon-opacity)]"
+										? "opacity-[calc(var(--card-glow-icon-opacity)*0.25)] transition-opacity duration-medium ease-out group-hover/card-glow:opacity-[var(--card-glow-icon-opacity)] group-focus-within/card-glow:opacity-[var(--card-glow-icon-opacity)]"
 										: "opacity-[var(--card-glow-icon-opacity)]",
 									tile.iconClassName,
 								)}

@@ -1242,7 +1242,7 @@ export function GlassSlider({
 									{showDot ? (
 										<div
 											className={cn(
-												"rounded-full transition-all duration-150 ease-out",
+												"rounded-full transition-all duration-normal ease-out",
 												hasLabel
 													? isEmphasized
 														// Selected gets the wider w-7 pill;
@@ -1277,7 +1277,7 @@ export function GlassSlider({
 									className={cn(
 										"pointer-events-none absolute left-1/2",
 										"text-[10px] font-medium uppercase tracking-[0.15em]",
-										"transition-[color,opacity] duration-150 ease-out",
+										"transition-[color,opacity] duration-normal ease-out",
 										"whitespace-nowrap",
 										"opacity-0 group-data-[active=true]/elastic-slider:opacity-100",
 										isSelected || isHoveredTick

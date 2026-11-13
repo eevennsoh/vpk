@@ -61,7 +61,7 @@ export function RadarLabels({
 						<text
 							className={
 								interactive
-									? "cursor-pointer transition-opacity duration-150 hover:opacity-100"
+									? "cursor-pointer transition-opacity duration-normal hover:opacity-100"
 									: ""
 							}
 							dominantBaseline="middle"
