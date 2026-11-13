@@ -196,6 +196,17 @@ export default [{ files: ["**/*.tsx"], languageOptions, plugins, rules, settings
 	}
 });
 
+// The smoke job serves the production backend with its default origin allowlist; browsing at an
+// origin outside that list gets every same-origin API POST rejected (a 500), so the two must agree.
+test("the smoke job browses at an origin the production backend allows by default", () => {
+	const { DEFAULT_ALLOWED_ORIGINS } = require("../backend/middleware/security.js");
+	const smoke = stepsFor(jobs.smoke).find((step) => step.name === "Smoke specs");
+	const origin = new URL(smoke.env.PLAYWRIGHT_BASE_URL).origin;
+	assert.ok(DEFAULT_ALLOWED_ORIGINS.includes(origin), `${origin} is not in DEFAULT_ALLOWED_ORIGINS (${DEFAULT_ALLOWED_ORIGINS.join(", ")})`);
+	assert.doesNotMatch(jobs.smoke, /ALLOWED_ORIGINS/u, "the job relies on the backend's defaults, not an override");
+	assert.equal(new URL(smoke.env.PLAYWRIGHT_BASE_URL).port, "8080", "the job serves on 8080");
+});
+
 test("the browser smoke job serves a production build and runs only the @smoke suite", () => {
 	const steps = stepsFor(jobs.smoke);
 	const order = ["Install dependencies", "Build the static export", "Serve the production build", "Install Chromium", "Smoke specs"];
@@ -209,7 +220,7 @@ test("the browser smoke job serves a production build and runs only the @smoke s
 	assert.match(jobs.smoke, /curl -fsS http:\/\/127\.0\.0\.1:8080\/api\/health/u);
 	const smoke = steps.find((step) => step.name === "Smoke specs");
 	assert.equal(smoke.run, "time pnpm run test:e2e:smoke");
-	assert.equal(smoke.env.PLAYWRIGHT_BASE_URL, "http://127.0.0.1:8080");
+	assert.equal(smoke.env.PLAYWRIGHT_BASE_URL, "http://localhost:8080");
 	assert.equal(require("../package.json").scripts["test:e2e:smoke"], "node scripts/run-playwright-smoke.mjs");
 	assert.doesNotMatch(workflow, /pull_request_target/u);
 });
