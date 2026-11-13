@@ -121,17 +121,23 @@ for (const route of ["/jira-team-eu26", "/preview/blocks/jira-dragging"]) {
 			await click(right.codes.at(-1)!);
 			await expect.poll(selected).toEqual(populated.flatMap((item) => item.codes));
 			await page.screenshot({ path: `output/agent-browser/grid-selection/${route.includes("preview") ? "dragging" : "eu26"}-${reducedMotion}.png` });
-			await page.keyboard.press("Escape");
-			await click(middle.codes[0]);
+			// d68326e2e made Command/Control+A on a selected card the column-scoped Select all.
 			for (const modifier of ["Meta", "Control"]) {
+				await page.keyboard.press("Escape");
+				await click(middle.codes[0]);
+				await expect.poll(selected).toEqual([middle.codes[0]]);
 				const intercepted = await issue(page, middle.codes[0]).locator('[data-jira-issue-activation-control]').evaluate((node, key) => {
 					const event = new KeyboardEvent("keydown", { key: "a", bubbles: true, cancelable: true, metaKey: key === "Meta", ctrlKey: key === "Control" });
 					node.dispatchEvent(event);
 					return event.defaultPrevented;
 				}, modifier);
-				expect(intercepted).toBe(false);
-				await page.keyboard.press(`${modifier}+a`);
+				expect(intercepted).toBe(true);
+				await expect.poll(selected).toEqual(middle.codes);
+				await page.keyboard.press("Escape");
+				await click(middle.codes[0]);
 				await expect.poll(selected).toEqual([middle.codes[0]]);
+				await page.keyboard.press(`${modifier}+a`);
+				await expect.poll(selected).toEqual(middle.codes);
 			}
 			await page.keyboard.press("Escape");
 			await page.getByRole("button", { name: `Collapse ${middle.title} column`, exact: true }).click();
@@ -324,12 +330,14 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				node.dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
 			});
 		}
-		await expect(page.locator('[data-jira-issue-activation-control][aria-pressed="true"]')).toHaveCount(13);
+		// fb9217d2f, c35b35ad0 and faeb15d81 settled the keynote board on 23 stories.
+		await expect(page.locator('[data-jira-issue-activation-control][aria-pressed="true"]')).toHaveCount(23);
 		await source.evaluate((node) => {
 			const bounds = node.getBoundingClientRect();
 			node.dispatchEvent(new DragEvent("dragstart", { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: bounds.x + 70, clientY: bounds.y + 30 }));
 		});
-		const previous = column(page, "Confidence");
+		// fb9217d2f moved TEU-8 (Loom Overlay) into Collaboration.
+		const previous = column(page, "Collaboration");
 		await previous.locator("[data-issue-drop-hit-area]").evaluate((node) => {
 			const card = node.parentElement!.querySelector('[data-issue-key="TEU-8"]')!;
 			const bounds = card.getBoundingClientRect();

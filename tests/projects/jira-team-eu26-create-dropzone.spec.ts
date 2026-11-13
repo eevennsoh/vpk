@@ -65,7 +65,8 @@ test("empty columns never show an inline create border during a session drag", a
 	await page.setViewportSize({ width: 1440, height: 1100 });
 	await page.goto(`${origin}/${project}`);
 	await expect(page.getByRole("heading", { name: "Jira Design", exact: true })).toBeVisible();
-	await page.getByRole("button", { name: "Filter board by Codex" }).click();
+	// 89fad1799 removed the Codex header filter; Venn has no To do work items either.
+	await page.getByRole("button", { name: "Filter board by Venn" }).click();
 	const column = page.locator('[data-jira-kanban-column="To do"]');
 	const expand = page.getByRole("button", { name: "Expand To do column" });
 	if (await expand.isVisible()) {
@@ -343,7 +344,10 @@ test("compact create adds a named issue in its own column without capturing sess
 	const sessionCount = await sessions.locator('[data-testid^="agent-session-row-"]').count();
 	await column.hover();
 	await column.getByRole("button", { name: "Create in In review" }).click();
-	const form = page.getByRole("dialog", { name: "Create in In review", exact: true });
+	// The popup's authored aria-label, "Create work item in <status>" (cfc9fe2e8), took effect
+	// only with Base UI 1.9 (72eae9e48); before that the popup was named after its trigger.
+	// No commit chose this name; the owner is to confirm it.
+	const form = page.getByRole("dialog", { name: "Create work item in In review", exact: true });
 	await form.getByRole("textbox", { name: "Name this work item" }).fill("Manual review follow-up");
 	await form.getByRole("button", { name: "Create work item", exact: true }).click();
 	await expect(form).toHaveCount(0);
@@ -703,7 +707,8 @@ test("empty columns keep the persistent create button directly below the header"
 	const column = page.locator('[data-jira-kanban-column="To do"]');
 	const button = column.getByRole("button", { name: "Create in To do" });
 	const populated = await readCreateInset(column, button);
-	await page.getByRole("button", { name: "Filter board by Codex" }).click();
+	// 89fad1799 removed the Codex header filter; Venn has no To do work items either.
+	await page.getByRole("button", { name: "Filter board by Venn" }).click();
 	const expand = page.getByRole("button", { name: "Expand To do column" });
 	if (await expand.isVisible()) {
 		await expand.focus();
@@ -717,7 +722,9 @@ test("empty columns keep the persistent create button directly below the header"
 	const columnBox = (await column.boundingBox())!;
 	expect(box.y - columnBox.y).toBeLessThan(60);
 	expect(await readCreateInset(column, button)).toEqual(populated);
-	await column.getByRole("button", { name: "Collapse To do column" }).focus();
+	// 8661caeab made "column actions" the last header control (Collapse now leads), and
+	// 4c8f4fad7 added a header create button before it.
+	await column.getByRole("button", { name: "To do column actions" }).focus();
 	await page.keyboard.press("Tab");
 	await expect(button).toBeFocused();
 });
@@ -726,7 +733,8 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
 	test(`empty columns fill downward and restore creation after cancellation (${reducedMotion})`, async ({ page }) => {
 		await page.emulateMedia({ reducedMotion });
 		await openBoard(page);
-		await page.getByRole("button", { name: "Filter board by Codex" }).click();
+		// 89fad1799 removed the Codex header filter; Venn has no To do work items either.
+		await page.getByRole("button", { name: "Filter board by Venn" }).click();
 		const expand = page.getByRole("button", { name: "Expand To do column" });
 		if (await expand.isVisible()) {
 			await expand.focus();
