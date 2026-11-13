@@ -139,6 +139,7 @@ test("payload-too-large handler preserves response shape and passes other errors
 			reason: "payload_too_large",
 			details:
 				"The request included more data than this endpoint can process, often from inline image/file data in chat history. You can continue chatting after starting a new thread or trimming history.",
+			code: "PAYLOAD_TOO_LARGE",
 		},
 	}]);
 	assert.deepEqual(nextCalls, []);
@@ -162,6 +163,7 @@ test("body limit middleware maps JSON parse failures to structured API errors", 
 		assert.match(response.headers.get("content-type") ?? "", /application\/json/u);
 		assert.deepEqual(await response.json(), {
 			error: "Invalid JSON request body.",
+			code: "INVALID_JSON",
 		});
 	});
 });
