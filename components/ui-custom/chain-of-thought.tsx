@@ -73,7 +73,7 @@ export const ChainOfThought = memo(
 		const chainOfThoughtContext = useMemo(() => ({ isOpen }), [isOpen]);
 
 		return (
-			<ChainOfThoughtContext.Provider value={chainOfThoughtContext}>
+			<ChainOfThoughtContext value={chainOfThoughtContext}>
 				<Collapsible
 					className={cn(
 						"not-prose w-full",
@@ -85,7 +85,7 @@ export const ChainOfThought = memo(
 				>
 					{children}
 				</Collapsible>
-			</ChainOfThoughtContext.Provider>
+			</ChainOfThoughtContext>
 		);
 	}
 );

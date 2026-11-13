@@ -114,9 +114,9 @@ export function WorldDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <WorldDataContext.Provider value={{ worldData, isLoading }}>
+    <WorldDataContext value={{ worldData, isLoading }}>
       {children}
-    </WorldDataContext.Provider>
+    </WorldDataContext>
   );
 }
 
