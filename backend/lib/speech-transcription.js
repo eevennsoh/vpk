@@ -277,8 +277,11 @@ function collectConfiguredTranscriptionChoices(envVars, sttEnvVars) {
 	if (googleModel) add("google", googleModel);
 	const whisperModel = getNonEmptyString(sttEnvVars.LOCAL_WHISPER_MODEL);
 	if (whisperModel) add(LOCAL_WHISPER_PROVIDER, whisperModel);
-	if (hasConfiguredOpenAiCompatibleBaseUrl(sttEnvVars)) {
-		add(OPENAI_COMPATIBLE_PROVIDER, getNonEmptyString(sttEnvVars.OPENAI_COMPATIBLE_STT_MODEL));
+	// The OpenAI-compatible provider works with its model alone: the base URL defaults to
+	// DEFAULT_OPENAI_COMPATIBLE_STT_BASE_URL.
+	const openAiCompatibleModel = getNonEmptyString(sttEnvVars.OPENAI_COMPATIBLE_STT_MODEL);
+	if (openAiCompatibleModel || hasConfiguredOpenAiCompatibleBaseUrl(sttEnvVars)) {
+		add(OPENAI_COMPATIBLE_PROVIDER, openAiCompatibleModel);
 	}
 	return choices;
 }

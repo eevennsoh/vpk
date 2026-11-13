@@ -322,3 +322,16 @@ test("a client may choose a transcription provider or model only among those the
 	// local-whisper cannot be chosen when nothing configures it.
 	assert.equal(decide("local-whisper", undefined, { sttEnvVars: {}, envVars }), "reject");
 });
+
+test("an OpenAI-compatible model configured without a base URL can be named by the client", () => {
+	const { decideClientTranscriptionChoice } = require("./speech-transcription").__test__;
+	const sttEnvVars = {
+		STT_PRESET: "qwen3-asr",
+		STT_PRESET_QWEN3_ASR_PROVIDER: "openai-compatible",
+		OPENAI_COMPATIBLE_STT_MODEL: "qwen3-asr",
+	};
+	const decide = (rawProvider, rawModel) => decideClientTranscriptionChoice({ envVars: {}, rawModel, rawProvider, sttEnvVars }).action;
+	assert.equal(decide("openai-compatible", "qwen3-asr"), "allow");
+	assert.equal(decide(undefined, "qwen3-asr"), "allow");
+	assert.equal(decide("openai-compatible", "other-model"), "reject");
+});
