@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useReducer, useState } from "react";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { getAppById, type DirectoryApp } from "@/app/data/directory/apps";
@@ -16,31 +16,28 @@ import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import type { AtlassianLogoName } from "@/components/ui/logo";
 import { ProgressTracker, type ProgressTrackerStep } from "@/components/ui/progress-tracker";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { useTimedTransition } from "@/components/hooks/use-timed-transition";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-const TEMPLATE_BUILD_STEP_LABELS = [
-	"Review template",
-	"Connect apps",
-	"Apply instructions",
-	"Configure skills",
-	"Prepare knowledge",
-	"Create draft agent",
-] as const;
-const TEMPLATE_BUILD_STEP_DURATION_MS = 1400;
+import {
+	selectTemplateBuildActiveStep,
+	selectTemplateBuildTimerKey,
+	TEMPLATE_BUILD_INITIAL_STATE,
+	TEMPLATE_BUILD_STEP_LABELS,
+	TEMPLATE_BUILD_TIMERS,
+	templateBuildReducer,
+	type TemplateBuildState,
+} from "./template-build-machine";
 
-type TemplateSetupPhase = "connect" | "building" | "built" | "error";
-
-function getTemplateBuildSteps(
-	phase: TemplateSetupPhase,
-	activeIndex: number,
-): ProgressTrackerStep[] {
+function getTemplateBuildSteps(state: TemplateBuildState): ProgressTrackerStep[] {
+	const activeIndex = selectTemplateBuildActiveStep(state);
 	return TEMPLATE_BUILD_STEP_LABELS.map((label, index) => ({
 		id: label.toLowerCase().replace(/\s+/gu, "-"),
 		label,
-		state: phase === "built" || index < activeIndex
+		state: state.phase === "built" || index < activeIndex
 			? "done"
-			: index === activeIndex && phase === "building"
+			: index === activeIndex && state.phase === "building"
 				? "current"
 				: "todo",
 	}));
@@ -108,61 +105,38 @@ export function useTemplateBuildFlow({
 	onBuildAgent,
 	onCancel,
 }: Readonly<UseTemplateBuildFlowOptions>) {
-	const [phase, setPhase] = useState<TemplateSetupPhase>("connect");
-	const [activeBuildStep, setActiveBuildStep] = useState(0);
-	const [builtProfileId, setBuiltProfileId] = useState<string | null>(null);
-	const [builtAgentCancel, setBuiltAgentCancel] = useState<(() => void) | null>(null);
-	const [pendingBuildOptions, setPendingBuildOptions] = useState<AgentBrowserTemplateBuildOptions | null>(null);
+	const [state, dispatch] = useReducer(templateBuildReducer, TEMPLATE_BUILD_INITIAL_STATE);
 	const [selectedAppIds, setSelectedAppIds] = useState<ReadonlySet<string>>(() => new Set());
-	const buildSteps = useMemo(
-		() => getTemplateBuildSteps(phase, activeBuildStep),
-		[activeBuildStep, phase],
-	);
+	const buildSteps = useMemo(() => getTemplateBuildSteps(state), [state]);
 
-	useEffect(() => {
-		if (phase !== "building") {
-			return;
-		}
-
-		const stepTimer = window.setTimeout(() => {
-			if (activeBuildStep >= TEMPLATE_BUILD_STEP_LABELS.length - 1) {
-				const result = onBuildAgent?.(agent, pendingBuildOptions ?? {
-					appIds: [],
-					connectApps: false,
-				}) ?? { profileId: `demo-template-${agent.id}` };
-
-				if (!result) {
-					setPhase("error");
-					return;
-				}
-
-				setBuiltProfileId(result.profileId);
-				setBuiltAgentCancel(() => result.onCancel ?? null);
-				setPhase("built");
+	// Steps are a staged reveal with no reduced-motion variant today, so the hold is kept.
+	useTimedTransition(selectTemplateBuildTimerKey(state), TEMPLATE_BUILD_TIMERS, {
+		onAdvance: (next) => {
+			if (next !== "finish") {
+				dispatch({ type: "step-elapsed" });
 				return;
 			}
-
-			setActiveBuildStep((currentStep) => Math.min(
-				currentStep + 1,
-				TEMPLATE_BUILD_STEP_LABELS.length - 1,
-			));
-		}, TEMPLATE_BUILD_STEP_DURATION_MS);
-
-		return () => window.clearTimeout(stepTimer);
-	}, [activeBuildStep, agent, onBuildAgent, pendingBuildOptions, phase]);
+			if (state.phase !== "building") {
+				return;
+			}
+			// A null result still falls back to the demo profile, as before this machine existed,
+			// so `error` stays unreachable until the host's null is treated as a failure.
+			const result = onBuildAgent?.(agent, state.options) ?? { profileId: `demo-template-${agent.id}` };
+			dispatch({ type: "build-finished", result });
+		},
+		reducedMotion: false,
+		restartKey: state.phase === "building" ? state.options : null,
+	});
 
 	const startBuild = useCallback((connectApps: boolean) => {
 		const appIds = connectApps ? [...selectedAppIds] : [];
-		setPendingBuildOptions({
-			appIds,
-			connectApps: connectApps && appIds.length > 0,
+		dispatch({
+			type: "start",
+			options: { appIds, connectApps: connectApps && appIds.length > 0 },
 		});
-		setBuiltProfileId(null);
-		setBuiltAgentCancel(null);
-		setActiveBuildStep(0);
-		setPhase("building");
 	}, [selectedAppIds]);
 
+	const builtAgentCancel = state.phase === "built" ? state.onCancel : null;
 	const cancel = useCallback(() => {
 		builtAgentCancel?.();
 		onCancel();
@@ -183,9 +157,10 @@ export function useTemplateBuildFlow({
 
 	return {
 		buildSteps,
-		builtProfileId,
+		builtProfileId: state.phase === "built" ? state.profileId : null,
 		cancel,
-		phase,
+		phase: state.phase,
+		state,
 		selectedAppCount: selectedAppIds.size,
 		selectedAppIds,
 		startBuild,
@@ -211,12 +186,12 @@ export function TemplateBuildFlow({
 }: Readonly<TemplateBuildFlowProps>) {
 	const {
 		buildSteps,
-		builtProfileId,
 		cancel,
 		phase,
 		selectedAppCount,
 		selectedAppIds,
 		startBuild,
+		state,
 		toggleApp,
 	} = useTemplateBuildFlow({ agent, onBuildAgent, onCancel });
 	const appSources = agent.sources ?? [];
@@ -249,10 +224,10 @@ export function TemplateBuildFlow({
 					</div>
 				</div>
 				<div className="mt-6 grid gap-2">
-					{phase === "built" ? (
+					{state.phase === "built" ? (
 						<>
 							<Button
-								onClick={() => builtProfileId ? onOpenBuiltAgent(agent, builtProfileId) : undefined}
+								onClick={() => onOpenBuiltAgent(agent, state.profileId)}
 								type="button"
 							>
 								See agent
