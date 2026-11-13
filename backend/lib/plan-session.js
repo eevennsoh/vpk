@@ -1,125 +1,103 @@
 "use strict";
 
-/** @type {Map<string, { isActive: boolean; phase: "qa" | "plan" | "execution" | null; deferredToolCallId: string | null; planCardIds: string[]; acceptedPlanId: string | null }>} */
-const _planSessions = new Map();
+const {
+	NO_PLAN_SESSION,
+	isPlanSessionExpired,
+	planReducer,
+} = require("./plan-session-machine");
 
-const DEFAULT_SESSION = Object.freeze({
-	isActive: false,
-	phase: null,
-	deferredToolCallId: null,
-	planCardIds: [],
-	acceptedPlanId: null,
-});
+// A session that has not changed for this long is dropped. It bounds a thread left in
+// execution: a plain message keeps an execution session alive (see
+// request-normalization.js), so without a TTL it lasted until the backend restarted.
+const DEFAULT_PLAN_SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 
-function normalizeNonEmptyString(value) {
-	if (typeof value !== "string") {
-		return null;
+function createPlanSessionStore({ now = () => Date.now(), ttlMs = DEFAULT_PLAN_SESSION_TTL_MS } = {}) {
+	/** @type {Map<string, import("./plan-session-machine").PlanSession>} */
+	const sessions = new Map();
+
+	// Reads never create an entry; an expired entry is removed on read.
+	function getPlanSession(threadId) {
+		if (!threadId) {
+			return NO_PLAN_SESSION;
+		}
+		const session = sessions.get(threadId);
+		if (!session) {
+			return NO_PLAN_SESSION;
+		}
+		if (isPlanSessionExpired(session, { now: now(), ttlMs })) {
+			sessions.delete(threadId);
+			return NO_PLAN_SESSION;
+		}
+		return session;
 	}
 
-	const trimmedValue = value.trim();
-	return trimmedValue.length > 0 ? trimmedValue : null;
-}
-
-function getPlanSession(threadId) {
-	if (!threadId) {
-		return { ...DEFAULT_SESSION };
-	}
-	if (!_planSessions.has(threadId)) {
-		_planSessions.set(threadId, {
-			isActive: false,
-			phase: null,
-			deferredToolCallId: null,
-			planCardIds: [],
-			acceptedPlanId: null,
-		});
-	}
-	return _planSessions.get(threadId);
-}
-
-function updatePlanSession(threadId, updates) {
-	if (!threadId) return;
-	const session = getPlanSession(threadId);
-	Object.assign(session, updates);
-}
-
-function recordPlanWidgetEmission(threadId, { deferredToolCallId, planCardId } = {}) {
-	if (!threadId) {
-		return { ...DEFAULT_SESSION };
+	function dispatchPlanSessionEvent(threadId, event) {
+		if (!threadId) {
+			return NO_PLAN_SESSION;
+		}
+		const next = planReducer(getPlanSession(threadId), { ...event, at: now() });
+		if (next.phase === "none") {
+			sessions.delete(threadId);
+		} else {
+			sessions.set(threadId, next);
+		}
+		return next;
 	}
 
-	const session = getPlanSession(threadId);
-	const normalizedDeferredToolCallId = normalizeNonEmptyString(deferredToolCallId);
-	const normalizedPlanCardId = normalizeNonEmptyString(planCardId);
-
-	session.isActive = true;
-	session.phase = "plan";
-	if (normalizedDeferredToolCallId) {
-		session.deferredToolCallId = normalizedDeferredToolCallId;
-	}
-	if (
-		normalizedPlanCardId &&
-		!session.planCardIds.includes(normalizedPlanCardId)
-	) {
-		session.planCardIds = [...session.planCardIds, normalizedPlanCardId];
+	function recordPlanWidgetEmission(threadId, { deferredToolCallId, planCardId } = {}) {
+		return dispatchPlanSessionEvent(threadId, { type: "PLAN_EMITTED", deferredToolCallId, planCardId });
 	}
 
-	return session;
-}
-
-function clearPlanSession(threadId) {
-	if (!threadId) return;
-	_planSessions.delete(threadId);
-}
-
-/**
- * On deferred-tool resume turns the original request's `isPlanMode` flag
- * is absent. This helper checks whether the persisted plan session should
- * re-activate `resolvedPlanModeActive` so downstream GenUI blocking and
- * prompt instructions stay correct.
- *
- * @param {{ pausedToolCallRecord: unknown; resolvedPlanModeActive: boolean; threadId: string }} ctx
- * @returns {{ shouldRestore: boolean; phase: string | null }}
- */
-function shouldRestorePlanModeOnResume({ pausedToolCallRecord, resolvedPlanModeActive, threadId }) {
-	if (!pausedToolCallRecord || resolvedPlanModeActive) {
-		return { shouldRestore: false, phase: null };
+	function clearPlanSession(threadId) {
+		dispatchPlanSessionEvent(threadId, { type: "CLEAR" });
 	}
 
-	const planSession = getPlanSession(threadId);
-	if (planSession.isActive) {
-		return { shouldRestore: true, phase: planSession.phase };
+	/**
+	 * On deferred-tool resume turns the original request's `isPlanMode` flag
+	 * is absent. This helper checks whether the persisted plan session should
+	 * re-activate `resolvedPlanModeActive` so downstream GenUI blocking and
+	 * prompt instructions stay correct.
+	 *
+	 * @param {{ pausedToolCallRecord: unknown; resolvedPlanModeActive: boolean; threadId: string }} ctx
+	 * @returns {{ shouldRestore: boolean; phase: string | null }}
+	 */
+	function shouldRestorePlanModeOnResume({ pausedToolCallRecord, resolvedPlanModeActive, threadId }) {
+		if (!pausedToolCallRecord || resolvedPlanModeActive) {
+			return { shouldRestore: false, phase: null };
+		}
+		const { phase } = getPlanSession(threadId);
+		return phase === "none" ? { shouldRestore: false, phase: null } : { shouldRestore: true, phase };
 	}
 
-	return { shouldRestore: false, phase: null };
+	/**
+	 * True when the plan session for `threadId` is in the execution phase. During
+	 * execution, all GenUI card routing is suppressed so that plan task outputs route
+	 * to the artifact panel instead.
+	 */
+	function isPlanExecutionPhase(threadId) {
+		return getPlanSession(threadId).phase === "execution";
+	}
+
+	return {
+		clearPlanSession,
+		dispatchPlanSessionEvent,
+		getPlanSession,
+		isPlanExecutionPhase,
+		recordPlanWidgetEmission,
+		shouldRestorePlanModeOnResume,
+		size: () => sessions.size,
+	};
 }
 
-/**
- * Returns true when the plan session for `threadId` is in the execution
- * phase. During execution, all GenUI card routing must be suppressed so
- * that plan task outputs route to the artifact panel instead.
- *
- * @param {string} threadId
- * @returns {boolean}
- */
-function isPlanExecutionPhase(threadId) {
-	if (!threadId) return false;
-	const session = getPlanSession(threadId);
-	return session.isActive && session.phase === "execution";
-}
-
-/**
- * Reset the internal session store. Only for tests.
- */
-function _resetForTest() {
-	_planSessions.clear();
-}
+const defaultStore = createPlanSessionStore();
 
 module.exports = {
-	getPlanSession,
-	updatePlanSession,
-	recordPlanWidgetEmission,
-	clearPlanSession,
-	shouldRestorePlanModeOnResume,
-	isPlanExecutionPhase,
-	_resetForTest,
+	DEFAULT_PLAN_SESSION_TTL_MS,
+	clearPlanSession: defaultStore.clearPlanSession,
+	createPlanSessionStore,
+	dispatchPlanSessionEvent: defaultStore.dispatchPlanSessionEvent,
+	getPlanSession: defaultStore.getPlanSession,
+	isPlanExecutionPhase: defaultStore.isPlanExecutionPhase,
+	recordPlanWidgetEmission: defaultStore.recordPlanWidgetEmission,
+	shouldRestorePlanModeOnResume: defaultStore.shouldRestorePlanModeOnResume,
 };
