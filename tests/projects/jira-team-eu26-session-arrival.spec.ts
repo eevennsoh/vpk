@@ -77,7 +77,8 @@ for (const reducedMotion of [false, true]) {
 		await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
 		await page.goto(BOARD_URL, { waitUntil: "domcontentloaded" });
 		await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
-		await page.getByRole("button", { name: "Expand Unlink sessions column" }).press("Enter");
+		// 5c96e6a9f opens the Unlink sessions column expanded, so there is no Expand step.
+		await expect(page.getByRole("button", { name: "Collapse Unlink sessions column" })).toBeVisible();
 		await expect(page.locator('[data-agent-session-column] ul[data-variant="large"]')).toBeVisible();
 
 		await page.locator('[data-agent-session-column] ul[data-variant="large"]').evaluate((list) => {
@@ -142,7 +143,7 @@ test("Needs input preserves the timeline and never replays arrivals across modes
 	await page.clock.install();
 	await page.goto(BOARD_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
-	await page.getByRole("button", { name: "Expand Unlink sessions column" }).press("Enter");
+	// 5c96e6a9f opens the Unlink sessions column expanded, so there is no Expand step.
 	await expect(page.locator("[data-agent-session-column-expansion]"))
 		.toHaveAttribute("data-agent-session-column-expansion", "expanded");
 	await page.getByRole("heading", { name: "Jira Design" }).hover();
