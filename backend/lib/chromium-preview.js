@@ -10,6 +10,7 @@ const {
 	requireAgentBrowserRef,
 	requireBrowserArgument,
 	requirePreviewKey,
+	toBoundedPointerNumber,
 } = require("./input-schemas");
 
 const execFileAsync = promisify(execFile);
@@ -299,8 +300,8 @@ class ChromiumPreviewManager {
 	click(x, y) {
 		return this._enqueue(async () => {
 			await this._ensureBrowser();
-			const resolvedX = Math.max(0, Math.round(Number(x) || 0));
-			const resolvedY = Math.max(0, Math.round(Number(y) || 0));
+			const resolvedX = toBoundedPointerNumber(x, { min: 0 });
+			const resolvedY = toBoundedPointerNumber(y, { min: 0 });
 			await this._run(["mouse", "move", String(resolvedX), String(resolvedY)]);
 			await this._run(["mouse", "down", "left"]);
 			await this._run(["mouse", "up", "left"]);
@@ -384,8 +385,8 @@ class ChromiumPreviewManager {
 	wheel(deltaX, deltaY) {
 		return this._enqueue(async () => {
 			await this._ensureBrowser();
-			const resolvedDeltaX = Math.round(Number(deltaX) || 0);
-			const resolvedDeltaY = Math.round(Number(deltaY) || 0);
+			const resolvedDeltaX = toBoundedPointerNumber(deltaX);
+			const resolvedDeltaY = toBoundedPointerNumber(deltaY);
 			await this._run([
 				"mouse",
 				"wheel",

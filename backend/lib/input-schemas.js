@@ -81,15 +81,41 @@ function parseNavigationUrl(value) {
 
 // agent-browser reads an option anywhere in its arguments and has no `--` end-of-options
 // marker (checked with the installed CLI: `fill @e1 -- --help` prints help), so a request
-// value that starts like an option would be read as one. "-", "-5" and "- item" are text.
-const OPTION_LIKE_ARGUMENT = /^-[A-Za-z-]/u;
+// value that starts like an option would be read as one, also after leading whitespace.
+// A `-` followed by any non-space character counts, unless the whole value is a number:
+// "-", "-5", "-0.5" and "- item" are text; "-x", "--help", "-5px" and "  -x" are refused.
+const OPTION_START = /^-\S/u;
+const NUMBER_ARGUMENT = /^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/iu;
 // A ref from an agent-browser snapshot: `e12` or `@e12`.
 const AGENT_BROWSER_REF_PATTERN = /^@?e\d{1,6}$/u;
-// A key the Chromium preview sends: a named key or one character, with modifiers.
-const PREVIEW_KEY_PATTERN = /^(?:(?:Control|Meta|Alt|Shift)\+)*(?:[A-Za-z][A-Za-z0-9]{0,15}|[0-9])$/u;
+// A key the Chromium preview sends: a named key, or one printable character (letters,
+// digits, punctuation such as `-` and `+`), with modifiers: `Enter`, `Control+a`, `Shift+-`.
+const PREVIEW_KEY_PATTERN = /^(?:(?:ControlOrMeta|Control|Meta|Alt|Shift)\+)*(?:[A-Za-z][A-Za-z0-9]{0,15}|[^\p{Cc}\p{Cs}\p{Z}])$/u;
+// Wheel deltas and pointer coordinates go to agent-browser as numbers; JSON allows
+// `-1e999`, which is -Infinity, so they are bounded (provisional bound).
+const MAX_POINTER_MAGNITUDE = 100_000;
 
 function isOptionLikeArgument(value) {
-	return typeof value === "string" && OPTION_LIKE_ARGUMENT.test(value);
+	if (typeof value !== "string") {
+		return false;
+	}
+	const start = value.trimStart();
+	return OPTION_START.test(start) && !NUMBER_ARGUMENT.test(start.trimEnd());
+}
+
+/**
+ * A finite integer within ±MAX_POINTER_MAGNITUDE (and at least `min`); anything that is not
+ * a number becomes `min` or 0.
+ * @param {unknown} value
+ * @param {{ min?: number }} [options]
+ * @returns {number}
+ */
+function toBoundedPointerNumber(value, { min = -MAX_POINTER_MAGNITUDE } = {}) {
+	const number = Number(value);
+	if (Number.isNaN(number)) {
+		return Math.max(min, 0);
+	}
+	return Math.round(Math.min(MAX_POINTER_MAGNITUDE, Math.max(min, number)));
 }
 
 /**
@@ -194,6 +220,7 @@ module.exports = {
 	requireAgentBrowserRef,
 	requireBrowserArgument,
 	requirePreviewKey,
+	toBoundedPointerNumber,
 	parseOrReject,
 	requireStorageId,
 	speechTranscriptionOptionsSchema,

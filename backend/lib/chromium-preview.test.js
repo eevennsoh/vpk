@@ -137,3 +137,15 @@ test("no request value that reads as an agent-browser option reaches its argumen
 	await manager.press("Control+a");
 	assert.deepEqual(manager.commands, [["type", "@e1", "-5"], ["keyboard", "inserttext", "-"], ["press", "Control+a"]]);
 });
+
+test("wheel sends finite, bounded deltas to agent-browser", async () => {
+	const manager = new TestChromiumPreviewManager();
+
+	await manager.wheel(JSON.parse("-1e999"), Number.NaN);
+	await manager.wheel("12.6", JSON.parse("1e999"));
+
+	assert.deepEqual(manager.commands, [
+		["mouse", "wheel", "0", "-100000"],
+		["mouse", "wheel", "100000", "13"],
+	]);
+});

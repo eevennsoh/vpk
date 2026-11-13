@@ -10,6 +10,7 @@ const {
 	DEFAULT_VIEWPORT,
 	} = require("./browser-workspace-runtime")
 const { BrowserPreviewSession } = require("./browser-preview-session")
+const { toBoundedPointerNumber } = require("./input-schemas")
 const {
 	BrowserWorkspaceNotFoundError,
 	BrowserWorkspaceUnavailableError,
@@ -316,11 +317,11 @@ class BrowserWorkspace {
 		return {
 			x: Math.min(
 				sourceDimensions.width,
-				Math.max(0, Math.round(Number(x) || 0)),
+				toBoundedPointerNumber(x, { min: 0 }),
 			),
 			y: Math.min(
 				sourceDimensions.height,
-				Math.max(0, Math.round(Number(y) || 0)),
+				toBoundedPointerNumber(y, { min: 0 }),
 			),
 		}
 	}
@@ -1007,8 +1008,8 @@ class BrowserWorkspace {
 	click(x, y) {
 		return this._enqueue(async () => {
 			this._beginPreviewActivity()
-			const resolvedX = Math.max(0, Math.round(Number(x) || 0))
-			const resolvedY = Math.max(0, Math.round(Number(y) || 0))
+			const resolvedX = toBoundedPointerNumber(x, { min: 0 })
+			const resolvedY = toBoundedPointerNumber(y, { min: 0 })
 			this._setPreviewOverlay({
 				x: resolvedX,
 				y: resolvedY,
@@ -1133,8 +1134,8 @@ class BrowserWorkspace {
 	wheel(deltaX, deltaY) {
 		return this._enqueue(async () => {
 			this._beginPreviewActivity()
-			const resolvedDeltaX = Math.round(Number(deltaX) || 0)
-			const resolvedDeltaY = Math.round(Number(deltaY) || 0)
+			const resolvedDeltaX = toBoundedPointerNumber(deltaX)
+			const resolvedDeltaY = toBoundedPointerNumber(deltaY)
 			const targetX = Math.round(this._viewport.width / 2)
 			const targetY = Math.round(this._viewport.height / 2)
 			this._setPreviewOverlay({
@@ -1356,8 +1357,8 @@ class BrowserWorkspace {
 	previewClick(x, y) {
 		return this._enqueue(async () => {
 			this._beginPreviewActivity()
-			const resolvedX = Math.max(0, Math.round(Number(x) || 0))
-			const resolvedY = Math.max(0, Math.round(Number(y) || 0))
+			const resolvedX = toBoundedPointerNumber(x, { min: 0 })
+			const resolvedY = toBoundedPointerNumber(y, { min: 0 })
 			this._setPreviewOverlay({
 				x: resolvedX,
 				y: resolvedY,
@@ -1374,10 +1375,10 @@ class BrowserWorkspace {
 	previewWheel(x, y, deltaX, deltaY) {
 		return this._enqueue(async () => {
 			this._beginPreviewActivity()
-			const resolvedX = Math.max(0, Math.round(Number(x) || 0))
-			const resolvedY = Math.max(0, Math.round(Number(y) || 0))
-			const resolvedDeltaX = Math.round(Number(deltaX) || 0)
-			const resolvedDeltaY = Math.round(Number(deltaY) || 0)
+			const resolvedX = toBoundedPointerNumber(x, { min: 0 })
+			const resolvedY = toBoundedPointerNumber(y, { min: 0 })
+			const resolvedDeltaX = toBoundedPointerNumber(deltaX)
+			const resolvedDeltaY = toBoundedPointerNumber(deltaY)
 			this._setPreviewOverlay({
 				x: resolvedX,
 				y: resolvedY,

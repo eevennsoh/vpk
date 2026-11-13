@@ -344,7 +344,11 @@ test("browser workspace runtime never passes a request value that reads as an op
 	await assert.rejects(runtime.insertText("--session=other"), isInvalidInput)
 	assert.deepEqual(runtime.commands, [])
 
+	// Only a whole number may follow a leading "-": "-5 items" reads like a short option.
+	await assert.rejects(runtime.insertText("-5 items"), isInvalidInput)
+	await assert.rejects(runtime.insertText("  --session=other"), isInvalidInput)
 	await runtime.keyEvent("keyDown", "-")
-	await runtime.insertText("-5 items")
-	assert.deepEqual(runtime.commands, [["keydown", "-"], ["keyboard", "inserttext", "-5 items"]])
+	await runtime.insertText("-5")
+	await runtime.insertText("- 5 items")
+	assert.deepEqual(runtime.commands, [["keydown", "-"], ["keyboard", "inserttext", "-5"], ["keyboard", "inserttext", "- 5 items"]])
 })

@@ -4,6 +4,7 @@ const path = require("node:path")
 const { createHash } = require("node:crypto")
 const { execFile } = require("node:child_process")
 const { promisify } = require("node:util")
+const { requireAgentBrowserRef, requireBrowserArgument, requirePreviewKey } = require("./input-schemas")
 
 const execFileAsync = promisify(execFile)
 
@@ -249,7 +250,7 @@ async function resolveTabIdentifier(threadId, tabIndex) {
 		return tab.tabId
 	}
 
-	return String(tabIndex)
+	return requireBrowserArgument(String(tabIndex), "tabIndex")
 }
 
 async function readThreadBrowserState(threadId) {
@@ -322,16 +323,20 @@ async function getRovoAppThreadBrowserWorkspace({
 	})
 }
 
+// The browser-workspace MCP server (scripts/browser-workspace-mcp.js) builds these
+// agent-browser arguments from an agent's tool call. They follow the same rules as the
+// HTTP and socket paths: a ref is a snapshot ref, a key is a key, and no value may start
+// like an option (agent-browser has no end-of-options marker).
 function getBodyText(body, key, message) {
-	return requireNonEmptyString(body[key], message)
+	return requireBrowserArgument(requireNonEmptyString(body[key], message), key)
 }
 
 function getBodyStringArray(body, key) {
-	return Array.isArray(body[key]) ? body[key].map((value) => String(value)) : []
+	return Array.isArray(body[key]) ? body[key].map((value) => requireBrowserArgument(String(value), key)) : []
 }
 
 function getOptionalBodyArg(body, key) {
-	return body[key] ? [String(body[key])] : []
+	return body[key] ? [requireBrowserArgument(String(body[key]), key)] : []
 }
 
 async function buildWorkspaceActionCommandArgs(threadId, action, body) {
@@ -345,29 +350,17 @@ async function buildWorkspaceActionCommandArgs(threadId, action, body) {
 		case "reload":
 			return ["reload"]
 		case "click-ref":
-			return ["click", getBodyText(body, "ref", "A non-empty ref is required.")]
+			return ["click", requireAgentBrowserRef(body.ref)]
 		case "hover-ref":
-			return ["hover", getBodyText(body, "ref", "A non-empty ref is required.")]
+			return ["hover", requireAgentBrowserRef(body.ref)]
 		case "fill-ref":
-			return [
-				"fill",
-				getBodyText(body, "ref", "A non-empty ref is required."),
-				String(body.text ?? ""),
-			]
+			return ["fill", requireAgentBrowserRef(body.ref), requireBrowserArgument(String(body.text ?? ""), "text")]
 		case "type-ref":
-			return [
-				"type",
-				getBodyText(body, "ref", "A non-empty ref is required."),
-				String(body.text ?? ""),
-			]
+			return ["type", requireAgentBrowserRef(body.ref), requireBrowserArgument(String(body.text ?? ""), "text")]
 		case "select-ref":
-			return [
-				"select",
-				getBodyText(body, "ref", "A non-empty ref is required."),
-				...getBodyStringArray(body, "values"),
-			]
+			return ["select", requireAgentBrowserRef(body.ref), ...getBodyStringArray(body, "values")]
 		case "press":
-			return ["press", getBodyText(body, "key", "A non-empty key is required.")]
+			return ["press", requirePreviewKey(body.key)]
 		case "scroll":
 			return [
 				"scroll",
@@ -517,6 +510,7 @@ module.exports = {
 	getRovoAppThreadBrowserWorkspaceId,
 	getRovoAppThreadBrowserWorkspaceScreenshot,
 	getRovoAppThreadBrowserWorkspaceSnapshot,
+	buildWorkspaceActionCommandArgs,
 	performRovoAppThreadBrowserWorkspaceAction,
 	urlsLooselyMatch,
 }

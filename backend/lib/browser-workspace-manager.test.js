@@ -661,3 +661,27 @@ test("browser workspace manager uses compact runtime session ids", async () => {
 
 	assert.equal(createdWorkspace?.sessionId, createdWorkspace?.workspaceId)
 })
+
+test("wheel and preview wheel pass only finite, bounded numbers to the runtime", async () => {
+	const wheelCalls = []
+	const workspace = new BrowserWorkspace({
+		workspaceId: "workspace-wheel",
+		sessionId: "workspace-wheel-session",
+		delayFn: async () => {},
+		runtimeFactory: () => ({
+			...createFakeRuntime(),
+			async wheel(...args) {
+				wheelCalls.push(args)
+			},
+		}),
+	})
+	await workspace.initialize("about:blank")
+	// JSON.parse("-1e999") is -Infinity, which a socket frame can carry.
+	await workspace.wheel(JSON.parse("-1e999"), Number.NaN)
+	await workspace.previewWheel(JSON.parse("1e999"), -40, "abc", JSON.parse("1e999"))
+	for (const call of wheelCalls) {
+		assert.equal(call.every(Number.isFinite), true, JSON.stringify(call.map(String)))
+	}
+	assert.deepEqual(wheelCalls[0].slice(2), [-100_000, 0])
+	assert.deepEqual(wheelCalls[1], [100_000, 0, 0, 100_000])
+})
