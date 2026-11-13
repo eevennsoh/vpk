@@ -508,6 +508,21 @@ class ChromiumPreviewManager {
 			return { snapshot: tree, state: this._getStateSnapshot() };
 		});
 	}
+
+	// Closes the preview browser if one was opened; queued behind in-flight commands.
+	// Resolves true when it closed one, false when there was none.
+	close() {
+		return this._enqueue(async () => {
+			if (!this._isBrowserReady) {
+				return false;
+			}
+			this._isBrowserReady = false;
+			this._latestScreenshotBuffer = null;
+			this._screenshotDirty = true;
+			await this._run(["close"]).catch(() => {});
+			return true;
+		});
+	}
 }
 
 const chromiumPreviewManager = new ChromiumPreviewManager();

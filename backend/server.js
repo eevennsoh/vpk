@@ -22,6 +22,7 @@ if (browserRuntimeDefaults.changed) {
 }
 
 const express = require("express");
+const http = require("http");
 const path = require("path");
 const {
 	createBackendRuntimeComposition,
@@ -40,6 +41,7 @@ const { resolveBackendListenHost } = require("./middleware/local-only");
 const {
 	createBackendProcess,
 	createHttpServerShutdownSteps,
+	refuseRequestsWhileDraining,
 } = require("./lib/backend-shutdown");
 
 console.log("[STARTUP] Dependencies loaded");
@@ -80,7 +82,10 @@ async function startServer() {
 
 	console.log("[STARTUP] All routes registered, starting HTTP server...");
 
-	server = runtime.app.listen(runtime.port, resolveBackendListenHost(), async () => {
+	const requestHandler = refuseRequestsWhileDraining(runtime.app, {
+		isDraining: () => backendProcess.getStatus() === "draining",
+	});
+	server = http.createServer(requestHandler).listen(runtime.port, resolveBackendListenHost(), async () => {
 		if (!backendProcess.markListening()) {
 			server.close();
 			return;
