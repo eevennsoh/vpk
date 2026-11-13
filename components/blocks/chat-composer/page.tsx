@@ -4,6 +4,7 @@ import { useState } from "react";
 import AddMenu from "./components/add-menu";
 import CustomizeMenu, { type CustomizeMenuProps } from "@/components/projects/shared/components/chat-configuration/customize-menu";
 import { Footer } from "@/components/ui-custom/footer";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import {
 	PromptInput,
 	PromptInputActionMenu,
@@ -149,7 +150,7 @@ export default function ChatComposer({
 									<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">
 										<AddIcon label="" />
 									</PromptInputActionMenuTrigger>
-									<PromptInputActionMenuContent className="w-auto min-w-[200px] p-1">
+									<PromptInputActionMenuContent className="w-auto min-w-[200px]">
 										<AddMenu onClose={() => setIsAddMenuOpen(false)} />
 									</PromptInputActionMenuContent>
 								</PromptInputActionMenu>
@@ -161,7 +162,7 @@ export default function ChatComposer({
 										render={<PromptInputPreferencesButton aria-label="Customize" />}
 									/>
 									{customizeMenuProps ? (
-										<PopoverContent side="top" align="start" sideOffset={8} className={customizeMenuProps.showReasoning === true ? "w-auto p-2" : "w-auto p-1"}>
+										<PopoverContent side="top" align="start" sideOffset={8} className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto")}>
 											<PopoverTitle className="sr-only">
 												{customizeMenuProps.showReasoning === true ? "Customize response" : "Customize sources"}
 											</PopoverTitle>

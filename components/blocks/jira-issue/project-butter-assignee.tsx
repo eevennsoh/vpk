@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage, AvatarUnassigned } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { dropdownStyles } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import type { JiraIssueParticipant } from "./index";
 
 export function ProjectButterAssignee({
@@ -44,17 +46,18 @@ export function ProjectButterAssignee({
 			<PopoverContent
 				align="start"
 				side="right"
-				className="w-[240px]"
+				className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-[240px] gap-0")}
 				onClick={(event) => event.stopPropagation()}
 				onPointerDown={(event) => event.stopPropagation()}
 			>
-				<PopoverTitle className="px-1.5 text-xs font-normal text-text-subtlest">Team</PopoverTitle>
+				<PopoverTitle className="px-2 py-1 text-xs font-normal text-text-subtlest">Team</PopoverTitle>
 				{options.map((person) => (
 					<button
 						type="button"
+						data-menu-row=""
 						aria-label={person.name}
 						key={person.id}
-						className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-3 focus-visible:ring-ring/50"
+						className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-3 focus-visible:ring-ring/50"
 						onClick={() => {
 							onAssign(person);
 							setOpen(false);

@@ -46,9 +46,9 @@ export const AGENT_LANYARD_DETAIL: ComponentDetail = {
 		],
 	}, {
 		name: "AgentLanyardHoverContent",
-		description: "A transparent, 252px hover popup for the lanyard. Import alongside the shared HoverCard and HoverCardTrigger. Match variant=\"recommended\" to the recommended card so its transparent notches and single shaped shadow remain visible; leave the default for existing agent and 1P cards.",
+		description: "A transparent, 252px hover popup for the lanyard. Import alongside the shared HoverCard and HoverCardTrigger. Match variant=\"recommended\" to the recommended card so its transparent notches and shaped shadow remain visible.",
 		props: [
-			{ name: "variant", type: '"agent" | "recommended"', default: '"agent"', description: "Recommended cards own their shaped shadow; this mode removes the rectangular popup shadow. Other positioning and hover-card props pass through." },
+			{ name: "variant", type: '"agent" | "recommended"', default: '"agent"', description: "Recommended cards use a shaped shadow matched to overlay elevation; this mode removes the rectangular popup shadow. Other positioning and hover-card props pass through." },
 		],
 	}],
 	adsLinks: [{ label: "Source prototype", url: "https://bitbucket.org/atlassian/prototyping/branch/studio/main/agent-lifecycle" }],

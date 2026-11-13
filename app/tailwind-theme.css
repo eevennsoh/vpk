@@ -983,6 +983,14 @@
 	filter: drop-shadow(0 8px 12px rgb(30 31 33 / 0.15));
 }
 
+@utility agent-lanyard-recommendation-shadow {
+	filter: drop-shadow(0 0 0.5px rgb(30 31 33 / 0.31)) drop-shadow(0 8px 6px rgb(30 31 33 / 0.15));
+
+	[data-color-mode="dark"] & {
+		filter: drop-shadow(0 0 0.5px rgb(1 4 4 / 0.5)) drop-shadow(0 8px 6px rgb(1 4 4 / 0.36)) drop-shadow(0 0 0.5px rgb(189 189 189 / 0.12));
+	}
+}
+
 @utility agent-card-ticket-seam {
 	&::before,
 	&::after {

@@ -8,10 +8,10 @@ const source = fs.readFileSync(
 	"utf8",
 );
 
-test("dropdown menu popup uses a 12px container radius and 4px padding", () => {
-	assert.match(source, /popup:\s*"[^"]*\brounded-xl\b/u);
-	assert.match(source, /popup:\s*"[^"]*\bp-1\b/u);
-	assert.doesNotMatch(source, /popup:\s*"[^"]*\brounded-lg\b/u);
+test("dropdown menu popup uses an 8px container radius and compact padding", () => {
+	assert.match(source, /surface:\s*"[^"]*\brounded-lg\b/u);
+	assert.match(source, /compact:\s*"p-1\.5\b/u);
+	assert.doesNotMatch(source, /surface:\s*"[^"]*\brounded-xl\b/u);
 });
 
 test("dropdown menu front slot icons use a 24px subtle icon container", () => {
@@ -45,8 +45,8 @@ test("selection is a subtle check glyph and nothing else — no blue state anywh
 });
 
 test("dropdown menu rows use an 8px item radius", () => {
-	assert.match(source, /selectableItem:\s*"[^"]*\brounded-lg\b/u);
-	assert.match(source, /data-slot="dropdown-menu-item"[\s\S]*\brounded-lg\b/u);
+	assert.match(source, /selectableItem: cn\(\s*menuItemBaseClassName/u);
+	assert.match(source, /const menuItemBaseClassName =\s*"[^"]*\brounded-lg\b/u);
 	assert.match(source, /data-slot="dropdown-menu-sub-trigger"[\s\S]*\brounded-lg\b/u);
 	assert.doesNotMatch(source, /\brounded-sm\b/u);
 });
