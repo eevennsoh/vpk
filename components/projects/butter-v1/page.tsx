@@ -994,7 +994,6 @@ function ButterApp({ ref, standaloneView, collapsedColumns, onCollapsedColumnsCh
 					onAutoMergeChange: setAutoMergeEnabled,
 					onPullRequestOpen: (number) => { if (number === PROJECT_BUTTER_JOURNEY_PULL_REQUEST.number) onStartChecks(); },
 					onFixCheck: () => setPhase("fixing"),
-					onMergePullRequest: () => setPhase("merged"),
 				} : undefined}
 				onBrowseAgents={browseAgents}
 				onCreateAgent={createAgent}

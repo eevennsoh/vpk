@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { DevelopmentPanel } from "@/components/blocks/development-panel/development-panel";
 import { pullRequestChecksScenario } from "@/components/blocks/pull-request/data/demo-pull-request-checks";
 import { DEVELOPMENT_PANEL_PULL_REQUESTS } from "@/components/blocks/pull-request/data/demo-pull-requests";
-import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type CheckPhase = "running" | "failed" | "fixing" | "passed" | "merged";
@@ -29,7 +28,7 @@ export default function DevelopmentPanelPage() {
 				<ToggleGroupItem value="empty">Before setup</ToggleGroupItem>
 				<ToggleGroupItem value="pull-requests">Pull requests created</ToggleGroupItem>
 			</ToggleGroup>
-			<div className="w-full max-w-sm"><DevelopmentPanel footerExtra={phase === "passed" && state === "pull-requests" ? <Button className="mt-2 w-full" onClick={() => setPhase("merged")} size="compact" type="button" variant="outline">Merge pull request</Button> : null} pullRequests={state === "pull-requests" ? pullRequests : []} pullRequestSettings={{ autoFix, mergeWhenReady, onAutoFixChange: setAutoFix, onMergeWhenReadyChange: setMergeWhenReady }} workItem={{ code: "PAY-999", summary: "Improve merchant onboarding for Payments SDK v2", description: "" }} /></div>
+			<div className="w-full max-w-sm"><DevelopmentPanel pullRequests={state === "pull-requests" ? pullRequests : []} pullRequestSettings={{ autoFix, mergeWhenReady, onAutoFixChange: setAutoFix, onMergeWhenReadyChange: setMergeWhenReady }} workItem={{ code: "PAY-999", summary: "Improve merchant onboarding for Payments SDK v2", description: "" }} /></div>
 		</div>
 	);
 }
