@@ -25,6 +25,10 @@ Quick rules:
 - Layers import downward only (lint-enforced): `ui` → `ui-custom` → `blocks`
   → `projects`. Blocks may use `projects/shared` and `projects/rovo-core`;
   numbered `experimental-v*` work-item variants belong to their projects.
+- A change prototyped in a demo, project, or variant copy of a shared
+  component lands in the original shared component (`components/ui/**`,
+  `components/ui-custom/**`, `components/blocks/**`), and the copy goes back
+  to using it. Do not leave the improvement only in the copy.
 - For prototypes, keep controls enabled when their behavior is unfinished,
   unless the user requests a disabled state or the reference design shows one.
   Clickable placeholders may omit a handler or use a no-op handler; a prototype

@@ -89,7 +89,7 @@ If instructions overlap, use this precedence:
 - Conditional rendering: use ternary (`cond ? <X /> : null`), not `&&` patterns that can render `0` (lint-enforced for rendered children; boolean props keep `&&`).
 - Prefer semantic token classes; do not introduce `bg-[var(--ds-...)]` / `text-[var(--ds-...)]` in VPK components.
 - Figma links and assets: load `vpk-design` and use the official Figma MCP first. Its tools may be lazy/deferred, so discover the exact `mcp__figma__*` capability and use `whoami` for access diagnostics before declaring Figma unavailable. Do not jump to browser login or `FIGMA_TOKEN` while the configured MCP is callable.
-- ADS content (components, tokens, icons, docs): query the `atlas ads` CLI first; ADS MCP tools are fallback only. See **ADS Lookups**.
+- ADS content (components, tokens, icons, docs): query the `atlas ads` CLI first; ADS MCP tools are fallback only. See `.agents/rules/ads-lookups.md`.
 - Custom CSS classes: prefer `@utility name { … }` (Tailwind v4 idiom) over `@layer components`. Full rules in `.agents/rules/token-priority.md`.
 
 ## Engineering Standards
@@ -98,7 +98,7 @@ If instructions overlap, use this precedence:
 
 - UI primitives: `components/ui/*`; icons: `@atlaskit/icon/core/*`, then `@atlaskit/icon-lab/core/*`; product logos: `@/components/ui/logo`.
 - Use `next/image` with explicit dimensions. Put static assets in `public/`, reference absolute paths, and group them under `1p/`, `3p/`, `illustration/`, or `illustration-ai/`.
-- Shadows: `token("elevation.shadow.raised")` or `token("elevation.shadow.overlay")`
+- Shadows: `shadow-sm` / `shadow-md` (raised), `shadow-lg` (overflow), `shadow-xl` (overlay), which `app/tailwind-theme.css` maps to ADS elevation; `token("elevation.shadow.*")` only in inline styles.
 - Dates: `Intl.DateTimeFormat("en-US", { dateStyle: "medium" })` (always specify locale to avoid SSR/client hydration mismatch)
 
 Key imports:
@@ -113,15 +113,7 @@ import { DefaultChatTransport, type UIMessage } from "ai"; // transport + messag
 
 ### Dependency Pinning
 
-Pin dependencies so routine in-range updates stay semver-safe; the lockfile is the gate. **Float** (`^x.y.z`) libraries take patch + minor updates; **Cautious** (`~x.y.z`) libraries take patches only; **Locked** exact versions cover framework core (`react`, `react-dom`, `next`, `eslint-config-next`, `recharts`, `@modelcontextprotocol/sdk`) and coordinated families.
-
-- Coordinated tiptap, json-render, and remotion families live in the `catalog:` block of `pnpm-workspace.yaml`; update it once, never individual `"catalog:"` references.
-- Use `overrides:` only to force one version across the whole tree, including transitives.
-
-- Survey what is behind: `pnpm run deps:check` (wraps `pnpm outdated` with an explicit status line — bare `pnpm outdated` prints nothing and exits 0 when current, which reads as silence)
-- Pull all in-range Float/Cautious updates and report status: `pnpm run deps:update` (runs `pnpm update`, then `deps:check`)
-- For Locked deps edit `package.json`; for catalog families edit `pnpm-workspace.yaml`; then run `pnpm install`.
-- After any update run `pnpm run lint` and `pnpm run typecheck`; for major bumps also smoke-test `pnpm run dev`
+Framework core is pinned exactly, coordinated families live in the `catalog:` block of `pnpm-workspace.yaml`, and the rest take minor (`^`) or patch (`~`) updates. Read `.agents/rules/dependency-pinning.md` before adding or updating a dependency.
 
 ### UI and Token Standards
 
@@ -133,20 +125,7 @@ Selection priority: semantic shadcn/ADS utilities, accent Tailwind classes from 
 
 ### ADS Lookups
 
-Retrieve ADS content with the `atlas ads` CLI first — same structured content as the ADS MCP, but faster and cheaper, and the MCP server has hung here for minutes on a single call. It ships as an Atlas CLI plugin (`/opt/atlassian/bin/atlas`), so the command is `atlas ads <cmd>`; there is no bare `ads` binary. Portable fallback on other machines: `npx @atlaskit/ads-cli <cmd>`. Add `--json` when you will parse the output, and use `atlas ads batch --command … --command …` when several lookups serve one decision.
-
-| When you need...                        | Run                                                                                                                                                                                   |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Plan a UI (components + tokens + icons) | `atlas ads batch --command "search <terms> --type component" --command "search <terms> --type token" --command "search <terms> --type icon"`, or `atlas ads search <terms>` for one unified sweep |
-| Search one kind                         | `atlas ads search <q> --type component` / `--type token` / `--type icon` (`[--limit N]`)                                                                                              |
-| Exact single lookup                     | `atlas ads component <Name>` / `atlas ads token <name>` / `atlas ads icon <IconName>`                                                                                                 |
-| Whole catalog                           | `atlas ads component --all` / `atlas ads token --all` / `atlas ads icon --all`                                                                                                        |
-| Foundations guidelines                  | `atlas ads docs <topic...>` (e.g. `atlas ads docs spacing`)                                                                                                                           |
-| Accessibility guidelines                | `atlas ads docs a11y <buttons\|forms\|images\|colors\|focus\|keyboard\|screenReaders\|aria\|wcag\|general>`                                                                            |
-| ESLint rule docs                        | `atlas ads lint-rules [term...] [--limit N]`                                                                                                                                          |
-| Migration guides                        | `atlas ads docs migration <avatar-xsmall-to-xxsmall\|jira-spotlight\|single-step\|multi-step\|motion>`                                                                                 |
-
-Reach for the ADS MCP only when the CLI is unavailable or erroring, or for capabilities with no CLI equivalent: `ads_analyze_a11y`, `ads_analyze_localhost_a11y`, `ads_suggest_a11y_fixes`, `ads_i18n_conversion_guide`, and the broader non-ADS `atlaskit_search_components` / `atlaskit_get_components` catalog.
+`atlas ads <cmd>` (an Atlas CLI plugin; there is no bare `ads` binary; elsewhere `npx @atlaskit/ads-cli <cmd>`) comes before the ADS MCP. Command table and the MCP-only exceptions: `.agents/rules/ads-lookups.md`.
 
 ### Browser Support
 
@@ -176,30 +155,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 
 - There is no single `pnpm test` script in `package.json`.
 - Repo tests span `backend/`, `lib/`, `scripts/`, `app/`, `components/`, and `rovo/`; run targeted `node --test` commands against relevant `.test.js` or `.test.ts` files.
-- When changing source guarded by a source-contract test, run the colocated exact-file suite before `pnpm run ci:pr`. If implementation moves between owners, relocate the assertion instead of deleting the contract; prefer behavioral, typed, or helper-level proof over incidental prop, class, or source ordering. Lint rejects new `assert.match(*_SOURCE, …)` assertions in app/components/hooks/lib tests; existing ones are baselined in `eslint-suppressions.json`, so a file's count may only drop.
-- Prove UI behavior by rendering it, not by regex-matching source: `renderComponent()` in `scripts/lib/render-component.js` bundles a real TSX component (with `@/` and mocks) into happy-dom and offers role/text queries, `click`/`press`/`focus`/`fill`, `tabOrder()`, and `isFocused()`. Assert on strings and booleans, never on DOM nodes, because a failed assert on a node can hang. Example: `components/blocks/jira-issue/uncaptured-work-chin.behavior.test.js`.
-- Every `*.test.{js,mjs,ts}` file that imports `node:test` runs in the unit gate; there is no registry to edit. Name a suite by what it asserts: `*.source.test.*` for source-contract suites that read source text, `*.behavior.test.*` for rendered or driven behavior, plain `*.test.*` otherwise. The only lists are what does not run: `scripts/js-unit-test-skipped.mjs` (each entry with its reason; `artifacts/` is skipped as a root because its suites belong to vpk-html sessions) and `scripts/js-unit-test-legacy-drift.mjs`, a frozen baseline of failing suites that a merge-base ratchet lets only shrink. Unfiltered `node scripts/run-js-unit-tests.mjs` fails on a test file without a `node:test` import. `--file` force-runs a named path, including a legacy-drift suite you are graduating.
-- Unit batches load `scripts/lib/register-alias-hook.mjs`, so modules a suite loads directly may use the `@/` alias and extensionless imports like the app does.
-- Browser coverage is under `tests/**/*.spec.ts` (`playwright.config.ts`); run targeted specs with `pnpm exec playwright test <spec>` after `pnpm install`. Specs reach the app through `appUrl()` in `tests/helpers/origin.ts` (lint rejects hardcoded ports and `*.localhost` hosts) and seed design settings with `?variants=` via `tests/helpers/design-variants.ts`. Board setup lives in `tests/helpers/board.ts`; wait on an observable condition, never `page.waitForTimeout` (`verify:source-guardrails` rejects new ones). Tag a fast, self-contained spec `{ tag: "@smoke" }` to put it in `pnpm run test:e2e:smoke`, which runs only the tagged files.
-- GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then runs `verify:fast`, lint (which covers the design-system pilot paths), and typecheck in its static job; unit tests run in four shards; a browser smoke job builds the static export, serves it from Express and runs `pnpm run test:e2e:smoke`; aggregate `PR checks` requires all three jobs to pass. GitHub does not enforce branch protection on this private repo, so `/vpk-git-ship` enforces it: the merge waits until `PR checks` passes.
-- Validation freshness:
-  <!-- validation-freshness:begin -->
-  Last validated: 2026-10-06
-  Commands: `pnpm run validate:preflight`, `pnpm run verify:fast` (bundles the
-  following checks), `pnpm run verify:root-artifacts`,
-  `pnpm run verify:url-credentials`, `pnpm run verify:route-manifest`, `pnpm run verify:api-surfaces`,
-  `pnpm run verify:repo-map`, `pnpm run verify:vpk-feature-map`, `pnpm run verify:file-size`,
-  `pnpm run verify:catalog`, `pnpm run verify:lazy-load`, `pnpm run verify:source-guardrails`,
-  `pnpm run verify:eslint-suppressions`, `pnpm run verify:cursor-rules`,
-  `pnpm run verify:doc-scripts`, `pnpm run validate:agents`, `pnpm run validate:skills`.
-  Additional checks: `pnpm run lint`, `pnpm run lint:design-system`, `pnpm run typecheck`.
-  Reference docs: `.agents/docs/architecture-overview.md`,
-  `.agents/docs/workflows-extended.md`, `.agents/rules/api-surfaces.md`,
-  `.agents/rules/token-priority.md`,
-  `.agents/rules/component-architecture.md`,
-  `.agents/rules/agent-operations.md`.
-  <!-- validation-freshness:end -->
-- Bundle work: use `pnpm run perf:budget:warn`, strict `pnpm run perf:budget` before shipping, and `pnpm run perf:baseline:timing -- --base-url <URL>` for route timing. Do not commit `output/perf-baseline.json`.
+- Source-contract tests, rendering UI in tests (`renderComponent()`), suite naming and the unit gate, Playwright specs, CI jobs, and perf budgets: `.agents/rules/testing.md`.
 - UI work also needs browser evidence and accessibility checks: fetch the rules with `atlas ads docs a11y <topic>`, then scan the code with the MCP-only `ads_analyze_a11y` / `ads_analyze_localhost_a11y` (and `ads_suggest_a11y_fixes` for remediation — these have no CLI equivalent); see the extended workflow checklist.
 
 ### Debugging
@@ -209,19 +165,10 @@ Inside herdr (`HERDR_ENV=1`), use the `herdr` skill and `herdr pane read <pane> 
 ## Gotchas
 
 - Durable generated deliverables belong under `artifacts/**`; disposable browser evidence belongs under `output/**`. Automation must never modify anything under `artifacts/`; deletion requires an explicit request naming the exact path.
-- Worktree ports are deterministic. Use `pnpm ports` or `pnpm ports watch` (arrows select, Enter opens, `k` confirms kill, `q` quits). The dashboard discovers active worktrees; browser tools use its Portless `🌐` URL, falling back to `.dev-frontend-port`, never a hardcoded port.
-- `pnpm run mem` reports each `next-server`'s CPU, port, worktree, and physical footprint via vmmap; `ps` RSS undercounts it ~50x. Next ≥16.3 is healthy at low single-digit GB; `vpk-system-clean` restarts servers at ≥6 GB.
 - Worktrees isolate browser automation through deterministic ports, unique Portless origins, and persistent `vpk-dev-<worktree>` tmux sessions. `pnpm run dev:tmux:stop` affects only this worktree. Only `tmux kill-server` and `portless prune` cascade globally — never use either for per-worktree cleanup; use the stop command or `portless alias --remove <name>`.
-- Runtime port files: `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, `.dev-backend-port`. `.claude/launch.json` (Claude preview configs) is also per-checkout: the SessionStart hook writes it via `scripts/write-claude-launch-config.js`; don't commit it.
-- Dev API calls traverse Next.js proxy then Express; debug both layers.
-- TypeScript checks authored project directories. Generated `output/` evidence and `public/1p/rovo-stage-kit` browser assets are excluded from file discovery; explicitly imported files remain type-checked.
 - Never import transitive pnpm dependencies directly — pnpm's strict isolation only allows imports from `package.json` direct dependencies. Use internal mechanisms (e.g., `globalThis.__PLATFORM_FEATURE_FLAGS__`) or add the package explicitly.
 - Tracked `.npmrc` contains token-free routing: public `@atlaskit/*` uses npmjs, `@atlassian/logo-third-party` uses `atlassian-npm`, and `motion-plus` (alias of `@motionplus/core`) uses `api.motion.dev/npm`. The repo is public: keep tokens in user `~/.npmrc` (as CI does) or ignored `.npmrc.local`, never in `package.json` or the lockfile.
-- Keep `@layer theme, base, components, utilities;` atop `app/globals.css`; it fixes cascade order so component layers do not lose to preflight.
-- Theme switching uses `setGlobalTheme()` from `@atlaskit/tokens`; toggling only the HTML `dark` class does not update ADS tokens.
-- Fresh worktrees need their own `node_modules`. Managed worktrees copy ignored `.env*` and clone matching dependencies or run `CI=true pnpm install --prefer-offline`; manual worktrees must do this themselves. Do not run parallel pnpm validations until warmup completes.
-- Tmux/Rovo launchers (`pnpm run dev:tmux:start`, `pnpm run rovo`, `pnpm run dev:rovo`, `pnpm run rovo:tmux:start`) seed `.env.local` from main or `.env.local.example`; copy/symlink it manually only for direct backend/frontend startup or provider bootstrap.
-- `ASAP_PRIVATE_KEY` in `.env.local` already includes surrounding double quotes and literal `\n` escapes — do not add extra quotes.
+- Ports, port files, memory, worktree bootstrap and env seeding gotchas: `.agents/docs/dev-environment.md`.
 
 ## Architecture
 
@@ -264,13 +211,13 @@ Rules live in `.agents/rules/` (canonical; provider dirs `.cursor/`, `.claude/`,
 
 - Claude Code: reads through the `.claude/rules` symlink. A `.md` rule without `paths:` frontmatter loads every session; a rule with `paths:` loads once a matching file is read. `.mdc` files are not injected. This file plus the unscoped rules are a standing context cost on every session, so keep additions proportionate and scope new rules.
 - Cursor: reads `.mdc` files only. `.agents/rules/cursor/*.mdc` are generated mirrors of each `.md` rule (`globs:` = `paths:`); after editing a rule, run `node scripts/generate-cursor-rules.js` (`verify:cursor-rules` checks drift). `browser-screenshots.mdc` is hand-written.
-- Codex and Rovo: no auto-load. Before editing files matching a rule's scope, read that rule first.
+- Codex and Rovo: no auto-load. Before editing files matching a rule's scope, read that rule first; `control-vpk where <path>` lists the rules that cover a path.
 
 Each rule's `paths:` frontmatter is its canonical scope; `scripts/agent-rule-scopes.test.js` keeps this table equal to it.
 
 | Rule file | Read before editing |
 | --- | --- |
-| `token-priority.md` | `*` (always) |
+| `token-priority.md` | `**/*.tsx`, `**/*.css` |
 | `component-architecture.md` | `components/**`, `app/**/*.tsx`, `hooks/**`, `eslint.config.mjs`, `scripts/eslint-boundary-rules.test.js` |
 | `chat-architecture.md` | `app/contexts/**`, `app/api/chat-sdk/**`, `backend/chat/**`, `backend/routes/**`, `backend/lib/**`, `rovo/**`, `lib/rovo-*.ts`, `components/projects/rovo*/**`, `components/projects/studio/**` |
 | `api-surfaces.md` | `app/api/**`, `backend/**` |
@@ -279,6 +226,9 @@ Each rule's `paths:` frontmatter is its canonical scope; `scripts/agent-rule-sco
 | `gotchas-react.md` | `**/*.tsx` |
 | `motion-base-ui.md` | `**/*.tsx`, `**/*.jsx` |
 | `motion-decisions.md` | `components/**/*.tsx`, `app/**/*.tsx`, `**/*.css`, `lib/motion.ts` |
+| `ads-lookups.md` | `components/**/*.tsx`, `app/**/*.tsx`, `**/*.css` |
+| `dependency-pinning.md` | `package.json`, `backend/package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml` |
+| `testing.md` | `**/*.test.*`, `tests/**`, `playwright.config.ts`, `scripts/run-js-unit-tests.mjs`, `scripts/js-unit-test-*.mjs` |
 | `agent-operations.md` | `.agents/**`, `.claude/**`, `.codex/**`, `.cursor/**`, `.rovo/**`, `scripts/validate-agents*.js`, `scripts/validate-skills*.js` |
 | `appendix-reference.md` | `backend/**`, `app/contexts/**`, `app/providers.tsx`, `.agents/**` |
 | `browser-screenshots.mdc` | `*` (always) |

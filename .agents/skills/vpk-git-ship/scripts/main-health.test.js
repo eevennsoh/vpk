@@ -73,11 +73,11 @@ async function cli(argv, { gh = fakeGh(), paths = [], commits = [] } = {}) {
 }
 
 test("only markdown outside guarded agent docs, and artifacts, count as inert", () => {
-	for (const inert of ["README.md", "docs/notes.mdx", "artifacts/vpk-html/x/index.html", "components/blocks/foo/README.md"]) {
+	for (const inert of ["docs/notes.mdx", "artifacts/vpk-html/x/index.html", "components/blocks/foo/README.md"]) {
 		assert.equal(isInertPath(inert), true, inert);
 	}
 	for (const code of ["AGENTS.md", ".agents/rules/token-priority.md", ".agents/skills/vpk-git-ship/SKILL.md", "package.json",
-		"scripts/check.mjs", "app/page.tsx", "markdown.md.ts", "WORKFLOW.md", "DESIGN.md",
+		"scripts/check.mjs", "app/page.tsx", "markdown.md.ts", "WORKFLOW.md", "DESIGN.md", "README.md",
 		"components/projects/jira-team-eu26-end/finale/VENDOR.md", "public/1p/rovo-stage-kit/README.md"]) {
 		assert.equal(isInertPath(code), false, code);
 	}
@@ -110,7 +110,7 @@ test("a docs-only change past the file-size threshold runs CI, because verify:fi
 
 test("the fast-ship marker is added only for inert diffs or a current billing block", () => {
 	assert.deepEqual(ciMarkerDecision({ billing: { blocked: false }, paths: ["app/page.tsx", "README.md"] }).skipCi, false);
-	assert.deepEqual(ciMarkerDecision({ billing: { blocked: false }, paths: ["README.md", "artifacts/a.html"] }).skipCi, true);
+	assert.deepEqual(ciMarkerDecision({ billing: { blocked: false }, paths: ["docs/notes.md", "artifacts/a.html"] }).skipCi, true);
 	assert.deepEqual(ciMarkerDecision({ billing: { blocked: false }, paths: [] }).skipCi, false);
 	assert.match(ciMarkerDecision({ billing: { blocked: true, url: "u" }, paths: ["app/page.tsx"] }).reason, /billing-blocked/u);
 	assert.equal(ciMarkerDecision({ billing: { blocked: true, url: "u" }, paths: ["app/page.tsx"] }).skipCi, true);
@@ -133,7 +133,7 @@ test("an unpushed commit that already skips CI makes a code push start CI explic
 	assert.match(output.reason, /gh workflow run ci\.yml --ref main/u);
 
 	// When the push should skip CI anyway, an existing marker changes nothing.
-	const docs = JSON.parse(await cli(["--ci-marker", "--json"], { commits, paths: ["README.md"] }));
+	const docs = JSON.parse(await cli(["--ci-marker", "--json"], { commits, paths: ["docs/notes.md"] }));
 	assert.equal(docs.skipCi, true);
 	assert.equal(docs.dispatchAfterPush, false);
 	assert.equal(JSON.parse(await cli(["--ci-marker", "--json"], { paths: ["app/page.tsx"] })).dispatchAfterPush, false);
@@ -226,7 +226,7 @@ test("fast-ship marker: billing-blocked Actions adds the marker without a questi
 	assert.equal(await cli(["--ci-marker"], { paths: ["app/page.tsx"] }), "CI marker: none (code change; CI runs after the push)\n");
 
 	const docs = fakeGh();
-	assert.equal(await cli(["--ci-marker"], { gh: docs, paths: ["README.md"] }), "CI marker: add [skip ci] (docs- or artifacts-only change)\n");
+	assert.equal(await cli(["--ci-marker"], { gh: docs, paths: ["docs/notes.md"] }), "CI marker: add [skip ci] (docs- or artifacts-only change)\n");
 	assert.equal(docs.calls.length, 0, "a docs-only decision needs no GitHub read");
 });
 

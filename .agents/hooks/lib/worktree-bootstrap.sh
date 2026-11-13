@@ -63,17 +63,34 @@ vpk_bootstrap_has_project_env_file() {
 	return 1
 }
 
-vpk_bootstrap_has_ignored_env_files() {
+# Lists ignored env files by name, NUL-separated; never reads them. The
+# pathspecs keep git from listing every other ignored path, and --directory
+# stops it descending into ignored directories (node_modules, .next, output,
+# provider worktrees): a checkout with ~270k ignored paths answers in a fraction
+# of a second instead of feeding each path through a bash loop.
+vpk_bootstrap_list_ignored_env_files() {
 	local source_dir="$1"
 	local rel base
 
 	while IFS= read -r -d '' rel; do
+		case "$rel" in
+			*/)
+				continue
+				;;
+		esac
 		vpk_bootstrap_is_provider_worktree_path "$rel" && continue
 		base="${rel##*/}"
-		if vpk_bootstrap_env_basename_matches "$base"; then
-			return 0
-		fi
-	done < <(git -C "$source_dir" ls-files --others --ignored --exclude-standard -z 2>/dev/null || true)
+		vpk_bootstrap_env_basename_matches "$base" || continue
+		printf '%s\0' "$rel"
+	done < <(git -C "$source_dir" ls-files --others --ignored --exclude-standard --directory -z -- ':(glob)**/.env' ':(glob)**/.env.*' 2>/dev/null || true)
+}
+
+vpk_bootstrap_has_ignored_env_files() {
+	local rel
+
+	while IFS= read -r -d '' rel; do
+		return 0
+	done < <(vpk_bootstrap_list_ignored_env_files "$1")
 
 	return 1
 }
@@ -103,15 +120,11 @@ vpk_bootstrap_resolve_source_tree_path() {
 vpk_bootstrap_copy_ignored_env_files() {
 	local source_dir="$1"
 	local project_dir="$2"
-	local rel base source_file target_file target_parent copied_count
+	local rel source_file target_file target_parent copied_count
 
 	copied_count=0
 
 	while IFS= read -r -d '' rel; do
-		vpk_bootstrap_is_provider_worktree_path "$rel" && continue
-		base="${rel##*/}"
-		vpk_bootstrap_env_basename_matches "$base" || continue
-
 		source_file="$source_dir/$rel"
 		target_file="$project_dir/$rel"
 		target_parent="${target_file%/*}"
@@ -123,7 +136,7 @@ vpk_bootstrap_copy_ignored_env_files() {
 		cp "$source_file" "$target_file"
 		VPK_BOOTSTRAP_ENV_FILES_COPIED+=("$rel")
 		copied_count=$((copied_count + 1))
-	done < <(git -C "$source_dir" ls-files --others --ignored --exclude-standard -z 2>/dev/null || true)
+	done < <(vpk_bootstrap_list_ignored_env_files "$source_dir")
 
 	if [ "$copied_count" -gt 0 ]; then
 		vpk_bootstrap_log "Copied ignored env file(s) from source worktree: ${VPK_BOOTSTRAP_ENV_FILES_COPIED[*]}"
@@ -228,6 +241,44 @@ vpk_bootstrap_clone_node_modules() {
 	[ "$cloned_count" -gt 0 ]
 }
 
+# An in-progress marker in the checkout's own git dir: written before a clone or
+# install starts and removed only when it succeeds, so a killed or failed run
+# leaves it behind and the next start redoes the install. A node_modules with no
+# marker is complete, including every checkout bootstrapped before the marker
+# existed. A node_modules clone never carries a source's marker along, and
+# `git worktree remove` deletes it. Prints nothing outside a git checkout.
+vpk_bootstrap_deps_marker_path() {
+	local git_dir
+
+	git_dir="$(git -C "$1" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
+	[ -n "$git_dir" ] || return 1
+	printf '%s/vpk-bootstrap-in-progress\n' "$git_dir"
+}
+
+vpk_bootstrap_begin_deps() {
+	local marker
+
+	marker="$(vpk_bootstrap_deps_marker_path "$1")" || return 0
+	: > "$marker" 2>/dev/null || true
+}
+
+vpk_bootstrap_finish_deps() {
+	local marker
+
+	marker="$(vpk_bootstrap_deps_marker_path "$1")" || return 0
+	rm -f "$marker"
+}
+
+vpk_bootstrap_deps_ready() {
+	local project_dir="$1"
+	local marker
+
+	[ -f "$project_dir/package.json" ] || return 0
+	[ -d "$project_dir/node_modules" ] || return 1
+	marker="$(vpk_bootstrap_deps_marker_path "$project_dir")" || return 0
+	[ ! -e "$marker" ]
+}
+
 vpk_bootstrap_install_dependencies() {
 	local project_dir="$1"
 
@@ -238,7 +289,9 @@ vpk_bootstrap_install_dependencies() {
 	fi
 
 	vpk_bootstrap_log "Fresh worktree detected - running CI=true pnpm install --prefer-offline..."
+	vpk_bootstrap_begin_deps "$project_dir"
 	if (cd "$project_dir" && CI=true pnpm install --prefer-offline >&2); then
+		vpk_bootstrap_finish_deps "$project_dir"
 		VPK_BOOTSTRAP_DEPS_WARMED="install"
 		vpk_bootstrap_add_message "Bootstrapped node_modules via pnpm install."
 		return 0
@@ -254,9 +307,15 @@ vpk_bootstrap_warm_dependencies() {
 	local project_dir="$1"
 	local source_dir="${2:-}"
 
-	if [ -d "$project_dir/node_modules" ]; then
+	if vpk_bootstrap_deps_ready "$project_dir"; then
 		VPK_BOOTSTRAP_DEPS_WARMED="skipped"
 		vpk_bootstrap_log "node_modules present - skipping dependency bootstrap."
+		return 0
+	fi
+
+	if [ -d "$project_dir/node_modules" ]; then
+		vpk_bootstrap_log "node_modules present but its last install or clone did not finish."
+		vpk_bootstrap_install_dependencies "$project_dir" || true
 		return 0
 	fi
 
@@ -266,7 +325,9 @@ vpk_bootstrap_warm_dependencies() {
 		[ "$source_dir" != "$project_dir" ] &&
 		vpk_bootstrap_lockfiles_match "$source_dir" "$project_dir"; then
 		vpk_bootstrap_log "Attempting APFS clonefile warmup for node_modules..."
+		vpk_bootstrap_begin_deps "$project_dir"
 		if vpk_bootstrap_clone_node_modules "$source_dir" "$project_dir"; then
+			vpk_bootstrap_finish_deps "$project_dir"
 			VPK_BOOTSTRAP_DEPS_WARMED="clone"
 			vpk_bootstrap_log "Cloned node_modules from source worktree with cp -c."
 			vpk_bootstrap_add_message "Bootstrapped node_modules via APFS clone."
@@ -288,6 +349,14 @@ vpk_bootstrap_worktree() {
 	VPK_BOOTSTRAP_DEPS_WARMED="skipped"
 
 	project_dir="$(cd "$project_dir" && pwd -P)"
+
+	# Every session start lands here; once env files exist and no dependency
+	# bootstrap was left unfinished there is nothing to look up or copy.
+	if vpk_bootstrap_has_project_env_file "$project_dir" && vpk_bootstrap_deps_ready "$project_dir"; then
+		vpk_bootstrap_log "Worktree already bootstrapped - env files and dependencies present."
+		return 0
+	fi
+
 	source_dir="$(vpk_bootstrap_resolve_source_tree_path "$project_dir" "$requested_source" || true)"
 
 	if [ -n "$source_dir" ]; then

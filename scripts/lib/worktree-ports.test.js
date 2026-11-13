@@ -8,7 +8,6 @@ const path = require("node:path");
 const {
 	getBackendBasePort,
 	getFrontendBasePort,
-	inferWorktreeKind,
 	getPortInfoForPath,
 	getRovoBasePort,
 	getWorktreePortOffsetForPath,
@@ -72,29 +71,6 @@ function runWorktreePortsExpression(cwd, expression) {
 		})
 	);
 }
-
-test("inferWorktreeKind treats a worktree with .git directory as main", () => {
-	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "worktree-ports-main-"));
-	try {
-		fs.mkdirSync(path.join(tempDir, ".git"));
-
-		assert.equal(inferWorktreeKind(tempDir), "main");
-	} finally {
-		fs.rmSync(tempDir, { recursive: true, force: true });
-	}
-});
-
-test("inferWorktreeKind falls back to worktree path heuristics when git metadata is unavailable", () => {
-	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "worktree-ports-linked-"));
-	try {
-		const linkedWorktreePath = path.join(tempDir, "codex", "worktrees", "plan-mode");
-		fs.mkdirSync(linkedWorktreePath, { recursive: true });
-
-		assert.equal(inferWorktreeKind(linkedWorktreePath), "linked");
-	} finally {
-		fs.rmSync(tempDir, { recursive: true, force: true });
-	}
-});
 
 test("worktree port helpers keep main first and assign linked worktree slots by identifier", () => {
 	const fixture = createGitWorktreeFixture();

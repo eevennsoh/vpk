@@ -27,9 +27,11 @@ const REPO_ROOT = path.resolve(__dirname, "../../../..");
 
 // Markdown that code reads: a change to it can fail a test or a guard, so it runs CI.
 // scripts/symphony.sh renders WORKFLOW.md; finale-wall-pieces.test.js reads the two vendor
-// notes; DESIGN.md is the shared visual contract the lint config points at.
+// notes; DESIGN.md is the shared visual contract the lint config points at; verify:doc-scripts
+// checks the paths and scripts that README.md, DESIGN.md and WORKFLOW.md name.
 const GUARDED_MARKDOWN = new Set([
 	"DESIGN.md",
+	"README.md",
 	"WORKFLOW.md",
 	"components/projects/jira-team-eu26-end/finale/VENDOR.md",
 	"public/1p/rovo-stage-kit/README.md",

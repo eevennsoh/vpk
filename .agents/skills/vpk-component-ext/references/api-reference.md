@@ -60,7 +60,6 @@ Key props: `className`, `children`
 | `PromptInputCommandGroup` | Grouped Command items with heading |
 | `PromptInputCommandEmpty` | Empty state for Command |
 | `PromptInputCommandSeparator` | Visual separator between Command groups |
-| `Footer` | Styled footer bar with icon and default text (`@/components/ui/footer`) |
 | `PromptInputTab` | Tab container for file/context lists |
 | `PromptInputTabLabel` | Tab section label |
 | `PromptInputTabBody` | Tab section body |
