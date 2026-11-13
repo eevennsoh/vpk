@@ -91,9 +91,9 @@ async function startServer() {
 
 	console.log("[STARTUP] All routes registered, starting HTTP server...");
 
-	const requestHandler = refuseRequestsWhileDraining(currentRuntime.app, {
-		isDraining: () => backendProcess.getStatus() === "draining",
-	});
+	// One answer to "is the backend draining?" for HTTP requests and WebSocket upgrades.
+	const isDraining = () => backendProcess.getStatus() === "draining";
+	const requestHandler = refuseRequestsWhileDraining(currentRuntime.app, { isDraining });
 	const httpServer = http.createServer(requestHandler);
 	server = httpServer;
 	// The port may be a string from PORT; listen() takes either.
@@ -112,7 +112,10 @@ async function startServer() {
 		process.exit(1);
 	});
 
-	const { browserPreviewWss, realtimeWss } = registerBackendWebSocketRelays(server, currentRuntime.webSocketRelayDependencies);
+	const { browserPreviewWss, realtimeWss } = registerBackendWebSocketRelays(server, {
+		...currentRuntime.webSocketRelayDependencies,
+		isDraining,
+	});
 	webSocketServers = [browserPreviewWss, realtimeWss];
 }
 
