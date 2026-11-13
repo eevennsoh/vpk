@@ -382,3 +382,19 @@ test("a next-server already serving this worktree outside tmux blocks a second o
 		fake.cleanup();
 	}
 });
+
+test("restarting a session whose frontend died still checks the budget", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		fs.writeFileSync(fake.statePath, `vpk-dev-stale|${repoRoot}\n`);
+		const inventory = fake.writeInventory({ swapUsedGb: 30 });
+		const result = withPortFiles(null, null, () => startAs(fake, "vpk-dev-stale", { VPK_DEV_STACK_INVENTORY: inventory }));
+		assert.equal(result.status, 3);
+		assert.match(result.stdout, /exists but has no listening frontend port\. Restarting it/);
+		assert.match(result.stderr, /Not starting: swap in use is 30 GB >= 16 GB/);
+		assert.deepEqual(fake.sessions(), [], "the dead session was stopped and nothing replaced it");
+		assert.deepEqual(fake.serversLaunched(), []);
+	} finally {
+		fake.cleanup();
+	}
+});

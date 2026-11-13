@@ -18,6 +18,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const { pressureReasons, readMemoryState } = require("./memory-pressure.js");
+const { findCurrentWorktree } = require("./worktree-kill.js");
 
 // Defaults from the 2026-11-13 incident on a 48 GB Mac: ten next-servers held about 39 GB
 // (about 4 GB each), and six stacks plus one validation run exhausted it again. Four stacks
@@ -44,9 +45,20 @@ function collectInventory() {
 	return { servers, swapUsedGb, pressureLevel };
 }
 
-function within(child, root) {
-	const relative = path.relative(root, child);
-	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+// Every worktree root of this repository. Linked worktrees can sit inside the main checkout
+// (.claude/worktrees/<name>), so a server belongs to the deepest root that contains its cwd.
+function listWorktreeRoots(cwd) {
+	const result = spawnSync("git", ["worktree", "list", "--porcelain"], { cwd, encoding: "utf8" });
+	if (result.status !== 0) return [];
+	return result.stdout.split("\n").filter((line) => line.startsWith("worktree ")).map((line) => line.slice("worktree ".length));
+}
+
+function realPath(value) {
+	try {
+		return fs.realpathSync(value);
+	} catch {
+		return path.resolve(value);
+	}
 }
 
 function evaluateBudget(inventory, {
@@ -54,21 +66,21 @@ function evaluateBudget(inventory, {
 	force = false,
 	idleCpuMax = IDLE_CPU_MAX,
 	worktree,
+	worktreeRoots = [],
 }) {
-	const roots = [path.resolve(worktree)];
-	try {
-		roots.push(fs.realpathSync(worktree));
-	} catch {
-		// The worktree path is what the caller says it is.
-	}
-	const ownServers = inventory.servers.filter((server) => roots.some((root) => within(server.cwd, root)));
+	const ownRoot = realPath(worktree);
+	const roots = [...new Set([ownRoot, ...worktreeRoots.map(realPath)])].map((root) => ({ path: root }));
+	// The worktree a server serves: the deepest known root containing its cwd, else its cwd.
+	const rootOf = (server) => findCurrentWorktree(realPath(server.cwd), roots)?.path ?? server.cwd;
+	const ownServers = inventory.servers.filter((server) => rootOf(server) === ownRoot);
 	if (ownServers.length > 0) return { exitCode: EXIT_DUPLICATE_SERVER, ownServers, otherStacks: [], reasons: [] };
 
 	const byRoot = new Map();
 	for (const server of inventory.servers) {
-		const stack = byRoot.get(server.cwd) ?? { worktree: server.cwd, servers: [] };
+		const root = rootOf(server);
+		const stack = byRoot.get(root) ?? { worktree: root, servers: [] };
 		stack.servers.push(server);
-		byRoot.set(server.cwd, stack);
+		byRoot.set(root, stack);
 	}
 	const otherStacks = [...byRoot.values()].map((stack) => ({
 		...stack,
@@ -121,7 +133,7 @@ function main(argv) {
 		process.stderr.write("Usage: dev-stack-budget.js check --worktree <path> [--force]\n");
 		return 2;
 	}
-	const verdict = evaluateBudget(readInventory(), { force: rest.includes("--force"), worktree });
+	const verdict = evaluateBudget(readInventory(), { force: rest.includes("--force"), worktree, worktreeRoots: listWorktreeRoots(worktree) });
 	const message = formatVerdict(verdict, { worktree });
 	if (message) process.stderr.write(`${message}\n`);
 	return verdict.exitCode;

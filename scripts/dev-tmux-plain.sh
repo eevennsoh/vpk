@@ -272,6 +272,7 @@ start_session() {
 		else
 			echo "Session '$SESSION_NAME' exists but has no listening frontend port. Restarting it..."
 			stop_session
+			check_stack_budget || exit $?
 			launch_session
 		fi
 	else

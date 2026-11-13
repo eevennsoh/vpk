@@ -35,3 +35,17 @@ test("a server in this worktree (or below it) is a duplicate that --force does n
 	assert.match(formatVerdict(verdict, { worktree: "/wt/new" }), /pid 9/u);
 	assert.equal(evaluateBudget({ ...calm, servers: [{ pid: 9, cwd: "/wt/new-other", cpu: 1 }] }, { worktree: "/wt/new" }).exitCode, 0);
 });
+
+test("a server in a linked worktree nested inside this checkout belongs to that worktree", () => {
+	// .claude/worktrees/<name> lives inside the main checkout; its server is another stack.
+	const servers = [{ pid: 31, cwd: "/repo/.claude/worktrees/feature", cpu: 2 }];
+	const worktreeRoots = ["/repo", "/repo/.claude/worktrees/feature"];
+	const fromMain = evaluateBudget({ ...calm, servers }, { worktree: "/repo", worktreeRoots });
+	assert.equal(fromMain.exitCode, 0);
+	assert.deepEqual(fromMain.otherStacks.map((stack) => stack.worktree), ["/repo/.claude/worktrees/feature"]);
+	const fromFeature = evaluateBudget({ ...calm, servers }, { worktree: "/repo/.claude/worktrees/feature", worktreeRoots });
+	assert.equal(fromFeature.exitCode, EXIT_DUPLICATE_SERVER);
+	// A server started from a subdirectory of the main checkout is still the main checkout's.
+	const nestedCwd = evaluateBudget({ ...calm, servers: [{ pid: 32, cwd: "/repo/app", cpu: 1 }] }, { worktree: "/repo", worktreeRoots });
+	assert.equal(nestedCwd.exitCode, EXIT_DUPLICATE_SERVER);
+});
