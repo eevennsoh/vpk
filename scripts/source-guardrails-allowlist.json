@@ -842,13 +842,6 @@
 			"type": "playwright-fixed-wait"
 		},
 		{
-			"filePath": "tests/projects/butter-card-appearance.spec.ts",
-			"occurrence": 1,
-			"reason": "existing fixed wait; replace with a wait on an observable condition",
-			"text": "await page.waitForTimeout(300);",
-			"type": "playwright-fixed-wait"
-		},
-		{
 			"filePath": "tests/projects/butter-claude-acknowledgment.spec.ts",
 			"occurrence": 1,
 			"reason": "existing fixed wait; replace with a wait on an observable condition",

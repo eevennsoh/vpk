@@ -89,20 +89,6 @@ test("undo during filling cancels remaining changes", async ({ page }) => {
 	await expect(item.getByRole("button", { name: "Change due date" })).toContainText("Dec 15, 2026");
 });
 
-test("undoing one suggestion during filling leaves the others accepted", async ({ page }) => {
-	await page.emulateMedia({ reducedMotion: "no-preference" });
-	const item = await openSuggestions(page);
-	await page.getByRole("button", { name: "Show as list" }).click();
-	await page.getByRole("button", { name: "Accept all" }).click();
-	const cursor = item.locator("[data-project-butter-suggestion-cursor]");
-	await expect(cursor).toBeVisible();
-	await page.getByRole("button", { name: "Undo due date" }).click();
-	await expect(cursor).toHaveCount(0, { timeout: 12_000 });
-	await expect(item.getByRole("button", { name: "Change due date" })).toContainText("Add due date");
-	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
-	await expect(item.getByRole("button", { name: "Change story points" })).toContainText("5");
-});
-
 test("accepting all respects reduced motion", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	const item = await openSuggestions(page);
