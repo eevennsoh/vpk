@@ -131,12 +131,45 @@ test("a write the browser refuses shows Unable to save", async (context) => {
 	assert.equal(probe.read(), "error|-|1");
 });
 
-test("unmounting with a pending write drops it and leaves no timer", async (context) => {
+test("a blank agent created while an edit is saving still ends on Saved", async (context) => {
 	const probe = await renderSaveProbe(context);
 	await probe.press("Create agent");
+	await advance(context, 300);
+	await probe.press("Create blank agent");
+	await advance(context, DEBOUNCE_MS);
+	assert.equal(probe.read(), `saved|at ${START + 300 + DEBOUNCE_MS}|2`);
+	assert.equal(probe.stored(), 2);
+});
+
+test("unmounting with a pending write stores it at once and leaves no timer", async (context) => {
+	const probe = await renderSaveProbe(context);
+	await probe.press("Create agent");
+	const setItem = context.mock.method(window.localStorage, "setItem");
 	await probe.view.unmount();
+	assert.equal(probe.stored(), 1, "the edit lands before the provider goes away");
 	await advance(context, 10_000);
-	// Pinned as found: the debounce effect's cleanup clears the timer before the unmount
-	// flush effect runs, so the flush never sees a pending write.
-	assert.equal(probe.stored(), 0);
+	assert.equal(setItem.mock.callCount(), 1, "the flushed write is not repeated by a leftover timer");
+});
+
+test("leaving the page with a pending write stores it at once", async (context) => {
+	const probe = await renderSaveProbe(context);
+	await probe.press("Create agent");
+	await React.act(async () => {
+		window.dispatchEvent(new Event("pagehide"));
+	});
+	assert.equal(probe.stored(), 1);
+	assert.equal(probe.read(), `saved|at ${START}|1`, "the flush reports its result like a debounced write");
+	const setItem = context.mock.method(window.localStorage, "setItem");
+	await advance(context, 10_000);
+	assert.equal(setItem.mock.callCount(), 0, "nothing is left to write after the flush");
+});
+
+test("leaving the page with nothing pending writes nothing", async (context) => {
+	const probe = await renderSaveProbe(context);
+	const setItem = context.mock.method(window.localStorage, "setItem");
+	await React.act(async () => {
+		window.dispatchEvent(new Event("pagehide"));
+	});
+	await probe.view.unmount();
+	assert.equal(setItem.mock.callCount(), 0);
 });

@@ -31,7 +31,7 @@
   },
   "app/contexts/context-rovo-chat-select-agent.test.js": {
     "no-restricted-syntax": {
-      "count": 40
+      "count": 34
     }
   },
   "app/contexts/context-rovo-chat.tsx": {

@@ -124,10 +124,4 @@ test("session-agent rollback restores a historical snapshot into the draft only"
 test("session-agent autosave is debounced instead of writing on every draft change", () => {
 	assert.match(SESSION_AGENT_REGISTRY_SOURCE, /export const STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS = 900;/u);
 	assert.match(CONTEXT_SOURCE, /STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS,[\s\S]*\} from "@\/components\/projects\/rovo-core\/lib\/agent-records\/session-agent-registry";/u);
-	assert.match(CONTEXT_SOURCE, /const sessionAgentSaveTimerRef = useRef<ReturnType<typeof setTimeout> \| null>\(null\);/u);
-	assert.match(CONTEXT_SOURCE, /clearTimeout\(sessionAgentSaveTimerRef\.current\);/u);
-	assert.match(CONTEXT_SOURCE, /const saveTimer = setTimeout\(\(\) => \{[\s\S]*persistSessionAgentEntries\(sessionAgentEntriesRef\.current\.map\(normalizeSessionAgentEntry\)\)[\s\S]*\}, STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS\);/u);
-	assert.match(CONTEXT_SOURCE, /sessionAgentSaveTimerRef\.current = saveTimer;/u);
-	assert.match(CONTEXT_SOURCE, /if \(sessionAgentSaveTimerRef\.current === saveTimer\) \{[\s\S]*clearTimeout\(saveTimer\);[\s\S]*sessionAgentSaveTimerRef\.current = null;/u);
-	assert.match(CONTEXT_SOURCE, /return \(\) => \{[\s\S]*if \(sessionAgentSaveTimerRef\.current\) \{[\s\S]*clearTimeout\(sessionAgentSaveTimerRef\.current\);[\s\S]*sessionAgentSaveTimerRef\.current = null;[\s\S]*persistSessionAgentEntries\(sessionAgentEntriesRef\.current\.map\(normalizeSessionAgentEntry\)\);[\s\S]*\}/u);
 });
