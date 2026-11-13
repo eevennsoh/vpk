@@ -168,7 +168,7 @@ Inside herdr (`HERDR_ENV=1`), use the `herdr` skill and `herdr pane read <pane> 
 - Worktrees isolate browser automation through deterministic ports, unique Portless origins, and persistent `vpk-dev-<worktree>` tmux sessions. `pnpm run dev:tmux:stop` affects only this worktree. Only `tmux kill-server` and `portless prune` cascade globally — never use either for per-worktree cleanup; use the stop command or `portless alias --remove <name>`.
 - Never import transitive pnpm dependencies directly — pnpm's strict isolation only allows imports from `package.json` direct dependencies. Use internal mechanisms (e.g., `globalThis.__PLATFORM_FEATURE_FLAGS__`) or add the package explicitly.
 - Tracked `.npmrc` contains token-free routing: public `@atlaskit/*` uses npmjs, `@atlassian/logo-third-party` uses `atlassian-npm`, and `motion-plus` (alias of `@motionplus/core`) uses `api.motion.dev/npm`. The repo is public: keep tokens in user `~/.npmrc` (as CI does) or ignored `.npmrc.local`, never in `package.json` or the lockfile.
-- Ports, port files, memory, worktree bootstrap, env seeding, theme switching and CSS-layer gotchas: `.agents/docs/dev-environment.md`.
+- Ports, port files, memory, worktree bootstrap and env seeding gotchas: `.agents/docs/dev-environment.md`.
 
 ## Architecture
 
