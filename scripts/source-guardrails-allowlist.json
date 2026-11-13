@@ -1192,13 +1192,6 @@
 			"type": "playwright-fixed-wait"
 		},
 		{
-			"filePath": "tests/rovo/floating-rovo-button-default-position.spec.ts",
-			"occurrence": 1,
-			"reason": "existing fixed wait; replace with a wait on an observable condition",
-			"text": "await page.waitForTimeout(400);",
-			"type": "playwright-fixed-wait"
-		},
-		{
 			"filePath": "tests/ui-custom/agent-loading.spec.ts",
 			"occurrence": 1,
 			"reason": "existing fixed wait; replace with a wait on an observable condition",
