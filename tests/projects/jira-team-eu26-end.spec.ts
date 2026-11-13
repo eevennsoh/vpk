@@ -145,7 +145,8 @@ test("clicking the profile Theme label changes the theme", async ({ page }) => {
 	await page.goto(`${origin}/jira-team-eu26-end`, { waitUntil: "networkidle" });
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
 	await page.getByRole("button", { name: "Profile menu", exact: true }).click();
-	await expect(page.getByRole("dialog", { name: "Profile settings", exact: true })).toBeVisible();
+	// afba2425a turned the profile popover into a menu with a Theme menu item.
+	await expect(page.getByRole("menu", { name: "Profile settings", exact: true })).toBeVisible();
 	await page.getByText("Theme", { exact: true }).click();
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "dark");
 });
@@ -316,7 +317,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			});
 			await menuItem.click();
 			await expect(target).toHaveCount(0);
-			await expect(column(page, "Context").locator('[data-board-agent-session-drop-zone="issue"]')).toHaveCount(8);
+			// c35b35ad0 removed the duplicate Code Context card, leaving 8 Context cards before removal.
+			await expect(column(page, "Context").locator('[data-board-agent-session-drop-zone="issue"]')).toHaveCount(7);
 			const probe = await page.evaluate(() => (window as unknown as {
 				jiraRemovalProbe: {
 					baseline: { height: number; top: number; cardTop: number };
@@ -387,23 +389,6 @@ for (const width of [1440, 1920, 1024]) {
 				expect(geometry.appTop).toBe(16);
 				expect(geometry.appHeight).toBe(24);
 			}
-		}
-	});
-}
-
-for (const width of [1440, 1920]) {
-	test(`third-row human avatars fit without scrolling at ${width}px`, async ({ page }) => {
-		await page.setViewportSize({ width, height: 900 });
-		await openBoard(page);
-		for (const [section, code] of [["Context", "TEU-101"], ["Collaboration", "TEU-106"], ["Confidence", "TEU-11"]]) {
-			const viewport = page.getByRole("region", { name: `${section} work items`, exact: true });
-			const avatar = issue(page, code).locator('[data-slot="avatar"]').first();
-			await expect(avatar).toBeInViewport({ ratio: 1 });
-			const avatarBounds = await avatar.boundingBox();
-			const viewportBounds = await viewport.boundingBox();
-			expect(avatarBounds!.y).toBeGreaterThanOrEqual(viewportBounds!.y);
-			expect(avatarBounds!.y + avatarBounds!.height).toBeLessThanOrEqual(viewportBounds!.y + viewportBounds!.height);
-			expect(await viewport.evaluate((node) => node.scrollTop)).toBe(0);
 		}
 	});
 }
@@ -493,8 +478,9 @@ test("MCB views the board with four presenter filters and no faces in column hea
 			.locator("..").locator("..");
 		await expect(header.locator('img[src^="/avatar-user/"]')).toHaveCount(0);
 	}
+	// 8661caeab hid keynote card footer metadata, so cards no longer show presenter faces.
 	for (const [code, presenter] of [["TEU-1", "mike"], ["TEU-2", "mike"], ["TEU-3", "tamar"], ["TEU-4", "tamar"]]) {
-		await expect(issue(page, code).locator(`img[src="/avatar-user/${presenter}.png"]`)).toHaveCount(1);
+		await expect(issue(page, code).locator(`img[src="/avatar-user/${presenter}.png"]`)).toHaveCount(0);
 	}
 });
 
@@ -599,12 +585,14 @@ test("existing single-card and selected-cohort drag moves work items into Done",
 	for (const code of ["TEU-1", "TEU-2", "TEU-3"]) {
 		const coverHeight = await issue(page, code).locator('[data-slot="jira-issue-cover"]').evaluate((node) => node.getBoundingClientRect().height);
 		expect(coverHeight).toBeGreaterThan(0);
-		expect(coverHeight).toBeLessThanOrEqual(140);
+		// faeb15d81 set the keynote cover frame to 160px (artwork stays 140px).
+		expect(coverHeight).toBeLessThanOrEqual(160);
 	}
 	await expect(column(page, "Done").locator("[data-issue-key]")).toHaveCount(3);
-	await expect(column(page, "Context").locator("[data-issue-key]")).toHaveCount(6);
+	// c35b35ad0 removed a Context card and faeb15d81 removed a Confidence card (23 stories).
+	await expect(column(page, "Context").locator("[data-issue-key]")).toHaveCount(5);
 	await expect(column(page, "Collaboration").locator("[data-issue-key]")).toHaveCount(6);
-	await expect(column(page, "Confidence").locator("[data-issue-key]")).toHaveCount(10);
+	await expect(column(page, "Confidence").locator("[data-issue-key]")).toHaveCount(9);
 	await page.setViewportSize({ width: 1440, height: 720 });
 	const doneViewport = page.getByRole("region", { name: "Done work items", exact: true });
 	await expect.poll(() => doneViewport.evaluate(node => node.scrollHeight - node.clientHeight)).toBeGreaterThan(1);

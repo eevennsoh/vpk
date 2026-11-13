@@ -44,7 +44,8 @@ for (const route of ["jira-team-eu26", "jira-team-eu26-end"]) {
 test("standalone lanyard hover retains its existing fast wave", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(`${baseURL}/preview/blocks/agent-lanyard`, { waitUntil: "domcontentloaded" });
-	const card = page.locator('[data-slot="agent-lanyard"][data-agent-id="claude"]');
+	// 3899ac78a added a Recommended Claude lanyard to this page; keep to the agent variant.
+	const card = page.locator('[data-slot="agent-lanyard"][data-agent-id="claude"][data-variant="agent"]');
 	await expect(card).toBeVisible();
 	await card.evaluate((element) => {
 		let startedAt: number | undefined;
