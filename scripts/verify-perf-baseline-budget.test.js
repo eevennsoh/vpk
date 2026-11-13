@@ -12,6 +12,7 @@ const {
 	ROUTE_BUDGET_TARGETS,
 	evaluateBuildDurationBudget,
 	findRaisedBudgets,
+	formatRaisedBudget,
 	evaluatePerfBaselineBudget,
 	evaluatePerfBaselineWarnings,
 	evaluateRouteLoadTimingFailures,
@@ -131,10 +132,19 @@ test("evaluatePerfBaselineBudget fails a measured default route that has no budg
 });
 
 test("findRaisedBudgets reports only values above the base", () => {
-	const base = { rovo: { cssBytes: 935_000, firstLoadJsBytes: 7_300_000 }, gone: { cssBytes: 1 } };
+	const base = { rovo: { cssBytes: 935_000, firstLoadJsBytes: 7_300_000 } };
 	const current = { rovo: { cssBytes: 940_000, firstLoadJsBytes: 7_200_000 }, home: { cssBytes: 999_999 } };
 	assert.deepEqual(findRaisedBudgets(base, current), [{ baseLimit: 935_000, limit: 940_000, metricName: "cssBytes", routeId: "rovo" }]);
 	assert.deepEqual(findRaisedBudgets(base, base), []);
+});
+
+test("findRaisedBudgets treats a removed metric or route as raised", () => {
+	const base = { rovo: { cssBytes: 935_000, firstLoadJsBytes: 7_300_000 }, "one-off": { cssBytes: 500_000 } };
+	const metricRemoved = findRaisedBudgets(base, { rovo: { cssBytes: 935_000 }, "one-off": { cssBytes: 500_000 } });
+	assert.deepEqual(metricRemoved, [{ baseLimit: 7_300_000, limit: null, metricName: "firstLoadJsBytes", routeId: "rovo" }]);
+	assert.equal(formatRaisedBudget(metricRemoved[0]), "rovo.firstLoadJsBytes 7300000 -> removed");
+	const routeRemoved = findRaisedBudgets(base, { rovo: { cssBytes: 935_000, firstLoadJsBytes: 7_300_000 } });
+	assert.deepEqual(routeRemoved, [{ baseLimit: 500_000, limit: null, metricName: "cssBytes", routeId: "one-off" }]);
 });
 
 // Same base as the other shrink-only baselines: the PR base in CI, the pre-push tip on a push to
@@ -154,7 +164,7 @@ test("route budgets only go down from the base", () => {
 	const baseSource = git(["show", `${baseRef}:scripts/perf-route-budgets.json`]);
 	if (baseSource === null) return; // the base predates the file: this change introduces the baseline
 	const raised = findRaisedBudgets(JSON.parse(baseSource).routes);
-	assert.deepEqual(raised, [], `perf route budgets may only go down; raised since ${baseRef.slice(0, 9)}: ${raised.map((entry) => `${entry.routeId}.${entry.metricName} ${entry.baseLimit} -> ${entry.limit}`).join(", ")}`);
+	assert.deepEqual(raised, [], `perf route budgets may only go down; raised since ${baseRef.slice(0, 9)}: ${raised.map(formatRaisedBudget).join(", ")}`);
 });
 
 test("the budget targets sit at or below the budgets", () => {

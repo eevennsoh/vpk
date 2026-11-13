@@ -24,18 +24,25 @@ const FIXED_ROUTE_IDS = [...FIXED_BASELINE_ROUTES.map((route) => route.id), "hea
 const ROUTE_BUDGETS_PATH = path.join(__dirname, "perf-route-budgets.json");
 const { routes: DEFAULT_ROUTE_BUDGETS, targets: ROUTE_BUDGET_TARGETS } = JSON.parse(readFileSync(ROUTE_BUDGETS_PATH, "utf8"));
 
-// Budget values that are higher than in the base copy of perf-route-budgets.json.
+// Budget values that are higher than in the base copy of perf-route-budgets.json. A route or metric
+// that the base budgets and the current file drops counts as raised (to no limit at all).
 function findRaisedBudgets(baseRoutes, currentRoutes = DEFAULT_ROUTE_BUDGETS) {
 	const raised = [];
 	for (const [routeId, baseBudget] of Object.entries(baseRoutes ?? {})) {
 		for (const [metricName, baseLimit] of Object.entries(baseBudget)) {
 			const limit = currentRoutes[routeId]?.[metricName];
-			if (typeof limit === "number" && limit > baseLimit) {
+			if (typeof limit !== "number") {
+				raised.push({ baseLimit, limit: null, metricName, routeId });
+			} else if (limit > baseLimit) {
 				raised.push({ baseLimit, limit, metricName, routeId });
 			}
 		}
 	}
 	return raised;
+}
+
+function formatRaisedBudget({ baseLimit, limit, metricName, routeId }) {
+	return `${routeId}.${metricName} ${baseLimit} -> ${limit === null ? "removed" : limit}`;
 }
 
 function parseArgs(argv) {
@@ -355,6 +362,7 @@ module.exports = {
 	ROUTE_BUDGET_TARGETS,
 	ROUTE_BUDGETS_PATH,
 	findRaisedBudgets,
+	formatRaisedBudget,
 	evaluateBuildDurationBudget,
 	evaluatePerfBaselineBudget,
 	evaluatePerfBaselineWarnings,
