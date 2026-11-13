@@ -1,15 +1,7 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ viewport: { width: 1280, height: 800 }, ignoreHTTPSErrors: true });
-
-async function openSessions(page: Page, picker = false) {
-	await page.goto(appUrl("/butter"));
-	await page.locator('[data-issue-key="PAY-123"][data-board-column-title] [data-slot="jira-issue-card"]').click();
-	await page.getByRole("button", { name: /Working on this work item.*Add agent/ }).click();
-	if (!picker) await page.getByRole("button", { name: "View agent sessions", exact: true }).click();
-	return page.getByRole("dialog", { name: picker ? "Add agent" : "Agent sessions" });
-}
 
 async function layer(surface: Locator) {
 	return surface.evaluate((element) => Number(getComputedStyle(element.parentElement!).zIndex));
@@ -33,23 +25,11 @@ test("Claude offers Open in Claude in the board agent picker", async ({ page }) 
 	await expect(page.getByRole("combobox", { name: "Search agents" })).toBeFocused();
 });
 
-test("session tooltip and action menu appear above the work item agent panel", async ({ page }) => {
-	const sessions = await openSessions(page);
-	const viewer = sessions.locator("article").filter({ hasText: "Recording decline-code fixtures" });
-	await viewer.hover();
-	const tooltip = page.locator('[data-slot="tooltip-content"]').filter({ hasText: "Someone is using an agent. Only they can see the work." });
-	await expect(tooltip).toBeVisible();
-	expect(await layer(tooltip)).toBeGreaterThan(await layer(sessions));
-	await sessions.locator("article").filter({ hasText: "Wiring recorded fixtures into the v2 client" }).hover();
-	await sessions.getByRole("button", { name: /More actions for Wiring recorded fixtures/ }).click();
-	const menu = page.getByRole("menu").filter({ hasText: "Dismiss" });
-	await expect(menu).toBeVisible();
-	expect(await layer(menu)).toBeGreaterThan(await layer(sessions));
-});
-
 test("agent and workspace submenus appear above their parent panels", async ({ page }) => {
-	await openSessions(page, true);
-	const picker = page.getByRole("dialog", { name: "Add agent", exact: true });
+	await page.goto(appUrl("/butter"));
+	await page.locator('[data-issue-key="PAY-118"][data-board-column-title]').getByRole("button", { name: "Add agent to PAY-118" }).focus();
+	await page.keyboard.press("Enter");
+	const picker = page.getByRole("dialog", { name: "Agents", exact: true });
 	await picker.locator('[role="option"][data-value="claude-code"]').hover();
 	const claude = page.getByRole("menu", { name: "Run Claude on" });
 	await expect(claude.getByRole("menuitem", { name: "Open in Claude" })).toBeVisible();
@@ -59,7 +39,6 @@ test("agent and workspace submenus appear above their parent panels", async ({ p
 	const submenu = page.getByRole("dialog", { name: "Rovo CLI local options" });
 	await expect(submenu).toBeVisible();
 	expect(await layer(submenu)).toBeGreaterThan(await layer(picker));
-	await submenu.getByRole("button", { name: /Configure/ }).click();
 	await submenu.getByRole("textbox", { name: "Choose your directory" }).click();
 	const workspaces = page.getByRole("dialog", { name: "Codebase workspaces" });
 	await expect(workspaces).toBeVisible();

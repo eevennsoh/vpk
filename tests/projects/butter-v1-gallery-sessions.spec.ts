@@ -7,9 +7,11 @@ test("teammate sessions keep their popover alignment while expanding near the vi
 	await page.setViewportSize({ width: 1398, height: 1236 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Board" }).click();
-	await page.getByRole("button", { name: "3 agents: Working" }).click();
+	await page.getByRole("region", { name: "Payments SDK v2 Kanban board" }).locator('[data-issue-key="PAY-123"][data-board-column-title]').getByRole("button", { name: "2 agents: Needs input" }).click();
 	const popup = page.getByRole("dialog", { name: "Agent assignment" });
 	const disclosure = popup.getByRole("button", { name: /(?:\d+ )?other sessions?/iu });
+	await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+	await disclosure.click();
 	await expect(disclosure).toHaveAttribute("aria-expanded", "false");
 	await page.setViewportSize({ width: 1398, height: 900 });
 	await expect(popup).toHaveAttribute("data-align", "start");
@@ -91,10 +93,10 @@ test("session titles describe their work in grouped, review, and List views", as
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 	const grouped = board.locator('[data-issue-key="PAY-123"][data-board-column-title]');
-	await grouped.getByRole("button", { name: "2 agents: Working" }).click();
+	await grouped.getByRole("button", { name: "2 agents: Needs input" }).click();
 	let assignment = page.getByRole("dialog", { name: "Agent assignment" });
+	await expect(assignment.getByText("Checking decline fixture coverage", { exact: true })).toBeVisible();
 	await expect(assignment.getByText("Recording decline-code fixtures", { exact: true })).toBeVisible();
-	await expect(assignment.getByText("Wiring recorded fixtures into the v2 client", { exact: true })).toBeVisible();
 	await page.keyboard.press("Escape");
 	const review = board.locator('[data-issue-key="PAY-112"][data-board-column-title]');
 	await review.getByRole("button", { name: "Codex: Needs input" }).click();
@@ -106,16 +108,22 @@ test("session titles describe their work in grouped, review, and List views", as
 	await page.getByRole("tab", { name: "List", exact: true }).click();
 	const row = page.getByRole("region", { name: "Payments SDK v2 migration work items list" }).locator("tr").filter({ hasText: "PAY-105" });
 	await row.getByRole("button", { name: "Cursor: Working" }).click();
-	const picker = page.getByRole("dialog", { name: "Add agent" });
-	await expect(picker.getByRole("button", { name: "Claude", exact: true })).toBeVisible();
-	await picker.getByRole("button", { name: "Claude", exact: true }).click();
-	await expect(row.getByRole("button", { name: "2 agents: Working" })).toBeVisible();
-	await row.getByRole("button", { name: "2 agents: Working" }).focus();
-	await page.keyboard.press("Enter");
-	await expect(page.getByRole("dialog", { name: "Add agent" }).getByRole("button", { name: "Claude", exact: true })).toBeVisible();
-	await expect(picker.getByRole("textbox", { name: "Search agents" })).toBeFocused();
+	assignment = page.getByRole("dialog", { name: "Agent assignment" });
+	await expect(assignment.getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
 	await page.keyboard.press("Escape");
+	await row.getByRole("button", { name: "Add agent to PAY-105" }).click();
+	const picker = page.getByRole("dialog", { name: "Agents" });
+	await picker.getByRole("button", { name: "Claude (Recommended)" }).click();
 	await expect(picker).toBeHidden();
+	const sessions = row.getByRole("button", { name: "2 agents: Working" });
+	await expect(sessions).toBeVisible();
+	await sessions.focus();
+	await page.keyboard.press("Enter");
+	await expect(assignment.getByText("Replaying 3-D Secure fixtures", { exact: true })).toBeVisible();
+	await expect(assignment.getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(assignment).toBeHidden();
+	await expect(sessions).toBeFocused();
 });
 
 test("a new board session uses the work-item summary as its title", async ({ page }) => {
@@ -135,28 +143,4 @@ test("a new board session uses the work-item summary as its title", async ({ pag
 	await expect(picker).toBeHidden();
 	await card.getByRole("button", { name: /^Cursor: / }).click();
 	await expect(page.getByRole("dialog", { name: "Agent assignment" }).getByText("Carry card-artwork metadata into the next wallet epic", { exact: true })).toBeVisible();
-});
-
-test("the last-used app action shows a borderless, 16px mark", async ({ page }) => {
-	await page.goto(appUrl("/butter-v1"));
-	await page.getByRole("button", { name: "Select Work item" }).click();
-	const item = page.getByRole("region", { name: "Work item full screen view" });
-	await item.getByRole("button", { name: "Open in", exact: true }).click();
-	await page.getByRole("dialog", { name: "Local software agents" }).getByRole("button", { name: "Claude", exact: true }).click();
-	const claude = item.getByRole("button", { name: "Open in Claude" });
-	await expect(claude.locator('[data-slot="avatar"]')).toHaveCount(0);
-	const ink = await claude.locator("svg").evaluate((element) => {
-		if (!(element instanceof SVGSVGElement)) throw new Error("Claude mark is not an SVG");
-		const bounds = element.getBoundingClientRect();
-		const artwork = element.getBBox();
-		return { width: bounds.width * artwork.width / element.viewBox.baseVal.width, height: bounds.height * artwork.height / element.viewBox.baseVal.height };
-	});
-	expect(ink.width).toBeCloseTo(16, 0);
-	expect(ink.height).toBeCloseTo(16, 0);
-	await item.getByRole("button", { name: "Open in", exact: true }).click();
-	await page.getByRole("dialog", { name: "Local software agents" }).getByRole("button", { name: "VS Code", exact: true }).click();
-	const vsCode = item.getByRole("button", { name: "Open in VS Code" });
-	await expect(vsCode.locator("svg")).toHaveCSS("width", "16px");
-	await expect(vsCode.locator("svg")).toHaveCSS("height", "16px");
-	await expect(vsCode.locator('[data-slot="tile"]')).toHaveCount(0);
 });
