@@ -2,6 +2,7 @@
 
 const express = require("express");
 
+const { isBrowserWorkspaceLimitError } = require("../lib/browser-workspace-lifecycle");
 const { getNonEmptyString } = require("../lib/shared-utils");
 
 const REQUIRED_MANAGER_METHODS = [
@@ -51,12 +52,16 @@ function sendBrowserWorkspaceError(response, error, fallbackMessage, {
 		error instanceof Error && error.message
 			? error.message
 			: fallbackMessage;
+	// Gone (missing, closing, closed, crashed) is 404, which the client answers by
+	// creating a new workspace; the live-workspace cap is 503.
 	const statusCode =
 		isBrowserWorkspaceNotFoundError(error) ||
 		(typeof message === "string" &&
 			message.startsWith("Browser workspace not found:"))
 			? 404
-			: 500;
+			: isBrowserWorkspaceLimitError(error)
+				? 503
+				: 500;
 
 	return response.status(statusCode).json({
 		error: message,
