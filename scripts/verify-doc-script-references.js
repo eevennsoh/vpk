@@ -24,6 +24,7 @@ const DEFAULT_DOC_TARGETS = [
 	"README.md",
 	"DESIGN.md",
 	"WORKFLOW.md",
+	".agents/agents",
 	".agents/docs",
 	".agents/rules",
 	".agents/skills",
@@ -163,7 +164,7 @@ function extractRepoPathReferences(content, filePath = "unknown") {
 // Commands in docs: every fenced block, plus inline spans outside the fences.
 function extractCommandSnippets(content) {
 	const snippets = [];
-	const fence = /^(\s*)```[^\n]*\n([\s\S]*?)^\1```/gmu;
+	const fence = /^([ \t]*)```[^\n]*\n([\s\S]*?)^\1```/gmu;
 	let match = fence.exec(content);
 	while (match) {
 		snippets.push({ index: match.index + match[0].indexOf(match[2]), text: match[2] });
@@ -183,7 +184,7 @@ function extractCommandSnippets(content) {
 // is "command not found" in every shell, because nothing puts it on PATH.
 function extractBareCliReferences(content, filePath, cliNames) {
 	if (cliNames.size === 0) return [];
-	const names = [...cliNames].map((name) => name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("|");
+	const names = [...cliNames.keys()].map((name) => name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("|");
 	const command = new RegExp(`(^|[\\s;|&(]|\\$\\()(${names})(?=\\s+[a-z-])`, "gmu");
 	const references = [];
 	for (const snippet of extractCommandSnippets(content)) {
@@ -237,13 +238,13 @@ function readTrackedTree(cwd) {
 	];
 	const paths = new Set();
 	const symlinks = new Map();
-	const executables = new Set();
+	const executables = new Map();
 	for (const entry of entries) {
 		const [meta, file] = entry.split("\t");
 		const parts = file.split("/");
 		for (let index = 1; index <= parts.length; index += 1) paths.add(parts.slice(0, index).join("/"));
 		// An extensionless executable is a repo CLI that no shell has on PATH.
-		if (meta.startsWith("100755") && !path.posix.basename(file).includes(".")) executables.add(path.posix.basename(file));
+		if (meta.startsWith("100755") && !path.posix.basename(file).includes(".")) executables.set(path.posix.basename(file), file);
 		if (meta.startsWith("120000")) {
 			try {
 				symlinks.set(file, path.posix.normalize(path.posix.join(path.posix.dirname(file), fs.readlinkSync(path.join(cwd, file)))));
@@ -277,7 +278,7 @@ function createPathChecks(cwd) {
 	const tree = readTrackedTree(cwd);
 	if (!tree) {
 		const onDisk = (relative) => fs.existsSync(path.join(cwd, relative));
-		return { cliNames: new Set(), hasEntry: onDisk, isIgnored: () => false, isTracked: onDisk };
+		return { cliNames: new Map(), hasEntry: onDisk, isIgnored: () => false, isTracked: onDisk };
 	}
 	const resolve = (relative) => {
 		for (const [link, target] of tree.symlinks) {
@@ -598,13 +599,17 @@ function verifyDocumentedScripts({
 		...reference,
 		message: `Documented path \`${reference.text}\` does not exist.`,
 	}));
-	const cliReferences = documents.flatMap(({ content, filePath }) => extractBareCliReferences(content, filePath, checks.cliNames ?? new Set()));
-	const cliFailures = cliReferences.map((reference) => ({
-		...reference,
-		message: scriptNames.has(reference.cliName)
-			? `Documented command \`${reference.cliName} …\` is not on PATH; write \`pnpm ${reference.cliName} …\`.`
-			: `Documented command \`${reference.cliName} …\` is not on PATH; call it by its repo path or add a package script.`,
-	}));
+	const cliNames = checks.cliNames ?? new Map();
+	const cliReferences = documents.flatMap(({ content, filePath }) => extractBareCliReferences(content, filePath, cliNames));
+	const cliFailures = cliReferences.map((reference) => {
+		const repoPath = cliNames.get(reference.cliName);
+		return {
+			...reference,
+			message: scriptNames.has(reference.cliName)
+				? `Documented command \`${reference.cliName} …\` is not on PATH; write \`pnpm ${reference.cliName} …\`, or \`${repoPath} …\` where pnpm cannot run (the agent sandbox, a stale install).`
+				: `Documented command \`${reference.cliName} …\` is not on PATH; write \`${repoPath} …\` or add a package script.`,
+		};
+	});
 	const providerComposition = verifyProviderCompositionDocs({ cwd, files });
 	const agentsFreshness = verifyAgentsFreshnessSection({ cwd, files });
 

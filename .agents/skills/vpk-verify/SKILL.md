@@ -11,6 +11,8 @@ Read [features/README.md](features/README.md) before a run. For component, block
 
 ## Launch
 
+`pnpm control-vpk <command>` and `.agents/skills/vpk-verify/scripts/control-vpk <command>` run the same CLI. Use the path form wherever pnpm cannot run the script: inside the Claude Code sandbox pnpm fails with `spawn EPERM`, and after a lockfile change it may reinstall first (printing to stdout, which breaks `$(…)` capture) or stop with `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`.
+
 From the worktree root:
 
 ```bash

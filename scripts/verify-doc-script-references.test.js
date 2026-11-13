@@ -329,6 +329,11 @@ test("verifyDocumentedScripts flags a repo CLI named bare in command position", 
 			"control-vpk browser snapshot -i",
 			"```",
 			"Also `other-cli run`.",
+			"",
+			"A second block after prose is still read as code:",
+			"```bash",
+			"control-vpk browser click x",
+			"```",
 		].join("\n"));
 		for (const args of [["init", "-q"], ["add", "-A"]]) {
 			assert.equal(spawnSync("git", args, { cwd }).status, 0);
@@ -338,10 +343,11 @@ test("verifyDocumentedScripts flags a repo CLI named bare in command position", 
 		assert.deepEqual(
 			result.failures.map(({ line, message }) => `${line} ${message}`),
 			[
-				"1 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`.",
-				"3 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`.",
-				"6 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`.",
-				"8 Documented command `other-cli …` is not on PATH; call it by its repo path or add a package script.",
+				"1 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`, or `tools/control-vpk …` where pnpm cannot run (the agent sandbox, a stale install).",
+				"3 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`, or `tools/control-vpk …` where pnpm cannot run (the agent sandbox, a stale install).",
+				"6 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`, or `tools/control-vpk …` where pnpm cannot run (the agent sandbox, a stale install).",
+				"8 Documented command `other-cli …` is not on PATH; write `tools/other-cli …` or add a package script.",
+				"12 Documented command `control-vpk …` is not on PATH; write `pnpm control-vpk …`, or `tools/control-vpk …` where pnpm cannot run (the agent sandbox, a stale install).",
 			],
 		);
 	} finally {
