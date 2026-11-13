@@ -249,12 +249,39 @@ jobs:
           set -o pipefail
           time pnpm run build 2>&1 | tee output/perf-build.log
 
+      - name: Serve the production build
+        # `next start` of the build just measured; no backend runs, the same as a local
+        # measurement, so routes that call /api get the same failed responses everywhere.
+        run: |
+          nohup pnpm exec next start -p 3100 -H 127.0.0.1 > output/perf-next-start.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            curl -fsS -o /dev/null http://127.0.0.1:3100/ && exit 0
+            sleep 2
+          done
+          cat output/perf-next-start.log
+          exit 1
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Route byte budgets
-        # The build log and .next manifests give the route sizes; the build-duration limit
-        # depends on the machine, so it stays with local `pnpm run perf:budget`.
+        # The build log and .next manifests give the manifest sizes; the browser run adds the
+        # JS and CSS actually fetched on each group's route (medians of 3 runs). The
+        # build-duration limit depends on the machine, so it stays with local `pnpm run perf:budget`.
         run: |
           node scripts/collect-perf-baseline.js --input output/perf-build.log
-          node scripts/verify-perf-baseline-budget.js
+          node scripts/collect-route-transfer.mjs --base-url http://127.0.0.1:3100 --runs 3
+          node scripts/verify-perf-baseline-budget.js --require-fetched
+
+      - name: Keep the perf baseline
+        # Every measured value plus the scripts and stylesheets each route fetched, for diffing a
+        # failing route against a local run.
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-baseline
+          path: output/perf-baseline.json
+          retention-days: 7
 
   aggregate:
     name: PR checks

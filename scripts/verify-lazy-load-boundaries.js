@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { existsSync, readFileSync } = require("node:fs");
+const { existsSync, readdirSync, readFileSync, writeFileSync } = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
 
@@ -52,6 +52,63 @@ const DEFAULT_DEFERRED_MODULE_RULES = [
 		targetFile: "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-context-rail.tsx",
 	},
 ];
+
+// Modules that load only through a dynamic import (C-8a). No route entry (the shells above,
+// every App Router page and every project's entry page) may reach them statically.
+const DEFAULT_LAZY_ONLY_MODULES = [
+	{
+		reason: "the Excalidraw runtime and its stylesheet load when a scene first renders",
+		targetFile: "components/projects/shared/components/excalidraw-runtime.ts",
+	},
+	{
+		reason: "Leaflet and its stylesheet load with the map widget",
+		targetFile: "lib/json-render/map-widget-canvas.tsx",
+	},
+];
+
+// Imports with one owner (C-8a): a third-party stylesheet travels with the module that renders
+// it, so it reaches only the routes that can render it. Applies to TS/JS imports and CSS @import.
+// `match: "stylesheet"` covers every .css file the package ships (any path under the package
+// name), so another stylesheet path such as katex/dist/katex.css cannot slip past.
+const DEFAULT_SINGLE_OWNER_IMPORTS = [
+	{
+		match: "stylesheet",
+		ownerFile: "components/ui-custom/streamdown-math.ts",
+		reason: "KaTeX CSS loads with the Streamdown math plugin",
+		source: "katex",
+	},
+	{
+		match: "exact",
+		ownerFile: "components/ui-custom/streamdown-math.ts",
+		reason: "importing the math plugin from components/ui-custom/streamdown-math brings KaTeX CSS with it",
+		source: "@streamdown/math",
+	},
+	{
+		match: "stylesheet",
+		ownerFile: "lib/json-render/map-widget-canvas.tsx",
+		reason: "Leaflet CSS loads with the map widget",
+		source: "leaflet",
+	},
+	{
+		match: "stylesheet",
+		ownerFile: "components/projects/shared/components/excalidraw-runtime.css",
+		reason: "Excalidraw CSS loads with the Excalidraw runtime",
+		source: "@excalidraw/excalidraw",
+	},
+];
+
+// Files that must not statically import a module family (C-8d).
+const DEFAULT_FILE_IMPORT_RULES = [
+	{
+		filePath: "components/projects/shared/components/icon-registry.tsx",
+		rules: [
+			{ match: "prefix", reason: "registry icons load on first render through createLazyIcon", source: "@atlaskit/icon/" },
+			{ match: "prefix", reason: "registry icons load on first render through createLazyIcon", source: "@atlaskit/icon-lab/" },
+		],
+	},
+];
+
+const SOURCE_ROOTS = ["app", "components", "hooks", "lib"];
 
 const DEFAULT_HEAVY_IMPORT_RULES = [
 	{
@@ -144,6 +201,7 @@ const DEFAULT_HEAVY_IMPORT_RULES = [
 function parseArgs(argv = process.argv.slice(2)) {
 	const routeShellFiles = [];
 	const heavyImports = [];
+	let updateBaseline = false;
 
 	for (let index = 0; index < argv.length; index += 1) {
 		const arg = argv[index];
@@ -173,9 +231,14 @@ function parseArgs(argv = process.argv.slice(2)) {
 			heavyImports.push(createHeavyImportRule(arg.slice("--heavy-import=".length)));
 			continue;
 		}
+		if (arg === "--update-baseline") {
+			updateBaseline = true;
+			continue;
+		}
 		if (arg === "--help" || arg === "-h") {
 			return {
 				help: true,
+				updateBaseline: false,
 				heavyImportRules: DEFAULT_HEAVY_IMPORT_RULES,
 				routeShellFiles: DEFAULT_ROUTE_SHELL_FILES,
 			};
@@ -187,6 +250,7 @@ function parseArgs(argv = process.argv.slice(2)) {
 		help: false,
 		heavyImportRules: heavyImports.length > 0 ? heavyImports : DEFAULT_HEAVY_IMPORT_RULES,
 		routeShellFiles: routeShellFiles.length > 0 ? routeShellFiles : DEFAULT_ROUTE_SHELL_FILES,
+		updateBaseline,
 	};
 }
 
@@ -403,7 +467,7 @@ function resolveLocalModule(cwd, importerFile, moduleSpecifier) {
 	return resolvedPath ? path.relative(cwd, resolvedPath) : null;
 }
 
-function findStaticDependencyPath({ cwd, entryFile, targetFile }) {
+function findStaticDependencyPath({ cwd, entryFile, readSpecifiers = createSpecifierReader(cwd), targetFile }) {
 	const normalizedTarget = path.normalize(targetFile);
 	const visited = new Set();
 
@@ -417,15 +481,11 @@ function findStaticDependencyPath({ cwd, entryFile, targetFile }) {
 		}
 		visited.add(normalizedFilePath);
 
-		const absolutePath = path.join(cwd, normalizedFilePath);
-		if (!existsSync(absolutePath)) {
+		if (!existsSync(path.join(cwd, normalizedFilePath))) {
 			return null;
 		}
 
-		const moduleSpecifiers = collectRuntimeStaticModuleSpecifiers(
-			readFileSync(absolutePath, "utf8"),
-			normalizedFilePath,
-		);
+		const moduleSpecifiers = readSpecifiers(normalizedFilePath);
 		for (const moduleSpecifier of moduleSpecifiers) {
 			const resolvedPath = resolveLocalModule(cwd, normalizedFilePath, moduleSpecifier);
 			if (!resolvedPath) {
@@ -443,13 +503,272 @@ function findStaticDependencyPath({ cwd, entryFile, targetFile }) {
 	return visit(entryFile, [entryFile]);
 }
 
+function walkSourceTree(cwd, roots, include) {
+	const files = [];
+	for (const root of roots) {
+		const absoluteRoot = path.join(cwd, root);
+		if (!existsSync(absoluteRoot)) {
+			continue;
+		}
+		for (const entry of readdirSync(absoluteRoot, { recursive: true, withFileTypes: true })) {
+			if (!entry.isFile()) {
+				continue;
+			}
+			const relativePath = path.relative(cwd, path.join(entry.parentPath, entry.name));
+			if (relativePath.split(path.sep).includes("node_modules") || !include(relativePath)) {
+				continue;
+			}
+			files.push(relativePath.split(path.sep).join("/"));
+		}
+	}
+	return files.sort();
+}
+
+// Every App Router page, layout and template (layouts compose implicitly, so the import walk
+// would not reach them from a page) plus every project's entry page, so a new route, layout or
+// project is guarded without editing a list.
+function discoverRouteEntryFiles(cwd = process.cwd()) {
+	const appPages = walkSourceTree(cwd, ["app"], (filePath) => /(^|\/)(page|layout|template)\.(tsx|ts|jsx|js)$/u.test(filePath) && !filePath.startsWith(`app${path.sep}api${path.sep}`));
+	const projectEntries = walkSourceTree(cwd, ["components/projects"], (filePath) => /^components\/projects\/[^/]+\/page\.tsx$/u.test(filePath.split(path.sep).join("/")));
+	return [...new Set([...appPages, ...projectEntries])].sort();
+}
+
+function createSpecifierReader(cwd) {
+	const cache = new Map();
+	return (filePath) => {
+		if (!cache.has(filePath)) {
+			const absolutePath = path.join(cwd, filePath);
+			cache.set(filePath, existsSync(absolutePath)
+				? collectRuntimeStaticModuleSpecifiers(readFileSync(absolutePath, "utf8"), filePath)
+				: []);
+		}
+		return cache.get(filePath);
+	};
+}
+
+// Breadth-first walk of an entry's static imports; returns the shortest path to each target reached.
+function findStaticDependencyPaths({ cwd, entryFile, readSpecifiers = createSpecifierReader(cwd), targetFiles }) {
+	const targets = new Set(targetFiles.map((targetFile) => path.normalize(targetFile)));
+	const previous = new Map([[path.normalize(entryFile), null]]);
+	const queue = [path.normalize(entryFile)];
+	const found = new Map();
+	while (queue.length > 0 && found.size < targets.size) {
+		const filePath = queue.shift();
+		if (targets.has(filePath) && !found.has(filePath)) {
+			const chain = [];
+			for (let cursor = filePath; cursor !== null; cursor = previous.get(cursor)) {
+				chain.unshift(cursor);
+			}
+			found.set(filePath, chain);
+		}
+		for (const moduleSpecifier of readSpecifiers(filePath)) {
+			const resolvedPath = resolveLocalModule(cwd, filePath, moduleSpecifier);
+			if (resolvedPath && !previous.has(path.normalize(resolvedPath))) {
+				previous.set(path.normalize(resolvedPath), filePath);
+				queue.push(path.normalize(resolvedPath));
+			}
+		}
+	}
+	return found;
+}
+
+function collectCssImports(source) {
+	return [...source.matchAll(/@import\s+(?:url\(\s*)?["']([^"']+)["']/gu)].map((match) => match[1]);
+}
+
+// The package-relative part of an import: "katex/dist/katex.css" for both the bare specifier and
+// a "../node_modules/katex/dist/katex.css" CSS @import path.
+function packageRelativeImport(importPath) {
+	const index = importPath.lastIndexOf("node_modules/");
+	return index === -1 ? importPath : importPath.slice(index + "node_modules/".length);
+}
+
+function singleOwnerImportMatches(importPath, rule) {
+	const specifier = packageRelativeImport(importPath.split(/[?#]/u)[0]);
+	if (rule.match === "stylesheet") {
+		return specifier.startsWith(`${rule.source}/`) && specifier.endsWith(".css");
+	}
+	return specifier === rule.source;
+}
+
+function verifySingleOwnerImports({ cwd, rules }) {
+	const failures = [];
+	const sourceFiles = walkSourceTree(cwd, SOURCE_ROOTS, (filePath) => SOURCE_MODULE_EXTENSIONS.includes(path.extname(filePath)) || filePath.endsWith(".css"));
+	for (const filePath of sourceFiles) {
+		const source = readFileSync(path.join(cwd, filePath), "utf8");
+		const candidateRules = rules.filter((rule) => source.includes(rule.source));
+		if (candidateRules.length === 0) {
+			continue;
+		}
+		const importPaths = filePath.endsWith(".css")
+			? collectCssImports(source)
+			: collectRuntimeStaticModuleSpecifiers(source, filePath);
+		for (const rule of candidateRules) {
+			if (filePath === rule.ownerFile) {
+				continue;
+			}
+			const importPath = importPaths.find((candidate) => singleOwnerImportMatches(candidate, rule));
+			if (importPath) {
+				failures.push({ filePath, importPath, ownerFile: rule.ownerFile, reason: rule.reason, type: "single-owner-import" });
+			}
+		}
+	}
+	return failures;
+}
+
+// Pages that render a catalog demo through loadDemoComponent("slug", "category") load that demo's
+// module right after hydration, so the demo module is part of the route's first load.
+const DEMO_REGISTRY_FILES = {
+	arts: "components/website/registry/arts.ts",
+	blocks: "components/website/registry/blocks.ts",
+	projects: "components/website/registry/projects.ts",
+	"ui-charts": "components/website/registry/ui-charts.ts",
+	"ui-custom": "components/website/registry/ui-custom.ts",
+	utility: "components/website/registry/utility.ts",
+	visual: "components/website/registry/visual.ts",
+};
+
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+// Returns [{ entryFile, demoFile }] for each page entry that calls loadDemoComponent with literals,
+// plus unresolved calls so the guard cannot go blind silently.
+function resolveDemoEntryFiles({ cwd, entryFiles }) {
+	const resolved = [];
+	const unresolved = [];
+	for (const entryFile of entryFiles) {
+		const absolutePath = path.join(cwd, entryFile);
+		if (!existsSync(absolutePath)) {
+			continue;
+		}
+		const source = readFileSync(absolutePath, "utf8");
+		for (const match of source.matchAll(/loadDemoComponent\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']\s*\)/gu)) {
+			const [, slug, category] = match;
+			const registryFile = DEMO_REGISTRY_FILES[category];
+			const registrySource = registryFile && existsSync(path.join(cwd, registryFile)) ? readFileSync(path.join(cwd, registryFile), "utf8") : "";
+			const key = /^[A-Za-z_$][\w$]*$/u.test(slug) ? `(?:"${escapeRegExp(slug)}"|'${escapeRegExp(slug)}'|${escapeRegExp(slug)})` : `["']${escapeRegExp(slug)}["']`;
+			const demoMatch = new RegExp(`(?:^|[\\s,{])${key}\\s*:\\s*dynamic\\(\\s*\\(\\)\\s*=>\\s*import\\(\\s*["']([^"']+)["']`, "mu").exec(registrySource);
+			const demoFile = demoMatch ? resolveLocalModule(cwd, registryFile, demoMatch[1]) : null;
+			if (demoFile) {
+				resolved.push({ demoFile, entryFile });
+			} else {
+				unresolved.push({ category, entryFile, slug });
+			}
+		}
+	}
+	return { resolved, unresolved };
+}
+
+const DEFAULT_HEAVY_REACH_BASELINE_PATH = "scripts/lazy-load-heavy-baseline.json";
+const DEFAULT_MAX_REACHABLE_MODULES = 6000;
+
+// Every heavy runtime an entry reaches through static imports, with the shortest chain to it.
+// A visited set guards against cycles; more than maxModules local modules is a failure, never a
+// silent truncation.
+function collectReachableHeavyImports({ cwd, entryFile, heavyImportRules, maxModules = DEFAULT_MAX_REACHABLE_MODULES, readSpecifiers }) {
+	const previous = new Map([[path.normalize(entryFile), null]]);
+	const queue = [path.normalize(entryFile)];
+	const reached = new Map();
+	let visited = 0;
+	while (queue.length > 0) {
+		const filePath = queue.shift();
+		visited += 1;
+		if (visited > maxModules) {
+			return { exceeded: true, reached, visited };
+		}
+		for (const moduleSpecifier of readSpecifiers(filePath)) {
+			const rule = getRuleForImport(moduleSpecifier, heavyImportRules);
+			if (rule && !reached.has(rule.source)) {
+				const chain = [moduleSpecifier];
+				for (let cursor = filePath; cursor !== null; cursor = previous.get(cursor)) {
+					chain.unshift(cursor);
+				}
+				reached.set(rule.source, { chain, reason: rule.reason });
+			}
+			const resolvedPath = resolveLocalModule(cwd, filePath, moduleSpecifier);
+			if (resolvedPath && !previous.has(path.normalize(resolvedPath))) {
+				previous.set(path.normalize(resolvedPath), filePath);
+				queue.push(path.normalize(resolvedPath));
+			}
+		}
+	}
+	return { exceeded: false, reached, visited };
+}
+
+function readHeavyReachBaseline(cwd, baselinePath) {
+	const absolutePath = path.join(cwd, baselinePath);
+	return existsSync(absolutePath) ? JSON.parse(readFileSync(absolutePath, "utf8")).entries ?? {} : {};
+}
+
+// The heavy runtimes each route entry reaches today. Lists may only shrink: a new pair fails,
+// and a pair that is no longer reached fails until the baseline is rewritten with --update-baseline.
+function verifyHeavyReach({ baseline, cwd, entries, heavyImportRules, maxModules, readSpecifiers }) {
+	const failures = [];
+	const measured = {};
+	for (const { entryFile, label } of entries) {
+		const { exceeded, reached, visited } = collectReachableHeavyImports({ cwd, entryFile, heavyImportRules, maxModules, readSpecifiers });
+		if (exceeded) {
+			failures.push({ filePath: label, maxModules, type: "heavy-reach-bound-exceeded", visited });
+			continue;
+		}
+		const sources = [...reached.keys()].sort();
+		measured[label] = sources;
+		const allowed = new Set(baseline[label] ?? []);
+		for (const source of sources) {
+			if (!allowed.has(source)) {
+				const { chain, reason } = reached.get(source);
+				failures.push({ dependencyPath: chain, filePath: label, reason, source, type: "heavy-reach-new" });
+			}
+		}
+		for (const source of allowed) {
+			if (!reached.has(source)) {
+				failures.push({ filePath: label, source, type: "heavy-reach-stale" });
+			}
+		}
+	}
+	for (const label of Object.keys(baseline)) {
+		if (!(label in measured) && !failures.some((failure) => failure.filePath === label)) {
+			failures.push({ filePath: label, source: (baseline[label] ?? []).join(", "), type: "heavy-reach-stale" });
+		}
+	}
+	return { failures, measured };
+}
+
+function buildHeavyReachEntries({ cwd, routeShellFiles }) {
+	const present = routeShellFiles.filter((filePath) => existsSync(path.join(cwd, filePath)));
+	const { resolved, unresolved } = resolveDemoEntryFiles({ cwd, entryFiles: present });
+	const entries = present.map((entryFile) => ({ entryFile, label: entryFile }));
+	for (const { demoFile, entryFile } of resolved) {
+		entries.push({ entryFile: demoFile, label: `${entryFile} -> ${demoFile}` });
+	}
+	return { entries, unresolved };
+}
+
 function verifyLazyLoadBoundaries({
 	cwd = process.cwd(),
 	deferredModuleRules = DEFAULT_DEFERRED_MODULE_RULES,
+	fileImportRules = DEFAULT_FILE_IMPORT_RULES,
 	heavyImportRules = DEFAULT_HEAVY_IMPORT_RULES,
+	lazyOnlyModules = DEFAULT_LAZY_ONLY_MODULES,
+	heavyReachBaseline = null,
+	maxReachableModules = DEFAULT_MAX_REACHABLE_MODULES,
+	onHeavyReachMeasured = null,
 	routeShellFiles = DEFAULT_ROUTE_SHELL_FILES,
+	singleOwnerImports = DEFAULT_SINGLE_OWNER_IMPORTS,
 } = {}) {
 	const failures = [];
+	const readSpecifiers = createSpecifierReader(cwd);
+
+	if (heavyReachBaseline !== null) {
+		const { entries, unresolved } = buildHeavyReachEntries({ cwd, routeShellFiles });
+		for (const { category, entryFile, slug } of unresolved) {
+			failures.push({ category, filePath: entryFile, slug, type: "unresolved-demo-entry" });
+		}
+		const heavyReach = verifyHeavyReach({ baseline: heavyReachBaseline, cwd, entries, heavyImportRules, maxModules: maxReachableModules, readSpecifiers });
+		onHeavyReachMeasured?.(heavyReach.measured);
+		failures.push(...heavyReach.failures);
+	}
 
 	for (const filePath of routeShellFiles) {
 		const absolutePath = path.join(cwd, filePath);
@@ -487,6 +806,7 @@ function verifyLazyLoadBoundaries({
 		const dependencyPath = findStaticDependencyPath({
 			cwd,
 			entryFile: rule.entryFile,
+			readSpecifiers,
 			targetFile: rule.targetFile,
 		});
 		if (dependencyPath) {
@@ -499,6 +819,47 @@ function verifyLazyLoadBoundaries({
 			});
 		}
 	}
+
+	for (const rule of lazyOnlyModules) {
+		if (!existsSync(path.join(cwd, rule.targetFile))) {
+			failures.push({ filePath: rule.targetFile, type: "missing-deferred-target" });
+		}
+	}
+	const presentLazyOnlyModules = lazyOnlyModules.filter((rule) => existsSync(path.join(cwd, rule.targetFile)));
+	if (presentLazyOnlyModules.length > 0) {
+		for (const entryFile of routeShellFiles.filter((filePath) => existsSync(path.join(cwd, filePath)))) {
+			const reached = findStaticDependencyPaths({
+				cwd,
+				entryFile,
+				readSpecifiers,
+				targetFiles: presentLazyOnlyModules.map((rule) => rule.targetFile),
+			});
+			for (const rule of presentLazyOnlyModules) {
+				const dependencyPath = reached.get(path.normalize(rule.targetFile));
+				if (dependencyPath) {
+					failures.push({
+						dependencyPath,
+						filePath: entryFile,
+						reason: rule.reason,
+						targetFile: rule.targetFile,
+						type: "deferred-module-statically-reachable",
+					});
+				}
+			}
+		}
+	}
+
+	for (const { filePath, rules } of fileImportRules) {
+		const absolutePath = path.join(cwd, filePath);
+		if (!existsSync(absolutePath)) {
+			failures.push({ filePath, type: "missing-guarded-file" });
+			continue;
+		}
+		failures.push(...collectHeavyStaticImportsFromSource(readFileSync(absolutePath, "utf8"), filePath, rules)
+			.map((failure) => ({ ...failure, type: "file-static-import" })));
+	}
+
+	failures.push(...verifySingleOwnerImports({ cwd, rules: singleOwnerImports }));
 
 	return failures;
 }
@@ -516,6 +877,27 @@ function formatFailure(failure) {
 	if (failure.type === "missing-deferred-target") {
 		return `${failure.filePath}: configured deferred module does not exist.`;
 	}
+	if (failure.type === "unresolved-demo-entry") {
+		return `${failure.filePath}: loadDemoComponent("${failure.slug}", "${failure.category}") does not resolve to a dynamic import in the ${failure.category} registry, so its first load cannot be checked.`;
+	}
+	if (failure.type === "heavy-reach-bound-exceeded") {
+		return `${failure.filePath}: static import graph passed ${failure.maxModules} local modules; raise the bound deliberately if this is real.`;
+	}
+	if (failure.type === "heavy-reach-new") {
+		return `${failure.filePath}: now reaches ${failure.reason} ("${failure.source}") through static imports: ${failure.dependencyPath.join(" -> ")}. Load it with a dynamic import, or move it behind the surface that needs it.`;
+	}
+	if (failure.type === "heavy-reach-stale") {
+		return `${failure.filePath}: no longer reaches "${failure.source}". Record the improvement: node scripts/verify-lazy-load-boundaries.js --update-baseline`;
+	}
+	if (failure.type === "missing-guarded-file") {
+		return `${failure.filePath}: configured guarded file does not exist.`;
+	}
+	if (failure.type === "file-static-import") {
+		return `${failure.filePath}:${failure.line}:${failure.column}: ${failure.kind} of "${failure.importPath}" is not allowed here: ${failure.reason}.`;
+	}
+	if (failure.type === "single-owner-import") {
+		return `${failure.filePath}: imports "${failure.importPath}", which only ${failure.ownerFile} may import (${failure.reason}). Import from the owner instead.`;
+	}
 	if (failure.type === "deferred-module-statically-reachable") {
 		return `${failure.filePath}: ${failure.targetFile} is statically reachable via ${failure.dependencyPath.join(" -> ")}; ${failure.reason}.`;
 	}
@@ -524,9 +906,11 @@ function formatFailure(failure) {
 
 function printHelp() {
 	console.log([
-		"Usage: node scripts/verify-lazy-load-boundaries.js [--file app/page.tsx] [--heavy-import three] [--heavy-import @tiptap/*]",
+		"Usage: node scripts/verify-lazy-load-boundaries.js [--file app/page.tsx] [--heavy-import three] [--heavy-import @tiptap/*] [--update-baseline]",
 		"",
-		"Verifies named route shell files do not statically import heavyweight optional runtimes.",
+		"Verifies route entries (the default shells, every app page and every project entry page) do not",
+		"statically import heavyweight optional runtimes or reach lazy-only modules, that third-party",
+		"stylesheets are imported only by their owner, and that the icon registry imports no icon statically.",
 		"Dynamic imports and type-only imports are allowed.",
 	].join("\n"));
 }
@@ -538,15 +922,46 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
 		return;
 	}
 
-	const failures = verifyLazyLoadBoundaries({
+	const routeShellFiles = options.routeShellFiles === DEFAULT_ROUTE_SHELL_FILES
+		? [...new Set([...DEFAULT_ROUTE_SHELL_FILES, ...discoverRouteEntryFiles(cwd)])]
+		: options.routeShellFiles;
+	const usesDefaults = options.routeShellFiles === DEFAULT_ROUTE_SHELL_FILES && options.heavyImportRules === DEFAULT_HEAVY_IMPORT_RULES;
+	let measuredHeavyReach = null;
+	const allFailures = verifyLazyLoadBoundaries({
 		cwd,
 		deferredModuleRules: DEFAULT_DEFERRED_MODULE_RULES,
 		heavyImportRules: options.heavyImportRules,
-		routeShellFiles: options.routeShellFiles,
+		heavyReachBaseline: usesDefaults ? readHeavyReachBaseline(cwd, DEFAULT_HEAVY_REACH_BASELINE_PATH) : null,
+		onHeavyReachMeasured: (measured) => { measuredHeavyReach = measured; },
+		routeShellFiles,
 	});
+	let failures = allFailures;
+	if (options.updateBaseline) {
+		if (!usesDefaults || measuredHeavyReach === null) {
+			throw new Error("--update-baseline runs only with the default route entries and heavy import rules.");
+		}
+		const previous = readHeavyReachBaseline(cwd, DEFAULT_HEAVY_REACH_BASELINE_PATH);
+		const grown = allFailures.filter((failure) => failure.type === "heavy-reach-new");
+		const hasPrevious = existsSync(path.join(cwd, DEFAULT_HEAVY_REACH_BASELINE_PATH));
+		if (hasPrevious && grown.length > 0) {
+			console.error("--update-baseline only records shrinkage; these entries reach a new heavy runtime:");
+			for (const failure of grown) {
+				console.error(`- ${formatFailure(failure)}`);
+			}
+			process.exitCode = 1;
+			return;
+		}
+		const entries = Object.fromEntries(Object.entries(measuredHeavyReach).filter(([, sources]) => sources.length > 0).sort(([a], [b]) => a.localeCompare(b)));
+		writeFileSync(path.join(cwd, DEFAULT_HEAVY_REACH_BASELINE_PATH), `${JSON.stringify({
+			note: "Heavy runtimes each route entry reaches through static imports today (verify:lazy-load). Shrink-only: a new entry/runtime pair fails; rewrite with --update-baseline after removing one.",
+			entries,
+		}, null, "\t")}\n`);
+		console.log(`Wrote ${DEFAULT_HEAVY_REACH_BASELINE_PATH} (${Object.keys(entries).length} entries; was ${Object.keys(previous).length}).`);
+		failures = allFailures.filter((failure) => !failure.type.startsWith("heavy-reach-"));
+	}
 
 	if (failures.length === 0) {
-		console.log(`Verified lazy-load boundaries (${options.routeShellFiles.length} route shells, ${options.heavyImportRules.length} heavy import rules, ${DEFAULT_DEFERRED_MODULE_RULES.length} deferred module rules)`);
+		console.log(`Verified lazy-load boundaries (${routeShellFiles.length} route entries, ${options.heavyImportRules.length} heavy import rules, ${DEFAULT_DEFERRED_MODULE_RULES.length + DEFAULT_LAZY_ONLY_MODULES.length} deferred module rules, ${DEFAULT_SINGLE_OWNER_IMPORTS.length} single-owner imports, ${DEFAULT_FILE_IMPORT_RULES.length} file import rules)`);
 		return;
 	}
 
@@ -563,8 +978,15 @@ if (require.main === module) {
 
 module.exports = {
 	DEFAULT_DEFERRED_MODULE_RULES,
+	DEFAULT_FILE_IMPORT_RULES,
 	DEFAULT_HEAVY_IMPORT_RULES,
+	DEFAULT_LAZY_ONLY_MODULES,
 	DEFAULT_ROUTE_SHELL_FILES,
+	DEFAULT_SINGLE_OWNER_IMPORTS,
+	collectReachableHeavyImports,
+	discoverRouteEntryFiles,
+	resolveDemoEntryFiles,
+	findStaticDependencyPaths,
 	collectHeavyStaticImportsFromSource,
 	collectRuntimeStaticModuleSpecifiers,
 	createHeavyImportRule,

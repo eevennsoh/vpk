@@ -12,6 +12,8 @@ const {
 	ROUTE_BUDGET_TARGETS,
 	evaluateBuildDurationBudget,
 	findRaisedBudgets,
+	formatBudgetTable,
+	formatFetchedAssetsForFailures,
 	formatRaisedBudget,
 	evaluatePerfBaselineBudget,
 	evaluatePerfBaselineWarnings,
@@ -43,16 +45,20 @@ function createPassingBaseline() {
 test("parseArgs supports custom input paths", () => {
 	assert.deepEqual(parseArgs(["--input", "tmp/perf.json"]), {
 		inputPath: "tmp/perf.json",
+		requireFetched: false,
 		warnOnly: false,
 	});
 	assert.deepEqual(parseArgs(["--input=tmp/perf.json"]), {
 		inputPath: "tmp/perf.json",
+		requireFetched: false,
 		warnOnly: false,
 	});
 	assert.deepEqual(parseArgs(["--warn-only"]), {
 		inputPath: "output/perf-baseline.json",
+		requireFetched: false,
 		warnOnly: true,
 	});
+	assert.equal(parseArgs(["--require-fetched"]).requireFetched, true);
 	assert.throws(() => parseArgs(["--input"]), /requires a value/u);
 });
 
@@ -346,4 +352,40 @@ test("package scripts expose strict and warning perf budget commands", () => {
 	assert.equal(packageJson.scripts["perf:budget:warn"], "pnpm run perf:baseline && node scripts/verify-perf-baseline-budget.js --warn-only");
 	assert.equal(packageJson.scripts["perf:budget:check"], "node scripts/verify-perf-baseline-budget.js");
 	assert.equal(packageJson.scripts["perf:budget:check:warn"], "node scripts/verify-perf-baseline-budget.js --warn-only");
+});
+
+test("fetched-byte budgets apply when measured and are required only with --require-fetched", () => {
+	const budgets = { home: { cssBytes: 10, fetchedCssBytes: 20, fetchedJsBytes: 100 } };
+	const local = { routes: [createRoute("home")] };
+	assert.deepEqual(evaluatePerfBaselineBudget(local, budgets), []);
+	assert.deepEqual(evaluatePerfBaselineBudget(local, budgets, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: true }).map((failure) => [failure.type, failure.metricName]), [
+		["missing-metric", "fetchedCssBytes"],
+		["missing-metric", "fetchedJsBytes"],
+	]);
+
+	const fetched = { routes: [createRoute("home", { fetchedCss: { bytes: 20 }, fetchedJs: { bytes: 101 } })] };
+	const failures = evaluatePerfBaselineBudget(fetched, budgets, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: true });
+	assert.deepEqual(failures.map((failure) => [failure.type, failure.metricName, failure.value, failure.limit]), [["over-budget", "fetchedJsBytes", 101, 100]]);
+	assert.match(formatFailure(failures[0]), /fetched JS bytes 101 exceeds budget 100/u);
+});
+
+test("the budget table shows each measured value, its budget and the headroom", () => {
+	const table = formatBudgetTable(
+		{ routes: [createRoute("home", { css: { bytes: 900 }, fetchedJs: { bytes: 50 } })] },
+		{ home: { cssBytes: 1000, fetchedCssBytes: 10, fetchedJsBytes: 100 } },
+	).split("\n").map((line) => line.trim().split(/\s{2,}/u));
+	assert.deepEqual(table, [
+		["route", "metric", "measured", "budget", "headroom"],
+		["home", "cssBytes", "900", "1000", "100 (10.0%)"],
+		["home", "fetchedCssBytes", "-", "10", "not measured"],
+		["home", "fetchedJsBytes", "50", "100", "50 (50.0%)"],
+	]);
+});
+
+test("a route over its fetched budget lists the assets its first run fetched", () => {
+	const baseline = { routes: [createRoute("home", { fetchedJs: { bytes: 300 }, fetchedPath: "/", fetchedRuns: [{ assets: [{ bytes: 200, kind: "js", path: "/_next/static/chunks/a.js" }, { bytes: 100, kind: "js", path: "/_next/static/chunks/b.js" }] }] })] };
+	const failures = evaluatePerfBaselineBudget(baseline, { home: { fetchedJsBytes: 250 } }, DEFAULT_BUILD_DURATION_BUDGET, { requireFetched: true });
+	const listing = formatFetchedAssetsForFailures(baseline, failures).split("\n").map((line) => line.trim());
+	assert.deepEqual(listing, ["Fetched by home (/), first run:", "200  /_next/static/chunks/a.js", "100  /_next/static/chunks/b.js"]);
+	assert.equal(formatFetchedAssetsForFailures(baseline, []), "");
 });
