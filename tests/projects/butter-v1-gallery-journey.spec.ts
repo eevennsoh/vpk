@@ -255,6 +255,8 @@ test("the e2e journey starts and resets with a complete ticket ready to invoke",
 	await card.locator('[data-slot="jira-issue-card"]').click();
 	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
 	await expect(item.getByRole("button", { name: /suggestions$/ })).toHaveCount(0);
+	// Board work items open with Related work collapsed.
+	await item.getByRole("button", { name: "Expand Related work" }).click();
 	await expect(item.getByText("Merchant onboarding brief", { exact: true })).toBeVisible();
 	await expect(item.getByText("Write the Payments SDK v2 sandbox quickstart", { exact: true })).toBeVisible();
 	await expect(item.getByText("Confirm the English-only account allow-list", { exact: true })).toBeVisible();
@@ -277,6 +279,7 @@ test("the e2e journey starts and resets with a complete ticket ready to invoke",
 	await card.locator('[data-slot="jira-issue-card"]').click();
 	await expect(item.getByRole("textbox", { name: "Work item description" })).toContainText("guided quickstart");
 	await expect(item.getByRole("button", { name: /suggestions$/ })).toHaveCount(0);
+	await item.getByRole("button", { name: "Expand Related work" }).click();
 	await expect(item.getByText("Write the Payments SDK v2 sandbox quickstart", { exact: true })).toBeVisible();
 });
 
@@ -332,7 +335,8 @@ test("Butter v1 keeps the journey while browsing the gallery placeholders", asyn
 	}
 	await expect(board.getByText("Improve merchant onboarding for Payments SDK v2", { exact: true })).toBeVisible();
 	await expect(page.getByRole("region", { name: /Unlink sessions/ })).toHaveCount(0);
-	await expect(page.getByRole("button", { name: "Open Rovo chat" })).toBeHidden();
+	// The Rovo launcher now stays available on the standalone Board as well.
+	await expect(page.getByRole("button", { name: "Open Rovo chat" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "List", exact: true })).toBeHidden();
 	await expect(page.getByRole("group", { name: "Merchant onboarding journey steps" })).toHaveCount(0);
 	await gallery.getByRole("button", { name: "Select e2e Journey" }).click();

@@ -36,7 +36,7 @@ test("work item field and development icons fit 12-pixel glyphs in 16-pixel slot
 		expect(Math.abs(iconBounds.x - slotBounds.x - 2), field).toBeLessThan(0.5);
 		expect(Math.abs(iconBounds.y - slotBounds.y - 2), field).toBeLessThan(0.5);
 	}
-	for (const action of ["Start coding", "Copy prompt"]) {
+	for (const action of ["Start coding", "Open in"]) {
 		const icon = page.getByRole("button", { name: action, exact: true }).locator("svg").first();
 		await expect(icon, action).toHaveCSS("width", "12px");
 		await expect(icon, action).toHaveCSS("height", "12px");
@@ -44,8 +44,14 @@ test("work item field and development icons fit 12-pixel glyphs in 16-pixel slot
 		await expect(slot, action).toHaveCSS("width", "16px");
 		await expect(slot, action).toHaveCSS("height", "16px");
 	}
-	await page.getByRole("button", { name: "Copy prompt", exact: true }).click();
-	const copied = page.getByRole("button", { name: "Prompt copied" }).locator("svg").last();
-	await expect(copied).toHaveCSS("width", "12px");
-	await expect(copied).toHaveCSS("height", "12px");
+	// Copy prompt lives in the Open in menu at the menu's 16px icon size, idle and copied alike.
+	await page.getByRole("button", { name: "Open in", exact: true }).click();
+	const localAgents = page.getByRole("dialog", { name: "Local software agents" });
+	const idle = localAgents.getByRole("button", { name: "Copy prompt", exact: true }).locator("svg").last();
+	await expect(idle).toHaveCSS("width", "16px");
+	await expect(idle).toHaveCSS("height", "16px");
+	await localAgents.getByRole("button", { name: "Copy prompt", exact: true }).click();
+	const copied = localAgents.getByRole("button", { name: "Prompt copied" }).locator("svg").last();
+	await expect(copied).toHaveCSS("width", "16px");
+	await expect(copied).toHaveCSS("height", "16px");
 });
