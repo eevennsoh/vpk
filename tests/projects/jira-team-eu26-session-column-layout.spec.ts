@@ -2,9 +2,45 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 import { openBoardWithSessions, revealCollapsedAgentSessionColumn } from "@/tests/helpers/board";
+import { withDesignVariants } from "@/tests/helpers/design-variants";
 
 const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");
 const JIRA_TEAM_EU26_EMBEDDED_URL = appUrl("/preview/projects/jira-team-eu26?embedded=1");
+// 42f5e86b1 moved the column options menu, Move handle, and hover gutter behind the
+// opt-in Advanced timeline setting.
+const JIRA_TEAM_EU26_ADVANCED_URL = appUrl(withDesignVariants("/jira-team-eu26", { advancedTimeline: true }));
+const JIRA_TEAM_EU26_EMBEDDED_ADVANCED_URL = appUrl(withDesignVariants("/preview/projects/jira-team-eu26?embedded=1", { advancedTimeline: true }));
+
+// 5c96e6a9f opens the Unlink sessions column expanded; collapse it to reach the rail.
+async function collapseUnlinkSessionsColumn(page: Page): Promise<void> {
+	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
+	// Leave the column's focus and pointer so they do not pause the session sync.
+	await page.getByRole("heading", { name: "Jira Design" }).click();
+	await expect(page.locator("[data-agent-session-column-rail]")).toBeVisible();
+}
+
+// a1b70b260 rests a collapsed column pinned; Unpin returns it to the hover gutter.
+async function openGutterBoard(page: Page, url = JIRA_TEAM_EU26_ADVANCED_URL): Promise<void> {
+	await page.goto(url, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
+	await collapseUnlinkSessionsColumn(page);
+	await page.getByRole("button", { name: "Unlink sessions column options" }).click();
+	await page.getByRole("menuitem", { name: "Unpin", exact: true }).click();
+	await page.getByRole("heading", { name: "Jira Design" }).hover();
+	await expect(page.locator("[data-agent-session-column-hit-area]")).toHaveCount(1);
+}
+
+// afba2425a made the profile Theme control a menu item named for the current theme.
+async function cycleThemeTo(page: Page, theme: "Light theme" | "Dark theme" | "System theme"): Promise<void> {
+	await page.getByRole("button", { name: "Profile menu", exact: true }).click();
+	const current = page.getByRole("menuitem", { name: /^Theme: /u });
+	for (let attempt = 0; attempt < 3; attempt++) {
+		if (await current.getAttribute("aria-label") === `Theme: ${theme}`) break;
+		await current.click();
+	}
+	await expect(current).toHaveAttribute("aria-label", `Theme: ${theme}`);
+	await page.keyboard.press("Escape");
+}
 
 for (const width of [1440, 1024]) {
 	test(`empty unlink sessions automatically collapses to the status pill geometry at ${width}px`, async ({ page }) => {
@@ -87,17 +123,17 @@ test("untracked card hover keeps its border inset and aligns its trailing slot w
 });
 
 async function openCollapsedBoard(page: Page): Promise<void> {
-	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
+	await page.goto(JIRA_TEAM_EU26_ADVANCED_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
 		timeout: 15_000,
 	});
+	await collapseUnlinkSessionsColumn(page);
 	await expect(page.getByRole("button", { name: "Unlink sessions column options" })).toBeVisible();
 }
 
 test("collapsed status glyphs cover the resting dot before returning to it", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
+	await openCollapsedBoard(page);
 	await expect(page.locator("[data-agent-session-column-rail]")).toBeAttached();
 	const notch = page.getByTestId("agent-session-notch-lw-sync-webhook-gap");
 	await expect(notch).toBeAttached({ timeout: 20_000 });
@@ -304,8 +340,11 @@ test("Advanced timeline omits its scroll ending when filtered sessions fit", asy
 	await page.getByRole("button", { name: "Settings" }).click();
 	await page.getByRole("menuitemcheckbox", { name: "Advanced timeline" }).click();
 	await page.getByRole("button", { name: "Settings" }).click();
-	await page.getByRole("button", { name: "Unlink sessions column options" }).click();
-	await page.getByRole("menuitem", { name: "Expand" }).click();
+	// 5c96e6a9f opens the column expanded, so it needs no Expand step.
+	await expect(page.locator("[data-agent-session-column-expansion]"))
+		.toHaveAttribute("data-agent-session-column-expansion", "expanded");
+	await expect(page.locator('[data-agent-session-column] [data-agent-session-lifecycle-current="needs-input"]').first())
+		.toBeVisible({ timeout: 20_000 });
 	await page.getByRole("button", { name: "Needs input: 1 agent" }).click();
 
 	const column = page.locator("[data-agent-session-column]");
@@ -331,10 +370,7 @@ test("Advanced timeline omits its scroll ending when filtered sessions fit", asy
 test("the expanded session plane follows overlay elevation as board columns underlap", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await openHeightComparisonBoard(page);
-	for (let attempt = 0; attempt < 3; attempt++) {
-		if (await page.getByRole("button", { name: "Dark theme" }).isVisible()) break;
-		await page.getByRole("button", { name: /^(Light|System) theme$/u }).click();
-	}
+	await cycleThemeTo(page, "Dark theme");
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "dark");
 
 	const plane = page.locator("[data-agent-session-column-surface]").first();
@@ -369,8 +405,7 @@ test("the expanded session plane follows overlay elevation as board columns unde
 	await expect(fade).toHaveCSS("color", surfaceColor);
 	expect(await fade.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain(surfaceColor);
 
-	await page.getByRole("button", { name: "Dark theme" }).click();
-	await page.getByRole("button", { name: "System theme" }).click();
+	await cycleThemeTo(page, "System theme");
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
 	await board.evaluate((element) => { element.scrollLeft = 120; });
 	await expect(plane).toHaveCSS("background-color", "rgb(255, 255, 255)");
@@ -399,10 +434,7 @@ test("only the expanded resting session well retains its 1px border", async ({ p
 test("the elevated session well keeps depth without a perimeter shadow", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await openHeightComparisonBoard(page);
-	for (let attempt = 0; attempt < 3; attempt++) {
-		if (await page.getByRole("button", { name: "Dark theme" }).isVisible()) break;
-		await page.getByRole("button", { name: /^(Light|System) theme$/u }).click();
-	}
+	await cycleThemeTo(page, "Dark theme");
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "dark");
 
 	const plane = page.locator("[data-agent-session-column-surface]").first();
@@ -413,16 +445,14 @@ test("the elevated session well keeps depth without a perimeter shadow", async (
 	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
 		.toMatch(/^rgba\(1, 4, 4, 0\.36\) 0px 8px 12px 0px$/u);
 
-	await page.getByRole("button", { name: "Dark theme" }).click();
-	await page.getByRole("button", { name: "System theme" }).click();
+	await cycleThemeTo(page, "System theme");
 	await expect(page.locator("html")).toHaveAttribute("data-color-mode", "light");
 	await expect.poll(() => plane.evaluate((element) => getComputedStyle(element).boxShadow))
 		.toMatch(/^rgba\(30, 31, 33, 0\.15\) 0px 8px 12px 0px$/u);
 });
 
 test("hovering the leading gutter stays open without bouncing under a stationary pointer", async ({ page }) => {
-	await page.goto(JIRA_TEAM_EU26_EMBEDDED_URL, { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	await openGutterBoard(page, JIRA_TEAM_EU26_EMBEDDED_ADVANCED_URL);
 	const gutter = await page.locator("[data-agent-session-column-hit-area]").boundingBox();
 	if (!gutter) throw new Error("Expected the leading gutter");
 	const origin = await page.evaluate(() => ({
@@ -485,7 +515,7 @@ test("hovering the leading gutter stays open without bouncing under a stationary
 });
 
 test("session column slots between statuses and supports cancellation and keyboard movement", async ({ page }) => {
-	await openBoard(page);
+	await openBoardWithSessions(page, JIRA_TEAM_EU26_ADVANCED_URL, { waitUntil: "networkidle" });
 	const placement = page.locator("[data-session-column-placement]");
 	const column = page.locator("[data-agent-session-column]");
 	const originalColumn = await column.elementHandle();
@@ -533,7 +563,7 @@ test("session column slots between statuses and supports cancellation and keyboa
 });
 
 test("the collapsed options button still moves the column and opens its menu", async ({ page }) => {
-	await openCollapsedBoard(page);
+	await openGutterBoard(page);
 	await revealCollapsedAgentSessionColumn(page);
 	const options = page.getByRole("button", { name: "Unlink sessions column options" });
 	const start = (await options.boundingBox())!;
@@ -596,6 +626,7 @@ for (const [surface, url] of [
 		await page.goto(url, { waitUntil: "domcontentloaded" });
 		const heading = page.getByRole("heading", { name: "Jira Design" });
 		await expect(heading).toBeVisible({ timeout: 15_000 });
+		await collapseUnlinkSessionsColumn(page);
 		const rail = page.locator("[data-agent-session-column-rail]");
 		const notch = rail.locator("[data-agent-session-notch]").first();
 		const flyout = page.locator('[data-slot="hover-card-content"]');
@@ -606,17 +637,19 @@ for (const [surface, url] of [
 		for (const edge of ["left", "right"] as const) {
 			await heading.hover();
 			await expect(flyout).toBeHidden();
-			const railBox = await rail.boundingBox();
-			const notchBox = await notch.boundingBox();
-			if (!railBox || !notchBox) throw new Error("Expected the collapsed rail and notch");
-			const x = edge === "left" ? railBox.x + 2 : railBox.x + railBox.width - 2;
-			const y = notchBox.y + notchBox.height / 2;
-			const hitId = await page.evaluate(({ x, y }) =>
-				document.elementFromPoint(x, y)?.closest("[data-agent-session-notch]")?.getAttribute("data-testid"),
-				{ x, y },
-			);
-			expect(hitId).toBe(notchId);
-			await page.mouse.move(x, y);
+			// The rail is measured after the collapse settles, since the column now starts expanded.
+			let point = { x: 0, y: 0 };
+			await expect.poll(async () => {
+				const railBox = await rail.boundingBox();
+				const notchBox = await notch.boundingBox();
+				if (!railBox || !notchBox) return null;
+				point = { x: edge === "left" ? railBox.x + 2 : railBox.x + railBox.width - 2, y: notchBox.y + notchBox.height / 2 };
+				return page.evaluate(({ x, y }) =>
+					document.elementFromPoint(x, y)?.closest("[data-agent-session-notch]")?.getAttribute("data-testid") ?? null,
+					point,
+				);
+			}).toBe(notchId);
+			await page.mouse.move(point.x, point.y);
 			await expect(flyout).toBeVisible();
 		}
 	});
@@ -625,11 +658,13 @@ for (const [surface, url] of [
 test("the collapsed Expand gutter target paints only its 24px column control", async ({ page }) => {
 	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
+	await collapseUnlinkSessionsColumn(page);
 	const expand = page.getByRole("button", { name: "Expand Unlink sessions column" });
 	const visual = expand.locator("[data-agent-session-column-expand-visual]");
 	const column = page.locator("[data-agent-session-column]");
 	const separator = page.locator('[data-slot="sidebar-resize-handle"]').first();
-	const todo = page.locator('[data-jira-kanban-column="To do"] > .group\\/board-column');
+	// d5aee7449 moved the hover group to the drop shell; the painted column is its content.
+	const todo = page.locator('[data-jira-kanban-column="To do"] [data-jira-kanban-column-content]');
 	await expect(expand).toBeVisible();
 	const [buttonBox, columnBox, separatorBox, todoBox] = await Promise.all([
 		expand.boundingBox(), column.boundingBox(), separator.boundingBox(), todo.boundingBox(),
@@ -672,7 +707,7 @@ test("the collapsed Expand gutter target paints only its 24px column control", a
 });
 
 test("dragging a session notch never starts a column drag", async ({ page }) => {
-	await openCollapsedBoard(page);
+	await openGutterBoard(page);
 	await revealCollapsedAgentSessionColumn(page);
 	const source = page.locator("[data-agent-session-column] [data-agent-session-notch]").first();
 	await source.hover();
@@ -695,7 +730,6 @@ test("dragging a session notch never starts a column drag", async ({ page }) => 
 
 test("compact session header drags without expanding and keeps its wider target", async ({ page }) => {
 	await openCollapsedBoard(page);
-	await revealCollapsedAgentSessionColumn(page);
 	const expand = page.getByRole("button", { name: "Unlink sessions column options" });
 	const start = await expand.boundingBox();
 	const todo = await page.locator('[data-jira-kanban-column="To do"]').boundingBox();
@@ -746,7 +780,7 @@ test("compact session header drags without expanding and keeps its wider target"
 test("keyboard movement reveals the last slot on a narrow board with reduced motion", async ({ page }) => {
 	await page.setViewportSize({ width: 900, height: 760 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await openBoard(page);
+	await openBoardWithSessions(page, JIRA_TEAM_EU26_ADVANCED_URL, { waitUntil: "networkidle" });
 	const handle = page.getByRole("button", { name: "Move Unlink sessions column" });
 	await handle.focus();
 	await page.keyboard.press("End");
@@ -765,7 +799,7 @@ test("keyboard movement reveals the last slot on a narrow board with reduced mot
 });
 
 test("nearby column gaps grow blue and return to subtle lines as the drag moves away", async ({ page }) => {
-	await openCollapsedBoard(page);
+	await openGutterBoard(page);
 	await revealCollapsedAgentSessionColumn(page);
 	const expand = page.getByRole("button", { name: "Unlink sessions column options" });
 	await expand.hover();
@@ -799,8 +833,7 @@ test("nearby column gaps grow blue and return to subtle lines as the drag moves 
 });
 
 test("the collapsed options menu offers Pin and Expand", async ({ page }) => {
-	await page.goto(JIRA_TEAM_EU26_EMBEDDED_URL, { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({ timeout: 15_000 });
+	await openGutterBoard(page, JIRA_TEAM_EU26_EMBEDDED_ADVANCED_URL);
 	await revealCollapsedAgentSessionColumn(page);
 	const options = page.getByRole("button", { name: "Unlink sessions column options" });
 	await options.hover();

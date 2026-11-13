@@ -14,7 +14,11 @@ async function getUntrackedSessionCount(page: Page): Promise<number> {
 test("the collapsed local session icon yields to a rising count and returns when syncing pauses", async ({ page }) => {
 	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible();
+	// 5c96e6a9f opens the column expanded; collapse it to show the compact counter, then
+	// move focus out of the column so focus does not pause the session sync.
+	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
 	await expect(page.getByRole("button", { name: "Expand Unlink sessions column" })).toBeVisible();
+	await page.getByRole("heading", { name: "Jira Design" }).click();
 	const count = page.locator("[data-agent-session-column-count]");
 	const number = count.locator("[data-agent-session-column-number]");
 	const icon = count.locator("[data-agent-session-column-local-icon]");
@@ -49,7 +53,11 @@ test("the collapsed counter returns to the monitor three times while new session
 	const initialCount = await getUntrackedSessionCount(page);
 	const browserNow = await page.evaluate(() => Date.now());
 	await page.clock.pauseAt(new Date(browserNow + 1_000));
+	// 5c96e6a9f opens the column expanded; collapse it to show the compact counter, then
+	// move focus out of the column so focus does not pause the session sync.
+	await page.getByRole("button", { name: "Collapse Unlink sessions column" }).click();
 	await expect(page.getByRole("button", { name: "Expand Unlink sessions column" })).toBeVisible();
+	await page.getByRole("heading", { name: "Jira Design" }).click();
 	await page.getByRole("heading", { name: "Jira Design" }).hover();
 	const count = page.locator("[data-agent-session-column-count]");
 	const number = count.locator("[data-agent-session-column-number]");
