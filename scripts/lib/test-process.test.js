@@ -3,7 +3,7 @@ const { spawnSync } = require("node:child_process");
 const { randomUUID } = require("node:crypto");
 const test = require("node:test");
 
-const { UNIT_BATCH_MARKER_ENV, findMarkedProcesses, groupAlive, groupMemberStates, killGroup, spawnInGroup } = require("./test-process.js");
+const { UNIT_BATCH_MARKER_ENV, findMarkedProcesses, groupAlive, groupMemberStates, isGroupTracked, killGroup, spawnInGroup } = require("./test-process.js");
 
 const processTableReadable = findMarkedProcesses("probe") !== null;
 
@@ -60,4 +60,27 @@ test("groupMemberStates reads this process's own group", { skip: processTableRea
 	const states = groupMemberStates(pgid);
 	assert.ok(states.length >= 1);
 	assert.ok(states.some((state) => !state.startsWith("Z")));
+});
+
+test("a group that ended on its own is forgotten and never signalled again", async () => {
+	const child = spawnInGroup(process.execPath, ["-e", "0"], { stdio: "ignore" });
+	assert.equal(isGroupTracked(child.pid), true);
+	await new Promise((resolve) => child.once("exit", resolve));
+	// The exit listener spawnInGroup registered ran first: the group is no longer live.
+	assert.equal(isGroupTracked(child.pid), false);
+	const signals = [];
+	await killGroup(child, { kill: (pgid, signal) => signals.push(`${signal} ${pgid}`) });
+	assert.deepEqual(signals, [], "no signal to a group id that may now belong to someone else");
+});
+
+test("a group whose leader exited but whose member lives is still killed on cleanup", { skip: processTableReadable ? false : "needs a readable process table" }, async () => {
+	const tag = `orphan-member-${randomUUID()}`;
+	// The leader starts a member in its group and exits at once.
+	const leader = spawnInGroup(process.execPath, ["-e", `require("node:child_process").spawn(process.execPath, ["-e", "setInterval(() => {}, 1 << 30)", ${JSON.stringify(tag)}], { stdio: "ignore" }).unref()`], { stdio: "ignore" });
+	await new Promise((resolve) => leader.once("exit", resolve));
+	assert.equal(isGroupTracked(leader.pid), true, "the id is still held by the member");
+	assert.equal(pidsWithTag(tag).length, 1);
+	await killGroup(leader);
+	assert.equal(pidsWithTag(tag).length, 0);
+	assert.equal(isGroupTracked(leader.pid), false);
 });
