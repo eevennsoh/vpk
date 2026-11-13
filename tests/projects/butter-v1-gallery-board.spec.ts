@@ -3,7 +3,7 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
-test("selecting a gallery item animates its highlight", async ({ page }) => {
+test("selecting a gallery item animates its highlight", { tag: "@smoke" }, async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));
 	const button = page.getByRole("button", { name: "Select Work item" });
@@ -26,7 +26,7 @@ test("selecting a gallery item animates its highlight", async ({ page }) => {
 	expect(new Set(sizes).size).toBeGreaterThan(2);
 });
 
-test("the standalone board hides an open sidebar chat and restores its draft", async ({ page }) => {
+test("the standalone board hides an open sidebar chat and restores its draft", { tag: "@smoke" }, async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -42,7 +42,7 @@ test("the standalone board hides an open sidebar chat and restores its draft", a
 	await expect(composer).toContainText("Keep this draft");
 });
 
-test("the standalone board is centered and remains scrollable on narrow screens", async ({ page }) => {
+test("the standalone board is centered and remains scrollable on narrow screens", { tag: "@smoke" }, async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));

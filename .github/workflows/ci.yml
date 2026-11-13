@@ -136,10 +136,74 @@ jobs:
           VPK_SUPPRESSIONS_BASE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: time pnpm run test:unit:js --shard "${{ matrix.shard }}/4"
 
+  smoke:
+    name: Browser smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Verify lockfile registries
+        run: node scripts/verify-pnpm-lockfile.js
+
+      - name: Authenticate to the internal Atlassian npm registry
+        # Same registry setup as the static and unit jobs; see the comment there.
+        run: node scripts/write-npmrc.mjs
+        env:
+          ATLASSIAN_NPM_TOKEN: ${{ secrets.ATLASSIAN_NPM_TOKEN }}
+          MOTION_TOKEN: ${{ secrets.MOTION_TOKEN }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the static export
+        run: time pnpm run build:export
+
+      - name: Serve the production build
+        # The production image copies out/ to backend/public and runs one Express process.
+        run: |
+          rm -rf backend/public
+          cp -R out backend/public
+          mkdir -p output/playwright
+          NODE_ENV=production PORT=8080 nohup node backend/server.js > output/playwright/server.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            curl -fsS http://127.0.0.1:8080/api/health > /dev/null && exit 0
+            sleep 2
+          done
+          cat output/playwright/server.log
+          exit 1
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Smoke specs
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:8080
+        run: time pnpm run test:e2e:smoke
+
+      - name: Keep the report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-smoke
+          path: output/playwright
+          retention-days: 7
+
   aggregate:
     name: PR checks
     if: ${{ always() }}
-    needs: [static, unit]
+    needs: [static, unit, smoke]
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -147,7 +211,9 @@ jobs:
         env:
           STATIC_RESULT: ${{ needs.static.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
+          SMOKE_RESULT: ${{ needs.smoke.result }}
         run: |
-          echo "Static validation: $STATIC_RESULT; unit shards: $UNIT_RESULT"
+          echo "Static validation: $STATIC_RESULT; unit shards: $UNIT_RESULT; browser smoke: $SMOKE_RESULT"
           test "$STATIC_RESULT" = success
           test "$UNIT_RESULT" = success
+          test "$SMOKE_RESULT" = success

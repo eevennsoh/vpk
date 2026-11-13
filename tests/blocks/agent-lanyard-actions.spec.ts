@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
 
-test("avatar is centered below the lanyard hole", async ({ page }) => {
+test("avatar is centered below the lanyard hole", { tag: "@smoke" }, async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/agent-lanyard"));
 	const card = page.locator('[data-agent-id="claude"]');
 	const cover = await card.locator('[data-slot="agent-lanyard-cutout"]').locator("..").boundingBox();
@@ -13,7 +13,7 @@ test("avatar is centered below the lanyard hole", async ({ page }) => {
 	expect(avatar.y + avatar.height / 2).toBeCloseTo(cover.y + (16 + cover.height) / 2, 1);
 });
 
-test("card selection and built-in actions remain independently clickable", async ({ page }) => {
+test("card selection and built-in actions remain independently clickable", { tag: "@smoke" }, async ({ page }) => {
 	await page.goto(appUrl("/preview/blocks/agent-lanyard"));
 	const card = page.locator('[data-agent-id="claude"]');
 	await card.getByRole("button", { name: "Chat with Claude" }).click({ timeout: 5000 });
