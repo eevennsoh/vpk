@@ -66,6 +66,7 @@ const {
 	readState,
 	runPnpm,
 	waitForDoctorReady,
+	warmRoute,
 	writeState,
 } = require("./lib/stack.js");
 const { formatWhere, resolveWhere, whereCli } = require("./lib/where.js");
@@ -134,6 +135,9 @@ async function main() {
 		return;
 	}
 
+	if (command === "capture" && !manualVerificationRequested(process.env)) {
+		await warmRoute(targetBrowserArguments(parseCaptureArgs(argv.slice(1)).route).at(-1));
+	}
 	if (command === "capture" || command === "where") {
 		const exitCode = command === "capture" ? captureCli(argv.slice(1)) : whereCli(argv.slice(1));
 		if (exitCode !== 0) process.exit(exitCode);
@@ -212,6 +216,7 @@ async function main() {
 			process.stderr.write("control-vpk browser requires agent-browser arguments.\n");
 			process.exit(1);
 		}
+		if (command === "open-target") await warmRoute(forwarded.at(-1));
 		let session;
 		try {
 			session = browserSessionId();
@@ -233,6 +238,8 @@ async function main() {
 			process.stderr.write(`${formatBrowserFailure(outcome, forwarded)}\n`);
 			process.exit(outcome.result?.status ?? 1);
 		}
+		// The opened URL (Portless when routed) is the last line, for the agent to hand on.
+		if (command === "open-target") process.stdout.write(`${forwarded.at(-1)}\n`);
 		return;
 	}
 

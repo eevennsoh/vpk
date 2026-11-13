@@ -36,6 +36,81 @@ const {
 const { browserSessionId } = require("./lib/browser.js");
 const { readDesignVariantIds, routeWithDesignVariants } = require("./lib/capture.js");
 const { withTempDir } = require("./lib/test-fixtures.js");
+const { collectDoctor, parseCompileTimeoutMs, requestCompiling, warmRoute } = require("./lib/stack.js");
+
+// A fake request that answers each call from a queue and records the timeout it was given.
+function queuedRequest(responses) {
+	const calls = [];
+	const request = async (url, { timeoutMs } = {}) => {
+		calls.push({ url, timeoutMs });
+		return responses.shift() ?? { ok: false, status: 0, error: "unexpected call", body: "" };
+	};
+	return { calls, request };
+}
+
+const TIMEOUT = { ok: false, status: 0, error: "timeout", body: "" };
+const HOME_OK = { ok: true, status: 200, error: "", body: "<html>" };
+
+test("a listening server that misses the quick probe gets the compile budget, and the report says it compiled", async () => {
+	const { calls, request } = queuedRequest([TIMEOUT, HOME_OK, { ok: true, status: 200, error: "", body: "{\"status\":\"OK\"}" }]);
+	const report = await collectDoctor({
+		listening: () => true,
+		readPort: () => "4040",
+		request,
+		resolve: () => "https://fixture.localhost",
+	});
+	assert.equal(report.ok, true);
+	assert.equal(report.frontendCompiled, true);
+	assert.equal(report.frontendError, null);
+	assert.equal(report.backendOk, true);
+	assert.deepEqual(calls.map(({ url, timeoutMs }) => `${new URL(url).pathname} ${timeoutMs}`), [
+		"/ 4000",
+		`/ ${parseCompileTimeoutMs({})}`,
+		"/api/health 4000",
+	]);
+});
+
+test("a server that misses the compile budget too reports why GET / failed", async () => {
+	const { request } = queuedRequest([TIMEOUT, TIMEOUT, TIMEOUT, TIMEOUT]);
+	const report = await collectDoctor({ listening: () => true, readPort: () => "4040", request, resolve: () => "https://fixture.localhost" });
+	assert.equal(report.ok, false);
+	assert.equal(report.frontendError, "timeout");
+	assert.equal(report.frontendCompiled, false);
+
+	// A port nobody listens on fails fast: one quick probe each, no compile wait.
+	const stopped = queuedRequest([{ ok: false, status: 0, error: "connect ECONNREFUSED", body: "" }, TIMEOUT]);
+	const down = await collectDoctor({ listening: () => false, readPort: () => "4040", request: stopped.request, resolve: () => "https://fixture.localhost" });
+	assert.equal(down.frontendError, "connect ECONNREFUSED");
+	assert.deepEqual(stopped.calls.map(({ timeoutMs }) => timeoutMs), [4000, 4000]);
+});
+
+test("the compile budget is configurable within the launch bounds", () => {
+	assert.equal(parseCompileTimeoutMs({}), 90_000);
+	assert.equal(parseCompileTimeoutMs({ VPK_VERIFY_COMPILE_TIMEOUT_MS: "120000" }), 120_000);
+	assert.equal(parseCompileTimeoutMs({ VPK_VERIFY_COMPILE_TIMEOUT_MS: "10" }), 4_000);
+	assert.equal(parseCompileTimeoutMs({ VPK_VERIFY_COMPILE_TIMEOUT_MS: "999999999" }), 300_000);
+});
+
+test("open-target and capture warm the route first and say when it compiled or never answered", async () => {
+	const lines = [];
+	const stderr = { write: (text) => lines.push(text) };
+	let clock = 0;
+	const now = () => clock;
+	await warmRoute("https://fixture.localhost/jira-team-eu26?x=1", {
+		now,
+		request: async () => {
+			clock += 17_700;
+			return requestCompiling("https://fixture.localhost/jira-team-eu26", { request: queuedRequest([TIMEOUT, HOME_OK]).request });
+		},
+		stderr,
+	});
+	await warmRoute("https://fixture.localhost/jira-team-eu26", { now, request: async () => ({ ...TIMEOUT, compiled: false }), stderr });
+	await warmRoute("https://fixture.localhost/jira-team-eu26", { now, request: async () => ({ ...HOME_OK, compiled: false }), stderr });
+	assert.deepEqual(lines, [
+		"Compiled /jira-team-eu26 on its first request (17.7 s).\n",
+		"/jira-team-eu26 did not answer within the compile budget (VPK_VERIFY_COMPILE_TIMEOUT_MS); opening it anyway.\n",
+	]);
+});
 
 const TARGET_REPO_MAP = {
 	appPages: { pages: [{ routePath: "/jira-team-eu26" }] },

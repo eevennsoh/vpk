@@ -21,6 +21,47 @@ const DEFAULT_LAUNCH_READY_TIMEOUT_MS = 60_000;
 const MIN_LAUNCH_READY_TIMEOUT_MS = 1_000;
 const MAX_LAUNCH_READY_TIMEOUT_MS = 300_000;
 const LAUNCH_READY_POLL_INTERVAL_MS = 500;
+// Quick probe first; a listening server that misses it is usually compiling the route
+// on demand. A fresh stack took 17.7 s for `GET /` and 25.6 s for a first open of
+// /jira-team-eu26, so the second attempt waits up to the compile budget.
+const QUICK_PROBE_TIMEOUT_MS = 4_000;
+const DEFAULT_COMPILE_TIMEOUT_MS = 90_000;
+
+function parseCompileTimeoutMs(env = process.env) {
+	const configured = Number.parseInt(env.VPK_VERIFY_COMPILE_TIMEOUT_MS ?? "", 10);
+	if (!Number.isFinite(configured)) return DEFAULT_COMPILE_TIMEOUT_MS;
+	return Math.min(Math.max(configured, QUICK_PROBE_TIMEOUT_MS), MAX_LAUNCH_READY_TIMEOUT_MS);
+}
+
+// GET a URL on this worktree's server, giving Next time to compile it on first request.
+// Returns the response plus `compiled: true` when only the longer attempt answered.
+async function requestCompiling(url, {
+	compileTimeoutMs = parseCompileTimeoutMs(),
+	request = requestWorktreeOrigin,
+} = {}) {
+	const quick = await request(url, { timeoutMs: QUICK_PROBE_TIMEOUT_MS });
+	if (quick.error !== "timeout") return { ...quick, compiled: false };
+	const slow = await request(url, { timeoutMs: compileTimeoutMs });
+	return { ...slow, compiled: slow.ok };
+}
+
+// Request a route before the browser opens it, so a first-request compile happens here,
+// within the compile budget, instead of inside the browser's 35 s command limit.
+async function warmRoute(url, {
+	now = Date.now,
+	request = (target) => requestCompiling(target),
+	stderr = process.stderr,
+} = {}) {
+	const started = now();
+	const result = await request(url);
+	const pathname = new URL(url).pathname;
+	if (result.compiled) {
+		stderr.write(`Compiled ${pathname} on its first request (${((now() - started) / 1000).toFixed(1)} s).\n`);
+	} else if (result.error === "timeout") {
+		stderr.write(`${pathname} did not answer within the compile budget (VPK_VERIFY_COMPILE_TIMEOUT_MS); opening it anyway.\n`);
+	}
+	return result;
+}
 
 function portListening(port) {
 	if (!port) return false;
@@ -106,16 +147,22 @@ function writeState(patch) {
 	return next;
 }
 
-async function collectDoctor() {
-	const frontendPort = readTrimmed(FRONTEND_PORT_FILE);
-	const backendPort = readTrimmed(BACKEND_PORT_FILE);
-	const origin = resolveOrigin(frontendPort);
-	const frontendListening = portListening(frontendPort);
-	const backendListening = portListening(backendPort);
-	const home = origin ? await requestWorktreeOrigin(`${origin}/`) : { ok: false, status: 0, error: "no origin", body: "" };
-	const health = origin
-		? await requestWorktreeOrigin(`${origin}/api/health`)
-		: { ok: false, status: 0, error: "no origin", body: "" };
+async function collectDoctor({
+	listening = portListening,
+	readPort = readTrimmed,
+	request = requestWorktreeOrigin,
+	resolve = resolveOrigin,
+} = {}) {
+	const frontendPort = readPort(FRONTEND_PORT_FILE);
+	const backendPort = readPort(BACKEND_PORT_FILE);
+	const origin = resolve(frontendPort);
+	const frontendListening = listening(frontendPort);
+	const backendListening = listening(backendPort);
+	const noOrigin = { ok: false, status: 0, error: "no origin", body: "", compiled: false };
+	// Only a listening server gets the compile budget; anything else answers or fails fast.
+	const get = (url) => (frontendListening ? requestCompiling(url, { request }) : request(url, { timeoutMs: QUICK_PROBE_TIMEOUT_MS }));
+	const home = origin ? await get(`${origin}/`) : noOrigin;
+	const health = origin ? await get(`${origin}/api/health`) : noOrigin;
 	let healthJson = null;
 	try {
 		healthJson = JSON.parse(health.body);
@@ -131,6 +178,10 @@ async function collectDoctor() {
 		frontendPort: frontendPort || null,
 		frontendListening,
 		frontendStatus: home.status,
+		// Why `GET /` failed ("timeout" after the compile budget, a connection error), or null.
+		frontendError: home.ok ? null : home.error || null,
+		// True when `/` answered only after the quick probe timed out: Next was compiling it.
+		frontendCompiled: Boolean(home.compiled),
 		backendPort: backendPort || null,
 		backendListening,
 		backendStatus: health.status,
@@ -169,10 +220,13 @@ function runPnpm(args, { stdio = "inherit" } = {}) {
 
 module.exports = {
 	collectDoctor,
+	parseCompileTimeoutMs,
 	parseLaunchReadyTimeoutMs,
 	printDoctor,
 	readState,
+	requestCompiling,
 	runPnpm,
 	waitForDoctorReady,
+	warmRoute,
 	writeState,
 };
