@@ -6,7 +6,7 @@ const { describe, it } = require("node:test");
 const planSessionModule = require("./plan-session");
 const { NO_PLAN_SESSION } = require("./plan-session-machine");
 
-const { DEFAULT_PLAN_SESSION_TTL_MS, createPlanSessionStore } = planSessionModule;
+const { DEFAULT_MAX_PLAN_SESSIONS, DEFAULT_PLAN_SESSION_TTL_MS, createPlanSessionStore } = planSessionModule;
 
 // Each test gets its own store with an injected clock; nothing waits on real time.
 function createStore({ ttlMs = 1000 } = {}) {
@@ -399,5 +399,61 @@ describe("TTL", () => {
 		store.dispatchPlanSessionEvent("t1", { type: "ENTER_PLAN_MODE" });
 		clock.now = 1901;
 		assert.equal(store.getPlanSession("t1"), NO_PLAN_SESSION, "ENTER_PLAN_MODE on an active session is a no-op");
+	});
+});
+
+describe("count bound", () => {
+	function boundedStore(maxSessions) {
+		const clock = { now: 100 };
+		const store = createPlanSessionStore({ maxSessions, now: () => clock.now, ttlMs: 1000 });
+		return { clock, store };
+	}
+
+	it("keeps at most maxSessions entries, also for threads never read again", () => {
+		assert.equal(DEFAULT_MAX_PLAN_SESSIONS, 1000);
+		const { clock, store } = boundedStore(3);
+		for (let index = 0; index < 20; index += 1) {
+			clock.now += 1;
+			store.dispatchPlanSessionEvent(`t${index}`, { type: "ENTER_PLAN_MODE" });
+			assert.ok(store.size() <= 3, `after ${index + 1} threads: ${store.size()}`);
+		}
+		assert.deepEqual(["t17", "t18", "t19"].map((id) => store.getPlanSession(id).phase), ["qa", "qa", "qa"]);
+	});
+
+	it("evicts expired sessions before a live one", () => {
+		const { clock, store } = boundedStore(2);
+		store.dispatchPlanSessionEvent("expired", { type: "ENTER_PLAN_MODE" });
+		clock.now = 900;
+		for (const event of EXECUTION) store.dispatchPlanSessionEvent("live", event);
+		clock.now = 1200; // "expired" is past its TTL (written at 100); "live" is not (900)
+		store.dispatchPlanSessionEvent("new", { type: "ENTER_PLAN_MODE" });
+		assert.equal(store.size(), 2);
+		assert.equal(store.isPlanExecutionPhase("live"), true, "the live execution session is kept");
+		assert.equal(store.getPlanSession("new").phase, "qa");
+	});
+
+	it("when every session is live, the least recently dispatched one goes, never the one in use", () => {
+		const { clock, store } = boundedStore(2);
+		for (const event of EXECUTION) store.dispatchPlanSessionEvent("in-use", event);
+		clock.now = 110;
+		store.dispatchPlanSessionEvent("idle", { type: "ENTER_PLAN_MODE" });
+		clock.now = 120;
+		// A turn on the execution thread dispatches again (a no-op), which keeps it newest.
+		store.dispatchPlanSessionEvent("in-use", { type: "START_EXECUTION" });
+		clock.now = 130;
+		store.dispatchPlanSessionEvent("new", { type: "ENTER_PLAN_MODE" });
+		assert.equal(store.isPlanExecutionPhase("in-use"), true);
+		assert.equal(store.getPlanSession("idle"), NO_PLAN_SESSION);
+		assert.equal(store.getPlanSession("new").phase, "qa");
+	});
+
+	it("re-dispatching an existing thread in a full store evicts nothing", () => {
+		const { store } = boundedStore(2);
+		store.dispatchPlanSessionEvent("a", { type: "ENTER_PLAN_MODE" });
+		store.dispatchPlanSessionEvent("b", { type: "ENTER_PLAN_MODE" });
+		store.recordPlanWidgetEmission("a", { planCardId: "card-1" });
+		assert.equal(store.size(), 2);
+		assert.equal(store.getPlanSession("a").phase, "plan");
+		assert.equal(store.getPlanSession("b").phase, "qa");
 	});
 });

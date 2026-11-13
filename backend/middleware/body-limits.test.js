@@ -82,8 +82,20 @@ test("body limit route table preserves exact scoped parser limits", () => {
 			paths: "/api/rovo/files/upload",
 			limit: "12mb",
 		},
+		{
+			paths: "/api/rovo/chat",
+			limit: "12mb",
+		},
+		{
+			paths: "/api/personal-graph",
+			limit: "12mb",
+		},
+		{
+			paths: ["/api/rovo/threads", "/api/rovo/documents", "/api/genui-export"],
+			limit: "50mb",
+		},
 	]);
-	assert.equal(FALLBACK_BODY_LIMIT, "50mb");
+	assert.equal(FALLBACK_BODY_LIMIT, "1mb");
 });
 
 test("registerBodyLimitMiddleware mounts scoped parsers before fallback parsers", () => {
@@ -92,17 +104,20 @@ test("registerBodyLimitMiddleware mounts scoped parsers before fallback parsers"
 
 	registerBodyLimitMiddleware(app, { expressImpl });
 
-	assert.deepEqual(app.uses.slice(0, 3), [
+	assert.deepEqual(app.uses.slice(0, 6), [
 		[["/api/chat-sdk", "/api/rovo/suggestions"], { parser: "json", options: { limit: "8mb" } }],
 		[["/api/sound-generation", "/api/speech-transcription"], { parser: "json", options: { limit: "12mb" } }],
 		["/api/rovo/files/upload", { parser: "json", options: { limit: "12mb" } }],
+		["/api/rovo/chat", { parser: "json", options: { limit: "12mb" } }],
+		["/api/personal-graph", { parser: "json", options: { limit: "12mb" } }],
+		[["/api/rovo/threads", "/api/rovo/documents", "/api/genui-export"], { parser: "json", options: { limit: "50mb" } }],
 	]);
-	assert.deepEqual(app.uses.slice(3, 6), [
-		[{ parser: "json", options: { limit: "50mb" } }],
-		[{ parser: "text", options: { limit: "50mb", type: "text/markdown" } }],
-		[{ parser: "urlencoded", options: { limit: "50mb", extended: true } }],
+	assert.deepEqual(app.uses.slice(6, 9), [
+		[{ parser: "json", options: { limit: "1mb" } }],
+		[{ parser: "text", options: { limit: "1mb", type: "text/markdown" } }],
+		[{ parser: "urlencoded", options: { limit: "1mb", extended: true } }],
 	]);
-	assert.equal(typeof app.uses[6][0], "function");
+	assert.equal(typeof app.uses[9][0], "function");
 });
 
 test("registerBodyLimitMiddleware validates app and parser dependencies", () => {
@@ -166,4 +181,46 @@ test("body limit middleware maps JSON parse failures to structured API errors", 
 			code: "INVALID_JSON",
 		});
 	});
+});
+
+test("the fallback limit is 1 MB, and the routes that carry large bodies keep theirs", async () => {
+	const app = express();
+	registerBodyLimitMiddleware(app);
+	app.post("/{*splat}", (req, res) => res.json({ bytes: JSON.stringify(req.body).length }));
+	const server = http.createServer(app);
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const baseUrl = `http://127.0.0.1:${server.address().port}`;
+	const bodyOf = (megabytes) => JSON.stringify({ data: "x".repeat(Math.round(megabytes * 1024 * 1024)) });
+	const post = (route, body) => fetch(`${baseUrl}${route}`, {
+		body,
+		headers: { "Content-Type": "application/json" },
+		method: "POST",
+	});
+	try {
+		const cases = [
+			["/api/agent-mode", 0.9, 200],
+			["/api/agent-mode", 1.1, 413],
+			["/api/rovo/messages", 1.1, 413],
+			["/api/rovo/chat", 11, 200],
+			["/api/rovo/chat", 13, 413],
+			["/api/personal-graph/raw", 11, 200],
+			["/api/rovo/threads", 40, 200],
+			["/api/rovo/threads/059d607c-a1aa-48f5-880b-5d824fc5b99f", 40, 200],
+			["/api/rovo/documents", 40, 200],
+			["/api/genui-export", 40, 200],
+			["/api/rovo/threads", 51, 413],
+		];
+		for (const [route, megabytes, status] of cases) {
+			const response = await post(route, bodyOf(megabytes));
+			assert.equal(response.status, status, `${route} ${megabytes} MB`);
+			if (status === 413) {
+				assert.equal((await response.json()).code, "PAYLOAD_TOO_LARGE");
+			} else {
+				await response.arrayBuffer();
+			}
+		}
+	} finally {
+		server.closeAllConnections();
+		await new Promise((resolve) => server.close(resolve));
+	}
 });
