@@ -20,7 +20,6 @@ const COMPONENT_MANIFEST_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app", "data", "component-manifest.ts"),
 	"utf8",
 );
-const NAV_ADS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "nav-ads.ts"), "utf8");
 const BLOCK_DETAILS_SOURCE = readDetailCategorySource("blocks");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
@@ -308,7 +307,6 @@ test("Pull Request block is registered in the website catalog", () => {
 	assert.match(DEMO_SOURCE, /export function PullRequestDemoFlyout/u);
 	assert.match(COMPONENTS_SOURCE, /blockComponent\("pull-request", "Pull Request"\)/u);
 	assert.match(COMPONENT_MANIFEST_SOURCE, /blockComponent\("pull-request", "Pull Request"\)/u);
-	assert.match(NAV_ADS_SOURCE, /"pull-request"/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /PULL_REQUEST_DETAIL|"pull-request": PULL_REQUEST_DETAIL/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /"dropdown" \| "spacious" \| "flyout"/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /pull-request-demo-dropdown/u);

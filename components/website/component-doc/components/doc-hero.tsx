@@ -1,28 +1,23 @@
 import Link from "next/link";
 import { token } from "@/lib/tokens";
+import type { ExternalLinkDefinition } from "@/app/data/component-detail-types";
+import type { DocImportReference } from "./source-links.server";
 
 interface DocHeroProps {
 	name: string;
 	description?: string;
 	category: "ui-charts" | "ui-custom" | "ui" | "blocks" | "projects" | "arts" | "utility" | "visual";
-	importPath: string;
-	adsLinks?: Array<{ href: string; label: string }>;
-	adsUrl?: string;
-	adsPackage?: string;
+	importReferences: DocImportReference[];
+	referenceLinks?: ExternalLinkDefinition[];
 }
 
-export function DocHero({ name, description, category, importPath, adsLinks, adsUrl, adsPackage }: Readonly<DocHeroProps>) {
+export function DocHero({ name, description, category, importReferences, referenceLinks = [] }: Readonly<DocHeroProps>) {
 	const categoryLabel = category === "ui-charts" ? "UI — Charts" : category === "ui-custom" ? "UI — Custom" : category === "blocks" ? "Blocks" : category === "projects" ? "Projects" : category === "visual" ? "Visual" : category === "utility" ? "Utils" : category === "arts" ? "Arts" : "UI";
-	const resolvedAdsLinks =
-		adsLinks && adsLinks.length > 0
-			? adsLinks
-			: adsUrl
-				? [{ href: adsUrl, label: adsPackage ?? "Atlassian Design System" }]
-				: [];
-	const importPaths = importPath
-		.split("\n")
-		.map(path => path.trim())
-		.filter(Boolean);
+	const referenceTextStyle = {
+		fontSize: "13px",
+		color: token("color.text.subtlest"),
+		fontFamily: "monospace",
+	};
 
 	return (
 		<div
@@ -93,7 +88,7 @@ export function DocHero({ name, description, category, importPath, adsLinks, ads
 						{description}
 					</p> : null}
 
-				{/* Import path and ADS link */}
+				{/* Import paths and source links */}
 				<div
 					style={{
 						display: "flex",
@@ -101,37 +96,42 @@ export function DocHero({ name, description, category, importPath, adsLinks, ads
 						gap: token("space.075"),
 					}}
 				>
-					{importPaths.map(path => (
-						<code
-							key={path}
-							style={{
-								display: "block",
-								maxWidth: "100%",
-								fontSize: "13px",
-								color: token("color.text.subtlest"),
-								fontFamily: "monospace",
-								overflowWrap: "anywhere",
-								wordBreak: "break-word",
-							}}
-						>
-							{path}
-						</code>
+					{importReferences.map(({ path, links }) => (
+						<div key={path} className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+							<code
+								style={{
+									...referenceTextStyle,
+									display: "block",
+									maxWidth: "100%",
+									overflowWrap: "anywhere",
+									wordBreak: "break-word",
+								}}
+							>
+								{path}
+							</code>
+							{links.map(link => (
+								<a
+									key={link.href}
+									href={link.href}
+									aria-label={`${link.label} source for ${path}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="inline-flex min-h-6 items-center no-underline decoration-text-subtlest underline-offset-2 hover:underline"
+								>
+									<code style={referenceTextStyle}>{link.label}</code>
+								</a>
+							))}
+						</div>
 					))}
-					{resolvedAdsLinks.map(link => (
+					{referenceLinks.map(link => (
 						<a
-							key={link.href}
-							href={link.href}
+							key={link.url}
+							href={link.url}
 							target="_blank"
 							rel="noopener noreferrer"
 							className="no-underline hover:underline decoration-text-subtlest w-fit"
 						>
-							<code
-								style={{
-									fontSize: "13px",
-									color: token("color.text.subtlest"),
-									fontFamily: "monospace",
-								}}
-							>
+							<code style={referenceTextStyle}>
 								{link.label}
 							</code>
 						</a>
