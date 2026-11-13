@@ -162,11 +162,15 @@ the branch, commit, and PR so the user can resume the same flow.
 Before handoff, capture:
 
 ```bash
-gh pr view <number> --json state,mergedAt,mergeCommit,url,statusCheckRollup
+pnpm run ship-status -- --branch <branch> --fetch --json
 git -C <main-checkout> status --short --branch
-git -C <main-checkout> rev-parse main
-git -C <main-checkout> rev-parse origin/main
 ```
+
+`ship-status` (defined in `scripts/lib/branch-landing.js`; it does not decide
+cleanup) is the proof that the work landed and `main` is synced: the flow is done at
+`main-synced` or `cleaned`. `merged` means the PR landed but the local `main`
+lacks it, with the sync command as its next action. Do not re-derive landing
+from `gh pr view` and `rev-parse` by hand.
 
 Report created/updated/merged state, PR URL, branch and commit, Codex status,
 review dispositions, check results, merge commit, persistent-main sync, preserved
