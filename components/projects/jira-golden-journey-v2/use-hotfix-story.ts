@@ -1,11 +1,12 @@
 "use client";
 
 import { useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useReducer } from "react";
 
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import type { JiraWorkItemState } from "@/components/blocks/jira-work-item/data/session-state";
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import { useTimedTransition } from "@/components/hooks/use-timed-transition";
 import {
 	DEFAULT_PULL_REQUEST_FIX_AGENT_ID,
 	type PullRequestFixAgentId,
@@ -29,51 +30,14 @@ import {
 	createJiraAgentsOrchestrationState,
 	type JiraAgentsOrchestrationStep,
 } from "./data/orchestration-state";
-
-const ORCHESTRATION_SEQUENCE = {
-	"agents-working": { next: "comment", delayMs: 1_500 },
-	comment: { next: "reaction-1", delayMs: 1_200 },
-	"reaction-1": { next: "reaction-2", delayMs: 1_000 },
-	"reaction-2": { next: "lead", delayMs: 3_500 },
-	lead: { next: "consult", delayMs: 1_800 },
-	consult: { next: "complete", delayMs: 1_500 },
-} as const satisfies Record<
-	Exclude<JiraAgentsOrchestrationStep, "idle" | "complete">,
-	{ next: Exclude<JiraAgentsOrchestrationStep, "idle">; delayMs: number }
->;
-
-// Demo-friendly staging from Plan end:
-// hold on Consult-ready frame → Implement+PR → Verify+screenshot → settle.
-const BUILD_SEQUENCE = {
-	ready: { next: "implementing", delayMs: 2_500 },
-	implementing: { next: "verifying", delayMs: 2_200 },
-	verifying: { next: "complete", delayMs: 2_400 },
-} as const satisfies Record<
-	Exclude<JiraAgentsBuildStep, "complete">,
-	{ next: JiraAgentsBuildStep; delayMs: number }
->;
-
-// Review CI: start → widen → unit green → browser green → lint failure.
-const REVIEW_SEQUENCE = {
-	queued: { next: "running", delayMs: 1_200 },
-	running: { next: "unit-passed", delayMs: 1_500 },
-	"unit-passed": { next: "settling", delayMs: 1_300 },
-	settling: { next: "failed", delayMs: 1_600 },
-} as const satisfies Record<
-	Exclude<JiraAgentsReviewStep, "failed">,
-	{ next: JiraAgentsReviewStep; delayMs: number }
->;
-
-// Fix CI repair after PullRequestFix submit: repairing → green.
-// ~8s keeps the CI spinner / rerunning beat visible in demos.
-const FIX_SEQUENCE = {
-	repairing: { next: "complete", delayMs: 8_000 },
-} as const satisfies Record<
-	Exclude<JiraAgentsFixStep, "failed" | "complete">,
-	{ next: JiraAgentsFixStep; delayMs: number }
->;
-
-const DESCRIPTION_SKILL_GENERATION_DELAY_MS = 4_000;
+import {
+	JIRA_AGENTS_STORY_INITIAL_STATE,
+	JIRA_AGENTS_STORY_TIMERS,
+	jiraAgentsStoryReducer,
+	selectJiraAgentsStoryReducedMotion,
+	selectJiraAgentsStorySteps,
+	selectJiraAgentsStoryTimerKey,
+} from "./hotfix-story-machine";
 
 export type JiraAgentsPullRequestApprovalState = "available" | "approved";
 
@@ -103,214 +67,89 @@ export interface JiraAgentsStoryController {
 	workItem: WorkItemData;
 }
 
+const NO_APPROVALS: Readonly<Record<string, JiraAgentsPullRequestApprovalState>> = {};
+const STORY_PULL_REQUEST_APPROVED: Readonly<Record<string, JiraAgentsPullRequestApprovalState>> = {
+	[JIRA_AGENTS_PULL_REQUEST_IDENTITY]: "approved",
+};
+
 export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 	const shouldReduceMotion = useReducedMotion() ?? false;
-	const [chapter, setChapter] = useState<JiraAgentsStoryChapter>("intake");
-	const [chapterRevision, setChapterRevision] = useState(0);
-	const [descriptionSkillPhase, setDescriptionSkillPhase] = useState<JiraAgentsDescriptionSkillPhase>("idle");
-	const [orchestrationStep, setOrchestrationStep] = useState<JiraAgentsOrchestrationStep>("idle");
-	const [buildStep, setBuildStep] = useState<JiraAgentsBuildStep>("complete");
-	const [pullRequestApprovalStates, setPullRequestApprovalStates] = useState<
-		Record<string, JiraAgentsPullRequestApprovalState>
-	>({});
-	const [reviewStep, setReviewStep] = useState<JiraAgentsReviewStep>("queued");
-	const [fixStep, setFixStep] = useState<JiraAgentsFixStep>("failed");
-	const [fixAgentId, setFixAgentId] = useState<PullRequestFixAgentId>(
-		DEFAULT_PULL_REQUEST_FIX_AGENT_ID,
-	);
-	const [launchId, setLaunchId] = useState(0);
-	const [boardColumns, setBoardColumns] = useState<JiraKanbanColumnData[]>(
-		() => createJiraAgentsBoardColumns("intake"),
-	);
+	const [state, dispatch] = useReducer(jiraAgentsStoryReducer, JIRA_AGENTS_STORY_INITIAL_STATE);
+	const { chapterRevision, launchId, stage } = state;
+	const { chapter } = stage;
+	const steps = selectJiraAgentsStorySteps(stage);
+	const {
+		buildStep,
+		descriptionSkillPhase,
+		fixStep,
+		orchestrationStep,
+		pullRequestApproved,
+		reviewStep,
+	} = steps;
+	const fixAgentId = steps.fixAgentId ?? DEFAULT_PULL_REQUEST_FIX_AGENT_ID;
+
+	// One timer for whichever step the open chapter is on; paused while the story is hidden.
+	useTimedTransition(active ? selectJiraAgentsStoryTimerKey(stage) : null, JIRA_AGENTS_STORY_TIMERS, {
+		onAdvance: (next) => dispatch({ type: "timer-elapsed", next }),
+		reducedMotion: selectJiraAgentsStoryReducedMotion(stage, shouldReduceMotion),
+	});
 
 	const selectChapter = useCallback((nextChapter: JiraAgentsStoryChapter) => {
-		if (nextChapter === chapter) {
-			setChapterRevision((current) => current + 1);
-		}
-		// Plan plays the staged Activity reveal (comment → 👀 → Claude → Code Planner).
-		setOrchestrationStep(nextChapter === "plan" ? "agents-working" : "idle");
-		// Build stages former Handoff work from Plan end:
-		// ready (orient) → implement → verify/screenshot → complete.
-		setBuildStep(nextChapter === "build" ? "ready" : "complete");
-		setChapter(nextChapter);
-		setDescriptionSkillPhase(nextChapter === "intake" ? "idle" : "applied");
-		// Approve lands ready-to-merge: teammate approvals + CI are already green.
-		setPullRequestApprovalStates(nextChapter === "approve"
-			? { [JIRA_AGENTS_PULL_REQUEST_IDENTITY]: "approved" }
-			: {});
-		setReviewStep("queued");
-		// Fix continues from Review's failed PR until PullRequestFix submit advances it.
-		setFixStep("failed");
-		setFixAgentId(DEFAULT_PULL_REQUEST_FIX_AGENT_ID);
-		setLaunchId((current) => current + 1);
-		setBoardColumns((current) => createJiraAgentsBoardColumns(nextChapter, current));
-	}, [chapter]);
+		dispatch({ type: "select-chapter", chapter: nextChapter });
+	}, []);
 
 	const resetCurrentChapter = useCallback(() => {
-		selectChapter(chapter);
-	}, [chapter, selectChapter]);
+		dispatch({ type: "select-chapter", chapter });
+	}, [chapter]);
 
 	const invokeDescriptionSkill = useCallback(() => {
-		if (
-			chapter !== "intake"
-			|| descriptionSkillPhase === "running"
-			|| descriptionSkillPhase === "awaiting-confirmation"
-			|| descriptionSkillPhase === "applied"
-		) return;
-		setDescriptionSkillPhase("running");
-		setLaunchId((current) => current + 1);
-	}, [chapter, descriptionSkillPhase]);
+		dispatch({ type: "invoke-description-skill" });
+	}, []);
 
 	const applyDescriptionSuggestion = useCallback(() => {
-		if (chapter !== "intake" || descriptionSkillPhase !== "awaiting-confirmation") return;
-		setDescriptionSkillPhase("applied");
-		setLaunchId((current) => current + 1);
-	}, [chapter, descriptionSkillPhase]);
+		dispatch({ type: "apply-description-suggestion" });
+	}, []);
 
 	const dismissDescriptionSuggestion = useCallback(() => {
-		if (chapter !== "intake" || descriptionSkillPhase !== "awaiting-confirmation") return;
-		setDescriptionSkillPhase("dismissed");
-		setLaunchId((current) => current + 1);
-	}, [chapter, descriptionSkillPhase]);
+		dispatch({ type: "dismiss-description-suggestion" });
+	}, []);
 
 	const descriptionImproved = descriptionSkillPhase === "applied";
 
 	const startOrchestration = useCallback(() => {
-		if (chapter !== "intake" || !descriptionImproved || orchestrationStep !== "idle") return;
-		setChapter("plan");
-		setOrchestrationStep("agents-working");
-		setBuildStep("complete");
-		setPullRequestApprovalStates({});
-		setReviewStep("queued");
-		setFixStep("failed");
-		setFixAgentId(DEFAULT_PULL_REQUEST_FIX_AGENT_ID);
-		setLaunchId((current) => current + 1);
-		setBoardColumns((current) => createJiraAgentsBoardColumns("plan", current));
-	}, [chapter, descriptionImproved, orchestrationStep]);
+		dispatch({ type: "start-orchestration" });
+	}, []);
 
-	useEffect(() => {
-		if (!active || chapter !== "intake" || descriptionSkillPhase !== "running") return undefined;
-		const timeoutId = window.setTimeout(() => {
-			setDescriptionSkillPhase("awaiting-confirmation");
-			setLaunchId((current) => current + 1);
-		}, DESCRIPTION_SKILL_GENERATION_DELAY_MS);
-		return () => window.clearTimeout(timeoutId);
-	}, [active, chapter, descriptionSkillPhase]);
-
-	// These timers reveal authored state snapshots rather than animating layout.
-	// Plan orchestration stops at "complete" — Build only starts when the user
-	// selects that chapter manually. Review CI keeps the same causal frames, but
-	// reduced motion jumps straight to the final failed checks. Fix waits for
-	// PullRequestFix submit, then stages repairing → green (reduced motion
-	// jumps to green).
-	useEffect(() => {
-		if (!active || orchestrationStep === "idle" || orchestrationStep === "complete") {
-			return undefined;
-		}
-
-		const transition = ORCHESTRATION_SEQUENCE[orchestrationStep];
-		const timeoutId = window.setTimeout(() => {
-			setOrchestrationStep(transition.next);
-			setLaunchId((current) => current + 1);
-		}, transition.delayMs);
-
-		return () => window.clearTimeout(timeoutId);
-	}, [active, orchestrationStep]);
-
-	useEffect(() => {
-		if (!active || chapter !== "build" || buildStep === "complete") return undefined;
-		const transition = BUILD_SEQUENCE[buildStep];
-		const timeoutId = window.setTimeout(() => {
-			setBuildStep(transition.next);
-			setLaunchId((current) => current + 1);
-		}, transition.delayMs);
-		return () => window.clearTimeout(timeoutId);
-	}, [active, buildStep, chapter]);
-
-	useEffect(() => {
-		if (!active || chapter !== "review" || reviewStep === "failed") return undefined;
-		if (shouldReduceMotion) {
-			setReviewStep("failed");
-			setLaunchId((current) => current + 1);
-			return undefined;
-		}
-		const transition = REVIEW_SEQUENCE[reviewStep];
-		const timeoutId = window.setTimeout(() => {
-			setReviewStep(transition.next);
-			setLaunchId((current) => current + 1);
-		}, transition.delayMs);
-		return () => window.clearTimeout(timeoutId);
-	}, [active, chapter, reviewStep, shouldReduceMotion]);
-
-	useEffect(() => {
-		if (!active || chapter !== "fix" || fixStep !== "repairing") return undefined;
-		if (shouldReduceMotion) {
-			setFixStep("complete");
-			setLaunchId((current) => current + 1);
-			return undefined;
-		}
-		const transition = FIX_SEQUENCE[fixStep];
-		const timeoutId = window.setTimeout(() => {
-			setFixStep(transition.next);
-			setLaunchId((current) => current + 1);
-		}, transition.delayMs);
-		return () => window.clearTimeout(timeoutId);
-	}, [active, chapter, fixStep, shouldReduceMotion]);
-
-	const approvePullRequest = useCallback((identity: string) => {
-		if (
-			chapter !== "approve"
-			|| identity !== JIRA_AGENTS_PULL_REQUEST_IDENTITY
-			|| pullRequestApprovalStates[identity] !== "available"
-		) return;
-		setPullRequestApprovalStates((current) => ({ ...current, [identity]: "approved" }));
-		// Rehydrate the work-item session snapshot so Claude resolves its
-		// waiting-on-user state. PR detail owns Guide progress by stable identity,
-		// so this refresh updates approval evidence without remounting the Guide.
-		setLaunchId((current) => current + 1);
-	}, [chapter, pullRequestApprovalStates]);
+	const approvePullRequest = useCallback((_identity: string) => {
+		dispatch({ type: "approve-pull-request" });
+	}, []);
 
 	const fixPullRequestCheck = useCallback((
 		identity: string,
 		agentId: PullRequestFixAgentId = DEFAULT_PULL_REQUEST_FIX_AGENT_ID,
 	) => {
-		if (
-			chapter !== "fix"
-			|| fixStep !== "failed"
-			|| identity !== JIRA_AGENTS_PULL_REQUEST_IDENTITY
-		) return;
-		setFixAgentId(agentId);
-		// Reduced motion skips the repairing beat and lands on green checks.
-		setFixStep(shouldReduceMotion ? "complete" : "repairing");
-		setLaunchId((current) => current + 1);
-	}, [chapter, fixStep, shouldReduceMotion]);
+		dispatch({
+			type: "fix-pull-request-check",
+			agentId,
+			isStoryPullRequest: identity === JIRA_AGENTS_PULL_REQUEST_IDENTITY,
+			reducedMotion: shouldReduceMotion,
+		});
+	}, [shouldReduceMotion]);
 
 	const updateBoardColumns = useCallback((nextColumns: readonly JiraKanbanColumnData[]) => {
 		const storyColumn = getJiraAgentsStoryColumn(nextColumns);
-		const nextChapter = storyColumn
-			? getJiraAgentsStoryChapterForStatus(storyColumn)
-			: null;
-		const resolvedChapter = nextChapter ?? chapter;
+		dispatch({
+			type: "board-changed",
+			chapter: storyColumn ? getJiraAgentsStoryChapterForStatus(storyColumn) : null,
+			columns: nextColumns,
+		});
+	}, []);
 
-		setBoardColumns(createJiraAgentsBoardColumns(resolvedChapter, nextColumns));
-		if (nextChapter && nextChapter !== chapter) {
-			setOrchestrationStep(nextChapter === "plan" ? "agents-working" : "idle");
-			setBuildStep(nextChapter === "build" ? "ready" : "complete");
-			setChapter(nextChapter);
-			setDescriptionSkillPhase(nextChapter === "intake" ? "idle" : "applied");
-			// Approve lands ready-to-merge (same default as the chapter picker).
-			setPullRequestApprovalStates(nextChapter === "approve"
-				? { [JIRA_AGENTS_PULL_REQUEST_IDENTITY]: "approved" }
-				: {});
-			setReviewStep("queued");
-			setFixStep("failed");
-			setFixAgentId(DEFAULT_PULL_REQUEST_FIX_AGENT_ID);
-			setLaunchId((current) => current + 1);
-		}
-	}, [chapter]);
-
-	const pullRequestApproved =
-		pullRequestApprovalStates[JIRA_AGENTS_PULL_REQUEST_IDENTITY] === "approved";
+	const boardColumns = useMemo(
+		() => createJiraAgentsBoardColumns(chapter, state.boardColumns ?? undefined),
+		[chapter, state.boardColumns],
+	);
+	const pullRequestApprovalStates = pullRequestApproved ? STORY_PULL_REQUEST_APPROVED : NO_APPROVALS;
 	const initialState = useMemo(
 		() => orchestrationStep === "idle"
 			? createJiraAgentsStoryState(chapter, {

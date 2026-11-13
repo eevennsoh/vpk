@@ -55,7 +55,6 @@ function loadOrchestrationModule() {
 test("Jira Golden Journey v2 composes the seven-stage software delivery story without changing the gallery", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journey-v2/page.tsx");
 	const controlsSource = readProjectFile("components/projects/jira-golden-journey-v2/story-controls.tsx");
-	const controllerSource = readProjectFile("components/projects/jira-golden-journey-v2/use-hotfix-story.ts");
 	const itemsSource = readProjectFile("components/projects/jira-golden-journey-v2/data/gallery-items.ts");
 	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
 
@@ -75,22 +74,6 @@ test("Jira Golden Journey v2 composes the seven-stage software delivery story wi
 	assert.match(pageSource, /inlineSurface="card-fill"/u);
 	assert.match(controlsSource, /JIRA_AGENTS_STORY_CHAPTERS\.map/u);
 	assert.match(controlsSource, /aria-label="Open a software delivery story chapter"/u);
-	assert.match(controllerSource, /setLaunchId\(\(current\) => current \+ 1\);/u);
-	assert.match(controllerSource, /getJiraAgentsStoryChapterForStatus\(storyColumn\)/u);
-	const approvePullRequestSource = controllerSource.match(
-		/const approvePullRequest = useCallback\([\s\S]*?\}, \[chapter, pullRequestApprovalStates\]\);/u,
-	)?.[0] ?? "";
-	assert.ok(approvePullRequestSource.length > 0);
-	assert.match(
-		approvePullRequestSource,
-		/setPullRequestApprovalStates\(\(current\) => \(\{ \.\.\.current, \[identity\]: "approved" \}\)\)/u,
-	);
-	assert.match(approvePullRequestSource, /setLaunchId\(\(current\) => current \+ 1\)/u);
-	assert.doesNotMatch(approvePullRequestSource, /setChapterRevision/u);
-	assert.match(
-		controllerSource,
-		/if \(nextChapter === chapter\) \{[\s\S]*setChapterRevision\(\(current\) => current \+ 1\);[\s\S]*\}/u,
-	);
 	assert.equal((itemsSource.match(/\bid:\s*"/gu) ?? []).length, 1);
 	assert.match(itemsSource, /id: "work-item"/u);
 	assert.doesNotMatch(itemsSource, /Kanban & List|id: "kanban-list"/u);
@@ -106,7 +89,6 @@ test("Jira Golden Journey v2 composes the seven-stage software delivery story wi
 test("submitting the complete @mentioned agent team starts the staged orchestration reveal", async () => {
 	const story = await loadStoryModule();
 	const pageSource = readProjectFile("components/projects/jira-golden-journey-v2/page.tsx");
-	const controllerSource = readProjectFile("components/projects/jira-golden-journey-v2/use-hotfix-story.ts");
 	const completeTeam = story.JIRA_AGENTS_STORY_COMPOSER_AGENTS.map((agent) => agent.id);
 
 	assert.equal(story.shouldStartJiraAgentsPlan("intake", completeTeam), false);
@@ -115,15 +97,6 @@ test("submitting the complete @mentioned agent team starts the staged orchestrat
 	assert.equal(story.shouldStartJiraAgentsPlan("plan", completeTeam, true), false);
 	assert.match(pageSource, /shouldStartJiraAgentsPlan\(chapter, agentIds, descriptionImproved\)[\s\S]*startOrchestration\(\)/u);
 	assert.doesNotMatch(pageSource, /shouldStartJiraAgentsPlan\(chapter, agentIds, descriptionImproved\)[\s\S]*selectChapter\("plan"\)/u);
-	assert.match(
-		controllerSource,
-		/if \(!active \|\| orchestrationStep === "idle" \|\| orchestrationStep === "complete"\) \{\s*return undefined;\s*\}/u,
-	);
-	assert.doesNotMatch(
-		controllerSource,
-		/if \(orchestrationStep === "complete"\) \{\s*selectChapter\("build"\);/u,
-	);
-	assert.match(controllerSource, /return \(\) => window\.clearTimeout\(timeoutId\);/u);
 });
 
 test("the orchestration reveal acknowledges the prompt, then removes reactions after the A2A reply", async () => {
@@ -180,36 +153,7 @@ test("the orchestration reveal acknowledges the prompt, then removes reactions a
 
 test("Plan chapter selection starts the staged orchestration and reveals Activity", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journey-v2/page.tsx");
-	const controllerSource = readProjectFile("components/projects/jira-golden-journey-v2/use-hotfix-story.ts");
 
-	assert.match(
-		controllerSource,
-		/setOrchestrationStep\(nextChapter === "plan" \? "agents-working" : "idle"\)/u,
-	);
-	assert.match(
-		controllerSource,
-		/setBuildStep\(nextChapter === "build" \? "ready" : "complete"\)/u,
-	);
-	assert.match(
-		controllerSource,
-		/const BUILD_SEQUENCE = \{[\s\S]*ready: \{ next: "implementing", delayMs: 2_500 \}[\s\S]*implementing: \{ next: "verifying", delayMs: 2_200 \}[\s\S]*verifying: \{ next: "complete", delayMs: 2_400 \}/u,
-	);
-	assert.match(
-		controllerSource,
-		/if \(!active \|\| chapter !== "build" \|\| buildStep === "complete"\) return undefined;/u,
-	);
-	assert.match(
-		controllerSource,
-		/"agents-working": \{ next: "comment"/u,
-	);
-	assert.match(
-		controllerSource,
-		/"reaction-2": \{ next: "lead", delayMs: 3_500 \}/u,
-	);
-	assert.match(
-		controllerSource,
-		/lead: \{ next: "consult"/u,
-	);
 	assert.match(
 		pageSource,
 		/revealActivityKey=\{\s*controller\.orchestrationStep !== "idle"\s*\?\s*`\$\{controller\.orchestrationStep\}:\$\{controller\.launchId\}`\s*:\s*controller\.chapter === "build" && controller\.buildStep !== "complete"\s*\?\s*`\$\{controller\.buildStep\}:\$\{controller\.launchId\}`\s*:\s*null\s*\}/u,
@@ -219,24 +163,11 @@ test("Plan chapter selection starts the staged orchestration and reveals Activit
 
 test("Build chapter selection stages ready→implement→verify and reveals Claude Activity", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journey-v2/page.tsx");
-	const controllerSource = readProjectFile("components/projects/jira-golden-journey-v2/use-hotfix-story.ts");
 	const metadataRailContextSource = readProjectFile(
 		"components/blocks/jira-work-item/experimental-v2/context-metadata-rail.tsx",
 	);
 
 	// Selecting Build starts from Plan-end hold, then stages implement → verify.
-	assert.match(
-		controllerSource,
-		/setBuildStep\(nextChapter === "build" \? "ready" : "complete"\)/u,
-	);
-	assert.match(
-		controllerSource,
-		/ready: \{ next: "implementing", delayMs: 2_500 \}/u,
-	);
-	assert.match(
-		controllerSource,
-		/if \(!active \|\| chapter !== "build" \|\| buildStep === "complete"\) return undefined;/u,
-	);
 	// Activity opens for each build step via revealActivityKey (mirrors Plan
 	// orchestration) — unless a PR is selected, which suppresses the panel switch.
 	assert.match(
@@ -272,7 +203,6 @@ test("Build chapter selection stages ready→implement→verify and reveals Clau
 
 test("Review, Fix, and Approve chapters auto-open PR #1847; Approve lands ready-to-merge", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journey-v2/page.tsx");
-	const controllerSource = readProjectFile("components/projects/jira-golden-journey-v2/use-hotfix-story.ts");
 	const compositionSource = readProjectFile(
 		"components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item.tsx",
 	);
@@ -288,10 +218,6 @@ test("Review, Fix, and Approve chapters auto-open PR #1847; Approve lands ready-
 		/autoOpenPullRequestIdentity=\{\s*controller\.chapter === "review"\s*\|\| controller\.chapter === "fix"\s*\|\| controller\.chapter === "approve"\s*\?\s*JIRA_AGENTS_PULL_REQUEST_IDENTITY\s*:\s*null\s*\}/u,
 	);
 	// Approve chapter controller lands ready-to-merge (approvals already satisfied).
-	assert.match(
-		controllerSource,
-		/setPullRequestApprovalStates\(nextChapter === "approve"\s*\?\s*\{\s*\[JIRA_AGENTS_PULL_REQUEST_IDENTITY\]: "approved"\s*\}\s*:\s*\{\}\)/u,
-	);
 	assert.match(
 		pageSource,
 		/onPullRequestFix=\{\s*controller\.chapter === "fix" && controller\.fixStep === "failed"\s*\?\s*controller\.fixPullRequestCheck\s*:\s*undefined\s*\}/u,
@@ -333,22 +259,6 @@ test("Review, Fix, and Approve chapters auto-open PR #1847; Approve lands ready-
 	assert.match(
 		activityComposerSource,
 		/key=\{`pull-request-fix-\$\{pullRequestFix\.checkName\}`\}/u,
-	);
-	assert.match(
-		controllerSource,
-		/queued: \{ next: "running", delayMs: 1_200 \}[\s\S]*running: \{ next: "unit-passed", delayMs: 1_500 \}[\s\S]*"unit-passed": \{ next: "settling", delayMs: 1_300 \}[\s\S]*settling: \{ next: "failed", delayMs: 1_600 \}/u,
-	);
-	assert.match(
-		controllerSource,
-		/if \(shouldReduceMotion\) \{\s*setReviewStep\("failed"\);/u,
-	);
-	assert.match(
-		controllerSource,
-		/repairing: \{ next: "complete", delayMs: 8_000 \}/u,
-	);
-	assert.match(
-		controllerSource,
-		/fixPullRequestCheck = useCallback\(\(\s*identity: string,\s*agentId: PullRequestFixAgentId = DEFAULT_PULL_REQUEST_FIX_AGENT_ID,\s*\) => \{[\s\S]*chapter !== "fix"[\s\S]*fixStep !== "failed"[\s\S]*setFixAgentId\(agentId\)[\s\S]*setFixStep\(shouldReduceMotion \? "complete" : "repairing"\)/u,
 	);
 	assert.match(checksSource, /export const UNIT_PASSED_PR_CHECKS = \[/u);
 	assert.match(checksSource, /export const SETTLING_PR_CHECKS = \[/u);

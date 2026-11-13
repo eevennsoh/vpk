@@ -1968,11 +1968,6 @@
       "count": 175
     }
   },
-  "components/projects/jira-golden-journey-v2/use-hotfix-story.ts": {
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
   "components/projects/jira-golden-journey-v3/jira-golden-journey-v3.source.test.js": {
     "no-restricted-syntax": {
       "count": 65
