@@ -34,9 +34,17 @@ test("AGENTS.md lists every rule with exactly its paths: frontmatter", () => {
 	}
 });
 
-test("only token-priority.md loads in every Claude Code session", () => {
+test("no rule loads in every Claude Code session", () => {
 	const alwaysLoaded = fs.readdirSync(RULES_DIR)
 		.filter((file) => file.endsWith(".md"))
 		.filter((file) => readFrontmatterPaths(fs.readFileSync(path.join(RULES_DIR, file), "utf8")) === null);
-	assert.deepEqual(alwaysLoaded, ["token-priority.md"], "scope new rules with paths: frontmatter");
+	assert.deepEqual(alwaysLoaded, [], "scope every rule with paths: frontmatter");
+});
+
+// Codex reads at most project_doc_max_bytes (default 32,768) of project instructions in
+// total and silently truncates the rest (openai/codex codex-rs/config/defaults.toml and
+// codex-rs/core/src/agents_md.rs). 24 KiB leaves room for nested AGENTS.md files and edits.
+test("AGENTS.md stays inside its 24 KiB budget", () => {
+	const bytes = Buffer.byteLength(AGENTS_MD, "utf8");
+	assert.ok(bytes <= 24 * 1024, `AGENTS.md is ${bytes} bytes; move detail into a path-scoped rule or a doc and leave a pointer`);
 });

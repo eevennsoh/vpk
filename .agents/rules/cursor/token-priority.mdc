@@ -1,6 +1,7 @@
 ---
 description: Token selection priority, theming, and common styling mistakes
-alwaysApply: true
+globs: **/*.tsx, **/*.css
+alwaysApply: false
 ---
 
 <!-- Generated from .agents/rules/token-priority.md by scripts/generate-cursor-rules.js. Edit the .md source, then rerun the script. -->

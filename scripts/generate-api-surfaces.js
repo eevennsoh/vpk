@@ -5,8 +5,8 @@
 const { existsSync, mkdirSync, readFileSync, writeFileSync } = require("node:fs");
 const path = require("node:path");
 
-// The tables live in `.agents/knowledge/` rather than `.agents/rules/` because everything
-// under `.agents/rules/` is eagerly loaded into every agent session. `.agents/knowledge/` is
+// The tables live in `.agents/knowledge/` rather than `.agents/rules/` because a rule is
+// loaded into the session whenever a file in its scope is read. `.agents/knowledge/` is
 // committed and drift-checked, but not auto-loaded.
 const DOC_PATH = ".agents/knowledge/api-surfaces.md";
 const GUIDANCE_DOC_PATH = ".agents/rules/api-surfaces.md";
@@ -19,8 +19,9 @@ const DOC_PREAMBLE = [
 	"Generated file. Do not edit by hand — run `node scripts/generate-api-surfaces.js`.",
 	"",
 	`Judgment guidance lives in \`${GUIDANCE_DOC_PATH}\`; the tables live here because Claude Code`,
-	"eagerly loads every `.md` under `.agents/rules/` into its session context (see the Contextual",
-	`Rules section of \`AGENTS.md\`). Source of truth is \`${ROUTE_MANIFEST_PATH}\`.`,
+	"loads that rule into the session as soon as a file in its scope is read, and the tables would",
+	"ride along each time (see the Contextual Rules section of `AGENTS.md`). Source of truth is",
+	`\`${ROUTE_MANIFEST_PATH}\`.`,
 	"",
 ].join("\n");
 

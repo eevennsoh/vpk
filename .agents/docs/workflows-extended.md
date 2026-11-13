@@ -70,15 +70,15 @@ Run additionally for UI changes:
 
 1. After editing code served by the local Next.js app, load and follow `next-dev-loop` for the `/_next/mcp` plus `agent-browser` runtime cross-check.
    Resolve the requested object route before opening a browser and navigate directly on the current worktree origin. Follow [Browser Verify Worktree](playbooks/browser-verify-worktree.md); home-first navigation is for explicit catalog/entry-path checks.
-2. For browser work that is not verifying a Next.js edit, use `agent-browser` (`npx agent-browser`) by default for local/isolated web work, screenshots, UI probes, visual debugging, and responsive checks. Load and follow the `agent-browser` skill before using it so command patterns match the installed version. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked, and load the `playwright` skill before using that fallback. In parallel worktrees, prefer the worktree's Portless URL from `pnpm ports` (the `🌐 https://…` entry — it survives dev-server restarts and is origin-isolated per worktree); fall back to the frontend URL from `.dev-frontend-port` only when no portless route exists. Do not assume the default frontend port.
+2. For browser work that is not verifying a Next.js edit, use `agent-browser` (`npx agent-browser`) by default for local/isolated web work, screenshots, UI probes, visual debugging, and responsive checks. Load and follow the `agent-browser` skill before using it so command patterns match the installed version. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked, and load the `playwright-cli` skill before using that fallback. In parallel worktrees, prefer the worktree's Portless URL from `pnpm ports` (the `🌐 https://…` entry — it survives dev-server restarts and is origin-isolated per worktree); fall back to the frontend URL from `.dev-frontend-port` only when no portless route exists. Do not assume the default frontend port.
 3. Accessibility checks — both MCP-only, with no `atlas ads` CLI equivalent:
    - `ads_analyze_a11y` for component code
    - `ads_analyze_localhost_a11y` for live page
    - For the ADS guidance behind a finding, use the CLI instead: `atlas ads docs a11y <buttons|forms|images|colors|focus|keyboard|screenReaders|aria|wcag|general>` (add `--json` when parsing). Fall back to `ads_get_a11y_guidelines` only when the CLI is unavailable.
 
-Required UI verification coverage:
+UI verification coverage: the default proof is one light-theme capture of the exact route (`control-vpk capture <route>`). Add the items below only when the change depends on them or the user asks:
 
-- Light and dark theme coverage
+- Dark theme
 - Default, hover, active, disabled, empty, and error states
 - Long text / missing optional data / empty-list edge cases
 - Keyboard and semantic accessibility

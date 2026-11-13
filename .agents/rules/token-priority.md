@@ -1,5 +1,8 @@
 ---
 description: Token selection priority, theming, and common styling mistakes
+paths:
+  - "**/*.tsx"
+  - "**/*.css"
 ---
 
 # Token Selection Priority
