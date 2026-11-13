@@ -48,6 +48,7 @@ const {
 	fetchOrigin,
 	listLocalBranches,
 	listWorktrees,
+	missingWorktreeFacts,
 	readLiveKeepRefs,
 	readPullRequests,
 	resolveDefaultBranch,
@@ -160,6 +161,7 @@ function cleanBlockers({ derived, facts = {}, target, defaultBranch, currentPath
 	const branchReflog = facts.branchReflogOnlyCommits;
 	if (branchReflog?.unknown) blockers.push(`the branch reflog ${branchReflog.unknown}`);
 	else if (branchReflog?.count > 0) blockers.push(`${branchReflog.count} commit(s) only the branch reflog reaches`);
+	if (target.branch !== null && facts.pushed === null) blockers.push(`origin/${target.branch} could not be read`);
 	if (facts.pushed && facts.remoteAhead !== 0) {
 		blockers.push(facts.remoteAhead === null
 			? `origin/${target.branch} could not be compared`
@@ -300,12 +302,23 @@ async function collectCleanCandidates({
 		prsRead: prsByBranch !== null,
 		candidates: results.filter((entry) => entry.cleanable),
 		retained: results.filter((entry) => !entry.cleanable),
-		missingWorktrees: worktrees.filter((entry) => entry.missing).map((entry) => ({
-			worktree: entry.path,
-			branch: entry.branch ?? null,
-			head: entry.head ?? null,
-			locked: entry.locked === true,
-			reason: entry.missing,
+		missingWorktrees: await Promise.all(worktrees.filter((entry) => entry.missing).map(async (entry) => {
+			const lost = await missingWorktreeFacts(git, entry, { keepRefs });
+			return {
+				worktree: entry.path,
+				branch: entry.branch ?? null,
+				head: entry.head ?? null,
+				locked: entry.locked === true,
+				reason: entry.missing,
+				// Whether `git worktree remove <path>` of this entry drops no commit: everything
+				// its HEAD, HEAD reflog and own refs name is on a kept ref. null when unknown.
+				removeSafe: lost.removeSafe,
+				unreachableCommits: lost.unreachableCommits,
+				rescue: (lost.rescue ?? []).map((sha, index, all) => ({
+					sha,
+					command: `git branch rescue/${rescueName(entry.path)}${all.length > 1 ? `-${index + 1}` : ""} ${sha}`,
+				})),
+			};
 		})),
 		staleDays,
 		processCheck: processCwds === null ? "unavailable" : "ok",
@@ -321,6 +334,11 @@ async function collectCleanCandidates({
 		})),
 		lockRemovals,
 	};
+}
+
+// A branch-name-safe form of the worktree folder's name.
+function rescueName(worktreePath) {
+	return path.basename(worktreePath).replace(/[^A-Za-z0-9._-]+/gu, "-").replace(/^[.-]+|[.-]+$/gu, "") || "worktree";
 }
 
 function formatCleanCandidates(report) {
@@ -340,7 +358,13 @@ function formatCleanCandidates(report) {
 	}
 	if (report.missingWorktrees.length > 0) {
 		const locked = report.missingWorktrees.filter((entry) => entry.locked).length;
-		lines.push(`  ${report.missingWorktrees.length} registered worktree(s) that cannot be inspected (${locked} locked); see git worktree prune --dry-run --verbose`);
+		const safe = report.missingWorktrees.filter((entry) => entry.removeSafe === true).length;
+		lines.push(`  ${report.missingWorktrees.length} registered worktree(s) that cannot be inspected (${locked} locked); ${safe} drop no commit if removed`);
+		for (const entry of report.missingWorktrees) {
+			if (entry.removeSafe === true) continue;
+			const why = entry.removeSafe === null ? "unknown whether removing it drops commits" : `removing it drops ${entry.unreachableCommits} commit(s); rescue first: ${entry.rescue.map((item) => item.command).join("; ")}`;
+			lines.push(`  missing ${entry.worktree}  ${why}`);
+		}
 	}
 	lines.push(`stale worktrees (no activity for ${report.staleDays} days${report.processCheck === "ok" ? "" : "; process check unavailable, so none is safe"}): ${report.stale.length}`);
 	for (const entry of report.stale) {
