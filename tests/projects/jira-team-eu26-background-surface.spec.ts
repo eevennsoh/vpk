@@ -107,9 +107,7 @@ test("board spacing follows session resizing and collapse without clipping the s
 	await page.setViewportSize({ width: 1024, height: 900 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await openBoard(page);
-	await page.getByRole("button", { name: "Settings", exact: true }).click();
-	await page.getByRole("menuitemcheckbox", { name: "Dragging", exact: true }).click();
-	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	// 6c3589886 turned the Dragging (session resizing) setting on by default.
 	const column = page.locator("[data-agent-session-column]");
 	const handle = page.getByRole("separator", { name: "Resize Unlink sessions column" });
 	for (const key of ["End", "Home"]) {
@@ -132,7 +130,8 @@ test("Agent Sessions stays rounded and frozen while the status pane scrolls unde
 	const surface = page.locator("[data-agent-session-column-surface]");
 	const wrap = page.locator('[data-board-agent-session-drop-zone="untracked"]');
 	const scrollport = page.locator("[data-jira-kanban-scrollport]");
-	const statusColumn = page.locator('[data-jira-kanban-column="To do"] > .group\\/board-column');
+	// d5aee7449 moved the hover group to the drop shell; the painted column is its content.
+	const statusColumn = page.locator('[data-jira-kanban-column="To do"] [data-jira-kanban-column-content]');
 	const frozenLeft = (await column.boundingBox())?.x;
 
 	await expect(surface).toHaveCSS(
