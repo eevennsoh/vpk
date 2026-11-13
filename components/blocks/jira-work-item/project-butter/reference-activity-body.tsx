@@ -18,9 +18,8 @@ type MarkdownNode = { type: string; value?: string; url?: string; children?: Mar
 const AGENT_MENTION = /@\[(subagent:[A-Za-z0-9_./:-]+)\]/gu;
 const MENTION_LINK = "#butter-agent-mention:";
 
-function mentionMarkdown(agents: readonly AgentBrowserAgent[]) {
-	const byId = new Map(agents.map((agent) => [mapAgentToMentionItem(agent).id, agent]));
-	return () => (tree: MarkdownNode) => {
+function mentionMarkdown() {
+	return (tree: MarkdownNode) => {
 		function visit(node: MarkdownNode) {
 			if (!node.children || node.type === "link") return;
 			node.children = node.children.flatMap((child) => {
@@ -28,10 +27,8 @@ function mentionMarkdown(agents: readonly AgentBrowserAgent[]) {
 				const parts: MarkdownNode[] = [];
 				let start = 0;
 				for (const match of child.value.matchAll(AGENT_MENTION)) {
-					const agent = byId.get(match[1]);
-					if (!agent) continue;
 					if (match.index > start) parts.push({ type: "text", value: child.value.slice(start, match.index) });
-					parts.push({ type: "link", url: `${MENTION_LINK}${encodeURIComponent(match[1])}`, children: [{ type: "text", value: agent.name }] });
+					parts.push({ type: "link", url: `${MENTION_LINK}${encodeURIComponent(match[1])}`, children: [{ type: "text", value: match[0] }] });
 					start = match.index + match[0].length;
 				}
 				if (!parts.length) return [child];
@@ -55,7 +52,7 @@ export function ProjectButterHistoryChange({ actor, item, timestamp, defaultOpen
 }
 
 export function ProjectButterReferenceCommentBody({ markdown, pullRequestStatus, agents = [] }: Readonly<{ markdown: string; pullRequestStatus?: PullRequestSmartLinkStatus; agents?: readonly AgentBrowserAgent[] }>) {
-	const remarkPlugins = useMemo(() => [mentionMarkdown(agents)], [agents]);
+	const remarkPlugins = useMemo(() => [mentionMarkdown], []);
 	const components = useMemo(() => {
 		const request = PROJECT_BUTTER_JOURNEY_PULL_REQUEST;
 		const item = pullRequestStatus ? toPullRequestSmartLink({ id: "butter-pr-284", number: request.number, title: request.title, status: pullRequestStatus, additions: request.additions, deletions: request.deletions, files: request.filesChanged, branch: request.branch, targetBranch: request.targetBranch, repository: "payments-platform/payments", href: "#pull-request-284", author: { name: "Venn", src: "/avatar-user/venn/venn.png" } }) : undefined;
@@ -64,6 +61,7 @@ export function ProjectButterReferenceCommentBody({ markdown, pullRequestStatus,
 		return { ...streamdownComponents, a: ({ href, ...props }: ComponentProps<"a"> & { node?: unknown }) => {
 			const agent = href?.startsWith(MENTION_LINK) ? byId.get(href.slice(MENTION_LINK.length)) : undefined;
 			if (agent) return <JiraActivitySegments segments={[mentionSegmentForActor({ id: agent.id, name: agent.name, kind: "agent", avatarSrc: agent.avatarSrc, brandName: agent.brandName })]} />;
+			if (href?.startsWith(MENTION_LINK)) return <>{props.children}</>;
 			return href === "#pull-request-284" && item ? <SmartLink className="text-[length:inherit] leading-[inherit]" item={item} positionerClassName="z-[700]" showStatus size="large" /> : <DefaultAnchor href={href} {...props} />;
 		} };
 	}, [agents, pullRequestStatus]);

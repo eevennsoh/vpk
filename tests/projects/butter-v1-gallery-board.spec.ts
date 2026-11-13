@@ -10,13 +10,16 @@ test("selecting a gallery item animates its highlight", { tag: "@smoke" }, async
 	await expect(button).toBeVisible();
 	const sizes = await button.evaluate(async (element) => {
 		const samples: number[] = [];
-		const start = performance.now();
+		let start: number | undefined;
 		(element as HTMLButtonElement).click();
 		await new Promise<void>((resolve) => {
 			const sample = () => {
 				const surface = element.querySelector<HTMLElement>("[style*='mask-image']");
-				if (surface) samples.push(Number.parseFloat(getComputedStyle(surface).maskSize));
-				if (performance.now() - start < 1000) requestAnimationFrame(sample);
+				if (surface) {
+					start ??= performance.now();
+					samples.push(surface.getBoundingClientRect().width);
+				}
+				if (start === undefined || performance.now() - start < 1000) requestAnimationFrame(sample);
 				else resolve();
 			};
 			requestAnimationFrame(sample);

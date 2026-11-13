@@ -17,10 +17,12 @@ export function FloatingRovoButtonNudge({
 	suggestion,
 	placement,
 	positioning = "viewport",
+	shouldReduceMotion = false,
 }: Readonly<{
 	suggestion: FloatingRovoButtonSuggestion;
 	placement?: FloatingRovoButtonPlacement;
 	positioning?: FloatingRovoButtonPositioning;
+	shouldReduceMotion?: boolean;
 }>) {
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
 
@@ -32,9 +34,9 @@ export function FloatingRovoButtonNudge({
 				positioning === "container" ? "absolute" : "fixed",
 				placement ? null : "right-[84px] bottom-7",
 			)}
-			initial={{ opacity: 0, scaleX: 0.24, x: 52 }}
+			initial={shouldReduceMotion ? false : { opacity: 0, scaleX: 0.24, x: 52 }}
 			animate={{ opacity: 1, scaleX: 1, x: 0 }}
-			exit={{ opacity: 0, scaleX: 0.24, x: 52 }}
+			exit={shouldReduceMotion ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scaleX: 0.24, x: 52 }}
 			transition={{
 				opacity: { duration: 0.12, ease: [0, 0, 0.2, 1] },
 				// Shares the button's morph spring so the pill reads as being pushed
@@ -62,7 +64,7 @@ export function FloatingRovoButtonNudge({
 				onClick={suggestion.onSelect}
 				type="button"
 			>
-				<AiAgentIcon color={token("color.icon.inverse")} label="" size="small" />
+				{suggestion.icon ?? <AiAgentIcon color={token("color.icon.inverse")} label="" size="small" />}
 				<span className="min-w-0 truncate">{suggestion.label}</span>
 			</button>
 			{suggestion.onDismiss ? (

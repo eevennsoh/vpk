@@ -9,7 +9,7 @@ import RovoFloatingChat from "@/components/projects/rovo-floating-chat/component
 import type { ChatComposerPrefillRequest, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { AgentResultCreator } from "@/components/projects/sidebar-chat/components/agent-result-card";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
-import type { FloatingRovoButtonInsightsConfig } from "@/components/projects/shared/components/floating-rovo-button";
+import type { FloatingRovoButtonInsightsConfig, FloatingRovoButtonSuggestion } from "@/components/projects/shared/components/floating-rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 
 interface JgpRovoOverlayProps {
@@ -32,6 +32,7 @@ interface JgpRovoOverlayProps {
 	 * into. `null` leaves it a plain chat launcher.
 	 */
 	insights?: FloatingRovoButtonInsightsConfig | null;
+	suggestion?: FloatingRovoButtonSuggestion | null;
 	/** Hide the viewport FAB. Embedded chrome also hides it via the same flags. */
 	launcher?: "auto" | "hidden";
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
@@ -51,6 +52,7 @@ export function JgpRovoOverlay({
 	isSwitchingSession = false,
 	chat = "auto",
 	insights = null,
+	suggestion = null,
 	launcher = "auto",
 	onInterceptSubmit,
 	onLauncherClick,
@@ -121,6 +123,7 @@ export function JgpRovoOverlay({
 					ariaLabel="Open Rovo chat"
 					forceVisible
 					insights={insights}
+					suggestion={suggestion}
 					onButtonClick={onLauncherClick}
 					product="home"
 				/>

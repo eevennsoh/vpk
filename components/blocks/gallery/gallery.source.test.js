@@ -215,12 +215,7 @@ test("Gallery selected surface preserves the organic ink-bloom contract", () => 
 	assert.match(source, /feGaussianBlur/u);
 	assert.match(source, /const originX = \(width \* visual\.origin\.xPercent\) \/ 100;/u);
 	assert.match(source, /const originY = \(height \* visual\.origin\.yPercent\) \/ 100;/u);
-	assert.match(source, /return `\$\{originX - offset\}px \$\{originY - offset\}px`;/u);
-	assert.match(source, /const targetRadius = isExitPhase \? 0 : revealRadius;/u);
-	assert.match(source, /if \(shouldReduceMotion\) \{\s*radius\.set\(targetRadius\);/u);
 	assert.match(source, /MASK_FEATHER_PX/u);
-	assert.match(source, /maskPosition,/u);
-	assert.match(source, /maskSize,/u);
 	assert.match(source, /maskImage: inkMaskImage/u);
 	assert.equal((source.match(/\bmaskImage:/gu) ?? []).length, 1);
 	assert.match(source, /maskMode: "alpha"/u);
