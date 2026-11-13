@@ -84,14 +84,15 @@ const LOOPBACK_ADDRESSES = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
  *            production, a loopback caller (the Next dev proxy, which sends no Origin)
  *   reject — anything else
  * @param {{ adminTokenValid: boolean, origin: string | null, originAllowed: boolean,
- *   remoteAddress: string | null, runtimeAdminRequired: boolean, runtimeAdminToken: string | null,
- *   secFetchSite: string | null }} request
+ *   production: boolean, remoteAddress: string | null, runtimeAdminRequired: boolean,
+ *   runtimeAdminToken: string | null, secFetchSite: string | null }} request
  * @returns {{ action: "issue" | "reject", reason: string }}
  */
 function decideRuntimeSocketTokenRequest({
 	adminTokenValid,
 	origin,
 	originAllowed,
+	production,
 	remoteAddress,
 	runtimeAdminRequired,
 	runtimeAdminToken,
@@ -101,7 +102,9 @@ function decideRuntimeSocketTokenRequest({
 	if (adminTokenValid) return { action: "issue", reason: "runtime-admin" };
 	if (origin) return originAllowed ? { action: "issue", reason: "allowed-origin" } : { action: "reject", reason: "origin-not-allowed" };
 	if (secFetchSite === "same-origin") return { action: "issue", reason: "same-origin-browser" };
-	if (!runtimeAdminRequired && remoteAddress && LOOPBACK_ADDRESSES.has(remoteAddress)) {
+	// Outside production (also with VPK_REQUIRE_RUNTIME_ADMIN=true) the Next dev proxy
+	// forwards from loopback without Origin or fetch metadata.
+	if (!production && remoteAddress && LOOPBACK_ADDRESSES.has(remoteAddress)) {
 		return { action: "issue", reason: "local-proxy" };
 	}
 	return { action: "reject", reason: "no-origin" };
@@ -176,6 +179,7 @@ function createRuntimeAdminControls({
 			adminTokenValid: isRuntimeAdminTokenValid(getRuntimeAdminTokenFromRequest(req), runtimeAdminToken),
 			origin,
 			originAllowed: Boolean(origin) && isAllowedRuntimeSocketOrigin(origin, req),
+			production: env.NODE_ENV === "production",
 			remoteAddress: getNonEmptyString(req.socket?.remoteAddress),
 			runtimeAdminRequired,
 			runtimeAdminToken,

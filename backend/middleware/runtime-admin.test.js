@@ -210,6 +210,7 @@ test("decideRuntimeSocketTokenRequest issues socket tokens only to an allowed Or
 		adminTokenValid: false,
 		origin: null,
 		originAllowed: false,
+		production: true,
 		remoteAddress: "203.0.113.7",
 		runtimeAdminRequired: true,
 		runtimeAdminToken: "secret",
@@ -223,9 +224,10 @@ test("decideRuntimeSocketTokenRequest issues socket tokens only to an allowed Or
 		["production, disallowed Origin even with same-origin metadata", { origin: "https://evil.test", secFetchSite: "same-origin" }, "reject", "origin-not-allowed"],
 		["production, runtime admin token", { adminTokenValid: true }, "issue", "runtime-admin"],
 		["production, loopback caller is not trusted", { remoteAddress: "127.0.0.1" }, "reject", "no-origin"],
-		["development with a token, the Next proxy on loopback", { runtimeAdminRequired: false, remoteAddress: "::ffff:127.0.0.1" }, "issue", "local-proxy"],
-		["development with a token, a LAN caller", { runtimeAdminRequired: false }, "reject", "no-origin"],
-		["development without a token (tokens are empty)", { runtimeAdminRequired: false, runtimeAdminToken: null }, "issue", "tokens-disabled"],
+		["development with a token, the Next proxy on loopback", { production: false, runtimeAdminRequired: false, remoteAddress: "::ffff:127.0.0.1" }, "issue", "local-proxy"],
+		["development with VPK_REQUIRE_RUNTIME_ADMIN, the Next proxy on loopback", { production: false, remoteAddress: "127.0.0.1" }, "issue", "local-proxy"],
+		["development with a token, a LAN caller", { production: false, runtimeAdminRequired: false }, "reject", "no-origin"],
+		["development without a token (tokens are empty)", { production: false, runtimeAdminRequired: false, runtimeAdminToken: null }, "issue", "tokens-disabled"],
 	];
 	for (const [name, overrides, action, reason] of cases) {
 		assert.deepEqual(decideRuntimeSocketTokenRequest({ ...base, ...overrides }), { action, reason }, name);
@@ -248,4 +250,18 @@ test("the token route refuses a production request with no Origin and accepts th
 	assert.deepEqual(run({}), { nextCalls: 0, payloads: [{ statusCode: 403, body: { error: "Runtime socket token origin is not allowed" } }] });
 	assert.deepEqual(run({ "sec-fetch-site": "same-origin" }), { nextCalls: 1, payloads: [] });
 	assert.deepEqual(run({ "x-vpk-runtime-admin-token": "secret" }), { nextCalls: 1, payloads: [] });
+});
+
+test("the token route keeps working through the Next dev proxy when development requires runtime admin", () => {
+	const controls = createRuntimeAdminControls({
+		allowedOrigins: ["http://localhost:3000"],
+		env: { NODE_ENV: "development", VPK_REQUIRE_RUNTIME_ADMIN: "true", VPK_RUNTIME_ADMIN_TOKEN: "secret" },
+	});
+	let nextCalls = 0;
+	const response = createResponse();
+	controls.requireRuntimeSocketTokenRequester(createRequest({ headers: { host: "127.0.0.1:8080" }, remoteAddress: "127.0.0.1" }), response, () => {
+		nextCalls += 1;
+	});
+	assert.equal(nextCalls, 1);
+	assert.deepEqual(response.payloads, []);
 });
