@@ -429,10 +429,8 @@ test("a launched session copies its pane output to the worktree's dev log and ke
 		);
 
 		const tmuxLog = fs.readFileSync(fake.tmuxLogPath, "utf8");
-		assert.ok(
-			tmuxLog.includes(`pipe-pane -t vpk-dev-plain-log-test -o cat >> '${path.join(logDir, "dev.log")}'`),
-			tmuxLog,
-		);
+		const pipe = tmuxLog.split("\n").find((line) => line.startsWith("-L vpk-dev pipe-pane -t vpk-dev-plain-log-test -o ")) ?? "";
+		assert.ok(pipe.includes(`'${path.join(repoRoot, "scripts/lib/dev-log-filter.js")}' --out '${path.join(logDir, "dev.log")}' --max-bytes '20971520'`), tmuxLog);
 		assert.equal(fs.readFileSync(path.join(logDir, "dev.previous.log"), "utf8"), "last run\n");
 		assert.equal(fs.existsSync(path.join(logDir, "dev.log")), false, "the fake pane wrote nothing yet");
 		assert.ok(output.includes(`Logs:        ${path.join(logDir, "dev.log")}`), output);
