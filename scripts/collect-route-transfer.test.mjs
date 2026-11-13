@@ -86,3 +86,8 @@ test("a failed, error or unreadable script or stylesheet invalidates the sample"
 		/2 script or stylesheet request\(s\) failed; refusing to record the sample: \/_next\/static\/chunks\/a\.js \(HTTP 404\)/u,
 	);
 });
+
+test("the browser that measured is recorded with the baseline", () => {
+	const merged = mergeIntoBaseline({ routes: [], source: { kind: "build" } }, {}, { executablePath: "/x/chrome", headless: true, version: "150.0.0.0" });
+	assert.deepEqual(merged.source, { fetchedBrowser: { executablePath: "/x/chrome", headless: true, version: "150.0.0.0" }, kind: "build" });
+});

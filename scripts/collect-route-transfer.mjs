@@ -196,9 +196,11 @@ async function measureOnce(browser, origin, routePath) {
 
 export async function collectRouteTransfer({ baseUrl, routes = TRANSFER_ROUTES, runs = 3 }) {
 	const { chromium } = require("@playwright/test");
-	const { findChromePath } = require(path.join(process.cwd(), "scripts/lib/chrome-path.js"));
-	const found = findChromePath();
-	const browser = await chromium.launch({ headless: true, ...(found?.path ? { executablePath: found.path } : {}) });
+	// Always Playwright's own Chromium (the headless shell the installed @playwright/test pins),
+	// never a system Chrome or CHROME_PATH, so the number does not depend on what is installed.
+	const browser = await chromium.launch({ headless: true });
+	// headless: true runs the chromium_headless_shell of the same revision as this executable.
+	const browserInfo = { executablePath: chromium.executablePath(), headless: true, version: browser.version() };
 	const origin = new URL(baseUrl).origin;
 	const results = {};
 	try {
@@ -212,12 +214,13 @@ export async function collectRouteTransfer({ baseUrl, routes = TRANSFER_ROUTES, 
 	} finally {
 		await browser.close();
 	}
-	return results;
+	return { browser: browserInfo, results };
 }
 
-export function mergeIntoBaseline(baseline, transfer) {
+export function mergeIntoBaseline(baseline, transfer, browser = null) {
 	return {
 		...baseline,
+		...(browser ? { source: { ...baseline.source, fetchedBrowser: browser } } : {}),
 		routes: baseline.routes.map((route) => (transfer[route.id]
 			? { ...route, fetchedCss: transfer[route.id].fetchedCss, fetchedJs: transfer[route.id].fetchedJs, fetchedPath: transfer[route.id].path, fetchedRuns: transfer[route.id].fetchedRuns }
 			: route)),
@@ -227,8 +230,9 @@ export function mergeIntoBaseline(baseline, transfer) {
 async function main() {
 	const options = parseArgs(process.argv.slice(2));
 	const baseline = JSON.parse(readFileSync(options.input, "utf8"));
-	const transfer = await collectRouteTransfer({ baseUrl: options.baseUrl, runs: options.runs });
-	writeFileSync(options.output, `${JSON.stringify(mergeIntoBaseline(baseline, transfer), null, 2)}\n`);
+	const { browser, results: transfer } = await collectRouteTransfer({ baseUrl: options.baseUrl, runs: options.runs });
+	console.log(`browser ${browser.version} at ${browser.executablePath}`);
+	writeFileSync(options.output, `${JSON.stringify(mergeIntoBaseline(baseline, transfer, browser), null, 2)}\n`);
 	for (const [routeId, result] of Object.entries(transfer)) {
 		console.log(`${routeId} ${result.path}: js ${result.fetchedJs.bytes} (range ${result.fetchedJs.range}), css ${result.fetchedCss.bytes} (range ${result.fetchedCss.range}) over ${result.fetchedRuns.length} runs`);
 	}
