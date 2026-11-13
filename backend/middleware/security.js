@@ -2,6 +2,7 @@
 
 const cors = require("cors");
 const helmet = require("helmet");
+const { createOriginNotAllowedError } = require("./error-response");
 
 const DEFAULT_ALLOWED_ORIGINS = [
 	"http://localhost:3000",
@@ -70,7 +71,8 @@ function createCorsOptions(allowedOrigins) {
 			if (isAllowedOrigin(origin, allowedOrigins)) {
 				return cb(null, true);
 			}
-			return cb(new Error(`CORS: origin ${origin} not allowed`));
+			// A 403 in the shared error shape (final handler), not Express's default 500 page.
+			return cb(createOriginNotAllowedError(origin));
 		},
 		credentials: true,
 	};

@@ -38,6 +38,7 @@ const {
 } = require("./realtime/ws-relay");
 const { loadAiSdk } = require("./lib/ai-sdk-runtime");
 const { resolveBackendListenHost } = require("./middleware/local-only");
+const { registerFinalErrorHandlers } = require("./middleware/error-response");
 const {
 	createBackendProcess,
 	createHttpServerShutdownSteps,
@@ -79,6 +80,8 @@ async function startServer() {
 		expressImpl: express,
 		publicPath,
 	});
+	// Last on the stack: unanswered /api requests and every unhandled error get the shared JSON shape.
+	registerFinalErrorHandlers(runtime.app);
 
 	console.log("[STARTUP] All routes registered, starting HTTP server...");
 
