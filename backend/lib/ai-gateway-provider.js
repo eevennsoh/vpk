@@ -211,7 +211,7 @@ async function fetchOpenAiCompatibleCompletion({
 	if (!response.ok) {
 		const errorText = await response.text();
 		throw new Error(
-			`AI Gateway OpenAI-compatible request failed (${response.status}): ${redactLogText(describeGatewayCloudIdError(errorText).slice(0, 500))}`
+			`AI Gateway OpenAI-compatible request failed (${response.status}): ${redactLogText(describeGatewayCloudIdError(errorText)).slice(0, 500)}`
 		);
 	}
 

@@ -68,7 +68,7 @@ async function streamLocalModel({ userMessage, conversationHistory, writer }) {
 	if (!response.ok) {
 		const errorText = await response.text().catch(() => "");
 		throw new Error(
-			`Local model server error (${response.status}): ${redactLogText(errorText.slice(0, 300))}`
+			`Local model server error (${response.status}): ${redactLogText(errorText).slice(0, 300)}`
 		);
 	}
 

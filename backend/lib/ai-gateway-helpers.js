@@ -509,7 +509,7 @@ async function streamBedrockGatewayManualSse({ gatewayUrl, envVars, system, prom
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`AI Gateway Bedrock error ${response.status}: ${redactLogText(describeGatewayCloudIdError(errorText).slice(0, 400))}`);
+		throw new Error(`AI Gateway Bedrock error ${response.status}: ${redactLogText(describeGatewayCloudIdError(errorText)).slice(0, 400)}`);
 	}
 
 	const reader = response.body?.getReader();
@@ -647,7 +647,7 @@ async function streamGoogleGatewayManualSse({
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`AI Gateway Google error ${response.status}: ${redactLogText(describeGatewayCloudIdError(errorText).slice(0, 400))}`);
+		throw new Error(`AI Gateway Google error ${response.status}: ${redactLogText(describeGatewayCloudIdError(errorText)).slice(0, 400)}`);
 	}
 
 	const reader = response.body?.getReader();
