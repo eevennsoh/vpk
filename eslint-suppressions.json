@@ -2565,14 +2565,6 @@
       "count": 35
     }
   },
-  "components/projects/shared/hooks/use-reasoning-phase.ts": {
-    "react-hooks/purity": {
-      "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 6
-    }
-  },
   "components/projects/shared/lib/rovo-app-composer-response-gradient-state.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
