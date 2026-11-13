@@ -92,3 +92,44 @@ test("a request on a keep-alive connection that arrives while draining gets 503 
 	assert.equal(code, 0, backend.lines.join("\n"));
 	assert.ok(backend.lines.includes("[SHUTDOWN] test-hold: done (released)"), backend.lines.join("\n"));
 });
+
+test("a WebSocket upgrade on a keep-alive connection that arrives while draining gets 503", { timeout: 60_000 }, async (t) => {
+	const backend = startBackend(t, { serverPath: HELD_SERVER_PATH });
+	const { host, port } = await backend.listening;
+
+	const socket = net.connect(port, host);
+	t.after(() => socket.destroy());
+	await once(socket, "connect");
+	let received = "";
+	socket.setEncoding("utf8");
+	socket.on("data", (chunk) => {
+		received += chunk;
+	});
+	const closed = once(socket, "close");
+
+	// As above: a request whose body has not arrived keeps the connection open past
+	// stop-accepting. "100 Continue" proves the server has parsed its headers.
+	socket.write("POST /healthcheck HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nExpect: 100-continue\r\n\r\n");
+	await new Promise((resolve) => {
+		const check = () => (received.includes("100 Continue\r\n\r\n") ? resolve() : socket.once("data", check));
+		check();
+	});
+	backend.child.kill("SIGTERM");
+	await backend.waitForLine(/^\[TEST\] drain held$/u);
+
+	// Finish the first request, then ask the same connection to become a WebSocket. A
+	// browser-preview upgrade needs no upstream, and before the fix it was accepted (101).
+	socket.write("hello");
+	socket.write(
+		"GET /api/browser-workspaces/059d607c-a1aa-48f5-880b-5d824fc5b99f/live HTTP/1.1\r\nHost: localhost\r\n" +
+			"Connection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n",
+	);
+	await closed;
+	const responses = received.split(/(?=HTTP\/1\.1 \d{3} )/u).filter(Boolean);
+	assert.match(responses.at(-1), /^HTTP\/1\.1 503 /u, received);
+	assert.equal(responses.some((response) => /^HTTP\/1\.1 101 /u.test(response)), false, received);
+
+	backend.child.stdin.write("release\n");
+	const { code } = await backend.exited;
+	assert.equal(code, 0, backend.lines.join("\n"));
+});
