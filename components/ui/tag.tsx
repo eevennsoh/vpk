@@ -223,7 +223,7 @@ interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	maxWidth?: React.CSSProperties["maxWidth"];
 }
 
-const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
+function Tag({
 	as,
 	children,
 	variant = "default",
@@ -245,8 +245,9 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	role,
 	onClick,
 	onKeyDown,
+	ref,
 	...props
-}: Readonly<TagProps>, ref) {
+}: Readonly<TagProps>) {
 	void as;
 
 	const resolvedColor = colorAliases[color ?? legacyVariantToColor[variant]];
@@ -520,7 +521,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 			) : null}
 		</span>
 	);
-});
+}
 
 type TagGroupProps = React.ComponentProps<"div">;
 
