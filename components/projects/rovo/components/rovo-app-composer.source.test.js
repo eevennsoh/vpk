@@ -129,7 +129,6 @@ test("Rovo cursor voice uses structured screen tools instead of screenshot POINT
 	assert.match(SHELL_SOURCE, /ScreenAssistantRegionOverlay/u);
 	assert.match(SHELL_SOURCE, /activeRegion: screenAssistantRegion/u);
 	assert.match(SHELL_SOURCE, /activeRegion: snapshot\.activeRegion \?\? null/u);
-	assert.match(SHELL_SOURCE, /const \[screenAssistantRegionPainting, setScreenAssistantRegionPainting\] = useState\(false\);/u);
 	assert.match(SHELL_SOURCE, /<ClickyOverlay[\s\S]*paintingActive=\{screenAssistantRegionPainting\}/u);
 	assert.match(SHELL_SOURCE, /<ScreenAssistantRegionOverlay[\s\S]*onPaintingChange=\{setScreenAssistantRegionPainting\}/u);
 	assert.doesNotMatch(SHELL_SOURCE, /onStartScreenAssistantRegionPaint|screenAssistantRegionActive|isScreenAssistantRegionPaintMode/u);

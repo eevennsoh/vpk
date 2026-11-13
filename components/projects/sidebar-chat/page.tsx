@@ -82,11 +82,11 @@ import { chatStyles } from "./data/styles";
 import { cn } from "@/lib/utils";
 import { useChatSubmit, type ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
 import { useScrollAnchor } from "./hooks/use-scroll-anchor";
+import { useScreenAssistantRegion } from "./hooks/use-screen-assistant-region";
 import { useThinkingStatus } from "./hooks/use-thinking-status";
 import { appendOptimisticCompactUserMessage } from "./lib/optimistic-user-message";
 import {
 	reduceDictationPresentation,
-	reduceScreenAssistantRegion,
 	subscribeToUserActivation,
 } from "./lib/sidebar-chat-state";
 import { type DelegationRequest, type UseRealtimeVoiceResult, useRealtimeVoice } from "@/components/projects/rovo-core/hooks/use-realtime-voice";
@@ -100,7 +100,6 @@ import {
 	createStudioScreenAssistantSnapshot,
 	getStudioScreenAssistantVisibleTargets,
 	groundStudioScreenAssistantTarget,
-	type StudioScreenAssistantRegion,
 	type StudioScreenAssistantTarget,
 } from "@/components/projects/rovo-core/lib/screen-assistant";
 import styles from "./chat.module.css";
@@ -783,22 +782,12 @@ export default function ChatPanel({ onClose, agentCreator,
 			clickyStartSpeaking(text);
 			return true;
 		}, [activateClicky, clickyStartSpeaking, hideAiCursor, isClickyActive]);
-		const [{ painting: screenAssistantRegionPainting, region: screenAssistantRegion }, dispatchScreenAssistantRegion] = useReducer(
-			reduceScreenAssistantRegion,
-			{ painting: false, region: null },
-		);
-		const setScreenAssistantRegionPainting = useCallback((painting: boolean) => {
-			dispatchScreenAssistantRegion({ type: "set-painting", painting });
-		}, []);
-		const setScreenAssistantRegion = useCallback((region: StudioScreenAssistantRegion | null) => {
-			dispatchScreenAssistantRegion({ type: "set-region", region });
-		}, []);
-		if (
-			(hideAiCursor || !isClickyActive) &&
-			(screenAssistantRegion || screenAssistantRegionPainting)
-		) {
-			dispatchScreenAssistantRegion({ type: "reset" });
-		}
+		const {
+			painting: screenAssistantRegionPainting,
+			region: screenAssistantRegion,
+			setPainting: setScreenAssistantRegionPainting,
+			setRegion: setScreenAssistantRegion,
+		} = useScreenAssistantRegion(!hideAiCursor && isClickyActive);
 
 	useEffect(() => {
 		if (hideAiCursor && isClickyActive) {

@@ -2476,7 +2476,7 @@
   },
   "components/projects/rovo/components/rovo-app-composer.source.test.js": {
     "no-restricted-syntax": {
-      "count": 133
+      "count": 132
     }
   },
   "components/projects/rovo/components/rovo-app-messages-empty-state.source.test.js": {
@@ -2494,7 +2494,7 @@
       "count": 17
     },
     "react-hooks/set-state-in-effect": {
-      "count": 12
+      "count": 11
     }
   },
   "components/projects/search/components/search-result-card.tsx": {
@@ -2648,7 +2648,7 @@
   },
   "components/projects/studio/components/rovo-app-agent-creation-flow.test.js": {
     "no-restricted-syntax": {
-      "count": 854
+      "count": 853
     }
   },
   "components/projects/studio/components/rovo-app-automation-discovery-widget.source.test.js": {
@@ -2674,7 +2674,7 @@
       "count": 24
     },
     "react-hooks/set-state-in-effect": {
-      "count": 16
+      "count": 15
     }
   },
   "components/projects/studio/components/rovo-app-sidebar.source.test.js": {
