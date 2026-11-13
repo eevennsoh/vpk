@@ -39,6 +39,15 @@ test("processesUnder matches the directory and its descendants only", () => {
 	assert.deepEqual(processesUnder(cwds, "/repo/wt", { exclude: [1] }).map(({ pid }) => pid), [2]);
 });
 
+test("Codex: a descendant whose name starts with two dots is inside the worktree", () => {
+	const cwds = [
+		{ pid: 5, command: "node", cwd: "/repo/wt/..cache" },
+		{ pid: 6, command: "node", cwd: "/repo/wt/..cache/deeper" },
+		{ pid: 7, command: "node", cwd: "/repo/..wt" },
+	];
+	assert.deepEqual(processesUnder(cwds, "/repo/wt").map(({ pid }) => pid), [5, 6]);
+});
+
 // A fake /proc: pid 10 is ours and holds the lock; pid 1 belongs to root.
 function fakeProc({ rootReadable }) {
 	const denied = () => Object.assign(new Error("EACCES"), { code: "EACCES" });

@@ -95,7 +95,8 @@ async function listProcessCwds({ platform = process.platform, lsof = runLsof, fs
 
 function isInside(child, parent) {
 	const relative = path.relative(parent, child);
-	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+	// Outside only when the first component is `..`: a folder named `..cache` is inside.
+	return relative === "" || (relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 }
 
 /** Processes whose cwd is `dir` or below it, from a listProcessCwds() result. */
