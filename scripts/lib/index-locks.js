@@ -33,7 +33,7 @@ async function inspectIndexLocks(entries, { now = Date.now(), minAgeMs, findHold
 		const lock = path.join(entry.gitDir, "index.lock");
 		const stat = statOrNull(lock);
 		if (!stat) continue;
-		found.push({ ...entry, lock: fs.realpathSync(lock), mtimeMs: stat.mtimeMs, ageMs: Math.max(0, now - stat.mtimeMs) });
+		found.push({ ...entry, lock: fs.realpathSync(lock), ino: stat.ino, mtimeMs: stat.mtimeMs, ageMs: Math.max(0, now - stat.mtimeMs) });
 	}
 	if (found.length === 0) return [];
 	const [holders, processCwds] = await Promise.all([findHolders(found.map((entry) => entry.lock)), readProcessCwds()]);
@@ -44,6 +44,7 @@ async function inspectIndexLocks(entries, { now = Date.now(), minAgeMs, findHold
 			worktree: entry.worktree,
 			lock: entry.lock,
 			ageMs: entry.ageMs,
+			ino: entry.ino,
 			mtimeMs: entry.mtimeMs,
 			minAgeMs,
 			protectedCheckout: entry.protectedCheckout === true,
@@ -64,8 +65,11 @@ async function removeStaleIndexLocks(inspected, { findHolders = findFileHolders,
 			results.push({ lock: entry.lock, removed: false, reason: entry.decision.reason });
 			continue;
 		}
-		const stat = statOrNull(entry.lock);
-		if (!stat || stat.mtimeMs !== entry.mtimeMs) {
+		const sameFile = () => {
+			const stat = statOrNull(entry.lock);
+			return Boolean(stat) && stat.ino === entry.ino && stat.mtimeMs === entry.mtimeMs;
+		};
+		if (!sameFile()) {
 			results.push({ lock: entry.lock, removed: false, reason: "changed since it was inspected" });
 			continue;
 		}
@@ -84,6 +88,11 @@ async function removeStaleIndexLocks(inspected, { findHolders = findFileHolders,
 		});
 		if (recheck.action !== "remove") {
 			results.push({ lock: entry.lock, removed: false, reason: `on recheck: ${recheck.reason}` });
+			continue;
+		}
+		// A git command may have replaced the lock while the holders were being read.
+		if (!sameFile()) {
+			results.push({ lock: entry.lock, removed: false, reason: "replaced during the recheck" });
 			continue;
 		}
 		try {

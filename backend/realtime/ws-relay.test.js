@@ -346,6 +346,32 @@ test("browser preview connection attaches, forwards controls, and detaches clien
 	assert.deepEqual(browserWorkspaceManager.calls[1].payload, { type: "click", x: 1 });
 });
 
+test("a preview socket for a deleted workspace gets a preview error instead of throwing out of the socket listeners", async (t) => {
+	// The real manager, not the async fake: on main its lookups threw synchronously,
+	// past the `.catch` in the listeners, and a throw from a socket listener exits
+	// the backend (server.js uncaughtException handler).
+	const { BrowserWorkspaceManager } = require("../lib/browser-workspace-manager");
+	const browserWorkspaceManager = new BrowserWorkspaceManager({ cleanupIntervalMs: 1_000_000 });
+	t.after(() => clearInterval(browserWorkspaceManager._cleanupTimer));
+	const server = createFakeServer();
+	const { instances, webSocketImpl } = createFakeWebSocketImpl();
+	registerBackendWebSocketRelays(server, {
+		...createRegistrationDependencies({ browserWorkspaceManager }),
+		webSocketImpl,
+	});
+
+	const ws = createFakeWs();
+	assert.doesNotThrow(() => instances[1].listeners.get("connection")(ws, {}, "deleted-workspace"));
+	await new Promise(setImmediate);
+	assert.deepEqual(ws.sent.map((payload) => JSON.parse(payload)), [
+		{ type: "preview-error", message: "Browser workspace not found: deleted-workspace" },
+	]);
+	assert.equal(ws.closed, true);
+	assert.doesNotThrow(() => ws.listeners.get("close")());
+	assert.doesNotThrow(() => ws.listeners.get("error")(new Error("reset")));
+	await new Promise(setImmediate);
+});
+
 test("browser preview connection uses mirror browsers before workspace manager", () => {
 	const server = createFakeServer();
 	const { instances, webSocketImpl } = createFakeWebSocketImpl();

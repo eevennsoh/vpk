@@ -792,7 +792,7 @@ export function CityRailEditor({
 				    dismiss" without introducing a second control. */}
 				<div
 					className={cn(
-						"absolute left-1/2 top-0 z-40 flex items-center justify-center transition-opacity duration-200",
+						"absolute left-1/2 top-0 z-40 flex items-center justify-center transition-opacity duration-medium",
 						// Hover-only when closed (resting state shouldn't
 						// clutter the slider edge); always visible when
 						// open so the close affordance stays findable.
@@ -876,7 +876,7 @@ export function CityRailEditor({
 			    bottom edge of the slider. */}
 				{!isOpen && (hasManuallySelectedCity || isPinned) ? (
 					<div
-						className="absolute bottom-0 left-1/2 z-40 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover/city-rail:opacity-100 group-focus-within/city-rail:opacity-100"
+						className="absolute bottom-0 left-1/2 z-40 flex items-center justify-center opacity-0 transition-opacity duration-medium group-hover/city-rail:opacity-100 group-focus-within/city-rail:opacity-100"
 						style={{ transform: "translate(-50%, calc(100% + 8px))" }}
 					>
 						<motion.div style={{ y: pinButtonY }}>

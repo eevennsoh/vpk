@@ -121,7 +121,7 @@ function openPrAction(pr, gate) {
  *   pushed: boolean | null,           // a remote branch exists
  *   unpushed: number | null,          // commits not on the remote branch
  *   inOriginDefault: boolean | null,  // head is an ancestor of origin/<default>
- *   patchEquivalent: boolean | null,  // git cherry origin/<default> head shows no '+'
+ *   patchEquivalent: boolean | null,  // git cherry origin/<default> head shows no '+' and no merge commit is ahead
  *   prs: Array<{ number, state, headRefOid, baseRefName, createdAt, mergedAt, mergeCommit? }> | null,
  *   commitsPastPrHead?: Record<number, number | null>,
  *   gate?: { isDraft: boolean, checks: string, failingChecks?: string[], reviewGateClear: boolean } | null,
@@ -139,6 +139,8 @@ function deriveBranchLanding(facts) {
 		landed: landing.landed,
 		proof: landing.proof,
 		pr: pr ? { number: pr.number, state: pr.state, url: pr.url ?? null } : null,
+		// Every open PR on the branch, not only the latest; null when PRs could not be read.
+		openPrs: facts.prs === null ? null : facts.prs.filter((candidate) => candidate.state === "OPEN").map((candidate) => candidate.number),
 		...(landing.pr ? { landedBy: landing.pr, exactHead: landing.exactHead } : {}),
 		...(landing.missing.length ? { missing: landing.missing } : {}),
 	};

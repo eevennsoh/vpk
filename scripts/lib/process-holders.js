@@ -47,38 +47,47 @@ function lsofRows(result) {
 	return null;
 }
 
-function linuxProcEntries(read) {
+// A process that exited while it was being read (ENOENT, ESRCH) is simply gone; any other
+// failure (EACCES on another user's process) leaves the whole reading unknown.
+const UNREADABLE = Symbol("unreadable");
+
+function readOrGone(read) {
+	try {
+		return read();
+	} catch (error) {
+		return error?.code === "ENOENT" || error?.code === "ESRCH" ? null : UNREADABLE;
+	}
+}
+
+// One row per process for which `read(name)` returns facts; null when any process could
+// not be read, because the one we could not read may be the one that matters.
+function linuxProcEntries(read, fsImpl = fs) {
 	let names;
 	try {
-		names = fs.readdirSync("/proc").filter((name) => /^\d+$/u.test(name));
+		names = fsImpl.readdirSync("/proc").filter((name) => /^\d+$/u.test(name));
 	} catch {
 		return null;
 	}
 	const rows = [];
 	for (const name of names) {
 		const pid = Number(name);
-		let command = "";
-		try {
-			command = fs.readFileSync(`/proc/${name}/comm`, "utf8").trim();
-		} catch {
-			continue;
-		}
+		const command = readOrGone(() => fsImpl.readFileSync(`/proc/${name}/comm`, "utf8").trim());
+		if (command === null) continue;
+		if (command === UNREADABLE) return null;
 		const value = read(name);
+		if (value === UNREADABLE) return null;
 		if (value !== null) rows.push({ pid, command, ...value });
 	}
 	return rows;
 }
 
 /** Every process with its cwd: [{ pid, command, cwd }], or null when unreadable. */
-async function listProcessCwds({ platform = process.platform, lsof = runLsof } = {}) {
+async function listProcessCwds({ platform = process.platform, lsof = runLsof, fsImpl = fs } = {}) {
 	if (platform === "linux") {
 		return linuxProcEntries((name) => {
-			try {
-				return { cwd: fs.readlinkSync(`/proc/${name}/cwd`) };
-			} catch {
-				return null;
-			}
-		});
+			const cwd = readOrGone(() => fsImpl.readlinkSync(`/proc/${name}/cwd`));
+			return cwd === null || cwd === UNREADABLE ? cwd : { cwd };
+		}, fsImpl);
 	}
 	const rows = lsofRows(await lsof(["-w", "-nP", "-d", "cwd", "-Fpcn"]));
 	return rows === null ? null : rows.flatMap((row) => row.names.map((cwd) => ({ pid: row.pid, command: row.command, cwd })));
@@ -96,29 +105,22 @@ function processesUnder(processCwds, dir, { exclude = [] } = {}) {
 }
 
 /** For each path, the processes holding it open: Map<path, [{ pid, command }]>, or null. */
-async function findFileHolders(paths, { platform = process.platform, lsof = runLsof } = {}) {
+async function findFileHolders(paths, { platform = process.platform, lsof = runLsof, fsImpl = fs } = {}) {
 	const holders = new Map(paths.map((file) => [file, []]));
 	if (paths.length === 0) return holders;
 	if (platform === "linux") {
 		const wanted = new Set(paths);
 		const rows = linuxProcEntries((name) => {
-			let fds;
-			try {
-				fds = fs.readdirSync(`/proc/${name}/fd`);
-			} catch {
-				return null;
-			}
+			const fds = readOrGone(() => fsImpl.readdirSync(`/proc/${name}/fd`));
+			if (fds === null || fds === UNREADABLE) return fds;
 			const open = [];
 			for (const fd of fds) {
-				try {
-					const target = fs.readlinkSync(`/proc/${name}/fd/${fd}`);
-					if (wanted.has(target)) open.push(target);
-				} catch {
-					// Closed while reading.
-				}
+				const target = readOrGone(() => fsImpl.readlinkSync(`/proc/${name}/fd/${fd}`));
+				if (target === UNREADABLE) return UNREADABLE;
+				if (target !== null && wanted.has(target)) open.push(target);
 			}
 			return open.length ? { open } : null;
-		});
+		}, fsImpl);
 		if (rows === null) return null;
 		for (const row of rows) for (const file of row.open) holders.get(file).push({ pid: row.pid, command: row.command });
 		return holders;

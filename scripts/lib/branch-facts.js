@@ -62,6 +62,13 @@ async function objectExists(git, oid) {
 	return (await git(["cat-file", "-e", `${oid}^{commit}`])).code === 0;
 }
 
+// Every commit's patch is on the target and no merge commit (which git cherry ignores) is
+// ahead of it. null when either read failed.
+function patchEquivalence(cherry, mergesAhead) {
+	if (!cherry?.ok || mergesAhead === null || mergesAhead === undefined) return null;
+	return mergesAhead === 0 && !/^\+ /mu.test(cherry.stdout);
+}
+
 // Does the local default branch hold the commit (or the patches) that landed the work?
 async function landingInLocalDefault(git, { landing, ref, prs, defaultBranch }) {
 	const localDefault = `refs/heads/${defaultBranch}`;
@@ -74,8 +81,11 @@ async function landingInLocalDefault(git, { landing, ref, prs, defaultBranch }) 
 		if (!(await objectExists(git, oid))) return oid ? false : null;
 		return exitAnswer(await git(["merge-base", "--is-ancestor", oid, localDefault]));
 	}
-	const cherry = await git(["cherry", localDefault, ref]);
-	return cherry.ok ? !/^\+ /mu.test(cherry.stdout) : null;
+	const [cherry, mergesAhead] = await Promise.all([
+		git(["cherry", localDefault, ref]),
+		git(["rev-list", "--merges", "--count", `${localDefault}..${ref}`]).then(countOrNull),
+	]);
+	return patchEquivalence(cherry, mergesAhead);
 }
 
 /**
@@ -91,12 +101,15 @@ async function collectBranchFacts({ git, branch, worktree = null, defaultBranch,
 	const originDefault = `refs/remotes/origin/${defaultBranch}`;
 	const remoteRef = branch ? `refs/remotes/origin/${branch}` : null;
 
-	const [status, pushed, inOriginDefault, cherry] = await Promise.all([
+	const [status, pushed, inOriginDefault, cherry, mergesAhead] = await Promise.all([
 		// --no-optional-locks: status must not refresh (write) the worktree's index.
 		worktree ? git(["--no-optional-locks", "-C", worktree.path, "status", "--porcelain=v1", "--untracked-files=all"]) : null,
 		remoteRef ? git(["show-ref", "--verify", "--quiet", remoteRef]).then(exitAnswer) : false,
 		head ? git(["merge-base", "--is-ancestor", head, originDefault]).then(exitAnswer) : null,
 		head ? git(["cherry", originDefault, head]) : null,
+		// git cherry skips merge commits, so a merge's own changes (a conflict resolution)
+		// cannot be proven by patch equivalence.
+		head ? git(["rev-list", "--merges", "--count", `${originDefault}..${head}`]).then(countOrNull) : null,
 	]);
 	// Commits not on the remote branch; irrelevant (0) when there is no remote branch.
 	const unpushed = pushed && head ? countOrNull(await git(["rev-list", "--count", `${remoteRef}..${head}`])) : pushed === false ? 0 : null;
@@ -121,7 +134,7 @@ async function collectBranchFacts({ git, branch, worktree = null, defaultBranch,
 		pushed,
 		unpushed,
 		inOriginDefault,
-		patchEquivalent: cherry?.ok ? !/^\+ /mu.test(cherry.stdout) : null,
+		patchEquivalent: patchEquivalence(cherry, mergesAhead),
 		prs,
 		commitsPastPrHead,
 		gate,

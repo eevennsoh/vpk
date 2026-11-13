@@ -47,6 +47,14 @@ test("a stale lock nobody holds is removed; a held one, a young one and the main
 		{ minAgeMs: 30 * MINUTE_MS },
 	);
 	const byName = Object.fromEntries(inspected.map((entry) => [path.basename(path.dirname(entry.lock)), entry]));
+	if (byName.held.holders === null) {
+		// The process table could not be fully read (Linux as a non-root user cannot read
+		// root's descriptors): unknown is never safe, so nothing is removed.
+		assert.equal(inspected.every((entry) => entry.decision.action === "keep"), true);
+		await removeStaleIndexLocks(inspected);
+		assert.equal([unheld, held, young, main].every(({ lock }) => fs.existsSync(lock)), true);
+		return;
+	}
 	assert.equal(byName.unheld.decision.action, "remove");
 	assert.deepEqual(byName.held.holders.map(({ pid }) => pid), [holder.pid]);
 	assert.equal(byName.held.decision.action, "keep");
@@ -127,4 +135,28 @@ test("a git process working in the worktree keeps an unheld old lock; only a non
 	const removed = await removeStaleIndexLocks(inspected, { findHolders: nobody, readProcessCwds: async () => cwds });
 	assert.deepEqual(removed.map(({ removed: done }) => done), [false, true]);
 	assert.equal(fs.existsSync(agentOnly.lock), false);
+});
+
+test("a lock replaced while its holders were being read is kept", async (t) => {
+	const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "index-locks-")));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const stale = makeGitDir(root, "stale", 60);
+	const nobody = async (paths) => new Map(paths.map((file) => [file, []]));
+	const inspected = await inspectIndexLocks([stale], { minAgeMs: 30 * MINUTE_MS, findHolders: nobody, readProcessCwds: async () => [] });
+	assert.equal(inspected[0].decision.action, "remove");
+
+	// A git command removes the old lock and takes a new one during the recheck's scan.
+	// Both files exist at once before the rename, so the new one has another inode even on
+	// filesystems that reuse freed inode numbers; its mtime is made identical on purpose.
+	const replacing = async (paths) => {
+		const next = `${stale.lock}.next`;
+		fs.writeFileSync(next, "");
+		const when = new Date(inspected[0].mtimeMs);
+		fs.utimesSync(next, when, when);
+		fs.renameSync(next, stale.lock);
+		return nobody(paths);
+	};
+	const [result] = await removeStaleIndexLocks(inspected, { findHolders: replacing, readProcessCwds: async () => [] });
+	assert.deepEqual({ removed: result.removed, reason: result.reason }, { removed: false, reason: "replaced during the recheck" });
+	assert.equal(fs.existsSync(stale.lock), true);
 });
