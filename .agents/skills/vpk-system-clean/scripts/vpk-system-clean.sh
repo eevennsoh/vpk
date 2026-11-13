@@ -10,11 +10,13 @@
 #     footprint, NOT ps RSS — the JIT/native mappings barely count toward RSS
 #     (an 11.1GB-footprint server showed 0.19GB RSS). A healthy compile burst
 #     can also peak in the double digits before Turbopack's eviction reclaims
-#     it (observed 12.9GB -> 1.7GB in one run), so this is sampled twice with a
-#     settle window and only killed if still bloated AND idle (low CPU) on the
-#     second sample — an idle server holding this much memory is the leak; a
-#     busy one is a normal burst. Killed (with its `next dev` parent) to
-#     restart clean.
+#     it (observed 12.9GB -> 1.7GB in one run), so CPU is sampled across a
+#     settle window and the server is only killed if still bloated AND its
+#     median CPU sample is idle — an idle server holding this much memory is
+#     the leak; a busy one is a normal burst. Killed (with its `next dev`
+#     parent) to restart clean. Under memory pressure (swap or the kernel
+#     pressure level past a limit) the bloat limit drops, the idle-CPU limit
+#     rises, and Codex stacks count as idle sooner.
 #  3. IDLE DEV STACKS (PORTS): leftover `vpk-dev-*` tmux sessions whose
 #     worktree still exists keep next-server, Express, and Portless routes
 #     bound. Stopped only when unattached, older than a grace window, and not
@@ -62,7 +64,16 @@ KILL_RUNAWAY_NEXT=1      # 1 = kill sustained-hot dev servers; 0 = report only
 NEXT_MEM_MAX_GB=6        # a next-server above this physical footprint (GB) is bloated/leaking
 KILL_BLOATED_NEXT=1      # 1 = kill bloated dev servers; 0 = report only
 NEXT_MEM_SETTLE_SECS=30  # settle window before re-checking a bloated candidate
-NEXT_MEM_IDLE_CPU_MAX=20 # %CPU below which a still-bloated server counts as idle (leak, not a compile burst)
+NEXT_MEM_IDLE_CPU_MAX=20 # median %CPU below which a still-bloated server counts as idle (leak, not a compile burst)
+NEXT_MEM_IDLE_SAMPLES=5  # CPU samples spread across the settle window; their median decides idle
+# Memory-pressure mode (values provisional). Entered when swap in use or the
+# kernel memory-pressure level reaches these. It lowers the bloat limit, raises
+# the idle-CPU limit (a real compile runs at 100%+), and uses the Codex probe's
+# shorter idle threshold. `--pressure-check` runs the sweep only in this mode.
+PRESSURE_SWAP_USED_GB=16          # swap in use (GB) that enters pressure mode
+PRESSURE_LEVEL_MIN=4              # kern.memorystatus_vm_pressure_level: 1 normal, 2 warn, 4 critical
+PRESSURE_NEXT_MEM_MAX_GB=4        # NEXT_MEM_MAX_GB in pressure mode
+PRESSURE_NEXT_MEM_IDLE_CPU_MAX=50 # NEXT_MEM_IDLE_CPU_MAX in pressure mode
 ALMD_PATH="/usr/local/bin/almd"
 ALMD_CPU_HOT=50          # minimum %CPU for every sample before almd is reset
 ALMD_MIN_AGE_SECS=900    # never reset almd during its first 15 minutes
@@ -73,8 +84,54 @@ KILL_RUNAWAY_ALMD=1      # 1 = reset sustained-hot almd; 0 = report only
 IDLE_STACK_MIN_AGE_SECS=1800  # leftover stacks younger than 30m are still warming
 KILL_IDLE_STACKS=1       # 1 = stop idle unattached leftover stacks; 0 = report only
 # Read-only Codex thread-recency probe; install.sh copies it next to this
-# script. Its IDLE_HOURS is the Codex idle threshold.
+# script. Its IDLE_HOURS (PRESSURE_IDLE_HOURS in pressure mode) is the Codex
+# idle threshold.
 CODEX_RECENCY_PROBE="${0:A:h}/codex-thread-recency.js"
+
+# --pressure-check: exit quietly unless the machine is under memory pressure
+#   (run often from its own LaunchAgent; the full sweep keeps its schedule).
+# --print-mode: print `pressure|<reasons>` or `normal|<readings>` and exit;
+#   status.sh uses it so the thresholds live only here.
+PRESSURE_CHECK_ONLY=0; PRINT_MODE_ONLY=0
+for arg in "$@"; do
+	case "$arg" in
+		--pressure-check) PRESSURE_CHECK_ONLY=1 ;;
+		--print-mode) PRINT_MODE_ONLY=1 ;;
+		*) print -u2 -- "vpk-system-clean: unknown flag $arg (use --pressure-check or --print-mode)"; exit 2 ;;
+	esac
+done
+
+# Whole GB of swap in use, from `used = 37580.80M`; empty when unreadable.
+swap_used_gb() {
+	sysctl -n vm.swapusage 2>/dev/null | awk '{
+		for (i = 1; i < NF; i++) if ($i == "used") {
+			v = $(i + 2); u = substr(v, length(v)); n = v + 0
+			if (u == "G") print int(n); else if (u == "M") print int(n / 1024); else if (u == "K") print 0
+			exit
+		}
+	}'
+}
+
+PRESSURE=0
+swap_gb=$(swap_used_gb)
+pressure_level=$(sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null | tr -d '[:space:]')
+pressure_reasons=()
+[[ "$swap_gb" == <-> ]] && (( swap_gb >= PRESSURE_SWAP_USED_GB )) && pressure_reasons+="swap ${swap_gb}GB in use >= ${PRESSURE_SWAP_USED_GB}GB"
+[[ "$pressure_level" == <-> ]] && (( pressure_level >= PRESSURE_LEVEL_MIN )) && pressure_reasons+="memory-pressure level ${pressure_level} >= ${PRESSURE_LEVEL_MIN}"
+if (( ${#pressure_reasons} )); then
+	PRESSURE=1
+	MODE_LINE="pressure|${(j:, :)pressure_reasons}"
+	NEXT_MEM_MAX_GB=$PRESSURE_NEXT_MEM_MAX_GB
+	NEXT_MEM_IDLE_CPU_MAX=$PRESSURE_NEXT_MEM_IDLE_CPU_MAX
+else
+	MODE_LINE="normal|swap ${swap_gb:-unknown}GB in use, memory-pressure level ${pressure_level:-unknown}"
+fi
+MODE_NOTE="${MODE_LINE%%|*} mode (${MODE_LINE#*|})"
+if (( PRINT_MODE_ONLY )); then
+	print -r -- "$MODE_LINE"
+	exit 0
+fi
+(( PRESSURE_CHECK_ONLY && ! PRESSURE )) && exit 0
 
 resolve_repo_root() {
 	local root
@@ -175,8 +232,10 @@ is_codex_desktop_worktree() {
 # whose cwd is exactly this worktree. Anything but `idle` means keep the stack.
 codex_thread_recency() {
 	local root="$1" line=""
+	local -a pressure_flag=()
+	(( PRESSURE )) && pressure_flag=( --pressure )
 	if [[ -f "$CODEX_RECENCY_PROBE" ]]; then
-		line=$(node "$CODEX_RECENCY_PROBE" --cwd "$root" 2>/dev/null | head -1)
+		line=$(node "$CODEX_RECENCY_PROBE" --cwd "$root" $pressure_flag 2>/dev/null | head -1)
 	fi
 	if [[ "$line" != *"|"*"|"*"|"* ]]; then
 		line="unknown|-|-|thread-recency probe unavailable at $CODEX_RECENCY_PROBE"
@@ -212,6 +271,7 @@ if [[ -f "$LOG" ]] && (( $(wc -l < "$LOG") > 500 )); then
 fi
 
 log "run start"
+log "mode: $MODE_NOTE; bloat limit ${NEXT_MEM_MAX_GB}GB, idle below median ${NEXT_MEM_IDLE_CPU_MAX}% CPU"
 freed=0; count=0; killed=0; bloated=0; almd_resets=0; idle_stopped=0; stale_killed=0
 
 # --- 1. runaway dev server -----------------------------------------------------
@@ -243,30 +303,63 @@ fi
 # --- 2. bloated dev server -----------------------------------------------------
 # First pass: which next-server pids are over the memory threshold right now?
 # Measured as vmmap Physical footprint — ps RSS misses the MAP_JIT leak.
+server_where() {
+	local c
+	c=$(cwd_of "$1")
+	if [[ -n "$c" && ( "$c" == "$MAIN_WORKTREE" || "$c" == "$MAIN_WORKTREE/"* ) ]]; then
+		print -r -- "primary checkout $c"
+	else
+		print -r -- "${c:-cwd unknown}"
+	fi
+}
 bloat1=()
 for p in ${(f)"$(pgrep -f 'next-server' 2>/dev/null)"}; do
 	gb=$(mem_gb_of "$p"); [[ -n "$gb" ]] || continue
-	(( gb >= NEXT_MEM_MAX_GB )) && bloat1+="$p"
+	if (( gb >= NEXT_MEM_MAX_GB )); then
+		bloat1+="$p"
+	else
+		log "kept next-server pid $p (~${gb}GB < ${NEXT_MEM_MAX_GB}GB bloat limit; $(server_where "$p"))"
+	fi
 done
-# Second pass after a settle window: kill only if still bloated AND idle (low
-# CPU) — a busy compile burst is not a leak, even at double-digit GB.
+# Second pass: sample CPU NEXT_MEM_IDLE_SAMPLES times across the settle window
+# and kill only if still bloated AND the median sample is idle. One sample at a
+# hard edge deferred a 9GB idle server at 20.1%; a busy compile burst (100%+)
+# is still not a leak, even at double-digit GB.
 if (( ${#bloat1} )); then
-	sleep "$NEXT_MEM_SETTLE_SECS"
+	typeset -A cpu_samples
+	sample_gap=$(( NEXT_MEM_SETTLE_SECS / NEXT_MEM_IDLE_SAMPLES ))
+	for (( round = 1; round <= NEXT_MEM_IDLE_SAMPLES; round++ )); do
+		sleep "$sample_gap"
+		for p in $bloat1; do
+			c=$(cpu_of "$p")
+			[[ -n "$c" ]] && cpu_samples[$p]="${cpu_samples[$p]:-} $c"
+		done
+	done
 	for p in $bloat1; do
-		gb=$(mem_gb_of "$p"); [[ -n "$gb" ]] || continue
-		c=$(cpu_of "$p"); c=${c:-0}
-		if (( gb >= NEXT_MEM_MAX_GB )) && (( ${c%%.*} < NEXT_MEM_IDLE_CPU_MAX )); then
+		samples=( ${=cpu_samples[$p]:-} )
+		gb=$(mem_gb_of "$p")
+		if [[ -z "$gb" ]] || (( ${#samples} == 0 )); then
+			log "next-server pid $p exited during the settle window"
+			continue
+		fi
+		sorted=( ${(on)samples} )
+		median="${sorted[$(( (${#sorted} + 1) / 2 ))]}"
+		window="median ${median}% CPU over ${#samples} samples [${(j:, :)samples}]"
+		where=$(server_where "$p")
+		if (( gb >= NEXT_MEM_MAX_GB )) && (( ${median%%.*} < NEXT_MEM_IDLE_CPU_MAX )); then
 			bloated=$(( bloated + 1 ))
 			if (( KILL_BLOATED_NEXT )); then
 				pp=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
 				kill "$p" 2>/dev/null
 				[[ -n "$pp" && "$pp" != 1 ]] && kill "$pp" 2>/dev/null
-				log "killed bloated next-server pid $p (~${gb}GB physical footprint, idle at ${c}% CPU, parent $pp) — restart dev server to recover"
+				log "killed bloated next-server pid $p (~${gb}GB physical footprint, idle: ${window} < ${NEXT_MEM_IDLE_CPU_MAX}%, parent $pp; ${where}; ${MODE_LINE%%|*} mode) — restart dev server to recover"
 			else
-				log "bloated next-server pid $p (~${gb}GB physical footprint, idle at ${c}% CPU) — KILL_BLOATED_NEXT=0, left running"
+				log "bloated next-server pid $p (~${gb}GB physical footprint, idle: ${window}; ${where}) — KILL_BLOATED_NEXT=0, left running"
 			fi
+		elif (( gb < NEXT_MEM_MAX_GB )); then
+			log "kept next-server pid $p (settled to ~${gb}GB < ${NEXT_MEM_MAX_GB}GB; ${where})"
 		else
-			log "next-server pid $p still elevated (~${gb}GB) but actively compiling (~${c}% CPU) or settled below threshold — deferred to next sweep"
+			log "kept next-server pid $p (~${gb}GB but busy: ${window} >= ${NEXT_MEM_IDLE_CPU_MAX}%; ${where}) — deferred to next sweep"
 		fi
 	done
 fi
@@ -484,5 +577,5 @@ if [[ -n "$fp" ]]; then
 	fi
 fi
 
-log "summary: killed ${killed} runaway server(s); bloated ${bloated} server(s); freed ${freed}G from ${count} cache(s); tmux ${tmux_action}; almd ${almd_action}; fseventsd ${fse_action}"
+log "summary: ${MODE_LINE%%|*} mode; killed ${killed} runaway server(s); bloated ${bloated} server(s); freed ${freed}G from ${count} cache(s); tmux ${tmux_action}; almd ${almd_action}; fseventsd ${fse_action}"
 log "run done"

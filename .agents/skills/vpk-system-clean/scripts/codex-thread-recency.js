@@ -2,7 +2,7 @@
 // codex-thread-recency.js — read-only probe: is any Codex thread for this exact
 // worktree cwd still in use?
 //
-//   node codex-thread-recency.js --cwd <worktree> [--idle-hours <n>] [--db <path>]
+//   node codex-thread-recency.js --cwd <worktree> [--pressure | --idle-hours <n>] [--db <path>]
 //
 // Prints one line, `verdict|newest_age_secs|thread_count|reason`:
 //   active   a thread for this cwd was updated in the last ACTIVE_WINDOW_SECS
@@ -19,10 +19,12 @@ const { readdirSync } = require("node:fs");
 const { homedir } = require("node:os");
 const { join } = require("node:path");
 
-// PROVISIONAL until the owner confirms it: a Codex worktree's stack may be
-// stopped once its newest thread is this many hours old. The sweep and
-// status.sh both take it from here.
+// PROVISIONAL until the owner confirms them: a Codex worktree's stack may be
+// stopped once its newest thread is this many hours old, normally and when the
+// sweep runs in memory-pressure mode (`--pressure`). The sweep and status.sh
+// both take them from here.
 const IDLE_HOURS = 24;
+const PRESSURE_IDLE_HOURS = 6;
 const ACTIVE_WINDOW_SECS = 15 * 60;
 const STATE_DB_PATTERN = /^state_(\d+)\.sqlite$/u;
 
@@ -103,6 +105,10 @@ function parseArgs(argv) {
 	for (let index = 0; index < argv.length; index += 1) {
 		const flag = argv[index];
 		const value = argv[index + 1];
+		if (flag === "--pressure") {
+			options.idleHours ??= PRESSURE_IDLE_HOURS;
+			continue;
+		}
 		if (flag === "--cwd") options.cwd = value;
 		else if (flag === "--idle-hours") options.idleHours = Number(value);
 		else if (flag === "--db") options.dbPath = value;
@@ -122,4 +128,4 @@ if (require.main === module) {
 	process.stdout.write(`${line}\n`);
 }
 
-module.exports = { ACTIVE_WINDOW_SECS, IDLE_HOURS, formatProbeLine, probeCodexThreadRecency, resolveStateDbPath };
+module.exports = { ACTIVE_WINDOW_SECS, IDLE_HOURS, PRESSURE_IDLE_HOURS, parseArgs, formatProbeLine, probeCodexThreadRecency, resolveStateDbPath };

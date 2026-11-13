@@ -15,7 +15,21 @@ The top of `scripts/vpk-system-clean.sh` defines:
   server candidate. Healthy Next 16.3 servers are generally low single-digit
   GB; a busy compile may peak higher, so the script settles and requires idle
   CPU on its second sample.
+- `NEXT_MEM_IDLE_SAMPLES` (5) and `NEXT_MEM_IDLE_CPU_MAX` (20): a bloated
+  candidate's CPU is sampled five times across `NEXT_MEM_SETTLE_SECS`; it
+  counts as idle when the median sample is below the limit. One sample at a
+  hard edge once deferred an idle 9 GB server at 20.1%.
 - `KILL_BLOATED_NEXT` (1): set to 0 to report memory candidates only.
+- Pressure mode (values provisional): entered when swap in use reaches
+  `PRESSURE_SWAP_USED_GB` (16) or `kern.memorystatus_vm_pressure_level`
+  reaches `PRESSURE_LEVEL_MIN` (4, critical; level 2 "warn" is common on a
+  healthy machine). It sets the bloat limit to `PRESSURE_NEXT_MEM_MAX_GB` (4),
+  the idle-CPU limit to `PRESSURE_NEXT_MEM_IDLE_CPU_MAX` (50), and asks the
+  Codex probe for `PRESSURE_IDLE_HOURS` (6). Every run logs its mode, and each
+  `next-server` and stack it keeps with the reason. Install adds a second
+  LaunchAgent, `com.<user>.vpk-system-clean.pressure`, that runs the sweep
+  with `--pressure-check` every 300 seconds; that exits at once unless the
+  machine is under pressure. `--print-mode` prints the mode only.
 - `NEXT_MAX_GB` (3): minimum `.next` cache size for deletion, and only while no
   dev server uses that cache.
 - `ALMD_CPU_HOT` (50): CPU floor across all three samples.
@@ -31,8 +45,8 @@ The top of `scripts/vpk-system-clean.sh` defines:
   that directory are always kept. A Codex Desktop worktree is stopped only
   when `scripts/codex-thread-recency.js` returns `idle` for its exact cwd.
   Worktree folder names are ignored.
-- `IDLE_HOURS` (24, provisional) at the top of
-  `scripts/codex-thread-recency.js`: a Codex worktree is idle once every
+- `IDLE_HOURS` (24) and `PRESSURE_IDLE_HOURS` (6), both provisional, at the
+  top of `scripts/codex-thread-recency.js`: a Codex worktree is idle once every
   thread whose cwd is that worktree was last updated at least this long ago.
   The probe opens Codex's newest `state_N.sqlite` read-only; no matching
   thread, a missing database, or an unrecognised schema returns `unknown`,

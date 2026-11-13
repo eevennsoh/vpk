@@ -48,6 +48,9 @@ function runSweep({
 	sessions = null,
 	operators = [],
 	codexThreads = null,
+	memory = { swapUsed: "1024.00M", level: "1" },
+	nextServer = null,
+	args = [],
 } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "vpk-system-clean-test-"));
 	const home = join(root, "home");
@@ -91,6 +94,27 @@ printf 'stop session=%s cwd=%s args=%s\\n' "\${VPK_DEV_TMUX_SESSION}" "$(pwd)" "
 	});
 	writeFileSync(sessionsFile, `${sessionLines.join("\n")}${sessionLines.length ? "\n" : ""}`);
 
+	// The sweep reads a next-server's CPU once in its runaway pass, then once per
+	// sample in the bloat window; each fake `ps` call returns the next value.
+	const server = typeof nextServer === "function" ? nextServer(home) : nextServer;
+	const cpuSequence = join(root, "cpu-sequence");
+	const cpuCounter = join(root, "cpu-counter");
+	if (server) writeFileSync(cpuSequence, `${["0.0", ...server.cpuSamples].join("\n")}\n`);
+	writeExecutable(
+		join(fakeBin, "sysctl"),
+		`#!/bin/sh
+case "$*" in
+	"-n vm.swapusage") echo "total = 38912.00M  used = ${memory.swapUsed}  free = 1024.00M  (encrypted)" ;;
+	"-n kern.memorystatus_vm_pressure_level") echo "${memory.level}" ;;
+	*) exit 1 ;;
+esac
+`,
+	);
+	writeExecutable(
+		join(fakeBin, "vmmap"),
+		server ? `#!/bin/sh\nprintf 'Physical footprint:         %sG\\n' "${server.gb}"\n` : "#!/bin/sh\nexit 1\n",
+	);
+
 	const operatorPids = resolvedOperators
 		.map((operator) => `	"-x ${operator.name}") echo ${operator.pid} ;;`)
 		.join("\n");
@@ -99,6 +123,7 @@ printf 'stop session=%s cwd=%s args=%s\\n' "\${VPK_DEV_TMUX_SESSION}" "$(pwd)" "
 		`#!/bin/sh
 case "$*" in
 	"-x almd") ${almd ? "echo 4242" : "exit 1"} ;;
+	"-f next-server") ${server ? `echo ${server.pid}` : "exit 1"} ;;
 ${operatorPids}
 	*) exit 1 ;;
 esac
@@ -108,6 +133,17 @@ esac
 		join(fakeBin, "ps"),
 		`#!/bin/sh
 case "$*" in
+${
+	server
+		? `	*%cpu=*"-p ${server.pid}"*)
+		n=$(( $(cat "${cpuCounter}" 2>/dev/null || echo 0) + 1 ))
+		echo "$n" > "${cpuCounter}"
+		line=$(sed -n "\${n}p" "${cpuSequence}")
+		[ -n "$line" ] || line=$(tail -n 1 "${cpuSequence}")
+		echo "$line"
+		;;`
+		: ""
+}
 	*%cpu=*) echo "${cpu}" ;;
 	*etime=*) echo "${elapsed}" ;;
 	*) exit 1 ;;
@@ -134,6 +170,14 @@ case " $* " in
 esac
 case "$*" in
 ${operatorCwdCases}
+${
+	server
+		? `	*"-p ${server.pid}"*)
+		printf 'p${server.pid}\\nfcwd\\nn${server.cwd}\\n'
+		exit 0
+		;;`
+		: ""
+}
 esac
 exit 0
 `,
@@ -186,7 +230,7 @@ printf '%s\\n' "$*" >> "$FAKE_KILL_LOG"
 `,
 	);
 
-	const result = spawnSync(ZSH_PATH, [SCRIPT_PATH], {
+	const result = spawnSync(ZSH_PATH, [SCRIPT_PATH, ...args], {
 		encoding: "utf8",
 		env: {
 			...process.env,
@@ -443,4 +487,104 @@ test("kills an unattached orphan whose worktree path is gone", ZSH_TEST_OPTIONS,
 	assert.match(tmuxLog, /send-keys/);
 	assert.match(tmuxLog, /kill-session/);
 	assert.match(cleanupLog, /killed stale tmux session vpk-dev-orphan on vpk-dev socket/);
+});
+
+const PRESSURE = { swapUsed: "37580.80M", level: "2" };
+const bloatedServer = (overrides) => (home) => ({
+	pid: 7001,
+	gb: "9.2",
+	cwd: join(home, "wt-bloated"),
+	...overrides,
+});
+
+test("restarts a 9GB server whose one 20.1% sample sits in an idle window", ZSH_TEST_OPTIONS, () => {
+	// The 2026-11-13 sweep read one 20.1% sample against a hard < 20% edge and
+	// deferred this server. The median of the window is what decides now.
+	const { cleanupLog, killLog, result } = runSweep({
+		almd: false,
+		nextServer: bloatedServer({ cpuSamples: ["20.1", "3.2", "2.0", "4.5", "1.1"] }),
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(killLog.trim(), "7001");
+	assert.match(cleanupLog, /mode: normal mode \(swap 1GB in use, memory-pressure level 1\); bloat limit 6GB, idle below median 20% CPU/);
+	assert.match(cleanupLog, /killed bloated next-server pid 7001 \(~9GB physical footprint, idle: median 3\.2% CPU over 5 samples \[20\.1, 3\.2, 2\.0, 4\.5, 1\.1\] < 20%/);
+	assert.match(cleanupLog, /summary: normal mode; killed 0 runaway server\(s\); bloated 1 server\(s\)/);
+});
+
+test("keeps a bloated server that is busy across the window and says why", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, killLog, result } = runSweep({
+		almd: false,
+		nextServer: bloatedServer({ cpuSamples: ["120.0", "140.5", "3.0", "130.0", "110.0"] }),
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(killLog, "");
+	assert.match(cleanupLog, /kept next-server pid 7001 \(~9GB but busy: median 120\.0% CPU over 5 samples .* >= 20%; .*wt-bloated\) — deferred to next sweep/);
+});
+
+test("a server hovering just above 20% is deferred normally and restarted under pressure", ZSH_TEST_OPTIONS, () => {
+	const samples = ["20.1", "25.0", "30.0", "22.0", "21.0"];
+	const normal = runSweep({ almd: false, nextServer: bloatedServer({ cpuSamples: samples }) });
+	assert.equal(normal.result.status, 0, normal.result.stderr);
+	assert.equal(normal.killLog, "");
+	assert.match(normal.cleanupLog, /kept next-server pid 7001 \(~9GB but busy: median 22\.0% CPU/);
+
+	const pressured = runSweep({ almd: false, memory: PRESSURE, nextServer: bloatedServer({ cpuSamples: samples }) });
+	assert.equal(pressured.result.status, 0, pressured.result.stderr);
+	assert.equal(pressured.killLog.trim(), "7001");
+	assert.match(pressured.cleanupLog, /mode: pressure mode \(swap 36GB in use >= 16GB\); bloat limit 4GB, idle below median 50% CPU/);
+	assert.match(pressured.cleanupLog, /killed bloated next-server pid 7001 .*idle: median 22\.0% CPU .* < 50%.*; pressure mode\)/);
+});
+
+test("pressure mode lowers the bloat limit", ZSH_TEST_OPTIONS, () => {
+	const server = bloatedServer({ gb: "5.1", cpuSamples: ["2.0"] });
+	const normal = runSweep({ almd: false, nextServer: server });
+	assert.equal(normal.killLog, "");
+	assert.match(normal.cleanupLog, /kept next-server pid 7001 \(~5GB < 6GB bloat limit; .*wt-bloated\)/);
+
+	const pressured = runSweep({ almd: false, memory: { swapUsed: "2048.00M", level: "4" }, nextServer: server });
+	assert.equal(pressured.killLog.trim(), "7001");
+	assert.match(pressured.cleanupLog, /mode: pressure mode \(memory-pressure level 4 >= 4\)/);
+});
+
+test("names the primary checkout when it restarts that server", ZSH_TEST_OPTIONS, () => {
+	const primary = runSweep({
+		almd: false,
+		memory: PRESSURE,
+		nextServer: (home) => ({ pid: 7001, gb: "9.2", cwd: join(home, "Labs/project"), cpuSamples: ["1.0"] }),
+	});
+	assert.equal(primary.result.status, 0, primary.result.stderr);
+	assert.match(primary.cleanupLog, /killed bloated next-server pid 7001 .*; primary checkout .*Labs\/project; pressure mode\)/);
+});
+
+test("pressure mode stops a Codex stack idle for the shorter threshold", ZSH_TEST_OPTIONS, () => {
+	const threads = (home) => [{ cwd: join(home, ".codex/worktrees/89b2/project"), ageHours: 13 }];
+	const normal = runSweep({ almd: false, sessions: codexSession, codexThreads: threads });
+	assert.equal(normal.stopLog, "");
+	assert.match(normal.cleanupLog, /kept tmux session vpk-dev-codex on vpk-dev socket \(Codex threads recent: newest Codex thread is younger than 24h\)/);
+
+	const pressured = runSweep({ almd: false, memory: PRESSURE, sessions: codexSession, codexThreads: threads });
+	assert.match(pressured.stopLog, /stop session=vpk-dev-codex/);
+	assert.match(pressured.cleanupLog, /stopped idle tmux session vpk-dev-codex .*Codex threads idle: every Codex thread is at least 6h old/);
+});
+
+test("--pressure-check exits quietly without pressure and runs the sweep under it", ZSH_TEST_OPTIONS, () => {
+	const calm = runSweep({ almd: false, args: ["--pressure-check"] });
+	assert.equal(calm.result.status, 0, calm.result.stderr);
+	assert.equal(calm.cleanupLog, "");
+
+	const pressured = runSweep({ almd: false, memory: PRESSURE, args: ["--pressure-check"] });
+	assert.equal(pressured.result.status, 0, pressured.result.stderr);
+	assert.match(pressured.cleanupLog, /run start/);
+	assert.match(pressured.cleanupLog, /summary: pressure mode;/);
+});
+
+test("--print-mode reports the mode without running the sweep", ZSH_TEST_OPTIONS, () => {
+	const calm = runSweep({ almd: false, args: ["--print-mode"] });
+	assert.equal(calm.result.stdout.trim(), "normal|swap 1GB in use, memory-pressure level 1");
+	assert.equal(calm.cleanupLog, "");
+
+	const pressured = runSweep({ almd: false, memory: { swapUsed: "20.5G", level: "4" }, args: ["--print-mode"] });
+	assert.equal(pressured.result.stdout.trim(), "pressure|swap 20GB in use >= 16GB, memory-pressure level 4 >= 4");
 });

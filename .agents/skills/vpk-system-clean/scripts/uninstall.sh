@@ -24,6 +24,8 @@ done
 USER_ID="$(id -un)"
 LABEL="com.${USER_ID}.vpk-system-clean"
 PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
+PRESSURE_LABEL="${LABEL}.pressure"
+PRESSURE_PLIST="$HOME/Library/LaunchAgents/${PRESSURE_LABEL}.plist"
 SCRIPT="$HOME/.local/bin/vpk-system-clean.sh"
 PROBE="$HOME/.local/bin/codex-thread-recency.js"
 CONF_DIR="$HOME/.config/vpk-system-clean"
@@ -50,8 +52,15 @@ else
 	print -- "• launchd agent not loaded"
 fi
 
-# 2. plist
+if launchctl print "gui/$(id -u)/$PRESSURE_LABEL" >/dev/null 2>&1; then
+	act "unload launchd agent $PRESSURE_LABEL" "launchctl bootout gui/$(id -u)/$PRESSURE_LABEL"
+else
+	print -- "• pressure-check agent not loaded"
+fi
+
+# 2. plists
 [[ -f "$PLIST" ]] && act "remove plist  $PLIST" "rm -f '$PLIST'" || print -- "• no plist"
+[[ -f "$PRESSURE_PLIST" ]] && act "remove plist  $PRESSURE_PLIST" "rm -f '$PRESSURE_PLIST'" || print -- "• no pressure-check plist"
 
 # 3. live script
 [[ -f "$SCRIPT" ]] && act "remove script $SCRIPT" "rm -f '$SCRIPT'" || print -- "• no installed script"
