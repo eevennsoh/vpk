@@ -323,7 +323,7 @@
 			"method": "GET",
 			"path": "/api/health",
 			"runtimeAdmin": false,
-			"source": "backend/routes/status.js:168"
+			"source": "backend/routes/status.js:174"
 		},
 		{
 			"method": "POST",
@@ -737,7 +737,7 @@
 			"method": "GET",
 			"path": "/healthcheck",
 			"runtimeAdmin": false,
-			"source": "backend/routes/status.js:167"
+			"source": "backend/routes/status.js:173"
 		}
 	],
 	"nextApiRoutes": [

@@ -7,6 +7,7 @@ const {
 	resolveChatSdkRequestEnvelope,
 	resolveChatSdkRequestState,
 } = require("./request-normalization");
+const { createPlanSessionStore } = require("../lib/plan-session");
 
 function createEnvelopeDependencies() {
 	return {
@@ -21,8 +22,19 @@ function createEnvelopeDependencies() {
 	};
 }
 
-function createStateDependencies({ sessions = new Map(), pausedIds = [] } = {}) {
-	const updates = [];
+// Seeds a real plan-session store (injected clock) by replaying events.
+function createPlanStore(seed = {}) {
+	const store = createPlanSessionStore({ now: () => 1000 });
+	for (const [threadId, events] of Object.entries(seed)) {
+		for (const event of events) {
+			store.dispatchPlanSessionEvent(threadId, event);
+		}
+	}
+	return store;
+}
+
+function createStateDependencies({ store = createPlanStore(), pausedIds = [] } = {}) {
+	const events = [];
 	const clearedPlanSessions = [];
 	const clearedDeferredToolCalls = [];
 	const logs = [];
@@ -39,14 +51,13 @@ function createStateDependencies({ sessions = new Map(), pausedIds = [] } = {}) 
 			},
 			clearPlanSession: (threadId) => {
 				clearedPlanSessions.push(threadId);
-				sessions.delete(threadId);
+				store.clearPlanSession(threadId);
 			},
-			getPlanSession: (threadId) =>
-				sessions.get(threadId) || {
-					isActive: false,
-					phase: null,
-					deferredToolCallId: null,
-				},
+			dispatchPlanSessionEvent: (threadId, event) => {
+				events.push({ threadId, type: event.type });
+				return store.dispatchPlanSessionEvent(threadId, event);
+			},
+			getPlanSession: store.getPlanSession,
 			getToolCallIdFromApprovalSubmission: (approvalSubmission, rawApproval) =>
 				approvalSubmission?.toolCallId || rawApproval?.toolCallId || null,
 			getToolCallIdFromClarificationSubmission: (clarificationSubmission) =>
@@ -64,27 +75,19 @@ function createStateDependencies({ sessions = new Map(), pausedIds = [] } = {}) 
 				};
 			},
 			pausedRovoToolCallStore,
-			shouldRestorePlanModeOnResume: ({ pausedToolCallRecord, threadId }) => {
-				const session = sessions.get(threadId);
-				return {
-					shouldRestore: Boolean(pausedToolCallRecord && session?.isActive),
-					phase: session?.phase || null,
-				};
-			},
-			updatePlanSession: (threadId, patch) => {
-				updates.push({ threadId, patch });
-				sessions.set(threadId, {
-					isActive: false,
-					phase: null,
-					deferredToolCallId: null,
-					...(sessions.get(threadId) || {}),
-					...patch,
-				});
-			},
+			shouldRestorePlanModeOnResume: store.shouldRestorePlanModeOnResume,
 		},
+		events,
 		logs,
-		updates,
+		store,
 	};
+}
+
+function resolveStateFor(body, { store, pausedIds } = {}) {
+	const envelope = resolveChatSdkRequestEnvelope({ body, ...createEnvelopeDependencies() });
+	const harness = createStateDependencies({ store, pausedIds });
+	const state = resolveChatSdkRequestState({ envelope, ...harness.dependencies });
+	return { ...harness, state };
 }
 
 test("resolveChatSdkRequestEnvelope normalizes request defaults and trace metadata", () => {
@@ -158,16 +161,9 @@ test("resolveChatSdkRequestEnvelope prepends creation mode context", () => {
 });
 
 test("resolveChatSdkRequestState clears deferred calls and restores plan mode on paused clarification", () => {
-	const sessions = new Map([
-		[
-			"thread-1",
-			{
-				isActive: true,
-				phase: "plan",
-				deferredToolCallId: "deferred-1",
-			},
-		],
-	]);
+	const store = createPlanStore({
+		"thread-1": [{ type: "PLAN_EMITTED", deferredToolCallId: "deferred-1" }],
+	});
 	const envelope = resolveChatSdkRequestEnvelope({
 		body: {
 			messages: [{ role: "user", content: "Answer clarification" }],
@@ -178,7 +174,7 @@ test("resolveChatSdkRequestState clears deferred calls and restores plan mode on
 		...createEnvelopeDependencies(),
 	});
 	const { clearedDeferredToolCalls, dependencies } = createStateDependencies({
-		sessions,
+		store,
 		pausedIds: ["clarify-1"],
 	});
 
@@ -196,9 +192,7 @@ test("resolveChatSdkRequestState clears deferred calls and restores plan mode on
 });
 
 test("resolveChatSdkRequestState transitions approval turns to execution", () => {
-	const sessions = new Map([
-		["thread-1", { isActive: true, phase: "qa", deferredToolCallId: null }],
-	]);
+	const store = createPlanStore({ "thread-1": [{ type: "ENTER_PLAN_MODE" }] });
 	const envelope = resolveChatSdkRequestEnvelope({
 		body: {
 			messages: [{ role: "user", content: "Build it" }],
@@ -208,7 +202,7 @@ test("resolveChatSdkRequestState transitions approval turns to execution", () =>
 		},
 		...createEnvelopeDependencies(),
 	});
-	const { dependencies, updates } = createStateDependencies({ sessions });
+	const { dependencies, events } = createStateDependencies({ store });
 
 	const state = resolveChatSdkRequestState({
 		envelope,
@@ -216,16 +210,15 @@ test("resolveChatSdkRequestState transitions approval turns to execution", () =>
 	});
 
 	assert.equal(state.approvalToolCallId, "approval-1");
-	assert.deepEqual(updates, [
-		{ threadId: "thread-1", patch: { phase: "execution" } },
+	assert.deepEqual(events, [
+		{ threadId: "thread-1", type: "ENTER_PLAN_MODE" },
+		{ threadId: "thread-1", type: "START_EXECUTION" },
 	]);
-	assert.equal(sessions.get("thread-1").phase, "execution");
+	assert.equal(store.getPlanSession("thread-1").phase, "execution");
 });
 
 test("resolveChatSdkRequestState keeps custom approval submissions in planning", () => {
-	const sessions = new Map([
-		["thread-1", { isActive: true, phase: "qa", deferredToolCallId: null }],
-	]);
+	const store = createPlanStore({ "thread-1": [{ type: "ENTER_PLAN_MODE" }] });
 	const envelope = resolveChatSdkRequestEnvelope({
 		body: {
 			messages: [{ role: "user", content: "Add rollback steps" }],
@@ -239,7 +232,7 @@ test("resolveChatSdkRequestState keeps custom approval submissions in planning",
 		},
 		...createEnvelopeDependencies(),
 	});
-	const { dependencies, updates } = createStateDependencies({ sessions });
+	const { dependencies, events } = createStateDependencies({ store });
 
 	const state = resolveChatSdkRequestState({
 		envelope,
@@ -247,8 +240,8 @@ test("resolveChatSdkRequestState keeps custom approval submissions in planning",
 	});
 
 	assert.equal(state.approvalToolCallId, "approval-1");
-	assert.deepEqual(updates, []);
-	assert.equal(sessions.get("thread-1").phase, "qa");
+	assert.deepEqual(events, [{ threadId: "thread-1", type: "ENTER_PLAN_MODE" }]);
+	assert.equal(store.getPlanSession("thread-1").phase, "qa");
 });
 
 test("resolveChatSdkRequestState preserves missing user message response shape", () => {
@@ -269,4 +262,67 @@ test("resolveChatSdkRequestState preserves missing user message response shape",
 		status: 400,
 		body: { error: "A user message is required" },
 	});
+});
+
+test("resolveChatSdkRequestState: an auto-accept approval with no session starts execution", () => {
+	const { state, store, logs } = resolveStateFor({
+		messages: [{ role: "user", content: "Build it" }],
+		approval: { decision: "auto-accept", toolCallId: "approval-1" },
+		threadId: "thread-1",
+	});
+	assert.equal(state.resolvedPlanModeActive, false);
+	assert.equal(store.getPlanSession("thread-1").phase, "execution");
+	assert.equal(logs.at(-1)[0], "[PLAN-SESSION] Created execution-phase session for auto-accept approval");
+});
+
+test("resolveChatSdkRequestState: a deferred tool response accepts a plan into execution", () => {
+	const store = createPlanStore({ "thread-1": [{ type: "PLAN_EMITTED", deferredToolCallId: "deferred-1" }] });
+	resolveStateFor({
+		messages: [{ role: "user", content: "Build" }],
+		deferredToolResponse: { tool_call_id: "deferred-1" },
+		threadId: "thread-1",
+	}, { store });
+	assert.equal(store.getPlanSession("thread-1").phase, "execution");
+});
+
+test("resolveChatSdkRequestState: a plain visible message ends a qa or plan session", () => {
+	for (const seed of [[{ type: "ENTER_PLAN_MODE" }], [{ type: "PLAN_EMITTED", planCardId: "card-1" }]]) {
+		const store = createPlanStore({ "thread-1": seed });
+		const { clearedPlanSessions } = resolveStateFor({
+			messages: [{ role: "user", content: "Something else" }],
+			threadId: "thread-1",
+		}, { store });
+		assert.deepEqual(clearedPlanSessions, ["thread-1"]);
+		assert.equal(store.getPlanSession("thread-1").phase, "none");
+	}
+});
+
+// Deliberate since 3b55aaac7 (2026-03-30): a "continue" prompt resumes a build, so a
+// plain message does not end execution. The plan-session TTL bounds an abandoned one.
+test("resolveChatSdkRequestState: a plain visible message keeps an execution session", () => {
+	const store = createPlanStore({ "thread-1": [{ type: "START_EXECUTION" }] });
+	const { clearedPlanSessions, state } = resolveStateFor({
+		messages: [{ role: "user", content: "continue" }],
+		threadId: "thread-1",
+	}, { store });
+	assert.deepEqual(clearedPlanSessions, []);
+	assert.equal(state.currentPlanSession.phase, "execution");
+});
+
+// What the 6 h TTL does to a plan approved late: Build sends a deferred tool response
+// outside plan mode; the expired session reads as none, so execution does not start.
+test("resolveChatSdkRequestState: Build on a plan older than the TTL does not start execution", () => {
+	const clock = { now: 0 };
+	const store = createPlanSessionStore({ now: () => clock.now, ttlMs: 1000 });
+	store.dispatchPlanSessionEvent("thread-1", { type: "PLAN_EMITTED", deferredToolCallId: "deferred-1" });
+	clock.now = 1001;
+	const { state, logs } = resolveStateFor({
+		messages: [{ role: "user", content: "Build" }],
+		deferredToolResponse: { tool_call_id: "deferred-1" },
+		threadId: "thread-1",
+	}, { store });
+	assert.equal(store.getPlanSession("thread-1").phase, "none");
+	assert.equal(state.currentPlanSession.phase, "none");
+	assert.equal(state.deferredToolResponseToolCallId, "deferred-1", "the deferred tool response still reaches Rovo");
+	assert.equal(logs.some(([message]) => String(message).includes("Transitioned to execution phase")), false);
 });
