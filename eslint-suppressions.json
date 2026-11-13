@@ -198,11 +198,6 @@
       "count": 1
     }
   },
-  "components/arts/personal-graph/hooks/use-personal-graph-intro.ts": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/arts/personal-graph/hooks/use-personal-graph-summary.source.test.js": {
     "no-restricted-syntax": {
       "count": 19
@@ -406,7 +401,7 @@
   },
   "components/blocks/agent-session-column/agent-session-column-arrival.source.test.js": {
     "no-restricted-syntax": {
-      "count": 97
+      "count": 95
     }
   },
   "components/blocks/agent-session-column/agent-session-column-capabilities.source.test.js": {
@@ -2568,14 +2563,6 @@
   "components/projects/shared/components/user-message-bubble.source.test.js": {
     "no-restricted-syntax": {
       "count": 35
-    }
-  },
-  "components/projects/shared/hooks/use-reasoning-phase.ts": {
-    "react-hooks/purity": {
-      "count": 1
-    },
-    "react-hooks/refs": {
-      "count": 6
     }
   },
   "components/projects/shared/lib/rovo-app-composer-response-gradient-state.source.test.js": {

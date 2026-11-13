@@ -146,30 +146,45 @@ when the user explicitly asks for that or when the current checkout is already a
 Symphony issue workspace; the workpad should then say that no new workspace was
 created and why local execution was used.
 
+`WORKFLOW.md` is based on upstream `elixir/WORKFLOW.md` and keeps VPK-specific
+customization in the YAML hooks plus the repository contract section.
+
+### Issue states
+
+This table is the one list of Symphony issue states and the moves between them.
+`WORKFLOW.md` (its `tracker.active_states` and `tracker.terminal_states`, status
+map, Step 0 routing and phase prompts) and the phase prompts in
+`.agents/skills/vpk-symphony/references/lifecycle.md` must agree with it;
+`scripts/symphony-issue-states.test.js` checks that.
+
+| State | Tracker list | Who acts | Moves to |
+| --- | --- | --- | --- |
+| `Backlog` | none | a human; not routed for implementation | `Todo` |
+| `Todo` | active | kickoff worker: moves the issue on, then creates or reuses the `## Codex Workpad` | `In Progress` |
+| `In Progress` | active | implementer, continuing from the workpad | `Agent Review`, `Done`, `Human Review` |
+| `Agent Review` | active | fresh read-only adversarial reviewer of the linked PR | `Merging`, `In Progress`, `Human Review` |
+| `Human Review` | none | a human: risk gate for security/privacy exposure, data loss, irreversible schema or migration changes, destructive production behavior, or missing permissions/secrets | `In Progress`, `Merging` |
+| `Merging` | active | landing worker, following `references/git/land.md` | `Done`, `Agent Review`, `In Progress`, `Human Review` |
+| `Done` | terminal | nobody | none |
+| `Closed` | terminal | nobody | none |
+| `Cancelled` | terminal | nobody | none |
+| `Canceled` | terminal | nobody | none |
+| `Duplicate` | terminal | nobody | none |
+
 Recommended Linear flow:
 
 ```text
 Backlog -> Todo -> In Progress -> Agent Review -> Merging -> Done
 ```
 
-`WORKFLOW.md` is based on upstream `elixir/WORKFLOW.md` and keeps VPK-specific
-customization in the YAML hooks plus the repository contract section.
-
-- `Backlog`: not routed for implementation.
-- `Todo`: worker moves the issue to `In Progress`, creates or updates the
-  `## Codex Workpad`, then starts.
-- `In Progress`: worker continues from the workpad.
-- `Agent Review`: worker performs a fresh read-only adversarial code review of
-  the linked PR against the issue, workpad, diff, validation proof, evidence,
-  comments, and checks. Passing work moves to `Merging`; gaps move back to
-  `In Progress`; super-risk moves to `Human Review`.
-- `Human Review`: risk gate for security/privacy exposure, data loss,
-  irreversible schema or migration changes, destructive production behavior, or
-  missing permissions/secrets.
-- `Merging`: worker follows the `vpk-symphony` landing reference and moves the
-  issue to `Done` only after a current-head passing Symphony Agent Review,
-  green checks, clean mergeability, and GitHub-reported merge commit.
-- `Done`, `Closed`, `Cancelled`, `Canceled`, `Duplicate`: terminal.
+The other moves: `In Progress -> Done` is for answer-only work, and
+`In Progress -> Human Review` for a blocked-access escape. `Agent Review` sends
+gaps back to `In Progress` and super-risk to `Human Review`. `Merging` moves to
+`Done` only after a current-head passing Symphony Agent Review, green checks,
+clean mergeability, and a GitHub-reported merge commit; it goes back to
+`Agent Review` when the PR head changes after review, and to `In Progress` when
+the review requests changes. Only states in the active list get a worker;
+`Backlog` and `Human Review` wait for a human.
 
 Symphony PRs should carry the `symphony` label and should not require
 `automerge:allowed`; Symphony owns the guarded merge path for this workflow.
@@ -180,11 +195,9 @@ Workers keep exactly one active `## Codex Workpad` comment. The workpad should
 be concise and current: environment stamp, plan, acceptance criteria,
 validation, evidence, decisions, branch, PR, and handoff.
 
-`WORKFLOW.md` also includes compact phase prompts for each Linear state:
-`Todo` is kickoff, `In Progress` is implementation, `Agent Review` is fresh
-adversarial code review, `Human Review` is a narrow super-risk waiting gate,
-`Merging` is guarded landing, and terminal states do nothing. These prompts are
-part of the runtime worker prompt, not only documentation.
+`WORKFLOW.md` also includes compact phase prompts for each Linear state (the
+"Who acts" column of [Issue states](#issue-states)). These prompts are part of
+the runtime worker prompt, not only documentation.
 
 For UI, browser-observable, generated/offline HTML, or visual artifact changes,
 workers use the repo-local `vpk-symphony` browser evidence reference during

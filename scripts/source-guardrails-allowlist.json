@@ -296,13 +296,6 @@
 			"type": "broad-any"
 		},
 		{
-			"filePath": "components/projects/shared/hooks/use-reasoning-phase.ts",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps -- re-run when phase changes via tick",
-			"type": "eslint-disable"
-		},
-		{
 			"filePath": "components/projects/shared/thread-message/thread-message-root.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",
@@ -1189,13 +1182,6 @@
 			"occurrence": 1,
 			"reason": "existing fixed wait; replace with a wait on an observable condition",
 			"text": "await page.waitForTimeout(250);",
-			"type": "playwright-fixed-wait"
-		},
-		{
-			"filePath": "tests/rovo/floating-rovo-button-default-position.spec.ts",
-			"occurrence": 1,
-			"reason": "existing fixed wait; replace with a wait on an observable condition",
-			"text": "await page.waitForTimeout(400);",
 			"type": "playwright-fixed-wait"
 		},
 		{

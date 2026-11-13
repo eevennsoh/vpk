@@ -11,6 +11,7 @@ import { DEFAULT_SKILLS } from "@/app/data/directory";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { MountOnFirstUse, RetainedView } from "@/components/projects/shared/components/mount-on-first-use";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Gallery } from "@/components/blocks/gallery";
 import { JiraLocalAgentMenu } from "@/components/blocks/jira-local-agent";
 import { useRovoChat } from "@/app/contexts/context-rovo-chat";
@@ -41,6 +42,7 @@ import {
 	type PulseLooseWork,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
+import { mergeJiraKanbanAgentCatalog } from "@/components/blocks/jira-kanban/lib/agent-catalog";
 import {
 	useJiraListRowFlashSource,
 	type JiraListAssignedAgent,
@@ -52,6 +54,7 @@ import { statusVariant } from "@/components/blocks/jira-work-item/team-eu26/comp
 import { renderEu26HeaderAssignee } from "@/components/projects/shared/components/eu26-header-assignee";
 
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
+import type { FloatingRovoButtonSuggestion } from "@/components/projects/shared/components/floating-rovo-button";
 import { BUTTER_CHAT_AGENT_PROFILES, BUTTER_DIRECTORY_AGENT_PROFILES, resolveButterChatAgentId } from "@/components/projects/butter-v1/data/chat-agent-profiles";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
@@ -79,7 +82,7 @@ import { BUTTER_GALLERY_SESSIONS, BUTTER_WORK_ITEM_SESSIONS } from "./data/galle
 
 import { renderButterAgentActivityIndicator } from "./data/agent-activity-indicators";
 import { BUTTER_BOARD_AGENTS, BUTTER_PAY_112_THINKING_MESSAGE_ID, BUTTER_SUGGESTION_DEMO_KEY, butterPay112WorkingParts, getButterPay112ClarificationReply, toButterAgentActivityFromSession } from "@/components/projects/butter-v1/data/presentation-board";
-import { resumeButterPay112 } from "@/components/projects/butter-v1/lib/list-rows";
+import { applyAssignedAgentIdsToCard, assignedAgentsFromCard, resumeButterPay112 } from "@/components/projects/butter-v1/lib/list-rows";
 import {
 	toButterDetachedAgentSession,
 	BUTTER_PAY_BOARD_AGENTS,
@@ -139,6 +142,17 @@ type ButterWorkItemHandle = {
 	close: () => void;
 };
 
+function agentAddedSuggestion(session: Pick<AgentSessionItem, "id" | "agent">, onSelect: () => void, onDismiss: () => void): FloatingRovoButtonSuggestion {
+	const { agent } = session;
+	return {
+		id: session.id,
+		label: `${agent.name} added`,
+		icon: <span aria-hidden="true"><AgentAvatarVisual animate={false} appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={20} /></span>,
+		onDismiss,
+		onSelect,
+	};
+}
+
 function ButterWorkItemDialog(props: ComponentProps<typeof ProjectButterJiraWorkItem>) {
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => {
@@ -159,7 +173,7 @@ function getMerchantWorkItemProps(issueKey: string, journey: Pick<ComponentProps
 	};
 }
 
-function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySession, journeyControls, developmentJourney, hideLauncherWhenClosed, onBrowseAgents, onCreateAgent, onAgentSessionStart, onOpenCloudSession, onStoryPointsChange, onAssigneeChange, onWorkItemClose, openRelatedItem, relatedCatalog, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
+function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySession, journeyControls, developmentJourney, onBrowseAgents, onCreateAgent, onAgentSessionStart, onOpenCloudSession, onStoryPointsChange, onAssigneeChange, onWorkItemClose, openRelatedItem, relatedCatalog, suggestion, ...overlayProps }: ComponentProps<typeof JgpRovoOverlay> & {
 	/** Board lookup from a related work key to an opener; keys that are not on the board render as plain text. */
 	openRelatedItem: RelatedItemOpener;
 	/** Board cards as related-work matches, so composers offer this project's items. */
@@ -170,7 +184,6 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 	journeySession?: ProjectButterSessionItem;
 	journeyControls?: React.ReactNode;
 	developmentJourney?: ProjectButterDevelopmentJourneyProps;
-	hideLauncherWhenClosed?: boolean;
 	onBrowseAgents: () => void;
 	onCreateAgent: () => void;
 	onAgentSessionStart: (issueKey: string, session: ProjectButterSessionItem) => void;
@@ -182,6 +195,7 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 	const workItem = useButterWorkItem();
 	const [overlayContainer, setOverlayContainer] = useState<HTMLDivElement | null>(null);
 	const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null);
+	const [addedSession, setAddedSession] = useState<ProjectButterSessionItem | null>(null);
 	useLayoutEffect(() => {
 		const host = document.createElement("div");
 		host.style.display = "contents";
@@ -193,9 +207,11 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 		if (overlayHost) (workItem.open && overlayContainer ? overlayContainer : document.body).appendChild(overlayHost);
 	}, [overlayContainer, overlayHost, workItem.open]);
 	const { openWorkItem, closeWorkItem } = workItem;
-	useImperativeHandle(ref, () => ({ open: openWorkItem, close: () => { closeWorkItem(); onWorkItemClose(); } }), [closeWorkItem, onWorkItemClose, openWorkItem]);
+	const selection = workItem.selection;
+	useImperativeHandle(ref, () => ({ open: (card, column) => { setAddedSession(null); openWorkItem(card, column); }, close: () => { setAddedSession(null); closeWorkItem(); onWorkItemClose(); } }), [closeWorkItem, onWorkItemClose, openWorkItem]);
 	return (
 		<>
+			<span className="sr-only" role="status">{addedSession ? `${addedSession.agent.name} added` : ""}</span>
 			{workItem.selection ? (
 				<ButterWorkItemDialog
 					cloudAgentSelector
@@ -211,9 +227,10 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 					onBrowseAgents={onBrowseAgents}
 					onCreateAgent={onCreateAgent}
 					onAgentSessionStart={(session) => { if (workItem.selection) onAgentSessionStart(workItem.selection.workItem.code, session); }}
+					onAgentAdded={setAddedSession}
 					onStoryPointsChange={(points) => { if (workItem.selection) onStoryPointsChange(workItem.selection.workItem.code, points); }}
 					onAssigneeChange={(assignee) => { if (workItem.selection) onAssigneeChange(workItem.selection.workItem.code, assignee); }}
-					onClose={() => { workItem.closeWorkItem(); onWorkItemClose(); }}
+					onClose={() => { setAddedSession(null); workItem.closeWorkItem(); onWorkItemClose(); }}
 					open={workItem.open}
 					openRelatedItem={openRelatedItem}
 					relatedScope={{ catalog: relatedCatalog, parentType: workItem.selection.workType }}
@@ -221,7 +238,9 @@ function ButterWorkItemSurface({ ref, defaultReporter, journeyPhase, journeySess
 					workItem={workItem.selection.workItem}
 				/>
 			) : null}
-			{overlayHost ? <JgpRovoOverlay {...overlayProps} launcher={hideLauncherWhenClosed && !workItem.open ? "hidden" : overlayProps.launcher} portalContainer={overlayHost} contained={workItem.open && Boolean(overlayContainer)} /> : null}
+			{overlayHost ? <JgpRovoOverlay {...overlayProps} portalContainer={overlayHost} contained={workItem.open && Boolean(overlayContainer)} suggestion={addedSession && selection ? agentAddedSuggestion(addedSession, async () => {
+					if (await onOpenCloudSession(selection.workItem.code, selection.workItem.title, addedSession)) setAddedSession(null);
+				}, () => setAddedSession(null)) : suggestion} /> : null}
 		</>
 	);
 }
@@ -376,21 +395,31 @@ export default function ButterPage(): React.ReactElement {
 function ButterGalleryWorkItem({ compact, galleryOpen, initialSessions, open, onClose }: Readonly<{ compact?: boolean; galleryOpen?: boolean; initialSessions: readonly ProjectButterSessionItem[]; open: boolean; onClose: () => void }>) {
 	const router = useRouter();
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
+	const [added, setAdded] = useState<{ session: ProjectButterSessionItem; workItem: { code: string; summary: string } } | null>(null);
+	const [wasOpen, setWasOpen] = useState(open);
+	if (wasOpen !== open) {
+		setWasOpen(open);
+		if (!open) setAdded(null);
+	}
 	const { chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat } = useJgpAgentChatDemo();
 	const prefillKey = useRef(0);
 	const [composerPrefillRequest, setComposerPrefillRequest] = useState<ComponentProps<typeof JgpRovoOverlay>["composerPrefillRequest"]>();
 	return (
 		<>
+			<span className="sr-only" role="status">{open && added ? `${added.session.agent.name} added` : ""}</span>
 			<div className={cn("pointer-events-none absolute inset-x-0 top-12 flex items-start justify-center overflow-hidden", galleryOpen ? "bottom-56" : "bottom-0")}>
 				<div className={cn("pointer-events-auto flex min-h-0 min-w-0", PROJECT_BUTTER_MODAL_SIZE, "h-full max-h-none")}>
-					<ProjectButterJiraWorkItem inlineSessionReplies cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" initialSessions={initialSessions} initialRelatedSectionOpen={false} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onClose={onClose} onOpenCloudSession={async (session, draft, workItem) => {
+					<ProjectButterJiraWorkItem inlineSessionReplies cloudAgentSelector compact={compact} currentUser={BUTTER_DEFAULT_REPORTER} defaultAssignee={BUTTER_DEFAULT_REPORTER} defaultReporter={BUTTER_DEFAULT_REPORTER} initialPreset="filled" initialSessions={initialSessions} initialRelatedSectionOpen={false} onBrowseAgents={() => setAgentsDirectoryOpen(true)} onCreateAgent={() => router.push("/studio")} onAgentAdded={(session, workItem) => setAdded({ session, workItem })} onClose={() => { setAdded(null); onClose(); }} onOpenCloudSession={async (session, draft, workItem) => {
 						const opened = await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt, recordedSession: workItemChatSnapshot(session, workItem.summary) });
 						if (opened && draft) setComposerPrefillRequest({ text: draft, append: true, requestKey: ++prefillKey.current });
 						return opened;
 					}} open={open} shell="gallery" />
 				</div>
 			</div>
-			{open ? <JgpRovoOverlay chatContextBar={chatContextBar} composerPrefillRequest={composerPrefillRequest} externalThinkingMessageId={externalThinkingMessageId} isSwitchingSession={isSwitchingSession} onComposerPrefillConsumed={(requestKey) => setComposerPrefillRequest((current) => current?.requestKey === requestKey ? undefined : current)} /> : null}
+			{open ? <JgpRovoOverlay chatContextBar={chatContextBar} composerPrefillRequest={composerPrefillRequest} externalThinkingMessageId={externalThinkingMessageId} isSwitchingSession={isSwitchingSession} onComposerPrefillConsumed={(requestKey) => setComposerPrefillRequest((current) => current?.requestKey === requestKey ? undefined : current)} suggestion={added ? agentAddedSuggestion(added.session, async () => {
+				const { session, workItem } = added;
+				if (await openAgentChat({ sessionId: session.id, agentId: resolveButterChatAgentId(session.agent, session.id), agentName: session.agent.name, issueKey: workItem.code, issueSummary: workItem.summary, intro: session.message, request: session.prompt, recordedSession: workItemChatSnapshot(session, workItem.summary) })) setAdded(null);
+			}, () => setAdded(null)) : null} /> : null}
 			<MountOnFirstUse active={agentsDirectoryOpen}>
 				<Suspense fallback={null}>
 					<AgentsDirectoryDialog agents={BUTTER_DIRECTORY_AGENT_PROFILES} variant="standard-v2" onCreateAgent={() => router.push("/studio")} onOpenChange={setAgentsDirectoryOpen} onSelectAgent={() => setAgentsDirectoryOpen(false)} open={agentsDirectoryOpen} />
@@ -443,9 +472,12 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 	const workItemRef = useRef<ButterWorkItemHandle>(null);
 	const pendingWorkItemAssignment = useRef<Readonly<{ issueKey: string; session: AgentSessionItem; journey: boolean }> | null>(null);
 	const [agentAssignmentRequest, setAgentAssignmentRequest] = useState<Readonly<{ issueKey: string; session: AgentSessionItem }>>();
+	const [addedBoardAgent, setAddedBoardAgent] = useState<Readonly<{ agent: AgentSessionItem["agent"]; activity: JiraIssueAgentActivity; card: JiraKanbanCardData }> | null>(null);
+	const agentCatalog = useMemo(() => mergeJiraKanbanAgentCatalog(BUTTER_BOARD_AGENTS), []);
 	const openButterWorkItem = useCallback((card: JiraKanbanCardData, columnTitle: string) => {
 		pendingWorkItemAssignment.current = null;
 		setAgentAssignmentRequest(undefined);
+		setAddedBoardAgent(null);
 		workItemRef.current?.open(card.code === BUTTER_SUGGESTION_DEMO_KEY ? merchantJourneyAuthoredCard(card) : card, columnTitle);
 	}, []);
 	const {
@@ -592,7 +624,9 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 			timeLabel: "Just now",
 			invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
 		};
-		startAgentSession(card.code, { ...toButterAgentActivityFromSession(session), waitingForPrompt: true });
+		const activity = { ...toButterAgentActivityFromSession(session), waitingForPrompt: true };
+		startAgentSession(card.code, activity);
+		setAddedBoardAgent({ agent: session.agent, activity, card });
 	}, [startAgentSession]);
 	const handleSessionPrompt = useCallback((sessionId: string, prompt: string) => {
 		if (!prompt.trim()) return;
@@ -668,11 +702,19 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 	}, [boardColumns, openButterWorkItem]);
 	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	const handleListAgentAssigned = useCallback((issueKey: string, agent: AgentSelectorAgent) => {
+		const card = boardColumns.flatMap((column) => column.cards).find((candidate) => candidate.code === issueKey);
+		if (card) {
+			const ids = assignedAgentsFromCard(card, agentCatalog).map((assigned) => assigned.id);
+			const next = applyAssignedAgentIdsToCard(card, [...ids, agent.id], agentCatalog);
+			const previousIds = new Set(card.agentActivities?.map((activity) => activity.id));
+			const activity = next.agentActivities?.find((candidate) => !previousIds.has(candidate.id));
+			if (activity) setAddedBoardAgent({ agent: { id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }, activity, card });
+		}
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 		const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(agent.brandName, agent.vpkLogo, agent.logoName, agent.name, agent.id))
 			?? (agent.avatarSrc?.startsWith("/avatar-agent") ? getAgentAvatarAccent(agent.avatarSrc) : AGENT_BRAND_TINT_FALLBACK);
 		flashListRow(issueKey, tint, "sweep");
-	}, [flashListRow]);
+	}, [agentCatalog, boardColumns, flashListRow]);
 	const handleWorkItemSessionStart = useCallback((issueKey: string, session: ProjectButterSessionItem) => {
 		const card = boardColumns.flatMap((column) => column.cards).find((candidate) => candidate.code === issueKey);
 		if (!card || card.agentActivities?.some((activity) => activity.id === session.id)) return;
@@ -973,6 +1015,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 			<span aria-live="polite" className="sr-only" role="status">
 				{resumeAnnouncement}
 			</span>
+			<span className="sr-only" role="status">{addedBoardAgent ? `${addedBoardAgent.agent.name} added` : ""}</span>
 			<MountOnFirstUse active={agentsDirectoryOpen}>
 				<Suspense fallback={null}>
 					<AgentsDirectoryDialog
@@ -995,7 +1038,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 			</MountOnFirstUse>
 			<ButterWorkItemSurface
 				ref={workItemRef}
-				hideLauncherWhenClosed={boardOnly}
+				suggestion={addedBoardAgent ? agentAddedSuggestion({ id: addedBoardAgent.activity.id, agent: addedBoardAgent.agent }, () => { handleViewChat(addedBoardAgent.activity, addedBoardAgent.card); setAddedBoardAgent(null); }, () => setAddedBoardAgent(null)) : null}
 				defaultReporter={wacContent ? WAC_DEFAULT_REPORTER : BUTTER_DEFAULT_REPORTER}
 				journeyPhase={!wacContent && (!boardOnly || phase !== "invoke") ? phase : undefined}
 				journeySession={!wacContent ? journeySession : undefined}

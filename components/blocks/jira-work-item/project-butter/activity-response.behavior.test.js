@@ -19,6 +19,32 @@ async function renderActivity(props = {}) {
 	});
 }
 
+test("saved replies render agent mentions alongside their message", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { ProjectButterReferenceCommentBody } from "@/components/blocks/jira-work-item/project-butter/reference-activity-body";
+			export default function ReplyProbe() {
+				return <ProjectButterReferenceCommentBody agents={[{ id: "claude", name: "Claude", brandName: "claude" }]} markdown="@[subagent:claude] adfadsf" />;
+			}`,
+	});
+	assert.equal(view.container.textContent.includes("@[subagent:claude]"), false);
+	assert.equal(view.container.querySelector("[data-jira-activity-agent-mention]")?.textContent, "Claude");
+	assert.equal(view.container.textContent.includes("adfadsf"), true);
+});
+
+test("saved mentions resolve when the agent roster arrives after the reply", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { ProjectButterReferenceCommentBody } from "@/components/blocks/jira-work-item/project-butter/reference-activity-body";
+			export default function ReplyProbe() {
+				const [loaded, setLoaded] = React.useState(false);
+				return <><button onClick={() => setLoaded(true)}>Load agents</button><ProjectButterReferenceCommentBody agents={loaded ? [{ id: "claude", name: "Claude", brandName: "claude" }] : []} markdown="@[subagent:claude] adfadsf" /></>;
+			}`,
+	});
+	await view.click(view.getByRole("button", { name: "Load agents" }));
+	assert.equal(view.container.querySelector("[data-jira-activity-agent-mention]")?.textContent, "Claude");
+});
+
 test("session choices belong to Venn while Annie's sessions stay private", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";
@@ -295,6 +321,29 @@ test("starting an agent from the details field immediately highlights its activi
 		await view.unmount();
 		window.Element.prototype.animate = originalAnimate;
 	}
+});
+
+test("a host can replace the agent-start toast with its own confirmation", async () => {
+	const added = [];
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { SidebarProvider } from "@/app/contexts/context-sidebar";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
+			export default function TestWorkItem(props) { return <ThemeWrapper><SidebarProvider><ProjectButterJiraWorkItem {...props} /></SidebarProvider></ThemeWrapper>; }`,
+		mocks: { "@/app/contexts": `const controls = { chatSurface: null, openChat() {}, toggleChat() {} };
+			export const useRovoChatControls = () => controls;
+			export const useOptionalRovoChatControls = () => controls;
+			export const useOptionalRovoChat = () => null;` },
+		props: { initialPreset: "filled", onClose() {}, onAgentAdded: (session) => added.push(session), open: true, cloudAgentSelector: true, shell: "gallery" },
+	});
+	await view.click(view.getByRole("group", { name: "Agents field" }).querySelector("button"));
+	await view.click(view.getByRole("button", { name: "Claude (Recommended)" }));
+	assert.equal(added.length, 1);
+	assert.equal(added[0].agent.name, "Claude");
+	assert.ok(document.querySelector(`[data-project-butter-session-start="${added[0].id}"]`));
+	assert.equal(document.body.textContent.includes("Claude started"), false);
+	await view.unmount();
 });
 
 test("starting an agent with reduced motion does not scroll or animate", async () => {

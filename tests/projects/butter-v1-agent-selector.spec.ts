@@ -45,6 +45,11 @@ test("e2e Journey assigns a board agent directly", async ({ page }) => {
 	await claude.click();
 	await expect(picker).toBeHidden();
 	await expect(card.getByRole("button", { name: "Claude: Working" })).toBeVisible();
+	const nudge = page.getByRole("button", { name: "Claude added", exact: true });
+	await expect(nudge).toBeVisible();
+	await expect(nudge.locator('[data-slot="avatar"][data-shape="hexagon"]')).toBeVisible();
+	await nudge.click();
+	await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
 });
 
 test("agent previews avoid the originating issue when the picker is near the viewport edge", async ({ page }) => {

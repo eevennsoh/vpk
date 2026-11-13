@@ -6,6 +6,7 @@ export type FloatingRovoButtonOnboardingStatus = "idle" | "creating" | "created"
 export interface FloatingRovoButtonSuggestion {
 	id: string;
 	label: string;
+	icon?: ReactNode;
 	ariaLabel?: string;
 	onSelect: () => void;
 	onDismiss?: () => void;
