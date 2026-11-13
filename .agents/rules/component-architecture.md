@@ -113,8 +113,10 @@ enforcement. The suite is discovered by the existing `scripts/` unit gate.
 
 Run `node --test scripts/eslint-boundary-rules.test.js`,
 `pnpm run lint:design-system`, `pnpm run lint`, and `pnpm run typecheck`.
-The pilot emits warnings for explanatory feedback; `lint:design-system`
-uses `--max-warnings 0` in PR CI so new findings cannot silently pass.
+The pilot emits warnings for explanatory feedback; `pnpm run lint`, which
+`ci:pr` and PR CI run, covers the pilot paths with `--max-warnings 0`, so new
+findings cannot silently pass. `lint:design-system` is that check scoped to the
+pilot paths, for a fast local run.
 Expand its paths together with the ESLint scope and regression cases.
 For rendered changes, also prove the live route and accessibility.
 Report what the contract prevents, its scope, and intentional exceptions.
