@@ -116,7 +116,8 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 		buildRuntimeStatusSnapshot: createNamedFunction("buildRuntimeStatusSnapshot", calls),
 		cancelActiveDeferredToolCallRecord: createNamedFunction("cancelActiveDeferredToolCallRecord", calls),
 		cancelPausedDeferredToolCallRecord: createNamedFunction("cancelPausedDeferredToolCallRecord", calls),
-		chromiumPreviewManager: { owner: "chromium-preview" },
+		chromiumPreviewManager: { close: createNamedFunction("closeChromiumPreview", calls), owner: "chromium-preview" },
+		closeAllMirrorBrowsers: createNamedFunction("closeAllMirrorBrowsers", calls),
 		classifyRovoHealthCheck: createNamedFunction("classifyRovoHealthCheck", calls),
 		clearPlanSession: createNamedFunction("clearPlanSession", calls),
 		collectRovoAppUploadIdsFromMessages: createNamedFunction("collectRovoAppUploadIdsFromMessages", calls),
@@ -220,13 +221,18 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 	assert.deepEqual(result.shutdownSteps.map(({ name }) => name), [
 		"abort-runs",
 		"close-browser-workspaces",
+		"close-mirror-browsers",
+		"close-chromium-preview",
 		"shutdown-rovo-pool",
 	]);
 	for (const shutdownStep of result.shutdownSteps) {
 		await shutdownStep.run();
 	}
 
-	assert.ok(calls.some((call) => call[0] === "shutdownRovoPool"));
+	assert.deepEqual(
+		calls.map(([name]) => name).filter((name) => ["closeAllMirrorBrowsers", "closeChromiumPreview", "shutdownRovoPool"].includes(name)),
+		["closeAllMirrorBrowsers", "closeChromiumPreview", "shutdownRovoPool"],
+	);
 	assert.ok(calls.some((call) => {
 		return call[0] === "logger.log" &&
 			call[1] === "[DEBUG][runtime] composed" &&
