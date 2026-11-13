@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { withDesignVariants } from "@/tests/helpers/design-variants";
 import { appUrl } from "@/tests/helpers/origin";
+import { openJiraBoard } from "@/tests/helpers/board";
 
 const JIRA_GOLDEN_JOURNEY_V4_ROUTE = "/jira-golden-journey-v4";
 
@@ -56,10 +57,7 @@ async function openBoard(page: Page, options?: { panelVariant?: boolean }): Prom
 		? JIRA_GOLDEN_JOURNEY_V4_ROUTE
 		: withDesignVariants(JIRA_GOLDEN_JOURNEY_V4_ROUTE, { panel: options.panelVariant });
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.goto(appUrl(route), { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
-		timeout: 30_000,
-	});
+	await openJiraBoard(page, appUrl(route), { timeout: 30_000 });
 }
 
 /** The panel mounts minimised; open it to its full 360px. */

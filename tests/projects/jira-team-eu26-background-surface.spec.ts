@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { appUrl } from "@/tests/helpers/origin";
+import { openJiraBoard } from "@/tests/helpers/board";
 
 const JIRA_TEAM_EU26_URL = appUrl("/jira-team-eu26");
 
@@ -21,10 +22,7 @@ async function collapseUnlink(page: Page): Promise<void> {
 }
 
 async function openBoard(page: Page): Promise<void> {
-	await page.goto(JIRA_TEAM_EU26_URL, { waitUntil: "domcontentloaded" });
-	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
-		timeout: 15_000,
-	});
+	await openJiraBoard(page, JIRA_TEAM_EU26_URL);
 	await expandUnlink(page);
 	await expect(page.locator("[data-agent-session-column]")).toBeVisible();
 }

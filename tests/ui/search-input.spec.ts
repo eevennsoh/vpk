@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
-test("search borders use the search token without hiding focus or invalid states", async ({ page }) => {
+test("search borders use the search token without hiding focus or invalid states", { tag: "@smoke" }, async ({ page }) => {
 	await page.goto(appUrl("/components/ui/field"));
 	const finesse = process.env.NEXT_PUBLIC_PLATFORM_DST_TOKENS_FINESSE !== "false";
 	await expect(page.locator('style[data-theme="light-finesse"]')).toHaveCount(finesse ? 1 : 0);
