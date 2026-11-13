@@ -375,6 +375,15 @@ export function RovoChatProvider({
 		const token = beginProviderTransition("destroy");
 		finishTransition(token);
 	}, [beginProviderTransition, finishTransition]);
+	// The one writer of the session-agent working copy: the ref that mutations read
+	// synchronously and the state that renders move together, normalized once here.
+	// Nothing copies state back into the ref, so a mutation made by a child's mount
+	// effect is never overwritten by the provider's first (still empty) state.
+	const commitSessionAgentEntries = useCallback((entries: readonly SessionAgentEntry[]) => {
+		const normalizedEntries = entries.map(normalizeSessionAgentEntry);
+		sessionAgentEntriesRef.current = normalizedEntries;
+		setSessionAgentEntries(normalizedEntries);
+	}, []);
 	const applySessionAgentMutation = useCallback((
 		result: SessionAgentEntryMutationResult,
 		options?: { silentSave?: boolean }
@@ -383,13 +392,12 @@ export function RovoChatProvider({
 			return result.entry;
 		}
 
-		sessionAgentEntriesRef.current = result.entries;
 		// A silent save (a brand-new blank agent, with nothing worth saving yet) writes
 		// without the "Saving…/Saved" progression.
 		dispatchSessionAgentSave({ type: "changed", silent: options?.silentSave === true });
-		setSessionAgentEntries(result.entries);
+		commitSessionAgentEntries(result.entries);
 		return result.entry;
-	}, []);
+	}, [commitSessionAgentEntries]);
 	// oxlint-disable react-doctor/no-event-handler -- Agent profile props and session-agent storage are external inputs that reconcile selected-agent state after render.
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Removed or auto-selected agent profiles must fall back after the owning profile set changes.
 	// oxlint-disable react-doctor/no-chain-state-updates -- Selection reconciliation intentionally updates the selected-agent state/ref pair together.
@@ -445,8 +453,6 @@ export function RovoChatProvider({
 	const sendChatMessageRef = useRef<(promptItem: QueuedPromptItem) => Promise<void>>(async () => {});
 
 	useEffect(() => {
-		sessionAgentEntriesRef.current = normalizedSessionAgentEntries;
-
 		// Skip the initial rehydration and React 19 StrictMode's dev-only mount
 		// double-invoke, which re-runs this effect with the *same* entries
 		// reference. Persisting on either would fire a spurious debounced save
@@ -496,7 +502,6 @@ export function RovoChatProvider({
 			rehydrated,
 		);
 		if (mergeResult.changed) {
-			sessionAgentEntriesRef.current = mergeResult.entries;
 			// Rehydration writes the persisted agents back to storage unchanged;
 			// run that persist silently so a plain reload (no user edits) never
 			// flashes the "Saving…/Saved just now" indicator. Only set here, in
@@ -504,9 +509,9 @@ export function RovoChatProvider({
 			// debounced save effect, so the flag can't linger and swallow the
 			// user's next real save.
 			dispatchSessionAgentSave({ type: "changed", silent: true });
-			setSessionAgentEntries(mergeResult.entries);
+			commitSessionAgentEntries(mergeResult.entries);
 		}
-	}, []);
+	}, [commitSessionAgentEntries]);
 	// oxlint-enable react-doctor/no-initialize-state
 
 	// oxlint-disable react-doctor/no-derived-state -- The selected agent also changes from explicit user actions, so it cannot be purely derived from the auto-select prop.
@@ -2152,9 +2157,8 @@ export function RovoChatProvider({
 			return;
 		}
 
-		sessionAgentEntriesRef.current = result.entries;
 		dispatchSessionAgentSave({ type: "changed", silent: false });
-		setSessionAgentEntries(result.entries);
+		commitSessionAgentEntries(result.entries);
 
 		// Deleting the agent that is currently driving the chat would otherwise
 		// leave the surface pointed at a profile that no longer exists, so fall
@@ -2163,7 +2167,7 @@ export function RovoChatProvider({
 			setSelectedAgentIdState(ROVO_AGENT_ID);
 			resetChat();
 		}
-	}, [resetChat, setSelectedAgentIdState]);
+	}, [commitSessionAgentEntries, resetChat, setSelectedAgentIdState]);
 
 	const rawUiMessagesRef = useLatestRef(rawUiMessages);
 	const transcriptOwner = useMemo<RovoChatTranscriptOwner>(() => ({
