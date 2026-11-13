@@ -1,0 +1,39 @@
+"use strict";
+
+const assert = require("node:assert/strict");
+const test = require("node:test");
+
+const { decideUploadResponseHeaders } = require("./upload-response-headers");
+
+test("only media types a browser renders without script are served inline", () => {
+	const cases = [
+		["a PNG screenshot", { mediaType: "image/png", filename: "shot.png" }, "image/png", "inline"],
+		["a JPEG with parameters and case", { mediaType: "Image/JPEG; q=1", filename: "a.jpg" }, "image/jpeg", "inline"],
+		["plain text", { mediaType: "text/plain", filename: "notes.txt" }, "text/plain; charset=utf-8", "inline"],
+		["an audio clip", { mediaType: "audio/webm", filename: "clip.webm" }, "audio/webm", "inline"],
+		["HTML", { mediaType: "text/html", filename: "page.html" }, "application/octet-stream", "attachment"],
+		["HTML with parameters", { mediaType: "text/html; charset=utf-8", filename: "page.html" }, "application/octet-stream", "attachment"],
+		["SVG", { mediaType: "image/svg+xml", filename: "logo.svg" }, "application/octet-stream", "attachment"],
+		["XHTML", { mediaType: "application/xhtml+xml", filename: "x.xhtml" }, "application/octet-stream", "attachment"],
+		["XML", { mediaType: "text/xml", filename: "x.xml" }, "application/octet-stream", "attachment"],
+		["PDF", { mediaType: "application/pdf", filename: "doc.pdf" }, "application/octet-stream", "attachment"],
+		["JavaScript", { mediaType: "text/javascript", filename: "x.js" }, "application/octet-stream", "attachment"],
+		["no type", { filename: "blob" }, "application/octet-stream", "attachment"],
+		["a non-string type", { mediaType: ["image/png"] }, "application/octet-stream", "attachment"],
+	];
+	for (const [name, upload, contentType, disposition] of cases) {
+		const headers = decideUploadResponseHeaders(upload);
+		assert.equal(headers["Content-Type"], contentType, name);
+		assert.equal(headers["Content-Disposition"].split(";")[0], disposition, name);
+		assert.equal(headers["X-Content-Type-Options"], "nosniff", name);
+		assert.match(headers["Content-Security-Policy"], /^sandbox;/u, name);
+	}
+});
+
+test("the filename cannot break out of the Content-Disposition header", () => {
+	const headers = decideUploadResponseHeaders({ mediaType: "image/png", filename: "a\"; x=\"y\r\nSet-Cookie: s=1.png" });
+	assert.equal(/[\r\n]/u.test(headers["Content-Disposition"]), false);
+	assert.match(headers["Content-Disposition"], /^inline; filename="a_; x=_y__Set-Cookie: s=1\.png"; filename\*=UTF-8''/u);
+	assert.match(decideUploadResponseHeaders({ mediaType: "image/png", filename: "résumé.png" })["Content-Disposition"], /filename\*=UTF-8''r%C3%A9sum%C3%A9\.png$/u);
+	assert.match(decideUploadResponseHeaders({ mediaType: "image/png" })["Content-Disposition"], /filename="attachment\.bin"/u);
+});

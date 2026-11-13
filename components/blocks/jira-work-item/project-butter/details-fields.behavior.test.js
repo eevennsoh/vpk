@@ -44,6 +44,11 @@ test("the overdue warning follows the date inside its editable field", async () 
 	assert.equal(date.nextElementSibling?.querySelector("svg") !== null, true);
 	await view.click(trigger);
 	assert.equal(view.queryByRole("grid") !== null, true);
+	assert.notEqual(document.querySelector('button[data-day="2026-05-25"][data-selected-single="true"]'), null);
+	await view.click(document.querySelector('button[data-day="2026-05-26"]'));
+	assert.equal(trigger.textContent.includes("May 26, 2026"), true);
+	await view.click(trigger);
+	assert.notEqual(document.querySelector('button[data-day="2026-05-26"][data-selected-single="true"]'), null);
 });
 
 test("assignee defaults to Unassigned with its avatar and can be reassigned", async () => {

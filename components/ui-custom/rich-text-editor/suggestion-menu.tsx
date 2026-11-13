@@ -8,11 +8,8 @@ import {
 	Fragment,
 	useEffect,
 	useLayoutEffect,
-	useRef,
 	useState,
 	type FocusEvent,
-	type KeyboardEvent,
-	type ReactElement,
 	type ReactNode,
 } from "react";
 import { ReactRenderer } from "@tiptap/react";
@@ -33,7 +30,6 @@ import TeamsIcon from "@atlaskit/icon/core/teams";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
-import CrossCircleIcon from "@atlaskit/icon/core/cross-circle";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
@@ -55,6 +51,7 @@ import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { Button } from "@/components/ui/button";
+import { DropdownMenuSearchField as RichTextCommandMenuSearchField, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import {
 	Empty,
 	EmptyContent,
@@ -63,7 +60,6 @@ import {
 	EmptyTitle,
 } from "@/components/ui/empty";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
-import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { ReturnIcon } from "@/components/ui/vpk-icons";
@@ -711,10 +707,10 @@ export function RichTextSuggestionMenu({
 }: Readonly<RichTextSuggestionMenuProps>) {
 	const {
 		listProps,
+		listRef,
 		menuProps,
 		remeasure: updateListScrollState,
 	} = useCommandMenuScrollMask();
-	const listRef = listProps.ref;
 	const isNested = Boolean(onBack);
 	const hasHoverActions = items.some((item) => item.hoverActions !== undefined);
 
@@ -772,7 +768,7 @@ export function RichTextSuggestionMenu({
 						return (
 							<Fragment key={item.id}>
 								{item.separatorBefore ? (
-									<div aria-hidden="true" className="rich-text-command-menu-divider" />
+									<DropdownMenuSeparator aria-hidden="true" />
 								) : null}
 								{item.headingLabel !== undefined ? (
 									<div
@@ -801,135 +797,6 @@ export function RichTextSuggestionMenu({
 					emptyState ?? <div className="rich-text-command-menu-empty">{emptyLabel}</div>
 				)}
 			</div>
-		</div>
-	);
-}
-
-export interface RichTextCommandMenuSearchFieldProps {
-	activeDescendantId?: string | null;
-	autoFocus?: boolean;
-	/**
-	 * Set when an ancestor owns list keyboard navigation — e.g. a cmdk `Command`
-	 * root, which handles Arrow/Enter through a React `onKeyDown` on its own
-	 * container and bails when the event is already `defaultPrevented`. In that
-	 * mode the field stops swallowing keys (no `stopPropagation`, no Enter
-	 * `preventDefault`) so navigation reaches the host. Defaults to false: the
-	 * field is self-contained and swallows keys so a surrounding TipTap editor
-	 * never sees them.
-	 */
-	hostOwnsKeyNavigation?: boolean;
-	icon: ReactNode;
-	id?: string;
-	label: string;
-	onClear: () => void;
-	onEscape?: () => void;
-	onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
-	onSubmit?: () => void;
-	onValueChange: (value: string) => void;
-	placeholder?: string;
-	renderInput?: (input: ReactElement) => ReactNode;
-	/**
-	 * When true, show a "Tab" key hint in the trailing slot while the field is
-	 * empty and unfocused — signalling that pressing Tab from the editor moves
-	 * focus into this field (e.g. to prompt Rovo) rather than typing into the
-	 * page. Hidden once the field is focused or has a value (where the clear
-	 * button takes the slot instead).
-	 */
-	tabHint?: boolean;
-	value: string;
-}
-
-export function RichTextCommandMenuSearchField({
-	activeDescendantId,
-	autoFocus,
-	hostOwnsKeyNavigation,
-	icon,
-	id,
-	label,
-	onClear,
-	onEscape,
-	onKeyDown,
-	onSubmit,
-	onValueChange,
-	placeholder = label,
-	renderInput,
-	tabHint,
-	value,
-}: Readonly<RichTextCommandMenuSearchFieldProps>) {
-	const inputRef = useRef<HTMLInputElement | null>(null);
-	// When this field is rendered inside a Base UI menu/popover, the
-	// `FloatingFocusManager` moves focus to the popup container on open, which
-	// beats the input's plain `autoFocus` attribute. Imperatively focus on mount
-	// (after the focus manager settles) so opening "Add automation", "Add apps",
-	// "Add skills", etc. lands the caret in the search box ready for typing.
-	// Use preventScroll because this field is often rendered in portalled
-	// popovers; native auto-focus can jump the surrounding page to the popup.
-	useEffect(() => {
-		if (!autoFocus) {
-			return;
-		}
-		const frame = requestAnimationFrame(() => {
-			inputRef.current?.focus({ preventScroll: true });
-		});
-		return () => cancelAnimationFrame(frame);
-	}, [autoFocus]);
-	const input = <Input
-		ref={inputRef}
-		{...(id === undefined ? {} : { id })}
-		{...(activeDescendantId === undefined ? {} : { "aria-activedescendant": activeDescendantId ?? undefined })}
-		variant="subtle"
-		value={value}
-		aria-label={label}
-		placeholder={placeholder}
-		onChange={(event) => onValueChange(event.currentTarget.value)}
-		onKeyDown={(event) => {
-			onKeyDown?.(event);
-			if (!hostOwnsKeyNavigation) {
-				event.stopPropagation();
-			}
-			if (event.defaultPrevented) {
-				return;
-			}
-			if ((event.key === "Escape" || event.key === "Esc") && onEscape) {
-				event.preventDefault();
-				onEscape();
-				return;
-			}
-			// Leave Enter alone when the host owns navigation: cmdk's root
-			// handler skips events that are already `defaultPrevented`, so
-			// preventing here would stop Enter from picking the highlighted row.
-			if (event.key === "Enter" && !hostOwnsKeyNavigation) {
-				event.preventDefault();
-				onSubmit?.();
-			}
-		}}
-	/>;
-	return (
-		<div className="rich-text-command-menu-search rich-text-command-menu-item-sticky">
-			<span className="rich-text-command-menu-search-logo" aria-hidden={true}>
-				{icon}
-			</span>
-			{renderInput ? renderInput(input) : input}
-			{value ? (
-				<Button
-					type="button"
-					aria-label="Clear search"
-					className="rich-text-command-menu-search-clear text-icon-subtle"
-					onMouseDown={(event) => event.preventDefault()}
-					onClick={onClear}
-					shape="circle"
-					size="icon-compact"
-					variant="ghost"
-				>
-					<CrossCircleIcon label="" size="small" />
-				</Button>
-			) : tabHint ? (
-				<span className="rich-text-command-menu-search-hint" aria-hidden="true">
-					{/* Wrap the label in an element so Kbd renders the literal word
-					    "Tab" instead of mapping the string to the ⇥ glyph. */}
-					<Kbd><span>Tab</span></Kbd>
-				</span>
-			) : null}
 		</div>
 	);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefCallback, type RefObject } from "react";
 
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 
@@ -11,9 +11,10 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 export function useCommandMenuScrollMask(): {
 	listProps: {
 		onScroll: () => void;
-		ref: RefObject<HTMLDivElement | null>;
+		ref: RefCallback<HTMLDivElement>;
 		style: CSSProperties;
 	};
+	listRef: RefObject<HTMLDivElement | null>;
 	menuProps: { "data-list-scrolled": "true" | undefined };
 	remeasure: () => void;
 } {
@@ -24,21 +25,25 @@ export function useCommandMenuScrollMask(): {
 		const listElement = listRef.current;
 		setHasScrolledList(Boolean(listElement && listElement.scrollTop > 0));
 	}, []);
+	const attachList = useCallback((element: HTMLDivElement | null) => {
+		listRef.current = element;
+		if (element) setHasScrolledList(element.scrollTop > 0);
+	}, []);
 
 	const listProps = useMemo(() => ({
 		onScroll: remeasure,
-		ref: listRef,
+		ref: attachList,
 		style: buildScrollMaskStyle({
 			fadeBottom: false,
 			fadeTop: hasScrolledList,
 			fadeSize: "var(--rich-text-command-menu-scroll-mask-fade-size)",
 			scrollbarWidth: "var(--rich-text-command-menu-scrollbar-width)",
 		}),
-	}), [hasScrolledList, remeasure]);
+	}), [attachList, hasScrolledList, remeasure]);
 	const menuProps = useMemo(
 		() => ({ "data-list-scrolled": hasScrolledList ? ("true" as const) : undefined }),
 		[hasScrolledList],
 	);
 
-	return { listProps, menuProps, remeasure };
+	return { listProps, listRef, menuProps, remeasure };
 }

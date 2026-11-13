@@ -3,6 +3,33 @@ import { appUrl } from "@/tests/helpers/origin";
 
 test.use({ actionTimeout: 7000, ignoreHTTPSErrors: true });
 
+test("switching pickers keeps the inline draft open", async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	const header = page.locator('[data-slot="board-column-header"]').filter({ has: page.getByRole("button", { name: "Create work item in To do" }) });
+	await expect(header).toBeAttached({ timeout: 20_000 });
+	await header.hover();
+	await header.getByRole("button", { name: "Create work item in To do" }).click();
+	const draft = page.locator('[data-board-create-card]');
+	await draft.getByRole("textbox", { name: "Work item summary" }).fill("Keep this draft");
+	await draft.getByRole("button", { name: "Priority: Medium" }).click();
+	const calendar = draft.getByRole("button", { name: "Set due date" });
+	const calendarBox = await calendar.boundingBox();
+	expect(calendarBox).not.toBeNull();
+	await page.mouse.click(calendarBox!.x + calendarBox!.width / 2, calendarBox!.y + calendarBox!.height / 2);
+	await expect(page.getByRole("dialog", { name: "Due date" })).toBeVisible();
+	await expect(draft.getByRole("textbox", { name: "Work item summary" })).toHaveValue("Keep this draft");
+	await draft.getByRole("button", { name: "Work item type: task" }).click();
+	await draft.getByRole("button", { name: "Set assignee" }).click();
+	await expect(page.getByRole("textbox", { name: "Search people" })).toBeVisible();
+	await expect(draft.getByRole("textbox", { name: "Work item summary" })).toHaveValue("Keep this draft");
+	await page.keyboard.press("Escape");
+	await expect(draft).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(draft).toHaveCount(0);
+});
+
 test("column header creates an inline work item with editable fields", async ({ page }) => {
 	test.setTimeout(60_000);
 	await page.setViewportSize({ width: 1800, height: 1100 });

@@ -50,11 +50,11 @@ test("composer suggestions prefer above-input placement and only fall below when
 });
 
 test("command menu search autofocus does not scroll portalled popovers into view", () => {
-	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
-	const fieldStart = source.indexOf("export function RichTextCommandMenuSearchField");
-	const fieldSource = source.slice(fieldStart, source.indexOf("interface RichTextSuggestionMenuOptionProps", fieldStart));
+	const source = readProjectFile("components/ui/dropdown-menu.tsx");
+	const fieldStart = source.indexOf("function DropdownMenuSearchField");
+	const fieldSource = source.slice(fieldStart, source.indexOf("type DropdownMenuProps", fieldStart));
 
-	assert.ok(fieldStart > -1, "expected RichTextCommandMenuSearchField source");
+	assert.ok(fieldStart > -1, "expected DropdownMenuSearchField source");
 	assert.match(fieldSource, /inputRef\.current\?\.focus\(\{ preventScroll: true \}\);/u);
 	assert.doesNotMatch(fieldSource, /autoFocus=\{autoFocus\}/u);
 });
@@ -142,14 +142,13 @@ test("separatorBefore draws a decorative full-bleed rule that never joins the li
 	assert.match(source, /separatorBefore\?: boolean;/u);
 	assert.match(source, /import \{\s*Fragment,/u);
 
-	// Decorative only: `aria-hidden`, no `role="separator"`, no `<hr>`. It is
+	// Decorative only: `aria-hidden`. It is
 	// emitted before EITHER branch, so a heading row can carry one too, and it
 	// consumes no index — `selectedIndex` still maps straight into `items`.
 	assert.match(
 		source,
-		/<Fragment key=\{item\.id\}>\s*\{item\.separatorBefore \? \(\s*<div aria-hidden="true" className="rich-text-command-menu-divider" \/>\s*\) : null\}\s*\{item\.headingLabel !== undefined \? \(/u,
+		/<Fragment key=\{item\.id\}>\s*\{item\.separatorBefore \? \(\s*<DropdownMenuSeparator aria-hidden="true" \/>\s*\) : null\}\s*\{item\.headingLabel !== undefined \? \(/u,
 	);
-	assert.doesNotMatch(source, /rich-text-command-menu-divider[\s\S]{0,80}role=/u);
 	assert.doesNotMatch(source, /<hr/u);
 
 	// `key` moved onto the Fragment, so neither branch may still carry one.
@@ -158,9 +157,6 @@ test("separatorBefore draws a decorative full-bleed rule that never joins the li
 
 	// Full-bleed: the negative inline margin has to cancel the list's padding
 	// exactly, or the rule insets like a menu item instead of spanning the menu.
-	assert.match(css, /\.rich-text-command-menu-list \{[\s\S]*?padding: 4px;/u);
-	assert.match(
-		css,
-		/\.rich-text-command-menu-divider \{\s*height: 1px;\s*margin: 4px -4px;\s*background-color: var\(--ds-border, #dfe1e6\);\s*\}/u,
-	);
+	assert.match(css, /\.rich-text-command-menu-list \{[\s\S]*?padding: var\(--menu-inset\);/u);
+	assert.match(css, /--menu-inset: var\(--ds-space-075, 6px\);/u);
 });

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { isValidElement, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -111,12 +112,13 @@ export function EmojiPickerPopover({
 				 * instead of permanently "false".
 				 */}
 				<EmojiQuickBar
-					className={isFullView ? "border-b border-border p-1" : undefined}
+					className={isFullView ? "p-1" : undefined}
 					frequent={frequent}
 					onSelect={handleSelect}
 					onShowMore={() => setView(isFullView ? "quick" : "full")}
 					showMoreExpanded={isFullView}
 				/>
+				{isFullView ? <div className="px-1 [--menu-inset:var(--ds-space-050,0.25rem)]"><DropdownMenuSeparator /></div> : null}
 				{isFullView ? <EmojiPickerPanel onSelect={handleSelect} /> : null}
 			</PopoverContent>
 		</Popover>

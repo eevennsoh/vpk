@@ -122,7 +122,7 @@ test("costly or mutating body routes have route-scoped rate and size limits", ()
 	assert.match(bodyLimitsSource, /paths: \["\/api\/chat-sdk", "\/api\/rovo\/suggestions"\][\s\S]*limit: "8mb"/u);
 	assert.match(bodyLimitsSource, /paths: \["\/api\/sound-generation", "\/api\/speech-transcription"\][\s\S]*limit: "12mb"/u);
 	assert.match(bodyLimitsSource, /paths: "\/api\/rovo\/files\/upload"[\s\S]*limit: "12mb"/u);
-	assert.match(bodyLimitsSource, /FALLBACK_BODY_LIMIT = "50mb"/u);
+	assert.match(bodyLimitsSource, /FALLBACK_BODY_LIMIT = "1mb"/u);
 });
 
 

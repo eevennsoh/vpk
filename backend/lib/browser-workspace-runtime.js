@@ -2,7 +2,9 @@ const fs = require("node:fs/promises")
 const fsSync = require("node:fs")
 const os = require("node:os")
 const path = require("node:path")
-const { execFile } = require("node:child_process")
+const childProcess = require("node:child_process")
+const { execFile } = childProcess
+const { createAgentBrowserCaller, isAgentBrowserCallTimeoutError } = require("./agent-browser-call")
 const { promisify } = require("node:util")
 const WebSocket = require("ws")
 const { requireAgentBrowserRef, requireBrowserArgument } = require("./input-schemas")
@@ -385,8 +387,12 @@ class AgentBrowserRuntime {
 		viewport = DEFAULT_VIEWPORT,
 		deviceScaleFactor = DEFAULT_DEVICE_SCALE_FACTOR,
 		agentBrowserExecutablePath = resolveAgentBrowserExecutablePath(),
+		onCrash = null,
+		timers = undefined,
 	} = {}) {
 		const sessionToken = sanitizeSessionToken(sessionId)
+		// Each command is bounded; one that does not answer calls onCrash (agent-browser-call.js).
+		this._caller = createAgentBrowserCaller({ execFileImpl: childProcess.execFile, file: BINARY_PATH, onCrash, timers })
 
 		this._sessionId = sessionId
 		this._sessionName = `browser-workspace-${sessionToken}`
@@ -417,15 +423,12 @@ class AgentBrowserRuntime {
 		}
 	}
 
-	async _executeAgentBrowser(commandArgs) {
+	async _executeAgentBrowser(commandArgs, args = commandArgs) {
+		this._caller.assertAnswering(args)
 		await ensureAgentBrowserDirectories({
 			env: this._agentBrowserEnv,
 		})
-		const { stdout } = await execFileAsync(BINARY_PATH, commandArgs, {
-			env: this._agentBrowserEnv,
-			maxBuffer: MAX_OUTPUT_BYTES,
-		})
-		return stdout.trim()
+		return this._caller.call({ args, commandArgs, options: { env: this._agentBrowserEnv, maxBuffer: MAX_OUTPUT_BYTES } })
 	}
 
 	async _buildCommandArgs(args, {
@@ -450,8 +453,9 @@ class AgentBrowserRuntime {
 		})
 
 		try {
-			return await this._executeAgentBrowser(commandArgs)
+			return await this._executeAgentBrowser(commandArgs, args)
 		} catch (error) {
+			if (isAgentBrowserCallTimeoutError(error)) throw error
 			const stderr =
 				typeof error?.stderr === "string" && error.stderr.trim()
 					? error.stderr.trim()
@@ -965,7 +969,8 @@ class AgentBrowserRuntime {
 
 	async close() {
 		await this.stopScreencast()
-		if (!this._isBrowserReady) {
+		// A command that did not answer (an initial open included) may have left a browser.
+		if (!this._isBrowserReady && !this._caller.hasTimedOut()) {
 			return
 		}
 

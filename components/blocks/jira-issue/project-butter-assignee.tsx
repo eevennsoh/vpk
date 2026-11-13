@@ -46,11 +46,11 @@ export function ProjectButterAssignee({
 			<PopoverContent
 				align="start"
 				side="right"
-				className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-[240px] gap-0")}
+				className={cn(dropdownStyles.surface, dropdownStyles.padding, "w-[240px] gap-0")}
 				onClick={(event) => event.stopPropagation()}
 				onPointerDown={(event) => event.stopPropagation()}
 			>
-				<PopoverTitle className="px-2 py-1 text-xs font-normal text-text-subtlest">Team</PopoverTitle>
+				<PopoverTitle className={dropdownStyles.label}>Team</PopoverTitle>
 				{options.map((person) => (
 					<button
 						type="button"

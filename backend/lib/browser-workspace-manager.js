@@ -147,20 +147,23 @@ class BrowserWorkspace {
 		this._lifecycle = INITIAL_BROWSER_WORKSPACE_LIFECYCLE
 		this._releasePromise = null
 		this._pendingCalls = 0
-		// AgentBrowserRuntime reports no crashes (agent-browser relaunches its own
-		// daemon); a runtime that can tell calls onCrash once its browser is gone.
+		// A runtime calls onCrash once its browser is gone. AgentBrowserRuntime does when
+		// an agent-browser command does not answer within its bound (agent-browser
+		// relaunches a daemon that exits, so that is the crash it can see).
+		const onCrash = (reason) => this._handleCrash(reason)
 		this._runtime = typeof runtimeFactory === "function"
 			? runtimeFactory({
 				workspaceId,
 				sessionId,
 				viewport: DEFAULT_VIEWPORT,
 				deviceScaleFactor: DEFAULT_DEVICE_SCALE_FACTOR,
-				onCrash: (reason) => this._handleCrash(reason),
+				onCrash,
 			})
 			: new AgentBrowserRuntime({
 				sessionId,
 				viewport: DEFAULT_VIEWPORT,
 				deviceScaleFactor: DEFAULT_DEVICE_SCALE_FACTOR,
+				onCrash,
 			})
 		this._queue = Promise.resolve()
 		this._title = ""

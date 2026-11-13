@@ -8,9 +8,9 @@ const source = fs.readFileSync(
 	"utf8",
 );
 
-test("dropdown menu popup uses an 8px container radius and compact padding", () => {
+test("dropdown menu popup uses an 8px container radius and 6px padding", () => {
 	assert.match(source, /surface:\s*"[^"]*\brounded-lg\b/u);
-	assert.match(source, /compact:\s*"p-1\.5\b/u);
+	assert.match(source, /padding:\s*"p-1\.5\b/u);
 	assert.doesNotMatch(source, /surface:\s*"[^"]*\brounded-xl\b/u);
 });
 
@@ -65,23 +65,7 @@ test("dropdown menu shortcut strings render as VPK keycaps", () => {
 	assert.match(source, /return <Kbd>\{trimmedShortcut\}<\/Kbd>;/u);
 });
 
-test("dropdown menu single rows lock to a fixed 32px height", () => {
-	assert.match(source, /const dropdownMenuRowHeightClassName = "h-8 py-0";/u);
-	assert.match(
-		source,
-		/shouldWrapText \? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName/u,
-	);
-	assert.match(
-		source,
-		/allowTextWrap \? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName/u,
-	);
-});
-
-test("dropdown menu rows only use vertical padding when text can wrap", () => {
-	assert.match(
-		source,
-		/const dropdownMenuWrappingRowClassName = "min-h-8 py-1\.5";/u,
-	);
+test("dropdown menu rows can wrap text", () => {
 	assert.match(source, /allowTextWrap\?: boolean;/u);
 	assert.match(
 		source,

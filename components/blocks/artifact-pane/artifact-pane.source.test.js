@@ -337,7 +337,7 @@ test("Artifact Pane labels picker fades its list once scrolled", () => {
 	assert.match(LABELS_FIELD_SOURCE, /const \{ listProps, menuProps \} = useCommandMenuScrollMask\(\);/u);
 	// menuProps supplies data-list-scrolled on the menu root; listProps supplies
 	// the ref + onScroll on the scroller.
-	assert.match(LABELS_FIELD_SOURCE, /className="rich-text-command-menu rich-text-command-menu-borderless"[\s\S]*\{\.\.\.menuProps\}/u);
+	assert.match(LABELS_FIELD_SOURCE, /className=\{cn\("rich-text-command-menu rich-text-command-menu-borderless", ARTIFACT_PICKER_DROPDOWN_CLASS,[\s\S]*\{\.\.\.menuProps\}/u);
 	assert.match(LABELS_FIELD_SOURCE, /className="rich-text-command-menu-list"[\s\S]*\{\.\.\.listProps\}/u);
 });
 

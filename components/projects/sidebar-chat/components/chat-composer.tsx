@@ -359,7 +359,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 									>
 										<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
 											<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
-											<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className={cn(dropdownStyles.surface, dropdownStyles.padding.compact, "w-auto")}>
+											<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className={cn(dropdownStyles.surface, dropdownStyles.padding, "w-auto")}>
 												<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
 												<CustomizeMenu
 													selectedReasoning={selectedReasoning}
