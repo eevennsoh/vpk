@@ -2,13 +2,16 @@ const assert = require("node:assert/strict");
 const { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 
 const {
 	DEFAULT_BUILD_DURATION_BUDGET,
 	DEFAULT_ROUTE_BUDGETS,
 	FIXED_ROUTE_IDS,
+	ROUTE_BUDGET_TARGETS,
 	evaluateBuildDurationBudget,
+	findRaisedBudgets,
 	evaluatePerfBaselineBudget,
 	evaluatePerfBaselineWarnings,
 	evaluateRouteLoadTimingFailures,
@@ -122,9 +125,45 @@ test("evaluatePerfBaselineBudget fails a measured default route that has no budg
 	const { eu26: _eu26, ...budgetsWithoutEu26 } = DEFAULT_ROUTE_BUDGETS;
 	const failures = evaluatePerfBaselineBudget(createPassingBaseline(), budgetsWithoutEu26);
 	assert.deepEqual(failures, [{ routeId: "eu26", type: "unbudgeted-route" }]);
-	assert.equal(formatFailure(failures[0]), "eu26: route is measured by default but has no budget in DEFAULT_ROUTE_BUDGETS.");
+	assert.equal(formatFailure(failures[0]), "eu26: route is measured by default but has no budget in scripts/perf-route-budgets.json.");
 	const custom = { routes: [...createPassingBaseline().routes, createRoute("one-off")] };
 	assert.deepEqual(evaluatePerfBaselineBudget(custom), [], "a --route measured on demand needs no budget");
+});
+
+test("findRaisedBudgets reports only values above the base", () => {
+	const base = { rovo: { cssBytes: 935_000, firstLoadJsBytes: 7_300_000 }, gone: { cssBytes: 1 } };
+	const current = { rovo: { cssBytes: 940_000, firstLoadJsBytes: 7_200_000 }, home: { cssBytes: 999_999 } };
+	assert.deepEqual(findRaisedBudgets(base, current), [{ baseLimit: 935_000, limit: 940_000, metricName: "cssBytes", routeId: "rovo" }]);
+	assert.deepEqual(findRaisedBudgets(base, base), []);
+});
+
+// Same base as the other shrink-only baselines: the PR base in CI, the pre-push tip on a push to
+// main, the merge base with origin/main locally.
+test("route budgets only go down from the base", () => {
+	const { isBaseRequired, resolveBaseRef } = require("./verify-eslint-suppressions");
+	const repoRoot = path.resolve(__dirname, "..");
+	const git = (args) => {
+		const result = spawnSync("git", args, { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+		return result.status === 0 ? result.stdout.trim() : null;
+	};
+	const baseRef = resolveBaseRef({ git });
+	if (!baseRef) {
+		assert.equal(isBaseRequired(), false, "the named ratchet base must resolve");
+		return;
+	}
+	const baseSource = git(["show", `${baseRef}:scripts/perf-route-budgets.json`]);
+	if (baseSource === null) return; // the base predates the file: this change introduces the baseline
+	const raised = findRaisedBudgets(JSON.parse(baseSource).routes);
+	assert.deepEqual(raised, [], `perf route budgets may only go down; raised since ${baseRef.slice(0, 9)}: ${raised.map((entry) => `${entry.routeId}.${entry.metricName} ${entry.baseLimit} -> ${entry.limit}`).join(", ")}`);
+});
+
+test("the budget targets sit at or below the budgets", () => {
+	for (const [routeId, budget] of Object.entries(DEFAULT_ROUTE_BUDGETS)) {
+		const target = { ...ROUTE_BUDGET_TARGETS["*"], ...ROUTE_BUDGET_TARGETS[routeId] };
+		for (const [metricName, value] of Object.entries(target)) {
+			assert.ok(value <= budget[metricName], `${routeId}.${metricName} target ${value} is above its budget ${budget[metricName]}`);
+		}
+	}
 });
 
 test("evaluatePerfBaselineBudget reports missing metrics", () => {
