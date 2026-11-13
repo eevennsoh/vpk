@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AppsIcon from "@atlaskit/icon/core/apps";
@@ -47,6 +47,15 @@ import {
 } from "@/components/blocks/trigger/data/trigger-catalog";
 import { useProviderConnection } from "@/components/blocks/trigger/hooks/use-provider-connection";
 import { AgentTriggerProviderTileIcon } from "@/components/blocks/trigger/page";
+
+import {
+	AGENT_CONFIG_DIRECTORY_INITIAL_STATE,
+	agentConfigDirectoryReducer,
+	createAppsSeed,
+	createSkillsSeed,
+	createToolsSeed,
+	selectAgentConfigDirectorySelection,
+} from "./rovo-app-agent-config-directory-machine";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { ManageSubagentsDialog } from "@/components/blocks/subagent/components/manage-subagents-dialog";
@@ -679,22 +688,17 @@ export function RovoAppAgentConfigPanel({
 	// (the navigator's positioning context) instead of using a fixed `top`.
 	const configureTabRef = useRef<HTMLDivElement | null>(null);
 	const navigatorTop = useSubagentNavigatorTop(configureTabRef);
-	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
+	const [directory, dispatchDirectory] = useReducer(agentConfigDirectoryReducer, AGENT_CONFIG_DIRECTORY_INITIAL_STATE);
+	const activeDirectory = directory.open;
+	const {
+		appId: directorySelectedAppId,
+		detailSkillId: directorySelectedSkillId,
+		selectedSkillIds: directorySkillIds,
+		toolId: directorySelectedToolId,
+	} = selectAgentConfigDirectorySelection(directory);
 	const [activeCompactSection, setActiveCompactSection] = useState<AgentCompactHeaderSection | null>(null);
 	const [instructionsViewMode, setInstructionsViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const lastCompactSectionRef = useRef<AgentCompactHeaderSection>("details");
-	// Tool to focus when the tools directory opens (e.g. clicking a tool chip).
-	// Cleared on close so a plain "Add" opens at the directory list instead.
-	const [directorySelectedToolId, setDirectorySelectedToolId] = useState<string | null>(null);
-	// Unified Apps directory: the app to focus when it opens (chip click / picker).
-	const [directorySelectedAppId, setDirectorySelectedAppId] = useState<string | null>(null);
-	// App to open the knowledge directory on (e.g. picking an app in the "Add
-	// knowledge" flyout). Cleared on close so "Browse knowledge" opens the grid.
-	const [directoryKnowledgeAppId, setDirectoryKnowledgeAppId] = useState<string | null>(null);
-	const [directorySkillIds, setDirectorySkillIds] = useState<readonly string[]>([]);
-	// Skill to open the skills directory on (e.g. clicking a configured skill
-	// chip). Cleared on close so "Browse skills" opens the grid, not a detail view.
-	const [directorySelectedSkillId, setDirectorySelectedSkillId] = useState<string | null>(null);
 	const [isManageSubagentsOpen, setIsManageSubagentsOpen] = useState(false);
 
 	// Floating Rovo chat launcher for the agent config screen. studio surfaces
@@ -913,47 +917,31 @@ export function RovoAppAgentConfigPanel({
 		},
 		[connectProvider, markProviderTriggers],
 	);
-	const handleOpenDirectory = useCallback((directory: AgentDirectoryKind, selectedItem?: string) => {
-		if (directory === "tools") {
-			if (selectedItem) {
-				// The "Add tools" picker passes a tool id; tool chips pass a tool
-				// name. Resolve either to the directory's tool id so the dialog can
-				// open directly on that tool's detail view.
-				const normalized = selectedItem.trim().toLowerCase();
-				const allTools = [...DEMO_TOOLS, ...DEMO_SESSION_TOOLS];
-				const matchedTool =
-					allTools.find((tool) => tool.id === selectedItem) ??
-					allTools.find((tool) => tool.name.trim().toLowerCase() === normalized);
-				setDirectorySelectedToolId(matchedTool?.id ?? null);
-			} else {
-				setDirectorySelectedToolId(null);
-			}
-		} else if (directory === "apps") {
-			// Apps chips pass an app name; the picker passes an app id. Resolve
-			// either to the app id so the dialog opens on that app's detail.
-			if (selectedItem) {
-				const normalized = selectedItem.trim().toLowerCase();
-				const matched =
-					getAppById(selectedItem) ??
-					DIRECTORY_APPS.find((app) => app.name.trim().toLowerCase() === normalized);
-				setDirectorySelectedAppId(matched?.id ?? null);
-			} else {
-				setDirectorySelectedAppId(null);
-			}
-		} else if (directory === "skills") {
-			// Skill chips pass the configured kebab-case label; older drafts may still
-			// pass a display name. Resolve either to the directory's skill id so the
-			// dialog opens directly on that skill's detail/config view.
-			if (selectedItem) {
-				const matched =
-					DEFAULT_SKILLS.find((skill) => skill.id === selectedItem) ??
-					getSkillByConfigLabel(selectedItem);
-				setDirectorySelectedSkillId(matched?.id ?? null);
-			} else {
-				setDirectorySelectedSkillId(null);
-			}
+	// A chip passes the item to focus (tool id or name, app id or name, skill id or
+	// configured label); a plain "Add" or "Browse" passes nothing and opens the list.
+	const handleOpenDirectory = useCallback((kind: AgentDirectoryKind, selectedItem?: string) => {
+		const normalized = selectedItem?.trim().toLowerCase();
+		if (kind === "tools") {
+			const allTools = [...DEMO_TOOLS, ...DEMO_SESSION_TOOLS];
+			const matchedTool = selectedItem
+				? allTools.find((tool) => tool.id === selectedItem)
+					?? allTools.find((tool) => tool.name.trim().toLowerCase() === normalized)
+				: undefined;
+			dispatchDirectory({ type: "open", kind, seed: createToolsSeed(matchedTool?.id ?? null) });
+		} else if (kind === "apps") {
+			const matched = selectedItem
+				? getAppById(selectedItem)
+					?? DIRECTORY_APPS.find((app) => app.name.trim().toLowerCase() === normalized)
+				: undefined;
+			dispatchDirectory({ type: "open", kind, seed: createAppsSeed(matched?.id ?? null) });
+		} else if (kind === "skills") {
+			const matched = selectedItem
+				? DEFAULT_SKILLS.find((skill) => skill.id === selectedItem) ?? getSkillByConfigLabel(selectedItem)
+				: undefined;
+			dispatchDirectory({ type: "open", kind, seed: createSkillsSeed(matched?.id ?? null) });
+		} else {
+			dispatchDirectory({ type: "open", kind });
 		}
-		setActiveDirectory(directory);
 	}, []);
 	// The apps already on the agent, as catalog ids — drives the Apps dialog's
 	// "added" state. Derived from the canonical apps[] (display names) so it stays
@@ -1069,7 +1057,7 @@ export function RovoAppAgentConfigPanel({
 				}
 			}
 			if (addedIds.length > 0) {
-				setActiveDirectory(null);
+				dispatchDirectory({ type: "close" });
 			}
 		},
 		[appendListValues, updateActiveConfig, addedAppIds],
@@ -1099,7 +1087,7 @@ export function RovoAppAgentConfigPanel({
 					);
 				}
 			}
-			setActiveDirectory(null);
+			dispatchDirectory({ type: "close" });
 		},
 		[appendListValues],
 	);
@@ -1121,7 +1109,7 @@ export function RovoAppAgentConfigPanel({
 				);
 			}
 
-			setActiveDirectory(null);
+			dispatchDirectory({ type: "close" });
 		},
 		[appendListValues],
 	);
@@ -1149,15 +1137,18 @@ export function RovoAppAgentConfigPanel({
 			);
 
 			if (addedIds.length > 0) {
-				setActiveDirectory(null);
+				dispatchDirectory({ type: "close" });
 			}
 		},
 		[addedToolIds, appendListValues, updateActiveConfig],
 	);
+	const handleDirectorySkillSelection = useCallback((skillIds: readonly string[]) => {
+		dispatchDirectory({ type: "select-skills", skillIds });
+	}, []);
 	const handleAddSkills = useCallback(
 		(_skillIds: readonly string[], skills: readonly SkillDirectorySkill[]) => {
 			appendListValues("skills", skills.map((skill) => getSkillConfigLabel(skill.name)));
-			setDirectorySkillIds([]);
+			dispatchDirectory({ type: "clear-skill-selection" });
 		},
 		[appendListValues],
 	);
@@ -1209,7 +1200,7 @@ export function RovoAppAgentConfigPanel({
 				conversationStarters: starters.map((starter) => starter.text),
 				conversationStarterIcons: starters.map((starter) => starter.icon),
 			}));
-			setActiveDirectory(null);
+			dispatchDirectory({ type: "close" });
 		},
 		[updateActiveConfig],
 	);
@@ -1681,19 +1672,9 @@ export function RovoAppAgentConfigPanel({
 				) : null}
 			</AnimatePresence>
 			<KnowledgeDirectoryDialog
-				// Remount per open so `defaultSelectedAppId` re-seeds the step: a
-				// plain "Browse knowledge" opens the grid, while picking an app in
-				// the "Add knowledge" flyout opens that app's content step.
-				key={`knowledge-${directoryKnowledgeAppId ?? "browse"}`}
 				addedAppIds={addedKnowledgeAppIds}
-				defaultSelectedAppId={directoryKnowledgeAppId}
 				open={activeDirectory === "knowledge"}
-				onOpenChange={(open) => {
-					setActiveDirectory(open ? "knowledge" : null);
-					if (!open) {
-						setDirectoryKnowledgeAppId(null);
-					}
-				}}
+				onOpenChange={(open) => dispatchDirectory(open ? { type: "open", kind: "knowledge" } : { type: "dismiss", kind: "knowledge" })}
 				onAddKnowledge={handleAddKnowledge}
 			/>
 			<ToolDirectoryDialog
@@ -1701,12 +1682,7 @@ export function RovoAppAgentConfigPanel({
 				initialSelectedToolId={directorySelectedToolId}
 				open={activeDirectory === "tools"}
 				onAddedToolIdsChange={handleDirectoryToolIdsChange}
-				onOpenChange={(open) => {
-					setActiveDirectory(open ? "tools" : null);
-					if (!open) {
-						setDirectorySelectedToolId(null);
-					}
-				}}
+				onOpenChange={(open) => dispatchDirectory(open ? { type: "open", kind: "tools" } : { type: "dismiss", kind: "tools" })}
 				sessionTools={DEMO_SESSION_TOOLS}
 				tools={DEMO_TOOLS}
 			/>
@@ -1718,12 +1694,7 @@ export function RovoAppAgentConfigPanel({
 				open={activeDirectory === "apps"}
 				onAddedToolIdsChange={handleDirectoryAppIdsChange}
 					onAddApp={handleAddApp}
-				onOpenChange={(open) => {
-					setActiveDirectory(open ? "apps" : null);
-					if (!open) {
-						setDirectorySelectedAppId(null);
-					}
-				}}
+				onOpenChange={(open) => dispatchDirectory(open ? { type: "open", kind: "apps" } : { type: "dismiss", kind: "apps" })}
 				tools={DIRECTORY_APPS}
 			/>
 			<SkillDirectoryDialog
@@ -1732,15 +1703,9 @@ export function RovoAppAgentConfigPanel({
 				variant="experimental"
 				initialDetailSkillId={directorySelectedSkillId}
 				onAddSkills={handleAddSkills}
-				onOpenChange={(open) => {
-					setActiveDirectory(open ? "skills" : null);
-					if (!open) {
-						setDirectorySelectedSkillId(null);
-						setDirectorySkillIds([]);
-					}
-				}}
+				onOpenChange={(open) => dispatchDirectory(open ? { type: "open", kind: "skills" } : { type: "dismiss", kind: "skills" })}
 				onRemoveSkills={handleRemoveSkills}
-				onSelectedSkillIdsChange={setDirectorySkillIds}
+				onSelectedSkillIdsChange={handleDirectorySkillSelection}
 				selectionExperience="studio-bulk-add"
 				onToggleSkillEnabled={handleToggleSkillEnabled}
 				open={activeDirectory === "skills"}
@@ -1749,12 +1714,12 @@ export function RovoAppAgentConfigPanel({
 			/>
 			<Memory
 				open={activeDirectory === "memory"}
-				onOpenChange={(open) => setActiveDirectory(open ? "memory" : null)}
+				onOpenChange={(open) => dispatchDirectory(open ? { type: "open", kind: "memory" } : { type: "dismiss", kind: "memory" })}
 				showTrigger={false}
 			/>
 			<ConversationStarterDialog
 				open={activeDirectory === "conversationStarters"}
-				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
+				onOpenChange={(open) => dispatchDirectory(open ? { type: "open", kind: "conversationStarters" } : { type: "dismiss", kind: "conversationStarters" })}
 				starters={conversationStarterDialogValue}
 				maxStarters={3}
 				saveLabel={conversationStarterDialogValue.length > 0 ? "Save" : "Add"}
