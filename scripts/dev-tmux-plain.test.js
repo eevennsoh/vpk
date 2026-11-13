@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const { PRESSURE_LEVEL_MIN: LEVEL, PRESSURE_SWAP_USED_GB: SWAP } = require("./lib/memory-pressure.js");
+const { PRESSURE_SWAP_USED_GB: SWAP } = require("./lib/memory-pressure.js");
 // Pressure fixtures follow the sweep's limits, so changing them there breaks no test.
 const OVER = SWAP + 13;
 
