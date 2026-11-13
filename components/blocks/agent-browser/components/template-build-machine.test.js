@@ -27,7 +27,7 @@ test("each elapsed step advances by one until the last", () => {
 	}
 });
 
-test("the last step finishes as built with the returned profile and cancel, or as error", () => {
+test("the last step finishes as built with the returned profile and cancel, or as error when the host returns null", () => {
 	const onCancel = () => {};
 	assert.deepEqual(templateBuildReducer(building(LAST), { type: "build-finished", result: { profileId: "p1" } }), BUILT);
 	assert.deepEqual(
