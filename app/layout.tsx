@@ -1,9 +1,7 @@
 /* eslint-disable @next/next/no-page-custom-font -- App Router root layout applies these fonts globally. */
 import type { Metadata } from "next";
 import "./globals.css";
-import "katex/dist/katex.min.css";
 import "streamdown/styles.css";
-import "leaflet/dist/leaflet.css";
 import { getSSRAutoScript } from "@atlaskit/tokens/get-ssr-auto-script";
 import { getThemeStyles } from "@atlaskit/tokens/get-theme-styles";
 import { PROJECT_COMPONENTS } from "@/app/data/component-manifest";
