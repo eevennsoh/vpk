@@ -349,7 +349,7 @@ export function WebsiteSidebarNav({
 											style={{ width: 36, height: 36 }}
 										>
 											<span
-												className="inline-flex transition-transform duration-200 ease-in-out"
+												className="inline-flex transition-transform duration-medium ease-in-out"
 												style={{ transform: sectionOpen ? "rotate(0deg)" : "rotate(-90deg)" }}
 											>
 												<ChevronDownIcon label="" size="small" />
@@ -469,7 +469,7 @@ function NavGroupItem({
 							}
 						>
 							<span
-								className="inline-flex transition-transform duration-200 ease-in-out"
+								className="inline-flex transition-transform duration-medium ease-in-out"
 								style={{ transform: isGroupOpen ? "rotate(0deg)" : "rotate(-90deg)" }}
 							>
 								<ChevronDownIcon label="" size="small" />

@@ -288,7 +288,7 @@ export default function TaskProgress({
 				>
 					<div
 						className={cn(
-							"group/card w-full overflow-hidden rounded-xl bg-surface-raised shadow-xl transition-shadow duration-200 hover:shadow-2xl",
+							"group/card w-full overflow-hidden rounded-xl bg-surface-raised shadow-xl transition-shadow duration-medium hover:shadow-2xl",
 							!isInteractive && "cursor-default",
 							className
 						)}

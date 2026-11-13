@@ -10,11 +10,23 @@ const {
 	DEFAULT_VIEWPORT,
 	} = require("./browser-workspace-runtime")
 const { BrowserPreviewSession } = require("./browser-preview-session")
+const {
+	BrowserWorkspaceNotFoundError,
+	BrowserWorkspaceUnavailableError,
+	INITIAL_BROWSER_WORKSPACE_LIFECYCLE,
+	MAX_LIVE_BROWSER_WORKSPACES,
+	decideBrowserWorkspaceCall,
+	isBrowserWorkspaceNotFoundError,
+	transitionBrowserWorkspace,
+} = require("./browser-workspace-lifecycle")
+const {
+	BrowserWorkspaceRegistry,
+	WORKSPACE_CLEANUP_INTERVAL_MS,
+	WORKSPACE_IDLE_TIMEOUT_MS,
+} = require("./browser-workspace-registry")
 
 const DEFAULT_URL = "about:blank"
 const SCREENSHOT_ROOT_DIR = path.join(os.tmpdir(), "vpk-browser-workspaces")
-const WORKSPACE_IDLE_TIMEOUT_MS = 30 * 60 * 1000
-const WORKSPACE_CLEANUP_INTERVAL_MS = 60 * 1000
 const PREVIEW_SETTLE_DELAY_MS = 750
 const PREVIEW_OVERLAY_ACTIVITY_RESET_MS = 1200
 const PREVIEW_OVERLAY_POINTER_STALE_MS = 5_000
@@ -91,18 +103,6 @@ function normalizeTabIndex(index) {
 	return parsed
 }
 
-class BrowserWorkspaceNotFoundError extends Error {
-	constructor(workspaceId) {
-		super(`Browser workspace not found: ${workspaceId}`)
-		this.name = "BrowserWorkspaceNotFoundError"
-		this.workspaceId = workspaceId
-	}
-}
-
-function isBrowserWorkspaceNotFoundError(error) {
-	return error instanceof BrowserWorkspaceNotFoundError
-}
-
 function tabsAreEqual(currentTabs, nextTabs) {
 	if (!Array.isArray(currentTabs) || !Array.isArray(nextTabs)) {
 		return false
@@ -143,12 +143,18 @@ class BrowserWorkspace {
 		this._delay = delayFn
 		this._now = nowFn
 		this._previewSessionFactory = previewSessionFactory
+		this._lifecycle = INITIAL_BROWSER_WORKSPACE_LIFECYCLE
+		this._releasePromise = null
+		this._pendingCalls = 0
+		// AgentBrowserRuntime reports no crashes (agent-browser relaunches its own
+		// daemon); a runtime that can tell calls onCrash once its browser is gone.
 		this._runtime = typeof runtimeFactory === "function"
 			? runtimeFactory({
 				workspaceId,
 				sessionId,
 				viewport: DEFAULT_VIEWPORT,
 				deviceScaleFactor: DEFAULT_DEVICE_SCALE_FACTOR,
+				onCrash: (reason) => this._handleCrash(reason),
 			})
 			: new AgentBrowserRuntime({
 				sessionId,
@@ -156,7 +162,6 @@ class BrowserWorkspace {
 				deviceScaleFactor: DEFAULT_DEVICE_SCALE_FACTOR,
 			})
 		this._queue = Promise.resolve()
-		this._isBrowserReady = false
 		this._title = ""
 		this._currentUrl = DEFAULT_URL
 		this._viewport = { ...DEFAULT_VIEWPORT }
@@ -213,7 +218,63 @@ class BrowserWorkspace {
 		this._screenshotDirty = true
 	}
 
+	_dispatch(event) {
+		const previous = this._lifecycle
+		this._lifecycle = transitionBrowserWorkspace(previous, event)
+		return this._lifecycle !== previous
+	}
+
+	getLifecycle() {
+		return this._lifecycle
+	}
+
+	// What the registry's cap decision needs to tell an abandoned workspace from one in use.
+	getUsage() {
+		return {
+			workspaceId: this._workspaceId,
+			status: this._lifecycle.status,
+			lastUsedAt: this._lastUsedAt,
+			previewConsumers: this._previewSessions.size + this._previewClients.size,
+			pendingCalls: this._pendingCalls,
+		}
+	}
+
+	assertCallable() {
+		const decision = decideBrowserWorkspaceCall(this._lifecycle)
+		if (decision.action === "reject") {
+			throw new BrowserWorkspaceUnavailableError(
+				this._workspaceId,
+				decision.code,
+				this._lifecycle.reason,
+			)
+		}
+	}
+
+	// Every call is checked when it is queued and again when it starts, so a call
+	// queued before a close or crash never reaches the released browser (which
+	// agent-browser would otherwise relaunch). Rejections are marked handled, as
+	// queued tasks are, because timers and preview controls drop the promise.
 	_enqueue(task) {
+		try {
+			this.assertCallable()
+		} catch (error) {
+			const rejected = Promise.reject(error)
+			rejected.catch(() => {})
+			return rejected
+		}
+
+		this._pendingCalls += 1
+		const call = this._enqueueUnchecked(() => {
+			this.assertCallable()
+			return task()
+		}).finally(() => {
+			this._pendingCalls -= 1
+		})
+		call.catch(() => {})
+		return call
+	}
+
+	_enqueueUnchecked(task) {
 		const nextTask = this._queue.then(task, task)
 		this._queue = nextTask.catch(() => {})
 		return nextTask
@@ -376,7 +437,7 @@ class BrowserWorkspace {
 
 		return {
 			workspaceId: this._workspaceId,
-			ready: this._isBrowserReady,
+			ready: this._lifecycle.status === "ready",
 			activeTabIndex: this._activeTabIndex,
 			tabs: this._tabs,
 			title: this._title,
@@ -821,8 +882,13 @@ class BrowserWorkspace {
 			]
 			this._activeTabIndex = 0
 			this._tabHistories = new Map([[0, initialHistory]])
-			await this._runtime.initialize(this._currentUrl)
-			this._isBrowserReady = true
+			try {
+				await this._runtime.initialize(this._currentUrl)
+			} catch (error) {
+				this._handleCrash(error instanceof Error ? error.message : String(error))
+				throw error
+			}
+			this._dispatch({ type: "LAUNCHED" })
 			return this._refreshState({ forceUpdated: true })
 		})
 	}
@@ -1390,264 +1456,74 @@ class BrowserWorkspace {
 		})
 	}
 
+	// One close per workspace: later and concurrent calls (a DELETE, the idle
+	// sweep, shutdown) share it. Closing a crashed workspace waits for the
+	// crash's release instead of releasing again.
 	close() {
-		return this._enqueue(async () => {
-			this._clearPreviewSettleTimer()
-			this._clearPreviewOverlayActivityTimer()
-			for (const session of this._previewSessions.values()) {
-				await session.close().catch(() => {})
-			}
-			this._previewSessions.clear()
-			this._previewClients.clear()
-			this._latestScreenshotBuffer = null
-			this._screenshotDirty = true
-			this._previewOverlayState = null
-			this._lastExactPointer = null
-			this._tabs = [
-				{
-					index: 0,
-					title: "",
-					url: DEFAULT_URL,
-					active: true,
-				},
-			]
-			this._activeTabIndex = 0
-			this._tabHistories = new Map([
-				[
-					0,
-					{
-						entries: [DEFAULT_URL],
-						index: 0,
-					},
-				],
-			])
-			this._isBrowserReady = false
-			await this._runtime.close().catch(() => {})
-			await fs.rm(this._screenshotDir, { recursive: true, force: true }).catch(() => {})
+		if (this._releasePromise) {
+			return this._releasePromise
+		}
+
+		this._dispatch({ type: "CLOSE_REQUESTED" })
+		this._releasePromise = this._enqueueUnchecked(() => this._release()).then(() => {
+			this._dispatch({ type: "CLOSED" })
 		})
+		return this._releasePromise
+	}
+
+	_handleCrash(reason) {
+		if (!this._dispatch({ type: "CRASHED", reason })) {
+			return
+		}
+
+		this._releasePromise = this._enqueueUnchecked(() => this._release())
+	}
+
+	async _release() {
+		this._clearPreviewSettleTimer()
+		this._clearPreviewOverlayActivityTimer()
+		for (const session of this._previewSessions.values()) {
+			await session.close().catch(() => {})
+		}
+		this._previewSessions.clear()
+		this._previewClients.clear()
+		this._latestScreenshotBuffer = null
+		this._screenshotDirty = true
+		this._previewOverlayState = null
+		this._lastExactPointer = null
+		this._tabs = [
+			{
+				index: 0,
+				title: "",
+				url: DEFAULT_URL,
+				active: true,
+			},
+		]
+		this._activeTabIndex = 0
+		this._tabHistories = new Map([
+			[
+				0,
+				{
+					entries: [DEFAULT_URL],
+					index: 0,
+				},
+			],
+		])
+		await this._runtime.close().catch(() => {})
+		await fs.rm(this._screenshotDir, { recursive: true, force: true }).catch(() => {})
 	}
 }
 
-class BrowserWorkspaceManager {
-	constructor({
-		idleTimeoutMs = WORKSPACE_IDLE_TIMEOUT_MS,
-		cleanupIntervalMs = WORKSPACE_CLEANUP_INTERVAL_MS,
-		nowFn = Date.now,
-		workspaceFactory,
-	} = {}) {
-		this._workspaces = new Map()
-		this._idleTimeoutMs = idleTimeoutMs
-		this._cleanupIntervalMs = cleanupIntervalMs
-		this._now = nowFn
-		this._workspaceFactory = workspaceFactory
-		this._cleanupTimer = setInterval(() => {
-			void this.cleanupIdleWorkspaces()
-		}, this._cleanupIntervalMs)
-		this._cleanupTimer.unref?.()
-	}
-
-	_createWorkspaceInstance({ workspaceId, sessionId }) {
-		if (typeof this._workspaceFactory === "function") {
-			return this._workspaceFactory({
-				workspaceId,
-				sessionId,
-			})
-		}
-
-		return new BrowserWorkspace({
-			workspaceId,
-			sessionId,
-			nowFn: this._now,
+// The registry with real workspaces by default; tests pass a workspaceFactory.
+class BrowserWorkspaceManager extends BrowserWorkspaceRegistry {
+	constructor(options = {}) {
+		super({
+			...options,
+			workspaceFactory:
+				options.workspaceFactory ??
+				(({ workspaceId, sessionId, nowFn }) =>
+					new BrowserWorkspace({ workspaceId, sessionId, nowFn })),
 		})
-	}
-
-	_requireWorkspace(workspaceId) {
-		const resolvedWorkspaceId = requireNonEmptyString(
-			workspaceId,
-			"A non-empty workspace ID is required.",
-		)
-		const workspace = this._workspaces.get(resolvedWorkspaceId)
-		if (!workspace) {
-			throw new BrowserWorkspaceNotFoundError(resolvedWorkspaceId)
-		}
-
-		return workspace
-	}
-
-	async createWorkspace(options = {}) {
-		const workspaceId = randomUUID()
-		const sessionId = workspaceId
-		const workspace = this._createWorkspaceInstance({
-			workspaceId,
-			sessionId,
-		})
-
-		this._workspaces.set(workspaceId, workspace)
-		try {
-			await workspace.initialize(options.defaultUrl || DEFAULT_URL)
-			return workspace.peekState()
-		} catch (error) {
-			this._workspaces.delete(workspaceId)
-			await workspace.close().catch(() => {})
-			throw error
-		}
-	}
-
-	listWorkspaces() {
-		return Array.from(this._workspaces.values(), (workspace) => workspace.peekState())
-	}
-
-	getWorkspaceState(workspaceId) {
-		return this._requireWorkspace(workspaceId).getState()
-	}
-
-	getWorkspaceStream(workspaceId) {
-		return this._requireWorkspace(workspaceId).getStreamConfig()
-	}
-
-	getWorkspaceSnapshot(workspaceId, options) {
-		return this._requireWorkspace(workspaceId).snapshot(options)
-	}
-
-	getWorkspaceScreenshot(workspaceId) {
-		return this._requireWorkspace(workspaceId).screenshot()
-	}
-
-	getWorkspaceTabs(workspaceId) {
-		return this._requireWorkspace(workspaceId).listTabs()
-	}
-
-	navigateWorkspace(workspaceId, url) {
-		return this._requireWorkspace(workspaceId).navigate(url)
-	}
-
-	resizeWorkspace(workspaceId, width, height, deviceScaleFactor) {
-		return this._requireWorkspace(workspaceId).setViewport(
-			width,
-			height,
-			deviceScaleFactor,
-		)
-	}
-
-	goBack(workspaceId) {
-		return this._requireWorkspace(workspaceId).goBack()
-	}
-
-	goForward(workspaceId) {
-		return this._requireWorkspace(workspaceId).goForward()
-	}
-
-	reloadWorkspace(workspaceId) {
-		return this._requireWorkspace(workspaceId).reload()
-	}
-
-	clickWorkspace(workspaceId, x, y) {
-		return this._requireWorkspace(workspaceId).click(x, y)
-	}
-
-	clickWorkspaceRef(workspaceId, ref) {
-		return this._requireWorkspace(workspaceId).clickRef(ref)
-	}
-
-	hoverWorkspaceRef(workspaceId, ref) {
-		return this._requireWorkspace(workspaceId).hoverRef(ref)
-	}
-
-	fillWorkspaceRef(workspaceId, ref, text) {
-		return this._requireWorkspace(workspaceId).fillRef(ref, text)
-	}
-
-	typeWorkspaceRef(workspaceId, ref, text) {
-		return this._requireWorkspace(workspaceId).typeRef(ref, text)
-	}
-
-	selectWorkspaceRef(workspaceId, ref, values) {
-		return this._requireWorkspace(workspaceId).selectRef(ref, values)
-	}
-
-	scrollWorkspace(workspaceId, direction, pixels) {
-		return this._requireWorkspace(workspaceId).scroll(direction, pixels)
-	}
-
-	wheelWorkspace(workspaceId, deltaX, deltaY) {
-		return this._requireWorkspace(workspaceId).wheel(deltaX, deltaY)
-	}
-
-	pressWorkspaceKey(workspaceId, key) {
-		return this._requireWorkspace(workspaceId).press(key)
-	}
-
-	typeWorkspaceText(workspaceId, text) {
-		return this._requireWorkspace(workspaceId).insertText(text)
-	}
-
-	createWorkspaceTab(workspaceId, url) {
-		return this._requireWorkspace(workspaceId).createTab(url)
-	}
-
-	activateWorkspaceTab(workspaceId, tabIndex) {
-		return this._requireWorkspace(workspaceId).activateTab(tabIndex)
-	}
-
-	closeWorkspaceTab(workspaceId, tabIndex) {
-		return this._requireWorkspace(workspaceId).closeTab(tabIndex)
-	}
-
-	createWorkspacePreviewSession(workspaceId, offerSdp) {
-		return this._requireWorkspace(workspaceId).createPreviewSession(offerSdp)
-	}
-
-	deleteWorkspacePreviewSession(workspaceId, sessionId) {
-		return this._requireWorkspace(workspaceId).deletePreviewSession(sessionId)
-	}
-
-	attachWorkspacePreviewClient(workspaceId, client) {
-		return this._requireWorkspace(workspaceId).attachPreviewClient(client)
-	}
-
-	detachWorkspacePreviewClient(workspaceId, client) {
-		return this._requireWorkspace(workspaceId).detachPreviewClient(client)
-	}
-
-	handleWorkspacePreviewControlMessage(workspaceId, message) {
-		return this._requireWorkspace(workspaceId)._handlePreviewControlMessage(message)
-	}
-
-	async deleteWorkspace(workspaceId) {
-		const resolvedWorkspaceId = requireNonEmptyString(
-			workspaceId,
-			"A non-empty workspace ID is required.",
-		)
-		const workspace = this._workspaces.get(resolvedWorkspaceId)
-		if (!workspace) {
-			return {
-				workspaceId: resolvedWorkspaceId,
-				closed: false,
-			}
-		}
-
-		this._workspaces.delete(resolvedWorkspaceId)
-		await workspace.close()
-		return {
-			workspaceId: resolvedWorkspaceId,
-			closed: true,
-		}
-	}
-
-	async cleanupIdleWorkspaces() {
-		const closedWorkspaceIds = []
-		const now = this._now()
-		for (const [workspaceId, workspace] of this._workspaces.entries()) {
-			if (now - workspace.getLastUsedAt() <= this._idleTimeoutMs) {
-				continue
-			}
-
-			this._workspaces.delete(workspaceId)
-			await workspace.close().catch(() => {})
-			closedWorkspaceIds.push(workspaceId)
-		}
-
-		return closedWorkspaceIds
 	}
 }
 
@@ -1659,6 +1535,7 @@ module.exports = {
 	BrowserWorkspaceNotFoundError,
 	browserWorkspaceManager,
 	isBrowserWorkspaceNotFoundError,
+	MAX_LIVE_BROWSER_WORKSPACES,
 	WORKSPACE_IDLE_TIMEOUT_MS,
 	WORKSPACE_CLEANUP_INTERVAL_MS,
 }

@@ -120,9 +120,6 @@
   "components/arts/awake/city-popover.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "components/arts/awake/glass-slider.source.test.js": {
@@ -131,9 +128,6 @@
     }
   },
   "components/arts/awake/glass-slider.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -377,9 +371,6 @@
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
     },
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "react-hooks/purity": {
       "count": 1
     }
@@ -598,11 +589,6 @@
       "count": 2
     }
   },
-  "components/blocks/answer-card/components/answer-card.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/blocks/app-directory/app-directory.source.test.js": {
     "no-restricted-syntax": {
       "count": 6
@@ -642,16 +628,8 @@
       "count": 24
     }
   },
-  "components/blocks/board/board-column.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/blocks/chat-timeline/chat-timeline-navigator.tsx": {
     "jsx-a11y/no-static-element-interactions": {
-      "count": 2
-    },
-    "no-restricted-syntax": {
       "count": 2
     }
   },
@@ -708,11 +686,6 @@
       "count": 1
     }
   },
-  "components/blocks/dashboard/components/nav-main.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/blocks/dashboard/components/performance-cards.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
@@ -764,11 +737,6 @@
   "components/blocks/gallery/page.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
-    }
-  },
-  "components/blocks/generative-card/index.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "components/blocks/generative/data/mock-data.ts": {
@@ -1533,6 +1501,26 @@
       "count": 2
     }
   },
+  "components/blocks/rovo-button/index.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "components/blocks/rovo-button/motion.test.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "components/blocks/rovo-button/nudge.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "components/blocks/rovo-button/surface.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
   "components/blocks/rovo-canvas/components/rovo-canvas-right-rail.source.test.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -1560,16 +1548,6 @@
   },
   "components/blocks/scrubber/components/scrubber-rail.tsx": {
     "jsx-a11y/interactive-supports-focus": {
-      "count": 1
-    }
-  },
-  "components/blocks/sidebar/app-sidebar/components/nav-main.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/blocks/sidebar/sidebar-07/components/nav-main.tsx": {
-    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -1631,11 +1609,6 @@
       "count": 160
     }
   },
-  "components/blocks/sprint-board/column.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "components/blocks/subagent/components/manage-subagents-dialog.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
@@ -1660,9 +1633,6 @@
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
     },
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "react-hooks/purity": {
       "count": 1
     },
@@ -1673,9 +1643,6 @@
   "components/blocks/terminal-switch/page.tsx": {
     "no-restricted-imports": {
       "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 4
     }
   },
   "components/blocks/tool-directory/components/tool-directory.tsx": {
@@ -2194,16 +2161,6 @@
       "count": 148
     }
   },
-  "components/website/demos/blocks/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "components/website/demos/blocks/rovo-button/page.source.test.js": {
-    "no-restricted-syntax": {
-      "count": 52
-    }
-  },
   "components/projects/rovo-core/components/clicky/clicky-core.source.test.js": {
     "no-restricted-syntax": {
       "count": 3
@@ -2525,26 +2482,6 @@
       "count": 2
     }
   },
-  "components/blocks/rovo-button/index.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
-  "components/blocks/rovo-button/motion.test.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
-  "components/blocks/rovo-button/nudge.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "components/blocks/rovo-button/surface.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "components/projects/shared/components/greeting-prompt-row.tsx": {
     "no-restricted-syntax": {
       "count": 1
@@ -2735,9 +2672,6 @@
   "components/ui-charts/legend/legend-item.tsx": {
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
-    },
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "components/ui-charts/legend/legend-progress.tsx": {
@@ -2753,11 +2687,6 @@
   "components/ui-charts/measured-parent-size.tsx": {
     "react-hooks/refs": {
       "count": 2
-    }
-  },
-  "components/ui-charts/radar-labels.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "components/ui-charts/stat-card-chart.tsx": {
@@ -3332,7 +3261,7 @@
   },
   "components/ui/message-scroller.tsx": {
     "no-restricted-syntax": {
-      "count": 2
+      "count": 1
     }
   },
   "components/ui/page-header.source.test.js": {
@@ -3399,9 +3328,6 @@
     }
   },
   "components/utils/gui-components.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -3616,6 +3542,16 @@
       "count": 1
     }
   },
+  "components/website/demos/blocks/rovo-button/hooks/use-rovo-button-demo-live-chat.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/website/demos/blocks/rovo-button/page.source.test.js": {
+    "no-restricted-syntax": {
+      "count": 52
+    }
+  },
   "components/website/demos/blocks/task-progress-demo.tsx": {
     "react-hooks/purity": {
       "count": 1
@@ -3762,9 +3698,6 @@
     }
   },
   "components/website/demos/visual/card-glow-demo.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
     "vpk-tokens/no-raw-white-black": {
       "count": 1
     }
@@ -3920,11 +3853,6 @@
   "components/website/website-preview.tsx": {
     "vpk-tokens/no-tailwind-heading-type": {
       "count": 1
-    }
-  },
-  "components/website/website-sidebar-nav.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "hooks/use-agent-url-sync.source.test.js": {
