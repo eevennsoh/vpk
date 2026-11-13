@@ -17,10 +17,10 @@ const DEFAULT_BUILD_DURATION_BUDGET = {
 const FIXED_ROUTE_IDS = [...FIXED_BASELINE_ROUTES.map((route) => route.id), "heavy-visual"];
 
 // Route budgets live in perf-route-budgets.json, a shrink-only baseline: a unit test fails when a
-// value rises above the merge base. They were re-baselined on 2026-11-13 to about 3% over a
+// value rises above the merge base. They were last lowered on 2026-11-14 (C-8e) to about 3% over a
 // production build of main, as a ceiling that stops further growth. The file's "targets" are the
-// earlier limits the bundle should return to: CSS 700,000 bytes per route (set in b565d0f57,
-// July 2026) and Rovo first-load JS 7,100,000 bytes.
+// limits the bundle should return to: CSS 700,000 bytes per route (set in b565d0f57, July 2026).
+// The Rovo first-load target of 7,100,000 bytes was met by C-8d and removed.
 const ROUTE_BUDGETS_PATH = path.join(__dirname, "perf-route-budgets.json");
 const { routes: DEFAULT_ROUTE_BUDGETS, targets: ROUTE_BUDGET_TARGETS } = JSON.parse(readFileSync(ROUTE_BUDGETS_PATH, "utf8"));
 
