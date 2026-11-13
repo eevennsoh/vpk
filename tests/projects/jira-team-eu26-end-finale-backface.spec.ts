@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 // Compile the production fragment shader: source inspection alone cannot prove
 // winding, premultiplied alpha, or the pixels a backwards sheet actually draws.
-const source = readFileSync("components/projects/jira-team-eu26-end/finale/components/finale-card-space-gl.tsx", "utf8");
+const source = readFileSync("components/projects/jira-team-eu26-end/finale/lib/finale-sheet-gl.ts", "utf8");
 const fragment = source.match(/const sheetFragmentShader = \/\* glsl \*\/ `([\s\S]*?)`;/)?.[1];
 if (!fragment) throw new Error("Finale sheet fragment shader not found");
 
@@ -68,6 +68,10 @@ test("finale sheets keep their print on the front and blank white paper on the b
 		gl.uniform2f(uniform("uSize"), 64, 64);
 		gl.uniform1f(uniform("uRadius"), 8);
 		gl.uniform3f(uniform("uTileColor"), 1, 1, 1);
+		// As in production: the back is blank paper of the tile colour, the print on the front, nothing clipped.
+		gl.uniform3f(uniform("uBackColor"), 1, 1, 1);
+		gl.uniform1f(uniform("uPrintSide"), 0);
+		gl.uniform4f(uniform("uClipUv"), 0, 0, 1, 1);
 		gl.uniform2f(uniform("uViewport"), 64, 64);
 		gl.uniform1f(uniform("uPixelRatio"), 1);
 		const pixel = (x: number, y: number) => {
