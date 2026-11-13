@@ -118,7 +118,7 @@ zsh ~/.local/bin/vpk-system-clean.sh
 ```
 
 The sweep samples sustained-hot `next-server` and rechecks memory-bloated but
-idle servers (median CPU over a settle window). Under memory pressure (swap or
+idle servers (true CPU average over a settle window). Under memory pressure (swap or
 the kernel pressure level past its limits) it uses lower limits, and a
 separate LaunchAgent runs it every five minutes while pressure lasts. It stops eligible unattached `vpk-dev-*` stacks and their worktree
 routes, deletes only oversized inactive `.next` caches, and stops unattached

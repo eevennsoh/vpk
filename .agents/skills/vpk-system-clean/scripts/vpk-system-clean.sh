@@ -12,7 +12,7 @@
 #     can also peak in the double digits before Turbopack's eviction reclaims
 #     it (observed 12.9GB -> 1.7GB in one run), so CPU is sampled across a
 #     settle window and the server is only killed if still bloated AND its
-#     median CPU sample is idle — an idle server holding this much memory is
+#     true CPU average over the window is idle — an idle server holding this much memory is
 #     the leak; a busy one is a normal burst. Killed (with its `next dev`
 #     parent) to restart clean. Under memory pressure (swap or the kernel
 #     pressure level past a limit) the bloat limit drops, the idle-CPU limit
@@ -64,8 +64,7 @@ KILL_RUNAWAY_NEXT=1      # 1 = kill sustained-hot dev servers; 0 = report only
 NEXT_MEM_MAX_GB=6        # a next-server above this physical footprint (GB) is bloated/leaking
 KILL_BLOATED_NEXT=1      # 1 = kill bloated dev servers; 0 = report only
 NEXT_MEM_SETTLE_SECS=30  # settle window before re-checking a bloated candidate
-NEXT_MEM_IDLE_CPU_MAX=20 # median %CPU below which a still-bloated server counts as idle (leak, not a compile burst)
-NEXT_MEM_IDLE_SAMPLES=5  # CPU samples spread across the settle window; their median decides idle
+NEXT_MEM_IDLE_CPU_MAX=20 # %CPU, averaged over the settle window, below which a still-bloated server counts as idle (leak, not a compile burst)
 # Memory-pressure mode (values provisional). Entered when swap in use or the
 # kernel memory-pressure level reaches these. It lowers the bloat limit, raises
 # the idle-CPU limit (a real compile runs at 100%+), and uses the Codex probe's
@@ -74,6 +73,9 @@ PRESSURE_SWAP_USED_GB=16          # swap in use (GB) that enters pressure mode
 PRESSURE_LEVEL_MIN=4              # kern.memorystatus_vm_pressure_level: 1 normal, 2 warn, 4 critical
 PRESSURE_NEXT_MEM_MAX_GB=4        # NEXT_MEM_MAX_GB in pressure mode
 PRESSURE_NEXT_MEM_IDLE_CPU_MAX=50 # NEXT_MEM_IDLE_CPU_MAX in pressure mode
+PRESSURE_COOLDOWN_SECS=900        # a --pressure-check run this soon after the last one is skipped...
+PRESSURE_REGROWTH_GB=4            # ...unless swap in use has grown by this much since
+PRESSURE_STATE="$HOME/.config/vpk-system-clean/pressure-last-run"  # `<epoch> <swap GB>` of the last pressure run
 ALMD_PATH="/usr/local/bin/almd"
 ALMD_CPU_HOT=50          # minimum %CPU for every sample before almd is reset
 ALMD_MIN_AGE_SECS=900    # never reset almd during its first 15 minutes
@@ -113,6 +115,7 @@ swap_used_gb() {
 }
 
 PRESSURE=0
+NEXT_MEM_NORMAL_MAX_GB=$NEXT_MEM_MAX_GB
 swap_gb=$(swap_used_gb)
 pressure_level=$(sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null | tr -d '[:space:]')
 pressure_reasons=()
@@ -132,6 +135,20 @@ if (( PRINT_MODE_ONLY )); then
 	exit 0
 fi
 (( PRESSURE_CHECK_ONLY && ! PRESSURE )) && exit 0
+# Cool-down: while pressure lasts the check fires every few minutes. Skip a run
+# that follows the last pressure run by less than PRESSURE_COOLDOWN_SECS unless
+# swap has grown by PRESSURE_REGROWTH_GB since; a skipped run logs nothing.
+if (( PRESSURE_CHECK_ONLY )); then
+	pressure_now=$(date +%s)
+	last_epoch=""; last_swap=""
+	[[ -f "$PRESSURE_STATE" ]] && read -r last_epoch last_swap < "$PRESSURE_STATE"
+	if [[ "$last_epoch" == <-> ]] && (( pressure_now - last_epoch < PRESSURE_COOLDOWN_SECS )); then
+		if [[ "$last_swap" != <-> || "$swap_gb" != <-> ]] || (( swap_gb < last_swap + PRESSURE_REGROWTH_GB )); then
+			exit 0
+		fi
+	fi
+	mkdir -p "${PRESSURE_STATE:h}" 2>/dev/null && print -r -- "$pressure_now ${swap_gb:-unknown}" > "$PRESSURE_STATE"
+fi
 
 resolve_repo_root() {
 	local root
@@ -157,6 +174,15 @@ NEXT_DIRS+=( "$HOME"/.superset/worktrees/*/*/.next )
 ts() { date "+%Y-%m-%d %H:%M:%S"; }
 log() { print -r -- "[$(ts)] $*" >> "$LOG"; }
 cpu_of() { ps -o %cpu= -p "$1" 2>/dev/null | tr -d ' '; }   # decaying avg %CPU
+# Cumulative CPU seconds from `ps -o time=` ([d-][h:]m:ss.ss). Two readings over
+# a window give its true average; `ps %cpu` is a decaying average that reads
+# about the same number every few seconds.
+cputime_secs_of() {
+	local raw
+	raw=$(ps -o time= -p "$1" 2>/dev/null | tr -d ' ')
+	[[ -n "$raw" ]] || return 1
+	awk -v t="$raw" 'BEGIN { d = 0; if (index(t, "-")) { split(t, a, "-"); d = a[1]; t = a[2] } n = split(t, p, ":"); s = 0; for (i = 1; i <= n; i++) s = s * 60 + p[i]; printf "%.2f", s + d * 86400 }'
+}
 exe_of() { lsof -a -d txt -p "$1" -Fn 2>/dev/null | sed -n 's/^n//p' | head -1; }
 elapsed_secs_of() {
 	local raw days=0 hours=0 minutes=0 seconds=0
@@ -281,7 +307,7 @@ if [[ -f "$LOG" ]] && (( $(wc -l < "$LOG") > 500 )); then
 fi
 
 log "run start"
-log "mode: $MODE_NOTE; bloat limit ${NEXT_MEM_MAX_GB}GB, idle below median ${NEXT_MEM_IDLE_CPU_MAX}% CPU"
+log "mode: $MODE_NOTE; bloat limit ${NEXT_MEM_MAX_GB}GB, idle below ${NEXT_MEM_IDLE_CPU_MAX}% CPU over the window"
 freed=0; count=0; killed=0; bloated=0; almd_resets=0; idle_stopped=0; stale_killed=0
 
 # --- 1. runaway dev server -----------------------------------------------------
@@ -331,45 +357,76 @@ for p in ${(f)"$(pgrep -f 'next-server' 2>/dev/null)"}; do
 		log "kept next-server pid $p (~${gb}GB < ${NEXT_MEM_MAX_GB}GB bloat limit; $(server_where "$p"))"
 	fi
 done
-# Second pass: sample CPU NEXT_MEM_IDLE_SAMPLES times across the settle window
-# and kill only if still bloated AND the median sample is idle. One sample at a
-# hard edge deferred a 9GB idle server at 20.1%; a busy compile burst (100%+)
-# is still not a leak, even at double-digit GB.
+# A reason to keep a server in the band only pressure mode adds (from its lower
+# bloat limit up to the normal one): its worktree shows a live task. Prints the
+# reason, or nothing when no live task is visible.
+live_task_in_worktree() {
+	local root="$1" recency verdict
+	[[ -n "$root" ]] || { print -r -- "cwd unknown"; return; }
+	if [[ "$root" == "$MAIN_WORKTREE" || "$root" == "$MAIN_WORKTREE/"* ]]; then
+		print -r -- "primary checkout"
+		return
+	fi
+	if worktree_has_operator "$root"; then
+		print -r -- "a tool process has its cwd in $root"
+		return
+	fi
+	if is_codex_desktop_worktree "$root"; then
+		recency=$(codex_thread_recency "$root")
+		verdict="${recency%%|*}"
+		[[ "$verdict" == "idle" ]] || print -r -- "Codex threads $verdict: ${recency##*|}"
+	fi
+}
+
+# Second pass: read each candidate's cumulative CPU time at the start and end
+# of the settle window and kill only if still bloated AND its true average over
+# the window is idle. A busy compile burst (100%+) is not a leak, even at
+# double-digit GB. The idle 9GB server the 2026-11-13 sweep deferred read 20.1%
+# from ps's decaying average.
 if (( ${#bloat1} )); then
-	typeset -A cpu_samples
-	sample_gap=$(( NEXT_MEM_SETTLE_SECS / NEXT_MEM_IDLE_SAMPLES ))
-	for (( round = 1; round <= NEXT_MEM_IDLE_SAMPLES; round++ )); do
-		sleep "$sample_gap"
-		for p in $bloat1; do
-			c=$(cpu_of "$p")
-			[[ -n "$c" ]] && cpu_samples[$p]="${cpu_samples[$p]:-} $c"
-		done
-	done
+	typeset -A cpu_start
+	window_start=$(date +%s)
 	for p in $bloat1; do
-		samples=( ${=cpu_samples[$p]:-} )
+		cpu_start[$p]=$(cputime_secs_of "$p")
+	done
+	sleep "$NEXT_MEM_SETTLE_SECS"
+	window_secs=$(( $(date +%s) - window_start ))
+	(( window_secs > 0 )) || window_secs=$NEXT_MEM_SETTLE_SECS
+	for p in $bloat1; do
 		gb=$(mem_gb_of "$p")
-		if [[ -z "$gb" ]] || (( ${#samples} == 0 )); then
+		cpu_end=$(cputime_secs_of "$p")
+		if [[ -z "$gb" || -z "$cpu_end" || -z "${cpu_start[$p]:-}" ]]; then
 			log "next-server pid $p exited during the settle window"
 			continue
 		fi
-		sorted=( ${(on)samples} )
-		median="${sorted[$(( (${#sorted} + 1) / 2 ))]}"
-		window="median ${median}% CPU over ${#samples} samples [${(j:, :)samples}]"
+		pct=$(awk -v a="${cpu_start[$p]}" -v b="$cpu_end" -v s="$window_secs" 'BEGIN { printf "%.1f", (b - a) / s * 100 }')
+		window="${pct}% CPU averaged over ${window_secs}s"
 		where=$(server_where "$p")
-		if (( gb >= NEXT_MEM_MAX_GB )) && (( ${median%%.*} < NEXT_MEM_IDLE_CPU_MAX )); then
-			bloated=$(( bloated + 1 ))
-			if (( KILL_BLOATED_NEXT )); then
-				pp=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
-				kill "$p" 2>/dev/null
-				[[ -n "$pp" && "$pp" != 1 ]] && kill "$pp" 2>/dev/null
-				log "killed bloated next-server pid $p (~${gb}GB physical footprint, idle: ${window} < ${NEXT_MEM_IDLE_CPU_MAX}%, parent $pp; ${where}; ${MODE_LINE%%|*} mode) — restart dev server to recover"
-			else
-				log "bloated next-server pid $p (~${gb}GB physical footprint, idle: ${window}; ${where}) — KILL_BLOATED_NEXT=0, left running"
-			fi
-		elif (( gb < NEXT_MEM_MAX_GB )); then
+		if (( gb < NEXT_MEM_MAX_GB )); then
 			log "kept next-server pid $p (settled to ~${gb}GB < ${NEXT_MEM_MAX_GB}GB; ${where})"
-		else
+			continue
+		fi
+		if (( ${pct%%.*} >= NEXT_MEM_IDLE_CPU_MAX )); then
 			log "kept next-server pid $p (~${gb}GB but busy: ${window} >= ${NEXT_MEM_IDLE_CPU_MAX}%; ${where}) — deferred to next sweep"
+			continue
+		fi
+		# Between the pressure limit and the normal one, an idle-looking server may
+		# still be in use between requests: restart it only with no live task.
+		if (( gb < NEXT_MEM_NORMAL_MAX_GB )); then
+			in_use=$(live_task_in_worktree "$(cwd_of "$p")")
+			if [[ -n "$in_use" ]]; then
+				log "kept next-server pid $p (~${gb}GB, ${window}, below the ${NEXT_MEM_NORMAL_MAX_GB}GB normal limit and its worktree is in use: ${in_use}; ${where})"
+				continue
+			fi
+		fi
+		bloated=$(( bloated + 1 ))
+		if (( KILL_BLOATED_NEXT )); then
+			pp=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+			kill "$p" 2>/dev/null
+			[[ -n "$pp" && "$pp" != 1 ]] && kill "$pp" 2>/dev/null
+			log "killed bloated next-server pid $p (~${gb}GB physical footprint, idle: ${window} < ${NEXT_MEM_IDLE_CPU_MAX}%, parent $pp; ${where}; ${MODE_LINE%%|*} mode) — restart dev server to recover"
+		else
+			log "bloated next-server pid $p (~${gb}GB physical footprint, idle: ${window}; ${where}) — KILL_BLOATED_NEXT=0, left running"
 		fi
 	done
 fi
