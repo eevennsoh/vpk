@@ -4,6 +4,8 @@ import { expect, test } from "@playwright/test";
 const captureScript = buildSync({
 	stdin: { contents: 'export { printFinaleElement } from "./components/projects/jira-team-eu26-end/finale/hooks/use-finale-prints";', resolveDir: process.cwd(), loader: "ts" },
 	bundle: true,
+	// Atlaskit components import their compiled CSS; the capture script needs none of it.
+	loader: { ".css": "empty" },
 	format: "iife",
 	globalName: "finaleCapture",
 	platform: "browser",

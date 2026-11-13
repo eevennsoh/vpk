@@ -61,6 +61,7 @@ export interface ProjectButterJiraWorkItemProps {
 	onBrowseAgents?: () => void;
 	onCreateAgent?: () => void;
 	onAgentSessionStart?: (session: ProjectButterSessionItem) => void;
+	onAgentAdded?: (session: ProjectButterSessionItem, workItem: { code: string; summary: string }) => void;
 	onOpenCloudSession?: (session: ProjectButterSessionItem, draft: string | undefined, workItem: { code: string; summary: string }) => boolean | void | Promise<boolean | void>;
 	inlineSessionReplies?: boolean;
 	/** Standalone only: the host's sidebar chat, mounted beside the work item. Pair with `onOpenCloudSession`. */
@@ -100,6 +101,7 @@ export function ProjectButterJiraWorkItem({
 	onBrowseAgents,
 	onCreateAgent,
 	onAgentSessionStart,
+	onAgentAdded,
 	onOpenCloudSession,
 	inlineSessionReplies = false,
 	chatPanel,
@@ -275,7 +277,8 @@ export function ProjectButterJiraWorkItem({
 		addInvocation(session);
 		content.setActivityFilters((filters) => ({ ...filters, agents: true }));
 		setStartedSessionId(session.id);
-		toast.custom((id) => (
+		if (onAgentAdded) onAgentAdded(session, { code: workItem?.code ?? "VITA-1", summary: content.summary });
+		else toast.custom((id) => (
 			<SonnerToast
 				icon={<span aria-hidden="true"><AgentAvatarVisual animate={false} appearance="coding" avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} fallbackText={agent.name.slice(0, 2).toUpperCase()} label="" sizePx={20} /></span>}
 				dismissible

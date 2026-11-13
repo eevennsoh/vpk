@@ -144,6 +144,7 @@ export default function FloatingRovoButton({
 						key={suggestion.id}
 						placement={placement}
 						positioning={positioning}
+						shouldReduceMotion={shouldReduceMotion}
 						suggestion={suggestion}
 					/>
 				) : null}

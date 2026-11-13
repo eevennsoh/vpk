@@ -56,21 +56,8 @@ existing Linear issue identifier or URL.
 
 ## States
 
-- `Backlog`: not routed for implementation.
-- `Todo`: move to `In Progress`, create or update the workpad, then start.
-- `In Progress`: continue from the current workpad.
-- `Agent Review`: fresh read-only adversarial code review against the issue,
-  workpad, PR diff, validation proof, evidence, comments, and checks. The
-  reviewer may run read-only verification commands that leave tracked files
-  unchanged. Passing work moves to `Merging`; gaps move back to `In Progress`;
-  super-risk moves to `Human Review`.
-- `Human Review`: wait for human action only on security/privacy exposure, data
-  loss, irreversible schema or migration changes, destructive production
-  behavior, or missing permissions/secrets.
-- `Merging`: follow `references/git/land.md`; move to `Done` only after a
-  current-head passing Symphony Agent Review, green checks, clean mergeability,
-  and GitHub-reported merge.
-- `Done`, `Closed`, `Cancelled`, `Canceled`, `Duplicate`: terminal.
+The states, who acts in each, and the allowed moves are one table: "Issue
+states" in `.agents/docs/symphony.md`. `WORKFLOW.md` is the runtime copy.
 
 ## Execution Rules
 

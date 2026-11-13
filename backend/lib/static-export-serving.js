@@ -132,16 +132,56 @@ function rejectRetiredControlPlaneRoute(req, res, next) {
 	return next();
 }
 
+// An optional catch-all such as `app/rovo/[[...id]]` exports only its root page (`rovo.html`) and
+// marks the route with a segment file named `rovo/__next.rovo.$oc$id.__PAGE__.txt`. Read those
+// markers from the export so a new catch-all route needs no list kept by hand. Longest first, so
+// a nested catch-all wins over its parent.
+const CATCH_ALL_SEGMENT_FILE = /^__next\..+\.\$o?c\$[^.]+\.__PAGE__\.txt$/u;
+
+function findCatchAllRoots(publicPath, { fsModule = fs, pathModule = path } = {}) {
+	const roots = [];
+	const walk = (relativeDir) => {
+		let entries;
+		try {
+			entries = fsModule.readdirSync(pathModule.join(publicPath, relativeDir), { withFileTypes: true });
+		} catch {
+			return;
+		}
+		for (const entry of entries) {
+			if (entry.isDirectory()) {
+				if (!entry.name.startsWith(".") && !(relativeDir === "" && entry.name === "_next")) walk(pathModule.join(relativeDir, entry.name));
+			} else if (relativeDir !== "" && CATCH_ALL_SEGMENT_FILE.test(entry.name)) {
+				try {
+					if (fsModule.statSync(pathModule.join(publicPath, `${relativeDir}.html`)).isFile()) roots.push(relativeDir.split(pathModule.sep));
+				} catch {
+					/* a catch-all without a root page has nothing to serve */
+				}
+			}
+		}
+	};
+	walk("");
+	return roots.sort((left, right) => right.length - left.length);
+}
+
+function isFileInside(root, file, { fsModule = fs, pathModule = path } = {}) {
+	if (!file.startsWith(`${root}${pathModule.sep}`)) return false;
+	try {
+		return fsModule.statSync(file).isFile();
+	} catch {
+		return false;
+	}
+}
+
 // Next.js export writes `a/b.html` beside an `a/b/` directory of RSC segment files, while links
 // address the page as `/a/b`. express.static would redirect that to the directory, so point an
-// extensionless page path (with or without a trailing slash) at its `.html` file first. Only a
-// file inside the public directory is used; anything else falls through unchanged.
-function createCleanUrlMiddleware(publicPath, { fsModule = fs, pathModule = path } = {}) {
+// extensionless page path (with or without a trailing slash) at its `.html` file first. A path
+// under an exported catch-all with no file of its own (`/rovo/<thread-id>`) gets the catch-all's
+// root page. Only a file inside the public directory is used; anything else falls through.
+function createCleanUrlMiddleware(publicPath, { catchAllRoots, fsModule = fs, pathModule = path } = {}) {
 	const root = pathModule.resolve(requirePublicPath(publicPath));
+	const roots = catchAllRoots ?? findCatchAllRoots(root, { fsModule, pathModule });
 	return function cleanUrlMiddleware(req, res, next) {
 		if (!["GET", "HEAD"].includes(req.method) || req.path === "/" || req.path.startsWith("/api/")) return next();
-		// An encoded separator is not a path separator.
-		if (/%(?:2f|5c)/iu.test(req.path)) return next();
 		let decoded;
 		try {
 			decoded = decodeURIComponent(req.path);
@@ -149,19 +189,16 @@ function createCleanUrlMiddleware(publicPath, { fsModule = fs, pathModule = path
 			return next();
 		}
 		const pagePath = decoded.replace(/\/$/u, "");
-		const segments = pagePath.split("/");
+		const segments = pagePath.split("/").slice(1);
 		if (segments.some((segment) => segment.startsWith(".")) || pathModule.extname(segments.at(-1)) !== "") return next();
-		const file = pathModule.resolve(root, `.${pagePath}.html`);
-		if (!file.startsWith(`${root}${pathModule.sep}`)) return next();
-		let isFile = false;
-		try {
-			isFile = fsModule.statSync(file).isFile();
-		} catch {
+		const query = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+		// An encoded separator is not a path separator, so it never names a page file.
+		if (!/%(?:2f|5c)/iu.test(req.path) && isFileInside(root, pathModule.resolve(root, `.${pagePath}.html`), { fsModule, pathModule })) {
+			req.url = `${encodeURI(pagePath)}.html${query}`;
 			return next();
 		}
-		if (!isFile) return next();
-		const query = req.url.slice(req.url.indexOf("?") >>> 0);
-		req.url = `${encodeURI(pagePath)}.html${req.url.includes("?") ? query : ""}`;
+		const catchAll = roots.find((rootSegments) => segments.length > rootSegments.length && rootSegments.every((segment, index) => segments[index] === segment));
+		if (catchAll) req.url = `/${catchAll.map(encodeURIComponent).join("/")}.html${query}`;
 		return next();
 	};
 }
@@ -250,6 +287,7 @@ function registerStaticExportServing(app, {
 module.exports = {
 	FALLBACK_HTML,
 	createCleanUrlMiddleware,
+	findCatchAllRoots,
 	isRetiredControlPlanePath,
 	rejectRetiredControlPlaneRoute,
 	buildPreloadLinkHeader,
