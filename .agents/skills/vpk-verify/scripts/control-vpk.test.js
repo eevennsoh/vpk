@@ -44,9 +44,11 @@ test("the control-vpk package script runs this CLI, so `pnpm control-vpk` works 
 	assert.equal(command, "node");
 	assert.equal(path.resolve(repoRoot, entry), CONTROL_VPK);
 	// `session` is read-only and needs no stack, so it proves the script resolves and runs.
-	const result = spawnSync(process.execPath, [path.resolve(repoRoot, entry), "session"], { cwd: repoRoot, encoding: "utf8" });
+	// Without an agent session id in the environment (as in CI) the id is the worktree's alone.
+	const { CODEX_THREAD_ID: _codex, CLAUDE_CODE_SESSION_ID: _claude, ...env } = process.env;
+	const result = spawnSync(process.execPath, [path.resolve(repoRoot, entry), "session"], { cwd: repoRoot, encoding: "utf8", env });
 	assert.equal(result.status, 0, result.stderr);
-	assert.match(result.stdout.trim(), /^vpk-verify-[0-9a-f]+-[0-9a-f]+$/u);
+	assert.match(result.stdout.trim(), /^vpk-verify-[0-9a-f]+$/u);
 });
 
 const TARGET_REPO_MAP = {
