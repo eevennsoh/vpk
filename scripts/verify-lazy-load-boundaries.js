@@ -459,7 +459,7 @@ function resolveLocalModule(cwd, importerFile, moduleSpecifier) {
 	return resolvedPath ? path.relative(cwd, resolvedPath) : null;
 }
 
-function findStaticDependencyPath({ cwd, entryFile, targetFile }) {
+function findStaticDependencyPath({ cwd, entryFile, readSpecifiers = createSpecifierReader(cwd), targetFile }) {
 	const normalizedTarget = path.normalize(targetFile);
 	const visited = new Set();
 
@@ -473,15 +473,11 @@ function findStaticDependencyPath({ cwd, entryFile, targetFile }) {
 		}
 		visited.add(normalizedFilePath);
 
-		const absolutePath = path.join(cwd, normalizedFilePath);
-		if (!existsSync(absolutePath)) {
+		if (!existsSync(path.join(cwd, normalizedFilePath))) {
 			return null;
 		}
 
-		const moduleSpecifiers = collectRuntimeStaticModuleSpecifiers(
-			readFileSync(absolutePath, "utf8"),
-			normalizedFilePath,
-		);
+		const moduleSpecifiers = readSpecifiers(normalizedFilePath);
 		for (const moduleSpecifier of moduleSpecifiers) {
 			const resolvedPath = resolveLocalModule(cwd, normalizedFilePath, moduleSpecifier);
 			if (!resolvedPath) {
@@ -580,7 +576,7 @@ function verifySingleOwnerImports({ cwd, rules }) {
 	const sourceFiles = walkSourceTree(cwd, SOURCE_ROOTS, (filePath) => SOURCE_MODULE_EXTENSIONS.includes(path.extname(filePath)) || filePath.endsWith(".css"));
 	for (const filePath of sourceFiles) {
 		const source = readFileSync(path.join(cwd, filePath), "utf8");
-		const candidateRules = rules.filter((rule) => source.includes(rule.source.split("/").at(-1)));
+		const candidateRules = rules.filter((rule) => source.includes(rule.source));
 		if (candidateRules.length === 0) {
 			continue;
 		}
@@ -610,6 +606,7 @@ function verifyLazyLoadBoundaries({
 	singleOwnerImports = DEFAULT_SINGLE_OWNER_IMPORTS,
 } = {}) {
 	const failures = [];
+	const readSpecifiers = createSpecifierReader(cwd);
 
 	for (const filePath of routeShellFiles) {
 		const absolutePath = path.join(cwd, filePath);
@@ -647,6 +644,7 @@ function verifyLazyLoadBoundaries({
 		const dependencyPath = findStaticDependencyPath({
 			cwd,
 			entryFile: rule.entryFile,
+			readSpecifiers,
 			targetFile: rule.targetFile,
 		});
 		if (dependencyPath) {
@@ -667,7 +665,6 @@ function verifyLazyLoadBoundaries({
 	}
 	const presentLazyOnlyModules = lazyOnlyModules.filter((rule) => existsSync(path.join(cwd, rule.targetFile)));
 	if (presentLazyOnlyModules.length > 0) {
-		const readSpecifiers = createSpecifierReader(cwd);
 		for (const entryFile of routeShellFiles.filter((filePath) => existsSync(path.join(cwd, filePath)))) {
 			const reached = findStaticDependencyPaths({
 				cwd,
