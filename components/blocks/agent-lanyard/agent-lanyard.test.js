@@ -256,7 +256,7 @@ test("catalog pairs the illustrative recommended card with the existing actionab
 	} finally { await view.unmount(); }
 });
 
-test("recommended hover content lets the card own its shaped shadow while ordinary popups retain theirs", async () => {
+test("recommended hover content preserves the shaped card shadow while ordinary popups use overlay elevation", async () => {
 	const view = await renderComponent({
 		entry: "components/blocks/agent-lanyard/index.ts", exportName: "AgentLanyardHoverContent", props: { variant: "recommended" },
 		mocks: { "@/components/ui/hover-card": 'export function HoverCardContent({style}) { return <div data-popup style={style} />; }' },
@@ -264,6 +264,6 @@ test("recommended hover content lets the card own its shaped shadow while ordina
 	try {
 		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow, "none");
 		await view.rerender({});
-		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow !== "none", true);
+		assert.equal(view.container.querySelector("[data-popup]").style.boxShadow.includes("--ds-shadow-overlay"), true);
 	} finally { await view.unmount(); }
 });
