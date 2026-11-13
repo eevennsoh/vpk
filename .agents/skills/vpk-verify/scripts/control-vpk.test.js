@@ -51,13 +51,20 @@ function queuedRequest(responses) {
 const TIMEOUT = { ok: false, status: 0, error: "timeout", body: "" };
 const HOME_OK = { ok: true, status: 200, error: "", body: "<html>" };
 
-test("a listening server that misses the quick probe gets the compile budget, and the report says it compiled", async () => {
+function lineSink() {
+	const lines = [];
+	return { lines, stderr: { write: (text) => lines.push(text) } };
+}
+
+test("a listening server that misses the quick probe gets the compile budget, says so once, and is reported compiled", async () => {
 	const { calls, request } = queuedRequest([TIMEOUT, HOME_OK, { ok: true, status: 200, error: "", body: "{\"status\":\"OK\"}" }]);
+	const { lines, stderr } = lineSink();
 	const report = await collectDoctor({
 		listening: () => true,
 		readPort: () => "4040",
 		request,
 		resolve: () => "https://fixture.localhost",
+		stderr,
 	});
 	assert.equal(report.ok, true);
 	assert.equal(report.frontendCompiled, true);
@@ -68,20 +75,30 @@ test("a listening server that misses the quick probe gets the compile budget, an
 		`/ ${parseCompileTimeoutMs({})}`,
 		"/api/health 4000",
 	]);
+	assert.deepEqual(lines, ["/ did not answer within 4 s, so Next is probably compiling it; waiting up to 90 s.\n"]);
 });
 
-test("a server that misses the compile budget too reports why GET / failed", async () => {
-	const { request } = queuedRequest([TIMEOUT, TIMEOUT, TIMEOUT, TIMEOUT]);
-	const report = await collectDoctor({ listening: () => true, readPort: () => "4040", request, resolve: () => "https://fixture.localhost" });
+test("a hung server costs one long wait, not two, and reports why GET / failed", async () => {
+	const { calls, request } = queuedRequest([TIMEOUT, TIMEOUT, TIMEOUT, TIMEOUT]);
+	const { lines, stderr } = lineSink();
+	const report = await collectDoctor({ listening: () => true, readPort: () => "4040", request, resolve: () => "https://fixture.localhost", stderr });
 	assert.equal(report.ok, false);
 	assert.equal(report.frontendError, "timeout");
 	assert.equal(report.frontendCompiled, false);
+	assert.deepEqual(calls.map(({ url, timeoutMs }) => `${new URL(url).pathname} ${timeoutMs}`), [
+		"/ 4000",
+		`/ ${parseCompileTimeoutMs({})}`,
+		"/api/health 4000",
+	]);
+	assert.equal(lines.length, 1, "the notice prints when the one long wait starts");
 
-	// A port nobody listens on fails fast: one quick probe each, no compile wait.
+	// A port nobody listens on fails fast: one quick probe each, no compile wait, no notice.
 	const stopped = queuedRequest([{ ok: false, status: 0, error: "connect ECONNREFUSED", body: "" }, TIMEOUT]);
-	const down = await collectDoctor({ listening: () => false, readPort: () => "4040", request: stopped.request, resolve: () => "https://fixture.localhost" });
+	const quiet = lineSink();
+	const down = await collectDoctor({ listening: () => false, readPort: () => "4040", request: stopped.request, resolve: () => "https://fixture.localhost", stderr: quiet.stderr });
 	assert.equal(down.frontendError, "connect ECONNREFUSED");
 	assert.deepEqual(stopped.calls.map(({ timeoutMs }) => timeoutMs), [4000, 4000]);
+	assert.deepEqual(quiet.lines, []);
 });
 
 test("the compile budget is configurable within the launch bounds", () => {
@@ -91,25 +108,31 @@ test("the compile budget is configurable within the launch bounds", () => {
 	assert.equal(parseCompileTimeoutMs({ VPK_VERIFY_COMPILE_TIMEOUT_MS: "999999999" }), 300_000);
 });
 
-test("open-target and capture warm the route first and say when it compiled or never answered", async () => {
-	const lines = [];
-	const stderr = { write: (text) => lines.push(text) };
+test("open-target and capture warm the route first: notice when the long wait starts, then the outcome", async () => {
 	let clock = 0;
 	const now = () => clock;
-	await warmRoute("https://fixture.localhost/jira-team-eu26?x=1", {
-		now,
-		request: async () => {
-			clock += 17_700;
-			return requestCompiling("https://fixture.localhost/jira-team-eu26", { request: queuedRequest([TIMEOUT, HOME_OK]).request });
-		},
-		stderr,
-	});
-	await warmRoute("https://fixture.localhost/jira-team-eu26", { now, request: async () => ({ ...TIMEOUT, compiled: false }), stderr });
-	await warmRoute("https://fixture.localhost/jira-team-eu26", { now, request: async () => ({ ...HOME_OK, compiled: false }), stderr });
-	assert.deepEqual(lines, [
+	const timed = (responses) => {
+		const { request } = queuedRequest(responses);
+		return async (url, options) => {
+			clock += options.timeoutMs === 4000 ? 4_000 : 13_700;
+			return request(url, options);
+		};
+	};
+	const compiled = lineSink();
+	await warmRoute("https://fixture.localhost/jira-team-eu26?x=1", { now, request: timed([TIMEOUT, HOME_OK]), stderr: compiled.stderr });
+	assert.deepEqual(compiled.lines, [
+		"/jira-team-eu26 did not answer within 4 s, so Next is probably compiling it; waiting up to 90 s.\n",
 		"Compiled /jira-team-eu26 on its first request (17.7 s).\n",
-		"/jira-team-eu26 did not answer within the compile budget (VPK_VERIFY_COMPILE_TIMEOUT_MS); opening it anyway.\n",
 	]);
+
+	const hung = lineSink();
+	await warmRoute("https://fixture.localhost/jira-team-eu26", { now, request: timed([TIMEOUT, TIMEOUT]), stderr: hung.stderr });
+	assert.equal(hung.lines.length, 2);
+	assert.equal(hung.lines[1], "/jira-team-eu26 did not answer within the compile budget (VPK_VERIFY_COMPILE_TIMEOUT_MS); opening it anyway.\n");
+
+	const warm = lineSink();
+	await warmRoute("https://fixture.localhost/jira-team-eu26", { now, request: timed([HOME_OK]), stderr: warm.stderr });
+	assert.deepEqual(warm.lines, [], "an already compiled route prints nothing");
 });
 
 const TARGET_REPO_MAP = {

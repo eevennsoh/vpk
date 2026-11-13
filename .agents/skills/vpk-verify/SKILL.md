@@ -34,7 +34,7 @@ Run this first, and again after any failed drive:
 .agents/skills/vpk-verify/scripts/control-vpk doctor
 ```
 
-A fresh stack compiles each route on its first request (17.7 s for `/` on a new stack). When the frontend is listening but misses the 4 s probe, doctor waits for the compile, up to `VPK_VERIFY_COMPILE_TIMEOUT_MS` (default 90000), and reports `frontendCompiled: true`; when it still fails, `frontendError` says why. `open-target` and `capture` request the route the same way before the browser opens it, so a cold compile does not count against the browser's 35 s limit.
+A fresh stack compiles each route on its first request (17.7 s for `/` on a new stack). When the frontend is listening but misses the 4 s probe, doctor waits for the compile, up to `VPK_VERIFY_COMPILE_TIMEOUT_MS` (default 90000), and reports `frontendCompiled: true`; when it still fails, `frontendError` says why. It prints one stderr line when that wait starts, and it waits at most once per run: if `/` never answers, `/api/health` gets only the 4 s probe. `open-target` and `capture` request the route the same way before the browser opens it, so a cold compile does not count against the browser's 35 s limit.
 
 Worth driving only when `"ok": true` for **this** worktree path. `"ok"` is frontend-only. `"backendOk": true` means `GET $ORIGIN/api/health` returned JSON `status: "OK"`. A 503 with `Cannot connect to backend server` is normal when the Express process is down; catalog/docs/theme still verify. Pass `--require-backend` only for features that hit `/api/*` or send chat.
 

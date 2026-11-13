@@ -33,14 +33,23 @@ function parseCompileTimeoutMs(env = process.env) {
 	return Math.min(Math.max(configured, QUICK_PROBE_TIMEOUT_MS), MAX_LAUNCH_READY_TIMEOUT_MS);
 }
 
+// The one line a caller sees when the long wait starts, so a compile does not look like a hang.
+function longWaitNotice(stderr) {
+	return (url, timeoutMs) => {
+		stderr.write(`${new URL(url).pathname} did not answer within ${QUICK_PROBE_TIMEOUT_MS / 1000} s, so Next is probably compiling it; waiting up to ${Math.round(timeoutMs / 1000)} s.\n`);
+	};
+}
+
 // GET a URL on this worktree's server, giving Next time to compile it on first request.
 // Returns the response plus `compiled: true` when only the longer attempt answered.
 async function requestCompiling(url, {
 	compileTimeoutMs = parseCompileTimeoutMs(),
+	onLongWait = () => {},
 	request = requestWorktreeOrigin,
 } = {}) {
 	const quick = await request(url, { timeoutMs: QUICK_PROBE_TIMEOUT_MS });
 	if (quick.error !== "timeout") return { ...quick, compiled: false };
+	onLongWait(url, compileTimeoutMs);
 	const slow = await request(url, { timeoutMs: compileTimeoutMs });
 	return { ...slow, compiled: slow.ok };
 }
@@ -49,11 +58,11 @@ async function requestCompiling(url, {
 // within the compile budget, instead of inside the browser's 35 s command limit.
 async function warmRoute(url, {
 	now = Date.now,
-	request = (target) => requestCompiling(target),
+	request = requestWorktreeOrigin,
 	stderr = process.stderr,
 } = {}) {
 	const started = now();
-	const result = await request(url);
+	const result = await requestCompiling(url, { onLongWait: longWaitNotice(stderr), request });
 	const pathname = new URL(url).pathname;
 	if (result.compiled) {
 		stderr.write(`Compiled ${pathname} on its first request (${((now() - started) / 1000).toFixed(1)} s).\n`);
@@ -152,6 +161,7 @@ async function collectDoctor({
 	readPort = readTrimmed,
 	request = requestWorktreeOrigin,
 	resolve = resolveOrigin,
+	stderr = process.stderr,
 } = {}) {
 	const frontendPort = readPort(FRONTEND_PORT_FILE);
 	const backendPort = readPort(BACKEND_PORT_FILE);
@@ -159,10 +169,20 @@ async function collectDoctor({
 	const frontendListening = listening(frontendPort);
 	const backendListening = listening(backendPort);
 	const noOrigin = { ok: false, status: 0, error: "no origin", body: "", compiled: false };
+	const quick = (url) => request(url, { timeoutMs: QUICK_PROBE_TIMEOUT_MS });
 	// Only a listening server gets the compile budget; anything else answers or fails fast.
-	const get = (url) => (frontendListening ? requestCompiling(url, { request }) : request(url, { timeoutMs: QUICK_PROBE_TIMEOUT_MS }));
-	const home = origin ? await get(`${origin}/`) : noOrigin;
-	const health = origin ? await get(`${origin}/api/health`) : noOrigin;
+	const home = !origin
+		? noOrigin
+		: frontendListening
+			? await requestCompiling(`${origin}/`, { onLongWait: longWaitNotice(stderr), request })
+			: await quick(`${origin}/`);
+	// At most one long wait per run: a server that never answered `/` gets only the quick
+	// probe for /api/health, so a hung stack costs one compile budget, not two.
+	const health = !origin
+		? noOrigin
+		: frontendListening && home.error !== "timeout"
+			? await requestCompiling(`${origin}/api/health`, { onLongWait: longWaitNotice(stderr), request })
+			: await quick(`${origin}/api/health`);
 	let healthJson = null;
 	try {
 		healthJson = JSON.parse(health.body);
