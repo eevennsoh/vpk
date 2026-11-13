@@ -1,7 +1,7 @@
 "use client";
 
-import type { CSSProperties, TextareaHTMLAttributes } from "react";
-import { Fragment, forwardRef, useEffect, useMemo, useState } from "react";
+import type { CSSProperties, Ref, TextareaHTMLAttributes } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 
 import {
 	createRawTokens,
@@ -60,15 +60,17 @@ export interface MarkdownSourceEditorProps
 	onValueChange: (value: string) => void;
 	className?: string;
 	textareaClassName?: string;
+	ref?: Ref<HTMLTextAreaElement>;
 }
 
-export const MarkdownSourceEditor = forwardRef<
-	HTMLTextAreaElement,
-	MarkdownSourceEditorProps
->(function MarkdownSourceEditor(
-	{ value, onValueChange, className, textareaClassName, ...props },
+export function MarkdownSourceEditor({
+	value,
+	onValueChange,
+	className,
+	textareaClassName,
 	ref,
-) {
+	...props
+}: MarkdownSourceEditorProps) {
 	const tokenized = useMarkdownTokens(value);
 
 	return (
@@ -128,4 +130,4 @@ export const MarkdownSourceEditor = forwardRef<
 			/>
 		</div>
 	);
-});
+}
