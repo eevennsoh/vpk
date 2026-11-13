@@ -80,73 +80,73 @@
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces",
-						"source": "backend/routes/browser-workspaces.js:126",
+						"source": "backend/routes/browser-workspaces.js:131",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces",
-						"source": "backend/routes/browser-workspaces.js:142",
+						"source": "backend/routes/browser-workspaces.js:147",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId",
-						"source": "backend/routes/browser-workspaces.js:182",
+						"source": "backend/routes/browser-workspaces.js:187",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId",
-						"source": "backend/routes/browser-workspaces.js:160",
+						"source": "backend/routes/browser-workspaces.js:165",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId/:action",
-						"source": "backend/routes/browser-workspaces.js:391",
+						"source": "backend/routes/browser-workspaces.js:396",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/:action",
-						"source": "backend/routes/browser-workspaces.js:479",
+						"source": "backend/routes/browser-workspaces.js:484",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/preview-session",
-						"source": "backend/routes/browser-workspaces.js:316",
+						"source": "backend/routes/browser-workspaces.js:321",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId/preview-session/:sessionId",
-						"source": "backend/routes/browser-workspaces.js:355",
+						"source": "backend/routes/browser-workspaces.js:360",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "GET",
 						"path": "/api/browser-workspaces/:workspaceId/tabs",
-						"source": "backend/routes/browser-workspaces.js:204",
+						"source": "backend/routes/browser-workspaces.js:209",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/tabs",
-						"source": "backend/routes/browser-workspaces.js:226",
+						"source": "backend/routes/browser-workspaces.js:231",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "DELETE",
 						"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex",
-						"source": "backend/routes/browser-workspaces.js:284",
+						"source": "backend/routes/browser-workspaces.js:289",
 						"runtimeAdmin": true
 					},
 					{
 						"method": "POST",
 						"path": "/api/browser-workspaces/:workspaceId/tabs/:tabIndex/activate",
-						"source": "backend/routes/browser-workspaces.js:252",
+						"source": "backend/routes/browser-workspaces.js:257",
 						"runtimeAdmin": true
 					}
 				]

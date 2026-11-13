@@ -104,6 +104,7 @@ test("createBackendRuntimeComposition wires runtime owners into app, startup, ws
 		projectRoot,
 	}, {
 		browserWorkspaceManager: {
+			closeAllWorkspaces: async () => 0,
 			deleteWorkspace: createNamedFunction("deleteWorkspace", calls),
 			listWorkspaces: () => [],
 			owner: "browser-workspaces",

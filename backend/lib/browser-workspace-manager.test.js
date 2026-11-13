@@ -543,45 +543,19 @@ test("browser workspace manager deletes explicit workspaces and cleans up idle o
 		nowFn: () => currentTime,
 		cleanupIntervalMs: 1_000_000,
 		idleTimeoutMs: 10,
-		workspaceFactory: ({ workspaceId, sessionId }) => ({
-			workspaceId,
-			sessionId,
-			lastUsedAt: currentTime,
-			state: {
+		workspaceFactory: ({ workspaceId, sessionId }) =>
+			new BrowserWorkspace({
 				workspaceId,
-				ready: true,
-				activeTabIndex: 0,
-				tabs: [
-					{
-						index: 0,
-						title: "",
-						url: "about:blank",
-						active: true,
+				sessionId,
+				delayFn: async () => {},
+				nowFn: () => currentTime,
+				runtimeFactory: () => ({
+					...createFakeRuntime(),
+					async close() {
+						closedWorkspaceIds.push(workspaceId)
 					},
-				],
-				title: "",
-				url: "about:blank",
-				viewportWidth: 1280,
-				viewportHeight: 900,
-				canGoBack: false,
-				canGoForward: false,
-				updatedAt: currentTime,
-			},
-			async initialize() {},
-			peekState() {
-				return this.state
-			},
-			async getState() {
-				this.lastUsedAt = currentTime
-				return this.state
-			},
-			getLastUsedAt() {
-				return this.lastUsedAt
-			},
-			async close() {
-				closedWorkspaceIds.push(workspaceId)
-			},
-		}),
+				}),
+			}),
 	})
 
 	const firstState = await manager.createWorkspace()
@@ -604,18 +578,20 @@ test("browser workspace manager deletes explicit workspaces and cleans up idle o
 		secondState.workspaceId,
 	])
 	assert.equal(manager.listWorkspaces().length, 0)
+	clearInterval(manager._cleanupTimer)
 })
 
-test("browser workspace manager throws typed errors for missing workspaces", () => {
+test("browser workspace manager rejects with typed errors for missing workspaces", async () => {
 	const manager = new BrowserWorkspaceManager({
 		cleanupIntervalMs: 1_000_000,
 	})
 
-	assert.throws(
-		() => manager.getWorkspaceState("missing-workspace"),
+	await assert.rejects(
+		manager.getWorkspaceState("missing-workspace"),
 		(error) => {
 			assert.equal(error instanceof BrowserWorkspaceNotFoundError, true)
 			assert.equal(isBrowserWorkspaceNotFoundError(error), true)
+			assert.equal(error.code, "BROWSER_WORKSPACE_NOT_FOUND")
 			assert.equal(error.workspaceId, "missing-workspace")
 			assert.equal(
 				error.message,
@@ -624,6 +600,12 @@ test("browser workspace manager throws typed errors for missing workspaces", () 
 			return true
 		},
 	)
+	// Synchronous lookups still throw synchronously.
+	assert.throws(
+		() => manager.getWorkspaceStream("missing-workspace"),
+		BrowserWorkspaceNotFoundError,
+	)
+	clearInterval(manager._cleanupTimer)
 })
 
 test("browser workspace manager uses compact runtime session ids", async () => {
@@ -661,6 +643,12 @@ test("browser workspace manager uses compact runtime session ids", async () => {
 					updatedAt: 1_000,
 				},
 				async initialize() {},
+				getLifecycle() {
+					return { status: "ready", reason: null }
+				},
+				getUsage() {
+					return { workspaceId, status: "ready", lastUsedAt: 0, previewConsumers: 0, pendingCalls: 0 }
+				},
 				peekState() {
 					return this.state
 				},

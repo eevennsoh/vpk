@@ -186,11 +186,12 @@ test("runtime steps abort runs, close workspaces, mirrors and the preview in ord
 	const steps = createRuntimeShutdownSteps({
 		activeRequests,
 		browserWorkspaceManager: {
-			deleteWorkspace: async (workspaceId) => {
-				calls.push(["deleteWorkspace", workspaceId]);
-				workspaces = workspaces.filter((id) => id !== workspaceId);
+			closeAllWorkspaces: async () => {
+				calls.push(["closeAllWorkspaces"]);
+				const closed = workspaces.length;
+				workspaces = [];
+				return closed;
 			},
-			listWorkspaces: () => workspaces.map((workspaceId) => ({ workspaceId })),
 		},
 		chromiumPreviewManager: {
 			close: async () => {
@@ -221,8 +222,7 @@ test("runtime steps abort runs, close workspaces, mirrors and the preview in ord
 	assert.deepEqual(details, ["1 aborted", "2 closed", "1 closed", "closed", undefined]);
 	assert.equal(live.signal.aborted, true);
 	assert.deepEqual(calls, [
-		["deleteWorkspace", "ws-1"],
-		["deleteWorkspace", "ws-2"],
+		["closeAllWorkspaces"],
 		["closeAllMirrorBrowsers"],
 		["closeChromiumPreview"],
 		["shutdownRovoPool"],
@@ -234,7 +234,7 @@ test("runtime steps abort runs, close workspaces, mirrors and the preview in ord
 	assert.deepEqual(again, ["0 aborted", "0 closed", "0 closed", "none open"]);
 	assert.throws(() => createRuntimeShutdownSteps({}), /activeRequests/u);
 	assert.throws(
-		() => createRuntimeShutdownSteps({ activeRequests, browserWorkspaceManager: { deleteWorkspace() {}, listWorkspaces() {} }, shutdownRovoPool() {} }),
+		() => createRuntimeShutdownSteps({ activeRequests, browserWorkspaceManager: { closeAllWorkspaces() {} }, shutdownRovoPool() {} }),
 		/closeAllMirrorBrowsers/u,
 	);
 });
