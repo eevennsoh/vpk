@@ -399,19 +399,28 @@ async function fetchOrigin(runCommand, cwd) {
 }
 
 // The kept refs once origin's branch list is known: local branches, tags, and the
-// origin/* refs whose branch still exists on origin (a stale one is left out, since
-// `git fetch --prune` would delete it). null when origin could not be listed.
+// origin/* refs whose tip is exactly the tip origin advertises for that branch. Any other
+// origin/* ref is left out: a branch origin deleted (`git fetch --prune` would delete the
+// ref) or moved (a narrowed fetch refspec leaves the ref behind, and the next fetch that
+// covers it moves it). origin/HEAD is always left out, since it resolves to another ref.
+// null when origin could not be listed.
 async function readLiveKeepRefs(git) {
 	const [remote, local] = await Promise.all([
 		git(["ls-remote", "--heads", "origin"], { timeoutMs: 60_000 }),
-		git(["for-each-ref", "--format=%(refname)", "refs/remotes/origin/"]),
+		git(["for-each-ref", "--format=%(objectname) %(refname)", "refs/remotes/origin/"]),
 	]);
 	if (!remote.ok || !local.ok) return null;
-	const live = new Set(remote.stdout.split("\n").map((line) => line.split("\t")[1]?.trim()).filter(Boolean)
-		.map((ref) => ref.replace(/^refs\/heads\//u, "refs/remotes/origin/")));
-	const stale = local.stdout.split("\n").map((line) => line.trim())
-		.filter((ref) => ref && ref !== "refs/remotes/origin/HEAD" && !live.has(ref));
-	return [...DEFAULT_KEEP_REFS, ...stale.map((ref) => `--exclude=${ref}`), "--glob=refs/remotes/origin/*"];
+	const advertised = new Map();
+	for (const line of remote.stdout.split("\n")) {
+		const [oid, ref] = line.trim().split("\t");
+		if (oid && ref?.startsWith("refs/heads/")) advertised.set(ref.replace(/^refs\/heads\//u, "refs/remotes/origin/"), oid);
+	}
+	const unproven = [];
+	for (const line of local.stdout.split("\n")) {
+		const [oid, ref] = line.trim().split(" ");
+		if (ref && advertised.get(ref) !== oid) unproven.push(ref);
+	}
+	return [...DEFAULT_KEEP_REFS, ...unproven.map((ref) => `--exclude=${ref}`), "--glob=refs/remotes/origin/*"];
 }
 
 module.exports = {
