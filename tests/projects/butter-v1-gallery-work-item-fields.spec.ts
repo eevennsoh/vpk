@@ -136,7 +136,7 @@ test("the whole story points cell acts as the editable field", async ({ page }) 
 	await expect(page.getByRole("button", { name: "Edit story points for PAY-118, 5" })).toBeVisible();
 });
 
-test("attachment piles stay settled when entering Work item and remain interactive", async ({ page }) => {
+test("attachment piles stay settled as Related work opens in the Work item and remain interactive", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));

@@ -184,8 +184,10 @@ test("Pull request tile opens the PAY-999 work item with its PR", async ({ page 
 	const cardBounds = await card.boundingBox();
 	if (!stageBounds || !cardBounds || !boardCardBounds) throw new Error("Pull request or board card has no bounds");
 	expect(cardBounds.width).toBe(boardCardBounds.width);
-	// The PR tile carries the journey's agent session and the board card does not; cards with an agent reserve a surface inset, so compare the content layout instead of the outer height.
+	// The PR tile carries the journey's agent session and the board card does not. Cards with an agent inset their
+	// activity surface with pb-3 instead of pb-2 (4c8f4fad7), so the content matches and the tile is exactly 4px taller.
 	expect(await contentHeight(card)).toBe(boardContentHeight);
+	expect(cardBounds.height - boardCardBounds.height).toBe(4);
 	expect(Math.abs((stageBounds.x + stageBounds.width / 2) - (cardBounds.x + cardBounds.width / 2))).toBeLessThan(2);
 	await expect(card).toContainText("Improve merchant onboarding for Payments SDK v2");
 	await expect(card.getByText("Improve merchant onboarding for Payments SDK v2", { exact: true })).toHaveCSS("-webkit-line-clamp", "2");

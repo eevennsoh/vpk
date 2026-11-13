@@ -288,6 +288,20 @@ test("the comment bar reveals quickly and covers content below it while scrollin
 		const cover = backdrop.getBoundingClientRect();
 		return cover.left <= x && cover.right >= x && cover.top <= y && cover.bottom >= y && getComputedStyle(backdrop).backgroundImage.includes("gradient");
 	})).toBe(true);
+	// Hit testing cannot see a pointer-events: none backdrop, so prove the stacking from pixels: a strip just
+	// below the bar must change when the backdrop is hidden, which it cannot do if the content painted above it.
+	const strip = await bar.evaluate((element) => {
+		const root = element.closest("[data-project-butter-work-item]")!.firstElementChild!;
+		const barBounds = element.getBoundingClientRect();
+		const viewport = root.getBoundingClientRect();
+		return { x: Math.round(barBounds.left + 16), y: Math.round(Math.min(barBounds.bottom + 4, viewport.bottom - 2)), width: Math.round(barBounds.width - 32), height: 1 };
+	});
+	const backdrop = bar.locator("[data-project-butter-comment-backdrop]");
+	const covered = await page.screenshot({ clip: strip, animations: "disabled" });
+	await backdrop.evaluate((element) => { element.style.visibility = "hidden"; });
+	const uncovered = await page.screenshot({ clip: strip, animations: "disabled" });
+	await backdrop.evaluate((element) => { element.style.visibility = ""; });
+	expect(covered.equals(uncovered), "the backdrop paints over the content below the bar").toBe(false);
 	await scrollport.evaluate((root) => { root.scrollTop = root.scrollHeight; });
 	await expect(dialog.locator("[data-jira-activity-entry-id]").last()).toBeVisible();
 });

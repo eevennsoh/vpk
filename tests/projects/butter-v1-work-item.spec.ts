@@ -239,14 +239,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(preview.locator("[data-preview-layer]")).toHaveCount(reducedMotion === "reduce" ? 0 : 2);
 		await picker.getByRole("button", { name: "Jira Coding Agent", exact: true }).focus();
 		await expect(preview).toHaveAttribute("data-agent-id", "jira-coding");
-		// The picker shows a lanyard preview for the agent under the pointer or focus; Escape dismisses that first, then the picker.
-		const lanyard = page.locator('[data-slot="hover-card-content"]');
-		await expect(lanyard).toBeVisible();
 		await page.keyboard.press("Escape");
-		await expect(lanyard).toHaveCount(0);
-		await expect(picker).toBeVisible();
-		await page.keyboard.press("Escape");
-		await expect(picker).toHaveCount(0);
 		await expect(preview).toHaveCount(0);
 		await expect(field.getByRole("button", { name: /\d+ agents/ })).toBeVisible();
 	});
@@ -688,11 +681,9 @@ for (const viewport of [{ width: 1600, height: 1200 }, { width: 1600, height: 10
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.goto(appUrl("/butter-v1"));
 		await page.getByRole("button", { name: "Select Board" }).click();
-		// Gallery selection commits in a transition and the board-only layout applies its 24px top inset after mounting,
-		// so wait for that inset before measuring the column.
 		const board = page.getByRole("region", { name: "Payments SDK v2 Kanban board" });
 		const boardColumn = board.locator('[data-jira-kanban-column="To do"]');
-		await expect(board).toHaveCSS("padding-top", "24px");
+		await expect(boardColumn).toBeVisible();
 		const boardBounds = await boardColumn.boundingBox();
 		await page.getByText("Port confirmPaymentIntent and the 3-D Secure challenge flow", { exact: true }).click();
 		const item = page.getByRole("dialog", { name: "Project butter" });

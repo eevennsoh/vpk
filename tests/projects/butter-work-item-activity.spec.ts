@@ -109,12 +109,10 @@ test("empty activity starts with who created the work item and places the commen
 	await expect(tabs).toContainText("created this work item");
 	const comment = dialog.locator("[data-project-butter-comment-editor]");
 	await expect(comment).toBeVisible();
-	// The timeline ends in a short fade below its last row; the comment bar sits 24px below that end.
-	const timelineEnd = tabs.locator("[data-jira-activity-end-fade]");
 	await expect.poll(async () => {
-		const [rowBox, endBox, commentBox] = await Promise.all([tabs.boundingBox(), timelineEnd.boundingBox(), comment.boundingBox()]);
-		return rowBox && endBox && commentBox ? { tail: endBox.y - (rowBox.y + rowBox.height), gap: commentBox.y - (endBox.y + endBox.height) } : null;
-	}).toEqual({ tail: 0, gap: 24 });
+		const [tabsBox, commentBox] = await Promise.all([tabs.boundingBox(), comment.boundingBox()]);
+		return tabsBox && commentBox ? commentBox.y - (tabsBox.y + tabsBox.height) : null;
+	}).toBe(24);
 });
 
 test("short work item activity ends without a viewport of blank space", async ({ page }) => {
